@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Definy 読み込み中</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/assets/icon.png">
+</head>
+
+<body>
+    <script src="main.js"></script>
+    <script>
+        /* Elmを起動!! */
+        const app = Elm.Main.init();
+        let prevKeyEvent;
+        /* キー入力 */
+        window.addEventListener("keydown", (e) => {
+            prevKeyEvent = e;
+            // e.preventDefault();
+            app.ports.keyDown.send(e);
+        });
+        /* 直前のキー入力のデフォルト動作を取り消す */
+        app.ports.preventDefaultBeforeKeyEvent.subscribe((_) => {
+            prevKeyEvent.preventDefault();
+            app.ports.keyPrevented.send(0); // 0 はダミーデータ(送らないとなぜかエラーになる)
+        });
+        /* テキストエリア(<textarea>)に値を設定(編集する前の初期設定用) */
+        app.ports.setTextAreaValue.subscribe((e) => {
+            requestAnimationFrame(() => {
+                const edit = document.getElementById("edit")
+                console.log(edit);
+                edit.focus();
+                if (edit.value !== e) {
+                    edit.value = e;
+                }
+            })
+        })
+        /* コンパイル結果(WASM)を実行 */
+        app.ports.run.subscribe((list) => {
+            console.log(list);
+            WebAssembly.instantiate(new Uint8Array(list)).then(result => {
+                console.log(result);
+                const exportFunc = result.instance.exports;
+                for (const [k, f] of Object.entries(exportFunc)) {
+                    console.log(k, f());
+                }
+            });
+        });
+        /* ウィンドウサイズを変えたら */
+        const windowResizeSend = (e) => {
+            app.ports.windowResize.send({ width: innerWidth, height: innerHeight });
+        }
+        windowResizeSend();
+        window.addEventListener("resize", windowResizeSend);
+        window.addEventListener("contextmenu", (e) => {
+            // e.preventDefault();
+        })
+    </script>
+</body>
+
+</html>
