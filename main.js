@@ -14282,6 +14282,12 @@ var author$project$Panel$Tree$viewTypeToClass = function (viewType) {
 				author$project$Panel$Tree$treePanelClass('item--select'));
 	}
 };
+var elm$html$Html$Attributes$tabindex = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'tabIndex',
+		elm$core$String$fromInt(n));
+};
 var author$project$Panel$Tree$viewCloseChildrenItem = F5(
 	function (icon, label, editorRef, viewType, optionList) {
 		return A2(
@@ -14289,7 +14295,8 @@ var author$project$Panel$Tree$viewCloseChildrenItem = F5(
 			_Utils_ap(
 				_List_fromArray(
 					[
-						author$project$Panel$Tree$treePanelClass('item')
+						author$project$Panel$Tree$treePanelClass('item'),
+						elm$html$Html$Attributes$tabindex(0)
 					]),
 				author$project$Utility$ListExtra$fromMaybe(
 					author$project$Panel$Tree$viewTypeToClass(viewType))),
@@ -14315,7 +14322,8 @@ var author$project$Panel$Tree$viewNoChildrenItem = F5(
 			_Utils_ap(
 				_List_fromArray(
 					[
-						author$project$Panel$Tree$treePanelClass('item')
+						author$project$Panel$Tree$treePanelClass('item'),
+						elm$html$Html$Attributes$tabindex(0)
 					]),
 				author$project$Utility$ListExtra$fromMaybe(
 					author$project$Panel$Tree$viewTypeToClass(viewType))),
@@ -14342,7 +14350,8 @@ var author$project$Panel$Tree$viewOpenChildrenItem = F6(
 			_Utils_ap(
 				_List_fromArray(
 					[
-						author$project$Panel$Tree$treePanelClass('itemWithChildren')
+						author$project$Panel$Tree$treePanelClass('itemWithChildren'),
+						elm$html$Html$Attributes$tabindex(0)
 					]),
 				author$project$Utility$ListExtra$fromMaybe(
 					author$project$Panel$Tree$viewTypeToClass(viewType))),

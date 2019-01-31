@@ -746,7 +746,7 @@ viewTreeItem (EditorTree { icon, label, editorRef, viewType, option, children })
 viewNoChildrenItem : Icon -> String -> Panel.EditorTypeRef.EditorTypeRef -> ViewType -> List Option -> Html.Html Msg
 viewNoChildrenItem icon label editorRef viewType optionList =
     Html.div
-        ([ treePanelClass "item" ]
+        ([ treePanelClass "item", Html.Attributes.tabindex 0 ]
             ++ Utility.ListExtra.fromMaybe (viewTypeToClass viewType)
         )
         ([ itemContent viewType editorRef icon label ]
@@ -764,6 +764,7 @@ viewCloseChildrenItem : Icon -> String -> Panel.EditorTypeRef.EditorTypeRef -> V
 viewCloseChildrenItem icon label editorRef viewType optionList =
     Html.div
         ([ treePanelClass "item"
+         , Html.Attributes.tabindex 0
          ]
             ++ Utility.ListExtra.fromMaybe (viewTypeToClass viewType)
         )
@@ -784,6 +785,7 @@ viewOpenChildrenItem : Icon -> String -> Panel.EditorTypeRef.EditorTypeRef -> Vi
 viewOpenChildrenItem icon label editorRef viewType optionList ( headTree, restTree ) =
     Html.div
         ([ treePanelClass "itemWithChildren"
+         , Html.Attributes.tabindex 0
          ]
             ++ Utility.ListExtra.fromMaybe (viewTypeToClass viewType)
         )
