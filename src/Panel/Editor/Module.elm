@@ -37,6 +37,8 @@ type Msg
     | FocusToDescription
     | FocusToPartEditor PartEditorFocus
     | InputReadMe String
+    | SelectLeft
+    | SelectRight
     | ActiveThisEditor
 
 
@@ -140,6 +142,44 @@ update msg project (Model rec) =
                     | focus = FocusDescription
                 }
             , Just (EmitChangeReadMe { text = text, ref = rec.moduleRef })
+            )
+
+        SelectLeft ->
+            ( case rec.focus of
+                FocusNone ->
+                    Model rec
+
+                FocusDescription ->
+                    Model rec
+
+                FocusPartEditor PartEditorFocusName ->
+                    Model { rec | focus = FocusPartEditor PartEditorFocusName }
+
+                FocusPartEditor PartEditorFocusType ->
+                    Model { rec | focus = FocusPartEditor PartEditorFocusName }
+
+                FocusPartEditor PartEditorFocusExpr ->
+                    Model rec
+            , Nothing
+            )
+
+        SelectRight ->
+            ( case rec.focus of
+                FocusNone ->
+                    Model rec
+
+                FocusDescription ->
+                    Model rec
+
+                FocusPartEditor PartEditorFocusName ->
+                    Model { rec | focus = FocusPartEditor PartEditorFocusType }
+
+                FocusPartEditor PartEditorFocusType ->
+                    Model { rec | focus = FocusPartEditor PartEditorFocusType }
+
+                FocusPartEditor PartEditorFocusExpr ->
+                    Model rec
+            , Nothing
             )
 
         ActiveThisEditor ->

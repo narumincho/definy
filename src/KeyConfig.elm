@@ -15,23 +15,27 @@ import Panel.Tree
 
 {-| キー入力。出力は更新したModelとキーのデフォルト動作を取り消すかどうか
 -}
-keyDown : Maybe Key.Key -> Model.Model -> Maybe (Model.Msg, Bool)
+keyDown : Maybe Key.Key -> Model.Model -> Maybe ( Model.Msg, Bool )
 keyDown keyMaybe model =
     case keyMaybe of
         Just key ->
             case editorReservedKey (Model.isOpenCommandPalette model) key of
                 Just msg ->
-                    Just (msg, True)
+                    Just ( msg, True )
 
                 Nothing ->
-                    case Model.getFocus model of
-                        Model.FocusTreePanel ->
-                            treePanelKeyDown key
-                                |> Maybe.map (Tuple.mapFirst Model.TreePanelMsg)
+                    if Model.isFocusTextArea model && textAreaReservedKey key then
+                        Nothing
 
-                        Model.FocusEditorGroupPanel ->
-                            editorGroupPanelKeyDown key (Model.isFocusTextArea model)
-                                |> Maybe.map (Tuple.mapFirst Model.EditorPanelMsg)
+                    else
+                        case Model.getFocus model of
+                            Model.FocusTreePanel ->
+                                treePanelKeyDown key
+                                    |> Maybe.map (Tuple.mapFirst Model.TreePanelMsg)
+
+                            Model.FocusEditorGroupPanel ->
+                                editorGroupPanelKeyDown key
+                                    |> Maybe.map (Tuple.mapFirst Model.EditorPanelMsg)
 
         Nothing ->
             Nothing
@@ -86,27 +90,45 @@ editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
                 Nothing
 
 
+textAreaReservedKey : Key.Key -> Bool
+textAreaReservedKey { key, ctrl, alt, shift } =
+    case ( ctrl, shift, alt ) of
+        ( False, False, False ) ->
+            case key of
+                Key.ArrowLeft ->
+                    True
+
+                Key.ArrowRight ->
+                    True
+
+                _ ->
+                    False
+
+        _ ->
+            False
+
+
 {-| ツリーパネルのキー入力
 -}
-treePanelKeyDown : Key.Key -> Maybe (Panel.Tree.Msg, Bool)
+treePanelKeyDown : Key.Key -> Maybe ( Panel.Tree.Msg, Bool )
 treePanelKeyDown { key, ctrl, shift, alt } =
     case ( shift, ctrl, alt ) of
         ( False, False, False ) ->
             case key of
                 Key.ArrowUp ->
-                    Just (Panel.Tree.SelectUp, True)
+                    Just ( Panel.Tree.SelectUp, True )
 
                 Key.ArrowDown ->
-                    Just (Panel.Tree.SelectDown, True)
+                    Just ( Panel.Tree.SelectDown, True )
 
                 Key.ArrowLeft ->
-                    Just (Panel.Tree.SelectParentOrTreeClose, True)
+                    Just ( Panel.Tree.SelectParentOrTreeClose, True )
 
                 Key.ArrowRight ->
-                    Just (Panel.Tree.SelectFirstChildOrTreeOpen, True)
+                    Just ( Panel.Tree.SelectFirstChildOrTreeOpen, True )
 
                 Key.Enter ->
-                    Just (Panel.Tree.ToFocusEditorPanel, True)
+                    Just ( Panel.Tree.ToFocusEditorPanel, True )
 
                 _ ->
                     Nothing
@@ -117,19 +139,38 @@ treePanelKeyDown { key, ctrl, shift, alt } =
 
 {-| エディタグループパネルのキー入力
 -}
-editorGroupPanelKeyDown : Key.Key -> Bool -> Maybe (Panel.EditorGroup.Msg, Bool)
-editorGroupPanelKeyDown { key, ctrl, shift, alt } isFocusTextArea =
+editorGroupPanelKeyDown : Key.Key -> Maybe ( Panel.EditorGroup.Msg, Bool )
+editorGroupPanelKeyDown { key, ctrl, shift, alt } =
     case ( shift, ctrl, alt ) of
         ( False, False, False ) ->
             case key of
                 Key.Numpad0 ->
                     Just
-                        (Panel.EditorGroup.EditorItemMsgToActive
+                        ( Panel.EditorGroup.EditorItemMsgToActive
                             (Panel.EditorGroup.ModuleEditorMsg
                                 (Panel.Editor.Module.InputReadMe "Numpad0をおしたな!?")
                             )
                         , True
                         )
+
+                Key.ArrowLeft ->
+                    Just
+                        ( Panel.EditorGroup.EditorItemMsgToActive
+                            (Panel.EditorGroup.ModuleEditorMsg
+                                Panel.Editor.Module.SelectLeft
+                            )
+                        , True
+                        )
+
+                Key.ArrowRight ->
+                    Just
+                        ( Panel.EditorGroup.EditorItemMsgToActive
+                            (Panel.EditorGroup.ModuleEditorMsg
+                                Panel.Editor.Module.SelectRight
+                            )
+                        , True
+                        )
+
                 _ ->
                     Nothing
 
