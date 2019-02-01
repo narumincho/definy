@@ -7515,11 +7515,10 @@ var author$project$Main$subscriptions = function (model) {
 					elm$core$Basics$always(author$project$Model$MouseUp))
 				]) : _List_Nil));
 };
-var author$project$Panel$Editor$Module$InputReadMe = function (a) {
-	return {$: 3, a: a};
-};
+var author$project$Panel$Editor$Module$SelectDown = {$: 7};
 var author$project$Panel$Editor$Module$SelectLeft = {$: 4};
 var author$project$Panel$Editor$Module$SelectRight = {$: 5};
+var author$project$Panel$Editor$Module$SelectUp = {$: 6};
 var author$project$Panel$EditorGroup$EditorItemMsgToActive = function (a) {
 	return {$: 6, a: a};
 };
@@ -7534,13 +7533,6 @@ var author$project$KeyConfig$editorGroupPanelKeyDown = function (_n0) {
 	var _n1 = _Utils_Tuple3(shift, ctrl, alt);
 	if (((!_n1.a) && (!_n1.b)) && (!_n1.c)) {
 		switch (key) {
-			case 82:
-				return elm$core$Maybe$Just(
-					_Utils_Tuple2(
-						author$project$Panel$EditorGroup$EditorItemMsgToActive(
-							author$project$Panel$EditorGroup$ModuleEditorMsg(
-								author$project$Panel$Editor$Module$InputReadMe('Numpad0をおしたな!?'))),
-						true));
 			case 79:
 				return elm$core$Maybe$Just(
 					_Utils_Tuple2(
@@ -7552,6 +7544,18 @@ var author$project$KeyConfig$editorGroupPanelKeyDown = function (_n0) {
 					_Utils_Tuple2(
 						author$project$Panel$EditorGroup$EditorItemMsgToActive(
 							author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SelectRight)),
+						true));
+			case 81:
+				return elm$core$Maybe$Just(
+					_Utils_Tuple2(
+						author$project$Panel$EditorGroup$EditorItemMsgToActive(
+							author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SelectUp)),
+						true));
+			case 78:
+				return elm$core$Maybe$Just(
+					_Utils_Tuple2(
+						author$project$Panel$EditorGroup$EditorItemMsgToActive(
+							author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SelectDown)),
 						true));
 			default:
 				return elm$core$Maybe$Nothing;
@@ -7986,7 +7990,7 @@ var author$project$Panel$EditorGroup$EmitHorizontalGutterModeOn = function (a) {
 var author$project$Panel$EditorGroup$EmitVerticalGutterModeOn = function (a) {
 	return {$: 0, a: a};
 };
-var author$project$Panel$Editor$Module$ActiveThisEditor = {$: 6};
+var author$project$Panel$Editor$Module$ActiveThisEditor = {$: 8};
 var author$project$Panel$Editor$Module$EmitChangeReadMe = function (a) {
 	return {$: 0, a: a};
 };
@@ -7997,11 +8001,21 @@ var author$project$Panel$Editor$Module$FocusDescription = {$: 1};
 var author$project$Panel$Editor$Module$FocusPartEditor = function (a) {
 	return {$: 2, a: a};
 };
-var author$project$Panel$Editor$Module$PartEditorEdit = function (a) {
-	return {$: 0, a: a};
-};
 var author$project$Panel$Editor$Module$PartEditorMove = function (a) {
 	return {$: 1, a: a};
+};
+var author$project$Panel$Editor$Module$MoveExprHead = {$: 2};
+var author$project$Panel$Editor$Module$partEditorMoveDown = function (position) {
+	switch (position.$) {
+		case 0:
+			return author$project$Panel$Editor$Module$MoveExprHead;
+		case 1:
+			return author$project$Panel$Editor$Module$MoveExprHead;
+		case 2:
+			return author$project$Panel$Editor$Module$MoveExprHead;
+		default:
+			return position;
+	}
 };
 var author$project$Panel$Editor$Module$MoveName = {$: 0};
 var author$project$Panel$Editor$Module$MoveType = {$: 1};
@@ -8017,7 +8031,6 @@ var author$project$Panel$Editor$Module$partEditorMoveLeft = function (partMove) 
 			return partMove;
 	}
 };
-var author$project$Panel$Editor$Module$MoveExprHead = {$: 2};
 var author$project$Panel$Editor$Module$partEditorMoveRight = function (partMove) {
 	switch (partMove.$) {
 		case 0:
@@ -8026,6 +8039,18 @@ var author$project$Panel$Editor$Module$partEditorMoveRight = function (partMove)
 			return author$project$Panel$Editor$Module$MoveExprHead;
 		default:
 			return partMove;
+	}
+};
+var author$project$Panel$Editor$Module$partEditorMoveUp = function (position) {
+	switch (position.$) {
+		case 0:
+			return author$project$Panel$Editor$Module$MoveName;
+		case 1:
+			return author$project$Panel$Editor$Module$MoveType;
+		case 2:
+			return author$project$Panel$Editor$Module$MoveName;
+		default:
+			return position;
 	}
 };
 var author$project$Project$Source$ModuleWithCache$getReadMe = function (_n0) {
@@ -8092,13 +8117,7 @@ var author$project$Panel$Editor$Module$update = F3(
 													author$project$Panel$Editor$Module$partEditorMoveLeft(partMove)))
 										});
 								} else {
-									var partEdit = _n2.a.a;
-									return _Utils_update(
-										rec,
-										{
-											ao: author$project$Panel$Editor$Module$FocusPartEditor(
-												author$project$Panel$Editor$Module$PartEditorEdit(partEdit))
-										});
+									return rec;
 								}
 						}
 					}(),
@@ -8123,18 +8142,12 @@ var author$project$Panel$Editor$Module$update = F3(
 													author$project$Panel$Editor$Module$partEditorMoveRight(partMove)))
 										});
 								} else {
-									var partEdit = _n3.a.a;
-									return _Utils_update(
-										rec,
-										{
-											ao: author$project$Panel$Editor$Module$FocusPartEditor(
-												author$project$Panel$Editor$Module$PartEditorEdit(partEdit))
-										});
+									return rec;
 								}
 						}
 					}(),
 					elm$core$Maybe$Nothing);
-			default:
+			case 8:
 				return _Utils_Tuple2(
 					rec,
 					function () {
@@ -8150,6 +8163,56 @@ var author$project$Panel$Editor$Module$update = F3(
 								return elm$core$Maybe$Nothing;
 						}
 					}());
+			case 6:
+				return _Utils_Tuple2(
+					function () {
+						var _n5 = rec.ao;
+						switch (_n5.$) {
+							case 0:
+								return rec;
+							case 1:
+								return rec;
+							default:
+								if (_n5.a.$ === 1) {
+									var partMove = _n5.a.a;
+									return _Utils_update(
+										rec,
+										{
+											ao: author$project$Panel$Editor$Module$FocusPartEditor(
+												author$project$Panel$Editor$Module$PartEditorMove(
+													author$project$Panel$Editor$Module$partEditorMoveUp(partMove)))
+										});
+								} else {
+									return rec;
+								}
+						}
+					}(),
+					elm$core$Maybe$Nothing);
+			default:
+				return _Utils_Tuple2(
+					function () {
+						var _n6 = rec.ao;
+						switch (_n6.$) {
+							case 0:
+								return rec;
+							case 1:
+								return rec;
+							default:
+								if (_n6.a.$ === 1) {
+									var partMove = _n6.a.a;
+									return _Utils_update(
+										rec,
+										{
+											ao: author$project$Panel$Editor$Module$FocusPartEditor(
+												author$project$Panel$Editor$Module$PartEditorMove(
+													author$project$Panel$Editor$Module$partEditorMoveDown(partMove)))
+										});
+								} else {
+									return rec;
+								}
+						}
+					}(),
+					elm$core$Maybe$Nothing);
 		}
 	});
 var author$project$Panel$EditorGroup$EmitChangeReadMe = function (a) {
@@ -13222,6 +13285,9 @@ var author$project$Panel$Editor$EditorKeyConfig$view = function (_n0) {
 	};
 };
 var author$project$Panel$Editor$Module$FocusToDescription = {$: 1};
+var author$project$Panel$Editor$Module$InputReadMe = function (a) {
+	return {$: 3, a: a};
+};
 var elm$json$Json$Decode$at = F2(
 	function (fields, decoder) {
 		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);

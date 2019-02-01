@@ -144,15 +144,6 @@ editorGroupPanelKeyDown { key, ctrl, shift, alt } =
     case ( shift, ctrl, alt ) of
         ( False, False, False ) ->
             case key of
-                Key.Numpad0 ->
-                    Just
-                        ( Panel.EditorGroup.EditorItemMsgToActive
-                            (Panel.EditorGroup.ModuleEditorMsg
-                                (Panel.Editor.Module.InputReadMe "Numpad0をおしたな!?")
-                            )
-                        , True
-                        )
-
                 Key.ArrowLeft ->
                     Just
                         ( Panel.EditorGroup.EditorItemMsgToActive
@@ -167,6 +158,24 @@ editorGroupPanelKeyDown { key, ctrl, shift, alt } =
                         ( Panel.EditorGroup.EditorItemMsgToActive
                             (Panel.EditorGroup.ModuleEditorMsg
                                 Panel.Editor.Module.SelectRight
+                            )
+                        , True
+                        )
+
+                Key.ArrowUp ->
+                    Just
+                        ( Panel.EditorGroup.EditorItemMsgToActive
+                            (Panel.EditorGroup.ModuleEditorMsg
+                                Panel.Editor.Module.SelectUp
+                            )
+                        , True
+                        )
+
+                Key.ArrowDown ->
+                    Just
+                        ( Panel.EditorGroup.EditorItemMsgToActive
+                            (Panel.EditorGroup.ModuleEditorMsg
+                                Panel.Editor.Module.SelectDown
                             )
                         , True
                         )

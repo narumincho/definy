@@ -28,6 +28,8 @@ type Msg
     | InputReadMe String
     | SelectLeft
     | SelectRight
+    | SelectUp
+    | SelectDown
     | ActiveThisEditor
 
 
@@ -139,8 +141,8 @@ update msg project (Model rec) =
                 FocusPartEditor (PartEditorMove partMove) ->
                     Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveLeft partMove)) }
 
-                FocusPartEditor (PartEditorEdit partEdit) ->
-                    Model { rec | focus = FocusPartEditor (PartEditorEdit partEdit) }
+                FocusPartEditor (PartEditorEdit _) ->
+                    Model rec
             , Nothing
             )
 
@@ -155,8 +157,8 @@ update msg project (Model rec) =
                 FocusPartEditor (PartEditorMove partMove) ->
                     Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveRight partMove)) }
 
-                FocusPartEditor (PartEditorEdit partEdit) ->
-                    Model { rec | focus = FocusPartEditor (PartEditorEdit partEdit) }
+                FocusPartEditor (PartEditorEdit _) ->
+                    Model rec
             , Nothing
             )
 
@@ -173,7 +175,41 @@ update msg project (Model rec) =
                     Nothing
             )
 
+        SelectUp ->
+            ( case rec.focus of
+                FocusNone ->
+                    Model rec
 
+                FocusDescription ->
+                    Model rec
+
+                FocusPartEditor (PartEditorMove partMove) ->
+                    Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveUp partMove)) }
+
+                FocusPartEditor (PartEditorEdit _) ->
+                    Model rec
+            , Nothing
+            )
+
+        SelectDown ->
+            ( case rec.focus of
+                FocusNone ->
+                    Model rec
+
+                FocusDescription ->
+                    Model rec
+
+                FocusPartEditor (PartEditorMove partMove) ->
+                    Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveDown partMove)) }
+
+                FocusPartEditor (PartEditorEdit _) ->
+                    Model rec
+            , Nothing
+            )
+
+
+{-| パーツエディタの移動モードで左に移動する
+-}
 partEditorMoveLeft : PartFocusMove -> PartFocusMove
 partEditorMoveLeft partMove =
     case partMove of
@@ -190,6 +226,8 @@ partEditorMoveLeft partMove =
             partMove
 
 
+{-| パーツエディタの移動モードで右に移動する
+-}
 partEditorMoveRight : PartFocusMove -> PartFocusMove
 partEditorMoveRight partMove =
     case partMove of
@@ -201,6 +239,42 @@ partEditorMoveRight partMove =
 
         _ ->
             partMove
+
+
+{-| パーツエディタの移動モードで上に移動する
+-}
+partEditorMoveUp : PartFocusMove -> PartFocusMove
+partEditorMoveUp position =
+    case position of
+        MoveName ->
+            MoveName
+
+        MoveType ->
+            MoveType
+
+        MoveExprHead ->
+            MoveName
+
+        _ ->
+            position
+
+
+{-| パーツエディタの移動モードで下に移動する
+-}
+partEditorMoveDown : PartFocusMove -> PartFocusMove
+partEditorMoveDown position =
+    case position of
+        MoveName ->
+            MoveExprHead
+
+        MoveType ->
+            MoveExprHead
+
+        MoveExprHead ->
+            MoveExprHead
+
+        _ ->
+            position
 
 
 {-| モジュールエディタのview。
