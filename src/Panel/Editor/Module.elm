@@ -21,17 +21,6 @@ type Model
         }
 
 
-type Mode
-    = EditMode
-        { editTarget : EditTarget
-        , textAreaValue : List ( Char, Bool )
-        , caretPos : Int
-        }
-    | MoveMode
-        { moveTarget : MoveTarget
-        }
-
-
 type Msg
     = FocusToNone
     | FocusToDescription
@@ -54,16 +43,11 @@ type Focus
 
 
 type PartEditorFocus
-    = PartEditorFocusName
-    | PartEditorFocusType
-    | PartEditorFocusExpr
+    = PartEditorEdit PartFocusEdit
+    | PartEditorMove PartFocusMove
 
 
-
-{- TODO editTargetが飛び出てる可能性がある -}
-
-
-type EditTarget
+type PartFocusEdit
     = EditName
     | EditType
     | EditExprHeadTerm -- [abc]+ def + 28
@@ -71,7 +55,7 @@ type EditTarget
     | EditExprTerm Int --  abc +[def]+ 28 Intの範囲は0..254
 
 
-type MoveTarget
+type PartFocusMove
     = MoveName -- [name]: Type
     | MoveType --  name :[Type]
     | MoveExprHead -- |abc + def + 28
@@ -152,14 +136,11 @@ update msg project (Model rec) =
                 FocusDescription ->
                     Model rec
 
-                FocusPartEditor PartEditorFocusName ->
-                    Model { rec | focus = FocusPartEditor PartEditorFocusName }
+                FocusPartEditor (PartEditorMove partMove) ->
+                    Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveLeft partMove)) }
 
-                FocusPartEditor PartEditorFocusType ->
-                    Model { rec | focus = FocusPartEditor PartEditorFocusName }
-
-                FocusPartEditor PartEditorFocusExpr ->
-                    Model rec
+                FocusPartEditor (PartEditorEdit partEdit) ->
+                    Model { rec | focus = FocusPartEditor (PartEditorEdit partEdit) }
             , Nothing
             )
 
@@ -171,14 +152,11 @@ update msg project (Model rec) =
                 FocusDescription ->
                     Model rec
 
-                FocusPartEditor PartEditorFocusName ->
-                    Model { rec | focus = FocusPartEditor PartEditorFocusType }
+                FocusPartEditor (PartEditorMove partMove) ->
+                    Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveRight partMove)) }
 
-                FocusPartEditor PartEditorFocusType ->
-                    Model { rec | focus = FocusPartEditor PartEditorFocusType }
-
-                FocusPartEditor PartEditorFocusExpr ->
-                    Model rec
+                FocusPartEditor (PartEditorEdit partEdit) ->
+                    Model { rec | focus = FocusPartEditor (PartEditorEdit partEdit) }
             , Nothing
             )
 
@@ -194,6 +172,35 @@ update msg project (Model rec) =
                 FocusPartEditor _ ->
                     Nothing
             )
+
+
+partEditorMoveLeft : PartFocusMove -> PartFocusMove
+partEditorMoveLeft partMove =
+    case partMove of
+        MoveName ->
+            MoveName
+
+        MoveType ->
+            MoveName
+
+        MoveExprHead ->
+            MoveType
+
+        _ ->
+            partMove
+
+
+partEditorMoveRight : PartFocusMove -> PartFocusMove
+partEditorMoveRight partMove =
+    case partMove of
+        MoveName ->
+            MoveType
+
+        MoveType ->
+            MoveExprHead
+
+        _ ->
+            partMove
 
 
 {-| モジュールエディタのview。
@@ -213,28 +220,7 @@ view project isEditorItemFocus (Model { moduleRef, focus }) =
     , body =
         [ Html.div
             []
-            [ Html.text
-                (case focus of
-                    FocusNone ->
-                        "Focus None"
-
-                    FocusDescription ->
-                        "Focus Description"
-
-                    FocusPartEditor partFocus ->
-                        "Focus PartEditor "
-                            ++ (case partFocus of
-                                    PartEditorFocusName ->
-                                        "Name"
-
-                                    PartEditorFocusType ->
-                                        "Type"
-
-                                    PartEditorFocusExpr ->
-                                        "Expr"
-                               )
-                )
-            ]
+            [ Html.text (focusToString focus) ]
         , descriptionView (Project.Source.ModuleWithCache.getReadMe targetModule) (isEditorItemFocus && focus == FocusDescription)
         , partDefinitionsView
             (case focus of
@@ -249,6 +235,61 @@ view project isEditorItemFocus (Model { moduleRef, focus }) =
             )
         ]
     }
+
+
+focusToString : Focus -> String
+focusToString focus =
+    case focus of
+        FocusNone ->
+            "フォーカスなし"
+
+        FocusDescription ->
+            "概要欄にフォーカス"
+
+        FocusPartEditor partEditorFocus ->
+            "パーツエディタにフォーカス "
+                ++ (case partEditorFocus of
+                        PartEditorEdit partEdit ->
+                            "テキストで編集 "
+                                ++ (case partEdit of
+                                        EditName ->
+                                            "名前"
+
+                                        EditType ->
+                                            "型"
+
+                                        EditExprHeadTerm ->
+                                            "先頭のTerm"
+
+                                        EditExprOp n ->
+                                            String.fromInt n ++ "番目の演算子"
+
+                                        EditExprTerm n ->
+                                            String.fromInt n ++ "番目の項"
+                                   )
+
+                        PartEditorMove partMove ->
+                            "移動モード(ボタンやショートカットーで操作)"
+                                ++ (case partMove of
+                                        MoveName ->
+                                            "名前"
+
+                                        MoveType ->
+                                            "型"
+
+                                        MoveExprHead ->
+                                            "|a + b + c"
+
+                                        MoveHeadTerm ->
+                                            " a|+ b + c"
+
+                                        MoveOp n ->
+                                            "+|" ++ String.fromInt n
+
+                                        MoveTerm n ->
+                                            "a|" ++ String.fromInt n
+                                   )
+                   )
 
 
 
@@ -344,7 +385,7 @@ partDefinitionEditor partEditorFocus =
     Html.div
         [ Html.Attributes.class "moduelEditor-partDefEditor" ]
         [ nameAndTypeView partEditorFocus
-        , exprView
+        , exprView partEditorFocus
         , intermediateExprView
         ]
 
@@ -354,24 +395,31 @@ nameAndTypeView partEditorFocus =
     Html.div
         [ Html.Attributes.class "moduelEditor-partDefEditor-nameAndType" ]
         [ Html.div
-            [ Html.Events.onClick (FocusToPartEditor PartEditorFocusName)
-            , Html.Attributes.classList [ ( "focused", partEditorFocus == Just PartEditorFocusName ) ]
+            [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveName))
+            , Html.Attributes.classList [ ( "focused", partEditorFocus == Just (PartEditorMove MoveName) ) ]
             ]
             [ Html.text "point" ]
         , Html.text ":"
         , Html.div
-            [ Html.Events.onClick (FocusToPartEditor PartEditorFocusType)
-            , Html.Attributes.classList [ ( "focused", partEditorFocus == Just PartEditorFocusType ) ]
+            [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveType))
+            , Html.Attributes.classList [ ( "focused", partEditorFocus == Just (PartEditorMove MoveType) ) ]
             ]
             [ Html.text "Int" ]
         ]
 
 
-exprView : Html.Html Msg
-exprView =
+exprView : Maybe PartEditorFocus -> Html.Html Msg
+exprView partEditorFocus =
     Html.div
         []
-        [ Html.text "= 1 + 1" ]
+        [ Html.text
+            (if partEditorFocus == Just (PartEditorMove MoveExprHead) then
+                "=|"
+
+             else
+                "="
+            )
+        ]
 
 
 intermediateExprView : Html.Html Msg

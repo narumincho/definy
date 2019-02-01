@@ -7997,8 +7997,37 @@ var author$project$Panel$Editor$Module$FocusDescription = {$: 1};
 var author$project$Panel$Editor$Module$FocusPartEditor = function (a) {
 	return {$: 2, a: a};
 };
-var author$project$Panel$Editor$Module$PartEditorFocusName = 0;
-var author$project$Panel$Editor$Module$PartEditorFocusType = 1;
+var author$project$Panel$Editor$Module$PartEditorEdit = function (a) {
+	return {$: 0, a: a};
+};
+var author$project$Panel$Editor$Module$PartEditorMove = function (a) {
+	return {$: 1, a: a};
+};
+var author$project$Panel$Editor$Module$MoveName = {$: 0};
+var author$project$Panel$Editor$Module$MoveType = {$: 1};
+var author$project$Panel$Editor$Module$partEditorMoveLeft = function (partMove) {
+	switch (partMove.$) {
+		case 0:
+			return author$project$Panel$Editor$Module$MoveName;
+		case 1:
+			return author$project$Panel$Editor$Module$MoveName;
+		case 2:
+			return author$project$Panel$Editor$Module$MoveType;
+		default:
+			return partMove;
+	}
+};
+var author$project$Panel$Editor$Module$MoveExprHead = {$: 2};
+var author$project$Panel$Editor$Module$partEditorMoveRight = function (partMove) {
+	switch (partMove.$) {
+		case 0:
+			return author$project$Panel$Editor$Module$MoveType;
+		case 1:
+			return author$project$Panel$Editor$Module$MoveExprHead;
+		default:
+			return partMove;
+	}
+};
 var author$project$Project$Source$ModuleWithCache$getReadMe = function (_n0) {
 	var readMe = _n0.aK;
 	return readMe;
@@ -8053,24 +8082,23 @@ var author$project$Panel$Editor$Module$update = F3(
 							case 1:
 								return rec;
 							default:
-								switch (_n2.a) {
-									case 0:
-										var _n3 = _n2.a;
-										return _Utils_update(
-											rec,
-											{
-												ao: author$project$Panel$Editor$Module$FocusPartEditor(0)
-											});
-									case 1:
-										var _n4 = _n2.a;
-										return _Utils_update(
-											rec,
-											{
-												ao: author$project$Panel$Editor$Module$FocusPartEditor(0)
-											});
-									default:
-										var _n5 = _n2.a;
-										return rec;
+								if (_n2.a.$ === 1) {
+									var partMove = _n2.a.a;
+									return _Utils_update(
+										rec,
+										{
+											ao: author$project$Panel$Editor$Module$FocusPartEditor(
+												author$project$Panel$Editor$Module$PartEditorMove(
+													author$project$Panel$Editor$Module$partEditorMoveLeft(partMove)))
+										});
+								} else {
+									var partEdit = _n2.a.a;
+									return _Utils_update(
+										rec,
+										{
+											ao: author$project$Panel$Editor$Module$FocusPartEditor(
+												author$project$Panel$Editor$Module$PartEditorEdit(partEdit))
+										});
 								}
 						}
 					}(),
@@ -8078,31 +8106,30 @@ var author$project$Panel$Editor$Module$update = F3(
 			case 5:
 				return _Utils_Tuple2(
 					function () {
-						var _n6 = rec.ao;
-						switch (_n6.$) {
+						var _n3 = rec.ao;
+						switch (_n3.$) {
 							case 0:
 								return rec;
 							case 1:
 								return rec;
 							default:
-								switch (_n6.a) {
-									case 0:
-										var _n7 = _n6.a;
-										return _Utils_update(
-											rec,
-											{
-												ao: author$project$Panel$Editor$Module$FocusPartEditor(1)
-											});
-									case 1:
-										var _n8 = _n6.a;
-										return _Utils_update(
-											rec,
-											{
-												ao: author$project$Panel$Editor$Module$FocusPartEditor(1)
-											});
-									default:
-										var _n9 = _n6.a;
-										return rec;
+								if (_n3.a.$ === 1) {
+									var partMove = _n3.a.a;
+									return _Utils_update(
+										rec,
+										{
+											ao: author$project$Panel$Editor$Module$FocusPartEditor(
+												author$project$Panel$Editor$Module$PartEditorMove(
+													author$project$Panel$Editor$Module$partEditorMoveRight(partMove)))
+										});
+								} else {
+									var partEdit = _n3.a.a;
+									return _Utils_update(
+										rec,
+										{
+											ao: author$project$Panel$Editor$Module$FocusPartEditor(
+												author$project$Panel$Editor$Module$PartEditorEdit(partEdit))
+										});
 								}
 						}
 					}(),
@@ -8111,8 +8138,8 @@ var author$project$Panel$Editor$Module$update = F3(
 				return _Utils_Tuple2(
 					rec,
 					function () {
-						var _n10 = rec.ao;
-						switch (_n10.$) {
+						var _n4 = rec.ao;
+						switch (_n4.$) {
 							case 0:
 								return elm$core$Maybe$Nothing;
 							case 1:
@@ -13344,13 +13371,70 @@ var author$project$Panel$Editor$Module$descriptionView = F2(
 						]))
 				]));
 	});
-var author$project$Panel$Editor$Module$exprView = A2(
-	elm$html$Html$div,
-	_List_Nil,
-	_List_fromArray(
-		[
-			elm$html$Html$text('= 1 + 1')
-		]));
+var author$project$Panel$Editor$Module$focusToString = function (focus) {
+	switch (focus.$) {
+		case 0:
+			return 'フォーカスなし';
+		case 1:
+			return '概要欄にフォーカス';
+		default:
+			var partEditorFocus = focus.a;
+			return 'パーツエディタにフォーカス ' + function () {
+				if (!partEditorFocus.$) {
+					var partEdit = partEditorFocus.a;
+					return 'テキストで編集 ' + function () {
+						switch (partEdit.$) {
+							case 0:
+								return '名前';
+							case 1:
+								return '型';
+							case 2:
+								return '先頭のTerm';
+							case 3:
+								var n = partEdit.a;
+								return elm$core$String$fromInt(n) + '番目の演算子';
+							default:
+								var n = partEdit.a;
+								return elm$core$String$fromInt(n) + '番目の項';
+						}
+					}();
+				} else {
+					var partMove = partEditorFocus.a;
+					return '移動モード(ボタンやショートカットーで操作)' + function () {
+						switch (partMove.$) {
+							case 0:
+								return '名前';
+							case 1:
+								return '型';
+							case 2:
+								return '|a + b + c';
+							case 3:
+								return ' a|+ b + c';
+							case 4:
+								var n = partMove.a;
+								return '+|' + elm$core$String$fromInt(n);
+							default:
+								var n = partMove.a;
+								return 'a|' + elm$core$String$fromInt(n);
+						}
+					}();
+				}
+			}();
+	}
+};
+var author$project$Panel$Editor$Module$exprView = function (partEditorFocus) {
+	return A2(
+		elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				elm$html$Html$text(
+				_Utils_eq(
+					partEditorFocus,
+					elm$core$Maybe$Just(
+						author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveExprHead))) ? '=|' : '=')
+			]));
+};
 var author$project$Panel$Editor$Module$intermediateExprView = A2(
 	elm$html$Html$div,
 	_List_Nil,
@@ -13375,7 +13459,8 @@ var author$project$Panel$Editor$Module$nameAndTypeView = function (partEditorFoc
 				_List_fromArray(
 					[
 						elm$html$Html$Events$onClick(
-						author$project$Panel$Editor$Module$FocusToPartEditor(0)),
+						author$project$Panel$Editor$Module$FocusToPartEditor(
+							author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveName))),
 						elm$html$Html$Attributes$classList(
 						_List_fromArray(
 							[
@@ -13383,7 +13468,8 @@ var author$project$Panel$Editor$Module$nameAndTypeView = function (partEditorFoc
 								'focused',
 								_Utils_eq(
 									partEditorFocus,
-									elm$core$Maybe$Just(0)))
+									elm$core$Maybe$Just(
+										author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveName))))
 							]))
 					]),
 				_List_fromArray(
@@ -13396,7 +13482,8 @@ var author$project$Panel$Editor$Module$nameAndTypeView = function (partEditorFoc
 				_List_fromArray(
 					[
 						elm$html$Html$Events$onClick(
-						author$project$Panel$Editor$Module$FocusToPartEditor(1)),
+						author$project$Panel$Editor$Module$FocusToPartEditor(
+							author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveType))),
 						elm$html$Html$Attributes$classList(
 						_List_fromArray(
 							[
@@ -13404,7 +13491,8 @@ var author$project$Panel$Editor$Module$nameAndTypeView = function (partEditorFoc
 								'focused',
 								_Utils_eq(
 									partEditorFocus,
-									elm$core$Maybe$Just(1)))
+									elm$core$Maybe$Just(
+										author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveType))))
 							]))
 					]),
 				_List_fromArray(
@@ -13423,7 +13511,7 @@ var author$project$Panel$Editor$Module$partDefinitionEditor = function (partEdit
 		_List_fromArray(
 			[
 				author$project$Panel$Editor$Module$nameAndTypeView(partEditorFocus),
-				author$project$Panel$Editor$Module$exprView,
+				author$project$Panel$Editor$Module$exprView(partEditorFocus),
 				author$project$Panel$Editor$Module$intermediateExprView
 			]));
 };
@@ -13473,26 +13561,7 @@ var author$project$Panel$Editor$Module$view = F3(
 					_List_fromArray(
 						[
 							elm$html$Html$text(
-							function () {
-								switch (focus.$) {
-									case 0:
-										return 'Focus None';
-									case 1:
-										return 'Focus Description';
-									default:
-										var partFocus = focus.a;
-										return 'Focus PartEditor ' + function () {
-											switch (partFocus) {
-												case 0:
-													return 'Name';
-												case 1:
-													return 'Type';
-												default:
-													return 'Expr';
-											}
-										}();
-								}
-							}())
+							author$project$Panel$Editor$Module$focusToString(focus))
 						])),
 					A2(
 					author$project$Panel$Editor$Module$descriptionView,
