@@ -411,18 +411,18 @@ img {
     flex-direction: column;
 }
 
-.moduelEditor-partDefEditorList {
+.moduleEditor-partDefEditorList {
     padding: 1rem;
     display: flex;
     flex-direction: column;
 }
 
-.moduelEditor-partDefEditor {
+.moduleEditor-partDefEditor {
     display: flex;
     flex-direction: column;
 }
 
-.moduelEditor-partDefEditor-nameAndType {
+.moduleEditor-partDefEditor-nameAndType {
     display: flex;
 }
 
@@ -430,6 +430,16 @@ img {
 
 .focused {
     outline: solid var(--accentColorBg) 3px;
+}
+
+.moduleEditor-partDefEditor-expr {
+    display: flex;
+}
+.moduleEditor-partDefEditor-caret {
+    display: block;
+    width: 2px;
+    height: 1.5rem;
+    background: #f09936
 }
 /* ==================================================================
 =====================================================================
@@ -641,20 +651,6 @@ img {
 .caretBox {
     width: 0;
     overflow: visible;
-}
-
-.caret {
-    display: block;
-    width: 2px;
-    height: 1.5rem;
-    animation-name: caretColor;
-    animation-duration: 2s;
-    animation-timing-function: ease;
-    animation-delay: 0s;
-    animation-iteration-count: infinite;
-    animation-direction: normal;
-    animation-fill-mode: none;
-    animation-play-state: running;
 }
 
 .editExprCaret {

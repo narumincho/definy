@@ -13488,18 +13488,30 @@ var author$project$Panel$Editor$Module$focusToString = function (focus) {
 			}();
 	}
 };
+var author$project$Panel$Editor$Module$caret = A2(
+	elm$html$Html$div,
+	_List_fromArray(
+		[
+			elm$html$Html$Attributes$class('moduleEditor-partDefEditor-caret')
+		]),
+	_List_Nil);
 var author$project$Panel$Editor$Module$exprView = function (partEditorFocus) {
 	return A2(
 		elm$html$Html$div,
-		_List_Nil,
 		_List_fromArray(
 			[
-				elm$html$Html$text(
-				_Utils_eq(
-					partEditorFocus,
-					elm$core$Maybe$Just(
-						author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveExprHead))) ? '=|' : '=')
-			]));
+				elm$html$Html$Attributes$class('moduleEditor-partDefEditor-expr')
+			]),
+		_Utils_ap(
+			_List_fromArray(
+				[
+					elm$html$Html$text('=')
+				]),
+			_Utils_eq(
+				partEditorFocus,
+				elm$core$Maybe$Just(
+					author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveExprHead))) ? _List_fromArray(
+				[author$project$Panel$Editor$Module$caret]) : _List_Nil));
 };
 var author$project$Panel$Editor$Module$intermediateExprView = A2(
 	elm$html$Html$div,
@@ -13516,7 +13528,7 @@ var author$project$Panel$Editor$Module$nameAndTypeView = function (partEditorFoc
 		elm$html$Html$div,
 		_List_fromArray(
 			[
-				elm$html$Html$Attributes$class('moduelEditor-partDefEditor-nameAndType')
+				elm$html$Html$Attributes$class('moduleEditor-partDefEditor-nameAndType')
 			]),
 		_List_fromArray(
 			[
@@ -13572,7 +13584,7 @@ var author$project$Panel$Editor$Module$partDefinitionEditor = function (partEdit
 		elm$html$Html$div,
 		_List_fromArray(
 			[
-				elm$html$Html$Attributes$class('moduelEditor-partDefEditor')
+				elm$html$Html$Attributes$class('moduleEditor-partDefEditor')
 			]),
 		_List_fromArray(
 			[
@@ -13586,7 +13598,7 @@ var author$project$Panel$Editor$Module$partDefinitionEditorList = function (part
 		elm$html$Html$div,
 		_List_fromArray(
 			[
-				elm$html$Html$Attributes$class('moduelEditor-partDefEditorList')
+				elm$html$Html$Attributes$class('moduleEditor-partDefEditorList')
 			]),
 		_List_fromArray(
 			[

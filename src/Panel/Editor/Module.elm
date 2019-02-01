@@ -448,7 +448,7 @@ partDefinitionsView partEditorFocus =
 partDefinitionEditorList : Maybe PartEditorFocus -> Html.Html Msg
 partDefinitionEditorList partEditorFocus =
     Html.div
-        [ Html.Attributes.class "moduelEditor-partDefEditorList" ]
+        [ Html.Attributes.class "moduleEditor-partDefEditorList" ]
         [ partDefinitionEditor partEditorFocus ]
 
 
@@ -457,7 +457,7 @@ partDefinitionEditorList partEditorFocus =
 partDefinitionEditor : Maybe PartEditorFocus -> Html.Html Msg
 partDefinitionEditor partEditorFocus =
     Html.div
-        [ Html.Attributes.class "moduelEditor-partDefEditor" ]
+        [ Html.Attributes.class "moduleEditor-partDefEditor" ]
         [ nameAndTypeView partEditorFocus
         , exprView partEditorFocus
         , intermediateExprView
@@ -467,7 +467,7 @@ partDefinitionEditor partEditorFocus =
 nameAndTypeView : Maybe PartEditorFocus -> Html.Html Msg
 nameAndTypeView partEditorFocus =
     Html.div
-        [ Html.Attributes.class "moduelEditor-partDefEditor-nameAndType" ]
+        [ Html.Attributes.class "moduleEditor-partDefEditor-nameAndType" ]
         [ Html.div
             [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveName))
             , Html.Attributes.classList [ ( "focused", partEditorFocus == Just (PartEditorMove MoveName) ) ]
@@ -485,15 +485,23 @@ nameAndTypeView partEditorFocus =
 exprView : Maybe PartEditorFocus -> Html.Html Msg
 exprView partEditorFocus =
     Html.div
-        []
-        [ Html.text
-            (if partEditorFocus == Just (PartEditorMove MoveExprHead) then
-                "=|"
+        [ Html.Attributes.class "moduleEditor-partDefEditor-expr" ]
+        ([ Html.text "="
+         ]
+            ++ (if partEditorFocus == Just (PartEditorMove MoveExprHead) then
+                    [ caret ]
 
-             else
-                "="
-            )
-        ]
+                else
+                    []
+               )
+        )
+
+
+caret : Html.Html Msg
+caret =
+    Html.div
+        [ Html.Attributes.class "moduleEditor-partDefEditor-caret" ]
+        []
 
 
 intermediateExprView : Html.Html Msg
