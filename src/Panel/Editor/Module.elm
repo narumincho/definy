@@ -35,7 +35,7 @@ type Mode
 type Msg
     = FocusToNone
     | FocusToDescription
-    | FocusToPartEditor
+    | FocusToPartEditor PartEditorFocus
     | InputReadMe String
     | ActiveThisEditor
 
@@ -48,7 +48,13 @@ type Emit
 type Focus
     = FocusNone
     | FocusDescription
-    | FocusPartEditor
+    | FocusPartEditor PartEditorFocus
+
+
+type PartEditorFocus
+    = PartEditorFocusName
+    | PartEditorFocusType
+    | PartEditorFocusExpr
 
 
 
@@ -120,10 +126,10 @@ update msg project (Model rec) =
             , Just (EmitSetTextAreaValue (Project.Source.ModuleWithCache.getReadMe targetModule))
             )
 
-        FocusToPartEditor ->
+        FocusToPartEditor partFocus ->
             ( Model
                 { rec
-                    | focus = FocusPartEditor
+                    | focus = FocusPartEditor partFocus
                 }
             , Nothing
             )
@@ -145,7 +151,7 @@ update msg project (Model rec) =
                 FocusDescription ->
                     Just (EmitSetTextAreaValue (Project.Source.ModuleWithCache.getReadMe targetModule))
 
-                FocusPartEditor ->
+                FocusPartEditor _ ->
                     Nothing
             )
 
@@ -175,12 +181,32 @@ view project isEditorItemFocus (Model { moduleRef, focus }) =
                     FocusDescription ->
                         "Focus Description"
 
-                    FocusPartEditor ->
-                        "Focus PartEditor"
+                    FocusPartEditor partFocus ->
+                        "Focus PartEditor "
+                            ++ (case partFocus of
+                                    PartEditorFocusName ->
+                                        "Name"
+
+                                    PartEditorFocusType ->
+                                        "Type"
+
+                                    PartEditorFocusExpr ->
+                                        "Expr"
+                               )
                 )
             ]
         , descriptionView (Project.Source.ModuleWithCache.getReadMe targetModule) (isEditorItemFocus && focus == FocusDescription)
         , partDefinitionsView
+            (case focus of
+                FocusNone ->
+                    Nothing
+
+                FocusDescription ->
+                    Nothing
+
+                FocusPartEditor partEditorFocus ->
+                    Just partEditorFocus
+            )
         ]
     }
 
@@ -253,41 +279,52 @@ inputEventDecoder =
 
 {-| モジュールエディタのメインの要素であるパーツエディタを表示する
 -}
-partDefinitionsView : Html.Html Msg
-partDefinitionsView =
+partDefinitionsView : Maybe PartEditorFocus -> Html.Html Msg
+partDefinitionsView partEditorFocus =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefinitions" ]
         [ Html.text "Part Definitions"
-        , partDefinitionEditorList
+        , partDefinitionEditorList partEditorFocus
         ]
 
 
 {-| 複数のパーツエディタが並んだもの
 -}
-partDefinitionEditorList : Html.Html Msg
-partDefinitionEditorList =
+partDefinitionEditorList : Maybe PartEditorFocus -> Html.Html Msg
+partDefinitionEditorList partEditorFocus =
     Html.div
         [ Html.Attributes.class "moduelEditor-partDefEditorList" ]
-        [ partDefinitionEditor ]
+        [ partDefinitionEditor partEditorFocus ]
 
 
 {-| 1つのパーツエディタ
 -}
-partDefinitionEditor : Html.Html Msg
-partDefinitionEditor =
+partDefinitionEditor : Maybe PartEditorFocus -> Html.Html Msg
+partDefinitionEditor partEditorFocus =
     Html.div
         [ Html.Attributes.class "moduelEditor-partDefEditor" ]
-        [ nameAndTypeView
+        [ nameAndTypeView partEditorFocus
         , exprView
         , intermediateExprView
         ]
 
 
-nameAndTypeView : Html.Html Msg
-nameAndTypeView =
+nameAndTypeView : Maybe PartEditorFocus -> Html.Html Msg
+nameAndTypeView partEditorFocus =
     Html.div
-        []
-        [ Html.text "point: Int" ]
+        [ Html.Attributes.class "moduelEditor-partDefEditor-nameAndType" ]
+        [ Html.div
+            [ Html.Events.onClick (FocusToPartEditor PartEditorFocusName)
+            , Html.Attributes.classList [ ( "focused", partEditorFocus == Just PartEditorFocusName ) ]
+            ]
+            [ Html.text "point" ]
+        , Html.text ":"
+        , Html.div
+            [ Html.Events.onClick (FocusToPartEditor PartEditorFocusType)
+            , Html.Attributes.classList [ ( "focused", partEditorFocus == Just PartEditorFocusType ) ]
+            ]
+            [ Html.text "Int" ]
+        ]
 
 
 exprView : Html.Html Msg

@@ -4834,13 +4834,13 @@ var author$project$Model$initCmd = function (model) {
 var author$project$Model$FocusTreePanel = 0;
 var author$project$Model$Model = elm$core$Basics$identity;
 var author$project$Model$SubModeNone = {$: 0};
-var author$project$Panel$Editor$Module$FocusNone = 0;
+var author$project$Panel$Editor$Module$FocusNone = {$: 0};
 var author$project$Panel$Editor$Module$Model = elm$core$Basics$identity;
 var elm$core$Basics$identity = function (x) {
 	return x;
 };
 var author$project$Panel$Editor$Module$initModel = function (moduleRef) {
-	return {ao: 0, aa: moduleRef};
+	return {ao: author$project$Panel$Editor$Module$FocusNone, aa: moduleRef};
 };
 var author$project$Panel$EditorGroup$ColumnOne = function (a) {
 	return {$: 0, a: a};
@@ -7653,7 +7653,7 @@ var author$project$Model$getEditorGroupPanelModel = function (_n0) {
 };
 var author$project$Panel$Editor$Module$isFocusTextArea = function (_n0) {
 	var focus = _n0.ao;
-	if (focus === 1) {
+	if (focus.$ === 1) {
 		return true;
 	} else {
 		return false;
@@ -7959,8 +7959,10 @@ var author$project$Panel$Editor$Module$EmitChangeReadMe = function (a) {
 var author$project$Panel$Editor$Module$EmitSetTextAreaValue = function (a) {
 	return {$: 1, a: a};
 };
-var author$project$Panel$Editor$Module$FocusDescription = 1;
-var author$project$Panel$Editor$Module$FocusPartEditor = 2;
+var author$project$Panel$Editor$Module$FocusDescription = {$: 1};
+var author$project$Panel$Editor$Module$FocusPartEditor = function (a) {
+	return {$: 2, a: a};
+};
 var author$project$Project$Source$ModuleWithCache$getReadMe = function (_n0) {
 	var readMe = _n0.aK;
 	return readMe;
@@ -7977,28 +7979,31 @@ var author$project$Panel$Editor$Module$update = F3(
 				return _Utils_Tuple2(
 					_Utils_update(
 						rec,
-						{ao: 0}),
+						{ao: author$project$Panel$Editor$Module$FocusNone}),
 					elm$core$Maybe$Nothing);
 			case 1:
 				return _Utils_Tuple2(
 					_Utils_update(
 						rec,
-						{ao: 1}),
+						{ao: author$project$Panel$Editor$Module$FocusDescription}),
 					elm$core$Maybe$Just(
 						author$project$Panel$Editor$Module$EmitSetTextAreaValue(
 							author$project$Project$Source$ModuleWithCache$getReadMe(targetModule))));
 			case 2:
+				var partFocus = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						rec,
-						{ao: 2}),
+						{
+							ao: author$project$Panel$Editor$Module$FocusPartEditor(partFocus)
+						}),
 					elm$core$Maybe$Nothing);
 			case 3:
 				var text = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						rec,
-						{ao: 1}),
+						{ao: author$project$Panel$Editor$Module$FocusDescription}),
 					elm$core$Maybe$Just(
 						author$project$Panel$Editor$Module$EmitChangeReadMe(
 							{aL: rec.aa, bR: text})));
@@ -8007,7 +8012,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					rec,
 					function () {
 						var _n2 = rec.ao;
-						switch (_n2) {
+						switch (_n2.$) {
 							case 0:
 								return elm$core$Maybe$Nothing;
 							case 1:
@@ -13253,40 +13258,102 @@ var author$project$Panel$Editor$Module$intermediateExprView = A2(
 		[
 			elm$html$Html$text('(1+1) ..クリックして評価')
 		]));
-var author$project$Panel$Editor$Module$nameAndTypeView = A2(
-	elm$html$Html$div,
-	_List_Nil,
-	_List_fromArray(
-		[
-			elm$html$Html$text('point: Int')
-		]));
-var author$project$Panel$Editor$Module$partDefinitionEditor = A2(
-	elm$html$Html$div,
-	_List_fromArray(
-		[
-			elm$html$Html$Attributes$class('moduelEditor-partDefEditor')
-		]),
-	_List_fromArray(
-		[author$project$Panel$Editor$Module$nameAndTypeView, author$project$Panel$Editor$Module$exprView, author$project$Panel$Editor$Module$intermediateExprView]));
-var author$project$Panel$Editor$Module$partDefinitionEditorList = A2(
-	elm$html$Html$div,
-	_List_fromArray(
-		[
-			elm$html$Html$Attributes$class('moduelEditor-partDefEditorList')
-		]),
-	_List_fromArray(
-		[author$project$Panel$Editor$Module$partDefinitionEditor]));
-var author$project$Panel$Editor$Module$partDefinitionsView = A2(
-	elm$html$Html$div,
-	_List_fromArray(
-		[
-			elm$html$Html$Attributes$class('moduleEditor-partDefinitions')
-		]),
-	_List_fromArray(
-		[
-			elm$html$Html$text('Part Definitions'),
-			author$project$Panel$Editor$Module$partDefinitionEditorList
-		]));
+var author$project$Panel$Editor$Module$FocusToPartEditor = function (a) {
+	return {$: 2, a: a};
+};
+var author$project$Panel$Editor$Module$PartEditorFocusName = 0;
+var author$project$Panel$Editor$Module$PartEditorFocusType = 1;
+var author$project$Panel$Editor$Module$nameAndTypeView = function (partEditorFocus) {
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$class('moduelEditor-partDefEditor-nameAndType')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						elm$html$Html$Events$onClick(
+						author$project$Panel$Editor$Module$FocusToPartEditor(0)),
+						elm$html$Html$Attributes$classList(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								'focused',
+								_Utils_eq(
+									partEditorFocus,
+									elm$core$Maybe$Just(0)))
+							]))
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text('point')
+					])),
+				elm$html$Html$text(':'),
+				A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						elm$html$Html$Events$onClick(
+						author$project$Panel$Editor$Module$FocusToPartEditor(1)),
+						elm$html$Html$Attributes$classList(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								'focused',
+								_Utils_eq(
+									partEditorFocus,
+									elm$core$Maybe$Just(1)))
+							]))
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text('Int')
+					]))
+			]));
+};
+var author$project$Panel$Editor$Module$partDefinitionEditor = function (partEditorFocus) {
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$class('moduelEditor-partDefEditor')
+			]),
+		_List_fromArray(
+			[
+				author$project$Panel$Editor$Module$nameAndTypeView(partEditorFocus),
+				author$project$Panel$Editor$Module$exprView,
+				author$project$Panel$Editor$Module$intermediateExprView
+			]));
+};
+var author$project$Panel$Editor$Module$partDefinitionEditorList = function (partEditorFocus) {
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$class('moduelEditor-partDefEditorList')
+			]),
+		_List_fromArray(
+			[
+				author$project$Panel$Editor$Module$partDefinitionEditor(partEditorFocus)
+			]));
+};
+var author$project$Panel$Editor$Module$partDefinitionsView = function (partEditorFocus) {
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$class('moduleEditor-partDefinitions')
+			]),
+		_List_fromArray(
+			[
+				elm$html$Html$text('Part Definitions'),
+				author$project$Panel$Editor$Module$partDefinitionEditorList(partEditorFocus)
+			]));
+};
 var author$project$Project$Source$ModuleWithCache$getName = function (_n0) {
 	var name = _n0.bK;
 	return name;
@@ -13309,21 +13376,42 @@ var author$project$Panel$Editor$Module$view = F3(
 						[
 							elm$html$Html$text(
 							function () {
-								switch (focus) {
+								switch (focus.$) {
 									case 0:
 										return 'Focus None';
 									case 1:
 										return 'Focus Description';
 									default:
-										return 'Focus PartEditor';
+										var partFocus = focus.a;
+										return 'Focus PartEditor ' + function () {
+											switch (partFocus) {
+												case 0:
+													return 'Name';
+												case 1:
+													return 'Type';
+												default:
+													return 'Expr';
+											}
+										}();
 								}
 							}())
 						])),
 					A2(
 					author$project$Panel$Editor$Module$descriptionView,
 					author$project$Project$Source$ModuleWithCache$getReadMe(targetModule),
-					isEditorItemFocus && (focus === 1)),
-					author$project$Panel$Editor$Module$partDefinitionsView
+					isEditorItemFocus && _Utils_eq(focus, author$project$Panel$Editor$Module$FocusDescription)),
+					author$project$Panel$Editor$Module$partDefinitionsView(
+					function () {
+						switch (focus.$) {
+							case 0:
+								return elm$core$Maybe$Nothing;
+							case 1:
+								return elm$core$Maybe$Nothing;
+							default:
+								var partEditorFocus = focus.a;
+								return elm$core$Maybe$Just(partEditorFocus);
+						}
+					}())
 				]),
 			bS: author$project$Project$Label$toCapitalString(
 				author$project$Project$Source$ModuleWithCache$getName(targetModule))
