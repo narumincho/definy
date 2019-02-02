@@ -9,7 +9,7 @@ module Panel.EditorGroup exposing
     , changeActiveEditorResource
     , getActiveEditor
     , initModel
-    , isFocusTextArea
+    , isFocusDefaultUi
     , resizeFromHorizontalGutter
     , resizeFromVerticalGutter
     , update
@@ -25,6 +25,7 @@ import Html.Attributes
 import Html.Events
 import NSvg
 import Palette.X11
+import Panel.DefaultUi
 import Panel.Editor.Config
 import Panel.Editor.Document
 import Panel.Editor.EditorKeyConfig
@@ -197,14 +198,14 @@ getActiveEditor model =
 {-| テキストエリアにフォーカスが当たっているか。
 当たっていたらKey.ArrowLeftなどのキー入力をpreventDefaultしない。ブラウザの基本機能(訂正など)を阻止しない
 -}
-isFocusTextArea : Model -> Bool
-isFocusTextArea model =
+isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
+isFocusDefaultUi model =
     case getEditorItem (getActiveEditorRef model) (getGroup model) of
         ModuleEditor moduleEditorModel ->
-            Panel.Editor.Module.isFocusTextArea moduleEditorModel
+            Panel.Editor.Module.isFocusDefaultUi moduleEditorModel
 
         _ ->
-            False
+            Nothing
 
 
 

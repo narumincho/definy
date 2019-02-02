@@ -7515,55 +7515,6 @@ var author$project$Main$subscriptions = function (model) {
 					elm$core$Basics$always(author$project$Model$MouseUp))
 				]) : _List_Nil));
 };
-var author$project$Panel$Editor$Module$SelectDown = {$: 8};
-var author$project$Panel$Editor$Module$SelectLeft = {$: 5};
-var author$project$Panel$Editor$Module$SelectRight = {$: 6};
-var author$project$Panel$Editor$Module$SelectUp = {$: 7};
-var author$project$Panel$EditorGroup$EditorItemMsgToActive = function (a) {
-	return {$: 6, a: a};
-};
-var author$project$Panel$EditorGroup$ModuleEditorMsg = function (a) {
-	return {$: 1, a: a};
-};
-var author$project$KeyConfig$editorGroupPanelKeyDown = function (_n0) {
-	var key = _n0.a3;
-	var ctrl = _n0.aY;
-	var shift = _n0.bi;
-	var alt = _n0.aU;
-	var _n1 = _Utils_Tuple3(shift, ctrl, alt);
-	if (((!_n1.a) && (!_n1.b)) && (!_n1.c)) {
-		switch (key) {
-			case 79:
-				return elm$core$Maybe$Just(
-					_Utils_Tuple2(
-						author$project$Panel$EditorGroup$EditorItemMsgToActive(
-							author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SelectLeft)),
-						true));
-			case 80:
-				return elm$core$Maybe$Just(
-					_Utils_Tuple2(
-						author$project$Panel$EditorGroup$EditorItemMsgToActive(
-							author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SelectRight)),
-						true));
-			case 81:
-				return elm$core$Maybe$Just(
-					_Utils_Tuple2(
-						author$project$Panel$EditorGroup$EditorItemMsgToActive(
-							author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SelectUp)),
-						true));
-			case 78:
-				return elm$core$Maybe$Just(
-					_Utils_Tuple2(
-						author$project$Panel$EditorGroup$EditorItemMsgToActive(
-							author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SelectDown)),
-						true));
-			default:
-				return elm$core$Maybe$Nothing;
-		}
-	} else {
-		return elm$core$Maybe$Nothing;
-	}
-};
 var author$project$Model$CloseCommandPalette = {$: 12};
 var author$project$Model$FocusEditorGroupPanel = 1;
 var author$project$Model$FocusTo = function (a) {
@@ -7623,23 +7574,60 @@ var author$project$KeyConfig$editorReservedKey = F2(
 			}
 		}
 	});
-var author$project$KeyConfig$textAreaReservedKey = function (_n0) {
+var author$project$Panel$Editor$Module$Confirm = {$: 11};
+var author$project$Panel$Editor$Module$SelectDown = {$: 8};
+var author$project$Panel$Editor$Module$SelectLeft = {$: 5};
+var author$project$Panel$Editor$Module$SelectRight = {$: 6};
+var author$project$Panel$Editor$Module$SelectUp = {$: 7};
+var author$project$Panel$EditorGroup$EditorItemMsgToActive = function (a) {
+	return {$: 6, a: a};
+};
+var author$project$Panel$EditorGroup$ModuleEditorMsg = function (a) {
+	return {$: 1, a: a};
+};
+var author$project$KeyConfig$editorGroupPanelKeyDown = function (_n0) {
 	var key = _n0.a3;
 	var ctrl = _n0.aY;
-	var alt = _n0.aU;
 	var shift = _n0.bi;
-	var _n1 = _Utils_Tuple3(ctrl, shift, alt);
+	var alt = _n0.aU;
+	var _n1 = _Utils_Tuple3(shift, ctrl, alt);
 	if (((!_n1.a) && (!_n1.b)) && (!_n1.c)) {
 		switch (key) {
 			case 79:
-				return true;
+				return elm$core$Maybe$Just(
+					_Utils_Tuple2(
+						author$project$Panel$EditorGroup$EditorItemMsgToActive(
+							author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SelectLeft)),
+						true));
 			case 80:
-				return true;
+				return elm$core$Maybe$Just(
+					_Utils_Tuple2(
+						author$project$Panel$EditorGroup$EditorItemMsgToActive(
+							author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SelectRight)),
+						true));
+			case 81:
+				return elm$core$Maybe$Just(
+					_Utils_Tuple2(
+						author$project$Panel$EditorGroup$EditorItemMsgToActive(
+							author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SelectUp)),
+						true));
+			case 78:
+				return elm$core$Maybe$Just(
+					_Utils_Tuple2(
+						author$project$Panel$EditorGroup$EditorItemMsgToActive(
+							author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SelectDown)),
+						true));
+			case 53:
+				return elm$core$Maybe$Just(
+					_Utils_Tuple2(
+						author$project$Panel$EditorGroup$EditorItemMsgToActive(
+							author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$Confirm)),
+						true));
 			default:
-				return false;
+				return elm$core$Maybe$Nothing;
 		}
 	} else {
-		return false;
+		return elm$core$Maybe$Nothing;
 	}
 };
 var author$project$Panel$Tree$SelectDown = {$: 3};
@@ -7684,20 +7672,103 @@ var author$project$Model$getFocus = function (_n0) {
 	var focus = _n0.ao;
 	return focus;
 };
+var elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (!maybe.$) {
+			var value = maybe.a;
+			return elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return elm$core$Maybe$Nothing;
+		}
+	});
+var elm$core$Tuple$mapFirst = F2(
+	function (func, _n0) {
+		var x = _n0.a;
+		var y = _n0.b;
+		return _Utils_Tuple2(
+			func(x),
+			y);
+	});
+var author$project$KeyConfig$keyDownEachPanel = F2(
+	function (key, model) {
+		var _n0 = author$project$Model$getFocus(model);
+		if (!_n0) {
+			return A2(
+				elm$core$Maybe$map,
+				elm$core$Tuple$mapFirst(author$project$Model$TreePanelMsg),
+				author$project$KeyConfig$treePanelKeyDown(key));
+		} else {
+			return A2(
+				elm$core$Maybe$map,
+				elm$core$Tuple$mapFirst(author$project$Model$EditorPanelMsg),
+				author$project$KeyConfig$editorGroupPanelKeyDown(key));
+		}
+	});
+var author$project$KeyConfig$textAreaReservedKey = function (_n0) {
+	var key = _n0.a3;
+	var ctrl = _n0.aY;
+	var alt = _n0.aU;
+	var shift = _n0.bi;
+	var _n1 = _Utils_Tuple3(ctrl, shift, alt);
+	if (((!_n1.a) && (!_n1.b)) && (!_n1.c)) {
+		switch (key) {
+			case 79:
+				return true;
+			case 80:
+				return true;
+			case 81:
+				return true;
+			case 78:
+				return true;
+			case 53:
+				return true;
+			case 2:
+				return true;
+			default:
+				return false;
+		}
+	} else {
+		return false;
+	}
+};
+var author$project$KeyConfig$textFieldReservedKey = function (_n0) {
+	var key = _n0.a3;
+	var ctrl = _n0.aY;
+	var alt = _n0.aU;
+	var shift = _n0.bi;
+	var _n1 = _Utils_Tuple3(ctrl, shift, alt);
+	if (((!_n1.a) && (!_n1.b)) && (!_n1.c)) {
+		switch (key) {
+			case 79:
+				return true;
+			case 80:
+				return true;
+			case 2:
+				return true;
+			default:
+				return false;
+		}
+	} else {
+		return false;
+	}
+};
 var author$project$Model$getEditorGroupPanelModel = function (_n0) {
 	var editorGroupPanelModel = _n0.aB;
 	return editorGroupPanelModel;
 };
-var author$project$Panel$Editor$Module$isFocusTextArea = function (_n0) {
+var author$project$Panel$DefaultUi$TextArea = 0;
+var author$project$Panel$DefaultUi$TextField = 1;
+var author$project$Panel$Editor$Module$isFocusDefaultUi = function (_n0) {
 	var focus = _n0.ao;
 	_n1$2:
 	while (true) {
 		switch (focus.$) {
 			case 1:
-				return true;
+				return elm$core$Maybe$Just(0);
 			case 2:
 				if (!focus.a.$) {
-					return true;
+					return elm$core$Maybe$Just(1);
 				} else {
 					break _n1$2;
 				}
@@ -7705,7 +7776,7 @@ var author$project$Panel$Editor$Module$isFocusTextArea = function (_n0) {
 				break _n1$2;
 		}
 	}
-	return false;
+	return elm$core$Maybe$Nothing;
 };
 var author$project$Panel$EditorGroup$getActiveEditorRef = function (_n0) {
 	var activeEditorRef = _n0.al;
@@ -7769,20 +7840,20 @@ var author$project$Panel$EditorGroup$getGroup = function (_n0) {
 	var group = _n0.ap;
 	return group;
 };
-var author$project$Panel$EditorGroup$isFocusTextArea = function (model) {
+var author$project$Panel$EditorGroup$isFocusDefaultUi = function (model) {
 	var _n0 = A2(
 		author$project$Panel$EditorGroup$getEditorItem,
 		author$project$Panel$EditorGroup$getActiveEditorRef(model),
 		author$project$Panel$EditorGroup$getGroup(model));
 	if (_n0.$ === 4) {
 		var moduleEditorModel = _n0.a;
-		return author$project$Panel$Editor$Module$isFocusTextArea(moduleEditorModel);
+		return author$project$Panel$Editor$Module$isFocusDefaultUi(moduleEditorModel);
 	} else {
-		return false;
+		return elm$core$Maybe$Nothing;
 	}
 };
-var author$project$Model$isFocusTextArea = function (model) {
-	return author$project$Panel$EditorGroup$isFocusTextArea(
+var author$project$Model$isFocusDefaultUi = function (model) {
+	return author$project$Panel$EditorGroup$isFocusDefaultUi(
 		author$project$Model$getEditorGroupPanelModel(model));
 };
 var author$project$Model$isOpenCommandPalette = function (_n0) {
@@ -7796,24 +7867,6 @@ var author$project$Model$isOpenCommandPalette = function (_n0) {
 			return true;
 	}
 };
-var elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (!maybe.$) {
-			var value = maybe.a;
-			return elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return elm$core$Maybe$Nothing;
-		}
-	});
-var elm$core$Tuple$mapFirst = F2(
-	function (func, _n0) {
-		var x = _n0.a;
-		var y = _n0.b;
-		return _Utils_Tuple2(
-			func(x),
-			y);
-	});
 var author$project$KeyConfig$keyDown = F2(
 	function (keyMaybe, model) {
 		if (!keyMaybe.$) {
@@ -7827,21 +7880,17 @@ var author$project$KeyConfig$keyDown = F2(
 				return elm$core$Maybe$Just(
 					_Utils_Tuple2(msg, true));
 			} else {
-				if (author$project$Model$isFocusTextArea(model) && author$project$KeyConfig$textAreaReservedKey(key)) {
-					return elm$core$Maybe$Nothing;
-				} else {
-					var _n2 = author$project$Model$getFocus(model);
-					if (!_n2) {
-						return A2(
-							elm$core$Maybe$map,
-							elm$core$Tuple$mapFirst(author$project$Model$TreePanelMsg),
-							author$project$KeyConfig$treePanelKeyDown(key));
+				var _n2 = author$project$Model$isFocusDefaultUi(model);
+				if (!_n2.$) {
+					if (!_n2.a) {
+						var _n3 = _n2.a;
+						return author$project$KeyConfig$textAreaReservedKey(key) ? elm$core$Maybe$Nothing : A2(author$project$KeyConfig$keyDownEachPanel, key, model);
 					} else {
-						return A2(
-							elm$core$Maybe$map,
-							elm$core$Tuple$mapFirst(author$project$Model$EditorPanelMsg),
-							author$project$KeyConfig$editorGroupPanelKeyDown(key));
+						var _n4 = _n2.a;
+						return author$project$KeyConfig$textFieldReservedKey(key) ? elm$core$Maybe$Nothing : A2(author$project$KeyConfig$keyDownEachPanel, key, model);
 					}
+				} else {
+					return A2(author$project$KeyConfig$keyDownEachPanel, key, model);
 				}
 			}
 		} else {

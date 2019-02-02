@@ -23,7 +23,7 @@ port module Model exposing
     , initModel
     , isCaptureMouseEvent
     , isFocusEditorGroupPanel
-    , isFocusTextArea
+    , isFocusDefaultUi
     , isFocusTreePanel
     , isOpenCommandPalette
     , isTreePanelGutter
@@ -48,6 +48,7 @@ import Panel.CommandPalette
 import Panel.EditorGroup
 import Panel.EditorTypeRef
 import Panel.Tree
+import Panel.DefaultUi
 import Project
 import Project.Document
 import Project.Label as Label
@@ -700,12 +701,12 @@ isOpenCommandPalette (Model { subMode }) =
             True
 
 
-{-| いまテキストエリアにフォーカスが当たっているかどうか。当たっていたらブラウザの基本操作を邪魔しない
+{-| いまブラウザが入力を受け取る要素にフォーカスが当たっているかどうか。当たっていたらブラウザのデフォルト動作を邪魔しない
 -}
-isFocusTextArea : Model -> Bool
-isFocusTextArea model =
+isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
+isFocusDefaultUi model =
     getEditorGroupPanelModel model
-        |> Panel.EditorGroup.isFocusTextArea
+        |> Panel.EditorGroup.isFocusDefaultUi
 
 
 changeReadMe : { text : String, ref : Project.Source.ModuleRef } -> Model -> Model

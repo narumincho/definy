@@ -8,6 +8,7 @@ module KeyConfig exposing (keyDown)
 
 import Key
 import Model
+import Panel.DefaultUi
 import Panel.Editor.Module
 import Panel.EditorGroup
 import Panel.Tree
@@ -24,24 +25,44 @@ keyDown keyMaybe model =
                     Just ( msg, True )
 
                 Nothing ->
-                    if Model.isFocusTextArea model && textAreaReservedKey key then
-                        Nothing
+                    case Model.isFocusDefaultUi model of
+                        Just Panel.DefaultUi.TextArea ->
+                            if textAreaReservedKey key then
+                                Nothing
 
-                    else
-                        case Model.getFocus model of
-                            Model.FocusTreePanel ->
-                                treePanelKeyDown key
-                                    |> Maybe.map (Tuple.mapFirst Model.TreePanelMsg)
+                            else
+                                keyDownEachPanel key model
 
-                            Model.FocusEditorGroupPanel ->
-                                editorGroupPanelKeyDown key
-                                    |> Maybe.map (Tuple.mapFirst Model.EditorPanelMsg)
+                        Just Panel.DefaultUi.TextField ->
+                            if textFieldReservedKey key then
+                                Nothing
+
+                            else
+                                keyDownEachPanel key model
+
+                        Nothing ->
+                            keyDownEachPanel key model
 
         Nothing ->
             Nothing
 
 
-{-| Definyによって予約されたキー。どのパネルにフォーカスが当たっていてもこれを優先する
+keyDownEachPanel : Key.Key -> Model.Model -> Maybe ( Model.Msg, Bool )
+keyDownEachPanel key model =
+    case Model.getFocus model of
+        Model.FocusTreePanel ->
+            treePanelKeyDown key
+                |> Maybe.map (Tuple.mapFirst Model.TreePanelMsg)
+
+        Model.FocusEditorGroupPanel ->
+            editorGroupPanelKeyDown key
+                |> Maybe.map (Tuple.mapFirst Model.EditorPanelMsg)
+
+
+{-|
+
+    Definyによって予約されたキー。どのパネルにフォーカスが当たっていてもこれを優先する
+
 -}
 editorReservedKey : Bool -> Key.Key -> Maybe Model.Msg
 editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
@@ -90,6 +111,21 @@ editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
                 Nothing
 
 
+
+{- ==============================================
+       キー入力をDefinyで処理しない例外のような処理
+   =================================================
+-}
+
+
+{-|
+
+<textarea>で入力したときに予約されているであろうキーならTrue、そうでないならFalse。
+複数行入力を想定している
+予約さるであろう動作を邪魔させないためにある。
+Model.isFocusTextAreaがTrueになったときにまずこれを優先する
+
+-}
 textAreaReservedKey : Key.Key -> Bool
 textAreaReservedKey { key, ctrl, alt, shift } =
     case ( ctrl, shift, alt ) of
@@ -101,11 +137,55 @@ textAreaReservedKey { key, ctrl, alt, shift } =
                 Key.ArrowRight ->
                     True
 
+                Key.ArrowUp ->
+                    True
+
+                Key.ArrowDown ->
+                    True
+
+                Key.Enter ->
+                    True
+
+                Key.Backspace ->
+                    True
+
                 _ ->
                     False
 
         _ ->
             False
+
+
+{-| <input type="text">で入力したときに予約されているであろうキーならTrue。そうでないなたFalse。
+1行の入力を想定している
+予約さるであろう動作を邪魔させないためにある。
+-}
+textFieldReservedKey : Key.Key -> Bool
+textFieldReservedKey { key, ctrl, alt, shift } =
+    case ( ctrl, shift, alt ) of
+        ( False, False, False ) ->
+            case key of
+                Key.ArrowLeft ->
+                    True
+
+                Key.ArrowRight ->
+                    True
+
+                Key.Backspace ->
+                    True
+
+                _ ->
+                    False
+
+        _ ->
+            False
+
+
+
+{- ==============================================
+             各パネルのキー入力。 キー -> メッセージ
+   =================================================
+-}
 
 
 {-| ツリーパネルのキー入力
@@ -176,6 +256,15 @@ editorGroupPanelKeyDown { key, ctrl, shift, alt } =
                         ( Panel.EditorGroup.EditorItemMsgToActive
                             (Panel.EditorGroup.ModuleEditorMsg
                                 Panel.Editor.Module.SelectDown
+                            )
+                        , True
+                        )
+
+                Key.Enter ->
+                    Just
+                        ( Panel.EditorGroup.EditorItemMsgToActive
+                            (Panel.EditorGroup.ModuleEditorMsg
+                                Panel.Editor.Module.Confirm
                             )
                         , True
                         )

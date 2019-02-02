@@ -1,9 +1,10 @@
-module Panel.Editor.Module exposing (Emit(..), Model, Msg(..), getModuleRef, initModel, isFocusTextArea, update, view)
+module Panel.Editor.Module exposing (Emit(..), Model, Msg(..), getModuleRef, initModel, isFocusDefaultUi, update, view)
 
 import Html
 import Html.Attributes
 import Html.Events
 import Json.Encode
+import Panel.DefaultUi
 import Project
 import Project.Label
 import Project.Source
@@ -33,7 +34,7 @@ type Msg
     | SelectDown
     | ActiveThisEditor
     | ToEditMode
-    | ToMoveMode
+    | Confirm
 
 
 type Emit
@@ -86,17 +87,17 @@ getModuleRef (Model { moduleRef }) =
 {-| テキストエリアにフォーカスが当たっているか。
 当たっていたらKey.ArrowLeftなどのキー入力をpreventDefaultしない。ブラウザの基本機能(訂正など)を阻止しない
 -}
-isFocusTextArea : Model -> Bool
-isFocusTextArea (Model { focus }) =
+isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
+isFocusDefaultUi (Model { focus }) =
     case focus of
         FocusDescription ->
-            True
+            Just Panel.DefaultUi.TextArea
 
         FocusPartEditor (PartEditorEdit _) ->
-            True
+            Just Panel.DefaultUi.TextField
 
         _ ->
-            False
+            Nothing
 
 
 update : Msg -> Project.Project -> Model -> ( Model, Maybe Emit )
@@ -248,7 +249,7 @@ update msg project (Model rec) =
             , Nothing
             )
 
-        ToMoveMode ->
+        Confirm ->
             ( case rec.focus of
                 FocusNone ->
                     Model rec
