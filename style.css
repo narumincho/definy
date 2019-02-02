@@ -430,6 +430,10 @@ img {
     font-family: "mplus-2m-regular";
 }
 
+.moduleEditor-partDefEditor-name {
+    display: flex;
+}
+
 /* 移動モードで対象になったもの */
 
 .focused {
@@ -437,6 +441,7 @@ img {
 }
 
 /* 編集モードで対象になったもの */
+
 .editTarget {
     outline: solid blue 2px;
 }
@@ -444,12 +449,14 @@ img {
 .moduleEditor-partDefEditor-expr {
     display: flex;
 }
+
 .moduleEditor-partDefEditor-caret {
     display: block;
     width: 2px;
     height: 1.5rem;
     background: #f09936
 }
+
 .moduleEditor-partDefEditor-hideTextArea {
     /* width: 0;
     height: 0; */
@@ -458,6 +465,19 @@ img {
     border: 0;
     resize: none;
 }
+
+/* 名前の問題がない文字 */
+
+.nameOkChar {
+    color: #d7ba7d;
+}
+
+/* 使えない文字(編集内) */
+
+.errChar {
+    color: #e45959;
+}
+
 /* ==================================================================
 =====================================================================
                             OLD
@@ -590,18 +610,6 @@ img {
     font-family: "mplus-2m-regular";
     padding: 0.2rem;
     line-height: 1rem;
-}
-
-/* 名前の問題がない文字 */
-
-.nameOkChar {
-    color: #d7ba7d;
-}
-
-/* 使えない文字(編集内) */
-
-.errChar {
-    color: #e45959;
 }
 
 .colon {

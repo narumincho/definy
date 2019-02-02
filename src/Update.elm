@@ -139,3 +139,9 @@ update msg model =
             ( Model.changeReadMe data model
             , Cmd.none
             )
+
+        Model.ChangeName data ->
+            ( Model.changeName data model
+            , Cmd.none
+            )
+

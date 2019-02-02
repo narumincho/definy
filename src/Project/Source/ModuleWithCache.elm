@@ -4,17 +4,22 @@ module Project.Source.ModuleWithCache exposing
     , deleteDefAt
     , getDefList
     , getName
+    , getReadMe
     , getWasmBinary
     , make
     , mapDefList
     , setName
-    , getReadMe, setReadMe)
+    , setReadMe
+    , setFirstDefName, getFirstDefName)
 
-import Project.Source.Module.Def as Def
-import Project.Label as Label
-import Project.Source.Module.TypeDef as TypeDef
 import Compiler
 import Compiler.Marger
+import Project.Label as Label
+import Project.Source.Module.Def as Def
+import Project.Source.Module.Def.Expr
+import Project.Source.Module.Def.Name
+import Project.Source.Module.Def.Type
+import Project.Source.Module.TypeDef as TypeDef
 import Utility.ListExtra
 
 
@@ -27,7 +32,7 @@ type Module
         }
 
 
-make : { name : Label.Label, defList : List ( Def.Def, Maybe Compiler.CompileResult ), readMe: String } -> Module
+make : { name : Label.Label, defList : List ( Def.Def, Maybe Compiler.CompileResult ), readMe : String } -> Module
 make { name, defList, readMe } =
     Module
         { name = name
@@ -51,11 +56,13 @@ setName name (Module rec) =
     Module
         { rec | name = name }
 
+
 {-| ModuleのReadMeを取得する
 -}
 getReadMe : Module -> String
-getReadMe (Module {readMe}) =
+getReadMe (Module { readMe }) =
     readMe
+
 
 {-| ModuleのReadMeを設定する
 -}
@@ -64,11 +71,18 @@ setReadMe string (Module rec) =
     Module
         { rec | readMe = string }
 
+
 {-| ModuleのList (Def,Maybe CompileResult)を取得
 -}
 getDefList : Module -> List ( Def.Def, Maybe Compiler.CompileResult )
 getDefList (Module { defList }) =
     defList
+
+
+setDefList : List ( Def.Def, Maybe Compiler.CompileResult ) -> Module -> Module
+setDefList defList (Module rec) =
+    Module
+        { rec | defList = defList }
 
 
 mapDefList : (List ( Def.Def, Maybe Compiler.CompileResult ) -> List ( Def.Def, Maybe Compiler.CompileResult )) -> Module -> Module
@@ -78,6 +92,36 @@ mapDefList f (Module rec) =
             | defList =
                 f rec.defList
         }
+
+
+{-| デバッグ用。最初の定義の名前を取得する。なければNoName
+-}
+getFirstDefName : Module -> Project.Source.Module.Def.Name.Name
+getFirstDefName (Module { defList }) =
+    defList
+        |> List.head
+        |> Maybe.map (Tuple.first >> Def.getName)
+        |> Maybe.withDefault Project.Source.Module.Def.Name.noName
+
+
+{-| デバッグ用。最初の定義の名前を設定する。なければ追加する
+-}
+setFirstDefName : Project.Source.Module.Def.Name.Name -> Module -> Module
+setFirstDefName name module_ =
+    case getDefList module_ of
+        ( x, xCash ) :: xs ->
+            module_
+                |> setDefList (( Def.setName name x, xCash ) :: xs)
+
+        [] ->
+            module_
+                |> addDef
+                    (Def.make
+                        { name = name
+                        , type_ = Project.Source.Module.Def.Type.empty
+                        , expr = Project.Source.Module.Def.Expr.empty
+                        }
+                    )
 
 
 {-| 定義を末尾に追加する

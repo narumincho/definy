@@ -36,6 +36,7 @@ import Panel.EditorTypeRef
 import Project
 import Project.Label
 import Project.Source
+import Project.Source.Module.Def.Name
 import Project.Source.ModuleWithCache
 import Utility.Map
 
@@ -155,6 +156,7 @@ type Emit
     | EmitHorizontalGutterModeOn GutterHorizontal
     | EmitChangeReadMe { text : String, ref : Project.Source.ModuleRef }
     | EmitSetTextAreaValue String
+    | EmitChangeName { name : Project.Source.Module.Def.Name.Name, ref : Project.Source.ModuleRef }
 
 
 initModel : Model
@@ -362,6 +364,9 @@ moduleEidtorEmitToEmit emit =
 
         Panel.Editor.Module.EmitSetTextAreaValue text ->
             EmitSetTextAreaValue text
+
+        Panel.Editor.Module.EmitChangeName { name, ref } ->
+            EmitChangeName { name = name, ref = ref }
 
 
 {-| 右端と下の端にある表示するエディタを増やすのボタンをおしたら、エディタ全体がどう変わるかと新しくアクティブになるエディタを返す

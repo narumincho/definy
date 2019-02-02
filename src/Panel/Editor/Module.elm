@@ -5,6 +5,8 @@ import Html.Attributes
 import Html.Events
 import Json.Encode
 import Panel.DefaultUi
+import Parser
+import Parser.SimpleChar
 import Project
 import Project.Label
 import Project.Source
@@ -18,7 +20,6 @@ type Model
     = Model
         { moduleRef : Project.Source.ModuleRef
         , focus : Focus
-        , name : String
         }
 
 
@@ -39,6 +40,7 @@ type Msg
 
 type Emit
     = EmitChangeReadMe { text : String, ref : Project.Source.ModuleRef }
+    | EmitChangeName { name : Project.Source.Module.Def.Name.Name, ref : Project.Source.ModuleRef }
     | EmitSetTextAreaValue String
 
 
@@ -49,7 +51,7 @@ type Focus
 
 
 type PartEditorFocus
-    = PartEditorEdit PartFocusEdit
+    = PartEditorEdit PartFocusEdit (List ( Char, Bool ))
     | PartEditorMove PartFocusMove
 
 
@@ -75,7 +77,6 @@ initModel moduleRef =
     Model
         { moduleRef = moduleRef
         , focus = FocusNone
-        , name = "point"
         }
 
 
@@ -93,7 +94,7 @@ isFocusDefaultUi (Model { focus }) =
         FocusDescription ->
             Just Panel.DefaultUi.TextArea
 
-        FocusPartEditor (PartEditorEdit _) ->
+        FocusPartEditor (PartEditorEdit _ _) ->
             Just Panel.DefaultUi.TextField
 
         _ ->
@@ -139,6 +140,10 @@ update msg project (Model rec) =
             )
 
         InputInPartEditor text ->
+            let
+                { name, textAreaValue } =
+                    parseSimple text
+            in
             ( case rec.focus of
                 FocusNone ->
                     Model rec
@@ -148,12 +153,12 @@ update msg project (Model rec) =
 
                 FocusPartEditor (PartEditorMove move) ->
                     Model
-                        { rec | focus = FocusPartEditor (PartEditorEdit (partEditorMoveToEdit move)), name = text }
+                        { rec | focus = FocusPartEditor (PartEditorEdit (partEditorMoveToEdit move) textAreaValue) }
 
-                FocusPartEditor (PartEditorEdit _) ->
+                FocusPartEditor (PartEditorEdit edit _) ->
                     Model
-                        { rec | name = text }
-            , Nothing
+                        { rec | focus = FocusPartEditor (PartEditorEdit edit textAreaValue) }
+            , Just (EmitChangeName { name = name, ref = rec.moduleRef })
             )
 
         SelectLeft ->
@@ -167,7 +172,7 @@ update msg project (Model rec) =
                 FocusPartEditor (PartEditorMove partMove) ->
                     Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveLeft partMove)) }
 
-                FocusPartEditor (PartEditorEdit _) ->
+                FocusPartEditor (PartEditorEdit _ _) ->
                     Model rec
             , Nothing
             )
@@ -183,7 +188,7 @@ update msg project (Model rec) =
                 FocusPartEditor (PartEditorMove partMove) ->
                     Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveRight partMove)) }
 
-                FocusPartEditor (PartEditorEdit _) ->
+                FocusPartEditor (PartEditorEdit _ _) ->
                     Model rec
             , Nothing
             )
@@ -212,7 +217,7 @@ update msg project (Model rec) =
                 FocusPartEditor (PartEditorMove partMove) ->
                     Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveUp partMove)) }
 
-                FocusPartEditor (PartEditorEdit _) ->
+                FocusPartEditor (PartEditorEdit _ _) ->
                     Model rec
             , Nothing
             )
@@ -228,7 +233,7 @@ update msg project (Model rec) =
                 FocusPartEditor (PartEditorMove partMove) ->
                     Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveDown partMove)) }
 
-                FocusPartEditor (PartEditorEdit _) ->
+                FocusPartEditor (PartEditorEdit _ _) ->
                     Model rec
             , Nothing
             )
@@ -242,9 +247,9 @@ update msg project (Model rec) =
                     Model rec
 
                 FocusPartEditor (PartEditorMove move) ->
-                    Model { rec | focus = FocusPartEditor (PartEditorEdit (partEditorMoveToEdit move)) }
+                    Model { rec | focus = FocusPartEditor (PartEditorEdit (partEditorMoveToEdit move) []) }
 
-                FocusPartEditor (PartEditorEdit _) ->
+                FocusPartEditor (PartEditorEdit _ _) ->
                     Model rec
             , Nothing
             )
@@ -260,7 +265,7 @@ update msg project (Model rec) =
                 FocusPartEditor (PartEditorMove _) ->
                     Model rec
 
-                FocusPartEditor (PartEditorEdit edit) ->
+                FocusPartEditor (PartEditorEdit edit _) ->
                     Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorEditToMove edit)) }
             , Nothing
             )
@@ -335,6 +340,8 @@ partEditorMoveDown position =
             position
 
 
+{-| パーツエディタの移動モードから編集モードに変える
+-}
 partEditorMoveToEdit : PartFocusMove -> PartFocusEdit
 partEditorMoveToEdit move =
     case move of
@@ -351,6 +358,8 @@ partEditorMoveToEdit move =
             EditExprHeadTerm
 
 
+{-| パーツエディタの編集モードから移動モードに変える
+-}
 partEditorEditToMove : PartFocusEdit -> PartFocusMove
 partEditorEditToMove edit =
     case edit of
@@ -373,13 +382,37 @@ partEditorEditToMove edit =
             MoveTerm (n - 1)
 
 
+parseSimple : String -> { name : Project.Source.Module.Def.Name.Name, textAreaValue : List ( Char, Bool ) }
+parseSimple string =
+    case Parser.beginWithName (Parser.SimpleChar.fromString string) of
+        Parser.BeginWithNameEndName { name, textAreaValue } ->
+            { name = name
+            , textAreaValue = textAreaValue
+            }
+
+        Parser.BeginWithNameEndType { name, textAreaValue } ->
+            { name = name
+            , textAreaValue = textAreaValue
+            }
+
+        Parser.BeginWithNameEndExprTerm { name, textAreaValue } ->
+            { name = name
+            , textAreaValue = textAreaValue
+            }
+
+        Parser.BeginWithNameEndExprOp { name, textAreaValue } ->
+            { name = name
+            , textAreaValue = textAreaValue
+            }
+
+
 {-| モジュールエディタのview。
 プロジェクト全体のデータと
 このエディタが全体にとってフォーカスが当たっているか当たっていないかのBoolと
 モジュールエディタのModelで見た目を決める
 -}
 view : Project.Project -> Bool -> Model -> { title : String, body : List (Html.Html Msg) }
-view project isEditorItemFocus (Model { moduleRef, focus, name }) =
+view project isEditorItemFocus (Model { moduleRef, focus }) =
     let
         targetModule =
             project
@@ -403,7 +436,7 @@ view project isEditorItemFocus (Model { moduleRef, focus, name }) =
                 FocusPartEditor partEditorFocus ->
                     Just partEditorFocus
             )
-            name
+            (Project.Source.ModuleWithCache.getFirstDefName targetModule)
         ]
     }
 
@@ -420,7 +453,7 @@ focusToString focus =
         FocusPartEditor partEditorFocus ->
             "パーツエディタにフォーカス "
                 ++ (case partEditorFocus of
-                        PartEditorEdit partEdit ->
+                        PartEditorEdit partEdit _ ->
                             "テキストで編集 "
                                 ++ (case partEdit of
                                         EditName ->
@@ -526,7 +559,7 @@ lfToBr string =
 
 {-| モジュールエディタのメインの要素であるパーツエディタを表示する
 -}
-partDefinitionsView : Maybe PartEditorFocus -> String -> Html.Html Msg
+partDefinitionsView : Maybe PartEditorFocus -> Project.Source.Module.Def.Name.Name -> Html.Html Msg
 partDefinitionsView partEditorFocus name =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefinitions" ]
@@ -537,7 +570,7 @@ partDefinitionsView partEditorFocus name =
 
 {-| 複数のパーツエディタが並んだもの
 -}
-partDefinitionEditorList : Maybe PartEditorFocus -> String -> Html.Html Msg
+partDefinitionEditorList : Maybe PartEditorFocus -> Project.Source.Module.Def.Name.Name -> Html.Html Msg
 partDefinitionEditorList partEditorFocus name =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditorList" ]
@@ -546,7 +579,7 @@ partDefinitionEditorList partEditorFocus name =
 
 {-| 1つのパーツエディタ
 -}
-partDefinitionEditor : Maybe PartEditorFocus -> String -> Html.Html Msg
+partDefinitionEditor : Maybe PartEditorFocus -> Project.Source.Module.Def.Name.Name -> Html.Html Msg
 partDefinitionEditor partEditorFocus name =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditor" ]
@@ -564,30 +597,65 @@ partDefinitionEditor partEditorFocus name =
         )
 
 
-nameAndTypeView : Maybe PartEditorFocus -> String -> Html.Html Msg
+nameAndTypeView : Maybe PartEditorFocus -> Project.Source.Module.Def.Name.Name -> Html.Html Msg
 nameAndTypeView partEditorFocus name =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditor-nameAndType" ]
-        [ Html.div
-            [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveName))
-            , Html.Attributes.classList
-                [ ( "moduleEditor-partDefEditor-name", True )
-                , ( "focused", partEditorFocus == Just (PartEditorMove MoveName) )
-                , ( "editTarget", partEditorFocus == Just (PartEditorEdit EditName) )
-                ]
-            ]
-            [ Html.text name ]
+        [ case partEditorFocus of
+            Just (PartEditorEdit EditName textAreaValue) ->
+                nameViewInputOutput textAreaValue
+
+            Just (PartEditorMove MoveName) ->
+                nameViewOutput True name
+
+            _ ->
+                nameViewOutput False name
         , Html.text ":"
         , Html.div
             [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveType))
             , Html.Attributes.classList
                 [ ( "moduleEditor-partDefEditor-type", True )
                 , ( "focused", partEditorFocus == Just (PartEditorMove MoveType) )
-                , ( "editTarget", partEditorFocus == Just (PartEditorEdit EditType) )
+                , ( "editTarget", partEditorFocus == Just (PartEditorEdit EditType []) )
                 ]
             ]
             [ Html.text "Int" ]
         ]
+
+
+nameViewOutput : Bool -> Project.Source.Module.Def.Name.Name -> Html.Html Msg
+nameViewOutput isFocus name =
+    Html.div
+        [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveName))
+        , Html.Attributes.classList
+            [ ( "moduleEditor-partDefEditor-name", True )
+            , ( "focused", isFocus )
+            ]
+        ]
+        [ Html.text (Project.Source.Module.Def.Name.toString name |> Maybe.withDefault "<?>") ]
+
+
+nameViewInputOutput : List ( Char, Bool ) -> Html.Html Msg
+nameViewInputOutput textAreaValue =
+    Html.div
+        [ Html.Attributes.class "editTarget"
+        , Html.Attributes.class "moduleEditor-partDefEditor-name"
+        ]
+        (textAreaValue
+            |> List.map
+                (\( char, bool ) ->
+                    Html.div
+                        [ Html.Attributes.class
+                            (if bool then
+                                "nameOkChar"
+
+                             else
+                                "errChar"
+                            )
+                        ]
+                        [ Html.text (String.fromChar char) ]
+                )
+        )
 
 
 exprView : Maybe PartEditorFocus -> Html.Html Msg

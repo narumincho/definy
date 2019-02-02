@@ -22,8 +22,8 @@ port module Model exposing
     , initCmd
     , initModel
     , isCaptureMouseEvent
-    , isFocusEditorGroupPanel
     , isFocusDefaultUi
+    , isFocusEditorGroupPanel
     , isFocusTreePanel
     , isOpenCommandPalette
     , isTreePanelGutter
@@ -37,7 +37,7 @@ port module Model exposing
     , toTreePanelGutterMode
     , treePanelMsgToMsg
     , treePanelUpdate
-    )
+    , changeName)
 
 {-| すべての状態を管理する
 -}
@@ -45,10 +45,10 @@ port module Model exposing
 import Compiler
 import Key
 import Panel.CommandPalette
+import Panel.DefaultUi
 import Panel.EditorGroup
 import Panel.EditorTypeRef
 import Panel.Tree
-import Panel.DefaultUi
 import Project
 import Project.Document
 import Project.Label as Label
@@ -86,6 +86,7 @@ type Msg
     | OpenCommandPalette -- コマンドパレットを開く
     | CloseCommandPalette -- コマンドパレッドを閉じる
     | ChangeReadMe { text : String, ref : Project.Source.ModuleRef } -- モジュールのReadMeを変更する
+    | ChangeName { name : Name.Name, ref : Project.Source.ModuleRef } -- 最初の名前を変更する
 
 
 {-| 全体を表現する
@@ -242,6 +243,7 @@ getFocus : Model -> Focus
 getFocus (Model { focus }) =
     focus
 
+
 {-| ツリーパネルにフォーカスが当たっているかどうか
 -}
 isFocusTreePanel : Model -> Bool
@@ -252,6 +254,7 @@ isFocusTreePanel model =
 
         FocusEditorGroupPanel ->
             False
+
 
 {-| エディタグループパネルにフォーカスが当たっているかどうか
 -}
@@ -615,6 +618,11 @@ editorPanelEmitToMsg emit =
             , Just (setTextAreaValue string)
             )
 
+        Panel.EditorGroup.EmitChangeName { name, ref } ->
+            ( Just (ChangeName { name = name, ref = ref })
+            , Nothing
+            )
+
 
 {-| プロジェクトを取得する
 -}
@@ -716,3 +724,11 @@ changeReadMe { text, ref } model =
             (Project.mapSource
                 (Project.Source.mapModule ref (Project.Source.ModuleWithCache.setReadMe text))
             )
+
+
+changeName : { name : Name.Name, ref : Project.Source.ModuleRef } -> Model -> Model
+changeName { name, ref } =
+    mapProject
+        (Project.mapSource
+            (Project.Source.mapModule ref (Project.Source.ModuleWithCache.setFirstDefName name))
+        )
