@@ -32,6 +32,8 @@ type Msg
     | SelectUp
     | SelectDown
     | ActiveThisEditor
+    | ToEditMode
+    | ToMoveMode
 
 
 type Emit
@@ -90,6 +92,9 @@ isFocusTextArea (Model { focus }) =
         FocusDescription ->
             True
 
+        FocusPartEditor (PartEditorEdit _) ->
+            True
+
         _ ->
             False
 
@@ -133,14 +138,20 @@ update msg project (Model rec) =
             )
 
         InputInPartEditor text ->
-            let
-                _ =
-                    Debug.log "input!" text
-            in
-            ( Model
-                { rec
-                    | name = text
-                }
+            ( case rec.focus of
+                FocusNone ->
+                    Model rec
+
+                FocusDescription ->
+                    Model rec
+
+                FocusPartEditor (PartEditorMove move) ->
+                    Model
+                        { rec | focus = FocusPartEditor (PartEditorEdit (partEditorMoveToEdit move)), name = text }
+
+                FocusPartEditor (PartEditorEdit _) ->
+                    Model
+                        { rec | name = text }
             , Nothing
             )
 
@@ -221,6 +232,38 @@ update msg project (Model rec) =
             , Nothing
             )
 
+        ToEditMode ->
+            ( case rec.focus of
+                FocusNone ->
+                    Model rec
+
+                FocusDescription ->
+                    Model rec
+
+                FocusPartEditor (PartEditorMove move) ->
+                    Model { rec | focus = FocusPartEditor (PartEditorEdit (partEditorMoveToEdit move)) }
+
+                FocusPartEditor (PartEditorEdit _) ->
+                    Model rec
+            , Nothing
+            )
+
+        ToMoveMode ->
+            ( case rec.focus of
+                FocusNone ->
+                    Model rec
+
+                FocusDescription ->
+                    Model rec
+
+                FocusPartEditor (PartEditorMove _) ->
+                    Model rec
+
+                FocusPartEditor (PartEditorEdit edit) ->
+                    Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorEditToMove edit)) }
+            , Nothing
+            )
+
 
 {-| パーツエディタの移動モードで左に移動する
 -}
@@ -289,6 +332,44 @@ partEditorMoveDown position =
 
         _ ->
             position
+
+
+partEditorMoveToEdit : PartFocusMove -> PartFocusEdit
+partEditorMoveToEdit move =
+    case move of
+        MoveName ->
+            EditName
+
+        MoveType ->
+            EditType
+
+        MoveExprHead ->
+            EditExprHeadTerm
+
+        _ ->
+            EditExprHeadTerm
+
+
+partEditorEditToMove : PartFocusEdit -> PartFocusMove
+partEditorEditToMove edit =
+    case edit of
+        EditName ->
+            MoveName
+
+        EditType ->
+            MoveType
+
+        EditExprHeadTerm ->
+            MoveExprHead
+
+        EditExprTerm 0 ->
+            MoveHeadTerm
+
+        EditExprOp n ->
+            MoveOp n
+
+        EditExprTerm n ->
+            MoveTerm (n - 1)
 
 
 {-| モジュールエディタのview。
@@ -472,11 +553,12 @@ partDefinitionEditor partEditorFocus name =
          , exprView partEditorFocus
          , intermediateExprView
          ]
-            ++ (if partEditorFocus == Nothing then
-                    []
+            ++ (case partEditorFocus of
+                    Just _ ->
+                        [ inputTextArea ]
 
-                else
-                    [ inputTextArea ]
+                    Nothing ->
+                        []
                )
         )
 
@@ -487,13 +569,21 @@ nameAndTypeView partEditorFocus name =
         [ Html.Attributes.class "moduleEditor-partDefEditor-nameAndType" ]
         [ Html.div
             [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveName))
-            , Html.Attributes.classList [ ( "focused", partEditorFocus == Just (PartEditorMove MoveName) ) ]
+            , Html.Attributes.classList
+                [ ( "moduleEditor-partDefEditor-name", True )
+                , ( "focused", partEditorFocus == Just (PartEditorMove MoveName) )
+                , ( "editTarget", partEditorFocus == Just (PartEditorEdit EditName) )
+                ]
             ]
             [ Html.text name ]
         , Html.text ":"
         , Html.div
             [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveType))
-            , Html.Attributes.classList [ ( "focused", partEditorFocus == Just (PartEditorMove MoveType) ) ]
+            , Html.Attributes.classList
+                [ ( "moduleEditor-partDefEditor-type", True )
+                , ( "focused", partEditorFocus == Just (PartEditorMove MoveType) )
+                , ( "editTarget", partEditorFocus == Just (PartEditorEdit EditType) )
+                ]
             ]
             [ Html.text "Int" ]
         ]

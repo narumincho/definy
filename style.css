@@ -1,7 +1,7 @@
 @font-face {
     /* M+ M Type-2 regular */
     font-family: "mplus-2m-regular";
-    src: url(./assets/mplus-2m-regular-sub.woff) format("woff");
+    src: url("assets/mplus-2m-regular-sub.woff") format("woff");
 }
 
 html {
@@ -424,12 +424,21 @@ img {
 
 .moduleEditor-partDefEditor-nameAndType {
     display: flex;
+    font-size: 1.3rem;
+    line-height: 1;
+    padding: 0;
+    font-family: "mplus-2m-regular";
 }
 
 /* 移動モードで対象になったもの */
 
 .focused {
-    outline: solid var(--accentColorBg) 3px;
+    outline: solid var(--accentColorBg) 2px;
+}
+
+/* 編集モードで対象になったもの */
+.editTarget {
+    outline: solid blue 2px;
 }
 
 .moduleEditor-partDefEditor-expr {
@@ -442,8 +451,8 @@ img {
     background: #f09936
 }
 .moduleEditor-partDefEditor-hideTextArea {
-    width: 0;
-    height: 0;
+    /* width: 0;
+    height: 0; */
     padding: 0;
     outline: none;
     border: 0;
