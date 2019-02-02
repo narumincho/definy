@@ -3,7 +3,6 @@ module Panel.Editor.Module exposing (Emit(..), Model, Msg(..), getModuleRef, ini
 import Html
 import Html.Attributes
 import Html.Events
-import Json.Decode
 import Json.Encode
 import Project
 import Project.Label
@@ -18,6 +17,7 @@ type Model
     = Model
         { moduleRef : Project.Source.ModuleRef
         , focus : Focus
+        , name : String
         }
 
 
@@ -25,7 +25,8 @@ type Msg
     = FocusToNone
     | FocusToDescription
     | FocusToPartEditor PartEditorFocus
-    | InputReadMe String
+    | InputInDescription String
+    | InputInPartEditor String
     | SelectLeft
     | SelectRight
     | SelectUp
@@ -71,6 +72,7 @@ initModel moduleRef =
     Model
         { moduleRef = moduleRef
         , focus = FocusNone
+        , name = "point"
         }
 
 
@@ -119,15 +121,27 @@ update msg project (Model rec) =
                 { rec
                     | focus = FocusPartEditor partFocus
                 }
-            , Nothing
+            , Just (EmitSetTextAreaValue "")
             )
 
-        InputReadMe text ->
+        InputInDescription text ->
             ( Model
                 { rec
                     | focus = FocusDescription
                 }
             , Just (EmitChangeReadMe { text = text, ref = rec.moduleRef })
+            )
+
+        InputInPartEditor text ->
+            let
+                _ =
+                    Debug.log "input!" text
+            in
+            ( Model
+                { rec
+                    | name = text
+                }
+            , Nothing
             )
 
         SelectLeft ->
@@ -283,7 +297,7 @@ partEditorMoveDown position =
 モジュールエディタのModelで見た目を決める
 -}
 view : Project.Project -> Bool -> Model -> { title : String, body : List (Html.Html Msg) }
-view project isEditorItemFocus (Model { moduleRef, focus }) =
+view project isEditorItemFocus (Model { moduleRef, focus, name }) =
     let
         targetModule =
             project
@@ -307,6 +321,7 @@ view project isEditorItemFocus (Model { moduleRef, focus }) =
                 FocusPartEditor partEditorFocus ->
                     Just partEditorFocus
             )
+            name
         ]
     }
 
@@ -388,7 +403,7 @@ descriptionView description editHere =
                         ]
                      ]
                         ++ (if editHere then
-                                [ Html.Events.on "input" (inputEventDecoder |> Json.Decode.map InputReadMe)
+                                [ Html.Events.onInput InputInDescription
                                 , Html.Attributes.id "edit"
                                 ]
 
@@ -423,56 +438,58 @@ lfToBr string =
            )
 
 
-inputEventDecoder : Json.Decode.Decoder String
-inputEventDecoder =
-    Json.Decode.at [ "target", "value" ] Json.Decode.string
-
-
 
 {- ===== part definitions ===== -}
 
 
 {-| モジュールエディタのメインの要素であるパーツエディタを表示する
 -}
-partDefinitionsView : Maybe PartEditorFocus -> Html.Html Msg
-partDefinitionsView partEditorFocus =
+partDefinitionsView : Maybe PartEditorFocus -> String -> Html.Html Msg
+partDefinitionsView partEditorFocus name =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefinitions" ]
         [ Html.text "Part Definitions"
-        , partDefinitionEditorList partEditorFocus
+        , partDefinitionEditorList partEditorFocus name
         ]
 
 
 {-| 複数のパーツエディタが並んだもの
 -}
-partDefinitionEditorList : Maybe PartEditorFocus -> Html.Html Msg
-partDefinitionEditorList partEditorFocus =
+partDefinitionEditorList : Maybe PartEditorFocus -> String -> Html.Html Msg
+partDefinitionEditorList partEditorFocus name =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditorList" ]
-        [ partDefinitionEditor partEditorFocus ]
+        [ partDefinitionEditor partEditorFocus name ]
 
 
 {-| 1つのパーツエディタ
 -}
-partDefinitionEditor : Maybe PartEditorFocus -> Html.Html Msg
-partDefinitionEditor partEditorFocus =
+partDefinitionEditor : Maybe PartEditorFocus -> String -> Html.Html Msg
+partDefinitionEditor partEditorFocus name =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditor" ]
-        [ nameAndTypeView partEditorFocus
-        , exprView partEditorFocus
-        , intermediateExprView
-        ]
+        ([ nameAndTypeView partEditorFocus name
+         , exprView partEditorFocus
+         , intermediateExprView
+         ]
+            ++ (if partEditorFocus == Nothing then
+                    []
+
+                else
+                    [ inputTextArea ]
+               )
+        )
 
 
-nameAndTypeView : Maybe PartEditorFocus -> Html.Html Msg
-nameAndTypeView partEditorFocus =
+nameAndTypeView : Maybe PartEditorFocus -> String -> Html.Html Msg
+nameAndTypeView partEditorFocus name =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditor-nameAndType" ]
         [ Html.div
             [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveName))
             , Html.Attributes.classList [ ( "focused", partEditorFocus == Just (PartEditorMove MoveName) ) ]
             ]
-            [ Html.text "point" ]
+            [ Html.text name ]
         , Html.text ":"
         , Html.div
             [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveType))
@@ -509,3 +526,13 @@ intermediateExprView =
     Html.div
         []
         [ Html.text "(1+1) ..クリックして評価" ]
+
+
+inputTextArea : Html.Html Msg
+inputTextArea =
+    Html.textarea
+        [ Html.Attributes.class "moduleEditor-partDefEditor-hideTextArea"
+        , Html.Attributes.id "edit"
+        , Html.Events.onInput InputInPartEditor
+        ]
+        []
