@@ -30,7 +30,7 @@
         app.ports.setTextAreaValue.subscribe((e) => {
             requestAnimationFrame(() => {
                 const edit = document.getElementById("edit")
-                console.log(edit);
+                console.log(e, edit);
                 edit.focus();
                 if (edit.value !== e) {
                     edit.value = e;

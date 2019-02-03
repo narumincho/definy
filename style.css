@@ -434,6 +434,10 @@ img {
     display: flex;
 }
 
+.moduleEditor-partDefEditor-type {
+    display: flex;
+}
+
 /* 移動モードで対象になったもの */
 
 .focused {
@@ -443,7 +447,7 @@ img {
 /* 編集モードで対象になったもの */
 
 .editTarget {
-    outline: solid blue 2px;
+    background-color: #000;
 }
 
 .moduleEditor-partDefEditor-expr {

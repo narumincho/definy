@@ -1,4 +1,4 @@
-module Project.Source exposing (ModuleRef(..), Source, getModule, init, setModule, mapModule)
+module Project.Source exposing (ModuleRef(..), Source, getModule, init, mapModule, setModule)
 
 import Project.Label as Label
 import Project.Source.Module.Def
@@ -16,16 +16,19 @@ type Source
         , sampleModule : ModuleWithCache.Module
         }
 
+
+
 {-
-type RootModule
-    = RootModuleLibrary
-        { name : Label.Label
-        , author : Label.Label
-        , originalName : Label.Label
-        , version : String
-        }
-    | RootModuleModule Module
+   type RootModule
+       = RootModuleLibrary
+           { name : Label.Label
+           , author : Label.Label
+           , originalName : Label.Label
+           , version : String
+           }
+       | RootModuleModule Module
 -}
+
 
 {-| モジュールの参照
 -}
@@ -33,6 +36,7 @@ type ModuleRef
     = Core
     | CoreInt32
     | SampleModule
+
 
 
 --type Module
@@ -45,7 +49,7 @@ type ModuleRef
 init : Source
 init =
     Source
-        { core=
+        { core =
             ModuleWithCache.make
                 { name = Label.make Label.hc [ Label.oo, Label.or, Label.oe ]
                 , defList =
@@ -65,14 +69,26 @@ init =
                 , defList = []
                 , readMe = "WebAssemblyでサポートされている32bit符号付き整数を扱えるようになる"
                 }
-
         , sampleModule =
             ModuleWithCache.make
                 { name = sampleModuleName
-                , defList = []
+                , defList =
+                    [ ( Project.Source.Module.Def.make
+                            { name =
+                                Project.Source.Module.Def.Name.fromLabel
+                                    (Label.make Label.hp
+                                        [ Label.oo, Label.oi, Label.on, Label.ot ]
+                                    )
+                            , type_ = Project.Source.Module.Def.Type.empty
+                            , expr = Project.Source.Module.Def.Expr.empty
+                            }
+                      , Nothing
+                      )
+                    ]
                 , readMe = ""
                 }
         }
+
 
 {-| SampleModule
 -}
@@ -81,6 +97,7 @@ sampleModuleName =
     Label.make
         Label.hs
         [ Label.oa, Label.om, Label.op, Label.ol, Label.oe, Label.oM, Label.oo, Label.od, Label.ou, Label.ol, Label.oe ]
+
 
 {-| 参照からモジュールを取得する
 -}
@@ -96,6 +113,7 @@ getModule moduleRef (Source source) =
         SampleModule ->
             source.sampleModule
 
+
 {-| 参照からモジュールを設定する
 -}
 setModule : ModuleRef -> ModuleWithCache.Module -> Source -> Source
@@ -107,11 +125,12 @@ setModule moduleRef module_ (Source rec) =
 
         CoreInt32 ->
             Source
-                { rec | coreInt32 = module_}
+                { rec | coreInt32 = module_ }
 
         SampleModule ->
             Source
                 { rec | sampleModule = module_ }
+
 
 {-| 参照からモジュールを加工する
 -}

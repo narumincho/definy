@@ -5061,6 +5061,7 @@ var author$project$Project$Label$ha = 0;
 var author$project$Project$Label$hc = 2;
 var author$project$Project$Label$I = 8;
 var author$project$Project$Label$hi = 8;
+var author$project$Project$Label$hp = 15;
 var author$project$Project$Label$Digits = function (a) {
 	return {$: 2, a: a};
 };
@@ -5070,6 +5071,7 @@ var author$project$Project$Label$N3 = 3;
 var author$project$Project$Label$o3 = author$project$Project$Label$Digits(3);
 var author$project$Project$Label$B = 1;
 var author$project$Project$Label$ob = author$project$Project$Label$Small(1);
+var author$project$Project$Label$oi = author$project$Project$Label$Small(8);
 var author$project$Project$Label$N = 13;
 var author$project$Project$Label$on = author$project$Project$Label$Small(13);
 var author$project$Project$Source$Source = elm$core$Basics$identity;
@@ -5148,7 +5150,26 @@ var author$project$Project$Source$init = {
 			aW: 'WebAssemblyでサポートされている32bit符号付き整数を扱えるようになる'
 		}),
 	aX: author$project$Project$Source$ModuleWithCache$make(
-		{aM: _List_Nil, aF: author$project$Project$Source$sampleModuleName, aW: ''})
+		{
+			aM: _List_fromArray(
+				[
+					_Utils_Tuple2(
+					author$project$Project$Source$Module$Def$make(
+						{
+							bM: author$project$Project$Source$Module$Def$Expr$empty,
+							aF: author$project$Project$Source$Module$Def$Name$fromLabel(
+								A2(
+									author$project$Project$Label$make,
+									author$project$Project$Label$hp,
+									_List_fromArray(
+										[author$project$Project$Label$oo, author$project$Project$Label$oi, author$project$Project$Label$on, author$project$Project$Label$ot]))),
+							b6: author$project$Project$Source$Module$Def$Type$empty
+						}),
+					elm$core$Maybe$Nothing)
+				]),
+			aF: author$project$Project$Source$sampleModuleName,
+			aW: ''
+		})
 };
 var author$project$Project$init = {a4: author$project$Project$projectAuthor, bG: author$project$Project$Config$init, bH: author$project$Project$Document$init, aF: author$project$Project$projectName, aY: author$project$Project$Source$init};
 var author$project$Model$initModel = {
@@ -8421,7 +8442,6 @@ var author$project$Project$Label$hl = 11;
 var author$project$Project$Label$hm = 12;
 var author$project$Project$Label$hn = 13;
 var author$project$Project$Label$ho = 14;
-var author$project$Project$Label$hp = 15;
 var author$project$Project$Label$hq = 16;
 var author$project$Project$Label$hr = 17;
 var author$project$Project$Label$ht = 19;
@@ -8573,7 +8593,6 @@ var author$project$Parser$SimpleChar$labelPushNumber = F2(
 var author$project$Project$Label$of_ = author$project$Project$Label$Small(5);
 var author$project$Project$Label$og = author$project$Project$Label$Small(6);
 var author$project$Project$Label$oh = author$project$Project$Label$Small(7);
-var author$project$Project$Label$oi = author$project$Project$Label$Small(8);
 var author$project$Project$Label$ok = author$project$Project$Label$Small(10);
 var author$project$Project$Label$oq = author$project$Project$Label$Small(16);
 var author$project$Project$Label$ov = author$project$Project$Label$Small(21);
@@ -15780,9 +15799,6 @@ var author$project$Panel$Editor$Module$intermediateExprView = A2(
 		[
 			elm$html$Html$text('(1+1) ..クリックして評価')
 		]));
-var author$project$Panel$Editor$Module$FocusToPartEditor = function (a) {
-	return {$: 2, a: a};
-};
 var author$project$Panel$Editor$Module$nameViewInputOutput = function (textAreaValue) {
 	return A2(
 		elm$html$Html$div,
@@ -15791,25 +15807,37 @@ var author$project$Panel$Editor$Module$nameViewInputOutput = function (textAreaV
 				elm$html$Html$Attributes$class('editTarget'),
 				elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name')
 			]),
-		A2(
-			elm$core$List$map,
-			function (_n0) {
-				var _char = _n0.a;
-				var bool = _n0.b;
+		function () {
+			if (textAreaValue.b) {
 				return A2(
-					elm$html$Html$div,
-					_List_fromArray(
-						[
-							elm$html$Html$Attributes$class(
-							bool ? 'nameOkChar' : 'errChar')
-						]),
-					_List_fromArray(
-						[
-							elm$html$Html$text(
-							elm$core$String$fromChar(_char))
-						]));
-			},
-			textAreaValue));
+					elm$core$List$map,
+					function (_n1) {
+						var _char = _n1.a;
+						var bool = _n1.b;
+						return A2(
+							elm$html$Html$div,
+							_List_fromArray(
+								[
+									elm$html$Html$Attributes$class(
+									bool ? 'nameOkChar' : 'errChar')
+								]),
+							_List_fromArray(
+								[
+									elm$html$Html$text(
+									elm$core$String$fromChar(_char))
+								]));
+					},
+					textAreaValue);
+			} else {
+				return _List_fromArray(
+					[
+						elm$html$Html$text('NAME')
+					]);
+			}
+		}());
+};
+var author$project$Panel$Editor$Module$FocusToPartEditor = function (a) {
+	return {$: 2, a: a};
 };
 var author$project$Project$Source$Module$Def$Name$toString = function (name) {
 	if (!name.$) {
@@ -15824,17 +15852,16 @@ var author$project$Panel$Editor$Module$nameViewOutput = F2(
 	function (isFocus, name) {
 		return A2(
 			elm$html$Html$div,
-			_List_fromArray(
+			isFocus ? _List_fromArray(
+				[
+					elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name'),
+					elm$html$Html$Attributes$class('focused')
+				]) : _List_fromArray(
 				[
 					elm$html$Html$Events$onClick(
 					author$project$Panel$Editor$Module$FocusToPartEditor(
 						author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveName))),
-					elm$html$Html$Attributes$classList(
-					_List_fromArray(
-						[
-							_Utils_Tuple2('moduleEditor-partDefEditor-name', true),
-							_Utils_Tuple2('focused', isFocus)
-						]))
+					elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name')
 				]),
 			_List_fromArray(
 				[
@@ -15845,8 +15872,91 @@ var author$project$Panel$Editor$Module$nameViewOutput = F2(
 						author$project$Project$Source$Module$Def$Name$toString(name)))
 				]));
 	});
-var author$project$Panel$Editor$Module$nameAndTypeView = F2(
-	function (partEditorFocus, name) {
+var author$project$Panel$Editor$Module$typeViewInputOutput = function (textAreaValue) {
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$class('editTarget'),
+				elm$html$Html$Attributes$class('moduleEditor-partDefEditor-type')
+			]),
+		function () {
+			if (textAreaValue.b) {
+				return A2(
+					elm$core$List$map,
+					function (_n1) {
+						var _char = _n1.a;
+						var bool = _n1.b;
+						return A2(
+							elm$html$Html$div,
+							_List_fromArray(
+								[
+									elm$html$Html$Attributes$class(
+									bool ? 'nameOkChar' : 'errChar')
+								]),
+							_List_fromArray(
+								[
+									elm$html$Html$text(
+									elm$core$String$fromChar(_char))
+								]));
+					},
+					textAreaValue);
+			} else {
+				return _List_fromArray(
+					[
+						elm$html$Html$text('TYPE')
+					]);
+			}
+		}());
+};
+var author$project$Project$Source$Module$Def$Type$validTypeToLabel = function (validType) {
+	return A2(
+		author$project$Project$Label$make,
+		author$project$Project$Label$hi,
+		_List_fromArray(
+			[author$project$Project$Label$on, author$project$Project$Label$ot]));
+};
+var author$project$Project$Source$Module$Def$Type$toString = function (type_) {
+	switch (type_.$) {
+		case 0:
+			var validType = type_.a;
+			return elm$core$Maybe$Just(
+				author$project$Project$Label$toCapitalString(
+					author$project$Project$Source$Module$Def$Type$validTypeToLabel(validType)));
+		case 1:
+			var label = type_.a;
+			return elm$core$Maybe$Just(
+				author$project$Project$Label$toCapitalString(label));
+		default:
+			return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Panel$Editor$Module$typeViewOutput = F2(
+	function (isSelect, type_) {
+		return A2(
+			elm$html$Html$div,
+			isSelect ? _List_fromArray(
+				[
+					elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name'),
+					elm$html$Html$Attributes$class('focused')
+				]) : _List_fromArray(
+				[
+					elm$html$Html$Events$onClick(
+					author$project$Panel$Editor$Module$FocusToPartEditor(
+						author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveType))),
+					elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name')
+				]),
+			_List_fromArray(
+				[
+					elm$html$Html$text(
+					A2(
+						elm$core$Maybe$withDefault,
+						'<?>',
+						author$project$Project$Source$Module$Def$Type$toString(type_)))
+				]));
+	});
+var author$project$Panel$Editor$Module$nameAndTypeView = F3(
+	function (partEditorFocus, name, type_) {
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
@@ -15883,39 +15993,45 @@ var author$project$Panel$Editor$Module$nameAndTypeView = F2(
 					return A2(author$project$Panel$Editor$Module$nameViewOutput, false, name);
 				}(),
 					elm$html$Html$text(':'),
-					A2(
-					elm$html$Html$div,
-					_List_fromArray(
-						[
-							elm$html$Html$Events$onClick(
-							author$project$Panel$Editor$Module$FocusToPartEditor(
-								author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveType))),
-							elm$html$Html$Attributes$classList(
-							_List_fromArray(
-								[
-									_Utils_Tuple2('moduleEditor-partDefEditor-type', true),
-									_Utils_Tuple2(
-									'focused',
-									_Utils_eq(
-										partEditorFocus,
-										elm$core$Maybe$Just(
-											author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveType)))),
-									_Utils_Tuple2(
-									'editTarget',
-									_Utils_eq(
-										partEditorFocus,
-										elm$core$Maybe$Just(
-											A2(author$project$Panel$Editor$Module$PartEditorEdit, author$project$Panel$Editor$Module$EditType, _List_Nil))))
-								]))
-						]),
-					_List_fromArray(
-						[
-							elm$html$Html$text('Int')
-						]))
+					function () {
+					_n4$2:
+					while (true) {
+						if (!partEditorFocus.$) {
+							if (!partEditorFocus.a.$) {
+								if (partEditorFocus.a.a.$ === 1) {
+									var _n5 = partEditorFocus.a;
+									var _n6 = _n5.a;
+									var textAreaValue = _n5.b;
+									return author$project$Panel$Editor$Module$typeViewInputOutput(textAreaValue);
+								} else {
+									break _n4$2;
+								}
+							} else {
+								if (partEditorFocus.a.a.$ === 1) {
+									var _n7 = partEditorFocus.a.a;
+									return A2(author$project$Panel$Editor$Module$typeViewOutput, true, type_);
+								} else {
+									break _n4$2;
+								}
+							}
+						} else {
+							break _n4$2;
+						}
+					}
+					return A2(author$project$Panel$Editor$Module$typeViewOutput, false, type_);
+				}()
 				]));
 	});
+var author$project$Project$Source$Module$Def$getName = function (_n0) {
+	var name = _n0.aF;
+	return name;
+};
+var author$project$Project$Source$Module$Def$getType = function (_n0) {
+	var type_ = _n0.b6;
+	return type_;
+};
 var author$project$Panel$Editor$Module$partDefinitionEditor = F2(
-	function (partEditorFocus, name) {
+	function (partEditorFocus, def) {
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
@@ -15925,7 +16041,11 @@ var author$project$Panel$Editor$Module$partDefinitionEditor = F2(
 			_Utils_ap(
 				_List_fromArray(
 					[
-						A2(author$project$Panel$Editor$Module$nameAndTypeView, partEditorFocus, name),
+						A3(
+						author$project$Panel$Editor$Module$nameAndTypeView,
+						partEditorFocus,
+						author$project$Project$Source$Module$Def$getName(def),
+						author$project$Project$Source$Module$Def$getType(def)),
 						author$project$Panel$Editor$Module$exprView(partEditorFocus),
 						author$project$Panel$Editor$Module$intermediateExprView
 					]),
@@ -15939,20 +16059,20 @@ var author$project$Panel$Editor$Module$partDefinitionEditor = F2(
 				}()));
 	});
 var author$project$Panel$Editor$Module$partDefinitionEditorList = F2(
-	function (partEditorFocus, name) {
+	function (partEditorFocus, defList) {
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
 					elm$html$Html$Attributes$class('moduleEditor-partDefEditorList')
 				]),
-			_List_fromArray(
-				[
-					A2(author$project$Panel$Editor$Module$partDefinitionEditor, partEditorFocus, name)
-				]));
+			A2(
+				elm$core$List$map,
+				author$project$Panel$Editor$Module$partDefinitionEditor(partEditorFocus),
+				defList));
 	});
 var author$project$Panel$Editor$Module$partDefinitionsView = F2(
-	function (partEditorFocus, name) {
+	function (partEditorFocus, defList) {
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
@@ -15962,32 +16082,9 @@ var author$project$Panel$Editor$Module$partDefinitionsView = F2(
 			_List_fromArray(
 				[
 					elm$html$Html$text('Part Definitions'),
-					A2(author$project$Panel$Editor$Module$partDefinitionEditorList, partEditorFocus, name)
+					A2(author$project$Panel$Editor$Module$partDefinitionEditorList, partEditorFocus, defList)
 				]));
 	});
-var author$project$Project$Source$Module$Def$getName = function (_n0) {
-	var name = _n0.aF;
-	return name;
-};
-var elm$core$List$head = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return elm$core$Maybe$Just(x);
-	} else {
-		return elm$core$Maybe$Nothing;
-	}
-};
-var author$project$Project$Source$ModuleWithCache$getFirstDefName = function (_n0) {
-	var defList = _n0.aM;
-	return A2(
-		elm$core$Maybe$withDefault,
-		author$project$Project$Source$Module$Def$Name$noName,
-		A2(
-			elm$core$Maybe$map,
-			A2(elm$core$Basics$composeR, elm$core$Tuple$first, author$project$Project$Source$Module$Def$getName),
-			elm$core$List$head(defList)));
-};
 var author$project$Project$Source$ModuleWithCache$getName = function (_n0) {
 	var name = _n0.aF;
 	return name;
@@ -16028,7 +16125,10 @@ var author$project$Panel$Editor$Module$view = F3(
 								return elm$core$Maybe$Just(partEditorFocus);
 						}
 					}(),
-					author$project$Project$Source$ModuleWithCache$getFirstDefName(targetModule))
+					A2(
+						elm$core$List$map,
+						elm$core$Tuple$first,
+						author$project$Project$Source$ModuleWithCache$getDefList(targetModule)))
 				]),
 			b4: author$project$Project$Label$toCapitalString(
 				author$project$Project$Source$ModuleWithCache$getName(targetModule))

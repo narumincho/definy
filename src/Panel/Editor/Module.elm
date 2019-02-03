@@ -12,6 +12,7 @@ import Project.Label
 import Project.Source
 import Project.Source.Module.Def
 import Project.Source.Module.Def.Name
+import Project.Source.Module.Def.Type
 import Project.Source.ModuleWithCache
 import Utility.ListExtra
 
@@ -436,7 +437,7 @@ view project isEditorItemFocus (Model { moduleRef, focus }) =
                 FocusPartEditor partEditorFocus ->
                     Just partEditorFocus
             )
-            (Project.Source.ModuleWithCache.getFirstDefName targetModule)
+            (Project.Source.ModuleWithCache.getDefList targetModule |> List.map Tuple.first)
         ]
     }
 
@@ -559,31 +560,31 @@ lfToBr string =
 
 {-| モジュールエディタのメインの要素であるパーツエディタを表示する
 -}
-partDefinitionsView : Maybe PartEditorFocus -> Project.Source.Module.Def.Name.Name -> Html.Html Msg
-partDefinitionsView partEditorFocus name =
+partDefinitionsView : Maybe PartEditorFocus -> List Project.Source.Module.Def.Def -> Html.Html Msg
+partDefinitionsView partEditorFocus defList =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefinitions" ]
         [ Html.text "Part Definitions"
-        , partDefinitionEditorList partEditorFocus name
+        , partDefinitionEditorList partEditorFocus defList
         ]
 
 
 {-| 複数のパーツエディタが並んだもの
 -}
-partDefinitionEditorList : Maybe PartEditorFocus -> Project.Source.Module.Def.Name.Name -> Html.Html Msg
-partDefinitionEditorList partEditorFocus name =
+partDefinitionEditorList : Maybe PartEditorFocus -> List Project.Source.Module.Def.Def -> Html.Html Msg
+partDefinitionEditorList partEditorFocus defList =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditorList" ]
-        [ partDefinitionEditor partEditorFocus name ]
+        (defList |> List.map (partDefinitionEditor partEditorFocus))
 
 
 {-| 1つのパーツエディタ
 -}
-partDefinitionEditor : Maybe PartEditorFocus -> Project.Source.Module.Def.Name.Name -> Html.Html Msg
-partDefinitionEditor partEditorFocus name =
+partDefinitionEditor : Maybe PartEditorFocus -> Project.Source.Module.Def.Def -> Html.Html Msg
+partDefinitionEditor partEditorFocus def =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditor" ]
-        ([ nameAndTypeView partEditorFocus name
+        ([ nameAndTypeView partEditorFocus (Project.Source.Module.Def.getName def) (Project.Source.Module.Def.getType def)
          , exprView partEditorFocus
          , intermediateExprView
          ]
@@ -597,8 +598,8 @@ partDefinitionEditor partEditorFocus name =
         )
 
 
-nameAndTypeView : Maybe PartEditorFocus -> Project.Source.Module.Def.Name.Name -> Html.Html Msg
-nameAndTypeView partEditorFocus name =
+nameAndTypeView : Maybe PartEditorFocus -> Project.Source.Module.Def.Name.Name -> Project.Source.Module.Def.Type.Type -> Html.Html Msg
+nameAndTypeView partEditorFocus name type_ =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditor-nameAndType" ]
         [ case partEditorFocus of
@@ -611,27 +612,31 @@ nameAndTypeView partEditorFocus name =
             _ ->
                 nameViewOutput False name
         , Html.text ":"
-        , Html.div
-            [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveType))
-            , Html.Attributes.classList
-                [ ( "moduleEditor-partDefEditor-type", True )
-                , ( "focused", partEditorFocus == Just (PartEditorMove MoveType) )
-                , ( "editTarget", partEditorFocus == Just (PartEditorEdit EditType []) )
-                ]
-            ]
-            [ Html.text "Int" ]
+        , case partEditorFocus of
+            Just (PartEditorEdit EditType textAreaValue) ->
+                typeViewInputOutput textAreaValue
+
+            Just (PartEditorMove MoveType) ->
+                typeViewOutput True type_
+
+            _ ->
+                typeViewOutput False type_
         ]
 
 
 nameViewOutput : Bool -> Project.Source.Module.Def.Name.Name -> Html.Html Msg
 nameViewOutput isFocus name =
     Html.div
-        [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveName))
-        , Html.Attributes.classList
-            [ ( "moduleEditor-partDefEditor-name", True )
-            , ( "focused", isFocus )
+        (if isFocus then
+            [ Html.Attributes.class "moduleEditor-partDefEditor-name"
+            , Html.Attributes.class "focused"
             ]
-        ]
+
+         else
+            [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveName))
+            , Html.Attributes.class "moduleEditor-partDefEditor-name"
+            ]
+        )
         [ Html.text (Project.Source.Module.Def.Name.toString name |> Maybe.withDefault "<?>") ]
 
 
@@ -641,20 +646,69 @@ nameViewInputOutput textAreaValue =
         [ Html.Attributes.class "editTarget"
         , Html.Attributes.class "moduleEditor-partDefEditor-name"
         ]
-        (textAreaValue
-            |> List.map
-                (\( char, bool ) ->
-                    Html.div
-                        [ Html.Attributes.class
-                            (if bool then
-                                "nameOkChar"
+        (case textAreaValue of
+            _ :: _ ->
+                textAreaValue
+                    |> List.map
+                        (\( char, bool ) ->
+                            Html.div
+                                [ Html.Attributes.class
+                                    (if bool then
+                                        "nameOkChar"
 
-                             else
-                                "errChar"
-                            )
-                        ]
-                        [ Html.text (String.fromChar char) ]
-                )
+                                     else
+                                        "errChar"
+                                    )
+                                ]
+                                [ Html.text (String.fromChar char) ]
+                        )
+
+            [] ->
+                [ Html.text "NAME" ]
+        )
+
+
+typeViewOutput : Bool -> Project.Source.Module.Def.Type.Type -> Html.Html Msg
+typeViewOutput isSelect type_ =
+    Html.div
+        (if isSelect then
+            [ Html.Attributes.class "moduleEditor-partDefEditor-name"
+            , Html.Attributes.class "focused"
+            ]
+
+         else
+            [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveType))
+            , Html.Attributes.class "moduleEditor-partDefEditor-name"
+            ]
+        )
+        [ Html.text (Project.Source.Module.Def.Type.toString type_ |> Maybe.withDefault "<?>") ]
+
+
+typeViewInputOutput : List ( Char, Bool ) -> Html.Html Msg
+typeViewInputOutput textAreaValue =
+    Html.div
+        [ Html.Attributes.class "editTarget"
+        , Html.Attributes.class "moduleEditor-partDefEditor-type"
+        ]
+        (case textAreaValue of
+            _ :: _ ->
+                textAreaValue
+                    |> List.map
+                        (\( char, bool ) ->
+                            Html.div
+                                [ Html.Attributes.class
+                                    (if bool then
+                                        "nameOkChar"
+
+                                     else
+                                        "errChar"
+                                    )
+                                ]
+                                [ Html.text (String.fromChar char) ]
+                        )
+
+            [] ->
+                [ Html.text "TYPE" ]
         )
 
 
