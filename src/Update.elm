@@ -73,21 +73,9 @@ update msg model =
 
         Model.FocusTo focus ->
             case Model.setFocus focus model of
-                ( newModel, Just newMsg, cmdMaybe ) ->
-                    update newMsg newModel
-                        |> (case cmdMaybe of
-                                Just cmd ->
-                                    Tuple.mapSecond
-                                        (\next -> Cmd.batch [ cmd, next ])
-
-                                Nothing ->
-                                    identity
-                           )
-
-                ( newModel, Nothing, cmdMaybe ) ->
-                    ( newModel
-                    , cmdMaybe |> Maybe.withDefault Cmd.none
-                    )
+                ( newModel, newMsgList, newCmdList ) ->
+                    updateFromList newMsgList newModel
+                        |> Tuple.mapSecond (\next -> Cmd.batch (newCmdList ++ [ next ]))
 
         Model.WindowResize { width, height } ->
             ( Model.setWindowSize { width = width, height = height } model
@@ -104,21 +92,9 @@ update msg model =
 
         Model.EditorPanelMsg editorPanelMsg ->
             case Model.editorPanelUpdate editorPanelMsg model of
-                ( newModel, Just newMsg, cmdMaybe ) ->
-                    update newMsg newModel
-                        |> (case cmdMaybe of
-                                Just cmd ->
-                                    Tuple.mapSecond
-                                        (\next -> Cmd.batch [ cmd, next ])
-
-                                Nothing ->
-                                    identity
-                           )
-
-                ( newModel, Nothing, cmdMaybe ) ->
-                    ( newModel
-                    , cmdMaybe |> Maybe.withDefault Cmd.none
-                    )
+                ( newModel, newMsgList, newCmdList ) ->
+                    updateFromList newMsgList newModel
+                        |> Tuple.mapSecond (\next -> Cmd.batch (newCmdList ++ [ next ]))
 
         Model.ChangeEditorResource editorRef ->
             ( Model.openEditor editorRef model
@@ -149,3 +125,18 @@ update msg model =
             ( Model.addPartDef data model
             , Cmd.none
             )
+
+
+updateFromList : List Msg -> Model -> ( Model, Cmd Msg )
+updateFromList msgList model =
+    case msgList of
+        msg :: tailMsg ->
+            let
+                ( newModel, cmd ) =
+                    update msg model
+            in
+            updateFromList tailMsg newModel
+                |> Tuple.mapSecond (\next -> Cmd.batch [ cmd, next ])
+
+        [] ->
+            ( model, Cmd.none )

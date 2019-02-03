@@ -38,6 +38,7 @@ import Project.Label
 import Project.Source
 import Project.Source.Module.Def.Name
 import Project.Source.ModuleWithCache
+import Utility.ListExtra
 import Utility.Map
 
 
@@ -215,13 +216,20 @@ isFocusDefaultUi model =
 {- ====================== Update ====================== -}
 
 
-update : Msg -> Project.Project -> Model -> ( Model, Maybe Emit )
+update : Msg -> Project.Project -> Model -> ( Model, List Emit )
 update msg project model =
     case msg of
         ChangeActiveEditor activeEditorRef ->
             let
+                ( activedEiditorNewModel, activedEmit ) =
+                    model
+                        |> getGroup
+                        |> getEditorItem (getActiveEditorRef model)
+                        |> blurEditor project
+
                 newModel =
                     model
+                        |> mapGroup (setEditorItem (getActiveEditorRef model) activedEiditorNewModel)
                         |> setActiveEditorRef activeEditorRef
                         |> mouseLeaveAddGutter
 
@@ -229,11 +237,11 @@ update msg project model =
                     newModel
                         |> getGroup
                         |> getEditorItem activeEditorRef
-                        |> activeEditor project
+                        |> focusEditor project
             in
             ( newModel
                 |> mapGroup (setEditorItem activeEditorRef newEditorItem)
-            , emit
+            , [ activedEmit, emit ] |> List.map Utility.ListExtra.fromMaybe |> List.concat
             )
 
         OpenEditor showEditorPosition ->
@@ -243,7 +251,7 @@ update msg project model =
                         |> setGroup newGroup
                         |> setActiveEditorRef newActiveEditorRef
                         |> mouseLeaveAddGutter
-            , Nothing
+            , []
             )
 
         CloseEditor hideEditorRef ->
@@ -251,27 +259,27 @@ update msg project model =
                 |> mapGroup (closeEditor hideEditorRef)
                 |> normalizeActiveEditorRef
                 |> mouseLeaveAddGutter
-            , Nothing
+            , []
             )
 
         MouseEnterOpenEditorGutter openEditorPosition ->
             ( mouseOverAddGutter openEditorPosition model
-            , Nothing
+            , []
             )
 
         MouseLeaveOpenEditorGutter ->
             ( mouseLeaveAddGutter model
-            , Nothing
+            , []
             )
 
         GrabHorizontalGutter gutter ->
             ( model
-            , Just (EmitHorizontalGutterModeOn gutter)
+            , [ EmitHorizontalGutterModeOn gutter ]
             )
 
         GrabVerticalGutter gutter ->
             ( model
-            , Just (EmitVerticalGutterModeOn gutter)
+            , [ EmitVerticalGutterModeOn gutter ]
             )
 
         EditorItemMsg rec ->
@@ -284,7 +292,7 @@ update msg project model =
             in
             ( model
                 |> mapGroup (setEditorItem rec.ref newEditorItem)
-            , emit
+            , emit |> Utility.ListExtra.fromMaybe
             )
 
         EditorItemMsgToActive editorItemmsg ->
@@ -297,7 +305,7 @@ update msg project model =
             in
             ( model
                 |> mapGroup (setEditorItem (getActiveEditorRef model) newEditorItem)
-            , emit
+            , emit |> Utility.ListExtra.fromMaybe
             )
 
         Focus ->
@@ -306,21 +314,37 @@ update msg project model =
                     model
                         |> getGroup
                         |> getEditorItem (getActiveEditorRef model)
-                        |> activeEditor project
+                        |> focusEditor project
             in
             ( model
                 |> mapGroup (setEditorItem (getActiveEditorRef model) newEditorItem)
-            , emit
+            , emit |>Utility.ListExtra.fromMaybe
             )
 
 
-activeEditor : Project.Project -> EditorItem -> ( EditorItem, Maybe Emit )
-activeEditor project editorItem =
+focusEditor : Project.Project -> EditorItem -> ( EditorItem, Maybe Emit )
+focusEditor project editorItem =
     case editorItem of
         ModuleEditor model ->
             let
                 ( newModel, emitMaybe ) =
-                    Panel.Editor.Module.update Panel.Editor.Module.ActiveThisEditor project model
+                    Panel.Editor.Module.update Panel.Editor.Module.FocusThisEditor project model
+            in
+            ( ModuleEditor newModel
+            , emitMaybe |> Maybe.map moduleEditorEmitToEmit
+            )
+
+        _ ->
+            ( editorItem, Nothing )
+
+
+blurEditor : Project.Project -> EditorItem -> ( EditorItem, Maybe Emit )
+blurEditor project editorItem =
+    case editorItem of
+        ModuleEditor model ->
+            let
+                ( newModel, emitMaybe ) =
+                    Panel.Editor.Module.update Panel.Editor.Module.BlurThisEditor project model
             in
             ( ModuleEditor newModel
             , emitMaybe |> Maybe.map moduleEditorEmitToEmit
@@ -654,6 +678,12 @@ closeEditorColumn editorRefColumn columnGroup =
             Just (ColumnOne { editor = editorTop })
 
 
+
+{- ====================== マウスとGutter ====================== -}
+
+
+{-| エディタ追加ガターの上にマウスがきた
+-}
 mouseOverAddGutter : OpenEditorPosition -> Model -> Model
 mouseOverAddGutter openEditorPosition (Model rec) =
     Model
@@ -662,6 +692,8 @@ mouseOverAddGutter openEditorPosition (Model rec) =
         }
 
 
+{-| エディタ追加ガターからマウスが離れた
+-}
 mouseLeaveAddGutter : Model -> Model
 mouseLeaveAddGutter (Model rec) =
     Model
@@ -827,6 +859,15 @@ resizeInColumn columnGroup mouseRelY editorHeight =
                 )
 
 
+
+{- ======= グループ(エディタの集まり) ======== -}
+
+
+getGroup : Model -> Group
+getGroup (Model { group }) =
+    group
+
+
 setGroup : Group -> Model -> Model
 setGroup rowGroup (Model rec) =
     Model
@@ -835,14 +876,13 @@ setGroup rowGroup (Model rec) =
         }
 
 
-getGroup : Model -> Group
-getGroup (Model { group }) =
-    group
-
-
 mapGroup : (Group -> Group) -> Model -> Model
 mapGroup =
     Utility.Map.toMapper getGroup setGroup
+
+
+
+{- =========  アクティブなエディタ位置 ========== -}
 
 
 getActiveEditorRef : Model -> EditorRef
@@ -850,36 +890,40 @@ getActiveEditorRef (Model { activeEditorRef }) =
     activeEditorRef
 
 
+setActiveEditorRefUnsafe : EditorRef -> Model -> Model
+setActiveEditorRefUnsafe activeEditorRef (Model rec) =
+    Model { rec | activeEditorRef = activeEditorRef }
+
+
 {-| Activeなエディタを設定する。そのEditorRefが開かれていなければ、近くのものをActiveにする
 -}
 setActiveEditorRef : EditorRef -> Model -> Model
-setActiveEditorRef ( rowRef, colRef ) (Model rec) =
-    Model
-        { rec
-            | activeEditorRef =
-                case getGroup (Model rec) of
-                    RowOne { columnGroup } ->
-                        ( EditorRefLeft, adjustColumnRef columnGroup colRef )
+setActiveEditorRef ( rowRef, colRef ) model =
+    model
+        |> setActiveEditorRefUnsafe
+            (case getGroup model of
+                RowOne { columnGroup } ->
+                    ( EditorRefLeft, adjustColumnRef columnGroup colRef )
 
-                    RowTwo { columnGroupLeft, columnGroupRight } ->
-                        case rowRef of
-                            EditorRefLeft ->
-                                ( EditorRefLeft, adjustColumnRef columnGroupLeft colRef )
+                RowTwo { columnGroupLeft, columnGroupRight } ->
+                    case rowRef of
+                        EditorRefLeft ->
+                            ( EditorRefLeft, adjustColumnRef columnGroupLeft colRef )
 
-                            _ ->
-                                ( EditorRefCenter, adjustColumnRef columnGroupRight colRef )
+                        _ ->
+                            ( EditorRefCenter, adjustColumnRef columnGroupRight colRef )
 
-                    RowThree { columnGroupLeft, columnGroupCenter, columnGroupRight } ->
-                        case rowRef of
-                            EditorRefLeft ->
-                                ( EditorRefLeft, adjustColumnRef columnGroupLeft colRef )
+                RowThree { columnGroupLeft, columnGroupCenter, columnGroupRight } ->
+                    case rowRef of
+                        EditorRefLeft ->
+                            ( EditorRefLeft, adjustColumnRef columnGroupLeft colRef )
 
-                            EditorRefCenter ->
-                                ( EditorRefCenter, adjustColumnRef columnGroupCenter colRef )
+                        EditorRefCenter ->
+                            ( EditorRefCenter, adjustColumnRef columnGroupCenter colRef )
 
-                            EditorRefRight ->
-                                ( EditorRefRight, adjustColumnRef columnGroupRight colRef )
-        }
+                        EditorRefRight ->
+                            ( EditorRefRight, adjustColumnRef columnGroupRight colRef )
+            )
 
 
 {-| editorColumnRefが存在するエディタを参照できるようにする
@@ -1067,6 +1111,8 @@ mapAtEditorItem ref =
         (setEditorItem ref)
 
 
+{-| データからエディタの初期値を返す
+-}
 projectRefToEditorItem : Panel.EditorTypeRef.EditorTypeRef -> EditorItem
 projectRefToEditorItem projectRef =
     case projectRef of
@@ -1432,16 +1478,24 @@ editorItemView project item { width, height } editorRef isActive isOne =
                     Panel.Editor.Source.view
 
                 ModuleEditor moduleEditorModel ->
-                    { title = (Panel.Editor.Module.view project isActive moduleEditorModel).title
+                    let
+                        viewItem =
+                            Panel.Editor.Module.view project isActive moduleEditorModel
+                    in
+                    { title = viewItem.title
                     , body =
-                        (Panel.Editor.Module.view project isActive moduleEditorModel).body
+                        viewItem.body
                             |> List.map (Html.map (\m -> EditorItemMsg { msg = ModuleEditorMsg m, ref = editorRef }))
                     }
 
                 EditorKeyConfig model ->
-                    { title = (Panel.Editor.EditorKeyConfig.view model).title
+                    let
+                        viewItem =
+                            Panel.Editor.EditorKeyConfig.view model
+                    in
+                    { title = viewItem.title
                     , body =
-                        (Panel.Editor.EditorKeyConfig.view model).body
+                        viewItem.body
                             |> List.map (Html.map (\m -> EditorItemMsg { msg = EditorKeyConfigMsg m, ref = editorRef }))
                     }
     in

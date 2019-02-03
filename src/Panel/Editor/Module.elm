@@ -34,7 +34,8 @@ type Msg
     | SelectRight
     | SelectUp
     | SelectDown
-    | ActiveThisEditor
+    | FocusThisEditor
+    | BlurThisEditor
     | ToEditMode
     | Confirm
     | AddPartDef
@@ -203,7 +204,7 @@ update msg project (Model rec) =
             , Nothing
             )
 
-        ActiveThisEditor ->
+        FocusThisEditor ->
             ( Model rec
             , case rec.focus of
                 FocusNone ->
@@ -214,6 +215,16 @@ update msg project (Model rec) =
 
                 FocusPartEditor _ _ ->
                     Nothing
+            )
+
+        BlurThisEditor ->
+            ( case rec.focus of
+                FocusPartEditor index (PartEditorEdit edit _) ->
+                    Model { rec | focus = FocusPartEditor index (PartEditorMove (partEditorEditToMove edit)) }
+
+                _ ->
+                    Model rec
+            , Nothing
             )
 
         SelectUp ->

@@ -62,6 +62,7 @@ import Project.Source.Module.Def.Expr.Term as Term
 import Project.Source.Module.Def.Name as Name
 import Project.Source.Module.Def.Type as Type
 import Project.Source.ModuleWithCache
+import Utility.ListExtra
 import Utility.Map
 
 
@@ -273,14 +274,14 @@ isFocusEditorGroupPanel model =
 
 {-| フォーカスする要素を変更する。それによって発生するCmdもある
 -}
-setFocus : Focus -> Model -> ( Model, Maybe Msg, Maybe (Cmd Msg) )
+setFocus : Focus -> Model -> ( Model, List Msg, List (Cmd Msg) )
 setFocus focus (Model rec) =
     case focus of
         FocusTreePanel ->
             ( Model
                 { rec | focus = FocusTreePanel }
-            , Nothing
-            , Nothing
+            , []
+            , []
             )
 
         FocusEditorGroupPanel ->
@@ -295,12 +296,9 @@ setFocus focus (Model rec) =
                         (getEditorGroupPanelModel newModel)
 
                 ( nextMsg, cmd ) =
-                    case emitMsg of
-                        Just e ->
-                            editorPanelEmitToMsg e
-
-                        Nothing ->
-                            ( Nothing, Nothing )
+                    emitMsg
+                        |> List.map editorPanelEmitToMsg
+                        |> Utility.ListExtra.listTupleListToTupleList
             in
             ( newModel |> setEditorGroupPanelModel editorPanelModel
             , nextMsg
@@ -571,7 +569,7 @@ treePanelEmitToMsg emit =
 
 {-| エディタグループパネルの更新
 -}
-editorPanelUpdate : Panel.EditorGroup.Msg -> Model -> ( Model, Maybe Msg, Maybe (Cmd Msg) )
+editorPanelUpdate : Panel.EditorGroup.Msg -> Model -> ( Model, List Msg, List (Cmd Msg) )
 editorPanelUpdate msg model =
     let
         ( editorPanelModel, emitMsg ) =
@@ -581,12 +579,9 @@ editorPanelUpdate msg model =
                 (getEditorGroupPanelModel model)
 
         ( nextMsg, cmd ) =
-            case emitMsg of
-                Just e ->
-                    editorPanelEmitToMsg e
-
-                Nothing ->
-                    ( Nothing, Nothing )
+            emitMsg
+                |> List.map editorPanelEmitToMsg
+                |> Utility.ListExtra.listTupleListToTupleList
     in
     ( model |> setEditorGroupPanelModel editorPanelModel
     , nextMsg
@@ -596,39 +591,37 @@ editorPanelUpdate msg model =
 
 {-| エディタグループパネルの更新
 -}
-editorPanelEmitToMsg : Panel.EditorGroup.Emit -> ( Maybe Msg, Maybe (Cmd Msg) )
+editorPanelEmitToMsg : Panel.EditorGroup.Emit -> ( List Msg, List (Cmd Msg) )
 editorPanelEmitToMsg emit =
     case emit of
         Panel.EditorGroup.EmitVerticalGutterModeOn gutterVertical ->
-            ( Just
-                (ToResizeGutterMode (GutterEditorGroupPanelVertical gutterVertical))
-            , Nothing
+            ( [ ToResizeGutterMode (GutterEditorGroupPanelVertical gutterVertical) ]
+            , []
             )
 
         Panel.EditorGroup.EmitHorizontalGutterModeOn gutterHorizontal ->
-            ( Just
-                (ToResizeGutterMode (GutterEditorGroupPanelHorizontal gutterHorizontal))
-            , Nothing
+            ( [ ToResizeGutterMode (GutterEditorGroupPanelHorizontal gutterHorizontal) ]
+            , []
             )
 
         Panel.EditorGroup.EmitChangeReadMe { text, ref } ->
-            ( Just (ChangeReadMe { text = text, ref = ref })
-            , Nothing
+            ( [ ChangeReadMe { text = text, ref = ref } ]
+            , []
             )
 
         Panel.EditorGroup.EmitSetTextAreaValue string ->
-            ( Nothing
-            , Just (setTextAreaValue string)
+            ( []
+            , [ setTextAreaValue string ]
             )
 
         Panel.EditorGroup.EmitChangeName { name, index, ref } ->
-            ( Just (ChangeName { name = name, index = index, ref = ref })
-            , Nothing
+            ( [ ChangeName { name = name, index = index, ref = ref } ]
+            , []
             )
 
         Panel.EditorGroup.EmitAddPartDef { ref } ->
-            ( Just (AddPartDef { ref = ref })
-            , Nothing
+            ( [ AddPartDef { ref = ref } ]
+            , []
             )
 
 

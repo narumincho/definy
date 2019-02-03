@@ -4,7 +4,7 @@ module Utility.ListExtra exposing
     , getFirstJust, last, headAndLast
     , takeFromJust
     , fromMaybe
-    )
+    , listTupleListToTupleList)
 
 {-| 標準のListで足りないListに対する操作をおこなう
 
@@ -189,3 +189,20 @@ fromMaybe aMaybe =
 
         Nothing ->
             []
+
+{-| それぞれがリストのタプルのリストを、2つのリストが入ったタプルにする
+-}
+listTupleListToTupleList : List ( List a, List b ) -> ( List a, List b )
+listTupleListToTupleList list =
+    case list of
+        ( a, b ) :: xs ->
+            let
+                tail =
+                    listTupleListToTupleList xs
+            in
+            ( a ++ Tuple.first tail
+            , b ++ Tuple.second tail
+            )
+
+        [] ->
+            ( [], [] )
