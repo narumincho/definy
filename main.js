@@ -7788,8 +7788,8 @@ var author$project$Panel$Editor$Module$isFocusDefaultUi = function (_n0) {
 			case 1:
 				return elm$core$Maybe$Just(0);
 			case 2:
-				if (!focus.a.$) {
-					var _n2 = focus.a;
+				if (!focus.b.$) {
+					var _n2 = focus.b;
 					return elm$core$Maybe$Just(1);
 				} else {
 					break _n1$2;
@@ -8186,9 +8186,10 @@ var author$project$Panel$Editor$Module$EmitSetTextAreaValue = function (a) {
 	return {$: 3, a: a};
 };
 var author$project$Panel$Editor$Module$FocusDescription = {$: 1};
-var author$project$Panel$Editor$Module$FocusPartEditor = function (a) {
-	return {$: 2, a: a};
-};
+var author$project$Panel$Editor$Module$FocusPartEditor = F2(
+	function (a, b) {
+		return {$: 2, a: a, b: b};
+	});
 var author$project$Panel$Editor$Module$PartEditorEdit = F2(
 	function (a, b) {
 		return {$: 0, a: a, b: b};
@@ -10162,18 +10163,19 @@ var author$project$Panel$Editor$Module$partEditorEditToMove = function (edit) {
 			}
 	}
 };
-var author$project$Panel$Editor$Module$partEditorMoveDown = function (position) {
-	switch (position.$) {
-		case 0:
-			return author$project$Panel$Editor$Module$MoveExprHead;
-		case 1:
-			return author$project$Panel$Editor$Module$MoveExprHead;
-		case 2:
-			return author$project$Panel$Editor$Module$MoveExprHead;
-		default:
-			return position;
-	}
-};
+var author$project$Panel$Editor$Module$partEditorMoveDown = F3(
+	function (position, index, defNum) {
+		switch (position.$) {
+			case 0:
+				return _Utils_Tuple2(author$project$Panel$Editor$Module$MoveExprHead, index);
+			case 1:
+				return _Utils_Tuple2(author$project$Panel$Editor$Module$MoveExprHead, index);
+			case 2:
+				return _Utils_eq(index, defNum - 1) ? _Utils_Tuple2(author$project$Panel$Editor$Module$MoveExprHead, index) : _Utils_Tuple2(author$project$Panel$Editor$Module$MoveName, index + 1);
+			default:
+				return _Utils_Tuple2(position, index);
+		}
+	});
 var author$project$Panel$Editor$Module$partEditorMoveLeft = function (partMove) {
 	switch (partMove.$) {
 		case 0:
@@ -10211,18 +10213,20 @@ var author$project$Panel$Editor$Module$partEditorMoveToEdit = function (move) {
 			return author$project$Panel$Editor$Module$EditExprHeadTerm;
 	}
 };
-var author$project$Panel$Editor$Module$partEditorMoveUp = function (position) {
-	switch (position.$) {
-		case 0:
-			return author$project$Panel$Editor$Module$MoveName;
-		case 1:
-			return author$project$Panel$Editor$Module$MoveType;
-		case 2:
-			return author$project$Panel$Editor$Module$MoveName;
-		default:
-			return position;
-	}
-};
+var author$project$Panel$Editor$Module$partEditorMoveUp = F2(
+	function (position, index) {
+		switch (position.$) {
+			case 0:
+				return (!index) ? _Utils_Tuple2(author$project$Panel$Editor$Module$MoveName, 0) : _Utils_Tuple2(author$project$Panel$Editor$Module$MoveExprHead, index - 1);
+			case 1:
+				return (!index) ? _Utils_Tuple2(author$project$Panel$Editor$Module$MoveType, 0) : _Utils_Tuple2(author$project$Panel$Editor$Module$MoveExprHead, index - 1);
+			case 2:
+				return _Utils_Tuple2(author$project$Panel$Editor$Module$MoveName, index);
+			default:
+				return _Utils_Tuple2(position, index);
+		}
+	});
+var author$project$Project$Source$ModuleWithCache$getDefNum = A2(elm$core$Basics$composeR, author$project$Project$Source$ModuleWithCache$getDefList, elm$core$List$length);
 var author$project$Project$Source$ModuleWithCache$getReadMe = function (_n0) {
 	var readMe = _n0.aW;
 	return readMe;
@@ -10250,12 +10254,13 @@ var author$project$Panel$Editor$Module$update = F3(
 						author$project$Panel$Editor$Module$EmitSetTextAreaValue(
 							author$project$Project$Source$ModuleWithCache$getReadMe(targetModule))));
 			case 2:
-				var partFocus = msg.a;
+				var index = msg.a;
+				var partFocus = msg.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						rec,
 						{
-							ay: author$project$Panel$Editor$Module$FocusPartEditor(partFocus)
+							ay: A2(author$project$Panel$Editor$Module$FocusPartEditor, index, partFocus)
 						}),
 					elm$core$Maybe$Just(
 						author$project$Panel$Editor$Module$EmitSetTextAreaValue('')));
@@ -10282,24 +10287,30 @@ var author$project$Panel$Editor$Module$update = F3(
 							case 1:
 								return rec;
 							default:
-								if (_n3.a.$ === 1) {
-									var move = _n3.a.a;
+								if (_n3.b.$ === 1) {
+									var index = _n3.a;
+									var move = _n3.b.a;
 									return _Utils_update(
 										rec,
 										{
-											ay: author$project$Panel$Editor$Module$FocusPartEditor(
+											ay: A2(
+												author$project$Panel$Editor$Module$FocusPartEditor,
+												index,
 												A2(
 													author$project$Panel$Editor$Module$PartEditorEdit,
 													author$project$Panel$Editor$Module$partEditorMoveToEdit(move),
 													textAreaValue))
 										});
 								} else {
-									var _n4 = _n3.a;
+									var index = _n3.a;
+									var _n4 = _n3.b;
 									var edit = _n4.a;
 									return _Utils_update(
 										rec,
 										{
-											ay: author$project$Panel$Editor$Module$FocusPartEditor(
+											ay: A2(
+												author$project$Panel$Editor$Module$FocusPartEditor,
+												index,
 												A2(author$project$Panel$Editor$Module$PartEditorEdit, edit, textAreaValue))
 										});
 								}
@@ -10318,17 +10329,20 @@ var author$project$Panel$Editor$Module$update = F3(
 							case 1:
 								return rec;
 							default:
-								if (_n5.a.$ === 1) {
-									var partMove = _n5.a.a;
+								if (_n5.b.$ === 1) {
+									var index = _n5.a;
+									var partMove = _n5.b.a;
 									return _Utils_update(
 										rec,
 										{
-											ay: author$project$Panel$Editor$Module$FocusPartEditor(
+											ay: A2(
+												author$project$Panel$Editor$Module$FocusPartEditor,
+												index,
 												author$project$Panel$Editor$Module$PartEditorMove(
 													author$project$Panel$Editor$Module$partEditorMoveLeft(partMove)))
 										});
 								} else {
-									var _n6 = _n5.a;
+									var _n6 = _n5.b;
 									return rec;
 								}
 						}
@@ -10344,17 +10358,20 @@ var author$project$Panel$Editor$Module$update = F3(
 							case 1:
 								return rec;
 							default:
-								if (_n7.a.$ === 1) {
-									var partMove = _n7.a.a;
+								if (_n7.b.$ === 1) {
+									var index = _n7.a;
+									var partMove = _n7.b.a;
 									return _Utils_update(
 										rec,
 										{
-											ay: author$project$Panel$Editor$Module$FocusPartEditor(
+											ay: A2(
+												author$project$Panel$Editor$Module$FocusPartEditor,
+												index,
 												author$project$Panel$Editor$Module$PartEditorMove(
 													author$project$Panel$Editor$Module$partEditorMoveRight(partMove)))
 										});
 								} else {
-									var _n8 = _n7.a;
+									var _n8 = _n7.b;
 									return rec;
 								}
 						}
@@ -10386,17 +10403,22 @@ var author$project$Panel$Editor$Module$update = F3(
 							case 1:
 								return rec;
 							default:
-								if (_n10.a.$ === 1) {
-									var partMove = _n10.a.a;
+								if (_n10.b.$ === 1) {
+									var index = _n10.a;
+									var partMove = _n10.b.a;
+									var _n11 = A2(author$project$Panel$Editor$Module$partEditorMoveUp, partMove, index);
+									var newMove = _n11.a;
+									var newIndex = _n11.b;
 									return _Utils_update(
 										rec,
 										{
-											ay: author$project$Panel$Editor$Module$FocusPartEditor(
-												author$project$Panel$Editor$Module$PartEditorMove(
-													author$project$Panel$Editor$Module$partEditorMoveUp(partMove)))
+											ay: A2(
+												author$project$Panel$Editor$Module$FocusPartEditor,
+												newIndex,
+												author$project$Panel$Editor$Module$PartEditorMove(newMove))
 										});
 								} else {
-									var _n11 = _n10.a;
+									var _n12 = _n10.b;
 									return rec;
 								}
 						}
@@ -10405,58 +10427,39 @@ var author$project$Panel$Editor$Module$update = F3(
 			case 8:
 				return _Utils_Tuple2(
 					function () {
-						var _n12 = rec.ay;
-						switch (_n12.$) {
+						var _n13 = rec.ay;
+						switch (_n13.$) {
 							case 0:
 								return rec;
 							case 1:
 								return rec;
 							default:
-								if (_n12.a.$ === 1) {
-									var partMove = _n12.a.a;
+								if (_n13.b.$ === 1) {
+									var index = _n13.a;
+									var partMove = _n13.b.a;
+									var _n14 = A3(
+										author$project$Panel$Editor$Module$partEditorMoveDown,
+										partMove,
+										index,
+										author$project$Project$Source$ModuleWithCache$getDefNum(targetModule));
+									var newMove = _n14.a;
+									var newIndex = _n14.b;
 									return _Utils_update(
 										rec,
 										{
-											ay: author$project$Panel$Editor$Module$FocusPartEditor(
-												author$project$Panel$Editor$Module$PartEditorMove(
-													author$project$Panel$Editor$Module$partEditorMoveDown(partMove)))
+											ay: A2(
+												author$project$Panel$Editor$Module$FocusPartEditor,
+												newIndex,
+												author$project$Panel$Editor$Module$PartEditorMove(newMove))
 										});
 								} else {
-									var _n13 = _n12.a;
+									var _n15 = _n13.b;
 									return rec;
 								}
 						}
 					}(),
 					elm$core$Maybe$Nothing);
 			case 10:
-				return _Utils_Tuple2(
-					function () {
-						var _n14 = rec.ay;
-						switch (_n14.$) {
-							case 0:
-								return rec;
-							case 1:
-								return rec;
-							default:
-								if (_n14.a.$ === 1) {
-									var move = _n14.a.a;
-									return _Utils_update(
-										rec,
-										{
-											ay: author$project$Panel$Editor$Module$FocusPartEditor(
-												A2(
-													author$project$Panel$Editor$Module$PartEditorEdit,
-													author$project$Panel$Editor$Module$partEditorMoveToEdit(move),
-													_List_Nil))
-										});
-								} else {
-									var _n15 = _n14.a;
-									return rec;
-								}
-						}
-					}(),
-					elm$core$Maybe$Nothing);
-			case 11:
 				return _Utils_Tuple2(
 					function () {
 						var _n16 = rec.ay;
@@ -10466,15 +10469,49 @@ var author$project$Panel$Editor$Module$update = F3(
 							case 1:
 								return rec;
 							default:
-								if (_n16.a.$ === 1) {
-									return rec;
-								} else {
-									var _n17 = _n16.a;
-									var edit = _n17.a;
+								if (_n16.b.$ === 1) {
+									var index = _n16.a;
+									var move = _n16.b.a;
 									return _Utils_update(
 										rec,
 										{
-											ay: author$project$Panel$Editor$Module$FocusPartEditor(
+											ay: A2(
+												author$project$Panel$Editor$Module$FocusPartEditor,
+												index,
+												A2(
+													author$project$Panel$Editor$Module$PartEditorEdit,
+													author$project$Panel$Editor$Module$partEditorMoveToEdit(move),
+													_List_Nil))
+										});
+								} else {
+									var _n17 = _n16.b;
+									return rec;
+								}
+						}
+					}(),
+					elm$core$Maybe$Nothing);
+			case 11:
+				return _Utils_Tuple2(
+					function () {
+						var _n18 = rec.ay;
+						switch (_n18.$) {
+							case 0:
+								return rec;
+							case 1:
+								return rec;
+							default:
+								if (_n18.b.$ === 1) {
+									return rec;
+								} else {
+									var index = _n18.a;
+									var _n19 = _n18.b;
+									var edit = _n19.a;
+									return _Utils_update(
+										rec,
+										{
+											ay: A2(
+												author$project$Panel$Editor$Module$FocusPartEditor,
+												index,
 												author$project$Panel$Editor$Module$PartEditorMove(
 													author$project$Panel$Editor$Module$partEditorEditToMove(edit)))
 										});
@@ -15749,8 +15786,9 @@ var author$project$Panel$Editor$Module$focusToString = function (focus) {
 		case 1:
 			return '概要欄にフォーカス';
 		default:
-			var partEditorFocus = focus.a;
-			return 'パーツエディタにフォーカス ' + function () {
+			var index = focus.a;
+			var partEditorFocus = focus.b;
+			return 'パーツエディタにフォーカス ' + (elm$core$String$fromInt(index) + (' ' + function () {
 				if (!partEditorFocus.$) {
 					var partEdit = partEditorFocus.a;
 					return 'テキストで編集 ' + function () {
@@ -15790,7 +15828,7 @@ var author$project$Panel$Editor$Module$focusToString = function (focus) {
 						}
 					}();
 				}
-			}();
+			}()));
 	}
 };
 var author$project$Panel$Editor$Module$AddPartDef = {$: 12};
@@ -15806,6 +15844,18 @@ var author$project$Panel$Editor$Module$addDefButton = A2(
 		[
 			elm$html$Html$text('+ 新しいパーツの定義')
 		]));
+var author$project$Panel$Editor$Module$InputInPartEditor = function (a) {
+	return {$: 4, a: a};
+};
+var author$project$Panel$Editor$Module$inputTextArea = A2(
+	elm$html$Html$textarea,
+	_List_fromArray(
+		[
+			elm$html$Html$Attributes$class('moduleEditor-partDefEditor-hideTextArea'),
+			elm$html$Html$Attributes$id('edit'),
+			elm$html$Html$Events$onInput(author$project$Panel$Editor$Module$InputInPartEditor)
+		]),
+	_List_Nil);
 var author$project$Panel$Editor$Module$caret = A2(
 	elm$html$Html$div,
 	_List_fromArray(
@@ -15831,18 +15881,6 @@ var author$project$Panel$Editor$Module$exprView = function (partEditorFocus) {
 					author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveExprHead))) ? _List_fromArray(
 				[author$project$Panel$Editor$Module$caret]) : _List_Nil));
 };
-var author$project$Panel$Editor$Module$InputInPartEditor = function (a) {
-	return {$: 4, a: a};
-};
-var author$project$Panel$Editor$Module$inputTextArea = A2(
-	elm$html$Html$textarea,
-	_List_fromArray(
-		[
-			elm$html$Html$Attributes$class('moduleEditor-partDefEditor-hideTextArea'),
-			elm$html$Html$Attributes$id('edit'),
-			elm$html$Html$Events$onInput(author$project$Panel$Editor$Module$InputInPartEditor)
-		]),
-	_List_Nil);
 var author$project$Panel$Editor$Module$intermediateExprView = A2(
 	elm$html$Html$div,
 	_List_Nil,
@@ -15887,9 +15925,10 @@ var author$project$Panel$Editor$Module$nameViewInputOutput = function (textAreaV
 			}
 		}());
 };
-var author$project$Panel$Editor$Module$FocusToPartEditor = function (a) {
-	return {$: 2, a: a};
-};
+var author$project$Panel$Editor$Module$FocusToPartEditor = F2(
+	function (a, b) {
+		return {$: 2, a: a, b: b};
+	});
 var author$project$Project$Source$Module$Def$Name$toString = function (name) {
 	if (!name.$) {
 		return elm$core$Maybe$Nothing;
@@ -15899,8 +15938,8 @@ var author$project$Project$Source$Module$Def$Name$toString = function (name) {
 			author$project$Project$Label$toSmallString(l));
 	}
 };
-var author$project$Panel$Editor$Module$nameViewOutput = F2(
-	function (isFocus, name) {
+var author$project$Panel$Editor$Module$nameViewOutput = F3(
+	function (isFocus, name, index) {
 		return A2(
 			elm$html$Html$div,
 			isFocus ? _List_fromArray(
@@ -15910,7 +15949,9 @@ var author$project$Panel$Editor$Module$nameViewOutput = F2(
 				]) : _List_fromArray(
 				[
 					elm$html$Html$Events$onClick(
-					author$project$Panel$Editor$Module$FocusToPartEditor(
+					A2(
+						author$project$Panel$Editor$Module$FocusToPartEditor,
+						index,
 						author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveName))),
 					elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name')
 				]),
@@ -15982,8 +16023,8 @@ var author$project$Project$Source$Module$Def$Type$toString = function (type_) {
 			return elm$core$Maybe$Nothing;
 	}
 };
-var author$project$Panel$Editor$Module$typeViewOutput = F2(
-	function (isSelect, type_) {
+var author$project$Panel$Editor$Module$typeViewOutput = F3(
+	function (isSelect, type_, index) {
 		return A2(
 			elm$html$Html$div,
 			isSelect ? _List_fromArray(
@@ -15993,7 +16034,9 @@ var author$project$Panel$Editor$Module$typeViewOutput = F2(
 				]) : _List_fromArray(
 				[
 					elm$html$Html$Events$onClick(
-					author$project$Panel$Editor$Module$FocusToPartEditor(
+					A2(
+						author$project$Panel$Editor$Module$FocusToPartEditor,
+						index,
 						author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveType))),
 					elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name')
 				]),
@@ -16006,8 +16049,8 @@ var author$project$Panel$Editor$Module$typeViewOutput = F2(
 						author$project$Project$Source$Module$Def$Type$toString(type_)))
 				]));
 	});
-var author$project$Panel$Editor$Module$nameAndTypeView = F3(
-	function (partEditorFocus, name, type_) {
+var author$project$Panel$Editor$Module$nameAndTypeView = F4(
+	function (partEditorFocus, name, type_, index) {
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
@@ -16032,7 +16075,7 @@ var author$project$Panel$Editor$Module$nameAndTypeView = F3(
 							} else {
 								if (!partEditorFocus.a.a.$) {
 									var _n3 = partEditorFocus.a.a;
-									return A2(author$project$Panel$Editor$Module$nameViewOutput, true, name);
+									return A3(author$project$Panel$Editor$Module$nameViewOutput, true, name, index);
 								} else {
 									break _n0$2;
 								}
@@ -16041,7 +16084,7 @@ var author$project$Panel$Editor$Module$nameAndTypeView = F3(
 							break _n0$2;
 						}
 					}
-					return A2(author$project$Panel$Editor$Module$nameViewOutput, false, name);
+					return A3(author$project$Panel$Editor$Module$nameViewOutput, false, name, index);
 				}(),
 					elm$html$Html$text(':'),
 					function () {
@@ -16060,7 +16103,7 @@ var author$project$Panel$Editor$Module$nameAndTypeView = F3(
 							} else {
 								if (partEditorFocus.a.a.$ === 1) {
 									var _n7 = partEditorFocus.a.a;
-									return A2(author$project$Panel$Editor$Module$typeViewOutput, true, type_);
+									return A3(author$project$Panel$Editor$Module$typeViewOutput, true, type_, index);
 								} else {
 									break _n4$2;
 								}
@@ -16069,7 +16112,7 @@ var author$project$Panel$Editor$Module$nameAndTypeView = F3(
 							break _n4$2;
 						}
 					}
-					return A2(author$project$Panel$Editor$Module$typeViewOutput, false, type_);
+					return A3(author$project$Panel$Editor$Module$typeViewOutput, false, type_, index);
 				}()
 				]));
 	});
@@ -16081,33 +16124,25 @@ var author$project$Project$Source$Module$Def$getType = function (_n0) {
 	var type_ = _n0.b6;
 	return type_;
 };
-var author$project$Panel$Editor$Module$partDefinitionEditor = F2(
-	function (partEditorFocus, def) {
+var author$project$Panel$Editor$Module$partDefinitionEditor = F3(
+	function (partEditorFocus, def, index) {
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
 					elm$html$Html$Attributes$class('moduleEditor-partDefEditor')
 				]),
-			_Utils_ap(
-				_List_fromArray(
-					[
-						A3(
-						author$project$Panel$Editor$Module$nameAndTypeView,
-						partEditorFocus,
-						author$project$Project$Source$Module$Def$getName(def),
-						author$project$Project$Source$Module$Def$getType(def)),
-						author$project$Panel$Editor$Module$exprView(partEditorFocus),
-						author$project$Panel$Editor$Module$intermediateExprView
-					]),
-				function () {
-					if (!partEditorFocus.$) {
-						return _List_fromArray(
-							[author$project$Panel$Editor$Module$inputTextArea]);
-					} else {
-						return _List_Nil;
-					}
-				}()));
+			_List_fromArray(
+				[
+					A4(
+					author$project$Panel$Editor$Module$nameAndTypeView,
+					partEditorFocus,
+					author$project$Project$Source$Module$Def$getName(def),
+					author$project$Project$Source$Module$Def$getType(def),
+					index),
+					author$project$Panel$Editor$Module$exprView(partEditorFocus),
+					author$project$Panel$Editor$Module$intermediateExprView
+				]));
 	});
 var author$project$Panel$Editor$Module$partDefinitionEditorList = F2(
 	function (partEditorFocus, defList) {
@@ -16117,13 +16152,38 @@ var author$project$Panel$Editor$Module$partDefinitionEditorList = F2(
 				[
 					elm$html$Html$Attributes$class('moduleEditor-partDefEditorList')
 				]),
-			_Utils_ap(
-				A2(
-					elm$core$List$map,
-					author$project$Panel$Editor$Module$partDefinitionEditor(partEditorFocus),
-					defList),
-				_List_fromArray(
-					[author$project$Panel$Editor$Module$addDefButton])));
+			function () {
+				if (!partEditorFocus.$) {
+					var _n1 = partEditorFocus.a;
+					var focusIndex = _n1.a;
+					var partFocus = _n1.b;
+					return _Utils_ap(
+						A2(
+							elm$core$List$indexedMap,
+							F2(
+								function (index, def) {
+									return _Utils_eq(index, focusIndex) ? A3(
+										author$project$Panel$Editor$Module$partDefinitionEditor,
+										elm$core$Maybe$Just(partFocus),
+										def,
+										index) : A3(author$project$Panel$Editor$Module$partDefinitionEditor, elm$core$Maybe$Nothing, def, index);
+								}),
+							defList),
+						_List_fromArray(
+							[author$project$Panel$Editor$Module$inputTextArea, author$project$Panel$Editor$Module$addDefButton]));
+				} else {
+					return _Utils_ap(
+						A2(
+							elm$core$List$indexedMap,
+							F2(
+								function (index, def) {
+									return A3(author$project$Panel$Editor$Module$partDefinitionEditor, elm$core$Maybe$Nothing, def, index);
+								}),
+							defList),
+						_List_fromArray(
+							[author$project$Panel$Editor$Module$addDefButton]));
+				}
+			}());
 	});
 var author$project$Panel$Editor$Module$partDefinitionsView = F2(
 	function (partEditorFocus, defList) {
@@ -16175,8 +16235,10 @@ var author$project$Panel$Editor$Module$view = F3(
 							case 1:
 								return elm$core$Maybe$Nothing;
 							default:
-								var partEditorFocus = focus.a;
-								return elm$core$Maybe$Just(partEditorFocus);
+								var index = focus.a;
+								var partEditorFocus = focus.b;
+								return elm$core$Maybe$Just(
+									_Utils_Tuple2(index, partEditorFocus));
 						}
 					}(),
 					A2(

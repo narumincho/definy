@@ -10,7 +10,7 @@ module Project.Source.ModuleWithCache exposing
     , mapDefList
     , setName
     , setReadMe
-    , setFirstDefName, getFirstDefName)
+    , setFirstDefName, getFirstDefName, getDefNum)
 
 import Compiler
 import Compiler.Marger
@@ -92,6 +92,11 @@ mapDefList =
         getDefList
         setDefList
 
+{-| 定義の個数
+-}
+getDefNum : Module -> Int
+getDefNum =
+    getDefList >> List.length
 
 {-| デバッグ用。最初の定義の名前を取得する。なければNoName
 -}

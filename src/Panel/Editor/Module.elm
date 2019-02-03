@@ -27,7 +27,7 @@ type Model
 type Msg
     = FocusToNone
     | FocusToDescription
-    | FocusToPartEditor PartEditorFocus
+    | FocusToPartEditor Int PartEditorFocus
     | InputInDescription String
     | InputInPartEditor String
     | SelectLeft
@@ -50,7 +50,7 @@ type Emit
 type Focus
     = FocusNone
     | FocusDescription
-    | FocusPartEditor PartEditorFocus
+    | FocusPartEditor Int PartEditorFocus
 
 
 type PartEditorFocus
@@ -97,7 +97,7 @@ isFocusDefaultUi (Model { focus }) =
         FocusDescription ->
             Just Panel.DefaultUi.TextArea
 
-        FocusPartEditor (PartEditorEdit _ _) ->
+        FocusPartEditor _ (PartEditorEdit _ _) ->
             Just Panel.DefaultUi.TextField
 
         _ ->
@@ -126,10 +126,10 @@ update msg project (Model rec) =
             , Just (EmitSetTextAreaValue (ModuleWithCache.getReadMe targetModule))
             )
 
-        FocusToPartEditor partFocus ->
+        FocusToPartEditor index partFocus ->
             ( Model
                 { rec
-                    | focus = FocusPartEditor partFocus
+                    | focus = FocusPartEditor index partFocus
                 }
             , Just (EmitSetTextAreaValue "")
             )
@@ -154,13 +154,13 @@ update msg project (Model rec) =
                 FocusDescription ->
                     Model rec
 
-                FocusPartEditor (PartEditorMove move) ->
+                FocusPartEditor index (PartEditorMove move) ->
                     Model
-                        { rec | focus = FocusPartEditor (PartEditorEdit (partEditorMoveToEdit move) textAreaValue) }
+                        { rec | focus = FocusPartEditor index (PartEditorEdit (partEditorMoveToEdit move) textAreaValue) }
 
-                FocusPartEditor (PartEditorEdit edit _) ->
+                FocusPartEditor index (PartEditorEdit edit _) ->
                     Model
-                        { rec | focus = FocusPartEditor (PartEditorEdit edit textAreaValue) }
+                        { rec | focus = FocusPartEditor index (PartEditorEdit edit textAreaValue) }
             , Just (EmitChangeName { name = name, ref = rec.moduleRef })
             )
 
@@ -172,10 +172,10 @@ update msg project (Model rec) =
                 FocusDescription ->
                     Model rec
 
-                FocusPartEditor (PartEditorMove partMove) ->
-                    Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveLeft partMove)) }
+                FocusPartEditor index (PartEditorMove partMove) ->
+                    Model { rec | focus = FocusPartEditor index (PartEditorMove (partEditorMoveLeft partMove)) }
 
-                FocusPartEditor (PartEditorEdit _ _) ->
+                FocusPartEditor _ (PartEditorEdit _ _) ->
                     Model rec
             , Nothing
             )
@@ -188,10 +188,10 @@ update msg project (Model rec) =
                 FocusDescription ->
                     Model rec
 
-                FocusPartEditor (PartEditorMove partMove) ->
-                    Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveRight partMove)) }
+                FocusPartEditor index (PartEditorMove partMove) ->
+                    Model { rec | focus = FocusPartEditor index (PartEditorMove (partEditorMoveRight partMove)) }
 
-                FocusPartEditor (PartEditorEdit _ _) ->
+                FocusPartEditor _ (PartEditorEdit _ _) ->
                     Model rec
             , Nothing
             )
@@ -205,7 +205,7 @@ update msg project (Model rec) =
                 FocusDescription ->
                     Just (EmitSetTextAreaValue (ModuleWithCache.getReadMe targetModule))
 
-                FocusPartEditor _ ->
+                FocusPartEditor _ _ ->
                     Nothing
             )
 
@@ -217,10 +217,17 @@ update msg project (Model rec) =
                 FocusDescription ->
                     Model rec
 
-                FocusPartEditor (PartEditorMove partMove) ->
-                    Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveUp partMove)) }
+                FocusPartEditor index (PartEditorMove partMove) ->
+                    let
+                        ( newMove, newIndex ) =
+                            partEditorMoveUp partMove index
+                    in
+                    Model
+                        { rec
+                            | focus = FocusPartEditor newIndex (PartEditorMove newMove)
+                        }
 
-                FocusPartEditor (PartEditorEdit _ _) ->
+                FocusPartEditor _ (PartEditorEdit _ _) ->
                     Model rec
             , Nothing
             )
@@ -233,10 +240,17 @@ update msg project (Model rec) =
                 FocusDescription ->
                     Model rec
 
-                FocusPartEditor (PartEditorMove partMove) ->
-                    Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorMoveDown partMove)) }
+                FocusPartEditor index (PartEditorMove partMove) ->
+                    let
+                        ( newMove, newIndex ) =
+                            partEditorMoveDown partMove index (ModuleWithCache.getDefNum targetModule)
+                    in
+                    Model
+                        { rec
+                            | focus = FocusPartEditor newIndex (PartEditorMove newMove)
+                        }
 
-                FocusPartEditor (PartEditorEdit _ _) ->
+                FocusPartEditor _ (PartEditorEdit _ _) ->
                     Model rec
             , Nothing
             )
@@ -249,10 +263,10 @@ update msg project (Model rec) =
                 FocusDescription ->
                     Model rec
 
-                FocusPartEditor (PartEditorMove move) ->
-                    Model { rec | focus = FocusPartEditor (PartEditorEdit (partEditorMoveToEdit move) []) }
+                FocusPartEditor index (PartEditorMove move) ->
+                    Model { rec | focus = FocusPartEditor index (PartEditorEdit (partEditorMoveToEdit move) []) }
 
-                FocusPartEditor (PartEditorEdit _ _) ->
+                FocusPartEditor _ (PartEditorEdit _ _) ->
                     Model rec
             , Nothing
             )
@@ -265,11 +279,11 @@ update msg project (Model rec) =
                 FocusDescription ->
                     Model rec
 
-                FocusPartEditor (PartEditorMove _) ->
+                FocusPartEditor _ (PartEditorMove _) ->
                     Model rec
 
-                FocusPartEditor (PartEditorEdit edit _) ->
-                    Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorEditToMove edit)) }
+                FocusPartEditor index (PartEditorEdit edit _) ->
+                    Model { rec | focus = FocusPartEditor index (PartEditorMove (partEditorEditToMove edit)) }
             , Nothing
             )
 
@@ -314,38 +328,50 @@ partEditorMoveRight partMove =
 
 {-| パーツエディタの移動モードで上に移動する
 -}
-partEditorMoveUp : PartFocusMove -> PartFocusMove
-partEditorMoveUp position =
+partEditorMoveUp : PartFocusMove -> Int -> ( PartFocusMove, Int )
+partEditorMoveUp position index =
     case position of
         MoveName ->
-            MoveName
+            if index == 0 then
+                ( MoveName, 0 )
+
+            else
+                ( MoveExprHead, index - 1 )
 
         MoveType ->
-            MoveType
+            if index == 0 then
+                ( MoveType, 0 )
+
+            else
+                ( MoveExprHead, index - 1 )
 
         MoveExprHead ->
-            MoveName
+            ( MoveName, index )
 
         _ ->
-            position
+            ( position, index )
 
 
 {-| パーツエディタの移動モードで下に移動する
 -}
-partEditorMoveDown : PartFocusMove -> PartFocusMove
-partEditorMoveDown position =
+partEditorMoveDown : PartFocusMove -> Int -> Int -> ( PartFocusMove, Int )
+partEditorMoveDown position index defNum =
     case position of
         MoveName ->
-            MoveExprHead
+            ( MoveExprHead, index )
 
         MoveType ->
-            MoveExprHead
+            ( MoveExprHead, index )
 
         MoveExprHead ->
-            MoveExprHead
+            if index == defNum - 1 then
+                ( MoveExprHead, index )
+
+            else
+                ( MoveName, index + 1 )
 
         _ ->
-            position
+            ( position, index )
 
 
 {-| パーツエディタの移動モードから編集モードに変える
@@ -441,8 +467,8 @@ view project isEditorItemFocus (Model { moduleRef, focus }) =
                 FocusDescription ->
                     Nothing
 
-                FocusPartEditor partEditorFocus ->
-                    Just partEditorFocus
+                FocusPartEditor index partEditorFocus ->
+                    Just ( index, partEditorFocus )
             )
             (ModuleWithCache.getDefList targetModule |> List.map Tuple.first)
         ]
@@ -458,8 +484,10 @@ focusToString focus =
         FocusDescription ->
             "概要欄にフォーカス"
 
-        FocusPartEditor partEditorFocus ->
+        FocusPartEditor index partEditorFocus ->
             "パーツエディタにフォーカス "
+                ++ String.fromInt index
+                ++ " "
                 ++ (case partEditorFocus of
                         PartEditorEdit partEdit _ ->
                             "テキストで編集 "
@@ -567,7 +595,7 @@ lfToBr string =
 
 {-| モジュールエディタのメインの要素であるパーツエディタを表示する
 -}
-partDefinitionsView : Maybe PartEditorFocus -> List Def.Def -> Html.Html Msg
+partDefinitionsView : Maybe ( Int, PartEditorFocus ) -> List Def.Def -> Html.Html Msg
 partDefinitionsView partEditorFocus defList =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefinitions" ]
@@ -578,39 +606,44 @@ partDefinitionsView partEditorFocus defList =
 
 {-| 複数のパーツエディタが並んだもの
 -}
-partDefinitionEditorList : Maybe PartEditorFocus -> List Def.Def -> Html.Html Msg
+partDefinitionEditorList : Maybe ( Int, PartEditorFocus ) -> List Def.Def -> Html.Html Msg
 partDefinitionEditorList partEditorFocus defList =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditorList" ]
-        ((defList
-            |> List.map (partDefinitionEditor partEditorFocus)
-         )
-            ++ [ addDefButton ]
+        (case partEditorFocus of
+            Just ( focusIndex, partFocus ) ->
+                (defList
+                    |> List.indexedMap
+                        (\index def ->
+                            if index == focusIndex then
+                                partDefinitionEditor (Just partFocus) def index
+
+                            else
+                                partDefinitionEditor Nothing def index
+                        )
+                )
+                    ++ [ inputTextArea, addDefButton ]
+
+            Nothing ->
+                (defList |> List.indexedMap (\index def -> partDefinitionEditor Nothing def index))
+                    ++ [ addDefButton ]
         )
 
 
 {-| 1つのパーツエディタ
 -}
-partDefinitionEditor : Maybe PartEditorFocus -> Def.Def -> Html.Html Msg
-partDefinitionEditor partEditorFocus def =
+partDefinitionEditor : Maybe PartEditorFocus -> Def.Def -> Int -> Html.Html Msg
+partDefinitionEditor partEditorFocus def index =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditor" ]
-        ([ nameAndTypeView partEditorFocus (Def.getName def) (Def.getType def)
-         , exprView partEditorFocus
-         , intermediateExprView
-         ]
-            ++ (case partEditorFocus of
-                    Just _ ->
-                        [ inputTextArea ]
-
-                    Nothing ->
-                        []
-               )
-        )
+        [ nameAndTypeView partEditorFocus (Def.getName def) (Def.getType def) index
+        , exprView partEditorFocus
+        , intermediateExprView
+        ]
 
 
-nameAndTypeView : Maybe PartEditorFocus -> Name.Name -> Type.Type -> Html.Html Msg
-nameAndTypeView partEditorFocus name type_ =
+nameAndTypeView : Maybe PartEditorFocus -> Name.Name -> Type.Type -> Int -> Html.Html Msg
+nameAndTypeView partEditorFocus name type_ index =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditor-nameAndType" ]
         [ case partEditorFocus of
@@ -618,25 +651,25 @@ nameAndTypeView partEditorFocus name type_ =
                 nameViewInputOutput textAreaValue
 
             Just (PartEditorMove MoveName) ->
-                nameViewOutput True name
+                nameViewOutput True name index
 
             _ ->
-                nameViewOutput False name
+                nameViewOutput False name index
         , Html.text ":"
         , case partEditorFocus of
             Just (PartEditorEdit EditType textAreaValue) ->
                 typeViewInputOutput textAreaValue
 
             Just (PartEditorMove MoveType) ->
-                typeViewOutput True type_
+                typeViewOutput True type_ index
 
             _ ->
-                typeViewOutput False type_
+                typeViewOutput False type_ index
         ]
 
 
-nameViewOutput : Bool -> Name.Name -> Html.Html Msg
-nameViewOutput isFocus name =
+nameViewOutput : Bool -> Name.Name -> Int -> Html.Html Msg
+nameViewOutput isFocus name index =
     Html.div
         (if isFocus then
             [ Html.Attributes.class "moduleEditor-partDefEditor-name"
@@ -644,7 +677,7 @@ nameViewOutput isFocus name =
             ]
 
          else
-            [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveName))
+            [ Html.Events.onClick (FocusToPartEditor index (PartEditorMove MoveName))
             , Html.Attributes.class "moduleEditor-partDefEditor-name"
             ]
         )
@@ -679,8 +712,8 @@ nameViewInputOutput textAreaValue =
         )
 
 
-typeViewOutput : Bool -> Type.Type -> Html.Html Msg
-typeViewOutput isSelect type_ =
+typeViewOutput : Bool -> Type.Type -> Int -> Html.Html Msg
+typeViewOutput isSelect type_ index =
     Html.div
         (if isSelect then
             [ Html.Attributes.class "moduleEditor-partDefEditor-name"
@@ -688,7 +721,7 @@ typeViewOutput isSelect type_ =
             ]
 
          else
-            [ Html.Events.onClick (FocusToPartEditor (PartEditorMove MoveType))
+            [ Html.Events.onClick (FocusToPartEditor index (PartEditorMove MoveType))
             , Html.Attributes.class "moduleEditor-partDefEditor-name"
             ]
         )
