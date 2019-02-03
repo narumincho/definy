@@ -121,6 +121,11 @@ update msg model =
             , Cmd.none
             )
 
+        Model.ChangeType data ->
+            ( Model.changeType data model
+            , Cmd.none
+            )
+
         Model.AddPartDef data ->
             ( Model.addPartDef data model
             , Cmd.none

@@ -44,6 +44,7 @@ type Msg
 type Emit
     = EmitChangeReadMe { text : String, ref : Project.Source.ModuleRef }
     | EmitChangeName { name : Name.Name, index : Int, ref : Project.Source.ModuleRef }
+    | EmitChangeType { type_ : Type.Type, index : Int, ref : Project.Source.ModuleRef }
     | EmitAddPartDef { ref : Project.Source.ModuleRef }
     | EmitSetTextAreaValue String
 
@@ -105,7 +106,7 @@ isFocusDefaultUi (Model { focus }) =
             Nothing
 
 
-update : Msg -> Project.Project -> Model -> ( Model, Maybe Emit )
+update : Msg -> Project.Project -> Model -> ( Model, List Emit )
 update msg project (Model rec) =
     let
         targetModule =
@@ -116,7 +117,7 @@ update msg project (Model rec) =
     case msg of
         FocusToNone ->
             ( Model { rec | focus = FocusNone }
-            , Nothing
+            , []
             )
 
         FocusToDescription ->
@@ -124,7 +125,7 @@ update msg project (Model rec) =
                 { rec
                     | focus = FocusDescription
                 }
-            , Just (EmitSetTextAreaValue (ModuleWithCache.getReadMe targetModule))
+            , [ EmitSetTextAreaValue (ModuleWithCache.getReadMe targetModule) ]
             )
 
         FocusToPartEditor index partFocus ->
@@ -132,7 +133,7 @@ update msg project (Model rec) =
                 { rec
                     | focus = FocusPartEditor index partFocus
                 }
-            , Just (EmitSetTextAreaValue "")
+            , [ EmitSetTextAreaValue "" ]
             )
 
         InputInDescription text ->
@@ -140,37 +141,11 @@ update msg project (Model rec) =
                 { rec
                     | focus = FocusDescription
                 }
-            , Just (EmitChangeReadMe { text = text, ref = rec.moduleRef })
+            , [ EmitChangeReadMe { text = text, ref = rec.moduleRef } ]
             )
 
         InputInPartEditor text ->
-            let
-                { name, textAreaValue } =
-                    parseSimple text
-            in
-            case rec.focus of
-                FocusNone ->
-                    ( Model rec
-                    , Nothing
-                    )
-
-                FocusDescription ->
-                    ( Model rec
-                    , Nothing
-                    )
-
-                FocusPartEditor index (PartEditorMove move) ->
-                    ( Model
-                        { rec | focus = FocusPartEditor index (PartEditorEdit (partEditorMoveToEdit move) textAreaValue) }
-                    , Just (EmitChangeName { name = name, index = index, ref = rec.moduleRef })
-                    )
-
-                FocusPartEditor index (PartEditorEdit edit _) ->
-                    ( Model
-                        { rec | focus = FocusPartEditor index (PartEditorEdit edit textAreaValue) }
-                    , Just
-                        (EmitChangeName { name = name, index = index, ref = rec.moduleRef })
-                    )
+            inputInPartEditor text (Model rec)
 
         SelectLeft ->
             ( case rec.focus of
@@ -185,7 +160,7 @@ update msg project (Model rec) =
 
                 FocusPartEditor _ (PartEditorEdit _ _) ->
                     Model rec
-            , Nothing
+            , []
             )
 
         SelectRight ->
@@ -201,20 +176,20 @@ update msg project (Model rec) =
 
                 FocusPartEditor _ (PartEditorEdit _ _) ->
                     Model rec
-            , Nothing
+            , []
             )
 
         FocusThisEditor ->
             ( Model rec
             , case rec.focus of
                 FocusNone ->
-                    Nothing
+                    []
 
                 FocusDescription ->
-                    Just (EmitSetTextAreaValue (ModuleWithCache.getReadMe targetModule))
+                    [ EmitSetTextAreaValue (ModuleWithCache.getReadMe targetModule) ]
 
                 FocusPartEditor _ _ ->
-                    Nothing
+                    []
             )
 
         BlurThisEditor ->
@@ -224,7 +199,7 @@ update msg project (Model rec) =
 
                 _ ->
                     Model rec
-            , Nothing
+            , []
             )
 
         SelectUp ->
@@ -247,7 +222,7 @@ update msg project (Model rec) =
 
                 FocusPartEditor _ (PartEditorEdit _ _) ->
                     Model rec
-            , Nothing
+            , []
             )
 
         SelectDown ->
@@ -270,7 +245,7 @@ update msg project (Model rec) =
 
                 FocusPartEditor _ (PartEditorEdit _ _) ->
                     Model rec
-            , Nothing
+            , []
             )
 
         ToEditMode ->
@@ -286,7 +261,7 @@ update msg project (Model rec) =
 
                 FocusPartEditor _ (PartEditorEdit _ _) ->
                     Model rec
-            , Nothing
+            , []
             )
 
         Confirm ->
@@ -302,12 +277,12 @@ update msg project (Model rec) =
 
                 FocusPartEditor index (PartEditorEdit edit _) ->
                     Model { rec | focus = FocusPartEditor index (PartEditorMove (partEditorEditToMove edit)) }
-            , Nothing
+            , []
             )
 
         AddPartDef ->
             ( Model rec
-            , Just (EmitAddPartDef { ref = rec.moduleRef })
+            , [ EmitAddPartDef { ref = rec.moduleRef } ]
             )
 
 
@@ -434,27 +409,110 @@ partEditorEditToMove edit =
             MoveTerm (n - 1)
 
 
-parseSimple : String -> { name : Name.Name, textAreaValue : List ( Char, Bool ) }
-parseSimple string =
-    case Parser.beginWithName (Parser.SimpleChar.fromString string) of
-        Parser.BeginWithNameEndName { name, textAreaValue } ->
-            { name = name
-            , textAreaValue = textAreaValue
-            }
+inputInPartEditor : String -> Model -> ( Model, List Emit )
+inputInPartEditor string (Model rec) =
+    case rec.focus of
+        FocusNone ->
+            ( Model rec
+            , []
+            )
 
-        Parser.BeginWithNameEndType { name } ->
-            { name = name
-            , textAreaValue = []
-            }
+        FocusDescription ->
+            ( Model rec
+            , []
+            )
 
-        Parser.BeginWithNameEndExprTerm { name } ->
-            { name = name
-            , textAreaValue = []
-            }
+        FocusPartEditor index (PartEditorMove move) ->
+            let
+                { edit, textAreaValue, name, type_ } =
+                    parseSimple string (partEditorMoveToEdit move)
+            in
+            ( Model
+                { rec | focus = FocusPartEditor index (PartEditorEdit edit textAreaValue) }
+            , Utility.ListExtra.takeFromMaybe
+                [ name |> Maybe.map (\n -> EmitChangeName { name = n, index = index, ref = rec.moduleRef })
+                , type_ |> Maybe.map (\t -> EmitChangeType { type_ = t, index = index, ref = rec.moduleRef })
+                ]
+            )
 
-        Parser.BeginWithNameEndExprOp { name } ->
-            { name = name
+        FocusPartEditor index (PartEditorEdit oldEdit _) ->
+            let
+                { edit, textAreaValue, name, type_ } =
+                    parseSimple string oldEdit
+            in
+            ( Model
+                { rec | focus = FocusPartEditor index (PartEditorEdit edit textAreaValue) }
+            , Utility.ListExtra.takeFromMaybe
+                [ name |> Maybe.map (\n -> EmitChangeName { name = n, index = index, ref = rec.moduleRef })
+                , type_ |> Maybe.map (\t -> EmitChangeType { type_ = t, index = index, ref = rec.moduleRef })
+                ]
+            )
+
+
+parseSimple :
+    String
+    -> PartFocusEdit
+    -> { edit : PartFocusEdit, textAreaValue : List ( Char, Bool ), name : Maybe Name.Name, type_ : Maybe Type.Type }
+parseSimple string edit =
+    case edit of
+        EditName ->
+            case Parser.beginWithName (Parser.SimpleChar.fromString string) of
+                Parser.BeginWithNameEndName { name, textAreaValue } ->
+                    { edit = EditName
+                    , textAreaValue = textAreaValue
+                    , name = Just name
+                    , type_ = Nothing
+                    }
+
+                Parser.BeginWithNameEndType { name, type_, textAreaValue } ->
+                    { edit = EditType
+                    , textAreaValue = textAreaValue
+                    , name = Just name
+                    , type_ = Just type_
+                    }
+
+                Parser.BeginWithNameEndExprTerm { name, type_ } ->
+                    { edit = EditExprHeadTerm
+                    , textAreaValue = []
+                    , name = Just name
+                    , type_ = Just type_
+                    }
+
+                Parser.BeginWithNameEndExprOp { name, type_ } ->
+                    { edit = EditExprHeadTerm
+                    , textAreaValue = []
+                    , name = Just name
+                    , type_ = Just type_
+                    }
+
+        EditType ->
+            case Parser.beginWithType (Parser.SimpleChar.fromString string) of
+                Parser.BeginWithTypeEndType { type_, textAreaValue } ->
+                    { edit = EditType
+                    , textAreaValue = textAreaValue
+                    , name = Nothing
+                    , type_ = Just type_
+                    }
+
+                Parser.BeginWithTypeEndExprTerm { type_ } ->
+                    { edit = EditExprHeadTerm
+                    , textAreaValue = []
+                    , name = Nothing
+                    , type_ = Just type_
+                    }
+
+                Parser.BeginWithTypeEndExprOp { type_ } ->
+                    { edit = EditExprHeadTerm
+                    , textAreaValue = []
+                    , name = Nothing
+                    , type_ = Just type_
+                    }
+
+        _ ->
+            { edit = edit
             , textAreaValue = []
+            , name = Nothing
+            , type_ = Nothing
             }
 
 

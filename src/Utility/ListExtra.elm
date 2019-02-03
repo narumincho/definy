@@ -2,9 +2,9 @@ module Utility.ListExtra exposing
     ( insert, insertList
     , getAt, setAt, mapAt, deleteAt
     , getFirstJust, last, headAndLast
-    , takeFromJust
     , fromMaybe
-    , listTupleListToTupleList)
+    , listTupleListToTupleList, takeFromMaybe
+    )
 
 {-| 標準のListで足りないListに対する操作をおこなう
 
@@ -158,24 +158,19 @@ getFirstJust f list =
                     getFirstJust f xs
 
 
-{-| すべての要素がJustのコンストラクタなら取り出す
+{-| Just aの要素を取り出す
 -}
-takeFromJust : List (Maybe a) -> Maybe (List a)
-takeFromJust list =
+takeFromMaybe : List (Maybe a) -> List a
+takeFromMaybe list =
     case list of
         (Just x) :: xs ->
-            case takeFromJust xs of
-                Just safeXs ->
-                    Just (x :: safeXs)
+            x :: takeFromMaybe xs
 
-                Nothing ->
-                    Nothing
-
-        Nothing :: _ ->
-            Nothing
+        Nothing :: xs ->
+            takeFromMaybe xs
 
         [] ->
-            Just []
+            []
 
 
 {-| Just a なら [a]
@@ -189,6 +184,7 @@ fromMaybe aMaybe =
 
         Nothing ->
             []
+
 
 {-| それぞれがリストのタプルのリストを、2つのリストが入ったタプルにする
 -}

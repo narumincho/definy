@@ -1,16 +1,15 @@
 module Project.Source.ModuleWithCache exposing
     ( Module(..)
     , addDef
-    , deleteDefAt
     , getDefList
     , getDefName
     , getDefNum
     , getName
     , getReadMe
-    , getWasmBinary
     , make
     , mapDefList
     , setDefName
+    , setDefType
     , setName
     , setReadMe
     )
@@ -132,6 +131,19 @@ setDefName index name module_ =
             module_
 
 
+{-| 指定したindexの定義の型を設定する なければ、なにもしない
+-}
+setDefType : Int -> Project.Source.Module.Def.Type.Type -> Module -> Module
+setDefType index type_ module_ =
+    case Utility.ListExtra.getAt index (getDefList module_) of
+        Just ( x, _ ) ->
+            module_
+                |> setDefListAt index ( Def.setType type_ x, Nothing )
+
+        Nothing ->
+            module_
+
+
 {-| 定義を末尾に追加する
 -}
 addDef : Def.Def -> Module -> Module
@@ -145,23 +157,3 @@ addDef def (Module rec) =
                 else
                     rec.defList ++ [ ( def, Nothing ) ]
         }
-
-
-{-| 指定位置の定義を削除する。TODO 参照番号のズレを解消
--}
-deleteDefAt : Int -> Module -> Module
-deleteDefAt index (Module rec) =
-    Module
-        { rec
-            | defList =
-                Utility.ListExtra.deleteAt index rec.defList
-        }
-
-
-getWasmBinary : Module -> Maybe (List Int)
-getWasmBinary (Module { defList }) =
-    defList
-        |> List.map Tuple.second
-        |> Utility.ListExtra.takeFromJust
-        |> Maybe.andThen (List.map Compiler.getBinary >> Utility.ListExtra.takeFromJust)
-        |> Maybe.map Compiler.Marger.marge

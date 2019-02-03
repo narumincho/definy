@@ -6,6 +6,7 @@ port module Model exposing
     , addPartDef
     , changeName
     , changeReadMe
+    , changeType
     , closeCommandPalette
     , editorPanelMsgToMsg
     , editorPanelUpdate
@@ -89,7 +90,8 @@ type Msg
     | OpenCommandPalette -- コマンドパレットを開く
     | CloseCommandPalette -- コマンドパレッドを閉じる
     | ChangeReadMe { text : String, ref : Project.Source.ModuleRef } -- モジュールのReadMeを変更する
-    | ChangeName { name : Name.Name, index : Int, ref : Project.Source.ModuleRef } -- 最初の名前を変更する
+    | ChangeName { name : Name.Name, index : Int, ref : Project.Source.ModuleRef } -- 定義の名前を変更する
+    | ChangeType { type_ : Type.Type, index : Int, ref : Project.Source.ModuleRef } -- 定義の型を変更する
     | AddPartDef { ref : Project.Source.ModuleRef } -- 定義を追加する
 
 
@@ -624,6 +626,11 @@ editorPanelEmitToMsg emit =
             , []
             )
 
+        Panel.EditorGroup.EmitChangeType { type_, index, ref } ->
+            ( [ ChangeType { type_ = type_, index = index, ref = ref } ]
+            , []
+            )
+
 
 {-| プロジェクトを取得する
 -}
@@ -731,7 +738,21 @@ changeName : { name : Name.Name, index : Int, ref : Project.Source.ModuleRef } -
 changeName { name, index, ref } =
     mapProject
         (Project.mapSource
-            (Project.Source.mapModule ref (Project.Source.ModuleWithCache.setDefName index name))
+            (Project.Source.mapModule
+                ref
+                (Project.Source.ModuleWithCache.setDefName index name)
+            )
+        )
+
+
+changeType : { type_ : Type.Type, index : Int, ref : Project.Source.ModuleRef } -> Model -> Model
+changeType { type_, index, ref } =
+    mapProject
+        (Project.mapSource
+            (Project.Source.mapModule
+                ref
+                (Project.Source.ModuleWithCache.setDefType index type_)
+            )
         )
 
 

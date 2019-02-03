@@ -413,7 +413,8 @@ img {
 
 .moduleEditor-partDefEditorList {
     padding: 1rem;
-    display: flex;
+    display: grid;
+    gap: 2rem;
     flex-direction: column;
 }
 
@@ -501,7 +502,7 @@ img {
 .accordionContent {
     flex-grow: 1;
     display: grid;
-    grid-gap: .3rem;
+    gap: .3rem;
     height: 100%;
     overflow: auto;
 }

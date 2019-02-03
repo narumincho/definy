@@ -37,6 +37,7 @@ import Project
 import Project.Label
 import Project.Source
 import Project.Source.Module.Def.Name
+import Project.Source.Module.Def.Type
 import Project.Source.ModuleWithCache
 import Utility.ListExtra
 import Utility.Map
@@ -52,6 +53,8 @@ type Model
         }
 
 
+{-| エディタを複数持つグループ
+-}
 type Group
     = RowOne
         { columnGroup : ColumnGroup
@@ -109,7 +112,7 @@ type EditorRefColumn
     | EditorRefBottom
 
 
-{-| リサイズのためにつかむところ
+{-| リサイズのためにつかむガター
 -}
 type Gutter
     = GutterVertical GutterVertical
@@ -127,6 +130,8 @@ type GutterHorizontal
     | GutterHorizontalRight
 
 
+{-| EditorGroupへのメッセージ
+-}
 type Msg
     = ChangeActiveEditor EditorRef -- 他のエディタへアクティブなエディタを変更する
     | OpenEditor OpenEditorPosition -- エディタを表示する
@@ -152,6 +157,8 @@ type OpenEditorPosition
     | OpenEditorPositionRightBottom
 
 
+{-| EditorGroupから発生する外へのエミット
+-}
 type Emit
     = EmitVerticalGutterModeOn GutterVertical
     | EmitHorizontalGutterModeOn GutterHorizontal
@@ -159,8 +166,11 @@ type Emit
     | EmitSetTextAreaValue String
     | EmitChangeName { name : Project.Source.Module.Def.Name.Name, index : Int, ref : Project.Source.ModuleRef }
     | EmitAddPartDef { ref : Project.Source.ModuleRef }
+    | EmitChangeType { type_ : Project.Source.Module.Def.Type.Type, index : Int, ref : Project.Source.ModuleRef }
 
 
+{-| 初期Model
+-}
 initModel : Model
 initModel =
     Model
@@ -241,7 +251,7 @@ update msg project model =
             in
             ( newModel
                 |> mapGroup (setEditorItem activeEditorRef newEditorItem)
-            , [ activedEmit, emit ] |> List.map Utility.ListExtra.fromMaybe |> List.concat
+            , [ activedEmit, emit ] |> List.concat
             )
 
         OpenEditor showEditorPosition ->
@@ -292,7 +302,7 @@ update msg project model =
             in
             ( model
                 |> mapGroup (setEditorItem rec.ref newEditorItem)
-            , emit |> Utility.ListExtra.fromMaybe
+            , emit
             )
 
         EditorItemMsgToActive editorItemmsg ->
@@ -305,7 +315,7 @@ update msg project model =
             in
             ( model
                 |> mapGroup (setEditorItem (getActiveEditorRef model) newEditorItem)
-            , emit |> Utility.ListExtra.fromMaybe
+            , emit
             )
 
         Focus ->
@@ -318,11 +328,11 @@ update msg project model =
             in
             ( model
                 |> mapGroup (setEditorItem (getActiveEditorRef model) newEditorItem)
-            , emit |>Utility.ListExtra.fromMaybe
+            , emit
             )
 
 
-focusEditor : Project.Project -> EditorItem -> ( EditorItem, Maybe Emit )
+focusEditor : Project.Project -> EditorItem -> ( EditorItem, List Emit )
 focusEditor project editorItem =
     case editorItem of
         ModuleEditor model ->
@@ -331,14 +341,14 @@ focusEditor project editorItem =
                     Panel.Editor.Module.update Panel.Editor.Module.FocusThisEditor project model
             in
             ( ModuleEditor newModel
-            , emitMaybe |> Maybe.map moduleEditorEmitToEmit
+            , emitMaybe |> List.map moduleEditorEmitToEmit
             )
 
         _ ->
-            ( editorItem, Nothing )
+            ( editorItem, [] )
 
 
-blurEditor : Project.Project -> EditorItem -> ( EditorItem, Maybe Emit )
+blurEditor : Project.Project -> EditorItem -> ( EditorItem, List Emit )
 blurEditor project editorItem =
     case editorItem of
         ModuleEditor model ->
@@ -347,23 +357,23 @@ blurEditor project editorItem =
                     Panel.Editor.Module.update Panel.Editor.Module.BlurThisEditor project model
             in
             ( ModuleEditor newModel
-            , emitMaybe |> Maybe.map moduleEditorEmitToEmit
+            , emitMaybe |> List.map moduleEditorEmitToEmit
             )
 
         _ ->
-            ( editorItem, Nothing )
+            ( editorItem, [] )
 
 
-updateEditor : EditorItemMsg -> Project.Project -> EditorItem -> ( EditorItem, Maybe Emit )
+updateEditor : EditorItemMsg -> Project.Project -> EditorItem -> ( EditorItem, List Emit )
 updateEditor editorItemMsg project editorItem =
     case ( editorItemMsg, editorItem ) of
         ( ModuleEditorMsg msg, ModuleEditor model ) ->
             let
-                ( newModel, emitMaybe ) =
+                ( newModel, emitList ) =
                     Panel.Editor.Module.update msg project model
             in
             ( ModuleEditor newModel
-            , emitMaybe |> Maybe.map moduleEditorEmitToEmit
+            , emitList |> List.map moduleEditorEmitToEmit
             )
 
         ( EditorKeyConfigMsg msg, EditorKeyConfig model ) ->
@@ -372,12 +382,12 @@ updateEditor editorItemMsg project editorItem =
                     Panel.Editor.EditorKeyConfig.update msg model
             in
             ( EditorKeyConfig newModel
-            , Nothing
+            , []
             )
 
         _ ->
             ( editorItem
-            , Nothing
+            , []
             )
 
 
@@ -395,6 +405,9 @@ moduleEditorEmitToEmit emit =
 
         Panel.Editor.Module.EmitAddPartDef { ref } ->
             EmitAddPartDef { ref = ref }
+
+        Panel.Editor.Module.EmitChangeType { type_, index, ref } ->
+            EmitChangeType { type_ = type_, index = index, ref = ref }
 
 
 {-| 右端と下の端にある表示するエディタを増やすのボタンをおしたら、エディタ全体がどう変わるかと新しくアクティブになるエディタを返す
