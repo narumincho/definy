@@ -156,7 +156,7 @@ type Emit
     | EmitHorizontalGutterModeOn GutterHorizontal
     | EmitChangeReadMe { text : String, ref : Project.Source.ModuleRef }
     | EmitSetTextAreaValue String
-    | EmitChangeName { name : Project.Source.Module.Def.Name.Name, ref : Project.Source.ModuleRef }
+    | EmitChangeName { name : Project.Source.Module.Def.Name.Name, index : Int, ref : Project.Source.ModuleRef }
     | EmitAddPartDef { ref : Project.Source.ModuleRef }
 
 
@@ -366,8 +366,8 @@ moduleEditorEmitToEmit emit =
         Panel.Editor.Module.EmitSetTextAreaValue text ->
             EmitSetTextAreaValue text
 
-        Panel.Editor.Module.EmitChangeName { name, ref } ->
-            EmitChangeName { name = name, ref = ref }
+        Panel.Editor.Module.EmitChangeName { name, index, ref } ->
+            EmitChangeName { name = name, index = index, ref = ref }
 
         Panel.Editor.Module.EmitAddPartDef { ref } ->
             EmitAddPartDef { ref = ref }

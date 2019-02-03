@@ -3,14 +3,17 @@ module Project.Source.ModuleWithCache exposing
     , addDef
     , deleteDefAt
     , getDefList
+    , getDefName
+    , getDefNum
     , getName
     , getReadMe
     , getWasmBinary
     , make
     , mapDefList
+    , setDefName
     , setName
     , setReadMe
-    , setFirstDefName, getFirstDefName, getDefNum)
+    )
 
 import Compiler
 import Compiler.Marger
@@ -86,11 +89,18 @@ setDefList defList (Module rec) =
         { rec | defList = defList }
 
 
+setDefListAt : Int -> ( Def.Def, Maybe Compiler.CompileResult ) -> Module -> Module
+setDefListAt index def (Module rec) =
+    Module
+        { rec | defList = rec.defList |> Utility.ListExtra.setAt index def }
+
+
 mapDefList : (List ( Def.Def, Maybe Compiler.CompileResult ) -> List ( Def.Def, Maybe Compiler.CompileResult )) -> Module -> Module
 mapDefList =
     Utility.Map.toMapper
         getDefList
         setDefList
+
 
 {-| 定義の個数
 -}
@@ -98,34 +108,28 @@ getDefNum : Module -> Int
 getDefNum =
     getDefList >> List.length
 
-{-| デバッグ用。最初の定義の名前を取得する。なければNoName
+
+{-| 指定したindexの定義の名前を取得する。なければNoName
 -}
-getFirstDefName : Module -> Project.Source.Module.Def.Name.Name
-getFirstDefName (Module { defList }) =
+getDefName : Int -> Module -> Project.Source.Module.Def.Name.Name
+getDefName index (Module { defList }) =
     defList
-        |> List.head
+        |> Utility.ListExtra.getAt index
         |> Maybe.map (Tuple.first >> Def.getName)
         |> Maybe.withDefault Project.Source.Module.Def.Name.noName
 
 
-{-| デバッグ用。最初の定義の名前を設定する。なければ追加する
+{-| 指定したindexの定義の名前を設定する なければ、なにもしない
 -}
-setFirstDefName : Project.Source.Module.Def.Name.Name -> Module -> Module
-setFirstDefName name module_ =
-    case getDefList module_ of
-        ( x, xCash ) :: xs ->
+setDefName : Int -> Project.Source.Module.Def.Name.Name -> Module -> Module
+setDefName index name module_ =
+    case Utility.ListExtra.getAt index (getDefList module_) of
+        Just ( x, _ ) ->
             module_
-                |> setDefList (( Def.setName name x, xCash ) :: xs)
+                |> setDefListAt index ( Def.setName name x, Nothing )
 
-        [] ->
+        Nothing ->
             module_
-                |> addDef
-                    (Def.make
-                        { name = name
-                        , type_ = Project.Source.Module.Def.Type.empty
-                        , expr = Project.Source.Module.Def.Expr.empty
-                        }
-                    )
 
 
 {-| 定義を末尾に追加する

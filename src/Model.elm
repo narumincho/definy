@@ -3,6 +3,8 @@ port module Model exposing
     , GutterType(..)
     , Model
     , Msg(..)
+    , addPartDef
+    , changeName
     , changeReadMe
     , closeCommandPalette
     , editorPanelMsgToMsg
@@ -37,7 +39,7 @@ port module Model exposing
     , toTreePanelGutterMode
     , treePanelMsgToMsg
     , treePanelUpdate
-    , changeName, addPartDef)
+    )
 
 {-| すべての状態を管理する
 -}
@@ -86,8 +88,8 @@ type Msg
     | OpenCommandPalette -- コマンドパレットを開く
     | CloseCommandPalette -- コマンドパレッドを閉じる
     | ChangeReadMe { text : String, ref : Project.Source.ModuleRef } -- モジュールのReadMeを変更する
-    | ChangeName { name : Name.Name, ref : Project.Source.ModuleRef } -- 最初の名前を変更する
-    | AddPartDef { ref : Project.Source.ModuleRef }  -- 定義を追加する
+    | ChangeName { name : Name.Name, index : Int, ref : Project.Source.ModuleRef } -- 最初の名前を変更する
+    | AddPartDef { ref : Project.Source.ModuleRef } -- 定義を追加する
 
 
 {-| 全体を表現する
@@ -619,13 +621,13 @@ editorPanelEmitToMsg emit =
             , Just (setTextAreaValue string)
             )
 
-        Panel.EditorGroup.EmitChangeName { name, ref } ->
-            ( Just (ChangeName { name = name, ref = ref })
+        Panel.EditorGroup.EmitChangeName { name, index, ref } ->
+            ( Just (ChangeName { name = name, index = index, ref = ref })
             , Nothing
             )
 
-        Panel.EditorGroup.EmitAddPartDef {ref} ->
-            ( Just (AddPartDef {ref=ref})
+        Panel.EditorGroup.EmitAddPartDef { ref } ->
+            ( Just (AddPartDef { ref = ref })
             , Nothing
             )
 
@@ -732,15 +734,16 @@ changeReadMe { text, ref } model =
             )
 
 
-changeName : { name : Name.Name, ref : Project.Source.ModuleRef } -> Model -> Model
-changeName { name, ref } =
+changeName : { name : Name.Name, index : Int, ref : Project.Source.ModuleRef } -> Model -> Model
+changeName { name, index, ref } =
     mapProject
         (Project.mapSource
-            (Project.Source.mapModule ref (Project.Source.ModuleWithCache.setFirstDefName name))
+            (Project.Source.mapModule ref (Project.Source.ModuleWithCache.setDefName index name))
         )
 
-addPartDef : {ref:Project.Source.ModuleRef} -> Model -> Model
-addPartDef {ref} =
+
+addPartDef : { ref : Project.Source.ModuleRef } -> Model -> Model
+addPartDef { ref } =
     mapProject
         (Project.mapSource
             (Project.Source.mapModule ref (Project.Source.ModuleWithCache.addDef Def.empty))

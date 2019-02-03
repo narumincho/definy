@@ -42,7 +42,7 @@ type Msg
 
 type Emit
     = EmitChangeReadMe { text : String, ref : Project.Source.ModuleRef }
-    | EmitChangeName { name : Name.Name, ref : Project.Source.ModuleRef }
+    | EmitChangeName { name : Name.Name, index : Int, ref : Project.Source.ModuleRef }
     | EmitAddPartDef { ref : Project.Source.ModuleRef }
     | EmitSetTextAreaValue String
 
@@ -147,22 +147,29 @@ update msg project (Model rec) =
                 { name, textAreaValue } =
                     parseSimple text
             in
-            ( case rec.focus of
+            case rec.focus of
                 FocusNone ->
-                    Model rec
+                    ( Model rec
+                    , Nothing
+                    )
 
                 FocusDescription ->
-                    Model rec
+                    ( Model rec
+                    , Nothing
+                    )
 
                 FocusPartEditor index (PartEditorMove move) ->
-                    Model
+                    ( Model
                         { rec | focus = FocusPartEditor index (PartEditorEdit (partEditorMoveToEdit move) textAreaValue) }
+                    , Just (EmitChangeName { name = name, index = index, ref = rec.moduleRef })
+                    )
 
                 FocusPartEditor index (PartEditorEdit edit _) ->
-                    Model
+                    ( Model
                         { rec | focus = FocusPartEditor index (PartEditorEdit edit textAreaValue) }
-            , Just (EmitChangeName { name = name, ref = rec.moduleRef })
-            )
+                    , Just
+                        (EmitChangeName { name = name, index = index, ref = rec.moduleRef })
+                    )
 
         SelectLeft ->
             ( case rec.focus of
