@@ -478,6 +478,7 @@ view project isEditorItemFocus (Model { moduleRef, focus }) =
             [ Html.text (focusToString focus) ]
         , descriptionView (ModuleWithCache.getReadMe targetModule) (isEditorItemFocus && focus == FocusDescription)
         , partDefinitionsView
+            isEditorItemFocus
             (case focus of
                 FocusNone ->
                     Nothing
@@ -613,19 +614,19 @@ lfToBr string =
 
 {-| モジュールエディタのメインの要素であるパーツエディタを表示する
 -}
-partDefinitionsView : Maybe ( Int, PartEditorFocus ) -> List Def.Def -> Html.Html Msg
-partDefinitionsView partEditorFocus defList =
+partDefinitionsView : Bool -> Maybe ( Int, PartEditorFocus ) -> List Def.Def -> Html.Html Msg
+partDefinitionsView isEditorItemFocus partEditorFocus defList =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefinitions" ]
         [ Html.text "Part Definitions"
-        , partDefinitionEditorList partEditorFocus defList
+        , partDefinitionEditorList isEditorItemFocus partEditorFocus defList
         ]
 
 
 {-| 複数のパーツエディタが並んだもの
 -}
-partDefinitionEditorList : Maybe ( Int, PartEditorFocus ) -> List Def.Def -> Html.Html Msg
-partDefinitionEditorList partEditorFocus defList =
+partDefinitionEditorList : Bool -> Maybe ( Int, PartEditorFocus ) -> List Def.Def -> Html.Html Msg
+partDefinitionEditorList isEditorItemFocus partEditorFocus defList =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditorList" ]
         (case partEditorFocus of
@@ -640,7 +641,12 @@ partDefinitionEditorList partEditorFocus defList =
                                 partDefinitionEditor Nothing def index
                         )
                 )
-                    ++ [ inputTextArea, addDefButton ]
+                    ++ (if isEditorItemFocus then
+                            [ inputTextArea, addDefButton ]
+
+                        else
+                            [ addDefButton ]
+                       )
 
             Nothing ->
                 (defList |> List.indexedMap (\index def -> partDefinitionEditor Nothing def index))

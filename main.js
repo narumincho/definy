@@ -16328,8 +16328,8 @@ var author$project$Panel$Editor$Module$partDefinitionEditor = F3(
 					author$project$Panel$Editor$Module$intermediateExprView
 				]));
 	});
-var author$project$Panel$Editor$Module$partDefinitionEditorList = F2(
-	function (partEditorFocus, defList) {
+var author$project$Panel$Editor$Module$partDefinitionEditorList = F3(
+	function (isEditorItemFocus, partEditorFocus, defList) {
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
@@ -16353,8 +16353,9 @@ var author$project$Panel$Editor$Module$partDefinitionEditorList = F2(
 										index) : A3(author$project$Panel$Editor$Module$partDefinitionEditor, elm$core$Maybe$Nothing, def, index);
 								}),
 							defList),
-						_List_fromArray(
-							[author$project$Panel$Editor$Module$inputTextArea, author$project$Panel$Editor$Module$addDefButton]));
+						isEditorItemFocus ? _List_fromArray(
+							[author$project$Panel$Editor$Module$inputTextArea, author$project$Panel$Editor$Module$addDefButton]) : _List_fromArray(
+							[author$project$Panel$Editor$Module$addDefButton]));
 				} else {
 					return _Utils_ap(
 						A2(
@@ -16369,8 +16370,8 @@ var author$project$Panel$Editor$Module$partDefinitionEditorList = F2(
 				}
 			}());
 	});
-var author$project$Panel$Editor$Module$partDefinitionsView = F2(
-	function (partEditorFocus, defList) {
+var author$project$Panel$Editor$Module$partDefinitionsView = F3(
+	function (isEditorItemFocus, partEditorFocus, defList) {
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
@@ -16380,7 +16381,7 @@ var author$project$Panel$Editor$Module$partDefinitionsView = F2(
 			_List_fromArray(
 				[
 					elm$html$Html$text('Part Definitions'),
-					A2(author$project$Panel$Editor$Module$partDefinitionEditorList, partEditorFocus, defList)
+					A3(author$project$Panel$Editor$Module$partDefinitionEditorList, isEditorItemFocus, partEditorFocus, defList)
 				]));
 	});
 var author$project$Project$Source$ModuleWithCache$getName = function (_n0) {
@@ -16410,8 +16411,9 @@ var author$project$Panel$Editor$Module$view = F3(
 					author$project$Panel$Editor$Module$descriptionView,
 					author$project$Project$Source$ModuleWithCache$getReadMe(targetModule),
 					isEditorItemFocus && _Utils_eq(focus, author$project$Panel$Editor$Module$FocusDescription)),
-					A2(
+					A3(
 					author$project$Panel$Editor$Module$partDefinitionsView,
+					isEditorItemFocus,
 					function () {
 						switch (focus.$) {
 							case 0:
