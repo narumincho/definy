@@ -21,6 +21,7 @@ import Project.Source.Module.Def.Name
 import Project.Source.Module.Def.Type
 import Project.Source.Module.TypeDef as TypeDef
 import Utility.ListExtra
+import Utility.Map
 
 
 type Module
@@ -86,12 +87,10 @@ setDefList defList (Module rec) =
 
 
 mapDefList : (List ( Def.Def, Maybe Compiler.CompileResult ) -> List ( Def.Def, Maybe Compiler.CompileResult )) -> Module -> Module
-mapDefList f (Module rec) =
-    Module
-        { rec
-            | defList =
-                f rec.defList
-        }
+mapDefList =
+    Utility.Map.toMapper
+        getDefList
+        setDefList
 
 
 {-| デバッグ用。最初の定義の名前を取得する。なければNoName

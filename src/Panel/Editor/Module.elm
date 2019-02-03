@@ -10,10 +10,10 @@ import Parser.SimpleChar
 import Project
 import Project.Label
 import Project.Source
-import Project.Source.Module.Def
-import Project.Source.Module.Def.Name
-import Project.Source.Module.Def.Type
-import Project.Source.ModuleWithCache
+import Project.Source.Module.Def as Def
+import Project.Source.Module.Def.Name as Name
+import Project.Source.Module.Def.Type as Type
+import Project.Source.ModuleWithCache as ModuleWithCache
 import Utility.ListExtra
 
 
@@ -41,7 +41,7 @@ type Msg
 
 type Emit
     = EmitChangeReadMe { text : String, ref : Project.Source.ModuleRef }
-    | EmitChangeName { name : Project.Source.Module.Def.Name.Name, ref : Project.Source.ModuleRef }
+    | EmitChangeName { name : Name.Name, ref : Project.Source.ModuleRef }
     | EmitSetTextAreaValue String
 
 
@@ -121,7 +121,7 @@ update msg project (Model rec) =
                 { rec
                     | focus = FocusDescription
                 }
-            , Just (EmitSetTextAreaValue (Project.Source.ModuleWithCache.getReadMe targetModule))
+            , Just (EmitSetTextAreaValue (ModuleWithCache.getReadMe targetModule))
             )
 
         FocusToPartEditor partFocus ->
@@ -201,7 +201,7 @@ update msg project (Model rec) =
                     Nothing
 
                 FocusDescription ->
-                    Just (EmitSetTextAreaValue (Project.Source.ModuleWithCache.getReadMe targetModule))
+                    Just (EmitSetTextAreaValue (ModuleWithCache.getReadMe targetModule))
 
                 FocusPartEditor _ ->
                     Nothing
@@ -383,7 +383,7 @@ partEditorEditToMove edit =
             MoveTerm (n - 1)
 
 
-parseSimple : String -> { name : Project.Source.Module.Def.Name.Name, textAreaValue : List ( Char, Bool ) }
+parseSimple : String -> { name : Name.Name, textAreaValue : List ( Char, Bool ) }
 parseSimple string =
     case Parser.beginWithName (Parser.SimpleChar.fromString string) of
         Parser.BeginWithNameEndName { name, textAreaValue } ->
@@ -391,19 +391,19 @@ parseSimple string =
             , textAreaValue = textAreaValue
             }
 
-        Parser.BeginWithNameEndType { name, textAreaValue } ->
+        Parser.BeginWithNameEndType { name } ->
             { name = name
-            , textAreaValue = textAreaValue
+            , textAreaValue = []
             }
 
-        Parser.BeginWithNameEndExprTerm { name, textAreaValue } ->
+        Parser.BeginWithNameEndExprTerm { name } ->
             { name = name
-            , textAreaValue = textAreaValue
+            , textAreaValue = []
             }
 
-        Parser.BeginWithNameEndExprOp { name, textAreaValue } ->
+        Parser.BeginWithNameEndExprOp { name } ->
             { name = name
-            , textAreaValue = textAreaValue
+            , textAreaValue = []
             }
 
 
@@ -420,12 +420,12 @@ view project isEditorItemFocus (Model { moduleRef, focus }) =
                 |> Project.getSource
                 |> Project.Source.getModule moduleRef
     in
-    { title = Project.Label.toCapitalString (Project.Source.ModuleWithCache.getName targetModule)
+    { title = Project.Label.toCapitalString (ModuleWithCache.getName targetModule)
     , body =
         [ Html.div
             []
             [ Html.text (focusToString focus) ]
-        , descriptionView (Project.Source.ModuleWithCache.getReadMe targetModule) (isEditorItemFocus && focus == FocusDescription)
+        , descriptionView (ModuleWithCache.getReadMe targetModule) (isEditorItemFocus && focus == FocusDescription)
         , partDefinitionsView
             (case focus of
                 FocusNone ->
@@ -437,7 +437,7 @@ view project isEditorItemFocus (Model { moduleRef, focus }) =
                 FocusPartEditor partEditorFocus ->
                     Just partEditorFocus
             )
-            (Project.Source.ModuleWithCache.getDefList targetModule |> List.map Tuple.first)
+            (ModuleWithCache.getDefList targetModule |> List.map Tuple.first)
         ]
     }
 
@@ -560,7 +560,7 @@ lfToBr string =
 
 {-| モジュールエディタのメインの要素であるパーツエディタを表示する
 -}
-partDefinitionsView : Maybe PartEditorFocus -> List Project.Source.Module.Def.Def -> Html.Html Msg
+partDefinitionsView : Maybe PartEditorFocus -> List Def.Def -> Html.Html Msg
 partDefinitionsView partEditorFocus defList =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefinitions" ]
@@ -571,7 +571,7 @@ partDefinitionsView partEditorFocus defList =
 
 {-| 複数のパーツエディタが並んだもの
 -}
-partDefinitionEditorList : Maybe PartEditorFocus -> List Project.Source.Module.Def.Def -> Html.Html Msg
+partDefinitionEditorList : Maybe PartEditorFocus -> List Def.Def -> Html.Html Msg
 partDefinitionEditorList partEditorFocus defList =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditorList" ]
@@ -580,11 +580,11 @@ partDefinitionEditorList partEditorFocus defList =
 
 {-| 1つのパーツエディタ
 -}
-partDefinitionEditor : Maybe PartEditorFocus -> Project.Source.Module.Def.Def -> Html.Html Msg
+partDefinitionEditor : Maybe PartEditorFocus -> Def.Def -> Html.Html Msg
 partDefinitionEditor partEditorFocus def =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditor" ]
-        ([ nameAndTypeView partEditorFocus (Project.Source.Module.Def.getName def) (Project.Source.Module.Def.getType def)
+        ([ nameAndTypeView partEditorFocus (Def.getName def) (Def.getType def)
          , exprView partEditorFocus
          , intermediateExprView
          ]
@@ -598,7 +598,7 @@ partDefinitionEditor partEditorFocus def =
         )
 
 
-nameAndTypeView : Maybe PartEditorFocus -> Project.Source.Module.Def.Name.Name -> Project.Source.Module.Def.Type.Type -> Html.Html Msg
+nameAndTypeView : Maybe PartEditorFocus -> Name.Name -> Type.Type -> Html.Html Msg
 nameAndTypeView partEditorFocus name type_ =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditor-nameAndType" ]
@@ -624,7 +624,7 @@ nameAndTypeView partEditorFocus name type_ =
         ]
 
 
-nameViewOutput : Bool -> Project.Source.Module.Def.Name.Name -> Html.Html Msg
+nameViewOutput : Bool -> Name.Name -> Html.Html Msg
 nameViewOutput isFocus name =
     Html.div
         (if isFocus then
@@ -637,7 +637,7 @@ nameViewOutput isFocus name =
             , Html.Attributes.class "moduleEditor-partDefEditor-name"
             ]
         )
-        [ Html.text (Project.Source.Module.Def.Name.toString name |> Maybe.withDefault "<?>") ]
+        [ Html.text (Name.toString name |> Maybe.withDefault "<?>") ]
 
 
 nameViewInputOutput : List ( Char, Bool ) -> Html.Html Msg
@@ -668,7 +668,7 @@ nameViewInputOutput textAreaValue =
         )
 
 
-typeViewOutput : Bool -> Project.Source.Module.Def.Type.Type -> Html.Html Msg
+typeViewOutput : Bool -> Type.Type -> Html.Html Msg
 typeViewOutput isSelect type_ =
     Html.div
         (if isSelect then
@@ -681,7 +681,7 @@ typeViewOutput isSelect type_ =
             , Html.Attributes.class "moduleEditor-partDefEditor-name"
             ]
         )
-        [ Html.text (Project.Source.Module.Def.Type.toString type_ |> Maybe.withDefault "<?>") ]
+        [ Html.text (Type.toString type_ |> Maybe.withDefault "<?>") ]
 
 
 typeViewInputOutput : List ( Char, Bool ) -> Html.Html Msg
