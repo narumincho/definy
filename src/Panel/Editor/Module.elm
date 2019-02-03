@@ -37,11 +37,13 @@ type Msg
     | ActiveThisEditor
     | ToEditMode
     | Confirm
+    | AddPartDef
 
 
 type Emit
     = EmitChangeReadMe { text : String, ref : Project.Source.ModuleRef }
     | EmitChangeName { name : Name.Name, ref : Project.Source.ModuleRef }
+    | EmitAddPartDef { ref : Project.Source.ModuleRef }
     | EmitSetTextAreaValue String
 
 
@@ -269,6 +271,11 @@ update msg project (Model rec) =
                 FocusPartEditor (PartEditorEdit edit _) ->
                     Model { rec | focus = FocusPartEditor (PartEditorMove (partEditorEditToMove edit)) }
             , Nothing
+            )
+
+        AddPartDef ->
+            ( Model rec
+            , Just (EmitAddPartDef { ref = rec.moduleRef })
             )
 
 
@@ -575,7 +582,11 @@ partDefinitionEditorList : Maybe PartEditorFocus -> List Def.Def -> Html.Html Ms
 partDefinitionEditorList partEditorFocus defList =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditorList" ]
-        (defList |> List.map (partDefinitionEditor partEditorFocus))
+        ((defList
+            |> List.map (partDefinitionEditor partEditorFocus)
+         )
+            ++ [ addDefButton ]
+        )
 
 
 {-| 1つのパーツエディタ
@@ -749,3 +760,12 @@ inputTextArea =
         , Html.Events.onInput InputInPartEditor
         ]
         []
+
+
+addDefButton : Html.Html Msg
+addDefButton =
+    Html.button
+        [ Html.Events.onClick AddPartDef
+        , Html.Attributes.class "moduleEditor-partDefEditor-addPartDef"
+        ]
+        [ Html.text "+ 新しいパーツの定義" ]

@@ -145,3 +145,7 @@ update msg model =
             , Cmd.none
             )
 
+        Model.AddPartDef data ->
+            ( Model.addPartDef data model
+            , Cmd.none
+            )

@@ -37,7 +37,7 @@ port module Model exposing
     , toTreePanelGutterMode
     , treePanelMsgToMsg
     , treePanelUpdate
-    , changeName)
+    , changeName, addPartDef)
 
 {-| すべての状態を管理する
 -}
@@ -87,6 +87,7 @@ type Msg
     | CloseCommandPalette -- コマンドパレッドを閉じる
     | ChangeReadMe { text : String, ref : Project.Source.ModuleRef } -- モジュールのReadMeを変更する
     | ChangeName { name : Name.Name, ref : Project.Source.ModuleRef } -- 最初の名前を変更する
+    | AddPartDef { ref : Project.Source.ModuleRef }  -- 定義を追加する
 
 
 {-| 全体を表現する
@@ -623,6 +624,11 @@ editorPanelEmitToMsg emit =
             , Nothing
             )
 
+        Panel.EditorGroup.EmitAddPartDef {ref} ->
+            ( Just (AddPartDef {ref=ref})
+            , Nothing
+            )
+
 
 {-| プロジェクトを取得する
 -}
@@ -731,4 +737,11 @@ changeName { name, ref } =
     mapProject
         (Project.mapSource
             (Project.Source.mapModule ref (Project.Source.ModuleWithCache.setFirstDefName name))
+        )
+
+addPartDef : {ref:Project.Source.ModuleRef} -> Model -> Model
+addPartDef {ref} =
+    mapProject
+        (Project.mapSource
+            (Project.Source.mapModule ref (Project.Source.ModuleWithCache.addDef Def.empty))
         )

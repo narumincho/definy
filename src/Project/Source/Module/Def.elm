@@ -3,7 +3,7 @@ module Project.Source.Module.Def exposing
     , getName, setName, mapName
     , getType, setType, mapType
     , getExpr, setExpr, mapExpr
-    )
+    , empty)
 
 {-| Def ある対象について1つの定義をすることができる
 
@@ -51,6 +51,15 @@ make : { name : Name, type_ : Type, expr : Expr } -> Def
 make rec =
     Def rec
 
+{-| 空の定義を作成する
+-}
+empty : Def
+empty =
+    Def
+        { name = Name.noName
+        , type_ = Type.empty
+        , expr = Expr.empty
+        }
 
 {-| 名前を取得する
 -}

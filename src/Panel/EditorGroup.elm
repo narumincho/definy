@@ -157,6 +157,7 @@ type Emit
     | EmitChangeReadMe { text : String, ref : Project.Source.ModuleRef }
     | EmitSetTextAreaValue String
     | EmitChangeName { name : Project.Source.Module.Def.Name.Name, ref : Project.Source.ModuleRef }
+    | EmitAddPartDef { ref : Project.Source.ModuleRef }
 
 
 initModel : Model
@@ -322,7 +323,7 @@ activeEditor project editorItem =
                     Panel.Editor.Module.update Panel.Editor.Module.ActiveThisEditor project model
             in
             ( ModuleEditor newModel
-            , emitMaybe |> Maybe.map moduleEidtorEmitToEmit
+            , emitMaybe |> Maybe.map moduleEditorEmitToEmit
             )
 
         _ ->
@@ -338,7 +339,7 @@ updateEditor editorItemMsg project editorItem =
                     Panel.Editor.Module.update msg project model
             in
             ( ModuleEditor newModel
-            , emitMaybe |> Maybe.map moduleEidtorEmitToEmit
+            , emitMaybe |> Maybe.map moduleEditorEmitToEmit
             )
 
         ( EditorKeyConfigMsg msg, EditorKeyConfig model ) ->
@@ -356,8 +357,8 @@ updateEditor editorItemMsg project editorItem =
             )
 
 
-moduleEidtorEmitToEmit : Panel.Editor.Module.Emit -> Emit
-moduleEidtorEmitToEmit emit =
+moduleEditorEmitToEmit : Panel.Editor.Module.Emit -> Emit
+moduleEditorEmitToEmit emit =
     case emit of
         Panel.Editor.Module.EmitChangeReadMe { text, ref } ->
             EmitChangeReadMe { text = text, ref = ref }
@@ -367,6 +368,9 @@ moduleEidtorEmitToEmit emit =
 
         Panel.Editor.Module.EmitChangeName { name, ref } ->
             EmitChangeName { name = name, ref = ref }
+
+        Panel.Editor.Module.EmitAddPartDef { ref } ->
+            EmitAddPartDef { ref = ref }
 
 
 {-| 右端と下の端にある表示するエディタを増やすのボタンをおしたら、エディタ全体がどう変わるかと新しくアクティブになるエディタを返す
