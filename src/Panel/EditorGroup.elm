@@ -34,13 +34,10 @@ import Panel.Editor.Project
 import Panel.Editor.Source
 import Panel.EditorTypeRef
 import Project
-import Project.Label
 import Project.Source
-import Project.Source.Module.Def.Expr
-import Project.Source.Module.Def.Name
-import Project.Source.Module.Def.Type
-import Project.Source.ModuleWithCache
-import Utility.ListExtra
+import Project.Source.Module.Def.Expr as Expr
+import Project.Source.Module.Def.Name as Name
+import Project.Source.Module.Def.Type as Type
 import Utility.Map
 
 
@@ -74,6 +71,8 @@ type Group
         }
 
 
+{-| 1列には1つか2つのエディタを持つ
+-}
 type ColumnGroup
     = ColumnOne
         { editor : EditorItem
@@ -96,18 +95,22 @@ type EditorItem
     | EditorKeyConfig Panel.Editor.EditorKeyConfig.Model
 
 
-{-| 最大6個のエディタのどれを指しているのかを保持する
+{-| 最大6個のエディタのどれを指しているのかを示す
 -}
 type alias EditorRef =
     ( EditorRefRow, EditorRefColumn )
 
 
+{-| 横方向。左、真ん中、右
+-}
 type EditorRefRow
     = EditorRefLeft
     | EditorRefCenter
     | EditorRefRight
 
 
+{-| 縦方向。上、下
+-}
 type EditorRefColumn
     = EditorRefTop
     | EditorRefBottom
@@ -165,10 +168,10 @@ type Emit
     | EmitHorizontalGutterModeOn GutterHorizontal
     | EmitChangeReadMe { text : String, ref : Project.Source.ModuleRef }
     | EmitSetTextAreaValue String
-    | EmitChangeName { name : Project.Source.Module.Def.Name.Name, index : Int, ref : Project.Source.ModuleRef }
+    | EmitChangeName { name : Name.Name, index : Int, ref : Project.Source.ModuleRef }
     | EmitAddPartDef { ref : Project.Source.ModuleRef }
-    | EmitChangeType { type_ : Project.Source.Module.Def.Type.Type, index : Int, ref : Project.Source.ModuleRef }
-    | EmitChangeExpr { expr : Project.Source.Module.Def.Expr.Expr, index : Int, ref : Project.Source.ModuleRef }
+    | EmitChangeType { type_ : Type.Type, index : Int, ref : Project.Source.ModuleRef }
+    | EmitChangeExpr { expr : Expr.Expr, index : Int, ref : Project.Source.ModuleRef }
 
 
 {-| 初期Model
@@ -974,9 +977,7 @@ changeEditorItem item model =
         |> mapGroup (setEditorItem (getActiveEditorRef model) item)
 
 
-{-| [O][_][_]
-エディタの位置を受け取って、エディタの中身(Modelとか)を返す
-List.getAt: index -> list -> item 的な
+{-| エディタの位置を受け取って、エディタの中身(Modelとか)を返す
 -}
 getEditorItem : EditorRef -> Group -> EditorItem
 getEditorItem editorRef rowGroup =
@@ -1021,81 +1022,57 @@ getEditorItemColumn editorRefCol colGroup =
                     editorBottom
 
 
-{-| [O][_][_]
-アクティブなエディタの位置とエディタの種類と列を受け取って新しい列を返す
+{-| エディタの中身を上書きする。指定するエディタの位置がないものだったらその左や上を上書きする
 -}
 setEditorItem : EditorRef -> EditorItem -> Group -> Group
 setEditorItem editorRef item group =
     case group of
         RowOne recRow ->
             RowOne
-                (case editorRef of
-                    ( EditorRefLeft, activeColumn ) ->
-                        { recRow
-                            | columnGroup =
-                                setEditorItemColumn activeColumn item recRow.columnGroup
-                        }
-
-                    ( EditorRefCenter, activeColumn ) ->
-                        { recRow
-                            | columnGroup =
-                                setEditorItemColumn activeColumn item recRow.columnGroup
-                        }
-
-                    ( EditorRefRight, activeColumn ) ->
-                        { recRow
-                            | columnGroup =
-                                setEditorItemColumn activeColumn item recRow.columnGroup
-                        }
-                )
+                { recRow
+                    | columnGroup =
+                        setEditorItemColumn (Tuple.second editorRef) item recRow.columnGroup
+                }
 
         RowTwo recRow ->
             RowTwo
-                (case editorRef of
-                    ( EditorRefLeft, activeColumn ) ->
+                (case Tuple.first editorRef of
+                    EditorRefLeft ->
                         { recRow
                             | columnGroupLeft =
-                                setEditorItemColumn activeColumn item recRow.columnGroupLeft
+                                setEditorItemColumn (Tuple.second editorRef) item recRow.columnGroupLeft
                         }
 
-                    ( EditorRefCenter, activeColumn ) ->
+                    _ ->
                         { recRow
                             | columnGroupRight =
-                                setEditorItemColumn activeColumn item recRow.columnGroupRight
-                        }
-
-                    ( EditorRefRight, activeColumn ) ->
-                        { recRow
-                            | columnGroupRight =
-                                setEditorItemColumn activeColumn item recRow.columnGroupRight
+                                setEditorItemColumn (Tuple.second editorRef) item recRow.columnGroupRight
                         }
                 )
 
         RowThree recRow ->
             RowThree
-                (case editorRef of
-                    ( EditorRefLeft, activeColumn ) ->
+                (case Tuple.first editorRef of
+                    EditorRefLeft ->
                         { recRow
                             | columnGroupLeft =
-                                setEditorItemColumn activeColumn item recRow.columnGroupLeft
+                                setEditorItemColumn (Tuple.second editorRef) item recRow.columnGroupLeft
                         }
 
-                    ( EditorRefCenter, activeColumn ) ->
+                    EditorRefCenter ->
                         { recRow
                             | columnGroupCenter =
-                                setEditorItemColumn activeColumn item recRow.columnGroupCenter
+                                setEditorItemColumn (Tuple.second editorRef) item recRow.columnGroupCenter
                         }
 
-                    ( EditorRefRight, activeColumn ) ->
+                    EditorRefRight ->
                         { recRow
                             | columnGroupRight =
-                                setEditorItemColumn activeColumn item recRow.columnGroupRight
+                                setEditorItemColumn (Tuple.second editorRef) item recRow.columnGroupRight
                         }
                 )
 
 
-{-| 列グループとエディタの種類を受け取って新しい行を返す
--}
 setEditorItemColumn : EditorRefColumn -> EditorItem -> ColumnGroup -> ColumnGroup
 setEditorItemColumn editorRefCol item columnGroup =
     case columnGroup of
@@ -1109,14 +1086,10 @@ setEditorItemColumn editorRefCol item columnGroup =
             ColumnTwo
                 (case editorRefCol of
                     EditorRefTop ->
-                        { recCol
-                            | editorTop = item
-                        }
+                        { recCol | editorTop = item }
 
                     EditorRefBottom ->
-                        { recCol
-                            | editorBottom = item
-                        }
+                        { recCol | editorBottom = item }
                 )
 
 
@@ -1129,7 +1102,7 @@ mapAtEditorItem ref =
         (setEditorItem ref)
 
 
-{-| データからエディタの初期値を返す
+{-| 編集対象からエディタの初期値を返す
 -}
 projectRefToEditorItem : Panel.EditorTypeRef.EditorTypeRef -> EditorItem
 projectRefToEditorItem projectRef =
@@ -1442,10 +1415,7 @@ editorColumn project columnGroup { width, height } showEditorPosition activeEdit
         )
 
 
-{-|
-
-  - エディタの高さを変更するガター
-
+{-| エディタの高さを変更するガター
 -}
 horizontalGutter : GutterHorizontal -> Bool -> Html.Html Msg
 horizontalGutter gutter isActive =
@@ -1550,7 +1520,7 @@ editorTitle : String -> EditorRef -> Bool -> Html.Html Msg
 editorTitle title editorRef closeable =
     Html.div
         [ subClass "editorTitle" ]
-        ([ editorTitleText title
+        ([ Html.div [ subClass "editorTitle-text" ] [ Html.text title ]
          ]
             ++ (if closeable then
                     []
@@ -1561,11 +1531,8 @@ editorTitle title editorRef closeable =
         )
 
 
-editorTitleText : String -> Html.Html Msg
-editorTitleText title =
-    Html.div [ subClass "editorTitle-text" ] [ Html.text title ]
-
-
+{-| エディタを閉じるときに押すボタン
+-}
 editorTitleCloseIcon : EditorRef -> Html.Html Msg
 editorTitleCloseIcon editorRef =
     Html.div

@@ -4538,22 +4538,22 @@ var elm$core$Array$builderToArray = F2(
 		if (!builder.k) {
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.o),
+				elm$core$Elm$JsArray$length(builder.n),
 				elm$core$Array$shiftStep,
 				elm$core$Elm$JsArray$empty,
-				builder.o);
+				builder.n);
 		} else {
 			var treeLen = builder.k * elm$core$Array$branchFactor;
 			var depth = elm$core$Basics$floor(
 				A2(elm$core$Basics$logBase, elm$core$Array$branchFactor, treeLen - 1));
-			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.p) : builder.p;
+			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.o) : builder.o;
 			var tree = A2(elm$core$Array$treeFromBuilder, correctNodeList, builder.k);
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.o) + treeLen,
+				elm$core$Elm$JsArray$length(builder.n) + treeLen,
 				A2(elm$core$Basics$max, 5, depth * elm$core$Array$shiftStep),
 				tree,
-				builder.o);
+				builder.n);
 		}
 	});
 var elm$core$Basics$False = 1;
@@ -4568,7 +4568,7 @@ var elm$core$Array$initializeHelp = F5(
 				return A2(
 					elm$core$Array$builderToArray,
 					false,
-					{p: nodeList, k: (len / elm$core$Array$branchFactor) | 0, o: tail});
+					{o: nodeList, k: (len / elm$core$Array$branchFactor) | 0, n: tail});
 			} else {
 				var leaf = elm$core$Array$Leaf(
 					A3(elm$core$Elm$JsArray$initialize, elm$core$Array$branchFactor, fromIndex, fn));
@@ -4859,7 +4859,7 @@ var author$project$Panel$EditorGroup$initModel = {
 	aw: _Utils_Tuple2(0, 0),
 	aB: author$project$Panel$EditorGroup$RowOne(
 		{
-			m: author$project$Panel$EditorGroup$ColumnOne(
+			q: author$project$Panel$EditorGroup$ColumnOne(
 				{
 					s: author$project$Panel$EditorGroup$ModuleEditor(
 						author$project$Panel$Editor$Module$initModel(2))
@@ -7831,11 +7831,11 @@ var author$project$Panel$EditorGroup$getEditorItem = F2(
 			function () {
 				switch (rowGroup.$) {
 					case 0:
-						var columnGroup = rowGroup.a.m;
+						var columnGroup = rowGroup.a.q;
 						return columnGroup;
 					case 1:
-						var columnGroupLeft = rowGroup.a.f;
-						var columnGroupRight = rowGroup.a.e;
+						var columnGroupLeft = rowGroup.a.e;
+						var columnGroupRight = rowGroup.a.f;
 						var _n1 = editorRef.a;
 						if (!_n1) {
 							return columnGroupLeft;
@@ -7843,9 +7843,9 @@ var author$project$Panel$EditorGroup$getEditorItem = F2(
 							return columnGroupRight;
 						}
 					default:
-						var columnGroupLeft = rowGroup.a.f;
+						var columnGroupLeft = rowGroup.a.e;
 						var columnGroupCenter = rowGroup.a.r;
-						var columnGroupRight = rowGroup.a.e;
+						var columnGroupRight = rowGroup.a.f;
 						var _n2 = editorRef.a;
 						switch (_n2) {
 							case 0:
@@ -8005,7 +8005,7 @@ var author$project$Project$Source$ModuleWithCache$addDef = F2(
 			});
 	});
 var author$project$Model$addPartDef = function (_n0) {
-	var ref = _n0.q;
+	var ref = _n0.p;
 	return author$project$Model$mapProject(
 		author$project$Project$mapSource(
 			A2(
@@ -8059,7 +8059,7 @@ var elm$core$Array$fromListHelp = F3(
 				return A2(
 					elm$core$Array$builderToArray,
 					true,
-					{p: nodeList, k: nodeListSize, o: jsArray});
+					{o: nodeList, k: nodeListSize, n: jsArray});
 			} else {
 				var $temp$list = remainingItems,
 					$temp$nodeList = A2(
@@ -8153,7 +8153,7 @@ var author$project$Project$Source$ModuleWithCache$setDefExpr = F3(
 var author$project$Model$changeExpr = function (_n0) {
 	var expr = _n0.az;
 	var index = _n0.G;
-	var ref = _n0.q;
+	var ref = _n0.p;
 	return author$project$Model$mapProject(
 		author$project$Project$mapSource(
 			A2(
@@ -8191,7 +8191,7 @@ var author$project$Project$Source$ModuleWithCache$setDefName = F3(
 var author$project$Model$changeName = function (_n0) {
 	var name = _n0.aH;
 	var index = _n0.G;
-	var ref = _n0.q;
+	var ref = _n0.p;
 	return author$project$Model$mapProject(
 		author$project$Project$mapSource(
 			A2(
@@ -8209,7 +8209,7 @@ var author$project$Project$Source$ModuleWithCache$setReadMe = F2(
 var author$project$Model$changeReadMe = F2(
 	function (_n0, model) {
 		var text = _n0.b6;
-		var ref = _n0.q;
+		var ref = _n0.p;
 		return A2(
 			author$project$Model$mapProject,
 			author$project$Project$mapSource(
@@ -8249,7 +8249,7 @@ var author$project$Project$Source$ModuleWithCache$setDefType = F3(
 var author$project$Model$changeType = function (_n0) {
 	var type_ = _n0.aM;
 	var index = _n0.G;
-	var ref = _n0.q;
+	var ref = _n0.p;
 	return author$project$Model$mapProject(
 		author$project$Project$mapSource(
 			A2(
@@ -8311,12 +8311,12 @@ var author$project$Model$editorPanelEmitToMsg = function (emit) {
 				_List_Nil);
 		case 2:
 			var text = emit.a.b6;
-			var ref = emit.a.q;
+			var ref = emit.a.p;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$ChangeReadMe(
-						{q: ref, b6: text})
+						{p: ref, b6: text})
 					]),
 				_List_Nil);
 		case 3:
@@ -8330,43 +8330,43 @@ var author$project$Model$editorPanelEmitToMsg = function (emit) {
 		case 4:
 			var name = emit.a.aH;
 			var index = emit.a.G;
-			var ref = emit.a.q;
+			var ref = emit.a.p;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$ChangeName(
-						{G: index, aH: name, q: ref})
+						{G: index, aH: name, p: ref})
 					]),
 				_List_Nil);
 		case 5:
-			var ref = emit.a.q;
+			var ref = emit.a.p;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$AddPartDef(
-						{q: ref})
+						{p: ref})
 					]),
 				_List_Nil);
 		case 6:
 			var type_ = emit.a.aM;
 			var index = emit.a.G;
-			var ref = emit.a.q;
+			var ref = emit.a.p;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$ChangeType(
-						{G: index, q: ref, aM: type_})
+						{G: index, p: ref, aM: type_})
 					]),
 				_List_Nil);
 		default:
 			var expr = emit.a.az;
 			var index = emit.a.G;
-			var ref = emit.a.q;
+			var ref = emit.a.p;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$ChangeExpr(
-						{az: expr, G: index, q: ref})
+						{az: expr, G: index, p: ref})
 					]),
 				_List_Nil);
 	}
@@ -10648,21 +10648,21 @@ var author$project$Panel$Editor$Module$inputInPartEditor = F2(
 									elm$core$Maybe$map,
 									function (n) {
 										return author$project$Panel$Editor$Module$EmitChangeName(
-											{G: index, aH: n, q: rec.z});
+											{G: index, aH: n, p: rec.z});
 									},
 									name),
 									A2(
 									elm$core$Maybe$map,
 									function (t) {
 										return author$project$Panel$Editor$Module$EmitChangeType(
-											{G: index, q: rec.z, aM: t});
+											{G: index, p: rec.z, aM: t});
 									},
 									type_),
 									A2(
 									elm$core$Maybe$map,
 									function (e) {
 										return author$project$Panel$Editor$Module$EmitChangeExpr(
-											{az: e, G: index, q: rec.z});
+											{az: e, G: index, p: rec.z});
 									},
 									expr),
 									reset ? elm$core$Maybe$Just(
@@ -10697,21 +10697,21 @@ var author$project$Panel$Editor$Module$inputInPartEditor = F2(
 									elm$core$Maybe$map,
 									function (n) {
 										return author$project$Panel$Editor$Module$EmitChangeName(
-											{G: index, aH: n, q: rec.z});
+											{G: index, aH: n, p: rec.z});
 									},
 									name),
 									A2(
 									elm$core$Maybe$map,
 									function (t) {
 										return author$project$Panel$Editor$Module$EmitChangeType(
-											{G: index, q: rec.z, aM: t});
+											{G: index, p: rec.z, aM: t});
 									},
 									type_),
 									A2(
 									elm$core$Maybe$map,
 									function (e) {
 										return author$project$Panel$Editor$Module$EmitChangeExpr(
-											{az: e, G: index, q: rec.z});
+											{az: e, G: index, p: rec.z});
 									},
 									expr),
 									reset ? elm$core$Maybe$Just(
@@ -10851,7 +10851,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					_List_fromArray(
 						[
 							author$project$Panel$Editor$Module$EmitChangeReadMe(
-							{q: rec.z, b6: text})
+							{p: rec.z, b6: text})
 						]));
 			case 4:
 				var text = msg.a;
@@ -11089,7 +11089,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					_List_fromArray(
 						[
 							author$project$Panel$Editor$Module$EmitAddPartDef(
-							{q: rec.z})
+							{p: rec.z})
 						]));
 		}
 	});
@@ -11115,34 +11115,34 @@ var author$project$Panel$EditorGroup$moduleEditorEmitToEmit = function (emit) {
 	switch (emit.$) {
 		case 0:
 			var text = emit.a.b6;
-			var ref = emit.a.q;
+			var ref = emit.a.p;
 			return author$project$Panel$EditorGroup$EmitChangeReadMe(
-				{q: ref, b6: text});
+				{p: ref, b6: text});
 		case 5:
 			var text = emit.a;
 			return author$project$Panel$EditorGroup$EmitSetTextAreaValue(text);
 		case 1:
 			var name = emit.a.aH;
 			var index = emit.a.G;
-			var ref = emit.a.q;
+			var ref = emit.a.p;
 			return author$project$Panel$EditorGroup$EmitChangeName(
-				{G: index, aH: name, q: ref});
+				{G: index, aH: name, p: ref});
 		case 4:
-			var ref = emit.a.q;
+			var ref = emit.a.p;
 			return author$project$Panel$EditorGroup$EmitAddPartDef(
-				{q: ref});
+				{p: ref});
 		case 2:
 			var type_ = emit.a.aM;
 			var index = emit.a.G;
-			var ref = emit.a.q;
+			var ref = emit.a.p;
 			return author$project$Panel$EditorGroup$EmitChangeType(
-				{G: index, q: ref, aM: type_});
+				{G: index, p: ref, aM: type_});
 		default:
 			var expr = emit.a.az;
 			var index = emit.a.G;
-			var ref = emit.a.q;
+			var ref = emit.a.p;
 			return author$project$Panel$EditorGroup$EmitChangeExpr(
-				{az: expr, G: index, q: ref});
+				{az: expr, G: index, p: ref});
 	}
 };
 var author$project$Panel$EditorGroup$blurEditor = F2(
@@ -11199,7 +11199,7 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 	function (editorRef, group) {
 		switch (group.$) {
 			case 0:
-				var columnGroup = group.a.m;
+				var columnGroup = group.a.q;
 				if (!editorRef.a) {
 					var _n2 = editorRef.a;
 					var editorRefColumn = editorRef.b;
@@ -11210,7 +11210,7 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 							elm$core$Maybe$map,
 							function (col) {
 								return author$project$Panel$EditorGroup$RowOne(
-									{m: col});
+									{q: col});
 							},
 							A2(author$project$Panel$EditorGroup$closeEditorColumn, editorRefColumn, columnGroup)));
 				} else {
@@ -11224,21 +11224,7 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 						return A2(
 							elm$core$Maybe$withDefault,
 							author$project$Panel$EditorGroup$RowOne(
-								{m: rec.e}),
-							A2(
-								elm$core$Maybe$map,
-								function (col) {
-									return author$project$Panel$EditorGroup$RowTwo(
-										_Utils_update(
-											rec,
-											{f: col}));
-								},
-								A2(author$project$Panel$EditorGroup$closeEditorColumn, editorRef.b, rec.f)));
-					case 1:
-						return A2(
-							elm$core$Maybe$withDefault,
-							author$project$Panel$EditorGroup$RowOne(
-								{m: rec.f}),
+								{q: rec.f}),
 							A2(
 								elm$core$Maybe$map,
 								function (col) {
@@ -11248,6 +11234,20 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 											{e: col}));
 								},
 								A2(author$project$Panel$EditorGroup$closeEditorColumn, editorRef.b, rec.e)));
+					case 1:
+						return A2(
+							elm$core$Maybe$withDefault,
+							author$project$Panel$EditorGroup$RowOne(
+								{q: rec.e}),
+							A2(
+								elm$core$Maybe$map,
+								function (col) {
+									return author$project$Panel$EditorGroup$RowTwo(
+										_Utils_update(
+											rec,
+											{f: col}));
+								},
+								A2(author$project$Panel$EditorGroup$closeEditorColumn, editorRef.b, rec.f)));
 					default:
 						return group;
 				}
@@ -11259,21 +11259,21 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 						return A2(
 							elm$core$Maybe$withDefault,
 							author$project$Panel$EditorGroup$RowTwo(
-								{f: rec.r, g: rec.L, e: rec.e}),
+								{e: rec.r, g: rec.L, f: rec.f}),
 							A2(
 								elm$core$Maybe$map,
 								function (col) {
 									return author$project$Panel$EditorGroup$RowThree(
 										_Utils_update(
 											rec,
-											{f: col}));
+											{e: col}));
 								},
-								A2(author$project$Panel$EditorGroup$closeEditorColumn, editorRef.b, rec.f)));
+								A2(author$project$Panel$EditorGroup$closeEditorColumn, editorRef.b, rec.e)));
 					case 1:
 						return A2(
 							elm$core$Maybe$withDefault,
 							author$project$Panel$EditorGroup$RowTwo(
-								{f: rec.f, g: rec.g, e: rec.e}),
+								{e: rec.e, g: rec.g, f: rec.f}),
 							A2(
 								elm$core$Maybe$map,
 								function (col) {
@@ -11287,16 +11287,16 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 						return A2(
 							elm$core$Maybe$withDefault,
 							author$project$Panel$EditorGroup$RowTwo(
-								{f: rec.f, g: rec.g, e: rec.r}),
+								{e: rec.e, g: rec.g, f: rec.r}),
 							A2(
 								elm$core$Maybe$map,
 								function (col) {
 									return author$project$Panel$EditorGroup$RowThree(
 										_Utils_update(
 											rec,
-											{e: col}));
+											{f: col}));
 								},
-								A2(author$project$Panel$EditorGroup$closeEditorColumn, editorRef.b, rec.e)));
+								A2(author$project$Panel$EditorGroup$closeEditorColumn, editorRef.b, rec.f)));
 				}
 		}
 	});
@@ -11365,13 +11365,13 @@ var author$project$Panel$EditorGroup$setActiveEditorRef = F2(
 				var _n1 = author$project$Panel$EditorGroup$getGroup(model);
 				switch (_n1.$) {
 					case 0:
-						var columnGroup = _n1.a.m;
+						var columnGroup = _n1.a.q;
 						return _Utils_Tuple2(
 							0,
 							A2(author$project$Panel$EditorGroup$adjustColumnRef, columnGroup, colRef));
 					case 1:
-						var columnGroupLeft = _n1.a.f;
-						var columnGroupRight = _n1.a.e;
+						var columnGroupLeft = _n1.a.e;
+						var columnGroupRight = _n1.a.f;
 						if (!rowRef) {
 							return _Utils_Tuple2(
 								0,
@@ -11382,9 +11382,9 @@ var author$project$Panel$EditorGroup$setActiveEditorRef = F2(
 								A2(author$project$Panel$EditorGroup$adjustColumnRef, columnGroupRight, colRef));
 						}
 					default:
-						var columnGroupLeft = _n1.a.f;
+						var columnGroupLeft = _n1.a.e;
 						var columnGroupCenter = _n1.a.r;
-						var columnGroupRight = _n1.a.e;
+						var columnGroupRight = _n1.a.f;
 						switch (rowRef) {
 							case 0:
 								return _Utils_Tuple2(
@@ -11417,9 +11417,9 @@ var author$project$Panel$EditorGroup$openEditorRowOne = F3(
 					_Utils_Tuple2(
 						author$project$Panel$EditorGroup$RowTwo(
 							{
-								f: colGroup,
+								e: colGroup,
 								g: 500,
-								e: author$project$Panel$EditorGroup$ColumnOne(
+								f: author$project$Panel$EditorGroup$ColumnOne(
 									{s: item})
 							}),
 						_Utils_Tuple2(1, 0)));
@@ -11430,7 +11430,7 @@ var author$project$Panel$EditorGroup$openEditorRowOne = F3(
 						_Utils_Tuple2(
 							author$project$Panel$EditorGroup$RowOne(
 								{
-									m: author$project$Panel$EditorGroup$ColumnTwo(
+									q: author$project$Panel$EditorGroup$ColumnTwo(
 										{B: item, C: editor, M: 500})
 								}),
 							_Utils_Tuple2(0, 1)));
@@ -11445,7 +11445,7 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 	function (rec, addEditorPosition, item) {
 		switch (addEditorPosition) {
 			case 1:
-				var _n1 = rec.f;
+				var _n1 = rec.e;
 				if (!_n1.$) {
 					var editor = _n1.a.s;
 					return elm$core$Maybe$Just(
@@ -11454,7 +11454,7 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 								_Utils_update(
 									rec,
 									{
-										f: author$project$Panel$EditorGroup$ColumnTwo(
+										e: author$project$Panel$EditorGroup$ColumnTwo(
 											{B: item, C: editor, M: 500})
 									})),
 							_Utils_Tuple2(0, 1)));
@@ -11479,7 +11479,7 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 					return elm$core$Maybe$Nothing;
 				}
 			case 3:
-				var _n3 = rec.e;
+				var _n3 = rec.f;
 				if (!_n3.$) {
 					var editor = _n3.a.s;
 					return elm$core$Maybe$Just(
@@ -11488,7 +11488,7 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 								_Utils_update(
 									rec,
 									{
-										e: author$project$Panel$EditorGroup$ColumnTwo(
+										f: author$project$Panel$EditorGroup$ColumnTwo(
 											{B: item, C: editor, M: 500})
 									})),
 							_Utils_Tuple2(2, 1)));
@@ -11507,16 +11507,16 @@ var author$project$Panel$EditorGroup$openEditorRowTwo = F3(
 					_Utils_Tuple2(
 						author$project$Panel$EditorGroup$RowThree(
 							{
-								r: rec.e,
+								r: rec.f,
 								L: 333,
-								f: rec.f,
+								e: rec.e,
 								g: 333,
-								e: author$project$Panel$EditorGroup$ColumnOne(
+								f: author$project$Panel$EditorGroup$ColumnOne(
 									{s: item})
 							}),
 						_Utils_Tuple2(2, 0)));
 			case 1:
-				var _n1 = rec.f;
+				var _n1 = rec.e;
 				if (!_n1.$) {
 					var editor = _n1.a.s;
 					return elm$core$Maybe$Just(
@@ -11525,7 +11525,7 @@ var author$project$Panel$EditorGroup$openEditorRowTwo = F3(
 								_Utils_update(
 									rec,
 									{
-										f: author$project$Panel$EditorGroup$ColumnTwo(
+										e: author$project$Panel$EditorGroup$ColumnTwo(
 											{B: item, C: editor, M: 500})
 									})),
 							_Utils_Tuple2(0, 1)));
@@ -11533,7 +11533,7 @@ var author$project$Panel$EditorGroup$openEditorRowTwo = F3(
 					return elm$core$Maybe$Nothing;
 				}
 			case 2:
-				var _n2 = rec.e;
+				var _n2 = rec.f;
 				if (!_n2.$) {
 					var editor = _n2.a.s;
 					return elm$core$Maybe$Just(
@@ -11542,7 +11542,7 @@ var author$project$Panel$EditorGroup$openEditorRowTwo = F3(
 								_Utils_update(
 									rec,
 									{
-										e: author$project$Panel$EditorGroup$ColumnTwo(
+										f: author$project$Panel$EditorGroup$ColumnTwo(
 											{B: item, C: editor, M: 500})
 									})),
 							_Utils_Tuple2(1, 1)));
@@ -11561,7 +11561,7 @@ var author$project$Panel$EditorGroup$openEditor = F3(
 			function () {
 				switch (group.$) {
 					case 0:
-						var columnGroup = group.a.m;
+						var columnGroup = group.a.q;
 						return A3(
 							author$project$Panel$EditorGroup$openEditorRowOne,
 							columnGroup,
@@ -11614,93 +11614,53 @@ var author$project$Panel$EditorGroup$setEditorItem = F3(
 			case 0:
 				var recRow = group.a;
 				return author$project$Panel$EditorGroup$RowOne(
-					function () {
-						switch (editorRef.a) {
-							case 0:
-								var _n2 = editorRef.a;
-								var activeColumn = editorRef.b;
-								return _Utils_update(
-									recRow,
-									{
-										m: A3(author$project$Panel$EditorGroup$setEditorItemColumn, activeColumn, item, recRow.m)
-									});
-							case 1:
-								var _n3 = editorRef.a;
-								var activeColumn = editorRef.b;
-								return _Utils_update(
-									recRow,
-									{
-										m: A3(author$project$Panel$EditorGroup$setEditorItemColumn, activeColumn, item, recRow.m)
-									});
-							default:
-								var _n4 = editorRef.a;
-								var activeColumn = editorRef.b;
-								return _Utils_update(
-									recRow,
-									{
-										m: A3(author$project$Panel$EditorGroup$setEditorItemColumn, activeColumn, item, recRow.m)
-									});
-						}
-					}());
+					_Utils_update(
+						recRow,
+						{
+							q: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.q)
+						}));
 			case 1:
 				var recRow = group.a;
 				return author$project$Panel$EditorGroup$RowTwo(
 					function () {
-						switch (editorRef.a) {
-							case 0:
-								var _n6 = editorRef.a;
-								var activeColumn = editorRef.b;
-								return _Utils_update(
-									recRow,
-									{
-										f: A3(author$project$Panel$EditorGroup$setEditorItemColumn, activeColumn, item, recRow.f)
-									});
-							case 1:
-								var _n7 = editorRef.a;
-								var activeColumn = editorRef.b;
-								return _Utils_update(
-									recRow,
-									{
-										e: A3(author$project$Panel$EditorGroup$setEditorItemColumn, activeColumn, item, recRow.e)
-									});
-							default:
-								var _n8 = editorRef.a;
-								var activeColumn = editorRef.b;
-								return _Utils_update(
-									recRow,
-									{
-										e: A3(author$project$Panel$EditorGroup$setEditorItemColumn, activeColumn, item, recRow.e)
-									});
+						var _n1 = editorRef.a;
+						if (!_n1) {
+							return _Utils_update(
+								recRow,
+								{
+									e: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.e)
+								});
+						} else {
+							return _Utils_update(
+								recRow,
+								{
+									f: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.f)
+								});
 						}
 					}());
 			default:
 				var recRow = group.a;
 				return author$project$Panel$EditorGroup$RowThree(
 					function () {
-						switch (editorRef.a) {
+						var _n2 = editorRef.a;
+						switch (_n2) {
 							case 0:
-								var _n10 = editorRef.a;
-								var activeColumn = editorRef.b;
 								return _Utils_update(
 									recRow,
 									{
-										f: A3(author$project$Panel$EditorGroup$setEditorItemColumn, activeColumn, item, recRow.f)
+										e: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.e)
 									});
 							case 1:
-								var _n11 = editorRef.a;
-								var activeColumn = editorRef.b;
 								return _Utils_update(
 									recRow,
 									{
-										r: A3(author$project$Panel$EditorGroup$setEditorItemColumn, activeColumn, item, recRow.r)
+										r: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.r)
 									});
 							default:
-								var _n12 = editorRef.a;
-								var activeColumn = editorRef.b;
 								return _Utils_update(
 									recRow,
 									{
-										e: A3(author$project$Panel$EditorGroup$setEditorItemColumn, activeColumn, item, recRow.e)
+										f: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.f)
 									});
 						}
 					}());
@@ -11878,14 +11838,14 @@ var author$project$Panel$EditorGroup$update = F3(
 					project,
 					A2(
 						author$project$Panel$EditorGroup$getEditorItem,
-						rec.q,
+						rec.p,
 						author$project$Panel$EditorGroup$getGroup(model)));
 				var newEditorItem = _n4.a;
 				var emit = _n4.b;
 				return _Utils_Tuple2(
 					A2(
 						author$project$Panel$EditorGroup$mapGroup,
-						A2(author$project$Panel$EditorGroup$setEditorItem, rec.q, newEditorItem),
+						A2(author$project$Panel$EditorGroup$setEditorItem, rec.p, newEditorItem),
 						model),
 					emit);
 			case 6:
@@ -12030,9 +11990,9 @@ var author$project$Panel$EditorGroup$resizeHorizontal = F3(
 								return author$project$Panel$EditorGroup$RowOne(
 									_Utils_update(
 										rec,
-										{m: col}));
+										{q: col}));
 							},
-							A3(author$project$Panel$EditorGroup$resizeInColumn, rec.m, y, height)));
+							A3(author$project$Panel$EditorGroup$resizeInColumn, rec.q, y, height)));
 				} else {
 					return group;
 				}
@@ -12049,9 +12009,9 @@ var author$project$Panel$EditorGroup$resizeHorizontal = F3(
 									return author$project$Panel$EditorGroup$RowTwo(
 										_Utils_update(
 											rec,
-											{f: col}));
+											{e: col}));
 								},
-								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.f, y, height)));
+								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.e, y, height)));
 					case 1:
 						return A2(
 							elm$core$Maybe$withDefault,
@@ -12062,9 +12022,9 @@ var author$project$Panel$EditorGroup$resizeHorizontal = F3(
 									return author$project$Panel$EditorGroup$RowTwo(
 										_Utils_update(
 											rec,
-											{e: col}));
+											{f: col}));
 								},
-								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.e, y, height)));
+								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.f, y, height)));
 					default:
 						return group;
 				}
@@ -12081,9 +12041,9 @@ var author$project$Panel$EditorGroup$resizeHorizontal = F3(
 									return author$project$Panel$EditorGroup$RowThree(
 										_Utils_update(
 											rec,
-											{f: col}));
+											{e: col}));
 								},
-								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.f, y, height)));
+								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.e, y, height)));
 					case 1:
 						return A2(
 							elm$core$Maybe$withDefault,
@@ -12107,9 +12067,9 @@ var author$project$Panel$EditorGroup$resizeHorizontal = F3(
 									return author$project$Panel$EditorGroup$RowThree(
 										_Utils_update(
 											rec,
-											{e: col}));
+											{f: col}));
 								},
-								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.e, y, height)));
+								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.f, y, height)));
 				}
 		}
 	});
@@ -17109,18 +17069,6 @@ var author$project$Panel$EditorGroup$editorTitleCloseIcon = function (editorRef)
 					]))
 			]));
 };
-var author$project$Panel$EditorGroup$editorTitleText = function (title) {
-	return A2(
-		elm$html$Html$div,
-		_List_fromArray(
-			[
-				author$project$Panel$EditorGroup$subClass('editorTitle-text')
-			]),
-		_List_fromArray(
-			[
-				elm$html$Html$text(title)
-			]));
-};
 var author$project$Panel$EditorGroup$editorTitle = F3(
 	function (title, editorRef, closeable) {
 		return A2(
@@ -17132,7 +17080,16 @@ var author$project$Panel$EditorGroup$editorTitle = F3(
 			_Utils_ap(
 				_List_fromArray(
 					[
-						author$project$Panel$EditorGroup$editorTitleText(title)
+						A2(
+						elm$html$Html$div,
+						_List_fromArray(
+							[
+								author$project$Panel$EditorGroup$subClass('editorTitle-text')
+							]),
+						_List_fromArray(
+							[
+								elm$html$Html$text(title)
+							]))
 					]),
 				closeable ? _List_Nil : _List_fromArray(
 					[
@@ -17166,7 +17123,7 @@ var author$project$Panel$EditorGroup$editorItemView = F6(
 									return author$project$Panel$EditorGroup$EditorItemMsg(
 										{
 											aU: author$project$Panel$EditorGroup$ModuleEditorMsg(m),
-											q: editorRef
+											p: editorRef
 										});
 								}),
 							viewItem.bH),
@@ -17183,7 +17140,7 @@ var author$project$Panel$EditorGroup$editorItemView = F6(
 									return author$project$Panel$EditorGroup$EditorItemMsg(
 										{
 											aU: author$project$Panel$EditorGroup$EditorKeyConfigMsg(m),
-											q: editorRef
+											p: editorRef
 										});
 								}),
 							viewItem.bH),
@@ -17539,7 +17496,7 @@ var author$project$Panel$EditorGroup$view = F5(
 			function () {
 				switch (group.$) {
 					case 0:
-						var columnGroup = group.a.m;
+						var columnGroup = group.a.q;
 						return _List_fromArray(
 							[
 								A8(
@@ -17558,8 +17515,8 @@ var author$project$Panel$EditorGroup$view = F5(
 								author$project$Panel$EditorGroup$editorRowAddGutter
 							]);
 					case 1:
-						var columnGroupLeft = group.a.f;
-						var columnGroupRight = group.a.e;
+						var columnGroupLeft = group.a.e;
+						var columnGroupRight = group.a.f;
 						var columnGroupLeftWidth = group.a.g;
 						return _List_fromArray(
 							[
@@ -17599,9 +17556,9 @@ var author$project$Panel$EditorGroup$view = F5(
 								author$project$Panel$EditorGroup$editorRowAddGutter
 							]);
 					default:
-						var columnGroupLeft = group.a.f;
+						var columnGroupLeft = group.a.e;
 						var columnGroupCenter = group.a.r;
-						var columnGroupRight = group.a.e;
+						var columnGroupRight = group.a.f;
 						var columnGroupLeftWidth = group.a.g;
 						var columnGroupCenterWidth = group.a.L;
 						return _List_fromArray(
