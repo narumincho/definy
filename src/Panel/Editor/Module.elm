@@ -409,6 +409,8 @@ partEditorEditToMove edit =
             MoveTerm (n - 1)
 
 
+{-| パートエディタで<textaera>に何かを入力したとき
+-}
 inputInPartEditor : String -> Model -> ( Model, List Emit )
 inputInPartEditor string (Model rec) =
     case rec.focus of
@@ -424,7 +426,7 @@ inputInPartEditor string (Model rec) =
 
         FocusPartEditor index (PartEditorMove move) ->
             let
-                { edit, textAreaValue, name, type_ } =
+                { edit, textAreaValue, name, type_, reset } =
                     parseSimple string (partEditorMoveToEdit move)
             in
             ( Model
@@ -432,12 +434,17 @@ inputInPartEditor string (Model rec) =
             , Utility.ListExtra.takeFromMaybe
                 [ name |> Maybe.map (\n -> EmitChangeName { name = n, index = index, ref = rec.moduleRef })
                 , type_ |> Maybe.map (\t -> EmitChangeType { type_ = t, index = index, ref = rec.moduleRef })
+                , if reset then
+                    Just (EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList))
+
+                  else
+                    Nothing
                 ]
             )
 
         FocusPartEditor index (PartEditorEdit oldEdit _) ->
             let
-                { edit, textAreaValue, name, type_ } =
+                { edit, textAreaValue, name, type_, reset } =
                     parseSimple string oldEdit
             in
             ( Model
@@ -445,6 +452,11 @@ inputInPartEditor string (Model rec) =
             , Utility.ListExtra.takeFromMaybe
                 [ name |> Maybe.map (\n -> EmitChangeName { name = n, index = index, ref = rec.moduleRef })
                 , type_ |> Maybe.map (\t -> EmitChangeType { type_ = t, index = index, ref = rec.moduleRef })
+                , if reset then
+                    Just (EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList))
+
+                  else
+                    Nothing
                 ]
             )
 
@@ -452,7 +464,7 @@ inputInPartEditor string (Model rec) =
 parseSimple :
     String
     -> PartFocusEdit
-    -> { edit : PartFocusEdit, textAreaValue : List ( Char, Bool ), name : Maybe Name.Name, type_ : Maybe Type.Type }
+    -> { edit : PartFocusEdit, textAreaValue : List ( Char, Bool ), name : Maybe Name.Name, type_ : Maybe Type.Type, reset : Bool }
 parseSimple string edit =
     case edit of
         EditName ->
@@ -462,6 +474,7 @@ parseSimple string edit =
                     , textAreaValue = textAreaValue
                     , name = Just name
                     , type_ = Nothing
+                    , reset = False
                     }
 
                 Parser.BeginWithNameEndType { name, type_, textAreaValue } ->
@@ -469,6 +482,7 @@ parseSimple string edit =
                     , textAreaValue = textAreaValue
                     , name = Just name
                     , type_ = Just type_
+                    , reset = True
                     }
 
                 Parser.BeginWithNameEndExprTerm { name, type_ } ->
@@ -476,6 +490,7 @@ parseSimple string edit =
                     , textAreaValue = []
                     , name = Just name
                     , type_ = Just type_
+                    , reset = True
                     }
 
                 Parser.BeginWithNameEndExprOp { name, type_ } ->
@@ -483,6 +498,7 @@ parseSimple string edit =
                     , textAreaValue = []
                     , name = Just name
                     , type_ = Just type_
+                    , reset = True
                     }
 
         EditType ->
@@ -492,6 +508,7 @@ parseSimple string edit =
                     , textAreaValue = textAreaValue
                     , name = Nothing
                     , type_ = Just type_
+                    , reset = False
                     }
 
                 Parser.BeginWithTypeEndExprTerm { type_ } ->
@@ -499,6 +516,7 @@ parseSimple string edit =
                     , textAreaValue = []
                     , name = Nothing
                     , type_ = Just type_
+                    , reset = True
                     }
 
                 Parser.BeginWithTypeEndExprOp { type_ } ->
@@ -506,6 +524,7 @@ parseSimple string edit =
                     , textAreaValue = []
                     , name = Nothing
                     , type_ = Just type_
+                    , reset = True
                     }
 
         _ ->
@@ -513,6 +532,7 @@ parseSimple string edit =
             , textAreaValue = []
             , name = Nothing
             , type_ = Nothing
+            , reset = False
             }
 
 
