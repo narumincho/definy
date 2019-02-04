@@ -36,6 +36,7 @@ import Panel.EditorTypeRef
 import Project
 import Project.Label
 import Project.Source
+import Project.Source.Module.Def.Expr
 import Project.Source.Module.Def.Name
 import Project.Source.Module.Def.Type
 import Project.Source.ModuleWithCache
@@ -167,6 +168,7 @@ type Emit
     | EmitChangeName { name : Project.Source.Module.Def.Name.Name, index : Int, ref : Project.Source.ModuleRef }
     | EmitAddPartDef { ref : Project.Source.ModuleRef }
     | EmitChangeType { type_ : Project.Source.Module.Def.Type.Type, index : Int, ref : Project.Source.ModuleRef }
+    | EmitChangeExpr { expr : Project.Source.Module.Def.Expr.Expr, index : Int, ref : Project.Source.ModuleRef }
 
 
 {-| 初期Model
@@ -408,6 +410,9 @@ moduleEditorEmitToEmit emit =
 
         Panel.Editor.Module.EmitChangeType { type_, index, ref } ->
             EmitChangeType { type_ = type_, index = index, ref = ref }
+
+        Panel.Editor.Module.EmitChangeExpr { expr, index, ref } ->
+            EmitChangeExpr { expr = expr, index = index, ref = ref }
 
 
 {-| 右端と下の端にある表示するエディタを増やすのボタンをおしたら、エディタ全体がどう変わるかと新しくアクティブになるエディタを返す

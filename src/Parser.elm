@@ -38,14 +38,14 @@ type BeginWithNameResult
         { name : Name.Name
         , type_ : Type.Type
         , headTerm : Term.Term
-        , termAndOp : List ( Operator.Operator, Term.Term )
+        , termAndOpList : List ( Operator.Operator, Term.Term )
         , textAreaValue : List ( Char, Bool )
         }
     | BeginWithNameEndExprOp
         { name : Name.Name
         , type_ : Type.Type
         , headTerm : Term.Term
-        , termAndOp : List ( Operator.Operator, Term.Term )
+        , termAndOpList : List ( Operator.Operator, Term.Term )
         , lastOp : Operator.Operator
         , textAreaValue : List ( Char, Bool )
         }
@@ -61,13 +61,13 @@ type BeginWithTypeResult
     | BeginWithTypeEndExprTerm
         { type_ : Type.Type
         , headTerm : Term.Term
-        , termAndOp : List ( Operator.Operator, Term.Term )
+        , termAndOpList : List ( Operator.Operator, Term.Term )
         , textAreaValue : List ( Char, Bool )
         }
     | BeginWithTypeEndExprOp
         { type_ : Type.Type
         , headTerm : Term.Term
-        , termAndOp : List ( Operator.Operator, Term.Term )
+        , termAndOpList : List ( Operator.Operator, Term.Term )
         , lastOp : Operator.Operator
         , textAreaValue : List ( Char, Bool )
         }
@@ -148,7 +148,7 @@ beginWithName list =
                                 { name = name
                                 , type_ = type_
                                 , headTerm = head
-                                , termAndOp = others
+                                , termAndOpList = others
                                 , textAreaValue = textAreaValue
                                 }
 
@@ -157,7 +157,7 @@ beginWithName list =
                                 { name = name
                                 , type_ = type_
                                 , headTerm = head
-                                , termAndOp = others
+                                , termAndOpList = others
                                 , lastOp = last
                                 , textAreaValue = textAreaValue
                                 }
@@ -169,7 +169,7 @@ beginWithName list =
                         { name = name
                         , type_ = Type.empty
                         , headTerm = head
-                        , termAndOp = others
+                        , termAndOpList = others
                         , textAreaValue = textAreaValue
                         }
 
@@ -178,7 +178,7 @@ beginWithName list =
                         { name = name
                         , type_ = Type.empty
                         , headTerm = head
-                        , termAndOp = others
+                        , termAndOpList = others
                         , lastOp = last
                         , textAreaValue = textAreaValue
                         }
@@ -201,7 +201,7 @@ beginWithType list =
                     BeginWithTypeEndExprTerm
                         { type_ = type_
                         , headTerm = head
-                        , termAndOp = others
+                        , termAndOpList = others
                         , textAreaValue = textAreaValue
                         }
 
@@ -209,7 +209,7 @@ beginWithType list =
                     BeginWithTypeEndExprOp
                         { type_ = type_
                         , headTerm = head
-                        , termAndOp = others
+                        , termAndOpList = others
                         , lastOp = last
                         , textAreaValue = textAreaValue
                         }

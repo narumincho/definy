@@ -12,7 +12,7 @@ module Project.Source.ModuleWithCache exposing
     , setDefType
     , setName
     , setReadMe
-    )
+    , setDefExpr)
 
 import Compiler
 import Compiler.Marger
@@ -143,6 +143,17 @@ setDefType index type_ module_ =
         Nothing ->
             module_
 
+{-| 指定したindexの定義の式を設定する なければ、なにもしない
+-}
+setDefExpr : Int -> Project.Source.Module.Def.Expr.Expr -> Module -> Module
+setDefExpr index expr module_ =
+    case Utility.ListExtra.getAt index (getDefList module_) of
+        Just ( x, _ ) ->
+            module_
+                |> setDefListAt index ( Def.setExpr expr x, Nothing )
+
+        Nothing ->
+            module_
 
 {-| 定義を末尾に追加する
 -}

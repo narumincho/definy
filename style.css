@@ -455,11 +455,20 @@ img {
     display: flex;
 }
 
+.moduleEditor-partDefEditor-term {
+    display: flex;
+}
+
+.moduleEditor-partDefEditor-op {
+    display: flex;
+}
+
 .moduleEditor-partDefEditor-caretBox {
     display: block;
     width: 0;
     overflow: visible;
 }
+
 .moduleEditor-partDefEditor-caret {
     display: block;
     width: 2px;

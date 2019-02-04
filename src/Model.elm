@@ -40,7 +40,7 @@ port module Model exposing
     , toTreePanelGutterMode
     , treePanelMsgToMsg
     , treePanelUpdate
-    )
+    , changeExpr)
 
 {-| すべての状態を管理する
 -}
@@ -92,6 +92,7 @@ type Msg
     | ChangeReadMe { text : String, ref : Project.Source.ModuleRef } -- モジュールのReadMeを変更する
     | ChangeName { name : Name.Name, index : Int, ref : Project.Source.ModuleRef } -- 定義の名前を変更する
     | ChangeType { type_ : Type.Type, index : Int, ref : Project.Source.ModuleRef } -- 定義の型を変更する
+    | ChangeExpr { expr : Expr.Expr, index : Int, ref : Project.Source.ModuleRef } -- 定義の式を変更する
     | AddPartDef { ref : Project.Source.ModuleRef } -- 定義を追加する
 
 
@@ -631,6 +632,11 @@ editorPanelEmitToMsg emit =
             , []
             )
 
+        Panel.EditorGroup.EmitChangeExpr { expr, index, ref } ->
+            ( [ ChangeExpr { expr = expr, index = index, ref = ref } ]
+            , []
+            )
+
 
 {-| プロジェクトを取得する
 -}
@@ -755,6 +761,15 @@ changeType { type_, index, ref } =
             )
         )
 
+changeExpr : {expr: Expr.Expr, index : Int, ref:Project.Source.ModuleRef} -> Model -> Model
+changeExpr {expr, index, ref} =
+    mapProject
+        (Project.mapSource
+            (Project.Source.mapModule
+                ref
+                (Project.Source.ModuleWithCache.setDefExpr index expr)
+            )
+        )
 
 addPartDef : { ref : Project.Source.ModuleRef } -> Model -> Model
 addPartDef { ref } =
