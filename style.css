@@ -455,11 +455,16 @@ img {
     display: flex;
 }
 
+.moduleEditor-partDefEditor-caretBox {
+    display: block;
+    width: 0;
+    overflow: visible;
+}
 .moduleEditor-partDefEditor-caret {
     display: block;
     width: 2px;
     height: 1.5rem;
-    background: #f09936
+    background: #f09936;
 }
 
 .moduleEditor-partDefEditor-hideTextArea {

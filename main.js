@@ -10892,7 +10892,10 @@ var author$project$Panel$Editor$Module$update = F3(
 								}
 						}
 					}(),
-					_List_Nil);
+					_List_fromArray(
+						[
+							author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
+						]));
 			default:
 				return _Utils_Tuple2(
 					rec,
@@ -16285,31 +16288,168 @@ var author$project$Panel$Editor$Module$inputTextArea = A2(
 			elm$html$Html$Events$onInput(author$project$Panel$Editor$Module$InputInPartEditor)
 		]),
 	_List_Nil);
-var author$project$Panel$Editor$Module$caret = A2(
+var author$project$Panel$Editor$Module$FocusToPartEditor = F2(
+	function (a, b) {
+		return {$: 2, a: a, b: b};
+	});
+var author$project$Panel$Editor$Module$moveModeCaret = A2(
 	elm$html$Html$div,
 	_List_fromArray(
 		[
-			elm$html$Html$Attributes$class('moduleEditor-partDefEditor-caret')
+			elm$html$Html$Attributes$class('moduleEditor-partDefEditor-caretBox')
 		]),
-	_List_Nil);
-var author$project$Panel$Editor$Module$exprView = function (partEditorFocus) {
+	_List_fromArray(
+		[
+			A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					elm$html$Html$Attributes$class('moduleEditor-partDefEditor-caret')
+				]),
+			_List_Nil)
+		]));
+var author$project$Panel$Editor$Module$termViewInputOutput = function (textAreaValue) {
 	return A2(
 		elm$html$Html$div,
 		_List_fromArray(
 			[
-				elm$html$Html$Attributes$class('moduleEditor-partDefEditor-expr')
+				elm$html$Html$Attributes$class('editTarget'),
+				elm$html$Html$Attributes$class('moduleEditor-partDefEditor-term')
 			]),
-		_Utils_ap(
+		function () {
+			if (textAreaValue.b) {
+				return A2(
+					elm$core$List$map,
+					function (_n1) {
+						var _char = _n1.a;
+						var bool = _n1.b;
+						return A2(
+							elm$html$Html$div,
+							_List_fromArray(
+								[
+									elm$html$Html$Attributes$class(
+									bool ? 'nameOkChar' : 'errChar')
+								]),
+							_List_fromArray(
+								[
+									elm$html$Html$text(
+									elm$core$String$fromChar(_char))
+								]));
+					},
+					textAreaValue);
+			} else {
+				return _List_fromArray(
+					[
+						elm$html$Html$text('TERM')
+					]);
+			}
+		}());
+};
+var author$project$Project$Source$Module$Def$Expr$Term$toString = function (term) {
+	switch (term.$) {
+		case 0:
+			var i = term.a;
+			return elm$core$String$fromInt(i);
+		case 1:
+			if (!term.a.$) {
+				var ref = term.a.a;
+				return '!(' + (elm$core$String$fromInt(ref) + ')');
+			} else {
+				var label = term.a.a;
+				return author$project$Project$Label$toSmallString(label);
+			}
+		default:
+			return '✗';
+	}
+};
+var author$project$Panel$Editor$Module$termViewOutput = function (term) {
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				elm$html$Html$Events$onClick(0),
+				elm$html$Html$Attributes$class('moduleEditor-partDefEditor-term')
+			]),
+		_List_fromArray(
+			[
+				elm$html$Html$text(
+				author$project$Project$Source$Module$Def$Expr$Term$toString(term))
+			]));
+};
+var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
+	var head = _n0.a;
+	return head;
+};
+var elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
+var elm$html$Html$map = elm$virtual_dom$VirtualDom$map;
+var author$project$Panel$Editor$Module$exprView = F3(
+	function (partEditorFocus, expr, index) {
+		return A2(
+			elm$html$Html$div,
 			_List_fromArray(
 				[
-					elm$html$Html$text('=')
+					elm$html$Html$Attributes$class('moduleEditor-partDefEditor-expr')
 				]),
-			_Utils_eq(
-				partEditorFocus,
-				elm$core$Maybe$Just(
-					author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveExprHead))) ? _List_fromArray(
-				[author$project$Panel$Editor$Module$caret]) : _List_Nil));
-};
+			A2(
+				elm$core$List$map,
+				elm$html$Html$map(
+					elm$core$Basics$always(
+						A2(
+							author$project$Panel$Editor$Module$FocusToPartEditor,
+							index,
+							author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveExprHead)))),
+				A2(
+					elm$core$List$cons,
+					elm$html$Html$text('='),
+					function () {
+						_n0$3:
+						while (true) {
+							if (!partEditorFocus.$) {
+								if (partEditorFocus.a.$ === 1) {
+									switch (partEditorFocus.a.a.$) {
+										case 2:
+											var _n1 = partEditorFocus.a.a;
+											return _List_fromArray(
+												[
+													author$project$Panel$Editor$Module$moveModeCaret,
+													author$project$Panel$Editor$Module$termViewOutput(
+													author$project$Project$Source$Module$Def$Expr$getHead(expr))
+												]);
+										case 3:
+											var _n2 = partEditorFocus.a.a;
+											return _List_fromArray(
+												[
+													author$project$Panel$Editor$Module$termViewOutput(
+													author$project$Project$Source$Module$Def$Expr$getHead(expr)),
+													author$project$Panel$Editor$Module$moveModeCaret
+												]);
+										default:
+											break _n0$3;
+									}
+								} else {
+									if (partEditorFocus.a.a.$ === 2) {
+										var _n3 = partEditorFocus.a;
+										var _n4 = _n3.a;
+										var textAreaValue = _n3.b;
+										return _List_fromArray(
+											[
+												author$project$Panel$Editor$Module$termViewInputOutput(textAreaValue)
+											]);
+									} else {
+										break _n0$3;
+									}
+								}
+							} else {
+								break _n0$3;
+							}
+						}
+						return _List_fromArray(
+							[
+								author$project$Panel$Editor$Module$termViewOutput(
+								author$project$Project$Source$Module$Def$Expr$getHead(expr))
+							]);
+					}())));
+	});
 var author$project$Panel$Editor$Module$intermediateExprView = A2(
 	elm$html$Html$div,
 	_List_Nil,
@@ -16354,10 +16494,6 @@ var author$project$Panel$Editor$Module$nameViewInputOutput = function (textAreaV
 			}
 		}());
 };
-var author$project$Panel$Editor$Module$FocusToPartEditor = F2(
-	function (a, b) {
-		return {$: 2, a: a, b: b};
-	});
 var author$project$Project$Source$Module$Def$Name$toString = function (name) {
 	if (!name.$) {
 		return elm$core$Maybe$Nothing;
@@ -16545,6 +16681,10 @@ var author$project$Panel$Editor$Module$nameAndTypeView = F4(
 				}()
 				]));
 	});
+var author$project$Project$Source$Module$Def$getExpr = function (_n0) {
+	var expr = _n0.bQ;
+	return expr;
+};
 var author$project$Project$Source$Module$Def$getName = function (_n0) {
 	var name = _n0.aI;
 	return name;
@@ -16569,7 +16709,11 @@ var author$project$Panel$Editor$Module$partDefinitionEditor = F3(
 					author$project$Project$Source$Module$Def$getName(def),
 					author$project$Project$Source$Module$Def$getType(def),
 					index),
-					author$project$Panel$Editor$Module$exprView(partEditorFocus),
+					A3(
+					author$project$Panel$Editor$Module$exprView,
+					partEditorFocus,
+					author$project$Project$Source$Module$Def$getExpr(def),
+					index),
 					author$project$Panel$Editor$Module$intermediateExprView
 				]));
 	});
@@ -16794,8 +16938,6 @@ var author$project$Panel$EditorGroup$editorTitle = F3(
 						author$project$Panel$EditorGroup$editorTitleCloseIcon(editorRef)
 					])));
 	});
-var elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
-var elm$html$Html$map = elm$virtual_dom$VirtualDom$map;
 var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
 var author$project$Panel$EditorGroup$editorItemView = F6(

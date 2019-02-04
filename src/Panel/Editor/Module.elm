@@ -11,6 +11,9 @@ import Project
 import Project.Label
 import Project.Source
 import Project.Source.Module.Def as Def
+import Project.Source.Module.Def.Expr as Expr
+import Project.Source.Module.Def.Expr.Operator as Op
+import Project.Source.Module.Def.Expr.Term as Term
 import Project.Source.Module.Def.Name as Name
 import Project.Source.Module.Def.Type as Type
 import Project.Source.ModuleWithCache as ModuleWithCache
@@ -277,7 +280,7 @@ update msg project (Model rec) =
 
                 FocusPartEditor index (PartEditorEdit edit _) ->
                     Model { rec | focus = FocusPartEditor index (PartEditorMove (partEditorEditToMove edit)) }
-            , []
+            , [ EmitSetTextAreaValue "" ]
             )
 
         AddPartDef ->
@@ -739,11 +742,13 @@ partDefinitionEditor partEditorFocus def index =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditor" ]
         [ nameAndTypeView partEditorFocus (Def.getName def) (Def.getType def) index
-        , exprView partEditorFocus
+        , exprView partEditorFocus (Def.getExpr def) index
         , intermediateExprView
         ]
 
 
+{-| 名前と型の表示
+-}
 nameAndTypeView : Maybe PartEditorFocus -> Name.Name -> Type.Type -> Int -> Html.Html Msg
 nameAndTypeView partEditorFocus name type_ index =
     Html.div
@@ -770,6 +775,8 @@ nameAndTypeView partEditorFocus name type_ index =
         ]
 
 
+{-| 編集していない名前の表示
+-}
 nameViewOutput : Bool -> Name.Name -> Int -> Html.Html Msg
 nameViewOutput isFocus name index =
     Html.div
@@ -786,6 +793,8 @@ nameViewOutput isFocus name index =
         [ Html.text (Name.toString name |> Maybe.withDefault "<?>") ]
 
 
+{-| 編集している名前の表示
+-}
 nameViewInputOutput : List ( Char, Bool ) -> Html.Html Msg
 nameViewInputOutput textAreaValue =
     Html.div
@@ -814,6 +823,8 @@ nameViewInputOutput textAreaValue =
         )
 
 
+{-| 編集していない型の表示
+-}
 typeViewOutput : Bool -> Type.Type -> Int -> Html.Html Msg
 typeViewOutput isSelect type_ index =
     Html.div
@@ -830,6 +841,8 @@ typeViewOutput isSelect type_ index =
         [ Html.text (Type.toString type_ |> Maybe.withDefault "<?>") ]
 
 
+{-| 編集している型の表示
+-}
 typeViewInputOutput : List ( Char, Bool ) -> Html.Html Msg
 typeViewInputOutput textAreaValue =
     Html.div
@@ -858,26 +871,124 @@ typeViewInputOutput textAreaValue =
         )
 
 
-exprView : Maybe PartEditorFocus -> Html.Html Msg
-exprView partEditorFocus =
+{-| 式の表示
+-}
+exprView : Maybe PartEditorFocus -> Expr.Expr -> Int -> Html.Html Msg
+exprView partEditorFocus expr index =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditor-expr" ]
-        ([ Html.text "="
-         ]
-            ++ (if partEditorFocus == Just (PartEditorMove MoveExprHead) then
-                    [ caret ]
+        ((Html.text "="
+            :: (case partEditorFocus of
+                    Just (PartEditorMove MoveExprHead) ->
+                        [ moveModeCaret, termViewOutput (Expr.getHead expr) ]
 
-                else
-                    []
+                    Just (PartEditorMove MoveHeadTerm) ->
+                        [ termViewOutput (Expr.getHead expr), moveModeCaret ]
+
+                    Just (PartEditorEdit EditExprHeadTerm textAreaValue) ->
+                        [ termViewInputOutput textAreaValue ]
+
+                    _ ->
+                        [ termViewOutput (Expr.getHead expr) ]
                )
+         )
+            |> List.map
+                (Html.map
+                    (always
+                        (FocusToPartEditor index (PartEditorMove MoveExprHead))
+                    )
+                )
         )
 
 
-caret : Html.Html Msg
-caret =
+{-| 編集していない項の表示
+-}
+termViewOutput : Term.Term -> Html.Html ()
+termViewOutput term =
     Html.div
-        [ Html.Attributes.class "moduleEditor-partDefEditor-caret" ]
-        []
+        [ Html.Events.onClick ()
+        , Html.Attributes.class "moduleEditor-partDefEditor-term"
+        ]
+        [ Html.text (Term.toString term) ]
+
+
+{-| 編集している項の表示
+-}
+termViewInputOutput : List ( Char, Bool ) -> Html.Html msg
+termViewInputOutput textAreaValue =
+    Html.div
+        [ Html.Attributes.class "editTarget"
+        , Html.Attributes.class "moduleEditor-partDefEditor-term"
+        ]
+        (case textAreaValue of
+            _ :: _ ->
+                textAreaValue
+                    |> List.map
+                        (\( char, bool ) ->
+                            Html.div
+                                [ Html.Attributes.class
+                                    (if bool then
+                                        "nameOkChar"
+
+                                     else
+                                        "errChar"
+                                    )
+                                ]
+                                [ Html.text (String.fromChar char) ]
+                        )
+
+            [] ->
+                [ Html.text "TERM" ]
+        )
+
+
+opViewOutput : Op.Operator -> Html.Html ()
+opViewOutput op =
+    Html.div
+        [ Html.Events.onClick ()
+        , Html.Attributes.class "moduleEditor-partDefEditor-op"
+        ]
+        [ Html.text (Op.toString op |> Maybe.withDefault "?") ]
+
+
+opViewInputOutput : List ( Char, Bool ) -> Html.Html msg
+opViewInputOutput textAreaValue =
+    Html.div
+        [ Html.Attributes.class "editTarget"
+        , Html.Attributes.class "moduleEditor-partDefEditor-op"
+        ]
+        (case textAreaValue of
+            _ :: _ ->
+                textAreaValue
+                    |> List.map
+                        (\( char, bool ) ->
+                            Html.div
+                                [ Html.Attributes.class
+                                    (if bool then
+                                        "nameOkChar"
+
+                                     else
+                                        "errChar"
+                                    )
+                                ]
+                                [ Html.text (String.fromChar char) ]
+                        )
+
+            [] ->
+                [ Html.text "OP" ]
+        )
+
+
+{-| 移動モードの式のキャレット
+-}
+moveModeCaret : Html.Html msg
+moveModeCaret =
+    Html.div
+        [ Html.Attributes.class "moduleEditor-partDefEditor-caretBox" ]
+        [ Html.div
+            [ Html.Attributes.class "moduleEditor-partDefEditor-caret" ]
+            []
+        ]
 
 
 intermediateExprView : Html.Html Msg
