@@ -46,7 +46,7 @@ import Utility.Map
 type Model
     = Model
         { group : Group
-        , activeEditorRef : EditorRef
+        , activeEditorIndex : EditorIndex
         , mouseOverOpenEditorPosition : Maybe OpenEditorPosition
         }
 
@@ -55,19 +55,19 @@ type Model
 -}
 type Group
     = RowOne
-        { columnGroup : ColumnGroup
+        { left : ColumnGroup
         }
     | RowTwo
-        { columnGroupLeft : ColumnGroup
-        , columnGroupRight : ColumnGroup
-        , columnGroupLeftWidth : Int -- MAX 1000
+        { left : ColumnGroup
+        , center : ColumnGroup
+        , leftWidth : Int -- MAX 1000
         }
     | RowThree
-        { columnGroupLeft : ColumnGroup
-        , columnGroupCenter : ColumnGroup
-        , columnGroupRight : ColumnGroup
-        , columnGroupLeftWidth : Int
-        , columnGroupCenterWidth : Int -- LeftとCenterを足してMAX 1000
+        { left : ColumnGroup
+        , center : ColumnGroup
+        , right : ColumnGroup
+        , leftWidth : Int
+        , centerWidth : Int -- LeftとCenterを足してMAX 1000
         }
 
 
@@ -75,12 +75,12 @@ type Group
 -}
 type ColumnGroup
     = ColumnOne
-        { editor : EditorItem
+        { top : EditorItem
         }
     | ColumnTwo
-        { editorTop : EditorItem
-        , editorBottom : EditorItem
-        , editorTopHeight : Int -- Max 1000
+        { top : EditorItem
+        , bottom : EditorItem
+        , topHeight : Int -- Max 1000
         }
 
 
@@ -97,13 +97,13 @@ type EditorItem
 
 {-| 最大6個のエディタのどれを指しているのかを示す
 -}
-type alias EditorRef =
-    ( EditorRefRow, EditorRefColumn )
+type alias EditorIndex =
+    ( EditorIndexRow, EditorIndexColumn )
 
 
 {-| 横方向。左、真ん中、右
 -}
-type EditorRefRow
+type EditorIndexRow
     = EditorRefLeft
     | EditorRefCenter
     | EditorRefRight
@@ -111,7 +111,7 @@ type EditorRefRow
 
 {-| 縦方向。上、下
 -}
-type EditorRefColumn
+type EditorIndexColumn
     = EditorRefTop
     | EditorRefBottom
 
@@ -137,12 +137,12 @@ type GutterHorizontal
 {-| EditorGroupへのメッセージ
 -}
 type Msg
-    = ChangeActiveEditor EditorRef -- 他のエディタへアクティブなエディタを変更する
+    = ChangeActiveEditor EditorIndex -- 他のエディタへアクティブなエディタを変更する
     | OpenEditor OpenEditorPosition -- エディタを表示する
-    | CloseEditor EditorRef -- エディタを削除する
+    | CloseEditor EditorIndex -- エディタを削除する
     | MouseEnterOpenEditorGutter OpenEditorPosition -- マウスがGutterの上を通る
     | MouseLeaveOpenEditorGutter -- マウスがGutterの上から離れる
-    | EditorItemMsg { msg : EditorItemMsg, ref : EditorRef } -- 内包しているエディタへのMsg
+    | EditorItemMsg { msg : EditorItemMsg, ref : EditorIndex } -- 内包しているエディタへのMsg
     | EditorItemMsgToActive EditorItemMsg -- アクティブなエディタへのMsg
     | GrabVerticalGutter GutterVertical -- |垂直Gutterをつかむ
     | GrabHorizontalGutter GutterHorizontal -- -水平Gutterをつかむ
@@ -181,11 +181,11 @@ initModel =
     Model
         { group =
             RowOne
-                { columnGroup =
+                { left =
                     ColumnOne
-                        { editor = ModuleEditor (Panel.Editor.Module.initModel Project.Source.SampleModule) }
+                        { top = ModuleEditor (Panel.Editor.Module.initModel Project.Source.SampleModule) }
                 }
-        , activeEditorRef = ( EditorRefLeft, EditorRefTop )
+        , activeEditorIndex = ( EditorRefLeft, EditorRefTop )
         , mouseOverOpenEditorPosition = Nothing
         }
 
@@ -420,12 +420,12 @@ moduleEditorEmitToEmit emit =
 
 {-| 右端と下の端にある表示するエディタを増やすのボタンをおしたら、エディタ全体がどう変わるかと新しくアクティブになるエディタを返す
 -}
-openEditor : EditorRef -> OpenEditorPosition -> Group -> ( Group, EditorRef )
+openEditor : EditorIndex -> OpenEditorPosition -> Group -> ( Group, EditorIndex )
 openEditor activeEditorRef showEditorPosition group =
     (case group of
-        RowOne { columnGroup } ->
+        RowOne { left } ->
             openEditorRowOne
-                columnGroup
+                left
                 showEditorPosition
                 (getEditorItem activeEditorRef group)
 
@@ -444,29 +444,29 @@ openEditor activeEditorRef showEditorPosition group =
         |> Maybe.withDefault ( group, activeEditorRef )
 
 
-openEditorRowOne : ColumnGroup -> OpenEditorPosition -> EditorItem -> Maybe ( Group, EditorRef )
+openEditorRowOne : ColumnGroup -> OpenEditorPosition -> EditorItem -> Maybe ( Group, EditorIndex )
 openEditorRowOne colGroup addEditorPosition item =
     case addEditorPosition of
         OpenEditorPositionRightRow ->
             Just
                 ( RowTwo
-                    { columnGroupLeft = colGroup
-                    , columnGroupRight = ColumnOne { editor = item }
-                    , columnGroupLeftWidth = 500
+                    { left = colGroup
+                    , center = ColumnOne { top = item }
+                    , leftWidth = 500
                     }
                 , ( EditorRefCenter, EditorRefTop )
                 )
 
         OpenEditorPositionLeftBottom ->
             case colGroup of
-                ColumnOne { editor } ->
+                ColumnOne { top } ->
                     Just
                         ( RowOne
-                            { columnGroup =
+                            { left =
                                 ColumnTwo
-                                    { editorTop = editor
-                                    , editorBottom = item
-                                    , editorTopHeight = 500
+                                    { top = top
+                                    , bottom = item
+                                    , topHeight = 500
                                     }
                             }
                         , ( EditorRefLeft, EditorRefBottom )
@@ -480,38 +480,38 @@ openEditorRowOne colGroup addEditorPosition item =
 
 
 openEditorRowTwo :
-    { columnGroupLeft : ColumnGroup
-    , columnGroupRight : ColumnGroup
-    , columnGroupLeftWidth : Int
+    { left : ColumnGroup
+    , center : ColumnGroup
+    , leftWidth : Int
     }
     -> OpenEditorPosition
     -> EditorItem
-    -> Maybe ( Group, EditorRef )
+    -> Maybe ( Group, EditorIndex )
 openEditorRowTwo rec addEditorPosition item =
     case addEditorPosition of
         OpenEditorPositionRightRow ->
             Just
                 ( RowThree
-                    { columnGroupLeft = rec.columnGroupLeft
-                    , columnGroupCenter = rec.columnGroupRight
-                    , columnGroupRight = ColumnOne { editor = item }
-                    , columnGroupLeftWidth = 333
-                    , columnGroupCenterWidth = 333
+                    { left = rec.left
+                    , center = rec.center
+                    , right = ColumnOne { top = item }
+                    , leftWidth = 333
+                    , centerWidth = 333
                     }
                 , ( EditorRefRight, EditorRefTop )
                 )
 
         OpenEditorPositionLeftBottom ->
-            case rec.columnGroupLeft of
-                ColumnOne { editor } ->
+            case rec.left of
+                ColumnOne { top } ->
                     Just
                         ( RowTwo
                             { rec
-                                | columnGroupLeft =
+                                | left =
                                     ColumnTwo
-                                        { editorTop = editor
-                                        , editorBottom = item
-                                        , editorTopHeight = 500
+                                        { top = top
+                                        , bottom = item
+                                        , topHeight = 500
                                         }
                             }
                         , ( EditorRefLeft, EditorRefBottom )
@@ -521,16 +521,16 @@ openEditorRowTwo rec addEditorPosition item =
                     Nothing
 
         OpenEditorPositionCenterBottom ->
-            case rec.columnGroupRight of
-                ColumnOne { editor } ->
+            case rec.center of
+                ColumnOne { top } ->
                     Just
                         ( RowTwo
                             { rec
-                                | columnGroupRight =
+                                | center =
                                     ColumnTwo
-                                        { editorTop = editor
-                                        , editorBottom = item
-                                        , editorTopHeight = 500
+                                        { top = top
+                                        , bottom = item
+                                        , topHeight = 500
                                         }
                             }
                         , ( EditorRefCenter, EditorRefBottom )
@@ -544,28 +544,28 @@ openEditorRowTwo rec addEditorPosition item =
 
 
 openEditorRowThree :
-    { columnGroupLeft : ColumnGroup
-    , columnGroupCenter : ColumnGroup
-    , columnGroupRight : ColumnGroup
-    , columnGroupLeftWidth : Int
-    , columnGroupCenterWidth : Int
+    { left : ColumnGroup
+    , center : ColumnGroup
+    , right : ColumnGroup
+    , leftWidth : Int
+    , centerWidth : Int
     }
     -> OpenEditorPosition
     -> EditorItem
-    -> Maybe ( Group, EditorRef )
+    -> Maybe ( Group, EditorIndex )
 openEditorRowThree rec addEditorPosition item =
     case addEditorPosition of
         OpenEditorPositionLeftBottom ->
-            case rec.columnGroupLeft of
-                ColumnOne { editor } ->
+            case rec.left of
+                ColumnOne { top } ->
                     Just
                         ( RowThree
                             { rec
-                                | columnGroupLeft =
+                                | left =
                                     ColumnTwo
-                                        { editorTop = editor
-                                        , editorBottom = item
-                                        , editorTopHeight = 500
+                                        { top = top
+                                        , bottom = item
+                                        , topHeight = 500
                                         }
                             }
                         , ( EditorRefLeft, EditorRefBottom )
@@ -575,16 +575,16 @@ openEditorRowThree rec addEditorPosition item =
                     Nothing
 
         OpenEditorPositionCenterBottom ->
-            case rec.columnGroupCenter of
-                ColumnOne { editor } ->
+            case rec.center of
+                ColumnOne { top } ->
                     Just
                         ( RowThree
                             { rec
-                                | columnGroupCenter =
+                                | center =
                                     ColumnTwo
-                                        { editorTop = editor
-                                        , editorBottom = item
-                                        , editorTopHeight = 500
+                                        { top = top
+                                        , bottom = item
+                                        , topHeight = 500
                                         }
                             }
                         , ( EditorRefCenter, EditorRefBottom )
@@ -594,16 +594,16 @@ openEditorRowThree rec addEditorPosition item =
                     Nothing
 
         OpenEditorPositionRightBottom ->
-            case rec.columnGroupRight of
-                ColumnOne { editor } ->
+            case rec.right of
+                ColumnOne { top } ->
                     Just
                         ( RowThree
                             { rec
-                                | columnGroupRight =
+                                | right =
                                     ColumnTwo
-                                        { editorTop = editor
-                                        , editorBottom = item
-                                        , editorTopHeight = 500
+                                        { top = top
+                                        , bottom = item
+                                        , topHeight = 500
                                         }
                             }
                         , ( EditorRefRight, EditorRefBottom )
@@ -616,87 +616,85 @@ openEditorRowThree rec addEditorPosition item =
             Nothing
 
 
-
-{- ==== Close Editor ==== -}
-
-
-closeEditor : EditorRef -> Group -> Group
-closeEditor editorRef group =
+{-| エディタを閉じる
+-}
+closeEditor : EditorIndex -> Group -> Group
+closeEditor index group =
     case group of
-        RowOne { columnGroup } ->
-            case editorRef of
+        RowOne rec ->
+            case index of
                 ( EditorRefLeft, editorRefColumn ) ->
-                    closeEditorColumn editorRefColumn columnGroup
-                        |> Maybe.map (\col -> RowOne { columnGroup = col })
+                    closeEditorColumn editorRefColumn rec.left
+                        |> Maybe.map (\col -> RowOne { rec | left = col })
                         |> Maybe.withDefault group
 
                 _ ->
                     group
 
         RowTwo rec ->
-            case Tuple.first editorRef of
+            case Tuple.first index of
                 EditorRefLeft ->
-                    closeEditorColumn (Tuple.second editorRef) rec.columnGroupLeft
-                        |> Maybe.map (\col -> RowTwo { rec | columnGroupLeft = col })
+                    closeEditorColumn (Tuple.second index) rec.left
+                        |> Maybe.map (\col -> RowTwo { rec | left = col })
                         |> Maybe.withDefault
-                            (RowOne { columnGroup = rec.columnGroupRight })
+                            (RowOne { left = rec.center })
 
                 EditorRefCenter ->
-                    closeEditorColumn (Tuple.second editorRef) rec.columnGroupRight
-                        |> Maybe.map (\col -> RowTwo { rec | columnGroupRight = col })
+                    closeEditorColumn (Tuple.second index) rec.center
+                        |> Maybe.map (\col -> RowTwo { rec | center = col })
                         |> Maybe.withDefault
-                            (RowOne { columnGroup = rec.columnGroupLeft })
+                            (RowOne { left = rec.left })
 
                 _ ->
                     group
 
         RowThree rec ->
-            case Tuple.first editorRef of
+            case Tuple.first index of
                 EditorRefLeft ->
-                    closeEditorColumn (Tuple.second editorRef) rec.columnGroupLeft
-                        |> Maybe.map (\col -> RowThree { rec | columnGroupLeft = col })
+                    closeEditorColumn (Tuple.second index) rec.left
+                        |> Maybe.map (\col -> RowThree { rec | left = col })
                         |> Maybe.withDefault
                             (RowTwo
-                                { columnGroupLeft = rec.columnGroupCenter
-                                , columnGroupRight = rec.columnGroupRight
-                                , columnGroupLeftWidth = rec.columnGroupCenterWidth
+                                { left = rec.center
+                                , center = rec.right
+                                , leftWidth = rec.centerWidth
                                 }
                             )
 
                 EditorRefCenter ->
-                    closeEditorColumn (Tuple.second editorRef) rec.columnGroupCenter
-                        |> Maybe.map (\col -> RowThree { rec | columnGroupCenter = col })
+                    closeEditorColumn (Tuple.second index) rec.center
+                        |> Maybe.map (\col -> RowThree { rec | center = col })
                         |> Maybe.withDefault
                             (RowTwo
-                                { columnGroupLeft = rec.columnGroupLeft
-                                , columnGroupRight = rec.columnGroupRight
-                                , columnGroupLeftWidth = rec.columnGroupLeftWidth
+                                { left = rec.left
+                                , center = rec.right
+                                , leftWidth = rec.leftWidth
                                 }
                             )
 
                 EditorRefRight ->
-                    closeEditorColumn (Tuple.second editorRef) rec.columnGroupRight
-                        |> Maybe.map (\col -> RowThree { rec | columnGroupRight = col })
+                    closeEditorColumn (Tuple.second index) rec.right
+                        |> Maybe.map (\col -> RowThree { rec | right = col })
                         |> Maybe.withDefault
                             (RowTwo
-                                { columnGroupLeft = rec.columnGroupLeft
-                                , columnGroupRight = rec.columnGroupCenter
-                                , columnGroupLeftWidth = rec.columnGroupLeftWidth
+                                { left = rec.left
+                                , center = rec.center
+                                , leftWidth = rec.leftWidth
                                 }
                             )
 
 
-closeEditorColumn : EditorRefColumn -> ColumnGroup -> Maybe ColumnGroup
+closeEditorColumn : EditorIndexColumn -> ColumnGroup -> Maybe ColumnGroup
 closeEditorColumn editorRefColumn columnGroup =
     case ( editorRefColumn, columnGroup ) of
         ( _, ColumnOne _ ) ->
             Nothing
 
-        ( EditorRefTop, ColumnTwo { editorBottom } ) ->
-            Just (ColumnOne { editor = editorBottom })
+        ( EditorRefTop, ColumnTwo { bottom } ) ->
+            Just (ColumnOne { top = bottom })
 
-        ( EditorRefBottom, ColumnTwo { editorTop } ) ->
-            Just (ColumnOne { editor = editorTop })
+        ( EditorRefBottom, ColumnTwo { top } ) ->
+            Just (ColumnOne { top = top })
 
 
 
@@ -762,7 +760,7 @@ resizeVertical { x, width } gutter group =
                 GutterVerticalLeft ->
                     RowTwo
                         { rec
-                            | columnGroupLeftWidth =
+                            | leftWidth =
                                 clamp 100 900 (x * 1002 // width - 1)
                         }
 
@@ -779,10 +777,10 @@ resizeVertical { x, width } gutter group =
                     in
                     RowThree
                         { rec
-                            | columnGroupLeftWidth =
+                            | leftWidth =
                                 leftWidth
-                            , columnGroupCenterWidth =
-                                max 100 (rec.columnGroupLeftWidth + rec.columnGroupCenterWidth - leftWidth)
+                            , centerWidth =
+                                max 100 (rec.leftWidth + rec.centerWidth - leftWidth)
                         }
 
                 GutterVerticalRight ->
@@ -792,14 +790,14 @@ resizeVertical { x, width } gutter group =
                     in
                     RowThree
                         { rec
-                            | columnGroupLeftWidth =
-                                if leftWidth - rec.columnGroupLeftWidth < 100 then
+                            | leftWidth =
+                                if leftWidth - rec.leftWidth < 100 then
                                     leftWidth - 100
 
                                 else
-                                    rec.columnGroupLeftWidth
-                            , columnGroupCenterWidth =
-                                max 100 (leftWidth - rec.columnGroupLeftWidth)
+                                    rec.leftWidth
+                            , centerWidth =
+                                max 100 (leftWidth - rec.leftWidth)
                         }
 
 
@@ -825,8 +823,8 @@ resizeHorizontal { y, height } gutter group =
         RowOne rec ->
             case gutter of
                 GutterHorizontalLeft ->
-                    resizeInColumn rec.columnGroup y height
-                        |> Maybe.map (\col -> RowOne { rec | columnGroup = col })
+                    resizeInColumn rec.left y height
+                        |> Maybe.map (\col -> RowOne { rec | left = col })
                         |> Maybe.withDefault group
 
                 _ ->
@@ -835,13 +833,13 @@ resizeHorizontal { y, height } gutter group =
         RowTwo rec ->
             case gutter of
                 GutterHorizontalLeft ->
-                    resizeInColumn rec.columnGroupLeft y height
-                        |> Maybe.map (\col -> RowTwo { rec | columnGroupLeft = col })
+                    resizeInColumn rec.left y height
+                        |> Maybe.map (\col -> RowTwo { rec | left = col })
                         |> Maybe.withDefault group
 
                 GutterHorizontalCenter ->
-                    resizeInColumn rec.columnGroupRight y height
-                        |> Maybe.map (\col -> RowTwo { rec | columnGroupRight = col })
+                    resizeInColumn rec.center y height
+                        |> Maybe.map (\col -> RowTwo { rec | center = col })
                         |> Maybe.withDefault group
 
                 _ ->
@@ -850,18 +848,18 @@ resizeHorizontal { y, height } gutter group =
         RowThree rec ->
             case gutter of
                 GutterHorizontalLeft ->
-                    resizeInColumn rec.columnGroupLeft y height
-                        |> Maybe.map (\col -> RowThree { rec | columnGroupLeft = col })
+                    resizeInColumn rec.left y height
+                        |> Maybe.map (\col -> RowThree { rec | left = col })
                         |> Maybe.withDefault group
 
                 GutterHorizontalCenter ->
-                    resizeInColumn rec.columnGroupCenter y height
-                        |> Maybe.map (\col -> RowThree { rec | columnGroupCenter = col })
+                    resizeInColumn rec.center y height
+                        |> Maybe.map (\col -> RowThree { rec | center = col })
                         |> Maybe.withDefault group
 
                 GutterHorizontalRight ->
-                    resizeInColumn rec.columnGroupRight y height
-                        |> Maybe.map (\col -> RowThree { rec | columnGroupRight = col })
+                    resizeInColumn rec.right y height
+                        |> Maybe.map (\col -> RowThree { rec | right = col })
                         |> Maybe.withDefault group
 
 
@@ -875,7 +873,7 @@ resizeInColumn columnGroup mouseRelY editorHeight =
             Just
                 (ColumnTwo
                     { rec
-                        | editorTopHeight = clamp 100 900 (mouseRelY * 1002 // editorHeight - 1)
+                        | topHeight = clamp 100 900 (mouseRelY * 1002 // editorHeight - 1)
                     }
                 )
 
@@ -906,50 +904,50 @@ mapGroup =
 {- =========  アクティブなエディタ位置 ========== -}
 
 
-getActiveEditorRef : Model -> EditorRef
-getActiveEditorRef (Model { activeEditorRef }) =
-    activeEditorRef
+getActiveEditorRef : Model -> EditorIndex
+getActiveEditorRef (Model { activeEditorIndex }) =
+    activeEditorIndex
 
 
-setActiveEditorRefUnsafe : EditorRef -> Model -> Model
-setActiveEditorRefUnsafe activeEditorRef (Model rec) =
-    Model { rec | activeEditorRef = activeEditorRef }
+setActiveEditorRefUnsafe : EditorIndex -> Model -> Model
+setActiveEditorRefUnsafe activeEditorIndex (Model rec) =
+    Model { rec | activeEditorIndex = activeEditorIndex }
 
 
 {-| Activeなエディタを設定する。そのEditorRefが開かれていなければ、近くのものをActiveにする
 -}
-setActiveEditorRef : EditorRef -> Model -> Model
+setActiveEditorRef : EditorIndex -> Model -> Model
 setActiveEditorRef ( rowRef, colRef ) model =
     model
         |> setActiveEditorRefUnsafe
             (case getGroup model of
-                RowOne { columnGroup } ->
-                    ( EditorRefLeft, adjustColumnRef columnGroup colRef )
+                RowOne { left } ->
+                    ( EditorRefLeft, adjustColumnRef left colRef )
 
-                RowTwo { columnGroupLeft, columnGroupRight } ->
+                RowTwo { left, center } ->
                     case rowRef of
                         EditorRefLeft ->
-                            ( EditorRefLeft, adjustColumnRef columnGroupLeft colRef )
+                            ( EditorRefLeft, adjustColumnRef left colRef )
 
                         _ ->
-                            ( EditorRefCenter, adjustColumnRef columnGroupRight colRef )
+                            ( EditorRefCenter, adjustColumnRef center colRef )
 
-                RowThree { columnGroupLeft, columnGroupCenter, columnGroupRight } ->
+                RowThree { left, center, right } ->
                     case rowRef of
                         EditorRefLeft ->
-                            ( EditorRefLeft, adjustColumnRef columnGroupLeft colRef )
+                            ( EditorRefLeft, adjustColumnRef left colRef )
 
                         EditorRefCenter ->
-                            ( EditorRefCenter, adjustColumnRef columnGroupCenter colRef )
+                            ( EditorRefCenter, adjustColumnRef center colRef )
 
                         EditorRefRight ->
-                            ( EditorRefRight, adjustColumnRef columnGroupRight colRef )
+                            ( EditorRefRight, adjustColumnRef right colRef )
             )
 
 
 {-| editorColumnRefが存在するエディタを参照できるようにする
 -}
-adjustColumnRef : ColumnGroup -> EditorRefColumn -> EditorRefColumn
+adjustColumnRef : ColumnGroup -> EditorIndexColumn -> EditorIndexColumn
 adjustColumnRef columnGroup editorRefColumn =
     case columnGroup of
         ColumnOne _ ->
@@ -959,7 +957,7 @@ adjustColumnRef columnGroup editorRefColumn =
             editorRefColumn
 
 
-mapActiveEditorRef : (EditorRef -> EditorRef) -> Model -> Model
+mapActiveEditorRef : (EditorIndex -> EditorIndex) -> Model -> Model
 mapActiveEditorRef =
     Utility.Map.toMapper getActiveEditorRef setActiveEditorRef
 
@@ -979,59 +977,59 @@ changeEditorItem item model =
 
 {-| エディタの位置を受け取って、エディタの中身(Modelとか)を返す
 -}
-getEditorItem : EditorRef -> Group -> EditorItem
+getEditorItem : EditorIndex -> Group -> EditorItem
 getEditorItem editorRef rowGroup =
     getEditorItemColumn (Tuple.second editorRef)
         (case rowGroup of
-            RowOne { columnGroup } ->
-                columnGroup
+            RowOne { left } ->
+                left
 
-            RowTwo { columnGroupLeft, columnGroupRight } ->
+            RowTwo { left, center } ->
                 case Tuple.first editorRef of
                     EditorRefLeft ->
-                        columnGroupLeft
+                        left
 
                     _ ->
-                        columnGroupRight
+                        center
 
-            RowThree { columnGroupLeft, columnGroupCenter, columnGroupRight } ->
+            RowThree { left, center, right } ->
                 case Tuple.first editorRef of
                     EditorRefLeft ->
-                        columnGroupLeft
+                        left
 
                     EditorRefCenter ->
-                        columnGroupCenter
+                        center
 
                     EditorRefRight ->
-                        columnGroupRight
+                        right
         )
 
 
-getEditorItemColumn : EditorRefColumn -> ColumnGroup -> EditorItem
+getEditorItemColumn : EditorIndexColumn -> ColumnGroup -> EditorItem
 getEditorItemColumn editorRefCol colGroup =
     case colGroup of
-        ColumnOne { editor } ->
-            editor
+        ColumnOne { top } ->
+            top
 
-        ColumnTwo { editorTop, editorBottom } ->
+        ColumnTwo { top, bottom } ->
             case editorRefCol of
                 EditorRefTop ->
-                    editorTop
+                    top
 
                 EditorRefBottom ->
-                    editorBottom
+                    bottom
 
 
 {-| エディタの中身を上書きする。指定するエディタの位置がないものだったらその左や上を上書きする
 -}
-setEditorItem : EditorRef -> EditorItem -> Group -> Group
+setEditorItem : EditorIndex -> EditorItem -> Group -> Group
 setEditorItem editorRef item group =
     case group of
         RowOne recRow ->
             RowOne
                 { recRow
-                    | columnGroup =
-                        setEditorItemColumn (Tuple.second editorRef) item recRow.columnGroup
+                    | left =
+                        setEditorItemColumn (Tuple.second editorRef) item recRow.left
                 }
 
         RowTwo recRow ->
@@ -1039,14 +1037,14 @@ setEditorItem editorRef item group =
                 (case Tuple.first editorRef of
                     EditorRefLeft ->
                         { recRow
-                            | columnGroupLeft =
-                                setEditorItemColumn (Tuple.second editorRef) item recRow.columnGroupLeft
+                            | left =
+                                setEditorItemColumn (Tuple.second editorRef) item recRow.left
                         }
 
                     _ ->
                         { recRow
-                            | columnGroupRight =
-                                setEditorItemColumn (Tuple.second editorRef) item recRow.columnGroupRight
+                            | center =
+                                setEditorItemColumn (Tuple.second editorRef) item recRow.center
                         }
                 )
 
@@ -1055,47 +1053,44 @@ setEditorItem editorRef item group =
                 (case Tuple.first editorRef of
                     EditorRefLeft ->
                         { recRow
-                            | columnGroupLeft =
-                                setEditorItemColumn (Tuple.second editorRef) item recRow.columnGroupLeft
+                            | left =
+                                setEditorItemColumn (Tuple.second editorRef) item recRow.left
                         }
 
                     EditorRefCenter ->
                         { recRow
-                            | columnGroupCenter =
-                                setEditorItemColumn (Tuple.second editorRef) item recRow.columnGroupCenter
+                            | center =
+                                setEditorItemColumn (Tuple.second editorRef) item recRow.center
                         }
 
                     EditorRefRight ->
                         { recRow
-                            | columnGroupRight =
-                                setEditorItemColumn (Tuple.second editorRef) item recRow.columnGroupRight
+                            | right =
+                                setEditorItemColumn (Tuple.second editorRef) item recRow.right
                         }
                 )
 
 
-setEditorItemColumn : EditorRefColumn -> EditorItem -> ColumnGroup -> ColumnGroup
+setEditorItemColumn : EditorIndexColumn -> EditorItem -> ColumnGroup -> ColumnGroup
 setEditorItemColumn editorRefCol item columnGroup =
     case columnGroup of
         ColumnOne recCol ->
-            ColumnOne
-                { recCol
-                    | editor = item
-                }
+            ColumnOne { recCol | top = item }
 
         ColumnTwo recCol ->
             ColumnTwo
                 (case editorRefCol of
                     EditorRefTop ->
-                        { recCol | editorTop = item }
+                        { recCol | top = item }
 
                     EditorRefBottom ->
-                        { recCol | editorBottom = item }
+                        { recCol | bottom = item }
                 )
 
 
 {-| エディタの位置とエディタを加工する関数でGroupを更新する
 -}
-mapAtEditorItem : EditorRef -> (EditorItem -> EditorItem) -> Group -> Group
+mapAtEditorItem : EditorIndex -> (EditorItem -> EditorItem) -> Group -> Group
 mapAtEditorItem ref =
     Utility.Map.toMapper
         (getEditorItem ref)
@@ -1131,28 +1126,28 @@ projectRefToEditorItem projectRef =
 
 
 view : Project.Project -> { width : Int, height : Int } -> Bool -> Maybe Gutter -> Model -> List (Html.Html Msg)
-view project { width, height } isFocus gutter (Model { group, activeEditorRef, mouseOverOpenEditorPosition }) =
+view project { width, height } isFocus gutter (Model { group, activeEditorIndex, mouseOverOpenEditorPosition }) =
     (case group of
-        RowOne { columnGroup } ->
+        RowOne { left } ->
             [ editorColumn
                 project
-                columnGroup
+                left
                 { width = width - 2, height = height }
                 OpenEditorPositionLeftBottom
-                activeEditorRef
+                activeEditorIndex
                 EditorRefLeft
                 (gutter == Just (GutterHorizontal GutterHorizontalLeft))
                 True
             , editorRowAddGutter
             ]
 
-        RowTwo { columnGroupLeft, columnGroupRight, columnGroupLeftWidth } ->
+        RowTwo { left, center, leftWidth } ->
             [ editorColumn
                 project
-                columnGroupLeft
-                { width = (width - 4) * columnGroupLeftWidth // 1000, height = height }
+                left
+                { width = (width - 4) * leftWidth // 1000, height = height }
                 OpenEditorPositionLeftBottom
-                activeEditorRef
+                activeEditorIndex
                 EditorRefLeft
                 (gutter == Just (GutterHorizontal GutterHorizontalLeft))
                 False
@@ -1161,23 +1156,23 @@ view project { width, height } isFocus gutter (Model { group, activeEditorRef, m
                 (gutter == Just (GutterVertical GutterVerticalLeft))
             , editorColumn
                 project
-                columnGroupRight
-                { width = (width - 4) * (1000 - columnGroupLeftWidth) // 1000, height = height }
+                center
+                { width = (width - 4) * (1000 - leftWidth) // 1000, height = height }
                 OpenEditorPositionCenterBottom
-                activeEditorRef
+                activeEditorIndex
                 EditorRefCenter
                 (gutter == Just (GutterHorizontal GutterHorizontalCenter))
                 False
             , editorRowAddGutter
             ]
 
-        RowThree { columnGroupLeft, columnGroupCenter, columnGroupRight, columnGroupLeftWidth, columnGroupCenterWidth } ->
+        RowThree { left, center, right, leftWidth, centerWidth } ->
             [ editorColumn
                 project
-                columnGroupLeft
-                { width = (width - 4) * columnGroupLeftWidth // 1000, height = height }
+                left
+                { width = (width - 4) * leftWidth // 1000, height = height }
                 OpenEditorPositionLeftBottom
-                activeEditorRef
+                activeEditorIndex
                 EditorRefLeft
                 (gutter == Just (GutterHorizontal GutterHorizontalLeft))
                 False
@@ -1186,10 +1181,10 @@ view project { width, height } isFocus gutter (Model { group, activeEditorRef, m
                 (gutter == Just (GutterVertical GutterVerticalLeft))
             , editorColumn
                 project
-                columnGroupCenter
-                { width = (width - 4) * columnGroupCenterWidth // 1000, height = height }
+                center
+                { width = (width - 4) * centerWidth // 1000, height = height }
                 OpenEditorPositionCenterBottom
-                activeEditorRef
+                activeEditorIndex
                 EditorRefCenter
                 (gutter == Just (GutterHorizontal GutterHorizontalCenter))
                 False
@@ -1198,10 +1193,10 @@ view project { width, height } isFocus gutter (Model { group, activeEditorRef, m
                 (gutter == Just (GutterVertical GutterVerticalRight))
             , editorColumn
                 project
-                columnGroupRight
-                { width = (width - 4) * (1000 - columnGroupLeftWidth - columnGroupCenterWidth) // 1000, height = height }
+                right
+                { width = (width - 4) * (1000 - leftWidth - centerWidth) // 1000, height = height }
                 OpenEditorPositionRightBottom
-                activeEditorRef
+                activeEditorIndex
                 EditorRefRight
                 (gutter == Just (GutterHorizontal GutterHorizontalRight))
                 False
@@ -1264,11 +1259,11 @@ openEditorButton { width, height } group openEditorPosition =
                         RowOne _ ->
                             width // 2
 
-                        RowTwo { columnGroupLeftWidth } ->
-                            floor (toFloat width * toFloat columnGroupLeftWidth / 1000 / 2)
+                        RowTwo { leftWidth } ->
+                            floor (toFloat width * toFloat leftWidth / 1000 / 2)
 
-                        RowThree { columnGroupLeftWidth } ->
-                            floor (toFloat width * toFloat columnGroupLeftWidth / 1000 / 2)
+                        RowThree { leftWidth } ->
+                            floor (toFloat width * toFloat leftWidth / 1000 / 2)
                     , 10
                     )
 
@@ -1277,11 +1272,11 @@ openEditorButton { width, height } group openEditorPosition =
                         RowOne _ ->
                             width // 2
 
-                        RowTwo { columnGroupLeftWidth } ->
-                            floor (toFloat width * toFloat ((1000 + columnGroupLeftWidth) // 2) / 1000)
+                        RowTwo { leftWidth } ->
+                            floor (toFloat width * toFloat ((1000 + leftWidth) // 2) / 1000)
 
-                        RowThree { columnGroupLeftWidth, columnGroupCenterWidth } ->
-                            floor (toFloat width * toFloat (columnGroupLeftWidth + columnGroupCenterWidth // 2) / 1000)
+                        RowThree { leftWidth, centerWidth } ->
+                            floor (toFloat width * toFloat (leftWidth + centerWidth // 2) / 1000)
                     , 10
                     )
 
@@ -1290,11 +1285,11 @@ openEditorButton { width, height } group openEditorPosition =
                         RowOne _ ->
                             width // 2
 
-                        RowTwo { columnGroupLeftWidth } ->
-                            floor (toFloat width * (toFloat (1000 - columnGroupLeftWidth) / 1000) / 2)
+                        RowTwo { leftWidth } ->
+                            floor (toFloat width * (toFloat (1000 - leftWidth) / 1000) / 2)
 
-                        RowThree { columnGroupLeftWidth, columnGroupCenterWidth } ->
-                            floor (toFloat width * (toFloat (1000 + columnGroupLeftWidth + columnGroupCenterWidth) / 1000 / 2))
+                        RowThree { leftWidth, centerWidth } ->
+                            floor (toFloat width * (toFloat (1000 + leftWidth + centerWidth) / 1000 / 2))
                     , 10
                     )
     in
@@ -1362,17 +1357,17 @@ addBottom =
     ]
 
 
-editorColumn : Project.Project -> ColumnGroup -> { width : Int, height : Int } -> OpenEditorPosition -> EditorRef -> EditorRefRow -> Bool -> Bool -> Html.Html Msg
+editorColumn : Project.Project -> ColumnGroup -> { width : Int, height : Int } -> OpenEditorPosition -> EditorIndex -> EditorIndexRow -> Bool -> Bool -> Html.Html Msg
 editorColumn project columnGroup { width, height } showEditorPosition activeEditorRef editorRefRow isGutterActive isOne =
     Html.div
         [ subClass "column"
         , Html.Attributes.style "width" (String.fromInt width ++ "px")
         ]
         (case columnGroup of
-            ColumnOne { editor } ->
+            ColumnOne { top } ->
                 [ editorItemView
                     project
-                    editor
+                    top
                     { width = width, height = height - 2 }
                     ( editorRefRow, EditorRefTop )
                     (( editorRefRow, EditorRefTop ) == activeEditorRef)
@@ -1380,12 +1375,12 @@ editorColumn project columnGroup { width, height } showEditorPosition activeEdit
                 , editorColumnAddGutter showEditorPosition
                 ]
 
-            ColumnTwo { editorTop, editorBottom, editorTopHeight } ->
+            ColumnTwo { top, bottom, topHeight } ->
                 [ editorItemView
                     project
-                    editorTop
+                    top
                     { width = width
-                    , height = (height - 2) * editorTopHeight // 1000
+                    , height = (height - 2) * topHeight // 1000
                     }
                     ( editorRefRow, EditorRefTop )
                     (( editorRefRow, EditorRefTop ) == activeEditorRef)
@@ -1404,9 +1399,9 @@ editorColumn project columnGroup { width, height } showEditorPosition activeEdit
                     isGutterActive
                 , editorItemView
                     project
-                    editorBottom
+                    bottom
                     { width = width
-                    , height = (height - 2) * (1000 - editorTopHeight) // 1000
+                    , height = (height - 2) * (1000 - topHeight) // 1000
                     }
                     ( editorRefRow, EditorRefBottom )
                     (( editorRefRow, EditorRefBottom ) == activeEditorRef)
@@ -1447,7 +1442,7 @@ editorColumnAddGutter showEditorPosition =
 
 {-| それぞれのエディタの表示
 -}
-editorItemView : Project.Project -> EditorItem -> { width : Int, height : Int } -> EditorRef -> Bool -> Bool -> Html.Html Msg
+editorItemView : Project.Project -> EditorItem -> { width : Int, height : Int } -> EditorIndex -> Bool -> Bool -> Html.Html Msg
 editorItemView project item { width, height } editorRef isActive isOne =
     let
         childItem : { title : String, body : List (Html.Html Msg) }
@@ -1516,7 +1511,7 @@ editorItemView project item { width, height } editorRef isActive isOne =
 
 {-| エディタのタイトル。closeableはパネルが1つのときにとじるボタンをなくすためにある
 -}
-editorTitle : String -> EditorRef -> Bool -> Html.Html Msg
+editorTitle : String -> EditorIndex -> Bool -> Html.Html Msg
 editorTitle title editorRef closeable =
     Html.div
         [ subClass "editorTitle" ]
@@ -1533,7 +1528,7 @@ editorTitle title editorRef closeable =
 
 {-| エディタを閉じるときに押すボタン
 -}
-editorTitleCloseIcon : EditorRef -> Html.Html Msg
+editorTitleCloseIcon : EditorIndex -> Html.Html Msg
 editorTitleCloseIcon editorRef =
     Html.div
         [ Html.Events.onClick (CloseEditor editorRef)
