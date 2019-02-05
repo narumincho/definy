@@ -436,7 +436,7 @@ img {
     overflow: hidden;
     padding: 0;
     font-family: "mplus-2m-regular";
-    align-items: baseline;
+    align-items: center;
 }
 
 .moduleEditor-partDefEditor-name {

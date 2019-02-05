@@ -77,8 +77,8 @@ type PartFocusEdit
     = EditName
     | EditType
     | EditExprHeadTerm -- [abc]+ def + 28
-    | EditExprOp Int --    abc[+]def + 28 Intの範囲は0..254
-    | EditExprTerm Int --  abc +[def]+ 28 Intの範囲は0..254
+    | EditOp Int --    abc[+]def + 28 Intの範囲は0..254
+    | EditTerm Int --  abc +[def]+ 28 Intの範囲は0..254
 
 
 type PartFocusMove
@@ -376,8 +376,8 @@ partEditorMoveRight defMaybe partMove =
         MoveTerm i ->
             case defMaybe |> Maybe.map (Def.getExpr >> Expr.getOthers >> List.length) of
                 Just length ->
-                    if i < length then
-                        MoveOp (length + 1)
+                    if i + 1 <= length - 1 then
+                        MoveOp (i + 1)
 
                     else
                         MoveTerm i
@@ -466,13 +466,13 @@ partEditorEditToMove edit =
         EditExprHeadTerm ->
             MoveExprHead
 
-        EditExprTerm 0 ->
+        EditTerm 0 ->
             MoveHeadTerm
 
-        EditExprOp n ->
+        EditOp n ->
             MoveOp n
 
-        EditExprTerm n ->
+        EditTerm n ->
             MoveTerm (n - 1)
 
 
@@ -569,7 +569,7 @@ parseSimple string edit =
                             EditExprHeadTerm
 
                         else
-                            EditExprTerm (List.length termAndOpList - 1)
+                            EditTerm (List.length termAndOpList - 1)
                     , textAreaValue = textAreaValue
                     , name = Just name
                     , type_ = Just type_
@@ -578,7 +578,7 @@ parseSimple string edit =
                     }
 
                 Parser.BeginWithNameEndExprOp { name, type_, headTerm, termAndOpList, lastOp, textAreaValue } ->
-                    { edit = EditExprOp (List.length termAndOpList - 1)
+                    { edit = EditOp (List.length termAndOpList - 1)
                     , textAreaValue = textAreaValue
                     , name = Just name
                     , type_ = Just type_
@@ -603,7 +603,7 @@ parseSimple string edit =
                             EditExprHeadTerm
 
                         else
-                            EditExprTerm (List.length termAndOpList - 1)
+                            EditTerm (List.length termAndOpList - 1)
                     , textAreaValue = textAreaValue
                     , name = Nothing
                     , type_ = Just type_
@@ -612,7 +612,7 @@ parseSimple string edit =
                     }
 
                 Parser.BeginWithTypeEndExprOp { type_, headTerm, termAndOpList, lastOp, textAreaValue } ->
-                    { edit = EditExprOp (List.length termAndOpList - 1)
+                    { edit = EditOp (List.length termAndOpList - 1)
                     , textAreaValue = []
                     , name = Nothing
                     , type_ = Just type_
@@ -628,7 +628,7 @@ parseSimple string edit =
                             EditExprHeadTerm
 
                         else
-                            EditExprTerm (List.length opAndTermList - 1)
+                            EditTerm (List.length opAndTermList - 1)
                     , textAreaValue = textAreaValue
                     , name = Nothing
                     , type_ = Nothing
@@ -637,7 +637,7 @@ parseSimple string edit =
                     }
 
                 Parser.BeginWithExprHeadEndOp { headTerm, opAndTermList, lastOp, textAreaValue } ->
-                    { edit = EditExprOp (List.length opAndTermList - 1)
+                    { edit = EditOp (List.length opAndTermList - 1)
                     , textAreaValue = textAreaValue
                     , name = Nothing
                     , type_ = Nothing
@@ -717,10 +717,10 @@ focusToString focus =
                                         EditExprHeadTerm ->
                                             "先頭のTerm"
 
-                                        EditExprOp n ->
+                                        EditOp n ->
                                             String.fromInt n ++ "番目の演算子"
 
-                                        EditExprTerm n ->
+                                        EditTerm n ->
                                             String.fromInt n ++ "番目の項"
                                    )
 
@@ -740,10 +740,10 @@ focusToString focus =
                                             " a|+ b + c"
 
                                         MoveOp n ->
-                                            "+|" ++ String.fromInt n
+                                            "+|a  " ++ String.fromInt n
 
                                         MoveTerm n ->
-                                            "a|" ++ String.fromInt n
+                                            "+ a| " ++ String.fromInt n
                                    )
                    )
 
@@ -968,6 +968,7 @@ typeViewOutput isSelect type_ index =
                     ]
                 )
                 [ Html.text typeString ]
+
         Nothing ->
             Html.div
                 (if isSelect then
@@ -991,25 +992,20 @@ typeViewInputOutput textAreaValue =
         [ Html.Attributes.class "editTarget"
         , Html.Attributes.class "moduleEditor-partDefEditor-type"
         ]
-        (case textAreaValue of
-            _ :: _ ->
-                textAreaValue
-                    |> List.map
-                        (\( char, bool ) ->
-                            Html.div
-                                [ Html.Attributes.class
-                                    (if bool then
-                                        "moduleEditor-partDefEditor-okChar"
+        (textAreaValue
+            |> List.map
+                (\( char, bool ) ->
+                    Html.div
+                        [ Html.Attributes.class
+                            (if bool then
+                                "moduleEditor-partDefEditor-okChar"
 
-                                     else
-                                        "moduleEditor-partDefEditor-errChar"
-                                    )
-                                ]
-                                [ Html.text (String.fromChar char) ]
-                        )
-
-            [] ->
-                [ Html.text "TYPE" ]
+                             else
+                                "moduleEditor-partDefEditor-errChar"
+                            )
+                        ]
+                        [ Html.text (String.fromChar char) ]
+                )
         )
 
 
@@ -1019,20 +1015,9 @@ exprView : Maybe PartEditorFocus -> Expr.Expr -> Int -> Html.Html Msg
 exprView partEditorFocus expr index =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefEditor-expr" ]
-        ((Html.text "="
-            :: (case partEditorFocus of
-                    Just (PartEditorMove MoveExprHead) ->
-                        [ moveModeCaret, termViewOutput (Expr.getHead expr) ]
-
-                    Just (PartEditorMove MoveHeadTerm) ->
-                        [ termViewOutput (Expr.getHead expr), moveModeCaret ]
-
-                    Just (PartEditorEdit EditExprHeadTerm textAreaValue) ->
-                        [ termViewInputOutput textAreaValue ]
-
-                    _ ->
-                        [ termViewOutput (Expr.getHead expr) ]
-               )
+        (([ Html.text "=" ]
+            ++ exprViewHeadTerm partEditorFocus expr
+            ++ exprViewOpAndTermList partEditorFocus expr
          )
             |> List.map
                 (Html.map
@@ -1041,6 +1026,81 @@ exprView partEditorFocus expr index =
                     )
                 )
         )
+
+
+{-| 式の最初の項の表示
+-}
+exprViewHeadTerm : Maybe PartEditorFocus -> Expr.Expr -> List (Html.Html PartEditorFocus)
+exprViewHeadTerm partEditorFocusMaybe expr =
+    case partEditorFocusMaybe of
+        Just (PartEditorMove MoveExprHead) ->
+            [ moveModeCaret
+            , termViewOutput (Expr.getHead expr)
+                |> Html.map (always (PartEditorMove MoveExprHead))
+            ]
+
+        Just (PartEditorMove MoveHeadTerm) ->
+            [ termViewOutput (Expr.getHead expr)
+                |> Html.map (always (PartEditorMove MoveExprHead))
+            , moveModeCaret
+            ]
+
+        Just (PartEditorEdit EditExprHeadTerm textAreaValue) ->
+            [ termViewInputOutput textAreaValue ]
+
+        _ ->
+            [ termViewOutput (Expr.getHead expr)
+                |> Html.map (always (PartEditorMove MoveExprHead))
+            ]
+
+
+exprViewOpAndTermList : Maybe PartEditorFocus -> Expr.Expr -> List (Html.Html PartEditorFocus)
+exprViewOpAndTermList partEditorFocusMaybe expr =
+    expr
+        |> Expr.getOthers
+        |> List.indexedMap (exprViewOpAndTerm partEditorFocusMaybe)
+        |> List.concat
+
+
+exprViewOpAndTerm : Maybe PartEditorFocus -> Int -> ( Op.Operator, Term.Term ) -> List (Html.Html PartEditorFocus)
+exprViewOpAndTerm partEditorFocusMaybe index ( op, term ) =
+    case partEditorFocusMaybe of
+        Just (PartEditorMove (MoveOp i)) ->
+            [ opViewOutput op
+                |> Html.map (always (PartEditorMove (MoveOp index)))
+            , moveModeCaret
+            , termViewOutput term
+                |> Html.map (always (PartEditorMove (MoveTerm index)))
+            ]
+
+        Just (PartEditorMove (MoveTerm i)) ->
+            [ opViewOutput op
+                |> Html.map (always (PartEditorMove (MoveOp index)))
+            , termViewOutput term
+                |> Html.map (always (PartEditorMove (MoveTerm index)))
+            , moveModeCaret
+            ]
+
+        Just (PartEditorEdit (EditOp i) textAreaValue) ->
+            [ opViewInputOutput textAreaValue
+                |> Html.map (always (PartEditorMove (MoveOp index)))
+            , termViewOutput term
+                |> Html.map (always (PartEditorMove (MoveTerm index)))
+            ]
+
+        Just (PartEditorEdit (EditTerm i) textAreaValue) ->
+            [ opViewOutput op
+                |> Html.map (always (PartEditorMove (MoveOp index)))
+            , termViewInputOutput textAreaValue
+                |> Html.map (always (PartEditorMove (MoveTerm index)))
+            ]
+
+        _ ->
+            [ opViewOutput op
+                |> Html.map (always (PartEditorMove (MoveOp index)))
+            , termViewOutput term
+                |> Html.map (always (PartEditorMove (MoveTerm index)))
+            ]
 
 
 {-| 編集していない項の表示
@@ -1099,25 +1159,20 @@ opViewInputOutput textAreaValue =
         [ Html.Attributes.class "editTarget"
         , Html.Attributes.class "moduleEditor-partDefEditor-op"
         ]
-        (case textAreaValue of
-            _ :: _ ->
-                textAreaValue
-                    |> List.map
-                        (\( char, bool ) ->
-                            Html.div
-                                [ Html.Attributes.class
-                                    (if bool then
-                                        "moduleEditor-partDefEditor-okChar"
+        (textAreaValue
+            |> List.map
+                (\( char, bool ) ->
+                    Html.div
+                        [ Html.Attributes.class
+                            (if bool then
+                                "moduleEditor-partDefEditor-okChar"
 
-                                     else
-                                        "moduleEditor-partDefEditor-errChar"
-                                    )
-                                ]
-                                [ Html.text (String.fromChar char) ]
-                        )
-
-            [] ->
-                [ Html.text "OP" ]
+                             else
+                                "moduleEditor-partDefEditor-errChar"
+                            )
+                        ]
+                        [ Html.text (String.fromChar char) ]
+                )
         )
 
 
