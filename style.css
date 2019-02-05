@@ -414,53 +414,84 @@ img {
 }
 
 .moduleEditor-partDefEditorList {
-    padding: 1rem;
+    padding: 8px;
     display: grid;
-    gap: 2rem;
+    gap: 1rem;
     flex-direction: column;
+    background-color: #222;
 }
 
 .moduleEditor-partDefEditor {
     display: flex;
     flex-direction: column;
+    padding: 8px;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4);
+    background-color: #181818;
 }
 
 .moduleEditor-partDefEditor-nameAndType {
     display: flex;
     font-size: 1.3rem;
-    line-height: 1;
+    height: 32px;
+    overflow: hidden;
     padding: 0;
     font-family: "mplus-2m-regular";
+    align-items: baseline;
 }
 
 .moduleEditor-partDefEditor-name {
     display: flex;
-    padding: 6px;
+    align-items: baseline;
+    padding: 0 8px;
+    border: solid 1px transparent;
+    height: 32px;
+    color: #d7ba7d;
 }
 
 .moduleEditor-partDefEditor-noName {
-    width: 7rem;
+    padding: 0 8px;
+    border: solid 1px transparent;
+    height: 32px;
+    width: 8rem;
     background-color: #000;
     color: #666;
-    padding: 6px;
     font-size: 1rem;
 }
 
 .moduleEditor-partDefEditor-type {
     display: flex;
-    padding: 6px;
+    align-items: baseline;
+    padding: 0 8px;
+    border: solid 1px transparent;
+    height: 32px;
+    color: #4ec9b0;
+}
+
+.moduleEditor-partDefEditor-noType {
+    display: flex;
+    align-items: baseline;
+    padding: 0 8px;
+    border: solid 1px transparent;
+    height: 32px;
+    width: 7rem;
+    background-color: #000;
+    color: #666;
+    font-size: 1rem;
 }
 
 /* 移動モードで対象になったもの */
 
 .focused {
-    outline: solid var(--accentColorBg) 2px;
+    /* outline: solid var(--accentColorBg) 2px; */
+    background-color: var(--accentColorBg);
+    color: var(--accentColorText);
 }
 
 /* 編集モードで対象になったもの */
 
 .editTarget {
     background-color: #000;
+    border: solid 1px var(--accentColorBg);
 }
 
 .moduleEditor-partDefEditor-expr {

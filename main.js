@@ -16744,7 +16744,7 @@ var author$project$Panel$Editor$Module$intermediateExprView = A2(
 	_List_Nil,
 	_List_fromArray(
 		[
-			elm$html$Html$text('(1+1) ..クリックして評価')
+			elm$html$Html$text('評価エリア')
 		]));
 var author$project$Panel$Editor$Module$nameViewInputOutput = function (textAreaValue) {
 	return A2(
@@ -16890,29 +16890,49 @@ var author$project$Project$Source$Module$Def$Type$toString = function (type_) {
 };
 var author$project$Panel$Editor$Module$typeViewOutput = F3(
 	function (isSelect, type_, index) {
-		return A2(
-			elm$html$Html$div,
-			isSelect ? _List_fromArray(
-				[
-					elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name'),
-					elm$html$Html$Attributes$class('focused')
-				]) : _List_fromArray(
-				[
-					elm$html$Html$Events$onClick(
-					A2(
-						author$project$Panel$Editor$Module$FocusToPartEditor,
-						index,
-						author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveType))),
-					elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name')
-				]),
-			_List_fromArray(
-				[
-					elm$html$Html$text(
-					A2(
-						elm$core$Maybe$withDefault,
-						'<?>',
-						author$project$Project$Source$Module$Def$Type$toString(type_)))
-				]));
+		var _n0 = author$project$Project$Source$Module$Def$Type$toString(type_);
+		if (!_n0.$) {
+			var typeString = _n0.a;
+			return A2(
+				elm$html$Html$div,
+				isSelect ? _List_fromArray(
+					[
+						elm$html$Html$Attributes$class('moduleEditor-partDefEditor-type'),
+						elm$html$Html$Attributes$class('focused')
+					]) : _List_fromArray(
+					[
+						elm$html$Html$Events$onClick(
+						A2(
+							author$project$Panel$Editor$Module$FocusToPartEditor,
+							index,
+							author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveType))),
+						elm$html$Html$Attributes$class('moduleEditor-partDefEditor-type')
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text(typeString)
+					]));
+		} else {
+			return A2(
+				elm$html$Html$div,
+				isSelect ? _List_fromArray(
+					[
+						elm$html$Html$Attributes$class('moduleEditor-partDefEditor-noType'),
+						elm$html$Html$Attributes$class('focused')
+					]) : _List_fromArray(
+					[
+						elm$html$Html$Events$onClick(
+						A2(
+							author$project$Panel$Editor$Module$FocusToPartEditor,
+							index,
+							author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveType))),
+						elm$html$Html$Attributes$class('moduleEditor-partDefEditor-noType')
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text('NO TYPE')
+					]));
+		}
 	});
 var author$project$Panel$Editor$Module$nameAndTypeView = F4(
 	function (partEditorFocus, name, type_, index) {

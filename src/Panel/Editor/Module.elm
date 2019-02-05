@@ -954,18 +954,33 @@ nameViewInputOutput textAreaValue =
 -}
 typeViewOutput : Bool -> Type.Type -> Int -> Html.Html Msg
 typeViewOutput isSelect type_ index =
-    Html.div
-        (if isSelect then
-            [ Html.Attributes.class "moduleEditor-partDefEditor-name"
-            , Html.Attributes.class "focused"
-            ]
+    case Type.toString type_ of
+        Just typeString ->
+            Html.div
+                (if isSelect then
+                    [ Html.Attributes.class "moduleEditor-partDefEditor-type"
+                    , Html.Attributes.class "focused"
+                    ]
 
-         else
-            [ Html.Events.onClick (FocusToPartEditor index (PartEditorMove MoveType))
-            , Html.Attributes.class "moduleEditor-partDefEditor-name"
-            ]
-        )
-        [ Html.text (Type.toString type_ |> Maybe.withDefault "<?>") ]
+                 else
+                    [ Html.Events.onClick (FocusToPartEditor index (PartEditorMove MoveType))
+                    , Html.Attributes.class "moduleEditor-partDefEditor-type"
+                    ]
+                )
+                [ Html.text typeString ]
+        Nothing ->
+            Html.div
+                (if isSelect then
+                    [ Html.Attributes.class "moduleEditor-partDefEditor-noType"
+                    , Html.Attributes.class "focused"
+                    ]
+
+                 else
+                    [ Html.Events.onClick (FocusToPartEditor index (PartEditorMove MoveType))
+                    , Html.Attributes.class "moduleEditor-partDefEditor-noType"
+                    ]
+                )
+                [ Html.text "NO TYPE" ]
 
 
 {-| 編集している型の表示
@@ -1122,7 +1137,7 @@ intermediateExprView : Html.Html Msg
 intermediateExprView =
     Html.div
         []
-        [ Html.text "(1+1) ..クリックして評価" ]
+        [ Html.text "評価エリア" ]
 
 
 inputTextArea : Html.Html Msg
