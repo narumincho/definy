@@ -147,6 +147,7 @@ type Msg
     | GrabVerticalGutter GutterVertical -- |垂直Gutterをつかむ
     | GrabHorizontalGutter GutterHorizontal -- -水平Gutterをつかむ
     | Focus -- フォーカスが当たる
+    | Blur -- フォカスが外れる
 
 
 type EditorItemMsg
@@ -234,33 +235,11 @@ isFocusDefaultUi model =
 update : Msg -> Project.Project -> Model -> ( Model, List Emit )
 update msg project model =
     case msg of
-        ChangeActiveEditor activeEditorRef ->
-            let
-                ( activedEiditorNewModel, activedEmit ) =
-                    model
-                        |> getGroup
-                        |> getEditorItem (getActiveEditorRef model)
-                        |> blurEditor project
+        ChangeActiveEditor activeEditorIndex ->
+            updateChangeActiveEditor project activeEditorIndex model
 
-                newModel =
-                    model
-                        |> mapGroup (setEditorItem (getActiveEditorRef model) activedEiditorNewModel)
-                        |> setActiveEditorRef activeEditorRef
-                        |> mouseLeaveAddGutter
-
-                ( newEditorItem, emit ) =
-                    newModel
-                        |> getGroup
-                        |> getEditorItem activeEditorRef
-                        |> focusEditor project
-            in
-            ( newModel
-                |> mapGroup (setEditorItem activeEditorRef newEditorItem)
-            , [ activedEmit, emit ] |> List.concat
-            )
-
-        OpenEditor showEditorPosition ->
-            ( case openEditor (getActiveEditorRef model) showEditorPosition (getGroup model) of
+        OpenEditor openEditorIndex ->
+            ( case openEditor (getActiveEditorRef model) openEditorIndex (getGroup model) of
                 ( newGroup, newActiveEditorRef ) ->
                     model
                         |> setGroup newGroup
@@ -310,13 +289,13 @@ update msg project model =
             , emit
             )
 
-        EditorItemMsgToActive editorItemmsg ->
+        EditorItemMsgToActive editorItemMsg ->
             let
                 ( newEditorItem, emit ) =
                     model
                         |> getGroup
                         |> getEditorItem (getActiveEditorRef model)
-                        |> updateEditor editorItemmsg project
+                        |> updateEditor editorItemMsg project
             in
             ( model
                 |> mapGroup (setEditorItem (getActiveEditorRef model) newEditorItem)
@@ -336,7 +315,49 @@ update msg project model =
             , emit
             )
 
+        Blur ->
+            let
+                ( newEditorItem, emit ) =
+                    model
+                        |> getGroup
+                        |> getEditorItem (getActiveEditorRef model)
+                        |> blurEditor project
+            in
+            ( model
+                |> mapGroup (setEditorItem (getActiveEditorRef model) newEditorItem)
+            , emit
+            )
 
+
+updateChangeActiveEditor : Project.Project -> EditorIndex -> Model -> ( Model, List Emit )
+updateChangeActiveEditor project index model =
+    let
+        ( beforeActiveEditorNewModel, beforeActiveEmit ) =
+            model
+                |> getGroup
+                |> getEditorItem (getActiveEditorRef model)
+                |> blurEditor project
+
+        newModel =
+            model
+                |> mapGroup (setEditorItem (getActiveEditorRef model) beforeActiveEditorNewModel)
+                |> setActiveEditorRef index
+                |> mouseLeaveAddGutter
+
+        ( newEditorItem, emit ) =
+            newModel
+                |> getGroup
+                |> getEditorItem index
+                |> focusEditor project
+    in
+    ( newModel
+        |> mapGroup (setEditorItem index newEditorItem)
+    , beforeActiveEmit ++ emit
+    )
+
+
+{-| エディタにフォーカスが当たったことを知らせて、新しいエディタとEmitを返す
+-}
 focusEditor : Project.Project -> EditorItem -> ( EditorItem, List Emit )
 focusEditor project editorItem =
     case editorItem of
@@ -353,6 +374,8 @@ focusEditor project editorItem =
             ( editorItem, [] )
 
 
+{-| エディタにフォーカスが外れたことを知らせて、新しいエディタとEmitを返す
+-}
 blurEditor : Project.Project -> EditorItem -> ( EditorItem, List Emit )
 blurEditor project editorItem =
     case editorItem of
@@ -396,6 +419,8 @@ updateEditor editorItemMsg project editorItem =
             )
 
 
+{-| モジュールエディタのEmitをEditorGroupのEmitに変換する
+-}
 moduleEditorEmitToEmit : Panel.Editor.Module.Emit -> Emit
 moduleEditorEmitToEmit emit =
     case emit of
@@ -421,36 +446,36 @@ moduleEditorEmitToEmit emit =
 {-| 右端と下の端にある表示するエディタを増やすのボタンをおしたら、エディタ全体がどう変わるかと新しくアクティブになるエディタを返す
 -}
 openEditor : EditorIndex -> OpenEditorPosition -> Group -> ( Group, EditorIndex )
-openEditor activeEditorRef showEditorPosition group =
+openEditor activeEditorIndex showEditorPosition group =
     (case group of
         RowOne { left } ->
             openEditorRowOne
                 left
                 showEditorPosition
-                (getEditorItem activeEditorRef group)
+                (getEditorItem activeEditorIndex group)
 
         RowTwo rec ->
             openEditorRowTwo
                 rec
                 showEditorPosition
-                (getEditorItem activeEditorRef group)
+                (getEditorItem activeEditorIndex group)
 
         RowThree rec ->
             openEditorRowThree
                 rec
                 showEditorPosition
-                (getEditorItem activeEditorRef group)
+                (getEditorItem activeEditorIndex group)
     )
-        |> Maybe.withDefault ( group, activeEditorRef )
+        |> Maybe.withDefault ( group, activeEditorIndex )
 
 
 openEditorRowOne : ColumnGroup -> OpenEditorPosition -> EditorItem -> Maybe ( Group, EditorIndex )
-openEditorRowOne colGroup addEditorPosition item =
+openEditorRowOne column addEditorPosition item =
     case addEditorPosition of
         OpenEditorPositionRightRow ->
             Just
                 ( RowTwo
-                    { left = colGroup
+                    { left = column
                     , center = ColumnOne { top = item }
                     , leftWidth = 500
                     }
@@ -458,7 +483,7 @@ openEditorRowOne colGroup addEditorPosition item =
                 )
 
         OpenEditorPositionLeftBottom ->
-            case colGroup of
+            case column of
                 ColumnOne { top } ->
                     Just
                         ( RowOne

@@ -4,6 +4,7 @@ port module Model exposing
     , Model
     , Msg(..)
     , addPartDef
+    , changeExpr
     , changeName
     , changeReadMe
     , changeType
@@ -40,7 +41,7 @@ port module Model exposing
     , toTreePanelGutterMode
     , treePanelMsgToMsg
     , treePanelUpdate
-    , changeExpr)
+    )
 
 {-| すべての状態を管理する
 -}
@@ -161,55 +162,6 @@ initModel =
         }
 
 
-initDefList : List ( Def.Def, Maybe Compiler.CompileResult )
-initDefList =
-    let
-        labelList =
-            [ Label.make Label.ha []
-            , Label.make Label.hb []
-
-            --            , Label.make Label.hc []
-            --            , Label.make Label.hd []
-            --            , Label.make Label.he []
-            --            , Label.make Label.hf []
-            --            , Label.make Label.hg []
-            --            , Label.make Label.hh []
-            --            , Label.make Label.hi []
-            --            , Label.make Label.hj []
-            --            , Label.make Label.hk []
-            --            , Label.make Label.hl []
-            --            , Label.make Label.hm []
-            --            , Label.make Label.hn []
-            --            , Label.make Label.ho []
-            --            , Label.make Label.hp []
-            --            , Label.make Label.hq []
-            --            , Label.make Label.hr []
-            --            , Label.make Label.hs []
-            --            , Label.make Label.ht []
-            --            , Label.make Label.hu []
-            --            , Label.make Label.hv []
-            --            , Label.make Label.hw []
-            --            , Label.make Label.hx []
-            --            , Label.make Label.hy []
-            --            , Label.make Label.hz []
-            ]
-    in
-    labelList
-        |> List.indexedMap
-            (\index label ->
-                ( Def.make
-                    { name = Name.fromLabel label
-                    , type_ = Type.empty
-                    , expr =
-                        Expr.make
-                            (Term.fromInt index)
-                            (List.repeat index ( Operator.add, Term.fromInt 12345678 ))
-                    }
-                , Nothing
-                )
-            )
-
-
 {-| 初期コマンド
 -}
 initCmd : Model -> Cmd Msg
@@ -281,29 +233,43 @@ setFocus : Focus -> Model -> ( Model, List Msg, List (Cmd Msg) )
 setFocus focus (Model rec) =
     case focus of
         FocusTreePanel ->
-            ( Model
-                { rec | focus = FocusTreePanel }
-            , []
-            , []
+            let
+                focusMovedModel =
+                    Model { rec | focus = FocusTreePanel }
+
+                ( editorPanelModel, editorPanelEmit ) =
+                    Panel.EditorGroup.update
+                        Panel.EditorGroup.Blur
+                        (getProject focusMovedModel)
+                        (getEditorGroupPanelModel focusMovedModel)
+
+                ( nextMsg, cmd ) =
+                    editorPanelEmit
+                        |> List.map editorPanelEmitToMsg
+                        |> Utility.ListExtra.listTupleListToTupleList
+            in
+            ( focusMovedModel |> setEditorGroupPanelModel editorPanelModel
+            , nextMsg
+            , cmd
             )
 
         FocusEditorGroupPanel ->
             let
-                newModel =
+                focusMovedModel =
                     Model { rec | focus = FocusEditorGroupPanel }
 
                 ( editorPanelModel, emitMsg ) =
                     Panel.EditorGroup.update
                         Panel.EditorGroup.Focus
-                        (getProject newModel)
-                        (getEditorGroupPanelModel newModel)
+                        (getProject focusMovedModel)
+                        (getEditorGroupPanelModel focusMovedModel)
 
                 ( nextMsg, cmd ) =
                     emitMsg
                         |> List.map editorPanelEmitToMsg
                         |> Utility.ListExtra.listTupleListToTupleList
             in
-            ( newModel |> setEditorGroupPanelModel editorPanelModel
+            ( focusMovedModel |> setEditorGroupPanelModel editorPanelModel
             , nextMsg
             , cmd
             )
@@ -761,8 +727,9 @@ changeType { type_, index, ref } =
             )
         )
 
-changeExpr : {expr: Expr.Expr, index : Int, ref:Project.Source.ModuleRef} -> Model -> Model
-changeExpr {expr, index, ref} =
+
+changeExpr : { expr : Expr.Expr, index : Int, ref : Project.Source.ModuleRef } -> Model -> Model
+changeExpr { expr, index, ref } =
     mapProject
         (Project.mapSource
             (Project.Source.mapModule
@@ -770,6 +737,7 @@ changeExpr {expr, index, ref} =
                 (Project.Source.ModuleWithCache.setDefExpr index expr)
             )
         )
+
 
 addPartDef : { ref : Project.Source.ModuleRef } -> Model -> Model
 addPartDef { ref } =
