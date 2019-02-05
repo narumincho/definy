@@ -895,18 +895,34 @@ nameAndTypeView partEditorFocus name type_ index =
 -}
 nameViewOutput : Bool -> Name.Name -> Int -> Html.Html Msg
 nameViewOutput isFocus name index =
-    Html.div
-        (if isFocus then
-            [ Html.Attributes.class "moduleEditor-partDefEditor-name"
-            , Html.Attributes.class "focused"
-            ]
+    case Name.toString name of
+        Just nameString ->
+            Html.div
+                (if isFocus then
+                    [ Html.Attributes.class "moduleEditor-partDefEditor-name"
+                    , Html.Attributes.class "focused"
+                    ]
 
-         else
-            [ Html.Events.onClick (FocusToPartEditor index (PartEditorMove MoveName))
-            , Html.Attributes.class "moduleEditor-partDefEditor-name"
-            ]
-        )
-        [ Html.text (Name.toString name |> Maybe.withDefault "<?>") ]
+                 else
+                    [ Html.Events.onClick (FocusToPartEditor index (PartEditorMove MoveName))
+                    , Html.Attributes.class "moduleEditor-partDefEditor-name"
+                    ]
+                )
+                [ Html.text nameString ]
+
+        Nothing ->
+            Html.div
+                (if isFocus then
+                    [ Html.Attributes.class "moduleEditor-partDefEditor-noName"
+                    , Html.Attributes.class "focused"
+                    ]
+
+                 else
+                    [ Html.Events.onClick (FocusToPartEditor index (PartEditorMove MoveName))
+                    , Html.Attributes.class "moduleEditor-partDefEditor-noName"
+                    ]
+                )
+                [ Html.text "NO NAME" ]
 
 
 {-| 編集している名前の表示
@@ -917,25 +933,20 @@ nameViewInputOutput textAreaValue =
         [ Html.Attributes.class "editTarget"
         , Html.Attributes.class "moduleEditor-partDefEditor-name"
         ]
-        (case textAreaValue of
-            _ :: _ ->
-                textAreaValue
-                    |> List.map
-                        (\( char, bool ) ->
-                            Html.div
-                                [ Html.Attributes.class
-                                    (if bool then
-                                        "nameOkChar"
+        (textAreaValue
+            |> List.map
+                (\( char, bool ) ->
+                    Html.div
+                        [ Html.Attributes.class
+                            (if bool then
+                                "moduleEditor-partDefEditor-okChar"
 
-                                     else
-                                        "errChar"
-                                    )
-                                ]
-                                [ Html.text (String.fromChar char) ]
-                        )
-
-            [] ->
-                [ Html.text "NAME" ]
+                             else
+                                "moduleEditor-partDefEditor-errChar"
+                            )
+                        ]
+                        [ Html.text (String.fromChar char) ]
+                )
         )
 
 
@@ -973,10 +984,10 @@ typeViewInputOutput textAreaValue =
                             Html.div
                                 [ Html.Attributes.class
                                     (if bool then
-                                        "nameOkChar"
+                                        "moduleEditor-partDefEditor-okChar"
 
                                      else
-                                        "errChar"
+                                        "moduleEditor-partDefEditor-errChar"
                                     )
                                 ]
                                 [ Html.text (String.fromChar char) ]
@@ -1044,10 +1055,10 @@ termViewInputOutput textAreaValue =
                             Html.div
                                 [ Html.Attributes.class
                                     (if bool then
-                                        "nameOkChar"
+                                        "moduleEditor-partDefEditor-okChar"
 
                                      else
-                                        "errChar"
+                                        "moduleEditor-partDefEditor-errChar"
                                     )
                                 ]
                                 [ Html.text (String.fromChar char) ]
@@ -1081,10 +1092,10 @@ opViewInputOutput textAreaValue =
                             Html.div
                                 [ Html.Attributes.class
                                     (if bool then
-                                        "nameOkChar"
+                                        "moduleEditor-partDefEditor-okChar"
 
                                      else
-                                        "errChar"
+                                        "moduleEditor-partDefEditor-errChar"
                                     )
                                 ]
                                 [ Html.text (String.fromChar char) ]

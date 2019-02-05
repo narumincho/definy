@@ -16621,7 +16621,7 @@ var author$project$Panel$Editor$Module$termViewInputOutput = function (textAreaV
 							_List_fromArray(
 								[
 									elm$html$Html$Attributes$class(
-									bool ? 'nameOkChar' : 'errChar')
+									bool ? 'moduleEditor-partDefEditor-okChar' : 'moduleEditor-partDefEditor-errChar')
 								]),
 							_List_fromArray(
 								[
@@ -16754,34 +16754,25 @@ var author$project$Panel$Editor$Module$nameViewInputOutput = function (textAreaV
 				elm$html$Html$Attributes$class('editTarget'),
 				elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name')
 			]),
-		function () {
-			if (textAreaValue.b) {
+		A2(
+			elm$core$List$map,
+			function (_n0) {
+				var _char = _n0.a;
+				var bool = _n0.b;
 				return A2(
-					elm$core$List$map,
-					function (_n1) {
-						var _char = _n1.a;
-						var bool = _n1.b;
-						return A2(
-							elm$html$Html$div,
-							_List_fromArray(
-								[
-									elm$html$Html$Attributes$class(
-									bool ? 'nameOkChar' : 'errChar')
-								]),
-							_List_fromArray(
-								[
-									elm$html$Html$text(
-									elm$core$String$fromChar(_char))
-								]));
-					},
-					textAreaValue);
-			} else {
-				return _List_fromArray(
-					[
-						elm$html$Html$text('NAME')
-					]);
-			}
-		}());
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							elm$html$Html$Attributes$class(
+							bool ? 'moduleEditor-partDefEditor-okChar' : 'moduleEditor-partDefEditor-errChar')
+						]),
+					_List_fromArray(
+						[
+							elm$html$Html$text(
+							elm$core$String$fromChar(_char))
+						]));
+			},
+			textAreaValue));
 };
 var author$project$Project$Source$Module$Def$Name$toString = function (name) {
 	if (!name.$) {
@@ -16794,29 +16785,49 @@ var author$project$Project$Source$Module$Def$Name$toString = function (name) {
 };
 var author$project$Panel$Editor$Module$nameViewOutput = F3(
 	function (isFocus, name, index) {
-		return A2(
-			elm$html$Html$div,
-			isFocus ? _List_fromArray(
-				[
-					elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name'),
-					elm$html$Html$Attributes$class('focused')
-				]) : _List_fromArray(
-				[
-					elm$html$Html$Events$onClick(
-					A2(
-						author$project$Panel$Editor$Module$FocusToPartEditor,
-						index,
-						author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveName))),
-					elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name')
-				]),
-			_List_fromArray(
-				[
-					elm$html$Html$text(
-					A2(
-						elm$core$Maybe$withDefault,
-						'<?>',
-						author$project$Project$Source$Module$Def$Name$toString(name)))
-				]));
+		var _n0 = author$project$Project$Source$Module$Def$Name$toString(name);
+		if (!_n0.$) {
+			var nameString = _n0.a;
+			return A2(
+				elm$html$Html$div,
+				isFocus ? _List_fromArray(
+					[
+						elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name'),
+						elm$html$Html$Attributes$class('focused')
+					]) : _List_fromArray(
+					[
+						elm$html$Html$Events$onClick(
+						A2(
+							author$project$Panel$Editor$Module$FocusToPartEditor,
+							index,
+							author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveName))),
+						elm$html$Html$Attributes$class('moduleEditor-partDefEditor-name')
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text(nameString)
+					]));
+		} else {
+			return A2(
+				elm$html$Html$div,
+				isFocus ? _List_fromArray(
+					[
+						elm$html$Html$Attributes$class('moduleEditor-partDefEditor-noName'),
+						elm$html$Html$Attributes$class('focused')
+					]) : _List_fromArray(
+					[
+						elm$html$Html$Events$onClick(
+						A2(
+							author$project$Panel$Editor$Module$FocusToPartEditor,
+							index,
+							author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveName))),
+						elm$html$Html$Attributes$class('moduleEditor-partDefEditor-noName')
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text('NO NAME')
+					]));
+		}
 	});
 var author$project$Panel$Editor$Module$typeViewInputOutput = function (textAreaValue) {
 	return A2(
@@ -16838,7 +16849,7 @@ var author$project$Panel$Editor$Module$typeViewInputOutput = function (textAreaV
 							_List_fromArray(
 								[
 									elm$html$Html$Attributes$class(
-									bool ? 'nameOkChar' : 'errChar')
+									bool ? 'moduleEditor-partDefEditor-okChar' : 'moduleEditor-partDefEditor-errChar')
 								]),
 							_List_fromArray(
 								[

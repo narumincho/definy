@@ -435,10 +435,20 @@ img {
 
 .moduleEditor-partDefEditor-name {
     display: flex;
+    padding: 6px;
+}
+
+.moduleEditor-partDefEditor-noName {
+    width: 7rem;
+    background-color: #000;
+    color: #666;
+    padding: 6px;
+    font-size: 1rem;
 }
 
 .moduleEditor-partDefEditor-type {
     display: flex;
+    padding: 6px;
 }
 
 /* 移動モードで対象になったもの */
@@ -487,291 +497,19 @@ img {
     resize: none;
 }
 
-/* 名前の問題がない文字 */
+/* 問題がない文字 */
 
-.nameOkChar {
+.moduleEditor-partDefEditor-okChar {
     color: #d7ba7d;
 }
 
 /* 使えない文字(編集内) */
 
-.errChar {
+.moduleEditor-partDefEditor-errChar {
     color: #e45959;
 }
 
 .moduleEditor-partDefEditor-addPartDef {
     width: 7rem;
     padding: .5rem;
-}
-
-/* ==================================================================
-=====================================================================
-                            OLD
-=====================================================================
-================================================================== */
-
-.moduleDefList {
-    display: flex;
-    flex-direction: column;
-}
-
-.accordionContent {
-    flex-grow: 1;
-    display: grid;
-    gap: .3rem;
-    height: 100%;
-    overflow: auto;
-}
-
-.moduleTitle {
-    font-size: 1.5rem;
-    font-family: "Segoe UI";
-    font-weight: 500;
-    padding: .5rem;
-    user-select: none;
-}
-
-.accordionTitle {
-    font-size: 1.3rem;
-    font-family: "Segoe UI";
-    font-weight: 400;
-    padding: .5rem;
-    background-color: #444;
-    display: flex;
-    align-items: center;
-}
-
-.accordionText {
-    flex-grow: 1;
-    user-select: none;
-}
-
-.accordionIcon {
-    height: 1.3rem;
-}
-
-.accordionIcon>svg {
-    height: 1.3rem;
-}
-
-.addDefButton {
-    justify-self: center;
-    display: inline-block;
-    border-radius: 0.5rem;
-    border: dotted orange 2px;
-    background-color: transparent;
-    color: inherit;
-    padding: .5rem 1rem;
-}
-
-/*=================
-        Def
-==================*/
-
-.def {
-    padding: .5rem;
-    display: flex;
-    background-color: #222;
-    overflow: hidden;
-    user-select: none;
-}
-
-.defIcon {
-    width: 2rem;
-    display: flex;
-    flex-direction: column;
-}
-
-.defTitle {
-    display: flex;
-}
-
-.defExpr {
-    display: flex;
-}
-
-.defContent {
-    flex-grow: 1;
-    padding: .5rem;
-    overflow: hidden;
-}
-
-.defContent>div {
-    overflow: hidden;
-}
-
-.defCompileResult {
-    background-color: #abc090;
-    color: #222;
-    padding: .5rem;
-    max-width: 50%;
-}
-
-/* テキスト編集で対象となったもの */
-
-.target {
-    background-color: #000;
-    padding: 0.3rem;
-    position: relative;
-}
-
-.accessIcon {
-    grid-column: 1 / 2;
-    grid-row: 1 / 2;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-}
-
-.accessIcon>svg {
-    height: 1rem
-}
-
-.name {
-    grid-column: 2 / 3;
-    grid-row: 1 / 2;
-    display: flex;
-    align-items: center;
-    font-size: 1.3rem;
-    font-family: "mplus-2m-regular";
-    padding: 0.2rem;
-    line-height: 1rem;
-}
-
-.colon {
-    grid-column: 3 / 4;
-    grid-row: 1 / 2;
-    display: flex;
-    align-items: center;
-}
-
-.colon>div {
-    font-size: 1.4rem;
-    line-height: 1;
-    display: inline;
-}
-
-.type {
-    grid-column: 4 / 5;
-    grid-row: 1 / 2;
-    display: flex;
-    align-items: center;
-    font-size: 1.3rem;
-    font-family: "mplus-2m-regular";
-    padding: 0.2rem;
-    line-height: 1;
-}
-
-/* 正しい型 */
-
-.typeOkChar {
-    color: #4ec9b0;
-}
-
-/* = */
-
-.equals {
-    grid-column: 1 / 2;
-    grid-row: 2 / 3;
-}
-
-.expr {
-    grid-column: 2 / 5;
-    grid-row: 2 / 3;
-    display: flex;
-    font-size: 1rem;
-    font-family: "mplus-2m-regular";
-    padding: 0.2rem;
-    line-height: 1;
-}
-
-.term {
-    display: flex;
-    color: #f09936;
-}
-
-.op {
-    color: #ddd;
-    padding: 0 0.3rem;
-}
-
-.opBlank {
-    color: #e45959;
-}
-
-.caretBox {
-    width: 0;
-    overflow: visible;
-}
-
-.editExprCaret {
-    display: block;
-    width: 2px;
-    height: 1.1rem;
-    animation-name: caretColor;
-    animation-duration: 2s;
-    animation-timing-function: ease;
-    animation-delay: 0s;
-    animation-iteration-count: infinite;
-    animation-direction: normal;
-    animation-fill-mode: none;
-    animation-play-state: running;
-}
-
-.moveExprCaret {
-    display: block;
-    width: 3px;
-    height: 1.2rem;
-    background-color: red;
-}
-
-@keyframes caretColor {
-    0% {
-        background: #f09936
-    }
-    50% {
-        background: #f0993669
-    }
-    100% {
-        background: #f09936
-    }
-}
-
-.description {
-    position: absolute;
-    left: 0;
-    top: 2.6rem;
-    white-space: nowrap;
-    background-color: #2d2d2d;
-    border: 1px #999 solid;
-    padding: .2rem;
-    font-size: 1rem;
-    color: #ddd;
-}
-
-.description-title {
-    font-size: 1rem;
-}
-
-.suggestion {
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    line-height: 1.5;
-}
-
-.suggestionItem {
-    list-style: none;
-    display: block;
-}
-
-.suggestionSubText {
-    font-size: .9rem;
-    color: #a2a2a2;
-    padding-left: 1rem;
-}
-
-.place-holder {
-    color: #777;
 }
