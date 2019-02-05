@@ -1038,12 +1038,7 @@ exprView partEditorFocus expr index =
             ++ exprViewHeadTerm partEditorFocus expr
             ++ exprViewOpAndTermList partEditorFocus expr
          )
-            |> List.map
-                (Html.map
-                    (always
-                        (FocusToPartEditor index (PartEditorMove MoveExprHead))
-                    )
-                )
+            |> List.map (Html.map (FocusToPartEditor index))
         )
 
 

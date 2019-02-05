@@ -17127,11 +17127,7 @@ var author$project$Panel$Editor$Module$exprView = F3(
 			A2(
 				elm$core$List$map,
 				elm$html$Html$map(
-					elm$core$Basics$always(
-						A2(
-							author$project$Panel$Editor$Module$FocusToPartEditor,
-							index,
-							author$project$Panel$Editor$Module$PartEditorMove(author$project$Panel$Editor$Module$MoveExprHead)))),
+					author$project$Panel$Editor$Module$FocusToPartEditor(index)),
 				_Utils_ap(
 					_List_fromArray(
 						[
