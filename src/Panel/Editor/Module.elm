@@ -1,4 +1,13 @@
-module Panel.Editor.Module exposing (Emit(..), Model, Msg(..), getModuleRef, initModel, isFocusDefaultUi, update, view)
+module Panel.Editor.Module exposing
+    ( Emit(..)
+    , Model
+    , Msg(..)
+    , getModuleRef
+    , initModel
+    , isFocusDefaultUi
+    , update
+    , view
+    )
 
 import Html
 import Html.Attributes
@@ -176,7 +185,15 @@ update msg project (Model rec) =
                     Model rec
 
                 FocusPartEditor index (PartEditorMove partMove) ->
-                    Model { rec | focus = FocusPartEditor index (PartEditorMove (partEditorMoveRight partMove)) }
+                    Model
+                        { rec
+                            | focus =
+                                FocusPartEditor
+                                    index
+                                    (PartEditorMove
+                                        (partEditorMoveRight (ModuleWithCache.getDef index targetModule) partMove)
+                                    )
+                        }
 
                 FocusPartEditor _ (PartEditorEdit _ _) ->
                     Model rec
@@ -304,14 +321,24 @@ partEditorMoveLeft partMove =
         MoveExprHead ->
             MoveType
 
-        _ ->
-            partMove
+        MoveHeadTerm ->
+            MoveExprHead
+
+        MoveOp i ->
+            if i <= 0 then
+                MoveHeadTerm
+
+            else
+                MoveTerm (i - 1)
+
+        MoveTerm i ->
+            MoveOp i
 
 
 {-| パーツエディタの移動モードで右に移動する
 -}
-partEditorMoveRight : PartFocusMove -> PartFocusMove
-partEditorMoveRight partMove =
+partEditorMoveRight : Maybe Def.Def -> PartFocusMove -> PartFocusMove
+partEditorMoveRight defMaybe partMove =
     case partMove of
         MoveName ->
             MoveType
@@ -319,8 +346,44 @@ partEditorMoveRight partMove =
         MoveType ->
             MoveExprHead
 
-        _ ->
-            partMove
+        MoveExprHead ->
+            case defMaybe |> Maybe.map (Def.getExpr >> Expr.getHead) of
+                Just head ->
+                    if head == Term.none then
+                        MoveExprHead
+
+                    else
+                        MoveHeadTerm
+
+                Nothing ->
+                    MoveExprHead
+
+        MoveHeadTerm ->
+            case defMaybe |> Maybe.map (Def.getExpr >> Expr.getOthers >> List.length) of
+                Just length ->
+                    if 0 < length then
+                        MoveOp 0
+
+                    else
+                        MoveHeadTerm
+
+                Nothing ->
+                    MoveExprHead
+
+        MoveOp i ->
+            MoveTerm i
+
+        MoveTerm i ->
+            case defMaybe |> Maybe.map (Def.getExpr >> Expr.getOthers >> List.length) of
+                Just length ->
+                    if i < length then
+                        MoveOp (length + 1)
+
+                    else
+                        MoveTerm i
+
+                Nothing ->
+                    MoveExprHead
 
 
 {-| パーツエディタの移動モードで上に移動する
@@ -623,7 +686,7 @@ view project isEditorItemFocus (Model { moduleRef, focus }) =
                 FocusPartEditor index partEditorFocus ->
                     Just ( index, partEditorFocus )
             )
-            (ModuleWithCache.getDefList targetModule |> List.map Tuple.first)
+            (ModuleWithCache.getDefWithCacheList targetModule |> List.map Tuple.first)
         ]
     }
 

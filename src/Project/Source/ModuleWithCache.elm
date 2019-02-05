@@ -1,18 +1,19 @@
 module Project.Source.ModuleWithCache exposing
     ( Module(..)
     , addDef
-    , getDefList
     , getDefName
     , getDefNum
+    , getDefWithCacheList
     , getName
     , getReadMe
     , make
     , mapDefList
+    , setDefExpr
     , setDefName
     , setDefType
     , setName
     , setReadMe
-    , setDefExpr)
+    , getDef)
 
 import Compiler
 import Compiler.Marger
@@ -75,11 +76,20 @@ setReadMe string (Module rec) =
         { rec | readMe = string }
 
 
-{-| ModuleのList (Def,Maybe CompileResult)を取得
+{-| Moduleで定義されているDefとそのキャッシュのListを取得
 -}
-getDefList : Module -> List ( Def.Def, Maybe Compiler.CompileResult )
-getDefList (Module { defList }) =
+getDefWithCacheList : Module -> List ( Def.Def, Maybe Compiler.CompileResult )
+getDefWithCacheList (Module { defList }) =
     defList
+
+
+{-| Moduleで定義されているDefを取得
+-}
+getDef : Int -> Module -> Maybe Def.Def
+getDef index (Module { defList }) =
+    defList
+        |> Utility.ListExtra.getAt index
+        |> Maybe.map Tuple.first
 
 
 setDefList : List ( Def.Def, Maybe Compiler.CompileResult ) -> Module -> Module
@@ -97,7 +107,7 @@ setDefListAt index def (Module rec) =
 mapDefList : (List ( Def.Def, Maybe Compiler.CompileResult ) -> List ( Def.Def, Maybe Compiler.CompileResult )) -> Module -> Module
 mapDefList =
     Utility.Map.toMapper
-        getDefList
+        getDefWithCacheList
         setDefList
 
 
@@ -105,7 +115,7 @@ mapDefList =
 -}
 getDefNum : Module -> Int
 getDefNum =
-    getDefList >> List.length
+    getDefWithCacheList >> List.length
 
 
 {-| 指定したindexの定義の名前を取得する。なければNoName
@@ -122,7 +132,7 @@ getDefName index (Module { defList }) =
 -}
 setDefName : Int -> Project.Source.Module.Def.Name.Name -> Module -> Module
 setDefName index name module_ =
-    case Utility.ListExtra.getAt index (getDefList module_) of
+    case Utility.ListExtra.getAt index (getDefWithCacheList module_) of
         Just ( x, _ ) ->
             module_
                 |> setDefListAt index ( Def.setName name x, Nothing )
@@ -135,7 +145,7 @@ setDefName index name module_ =
 -}
 setDefType : Int -> Project.Source.Module.Def.Type.Type -> Module -> Module
 setDefType index type_ module_ =
-    case Utility.ListExtra.getAt index (getDefList module_) of
+    case Utility.ListExtra.getAt index (getDefWithCacheList module_) of
         Just ( x, _ ) ->
             module_
                 |> setDefListAt index ( Def.setType type_ x, Nothing )
@@ -143,17 +153,19 @@ setDefType index type_ module_ =
         Nothing ->
             module_
 
+
 {-| 指定したindexの定義の式を設定する なければ、なにもしない
 -}
 setDefExpr : Int -> Project.Source.Module.Def.Expr.Expr -> Module -> Module
 setDefExpr index expr module_ =
-    case Utility.ListExtra.getAt index (getDefList module_) of
+    case Utility.ListExtra.getAt index (getDefWithCacheList module_) of
         Just ( x, _ ) ->
             module_
                 |> setDefListAt index ( Def.setExpr expr x, Nothing )
 
         Nothing ->
             module_
+
 
 {-| 定義を末尾に追加する
 -}

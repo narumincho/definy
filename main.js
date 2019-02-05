@@ -8020,7 +8020,7 @@ var author$project$Project$Source$Module$Def$setExpr = F2(
 			rec,
 			{aK: expr});
 	});
-var author$project$Project$Source$ModuleWithCache$getDefList = function (_n0) {
+var author$project$Project$Source$ModuleWithCache$getDefWithCacheList = function (_n0) {
 	var defList = _n0.aI;
 	return defList;
 };
@@ -8135,7 +8135,7 @@ var author$project$Project$Source$ModuleWithCache$setDefExpr = F3(
 		var _n0 = A2(
 			author$project$Utility$ListExtra$getAt,
 			index,
-			author$project$Project$Source$ModuleWithCache$getDefList(module_));
+			author$project$Project$Source$ModuleWithCache$getDefWithCacheList(module_));
 		if (!_n0.$) {
 			var _n1 = _n0.a;
 			var x = _n1.a;
@@ -8173,7 +8173,7 @@ var author$project$Project$Source$ModuleWithCache$setDefName = F3(
 		var _n0 = A2(
 			author$project$Utility$ListExtra$getAt,
 			index,
-			author$project$Project$Source$ModuleWithCache$getDefList(module_));
+			author$project$Project$Source$ModuleWithCache$getDefWithCacheList(module_));
 		if (!_n0.$) {
 			var _n1 = _n0.a;
 			var x = _n1.a;
@@ -8231,7 +8231,7 @@ var author$project$Project$Source$ModuleWithCache$setDefType = F3(
 		var _n0 = A2(
 			author$project$Utility$ListExtra$getAt,
 			index,
-			author$project$Project$Source$ModuleWithCache$getDefList(module_));
+			author$project$Project$Source$ModuleWithCache$getDefWithCacheList(module_));
 		if (!_n0.$) {
 			var _n1 = _n0.a;
 			var x = _n1.a;
@@ -10773,20 +10773,80 @@ var author$project$Panel$Editor$Module$partEditorMoveLeft = function (partMove) 
 			return author$project$Panel$Editor$Module$MoveName;
 		case 2:
 			return author$project$Panel$Editor$Module$MoveType;
-		default:
-			return partMove;
-	}
-};
-var author$project$Panel$Editor$Module$partEditorMoveRight = function (partMove) {
-	switch (partMove.$) {
-		case 0:
-			return author$project$Panel$Editor$Module$MoveType;
-		case 1:
+		case 3:
 			return author$project$Panel$Editor$Module$MoveExprHead;
+		case 4:
+			var i = partMove.a;
+			return (i <= 0) ? author$project$Panel$Editor$Module$MoveHeadTerm : author$project$Panel$Editor$Module$MoveTerm(i - 1);
 		default:
-			return partMove;
+			var i = partMove.a;
+			return author$project$Panel$Editor$Module$MoveOp(i);
 	}
 };
+var author$project$Project$Source$Module$Def$getExpr = function (_n0) {
+	var expr = _n0.aK;
+	return expr;
+};
+var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
+	var head = _n0.a;
+	return head;
+};
+var author$project$Project$Source$Module$Def$Expr$getOthers = function (_n0) {
+	var others = _n0.b;
+	return others;
+};
+var author$project$Panel$Editor$Module$partEditorMoveRight = F2(
+	function (defMaybe, partMove) {
+		switch (partMove.$) {
+			case 0:
+				return author$project$Panel$Editor$Module$MoveType;
+			case 1:
+				return author$project$Panel$Editor$Module$MoveExprHead;
+			case 2:
+				var _n1 = A2(
+					elm$core$Maybe$map,
+					A2(elm$core$Basics$composeR, author$project$Project$Source$Module$Def$getExpr, author$project$Project$Source$Module$Def$Expr$getHead),
+					defMaybe);
+				if (!_n1.$) {
+					var head = _n1.a;
+					return _Utils_eq(head, author$project$Project$Source$Module$Def$Expr$Term$none) ? author$project$Panel$Editor$Module$MoveExprHead : author$project$Panel$Editor$Module$MoveHeadTerm;
+				} else {
+					return author$project$Panel$Editor$Module$MoveExprHead;
+				}
+			case 3:
+				var _n2 = A2(
+					elm$core$Maybe$map,
+					A2(
+						elm$core$Basics$composeR,
+						author$project$Project$Source$Module$Def$getExpr,
+						A2(elm$core$Basics$composeR, author$project$Project$Source$Module$Def$Expr$getOthers, elm$core$List$length)),
+					defMaybe);
+				if (!_n2.$) {
+					var length = _n2.a;
+					return (0 < length) ? author$project$Panel$Editor$Module$MoveOp(0) : author$project$Panel$Editor$Module$MoveHeadTerm;
+				} else {
+					return author$project$Panel$Editor$Module$MoveExprHead;
+				}
+			case 4:
+				var i = partMove.a;
+				return author$project$Panel$Editor$Module$MoveTerm(i);
+			default:
+				var i = partMove.a;
+				var _n3 = A2(
+					elm$core$Maybe$map,
+					A2(
+						elm$core$Basics$composeR,
+						author$project$Project$Source$Module$Def$getExpr,
+						A2(elm$core$Basics$composeR, author$project$Project$Source$Module$Def$Expr$getOthers, elm$core$List$length)),
+					defMaybe);
+				if (!_n3.$) {
+					var length = _n3.a;
+					return (_Utils_cmp(i, length) < 0) ? author$project$Panel$Editor$Module$MoveOp(length + 1) : author$project$Panel$Editor$Module$MoveTerm(i);
+				} else {
+					return author$project$Panel$Editor$Module$MoveExprHead;
+				}
+		}
+	});
 var author$project$Panel$Editor$Module$partEditorMoveUp = F2(
 	function (position, index) {
 		switch (position.$) {
@@ -10800,7 +10860,15 @@ var author$project$Panel$Editor$Module$partEditorMoveUp = F2(
 				return _Utils_Tuple2(position, index);
 		}
 	});
-var author$project$Project$Source$ModuleWithCache$getDefNum = A2(elm$core$Basics$composeR, author$project$Project$Source$ModuleWithCache$getDefList, elm$core$List$length);
+var author$project$Project$Source$ModuleWithCache$getDef = F2(
+	function (index, _n0) {
+		var defList = _n0.aI;
+		return A2(
+			elm$core$Maybe$map,
+			elm$core$Tuple$first,
+			A2(author$project$Utility$ListExtra$getAt, index, defList));
+	});
+var author$project$Project$Source$ModuleWithCache$getDefNum = A2(elm$core$Basics$composeR, author$project$Project$Source$ModuleWithCache$getDefWithCacheList, elm$core$List$length);
 var author$project$Project$Source$ModuleWithCache$getReadMe = function (_n0) {
 	var readMe = _n0.aV;
 	return readMe;
@@ -10905,7 +10973,10 @@ var author$project$Panel$Editor$Module$update = F3(
 												author$project$Panel$Editor$Module$FocusPartEditor,
 												index,
 												author$project$Panel$Editor$Module$PartEditorMove(
-													author$project$Panel$Editor$Module$partEditorMoveRight(partMove)))
+													A2(
+														author$project$Panel$Editor$Module$partEditorMoveRight,
+														A2(author$project$Project$Source$ModuleWithCache$getDef, index, targetModule),
+														partMove)))
 										});
 								} else {
 									var _n5 = _n4.b;
@@ -16573,10 +16644,6 @@ var author$project$Panel$Editor$Module$termViewOutput = function (term) {
 				author$project$Project$Source$Module$Def$Expr$Term$toString(term))
 			]));
 };
-var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
-	var head = _n0.a;
-	return head;
-};
 var elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
 var elm$html$Html$map = elm$virtual_dom$VirtualDom$map;
 var author$project$Panel$Editor$Module$exprView = F3(
@@ -16878,10 +16945,6 @@ var author$project$Panel$Editor$Module$nameAndTypeView = F4(
 				}()
 				]));
 	});
-var author$project$Project$Source$Module$Def$getExpr = function (_n0) {
-	var expr = _n0.aK;
-	return expr;
-};
 var author$project$Project$Source$Module$Def$getName = function (_n0) {
 	var name = _n0.aP;
 	return name;
@@ -17016,7 +17079,7 @@ var author$project$Panel$Editor$Module$view = F3(
 					A2(
 						elm$core$List$map,
 						elm$core$Tuple$first,
-						author$project$Project$Source$ModuleWithCache$getDefList(targetModule)))
+						author$project$Project$Source$ModuleWithCache$getDefWithCacheList(targetModule)))
 				]),
 			b3: author$project$Project$Label$toCapitalString(
 				author$project$Project$Source$ModuleWithCache$getName(targetModule))
