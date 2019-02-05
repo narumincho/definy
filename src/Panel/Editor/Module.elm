@@ -158,7 +158,7 @@ update msg project (Model rec) =
             )
 
         InputInPartEditor text ->
-            inputInPartEditor text (Model rec)
+            inputInPartEditor text targetModule (Model rec)
 
         SelectLeft ->
             ( case rec.focus of
@@ -478,8 +478,8 @@ partEditorEditToMove edit =
 
 {-| パーツエディタで<textaera>に何かを入力したとき
 -}
-inputInPartEditor : String -> Model -> ( Model, List Emit )
-inputInPartEditor string (Model rec) =
+inputInPartEditor : String -> ModuleWithCache.Module -> Model -> ( Model, List Emit )
+inputInPartEditor string targetModule (Model rec) =
     case rec.focus of
         FocusNone ->
             ( Model rec
@@ -492,47 +492,62 @@ inputInPartEditor string (Model rec) =
             )
 
         FocusPartEditor index (PartEditorMove move) ->
-            let
-                { edit, textAreaValue, name, type_, expr, reset } =
-                    parseSimple string (partEditorMoveToEdit move)
-            in
-            ( Model
-                { rec | focus = FocusPartEditor index (PartEditorEdit edit textAreaValue) }
-            , Utility.ListExtra.takeFromMaybe
-                [ name |> Maybe.map (\n -> EmitChangeName { name = n, index = index, ref = rec.moduleRef })
-                , type_ |> Maybe.map (\t -> EmitChangeType { type_ = t, index = index, ref = rec.moduleRef })
-                , expr |> Maybe.map (\e -> EmitChangeExpr { expr = e, index = index, ref = rec.moduleRef })
-                , if reset then
-                    Just (EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList))
+            case ModuleWithCache.getDef index targetModule of
+                Just def ->
+                    let
+                        { edit, textAreaValue, name, type_, expr, reset } =
+                            parseSimple string (partEditorMoveToEdit move) def
+                    in
+                    ( Model
+                        { rec | focus = FocusPartEditor index (PartEditorEdit edit textAreaValue) }
+                    , Utility.ListExtra.takeFromMaybe
+                        [ name |> Maybe.map (\n -> EmitChangeName { name = n, index = index, ref = rec.moduleRef })
+                        , type_ |> Maybe.map (\t -> EmitChangeType { type_ = t, index = index, ref = rec.moduleRef })
+                        , expr |> Maybe.map (\e -> EmitChangeExpr { expr = e, index = index, ref = rec.moduleRef })
+                        , if reset then
+                            Just (EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList))
 
-                  else
-                    Nothing
-                ]
-            )
+                          else
+                            Nothing
+                        ]
+                    )
+
+                Nothing ->
+                    ( Model rec
+                    , []
+                    )
 
         FocusPartEditor index (PartEditorEdit oldEdit _) ->
-            let
-                { edit, textAreaValue, name, type_, expr, reset } =
-                    parseSimple string oldEdit
-            in
-            ( Model
-                { rec | focus = FocusPartEditor index (PartEditorEdit edit textAreaValue) }
-            , Utility.ListExtra.takeFromMaybe
-                [ name |> Maybe.map (\n -> EmitChangeName { name = n, index = index, ref = rec.moduleRef })
-                , type_ |> Maybe.map (\t -> EmitChangeType { type_ = t, index = index, ref = rec.moduleRef })
-                , expr |> Maybe.map (\e -> EmitChangeExpr { expr = e, index = index, ref = rec.moduleRef })
-                , if reset then
-                    Just (EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList))
+            case ModuleWithCache.getDef index targetModule of
+                Just def ->
+                    let
+                        { edit, textAreaValue, name, type_, expr, reset } =
+                            parseSimple string oldEdit def
+                    in
+                    ( Model
+                        { rec | focus = FocusPartEditor index (PartEditorEdit edit textAreaValue) }
+                    , Utility.ListExtra.takeFromMaybe
+                        [ name |> Maybe.map (\n -> EmitChangeName { name = n, index = index, ref = rec.moduleRef })
+                        , type_ |> Maybe.map (\t -> EmitChangeType { type_ = t, index = index, ref = rec.moduleRef })
+                        , expr |> Maybe.map (\e -> EmitChangeExpr { expr = e, index = index, ref = rec.moduleRef })
+                        , if reset then
+                            Just (EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList))
 
-                  else
-                    Nothing
-                ]
-            )
+                          else
+                            Nothing
+                        ]
+                    )
+
+                Nothing ->
+                    ( Model rec
+                    , []
+                    )
 
 
 parseSimple :
     String
     -> PartFocusEdit
+    -> Def.Def
     ->
         { edit : PartFocusEdit
         , textAreaValue : List ( Char, Bool )
@@ -541,7 +556,11 @@ parseSimple :
         , expr : Maybe Expr.Expr
         , reset : Bool
         }
-parseSimple string edit =
+parseSimple string edit def =
+    let
+        expr =
+            Def.getExpr def
+    in
     case edit of
         EditName ->
             case Parser.beginWithName (Parser.SimpleChar.fromString string) of
@@ -563,26 +582,26 @@ parseSimple string edit =
                     , reset = True
                     }
 
-                Parser.BeginWithNameEndExprTerm { name, type_, headTerm, termAndOpList, textAreaValue } ->
+                Parser.BeginWithNameEndExprTerm { name, type_, headTerm, opAndTermList, textAreaValue } ->
                     { edit =
-                        if termAndOpList == [] then
+                        if opAndTermList == [] then
                             EditExprHeadTerm
 
                         else
-                            EditTerm (List.length termAndOpList - 1)
+                            EditTerm (List.length opAndTermList - 1)
                     , textAreaValue = textAreaValue
                     , name = Just name
                     , type_ = Just type_
-                    , expr = Just (Expr.make headTerm termAndOpList)
+                    , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( Op.blank, Expr.getHead expr ) ] ++ Expr.getOthers expr))
                     , reset = True
                     }
 
-                Parser.BeginWithNameEndExprOp { name, type_, headTerm, termAndOpList, lastOp, textAreaValue } ->
-                    { edit = EditOp (List.length termAndOpList - 1)
+                Parser.BeginWithNameEndExprOp { name, type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
+                    { edit = EditOp (List.length opAndTermList - 1)
                     , textAreaValue = textAreaValue
                     , name = Just name
                     , type_ = Just type_
-                    , expr = Just (Expr.make headTerm (termAndOpList ++ [ ( lastOp, Term.none ) ]))
+                    , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.getHead expr ) ] ++ Expr.getOthers expr))
                     , reset = True
                     }
 
@@ -597,26 +616,26 @@ parseSimple string edit =
                     , reset = False
                     }
 
-                Parser.BeginWithTypeEndExprTerm { type_, headTerm, termAndOpList, textAreaValue } ->
+                Parser.BeginWithTypeEndExprTerm { type_, headTerm, opAndTermList, textAreaValue } ->
                     { edit =
-                        if termAndOpList == [] then
+                        if opAndTermList == [] then
                             EditExprHeadTerm
 
                         else
-                            EditTerm (List.length termAndOpList - 1)
+                            EditTerm (List.length opAndTermList - 1)
                     , textAreaValue = textAreaValue
                     , name = Nothing
                     , type_ = Just type_
-                    , expr = Just (Expr.make headTerm termAndOpList)
+                    , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( Op.blank, Expr.getHead expr ) ] ++ Expr.getOthers expr))
                     , reset = True
                     }
 
-                Parser.BeginWithTypeEndExprOp { type_, headTerm, termAndOpList, lastOp, textAreaValue } ->
-                    { edit = EditOp (List.length termAndOpList - 1)
+                Parser.BeginWithTypeEndExprOp { type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
+                    { edit = EditOp (List.length opAndTermList - 1)
                     , textAreaValue = []
                     , name = Nothing
                     , type_ = Just type_
-                    , expr = Just (Expr.make headTerm (termAndOpList ++ [ ( lastOp, Term.none ) ]))
+                    , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.getHead expr ) ] ++ Expr.getOthers expr))
                     , reset = True
                     }
 
@@ -632,7 +651,7 @@ parseSimple string edit =
                     , textAreaValue = textAreaValue
                     , name = Nothing
                     , type_ = Nothing
-                    , expr = Just (Expr.make headTerm opAndTermList)
+                    , expr = Just (expr |> Expr.replaceAndInsertHeadLastTerm headTerm opAndTermList)
                     , reset = False
                     }
 
@@ -641,7 +660,7 @@ parseSimple string edit =
                     , textAreaValue = textAreaValue
                     , name = Nothing
                     , type_ = Nothing
-                    , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( lastOp, Term.none ) ]))
+                    , expr = Just (expr |> Expr.replaceAndInsertHeadLastOp headTerm opAndTermList lastOp)
                     , reset = True
                     }
 

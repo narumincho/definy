@@ -32,8 +32,9 @@ type Expr
 
 
 make : Term -> List ( Operator, Term ) -> Expr
-make =
-    Expr
+make head others =
+    Expr head others
+        |> removeBlankOpNoneTerm
 
 
 empty : Expr
@@ -67,8 +68,6 @@ removeBlankOpNoneTerm (Expr head others) =
         (Expr head [])
 
 
-{-| 入力List (Operator,Term)と中間表現Expr(othersの順番が式の順序と逆!)を受けて空の演算子と項の連続を取り除く
--}
 removeSetBlankOpNoneTermLoop : List ( Operator, Term ) -> Expr -> Expr
 removeSetBlankOpNoneTermLoop rest expr =
     case rest of
