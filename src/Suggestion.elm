@@ -20,4 +20,4 @@ name _ =
 
 type_ : Type.Type -> List ( Type.ValidType, String )
 type_ _ =
-    [ ( Type.int, "32bit整数" ) ]
+    [ ( Type.validInt, "32bit整数" ) ]

@@ -3,12 +3,12 @@ module Project.Source.Module.Def.Type exposing
     , ValidType
     , empty
     , fromLabel
-    , int
     , isEmpty
     , toString
     , toTextAreaValue
+    , validInt
     , validTypeToString
-    )
+    , int)
 
 import Project.Label as Label
 
@@ -23,11 +23,18 @@ type ValidType
     = TypeInt
 
 
-{-| 整数Int
+{-| Noneではない32bit整数
 -}
-int : ValidType
-int =
+validInt : ValidType
+validInt =
     TypeInt
+
+
+{-| 32bit整数
+-}
+int : Type
+int =
+    Valid validInt
 
 
 {-| 正しい型を文字列にする

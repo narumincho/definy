@@ -5061,6 +5061,7 @@ var author$project$Project$Label$ha = 0;
 var author$project$Project$Label$hc = 2;
 var author$project$Project$Label$I = 8;
 var author$project$Project$Label$hi = 8;
+var author$project$Project$Label$ho = 14;
 var author$project$Project$Label$hp = 15;
 var author$project$Project$Label$Digits = function (a) {
 	return {$: 2, a: a};
@@ -5069,16 +5070,19 @@ var author$project$Project$Label$N2 = 2;
 var author$project$Project$Label$o2 = author$project$Project$Label$Digits(2);
 var author$project$Project$Label$N3 = 3;
 var author$project$Project$Label$o3 = author$project$Project$Label$Digits(3);
+var author$project$Project$Label$oT = author$project$Project$Label$Capital(19);
 var author$project$Project$Label$B = 1;
 var author$project$Project$Label$ob = author$project$Project$Label$Small(1);
 var author$project$Project$Label$oi = author$project$Project$Label$Small(8);
 var author$project$Project$Label$N = 13;
 var author$project$Project$Label$on = author$project$Project$Label$Small(13);
+var author$project$Project$Label$ou = author$project$Project$Label$Small(20);
+var author$project$Project$Label$W = 22;
+var author$project$Project$Label$ow = author$project$Project$Label$Small(22);
 var author$project$Project$Source$Source = elm$core$Basics$identity;
 var author$project$Project$Label$oM = author$project$Project$Label$Capital(12);
 var author$project$Project$Label$D = 3;
 var author$project$Project$Label$od = author$project$Project$Label$Small(3);
-var author$project$Project$Label$ou = author$project$Project$Label$Small(20);
 var author$project$Project$Source$sampleModuleName = A2(
 	author$project$Project$Label$make,
 	author$project$Project$Label$hs,
@@ -5095,12 +5099,28 @@ var author$project$Project$Source$Module$Def$Expr$Expr = F2(
 var author$project$Project$Source$Module$Def$Expr$Term$None = {$: 2};
 var author$project$Project$Source$Module$Def$Expr$Term$none = author$project$Project$Source$Module$Def$Expr$Term$None;
 var author$project$Project$Source$Module$Def$Expr$empty = A2(author$project$Project$Source$Module$Def$Expr$Expr, author$project$Project$Source$Module$Def$Expr$Term$none, _List_Nil);
+var author$project$Project$Source$Module$Def$Expr$make = author$project$Project$Source$Module$Def$Expr$Expr;
+var author$project$Project$Source$Module$Def$Expr$Operator$Add = 8;
+var author$project$Project$Source$Module$Def$Expr$Operator$Safe = function (a) {
+	return {$: 0, a: a};
+};
+var author$project$Project$Source$Module$Def$Expr$Operator$add = author$project$Project$Source$Module$Def$Expr$Operator$Safe(8);
+var author$project$Project$Source$Module$Def$Expr$Term$IntLiteral = function (a) {
+	return {$: 0, a: a};
+};
+var author$project$Project$Source$Module$Def$Expr$Term$fromInt = author$project$Project$Source$Module$Def$Expr$Term$IntLiteral;
 var author$project$Project$Source$Module$Def$Name$Name = function (a) {
 	return {$: 1, a: a};
 };
 var author$project$Project$Source$Module$Def$Name$fromLabel = author$project$Project$Source$Module$Def$Name$Name;
 var author$project$Project$Source$Module$Def$Type$Empty = {$: 2};
 var author$project$Project$Source$Module$Def$Type$empty = author$project$Project$Source$Module$Def$Type$Empty;
+var author$project$Project$Source$Module$Def$Type$Valid = function (a) {
+	return {$: 0, a: a};
+};
+var author$project$Project$Source$Module$Def$Type$TypeInt = 0;
+var author$project$Project$Source$Module$Def$Type$validInt = 0;
+var author$project$Project$Source$Module$Def$Type$int = author$project$Project$Source$Module$Def$Type$Valid(author$project$Project$Source$Module$Def$Type$validInt);
 var author$project$Project$Source$ModuleWithCache$Module = elm$core$Basics$identity;
 var author$project$Project$Source$ModuleWithCache$make = function (_n0) {
 	var name = _n0.aP;
@@ -5141,7 +5161,30 @@ var author$project$Project$Source$init = {
 		}),
 	aH: author$project$Project$Source$ModuleWithCache$make(
 		{
-			aI: _List_Nil,
+			aI: _List_fromArray(
+				[
+					_Utils_Tuple2(
+					author$project$Project$Source$Module$Def$make(
+						{
+							aK: A2(
+								author$project$Project$Source$Module$Def$Expr$make,
+								author$project$Project$Source$Module$Def$Expr$Term$fromInt(1),
+								_List_fromArray(
+									[
+										_Utils_Tuple2(
+										author$project$Project$Source$Module$Def$Expr$Operator$add,
+										author$project$Project$Source$Module$Def$Expr$Term$fromInt(2))
+									])),
+							aP: author$project$Project$Source$Module$Def$Name$fromLabel(
+								A2(
+									author$project$Project$Label$make,
+									author$project$Project$Label$ho,
+									_List_fromArray(
+										[author$project$Project$Label$on, author$project$Project$Label$oe, author$project$Project$Label$oP, author$project$Project$Label$ol, author$project$Project$Label$ou, author$project$Project$Label$os, author$project$Project$Label$oT, author$project$Project$Label$ow, author$project$Project$Label$oo]))),
+							a0: author$project$Project$Source$Module$Def$Type$int
+						}),
+					elm$core$Maybe$Nothing)
+				]),
 			aP: A2(
 				author$project$Project$Label$make,
 				author$project$Project$Label$hi,
@@ -8443,9 +8486,6 @@ var author$project$Parser$Expr$TermLastTerm = function (a) {
 	return {$: 0, a: a};
 };
 var author$project$Project$Source$Module$Def$Expr$Operator$App = 14;
-var author$project$Project$Source$Module$Def$Expr$Operator$Safe = function (a) {
-	return {$: 0, a: a};
-};
 var author$project$Project$Source$Module$Def$Expr$Operator$app = author$project$Project$Source$Module$Def$Expr$Operator$Safe(14);
 var author$project$Parser$Expr$batchTermResultLoop = F2(
 	function (intermediate, list) {
@@ -8609,11 +8649,9 @@ var author$project$Project$Label$Q = 16;
 var author$project$Project$Label$oQ = author$project$Project$Label$Capital(16);
 var author$project$Project$Label$oR = author$project$Project$Label$Capital(17);
 var author$project$Project$Label$oS = author$project$Project$Label$Capital(18);
-var author$project$Project$Label$oT = author$project$Project$Label$Capital(19);
 var author$project$Project$Label$oU = author$project$Project$Label$Capital(20);
 var author$project$Project$Label$V = 21;
 var author$project$Project$Label$oV = author$project$Project$Label$Capital(21);
-var author$project$Project$Label$W = 22;
 var author$project$Project$Label$oW = author$project$Project$Label$Capital(22);
 var author$project$Project$Label$X = 23;
 var author$project$Project$Label$oX = author$project$Project$Label$Capital(23);
@@ -8688,7 +8726,6 @@ var author$project$Project$Label$hk = 10;
 var author$project$Project$Label$hl = 11;
 var author$project$Project$Label$hm = 12;
 var author$project$Project$Label$hn = 13;
-var author$project$Project$Label$ho = 14;
 var author$project$Project$Label$hq = 16;
 var author$project$Project$Label$hr = 17;
 var author$project$Project$Label$ht = 19;
@@ -8843,7 +8880,6 @@ var author$project$Project$Label$oh = author$project$Project$Label$Small(7);
 var author$project$Project$Label$ok = author$project$Project$Label$Small(10);
 var author$project$Project$Label$oq = author$project$Project$Label$Small(16);
 var author$project$Project$Label$ov = author$project$Project$Label$Small(21);
-var author$project$Project$Label$ow = author$project$Project$Label$Small(22);
 var author$project$Project$Label$ox = author$project$Project$Label$Small(23);
 var author$project$Project$Label$oy = author$project$Project$Label$Small(24);
 var author$project$Project$Label$oz = author$project$Project$Label$Small(25);
@@ -9088,10 +9124,6 @@ var author$project$Parser$Expr$intLiteralIntermediateToInt = function (_n0) {
 	var digits = _n0.af;
 	return minus ? (-author$project$Parser$SimpleChar$listNumberToInt(digits)) : author$project$Parser$SimpleChar$listNumberToInt(digits);
 };
-var author$project$Project$Source$Module$Def$Expr$Term$IntLiteral = function (a) {
-	return {$: 0, a: a};
-};
-var author$project$Project$Source$Module$Def$Expr$Term$fromInt = author$project$Project$Source$Module$Def$Expr$Term$IntLiteral;
 var author$project$Parser$Expr$parseIntLiteral = F3(
 	function (intermediate, rest, textareaValue) {
 		parseIntLiteral:
@@ -9142,8 +9174,6 @@ var author$project$Parser$Expr$parseIntLiteral = F3(
 			}
 		}
 	});
-var author$project$Project$Source$Module$Def$Expr$Operator$Add = 8;
-var author$project$Project$Source$Module$Def$Expr$Operator$add = author$project$Project$Source$Module$Def$Expr$Operator$Safe(8);
 var author$project$Project$Source$Module$Def$Expr$Operator$And = 2;
 var author$project$Project$Source$Module$Def$Expr$Operator$and = author$project$Project$Source$Module$Def$Expr$Operator$Safe(2);
 var author$project$Project$Source$Module$Def$Expr$Operator$Compose = 13;
@@ -9862,10 +9892,6 @@ var author$project$Parser$Type$TypeToExpr = function (a) {
 var author$project$Project$Source$Module$Def$Type$Invalid = function (a) {
 	return {$: 1, a: a};
 };
-var author$project$Project$Source$Module$Def$Type$TypeInt = 0;
-var author$project$Project$Source$Module$Def$Type$Valid = function (a) {
-	return {$: 0, a: a};
-};
 var author$project$Project$Source$Module$Def$Type$fromLabel = function (label) {
 	return _Utils_eq(
 		label,
@@ -10400,7 +10426,6 @@ var author$project$Parser$SimpleChar$fromString = function (string) {
 		author$project$Parser$SimpleChar$fromChar,
 		elm$core$String$toList(string));
 };
-var author$project$Project$Source$Module$Def$Expr$make = author$project$Project$Source$Module$Def$Expr$Expr;
 var author$project$Panel$Editor$Module$parseSimple = F2(
 	function (string, edit) {
 		switch (edit.$) {

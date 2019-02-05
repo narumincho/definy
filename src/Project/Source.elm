@@ -1,10 +1,12 @@
 module Project.Source exposing (ModuleRef(..), Source, getModule, init, mapModule, setModule)
 
 import Project.Label as Label
-import Project.Source.Module.Def
-import Project.Source.Module.Def.Expr
-import Project.Source.Module.Def.Name
-import Project.Source.Module.Def.Type
+import Project.Source.Module.Def as Def
+import Project.Source.Module.Def.Expr as Expr
+import Project.Source.Module.Def.Expr.Operator as Op
+import Project.Source.Module.Def.Expr.Term as Term
+import Project.Source.Module.Def.Name as Name
+import Project.Source.Module.Def.Type as Type
 import Project.Source.ModuleWithCache as ModuleWithCache
 import Utility.Map
 
@@ -53,10 +55,10 @@ init =
             ModuleWithCache.make
                 { name = Label.make Label.hc [ Label.oo, Label.or, Label.oe ]
                 , defList =
-                    [ ( Project.Source.Module.Def.make
-                            { name = Project.Source.Module.Def.Name.fromLabel (Label.make Label.ha [ Label.ob, Label.os ])
-                            , type_ = Project.Source.Module.Def.Type.empty
-                            , expr = Project.Source.Module.Def.Expr.empty
+                    [ ( Def.make
+                            { name = Name.fromLabel (Label.make Label.ha [ Label.ob, Label.os ])
+                            , type_ = Type.empty
+                            , expr = Expr.empty
                             }
                       , Nothing
                       )
@@ -66,21 +68,39 @@ init =
         , coreInt32 =
             ModuleWithCache.make
                 { name = Label.make Label.hi [ Label.on, Label.ot, Label.o3, Label.o2 ]
-                , defList = []
+                , defList =
+                    [ ( Def.make
+                            { name =
+                                Name.fromLabel
+                                    (Label.make Label.ho
+                                        [ Label.on, Label.oe, Label.oP, Label.ol, Label.ou, Label.os, Label.oT, Label.ow, Label.oo ]
+                                    )
+                            , type_ = Type.int
+                            , expr =
+                                Expr.make
+                                    (Term.fromInt 1)
+                                    [ ( Op.add
+                                      , Term.fromInt 2
+                                      )
+                                    ]
+                            }
+                      , Nothing
+                      )
+                    ]
                 , readMe = "WebAssemblyでサポートされている32bit符号付き整数を扱えるようになる"
                 }
         , sampleModule =
             ModuleWithCache.make
                 { name = sampleModuleName
                 , defList =
-                    [ ( Project.Source.Module.Def.make
+                    [ ( Def.make
                             { name =
-                                Project.Source.Module.Def.Name.fromLabel
+                                Name.fromLabel
                                     (Label.make Label.hp
                                         [ Label.oo, Label.oi, Label.on, Label.ot ]
                                     )
-                            , type_ = Project.Source.Module.Def.Type.empty
-                            , expr = Project.Source.Module.Def.Expr.empty
+                            , type_ = Type.empty
+                            , expr = Expr.empty
                             }
                       , Nothing
                       )
