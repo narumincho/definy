@@ -11036,13 +11036,14 @@ var author$project$Panel$Editor$Module$partEditorMoveRight = F2(
 			case 1:
 				return author$project$Panel$Editor$Module$MoveExprHead;
 			case 2:
-				var _n1 = A2(
-					elm$core$Maybe$map,
-					A2(elm$core$Basics$composeR, author$project$Project$Source$Module$Def$getExpr, author$project$Project$Source$Module$Def$Expr$getHead),
-					defMaybe);
+				var _n1 = A2(elm$core$Maybe$map, author$project$Project$Source$Module$Def$getExpr, defMaybe);
 				if (!_n1.$) {
-					var head = _n1.a;
-					return _Utils_eq(head, author$project$Project$Source$Module$Def$Expr$Term$none) ? author$project$Panel$Editor$Module$MoveExprHead : author$project$Panel$Editor$Module$MoveHeadTerm;
+					var expr = _n1.a;
+					return (_Utils_eq(
+						author$project$Project$Source$Module$Def$Expr$getHead(expr),
+						author$project$Project$Source$Module$Def$Expr$Term$none) && _Utils_eq(
+						author$project$Project$Source$Module$Def$Expr$getOthers(expr),
+						_List_Nil)) ? author$project$Panel$Editor$Module$MoveExprHead : author$project$Panel$Editor$Module$MoveHeadTerm;
 				} else {
 					return author$project$Panel$Editor$Module$MoveExprHead;
 				}
@@ -16932,34 +16933,6 @@ var author$project$Panel$Editor$Module$exprViewHeadTerm = F2(
 					author$project$Project$Source$Module$Def$Expr$getHead(expr)))
 			]);
 	});
-var author$project$Panel$Editor$Module$opViewInputOutput = function (textAreaValue) {
-	return A2(
-		elm$html$Html$div,
-		_List_fromArray(
-			[
-				elm$html$Html$Attributes$class('editTarget'),
-				elm$html$Html$Attributes$class('moduleEditor-partDefEditor-op')
-			]),
-		A2(
-			elm$core$List$map,
-			function (_n0) {
-				var _char = _n0.a;
-				var bool = _n0.b;
-				return A2(
-					elm$html$Html$div,
-					_List_fromArray(
-						[
-							elm$html$Html$Attributes$class(
-							bool ? 'moduleEditor-partDefEditor-okChar' : 'moduleEditor-partDefEditor-errChar')
-						]),
-					_List_fromArray(
-						[
-							elm$html$Html$text(
-							elm$core$String$fromChar(_char))
-						]));
-			},
-			textAreaValue));
-};
 var author$project$Project$Source$Module$Def$Expr$Operator$safeToString = function (safeOperator) {
 	switch (safeOperator) {
 		case 0:
@@ -17020,102 +16993,8 @@ var author$project$Panel$Editor$Module$opViewOutput = function (op) {
 					author$project$Project$Source$Module$Def$Expr$Operator$toString(op)))
 			]));
 };
-var author$project$Panel$Editor$Module$exprViewOpAndTerm = F3(
-	function (partEditorFocusMaybe, index, _n0) {
-		var op = _n0.a;
-		var term = _n0.b;
-		_n1$4:
-		while (true) {
-			if (!partEditorFocusMaybe.$) {
-				if (partEditorFocusMaybe.a.$ === 1) {
-					switch (partEditorFocusMaybe.a.a.$) {
-						case 4:
-							var i = partEditorFocusMaybe.a.a.a;
-							return _List_fromArray(
-								[
-									A2(
-									elm$html$Html$map,
-									elm$core$Basics$always(
-										author$project$Panel$Editor$Module$PartEditorMove(
-											author$project$Panel$Editor$Module$MoveOp(index))),
-									author$project$Panel$Editor$Module$opViewOutput(op)),
-									author$project$Panel$Editor$Module$moveModeCaret,
-									A2(
-									elm$html$Html$map,
-									elm$core$Basics$always(
-										author$project$Panel$Editor$Module$PartEditorMove(
-											author$project$Panel$Editor$Module$MoveTerm(index))),
-									author$project$Panel$Editor$Module$termViewOutput(term))
-								]);
-						case 5:
-							var i = partEditorFocusMaybe.a.a.a;
-							return _List_fromArray(
-								[
-									A2(
-									elm$html$Html$map,
-									elm$core$Basics$always(
-										author$project$Panel$Editor$Module$PartEditorMove(
-											author$project$Panel$Editor$Module$MoveOp(index))),
-									author$project$Panel$Editor$Module$opViewOutput(op)),
-									A2(
-									elm$html$Html$map,
-									elm$core$Basics$always(
-										author$project$Panel$Editor$Module$PartEditorMove(
-											author$project$Panel$Editor$Module$MoveTerm(index))),
-									author$project$Panel$Editor$Module$termViewOutput(term)),
-									author$project$Panel$Editor$Module$moveModeCaret
-								]);
-						default:
-							break _n1$4;
-					}
-				} else {
-					switch (partEditorFocusMaybe.a.a.$) {
-						case 3:
-							var _n2 = partEditorFocusMaybe.a;
-							var i = _n2.a.a;
-							var textAreaValue = _n2.b;
-							return _List_fromArray(
-								[
-									A2(
-									elm$html$Html$map,
-									elm$core$Basics$always(
-										author$project$Panel$Editor$Module$PartEditorMove(
-											author$project$Panel$Editor$Module$MoveOp(index))),
-									author$project$Panel$Editor$Module$opViewInputOutput(textAreaValue)),
-									A2(
-									elm$html$Html$map,
-									elm$core$Basics$always(
-										author$project$Panel$Editor$Module$PartEditorMove(
-											author$project$Panel$Editor$Module$MoveTerm(index))),
-									author$project$Panel$Editor$Module$termViewOutput(term))
-								]);
-						case 4:
-							var _n3 = partEditorFocusMaybe.a;
-							var i = _n3.a.a;
-							var textAreaValue = _n3.b;
-							return _List_fromArray(
-								[
-									A2(
-									elm$html$Html$map,
-									elm$core$Basics$always(
-										author$project$Panel$Editor$Module$PartEditorMove(
-											author$project$Panel$Editor$Module$MoveOp(index))),
-									author$project$Panel$Editor$Module$opViewOutput(op)),
-									A2(
-									elm$html$Html$map,
-									elm$core$Basics$always(
-										author$project$Panel$Editor$Module$PartEditorMove(
-											author$project$Panel$Editor$Module$MoveTerm(index))),
-									author$project$Panel$Editor$Module$termViewInputOutput(textAreaValue))
-								]);
-						default:
-							break _n1$4;
-					}
-				}
-			} else {
-				break _n1$4;
-			}
-		}
+var author$project$Panel$Editor$Module$exprViewOpAndTermNormal = F3(
+	function (index, op, term) {
 		return _List_fromArray(
 			[
 				A2(
@@ -17131,6 +17010,132 @@ var author$project$Panel$Editor$Module$exprViewOpAndTerm = F3(
 						author$project$Panel$Editor$Module$MoveTerm(index))),
 				author$project$Panel$Editor$Module$termViewOutput(term))
 			]);
+	});
+var author$project$Panel$Editor$Module$opViewInputOutput = function (textAreaValue) {
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$class('editTarget'),
+				elm$html$Html$Attributes$class('moduleEditor-partDefEditor-op')
+			]),
+		A2(
+			elm$core$List$map,
+			function (_n0) {
+				var _char = _n0.a;
+				var bool = _n0.b;
+				return A2(
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							elm$html$Html$Attributes$class(
+							bool ? 'moduleEditor-partDefEditor-okChar' : 'moduleEditor-partDefEditor-errChar')
+						]),
+					_List_fromArray(
+						[
+							elm$html$Html$text(
+							elm$core$String$fromChar(_char))
+						]));
+			},
+			textAreaValue));
+};
+var author$project$Panel$Editor$Module$exprViewOpAndTerm = F3(
+	function (partEditorFocusMaybe, index, _n0) {
+		var op = _n0.a;
+		var term = _n0.b;
+		_n1$4:
+		while (true) {
+			if (!partEditorFocusMaybe.$) {
+				if (partEditorFocusMaybe.a.$ === 1) {
+					switch (partEditorFocusMaybe.a.a.$) {
+						case 4:
+							var i = partEditorFocusMaybe.a.a.a;
+							return _Utils_eq(index, i) ? _List_fromArray(
+								[
+									A2(
+									elm$html$Html$map,
+									elm$core$Basics$always(
+										author$project$Panel$Editor$Module$PartEditorMove(
+											author$project$Panel$Editor$Module$MoveOp(index))),
+									author$project$Panel$Editor$Module$opViewOutput(op)),
+									author$project$Panel$Editor$Module$moveModeCaret,
+									A2(
+									elm$html$Html$map,
+									elm$core$Basics$always(
+										author$project$Panel$Editor$Module$PartEditorMove(
+											author$project$Panel$Editor$Module$MoveTerm(index))),
+									author$project$Panel$Editor$Module$termViewOutput(term))
+								]) : A3(author$project$Panel$Editor$Module$exprViewOpAndTermNormal, index, op, term);
+						case 5:
+							var i = partEditorFocusMaybe.a.a.a;
+							return _Utils_eq(index, i) ? _List_fromArray(
+								[
+									A2(
+									elm$html$Html$map,
+									elm$core$Basics$always(
+										author$project$Panel$Editor$Module$PartEditorMove(
+											author$project$Panel$Editor$Module$MoveOp(index))),
+									author$project$Panel$Editor$Module$opViewOutput(op)),
+									A2(
+									elm$html$Html$map,
+									elm$core$Basics$always(
+										author$project$Panel$Editor$Module$PartEditorMove(
+											author$project$Panel$Editor$Module$MoveTerm(index))),
+									author$project$Panel$Editor$Module$termViewOutput(term)),
+									author$project$Panel$Editor$Module$moveModeCaret
+								]) : A3(author$project$Panel$Editor$Module$exprViewOpAndTermNormal, index, op, term);
+						default:
+							break _n1$4;
+					}
+				} else {
+					switch (partEditorFocusMaybe.a.a.$) {
+						case 3:
+							var _n2 = partEditorFocusMaybe.a;
+							var i = _n2.a.a;
+							var textAreaValue = _n2.b;
+							return _Utils_eq(index, i) ? _List_fromArray(
+								[
+									A2(
+									elm$html$Html$map,
+									elm$core$Basics$always(
+										author$project$Panel$Editor$Module$PartEditorMove(
+											author$project$Panel$Editor$Module$MoveOp(index))),
+									author$project$Panel$Editor$Module$opViewInputOutput(textAreaValue)),
+									A2(
+									elm$html$Html$map,
+									elm$core$Basics$always(
+										author$project$Panel$Editor$Module$PartEditorMove(
+											author$project$Panel$Editor$Module$MoveTerm(index))),
+									author$project$Panel$Editor$Module$termViewOutput(term))
+								]) : A3(author$project$Panel$Editor$Module$exprViewOpAndTermNormal, index, op, term);
+						case 4:
+							var _n3 = partEditorFocusMaybe.a;
+							var i = _n3.a.a;
+							var textAreaValue = _n3.b;
+							return _Utils_eq(index, i) ? _List_fromArray(
+								[
+									A2(
+									elm$html$Html$map,
+									elm$core$Basics$always(
+										author$project$Panel$Editor$Module$PartEditorMove(
+											author$project$Panel$Editor$Module$MoveOp(index))),
+									author$project$Panel$Editor$Module$opViewOutput(op)),
+									A2(
+									elm$html$Html$map,
+									elm$core$Basics$always(
+										author$project$Panel$Editor$Module$PartEditorMove(
+											author$project$Panel$Editor$Module$MoveTerm(index))),
+									author$project$Panel$Editor$Module$termViewInputOutput(textAreaValue))
+								]) : A3(author$project$Panel$Editor$Module$exprViewOpAndTermNormal, index, op, term);
+						default:
+							break _n1$4;
+					}
+				}
+			} else {
+				break _n1$4;
+			}
+		}
+		return A3(author$project$Panel$Editor$Module$exprViewOpAndTermNormal, index, op, term);
 	});
 var author$project$Panel$Editor$Module$exprViewOpAndTermList = F2(
 	function (partEditorFocusMaybe, expr) {

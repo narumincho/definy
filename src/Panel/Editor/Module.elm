@@ -347,9 +347,9 @@ partEditorMoveRight defMaybe partMove =
             MoveExprHead
 
         MoveExprHead ->
-            case defMaybe |> Maybe.map (Def.getExpr >> Expr.getHead) of
-                Just head ->
-                    if head == Term.none then
+            case defMaybe |> Maybe.map Def.getExpr of
+                Just expr ->
+                    if Expr.getHead expr == Term.none && Expr.getOthers expr == [] then
                         MoveExprHead
 
                     else
@@ -1112,41 +1112,62 @@ exprViewOpAndTerm : Maybe PartEditorFocus -> Int -> ( Op.Operator, Term.Term ) -
 exprViewOpAndTerm partEditorFocusMaybe index ( op, term ) =
     case partEditorFocusMaybe of
         Just (PartEditorMove (MoveOp i)) ->
-            [ opViewOutput op
-                |> Html.map (always (PartEditorMove (MoveOp index)))
-            , moveModeCaret
-            , termViewOutput term
-                |> Html.map (always (PartEditorMove (MoveTerm index)))
-            ]
+            if index == i then
+                [ opViewOutput op
+                    |> Html.map (always (PartEditorMove (MoveOp index)))
+                , moveModeCaret
+                , termViewOutput term
+                    |> Html.map (always (PartEditorMove (MoveTerm index)))
+                ]
+
+            else
+                exprViewOpAndTermNormal index op term
 
         Just (PartEditorMove (MoveTerm i)) ->
-            [ opViewOutput op
-                |> Html.map (always (PartEditorMove (MoveOp index)))
-            , termViewOutput term
-                |> Html.map (always (PartEditorMove (MoveTerm index)))
-            , moveModeCaret
-            ]
+            if index == i then
+                [ opViewOutput op
+                    |> Html.map (always (PartEditorMove (MoveOp index)))
+                , termViewOutput term
+                    |> Html.map (always (PartEditorMove (MoveTerm index)))
+                , moveModeCaret
+                ]
+
+            else
+                exprViewOpAndTermNormal index op term
 
         Just (PartEditorEdit (EditOp i) textAreaValue) ->
-            [ opViewInputOutput textAreaValue
-                |> Html.map (always (PartEditorMove (MoveOp index)))
-            , termViewOutput term
-                |> Html.map (always (PartEditorMove (MoveTerm index)))
-            ]
+            if index == i then
+                [ opViewInputOutput textAreaValue
+                    |> Html.map (always (PartEditorMove (MoveOp index)))
+                , termViewOutput term
+                    |> Html.map (always (PartEditorMove (MoveTerm index)))
+                ]
+
+            else
+                exprViewOpAndTermNormal index op term
 
         Just (PartEditorEdit (EditTerm i) textAreaValue) ->
-            [ opViewOutput op
-                |> Html.map (always (PartEditorMove (MoveOp index)))
-            , termViewInputOutput textAreaValue
-                |> Html.map (always (PartEditorMove (MoveTerm index)))
-            ]
+            if index == i then
+                [ opViewOutput op
+                    |> Html.map (always (PartEditorMove (MoveOp index)))
+                , termViewInputOutput textAreaValue
+                    |> Html.map (always (PartEditorMove (MoveTerm index)))
+                ]
+
+            else
+                exprViewOpAndTermNormal index op term
 
         _ ->
-            [ opViewOutput op
-                |> Html.map (always (PartEditorMove (MoveOp index)))
-            , termViewOutput term
-                |> Html.map (always (PartEditorMove (MoveTerm index)))
-            ]
+            exprViewOpAndTermNormal index op term
+
+
+exprViewOpAndTermNormal : Int -> Op.Operator -> Term.Term -> List (Html.Html PartEditorFocus)
+exprViewOpAndTermNormal index op term =
+    [ opViewOutput op
+        |> Html.map (always (PartEditorMove (MoveOp index)))
+    , termViewOutput term
+        |> Html.map (always (PartEditorMove (MoveTerm index)))
+    ]
 
 
 {-| 編集していない項の表示
