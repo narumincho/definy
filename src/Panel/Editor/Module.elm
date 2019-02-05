@@ -496,7 +496,7 @@ inputInPartEditor string targetModule (Model rec) =
                 Just def ->
                     let
                         { edit, textAreaValue, name, type_, expr, reset } =
-                            parseSimple string (partEditorMoveToEdit move) def
+                            parse string (partEditorMoveToEdit move) def
                     in
                     ( Model
                         { rec | focus = FocusPartEditor index (PartEditorEdit edit textAreaValue) }
@@ -522,7 +522,7 @@ inputInPartEditor string targetModule (Model rec) =
                 Just def ->
                     let
                         { edit, textAreaValue, name, type_, expr, reset } =
-                            parseSimple string oldEdit def
+                            parse string oldEdit def
                     in
                     ( Model
                         { rec | focus = FocusPartEditor index (PartEditorEdit edit textAreaValue) }
@@ -544,7 +544,7 @@ inputInPartEditor string targetModule (Model rec) =
                     )
 
 
-parseSimple :
+parse :
     String
     -> PartFocusEdit
     -> Def.Def
@@ -556,121 +556,153 @@ parseSimple :
         , expr : Maybe Expr.Expr
         , reset : Bool
         }
-parseSimple string edit def =
-    let
-        expr =
-            Def.getExpr def
-    in
-    case edit of
+parse string partEdit def =
+    case partEdit of
         EditName ->
-            case Parser.beginWithName (Parser.SimpleChar.fromString string) of
-                Parser.BeginWithNameEndName { name, textAreaValue } ->
-                    { edit = EditName
-                    , textAreaValue = textAreaValue
-                    , name = Just name
-                    , type_ = Nothing
-                    , expr = Nothing
-                    , reset = False
-                    }
-
-                Parser.BeginWithNameEndType { name, type_, textAreaValue } ->
-                    { edit = EditType
-                    , textAreaValue = textAreaValue
-                    , name = Just name
-                    , type_ = Just type_
-                    , expr = Nothing
-                    , reset = True
-                    }
-
-                Parser.BeginWithNameEndExprTerm { name, type_, headTerm, opAndTermList, textAreaValue } ->
-                    { edit =
-                        if opAndTermList == [] then
-                            EditExprHeadTerm
-
-                        else
-                            EditTerm (List.length opAndTermList - 1)
-                    , textAreaValue = textAreaValue
-                    , name = Just name
-                    , type_ = Just type_
-                    , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( Op.blank, Expr.getHead expr ) ] ++ Expr.getOthers expr))
-                    , reset = True
-                    }
-
-                Parser.BeginWithNameEndExprOp { name, type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
-                    { edit = EditOp (List.length opAndTermList - 1)
-                    , textAreaValue = textAreaValue
-                    , name = Just name
-                    , type_ = Just type_
-                    , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.getHead expr ) ] ++ Expr.getOthers expr))
-                    , reset = True
-                    }
+            parseBeginWithName def (Parser.SimpleChar.fromString string)
 
         EditType ->
-            case Parser.beginWithType (Parser.SimpleChar.fromString string) of
-                Parser.BeginWithTypeEndType { type_, textAreaValue } ->
-                    { edit = EditType
+            case parseBeginWithType def (Parser.SimpleChar.fromString string) of
+                { edit, textAreaValue, type_, expr, reset } ->
+                    { edit = edit
                     , textAreaValue = textAreaValue
                     , name = Nothing
-                    , type_ = Just type_
-                    , expr = Nothing
-                    , reset = False
-                    }
-
-                Parser.BeginWithTypeEndExprTerm { type_, headTerm, opAndTermList, textAreaValue } ->
-                    { edit =
-                        if opAndTermList == [] then
-                            EditExprHeadTerm
-
-                        else
-                            EditTerm (List.length opAndTermList - 1)
-                    , textAreaValue = textAreaValue
-                    , name = Nothing
-                    , type_ = Just type_
-                    , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( Op.blank, Expr.getHead expr ) ] ++ Expr.getOthers expr))
-                    , reset = True
-                    }
-
-                Parser.BeginWithTypeEndExprOp { type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
-                    { edit = EditOp (List.length opAndTermList - 1)
-                    , textAreaValue = []
-                    , name = Nothing
-                    , type_ = Just type_
-                    , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.getHead expr ) ] ++ Expr.getOthers expr))
-                    , reset = True
+                    , type_ = type_
+                    , expr = expr
+                    , reset = reset
                     }
 
         EditExprHeadTerm ->
-            case Parser.beginWithExprHead (Parser.SimpleChar.fromString string) of
-                Parser.BeginWithExprHeadEndTerm { headTerm, opAndTermList, textAreaValue } ->
-                    { edit =
-                        if opAndTermList == [] then
-                            EditExprHeadTerm
-
-                        else
-                            EditTerm (List.length opAndTermList - 1)
+            case parseBeginWithExprHead def (Parser.SimpleChar.fromString string) of
+                { edit, textAreaValue, expr, reset } ->
+                    { edit = edit
                     , textAreaValue = textAreaValue
                     , name = Nothing
                     , type_ = Nothing
-                    , expr = Just (expr |> Expr.replaceAndInsertHeadLastTerm headTerm opAndTermList)
-                    , reset = False
-                    }
-
-                Parser.BeginWithExprHeadEndOp { headTerm, opAndTermList, lastOp, textAreaValue } ->
-                    { edit = EditOp (List.length opAndTermList - 1)
-                    , textAreaValue = textAreaValue
-                    , name = Nothing
-                    , type_ = Nothing
-                    , expr = Just (expr |> Expr.replaceAndInsertHeadLastOp headTerm opAndTermList lastOp)
-                    , reset = True
+                    , expr = expr
+                    , reset = reset
                     }
 
         _ ->
-            { edit = edit
+            { edit = partEdit
             , textAreaValue = []
             , name = Nothing
             , type_ = Nothing
             , expr = Nothing
             , reset = False
+            }
+
+
+parseBeginWithName : Def.Def -> List Parser.SimpleChar.SimpleChar -> { edit : PartFocusEdit, textAreaValue : List ( Char, Bool ), name : Maybe Name.Name, type_ : Maybe Type.Type, expr : Maybe Expr.Expr, reset : Bool }
+parseBeginWithName def simpleCharList =
+    let
+        expr =
+            Def.getExpr def
+    in
+    case Parser.beginWithName simpleCharList of
+        Parser.BeginWithNameEndName { name, textAreaValue } ->
+            { edit = EditName
+            , textAreaValue = textAreaValue
+            , name = Just name
+            , type_ = Nothing
+            , expr = Nothing
+            , reset = False
+            }
+
+        Parser.BeginWithNameEndType { name, type_, textAreaValue } ->
+            { edit = EditType
+            , textAreaValue = textAreaValue
+            , name = Just name
+            , type_ = Just type_
+            , expr = Nothing
+            , reset = True
+            }
+
+        Parser.BeginWithNameEndExprTerm { name, type_, headTerm, opAndTermList, textAreaValue } ->
+            { edit =
+                if opAndTermList == [] then
+                    EditExprHeadTerm
+
+                else
+                    EditTerm (List.length opAndTermList - 1)
+            , textAreaValue = textAreaValue
+            , name = Just name
+            , type_ = Just type_
+            , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( Op.blank, Expr.getHead expr ) ] ++ Expr.getOthers expr))
+            , reset = True
+            }
+
+        Parser.BeginWithNameEndExprOp { name, type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
+            { edit = EditOp (List.length opAndTermList - 1)
+            , textAreaValue = textAreaValue
+            , name = Just name
+            , type_ = Just type_
+            , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.getHead expr ) ] ++ Expr.getOthers expr))
+            , reset = True
+            }
+
+
+parseBeginWithType : Def.Def -> List Parser.SimpleChar.SimpleChar -> { edit : PartFocusEdit, textAreaValue : List ( Char, Bool ), type_ : Maybe Type.Type, expr : Maybe Expr.Expr, reset : Bool }
+parseBeginWithType def simpleCharList =
+    let
+        expr =
+            Def.getExpr def
+    in
+    case Parser.beginWithType simpleCharList of
+        Parser.BeginWithTypeEndType { type_, textAreaValue } ->
+            { edit = EditType
+            , textAreaValue = textAreaValue
+            , type_ = Just type_
+            , expr = Nothing
+            , reset = False
+            }
+
+        Parser.BeginWithTypeEndExprTerm { type_, headTerm, opAndTermList, textAreaValue } ->
+            { edit =
+                if opAndTermList == [] then
+                    EditExprHeadTerm
+
+                else
+                    EditTerm (List.length opAndTermList - 1)
+            , textAreaValue = textAreaValue
+            , type_ = Just type_
+            , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( Op.blank, Expr.getHead expr ) ] ++ Expr.getOthers expr))
+            , reset = True
+            }
+
+        Parser.BeginWithTypeEndExprOp { type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
+            { edit = EditOp (List.length opAndTermList - 1)
+            , textAreaValue = []
+            , type_ = Just type_
+            , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.getHead expr ) ] ++ Expr.getOthers expr))
+            , reset = True
+            }
+
+
+parseBeginWithExprHead : Def.Def -> List Parser.SimpleChar.SimpleChar -> { edit : PartFocusEdit, textAreaValue : List ( Char, Bool ), expr : Maybe Expr.Expr, reset : Bool }
+parseBeginWithExprHead def simpleCharList =
+    let
+        expr =
+            Def.getExpr def
+    in
+    case Parser.beginWithExprHead simpleCharList of
+        Parser.BeginWithExprHeadEndTerm { headTerm, opAndTermList, textAreaValue } ->
+            { edit =
+                if opAndTermList == [] then
+                    EditExprHeadTerm
+
+                else
+                    EditTerm (List.length opAndTermList - 1)
+            , textAreaValue = textAreaValue
+            , expr = Just (expr |> Expr.replaceAndInsertHeadLastTerm headTerm opAndTermList)
+            , reset = False
+            }
+
+        Parser.BeginWithExprHeadEndOp { headTerm, opAndTermList, lastOp, textAreaValue } ->
+            { edit = EditOp (List.length opAndTermList - 1)
+            , textAreaValue = textAreaValue
+            , expr = Just (expr |> Expr.replaceAndInsertHeadLastOp headTerm opAndTermList lastOp)
+            , reset = True
             }
 
 
