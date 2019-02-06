@@ -11090,8 +11090,12 @@ var author$project$Panel$Editor$Module$partEditorMoveUp = F2(
 				return (!index) ? _Utils_Tuple2(author$project$Panel$Editor$Module$MoveType, 0) : _Utils_Tuple2(author$project$Panel$Editor$Module$MoveExprHead, index - 1);
 			case 2:
 				return _Utils_Tuple2(author$project$Panel$Editor$Module$MoveName, index);
+			case 3:
+				return _Utils_Tuple2(author$project$Panel$Editor$Module$MoveName, index);
+			case 4:
+				return _Utils_Tuple2(author$project$Panel$Editor$Module$MoveName, index);
 			default:
-				return _Utils_Tuple2(position, index);
+				return _Utils_Tuple2(author$project$Panel$Editor$Module$MoveName, index);
 		}
 	});
 var author$project$Project$Source$ModuleWithCache$getDefNum = A2(elm$core$Basics$composeR, author$project$Project$Source$ModuleWithCache$getDefWithCacheList, elm$core$List$length);

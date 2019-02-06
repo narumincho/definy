@@ -496,10 +496,13 @@ img {
 
 .moduleEditor-partDefEditor-expr {
     display: flex;
+    height: 32px;
+    align-items: center;
 }
 
 .moduleEditor-partDefEditor-term {
     display: flex;
+    padding: 0 8px;
 }
 
 .moduleEditor-partDefEditor-op {

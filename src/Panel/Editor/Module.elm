@@ -408,8 +408,14 @@ partEditorMoveUp position index =
         MoveExprHead ->
             ( MoveName, index )
 
-        _ ->
-            ( position, index )
+        MoveHeadTerm ->
+            ( MoveName, index )
+
+        MoveOp _ ->
+            ( MoveName, index )
+
+        MoveTerm _ ->
+            ( MoveName, index )
 
 
 {-| パーツエディタの移動モードで下に移動する
