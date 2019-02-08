@@ -28,18 +28,14 @@ update msg model =
     case msg of
         Model.KeyPressed key ->
             case KeyConfig.keyDown key model of
-                Just ( concreteMsg, isPreventDefault ) ->
-                    update concreteMsg model
-                        |> (if isPreventDefault then
-                                Tuple.mapSecond
-                                    (\cmd -> Cmd.batch [ preventDefaultBeforeKeyEvent (), cmd ])
-
-                            else
-                                identity
-                           )
-
-                Nothing ->
+                [] ->
                     ( model, Cmd.none )
+
+                concreteMsgList ->
+                    updateFromList concreteMsgList
+                        model
+                        |> Tuple.mapSecond
+                            (\cmd -> Cmd.batch [ preventDefaultBeforeKeyEvent (), cmd ])
 
         Model.MouseMove position ->
             ( Model.mouseMove position model

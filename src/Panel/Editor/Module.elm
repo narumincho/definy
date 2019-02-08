@@ -157,10 +157,10 @@ update msg project (Model rec) =
             update (ActiveTo (selectFirstChild targetModule rec.active)) project (Model rec)
 
         SelectLastChild ->
-            update (ActiveTo (selectLastChild targetModule rec.active) project) (Model rec)
+            update (ActiveTo (selectLastChild targetModule rec.active)) project (Model rec)
 
         SelectParent ->
-            update (ActiveTo (selectParent targetModule rec.active) project) (Model rec)
+            update (ActiveTo (selectParent targetModule rec.active)) project (Model rec)
 
         ToEditMode ->
             ( Model rec
