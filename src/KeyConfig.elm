@@ -192,7 +192,7 @@ textFieldReservedKey { key, ctrl, alt, shift } =
 -}
 treePanelKeyDown : Key.Key -> Maybe ( Panel.Tree.Msg, Bool )
 treePanelKeyDown { key, ctrl, shift, alt } =
-    case ( shift, ctrl, alt ) of
+    case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
                 Key.ArrowUp ->
@@ -221,7 +221,7 @@ treePanelKeyDown { key, ctrl, shift, alt } =
 -}
 editorGroupPanelKeyDown : Key.Key -> Maybe ( Panel.EditorGroup.Msg, Bool )
 editorGroupPanelKeyDown { key, ctrl, shift, alt } =
-    case ( shift, ctrl, alt ) of
+    case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
                 Key.ArrowLeft ->
@@ -260,6 +260,15 @@ editorGroupPanelKeyDown { key, ctrl, shift, alt } =
                         , True
                         )
 
+                Key.Space ->
+                    Just
+                        ( Panel.EditorGroup.EditorItemMsgToActive
+                            (Panel.EditorGroup.ModuleEditorMsg
+                                Panel.Editor.Module.SelectFirstChild
+                            )
+                        , True
+                        )
+
                 Key.Enter ->
                     Just
                         ( Panel.EditorGroup.EditorItemMsgToActive
@@ -267,6 +276,27 @@ editorGroupPanelKeyDown { key, ctrl, shift, alt } =
                                 Panel.Editor.Module.Confirm
                             )
                         , True
+                        )
+
+                _ ->
+                    Nothing
+
+        ( True, False, False ) ->
+            case key of
+                Key.ArrowLeft ->
+                    Just
+                        (Panel.EditorGroup.EditorItemMsgToActive
+                            (Panel.EditorGroup.ModuleEditorMsg
+                                Panel.Editor.Module.SelectLastChild
+                            )
+                        )
+
+                Key.ArrowRight ->
+                    Just
+                        (Panel.EditorGroup.EditorItemMsgToActive
+                            (Panel.EditorGroup.ModuleEditorMsg
+                                Panel.Editor.Module.SelectFirstChild
+                            )
                         )
 
                 _ ->

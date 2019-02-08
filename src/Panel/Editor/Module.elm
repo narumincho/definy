@@ -42,6 +42,8 @@ type Msg
     | SelectRight
     | SelectUp
     | SelectDown
+    | SelectFirstChild
+    | SelectLastChild
     | ToEditMode
     | Confirm
     | AddPartDef
@@ -149,6 +151,12 @@ update msg project (Model rec) =
 
         SelectDown ->
             update (ActiveTo (selectDown targetModule rec.active)) project (Model rec)
+
+        SelectFirstChild ->
+            update (ActiveTo (selectFirstChild targetModule rec.active)) project (Model rec)
+
+        SelectLastChild ->
+            update (ActiveTo (selectLastChild targetModule rec.active) project) (Model rec)
 
         ToEditMode ->
             ( Model rec
@@ -287,6 +295,16 @@ selectUp module_ active =
 -}
 selectDown : ModuleWithCache.Module -> Active -> Active
 selectDown module_ active =
+    active
+
+
+selectFirstChild : ModuleWithCache.Module -> Active -> Active
+selectFirstChild module_ active =
+    active
+
+
+selectLastChild : ModuleWithCache.Module -> Active -> Active
+selectLastChild module_ active =
     active
 
 
