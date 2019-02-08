@@ -28,15 +28,15 @@
         });
         /* テキストエリア(<textarea id="edit">)に値を設定(編集する前の初期設定用) */
         app.ports.setTextAreaValue.subscribe((e) => {
-            console.log(`テキストエリア(<textarea id="eidt">)に値を設定しようとしている`)
-            requestAnimationFrame(() => {
-                // const edit = document.getElementById("edit")
-                // console.log(e, edit);
-                // edit.focus();
-                // if (edit.value !== e) {
-                //     edit.value = e;
-                // }
-            })
+            console.log(`テキストエリア(<textarea id="eidt">)に${e}を設定しようとしている`)
+            // requestAnimationFrame(() => {
+            // const edit = document.getElementById("edit")
+            // console.log(e, edit);
+            // edit.focus();
+            // if (edit.value !== e) {
+            //     edit.value = e;
+            // }
+            // });
         })
         /* コンパイル結果(WASM)を実行 */
         app.ports.run.subscribe((list) => {

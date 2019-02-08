@@ -69,7 +69,7 @@ type Active
 
 type DescriptionActive
     = ActiveDescriptionSelf
-    | ActiveDescriptionText Int
+    | ActiveDescriptionText
 
 
 type PartDefListActive
@@ -99,7 +99,7 @@ type PartDefExprActive
 isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
 isFocusDefaultUi (Model { active }) =
     case active of
-        ActiveDescription (ActiveDescriptionText _) ->
+        ActiveDescription ActiveDescriptionText ->
             Just Panel.DefaultUi.TextArea
 
         _ ->
@@ -466,8 +466,8 @@ activeToString active =
         ActiveDescription ActiveDescriptionSelf ->
             "概要欄"
 
-        ActiveDescription (ActiveDescriptionText caretPos) ->
-            "概要欄" ++ String.fromInt caretPos ++ "の位置にキャレット"
+        ActiveDescription ActiveDescriptionText ->
+            "概要欄のテキストを編集している"
 
         ActivePartDefList ActivePartDefListSelf ->
             "パーツエディタ全体"
@@ -512,39 +512,58 @@ descriptionView description isFocus descriptionActiveMaybe =
     let
         editHere =
             case descriptionActiveMaybe of
-                Just (ActiveDescriptionText _) ->
+                Just ActiveDescriptionText ->
                     isFocus
 
                 _ ->
                     False
     in
     Html.div
-        [ Html.Attributes.class "moduleEditor-description"
-        , Html.Events.onClick (ActiveTo (ActiveDescription ActiveDescriptionSelf))
-        ]
-        [ Html.text "Description"
-        , Html.div [ Html.Attributes.class "moduleEditor-description-inputArea" ]
-            [ Html.div
-                [ Html.Attributes.class "moduleEditor-description-measure" ]
-                [ Html.div
-                    [ Html.Attributes.class "moduleEditor-description-measure-text" ]
-                    (lfToBr description)
-                , Html.textarea
-                    ([ Html.Attributes.classList
-                        [ ( "moduleEditor-description-textarea", True )
-                        , ( "moduleEditor-description-textarea-focus", editHere )
-                        ]
-                     ]
-                        ++ (if editHere then
-                                [ Html.Attributes.id "edit" ]
+        ([ Html.Attributes.classList
+            [ ( "moduleEditor-description", True )
+            , ( "moduleEditor-description-active", descriptionActiveMaybe == Just ActiveDescriptionSelf )
+            ]
+         ]
+            ++ (case descriptionActiveMaybe of
+                    Just _ ->
+                        []
 
-                            else
-                                [ Html.Attributes.property "value" (Json.Encode.string description)
-                                ]
-                           )
-                    )
-                    []
+                    Nothing ->
+                        [ Html.Events.onClick (ActiveTo (ActiveDescription ActiveDescriptionSelf)) ]
+               )
+        )
+        [ descriptionViewTitle
+        , descriptionViewInputArea description isFocus descriptionActiveMaybe
+        ]
+
+
+descriptionViewTitle : Html.Html Msg
+descriptionViewTitle =
+    Html.h2
+        [ Html.Attributes.class "moduleEditor-description-title" ]
+        [ Html.text "Description" ]
+
+
+descriptionViewInputArea : String -> Bool -> Maybe DescriptionActive -> Html.Html Msg
+descriptionViewInputArea description isFocus descriptionActiveMaybe =
+    Html.div [ Html.Attributes.class "moduleEditor-description-inputArea" ]
+        [ Html.div
+            [ Html.Attributes.class "moduleEditor-description-measure" ]
+            [ Html.div
+                [ Html.Attributes.class "moduleEditor-description-measure-text" ]
+                (lfToBr description)
+            , Html.textarea
+                [ Html.Attributes.classList
+                    [ ( "moduleEditor-description-textarea", True )
+                    , ( "moduleEditor-description-textarea-focus"
+                      , descriptionActiveMaybe == Just ActiveDescriptionText
+                      )
+                    ]
+
+                --                , Html.Attributes.property "value" (Json.Encode.string description)
+                , Html.Events.onFocus (ActiveTo (ActiveDescription ActiveDescriptionText))
                 ]
+                []
             ]
         ]
 
@@ -578,18 +597,27 @@ partDefActiveMaybeAndIndexがJustならこのエディタ
 partDefinitionsView : Bool -> Maybe PartDefListActive -> List Def.Def -> Html.Html Msg
 partDefinitionsView isEditorItemFocus partDefListActiveMaybe defList =
     Html.div
-        [ Html.Attributes.class "moduleEditor-partDefinitions"
-        , Html.Events.onClick (ActiveTo (ActivePartDefList ActivePartDefListSelf))
-        ]
-        [ Html.text
-            (case partDefListActiveMaybe of
-                Just _ ->
-                    "[Part Definitions]"
+        ([ Html.Attributes.class "moduleEditor-partDefinitions"
+         ]
+            ++ (case partDefListActiveMaybe of
+                    Just ActivePartDefListSelf ->
+                        [ Html.Attributes.class "moduleEditor-partDefinitions-active" ]
 
-                Nothing ->
-                    "Part Definitions"
-            )
-        ]
+                    Just _ ->
+                        []
+
+                    Nothing ->
+                        [ Html.Events.onClick (ActiveTo (ActivePartDefList ActivePartDefListSelf)) ]
+               )
+        )
+        [ partDefListView ]
+
+
+partDefListView : Html.Html Msg
+partDefListView =
+    Html.div
+        [ Html.Attributes.class "moduleEditor-partDefinitions-title" ]
+        [ Html.text "Part Definitions" ]
 
 
 exprViewOpAndTermNormal : Int -> Op.Operator -> Term.Term -> List (Html.Html PartDefExprActive)

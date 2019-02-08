@@ -7967,7 +7967,8 @@ var author$project$Model$getEditorGroupPanelModel = function (_n0) {
 var author$project$Panel$DefaultUi$TextArea = 0;
 var author$project$Panel$Editor$Module$isFocusDefaultUi = function (_n0) {
 	var active = _n0.v;
-	if ((active.$ === 1) && (active.a.$ === 1)) {
+	if ((active.$ === 1) && (active.a === 1)) {
+		var _n2 = active.a;
 		return elm$core$Maybe$Just(0);
 	} else {
 		return elm$core$Maybe$Nothing;
@@ -8697,7 +8698,7 @@ var author$project$Panel$Editor$Module$selectLastChild = F2(
 var author$project$Panel$Editor$Module$ActiveDescription = function (a) {
 	return {$: 1, a: a};
 };
-var author$project$Panel$Editor$Module$ActiveDescriptionSelf = {$: 0};
+var author$project$Panel$Editor$Module$ActiveDescriptionSelf = 0;
 var author$project$Panel$Editor$Module$ActiveExprHead = {$: 1};
 var author$project$Panel$Editor$Module$ActiveExprOp = function (a) {
 	return {$: 3, a: a};
@@ -8709,11 +8710,11 @@ var author$project$Panel$Editor$Module$selectLeft = F2(
 			case 0:
 				return author$project$Panel$Editor$Module$ActiveNone;
 			case 1:
-				return author$project$Panel$Editor$Module$ActiveDescription(author$project$Panel$Editor$Module$ActiveDescriptionSelf);
+				return author$project$Panel$Editor$Module$ActiveDescription(0);
 			default:
 				if (!active.a.$) {
 					var _n1 = active.a;
-					return author$project$Panel$Editor$Module$ActiveDescription(author$project$Panel$Editor$Module$ActiveDescriptionSelf);
+					return author$project$Panel$Editor$Module$ActiveDescription(0);
 				} else {
 					switch (active.a.a.b.$) {
 						case 0:
@@ -8888,11 +8889,11 @@ var author$project$Panel$Editor$Module$selectUp = F2(
 			case 0:
 				return author$project$Panel$Editor$Module$ActiveNone;
 			case 1:
-				return author$project$Panel$Editor$Module$ActiveDescription(author$project$Panel$Editor$Module$ActiveDescriptionSelf);
+				return author$project$Panel$Editor$Module$ActiveDescription(0);
 			default:
 				if (!active.a.$) {
 					var _n1 = active.a;
-					return author$project$Panel$Editor$Module$ActiveDescription(author$project$Panel$Editor$Module$ActiveDescriptionSelf);
+					return author$project$Panel$Editor$Module$ActiveDescription(0);
 				} else {
 					switch (active.a.a.b.$) {
 						case 0:
@@ -14265,25 +14266,26 @@ var author$project$Panel$Editor$Module$activeToString = function (active) {
 		case 0:
 			return 'アクティブなし';
 		case 1:
-			if (!active.a.$) {
+			if (!active.a) {
 				var _n1 = active.a;
 				return '概要欄';
 			} else {
-				var caretPos = active.a.a;
-				return '概要欄' + (elm$core$String$fromInt(caretPos) + 'の位置にキャレット');
+				var _n2 = active.a;
+				return '概要欄のテキストを編集している';
 			}
 		default:
 			if (!active.a.$) {
-				var _n2 = active.a;
+				var _n3 = active.a;
 				return 'パーツエディタ全体';
 			} else {
-				var _n3 = active.a.a;
-				var index = _n3.a;
-				var partDefActive = _n3.b;
+				var _n4 = active.a.a;
+				var index = _n4.a;
+				var partDefActive = _n4.b;
 				return elm$core$String$fromInt(index) + ('番目の定義' + author$project$Panel$Editor$Module$partDefActiveToString(partDefActive));
 			}
 	}
 };
+var author$project$Panel$Editor$Module$ActiveDescriptionText = 1;
 var elm$core$List$intersperse = F2(
 	function (sep, xs) {
 		if (!xs.b) {
@@ -14349,41 +14351,27 @@ var elm$html$Html$Attributes$classList = function (classes) {
 				elm$core$Tuple$first,
 				A2(elm$core$List$filter, elm$core$Tuple$second, classes))));
 };
-var elm$html$Html$Attributes$id = elm$html$Html$Attributes$stringProperty('id');
-var elm$virtual_dom$VirtualDom$property = F2(
-	function (key, value) {
-		return A2(
-			_VirtualDom_property,
-			_VirtualDom_noInnerHtmlOrFormAction(key),
-			_VirtualDom_noJavaScriptOrHtmlUri(value));
-	});
-var elm$html$Html$Attributes$property = elm$virtual_dom$VirtualDom$property;
-var author$project$Panel$Editor$Module$descriptionView = F3(
+var elm$html$Html$Events$onFocus = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'focus',
+		elm$json$Json$Decode$succeed(msg));
+};
+var author$project$Panel$Editor$Module$descriptionViewInputArea = F3(
 	function (description, isFocus, descriptionActiveMaybe) {
-		var editHere = function () {
-			if ((!descriptionActiveMaybe.$) && (descriptionActiveMaybe.a.$ === 1)) {
-				return isFocus;
-			} else {
-				return false;
-			}
-		}();
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
-					elm$html$Html$Attributes$class('moduleEditor-description'),
-					elm$html$Html$Events$onClick(
-					author$project$Panel$Editor$Module$ActiveTo(
-						author$project$Panel$Editor$Module$ActiveDescription(author$project$Panel$Editor$Module$ActiveDescriptionSelf)))
+					elm$html$Html$Attributes$class('moduleEditor-description-inputArea')
 				]),
 			_List_fromArray(
 				[
-					elm$html$Html$text('Description'),
 					A2(
 					elm$html$Html$div,
 					_List_fromArray(
 						[
-							elm$html$Html$Attributes$class('moduleEditor-description-inputArea')
+							elm$html$Html$Attributes$class('moduleEditor-description-measure')
 						]),
 					_List_fromArray(
 						[
@@ -14391,66 +14379,127 @@ var author$project$Panel$Editor$Module$descriptionView = F3(
 							elm$html$Html$div,
 							_List_fromArray(
 								[
-									elm$html$Html$Attributes$class('moduleEditor-description-measure')
+									elm$html$Html$Attributes$class('moduleEditor-description-measure-text')
 								]),
+							author$project$Panel$Editor$Module$lfToBr(description)),
+							A2(
+							elm$html$Html$textarea,
 							_List_fromArray(
 								[
-									A2(
-									elm$html$Html$div,
+									elm$html$Html$Attributes$classList(
 									_List_fromArray(
 										[
-											elm$html$Html$Attributes$class('moduleEditor-description-measure-text')
-										]),
-									author$project$Panel$Editor$Module$lfToBr(description)),
-									A2(
-									elm$html$Html$textarea,
-									_Utils_ap(
-										_List_fromArray(
-											[
-												elm$html$Html$Attributes$classList(
-												_List_fromArray(
-													[
-														_Utils_Tuple2('moduleEditor-description-textarea', true),
-														_Utils_Tuple2('moduleEditor-description-textarea-focus', editHere)
-													]))
-											]),
-										editHere ? _List_fromArray(
-											[
-												elm$html$Html$Attributes$id('edit')
-											]) : _List_fromArray(
-											[
-												A2(
-												elm$html$Html$Attributes$property,
-												'value',
-												elm$json$Json$Encode$string(description))
-											])),
-									_List_Nil)
-								]))
+											_Utils_Tuple2('moduleEditor-description-textarea', true),
+											_Utils_Tuple2(
+											'moduleEditor-description-textarea-focus',
+											_Utils_eq(
+												descriptionActiveMaybe,
+												elm$core$Maybe$Just(1)))
+										])),
+									elm$html$Html$Events$onFocus(
+									author$project$Panel$Editor$Module$ActiveTo(
+										author$project$Panel$Editor$Module$ActiveDescription(1)))
+								]),
+							_List_Nil)
 						]))
 				]));
 	});
+var elm$html$Html$h2 = _VirtualDom_node('h2');
+var author$project$Panel$Editor$Module$descriptionViewTitle = A2(
+	elm$html$Html$h2,
+	_List_fromArray(
+		[
+			elm$html$Html$Attributes$class('moduleEditor-description-title')
+		]),
+	_List_fromArray(
+		[
+			elm$html$Html$text('Description')
+		]));
+var author$project$Panel$Editor$Module$descriptionView = F3(
+	function (description, isFocus, descriptionActiveMaybe) {
+		var editHere = function () {
+			if ((!descriptionActiveMaybe.$) && (descriptionActiveMaybe.a === 1)) {
+				var _n2 = descriptionActiveMaybe.a;
+				return isFocus;
+			} else {
+				return false;
+			}
+		}();
+		return A2(
+			elm$html$Html$div,
+			_Utils_ap(
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$classList(
+						_List_fromArray(
+							[
+								_Utils_Tuple2('moduleEditor-description', true),
+								_Utils_Tuple2(
+								'moduleEditor-description-active',
+								_Utils_eq(
+									descriptionActiveMaybe,
+									elm$core$Maybe$Just(0)))
+							]))
+					]),
+				function () {
+					if (!descriptionActiveMaybe.$) {
+						return _List_Nil;
+					} else {
+						return _List_fromArray(
+							[
+								elm$html$Html$Events$onClick(
+								author$project$Panel$Editor$Module$ActiveTo(
+									author$project$Panel$Editor$Module$ActiveDescription(0)))
+							]);
+					}
+				}()),
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$descriptionViewTitle,
+					A3(author$project$Panel$Editor$Module$descriptionViewInputArea, description, isFocus, descriptionActiveMaybe)
+				]));
+	});
+var author$project$Panel$Editor$Module$partDefListView = A2(
+	elm$html$Html$div,
+	_List_fromArray(
+		[
+			elm$html$Html$Attributes$class('moduleEditor-partDefinitions-title')
+		]),
+	_List_fromArray(
+		[
+			elm$html$Html$text('Part Definitions')
+		]));
 var author$project$Panel$Editor$Module$partDefinitionsView = F3(
 	function (isEditorItemFocus, partDefListActiveMaybe, defList) {
 		return A2(
 			elm$html$Html$div,
-			_List_fromArray(
-				[
-					elm$html$Html$Attributes$class('moduleEditor-partDefinitions'),
-					elm$html$Html$Events$onClick(
-					author$project$Panel$Editor$Module$ActiveTo(
-						author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf)))
-				]),
-			_List_fromArray(
-				[
-					elm$html$Html$text(
-					function () {
-						if (!partDefListActiveMaybe.$) {
-							return '[Part Definitions]';
+			_Utils_ap(
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$class('moduleEditor-partDefinitions')
+					]),
+				function () {
+					if (!partDefListActiveMaybe.$) {
+						if (!partDefListActiveMaybe.a.$) {
+							var _n1 = partDefListActiveMaybe.a;
+							return _List_fromArray(
+								[
+									elm$html$Html$Attributes$class('moduleEditor-partDefinitions-active')
+								]);
 						} else {
-							return 'Part Definitions';
+							return _List_Nil;
 						}
-					}())
-				]));
+					} else {
+						return _List_fromArray(
+							[
+								elm$html$Html$Events$onClick(
+								author$project$Panel$Editor$Module$ActiveTo(
+									author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf)))
+							]);
+					}
+				}()),
+			_List_fromArray(
+				[author$project$Panel$Editor$Module$partDefListView]));
 	});
 var author$project$Project$Source$ModuleWithCache$getName = function (_n0) {
 	var name = _n0.aO;
