@@ -12,6 +12,7 @@ module Panel.Editor.Module exposing
 import Html
 import Html.Attributes
 import Html.Events
+import Json.Decode
 import Json.Encode
 import Panel.DefaultUi
 import Parser
@@ -45,6 +46,7 @@ type Msg
     | SelectFirstChild
     | SelectLastChild
     | SelectParent
+    | Input String
     | ToEditMode
     | Confirm
     | AddPartDef
@@ -59,6 +61,7 @@ type Emit
     | EmitChangeExpr { expr : Expr.Expr, index : Int, ref : Project.Source.ModuleRef }
     | EmitAddPartDef { ref : Project.Source.ModuleRef }
     | EmitSetTextAreaValue String
+    | EmitFocusEditTextAea
 
 
 type Active
@@ -134,11 +137,14 @@ update msg project (Model rec) =
                 ActiveNone ->
                     []
 
-                ActiveDescription _ ->
-                    [ EmitSetTextAreaValue (ModuleWithCache.getReadMe targetModule) ]
+                ActiveDescription ActiveDescriptionSelf ->
+                    []
+
+                ActiveDescription ActiveDescriptionText ->
+                    [ EmitFocusEditTextAea ]
 
                 ActivePartDefList _ ->
-                    [ EmitSetTextAreaValue "" ]
+                    []
             )
 
         SelectLeft ->
@@ -162,6 +168,11 @@ update msg project (Model rec) =
         SelectParent ->
             update (ActiveTo (selectParent targetModule rec.active)) project (Model rec)
 
+        Input string ->
+            ( Model rec
+            , [ EmitChangeReadMe { text = string, ref = rec.moduleRef } ]
+            )
+
         ToEditMode ->
             ( Model rec
             , []
@@ -169,7 +180,7 @@ update msg project (Model rec) =
 
         Confirm ->
             ( Model rec
-            , [ EmitSetTextAreaValue "" ]
+            , []
             )
 
         AddPartDef ->
@@ -183,7 +194,16 @@ update msg project (Model rec) =
             )
 
         BlurThisEditor ->
-            ( Model rec
+            ( Model
+                { rec
+                    | active =
+                        case rec.active of
+                            ActiveDescription ActiveDescriptionText ->
+                                ActiveDescription ActiveDescriptionSelf
+
+                            _ ->
+                                rec.active
+                }
             , []
             )
 
@@ -377,9 +397,9 @@ selectFirstChild module_ active =
             -- 何も選択していないところから何も選択していないところへ
             ActiveNone
 
-        ActiveDescription _ ->
-            -- 概要欄から定義リストへ
-            ActivePartDefList ActivePartDefListSelf
+        ActiveDescription ActiveDescriptionSelf ->
+            -- 概要欄から概要欄のテキスト入力へ
+            ActiveDescription ActiveDescriptionText
 
         ActivePartDefList ActivePartDefListSelf ->
             -- 定義リストから先頭の定義へ
@@ -525,10 +545,10 @@ descriptionView description isFocus descriptionActiveMaybe =
             ]
          ]
             ++ (case descriptionActiveMaybe of
-                    Just _ ->
+                    Just ActiveDescriptionSelf ->
                         []
 
-                    Nothing ->
+                    _ ->
                         [ Html.Events.onClick (ActiveTo (ActiveDescription ActiveDescriptionSelf)) ]
                )
         )
@@ -548,43 +568,81 @@ descriptionViewInputArea : String -> Bool -> Maybe DescriptionActive -> Html.Htm
 descriptionViewInputArea description isFocus descriptionActiveMaybe =
     Html.div [ Html.Attributes.class "moduleEditor-description-inputArea" ]
         [ Html.div
-            [ Html.Attributes.class "moduleEditor-description-measure" ]
-            [ Html.div
-                [ Html.Attributes.class "moduleEditor-description-measure-text" ]
-                (lfToBr description)
-            , Html.textarea
-                [ Html.Attributes.classList
-                    [ ( "moduleEditor-description-textarea", True )
-                    , ( "moduleEditor-description-textarea-focus"
-                      , descriptionActiveMaybe == Just ActiveDescriptionText
-                      )
-                    ]
-
-                --                , Html.Attributes.property "value" (Json.Encode.string description)
-                , Html.Events.onFocus (ActiveTo (ActiveDescription ActiveDescriptionText))
+            [ Html.Attributes.classList
+                [ ( "moduleEditor-description-container", True )
+                , ( "moduleEditor-description-container-active", descriptionActiveMaybe == Just ActiveDescriptionText )
                 ]
-                []
+            ]
+            [ descriptionViewMeasure description
+            , descriptionViewTextArea description isFocus descriptionActiveMaybe
             ]
         ]
 
 
-lfToBr : String -> List (Html.Html Msg)
-lfToBr string =
+descriptionViewMeasure : String -> Html.Html Msg
+descriptionViewMeasure description =
     let
         lineList =
-            string
-                |> String.lines
+            description |> String.lines
     in
-    (lineList
-        |> List.map Html.text
-        |> List.intersperse (Html.br [] [])
-    )
-        ++ (if Utility.ListExtra.last lineList == Just "" then
-                [ Html.div [ Html.Attributes.class "moduleEditor-description-measure-lastLine" ] [ Html.text "_" ] ]
+    Html.div
+        [ Html.Attributes.class "moduleEditor-description-measure" ]
+        ((lineList
+            |> List.map Html.text
+            |> List.intersperse (Html.br [] [])
+         )
+            ++ (if Utility.ListExtra.last lineList == Just "" then
+                    [ Html.div [] [ Html.text "_" ] ]
 
-            else
-                []
-           )
+                else
+                    []
+               )
+        )
+
+
+descriptionViewTextArea : String -> Bool -> Maybe DescriptionActive -> Html.Html Msg
+descriptionViewTextArea description isFocus descriptionActiveMaybe =
+    Html.textarea
+        ([ Html.Attributes.class "moduleEditor-description-textarea"
+         ]
+            ++ (case descriptionActiveMaybe of
+                    Just ActiveDescriptionSelf ->
+                        [ Html.Events.stopPropagationOn "click" focusEventJsonDecoder
+                        , Html.Attributes.property "value" (Json.Encode.string description)
+                        ]
+
+                    Just ActiveDescriptionText ->
+                        [ Html.Events.onInput Input
+                        , Html.Attributes.property "value" (Json.Encode.string description)
+                        , Html.Events.stopPropagationOn "click" focusEventJsonDecoder
+                        , Html.Attributes.class "moduleEditor-description-textarea-focus"
+                        ]
+                            ++ (if isFocus then
+                                    [ Html.Attributes.id "edit" ]
+
+                                else
+                                    []
+                               )
+
+                    Nothing ->
+                        if isFocus then
+                            [ Html.Events.stopPropagationOn "click" focusEventJsonDecoder
+                            , Html.Attributes.property "value" (Json.Encode.string description)
+                            ]
+
+                        else
+                            [ Html.Events.stopPropagationOn "click" focusEventJsonDecoder
+                            , Html.Attributes.property "value" (Json.Encode.string description)
+                            ]
+               )
+        )
+        []
+
+
+focusEventJsonDecoder : Json.Decode.Decoder ( Msg, Bool )
+focusEventJsonDecoder =
+    Json.Decode.succeed
+        ( ActiveTo (ActiveDescription ActiveDescriptionText), True )
 
 
 

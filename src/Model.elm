@@ -72,7 +72,7 @@ port loaded : () -> Cmd msg
 
 
 port setTextAreaValue : String -> Cmd msg
-
+port focusEditTextAea : () -> Cmd msg
 
 {-| 全体の入力を表すメッセージ
 -}
@@ -583,6 +583,11 @@ editorPanelEmitToMsg emit =
             , [ setTextAreaValue string ]
             )
 
+        Panel.EditorGroup.EmitFocusEditTextAea ->
+            ( []
+            , [ focusEditTextAea () ]
+            )
+
         Panel.EditorGroup.EmitChangeName { name, index, ref } ->
             ( [ ChangeName { name = name, index = index, ref = ref } ]
             , []
@@ -602,6 +607,7 @@ editorPanelEmitToMsg emit =
             ( [ ChangeExpr { expr = expr, index = index, ref = ref } ]
             , []
             )
+
 
 
 {-| プロジェクトを取得する

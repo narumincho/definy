@@ -169,6 +169,7 @@ type Emit
     | EmitHorizontalGutterModeOn GutterHorizontal
     | EmitChangeReadMe { text : String, ref : Project.Source.ModuleRef }
     | EmitSetTextAreaValue String
+    | EmitFocusEditTextAea
     | EmitChangeName { name : Name.Name, index : Int, ref : Project.Source.ModuleRef }
     | EmitAddPartDef { ref : Project.Source.ModuleRef }
     | EmitChangeType { type_ : Type.Type, index : Int, ref : Project.Source.ModuleRef }
@@ -430,6 +431,9 @@ moduleEditorEmitToEmit emit =
         Panel.Editor.Module.EmitSetTextAreaValue text ->
             EmitSetTextAreaValue text
 
+        Panel.Editor.Module.EmitFocusEditTextAea ->
+            EmitFocusEditTextAea
+
         Panel.Editor.Module.EmitChangeName { name, index, ref } ->
             EmitChangeName { name = name, index = index, ref = ref }
 
@@ -441,6 +445,7 @@ moduleEditorEmitToEmit emit =
 
         Panel.Editor.Module.EmitChangeExpr { expr, index, ref } ->
             EmitChangeExpr { expr = expr, index = index, ref = ref }
+
 
 
 {-| 右端と下の端にある表示するエディタを増やすのボタンをおしたら、エディタ全体がどう変わるかと新しくアクティブになるエディタを返す

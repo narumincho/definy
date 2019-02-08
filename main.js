@@ -784,11 +784,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.aX.ag === region.a9.ag)
+	if (region.aX.ah === region.a9.ah)
 	{
-		return 'on line ' + region.aX.ag;
+		return 'on line ' + region.aX.ah;
 	}
-	return 'on lines ' + region.aX.ag + ' through ' + region.a9.ag;
+	return 'on lines ' + region.aX.ah + ' through ' + region.a9.ah;
 }
 
 
@@ -4840,7 +4840,7 @@ var elm$core$Basics$identity = function (x) {
 	return x;
 };
 var author$project$Panel$Editor$Module$initModel = function (moduleRef) {
-	return {v: author$project$Panel$Editor$Module$ActiveNone, ai: moduleRef};
+	return {q: author$project$Panel$Editor$Module$ActiveNone, Y: moduleRef};
 };
 var author$project$Panel$EditorGroup$ColumnOne = function (a) {
 	return {$: 0, a: a};
@@ -7761,7 +7761,7 @@ var author$project$KeyConfig$editorReservedKey = F2(
 			}
 		}
 	});
-var author$project$Panel$Editor$Module$Confirm = {$: 9};
+var author$project$Panel$Editor$Module$Confirm = {$: 10};
 var author$project$Panel$Editor$Module$SelectDown = {$: 4};
 var author$project$Panel$Editor$Module$SelectFirstChild = {$: 5};
 var author$project$Panel$Editor$Module$SelectLastChild = {$: 6};
@@ -7966,7 +7966,7 @@ var author$project$Model$getEditorGroupPanelModel = function (_n0) {
 };
 var author$project$Panel$DefaultUi$TextArea = 0;
 var author$project$Panel$Editor$Module$isFocusDefaultUi = function (_n0) {
-	var active = _n0.v;
+	var active = _n0.q;
 	if ((active.$ === 1) && (active.a === 1)) {
 		var _n2 = active.a;
 		return elm$core$Maybe$Just(0);
@@ -8461,6 +8461,11 @@ var author$project$Model$GutterEditorGroupPanelVertical = function (a) {
 var author$project$Model$ToResizeGutterMode = function (a) {
 	return {$: 5, a: a};
 };
+var author$project$Model$focusEditTextAea = _Platform_outgoingPort(
+	'focusEditTextAea',
+	function ($) {
+		return elm$json$Json$Encode$null;
+	});
 var elm$json$Json$Encode$string = _Json_wrap;
 var author$project$Model$setTextAreaValue = _Platform_outgoingPort('setTextAreaValue', elm$json$Json$Encode$string);
 var author$project$Model$editorPanelEmitToMsg = function (emit) {
@@ -8502,6 +8507,13 @@ var author$project$Model$editorPanelEmitToMsg = function (emit) {
 						author$project$Model$setTextAreaValue(string)
 					]));
 		case 4:
+			return _Utils_Tuple2(
+				_List_Nil,
+				_List_fromArray(
+					[
+						author$project$Model$focusEditTextAea(0)
+					]));
+		case 5:
 			var name = emit.a.aO;
 			var index = emit.a.C;
 			var ref = emit.a.p;
@@ -8512,7 +8524,7 @@ var author$project$Model$editorPanelEmitToMsg = function (emit) {
 						{C: index, aO: name, p: ref})
 					]),
 				_List_Nil);
-		case 5:
+		case 6:
 			var ref = emit.a.p;
 			return _Utils_Tuple2(
 				_List_fromArray(
@@ -8521,7 +8533,7 @@ var author$project$Model$editorPanelEmitToMsg = function (emit) {
 						{p: ref})
 					]),
 				_List_Nil);
-		case 6:
+		case 7:
 			var type_ = emit.a.a$;
 			var index = emit.a.C;
 			var ref = emit.a.p;
@@ -8558,16 +8570,21 @@ var author$project$Panel$EditorGroup$EmitHorizontalGutterModeOn = function (a) {
 var author$project$Panel$EditorGroup$EmitVerticalGutterModeOn = function (a) {
 	return {$: 0, a: a};
 };
-var author$project$Panel$Editor$Module$BlurThisEditor = {$: 12};
+var author$project$Panel$Editor$Module$BlurThisEditor = {$: 13};
+var author$project$Panel$Editor$Module$ActiveDescription = function (a) {
+	return {$: 1, a: a};
+};
+var author$project$Panel$Editor$Module$ActiveDescriptionSelf = 0;
 var author$project$Panel$Editor$Module$ActiveTo = function (a) {
 	return {$: 0, a: a};
 };
 var author$project$Panel$Editor$Module$EmitAddPartDef = function (a) {
 	return {$: 4, a: a};
 };
-var author$project$Panel$Editor$Module$EmitSetTextAreaValue = function (a) {
-	return {$: 5, a: a};
+var author$project$Panel$Editor$Module$EmitChangeReadMe = function (a) {
+	return {$: 0, a: a};
 };
+var author$project$Panel$Editor$Module$EmitFocusEditTextAea = {$: 6};
 var author$project$Panel$Editor$Module$ActivePartDef = function (a) {
 	return {$: 1, a: a};
 };
@@ -8641,6 +8658,7 @@ var author$project$Panel$Editor$Module$selectDown = F2(
 				}
 		}
 	});
+var author$project$Panel$Editor$Module$ActiveDescriptionText = 1;
 var author$project$Panel$Editor$Module$ActiveExprTerm = function (a) {
 	return {$: 2, a: a};
 };
@@ -8653,27 +8671,32 @@ var author$project$Panel$Editor$Module$selectFirstChild = F2(
 				case 0:
 					return author$project$Panel$Editor$Module$ActiveNone;
 				case 1:
-					return author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf);
+					if (!active.a) {
+						var _n1 = active.a;
+						return author$project$Panel$Editor$Module$ActiveDescription(1);
+					} else {
+						break _n0$5;
+					}
 				default:
 					if (!active.a.$) {
-						var _n1 = active.a;
+						var _n2 = active.a;
 						return author$project$Panel$Editor$Module$ActivePartDefList(
 							author$project$Panel$Editor$Module$ActivePartDef(
 								_Utils_Tuple2(0, author$project$Panel$Editor$Module$ActivePartDefSelf)));
 					} else {
 						switch (active.a.a.b.$) {
 							case 0:
-								var _n2 = active.a.a;
-								var index = _n2.a;
-								var _n3 = _n2.b;
+								var _n3 = active.a.a;
+								var index = _n3.a;
+								var _n4 = _n3.b;
 								return author$project$Panel$Editor$Module$ActivePartDefList(
 									author$project$Panel$Editor$Module$ActivePartDef(
 										_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefName)));
 							case 3:
 								if (!active.a.a.b.a.$) {
-									var _n4 = active.a.a;
-									var index = _n4.a;
-									var _n5 = _n4.b.a;
+									var _n5 = active.a.a;
+									var index = _n5.a;
+									var _n6 = _n5.b.a;
 									return author$project$Panel$Editor$Module$ActivePartDefList(
 										author$project$Panel$Editor$Module$ActivePartDef(
 											_Utils_Tuple2(
@@ -8695,10 +8718,6 @@ var author$project$Panel$Editor$Module$selectLastChild = F2(
 	function (module_, active) {
 		return active;
 	});
-var author$project$Panel$Editor$Module$ActiveDescription = function (a) {
-	return {$: 1, a: a};
-};
-var author$project$Panel$Editor$Module$ActiveDescriptionSelf = 0;
 var author$project$Panel$Editor$Module$ActiveExprHead = {$: 1};
 var author$project$Panel$Editor$Module$ActiveExprOp = function (a) {
 	return {$: 3, a: a};
@@ -8944,10 +8963,6 @@ var author$project$Panel$Editor$Module$selectUp = F2(
 				}
 		}
 	});
-var author$project$Project$Source$ModuleWithCache$getReadMe = function (_n0) {
-	var readMe = _n0.aU;
-	return readMe;
-};
 var author$project$Panel$Editor$Module$update = F3(
 	function (msg, project, _n0) {
 		update:
@@ -8955,7 +8970,7 @@ var author$project$Panel$Editor$Module$update = F3(
 			var rec = _n0;
 			var targetModule = A2(
 				author$project$Project$Source$getModule,
-				rec.ai,
+				rec.Y,
 				author$project$Project$getSource(project));
 			switch (msg.$) {
 				case 0:
@@ -8963,27 +8978,27 @@ var author$project$Panel$Editor$Module$update = F3(
 					return _Utils_Tuple2(
 						_Utils_update(
 							rec,
-							{v: active}),
+							{q: active}),
 						function () {
 							switch (active.$) {
 								case 0:
 									return _List_Nil;
 								case 1:
-									return _List_fromArray(
-										[
-											author$project$Panel$Editor$Module$EmitSetTextAreaValue(
-											author$project$Project$Source$ModuleWithCache$getReadMe(targetModule))
-										]);
+									if (!active.a) {
+										var _n3 = active.a;
+										return _List_Nil;
+									} else {
+										var _n4 = active.a;
+										return _List_fromArray(
+											[author$project$Panel$Editor$Module$EmitFocusEditTextAea]);
+									}
 								default:
-									return _List_fromArray(
-										[
-											author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
-										]);
+									return _List_Nil;
 							}
 						}());
 				case 1:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectLeft, targetModule, rec.v)),
+						A2(author$project$Panel$Editor$Module$selectLeft, targetModule, rec.q)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -8992,7 +9007,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 2:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectRight, targetModule, rec.v)),
+						A2(author$project$Panel$Editor$Module$selectRight, targetModule, rec.q)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -9001,7 +9016,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 3:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectUp, targetModule, rec.v)),
+						A2(author$project$Panel$Editor$Module$selectUp, targetModule, rec.q)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -9010,7 +9025,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 4:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectDown, targetModule, rec.v)),
+						A2(author$project$Panel$Editor$Module$selectDown, targetModule, rec.q)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -9019,7 +9034,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 5:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectFirstChild, targetModule, rec.v)),
+						A2(author$project$Panel$Editor$Module$selectFirstChild, targetModule, rec.q)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -9028,7 +9043,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 6:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectLastChild, targetModule, rec.v)),
+						A2(author$project$Panel$Editor$Module$selectLastChild, targetModule, rec.q)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -9037,7 +9052,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 7:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectParent, targetModule, rec.v)),
+						A2(author$project$Panel$Editor$Module$selectParent, targetModule, rec.q)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -9045,44 +9060,63 @@ var author$project$Panel$Editor$Module$update = F3(
 					_n0 = $temp$_n0;
 					continue update;
 				case 8:
-					return _Utils_Tuple2(rec, _List_Nil);
-				case 9:
+					var string = msg.a;
 					return _Utils_Tuple2(
 						rec,
 						_List_fromArray(
 							[
-								author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
+								author$project$Panel$Editor$Module$EmitChangeReadMe(
+								{p: rec.Y, b1: string})
 							]));
+				case 9:
+					return _Utils_Tuple2(rec, _List_Nil);
 				case 10:
+					return _Utils_Tuple2(rec, _List_Nil);
+				case 11:
 					return _Utils_Tuple2(
 						rec,
 						_List_fromArray(
 							[
 								author$project$Panel$Editor$Module$EmitAddPartDef(
-								{p: rec.ai})
+								{p: rec.Y})
 							]));
-				case 11:
+				case 12:
 					return _Utils_Tuple2(rec, _List_Nil);
 				default:
-					return _Utils_Tuple2(rec, _List_Nil);
+					return _Utils_Tuple2(
+						_Utils_update(
+							rec,
+							{
+								q: function () {
+									var _n5 = rec.q;
+									if ((_n5.$ === 1) && (_n5.a === 1)) {
+										var _n6 = _n5.a;
+										return author$project$Panel$Editor$Module$ActiveDescription(0);
+									} else {
+										return rec.q;
+									}
+								}()
+							}),
+						_List_Nil);
 			}
 		}
 	});
 var author$project$Panel$EditorGroup$EmitAddPartDef = function (a) {
-	return {$: 5, a: a};
+	return {$: 6, a: a};
 };
 var author$project$Panel$EditorGroup$EmitChangeExpr = function (a) {
-	return {$: 7, a: a};
+	return {$: 8, a: a};
 };
 var author$project$Panel$EditorGroup$EmitChangeName = function (a) {
-	return {$: 4, a: a};
+	return {$: 5, a: a};
 };
 var author$project$Panel$EditorGroup$EmitChangeReadMe = function (a) {
 	return {$: 2, a: a};
 };
 var author$project$Panel$EditorGroup$EmitChangeType = function (a) {
-	return {$: 6, a: a};
+	return {$: 7, a: a};
 };
+var author$project$Panel$EditorGroup$EmitFocusEditTextAea = {$: 4};
 var author$project$Panel$EditorGroup$EmitSetTextAreaValue = function (a) {
 	return {$: 3, a: a};
 };
@@ -9096,6 +9130,8 @@ var author$project$Panel$EditorGroup$moduleEditorEmitToEmit = function (emit) {
 		case 5:
 			var text = emit.a;
 			return author$project$Panel$EditorGroup$EmitSetTextAreaValue(text);
+		case 6:
+			return author$project$Panel$EditorGroup$EmitFocusEditTextAea;
 		case 1:
 			var name = emit.a.aO;
 			var index = emit.a.C;
@@ -9287,7 +9323,7 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 				}
 		}
 	});
-var author$project$Panel$Editor$Module$FocusThisEditor = {$: 11};
+var author$project$Panel$Editor$Module$FocusThisEditor = {$: 12};
 var author$project$Panel$EditorGroup$focusEditor = F2(
 	function (project, editorItem) {
 		if (editorItem.$ === 4) {
@@ -10347,7 +10383,7 @@ var author$project$Model$toGutterMode = F2(
 			});
 	});
 var author$project$Panel$Editor$Module$getModuleRef = function (_n0) {
-	var moduleRef = _n0.ai;
+	var moduleRef = _n0.Y;
 	return moduleRef;
 };
 var author$project$Panel$EditorTypeRef$EditorKeyConfig = {$: 1};
@@ -10623,7 +10659,7 @@ var author$project$NSvg$path = F3(
 				a7: d,
 				x: fillStyle,
 				aD: _Utils_Tuple2(0, 0),
-				t: strokeStyle
+				u: strokeStyle
 			});
 	});
 var author$project$NSvg$Polygon = function (a) {
@@ -10632,7 +10668,7 @@ var author$project$NSvg$Polygon = function (a) {
 var author$project$NSvg$polygon = F3(
 	function (points, strokeStyle, fillStyle) {
 		return author$project$NSvg$Polygon(
-			{T: elm$core$Maybe$Nothing, x: fillStyle, aj: points, t: strokeStyle});
+			{T: elm$core$Maybe$Nothing, x: fillStyle, aj: points, u: strokeStyle});
 	});
 var author$project$NSvg$StrokeNone = {$: 0};
 var author$project$NSvg$strokeNone = author$project$NSvg$StrokeNone;
@@ -10691,7 +10727,7 @@ var author$project$Panel$Tree$configIcon = {
 					author$project$Panel$Tree$iconColor(viewType)))
 			]);
 	},
-	aa: 10
+	ab: 10
 };
 var author$project$NSvg$FillNone = {$: 0};
 var author$project$NSvg$fillNone = author$project$NSvg$FillNone;
@@ -10703,7 +10739,7 @@ var author$project$NSvg$rect = F3(
 		var width = _n0.b7;
 		var height = _n0.bP;
 		return author$project$NSvg$Rect(
-			{T: elm$core$Maybe$Nothing, x: fillStyle, bP: height, t: strokeStyle, b7: width, b9: 0, ca: 0});
+			{T: elm$core$Maybe$Nothing, x: fillStyle, bP: height, u: strokeStyle, b7: width, b9: 0, ca: 0});
 	});
 var author$project$NSvg$Stroke = function (a) {
 	return {$: 1, a: a};
@@ -10807,7 +10843,7 @@ var author$project$Panel$Tree$defaultProjectIcon = {
 						author$project$Panel$Tree$iconColor(viewType))))
 			]);
 	},
-	aa: 28
+	ab: 28
 };
 var author$project$Panel$Tree$documentIcon = {
 	bC: function (viewType) {
@@ -10851,12 +10887,12 @@ var author$project$Panel$Tree$documentIcon = {
 						author$project$Panel$Tree$iconColor(viewType))))
 			]);
 	},
-	aa: 28
+	ab: 28
 };
 var author$project$NSvg$circle = F3(
 	function (r, strokeStyle, fillStyle) {
 		return author$project$NSvg$Circle(
-			{au: 0, av: 0, x: fillStyle, bp: r, t: strokeStyle});
+			{au: 0, av: 0, x: fillStyle, bp: r, u: strokeStyle});
 	});
 var author$project$Panel$Tree$moduleIcon = {
 	bC: function (viewType) {
@@ -10882,7 +10918,7 @@ var author$project$Panel$Tree$moduleIcon = {
 						author$project$Panel$Tree$iconColor(viewType))))
 			]);
 	},
-	aa: 10
+	ab: 10
 };
 var author$project$NSvg$StrokeLineJoinRound = 1;
 var author$project$NSvg$strokeColorAndStrokeLineJoinRound = function (color) {
@@ -10919,7 +10955,7 @@ var author$project$Panel$Tree$sourceIcon = {
 				author$project$NSvg$fillNone)
 			]);
 	},
-	aa: 20
+	ab: 20
 };
 var author$project$Project$getAuthor = function (_n0) {
 	var author = _n0.a3;
@@ -11108,14 +11144,14 @@ var author$project$Panel$Tree$baseTree = function (project) {
 					{
 					l: _List_Nil,
 					j: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$Document),
-					r: author$project$Panel$Tree$documentIcon,
-					s: 'Document'
+					s: author$project$Panel$Tree$documentIcon,
+					t: 'Document'
 				},
 					{
 					l: _List_Nil,
 					j: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$Config),
-					r: author$project$Panel$Tree$configIcon,
-					s: 'Default IO Config'
+					s: author$project$Panel$Tree$configIcon,
+					t: 'Default IO Config'
 				},
 					{
 					l: _List_fromArray(
@@ -11124,8 +11160,8 @@ var author$project$Panel$Tree$baseTree = function (project) {
 							l: _List_Nil,
 							j: author$project$Panel$EditorTypeRef$EditorProject(
 								author$project$Project$Module(2)),
-							r: author$project$Panel$Tree$moduleIcon,
-							s: 'SampleModule'
+							s: author$project$Panel$Tree$moduleIcon,
+							t: 'SampleModule'
 						},
 							{
 							l: _List_fromArray(
@@ -11134,28 +11170,28 @@ var author$project$Panel$Tree$baseTree = function (project) {
 									l: _List_Nil,
 									j: author$project$Panel$EditorTypeRef$EditorProject(
 										author$project$Project$Module(1)),
-									r: author$project$Panel$Tree$moduleIcon,
-									s: 'Int32'
+									s: author$project$Panel$Tree$moduleIcon,
+									t: 'Int32'
 								}
 								]),
 							j: author$project$Panel$EditorTypeRef$EditorProject(
 								author$project$Project$Module(0)),
-							r: author$project$Panel$Tree$moduleIcon,
-							s: 'Core'
+							s: author$project$Panel$Tree$moduleIcon,
+							t: 'Core'
 						}
 						]),
 					j: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$Source),
-					r: author$project$Panel$Tree$sourceIcon,
-					s: 'Source'
+					s: author$project$Panel$Tree$sourceIcon,
+					t: 'Source'
 				}
 				]),
 			j: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$ProjectRoot),
-			r: author$project$Panel$Tree$defaultProjectIcon,
-			s: author$project$Project$Label$toSmallString(
+			s: author$project$Panel$Tree$defaultProjectIcon,
+			t: author$project$Project$Label$toSmallString(
 				author$project$Project$getAuthor(project)) + ('/' + author$project$Project$Label$toCapitalString(
 				author$project$Project$getName(project)))
 		},
-			{l: _List_Nil, j: author$project$Panel$EditorTypeRef$EditorKeyConfig, r: author$project$Panel$Tree$moduleIcon, s: 'Editor Key Config'}
+			{l: _List_Nil, j: author$project$Panel$EditorTypeRef$EditorKeyConfig, s: author$project$Panel$Tree$moduleIcon, t: 'Editor Key Config'}
 		]);
 };
 var author$project$Panel$Tree$ChildrenClose = {$: 1};
@@ -11167,8 +11203,8 @@ var author$project$Panel$Tree$SimpleTree = elm$core$Basics$identity;
 var author$project$Panel$Tree$baseTreeToSimpleProjectTree = F2(
 	function (openCloseData, _n0) {
 		var editorRef = _n0.j;
-		var label = _n0.s;
-		var icon = _n0.r;
+		var label = _n0.t;
+		var icon = _n0.s;
 		var children = _n0.l;
 		return {
 			l: function () {
@@ -11187,8 +11223,8 @@ var author$project$Panel$Tree$baseTreeToSimpleProjectTree = F2(
 				}
 			}(),
 			j: editorRef,
-			r: icon,
-			s: label
+			s: icon,
+			t: label
 		};
 	});
 var author$project$Panel$Tree$simpleProjectTree = F2(
@@ -12228,7 +12264,7 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 			var y = nSvgElement.a.ca;
 			var width = nSvgElement.a.b7;
 			var height = nSvgElement.a.bP;
-			var strokeStyle = nSvgElement.a.t;
+			var strokeStyle = nSvgElement.a.u;
 			var fillStyle = nSvgElement.a.x;
 			var clickMsg = nSvgElement.a.T;
 			return A2(
@@ -12255,7 +12291,7 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 			var cx = nSvgElement.a.au;
 			var cy = nSvgElement.a.av;
 			var r = nSvgElement.a.bp;
-			var strokeStyle = nSvgElement.a.t;
+			var strokeStyle = nSvgElement.a.u;
 			var fillStyle = nSvgElement.a.x;
 			return A2(
 				elm$svg$Svg$circle,
@@ -12275,7 +12311,7 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 				_List_Nil);
 		case 2:
 			var points = nSvgElement.a.aj;
-			var strokeStyle = nSvgElement.a.t;
+			var strokeStyle = nSvgElement.a.u;
 			var fillStyle = nSvgElement.a.x;
 			var clickMsg = nSvgElement.a.T;
 			return A2(
@@ -12304,7 +12340,7 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 				_List_Nil);
 		case 3:
 			var d = nSvgElement.a.a7;
-			var strokeStyle = nSvgElement.a.t;
+			var strokeStyle = nSvgElement.a.u;
 			var fillStyle = nSvgElement.a.x;
 			var offset = nSvgElement.a.aD;
 			return A2(
@@ -12325,7 +12361,7 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 			var y0 = nSvgElement.a.ar;
 			var x1 = nSvgElement.a.aq;
 			var y1 = nSvgElement.a.as;
-			var strokeStyle = nSvgElement.a.t;
+			var strokeStyle = nSvgElement.a.u;
 			return A2(
 				elm$svg$Svg$line,
 				_Utils_ap(
@@ -12416,7 +12452,7 @@ var author$project$NSvg$polygonWithClickEvent = F4(
 				T: elm$core$Maybe$Just(cliskMsg),
 				x: fillStyle,
 				aj: points,
-				t: strokeStyle
+				u: strokeStyle
 			});
 	});
 var author$project$NSvg$rectWithClickEvent = F4(
@@ -12428,7 +12464,7 @@ var author$project$NSvg$rectWithClickEvent = F4(
 				T: elm$core$Maybe$Just(clickMsg),
 				x: fillStyle,
 				bP: height,
-				t: strokeStyle,
+				u: strokeStyle,
 				b7: width,
 				b9: 0,
 				ca: 0
@@ -12537,7 +12573,7 @@ var author$project$NSvg$line = F3(
 		var x1 = _n1.a;
 		var y1 = _n1.b;
 		return author$project$NSvg$Line(
-			{t: strokeStyle, ap: x0, aq: x1, ar: y0, as: y1});
+			{u: strokeStyle, ap: x0, aq: x1, ar: y0, as: y1});
 	});
 var author$project$Panel$Editor$EditorKeyConfig$arrowDownKey = _List_fromArray(
 	[
@@ -14285,7 +14321,6 @@ var author$project$Panel$Editor$Module$activeToString = function (active) {
 			}
 	}
 };
-var author$project$Panel$Editor$Module$ActiveDescriptionText = 1;
 var elm$core$List$intersperse = F2(
 	function (sep, xs) {
 		if (!xs.b) {
@@ -14306,30 +14341,140 @@ var elm$core$List$intersperse = F2(
 	});
 var elm$core$String$lines = _String_lines;
 var elm$html$Html$br = _VirtualDom_node('br');
-var author$project$Panel$Editor$Module$lfToBr = function (string) {
-	var lineList = elm$core$String$lines(string);
-	return _Utils_ap(
-		A2(
-			elm$core$List$intersperse,
-			A2(elm$html$Html$br, _List_Nil, _List_Nil),
-			A2(elm$core$List$map, elm$html$Html$text, lineList)),
-		_Utils_eq(
-			author$project$Utility$ListExtra$last(lineList),
-			elm$core$Maybe$Just('')) ? _List_fromArray(
+var author$project$Panel$Editor$Module$descriptionViewMeasure = function (description) {
+	var lineList = elm$core$String$lines(description);
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
 			[
-				A2(
-				elm$html$Html$div,
-				_List_fromArray(
-					[
-						elm$html$Html$Attributes$class('moduleEditor-description-measure-lastLine')
-					]),
-				_List_fromArray(
-					[
-						elm$html$Html$text('_')
-					]))
-			]) : _List_Nil);
+				elm$html$Html$Attributes$class('moduleEditor-description-measure')
+			]),
+		_Utils_ap(
+			A2(
+				elm$core$List$intersperse,
+				A2(elm$html$Html$br, _List_Nil, _List_Nil),
+				A2(elm$core$List$map, elm$html$Html$text, lineList)),
+			_Utils_eq(
+				author$project$Utility$ListExtra$last(lineList),
+				elm$core$Maybe$Just('')) ? _List_fromArray(
+				[
+					A2(
+					elm$html$Html$div,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text('_')
+						]))
+				]) : _List_Nil));
 };
+var author$project$Panel$Editor$Module$Input = function (a) {
+	return {$: 8, a: a};
+};
+var author$project$Panel$Editor$Module$focusEventJsonDecoder = elm$json$Json$Decode$succeed(
+	_Utils_Tuple2(
+		author$project$Panel$Editor$Module$ActiveTo(
+			author$project$Panel$Editor$Module$ActiveDescription(1)),
+		true));
 var elm$html$Html$textarea = _VirtualDom_node('textarea');
+var elm$html$Html$Attributes$id = elm$html$Html$Attributes$stringProperty('id');
+var elm$virtual_dom$VirtualDom$property = F2(
+	function (key, value) {
+		return A2(
+			_VirtualDom_property,
+			_VirtualDom_noInnerHtmlOrFormAction(key),
+			_VirtualDom_noJavaScriptOrHtmlUri(value));
+	});
+var elm$html$Html$Attributes$property = elm$virtual_dom$VirtualDom$property;
+var elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 1, a: a};
+};
+var elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
+	});
+var elm$html$Html$Events$targetValue = A2(
+	elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	elm$json$Json$Decode$string);
+var elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			elm$json$Json$Decode$map,
+			elm$html$Html$Events$alwaysStop,
+			A2(elm$json$Json$Decode$map, tagger, elm$html$Html$Events$targetValue)));
+};
+var author$project$Panel$Editor$Module$descriptionViewTextArea = F3(
+	function (description, isFocus, descriptionActiveMaybe) {
+		return A2(
+			elm$html$Html$textarea,
+			_Utils_ap(
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$class('moduleEditor-description-textarea')
+					]),
+				function () {
+					if (!descriptionActiveMaybe.$) {
+						if (!descriptionActiveMaybe.a) {
+							var _n1 = descriptionActiveMaybe.a;
+							return _List_fromArray(
+								[
+									A2(elm$html$Html$Events$stopPropagationOn, 'click', author$project$Panel$Editor$Module$focusEventJsonDecoder),
+									A2(
+									elm$html$Html$Attributes$property,
+									'value',
+									elm$json$Json$Encode$string(description))
+								]);
+						} else {
+							var _n2 = descriptionActiveMaybe.a;
+							return _Utils_ap(
+								_List_fromArray(
+									[
+										elm$html$Html$Events$onInput(author$project$Panel$Editor$Module$Input),
+										A2(
+										elm$html$Html$Attributes$property,
+										'value',
+										elm$json$Json$Encode$string(description)),
+										A2(elm$html$Html$Events$stopPropagationOn, 'click', author$project$Panel$Editor$Module$focusEventJsonDecoder),
+										elm$html$Html$Attributes$class('moduleEditor-description-textarea-focus')
+									]),
+								isFocus ? _List_fromArray(
+									[
+										elm$html$Html$Attributes$id('edit')
+									]) : _List_Nil);
+						}
+					} else {
+						return isFocus ? _List_fromArray(
+							[
+								A2(elm$html$Html$Events$stopPropagationOn, 'click', author$project$Panel$Editor$Module$focusEventJsonDecoder),
+								A2(
+								elm$html$Html$Attributes$property,
+								'value',
+								elm$json$Json$Encode$string(description))
+							]) : _List_fromArray(
+							[
+								A2(elm$html$Html$Events$stopPropagationOn, 'click', author$project$Panel$Editor$Module$focusEventJsonDecoder),
+								A2(
+								elm$html$Html$Attributes$property,
+								'value',
+								elm$json$Json$Encode$string(description))
+							]);
+					}
+				}()),
+			_List_Nil);
+	});
 var elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -14351,12 +14496,6 @@ var elm$html$Html$Attributes$classList = function (classes) {
 				elm$core$Tuple$first,
 				A2(elm$core$List$filter, elm$core$Tuple$second, classes))));
 };
-var elm$html$Html$Events$onFocus = function (msg) {
-	return A2(
-		elm$html$Html$Events$on,
-		'focus',
-		elm$json$Json$Decode$succeed(msg));
-};
 var author$project$Panel$Editor$Module$descriptionViewInputArea = F3(
 	function (description, isFocus, descriptionActiveMaybe) {
 		return A2(
@@ -14371,36 +14510,21 @@ var author$project$Panel$Editor$Module$descriptionViewInputArea = F3(
 					elm$html$Html$div,
 					_List_fromArray(
 						[
-							elm$html$Html$Attributes$class('moduleEditor-description-measure')
+							elm$html$Html$Attributes$classList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('moduleEditor-description-container', true),
+									_Utils_Tuple2(
+									'moduleEditor-description-container-active',
+									_Utils_eq(
+										descriptionActiveMaybe,
+										elm$core$Maybe$Just(1)))
+								]))
 						]),
 					_List_fromArray(
 						[
-							A2(
-							elm$html$Html$div,
-							_List_fromArray(
-								[
-									elm$html$Html$Attributes$class('moduleEditor-description-measure-text')
-								]),
-							author$project$Panel$Editor$Module$lfToBr(description)),
-							A2(
-							elm$html$Html$textarea,
-							_List_fromArray(
-								[
-									elm$html$Html$Attributes$classList(
-									_List_fromArray(
-										[
-											_Utils_Tuple2('moduleEditor-description-textarea', true),
-											_Utils_Tuple2(
-											'moduleEditor-description-textarea-focus',
-											_Utils_eq(
-												descriptionActiveMaybe,
-												elm$core$Maybe$Just(1)))
-										])),
-									elm$html$Html$Events$onFocus(
-									author$project$Panel$Editor$Module$ActiveTo(
-										author$project$Panel$Editor$Module$ActiveDescription(1)))
-								]),
-							_List_Nil)
+							author$project$Panel$Editor$Module$descriptionViewMeasure(description),
+							A3(author$project$Panel$Editor$Module$descriptionViewTextArea, description, isFocus, descriptionActiveMaybe)
 						]))
 				]));
 	});
@@ -14419,7 +14543,7 @@ var author$project$Panel$Editor$Module$descriptionView = F3(
 	function (description, isFocus, descriptionActiveMaybe) {
 		var editHere = function () {
 			if ((!descriptionActiveMaybe.$) && (descriptionActiveMaybe.a === 1)) {
-				var _n2 = descriptionActiveMaybe.a;
+				var _n3 = descriptionActiveMaybe.a;
 				return isFocus;
 			} else {
 				return false;
@@ -14442,7 +14566,8 @@ var author$project$Panel$Editor$Module$descriptionView = F3(
 							]))
 					]),
 				function () {
-					if (!descriptionActiveMaybe.$) {
+					if ((!descriptionActiveMaybe.$) && (!descriptionActiveMaybe.a)) {
+						var _n1 = descriptionActiveMaybe.a;
 						return _List_Nil;
 					} else {
 						return _List_fromArray(
@@ -14505,10 +14630,14 @@ var author$project$Project$Source$ModuleWithCache$getName = function (_n0) {
 	var name = _n0.aO;
 	return name;
 };
+var author$project$Project$Source$ModuleWithCache$getReadMe = function (_n0) {
+	var readMe = _n0.aU;
+	return readMe;
+};
 var author$project$Panel$Editor$Module$view = F3(
 	function (project, isFocus, _n0) {
-		var moduleRef = _n0.ai;
-		var active = _n0.v;
+		var moduleRef = _n0.Y;
+		var active = _n0.q;
 		var targetModule = A2(
 			author$project$Project$Source$getModule,
 			moduleRef,
@@ -15301,8 +15430,8 @@ var author$project$Panel$Tree$makeEditorTree = F3(
 	function (isFocus, selectRef, _n0) {
 		var editorRef = _n0.j;
 		var children = _n0.l;
-		var icon = _n0.r;
-		var label = _n0.s;
+		var icon = _n0.s;
+		var label = _n0.t;
 		return {
 			l: function () {
 				switch (children.$) {
@@ -15324,8 +15453,8 @@ var author$project$Panel$Tree$makeEditorTree = F3(
 				}
 			}(),
 			j: editorRef,
-			r: icon,
-			s: label,
+			s: icon,
+			t: label,
 			bh: _List_Nil,
 			by: A2(
 				author$project$Panel$Tree$makeViewType,
@@ -15362,7 +15491,7 @@ var author$project$NSvg$toHtmlWithClass = F3(
 	});
 var author$project$Panel$Tree$iconToElement = F2(
 	function (viewType, _n0) {
-		var size = _n0.aa;
+		var size = _n0.ab;
 		var body = _n0.bC;
 		return A2(
 			elm$html$Html$map,
@@ -15611,8 +15740,8 @@ var author$project$Panel$Tree$viewOpenChildrenItem = F6(
 						]))));
 	});
 var author$project$Panel$Tree$viewTreeItem = function (_n0) {
-	var icon = _n0.r;
-	var label = _n0.s;
+	var icon = _n0.s;
+	var label = _n0.t;
 	var editorRef = _n0.j;
 	var viewType = _n0.by;
 	var option = _n0.bh;
