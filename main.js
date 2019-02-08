@@ -14584,7 +14584,149 @@ var author$project$Panel$Editor$Module$descriptionView = F3(
 					A3(author$project$Panel$Editor$Module$descriptionViewInputArea, description, isFocus, descriptionActiveMaybe)
 				]));
 	});
-var author$project$Panel$Editor$Module$partDefListView = A2(
+var author$project$Project$Source$Module$Def$Expr$Operator$safeToString = function (safeOperator) {
+	switch (safeOperator) {
+		case 0:
+			return '>';
+		case 1:
+			return '|';
+		case 2:
+			return '&';
+		case 3:
+			return '=';
+		case 4:
+			return '/=';
+		case 5:
+			return '<';
+		case 6:
+			return '<=';
+		case 7:
+			return '++';
+		case 8:
+			return '+';
+		case 9:
+			return '-';
+		case 10:
+			return '*';
+		case 11:
+			return '/';
+		case 12:
+			return '^';
+		case 13:
+			return '>>';
+		default:
+			return ' ';
+	}
+};
+var author$project$Project$Source$Module$Def$Expr$Operator$toString = function (operator) {
+	if (!operator.$) {
+		var safeOp = operator.a;
+		return elm$core$Maybe$Just(
+			author$project$Project$Source$Module$Def$Expr$Operator$safeToString(safeOp));
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Project$Source$Module$Def$Expr$Term$toString = function (term) {
+	switch (term.$) {
+		case 0:
+			var i = term.a;
+			return elm$core$String$fromInt(i);
+		case 1:
+			if (!term.a.$) {
+				var ref = term.a.a;
+				return '!(' + (elm$core$String$fromInt(ref) + ')');
+			} else {
+				var label = term.a.a;
+				return author$project$Project$Label$toSmallString(label);
+			}
+		default:
+			return '✗';
+	}
+};
+var elm$core$String$concat = function (strings) {
+	return A2(elm$core$String$join, '', strings);
+};
+var author$project$Project$Source$Module$Def$Expr$toString = function (_n0) {
+	var head = _n0.a;
+	var others = _n0.b;
+	return _Utils_ap(
+		author$project$Project$Source$Module$Def$Expr$Term$toString(head),
+		elm$core$String$concat(
+			A2(
+				elm$core$List$map,
+				function (_n1) {
+					var op = _n1.a;
+					var term = _n1.b;
+					return _Utils_ap(
+						A2(
+							elm$core$Maybe$withDefault,
+							'(?)',
+							author$project$Project$Source$Module$Def$Expr$Operator$toString(op)),
+						author$project$Project$Source$Module$Def$Expr$Term$toString(term));
+				},
+				others)));
+};
+var author$project$Project$Source$Module$Def$Name$toString = function (name) {
+	if (!name.$) {
+		return elm$core$Maybe$Nothing;
+	} else {
+		var l = name.a;
+		return elm$core$Maybe$Just(
+			author$project$Project$Label$toSmallString(l));
+	}
+};
+var author$project$Project$Source$Module$Def$Type$validTypeToLabel = function (validType) {
+	return A2(
+		author$project$Project$Label$make,
+		author$project$Project$Label$hi,
+		_List_fromArray(
+			[author$project$Project$Label$on, author$project$Project$Label$ot]));
+};
+var author$project$Project$Source$Module$Def$Type$toString = function (type_) {
+	switch (type_.$) {
+		case 0:
+			var validType = type_.a;
+			return elm$core$Maybe$Just(
+				author$project$Project$Label$toCapitalString(
+					author$project$Project$Source$Module$Def$Type$validTypeToLabel(validType)));
+		case 1:
+			var label = type_.a;
+			return elm$core$Maybe$Just(
+				author$project$Project$Label$toCapitalString(label));
+		default:
+			return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Project$Source$Module$Def$toString = function (_n0) {
+	var name = _n0.aO;
+	var type_ = _n0.a$;
+	var expr = _n0.aK;
+	return A2(
+		elm$core$Maybe$withDefault,
+		'<NO NAME>',
+		author$project$Project$Source$Module$Def$Name$toString(name)) + (':' + (A2(
+		elm$core$Maybe$withDefault,
+		'<NO TYPE>',
+		author$project$Project$Source$Module$Def$Type$toString(type_)) + ('=' + author$project$Project$Source$Module$Def$Expr$toString(expr))));
+};
+var author$project$Panel$Editor$Module$partDefView = function (def) {
+	return A2(
+		elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				elm$html$Html$text(
+				author$project$Project$Source$Module$Def$toString(def))
+			]));
+};
+var author$project$Panel$Editor$Module$partDefListView = function (defList) {
+	return A2(
+		elm$html$Html$div,
+		_List_Nil,
+		A2(elm$core$List$map, author$project$Panel$Editor$Module$partDefView, defList));
+};
+var author$project$Panel$Editor$Module$partDefinitionsViewTitle = A2(
 	elm$html$Html$div,
 	_List_fromArray(
 		[
@@ -14624,7 +14766,10 @@ var author$project$Panel$Editor$Module$partDefinitionsView = F3(
 					}
 				}()),
 			_List_fromArray(
-				[author$project$Panel$Editor$Module$partDefListView]));
+				[
+					author$project$Panel$Editor$Module$partDefinitionsViewTitle,
+					author$project$Panel$Editor$Module$partDefListView(defList)
+				]));
 	});
 var author$project$Project$Source$ModuleWithCache$getName = function (_n0) {
 	var name = _n0.aO;

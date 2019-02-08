@@ -3,7 +3,8 @@ module Project.Source.Module.Def exposing
     , getName, setName, mapName
     , getType, setType, mapType
     , getExpr, setExpr, mapExpr
-    , empty)
+    , empty
+    , toString)
 
 {-| Def ある対象について1つの定義をすることができる
 
@@ -51,6 +52,7 @@ make : { name : Name, type_ : Type, expr : Expr } -> Def
 make rec =
     Def rec
 
+
 {-| 空の定義を作成する
 -}
 empty : Def
@@ -60,6 +62,7 @@ empty =
         , type_ = Type.empty
         , expr = Expr.empty
         }
+
 
 {-| 名前を取得する
 -}
@@ -122,3 +125,14 @@ setExpr expr (Def rec) =
 mapExpr : (Expr -> Expr) -> Def -> Def
 mapExpr =
     Utility.Map.toMapper getExpr setExpr
+
+
+{-| 定義を文字列にする。デバッグ用
+-}
+toString : Def -> String
+toString (Def { name, type_, expr }) =
+    (Name.toString name |> Maybe.withDefault "<NO NAME>")
+        ++ ":"
+        ++ (Type.toString type_ |> Maybe.withDefault "<NO TYPE>")
+        ++ "="
+        ++ Expr.toString expr

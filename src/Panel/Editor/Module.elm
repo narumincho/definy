@@ -668,14 +668,30 @@ partDefinitionsView isEditorItemFocus partDefListActiveMaybe defList =
                         [ Html.Events.onClick (ActiveTo (ActivePartDefList ActivePartDefListSelf)) ]
                )
         )
-        [ partDefListView ]
+        [ partDefinitionsViewTitle
+        , partDefListView defList
+        ]
 
 
-partDefListView : Html.Html Msg
-partDefListView =
+partDefinitionsViewTitle : Html.Html Msg
+partDefinitionsViewTitle =
     Html.div
         [ Html.Attributes.class "moduleEditor-partDefinitions-title" ]
         [ Html.text "Part Definitions" ]
+
+
+partDefListView : List Def.Def -> Html.Html Msg
+partDefListView defList =
+    Html.div
+        []
+        (defList |> List.map partDefView)
+
+
+partDefView : Def.Def -> Html.Html Msg
+partDefView def =
+    Html.div
+        []
+        [ Html.text (Def.toString def) ]
 
 
 exprViewOpAndTermNormal : Int -> Op.Operator -> Term.Term -> List (Html.Html PartDefExprActive)
