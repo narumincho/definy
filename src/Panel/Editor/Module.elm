@@ -44,6 +44,7 @@ type Msg
     | SelectDown
     | SelectFirstChild
     | SelectLastChild
+    | SelectParent
     | ToEditMode
     | Confirm
     | AddPartDef
@@ -158,6 +159,9 @@ update msg project (Model rec) =
         SelectLastChild ->
             update (ActiveTo (selectLastChild targetModule rec.active) project) (Model rec)
 
+        SelectParent ->
+            update (ActiveTo (selectParent targetModule rec.active) project) (Model rec)
+
         ToEditMode ->
             ( Model rec
             , []
@@ -184,7 +188,7 @@ update msg project (Model rec) =
             )
 
 
-{-| 方向キー左で選択を変える
+{-| 選択を左へ移動して、選択する対象を変える
 -}
 selectLeft : ModuleWithCache.Module -> Active -> Active
 selectLeft module_ active =
@@ -238,7 +242,7 @@ selectLeft module_ active =
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp (termIndex - 1)) ))
 
 
-{-| 方向キー右で選択を変える
+{-| 選択を右へ移動して、選択する対象を変える
 -}
 selectRight : ModuleWithCache.Module -> Active -> Active
 selectRight module_ active =
@@ -284,27 +288,124 @@ selectRight module_ active =
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm (opIndex + 1)) ))
 
 
-{-| TODO
+{-| 選択を上へ移動して、選択する対象を変える
 -}
 selectUp : ModuleWithCache.Module -> Active -> Active
 selectUp module_ active =
-    active
+    case active of
+        ActiveNone ->
+            -- 何も選択していないところから何も選択していないところへ
+            ActiveNone
+
+        ActiveDescription _ ->
+            -- 概要欄から概要欄へ
+            ActiveDescription ActiveDescriptionSelf
+
+        ActivePartDefList ActivePartDefListSelf ->
+            -- 定義リストから概要欄へ
+            ActiveDescription ActiveDescriptionSelf
+
+        ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf )) ->
+            -- 先頭の定義から定義リストへ
+            ActivePartDefList ActivePartDefListSelf
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
+            -- 定義から前の定義へ
+            ActivePartDefList (ActivePartDef ( index - 1, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+            -- 名前から定義へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
+            -- 型から定義へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+            -- 式から名前へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr _ )) ->
+            -- 式の中身から式へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
 
 
-{-| TODO
+{-| 選択を下へ移動して、選択する対象を変える
 -}
 selectDown : ModuleWithCache.Module -> Active -> Active
 selectDown module_ active =
-    active
+    case active of
+        ActiveNone ->
+            -- 何も選択していないところから何も選択していないところへ
+            ActiveNone
+
+        ActiveDescription _ ->
+            -- 概要欄から定義リストへ
+            ActivePartDefList ActivePartDefListSelf
+
+        ActivePartDefList ActivePartDefListSelf ->
+            -- 定義リストから先頭の定義へ
+            ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
+            -- 定義から次の定義へ
+            ActivePartDefList (ActivePartDef ( index + 1, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+            -- 名前から式へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
+            -- 型から式へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+            -- 式から定義へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr _ )) ->
+            -- 式の中身から式へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
 
 
+{-| 選択を選択していたものからその子供の先頭へ移動する
+-}
 selectFirstChild : ModuleWithCache.Module -> Active -> Active
 selectFirstChild module_ active =
+    case active of
+        ActiveNone ->
+            -- 何も選択していないところから何も選択していないところへ
+            ActiveNone
+
+        ActiveDescription _ ->
+            -- 概要欄から定義リストへ
+            ActivePartDefList ActivePartDefListSelf
+
+        ActivePartDefList ActivePartDefListSelf ->
+            -- 定義リストから先頭の定義へ
+            ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
+            -- 定義から名前へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefName ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+            -- 式から先頭の項へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0) ))
+
+        _ ->
+            active
+
+
+{-| 選択を選択していたものからその子供の末尾へ移動する
+-}
+selectLastChild : ModuleWithCache.Module -> Active -> Active
+selectLastChild module_ active =
     active
 
 
-selectLastChild : ModuleWithCache.Module -> Active -> Active
-selectLastChild module_ active =
+selectParent : ModuleWithCache.Module -> Active -> Active
+selectParent module_ active =
     active
 
 
