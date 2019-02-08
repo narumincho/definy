@@ -32,25 +32,21 @@ import Utility.ListExtra
 type Model
     = Model
         { moduleRef : Project.Source.ModuleRef
-        , focus : Focus
+        , active : Active
         }
 
 
 type Msg
-    = FocusToNone
-    | FocusToDescription
-    | FocusToPartEditor Int PartEditorFocus
-    | InputInDescription String
-    | InputInPartEditor String
+    = ActiveTo Active
     | SelectLeft
     | SelectRight
     | SelectUp
     | SelectDown
-    | FocusThisEditor
-    | BlurThisEditor
     | ToEditMode
     | Confirm
     | AddPartDef
+    | FocusThisEditor
+    | BlurThisEditor
 
 
 type Emit
@@ -62,61 +58,62 @@ type Emit
     | EmitSetTextAreaValue String
 
 
-type Focus
-    = FocusNone
-    | FocusDescription
-    | FocusPartEditor Int PartEditorFocus
+type Active
+    = ActiveNone
+    | ActiveDescription DescriptionActive
+    | ActivePartDefList PartDefListActive
 
 
-type PartEditorFocus
-    = PartEditorEdit PartFocusEdit (List ( Char, Bool ))
-    | PartEditorMove PartFocusMove
+type DescriptionActive
+    = ActiveDescriptionSelf
+    | ActiveDescriptionText Int
 
 
-type PartFocusEdit
-    = EditName
-    | EditType
-    | EditExprHeadTerm -- [abc]+ def + 28
-    | EditOp Int --    abc[+]def + 28 Intの範囲は0..254
-    | EditTerm Int --  abc +[def]+ 28 Intの範囲は0..254
+type PartDefListActive
+    = ActivePartDefListSelf
+    | ActivePartDef ( Int, PartDefActive )
 
 
-type PartFocusMove
-    = MoveName -- [name]: Type
-    | MoveType --  name :[Type]
-    | MoveExprHead -- |abc + def + 28
-    | MoveHeadTerm --  abc|+ def + 28
-    | MoveOp Int --    abc +|def + 28  Intの範囲は0..254
-    | MoveTerm Int --  abc + def|+ 28  Intの範囲は0..254
+type PartDefActive
+    = ActivePartDefSelf
+    | ActivePartDefName
+    | ActivePartDefType
+    | ActivePartDefExpr PartDefExprActive
 
 
-initModel : Project.Source.ModuleRef -> Model
-initModel moduleRef =
-    Model
-        { moduleRef = moduleRef
-        , focus = FocusNone
-        }
-
-
-getModuleRef : Model -> Project.Source.ModuleRef
-getModuleRef (Model { moduleRef }) =
-    moduleRef
+{-| 式の中で選択している位置。式の長さを超えるところを指定しているならば、それは式の末尾を表す
+-}
+type PartDefExprActive
+    = ActivePartDefExprSelf
+    | ActiveExprHead --     |abc + def + 28
+    | ActiveExprTerm Int -- [abc]+ def + 28  Intの範囲は0..255
+    | ActiveExprOp Int --  abc[+]def + 28  Intの範囲は0..254
 
 
 {-| テキストエリアにフォーカスが当たっているか。
 当たっていたらKey.ArrowLeftなどのキー入力をpreventDefaultしない。ブラウザの基本機能(訂正など)を阻止しない
 -}
 isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
-isFocusDefaultUi (Model { focus }) =
-    case focus of
-        FocusDescription ->
+isFocusDefaultUi (Model { active }) =
+    case active of
+        ActiveDescription (ActiveDescriptionText _) ->
             Just Panel.DefaultUi.TextArea
-
-        FocusPartEditor _ (PartEditorEdit _ _) ->
-            Just Panel.DefaultUi.TextField
 
         _ ->
             Nothing
+
+
+initModel : Project.Source.ModuleRef -> Model
+initModel moduleRef =
+    Model
+        { moduleRef = moduleRef
+        , active = ActiveNone
+        }
+
+
+getModuleRef : Model -> Project.Source.ModuleRef
+getModuleRef (Model { moduleRef }) =
+    moduleRef
 
 
 update : Msg -> Project.Project -> Model -> ( Model, List Emit )
@@ -128,176 +125,38 @@ update msg project (Model rec) =
                 |> Project.Source.getModule rec.moduleRef
     in
     case msg of
-        FocusToNone ->
-            ( Model { rec | focus = FocusNone }
-            , []
-            )
-
-        FocusToDescription ->
-            ( Model
-                { rec
-                    | focus = FocusDescription
-                }
-            , [ EmitSetTextAreaValue (ModuleWithCache.getReadMe targetModule) ]
-            )
-
-        FocusToPartEditor index partFocus ->
-            ( Model
-                { rec
-                    | focus = FocusPartEditor index partFocus
-                }
-            , [ EmitSetTextAreaValue "" ]
-            )
-
-        InputInDescription text ->
-            ( Model
-                { rec
-                    | focus = FocusDescription
-                }
-            , [ EmitChangeReadMe { text = text, ref = rec.moduleRef } ]
-            )
-
-        InputInPartEditor text ->
-            inputInPartEditor text targetModule (Model rec)
-
-        SelectLeft ->
-            ( case rec.focus of
-                FocusNone ->
-                    Model rec
-
-                FocusDescription ->
-                    Model rec
-
-                FocusPartEditor index (PartEditorMove partMove) ->
-                    Model { rec | focus = FocusPartEditor index (PartEditorMove (partEditorMoveLeft partMove)) }
-
-                FocusPartEditor _ (PartEditorEdit _ _) ->
-                    Model rec
-            , []
-            )
-
-        SelectRight ->
-            ( case rec.focus of
-                FocusNone ->
-                    Model rec
-
-                FocusDescription ->
-                    Model rec
-
-                FocusPartEditor index (PartEditorMove partMove) ->
-                    Model
-                        { rec
-                            | focus =
-                                FocusPartEditor
-                                    index
-                                    (PartEditorMove
-                                        (partEditorMoveRight (ModuleWithCache.getDef index targetModule) partMove)
-                                    )
-                        }
-
-                FocusPartEditor _ (PartEditorEdit _ _) ->
-                    Model rec
-            , []
-            )
-
-        FocusThisEditor ->
-            ( Model rec
-            , case rec.focus of
-                FocusNone ->
+        ActiveTo active ->
+            ( Model { rec | active = active }
+            , case active of
+                ActiveNone ->
                     []
 
-                FocusDescription ->
+                ActiveDescription _ ->
                     [ EmitSetTextAreaValue (ModuleWithCache.getReadMe targetModule) ]
 
-                FocusPartEditor _ _ ->
-                    []
+                ActivePartDefList _ ->
+                    [ EmitSetTextAreaValue "" ]
             )
 
-        BlurThisEditor ->
-            ( case rec.focus of
-                FocusPartEditor index (PartEditorEdit edit _) ->
-                    Model { rec | focus = FocusPartEditor index (PartEditorMove (partEditorEditToMove edit)) }
+        SelectLeft ->
+            update (ActiveTo (selectLeft targetModule rec.active)) project (Model rec)
 
-                _ ->
-                    Model rec
-            , []
-            )
+        SelectRight ->
+            update (ActiveTo (selectRight targetModule rec.active)) project (Model rec)
 
         SelectUp ->
-            ( case rec.focus of
-                FocusNone ->
-                    Model rec
-
-                FocusDescription ->
-                    Model rec
-
-                FocusPartEditor index (PartEditorMove partMove) ->
-                    let
-                        ( newMove, newIndex ) =
-                            partEditorMoveUp partMove index
-                    in
-                    Model
-                        { rec
-                            | focus = FocusPartEditor newIndex (PartEditorMove newMove)
-                        }
-
-                FocusPartEditor _ (PartEditorEdit _ _) ->
-                    Model rec
-            , []
-            )
+            update (ActiveTo (selectUp targetModule rec.active)) project (Model rec)
 
         SelectDown ->
-            ( case rec.focus of
-                FocusNone ->
-                    Model rec
-
-                FocusDescription ->
-                    Model rec
-
-                FocusPartEditor index (PartEditorMove partMove) ->
-                    let
-                        ( newMove, newIndex ) =
-                            partEditorMoveDown partMove index (ModuleWithCache.getDefNum targetModule)
-                    in
-                    Model
-                        { rec
-                            | focus = FocusPartEditor newIndex (PartEditorMove newMove)
-                        }
-
-                FocusPartEditor _ (PartEditorEdit _ _) ->
-                    Model rec
-            , []
-            )
+            update (ActiveTo (selectDown targetModule rec.active)) project (Model rec)
 
         ToEditMode ->
-            ( case rec.focus of
-                FocusNone ->
-                    Model rec
-
-                FocusDescription ->
-                    Model rec
-
-                FocusPartEditor index (PartEditorMove move) ->
-                    Model { rec | focus = FocusPartEditor index (PartEditorEdit (partEditorMoveToEdit move) []) }
-
-                FocusPartEditor _ (PartEditorEdit _ _) ->
-                    Model rec
+            ( Model rec
             , []
             )
 
         Confirm ->
-            ( case rec.focus of
-                FocusNone ->
-                    Model rec
-
-                FocusDescription ->
-                    Model rec
-
-                FocusPartEditor _ (PartEditorMove _) ->
-                    Model rec
-
-                FocusPartEditor index (PartEditorEdit edit _) ->
-                    Model { rec | focus = FocusPartEditor index (PartEditorMove (partEditorEditToMove edit)) }
+            ( Model rec
             , [ EmitSetTextAreaValue "" ]
             )
 
@@ -306,410 +165,138 @@ update msg project (Model rec) =
             , [ EmitAddPartDef { ref = rec.moduleRef } ]
             )
 
-
-{-| パーツエディタの移動モードで左に移動する
--}
-partEditorMoveLeft : PartFocusMove -> PartFocusMove
-partEditorMoveLeft partMove =
-    case partMove of
-        MoveName ->
-            MoveName
-
-        MoveType ->
-            MoveName
-
-        MoveExprHead ->
-            MoveType
-
-        MoveHeadTerm ->
-            MoveExprHead
-
-        MoveOp i ->
-            if i <= 0 then
-                MoveHeadTerm
-
-            else
-                MoveTerm (i - 1)
-
-        MoveTerm i ->
-            MoveOp i
-
-
-{-| パーツエディタの移動モードで右に移動する
--}
-partEditorMoveRight : Maybe Def.Def -> PartFocusMove -> PartFocusMove
-partEditorMoveRight defMaybe partMove =
-    case partMove of
-        MoveName ->
-            MoveType
-
-        MoveType ->
-            MoveExprHead
-
-        MoveExprHead ->
-            case defMaybe |> Maybe.map Def.getExpr of
-                Just expr ->
-                    if Expr.getHead expr == Term.none && Expr.getOthers expr == [] then
-                        MoveExprHead
-
-                    else
-                        MoveHeadTerm
-
-                Nothing ->
-                    MoveExprHead
-
-        MoveHeadTerm ->
-            case defMaybe |> Maybe.map (Def.getExpr >> Expr.getOthers >> List.length) of
-                Just length ->
-                    if 0 < length then
-                        MoveOp 0
-
-                    else
-                        MoveHeadTerm
-
-                Nothing ->
-                    MoveExprHead
-
-        MoveOp i ->
-            MoveTerm i
-
-        MoveTerm i ->
-            case defMaybe |> Maybe.map (Def.getExpr >> Expr.getOthers >> List.length) of
-                Just length ->
-                    if i + 1 <= length - 1 then
-                        MoveOp (i + 1)
-
-                    else
-                        MoveTerm i
-
-                Nothing ->
-                    MoveExprHead
-
-
-{-| パーツエディタの移動モードで上に移動する
--}
-partEditorMoveUp : PartFocusMove -> Int -> ( PartFocusMove, Int )
-partEditorMoveUp position index =
-    case position of
-        MoveName ->
-            if index == 0 then
-                ( MoveName, 0 )
-
-            else
-                ( MoveExprHead, index - 1 )
-
-        MoveType ->
-            if index == 0 then
-                ( MoveType, 0 )
-
-            else
-                ( MoveExprHead, index - 1 )
-
-        MoveExprHead ->
-            ( MoveName, index )
-
-        MoveHeadTerm ->
-            ( MoveName, index )
-
-        MoveOp _ ->
-            ( MoveName, index )
-
-        MoveTerm _ ->
-            ( MoveName, index )
-
-
-{-| パーツエディタの移動モードで下に移動する
--}
-partEditorMoveDown : PartFocusMove -> Int -> Int -> ( PartFocusMove, Int )
-partEditorMoveDown position index defNum =
-    case position of
-        MoveName ->
-            ( MoveExprHead, index )
-
-        MoveType ->
-            ( MoveExprHead, index )
-
-        MoveExprHead ->
-            if index == defNum - 1 then
-                ( MoveExprHead, index )
-
-            else
-                ( MoveName, index + 1 )
-
-        _ ->
-            ( position, index )
-
-
-{-| パーツエディタの移動モードから編集モードに変える
--}
-partEditorMoveToEdit : PartFocusMove -> PartFocusEdit
-partEditorMoveToEdit move =
-    case move of
-        MoveName ->
-            EditName
-
-        MoveType ->
-            EditType
-
-        MoveExprHead ->
-            EditExprHeadTerm
-
-        _ ->
-            EditExprHeadTerm
-
-
-{-| パーツエディタの編集モードから移動モードに変える
--}
-partEditorEditToMove : PartFocusEdit -> PartFocusMove
-partEditorEditToMove edit =
-    case edit of
-        EditName ->
-            MoveName
-
-        EditType ->
-            MoveType
-
-        EditExprHeadTerm ->
-            MoveExprHead
-
-        EditTerm 0 ->
-            MoveHeadTerm
-
-        EditOp n ->
-            MoveOp n
-
-        EditTerm n ->
-            MoveTerm (n - 1)
-
-
-{-| パーツエディタで<textaera>に何かを入力したとき
--}
-inputInPartEditor : String -> ModuleWithCache.Module -> Model -> ( Model, List Emit )
-inputInPartEditor string targetModule (Model rec) =
-    case rec.focus of
-        FocusNone ->
+        FocusThisEditor ->
             ( Model rec
             , []
             )
 
-        FocusDescription ->
+        BlurThisEditor ->
             ( Model rec
             , []
             )
 
-        FocusPartEditor index (PartEditorMove move) ->
-            case ModuleWithCache.getDef index targetModule of
-                Just def ->
-                    let
-                        { edit, textAreaValue, name, type_, expr, reset } =
-                            parse string (partEditorMoveToEdit move) def
-                    in
-                    ( Model
-                        { rec | focus = FocusPartEditor index (PartEditorEdit edit textAreaValue) }
-                    , Utility.ListExtra.takeFromMaybe
-                        [ name |> Maybe.map (\n -> EmitChangeName { name = n, index = index, ref = rec.moduleRef })
-                        , type_ |> Maybe.map (\t -> EmitChangeType { type_ = t, index = index, ref = rec.moduleRef })
-                        , expr |> Maybe.map (\e -> EmitChangeExpr { expr = e, index = index, ref = rec.moduleRef })
-                        , if reset then
-                            Just (EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList))
 
-                          else
-                            Nothing
-                        ]
-                    )
+{-| 方向キー左で選択を変える
+-}
+selectLeft : ModuleWithCache.Module -> Active -> Active
+selectLeft module_ active =
+    case active of
+        ActiveNone ->
+            -- 何も選択していないところから何も選択していないところへ
+            ActiveNone
 
-                Nothing ->
-                    ( Model rec
-                    , []
-                    )
+        ActiveDescription _ ->
+            -- 概要欄から概要欄へ
+            ActiveDescription ActiveDescriptionSelf
 
-        FocusPartEditor index (PartEditorEdit oldEdit _) ->
-            case ModuleWithCache.getDef index targetModule of
-                Just def ->
-                    let
-                        { edit, textAreaValue, name, type_, expr, reset } =
-                            parse string oldEdit def
-                    in
-                    ( Model
-                        { rec | focus = FocusPartEditor index (PartEditorEdit edit textAreaValue) }
-                    , Utility.ListExtra.takeFromMaybe
-                        [ name |> Maybe.map (\n -> EmitChangeName { name = n, index = index, ref = rec.moduleRef })
-                        , type_ |> Maybe.map (\t -> EmitChangeType { type_ = t, index = index, ref = rec.moduleRef })
-                        , expr |> Maybe.map (\e -> EmitChangeExpr { expr = e, index = index, ref = rec.moduleRef })
-                        , if reset then
-                            Just (EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList))
+        ActivePartDefList ActivePartDefListSelf ->
+            -- 定義リストから概要欄へ
+            ActiveDescription ActiveDescriptionSelf
 
-                          else
-                            Nothing
-                        ]
-                    )
+        ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf )) ->
+            -- 先頭の定義から定義リストへ
+            ActivePartDefList ActivePartDefListSelf
 
-                Nothing ->
-                    ( Model rec
-                    , []
-                    )
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
+            -- 定義から前の定義へ
+            ActivePartDefList (ActivePartDef ( index - 1, ActivePartDefSelf ))
 
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+            -- 名前から定義へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
-parse :
-    String
-    -> PartFocusEdit
-    -> Def.Def
-    ->
-        { edit : PartFocusEdit
-        , textAreaValue : List ( Char, Bool )
-        , name : Maybe Name.Name
-        , type_ : Maybe Type.Type
-        , expr : Maybe Expr.Expr
-        , reset : Bool
-        }
-parse string partEdit def =
-    case partEdit of
-        EditName ->
-            parseBeginWithName def (Parser.SimpleChar.fromString string)
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
+            -- 型から名前へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefName ))
 
-        EditType ->
-            case parseBeginWithType def (Parser.SimpleChar.fromString string) of
-                { edit, textAreaValue, type_, expr, reset } ->
-                    { edit = edit
-                    , textAreaValue = textAreaValue
-                    , name = Nothing
-                    , type_ = type_
-                    , expr = expr
-                    , reset = reset
-                    }
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+            -- 式から名前へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
 
-        EditExprHeadTerm ->
-            case parseBeginWithExprHead def (Parser.SimpleChar.fromString string) of
-                { edit, textAreaValue, expr, reset } ->
-                    { edit = edit
-                    , textAreaValue = textAreaValue
-                    , name = Nothing
-                    , type_ = Nothing
-                    , expr = expr
-                    , reset = reset
-                    }
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead )) ->
+            -- 先頭の項の前から式へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
 
-        _ ->
-            { edit = partEdit
-            , textAreaValue = []
-            , name = Nothing
-            , type_ = Nothing
-            , expr = Nothing
-            , reset = False
-            }
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0) )) ->
+            -- 先頭の項から先頭の項の前へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp opIndex) )) ->
+            -- 演算子から前の項へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm opIndex) ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm termIndex) )) ->
+            -- 項から前の演算子へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp (termIndex - 1)) ))
 
 
-parseBeginWithName : Def.Def -> List Parser.SimpleChar.SimpleChar -> { edit : PartFocusEdit, textAreaValue : List ( Char, Bool ), name : Maybe Name.Name, type_ : Maybe Type.Type, expr : Maybe Expr.Expr, reset : Bool }
-parseBeginWithName def simpleCharList =
-    let
-        expr =
-            Def.getExpr def
-    in
-    case Parser.beginWithName simpleCharList of
-        Parser.BeginWithNameEndName { name, textAreaValue } ->
-            { edit = EditName
-            , textAreaValue = textAreaValue
-            , name = Just name
-            , type_ = Nothing
-            , expr = Nothing
-            , reset = False
-            }
+{-| 方向キー右で選択を変える
+-}
+selectRight : ModuleWithCache.Module -> Active -> Active
+selectRight module_ active =
+    case active of
+        ActiveNone ->
+            -- 何も選択していないところから何も選択していないところへ
+            ActiveNone
 
-        Parser.BeginWithNameEndType { name, type_, textAreaValue } ->
-            { edit = EditType
-            , textAreaValue = textAreaValue
-            , name = Just name
-            , type_ = Just type_
-            , expr = Nothing
-            , reset = True
-            }
+        ActiveDescription _ ->
+            -- 概要欄から定義リストへ
+            ActivePartDefList ActivePartDefListSelf
 
-        Parser.BeginWithNameEndExprTerm { name, type_, headTerm, opAndTermList, textAreaValue } ->
-            { edit =
-                if opAndTermList == [] then
-                    EditExprHeadTerm
+        ActivePartDefList ActivePartDefListSelf ->
+            -- 定義リストから先頭の定義へ
+            ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf ))
 
-                else
-                    EditTerm (List.length opAndTermList - 1)
-            , textAreaValue = textAreaValue
-            , name = Just name
-            , type_ = Just type_
-            , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( Op.blank, Expr.getHead expr ) ] ++ Expr.getOthers expr))
-            , reset = True
-            }
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
+            -- 定義から次の定義へ
+            ActivePartDefList (ActivePartDef ( index + 1, ActivePartDefSelf ))
 
-        Parser.BeginWithNameEndExprOp { name, type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
-            { edit = EditOp (List.length opAndTermList - 1)
-            , textAreaValue = textAreaValue
-            , name = Just name
-            , type_ = Just type_
-            , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.getHead expr ) ] ++ Expr.getOthers expr))
-            , reset = True
-            }
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+            -- 名前から型へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
+            -- 型から式へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+            -- 式から定義へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead )) ->
+            -- 先頭の項の前から先頭の項へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0) ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm termIndex) )) ->
+            -- 項から次の演算子へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp termIndex) ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp opIndex) )) ->
+            -- 演算子から次の項へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm (opIndex + 1)) ))
 
 
-parseBeginWithType : Def.Def -> List Parser.SimpleChar.SimpleChar -> { edit : PartFocusEdit, textAreaValue : List ( Char, Bool ), type_ : Maybe Type.Type, expr : Maybe Expr.Expr, reset : Bool }
-parseBeginWithType def simpleCharList =
-    let
-        expr =
-            Def.getExpr def
-    in
-    case Parser.beginWithType simpleCharList of
-        Parser.BeginWithTypeEndType { type_, textAreaValue } ->
-            { edit = EditType
-            , textAreaValue = textAreaValue
-            , type_ = Just type_
-            , expr = Nothing
-            , reset = False
-            }
-
-        Parser.BeginWithTypeEndExprTerm { type_, headTerm, opAndTermList, textAreaValue } ->
-            { edit =
-                if opAndTermList == [] then
-                    EditExprHeadTerm
-
-                else
-                    EditTerm (List.length opAndTermList - 1)
-            , textAreaValue = textAreaValue
-            , type_ = Just type_
-            , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( Op.blank, Expr.getHead expr ) ] ++ Expr.getOthers expr))
-            , reset = True
-            }
-
-        Parser.BeginWithTypeEndExprOp { type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
-            { edit = EditOp (List.length opAndTermList - 1)
-            , textAreaValue = []
-            , type_ = Just type_
-            , expr = Just (Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.getHead expr ) ] ++ Expr.getOthers expr))
-            , reset = True
-            }
+{-| TODO
+-}
+selectUp : ModuleWithCache.Module -> Active -> Active
+selectUp module_ active =
+    active
 
 
-parseBeginWithExprHead : Def.Def -> List Parser.SimpleChar.SimpleChar -> { edit : PartFocusEdit, textAreaValue : List ( Char, Bool ), expr : Maybe Expr.Expr, reset : Bool }
-parseBeginWithExprHead def simpleCharList =
-    let
-        expr =
-            Def.getExpr def
-    in
-    case Parser.beginWithExprHead simpleCharList of
-        Parser.BeginWithExprHeadEndTerm { headTerm, opAndTermList, textAreaValue } ->
-            { edit =
-                if opAndTermList == [] then
-                    EditExprHeadTerm
+{-| TODO
+-}
+selectDown : ModuleWithCache.Module -> Active -> Active
+selectDown module_ active =
+    active
 
-                else
-                    EditTerm (List.length opAndTermList - 1)
-            , textAreaValue = textAreaValue
-            , expr = Just (expr |> Expr.replaceAndInsertHeadLastTerm headTerm opAndTermList)
-            , reset = False
-            }
 
-        Parser.BeginWithExprHeadEndOp { headTerm, opAndTermList, lastOp, textAreaValue } ->
-            { edit = EditOp (List.length opAndTermList - 1)
-            , textAreaValue = textAreaValue
-            , expr = Just (expr |> Expr.replaceAndInsertHeadLastOp headTerm opAndTermList lastOp)
-            , reset = True
-            }
+
+{- ================================================
+   ==================================================
+                       View
+   ==================================================
+   ================================================
+-}
 
 
 {-| モジュールエディタのview。
@@ -718,7 +305,7 @@ parseBeginWithExprHead def simpleCharList =
 モジュールエディタのModelで見た目を決める
 -}
 view : Project.Project -> Bool -> Model -> { title : String, body : List (Html.Html Msg) }
-view project isEditorItemFocus (Model { moduleRef, focus }) =
+view project isFocus (Model { moduleRef, active }) =
     let
         targetModule =
             project
@@ -727,92 +314,95 @@ view project isEditorItemFocus (Model { moduleRef, focus }) =
     in
     { title = Project.Label.toCapitalString (ModuleWithCache.getName targetModule)
     , body =
-        [ Html.div
-            []
-            [ Html.text (focusToString focus) ]
-        , descriptionView (ModuleWithCache.getReadMe targetModule) (isEditorItemFocus && focus == FocusDescription)
+        [ Html.div [] [ Html.text (activeToString active) ]
+        , descriptionView (ModuleWithCache.getReadMe targetModule)
+            isFocus
+            (case active of
+                ActiveDescription descriptionActive ->
+                    Just descriptionActive
+
+                _ ->
+                    Nothing
+            )
         , partDefinitionsView
-            isEditorItemFocus
-            (case focus of
-                FocusNone ->
-                    Nothing
+            isFocus
+            (case active of
+                ActivePartDefList partDefListActive ->
+                    Just partDefListActive
 
-                FocusDescription ->
+                _ ->
                     Nothing
-
-                FocusPartEditor index partEditorFocus ->
-                    Just ( index, partEditorFocus )
             )
             (ModuleWithCache.getDefWithCacheList targetModule |> List.map Tuple.first)
         ]
     }
 
 
-focusToString : Focus -> String
-focusToString focus =
-    case focus of
-        FocusNone ->
-            "フォーカスなし"
+activeToString : Active -> String
+activeToString active =
+    case active of
+        ActiveNone ->
+            "アクティブなし"
 
-        FocusDescription ->
-            "概要欄にフォーカス"
+        ActiveDescription ActiveDescriptionSelf ->
+            "概要欄"
 
-        FocusPartEditor index partEditorFocus ->
-            "パーツエディタにフォーカス "
-                ++ String.fromInt index
-                ++ " "
-                ++ (case partEditorFocus of
-                        PartEditorEdit partEdit _ ->
-                            "テキストで編集 "
-                                ++ (case partEdit of
-                                        EditName ->
-                                            "名前"
+        ActiveDescription (ActiveDescriptionText caretPos) ->
+            "概要欄" ++ String.fromInt caretPos ++ "の位置にキャレット"
 
-                                        EditType ->
-                                            "型"
+        ActivePartDefList ActivePartDefListSelf ->
+            "パーツエディタ全体"
 
-                                        EditExprHeadTerm ->
-                                            "先頭のTerm"
+        ActivePartDefList (ActivePartDef ( index, partDefActive )) ->
+            String.fromInt index
+                ++ "番目の定義"
+                ++ (partDefActive |> partDefActiveToString)
 
-                                        EditOp n ->
-                                            String.fromInt n ++ "番目の演算子"
 
-                                        EditTerm n ->
-                                            String.fromInt n ++ "番目の項"
-                                   )
+partDefActiveToString : PartDefActive -> String
+partDefActiveToString partDefActive =
+    case partDefActive of
+        ActivePartDefSelf ->
+            "全体"
 
-                        PartEditorMove partMove ->
-                            "移動モード(ボタンやショートカットーで操作)"
-                                ++ (case partMove of
-                                        MoveName ->
-                                            "名前"
+        ActivePartDefName ->
+            "名前"
 
-                                        MoveType ->
-                                            "型"
+        ActivePartDefType ->
+            "型"
 
-                                        MoveExprHead ->
-                                            "|a + b + c"
+        ActivePartDefExpr ActivePartDefExprSelf ->
+            "式全体"
 
-                                        MoveHeadTerm ->
-                                            " a|+ b + c"
+        ActivePartDefExpr ActiveExprHead ->
+            "先頭の項の前"
 
-                                        MoveOp n ->
-                                            "+|a  " ++ String.fromInt n
+        ActivePartDefExpr (ActiveExprTerm index) ->
+            String.fromInt index ++ "番目の項"
 
-                                        MoveTerm n ->
-                                            "+ a| " ++ String.fromInt n
-                                   )
-                   )
+        ActivePartDefExpr (ActiveExprOp index) ->
+            String.fromInt index ++ "番目の演算子"
 
 
 
 {- ===== descriptionView ===== -}
 
 
-descriptionView : String -> Bool -> Html.Html Msg
-descriptionView description editHere =
+descriptionView : String -> Bool -> Maybe DescriptionActive -> Html.Html Msg
+descriptionView description isFocus descriptionActiveMaybe =
+    let
+        editHere =
+            case descriptionActiveMaybe of
+                Just (ActiveDescriptionText _) ->
+                    isFocus
+
+                _ ->
+                    False
+    in
     Html.div
-        [ Html.Attributes.class "moduleEditor-description" ]
+        [ Html.Attributes.class "moduleEditor-description"
+        , Html.Events.onClick (ActiveTo (ActiveDescription ActiveDescriptionSelf))
+        ]
         [ Html.text "Description"
         , Html.div [ Html.Attributes.class "moduleEditor-description-inputArea" ]
             [ Html.div
@@ -827,13 +417,10 @@ descriptionView description editHere =
                         ]
                      ]
                         ++ (if editHere then
-                                [ Html.Events.onInput InputInDescription
-                                , Html.Attributes.id "edit"
-                                ]
+                                [ Html.Attributes.id "edit" ]
 
                             else
                                 [ Html.Attributes.property "value" (Json.Encode.string description)
-                                , Html.Events.onClick FocusToDescription
                                 ]
                            )
                     )
@@ -867,312 +454,31 @@ lfToBr string =
 
 
 {-| モジュールエディタのメインの要素であるパーツエディタを表示する
+partDefActiveMaybeAndIndexがJustならこのエディタ
 -}
-partDefinitionsView : Bool -> Maybe ( Int, PartEditorFocus ) -> List Def.Def -> Html.Html Msg
-partDefinitionsView isEditorItemFocus partEditorFocus defList =
+partDefinitionsView : Bool -> Maybe PartDefListActive -> List Def.Def -> Html.Html Msg
+partDefinitionsView isEditorItemFocus partDefListActiveMaybe defList =
     Html.div
-        [ Html.Attributes.class "moduleEditor-partDefinitions" ]
-        [ Html.text "Part Definitions"
-        , partDefinitionEditorList isEditorItemFocus partEditorFocus defList
+        [ Html.Attributes.class "moduleEditor-partDefinitions"
+        , Html.Events.onClick (ActiveTo (ActivePartDefList ActivePartDefListSelf))
+        ]
+        [ Html.text
+            (case partDefListActiveMaybe of
+                Just _ ->
+                    "[Part Definitions]"
+
+                Nothing ->
+                    "Part Definitions"
+            )
         ]
 
 
-{-| 複数のパーツエディタが並んだもの
--}
-partDefinitionEditorList : Bool -> Maybe ( Int, PartEditorFocus ) -> List Def.Def -> Html.Html Msg
-partDefinitionEditorList isEditorItemFocus partEditorFocus defList =
-    Html.div
-        [ Html.Attributes.class "moduleEditor-partDefEditorList" ]
-        (case partEditorFocus of
-            Just ( focusIndex, partFocus ) ->
-                (defList
-                    |> List.indexedMap
-                        (\index def ->
-                            if index == focusIndex then
-                                partDefinitionEditor (Just partFocus) def index
-
-                            else
-                                partDefinitionEditor Nothing def index
-                        )
-                )
-                    ++ (if isEditorItemFocus then
-                            [ inputTextArea, addDefButton ]
-
-                        else
-                            [ addDefButton ]
-                       )
-
-            Nothing ->
-                (defList |> List.indexedMap (\index def -> partDefinitionEditor Nothing def index))
-                    ++ [ addDefButton ]
-        )
-
-
-{-| 1つのパーツエディタ
--}
-partDefinitionEditor : Maybe PartEditorFocus -> Def.Def -> Int -> Html.Html Msg
-partDefinitionEditor partEditorFocus def index =
-    Html.div
-        [ Html.Attributes.class "moduleEditor-partDefEditor" ]
-        [ nameAndTypeView partEditorFocus (Def.getName def) (Def.getType def) index
-        , exprView partEditorFocus (Def.getExpr def) index
-        , intermediateExprView
-        ]
-
-
-{-| 名前と型の表示
--}
-nameAndTypeView : Maybe PartEditorFocus -> Name.Name -> Type.Type -> Int -> Html.Html Msg
-nameAndTypeView partEditorFocus name type_ index =
-    Html.div
-        [ Html.Attributes.class "moduleEditor-partDefEditor-nameAndType" ]
-        [ case partEditorFocus of
-            Just (PartEditorEdit EditName textAreaValue) ->
-                nameViewInputOutput textAreaValue
-
-            Just (PartEditorMove MoveName) ->
-                nameViewOutput True name index
-
-            _ ->
-                nameViewOutput False name index
-        , Html.text ":"
-        , case partEditorFocus of
-            Just (PartEditorEdit EditType textAreaValue) ->
-                typeViewInputOutput textAreaValue
-
-            Just (PartEditorMove MoveType) ->
-                typeViewOutput True type_ index
-
-            _ ->
-                typeViewOutput False type_ index
-        ]
-
-
-{-| 編集していない名前の表示
--}
-nameViewOutput : Bool -> Name.Name -> Int -> Html.Html Msg
-nameViewOutput isFocus name index =
-    case Name.toString name of
-        Just nameString ->
-            Html.div
-                (if isFocus then
-                    [ Html.Attributes.class "moduleEditor-partDefEditor-name"
-                    , Html.Attributes.class "focused"
-                    ]
-
-                 else
-                    [ Html.Events.onClick (FocusToPartEditor index (PartEditorMove MoveName))
-                    , Html.Attributes.class "moduleEditor-partDefEditor-name"
-                    ]
-                )
-                [ Html.text nameString ]
-
-        Nothing ->
-            Html.div
-                (if isFocus then
-                    [ Html.Attributes.class "moduleEditor-partDefEditor-noName"
-                    , Html.Attributes.class "focused"
-                    ]
-
-                 else
-                    [ Html.Events.onClick (FocusToPartEditor index (PartEditorMove MoveName))
-                    , Html.Attributes.class "moduleEditor-partDefEditor-noName"
-                    ]
-                )
-                [ Html.text "NO NAME" ]
-
-
-{-| 編集している名前の表示
--}
-nameViewInputOutput : List ( Char, Bool ) -> Html.Html Msg
-nameViewInputOutput textAreaValue =
-    Html.div
-        [ Html.Attributes.class "editTarget"
-        , Html.Attributes.class "moduleEditor-partDefEditor-name"
-        ]
-        (textAreaValue
-            |> List.map
-                (\( char, bool ) ->
-                    Html.div
-                        [ Html.Attributes.class
-                            (if bool then
-                                "moduleEditor-partDefEditor-okChar"
-
-                             else
-                                "moduleEditor-partDefEditor-errChar"
-                            )
-                        ]
-                        [ Html.text (String.fromChar char) ]
-                )
-        )
-
-
-{-| 編集していない型の表示
--}
-typeViewOutput : Bool -> Type.Type -> Int -> Html.Html Msg
-typeViewOutput isSelect type_ index =
-    case Type.toString type_ of
-        Just typeString ->
-            Html.div
-                (if isSelect then
-                    [ Html.Attributes.class "moduleEditor-partDefEditor-type"
-                    , Html.Attributes.class "focused"
-                    ]
-
-                 else
-                    [ Html.Events.onClick (FocusToPartEditor index (PartEditorMove MoveType))
-                    , Html.Attributes.class "moduleEditor-partDefEditor-type"
-                    ]
-                )
-                [ Html.text typeString ]
-
-        Nothing ->
-            Html.div
-                (if isSelect then
-                    [ Html.Attributes.class "moduleEditor-partDefEditor-noType"
-                    , Html.Attributes.class "focused"
-                    ]
-
-                 else
-                    [ Html.Events.onClick (FocusToPartEditor index (PartEditorMove MoveType))
-                    , Html.Attributes.class "moduleEditor-partDefEditor-noType"
-                    ]
-                )
-                [ Html.text "NO TYPE" ]
-
-
-{-| 編集している型の表示
--}
-typeViewInputOutput : List ( Char, Bool ) -> Html.Html Msg
-typeViewInputOutput textAreaValue =
-    Html.div
-        [ Html.Attributes.class "editTarget"
-        , Html.Attributes.class "moduleEditor-partDefEditor-type"
-        ]
-        (textAreaValue
-            |> List.map
-                (\( char, bool ) ->
-                    Html.div
-                        [ Html.Attributes.class
-                            (if bool then
-                                "moduleEditor-partDefEditor-okChar"
-
-                             else
-                                "moduleEditor-partDefEditor-errChar"
-                            )
-                        ]
-                        [ Html.text (String.fromChar char) ]
-                )
-        )
-
-
-{-| 式の表示
--}
-exprView : Maybe PartEditorFocus -> Expr.Expr -> Int -> Html.Html Msg
-exprView partEditorFocus expr index =
-    Html.div
-        [ Html.Attributes.class "moduleEditor-partDefEditor-expr" ]
-        (([ Html.text "=" ]
-            ++ exprViewHeadTerm partEditorFocus expr
-            ++ exprViewOpAndTermList partEditorFocus expr
-         )
-            |> List.map (Html.map (FocusToPartEditor index))
-        )
-
-
-{-| 式の最初の項の表示
--}
-exprViewHeadTerm : Maybe PartEditorFocus -> Expr.Expr -> List (Html.Html PartEditorFocus)
-exprViewHeadTerm partEditorFocusMaybe expr =
-    case partEditorFocusMaybe of
-        Just (PartEditorMove MoveExprHead) ->
-            [ moveModeCaret
-            , termViewOutput (Expr.getHead expr)
-                |> Html.map (always (PartEditorMove MoveExprHead))
-            ]
-
-        Just (PartEditorMove MoveHeadTerm) ->
-            [ termViewOutput (Expr.getHead expr)
-                |> Html.map (always (PartEditorMove MoveExprHead))
-            , moveModeCaret
-            ]
-
-        Just (PartEditorEdit EditExprHeadTerm textAreaValue) ->
-            [ termViewInputOutput textAreaValue ]
-
-        _ ->
-            [ termViewOutput (Expr.getHead expr)
-                |> Html.map (always (PartEditorMove MoveExprHead))
-            ]
-
-
-exprViewOpAndTermList : Maybe PartEditorFocus -> Expr.Expr -> List (Html.Html PartEditorFocus)
-exprViewOpAndTermList partEditorFocusMaybe expr =
-    expr
-        |> Expr.getOthers
-        |> List.indexedMap (exprViewOpAndTerm partEditorFocusMaybe)
-        |> List.concat
-
-
-exprViewOpAndTerm : Maybe PartEditorFocus -> Int -> ( Op.Operator, Term.Term ) -> List (Html.Html PartEditorFocus)
-exprViewOpAndTerm partEditorFocusMaybe index ( op, term ) =
-    case partEditorFocusMaybe of
-        Just (PartEditorMove (MoveOp i)) ->
-            if index == i then
-                [ opViewOutput op
-                    |> Html.map (always (PartEditorMove (MoveOp index)))
-                , moveModeCaret
-                , termViewOutput term
-                    |> Html.map (always (PartEditorMove (MoveTerm index)))
-                ]
-
-            else
-                exprViewOpAndTermNormal index op term
-
-        Just (PartEditorMove (MoveTerm i)) ->
-            if index == i then
-                [ opViewOutput op
-                    |> Html.map (always (PartEditorMove (MoveOp index)))
-                , termViewOutput term
-                    |> Html.map (always (PartEditorMove (MoveTerm index)))
-                , moveModeCaret
-                ]
-
-            else
-                exprViewOpAndTermNormal index op term
-
-        Just (PartEditorEdit (EditOp i) textAreaValue) ->
-            if index == i then
-                [ opViewInputOutput textAreaValue
-                    |> Html.map (always (PartEditorMove (MoveOp index)))
-                , termViewOutput term
-                    |> Html.map (always (PartEditorMove (MoveTerm index)))
-                ]
-
-            else
-                exprViewOpAndTermNormal index op term
-
-        Just (PartEditorEdit (EditTerm i) textAreaValue) ->
-            if index == i then
-                [ opViewOutput op
-                    |> Html.map (always (PartEditorMove (MoveOp index)))
-                , termViewInputOutput textAreaValue
-                    |> Html.map (always (PartEditorMove (MoveTerm index)))
-                ]
-
-            else
-                exprViewOpAndTermNormal index op term
-
-        _ ->
-            exprViewOpAndTermNormal index op term
-
-
-exprViewOpAndTermNormal : Int -> Op.Operator -> Term.Term -> List (Html.Html PartEditorFocus)
+exprViewOpAndTermNormal : Int -> Op.Operator -> Term.Term -> List (Html.Html PartDefExprActive)
 exprViewOpAndTermNormal index op term =
     [ opViewOutput op
-        |> Html.map (always (PartEditorMove (MoveOp index)))
+        |> Html.map (always (ActiveExprOp index))
     , termViewOutput term
-        |> Html.map (always (PartEditorMove (MoveTerm index)))
+        |> Html.map (always (ActiveExprTerm index))
     ]
 
 
@@ -1273,7 +579,6 @@ inputTextArea =
     Html.textarea
         [ Html.Attributes.class "moduleEditor-partDefEditor-hideTextArea"
         , Html.Attributes.id "edit"
-        , Html.Events.onInput InputInPartEditor
         ]
         []
 

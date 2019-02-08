@@ -513,12 +513,14 @@ img {
     display: block;
     width: 0;
     overflow: visible;
+    position: relative;
 }
 
 .moduleEditor-partDefEditor-caret {
     display: block;
     width: 2px;
     height: 1.5rem;
+    left: -1px;
     background: #f09936;
 }
 
