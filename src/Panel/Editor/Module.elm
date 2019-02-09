@@ -170,9 +170,7 @@ update msg project (Model rec) =
             update (ActiveTo (selectParent targetModule rec.active)) project (Model rec)
 
         Input string ->
-            ( Model rec
-            , [ EmitChangeReadMe { text = string, ref = rec.moduleRef } ]
-            )
+            input string (Model rec)
 
         ToEditMode ->
             ( Model rec
@@ -482,6 +480,73 @@ confirmMultiLineTextField active =
             active
 
 
+input : String -> Model -> ( Model, List Emit )
+input string (Model rec) =
+    case rec.active of
+        ActiveDescription ActiveDescriptionText ->
+            ( Model rec
+            , [ EmitChangeReadMe { text = string, ref = rec.moduleRef } ]
+            )
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+            ( Model rec
+            , [ EmitChangeName { name = (parserBeginWithName string).name, index = index, ref = rec.moduleRef } ]
+            )
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
+            ( Model rec
+            , [ EmitChangeType { type_ = (parserBeginWithType string).type_, index = index, ref = rec.moduleRef } ]
+            )
+
+        _ ->
+            ( Model rec
+            , []
+            )
+
+
+parserBeginWithName : String -> { name : Name.Name, textAreaValue : List ( Char, Bool ) }
+parserBeginWithName string =
+    case Parser.beginWithName (Parser.SimpleChar.fromString string) of
+        Parser.BeginWithNameEndName { name, textAreaValue } ->
+            { name = name
+            , textAreaValue = textAreaValue
+            }
+
+        Parser.BeginWithNameEndType { name, textAreaValue } ->
+            { name = name
+            , textAreaValue = textAreaValue
+            }
+
+        Parser.BeginWithNameEndExprTerm { name, textAreaValue } ->
+            { name = name
+            , textAreaValue = textAreaValue
+            }
+
+        Parser.BeginWithNameEndExprOp { name, textAreaValue } ->
+            { name = name
+            , textAreaValue = textAreaValue
+            }
+
+
+parserBeginWithType : String -> { type_ : Type.Type, textAreaValue : List ( Char, Bool ) }
+parserBeginWithType string =
+    case Parser.beginWithType (Parser.SimpleChar.fromString string) of
+        Parser.BeginWithTypeEndType { type_, textAreaValue } ->
+            { type_ = type_
+            , textAreaValue = textAreaValue
+            }
+
+        Parser.BeginWithTypeEndExprTerm { type_, textAreaValue } ->
+            { type_ = type_
+            , textAreaValue = textAreaValue
+            }
+
+        Parser.BeginWithTypeEndExprOp { type_, textAreaValue } ->
+            { type_ = type_
+            , textAreaValue = textAreaValue
+            }
+
+
 
 {- ================================================
    ==================================================
@@ -711,7 +776,7 @@ focusEventJsonDecoder =
 partDefActiveMaybeAndIndexがJustならこのエディタ
 -}
 partDefinitionsView : Bool -> Maybe PartDefListActive -> List Def.Def -> Html.Html Msg
-partDefinitionsView isEditorItemFocus partDefListActiveMaybe defList =
+partDefinitionsView isFocus partDefListActiveMaybe defList =
     Html.div
         ([ subClass "partDefinitions"
          ]
@@ -735,12 +800,17 @@ partDefinitionsView isEditorItemFocus partDefListActiveMaybe defList =
          ]
             ++ (case partDefListActiveMaybe of
                     Just _ ->
-                        [ Html.textarea
-                            [ Html.Attributes.class "partDefEditor-hideTextArea"
-                            , Html.Attributes.id "edit"
+                        if isFocus then
+                            [ Html.textarea
+                                [ Html.Attributes.class "partDefEditor-hideTextArea"
+                                , Html.Attributes.id "edit"
+                                , Html.Events.onInput Input
+                                ]
+                                []
                             ]
+
+                        else
                             []
-                        ]
 
                     Nothing ->
                         []
@@ -776,11 +846,12 @@ partDefListView defList partDefActiveWithIndexMaybe =
                             _ ->
                                 Nothing
                         )
+                        |> Html.map (\m -> ActiveTo (ActivePartDefList (ActivePartDef ( index, m ))))
                 )
         )
 
 
-partDefView : Int -> Def.Def -> Maybe PartDefActive -> Html.Html Msg
+partDefView : Int -> Def.Def -> Maybe PartDefActive -> Html.Html PartDefActive
 partDefView index def partDefActiveMaybe =
     Html.div
         [ subClassList
@@ -789,8 +860,7 @@ partDefView index def partDefActiveMaybe =
             ]
         , Html.Events.stopPropagationOn "click"
             (Json.Decode.succeed
-                ( ActiveTo
-                    (ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )))
+                ( ActivePartDefSelf
                 , True
                 )
             )
@@ -807,7 +877,7 @@ partDefView index def partDefActiveMaybe =
         ]
 
 
-partDefViewNameAndType : Name.Name -> Type.Type -> Maybe PartDefActive -> Html.Html Msg
+partDefViewNameAndType : Name.Name -> Type.Type -> Maybe PartDefActive -> Html.Html PartDefActive
 partDefViewNameAndType name type_ partDefActiveMaybe =
     Html.div
         [ subClass "partDefEditor-nameAndType" ]
@@ -817,67 +887,111 @@ partDefViewNameAndType name type_ partDefActiveMaybe =
         ]
 
 
-partDefViewName : Name.Name -> Bool -> Html.Html Msg
+partDefViewName : Name.Name -> Bool -> Html.Html PartDefActive
 partDefViewName name isActive =
     case Name.toString name of
         Just nameString ->
             Html.div
-                [ subClassList
+                ([ subClassList
                     [ ( "partDefEditor-name", True )
                     , ( "partDefEditor-element-active", isActive )
                     ]
-                ]
+                 ]
+                    ++ (if isActive then
+                            []
+
+                        else
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefName, True )) ]
+                       )
+                )
                 [ Html.text nameString ]
 
         Nothing ->
             Html.div
-                [ subClassList
+                ([ subClassList
                     [ ( "partDefEditor-noName", True )
                     , ( "partDefEditor-element-active", isActive )
                     ]
-                ]
+                 ]
+                    ++ (if isActive then
+                            []
+
+                        else
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefName, True )) ]
+                       )
+                )
                 [ Html.text "NO NAME" ]
 
 
-partDefViewType : Type.Type -> Bool -> Html.Html Msg
+partDefViewType : Type.Type -> Bool -> Html.Html PartDefActive
 partDefViewType type_ isActive =
     case Type.toString type_ of
         Just nameString ->
             Html.div
-                [ subClassList
+                ([ subClassList
                     [ ( "partDefEditor-type", True )
                     , ( "partDefEditor-element-active", isActive )
                     ]
-                ]
+                 ]
+                    ++ (if isActive then
+                            []
+
+                        else
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefType, True )) ]
+                       )
+                )
                 [ Html.text nameString ]
 
         Nothing ->
             Html.div
-                [ subClassList
+                ([ subClassList
                     [ ( "partDefEditor-noType", True )
                     , ( "partDefEditor-element-active", isActive )
                     ]
-                ]
+                 ]
+                    ++ (if isActive then
+                            []
+
+                        else
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefType, True )) ]
+                       )
+                )
                 [ Html.text "NO TYPE" ]
 
 
-partDefViewExpr : Expr.Expr -> Maybe PartDefExprActive -> Html.Html Msg
+partDefViewExpr : Expr.Expr -> Maybe PartDefExprActive -> Html.Html PartDefActive
 partDefViewExpr expr partDefExprActiveMaybe =
     Html.div
-        [ subClassList
-            [ ( "partDefEditor-expr", True )
-            , ( "partDefEditor-element-active", partDefExprActiveMaybe == Just ActivePartDefExprSelf )
-            ]
-        ]
-        [ Html.text ("=" ++ Expr.toString expr) ]
+        ([ subClass "partDefEditor-expr"
+         ]
+            ++ (case partDefExprActiveMaybe of
+                    Just ActivePartDefExprSelf ->
+                        [ subClass "partDefEditor-element-active" ]
+
+                    _ ->
+                        [ Html.Events.stopPropagationOn "click"
+                            (Json.Decode.succeed ( ActivePartDefExpr ActivePartDefExprSelf, True ))
+                        ]
+               )
+        )
+        ([ Html.text "="
+         , termViewOutput (Expr.getHead expr)
+            |> Html.map (always (ActivePartDefExpr (ActiveExprTerm 0)))
+         ]
+            ++ (Expr.getOthers expr
+                    |> List.indexedMap exprViewOpAndTermNormal
+                    |> List.concat
+                    |> List.map (Html.map ActivePartDefExpr)
+               )
+        )
 
 
-exprViewOpAndTermNormal : Int -> Op.Operator -> Term.Term -> List (Html.Html PartDefExprActive)
-exprViewOpAndTermNormal index op term =
+exprViewOpAndTermNormal : Int -> ( Op.Operator, Term.Term ) -> List (Html.Html PartDefExprActive)
+exprViewOpAndTermNormal index ( op, term ) =
     [ opViewOutput op
         |> Html.map (always (ActiveExprOp index))
     , termViewOutput term
-        |> Html.map (always (ActiveExprTerm index))
+        |> Html.map (always (ActiveExprTerm (index + 1)))
     ]
 
 
@@ -971,15 +1085,6 @@ intermediateExprView =
     Html.div
         []
         [ Html.text "評価エリア" ]
-
-
-inputTextArea : Html.Html Msg
-inputTextArea =
-    Html.textarea
-        [ subClass "partDefEditor-hideTextArea"
-        , Html.Attributes.id "edit"
-        ]
-        []
 
 
 addDefButton : Html.Html Msg
