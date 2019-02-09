@@ -18,7 +18,6 @@
         /* キー入力 */
         window.addEventListener("keydown", (e) => {
             prevKeyEvent = e;
-            // e.preventDefault();
             app.ports.keyDown.send(e);
         });
         /* 直前のキー入力のデフォルト動作を取り消す */

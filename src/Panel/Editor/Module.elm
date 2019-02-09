@@ -106,6 +106,12 @@ isFocusDefaultUi (Model { active }) =
         ActiveDescription ActiveDescriptionText ->
             Just Panel.DefaultUi.MultiLineTextField
 
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefName (Just _) )) ->
+            Just Panel.DefaultUi.SingleLineTextField
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefType (Just _) )) ->
+            Just Panel.DefaultUi.SingleLineTextField
+
         _ ->
             Nothing
 
@@ -178,9 +184,7 @@ update msg project (Model rec) =
             )
 
         Confirm ->
-            ( Model rec
-            , [ EmitSetTextAreaValue "" ]
-            )
+            confirm (Model rec)
 
         ConfirmMultiLineTextField ->
             update (ActiveTo (confirmMultiLineTextField rec.active)) project (Model rec)
@@ -495,6 +499,33 @@ confirmMultiLineTextField active =
 
         _ ->
             active
+
+
+confirm : Model -> ( Model, List Emit )
+confirm (Model rec) =
+    case rec.active of
+        ActiveDescription ActiveDescriptionText ->
+            ( Model
+                { rec | active = ActiveDescription ActiveDescriptionSelf }
+            , []
+            )
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just _) )) ->
+            ( Model
+                { rec | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) }
+            , [ EmitSetTextAreaValue "" ]
+            )
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just _) )) ->
+            ( Model
+                { rec | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) }
+            , [ EmitSetTextAreaValue "" ]
+            )
+
+        _ ->
+            ( Model rec
+            , []
+            )
 
 
 input : String -> Model -> ( Model, List Emit )
@@ -996,7 +1027,16 @@ partDefNameEditView : Name.Name -> List ( Char, Bool ) -> Html.Html PartDefActiv
 partDefNameEditView name textAreaValue =
     Html.div
         [ subClass "partDefEditor-name-edit" ]
-        (textAreaValueToListHtml textAreaValue)
+        (textAreaValueToListHtml textAreaValue
+            ++ [ suggestionName name ]
+        )
+
+
+suggestionName : Name.Name -> Html.Html msg
+suggestionName name =
+    Html.div
+        [ subClass "partDefEditor-name-edit-suggestion" ]
+        [ Html.text (Name.toString name |> Maybe.withDefault "<NO NAME>") ]
 
 
 
