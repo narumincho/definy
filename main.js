@@ -8889,6 +8889,62 @@ var author$project$Panel$Editor$Module$selectLeft = F2(
 	});
 var author$project$Panel$Editor$Module$selectParent = F2(
 	function (module_, active) {
+		_n0$6:
+		while (true) {
+			switch (active.$) {
+				case 1:
+					if (active.a === 1) {
+						var _n1 = active.a;
+						return author$project$Panel$Editor$Module$ActiveDescription(0);
+					} else {
+						break _n0$6;
+					}
+				case 2:
+					if (active.a.$ === 1) {
+						switch (active.a.a.b.$) {
+							case 0:
+								var _n2 = active.a.a;
+								var _n3 = _n2.b;
+								return author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf);
+							case 1:
+								var _n4 = active.a.a;
+								var index = _n4.a;
+								var _n5 = _n4.b;
+								return author$project$Panel$Editor$Module$ActivePartDefList(
+									author$project$Panel$Editor$Module$ActivePartDef(
+										_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefSelf)));
+							case 2:
+								var _n6 = active.a.a;
+								var index = _n6.a;
+								var _n7 = _n6.b;
+								return author$project$Panel$Editor$Module$ActivePartDefList(
+									author$project$Panel$Editor$Module$ActivePartDef(
+										_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefSelf)));
+							default:
+								if (!active.a.a.b.a.$) {
+									var _n8 = active.a.a;
+									var index = _n8.a;
+									var _n9 = _n8.b.a;
+									return author$project$Panel$Editor$Module$ActivePartDefList(
+										author$project$Panel$Editor$Module$ActivePartDef(
+											_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefSelf)));
+								} else {
+									var _n10 = active.a.a;
+									var index = _n10.a;
+									return author$project$Panel$Editor$Module$ActivePartDefList(
+										author$project$Panel$Editor$Module$ActivePartDef(
+											_Utils_Tuple2(
+												index,
+												author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$ActivePartDefExprSelf))));
+								}
+						}
+					} else {
+						break _n0$6;
+					}
+				default:
+					break _n0$6;
+			}
+		}
 		return active;
 	});
 var author$project$Panel$Editor$Module$selectRight = F2(

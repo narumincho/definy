@@ -447,7 +447,27 @@ selectLastChild module_ active =
 
 selectParent : ModuleWithCache.Module -> Active -> Active
 selectParent module_ active =
-    active
+    case active of
+        ActiveDescription ActiveDescriptionText ->
+            ActiveDescription ActiveDescriptionSelf
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
+            ActivePartDefList ActivePartDefListSelf
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr _ )) ->
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+
+        _ ->
+            active
 
 
 {-| 複数行入力の確定。概要や文字列リテラルでの入力を確定にする
