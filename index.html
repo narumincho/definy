@@ -32,10 +32,9 @@
             requestAnimationFrame(() => {
                 const edit = document.getElementById("edit");
                 console.log(e, edit.value);
-                // edit.focus();
-                // if (edit.value !== e) {
-                //     edit.value = e;
-                // }
+                if (edit.value !== e) {
+                    edit.value = e;
+                }
             });
         })
         app.ports.focusEditTextAea.subscribe(e => {

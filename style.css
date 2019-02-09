@@ -517,6 +517,18 @@ img {
     border-radius: 4px;
 }
 
+.moduleEditor-partDefEditor-name-edit {
+    display: flex;
+    align-items: baseline;
+    padding: 2px;
+    border: solid #ddd 2px;
+    height: 38px;
+    color: #d7ba7d;
+    font-size: 20px;
+    border-radius: 4px;
+    min-width: 32px;
+}
+
 .moduleEditor-partDefEditor-type {
     display: flex;
     align-items: baseline;
@@ -536,6 +548,18 @@ img {
     color: #666;
     font-size: 16px;
     border-radius: 4px;
+}
+
+.moduleEditor-partDefEditor-type-edit {
+    display: flex;
+    align-items: baseline;
+    padding: 2px;
+    border: solid 2px #ddd;
+    height: 32px;
+    color: #4ec9b0;
+    font-size: 16px;
+    border-radius: 4px;
+    min-width: 32px;
 }
 
 .moduleEditor-partDefEditor-expr {

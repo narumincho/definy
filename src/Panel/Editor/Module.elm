@@ -83,8 +83,8 @@ type PartDefListActive
 
 type PartDefActive
     = ActivePartDefSelf
-    | ActivePartDefName
-    | ActivePartDefType
+    | ActivePartDefName (Maybe (List ( Char, Bool )))
+    | ActivePartDefType (Maybe (List ( Char, Bool )))
     | ActivePartDefExpr PartDefExprActive
 
 
@@ -179,7 +179,7 @@ update msg project (Model rec) =
 
         Confirm ->
             ( Model rec
-            , []
+            , [ EmitSetTextAreaValue "" ]
             )
 
         ConfirmMultiLineTextField ->
@@ -231,17 +231,17 @@ selectLeft module_ active =
             -- 定義から前の定義へ
             ActivePartDefList (ActivePartDef ( index - 1, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
             -- 名前から定義へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
             -- 型から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
             -- 式から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead )) ->
             -- 先頭の項の前から式へ
@@ -280,11 +280,11 @@ selectRight module_ active =
             -- 定義から次の定義へ
             ActivePartDefList (ActivePartDef ( min (ModuleWithCache.getDefNum module_ - 1) (index + 1), ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
             -- 名前から型へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
             -- 型から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
 
@@ -333,21 +333,24 @@ selectUp module_ active =
             -- 定義から前の定義へ
             ActivePartDefList (ActivePartDef ( index - 1, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
             -- 名前から定義へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
             -- 型から定義へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
             -- 式から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr _ )) ->
             -- 式の中身から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+
+        _ ->
+            active
 
 
 {-| 選択を下へ移動して、選択する対象を変える
@@ -367,11 +370,11 @@ selectDown module_ active =
             -- 定義から次の定義へ
             ActivePartDefList (ActivePartDef ( min (ModuleWithCache.getDefNum module_ - 1) (index + 1), ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
             -- 名前から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
             -- 型から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
 
@@ -406,7 +409,15 @@ selectFirstChild module_ active =
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
             -- 定義から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
+            -- 名前から名前の編集へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just []) ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
+            -- 型から型の編集へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just []) ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
             -- 式から先頭の項へ
@@ -452,11 +463,17 @@ selectParent module_ active =
         ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
             ActivePartDefList ActivePartDefListSelf
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just _) )) ->
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just _) )) ->
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
@@ -488,14 +505,28 @@ input string (Model rec) =
             , [ EmitChangeReadMe { text = string, ref = rec.moduleRef } ]
             )
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
-            ( Model rec
-            , [ EmitChangeName { name = (parserBeginWithName string).name, index = index, ref = rec.moduleRef } ]
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
+            let
+                { name, textAreaValue } =
+                    parserBeginWithName string
+            in
+            ( Model
+                { rec
+                    | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just textAreaValue) ))
+                }
+            , [ EmitChangeName { name = name, index = index, ref = rec.moduleRef } ]
             )
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
-            ( Model rec
-            , [ EmitChangeType { type_ = (parserBeginWithType string).type_, index = index, ref = rec.moduleRef } ]
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType _ )) ->
+            let
+                { type_, textAreaValue } =
+                    parserBeginWithType string
+            in
+            ( Model
+                { rec
+                    | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just textAreaValue) ))
+                }
+            , [ EmitChangeType { type_ = type_, index = index, ref = rec.moduleRef } ]
             )
 
         _ ->
@@ -622,11 +653,17 @@ partDefActiveToString partDefActive =
         ActivePartDefSelf ->
             "全体"
 
-        ActivePartDefName ->
+        ActivePartDefName Nothing ->
             "名前"
 
-        ActivePartDefType ->
+        ActivePartDefName (Just _) ->
+            "名前を編集中"
+
+        ActivePartDefType Nothing ->
             "型"
+
+        ActivePartDefType (Just _) ->
+            "型を編集中"
 
         ActivePartDefExpr ActivePartDefExprSelf ->
             "式全体"
@@ -877,18 +914,50 @@ partDefView index def partDefActiveMaybe =
         ]
 
 
+
+{- ================= Name And Type ================= -}
+{------------------ Name  ------------------}
+
+
 partDefViewNameAndType : Name.Name -> Type.Type -> Maybe PartDefActive -> Html.Html PartDefActive
 partDefViewNameAndType name type_ partDefActiveMaybe =
     Html.div
         [ subClass "partDefEditor-nameAndType" ]
-        [ partDefViewName name (partDefActiveMaybe == Just ActivePartDefName)
+        [ partDefViewName name
+            (case partDefActiveMaybe of
+                Just (ActivePartDefName textAreaValueMaybe) ->
+                    Just textAreaValueMaybe
+
+                _ ->
+                    Nothing
+            )
         , Html.text ":"
-        , partDefViewType type_ (partDefActiveMaybe == Just ActivePartDefType)
+        , partDefViewType type_
+            (case partDefActiveMaybe of
+                Just (ActivePartDefType textAreaValueMaybe) ->
+                    Just textAreaValueMaybe
+
+                _ ->
+                    Nothing
+            )
         ]
 
 
-partDefViewName : Name.Name -> Bool -> Html.Html PartDefActive
-partDefViewName name isActive =
+partDefViewName : Name.Name -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html PartDefActive
+partDefViewName name textAreaValueMaybeMaybe =
+    case textAreaValueMaybeMaybe of
+        Just (Just textAreaValue) ->
+            partDefNameEditView name textAreaValue
+
+        Just Nothing ->
+            partDefNameNormalView name True
+
+        Nothing ->
+            partDefNameNormalView name False
+
+
+partDefNameNormalView : Name.Name -> Bool -> Html.Html PartDefActive
+partDefNameNormalView name isActive =
     case Name.toString name of
         Just nameString ->
             Html.div
@@ -901,7 +970,7 @@ partDefViewName name isActive =
                             []
 
                         else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefName, True )) ]
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefName Nothing, True )) ]
                        )
                 )
                 [ Html.text nameString ]
@@ -917,14 +986,38 @@ partDefViewName name isActive =
                             []
 
                         else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefName, True )) ]
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefName Nothing, True )) ]
                        )
                 )
                 [ Html.text "NO NAME" ]
 
 
-partDefViewType : Type.Type -> Bool -> Html.Html PartDefActive
-partDefViewType type_ isActive =
+partDefNameEditView : Name.Name -> List ( Char, Bool ) -> Html.Html PartDefActive
+partDefNameEditView name textAreaValue =
+    Html.div
+        [ subClass "partDefEditor-name-edit" ]
+        (textAreaValueToListHtml textAreaValue)
+
+
+
+{------------------ Type  ------------------}
+
+
+partDefViewType : Type.Type -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html PartDefActive
+partDefViewType type_ textAreaValueMaybeMaybe =
+    case textAreaValueMaybeMaybe of
+        Just (Just textAreaValue) ->
+            partDefTypeEditView type_ textAreaValue
+
+        Just Nothing ->
+            partDefTypeNormalView type_ True
+
+        Nothing ->
+            partDefTypeNormalView type_ False
+
+
+partDefTypeNormalView : Type.Type -> Bool -> Html.Html PartDefActive
+partDefTypeNormalView type_ isActive =
     case Type.toString type_ of
         Just nameString ->
             Html.div
@@ -937,7 +1030,7 @@ partDefViewType type_ isActive =
                             []
 
                         else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefType, True )) ]
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefType Nothing, True )) ]
                        )
                 )
                 [ Html.text nameString ]
@@ -953,10 +1046,21 @@ partDefViewType type_ isActive =
                             []
 
                         else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefType, True )) ]
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefType Nothing, True )) ]
                        )
                 )
                 [ Html.text "NO TYPE" ]
+
+
+partDefTypeEditView : Type.Type -> List ( Char, Bool ) -> Html.Html PartDefActive
+partDefTypeEditView type_ textAreaValue =
+    Html.div
+        [ subClass "partDefEditor-type-edit" ]
+        (textAreaValueToListHtml textAreaValue)
+
+
+
+{- ================= Expr ================= -}
 
 
 partDefViewExpr : Expr.Expr -> Maybe PartDefExprActive -> Html.Html PartDefActive
@@ -1008,31 +1112,20 @@ termViewOutput term =
 
 {-| 編集している項の表示
 -}
-termViewInputOutput : List ( Char, Bool ) -> Html.Html msg
-termViewInputOutput textAreaValue =
-    Html.div
-        [ subClass "partDefEditor-editTarget"
-        , subClass "partDefEditor-term"
-        ]
-        (case textAreaValue of
-            _ :: _ ->
-                textAreaValue
-                    |> List.map
-                        (\( char, bool ) ->
-                            Html.div
-                                [ subClass
-                                    (if bool then
-                                        "partDefEditor-okChar"
+textAreaValueToListHtml : List ( Char, Bool ) -> List (Html.Html msg)
+textAreaValueToListHtml =
+    List.map
+        (\( char, bool ) ->
+            Html.div
+                [ subClass
+                    (if bool then
+                        "partDefEditor-okChar"
 
-                                     else
-                                        "partDefEditor-errChar"
-                                    )
-                                ]
-                                [ Html.text (String.fromChar char) ]
-                        )
-
-            [] ->
-                [ Html.text "TERM" ]
+                     else
+                        "partDefEditor-errChar"
+                    )
+                ]
+                [ Html.text (String.fromChar char) ]
         )
 
 
