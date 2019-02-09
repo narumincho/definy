@@ -72,7 +72,10 @@ port loaded : () -> Cmd msg
 
 
 port setTextAreaValue : String -> Cmd msg
+
+
 port focusEditTextAea : () -> Cmd msg
+
 
 {-| 全体の入力を表すメッセージ
 -}
@@ -148,7 +151,7 @@ initModel =
     Model
         { project = Project.init
         , focus =
-            FocusTreePanel
+            FocusEditorGroupPanel
         , subMode =
             SubModeNone
         , treePanelModel =
@@ -607,7 +610,6 @@ editorPanelEmitToMsg emit =
             ( [ ChangeExpr { expr = expr, index = index, ref = ref } ]
             , []
             )
-
 
 
 {-| プロジェクトを取得する

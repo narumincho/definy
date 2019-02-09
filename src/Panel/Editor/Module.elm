@@ -104,7 +104,7 @@ isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
 isFocusDefaultUi (Model { active }) =
     case active of
         ActiveDescription ActiveDescriptionText ->
-            Just Panel.DefaultUi.TextArea
+            Just Panel.DefaultUi.MultiLineTextField
 
         _ ->
             Nothing
@@ -145,7 +145,7 @@ update msg project (Model rec) =
                     [ EmitFocusEditTextAea ]
 
                 ActivePartDefList _ ->
-                    []
+                    [ EmitFocusEditTextAea ]
             )
 
         SelectLeft ->
@@ -218,12 +218,8 @@ selectLeft : ModuleWithCache.Module -> Active -> Active
 selectLeft module_ active =
     case active of
         ActiveNone ->
-            -- 何も選択していないところから何も選択していないところへ
-            ActiveNone
-
-        ActiveDescription _ ->
-            -- 概要欄から概要欄へ
-            ActiveDescription ActiveDescriptionSelf
+            -- 何も選択していないところから定義リストへ
+            ActivePartDefList ActivePartDefListSelf
 
         ActivePartDefList ActivePartDefListSelf ->
             -- 定義リストから概要欄へ
@@ -265,6 +261,9 @@ selectLeft module_ active =
             -- 項から前の演算子へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp (termIndex - 1)) ))
 
+        _ ->
+            active
+
 
 {-| 選択を右へ移動して、選択する対象を変える
 -}
@@ -272,20 +271,16 @@ selectRight : ModuleWithCache.Module -> Active -> Active
 selectRight module_ active =
     case active of
         ActiveNone ->
-            -- 何も選択していないところから何も選択していないところへ
-            ActiveNone
+            -- 何も選択していないところから概要欄へ
+            ActiveDescription ActiveDescriptionSelf
 
-        ActiveDescription _ ->
+        ActiveDescription ActiveDescriptionSelf ->
             -- 概要欄から定義リストへ
             ActivePartDefList ActivePartDefListSelf
 
-        ActivePartDefList ActivePartDefListSelf ->
-            -- 定義リストから先頭の定義へ
-            ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf ))
-
         ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
             -- 定義から次の定義へ
-            ActivePartDefList (ActivePartDef ( index + 1, ActivePartDefSelf ))
+            ActivePartDefList (ActivePartDef ( min (ModuleWithCache.getDefNum module_ - 1) (index + 1), ActivePartDefSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
             -- 名前から型へ
@@ -311,6 +306,9 @@ selectRight module_ active =
             -- 演算子から次の項へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm (opIndex + 1)) ))
 
+        _ ->
+            active
+
 
 {-| 選択を上へ移動して、選択する対象を変える
 -}
@@ -318,8 +316,8 @@ selectUp : ModuleWithCache.Module -> Active -> Active
 selectUp module_ active =
     case active of
         ActiveNone ->
-            -- 何も選択していないところから何も選択していないところへ
-            ActiveNone
+            -- 何も選択していないところから定義リストへ
+            ActivePartDefList ActivePartDefListSelf
 
         ActiveDescription _ ->
             -- 概要欄から概要欄へ
@@ -360,20 +358,16 @@ selectDown : ModuleWithCache.Module -> Active -> Active
 selectDown module_ active =
     case active of
         ActiveNone ->
-            -- 何も選択していないところから何も選択していないところへ
-            ActiveNone
+            -- 何も選択していないところから概要へ
+            ActiveDescription ActiveDescriptionSelf
 
         ActiveDescription _ ->
             -- 概要欄から定義リストへ
             ActivePartDefList ActivePartDefListSelf
 
-        ActivePartDefList ActivePartDefListSelf ->
-            -- 定義リストから先頭の定義へ
-            ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf ))
-
         ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
             -- 定義から次の定義へ
-            ActivePartDefList (ActivePartDef ( index + 1, ActivePartDefSelf ))
+            ActivePartDefList (ActivePartDef ( min (ModuleWithCache.getDefNum module_ - 1) (index + 1), ActivePartDefSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
             -- 名前から式へ
@@ -391,6 +385,9 @@ selectDown module_ active =
             -- 式の中身から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
 
+        _ ->
+            active
+
 
 {-| 選択を選択していたものからその子供の先頭へ移動する
 -}
@@ -398,8 +395,8 @@ selectFirstChild : ModuleWithCache.Module -> Active -> Active
 selectFirstChild module_ active =
     case active of
         ActiveNone ->
-            -- 何も選択していないところから何も選択していないところへ
-            ActiveNone
+            -- 何も選択していないところから概要へ
+            ActiveDescription ActiveDescriptionSelf
 
         ActiveDescription ActiveDescriptionSelf ->
             -- 概要欄から概要欄のテキスト入力へ
@@ -425,7 +422,27 @@ selectFirstChild module_ active =
 -}
 selectLastChild : ModuleWithCache.Module -> Active -> Active
 selectLastChild module_ active =
-    active
+    case active of
+        ActiveNone ->
+            -- 何も選択していないところから定義リストへ
+            ActivePartDefList ActivePartDefListSelf
+
+        ActiveDescription ActiveDescriptionSelf ->
+            -- 概要欄から概要欄のテキスト入力へ
+            ActiveDescription ActiveDescriptionText
+
+        ActivePartDefList ActivePartDefListSelf ->
+            -- 定義リストから最後の定義リストへ
+            ActivePartDefList
+                (ActivePartDef ( ModuleWithCache.getDefNum module_ - 1, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
+            -- 定義から式へ
+            ActivePartDefList
+                (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+
+        _ ->
+            active
 
 
 selectParent : ModuleWithCache.Module -> Active -> Active
@@ -623,9 +640,14 @@ descriptionViewTextArea description isFocus descriptionActiveMaybe =
          ]
             ++ (case descriptionActiveMaybe of
                     Just ActiveDescriptionSelf ->
-                        [ Html.Events.stopPropagationOn "click" focusEventJsonDecoder
-                        , Html.Attributes.property "value" (Json.Encode.string description)
+                        [ Html.Attributes.property "value" (Json.Encode.string description)
                         ]
+                            ++ (if isFocus then
+                                    [ Html.Events.stopPropagationOn "click" focusEventJsonDecoder ]
+
+                                else
+                                    [ Html.Events.onClick (ActiveTo (ActiveDescription ActiveDescriptionText)) ]
+                               )
 
                     Just ActiveDescriptionText ->
                         [ Html.Events.onInput Input
@@ -647,7 +669,7 @@ descriptionViewTextArea description isFocus descriptionActiveMaybe =
                             ]
 
                         else
-                            [ Html.Events.stopPropagationOn "click" focusEventJsonDecoder
+                            [ Html.Events.onClick (ActiveTo (ActiveDescription ActiveDescriptionText))
                             , Html.Attributes.property "value" (Json.Encode.string description)
                             ]
                )
@@ -681,8 +703,8 @@ partDefinitionsView isEditorItemFocus partDefListActiveMaybe defList =
                         [ Html.Events.onClick (ActiveTo (ActivePartDefList ActivePartDefListSelf)) ]
                )
         )
-        [ partDefinitionsViewTitle
-        , partDefListView defList
+        ([ partDefinitionsViewTitle
+         , partDefListView defList
             (case partDefListActiveMaybe of
                 Just (ActivePartDef partDefActiveWithIndex) ->
                     Just partDefActiveWithIndex
@@ -690,7 +712,20 @@ partDefinitionsView isEditorItemFocus partDefListActiveMaybe defList =
                 _ ->
                     Nothing
             )
-        ]
+         ]
+            ++ (case partDefListActiveMaybe of
+                    Just _ ->
+                        [ Html.textarea
+                            [ Html.Attributes.class "partDefEditor-hideTextArea"
+                            , Html.Attributes.id "edit"
+                            ]
+                            []
+                        ]
+
+                    Nothing ->
+                        []
+               )
+        )
 
 
 partDefinitionsViewTitle : Html.Html Msg
@@ -740,7 +775,81 @@ partDefView index def partDefActiveMaybe =
                 )
             )
         ]
-        [ Html.text (Def.toString def) ]
+        [ partDefViewNameAndType (Def.getName def) (Def.getType def) partDefActiveMaybe
+        , partDefViewExpr (Def.getExpr def)
+            (case partDefActiveMaybe of
+                Just (ActivePartDefExpr partDefExprActive) ->
+                    Just partDefExprActive
+
+                _ ->
+                    Nothing
+            )
+        ]
+
+
+partDefViewNameAndType : Name.Name -> Type.Type -> Maybe PartDefActive -> Html.Html Msg
+partDefViewNameAndType name type_ partDefActiveMaybe =
+    Html.div
+        [ subClass "partDefEditor-nameAndType" ]
+        [ partDefViewName name (partDefActiveMaybe == Just ActivePartDefName)
+        , Html.text ":"
+        , partDefViewType type_ (partDefActiveMaybe == Just ActivePartDefType)
+        ]
+
+
+partDefViewName : Name.Name -> Bool -> Html.Html Msg
+partDefViewName name isActive =
+    case Name.toString name of
+        Just nameString ->
+            Html.div
+                [ subClassList
+                    [ ( "partDefEditor-name", True )
+                    , ( "partDefEditor-element-active", isActive )
+                    ]
+                ]
+                [ Html.text nameString ]
+
+        Nothing ->
+            Html.div
+                [ subClassList
+                    [ ( "partDefEditor-noName", True )
+                    , ( "partDefEditor-element-active", isActive )
+                    ]
+                ]
+                [ Html.text "NO NAME" ]
+
+
+partDefViewType : Type.Type -> Bool -> Html.Html Msg
+partDefViewType type_ isActive =
+    case Type.toString type_ of
+        Just nameString ->
+            Html.div
+                [ subClassList
+                    [ ( "partDefEditor-type", True )
+                    , ( "partDefEditor-element-active", isActive )
+                    ]
+                ]
+                [ Html.text nameString ]
+
+        Nothing ->
+            Html.div
+                [ subClassList
+                    [ ( "partDefEditor-noType", True )
+                    , ( "partDefEditor-element-active", isActive )
+                    ]
+                ]
+                [ Html.text "NO TYPE" ]
+
+
+partDefViewExpr : Expr.Expr -> Maybe PartDefExprActive -> Html.Html Msg
+partDefViewExpr expr partDefExprActiveMaybe =
+    Html.div
+        [ subClassList
+            [ ( "partDefEditor-expr", True )
+            , ( "partDefEditor-element-active", partDefExprActiveMaybe == Just ActivePartDefExprSelf )
+            ]
+        ]
+        [ Html.text ("=" ++ Expr.toString expr) ]
 
 
 exprViewOpAndTermNormal : Int -> Op.Operator -> Term.Term -> List (Html.Html PartDefExprActive)

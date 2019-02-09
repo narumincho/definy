@@ -26,15 +26,15 @@ keyDown keyMaybe model =
 
                 [] ->
                     case Model.isFocusDefaultUi model of
-                        Just Panel.DefaultUi.TextArea ->
-                            if textAreaReservedKey key then
+                        Just Panel.DefaultUi.MultiLineTextField ->
+                            if multiLineTextFieldReservedKey key then
                                 []
 
                             else
                                 keyDownEachPanel key model
 
-                        Just Panel.DefaultUi.TextField ->
-                            if textFieldReservedKey key then
+                        Just Panel.DefaultUi.SingleLineTextField ->
+                            if singleLineTextFieldReservedKey key then
                                 []
 
                             else
@@ -59,10 +59,7 @@ keyDownEachPanel key model =
                 |> List.map Model.EditorPanelMsg
 
 
-{-|
-
-    Definyによって予約されたキー。どのパネルにフォーカスが当たっていてもこれを優先する
-
+{-| Definyによって予約されたキー。どのパネルにフォーカスが当たっていてもこれを優先する
 -}
 editorReservedKey : Bool -> Key.Key -> List Model.Msg
 editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
@@ -126,8 +123,8 @@ editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
 Model.isFocusTextAreaがTrueになったときにまずこれを優先する
 
 -}
-textAreaReservedKey : Key.Key -> Bool
-textAreaReservedKey { key, ctrl, alt, shift } =
+multiLineTextFieldReservedKey : Key.Key -> Bool
+multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
     case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
@@ -160,8 +157,8 @@ textAreaReservedKey { key, ctrl, alt, shift } =
 1行の入力を想定している
 予約さるであろう動作を邪魔させないためにある。
 -}
-textFieldReservedKey : Key.Key -> Bool
-textFieldReservedKey { key, ctrl, alt, shift } =
+singleLineTextFieldReservedKey : Key.Key -> Bool
+singleLineTextFieldReservedKey { key, ctrl, alt, shift } =
     case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
@@ -288,6 +285,7 @@ editorGroupPanelKeyDown { key, ctrl, shift, alt } =
                             Panel.Editor.Module.SelectFirstChild
                         )
                     ]
+
                 Key.Enter ->
                     [ Panel.EditorGroup.EditorItemMsgToActive
                         (Panel.EditorGroup.ModuleEditorMsg

@@ -4831,7 +4831,7 @@ var author$project$Model$loaded = _Platform_outgoingPort(
 var author$project$Model$initCmd = function (model) {
 	return author$project$Model$loaded(0);
 };
-var author$project$Model$FocusTreePanel = 0;
+var author$project$Model$FocusEditorGroupPanel = 1;
 var author$project$Model$Model = elm$core$Basics$identity;
 var author$project$Model$SubModeNone = {$: 0};
 var author$project$Panel$Editor$Module$ActiveNone = {$: 0};
@@ -5073,6 +5073,8 @@ var author$project$Project$Label$o3 = author$project$Project$Label$Digits(3);
 var author$project$Project$Label$oT = author$project$Project$Label$Capital(19);
 var author$project$Project$Label$B = 1;
 var author$project$Project$Label$ob = author$project$Project$Label$Small(1);
+var author$project$Project$Label$D = 3;
+var author$project$Project$Label$od = author$project$Project$Label$Small(3);
 var author$project$Project$Label$oi = author$project$Project$Label$Small(8);
 var author$project$Project$Label$N = 13;
 var author$project$Project$Label$on = author$project$Project$Label$Small(13);
@@ -5081,8 +5083,6 @@ var author$project$Project$Label$W = 22;
 var author$project$Project$Label$ow = author$project$Project$Label$Small(22);
 var author$project$Project$Source$Source = elm$core$Basics$identity;
 var author$project$Project$Label$oM = author$project$Project$Label$Capital(12);
-var author$project$Project$Label$D = 3;
-var author$project$Project$Label$od = author$project$Project$Label$Small(3);
 var author$project$Project$Source$sampleModuleName = A2(
 	author$project$Project$Label$make,
 	author$project$Project$Label$hs,
@@ -5297,6 +5297,19 @@ var author$project$Project$Source$init = {
 										[author$project$Project$Label$on, author$project$Project$Label$oe, author$project$Project$Label$oP, author$project$Project$Label$ol, author$project$Project$Label$ou, author$project$Project$Label$os, author$project$Project$Label$oT, author$project$Project$Label$ow, author$project$Project$Label$oo]))),
 							a$: author$project$Project$Source$Module$Def$Type$int
 						}),
+					elm$core$Maybe$Nothing),
+					_Utils_Tuple2(
+					author$project$Project$Source$Module$Def$make(
+						{
+							aK: author$project$Project$Source$Module$Def$Expr$empty,
+							aO: author$project$Project$Source$Module$Def$Name$fromLabel(
+								A2(
+									author$project$Project$Label$make,
+									author$project$Project$Label$ha,
+									_List_fromArray(
+										[author$project$Project$Label$od, author$project$Project$Label$od]))),
+							a$: author$project$Project$Source$Module$Def$Type$int
+						}),
 					elm$core$Maybe$Nothing)
 				]),
 			aO: A2(
@@ -5331,7 +5344,7 @@ var author$project$Project$Source$init = {
 var author$project$Project$init = {a3: author$project$Project$projectAuthor, bF: author$project$Project$Config$init, bG: author$project$Project$Document$init, aO: author$project$Project$projectName, aW: author$project$Project$Source$init};
 var author$project$Model$initModel = {
 	aJ: author$project$Panel$EditorGroup$initModel,
-	aw: 0,
+	aw: 1,
 	aT: author$project$Project$init,
 	K: author$project$Model$SubModeNone,
 	aZ: author$project$Panel$Tree$initModel,
@@ -7694,10 +7707,10 @@ var author$project$Main$subscriptions = function (model) {
 				]) : _List_Nil));
 };
 var author$project$Model$CloseCommandPalette = {$: 12};
-var author$project$Model$FocusEditorGroupPanel = 1;
 var author$project$Model$FocusTo = function (a) {
 	return {$: 6, a: a};
 };
+var author$project$Model$FocusTreePanel = 0;
 var author$project$Model$OpenCommandPalette = {$: 11};
 var author$project$Model$TreePanelMsg = function (a) {
 	return {$: 8, a: a};
@@ -7919,7 +7932,7 @@ var author$project$KeyConfig$keyDownEachPanel = F2(
 				author$project$KeyConfig$editorGroupPanelKeyDown(key));
 		}
 	});
-var author$project$KeyConfig$textAreaReservedKey = function (_n0) {
+var author$project$KeyConfig$multiLineTextFieldReservedKey = function (_n0) {
 	var key = _n0.be;
 	var ctrl = _n0.a6;
 	var alt = _n0.a2;
@@ -7946,7 +7959,7 @@ var author$project$KeyConfig$textAreaReservedKey = function (_n0) {
 		return false;
 	}
 };
-var author$project$KeyConfig$textFieldReservedKey = function (_n0) {
+var author$project$KeyConfig$singleLineTextFieldReservedKey = function (_n0) {
 	var key = _n0.be;
 	var ctrl = _n0.a6;
 	var alt = _n0.a2;
@@ -7971,7 +7984,7 @@ var author$project$Model$getEditorGroupPanelModel = function (_n0) {
 	var editorGroupPanelModel = _n0.aJ;
 	return editorGroupPanelModel;
 };
-var author$project$Panel$DefaultUi$TextArea = 0;
+var author$project$Panel$DefaultUi$MultiLineTextField = 0;
 var author$project$Panel$Editor$Module$isFocusDefaultUi = function (_n0) {
 	var active = _n0.p;
 	if ((active.$ === 1) && (active.a === 1)) {
@@ -8087,10 +8100,10 @@ var author$project$KeyConfig$keyDown = F2(
 				if (!_n2.$) {
 					if (!_n2.a) {
 						var _n3 = _n2.a;
-						return author$project$KeyConfig$textAreaReservedKey(key) ? _List_Nil : A2(author$project$KeyConfig$keyDownEachPanel, key, model);
+						return author$project$KeyConfig$multiLineTextFieldReservedKey(key) ? _List_Nil : A2(author$project$KeyConfig$keyDownEachPanel, key, model);
 					} else {
 						var _n4 = _n2.a;
-						return author$project$KeyConfig$textFieldReservedKey(key) ? _List_Nil : A2(author$project$KeyConfig$keyDownEachPanel, key, model);
+						return author$project$KeyConfig$singleLineTextFieldReservedKey(key) ? _List_Nil : A2(author$project$KeyConfig$keyDownEachPanel, key, model);
 					}
 				} else {
 					return A2(author$project$KeyConfig$keyDownEachPanel, key, model);
@@ -8612,41 +8625,46 @@ var author$project$Panel$Editor$Module$ActivePartDefList = function (a) {
 };
 var author$project$Panel$Editor$Module$ActivePartDefListSelf = {$: 0};
 var author$project$Panel$Editor$Module$ActivePartDefSelf = {$: 0};
+var author$project$Project$Source$ModuleWithCache$getDefNum = A2(elm$core$Basics$composeR, author$project$Project$Source$ModuleWithCache$getDefWithCacheList, elm$core$List$length);
+var elm$core$Basics$min = F2(
+	function (x, y) {
+		return (_Utils_cmp(x, y) < 0) ? x : y;
+	});
 var author$project$Panel$Editor$Module$selectDown = F2(
 	function (module_, active) {
 		switch (active.$) {
 			case 0:
-				return author$project$Panel$Editor$Module$ActiveNone;
+				return author$project$Panel$Editor$Module$ActiveDescription(0);
 			case 1:
 				return author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf);
 			default:
-				if (!active.a.$) {
-					var _n1 = active.a;
-					return author$project$Panel$Editor$Module$ActivePartDefList(
-						author$project$Panel$Editor$Module$ActivePartDef(
-							_Utils_Tuple2(0, author$project$Panel$Editor$Module$ActivePartDefSelf)));
-				} else {
+				if (active.a.$ === 1) {
 					switch (active.a.a.b.$) {
 						case 0:
-							var _n2 = active.a.a;
-							var index = _n2.a;
-							var _n3 = _n2.b;
+							var _n1 = active.a.a;
+							var index = _n1.a;
+							var _n2 = _n1.b;
 							return author$project$Panel$Editor$Module$ActivePartDefList(
 								author$project$Panel$Editor$Module$ActivePartDef(
-									_Utils_Tuple2(index + 1, author$project$Panel$Editor$Module$ActivePartDefSelf)));
+									_Utils_Tuple2(
+										A2(
+											elm$core$Basics$min,
+											author$project$Project$Source$ModuleWithCache$getDefNum(module_) - 1,
+											index + 1),
+										author$project$Panel$Editor$Module$ActivePartDefSelf)));
 						case 1:
-							var _n4 = active.a.a;
-							var index = _n4.a;
-							var _n5 = _n4.b;
+							var _n3 = active.a.a;
+							var index = _n3.a;
+							var _n4 = _n3.b;
 							return author$project$Panel$Editor$Module$ActivePartDefList(
 								author$project$Panel$Editor$Module$ActivePartDef(
 									_Utils_Tuple2(
 										index,
 										author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$ActivePartDefExprSelf))));
 						case 2:
-							var _n6 = active.a.a;
-							var index = _n6.a;
-							var _n7 = _n6.b;
+							var _n5 = active.a.a;
+							var index = _n5.a;
+							var _n6 = _n5.b;
 							return author$project$Panel$Editor$Module$ActivePartDefList(
 								author$project$Panel$Editor$Module$ActivePartDef(
 									_Utils_Tuple2(
@@ -8654,15 +8672,15 @@ var author$project$Panel$Editor$Module$selectDown = F2(
 										author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$ActivePartDefExprSelf))));
 						default:
 							if (!active.a.a.b.a.$) {
-								var _n8 = active.a.a;
-								var index = _n8.a;
-								var _n9 = _n8.b.a;
+								var _n7 = active.a.a;
+								var index = _n7.a;
+								var _n8 = _n7.b.a;
 								return author$project$Panel$Editor$Module$ActivePartDefList(
 									author$project$Panel$Editor$Module$ActivePartDef(
 										_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefSelf)));
 							} else {
-								var _n10 = active.a.a;
-								var index = _n10.a;
+								var _n9 = active.a.a;
+								var index = _n9.a;
 								return author$project$Panel$Editor$Module$ActivePartDefList(
 									author$project$Panel$Editor$Module$ActivePartDef(
 										_Utils_Tuple2(
@@ -8670,6 +8688,8 @@ var author$project$Panel$Editor$Module$selectDown = F2(
 											author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$ActivePartDefExprSelf))));
 							}
 					}
+				} else {
+					return active;
 				}
 		}
 	});
@@ -8684,7 +8704,7 @@ var author$project$Panel$Editor$Module$selectFirstChild = F2(
 		while (true) {
 			switch (active.$) {
 				case 0:
-					return author$project$Panel$Editor$Module$ActiveNone;
+					return author$project$Panel$Editor$Module$ActiveDescription(0);
 				case 1:
 					if (!active.a) {
 						var _n1 = active.a;
@@ -8731,6 +8751,42 @@ var author$project$Panel$Editor$Module$selectFirstChild = F2(
 	});
 var author$project$Panel$Editor$Module$selectLastChild = F2(
 	function (module_, active) {
+		_n0$4:
+		while (true) {
+			switch (active.$) {
+				case 0:
+					return author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf);
+				case 1:
+					if (!active.a) {
+						var _n1 = active.a;
+						return author$project$Panel$Editor$Module$ActiveDescription(1);
+					} else {
+						break _n0$4;
+					}
+				default:
+					if (!active.a.$) {
+						var _n2 = active.a;
+						return author$project$Panel$Editor$Module$ActivePartDefList(
+							author$project$Panel$Editor$Module$ActivePartDef(
+								_Utils_Tuple2(
+									author$project$Project$Source$ModuleWithCache$getDefNum(module_) - 1,
+									author$project$Panel$Editor$Module$ActivePartDefSelf)));
+					} else {
+						if (!active.a.a.b.$) {
+							var _n3 = active.a.a;
+							var index = _n3.a;
+							var _n4 = _n3.b;
+							return author$project$Panel$Editor$Module$ActivePartDefList(
+								author$project$Panel$Editor$Module$ActivePartDef(
+									_Utils_Tuple2(
+										index,
+										author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$ActivePartDefExprSelf))));
+						} else {
+							break _n0$4;
+						}
+					}
+			}
+		}
 		return active;
 	});
 var author$project$Panel$Editor$Module$ActiveExprHead = {$: 1};
@@ -8742,10 +8798,8 @@ var author$project$Panel$Editor$Module$selectLeft = F2(
 	function (module_, active) {
 		switch (active.$) {
 			case 0:
-				return author$project$Panel$Editor$Module$ActiveNone;
-			case 1:
-				return author$project$Panel$Editor$Module$ActiveDescription(0);
-			default:
+				return author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf);
+			case 2:
 				if (!active.a.$) {
 					var _n1 = active.a;
 					return author$project$Panel$Editor$Module$ActiveDescription(0);
@@ -8829,6 +8883,8 @@ var author$project$Panel$Editor$Module$selectLeft = F2(
 							}
 					}
 				}
+			default:
+				return active;
 		}
 	});
 var author$project$Panel$Editor$Module$selectParent = F2(
@@ -8837,91 +8893,102 @@ var author$project$Panel$Editor$Module$selectParent = F2(
 	});
 var author$project$Panel$Editor$Module$selectRight = F2(
 	function (module_, active) {
-		switch (active.$) {
-			case 0:
-				return author$project$Panel$Editor$Module$ActiveNone;
-			case 1:
-				return author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf);
-			default:
-				if (!active.a.$) {
-					var _n1 = active.a;
-					return author$project$Panel$Editor$Module$ActivePartDefList(
-						author$project$Panel$Editor$Module$ActivePartDef(
-							_Utils_Tuple2(0, author$project$Panel$Editor$Module$ActivePartDefSelf)));
-				} else {
-					switch (active.a.a.b.$) {
-						case 0:
-							var _n2 = active.a.a;
-							var index = _n2.a;
-							var _n3 = _n2.b;
-							return author$project$Panel$Editor$Module$ActivePartDefList(
-								author$project$Panel$Editor$Module$ActivePartDef(
-									_Utils_Tuple2(index + 1, author$project$Panel$Editor$Module$ActivePartDefSelf)));
-						case 1:
-							var _n4 = active.a.a;
-							var index = _n4.a;
-							var _n5 = _n4.b;
-							return author$project$Panel$Editor$Module$ActivePartDefList(
-								author$project$Panel$Editor$Module$ActivePartDef(
-									_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefType)));
-						case 2:
-							var _n6 = active.a.a;
-							var index = _n6.a;
-							var _n7 = _n6.b;
-							return author$project$Panel$Editor$Module$ActivePartDefList(
-								author$project$Panel$Editor$Module$ActivePartDef(
-									_Utils_Tuple2(
-										index,
-										author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$ActivePartDefExprSelf))));
-						default:
-							switch (active.a.a.b.a.$) {
-								case 0:
-									var _n8 = active.a.a;
-									var index = _n8.a;
-									var _n9 = _n8.b.a;
-									return author$project$Panel$Editor$Module$ActivePartDefList(
-										author$project$Panel$Editor$Module$ActivePartDef(
-											_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefSelf)));
-								case 1:
-									var _n10 = active.a.a;
-									var index = _n10.a;
-									var _n11 = _n10.b.a;
-									return author$project$Panel$Editor$Module$ActivePartDefList(
-										author$project$Panel$Editor$Module$ActivePartDef(
-											_Utils_Tuple2(
-												index,
-												author$project$Panel$Editor$Module$ActivePartDefExpr(
-													author$project$Panel$Editor$Module$ActiveExprTerm(0)))));
-								case 2:
-									var _n12 = active.a.a;
-									var index = _n12.a;
-									var termIndex = _n12.b.a.a;
-									return author$project$Panel$Editor$Module$ActivePartDefList(
-										author$project$Panel$Editor$Module$ActivePartDef(
-											_Utils_Tuple2(
-												index,
-												author$project$Panel$Editor$Module$ActivePartDefExpr(
-													author$project$Panel$Editor$Module$ActiveExprOp(termIndex)))));
-								default:
-									var _n13 = active.a.a;
-									var index = _n13.a;
-									var opIndex = _n13.b.a.a;
-									return author$project$Panel$Editor$Module$ActivePartDefList(
-										author$project$Panel$Editor$Module$ActivePartDef(
-											_Utils_Tuple2(
-												index,
-												author$project$Panel$Editor$Module$ActivePartDefExpr(
-													author$project$Panel$Editor$Module$ActiveExprTerm(opIndex + 1)))));
-							}
+		_n0$9:
+		while (true) {
+			switch (active.$) {
+				case 0:
+					return author$project$Panel$Editor$Module$ActiveDescription(0);
+				case 1:
+					if (!active.a) {
+						var _n1 = active.a;
+						return author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf);
+					} else {
+						break _n0$9;
 					}
-				}
+				default:
+					if (active.a.$ === 1) {
+						switch (active.a.a.b.$) {
+							case 0:
+								var _n2 = active.a.a;
+								var index = _n2.a;
+								var _n3 = _n2.b;
+								return author$project$Panel$Editor$Module$ActivePartDefList(
+									author$project$Panel$Editor$Module$ActivePartDef(
+										_Utils_Tuple2(
+											A2(
+												elm$core$Basics$min,
+												author$project$Project$Source$ModuleWithCache$getDefNum(module_) - 1,
+												index + 1),
+											author$project$Panel$Editor$Module$ActivePartDefSelf)));
+							case 1:
+								var _n4 = active.a.a;
+								var index = _n4.a;
+								var _n5 = _n4.b;
+								return author$project$Panel$Editor$Module$ActivePartDefList(
+									author$project$Panel$Editor$Module$ActivePartDef(
+										_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefType)));
+							case 2:
+								var _n6 = active.a.a;
+								var index = _n6.a;
+								var _n7 = _n6.b;
+								return author$project$Panel$Editor$Module$ActivePartDefList(
+									author$project$Panel$Editor$Module$ActivePartDef(
+										_Utils_Tuple2(
+											index,
+											author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$ActivePartDefExprSelf))));
+							default:
+								switch (active.a.a.b.a.$) {
+									case 0:
+										var _n8 = active.a.a;
+										var index = _n8.a;
+										var _n9 = _n8.b.a;
+										return author$project$Panel$Editor$Module$ActivePartDefList(
+											author$project$Panel$Editor$Module$ActivePartDef(
+												_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefSelf)));
+									case 1:
+										var _n10 = active.a.a;
+										var index = _n10.a;
+										var _n11 = _n10.b.a;
+										return author$project$Panel$Editor$Module$ActivePartDefList(
+											author$project$Panel$Editor$Module$ActivePartDef(
+												_Utils_Tuple2(
+													index,
+													author$project$Panel$Editor$Module$ActivePartDefExpr(
+														author$project$Panel$Editor$Module$ActiveExprTerm(0)))));
+									case 2:
+										var _n12 = active.a.a;
+										var index = _n12.a;
+										var termIndex = _n12.b.a.a;
+										return author$project$Panel$Editor$Module$ActivePartDefList(
+											author$project$Panel$Editor$Module$ActivePartDef(
+												_Utils_Tuple2(
+													index,
+													author$project$Panel$Editor$Module$ActivePartDefExpr(
+														author$project$Panel$Editor$Module$ActiveExprOp(termIndex)))));
+									default:
+										var _n13 = active.a.a;
+										var index = _n13.a;
+										var opIndex = _n13.b.a.a;
+										return author$project$Panel$Editor$Module$ActivePartDefList(
+											author$project$Panel$Editor$Module$ActivePartDef(
+												_Utils_Tuple2(
+													index,
+													author$project$Panel$Editor$Module$ActivePartDefExpr(
+														author$project$Panel$Editor$Module$ActiveExprTerm(opIndex + 1)))));
+								}
+						}
+					} else {
+						break _n0$9;
+					}
+			}
 		}
+		return active;
 	});
 var author$project$Panel$Editor$Module$selectUp = F2(
 	function (module_, active) {
 		switch (active.$) {
 			case 0:
-				return author$project$Panel$Editor$Module$ActiveNone;
+				return author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf);
 			case 1:
 				return author$project$Panel$Editor$Module$ActiveDescription(0);
 			default:
@@ -9008,7 +9075,8 @@ var author$project$Panel$Editor$Module$update = F3(
 											[author$project$Panel$Editor$Module$EmitFocusEditTextAea]);
 									}
 								default:
-									return _List_Nil;
+									return _List_fromArray(
+										[author$project$Panel$Editor$Module$EmitFocusEditTextAea]);
 							}
 						}());
 				case 1:
@@ -10010,10 +10078,6 @@ var author$project$Model$setTreePanelWidth = F2(
 		return _Utils_update(
 			rec,
 			{a_: width});
-	});
-var elm$core$Basics$min = F2(
-	function (x, y) {
-		return (_Utils_cmp(x, y) < 0) ? x : y;
 	});
 var author$project$Model$treePanelResizeFromGutter = F2(
 	function (maxLimit, x) {
@@ -14460,14 +14524,23 @@ var author$project$Panel$Editor$Module$descriptionViewTextArea = F3(
 					if (!descriptionActiveMaybe.$) {
 						if (!descriptionActiveMaybe.a) {
 							var _n1 = descriptionActiveMaybe.a;
-							return _List_fromArray(
-								[
-									A2(elm$html$Html$Events$stopPropagationOn, 'click', author$project$Panel$Editor$Module$focusEventJsonDecoder),
-									A2(
-									elm$html$Html$Attributes$property,
-									'value',
-									elm$json$Json$Encode$string(description))
-								]);
+							return _Utils_ap(
+								_List_fromArray(
+									[
+										A2(
+										elm$html$Html$Attributes$property,
+										'value',
+										elm$json$Json$Encode$string(description))
+									]),
+								isFocus ? _List_fromArray(
+									[
+										A2(elm$html$Html$Events$stopPropagationOn, 'click', author$project$Panel$Editor$Module$focusEventJsonDecoder)
+									]) : _List_fromArray(
+									[
+										elm$html$Html$Events$onClick(
+										author$project$Panel$Editor$Module$ActiveTo(
+											author$project$Panel$Editor$Module$ActiveDescription(1)))
+									]));
 						} else {
 							var _n2 = descriptionActiveMaybe.a;
 							return _Utils_ap(
@@ -14496,7 +14569,9 @@ var author$project$Panel$Editor$Module$descriptionViewTextArea = F3(
 								elm$json$Json$Encode$string(description))
 							]) : _List_fromArray(
 							[
-								A2(elm$html$Html$Events$stopPropagationOn, 'click', author$project$Panel$Editor$Module$focusEventJsonDecoder),
+								elm$html$Html$Events$onClick(
+								author$project$Panel$Editor$Module$ActiveTo(
+									author$project$Panel$Editor$Module$ActiveDescription(1))),
 								A2(
 								elm$html$Html$Attributes$property,
 								'value',
@@ -14712,6 +14787,29 @@ var author$project$Project$Source$Module$Def$Expr$toString = function (_n0) {
 				},
 				others)));
 };
+var author$project$Panel$Editor$Module$partDefViewExpr = F2(
+	function (expr, partDefExprActiveMaybe) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClassList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('partDefEditor-expr', true),
+							_Utils_Tuple2(
+							'partDefEditor-element-active',
+							_Utils_eq(
+								partDefExprActiveMaybe,
+								elm$core$Maybe$Just(author$project$Panel$Editor$Module$ActivePartDefExprSelf)))
+						]))
+				]),
+			_List_fromArray(
+				[
+					elm$html$Html$text(
+					'=' + author$project$Project$Source$Module$Def$Expr$toString(expr))
+				]));
+	});
 var author$project$Project$Source$Module$Def$Name$toString = function (name) {
 	if (!name.$) {
 		return elm$core$Maybe$Nothing;
@@ -14721,6 +14819,44 @@ var author$project$Project$Source$Module$Def$Name$toString = function (name) {
 			author$project$Project$Label$toSmallString(l));
 	}
 };
+var author$project$Panel$Editor$Module$partDefViewName = F2(
+	function (name, isActive) {
+		var _n0 = author$project$Project$Source$Module$Def$Name$toString(name);
+		if (!_n0.$) {
+			var nameString = _n0.a;
+			return A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						author$project$Panel$Editor$Module$subClassList(
+						_List_fromArray(
+							[
+								_Utils_Tuple2('partDefEditor-name', true),
+								_Utils_Tuple2('partDefEditor-element-active', isActive)
+							]))
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text(nameString)
+					]));
+		} else {
+			return A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						author$project$Panel$Editor$Module$subClassList(
+						_List_fromArray(
+							[
+								_Utils_Tuple2('partDefEditor-noName', true),
+								_Utils_Tuple2('partDefEditor-element-active', isActive)
+							]))
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text('NO NAME')
+					]));
+		}
+	});
 var author$project$Project$Source$Module$Def$Type$validTypeToLabel = function (validType) {
 	return A2(
 		author$project$Project$Label$make,
@@ -14743,17 +14879,80 @@ var author$project$Project$Source$Module$Def$Type$toString = function (type_) {
 			return elm$core$Maybe$Nothing;
 	}
 };
-var author$project$Project$Source$Module$Def$toString = function (_n0) {
-	var name = _n0.aO;
-	var type_ = _n0.a$;
+var author$project$Panel$Editor$Module$partDefViewType = F2(
+	function (type_, isActive) {
+		var _n0 = author$project$Project$Source$Module$Def$Type$toString(type_);
+		if (!_n0.$) {
+			var nameString = _n0.a;
+			return A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						author$project$Panel$Editor$Module$subClassList(
+						_List_fromArray(
+							[
+								_Utils_Tuple2('partDefEditor-type', true),
+								_Utils_Tuple2('partDefEditor-element-active', isActive)
+							]))
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text(nameString)
+					]));
+		} else {
+			return A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						author$project$Panel$Editor$Module$subClassList(
+						_List_fromArray(
+							[
+								_Utils_Tuple2('partDefEditor-noType', true),
+								_Utils_Tuple2('partDefEditor-element-active', isActive)
+							]))
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text('NO TYPE')
+					]));
+		}
+	});
+var author$project$Panel$Editor$Module$partDefViewNameAndType = F3(
+	function (name, type_, partDefActiveMaybe) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDefEditor-nameAndType')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					author$project$Panel$Editor$Module$partDefViewName,
+					name,
+					_Utils_eq(
+						partDefActiveMaybe,
+						elm$core$Maybe$Just(author$project$Panel$Editor$Module$ActivePartDefName))),
+					elm$html$Html$text(':'),
+					A2(
+					author$project$Panel$Editor$Module$partDefViewType,
+					type_,
+					_Utils_eq(
+						partDefActiveMaybe,
+						elm$core$Maybe$Just(author$project$Panel$Editor$Module$ActivePartDefType)))
+				]));
+	});
+var author$project$Project$Source$Module$Def$getExpr = function (_n0) {
 	var expr = _n0.aK;
-	return A2(
-		elm$core$Maybe$withDefault,
-		'<NO NAME>',
-		author$project$Project$Source$Module$Def$Name$toString(name)) + (':' + (A2(
-		elm$core$Maybe$withDefault,
-		'<NO TYPE>',
-		author$project$Project$Source$Module$Def$Type$toString(type_)) + ('=' + author$project$Project$Source$Module$Def$Expr$toString(expr))));
+	return expr;
+};
+var author$project$Project$Source$Module$Def$getName = function (_n0) {
+	var name = _n0.aO;
+	return name;
+};
+var author$project$Project$Source$Module$Def$getType = function (_n0) {
+	var type_ = _n0.a$;
+	return type_;
 };
 var author$project$Panel$Editor$Module$partDefView = F3(
 	function (index, def, partDefActiveMaybe) {
@@ -14784,8 +14983,22 @@ var author$project$Panel$Editor$Module$partDefView = F3(
 				]),
 			_List_fromArray(
 				[
-					elm$html$Html$text(
-					author$project$Project$Source$Module$Def$toString(def))
+					A3(
+					author$project$Panel$Editor$Module$partDefViewNameAndType,
+					author$project$Project$Source$Module$Def$getName(def),
+					author$project$Project$Source$Module$Def$getType(def),
+					partDefActiveMaybe),
+					A2(
+					author$project$Panel$Editor$Module$partDefViewExpr,
+					author$project$Project$Source$Module$Def$getExpr(def),
+					function () {
+						if ((!partDefActiveMaybe.$) && (partDefActiveMaybe.a.$ === 3)) {
+							var partDefExprActive = partDefActiveMaybe.a.a;
+							return elm$core$Maybe$Just(partDefExprActive);
+						} else {
+							return elm$core$Maybe$Nothing;
+						}
+					}())
 				]));
 	});
 var author$project$Panel$Editor$Module$partDefListView = F2(
@@ -14852,21 +15065,39 @@ var author$project$Panel$Editor$Module$partDefinitionsView = F3(
 							]);
 					}
 				}()),
-			_List_fromArray(
-				[
-					author$project$Panel$Editor$Module$partDefinitionsViewTitle,
-					A2(
-					author$project$Panel$Editor$Module$partDefListView,
-					defList,
-					function () {
-						if ((!partDefListActiveMaybe.$) && (partDefListActiveMaybe.a.$ === 1)) {
-							var partDefActiveWithIndex = partDefListActiveMaybe.a.a;
-							return elm$core$Maybe$Just(partDefActiveWithIndex);
-						} else {
-							return elm$core$Maybe$Nothing;
-						}
-					}())
-				]));
+			_Utils_ap(
+				_List_fromArray(
+					[
+						author$project$Panel$Editor$Module$partDefinitionsViewTitle,
+						A2(
+						author$project$Panel$Editor$Module$partDefListView,
+						defList,
+						function () {
+							if ((!partDefListActiveMaybe.$) && (partDefListActiveMaybe.a.$ === 1)) {
+								var partDefActiveWithIndex = partDefListActiveMaybe.a.a;
+								return elm$core$Maybe$Just(partDefActiveWithIndex);
+							} else {
+								return elm$core$Maybe$Nothing;
+							}
+						}())
+					]),
+				function () {
+					if (!partDefListActiveMaybe.$) {
+						return _List_fromArray(
+							[
+								A2(
+								elm$html$Html$textarea,
+								_List_fromArray(
+									[
+										elm$html$Html$Attributes$class('partDefEditor-hideTextArea'),
+										elm$html$Html$Attributes$id('edit')
+									]),
+								_List_Nil)
+							]);
+					} else {
+						return _List_Nil;
+					}
+				}()));
 	});
 var author$project$Project$Source$ModuleWithCache$getName = function (_n0) {
 	var name = _n0.aO;

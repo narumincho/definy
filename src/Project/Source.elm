@@ -86,6 +86,18 @@ init =
                             }
                       , Nothing
                       )
+                    , ( Def.make
+                            { name =
+                                Name.fromLabel
+                                    (Label.make Label.ha
+                                        [ Label.od, Label.od ]
+                                    )
+                            , type_ = Type.int
+                            , expr =
+                                Expr.empty
+                            }
+                      , Nothing
+                      )
                     ]
                 , readMe = "WebAssemblyでサポートされている32bit符号付き整数を扱えるようになる"
                 }
