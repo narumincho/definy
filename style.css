@@ -540,6 +540,20 @@ img {
     width: 160px;
 }
 
+.moduleEditor-partDefEditor-name-edit-suggestion-item {
+    display: flex;
+    align-items: center;
+    height: 24px;
+}
+
+.moduleEditor-partDefEditor-name-edit-suggestion-item-text {
+    flex-grow: 1;
+}
+
+.moduleEditor-partDefEditor-name-edit-suggestion-keyIcon {
+    height: 20px;
+}
+
 .moduleEditor-partDefEditor-type {
     display: flex;
     align-items: baseline;

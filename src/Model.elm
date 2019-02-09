@@ -41,7 +41,7 @@ port module Model exposing
     , toTreePanelGutterMode
     , treePanelMsgToMsg
     , treePanelUpdate
-    )
+    , shiftMsgListFromMsgQueue, pushMsgListToMsgQueue)
 
 {-| すべての状態を管理する
 -}
@@ -111,6 +111,7 @@ type Model
         , editorGroupPanelModel : Panel.EditorGroup.Model
         , treePanelWidth : Int
         , windowSize : { width : Int, height : Int }
+        , msgQueue : List Msg
         }
 
 
@@ -162,6 +163,7 @@ initModel =
             250
         , windowSize =
             { width = 0, height = 0 }
+        , msgQueue = []
         }
 
 
@@ -753,3 +755,18 @@ addPartDef { ref } =
         (Project.mapSource
             (Project.Source.mapModule ref (Project.Source.ModuleWithCache.addDef Def.empty))
         )
+
+
+pushMsgListToMsgQueue : List Msg -> Model -> Model
+pushMsgListToMsgQueue msgList (Model rec)=
+    Model
+        { rec |
+            msgQueue = rec.msgQueue ++ msgList
+        }
+
+shiftMsgListFromMsgQueue : Model -> (List Msg, Model)
+shiftMsgListFromMsgQueue (Model rec) =
+    (rec.msgQueue
+    , Model
+        { rec | msgQueue = [] }
+    )

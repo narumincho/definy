@@ -32,10 +32,10 @@ update msg model =
                     ( model, Cmd.none )
 
                 concreteMsgList ->
-                    updateFromList concreteMsgList
-                        model
-                        |> Tuple.mapSecond
-                            (\cmd -> Cmd.batch [ preventDefaultBeforeKeyEvent (), cmd ])
+                    Debug.log "CONCREAT NO []"
+                        ( model |> Model.pushMsgListToMsgQueue concreteMsgList
+                        , preventDefaultBeforeKeyEvent ()
+                        )
 
         Model.MouseMove position ->
             ( Model.mouseMove position model
@@ -48,9 +48,11 @@ update msg model =
             )
 
         Model.KeyPrevented ->
-            ( model
-            , Cmd.none
-            )
+            let
+                ( listMsg, newModel ) =
+                    model |> Model.shiftMsgListFromMsgQueue
+            in
+            updateFromList listMsg newModel
 
         Model.ReceiveCompiledData ( index, compileResult ) ->
             ( model

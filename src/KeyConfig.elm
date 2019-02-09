@@ -261,10 +261,6 @@ editorGroupPanelKeyDown { key, ctrl, shift, alt } =
                         (Panel.EditorGroup.ModuleEditorMsg
                             Panel.Editor.Module.SelectParent
                         )
-                    , Panel.EditorGroup.EditorItemMsgToActive
-                        (Panel.EditorGroup.ModuleEditorMsg
-                            Panel.Editor.Module.Confirm
-                        )
                     ]
 
                 _ ->

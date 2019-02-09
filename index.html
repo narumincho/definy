@@ -22,6 +22,7 @@
         });
         /* 直前のキー入力のデフォルト動作を取り消す */
         app.ports.preventDefaultBeforeKeyEvent.subscribe((_) => {
+            console.log("直前のキー入力のデフォルト動作を取り消す", prevKeyEvent);
             prevKeyEvent.preventDefault();
             app.ports.keyPrevented.send(0); // 0 はダミーデータ(送らないとなぜかエラーになる)
         });
@@ -30,7 +31,6 @@
             console.log(`テキストエリア(<textarea id="eidt">)に${e}を設定しようとしている`);
             requestAnimationFrame(() => {
                 const edit = document.getElementById("edit");
-                console.log(e, edit.value);
                 if (edit.value !== e) {
                     edit.value = e;
                 }

@@ -14,6 +14,8 @@ import Html.Attributes
 import Html.Events
 import Json.Decode
 import Json.Encode
+import NSvg
+import Palette.X11
 import Panel.DefaultUi
 import Parser
 import Parser.SimpleChar
@@ -48,7 +50,6 @@ type Msg
     | SelectParent
     | Input String
     | ToEditMode
-    | Confirm
     | ConfirmMultiLineTextField
     | AddPartDef
     | FocusThisEditor
@@ -136,23 +137,13 @@ update msg project (Model rec) =
             project
                 |> Project.getSource
                 |> Project.Source.getModule rec.moduleRef
+
+        _ =
+            Debug.log "module msg=" msg
     in
     case msg of
         ActiveTo active ->
-            ( Model { rec | active = active }
-            , case active of
-                ActiveNone ->
-                    []
-
-                ActiveDescription ActiveDescriptionSelf ->
-                    []
-
-                ActiveDescription ActiveDescriptionText ->
-                    [ EmitFocusEditTextAea ]
-
-                ActivePartDefList _ ->
-                    [ EmitFocusEditTextAea ]
-            )
+            activeTo active (Model rec)
 
         SelectLeft ->
             update (ActiveTo (selectLeft targetModule rec.active)) project (Model rec)
@@ -183,9 +174,6 @@ update msg project (Model rec) =
             , []
             )
 
-        Confirm ->
-            confirm (Model rec)
-
         ConfirmMultiLineTextField ->
             update (ActiveTo (confirmMultiLineTextField rec.active)) project (Model rec)
 
@@ -212,6 +200,39 @@ update msg project (Model rec) =
                 }
             , []
             )
+
+
+activeTo : Active -> Model -> ( Model, List Emit )
+activeTo active (Model rec) =
+    ( Model { rec | active = active }
+    , case active of
+        ActiveNone ->
+            []
+
+        ActiveDescription ActiveDescriptionSelf ->
+            []
+
+        ActiveDescription ActiveDescriptionText ->
+            [ EmitFocusEditTextAea ]
+
+        ActivePartDefList ActivePartDefListSelf ->
+            [ EmitFocusEditTextAea ]
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
+            [ EmitFocusEditTextAea ]
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefName Nothing )) ->
+            [ EmitFocusEditTextAea, EmitSetTextAreaValue "" ]
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefType Nothing )) ->
+            [ EmitFocusEditTextAea, EmitSetTextAreaValue "" ]
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr ActivePartDefExprSelf )) ->
+            [ EmitFocusEditTextAea, EmitSetTextAreaValue "" ]
+
+        _ ->
+            []
+    )
 
 
 {-| 選択を左へ移動して、選択する対象を変える
@@ -530,40 +551,46 @@ confirm (Model rec) =
 
 input : String -> Model -> ( Model, List Emit )
 input string (Model rec) =
-    case rec.active of
-        ActiveDescription ActiveDescriptionText ->
-            ( Model rec
-            , [ EmitChangeReadMe { text = string, ref = rec.moduleRef } ]
-            )
+    if String.isEmpty (String.trim string) then
+        ( Model rec
+        , []
+        )
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
-            let
-                { name, textAreaValue } =
-                    parserBeginWithName string
-            in
-            ( Model
-                { rec
-                    | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just textAreaValue) ))
-                }
-            , [ EmitChangeName { name = name, index = index, ref = rec.moduleRef } ]
-            )
+    else
+        case rec.active of
+            ActiveDescription ActiveDescriptionText ->
+                ( Model rec
+                , [ EmitChangeReadMe { text = string, ref = rec.moduleRef } ]
+                )
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType _ )) ->
-            let
-                { type_, textAreaValue } =
-                    parserBeginWithType string
-            in
-            ( Model
-                { rec
-                    | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just textAreaValue) ))
-                }
-            , [ EmitChangeType { type_ = type_, index = index, ref = rec.moduleRef } ]
-            )
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
+                let
+                    { name, textAreaValue } =
+                        parserBeginWithName string
+                in
+                ( Model
+                    { rec
+                        | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just textAreaValue) ))
+                    }
+                , [ EmitChangeName { name = name, index = index, ref = rec.moduleRef } ]
+                )
 
-        _ ->
-            ( Model rec
-            , []
-            )
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType _ )) ->
+                let
+                    { type_, textAreaValue } =
+                        parserBeginWithType string
+                in
+                ( Model
+                    { rec
+                        | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just textAreaValue) ))
+                    }
+                , [ EmitChangeType { type_ = type_, index = index, ref = rec.moduleRef } ]
+                )
+
+            _ ->
+                ( Model rec
+                , []
+                )
 
 
 parserBeginWithName : String -> { name : Name.Name, textAreaValue : List ( Char, Bool ) }
@@ -1036,7 +1063,24 @@ suggestionName : Name.Name -> Html.Html msg
 suggestionName name =
     Html.div
         [ subClass "partDefEditor-name-edit-suggestion" ]
-        [ Html.text (Name.toString name |> Maybe.withDefault "<NO NAME>") ]
+        [ Html.div
+            [ subClass "partDefEditor-name-edit-suggestion-item" ]
+            [ Html.div
+                [ subClass "partDefEditor-name-edit-suggestion-item-text" ]
+                [ Html.text (Name.toString name |> Maybe.withDefault "<NO NAME>") ]
+            , enterIcon
+            ]
+        ]
+
+
+enterIcon : Html.Html msg
+enterIcon =
+    NSvg.toHtmlWithClass
+        "moduleEditor-partDefEditor-name-edit-suggestion-keyIcon"
+        { x = 0, y = 0, width = 38, height = 32 }
+        [ NSvg.polygon [ ( 4, 4 ), ( 34, 4 ), ( 34, 28 ), ( 12, 28 ), ( 12, 16 ), ( 4, 16 ) ] (NSvg.strokeColor Palette.X11.white) NSvg.fillNone
+        , NSvg.path "M30,8 V20 H16 L18,18 M16,20 L18,22" (NSvg.strokeColor Palette.X11.white) NSvg.fillNone
+        ]
 
 
 
