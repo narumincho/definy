@@ -4840,7 +4840,7 @@ var elm$core$Basics$identity = function (x) {
 	return x;
 };
 var author$project$Panel$Editor$Module$initModel = function (moduleRef) {
-	return {q: author$project$Panel$Editor$Module$ActiveNone, Y: moduleRef};
+	return {p: author$project$Panel$Editor$Module$ActiveNone, Y: moduleRef};
 };
 var author$project$Panel$EditorGroup$ColumnOne = function (a) {
 	return {$: 0, a: a};
@@ -7762,6 +7762,7 @@ var author$project$KeyConfig$editorReservedKey = F2(
 		}
 	});
 var author$project$Panel$Editor$Module$Confirm = {$: 10};
+var author$project$Panel$Editor$Module$ConfirmMultiLineTextField = {$: 11};
 var author$project$Panel$Editor$Module$SelectDown = {$: 4};
 var author$project$Panel$Editor$Module$SelectFirstChild = {$: 5};
 var author$project$Panel$Editor$Module$SelectLastChild = {$: 6};
@@ -7844,6 +7845,12 @@ var author$project$KeyConfig$editorGroupPanelKeyDown = function (_n0) {
 							[
 								author$project$Panel$EditorGroup$EditorItemMsgToActive(
 								author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SelectFirstChild))
+							]);
+					case 53:
+						return _List_fromArray(
+							[
+								author$project$Panel$EditorGroup$EditorItemMsgToActive(
+								author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$ConfirmMultiLineTextField))
 							]);
 					default:
 						return _List_Nil;
@@ -7966,7 +7973,7 @@ var author$project$Model$getEditorGroupPanelModel = function (_n0) {
 };
 var author$project$Panel$DefaultUi$TextArea = 0;
 var author$project$Panel$Editor$Module$isFocusDefaultUi = function (_n0) {
-	var active = _n0.q;
+	var active = _n0.p;
 	if ((active.$ === 1) && (active.a === 1)) {
 		var _n2 = active.a;
 		return elm$core$Maybe$Just(0);
@@ -8179,7 +8186,7 @@ var author$project$Project$Source$ModuleWithCache$addDef = F2(
 			});
 	});
 var author$project$Model$addPartDef = function (_n0) {
-	var ref = _n0.p;
+	var ref = _n0.q;
 	return author$project$Model$mapProject(
 		author$project$Project$mapSource(
 			A2(
@@ -8327,7 +8334,7 @@ var author$project$Project$Source$ModuleWithCache$setDefExpr = F3(
 var author$project$Model$changeExpr = function (_n0) {
 	var expr = _n0.aK;
 	var index = _n0.C;
-	var ref = _n0.p;
+	var ref = _n0.q;
 	return author$project$Model$mapProject(
 		author$project$Project$mapSource(
 			A2(
@@ -8365,7 +8372,7 @@ var author$project$Project$Source$ModuleWithCache$setDefName = F3(
 var author$project$Model$changeName = function (_n0) {
 	var name = _n0.aO;
 	var index = _n0.C;
-	var ref = _n0.p;
+	var ref = _n0.q;
 	return author$project$Model$mapProject(
 		author$project$Project$mapSource(
 			A2(
@@ -8383,7 +8390,7 @@ var author$project$Project$Source$ModuleWithCache$setReadMe = F2(
 var author$project$Model$changeReadMe = F2(
 	function (_n0, model) {
 		var text = _n0.b1;
-		var ref = _n0.p;
+		var ref = _n0.q;
 		return A2(
 			author$project$Model$mapProject,
 			author$project$Project$mapSource(
@@ -8423,7 +8430,7 @@ var author$project$Project$Source$ModuleWithCache$setDefType = F3(
 var author$project$Model$changeType = function (_n0) {
 	var type_ = _n0.a$;
 	var index = _n0.C;
-	var ref = _n0.p;
+	var ref = _n0.q;
 	return author$project$Model$mapProject(
 		author$project$Project$mapSource(
 			A2(
@@ -8490,12 +8497,12 @@ var author$project$Model$editorPanelEmitToMsg = function (emit) {
 				_List_Nil);
 		case 2:
 			var text = emit.a.b1;
-			var ref = emit.a.p;
+			var ref = emit.a.q;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$ChangeReadMe(
-						{p: ref, b1: text})
+						{q: ref, b1: text})
 					]),
 				_List_Nil);
 		case 3:
@@ -8516,43 +8523,43 @@ var author$project$Model$editorPanelEmitToMsg = function (emit) {
 		case 5:
 			var name = emit.a.aO;
 			var index = emit.a.C;
-			var ref = emit.a.p;
+			var ref = emit.a.q;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$ChangeName(
-						{C: index, aO: name, p: ref})
+						{C: index, aO: name, q: ref})
 					]),
 				_List_Nil);
 		case 6:
-			var ref = emit.a.p;
+			var ref = emit.a.q;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$AddPartDef(
-						{p: ref})
+						{q: ref})
 					]),
 				_List_Nil);
 		case 7:
 			var type_ = emit.a.a$;
 			var index = emit.a.C;
-			var ref = emit.a.p;
+			var ref = emit.a.q;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$ChangeType(
-						{C: index, p: ref, a$: type_})
+						{C: index, q: ref, a$: type_})
 					]),
 				_List_Nil);
 		default:
 			var expr = emit.a.aK;
 			var index = emit.a.C;
-			var ref = emit.a.p;
+			var ref = emit.a.q;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$ChangeExpr(
-						{aK: expr, C: index, p: ref})
+						{aK: expr, C: index, q: ref})
 					]),
 				_List_Nil);
 	}
@@ -8570,7 +8577,7 @@ var author$project$Panel$EditorGroup$EmitHorizontalGutterModeOn = function (a) {
 var author$project$Panel$EditorGroup$EmitVerticalGutterModeOn = function (a) {
 	return {$: 0, a: a};
 };
-var author$project$Panel$Editor$Module$BlurThisEditor = {$: 13};
+var author$project$Panel$Editor$Module$BlurThisEditor = {$: 14};
 var author$project$Panel$Editor$Module$ActiveDescription = function (a) {
 	return {$: 1, a: a};
 };
@@ -8585,6 +8592,14 @@ var author$project$Panel$Editor$Module$EmitChangeReadMe = function (a) {
 	return {$: 0, a: a};
 };
 var author$project$Panel$Editor$Module$EmitFocusEditTextAea = {$: 6};
+var author$project$Panel$Editor$Module$confirmMultiLineTextField = function (active) {
+	if ((active.$ === 1) && (active.a === 1)) {
+		var _n1 = active.a;
+		return author$project$Panel$Editor$Module$ActiveDescription(0);
+	} else {
+		return active;
+	}
+};
 var author$project$Panel$Editor$Module$ActivePartDef = function (a) {
 	return {$: 1, a: a};
 };
@@ -8978,7 +8993,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					return _Utils_Tuple2(
 						_Utils_update(
 							rec,
-							{q: active}),
+							{p: active}),
 						function () {
 							switch (active.$) {
 								case 0:
@@ -8998,7 +9013,7 @@ var author$project$Panel$Editor$Module$update = F3(
 						}());
 				case 1:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectLeft, targetModule, rec.q)),
+						A2(author$project$Panel$Editor$Module$selectLeft, targetModule, rec.p)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -9007,7 +9022,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 2:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectRight, targetModule, rec.q)),
+						A2(author$project$Panel$Editor$Module$selectRight, targetModule, rec.p)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -9016,7 +9031,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 3:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectUp, targetModule, rec.q)),
+						A2(author$project$Panel$Editor$Module$selectUp, targetModule, rec.p)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -9025,7 +9040,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 4:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectDown, targetModule, rec.q)),
+						A2(author$project$Panel$Editor$Module$selectDown, targetModule, rec.p)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -9034,7 +9049,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 5:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectFirstChild, targetModule, rec.q)),
+						A2(author$project$Panel$Editor$Module$selectFirstChild, targetModule, rec.p)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -9043,7 +9058,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 6:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectLastChild, targetModule, rec.q)),
+						A2(author$project$Panel$Editor$Module$selectLastChild, targetModule, rec.p)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -9052,7 +9067,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 7:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectParent, targetModule, rec.q)),
+						A2(author$project$Panel$Editor$Module$selectParent, targetModule, rec.p)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -9066,34 +9081,43 @@ var author$project$Panel$Editor$Module$update = F3(
 						_List_fromArray(
 							[
 								author$project$Panel$Editor$Module$EmitChangeReadMe(
-								{p: rec.Y, b1: string})
+								{q: rec.Y, b1: string})
 							]));
 				case 9:
 					return _Utils_Tuple2(rec, _List_Nil);
 				case 10:
 					return _Utils_Tuple2(rec, _List_Nil);
 				case 11:
+					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
+						author$project$Panel$Editor$Module$confirmMultiLineTextField(rec.p)),
+						$temp$project = project,
+						$temp$_n0 = rec;
+					msg = $temp$msg;
+					project = $temp$project;
+					_n0 = $temp$_n0;
+					continue update;
+				case 12:
 					return _Utils_Tuple2(
 						rec,
 						_List_fromArray(
 							[
 								author$project$Panel$Editor$Module$EmitAddPartDef(
-								{p: rec.Y})
+								{q: rec.Y})
 							]));
-				case 12:
+				case 13:
 					return _Utils_Tuple2(rec, _List_Nil);
 				default:
 					return _Utils_Tuple2(
 						_Utils_update(
 							rec,
 							{
-								q: function () {
-									var _n5 = rec.q;
+								p: function () {
+									var _n5 = rec.p;
 									if ((_n5.$ === 1) && (_n5.a === 1)) {
 										var _n6 = _n5.a;
 										return author$project$Panel$Editor$Module$ActiveDescription(0);
 									} else {
-										return rec.q;
+										return rec.p;
 									}
 								}()
 							}),
@@ -9124,9 +9148,9 @@ var author$project$Panel$EditorGroup$moduleEditorEmitToEmit = function (emit) {
 	switch (emit.$) {
 		case 0:
 			var text = emit.a.b1;
-			var ref = emit.a.p;
+			var ref = emit.a.q;
 			return author$project$Panel$EditorGroup$EmitChangeReadMe(
-				{p: ref, b1: text});
+				{q: ref, b1: text});
 		case 5:
 			var text = emit.a;
 			return author$project$Panel$EditorGroup$EmitSetTextAreaValue(text);
@@ -9135,25 +9159,25 @@ var author$project$Panel$EditorGroup$moduleEditorEmitToEmit = function (emit) {
 		case 1:
 			var name = emit.a.aO;
 			var index = emit.a.C;
-			var ref = emit.a.p;
+			var ref = emit.a.q;
 			return author$project$Panel$EditorGroup$EmitChangeName(
-				{C: index, aO: name, p: ref});
+				{C: index, aO: name, q: ref});
 		case 4:
-			var ref = emit.a.p;
+			var ref = emit.a.q;
 			return author$project$Panel$EditorGroup$EmitAddPartDef(
-				{p: ref});
+				{q: ref});
 		case 2:
 			var type_ = emit.a.a$;
 			var index = emit.a.C;
-			var ref = emit.a.p;
+			var ref = emit.a.q;
 			return author$project$Panel$EditorGroup$EmitChangeType(
-				{C: index, p: ref, a$: type_});
+				{C: index, q: ref, a$: type_});
 		default:
 			var expr = emit.a.aK;
 			var index = emit.a.C;
-			var ref = emit.a.p;
+			var ref = emit.a.q;
 			return author$project$Panel$EditorGroup$EmitChangeExpr(
-				{aK: expr, C: index, p: ref});
+				{aK: expr, C: index, q: ref});
 	}
 };
 var author$project$Panel$EditorGroup$blurEditor = F2(
@@ -9323,7 +9347,7 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 				}
 		}
 	});
-var author$project$Panel$Editor$Module$FocusThisEditor = {$: 12};
+var author$project$Panel$Editor$Module$FocusThisEditor = {$: 13};
 var author$project$Panel$EditorGroup$focusEditor = F2(
 	function (project, editorItem) {
 		if (editorItem.$ === 4) {
@@ -9860,14 +9884,14 @@ var author$project$Panel$EditorGroup$update = F3(
 					project,
 					A2(
 						author$project$Panel$EditorGroup$getEditorItem,
-						rec.p,
+						rec.q,
 						author$project$Panel$EditorGroup$getGroup(model)));
 				var newEditorItem = _n2.a;
 				var emit = _n2.b;
 				return _Utils_Tuple2(
 					A2(
 						author$project$Panel$EditorGroup$mapGroup,
-						A2(author$project$Panel$EditorGroup$setEditorItem, rec.p, newEditorItem),
+						A2(author$project$Panel$EditorGroup$setEditorItem, rec.q, newEditorItem),
 						model),
 					emit);
 			case 6:
@@ -14321,6 +14345,13 @@ var author$project$Panel$Editor$Module$activeToString = function (active) {
 			}
 	}
 };
+var author$project$Panel$Editor$Module$subClass = function (_class) {
+	if (_class === '') {
+		return elm$html$Html$Attributes$class('moduleEditor');
+	} else {
+		return elm$html$Html$Attributes$class('moduleEditor-' + _class);
+	}
+};
 var elm$core$List$intersperse = F2(
 	function (sep, xs) {
 		if (!xs.b) {
@@ -14347,7 +14378,7 @@ var author$project$Panel$Editor$Module$descriptionViewMeasure = function (descri
 		elm$html$Html$div,
 		_List_fromArray(
 			[
-				elm$html$Html$Attributes$class('moduleEditor-description-measure')
+				author$project$Panel$Editor$Module$subClass('description-measure')
 			]),
 		_Utils_ap(
 			A2(
@@ -14423,7 +14454,7 @@ var author$project$Panel$Editor$Module$descriptionViewTextArea = F3(
 			_Utils_ap(
 				_List_fromArray(
 					[
-						elm$html$Html$Attributes$class('moduleEditor-description-textarea')
+						author$project$Panel$Editor$Module$subClass('description-textarea')
 					]),
 				function () {
 					if (!descriptionActiveMaybe.$) {
@@ -14448,7 +14479,7 @@ var author$project$Panel$Editor$Module$descriptionViewTextArea = F3(
 										'value',
 										elm$json$Json$Encode$string(description)),
 										A2(elm$html$Html$Events$stopPropagationOn, 'click', author$project$Panel$Editor$Module$focusEventJsonDecoder),
-										elm$html$Html$Attributes$class('moduleEditor-description-textarea-focus')
+										author$project$Panel$Editor$Module$subClass('description-textarea-focus')
 									]),
 								isFocus ? _List_fromArray(
 									[
@@ -14475,6 +14506,14 @@ var author$project$Panel$Editor$Module$descriptionViewTextArea = F3(
 				}()),
 			_List_Nil);
 	});
+var elm$core$Tuple$mapFirst = F2(
+	function (func, _n0) {
+		var x = _n0.a;
+		var y = _n0.b;
+		return _Utils_Tuple2(
+			func(x),
+			y);
+	});
 var elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -14496,13 +14535,19 @@ var elm$html$Html$Attributes$classList = function (classes) {
 				elm$core$Tuple$first,
 				A2(elm$core$List$filter, elm$core$Tuple$second, classes))));
 };
+var author$project$Panel$Editor$Module$subClassList = A2(
+	elm$core$Basics$composeR,
+	elm$core$List$map(
+		elm$core$Tuple$mapFirst(
+			elm$core$Basics$append('moduleEditor-'))),
+	elm$html$Html$Attributes$classList);
 var author$project$Panel$Editor$Module$descriptionViewInputArea = F3(
 	function (description, isFocus, descriptionActiveMaybe) {
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
-					elm$html$Html$Attributes$class('moduleEditor-description-inputArea')
+					author$project$Panel$Editor$Module$subClass('description-inputArea')
 				]),
 			_List_fromArray(
 				[
@@ -14510,12 +14555,12 @@ var author$project$Panel$Editor$Module$descriptionViewInputArea = F3(
 					elm$html$Html$div,
 					_List_fromArray(
 						[
-							elm$html$Html$Attributes$classList(
+							author$project$Panel$Editor$Module$subClassList(
 							_List_fromArray(
 								[
-									_Utils_Tuple2('moduleEditor-description-container', true),
+									_Utils_Tuple2('description-container', true),
 									_Utils_Tuple2(
-									'moduleEditor-description-container-active',
+									'description-container-active',
 									_Utils_eq(
 										descriptionActiveMaybe,
 										elm$core$Maybe$Just(1)))
@@ -14533,7 +14578,7 @@ var author$project$Panel$Editor$Module$descriptionViewTitle = A2(
 	elm$html$Html$h2,
 	_List_fromArray(
 		[
-			elm$html$Html$Attributes$class('moduleEditor-description-title')
+			author$project$Panel$Editor$Module$subClass('description-title')
 		]),
 	_List_fromArray(
 		[
@@ -14554,12 +14599,12 @@ var author$project$Panel$Editor$Module$descriptionView = F3(
 			_Utils_ap(
 				_List_fromArray(
 					[
-						elm$html$Html$Attributes$classList(
+						author$project$Panel$Editor$Module$subClassList(
 						_List_fromArray(
 							[
-								_Utils_Tuple2('moduleEditor-description', true),
+								_Utils_Tuple2('description', true),
 								_Utils_Tuple2(
-								'moduleEditor-description-active',
+								'description-active',
 								_Utils_eq(
 									descriptionActiveMaybe,
 									elm$core$Maybe$Just(0)))
@@ -14710,27 +14755,73 @@ var author$project$Project$Source$Module$Def$toString = function (_n0) {
 		'<NO TYPE>',
 		author$project$Project$Source$Module$Def$Type$toString(type_)) + ('=' + author$project$Project$Source$Module$Def$Expr$toString(expr))));
 };
-var author$project$Panel$Editor$Module$partDefView = function (def) {
-	return A2(
-		elm$html$Html$div,
-		_List_Nil,
-		_List_fromArray(
-			[
-				elm$html$Html$text(
-				author$project$Project$Source$Module$Def$toString(def))
-			]));
-};
-var author$project$Panel$Editor$Module$partDefListView = function (defList) {
-	return A2(
-		elm$html$Html$div,
-		_List_Nil,
-		A2(elm$core$List$map, author$project$Panel$Editor$Module$partDefView, defList));
-};
+var author$project$Panel$Editor$Module$partDefView = F3(
+	function (index, def, partDefActiveMaybe) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClassList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('partDefEditor', true),
+							_Utils_Tuple2(
+							'partDefEditor-active',
+							_Utils_eq(
+								partDefActiveMaybe,
+								elm$core$Maybe$Just(author$project$Panel$Editor$Module$ActivePartDefSelf)))
+						])),
+					A2(
+					elm$html$Html$Events$stopPropagationOn,
+					'click',
+					elm$json$Json$Decode$succeed(
+						_Utils_Tuple2(
+							author$project$Panel$Editor$Module$ActiveTo(
+								author$project$Panel$Editor$Module$ActivePartDefList(
+									author$project$Panel$Editor$Module$ActivePartDef(
+										_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefSelf)))),
+							true)))
+				]),
+			_List_fromArray(
+				[
+					elm$html$Html$text(
+					author$project$Project$Source$Module$Def$toString(def))
+				]));
+	});
+var author$project$Panel$Editor$Module$partDefListView = F2(
+	function (defList, partDefActiveWithIndexMaybe) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDefEditorList')
+				]),
+			A2(
+				elm$core$List$indexedMap,
+				F2(
+					function (index, def) {
+						return A3(
+							author$project$Panel$Editor$Module$partDefView,
+							index,
+							def,
+							function () {
+								if (!partDefActiveWithIndexMaybe.$) {
+									var _n1 = partDefActiveWithIndexMaybe.a;
+									var i = _n1.a;
+									var partDefActive = _n1.b;
+									return _Utils_eq(i, index) ? elm$core$Maybe$Just(partDefActive) : elm$core$Maybe$Nothing;
+								} else {
+									return elm$core$Maybe$Nothing;
+								}
+							}());
+					}),
+				defList));
+	});
 var author$project$Panel$Editor$Module$partDefinitionsViewTitle = A2(
 	elm$html$Html$div,
 	_List_fromArray(
 		[
-			elm$html$Html$Attributes$class('moduleEditor-partDefinitions-title')
+			author$project$Panel$Editor$Module$subClass('partDefinitions-title')
 		]),
 	_List_fromArray(
 		[
@@ -14743,19 +14834,15 @@ var author$project$Panel$Editor$Module$partDefinitionsView = F3(
 			_Utils_ap(
 				_List_fromArray(
 					[
-						elm$html$Html$Attributes$class('moduleEditor-partDefinitions')
+						author$project$Panel$Editor$Module$subClass('partDefinitions')
 					]),
 				function () {
-					if (!partDefListActiveMaybe.$) {
-						if (!partDefListActiveMaybe.a.$) {
-							var _n1 = partDefListActiveMaybe.a;
-							return _List_fromArray(
-								[
-									elm$html$Html$Attributes$class('moduleEditor-partDefinitions-active')
-								]);
-						} else {
-							return _List_Nil;
-						}
+					if ((!partDefListActiveMaybe.$) && (!partDefListActiveMaybe.a.$)) {
+						var _n1 = partDefListActiveMaybe.a;
+						return _List_fromArray(
+							[
+								author$project$Panel$Editor$Module$subClass('partDefinitions-active')
+							]);
 					} else {
 						return _List_fromArray(
 							[
@@ -14768,7 +14855,17 @@ var author$project$Panel$Editor$Module$partDefinitionsView = F3(
 			_List_fromArray(
 				[
 					author$project$Panel$Editor$Module$partDefinitionsViewTitle,
-					author$project$Panel$Editor$Module$partDefListView(defList)
+					A2(
+					author$project$Panel$Editor$Module$partDefListView,
+					defList,
+					function () {
+						if ((!partDefListActiveMaybe.$) && (partDefListActiveMaybe.a.$ === 1)) {
+							var partDefActiveWithIndex = partDefListActiveMaybe.a.a;
+							return elm$core$Maybe$Just(partDefActiveWithIndex);
+						} else {
+							return elm$core$Maybe$Nothing;
+						}
+					}())
 				]));
 	});
 var author$project$Project$Source$ModuleWithCache$getName = function (_n0) {
@@ -14782,7 +14879,7 @@ var author$project$Project$Source$ModuleWithCache$getReadMe = function (_n0) {
 var author$project$Panel$Editor$Module$view = F3(
 	function (project, isFocus, _n0) {
 		var moduleRef = _n0.Y;
-		var active = _n0.q;
+		var active = _n0.p;
 		var targetModule = A2(
 			author$project$Project$Source$getModule,
 			moduleRef,
@@ -14969,7 +15066,7 @@ var author$project$Panel$EditorGroup$editorItemView = F6(
 									return author$project$Panel$EditorGroup$EditorItemMsg(
 										{
 											aN: author$project$Panel$EditorGroup$ModuleEditorMsg(m),
-											p: editorRef
+											q: editorRef
 										});
 								}),
 							viewItem.bC),
@@ -14986,7 +15083,7 @@ var author$project$Panel$EditorGroup$editorItemView = F6(
 									return author$project$Panel$EditorGroup$EditorItemMsg(
 										{
 											aN: author$project$Panel$EditorGroup$EditorKeyConfigMsg(m),
-											p: editorRef
+											q: editorRef
 										});
 								}),
 							viewItem.bC),

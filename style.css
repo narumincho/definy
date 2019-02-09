@@ -401,7 +401,7 @@ img {
 .moduleEditor-description-container-active {
     border: solid #f09936 3px;
     padding: 13px;
-    box-shadow: 0 2px rgba(0, 0, 0, 0.2) inset;
+    box-shadow: 0 4px 2px 0px rgba(0, 0, 0, 0.2) inset;
 }
 
 .moduleEditor-description-measure {
@@ -442,9 +442,10 @@ img {
 .moduleEditor-description-textarea-focus {
     padding: 13px;
 }
-/* ==============
+
+/* =========================
     Part Def
-===============*/
+==========================*/
 
 .moduleEditor-partDefinitions {
     padding: 16px 8px;
@@ -468,9 +469,8 @@ img {
 }
 
 .moduleEditor-partDefEditorList {
-    padding: 8px;
     display: grid;
-    gap: 1rem;
+    gap: 16px;
     flex-direction: column;
     background-color: #222;
 }
@@ -480,7 +480,13 @@ img {
     flex-direction: column;
     padding: 8px;
     box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4);
-    background-color: #181818;
+    background-color: #383838;
+    color: #ddd;
+}
+
+.moduleEditor-partDefEditor-active {
+    background-color: #f09936;
+    color: #111;
 }
 
 .moduleEditor-partDefEditor-nameAndType {
@@ -535,7 +541,7 @@ img {
 
 /* 移動モードで対象になったもの */
 
-.focused {
+.moduleEditor-partDefEditor-focused {
     /* outline: solid var(--accentColorBg) 2px; */
     background-color: var(--accentColorBg);
     color: var(--accentColorText);
@@ -543,7 +549,7 @@ img {
 
 /* 編集モードで対象になったもの */
 
-.editTarget {
+.moduleEditor-partDefEditor-editTarget {
     background-color: #000;
     border: solid 1px var(--accentColorBg);
 }

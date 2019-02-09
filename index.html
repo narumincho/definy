@@ -40,7 +40,9 @@
         })
         app.ports.focusEditTextAea.subscribe(e => {
             console.log(`<textarea id="eidt">にフォーカス`);
-            document.getElementById("edit").focus();
+            requestAnimationFrame(() => {
+                document.getElementById("edit").focus();
+            })
         })
         /* コンパイル結果(WASM)を実行 */
         app.ports.run.subscribe((list) => {

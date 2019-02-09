@@ -49,6 +49,7 @@ type Msg
     | Input String
     | ToEditMode
     | Confirm
+    | ConfirmMultiLineTextField
     | AddPartDef
     | FocusThisEditor
     | BlurThisEditor
@@ -182,6 +183,9 @@ update msg project (Model rec) =
             ( Model rec
             , []
             )
+
+        ConfirmMultiLineTextField ->
+            update (ActiveTo (confirmMultiLineTextField rec.active)) project (Model rec)
 
         AddPartDef ->
             ( Model rec
@@ -429,6 +433,18 @@ selectParent module_ active =
     active
 
 
+{-| 複数行入力の確定。概要や文字列リテラルでの入力を確定にする
+-}
+confirmMultiLineTextField : Active -> Active
+confirmMultiLineTextField active =
+    case active of
+        ActiveDescription ActiveDescriptionText ->
+            ActiveDescription ActiveDescriptionSelf
+
+        _ ->
+            active
+
+
 
 {- ================================================
    ==================================================
@@ -539,9 +555,9 @@ descriptionView description isFocus descriptionActiveMaybe =
                     False
     in
     Html.div
-        ([ Html.Attributes.classList
-            [ ( "moduleEditor-description", True )
-            , ( "moduleEditor-description-active", descriptionActiveMaybe == Just ActiveDescriptionSelf )
+        ([ subClassList
+            [ ( "description", True )
+            , ( "description-active", descriptionActiveMaybe == Just ActiveDescriptionSelf )
             ]
          ]
             ++ (case descriptionActiveMaybe of
@@ -560,17 +576,17 @@ descriptionView description isFocus descriptionActiveMaybe =
 descriptionViewTitle : Html.Html Msg
 descriptionViewTitle =
     Html.h2
-        [ Html.Attributes.class "moduleEditor-description-title" ]
+        [ subClass "description-title" ]
         [ Html.text "Description" ]
 
 
 descriptionViewInputArea : String -> Bool -> Maybe DescriptionActive -> Html.Html Msg
 descriptionViewInputArea description isFocus descriptionActiveMaybe =
-    Html.div [ Html.Attributes.class "moduleEditor-description-inputArea" ]
+    Html.div [ subClass "description-inputArea" ]
         [ Html.div
-            [ Html.Attributes.classList
-                [ ( "moduleEditor-description-container", True )
-                , ( "moduleEditor-description-container-active", descriptionActiveMaybe == Just ActiveDescriptionText )
+            [ subClassList
+                [ ( "description-container", True )
+                , ( "description-container-active", descriptionActiveMaybe == Just ActiveDescriptionText )
                 ]
             ]
             [ descriptionViewMeasure description
@@ -586,7 +602,7 @@ descriptionViewMeasure description =
             description |> String.lines
     in
     Html.div
-        [ Html.Attributes.class "moduleEditor-description-measure" ]
+        [ subClass "description-measure" ]
         ((lineList
             |> List.map Html.text
             |> List.intersperse (Html.br [] [])
@@ -603,7 +619,7 @@ descriptionViewMeasure description =
 descriptionViewTextArea : String -> Bool -> Maybe DescriptionActive -> Html.Html Msg
 descriptionViewTextArea description isFocus descriptionActiveMaybe =
     Html.textarea
-        ([ Html.Attributes.class "moduleEditor-description-textarea"
+        ([ subClass "description-textarea"
          ]
             ++ (case descriptionActiveMaybe of
                     Just ActiveDescriptionSelf ->
@@ -615,7 +631,7 @@ descriptionViewTextArea description isFocus descriptionActiveMaybe =
                         [ Html.Events.onInput Input
                         , Html.Attributes.property "value" (Json.Encode.string description)
                         , Html.Events.stopPropagationOn "click" focusEventJsonDecoder
-                        , Html.Attributes.class "moduleEditor-description-textarea-focus"
+                        , subClass "description-textarea-focus"
                         ]
                             ++ (if isFocus then
                                     [ Html.Attributes.id "edit" ]
@@ -655,42 +671,75 @@ partDefActiveMaybeAndIndexがJustならこのエディタ
 partDefinitionsView : Bool -> Maybe PartDefListActive -> List Def.Def -> Html.Html Msg
 partDefinitionsView isEditorItemFocus partDefListActiveMaybe defList =
     Html.div
-        ([ Html.Attributes.class "moduleEditor-partDefinitions"
+        ([ subClass "partDefinitions"
          ]
             ++ (case partDefListActiveMaybe of
                     Just ActivePartDefListSelf ->
-                        [ Html.Attributes.class "moduleEditor-partDefinitions-active" ]
+                        [ subClass "partDefinitions-active" ]
 
-                    Just _ ->
-                        []
-
-                    Nothing ->
+                    _ ->
                         [ Html.Events.onClick (ActiveTo (ActivePartDefList ActivePartDefListSelf)) ]
                )
         )
         [ partDefinitionsViewTitle
         , partDefListView defList
+            (case partDefListActiveMaybe of
+                Just (ActivePartDef partDefActiveWithIndex) ->
+                    Just partDefActiveWithIndex
+
+                _ ->
+                    Nothing
+            )
         ]
 
 
 partDefinitionsViewTitle : Html.Html Msg
 partDefinitionsViewTitle =
     Html.div
-        [ Html.Attributes.class "moduleEditor-partDefinitions-title" ]
+        [ subClass "partDefinitions-title" ]
         [ Html.text "Part Definitions" ]
 
 
-partDefListView : List Def.Def -> Html.Html Msg
-partDefListView defList =
+partDefListView : List Def.Def -> Maybe ( Int, PartDefActive ) -> Html.Html Msg
+partDefListView defList partDefActiveWithIndexMaybe =
     Html.div
-        []
-        (defList |> List.map partDefView)
+        [ subClass "partDefEditorList"
+        ]
+        (defList
+            |> List.indexedMap
+                (\index def ->
+                    partDefView index
+                        def
+                        (case partDefActiveWithIndexMaybe of
+                            Just ( i, partDefActive ) ->
+                                if i == index then
+                                    Just partDefActive
+
+                                else
+                                    Nothing
+
+                            _ ->
+                                Nothing
+                        )
+                )
+        )
 
 
-partDefView : Def.Def -> Html.Html Msg
-partDefView def =
+partDefView : Int -> Def.Def -> Maybe PartDefActive -> Html.Html Msg
+partDefView index def partDefActiveMaybe =
     Html.div
-        []
+        [ subClassList
+            [ ( "partDefEditor", True )
+            , ( "partDefEditor-active", partDefActiveMaybe == Just ActivePartDefSelf )
+            ]
+        , Html.Events.stopPropagationOn "click"
+            (Json.Decode.succeed
+                ( ActiveTo
+                    (ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )))
+                , True
+                )
+            )
+        ]
         [ Html.text (Def.toString def) ]
 
 
@@ -709,7 +758,7 @@ termViewOutput : Term.Term -> Html.Html ()
 termViewOutput term =
     Html.div
         [ Html.Events.onClick ()
-        , Html.Attributes.class "moduleEditor-partDefEditor-term"
+        , subClass "partDefEditor-term"
         ]
         [ Html.text (Term.toString term) ]
 
@@ -719,8 +768,8 @@ termViewOutput term =
 termViewInputOutput : List ( Char, Bool ) -> Html.Html msg
 termViewInputOutput textAreaValue =
     Html.div
-        [ Html.Attributes.class "editTarget"
-        , Html.Attributes.class "moduleEditor-partDefEditor-term"
+        [ subClass "partDefEditor-editTarget"
+        , subClass "partDefEditor-term"
         ]
         (case textAreaValue of
             _ :: _ ->
@@ -728,12 +777,12 @@ termViewInputOutput textAreaValue =
                     |> List.map
                         (\( char, bool ) ->
                             Html.div
-                                [ Html.Attributes.class
+                                [ subClass
                                     (if bool then
-                                        "moduleEditor-partDefEditor-okChar"
+                                        "partDefEditor-okChar"
 
                                      else
-                                        "moduleEditor-partDefEditor-errChar"
+                                        "partDefEditor-errChar"
                                     )
                                 ]
                                 [ Html.text (String.fromChar char) ]
@@ -748,7 +797,7 @@ opViewOutput : Op.Operator -> Html.Html ()
 opViewOutput op =
     Html.div
         [ Html.Events.onClick ()
-        , Html.Attributes.class "moduleEditor-partDefEditor-op"
+        , subClass "partDefEditor-op"
         ]
         [ Html.text (Op.toString op |> Maybe.withDefault "?") ]
 
@@ -756,19 +805,19 @@ opViewOutput op =
 opViewInputOutput : List ( Char, Bool ) -> Html.Html msg
 opViewInputOutput textAreaValue =
     Html.div
-        [ Html.Attributes.class "editTarget"
-        , Html.Attributes.class "moduleEditor-partDefEditor-op"
+        [ subClass "partDefEditor-editTarget"
+        , subClass "partDefEditor-op"
         ]
         (textAreaValue
             |> List.map
                 (\( char, bool ) ->
                     Html.div
-                        [ Html.Attributes.class
+                        [ subClass
                             (if bool then
-                                "moduleEditor-partDefEditor-okChar"
+                                "partDefEditor-okChar"
 
                              else
-                                "moduleEditor-partDefEditor-errChar"
+                                "partDefEditor-errChar"
                             )
                         ]
                         [ Html.text (String.fromChar char) ]
@@ -781,9 +830,9 @@ opViewInputOutput textAreaValue =
 moveModeCaret : Html.Html msg
 moveModeCaret =
     Html.div
-        [ Html.Attributes.class "moduleEditor-partDefEditor-caretBox" ]
+        [ subClass "partDefEditor-caretBox" ]
         [ Html.div
-            [ Html.Attributes.class "moduleEditor-partDefEditor-caret" ]
+            [ subClass "partDefEditor-caret" ]
             []
         ]
 
@@ -798,7 +847,7 @@ intermediateExprView =
 inputTextArea : Html.Html Msg
 inputTextArea =
     Html.textarea
-        [ Html.Attributes.class "moduleEditor-partDefEditor-hideTextArea"
+        [ subClass "partDefEditor-hideTextArea"
         , Html.Attributes.id "edit"
         ]
         []
@@ -808,6 +857,22 @@ addDefButton : Html.Html Msg
 addDefButton =
     Html.button
         [ Html.Events.onClick AddPartDef
-        , Html.Attributes.class "moduleEditor-partDefEditor-addPartDef"
+        , subClass "partDefEditor-addPartDef"
         ]
         [ Html.text "+ 新しいパーツの定義" ]
+
+
+subClass : String -> Html.Attribute msg
+subClass class =
+    case class of
+        "" ->
+            Html.Attributes.class "moduleEditor"
+
+        _ ->
+            Html.Attributes.class ("moduleEditor-" ++ class)
+
+
+subClassList : List ( String, Bool ) -> Html.Attribute msg
+subClassList =
+    List.map (Tuple.mapFirst ((++) "moduleEditor-"))
+        >> Html.Attributes.classList

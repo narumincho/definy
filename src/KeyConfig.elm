@@ -288,6 +288,12 @@ editorGroupPanelKeyDown { key, ctrl, shift, alt } =
                             Panel.Editor.Module.SelectFirstChild
                         )
                     ]
+                Key.Enter ->
+                    [ Panel.EditorGroup.EditorItemMsgToActive
+                        (Panel.EditorGroup.ModuleEditorMsg
+                            Panel.Editor.Module.ConfirmMultiLineTextField
+                        )
+                    ]
 
                 _ ->
                     []
