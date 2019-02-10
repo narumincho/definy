@@ -17058,6 +17058,35 @@ var author$project$Panel$Editor$Module$descriptionView = F3(
 					A3(author$project$Panel$Editor$Module$descriptionViewInputArea, description, isFocus, descriptionActiveMaybe)
 				]));
 	});
+var author$project$Panel$Editor$Module$AddPartDef = {$: 13};
+var elm$html$Html$button = _VirtualDom_node('button');
+var author$project$Panel$Editor$Module$addDefButton = A2(
+	elm$html$Html$button,
+	_List_fromArray(
+		[
+			elm$html$Html$Events$onClick(author$project$Panel$Editor$Module$AddPartDef),
+			author$project$Panel$Editor$Module$subClass('partDefEditor-addPartDef')
+		]),
+	_List_fromArray(
+		[
+			elm$html$Html$text('+ 新しいパーツの定義')
+		]));
+var author$project$Panel$Editor$Module$activeHeadTermLeft = A2(
+	elm$html$Html$div,
+	_List_fromArray(
+		[
+			author$project$Panel$Editor$Module$subClass('partDefEditor-caretBox')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDefEditor-caret')
+				]),
+			_List_Nil)
+		]));
 var author$project$Project$Source$Module$Def$Expr$Operator$safeToString = function (safeOperator) {
 	switch (safeOperator) {
 		case 0:
@@ -17101,23 +17130,29 @@ var author$project$Project$Source$Module$Def$Expr$Operator$toString = function (
 		return elm$core$Maybe$Nothing;
 	}
 };
-var author$project$Panel$Editor$Module$opViewOutput = function (op) {
-	return A2(
-		elm$html$Html$div,
-		_List_fromArray(
-			[
-				elm$html$Html$Events$onClick(0),
-				author$project$Panel$Editor$Module$subClass('partDefEditor-op')
-			]),
-		_List_fromArray(
-			[
-				elm$html$Html$text(
-				A2(
-					elm$core$Maybe$withDefault,
-					'?',
-					author$project$Project$Source$Module$Def$Expr$Operator$toString(op)))
-			]));
-};
+var author$project$Panel$Editor$Module$opViewOutput = F2(
+	function (op, isActive) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					elm$html$Html$Events$onClick(0),
+					author$project$Panel$Editor$Module$subClassList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('partDefEditor-op', true),
+							_Utils_Tuple2('partDefEditor-element-active', isActive)
+						]))
+				]),
+			_List_fromArray(
+				[
+					elm$html$Html$text(
+					A2(
+						elm$core$Maybe$withDefault,
+						'?',
+						author$project$Project$Source$Module$Def$Expr$Operator$toString(op)))
+				]));
+	});
 var author$project$Project$Source$Module$Def$Expr$Term$toString = function (term) {
 	switch (term.$) {
 		case 0:
@@ -17135,39 +17170,25 @@ var author$project$Project$Source$Module$Def$Expr$Term$toString = function (term
 			return '✗';
 	}
 };
-var author$project$Panel$Editor$Module$termViewOutput = function (term) {
-	return A2(
-		elm$html$Html$div,
-		_List_fromArray(
-			[
-				elm$html$Html$Events$onClick(0),
-				author$project$Panel$Editor$Module$subClass('partDefEditor-term')
-			]),
-		_List_fromArray(
-			[
-				elm$html$Html$text(
-				author$project$Project$Source$Module$Def$Expr$Term$toString(term))
-			]));
-};
-var elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
-var elm$html$Html$map = elm$virtual_dom$VirtualDom$map;
-var author$project$Panel$Editor$Module$exprViewOpAndTermNormal = F2(
-	function (index, _n0) {
-		var op = _n0.a;
-		var term = _n0.b;
-		return _List_fromArray(
-			[
-				A2(
-				elm$html$Html$map,
-				elm$core$Basics$always(
-					author$project$Panel$Editor$Module$ActiveExprOp(index)),
-				author$project$Panel$Editor$Module$opViewOutput(op)),
-				A2(
-				elm$html$Html$map,
-				elm$core$Basics$always(
-					author$project$Panel$Editor$Module$ActiveExprTerm(index + 1)),
-				author$project$Panel$Editor$Module$termViewOutput(term))
-			]);
+var author$project$Panel$Editor$Module$termViewOutput = F2(
+	function (term, isActive) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					elm$html$Html$Events$onClick(0),
+					author$project$Panel$Editor$Module$subClassList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('partDefEditor-term', true),
+							_Utils_Tuple2('partDefEditor-element-active', isActive)
+						]))
+				]),
+			_List_fromArray(
+				[
+					elm$html$Html$text(
+					author$project$Project$Source$Module$Def$Expr$Term$toString(term))
+				]));
 	});
 var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
 	var head = _n0.a;
@@ -17177,6 +17198,8 @@ var author$project$Project$Source$Module$Def$Expr$getOthers = function (_n0) {
 	var others = _n0.b;
 	return others;
 };
+var elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
+var elm$html$Html$map = elm$virtual_dom$VirtualDom$map;
 var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 	function (expr, partDefExprActiveMaybe) {
 		return A2(
@@ -17209,23 +17232,71 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 			_Utils_ap(
 				_List_fromArray(
 					[
-						elm$html$Html$text('='),
-						A2(
-						elm$html$Html$map,
-						elm$core$Basics$always(
-							author$project$Panel$Editor$Module$ActivePartDefExpr(
-								author$project$Panel$Editor$Module$ActiveExprTerm(0))),
-						author$project$Panel$Editor$Module$termViewOutput(
-							author$project$Project$Source$Module$Def$Expr$getHead(expr)))
+						elm$html$Html$text('=')
 					]),
-				A2(
-					elm$core$List$map,
-					elm$html$Html$map(author$project$Panel$Editor$Module$ActivePartDefExpr),
-					elm$core$List$concat(
+				_Utils_ap(
+					function () {
+						if ((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 1)) {
+							var _n3 = partDefExprActiveMaybe.a;
+							return _List_fromArray(
+								[author$project$Panel$Editor$Module$activeHeadTermLeft]);
+						} else {
+							return _List_Nil;
+						}
+					}(),
+					_Utils_ap(
+						_List_fromArray(
+							[
+								A2(
+								elm$html$Html$map,
+								elm$core$Basics$always(
+									author$project$Panel$Editor$Module$ActivePartDefExpr(
+										author$project$Panel$Editor$Module$ActiveExprTerm(0))),
+								A2(
+									author$project$Panel$Editor$Module$termViewOutput,
+									author$project$Project$Source$Module$Def$Expr$getHead(expr),
+									_Utils_eq(
+										partDefExprActiveMaybe,
+										elm$core$Maybe$Just(
+											author$project$Panel$Editor$Module$ActiveExprTerm(0)))))
+							]),
 						A2(
-							elm$core$List$indexedMap,
-							author$project$Panel$Editor$Module$exprViewOpAndTermNormal,
-							author$project$Project$Source$Module$Def$Expr$getOthers(expr))))));
+							elm$core$List$map,
+							elm$html$Html$map(author$project$Panel$Editor$Module$ActivePartDefExpr),
+							elm$core$List$concat(
+								A2(
+									elm$core$List$indexedMap,
+									F2(
+										function (index, _n4) {
+											var op = _n4.a;
+											var term = _n4.b;
+											return _List_fromArray(
+												[
+													A2(
+													elm$html$Html$map,
+													elm$core$Basics$always(
+														author$project$Panel$Editor$Module$ActiveExprOp(index)),
+													A2(
+														author$project$Panel$Editor$Module$opViewOutput,
+														op,
+														_Utils_eq(
+															partDefExprActiveMaybe,
+															elm$core$Maybe$Just(
+																author$project$Panel$Editor$Module$ActiveExprOp(index))))),
+													A2(
+													elm$html$Html$map,
+													elm$core$Basics$always(
+														author$project$Panel$Editor$Module$ActiveExprTerm(index + 1)),
+													A2(
+														author$project$Panel$Editor$Module$termViewOutput,
+														term,
+														_Utils_eq(
+															partDefExprActiveMaybe,
+															elm$core$Maybe$Just(
+																author$project$Panel$Editor$Module$ActiveExprTerm(index + 1)))))
+												]);
+										}),
+									author$project$Project$Source$Module$Def$Expr$getOthers(expr))))))));
 	});
 var elm$svg$Svg$Attributes$class = _VirtualDom_attribute('class');
 var author$project$NSvg$toHtmlWithClass = F3(
@@ -17686,34 +17757,37 @@ var author$project$Panel$Editor$Module$partDefListView = F2(
 				[
 					author$project$Panel$Editor$Module$subClass('partDefEditorList')
 				]),
-			A2(
-				elm$core$List$indexedMap,
-				F2(
-					function (index, def) {
-						return A2(
-							elm$html$Html$map,
-							function (m) {
-								return author$project$Panel$Editor$Module$ActiveTo(
-									author$project$Panel$Editor$Module$ActivePartDefList(
-										author$project$Panel$Editor$Module$ActivePartDef(
-											_Utils_Tuple2(index, m))));
-							},
-							A3(
-								author$project$Panel$Editor$Module$partDefView,
-								index,
-								def,
-								function () {
-									if (!partDefActiveWithIndexMaybe.$) {
-										var _n1 = partDefActiveWithIndexMaybe.a;
-										var i = _n1.a;
-										var partDefActive = _n1.b;
-										return _Utils_eq(i, index) ? elm$core$Maybe$Just(partDefActive) : elm$core$Maybe$Nothing;
-									} else {
-										return elm$core$Maybe$Nothing;
-									}
-								}()));
-					}),
-				defList));
+			_Utils_ap(
+				A2(
+					elm$core$List$indexedMap,
+					F2(
+						function (index, def) {
+							return A2(
+								elm$html$Html$map,
+								function (m) {
+									return author$project$Panel$Editor$Module$ActiveTo(
+										author$project$Panel$Editor$Module$ActivePartDefList(
+											author$project$Panel$Editor$Module$ActivePartDef(
+												_Utils_Tuple2(index, m))));
+								},
+								A3(
+									author$project$Panel$Editor$Module$partDefView,
+									index,
+									def,
+									function () {
+										if (!partDefActiveWithIndexMaybe.$) {
+											var _n1 = partDefActiveWithIndexMaybe.a;
+											var i = _n1.a;
+											var partDefActive = _n1.b;
+											return _Utils_eq(i, index) ? elm$core$Maybe$Just(partDefActive) : elm$core$Maybe$Nothing;
+										} else {
+											return elm$core$Maybe$Nothing;
+										}
+									}()));
+						}),
+					defList),
+				_List_fromArray(
+					[author$project$Panel$Editor$Module$addDefButton])));
 	});
 var author$project$Panel$Editor$Module$partDefinitionsViewTitle = A2(
 	elm$html$Html$div,

@@ -547,7 +547,8 @@ img {
 }
 
 .moduleEditor-partDefEditor-name-edit-suggestion-item-select {
-    background-color: #22229978;
+    background-color: var(--accentColorBg);
+    color: var(--accentColorText);
 }
 
 .moduleEditor-partDefEditor-name-edit-suggestion-item-text {

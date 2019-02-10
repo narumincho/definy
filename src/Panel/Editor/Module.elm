@@ -950,7 +950,7 @@ partDefListView defList partDefActiveWithIndexMaybe =
     Html.div
         [ subClass "partDefEditorList"
         ]
-        (defList
+        ((defList
             |> List.indexedMap
                 (\index def ->
                     partDefView index
@@ -968,6 +968,8 @@ partDefListView defList partDefActiveWithIndexMaybe =
                         )
                         |> Html.map (\m -> ActiveTo (ActivePartDefList (ActivePartDef ( index, m ))))
                 )
+         )
+            ++ [ addDefButton ]
         )
 
 
@@ -1206,39 +1208,59 @@ partDefViewExpr expr partDefExprActiveMaybe =
                         ]
                )
         )
-        ([ Html.text "="
-         , termViewOutput (Expr.getHead expr)
-            |> Html.map (always (ActivePartDefExpr (ActiveExprTerm 0)))
-         ]
+        ([ Html.text "=" ]
+            ++ (case partDefExprActiveMaybe of
+                    Just ActiveExprHead ->
+                        [ activeHeadTermLeft ]
+
+                    _ ->
+                        []
+               )
+            ++ [ termViewOutput (Expr.getHead expr) (partDefExprActiveMaybe == Just (ActiveExprTerm 0))
+                    |> Html.map (always (ActivePartDefExpr (ActiveExprTerm 0)))
+               ]
             ++ (Expr.getOthers expr
-                    |> List.indexedMap exprViewOpAndTermNormal
+                    |> List.indexedMap
+                        (\index ( op, term ) ->
+                            [ opViewOutput op (partDefExprActiveMaybe == Just (ActiveExprOp index))
+                                |> Html.map (always (ActiveExprOp index))
+                            , termViewOutput term (partDefExprActiveMaybe == Just (ActiveExprTerm (index + 1)))
+                                |> Html.map (always (ActiveExprTerm (index + 1)))
+                            ]
+                        )
                     |> List.concat
                     |> List.map (Html.map ActivePartDefExpr)
                )
         )
 
 
-exprViewOpAndTermNormal : Int -> ( Op.Operator, Term.Term ) -> List (Html.Html PartDefExprActive)
-exprViewOpAndTermNormal index ( op, term ) =
-    [ opViewOutput op
-        |> Html.map (always (ActiveExprOp index))
-    , termViewOutput term
-        |> Html.map (always (ActiveExprTerm (index + 1)))
-    ]
-
-
 {-| 編集していない項の表示
 -}
-termViewOutput : Term.Term -> Html.Html ()
-termViewOutput term =
+termViewOutput : Term.Term -> Bool -> Html.Html ()
+termViewOutput term isActive =
     Html.div
         [ Html.Events.onClick ()
-        , subClass "partDefEditor-term"
+        , subClassList
+            [ ( "partDefEditor-term", True )
+            , ( "partDefEditor-element-active", isActive )
+            ]
         ]
         [ Html.text (Term.toString term) ]
 
 
-{-| 編集している項の表示
+opViewOutput : Op.Operator -> Bool -> Html.Html ()
+opViewOutput op isActive =
+    Html.div
+        [ Html.Events.onClick ()
+        , subClassList
+            [ ( "partDefEditor-op", True )
+            , ( "partDefEditor-element-active", isActive )
+            ]
+        ]
+        [ Html.text (Op.toString op |> Maybe.withDefault "?") ]
+
+
+{-| 編集の表示
 -}
 textAreaValueToListHtml : List ( Char, Bool ) -> List (Html.Html msg)
 textAreaValueToListHtml =
@@ -1257,55 +1279,16 @@ textAreaValueToListHtml =
         )
 
 
-opViewOutput : Op.Operator -> Html.Html ()
-opViewOutput op =
-    Html.div
-        [ Html.Events.onClick ()
-        , subClass "partDefEditor-op"
-        ]
-        [ Html.text (Op.toString op |> Maybe.withDefault "?") ]
-
-
-opViewInputOutput : List ( Char, Bool ) -> Html.Html msg
-opViewInputOutput textAreaValue =
-    Html.div
-        [ subClass "partDefEditor-editTarget"
-        , subClass "partDefEditor-op"
-        ]
-        (textAreaValue
-            |> List.map
-                (\( char, bool ) ->
-                    Html.div
-                        [ subClass
-                            (if bool then
-                                "partDefEditor-okChar"
-
-                             else
-                                "partDefEditor-errChar"
-                            )
-                        ]
-                        [ Html.text (String.fromChar char) ]
-                )
-        )
-
-
-{-| 移動モードの式のキャレット
+{-| 項の先頭を表す
 -}
-moveModeCaret : Html.Html msg
-moveModeCaret =
+activeHeadTermLeft : Html.Html msg
+activeHeadTermLeft =
     Html.div
         [ subClass "partDefEditor-caretBox" ]
         [ Html.div
             [ subClass "partDefEditor-caret" ]
             []
         ]
-
-
-intermediateExprView : Html.Html Msg
-intermediateExprView =
-    Html.div
-        []
-        [ Html.text "評価エリア" ]
 
 
 addDefButton : Html.Html Msg
