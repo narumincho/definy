@@ -20,7 +20,7 @@ import Panel.DefaultUi
 import Parser
 import Parser.SimpleChar
 import Project
-import Project.Label
+import Project.Label as L
 import Project.Source
 import Project.Source.Module.Def as Def
 import Project.Source.Module.Def.Expr as Expr
@@ -48,6 +48,8 @@ type Msg
     | SelectFirstChild
     | SelectLastChild
     | SelectParent
+    | SuggestNextOrSelectDown
+    | SuggestPrevOrSelectUp
     | Input String
     | ToEditMode
     | ConfirmMultiLineTextField
@@ -84,7 +86,7 @@ type PartDefListActive
 
 type PartDefActive
     = ActivePartDefSelf
-    | ActivePartDefName (Maybe (List ( Char, Bool )))
+    | ActivePartDefName (Maybe ( List ( Char, Bool ), Int ))
     | ActivePartDefType (Maybe (List ( Char, Bool )))
     | ActivePartDefExpr PartDefExprActive
 
@@ -137,9 +139,6 @@ update msg project (Model rec) =
             project
                 |> Project.getSource
                 |> Project.Source.getModule rec.moduleRef
-
-        _ =
-            Debug.log "module msg=" msg
     in
     case msg of
         ActiveTo active ->
@@ -165,6 +164,40 @@ update msg project (Model rec) =
 
         SelectParent ->
             update (ActiveTo (selectParent targetModule rec.active)) project (Model rec)
+
+        SuggestPrevOrSelectUp ->
+            case rec.active of
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex )) )) ->
+                    ( Model
+                        { rec
+                            | active =
+                                ActivePartDefList
+                                    (ActivePartDef
+                                        ( index, ActivePartDefName (Just ( textAreaValue, max 0 (suggestIndex - 1) )) )
+                                    )
+                        }
+                    , []
+                    )
+
+                _ ->
+                    update SelectUp project (Model rec)
+
+        SuggestNextOrSelectDown ->
+            case rec.active of
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex )) )) ->
+                    ( Model
+                        { rec
+                            | active =
+                                ActivePartDefList
+                                    (ActivePartDef
+                                        ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex + 1 )) )
+                                    )
+                        }
+                    , []
+                    )
+
+                _ ->
+                    update SelectUp project (Model rec)
 
         Input string ->
             input string (Model rec)
@@ -436,14 +469,6 @@ selectFirstChild module_ active =
             -- 定義から名前へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
-            -- 名前から名前の編集へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just []) ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
-            -- 型から型の編集へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just []) ))
-
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
             -- 式から先頭の項へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0) ))
@@ -570,7 +595,7 @@ input string (Model rec) =
                 in
                 ( Model
                     { rec
-                        | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just textAreaValue) ))
+                        | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, 0 )) ))
                     }
                 , [ EmitChangeName { name = name, index = index, ref = rec.moduleRef } ]
                 )
@@ -658,7 +683,7 @@ view project isFocus (Model { moduleRef, active }) =
                 |> Project.getSource
                 |> Project.Source.getModule moduleRef
     in
-    { title = Project.Label.toCapitalString (ModuleWithCache.getName targetModule)
+    { title = L.toCapitalString (ModuleWithCache.getName targetModule)
     , body =
         [ Html.div [] [ Html.text (activeToString active) ]
         , descriptionView (ModuleWithCache.getReadMe targetModule)
@@ -983,8 +1008,8 @@ partDefViewNameAndType name type_ partDefActiveMaybe =
         [ subClass "partDefEditor-nameAndType" ]
         [ partDefViewName name
             (case partDefActiveMaybe of
-                Just (ActivePartDefName textAreaValueMaybe) ->
-                    Just textAreaValueMaybe
+                Just (ActivePartDefName textAreaValueAndIndexMaybe) ->
+                    Just textAreaValueAndIndexMaybe
 
                 _ ->
                     Nothing
@@ -1001,11 +1026,11 @@ partDefViewNameAndType name type_ partDefActiveMaybe =
         ]
 
 
-partDefViewName : Name.Name -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html PartDefActive
-partDefViewName name textAreaValueMaybeMaybe =
-    case textAreaValueMaybeMaybe of
-        Just (Just textAreaValue) ->
-            partDefNameEditView name textAreaValue
+partDefViewName : Name.Name -> Maybe (Maybe ( List ( Char, Bool ), Int )) -> Html.Html PartDefActive
+partDefViewName name textAreaValueAndIndexMaybeMaybe =
+    case textAreaValueAndIndexMaybeMaybe of
+        Just (Just ( textAreaValue, suggestIndex )) ->
+            partDefNameEditView name textAreaValue suggestIndex
 
         Just Nothing ->
             partDefNameNormalView name True
@@ -1050,26 +1075,45 @@ partDefNameNormalView name isActive =
                 [ Html.text "NO NAME" ]
 
 
-partDefNameEditView : Name.Name -> List ( Char, Bool ) -> Html.Html PartDefActive
-partDefNameEditView name textAreaValue =
+partDefNameEditView : Name.Name -> List ( Char, Bool ) -> Int -> Html.Html PartDefActive
+partDefNameEditView name textAreaValue suggestIndex =
     Html.div
         [ subClass "partDefEditor-name-edit" ]
         (textAreaValueToListHtml textAreaValue
-            ++ [ suggestionName name ]
+            ++ [ suggestionName name suggestIndex ]
         )
 
 
-suggestionName : Name.Name -> Html.Html msg
-suggestionName name =
+suggestionName : Name.Name -> Int -> Html.Html msg
+suggestionName name index =
     Html.div
         [ subClass "partDefEditor-name-edit-suggestion" ]
-        [ Html.div
-            [ subClass "partDefEditor-name-edit-suggestion-item" ]
-            [ Html.div
-                [ subClass "partDefEditor-name-edit-suggestion-item-text" ]
-                [ Html.text (Name.toString name |> Maybe.withDefault "<NO NAME>") ]
-            , enterIcon
+        ([ ( name, enterIcon )
+         , ( Name.fromLabel (L.make L.hg [ L.oa, L.om, L.oe ]), Html.text "ゲーム" )
+         , ( Name.fromLabel (L.make L.hh [ L.oe, L.or, L.oo ]), Html.text "主人公" )
+         , ( Name.fromLabel (L.make L.hb [ L.oe, L.oa, L.ou, L.ot, L.oi, L.of_, L.ou, L.ol, L.oG, L.oi, L.or, L.ol ]), Html.text "美少女" )
+         , ( Name.fromLabel (L.make L.hm [ L.oo, L.on, L.os, L.ot, L.oe, L.or ]), Html.text "モンスター" )
+         , ( Name.fromLabel (L.make L.hw [ L.oo, L.or, L.ol, L.od ]), Html.text "世界" )
+         ]
+            |> List.indexedMap
+                (\i ( n, subItem ) ->
+                    suggestNameItem n subItem (i == index)
+                )
+        )
+
+
+suggestNameItem : Name.Name -> Html.Html msg -> Bool -> Html.Html msg
+suggestNameItem name subItem isSelect =
+    Html.div
+        [ subClassList
+            [ ( "partDefEditor-name-edit-suggestion-item", True )
+            , ( "partDefEditor-name-edit-suggestion-item-select", isSelect )
             ]
+        ]
+        [ Html.div
+            [ subClass "partDefEditor-name-edit-suggestion-item-text" ]
+            [ Html.text (Name.toString name |> Maybe.withDefault "<NO NAME>") ]
+        , subItem
         ]
 
 

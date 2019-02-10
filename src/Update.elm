@@ -32,10 +32,9 @@ update msg model =
                     ( model, Cmd.none )
 
                 concreteMsgList ->
-                    Debug.log "CONCREAT NO []"
-                        ( model |> Model.pushMsgListToMsgQueue concreteMsgList
-                        , preventDefaultBeforeKeyEvent ()
-                        )
+                    ( model |> Model.pushMsgListToMsgQueue concreteMsgList
+                    , preventDefaultBeforeKeyEvent ()
+                    )
 
         Model.MouseMove position ->
             ( Model.mouseMove position model

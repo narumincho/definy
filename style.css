@@ -546,6 +546,10 @@ img {
     height: 24px;
 }
 
+.moduleEditor-partDefEditor-name-edit-suggestion-item-select {
+    background-color: #22229978;
+}
+
 .moduleEditor-partDefEditor-name-edit-suggestion-item-text {
     flex-grow: 1;
 }
