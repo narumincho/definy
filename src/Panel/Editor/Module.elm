@@ -87,7 +87,7 @@ type PartDefListActive
 type PartDefActive
     = ActivePartDefSelf
     | ActivePartDefName (Maybe ( List ( Char, Bool ), Int ))
-    | ActivePartDefType (Maybe (List ( Char, Bool )))
+    | ActivePartDefType (Maybe ( List ( Char, Bool ), Int ))
     | ActivePartDefExpr PartDefExprActive
 
 
@@ -96,8 +96,8 @@ type PartDefActive
 type PartDefExprActive
     = ActivePartDefExprSelf
     | ActiveExprHead --     |abc + def + 28
-    | ActiveExprTerm Int -- [abc]+ def + 28  Intの範囲は0..255
-    | ActiveExprOp Int --  abc[+]def + 28  Intの範囲は0..254
+    | ActiveExprTerm Int (Maybe (List ( Char, Bool ))) -- [abc]+ def + 28  Intの範囲は0..255
+    | ActiveExprOp Int (Maybe (List ( Char, Bool ))) --  abc[+]def + 28  Intの範囲は0..254
 
 
 {-| テキストエリアにフォーカスが当たっているか。
@@ -305,17 +305,17 @@ selectLeft module_ active =
             -- 先頭の項の前から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0 _) )) ->
             -- 先頭の項から先頭の項の前へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp opIndex) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp opIndex _) )) ->
             -- 演算子から前の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm opIndex) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm opIndex Nothing) ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm termIndex) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm termIndex _) )) ->
             -- 項から前の演算子へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp (termIndex - 1)) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp (termIndex - 1) Nothing) ))
 
         _ ->
             active
@@ -352,15 +352,15 @@ selectRight module_ active =
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead )) ->
             -- 先頭の項の前から先頭の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0 Nothing) ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm termIndex) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm termIndex _) )) ->
             -- 項から次の演算子へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp termIndex) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp termIndex Nothing) ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp opIndex) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp opIndex _) )) ->
             -- 演算子から次の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm (opIndex + 1)) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm (opIndex + 1) Nothing) ))
 
         _ ->
             active
@@ -471,7 +471,7 @@ selectFirstChild module_ active =
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
             -- 式から先頭の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0 Nothing) ))
 
         _ ->
             active
@@ -547,33 +547,6 @@ confirmMultiLineTextField active =
             active
 
 
-confirm : Model -> ( Model, List Emit )
-confirm (Model rec) =
-    case rec.active of
-        ActiveDescription ActiveDescriptionText ->
-            ( Model
-                { rec | active = ActiveDescription ActiveDescriptionSelf }
-            , []
-            )
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just _) )) ->
-            ( Model
-                { rec | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) }
-            , [ EmitSetTextAreaValue "" ]
-            )
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just _) )) ->
-            ( Model
-                { rec | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) }
-            , [ EmitSetTextAreaValue "" ]
-            )
-
-        _ ->
-            ( Model rec
-            , []
-            )
-
-
 input : String -> Model -> ( Model, List Emit )
 input string (Model rec) =
     if String.isEmpty (String.trim string) then
@@ -590,14 +563,11 @@ input string (Model rec) =
 
             ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
                 let
-                    { name, textAreaValue } =
-                        parserBeginWithName string
+                    ( active, emitList ) =
+                        parserBeginWithName string index rec.moduleRef
                 in
-                ( Model
-                    { rec
-                        | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, 0 )) ))
-                    }
-                , [ EmitChangeName { name = name, index = index, ref = rec.moduleRef } ]
+                ( Model { rec | active = active }
+                , emitList
                 )
 
             ActivePartDefList (ActivePartDef ( index, ActivePartDefType _ )) ->
@@ -607,7 +577,7 @@ input string (Model rec) =
                 in
                 ( Model
                     { rec
-                        | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just textAreaValue) ))
+                        | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just ( textAreaValue, 0 )) ))
                     }
                 , [ EmitChangeType { type_ = type_, index = index, ref = rec.moduleRef } ]
                 )
@@ -618,28 +588,49 @@ input string (Model rec) =
                 )
 
 
-parserBeginWithName : String -> { name : Name.Name, textAreaValue : List ( Char, Bool ) }
-parserBeginWithName string =
+parserBeginWithName : String -> Int -> Project.Source.ModuleRef -> ( Active, List Emit )
+parserBeginWithName string index moduleRef =
     case Parser.beginWithName (Parser.SimpleChar.fromString string) of
         Parser.BeginWithNameEndName { name, textAreaValue } ->
-            { name = name
-            , textAreaValue = textAreaValue
-            }
+            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, 0 )) ))
+            , [ EmitChangeName { name = name, index = index, ref = moduleRef } ]
+            )
 
-        Parser.BeginWithNameEndType { name, textAreaValue } ->
-            { name = name
-            , textAreaValue = textAreaValue
-            }
+        Parser.BeginWithNameEndType { name, type_, textAreaValue } ->
+            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just ( textAreaValue, 0 )) ))
+            , [ EmitChangeName { name = name, index = index, ref = moduleRef } ]
+                ++ (if Type.isEmpty type_ then
+                        []
 
-        Parser.BeginWithNameEndExprTerm { name, textAreaValue } ->
-            { name = name
-            , textAreaValue = textAreaValue
-            }
+                    else
+                        [ EmitChangeType { type_ = type_, index = index, ref = moduleRef } ]
+                   )
+            )
 
-        Parser.BeginWithNameEndExprOp { name, textAreaValue } ->
-            { name = name
-            , textAreaValue = textAreaValue
-            }
+        Parser.BeginWithNameEndExprTerm { name, type_, headTerm, opAndTermList, textAreaValue } ->
+            ( ActivePartDefList
+                (ActivePartDef
+                    ( index
+                    , ActivePartDefExpr
+                        (ActiveExprTerm (List.length opAndTermList) (Just textAreaValue))
+                    )
+                )
+            , [ EmitChangeName { name = name, index = index, ref = moduleRef }
+              , EmitChangeType { type_ = type_, index = index, ref = moduleRef }
+              , EmitChangeExpr { expr = Expr.make headTerm opAndTermList, index = index, ref = moduleRef }
+              ]
+            )
+
+        Parser.BeginWithNameEndExprOp { name, type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
+            ( ActivePartDefList
+                (ActivePartDef
+                    ( index, ActivePartDefExpr (ActiveExprOp (List.length opAndTermList) (Just textAreaValue)) )
+                )
+            , [ EmitChangeName { name = name, index = index, ref = moduleRef }
+              , EmitChangeType { type_ = type_, index = index, ref = moduleRef }
+              , EmitChangeExpr { expr = Expr.make headTerm (opAndTermList ++ [ ( lastOp, Term.none ) ]), index = index, ref = moduleRef }
+              ]
+            )
 
 
 parserBeginWithType : String -> { type_ : Type.Type, textAreaValue : List ( Char, Bool ) }
@@ -754,11 +745,17 @@ partDefActiveToString partDefActive =
         ActivePartDefExpr ActiveExprHead ->
             "先頭の項の前"
 
-        ActivePartDefExpr (ActiveExprTerm index) ->
+        ActivePartDefExpr (ActiveExprTerm index Nothing) ->
             String.fromInt index ++ "番目の項"
 
-        ActivePartDefExpr (ActiveExprOp index) ->
+        ActivePartDefExpr (ActiveExprTerm index (Just _)) ->
+            String.fromInt index ++ "番目の項を編集中"
+
+        ActivePartDefExpr (ActiveExprOp index Nothing) ->
             String.fromInt index ++ "番目の演算子"
+
+        ActivePartDefExpr (ActiveExprOp index (Just _)) ->
+            String.fromInt index ++ "番目の演算子を編集中"
 
 
 
@@ -1019,8 +1016,8 @@ partDefViewNameAndType name type_ partDefActiveMaybe =
         , Html.text ":"
         , partDefViewType type_
             (case partDefActiveMaybe of
-                Just (ActivePartDefType textAreaValueMaybe) ->
-                    Just textAreaValueMaybe
+                Just (ActivePartDefType textAreaValueAndIndexMaybe) ->
+                    Just textAreaValueAndIndexMaybe
 
                 _ ->
                     Nothing
@@ -1133,10 +1130,10 @@ enterIcon =
 {------------------ Type  ------------------}
 
 
-partDefViewType : Type.Type -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html PartDefActive
-partDefViewType type_ textAreaValueMaybeMaybe =
-    case textAreaValueMaybeMaybe of
-        Just (Just textAreaValue) ->
+partDefViewType : Type.Type -> Maybe (Maybe ( List ( Char, Bool ), Int )) -> Html.Html PartDefActive
+partDefViewType type_ textAreaValueAndIndexMaybeMaybe =
+    case textAreaValueAndIndexMaybeMaybe of
+        Just (Just ( textAreaValue, _ )) ->
             partDefTypeEditView type_ textAreaValue
 
         Just Nothing ->
@@ -1216,16 +1213,16 @@ partDefViewExpr expr partDefExprActiveMaybe =
                     _ ->
                         []
                )
-            ++ [ termViewOutput (Expr.getHead expr) (partDefExprActiveMaybe == Just (ActiveExprTerm 0))
-                    |> Html.map (always (ActivePartDefExpr (ActiveExprTerm 0)))
+            ++ [ termViewOutput (Expr.getHead expr) (partDefExprActiveMaybe == Just (ActiveExprTerm 0 Nothing))
+                    |> Html.map (always (ActivePartDefExpr (ActiveExprTerm 0 Nothing)))
                ]
             ++ (Expr.getOthers expr
                     |> List.indexedMap
                         (\index ( op, term ) ->
-                            [ opViewOutput op (partDefExprActiveMaybe == Just (ActiveExprOp index))
-                                |> Html.map (always (ActiveExprOp index))
-                            , termViewOutput term (partDefExprActiveMaybe == Just (ActiveExprTerm (index + 1)))
-                                |> Html.map (always (ActiveExprTerm (index + 1)))
+                            [ opViewOutput op (partDefExprActiveMaybe == Just (ActiveExprOp index Nothing))
+                                |> Html.map (always (ActiveExprOp index Nothing))
+                            , termViewOutput term (partDefExprActiveMaybe == Just (ActiveExprTerm (index + 1) Nothing))
+                                |> Html.map (always (ActiveExprTerm (index + 1) Nothing))
                             ]
                         )
                     |> List.concat
