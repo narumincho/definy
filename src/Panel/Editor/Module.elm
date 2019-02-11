@@ -572,14 +572,20 @@ input string (Model rec) =
 
             ActivePartDefList (ActivePartDef ( index, ActivePartDefType _ )) ->
                 let
-                    { type_, textAreaValue } =
-                        parserBeginWithType string
+                    ( active, emitList ) =
+                        parserBeginWithType string index rec.moduleRef
                 in
-                ( Model
-                    { rec
-                        | active = ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just ( textAreaValue, 0 )) ))
-                    }
-                , [ EmitChangeType { type_ = type_, index = index, ref = rec.moduleRef } ]
+                ( Model { rec | active = active }
+                , emitList
+                )
+
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+                let
+                    ( active, emitList ) =
+                        parserInExpr string index rec.moduleRef
+                in
+                ( Model { rec | active = active }
+                , emitList
                 )
 
             _ ->
@@ -617,13 +623,24 @@ parserBeginWithName string index moduleRef =
                 (ActivePartDef
                     ( index
                     , ActivePartDefExpr
-                        (ActiveExprTerm (List.length opAndTermList) (Just textAreaValue))
+                        (if headTerm == Term.none && opAndTermList == [] then
+                            ActivePartDefExprSelf
+
+                         else
+                            ActiveExprTerm (List.length opAndTermList) (Just textAreaValue)
+                        )
                     )
                 )
             , [ EmitChangeName { name = name, index = index, ref = moduleRef }
-              , EmitChangeType { type_ = type_, index = index, ref = moduleRef }
-              , EmitChangeExpr { expr = Expr.make headTerm opAndTermList, index = index, ref = moduleRef }
+              , EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
               ]
+                ++ (if Type.isEmpty type_ then
+                        []
+
+                    else
+                        [ EmitChangeType { type_ = type_, index = index, ref = moduleRef } ]
+                   )
+                ++ [ EmitChangeExpr { expr = Expr.make headTerm opAndTermList, index = index, ref = moduleRef } ]
             )
 
         Parser.BeginWithNameEndExprOp { name, type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
@@ -634,27 +651,109 @@ parserBeginWithName string index moduleRef =
             , [ EmitChangeName { name = name, index = index, ref = moduleRef }
               , EmitChangeType { type_ = type_, index = index, ref = moduleRef }
               , EmitChangeExpr { expr = Expr.make headTerm (opAndTermList ++ [ ( lastOp, Term.none ) ]), index = index, ref = moduleRef }
+              , EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
               ]
             )
 
 
-parserBeginWithType : String -> { type_ : Type.Type, textAreaValue : List ( Char, Bool ) }
-parserBeginWithType string =
+parserBeginWithType : String -> Int -> Project.Source.ModuleRef -> ( Active, List Emit )
+parserBeginWithType string index moduleRef =
     case Parser.beginWithType (Parser.SimpleChar.fromString string) of
         Parser.BeginWithTypeEndType { type_, textAreaValue } ->
-            { type_ = type_
-            , textAreaValue = textAreaValue
-            }
+            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just ( textAreaValue, 0 )) ))
+            , [ EmitChangeType { type_ = type_, index = index, ref = moduleRef } ]
+            )
 
-        Parser.BeginWithTypeEndExprTerm { type_, textAreaValue } ->
-            { type_ = type_
-            , textAreaValue = textAreaValue
-            }
+        Parser.BeginWithTypeEndExprTerm { type_, headTerm, opAndTermList, textAreaValue } ->
+            ( ActivePartDefList
+                (ActivePartDef
+                    ( index
+                    , ActivePartDefExpr
+                        (case List.length opAndTermList of
+                            0 ->
+                                ActivePartDefExprSelf
 
-        Parser.BeginWithTypeEndExprOp { type_, textAreaValue } ->
-            { type_ = type_
-            , textAreaValue = textAreaValue
-            }
+                            length ->
+                                ActiveExprTerm length
+                                    (if textAreaValue == [] then
+                                        Nothing
+
+                                     else
+                                        Just textAreaValue
+                                    )
+                        )
+                    )
+                )
+            , [ EmitChangeType { type_ = type_, index = index, ref = moduleRef }
+              , EmitChangeExpr { expr = Expr.make headTerm opAndTermList, index = index, ref = moduleRef }
+              , EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
+              ]
+            )
+
+        Parser.BeginWithTypeEndExprOp { type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
+            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+            , [ EmitChangeType { type_ = type_, index = index, ref = moduleRef }
+              , EmitChangeExpr { expr = Expr.make headTerm (opAndTermList ++ [ ( lastOp, Term.none ) ]), index = index, ref = moduleRef }
+              , EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
+              ]
+            )
+
+
+parserInExpr : String -> Int -> Project.Source.ModuleRef -> ( Active, List Emit )
+parserInExpr string index moduleRef =
+    case Parser.beginWithExprHead (Parser.SimpleChar.fromString string) of
+        Parser.BeginWithExprHeadEndTerm { headTerm, opAndTermList, textAreaValue } ->
+            ( ActivePartDefList
+                (ActivePartDef
+                    ( index
+                    , ActivePartDefExpr
+                        (ActiveExprTerm
+                            (List.length opAndTermList)
+                            (if getLastTerm headTerm opAndTermList == Term.none then
+                                Nothing
+
+                             else
+                                Just textAreaValue
+                            )
+                        )
+                    )
+                )
+            , [ EmitChangeExpr { expr = Expr.make headTerm opAndTermList, index = index, ref = moduleRef } ]
+                ++ (if opAndTermList == [] then
+                        []
+
+                    else
+                        [ EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList) ]
+                   )
+            )
+
+        Parser.BeginWithExprHeadEndOp { headTerm, opAndTermList, lastOp, textAreaValue } ->
+            ( ActivePartDefList
+                (ActivePartDef
+                    ( index
+                    , ActivePartDefExpr
+                        (ActiveExprOp
+                            (List.length opAndTermList)
+                            (if lastOp == Op.blank then
+                                Nothing
+
+                             else
+                                Just textAreaValue
+                            )
+                        )
+                    )
+                )
+            , [ EmitChangeExpr { expr = Expr.make headTerm opAndTermList, index = index, ref = moduleRef }
+              , EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
+              ]
+            )
+
+
+getLastTerm : Term.Term -> List ( Op.Operator, Term.Term ) -> Term.Term
+getLastTerm headTerm opAndTermList =
+    Utility.ListExtra.last opAndTermList
+        |> Maybe.map Tuple.second
+        |> Maybe.withDefault headTerm
 
 
 
