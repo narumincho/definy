@@ -442,9 +442,9 @@ img {
     padding: 13px;
 }
 
-/* =========================
-    Part Def
-==========================*/
+/* ==================================================================
+                            part Def
+================================================================== */
 
 .moduleEditor-partDefinitions {
     padding: 16px 8px;
@@ -467,14 +467,14 @@ img {
     letter-spacing: 0.15px;
 }
 
-.moduleEditor-partDefEditorList {
+.moduleEditor-partDefList {
     display: grid;
     gap: 16px;
     flex-direction: column;
     padding: 8px 0 0 0;
 }
 
-.moduleEditor-partDefEditor {
+.moduleEditor-partDef {
     display: flex;
     flex-direction: column;
     padding: 8px;
@@ -484,12 +484,12 @@ img {
     border-radius: 4px;
 }
 
-.moduleEditor-partDefEditor-active {
+.moduleEditor-partDef-active {
     border: solid 3px #f09936;
     padding: 5px;
 }
 
-.moduleEditor-partDefEditor-nameAndType {
+.moduleEditor-partDef-nameAndType {
     display: flex;
     height: 38px;
     padding: 0;
@@ -497,7 +497,7 @@ img {
     align-items: center;
 }
 
-.moduleEditor-partDefEditor-name {
+.moduleEditor-partDef-name {
     display: flex;
     align-items: baseline;
     padding: 4px;
@@ -507,7 +507,7 @@ img {
     border-radius: 4px;
 }
 
-.moduleEditor-partDefEditor-noName {
+.moduleEditor-partDef-noName {
     padding: 4px;
     height: 38px;
     background-color: #000;
@@ -516,7 +516,7 @@ img {
     border-radius: 4px;
 }
 
-.moduleEditor-partDefEditor-name-edit {
+.moduleEditor-partDef-name-edit {
     display: flex;
     align-items: baseline;
     padding: 2px;
@@ -529,7 +529,7 @@ img {
     position: relative;
 }
 
-.moduleEditor-partDefEditor-name-edit-suggestion {
+.moduleEditor-partDef-name-edit-suggestion {
     position: absolute;
     top: 38px;
     left: 0;
@@ -540,26 +540,26 @@ img {
     width: 160px;
 }
 
-.moduleEditor-partDefEditor-name-edit-suggestion-item {
+.moduleEditor-partDef-name-edit-suggestion-item {
     display: flex;
     align-items: center;
     height: 24px;
 }
 
-.moduleEditor-partDefEditor-name-edit-suggestion-item-select {
+.moduleEditor-partDef-name-edit-suggestion-item-select {
     background-color: var(--accentColorBg);
     color: var(--accentColorText);
 }
 
-.moduleEditor-partDefEditor-name-edit-suggestion-item-text {
+.moduleEditor-partDef-name-edit-suggestion-item-text {
     flex-grow: 1;
 }
 
-.moduleEditor-partDefEditor-name-edit-suggestion-keyIcon {
+.moduleEditor-partDef-name-edit-suggestion-keyIcon {
     height: 20px;
 }
 
-.moduleEditor-partDefEditor-type {
+.moduleEditor-partDef-type {
     display: flex;
     align-items: baseline;
     padding: 4px;
@@ -569,7 +569,7 @@ img {
     border-radius: 4px;
 }
 
-.moduleEditor-partDefEditor-noType {
+.moduleEditor-partDef-noType {
     display: flex;
     align-items: baseline;
     padding: 4px;
@@ -580,7 +580,7 @@ img {
     border-radius: 4px;
 }
 
-.moduleEditor-partDefEditor-type-edit {
+.moduleEditor-partDef-type-edit {
     display: flex;
     align-items: baseline;
     padding: 2px;
@@ -592,7 +592,7 @@ img {
     min-width: 32px;
 }
 
-.moduleEditor-partDefEditor-expr {
+.moduleEditor-partDef-expr {
     display: flex;
     height: 32px;
     align-items: center;
@@ -600,23 +600,23 @@ img {
     border-radius: 4px;
 }
 
-.moduleEditor-partDefEditor-term {
+.moduleEditor-partDef-term {
     display: flex;
     padding: 0 8px;
 }
 
-.moduleEditor-partDefEditor-op {
+.moduleEditor-partDef-op {
     display: flex;
 }
 
-.moduleEditor-partDefEditor-caretBox {
+.moduleEditor-partDef-caretBox {
     display: block;
     width: 0;
     overflow: visible;
     position: relative;
 }
 
-.moduleEditor-partDefEditor-caret {
+.moduleEditor-partDef-caret {
     display: block;
     width: 2px;
     height: 24px;
@@ -624,12 +624,12 @@ img {
     background: #f09936;
 }
 
-.moduleEditor-partDefEditor-element-active {
+.moduleEditor-partDef-element-active {
     border: solid 3px var(--accentColorBg);
     padding: 1px;
 }
 
-.moduleEditor-partDefEditor-hideTextArea {
+.moduleEditor-partDef-hideTextArea {
     width: 10rem;
     height: 0;
     padding: 0;
@@ -640,17 +640,17 @@ img {
 
 /* 問題がない文字 */
 
-.moduleEditor-partDefEditor-okChar {
+.moduleEditor-partDef-okChar {
     color: #d7ba7d;
 }
 
 /* 使えない文字(編集内) */
 
-.moduleEditor-partDefEditor-errChar {
+.moduleEditor-partDef-errChar {
     color: #e45959;
 }
 
-.moduleEditor-partDefEditor-addPartDef {
+.moduleEditor-partDef-addPartDef {
     width: 7rem;
     padding: .5rem;
 }

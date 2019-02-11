@@ -919,7 +919,7 @@ partDefinitionsView isFocus partDefListActiveMaybe defList =
                     Just _ ->
                         if isFocus then
                             [ Html.textarea
-                                [ Html.Attributes.class "partDefEditor-hideTextArea"
+                                [ Html.Attributes.class "partDef-hideTextArea"
                                 , Html.Attributes.id "edit"
                                 , Html.Events.onInput Input
                                 ]
@@ -945,7 +945,7 @@ partDefinitionsViewTitle =
 partDefListView : List Def.Def -> Maybe ( Int, PartDefActive ) -> Html.Html Msg
 partDefListView defList partDefActiveWithIndexMaybe =
     Html.div
-        [ subClass "partDefEditorList"
+        [ subClass "partDefList"
         ]
         ((defList
             |> List.indexedMap
@@ -974,8 +974,8 @@ partDefView : Int -> Def.Def -> Maybe PartDefActive -> Html.Html PartDefActive
 partDefView index def partDefActiveMaybe =
     Html.div
         [ subClassList
-            [ ( "partDefEditor", True )
-            , ( "partDefEditor-active", partDefActiveMaybe == Just ActivePartDefSelf )
+            [ ( "partDef", True )
+            , ( "partDef-active", partDefActiveMaybe == Just ActivePartDefSelf )
             ]
         , Html.Events.stopPropagationOn "click"
             (Json.Decode.succeed
@@ -1004,7 +1004,7 @@ partDefView index def partDefActiveMaybe =
 partDefViewNameAndType : Name.Name -> Type.Type -> Maybe PartDefActive -> Html.Html PartDefActive
 partDefViewNameAndType name type_ partDefActiveMaybe =
     Html.div
-        [ subClass "partDefEditor-nameAndType" ]
+        [ subClass "partDef-nameAndType" ]
         [ partDefViewName name
             (case partDefActiveMaybe of
                 Just (ActivePartDefName textAreaValueAndIndexMaybe) ->
@@ -1044,8 +1044,8 @@ partDefNameNormalView name isActive =
         Just nameString ->
             Html.div
                 ([ subClassList
-                    [ ( "partDefEditor-name", True )
-                    , ( "partDefEditor-element-active", isActive )
+                    [ ( "partDef-name", True )
+                    , ( "partDef-element-active", isActive )
                     ]
                  ]
                     ++ (if isActive then
@@ -1060,8 +1060,8 @@ partDefNameNormalView name isActive =
         Nothing ->
             Html.div
                 ([ subClassList
-                    [ ( "partDefEditor-noName", True )
-                    , ( "partDefEditor-element-active", isActive )
+                    [ ( "partDef-noName", True )
+                    , ( "partDef-element-active", isActive )
                     ]
                  ]
                     ++ (if isActive then
@@ -1077,7 +1077,7 @@ partDefNameNormalView name isActive =
 partDefNameEditView : Name.Name -> List ( Char, Bool ) -> Int -> Html.Html PartDefActive
 partDefNameEditView name textAreaValue suggestIndex =
     Html.div
-        [ subClass "partDefEditor-name-edit" ]
+        [ subClass "partDef-name-edit" ]
         (textAreaValueToListHtml textAreaValue
             ++ [ suggestionName name suggestIndex ]
         )
@@ -1086,7 +1086,7 @@ partDefNameEditView name textAreaValue suggestIndex =
 suggestionName : Name.Name -> Int -> Html.Html msg
 suggestionName name index =
     Html.div
-        [ subClass "partDefEditor-name-edit-suggestion" ]
+        [ subClass "partDef-name-edit-suggestion" ]
         ([ ( name, enterIcon )
          , ( Name.fromLabel (L.make L.hg [ L.oa, L.om, L.oe ]), Html.text "ゲーム" )
          , ( Name.fromLabel (L.make L.hh [ L.oe, L.or, L.oo ]), Html.text "主人公" )
@@ -1105,12 +1105,12 @@ suggestNameItem : Name.Name -> Html.Html msg -> Bool -> Html.Html msg
 suggestNameItem name subItem isSelect =
     Html.div
         [ subClassList
-            [ ( "partDefEditor-name-edit-suggestion-item", True )
-            , ( "partDefEditor-name-edit-suggestion-item-select", isSelect )
+            [ ( "partDef-name-edit-suggestion-item", True )
+            , ( "partDef-name-edit-suggestion-item-select", isSelect )
             ]
         ]
         [ Html.div
-            [ subClass "partDefEditor-name-edit-suggestion-item-text" ]
+            [ subClass "partDef-name-edit-suggestion-item-text" ]
             [ Html.text (Name.toString name |> Maybe.withDefault "<NO NAME>") ]
         , subItem
         ]
@@ -1119,7 +1119,7 @@ suggestNameItem name subItem isSelect =
 enterIcon : Html.Html msg
 enterIcon =
     NSvg.toHtmlWithClass
-        "moduleEditor-partDefEditor-name-edit-suggestion-keyIcon"
+        "moduleEditor-partDef-name-edit-suggestion-keyIcon"
         { x = 0, y = 0, width = 38, height = 32 }
         [ NSvg.polygon [ ( 4, 4 ), ( 34, 4 ), ( 34, 28 ), ( 12, 28 ), ( 12, 16 ), ( 4, 16 ) ] (NSvg.strokeColor Palette.X11.white) NSvg.fillNone
         , NSvg.path "M30,8 V20 H16 L18,18 M16,20 L18,22" (NSvg.strokeColor Palette.X11.white) NSvg.fillNone
@@ -1149,8 +1149,8 @@ partDefTypeNormalView type_ isActive =
         Just nameString ->
             Html.div
                 ([ subClassList
-                    [ ( "partDefEditor-type", True )
-                    , ( "partDefEditor-element-active", isActive )
+                    [ ( "partDef-type", True )
+                    , ( "partDef-element-active", isActive )
                     ]
                  ]
                     ++ (if isActive then
@@ -1165,8 +1165,8 @@ partDefTypeNormalView type_ isActive =
         Nothing ->
             Html.div
                 ([ subClassList
-                    [ ( "partDefEditor-noType", True )
-                    , ( "partDefEditor-element-active", isActive )
+                    [ ( "partDef-noType", True )
+                    , ( "partDef-element-active", isActive )
                     ]
                  ]
                     ++ (if isActive then
@@ -1182,7 +1182,7 @@ partDefTypeNormalView type_ isActive =
 partDefTypeEditView : Type.Type -> List ( Char, Bool ) -> Html.Html PartDefActive
 partDefTypeEditView type_ textAreaValue =
     Html.div
-        [ subClass "partDefEditor-type-edit" ]
+        [ subClass "partDef-type-edit" ]
         (textAreaValueToListHtml textAreaValue)
 
 
@@ -1193,11 +1193,11 @@ partDefTypeEditView type_ textAreaValue =
 partDefViewExpr : Expr.Expr -> Maybe PartDefExprActive -> Html.Html PartDefActive
 partDefViewExpr expr partDefExprActiveMaybe =
     Html.div
-        ([ subClass "partDefEditor-expr"
+        ([ subClass "partDef-expr"
          ]
             ++ (case partDefExprActiveMaybe of
                     Just ActivePartDefExprSelf ->
-                        [ subClass "partDefEditor-element-active" ]
+                        [ subClass "partDef-element-active" ]
 
                     _ ->
                         [ Html.Events.stopPropagationOn "click"
@@ -1238,8 +1238,8 @@ termViewOutput term isActive =
     Html.div
         [ Html.Events.onClick ()
         , subClassList
-            [ ( "partDefEditor-term", True )
-            , ( "partDefEditor-element-active", isActive )
+            [ ( "partDef-term", True )
+            , ( "partDef-element-active", isActive )
             ]
         ]
         [ Html.text (Term.toString term) ]
@@ -1250,8 +1250,8 @@ opViewOutput op isActive =
     Html.div
         [ Html.Events.onClick ()
         , subClassList
-            [ ( "partDefEditor-op", True )
-            , ( "partDefEditor-element-active", isActive )
+            [ ( "partDef-op", True )
+            , ( "partDef-element-active", isActive )
             ]
         ]
         [ Html.text (Op.toString op |> Maybe.withDefault "?") ]
@@ -1266,10 +1266,10 @@ textAreaValueToListHtml =
             Html.div
                 [ subClass
                     (if bool then
-                        "partDefEditor-okChar"
+                        "partDef-okChar"
 
                      else
-                        "partDefEditor-errChar"
+                        "partDef-errChar"
                     )
                 ]
                 [ Html.text (String.fromChar char) ]
@@ -1281,9 +1281,9 @@ textAreaValueToListHtml =
 activeHeadTermLeft : Html.Html msg
 activeHeadTermLeft =
     Html.div
-        [ subClass "partDefEditor-caretBox" ]
+        [ subClass "partDef-caretBox" ]
         [ Html.div
-            [ subClass "partDefEditor-caret" ]
+            [ subClass "partDef-caret" ]
             []
         ]
 
@@ -1292,7 +1292,7 @@ addDefButton : Html.Html Msg
 addDefButton =
     Html.button
         [ Html.Events.onClick AddPartDef
-        , subClass "partDefEditor-addPartDef"
+        , subClass "partDef-addPartDef"
         ]
         [ Html.text "+ 新しいパーツの定義" ]
 
