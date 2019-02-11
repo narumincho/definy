@@ -200,7 +200,7 @@ update msg project (Model rec) =
                     update SelectDown project (Model rec)
 
         Input string ->
-            input string (Model rec)
+            input string targetModule (Model rec)
 
         ToEditMode ->
             ( Model rec
@@ -547,8 +547,8 @@ confirmMultiLineTextField active =
             active
 
 
-input : String -> Model -> ( Model, List Emit )
-input string (Model rec) =
+input : String -> ModuleWithCache.Module -> Model -> ( Model, List Emit )
+input string targetModule (Model rec) =
     if String.isEmpty (String.trim string) then
         ( Model rec
         , []
@@ -588,6 +588,32 @@ input string (Model rec) =
                 , emitList
                 )
 
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm termIndex _) )) ->
+                let
+                    ( active, emitList ) =
+                        parserBeginWithTerm string
+                            index
+                            rec.moduleRef
+                            termIndex
+                            (ModuleWithCache.getDef index targetModule |> Maybe.withDefault Def.empty |> Def.getExpr)
+                in
+                ( Model { rec | active = active }
+                , emitList
+                )
+
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp opIndex _) )) ->
+                let
+                    ( active, emitList ) =
+                        parserBeginWithOp string
+                            index
+                            rec.moduleRef
+                            opIndex
+                            (ModuleWithCache.getDef index targetModule |> Maybe.withDefault Def.empty |> Def.getExpr)
+                in
+                ( Model { rec | active = active }
+                , emitList
+                )
+
             _ ->
                 ( Model rec
                 , []
@@ -614,7 +640,7 @@ parserBeginWithName string index moduleRef =
                 ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just ( textAreaValue, 0 )) ))
                 , [ EmitChangeName { name = name, index = index, ref = moduleRef }
                   , EmitChangeType { type_ = type_, index = index, ref = moduleRef }
-                  , EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
+                  , textAreaValueToSetTextEmit textAreaValue
                   ]
                 )
 
@@ -651,7 +677,7 @@ parserBeginWithName string index moduleRef =
             , [ EmitChangeName { name = name, index = index, ref = moduleRef }
               , EmitChangeType { type_ = type_, index = index, ref = moduleRef }
               , EmitChangeExpr { expr = Expr.make headTerm (opAndTermList ++ [ ( lastOp, Term.none ) ]), index = index, ref = moduleRef }
-              , EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
+              , textAreaValueToSetTextEmit textAreaValue
               ]
             )
 
@@ -686,7 +712,7 @@ parserBeginWithType string index moduleRef =
                 )
             , [ EmitChangeType { type_ = type_, index = index, ref = moduleRef }
               , EmitChangeExpr { expr = Expr.make headTerm opAndTermList, index = index, ref = moduleRef }
-              , EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
+              , textAreaValueToSetTextEmit textAreaValue
               ]
             )
 
@@ -694,7 +720,7 @@ parserBeginWithType string index moduleRef =
             ( ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
             , [ EmitChangeType { type_ = type_, index = index, ref = moduleRef }
               , EmitChangeExpr { expr = Expr.make headTerm (opAndTermList ++ [ ( lastOp, Term.none ) ]), index = index, ref = moduleRef }
-              , EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
+              , textAreaValueToSetTextEmit textAreaValue
               ]
             )
 
@@ -723,7 +749,7 @@ parserInExpr string index moduleRef =
                         []
 
                     else
-                        [ EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList) ]
+                        [ textAreaValueToSetTextEmit textAreaValue ]
                    )
             )
 
@@ -744,8 +770,126 @@ parserInExpr string index moduleRef =
                     )
                 )
             , [ EmitChangeExpr { expr = Expr.make headTerm opAndTermList, index = index, ref = moduleRef }
-              , EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
+              , textAreaValueToSetTextEmit textAreaValue
               ]
+            )
+
+
+parserBeginWithTerm : String -> Int -> Project.Source.ModuleRef -> Int -> Expr.Expr -> ( Active, List Emit )
+parserBeginWithTerm string index moduleRef termIndex expr =
+    case Parser.beginWithExprTerm (Parser.SimpleChar.fromString string) of
+        Parser.BeginWithTermEndTerm { headTerm, opAndTermList, textAreaValue } ->
+            ( ActivePartDefList
+                (ActivePartDef
+                    ( index
+                    , ActivePartDefExpr
+                        (ActiveExprTerm
+                            (termIndex + List.length opAndTermList)
+                            (if getLastTerm headTerm opAndTermList == Term.none then
+                                Nothing
+
+                             else
+                                Just textAreaValue
+                            )
+                        )
+                    )
+                )
+            , [ EmitChangeExpr
+                    { expr = expr |> Expr.replaceAndInsertTermLastTerm termIndex headTerm opAndTermList
+                    , index = index
+                    , ref = moduleRef
+                    }
+              ]
+                ++ (if opAndTermList == [] then
+                        []
+
+                    else
+                        [ textAreaValueToSetTextEmit textAreaValue ]
+                   )
+            )
+
+        Parser.BeginWithTermEndOp { headTerm, opAndTermList, lastOp, textAreaValue } ->
+            ( ActivePartDefList
+                (ActivePartDef
+                    ( index
+                    , ActivePartDefExpr
+                        (ActiveExprOp
+                            (termIndex + List.length opAndTermList)
+                            (if lastOp == Op.blank then
+                                Nothing
+
+                             else
+                                Just textAreaValue
+                            )
+                        )
+                    )
+                )
+            , [ EmitChangeExpr
+                    { expr = Expr.replaceAndInsertTermLastOp termIndex headTerm opAndTermList lastOp expr
+                    , index = index
+                    , ref = moduleRef
+                    }
+              , textAreaValueToSetTextEmit textAreaValue
+              ]
+            )
+
+
+parserBeginWithOp : String -> Int -> Project.Source.ModuleRef -> Int -> Expr.Expr -> ( Active, List Emit )
+parserBeginWithOp string index moduleRef opIndex expr =
+    case Parser.beginWithExprOp (Parser.SimpleChar.fromString string) of
+        Parser.BeginWithOpEndTerm { headOp, termAndOpList, lastTerm, textAreaValue } ->
+            ( ActivePartDefList
+                (ActivePartDef
+                    ( index
+                    , ActivePartDefExpr
+                        (ActiveExprTerm
+                            (opIndex + List.length termAndOpList)
+                            (if lastTerm == Term.none then
+                                Nothing
+
+                             else
+                                Just textAreaValue
+                            )
+                        )
+                    )
+                )
+            , [ EmitChangeExpr
+                    { expr = expr |> Expr.replaceAndInsertOpLastTerm opIndex headOp termAndOpList lastTerm
+                    , index = index
+                    , ref = moduleRef
+                    }
+              , textAreaValueToSetTextEmit textAreaValue
+              ]
+            )
+
+        Parser.BeginWithOpEndOp { headOp, termAndOpList, textAreaValue } ->
+            ( ActivePartDefList
+                (ActivePartDef
+                    ( index
+                    , ActivePartDefExpr
+                        (ActiveExprOp
+                            (opIndex + List.length termAndOpList)
+                            (if getLastOp headOp termAndOpList == Op.blank then
+                                Nothing
+
+                             else
+                                Just textAreaValue
+                            )
+                        )
+                    )
+                )
+            , [ EmitChangeExpr
+                    { expr = expr |> Expr.replaceAndInsertOpLastOp opIndex headOp termAndOpList
+                    , index = index
+                    , ref = moduleRef
+                    }
+              ]
+                ++ (if termAndOpList == [] then
+                        []
+
+                    else
+                        [ textAreaValueToSetTextEmit textAreaValue ]
+                   )
             )
 
 
@@ -754,6 +898,18 @@ getLastTerm headTerm opAndTermList =
     Utility.ListExtra.last opAndTermList
         |> Maybe.map Tuple.second
         |> Maybe.withDefault headTerm
+
+
+getLastOp : Op.Operator -> List ( Term.Term, Op.Operator ) -> Op.Operator
+getLastOp headOp termAndOpList =
+    Utility.ListExtra.last termAndOpList
+        |> Maybe.map Tuple.second
+        |> Maybe.withDefault headOp
+
+
+textAreaValueToSetTextEmit : List ( Char, Bool ) -> Emit
+textAreaValueToSetTextEmit =
+    List.map Tuple.first >> String.fromList >> EmitSetTextAreaValue
 
 
 
