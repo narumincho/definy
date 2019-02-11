@@ -581,11 +581,33 @@ img {
 
 .moduleEditor-partDef-term {
     display: flex;
-    padding: 0 8px;
+}
+
+.moduleEditor-partDef-term-edit {
+    display: flex;
+    align-items: baseline;
+    border: solid 2px #ddd;
+    color: #4ec9b0;
+    font-size: 16px;
+    border-radius: 4px;
+    min-width: 32px;
+    position: relative;
 }
 
 .moduleEditor-partDef-op {
     display: flex;
+    padding: 0 8px;
+}
+
+.moduleEditor-partDef-op-edit {
+    display: flex;
+    align-items: baseline;
+    border: solid 2px #ddd;
+    color: #4ec9b0;
+    font-size: 16px;
+    border-radius: 4px;
+    min-width: 32px;
+    position: relative;
 }
 
 .moduleEditor-partDef-caretBox {

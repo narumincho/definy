@@ -18084,6 +18084,47 @@ var author$project$Panel$Editor$Module$activeHeadTermLeft = A2(
 				]),
 			_List_Nil)
 		]));
+var author$project$Panel$Editor$Module$suggestionOp = function (op) {
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				author$project$Panel$Editor$Module$subClass('partDef-suggestion')
+			]),
+		_List_Nil);
+};
+var author$project$Panel$Editor$Module$textAreaValueToListHtml = elm$core$List$map(
+	function (_n0) {
+		var _char = _n0.a;
+		var bool = _n0.b;
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass(
+					bool ? 'partDef-okChar' : 'partDef-errChar')
+				]),
+			_List_fromArray(
+				[
+					elm$html$Html$text(
+					elm$core$String$fromChar(_char))
+				]));
+	});
+var author$project$Panel$Editor$Module$opEditView = F2(
+	function (op, textAreaValue) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDef-op-edit')
+				]),
+			_Utils_ap(
+				author$project$Panel$Editor$Module$textAreaValueToListHtml(textAreaValue),
+				_List_fromArray(
+					[
+						author$project$Panel$Editor$Module$suggestionOp(op)
+					])));
+	});
 var author$project$Project$Source$Module$Def$Expr$Operator$safeToString = function (safeOperator) {
 	switch (safeOperator) {
 		case 0:
@@ -18127,7 +18168,7 @@ var author$project$Project$Source$Module$Def$Expr$Operator$toString = function (
 		return elm$core$Maybe$Nothing;
 	}
 };
-var author$project$Panel$Editor$Module$opViewOutput = F2(
+var author$project$Panel$Editor$Module$opNormalView = F2(
 	function (op, isActive) {
 		return A2(
 			elm$html$Html$div,
@@ -18154,6 +18195,44 @@ var author$project$Panel$Editor$Module$opViewOutput = F2(
 						author$project$Project$Source$Module$Def$Expr$Operator$toString(op)))
 				]));
 	});
+var author$project$Panel$Editor$Module$opViewOutput = F2(
+	function (op, textAreaValueMaybeMaybe) {
+		if (!textAreaValueMaybeMaybe.$) {
+			if (!textAreaValueMaybeMaybe.a.$) {
+				var textAreaValue = textAreaValueMaybeMaybe.a.a;
+				return A2(author$project$Panel$Editor$Module$opEditView, op, textAreaValue);
+			} else {
+				var _n1 = textAreaValueMaybeMaybe.a;
+				return A2(author$project$Panel$Editor$Module$opNormalView, op, true);
+			}
+		} else {
+			return A2(author$project$Panel$Editor$Module$opNormalView, op, false);
+		}
+	});
+var author$project$Panel$Editor$Module$suggestionTerm = function (term) {
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				author$project$Panel$Editor$Module$subClass('partDef-suggestion')
+			]),
+		_List_Nil);
+};
+var author$project$Panel$Editor$Module$termEditView = F2(
+	function (term, textAreaValue) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDef-term-edit')
+				]),
+			_Utils_ap(
+				author$project$Panel$Editor$Module$textAreaValueToListHtml(textAreaValue),
+				_List_fromArray(
+					[
+						author$project$Panel$Editor$Module$suggestionTerm(term)
+					])));
+	});
 var author$project$Project$Source$Module$Def$Expr$Term$toString = function (term) {
 	switch (term.$) {
 		case 0:
@@ -18171,7 +18250,7 @@ var author$project$Project$Source$Module$Def$Expr$Term$toString = function (term
 			return '✗';
 	}
 };
-var author$project$Panel$Editor$Module$termViewOutput = F2(
+var author$project$Panel$Editor$Module$termNormalView = F2(
 	function (term, isActive) {
 		return A2(
 			elm$html$Html$div,
@@ -18194,6 +18273,20 @@ var author$project$Panel$Editor$Module$termViewOutput = F2(
 					elm$html$Html$text(
 					author$project$Project$Source$Module$Def$Expr$Term$toString(term))
 				]));
+	});
+var author$project$Panel$Editor$Module$termViewOutput = F2(
+	function (term, textAreaValueMaybeMaybe) {
+		if (!textAreaValueMaybeMaybe.$) {
+			if (!textAreaValueMaybeMaybe.a.$) {
+				var textAreaValue = textAreaValueMaybeMaybe.a.a;
+				return A2(author$project$Panel$Editor$Module$termEditView, term, textAreaValue);
+			} else {
+				var _n1 = textAreaValueMaybeMaybe.a;
+				return A2(author$project$Panel$Editor$Module$termNormalView, term, true);
+			}
+		} else {
+			return A2(author$project$Panel$Editor$Module$termNormalView, term, false);
+		}
 	});
 var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
 	var head = _n0.a;
@@ -18260,10 +18353,15 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 								A2(
 									author$project$Panel$Editor$Module$termViewOutput,
 									author$project$Project$Source$Module$Def$Expr$getHead(expr),
-									_Utils_eq(
-										partDefExprActiveMaybe,
-										elm$core$Maybe$Just(
-											A2(author$project$Panel$Editor$Module$ActiveExprTerm, 0, elm$core$Maybe$Nothing)))))
+									function () {
+										if (((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 2)) && (!partDefExprActiveMaybe.a.a)) {
+											var _n5 = partDefExprActiveMaybe.a;
+											var textAreaValueMaybe = _n5.b;
+											return elm$core$Maybe$Just(textAreaValueMaybe);
+										} else {
+											return elm$core$Maybe$Nothing;
+										}
+									}()))
 							]),
 						A2(
 							elm$core$List$map,
@@ -18272,9 +18370,9 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 								A2(
 									elm$core$List$indexedMap,
 									F2(
-										function (index, _n4) {
-											var op = _n4.a;
-											var term = _n4.b;
+										function (index, _n6) {
+											var op = _n6.a;
+											var term = _n6.b;
 											return _List_fromArray(
 												[
 													A2(
@@ -18284,10 +18382,16 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 													A2(
 														author$project$Panel$Editor$Module$opViewOutput,
 														op,
-														_Utils_eq(
-															partDefExprActiveMaybe,
-															elm$core$Maybe$Just(
-																A2(author$project$Panel$Editor$Module$ActiveExprOp, index, elm$core$Maybe$Nothing))))),
+														function () {
+															if ((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 3)) {
+																var _n8 = partDefExprActiveMaybe.a;
+																var i = _n8.a;
+																var textAreaValueMaybe = _n8.b;
+																return _Utils_eq(i, index) ? elm$core$Maybe$Just(textAreaValueMaybe) : elm$core$Maybe$Nothing;
+															} else {
+																return elm$core$Maybe$Nothing;
+															}
+														}())),
 													A2(
 													elm$html$Html$map,
 													elm$core$Basics$always(
@@ -18295,10 +18399,16 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 													A2(
 														author$project$Panel$Editor$Module$termViewOutput,
 														term,
-														_Utils_eq(
-															partDefExprActiveMaybe,
-															elm$core$Maybe$Just(
-																A2(author$project$Panel$Editor$Module$ActiveExprTerm, index + 1, elm$core$Maybe$Nothing)))))
+														function () {
+															if ((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 2)) {
+																var _n10 = partDefExprActiveMaybe.a;
+																var i = _n10.a;
+																var textAreaValueMaybe = _n10.b;
+																return _Utils_eq(i, index + 1) ? elm$core$Maybe$Just(textAreaValueMaybe) : elm$core$Maybe$Nothing;
+															} else {
+																return elm$core$Maybe$Nothing;
+															}
+														}()))
 												]);
 										}),
 									author$project$Project$Source$Module$Def$Expr$getOthers(expr))))))));
@@ -18463,23 +18573,6 @@ var author$project$Panel$Editor$Module$suggestionName = F2(
 									[author$project$Project$Label$oo, author$project$Project$Label$or, author$project$Project$Label$ol, author$project$Project$Label$od]))),
 						elm$html$Html$text('世界'))
 					])));
-	});
-var author$project$Panel$Editor$Module$textAreaValueToListHtml = elm$core$List$map(
-	function (_n0) {
-		var _char = _n0.a;
-		var bool = _n0.b;
-		return A2(
-			elm$html$Html$div,
-			_List_fromArray(
-				[
-					author$project$Panel$Editor$Module$subClass(
-					bool ? 'partDef-okChar' : 'partDef-errChar')
-				]),
-			_List_fromArray(
-				[
-					elm$html$Html$text(
-					elm$core$String$fromChar(_char))
-				]));
 	});
 var author$project$Panel$Editor$Module$partDefNameEditView = F3(
 	function (name, textAreaValue, suggestIndex) {

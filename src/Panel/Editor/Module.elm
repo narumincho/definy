@@ -1530,15 +1530,44 @@ partDefViewExpr expr partDefExprActiveMaybe =
                     _ ->
                         []
                )
-            ++ [ termViewOutput (Expr.getHead expr) (partDefExprActiveMaybe == Just (ActiveExprTerm 0 Nothing))
+            ++ [ termViewOutput (Expr.getHead expr)
+                    (case partDefExprActiveMaybe of
+                        Just (ActiveExprTerm 0 textAreaValueMaybe) ->
+                            Just textAreaValueMaybe
+
+                        _ ->
+                            Nothing
+                    )
                     |> Html.map (always (ActivePartDefExpr (ActiveExprTerm 0 Nothing)))
                ]
             ++ (Expr.getOthers expr
                     |> List.indexedMap
                         (\index ( op, term ) ->
-                            [ opViewOutput op (partDefExprActiveMaybe == Just (ActiveExprOp index Nothing))
+                            [ opViewOutput op
+                                (case partDefExprActiveMaybe of
+                                    Just (ActiveExprOp i textAreaValueMaybe) ->
+                                        if i == index then
+                                            Just textAreaValueMaybe
+
+                                        else
+                                            Nothing
+
+                                    _ ->
+                                        Nothing
+                                )
                                 |> Html.map (always (ActiveExprOp index Nothing))
-                            , termViewOutput term (partDefExprActiveMaybe == Just (ActiveExprTerm (index + 1) Nothing))
+                            , termViewOutput term
+                                (case partDefExprActiveMaybe of
+                                    Just (ActiveExprTerm i textAreaValueMaybe) ->
+                                        if i == index + 1 then
+                                            Just textAreaValueMaybe
+
+                                        else
+                                            Nothing
+
+                                    _ ->
+                                        Nothing
+                                )
                                 |> Html.map (always (ActiveExprTerm (index + 1) Nothing))
                             ]
                         )
@@ -1549,9 +1578,26 @@ partDefViewExpr expr partDefExprActiveMaybe =
 
 
 {-| 編集していない項の表示
+Maybe (Maybe (List (Char, Bool))) の値は
+Nothing: 選択されていない
+Just Nothing: 選択されている
+Just (Just textAreaValue): 編集中
 -}
-termViewOutput : Term.Term -> Bool -> Html.Html ()
-termViewOutput term isActive =
+termViewOutput : Term.Term -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html ()
+termViewOutput term textAreaValueMaybeMaybe =
+    case textAreaValueMaybeMaybe of
+        Just (Just textAreaValue) ->
+            termEditView term textAreaValue
+
+        Just Nothing ->
+            termNormalView term True
+
+        Nothing ->
+            termNormalView term False
+
+
+termNormalView : Term.Term -> Bool -> Html.Html ()
+termNormalView term isActive =
     Html.div
         [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( (), True ))
         , subClassList
@@ -1562,8 +1608,37 @@ termViewOutput term isActive =
         [ Html.text (Term.toString term) ]
 
 
-opViewOutput : Op.Operator -> Bool -> Html.Html ()
-opViewOutput op isActive =
+termEditView : Term.Term -> List ( Char, Bool ) -> Html.Html msg
+termEditView term textAreaValue =
+    Html.div
+        [ subClass "partDef-term-edit" ]
+        (textAreaValueToListHtml textAreaValue
+            ++ [ suggestionTerm term ]
+        )
+
+
+suggestionTerm : Term.Term -> Html.Html msg
+suggestionTerm term =
+    Html.div
+        [ subClass "partDef-suggestion" ]
+        []
+
+
+opViewOutput : Op.Operator -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html ()
+opViewOutput op textAreaValueMaybeMaybe =
+    case textAreaValueMaybeMaybe of
+        Just (Just textAreaValue) ->
+            opEditView op textAreaValue
+
+        Just Nothing ->
+            opNormalView op True
+
+        Nothing ->
+            opNormalView op False
+
+
+opNormalView : Op.Operator -> Bool -> Html.Html ()
+opNormalView op isActive =
     Html.div
         [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( (), True ))
         , subClassList
@@ -1572,6 +1647,22 @@ opViewOutput op isActive =
             ]
         ]
         [ Html.text (Op.toString op |> Maybe.withDefault "?") ]
+
+
+opEditView : Op.Operator -> List ( Char, Bool ) -> Html.Html msg
+opEditView op textAreaValue =
+    Html.div
+        [ subClass "partDef-op-edit" ]
+        (textAreaValueToListHtml textAreaValue
+            ++ [ suggestionOp op ]
+        )
+
+
+suggestionOp : Op.Operator -> Html.Html msg
+suggestionOp op =
+    Html.div
+        [ subClass "partDef-suggestion" ]
+        []
 
 
 {-| 編集しているものの入力途中の文字の表示
