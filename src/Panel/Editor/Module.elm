@@ -597,15 +597,20 @@ parserBeginWithName string index moduleRef =
             )
 
         Parser.BeginWithNameEndType { name, type_, textAreaValue } ->
-            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just ( textAreaValue, 0 )) ))
-            , [ EmitChangeName { name = name, index = index, ref = moduleRef } ]
-                ++ (if Type.isEmpty type_ then
-                        []
+            if Type.isEmpty type_ then
+                ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
+                , [ EmitChangeName { name = name, index = index, ref = moduleRef }
+                  , EmitSetTextAreaValue ""
+                  ]
+                )
 
-                    else
-                        [ EmitChangeType { type_ = type_, index = index, ref = moduleRef } ]
-                   )
-            )
+            else
+                ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just ( textAreaValue, 0 )) ))
+                , [ EmitChangeName { name = name, index = index, ref = moduleRef }
+                  , EmitChangeType { type_ = type_, index = index, ref = moduleRef }
+                  , EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
+                  ]
+                )
 
         Parser.BeginWithNameEndExprTerm { name, type_, headTerm, opAndTermList, textAreaValue } ->
             ( ActivePartDefList
@@ -1143,8 +1148,8 @@ enterIcon =
 partDefViewType : Type.Type -> Maybe (Maybe ( List ( Char, Bool ), Int )) -> Html.Html PartDefActive
 partDefViewType type_ textAreaValueAndIndexMaybeMaybe =
     case textAreaValueAndIndexMaybeMaybe of
-        Just (Just ( textAreaValue, _ )) ->
-            partDefTypeEditView type_ textAreaValue
+        Just (Just ( textAreaValue, suggestIndex )) ->
+            partDefTypeEditView type_ textAreaValue suggestIndex
 
         Just Nothing ->
             partDefTypeNormalView type_ True
@@ -1189,11 +1194,49 @@ partDefTypeNormalView type_ isActive =
                 [ Html.text "NO TYPE" ]
 
 
-partDefTypeEditView : Type.Type -> List ( Char, Bool ) -> Html.Html PartDefActive
-partDefTypeEditView type_ textAreaValue =
+partDefTypeEditView : Type.Type -> List ( Char, Bool ) -> Int -> Html.Html PartDefActive
+partDefTypeEditView type_ textAreaValue suggestIndex =
     Html.div
         [ subClass "partDef-type-edit" ]
-        (textAreaValueToListHtml textAreaValue)
+        (textAreaValueToListHtml textAreaValue
+            ++ [ suggestionType type_ suggestIndex ]
+        )
+
+
+suggestionType : Type.Type -> Int -> Html.Html msg
+suggestionType type_ suggestIndex =
+    Html.div
+        [ subClass "partDef-suggestion" ]
+        [ suggestTypeItem
+            Type.int
+            (Html.text "32bit整数")
+            True
+        ]
+
+
+suggestTypeItem : Type.Type -> Html.Html msg -> Bool -> Html.Html msg
+suggestTypeItem type_ subItem isSelect =
+    Html.div
+        [ subClassList
+            [ ( "partDef-suggestion-item", True )
+            , ( "partDef-suggestion-item-select", isSelect )
+            ]
+        ]
+        [ Html.div
+            [ subClassList
+                [ ( "partDef-suggestion-item-text", True )
+                , ( "partDef-suggestion-item-text-select", isSelect )
+                ]
+            ]
+            [ Html.text (Type.toString type_ |> Maybe.withDefault "<NO TYPE>") ]
+        , Html.div
+            [ subClassList
+                [ ( "partDef-suggestion-item-subItem", True )
+                , ( "partDef-suggestion-item-subItem-select", isSelect )
+                ]
+            ]
+            [ subItem ]
+        ]
 
 
 

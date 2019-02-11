@@ -10661,6 +10661,7 @@ var author$project$Parser$SimpleChar$fromString = function (string) {
 var author$project$Project$Source$Module$Def$Type$isEmpty = function (type_) {
 	return _Utils_eq(type_, author$project$Project$Source$Module$Def$Type$Empty);
 };
+var elm$core$String$fromList = _String_fromList;
 var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 	function (string, index, moduleRef) {
 		var _n0 = author$project$Parser$beginWithName(
@@ -10686,7 +10687,18 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 				var name = _n0.a.aM;
 				var type_ = _n0.a.aZ;
 				var textAreaValue = _n0.a.v;
-				return _Utils_Tuple2(
+				return author$project$Project$Source$Module$Def$Type$isEmpty(type_) ? _Utils_Tuple2(
+					author$project$Panel$Editor$Module$ActivePartDefList(
+						author$project$Panel$Editor$Module$ActivePartDef(
+							_Utils_Tuple2(
+								index,
+								author$project$Panel$Editor$Module$ActivePartDefType(elm$core$Maybe$Nothing)))),
+					_List_fromArray(
+						[
+							author$project$Panel$Editor$Module$EmitChangeName(
+							{A: index, aM: name, p: moduleRef}),
+							author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
+						])) : _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
 							_Utils_Tuple2(
@@ -10694,17 +10706,16 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 								author$project$Panel$Editor$Module$ActivePartDefType(
 									elm$core$Maybe$Just(
 										_Utils_Tuple2(textAreaValue, 0)))))),
-					_Utils_ap(
-						_List_fromArray(
-							[
-								author$project$Panel$Editor$Module$EmitChangeName(
-								{A: index, aM: name, p: moduleRef})
-							]),
-						author$project$Project$Source$Module$Def$Type$isEmpty(type_) ? _List_Nil : _List_fromArray(
-							[
-								author$project$Panel$Editor$Module$EmitChangeType(
-								{A: index, p: moduleRef, aZ: type_})
-							])));
+					_List_fromArray(
+						[
+							author$project$Panel$Editor$Module$EmitChangeName(
+							{A: index, aM: name, p: moduleRef}),
+							author$project$Panel$Editor$Module$EmitChangeType(
+							{A: index, p: moduleRef, aZ: type_}),
+							author$project$Panel$Editor$Module$EmitSetTextAreaValue(
+							elm$core$String$fromList(
+								A2(elm$core$List$map, elm$core$Tuple$first, textAreaValue)))
+						]));
 			case 2:
 				var name = _n0.a.aM;
 				var type_ = _n0.a.aZ;
@@ -13660,7 +13671,6 @@ var author$project$Project$Label$othersToChar = function (others) {
 			return author$project$Project$Label$digitsToChar(digits);
 	}
 };
-var elm$core$String$fromList = _String_fromList;
 var author$project$Project$Label$toCapitalString = function (_n0) {
 	var head = _n0.a;
 	var others = _n0.b;
@@ -17677,16 +17687,6 @@ var author$project$Panel$Editor$Module$partDefViewName = F2(
 			return A2(author$project$Panel$Editor$Module$partDefNameNormalView, name, false);
 		}
 	});
-var author$project$Panel$Editor$Module$partDefTypeEditView = F2(
-	function (type_, textAreaValue) {
-		return A2(
-			elm$html$Html$div,
-			_List_fromArray(
-				[
-					author$project$Panel$Editor$Module$subClass('partDef-type-edit')
-				]),
-			author$project$Panel$Editor$Module$textAreaValueToListHtml(textAreaValue));
-	});
 var author$project$Project$Source$Module$Def$Type$validTypeToLabel = function (validType) {
 	return A2(
 		author$project$Project$Label$make,
@@ -17709,6 +17709,87 @@ var author$project$Project$Source$Module$Def$Type$toString = function (type_) {
 			return elm$core$Maybe$Nothing;
 	}
 };
+var author$project$Panel$Editor$Module$suggestTypeItem = F3(
+	function (type_, subItem, isSelect) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClassList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('partDef-suggestion-item', true),
+							_Utils_Tuple2('partDef-suggestion-item-select', isSelect)
+						]))
+				]),
+			_List_fromArray(
+				[
+					A2(
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							author$project$Panel$Editor$Module$subClassList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('partDef-suggestion-item-text', true),
+									_Utils_Tuple2('partDef-suggestion-item-text-select', isSelect)
+								]))
+						]),
+					_List_fromArray(
+						[
+							elm$html$Html$text(
+							A2(
+								elm$core$Maybe$withDefault,
+								'<NO TYPE>',
+								author$project$Project$Source$Module$Def$Type$toString(type_)))
+						])),
+					A2(
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							author$project$Panel$Editor$Module$subClassList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('partDef-suggestion-item-subItem', true),
+									_Utils_Tuple2('partDef-suggestion-item-subItem-select', isSelect)
+								]))
+						]),
+					_List_fromArray(
+						[subItem]))
+				]));
+	});
+var author$project$Panel$Editor$Module$suggestionType = F2(
+	function (type_, suggestIndex) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDef-suggestion')
+				]),
+			_List_fromArray(
+				[
+					A3(
+					author$project$Panel$Editor$Module$suggestTypeItem,
+					author$project$Project$Source$Module$Def$Type$int,
+					elm$html$Html$text('32bit整数'),
+					true)
+				]));
+	});
+var author$project$Panel$Editor$Module$partDefTypeEditView = F3(
+	function (type_, textAreaValue, suggestIndex) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDef-type-edit')
+				]),
+			_Utils_ap(
+				author$project$Panel$Editor$Module$textAreaValueToListHtml(textAreaValue),
+				_List_fromArray(
+					[
+						A2(author$project$Panel$Editor$Module$suggestionType, type_, suggestIndex)
+					])));
+	});
 var author$project$Panel$Editor$Module$partDefTypeNormalView = F2(
 	function (type_, isActive) {
 		var _n0 = author$project$Project$Source$Module$Def$Type$toString(type_);
@@ -17775,7 +17856,8 @@ var author$project$Panel$Editor$Module$partDefViewType = F2(
 			if (!textAreaValueAndIndexMaybeMaybe.a.$) {
 				var _n1 = textAreaValueAndIndexMaybeMaybe.a.a;
 				var textAreaValue = _n1.a;
-				return A2(author$project$Panel$Editor$Module$partDefTypeEditView, type_, textAreaValue);
+				var suggestIndex = _n1.b;
+				return A3(author$project$Panel$Editor$Module$partDefTypeEditView, type_, textAreaValue, suggestIndex);
 			} else {
 				var _n2 = textAreaValueAndIndexMaybeMaybe.a;
 				return A2(author$project$Panel$Editor$Module$partDefTypeNormalView, type_, true);
