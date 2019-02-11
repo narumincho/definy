@@ -238,14 +238,14 @@ editorGroupPanelKeyDown { key, ctrl, shift, alt } =
                 Key.ArrowUp ->
                     [ Panel.EditorGroup.EditorItemMsgToActive
                         (Panel.EditorGroup.ModuleEditorMsg
-                            Panel.Editor.Module.SuggestPrevOrSelectUp
+                            Panel.Editor.Module.SuggestionPrevOrSelectUp
                         )
                     ]
 
                 Key.ArrowDown ->
                     [ Panel.EditorGroup.EditorItemMsgToActive
                         (Panel.EditorGroup.ModuleEditorMsg
-                            Panel.Editor.Module.SuggestNextOrSelectDown
+                            Panel.Editor.Module.SuggestionNextOrSelectDown
                         )
                     ]
 

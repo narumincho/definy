@@ -7781,8 +7781,8 @@ var author$project$Panel$Editor$Module$SelectLastChild = {$: 6};
 var author$project$Panel$Editor$Module$SelectLeft = {$: 1};
 var author$project$Panel$Editor$Module$SelectParent = {$: 7};
 var author$project$Panel$Editor$Module$SelectRight = {$: 2};
-var author$project$Panel$Editor$Module$SuggestNextOrSelectDown = {$: 8};
-var author$project$Panel$Editor$Module$SuggestPrevOrSelectUp = {$: 9};
+var author$project$Panel$Editor$Module$SuggestionNextOrSelectDown = {$: 8};
+var author$project$Panel$Editor$Module$SuggestionPrevOrSelectUp = {$: 9};
 var author$project$Panel$EditorGroup$EditorItemMsgToActive = function (a) {
 	return {$: 6, a: a};
 };
@@ -7816,13 +7816,13 @@ var author$project$KeyConfig$editorGroupPanelKeyDown = function (_n0) {
 						return _List_fromArray(
 							[
 								author$project$Panel$EditorGroup$EditorItemMsgToActive(
-								author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SuggestPrevOrSelectUp))
+								author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SuggestionPrevOrSelectUp))
 							]);
 					case 78:
 						return _List_fromArray(
 							[
 								author$project$Panel$EditorGroup$EditorItemMsgToActive(
-								author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SuggestNextOrSelectDown))
+								author$project$Panel$EditorGroup$ModuleEditorMsg(author$project$Panel$Editor$Module$SuggestionNextOrSelectDown))
 							]);
 					case 55:
 						return _List_fromArray(
@@ -8641,6 +8641,7 @@ var author$project$Panel$Editor$Module$ActiveTo = function (a) {
 var author$project$Panel$Editor$Module$EmitAddPartDef = function (a) {
 	return {$: 4, a: a};
 };
+var author$project$Panel$Editor$Module$SelectDown = {$: 4};
 var author$project$Panel$Editor$Module$SelectUp = {$: 3};
 var author$project$Panel$Editor$Module$EmitFocusEditTextAea = {$: 6};
 var author$project$Panel$Editor$Module$EmitSetTextAreaValue = function (a) {
@@ -11582,7 +11583,7 @@ var author$project$Panel$Editor$Module$update = F3(
 								}),
 							_List_Nil);
 					} else {
-						var $temp$msg = author$project$Panel$Editor$Module$SelectUp,
+						var $temp$msg = author$project$Panel$Editor$Module$SelectDown,
 							$temp$project = project,
 							$temp$_n0 = rec;
 						msg = $temp$msg;
@@ -17174,7 +17175,7 @@ var author$project$Panel$Editor$Module$addDefButton = A2(
 	_List_fromArray(
 		[
 			elm$html$Html$Events$onClick(author$project$Panel$Editor$Module$AddPartDef),
-			author$project$Panel$Editor$Module$subClass('partDefEditor-addPartDef')
+			author$project$Panel$Editor$Module$subClass('partDef-addPartDef')
 		]),
 	_List_fromArray(
 		[
@@ -17184,7 +17185,7 @@ var author$project$Panel$Editor$Module$activeHeadTermLeft = A2(
 	elm$html$Html$div,
 	_List_fromArray(
 		[
-			author$project$Panel$Editor$Module$subClass('partDefEditor-caretBox')
+			author$project$Panel$Editor$Module$subClass('partDef-caretBox')
 		]),
 	_List_fromArray(
 		[
@@ -17192,7 +17193,7 @@ var author$project$Panel$Editor$Module$activeHeadTermLeft = A2(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
-					author$project$Panel$Editor$Module$subClass('partDefEditor-caret')
+					author$project$Panel$Editor$Module$subClass('partDef-caret')
 				]),
 			_List_Nil)
 		]));
@@ -17249,8 +17250,8 @@ var author$project$Panel$Editor$Module$opViewOutput = F2(
 					author$project$Panel$Editor$Module$subClassList(
 					_List_fromArray(
 						[
-							_Utils_Tuple2('partDefEditor-op', true),
-							_Utils_Tuple2('partDefEditor-element-active', isActive)
+							_Utils_Tuple2('partDef-op', true),
+							_Utils_Tuple2('partDef-element-active', isActive)
 						]))
 				]),
 			_List_fromArray(
@@ -17289,8 +17290,8 @@ var author$project$Panel$Editor$Module$termViewOutput = F2(
 					author$project$Panel$Editor$Module$subClassList(
 					_List_fromArray(
 						[
-							_Utils_Tuple2('partDefEditor-term', true),
-							_Utils_Tuple2('partDefEditor-element-active', isActive)
+							_Utils_Tuple2('partDef-term', true),
+							_Utils_Tuple2('partDef-element-active', isActive)
 						]))
 				]),
 			_List_fromArray(
@@ -17316,14 +17317,14 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 			_Utils_ap(
 				_List_fromArray(
 					[
-						author$project$Panel$Editor$Module$subClass('partDefEditor-expr')
+						author$project$Panel$Editor$Module$subClass('partDef-expr')
 					]),
 				function () {
 					if ((!partDefExprActiveMaybe.$) && (!partDefExprActiveMaybe.a.$)) {
 						var _n1 = partDefExprActiveMaybe.a;
 						return _List_fromArray(
 							[
-								author$project$Panel$Editor$Module$subClass('partDefEditor-element-active')
+								author$project$Panel$Editor$Module$subClass('partDef-element-active')
 							]);
 					} else {
 						return _List_fromArray(
@@ -17426,7 +17427,7 @@ var author$project$NSvg$toHtmlWithClass = F3(
 	});
 var author$project$Panel$Editor$Module$enterIcon = A3(
 	author$project$NSvg$toHtmlWithClass,
-	'moduleEditor-partDefEditor-name-edit-suggestion-keyIcon',
+	'moduleEditor-partDef-suggestion-keyIcon',
 	{bP: 32, b8: 38, ca: 0, cb: 0},
 	_List_fromArray(
 		[
@@ -17441,13 +17442,9 @@ var author$project$Panel$Editor$Module$enterIcon = A3(
 					_Utils_Tuple2(12, 16),
 					_Utils_Tuple2(4, 16)
 				]),
-			author$project$NSvg$strokeColor(tesk9$palette$Palette$X11$white),
+			author$project$NSvg$strokeNone,
 			author$project$NSvg$fillNone),
-			A3(
-			author$project$NSvg$path,
-			'M30,8 V20 H16 L18,18 M16,20 L18,22',
-			author$project$NSvg$strokeColor(tesk9$palette$Palette$X11$white),
-			author$project$NSvg$fillNone)
+			A3(author$project$NSvg$path, 'M30,8 V20 H16 L18,18 M16,20 L18,22', author$project$NSvg$strokeNone, author$project$NSvg$fillNone)
 		]));
 var author$project$Project$Source$Module$Def$Name$toString = function (name) {
 	if (!name.$) {
@@ -17467,8 +17464,8 @@ var author$project$Panel$Editor$Module$suggestNameItem = F3(
 					author$project$Panel$Editor$Module$subClassList(
 					_List_fromArray(
 						[
-							_Utils_Tuple2('partDefEditor-name-edit-suggestion-item', true),
-							_Utils_Tuple2('partDefEditor-name-edit-suggestion-item-select', isSelect)
+							_Utils_Tuple2('partDef-suggestion-item', true),
+							_Utils_Tuple2('partDef-suggestion-item-select', isSelect)
 						]))
 				]),
 			_List_fromArray(
@@ -17477,7 +17474,12 @@ var author$project$Panel$Editor$Module$suggestNameItem = F3(
 					elm$html$Html$div,
 					_List_fromArray(
 						[
-							author$project$Panel$Editor$Module$subClass('partDefEditor-name-edit-suggestion-item-text')
+							author$project$Panel$Editor$Module$subClassList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('partDef-suggestion-item-text', true),
+									_Utils_Tuple2('partDef-suggestion-item-text-select', isSelect)
+								]))
 						]),
 					_List_fromArray(
 						[
@@ -17487,7 +17489,19 @@ var author$project$Panel$Editor$Module$suggestNameItem = F3(
 								'<NO NAME>',
 								author$project$Project$Source$Module$Def$Name$toString(name)))
 						])),
-					subItem
+					A2(
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							author$project$Panel$Editor$Module$subClassList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('partDef-suggestion-item-subItem', true),
+									_Utils_Tuple2('partDef-suggestion-item-subItem-select', isSelect)
+								]))
+						]),
+					_List_fromArray(
+						[subItem]))
 				]));
 	});
 var author$project$Panel$Editor$Module$suggestionName = F2(
@@ -17496,7 +17510,7 @@ var author$project$Panel$Editor$Module$suggestionName = F2(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
-					author$project$Panel$Editor$Module$subClass('partDefEditor-name-edit-suggestion')
+					author$project$Panel$Editor$Module$subClass('partDef-suggestion')
 				]),
 			A2(
 				elm$core$List$indexedMap,
@@ -17564,7 +17578,7 @@ var author$project$Panel$Editor$Module$textAreaValueToListHtml = elm$core$List$m
 			_List_fromArray(
 				[
 					author$project$Panel$Editor$Module$subClass(
-					bool ? 'partDefEditor-okChar' : 'partDefEditor-errChar')
+					bool ? 'partDef-okChar' : 'partDef-errChar')
 				]),
 			_List_fromArray(
 				[
@@ -17578,7 +17592,7 @@ var author$project$Panel$Editor$Module$partDefNameEditView = F3(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
-					author$project$Panel$Editor$Module$subClass('partDefEditor-name-edit')
+					author$project$Panel$Editor$Module$subClass('partDef-name-edit')
 				]),
 			_Utils_ap(
 				author$project$Panel$Editor$Module$textAreaValueToListHtml(textAreaValue),
@@ -17600,8 +17614,8 @@ var author$project$Panel$Editor$Module$partDefNameNormalView = F2(
 							author$project$Panel$Editor$Module$subClassList(
 							_List_fromArray(
 								[
-									_Utils_Tuple2('partDefEditor-name', true),
-									_Utils_Tuple2('partDefEditor-element-active', isActive)
+									_Utils_Tuple2('partDef-name', true),
+									_Utils_Tuple2('partDef-element-active', isActive)
 								]))
 						]),
 					isActive ? _List_Nil : _List_fromArray(
@@ -17627,8 +17641,8 @@ var author$project$Panel$Editor$Module$partDefNameNormalView = F2(
 							author$project$Panel$Editor$Module$subClassList(
 							_List_fromArray(
 								[
-									_Utils_Tuple2('partDefEditor-noName', true),
-									_Utils_Tuple2('partDefEditor-element-active', isActive)
+									_Utils_Tuple2('partDef-noName', true),
+									_Utils_Tuple2('partDef-element-active', isActive)
 								]))
 						]),
 					isActive ? _List_Nil : _List_fromArray(
@@ -17669,7 +17683,7 @@ var author$project$Panel$Editor$Module$partDefTypeEditView = F2(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
-					author$project$Panel$Editor$Module$subClass('partDefEditor-type-edit')
+					author$project$Panel$Editor$Module$subClass('partDef-type-edit')
 				]),
 			author$project$Panel$Editor$Module$textAreaValueToListHtml(textAreaValue));
 	});
@@ -17708,8 +17722,8 @@ var author$project$Panel$Editor$Module$partDefTypeNormalView = F2(
 							author$project$Panel$Editor$Module$subClassList(
 							_List_fromArray(
 								[
-									_Utils_Tuple2('partDefEditor-type', true),
-									_Utils_Tuple2('partDefEditor-element-active', isActive)
+									_Utils_Tuple2('partDef-type', true),
+									_Utils_Tuple2('partDef-element-active', isActive)
 								]))
 						]),
 					isActive ? _List_Nil : _List_fromArray(
@@ -17735,8 +17749,8 @@ var author$project$Panel$Editor$Module$partDefTypeNormalView = F2(
 							author$project$Panel$Editor$Module$subClassList(
 							_List_fromArray(
 								[
-									_Utils_Tuple2('partDefEditor-noType', true),
-									_Utils_Tuple2('partDefEditor-element-active', isActive)
+									_Utils_Tuple2('partDef-noType', true),
+									_Utils_Tuple2('partDef-element-active', isActive)
 								]))
 						]),
 					isActive ? _List_Nil : _List_fromArray(
@@ -17776,7 +17790,7 @@ var author$project$Panel$Editor$Module$partDefViewNameAndType = F3(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
-					author$project$Panel$Editor$Module$subClass('partDefEditor-nameAndType')
+					author$project$Panel$Editor$Module$subClass('partDef-nameAndType')
 				]),
 			_List_fromArray(
 				[
@@ -17826,9 +17840,9 @@ var author$project$Panel$Editor$Module$partDefView = F3(
 					author$project$Panel$Editor$Module$subClassList(
 					_List_fromArray(
 						[
-							_Utils_Tuple2('partDefEditor', true),
+							_Utils_Tuple2('partDef', true),
 							_Utils_Tuple2(
-							'partDefEditor-active',
+							'partDef-active',
 							_Utils_eq(
 								partDefActiveMaybe,
 								elm$core$Maybe$Just(author$project$Panel$Editor$Module$ActivePartDefSelf)))
@@ -17865,7 +17879,7 @@ var author$project$Panel$Editor$Module$partDefListView = F2(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
-					author$project$Panel$Editor$Module$subClass('partDefEditorList')
+					author$project$Panel$Editor$Module$subClass('partDefList')
 				]),
 			_Utils_ap(
 				A2(
@@ -17958,7 +17972,7 @@ var author$project$Panel$Editor$Module$partDefinitionsView = F3(
 								elm$html$Html$textarea,
 								_List_fromArray(
 									[
-										elm$html$Html$Attributes$class('partDefEditor-hideTextArea'),
+										elm$html$Html$Attributes$class('partDef-hideTextArea'),
 										elm$html$Html$Attributes$id('edit'),
 										elm$html$Html$Events$onInput(author$project$Panel$Editor$Module$Input)
 									]),

@@ -529,35 +529,9 @@ img {
     position: relative;
 }
 
-.moduleEditor-partDef-name-edit-suggestion {
-    position: absolute;
-    top: 38px;
-    left: 0;
-    background-color: #2d2d2d;
-    border: solid 1px #999;
-    padding: 2px;
-    font-size: 16px;
-    width: 160px;
-}
-
-.moduleEditor-partDef-name-edit-suggestion-item {
-    display: flex;
-    align-items: center;
-    height: 24px;
-}
-
-.moduleEditor-partDef-name-edit-suggestion-item-select {
-    background-color: var(--accentColorBg);
-    color: var(--accentColorText);
-}
-
-.moduleEditor-partDef-name-edit-suggestion-item-text {
-    flex-grow: 1;
-}
-
-.moduleEditor-partDef-name-edit-suggestion-keyIcon {
-    height: 20px;
-}
+/*=================
+        Type
+=================*/
 
 .moduleEditor-partDef-type {
     display: flex;
@@ -592,6 +566,10 @@ img {
     min-width: 32px;
 }
 
+/*=================
+        Expr
+=================*/
+
 .moduleEditor-partDef-expr {
     display: flex;
     height: 32px;
@@ -624,9 +602,60 @@ img {
     background: #f09936;
 }
 
+/*=========================
+        Common
+=========================*/
+
 .moduleEditor-partDef-element-active {
     border: solid 3px var(--accentColorBg);
     padding: 1px;
+}
+
+/*=========================
+        Suggestion
+=========================*/
+
+.moduleEditor-partDef-suggestion {
+    position: absolute;
+    top: 38px;
+    left: 0;
+    background-color: #2d2d2d;
+    border: solid 1px #999;
+    padding: 2px;
+    font-size: 16px;
+    width: 160px;
+}
+
+.moduleEditor-partDef-suggestion-item {
+    display: flex;
+    align-items: center;
+    height: 24px;
+}
+
+.moduleEditor-partDef-suggestion-item-select {
+    background-color: var(--accentColorBg);
+}
+
+.moduleEditor-partDef-suggestion-item-text {
+    flex-grow: 1;
+}
+
+.moduleEditor-partDef-suggestion-item-text-select {
+    color: var(--accentColorText);
+}
+
+.moduleEditor-partDef-suggestion-item-subItem {
+    color: #999;
+    stroke: #999;
+}
+
+.moduleEditor-partDef-suggestion-item-subItem-select {
+    color: var(--accentColorText);
+    stroke: var(--accentColorText);
+}
+
+.moduleEditor-partDef-suggestion-keyIcon {
+    height: 20px;
 }
 
 .moduleEditor-partDef-hideTextArea {

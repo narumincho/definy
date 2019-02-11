@@ -48,8 +48,8 @@ type Msg
     | SelectFirstChild
     | SelectLastChild
     | SelectParent
-    | SuggestNextOrSelectDown
-    | SuggestPrevOrSelectUp
+    | SuggestionNextOrSelectDown
+    | SuggestionPrevOrSelectUp
     | Input String
     | ToEditMode
     | ConfirmMultiLineTextField
@@ -165,7 +165,7 @@ update msg project (Model rec) =
         SelectParent ->
             update (ActiveTo (selectParent targetModule rec.active)) project (Model rec)
 
-        SuggestPrevOrSelectUp ->
+        SuggestionPrevOrSelectUp ->
             case rec.active of
                 ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex )) )) ->
                     ( Model
@@ -182,7 +182,7 @@ update msg project (Model rec) =
                 _ ->
                     update SelectUp project (Model rec)
 
-        SuggestNextOrSelectDown ->
+        SuggestionNextOrSelectDown ->
             case rec.active of
                 ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex )) )) ->
                     ( Model
@@ -197,7 +197,7 @@ update msg project (Model rec) =
                     )
 
                 _ ->
-                    update SelectUp project (Model rec)
+                    update SelectDown project (Model rec)
 
         Input string ->
             input string (Model rec)
@@ -1086,7 +1086,7 @@ partDefNameEditView name textAreaValue suggestIndex =
 suggestionName : Name.Name -> Int -> Html.Html msg
 suggestionName name index =
     Html.div
-        [ subClass "partDef-name-edit-suggestion" ]
+        [ subClass "partDef-suggestion" ]
         ([ ( name, enterIcon )
          , ( Name.fromLabel (L.make L.hg [ L.oa, L.om, L.oe ]), Html.text "ゲーム" )
          , ( Name.fromLabel (L.make L.hh [ L.oe, L.or, L.oo ]), Html.text "主人公" )
@@ -1105,24 +1105,34 @@ suggestNameItem : Name.Name -> Html.Html msg -> Bool -> Html.Html msg
 suggestNameItem name subItem isSelect =
     Html.div
         [ subClassList
-            [ ( "partDef-name-edit-suggestion-item", True )
-            , ( "partDef-name-edit-suggestion-item-select", isSelect )
+            [ ( "partDef-suggestion-item", True )
+            , ( "partDef-suggestion-item-select", isSelect )
             ]
         ]
         [ Html.div
-            [ subClass "partDef-name-edit-suggestion-item-text" ]
+            [ subClassList
+                [ ( "partDef-suggestion-item-text", True )
+                , ( "partDef-suggestion-item-text-select", isSelect )
+                ]
+            ]
             [ Html.text (Name.toString name |> Maybe.withDefault "<NO NAME>") ]
-        , subItem
+        , Html.div
+            [ subClassList
+                [ ( "partDef-suggestion-item-subItem", True )
+                , ( "partDef-suggestion-item-subItem-select", isSelect )
+                ]
+            ]
+            [ subItem ]
         ]
 
 
 enterIcon : Html.Html msg
 enterIcon =
     NSvg.toHtmlWithClass
-        "moduleEditor-partDef-name-edit-suggestion-keyIcon"
+        "moduleEditor-partDef-suggestion-keyIcon"
         { x = 0, y = 0, width = 38, height = 32 }
-        [ NSvg.polygon [ ( 4, 4 ), ( 34, 4 ), ( 34, 28 ), ( 12, 28 ), ( 12, 16 ), ( 4, 16 ) ] (NSvg.strokeColor Palette.X11.white) NSvg.fillNone
-        , NSvg.path "M30,8 V20 H16 L18,18 M16,20 L18,22" (NSvg.strokeColor Palette.X11.white) NSvg.fillNone
+        [ NSvg.polygon [ ( 4, 4 ), ( 34, 4 ), ( 34, 28 ), ( 12, 28 ), ( 12, 16 ), ( 4, 16 ) ] NSvg.strokeNone NSvg.fillNone
+        , NSvg.path "M30,8 V20 H16 L18,18 M16,20 L18,22" NSvg.strokeNone NSvg.fillNone
         ]
 
 
