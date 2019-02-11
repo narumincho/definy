@@ -8655,7 +8655,7 @@ var author$project$Panel$Editor$Module$activeTo = F2(
 				rec,
 				{f: active}),
 			function () {
-				_n1$8:
+				_n1$11:
 				while (true) {
 					switch (active.$) {
 						case 0:
@@ -8691,7 +8691,7 @@ var author$project$Panel$Editor$Module$activeTo = F2(
 													author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
 												]);
 										} else {
-											break _n1$8;
+											break _n1$11;
 										}
 									case 2:
 										if (active.a.a.b.a.$ === 1) {
@@ -8703,19 +8703,52 @@ var author$project$Panel$Editor$Module$activeTo = F2(
 													author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
 												]);
 										} else {
-											break _n1$8;
+											break _n1$11;
 										}
 									default:
-										if (!active.a.a.b.a.$) {
-											var _n11 = active.a.a;
-											var _n12 = _n11.b.a;
-											return _List_fromArray(
-												[
-													author$project$Panel$Editor$Module$EmitFocusEditTextAea,
-													author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
-												]);
-										} else {
-											break _n1$8;
+										switch (active.a.a.b.a.$) {
+											case 0:
+												var _n11 = active.a.a;
+												var _n12 = _n11.b.a;
+												return _List_fromArray(
+													[
+														author$project$Panel$Editor$Module$EmitFocusEditTextAea,
+														author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
+													]);
+											case 1:
+												var _n13 = active.a.a;
+												var _n14 = _n13.b.a;
+												return _List_fromArray(
+													[
+														author$project$Panel$Editor$Module$EmitFocusEditTextAea,
+														author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
+													]);
+											case 2:
+												if (active.a.a.b.a.b.$ === 1) {
+													var _n15 = active.a.a;
+													var _n16 = _n15.b.a;
+													var _n17 = _n16.b;
+													return _List_fromArray(
+														[
+															author$project$Panel$Editor$Module$EmitFocusEditTextAea,
+															author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
+														]);
+												} else {
+													break _n1$11;
+												}
+											default:
+												if (active.a.a.b.a.b.$ === 1) {
+													var _n18 = active.a.a;
+													var _n19 = _n18.b.a;
+													var _n20 = _n19.b;
+													return _List_fromArray(
+														[
+															author$project$Panel$Editor$Module$EmitFocusEditTextAea,
+															author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
+														]);
+												} else {
+													break _n1$11;
+												}
 										}
 								}
 							}
@@ -18100,7 +18133,11 @@ var author$project$Panel$Editor$Module$opViewOutput = F2(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
-					elm$html$Html$Events$onClick(0),
+					A2(
+					elm$html$Html$Events$stopPropagationOn,
+					'click',
+					elm$json$Json$Decode$succeed(
+						_Utils_Tuple2(0, true))),
 					author$project$Panel$Editor$Module$subClassList(
 					_List_fromArray(
 						[
@@ -18140,7 +18177,11 @@ var author$project$Panel$Editor$Module$termViewOutput = F2(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
-					elm$html$Html$Events$onClick(0),
+					A2(
+					elm$html$Html$Events$stopPropagationOn,
+					'click',
+					elm$json$Json$Decode$succeed(
+						_Utils_Tuple2(0, true))),
 					author$project$Panel$Editor$Module$subClassList(
 					_List_fromArray(
 						[

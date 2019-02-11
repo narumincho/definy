@@ -263,6 +263,15 @@ activeTo active (Model rec) =
         ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr ActivePartDefExprSelf )) ->
             [ EmitFocusEditTextAea, EmitSetTextAreaValue "" ]
 
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr ActiveExprHead )) ->
+            [ EmitFocusEditTextAea, EmitSetTextAreaValue "" ]
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr (ActiveExprTerm _ Nothing) )) ->
+            [ EmitFocusEditTextAea, EmitSetTextAreaValue "" ]
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr (ActiveExprOp _ Nothing) )) ->
+            [ EmitFocusEditTextAea, EmitSetTextAreaValue "" ]
+
         _ ->
             []
     )
@@ -1544,7 +1553,7 @@ partDefViewExpr expr partDefExprActiveMaybe =
 termViewOutput : Term.Term -> Bool -> Html.Html ()
 termViewOutput term isActive =
     Html.div
-        [ Html.Events.onClick ()
+        [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( (), True ))
         , subClassList
             [ ( "partDef-term", True )
             , ( "partDef-element-active", isActive )
@@ -1556,7 +1565,7 @@ termViewOutput term isActive =
 opViewOutput : Op.Operator -> Bool -> Html.Html ()
 opViewOutput op isActive =
     Html.div
-        [ Html.Events.onClick ()
+        [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( (), True ))
         , subClassList
             [ ( "partDef-op", True )
             , ( "partDef-element-active", isActive )
@@ -1565,7 +1574,7 @@ opViewOutput op isActive =
         [ Html.text (Op.toString op |> Maybe.withDefault "?") ]
 
 
-{-| 編集の表示
+{-| 編集しているものの入力途中の文字の表示
 -}
 textAreaValueToListHtml : List ( Char, Bool ) -> List (Html.Html msg)
 textAreaValueToListHtml =
