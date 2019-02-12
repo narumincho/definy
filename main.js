@@ -11292,7 +11292,7 @@ var author$project$Panel$Editor$Module$parserBeginWithOp = F5(
 							author$project$Panel$Editor$Module$ActivePartDefExpr(
 								A2(
 									author$project$Panel$Editor$Module$ActiveExprTerm,
-									opIndex + elm$core$List$length(termAndOpList),
+									(opIndex + 1) + elm$core$List$length(termAndOpList),
 									_Utils_eq(lastTerm, author$project$Project$Source$Module$Def$Expr$Term$none) ? elm$core$Maybe$Nothing : elm$core$Maybe$Just(textAreaValue)))))),
 				_List_fromArray(
 					[
@@ -11369,6 +11369,30 @@ var author$project$Parser$beginWithExprTerm = function (list) {
 			{H: head, aB: last, K: others, u: textAreaValue});
 	}
 };
+var author$project$Project$Source$Module$Def$Expr$replaceAndInsertHeadLastOp = F4(
+	function (headTerm, list, lastOp, _n0) {
+		var others = _n0.b;
+		return author$project$Project$Source$Module$Def$Expr$removeBlankOpNoneTerm(
+			A2(
+				author$project$Project$Source$Module$Def$Expr$Expr,
+				headTerm,
+				_Utils_ap(
+					list,
+					_Utils_ap(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(lastOp, author$project$Project$Source$Module$Def$Expr$Term$none)
+							]),
+						others))));
+	});
+var author$project$Project$Source$Module$Def$Expr$replaceAndInsertHeadLastTerm = F3(
+	function (term, list, _n0) {
+		var others = _n0.b;
+		return A2(
+			author$project$Project$Source$Module$Def$Expr$Expr,
+			term,
+			_Utils_ap(list, others));
+	});
 var author$project$Project$Source$Module$Def$Expr$getOperatorAt = F2(
 	function (index, _n0) {
 		var others = _n0.b;
@@ -11445,7 +11469,7 @@ var author$project$Panel$Editor$Module$parserBeginWithTerm = F5(
 						[
 							author$project$Panel$Editor$Module$EmitChangeExpr(
 							{
-								aL: A4(author$project$Project$Source$Module$Def$Expr$replaceAndInsertTermLastTerm, termIndex, headTerm, opAndTermList, expr),
+								aL: ((!termIndex) ? A2(author$project$Project$Source$Module$Def$Expr$replaceAndInsertHeadLastTerm, headTerm, opAndTermList) : A3(author$project$Project$Source$Module$Def$Expr$replaceAndInsertTermLastTerm, termIndex - 1, headTerm, opAndTermList))(expr),
 								B: index,
 								p: moduleRef
 							})
@@ -11473,7 +11497,7 @@ var author$project$Panel$Editor$Module$parserBeginWithTerm = F5(
 					[
 						author$project$Panel$Editor$Module$EmitChangeExpr(
 						{
-							aL: A5(author$project$Project$Source$Module$Def$Expr$replaceAndInsertTermLastOp, termIndex, headTerm, opAndTermList, lastOp, expr),
+							aL: ((!termIndex) ? A3(author$project$Project$Source$Module$Def$Expr$replaceAndInsertHeadLastOp, headTerm, opAndTermList, lastOp) : A4(author$project$Project$Source$Module$Def$Expr$replaceAndInsertTermLastOp, termIndex, headTerm, opAndTermList, lastOp))(expr),
 							B: index,
 							p: moduleRef
 						}),
@@ -18084,47 +18108,6 @@ var author$project$Panel$Editor$Module$activeHeadTermLeft = A2(
 				]),
 			_List_Nil)
 		]));
-var author$project$Panel$Editor$Module$suggestionOp = function (op) {
-	return A2(
-		elm$html$Html$div,
-		_List_fromArray(
-			[
-				author$project$Panel$Editor$Module$subClass('partDef-suggestion')
-			]),
-		_List_Nil);
-};
-var author$project$Panel$Editor$Module$textAreaValueToListHtml = elm$core$List$map(
-	function (_n0) {
-		var _char = _n0.a;
-		var bool = _n0.b;
-		return A2(
-			elm$html$Html$div,
-			_List_fromArray(
-				[
-					author$project$Panel$Editor$Module$subClass(
-					bool ? 'partDef-okChar' : 'partDef-errChar')
-				]),
-			_List_fromArray(
-				[
-					elm$html$Html$text(
-					elm$core$String$fromChar(_char))
-				]));
-	});
-var author$project$Panel$Editor$Module$opEditView = F2(
-	function (op, textAreaValue) {
-		return A2(
-			elm$html$Html$div,
-			_List_fromArray(
-				[
-					author$project$Panel$Editor$Module$subClass('partDef-op-edit')
-				]),
-			_Utils_ap(
-				author$project$Panel$Editor$Module$textAreaValueToListHtml(textAreaValue),
-				_List_fromArray(
-					[
-						author$project$Panel$Editor$Module$suggestionOp(op)
-					])));
-	});
 var author$project$Project$Source$Module$Def$Expr$Operator$safeToString = function (safeOperator) {
 	switch (safeOperator) {
 		case 0:
@@ -18168,6 +18151,82 @@ var author$project$Project$Source$Module$Def$Expr$Operator$toString = function (
 		return elm$core$Maybe$Nothing;
 	}
 };
+var author$project$Panel$Editor$Module$suggestionOp = function (op) {
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				author$project$Panel$Editor$Module$subClass('partDef-suggestion')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						author$project$Panel$Editor$Module$subClass('partDef-suggestion-item')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						elm$html$Html$div,
+						_List_fromArray(
+							[
+								author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-text')
+							]),
+						_List_fromArray(
+							[
+								elm$html$Html$text(
+								A2(
+									elm$core$Maybe$withDefault,
+									'?',
+									author$project$Project$Source$Module$Def$Expr$Operator$toString(op)))
+							])),
+						A2(
+						elm$html$Html$div,
+						_List_fromArray(
+							[
+								author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-subItem')
+							]),
+						_List_fromArray(
+							[
+								elm$html$Html$text('演算子')
+							]))
+					]))
+			]));
+};
+var author$project$Panel$Editor$Module$textAreaValueToListHtml = elm$core$List$map(
+	function (_n0) {
+		var _char = _n0.a;
+		var bool = _n0.b;
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass(
+					bool ? 'partDef-okChar' : 'partDef-errChar')
+				]),
+			_List_fromArray(
+				[
+					elm$html$Html$text(
+					elm$core$String$fromChar(_char))
+				]));
+	});
+var author$project$Panel$Editor$Module$opEditView = F2(
+	function (op, textAreaValue) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDef-op-edit')
+				]),
+			_Utils_ap(
+				author$project$Panel$Editor$Module$textAreaValueToListHtml(textAreaValue),
+				_List_fromArray(
+					[
+						author$project$Panel$Editor$Module$suggestionOp(op)
+					])));
+	});
 var author$project$Panel$Editor$Module$opNormalView = F2(
 	function (op, isActive) {
 		return A2(
@@ -18209,30 +18268,6 @@ var author$project$Panel$Editor$Module$opViewOutput = F2(
 			return A2(author$project$Panel$Editor$Module$opNormalView, op, false);
 		}
 	});
-var author$project$Panel$Editor$Module$suggestionTerm = function (term) {
-	return A2(
-		elm$html$Html$div,
-		_List_fromArray(
-			[
-				author$project$Panel$Editor$Module$subClass('partDef-suggestion')
-			]),
-		_List_Nil);
-};
-var author$project$Panel$Editor$Module$termEditView = F2(
-	function (term, textAreaValue) {
-		return A2(
-			elm$html$Html$div,
-			_List_fromArray(
-				[
-					author$project$Panel$Editor$Module$subClass('partDef-term-edit')
-				]),
-			_Utils_ap(
-				author$project$Panel$Editor$Module$textAreaValueToListHtml(textAreaValue),
-				_List_fromArray(
-					[
-						author$project$Panel$Editor$Module$suggestionTerm(term)
-					])));
-	});
 var author$project$Project$Source$Module$Def$Expr$Term$toString = function (term) {
 	switch (term.$) {
 		case 0:
@@ -18250,6 +18285,62 @@ var author$project$Project$Source$Module$Def$Expr$Term$toString = function (term
 			return '✗';
 	}
 };
+var author$project$Panel$Editor$Module$suggestionTerm = function (term) {
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				author$project$Panel$Editor$Module$subClass('partDef-suggestion')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						author$project$Panel$Editor$Module$subClass('partDef-suggestion-item')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						elm$html$Html$div,
+						_List_fromArray(
+							[
+								author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-text')
+							]),
+						_List_fromArray(
+							[
+								elm$html$Html$text(
+								author$project$Project$Source$Module$Def$Expr$Term$toString(term))
+							])),
+						A2(
+						elm$html$Html$div,
+						_List_fromArray(
+							[
+								author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-subItem')
+							]),
+						_List_fromArray(
+							[
+								elm$html$Html$text('項')
+							]))
+					]))
+			]));
+};
+var author$project$Panel$Editor$Module$termEditView = F2(
+	function (term, textAreaValue) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDef-term-edit')
+				]),
+			_Utils_ap(
+				author$project$Panel$Editor$Module$textAreaValueToListHtml(textAreaValue),
+				_List_fromArray(
+					[
+						author$project$Panel$Editor$Module$suggestionTerm(term)
+					])));
+	});
 var author$project$Panel$Editor$Module$termNormalView = F2(
 	function (term, isActive) {
 		return A2(

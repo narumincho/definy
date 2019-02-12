@@ -804,7 +804,14 @@ parserBeginWithTerm string index moduleRef termIndex expr =
                     )
                 )
             , [ EmitChangeExpr
-                    { expr = expr |> Expr.replaceAndInsertTermLastTerm termIndex headTerm opAndTermList
+                    { expr =
+                        expr
+                            |> (if termIndex == 0 then
+                                    Expr.replaceAndInsertHeadLastTerm headTerm opAndTermList
+
+                                else
+                                    Expr.replaceAndInsertTermLastTerm (termIndex - 1) headTerm opAndTermList
+                               )
                     , index = index
                     , ref = moduleRef
                     }
@@ -834,7 +841,14 @@ parserBeginWithTerm string index moduleRef termIndex expr =
                     )
                 )
             , [ EmitChangeExpr
-                    { expr = Expr.replaceAndInsertTermLastOp termIndex headTerm opAndTermList lastOp expr
+                    { expr =
+                        expr
+                            |> (if termIndex == 0 then
+                                    Expr.replaceAndInsertHeadLastOp headTerm opAndTermList lastOp
+
+                                else
+                                    Expr.replaceAndInsertTermLastOp termIndex headTerm opAndTermList lastOp
+                               )
                     , index = index
                     , ref = moduleRef
                     }
@@ -852,7 +866,7 @@ parserBeginWithOp string index moduleRef opIndex expr =
                     ( index
                     , ActivePartDefExpr
                         (ActiveExprTerm
-                            (opIndex + List.length termAndOpList)
+                            (opIndex + 1 + List.length termAndOpList)
                             (if lastTerm == Term.none then
                                 Nothing
 
@@ -1621,7 +1635,12 @@ suggestionTerm : Term.Term -> Html.Html msg
 suggestionTerm term =
     Html.div
         [ subClass "partDef-suggestion" ]
-        []
+        [ Html.div
+            [ subClass "partDef-suggestion-item" ]
+            [ Html.div [ subClass "partDef-suggestion-item-text" ] [ Html.text (Term.toString term) ]
+            , Html.div [ subClass "partDef-suggestion-item-subItem" ] [ Html.text "項" ]
+            ]
+        ]
 
 
 opViewOutput : Op.Operator -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html ()
@@ -1662,7 +1681,12 @@ suggestionOp : Op.Operator -> Html.Html msg
 suggestionOp op =
     Html.div
         [ subClass "partDef-suggestion" ]
-        []
+        [ Html.div
+            [ subClass "partDef-suggestion-item" ]
+            [ Html.div [ subClass "partDef-suggestion-item-text" ] [ Html.text (Op.toString op |> Maybe.withDefault "?") ]
+            , Html.div [ subClass "partDef-suggestion-item-subItem" ] [ Html.text "演算子" ]
+            ]
+        ]
 
 
 {-| 編集しているものの入力途中の文字の表示
