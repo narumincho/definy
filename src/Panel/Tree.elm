@@ -310,12 +310,13 @@ selectUpListLoop ( prev, list ) target =
         x :: xs ->
             case selectUpLoop x target of
                 UpNoExistThisTree ->
-                    (selectUpListLoop ( Just x, xs ) target)
+                    selectUpListLoop ( Just x, xs ) target
 
                 UpPrevious pe ->
                     case prev of
                         Just p ->
                             UpExist (getTailRef p)
+
                         Nothing ->
                             UpPrevious pe
 
@@ -453,6 +454,8 @@ isExistInChildren (SimpleTree { children }) target =
 
         ChildrenOpen ( x, xs ) ->
             List.any (simpleTreeGetEditorRef >> (==) target) (x :: xs)
+
+
 
 {- ====================== View ====================== -}
 

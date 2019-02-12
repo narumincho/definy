@@ -447,7 +447,6 @@ moduleEditorEmitToEmit emit =
             EmitChangeExpr { expr = expr, index = index, ref = ref }
 
 
-
 {-| 右端と下の端にある表示するエディタを増やすのボタンをおしたら、エディタ全体がどう変わるかと新しくアクティブになるエディタを返す
 -}
 openEditor : EditorIndex -> OpenEditorPosition -> Group -> ( Group, EditorIndex )

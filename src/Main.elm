@@ -29,7 +29,9 @@ port keyPrevented : (Int -> msg) -> Sub msg
 
 port windowResize : ({ width : Int, height : Int } -> msg) -> Sub msg
 
-port runResult : ({ref:List Int, index : Int, result : Int}->msg) -> Sub msg
+
+port runResult : ({ ref : List Int, index : Int, result : Int } -> msg) -> Sub msg
+
 
 main : Program () Model Msg
 main =

@@ -202,8 +202,7 @@ insertABetweenOpAndTerm index term op (Expr head others) =
         )
 
 
-{-|
-先頭の項を置き換え、挿入する。最後が項で終わる用
+{-| 先頭の項を置き換え、挿入する。最後が項で終わる用
 
     [| ]+2+3
     input: 5+6+7
@@ -218,8 +217,7 @@ replaceAndInsertHeadLastTerm term list (Expr _ others) =
         (list ++ others)
 
 
-{-|
-先頭の項を置き換え、挿入する。最後が演算子で終わる用
+{-| 先頭の項を置き換え、挿入する。最後が演算子で終わる用
 
     [| ]+2+3
     input: 5+6+

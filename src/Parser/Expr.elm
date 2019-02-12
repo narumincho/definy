@@ -5,11 +5,11 @@ module Parser.Expr exposing
     , parseStartTerm
     )
 
+import Parser.SimpleChar as SimpleChar exposing (SimpleChar(..), Symbol(..))
+import Project.Label as Label exposing (Label)
 import Project.Source.Module.Def as Def exposing (Def)
 import Project.Source.Module.Def.Expr.Operator as Operator exposing (Operator)
 import Project.Source.Module.Def.Expr.Term as Term exposing (Term)
-import Project.Label as Label exposing (Label)
-import Parser.SimpleChar as SimpleChar exposing (SimpleChar(..), Symbol(..))
 
 
 

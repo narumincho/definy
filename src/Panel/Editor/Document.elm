@@ -12,7 +12,7 @@ initModel =
     Model
 
 
-view : { title: String, body : List (Html.Html msg) }
+view : { title : String, body : List (Html.Html msg) }
 view =
     { title = "Document ドキュメント"
     , body = [ Html.text "使い方説明、説明書" ]

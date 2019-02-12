@@ -1,6 +1,7 @@
 module Project.Source.Module.Def.Expr.Term exposing
     ( SafeTerm(..)
     , Term(..)
+    , description
     , fromInt
     , fromMaybeLabel
     , integerToListCharBool
@@ -9,7 +10,7 @@ module Project.Source.Module.Def.Expr.Term exposing
     , toSafe
     , toString
     , toTextAreaValue
-    , description)
+    )
 
 import Project.Label as Label
 

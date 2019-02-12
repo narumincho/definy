@@ -451,6 +451,8 @@ spaceCharString =
         , "\u{3000}" -- IDEOGRAPHIC SPACE
         ]
 
+
+
 -- アルファベットをLabelHeadに変換する(大文字小文字は関係ない)
 
 

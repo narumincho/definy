@@ -2,8 +2,8 @@ module Project exposing
     ( Project, ProjectRef(..), init, projectRefSetEmpty, ProjectRefSet
     , getName
     , getAuthor
-    , getSource, mapSource, moduleRefToListInt, projectRefToListInt
-    , listIntToModuleRef)
+    , getSource, listIntToModuleRef, mapSource, moduleRefToListInt, projectRefToListInt
+    )
 
 {-| プロジェクト。アプリを構成するものすべて。
 プログラムのソースやドキュメント、実行設定まで

@@ -3,8 +3,8 @@ module Project.Source.Module.Def exposing
     , getName, setName, mapName
     , getType, setType, mapType
     , getExpr, setExpr, mapExpr
-    , empty
-    , toString)
+    , empty, toString
+    )
 
 {-| Def ある対象について1つの定義をすることができる
 

@@ -3,12 +3,13 @@ module Project.Source.Module.Def.Type exposing
     , ValidType
     , empty
     , fromLabel
+    , int
     , isEmpty
     , toString
     , toTextAreaValue
     , validInt
     , validTypeToString
-    , int)
+    )
 
 import Project.Label as Label
 

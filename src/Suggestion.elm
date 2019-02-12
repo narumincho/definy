@@ -3,9 +3,9 @@ module Suggestion exposing
     , type_
     )
 
+import Project.Label as L
 import Project.Source.Module.Def.Name as Name
 import Project.Source.Module.Def.Type as Type
-import Project.Label as L
 
 
 name : Name.Name -> List ( L.Label, String )
