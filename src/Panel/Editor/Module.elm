@@ -166,38 +166,10 @@ update msg project (Model rec) =
             update (ActiveTo (selectParent targetModule rec.active)) project (Model rec)
 
         SuggestionPrevOrSelectUp ->
-            case rec.active of
-                ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex )) )) ->
-                    ( Model
-                        { rec
-                            | active =
-                                ActivePartDefList
-                                    (ActivePartDef
-                                        ( index, ActivePartDefName (Just ( textAreaValue, max 0 (suggestIndex - 1) )) )
-                                    )
-                        }
-                    , []
-                    )
-
-                _ ->
-                    update SelectUp project (Model rec)
+            suggestionPrevOrSelectUp targetModule project (Model rec)
 
         SuggestionNextOrSelectDown ->
-            case rec.active of
-                ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex )) )) ->
-                    ( Model
-                        { rec
-                            | active =
-                                ActivePartDefList
-                                    (ActivePartDef
-                                        ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex + 1 )) )
-                                    )
-                        }
-                    , []
-                    )
-
-                _ ->
-                    update SelectDown project (Model rec)
+            suggestionPrevOrSelectDown targetModule project (Model rec)
 
         Input string ->
             input string targetModule (Model rec)
@@ -542,6 +514,59 @@ selectParent module_ active =
 
         _ ->
             active
+
+
+suggestionPrevOrSelectUp : ModuleWithCache.Module -> Project.Project -> Model -> ( Model, List Emit )
+suggestionPrevOrSelectUp module_ project (Model rec) =
+    case rec.active of
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex )) )) ->
+            ( Model
+                { rec
+                    | active =
+                        ActivePartDefList
+                            (ActivePartDef
+                                ( index, ActivePartDefName (Just ( textAreaValue, max 0 (suggestIndex - 1) )) )
+                            )
+                }
+            , suggestionSelcetChagnedThenNameChangeEmit suggestIndex index rec.moduleRef
+            )
+
+        _ ->
+            update SelectUp project (Model rec)
+
+
+suggestionPrevOrSelectDown : ModuleWithCache.Module -> Project.Project -> Model -> ( Model, List Emit )
+suggestionPrevOrSelectDown module_ project (Model rec) =
+    case rec.active of
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex )) )) ->
+            ( Model
+                { rec
+                    | active =
+                        ActivePartDefList
+                            (ActivePartDef
+                                ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex + 1 )) )
+                            )
+                }
+            , suggestionSelcetChagnedThenNameChangeEmit suggestIndex index rec.moduleRef
+            )
+
+        _ ->
+            update SelectDown project (Model rec)
+
+
+suggestionSelcetChagnedThenNameChangeEmit : Int -> Int -> Project.Source.ModuleRef -> List Emit
+suggestionSelcetChagnedThenNameChangeEmit suggestIndex defIndex moduleRef =
+    case nameSuggestList |> Utility.ListExtra.getAt suggestIndex of
+        Just ( suggestName, _ ) ->
+            [ EmitChangeName
+                { name = suggestName
+                , index = defIndex
+                , ref = moduleRef
+                }
+            ]
+
+        Nothing ->
+            []
 
 
 {-| 複数行入力の確定。概要や文字列リテラルでの入力を確定にする
@@ -1370,13 +1395,9 @@ suggestionName : Name.Name -> Int -> Html.Html msg
 suggestionName name index =
     Html.div
         [ subClass "partDef-suggestion" ]
-        ([ ( name, enterIcon )
-         , ( Name.fromLabel (L.make L.hg [ L.oa, L.om, L.oe ]), Html.text "ゲーム" )
-         , ( Name.fromLabel (L.make L.hh [ L.oe, L.or, L.oo ]), Html.text "主人公" )
-         , ( Name.fromLabel (L.make L.hb [ L.oe, L.oa, L.ou, L.ot, L.oi, L.of_, L.ou, L.ol, L.oG, L.oi, L.or, L.ol ]), Html.text "美少女" )
-         , ( Name.fromLabel (L.make L.hm [ L.oo, L.on, L.os, L.ot, L.oe, L.or ]), Html.text "モンスター" )
-         , ( Name.fromLabel (L.make L.hw [ L.oo, L.or, L.ol, L.od ]), Html.text "世界" )
-         ]
+        (([ ( name, enterIcon ) ]
+            ++ (nameSuggestList |> List.map (Tuple.mapSecond Html.text))
+         )
             |> List.indexedMap
                 (\i ( n, subItem ) ->
                     suggestNameItem n subItem (i == index)
@@ -1417,6 +1438,16 @@ enterIcon =
         [ NSvg.polygon [ ( 4, 4 ), ( 34, 4 ), ( 34, 28 ), ( 12, 28 ), ( 12, 16 ), ( 4, 16 ) ] NSvg.strokeNone NSvg.fillNone
         , NSvg.path "M30,8 V20 H16 L18,18 M16,20 L18,22" NSvg.strokeNone NSvg.fillNone
         ]
+
+
+nameSuggestList : List ( Name.Name, String )
+nameSuggestList =
+    [ ( Name.fromLabel (L.make L.hg [ L.oa, L.om, L.oe ]), "ゲーム" )
+    , ( Name.fromLabel (L.make L.hh [ L.oe, L.or, L.oo ]), "主人公" )
+    , ( Name.fromLabel (L.make L.hb [ L.oe, L.oa, L.ou, L.ot, L.oi, L.of_, L.ou, L.ol, L.oG, L.oi, L.or, L.ol ]), "美少女" )
+    , ( Name.fromLabel (L.make L.hm [ L.oo, L.on, L.os, L.ot, L.oe, L.or ]), "モンスター" )
+    , ( Name.fromLabel (L.make L.hw [ L.oo, L.or, L.ol, L.od ]), "世界" )
+    ]
 
 
 
