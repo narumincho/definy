@@ -9,7 +9,7 @@ module Project.Source.Module.Def.Expr.Term exposing
     , toSafe
     , toString
     , toTextAreaValue
-    )
+    , description)
 
 import Project.Label as Label
 
@@ -73,6 +73,22 @@ toString term =
 
         None ->
             "✗"
+
+
+description : Term -> ( String, String )
+description term =
+    case term of
+        IntLiteral i ->
+            ( String.fromInt i, "Int32リテラル" )
+
+        Ref (ValidRef ref) ->
+            ( "正しい参照=" ++ String.fromInt ref, "パーツによる参照" )
+
+        Ref (InvalidRef label) ->
+            ( "不正な参照=" ++ Label.toSmallString label, "パーツによる参照" )
+
+        None ->
+            ( "不正な項", "" )
 
 
 safeToString : SafeTerm -> String

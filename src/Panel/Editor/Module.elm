@@ -1633,12 +1633,26 @@ termEditView term textAreaValue =
 
 suggestionTerm : Term.Term -> Html.Html msg
 suggestionTerm term =
+    let
+        ( text, subItem ) =
+            Term.description term
+    in
     Html.div
         [ subClass "partDef-suggestion" ]
         [ Html.div
-            [ subClass "partDef-suggestion-item" ]
-            [ Html.div [ subClass "partDef-suggestion-item-text" ] [ Html.text (Term.toString term) ]
-            , Html.div [ subClass "partDef-suggestion-item-subItem" ] [ Html.text "項" ]
+            [ subClass "partDef-suggestion-item"
+            , subClass "partDef-suggestion-item-select"
+            ]
+            [ Html.div
+                [ subClass "partDef-suggestion-item-text"
+                , subClass "partDef-suggestion-item-text-select"
+                ]
+                [ Html.text text ]
+            , Html.div
+                [ subClass "partDef-suggestion-item-subItem"
+                , subClass "partDef-suggestion-item-subItem-select"
+                ]
+                [ Html.text subItem ]
             ]
         ]
 
@@ -1681,7 +1695,7 @@ suggestionOp : Op.Operator -> Html.Html msg
 suggestionOp op =
     Html.div
         [ subClass "partDef-suggestion" ]
-        ([ suggestionOpItem op ]
+        ([ suggestionOpItem op True ]
             ++ (Op.safeAllOperator
                     |> List.map Op.toNotSafe
                     |> List.filterMap
@@ -1690,25 +1704,37 @@ suggestionOp op =
                                 Nothing
 
                             else
-                                Just (suggestionOpItem o)
+                                Just (suggestionOpItem o False)
                         )
                )
         )
 
 
-suggestionOpItem : Op.Operator -> Html.Html msg
-suggestionOpItem op =
+suggestionOpItem : Op.Operator -> Bool -> Html.Html msg
+suggestionOpItem op isSelect =
     let
         ( text, subItem ) =
             Op.toDescriptionString op
     in
     Html.div
-        [ subClass "partDef-suggestion-item" ]
+        [ subClassList
+            [ ( "partDef-suggestion-item", True )
+            , ( "partDef-suggestion-item-select", isSelect )
+            ]
+        ]
         [ Html.div
-            [ subClass "partDef-suggestion-item-text" ]
+            [ subClassList
+                [ ( "partDef-suggestion-item-text", True )
+                , ( "partDef-suggestion-item-text-select", isSelect )
+                ]
+            ]
             [ Html.text text ]
         , Html.div
-            [ subClass "partDef-suggestion-item-subItem" ]
+            [ subClassList
+                [ ( "partDef-suggestion-item-subItem", True )
+                , ( "partDef-suggestion-item-subItem", isSelect )
+                ]
+            ]
             [ Html.text (subItem |> Maybe.withDefault "") ]
         ]
 

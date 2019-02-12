@@ -660,6 +660,9 @@ img {
 }
 
 .moduleEditor-partDef-suggestion-item-text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     flex-grow: 1;
 }
 
@@ -668,6 +671,9 @@ img {
 }
 
 .moduleEditor-partDef-suggestion-item-subItem {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     color: #999;
     stroke: #999;
 }

@@ -18187,41 +18187,57 @@ var author$project$Project$Source$Module$Def$Expr$Operator$toDescriptionString =
 		return _Utils_Tuple2('不正な演算子', elm$core$Maybe$Nothing);
 	}
 };
-var author$project$Panel$Editor$Module$suggestionOpItem = function (op) {
-	var _n0 = author$project$Project$Source$Module$Def$Expr$Operator$toDescriptionString(op);
-	var text = _n0.a;
-	var subItem = _n0.b;
-	return A2(
-		elm$html$Html$div,
-		_List_fromArray(
-			[
-				author$project$Panel$Editor$Module$subClass('partDef-suggestion-item')
-			]),
-		_List_fromArray(
-			[
-				A2(
-				elm$html$Html$div,
-				_List_fromArray(
-					[
-						author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-text')
-					]),
-				_List_fromArray(
-					[
-						elm$html$Html$text(text)
-					])),
-				A2(
-				elm$html$Html$div,
-				_List_fromArray(
-					[
-						author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-subItem')
-					]),
-				_List_fromArray(
-					[
-						elm$html$Html$text(
-						A2(elm$core$Maybe$withDefault, '', subItem))
-					]))
-			]));
-};
+var author$project$Panel$Editor$Module$suggestionOpItem = F2(
+	function (op, isSelect) {
+		var _n0 = author$project$Project$Source$Module$Def$Expr$Operator$toDescriptionString(op);
+		var text = _n0.a;
+		var subItem = _n0.b;
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClassList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('partDef-suggestion-item', true),
+							_Utils_Tuple2('partDef-suggestion-item-select', isSelect)
+						]))
+				]),
+			_List_fromArray(
+				[
+					A2(
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							author$project$Panel$Editor$Module$subClassList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('partDef-suggestion-item-text', true),
+									_Utils_Tuple2('partDef-suggestion-item-text-select', isSelect)
+								]))
+						]),
+					_List_fromArray(
+						[
+							elm$html$Html$text(text)
+						])),
+					A2(
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							author$project$Panel$Editor$Module$subClassList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('partDef-suggestion-item-subItem', true),
+									_Utils_Tuple2('partDef-suggestion-item-subItem', isSelect)
+								]))
+						]),
+					_List_fromArray(
+						[
+							elm$html$Html$text(
+							A2(elm$core$Maybe$withDefault, '', subItem))
+						]))
+				]));
+	});
 var author$project$Project$Source$Module$Def$Expr$Operator$safeAllOperator = _List_fromArray(
 	[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
 var author$project$Project$Source$Module$Def$Expr$Operator$toNotSafe = function (safeOperator) {
@@ -18237,13 +18253,13 @@ var author$project$Panel$Editor$Module$suggestionOp = function (op) {
 		_Utils_ap(
 			_List_fromArray(
 				[
-					author$project$Panel$Editor$Module$suggestionOpItem(op)
+					A2(author$project$Panel$Editor$Module$suggestionOpItem, op, true)
 				]),
 			A2(
 				elm$core$List$filterMap,
 				function (o) {
 					return _Utils_eq(o, op) ? elm$core$Maybe$Nothing : elm$core$Maybe$Just(
-						author$project$Panel$Editor$Module$suggestionOpItem(o));
+						A2(author$project$Panel$Editor$Module$suggestionOpItem, o, false));
 				},
 				A2(elm$core$List$map, author$project$Project$Source$Module$Def$Expr$Operator$toNotSafe, author$project$Project$Source$Module$Def$Expr$Operator$safeAllOperator))));
 };
@@ -18329,24 +18345,33 @@ var author$project$Panel$Editor$Module$opViewOutput = F2(
 			return A2(author$project$Panel$Editor$Module$opNormalView, op, false);
 		}
 	});
-var author$project$Project$Source$Module$Def$Expr$Term$toString = function (term) {
+var author$project$Project$Source$Module$Def$Expr$Term$description = function (term) {
 	switch (term.$) {
 		case 0:
 			var i = term.a;
-			return elm$core$String$fromInt(i);
+			return _Utils_Tuple2(
+				elm$core$String$fromInt(i),
+				'Int32リテラル');
 		case 1:
 			if (!term.a.$) {
 				var ref = term.a.a;
-				return '!(' + (elm$core$String$fromInt(ref) + ')');
+				return _Utils_Tuple2(
+					'正しい参照=' + elm$core$String$fromInt(ref),
+					'パーツによる参照');
 			} else {
 				var label = term.a.a;
-				return author$project$Project$Label$toSmallString(label);
+				return _Utils_Tuple2(
+					'不正な参照=' + author$project$Project$Label$toSmallString(label),
+					'パーツによる参照');
 			}
 		default:
-			return '✗';
+			return _Utils_Tuple2('不正な項', '');
 	}
 };
 var author$project$Panel$Editor$Module$suggestionTerm = function (term) {
+	var _n0 = author$project$Project$Source$Module$Def$Expr$Term$description(term);
+	var text = _n0.a;
+	var subItem = _n0.b;
 	return A2(
 		elm$html$Html$div,
 		_List_fromArray(
@@ -18359,7 +18384,8 @@ var author$project$Panel$Editor$Module$suggestionTerm = function (term) {
 				elm$html$Html$div,
 				_List_fromArray(
 					[
-						author$project$Panel$Editor$Module$subClass('partDef-suggestion-item')
+						author$project$Panel$Editor$Module$subClass('partDef-suggestion-item'),
+						author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-select')
 					]),
 				_List_fromArray(
 					[
@@ -18367,22 +18393,23 @@ var author$project$Panel$Editor$Module$suggestionTerm = function (term) {
 						elm$html$Html$div,
 						_List_fromArray(
 							[
-								author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-text')
+								author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-text'),
+								author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-text-select')
 							]),
 						_List_fromArray(
 							[
-								elm$html$Html$text(
-								author$project$Project$Source$Module$Def$Expr$Term$toString(term))
+								elm$html$Html$text(text)
 							])),
 						A2(
 						elm$html$Html$div,
 						_List_fromArray(
 							[
-								author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-subItem')
+								author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-subItem'),
+								author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-subItem-select')
 							]),
 						_List_fromArray(
 							[
-								elm$html$Html$text('項')
+								elm$html$Html$text(subItem)
 							]))
 					]))
 			]));
@@ -18402,6 +18429,23 @@ var author$project$Panel$Editor$Module$termEditView = F2(
 						author$project$Panel$Editor$Module$suggestionTerm(term)
 					])));
 	});
+var author$project$Project$Source$Module$Def$Expr$Term$toString = function (term) {
+	switch (term.$) {
+		case 0:
+			var i = term.a;
+			return elm$core$String$fromInt(i);
+		case 1:
+			if (!term.a.$) {
+				var ref = term.a.a;
+				return '!(' + (elm$core$String$fromInt(ref) + ')');
+			} else {
+				var label = term.a.a;
+				return author$project$Project$Label$toSmallString(label);
+			}
+		default:
+			return '✗';
+	}
+};
 var author$project$Panel$Editor$Module$termNormalView = F2(
 	function (term, isActive) {
 		return A2(
