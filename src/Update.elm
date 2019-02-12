@@ -18,7 +18,7 @@ port focusTextArea : () -> Cmd msg
 port preventDefaultBeforeKeyEvent : () -> Cmd msg
 
 
-port run : List Int -> Cmd msg
+port run : { ref : List Int, index : Int, wasm : List Int } -> Cmd msg
 
 
 {-| Definyエディタの全体のUpdate
@@ -55,16 +55,21 @@ update msg model =
 
         Model.ReceiveCompiledData data ->
             let
-                ( newModel, wasmBinaryMaybe ) =
+                ( newModel, wasmAndRefMaybe ) =
                     Model.receiveCompiledData data model
             in
             ( newModel
-            , case wasmBinaryMaybe of
-                Just wasmBinary ->
-                    run wasmBinary
+            , case wasmAndRefMaybe of
+                Just wasmAndRef ->
+                    run wasmAndRef
 
                 Nothing ->
                     Cmd.none
+            )
+
+        Model.ReceiveResultValue data ->
+            ( Model.receiveResultValue data model
+            , Cmd.none
             )
 
         Model.ToResizeGutterMode gutter ->

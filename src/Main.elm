@@ -29,6 +29,7 @@ port keyPrevented : (Int -> msg) -> Sub msg
 
 port windowResize : ({ width : Int, height : Int } -> msg) -> Sub msg
 
+port runResult : ({ref:List Int, index : Int, result : Int}->msg) -> Sub msg
 
 main : Program () Model Msg
 main =
@@ -53,6 +54,7 @@ subscriptions model =
         ([ keyDown (Key.fromKeyEventObject >> Model.KeyPressed)
          , keyPrevented (always Model.KeyPrevented)
          , windowResize Model.WindowResize
+         , runResult Model.ReceiveResultValue
          ]
             ++ (if Model.isCaptureMouseEvent model then
                     [ Browser.Events.onMouseMove

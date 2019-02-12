@@ -1,4 +1,4 @@
-module Project.Source exposing (ModuleRef(..), Source, getModule, init, mapModule, setModule)
+module Project.Source exposing (ModuleRef(..), Source, allModuleRef, getModule, init, mapModule, setModule)
 
 import Project.Label as Label
 import Project.Source.Module.Def as Def
@@ -163,3 +163,11 @@ mapModule moduleRef =
     Utility.Map.toMapper
         (getModule moduleRef)
         (setModule moduleRef)
+
+
+allModuleRef : Source -> List ModuleRef
+allModuleRef _ =
+    [ Core
+    , CoreInt32
+    , SampleModule
+    ]

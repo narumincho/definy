@@ -1,7 +1,9 @@
 module Project exposing
     ( Project, ProjectRef(..), init, projectRefSetEmpty, ProjectRefSet
     , getName
-    , getAuthor, getSource, mapSource)
+    , getAuthor
+    , getSource, mapSource, moduleRefToListInt, projectRefToListInt
+    , listIntToModuleRef)
 
 {-| プロジェクト。アプリを構成するものすべて。
 プログラムのソースやドキュメント、実行設定まで
@@ -54,17 +56,18 @@ type ProjectRef
     | Source
     | Module Source.ModuleRef
 
+
 type alias ProjectRefSet =
     Set.Any.AnySet (List Int) ProjectRef
 
 
 projectRefSetEmpty : ProjectRefSet
 projectRefSetEmpty =
-    Set.Any.empty projectRefToInt
+    Set.Any.empty projectRefToListInt
 
 
-projectRefToInt : ProjectRef -> List Int
-projectRefToInt projectRef =
+projectRefToListInt : ProjectRef -> List Int
+projectRefToListInt projectRef =
     case projectRef of
         ProjectRoot ->
             []
@@ -79,11 +82,11 @@ projectRefToInt projectRef =
             [ 2 ]
 
         Module moduleRef ->
-            [ 3 ] ++ moduleRefToInt moduleRef
+            [ 3 ] ++ moduleRefToListInt moduleRef
 
 
-moduleRefToInt : Source.ModuleRef -> List Int
-moduleRefToInt moduleRef =
+moduleRefToListInt : Source.ModuleRef -> List Int
+moduleRefToListInt moduleRef =
     case moduleRef of
         Source.Core ->
             [ 0 ]
@@ -93,6 +96,19 @@ moduleRefToInt moduleRef =
 
         Source.SampleModule ->
             [ 2 ]
+
+
+listIntToModuleRef : List Int -> Source.ModuleRef
+listIntToModuleRef list =
+    case list of
+        [ 0 ] ->
+            Source.Core
+
+        [ 1 ] ->
+            Source.CoreInt32
+
+        _ ->
+            Source.SampleModule
 
 
 {-| プロジェクトの初期値
@@ -145,11 +161,13 @@ getAuthor : Project -> Label.Label
 getAuthor (Project { author }) =
     author
 
+
 {-| プロジェクトのソース (モジュールがたくさん入ったもの)を取得する
 -}
 getSource : Project -> Source.Source
-getSource (Project {source}) =
+getSource (Project { source }) =
     source
+
 
 {-| プロジェクトのソース (モジュールがたくさん入ったもの)を設定する
 -}
@@ -158,9 +176,10 @@ setSource source (Project rec) =
     Project
         { rec | source = source }
 
+
 {-| プロジェクトのソース (モジュールがたくさん入ったもの)を加工する
 -}
-mapSource : (Source.Source->Source.Source) -> Project->Project
+mapSource : (Source.Source -> Source.Source) -> Project -> Project
 mapSource =
     Utility.Map.toMapper
         getSource

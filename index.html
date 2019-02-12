@@ -44,14 +44,16 @@
             })
         })
         /* コンパイル結果(WASM)を実行 */
-        app.ports.run.subscribe((list) => {
-            console.log(list);
-            WebAssembly.instantiate(new Uint8Array(list)).then(result => {
-                console.log(result);
+        app.ports.run.subscribe((compileResult) => {
+            WebAssembly.instantiate(new Uint8Array(compileResult.wasm)).then(result => {
                 const exportFunc = result.instance.exports;
-                for (const [k, f] of Object.entries(exportFunc)) {
-                    console.log(k, f());
-                }
+                const resultValue = exportFunc[0]();
+                console.log(resultValue);
+                app.ports.runResult.send({
+                    ref: compileResult.ref,
+                    index: compileResult.index,
+                    result: resultValue
+                });
             });
         });
         /* ウィンドウサイズを変えたら */

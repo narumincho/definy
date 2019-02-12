@@ -36,6 +36,7 @@ port module Model exposing
     , openEditor
     , pushMsgListToMsgQueue
     , receiveCompiledData
+    , receiveResultValue
     , setFocus
     , setWindowSize
     , shiftMsgListFromMsgQueue
@@ -88,6 +89,7 @@ type Msg
     | MouseMove { x : Int, y : Int } -- マウスの移動
     | MouseUp -- マウスのボタンを離した
     | ReceiveCompiledData { ref : Project.Source.ModuleRef, index : Int, compileResult : Compiler.CompileResult } -- コンパイルの結果を受け取った
+    | ReceiveResultValue { ref : List Int, index : Int, result : Int } -- 実行結果を受け取った
     | ToResizeGutterMode Gutter -- リサイズモードに移行
     | FocusTo Focus -- フォーカスを移動
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
@@ -174,7 +176,29 @@ initModel =
 -}
 initCmd : Model -> Cmd Msg
 initCmd model =
-    loaded ()
+    let
+        source =
+            model
+                |> getProject
+                |> Project.getSource
+    in
+    Cmd.batch
+        ([ loaded () ]
+            ++ (source
+                    |> Project.Source.allModuleRef
+                    |> List.concatMap
+                        (\moduleRef ->
+                            let
+                                defNum =
+                                    source
+                                        |> Project.Source.getModule moduleRef
+                                        |> Project.Source.ModuleWithCache.getDefNum
+                            in
+                            List.range 0 defNum
+                                |> List.map (compileCmd source moduleRef)
+                        )
+               )
+        )
 
 
 
@@ -516,7 +540,10 @@ mouseUp (Model rec) =
 
 {-| コンパイルの結果を受け取った
 -}
-receiveCompiledData : { ref : Project.Source.ModuleRef, index : Int, compileResult : Compiler.CompileResult } -> Model -> ( Model, Maybe (List Int) )
+receiveCompiledData :
+    { ref : Project.Source.ModuleRef, index : Int, compileResult : Compiler.CompileResult }
+    -> Model
+    -> ( Model, Maybe { ref : List Int, index : Int, wasm : List Int } )
 receiveCompiledData { ref, index, compileResult } model =
     ( model
         |> mapProject
@@ -525,8 +552,31 @@ receiveCompiledData { ref, index, compileResult } model =
                     (Project.Source.ModuleWithCache.setCompileResult index compileResult)
                 )
             )
-    , Compiler.getBinary compileResult
+    , case Compiler.getBinary compileResult of
+        Just wasm ->
+            Just
+                { ref = Project.moduleRefToListInt ref
+                , index = index
+                , wasm = wasm
+                }
+
+        Nothing ->
+            Nothing
     )
+
+
+receiveResultValue :
+    { ref : List Int, index : Int, result : Int }
+    -> Model
+    -> Model
+receiveResultValue { ref, index, result } =
+    mapProject
+        (Project.mapSource
+            (Project.Source.mapModule
+                (Project.listIntToModuleRef ref)
+                (Project.Source.ModuleWithCache.setEvalResult index result)
+            )
+        )
 
 
 {-| ツリーパネルの更新
@@ -761,18 +811,23 @@ changeExpr { expr, index, ref } model =
                             (Project.Source.ModuleWithCache.setDefExpr index expr)
                         )
                     )
-
-        newDefMaybe =
-            newModel
-                |> getProject
-                |> Project.getSource
-                |> Project.Source.getModule ref
-                |> Project.Source.ModuleWithCache.getDef index
     in
     ( newModel
-    , case newDefMaybe of
-        Just newDef ->
-            Task.succeed newDef
+    , compileCmd (newModel |> getProject |> Project.getSource) ref index
+    )
+
+
+compileCmd : Project.Source.Source -> Project.Source.ModuleRef -> Int -> Cmd Msg
+compileCmd source moduleRef index =
+    let
+        targetDefMaybe =
+            source
+                |> Project.Source.getModule moduleRef
+                |> Project.Source.ModuleWithCache.getDef index
+    in
+    case targetDefMaybe of
+        Just targetDef ->
+            Task.succeed targetDef
                 |> Task.andThen
                     (\def ->
                         Task.succeed (Compiler.compile def)
@@ -780,7 +835,7 @@ changeExpr { expr, index, ref } model =
                 |> Task.perform
                     (\compileResult ->
                         ReceiveCompiledData
-                            { ref = ref
+                            { ref = moduleRef
                             , index = index
                             , compileResult = compileResult
                             }
@@ -788,7 +843,6 @@ changeExpr { expr, index, ref } model =
 
         Nothing ->
             Cmd.none
-    )
 
 
 addPartDef : { ref : Project.Source.ModuleRef } -> Model -> Model

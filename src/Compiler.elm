@@ -6,14 +6,15 @@ module Compiler exposing
     )
 
 import Array exposing (Array)
-import Project.Source.Module.Def as Def
 import Compiler.DefToSafeExpr as DefToSafeExpr
+import Compiler.Marger
 import Compiler.NoOp as NoOp
 import Compiler.NoOpToOpt as NoOpToOpt
 import Compiler.Opt as Opt
 import Compiler.OptToBinary as OptToBinary
 import Compiler.SafeExpr as SafeExpr
 import Compiler.SafeExprToNoOp as SafeExprToNoOp
+import Project.Source.Module.Def as Def
 
 
 type CompileResult
@@ -60,17 +61,17 @@ compileResultToString result =
             "成功" ++ Opt.toString opt
 
         FailureAtNoOpToOpt { noOp } ->
-            "途中で失敗" ++ NoOp.toString noOp
+            "コンパイルエラー。途中で失敗" ++ NoOp.toString noOp
 
         FailureAll ->
-            "空欄の部分があるかも"
+            "コンパイルエラー。空欄の部分があるかも"
 
 
 getBinary : CompileResult -> Maybe (List Int)
 getBinary result =
     case result of
         Success { binary } ->
-            Just binary
+            Just (Compiler.Marger.marge [ binary ])
 
         _ ->
             Nothing

@@ -13,12 +13,14 @@ module Project.Source.ModuleWithCache exposing
     , getReadMe
     , make
     , mapDef
+    , setCompileResult
     , setDefExpr
     , setDefName
     , setDefType
+    , setEvalResult
     , setName
     , setReadMe
-    , setCompileResult)
+    )
 
 import Compiler
 import Compiler.Marger
@@ -194,6 +196,12 @@ setCompileResult : Int -> Compiler.CompileResult -> Module -> Module
 setCompileResult index compileResult =
     mapDefAndResult index
         (defAndResultSetCompileResult compileResult)
+
+
+setEvalResult : Int -> Int -> Module -> Module
+setEvalResult index evalResult =
+    mapDefAndResult index
+        (defAndResultSetEvalResult evalResult)
 
 
 {-| 定義の個数

@@ -784,11 +784,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.a$.aj === region.be.aj)
+	if (region.aZ.ah === region.bc.ah)
 	{
-		return 'on line ' + region.a$.aj;
+		return 'on line ' + region.aZ.ah;
 	}
-	return 'on lines ' + region.a$.aj + ' through ' + region.be.aj;
+	return 'on lines ' + region.aZ.ah + ' through ' + region.bc.ah;
 }
 
 
@@ -850,6 +850,43 @@ function _Basics_not(bool) { return !bool; }
 var _Basics_and = F2(function(a, b) { return a && b; });
 var _Basics_or  = F2(function(a, b) { return a || b; });
 var _Basics_xor = F2(function(a, b) { return a !== b; });
+
+
+
+var _Bitwise_and = F2(function(a, b)
+{
+	return a & b;
+});
+
+var _Bitwise_or = F2(function(a, b)
+{
+	return a | b;
+});
+
+var _Bitwise_xor = F2(function(a, b)
+{
+	return a ^ b;
+});
+
+function _Bitwise_complement(a)
+{
+	return ~a;
+};
+
+var _Bitwise_shiftLeftBy = F2(function(offset, a)
+{
+	return a << offset;
+});
+
+var _Bitwise_shiftRightBy = F2(function(offset, a)
+{
+	return a >> offset;
+});
+
+var _Bitwise_shiftRightZfBy = F2(function(offset, a)
+{
+	return a >>> offset;
+});
 
 
 
@@ -1857,9 +1894,9 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.bX,
-		impl.b9,
-		impl.b5,
+		impl.bW,
+		impl.ca,
+		impl.b6,
 		function() { return function() {} }
 	);
 });
@@ -2659,9 +2696,9 @@ var _VirtualDom_mapEventTuple = F2(function(func, tuple)
 var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
-		J: func(record.J),
-		a0: record.a0,
-		aW: record.aW
+		H: func(record.H),
+		a_: record.a_,
+		aU: record.aU
 	}
 });
 
@@ -2929,11 +2966,11 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 		// 3 = Custom
 
 		var value = result.a;
-		var message = !tag ? value : tag < 3 ? value.a : value.J;
-		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.a0;
+		var message = !tag ? value : tag < 3 ? value.a : value.H;
+		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.a_;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
-			(tag == 2 ? value.b : tag == 3 && value.aW) && event.preventDefault(),
+			(tag == 2 ? value.b : tag == 3 && value.aU) && event.preventDefault(),
 			eventNode
 		);
 		var tagger;
@@ -3883,11 +3920,11 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.bX,
-		impl.b9,
-		impl.b5,
+		impl.bW,
+		impl.ca,
+		impl.b6,
 		function(sendToApp, initialModel) {
-			var view = impl.cb;
+			var view = impl.cc;
 			/**/
 			var domNode = args['node'];
 			//*/
@@ -3919,12 +3956,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.bX,
-		impl.b9,
-		impl.b5,
+		impl.bW,
+		impl.ca,
+		impl.b6,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.an && impl.an(sendToApp)
-			var view = impl.cb;
+			var divertHrefToApp = impl.al && impl.al(sendToApp)
+			var view = impl.cc;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
 			var currNode = _VirtualDom_virtualize(bodyNode);
@@ -3932,12 +3969,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 			{
 				_VirtualDom_divertHrefToApp = divertHrefToApp;
 				var doc = view(model);
-				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.bH);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.bF);
 				var patches = _VirtualDom_diff(currNode, nextNode);
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
 				_VirtualDom_divertHrefToApp = 0;
-				(title !== doc.b7) && (_VirtualDom_doc.title = title = doc.b7);
+				(title !== doc.b8) && (_VirtualDom_doc.title = title = doc.b8);
 			});
 		}
 	);
@@ -3993,12 +4030,12 @@ function _Browser_makeAnimator(model, draw)
 
 function _Browser_application(impl)
 {
-	var onUrlChange = impl.b0;
-	var onUrlRequest = impl.b1;
+	var onUrlChange = impl.b$;
+	var onUrlRequest = impl.b0;
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		an: function(sendToApp)
+		al: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -4014,9 +4051,9 @@ function _Browser_application(impl)
 					var next = elm$url$Url$fromString(href).a;
 					sendToApp(onUrlRequest(
 						(next
-							&& curr.bs === next.bs
-							&& curr.bi === next.bi
-							&& curr.bp.a === next.bp.a
+							&& curr.bq === next.bq
+							&& curr.bg === next.bg
+							&& curr.bn.a === next.bn.a
 						)
 							? elm$browser$Browser$Internal(next)
 							: elm$browser$Browser$External(href)
@@ -4024,13 +4061,13 @@ function _Browser_application(impl)
 				}
 			});
 		},
-		bX: function(flags)
+		bW: function(flags)
 		{
-			return A3(impl.bX, flags, _Browser_getUrl(), key);
+			return A3(impl.bW, flags, _Browser_getUrl(), key);
 		},
-		cb: impl.cb,
-		b9: impl.b9,
-		b5: impl.b5
+		cc: impl.cc,
+		ca: impl.ca,
+		b6: impl.b6
 	});
 }
 
@@ -4096,17 +4133,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { bV: 'hidden', bJ: 'visibilitychange' }
+		? { bT: 'hidden', bH: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { bV: 'mozHidden', bJ: 'mozvisibilitychange' }
+		? { bT: 'mozHidden', bH: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { bV: 'msHidden', bJ: 'msvisibilitychange' }
+		? { bT: 'msHidden', bH: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { bV: 'webkitHidden', bJ: 'webkitvisibilitychange' }
-		: { bV: 'hidden', bJ: 'visibilitychange' };
+		? { bT: 'webkitHidden', bH: 'webkitvisibilitychange' }
+		: { bT: 'hidden', bH: 'visibilitychange' };
 }
 
 
@@ -4187,12 +4224,12 @@ var _Browser_call = F2(function(functionName, id)
 function _Browser_getViewport()
 {
 	return {
-		by: _Browser_getScene(),
-		bE: {
-			ce: _Browser_window.pageXOffset,
-			cf: _Browser_window.pageYOffset,
-			cc: _Browser_doc.documentElement.clientWidth,
-			bU: _Browser_doc.documentElement.clientHeight
+		bw: _Browser_getScene(),
+		bC: {
+			cg: _Browser_window.pageXOffset,
+			ch: _Browser_window.pageYOffset,
+			ce: _Browser_doc.documentElement.clientWidth,
+			bS: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4202,8 +4239,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		cc: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		bU: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		ce: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		bS: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4226,15 +4263,15 @@ function _Browser_getViewportOf(id)
 	return _Browser_withNode(id, function(node)
 	{
 		return {
-			by: {
-				cc: node.scrollWidth,
-				bU: node.scrollHeight
+			bw: {
+				ce: node.scrollWidth,
+				bS: node.scrollHeight
 			},
-			bE: {
-				ce: node.scrollLeft,
-				cf: node.scrollTop,
-				cc: node.clientWidth,
-				bU: node.clientHeight
+			bC: {
+				cg: node.scrollLeft,
+				ch: node.scrollTop,
+				ce: node.clientWidth,
+				bS: node.clientHeight
 			}
 		};
 	});
@@ -4264,18 +4301,18 @@ function _Browser_getElement(id)
 		var x = _Browser_window.pageXOffset;
 		var y = _Browser_window.pageYOffset;
 		return {
-			by: _Browser_getScene(),
-			bE: {
-				ce: x,
-				cf: y,
-				cc: _Browser_doc.documentElement.clientWidth,
-				bU: _Browser_doc.documentElement.clientHeight
+			bw: _Browser_getScene(),
+			bC: {
+				cg: x,
+				ch: y,
+				ce: _Browser_doc.documentElement.clientWidth,
+				bS: _Browser_doc.documentElement.clientHeight
 			},
-			bO: {
-				ce: x + rect.left,
-				cf: y + rect.top,
-				cc: rect.width,
-				bU: rect.height
+			bM: {
+				cg: x + rect.left,
+				ch: y + rect.top,
+				ce: rect.width,
+				bS: rect.height
 			}
 		};
 	});
@@ -4310,48 +4347,73 @@ function _Browser_load(url)
 		}
 	}));
 }
-
-
-
-var _Bitwise_and = F2(function(a, b)
-{
-	return a & b;
-});
-
-var _Bitwise_or = F2(function(a, b)
-{
-	return a | b;
-});
-
-var _Bitwise_xor = F2(function(a, b)
-{
-	return a ^ b;
-});
-
-function _Bitwise_complement(a)
-{
-	return ~a;
+var author$project$Compiler$FailureAll = {$: 2};
+var author$project$Compiler$FailureAtNoOpToOpt = function (a) {
+	return {$: 1, a: a};
 };
-
-var _Bitwise_shiftLeftBy = F2(function(offset, a)
-{
-	return a << offset;
-});
-
-var _Bitwise_shiftRightBy = F2(function(offset, a)
-{
-	return a >> offset;
-});
-
-var _Bitwise_shiftRightZfBy = F2(function(offset, a)
-{
-	return a >>> offset;
-});
-var elm$core$Array$branchFactor = 32;
-var elm$core$Array$Array_elm_builtin = F4(
-	function (a, b, c, d) {
-		return {$: 0, a: a, b: b, c: c, d: d};
+var author$project$Compiler$Success = function (a) {
+	return {$: 0, a: a};
+};
+var author$project$Compiler$SafeExpr$SafeExpr = elm$core$Basics$identity;
+var author$project$Project$Source$Module$Def$getExpr = function (_n0) {
+	var expr = _n0.aM;
+	return expr;
+};
+var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
+	var head = _n0.a;
+	return head;
+};
+var author$project$Project$Source$Module$Def$Expr$getOthers = function (_n0) {
+	var others = _n0.b;
+	return others;
+};
+var elm$core$Maybe$Just = function (a) {
+	return {$: 0, a: a};
+};
+var elm$core$Maybe$Nothing = {$: 1};
+var author$project$Project$Source$Module$Def$Expr$Operator$toSafe = function (op) {
+	if (!op.$) {
+		var so = op.a;
+		return elm$core$Maybe$Just(so);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Project$Source$Module$Def$Expr$Term$SIntLiteral = function (a) {
+	return {$: 0, a: a};
+};
+var author$project$Project$Source$Module$Def$Expr$Term$SRef = function (a) {
+	return {$: 1, a: a};
+};
+var author$project$Project$Source$Module$Def$Expr$Term$toSafe = function (term) {
+	_n0$2:
+	while (true) {
+		switch (term.$) {
+			case 0:
+				var i = term.a;
+				return elm$core$Maybe$Just(
+					author$project$Project$Source$Module$Def$Expr$Term$SIntLiteral(i));
+			case 1:
+				if (!term.a.$) {
+					var ref = term.a.a;
+					return elm$core$Maybe$Just(
+						author$project$Project$Source$Module$Def$Expr$Term$SRef(ref));
+				} else {
+					break _n0$2;
+				}
+			default:
+				break _n0$2;
+		}
+	}
+	return elm$core$Maybe$Nothing;
+};
+var elm$core$Basics$apR = F2(
+	function (x, f) {
+		return f(x);
 	});
+var elm$core$Basics$identity = function (x) {
+	return x;
+};
 var elm$core$Basics$EQ = 1;
 var elm$core$Basics$GT = 2;
 var elm$core$Basics$LT = 0;
@@ -4432,24 +4494,8 @@ var elm$core$Array$foldr = F3(
 var elm$core$Array$toList = function (array) {
 	return A3(elm$core$Array$foldr, elm$core$List$cons, _List_Nil, array);
 };
-var elm$core$Basics$ceiling = _Basics_ceiling;
-var elm$core$Basics$fdiv = _Basics_fdiv;
-var elm$core$Basics$logBase = F2(
-	function (base, number) {
-		return _Basics_log(number) / _Basics_log(base);
-	});
-var elm$core$Basics$toFloat = _Basics_toFloat;
-var elm$core$Array$shiftStep = elm$core$Basics$ceiling(
-	A2(elm$core$Basics$logBase, 2, elm$core$Array$branchFactor));
-var elm$core$Elm$JsArray$empty = _JsArray_empty;
-var elm$core$Array$empty = A4(elm$core$Array$Array_elm_builtin, 0, elm$core$Array$shiftStep, elm$core$Elm$JsArray$empty, elm$core$Elm$JsArray$empty);
-var elm$core$Array$Leaf = function (a) {
-	return {$: 1, a: a};
-};
-var elm$core$Array$SubTree = function (a) {
-	return {$: 0, a: a};
-};
-var elm$core$Elm$JsArray$initializeFromList = _JsArray_initializeFromList;
+var elm$core$Basics$add = _Basics_add;
+var elm$core$Basics$gt = _Utils_gt;
 var elm$core$List$foldl = F3(
 	function (func, acc, list) {
 		foldl:
@@ -4472,6 +4518,693 @@ var elm$core$List$foldl = F3(
 var elm$core$List$reverse = function (list) {
 	return A3(elm$core$List$foldl, elm$core$List$cons, _List_Nil, list);
 };
+var elm$core$List$foldrHelper = F4(
+	function (fn, acc, ctr, ls) {
+		if (!ls.b) {
+			return acc;
+		} else {
+			var a = ls.a;
+			var r1 = ls.b;
+			if (!r1.b) {
+				return A2(fn, a, acc);
+			} else {
+				var b = r1.a;
+				var r2 = r1.b;
+				if (!r2.b) {
+					return A2(
+						fn,
+						a,
+						A2(fn, b, acc));
+				} else {
+					var c = r2.a;
+					var r3 = r2.b;
+					if (!r3.b) {
+						return A2(
+							fn,
+							a,
+							A2(
+								fn,
+								b,
+								A2(fn, c, acc)));
+					} else {
+						var d = r3.a;
+						var r4 = r3.b;
+						var res = (ctr > 500) ? A3(
+							elm$core$List$foldl,
+							fn,
+							acc,
+							elm$core$List$reverse(r4)) : A4(elm$core$List$foldrHelper, fn, acc, ctr + 1, r4);
+						return A2(
+							fn,
+							a,
+							A2(
+								fn,
+								b,
+								A2(
+									fn,
+									c,
+									A2(fn, d, res))));
+					}
+				}
+			}
+		}
+	});
+var elm$core$List$foldr = F3(
+	function (fn, acc, ls) {
+		return A4(elm$core$List$foldrHelper, fn, acc, 0, ls);
+	});
+var elm$core$List$maybeCons = F3(
+	function (f, mx, xs) {
+		var _n0 = f(mx);
+		if (!_n0.$) {
+			var x = _n0.a;
+			return A2(elm$core$List$cons, x, xs);
+		} else {
+			return xs;
+		}
+	});
+var elm$core$List$filterMap = F2(
+	function (f, xs) {
+		return A3(
+			elm$core$List$foldr,
+			elm$core$List$maybeCons(f),
+			_List_Nil,
+			xs);
+	});
+var author$project$Compiler$DefToSafeExpr$convert = function (def) {
+	var expr = author$project$Project$Source$Module$Def$getExpr(def);
+	var _n0 = author$project$Project$Source$Module$Def$Expr$Term$toSafe(
+		author$project$Project$Source$Module$Def$Expr$getHead(expr));
+	if (!_n0.$) {
+		var safeHead = _n0.a;
+		return elm$core$Maybe$Just(
+			{
+				bR: safeHead,
+				b2: A2(
+					elm$core$List$filterMap,
+					function (_n1) {
+						var op = _n1.a;
+						var term = _n1.b;
+						var _n2 = _Utils_Tuple2(
+							author$project$Project$Source$Module$Def$Expr$Operator$toSafe(op),
+							author$project$Project$Source$Module$Def$Expr$Term$toSafe(term));
+						if ((!_n2.a.$) && (!_n2.b.$)) {
+							var safeOp = _n2.a.a;
+							var safeTerm = _n2.b.a;
+							return elm$core$Maybe$Just(
+								_Utils_Tuple2(safeOp, safeTerm));
+						} else {
+							return elm$core$Maybe$Nothing;
+						}
+					},
+					author$project$Project$Source$Module$Def$Expr$getOthers(expr))
+			});
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Compiler$Opt$Call = function (a) {
+	return {$: 4, a: a};
+};
+var author$project$Compiler$Opt$I32Add = F2(
+	function (a, b) {
+		return {$: 0, a: a, b: b};
+	});
+var author$project$Compiler$Opt$I32Const = function (a) {
+	return {$: 3, a: a};
+};
+var author$project$Compiler$Opt$I32Mul = F2(
+	function (a, b) {
+		return {$: 2, a: a, b: b};
+	});
+var author$project$Compiler$Opt$I32Sub = F2(
+	function (a, b) {
+		return {$: 1, a: a, b: b};
+	});
+var author$project$Compiler$NoOpToOpt$convert = function (noOp) {
+	_n0$5:
+	while (true) {
+		switch (noOp.$) {
+			case 1:
+				var v = noOp.a;
+				return elm$core$Maybe$Just(
+					author$project$Compiler$Opt$I32Const(v));
+			case 2:
+				var defNum = noOp.a;
+				return elm$core$Maybe$Just(
+					author$project$Compiler$Opt$Call(defNum));
+			case 4:
+				if (!noOp.a.$) {
+					switch (noOp.a.a) {
+						case 0:
+							var _n1 = noOp.a.a;
+							var p0 = noOp.b;
+							var p1 = noOp.c;
+							var _n2 = _Utils_Tuple2(
+								author$project$Compiler$NoOpToOpt$convert(p0),
+								author$project$Compiler$NoOpToOpt$convert(p1));
+							if ((!_n2.a.$) && (!_n2.b.$)) {
+								var opt0 = _n2.a.a;
+								var opt1 = _n2.b.a;
+								return elm$core$Maybe$Just(
+									A2(author$project$Compiler$Opt$I32Add, opt0, opt1));
+							} else {
+								return elm$core$Maybe$Nothing;
+							}
+						case 1:
+							var _n3 = noOp.a.a;
+							var p0 = noOp.b;
+							var p1 = noOp.c;
+							var _n4 = _Utils_Tuple2(
+								author$project$Compiler$NoOpToOpt$convert(p0),
+								author$project$Compiler$NoOpToOpt$convert(p1));
+							if ((!_n4.a.$) && (!_n4.b.$)) {
+								var opt0 = _n4.a.a;
+								var opt1 = _n4.b.a;
+								return elm$core$Maybe$Just(
+									A2(author$project$Compiler$Opt$I32Sub, opt0, opt1));
+							} else {
+								return elm$core$Maybe$Nothing;
+							}
+						default:
+							var _n5 = noOp.a.a;
+							var p0 = noOp.b;
+							var p1 = noOp.c;
+							var _n6 = _Utils_Tuple2(
+								author$project$Compiler$NoOpToOpt$convert(p0),
+								author$project$Compiler$NoOpToOpt$convert(p1));
+							if ((!_n6.a.$) && (!_n6.b.$)) {
+								var opt0 = _n6.a.a;
+								var opt1 = _n6.b.a;
+								return elm$core$Maybe$Just(
+									A2(author$project$Compiler$Opt$I32Mul, opt0, opt1));
+							} else {
+								return elm$core$Maybe$Nothing;
+							}
+					}
+				} else {
+					break _n0$5;
+				}
+			default:
+				break _n0$5;
+		}
+	}
+	return elm$core$Maybe$Nothing;
+};
+var elm$core$Basics$and = _Basics_and;
+var elm$core$Basics$eq = _Utils_equal;
+var elm$core$Bitwise$and = _Bitwise_and;
+var elm$core$Bitwise$or = _Bitwise_or;
+var elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var author$project$Compiler$BinaryEncoding$varsUInt32 = function (x) {
+	var b4 = 127 & (x >> 28);
+	var b3 = 127 & (x >> 21);
+	var b2 = 127 & (x >> 14);
+	var b1 = 127 & (x >> 7);
+	var b0 = 127 & x;
+	return ((!b1) && ((!b2) && ((!b3) && (!b4)))) ? _List_fromArray(
+		[b0]) : (((!b2) && ((!b3) && (!b4))) ? _List_fromArray(
+		[b0 | 128, b1]) : (((!b3) && (!b4)) ? _List_fromArray(
+		[b0 | 128, b1 | 128, b2]) : ((!b4) ? _List_fromArray(
+		[b0 | 128, b1 | 128, b2 | 128, b3]) : _List_fromArray(
+		[b0 | 128, b1 | 128, b2 | 128, b3 | 128, b4]))));
+};
+var author$project$Compiler$OptToBinary$Call = function (a) {
+	return {$: 1, a: a};
+};
+var author$project$Compiler$OptToBinary$I32Add = {$: 2};
+var author$project$Compiler$OptToBinary$I32Const = function (a) {
+	return {$: 0, a: a};
+};
+var author$project$Compiler$OptToBinary$I32Mul = {$: 4};
+var author$project$Compiler$OptToBinary$I32Sub = {$: 3};
+var elm$core$Basics$append = _Utils_append;
+var author$project$Compiler$OptToBinary$optToWatLikeList = function (opt) {
+	switch (opt.$) {
+		case 0:
+			var p0 = opt.a;
+			var p1 = opt.b;
+			return _Utils_ap(
+				author$project$Compiler$OptToBinary$optToWatLikeList(p0),
+				_Utils_ap(
+					author$project$Compiler$OptToBinary$optToWatLikeList(p1),
+					_List_fromArray(
+						[author$project$Compiler$OptToBinary$I32Add])));
+		case 1:
+			var p0 = opt.a;
+			var p1 = opt.b;
+			return _Utils_ap(
+				author$project$Compiler$OptToBinary$optToWatLikeList(p0),
+				_Utils_ap(
+					author$project$Compiler$OptToBinary$optToWatLikeList(p1),
+					_List_fromArray(
+						[author$project$Compiler$OptToBinary$I32Sub])));
+		case 2:
+			var p0 = opt.a;
+			var p1 = opt.b;
+			return _Utils_ap(
+				author$project$Compiler$OptToBinary$optToWatLikeList(p0),
+				_Utils_ap(
+					author$project$Compiler$OptToBinary$optToWatLikeList(p1),
+					_List_fromArray(
+						[author$project$Compiler$OptToBinary$I32Mul])));
+		case 3:
+			var v = opt.a;
+			return _List_fromArray(
+				[
+					author$project$Compiler$OptToBinary$I32Const(v)
+				]);
+		default:
+			var defNum = opt.a;
+			return _List_fromArray(
+				[
+					author$project$Compiler$OptToBinary$Call(defNum)
+				]);
+	}
+};
+var elm$core$Basics$idiv = _Basics_idiv;
+var elm$core$Basics$le = _Utils_le;
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var elm$core$Basics$pow = _Basics_pow;
+var elm$core$Basics$sub = _Basics_sub;
+var author$project$Compiler$BinaryEncoding$varsInt32 = function (x) {
+	var b3 = 127 & (x >> 21);
+	var b2 = 127 & (x >> 14);
+	var b1 = 127 & (x >> 7);
+	var b0 = 127 & x;
+	if ((_Utils_cmp(
+		((-A2(elm$core$Basics$pow, 2, 7)) / 2) | 0,
+		x) < 1) && (_Utils_cmp(
+		x,
+		((A2(elm$core$Basics$pow, 2, 7) / 2) | 0) - 1) < 1)) {
+		return _List_fromArray(
+			[b0]);
+	} else {
+		if ((_Utils_cmp(
+			((-A2(elm$core$Basics$pow, 2, 14)) / 2) | 0,
+			x) < 1) && (_Utils_cmp(
+			x,
+			((A2(elm$core$Basics$pow, 2, 14) / 2) | 0) - 1) < 1)) {
+			return _List_fromArray(
+				[b0 | 128, b1]);
+		} else {
+			if ((_Utils_cmp(
+				((-A2(elm$core$Basics$pow, 2, 21)) / 2) | 0,
+				x) < 1) && (_Utils_cmp(
+				x,
+				((A2(elm$core$Basics$pow, 2, 21) / 2) | 0) - 1) < 1)) {
+				return _List_fromArray(
+					[b0 | 128, b1 | 128, b2]);
+			} else {
+				if ((_Utils_cmp(
+					((-A2(elm$core$Basics$pow, 2, 28)) / 2) | 0,
+					x) < 1) && (_Utils_cmp(
+					x,
+					((A2(elm$core$Basics$pow, 2, 28) / 2) | 0) - 1) < 1)) {
+					return _List_fromArray(
+						[b0 | 128, b1 | 128, b2 | 128, b3]);
+				} else {
+					if (0 <= x) {
+						var b4 = 127 & (x >> 28);
+						return _List_fromArray(
+							[b0 | 128, b1 | 128, b2 | 128, b3 | 128, b4]);
+					} else {
+						var b4 = 112 | (127 & (x >> 28));
+						return _List_fromArray(
+							[b0 | 128, b1 | 128, b2 | 128, b3 | 128, b4]);
+					}
+				}
+			}
+		}
+	}
+};
+var author$project$Compiler$OptToBinary$watLikeToBinary = function (watLike) {
+	switch (watLike.$) {
+		case 0:
+			var v = watLike.a;
+			return A2(
+				elm$core$List$cons,
+				65,
+				author$project$Compiler$BinaryEncoding$varsInt32(v));
+		case 1:
+			var defNum = watLike.a;
+			return A2(
+				elm$core$List$cons,
+				16,
+				author$project$Compiler$BinaryEncoding$varsInt32(defNum));
+		case 2:
+			return _List_fromArray(
+				[106]);
+		case 3:
+			return _List_fromArray(
+				[107]);
+		default:
+			return _List_fromArray(
+				[108]);
+	}
+};
+var elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3(elm$core$List$foldr, elm$core$List$cons, ys, xs);
+		}
+	});
+var elm$core$List$concat = function (lists) {
+	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
+};
+var elm$core$List$map = F2(
+	function (f, xs) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, acc) {
+					return A2(
+						elm$core$List$cons,
+						f(x),
+						acc);
+				}),
+			_List_Nil,
+			xs);
+	});
+var elm$core$List$concatMap = F2(
+	function (f, list) {
+		return elm$core$List$concat(
+			A2(elm$core$List$map, f, list));
+	});
+var elm$core$List$length = function (xs) {
+	return A3(
+		elm$core$List$foldl,
+		F2(
+			function (_n0, i) {
+				return i + 1;
+			}),
+		0,
+		xs);
+};
+var author$project$Compiler$OptToBinary$convert = function (opt) {
+	var binary = _Utils_ap(
+		_List_fromArray(
+			[0]),
+		_Utils_ap(
+			A2(
+				elm$core$List$concatMap,
+				author$project$Compiler$OptToBinary$watLikeToBinary,
+				author$project$Compiler$OptToBinary$optToWatLikeList(opt)),
+			_List_fromArray(
+				[11])));
+	return _Utils_ap(
+		author$project$Compiler$BinaryEncoding$varsUInt32(
+			elm$core$List$length(binary)),
+		binary);
+};
+var author$project$Compiler$NoOp$Call2 = F3(
+	function (a, b, c) {
+		return {$: 4, a: a, b: b, c: c};
+	});
+var author$project$Compiler$SafeExpr$getHead = function (_n0) {
+	var head = _n0.bR;
+	return head;
+};
+var author$project$Compiler$SafeExpr$getOthers = function (_n0) {
+	var others = _n0.b2;
+	return others;
+};
+var author$project$Compiler$SafeExpr$concat = F3(
+	function (left, centerOp, right) {
+		return {
+			bR: author$project$Compiler$SafeExpr$getHead(left),
+			b2: _Utils_ap(
+				author$project$Compiler$SafeExpr$getOthers(left),
+				_Utils_ap(
+					_List_fromArray(
+						[
+							_Utils_Tuple2(
+							centerOp,
+							author$project$Compiler$SafeExpr$getHead(right))
+						]),
+					author$project$Compiler$SafeExpr$getOthers(right)))
+		};
+	});
+var author$project$Compiler$SafeExpr$push = F2(
+	function (tuple, _n0) {
+		var head = _n0.bR;
+		var others = _n0.b2;
+		return {
+			bR: head,
+			b2: _Utils_ap(
+				others,
+				_List_fromArray(
+					[tuple]))
+		};
+	});
+var author$project$Project$Source$Module$Def$Expr$Operator$bindingOrderToInt = function (order) {
+	switch (order) {
+		case 0:
+			return 0;
+		case 1:
+			return 1;
+		case 2:
+			return 2;
+		case 3:
+			return 3;
+		case 4:
+			return 4;
+		case 5:
+			return 5;
+		case 6:
+			return 6;
+		default:
+			return 7;
+	}
+};
+var author$project$Project$Source$Module$Def$Expr$Operator$bindingOrderLessThanOrEqual = F2(
+	function (by, target) {
+		return _Utils_cmp(
+			author$project$Project$Source$Module$Def$Expr$Operator$bindingOrderToInt(target),
+			author$project$Project$Source$Module$Def$Expr$Operator$bindingOrderToInt(by)) < 1;
+	});
+var author$project$Project$Source$Module$Def$Expr$Operator$O0 = 0;
+var author$project$Project$Source$Module$Def$Expr$Operator$O1 = 1;
+var author$project$Project$Source$Module$Def$Expr$Operator$O2 = 2;
+var author$project$Project$Source$Module$Def$Expr$Operator$O3 = 3;
+var author$project$Project$Source$Module$Def$Expr$Operator$O4 = 4;
+var author$project$Project$Source$Module$Def$Expr$Operator$O5 = 5;
+var author$project$Project$Source$Module$Def$Expr$Operator$O6 = 6;
+var author$project$Project$Source$Module$Def$Expr$Operator$O7 = 7;
+var author$project$Project$Source$Module$Def$Expr$Operator$toBindingOrder = function (op) {
+	switch (op) {
+		case 0:
+			return 0;
+		case 1:
+			return 1;
+		case 2:
+			return 2;
+		case 3:
+			return 3;
+		case 4:
+			return 3;
+		case 5:
+			return 3;
+		case 6:
+			return 3;
+		case 7:
+			return 4;
+		case 8:
+			return 4;
+		case 9:
+			return 4;
+		case 10:
+			return 5;
+		case 11:
+			return 5;
+		case 12:
+			return 6;
+		case 13:
+			return 6;
+		default:
+			return 7;
+	}
+};
+var author$project$Compiler$SafeExprToNoOp$convertLoop = function (_n0) {
+	convertLoop:
+	while (true) {
+		var left = _n0.P;
+		var centerOp = _n0.N;
+		var leftCandidate = _n0.aD;
+		var right = _n0.R;
+		if (!right.b) {
+			return {N: centerOp, P: left, R: leftCandidate};
+		} else {
+			var _n2 = right.a;
+			var op = _n2.a;
+			var term = _n2.b;
+			var xs = right.b;
+			if (A2(
+				author$project$Project$Source$Module$Def$Expr$Operator$bindingOrderLessThanOrEqual,
+				author$project$Project$Source$Module$Def$Expr$Operator$toBindingOrder(centerOp),
+				author$project$Project$Source$Module$Def$Expr$Operator$toBindingOrder(op))) {
+				var $temp$_n0 = {
+					N: op,
+					P: A3(author$project$Compiler$SafeExpr$concat, left, centerOp, leftCandidate),
+					aD: {bR: term, b2: _List_Nil},
+					R: xs
+				};
+				_n0 = $temp$_n0;
+				continue convertLoop;
+			} else {
+				var $temp$_n0 = {
+					N: centerOp,
+					P: left,
+					aD: A2(
+						author$project$Compiler$SafeExpr$push,
+						_Utils_Tuple2(op, term),
+						leftCandidate),
+					R: xs
+				};
+				_n0 = $temp$_n0;
+				continue convertLoop;
+			}
+		}
+	}
+};
+var author$project$Compiler$NoOp$Core = function (a) {
+	return {$: 0, a: a};
+};
+var author$project$Compiler$NoOp$Minus = 1;
+var author$project$Compiler$NoOp$Mul = 2;
+var author$project$Compiler$NoOp$Plus = 0;
+var author$project$Compiler$SafeExprToNoOp$opToNoOp = function (op) {
+	switch (op) {
+		case 8:
+			return author$project$Compiler$NoOp$Core(0);
+		case 9:
+			return author$project$Compiler$NoOp$Core(1);
+		case 10:
+			return author$project$Compiler$NoOp$Core(2);
+		default:
+			return author$project$Compiler$NoOp$Core(0);
+	}
+};
+var author$project$Compiler$NoOp$Int = function (a) {
+	return {$: 1, a: a};
+};
+var author$project$Compiler$NoOp$Ref = function (a) {
+	return {$: 2, a: a};
+};
+var author$project$Compiler$SafeExprToNoOp$termToNoOp = function (safeTerm) {
+	if (!safeTerm.$) {
+		var x = safeTerm.a;
+		return author$project$Compiler$NoOp$Int(x);
+	} else {
+		var ref = safeTerm.a;
+		return author$project$Compiler$NoOp$Ref(ref);
+	}
+};
+var author$project$Compiler$SafeExprToNoOp$convert = function (_n0) {
+	var head = _n0.bR;
+	var others = _n0.b2;
+	if (!others.b) {
+		return author$project$Compiler$SafeExprToNoOp$termToNoOp(head);
+	} else {
+		var _n2 = others.a;
+		var op = _n2.a;
+		var term = _n2.b;
+		var xs = others.b;
+		var a = author$project$Compiler$SafeExprToNoOp$convertLoop(
+			{
+				N: op,
+				P: {bR: head, b2: _List_Nil},
+				aD: {bR: term, b2: _List_Nil},
+				R: xs
+			});
+		return A3(
+			author$project$Compiler$NoOp$Call2,
+			author$project$Compiler$SafeExprToNoOp$opToNoOp(a.N),
+			author$project$Compiler$SafeExprToNoOp$convert(a.P),
+			author$project$Compiler$SafeExprToNoOp$convert(a.R));
+	}
+};
+var author$project$Compiler$compile = function (def) {
+	var _n0 = author$project$Compiler$DefToSafeExpr$convert(def);
+	if (!_n0.$) {
+		var safeExpr = _n0.a;
+		var noOp = author$project$Compiler$SafeExprToNoOp$convert(safeExpr);
+		var _n1 = author$project$Compiler$NoOpToOpt$convert(noOp);
+		if (!_n1.$) {
+			var opt = _n1.a;
+			return author$project$Compiler$Success(
+				{
+					a6: author$project$Compiler$OptToBinary$convert(opt),
+					aR: noOp,
+					bj: opt
+				});
+		} else {
+			return author$project$Compiler$FailureAtNoOpToOpt(
+				{aR: noOp});
+		}
+	} else {
+		return author$project$Compiler$FailureAll;
+	}
+};
+var author$project$Model$ReceiveCompiledData = function (a) {
+	return {$: 4, a: a};
+};
+var author$project$Project$Source$getModule = F2(
+	function (moduleRef, _n0) {
+		var source = _n0;
+		switch (moduleRef) {
+			case 0:
+				return source.aI;
+			case 1:
+				return source.aJ;
+			default:
+				return source.aX;
+		}
+	});
+var author$project$Project$Source$ModuleWithCache$defAndResultGetDef = function (_n0) {
+	var def = _n0.ae;
+	return def;
+};
+var author$project$Project$Source$ModuleWithCache$getDefAndResultList = function (_n0) {
+	var defAndCacheList = _n0.A;
+	return defAndCacheList;
+};
+var elm$core$Basics$composeR = F3(
+	function (f, g, x) {
+		return g(
+			f(x));
+	});
+var author$project$Project$Source$ModuleWithCache$getDefList = A2(
+	elm$core$Basics$composeR,
+	author$project$Project$Source$ModuleWithCache$getDefAndResultList,
+	elm$core$List$map(author$project$Project$Source$ModuleWithCache$defAndResultGetDef));
+var elm$core$Array$Array_elm_builtin = F4(
+	function (a, b, c, d) {
+		return {$: 0, a: a, b: b, c: c, d: d};
+	});
+var elm$core$Array$branchFactor = 32;
+var elm$core$Basics$ceiling = _Basics_ceiling;
+var elm$core$Basics$fdiv = _Basics_fdiv;
+var elm$core$Basics$logBase = F2(
+	function (base, number) {
+		return _Basics_log(number) / _Basics_log(base);
+	});
+var elm$core$Basics$toFloat = _Basics_toFloat;
+var elm$core$Array$shiftStep = elm$core$Basics$ceiling(
+	A2(elm$core$Basics$logBase, 2, elm$core$Array$branchFactor));
+var elm$core$Elm$JsArray$empty = _JsArray_empty;
+var elm$core$Array$empty = A4(elm$core$Array$Array_elm_builtin, 0, elm$core$Array$shiftStep, elm$core$Elm$JsArray$empty, elm$core$Elm$JsArray$empty);
+var elm$core$Array$Leaf = function (a) {
+	return {$: 1, a: a};
+};
+var elm$core$Array$SubTree = function (a) {
+	return {$: 0, a: a};
+};
+var elm$core$Elm$JsArray$initializeFromList = _JsArray_initializeFromList;
 var elm$core$Array$compressNodes = F2(
 	function (nodes, acc) {
 		compressNodes:
@@ -4494,11 +5227,6 @@ var elm$core$Array$compressNodes = F2(
 			}
 		}
 	});
-var elm$core$Basics$apR = F2(
-	function (x, f) {
-		return f(x);
-	});
-var elm$core$Basics$eq = _Utils_equal;
 var elm$core$Tuple$first = function (_n0) {
 	var x = _n0.a;
 	return x;
@@ -4519,19 +5247,16 @@ var elm$core$Array$treeFromBuilder = F2(
 			}
 		}
 	});
-var elm$core$Basics$add = _Basics_add;
 var elm$core$Basics$apL = F2(
 	function (f, x) {
 		return f(x);
 	});
 var elm$core$Basics$floor = _Basics_floor;
-var elm$core$Basics$gt = _Utils_gt;
 var elm$core$Basics$max = F2(
 	function (x, y) {
 		return (_Utils_cmp(x, y) > 0) ? x : y;
 	});
 var elm$core$Basics$mul = _Basics_mul;
-var elm$core$Basics$sub = _Basics_sub;
 var elm$core$Elm$JsArray$length = _JsArray_length;
 var elm$core$Array$builderToArray = F2(
 	function (reverseNodeList, builder) {
@@ -4556,9 +5281,107 @@ var elm$core$Array$builderToArray = F2(
 				builder.n);
 		}
 	});
-var elm$core$Basics$False = 1;
-var elm$core$Basics$idiv = _Basics_idiv;
+var elm$core$Basics$True = 0;
 var elm$core$Basics$lt = _Utils_lt;
+var elm$core$Array$fromListHelp = F3(
+	function (list, nodeList, nodeListSize) {
+		fromListHelp:
+		while (true) {
+			var _n0 = A2(elm$core$Elm$JsArray$initializeFromList, elm$core$Array$branchFactor, list);
+			var jsArray = _n0.a;
+			var remainingItems = _n0.b;
+			if (_Utils_cmp(
+				elm$core$Elm$JsArray$length(jsArray),
+				elm$core$Array$branchFactor) < 0) {
+				return A2(
+					elm$core$Array$builderToArray,
+					true,
+					{o: nodeList, k: nodeListSize, n: jsArray});
+			} else {
+				var $temp$list = remainingItems,
+					$temp$nodeList = A2(
+					elm$core$List$cons,
+					elm$core$Array$Leaf(jsArray),
+					nodeList),
+					$temp$nodeListSize = nodeListSize + 1;
+				list = $temp$list;
+				nodeList = $temp$nodeList;
+				nodeListSize = $temp$nodeListSize;
+				continue fromListHelp;
+			}
+		}
+	});
+var elm$core$Array$fromList = function (list) {
+	if (!list.b) {
+		return elm$core$Array$empty;
+	} else {
+		return A3(elm$core$Array$fromListHelp, list, _List_Nil, 0);
+	}
+};
+var elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
+var elm$core$Array$bitMask = 4294967295 >>> (32 - elm$core$Array$shiftStep);
+var elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
+var elm$core$Array$getHelp = F3(
+	function (shift, index, tree) {
+		getHelp:
+		while (true) {
+			var pos = elm$core$Array$bitMask & (index >>> shift);
+			var _n0 = A2(elm$core$Elm$JsArray$unsafeGet, pos, tree);
+			if (!_n0.$) {
+				var subTree = _n0.a;
+				var $temp$shift = shift - elm$core$Array$shiftStep,
+					$temp$index = index,
+					$temp$tree = subTree;
+				shift = $temp$shift;
+				index = $temp$index;
+				tree = $temp$tree;
+				continue getHelp;
+			} else {
+				var values = _n0.a;
+				return A2(elm$core$Elm$JsArray$unsafeGet, elm$core$Array$bitMask & index, values);
+			}
+		}
+	});
+var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var elm$core$Array$tailIndex = function (len) {
+	return (len >>> 5) << 5;
+};
+var elm$core$Basics$ge = _Utils_ge;
+var elm$core$Basics$or = _Basics_or;
+var elm$core$Array$get = F2(
+	function (index, _n0) {
+		var len = _n0.a;
+		var startShift = _n0.b;
+		var tree = _n0.c;
+		var tail = _n0.d;
+		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? elm$core$Maybe$Nothing : ((_Utils_cmp(
+			index,
+			elm$core$Array$tailIndex(len)) > -1) ? elm$core$Maybe$Just(
+			A2(elm$core$Elm$JsArray$unsafeGet, elm$core$Array$bitMask & index, tail)) : elm$core$Maybe$Just(
+			A3(elm$core$Array$getHelp, startShift, index, tree)));
+	});
+var author$project$Utility$ListExtra$getAt = F2(
+	function (index, list) {
+		return A2(
+			elm$core$Array$get,
+			index,
+			elm$core$Array$fromList(list));
+	});
+var author$project$Project$Source$ModuleWithCache$getDef = F2(
+	function (index, module_) {
+		return A2(
+			author$project$Utility$ListExtra$getAt,
+			index,
+			author$project$Project$Source$ModuleWithCache$getDefList(module_));
+	});
+var elm$core$Basics$False = 1;
+var elm$core$Result$isOk = function (result) {
+	if (!result.$) {
+		return true;
+	} else {
+		return false;
+	}
+};
 var elm$core$Elm$JsArray$initialize = _JsArray_initialize;
 var elm$core$Array$initializeHelp = F5(
 	function (fn, fromIndex, len, nodeList, tail) {
@@ -4586,7 +5409,6 @@ var elm$core$Array$initializeHelp = F5(
 			}
 		}
 	});
-var elm$core$Basics$le = _Utils_le;
 var elm$core$Basics$remainderBy = _Basics_remainderBy;
 var elm$core$Array$initialize = F2(
 	function (len, fn) {
@@ -4599,23 +5421,11 @@ var elm$core$Array$initialize = F2(
 			return A5(elm$core$Array$initializeHelp, fn, initialFromIndex, len, _List_Nil, tail);
 		}
 	});
-var elm$core$Maybe$Just = function (a) {
-	return {$: 0, a: a};
-};
-var elm$core$Maybe$Nothing = {$: 1};
 var elm$core$Result$Err = function (a) {
 	return {$: 1, a: a};
 };
 var elm$core$Result$Ok = function (a) {
 	return {$: 0, a: a};
-};
-var elm$core$Basics$True = 0;
-var elm$core$Result$isOk = function (result) {
-	if (!result.$) {
-		return true;
-	} else {
-		return false;
-	}
 };
 var elm$json$Json$Decode$Failure = F2(
 	function (a, b) {
@@ -4632,9 +5442,6 @@ var elm$json$Json$Decode$Index = F2(
 var elm$json$Json$Decode$OneOf = function (a) {
 	return {$: 2, a: a};
 };
-var elm$core$Basics$and = _Basics_and;
-var elm$core$Basics$append = _Utils_append;
-var elm$core$Basics$or = _Basics_or;
 var elm$core$Char$toCode = _Char_toCode;
 var elm$core$Char$isLower = function (_char) {
 	var code = elm$core$Char$toCode(_char);
@@ -4653,16 +5460,6 @@ var elm$core$Char$isDigit = function (_char) {
 };
 var elm$core$Char$isAlphaNum = function (_char) {
 	return elm$core$Char$isLower(_char) || (elm$core$Char$isUpper(_char) || elm$core$Char$isDigit(_char));
-};
-var elm$core$List$length = function (xs) {
-	return A3(
-		elm$core$List$foldl,
-		F2(
-			function (_n0, i) {
-				return i + 1;
-			}),
-		0,
-		xs);
 };
 var elm$core$List$map2 = _List_map2;
 var elm$core$List$rangeHelp = F3(
@@ -4822,25 +5619,158 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 			}
 		}
 	});
+var elm$core$Platform$Cmd$batch = _Platform_batch;
+var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
+var elm$core$Task$andThen = _Scheduler_andThen;
+var elm$core$Task$Perform = elm$core$Basics$identity;
+var elm$core$Task$succeed = _Scheduler_succeed;
+var elm$core$Task$init = elm$core$Task$succeed(0);
+var elm$core$Task$map = F2(
+	function (func, taskA) {
+		return A2(
+			elm$core$Task$andThen,
+			function (a) {
+				return elm$core$Task$succeed(
+					func(a));
+			},
+			taskA);
+	});
+var elm$core$Task$map2 = F3(
+	function (func, taskA, taskB) {
+		return A2(
+			elm$core$Task$andThen,
+			function (a) {
+				return A2(
+					elm$core$Task$andThen,
+					function (b) {
+						return elm$core$Task$succeed(
+							A2(func, a, b));
+					},
+					taskB);
+			},
+			taskA);
+	});
+var elm$core$Task$sequence = function (tasks) {
+	return A3(
+		elm$core$List$foldr,
+		elm$core$Task$map2(elm$core$List$cons),
+		elm$core$Task$succeed(_List_Nil),
+		tasks);
+};
+var elm$core$Platform$sendToApp = _Platform_sendToApp;
+var elm$core$Task$spawnCmd = F2(
+	function (router, _n0) {
+		var task = _n0;
+		return _Scheduler_spawn(
+			A2(
+				elm$core$Task$andThen,
+				elm$core$Platform$sendToApp(router),
+				task));
+	});
+var elm$core$Task$onEffects = F3(
+	function (router, commands, state) {
+		return A2(
+			elm$core$Task$map,
+			function (_n0) {
+				return 0;
+			},
+			elm$core$Task$sequence(
+				A2(
+					elm$core$List$map,
+					elm$core$Task$spawnCmd(router),
+					commands)));
+	});
+var elm$core$Task$onSelfMsg = F3(
+	function (_n0, _n1, _n2) {
+		return elm$core$Task$succeed(0);
+	});
+var elm$core$Task$cmdMap = F2(
+	function (tagger, _n0) {
+		var task = _n0;
+		return A2(elm$core$Task$map, tagger, task);
+	});
+_Platform_effectManagers['Task'] = _Platform_createManager(elm$core$Task$init, elm$core$Task$onEffects, elm$core$Task$onSelfMsg, elm$core$Task$cmdMap);
+var elm$core$Task$command = _Platform_leaf('Task');
+var elm$core$Task$perform = F2(
+	function (toMessage, task) {
+		return elm$core$Task$command(
+			A2(elm$core$Task$map, toMessage, task));
+	});
+var author$project$Model$compileCmd = F3(
+	function (source, moduleRef, index) {
+		var targetDefMaybe = A2(
+			author$project$Project$Source$ModuleWithCache$getDef,
+			index,
+			A2(author$project$Project$Source$getModule, moduleRef, source));
+		if (!targetDefMaybe.$) {
+			var targetDef = targetDefMaybe.a;
+			return A2(
+				elm$core$Task$perform,
+				function (compileResult) {
+					return author$project$Model$ReceiveCompiledData(
+						{a8: compileResult, bV: index, b3: moduleRef});
+				},
+				A2(
+					elm$core$Task$andThen,
+					function (def) {
+						return elm$core$Task$succeed(
+							author$project$Compiler$compile(def));
+					},
+					elm$core$Task$succeed(targetDef)));
+		} else {
+			return elm$core$Platform$Cmd$none;
+		}
+	});
+var author$project$Model$getProject = function (_n0) {
+	var project = _n0.aV;
+	return project;
+};
 var elm$json$Json$Encode$null = _Json_encodeNull;
 var author$project$Model$loaded = _Platform_outgoingPort(
 	'loaded',
 	function ($) {
 		return elm$json$Json$Encode$null;
 	});
+var author$project$Project$getSource = function (_n0) {
+	var source = _n0.aY;
+	return source;
+};
+var author$project$Project$Source$Core = 0;
+var author$project$Project$Source$CoreInt32 = 1;
+var author$project$Project$Source$SampleModule = 2;
+var author$project$Project$Source$allModuleRef = function (_n0) {
+	return _List_fromArray(
+		[0, 1, 2]);
+};
+var author$project$Project$Source$ModuleWithCache$getDefNum = A2(elm$core$Basics$composeR, author$project$Project$Source$ModuleWithCache$getDefList, elm$core$List$length);
 var author$project$Model$initCmd = function (model) {
-	return author$project$Model$loaded(0);
+	var source = author$project$Project$getSource(
+		author$project$Model$getProject(model));
+	return elm$core$Platform$Cmd$batch(
+		_Utils_ap(
+			_List_fromArray(
+				[
+					author$project$Model$loaded(0)
+				]),
+			A2(
+				elm$core$List$concatMap,
+				function (moduleRef) {
+					var defNum = author$project$Project$Source$ModuleWithCache$getDefNum(
+						A2(author$project$Project$Source$getModule, moduleRef, source));
+					return A2(
+						elm$core$List$map,
+						A2(author$project$Model$compileCmd, source, moduleRef),
+						A2(elm$core$List$range, 0, defNum));
+				},
+				author$project$Project$Source$allModuleRef(source))));
 };
 var author$project$Model$FocusEditorGroupPanel = 1;
 var author$project$Model$Model = elm$core$Basics$identity;
 var author$project$Model$SubModeNone = {$: 0};
 var author$project$Panel$Editor$Module$ActiveNone = {$: 0};
 var author$project$Panel$Editor$Module$Model = elm$core$Basics$identity;
-var elm$core$Basics$identity = function (x) {
-	return x;
-};
 var author$project$Panel$Editor$Module$initModel = function (moduleRef) {
-	return {f: author$project$Panel$Editor$Module$ActiveNone, t: moduleRef};
+	return {f: author$project$Panel$Editor$Module$ActiveNone, s: moduleRef};
 };
 var author$project$Panel$EditorGroup$ColumnOne = function (a) {
 	return {$: 0, a: a};
@@ -4854,23 +5784,22 @@ var author$project$Panel$EditorGroup$ModuleEditor = function (a) {
 var author$project$Panel$EditorGroup$RowOne = function (a) {
 	return {$: 0, a: a};
 };
-var author$project$Project$Source$SampleModule = 2;
 var author$project$Panel$EditorGroup$initModel = {
-	aw: _Utils_Tuple2(0, 0),
-	aA: author$project$Panel$EditorGroup$RowOne(
+	au: _Utils_Tuple2(0, 0),
+	ay: author$project$Panel$EditorGroup$RowOne(
 		{
-			R: author$project$Panel$EditorGroup$ColumnOne(
+			P: author$project$Panel$EditorGroup$ColumnOne(
 				{
 					g: author$project$Panel$EditorGroup$ModuleEditor(
 						author$project$Panel$Editor$Module$initModel(2))
 				})
 		}),
-	aG: elm$core$Maybe$Nothing
+	aE: elm$core$Maybe$Nothing
 };
 var author$project$Panel$Tree$Model = elm$core$Basics$identity;
 var author$project$Panel$Tree$OpenCloseData = elm$core$Basics$identity;
 var author$project$Panel$Tree$initModel = {
-	aV: {aB: true, aC: true, aD: true}
+	aT: {az: true, aA: true, aB: true}
 };
 var author$project$Project$Project = elm$core$Basics$identity;
 var author$project$Project$Label$Head = elm$core$Basics$identity;
@@ -5237,122 +6166,53 @@ var author$project$Project$Source$Module$Def$Type$validInt = 0;
 var author$project$Project$Source$Module$Def$Type$int = author$project$Project$Source$Module$Def$Type$Valid(author$project$Project$Source$Module$Def$Type$validInt);
 var author$project$Project$Source$ModuleWithCache$DefAndResult = elm$core$Basics$identity;
 var author$project$Project$Source$ModuleWithCache$Module = elm$core$Basics$identity;
-var elm$core$List$foldrHelper = F4(
-	function (fn, acc, ctr, ls) {
-		if (!ls.b) {
-			return acc;
-		} else {
-			var a = ls.a;
-			var r1 = ls.b;
-			if (!r1.b) {
-				return A2(fn, a, acc);
-			} else {
-				var b = r1.a;
-				var r2 = r1.b;
-				if (!r2.b) {
-					return A2(
-						fn,
-						a,
-						A2(fn, b, acc));
-				} else {
-					var c = r2.a;
-					var r3 = r2.b;
-					if (!r3.b) {
-						return A2(
-							fn,
-							a,
-							A2(
-								fn,
-								b,
-								A2(fn, c, acc)));
-					} else {
-						var d = r3.a;
-						var r4 = r3.b;
-						var res = (ctr > 500) ? A3(
-							elm$core$List$foldl,
-							fn,
-							acc,
-							elm$core$List$reverse(r4)) : A4(elm$core$List$foldrHelper, fn, acc, ctr + 1, r4);
-						return A2(
-							fn,
-							a,
-							A2(
-								fn,
-								b,
-								A2(
-									fn,
-									c,
-									A2(fn, d, res))));
-					}
-				}
-			}
-		}
-	});
-var elm$core$List$foldr = F3(
-	function (fn, acc, ls) {
-		return A4(elm$core$List$foldrHelper, fn, acc, 0, ls);
-	});
-var elm$core$List$map = F2(
-	function (f, xs) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, acc) {
-					return A2(
-						elm$core$List$cons,
-						f(x),
-						acc);
-				}),
-			_List_Nil,
-			xs);
-	});
 var author$project$Project$Source$ModuleWithCache$make = function (_n0) {
-	var name = _n0.aS;
-	var defList = _n0.aM;
-	var readMe = _n0.aY;
+	var name = _n0.aQ;
+	var defList = _n0.aK;
+	var readMe = _n0.aW;
 	return {
-		C: A2(
+		A: A2(
 			elm$core$List$map,
 			function (def) {
-				return {ba: elm$core$Maybe$Nothing, ag: def, ai: elm$core$Maybe$Nothing};
+				return {a8: elm$core$Maybe$Nothing, ae: def, ag: elm$core$Maybe$Nothing};
 			},
 			A2(elm$core$List$take, 65535, defList)),
-		aS: name,
-		aY: readMe,
-		b8: _List_Nil
+		aQ: name,
+		aW: readMe,
+		b9: _List_Nil
 	};
 };
 var author$project$Project$Source$init = {
-	aK: author$project$Project$Source$ModuleWithCache$make(
+	aI: author$project$Project$Source$ModuleWithCache$make(
 		{
-			aM: _List_fromArray(
+			aK: _List_fromArray(
 				[
 					author$project$Project$Source$Module$Def$make(
 					{
-						aO: author$project$Project$Source$Module$Def$Expr$empty,
-						aS: author$project$Project$Source$Module$Def$Name$fromLabel(
+						aM: author$project$Project$Source$Module$Def$Expr$empty,
+						aQ: author$project$Project$Source$Module$Def$Name$fromLabel(
 							A2(
 								author$project$Project$Label$make,
 								author$project$Project$Label$ha,
 								_List_fromArray(
 									[author$project$Project$Label$ob, author$project$Project$Label$os]))),
-						a3: author$project$Project$Source$Module$Def$Type$empty
+						a1: author$project$Project$Source$Module$Def$Type$empty
 					})
 				]),
-			aS: A2(
+			aQ: A2(
 				author$project$Project$Label$make,
 				author$project$Project$Label$hc,
 				_List_fromArray(
 					[author$project$Project$Label$oo, author$project$Project$Label$or, author$project$Project$Label$oe])),
-			aY: 'プログラムに最低限必要なものが含まれている標準ライブラリ。足し算引き算、論理演算などの演算や、リスト、辞書、集合などの基本データ構造を含む'
+			aW: 'プログラムに最低限必要なものが含まれている標準ライブラリ。足し算引き算、論理演算などの演算や、リスト、辞書、集合などの基本データ構造を含む'
 		}),
-	aL: author$project$Project$Source$ModuleWithCache$make(
+	aJ: author$project$Project$Source$ModuleWithCache$make(
 		{
-			aM: _List_fromArray(
+			aK: _List_fromArray(
 				[
 					author$project$Project$Source$Module$Def$make(
 					{
-						aO: A2(
+						aM: A2(
 							author$project$Project$Source$Module$Def$Expr$make,
 							author$project$Project$Source$Module$Def$Expr$Term$fromInt(1),
 							_List_fromArray(
@@ -5361,63 +6221,63 @@ var author$project$Project$Source$init = {
 									author$project$Project$Source$Module$Def$Expr$Operator$add,
 									author$project$Project$Source$Module$Def$Expr$Term$fromInt(2))
 								])),
-						aS: author$project$Project$Source$Module$Def$Name$fromLabel(
+						aQ: author$project$Project$Source$Module$Def$Name$fromLabel(
 							A2(
 								author$project$Project$Label$make,
 								author$project$Project$Label$ho,
 								_List_fromArray(
 									[author$project$Project$Label$on, author$project$Project$Label$oe, author$project$Project$Label$oP, author$project$Project$Label$ol, author$project$Project$Label$ou, author$project$Project$Label$os, author$project$Project$Label$oT, author$project$Project$Label$ow, author$project$Project$Label$oo]))),
-						a3: author$project$Project$Source$Module$Def$Type$int
+						a1: author$project$Project$Source$Module$Def$Type$int
 					}),
 					author$project$Project$Source$Module$Def$make(
 					{
-						aO: author$project$Project$Source$Module$Def$Expr$empty,
-						aS: author$project$Project$Source$Module$Def$Name$fromLabel(
+						aM: author$project$Project$Source$Module$Def$Expr$empty,
+						aQ: author$project$Project$Source$Module$Def$Name$fromLabel(
 							A2(
 								author$project$Project$Label$make,
 								author$project$Project$Label$ha,
 								_List_fromArray(
 									[author$project$Project$Label$od, author$project$Project$Label$od]))),
-						a3: author$project$Project$Source$Module$Def$Type$int
+						a1: author$project$Project$Source$Module$Def$Type$int
 					})
 				]),
-			aS: A2(
+			aQ: A2(
 				author$project$Project$Label$make,
 				author$project$Project$Label$hi,
 				_List_fromArray(
 					[author$project$Project$Label$on, author$project$Project$Label$ot, author$project$Project$Label$o3, author$project$Project$Label$o2])),
-			aY: 'WebAssemblyでサポートされている32bit符号付き整数を扱えるようになる'
+			aW: 'WebAssemblyでサポートされている32bit符号付き整数を扱えるようになる'
 		}),
-	aZ: author$project$Project$Source$ModuleWithCache$make(
+	aX: author$project$Project$Source$ModuleWithCache$make(
 		{
-			aM: _List_fromArray(
+			aK: _List_fromArray(
 				[
 					author$project$Project$Source$Module$Def$make(
 					{
-						aO: author$project$Project$Source$Module$Def$Expr$empty,
-						aS: author$project$Project$Source$Module$Def$Name$fromLabel(
+						aM: author$project$Project$Source$Module$Def$Expr$empty,
+						aQ: author$project$Project$Source$Module$Def$Name$fromLabel(
 							A2(
 								author$project$Project$Label$make,
 								author$project$Project$Label$hp,
 								_List_fromArray(
 									[author$project$Project$Label$oo, author$project$Project$Label$oi, author$project$Project$Label$on, author$project$Project$Label$ot]))),
-						a3: author$project$Project$Source$Module$Def$Type$empty
+						a1: author$project$Project$Source$Module$Def$Type$empty
 					})
 				]),
-			aS: author$project$Project$Source$sampleModuleName,
-			aY: ''
+			aQ: author$project$Project$Source$sampleModuleName,
+			aW: ''
 		})
 };
-var author$project$Project$init = {a7: author$project$Project$projectAuthor, bK: author$project$Project$Config$init, bL: author$project$Project$Document$init, aS: author$project$Project$projectName, a_: author$project$Project$Source$init};
+var author$project$Project$init = {a5: author$project$Project$projectAuthor, bI: author$project$Project$Config$init, bJ: author$project$Project$Document$init, aQ: author$project$Project$projectName, aY: author$project$Project$Source$init};
 var author$project$Model$initModel = {
-	aN: author$project$Panel$EditorGroup$initModel,
-	az: 1,
-	al: _List_Nil,
-	aX: author$project$Project$init,
-	M: author$project$Model$SubModeNone,
-	a1: author$project$Panel$Tree$initModel,
-	a2: 250,
-	a4: {bU: 0, cc: 0}
+	aL: author$project$Panel$EditorGroup$initModel,
+	ax: 1,
+	aj: _List_Nil,
+	aV: author$project$Project$init,
+	K: author$project$Model$SubModeNone,
+	a$: author$project$Panel$Tree$initModel,
+	a0: 250,
+	a2: {bS: 0, ce: 0}
 };
 var author$project$Main$init = function (_n0) {
 	return _Utils_Tuple2(
@@ -6931,7 +7791,7 @@ var author$project$Key$fromKeyAndCodeAndModifierKeys = F5(
 		if (!_n0.$) {
 			var key = _n0.a;
 			return elm$core$Maybe$Just(
-				{a6: alt, bb: ctrl, bj: key, bz: shift});
+				{a4: alt, a9: ctrl, bh: key, bx: shift});
 		} else {
 			return elm$core$Maybe$Nothing;
 		}
@@ -6948,11 +7808,6 @@ var author$project$Key$decoder = A6(
 	A2(elm$json$Json$Decode$field, 'ctrlKey', elm$json$Json$Decode$bool),
 	A2(elm$json$Json$Decode$field, 'shiftKey', elm$json$Json$Decode$bool),
 	A2(elm$json$Json$Decode$field, 'altKey', elm$json$Json$Decode$bool));
-var elm$core$Basics$composeR = F3(
-	function (f, g, x) {
-		return g(
-			f(x));
-	});
 var elm$json$Json$Decode$decodeValue = _Json_run;
 var author$project$Key$fromKeyEventObject = A2(
 	elm$core$Basics$composeR,
@@ -6970,7 +7825,30 @@ var author$project$Main$keyDown = _Platform_incomingPort('keyDown', elm$json$Jso
 var elm$json$Json$Decode$int = _Json_decodeInt;
 var author$project$Main$keyPrevented = _Platform_incomingPort('keyPrevented', elm$json$Json$Decode$int);
 var elm$json$Json$Decode$andThen = _Json_andThen;
+var elm$json$Json$Decode$list = _Json_decodeList;
 var elm$json$Json$Decode$succeed = _Json_succeed;
+var author$project$Main$runResult = _Platform_incomingPort(
+	'runResult',
+	A2(
+		elm$json$Json$Decode$andThen,
+		function (result) {
+			return A2(
+				elm$json$Json$Decode$andThen,
+				function (ref) {
+					return A2(
+						elm$json$Json$Decode$andThen,
+						function (index) {
+							return elm$json$Json$Decode$succeed(
+								{bV: index, b3: ref, b4: result});
+						},
+						A2(elm$json$Json$Decode$field, 'index', elm$json$Json$Decode$int));
+				},
+				A2(
+					elm$json$Json$Decode$field,
+					'ref',
+					elm$json$Json$Decode$list(elm$json$Json$Decode$int)));
+		},
+		A2(elm$json$Json$Decode$field, 'result', elm$json$Json$Decode$int)));
 var author$project$Main$windowResize = _Platform_incomingPort(
 	'windowResize',
 	A2(
@@ -6980,7 +7858,7 @@ var author$project$Main$windowResize = _Platform_incomingPort(
 				elm$json$Json$Decode$andThen,
 				function (height) {
 					return elm$json$Json$Decode$succeed(
-						{bU: height, cc: width});
+						{bS: height, ce: width});
 				},
 				A2(elm$json$Json$Decode$field, 'height', elm$json$Json$Decode$int));
 		},
@@ -6993,11 +7871,14 @@ var author$project$Model$MouseMove = function (a) {
 	return {$: 2, a: a};
 };
 var author$project$Model$MouseUp = {$: 3};
+var author$project$Model$ReceiveResultValue = function (a) {
+	return {$: 5, a: a};
+};
 var author$project$Model$WindowResize = function (a) {
-	return {$: 7, a: a};
+	return {$: 8, a: a};
 };
 var author$project$Model$getGutterMode = function (_n0) {
-	var subMode = _n0.M;
+	var subMode = _n0.K;
 	switch (subMode.$) {
 		case 0:
 			return elm$core$Maybe$Nothing;
@@ -7021,11 +7902,10 @@ var elm$browser$Browser$Events$MySub = F3(
 	});
 var elm$browser$Browser$Events$State = F2(
 	function (subs, pids) {
-		return {bo: pids, bA: subs};
+		return {bm: pids, by: subs};
 	});
 var elm$core$Dict$RBEmpty_elm_builtin = {$: -2};
 var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
-var elm$core$Task$succeed = _Scheduler_succeed;
 var elm$browser$Browser$Events$init = elm$core$Task$succeed(
 	A2(elm$browser$Browser$Events$State, _List_Nil, elm$core$Dict$empty));
 var elm$browser$Browser$Events$nodeToKey = function (node) {
@@ -7046,20 +7926,9 @@ var elm$browser$Browser$Events$addKey = function (sub) {
 };
 var elm$browser$Browser$Events$Event = F2(
 	function (key, event) {
-		return {bf: event, bj: key};
+		return {bd: event, bh: key};
 	});
 var elm$core$Platform$sendToSelf = _Platform_sendToSelf;
-var elm$core$Task$andThen = _Scheduler_andThen;
-var elm$core$Task$map = F2(
-	function (func, taskA) {
-		return A2(
-			elm$core$Task$andThen,
-			function (a) {
-				return elm$core$Task$succeed(
-					func(a));
-			},
-			taskA);
-	});
 var elm$browser$Browser$External = function (a) {
 	return {$: 1, a: a};
 };
@@ -7076,69 +7945,6 @@ var elm$core$Basics$never = function (_n0) {
 		continue never;
 	}
 };
-var elm$core$Task$Perform = elm$core$Basics$identity;
-var elm$core$Task$init = elm$core$Task$succeed(0);
-var elm$core$Task$map2 = F3(
-	function (func, taskA, taskB) {
-		return A2(
-			elm$core$Task$andThen,
-			function (a) {
-				return A2(
-					elm$core$Task$andThen,
-					function (b) {
-						return elm$core$Task$succeed(
-							A2(func, a, b));
-					},
-					taskB);
-			},
-			taskA);
-	});
-var elm$core$Task$sequence = function (tasks) {
-	return A3(
-		elm$core$List$foldr,
-		elm$core$Task$map2(elm$core$List$cons),
-		elm$core$Task$succeed(_List_Nil),
-		tasks);
-};
-var elm$core$Platform$sendToApp = _Platform_sendToApp;
-var elm$core$Task$spawnCmd = F2(
-	function (router, _n0) {
-		var task = _n0;
-		return _Scheduler_spawn(
-			A2(
-				elm$core$Task$andThen,
-				elm$core$Platform$sendToApp(router),
-				task));
-	});
-var elm$core$Task$onEffects = F3(
-	function (router, commands, state) {
-		return A2(
-			elm$core$Task$map,
-			function (_n0) {
-				return 0;
-			},
-			elm$core$Task$sequence(
-				A2(
-					elm$core$List$map,
-					elm$core$Task$spawnCmd(router),
-					commands)));
-	});
-var elm$core$Task$onSelfMsg = F3(
-	function (_n0, _n1, _n2) {
-		return elm$core$Task$succeed(0);
-	});
-var elm$core$Task$cmdMap = F2(
-	function (tagger, _n0) {
-		var task = _n0;
-		return A2(elm$core$Task$map, tagger, task);
-	});
-_Platform_effectManagers['Task'] = _Platform_createManager(elm$core$Task$init, elm$core$Task$onEffects, elm$core$Task$onSelfMsg, elm$core$Task$cmdMap);
-var elm$core$Task$command = _Platform_leaf('Task');
-var elm$core$Task$perform = F2(
-	function (toMessage, task) {
-		return elm$core$Task$command(
-			A2(elm$core$Task$map, toMessage, task));
-	});
 var elm$json$Json$Decode$map = _Json_map1;
 var elm$json$Json$Decode$map2 = _Json_map2;
 var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
@@ -7178,7 +7984,7 @@ var elm$core$String$contains = _String_contains;
 var elm$core$String$toInt = _String_toInt;
 var elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
-		return {bg: fragment, bi: host, bn: path, bp: port_, bs: protocol, bt: query};
+		return {be: fragment, bg: host, bl: path, bn: port_, bq: protocol, br: query};
 	});
 var elm$url$Url$chompBeforePath = F5(
 	function (protocol, path, params, frag, str) {
@@ -7562,7 +8368,7 @@ var elm$browser$Browser$Events$onEffects = F3(
 			stepLeft,
 			stepBoth,
 			stepRight,
-			state.bo,
+			state.bm,
 			elm$core$Dict$fromList(newSubs),
 			_Utils_Tuple3(_List_Nil, elm$core$Dict$empty, _List_Nil));
 		var deadPids = _n0.a;
@@ -7588,28 +8394,10 @@ var elm$browser$Browser$Events$onEffects = F3(
 				elm$core$Task$sequence(
 					A2(elm$core$List$map, elm$core$Process$kill, deadPids))));
 	});
-var elm$core$List$maybeCons = F3(
-	function (f, mx, xs) {
-		var _n0 = f(mx);
-		if (!_n0.$) {
-			var x = _n0.a;
-			return A2(elm$core$List$cons, x, xs);
-		} else {
-			return xs;
-		}
-	});
-var elm$core$List$filterMap = F2(
-	function (f, xs) {
-		return A3(
-			elm$core$List$foldr,
-			elm$core$List$maybeCons(f),
-			_List_Nil,
-			xs);
-	});
 var elm$browser$Browser$Events$onSelfMsg = F3(
 	function (router, _n0, state) {
-		var key = _n0.bj;
-		var event = _n0.bf;
+		var key = _n0.bh;
+		var event = _n0.bd;
 		var toMessage = function (_n2) {
 			var subKey = _n2.a;
 			var _n3 = _n2.b;
@@ -7618,7 +8406,7 @@ var elm$browser$Browser$Events$onSelfMsg = F3(
 			var decoder = _n3.c;
 			return _Utils_eq(subKey, key) ? A2(_Browser_decodeEvent, decoder, event) : elm$core$Maybe$Nothing;
 		};
-		var messages = A2(elm$core$List$filterMap, toMessage, state.bA);
+		var messages = A2(elm$core$List$filterMap, toMessage, state.by);
 		return A2(
 			elm$core$Task$andThen,
 			function (_n1) {
@@ -7662,14 +8450,14 @@ var elm$browser$Browser$Events$onVisibilityChange = function (func) {
 	return A3(
 		elm$browser$Browser$Events$on,
 		0,
-		info.bJ,
+		info.bH,
 		A2(
 			elm$json$Json$Decode$map,
 			elm$browser$Browser$Events$withHidden(func),
 			A2(
 				elm$json$Json$Decode$field,
 				'target',
-				A2(elm$json$Json$Decode$field, info.bV, elm$json$Json$Decode$bool))));
+				A2(elm$json$Json$Decode$field, info.bT, elm$json$Json$Decode$bool))));
 };
 var elm$core$Basics$always = F2(
 	function (a, _n0) {
@@ -7685,7 +8473,8 @@ var author$project$Main$subscriptions = function (model) {
 					A2(elm$core$Basics$composeR, author$project$Key$fromKeyEventObject, author$project$Model$KeyPressed)),
 					author$project$Main$keyPrevented(
 					elm$core$Basics$always(author$project$Model$KeyPrevented)),
-					author$project$Main$windowResize(author$project$Model$WindowResize)
+					author$project$Main$windowResize(author$project$Model$WindowResize),
+					author$project$Main$runResult(author$project$Model$ReceiveResultValue)
 				]),
 			author$project$Model$isCaptureMouseEvent(model) ? _List_fromArray(
 				[
@@ -7695,7 +8484,7 @@ var author$project$Main$subscriptions = function (model) {
 						F2(
 							function (x, y) {
 								return author$project$Model$MouseMove(
-									{ce: x, cf: y});
+									{cg: x, ch: y});
 							}),
 						A2(elm$json$Json$Decode$field, 'clientX', elm$json$Json$Decode$int),
 						A2(elm$json$Json$Decode$field, 'clientY', elm$json$Json$Decode$int))),
@@ -7705,22 +8494,22 @@ var author$project$Main$subscriptions = function (model) {
 					elm$core$Basics$always(author$project$Model$MouseUp))
 				]) : _List_Nil));
 };
-var author$project$Model$CloseCommandPalette = {$: 12};
+var author$project$Model$CloseCommandPalette = {$: 13};
 var author$project$Model$FocusTo = function (a) {
-	return {$: 6, a: a};
+	return {$: 7, a: a};
 };
 var author$project$Model$FocusTreePanel = 0;
-var author$project$Model$OpenCommandPalette = {$: 11};
+var author$project$Model$OpenCommandPalette = {$: 12};
 var author$project$Model$TreePanelMsg = function (a) {
-	return {$: 8, a: a};
+	return {$: 9, a: a};
 };
 var author$project$Panel$Tree$SelectAndOpenKeyConfig = {$: 8};
 var author$project$KeyConfig$editorReservedKey = F2(
 	function (isOpenPalette, _n0) {
-		var key = _n0.bj;
-		var ctrl = _n0.bb;
-		var alt = _n0.a6;
-		var shift = _n0.bz;
+		var key = _n0.bh;
+		var ctrl = _n0.a9;
+		var alt = _n0.a4;
+		var shift = _n0.bx;
 		if (isOpenPalette) {
 			var _n1 = _Utils_Tuple3(ctrl, shift, alt);
 			if (((!_n1.a) && (!_n1.b)) && (!_n1.c)) {
@@ -7788,10 +8577,10 @@ var author$project$Panel$EditorGroup$ModuleEditorMsg = function (a) {
 	return {$: 1, a: a};
 };
 var author$project$KeyConfig$editorGroupPanelKeyDown = function (_n0) {
-	var key = _n0.bj;
-	var ctrl = _n0.bb;
-	var shift = _n0.bz;
-	var alt = _n0.a6;
+	var key = _n0.bh;
+	var ctrl = _n0.a9;
+	var shift = _n0.bx;
+	var alt = _n0.a4;
 	var _n1 = _Utils_Tuple3(ctrl, shift, alt);
 	_n1$2:
 	while (true) {
@@ -7877,10 +8666,10 @@ var author$project$Panel$Tree$SelectParentOrTreeClose = {$: 4};
 var author$project$Panel$Tree$SelectUp = {$: 2};
 var author$project$Panel$Tree$ToFocusEditorPanel = {$: 6};
 var author$project$KeyConfig$treePanelKeyDown = function (_n0) {
-	var key = _n0.bj;
-	var ctrl = _n0.bb;
-	var shift = _n0.bz;
-	var alt = _n0.a6;
+	var key = _n0.bh;
+	var ctrl = _n0.a9;
+	var shift = _n0.bx;
+	var alt = _n0.a4;
 	var _n1 = _Utils_Tuple3(ctrl, shift, alt);
 	if (((!_n1.a) && (!_n1.b)) && (!_n1.c)) {
 		switch (key) {
@@ -7907,10 +8696,10 @@ var author$project$KeyConfig$treePanelKeyDown = function (_n0) {
 	}
 };
 var author$project$Model$EditorPanelMsg = function (a) {
-	return {$: 9, a: a};
+	return {$: 10, a: a};
 };
 var author$project$Model$getFocus = function (_n0) {
-	var focus = _n0.az;
+	var focus = _n0.ax;
 	return focus;
 };
 var author$project$KeyConfig$keyDownEachPanel = F2(
@@ -7929,10 +8718,10 @@ var author$project$KeyConfig$keyDownEachPanel = F2(
 		}
 	});
 var author$project$KeyConfig$multiLineTextFieldReservedKey = function (_n0) {
-	var key = _n0.bj;
-	var ctrl = _n0.bb;
-	var alt = _n0.a6;
-	var shift = _n0.bz;
+	var key = _n0.bh;
+	var ctrl = _n0.a9;
+	var alt = _n0.a4;
+	var shift = _n0.bx;
 	var _n1 = _Utils_Tuple3(ctrl, shift, alt);
 	if (((!_n1.a) && (!_n1.b)) && (!_n1.c)) {
 		switch (key) {
@@ -7956,10 +8745,10 @@ var author$project$KeyConfig$multiLineTextFieldReservedKey = function (_n0) {
 	}
 };
 var author$project$KeyConfig$singleLineTextFieldReservedKey = function (_n0) {
-	var key = _n0.bj;
-	var ctrl = _n0.bb;
-	var alt = _n0.a6;
-	var shift = _n0.bz;
+	var key = _n0.bh;
+	var ctrl = _n0.a9;
+	var alt = _n0.a4;
+	var shift = _n0.bx;
 	var _n1 = _Utils_Tuple3(ctrl, shift, alt);
 	if (((!_n1.a) && (!_n1.b)) && (!_n1.c)) {
 		switch (key) {
@@ -7977,7 +8766,7 @@ var author$project$KeyConfig$singleLineTextFieldReservedKey = function (_n0) {
 	}
 };
 var author$project$Model$getEditorGroupPanelModel = function (_n0) {
-	var editorGroupPanelModel = _n0.aN;
+	var editorGroupPanelModel = _n0.aL;
 	return editorGroupPanelModel;
 };
 var author$project$Panel$DefaultUi$MultiLineTextField = 0;
@@ -8024,7 +8813,7 @@ var author$project$Panel$Editor$Module$isFocusDefaultUi = function (_n0) {
 	return elm$core$Maybe$Nothing;
 };
 var author$project$Panel$EditorGroup$getActiveEditorRef = function (_n0) {
-	var activeEditorIndex = _n0.aw;
+	var activeEditorIndex = _n0.au;
 	return activeEditorIndex;
 };
 var author$project$Panel$EditorGroup$getEditorItemColumn = F2(
@@ -8034,7 +8823,7 @@ var author$project$Panel$EditorGroup$getEditorItemColumn = F2(
 			return top;
 		} else {
 			var top = colGroup.a.g;
-			var bottom = colGroup.a.y;
+			var bottom = colGroup.a.w;
 			if (!editorRefCol) {
 				return top;
 			} else {
@@ -8054,10 +8843,10 @@ var author$project$Panel$EditorGroup$getEditorItem = F2(
 			function () {
 				switch (rowGroup.$) {
 					case 0:
-						var left = rowGroup.a.R;
+						var left = rowGroup.a.P;
 						return left;
 					case 1:
-						var left = rowGroup.a.R;
+						var left = rowGroup.a.P;
 						var center = rowGroup.a.e;
 						var _n1 = editorRef.a;
 						if (!_n1) {
@@ -8066,9 +8855,9 @@ var author$project$Panel$EditorGroup$getEditorItem = F2(
 							return center;
 						}
 					default:
-						var left = rowGroup.a.R;
+						var left = rowGroup.a.P;
 						var center = rowGroup.a.e;
-						var right = rowGroup.a.T;
+						var right = rowGroup.a.R;
 						var _n2 = editorRef.a;
 						switch (_n2) {
 							case 0:
@@ -8082,7 +8871,7 @@ var author$project$Panel$EditorGroup$getEditorItem = F2(
 			}());
 	});
 var author$project$Panel$EditorGroup$getGroup = function (_n0) {
-	var group = _n0.aA;
+	var group = _n0.ay;
 	return group;
 };
 var author$project$Panel$EditorGroup$isFocusDefaultUi = function (model) {
@@ -8102,7 +8891,7 @@ var author$project$Model$isFocusDefaultUi = function (model) {
 		author$project$Model$getEditorGroupPanelModel(model));
 };
 var author$project$Model$isOpenCommandPalette = function (_n0) {
-	var subMode = _n0.M;
+	var subMode = _n0.K;
 	switch (subMode.$) {
 		case 0:
 			return false;
@@ -8142,16 +8931,12 @@ var author$project$KeyConfig$keyDown = F2(
 			return _List_Nil;
 		}
 	});
-var author$project$Model$getProject = function (_n0) {
-	var project = _n0.aX;
-	return project;
-};
 var author$project$Model$setProject = F2(
 	function (project, _n0) {
 		var rec = _n0;
 		return _Utils_update(
 			rec,
-			{aX: project});
+			{aV: project});
 	});
 var author$project$Utility$Map$toMapper = F4(
 	function (getter, setter, f, big) {
@@ -8162,30 +8947,14 @@ var author$project$Utility$Map$toMapper = F4(
 			big);
 	});
 var author$project$Model$mapProject = A2(author$project$Utility$Map$toMapper, author$project$Model$getProject, author$project$Model$setProject);
-var author$project$Project$getSource = function (_n0) {
-	var source = _n0.a_;
-	return source;
-};
 var author$project$Project$setSource = F2(
 	function (source, _n0) {
 		var rec = _n0;
 		return _Utils_update(
 			rec,
-			{a_: source});
+			{aY: source});
 	});
 var author$project$Project$mapSource = A2(author$project$Utility$Map$toMapper, author$project$Project$getSource, author$project$Project$setSource);
-var author$project$Project$Source$getModule = F2(
-	function (moduleRef, _n0) {
-		var source = _n0;
-		switch (moduleRef) {
-			case 0:
-				return source.aK;
-			case 1:
-				return source.aL;
-			default:
-				return source.aZ;
-		}
-	});
 var author$project$Project$Source$setModule = F3(
 	function (moduleRef, module_, _n0) {
 		var rec = _n0;
@@ -8193,15 +8962,15 @@ var author$project$Project$Source$setModule = F3(
 			case 0:
 				return _Utils_update(
 					rec,
-					{aK: module_});
+					{aI: module_});
 			case 1:
 				return _Utils_update(
 					rec,
-					{aL: module_});
+					{aJ: module_});
 			default:
 				return _Utils_update(
 					rec,
-					{aZ: module_});
+					{aX: module_});
 		}
 	});
 var author$project$Project$Source$mapModule = function (moduleRef) {
@@ -8212,23 +8981,23 @@ var author$project$Project$Source$mapModule = function (moduleRef) {
 };
 var author$project$Project$Source$Module$Def$Name$NoName = {$: 0};
 var author$project$Project$Source$Module$Def$Name$noName = author$project$Project$Source$Module$Def$Name$NoName;
-var author$project$Project$Source$Module$Def$empty = {aO: author$project$Project$Source$Module$Def$Expr$empty, aS: author$project$Project$Source$Module$Def$Name$noName, a3: author$project$Project$Source$Module$Def$Type$empty};
+var author$project$Project$Source$Module$Def$empty = {aM: author$project$Project$Source$Module$Def$Expr$empty, aQ: author$project$Project$Source$Module$Def$Name$noName, a1: author$project$Project$Source$Module$Def$Type$empty};
 var author$project$Project$Source$ModuleWithCache$addDef = F2(
 	function (def, _n0) {
 		var rec = _n0;
 		return _Utils_update(
 			rec,
 			{
-				C: (65535 <= elm$core$List$length(rec.C)) ? A2(elm$core$List$take, 65535, rec.C) : _Utils_ap(
-					rec.C,
+				A: (65535 <= elm$core$List$length(rec.A)) ? A2(elm$core$List$take, 65535, rec.A) : _Utils_ap(
+					rec.A,
 					_List_fromArray(
 						[
-							{ba: elm$core$Maybe$Nothing, ag: def, ai: elm$core$Maybe$Nothing}
+							{a8: elm$core$Maybe$Nothing, ae: def, ag: elm$core$Maybe$Nothing}
 						]))
 			});
 	});
 var author$project$Model$addPartDef = function (_n0) {
-	var ref = _n0.p;
+	var ref = _n0.b3;
 	return author$project$Model$mapProject(
 		author$project$Project$mapSource(
 			A2(
@@ -8236,702 +9005,12 @@ var author$project$Model$addPartDef = function (_n0) {
 				ref,
 				author$project$Project$Source$ModuleWithCache$addDef(author$project$Project$Source$Module$Def$empty))));
 };
-var author$project$Compiler$FailureAll = {$: 2};
-var author$project$Compiler$FailureAtNoOpToOpt = function (a) {
-	return {$: 1, a: a};
-};
-var author$project$Compiler$Success = function (a) {
-	return {$: 0, a: a};
-};
-var author$project$Compiler$SafeExpr$SafeExpr = elm$core$Basics$identity;
-var author$project$Project$Source$Module$Def$getExpr = function (_n0) {
-	var expr = _n0.aO;
-	return expr;
-};
-var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
-	var head = _n0.a;
-	return head;
-};
-var author$project$Project$Source$Module$Def$Expr$getOthers = function (_n0) {
-	var others = _n0.b;
-	return others;
-};
-var author$project$Project$Source$Module$Def$Expr$Operator$toSafe = function (op) {
-	if (!op.$) {
-		var so = op.a;
-		return elm$core$Maybe$Just(so);
-	} else {
-		return elm$core$Maybe$Nothing;
-	}
-};
-var author$project$Project$Source$Module$Def$Expr$Term$SIntLiteral = function (a) {
-	return {$: 0, a: a};
-};
-var author$project$Project$Source$Module$Def$Expr$Term$SRef = function (a) {
-	return {$: 1, a: a};
-};
-var author$project$Project$Source$Module$Def$Expr$Term$toSafe = function (term) {
-	_n0$2:
-	while (true) {
-		switch (term.$) {
-			case 0:
-				var i = term.a;
-				return elm$core$Maybe$Just(
-					author$project$Project$Source$Module$Def$Expr$Term$SIntLiteral(i));
-			case 1:
-				if (!term.a.$) {
-					var ref = term.a.a;
-					return elm$core$Maybe$Just(
-						author$project$Project$Source$Module$Def$Expr$Term$SRef(ref));
-				} else {
-					break _n0$2;
-				}
-			default:
-				break _n0$2;
-		}
-	}
-	return elm$core$Maybe$Nothing;
-};
-var author$project$Compiler$DefToSafeExpr$convert = function (def) {
-	var expr = author$project$Project$Source$Module$Def$getExpr(def);
-	var _n0 = author$project$Project$Source$Module$Def$Expr$Term$toSafe(
-		author$project$Project$Source$Module$Def$Expr$getHead(expr));
-	if (!_n0.$) {
-		var safeHead = _n0.a;
-		return elm$core$Maybe$Just(
-			{
-				bT: safeHead,
-				b3: A2(
-					elm$core$List$filterMap,
-					function (_n1) {
-						var op = _n1.a;
-						var term = _n1.b;
-						var _n2 = _Utils_Tuple2(
-							author$project$Project$Source$Module$Def$Expr$Operator$toSafe(op),
-							author$project$Project$Source$Module$Def$Expr$Term$toSafe(term));
-						if ((!_n2.a.$) && (!_n2.b.$)) {
-							var safeOp = _n2.a.a;
-							var safeTerm = _n2.b.a;
-							return elm$core$Maybe$Just(
-								_Utils_Tuple2(safeOp, safeTerm));
-						} else {
-							return elm$core$Maybe$Nothing;
-						}
-					},
-					author$project$Project$Source$Module$Def$Expr$getOthers(expr))
-			});
-	} else {
-		return elm$core$Maybe$Nothing;
-	}
-};
-var author$project$Compiler$Opt$Call = function (a) {
-	return {$: 4, a: a};
-};
-var author$project$Compiler$Opt$I32Add = F2(
-	function (a, b) {
-		return {$: 0, a: a, b: b};
-	});
-var author$project$Compiler$Opt$I32Const = function (a) {
-	return {$: 3, a: a};
-};
-var author$project$Compiler$Opt$I32Mul = F2(
-	function (a, b) {
-		return {$: 2, a: a, b: b};
-	});
-var author$project$Compiler$Opt$I32Sub = F2(
-	function (a, b) {
-		return {$: 1, a: a, b: b};
-	});
-var author$project$Compiler$NoOpToOpt$convert = function (noOp) {
-	_n0$5:
-	while (true) {
-		switch (noOp.$) {
-			case 1:
-				var v = noOp.a;
-				return elm$core$Maybe$Just(
-					author$project$Compiler$Opt$I32Const(v));
-			case 2:
-				var defNum = noOp.a;
-				return elm$core$Maybe$Just(
-					author$project$Compiler$Opt$Call(defNum));
-			case 4:
-				if (!noOp.a.$) {
-					switch (noOp.a.a) {
-						case 0:
-							var _n1 = noOp.a.a;
-							var p0 = noOp.b;
-							var p1 = noOp.c;
-							var _n2 = _Utils_Tuple2(
-								author$project$Compiler$NoOpToOpt$convert(p0),
-								author$project$Compiler$NoOpToOpt$convert(p1));
-							if ((!_n2.a.$) && (!_n2.b.$)) {
-								var opt0 = _n2.a.a;
-								var opt1 = _n2.b.a;
-								return elm$core$Maybe$Just(
-									A2(author$project$Compiler$Opt$I32Add, opt0, opt1));
-							} else {
-								return elm$core$Maybe$Nothing;
-							}
-						case 1:
-							var _n3 = noOp.a.a;
-							var p0 = noOp.b;
-							var p1 = noOp.c;
-							var _n4 = _Utils_Tuple2(
-								author$project$Compiler$NoOpToOpt$convert(p0),
-								author$project$Compiler$NoOpToOpt$convert(p1));
-							if ((!_n4.a.$) && (!_n4.b.$)) {
-								var opt0 = _n4.a.a;
-								var opt1 = _n4.b.a;
-								return elm$core$Maybe$Just(
-									A2(author$project$Compiler$Opt$I32Sub, opt0, opt1));
-							} else {
-								return elm$core$Maybe$Nothing;
-							}
-						default:
-							var _n5 = noOp.a.a;
-							var p0 = noOp.b;
-							var p1 = noOp.c;
-							var _n6 = _Utils_Tuple2(
-								author$project$Compiler$NoOpToOpt$convert(p0),
-								author$project$Compiler$NoOpToOpt$convert(p1));
-							if ((!_n6.a.$) && (!_n6.b.$)) {
-								var opt0 = _n6.a.a;
-								var opt1 = _n6.b.a;
-								return elm$core$Maybe$Just(
-									A2(author$project$Compiler$Opt$I32Mul, opt0, opt1));
-							} else {
-								return elm$core$Maybe$Nothing;
-							}
-					}
-				} else {
-					break _n0$5;
-				}
-			default:
-				break _n0$5;
-		}
-	}
-	return elm$core$Maybe$Nothing;
-};
-var elm$core$Bitwise$and = _Bitwise_and;
-var elm$core$Bitwise$or = _Bitwise_or;
-var elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
-var author$project$Compiler$BinaryEncoding$varsUInt32 = function (x) {
-	var b4 = 127 & (x >> 28);
-	var b3 = 127 & (x >> 21);
-	var b2 = 127 & (x >> 14);
-	var b1 = 127 & (x >> 7);
-	var b0 = 127 & x;
-	return ((!b1) && ((!b2) && ((!b3) && (!b4)))) ? _List_fromArray(
-		[b0]) : (((!b2) && ((!b3) && (!b4))) ? _List_fromArray(
-		[b0 | 128, b1]) : (((!b3) && (!b4)) ? _List_fromArray(
-		[b0 | 128, b1 | 128, b2]) : ((!b4) ? _List_fromArray(
-		[b0 | 128, b1 | 128, b2 | 128, b3]) : _List_fromArray(
-		[b0 | 128, b1 | 128, b2 | 128, b3 | 128, b4]))));
-};
-var author$project$Compiler$OptToBinary$Call = function (a) {
-	return {$: 1, a: a};
-};
-var author$project$Compiler$OptToBinary$I32Add = {$: 2};
-var author$project$Compiler$OptToBinary$I32Const = function (a) {
-	return {$: 0, a: a};
-};
-var author$project$Compiler$OptToBinary$I32Mul = {$: 4};
-var author$project$Compiler$OptToBinary$I32Sub = {$: 3};
-var author$project$Compiler$OptToBinary$optToWatLikeList = function (opt) {
-	switch (opt.$) {
-		case 0:
-			var p0 = opt.a;
-			var p1 = opt.b;
-			return _Utils_ap(
-				author$project$Compiler$OptToBinary$optToWatLikeList(p0),
-				_Utils_ap(
-					author$project$Compiler$OptToBinary$optToWatLikeList(p1),
-					_List_fromArray(
-						[author$project$Compiler$OptToBinary$I32Add])));
-		case 1:
-			var p0 = opt.a;
-			var p1 = opt.b;
-			return _Utils_ap(
-				author$project$Compiler$OptToBinary$optToWatLikeList(p0),
-				_Utils_ap(
-					author$project$Compiler$OptToBinary$optToWatLikeList(p1),
-					_List_fromArray(
-						[author$project$Compiler$OptToBinary$I32Sub])));
-		case 2:
-			var p0 = opt.a;
-			var p1 = opt.b;
-			return _Utils_ap(
-				author$project$Compiler$OptToBinary$optToWatLikeList(p0),
-				_Utils_ap(
-					author$project$Compiler$OptToBinary$optToWatLikeList(p1),
-					_List_fromArray(
-						[author$project$Compiler$OptToBinary$I32Mul])));
-		case 3:
-			var v = opt.a;
-			return _List_fromArray(
-				[
-					author$project$Compiler$OptToBinary$I32Const(v)
-				]);
-		default:
-			var defNum = opt.a;
-			return _List_fromArray(
-				[
-					author$project$Compiler$OptToBinary$Call(defNum)
-				]);
-	}
-};
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
-var elm$core$Basics$pow = _Basics_pow;
-var author$project$Compiler$BinaryEncoding$varsInt32 = function (x) {
-	var b3 = 127 & (x >> 21);
-	var b2 = 127 & (x >> 14);
-	var b1 = 127 & (x >> 7);
-	var b0 = 127 & x;
-	if ((_Utils_cmp(
-		((-A2(elm$core$Basics$pow, 2, 7)) / 2) | 0,
-		x) < 1) && (_Utils_cmp(
-		x,
-		((A2(elm$core$Basics$pow, 2, 7) / 2) | 0) - 1) < 1)) {
-		return _List_fromArray(
-			[b0]);
-	} else {
-		if ((_Utils_cmp(
-			((-A2(elm$core$Basics$pow, 2, 14)) / 2) | 0,
-			x) < 1) && (_Utils_cmp(
-			x,
-			((A2(elm$core$Basics$pow, 2, 14) / 2) | 0) - 1) < 1)) {
-			return _List_fromArray(
-				[b0 | 128, b1]);
-		} else {
-			if ((_Utils_cmp(
-				((-A2(elm$core$Basics$pow, 2, 21)) / 2) | 0,
-				x) < 1) && (_Utils_cmp(
-				x,
-				((A2(elm$core$Basics$pow, 2, 21) / 2) | 0) - 1) < 1)) {
-				return _List_fromArray(
-					[b0 | 128, b1 | 128, b2]);
-			} else {
-				if ((_Utils_cmp(
-					((-A2(elm$core$Basics$pow, 2, 28)) / 2) | 0,
-					x) < 1) && (_Utils_cmp(
-					x,
-					((A2(elm$core$Basics$pow, 2, 28) / 2) | 0) - 1) < 1)) {
-					return _List_fromArray(
-						[b0 | 128, b1 | 128, b2 | 128, b3]);
-				} else {
-					if (0 <= x) {
-						var b4 = 127 & (x >> 28);
-						return _List_fromArray(
-							[b0 | 128, b1 | 128, b2 | 128, b3 | 128, b4]);
-					} else {
-						var b4 = 112 | (127 & (x >> 28));
-						return _List_fromArray(
-							[b0 | 128, b1 | 128, b2 | 128, b3 | 128, b4]);
-					}
-				}
-			}
-		}
-	}
-};
-var author$project$Compiler$OptToBinary$watLikeToBinary = function (watLike) {
-	switch (watLike.$) {
-		case 0:
-			var v = watLike.a;
-			return A2(
-				elm$core$List$cons,
-				65,
-				author$project$Compiler$BinaryEncoding$varsInt32(v));
-		case 1:
-			var defNum = watLike.a;
-			return A2(
-				elm$core$List$cons,
-				16,
-				author$project$Compiler$BinaryEncoding$varsInt32(defNum));
-		case 2:
-			return _List_fromArray(
-				[106]);
-		case 3:
-			return _List_fromArray(
-				[107]);
-		default:
-			return _List_fromArray(
-				[108]);
-	}
-};
-var elm$core$List$append = F2(
-	function (xs, ys) {
-		if (!ys.b) {
-			return xs;
-		} else {
-			return A3(elm$core$List$foldr, elm$core$List$cons, ys, xs);
-		}
-	});
-var elm$core$List$concat = function (lists) {
-	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
-};
-var elm$core$List$concatMap = F2(
-	function (f, list) {
-		return elm$core$List$concat(
-			A2(elm$core$List$map, f, list));
-	});
-var author$project$Compiler$OptToBinary$convert = function (opt) {
-	var binary = _Utils_ap(
-		_List_fromArray(
-			[0]),
-		_Utils_ap(
-			A2(
-				elm$core$List$concatMap,
-				author$project$Compiler$OptToBinary$watLikeToBinary,
-				author$project$Compiler$OptToBinary$optToWatLikeList(opt)),
-			_List_fromArray(
-				[11])));
-	return _Utils_ap(
-		author$project$Compiler$BinaryEncoding$varsUInt32(
-			elm$core$List$length(binary)),
-		binary);
-};
-var author$project$Compiler$NoOp$Call2 = F3(
-	function (a, b, c) {
-		return {$: 4, a: a, b: b, c: c};
-	});
-var author$project$Compiler$SafeExpr$getHead = function (_n0) {
-	var head = _n0.bT;
-	return head;
-};
-var author$project$Compiler$SafeExpr$getOthers = function (_n0) {
-	var others = _n0.b3;
-	return others;
-};
-var author$project$Compiler$SafeExpr$concat = F3(
-	function (left, centerOp, right) {
-		return {
-			bT: author$project$Compiler$SafeExpr$getHead(left),
-			b3: _Utils_ap(
-				author$project$Compiler$SafeExpr$getOthers(left),
-				_Utils_ap(
-					_List_fromArray(
-						[
-							_Utils_Tuple2(
-							centerOp,
-							author$project$Compiler$SafeExpr$getHead(right))
-						]),
-					author$project$Compiler$SafeExpr$getOthers(right)))
-		};
-	});
-var author$project$Compiler$SafeExpr$push = F2(
-	function (tuple, _n0) {
-		var head = _n0.bT;
-		var others = _n0.b3;
-		return {
-			bT: head,
-			b3: _Utils_ap(
-				others,
-				_List_fromArray(
-					[tuple]))
-		};
-	});
-var author$project$Project$Source$Module$Def$Expr$Operator$bindingOrderToInt = function (order) {
-	switch (order) {
-		case 0:
-			return 0;
-		case 1:
-			return 1;
-		case 2:
-			return 2;
-		case 3:
-			return 3;
-		case 4:
-			return 4;
-		case 5:
-			return 5;
-		case 6:
-			return 6;
-		default:
-			return 7;
-	}
-};
-var author$project$Project$Source$Module$Def$Expr$Operator$bindingOrderLessThanOrEqual = F2(
-	function (by, target) {
-		return _Utils_cmp(
-			author$project$Project$Source$Module$Def$Expr$Operator$bindingOrderToInt(target),
-			author$project$Project$Source$Module$Def$Expr$Operator$bindingOrderToInt(by)) < 1;
-	});
-var author$project$Project$Source$Module$Def$Expr$Operator$O0 = 0;
-var author$project$Project$Source$Module$Def$Expr$Operator$O1 = 1;
-var author$project$Project$Source$Module$Def$Expr$Operator$O2 = 2;
-var author$project$Project$Source$Module$Def$Expr$Operator$O3 = 3;
-var author$project$Project$Source$Module$Def$Expr$Operator$O4 = 4;
-var author$project$Project$Source$Module$Def$Expr$Operator$O5 = 5;
-var author$project$Project$Source$Module$Def$Expr$Operator$O6 = 6;
-var author$project$Project$Source$Module$Def$Expr$Operator$O7 = 7;
-var author$project$Project$Source$Module$Def$Expr$Operator$toBindingOrder = function (op) {
-	switch (op) {
-		case 0:
-			return 0;
-		case 1:
-			return 1;
-		case 2:
-			return 2;
-		case 3:
-			return 3;
-		case 4:
-			return 3;
-		case 5:
-			return 3;
-		case 6:
-			return 3;
-		case 7:
-			return 4;
-		case 8:
-			return 4;
-		case 9:
-			return 4;
-		case 10:
-			return 5;
-		case 11:
-			return 5;
-		case 12:
-			return 6;
-		case 13:
-			return 6;
-		default:
-			return 7;
-	}
-};
-var author$project$Compiler$SafeExprToNoOp$convertLoop = function (_n0) {
-	convertLoop:
-	while (true) {
-		var left = _n0.R;
-		var centerOp = _n0.P;
-		var leftCandidate = _n0.aF;
-		var right = _n0.T;
-		if (!right.b) {
-			return {P: centerOp, R: left, T: leftCandidate};
-		} else {
-			var _n2 = right.a;
-			var op = _n2.a;
-			var term = _n2.b;
-			var xs = right.b;
-			if (A2(
-				author$project$Project$Source$Module$Def$Expr$Operator$bindingOrderLessThanOrEqual,
-				author$project$Project$Source$Module$Def$Expr$Operator$toBindingOrder(centerOp),
-				author$project$Project$Source$Module$Def$Expr$Operator$toBindingOrder(op))) {
-				var $temp$_n0 = {
-					P: op,
-					R: A3(author$project$Compiler$SafeExpr$concat, left, centerOp, leftCandidate),
-					aF: {bT: term, b3: _List_Nil},
-					T: xs
-				};
-				_n0 = $temp$_n0;
-				continue convertLoop;
-			} else {
-				var $temp$_n0 = {
-					P: centerOp,
-					R: left,
-					aF: A2(
-						author$project$Compiler$SafeExpr$push,
-						_Utils_Tuple2(op, term),
-						leftCandidate),
-					T: xs
-				};
-				_n0 = $temp$_n0;
-				continue convertLoop;
-			}
-		}
-	}
-};
-var author$project$Compiler$NoOp$Core = function (a) {
-	return {$: 0, a: a};
-};
-var author$project$Compiler$NoOp$Minus = 1;
-var author$project$Compiler$NoOp$Mul = 2;
-var author$project$Compiler$NoOp$Plus = 0;
-var author$project$Compiler$SafeExprToNoOp$opToNoOp = function (op) {
-	switch (op) {
-		case 8:
-			return author$project$Compiler$NoOp$Core(0);
-		case 9:
-			return author$project$Compiler$NoOp$Core(1);
-		case 10:
-			return author$project$Compiler$NoOp$Core(2);
-		default:
-			return author$project$Compiler$NoOp$Core(0);
-	}
-};
-var author$project$Compiler$NoOp$Int = function (a) {
-	return {$: 1, a: a};
-};
-var author$project$Compiler$NoOp$Ref = function (a) {
-	return {$: 2, a: a};
-};
-var author$project$Compiler$SafeExprToNoOp$termToNoOp = function (safeTerm) {
-	if (!safeTerm.$) {
-		var x = safeTerm.a;
-		return author$project$Compiler$NoOp$Int(x);
-	} else {
-		var ref = safeTerm.a;
-		return author$project$Compiler$NoOp$Ref(ref);
-	}
-};
-var author$project$Compiler$SafeExprToNoOp$convert = function (_n0) {
-	var head = _n0.bT;
-	var others = _n0.b3;
-	if (!others.b) {
-		return author$project$Compiler$SafeExprToNoOp$termToNoOp(head);
-	} else {
-		var _n2 = others.a;
-		var op = _n2.a;
-		var term = _n2.b;
-		var xs = others.b;
-		var a = author$project$Compiler$SafeExprToNoOp$convertLoop(
-			{
-				P: op,
-				R: {bT: head, b3: _List_Nil},
-				aF: {bT: term, b3: _List_Nil},
-				T: xs
-			});
-		return A3(
-			author$project$Compiler$NoOp$Call2,
-			author$project$Compiler$SafeExprToNoOp$opToNoOp(a.P),
-			author$project$Compiler$SafeExprToNoOp$convert(a.R),
-			author$project$Compiler$SafeExprToNoOp$convert(a.T));
-	}
-};
-var author$project$Compiler$compile = function (def) {
-	var _n0 = author$project$Compiler$DefToSafeExpr$convert(def);
-	if (!_n0.$) {
-		var safeExpr = _n0.a;
-		var noOp = author$project$Compiler$SafeExprToNoOp$convert(safeExpr);
-		var _n1 = author$project$Compiler$NoOpToOpt$convert(noOp);
-		if (!_n1.$) {
-			var opt = _n1.a;
-			return author$project$Compiler$Success(
-				{
-					a8: author$project$Compiler$OptToBinary$convert(opt),
-					aT: noOp,
-					bl: opt
-				});
-		} else {
-			return author$project$Compiler$FailureAtNoOpToOpt(
-				{aT: noOp});
-		}
-	} else {
-		return author$project$Compiler$FailureAll;
-	}
-};
-var author$project$Model$ReceiveCompiledData = function (a) {
-	return {$: 4, a: a};
-};
-var author$project$Project$Source$ModuleWithCache$defAndResultGetDef = function (_n0) {
-	var def = _n0.ag;
-	return def;
-};
-var author$project$Project$Source$ModuleWithCache$getDefAndResultList = function (_n0) {
-	var defAndCacheList = _n0.C;
-	return defAndCacheList;
-};
-var author$project$Project$Source$ModuleWithCache$getDefList = A2(
-	elm$core$Basics$composeR,
-	author$project$Project$Source$ModuleWithCache$getDefAndResultList,
-	elm$core$List$map(author$project$Project$Source$ModuleWithCache$defAndResultGetDef));
-var elm$core$Array$fromListHelp = F3(
-	function (list, nodeList, nodeListSize) {
-		fromListHelp:
-		while (true) {
-			var _n0 = A2(elm$core$Elm$JsArray$initializeFromList, elm$core$Array$branchFactor, list);
-			var jsArray = _n0.a;
-			var remainingItems = _n0.b;
-			if (_Utils_cmp(
-				elm$core$Elm$JsArray$length(jsArray),
-				elm$core$Array$branchFactor) < 0) {
-				return A2(
-					elm$core$Array$builderToArray,
-					true,
-					{o: nodeList, k: nodeListSize, n: jsArray});
-			} else {
-				var $temp$list = remainingItems,
-					$temp$nodeList = A2(
-					elm$core$List$cons,
-					elm$core$Array$Leaf(jsArray),
-					nodeList),
-					$temp$nodeListSize = nodeListSize + 1;
-				list = $temp$list;
-				nodeList = $temp$nodeList;
-				nodeListSize = $temp$nodeListSize;
-				continue fromListHelp;
-			}
-		}
-	});
-var elm$core$Array$fromList = function (list) {
-	if (!list.b) {
-		return elm$core$Array$empty;
-	} else {
-		return A3(elm$core$Array$fromListHelp, list, _List_Nil, 0);
-	}
-};
-var elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
-var elm$core$Array$bitMask = 4294967295 >>> (32 - elm$core$Array$shiftStep);
-var elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
-var elm$core$Array$getHelp = F3(
-	function (shift, index, tree) {
-		getHelp:
-		while (true) {
-			var pos = elm$core$Array$bitMask & (index >>> shift);
-			var _n0 = A2(elm$core$Elm$JsArray$unsafeGet, pos, tree);
-			if (!_n0.$) {
-				var subTree = _n0.a;
-				var $temp$shift = shift - elm$core$Array$shiftStep,
-					$temp$index = index,
-					$temp$tree = subTree;
-				shift = $temp$shift;
-				index = $temp$index;
-				tree = $temp$tree;
-				continue getHelp;
-			} else {
-				var values = _n0.a;
-				return A2(elm$core$Elm$JsArray$unsafeGet, elm$core$Array$bitMask & index, values);
-			}
-		}
-	});
-var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
-var elm$core$Array$tailIndex = function (len) {
-	return (len >>> 5) << 5;
-};
-var elm$core$Basics$ge = _Utils_ge;
-var elm$core$Array$get = F2(
-	function (index, _n0) {
-		var len = _n0.a;
-		var startShift = _n0.b;
-		var tree = _n0.c;
-		var tail = _n0.d;
-		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? elm$core$Maybe$Nothing : ((_Utils_cmp(
-			index,
-			elm$core$Array$tailIndex(len)) > -1) ? elm$core$Maybe$Just(
-			A2(elm$core$Elm$JsArray$unsafeGet, elm$core$Array$bitMask & index, tail)) : elm$core$Maybe$Just(
-			A3(elm$core$Array$getHelp, startShift, index, tree)));
-	});
-var author$project$Utility$ListExtra$getAt = F2(
-	function (index, list) {
-		return A2(
-			elm$core$Array$get,
-			index,
-			elm$core$Array$fromList(list));
-	});
-var author$project$Project$Source$ModuleWithCache$getDef = F2(
-	function (index, module_) {
-		return A2(
-			author$project$Utility$ListExtra$getAt,
-			index,
-			author$project$Project$Source$ModuleWithCache$getDefList(module_));
-	});
 var author$project$Project$Source$Module$Def$setExpr = F2(
 	function (expr, _n0) {
 		var rec = _n0;
 		return _Utils_update(
 			rec,
-			{aO: expr});
+			{aM: expr});
 	});
 var author$project$Utility$ListExtra$setAt = F3(
 	function (index, element, list) {
@@ -8952,11 +9031,11 @@ var author$project$Project$Source$ModuleWithCache$setDef = F3(
 		return _Utils_update(
 			rec,
 			{
-				C: A3(
+				A: A3(
 					author$project$Utility$ListExtra$setAt,
 					index,
-					{ba: elm$core$Maybe$Nothing, ag: def, ai: elm$core$Maybe$Nothing},
-					rec.C)
+					{a8: elm$core$Maybe$Nothing, ae: def, ag: elm$core$Maybe$Nothing},
+					rec.A)
 			});
 	});
 var author$project$Project$Source$ModuleWithCache$setDefExpr = F3(
@@ -8973,13 +9052,11 @@ var author$project$Project$Source$ModuleWithCache$setDefExpr = F3(
 			return module_;
 		}
 	});
-var elm$core$Platform$Cmd$batch = _Platform_batch;
-var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Model$changeExpr = F2(
 	function (_n0, model) {
-		var expr = _n0.aO;
-		var index = _n0.x;
-		var ref = _n0.p;
+		var expr = _n0.aM;
+		var index = _n0.bV;
+		var ref = _n0.b3;
 		var newModel = A2(
 			author$project$Model$mapProject,
 			author$project$Project$mapSource(
@@ -8988,43 +9065,21 @@ var author$project$Model$changeExpr = F2(
 					ref,
 					A2(author$project$Project$Source$ModuleWithCache$setDefExpr, index, expr))),
 			model);
-		var newDefMaybe = A2(
-			author$project$Project$Source$ModuleWithCache$getDef,
-			index,
-			A2(
-				author$project$Project$Source$getModule,
-				ref,
-				author$project$Project$getSource(
-					author$project$Model$getProject(newModel))));
 		return _Utils_Tuple2(
 			newModel,
-			function () {
-				if (!newDefMaybe.$) {
-					var newDef = newDefMaybe.a;
-					return A2(
-						elm$core$Task$perform,
-						function (compileResult) {
-							return author$project$Model$ReceiveCompiledData(
-								{ba: compileResult, x: index, p: ref});
-						},
-						A2(
-							elm$core$Task$andThen,
-							function (def) {
-								return elm$core$Task$succeed(
-									author$project$Compiler$compile(def));
-							},
-							elm$core$Task$succeed(newDef)));
-				} else {
-					return elm$core$Platform$Cmd$none;
-				}
-			}());
+			A3(
+				author$project$Model$compileCmd,
+				author$project$Project$getSource(
+					author$project$Model$getProject(newModel)),
+				ref,
+				index));
 	});
 var author$project$Project$Source$Module$Def$setName = F2(
 	function (name, _n0) {
 		var rec = _n0;
 		return _Utils_update(
 			rec,
-			{aS: name});
+			{aQ: name});
 	});
 var author$project$Project$Source$ModuleWithCache$setDefName = F3(
 	function (index, name, module_) {
@@ -9041,9 +9096,9 @@ var author$project$Project$Source$ModuleWithCache$setDefName = F3(
 		}
 	});
 var author$project$Model$changeName = function (_n0) {
-	var name = _n0.aS;
-	var index = _n0.x;
-	var ref = _n0.p;
+	var name = _n0.aQ;
+	var index = _n0.bV;
+	var ref = _n0.b3;
 	return author$project$Model$mapProject(
 		author$project$Project$mapSource(
 			A2(
@@ -9056,12 +9111,12 @@ var author$project$Project$Source$ModuleWithCache$setReadMe = F2(
 		var rec = _n0;
 		return _Utils_update(
 			rec,
-			{aY: string});
+			{aW: string});
 	});
 var author$project$Model$changeReadMe = F2(
 	function (_n0, model) {
-		var text = _n0.b6;
-		var ref = _n0.p;
+		var text = _n0.b7;
+		var ref = _n0.b3;
 		return A2(
 			author$project$Model$mapProject,
 			author$project$Project$mapSource(
@@ -9076,7 +9131,7 @@ var author$project$Project$Source$Module$Def$setType = F2(
 		var rec = _n0;
 		return _Utils_update(
 			rec,
-			{a3: type_});
+			{a1: type_});
 	});
 var author$project$Project$Source$ModuleWithCache$setDefType = F3(
 	function (index, type_, module_) {
@@ -9093,9 +9148,9 @@ var author$project$Project$Source$ModuleWithCache$setDefType = F3(
 		}
 	});
 var author$project$Model$changeType = function (_n0) {
-	var type_ = _n0.a3;
-	var index = _n0.x;
-	var ref = _n0.p;
+	var type_ = _n0.a1;
+	var index = _n0.bV;
+	var ref = _n0.b3;
 	return author$project$Model$mapProject(
 		author$project$Project$mapSource(
 			A2(
@@ -9107,22 +9162,22 @@ var author$project$Model$closeCommandPalette = function (_n0) {
 	var rec = _n0;
 	return _Utils_update(
 		rec,
-		{M: author$project$Model$SubModeNone});
+		{K: author$project$Model$SubModeNone});
 };
 var author$project$Model$AddPartDef = function (a) {
-	return {$: 17, a: a};
+	return {$: 18, a: a};
 };
 var author$project$Model$ChangeExpr = function (a) {
-	return {$: 16, a: a};
+	return {$: 17, a: a};
 };
 var author$project$Model$ChangeName = function (a) {
-	return {$: 14, a: a};
+	return {$: 15, a: a};
 };
 var author$project$Model$ChangeReadMe = function (a) {
-	return {$: 13, a: a};
+	return {$: 14, a: a};
 };
 var author$project$Model$ChangeType = function (a) {
-	return {$: 15, a: a};
+	return {$: 16, a: a};
 };
 var author$project$Model$GutterEditorGroupPanelHorizontal = function (a) {
 	return {$: 2, a: a};
@@ -9131,7 +9186,7 @@ var author$project$Model$GutterEditorGroupPanelVertical = function (a) {
 	return {$: 1, a: a};
 };
 var author$project$Model$ToResizeGutterMode = function (a) {
-	return {$: 5, a: a};
+	return {$: 6, a: a};
 };
 var author$project$Model$focusTextArea = _Platform_outgoingPort(
 	'focusTextArea',
@@ -9161,13 +9216,13 @@ var author$project$Model$editorPanelEmitToMsg = function (emit) {
 					]),
 				_List_Nil);
 		case 2:
-			var text = emit.a.b6;
-			var ref = emit.a.p;
+			var text = emit.a.b7;
+			var ref = emit.a.b3;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$ChangeReadMe(
-						{p: ref, b6: text})
+						{b3: ref, b7: text})
 					]),
 				_List_Nil);
 		case 3:
@@ -9186,45 +9241,45 @@ var author$project$Model$editorPanelEmitToMsg = function (emit) {
 						author$project$Model$focusTextArea(0)
 					]));
 		case 5:
-			var name = emit.a.aS;
-			var index = emit.a.x;
-			var ref = emit.a.p;
+			var name = emit.a.aQ;
+			var index = emit.a.bV;
+			var ref = emit.a.b3;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$ChangeName(
-						{x: index, aS: name, p: ref})
+						{bV: index, aQ: name, b3: ref})
 					]),
 				_List_Nil);
 		case 6:
-			var ref = emit.a.p;
+			var ref = emit.a.b3;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$AddPartDef(
-						{p: ref})
+						{b3: ref})
 					]),
 				_List_Nil);
 		case 7:
-			var type_ = emit.a.a3;
-			var index = emit.a.x;
-			var ref = emit.a.p;
+			var type_ = emit.a.a1;
+			var index = emit.a.bV;
+			var ref = emit.a.b3;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$ChangeType(
-						{x: index, p: ref, a3: type_})
+						{bV: index, b3: ref, a1: type_})
 					]),
 				_List_Nil);
 		default:
-			var expr = emit.a.aO;
-			var index = emit.a.x;
-			var ref = emit.a.p;
+			var expr = emit.a.aM;
+			var index = emit.a.bV;
+			var ref = emit.a.b3;
 			return _Utils_Tuple2(
 				_List_fromArray(
 					[
 						author$project$Model$ChangeExpr(
-						{aO: expr, x: index, p: ref})
+						{aM: expr, bV: index, b3: ref})
 					]),
 				_List_Nil);
 	}
@@ -9234,7 +9289,7 @@ var author$project$Model$setEditorGroupPanelModel = F2(
 		var rec = _n0;
 		return _Utils_update(
 			rec,
-			{aN: editorPanelModel});
+			{aL: editorPanelModel});
 	});
 var author$project$Panel$EditorGroup$EmitHorizontalGutterModeOn = function (a) {
 	return {$: 1, a: a};
@@ -9452,36 +9507,36 @@ var author$project$Parser$Expr$batchTermResultLoop = F2(
 			if (_n0.b.b) {
 				if (!_n0.a.$) {
 					if (!_n0.b.a.$) {
-						var head = _n0.a.a.bT;
-						var others = _n0.a.a.b3;
-						var textAreaValue = _n0.a.a.v;
+						var head = _n0.a.a.bR;
+						var others = _n0.a.a.b2;
+						var textAreaValue = _n0.a.a.u;
 						var _n1 = _n0.b;
 						var term = _n1.a.a;
 						var listOthers = _n1.b;
 						var $temp$intermediate = author$project$Parser$Expr$TermLastTerm(
 							{
-								bT: head,
-								b3: _Utils_ap(
+								bR: head,
+								b2: _Utils_ap(
 									others,
 									_List_fromArray(
 										[
 											_Utils_Tuple2(author$project$Project$Source$Module$Def$Expr$Operator$app, term)
 										])),
-								v: textAreaValue
+								u: textAreaValue
 							}),
 							$temp$list = listOthers;
 						intermediate = $temp$intermediate;
 						list = $temp$list;
 						continue batchTermResultLoop;
 					} else {
-						var head = _n0.a.a.bT;
-						var others = _n0.a.a.b3;
-						var textAreaValue = _n0.a.a.v;
+						var head = _n0.a.a.bR;
+						var others = _n0.a.a.b2;
+						var textAreaValue = _n0.a.a.u;
 						var _n2 = _n0.b;
 						var op = _n2.a.a;
 						var listOthers = _n2.b;
 						var $temp$intermediate = author$project$Parser$Expr$TermLastOp(
-							{bT: head, Z: op, b3: others, v: textAreaValue}),
+							{bR: head, X: op, b2: others, u: textAreaValue}),
 							$temp$list = listOthers;
 						intermediate = $temp$intermediate;
 						list = $temp$list;
@@ -9489,47 +9544,47 @@ var author$project$Parser$Expr$batchTermResultLoop = F2(
 					}
 				} else {
 					if (!_n0.b.a.$) {
-						var head = _n0.a.a.bT;
-						var others = _n0.a.a.b3;
-						var last = _n0.a.a.Z;
-						var textAreaValue = _n0.a.a.v;
+						var head = _n0.a.a.bR;
+						var others = _n0.a.a.b2;
+						var last = _n0.a.a.X;
+						var textAreaValue = _n0.a.a.u;
 						var _n3 = _n0.b;
 						var term = _n3.a.a;
 						var listOthers = _n3.b;
 						var $temp$intermediate = author$project$Parser$Expr$TermLastTerm(
 							{
-								bT: head,
-								b3: _Utils_ap(
+								bR: head,
+								b2: _Utils_ap(
 									others,
 									_List_fromArray(
 										[
 											_Utils_Tuple2(last, term)
 										])),
-								v: textAreaValue
+								u: textAreaValue
 							}),
 							$temp$list = listOthers;
 						intermediate = $temp$intermediate;
 						list = $temp$list;
 						continue batchTermResultLoop;
 					} else {
-						var head = _n0.a.a.bT;
-						var others = _n0.a.a.b3;
-						var last = _n0.a.a.Z;
-						var textAreaValue = _n0.a.a.v;
+						var head = _n0.a.a.bR;
+						var others = _n0.a.a.b2;
+						var last = _n0.a.a.X;
+						var textAreaValue = _n0.a.a.u;
 						var _n4 = _n0.b;
 						var op = _n4.a.a;
 						var listOthers = _n4.b;
 						var $temp$intermediate = author$project$Parser$Expr$TermLastOp(
 							{
-								bT: head,
-								Z: op,
-								b3: _Utils_ap(
+								bR: head,
+								X: op,
+								b2: _Utils_ap(
 									others,
 									_List_fromArray(
 										[
 											_Utils_Tuple2(last, author$project$Project$Source$Module$Def$Expr$Term$none)
 										])),
-								v: textAreaValue
+								u: textAreaValue
 							}),
 							$temp$list = listOthers;
 						intermediate = $temp$intermediate;
@@ -9551,7 +9606,7 @@ var author$project$Parser$Expr$batchTermResult = F2(
 				return A2(
 					author$project$Parser$Expr$batchTermResultLoop,
 					author$project$Parser$Expr$TermLastTerm(
-						{bT: term, b3: _List_Nil, v: textAreaValue}),
+						{bR: term, b2: _List_Nil, u: textAreaValue}),
 					others);
 			} else {
 				var op = list.a.a;
@@ -9559,12 +9614,12 @@ var author$project$Parser$Expr$batchTermResult = F2(
 				return A2(
 					author$project$Parser$Expr$batchTermResultLoop,
 					author$project$Parser$Expr$TermLastOp(
-						{bT: author$project$Project$Source$Module$Def$Expr$Term$none, Z: op, b3: _List_Nil, v: textAreaValue}),
+						{bR: author$project$Project$Source$Module$Def$Expr$Term$none, X: op, b2: _List_Nil, u: textAreaValue}),
 					others);
 			}
 		} else {
 			return author$project$Parser$Expr$TermLastTerm(
-				{bT: author$project$Project$Source$Module$Def$Expr$Term$none, b3: _List_Nil, v: _List_Nil});
+				{bR: author$project$Project$Source$Module$Def$Expr$Term$none, b2: _List_Nil, u: _List_Nil});
 		}
 	});
 var author$project$Parser$Expr$IntLiteralIntermediate = elm$core$Basics$identity;
@@ -9934,8 +9989,8 @@ var author$project$Parser$Expr$parseInRef = F3(
 						var others = rest.b;
 						return author$project$Parser$Expr$TermAndRest(
 							{
-								bx: others,
-								B: author$project$Project$Source$Module$Def$Expr$Term$fromMaybeLabel(label)
+								bv: others,
+								z: author$project$Project$Source$Module$Def$Expr$Term$fromMaybeLabel(label)
 							});
 					case 1:
 						var _n2 = rest.a;
@@ -9943,8 +9998,8 @@ var author$project$Parser$Expr$parseInRef = F3(
 						var _char = _n2.b;
 						return author$project$Parser$Expr$TermAndRest(
 							{
-								bx: rest,
-								B: author$project$Project$Source$Module$Def$Expr$Term$fromMaybeLabel(label)
+								bv: rest,
+								z: author$project$Project$Source$Module$Def$Expr$Term$fromMaybeLabel(label)
 							});
 					case 2:
 						var _n3 = rest.a;
@@ -10021,22 +10076,22 @@ var author$project$Parser$Expr$parseInRef = F3(
 			} else {
 				return author$project$Parser$Expr$TermEnd(
 					{
-						B: author$project$Project$Source$Module$Def$Expr$Term$fromMaybeLabel(label),
-						v: textAreaValue
+						z: author$project$Project$Source$Module$Def$Expr$Term$fromMaybeLabel(label),
+						u: textAreaValue
 					});
 			}
 		}
 	});
 var author$project$Parser$Expr$intLiteralIntermediatePush = F2(
 	function (num, _n0) {
-		var minus = _n0.ak;
-		var digits = _n0.ah;
+		var minus = _n0.ai;
+		var digits = _n0.af;
 		return {
-			ah: _Utils_ap(
+			af: _Utils_ap(
 				digits,
 				_List_fromArray(
 					[num])),
-			ak: minus
+			ai: minus
 		};
 	});
 var author$project$Parser$SimpleChar$numberToInt = function (number) {
@@ -10074,8 +10129,8 @@ var author$project$Parser$SimpleChar$listNumberToIntLoop = function (list) {
 };
 var author$project$Parser$SimpleChar$listNumberToInt = A2(elm$core$Basics$composeR, elm$core$List$reverse, author$project$Parser$SimpleChar$listNumberToIntLoop);
 var author$project$Parser$Expr$intLiteralIntermediateToInt = function (_n0) {
-	var minus = _n0.ak;
-	var digits = _n0.ah;
+	var minus = _n0.ai;
+	var digits = _n0.af;
 	return minus ? (-author$project$Parser$SimpleChar$listNumberToInt(digits)) : author$project$Parser$SimpleChar$listNumberToInt(digits);
 };
 var author$project$Parser$Expr$parseIntLiteral = F3(
@@ -10089,8 +10144,8 @@ var author$project$Parser$Expr$parseIntLiteral = F3(
 						var others = rest.b;
 						return author$project$Parser$Expr$TermAndRest(
 							{
-								bx: others,
-								B: author$project$Project$Source$Module$Def$Expr$Term$fromInt(
+								bv: others,
+								z: author$project$Project$Source$Module$Def$Expr$Term$fromInt(
 									author$project$Parser$Expr$intLiteralIntermediateToInt(intermediate))
 							});
 					case 4:
@@ -10113,17 +10168,17 @@ var author$project$Parser$Expr$parseIntLiteral = F3(
 					default:
 						return author$project$Parser$Expr$TermAndRest(
 							{
-								bx: rest,
-								B: author$project$Project$Source$Module$Def$Expr$Term$fromInt(
+								bv: rest,
+								z: author$project$Project$Source$Module$Def$Expr$Term$fromInt(
 									author$project$Parser$Expr$intLiteralIntermediateToInt(intermediate))
 							});
 				}
 			} else {
 				return author$project$Parser$Expr$TermEnd(
 					{
-						B: author$project$Project$Source$Module$Def$Expr$Term$fromInt(
+						z: author$project$Project$Source$Module$Def$Expr$Term$fromInt(
 							author$project$Parser$Expr$intLiteralIntermediateToInt(intermediate)),
-						v: textareaValue
+						u: textareaValue
 					});
 			}
 		}
@@ -10175,9 +10230,9 @@ var author$project$Parser$Expr$parseOne = function (list) {
 							A3(
 								author$project$Parser$Expr$parseIntLiteral,
 								{
-									ah: _List_fromArray(
+									af: _List_fromArray(
 										[num]),
-									ak: true
+									ai: true
 								},
 								others,
 								_List_fromArray(
@@ -10203,32 +10258,32 @@ var author$project$Parser$Expr$parseOne = function (list) {
 								var _n27 = _n26.a;
 								var others = _n25.b;
 								return author$project$Parser$Expr$OneOpAndRest(
-									{i: author$project$Project$Source$Module$Def$Expr$Operator$compose, bx: others});
+									{i: author$project$Project$Source$Module$Def$Expr$Operator$compose, bv: others});
 							} else {
 								var _n28 = list.a;
 								var _n29 = _n28.a;
 								var others = list.b;
 								return author$project$Parser$Expr$OneOpAndRest(
-									{i: author$project$Project$Source$Module$Def$Expr$Operator$pipe, bx: others});
+									{i: author$project$Project$Source$Module$Def$Expr$Operator$pipe, bv: others});
 							}
 						case 27:
 							var _n30 = list.a;
 							var _n31 = _n30.a;
 							var others = list.b;
 							return author$project$Parser$Expr$OneOpAndRest(
-								{i: author$project$Project$Source$Module$Def$Expr$Operator$or, bx: others});
+								{i: author$project$Project$Source$Module$Def$Expr$Operator$or, bv: others});
 						case 4:
 							var _n32 = list.a;
 							var _n33 = _n32.a;
 							var others = list.b;
 							return author$project$Parser$Expr$OneOpAndRest(
-								{i: author$project$Project$Source$Module$Def$Expr$Operator$and, bx: others});
+								{i: author$project$Project$Source$Module$Def$Expr$Operator$and, bv: others});
 						case 16:
 							var _n34 = list.a;
 							var _n35 = _n34.a;
 							var others = list.b;
 							return author$project$Parser$Expr$OneOpAndRest(
-								{i: author$project$Project$Source$Module$Def$Expr$Operator$equal, bx: others});
+								{i: author$project$Project$Source$Module$Def$Expr$Operator$equal, bv: others});
 						case 15:
 							if (list.b.b) {
 								if ((list.b.a.$ === 1) && (list.b.a.a === 16)) {
@@ -10239,13 +10294,13 @@ var author$project$Parser$Expr$parseOne = function (list) {
 									var _n17 = _n16.a;
 									var others = _n15.b;
 									return author$project$Parser$Expr$OneOpAndRest(
-										{i: author$project$Project$Source$Module$Def$Expr$Operator$lessThanOrEqual, bx: others});
+										{i: author$project$Project$Source$Module$Def$Expr$Operator$lessThanOrEqual, bv: others});
 								} else {
 									var _n38 = list.a;
 									var _n39 = _n38.a;
 									var others = list.b;
 									return author$project$Parser$Expr$OneOpAndRest(
-										{i: author$project$Project$Source$Module$Def$Expr$Operator$lessThan, bx: others});
+										{i: author$project$Project$Source$Module$Def$Expr$Operator$lessThan, bv: others});
 								}
 							} else {
 								var _n36 = list.a;
@@ -10254,7 +10309,7 @@ var author$project$Parser$Expr$parseOne = function (list) {
 								return author$project$Parser$Expr$OneOpEnd(
 									{
 										i: author$project$Project$Source$Module$Def$Expr$Operator$lessThan,
-										v: _List_fromArray(
+										u: _List_fromArray(
 											[
 												_Utils_Tuple2(_char, true)
 											])
@@ -10270,13 +10325,13 @@ var author$project$Parser$Expr$parseOne = function (list) {
 									var _n22 = _n21.a;
 									var others = _n20.b;
 									return author$project$Parser$Expr$OneOpAndRest(
-										{i: author$project$Project$Source$Module$Def$Expr$Operator$concat, bx: others});
+										{i: author$project$Project$Source$Module$Def$Expr$Operator$concat, bv: others});
 								} else {
 									var _n42 = list.a;
 									var _n43 = _n42.a;
 									var others = list.b;
 									return author$project$Parser$Expr$OneOpAndRest(
-										{i: author$project$Project$Source$Module$Def$Expr$Operator$add, bx: others});
+										{i: author$project$Project$Source$Module$Def$Expr$Operator$add, bv: others});
 								}
 							} else {
 								var _n40 = list.a;
@@ -10285,7 +10340,7 @@ var author$project$Parser$Expr$parseOne = function (list) {
 								return author$project$Parser$Expr$OneOpEnd(
 									{
 										i: author$project$Project$Source$Module$Def$Expr$Operator$add,
-										v: _List_fromArray(
+										u: _List_fromArray(
 											[
 												_Utils_Tuple2(_char, true)
 											])
@@ -10296,13 +10351,13 @@ var author$project$Parser$Expr$parseOne = function (list) {
 							var _n45 = _n44.a;
 							var others = list.b;
 							return author$project$Parser$Expr$OneOpAndRest(
-								{i: author$project$Project$Source$Module$Def$Expr$Operator$sub, bx: others});
+								{i: author$project$Project$Source$Module$Def$Expr$Operator$sub, bv: others});
 						case 8:
 							var _n46 = list.a;
 							var _n47 = _n46.a;
 							var others = list.b;
 							return author$project$Parser$Expr$OneOpAndRest(
-								{i: author$project$Project$Source$Module$Def$Expr$Operator$mul, bx: others});
+								{i: author$project$Project$Source$Module$Def$Expr$Operator$mul, bv: others});
 						case 13:
 							if (list.b.b) {
 								if ((list.b.a.$ === 1) && (list.b.a.a === 16)) {
@@ -10313,13 +10368,13 @@ var author$project$Parser$Expr$parseOne = function (list) {
 									var _n12 = _n11.a;
 									var others = _n10.b;
 									return author$project$Parser$Expr$OneOpAndRest(
-										{i: author$project$Project$Source$Module$Def$Expr$Operator$notEqual, bx: others});
+										{i: author$project$Project$Source$Module$Def$Expr$Operator$notEqual, bv: others});
 								} else {
 									var _n50 = list.a;
 									var _n51 = _n50.a;
 									var others = list.b;
 									return author$project$Parser$Expr$OneOpAndRest(
-										{i: author$project$Project$Source$Module$Def$Expr$Operator$div, bx: others});
+										{i: author$project$Project$Source$Module$Def$Expr$Operator$div, bv: others});
 								}
 							} else {
 								var _n48 = list.a;
@@ -10328,7 +10383,7 @@ var author$project$Parser$Expr$parseOne = function (list) {
 								return author$project$Parser$Expr$OneOpEnd(
 									{
 										i: author$project$Project$Source$Module$Def$Expr$Operator$div,
-										v: _List_fromArray(
+										u: _List_fromArray(
 											[
 												_Utils_Tuple2(_char, true)
 											])
@@ -10339,7 +10394,7 @@ var author$project$Parser$Expr$parseOne = function (list) {
 							var _n53 = _n52.a;
 							var others = list.b;
 							return author$project$Parser$Expr$OneOpAndRest(
-								{i: author$project$Project$Source$Module$Def$Expr$Operator$factorial, bx: others});
+								{i: author$project$Project$Source$Module$Def$Expr$Operator$factorial, bv: others});
 						default:
 							var _n54 = list.a;
 							var _char = _n54.b;
@@ -10395,9 +10450,9 @@ var author$project$Parser$Expr$parseOne = function (list) {
 						A3(
 							author$project$Parser$Expr$parseIntLiteral,
 							{
-								ah: _List_fromArray(
+								af: _List_fromArray(
 									[num]),
-								ak: false
+								ai: false
 							},
 							others,
 							_List_fromArray(
@@ -10430,8 +10485,8 @@ var author$project$Parser$Expr$parseStartTermLoop = F2(
 			switch (_n0.$) {
 				case 0:
 					if (!_n0.a.$) {
-						var term = _n0.a.a.B;
-						var rest = _n0.a.a.bx;
+						var term = _n0.a.a.z;
+						var rest = _n0.a.a.bv;
 						var $temp$intermediate = _Utils_ap(
 							intermediate,
 							_List_fromArray(
@@ -10443,8 +10498,8 @@ var author$project$Parser$Expr$parseStartTermLoop = F2(
 						list = $temp$list;
 						continue parseStartTermLoop;
 					} else {
-						var term = _n0.a.a.B;
-						var textAreaValue = _n0.a.a.v;
+						var term = _n0.a.a.z;
+						var textAreaValue = _n0.a.a.u;
 						return A2(
 							author$project$Parser$Expr$batchTermResult,
 							_Utils_ap(
@@ -10457,7 +10512,7 @@ var author$project$Parser$Expr$parseStartTermLoop = F2(
 					}
 				case 1:
 					var op = _n0.a.i;
-					var rest = _n0.a.bx;
+					var rest = _n0.a.bv;
 					var $temp$intermediate = _Utils_ap(
 						intermediate,
 						_List_fromArray(
@@ -10470,7 +10525,7 @@ var author$project$Parser$Expr$parseStartTermLoop = F2(
 					continue parseStartTermLoop;
 				case 2:
 					var op = _n0.a.i;
-					var textAreaValue = _n0.a.v;
+					var textAreaValue = _n0.a.u;
 					return A2(
 						author$project$Parser$Expr$batchTermResult,
 						_Utils_ap(
@@ -10844,12 +10899,12 @@ var author$project$Parser$Type$inTypeParser = F3(
 								var l = label.a;
 								return author$project$Parser$Type$TypeToExpr(
 									{
-										bx: others,
-										a3: author$project$Project$Source$Module$Def$Type$fromLabel(l)
+										bv: others,
+										a1: author$project$Project$Source$Module$Def$Type$fromLabel(l)
 									});
 							} else {
 								return author$project$Parser$Type$TypeToExpr(
-									{bx: others, a3: author$project$Project$Source$Module$Def$Type$empty});
+									{bv: others, a1: author$project$Project$Source$Module$Def$Type$empty});
 							}
 						} else {
 							var _n5 = rest.a;
@@ -10944,12 +10999,12 @@ var author$project$Parser$Type$inTypeParser = F3(
 					var l = label.a;
 					return author$project$Parser$Type$TypeEnd(
 						{
-							v: textAreaValue,
-							a3: author$project$Project$Source$Module$Def$Type$fromLabel(l)
+							u: textAreaValue,
+							a1: author$project$Project$Source$Module$Def$Type$fromLabel(l)
 						});
 				} else {
 					return author$project$Parser$Type$TypeEnd(
-						{v: textAreaValue, a3: author$project$Project$Source$Module$Def$Type$empty});
+						{u: textAreaValue, a1: author$project$Project$Source$Module$Def$Type$empty});
 				}
 			}
 		}
@@ -10972,7 +11027,7 @@ var author$project$Parser$Type$parse = function (list) {
 						var _char = _n2.b;
 						var others = list.b;
 						return author$project$Parser$Type$TypeToExpr(
-							{bx: others, a3: author$project$Project$Source$Module$Def$Type$empty});
+							{bv: others, a1: author$project$Project$Source$Module$Def$Type$empty});
 					} else {
 						var _n4 = list.a;
 						var _char = _n4.b;
@@ -11043,7 +11098,7 @@ var author$project$Parser$Type$parse = function (list) {
 			}
 		} else {
 			return author$project$Parser$Type$TypeEnd(
-				{v: _List_Nil, a3: author$project$Project$Source$Module$Def$Type$empty});
+				{u: _List_Nil, a1: author$project$Project$Source$Module$Def$Type$empty});
 		}
 	}
 };
@@ -11054,33 +11109,33 @@ var author$project$Parser$beginWithName = function (list) {
 			var name = _n0.a;
 			var textAreaValue = _n0.b;
 			return author$project$Parser$BeginWithNameEndName(
-				{aS: name, v: textAreaValue});
+				{aQ: name, u: textAreaValue});
 		case 1:
 			var name = _n0.a;
 			var restN = _n0.b;
 			var _n1 = author$project$Parser$Type$parse(restN);
 			if (!_n1.$) {
-				var type_ = _n1.a.a3;
-				var textAreaValue = _n1.a.v;
+				var type_ = _n1.a.a1;
+				var textAreaValue = _n1.a.u;
 				return author$project$Parser$BeginWithNameEndType(
-					{aS: name, v: textAreaValue, a3: type_});
+					{aQ: name, u: textAreaValue, a1: type_});
 			} else {
-				var type_ = _n1.a.a3;
-				var rest = _n1.a.bx;
+				var type_ = _n1.a.a1;
+				var rest = _n1.a.bv;
 				var _n2 = author$project$Parser$Expr$parseStartTerm(rest);
 				if (!_n2.$) {
-					var head = _n2.a.bT;
-					var others = _n2.a.b3;
-					var textAreaValue = _n2.a.v;
+					var head = _n2.a.bR;
+					var others = _n2.a.b2;
+					var textAreaValue = _n2.a.u;
 					return author$project$Parser$BeginWithNameEndExprTerm(
-						{I: head, aS: name, L: others, v: textAreaValue, a3: type_});
+						{G: head, aQ: name, J: others, u: textAreaValue, a1: type_});
 				} else {
-					var head = _n2.a.bT;
-					var others = _n2.a.b3;
-					var last = _n2.a.Z;
-					var textAreaValue = _n2.a.v;
+					var head = _n2.a.bR;
+					var others = _n2.a.b2;
+					var last = _n2.a.X;
+					var textAreaValue = _n2.a.u;
 					return author$project$Parser$BeginWithNameEndExprOp(
-						{I: head, aE: last, aS: name, L: others, v: textAreaValue, a3: type_});
+						{G: head, aC: last, aQ: name, J: others, u: textAreaValue, a1: type_});
 				}
 			}
 		default:
@@ -11088,18 +11143,18 @@ var author$project$Parser$beginWithName = function (list) {
 			var rest = _n0.b;
 			var _n3 = author$project$Parser$Expr$parseStartTerm(rest);
 			if (!_n3.$) {
-				var head = _n3.a.bT;
-				var others = _n3.a.b3;
-				var textAreaValue = _n3.a.v;
+				var head = _n3.a.bR;
+				var others = _n3.a.b2;
+				var textAreaValue = _n3.a.u;
 				return author$project$Parser$BeginWithNameEndExprTerm(
-					{I: head, aS: name, L: others, v: textAreaValue, a3: author$project$Project$Source$Module$Def$Type$empty});
+					{G: head, aQ: name, J: others, u: textAreaValue, a1: author$project$Project$Source$Module$Def$Type$empty});
 			} else {
-				var head = _n3.a.bT;
-				var others = _n3.a.b3;
-				var last = _n3.a.Z;
-				var textAreaValue = _n3.a.v;
+				var head = _n3.a.bR;
+				var others = _n3.a.b2;
+				var last = _n3.a.X;
+				var textAreaValue = _n3.a.u;
 				return author$project$Parser$BeginWithNameEndExprOp(
-					{I: head, aE: last, aS: name, L: others, v: textAreaValue, a3: author$project$Project$Source$Module$Def$Type$empty});
+					{G: head, aC: last, aQ: name, J: others, u: textAreaValue, a1: author$project$Project$Source$Module$Def$Type$empty});
 			}
 	}
 };
@@ -11316,8 +11371,8 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 			author$project$Parser$SimpleChar$fromString(string));
 		switch (_n0.$) {
 			case 0:
-				var name = _n0.a.aS;
-				var textAreaValue = _n0.a.v;
+				var name = _n0.a.aQ;
+				var textAreaValue = _n0.a.u;
 				return _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -11329,12 +11384,12 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 					_List_fromArray(
 						[
 							author$project$Panel$Editor$Module$EmitChangeName(
-							{x: index, aS: name, p: moduleRef})
+							{bV: index, aQ: name, b3: moduleRef})
 						]));
 			case 1:
-				var name = _n0.a.aS;
-				var type_ = _n0.a.a3;
-				var textAreaValue = _n0.a.v;
+				var name = _n0.a.aQ;
+				var type_ = _n0.a.a1;
+				var textAreaValue = _n0.a.u;
 				return author$project$Project$Source$Module$Def$Type$isEmpty(type_) ? _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -11344,7 +11399,7 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 					_List_fromArray(
 						[
 							author$project$Panel$Editor$Module$EmitChangeName(
-							{x: index, aS: name, p: moduleRef}),
+							{bV: index, aQ: name, b3: moduleRef}),
 							author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
 						])) : _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
@@ -11357,17 +11412,17 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 					_List_fromArray(
 						[
 							author$project$Panel$Editor$Module$EmitChangeName(
-							{x: index, aS: name, p: moduleRef}),
+							{bV: index, aQ: name, b3: moduleRef}),
 							author$project$Panel$Editor$Module$EmitChangeType(
-							{x: index, p: moduleRef, a3: type_}),
+							{bV: index, b3: moduleRef, a1: type_}),
 							author$project$Panel$Editor$Module$textAreaValueToSetTextEmit(textAreaValue)
 						]));
 			case 2:
-				var name = _n0.a.aS;
-				var type_ = _n0.a.a3;
-				var headTerm = _n0.a.I;
-				var opAndTermList = _n0.a.L;
-				var textAreaValue = _n0.a.v;
+				var name = _n0.a.aQ;
+				var type_ = _n0.a.a1;
+				var headTerm = _n0.a.G;
+				var opAndTermList = _n0.a.J;
+				var textAreaValue = _n0.a.u;
 				return _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -11382,7 +11437,7 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 						_List_fromArray(
 							[
 								author$project$Panel$Editor$Module$EmitChangeName(
-								{x: index, aS: name, p: moduleRef}),
+								{bV: index, aQ: name, b3: moduleRef}),
 								author$project$Panel$Editor$Module$EmitSetTextAreaValue(
 								elm$core$String$fromList(
 									A2(elm$core$List$map, elm$core$Tuple$first, textAreaValue)))
@@ -11391,24 +11446,24 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 							author$project$Project$Source$Module$Def$Type$isEmpty(type_) ? _List_Nil : _List_fromArray(
 								[
 									author$project$Panel$Editor$Module$EmitChangeType(
-									{x: index, p: moduleRef, a3: type_})
+									{bV: index, b3: moduleRef, a1: type_})
 								]),
 							_List_fromArray(
 								[
 									author$project$Panel$Editor$Module$EmitChangeExpr(
 									{
-										aO: A2(author$project$Project$Source$Module$Def$Expr$make, headTerm, opAndTermList),
-										x: index,
-										p: moduleRef
+										aM: A2(author$project$Project$Source$Module$Def$Expr$make, headTerm, opAndTermList),
+										bV: index,
+										b3: moduleRef
 									})
 								]))));
 			default:
-				var name = _n0.a.aS;
-				var type_ = _n0.a.a3;
-				var headTerm = _n0.a.I;
-				var opAndTermList = _n0.a.L;
-				var lastOp = _n0.a.aE;
-				var textAreaValue = _n0.a.v;
+				var name = _n0.a.aQ;
+				var type_ = _n0.a.a1;
+				var headTerm = _n0.a.G;
+				var opAndTermList = _n0.a.J;
+				var lastOp = _n0.a.aC;
+				var textAreaValue = _n0.a.u;
 				return _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -11422,12 +11477,12 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 					_List_fromArray(
 						[
 							author$project$Panel$Editor$Module$EmitChangeName(
-							{x: index, aS: name, p: moduleRef}),
+							{bV: index, aQ: name, b3: moduleRef}),
 							author$project$Panel$Editor$Module$EmitChangeType(
-							{x: index, p: moduleRef, a3: type_}),
+							{bV: index, b3: moduleRef, a1: type_}),
 							author$project$Panel$Editor$Module$EmitChangeExpr(
 							{
-								aO: A2(
+								aM: A2(
 									author$project$Project$Source$Module$Def$Expr$make,
 									headTerm,
 									_Utils_ap(
@@ -11436,8 +11491,8 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 											[
 												_Utils_Tuple2(lastOp, author$project$Project$Source$Module$Def$Expr$Term$none)
 											]))),
-								x: index,
-								p: moduleRef
+								bV: index,
+								b3: moduleRef
 							}),
 							author$project$Panel$Editor$Module$textAreaValueToSetTextEmit(textAreaValue)
 						]));
@@ -11510,47 +11565,47 @@ var author$project$Parser$Expr$batchOpResultLoop = F2(
 			if (_n0.b.b) {
 				if (_n0.a.$ === 1) {
 					if (!_n0.b.a.$) {
-						var head = _n0.a.a.bT;
-						var others = _n0.a.a.b3;
-						var last = _n0.a.a.Z;
-						var textAreaValue = _n0.a.a.v;
+						var head = _n0.a.a.bR;
+						var others = _n0.a.a.b2;
+						var last = _n0.a.a.X;
+						var textAreaValue = _n0.a.a.u;
 						var _n1 = _n0.b;
 						var term = _n1.a.a;
 						var listOthers = _n1.b;
 						var $temp$intermediate = author$project$Parser$Expr$OpLastTerm(
 							{
-								bT: head,
-								Z: term,
-								b3: _Utils_ap(
+								bR: head,
+								X: term,
+								b2: _Utils_ap(
 									others,
 									_List_fromArray(
 										[
 											_Utils_Tuple2(last, author$project$Project$Source$Module$Def$Expr$Operator$app)
 										])),
-								v: textAreaValue
+								u: textAreaValue
 							}),
 							$temp$list = listOthers;
 						intermediate = $temp$intermediate;
 						list = $temp$list;
 						continue batchOpResultLoop;
 					} else {
-						var head = _n0.a.a.bT;
-						var others = _n0.a.a.b3;
-						var last = _n0.a.a.Z;
-						var textAreaValue = _n0.a.a.v;
+						var head = _n0.a.a.bR;
+						var others = _n0.a.a.b2;
+						var last = _n0.a.a.X;
+						var textAreaValue = _n0.a.a.u;
 						var _n2 = _n0.b;
 						var op = _n2.a.a;
 						var listOthers = _n2.b;
 						var $temp$intermediate = author$project$Parser$Expr$OpLastOp(
 							{
-								bT: head,
-								b3: _Utils_ap(
+								bR: head,
+								b2: _Utils_ap(
 									others,
 									_List_fromArray(
 										[
 											_Utils_Tuple2(last, op)
 										])),
-								v: textAreaValue
+								u: textAreaValue
 							}),
 							$temp$list = listOthers;
 						intermediate = $temp$intermediate;
@@ -11559,35 +11614,35 @@ var author$project$Parser$Expr$batchOpResultLoop = F2(
 					}
 				} else {
 					if (!_n0.b.a.$) {
-						var head = _n0.a.a.bT;
-						var others = _n0.a.a.b3;
-						var textAreaValue = _n0.a.a.v;
+						var head = _n0.a.a.bR;
+						var others = _n0.a.a.b2;
+						var textAreaValue = _n0.a.a.u;
 						var _n3 = _n0.b;
 						var term = _n3.a.a;
 						var listOthers = _n3.b;
 						var $temp$intermediate = author$project$Parser$Expr$OpLastTerm(
-							{bT: head, Z: term, b3: others, v: textAreaValue}),
+							{bR: head, X: term, b2: others, u: textAreaValue}),
 							$temp$list = listOthers;
 						intermediate = $temp$intermediate;
 						list = $temp$list;
 						continue batchOpResultLoop;
 					} else {
-						var head = _n0.a.a.bT;
-						var others = _n0.a.a.b3;
-						var textAreaValue = _n0.a.a.v;
+						var head = _n0.a.a.bR;
+						var others = _n0.a.a.b2;
+						var textAreaValue = _n0.a.a.u;
 						var _n4 = _n0.b;
 						var op = _n4.a.a;
 						var listOthers = _n4.b;
 						var $temp$intermediate = author$project$Parser$Expr$OpLastOp(
 							{
-								bT: head,
-								b3: _Utils_ap(
+								bR: head,
+								b2: _Utils_ap(
 									others,
 									_List_fromArray(
 										[
 											_Utils_Tuple2(author$project$Project$Source$Module$Def$Expr$Term$none, op)
 										])),
-								v: textAreaValue
+								u: textAreaValue
 							}),
 							$temp$list = listOthers;
 						intermediate = $temp$intermediate;
@@ -11609,7 +11664,7 @@ var author$project$Parser$Expr$batchOpResult = F2(
 				return A2(
 					author$project$Parser$Expr$batchOpResultLoop,
 					author$project$Parser$Expr$OpLastTerm(
-						{bT: author$project$Project$Source$Module$Def$Expr$Operator$blank, Z: term, b3: _List_Nil, v: textAreaValue}),
+						{bR: author$project$Project$Source$Module$Def$Expr$Operator$blank, X: term, b2: _List_Nil, u: textAreaValue}),
 					others);
 			} else {
 				var op = list.a.a;
@@ -11617,12 +11672,12 @@ var author$project$Parser$Expr$batchOpResult = F2(
 				return A2(
 					author$project$Parser$Expr$batchOpResultLoop,
 					author$project$Parser$Expr$OpLastOp(
-						{bT: op, b3: _List_Nil, v: textAreaValue}),
+						{bR: op, b2: _List_Nil, u: textAreaValue}),
 					others);
 			}
 		} else {
 			return author$project$Parser$Expr$OpLastOp(
-				{bT: author$project$Project$Source$Module$Def$Expr$Operator$blank, b3: _List_Nil, v: textAreaValue});
+				{bR: author$project$Project$Source$Module$Def$Expr$Operator$blank, b2: _List_Nil, u: textAreaValue});
 		}
 	});
 var author$project$Parser$Expr$parseStartOpLoop = F2(
@@ -11633,8 +11688,8 @@ var author$project$Parser$Expr$parseStartOpLoop = F2(
 			switch (_n0.$) {
 				case 0:
 					if (!_n0.a.$) {
-						var term = _n0.a.a.B;
-						var rest = _n0.a.a.bx;
+						var term = _n0.a.a.z;
+						var rest = _n0.a.a.bv;
 						var $temp$intermediate = _Utils_ap(
 							intermediate,
 							_List_fromArray(
@@ -11646,8 +11701,8 @@ var author$project$Parser$Expr$parseStartOpLoop = F2(
 						list = $temp$list;
 						continue parseStartOpLoop;
 					} else {
-						var term = _n0.a.a.B;
-						var textAreaValue = _n0.a.a.v;
+						var term = _n0.a.a.z;
+						var textAreaValue = _n0.a.a.u;
 						return A2(
 							author$project$Parser$Expr$batchOpResult,
 							_Utils_ap(
@@ -11660,7 +11715,7 @@ var author$project$Parser$Expr$parseStartOpLoop = F2(
 					}
 				case 1:
 					var op = _n0.a.i;
-					var rest = _n0.a.bx;
+					var rest = _n0.a.bv;
 					var $temp$intermediate = _Utils_ap(
 						intermediate,
 						_List_fromArray(
@@ -11673,7 +11728,7 @@ var author$project$Parser$Expr$parseStartOpLoop = F2(
 					continue parseStartOpLoop;
 				case 2:
 					var op = _n0.a.i;
-					var textAreaValue = _n0.a.v;
+					var textAreaValue = _n0.a.u;
 					return A2(
 						author$project$Parser$Expr$batchOpResult,
 						_Utils_ap(
@@ -11705,18 +11760,18 @@ var author$project$Parser$Expr$parseStartOp = function (list) {
 var author$project$Parser$beginWithExprOp = function (list) {
 	var _n0 = author$project$Parser$Expr$parseStartOp(list);
 	if (_n0.$ === 1) {
-		var head = _n0.a.bT;
-		var others = _n0.a.b3;
-		var last = _n0.a.Z;
-		var textAreaValue = _n0.a.v;
+		var head = _n0.a.bR;
+		var others = _n0.a.b2;
+		var last = _n0.a.X;
+		var textAreaValue = _n0.a.u;
 		return author$project$Parser$BeginWithOpEndTerm(
-			{bh: head, bY: last, bC: others, v: textAreaValue});
+			{bf: head, bX: last, bA: others, u: textAreaValue});
 	} else {
-		var head = _n0.a.bT;
-		var others = _n0.a.b3;
-		var textAreaValue = _n0.a.v;
+		var head = _n0.a.bR;
+		var others = _n0.a.b2;
+		var textAreaValue = _n0.a.u;
 		return author$project$Parser$BeginWithOpEndOp(
-			{bh: head, bC: others, v: textAreaValue});
+			{bf: head, bA: others, u: textAreaValue});
 	}
 };
 var author$project$Project$Source$Module$Def$Expr$getTermAt = F2(
@@ -11814,8 +11869,8 @@ var author$project$Project$Source$Module$Def$Expr$replaceAndInsertOpLastOp = F4(
 			var _n0 = author$project$Utility$ListExtra$headAndLast(termOpList);
 			if (_n0.$ === 1) {
 				return {
-					Y: _List_Nil,
-					ab: _Utils_Tuple2(headOp, targetTerm)
+					W: _List_Nil,
+					_: _Utils_Tuple2(headOp, targetTerm)
 				};
 			} else {
 				var _n1 = _n0.a;
@@ -11824,13 +11879,13 @@ var author$project$Project$Source$Module$Def$Expr$replaceAndInsertOpLastOp = F4(
 				var _n3 = _n1.b;
 				var lastOp = _n3.b;
 				return {
-					Y: _Utils_ap(
+					W: _Utils_ap(
 						A2(author$project$Project$Source$Module$Def$Expr$offsetTermOpList, _List_Nil, termOpList),
 						_List_fromArray(
 							[
 								_Utils_Tuple2(lastOp, targetTerm)
 							])),
-					ab: _Utils_Tuple2(headOp, headTerm)
+					_: _Utils_Tuple2(headOp, headTerm)
 				};
 			}
 		}();
@@ -11838,8 +11893,8 @@ var author$project$Project$Source$Module$Def$Expr$replaceAndInsertOpLastOp = F4(
 			author$project$Project$Source$Module$Def$Expr$mapOthers,
 			A2(
 				elm$core$Basics$composeR,
-				A2(author$project$Utility$ListExtra$setAt, index, replaceAndInsertElement.ab),
-				A2(author$project$Utility$ListExtra$insertList, index + 1, replaceAndInsertElement.Y)),
+				A2(author$project$Utility$ListExtra$setAt, index, replaceAndInsertElement._),
+				A2(author$project$Utility$ListExtra$insertList, index + 1, replaceAndInsertElement.W)),
 			expr);
 	});
 var author$project$Project$Source$Module$Def$Expr$replaceAndInsertOpLastTerm = F5(
@@ -11852,11 +11907,11 @@ var author$project$Project$Source$Module$Def$Expr$replaceAndInsertOpLastTerm = F
 			var _n0 = author$project$Utility$ListExtra$headAndLast(termOpList);
 			if (_n0.$ === 1) {
 				return {
-					Y: _Utils_eq(targetTerm, author$project$Project$Source$Module$Def$Expr$Term$none) ? _List_Nil : _List_fromArray(
+					W: _Utils_eq(targetTerm, author$project$Project$Source$Module$Def$Expr$Term$none) ? _List_Nil : _List_fromArray(
 						[
 							_Utils_Tuple2(author$project$Project$Source$Module$Def$Expr$Operator$blank, targetTerm)
 						]),
-					ab: _Utils_Tuple2(op, lastTerm)
+					_: _Utils_Tuple2(op, lastTerm)
 				};
 			} else {
 				var _n1 = _n0.a;
@@ -11865,14 +11920,14 @@ var author$project$Project$Source$Module$Def$Expr$replaceAndInsertOpLastTerm = F
 				var _n3 = _n1.b;
 				var lastOp = _n3.b;
 				return {
-					Y: _Utils_ap(
+					W: _Utils_ap(
 						A2(author$project$Project$Source$Module$Def$Expr$offsetTermOpList, _List_Nil, termOpList),
 						_List_fromArray(
 							[
 								_Utils_Tuple2(lastOp, lastTerm),
 								_Utils_Tuple2(author$project$Project$Source$Module$Def$Expr$Operator$blank, targetTerm)
 							])),
-					ab: _Utils_Tuple2(op, headTerm)
+					_: _Utils_Tuple2(op, headTerm)
 				};
 			}
 		}();
@@ -11881,8 +11936,8 @@ var author$project$Project$Source$Module$Def$Expr$replaceAndInsertOpLastTerm = F
 				author$project$Project$Source$Module$Def$Expr$mapOthers,
 				A2(
 					elm$core$Basics$composeR,
-					A2(author$project$Utility$ListExtra$setAt, index, replaceAndInsertElement.ab),
-					A2(author$project$Utility$ListExtra$insertList, index + 1, replaceAndInsertElement.Y)),
+					A2(author$project$Utility$ListExtra$setAt, index, replaceAndInsertElement._),
+					A2(author$project$Utility$ListExtra$insertList, index + 1, replaceAndInsertElement.W)),
 				expr));
 	});
 var author$project$Panel$Editor$Module$parserBeginWithOp = F5(
@@ -11890,10 +11945,10 @@ var author$project$Panel$Editor$Module$parserBeginWithOp = F5(
 		var _n0 = author$project$Parser$beginWithExprOp(
 			author$project$Parser$SimpleChar$fromString(string));
 		if (!_n0.$) {
-			var headOp = _n0.a.bh;
-			var termAndOpList = _n0.a.bC;
-			var lastTerm = _n0.a.bY;
-			var textAreaValue = _n0.a.v;
+			var headOp = _n0.a.bf;
+			var termAndOpList = _n0.a.bA;
+			var lastTerm = _n0.a.bX;
+			var textAreaValue = _n0.a.u;
 			return _Utils_Tuple2(
 				author$project$Panel$Editor$Module$ActivePartDefList(
 					author$project$Panel$Editor$Module$ActivePartDef(
@@ -11908,16 +11963,16 @@ var author$project$Panel$Editor$Module$parserBeginWithOp = F5(
 					[
 						author$project$Panel$Editor$Module$EmitChangeExpr(
 						{
-							aO: A5(author$project$Project$Source$Module$Def$Expr$replaceAndInsertOpLastTerm, opIndex, headOp, termAndOpList, lastTerm, expr),
-							x: index,
-							p: moduleRef
+							aM: A5(author$project$Project$Source$Module$Def$Expr$replaceAndInsertOpLastTerm, opIndex, headOp, termAndOpList, lastTerm, expr),
+							bV: index,
+							b3: moduleRef
 						}),
 						author$project$Panel$Editor$Module$textAreaValueToSetTextEmit(textAreaValue)
 					]));
 		} else {
-			var headOp = _n0.a.bh;
-			var termAndOpList = _n0.a.bC;
-			var textAreaValue = _n0.a.v;
+			var headOp = _n0.a.bf;
+			var termAndOpList = _n0.a.bA;
+			var textAreaValue = _n0.a.u;
 			return _Utils_Tuple2(
 				author$project$Panel$Editor$Module$ActivePartDefList(
 					author$project$Panel$Editor$Module$ActivePartDef(
@@ -11935,9 +11990,9 @@ var author$project$Panel$Editor$Module$parserBeginWithOp = F5(
 						[
 							author$project$Panel$Editor$Module$EmitChangeExpr(
 							{
-								aO: A4(author$project$Project$Source$Module$Def$Expr$replaceAndInsertOpLastOp, opIndex, headOp, termAndOpList, expr),
-								x: index,
-								p: moduleRef
+								aM: A4(author$project$Project$Source$Module$Def$Expr$replaceAndInsertOpLastOp, opIndex, headOp, termAndOpList, expr),
+								bV: index,
+								b3: moduleRef
 							})
 						]),
 					_Utils_eq(termAndOpList, _List_Nil) ? _List_Nil : _List_fromArray(
@@ -11965,18 +12020,18 @@ var author$project$Parser$BeginWithTermEndTerm = function (a) {
 var author$project$Parser$beginWithExprTerm = function (list) {
 	var _n0 = author$project$Parser$Expr$parseStartTerm(list);
 	if (!_n0.$) {
-		var head = _n0.a.bT;
-		var others = _n0.a.b3;
-		var textAreaValue = _n0.a.v;
+		var head = _n0.a.bR;
+		var others = _n0.a.b2;
+		var textAreaValue = _n0.a.u;
 		return author$project$Parser$BeginWithTermEndTerm(
-			{I: head, L: others, v: textAreaValue});
+			{G: head, J: others, u: textAreaValue});
 	} else {
-		var head = _n0.a.bT;
-		var others = _n0.a.b3;
-		var last = _n0.a.Z;
-		var textAreaValue = _n0.a.v;
+		var head = _n0.a.bR;
+		var others = _n0.a.b2;
+		var last = _n0.a.X;
+		var textAreaValue = _n0.a.u;
 		return author$project$Parser$BeginWithTermEndOp(
-			{I: head, aE: last, L: others, v: textAreaValue});
+			{G: head, aC: last, J: others, u: textAreaValue});
 	}
 };
 var author$project$Project$Source$Module$Def$Expr$replaceAndInsertHeadLastOp = F4(
@@ -12059,9 +12114,9 @@ var author$project$Panel$Editor$Module$parserBeginWithTerm = F5(
 		var _n0 = author$project$Parser$beginWithExprTerm(
 			author$project$Parser$SimpleChar$fromString(string));
 		if (!_n0.$) {
-			var headTerm = _n0.a.I;
-			var opAndTermList = _n0.a.L;
-			var textAreaValue = _n0.a.v;
+			var headTerm = _n0.a.G;
+			var opAndTermList = _n0.a.J;
+			var textAreaValue = _n0.a.u;
 			return _Utils_Tuple2(
 				author$project$Panel$Editor$Module$ActivePartDefList(
 					author$project$Panel$Editor$Module$ActivePartDef(
@@ -12079,9 +12134,9 @@ var author$project$Panel$Editor$Module$parserBeginWithTerm = F5(
 						[
 							author$project$Panel$Editor$Module$EmitChangeExpr(
 							{
-								aO: ((!termIndex) ? A2(author$project$Project$Source$Module$Def$Expr$replaceAndInsertHeadLastTerm, headTerm, opAndTermList) : A3(author$project$Project$Source$Module$Def$Expr$replaceAndInsertTermLastTerm, termIndex - 1, headTerm, opAndTermList))(expr),
-								x: index,
-								p: moduleRef
+								aM: ((!termIndex) ? A2(author$project$Project$Source$Module$Def$Expr$replaceAndInsertHeadLastTerm, headTerm, opAndTermList) : A3(author$project$Project$Source$Module$Def$Expr$replaceAndInsertTermLastTerm, termIndex - 1, headTerm, opAndTermList))(expr),
+								bV: index,
+								b3: moduleRef
 							})
 						]),
 					_Utils_eq(opAndTermList, _List_Nil) ? _List_Nil : _List_fromArray(
@@ -12089,10 +12144,10 @@ var author$project$Panel$Editor$Module$parserBeginWithTerm = F5(
 							author$project$Panel$Editor$Module$textAreaValueToSetTextEmit(textAreaValue)
 						])));
 		} else {
-			var headTerm = _n0.a.I;
-			var opAndTermList = _n0.a.L;
-			var lastOp = _n0.a.aE;
-			var textAreaValue = _n0.a.v;
+			var headTerm = _n0.a.G;
+			var opAndTermList = _n0.a.J;
+			var lastOp = _n0.a.aC;
+			var textAreaValue = _n0.a.u;
 			return _Utils_Tuple2(
 				author$project$Panel$Editor$Module$ActivePartDefList(
 					author$project$Panel$Editor$Module$ActivePartDef(
@@ -12107,9 +12162,9 @@ var author$project$Panel$Editor$Module$parserBeginWithTerm = F5(
 					[
 						author$project$Panel$Editor$Module$EmitChangeExpr(
 						{
-							aO: ((!termIndex) ? A3(author$project$Project$Source$Module$Def$Expr$replaceAndInsertHeadLastOp, headTerm, opAndTermList, lastOp) : A4(author$project$Project$Source$Module$Def$Expr$replaceAndInsertTermLastOp, termIndex, headTerm, opAndTermList, lastOp))(expr),
-							x: index,
-							p: moduleRef
+							aM: ((!termIndex) ? A3(author$project$Project$Source$Module$Def$Expr$replaceAndInsertHeadLastOp, headTerm, opAndTermList, lastOp) : A4(author$project$Project$Source$Module$Def$Expr$replaceAndInsertTermLastOp, termIndex, headTerm, opAndTermList, lastOp))(expr),
+							bV: index,
+							b3: moduleRef
 						}),
 						author$project$Panel$Editor$Module$textAreaValueToSetTextEmit(textAreaValue)
 					]));
@@ -12127,27 +12182,27 @@ var author$project$Parser$BeginWithTypeEndType = function (a) {
 var author$project$Parser$beginWithType = function (list) {
 	var _n0 = author$project$Parser$Type$parse(list);
 	if (!_n0.$) {
-		var type_ = _n0.a.a3;
-		var textAreaValue = _n0.a.v;
+		var type_ = _n0.a.a1;
+		var textAreaValue = _n0.a.u;
 		return author$project$Parser$BeginWithTypeEndType(
-			{v: textAreaValue, a3: type_});
+			{u: textAreaValue, a1: type_});
 	} else {
-		var type_ = _n0.a.a3;
-		var rest = _n0.a.bx;
+		var type_ = _n0.a.a1;
+		var rest = _n0.a.bv;
 		var _n1 = author$project$Parser$Expr$parseStartTerm(rest);
 		if (!_n1.$) {
-			var head = _n1.a.bT;
-			var others = _n1.a.b3;
-			var textAreaValue = _n1.a.v;
+			var head = _n1.a.bR;
+			var others = _n1.a.b2;
+			var textAreaValue = _n1.a.u;
 			return author$project$Parser$BeginWithTypeEndExprTerm(
-				{I: head, L: others, v: textAreaValue, a3: type_});
+				{G: head, J: others, u: textAreaValue, a1: type_});
 		} else {
-			var head = _n1.a.bT;
-			var others = _n1.a.b3;
-			var last = _n1.a.Z;
-			var textAreaValue = _n1.a.v;
+			var head = _n1.a.bR;
+			var others = _n1.a.b2;
+			var last = _n1.a.X;
+			var textAreaValue = _n1.a.u;
 			return author$project$Parser$BeginWithTypeEndExprOp(
-				{I: head, aE: last, L: others, v: textAreaValue, a3: type_});
+				{G: head, aC: last, J: others, u: textAreaValue, a1: type_});
 		}
 	}
 };
@@ -12157,8 +12212,8 @@ var author$project$Panel$Editor$Module$parserBeginWithType = F3(
 			author$project$Parser$SimpleChar$fromString(string));
 		switch (_n0.$) {
 			case 0:
-				var type_ = _n0.a.a3;
-				var textAreaValue = _n0.a.v;
+				var type_ = _n0.a.a1;
+				var textAreaValue = _n0.a.u;
 				return _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -12170,13 +12225,13 @@ var author$project$Panel$Editor$Module$parserBeginWithType = F3(
 					_List_fromArray(
 						[
 							author$project$Panel$Editor$Module$EmitChangeType(
-							{x: index, p: moduleRef, a3: type_})
+							{bV: index, b3: moduleRef, a1: type_})
 						]));
 			case 1:
-				var type_ = _n0.a.a3;
-				var headTerm = _n0.a.I;
-				var opAndTermList = _n0.a.L;
-				var textAreaValue = _n0.a.v;
+				var type_ = _n0.a.a1;
+				var headTerm = _n0.a.G;
+				var opAndTermList = _n0.a.J;
+				var textAreaValue = _n0.a.u;
 				return _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -12198,21 +12253,21 @@ var author$project$Panel$Editor$Module$parserBeginWithType = F3(
 					_List_fromArray(
 						[
 							author$project$Panel$Editor$Module$EmitChangeType(
-							{x: index, p: moduleRef, a3: type_}),
+							{bV: index, b3: moduleRef, a1: type_}),
 							author$project$Panel$Editor$Module$EmitChangeExpr(
 							{
-								aO: A2(author$project$Project$Source$Module$Def$Expr$make, headTerm, opAndTermList),
-								x: index,
-								p: moduleRef
+								aM: A2(author$project$Project$Source$Module$Def$Expr$make, headTerm, opAndTermList),
+								bV: index,
+								b3: moduleRef
 							}),
 							author$project$Panel$Editor$Module$textAreaValueToSetTextEmit(textAreaValue)
 						]));
 			default:
-				var type_ = _n0.a.a3;
-				var headTerm = _n0.a.I;
-				var opAndTermList = _n0.a.L;
-				var lastOp = _n0.a.aE;
-				var textAreaValue = _n0.a.v;
+				var type_ = _n0.a.a1;
+				var headTerm = _n0.a.G;
+				var opAndTermList = _n0.a.J;
+				var lastOp = _n0.a.aC;
+				var textAreaValue = _n0.a.u;
 				return _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -12222,10 +12277,10 @@ var author$project$Panel$Editor$Module$parserBeginWithType = F3(
 					_List_fromArray(
 						[
 							author$project$Panel$Editor$Module$EmitChangeType(
-							{x: index, p: moduleRef, a3: type_}),
+							{bV: index, b3: moduleRef, a1: type_}),
 							author$project$Panel$Editor$Module$EmitChangeExpr(
 							{
-								aO: A2(
+								aM: A2(
 									author$project$Project$Source$Module$Def$Expr$make,
 									headTerm,
 									_Utils_ap(
@@ -12234,8 +12289,8 @@ var author$project$Panel$Editor$Module$parserBeginWithType = F3(
 											[
 												_Utils_Tuple2(lastOp, author$project$Project$Source$Module$Def$Expr$Term$none)
 											]))),
-								x: index,
-								p: moduleRef
+								bV: index,
+								b3: moduleRef
 							}),
 							author$project$Panel$Editor$Module$textAreaValueToSetTextEmit(textAreaValue)
 						]));
@@ -12250,18 +12305,18 @@ var author$project$Parser$BeginWithExprHeadEndTerm = function (a) {
 var author$project$Parser$beginWithExprHead = function (list) {
 	var _n0 = author$project$Parser$Expr$parseStartTerm(list);
 	if (!_n0.$) {
-		var head = _n0.a.bT;
-		var others = _n0.a.b3;
-		var textAreaValue = _n0.a.v;
+		var head = _n0.a.bR;
+		var others = _n0.a.b2;
+		var textAreaValue = _n0.a.u;
 		return author$project$Parser$BeginWithExprHeadEndTerm(
-			{I: head, L: others, v: textAreaValue});
+			{G: head, J: others, u: textAreaValue});
 	} else {
-		var head = _n0.a.bT;
-		var others = _n0.a.b3;
-		var last = _n0.a.Z;
-		var textAreaValue = _n0.a.v;
+		var head = _n0.a.bR;
+		var others = _n0.a.b2;
+		var last = _n0.a.X;
+		var textAreaValue = _n0.a.u;
 		return author$project$Parser$BeginWithExprHeadEndOp(
-			{I: head, aE: last, L: others, v: textAreaValue});
+			{G: head, aC: last, J: others, u: textAreaValue});
 	}
 };
 var author$project$Panel$Editor$Module$parserInExpr = F3(
@@ -12269,9 +12324,9 @@ var author$project$Panel$Editor$Module$parserInExpr = F3(
 		var _n0 = author$project$Parser$beginWithExprHead(
 			author$project$Parser$SimpleChar$fromString(string));
 		if (!_n0.$) {
-			var headTerm = _n0.a.I;
-			var opAndTermList = _n0.a.L;
-			var textAreaValue = _n0.a.v;
+			var headTerm = _n0.a.G;
+			var opAndTermList = _n0.a.J;
+			var textAreaValue = _n0.a.u;
 			return _Utils_Tuple2(
 				author$project$Panel$Editor$Module$ActivePartDefList(
 					author$project$Panel$Editor$Module$ActivePartDef(
@@ -12289,9 +12344,9 @@ var author$project$Panel$Editor$Module$parserInExpr = F3(
 						[
 							author$project$Panel$Editor$Module$EmitChangeExpr(
 							{
-								aO: A2(author$project$Project$Source$Module$Def$Expr$make, headTerm, opAndTermList),
-								x: index,
-								p: moduleRef
+								aM: A2(author$project$Project$Source$Module$Def$Expr$make, headTerm, opAndTermList),
+								bV: index,
+								b3: moduleRef
 							})
 						]),
 					_Utils_eq(opAndTermList, _List_Nil) ? _List_Nil : _List_fromArray(
@@ -12299,10 +12354,10 @@ var author$project$Panel$Editor$Module$parserInExpr = F3(
 							author$project$Panel$Editor$Module$textAreaValueToSetTextEmit(textAreaValue)
 						])));
 		} else {
-			var headTerm = _n0.a.I;
-			var opAndTermList = _n0.a.L;
-			var lastOp = _n0.a.aE;
-			var textAreaValue = _n0.a.v;
+			var headTerm = _n0.a.G;
+			var opAndTermList = _n0.a.J;
+			var lastOp = _n0.a.aC;
+			var textAreaValue = _n0.a.u;
 			return _Utils_Tuple2(
 				author$project$Panel$Editor$Module$ActivePartDefList(
 					author$project$Panel$Editor$Module$ActivePartDef(
@@ -12317,9 +12372,9 @@ var author$project$Panel$Editor$Module$parserInExpr = F3(
 					[
 						author$project$Panel$Editor$Module$EmitChangeExpr(
 						{
-							aO: A2(author$project$Project$Source$Module$Def$Expr$make, headTerm, opAndTermList),
-							x: index,
-							p: moduleRef
+							aM: A2(author$project$Project$Source$Module$Def$Expr$make, headTerm, opAndTermList),
+							bV: index,
+							b3: moduleRef
 						}),
 						author$project$Panel$Editor$Module$textAreaValueToSetTextEmit(textAreaValue)
 					]));
@@ -12345,7 +12400,7 @@ var author$project$Panel$Editor$Module$input = F3(
 								_List_fromArray(
 									[
 										author$project$Panel$Editor$Module$EmitChangeReadMe(
-										{p: rec.t, b6: string})
+										{b3: rec.s, b7: string})
 									]));
 						} else {
 							break _n1$6;
@@ -12356,7 +12411,7 @@ var author$project$Panel$Editor$Module$input = F3(
 								case 1:
 									var _n3 = _n1.a.a;
 									var index = _n3.a;
-									var _n4 = A3(author$project$Panel$Editor$Module$parserBeginWithName, string, index, rec.t);
+									var _n4 = A3(author$project$Panel$Editor$Module$parserBeginWithName, string, index, rec.s);
 									var active = _n4.a;
 									var emitList = _n4.b;
 									return _Utils_Tuple2(
@@ -12367,7 +12422,7 @@ var author$project$Panel$Editor$Module$input = F3(
 								case 2:
 									var _n5 = _n1.a.a;
 									var index = _n5.a;
-									var _n6 = A3(author$project$Panel$Editor$Module$parserBeginWithType, string, index, rec.t);
+									var _n6 = A3(author$project$Panel$Editor$Module$parserBeginWithType, string, index, rec.s);
 									var active = _n6.a;
 									var emitList = _n6.b;
 									return _Utils_Tuple2(
@@ -12381,7 +12436,7 @@ var author$project$Panel$Editor$Module$input = F3(
 											var _n7 = _n1.a.a;
 											var index = _n7.a;
 											var _n8 = _n7.b.a;
-											var _n9 = A3(author$project$Panel$Editor$Module$parserInExpr, string, index, rec.t);
+											var _n9 = A3(author$project$Panel$Editor$Module$parserInExpr, string, index, rec.s);
 											var active = _n9.a;
 											var emitList = _n9.b;
 											return _Utils_Tuple2(
@@ -12398,7 +12453,7 @@ var author$project$Panel$Editor$Module$input = F3(
 												author$project$Panel$Editor$Module$parserBeginWithTerm,
 												string,
 												index,
-												rec.t,
+												rec.s,
 												termIndex,
 												author$project$Project$Source$Module$Def$getExpr(
 													A2(
@@ -12421,7 +12476,7 @@ var author$project$Panel$Editor$Module$input = F3(
 												author$project$Panel$Editor$Module$parserBeginWithOp,
 												string,
 												index,
-												rec.t,
+												rec.s,
 												opIndex,
 												author$project$Project$Source$Module$Def$getExpr(
 													A2(
@@ -12453,7 +12508,6 @@ var author$project$Panel$Editor$Module$input = F3(
 	});
 var author$project$Panel$Editor$Module$ActivePartDefListSelf = {$: 0};
 var author$project$Panel$Editor$Module$ActivePartDefSelf = {$: 0};
-var author$project$Project$Source$ModuleWithCache$getDefNum = A2(elm$core$Basics$composeR, author$project$Project$Source$ModuleWithCache$getDefList, elm$core$List$length);
 var elm$core$Basics$min = F2(
 	function (x, y) {
 		return (_Utils_cmp(x, y) < 0) ? x : y;
@@ -13052,7 +13106,7 @@ var author$project$Panel$Editor$Module$suggestionSelectChangedThenNameChangeEmit
 			return _List_fromArray(
 				[
 					author$project$Panel$Editor$Module$EmitChangeName(
-					{x: defIndex, aS: suggestName, p: moduleRef})
+					{bV: defIndex, aQ: suggestName, b3: moduleRef})
 				]);
 		} else {
 			return _List_Nil;
@@ -13080,7 +13134,7 @@ var author$project$Panel$Editor$Module$suggestionPrevOrSelectDown = F3(
 										elm$core$Maybe$Just(
 											_Utils_Tuple2(textAreaValue, suggestIndex + 1))))))
 					}),
-				A3(author$project$Panel$Editor$Module$suggestionSelectChangedThenNameChangeEmit, suggestIndex, index, rec.t));
+				A3(author$project$Panel$Editor$Module$suggestionSelectChangedThenNameChangeEmit, suggestIndex, index, rec.s));
 		} else {
 			return A3(author$project$Panel$Editor$Module$update, author$project$Panel$Editor$Module$SelectDown, project, rec);
 		}
@@ -13109,7 +13163,7 @@ var author$project$Panel$Editor$Module$suggestionPrevOrSelectUp = F3(
 												textAreaValue,
 												A2(elm$core$Basics$max, 0, suggestIndex - 1)))))))
 					}),
-				A3(author$project$Panel$Editor$Module$suggestionSelectChangedThenNameChangeEmit, suggestIndex, index, rec.t));
+				A3(author$project$Panel$Editor$Module$suggestionSelectChangedThenNameChangeEmit, suggestIndex, index, rec.s));
 		} else {
 			return A3(author$project$Panel$Editor$Module$update, author$project$Panel$Editor$Module$SelectUp, project, rec);
 		}
@@ -13121,7 +13175,7 @@ var author$project$Panel$Editor$Module$update = F3(
 			var rec = _n0;
 			var targetModule = A2(
 				author$project$Project$Source$getModule,
-				rec.t,
+				rec.s,
 				author$project$Project$getSource(project));
 			switch (msg.$) {
 				case 0:
@@ -13214,7 +13268,7 @@ var author$project$Panel$Editor$Module$update = F3(
 						_List_fromArray(
 							[
 								author$project$Panel$Editor$Module$EmitAddPartDef(
-								{p: rec.t})
+								{b3: rec.s})
 							]));
 				case 14:
 					return _Utils_Tuple2(rec, _List_Nil);
@@ -13259,37 +13313,37 @@ var author$project$Panel$EditorGroup$EmitSetTextAreaValue = function (a) {
 var author$project$Panel$EditorGroup$moduleEditorEmitToEmit = function (emit) {
 	switch (emit.$) {
 		case 0:
-			var text = emit.a.b6;
-			var ref = emit.a.p;
+			var text = emit.a.b7;
+			var ref = emit.a.b3;
 			return author$project$Panel$EditorGroup$EmitChangeReadMe(
-				{p: ref, b6: text});
+				{b3: ref, b7: text});
 		case 5:
 			var text = emit.a;
 			return author$project$Panel$EditorGroup$EmitSetTextAreaValue(text);
 		case 6:
 			return author$project$Panel$EditorGroup$EmitFocusEditTextAea;
 		case 1:
-			var name = emit.a.aS;
-			var index = emit.a.x;
-			var ref = emit.a.p;
+			var name = emit.a.aQ;
+			var index = emit.a.bV;
+			var ref = emit.a.b3;
 			return author$project$Panel$EditorGroup$EmitChangeName(
-				{x: index, aS: name, p: ref});
+				{bV: index, aQ: name, b3: ref});
 		case 4:
-			var ref = emit.a.p;
+			var ref = emit.a.b3;
 			return author$project$Panel$EditorGroup$EmitAddPartDef(
-				{p: ref});
+				{b3: ref});
 		case 2:
-			var type_ = emit.a.a3;
-			var index = emit.a.x;
-			var ref = emit.a.p;
+			var type_ = emit.a.a1;
+			var index = emit.a.bV;
+			var ref = emit.a.b3;
 			return author$project$Panel$EditorGroup$EmitChangeType(
-				{x: index, p: ref, a3: type_});
+				{bV: index, b3: ref, a1: type_});
 		default:
-			var expr = emit.a.aO;
-			var index = emit.a.x;
-			var ref = emit.a.p;
+			var expr = emit.a.aM;
+			var index = emit.a.bV;
+			var ref = emit.a.b3;
 			return author$project$Panel$EditorGroup$EmitChangeExpr(
-				{aO: expr, x: index, p: ref});
+				{aM: expr, bV: index, b3: ref});
 	}
 };
 var author$project$Panel$EditorGroup$blurEditor = F2(
@@ -13320,7 +13374,7 @@ var author$project$Panel$EditorGroup$closeEditorColumn = F2(
 		} else {
 			if (!_n0.a) {
 				var _n1 = _n0.a;
-				var bottom = _n0.b.a.y;
+				var bottom = _n0.b.a.w;
 				return elm$core$Maybe$Just(
 					author$project$Panel$EditorGroup$ColumnOne(
 						{g: bottom}));
@@ -13350,9 +13404,9 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 								return author$project$Panel$EditorGroup$RowOne(
 									_Utils_update(
 										rec,
-										{R: col}));
+										{P: col}));
 							},
-							A2(author$project$Panel$EditorGroup$closeEditorColumn, editorRefColumn, rec.R)));
+							A2(author$project$Panel$EditorGroup$closeEditorColumn, editorRefColumn, rec.P)));
 				} else {
 					return group;
 				}
@@ -13364,21 +13418,21 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 						return A2(
 							elm$core$Maybe$withDefault,
 							author$project$Panel$EditorGroup$RowOne(
-								{R: rec.e}),
+								{P: rec.e}),
 							A2(
 								elm$core$Maybe$map,
 								function (col) {
 									return author$project$Panel$EditorGroup$RowTwo(
 										_Utils_update(
 											rec,
-											{R: col}));
+											{P: col}));
 								},
-								A2(author$project$Panel$EditorGroup$closeEditorColumn, index.b, rec.R)));
+								A2(author$project$Panel$EditorGroup$closeEditorColumn, index.b, rec.P)));
 					case 1:
 						return A2(
 							elm$core$Maybe$withDefault,
 							author$project$Panel$EditorGroup$RowOne(
-								{R: rec.R}),
+								{P: rec.P}),
 							A2(
 								elm$core$Maybe$map,
 								function (col) {
@@ -13399,21 +13453,21 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 						return A2(
 							elm$core$Maybe$withDefault,
 							author$project$Panel$EditorGroup$RowTwo(
-								{e: rec.T, R: rec.e, h: rec.H}),
+								{e: rec.R, P: rec.e, h: rec.F}),
 							A2(
 								elm$core$Maybe$map,
 								function (col) {
 									return author$project$Panel$EditorGroup$RowThree(
 										_Utils_update(
 											rec,
-											{R: col}));
+											{P: col}));
 								},
-								A2(author$project$Panel$EditorGroup$closeEditorColumn, index.b, rec.R)));
+								A2(author$project$Panel$EditorGroup$closeEditorColumn, index.b, rec.P)));
 					case 1:
 						return A2(
 							elm$core$Maybe$withDefault,
 							author$project$Panel$EditorGroup$RowTwo(
-								{e: rec.T, R: rec.R, h: rec.h}),
+								{e: rec.R, P: rec.P, h: rec.h}),
 							A2(
 								elm$core$Maybe$map,
 								function (col) {
@@ -13427,16 +13481,16 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 						return A2(
 							elm$core$Maybe$withDefault,
 							author$project$Panel$EditorGroup$RowTwo(
-								{e: rec.e, R: rec.R, h: rec.h}),
+								{e: rec.e, P: rec.P, h: rec.h}),
 							A2(
 								elm$core$Maybe$map,
 								function (col) {
 									return author$project$Panel$EditorGroup$RowThree(
 										_Utils_update(
 											rec,
-											{T: col}));
+											{R: col}));
 								},
-								A2(author$project$Panel$EditorGroup$closeEditorColumn, index.b, rec.T)));
+								A2(author$project$Panel$EditorGroup$closeEditorColumn, index.b, rec.R)));
 				}
 		}
 	});
@@ -13460,14 +13514,14 @@ var author$project$Panel$EditorGroup$setGroup = F2(
 		var rec = _n0;
 		return _Utils_update(
 			rec,
-			{aA: rowGroup});
+			{ay: rowGroup});
 	});
 var author$project$Panel$EditorGroup$mapGroup = A2(author$project$Utility$Map$toMapper, author$project$Panel$EditorGroup$getGroup, author$project$Panel$EditorGroup$setGroup);
 var author$project$Panel$EditorGroup$mouseLeaveAddGutter = function (_n0) {
 	var rec = _n0;
 	return _Utils_update(
 		rec,
-		{aG: elm$core$Maybe$Nothing});
+		{aE: elm$core$Maybe$Nothing});
 };
 var author$project$Panel$EditorGroup$mouseOverAddGutter = F2(
 	function (openEditorPosition, _n0) {
@@ -13475,7 +13529,7 @@ var author$project$Panel$EditorGroup$mouseOverAddGutter = F2(
 		return _Utils_update(
 			rec,
 			{
-				aG: elm$core$Maybe$Just(openEditorPosition)
+				aE: elm$core$Maybe$Just(openEditorPosition)
 			});
 	});
 var author$project$Panel$EditorGroup$EditorRefCenter = 1;
@@ -13493,7 +13547,7 @@ var author$project$Panel$EditorGroup$setActiveEditorRefUnsafe = F2(
 		var rec = _n0;
 		return _Utils_update(
 			rec,
-			{aw: activeEditorIndex});
+			{au: activeEditorIndex});
 	});
 var author$project$Panel$EditorGroup$setActiveEditorRef = F2(
 	function (_n0, model) {
@@ -13505,12 +13559,12 @@ var author$project$Panel$EditorGroup$setActiveEditorRef = F2(
 				var _n1 = author$project$Panel$EditorGroup$getGroup(model);
 				switch (_n1.$) {
 					case 0:
-						var left = _n1.a.R;
+						var left = _n1.a.P;
 						return _Utils_Tuple2(
 							0,
 							A2(author$project$Panel$EditorGroup$adjustColumnRef, left, colRef));
 					case 1:
-						var left = _n1.a.R;
+						var left = _n1.a.P;
 						var center = _n1.a.e;
 						if (!rowRef) {
 							return _Utils_Tuple2(
@@ -13522,9 +13576,9 @@ var author$project$Panel$EditorGroup$setActiveEditorRef = F2(
 								A2(author$project$Panel$EditorGroup$adjustColumnRef, center, colRef));
 						}
 					default:
-						var left = _n1.a.R;
+						var left = _n1.a.P;
 						var center = _n1.a.e;
-						var right = _n1.a.T;
+						var right = _n1.a.R;
 						switch (rowRef) {
 							case 0:
 								return _Utils_Tuple2(
@@ -13559,7 +13613,7 @@ var author$project$Panel$EditorGroup$openEditorRowOne = F3(
 							{
 								e: author$project$Panel$EditorGroup$ColumnOne(
 									{g: item}),
-								R: column,
+								P: column,
 								h: 500
 							}),
 						_Utils_Tuple2(1, 0)));
@@ -13570,8 +13624,8 @@ var author$project$Panel$EditorGroup$openEditorRowOne = F3(
 						_Utils_Tuple2(
 							author$project$Panel$EditorGroup$RowOne(
 								{
-									R: author$project$Panel$EditorGroup$ColumnTwo(
-										{y: item, g: top, N: 500})
+									P: author$project$Panel$EditorGroup$ColumnTwo(
+										{w: item, g: top, L: 500})
 								}),
 							_Utils_Tuple2(0, 1)));
 				} else {
@@ -13585,7 +13639,7 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 	function (rec, addEditorPosition, item) {
 		switch (addEditorPosition) {
 			case 1:
-				var _n1 = rec.R;
+				var _n1 = rec.P;
 				if (!_n1.$) {
 					var top = _n1.a.g;
 					return elm$core$Maybe$Just(
@@ -13594,8 +13648,8 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 								_Utils_update(
 									rec,
 									{
-										R: author$project$Panel$EditorGroup$ColumnTwo(
-											{y: item, g: top, N: 500})
+										P: author$project$Panel$EditorGroup$ColumnTwo(
+											{w: item, g: top, L: 500})
 									})),
 							_Utils_Tuple2(0, 1)));
 				} else {
@@ -13612,14 +13666,14 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 									rec,
 									{
 										e: author$project$Panel$EditorGroup$ColumnTwo(
-											{y: item, g: top, N: 500})
+											{w: item, g: top, L: 500})
 									})),
 							_Utils_Tuple2(1, 1)));
 				} else {
 					return elm$core$Maybe$Nothing;
 				}
 			case 3:
-				var _n3 = rec.T;
+				var _n3 = rec.R;
 				if (!_n3.$) {
 					var top = _n3.a.g;
 					return elm$core$Maybe$Just(
@@ -13628,8 +13682,8 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 								_Utils_update(
 									rec,
 									{
-										T: author$project$Panel$EditorGroup$ColumnTwo(
-											{y: item, g: top, N: 500})
+										R: author$project$Panel$EditorGroup$ColumnTwo(
+											{w: item, g: top, L: 500})
 									})),
 							_Utils_Tuple2(2, 1)));
 				} else {
@@ -13648,15 +13702,15 @@ var author$project$Panel$EditorGroup$openEditorRowTwo = F3(
 						author$project$Panel$EditorGroup$RowThree(
 							{
 								e: rec.e,
-								H: 333,
-								R: rec.R,
+								F: 333,
+								P: rec.P,
 								h: 333,
-								T: author$project$Panel$EditorGroup$ColumnOne(
+								R: author$project$Panel$EditorGroup$ColumnOne(
 									{g: item})
 							}),
 						_Utils_Tuple2(2, 0)));
 			case 1:
-				var _n1 = rec.R;
+				var _n1 = rec.P;
 				if (!_n1.$) {
 					var top = _n1.a.g;
 					return elm$core$Maybe$Just(
@@ -13665,8 +13719,8 @@ var author$project$Panel$EditorGroup$openEditorRowTwo = F3(
 								_Utils_update(
 									rec,
 									{
-										R: author$project$Panel$EditorGroup$ColumnTwo(
-											{y: item, g: top, N: 500})
+										P: author$project$Panel$EditorGroup$ColumnTwo(
+											{w: item, g: top, L: 500})
 									})),
 							_Utils_Tuple2(0, 1)));
 				} else {
@@ -13683,7 +13737,7 @@ var author$project$Panel$EditorGroup$openEditorRowTwo = F3(
 									rec,
 									{
 										e: author$project$Panel$EditorGroup$ColumnTwo(
-											{y: item, g: top, N: 500})
+											{w: item, g: top, L: 500})
 									})),
 							_Utils_Tuple2(1, 1)));
 				} else {
@@ -13701,7 +13755,7 @@ var author$project$Panel$EditorGroup$openEditor = F3(
 			function () {
 				switch (group.$) {
 					case 0:
-						var left = group.a.R;
+						var left = group.a.P;
 						return A3(
 							author$project$Panel$EditorGroup$openEditorRowOne,
 							left,
@@ -13743,7 +13797,7 @@ var author$project$Panel$EditorGroup$setEditorItemColumn = F3(
 					} else {
 						return _Utils_update(
 							recCol,
-							{y: item});
+							{w: item});
 					}
 				}());
 		}
@@ -13757,7 +13811,7 @@ var author$project$Panel$EditorGroup$setEditorItem = F3(
 					_Utils_update(
 						recRow,
 						{
-							R: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.R)
+							P: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.P)
 						}));
 			case 1:
 				var recRow = group.a;
@@ -13768,7 +13822,7 @@ var author$project$Panel$EditorGroup$setEditorItem = F3(
 							return _Utils_update(
 								recRow,
 								{
-									R: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.R)
+									P: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.P)
 								});
 						} else {
 							return _Utils_update(
@@ -13788,7 +13842,7 @@ var author$project$Panel$EditorGroup$setEditorItem = F3(
 								return _Utils_update(
 									recRow,
 									{
-										R: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.R)
+										P: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.P)
 									});
 							case 1:
 								return _Utils_update(
@@ -13800,7 +13854,7 @@ var author$project$Panel$EditorGroup$setEditorItem = F3(
 								return _Utils_update(
 									recRow,
 									{
-										T: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.T)
+										R: A3(author$project$Panel$EditorGroup$setEditorItemColumn, editorRef.b, item, recRow.R)
 									});
 						}
 					}());
@@ -13855,7 +13909,7 @@ var author$project$Panel$Editor$EditorKeyConfig$update = F2(
 					_Utils_update(
 						rec,
 						{
-							aI: elm$core$Maybe$Just(oneKey)
+							aG: elm$core$Maybe$Just(oneKey)
 						}),
 					elm$core$Maybe$Nothing);
 			case 1:
@@ -13869,7 +13923,7 @@ var author$project$Panel$Editor$EditorKeyConfig$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						rec,
-						{aP: inputDevice}),
+						{aN: inputDevice}),
 					elm$core$Maybe$Nothing);
 		}
 	});
@@ -13973,18 +14027,18 @@ var author$project$Panel$EditorGroup$update = F3(
 				var rec = msg.a;
 				var _n2 = A3(
 					author$project$Panel$EditorGroup$updateEditor,
-					rec.aR,
+					rec.aP,
 					project,
 					A2(
 						author$project$Panel$EditorGroup$getEditorItem,
-						rec.p,
+						rec.b3,
 						author$project$Panel$EditorGroup$getGroup(model)));
 				var newEditorItem = _n2.a;
 				var emit = _n2.b;
 				return _Utils_Tuple2(
 					A2(
 						author$project$Panel$EditorGroup$mapGroup,
-						A2(author$project$Panel$EditorGroup$setEditorItem, rec.p, newEditorItem),
+						A2(author$project$Panel$EditorGroup$setEditorItem, rec.b3, newEditorItem),
 						model),
 					emit);
 			case 6:
@@ -14081,7 +14135,7 @@ var author$project$Model$editorPanelUpdate = F2(
 			cmd);
 	});
 var author$project$Model$getVerticalGutterX = function (_n0) {
-	var treePanelWidth = _n0.a2;
+	var treePanelWidth = _n0.a0;
 	return treePanelWidth;
 };
 var author$project$Model$verticalGutterWidth = 2;
@@ -14090,7 +14144,7 @@ var author$project$Model$getTreePanelWidth = function (model) {
 	return (width < 120) ? 0 : width;
 };
 var author$project$Model$getWindowSize = function (_n0) {
-	var windowSize = _n0.a4;
+	var windowSize = _n0.a2;
 	return windowSize;
 };
 var author$project$Model$mapEditorGroupPanelModel = A2(author$project$Utility$Map$toMapper, author$project$Model$getEditorGroupPanelModel, author$project$Model$setEditorGroupPanelModel);
@@ -14099,7 +14153,7 @@ var author$project$Model$setTreePanelWidth = F2(
 		var rec = _n0;
 		return _Utils_update(
 			rec,
-			{a2: width});
+			{a0: width});
 	});
 var author$project$Model$treePanelResizeFromGutter = F2(
 	function (maxLimit, x) {
@@ -14120,14 +14174,14 @@ var author$project$Panel$EditorGroup$resizeInColumn = F3(
 					_Utils_update(
 						rec,
 						{
-							N: A3(elm$core$Basics$clamp, 100, 900, (((mouseRelY * 1002) / editorHeight) | 0) - 1)
+							L: A3(elm$core$Basics$clamp, 100, 900, (((mouseRelY * 1002) / editorHeight) | 0) - 1)
 						})));
 		}
 	});
 var author$project$Panel$EditorGroup$resizeHorizontal = F3(
 	function (_n0, gutter, group) {
-		var y = _n0.cf;
-		var height = _n0.bU;
+		var y = _n0.ch;
+		var height = _n0.bS;
 		switch (group.$) {
 			case 0:
 				var rec = group.a;
@@ -14141,9 +14195,9 @@ var author$project$Panel$EditorGroup$resizeHorizontal = F3(
 								return author$project$Panel$EditorGroup$RowOne(
 									_Utils_update(
 										rec,
-										{R: col}));
+										{P: col}));
 							},
-							A3(author$project$Panel$EditorGroup$resizeInColumn, rec.R, y, height)));
+							A3(author$project$Panel$EditorGroup$resizeInColumn, rec.P, y, height)));
 				} else {
 					return group;
 				}
@@ -14160,9 +14214,9 @@ var author$project$Panel$EditorGroup$resizeHorizontal = F3(
 									return author$project$Panel$EditorGroup$RowTwo(
 										_Utils_update(
 											rec,
-											{R: col}));
+											{P: col}));
 								},
-								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.R, y, height)));
+								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.P, y, height)));
 					case 1:
 						return A2(
 							elm$core$Maybe$withDefault,
@@ -14192,9 +14246,9 @@ var author$project$Panel$EditorGroup$resizeHorizontal = F3(
 									return author$project$Panel$EditorGroup$RowThree(
 										_Utils_update(
 											rec,
-											{R: col}));
+											{P: col}));
 								},
-								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.R, y, height)));
+								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.P, y, height)));
 					case 1:
 						return A2(
 							elm$core$Maybe$withDefault,
@@ -14218,28 +14272,28 @@ var author$project$Panel$EditorGroup$resizeHorizontal = F3(
 									return author$project$Panel$EditorGroup$RowThree(
 										_Utils_update(
 											rec,
-											{T: col}));
+											{R: col}));
 								},
-								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.T, y, height)));
+								A3(author$project$Panel$EditorGroup$resizeInColumn, rec.R, y, height)));
 				}
 		}
 	});
 var author$project$Panel$EditorGroup$resizeFromHorizontalGutter = F3(
 	function (_n0, gutter, model) {
-		var mouseRelY = _n0.b$;
-		var editorHeight = _n0.bM;
+		var mouseRelY = _n0.b_;
+		var editorHeight = _n0.bK;
 		return A2(
 			author$project$Panel$EditorGroup$mapGroup,
 			A2(
 				author$project$Panel$EditorGroup$resizeHorizontal,
-				{bU: editorHeight, cf: mouseRelY},
+				{bS: editorHeight, ch: mouseRelY},
 				gutter),
 			model);
 	});
 var author$project$Panel$EditorGroup$resizeVertical = F3(
 	function (_n0, gutter, group) {
-		var x = _n0.ce;
-		var width = _n0.cc;
+		var x = _n0.cg;
+		var width = _n0.ce;
 		switch (group.$) {
 			case 0:
 				return group;
@@ -14263,7 +14317,7 @@ var author$project$Panel$EditorGroup$resizeVertical = F3(
 						_Utils_update(
 							rec,
 							{
-								H: A2(elm$core$Basics$max, 100, (rec.h + rec.H) - leftWidth),
+								F: A2(elm$core$Basics$max, 100, (rec.h + rec.F) - leftWidth),
 								h: leftWidth
 							}));
 				} else {
@@ -14272,7 +14326,7 @@ var author$project$Panel$EditorGroup$resizeVertical = F3(
 						_Utils_update(
 							rec,
 							{
-								H: A2(elm$core$Basics$max, 100, leftWidth - rec.h),
+								F: A2(elm$core$Basics$max, 100, leftWidth - rec.h),
 								h: ((leftWidth - rec.h) < 100) ? (leftWidth - 100) : rec.h
 							}));
 				}
@@ -14280,20 +14334,20 @@ var author$project$Panel$EditorGroup$resizeVertical = F3(
 	});
 var author$project$Panel$EditorGroup$resizeFromVerticalGutter = F3(
 	function (_n0, gutter, model) {
-		var mouseRelX = _n0.b_;
-		var editorWidth = _n0.bN;
+		var mouseRelX = _n0.bZ;
+		var editorWidth = _n0.bL;
 		return A2(
 			author$project$Panel$EditorGroup$mapGroup,
 			A2(
 				author$project$Panel$EditorGroup$resizeVertical,
-				{cc: editorWidth, ce: mouseRelX},
+				{ce: editorWidth, cg: mouseRelX},
 				gutter),
 			model);
 	});
 var author$project$Model$mouseMove = F2(
 	function (_n0, model) {
-		var x = _n0.ce;
-		var y = _n0.cf;
+		var x = _n0.cg;
+		var y = _n0.ch;
 		var _n1 = author$project$Model$getGutterMode(model);
 		if (!_n1.$) {
 			switch (_n1.a.$) {
@@ -14303,7 +14357,7 @@ var author$project$Model$mouseMove = F2(
 						author$project$Model$setTreePanelWidth,
 						A2(
 							author$project$Model$treePanelResizeFromGutter,
-							author$project$Model$getWindowSize(model).cc,
+							author$project$Model$getWindowSize(model).ce,
 							x),
 						model);
 				case 1:
@@ -14313,8 +14367,8 @@ var author$project$Model$mouseMove = F2(
 						A2(
 							author$project$Panel$EditorGroup$resizeFromVerticalGutter,
 							{
-								bN: author$project$Model$getWindowSize(model).cc - author$project$Model$getTreePanelWidth(model),
-								b_: A2(
+								bL: author$project$Model$getWindowSize(model).ce - author$project$Model$getTreePanelWidth(model),
+								bZ: A2(
 									elm$core$Basics$max,
 									0,
 									x - author$project$Model$getTreePanelWidth(model))
@@ -14328,8 +14382,8 @@ var author$project$Model$mouseMove = F2(
 						A2(
 							author$project$Panel$EditorGroup$resizeFromHorizontalGutter,
 							{
-								bM: author$project$Model$getWindowSize(model).bU,
-								b$: A2(elm$core$Basics$max, 0, y)
+								bK: author$project$Model$getWindowSize(model).bS,
+								b_: A2(elm$core$Basics$max, 0, y)
 							},
 							gutter),
 						model);
@@ -14342,7 +14396,7 @@ var author$project$Model$mouseUp = function (_n0) {
 	var rec = _n0;
 	return _Utils_update(
 		rec,
-		{M: author$project$Model$SubModeNone});
+		{K: author$project$Model$SubModeNone});
 };
 var author$project$Model$SubModeCommandPalette = function (a) {
 	return {$: 1, a: a};
@@ -14354,7 +14408,7 @@ var author$project$Model$openCommandPalette = function (_n0) {
 	return _Utils_update(
 		rec,
 		{
-			M: author$project$Model$SubModeCommandPalette(author$project$Panel$CommandPalette$initModel)
+			K: author$project$Model$SubModeCommandPalette(author$project$Panel$CommandPalette$initModel)
 		});
 };
 var author$project$Panel$EditorGroup$changeEditorItem = F2(
@@ -14372,7 +14426,7 @@ var author$project$Panel$Editor$Config$initModel = 0;
 var author$project$Panel$Editor$Document$Model = 0;
 var author$project$Panel$Editor$Document$initModel = 0;
 var author$project$Panel$Editor$EditorKeyConfig$Keyboard = 0;
-var author$project$Panel$Editor$EditorKeyConfig$initModel = {aP: 0, aI: elm$core$Maybe$Nothing};
+var author$project$Panel$Editor$EditorKeyConfig$initModel = {aN: 0, aG: elm$core$Maybe$Nothing};
 var author$project$Panel$Editor$Project$Model = 0;
 var author$project$Panel$Editor$Project$initModel = 0;
 var author$project$Panel$Editor$Source$Model = 0;
@@ -14430,15 +14484,162 @@ var author$project$Model$pushMsgListToMsgQueue = F2(
 		return _Utils_update(
 			rec,
 			{
-				al: _Utils_ap(rec.al, msgList)
+				aj: _Utils_ap(rec.aj, msgList)
 			});
 	});
+var author$project$Compiler$Marger$codeSection = function (codeList) {
+	var numberOfFunctionBinary = _List_fromArray(
+		[
+			elm$core$List$length(codeList)
+		]);
+	var body = elm$core$List$concat(codeList);
+	var length = elm$core$List$length(numberOfFunctionBinary) + elm$core$List$length(body);
+	return elm$core$List$concat(
+		_List_fromArray(
+			[
+				_List_fromArray(
+				[10]),
+				author$project$Compiler$BinaryEncoding$varsUInt32(length),
+				numberOfFunctionBinary,
+				body
+			]));
+};
+var elm$core$Basics$modBy = _Basics_modBy;
+var author$project$Compiler$Marger$toDigitList = function (x) {
+	return (x <= 0) ? _List_fromArray(
+		[0]) : author$project$Compiler$Marger$toDigitListLoop(x);
+};
+var author$project$Compiler$Marger$toDigitListLoop = function (x) {
+	return (x <= 0) ? _List_Nil : ((x < 10) ? _List_fromArray(
+		[x]) : _Utils_ap(
+		author$project$Compiler$Marger$toDigitList((x / 10) | 0),
+		_List_fromArray(
+			[
+				A2(elm$core$Basics$modBy, 10, x)
+			])));
+};
+var author$project$Compiler$Marger$exportFunctionName = function (index) {
+	var digitList = author$project$Compiler$Marger$toDigitList(index);
+	return A2(
+		elm$core$List$cons,
+		elm$core$List$length(digitList),
+		_Utils_ap(
+			A2(
+				elm$core$List$map,
+				elm$core$Basics$add(48),
+				digitList),
+			_List_fromArray(
+				[0, index])));
+};
+var author$project$Compiler$Marger$exportSection = function (numberOfFunction) {
+	var numberOfFunctionBinary = _List_fromArray(
+		[numberOfFunction]);
+	var body = A2(
+		elm$core$List$concatMap,
+		author$project$Compiler$Marger$exportFunctionName,
+		A2(elm$core$List$range, 0, numberOfFunction - 1));
+	var length = elm$core$List$length(numberOfFunctionBinary) + elm$core$List$length(body);
+	return elm$core$List$concat(
+		_List_fromArray(
+			[
+				_List_fromArray(
+				[7]),
+				author$project$Compiler$BinaryEncoding$varsUInt32(length),
+				numberOfFunctionBinary,
+				body
+			]));
+};
+var elm$core$List$repeatHelp = F3(
+	function (result, n, value) {
+		repeatHelp:
+		while (true) {
+			if (n <= 0) {
+				return result;
+			} else {
+				var $temp$result = A2(elm$core$List$cons, value, result),
+					$temp$n = n - 1,
+					$temp$value = value;
+				result = $temp$result;
+				n = $temp$n;
+				value = $temp$value;
+				continue repeatHelp;
+			}
+		}
+	});
+var elm$core$List$repeat = F2(
+	function (n, value) {
+		return A3(elm$core$List$repeatHelp, _List_Nil, n, value);
+	});
+var author$project$Compiler$Marger$functionSection = function (numberOfFunction) {
+	var numberOfFunctionBinary = _List_fromArray(
+		[numberOfFunction]);
+	var body = A2(elm$core$List$repeat, numberOfFunction, 0);
+	var length = elm$core$List$length(numberOfFunctionBinary) + elm$core$List$length(body);
+	return elm$core$List$concat(
+		_List_fromArray(
+			[
+				_List_fromArray(
+				[3]),
+				author$project$Compiler$BinaryEncoding$varsUInt32(length),
+				numberOfFunctionBinary,
+				body
+			]));
+};
+var author$project$Compiler$Marger$typeSection = function () {
+	var numberOfType = _List_fromArray(
+		[1]);
+	var body = _List_fromArray(
+		[96, 0, 1, 127]);
+	var length = elm$core$List$length(numberOfType) + elm$core$List$length(body);
+	return elm$core$List$concat(
+		_List_fromArray(
+			[
+				_List_fromArray(
+				[1]),
+				author$project$Compiler$BinaryEncoding$varsUInt32(length),
+				numberOfType,
+				body
+			]));
+}();
+var author$project$Compiler$Marger$wasmBinaryMagic = _List_fromArray(
+	[0, 97, 115, 109]);
+var author$project$Compiler$Marger$wasmBinaryVersion = _List_fromArray(
+	[1, 0, 0, 0]);
+var author$project$Compiler$Marger$marge = function (binaryList) {
+	var length = elm$core$List$length(binaryList);
+	return elm$core$List$concat(
+		_List_fromArray(
+			[
+				author$project$Compiler$Marger$wasmBinaryMagic,
+				author$project$Compiler$Marger$wasmBinaryVersion,
+				author$project$Compiler$Marger$typeSection,
+				author$project$Compiler$Marger$functionSection(length),
+				author$project$Compiler$Marger$exportSection(length),
+				author$project$Compiler$Marger$codeSection(binaryList)
+			]));
+};
 var author$project$Compiler$getBinary = function (result) {
 	if (!result.$) {
-		var binary = result.a.a8;
-		return elm$core$Maybe$Just(binary);
+		var binary = result.a.a6;
+		return elm$core$Maybe$Just(
+			author$project$Compiler$Marger$marge(
+				_List_fromArray(
+					[binary])));
 	} else {
 		return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Project$moduleRefToListInt = function (moduleRef) {
+	switch (moduleRef) {
+		case 0:
+			return _List_fromArray(
+				[0]);
+		case 1:
+			return _List_fromArray(
+				[1]);
+		default:
+			return _List_fromArray(
+				[2]);
 	}
 };
 var author$project$Project$Source$ModuleWithCache$defAndResultSetCompileResult = F2(
@@ -14447,7 +14648,7 @@ var author$project$Project$Source$ModuleWithCache$defAndResultSetCompileResult =
 		return _Utils_update(
 			rec,
 			{
-				ba: elm$core$Maybe$Just(compileResult)
+				a8: elm$core$Maybe$Just(compileResult)
 			});
 	});
 var author$project$Project$Source$ModuleWithCache$getDefAndResult = function (index) {
@@ -14461,7 +14662,7 @@ var author$project$Project$Source$ModuleWithCache$setDefAndResultList = F2(
 		var rec = _n0;
 		return _Utils_update(
 			rec,
-			{C: defAndResultList});
+			{A: defAndResultList});
 	});
 var author$project$Project$Source$ModuleWithCache$mapDefAndResultList = A2(author$project$Utility$Map$toMapper, author$project$Project$Source$ModuleWithCache$getDefAndResultList, author$project$Project$Source$ModuleWithCache$setDefAndResultList);
 var author$project$Project$Source$ModuleWithCache$setDefAndResult = F2(
@@ -14497,9 +14698,9 @@ var author$project$Project$Source$ModuleWithCache$setCompileResult = F2(
 	});
 var author$project$Model$receiveCompiledData = F2(
 	function (_n0, model) {
-		var ref = _n0.p;
-		var index = _n0.x;
-		var compileResult = _n0.ba;
+		var ref = _n0.b3;
+		var index = _n0.bV;
+		var compileResult = _n0.a8;
 		return _Utils_Tuple2(
 			A2(
 				author$project$Model$mapProject,
@@ -14509,8 +14710,66 @@ var author$project$Model$receiveCompiledData = F2(
 						ref,
 						A2(author$project$Project$Source$ModuleWithCache$setCompileResult, index, compileResult))),
 				model),
-			author$project$Compiler$getBinary(compileResult));
+			function () {
+				var _n1 = author$project$Compiler$getBinary(compileResult);
+				if (!_n1.$) {
+					var wasm = _n1.a;
+					return elm$core$Maybe$Just(
+						{
+							bV: index,
+							b3: author$project$Project$moduleRefToListInt(ref),
+							cd: wasm
+						});
+				} else {
+					return elm$core$Maybe$Nothing;
+				}
+			}());
 	});
+var author$project$Project$listIntToModuleRef = function (list) {
+	_n0$2:
+	while (true) {
+		if (list.b && (!list.b.b)) {
+			switch (list.a) {
+				case 0:
+					return 0;
+				case 1:
+					return 1;
+				default:
+					break _n0$2;
+			}
+		} else {
+			break _n0$2;
+		}
+	}
+	return 2;
+};
+var author$project$Project$Source$ModuleWithCache$defAndResultSetEvalResult = F2(
+	function (evalResult, _n0) {
+		var rec = _n0;
+		return _Utils_update(
+			rec,
+			{
+				ag: elm$core$Maybe$Just(evalResult)
+			});
+	});
+var author$project$Project$Source$ModuleWithCache$setEvalResult = F2(
+	function (index, evalResult) {
+		return A2(
+			author$project$Project$Source$ModuleWithCache$mapDefAndResult,
+			index,
+			author$project$Project$Source$ModuleWithCache$defAndResultSetEvalResult(evalResult));
+	});
+var author$project$Model$receiveResultValue = function (_n0) {
+	var ref = _n0.b3;
+	var index = _n0.bV;
+	var result = _n0.b4;
+	return author$project$Model$mapProject(
+		author$project$Project$mapSource(
+			A2(
+				author$project$Project$Source$mapModule,
+				author$project$Project$listIntToModuleRef(ref),
+				A2(author$project$Project$Source$ModuleWithCache$setEvalResult, index, result))));
+};
 var author$project$Panel$EditorGroup$Blur = {$: 10};
 var author$project$Panel$EditorGroup$Focus = {$: 9};
 var author$project$Model$setFocus = F2(
@@ -14519,7 +14778,7 @@ var author$project$Model$setFocus = F2(
 		if (!focus) {
 			var focusMovedModel = _Utils_update(
 				rec,
-				{az: 0});
+				{ax: 0});
 			var _n2 = A3(
 				author$project$Panel$EditorGroup$update,
 				author$project$Panel$EditorGroup$Blur,
@@ -14538,7 +14797,7 @@ var author$project$Model$setFocus = F2(
 		} else {
 			var focusMovedModel = _Utils_update(
 				rec,
-				{az: 1});
+				{ax: 1});
 			var _n4 = A3(
 				author$project$Panel$EditorGroup$update,
 				author$project$Panel$EditorGroup$Focus,
@@ -14558,22 +14817,22 @@ var author$project$Model$setFocus = F2(
 	});
 var author$project$Model$setWindowSize = F2(
 	function (_n0, _n1) {
-		var width = _n0.cc;
-		var height = _n0.bU;
+		var width = _n0.ce;
+		var height = _n0.bS;
 		var rec = _n1;
 		return _Utils_update(
 			rec,
 			{
-				a4: {bU: height, cc: width}
+				a2: {bS: height, ce: width}
 			});
 	});
 var author$project$Model$shiftMsgListFromMsgQueue = function (_n0) {
 	var rec = _n0;
 	return _Utils_Tuple2(
-		rec.al,
+		rec.aj,
 		_Utils_update(
 			rec,
-			{al: _List_Nil}));
+			{aj: _List_Nil}));
 };
 var author$project$Model$SubModeGutter = function (a) {
 	return {$: 2, a: a};
@@ -14584,11 +14843,11 @@ var author$project$Model$toGutterMode = F2(
 		return _Utils_update(
 			rec,
 			{
-				M: author$project$Model$SubModeGutter(gutter)
+				K: author$project$Model$SubModeGutter(gutter)
 			});
 	});
 var author$project$Panel$Editor$Module$getModuleRef = function (_n0) {
-	var moduleRef = _n0.t;
+	var moduleRef = _n0.s;
 	return moduleRef;
 };
 var author$project$Panel$EditorTypeRef$EditorKeyConfig = {$: 1};
@@ -14630,7 +14889,7 @@ var author$project$Model$getActiveEditor = function (model) {
 		author$project$Model$getEditorGroupPanelModel(model));
 };
 var author$project$Model$getTreePanelModel = function (_n0) {
-	var treePanelModel = _n0.a1;
+	var treePanelModel = _n0.a$;
 	return treePanelModel;
 };
 var author$project$Model$setTreePanelModel = F2(
@@ -14638,10 +14897,10 @@ var author$project$Model$setTreePanelModel = F2(
 		var rec = _n0;
 		return _Utils_update(
 			rec,
-			{a1: moduleTreePanelModel});
+			{a$: moduleTreePanelModel});
 	});
 var author$project$Model$ChangeEditorResource = function (a) {
-	return {$: 10, a: a};
+	return {$: 11, a: a};
 };
 var author$project$Model$treePanelEmitToMsg = function (emit) {
 	if (!emit.$) {
@@ -14666,18 +14925,18 @@ var author$project$Panel$Tree$closeTree = F2(
 						var _n2 = editorRef.a;
 						return _Utils_update(
 							rec,
-							{aC: false});
+							{aA: false});
 					case 3:
 						var _n3 = editorRef.a;
 						return _Utils_update(
 							rec,
-							{aD: false});
+							{aB: false});
 					case 4:
 						if (!editorRef.a.a) {
 							var _n4 = editorRef.a.a;
 							return _Utils_update(
 								rec,
-								{aB: false});
+								{az: false});
 						} else {
 							break _n1$3;
 						}
@@ -14691,14 +14950,14 @@ var author$project$Panel$Tree$closeTree = F2(
 		return rec;
 	});
 var author$project$Panel$Tree$getOpenCloseData = function (_n0) {
-	var openCloseData = _n0.aV;
+	var openCloseData = _n0.aT;
 	return openCloseData;
 };
 var author$project$Panel$Tree$isTreeOpen = F2(
 	function (projectRef, _n0) {
-		var isProjectRootOpen = _n0.aC;
-		var isSourceOpen = _n0.aD;
-		var isCoreOpen = _n0.aB;
+		var isProjectRootOpen = _n0.aA;
+		var isSourceOpen = _n0.aB;
+		var isCoreOpen = _n0.az;
 		_n1$3:
 		while (true) {
 			if (!projectRef.$) {
@@ -14730,7 +14989,7 @@ var author$project$Panel$Tree$setOpenCloseData = F2(
 		var rec = _n0;
 		return _Utils_update(
 			rec,
-			{aV: openCloseData});
+			{aT: openCloseData});
 	});
 var author$project$Panel$Tree$mapOpenCloseData = A2(author$project$Utility$Map$toMapper, author$project$Panel$Tree$getOpenCloseData, author$project$Panel$Tree$setOpenCloseData);
 var author$project$Panel$Tree$openTree = F2(
@@ -14744,18 +15003,18 @@ var author$project$Panel$Tree$openTree = F2(
 						var _n2 = editorRef.a;
 						return _Utils_update(
 							rec,
-							{aC: true});
+							{aA: true});
 					case 3:
 						var _n3 = editorRef.a;
 						return _Utils_update(
 							rec,
-							{aD: true});
+							{aB: true});
 					case 4:
 						if (!editorRef.a.a) {
 							var _n4 = editorRef.a.a;
 							return _Utils_update(
 								rec,
-								{aB: true});
+								{az: true});
 						} else {
 							break _n1$3;
 						}
@@ -14852,7 +15111,7 @@ var author$project$NSvg$FillWithColor = function (a) {
 };
 var author$project$NSvg$fillColor = function (color) {
 	return author$project$NSvg$FillWithColor(
-		{W: color});
+		{U: color});
 };
 var author$project$NSvg$Path = function (a) {
 	return {$: 3, a: a};
@@ -14861,10 +15120,10 @@ var author$project$NSvg$path = F3(
 	function (d, strokeStyle, fillStyle) {
 		return author$project$NSvg$Path(
 			{
-				bc: d,
-				z: fillStyle,
-				aH: _Utils_Tuple2(0, 0),
-				u: strokeStyle
+				ba: d,
+				x: fillStyle,
+				aF: _Utils_Tuple2(0, 0),
+				t: strokeStyle
 			});
 	});
 var author$project$NSvg$Polygon = function (a) {
@@ -14873,7 +15132,7 @@ var author$project$NSvg$Polygon = function (a) {
 var author$project$NSvg$polygon = F3(
 	function (points, strokeStyle, fillStyle) {
 		return author$project$NSvg$Polygon(
-			{V: elm$core$Maybe$Nothing, z: fillStyle, am: points, u: strokeStyle});
+			{T: elm$core$Maybe$Nothing, x: fillStyle, ak: points, t: strokeStyle});
 	});
 var author$project$NSvg$StrokeNone = {$: 0};
 var author$project$NSvg$strokeNone = author$project$NSvg$StrokeNone;
@@ -14910,7 +15169,7 @@ var author$project$Panel$Tree$iconColor = function (viewType) {
 	}
 };
 var author$project$Panel$Tree$configIcon = {
-	bH: function (viewType) {
+	bF: function (viewType) {
 		return _List_fromArray(
 			[
 				A3(
@@ -14932,7 +15191,7 @@ var author$project$Panel$Tree$configIcon = {
 					author$project$Panel$Tree$iconColor(viewType)))
 			]);
 	},
-	ac: 10
+	aa: 10
 };
 var author$project$NSvg$FillNone = {$: 0};
 var author$project$NSvg$fillNone = author$project$NSvg$FillNone;
@@ -14941,10 +15200,10 @@ var author$project$NSvg$Rect = function (a) {
 };
 var author$project$NSvg$rect = F3(
 	function (_n0, strokeStyle, fillStyle) {
-		var width = _n0.cc;
-		var height = _n0.bU;
+		var width = _n0.ce;
+		var height = _n0.bS;
 		return author$project$NSvg$Rect(
-			{V: elm$core$Maybe$Nothing, z: fillStyle, bU: height, u: strokeStyle, cc: width, ce: 0, cf: 0});
+			{T: elm$core$Maybe$Nothing, x: fillStyle, bS: height, t: strokeStyle, ce: width, cg: 0, ch: 0});
 	});
 var author$project$NSvg$Stroke = function (a) {
 	return {$: 1, a: a};
@@ -14952,7 +15211,7 @@ var author$project$NSvg$Stroke = function (a) {
 var author$project$NSvg$StrokeLineJoinMiter = 0;
 var author$project$NSvg$strokeColor = function (color) {
 	return author$project$NSvg$Stroke(
-		{W: color, aJ: 0, cc: 1});
+		{U: color, aH: 0, ce: 1});
 };
 var author$project$NSvg$Circle = function (a) {
 	return {$: 1, a: a};
@@ -14970,35 +15229,35 @@ var elm$core$Tuple$mapBoth = F3(
 	});
 var author$project$NSvg$translate = F2(
 	function (_n0, nSvgElement) {
-		var x = _n0.ce;
-		var y = _n0.cf;
+		var x = _n0.cg;
+		var y = _n0.ch;
 		switch (nSvgElement.$) {
 			case 0:
 				var rec = nSvgElement.a;
 				return author$project$NSvg$Rect(
 					_Utils_update(
 						rec,
-						{ce: rec.ce + x, cf: rec.cf + y}));
+						{cg: rec.cg + x, ch: rec.ch + y}));
 			case 1:
 				var rec = nSvgElement.a;
 				return author$project$NSvg$Circle(
 					_Utils_update(
 						rec,
-						{ax: rec.ax + x, ay: rec.ay + y}));
+						{av: rec.av + x, aw: rec.aw + y}));
 			case 2:
 				var rec = nSvgElement.a;
 				return author$project$NSvg$Polygon(
 					_Utils_update(
 						rec,
 						{
-							am: A2(
+							ak: A2(
 								elm$core$List$map,
 								function (_n2) {
 									var px = _n2.a;
 									var py = _n2.b;
 									return _Utils_Tuple2(px + x, py + y);
 								},
-								rec.am)
+								rec.ak)
 						}));
 			case 3:
 				var rec = nSvgElement.a;
@@ -15006,7 +15265,7 @@ var author$project$NSvg$translate = F2(
 					_Utils_update(
 						rec,
 						{
-							aH: A3(
+							aF: A3(
 								elm$core$Tuple$mapBoth,
 								function (ox) {
 									return ox + x;
@@ -15014,107 +15273,107 @@ var author$project$NSvg$translate = F2(
 								function (oy) {
 									return oy + y;
 								},
-								rec.aH)
+								rec.aF)
 						}));
 			default:
 				var rec = nSvgElement.a;
 				return author$project$NSvg$Line(
 					_Utils_update(
 						rec,
-						{as: rec.as + x, at: rec.at + x, au: rec.au + y, av: rec.av + y}));
+						{aq: rec.aq + x, ar: rec.ar + x, as: rec.as + y, at: rec.at + y}));
 		}
 	});
 var author$project$Panel$Tree$defaultProjectIcon = {
-	bH: function (viewType) {
+	bF: function (viewType) {
 		return _List_fromArray(
 			[
 				A2(
 				author$project$NSvg$translate,
-				{ce: 2, cf: 2},
+				{cg: 2, ch: 2},
 				A3(
 					author$project$NSvg$rect,
-					{bU: 22, cc: 24},
+					{bS: 22, ce: 24},
 					author$project$NSvg$strokeColor(
 						author$project$Panel$Tree$iconColor(viewType)),
 					author$project$NSvg$fillNone)),
 				A2(
 				author$project$NSvg$translate,
-				{ce: 4, cf: 12},
+				{cg: 4, ch: 12},
 				A3(
 					author$project$NSvg$rect,
-					{bU: 10, cc: 20},
+					{bS: 10, ce: 20},
 					author$project$NSvg$strokeNone,
 					author$project$NSvg$fillColor(
 						author$project$Panel$Tree$iconColor(viewType))))
 			]);
 	},
-	ac: 28
+	aa: 28
 };
 var author$project$Panel$Tree$documentIcon = {
-	bH: function (viewType) {
+	bF: function (viewType) {
 		return _List_fromArray(
 			[
 				A2(
 				author$project$NSvg$translate,
-				{ce: 1, cf: 1},
+				{cg: 1, ch: 1},
 				A3(
 					author$project$NSvg$rect,
-					{bU: 26, cc: 26},
+					{bS: 26, ce: 26},
 					author$project$NSvg$strokeColor(
 						author$project$Panel$Tree$iconColor(viewType)),
 					author$project$NSvg$fillNone)),
 				A2(
 				author$project$NSvg$translate,
-				{ce: 5, cf: 6},
+				{cg: 5, ch: 6},
 				A3(
 					author$project$NSvg$rect,
-					{bU: 2, cc: 18},
+					{bS: 2, ce: 18},
 					author$project$NSvg$strokeNone,
 					author$project$NSvg$fillColor(
 						author$project$Panel$Tree$iconColor(viewType)))),
 				A2(
 				author$project$NSvg$translate,
-				{ce: 5, cf: 11},
+				{cg: 5, ch: 11},
 				A3(
 					author$project$NSvg$rect,
-					{bU: 2, cc: 18},
+					{bS: 2, ce: 18},
 					author$project$NSvg$strokeNone,
 					author$project$NSvg$fillColor(
 						author$project$Panel$Tree$iconColor(viewType)))),
 				A2(
 				author$project$NSvg$translate,
-				{ce: 5, cf: 16},
+				{cg: 5, ch: 16},
 				A3(
 					author$project$NSvg$rect,
-					{bU: 2, cc: 18},
+					{bS: 2, ce: 18},
 					author$project$NSvg$strokeNone,
 					author$project$NSvg$fillColor(
 						author$project$Panel$Tree$iconColor(viewType))))
 			]);
 	},
-	ac: 28
+	aa: 28
 };
 var author$project$NSvg$circle = F3(
 	function (r, strokeStyle, fillStyle) {
 		return author$project$NSvg$Circle(
-			{ax: 0, ay: 0, z: fillStyle, bu: r, u: strokeStyle});
+			{av: 0, aw: 0, x: fillStyle, bs: r, t: strokeStyle});
 	});
 var author$project$Panel$Tree$moduleIcon = {
-	bH: function (viewType) {
+	bF: function (viewType) {
 		return _List_fromArray(
 			[
 				A2(
 				author$project$NSvg$translate,
-				{ce: 1, cf: 1},
+				{cg: 1, ch: 1},
 				A3(
 					author$project$NSvg$rect,
-					{bU: 8, cc: 8},
+					{bS: 8, ce: 8},
 					author$project$NSvg$strokeColor(
 						author$project$Panel$Tree$iconColor(viewType)),
 					author$project$NSvg$fillNone)),
 				A2(
 				author$project$NSvg$translate,
-				{ce: 5, cf: 5},
+				{cg: 5, ch: 5},
 				A3(
 					author$project$NSvg$circle,
 					2,
@@ -15123,29 +15382,29 @@ var author$project$Panel$Tree$moduleIcon = {
 						author$project$Panel$Tree$iconColor(viewType))))
 			]);
 	},
-	ac: 10
+	aa: 10
 };
 var author$project$NSvg$StrokeLineJoinRound = 1;
 var author$project$NSvg$strokeColorAndStrokeLineJoinRound = function (color) {
 	return author$project$NSvg$Stroke(
-		{W: color, aJ: 1, cc: 1});
+		{U: color, aH: 1, ce: 1});
 };
 var author$project$Panel$Tree$sourceIcon = {
-	bH: function (viewType) {
+	bF: function (viewType) {
 		return _List_fromArray(
 			[
 				A2(
 				author$project$NSvg$translate,
-				{ce: 2, cf: 2},
+				{cg: 2, ch: 2},
 				A3(
 					author$project$NSvg$rect,
-					{bU: 12, cc: 12},
+					{bS: 12, ce: 12},
 					author$project$NSvg$strokeColor(
 						author$project$Panel$Tree$iconColor(viewType)),
 					author$project$NSvg$fillNone)),
 				A2(
 				author$project$NSvg$translate,
-				{ce: 8, cf: 8},
+				{cg: 8, ch: 8},
 				A3(
 					author$project$NSvg$circle,
 					2,
@@ -15160,14 +15419,14 @@ var author$project$Panel$Tree$sourceIcon = {
 				author$project$NSvg$fillNone)
 			]);
 	},
-	ac: 20
+	aa: 20
 };
 var author$project$Project$getAuthor = function (_n0) {
-	var author = _n0.a7;
+	var author = _n0.a5;
 	return author;
 };
 var author$project$Project$getName = function (_n0) {
-	var name = _n0.aS;
+	var name = _n0.aQ;
 	return name;
 };
 var author$project$Project$Label$alphabetToCapitalChar = function (alphabet) {
@@ -15337,8 +15596,6 @@ var author$project$Project$Label$toSmallString = function (_n0) {
 			author$project$Project$Label$alphabetToSmallChar(head),
 			A2(elm$core$List$map, author$project$Project$Label$othersToChar, others)));
 };
-var author$project$Project$Source$Core = 0;
-var author$project$Project$Source$CoreInt32 = 1;
 var author$project$Panel$Tree$baseTree = function (project) {
 	return _List_fromArray(
 		[
@@ -15348,14 +15605,14 @@ var author$project$Panel$Tree$baseTree = function (project) {
 					{
 					l: _List_Nil,
 					j: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$Document),
-					r: author$project$Panel$Tree$documentIcon,
-					s: 'Document'
+					q: author$project$Panel$Tree$documentIcon,
+					r: 'Document'
 				},
 					{
 					l: _List_Nil,
 					j: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$Config),
-					r: author$project$Panel$Tree$configIcon,
-					s: 'Default IO Config'
+					q: author$project$Panel$Tree$configIcon,
+					r: 'Default IO Config'
 				},
 					{
 					l: _List_fromArray(
@@ -15364,8 +15621,8 @@ var author$project$Panel$Tree$baseTree = function (project) {
 							l: _List_Nil,
 							j: author$project$Panel$EditorTypeRef$EditorProject(
 								author$project$Project$Module(2)),
-							r: author$project$Panel$Tree$moduleIcon,
-							s: 'SampleModule'
+							q: author$project$Panel$Tree$moduleIcon,
+							r: 'SampleModule'
 						},
 							{
 							l: _List_fromArray(
@@ -15374,28 +15631,28 @@ var author$project$Panel$Tree$baseTree = function (project) {
 									l: _List_Nil,
 									j: author$project$Panel$EditorTypeRef$EditorProject(
 										author$project$Project$Module(1)),
-									r: author$project$Panel$Tree$moduleIcon,
-									s: 'Int32'
+									q: author$project$Panel$Tree$moduleIcon,
+									r: 'Int32'
 								}
 								]),
 							j: author$project$Panel$EditorTypeRef$EditorProject(
 								author$project$Project$Module(0)),
-							r: author$project$Panel$Tree$moduleIcon,
-							s: 'Core'
+							q: author$project$Panel$Tree$moduleIcon,
+							r: 'Core'
 						}
 						]),
 					j: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$Source),
-					r: author$project$Panel$Tree$sourceIcon,
-					s: 'Source'
+					q: author$project$Panel$Tree$sourceIcon,
+					r: 'Source'
 				}
 				]),
 			j: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$ProjectRoot),
-			r: author$project$Panel$Tree$defaultProjectIcon,
-			s: author$project$Project$Label$toSmallString(
+			q: author$project$Panel$Tree$defaultProjectIcon,
+			r: author$project$Project$Label$toSmallString(
 				author$project$Project$getAuthor(project)) + ('/' + author$project$Project$Label$toCapitalString(
 				author$project$Project$getName(project)))
 		},
-			{l: _List_Nil, j: author$project$Panel$EditorTypeRef$EditorKeyConfig, r: author$project$Panel$Tree$moduleIcon, s: 'Editor Key Config'}
+			{l: _List_Nil, j: author$project$Panel$EditorTypeRef$EditorKeyConfig, q: author$project$Panel$Tree$moduleIcon, r: 'Editor Key Config'}
 		]);
 };
 var author$project$Panel$Tree$ChildrenClose = {$: 1};
@@ -15407,8 +15664,8 @@ var author$project$Panel$Tree$SimpleTree = elm$core$Basics$identity;
 var author$project$Panel$Tree$baseTreeToSimpleProjectTree = F2(
 	function (openCloseData, _n0) {
 		var editorRef = _n0.j;
-		var label = _n0.s;
-		var icon = _n0.r;
+		var label = _n0.r;
+		var icon = _n0.q;
 		var children = _n0.l;
 		return {
 			l: function () {
@@ -15427,8 +15684,8 @@ var author$project$Panel$Tree$baseTreeToSimpleProjectTree = F2(
 				}
 			}(),
 			j: editorRef,
-			r: icon,
-			s: label
+			q: icon,
+			r: label
 		};
 	});
 var author$project$Panel$Tree$simpleProjectTree = F2(
@@ -15783,9 +16040,36 @@ var elm$json$Json$Encode$list = F2(
 				_Json_emptyArray(0),
 				entries));
 	});
+var elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			elm$core$List$foldl,
+			F2(
+				function (_n0, obj) {
+					var k = _n0.a;
+					var v = _n0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(0),
+			pairs));
+};
 var author$project$Update$run = _Platform_outgoingPort(
 	'run',
-	elm$json$Json$Encode$list(elm$json$Json$Encode$int));
+	function ($) {
+		return elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'index',
+					elm$json$Json$Encode$int($.bV)),
+					_Utils_Tuple2(
+					'ref',
+					elm$json$Json$Encode$list(elm$json$Json$Encode$int)($.b3)),
+					_Utils_Tuple2(
+					'wasm',
+					elm$json$Json$Encode$list(elm$json$Json$Encode$int)($.cd))
+				]));
+	});
 var elm$core$Tuple$mapSecond = F2(
 	function (func, _n0) {
 		var x = _n0.a;
@@ -15828,23 +16112,28 @@ var author$project$Update$update = F2(
 					var data = msg.a;
 					var _n5 = A2(author$project$Model$receiveCompiledData, data, model);
 					var newModel = _n5.a;
-					var wasmBinaryMaybe = _n5.b;
+					var wasmAndRefMaybe = _n5.b;
 					return _Utils_Tuple2(
 						newModel,
 						function () {
-							if (!wasmBinaryMaybe.$) {
-								var wasmBinary = wasmBinaryMaybe.a;
-								return author$project$Update$run(wasmBinary);
+							if (!wasmAndRefMaybe.$) {
+								var wasmAndRef = wasmAndRefMaybe.a;
+								return author$project$Update$run(wasmAndRef);
 							} else {
 								return elm$core$Platform$Cmd$none;
 							}
 						}());
 				case 5:
+					var data = msg.a;
+					return _Utils_Tuple2(
+						A2(author$project$Model$receiveResultValue, data, model),
+						elm$core$Platform$Cmd$none);
+				case 6:
 					var gutter = msg.a;
 					return _Utils_Tuple2(
 						A2(author$project$Model$toGutterMode, gutter, model),
 						elm$core$Platform$Cmd$none);
-				case 6:
+				case 7:
 					var focus = msg.a;
 					var _n7 = A2(author$project$Model$setFocus, focus, model);
 					var newModel = _n7.a;
@@ -15860,16 +16149,16 @@ var author$project$Update$update = F2(
 										[next])));
 						},
 						A2(author$project$Update$updateFromList, newMsgList, newModel));
-				case 7:
-					var width = msg.a.cc;
-					var height = msg.a.bU;
+				case 8:
+					var width = msg.a.ce;
+					var height = msg.a.bS;
 					return _Utils_Tuple2(
 						A2(
 							author$project$Model$setWindowSize,
-							{bU: height, cc: width},
+							{bS: height, ce: width},
 							model),
 						elm$core$Platform$Cmd$none);
-				case 8:
+				case 9:
 					var treePanelMsg = msg.a;
 					var _n8 = A2(author$project$Model$treePanelUpdate, treePanelMsg, model);
 					if (!_n8.b.$) {
@@ -15885,7 +16174,7 @@ var author$project$Update$update = F2(
 						var _n9 = _n8.b;
 						return _Utils_Tuple2(newModel, elm$core$Platform$Cmd$none);
 					}
-				case 9:
+				case 10:
 					var editorPanelMsg = msg.a;
 					var _n10 = A2(author$project$Model$editorPanelUpdate, editorPanelMsg, model);
 					var newModel = _n10.a;
@@ -15901,35 +16190,35 @@ var author$project$Update$update = F2(
 										[next])));
 						},
 						A2(author$project$Update$updateFromList, newMsgList, newModel));
-				case 10:
+				case 11:
 					var editorRef = msg.a;
 					return _Utils_Tuple2(
 						A2(author$project$Model$openEditor, editorRef, model),
 						elm$core$Platform$Cmd$none);
-				case 11:
+				case 12:
 					return _Utils_Tuple2(
 						author$project$Model$openCommandPalette(model),
 						elm$core$Platform$Cmd$none);
-				case 12:
+				case 13:
 					return _Utils_Tuple2(
 						author$project$Model$closeCommandPalette(model),
-						elm$core$Platform$Cmd$none);
-				case 13:
-					var data = msg.a;
-					return _Utils_Tuple2(
-						A2(author$project$Model$changeReadMe, data, model),
 						elm$core$Platform$Cmd$none);
 				case 14:
 					var data = msg.a;
 					return _Utils_Tuple2(
-						A2(author$project$Model$changeName, data, model),
+						A2(author$project$Model$changeReadMe, data, model),
 						elm$core$Platform$Cmd$none);
 				case 15:
 					var data = msg.a;
 					return _Utils_Tuple2(
-						A2(author$project$Model$changeType, data, model),
+						A2(author$project$Model$changeName, data, model),
 						elm$core$Platform$Cmd$none);
 				case 16:
+					var data = msg.a;
+					return _Utils_Tuple2(
+						A2(author$project$Model$changeType, data, model),
+						elm$core$Platform$Cmd$none);
+				case 17:
 					var data = msg.a;
 					return A2(author$project$Model$changeExpr, data, model);
 				default:
@@ -15961,7 +16250,7 @@ var author$project$Update$updateFromList = F2(
 		}
 	});
 var author$project$Model$getCommandPaletteModel = function (_n0) {
-	var subMode = _n0.M;
+	var subMode = _n0.K;
 	switch (subMode.$) {
 		case 0:
 			return elm$core$Maybe$Nothing;
@@ -16036,8 +16325,8 @@ var author$project$Model$getEditorGroupPanelGutter = function (model) {
 };
 var author$project$Model$getEditorGroupPanelSize = function (model) {
 	return {
-		bU: author$project$Model$getWindowSize(model).bU,
-		cc: author$project$Model$getWindowSize(model).cc - (author$project$Model$getTreePanelWidth(model) + author$project$Model$verticalGutterWidth)
+		bS: author$project$Model$getWindowSize(model).bS,
+		ce: author$project$Model$getWindowSize(model).ce - (author$project$Model$getTreePanelWidth(model) + author$project$Model$verticalGutterWidth)
 	};
 };
 var author$project$Model$GutterTypeHorizontal = 1;
@@ -16126,7 +16415,7 @@ var author$project$Panel$EditorGroup$editorColumnAddGutter = function (showEdito
 var elm$html$Html$li = _VirtualDom_node('li');
 var elm$html$Html$ul = _VirtualDom_node('ul');
 var author$project$Panel$Editor$Config$view = {
-	bH: _List_fromArray(
+	bF: _List_fromArray(
 		[
 			A2(
 			elm$html$Html$ul,
@@ -16142,14 +16431,14 @@ var author$project$Panel$Editor$Config$view = {
 						]))
 				]))
 		]),
-	b7: 'Input Config 入力設定'
+	b8: 'Input Config 入力設定'
 };
 var author$project$Panel$Editor$Document$view = {
-	bH: _List_fromArray(
+	bF: _List_fromArray(
 		[
 			elm$html$Html$text('使い方説明、説明書')
 		]),
-	b7: 'Document ドキュメント'
+	b8: 'Document ドキュメント'
 };
 var elm$svg$Svg$Events$onClick = function (msg) {
 	return A2(
@@ -16349,7 +16638,7 @@ var author$project$NSvg$fillStyleToSvgAttributes = function (fillStyle) {
 				elm$svg$Svg$Attributes$fill('none')
 			]);
 	} else {
-		var color = fillStyle.a.W;
+		var color = fillStyle.a.U;
 		return _List_fromArray(
 			[
 				elm$svg$Svg$Attributes$fill(
@@ -16374,9 +16663,9 @@ var author$project$NSvg$strokeStyleToSvgAttributes = function (strokeStyle) {
 	if (!strokeStyle.$) {
 		return _List_Nil;
 	} else {
-		var color = strokeStyle.a.W;
-		var width = strokeStyle.a.cc;
-		var strokeLineJoin = strokeStyle.a.aJ;
+		var color = strokeStyle.a.U;
+		var width = strokeStyle.a.ce;
+		var strokeLineJoin = strokeStyle.a.aH;
 		return _Utils_ap(
 			_List_fromArray(
 				[
@@ -16429,13 +16718,13 @@ var elm$svg$Svg$Attributes$y2 = _VirtualDom_attribute('y2');
 var author$project$NSvg$elementToSvg = function (nSvgElement) {
 	switch (nSvgElement.$) {
 		case 0:
-			var x = nSvgElement.a.ce;
-			var y = nSvgElement.a.cf;
-			var width = nSvgElement.a.cc;
-			var height = nSvgElement.a.bU;
-			var strokeStyle = nSvgElement.a.u;
-			var fillStyle = nSvgElement.a.z;
-			var clickMsg = nSvgElement.a.V;
+			var x = nSvgElement.a.cg;
+			var y = nSvgElement.a.ch;
+			var width = nSvgElement.a.ce;
+			var height = nSvgElement.a.bS;
+			var strokeStyle = nSvgElement.a.t;
+			var fillStyle = nSvgElement.a.x;
+			var clickMsg = nSvgElement.a.T;
 			return A2(
 				elm$svg$Svg$rect,
 				_Utils_ap(
@@ -16457,11 +16746,11 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 							author$project$NSvg$clickMsgToSvgAttributes(clickMsg)))),
 				_List_Nil);
 		case 1:
-			var cx = nSvgElement.a.ax;
-			var cy = nSvgElement.a.ay;
-			var r = nSvgElement.a.bu;
-			var strokeStyle = nSvgElement.a.u;
-			var fillStyle = nSvgElement.a.z;
+			var cx = nSvgElement.a.av;
+			var cy = nSvgElement.a.aw;
+			var r = nSvgElement.a.bs;
+			var strokeStyle = nSvgElement.a.t;
+			var fillStyle = nSvgElement.a.x;
 			return A2(
 				elm$svg$Svg$circle,
 				_Utils_ap(
@@ -16479,10 +16768,10 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 						author$project$NSvg$fillStyleToSvgAttributes(fillStyle))),
 				_List_Nil);
 		case 2:
-			var points = nSvgElement.a.am;
-			var strokeStyle = nSvgElement.a.u;
-			var fillStyle = nSvgElement.a.z;
-			var clickMsg = nSvgElement.a.V;
+			var points = nSvgElement.a.ak;
+			var strokeStyle = nSvgElement.a.t;
+			var fillStyle = nSvgElement.a.x;
+			var clickMsg = nSvgElement.a.T;
 			return A2(
 				elm$svg$Svg$polygon,
 				_Utils_ap(
@@ -16508,10 +16797,10 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 							author$project$NSvg$clickMsgToSvgAttributes(clickMsg)))),
 				_List_Nil);
 		case 3:
-			var d = nSvgElement.a.bc;
-			var strokeStyle = nSvgElement.a.u;
-			var fillStyle = nSvgElement.a.z;
-			var offset = nSvgElement.a.aH;
+			var d = nSvgElement.a.ba;
+			var strokeStyle = nSvgElement.a.t;
+			var fillStyle = nSvgElement.a.x;
+			var offset = nSvgElement.a.aF;
 			return A2(
 				elm$svg$Svg$path,
 				_Utils_ap(
@@ -16526,11 +16815,11 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 							author$project$NSvg$offsetTranslate(offset)))),
 				_List_Nil);
 		default:
-			var x0 = nSvgElement.a.as;
-			var y0 = nSvgElement.a.au;
-			var x1 = nSvgElement.a.at;
-			var y1 = nSvgElement.a.av;
-			var strokeStyle = nSvgElement.a.u;
+			var x0 = nSvgElement.a.aq;
+			var y0 = nSvgElement.a.as;
+			var x1 = nSvgElement.a.ar;
+			var y1 = nSvgElement.a.at;
+			var strokeStyle = nSvgElement.a.t;
 			return A2(
 				elm$svg$Svg$line,
 				_Utils_ap(
@@ -16553,10 +16842,10 @@ var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
 var author$project$NSvg$toHtml = F2(
 	function (_n0, children) {
-		var x = _n0.ce;
-		var y = _n0.cf;
-		var width = _n0.cc;
-		var height = _n0.bU;
+		var x = _n0.cg;
+		var y = _n0.ch;
+		var width = _n0.ce;
+		var height = _n0.bS;
 		return A2(
 			elm$svg$Svg$svg,
 			_List_fromArray(
@@ -16609,7 +16898,7 @@ var author$project$Panel$Editor$EditorKeyConfig$inputSourceTab = function (selec
 var author$project$NSvg$strokeColorWidth = F2(
 	function (color, width) {
 		return author$project$NSvg$Stroke(
-			{W: color, aJ: 0, cc: width});
+			{U: color, aH: 0, ce: width});
 	});
 var author$project$Panel$Editor$EditorKeyConfig$SelectKey = function (a) {
 	return {$: 0, a: a};
@@ -16618,25 +16907,25 @@ var author$project$NSvg$polygonWithClickEvent = F4(
 	function (points, strokeStyle, fillStyle, cliskMsg) {
 		return author$project$NSvg$Polygon(
 			{
-				V: elm$core$Maybe$Just(cliskMsg),
-				z: fillStyle,
-				am: points,
-				u: strokeStyle
+				T: elm$core$Maybe$Just(cliskMsg),
+				x: fillStyle,
+				ak: points,
+				t: strokeStyle
 			});
 	});
 var author$project$NSvg$rectWithClickEvent = F4(
 	function (_n0, strokeStyle, fillStyle, clickMsg) {
-		var width = _n0.cc;
-		var height = _n0.bU;
+		var width = _n0.ce;
+		var height = _n0.bS;
 		return author$project$NSvg$Rect(
 			{
-				V: elm$core$Maybe$Just(clickMsg),
-				z: fillStyle,
-				bU: height,
-				u: strokeStyle,
-				cc: width,
-				ce: 0,
-				cf: 0
+				T: elm$core$Maybe$Just(clickMsg),
+				x: fillStyle,
+				bS: height,
+				t: strokeStyle,
+				ce: width,
+				cg: 0,
+				ch: 0
 			});
 	});
 var tesk9$palette$Palette$X11$black = tesk9$palette$Color$fromRGB(
@@ -16648,25 +16937,25 @@ var author$project$Panel$Editor$EditorKeyConfig$keyShapeToNSvgShapeClick = F2(
 				switch (keyShape) {
 					case 0:
 						return author$project$NSvg$rectWithClickEvent(
-							{bU: 200, cc: 300});
+							{bS: 200, ce: 300});
 					case 1:
 						return author$project$NSvg$rectWithClickEvent(
-							{bU: 200, cc: 400});
+							{bS: 200, ce: 400});
 					case 2:
 						return author$project$NSvg$rectWithClickEvent(
-							{bU: 300, cc: 300});
+							{bS: 300, ce: 300});
 					case 3:
 						return author$project$NSvg$rectWithClickEvent(
-							{bU: 300, cc: 400});
+							{bS: 300, ce: 400});
 					case 4:
 						return author$project$NSvg$rectWithClickEvent(
-							{bU: 300, cc: 500});
+							{bS: 300, ce: 500});
 					case 5:
 						return author$project$NSvg$rectWithClickEvent(
-							{bU: 300, cc: 600});
+							{bS: 300, ce: 600});
 					case 6:
 						return author$project$NSvg$rectWithClickEvent(
-							{bU: 300, cc: 1500});
+							{bS: 300, ce: 1500});
 					case 7:
 						return author$project$NSvg$polygonWithClickEvent(
 							_List_fromArray(
@@ -16680,10 +16969,10 @@ var author$project$Panel$Editor$EditorKeyConfig$keyShapeToNSvgShapeClick = F2(
 								]));
 					case 8:
 						return author$project$NSvg$rectWithClickEvent(
-							{bU: 200, cc: 600});
+							{bS: 200, ce: 600});
 					default:
 						return author$project$NSvg$rectWithClickEvent(
-							{bU: 600, cc: 300});
+							{bS: 600, ce: 300});
 				}
 			}(),
 			A2(author$project$NSvg$strokeColorWidth, tesk9$palette$Palette$X11$black, 20),
@@ -16697,11 +16986,11 @@ var author$project$Panel$Editor$EditorKeyConfig$addKeyFrameAndClick = F2(
 		var pos = _n0.a;
 		var shape = _n0.b;
 		var stroke = _n0.c;
-		var key = _n0.bj;
+		var key = _n0.bh;
 		return A2(
 			elm$core$List$map,
 			author$project$NSvg$translate(
-				{ce: pos.a * 100, cf: pos.b * 100}),
+				{cg: pos.a * 100, ch: pos.b * 100}),
 			A2(
 				elm$core$List$cons,
 				A2(
@@ -16742,7 +17031,7 @@ var author$project$NSvg$line = F3(
 		var x1 = _n1.a;
 		var y1 = _n1.b;
 		return author$project$NSvg$Line(
-			{u: strokeStyle, as: x0, at: x1, au: y0, av: y1});
+			{t: strokeStyle, aq: x0, ar: x1, as: y0, at: y1});
 	});
 var author$project$Panel$Editor$EditorKeyConfig$arrowDownKey = _List_fromArray(
 	[
@@ -16835,26 +17124,26 @@ var author$project$Panel$Editor$EditorKeyConfig$backquoteKey = _List_fromArray(
 		author$project$NSvg$fillColor(tesk9$palette$Palette$X11$white)),
 		A2(
 		author$project$NSvg$translate,
-		{ce: 67, cf: 155},
+		{cg: 67, ch: 155},
 		A3(
 			author$project$NSvg$rect,
-			{bU: 105, cc: 8},
+			{bS: 105, ce: 8},
 			author$project$NSvg$strokeNone,
 			author$project$NSvg$fillColor(tesk9$palette$Palette$X11$skyBlue))),
 		A2(
 		author$project$NSvg$translate,
-		{ce: 28, cf: 192},
+		{cg: 28, ch: 192},
 		A3(
 			author$project$NSvg$rect,
-			{bU: 8, cc: 88},
+			{bS: 8, ce: 88},
 			author$project$NSvg$strokeNone,
 			author$project$NSvg$fillColor(tesk9$palette$Palette$X11$skyBlue))),
 		A2(
 		author$project$NSvg$translate,
-		{ce: 20, cf: 219},
+		{cg: 20, ch: 219},
 		A3(
 			author$project$NSvg$rect,
-			{bU: 8, cc: 103},
+			{bS: 8, ce: 103},
 			author$project$NSvg$strokeNone,
 			author$project$NSvg$fillColor(tesk9$palette$Palette$X11$skyBlue))),
 		A3(
@@ -16879,34 +17168,34 @@ var author$project$Panel$Editor$EditorKeyConfig$backquoteKey = _List_fromArray(
 		author$project$NSvg$fillColor(tesk9$palette$Palette$X11$skyBlue)),
 		A2(
 		author$project$NSvg$translate,
-		{ce: 227, cf: 196},
+		{cg: 227, ch: 196},
 		A3(
 			author$project$NSvg$rect,
-			{bU: 60, cc: 8},
+			{bS: 60, ce: 8},
 			author$project$NSvg$strokeNone,
 			author$project$NSvg$fillColor(tesk9$palette$Palette$X11$skyBlue))),
 		A2(
 		author$project$NSvg$translate,
-		{ce: 199, cf: 196},
+		{cg: 199, ch: 196},
 		A3(
 			author$project$NSvg$rect,
-			{bU: 8, cc: 68},
+			{bS: 8, ce: 68},
 			author$project$NSvg$strokeNone,
 			author$project$NSvg$fillColor(tesk9$palette$Palette$X11$skyBlue))),
 		A2(
 		author$project$NSvg$translate,
-		{ce: 193, cf: 222},
+		{cg: 193, ch: 222},
 		A3(
 			author$project$NSvg$rect,
-			{bU: 8, cc: 78},
+			{bS: 8, ce: 78},
 			author$project$NSvg$strokeNone,
 			author$project$NSvg$fillColor(tesk9$palette$Palette$X11$skyBlue))),
 		A2(
 		author$project$NSvg$translate,
-		{ce: 184, cf: 249},
+		{cg: 184, ch: 249},
 		A3(
 			author$project$NSvg$rect,
-			{bU: 8, cc: 97},
+			{bS: 8, ce: 97},
 			author$project$NSvg$strokeNone,
 			author$project$NSvg$fillColor(tesk9$palette$Palette$X11$skyBlue)))
 	]);
@@ -16977,10 +17266,10 @@ var author$project$Panel$Editor$EditorKeyConfig$contextMenuKey = _List_fromArray
 	[
 		A2(
 		author$project$NSvg$translate,
-		{ce: 80, cf: 50},
+		{cg: 80, ch: 50},
 		A3(
 			author$project$NSvg$rect,
-			{bU: 200, cc: 140},
+			{bS: 200, ce: 140},
 			A2(author$project$NSvg$strokeColorWidth, tesk9$palette$Palette$X11$white, 10),
 			author$project$NSvg$fillNone)),
 		A3(
@@ -17385,7 +17674,7 @@ var author$project$Panel$Editor$EditorKeyConfig$nonConvertKey = _List_fromArray(
 var author$project$Panel$Editor$EditorKeyConfig$numpad0Key = A2(
 	elm$core$List$map,
 	author$project$NSvg$translate(
-		{ce: 150, cf: 0}),
+		{cg: 150, ch: 0}),
 	author$project$Panel$Editor$EditorKeyConfig$digit0Key);
 var author$project$Panel$Editor$EditorKeyConfig$numpad1Key = author$project$Panel$Editor$EditorKeyConfig$digit1Key;
 var author$project$Panel$Editor$EditorKeyConfig$numpad2Key = author$project$Panel$Editor$EditorKeyConfig$digit2Key;
@@ -17583,7 +17872,7 @@ var author$project$Panel$Editor$EditorKeyConfig$tabKey = _List_fromArray(
 	[
 		A2(
 		author$project$NSvg$translate,
-		{ce: 10, cf: 10},
+		{cg: 10, ch: 10},
 		A3(
 			author$project$NSvg$path,
 			'M 106.678 107.293 L 106.678 211.652 L 91.819 211.652 L 91.819 107.293 L 55.139 107.293 L 55.139 94.275 L 143.114 94.275 L 143.114 107.293 L 106.678 107.293 Z M 217.457 211.652 L 206.942 211.652 L 204.137 199.123 L 203.49 199.123 C 199.098 204.637 194.725 208.373 190.371 210.329 C 186.008 212.285 180.509 213.263 173.872 213.263 C 165.204 213.263 158.405 210.986 153.475 206.431 C 148.556 201.885 146.096 195.466 146.096 187.17 C 146.096 169.295 160.198 159.926 188.401 159.063 L 203.332 158.502 L 203.332 153.295 C 203.332 146.602 201.889 141.662 199.002 138.479 C 196.106 135.295 191.475 133.703 185.107 133.703 C 180.446 133.703 176.044 134.398 171.902 135.789 C 167.75 137.18 163.856 138.733 160.222 140.449 L 155.805 129.604 C 160.246 127.255 165.089 125.408 170.334 124.066 C 175.58 122.732 180.773 122.066 185.912 122.066 C 196.557 122.066 204.478 124.421 209.675 129.129 C 214.864 133.837 217.457 141.327 217.457 151.597 L 217.457 211.652 Z M 177.152 201.612 C 185.236 201.612 191.594 199.436 196.226 195.081 C 200.857 190.719 203.173 184.519 203.173 176.482 L 203.173 168.542 L 190.17 169.103 C 180.053 169.477 172.678 171.084 168.047 173.922 C 163.415 176.76 161.099 181.229 161.099 187.328 C 161.099 191.931 162.504 195.466 165.314 197.93 C 168.124 200.385 172.07 201.612 177.152 201.612 Z M 286.497 122.066 C 298.111 122.066 307.076 126.065 313.395 134.063 C 319.706 142.06 322.86 153.233 322.86 167.578 C 322.86 182.135 319.653 193.388 313.237 201.339 C 306.813 209.289 297.899 213.263 286.497 213.263 C 280.562 213.263 275.262 212.189 270.602 210.041 C 265.951 207.902 262.154 204.719 259.209 200.49 L 258.087 200.49 C 256.429 206.916 255.436 210.635 255.11 211.652 L 244.753 211.652 L 244.753 86.738 L 259.209 86.738 L 259.209 117.089 C 259.209 123.131 258.942 129.176 258.404 135.228 L 259.209 135.228 C 265.146 126.453 274.241 122.066 286.497 122.066 Z M 284.094 134.02 C 275.205 134.02 268.838 136.537 264.992 141.571 C 261.137 146.596 259.209 155.107 259.209 167.104 L 259.209 167.737 C 259.209 179.781 261.176 188.383 265.107 193.542 C 269.04 198.711 275.474 201.296 284.411 201.296 C 292.332 201.296 298.234 198.39 302.118 192.579 C 305.993 186.777 307.929 178.391 307.929 167.42 C 307.929 156.287 305.979 147.939 302.075 142.377 C 298.172 136.806 292.178 134.02 284.094 134.02 Z',
@@ -17641,607 +17930,607 @@ var author$project$Panel$Editor$EditorKeyConfig$zKey = _List_fromArray(
 var author$project$Panel$Editor$EditorKeyConfig$keyList = _List_fromArray(
 	[
 		{
-		bj: 60,
+		bh: 60,
 		a: _Utils_Tuple2(0, 0),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$escapeKey
 	},
 		{
-		bj: 61,
+		bh: 61,
 		a: _Utils_Tuple2(4, 0),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$f1Key
 	},
 		{
-		bj: 62,
+		bh: 62,
 		a: _Utils_Tuple2(7, 0),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$f2Key
 	},
 		{
-		bj: 63,
+		bh: 63,
 		a: _Utils_Tuple2(10, 0),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$f3Key
 	},
 		{
-		bj: 64,
+		bh: 64,
 		a: _Utils_Tuple2(13, 0),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$f4Key
 	},
 		{
-		bj: 65,
+		bh: 65,
 		a: _Utils_Tuple2(17, 0),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$f5Key
 	},
 		{
-		bj: 66,
+		bh: 66,
 		a: _Utils_Tuple2(20, 0),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$f6Key
 	},
 		{
-		bj: 67,
+		bh: 67,
 		a: _Utils_Tuple2(23, 0),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$f7Key
 	},
 		{
-		bj: 68,
+		bh: 68,
 		a: _Utils_Tuple2(26, 0),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$f8Key
 	},
 		{
-		bj: 69,
+		bh: 69,
 		a: _Utils_Tuple2(30, 0),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$f9Key
 	},
 		{
-		bj: 70,
+		bh: 70,
 		a: _Utils_Tuple2(33, 0),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$f10Key
 	},
 		{
-		bj: 71,
+		bh: 71,
 		a: _Utils_Tuple2(36, 0),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$f11Key
 	},
 		{
-		bj: 72,
+		bh: 72,
 		a: _Utils_Tuple2(39, 0),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$f12Key
 	},
 		{
-		bj: 73,
+		bh: 73,
 		a: _Utils_Tuple2(43, 0),
 		b: 3,
 		c: author$project$Panel$Editor$EditorKeyConfig$deleteKey
 	},
 		{
-		bj: 0,
+		bh: 0,
 		a: _Utils_Tuple2(0, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$backquoteKey
 	},
 		{
-		bj: 7,
+		bh: 7,
 		a: _Utils_Tuple2(3, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$digit1Key
 	},
 		{
-		bj: 8,
+		bh: 8,
 		a: _Utils_Tuple2(6, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$digit2Key
 	},
 		{
-		bj: 9,
+		bh: 9,
 		a: _Utils_Tuple2(9, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$digit3Key
 	},
 		{
-		bj: 10,
+		bh: 10,
 		a: _Utils_Tuple2(12, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$digit4Key
 	},
 		{
-		bj: 11,
+		bh: 11,
 		a: _Utils_Tuple2(15, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$digit5Key
 	},
 		{
-		bj: 12,
+		bh: 12,
 		a: _Utils_Tuple2(18, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$digit6Key
 	},
 		{
-		bj: 13,
+		bh: 13,
 		a: _Utils_Tuple2(21, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$digit7Key
 	},
 		{
-		bj: 14,
+		bh: 14,
 		a: _Utils_Tuple2(24, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$digit8Key
 	},
 		{
-		bj: 15,
+		bh: 15,
 		a: _Utils_Tuple2(27, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$digit9Key
 	},
 		{
-		bj: 6,
+		bh: 6,
 		a: _Utils_Tuple2(30, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$digit0Key
 	},
 		{
-		bj: 45,
+		bh: 45,
 		a: _Utils_Tuple2(33, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$minusKey
 	},
 		{
-		bj: 16,
+		bh: 16,
 		a: _Utils_Tuple2(36, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$equalKey
 	},
 		{
-		bj: 18,
+		bh: 18,
 		a: _Utils_Tuple2(39, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$intlYen
 	},
 		{
-		bj: 2,
+		bh: 2,
 		a: _Utils_Tuple2(42, 3),
 		b: 4,
 		c: author$project$Panel$Editor$EditorKeyConfig$backspaceKey
 	},
 		{
-		bj: 56,
+		bh: 56,
 		a: _Utils_Tuple2(0, 6),
 		b: 3,
 		c: author$project$Panel$Editor$EditorKeyConfig$tabKey
 	},
 		{
-		bj: 35,
+		bh: 35,
 		a: _Utils_Tuple2(4, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$qKey
 	},
 		{
-		bj: 41,
+		bh: 41,
 		a: _Utils_Tuple2(7, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$wKey
 	},
 		{
-		bj: 23,
+		bh: 23,
 		a: _Utils_Tuple2(10, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$eKey
 	},
 		{
-		bj: 36,
+		bh: 36,
 		a: _Utils_Tuple2(13, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$rKey
 	},
 		{
-		bj: 38,
+		bh: 38,
 		a: _Utils_Tuple2(16, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$tKey
 	},
 		{
-		bj: 43,
+		bh: 43,
 		a: _Utils_Tuple2(19, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$yKey
 	},
 		{
-		bj: 39,
+		bh: 39,
 		a: _Utils_Tuple2(22, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$uKey
 	},
 		{
-		bj: 27,
+		bh: 27,
 		a: _Utils_Tuple2(25, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$iKey
 	},
 		{
-		bj: 33,
+		bh: 33,
 		a: _Utils_Tuple2(28, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$oKey
 	},
 		{
-		bj: 34,
+		bh: 34,
 		a: _Utils_Tuple2(31, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$pKey
 	},
 		{
-		bj: 3,
+		bh: 3,
 		a: _Utils_Tuple2(34, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$bracketLeftKey
 	},
 		{
-		bj: 4,
+		bh: 4,
 		a: _Utils_Tuple2(37, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$bracketRightKey
 	},
 		{
-		bj: 53,
+		bh: 53,
 		a: _Utils_Tuple2(40, 6),
 		b: 7,
 		c: author$project$Panel$Editor$EditorKeyConfig$enterKey
 	},
 		{
-		bj: 19,
+		bh: 19,
 		a: _Utils_Tuple2(5, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$aKey
 	},
 		{
-		bj: 37,
+		bh: 37,
 		a: _Utils_Tuple2(8, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$sKey
 	},
 		{
-		bj: 22,
+		bh: 22,
 		a: _Utils_Tuple2(11, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$dKey
 	},
 		{
-		bj: 24,
+		bh: 24,
 		a: _Utils_Tuple2(14, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$fKey
 	},
 		{
-		bj: 25,
+		bh: 25,
 		a: _Utils_Tuple2(17, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$gKey
 	},
 		{
-		bj: 26,
+		bh: 26,
 		a: _Utils_Tuple2(20, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$hKey
 	},
 		{
-		bj: 28,
+		bh: 28,
 		a: _Utils_Tuple2(23, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$jKey
 	},
 		{
-		bj: 29,
+		bh: 29,
 		a: _Utils_Tuple2(26, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$kKey
 	},
 		{
-		bj: 30,
+		bh: 30,
 		a: _Utils_Tuple2(29, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$lKey
 	},
 		{
-		bj: 48,
+		bh: 48,
 		a: _Utils_Tuple2(32, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$semicolonKey
 	},
 		{
-		bj: 47,
+		bh: 47,
 		a: _Utils_Tuple2(35, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$quoteKey
 	},
 		{
-		bj: 1,
+		bh: 1,
 		a: _Utils_Tuple2(38, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$backslashKey
 	},
 		{
-		bj: 54,
+		bh: 54,
 		a: _Utils_Tuple2(0, 12),
 		b: 5,
 		c: author$project$Panel$Editor$EditorKeyConfig$shiftKey
 	},
 		{
-		bj: 44,
+		bh: 44,
 		a: _Utils_Tuple2(6, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$zKey
 	},
 		{
-		bj: 42,
+		bh: 42,
 		a: _Utils_Tuple2(9, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$xKey
 	},
 		{
-		bj: 21,
+		bh: 21,
 		a: _Utils_Tuple2(12, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$cKey
 	},
 		{
-		bj: 40,
+		bh: 40,
 		a: _Utils_Tuple2(15, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$vKey
 	},
 		{
-		bj: 20,
+		bh: 20,
 		a: _Utils_Tuple2(18, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$bKey
 	},
 		{
-		bj: 32,
+		bh: 32,
 		a: _Utils_Tuple2(21, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$nKey
 	},
 		{
-		bj: 31,
+		bh: 31,
 		a: _Utils_Tuple2(24, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$mKey
 	},
 		{
-		bj: 5,
+		bh: 5,
 		a: _Utils_Tuple2(27, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$commaKey
 	},
 		{
-		bj: 46,
+		bh: 46,
 		a: _Utils_Tuple2(30, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$periodKey
 	},
 		{
-		bj: 49,
+		bh: 49,
 		a: _Utils_Tuple2(33, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$slashKey
 	},
 		{
-		bj: 17,
+		bh: 17,
 		a: _Utils_Tuple2(36, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$intlRoKey
 	},
 		{
-		bj: 52,
+		bh: 52,
 		a: _Utils_Tuple2(0, 15),
 		b: 4,
 		c: author$project$Panel$Editor$EditorKeyConfig$ctrlKey
 	},
 		{
-		bj: 50,
+		bh: 50,
 		a: _Utils_Tuple2(5, 15),
 		b: 4,
 		c: author$project$Panel$Editor$EditorKeyConfig$altKey
 	},
 		{
-		bj: 59,
+		bh: 59,
 		a: _Utils_Tuple2(10, 15),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$nonConvertKey
 	},
 		{
-		bj: 55,
+		bh: 55,
 		a: _Utils_Tuple2(13, 15),
 		b: 6,
 		c: author$project$Panel$Editor$EditorKeyConfig$spaceKey
 	},
 		{
-		bj: 57,
+		bh: 57,
 		a: _Utils_Tuple2(28, 15),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$convertKey
 	},
 		{
-		bj: 58,
+		bh: 58,
 		a: _Utils_Tuple2(31, 15),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$kanaModeKey
 	},
 		{
-		bj: 51,
+		bh: 51,
 		a: _Utils_Tuple2(34, 15),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$contextMenuKey
 	},
 		{
-		bj: 81,
+		bh: 81,
 		a: _Utils_Tuple2(41, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$arrowUpKey
 	},
 		{
-		bj: 79,
+		bh: 79,
 		a: _Utils_Tuple2(38, 15),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$arrowLeftKey
 	},
 		{
-		bj: 78,
+		bh: 78,
 		a: _Utils_Tuple2(41, 15),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$arrowDownKey
 	},
 		{
-		bj: 80,
+		bh: 80,
 		a: _Utils_Tuple2(44, 15),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$arrowRightKey
 	},
 		{
-		bj: 75,
+		bh: 75,
 		a: _Utils_Tuple2(48, 1),
 		b: 3,
 		c: author$project$Panel$Editor$EditorKeyConfig$homeKey
 	},
 		{
-		bj: 74,
+		bh: 74,
 		a: _Utils_Tuple2(48, 4),
 		b: 3,
 		c: author$project$Panel$Editor$EditorKeyConfig$endKey
 	},
 		{
-		bj: 77,
+		bh: 77,
 		a: _Utils_Tuple2(48, 8),
 		b: 3,
 		c: author$project$Panel$Editor$EditorKeyConfig$pageUpKey
 	},
 		{
-		bj: 76,
+		bh: 76,
 		a: _Utils_Tuple2(48, 11),
 		b: 3,
 		c: author$project$Panel$Editor$EditorKeyConfig$pageDownKey
 	},
 		{
-		bj: 94,
+		bh: 94,
 		a: _Utils_Tuple2(53, 0),
 		b: 5,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpadClearKey
 	},
 		{
-		bj: 93,
+		bh: 93,
 		a: _Utils_Tuple2(59, 0),
 		b: 5,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpadBackspaceKey
 	},
 		{
-		bj: 98,
+		bh: 98,
 		a: _Utils_Tuple2(53, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpadEqualKey
 	},
 		{
-		bj: 96,
+		bh: 96,
 		a: _Utils_Tuple2(56, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpadDivideKey
 	},
 		{
-		bj: 99,
+		bh: 99,
 		a: _Utils_Tuple2(59, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpadMultiplyKey
 	},
 		{
-		bj: 100,
+		bh: 100,
 		a: _Utils_Tuple2(62, 3),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpadSubtractKey
 	},
 		{
-		bj: 89,
+		bh: 89,
 		a: _Utils_Tuple2(53, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpad7Key
 	},
 		{
-		bj: 90,
+		bh: 90,
 		a: _Utils_Tuple2(56, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpad8Key
 	},
 		{
-		bj: 91,
+		bh: 91,
 		a: _Utils_Tuple2(59, 6),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpad9Key
 	},
 		{
-		bj: 92,
+		bh: 92,
 		a: _Utils_Tuple2(62, 6),
 		b: 9,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpadAdd
 	},
 		{
-		bj: 86,
+		bh: 86,
 		a: _Utils_Tuple2(53, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpad4Key
 	},
 		{
-		bj: 87,
+		bh: 87,
 		a: _Utils_Tuple2(56, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpad5Key
 	},
 		{
-		bj: 88,
+		bh: 88,
 		a: _Utils_Tuple2(59, 9),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpad6Key
 	},
 		{
-		bj: 83,
+		bh: 83,
 		a: _Utils_Tuple2(53, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpad1Key
 	},
 		{
-		bj: 84,
+		bh: 84,
 		a: _Utils_Tuple2(56, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpad2Key
 	},
 		{
-		bj: 85,
+		bh: 85,
 		a: _Utils_Tuple2(59, 12),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpad3Key
 	},
 		{
-		bj: 97,
+		bh: 97,
 		a: _Utils_Tuple2(62, 12),
 		b: 9,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpadEnterKey
 	},
 		{
-		bj: 82,
+		bh: 82,
 		a: _Utils_Tuple2(53, 15),
 		b: 5,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpad0Key
 	},
 		{
-		bj: 95,
+		bh: 95,
 		a: _Utils_Tuple2(59, 15),
 		b: 2,
 		c: author$project$Panel$Editor$EditorKeyConfig$numpadDecimal
@@ -18254,7 +18543,7 @@ var author$project$Panel$Editor$EditorKeyConfig$getPosAndKeyShapeFromOneKeyLoop 
 			if (list.b) {
 				var x = list.a;
 				var xs = list.b;
-				if (_Utils_eq(x.bj, oneKey)) {
+				if (_Utils_eq(x.bh, oneKey)) {
 					return {a: x.a, b: x.b};
 				} else {
 					var $temp$oneKey = oneKey,
@@ -18278,25 +18567,25 @@ var author$project$Panel$Editor$EditorKeyConfig$keyShapeToNSvgShape = function (
 	switch (keyShape) {
 		case 0:
 			return author$project$NSvg$rect(
-				{bU: 200, cc: 300});
+				{bS: 200, ce: 300});
 		case 1:
 			return author$project$NSvg$rect(
-				{bU: 200, cc: 400});
+				{bS: 200, ce: 400});
 		case 2:
 			return author$project$NSvg$rect(
-				{bU: 300, cc: 300});
+				{bS: 300, ce: 300});
 		case 3:
 			return author$project$NSvg$rect(
-				{bU: 300, cc: 400});
+				{bS: 300, ce: 400});
 		case 4:
 			return author$project$NSvg$rect(
-				{bU: 300, cc: 500});
+				{bS: 300, ce: 500});
 		case 5:
 			return author$project$NSvg$rect(
-				{bU: 300, cc: 600});
+				{bS: 300, ce: 600});
 		case 6:
 			return author$project$NSvg$rect(
-				{bU: 300, cc: 1500});
+				{bS: 300, ce: 1500});
 		case 7:
 			return author$project$NSvg$polygon(
 				_List_fromArray(
@@ -18310,10 +18599,10 @@ var author$project$Panel$Editor$EditorKeyConfig$keyShapeToNSvgShape = function (
 					]));
 		case 8:
 			return author$project$NSvg$rect(
-				{bU: 200, cc: 600});
+				{bS: 200, ce: 600});
 		default:
 			return author$project$NSvg$rect(
-				{bU: 600, cc: 300});
+				{bS: 600, ce: 300});
 	}
 };
 var tesk9$palette$Palette$X11$orange = tesk9$palette$Color$fromRGB(
@@ -18322,7 +18611,7 @@ var author$project$Panel$Editor$EditorKeyConfig$selectFrame = function (oneKey) 
 	var shapeData = author$project$Panel$Editor$EditorKeyConfig$getPosAndKeyShapeFromOneKey(oneKey);
 	return A2(
 		author$project$NSvg$translate,
-		{ce: shapeData.a.a * 100, cf: shapeData.a.b * 100},
+		{cg: shapeData.a.a * 100, ch: shapeData.a.b * 100},
 		A3(
 			author$project$Panel$Editor$EditorKeyConfig$keyShapeToNSvgShape,
 			shapeData.b,
@@ -18335,7 +18624,7 @@ var author$project$Panel$Editor$EditorKeyConfig$keyboard = function (oneKey) {
 			[
 				A3(
 				author$project$NSvg$rect,
-				{bU: 1800, cc: 6500},
+				{bS: 1800, ce: 6500},
 				A2(author$project$NSvg$strokeColorWidth, tesk9$palette$Palette$X11$white, 3),
 				author$project$NSvg$fillNone)
 			]),
@@ -18361,10 +18650,10 @@ var author$project$Panel$Editor$EditorKeyConfig$keyboard = function (oneKey) {
 				}())));
 };
 var author$project$Panel$Editor$EditorKeyConfig$view = function (_n0) {
-	var selectedKey = _n0.aI;
-	var inputDevice = _n0.aP;
+	var selectedKey = _n0.aG;
+	var inputDevice = _n0.aN;
 	return {
-		bH: _List_fromArray(
+		bF: _List_fromArray(
 			[
 				A2(
 				elm$html$Html$div,
@@ -18385,7 +18674,7 @@ var author$project$Panel$Editor$EditorKeyConfig$view = function (_n0) {
 										[
 											A2(
 											author$project$NSvg$toHtml,
-											{bU: 1800, cc: 6500, ce: 0, cf: 0},
+											{bS: 1800, ce: 6500, cg: 0, ch: 0},
 											author$project$Panel$Editor$EditorKeyConfig$keyboard(selectedKey))
 										]);
 								case 1:
@@ -18427,7 +18716,7 @@ var author$project$Panel$Editor$EditorKeyConfig$view = function (_n0) {
 									elm$html$Html$text('ゲームパッドの操作を受け付けるかどうかCtrlとWを押したときにWのメッセージを送信するかどうかと、GamePadとMIDIキーボードの入力')
 								])))))
 			]),
-		b7: 'エディタのキーコンフィグ'
+		b8: 'エディタのキーコンフィグ'
 	};
 };
 var author$project$Panel$Editor$Module$partDefActiveToString = function (partDefActive) {
@@ -18870,13 +19159,13 @@ var author$project$Compiler$Opt$toString = function (opt) {
 var author$project$Compiler$compileResultToString = function (result) {
 	switch (result.$) {
 		case 0:
-			var opt = result.a.bl;
+			var opt = result.a.bj;
 			return '成功' + author$project$Compiler$Opt$toString(opt);
 		case 1:
-			var noOp = result.a.aT;
-			return '途中で失敗' + author$project$Compiler$NoOp$toString(noOp);
+			var noOp = result.a.aR;
+			return 'コンパイルエラー。途中で失敗' + author$project$Compiler$NoOp$toString(noOp);
 		default:
-			return '空欄の部分があるかも';
+			return 'コンパイルエラー。空欄の部分があるかも';
 	}
 };
 var author$project$Panel$Editor$Module$activeHeadTermLeft = A2(
@@ -19391,10 +19680,10 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 var elm$svg$Svg$Attributes$class = _VirtualDom_attribute('class');
 var author$project$NSvg$toHtmlWithClass = F3(
 	function (className, _n0, children) {
-		var x = _n0.ce;
-		var y = _n0.cf;
-		var width = _n0.cc;
-		var height = _n0.bU;
+		var x = _n0.cg;
+		var y = _n0.ch;
+		var width = _n0.ce;
+		var height = _n0.bS;
 		return A2(
 			elm$svg$Svg$svg,
 			_List_fromArray(
@@ -19408,7 +19697,7 @@ var author$project$NSvg$toHtmlWithClass = F3(
 var author$project$Panel$Editor$Module$enterIcon = A3(
 	author$project$NSvg$toHtmlWithClass,
 	'moduleEditor-partDef-suggestion-keyIcon',
-	{bU: 32, cc: 38, ce: 0, cf: 0},
+	{bS: 32, ce: 38, cg: 0, ch: 0},
 	_List_fromArray(
 		[
 			A3(
@@ -19820,19 +20109,19 @@ var author$project$Panel$Editor$Module$partDefViewNameAndType = F3(
 				]));
 	});
 var author$project$Project$Source$Module$Def$getName = function (_n0) {
-	var name = _n0.aS;
+	var name = _n0.aQ;
 	return name;
 };
 var author$project$Project$Source$Module$Def$getType = function (_n0) {
-	var type_ = _n0.a3;
+	var type_ = _n0.a1;
 	return type_;
 };
 var author$project$Project$Source$ModuleWithCache$defAndResultGetCompileResult = function (_n0) {
-	var compileResult = _n0.ba;
+	var compileResult = _n0.a8;
 	return compileResult;
 };
 var author$project$Project$Source$ModuleWithCache$defAndResultGetEvalResult = function (_n0) {
-	var evalResult = _n0.ai;
+	var evalResult = _n0.ag;
 	return evalResult;
 };
 var author$project$Panel$Editor$Module$partDefView = F3(
@@ -20013,23 +20302,23 @@ var author$project$Panel$Editor$Module$partDefinitionsView = F3(
 				}()));
 	});
 var author$project$Project$Source$ModuleWithCache$getName = function (_n0) {
-	var name = _n0.aS;
+	var name = _n0.aQ;
 	return name;
 };
 var author$project$Project$Source$ModuleWithCache$getReadMe = function (_n0) {
-	var readMe = _n0.aY;
+	var readMe = _n0.aW;
 	return readMe;
 };
 var author$project$Panel$Editor$Module$view = F3(
 	function (project, isFocus, _n0) {
-		var moduleRef = _n0.t;
+		var moduleRef = _n0.s;
 		var active = _n0.f;
 		var targetModule = A2(
 			author$project$Project$Source$getModule,
 			moduleRef,
 			author$project$Project$getSource(project));
 		return {
-			bH: _List_fromArray(
+			bF: _List_fromArray(
 				[
 					A2(
 					elm$html$Html$div,
@@ -20064,12 +20353,12 @@ var author$project$Panel$Editor$Module$view = F3(
 					}(),
 					author$project$Project$Source$ModuleWithCache$getDefAndResultList(targetModule))
 				]),
-			b7: author$project$Project$Label$toCapitalString(
+			b8: author$project$Project$Label$toCapitalString(
 				author$project$Project$Source$ModuleWithCache$getName(targetModule))
 		};
 	});
 var author$project$Panel$Editor$Project$view = {
-	bH: _List_fromArray(
+	bF: _List_fromArray(
 		[
 			A2(
 			elm$html$Html$div,
@@ -20098,14 +20387,14 @@ var author$project$Panel$Editor$Project$view = {
 						]))
 				]))
 		]),
-	b7: 'Project'
+	b8: 'Project'
 };
 var author$project$Panel$Editor$Source$view = {
-	bH: _List_fromArray(
+	bF: _List_fromArray(
 		[
 			elm$html$Html$text('ここではソースの概要を表示する。バージョン管理、更新のバグ修正と新機能、エラーの一覧(TODOリスト),view,update,initの設定…')
 		]),
-	b7: 'Source ソース'
+	b8: 'Source ソース'
 };
 var author$project$Panel$EditorGroup$ChangeActiveEditor = function (a) {
 	return {$: 0, a: a};
@@ -20135,7 +20424,7 @@ var author$project$Panel$EditorGroup$editorTitleCloseIcon = function (editorRef)
 			[
 				A2(
 				author$project$NSvg$toHtml,
-				{bU: 12, cc: 12, ce: 0, cf: 0},
+				{bS: 12, ce: 12, cg: 0, ch: 0},
 				_List_fromArray(
 					[
 						A3(
@@ -20182,8 +20471,8 @@ var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
 var author$project$Panel$EditorGroup$editorItemView = F6(
 	function (project, item, _n0, editorRef, isActive, isOne) {
-		var width = _n0.cc;
-		var height = _n0.bU;
+		var width = _n0.ce;
+		var height = _n0.bS;
 		var childItem = function () {
 			switch (item.$) {
 				case 0:
@@ -20198,35 +20487,35 @@ var author$project$Panel$EditorGroup$editorItemView = F6(
 					var moduleEditorModel = item.a;
 					var viewItem = A3(author$project$Panel$Editor$Module$view, project, isActive, moduleEditorModel);
 					return {
-						bH: A2(
+						bF: A2(
 							elm$core$List$map,
 							elm$html$Html$map(
 								function (m) {
 									return author$project$Panel$EditorGroup$EditorItemMsg(
 										{
-											aR: author$project$Panel$EditorGroup$ModuleEditorMsg(m),
-											p: editorRef
+											aP: author$project$Panel$EditorGroup$ModuleEditorMsg(m),
+											b3: editorRef
 										});
 								}),
-							viewItem.bH),
-						b7: viewItem.b7
+							viewItem.bF),
+						b8: viewItem.b8
 					};
 				default:
 					var model = item.a;
 					var viewItem = author$project$Panel$Editor$EditorKeyConfig$view(model);
 					return {
-						bH: A2(
+						bF: A2(
 							elm$core$List$map,
 							elm$html$Html$map(
 								function (m) {
 									return author$project$Panel$EditorGroup$EditorItemMsg(
 										{
-											aR: author$project$Panel$EditorGroup$EditorKeyConfigMsg(m),
-											p: editorRef
+											aP: author$project$Panel$EditorGroup$EditorKeyConfigMsg(m),
+											b3: editorRef
 										});
 								}),
-							viewItem.bH),
-						b7: viewItem.b7
+							viewItem.bF),
+						b8: viewItem.b8
 					};
 			}
 		}();
@@ -20254,9 +20543,9 @@ var author$project$Panel$EditorGroup$editorItemView = F6(
 			_Utils_ap(
 				_List_fromArray(
 					[
-						A3(author$project$Panel$EditorGroup$editorTitle, childItem.b7, editorRef, isOne)
+						A3(author$project$Panel$EditorGroup$editorTitle, childItem.b8, editorRef, isOne)
 					]),
-				childItem.bH));
+				childItem.bF));
 	});
 var author$project$Panel$EditorGroup$GrabHorizontalGutter = function (a) {
 	return {$: 8, a: a};
@@ -20282,8 +20571,8 @@ var author$project$Panel$EditorGroup$horizontalGutter = F2(
 	});
 var author$project$Panel$EditorGroup$editorColumn = F8(
 	function (project, columnGroup, _n0, showEditorPosition, activeEditorRef, editorRefRow, isGutterActive, isOne) {
-		var width = _n0.cc;
-		var height = _n0.bU;
+		var width = _n0.ce;
+		var height = _n0.bS;
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
@@ -20303,7 +20592,7 @@ var author$project$Panel$EditorGroup$editorColumn = F8(
 							author$project$Panel$EditorGroup$editorItemView,
 							project,
 							top,
-							{bU: height - 2, cc: width},
+							{bS: height - 2, ce: width},
 							_Utils_Tuple2(editorRefRow, 0),
 							_Utils_eq(
 								_Utils_Tuple2(editorRefRow, 0),
@@ -20313,15 +20602,15 @@ var author$project$Panel$EditorGroup$editorColumn = F8(
 						]);
 				} else {
 					var top = columnGroup.a.g;
-					var bottom = columnGroup.a.y;
-					var topHeight = columnGroup.a.N;
+					var bottom = columnGroup.a.w;
+					var topHeight = columnGroup.a.L;
 					return _List_fromArray(
 						[
 							A6(
 							author$project$Panel$EditorGroup$editorItemView,
 							project,
 							top,
-							{bU: (((height - 2) * topHeight) / 1000) | 0, cc: width},
+							{bS: (((height - 2) * topHeight) / 1000) | 0, ce: width},
 							_Utils_Tuple2(editorRefRow, 0),
 							_Utils_eq(
 								_Utils_Tuple2(editorRefRow, 0),
@@ -20344,7 +20633,7 @@ var author$project$Panel$EditorGroup$editorColumn = F8(
 							author$project$Panel$EditorGroup$editorItemView,
 							project,
 							bottom,
-							{bU: (((height - 2) * (1000 - topHeight)) / 1000) | 0, cc: width},
+							{bS: (((height - 2) * (1000 - topHeight)) / 1000) | 0, ce: width},
 							_Utils_Tuple2(editorRefRow, 1),
 							_Utils_eq(
 								_Utils_Tuple2(editorRefRow, 1),
@@ -20376,7 +20665,7 @@ var author$project$Panel$EditorGroup$addBottom = _List_fromArray(
 		author$project$NSvg$strokeColor(tesk9$palette$Palette$X11$white)),
 		A2(
 		author$project$NSvg$translate,
-		{ce: 0, cf: 9},
+		{cg: 0, ch: 9},
 		A3(
 			author$project$NSvg$line,
 			_Utils_Tuple2(8, 7),
@@ -20384,7 +20673,7 @@ var author$project$Panel$EditorGroup$addBottom = _List_fromArray(
 			author$project$NSvg$strokeColor(tesk9$palette$Palette$X11$white))),
 		A2(
 		author$project$NSvg$translate,
-		{ce: 0, cf: 9},
+		{cg: 0, ch: 9},
 		A3(
 			author$project$NSvg$line,
 			_Utils_Tuple2(12, 3),
@@ -20405,7 +20694,7 @@ var author$project$Panel$EditorGroup$threeRowAddRight = _List_fromArray(
 		author$project$NSvg$strokeColor(tesk9$palette$Palette$X11$white)),
 		A2(
 		author$project$NSvg$translate,
-		{ce: 11, cf: 0},
+		{cg: 11, ch: 0},
 		A3(
 			author$project$NSvg$line,
 			_Utils_Tuple2(7, 8),
@@ -20413,7 +20702,7 @@ var author$project$Panel$EditorGroup$threeRowAddRight = _List_fromArray(
 			author$project$NSvg$strokeColor(tesk9$palette$Palette$X11$white))),
 		A2(
 		author$project$NSvg$translate,
-		{ce: 11, cf: 0},
+		{cg: 11, ch: 0},
 		A3(
 			author$project$NSvg$line,
 			_Utils_Tuple2(3, 12),
@@ -20429,7 +20718,7 @@ var author$project$Panel$EditorGroup$twoRowAddRight = _List_fromArray(
 		author$project$NSvg$strokeColor(tesk9$palette$Palette$X11$white)),
 		A2(
 		author$project$NSvg$translate,
-		{ce: 9, cf: 0},
+		{cg: 9, ch: 0},
 		A3(
 			author$project$NSvg$line,
 			_Utils_Tuple2(7, 8),
@@ -20437,7 +20726,7 @@ var author$project$Panel$EditorGroup$twoRowAddRight = _List_fromArray(
 			author$project$NSvg$strokeColor(tesk9$palette$Palette$X11$white))),
 		A2(
 		author$project$NSvg$translate,
-		{ce: 9, cf: 0},
+		{cg: 9, ch: 0},
 		A3(
 			author$project$NSvg$line,
 			_Utils_Tuple2(3, 12),
@@ -20446,8 +20735,8 @@ var author$project$Panel$EditorGroup$twoRowAddRight = _List_fromArray(
 	]);
 var author$project$Panel$EditorGroup$openEditorButton = F3(
 	function (_n0, group, openEditorPosition) {
-		var width = _n0.cc;
-		var height = _n0.bU;
+		var width = _n0.ce;
+		var height = _n0.bS;
 		var _n1 = function () {
 			switch (openEditorPosition) {
 				case 0:
@@ -20478,7 +20767,7 @@ var author$project$Panel$EditorGroup$openEditorButton = F3(
 									return elm$core$Basics$floor((width * (((1000 + leftWidth) / 2) | 0)) / 1000);
 								default:
 									var leftWidth = group.a.h;
-									var centerWidth = group.a.H;
+									var centerWidth = group.a.F;
 									return elm$core$Basics$floor((width * (leftWidth + ((centerWidth / 2) | 0))) / 1000);
 							}
 						}(),
@@ -20494,7 +20783,7 @@ var author$project$Panel$EditorGroup$openEditorButton = F3(
 									return elm$core$Basics$floor((width * ((1000 - leftWidth) / 1000)) / 2);
 								default:
 									var leftWidth = group.a.h;
-									var centerWidth = group.a.H;
+									var centerWidth = group.a.F;
 									return elm$core$Basics$floor(width * ((((1000 + leftWidth) + centerWidth) / 1000) / 2));
 							}
 						}(),
@@ -20521,17 +20810,17 @@ var author$project$Panel$EditorGroup$openEditorButton = F3(
 				[
 					A2(
 					author$project$NSvg$toHtml,
-					{bU: 26, cc: 26, ce: 0, cf: 0},
+					{bS: 26, ce: 26, cg: 0, ch: 0},
 					A2(
 						elm$core$List$map,
 						author$project$NSvg$translate(
-							{ce: 1, cf: 1}),
+							{cg: 1, ch: 1}),
 						_Utils_ap(
 							_List_fromArray(
 								[
 									A3(
 									author$project$NSvg$rect,
-									{bU: 24, cc: 24},
+									{bS: 24, ce: 24},
 									author$project$NSvg$strokeColor(tesk9$palette$Palette$X11$white),
 									author$project$NSvg$fillNone)
 								]),
@@ -20569,23 +20858,23 @@ var author$project$Panel$EditorGroup$verticalGutter = F2(
 	});
 var author$project$Panel$EditorGroup$view = F5(
 	function (project, _n0, isFocus, gutter, _n1) {
-		var width = _n0.cc;
-		var height = _n0.bU;
-		var group = _n1.aA;
-		var activeEditorIndex = _n1.aw;
-		var mouseOverOpenEditorPosition = _n1.aG;
+		var width = _n0.ce;
+		var height = _n0.bS;
+		var group = _n1.ay;
+		var activeEditorIndex = _n1.au;
+		var mouseOverOpenEditorPosition = _n1.aE;
 		return _Utils_ap(
 			function () {
 				switch (group.$) {
 					case 0:
-						var left = group.a.R;
+						var left = group.a.P;
 						return _List_fromArray(
 							[
 								A8(
 								author$project$Panel$EditorGroup$editorColumn,
 								project,
 								left,
-								{bU: height, cc: width - 2},
+								{bS: height, ce: width - 2},
 								1,
 								activeEditorIndex,
 								0,
@@ -20597,7 +20886,7 @@ var author$project$Panel$EditorGroup$view = F5(
 								author$project$Panel$EditorGroup$editorRowAddGutter
 							]);
 					case 1:
-						var left = group.a.R;
+						var left = group.a.P;
 						var center = group.a.e;
 						var leftWidth = group.a.h;
 						return _List_fromArray(
@@ -20606,7 +20895,7 @@ var author$project$Panel$EditorGroup$view = F5(
 								author$project$Panel$EditorGroup$editorColumn,
 								project,
 								left,
-								{bU: height, cc: (((width - 4) * leftWidth) / 1000) | 0},
+								{bS: height, ce: (((width - 4) * leftWidth) / 1000) | 0},
 								1,
 								activeEditorIndex,
 								0,
@@ -20626,7 +20915,7 @@ var author$project$Panel$EditorGroup$view = F5(
 								author$project$Panel$EditorGroup$editorColumn,
 								project,
 								center,
-								{bU: height, cc: (((width - 4) * (1000 - leftWidth)) / 1000) | 0},
+								{bS: height, ce: (((width - 4) * (1000 - leftWidth)) / 1000) | 0},
 								2,
 								activeEditorIndex,
 								1,
@@ -20638,18 +20927,18 @@ var author$project$Panel$EditorGroup$view = F5(
 								author$project$Panel$EditorGroup$editorRowAddGutter
 							]);
 					default:
-						var left = group.a.R;
+						var left = group.a.P;
 						var center = group.a.e;
-						var right = group.a.T;
+						var right = group.a.R;
 						var leftWidth = group.a.h;
-						var centerWidth = group.a.H;
+						var centerWidth = group.a.F;
 						return _List_fromArray(
 							[
 								A8(
 								author$project$Panel$EditorGroup$editorColumn,
 								project,
 								left,
-								{bU: height, cc: (((width - 4) * leftWidth) / 1000) | 0},
+								{bS: height, ce: (((width - 4) * leftWidth) / 1000) | 0},
 								1,
 								activeEditorIndex,
 								0,
@@ -20669,7 +20958,7 @@ var author$project$Panel$EditorGroup$view = F5(
 								author$project$Panel$EditorGroup$editorColumn,
 								project,
 								center,
-								{bU: height, cc: (((width - 4) * centerWidth) / 1000) | 0},
+								{bS: height, ce: (((width - 4) * centerWidth) / 1000) | 0},
 								2,
 								activeEditorIndex,
 								1,
@@ -20689,7 +20978,7 @@ var author$project$Panel$EditorGroup$view = F5(
 								author$project$Panel$EditorGroup$editorColumn,
 								project,
 								right,
-								{bU: height, cc: (((width - 4) * ((1000 - leftWidth) - centerWidth)) / 1000) | 0},
+								{bS: height, ce: (((width - 4) * ((1000 - leftWidth) - centerWidth)) / 1000) | 0},
 								3,
 								activeEditorIndex,
 								2,
@@ -20711,7 +21000,7 @@ var author$project$Panel$EditorGroup$view = F5(
 							[
 								A3(
 								author$project$Panel$EditorGroup$openEditorButton,
-								{bU: height, cc: width},
+								{bS: height, ce: width},
 								group,
 								openEditorPosition)
 							]);
@@ -20811,8 +21100,8 @@ var author$project$Panel$Tree$makeEditorTree = F3(
 	function (isFocus, selectRef, _n0) {
 		var editorRef = _n0.j;
 		var children = _n0.l;
-		var icon = _n0.r;
-		var label = _n0.s;
+		var icon = _n0.q;
+		var label = _n0.r;
 		return {
 			l: function () {
 				switch (children.$) {
@@ -20834,10 +21123,10 @@ var author$project$Panel$Tree$makeEditorTree = F3(
 				}
 			}(),
 			j: editorRef,
-			r: icon,
-			s: label,
-			bm: _List_Nil,
-			bD: A2(
+			q: icon,
+			r: label,
+			bk: _List_Nil,
+			bB: A2(
 				author$project$Panel$Tree$makeViewType,
 				_Utils_eq(editorRef, selectRef),
 				isFocus)
@@ -20855,15 +21144,15 @@ var author$project$Panel$Tree$OpenEditor = function (a) {
 };
 var author$project$Panel$Tree$iconToElement = F2(
 	function (viewType, _n0) {
-		var size = _n0.ac;
-		var body = _n0.bH;
+		var size = _n0.aa;
+		var body = _n0.bF;
 		return A2(
 			elm$html$Html$map,
 			elm$core$Basics$never,
 			A3(
 				author$project$NSvg$toHtmlWithClass,
 				'treePanel-item-content-icon',
-				{bU: size, cc: size, ce: 0, cf: 0},
+				{bS: size, ce: size, cg: 0, ch: 0},
 				body(viewType)));
 	});
 var author$project$Panel$Tree$itemContent = F4(
@@ -20892,12 +21181,12 @@ var author$project$Panel$Tree$optionButton = A2(
 		[
 			A2(
 			author$project$NSvg$toHtml,
-			{bU: 30, cc: 20, ce: 0, cf: 0},
+			{bS: 30, ce: 20, cg: 0, ch: 0},
 			_List_fromArray(
 				[
 					A2(
 					author$project$NSvg$translate,
-					{ce: 10, cf: 7},
+					{cg: 10, ch: 7},
 					A3(
 						author$project$NSvg$circle,
 						2,
@@ -20905,7 +21194,7 @@ var author$project$Panel$Tree$optionButton = A2(
 						author$project$NSvg$fillColor(tesk9$palette$Palette$X11$white))),
 					A2(
 					author$project$NSvg$translate,
-					{ce: 10, cf: 15},
+					{cg: 10, ch: 15},
 					A3(
 						author$project$NSvg$circle,
 						2,
@@ -20913,7 +21202,7 @@ var author$project$Panel$Tree$optionButton = A2(
 						author$project$NSvg$fillColor(tesk9$palette$Palette$X11$white))),
 					A2(
 					author$project$NSvg$translate,
-					{ce: 10, cf: 23},
+					{cg: 10, ch: 23},
 					A3(
 						author$project$NSvg$circle,
 						2,
@@ -20938,7 +21227,7 @@ var author$project$Panel$Tree$treeOpenIcon = F2(
 				[
 					A2(
 					author$project$NSvg$toHtml,
-					{bU: 30, cc: 20, ce: 0, cf: 0},
+					{bS: 30, ce: 20, cg: 0, ch: 0},
 					_List_fromArray(
 						[
 							A3(
@@ -20972,7 +21261,7 @@ var author$project$Panel$Tree$treeCloseIcon = F2(
 				[
 					A2(
 					author$project$NSvg$toHtml,
-					{bU: 30, cc: 20, ce: 0, cf: 0},
+					{bS: 30, ce: 20, cg: 0, ch: 0},
 					_List_fromArray(
 						[
 							A3(
@@ -21104,11 +21393,11 @@ var author$project$Panel$Tree$viewOpenChildrenItem = F6(
 						]))));
 	});
 var author$project$Panel$Tree$viewTreeItem = function (_n0) {
-	var icon = _n0.r;
-	var label = _n0.s;
+	var icon = _n0.q;
+	var label = _n0.r;
 	var editorRef = _n0.j;
-	var viewType = _n0.bD;
-	var option = _n0.bm;
+	var viewType = _n0.bB;
+	var option = _n0.bk;
 	var children = _n0.l;
 	switch (children.$) {
 		case 2:
@@ -21131,10 +21420,10 @@ var author$project$Panel$Tree$viewTreeItem = function (_n0) {
 };
 var author$project$Panel$Tree$viewTree = F2(
 	function (_n0, model) {
-		var project = _n0.aX;
+		var project = _n0.aV;
 		var editorRef = _n0.j;
-		var focus = _n0.az;
-		var width = _n0.cc;
+		var focus = _n0.ax;
+		var width = _n0.ce;
 		return A2(
 			elm$core$List$map,
 			author$project$Panel$Tree$viewTreeItem,
@@ -21146,17 +21435,17 @@ var author$project$Panel$Tree$viewTree = F2(
 				author$project$Panel$Tree$getOpenCloseData(model)));
 	});
 var author$project$Panel$Tree$view = function (_n0) {
-	var project = _n0.aX;
+	var project = _n0.aV;
 	var editorRef = _n0.j;
-	var model = _n0.bZ;
-	var focus = _n0.az;
-	var width = _n0.cc;
+	var model = _n0.bY;
+	var focus = _n0.ax;
+	var width = _n0.ce;
 	return (100 < width) ? _Utils_ap(
 		_List_fromArray(
 			[author$project$Panel$Tree$viewTitle]),
 		A2(
 			author$project$Panel$Tree$viewTree,
-			{j: editorRef, az: focus, aX: project, cc: width},
+			{j: editorRef, ax: focus, aV: project, ce: width},
 			model)) : _List_Nil;
 };
 var author$project$View$treePanel = function (model) {
@@ -21189,10 +21478,10 @@ var author$project$View$treePanel = function (model) {
 			author$project$Panel$Tree$view(
 				{
 					j: author$project$Model$getActiveEditor(model),
-					az: author$project$Model$isFocusTreePanel(model),
-					bZ: author$project$Model$getTreePanelModel(model),
-					aX: author$project$Model$getProject(model),
-					cc: author$project$Model$getTreePanelWidth(model)
+					ax: author$project$Model$isFocusTreePanel(model),
+					bY: author$project$Model$getTreePanelModel(model),
+					aV: author$project$Model$getProject(model),
+					ce: author$project$Model$getTreePanelWidth(model)
 				})));
 };
 var author$project$Model$SideBarGutter = {$: 0};
@@ -21210,7 +21499,7 @@ var author$project$View$verticalGutter = function (isGutterMode) {
 };
 var author$project$View$view = function (model) {
 	return {
-		bH: _Utils_ap(
+		bF: _Utils_ap(
 			_List_fromArray(
 				[
 					author$project$View$treePanel(model),
@@ -21230,13 +21519,13 @@ var author$project$View$view = function (model) {
 					return _List_Nil;
 				}
 			}()),
-		b7: 'Definy 0 - ' + author$project$Project$Label$toCapitalString(
+		b8: 'Definy 0 - ' + author$project$Project$Label$toCapitalString(
 			author$project$Project$getName(
 				author$project$Model$getProject(model)))
 	};
 };
 var elm$browser$Browser$document = _Browser_document;
 var author$project$Main$main = elm$browser$Browser$document(
-	{bX: author$project$Main$init, b5: author$project$Main$subscriptions, b9: author$project$Update$update, cb: author$project$View$view});
+	{bW: author$project$Main$init, b6: author$project$Main$subscriptions, ca: author$project$Update$update, cc: author$project$View$view});
 _Platform_export({'Main':{'init':author$project$Main$main(
 	elm$json$Json$Decode$succeed(0))(0)}});}(this));
