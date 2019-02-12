@@ -1,6 +1,6 @@
 module Project.Source.Module.Def.Expr.Operator exposing
     ( Operator(..)
-    , OperatorBindingOrder(..), SafeOperator(..), add, and, app, bindingOrderLessThanOrEqual, blank, compose, concat, div, equal, factorial, lessThan, lessThanOrEqual, mul, notEqual, or, pipe, safeToString, sub, toBindingOrder, toSafe, toString, toTextAreaValue
+    , OperatorBindingOrder(..), SafeOperator(..), add, and, app, bindingOrderLessThanOrEqual, blank, compose, concat, div, equal, factorial, lessThan, lessThanOrEqual, mul, notEqual, or, pipe, safeAllOperator, safeToString, sub, toBindingOrder, toDescriptionString, toNotSafe, toSafe, toString, toTextAreaValue
     )
 
 {-|
@@ -117,6 +117,26 @@ blank =
     Blank
 
 
+safeAllOperator : List SafeOperator
+safeAllOperator =
+    [ Pipe
+    , Or
+    , And
+    , Equal
+    , NotEqual
+    , LessThan
+    , LessThanOrEqual
+    , Concat
+    , Add
+    , Sub
+    , Mul
+    , Div
+    , Factorial
+    , Compose
+    , App
+    ]
+
+
 toString : Operator -> Maybe String
 toString operator =
     case operator of
@@ -125,6 +145,16 @@ toString operator =
 
         Blank ->
             Nothing
+
+
+toDescriptionString : Operator -> ( String, Maybe String )
+toDescriptionString operator =
+    case operator of
+        Safe safeOperator ->
+            ( safeToString safeOperator, Just (safeShortOpDescription safeOperator) )
+
+        Blank ->
+            ( "不正な演算子", Nothing )
 
 
 safeToString : SafeOperator -> String
@@ -174,6 +204,55 @@ safeToString safeOperator =
 
         App ->
             " "
+
+
+safeShortOpDescription : SafeOperator -> String
+safeShortOpDescription safeOperator =
+    case safeOperator of
+        Pipe ->
+            "パイプライン"
+
+        Or ->
+            "または"
+
+        And ->
+            "かつ"
+
+        Equal ->
+            "同じ"
+
+        NotEqual ->
+            "同じじゃない"
+
+        LessThan ->
+            "右辺が大きいか?"
+
+        LessThanOrEqual ->
+            "右辺が大きいか等しいか"
+
+        Concat ->
+            "結合"
+
+        Add ->
+            "足し算"
+
+        Sub ->
+            "引き算"
+
+        Mul ->
+            "かけ算"
+
+        Div ->
+            "割り算"
+
+        Factorial ->
+            "べき乗"
+
+        Compose ->
+            "関数合成"
+
+        App ->
+            "関数適用"
 
 
 toTextAreaValue : Operator -> List ( Char, Bool )
@@ -282,3 +361,8 @@ toSafe op =
 
         Blank ->
             Nothing
+
+
+toNotSafe : SafeOperator -> Operator
+toNotSafe safeOperator =
+    Safe safeOperator

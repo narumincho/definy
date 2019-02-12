@@ -18108,6 +18108,40 @@ var author$project$Panel$Editor$Module$activeHeadTermLeft = A2(
 				]),
 			_List_Nil)
 		]));
+var author$project$Project$Source$Module$Def$Expr$Operator$safeShortOpDescription = function (safeOperator) {
+	switch (safeOperator) {
+		case 0:
+			return 'パイプライン';
+		case 1:
+			return 'または';
+		case 2:
+			return 'かつ';
+		case 3:
+			return '同じ';
+		case 4:
+			return '同じじゃない';
+		case 5:
+			return '右辺が大きいか?';
+		case 6:
+			return '右辺が大きいか等しいか';
+		case 7:
+			return '結合';
+		case 8:
+			return '足し算';
+		case 9:
+			return '引き算';
+		case 10:
+			return 'かけ算';
+		case 11:
+			return '割り算';
+		case 12:
+			return 'べき乗';
+		case 13:
+			return '関数合成';
+		default:
+			return '関数適用';
+	}
+};
 var author$project$Project$Source$Module$Def$Expr$Operator$safeToString = function (safeOperator) {
 	switch (safeOperator) {
 		case 0:
@@ -18142,14 +18176,56 @@ var author$project$Project$Source$Module$Def$Expr$Operator$safeToString = functi
 			return ' ';
 	}
 };
-var author$project$Project$Source$Module$Def$Expr$Operator$toString = function (operator) {
+var author$project$Project$Source$Module$Def$Expr$Operator$toDescriptionString = function (operator) {
 	if (!operator.$) {
-		var safeOp = operator.a;
-		return elm$core$Maybe$Just(
-			author$project$Project$Source$Module$Def$Expr$Operator$safeToString(safeOp));
+		var safeOperator = operator.a;
+		return _Utils_Tuple2(
+			author$project$Project$Source$Module$Def$Expr$Operator$safeToString(safeOperator),
+			elm$core$Maybe$Just(
+				author$project$Project$Source$Module$Def$Expr$Operator$safeShortOpDescription(safeOperator)));
 	} else {
-		return elm$core$Maybe$Nothing;
+		return _Utils_Tuple2('不正な演算子', elm$core$Maybe$Nothing);
 	}
+};
+var author$project$Panel$Editor$Module$suggestionOpItem = function (op) {
+	var _n0 = author$project$Project$Source$Module$Def$Expr$Operator$toDescriptionString(op);
+	var text = _n0.a;
+	var subItem = _n0.b;
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				author$project$Panel$Editor$Module$subClass('partDef-suggestion-item')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-text')
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text(text)
+					])),
+				A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-subItem')
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text(
+						A2(elm$core$Maybe$withDefault, '', subItem))
+					]))
+			]));
+};
+var author$project$Project$Source$Module$Def$Expr$Operator$safeAllOperator = _List_fromArray(
+	[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
+var author$project$Project$Source$Module$Def$Expr$Operator$toNotSafe = function (safeOperator) {
+	return author$project$Project$Source$Module$Def$Expr$Operator$Safe(safeOperator);
 };
 var author$project$Panel$Editor$Module$suggestionOp = function (op) {
 	return A2(
@@ -18158,42 +18234,18 @@ var author$project$Panel$Editor$Module$suggestionOp = function (op) {
 			[
 				author$project$Panel$Editor$Module$subClass('partDef-suggestion')
 			]),
-		_List_fromArray(
-			[
-				A2(
-				elm$html$Html$div,
-				_List_fromArray(
-					[
-						author$project$Panel$Editor$Module$subClass('partDef-suggestion-item')
-					]),
-				_List_fromArray(
-					[
-						A2(
-						elm$html$Html$div,
-						_List_fromArray(
-							[
-								author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-text')
-							]),
-						_List_fromArray(
-							[
-								elm$html$Html$text(
-								A2(
-									elm$core$Maybe$withDefault,
-									'?',
-									author$project$Project$Source$Module$Def$Expr$Operator$toString(op)))
-							])),
-						A2(
-						elm$html$Html$div,
-						_List_fromArray(
-							[
-								author$project$Panel$Editor$Module$subClass('partDef-suggestion-item-subItem')
-							]),
-						_List_fromArray(
-							[
-								elm$html$Html$text('演算子')
-							]))
-					]))
-			]));
+		_Utils_ap(
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$suggestionOpItem(op)
+				]),
+			A2(
+				elm$core$List$filterMap,
+				function (o) {
+					return _Utils_eq(o, op) ? elm$core$Maybe$Nothing : elm$core$Maybe$Just(
+						author$project$Panel$Editor$Module$suggestionOpItem(o));
+				},
+				A2(elm$core$List$map, author$project$Project$Source$Module$Def$Expr$Operator$toNotSafe, author$project$Project$Source$Module$Def$Expr$Operator$safeAllOperator))));
 };
 var author$project$Panel$Editor$Module$textAreaValueToListHtml = elm$core$List$map(
 	function (_n0) {
@@ -18227,6 +18279,15 @@ var author$project$Panel$Editor$Module$opEditView = F2(
 						author$project$Panel$Editor$Module$suggestionOp(op)
 					])));
 	});
+var author$project$Project$Source$Module$Def$Expr$Operator$toString = function (operator) {
+	if (!operator.$) {
+		var safeOp = operator.a;
+		return elm$core$Maybe$Just(
+			author$project$Project$Source$Module$Def$Expr$Operator$safeToString(safeOp));
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
 var author$project$Panel$Editor$Module$opNormalView = F2(
 	function (op, isActive) {
 		return A2(

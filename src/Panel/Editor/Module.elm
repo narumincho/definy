@@ -1681,11 +1681,35 @@ suggestionOp : Op.Operator -> Html.Html msg
 suggestionOp op =
     Html.div
         [ subClass "partDef-suggestion" ]
+        ([ suggestionOpItem op ]
+            ++ (Op.safeAllOperator
+                    |> List.map Op.toNotSafe
+                    |> List.filterMap
+                        (\o ->
+                            if o == op then
+                                Nothing
+
+                            else
+                                Just (suggestionOpItem o)
+                        )
+               )
+        )
+
+
+suggestionOpItem : Op.Operator -> Html.Html msg
+suggestionOpItem op =
+    let
+        ( text, subItem ) =
+            Op.toDescriptionString op
+    in
+    Html.div
+        [ subClass "partDef-suggestion-item" ]
         [ Html.div
-            [ subClass "partDef-suggestion-item" ]
-            [ Html.div [ subClass "partDef-suggestion-item-text" ] [ Html.text (Op.toString op |> Maybe.withDefault "?") ]
-            , Html.div [ subClass "partDef-suggestion-item-subItem" ] [ Html.text "演算子" ]
-            ]
+            [ subClass "partDef-suggestion-item-text" ]
+            [ Html.text text ]
+        , Html.div
+            [ subClass "partDef-suggestion-item-subItem" ]
+            [ Html.text (subItem |> Maybe.withDefault "") ]
         ]
 
 
