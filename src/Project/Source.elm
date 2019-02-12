@@ -55,13 +55,11 @@ init =
             ModuleWithCache.make
                 { name = Label.make Label.hc [ Label.oo, Label.or, Label.oe ]
                 , defList =
-                    [ ( Def.make
-                            { name = Name.fromLabel (Label.make Label.ha [ Label.ob, Label.os ])
-                            , type_ = Type.empty
-                            , expr = Expr.empty
-                            }
-                      , Nothing
-                      )
+                    [ Def.make
+                        { name = Name.fromLabel (Label.make Label.ha [ Label.ob, Label.os ])
+                        , type_ = Type.empty
+                        , expr = Expr.empty
+                        }
                     ]
                 , readMe = "プログラムに最低限必要なものが含まれている標準ライブラリ。足し算引き算、論理演算などの演算や、リスト、辞書、集合などの基本データ構造を含む"
                 }
@@ -69,35 +67,31 @@ init =
             ModuleWithCache.make
                 { name = Label.make Label.hi [ Label.on, Label.ot, Label.o3, Label.o2 ]
                 , defList =
-                    [ ( Def.make
-                            { name =
-                                Name.fromLabel
-                                    (Label.make Label.ho
-                                        [ Label.on, Label.oe, Label.oP, Label.ol, Label.ou, Label.os, Label.oT, Label.ow, Label.oo ]
-                                    )
-                            , type_ = Type.int
-                            , expr =
-                                Expr.make
-                                    (Term.fromInt 1)
-                                    [ ( Op.add
-                                      , Term.fromInt 2
-                                      )
-                                    ]
-                            }
-                      , Nothing
-                      )
-                    , ( Def.make
-                            { name =
-                                Name.fromLabel
-                                    (Label.make Label.ha
-                                        [ Label.od, Label.od ]
-                                    )
-                            , type_ = Type.int
-                            , expr =
-                                Expr.empty
-                            }
-                      , Nothing
-                      )
+                    [ Def.make
+                        { name =
+                            Name.fromLabel
+                                (Label.make Label.ho
+                                    [ Label.on, Label.oe, Label.oP, Label.ol, Label.ou, Label.os, Label.oT, Label.ow, Label.oo ]
+                                )
+                        , type_ = Type.int
+                        , expr =
+                            Expr.make
+                                (Term.fromInt 1)
+                                [ ( Op.add
+                                  , Term.fromInt 2
+                                  )
+                                ]
+                        }
+                    , Def.make
+                        { name =
+                            Name.fromLabel
+                                (Label.make Label.ha
+                                    [ Label.od, Label.od ]
+                                )
+                        , type_ = Type.int
+                        , expr =
+                            Expr.empty
+                        }
                     ]
                 , readMe = "WebAssemblyでサポートされている32bit符号付き整数を扱えるようになる"
                 }
@@ -105,17 +99,15 @@ init =
             ModuleWithCache.make
                 { name = sampleModuleName
                 , defList =
-                    [ ( Def.make
-                            { name =
-                                Name.fromLabel
-                                    (Label.make Label.hp
-                                        [ Label.oo, Label.oi, Label.on, Label.ot ]
-                                    )
-                            , type_ = Type.empty
-                            , expr = Expr.empty
-                            }
-                      , Nothing
-                      )
+                    [ Def.make
+                        { name =
+                            Name.fromLabel
+                                (Label.make Label.hp
+                                    [ Label.oo, Label.oi, Label.on, Label.ot ]
+                                )
+                        , type_ = Type.empty
+                        , expr = Expr.empty
+                        }
                     ]
                 , readMe = ""
                 }

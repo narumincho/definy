@@ -528,7 +528,7 @@ suggestionPrevOrSelectUp module_ project (Model rec) =
                                 ( index, ActivePartDefName (Just ( textAreaValue, max 0 (suggestIndex - 1) )) )
                             )
                 }
-            , suggestionSelcetChagnedThenNameChangeEmit suggestIndex index rec.moduleRef
+            , suggestionSelectChangedThenNameChangeEmit suggestIndex index rec.moduleRef
             )
 
         _ ->
@@ -547,15 +547,15 @@ suggestionPrevOrSelectDown module_ project (Model rec) =
                                 ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex + 1 )) )
                             )
                 }
-            , suggestionSelcetChagnedThenNameChangeEmit suggestIndex index rec.moduleRef
+            , suggestionSelectChangedThenNameChangeEmit suggestIndex index rec.moduleRef
             )
 
         _ ->
             update SelectDown project (Model rec)
 
 
-suggestionSelcetChagnedThenNameChangeEmit : Int -> Int -> Project.Source.ModuleRef -> List Emit
-suggestionSelcetChagnedThenNameChangeEmit suggestIndex defIndex moduleRef =
+suggestionSelectChangedThenNameChangeEmit : Int -> Int -> Project.Source.ModuleRef -> List Emit
+suggestionSelectChangedThenNameChangeEmit suggestIndex defIndex moduleRef =
     case nameSuggestList |> Utility.ListExtra.getAt suggestIndex of
         Just ( suggestName, _ ) ->
             [ EmitChangeName
@@ -1003,7 +1003,7 @@ view project isFocus (Model { moduleRef, active }) =
                 _ ->
                     Nothing
             )
-            (ModuleWithCache.getDefWithCacheList targetModule |> List.map Tuple.first)
+            (ModuleWithCache.getDefAndResult targetModule)
         ]
     }
 
@@ -1200,8 +1200,8 @@ focusEventJsonDecoder =
 {-| モジュールエディタのメインの要素であるパーツエディタを表示する
 partDefActiveMaybeAndIndexがJustならこのエディタ
 -}
-partDefinitionsView : Bool -> Maybe PartDefListActive -> List Def.Def -> Html.Html Msg
-partDefinitionsView isFocus partDefListActiveMaybe defList =
+partDefinitionsView : Bool -> Maybe PartDefListActive -> List ModuleWithCache.DefAndResult -> Html.Html Msg
+partDefinitionsView isFocus partDefListActiveMaybe defAndResultList =
     Html.div
         ([ subClass "partDefinitions"
          ]
@@ -1214,7 +1214,7 @@ partDefinitionsView isFocus partDefListActiveMaybe defList =
                )
         )
         ([ partDefinitionsViewTitle
-         , partDefListView defList
+         , partDefListView defAndResultList
             (case partDefListActiveMaybe of
                 Just (ActivePartDef partDefActiveWithIndex) ->
                     Just partDefActiveWithIndex
@@ -1250,16 +1250,17 @@ partDefinitionsViewTitle =
         [ Html.text "Part Definitions" ]
 
 
-partDefListView : List Def.Def -> Maybe ( Int, PartDefActive ) -> Html.Html Msg
-partDefListView defList partDefActiveWithIndexMaybe =
+partDefListView : List ModuleWithCache.DefAndResult -> Maybe ( Int, PartDefActive ) -> Html.Html Msg
+partDefListView defAndResultList partDefActiveWithIndexMaybe =
     Html.div
         [ subClass "partDefList"
         ]
-        ((defList
+        ((defAndResultList
             |> List.indexedMap
-                (\index def ->
-                    partDefView index
-                        def
+                (\index defAndResult ->
+                    partDefView
+                        index
+                        defAndResult
                         (case partDefActiveWithIndexMaybe of
                             Just ( i, partDefActive ) ->
                                 if i == index then
@@ -1278,8 +1279,15 @@ partDefListView defList partDefActiveWithIndexMaybe =
         )
 
 
-partDefView : Int -> Def.Def -> Maybe PartDefActive -> Html.Html PartDefActive
-partDefView index def partDefActiveMaybe =
+partDefView : Int -> ModuleWithCache.DefAndResult -> Maybe PartDefActive -> Html.Html PartDefActive
+partDefView index defAndResult partDefActiveMaybe =
+    let
+        def =
+            ModuleWithCache.defAndResultGetDef defAndResult
+
+        evalResult =
+            ModuleWithCache.defAndResultGetEvalResult defAndResult
+    in
     Html.div
         [ subClassList
             [ ( "partDef", True )
@@ -1301,6 +1309,7 @@ partDefView index def partDefActiveMaybe =
                 _ ->
                     Nothing
             )
+        , Html.text (evalResult |> Maybe.map String.fromInt |> Maybe.withDefault "評価結果がない")
         ]
 
 

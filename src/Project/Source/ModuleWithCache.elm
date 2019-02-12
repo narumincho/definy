@@ -1,19 +1,23 @@
 module Project.Source.ModuleWithCache exposing
-    ( Module(..)
+    ( DefAndResult
+    , Module(..)
     , addDef
-    , getDefName
+    , defAndResultGetCompileResult
+    , defAndResultGetDef
+    , defAndResultGetEvalResult
+    , getDef
+    , getDefAndResult
+    , getDefList
     , getDefNum
-    , getDefWithCacheList
     , getName
     , getReadMe
     , make
-    , mapDefList
     , setDefExpr
     , setDefName
     , setDefType
     , setName
     , setReadMe
-    , getDef)
+    )
 
 import Compiler
 import Compiler.Marger
@@ -31,17 +35,36 @@ type Module
     = Module
         { name : Label.Label
         , typeDefList : List TypeDef.TypeDef
-        , defList : List ( Def.Def, Maybe Compiler.CompileResult )
+        , defAndCacheList : List DefAndResult
         , readMe : String
         }
 
 
-make : { name : Label.Label, defList : List ( Def.Def, Maybe Compiler.CompileResult ), readMe : String } -> Module
+type DefAndResult
+    = DefAndResult
+        { def : Def.Def
+        , compileResult : Maybe Compiler.CompileResult
+        , evalResult : Maybe Int
+        }
+
+
+make : { name : Label.Label, defList : List Def.Def, readMe : String } -> Module
 make { name, defList, readMe } =
     Module
         { name = name
         , typeDefList = []
-        , defList = List.take 65535 defList -- 定義の数の上限
+        , defAndCacheList =
+            defList
+                |> List.take 65535
+                -- 定義の数の上限
+                |> List.map
+                    (\def ->
+                        DefAndResult
+                            { def = def
+                            , compileResult = Nothing
+                            , evalResult = Nothing
+                            }
+                    )
         , readMe = readMe
         }
 
@@ -76,92 +99,87 @@ setReadMe string (Module rec) =
         { rec | readMe = string }
 
 
-{-| Moduleで定義されているDefとそのキャッシュのListを取得
+{-| Moduleで定義されているDefとそのコンパイル結果と評価結果のListを取得する
 -}
-getDefWithCacheList : Module -> List ( Def.Def, Maybe Compiler.CompileResult )
-getDefWithCacheList (Module { defList }) =
-    defList
+getDefAndResult : Module -> List DefAndResult
+getDefAndResult (Module { defAndCacheList }) =
+    defAndCacheList
 
 
-{-| Moduleで定義されているDefを取得
+{-| Moduleで定義されているDefのListを取得する
+-}
+getDefList : Module -> List Def.Def
+getDefList (Module { defAndCacheList }) =
+    defAndCacheList |> List.map defAndResultGetDef
+
+
+{-| Moduleで定義されているDefを取得する
 -}
 getDef : Int -> Module -> Maybe Def.Def
-getDef index (Module { defList }) =
-    defList
+getDef index module_ =
+    getDefList module_
         |> Utility.ListExtra.getAt index
-        |> Maybe.map Tuple.first
 
 
-setDefList : List ( Def.Def, Maybe Compiler.CompileResult ) -> Module -> Module
-setDefList defList (Module rec) =
+{-| コンパイル結果と評価結果がない定義を追加
+-}
+setDef : Int -> Def.Def -> Module -> Module
+setDef index def (Module rec) =
     Module
-        { rec | defList = defList }
-
-
-setDefListAt : Int -> ( Def.Def, Maybe Compiler.CompileResult ) -> Module -> Module
-setDefListAt index def (Module rec) =
-    Module
-        { rec | defList = rec.defList |> Utility.ListExtra.setAt index def }
-
-
-mapDefList : (List ( Def.Def, Maybe Compiler.CompileResult ) -> List ( Def.Def, Maybe Compiler.CompileResult )) -> Module -> Module
-mapDefList =
-    Utility.Map.toMapper
-        getDefWithCacheList
-        setDefList
+        { rec
+            | defAndCacheList =
+                rec.defAndCacheList
+                    |> Utility.ListExtra.setAt index
+                        (DefAndResult
+                            { def = def
+                            , compileResult = Nothing
+                            , evalResult = Nothing
+                            }
+                        )
+        }
 
 
 {-| 定義の個数
 -}
 getDefNum : Module -> Int
 getDefNum =
-    getDefWithCacheList >> List.length
+    getDefList >> List.length
 
 
-{-| 指定したindexの定義の名前を取得する。なければNoName
--}
-getDefName : Int -> Module -> Project.Source.Module.Def.Name.Name
-getDefName index (Module { defList }) =
-    defList
-        |> Utility.ListExtra.getAt index
-        |> Maybe.map (Tuple.first >> Def.getName)
-        |> Maybe.withDefault Project.Source.Module.Def.Name.noName
-
-
-{-| 指定したindexの定義の名前を設定する なければ、なにもしない
+{-| 指定したindexの定義の名前を設定する。なければ、なにもしない
 -}
 setDefName : Int -> Project.Source.Module.Def.Name.Name -> Module -> Module
 setDefName index name module_ =
-    case Utility.ListExtra.getAt index (getDefWithCacheList module_) of
-        Just ( x, _ ) ->
+    case getDef index module_ of
+        Just def ->
             module_
-                |> setDefListAt index ( Def.setName name x, Nothing )
+                |> setDef index (def |> Def.setName name)
 
         Nothing ->
             module_
 
 
-{-| 指定したindexの定義の型を設定する なければ、なにもしない
+{-| 指定したindexの定義の型を設定する。なければ、なにもしない
 -}
 setDefType : Int -> Project.Source.Module.Def.Type.Type -> Module -> Module
 setDefType index type_ module_ =
-    case Utility.ListExtra.getAt index (getDefWithCacheList module_) of
-        Just ( x, _ ) ->
+    case getDef index module_ of
+        Just def ->
             module_
-                |> setDefListAt index ( Def.setType type_ x, Nothing )
+                |> setDef index (def |> Def.setType type_)
 
         Nothing ->
             module_
 
 
-{-| 指定したindexの定義の式を設定する なければ、なにもしない
+{-| 指定したindexの定義の式を設定する。なければ、なにもしない
 -}
 setDefExpr : Int -> Project.Source.Module.Def.Expr.Expr -> Module -> Module
 setDefExpr index expr module_ =
-    case Utility.ListExtra.getAt index (getDefWithCacheList module_) of
-        Just ( x, _ ) ->
+    case getDef index module_ of
+        Just def ->
             module_
-                |> setDefListAt index ( Def.setExpr expr x, Nothing )
+                |> setDef index (def |> Def.setExpr expr)
 
         Nothing ->
             module_
@@ -173,10 +191,31 @@ addDef : Def.Def -> Module -> Module
 addDef def (Module rec) =
     Module
         { rec
-            | defList =
-                if 65535 <= List.length rec.defList then
-                    rec.defList
+            | defAndCacheList =
+                if 65535 <= List.length rec.defAndCacheList then
+                    List.take 65535 rec.defAndCacheList
 
                 else
-                    rec.defList ++ [ ( def, Nothing ) ]
+                    rec.defAndCacheList
+                        ++ [ DefAndResult
+                                { def = def
+                                , compileResult = Nothing
+                                , evalResult = Nothing
+                                }
+                           ]
         }
+
+
+defAndResultGetDef : DefAndResult -> Def.Def
+defAndResultGetDef (DefAndResult { def }) =
+    def
+
+
+defAndResultGetCompileResult : DefAndResult -> Maybe Compiler.CompileResult
+defAndResultGetCompileResult (DefAndResult { compileResult }) =
+    compileResult
+
+
+defAndResultGetEvalResult : DefAndResult -> Maybe Int
+defAndResultGetEvalResult (DefAndResult { evalResult }) =
+    evalResult
