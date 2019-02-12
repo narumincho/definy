@@ -36,7 +36,8 @@
                 }
             });
         })
-        app.ports.focusEditTextAea.subscribe(e => {
+        /* テキストエリア(<textarea id="edit">)に強制的にフォーカスさせる */
+        app.ports.focusTextArea.subscribe(e => {
             console.log(`<textarea id="eidt">にフォーカス`);
             requestAnimationFrame(() => {
                 document.getElementById("edit").focus();

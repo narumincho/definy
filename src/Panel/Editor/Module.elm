@@ -9,6 +9,7 @@ module Panel.Editor.Module exposing
     , view
     )
 
+import Compiler
 import Html
 import Html.Attributes
 import Html.Events
@@ -1003,7 +1004,7 @@ view project isFocus (Model { moduleRef, active }) =
                 _ ->
                     Nothing
             )
-            (ModuleWithCache.getDefAndResult targetModule)
+            (ModuleWithCache.getDefAndResultList targetModule)
         ]
     }
 
@@ -1285,6 +1286,9 @@ partDefView index defAndResult partDefActiveMaybe =
         def =
             ModuleWithCache.defAndResultGetDef defAndResult
 
+        compileResult =
+            ModuleWithCache.defAndResultGetCompileResult defAndResult
+
         evalResult =
             ModuleWithCache.defAndResultGetEvalResult defAndResult
     in
@@ -1309,7 +1313,8 @@ partDefView index defAndResult partDefActiveMaybe =
                 _ ->
                     Nothing
             )
-        , Html.text (evalResult |> Maybe.map String.fromInt |> Maybe.withDefault "評価結果がない")
+        , Html.div [] [ Html.text (compileResult |> Maybe.map Compiler.compileResultToString |> Maybe.withDefault "コンパイル結果がない") ]
+        , Html.div [] [ Html.text (evalResult |> Maybe.map String.fromInt |> Maybe.withDefault "評価結果がない") ]
         ]
 
 

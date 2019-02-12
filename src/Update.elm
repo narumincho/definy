@@ -53,11 +53,15 @@ update msg model =
             in
             updateFromList listMsg newModel
 
-        Model.ReceiveCompiledData ( index, compileResult ) ->
-            ( model
-            , case Model.getWasmBinary model of
-                Just list ->
-                    run list
+        Model.ReceiveCompiledData data ->
+            let
+                ( newModel, wasmBinaryMaybe ) =
+                    Model.receiveCompiledData data model
+            in
+            ( newModel
+            , case wasmBinaryMaybe of
+                Just wasmBinary ->
+                    run wasmBinary
 
                 Nothing ->
                     Cmd.none
@@ -124,9 +128,7 @@ update msg model =
             )
 
         Model.ChangeExpr data ->
-            ( Model.changeExpr data model
-            , Cmd.none
-            )
+            Model.changeExpr data model
 
         Model.AddPartDef data ->
             ( Model.addPartDef data model

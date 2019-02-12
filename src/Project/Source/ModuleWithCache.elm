@@ -6,18 +6,19 @@ module Project.Source.ModuleWithCache exposing
     , defAndResultGetDef
     , defAndResultGetEvalResult
     , getDef
-    , getDefAndResult
+    , getDefAndResultList
     , getDefList
     , getDefNum
     , getName
     , getReadMe
     , make
+    , mapDef
     , setDefExpr
     , setDefName
     , setDefType
     , setName
     , setReadMe
-    )
+    , setCompileResult)
 
 import Compiler
 import Compiler.Marger
@@ -101,16 +102,57 @@ setReadMe string (Module rec) =
 
 {-| Moduleで定義されているDefとそのコンパイル結果と評価結果のListを取得する
 -}
-getDefAndResult : Module -> List DefAndResult
-getDefAndResult (Module { defAndCacheList }) =
+getDefAndResultList : Module -> List DefAndResult
+getDefAndResultList (Module { defAndCacheList }) =
     defAndCacheList
+
+
+{-| Moduleで定義されているDefとそのコンパイル結果と評価結果のListを設定する
+-}
+setDefAndResultList : List DefAndResult -> Module -> Module
+setDefAndResultList defAndResultList (Module rec) =
+    Module
+        { rec | defAndCacheList = defAndResultList }
+
+
+{-| Moduleで定義されているDefとそのコンパイル結果と評価結果のListを加工する
+-}
+mapDefAndResultList : (List DefAndResult -> List DefAndResult) -> Module -> Module
+mapDefAndResultList =
+    Utility.Map.toMapper
+        getDefAndResultList
+        setDefAndResultList
+
+
+{-| Moduleで定義されているDefとそのコンパイル結果と評価結果を取得する
+-}
+getDefAndResult : Int -> Module -> Maybe DefAndResult
+getDefAndResult index =
+    getDefAndResultList >> Utility.ListExtra.getAt index
+
+
+{-| Moduleで定義されているDefとそのコンパイル結果と評価結果を設定する
+-}
+setDefAndResult : Int -> DefAndResult -> Module -> Module
+setDefAndResult index defAndResult =
+    mapDefAndResultList
+        (Utility.ListExtra.setAt index defAndResult)
+
+
+{-| Moduleで定義されているDefとそのコンパイル結果と評価結果を加工する
+-}
+mapDefAndResult : Int -> (DefAndResult -> DefAndResult) -> Module -> Module
+mapDefAndResult index =
+    Utility.Map.toMapperGetterMaybe
+        (getDefAndResult index)
+        (setDefAndResult index)
 
 
 {-| Moduleで定義されているDefのListを取得する
 -}
 getDefList : Module -> List Def.Def
-getDefList (Module { defAndCacheList }) =
-    defAndCacheList |> List.map defAndResultGetDef
+getDefList =
+    getDefAndResultList >> List.map defAndResultGetDef
 
 
 {-| Moduleで定義されているDefを取得する
@@ -121,7 +163,7 @@ getDef index module_ =
         |> Utility.ListExtra.getAt index
 
 
-{-| コンパイル結果と評価結果がない定義を追加
+{-| コンパイル結果と評価結果がない定義を設定
 -}
 setDef : Int -> Def.Def -> Module -> Module
 setDef index def (Module rec) =
@@ -137,6 +179,21 @@ setDef index def (Module rec) =
                             }
                         )
         }
+
+
+{-| 定義を加工する
+-}
+mapDef : Int -> (Def.Def -> Def.Def) -> Module -> Module
+mapDef index =
+    Utility.Map.toMapperGetterMaybe
+        (getDef index)
+        (setDef index)
+
+
+setCompileResult : Int -> Compiler.CompileResult -> Module -> Module
+setCompileResult index compileResult =
+    mapDefAndResult index
+        (defAndResultSetCompileResult compileResult)
 
 
 {-| 定義の個数
@@ -219,3 +276,27 @@ defAndResultGetCompileResult (DefAndResult { compileResult }) =
 defAndResultGetEvalResult : DefAndResult -> Maybe Int
 defAndResultGetEvalResult (DefAndResult { evalResult }) =
     evalResult
+
+
+defAndResultSetDef : Def.Def -> DefAndResult -> DefAndResult
+defAndResultSetDef def (DefAndResult rec) =
+    DefAndResult
+        { rec
+            | def = def
+        }
+
+
+defAndResultSetCompileResult : Compiler.CompileResult -> DefAndResult -> DefAndResult
+defAndResultSetCompileResult compileResult (DefAndResult rec) =
+    DefAndResult
+        { rec
+            | compileResult = Just compileResult
+        }
+
+
+defAndResultSetEvalResult : Int -> DefAndResult -> DefAndResult
+defAndResultSetEvalResult evalResult (DefAndResult rec) =
+    DefAndResult
+        { rec
+            | evalResult = Just evalResult
+        }

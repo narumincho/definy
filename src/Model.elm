@@ -21,7 +21,6 @@ port module Model exposing
     , getProject
     , getTreePanelModel
     , getTreePanelWidth
-    , getWasmBinary
     , getWindowSize
     , initCmd
     , initModel
@@ -35,13 +34,16 @@ port module Model exposing
     , mouseUp
     , openCommandPalette
     , openEditor
+    , pushMsgListToMsgQueue
+    , receiveCompiledData
     , setFocus
     , setWindowSize
+    , shiftMsgListFromMsgQueue
     , toGutterMode
     , toTreePanelGutterMode
     , treePanelMsgToMsg
     , treePanelUpdate
-    , shiftMsgListFromMsgQueue, pushMsgListToMsgQueue)
+    )
 
 {-| すべての状態を管理する
 -}
@@ -64,6 +66,7 @@ import Project.Source.Module.Def.Expr.Term as Term
 import Project.Source.Module.Def.Name as Name
 import Project.Source.Module.Def.Type as Type
 import Project.Source.ModuleWithCache
+import Task
 import Utility.ListExtra
 import Utility.Map
 
@@ -74,7 +77,7 @@ port loaded : () -> Cmd msg
 port setTextAreaValue : String -> Cmd msg
 
 
-port focusEditTextAea : () -> Cmd msg
+port focusTextArea : () -> Cmd msg
 
 
 {-| 全体の入力を表すメッセージ
@@ -84,7 +87,7 @@ type Msg
     | KeyPrevented -- キーボードの入力のデフォルト動作を取り消した後
     | MouseMove { x : Int, y : Int } -- マウスの移動
     | MouseUp -- マウスのボタンを離した
-    | ReceiveCompiledData ( Int, Compiler.CompileResult ) -- コンパイルの結果を受け取った
+    | ReceiveCompiledData { ref : Project.Source.ModuleRef, index : Int, compileResult : Compiler.CompileResult } -- コンパイルの結果を受け取った
     | ToResizeGutterMode Gutter -- リサイズモードに移行
     | FocusTo Focus -- フォーカスを移動
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
@@ -511,11 +514,19 @@ mouseUp (Model rec) =
         }
 
 
-{-| WASM
+{-| コンパイルの結果を受け取った
 -}
-getWasmBinary : Model -> Maybe (List Int)
-getWasmBinary _ =
-    Nothing
+receiveCompiledData : { ref : Project.Source.ModuleRef, index : Int, compileResult : Compiler.CompileResult } -> Model -> ( Model, Maybe (List Int) )
+receiveCompiledData { ref, index, compileResult } model =
+    ( model
+        |> mapProject
+            (Project.mapSource
+                (Project.Source.mapModule ref
+                    (Project.Source.ModuleWithCache.setCompileResult index compileResult)
+                )
+            )
+    , Compiler.getBinary compileResult
+    )
 
 
 {-| ツリーパネルの更新
@@ -590,7 +601,7 @@ editorPanelEmitToMsg emit =
 
         Panel.EditorGroup.EmitFocusEditTextAea ->
             ( []
-            , [ focusEditTextAea () ]
+            , [ focusTextArea () ]
             )
 
         Panel.EditorGroup.EmitChangeName { name, index, ref } ->
@@ -738,15 +749,46 @@ changeType { type_, index, ref } =
         )
 
 
-changeExpr : { expr : Expr.Expr, index : Int, ref : Project.Source.ModuleRef } -> Model -> Model
-changeExpr { expr, index, ref } =
-    mapProject
-        (Project.mapSource
-            (Project.Source.mapModule
-                ref
-                (Project.Source.ModuleWithCache.setDefExpr index expr)
-            )
-        )
+changeExpr : { expr : Expr.Expr, index : Int, ref : Project.Source.ModuleRef } -> Model -> ( Model, Cmd Msg )
+changeExpr { expr, index, ref } model =
+    let
+        newModel =
+            model
+                |> mapProject
+                    (Project.mapSource
+                        (Project.Source.mapModule
+                            ref
+                            (Project.Source.ModuleWithCache.setDefExpr index expr)
+                        )
+                    )
+
+        newDefMaybe =
+            newModel
+                |> getProject
+                |> Project.getSource
+                |> Project.Source.getModule ref
+                |> Project.Source.ModuleWithCache.getDef index
+    in
+    ( newModel
+    , case newDefMaybe of
+        Just newDef ->
+            Task.succeed newDef
+                |> Task.andThen
+                    (\def ->
+                        Task.succeed (Compiler.compile def)
+                    )
+                |> Task.perform
+                    (\compileResult ->
+                        ReceiveCompiledData
+                            { ref = ref
+                            , index = index
+                            , compileResult = compileResult
+                            }
+                    )
+
+        Nothing ->
+            Cmd.none
+    )
 
 
 addPartDef : { ref : Project.Source.ModuleRef } -> Model -> Model
@@ -758,15 +800,16 @@ addPartDef { ref } =
 
 
 pushMsgListToMsgQueue : List Msg -> Model -> Model
-pushMsgListToMsgQueue msgList (Model rec)=
+pushMsgListToMsgQueue msgList (Model rec) =
     Model
-        { rec |
-            msgQueue = rec.msgQueue ++ msgList
+        { rec
+            | msgQueue = rec.msgQueue ++ msgList
         }
 
-shiftMsgListFromMsgQueue : Model -> (List Msg, Model)
+
+shiftMsgListFromMsgQueue : Model -> ( List Msg, Model )
 shiftMsgListFromMsgQueue (Model rec) =
-    (rec.msgQueue
+    ( rec.msgQueue
     , Model
         { rec | msgQueue = [] }
     )
