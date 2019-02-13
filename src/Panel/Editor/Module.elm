@@ -228,22 +228,22 @@ activeTo active (Model rec) =
             [ EmitFocusEditTextAea ]
 
         ActivePartDefList (ActivePartDef ( _, ActivePartDefName Nothing )) ->
-            [ EmitFocusEditTextAea, EmitSetTextAreaValue "" ]
+            [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
 
         ActivePartDefList (ActivePartDef ( _, ActivePartDefType Nothing )) ->
-            [ EmitFocusEditTextAea, EmitSetTextAreaValue "" ]
+            [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
 
         ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr ActivePartDefExprSelf )) ->
-            [ EmitFocusEditTextAea, EmitSetTextAreaValue "" ]
+            [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
 
         ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr ActiveExprHead )) ->
-            [ EmitFocusEditTextAea, EmitSetTextAreaValue "" ]
+            [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
 
         ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr (ActiveExprTerm _ Nothing) )) ->
-            [ EmitFocusEditTextAea, EmitSetTextAreaValue "" ]
+            [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
 
         ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr (ActiveExprOp _ Nothing) )) ->
-            [ EmitFocusEditTextAea, EmitSetTextAreaValue "" ]
+            [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
 
         _ ->
             []
@@ -313,12 +313,16 @@ selectRight module_ active =
             ActiveDescription ActiveDescriptionSelf
 
         ActiveDescription ActiveDescriptionSelf ->
-            -- 概要欄から定義リストへ
-            ActivePartDefList ActivePartDefListSelf
+            -- 概要欄から概要欄編集へ
+            ActiveDescription ActiveDescriptionText
+
+        ActivePartDefList ActivePartDefListSelf ->
+            -- 定義リストから
+            ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
-            -- 定義から次の定義へ
-            ActivePartDefList (ActivePartDef ( min (ModuleWithCache.getDefNum module_ - 1) (index + 1), ActivePartDefSelf ))
+            -- 定義から名前へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
             -- 名前から型へ
@@ -329,8 +333,8 @@ selectRight module_ active =
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
-            -- 式から定義へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+            -- 式から最初の項へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0 Nothing) ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead )) ->
             -- 先頭の項の前から先頭の項へ

@@ -27,12 +27,12 @@
             app.ports.keyPrevented.send(0); // 0 はダミーデータ(送らないとなぜかエラーになる)
         });
         /* テキストエリア(<textarea id="edit">)に値を設定(編集する前の初期設定用) */
-        app.ports.setTextAreaValue.subscribe((e) => {
-            console.log(`テキストエリア(<textarea id="eidt">)に${e}を設定しようとしている`);
+        app.ports.setTextAreaValue.subscribe((text) => {
+            console.log(`テキストエリア(<textarea id="eidt">)に${text}を設定しようとしている`);
             requestAnimationFrame(() => {
                 const edit = document.getElementById("edit");
-                if (edit.value !== e) {
-                    edit.value = e;
+                if (edit.value !== text) {
+                    edit.value = text;
                 }
             });
         })

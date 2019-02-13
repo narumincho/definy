@@ -9363,8 +9363,8 @@ var author$project$Panel$Editor$Module$activeTo = F2(
 											var _n8 = _n7.b.a;
 											return _List_fromArray(
 												[
-													author$project$Panel$Editor$Module$EmitFocusEditTextAea,
-													author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
+													author$project$Panel$Editor$Module$EmitSetTextAreaValue(''),
+													author$project$Panel$Editor$Module$EmitFocusEditTextAea
 												]);
 										} else {
 											break _n1$11;
@@ -9375,8 +9375,8 @@ var author$project$Panel$Editor$Module$activeTo = F2(
 											var _n10 = _n9.b.a;
 											return _List_fromArray(
 												[
-													author$project$Panel$Editor$Module$EmitFocusEditTextAea,
-													author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
+													author$project$Panel$Editor$Module$EmitSetTextAreaValue(''),
+													author$project$Panel$Editor$Module$EmitFocusEditTextAea
 												]);
 										} else {
 											break _n1$11;
@@ -9388,16 +9388,16 @@ var author$project$Panel$Editor$Module$activeTo = F2(
 												var _n12 = _n11.b.a;
 												return _List_fromArray(
 													[
-														author$project$Panel$Editor$Module$EmitFocusEditTextAea,
-														author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
+														author$project$Panel$Editor$Module$EmitSetTextAreaValue(''),
+														author$project$Panel$Editor$Module$EmitFocusEditTextAea
 													]);
 											case 1:
 												var _n13 = active.a.a;
 												var _n14 = _n13.b.a;
 												return _List_fromArray(
 													[
-														author$project$Panel$Editor$Module$EmitFocusEditTextAea,
-														author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
+														author$project$Panel$Editor$Module$EmitSetTextAreaValue(''),
+														author$project$Panel$Editor$Module$EmitFocusEditTextAea
 													]);
 											case 2:
 												if (active.a.a.b.a.b.$ === 1) {
@@ -9406,8 +9406,8 @@ var author$project$Panel$Editor$Module$activeTo = F2(
 													var _n17 = _n16.b;
 													return _List_fromArray(
 														[
-															author$project$Panel$Editor$Module$EmitFocusEditTextAea,
-															author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
+															author$project$Panel$Editor$Module$EmitSetTextAreaValue(''),
+															author$project$Panel$Editor$Module$EmitFocusEditTextAea
 														]);
 												} else {
 													break _n1$11;
@@ -9419,8 +9419,8 @@ var author$project$Panel$Editor$Module$activeTo = F2(
 													var _n20 = _n19.b;
 													return _List_fromArray(
 														[
-															author$project$Panel$Editor$Module$EmitFocusEditTextAea,
-															author$project$Panel$Editor$Module$EmitSetTextAreaValue('')
+															author$project$Panel$Editor$Module$EmitSetTextAreaValue(''),
+															author$project$Panel$Editor$Module$EmitFocusEditTextAea
 														]);
 												} else {
 													break _n1$11;
@@ -12876,7 +12876,7 @@ var author$project$Panel$Editor$Module$selectParent = F2(
 	});
 var author$project$Panel$Editor$Module$selectRight = F2(
 	function (module_, active) {
-		_n0$9:
+		_n0$10:
 		while (true) {
 			switch (active.$) {
 				case 0:
@@ -12884,64 +12884,69 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 				case 1:
 					if (!active.a) {
 						var _n1 = active.a;
-						return author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf);
+						return author$project$Panel$Editor$Module$ActiveDescription(1);
 					} else {
-						break _n0$9;
+						break _n0$10;
 					}
 				default:
-					if (active.a.$ === 1) {
+					if (!active.a.$) {
+						var _n2 = active.a;
+						return author$project$Panel$Editor$Module$ActivePartDefList(
+							author$project$Panel$Editor$Module$ActivePartDef(
+								_Utils_Tuple2(0, author$project$Panel$Editor$Module$ActivePartDefSelf)));
+					} else {
 						switch (active.a.a.b.$) {
 							case 0:
-								var _n2 = active.a.a;
-								var index = _n2.a;
-								var _n3 = _n2.b;
+								var _n3 = active.a.a;
+								var index = _n3.a;
+								var _n4 = _n3.b;
 								return author$project$Panel$Editor$Module$ActivePartDefList(
 									author$project$Panel$Editor$Module$ActivePartDef(
 										_Utils_Tuple2(
-											A2(
-												elm$core$Basics$min,
-												author$project$Project$Source$ModuleWithCache$getDefNum(module_) - 1,
-												index + 1),
-											author$project$Panel$Editor$Module$ActivePartDefSelf)));
+											index,
+											author$project$Panel$Editor$Module$ActivePartDefName(elm$core$Maybe$Nothing))));
 							case 1:
 								if (active.a.a.b.a.$ === 1) {
-									var _n4 = active.a.a;
-									var index = _n4.a;
-									var _n5 = _n4.b.a;
+									var _n5 = active.a.a;
+									var index = _n5.a;
+									var _n6 = _n5.b.a;
 									return author$project$Panel$Editor$Module$ActivePartDefList(
 										author$project$Panel$Editor$Module$ActivePartDef(
 											_Utils_Tuple2(
 												index,
 												author$project$Panel$Editor$Module$ActivePartDefType(elm$core$Maybe$Nothing))));
 								} else {
-									break _n0$9;
+									break _n0$10;
 								}
 							case 2:
 								if (active.a.a.b.a.$ === 1) {
-									var _n6 = active.a.a;
-									var index = _n6.a;
-									var _n7 = _n6.b.a;
+									var _n7 = active.a.a;
+									var index = _n7.a;
+									var _n8 = _n7.b.a;
 									return author$project$Panel$Editor$Module$ActivePartDefList(
 										author$project$Panel$Editor$Module$ActivePartDef(
 											_Utils_Tuple2(
 												index,
 												author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$ActivePartDefExprSelf))));
 								} else {
-									break _n0$9;
+									break _n0$10;
 								}
 							default:
 								switch (active.a.a.b.a.$) {
 									case 0:
-										var _n8 = active.a.a;
-										var index = _n8.a;
-										var _n9 = _n8.b.a;
+										var _n9 = active.a.a;
+										var index = _n9.a;
+										var _n10 = _n9.b.a;
 										return author$project$Panel$Editor$Module$ActivePartDefList(
 											author$project$Panel$Editor$Module$ActivePartDef(
-												_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefSelf)));
+												_Utils_Tuple2(
+													index,
+													author$project$Panel$Editor$Module$ActivePartDefExpr(
+														A2(author$project$Panel$Editor$Module$ActiveExprTerm, 0, elm$core$Maybe$Nothing)))));
 									case 1:
-										var _n10 = active.a.a;
-										var index = _n10.a;
-										var _n11 = _n10.b.a;
+										var _n11 = active.a.a;
+										var index = _n11.a;
+										var _n12 = _n11.b.a;
 										return author$project$Panel$Editor$Module$ActivePartDefList(
 											author$project$Panel$Editor$Module$ActivePartDef(
 												_Utils_Tuple2(
@@ -12949,10 +12954,10 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 													author$project$Panel$Editor$Module$ActivePartDefExpr(
 														A2(author$project$Panel$Editor$Module$ActiveExprTerm, 0, elm$core$Maybe$Nothing)))));
 									case 2:
-										var _n12 = active.a.a;
-										var index = _n12.a;
-										var _n13 = _n12.b.a;
-										var termIndex = _n13.a;
+										var _n13 = active.a.a;
+										var index = _n13.a;
+										var _n14 = _n13.b.a;
+										var termIndex = _n14.a;
 										return author$project$Panel$Editor$Module$ActivePartDefList(
 											author$project$Panel$Editor$Module$ActivePartDef(
 												_Utils_Tuple2(
@@ -12960,10 +12965,10 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 													author$project$Panel$Editor$Module$ActivePartDefExpr(
 														A2(author$project$Panel$Editor$Module$ActiveExprOp, termIndex, elm$core$Maybe$Nothing)))));
 									default:
-										var _n14 = active.a.a;
-										var index = _n14.a;
-										var _n15 = _n14.b.a;
-										var opIndex = _n15.a;
+										var _n15 = active.a.a;
+										var index = _n15.a;
+										var _n16 = _n15.b.a;
+										var opIndex = _n16.a;
 										return author$project$Panel$Editor$Module$ActivePartDefList(
 											author$project$Panel$Editor$Module$ActivePartDef(
 												_Utils_Tuple2(
@@ -12972,8 +12977,6 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 														A2(author$project$Panel$Editor$Module$ActiveExprTerm, opIndex + 1, elm$core$Maybe$Nothing)))));
 								}
 						}
-					} else {
-						break _n0$9;
 					}
 			}
 		}
