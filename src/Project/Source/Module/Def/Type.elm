@@ -6,7 +6,6 @@ module Project.Source.Module.Def.Type exposing
     , int
     , isEmpty
     , toString
-    , toTextAreaValue
     , validInt
     , validTypeToString
     )
@@ -90,17 +89,3 @@ toString type_ =
 
         Empty ->
             Nothing
-
-
-{-| 入力欄の値に変換する
--}
-toTextAreaValue : Type -> List ( Char, Bool )
-toTextAreaValue type_ =
-    case toString type_ of
-        Just text ->
-            text
-                |> String.toList
-                |> List.map (\x -> ( x, True ))
-
-        Nothing ->
-            []

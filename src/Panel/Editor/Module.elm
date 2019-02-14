@@ -1697,6 +1697,10 @@ partDefViewExpr expr partDefExprActiveMaybe =
         )
 
 
+
+{------------------ Term  ------------------}
+
+
 {-| 編集していない項の表示
 Maybe (Maybe (List (Char, Bool))) の値は
 Nothing: 選択されていない
@@ -1761,6 +1765,10 @@ suggestionTerm term =
                 [ Html.text subItem ]
             ]
         ]
+
+
+
+{------------------ Operator  ------------------}
 
 
 opViewOutput : Op.Operator -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html ()
@@ -1838,7 +1846,7 @@ suggestionOpItem op isSelect =
         , Html.div
             [ subClassList
                 [ ( "partDef-suggestion-item-subItem", True )
-                , ( "partDef-suggestion-item-subItem", isSelect )
+                , ( "partDef-suggestion-item-subItem-select", isSelect )
                 ]
             ]
             [ Html.text (subItem |> Maybe.withDefault "") ]
