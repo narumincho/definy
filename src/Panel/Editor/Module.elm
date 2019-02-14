@@ -415,8 +415,16 @@ selectUp module_ active =
             -- 式から名前へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr _ )) ->
-            -- 式の中身から式へ
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead )) ->
+            -- 先頭の項の前から式へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm _ Nothing) )) ->
+            -- 項から式へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp _ Nothing) )) ->
+            -- 演算子から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
 
         _ ->
@@ -452,8 +460,16 @@ selectDown module_ active =
             -- 式から定義へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr _ )) ->
-            -- 式の中身から式へ
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead )) ->
+            -- 先頭の項の前から式へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm _ Nothing) )) ->
+            -- 項から式へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp _ Nothing) )) ->
+            -- 演算子から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
 
         _ ->
