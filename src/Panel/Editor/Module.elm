@@ -342,11 +342,37 @@ selectRight module_ active =
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm termIndex _) )) ->
             -- 項から次の演算子へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp termIndex Nothing) ))
+            let
+                exprTermCount =
+                    module_
+                        |> ModuleWithCache.getDef index
+                        |> Maybe.map Def.getExpr
+                        |> Maybe.map Expr.getOthers
+                        |> Maybe.map List.length
+                        |> Maybe.withDefault 0
+            in
+            if exprTermCount < termIndex + 1 then
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+
+            else
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp termIndex Nothing) ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp opIndex _) )) ->
             -- 演算子から次の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm (opIndex + 1) Nothing) ))
+            let
+                exprTermCount =
+                    module_
+                        |> ModuleWithCache.getDef index
+                        |> Maybe.map Def.getExpr
+                        |> Maybe.map Expr.getOthers
+                        |> Maybe.map List.length
+                        |> Maybe.withDefault 0
+            in
+            if exprTermCount < opIndex + 1 then
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+
+            else
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm (opIndex + 1) Nothing) ))
 
         _ ->
             active
@@ -1308,17 +1334,32 @@ partDefView index defAndResult partDefActiveMaybe =
                 )
             )
         ]
-        [ partDefViewNameAndType (Def.getName def) (Def.getType def) partDefActiveMaybe
-        , partDefViewExpr (Def.getExpr def)
-            (case partDefActiveMaybe of
-                Just (ActivePartDefExpr partDefExprActive) ->
-                    Just partDefExprActive
+        [ Html.div
+            [ subClass "partDef-defArea" ]
+            [ partDefViewNameAndType (Def.getName def) (Def.getType def) partDefActiveMaybe
+            , partDefViewExpr (Def.getExpr def)
+                (case partDefActiveMaybe of
+                    Just (ActivePartDefExpr partDefExprActive) ->
+                        Just partDefExprActive
 
-                _ ->
-                    Nothing
-            )
-        , Html.div [] [ Html.text (compileResult |> Maybe.map Compiler.compileResultToString |> Maybe.withDefault "コンパイル結果がない") ]
-        , Html.div [] [ Html.text (evalResult |> Maybe.map String.fromInt |> Maybe.withDefault "評価結果がない") ]
+                    _ ->
+                        Nothing
+                )
+            ]
+        , resultArea compileResult evalResult
+        ]
+
+
+resultArea : Maybe Compiler.CompileResult -> Maybe Int -> Html.Html msg
+resultArea compileResult evalResult =
+    Html.div
+        [ subClass "partDef-resultArea " ]
+        [ Html.div
+            []
+            [ Html.text (compileResult |> Maybe.map Compiler.compileResultToString |> Maybe.withDefault "コンパイル結果がない") ]
+        , Html.div
+            []
+            [ Html.text (evalResult |> Maybe.map String.fromInt |> Maybe.withDefault "評価結果がない") ]
         ]
 
 

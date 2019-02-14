@@ -12958,7 +12958,24 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 										var index = _n13.a;
 										var _n14 = _n13.b.a;
 										var termIndex = _n14.a;
-										return author$project$Panel$Editor$Module$ActivePartDefList(
+										var exprTermCount = A2(
+											elm$core$Maybe$withDefault,
+											0,
+											A2(
+												elm$core$Maybe$map,
+												elm$core$List$length,
+												A2(
+													elm$core$Maybe$map,
+													author$project$Project$Source$Module$Def$Expr$getOthers,
+													A2(
+														elm$core$Maybe$map,
+														author$project$Project$Source$Module$Def$getExpr,
+														A2(author$project$Project$Source$ModuleWithCache$getDef, index, module_)))));
+										return (_Utils_cmp(exprTermCount, termIndex + 1) < 0) ? author$project$Panel$Editor$Module$ActivePartDefList(
+											author$project$Panel$Editor$Module$ActivePartDef(
+												_Utils_Tuple2(
+													index,
+													author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$ActivePartDefExprSelf)))) : author$project$Panel$Editor$Module$ActivePartDefList(
 											author$project$Panel$Editor$Module$ActivePartDef(
 												_Utils_Tuple2(
 													index,
@@ -12969,7 +12986,24 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 										var index = _n15.a;
 										var _n16 = _n15.b.a;
 										var opIndex = _n16.a;
-										return author$project$Panel$Editor$Module$ActivePartDefList(
+										var exprTermCount = A2(
+											elm$core$Maybe$withDefault,
+											0,
+											A2(
+												elm$core$Maybe$map,
+												elm$core$List$length,
+												A2(
+													elm$core$Maybe$map,
+													author$project$Project$Source$Module$Def$Expr$getOthers,
+													A2(
+														elm$core$Maybe$map,
+														author$project$Project$Source$Module$Def$getExpr,
+														A2(author$project$Project$Source$ModuleWithCache$getDef, index, module_)))));
+										return (_Utils_cmp(exprTermCount, opIndex + 1) < 0) ? author$project$Panel$Editor$Module$ActivePartDefList(
+											author$project$Panel$Editor$Module$ActivePartDef(
+												_Utils_Tuple2(
+													index,
+													author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$ActivePartDefExprSelf)))) : author$project$Panel$Editor$Module$ActivePartDefList(
 											author$project$Panel$Editor$Module$ActivePartDef(
 												_Utils_Tuple2(
 													index,
@@ -19105,72 +19139,6 @@ var author$project$Panel$Editor$Module$addDefButton = A2(
 		[
 			elm$html$Html$text('+ 新しいパーツの定義')
 		]));
-var author$project$Compiler$NoOp$coreEnumToString = function (coreEnum) {
-	switch (coreEnum) {
-		case 0:
-			return '+';
-		case 1:
-			return '-';
-		default:
-			return '*';
-	}
-};
-var author$project$Compiler$NoOp$toString = function (noOp) {
-	switch (noOp.$) {
-		case 0:
-			var coreEnum = noOp.a;
-			return author$project$Compiler$NoOp$coreEnumToString(coreEnum);
-		case 1:
-			var x = noOp.a;
-			return elm$core$String$fromInt(x);
-		case 2:
-			var defNum = noOp.a;
-			return '!' + elm$core$String$fromInt(defNum);
-		case 3:
-			var f = noOp.a;
-			var x = noOp.b;
-			return '(' + (author$project$Compiler$NoOp$toString(f) + (' ' + (author$project$Compiler$NoOp$toString(x) + ')')));
-		default:
-			var f = noOp.a;
-			var x = noOp.b;
-			var y = noOp.c;
-			return '(' + (author$project$Compiler$NoOp$toString(f) + (' ' + (author$project$Compiler$NoOp$toString(x) + (' ' + (author$project$Compiler$NoOp$toString(y) + ')')))));
-	}
-};
-var author$project$Compiler$Opt$toString = function (opt) {
-	switch (opt.$) {
-		case 0:
-			var p0 = opt.a;
-			var p1 = opt.b;
-			return '(i32.add ' + (author$project$Compiler$Opt$toString(p0) + (' ' + (author$project$Compiler$Opt$toString(p1) + ')')));
-		case 1:
-			var p0 = opt.a;
-			var p1 = opt.b;
-			return '(i32.sub ' + (author$project$Compiler$Opt$toString(p0) + (' ' + (author$project$Compiler$Opt$toString(p1) + ')')));
-		case 2:
-			var p0 = opt.a;
-			var p1 = opt.b;
-			return '(i32.mul' + (author$project$Compiler$Opt$toString(p0) + (' ' + (author$project$Compiler$Opt$toString(p1) + ')')));
-		case 3:
-			var v = opt.a;
-			return '[i32.const ' + (elm$core$String$fromInt(v) + ']');
-		default:
-			var f = opt.a;
-			return '(call' + (elm$core$String$fromInt(f) + ')');
-	}
-};
-var author$project$Compiler$compileResultToString = function (result) {
-	switch (result.$) {
-		case 0:
-			var opt = result.a.bj;
-			return '成功' + author$project$Compiler$Opt$toString(opt);
-		case 1:
-			var noOp = result.a.aR;
-			return 'コンパイルエラー。途中で失敗' + author$project$Compiler$NoOp$toString(noOp);
-		default:
-			return 'コンパイルエラー。空欄の部分があるかも';
-	}
-};
 var author$project$Panel$Editor$Module$activeHeadTermLeft = A2(
 	elm$html$Html$div,
 	_List_fromArray(
@@ -20111,6 +20079,106 @@ var author$project$Panel$Editor$Module$partDefViewNameAndType = F3(
 					}())
 				]));
 	});
+var author$project$Compiler$NoOp$coreEnumToString = function (coreEnum) {
+	switch (coreEnum) {
+		case 0:
+			return '+';
+		case 1:
+			return '-';
+		default:
+			return '*';
+	}
+};
+var author$project$Compiler$NoOp$toString = function (noOp) {
+	switch (noOp.$) {
+		case 0:
+			var coreEnum = noOp.a;
+			return author$project$Compiler$NoOp$coreEnumToString(coreEnum);
+		case 1:
+			var x = noOp.a;
+			return elm$core$String$fromInt(x);
+		case 2:
+			var defNum = noOp.a;
+			return '!' + elm$core$String$fromInt(defNum);
+		case 3:
+			var f = noOp.a;
+			var x = noOp.b;
+			return '(' + (author$project$Compiler$NoOp$toString(f) + (' ' + (author$project$Compiler$NoOp$toString(x) + ')')));
+		default:
+			var f = noOp.a;
+			var x = noOp.b;
+			var y = noOp.c;
+			return '(' + (author$project$Compiler$NoOp$toString(f) + (' ' + (author$project$Compiler$NoOp$toString(x) + (' ' + (author$project$Compiler$NoOp$toString(y) + ')')))));
+	}
+};
+var author$project$Compiler$Opt$toString = function (opt) {
+	switch (opt.$) {
+		case 0:
+			var p0 = opt.a;
+			var p1 = opt.b;
+			return '(i32.add ' + (author$project$Compiler$Opt$toString(p0) + (' ' + (author$project$Compiler$Opt$toString(p1) + ')')));
+		case 1:
+			var p0 = opt.a;
+			var p1 = opt.b;
+			return '(i32.sub ' + (author$project$Compiler$Opt$toString(p0) + (' ' + (author$project$Compiler$Opt$toString(p1) + ')')));
+		case 2:
+			var p0 = opt.a;
+			var p1 = opt.b;
+			return '(i32.mul' + (author$project$Compiler$Opt$toString(p0) + (' ' + (author$project$Compiler$Opt$toString(p1) + ')')));
+		case 3:
+			var v = opt.a;
+			return '[i32.const ' + (elm$core$String$fromInt(v) + ']');
+		default:
+			var f = opt.a;
+			return '(call' + (elm$core$String$fromInt(f) + ')');
+	}
+};
+var author$project$Compiler$compileResultToString = function (result) {
+	switch (result.$) {
+		case 0:
+			var opt = result.a.bj;
+			return '成功' + author$project$Compiler$Opt$toString(opt);
+		case 1:
+			var noOp = result.a.aR;
+			return 'コンパイルエラー。途中で失敗' + author$project$Compiler$NoOp$toString(noOp);
+		default:
+			return 'コンパイルエラー。空欄の部分があるかも';
+	}
+};
+var author$project$Panel$Editor$Module$resultArea = F2(
+	function (compileResult, evalResult) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDef-resultArea ')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					elm$html$Html$div,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text(
+							A2(
+								elm$core$Maybe$withDefault,
+								'コンパイル結果がない',
+								A2(elm$core$Maybe$map, author$project$Compiler$compileResultToString, compileResult)))
+						])),
+					A2(
+					elm$html$Html$div,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text(
+							A2(
+								elm$core$Maybe$withDefault,
+								'評価結果がない',
+								A2(elm$core$Maybe$map, elm$core$String$fromInt, evalResult)))
+						]))
+				]));
+	});
 var author$project$Project$Source$Module$Def$getName = function (_n0) {
 	var name = _n0.aQ;
 	return name;
@@ -20154,44 +20222,32 @@ var author$project$Panel$Editor$Module$partDefView = F3(
 				]),
 			_List_fromArray(
 				[
-					A3(
-					author$project$Panel$Editor$Module$partDefViewNameAndType,
-					author$project$Project$Source$Module$Def$getName(def),
-					author$project$Project$Source$Module$Def$getType(def),
-					partDefActiveMaybe),
-					A2(
-					author$project$Panel$Editor$Module$partDefViewExpr,
-					author$project$Project$Source$Module$Def$getExpr(def),
-					function () {
-						if ((!partDefActiveMaybe.$) && (partDefActiveMaybe.a.$ === 3)) {
-							var partDefExprActive = partDefActiveMaybe.a.a;
-							return elm$core$Maybe$Just(partDefExprActive);
-						} else {
-							return elm$core$Maybe$Nothing;
-						}
-					}()),
 					A2(
 					elm$html$Html$div,
-					_List_Nil,
 					_List_fromArray(
 						[
-							elm$html$Html$text(
+							author$project$Panel$Editor$Module$subClass('partDef-defArea')
+						]),
+					_List_fromArray(
+						[
+							A3(
+							author$project$Panel$Editor$Module$partDefViewNameAndType,
+							author$project$Project$Source$Module$Def$getName(def),
+							author$project$Project$Source$Module$Def$getType(def),
+							partDefActiveMaybe),
 							A2(
-								elm$core$Maybe$withDefault,
-								'コンパイル結果がない',
-								A2(elm$core$Maybe$map, author$project$Compiler$compileResultToString, compileResult)))
+							author$project$Panel$Editor$Module$partDefViewExpr,
+							author$project$Project$Source$Module$Def$getExpr(def),
+							function () {
+								if ((!partDefActiveMaybe.$) && (partDefActiveMaybe.a.$ === 3)) {
+									var partDefExprActive = partDefActiveMaybe.a.a;
+									return elm$core$Maybe$Just(partDefExprActive);
+								} else {
+									return elm$core$Maybe$Nothing;
+								}
+							}())
 						])),
-					A2(
-					elm$html$Html$div,
-					_List_Nil,
-					_List_fromArray(
-						[
-							elm$html$Html$text(
-							A2(
-								elm$core$Maybe$withDefault,
-								'評価結果がない',
-								A2(elm$core$Maybe$map, elm$core$String$fromInt, evalResult)))
-						]))
+					A2(author$project$Panel$Editor$Module$resultArea, compileResult, evalResult)
 				]));
 	});
 var author$project$Panel$Editor$Module$partDefListView = F2(
