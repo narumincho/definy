@@ -3,8 +3,6 @@ module Project.Source exposing (ModuleRef(..), Source, allModuleRef, getModule, 
 import Project.Label as Label
 import Project.Source.Module.Def as Def
 import Project.Source.Module.Def.Expr as Expr
-import Project.Source.Module.Def.Expr.Operator as Op
-import Project.Source.Module.Def.Expr.Term as Term
 import Project.Source.Module.Def.Name as Name
 import Project.Source.Module.Def.Type as Type
 import Project.Source.ModuleWithCache as ModuleWithCache
@@ -76,9 +74,9 @@ init =
                         , type_ = Type.int
                         , expr =
                             Expr.make
-                                (Term.fromInt 1)
-                                [ ( Op.add
-                                  , Term.fromInt 2
+                                (Expr.Int32Literal 1)
+                                [ ( Expr.Add
+                                  , Expr.Int32Literal 2
                                   )
                                 ]
                         }

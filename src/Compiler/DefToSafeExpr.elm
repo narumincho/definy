@@ -1,36 +1,116 @@
 module Compiler.DefToSafeExpr exposing (convert)
 
-import Compiler.SafeExpr exposing (SafeExpr(..))
+import Compiler.SafeExpr exposing (SafeExpr(..), SafeOperator(..), SafeTerm(..))
 import Project.Source.Module.Def as Def
 import Project.Source.Module.Def.Expr as Expr
-import Project.Source.Module.Def.Expr.Operator as Op
-import Project.Source.Module.Def.Expr.Term as Term
 
 
 convert : Def.Def -> Maybe SafeExpr
 convert def =
+    exprToSafeExpr (Def.getExpr def)
+
+
+exprToSafeExpr : Expr.Expr -> Maybe SafeExpr
+exprToSafeExpr (Expr.Expr head others) =
     let
-        expr =
-            Def.getExpr def
+        safeHeadMaybe : Maybe SafeTerm
+        safeHeadMaybe =
+            termToSafeTerm head
+
+        safeOthersMaybe : Maybe (List ( SafeOperator, SafeTerm ))
+        safeOthersMaybe =
+            others
+                |> List.foldl
+                    (\( op, term ) listMaybe ->
+                        case ( listMaybe, opToSafeOp op, termToSafeTerm term ) of
+                            ( Just list, Just safeOp, Just safeTerm ) ->
+                                Just (list ++ [ ( safeOp, safeTerm ) ])
+
+                            _ ->
+                                Nothing
+                    )
+                    (Just [])
     in
-    case Term.toSafe (Expr.getHead expr) of
-        Just safeHead ->
+    case ( safeHeadMaybe, safeOthersMaybe ) of
+        ( Just safeHead, Just safeOthers ) ->
             Just
                 (SafeExpr
-                    { head = safeHead
-                    , others =
-                        Expr.getOthers expr
-                            |> List.filterMap
-                                (\( op, term ) ->
-                                    case ( Op.toSafe op, Term.toSafe term ) of
-                                        ( Just safeOp, Just safeTerm ) ->
-                                            Just ( safeOp, safeTerm )
-
-                                        _ ->
-                                            Nothing
-                                )
-                    }
+                    safeHead
+                    safeOthers
                 )
 
-        Nothing ->
+        _ ->
+            Nothing
+
+
+termToSafeTerm : Expr.Term -> Maybe SafeTerm
+termToSafeTerm term =
+    case term of
+        Expr.Int32Literal int ->
+            Just (Int32Literal int)
+
+        Expr.Part (Expr.ValidPart defIndex) ->
+            Just (Part defIndex)
+
+        Expr.Parentheses expr ->
+            case exprToSafeExpr expr of
+                Just safeExpr ->
+                    Just (Parentheses safeExpr)
+
+                Nothing ->
+                    Nothing
+
+        _ ->
+            Nothing
+
+
+opToSafeOp : Expr.Operator -> Maybe SafeOperator
+opToSafeOp op =
+    case op of
+        Expr.Pipe ->
+            Just Pipe
+
+        Expr.Or ->
+            Just Or
+
+        Expr.And ->
+            Just And
+
+        Expr.Equal ->
+            Just Equal
+
+        Expr.NotEqual ->
+            Just NotEqual
+
+        Expr.LessThan ->
+            Just LessThan
+
+        Expr.LessThanOrEqual ->
+            Just LessThanOrEqual
+
+        Expr.Concat ->
+            Just Concat
+
+        Expr.Add ->
+            Just Add
+
+        Expr.Sub ->
+            Just Sub
+
+        Expr.Mul ->
+            Just Mul
+
+        Expr.Div ->
+            Just Div
+
+        Expr.Factorial ->
+            Just Factorial
+
+        Expr.Compose ->
+            Just Compose
+
+        Expr.App ->
+            Just App
+
+        Expr.Blank ->
             Nothing

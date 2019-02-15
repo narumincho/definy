@@ -1,5 +1,8 @@
 module Project.Source.Module.Def.Expr exposing
-    ( Expr
+    ( Expr(..)
+    , Operator(..)
+    , Part(..)
+    , Term(..)
     , empty
     , getHead
     , getOthers
@@ -19,39 +22,52 @@ module Project.Source.Module.Def.Expr exposing
     , replaceAndInsertTermLastTerm
     , setOperatorAtOther
     , setTermAtOther
+    , termFromMaybeLabel
+    , termToString
     , toString
-    )
+    , termToDescription, allOperator, opToDescription, opToString)
 
-import Project.Source.Module.Def.Expr.Operator as Op exposing (Operator)
-import Project.Source.Module.Def.Expr.Term as Term exposing (Term)
+import Project.Label as Label
 import Utility.ListExtra as ListExtra
 
 
+{-| 式。項と演算子が交互に並んだもの。評価して値を作ることができる
+-}
 type Expr
     = Expr Term (List ( Operator, Term ))
 
 
+{-| 先頭の項と演算子と項の組のListから式をつくる
+-}
 make : Term -> List ( Operator, Term ) -> Expr
 make head others =
     Expr head others
         |> removeBlankOpNoneTerm
 
 
+{-| 空の式
+-}
 empty : Expr
 empty =
-    Expr Term.none []
+    Expr None []
 
 
+{-| 先頭の項を取得する
+-}
 getHead : Expr -> Term
 getHead (Expr head _) =
     head
 
 
+{-| 先頭以外の演算子と項のListを取得する
+-}
 getOthers : Expr -> List ( Operator, Term )
 getOthers (Expr _ others) =
     others
 
 
+{-| 先頭以外の演算子と項のListを加工する
+-}
 mapOthers : (List ( Operator, Term ) -> List ( Operator, Term )) -> Expr -> Expr
 mapOthers f (Expr head others) =
     Expr
@@ -74,17 +90,17 @@ removeSetBlankOpNoneTermLoop rest expr =
         [] ->
             expr |> mapOthers List.reverse
 
-        ( Op.Blank, Term.None ) :: xs ->
+        ( Blank, None ) :: xs ->
             removeSetBlankOpNoneTermLoop xs expr
 
-        ( Op.Blank, term ) :: xs ->
+        ( Blank, term ) :: xs ->
             case expr of
-                Expr Term.None [] ->
+                Expr None [] ->
                     removeSetBlankOpNoneTermLoop
                         xs
                         (Expr term [])
 
-                Expr iHead (( iOp, Term.None ) :: iOthers) ->
+                Expr iHead (( iOp, None ) :: iOthers) ->
                     removeSetBlankOpNoneTermLoop
                         xs
                         (Expr iHead (( iOp, term ) :: iOthers))
@@ -92,7 +108,7 @@ removeSetBlankOpNoneTermLoop rest expr =
                 Expr iHead iOthers ->
                     removeSetBlankOpNoneTermLoop
                         xs
-                        (Expr iHead (( Op.blank, term ) :: iOthers))
+                        (Expr iHead (( Blank, term ) :: iOthers))
 
         x :: xs ->
             case expr of
@@ -124,19 +140,19 @@ getTermAt index (Expr _ others) =
 -}
 isEmpty : Expr -> Bool
 isEmpty (Expr head others) =
-    Term.none == head && others == []
+    None == head && others == []
 
 
 {-| 文字列で表現(デバッグ用)
 -}
 toString : Expr -> String
 toString (Expr head others) =
-    Term.toString head
+    termToString head
         ++ (others
                 |> List.map
                     (\( op, term ) ->
-                        Maybe.withDefault "(?)" (Op.toString op)
-                            ++ Term.toString term
+                        opToString op
+                            ++ termToString term
                     )
                 |> String.concat
            )
@@ -176,22 +192,22 @@ insertAt index op term (Expr head others) =
 insertABetweenOpAndTerm : Int -> Term -> Operator -> Expr -> Expr
 insertABetweenOpAndTerm index term op (Expr head others) =
     let
-        left : ( Op.Operator, Term.Term )
+        left : ( Operator, Term )
         left =
             ( others
                 |> ListExtra.getAt index
                 |> Maybe.map Tuple.first
-                |> Maybe.withDefault Op.blank
+                |> Maybe.withDefault Blank
             , term
             )
 
-        right : ( Op.Operator, Term.Term )
+        right : ( Operator, Term )
         right =
             ( op
             , others
                 |> ListExtra.getAt index
                 |> Maybe.map Tuple.second
-                |> Maybe.withDefault Term.none
+                |> Maybe.withDefault None
             )
     in
     Expr
@@ -229,7 +245,7 @@ replaceAndInsertHeadLastOp : Term -> List ( Operator, Term ) -> Operator -> Expr
 replaceAndInsertHeadLastOp headTerm list lastOp (Expr _ others) =
     Expr
         headTerm
-        (list ++ [ ( lastOp, Term.none ) ] ++ others)
+        (list ++ [ ( lastOp, None ) ] ++ others)
         |> removeBlankOpNoneTerm
 
 
@@ -243,7 +259,7 @@ replaceAndInsertOpLastTerm index op termOpList lastTerm expr =
     let
         targetTerm : Term
         targetTerm =
-            expr |> getTermAt index |> Maybe.withDefault Term.none
+            expr |> getTermAt index |> Maybe.withDefault None
 
         replaceAndInsertElement : { replace : ( Operator, Term ), insert : List ( Operator, Term ) }
         replaceAndInsertElement =
@@ -251,18 +267,18 @@ replaceAndInsertOpLastTerm index op termOpList lastTerm expr =
                 Nothing ->
                     { replace = ( op, lastTerm )
                     , insert =
-                        if targetTerm == Term.none then
+                        if targetTerm == None then
                             []
 
                         else
-                            [ ( Op.blank, targetTerm ) ]
+                            [ ( Blank, targetTerm ) ]
                     }
 
                 Just ( ( headTerm, _ ), ( _, lastOp ) ) ->
                     { replace = ( op, headTerm )
                     , insert =
                         offsetTermOpList [] termOpList
-                            ++ [ ( lastOp, lastTerm ), ( Op.blank, targetTerm ) ]
+                            ++ [ ( lastOp, lastTerm ), ( Blank, targetTerm ) ]
                     }
     in
     expr
@@ -283,7 +299,7 @@ replaceAndInsertOpLastOp index headOp termOpList expr =
     let
         targetTerm : Term
         targetTerm =
-            expr |> getTermAt index |> Maybe.withDefault Term.none
+            expr |> getTermAt index |> Maybe.withDefault None
 
         replaceAndInsertElement : { replace : ( Operator, Term ), insert : List ( Operator, Term ) }
         replaceAndInsertElement =
@@ -331,7 +347,7 @@ replaceAndInsertTermLastTerm index headTerm opTermList expr =
     let
         targetOp : Operator
         targetOp =
-            expr |> getOperatorAt index |> Maybe.withDefault Op.blank
+            expr |> getOperatorAt index |> Maybe.withDefault Blank
     in
     expr
         |> mapOthers
@@ -350,12 +366,12 @@ replaceAndInsertTermLastOp index headTerm opTermList lastOp expr =
     let
         targetOp : Operator
         targetOp =
-            expr |> getOperatorAt index |> Maybe.withDefault Op.blank
+            expr |> getOperatorAt index |> Maybe.withDefault Blank
     in
     expr
         |> mapOthers
             (ListExtra.setAt index ( targetOp, headTerm )
-                >> ListExtra.insertList (index + 1) (opTermList ++ [ ( lastOp, Term.none ) ])
+                >> ListExtra.insertList (index + 1) (opTermList ++ [ ( lastOp, None ) ])
             )
         |> removeBlankOpNoneTerm
 
@@ -372,7 +388,7 @@ setOperatorAtOther index op (Expr head others) =
             others
                 |> ListExtra.getAt index
                 |> Maybe.map Tuple.second
-                |> Maybe.withDefault Term.none
+                |> Maybe.withDefault None
     in
     Expr
         head
@@ -388,8 +404,337 @@ setTermAtOther index term (Expr head others) =
             others
                 |> ListExtra.getAt index
                 |> Maybe.map Tuple.first
-                |> Maybe.withDefault Op.blank
+                |> Maybe.withDefault Blank
     in
     Expr
         head
         (others |> ListExtra.setAt index ( op, term ))
+
+
+
+{- ===================================
+                   Term
+   ===================================
+-}
+
+
+type Term
+    = Int32Literal Int
+    | Part Part
+    | Parentheses Expr
+    | None
+
+
+type Part
+    = ValidPart Int
+    | InvalidPart Label.Label
+
+
+integerToListCharBool : Int -> List ( Char, Bool )
+integerToListCharBool i =
+    String.fromInt i
+        |> String.toList
+        |> List.map (\char -> ( char, True ))
+
+
+{-| ラベルから名前による参照の項をつくるが、 NothingならNoneという項を返す
+-}
+termFromMaybeLabel : Maybe Label.Label -> Term
+termFromMaybeLabel mLabel =
+    case mLabel of
+        Just label ->
+            Part (InvalidPart label)
+
+        Nothing ->
+            None
+
+
+termToString : Term -> String
+termToString term =
+    case term of
+        Int32Literal i ->
+            String.fromInt i
+
+        Part (ValidPart ref) ->
+            "!(" ++ String.fromInt ref ++ ")"
+
+        Part (InvalidPart label) ->
+            Label.toSmallString label
+
+        None ->
+            "✗"
+
+        Parentheses expr ->
+            "(" ++ toString expr ++ ")"
+
+
+termToDescription : Term -> ( String, String )
+termToDescription term =
+    case term of
+        Int32Literal i ->
+            ( String.fromInt i, "Int32リテラル" )
+
+        Part (ValidPart ref) ->
+            ( "正しい参照=" ++ String.fromInt ref, "パーツによる参照" )
+
+        Part (InvalidPart label) ->
+            ( "不正な参照=" ++ Label.toSmallString label, "パーツによる参照" )
+
+        None ->
+            ( "不正な項", "" )
+
+        Parentheses expr ->
+            ( "かっこ", "優先的に中身を計算する" )
+
+
+
+{- ===================================
+               Operator
+   ===================================
+-}
+
+
+{-| 決めていないというBlankを含む
+-}
+type Operator
+    = Pipe
+    | Or
+    | And
+    | Equal
+    | NotEqual
+    | LessThan
+    | LessThanOrEqual
+    | Concat
+    | Add
+    | Sub
+    | Mul
+    | Div
+    | Factorial
+    | Compose
+    | App
+    | Blank
+
+
+allOperator : List Operator
+allOperator =
+    [ Pipe
+    , Or
+    , And
+    , Equal
+    , NotEqual
+    , LessThan
+    , LessThanOrEqual
+    , Concat
+    , Add
+    , Sub
+    , Mul
+    , Div
+    , Factorial
+    , Compose
+    , App
+    ]
+
+
+opToDescription : Operator -> ( String, String )
+opToDescription op =
+    ( opToString op, opToShortDescription op )
+
+
+opToString : Operator -> String
+opToString operator =
+    case operator of
+        Pipe ->
+            ">"
+
+        Or ->
+            "|"
+
+        And ->
+            "&"
+
+        Equal ->
+            "="
+
+        NotEqual ->
+            "/="
+
+        LessThan ->
+            "<"
+
+        LessThanOrEqual ->
+            "<="
+
+        Concat ->
+            "++"
+
+        Add ->
+            "+"
+
+        Sub ->
+            "-"
+
+        Mul ->
+            "*"
+
+        Div ->
+            "/"
+
+        Factorial ->
+            "^"
+
+        Compose ->
+            ">>"
+
+        App ->
+            " "
+
+        Blank ->
+            "?"
+
+
+opToShortDescription : Operator -> String
+opToShortDescription op =
+    case op of
+        Pipe ->
+            "パイプライン"
+
+        Or ->
+            "または"
+
+        And ->
+            "かつ"
+
+        Equal ->
+            "同じ"
+
+        NotEqual ->
+            "同じじゃない"
+
+        LessThan ->
+            "右辺が大きいか?"
+
+        LessThanOrEqual ->
+            "右辺が大きいか等しいか"
+
+        Concat ->
+            "結合"
+
+        Add ->
+            "足し算"
+
+        Sub ->
+            "引き算"
+
+        Mul ->
+            "かけ算"
+
+        Div ->
+            "割り算"
+
+        Factorial ->
+            "べき乗"
+
+        Compose ->
+            "関数合成"
+
+        App ->
+            "関数適用"
+
+        Blank ->
+            "不正な演算子"
+
+
+type OperatorBindingOrder
+    = O0
+    | O1
+    | O2
+    | O3
+    | O4
+    | O5
+    | O6
+    | O7
+
+
+toBindingOrder : Operator -> OperatorBindingOrder
+toBindingOrder op =
+    case op of
+        Pipe ->
+            O0
+
+        Or ->
+            O1
+
+        And ->
+            O2
+
+        Equal ->
+            O3
+
+        NotEqual ->
+            O3
+
+        LessThan ->
+            O3
+
+        LessThanOrEqual ->
+            O3
+
+        Concat ->
+            O4
+
+        Add ->
+            O4
+
+        Sub ->
+            O4
+
+        Mul ->
+            O5
+
+        Div ->
+            O5
+
+        Factorial ->
+            O6
+
+        Compose ->
+            O6
+
+        App ->
+            O7
+
+        Blank ->
+            O0
+
+
+bindingOrderLessThanOrEqual : OperatorBindingOrder -> OperatorBindingOrder -> Bool
+bindingOrderLessThanOrEqual by target =
+    bindingOrderToInt target <= bindingOrderToInt by
+
+
+bindingOrderToInt : OperatorBindingOrder -> Int
+bindingOrderToInt order =
+    case order of
+        O0 ->
+            0
+
+        O1 ->
+            1
+
+        O2 ->
+            2
+
+        O3 ->
+            3
+
+        O4 ->
+            4
+
+        O5 ->
+            5
+
+        O6 ->
+            6
+
+        O7 ->
+            7

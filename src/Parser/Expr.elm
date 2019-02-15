@@ -7,15 +7,11 @@ module Parser.Expr exposing
 
 import Parser.SimpleChar as SimpleChar exposing (SimpleChar(..), Symbol(..))
 import Project.Label as Label exposing (Label)
-import Project.Source.Module.Def as Def exposing (Def)
-import Project.Source.Module.Def.Expr.Operator as Operator exposing (Operator)
-import Project.Source.Module.Def.Expr.Term as Term exposing (Term)
+import Project.Source.Module.Def.Expr as Expr exposing (Operator, Term)
 
 
-
--- 始まりがTermの公文解析結果
-
-
+{-| 始まりがTermの構文解析結果
+-}
 type ParseTermResult
     = TermLastTerm
         { head : Term
@@ -60,7 +56,7 @@ parseStartTermLoop intermediate list =
             batchTermResult (intermediate ++ [ Op op ]) textAreaValue
 
         OneEnd ->
-            batchTermResult (intermediate ++ [ Term Term.none ]) []
+            batchTermResult (intermediate ++ [ Term Expr.None ]) []
 
 
 batchTermResult : List TermOrOp -> List ( Char, Bool ) -> ParseTermResult
@@ -79,7 +75,7 @@ batchTermResult list textAreaValue =
         (Op op) :: others ->
             batchTermResultLoop
                 (TermLastOp
-                    { head = Term.none
+                    { head = Expr.None
                     , others = []
                     , last = op
                     , textAreaValue = textAreaValue
@@ -89,7 +85,7 @@ batchTermResult list textAreaValue =
 
         [] ->
             TermLastTerm
-                { head = Term.none
+                { head = Expr.None
                 , others = []
                 , textAreaValue = []
                 }
@@ -102,7 +98,7 @@ batchTermResultLoop intermediate list =
             batchTermResultLoop
                 (TermLastTerm
                     { head = head
-                    , others = others ++ [ ( Operator.app, term ) ]
+                    , others = others ++ [ ( Expr.App, term ) ]
                     , textAreaValue = textAreaValue
                     }
                 )
@@ -133,7 +129,7 @@ batchTermResultLoop intermediate list =
             batchTermResultLoop
                 (TermLastOp
                     { head = head
-                    , others = others ++ [ ( last, Term.none ) ]
+                    , others = others ++ [ ( last, Expr.None ) ]
                     , last = op
                     , textAreaValue = textAreaValue
                     }
@@ -191,7 +187,7 @@ parseStartOpLoop intermediate list =
             batchOpResult (intermediate ++ [ Op op ]) textAreaValue
 
         OneEnd ->
-            batchOpResult (intermediate ++ [ Term Term.none ]) []
+            batchOpResult (intermediate ++ [ Term Expr.None ]) []
 
 
 batchOpResult : List TermOrOp -> List ( Char, Bool ) -> ParseOpResult
@@ -200,7 +196,7 @@ batchOpResult list textAreaValue =
         (Term term) :: others ->
             batchOpResultLoop
                 (OpLastTerm
-                    { head = Operator.blank
+                    { head = Expr.Blank
                     , others = []
                     , last = term
                     , textAreaValue = textAreaValue
@@ -220,7 +216,7 @@ batchOpResult list textAreaValue =
 
         [] ->
             OpLastOp
-                { head = Operator.blank
+                { head = Expr.Blank
                 , others = []
                 , textAreaValue = textAreaValue
                 }
@@ -233,7 +229,7 @@ batchOpResultLoop intermediate list =
             batchOpResultLoop
                 (OpLastTerm
                     { head = head
-                    , others = others ++ [ ( last, Operator.app ) ]
+                    , others = others ++ [ ( last, Expr.App ) ]
                     , last = term
                     , textAreaValue = textAreaValue
                     }
@@ -265,7 +261,7 @@ batchOpResultLoop intermediate list =
             batchOpResultLoop
                 (OpLastOp
                     { head = head
-                    , others = others ++ [ ( Term.none, op ) ]
+                    , others = others ++ [ ( Expr.None, op ) ]
                     , textAreaValue = textAreaValue
                     }
                 )
@@ -322,103 +318,103 @@ parseOne list =
 
         (ASymbol Solidus _) :: (ASymbol EqualsSign _) :: others ->
             OneOpAndRest
-                { op = Operator.notEqual
+                { op = Expr.NotEqual
                 , rest = others
                 }
 
         (ASymbol LessThanSign _) :: (ASymbol EqualsSign _) :: others ->
             OneOpAndRest
-                { op = Operator.lessThanOrEqual
+                { op = Expr.LessThanOrEqual
                 , rest = others
                 }
 
         (ASymbol PlusSign _) :: (ASymbol PlusSign _) :: others ->
             OneOpAndRest
-                { op = Operator.concat
+                { op = Expr.Concat
                 , rest = others
                 }
 
         (ASymbol GreaterThanSign _) :: (ASymbol GreaterThanSign _) :: others ->
             OneOpAndRest
-                { op = Operator.compose
+                { op = Expr.Compose
                 , rest = others
                 }
 
         (ASymbol GreaterThanSign _) :: others ->
             OneOpAndRest
-                { op = Operator.pipe
+                { op = Expr.Pipe
                 , rest = others
                 }
 
         (ASymbol VerticalLine _) :: others ->
             OneOpAndRest
-                { op = Operator.or
+                { op = Expr.Or
                 , rest = others
                 }
 
         (ASymbol Ampersand _) :: others ->
             OneOpAndRest
-                { op = Operator.and
+                { op = Expr.And
                 , rest = others
                 }
 
         (ASymbol EqualsSign _) :: others ->
             OneOpAndRest
-                { op = Operator.equal
+                { op = Expr.Equal
                 , rest = others
                 }
 
         [ ASymbol LessThanSign char ] ->
             OneOpEnd
-                { op = Operator.lessThan
+                { op = Expr.LessThan
                 , textAreaValue = [ ( char, True ) ]
                 }
 
         (ASymbol LessThanSign _) :: others ->
             OneOpAndRest
-                { op = Operator.lessThan
+                { op = Expr.LessThan
                 , rest = others
                 }
 
         [ ASymbol PlusSign char ] ->
             OneOpEnd
-                { op = Operator.add
+                { op = Expr.Add
                 , textAreaValue = [ ( char, True ) ]
                 }
 
         (ASymbol PlusSign _) :: others ->
             OneOpAndRest
-                { op = Operator.add
+                { op = Expr.Add
                 , rest = others
                 }
 
         (ASymbol HyphenMinus _) :: others ->
             OneOpAndRest
-                { op = Operator.sub
+                { op = Expr.Sub
                 , rest = others
                 }
 
         (ASymbol Asterisk _) :: others ->
             OneOpAndRest
-                { op = Operator.mul
+                { op = Expr.Mul
                 , rest = others
                 }
 
         [ ASymbol Solidus char ] ->
             OneOpEnd
-                { op = Operator.div
+                { op = Expr.Div
                 , textAreaValue = [ ( char, True ) ]
                 }
 
         (ASymbol Solidus _) :: others ->
             OneOpAndRest
-                { op = Operator.div
+                { op = Expr.Div
                 , rest = others
                 }
 
         (ASymbol CircumflexAccent _) :: others ->
             OneOpAndRest
-                { op = Operator.factorial
+                { op = Expr.Factorial
                 , rest = others
                 }
 
@@ -504,7 +500,7 @@ parseIntLiteral intermediate rest textareaValue =
     case rest of
         ASpace :: others ->
             TermAndRest
-                { term = Term.fromInt (intLiteralIntermediateToInt intermediate)
+                { term = Expr.Int32Literal (intLiteralIntermediateToInt intermediate)
                 , rest = others
                 }
 
@@ -516,13 +512,13 @@ parseIntLiteral intermediate rest textareaValue =
 
         _ :: _ ->
             TermAndRest
-                { term = Term.fromInt (intLiteralIntermediateToInt intermediate)
+                { term = Expr.Int32Literal (intLiteralIntermediateToInt intermediate)
                 , rest = rest
                 }
 
         [] ->
             TermEnd
-                { term = Term.fromInt (intLiteralIntermediateToInt intermediate)
+                { term = Expr.Int32Literal (intLiteralIntermediateToInt intermediate)
                 , textAreaValue = textareaValue
                 }
 
@@ -536,13 +532,13 @@ parseInRef label rest textAreaValue =
     case rest of
         ASpace :: others ->
             TermAndRest
-                { term = Term.fromMaybeLabel label
+                { term = Expr.termFromMaybeLabel label
                 , rest = others
                 }
 
         (ASymbol symbol char) :: _ ->
             TermAndRest
-                { term = Term.fromMaybeLabel label
+                { term = Expr.termFromMaybeLabel label
                 , rest = rest
                 }
 
@@ -576,6 +572,6 @@ parseInRef label rest textAreaValue =
 
         [] ->
             TermEnd
-                { term = Term.fromMaybeLabel label
+                { term = Expr.termFromMaybeLabel label
                 , textAreaValue = textAreaValue
                 }

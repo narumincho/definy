@@ -1,48 +1,229 @@
 module Compiler.SafeExpr exposing
     ( SafeExpr(..)
+    , SafeOperator(..)
+    , SafeTerm(..)
+    , bindingOrderLessThanOrEqual
     , concat
     , push
+    , toBindingOrder
     , toString
     )
 
-import Project.Source.Module.Def.Expr.Operator as Op exposing (SafeOperator)
-import Project.Source.Module.Def.Expr.Term as Term exposing (SafeTerm)
-
 
 type SafeExpr
-    = SafeExpr
-        { head : SafeTerm
-        , others : List ( SafeOperator, SafeTerm )
-        }
+    = SafeExpr SafeTerm (List ( SafeOperator, SafeTerm ))
+
+
+type SafeTerm
+    = Int32Literal Int
+    | Part Int
+    | Parentheses SafeExpr
+
+
+type SafeOperator
+    = Pipe
+    | Or
+    | And
+    | Equal
+    | NotEqual
+    | LessThan
+    | LessThanOrEqual
+    | Concat
+    | Add
+    | Sub
+    | Mul
+    | Div
+    | Factorial
+    | Compose
+    | App
 
 
 getHead : SafeExpr -> SafeTerm
-getHead (SafeExpr { head }) =
+getHead (SafeExpr head _) =
     head
 
 
 getOthers : SafeExpr -> List ( SafeOperator, SafeTerm )
-getOthers (SafeExpr { others }) =
+getOthers (SafeExpr _ others) =
     others
 
 
 toString : SafeExpr -> String
-toString (SafeExpr { head, others }) =
-    Term.safeToString head
-        ++ String.concat (List.map (\( op, term ) -> Op.safeToString op ++ Term.safeToString term) others)
+toString (SafeExpr head others) =
+    termToString head
+        ++ String.concat
+            (List.map
+                (\( op, term ) ->
+                    opToString op ++ termToString term
+                )
+                others
+            )
+
+
+termToString : SafeTerm -> String
+termToString safeTerm =
+    case safeTerm of
+        Int32Literal i ->
+            String.fromInt i
+
+        Part ref ->
+            "!(" ++ String.fromInt ref ++ ")"
+
+        Parentheses expr ->
+            "(" ++ toString expr ++ ")"
+
+
+opToString : SafeOperator -> String
+opToString safeOperator =
+    case safeOperator of
+        Pipe ->
+            ">"
+
+        Or ->
+            "|"
+
+        And ->
+            "&"
+
+        Equal ->
+            "="
+
+        NotEqual ->
+            "/="
+
+        LessThan ->
+            "<"
+
+        LessThanOrEqual ->
+            "<="
+
+        Concat ->
+            "++"
+
+        Add ->
+            "+"
+
+        Sub ->
+            "-"
+
+        Mul ->
+            "*"
+
+        Div ->
+            "/"
+
+        Factorial ->
+            "^"
+
+        Compose ->
+            ">>"
+
+        App ->
+            " "
+
+
+type OperatorBindingOrder
+    = O0
+    | O1
+    | O2
+    | O3
+    | O4
+    | O5
+    | O6
+    | O7
+
+
+toBindingOrder : SafeOperator -> OperatorBindingOrder
+toBindingOrder op =
+    case op of
+        Pipe ->
+            O0
+
+        Or ->
+            O1
+
+        And ->
+            O2
+
+        Equal ->
+            O3
+
+        NotEqual ->
+            O3
+
+        LessThan ->
+            O3
+
+        LessThanOrEqual ->
+            O3
+
+        Concat ->
+            O4
+
+        Add ->
+            O4
+
+        Sub ->
+            O4
+
+        Mul ->
+            O5
+
+        Div ->
+            O5
+
+        Factorial ->
+            O6
+
+        Compose ->
+            O6
+
+        App ->
+            O7
+
+
+bindingOrderLessThanOrEqual : OperatorBindingOrder -> OperatorBindingOrder -> Bool
+bindingOrderLessThanOrEqual by target =
+    bindingOrderToInt target <= bindingOrderToInt by
+
+
+bindingOrderToInt : OperatorBindingOrder -> Int
+bindingOrderToInt order =
+    case order of
+        O0 ->
+            0
+
+        O1 ->
+            1
+
+        O2 ->
+            2
+
+        O3 ->
+            3
+
+        O4 ->
+            4
+
+        O5 ->
+            5
+
+        O6 ->
+            6
+
+        O7 ->
+            7
 
 
 push : ( SafeOperator, SafeTerm ) -> SafeExpr -> SafeExpr
-push tuple (SafeExpr { head, others }) =
+push tuple (SafeExpr head others) =
     SafeExpr
-        { head = head
-        , others = others ++ [ tuple ]
-        }
+        head
+        (others ++ [ tuple ])
 
 
 concat : SafeExpr -> SafeOperator -> SafeExpr -> SafeExpr
 concat left centerOp right =
     SafeExpr
-        { head = getHead left
-        , others = getOthers left ++ [ ( centerOp, getHead right ) ] ++ getOthers right
-        }
+        (getHead left)
+        (getOthers left ++ [ ( centerOp, getHead right ) ] ++ getOthers right)

@@ -62,8 +62,6 @@ import Project.Label as Label
 import Project.Source
 import Project.Source.Module.Def as Def
 import Project.Source.Module.Def.Expr as Expr
-import Project.Source.Module.Def.Expr.Operator as Operator
-import Project.Source.Module.Def.Expr.Term as Term
 import Project.Source.Module.Def.Name as Name
 import Project.Source.Module.Def.Type as Type
 import Project.Source.ModuleWithCache

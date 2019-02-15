@@ -1,13 +1,11 @@
 module Compiler.SafeExprToNoOp exposing (convert)
 
 import Compiler.NoOp as NoOp exposing (NoOp)
-import Compiler.SafeExpr as SafeExpr exposing (SafeExpr(..))
-import Project.Source.Module.Def.Expr.Operator as Op exposing (OperatorBindingOrder(..), SafeOperator)
-import Project.Source.Module.Def.Expr.Term as Term exposing (SafeTerm)
+import Compiler.SafeExpr as SafeExpr exposing (SafeExpr(..), SafeOperator(..), SafeTerm(..))
 
 
 convert : SafeExpr -> NoOp
-convert (SafeExpr { head, others }) =
+convert (SafeExpr head others) =
     case others of
         [] ->
             termToNoOp head
@@ -16,17 +14,9 @@ convert (SafeExpr { head, others }) =
             let
                 a =
                     convertLoop
-                        { left =
-                            SafeExpr
-                                { head = head
-                                , others = []
-                                }
+                        { left = SafeExpr head []
                         , centerOp = op
-                        , leftCandidate =
-                            SafeExpr
-                                { head = term
-                                , others = []
-                                }
+                        , leftCandidate = SafeExpr term []
                         , right = xs
                         }
             in
@@ -40,11 +30,11 @@ convertLoop { left, centerOp, leftCandidate, right } =
             { left = left, centerOp = centerOp, right = leftCandidate }
 
         ( op, term ) :: xs ->
-            if Op.toBindingOrder op |> Op.bindingOrderLessThanOrEqual (Op.toBindingOrder centerOp) then
+            if SafeExpr.toBindingOrder op |> SafeExpr.bindingOrderLessThanOrEqual (SafeExpr.toBindingOrder centerOp) then
                 convertLoop
                     { left = SafeExpr.concat left centerOp leftCandidate
                     , centerOp = op
-                    , leftCandidate = SafeExpr { head = term, others = [] }
+                    , leftCandidate = SafeExpr term []
                     , right = xs
                     }
 
@@ -64,26 +54,33 @@ type alias State =
     }
 
 
+{-| TODO かっこ(Parentheses)も正しくNoOpに変換する
+-}
 termToNoOp : SafeTerm -> NoOp
 termToNoOp safeTerm =
     case safeTerm of
-        Term.SIntLiteral x ->
-            NoOp.Int x
+        Int32Literal int ->
+            NoOp.Int int
 
-        Term.SRef ref ->
+        Part ref ->
             NoOp.Ref ref
 
+        Parentheses safeExpr ->
+            NoOp.Int 100
 
+
+{-| TODO 他の演算子も正しくNoOpに変換する
+-}
 opToNoOp : SafeOperator -> NoOp
 opToNoOp op =
     case op of
-        Op.Add ->
+        Add ->
             NoOp.Core NoOp.Plus
 
-        Op.Sub ->
+        Sub ->
             NoOp.Core NoOp.Minus
 
-        Op.Mul ->
+        Mul ->
             NoOp.Core NoOp.Mul
 
         _ ->

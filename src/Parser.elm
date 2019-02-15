@@ -16,8 +16,6 @@ import Parser.Name as NameParser
 import Parser.SimpleChar as SimpleChar exposing (SimpleChar)
 import Parser.Type as TypeParser
 import Project.Source.Module.Def.Expr as Expr
-import Project.Source.Module.Def.Expr.Operator as Operator
-import Project.Source.Module.Def.Expr.Term as Term
 import Project.Source.Module.Def.Name as Name
 import Project.Source.Module.Def.Type as Type
 
@@ -37,16 +35,16 @@ type BeginWithNameResult
     | BeginWithNameEndExprTerm
         { name : Name.Name
         , type_ : Type.Type
-        , headTerm : Term.Term
-        , opAndTermList : List ( Operator.Operator, Term.Term )
+        , headTerm : Expr.Term
+        , opAndTermList : List ( Expr.Operator, Expr.Term )
         , textAreaValue : List ( Char, Bool )
         }
     | BeginWithNameEndExprOp
         { name : Name.Name
         , type_ : Type.Type
-        , headTerm : Term.Term
-        , opAndTermList : List ( Operator.Operator, Term.Term )
-        , lastOp : Operator.Operator
+        , headTerm : Expr.Term
+        , opAndTermList : List ( Expr.Operator, Expr.Term )
+        , lastOp : Expr.Operator
         , textAreaValue : List ( Char, Bool )
         }
 
@@ -60,15 +58,15 @@ type BeginWithTypeResult
         }
     | BeginWithTypeEndExprTerm
         { type_ : Type.Type
-        , headTerm : Term.Term
-        , opAndTermList : List ( Operator.Operator, Term.Term )
+        , headTerm : Expr.Term
+        , opAndTermList : List ( Expr.Operator, Expr.Term )
         , textAreaValue : List ( Char, Bool )
         }
     | BeginWithTypeEndExprOp
         { type_ : Type.Type
-        , headTerm : Term.Term
-        , opAndTermList : List ( Operator.Operator, Term.Term )
-        , lastOp : Operator.Operator
+        , headTerm : Expr.Term
+        , opAndTermList : List ( Expr.Operator, Expr.Term )
+        , lastOp : Expr.Operator
         , textAreaValue : List ( Char, Bool )
         }
 
@@ -77,14 +75,14 @@ type BeginWithTypeResult
 -}
 type BeginWithExprHeadResult
     = BeginWithExprHeadEndTerm
-        { headTerm : Term.Term
-        , opAndTermList : List ( Operator.Operator, Term.Term )
+        { headTerm : Expr.Term
+        , opAndTermList : List ( Expr.Operator, Expr.Term )
         , textAreaValue : List ( Char, Bool )
         }
     | BeginWithExprHeadEndOp
-        { headTerm : Term.Term
-        , opAndTermList : List ( Operator.Operator, Term.Term )
-        , lastOp : Operator.Operator
+        { headTerm : Expr.Term
+        , opAndTermList : List ( Expr.Operator, Expr.Term )
+        , lastOp : Expr.Operator
         , textAreaValue : List ( Char, Bool )
         }
 
@@ -93,14 +91,14 @@ type BeginWithExprHeadResult
 -}
 type BeginWithOpResult
     = BeginWithOpEndTerm
-        { headOp : Operator.Operator
-        , termAndOpList : List ( Term.Term, Operator.Operator )
-        , lastTerm : Term.Term
+        { headOp : Expr.Operator
+        , termAndOpList : List ( Expr.Term, Expr.Operator )
+        , lastTerm : Expr.Term
         , textAreaValue : List ( Char, Bool )
         }
     | BeginWithOpEndOp
-        { headOp : Operator.Operator
-        , termAndOpList : List ( Term.Term, Operator.Operator )
+        { headOp : Expr.Operator
+        , termAndOpList : List ( Expr.Term, Expr.Operator )
         , textAreaValue : List ( Char, Bool )
         }
 
@@ -109,14 +107,14 @@ type BeginWithOpResult
 -}
 type BeginWithTermResult
     = BeginWithTermEndTerm
-        { headTerm : Term.Term
-        , opAndTermList : List ( Operator.Operator, Term.Term )
+        { headTerm : Expr.Term
+        , opAndTermList : List ( Expr.Operator, Expr.Term )
         , textAreaValue : List ( Char, Bool )
         }
     | BeginWithTermEndOp
-        { headTerm : Term.Term
-        , opAndTermList : List ( Operator.Operator, Term.Term )
-        , lastOp : Operator.Operator
+        { headTerm : Expr.Term
+        , opAndTermList : List ( Expr.Operator, Expr.Term )
+        , lastOp : Expr.Operator
         , textAreaValue : List ( Char, Bool )
         }
 

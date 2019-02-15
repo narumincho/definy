@@ -25,8 +25,6 @@ import Project.Label as L
 import Project.Source
 import Project.Source.Module.Def as Def
 import Project.Source.Module.Def.Expr as Expr
-import Project.Source.Module.Def.Expr.Operator as Op
-import Project.Source.Module.Def.Expr.Term as Term
 import Project.Source.Module.Def.Name as Name
 import Project.Source.Module.Def.Type as Type
 import Project.Source.ModuleWithCache as ModuleWithCache
@@ -730,7 +728,7 @@ parserBeginWithName string index moduleRef =
                 (ActivePartDef
                     ( index
                     , ActivePartDefExpr
-                        (if headTerm == Term.none && opAndTermList == [] then
+                        (if headTerm == Expr.None && opAndTermList == [] then
                             ActivePartDefExprSelf
 
                          else
@@ -757,7 +755,7 @@ parserBeginWithName string index moduleRef =
                 )
             , [ EmitChangeName { name = name, index = index, ref = moduleRef }
               , EmitChangeType { type_ = type_, index = index, ref = moduleRef }
-              , EmitChangeExpr { expr = Expr.make headTerm (opAndTermList ++ [ ( lastOp, Term.none ) ]), index = index, ref = moduleRef }
+              , EmitChangeExpr { expr = Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.None ) ]), index = index, ref = moduleRef }
               , textAreaValueToSetTextEmit textAreaValue
               ]
             )
@@ -800,7 +798,7 @@ parserBeginWithType string index moduleRef =
         Parser.BeginWithTypeEndExprOp { type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
             ( ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
             , [ EmitChangeType { type_ = type_, index = index, ref = moduleRef }
-              , EmitChangeExpr { expr = Expr.make headTerm (opAndTermList ++ [ ( lastOp, Term.none ) ]), index = index, ref = moduleRef }
+              , EmitChangeExpr { expr = Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.None ) ]), index = index, ref = moduleRef }
               , textAreaValueToSetTextEmit textAreaValue
               ]
             )
@@ -816,7 +814,7 @@ parserInExpr string index moduleRef =
                     , ActivePartDefExpr
                         (ActiveExprTerm
                             (List.length opAndTermList)
-                            (if getLastTerm headTerm opAndTermList == Term.none then
+                            (if getLastTerm headTerm opAndTermList == Expr.None then
                                 Nothing
 
                              else
@@ -841,7 +839,7 @@ parserInExpr string index moduleRef =
                     , ActivePartDefExpr
                         (ActiveExprOp
                             (List.length opAndTermList)
-                            (if lastOp == Op.blank then
+                            (if lastOp == Expr.Blank then
                                 Nothing
 
                              else
@@ -866,7 +864,7 @@ parserBeginWithTerm string index moduleRef termIndex expr =
                     , ActivePartDefExpr
                         (ActiveExprTerm
                             (termIndex + List.length opAndTermList)
-                            (if getLastTerm headTerm opAndTermList == Term.none then
+                            (if getLastTerm headTerm opAndTermList == Expr.None then
                                 Nothing
 
                              else
@@ -903,7 +901,7 @@ parserBeginWithTerm string index moduleRef termIndex expr =
                     , ActivePartDefExpr
                         (ActiveExprOp
                             (termIndex + List.length opAndTermList)
-                            (if lastOp == Op.blank then
+                            (if lastOp == Expr.Blank then
                                 Nothing
 
                              else
@@ -939,7 +937,7 @@ parserBeginWithOp string index moduleRef opIndex expr =
                     , ActivePartDefExpr
                         (ActiveExprTerm
                             (opIndex + 1 + List.length termAndOpList)
-                            (if lastTerm == Term.none then
+                            (if lastTerm == Expr.None then
                                 Nothing
 
                              else
@@ -964,7 +962,7 @@ parserBeginWithOp string index moduleRef opIndex expr =
                     , ActivePartDefExpr
                         (ActiveExprOp
                             (opIndex + List.length termAndOpList)
-                            (if getLastOp headOp termAndOpList == Op.blank then
+                            (if getLastOp headOp termAndOpList == Expr.Blank then
                                 Nothing
 
                              else
@@ -988,14 +986,14 @@ parserBeginWithOp string index moduleRef opIndex expr =
             )
 
 
-getLastTerm : Term.Term -> List ( Op.Operator, Term.Term ) -> Term.Term
+getLastTerm : Expr.Term -> List ( Expr.Operator, Expr.Term ) -> Expr.Term
 getLastTerm headTerm opAndTermList =
     Utility.ListExtra.last opAndTermList
         |> Maybe.map Tuple.second
         |> Maybe.withDefault headTerm
 
 
-getLastOp : Op.Operator -> List ( Term.Term, Op.Operator ) -> Op.Operator
+getLastOp : Expr.Operator -> List ( Expr.Term, Expr.Operator ) -> Expr.Operator
 getLastOp headOp termAndOpList =
     Utility.ListExtra.last termAndOpList
         |> Maybe.map Tuple.second
@@ -1707,7 +1705,7 @@ Nothing: 選択されていない
 Just Nothing: 選択されている
 Just (Just textAreaValue): 編集中
 -}
-termViewOutput : Term.Term -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html ()
+termViewOutput : Expr.Term -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html ()
 termViewOutput term textAreaValueMaybeMaybe =
     case textAreaValueMaybeMaybe of
         Just (Just textAreaValue) ->
@@ -1720,7 +1718,7 @@ termViewOutput term textAreaValueMaybeMaybe =
             termNormalView term False
 
 
-termNormalView : Term.Term -> Bool -> Html.Html ()
+termNormalView : Expr.Term -> Bool -> Html.Html ()
 termNormalView term isActive =
     Html.div
         [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( (), True ))
@@ -1729,10 +1727,10 @@ termNormalView term isActive =
             , ( "partDef-element-active", isActive )
             ]
         ]
-        [ Html.text (Term.toString term) ]
+        [ Html.text (Expr.termToString term) ]
 
 
-termEditView : Term.Term -> List ( Char, Bool ) -> Html.Html msg
+termEditView : Expr.Term -> List ( Char, Bool ) -> Html.Html msg
 termEditView term textAreaValue =
     Html.div
         [ subClass "partDef-term-edit" ]
@@ -1741,11 +1739,11 @@ termEditView term textAreaValue =
         )
 
 
-suggestionTerm : Term.Term -> Html.Html msg
+suggestionTerm : Expr.Term -> Html.Html msg
 suggestionTerm term =
     let
         ( text, subItem ) =
-            Term.description term
+            Expr.termToDescription term
     in
     Html.div
         [ subClass "partDef-suggestion" ]
@@ -1771,7 +1769,7 @@ suggestionTerm term =
 {------------------ Operator  ------------------}
 
 
-opViewOutput : Op.Operator -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html ()
+opViewOutput : Expr.Operator -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html ()
 opViewOutput op textAreaValueMaybeMaybe =
     case textAreaValueMaybeMaybe of
         Just (Just textAreaValue) ->
@@ -1784,7 +1782,7 @@ opViewOutput op textAreaValueMaybeMaybe =
             opNormalView op False
 
 
-opNormalView : Op.Operator -> Bool -> Html.Html ()
+opNormalView : Expr.Operator -> Bool -> Html.Html ()
 opNormalView op isActive =
     Html.div
         [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( (), True ))
@@ -1793,10 +1791,10 @@ opNormalView op isActive =
             , ( "partDef-element-active", isActive )
             ]
         ]
-        [ Html.text (Op.toString op |> Maybe.withDefault "?") ]
+        [ Html.text (Expr.opToString op) ]
 
 
-opEditView : Op.Operator -> List ( Char, Bool ) -> Html.Html msg
+opEditView : Expr.Operator -> List ( Char, Bool ) -> Html.Html msg
 opEditView op textAreaValue =
     Html.div
         [ subClass "partDef-op-edit" ]
@@ -1805,13 +1803,12 @@ opEditView op textAreaValue =
         )
 
 
-suggestionOp : Op.Operator -> Html.Html msg
+suggestionOp : Expr.Operator -> Html.Html msg
 suggestionOp op =
     Html.div
         [ subClass "partDef-suggestion" ]
         ([ suggestionOpItem op True ]
-            ++ (Op.safeAllOperator
-                    |> List.map Op.toNotSafe
+            ++ (Expr.allOperator
                     |> List.filterMap
                         (\o ->
                             if o == op then
@@ -1824,11 +1821,11 @@ suggestionOp op =
         )
 
 
-suggestionOpItem : Op.Operator -> Bool -> Html.Html msg
+suggestionOpItem : Expr.Operator -> Bool -> Html.Html msg
 suggestionOpItem op isSelect =
     let
         ( text, subItem ) =
-            Op.toDescriptionString op
+            Expr.opToDescription op
     in
     Html.div
         [ subClassList
@@ -1849,7 +1846,7 @@ suggestionOpItem op isSelect =
                 , ( "partDef-suggestion-item-subItem-select", isSelect )
                 ]
             ]
-            [ Html.text (subItem |> Maybe.withDefault "") ]
+            [ Html.text subItem ]
         ]
 
 
