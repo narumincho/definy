@@ -1,9 +1,11 @@
 module Parser.Expr exposing
     ( ParseOpResult(..)
     , ParseTermResult(..)
+    , TermWithParenthesis(..)
     , parseStartOp
     , parseStartTerm
-    )
+    , takeTerm
+    , takeTermListTO, takeTermListOT)
 
 import Parser.SimpleChar as SimpleChar exposing (SimpleChar(..), Symbol(..))
 import Project.Label as Label exposing (Label)
@@ -14,205 +16,201 @@ import Project.Source.Module.Def.Expr as Expr exposing (Operator, Term)
 -}
 type ParseTermResult
     = TermLastTerm
-        { head : Term
-        , others : List ( Operator, Term )
+        { head : TermWithParenthesis
+        , others : List ( Operator, TermWithParenthesis )
         , textAreaValue : List ( Char, Bool )
         }
     | TermLastOp
-        { head : Term
-        , others : List ( Operator, Term )
+        { head : TermWithParenthesis
+        , others : List ( Operator, TermWithParenthesis )
         , last : Operator
         , textAreaValue : List ( Char, Bool )
         }
 
 
+{-| カッコつきの項 前後にどれだけカッコがあるかどうか
+((3) → 2 (Int32 3) 1
+-}
+type TermWithParenthesis
+    = TermWithParenthesis Int Term Int
+
+{-| TODO デバッグ用 カッコを無視して項を取りだす -}
+takeTerm : TermWithParenthesis -> Term
+takeTerm (TermWithParenthesis _ term _) =
+    term
+
+
+takeTermListTO : List ( TermWithParenthesis, Operator ) -> List ( Term, Operator )
+takeTermListTO =
+    List.map (Tuple.mapFirst takeTerm)
+
+
+takeTermListOT : List ( Operator, TermWithParenthesis ) -> List ( Operator, Term )
+takeTermListOT =
+    List.map (Tuple.mapSecond takeTerm)
+
+
 parseStartTerm : List SimpleChar -> ParseTermResult
 parseStartTerm list =
-    parseStartTermLoop
-        []
-        (list
-            |> List.append [ ASpace ]
-            |> SimpleChar.trimRight
-        )
+    (list
+        |> List.append [ ASpace ]
+        |> SimpleChar.trimRight
+    )
+        |> parseToTermOrOpList
+        |> termOrOpListToParseTermResult
 
 
-parseStartTermLoop : List TermOrOp -> List SimpleChar -> ParseTermResult
-parseStartTermLoop intermediate list =
-    case parseOne list of
-        OneTerm (TermAndRest { term, rest }) ->
-            parseStartTermLoop
-                (intermediate ++ [ Term term ])
-                rest
-
-        OneTerm (TermEnd { term, textAreaValue }) ->
-            batchTermResult (intermediate ++ [ Term term ]) textAreaValue
-
-        OneOpAndRest { op, rest } ->
-            parseStartTermLoop
-                (intermediate ++ [ Op op ])
-                rest
-
-        OneOpEnd { op, textAreaValue } ->
-            batchTermResult (intermediate ++ [ Op op ]) textAreaValue
-
-        OneEnd ->
-            batchTermResult (intermediate ++ [ Term Expr.None ]) []
-
-
-batchTermResult : List TermOrOp -> List ( Char, Bool ) -> ParseTermResult
-batchTermResult list textAreaValue =
+termOrOpListToParseTermResult : ( List TermOrOp, List ( Char, Bool ) ) -> ParseTermResult
+termOrOpListToParseTermResult ( list, textAreaValue ) =
     case list of
-        (Term term) :: others ->
-            batchTermResultLoop
-                (TermLastTerm
-                    { head = term
-                    , others = []
-                    , textAreaValue = textAreaValue
-                    }
-                )
-                others
+        (Term term) :: listOthers ->
+            let
+                { others, lastMaybe } =
+                    termOrOpListToParseTermResultNeedOp listOthers
+            in
+            concatParseTermResult
+                { head = term
+                , others = others
+                , lastMaybe = lastMaybe
+                , textAreaValue = textAreaValue
+                }
 
-        (Op op) :: others ->
-            batchTermResultLoop
-                (TermLastOp
-                    { head = Expr.None
-                    , others = []
-                    , last = op
-                    , textAreaValue = textAreaValue
-                    }
-                )
-                others
+        (Op op) :: listOthers ->
+            let
+                { others, lastMaybe } =
+                    termOrOpListToParseTermResultNeedTerm op listOthers
+            in
+            concatParseTermResult
+                { head = TermWithParenthesis 0 Expr.None 0
+                , others = others
+                , lastMaybe = lastMaybe
+                , textAreaValue = textAreaValue
+                }
 
         [] ->
             TermLastTerm
-                { head = Expr.None
+                { head = TermWithParenthesis 0 Expr.None 0
                 , others = []
-                , textAreaValue = []
+                , textAreaValue = textAreaValue
                 }
 
 
-batchTermResultLoop : ParseTermResult -> List TermOrOp -> ParseTermResult
-batchTermResultLoop intermediate list =
-    case ( intermediate, list ) of
-        ( TermLastTerm { head, others, textAreaValue }, (Term term) :: listOthers ) ->
-            batchTermResultLoop
-                (TermLastTerm
-                    { head = head
-                    , others = others ++ [ ( Expr.App, term ) ]
-                    , textAreaValue = textAreaValue
-                    }
-                )
-                listOthers
+termOrOpListToParseTermResultNeedTerm : Operator -> List TermOrOp -> { others : List ( Operator, TermWithParenthesis ), lastMaybe : Maybe Operator }
+termOrOpListToParseTermResultNeedTerm operator termOrOpList =
+    case termOrOpList of
+        (Term term) :: listOthers ->
+            let
+                { others, lastMaybe } =
+                    termOrOpListToParseTermResultNeedOp listOthers
+            in
+            { others = [ ( operator, term ) ] ++ others
+            , lastMaybe = lastMaybe
+            }
 
-        ( TermLastTerm { head, others, textAreaValue }, (Op op) :: listOthers ) ->
-            batchTermResultLoop
-                (TermLastOp
-                    { head = head
-                    , others = others
-                    , last = op
-                    , textAreaValue = textAreaValue
-                    }
-                )
-                listOthers
+        (Op op) :: listOthers ->
+            let
+                { others, lastMaybe } =
+                    termOrOpListToParseTermResultNeedTerm op listOthers
+            in
+            { others = [ ( operator, TermWithParenthesis 0 Expr.None 0 ) ] ++ others
+            , lastMaybe = lastMaybe
+            }
 
-        ( TermLastOp { head, others, last, textAreaValue }, (Term term) :: listOthers ) ->
-            batchTermResultLoop
-                (TermLastTerm
-                    { head = head
-                    , others = others ++ [ ( last, term ) ]
-                    , textAreaValue = textAreaValue
-                    }
-                )
-                listOthers
-
-        ( TermLastOp { head, others, last, textAreaValue }, (Op op) :: listOthers ) ->
-            batchTermResultLoop
-                (TermLastOp
-                    { head = head
-                    , others = others ++ [ ( last, Expr.None ) ]
-                    , last = op
-                    , textAreaValue = textAreaValue
-                    }
-                )
-                listOthers
-
-        ( _, [] ) ->
-            intermediate
+        [] ->
+            { others = []
+            , lastMaybe = Just operator
+            }
 
 
+termOrOpListToParseTermResultNeedOp : List TermOrOp -> { others : List ( Operator, TermWithParenthesis ), lastMaybe : Maybe Operator }
+termOrOpListToParseTermResultNeedOp termOrOpList =
+    case termOrOpList of
+        (Term term) :: listOthers ->
+            let
+                { others, lastMaybe } =
+                    termOrOpListToParseTermResultNeedOp listOthers
+            in
+            { others = [ ( Expr.Blank, term ) ] ++ others
+            , lastMaybe = lastMaybe
+            }
 
--- 始まりがOpの公文解析結果
+        (Op op) :: others ->
+            termOrOpListToParseTermResultNeedTerm op others
+
+        [] ->
+            { others = []
+            , lastMaybe = Nothing
+            }
 
 
+concatParseTermResult : { head : TermWithParenthesis, others : List ( Operator, TermWithParenthesis ), lastMaybe : Maybe Operator, textAreaValue : List ( Char, Bool ) } -> ParseTermResult
+concatParseTermResult { head, others, lastMaybe, textAreaValue } =
+    case lastMaybe of
+        Just last ->
+            TermLastOp
+                { head = head
+                , others = others
+                , last = last
+                , textAreaValue = textAreaValue
+                }
+
+        Nothing ->
+            TermLastTerm
+                { head = head
+                , others = others
+                , textAreaValue = textAreaValue
+                }
+
+
+{-| 始まりがOpの公文解析結果
+-}
 type ParseOpResult
     = OpLastOp
         { head : Operator
-        , others : List ( Term, Operator )
+        , others : List ( TermWithParenthesis, Operator )
         , textAreaValue : List ( Char, Bool )
         }
     | OpLastTerm
         { head : Operator
-        , others : List ( Term, Operator )
-        , last : Term
+        , others : List ( TermWithParenthesis, Operator )
+        , last : TermWithParenthesis
         , textAreaValue : List ( Char, Bool )
         }
 
 
 parseStartOp : List SimpleChar -> ParseOpResult
 parseStartOp list =
-    parseStartOpLoop
-        []
-        (list
-            |> SimpleChar.trimRight
-        )
+    (list |> SimpleChar.trimRight)
+        |> parseToTermOrOpList
+        |> termOrOpListToParseOpResult
 
 
-parseStartOpLoop : List TermOrOp -> List SimpleChar -> ParseOpResult
-parseStartOpLoop intermediate list =
-    case parseOne list of
-        OneTerm (TermAndRest { term, rest }) ->
-            parseStartOpLoop
-                (intermediate ++ [ Term term ])
-                rest
-
-        OneTerm (TermEnd { term, textAreaValue }) ->
-            batchOpResult (intermediate ++ [ Term term ]) textAreaValue
-
-        OneOpAndRest { op, rest } ->
-            parseStartOpLoop
-                (intermediate ++ [ Op op ])
-                rest
-
-        OneOpEnd { op, textAreaValue } ->
-            batchOpResult (intermediate ++ [ Op op ]) textAreaValue
-
-        OneEnd ->
-            batchOpResult (intermediate ++ [ Term Expr.None ]) []
-
-
-batchOpResult : List TermOrOp -> List ( Char, Bool ) -> ParseOpResult
-batchOpResult list textAreaValue =
+termOrOpListToParseOpResult : ( List TermOrOp, List ( Char, Bool ) ) -> ParseOpResult
+termOrOpListToParseOpResult ( list, textAreaValue ) =
     case list of
-        (Term term) :: others ->
-            batchOpResultLoop
-                (OpLastTerm
-                    { head = Expr.Blank
-                    , others = []
-                    , last = term
-                    , textAreaValue = textAreaValue
-                    }
-                )
-                others
+        (Term term) :: listOthers ->
+            let
+                { others, lastMaybe } =
+                    termOrOpListToParseOpResultNeedOp term listOthers
+            in
+            concatParseOpResult
+                { head = Expr.Blank
+                , others = others
+                , lastMaybe = lastMaybe
+                , textAreaValue = textAreaValue
+                }
 
-        (Op op) :: others ->
-            batchOpResultLoop
-                (OpLastOp
-                    { head = op
-                    , others = []
-                    , textAreaValue = textAreaValue
-                    }
-                )
-                others
+        (Op op) :: listOthers ->
+            let
+                { others, lastMaybe } =
+                    termOrOpListToParseOpResultNeedTerm listOthers
+            in
+            concatParseOpResult
+                { head = op
+                , others = others
+                , lastMaybe = lastMaybe
+                , textAreaValue = textAreaValue
+                }
 
         [] ->
             OpLastOp
@@ -222,249 +220,350 @@ batchOpResult list textAreaValue =
                 }
 
 
-batchOpResultLoop : ParseOpResult -> List TermOrOp -> ParseOpResult
-batchOpResultLoop intermediate list =
-    case ( intermediate, list ) of
-        ( OpLastTerm { head, others, last, textAreaValue }, (Term term) :: listOthers ) ->
-            batchOpResultLoop
-                (OpLastTerm
-                    { head = head
-                    , others = others ++ [ ( last, Expr.App ) ]
-                    , last = term
-                    , textAreaValue = textAreaValue
-                    }
-                )
-                listOthers
+termOrOpListToParseOpResultNeedOp : TermWithParenthesis -> List TermOrOp -> { others : List ( TermWithParenthesis, Operator ), lastMaybe : Maybe TermWithParenthesis }
+termOrOpListToParseOpResultNeedOp prevTerm termOrOpList =
+    case termOrOpList of
+        (Term term) :: listOthers ->
+            let
+                { others, lastMaybe } =
+                    termOrOpListToParseOpResultNeedOp term listOthers
+            in
+            { others = [ ( prevTerm, Expr.Blank ) ] ++ others
+            , lastMaybe = lastMaybe
+            }
 
-        ( OpLastTerm { head, others, last, textAreaValue }, (Op op) :: listOthers ) ->
-            batchOpResultLoop
-                (OpLastOp
-                    { head = head
-                    , others = others ++ [ ( last, op ) ]
-                    , textAreaValue = textAreaValue
-                    }
-                )
-                listOthers
+        (Op op) :: listOthers ->
+            let
+                { others, lastMaybe } =
+                    termOrOpListToParseOpResultNeedTerm listOthers
+            in
+            { others = [ ( prevTerm, op ) ] ++ others
+            , lastMaybe = lastMaybe
+            }
 
-        ( OpLastOp { head, others, textAreaValue }, (Term term) :: listOthers ) ->
-            batchOpResultLoop
-                (OpLastTerm
-                    { head = head
-                    , others = others
-                    , last = term
-                    , textAreaValue = textAreaValue
-                    }
-                )
-                listOthers
+        [] ->
+            { others = []
+            , lastMaybe = Just prevTerm
+            }
 
-        ( OpLastOp { head, others, textAreaValue }, (Op op) :: listOthers ) ->
-            batchOpResultLoop
-                (OpLastOp
-                    { head = head
-                    , others = others ++ [ ( Expr.None, op ) ]
-                    , textAreaValue = textAreaValue
-                    }
-                )
-                listOthers
 
-        ( _, [] ) ->
-            intermediate
+termOrOpListToParseOpResultNeedTerm : List TermOrOp -> { others : List ( TermWithParenthesis, Operator ), lastMaybe : Maybe TermWithParenthesis }
+termOrOpListToParseOpResultNeedTerm termOrOpList =
+    case termOrOpList of
+        (Term term) :: listOthers ->
+            termOrOpListToParseOpResultNeedOp term listOthers
+
+        (Op op) :: listOthers ->
+            let
+                { others, lastMaybe } =
+                    termOrOpListToParseOpResultNeedTerm listOthers
+            in
+            { others = [ ( TermWithParenthesis 0 Expr.None 0, op ) ] ++ others
+            , lastMaybe = lastMaybe
+            }
+
+        [] ->
+            { others = []
+            , lastMaybe = Nothing
+            }
+
+
+concatParseOpResult : { head : Operator, others : List ( TermWithParenthesis, Operator ), lastMaybe : Maybe TermWithParenthesis, textAreaValue : List ( Char, Bool ) } -> ParseOpResult
+concatParseOpResult { head, others, lastMaybe, textAreaValue } =
+    case lastMaybe of
+        Just last ->
+            OpLastTerm
+                { head = head
+                , others = others
+                , last = last
+                , textAreaValue = textAreaValue
+                }
+
+        Nothing ->
+            OpLastOp
+                { head = head
+                , others = others
+                , textAreaValue = textAreaValue
+                }
 
 
 type TermOrOp
-    = Term Term
+    = Term TermWithParenthesis
     | Op Operator
 
 
-type OneResult
-    = OneTerm TermResult
-    | OneOpAndRest
-        { op : Operator
+type ParseResult
+    = Rest
+        { termOrOpList : List TermOrOp
         , rest : List SimpleChar
         }
-    | OneOpEnd
-        { op : Operator
-        , textAreaValue : List ( Char, Bool )
-        }
-    | OneEnd -- やっぱ終わり
-
-
-type TermResult
-    = TermAndRest
-        { term : Term
-        , rest : List SimpleChar
-        }
-    | TermEnd
-        { term : Term
+    | End
+        { termOrOpList : List TermOrOp
         , textAreaValue : List ( Char, Bool )
         }
 
 
-parseOne : List SimpleChar -> OneResult
-parseOne list =
-    case list of
-        ASpace :: (ASymbol SimpleChar.HyphenMinus charH) :: (ANumber num charN) :: others ->
-            OneTerm
-                (parseIntLiteral
-                    (IntLiteralIntermediate
-                        { minus = True, digits = [ num ] }
-                    )
-                    others
-                    [ ( charH, True ), ( charN, True ) ]
-                )
-
-        ASpace :: others ->
-            parseOne others
-
-        (ASymbol Solidus _) :: (ASymbol EqualsSign _) :: others ->
-            OneOpAndRest
-                { op = Expr.NotEqual
-                , rest = others
+parseResultAddTermOrOpList : List TermOrOp -> ParseResult -> ParseResult
+parseResultAddTermOrOpList list parseResult =
+    case parseResult of
+        Rest { termOrOpList, rest } ->
+            Rest
+                { termOrOpList = list ++ termOrOpList
+                , rest = rest
                 }
+
+        End { termOrOpList, textAreaValue } ->
+            End
+                { termOrOpList = list ++ termOrOpList
+                , textAreaValue = textAreaValue
+                }
+
+
+parseToTermOrOpList : List SimpleChar -> ( List TermOrOp, List ( Char, Bool ) )
+parseToTermOrOpList list =
+    case parse 0 list of
+        Rest { termOrOpList, rest } ->
+            let
+                ( restTermOrOpList, textAreaValue ) =
+                    parseToTermOrOpList rest
+            in
+            ( termOrOpList ++ restTermOrOpList
+            , textAreaValue
+            )
+
+        End { termOrOpList, textAreaValue } ->
+            ( termOrOpList
+            , textAreaValue
+            )
+
+
+parse : Int -> List SimpleChar -> ParseResult
+parse leftParenthesis list =
+    case list of
+        -- -から始まるInt32リテラル
+        ASpace :: (ASymbol SimpleChar.HyphenMinus charH) :: (ANumber num charN) :: others ->
+            parseIntLiteral
+                leftParenthesis
+                (IntLiteralIntermediate
+                    { minus = True, digits = [ num ] }
+                )
+                others
+                [ ( charH, True ), ( charN, True ) ]
+
+        _ ->
+            case parseOperator list of
+                Just opResult ->
+                    if leftParenthesis == 0 then
+                        opResult
+
+                    else
+                        parseResultAddTermOrOpList
+                            [ Term (TermWithParenthesis leftParenthesis Expr.None 0) ]
+                            opResult
+
+                Nothing ->
+                    case list of
+                        -- スペースは見送り
+                        ASpace :: others ->
+                            parse leftParenthesis others
+
+                        (ASymbol LeftParenthesis _) :: others ->
+                            parse (leftParenthesis + 1) others
+
+                        (ASymbol _ char) :: others ->
+                            parseInPart
+                                leftParenthesis
+                                Nothing
+                                others
+                                [ ( char, False ) ]
+
+                        (ACapitalLetter letter char) :: others ->
+                            parseInPart
+                                leftParenthesis
+                                (Just
+                                    (Label.fromHead
+                                        (SimpleChar.alphabetToLabelHead letter)
+                                    )
+                                )
+                                others
+                                [ ( char, True ) ]
+
+                        (ASmallLetter letter char) :: others ->
+                            parseInPart
+                                leftParenthesis
+                                (Just
+                                    (Label.fromHead
+                                        (SimpleChar.alphabetToLabelHead letter)
+                                    )
+                                )
+                                others
+                                [ ( char, True ) ]
+
+                        (ANumber num char) :: others ->
+                            parseIntLiteral
+                                leftParenthesis
+                                (IntLiteralIntermediate
+                                    { minus = False, digits = [ num ] }
+                                )
+                                others
+                                [ ( char, True ) ]
+
+                        (AChar char) :: others ->
+                            parseInPart leftParenthesis Nothing others [ ( char, False ) ]
+
+                        [] ->
+                            End
+                                { termOrOpList =
+                                    if leftParenthesis == 0 then
+                                        []
+
+                                    else
+                                        [ Term (TermWithParenthesis leftParenthesis Expr.None 0) ]
+                                , textAreaValue = []
+                                }
+
+
+parseOperator : List SimpleChar -> Maybe ParseResult
+parseOperator list =
+    case list of
+        (ASymbol Solidus _) :: (ASymbol EqualsSign _) :: others ->
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.NotEqual ]
+                    , rest = others
+                    }
+                )
 
         (ASymbol LessThanSign _) :: (ASymbol EqualsSign _) :: others ->
-            OneOpAndRest
-                { op = Expr.LessThanOrEqual
-                , rest = others
-                }
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.LessThanOrEqual ]
+                    , rest = others
+                    }
+                )
 
         (ASymbol PlusSign _) :: (ASymbol PlusSign _) :: others ->
-            OneOpAndRest
-                { op = Expr.Concat
-                , rest = others
-                }
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.Concat ]
+                    , rest = others
+                    }
+                )
 
         (ASymbol GreaterThanSign _) :: (ASymbol GreaterThanSign _) :: others ->
-            OneOpAndRest
-                { op = Expr.Compose
-                , rest = others
-                }
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.Compose ]
+                    , rest = others
+                    }
+                )
 
         (ASymbol GreaterThanSign _) :: others ->
-            OneOpAndRest
-                { op = Expr.Pipe
-                , rest = others
-                }
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.Pipe ]
+                    , rest = others
+                    }
+                )
 
         (ASymbol VerticalLine _) :: others ->
-            OneOpAndRest
-                { op = Expr.Or
-                , rest = others
-                }
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.Or ]
+                    , rest = others
+                    }
+                )
 
         (ASymbol Ampersand _) :: others ->
-            OneOpAndRest
-                { op = Expr.And
-                , rest = others
-                }
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.And ]
+                    , rest = others
+                    }
+                )
 
         (ASymbol EqualsSign _) :: others ->
-            OneOpAndRest
-                { op = Expr.Equal
-                , rest = others
-                }
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.Equal ]
+                    , rest = others
+                    }
+                )
 
         [ ASymbol LessThanSign char ] ->
-            OneOpEnd
-                { op = Expr.LessThan
-                , textAreaValue = [ ( char, True ) ]
-                }
+            Just
+                (End
+                    { termOrOpList = [ Op Expr.LessThan ]
+                    , textAreaValue = [ ( char, True ) ]
+                    }
+                )
 
         (ASymbol LessThanSign _) :: others ->
-            OneOpAndRest
-                { op = Expr.LessThan
-                , rest = others
-                }
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.LessThan ]
+                    , rest = others
+                    }
+                )
 
         [ ASymbol PlusSign char ] ->
-            OneOpEnd
-                { op = Expr.Add
-                , textAreaValue = [ ( char, True ) ]
-                }
+            Just
+                (End
+                    { termOrOpList = [ Op Expr.Add ]
+                    , textAreaValue = [ ( char, True ) ]
+                    }
+                )
 
         (ASymbol PlusSign _) :: others ->
-            OneOpAndRest
-                { op = Expr.Add
-                , rest = others
-                }
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.Add ]
+                    , rest = others
+                    }
+                )
 
         (ASymbol HyphenMinus _) :: others ->
-            OneOpAndRest
-                { op = Expr.Sub
-                , rest = others
-                }
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.Sub ]
+                    , rest = others
+                    }
+                )
 
         (ASymbol Asterisk _) :: others ->
-            OneOpAndRest
-                { op = Expr.Mul
-                , rest = others
-                }
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.Mul ]
+                    , rest = others
+                    }
+                )
 
         [ ASymbol Solidus char ] ->
-            OneOpEnd
-                { op = Expr.Div
-                , textAreaValue = [ ( char, True ) ]
-                }
+            Just
+                (End
+                    { termOrOpList = [ Op Expr.Div ]
+                    , textAreaValue = [ ( char, True ) ]
+                    }
+                )
 
         (ASymbol Solidus _) :: others ->
-            OneOpAndRest
-                { op = Expr.Div
-                , rest = others
-                }
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.Div ]
+                    , rest = others
+                    }
+                )
 
         (ASymbol CircumflexAccent _) :: others ->
-            OneOpAndRest
-                { op = Expr.Factorial
-                , rest = others
-                }
-
-        (ASymbol _ char) :: others ->
-            OneTerm
-                (parseInRef
-                    Nothing
-                    others
-                    [ ( char, False ) ]
+            Just
+                (Rest
+                    { termOrOpList = [ Op Expr.Factorial ]
+                    , rest = others
+                    }
                 )
 
-        (ACapitalLetter letter char) :: others ->
-            OneTerm
-                (parseInRef
-                    (Just
-                        (Label.fromHead
-                            (SimpleChar.alphabetToLabelHead letter)
-                        )
-                    )
-                    others
-                    [ ( char, True ) ]
-                )
-
-        (ASmallLetter letter char) :: others ->
-            OneTerm
-                (parseInRef
-                    (Just
-                        (Label.fromHead
-                            (SimpleChar.alphabetToLabelHead letter)
-                        )
-                    )
-                    others
-                    [ ( char, True ) ]
-                )
-
-        (ANumber num char) :: others ->
-            OneTerm
-                (parseIntLiteral
-                    (IntLiteralIntermediate
-                        { minus = False, digits = [ num ] }
-                    )
-                    others
-                    [ ( char, True ) ]
-                )
-
-        (AChar char) :: others ->
-            OneTerm (parseInRef Nothing others [ ( char, False ) ])
-
-        [] ->
-            OneEnd
+        _ ->
+            Nothing
 
 
 type IntLiteralIntermediate
@@ -491,65 +590,87 @@ intLiteralIntermediateToInt (IntLiteralIntermediate { minus, digits }) =
         SimpleChar.listNumberToInt digits
 
 
-
--- 整数リテラルの解析
-
-
-parseIntLiteral : IntLiteralIntermediate -> List SimpleChar -> List ( Char, Bool ) -> TermResult
-parseIntLiteral intermediate rest textareaValue =
+{-| 整数リテラルの解析
+-}
+parseIntLiteral : Int -> IntLiteralIntermediate -> List SimpleChar -> List ( Char, Bool ) -> ParseResult
+parseIntLiteral leftParenthesis intermediate rest textAreaValue =
     case rest of
         ASpace :: others ->
-            TermAndRest
-                { term = Expr.Int32Literal (intLiteralIntermediateToInt intermediate)
+            Rest
+                { termOrOpList =
+                    [ Term
+                        (TermWithParenthesis
+                            leftParenthesis
+                            (Expr.Int32Literal (intLiteralIntermediateToInt intermediate))
+                            0
+                        )
+                    ]
                 , rest = others
                 }
 
         (ANumber num char) :: others ->
             parseIntLiteral
+                leftParenthesis
                 (intLiteralIntermediatePush num intermediate)
                 others
-                (textareaValue ++ [ ( char, True ) ])
+                (textAreaValue ++ [ ( char, True ) ])
 
         _ :: _ ->
-            TermAndRest
-                { term = Expr.Int32Literal (intLiteralIntermediateToInt intermediate)
+            Rest
+                { termOrOpList =
+                    [ Term
+                        (TermWithParenthesis
+                            leftParenthesis
+                            (Expr.Int32Literal (intLiteralIntermediateToInt intermediate))
+                            0
+                        )
+                    ]
                 , rest = rest
                 }
 
         [] ->
-            TermEnd
-                { term = Expr.Int32Literal (intLiteralIntermediateToInt intermediate)
-                , textAreaValue = textareaValue
+            End
+                { termOrOpList =
+                    [ Term
+                        (TermWithParenthesis
+                            leftParenthesis
+                            (Expr.Int32Literal (intLiteralIntermediateToInt intermediate))
+                            0
+                        )
+                    ]
+                , textAreaValue = textAreaValue
                 }
 
 
-
--- 名前による参照
-
-
-parseInRef : Maybe Label.Label -> List SimpleChar -> List ( Char, Bool ) -> TermResult
-parseInRef label rest textAreaValue =
+{-| 名前による参照
+-}
+parseInPart : Int -> Maybe Label.Label -> List SimpleChar -> List ( Char, Bool ) -> ParseResult
+parseInPart leftParenthesis label rest textAreaValue =
     case rest of
         ASpace :: others ->
-            TermAndRest
-                { term = Expr.termFromMaybeLabel label
+            Rest
+                { termOrOpList =
+                    [ Term (TermWithParenthesis leftParenthesis (Expr.termFromMaybeLabel label) 0) ]
                 , rest = others
                 }
 
         (ASymbol symbol char) :: _ ->
-            TermAndRest
-                { term = Expr.termFromMaybeLabel label
+            Rest
+                { termOrOpList =
+                    [ Term (TermWithParenthesis leftParenthesis (Expr.termFromMaybeLabel label) 0) ]
                 , rest = rest
                 }
 
         (ACapitalLetter letter char) :: others ->
-            parseInRef
+            parseInPart
+                leftParenthesis
                 (Just (SimpleChar.labelPushCapitalLetter letter label))
                 others
                 (textAreaValue ++ [ ( char, True ) ])
 
         (ASmallLetter letter char) :: others ->
-            parseInRef
+            parseInPart
+                leftParenthesis
                 (Just (SimpleChar.labelPushSmallLetter letter label))
                 others
                 (textAreaValue ++ [ ( char, True ) ])
@@ -559,19 +680,22 @@ parseInRef label rest textAreaValue =
                 newLabel =
                     SimpleChar.labelPushNumber num label
             in
-            parseInRef
+            parseInPart
+                leftParenthesis
                 newLabel
                 others
                 (textAreaValue ++ [ ( char, newLabel /= Nothing ) ])
 
         (AChar char) :: others ->
-            parseInRef
+            parseInPart
+                leftParenthesis
                 label
                 others
                 (textAreaValue ++ [ ( char, False ) ])
 
         [] ->
-            TermEnd
-                { term = Expr.termFromMaybeLabel label
+            End
+                { termOrOpList =
+                    [ Term (TermWithParenthesis leftParenthesis (Expr.termFromMaybeLabel label) 0) ]
                 , textAreaValue = textAreaValue
                 }

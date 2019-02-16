@@ -856,7 +856,7 @@ parserInExpr string index moduleRef =
 
 parserBeginWithTerm : String -> Int -> Project.Source.ModuleRef -> Int -> Expr.Expr -> ( Active, List Emit )
 parserBeginWithTerm string index moduleRef termIndex expr =
-    case Parser.beginWithExprTerm (Parser.SimpleChar.fromString string) of
+    case Parser.beginWithExprTerm 0 (Parser.SimpleChar.fromString string) of
         Parser.BeginWithTermEndTerm { headTerm, opAndTermList, textAreaValue } ->
             ( ActivePartDefList
                 (ActivePartDef
@@ -929,7 +929,7 @@ parserBeginWithTerm string index moduleRef termIndex expr =
 
 parserBeginWithOp : String -> Int -> Project.Source.ModuleRef -> Int -> Expr.Expr -> ( Active, List Emit )
 parserBeginWithOp string index moduleRef opIndex expr =
-    case Parser.beginWithExprOp (Parser.SimpleChar.fromString string) of
+    case Parser.beginWithExprOp 0 (Parser.SimpleChar.fromString string) of
         Parser.BeginWithOpEndTerm { headOp, termAndOpList, lastTerm, textAreaValue } ->
             ( ActivePartDefList
                 (ActivePartDef

@@ -145,8 +145,8 @@ beginWithName list =
                             BeginWithNameEndExprTerm
                                 { name = name
                                 , type_ = type_
-                                , headTerm = head
-                                , opAndTermList = others
+                                , headTerm = ExprParser.takeTerm head
+                                , opAndTermList = ExprParser.takeTermListOT others
                                 , textAreaValue = textAreaValue
                                 }
 
@@ -154,8 +154,8 @@ beginWithName list =
                             BeginWithNameEndExprOp
                                 { name = name
                                 , type_ = type_
-                                , headTerm = head
-                                , opAndTermList = others
+                                , headTerm = ExprParser.takeTerm head
+                                , opAndTermList = ExprParser.takeTermListOT others
                                 , lastOp = last
                                 , textAreaValue = textAreaValue
                                 }
@@ -166,8 +166,8 @@ beginWithName list =
                     BeginWithNameEndExprTerm
                         { name = name
                         , type_ = Type.empty
-                        , headTerm = head
-                        , opAndTermList = others
+                        , headTerm = ExprParser.takeTerm head
+                        , opAndTermList = ExprParser.takeTermListOT others
                         , textAreaValue = textAreaValue
                         }
 
@@ -175,8 +175,8 @@ beginWithName list =
                     BeginWithNameEndExprOp
                         { name = name
                         , type_ = Type.empty
-                        , headTerm = head
-                        , opAndTermList = others
+                        , headTerm = ExprParser.takeTerm head
+                        , opAndTermList = ExprParser.takeTermListOT others
                         , lastOp = last
                         , textAreaValue = textAreaValue
                         }
@@ -198,16 +198,16 @@ beginWithType list =
                 ExprParser.TermLastTerm { head, others, textAreaValue } ->
                     BeginWithTypeEndExprTerm
                         { type_ = type_
-                        , headTerm = head
-                        , opAndTermList = others
+                        , headTerm = ExprParser.takeTerm head
+                        , opAndTermList = ExprParser.takeTermListOT others
                         , textAreaValue = textAreaValue
                         }
 
                 ExprParser.TermLastOp { head, others, last, textAreaValue } ->
                     BeginWithTypeEndExprOp
                         { type_ = type_
-                        , headTerm = head
-                        , opAndTermList = others
+                        , headTerm = ExprParser.takeTerm head
+                        , opAndTermList = ExprParser.takeTermListOT others
                         , lastOp = last
                         , textAreaValue = textAreaValue
                         }
@@ -220,15 +220,15 @@ beginWithExprHead list =
     case ExprParser.parseStartTerm list of
         ExprParser.TermLastTerm { head, others, textAreaValue } ->
             BeginWithExprHeadEndTerm
-                { headTerm = head
-                , opAndTermList = others
+                { headTerm = ExprParser.takeTerm head
+                , opAndTermList = ExprParser.takeTermListOT others
                 , textAreaValue = textAreaValue
                 }
 
         ExprParser.TermLastOp { head, others, last, textAreaValue } ->
             BeginWithExprHeadEndOp
-                { headTerm = head
-                , opAndTermList = others
+                { headTerm = ExprParser.takeTerm head
+                , opAndTermList = ExprParser.takeTermListOT others
                 , lastOp = last
                 , textAreaValue = textAreaValue
                 }
@@ -236,41 +236,41 @@ beginWithExprHead list =
 
 {-| 演算子始まりとして解析
 -}
-beginWithExprOp : List SimpleChar -> BeginWithOpResult
-beginWithExprOp list =
+beginWithExprOp : Int -> List SimpleChar -> BeginWithOpResult
+beginWithExprOp parenthesisLevel list =
     case ExprParser.parseStartOp list of
         ExprParser.OpLastTerm { head, others, last, textAreaValue } ->
             BeginWithOpEndTerm
                 { headOp = head
-                , termAndOpList = others
-                , lastTerm = last
+                , termAndOpList = ExprParser.takeTermListTO others
+                , lastTerm = ExprParser.takeTerm last
                 , textAreaValue = textAreaValue
                 }
 
         ExprParser.OpLastOp { head, others, textAreaValue } ->
             BeginWithOpEndOp
                 { headOp = head
-                , termAndOpList = others
+                , termAndOpList = ExprParser.takeTermListTO others
                 , textAreaValue = textAreaValue
                 }
 
 
 {-| 項始まりとして解析
 -}
-beginWithExprTerm : List SimpleChar -> BeginWithTermResult
-beginWithExprTerm list =
+beginWithExprTerm : Int -> List SimpleChar -> BeginWithTermResult
+beginWithExprTerm parenthesisLevel list =
     case ExprParser.parseStartTerm list of
         ExprParser.TermLastTerm { head, others, textAreaValue } ->
             BeginWithTermEndTerm
-                { headTerm = head
-                , opAndTermList = others
+                { headTerm = ExprParser.takeTerm head
+                , opAndTermList = ExprParser.takeTermListOT others
                 , textAreaValue = textAreaValue
                 }
 
         ExprParser.TermLastOp { head, others, last, textAreaValue } ->
             BeginWithTermEndOp
-                { headTerm = head
-                , opAndTermList = others
+                { headTerm = ExprParser.takeTerm head
+                , opAndTermList = ExprParser.takeTermListOT others
                 , lastOp = last
                 , textAreaValue = textAreaValue
                 }

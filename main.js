@@ -5307,25 +5307,25 @@ var elm$core$Basics$mul = _Basics_mul;
 var elm$core$Elm$JsArray$length = _JsArray_length;
 var elm$core$Array$builderToArray = F2(
 	function (reverseNodeList, builder) {
-		if (!builder.k) {
+		if (!builder.l) {
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.n),
+				elm$core$Elm$JsArray$length(builder.o),
 				elm$core$Array$shiftStep,
 				elm$core$Elm$JsArray$empty,
-				builder.n);
+				builder.o);
 		} else {
-			var treeLen = builder.k * elm$core$Array$branchFactor;
+			var treeLen = builder.l * elm$core$Array$branchFactor;
 			var depth = elm$core$Basics$floor(
 				A2(elm$core$Basics$logBase, elm$core$Array$branchFactor, treeLen - 1));
-			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.o) : builder.o;
-			var tree = A2(elm$core$Array$treeFromBuilder, correctNodeList, builder.k);
+			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.p) : builder.p;
+			var tree = A2(elm$core$Array$treeFromBuilder, correctNodeList, builder.l);
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.n) + treeLen,
+				elm$core$Elm$JsArray$length(builder.o) + treeLen,
 				A2(elm$core$Basics$max, 5, depth * elm$core$Array$shiftStep),
 				tree,
-				builder.n);
+				builder.o);
 		}
 	});
 var elm$core$Basics$True = 0;
@@ -5343,7 +5343,7 @@ var elm$core$Array$fromListHelp = F3(
 				return A2(
 					elm$core$Array$builderToArray,
 					true,
-					{o: nodeList, k: nodeListSize, n: jsArray});
+					{p: nodeList, l: nodeListSize, o: jsArray});
 			} else {
 				var $temp$list = remainingItems,
 					$temp$nodeList = A2(
@@ -5438,7 +5438,7 @@ var elm$core$Array$initializeHelp = F5(
 				return A2(
 					elm$core$Array$builderToArray,
 					false,
-					{o: nodeList, k: (len / elm$core$Array$branchFactor) | 0, n: tail});
+					{p: nodeList, l: (len / elm$core$Array$branchFactor) | 0, o: tail});
 			} else {
 				var leaf = elm$core$Array$Leaf(
 					A3(elm$core$Elm$JsArray$initialize, elm$core$Array$branchFactor, fromIndex, fn));
@@ -5820,7 +5820,7 @@ var author$project$Model$SubModeNone = {$: 0};
 var author$project$Panel$Editor$Module$ActiveNone = {$: 0};
 var author$project$Panel$Editor$Module$Model = elm$core$Basics$identity;
 var author$project$Panel$Editor$Module$initModel = function (moduleRef) {
-	return {f: author$project$Panel$Editor$Module$ActiveNone, s: moduleRef};
+	return {h: author$project$Panel$Editor$Module$ActiveNone, t: moduleRef};
 };
 var author$project$Panel$EditorGroup$ColumnOne = function (a) {
 	return {$: 0, a: a};
@@ -5840,7 +5840,7 @@ var author$project$Panel$EditorGroup$initModel = {
 		{
 			R: author$project$Panel$EditorGroup$ColumnOne(
 				{
-					g: author$project$Panel$EditorGroup$ModuleEditor(
+					i: author$project$Panel$EditorGroup$ModuleEditor(
 						author$project$Panel$Editor$Module$initModel(2))
 				})
 		}),
@@ -8833,7 +8833,7 @@ var author$project$Model$getEditorGroupPanelModel = function (_n0) {
 var author$project$Panel$DefaultUi$MultiLineTextField = 0;
 var author$project$Panel$DefaultUi$SingleLineTextField = 1;
 var author$project$Panel$Editor$Module$isFocusDefaultUi = function (_n0) {
-	var active = _n0.f;
+	var active = _n0.h;
 	_n1$3:
 	while (true) {
 		switch (active.$) {
@@ -8880,11 +8880,11 @@ var author$project$Panel$EditorGroup$getActiveEditorRef = function (_n0) {
 var author$project$Panel$EditorGroup$getEditorItemColumn = F2(
 	function (editorRefCol, colGroup) {
 		if (!colGroup.$) {
-			var top = colGroup.a.g;
+			var top = colGroup.a.i;
 			return top;
 		} else {
-			var top = colGroup.a.g;
-			var bottom = colGroup.a.y;
+			var top = colGroup.a.i;
+			var bottom = colGroup.a.z;
 			if (!editorRefCol) {
 				return top;
 			} else {
@@ -9390,7 +9390,7 @@ var author$project$Panel$Editor$Module$activeTo = F2(
 		return _Utils_Tuple2(
 			_Utils_update(
 				rec,
-				{f: active}),
+				{h: active}),
 			function () {
 				_n1$11:
 				while (true) {
@@ -9546,158 +9546,19 @@ var author$project$Parser$BeginWithNameEndName = function (a) {
 var author$project$Parser$BeginWithNameEndType = function (a) {
 	return {$: 1, a: a};
 };
-var author$project$Parser$Expr$Op = function (a) {
+var author$project$Parser$Expr$End = function (a) {
 	return {$: 1, a: a};
 };
+var author$project$Parser$Expr$IntLiteralIntermediate = elm$core$Basics$identity;
 var author$project$Parser$Expr$Term = function (a) {
 	return {$: 0, a: a};
 };
-var author$project$Parser$Expr$TermLastOp = function (a) {
-	return {$: 1, a: a};
-};
-var author$project$Parser$Expr$TermLastTerm = function (a) {
-	return {$: 0, a: a};
-};
-var author$project$Project$Source$Module$Def$Expr$App = 14;
-var author$project$Parser$Expr$batchTermResultLoop = F2(
-	function (intermediate, list) {
-		batchTermResultLoop:
-		while (true) {
-			var _n0 = _Utils_Tuple2(intermediate, list);
-			if (_n0.b.b) {
-				if (!_n0.a.$) {
-					if (!_n0.b.a.$) {
-						var head = _n0.a.a.w;
-						var others = _n0.a.a.x;
-						var textAreaValue = _n0.a.a.u;
-						var _n1 = _n0.b;
-						var term = _n1.a.a;
-						var listOthers = _n1.b;
-						var $temp$intermediate = author$project$Parser$Expr$TermLastTerm(
-							{
-								w: head,
-								x: _Utils_ap(
-									others,
-									_List_fromArray(
-										[
-											_Utils_Tuple2(14, term)
-										])),
-								u: textAreaValue
-							}),
-							$temp$list = listOthers;
-						intermediate = $temp$intermediate;
-						list = $temp$list;
-						continue batchTermResultLoop;
-					} else {
-						var head = _n0.a.a.w;
-						var others = _n0.a.a.x;
-						var textAreaValue = _n0.a.a.u;
-						var _n2 = _n0.b;
-						var op = _n2.a.a;
-						var listOthers = _n2.b;
-						var $temp$intermediate = author$project$Parser$Expr$TermLastOp(
-							{w: head, Z: op, x: others, u: textAreaValue}),
-							$temp$list = listOthers;
-						intermediate = $temp$intermediate;
-						list = $temp$list;
-						continue batchTermResultLoop;
-					}
-				} else {
-					if (!_n0.b.a.$) {
-						var head = _n0.a.a.w;
-						var others = _n0.a.a.x;
-						var last = _n0.a.a.Z;
-						var textAreaValue = _n0.a.a.u;
-						var _n3 = _n0.b;
-						var term = _n3.a.a;
-						var listOthers = _n3.b;
-						var $temp$intermediate = author$project$Parser$Expr$TermLastTerm(
-							{
-								w: head,
-								x: _Utils_ap(
-									others,
-									_List_fromArray(
-										[
-											_Utils_Tuple2(last, term)
-										])),
-								u: textAreaValue
-							}),
-							$temp$list = listOthers;
-						intermediate = $temp$intermediate;
-						list = $temp$list;
-						continue batchTermResultLoop;
-					} else {
-						var head = _n0.a.a.w;
-						var others = _n0.a.a.x;
-						var last = _n0.a.a.Z;
-						var textAreaValue = _n0.a.a.u;
-						var _n4 = _n0.b;
-						var op = _n4.a.a;
-						var listOthers = _n4.b;
-						var $temp$intermediate = author$project$Parser$Expr$TermLastOp(
-							{
-								w: head,
-								Z: op,
-								x: _Utils_ap(
-									others,
-									_List_fromArray(
-										[
-											_Utils_Tuple2(last, author$project$Project$Source$Module$Def$Expr$None)
-										])),
-								u: textAreaValue
-							}),
-							$temp$list = listOthers;
-						intermediate = $temp$intermediate;
-						list = $temp$list;
-						continue batchTermResultLoop;
-					}
-				}
-			} else {
-				return intermediate;
-			}
-		}
+var author$project$Parser$Expr$TermWithParenthesis = F3(
+	function (a, b, c) {
+		return {$: 0, a: a, b: b, c: c};
 	});
-var author$project$Parser$Expr$batchTermResult = F2(
-	function (list, textAreaValue) {
-		if (list.b) {
-			if (!list.a.$) {
-				var term = list.a.a;
-				var others = list.b;
-				return A2(
-					author$project$Parser$Expr$batchTermResultLoop,
-					author$project$Parser$Expr$TermLastTerm(
-						{w: term, x: _List_Nil, u: textAreaValue}),
-					others);
-			} else {
-				var op = list.a.a;
-				var others = list.b;
-				return A2(
-					author$project$Parser$Expr$batchTermResultLoop,
-					author$project$Parser$Expr$TermLastOp(
-						{w: author$project$Project$Source$Module$Def$Expr$None, Z: op, x: _List_Nil, u: textAreaValue}),
-					others);
-			}
-		} else {
-			return author$project$Parser$Expr$TermLastTerm(
-				{w: author$project$Project$Source$Module$Def$Expr$None, x: _List_Nil, u: _List_Nil});
-		}
-	});
-var author$project$Parser$Expr$IntLiteralIntermediate = elm$core$Basics$identity;
-var author$project$Parser$Expr$OneEnd = {$: 3};
-var author$project$Parser$Expr$OneOpAndRest = function (a) {
-	return {$: 1, a: a};
-};
-var author$project$Parser$Expr$OneOpEnd = function (a) {
-	return {$: 2, a: a};
-};
-var author$project$Parser$Expr$OneTerm = function (a) {
+var author$project$Parser$Expr$Rest = function (a) {
 	return {$: 0, a: a};
-};
-var author$project$Parser$Expr$TermAndRest = function (a) {
-	return {$: 0, a: a};
-};
-var author$project$Parser$Expr$TermEnd = function (a) {
-	return {$: 1, a: a};
 };
 var author$project$Project$Label$oA = author$project$Project$Label$Capital(0);
 var author$project$Project$Label$oB = author$project$Project$Label$Capital(1);
@@ -10038,35 +9899,52 @@ var author$project$Project$Source$Module$Def$Expr$termFromMaybeLabel = function 
 		return author$project$Project$Source$Module$Def$Expr$None;
 	}
 };
-var author$project$Parser$Expr$parseInRef = F3(
-	function (label, rest, textAreaValue) {
-		parseInRef:
+var author$project$Parser$Expr$parseInPart = F4(
+	function (leftParenthesis, label, rest, textAreaValue) {
+		parseInPart:
 		while (true) {
 			if (rest.b) {
 				switch (rest.a.$) {
 					case 0:
 						var _n1 = rest.a;
 						var others = rest.b;
-						return author$project$Parser$Expr$TermAndRest(
+						return author$project$Parser$Expr$Rest(
 							{
 								bx: others,
-								B: author$project$Project$Source$Module$Def$Expr$termFromMaybeLabel(label)
+								f: _List_fromArray(
+									[
+										author$project$Parser$Expr$Term(
+										A3(
+											author$project$Parser$Expr$TermWithParenthesis,
+											leftParenthesis,
+											author$project$Project$Source$Module$Def$Expr$termFromMaybeLabel(label),
+											0))
+									])
 							});
 					case 1:
 						var _n2 = rest.a;
 						var symbol = _n2.a;
 						var _char = _n2.b;
-						return author$project$Parser$Expr$TermAndRest(
+						return author$project$Parser$Expr$Rest(
 							{
 								bx: rest,
-								B: author$project$Project$Source$Module$Def$Expr$termFromMaybeLabel(label)
+								f: _List_fromArray(
+									[
+										author$project$Parser$Expr$Term(
+										A3(
+											author$project$Parser$Expr$TermWithParenthesis,
+											leftParenthesis,
+											author$project$Project$Source$Module$Def$Expr$termFromMaybeLabel(label),
+											0))
+									])
 							});
 					case 2:
 						var _n3 = rest.a;
 						var letter = _n3.a;
 						var _char = _n3.b;
 						var others = rest.b;
-						var $temp$label = elm$core$Maybe$Just(
+						var $temp$leftParenthesis = leftParenthesis,
+							$temp$label = elm$core$Maybe$Just(
 							A2(author$project$Parser$SimpleChar$labelPushCapitalLetter, letter, label)),
 							$temp$rest = others,
 							$temp$textAreaValue = _Utils_ap(
@@ -10075,16 +9953,18 @@ var author$project$Parser$Expr$parseInRef = F3(
 								[
 									_Utils_Tuple2(_char, true)
 								]));
+						leftParenthesis = $temp$leftParenthesis;
 						label = $temp$label;
 						rest = $temp$rest;
 						textAreaValue = $temp$textAreaValue;
-						continue parseInRef;
+						continue parseInPart;
 					case 3:
 						var _n4 = rest.a;
 						var letter = _n4.a;
 						var _char = _n4.b;
 						var others = rest.b;
-						var $temp$label = elm$core$Maybe$Just(
+						var $temp$leftParenthesis = leftParenthesis,
+							$temp$label = elm$core$Maybe$Just(
 							A2(author$project$Parser$SimpleChar$labelPushSmallLetter, letter, label)),
 							$temp$rest = others,
 							$temp$textAreaValue = _Utils_ap(
@@ -10093,17 +9973,19 @@ var author$project$Parser$Expr$parseInRef = F3(
 								[
 									_Utils_Tuple2(_char, true)
 								]));
+						leftParenthesis = $temp$leftParenthesis;
 						label = $temp$label;
 						rest = $temp$rest;
 						textAreaValue = $temp$textAreaValue;
-						continue parseInRef;
+						continue parseInPart;
 					case 4:
 						var _n5 = rest.a;
 						var num = _n5.a;
 						var _char = _n5.b;
 						var others = rest.b;
 						var newLabel = A2(author$project$Parser$SimpleChar$labelPushNumber, num, label);
-						var $temp$label = newLabel,
+						var $temp$leftParenthesis = leftParenthesis,
+							$temp$label = newLabel,
 							$temp$rest = others,
 							$temp$textAreaValue = _Utils_ap(
 							textAreaValue,
@@ -10113,14 +9995,16 @@ var author$project$Parser$Expr$parseInRef = F3(
 									_char,
 									!_Utils_eq(newLabel, elm$core$Maybe$Nothing))
 								]));
+						leftParenthesis = $temp$leftParenthesis;
 						label = $temp$label;
 						rest = $temp$rest;
 						textAreaValue = $temp$textAreaValue;
-						continue parseInRef;
+						continue parseInPart;
 					default:
 						var _char = rest.a.a;
 						var others = rest.b;
-						var $temp$label = label,
+						var $temp$leftParenthesis = leftParenthesis,
+							$temp$label = label,
 							$temp$rest = others,
 							$temp$textAreaValue = _Utils_ap(
 							textAreaValue,
@@ -10128,16 +10012,25 @@ var author$project$Parser$Expr$parseInRef = F3(
 								[
 									_Utils_Tuple2(_char, false)
 								]));
+						leftParenthesis = $temp$leftParenthesis;
 						label = $temp$label;
 						rest = $temp$rest;
 						textAreaValue = $temp$textAreaValue;
-						continue parseInRef;
+						continue parseInPart;
 				}
 			} else {
-				return author$project$Parser$Expr$TermEnd(
+				return author$project$Parser$Expr$End(
 					{
-						B: author$project$Project$Source$Module$Def$Expr$termFromMaybeLabel(label),
-						u: textAreaValue
+						f: _List_fromArray(
+							[
+								author$project$Parser$Expr$Term(
+								A3(
+									author$project$Parser$Expr$TermWithParenthesis,
+									leftParenthesis,
+									author$project$Project$Source$Module$Def$Expr$termFromMaybeLabel(label),
+									0))
+							]),
+						v: textAreaValue
 					});
 			}
 		}
@@ -10193,8 +10086,8 @@ var author$project$Parser$Expr$intLiteralIntermediateToInt = function (_n0) {
 	var digits = _n0.ah;
 	return minus ? (-author$project$Parser$SimpleChar$listNumberToInt(digits)) : author$project$Parser$SimpleChar$listNumberToInt(digits);
 };
-var author$project$Parser$Expr$parseIntLiteral = F3(
-	function (intermediate, rest, textareaValue) {
+var author$project$Parser$Expr$parseIntLiteral = F4(
+	function (leftParenthesis, intermediate, rest, textAreaValue) {
 		parseIntLiteral:
 		while (true) {
 			if (rest.b) {
@@ -10202,47 +10095,76 @@ var author$project$Parser$Expr$parseIntLiteral = F3(
 					case 0:
 						var _n1 = rest.a;
 						var others = rest.b;
-						return author$project$Parser$Expr$TermAndRest(
+						return author$project$Parser$Expr$Rest(
 							{
 								bx: others,
-								B: author$project$Project$Source$Module$Def$Expr$Int32Literal(
-									author$project$Parser$Expr$intLiteralIntermediateToInt(intermediate))
+								f: _List_fromArray(
+									[
+										author$project$Parser$Expr$Term(
+										A3(
+											author$project$Parser$Expr$TermWithParenthesis,
+											leftParenthesis,
+											author$project$Project$Source$Module$Def$Expr$Int32Literal(
+												author$project$Parser$Expr$intLiteralIntermediateToInt(intermediate)),
+											0))
+									])
 							});
 					case 4:
 						var _n2 = rest.a;
 						var num = _n2.a;
 						var _char = _n2.b;
 						var others = rest.b;
-						var $temp$intermediate = A2(author$project$Parser$Expr$intLiteralIntermediatePush, num, intermediate),
+						var $temp$leftParenthesis = leftParenthesis,
+							$temp$intermediate = A2(author$project$Parser$Expr$intLiteralIntermediatePush, num, intermediate),
 							$temp$rest = others,
-							$temp$textareaValue = _Utils_ap(
-							textareaValue,
+							$temp$textAreaValue = _Utils_ap(
+							textAreaValue,
 							_List_fromArray(
 								[
 									_Utils_Tuple2(_char, true)
 								]));
+						leftParenthesis = $temp$leftParenthesis;
 						intermediate = $temp$intermediate;
 						rest = $temp$rest;
-						textareaValue = $temp$textareaValue;
+						textAreaValue = $temp$textAreaValue;
 						continue parseIntLiteral;
 					default:
-						return author$project$Parser$Expr$TermAndRest(
+						return author$project$Parser$Expr$Rest(
 							{
 								bx: rest,
-								B: author$project$Project$Source$Module$Def$Expr$Int32Literal(
-									author$project$Parser$Expr$intLiteralIntermediateToInt(intermediate))
+								f: _List_fromArray(
+									[
+										author$project$Parser$Expr$Term(
+										A3(
+											author$project$Parser$Expr$TermWithParenthesis,
+											leftParenthesis,
+											author$project$Project$Source$Module$Def$Expr$Int32Literal(
+												author$project$Parser$Expr$intLiteralIntermediateToInt(intermediate)),
+											0))
+									])
 							});
 				}
 			} else {
-				return author$project$Parser$Expr$TermEnd(
+				return author$project$Parser$Expr$End(
 					{
-						B: author$project$Project$Source$Module$Def$Expr$Int32Literal(
-							author$project$Parser$Expr$intLiteralIntermediateToInt(intermediate)),
-						u: textareaValue
+						f: _List_fromArray(
+							[
+								author$project$Parser$Expr$Term(
+								A3(
+									author$project$Parser$Expr$TermWithParenthesis,
+									leftParenthesis,
+									author$project$Project$Source$Module$Def$Expr$Int32Literal(
+										author$project$Parser$Expr$intLiteralIntermediateToInt(intermediate)),
+									0))
+							]),
+						v: textAreaValue
 					});
 			}
 		}
 	});
+var author$project$Parser$Expr$Op = function (a) {
+	return {$: 1, a: a};
+};
 var author$project$Project$Source$Module$Def$Expr$And = 2;
 var author$project$Project$Source$Module$Def$Expr$Compose = 13;
 var author$project$Project$Source$Module$Def$Expr$Concat = 7;
@@ -10256,345 +10178,591 @@ var author$project$Project$Source$Module$Def$Expr$NotEqual = 4;
 var author$project$Project$Source$Module$Def$Expr$Or = 1;
 var author$project$Project$Source$Module$Def$Expr$Pipe = 0;
 var author$project$Project$Source$Module$Def$Expr$Sub = 9;
-var author$project$Parser$Expr$parseOne = function (list) {
-	parseOne:
+var author$project$Parser$Expr$parseOperator = function (list) {
+	_n0$17:
 	while (true) {
-		if (list.b) {
-			switch (list.a.$) {
-				case 0:
-					if ((((list.b.b && (list.b.a.$ === 1)) && (list.b.a.a === 11)) && list.b.b.b) && (list.b.b.a.$ === 4)) {
-						var _n1 = list.a;
-						var _n2 = list.b;
-						var _n3 = _n2.a;
-						var _n4 = _n3.a;
-						var charH = _n3.b;
-						var _n5 = _n2.b;
-						var _n6 = _n5.a;
-						var num = _n6.a;
-						var charN = _n6.b;
-						var others = _n5.b;
-						return author$project$Parser$Expr$OneTerm(
-							A3(
-								author$project$Parser$Expr$parseIntLiteral,
+		if (list.b && (list.a.$ === 1)) {
+			switch (list.a.a) {
+				case 17:
+					if ((list.b.b && (list.b.a.$ === 1)) && (list.b.a.a === 17)) {
+						var _n16 = list.a;
+						var _n17 = _n16.a;
+						var _n18 = list.b;
+						var _n19 = _n18.a;
+						var _n20 = _n19.a;
+						var others = _n18.b;
+						return elm$core$Maybe$Just(
+							author$project$Parser$Expr$Rest(
 								{
-									ah: _List_fromArray(
-										[num]),
-									ak: true
-								},
-								others,
-								_List_fromArray(
-									[
-										_Utils_Tuple2(charH, true),
-										_Utils_Tuple2(charN, true)
-									])));
+									bx: others,
+									f: _List_fromArray(
+										[
+											author$project$Parser$Expr$Op(13)
+										])
+								}));
 					} else {
-						var _n7 = list.a;
+						var _n21 = list.a;
+						var _n22 = _n21.a;
 						var others = list.b;
-						var $temp$list = others;
-						list = $temp$list;
-						continue parseOne;
+						return elm$core$Maybe$Just(
+							author$project$Parser$Expr$Rest(
+								{
+									bx: others,
+									f: _List_fromArray(
+										[
+											author$project$Parser$Expr$Op(0)
+										])
+								}));
 					}
-				case 1:
-					switch (list.a.a) {
-						case 17:
-							if ((list.b.b && (list.b.a.$ === 1)) && (list.b.a.a === 17)) {
-								var _n23 = list.a;
-								var _n24 = _n23.a;
-								var _n25 = list.b;
-								var _n26 = _n25.a;
-								var _n27 = _n26.a;
-								var others = _n25.b;
-								return author$project$Parser$Expr$OneOpAndRest(
-									{i: 13, bx: others});
-							} else {
-								var _n28 = list.a;
-								var _n29 = _n28.a;
+				case 27:
+					var _n23 = list.a;
+					var _n24 = _n23.a;
+					var others = list.b;
+					return elm$core$Maybe$Just(
+						author$project$Parser$Expr$Rest(
+							{
+								bx: others,
+								f: _List_fromArray(
+									[
+										author$project$Parser$Expr$Op(1)
+									])
+							}));
+				case 4:
+					var _n25 = list.a;
+					var _n26 = _n25.a;
+					var others = list.b;
+					return elm$core$Maybe$Just(
+						author$project$Parser$Expr$Rest(
+							{
+								bx: others,
+								f: _List_fromArray(
+									[
+										author$project$Parser$Expr$Op(2)
+									])
+							}));
+				case 16:
+					var _n27 = list.a;
+					var _n28 = _n27.a;
+					var others = list.b;
+					return elm$core$Maybe$Just(
+						author$project$Parser$Expr$Rest(
+							{
+								bx: others,
+								f: _List_fromArray(
+									[
+										author$project$Parser$Expr$Op(3)
+									])
+							}));
+				case 15:
+					if (list.b.b) {
+						if ((list.b.a.$ === 1) && (list.b.a.a === 16)) {
+							var _n6 = list.a;
+							var _n7 = _n6.a;
+							var _n8 = list.b;
+							var _n9 = _n8.a;
+							var _n10 = _n9.a;
+							var others = _n8.b;
+							return elm$core$Maybe$Just(
+								author$project$Parser$Expr$Rest(
+									{
+										bx: others,
+										f: _List_fromArray(
+											[
+												author$project$Parser$Expr$Op(6)
+											])
+									}));
+						} else {
+							var _n31 = list.a;
+							var _n32 = _n31.a;
+							var others = list.b;
+							return elm$core$Maybe$Just(
+								author$project$Parser$Expr$Rest(
+									{
+										bx: others,
+										f: _List_fromArray(
+											[
+												author$project$Parser$Expr$Op(5)
+											])
+									}));
+						}
+					} else {
+						var _n29 = list.a;
+						var _n30 = _n29.a;
+						var _char = _n29.b;
+						return elm$core$Maybe$Just(
+							author$project$Parser$Expr$End(
+								{
+									f: _List_fromArray(
+										[
+											author$project$Parser$Expr$Op(5)
+										]),
+									v: _List_fromArray(
+										[
+											_Utils_Tuple2(_char, true)
+										])
+								}));
+					}
+				case 9:
+					if (list.b.b) {
+						if ((list.b.a.$ === 1) && (list.b.a.a === 9)) {
+							var _n11 = list.a;
+							var _n12 = _n11.a;
+							var _n13 = list.b;
+							var _n14 = _n13.a;
+							var _n15 = _n14.a;
+							var others = _n13.b;
+							return elm$core$Maybe$Just(
+								author$project$Parser$Expr$Rest(
+									{
+										bx: others,
+										f: _List_fromArray(
+											[
+												author$project$Parser$Expr$Op(7)
+											])
+									}));
+						} else {
+							var _n35 = list.a;
+							var _n36 = _n35.a;
+							var others = list.b;
+							return elm$core$Maybe$Just(
+								author$project$Parser$Expr$Rest(
+									{
+										bx: others,
+										f: _List_fromArray(
+											[
+												author$project$Parser$Expr$Op(8)
+											])
+									}));
+						}
+					} else {
+						var _n33 = list.a;
+						var _n34 = _n33.a;
+						var _char = _n33.b;
+						return elm$core$Maybe$Just(
+							author$project$Parser$Expr$End(
+								{
+									f: _List_fromArray(
+										[
+											author$project$Parser$Expr$Op(8)
+										]),
+									v: _List_fromArray(
+										[
+											_Utils_Tuple2(_char, true)
+										])
+								}));
+					}
+				case 11:
+					var _n37 = list.a;
+					var _n38 = _n37.a;
+					var others = list.b;
+					return elm$core$Maybe$Just(
+						author$project$Parser$Expr$Rest(
+							{
+								bx: others,
+								f: _List_fromArray(
+									[
+										author$project$Parser$Expr$Op(9)
+									])
+							}));
+				case 8:
+					var _n39 = list.a;
+					var _n40 = _n39.a;
+					var others = list.b;
+					return elm$core$Maybe$Just(
+						author$project$Parser$Expr$Rest(
+							{
+								bx: others,
+								f: _List_fromArray(
+									[
+										author$project$Parser$Expr$Op(10)
+									])
+							}));
+				case 13:
+					if (list.b.b) {
+						if ((list.b.a.$ === 1) && (list.b.a.a === 16)) {
+							var _n1 = list.a;
+							var _n2 = _n1.a;
+							var _n3 = list.b;
+							var _n4 = _n3.a;
+							var _n5 = _n4.a;
+							var others = _n3.b;
+							return elm$core$Maybe$Just(
+								author$project$Parser$Expr$Rest(
+									{
+										bx: others,
+										f: _List_fromArray(
+											[
+												author$project$Parser$Expr$Op(4)
+											])
+									}));
+						} else {
+							var _n43 = list.a;
+							var _n44 = _n43.a;
+							var others = list.b;
+							return elm$core$Maybe$Just(
+								author$project$Parser$Expr$Rest(
+									{
+										bx: others,
+										f: _List_fromArray(
+											[
+												author$project$Parser$Expr$Op(11)
+											])
+									}));
+						}
+					} else {
+						var _n41 = list.a;
+						var _n42 = _n41.a;
+						var _char = _n41.b;
+						return elm$core$Maybe$Just(
+							author$project$Parser$Expr$End(
+								{
+									f: _List_fromArray(
+										[
+											author$project$Parser$Expr$Op(11)
+										]),
+									v: _List_fromArray(
+										[
+											_Utils_Tuple2(_char, true)
+										])
+								}));
+					}
+				case 23:
+					var _n45 = list.a;
+					var _n46 = _n45.a;
+					var others = list.b;
+					return elm$core$Maybe$Just(
+						author$project$Parser$Expr$Rest(
+							{
+								bx: others,
+								f: _List_fromArray(
+									[
+										author$project$Parser$Expr$Op(12)
+									])
+							}));
+				default:
+					break _n0$17;
+			}
+		} else {
+			break _n0$17;
+		}
+	}
+	return elm$core$Maybe$Nothing;
+};
+var author$project$Parser$Expr$parseResultAddTermOrOpList = F2(
+	function (list, parseResult) {
+		if (!parseResult.$) {
+			var termOrOpList = parseResult.a.f;
+			var rest = parseResult.a.bx;
+			return author$project$Parser$Expr$Rest(
+				{
+					bx: rest,
+					f: _Utils_ap(list, termOrOpList)
+				});
+		} else {
+			var termOrOpList = parseResult.a.f;
+			var textAreaValue = parseResult.a.v;
+			return author$project$Parser$Expr$End(
+				{
+					f: _Utils_ap(list, termOrOpList),
+					v: textAreaValue
+				});
+		}
+	});
+var author$project$Parser$Expr$parse = F2(
+	function (leftParenthesis, list) {
+		parse:
+		while (true) {
+			if ((((((list.b && (!list.a.$)) && list.b.b) && (list.b.a.$ === 1)) && (list.b.a.a === 11)) && list.b.b.b) && (list.b.b.a.$ === 4)) {
+				var _n1 = list.a;
+				var _n2 = list.b;
+				var _n3 = _n2.a;
+				var _n4 = _n3.a;
+				var charH = _n3.b;
+				var _n5 = _n2.b;
+				var _n6 = _n5.a;
+				var num = _n6.a;
+				var charN = _n6.b;
+				var others = _n5.b;
+				return A4(
+					author$project$Parser$Expr$parseIntLiteral,
+					leftParenthesis,
+					{
+						ah: _List_fromArray(
+							[num]),
+						ak: true
+					},
+					others,
+					_List_fromArray(
+						[
+							_Utils_Tuple2(charH, true),
+							_Utils_Tuple2(charN, true)
+						]));
+			} else {
+				var _n7 = author$project$Parser$Expr$parseOperator(list);
+				if (!_n7.$) {
+					var opResult = _n7.a;
+					return (!leftParenthesis) ? opResult : A2(
+						author$project$Parser$Expr$parseResultAddTermOrOpList,
+						_List_fromArray(
+							[
+								author$project$Parser$Expr$Term(
+								A3(author$project$Parser$Expr$TermWithParenthesis, leftParenthesis, author$project$Project$Source$Module$Def$Expr$None, 0))
+							]),
+						opResult);
+				} else {
+					if (list.b) {
+						switch (list.a.$) {
+							case 0:
+								var _n9 = list.a;
 								var others = list.b;
-								return author$project$Parser$Expr$OneOpAndRest(
-									{i: 0, bx: others});
-							}
-						case 27:
-							var _n30 = list.a;
-							var _n31 = _n30.a;
-							var others = list.b;
-							return author$project$Parser$Expr$OneOpAndRest(
-								{i: 1, bx: others});
-						case 4:
-							var _n32 = list.a;
-							var _n33 = _n32.a;
-							var others = list.b;
-							return author$project$Parser$Expr$OneOpAndRest(
-								{i: 2, bx: others});
-						case 16:
-							var _n34 = list.a;
-							var _n35 = _n34.a;
-							var others = list.b;
-							return author$project$Parser$Expr$OneOpAndRest(
-								{i: 3, bx: others});
-						case 15:
-							if (list.b.b) {
-								if ((list.b.a.$ === 1) && (list.b.a.a === 16)) {
-									var _n13 = list.a;
-									var _n14 = _n13.a;
-									var _n15 = list.b;
-									var _n16 = _n15.a;
-									var _n17 = _n16.a;
-									var others = _n15.b;
-									return author$project$Parser$Expr$OneOpAndRest(
-										{i: 6, bx: others});
-								} else {
-									var _n38 = list.a;
-									var _n39 = _n38.a;
-									var others = list.b;
-									return author$project$Parser$Expr$OneOpAndRest(
-										{i: 5, bx: others});
-								}
-							} else {
-								var _n36 = list.a;
-								var _n37 = _n36.a;
-								var _char = _n36.b;
-								return author$project$Parser$Expr$OneOpEnd(
-									{
-										i: 5,
-										u: _List_fromArray(
-											[
-												_Utils_Tuple2(_char, true)
-											])
-									});
-							}
-						case 9:
-							if (list.b.b) {
-								if ((list.b.a.$ === 1) && (list.b.a.a === 9)) {
-									var _n18 = list.a;
-									var _n19 = _n18.a;
-									var _n20 = list.b;
-									var _n21 = _n20.a;
-									var _n22 = _n21.a;
-									var others = _n20.b;
-									return author$project$Parser$Expr$OneOpAndRest(
-										{i: 7, bx: others});
-								} else {
-									var _n42 = list.a;
-									var _n43 = _n42.a;
-									var others = list.b;
-									return author$project$Parser$Expr$OneOpAndRest(
-										{i: 8, bx: others});
-								}
-							} else {
-								var _n40 = list.a;
-								var _n41 = _n40.a;
-								var _char = _n40.b;
-								return author$project$Parser$Expr$OneOpEnd(
-									{
-										i: 8,
-										u: _List_fromArray(
-											[
-												_Utils_Tuple2(_char, true)
-											])
-									});
-							}
-						case 11:
-							var _n44 = list.a;
-							var _n45 = _n44.a;
-							var others = list.b;
-							return author$project$Parser$Expr$OneOpAndRest(
-								{i: 9, bx: others});
-						case 8:
-							var _n46 = list.a;
-							var _n47 = _n46.a;
-							var others = list.b;
-							return author$project$Parser$Expr$OneOpAndRest(
-								{i: 10, bx: others});
-						case 13:
-							if (list.b.b) {
-								if ((list.b.a.$ === 1) && (list.b.a.a === 16)) {
-									var _n8 = list.a;
-									var _n9 = _n8.a;
-									var _n10 = list.b;
+								var $temp$leftParenthesis = leftParenthesis,
+									$temp$list = others;
+								leftParenthesis = $temp$leftParenthesis;
+								list = $temp$list;
+								continue parse;
+							case 1:
+								if (list.a.a === 6) {
+									var _n10 = list.a;
 									var _n11 = _n10.a;
-									var _n12 = _n11.a;
-									var others = _n10.b;
-									return author$project$Parser$Expr$OneOpAndRest(
-										{i: 4, bx: others});
-								} else {
-									var _n50 = list.a;
-									var _n51 = _n50.a;
 									var others = list.b;
-									return author$project$Parser$Expr$OneOpAndRest(
-										{i: 11, bx: others});
-								}
-							} else {
-								var _n48 = list.a;
-								var _n49 = _n48.a;
-								var _char = _n48.b;
-								return author$project$Parser$Expr$OneOpEnd(
-									{
-										i: 11,
-										u: _List_fromArray(
+									var $temp$leftParenthesis = leftParenthesis + 1,
+										$temp$list = others;
+									leftParenthesis = $temp$leftParenthesis;
+									list = $temp$list;
+									continue parse;
+								} else {
+									var _n12 = list.a;
+									var _char = _n12.b;
+									var others = list.b;
+									return A4(
+										author$project$Parser$Expr$parseInPart,
+										leftParenthesis,
+										elm$core$Maybe$Nothing,
+										others,
+										_List_fromArray(
 											[
-												_Utils_Tuple2(_char, true)
-											])
-									});
-							}
-						case 23:
-							var _n52 = list.a;
-							var _n53 = _n52.a;
-							var others = list.b;
-							return author$project$Parser$Expr$OneOpAndRest(
-								{i: 12, bx: others});
-						default:
-							var _n54 = list.a;
-							var _char = _n54.b;
-							var others = list.b;
-							return author$project$Parser$Expr$OneTerm(
-								A3(
-									author$project$Parser$Expr$parseInRef,
+												_Utils_Tuple2(_char, false)
+											]));
+								}
+							case 2:
+								var _n13 = list.a;
+								var letter = _n13.a;
+								var _char = _n13.b;
+								var others = list.b;
+								return A4(
+									author$project$Parser$Expr$parseInPart,
+									leftParenthesis,
+									elm$core$Maybe$Just(
+										author$project$Project$Label$fromHead(
+											author$project$Parser$SimpleChar$alphabetToLabelHead(letter))),
+									others,
+									_List_fromArray(
+										[
+											_Utils_Tuple2(_char, true)
+										]));
+							case 3:
+								var _n14 = list.a;
+								var letter = _n14.a;
+								var _char = _n14.b;
+								var others = list.b;
+								return A4(
+									author$project$Parser$Expr$parseInPart,
+									leftParenthesis,
+									elm$core$Maybe$Just(
+										author$project$Project$Label$fromHead(
+											author$project$Parser$SimpleChar$alphabetToLabelHead(letter))),
+									others,
+									_List_fromArray(
+										[
+											_Utils_Tuple2(_char, true)
+										]));
+							case 4:
+								var _n15 = list.a;
+								var num = _n15.a;
+								var _char = _n15.b;
+								var others = list.b;
+								return A4(
+									author$project$Parser$Expr$parseIntLiteral,
+									leftParenthesis,
+									{
+										ah: _List_fromArray(
+											[num]),
+										ak: false
+									},
+									others,
+									_List_fromArray(
+										[
+											_Utils_Tuple2(_char, true)
+										]));
+							default:
+								var _char = list.a.a;
+								var others = list.b;
+								return A4(
+									author$project$Parser$Expr$parseInPart,
+									leftParenthesis,
 									elm$core$Maybe$Nothing,
 									others,
 									_List_fromArray(
 										[
 											_Utils_Tuple2(_char, false)
-										])));
-					}
-				case 2:
-					var _n55 = list.a;
-					var letter = _n55.a;
-					var _char = _n55.b;
-					var others = list.b;
-					return author$project$Parser$Expr$OneTerm(
-						A3(
-							author$project$Parser$Expr$parseInRef,
-							elm$core$Maybe$Just(
-								author$project$Project$Label$fromHead(
-									author$project$Parser$SimpleChar$alphabetToLabelHead(letter))),
-							others,
-							_List_fromArray(
-								[
-									_Utils_Tuple2(_char, true)
-								])));
-				case 3:
-					var _n56 = list.a;
-					var letter = _n56.a;
-					var _char = _n56.b;
-					var others = list.b;
-					return author$project$Parser$Expr$OneTerm(
-						A3(
-							author$project$Parser$Expr$parseInRef,
-							elm$core$Maybe$Just(
-								author$project$Project$Label$fromHead(
-									author$project$Parser$SimpleChar$alphabetToLabelHead(letter))),
-							others,
-							_List_fromArray(
-								[
-									_Utils_Tuple2(_char, true)
-								])));
-				case 4:
-					var _n57 = list.a;
-					var num = _n57.a;
-					var _char = _n57.b;
-					var others = list.b;
-					return author$project$Parser$Expr$OneTerm(
-						A3(
-							author$project$Parser$Expr$parseIntLiteral,
-							{
-								ah: _List_fromArray(
-									[num]),
-								ak: false
-							},
-							others,
-							_List_fromArray(
-								[
-									_Utils_Tuple2(_char, true)
-								])));
-				default:
-					var _char = list.a.a;
-					var others = list.b;
-					return author$project$Parser$Expr$OneTerm(
-						A3(
-							author$project$Parser$Expr$parseInRef,
-							elm$core$Maybe$Nothing,
-							others,
-							_List_fromArray(
-								[
-									_Utils_Tuple2(_char, false)
-								])));
-			}
-		} else {
-			return author$project$Parser$Expr$OneEnd;
-		}
-	}
-};
-var author$project$Parser$Expr$parseStartTermLoop = F2(
-	function (intermediate, list) {
-		parseStartTermLoop:
-		while (true) {
-			var _n0 = author$project$Parser$Expr$parseOne(list);
-			switch (_n0.$) {
-				case 0:
-					if (!_n0.a.$) {
-						var term = _n0.a.a.B;
-						var rest = _n0.a.a.bx;
-						var $temp$intermediate = _Utils_ap(
-							intermediate,
-							_List_fromArray(
-								[
-									author$project$Parser$Expr$Term(term)
-								])),
-							$temp$list = rest;
-						intermediate = $temp$intermediate;
-						list = $temp$list;
-						continue parseStartTermLoop;
+										]));
+						}
 					} else {
-						var term = _n0.a.a.B;
-						var textAreaValue = _n0.a.a.u;
-						return A2(
-							author$project$Parser$Expr$batchTermResult,
-							_Utils_ap(
-								intermediate,
-								_List_fromArray(
+						return author$project$Parser$Expr$End(
+							{
+								f: (!leftParenthesis) ? _List_Nil : _List_fromArray(
 									[
-										author$project$Parser$Expr$Term(term)
-									])),
-							textAreaValue);
+										author$project$Parser$Expr$Term(
+										A3(author$project$Parser$Expr$TermWithParenthesis, leftParenthesis, author$project$Project$Source$Module$Def$Expr$None, 0))
+									]),
+								v: _List_Nil
+							});
 					}
-				case 1:
-					var op = _n0.a.i;
-					var rest = _n0.a.bx;
-					var $temp$intermediate = _Utils_ap(
-						intermediate,
-						_List_fromArray(
-							[
-								author$project$Parser$Expr$Op(op)
-							])),
-						$temp$list = rest;
-					intermediate = $temp$intermediate;
-					list = $temp$list;
-					continue parseStartTermLoop;
-				case 2:
-					var op = _n0.a.i;
-					var textAreaValue = _n0.a.u;
-					return A2(
-						author$project$Parser$Expr$batchTermResult,
-						_Utils_ap(
-							intermediate,
-							_List_fromArray(
-								[
-									author$project$Parser$Expr$Op(op)
-								])),
-						textAreaValue);
-				default:
-					return A2(
-						author$project$Parser$Expr$batchTermResult,
-						_Utils_ap(
-							intermediate,
-							_List_fromArray(
-								[
-									author$project$Parser$Expr$Term(author$project$Project$Source$Module$Def$Expr$None)
-								])),
-						_List_Nil);
+				}
 			}
 		}
 	});
+var author$project$Parser$Expr$parseToTermOrOpList = function (list) {
+	var _n0 = A2(author$project$Parser$Expr$parse, 0, list);
+	if (!_n0.$) {
+		var termOrOpList = _n0.a.f;
+		var rest = _n0.a.bx;
+		var _n1 = author$project$Parser$Expr$parseToTermOrOpList(rest);
+		var restTermOrOpList = _n1.a;
+		var textAreaValue = _n1.b;
+		return _Utils_Tuple2(
+			_Utils_ap(termOrOpList, restTermOrOpList),
+			textAreaValue);
+	} else {
+		var termOrOpList = _n0.a.f;
+		var textAreaValue = _n0.a.v;
+		return _Utils_Tuple2(termOrOpList, textAreaValue);
+	}
+};
+var author$project$Parser$Expr$TermLastTerm = function (a) {
+	return {$: 0, a: a};
+};
+var author$project$Parser$Expr$TermLastOp = function (a) {
+	return {$: 1, a: a};
+};
+var author$project$Parser$Expr$concatParseTermResult = function (_n0) {
+	var head = _n0.x;
+	var others = _n0.y;
+	var lastMaybe = _n0.g;
+	var textAreaValue = _n0.v;
+	if (!lastMaybe.$) {
+		var last = lastMaybe.a;
+		return author$project$Parser$Expr$TermLastOp(
+			{x: head, Z: last, y: others, v: textAreaValue});
+	} else {
+		return author$project$Parser$Expr$TermLastTerm(
+			{x: head, y: others, v: textAreaValue});
+	}
+};
+var author$project$Parser$Expr$termOrOpListToParseTermResultNeedOp = function (termOrOpList) {
+	if (termOrOpList.b) {
+		if (!termOrOpList.a.$) {
+			var term = termOrOpList.a.a;
+			var listOthers = termOrOpList.b;
+			var _n4 = author$project$Parser$Expr$termOrOpListToParseTermResultNeedOp(listOthers);
+			var others = _n4.y;
+			var lastMaybe = _n4.g;
+			return {
+				g: lastMaybe,
+				y: _Utils_ap(
+					_List_fromArray(
+						[
+							_Utils_Tuple2(15, term)
+						]),
+					others)
+			};
+		} else {
+			var op = termOrOpList.a.a;
+			var others = termOrOpList.b;
+			return A2(author$project$Parser$Expr$termOrOpListToParseTermResultNeedTerm, op, others);
+		}
+	} else {
+		return {g: elm$core$Maybe$Nothing, y: _List_Nil};
+	}
+};
+var author$project$Parser$Expr$termOrOpListToParseTermResultNeedTerm = F2(
+	function (operator, termOrOpList) {
+		if (termOrOpList.b) {
+			if (!termOrOpList.a.$) {
+				var term = termOrOpList.a.a;
+				var listOthers = termOrOpList.b;
+				var _n1 = author$project$Parser$Expr$termOrOpListToParseTermResultNeedOp(listOthers);
+				var others = _n1.y;
+				var lastMaybe = _n1.g;
+				return {
+					g: lastMaybe,
+					y: _Utils_ap(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(operator, term)
+							]),
+						others)
+				};
+			} else {
+				var op = termOrOpList.a.a;
+				var listOthers = termOrOpList.b;
+				var _n2 = A2(author$project$Parser$Expr$termOrOpListToParseTermResultNeedTerm, op, listOthers);
+				var others = _n2.y;
+				var lastMaybe = _n2.g;
+				return {
+					g: lastMaybe,
+					y: _Utils_ap(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								operator,
+								A3(author$project$Parser$Expr$TermWithParenthesis, 0, author$project$Project$Source$Module$Def$Expr$None, 0))
+							]),
+						others)
+				};
+			}
+		} else {
+			return {
+				g: elm$core$Maybe$Just(operator),
+				y: _List_Nil
+			};
+		}
+	});
+var author$project$Parser$Expr$termOrOpListToParseTermResult = function (_n0) {
+	var list = _n0.a;
+	var textAreaValue = _n0.b;
+	if (list.b) {
+		if (!list.a.$) {
+			var term = list.a.a;
+			var listOthers = list.b;
+			var _n2 = author$project$Parser$Expr$termOrOpListToParseTermResultNeedOp(listOthers);
+			var others = _n2.y;
+			var lastMaybe = _n2.g;
+			return author$project$Parser$Expr$concatParseTermResult(
+				{x: term, g: lastMaybe, y: others, v: textAreaValue});
+		} else {
+			var op = list.a.a;
+			var listOthers = list.b;
+			var _n3 = A2(author$project$Parser$Expr$termOrOpListToParseTermResultNeedTerm, op, listOthers);
+			var others = _n3.y;
+			var lastMaybe = _n3.g;
+			return author$project$Parser$Expr$concatParseTermResult(
+				{
+					x: A3(author$project$Parser$Expr$TermWithParenthesis, 0, author$project$Project$Source$Module$Def$Expr$None, 0),
+					g: lastMaybe,
+					y: others,
+					v: textAreaValue
+				});
+		}
+	} else {
+		return author$project$Parser$Expr$TermLastTerm(
+			{
+				x: A3(author$project$Parser$Expr$TermWithParenthesis, 0, author$project$Project$Source$Module$Def$Expr$None, 0),
+				y: _List_Nil,
+				v: textAreaValue
+			});
+	}
+};
 var author$project$Parser$SimpleChar$ASpace = {$: 0};
 var author$project$Parser$SimpleChar$trimLeft = function (list) {
 	trimLeft:
@@ -10616,16 +10784,29 @@ var author$project$Parser$SimpleChar$trimRight = A2(
 	elm$core$List$reverse,
 	A2(elm$core$Basics$composeR, author$project$Parser$SimpleChar$trimLeft, elm$core$List$reverse));
 var author$project$Parser$Expr$parseStartTerm = function (list) {
-	return A2(
-		author$project$Parser$Expr$parseStartTermLoop,
-		_List_Nil,
-		author$project$Parser$SimpleChar$trimRight(
-			A2(
-				elm$core$List$append,
-				_List_fromArray(
-					[author$project$Parser$SimpleChar$ASpace]),
-				list)));
+	return author$project$Parser$Expr$termOrOpListToParseTermResult(
+		author$project$Parser$Expr$parseToTermOrOpList(
+			author$project$Parser$SimpleChar$trimRight(
+				A2(
+					elm$core$List$append,
+					_List_fromArray(
+						[author$project$Parser$SimpleChar$ASpace]),
+					list))));
 };
+var author$project$Parser$Expr$takeTerm = function (_n0) {
+	var term = _n0.b;
+	return term;
+};
+var elm$core$Tuple$mapSecond = F2(
+	function (func, _n0) {
+		var x = _n0.a;
+		var y = _n0.b;
+		return _Utils_Tuple2(
+			x,
+			func(y));
+	});
+var author$project$Parser$Expr$takeTermListOT = elm$core$List$map(
+	elm$core$Tuple$mapSecond(author$project$Parser$Expr$takeTerm));
 var author$project$Parser$Name$NameEnd = F2(
 	function (a, b) {
 		return {$: 0, a: a, b: b};
@@ -11046,12 +11227,12 @@ var author$project$Parser$Type$inTypeParser = F3(
 					var l = label.a;
 					return author$project$Parser$Type$TypeEnd(
 						{
-							u: textAreaValue,
+							v: textAreaValue,
 							a3: author$project$Project$Source$Module$Def$Type$fromLabel(l)
 						});
 				} else {
 					return author$project$Parser$Type$TypeEnd(
-						{u: textAreaValue, a3: author$project$Project$Source$Module$Def$Type$empty});
+						{v: textAreaValue, a3: author$project$Project$Source$Module$Def$Type$empty});
 				}
 			}
 		}
@@ -11145,7 +11326,7 @@ var author$project$Parser$Type$parse = function (list) {
 			}
 		} else {
 			return author$project$Parser$Type$TypeEnd(
-				{u: _List_Nil, a3: author$project$Project$Source$Module$Def$Type$empty});
+				{v: _List_Nil, a3: author$project$Project$Source$Module$Def$Type$empty});
 		}
 	}
 };
@@ -11156,33 +11337,46 @@ var author$project$Parser$beginWithName = function (list) {
 			var name = _n0.a;
 			var textAreaValue = _n0.b;
 			return author$project$Parser$BeginWithNameEndName(
-				{aS: name, u: textAreaValue});
+				{aS: name, v: textAreaValue});
 		case 1:
 			var name = _n0.a;
 			var restN = _n0.b;
 			var _n1 = author$project$Parser$Type$parse(restN);
 			if (!_n1.$) {
 				var type_ = _n1.a.a3;
-				var textAreaValue = _n1.a.u;
+				var textAreaValue = _n1.a.v;
 				return author$project$Parser$BeginWithNameEndType(
-					{aS: name, u: textAreaValue, a3: type_});
+					{aS: name, v: textAreaValue, a3: type_});
 			} else {
 				var type_ = _n1.a.a3;
 				var rest = _n1.a.bx;
 				var _n2 = author$project$Parser$Expr$parseStartTerm(rest);
 				if (!_n2.$) {
-					var head = _n2.a.w;
-					var others = _n2.a.x;
-					var textAreaValue = _n2.a.u;
+					var head = _n2.a.x;
+					var others = _n2.a.y;
+					var textAreaValue = _n2.a.v;
 					return author$project$Parser$BeginWithNameEndExprTerm(
-						{I: head, aS: name, L: others, u: textAreaValue, a3: type_});
+						{
+							I: author$project$Parser$Expr$takeTerm(head),
+							aS: name,
+							L: author$project$Parser$Expr$takeTermListOT(others),
+							v: textAreaValue,
+							a3: type_
+						});
 				} else {
-					var head = _n2.a.w;
-					var others = _n2.a.x;
+					var head = _n2.a.x;
+					var others = _n2.a.y;
 					var last = _n2.a.Z;
-					var textAreaValue = _n2.a.u;
+					var textAreaValue = _n2.a.v;
 					return author$project$Parser$BeginWithNameEndExprOp(
-						{I: head, aE: last, aS: name, L: others, u: textAreaValue, a3: type_});
+						{
+							I: author$project$Parser$Expr$takeTerm(head),
+							aE: last,
+							aS: name,
+							L: author$project$Parser$Expr$takeTermListOT(others),
+							v: textAreaValue,
+							a3: type_
+						});
 				}
 			}
 		default:
@@ -11190,18 +11384,31 @@ var author$project$Parser$beginWithName = function (list) {
 			var rest = _n0.b;
 			var _n3 = author$project$Parser$Expr$parseStartTerm(rest);
 			if (!_n3.$) {
-				var head = _n3.a.w;
-				var others = _n3.a.x;
-				var textAreaValue = _n3.a.u;
+				var head = _n3.a.x;
+				var others = _n3.a.y;
+				var textAreaValue = _n3.a.v;
 				return author$project$Parser$BeginWithNameEndExprTerm(
-					{I: head, aS: name, L: others, u: textAreaValue, a3: author$project$Project$Source$Module$Def$Type$empty});
+					{
+						I: author$project$Parser$Expr$takeTerm(head),
+						aS: name,
+						L: author$project$Parser$Expr$takeTermListOT(others),
+						v: textAreaValue,
+						a3: author$project$Project$Source$Module$Def$Type$empty
+					});
 			} else {
-				var head = _n3.a.w;
-				var others = _n3.a.x;
+				var head = _n3.a.x;
+				var others = _n3.a.y;
 				var last = _n3.a.Z;
-				var textAreaValue = _n3.a.u;
+				var textAreaValue = _n3.a.v;
 				return author$project$Parser$BeginWithNameEndExprOp(
-					{I: head, aE: last, aS: name, L: others, u: textAreaValue, a3: author$project$Project$Source$Module$Def$Type$empty});
+					{
+						I: author$project$Parser$Expr$takeTerm(head),
+						aE: last,
+						aS: name,
+						L: author$project$Parser$Expr$takeTermListOT(others),
+						v: textAreaValue,
+						a3: author$project$Project$Source$Module$Def$Type$empty
+					});
 			}
 	}
 };
@@ -11419,7 +11626,7 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 		switch (_n0.$) {
 			case 0:
 				var name = _n0.a.aS;
-				var textAreaValue = _n0.a.u;
+				var textAreaValue = _n0.a.v;
 				return _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -11436,7 +11643,7 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 			case 1:
 				var name = _n0.a.aS;
 				var type_ = _n0.a.a3;
-				var textAreaValue = _n0.a.u;
+				var textAreaValue = _n0.a.v;
 				return author$project$Project$Source$Module$Def$Type$isEmpty(type_) ? _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -11469,7 +11676,7 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 				var type_ = _n0.a.a3;
 				var headTerm = _n0.a.I;
 				var opAndTermList = _n0.a.L;
-				var textAreaValue = _n0.a.u;
+				var textAreaValue = _n0.a.v;
 				return _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -11510,7 +11717,7 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 				var headTerm = _n0.a.I;
 				var opAndTermList = _n0.a.L;
 				var lastOp = _n0.a.aE;
-				var textAreaValue = _n0.a.u;
+				var textAreaValue = _n0.a.v;
 				return _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -11604,223 +11811,157 @@ var author$project$Parser$Expr$OpLastOp = function (a) {
 var author$project$Parser$Expr$OpLastTerm = function (a) {
 	return {$: 1, a: a};
 };
-var author$project$Parser$Expr$batchOpResultLoop = F2(
-	function (intermediate, list) {
-		batchOpResultLoop:
-		while (true) {
-			var _n0 = _Utils_Tuple2(intermediate, list);
-			if (_n0.b.b) {
-				if (_n0.a.$ === 1) {
-					if (!_n0.b.a.$) {
-						var head = _n0.a.a.w;
-						var others = _n0.a.a.x;
-						var last = _n0.a.a.Z;
-						var textAreaValue = _n0.a.a.u;
-						var _n1 = _n0.b;
-						var term = _n1.a.a;
-						var listOthers = _n1.b;
-						var $temp$intermediate = author$project$Parser$Expr$OpLastTerm(
-							{
-								w: head,
-								Z: term,
-								x: _Utils_ap(
-									others,
-									_List_fromArray(
-										[
-											_Utils_Tuple2(last, 14)
-										])),
-								u: textAreaValue
-							}),
-							$temp$list = listOthers;
-						intermediate = $temp$intermediate;
-						list = $temp$list;
-						continue batchOpResultLoop;
-					} else {
-						var head = _n0.a.a.w;
-						var others = _n0.a.a.x;
-						var last = _n0.a.a.Z;
-						var textAreaValue = _n0.a.a.u;
-						var _n2 = _n0.b;
-						var op = _n2.a.a;
-						var listOthers = _n2.b;
-						var $temp$intermediate = author$project$Parser$Expr$OpLastOp(
-							{
-								w: head,
-								x: _Utils_ap(
-									others,
-									_List_fromArray(
-										[
-											_Utils_Tuple2(last, op)
-										])),
-								u: textAreaValue
-							}),
-							$temp$list = listOthers;
-						intermediate = $temp$intermediate;
-						list = $temp$list;
-						continue batchOpResultLoop;
-					}
-				} else {
-					if (!_n0.b.a.$) {
-						var head = _n0.a.a.w;
-						var others = _n0.a.a.x;
-						var textAreaValue = _n0.a.a.u;
-						var _n3 = _n0.b;
-						var term = _n3.a.a;
-						var listOthers = _n3.b;
-						var $temp$intermediate = author$project$Parser$Expr$OpLastTerm(
-							{w: head, Z: term, x: others, u: textAreaValue}),
-							$temp$list = listOthers;
-						intermediate = $temp$intermediate;
-						list = $temp$list;
-						continue batchOpResultLoop;
-					} else {
-						var head = _n0.a.a.w;
-						var others = _n0.a.a.x;
-						var textAreaValue = _n0.a.a.u;
-						var _n4 = _n0.b;
-						var op = _n4.a.a;
-						var listOthers = _n4.b;
-						var $temp$intermediate = author$project$Parser$Expr$OpLastOp(
-							{
-								w: head,
-								x: _Utils_ap(
-									others,
-									_List_fromArray(
-										[
-											_Utils_Tuple2(author$project$Project$Source$Module$Def$Expr$None, op)
-										])),
-								u: textAreaValue
-							}),
-							$temp$list = listOthers;
-						intermediate = $temp$intermediate;
-						list = $temp$list;
-						continue batchOpResultLoop;
-					}
-				}
-			} else {
-				return intermediate;
-			}
-		}
-	});
-var author$project$Parser$Expr$batchOpResult = F2(
-	function (list, textAreaValue) {
-		if (list.b) {
-			if (!list.a.$) {
-				var term = list.a.a;
-				var others = list.b;
-				return A2(
-					author$project$Parser$Expr$batchOpResultLoop,
-					author$project$Parser$Expr$OpLastTerm(
-						{w: 15, Z: term, x: _List_Nil, u: textAreaValue}),
-					others);
-			} else {
-				var op = list.a.a;
-				var others = list.b;
-				return A2(
-					author$project$Parser$Expr$batchOpResultLoop,
-					author$project$Parser$Expr$OpLastOp(
-						{w: op, x: _List_Nil, u: textAreaValue}),
-					others);
-			}
-		} else {
-			return author$project$Parser$Expr$OpLastOp(
-				{w: 15, x: _List_Nil, u: textAreaValue});
-		}
-	});
-var author$project$Parser$Expr$parseStartOpLoop = F2(
-	function (intermediate, list) {
-		parseStartOpLoop:
-		while (true) {
-			var _n0 = author$project$Parser$Expr$parseOne(list);
-			switch (_n0.$) {
-				case 0:
-					if (!_n0.a.$) {
-						var term = _n0.a.a.B;
-						var rest = _n0.a.a.bx;
-						var $temp$intermediate = _Utils_ap(
-							intermediate,
-							_List_fromArray(
-								[
-									author$project$Parser$Expr$Term(term)
-								])),
-							$temp$list = rest;
-						intermediate = $temp$intermediate;
-						list = $temp$list;
-						continue parseStartOpLoop;
-					} else {
-						var term = _n0.a.a.B;
-						var textAreaValue = _n0.a.a.u;
-						return A2(
-							author$project$Parser$Expr$batchOpResult,
-							_Utils_ap(
-								intermediate,
-								_List_fromArray(
-									[
-										author$project$Parser$Expr$Term(term)
-									])),
-							textAreaValue);
-					}
-				case 1:
-					var op = _n0.a.i;
-					var rest = _n0.a.bx;
-					var $temp$intermediate = _Utils_ap(
-						intermediate,
-						_List_fromArray(
-							[
-								author$project$Parser$Expr$Op(op)
-							])),
-						$temp$list = rest;
-					intermediate = $temp$intermediate;
-					list = $temp$list;
-					continue parseStartOpLoop;
-				case 2:
-					var op = _n0.a.i;
-					var textAreaValue = _n0.a.u;
-					return A2(
-						author$project$Parser$Expr$batchOpResult,
-						_Utils_ap(
-							intermediate,
-							_List_fromArray(
-								[
-									author$project$Parser$Expr$Op(op)
-								])),
-						textAreaValue);
-				default:
-					return A2(
-						author$project$Parser$Expr$batchOpResult,
-						_Utils_ap(
-							intermediate,
-							_List_fromArray(
-								[
-									author$project$Parser$Expr$Term(author$project$Project$Source$Module$Def$Expr$None)
-								])),
-						_List_Nil);
-			}
-		}
-	});
-var author$project$Parser$Expr$parseStartOp = function (list) {
-	return A2(
-		author$project$Parser$Expr$parseStartOpLoop,
-		_List_Nil,
-		author$project$Parser$SimpleChar$trimRight(list));
-};
-var author$project$Parser$beginWithExprOp = function (list) {
-	var _n0 = author$project$Parser$Expr$parseStartOp(list);
-	if (_n0.$ === 1) {
-		var head = _n0.a.w;
-		var others = _n0.a.x;
-		var last = _n0.a.Z;
-		var textAreaValue = _n0.a.u;
-		return author$project$Parser$BeginWithOpEndTerm(
-			{bh: head, bY: last, bC: others, u: textAreaValue});
+var author$project$Parser$Expr$concatParseOpResult = function (_n0) {
+	var head = _n0.x;
+	var others = _n0.y;
+	var lastMaybe = _n0.g;
+	var textAreaValue = _n0.v;
+	if (!lastMaybe.$) {
+		var last = lastMaybe.a;
+		return author$project$Parser$Expr$OpLastTerm(
+			{x: head, Z: last, y: others, v: textAreaValue});
 	} else {
-		var head = _n0.a.w;
-		var others = _n0.a.x;
-		var textAreaValue = _n0.a.u;
-		return author$project$Parser$BeginWithOpEndOp(
-			{bh: head, bC: others, u: textAreaValue});
+		return author$project$Parser$Expr$OpLastOp(
+			{x: head, y: others, v: textAreaValue});
 	}
 };
+var author$project$Parser$Expr$termOrOpListToParseOpResultNeedOp = F2(
+	function (prevTerm, termOrOpList) {
+		if (termOrOpList.b) {
+			if (!termOrOpList.a.$) {
+				var term = termOrOpList.a.a;
+				var listOthers = termOrOpList.b;
+				var _n3 = A2(author$project$Parser$Expr$termOrOpListToParseOpResultNeedOp, term, listOthers);
+				var others = _n3.y;
+				var lastMaybe = _n3.g;
+				return {
+					g: lastMaybe,
+					y: _Utils_ap(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(prevTerm, 15)
+							]),
+						others)
+				};
+			} else {
+				var op = termOrOpList.a.a;
+				var listOthers = termOrOpList.b;
+				var _n4 = author$project$Parser$Expr$termOrOpListToParseOpResultNeedTerm(listOthers);
+				var others = _n4.y;
+				var lastMaybe = _n4.g;
+				return {
+					g: lastMaybe,
+					y: _Utils_ap(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(prevTerm, op)
+							]),
+						others)
+				};
+			}
+		} else {
+			return {
+				g: elm$core$Maybe$Just(prevTerm),
+				y: _List_Nil
+			};
+		}
+	});
+var author$project$Parser$Expr$termOrOpListToParseOpResultNeedTerm = function (termOrOpList) {
+	if (termOrOpList.b) {
+		if (!termOrOpList.a.$) {
+			var term = termOrOpList.a.a;
+			var listOthers = termOrOpList.b;
+			return A2(author$project$Parser$Expr$termOrOpListToParseOpResultNeedOp, term, listOthers);
+		} else {
+			var op = termOrOpList.a.a;
+			var listOthers = termOrOpList.b;
+			var _n1 = author$project$Parser$Expr$termOrOpListToParseOpResultNeedTerm(listOthers);
+			var others = _n1.y;
+			var lastMaybe = _n1.g;
+			return {
+				g: lastMaybe,
+				y: _Utils_ap(
+					_List_fromArray(
+						[
+							_Utils_Tuple2(
+							A3(author$project$Parser$Expr$TermWithParenthesis, 0, author$project$Project$Source$Module$Def$Expr$None, 0),
+							op)
+						]),
+					others)
+			};
+		}
+	} else {
+		return {g: elm$core$Maybe$Nothing, y: _List_Nil};
+	}
+};
+var author$project$Parser$Expr$termOrOpListToParseOpResult = function (_n0) {
+	var list = _n0.a;
+	var textAreaValue = _n0.b;
+	if (list.b) {
+		if (!list.a.$) {
+			var term = list.a.a;
+			var listOthers = list.b;
+			var _n2 = A2(author$project$Parser$Expr$termOrOpListToParseOpResultNeedOp, term, listOthers);
+			var others = _n2.y;
+			var lastMaybe = _n2.g;
+			return author$project$Parser$Expr$concatParseOpResult(
+				{x: 15, g: lastMaybe, y: others, v: textAreaValue});
+		} else {
+			var op = list.a.a;
+			var listOthers = list.b;
+			var _n3 = author$project$Parser$Expr$termOrOpListToParseOpResultNeedTerm(listOthers);
+			var others = _n3.y;
+			var lastMaybe = _n3.g;
+			return author$project$Parser$Expr$concatParseOpResult(
+				{x: op, g: lastMaybe, y: others, v: textAreaValue});
+		}
+	} else {
+		return author$project$Parser$Expr$OpLastOp(
+			{x: 15, y: _List_Nil, v: textAreaValue});
+	}
+};
+var author$project$Parser$Expr$parseStartOp = function (list) {
+	return author$project$Parser$Expr$termOrOpListToParseOpResult(
+		author$project$Parser$Expr$parseToTermOrOpList(
+			author$project$Parser$SimpleChar$trimRight(list)));
+};
+var elm$core$Tuple$mapFirst = F2(
+	function (func, _n0) {
+		var x = _n0.a;
+		var y = _n0.b;
+		return _Utils_Tuple2(
+			func(x),
+			y);
+	});
+var author$project$Parser$Expr$takeTermListTO = elm$core$List$map(
+	elm$core$Tuple$mapFirst(author$project$Parser$Expr$takeTerm));
+var author$project$Parser$beginWithExprOp = F2(
+	function (parenthesisLevel, list) {
+		var _n0 = author$project$Parser$Expr$parseStartOp(list);
+		if (_n0.$ === 1) {
+			var head = _n0.a.x;
+			var others = _n0.a.y;
+			var last = _n0.a.Z;
+			var textAreaValue = _n0.a.v;
+			return author$project$Parser$BeginWithOpEndTerm(
+				{
+					bh: head,
+					bY: author$project$Parser$Expr$takeTerm(last),
+					bC: author$project$Parser$Expr$takeTermListTO(others),
+					v: textAreaValue
+				});
+		} else {
+			var head = _n0.a.x;
+			var others = _n0.a.y;
+			var textAreaValue = _n0.a.v;
+			return author$project$Parser$BeginWithOpEndOp(
+				{
+					bh: head,
+					bC: author$project$Parser$Expr$takeTermListTO(others),
+					v: textAreaValue
+				});
+		}
+	});
 var author$project$Project$Source$Module$Def$Expr$getTermAt = F2(
 	function (index, _n0) {
 		var others = _n0.b;
@@ -11989,13 +12130,15 @@ var author$project$Project$Source$Module$Def$Expr$replaceAndInsertOpLastTerm = F
 	});
 var author$project$Panel$Editor$Module$parserBeginWithOp = F5(
 	function (string, index, moduleRef, opIndex, expr) {
-		var _n0 = author$project$Parser$beginWithExprOp(
+		var _n0 = A2(
+			author$project$Parser$beginWithExprOp,
+			0,
 			author$project$Parser$SimpleChar$fromString(string));
 		if (!_n0.$) {
 			var headOp = _n0.a.bh;
 			var termAndOpList = _n0.a.bC;
 			var lastTerm = _n0.a.bY;
-			var textAreaValue = _n0.a.u;
+			var textAreaValue = _n0.a.v;
 			return _Utils_Tuple2(
 				author$project$Panel$Editor$Module$ActivePartDefList(
 					author$project$Panel$Editor$Module$ActivePartDef(
@@ -12019,7 +12162,7 @@ var author$project$Panel$Editor$Module$parserBeginWithOp = F5(
 		} else {
 			var headOp = _n0.a.bh;
 			var termAndOpList = _n0.a.bC;
-			var textAreaValue = _n0.a.u;
+			var textAreaValue = _n0.a.v;
 			return _Utils_Tuple2(
 				author$project$Panel$Editor$Module$ActivePartDefList(
 					author$project$Panel$Editor$Module$ActivePartDef(
@@ -12062,23 +12205,33 @@ var author$project$Parser$BeginWithTermEndOp = function (a) {
 var author$project$Parser$BeginWithTermEndTerm = function (a) {
 	return {$: 0, a: a};
 };
-var author$project$Parser$beginWithExprTerm = function (list) {
-	var _n0 = author$project$Parser$Expr$parseStartTerm(list);
-	if (!_n0.$) {
-		var head = _n0.a.w;
-		var others = _n0.a.x;
-		var textAreaValue = _n0.a.u;
-		return author$project$Parser$BeginWithTermEndTerm(
-			{I: head, L: others, u: textAreaValue});
-	} else {
-		var head = _n0.a.w;
-		var others = _n0.a.x;
-		var last = _n0.a.Z;
-		var textAreaValue = _n0.a.u;
-		return author$project$Parser$BeginWithTermEndOp(
-			{I: head, aE: last, L: others, u: textAreaValue});
-	}
-};
+var author$project$Parser$beginWithExprTerm = F2(
+	function (parenthesisLevel, list) {
+		var _n0 = author$project$Parser$Expr$parseStartTerm(list);
+		if (!_n0.$) {
+			var head = _n0.a.x;
+			var others = _n0.a.y;
+			var textAreaValue = _n0.a.v;
+			return author$project$Parser$BeginWithTermEndTerm(
+				{
+					I: author$project$Parser$Expr$takeTerm(head),
+					L: author$project$Parser$Expr$takeTermListOT(others),
+					v: textAreaValue
+				});
+		} else {
+			var head = _n0.a.x;
+			var others = _n0.a.y;
+			var last = _n0.a.Z;
+			var textAreaValue = _n0.a.v;
+			return author$project$Parser$BeginWithTermEndOp(
+				{
+					I: author$project$Parser$Expr$takeTerm(head),
+					aE: last,
+					L: author$project$Parser$Expr$takeTermListOT(others),
+					v: textAreaValue
+				});
+		}
+	});
 var author$project$Project$Source$Module$Def$Expr$replaceAndInsertHeadLastOp = F4(
 	function (headTerm, list, lastOp, _n0) {
 		var others = _n0.b;
@@ -12156,12 +12309,14 @@ var author$project$Project$Source$Module$Def$Expr$replaceAndInsertTermLastTerm =
 	});
 var author$project$Panel$Editor$Module$parserBeginWithTerm = F5(
 	function (string, index, moduleRef, termIndex, expr) {
-		var _n0 = author$project$Parser$beginWithExprTerm(
+		var _n0 = A2(
+			author$project$Parser$beginWithExprTerm,
+			0,
 			author$project$Parser$SimpleChar$fromString(string));
 		if (!_n0.$) {
 			var headTerm = _n0.a.I;
 			var opAndTermList = _n0.a.L;
-			var textAreaValue = _n0.a.u;
+			var textAreaValue = _n0.a.v;
 			return _Utils_Tuple2(
 				author$project$Panel$Editor$Module$ActivePartDefList(
 					author$project$Panel$Editor$Module$ActivePartDef(
@@ -12192,7 +12347,7 @@ var author$project$Panel$Editor$Module$parserBeginWithTerm = F5(
 			var headTerm = _n0.a.I;
 			var opAndTermList = _n0.a.L;
 			var lastOp = _n0.a.aE;
-			var textAreaValue = _n0.a.u;
+			var textAreaValue = _n0.a.v;
 			return _Utils_Tuple2(
 				author$project$Panel$Editor$Module$ActivePartDefList(
 					author$project$Panel$Editor$Module$ActivePartDef(
@@ -12228,26 +12383,37 @@ var author$project$Parser$beginWithType = function (list) {
 	var _n0 = author$project$Parser$Type$parse(list);
 	if (!_n0.$) {
 		var type_ = _n0.a.a3;
-		var textAreaValue = _n0.a.u;
+		var textAreaValue = _n0.a.v;
 		return author$project$Parser$BeginWithTypeEndType(
-			{u: textAreaValue, a3: type_});
+			{v: textAreaValue, a3: type_});
 	} else {
 		var type_ = _n0.a.a3;
 		var rest = _n0.a.bx;
 		var _n1 = author$project$Parser$Expr$parseStartTerm(rest);
 		if (!_n1.$) {
-			var head = _n1.a.w;
-			var others = _n1.a.x;
-			var textAreaValue = _n1.a.u;
+			var head = _n1.a.x;
+			var others = _n1.a.y;
+			var textAreaValue = _n1.a.v;
 			return author$project$Parser$BeginWithTypeEndExprTerm(
-				{I: head, L: others, u: textAreaValue, a3: type_});
+				{
+					I: author$project$Parser$Expr$takeTerm(head),
+					L: author$project$Parser$Expr$takeTermListOT(others),
+					v: textAreaValue,
+					a3: type_
+				});
 		} else {
-			var head = _n1.a.w;
-			var others = _n1.a.x;
+			var head = _n1.a.x;
+			var others = _n1.a.y;
 			var last = _n1.a.Z;
-			var textAreaValue = _n1.a.u;
+			var textAreaValue = _n1.a.v;
 			return author$project$Parser$BeginWithTypeEndExprOp(
-				{I: head, aE: last, L: others, u: textAreaValue, a3: type_});
+				{
+					I: author$project$Parser$Expr$takeTerm(head),
+					aE: last,
+					L: author$project$Parser$Expr$takeTermListOT(others),
+					v: textAreaValue,
+					a3: type_
+				});
 		}
 	}
 };
@@ -12258,7 +12424,7 @@ var author$project$Panel$Editor$Module$parserBeginWithType = F3(
 		switch (_n0.$) {
 			case 0:
 				var type_ = _n0.a.a3;
-				var textAreaValue = _n0.a.u;
+				var textAreaValue = _n0.a.v;
 				return _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -12276,7 +12442,7 @@ var author$project$Panel$Editor$Module$parserBeginWithType = F3(
 				var type_ = _n0.a.a3;
 				var headTerm = _n0.a.I;
 				var opAndTermList = _n0.a.L;
-				var textAreaValue = _n0.a.u;
+				var textAreaValue = _n0.a.v;
 				return _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -12312,7 +12478,7 @@ var author$project$Panel$Editor$Module$parserBeginWithType = F3(
 				var headTerm = _n0.a.I;
 				var opAndTermList = _n0.a.L;
 				var lastOp = _n0.a.aE;
-				var textAreaValue = _n0.a.u;
+				var textAreaValue = _n0.a.v;
 				return _Utils_Tuple2(
 					author$project$Panel$Editor$Module$ActivePartDefList(
 						author$project$Panel$Editor$Module$ActivePartDef(
@@ -12350,18 +12516,27 @@ var author$project$Parser$BeginWithExprHeadEndTerm = function (a) {
 var author$project$Parser$beginWithExprHead = function (list) {
 	var _n0 = author$project$Parser$Expr$parseStartTerm(list);
 	if (!_n0.$) {
-		var head = _n0.a.w;
-		var others = _n0.a.x;
-		var textAreaValue = _n0.a.u;
+		var head = _n0.a.x;
+		var others = _n0.a.y;
+		var textAreaValue = _n0.a.v;
 		return author$project$Parser$BeginWithExprHeadEndTerm(
-			{I: head, L: others, u: textAreaValue});
+			{
+				I: author$project$Parser$Expr$takeTerm(head),
+				L: author$project$Parser$Expr$takeTermListOT(others),
+				v: textAreaValue
+			});
 	} else {
-		var head = _n0.a.w;
-		var others = _n0.a.x;
+		var head = _n0.a.x;
+		var others = _n0.a.y;
 		var last = _n0.a.Z;
-		var textAreaValue = _n0.a.u;
+		var textAreaValue = _n0.a.v;
 		return author$project$Parser$BeginWithExprHeadEndOp(
-			{I: head, aE: last, L: others, u: textAreaValue});
+			{
+				I: author$project$Parser$Expr$takeTerm(head),
+				aE: last,
+				L: author$project$Parser$Expr$takeTermListOT(others),
+				v: textAreaValue
+			});
 	}
 };
 var author$project$Panel$Editor$Module$parserInExpr = F3(
@@ -12371,7 +12546,7 @@ var author$project$Panel$Editor$Module$parserInExpr = F3(
 		if (!_n0.$) {
 			var headTerm = _n0.a.I;
 			var opAndTermList = _n0.a.L;
-			var textAreaValue = _n0.a.u;
+			var textAreaValue = _n0.a.v;
 			return _Utils_Tuple2(
 				author$project$Panel$Editor$Module$ActivePartDefList(
 					author$project$Panel$Editor$Module$ActivePartDef(
@@ -12402,7 +12577,7 @@ var author$project$Panel$Editor$Module$parserInExpr = F3(
 			var headTerm = _n0.a.I;
 			var opAndTermList = _n0.a.L;
 			var lastOp = _n0.a.aE;
-			var textAreaValue = _n0.a.u;
+			var textAreaValue = _n0.a.v;
 			return _Utils_Tuple2(
 				author$project$Panel$Editor$Module$ActivePartDefList(
 					author$project$Panel$Editor$Module$ActivePartDef(
@@ -12433,7 +12608,7 @@ var author$project$Panel$Editor$Module$input = F3(
 			elm$core$String$trim(string))) {
 			return _Utils_Tuple2(rec, _List_Nil);
 		} else {
-			var _n1 = rec.f;
+			var _n1 = rec.h;
 			_n1$6:
 			while (true) {
 				switch (_n1.$) {
@@ -12445,7 +12620,7 @@ var author$project$Panel$Editor$Module$input = F3(
 								_List_fromArray(
 									[
 										author$project$Panel$Editor$Module$EmitChangeReadMe(
-										{b3: rec.s, b7: string})
+										{b3: rec.t, b7: string})
 									]));
 						} else {
 							break _n1$6;
@@ -12456,24 +12631,24 @@ var author$project$Panel$Editor$Module$input = F3(
 								case 1:
 									var _n3 = _n1.a.a;
 									var index = _n3.a;
-									var _n4 = A3(author$project$Panel$Editor$Module$parserBeginWithName, string, index, rec.s);
+									var _n4 = A3(author$project$Panel$Editor$Module$parserBeginWithName, string, index, rec.t);
 									var active = _n4.a;
 									var emitList = _n4.b;
 									return _Utils_Tuple2(
 										_Utils_update(
 											rec,
-											{f: active}),
+											{h: active}),
 										emitList);
 								case 2:
 									var _n5 = _n1.a.a;
 									var index = _n5.a;
-									var _n6 = A3(author$project$Panel$Editor$Module$parserBeginWithType, string, index, rec.s);
+									var _n6 = A3(author$project$Panel$Editor$Module$parserBeginWithType, string, index, rec.t);
 									var active = _n6.a;
 									var emitList = _n6.b;
 									return _Utils_Tuple2(
 										_Utils_update(
 											rec,
-											{f: active}),
+											{h: active}),
 										emitList);
 								case 3:
 									switch (_n1.a.a.b.a.$) {
@@ -12481,13 +12656,13 @@ var author$project$Panel$Editor$Module$input = F3(
 											var _n7 = _n1.a.a;
 											var index = _n7.a;
 											var _n8 = _n7.b.a;
-											var _n9 = A3(author$project$Panel$Editor$Module$parserInExpr, string, index, rec.s);
+											var _n9 = A3(author$project$Panel$Editor$Module$parserInExpr, string, index, rec.t);
 											var active = _n9.a;
 											var emitList = _n9.b;
 											return _Utils_Tuple2(
 												_Utils_update(
 													rec,
-													{f: active}),
+													{h: active}),
 												emitList);
 										case 2:
 											var _n10 = _n1.a.a;
@@ -12498,7 +12673,7 @@ var author$project$Panel$Editor$Module$input = F3(
 												author$project$Panel$Editor$Module$parserBeginWithTerm,
 												string,
 												index,
-												rec.s,
+												rec.t,
 												termIndex,
 												author$project$Project$Source$Module$Def$getExpr(
 													A2(
@@ -12510,7 +12685,7 @@ var author$project$Panel$Editor$Module$input = F3(
 											return _Utils_Tuple2(
 												_Utils_update(
 													rec,
-													{f: active}),
+													{h: active}),
 												emitList);
 										case 3:
 											var _n13 = _n1.a.a;
@@ -12521,7 +12696,7 @@ var author$project$Panel$Editor$Module$input = F3(
 												author$project$Panel$Editor$Module$parserBeginWithOp,
 												string,
 												index,
-												rec.s,
+												rec.t,
 												opIndex,
 												author$project$Project$Source$Module$Def$getExpr(
 													A2(
@@ -12533,7 +12708,7 @@ var author$project$Panel$Editor$Module$input = F3(
 											return _Utils_Tuple2(
 												_Utils_update(
 													rec,
-													{f: active}),
+													{h: active}),
 												emitList);
 										default:
 											break _n1$6;
@@ -13261,7 +13436,7 @@ var author$project$Panel$Editor$Module$suggestionSelectChangedThenNameChangeEmit
 var author$project$Panel$Editor$Module$suggestionPrevOrSelectDown = F3(
 	function (module_, project, _n8) {
 		var rec = _n8;
-		var _n9 = rec.f;
+		var _n9 = rec.h;
 		if ((((_n9.$ === 2) && (_n9.a.$ === 1)) && (_n9.a.a.b.$ === 1)) && (!_n9.a.a.b.a.$)) {
 			var _n10 = _n9.a.a;
 			var index = _n10.a;
@@ -13272,7 +13447,7 @@ var author$project$Panel$Editor$Module$suggestionPrevOrSelectDown = F3(
 				_Utils_update(
 					rec,
 					{
-						f: author$project$Panel$Editor$Module$ActivePartDefList(
+						h: author$project$Panel$Editor$Module$ActivePartDefList(
 							author$project$Panel$Editor$Module$ActivePartDef(
 								_Utils_Tuple2(
 									index,
@@ -13280,7 +13455,7 @@ var author$project$Panel$Editor$Module$suggestionPrevOrSelectDown = F3(
 										elm$core$Maybe$Just(
 											_Utils_Tuple2(textAreaValue, suggestIndex + 1))))))
 					}),
-				A3(author$project$Panel$Editor$Module$suggestionSelectChangedThenNameChangeEmit, suggestIndex, index, rec.s));
+				A3(author$project$Panel$Editor$Module$suggestionSelectChangedThenNameChangeEmit, suggestIndex, index, rec.t));
 		} else {
 			return A3(author$project$Panel$Editor$Module$update, author$project$Panel$Editor$Module$SelectDown, project, rec);
 		}
@@ -13288,7 +13463,7 @@ var author$project$Panel$Editor$Module$suggestionPrevOrSelectDown = F3(
 var author$project$Panel$Editor$Module$suggestionPrevOrSelectUp = F3(
 	function (module_, project, _n4) {
 		var rec = _n4;
-		var _n5 = rec.f;
+		var _n5 = rec.h;
 		if ((((_n5.$ === 2) && (_n5.a.$ === 1)) && (_n5.a.a.b.$ === 1)) && (!_n5.a.a.b.a.$)) {
 			var _n6 = _n5.a.a;
 			var index = _n6.a;
@@ -13299,7 +13474,7 @@ var author$project$Panel$Editor$Module$suggestionPrevOrSelectUp = F3(
 				_Utils_update(
 					rec,
 					{
-						f: author$project$Panel$Editor$Module$ActivePartDefList(
+						h: author$project$Panel$Editor$Module$ActivePartDefList(
 							author$project$Panel$Editor$Module$ActivePartDef(
 								_Utils_Tuple2(
 									index,
@@ -13309,7 +13484,7 @@ var author$project$Panel$Editor$Module$suggestionPrevOrSelectUp = F3(
 												textAreaValue,
 												A2(elm$core$Basics$max, 0, suggestIndex - 1)))))))
 					}),
-				A3(author$project$Panel$Editor$Module$suggestionSelectChangedThenNameChangeEmit, suggestIndex, index, rec.s));
+				A3(author$project$Panel$Editor$Module$suggestionSelectChangedThenNameChangeEmit, suggestIndex, index, rec.t));
 		} else {
 			return A3(author$project$Panel$Editor$Module$update, author$project$Panel$Editor$Module$SelectUp, project, rec);
 		}
@@ -13321,7 +13496,7 @@ var author$project$Panel$Editor$Module$update = F3(
 			var rec = _n0;
 			var targetModule = A2(
 				author$project$Project$Source$getModule,
-				rec.s,
+				rec.t,
 				author$project$Project$getSource(project));
 			switch (msg.$) {
 				case 0:
@@ -13329,7 +13504,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					return A2(author$project$Panel$Editor$Module$activeTo, active, rec);
 				case 1:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectLeft, targetModule, rec.f)),
+						A2(author$project$Panel$Editor$Module$selectLeft, targetModule, rec.h)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -13338,7 +13513,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 2:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectRight, targetModule, rec.f)),
+						A2(author$project$Panel$Editor$Module$selectRight, targetModule, rec.h)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -13347,7 +13522,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 3:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectUp, targetModule, rec.f)),
+						A2(author$project$Panel$Editor$Module$selectUp, targetModule, rec.h)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -13356,7 +13531,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 4:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectDown, targetModule, rec.f)),
+						A2(author$project$Panel$Editor$Module$selectDown, targetModule, rec.h)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -13365,7 +13540,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 5:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectFirstChild, targetModule, rec.f)),
+						A2(author$project$Panel$Editor$Module$selectFirstChild, targetModule, rec.h)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -13374,7 +13549,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 6:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectLastChild, targetModule, rec.f)),
+						A2(author$project$Panel$Editor$Module$selectLastChild, targetModule, rec.h)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -13383,7 +13558,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					continue update;
 				case 7:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						A2(author$project$Panel$Editor$Module$selectParent, targetModule, rec.f)),
+						A2(author$project$Panel$Editor$Module$selectParent, targetModule, rec.h)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -13401,7 +13576,7 @@ var author$project$Panel$Editor$Module$update = F3(
 					return _Utils_Tuple2(rec, _List_Nil);
 				case 12:
 					var $temp$msg = author$project$Panel$Editor$Module$ActiveTo(
-						author$project$Panel$Editor$Module$confirmMultiLineTextField(rec.f)),
+						author$project$Panel$Editor$Module$confirmMultiLineTextField(rec.h)),
 						$temp$project = project,
 						$temp$_n0 = rec;
 					msg = $temp$msg;
@@ -13414,7 +13589,7 @@ var author$project$Panel$Editor$Module$update = F3(
 						_List_fromArray(
 							[
 								author$project$Panel$Editor$Module$EmitAddPartDef(
-								{b3: rec.s})
+								{b3: rec.t})
 							]));
 				case 14:
 					return _Utils_Tuple2(rec, _List_Nil);
@@ -13423,13 +13598,13 @@ var author$project$Panel$Editor$Module$update = F3(
 						_Utils_update(
 							rec,
 							{
-								f: function () {
-									var _n2 = rec.f;
+								h: function () {
+									var _n2 = rec.h;
 									if ((_n2.$ === 1) && (_n2.a === 1)) {
 										var _n3 = _n2.a;
 										return author$project$Panel$Editor$Module$ActiveDescription(0);
 									} else {
-										return rec.f;
+										return rec.h;
 									}
 								}()
 							}),
@@ -13520,16 +13695,16 @@ var author$project$Panel$EditorGroup$closeEditorColumn = F2(
 		} else {
 			if (!_n0.a) {
 				var _n1 = _n0.a;
-				var bottom = _n0.b.a.y;
+				var bottom = _n0.b.a.z;
 				return elm$core$Maybe$Just(
 					author$project$Panel$EditorGroup$ColumnOne(
-						{g: bottom}));
+						{i: bottom}));
 			} else {
 				var _n2 = _n0.a;
-				var top = _n0.b.a.g;
+				var top = _n0.b.a.i;
 				return elm$core$Maybe$Just(
 					author$project$Panel$EditorGroup$ColumnOne(
-						{g: top}));
+						{i: top}));
 			}
 		}
 	});
@@ -13599,7 +13774,7 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 						return A2(
 							elm$core$Maybe$withDefault,
 							author$project$Panel$EditorGroup$RowTwo(
-								{e: rec.T, R: rec.e, h: rec.H}),
+								{e: rec.T, R: rec.e, j: rec.H}),
 							A2(
 								elm$core$Maybe$map,
 								function (col) {
@@ -13613,7 +13788,7 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 						return A2(
 							elm$core$Maybe$withDefault,
 							author$project$Panel$EditorGroup$RowTwo(
-								{e: rec.T, R: rec.R, h: rec.h}),
+								{e: rec.T, R: rec.R, j: rec.j}),
 							A2(
 								elm$core$Maybe$map,
 								function (col) {
@@ -13627,7 +13802,7 @@ var author$project$Panel$EditorGroup$closeEditor = F2(
 						return A2(
 							elm$core$Maybe$withDefault,
 							author$project$Panel$EditorGroup$RowTwo(
-								{e: rec.e, R: rec.R, h: rec.h}),
+								{e: rec.e, R: rec.R, j: rec.j}),
 							A2(
 								elm$core$Maybe$map,
 								function (col) {
@@ -13758,20 +13933,20 @@ var author$project$Panel$EditorGroup$openEditorRowOne = F3(
 						author$project$Panel$EditorGroup$RowTwo(
 							{
 								e: author$project$Panel$EditorGroup$ColumnOne(
-									{g: item}),
+									{i: item}),
 								R: column,
-								h: 500
+								j: 500
 							}),
 						_Utils_Tuple2(1, 0)));
 			case 1:
 				if (!column.$) {
-					var top = column.a.g;
+					var top = column.a.i;
 					return elm$core$Maybe$Just(
 						_Utils_Tuple2(
 							author$project$Panel$EditorGroup$RowOne(
 								{
 									R: author$project$Panel$EditorGroup$ColumnTwo(
-										{y: item, g: top, N: 500})
+										{z: item, i: top, N: 500})
 								}),
 							_Utils_Tuple2(0, 1)));
 				} else {
@@ -13787,7 +13962,7 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 			case 1:
 				var _n1 = rec.R;
 				if (!_n1.$) {
-					var top = _n1.a.g;
+					var top = _n1.a.i;
 					return elm$core$Maybe$Just(
 						_Utils_Tuple2(
 							author$project$Panel$EditorGroup$RowThree(
@@ -13795,7 +13970,7 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 									rec,
 									{
 										R: author$project$Panel$EditorGroup$ColumnTwo(
-											{y: item, g: top, N: 500})
+											{z: item, i: top, N: 500})
 									})),
 							_Utils_Tuple2(0, 1)));
 				} else {
@@ -13804,7 +13979,7 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 			case 2:
 				var _n2 = rec.e;
 				if (!_n2.$) {
-					var top = _n2.a.g;
+					var top = _n2.a.i;
 					return elm$core$Maybe$Just(
 						_Utils_Tuple2(
 							author$project$Panel$EditorGroup$RowThree(
@@ -13812,7 +13987,7 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 									rec,
 									{
 										e: author$project$Panel$EditorGroup$ColumnTwo(
-											{y: item, g: top, N: 500})
+											{z: item, i: top, N: 500})
 									})),
 							_Utils_Tuple2(1, 1)));
 				} else {
@@ -13821,7 +13996,7 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 			case 3:
 				var _n3 = rec.T;
 				if (!_n3.$) {
-					var top = _n3.a.g;
+					var top = _n3.a.i;
 					return elm$core$Maybe$Just(
 						_Utils_Tuple2(
 							author$project$Panel$EditorGroup$RowThree(
@@ -13829,7 +14004,7 @@ var author$project$Panel$EditorGroup$openEditorRowThree = F3(
 									rec,
 									{
 										T: author$project$Panel$EditorGroup$ColumnTwo(
-											{y: item, g: top, N: 500})
+											{z: item, i: top, N: 500})
 									})),
 							_Utils_Tuple2(2, 1)));
 				} else {
@@ -13850,15 +14025,15 @@ var author$project$Panel$EditorGroup$openEditorRowTwo = F3(
 								e: rec.e,
 								H: 333,
 								R: rec.R,
-								h: 333,
+								j: 333,
 								T: author$project$Panel$EditorGroup$ColumnOne(
-									{g: item})
+									{i: item})
 							}),
 						_Utils_Tuple2(2, 0)));
 			case 1:
 				var _n1 = rec.R;
 				if (!_n1.$) {
-					var top = _n1.a.g;
+					var top = _n1.a.i;
 					return elm$core$Maybe$Just(
 						_Utils_Tuple2(
 							author$project$Panel$EditorGroup$RowTwo(
@@ -13866,7 +14041,7 @@ var author$project$Panel$EditorGroup$openEditorRowTwo = F3(
 									rec,
 									{
 										R: author$project$Panel$EditorGroup$ColumnTwo(
-											{y: item, g: top, N: 500})
+											{z: item, i: top, N: 500})
 									})),
 							_Utils_Tuple2(0, 1)));
 				} else {
@@ -13875,7 +14050,7 @@ var author$project$Panel$EditorGroup$openEditorRowTwo = F3(
 			case 2:
 				var _n2 = rec.e;
 				if (!_n2.$) {
-					var top = _n2.a.g;
+					var top = _n2.a.i;
 					return elm$core$Maybe$Just(
 						_Utils_Tuple2(
 							author$project$Panel$EditorGroup$RowTwo(
@@ -13883,7 +14058,7 @@ var author$project$Panel$EditorGroup$openEditorRowTwo = F3(
 									rec,
 									{
 										e: author$project$Panel$EditorGroup$ColumnTwo(
-											{y: item, g: top, N: 500})
+											{z: item, i: top, N: 500})
 									})),
 							_Utils_Tuple2(1, 1)));
 				} else {
@@ -13931,7 +14106,7 @@ var author$project$Panel$EditorGroup$setEditorItemColumn = F3(
 			return author$project$Panel$EditorGroup$ColumnOne(
 				_Utils_update(
 					recCol,
-					{g: item}));
+					{i: item}));
 		} else {
 			var recCol = columnGroup.a;
 			return author$project$Panel$EditorGroup$ColumnTwo(
@@ -13939,11 +14114,11 @@ var author$project$Panel$EditorGroup$setEditorItemColumn = F3(
 					if (!editorRefCol) {
 						return _Utils_update(
 							recCol,
-							{g: item});
+							{i: item});
 					} else {
 						return _Utils_update(
 							recCol,
-							{y: item});
+							{z: item});
 					}
 				}());
 		}
@@ -14450,7 +14625,7 @@ var author$project$Panel$EditorGroup$resizeVertical = F3(
 						_Utils_update(
 							rec,
 							{
-								h: A3(elm$core$Basics$clamp, 100, 900, (((x * 1002) / width) | 0) - 1)
+								j: A3(elm$core$Basics$clamp, 100, 900, (((x * 1002) / width) | 0) - 1)
 							}));
 				} else {
 					return group;
@@ -14463,8 +14638,8 @@ var author$project$Panel$EditorGroup$resizeVertical = F3(
 						_Utils_update(
 							rec,
 							{
-								H: A2(elm$core$Basics$max, 100, (rec.h + rec.H) - leftWidth),
-								h: leftWidth
+								H: A2(elm$core$Basics$max, 100, (rec.j + rec.H) - leftWidth),
+								j: leftWidth
 							}));
 				} else {
 					var leftWidth = A3(elm$core$Basics$clamp, 200, 900, (((x * 1002) / width) | 0) - 1);
@@ -14472,8 +14647,8 @@ var author$project$Panel$EditorGroup$resizeVertical = F3(
 						_Utils_update(
 							rec,
 							{
-								H: A2(elm$core$Basics$max, 100, leftWidth - rec.h),
-								h: ((leftWidth - rec.h) < 100) ? (leftWidth - 100) : rec.h
+								H: A2(elm$core$Basics$max, 100, leftWidth - rec.j),
+								j: ((leftWidth - rec.j) < 100) ? (leftWidth - 100) : rec.j
 							}));
 				}
 		}
@@ -14993,7 +15168,7 @@ var author$project$Model$toGutterMode = F2(
 			});
 	});
 var author$project$Panel$Editor$Module$getModuleRef = function (_n0) {
-	var moduleRef = _n0.s;
+	var moduleRef = _n0.t;
 	return moduleRef;
 };
 var author$project$Panel$EditorTypeRef$EditorKeyConfig = {$: 1};
@@ -15181,7 +15356,7 @@ var author$project$Panel$Tree$DownNext = function (a) {
 };
 var author$project$Panel$Tree$DownNoExistThisTree = {$: 2};
 var author$project$Panel$Tree$simpleTreeGetEditorRef = function (_n0) {
-	var editorRef = _n0.j;
+	var editorRef = _n0.k;
 	return editorRef;
 };
 var author$project$Panel$Tree$selectDownListLoop = F2(
@@ -15219,8 +15394,8 @@ var author$project$Panel$Tree$selectDownListLoop = F2(
 	});
 var author$project$Panel$Tree$selectDownLoop = F2(
 	function (_n0, target) {
-		var editorRef = _n0.j;
-		var children = _n0.l;
+		var editorRef = _n0.k;
+		var children = _n0.m;
 		if (_Utils_eq(target, editorRef)) {
 			switch (children.$) {
 				case 2:
@@ -15267,9 +15442,9 @@ var author$project$NSvg$path = F3(
 		return author$project$NSvg$Path(
 			{
 				bc: d,
-				z: fillStyle,
+				A: fillStyle,
 				aH: _Utils_Tuple2(0, 0),
-				t: strokeStyle
+				u: strokeStyle
 			});
 	});
 var author$project$NSvg$Polygon = function (a) {
@@ -15278,7 +15453,7 @@ var author$project$NSvg$Polygon = function (a) {
 var author$project$NSvg$polygon = F3(
 	function (points, strokeStyle, fillStyle) {
 		return author$project$NSvg$Polygon(
-			{V: elm$core$Maybe$Nothing, z: fillStyle, am: points, t: strokeStyle});
+			{V: elm$core$Maybe$Nothing, A: fillStyle, am: points, u: strokeStyle});
 	});
 var author$project$NSvg$StrokeNone = {$: 0};
 var author$project$NSvg$strokeNone = author$project$NSvg$StrokeNone;
@@ -15349,7 +15524,7 @@ var author$project$NSvg$rect = F3(
 		var width = _n0.ce;
 		var height = _n0.bT;
 		return author$project$NSvg$Rect(
-			{V: elm$core$Maybe$Nothing, z: fillStyle, bT: height, t: strokeStyle, ce: width, cg: 0, ch: 0});
+			{V: elm$core$Maybe$Nothing, A: fillStyle, bT: height, u: strokeStyle, ce: width, cg: 0, ch: 0});
 	});
 var author$project$NSvg$Stroke = function (a) {
 	return {$: 1, a: a};
@@ -15502,7 +15677,7 @@ var author$project$Panel$Tree$documentIcon = {
 var author$project$NSvg$circle = F3(
 	function (r, strokeStyle, fillStyle) {
 		return author$project$NSvg$Circle(
-			{ax: 0, ay: 0, z: fillStyle, bu: r, t: strokeStyle});
+			{ax: 0, ay: 0, A: fillStyle, bu: r, u: strokeStyle});
 	});
 var author$project$Panel$Tree$moduleIcon = {
 	bH: function (viewType) {
@@ -15746,59 +15921,59 @@ var author$project$Panel$Tree$baseTree = function (project) {
 	return _List_fromArray(
 		[
 			{
-			l: _List_fromArray(
+			m: _List_fromArray(
 				[
 					{
-					l: _List_Nil,
-					j: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$Document),
-					q: author$project$Panel$Tree$documentIcon,
-					r: 'Document'
+					m: _List_Nil,
+					k: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$Document),
+					r: author$project$Panel$Tree$documentIcon,
+					s: 'Document'
 				},
 					{
-					l: _List_Nil,
-					j: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$Config),
-					q: author$project$Panel$Tree$configIcon,
-					r: 'Default IO Config'
+					m: _List_Nil,
+					k: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$Config),
+					r: author$project$Panel$Tree$configIcon,
+					s: 'Default IO Config'
 				},
 					{
-					l: _List_fromArray(
+					m: _List_fromArray(
 						[
 							{
-							l: _List_Nil,
-							j: author$project$Panel$EditorTypeRef$EditorProject(
+							m: _List_Nil,
+							k: author$project$Panel$EditorTypeRef$EditorProject(
 								author$project$Project$Module(2)),
-							q: author$project$Panel$Tree$moduleIcon,
-							r: 'SampleModule'
+							r: author$project$Panel$Tree$moduleIcon,
+							s: 'SampleModule'
 						},
 							{
-							l: _List_fromArray(
+							m: _List_fromArray(
 								[
 									{
-									l: _List_Nil,
-									j: author$project$Panel$EditorTypeRef$EditorProject(
+									m: _List_Nil,
+									k: author$project$Panel$EditorTypeRef$EditorProject(
 										author$project$Project$Module(1)),
-									q: author$project$Panel$Tree$moduleIcon,
-									r: 'Int32'
+									r: author$project$Panel$Tree$moduleIcon,
+									s: 'Int32'
 								}
 								]),
-							j: author$project$Panel$EditorTypeRef$EditorProject(
+							k: author$project$Panel$EditorTypeRef$EditorProject(
 								author$project$Project$Module(0)),
-							q: author$project$Panel$Tree$moduleIcon,
-							r: 'Core'
+							r: author$project$Panel$Tree$moduleIcon,
+							s: 'Core'
 						}
 						]),
-					j: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$Source),
-					q: author$project$Panel$Tree$sourceIcon,
-					r: 'Source'
+					k: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$Source),
+					r: author$project$Panel$Tree$sourceIcon,
+					s: 'Source'
 				}
 				]),
-			j: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$ProjectRoot),
-			q: author$project$Panel$Tree$defaultProjectIcon,
-			r: author$project$Project$Label$toSmallString(
+			k: author$project$Panel$EditorTypeRef$EditorProject(author$project$Project$ProjectRoot),
+			r: author$project$Panel$Tree$defaultProjectIcon,
+			s: author$project$Project$Label$toSmallString(
 				author$project$Project$getAuthor(project)) + ('/' + author$project$Project$Label$toCapitalString(
 				author$project$Project$getName(project)))
 		},
-			{l: _List_Nil, j: author$project$Panel$EditorTypeRef$EditorKeyConfig, q: author$project$Panel$Tree$moduleIcon, r: 'Editor Key Config'}
+			{m: _List_Nil, k: author$project$Panel$EditorTypeRef$EditorKeyConfig, r: author$project$Panel$Tree$moduleIcon, s: 'Editor Key Config'}
 		]);
 };
 var author$project$Panel$Tree$ChildrenClose = {$: 1};
@@ -15809,12 +15984,12 @@ var author$project$Panel$Tree$ChildrenOpen = function (a) {
 var author$project$Panel$Tree$SimpleTree = elm$core$Basics$identity;
 var author$project$Panel$Tree$baseTreeToSimpleProjectTree = F2(
 	function (openCloseData, _n0) {
-		var editorRef = _n0.j;
-		var label = _n0.r;
-		var icon = _n0.q;
-		var children = _n0.l;
+		var editorRef = _n0.k;
+		var label = _n0.s;
+		var icon = _n0.r;
+		var children = _n0.m;
 		return {
-			l: function () {
+			m: function () {
 				if (!children.b) {
 					return author$project$Panel$Tree$ChildrenNone;
 				} else {
@@ -15829,9 +16004,9 @@ var author$project$Panel$Tree$baseTreeToSimpleProjectTree = F2(
 								xs))) : author$project$Panel$Tree$ChildrenClose;
 				}
 			}(),
-			j: editorRef,
-			q: icon,
-			r: label
+			k: editorRef,
+			r: icon,
+			s: label
 		};
 	});
 var author$project$Panel$Tree$simpleProjectTree = F2(
@@ -15894,7 +16069,7 @@ var elm$core$List$any = F2(
 	});
 var author$project$Panel$Tree$isExistInChildren = F2(
 	function (_n0, target) {
-		var children = _n0.l;
+		var children = _n0.m;
 		switch (children.$) {
 			case 2:
 				return false;
@@ -15927,7 +16102,7 @@ var author$project$Panel$Tree$selectToParentLoop = F2(
 						author$project$Panel$Tree$simpleTreeGetEditorRef(x));
 				} else {
 					var _n1 = x;
-					var children = _n1.l;
+					var children = _n1.m;
 					var _n2 = A2(
 						author$project$Panel$Tree$selectToParentLoop,
 						author$project$Panel$Tree$childrenToList(children),
@@ -15967,8 +16142,8 @@ var author$project$Panel$Tree$UpPrevious = function (a) {
 	return {$: 1, a: a};
 };
 var author$project$Panel$Tree$getTailRef = function (_n0) {
-	var editorRef = _n0.j;
-	var children = _n0.l;
+	var editorRef = _n0.k;
+	var children = _n0.m;
 	switch (children.$) {
 		case 2:
 			return editorRef;
@@ -16024,8 +16199,8 @@ var author$project$Panel$Tree$selectUpListLoop = F2(
 	});
 var author$project$Panel$Tree$selectUpLoop = F2(
 	function (_n0, target) {
-		var editorRef = _n0.j;
-		var children = _n0.l;
+		var editorRef = _n0.k;
+		var children = _n0.m;
 		if (_Utils_eq(editorRef, target)) {
 			return author$project$Panel$Tree$UpPrevious(editorRef);
 		} else {
@@ -16215,14 +16390,6 @@ var author$project$Update$run = _Platform_outgoingPort(
 					'wasm',
 					elm$json$Json$Encode$list(elm$json$Json$Encode$int)($.cd))
 				]));
-	});
-var elm$core$Tuple$mapSecond = F2(
-	function (func, _n0) {
-		var x = _n0.a;
-		var y = _n0.b;
-		return _Utils_Tuple2(
-			x,
-			func(y));
 	});
 var author$project$Update$update = F2(
 	function (msg, model) {
@@ -16868,8 +17035,8 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 			var y = nSvgElement.a.ch;
 			var width = nSvgElement.a.ce;
 			var height = nSvgElement.a.bT;
-			var strokeStyle = nSvgElement.a.t;
-			var fillStyle = nSvgElement.a.z;
+			var strokeStyle = nSvgElement.a.u;
+			var fillStyle = nSvgElement.a.A;
 			var clickMsg = nSvgElement.a.V;
 			return A2(
 				elm$svg$Svg$rect,
@@ -16895,8 +17062,8 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 			var cx = nSvgElement.a.ax;
 			var cy = nSvgElement.a.ay;
 			var r = nSvgElement.a.bu;
-			var strokeStyle = nSvgElement.a.t;
-			var fillStyle = nSvgElement.a.z;
+			var strokeStyle = nSvgElement.a.u;
+			var fillStyle = nSvgElement.a.A;
 			return A2(
 				elm$svg$Svg$circle,
 				_Utils_ap(
@@ -16915,8 +17082,8 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 				_List_Nil);
 		case 2:
 			var points = nSvgElement.a.am;
-			var strokeStyle = nSvgElement.a.t;
-			var fillStyle = nSvgElement.a.z;
+			var strokeStyle = nSvgElement.a.u;
+			var fillStyle = nSvgElement.a.A;
 			var clickMsg = nSvgElement.a.V;
 			return A2(
 				elm$svg$Svg$polygon,
@@ -16944,8 +17111,8 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 				_List_Nil);
 		case 3:
 			var d = nSvgElement.a.bc;
-			var strokeStyle = nSvgElement.a.t;
-			var fillStyle = nSvgElement.a.z;
+			var strokeStyle = nSvgElement.a.u;
+			var fillStyle = nSvgElement.a.A;
 			var offset = nSvgElement.a.aH;
 			return A2(
 				elm$svg$Svg$path,
@@ -16965,7 +17132,7 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 			var y0 = nSvgElement.a.au;
 			var x1 = nSvgElement.a.at;
 			var y1 = nSvgElement.a.av;
-			var strokeStyle = nSvgElement.a.t;
+			var strokeStyle = nSvgElement.a.u;
 			return A2(
 				elm$svg$Svg$line,
 				_Utils_ap(
@@ -17054,9 +17221,9 @@ var author$project$NSvg$polygonWithClickEvent = F4(
 		return author$project$NSvg$Polygon(
 			{
 				V: elm$core$Maybe$Just(cliskMsg),
-				z: fillStyle,
+				A: fillStyle,
 				am: points,
-				t: strokeStyle
+				u: strokeStyle
 			});
 	});
 var author$project$NSvg$rectWithClickEvent = F4(
@@ -17066,9 +17233,9 @@ var author$project$NSvg$rectWithClickEvent = F4(
 		return author$project$NSvg$Rect(
 			{
 				V: elm$core$Maybe$Just(clickMsg),
-				z: fillStyle,
+				A: fillStyle,
 				bT: height,
-				t: strokeStyle,
+				u: strokeStyle,
 				ce: width,
 				cg: 0,
 				ch: 0
@@ -17177,7 +17344,7 @@ var author$project$NSvg$line = F3(
 		var x1 = _n1.a;
 		var y1 = _n1.b;
 		return author$project$NSvg$Line(
-			{t: strokeStyle, as: x0, at: x1, au: y0, av: y1});
+			{u: strokeStyle, as: x0, at: x1, au: y0, av: y1});
 	});
 var author$project$Panel$Editor$EditorKeyConfig$arrowDownKey = _List_fromArray(
 	[
@@ -19112,14 +19279,6 @@ var author$project$Panel$Editor$Module$descriptionViewTextArea = F3(
 				}()),
 			_List_Nil);
 	});
-var elm$core$Tuple$mapFirst = F2(
-	function (func, _n0) {
-		var x = _n0.a;
-		var y = _n0.b;
-		return _Utils_Tuple2(
-			func(x),
-			y);
-	});
 var elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -19391,6 +19550,7 @@ var author$project$Panel$Editor$Module$suggestionOpItem = F2(
 						]))
 				]));
 	});
+var author$project$Project$Source$Module$Def$Expr$App = 14;
 var author$project$Project$Source$Module$Def$Expr$allOperator = _List_fromArray(
 	[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
 var author$project$Panel$Editor$Module$suggestionOp = function (op) {
@@ -20488,8 +20648,8 @@ var author$project$Project$Source$ModuleWithCache$getReadMe = function (_n0) {
 };
 var author$project$Panel$Editor$Module$view = F3(
 	function (project, isFocus, _n0) {
-		var moduleRef = _n0.s;
-		var active = _n0.f;
+		var moduleRef = _n0.t;
+		var active = _n0.h;
 		var targetModule = A2(
 			author$project$Project$Source$getModule,
 			moduleRef,
@@ -20762,7 +20922,7 @@ var author$project$Panel$EditorGroup$editorColumn = F8(
 				]),
 			function () {
 				if (!columnGroup.$) {
-					var top = columnGroup.a.g;
+					var top = columnGroup.a.i;
 					return _List_fromArray(
 						[
 							A6(
@@ -20778,8 +20938,8 @@ var author$project$Panel$EditorGroup$editorColumn = F8(
 							author$project$Panel$EditorGroup$editorColumnAddGutter(showEditorPosition)
 						]);
 				} else {
-					var top = columnGroup.a.g;
-					var bottom = columnGroup.a.y;
+					var top = columnGroup.a.i;
+					var bottom = columnGroup.a.z;
 					var topHeight = columnGroup.a.N;
 					return _List_fromArray(
 						[
@@ -20925,10 +21085,10 @@ var author$project$Panel$EditorGroup$openEditorButton = F3(
 								case 0:
 									return (width / 2) | 0;
 								case 1:
-									var leftWidth = group.a.h;
+									var leftWidth = group.a.j;
 									return elm$core$Basics$floor(((width * leftWidth) / 1000) / 2);
 								default:
-									var leftWidth = group.a.h;
+									var leftWidth = group.a.j;
 									return elm$core$Basics$floor(((width * leftWidth) / 1000) / 2);
 							}
 						}(),
@@ -20940,10 +21100,10 @@ var author$project$Panel$EditorGroup$openEditorButton = F3(
 								case 0:
 									return (width / 2) | 0;
 								case 1:
-									var leftWidth = group.a.h;
+									var leftWidth = group.a.j;
 									return elm$core$Basics$floor((width * (((1000 + leftWidth) / 2) | 0)) / 1000);
 								default:
-									var leftWidth = group.a.h;
+									var leftWidth = group.a.j;
 									var centerWidth = group.a.H;
 									return elm$core$Basics$floor((width * (leftWidth + ((centerWidth / 2) | 0))) / 1000);
 							}
@@ -20956,10 +21116,10 @@ var author$project$Panel$EditorGroup$openEditorButton = F3(
 								case 0:
 									return (width / 2) | 0;
 								case 1:
-									var leftWidth = group.a.h;
+									var leftWidth = group.a.j;
 									return elm$core$Basics$floor((width * ((1000 - leftWidth) / 1000)) / 2);
 								default:
-									var leftWidth = group.a.h;
+									var leftWidth = group.a.j;
 									var centerWidth = group.a.H;
 									return elm$core$Basics$floor(width * ((((1000 + leftWidth) + centerWidth) / 1000) / 2));
 							}
@@ -21065,7 +21225,7 @@ var author$project$Panel$EditorGroup$view = F5(
 					case 1:
 						var left = group.a.R;
 						var center = group.a.e;
-						var leftWidth = group.a.h;
+						var leftWidth = group.a.j;
 						return _List_fromArray(
 							[
 								A8(
@@ -21107,7 +21267,7 @@ var author$project$Panel$EditorGroup$view = F5(
 						var left = group.a.R;
 						var center = group.a.e;
 						var right = group.a.T;
-						var leftWidth = group.a.h;
+						var leftWidth = group.a.j;
 						var centerWidth = group.a.H;
 						return _List_fromArray(
 							[
@@ -21275,12 +21435,12 @@ var author$project$Panel$Tree$makeViewType = F2(
 	});
 var author$project$Panel$Tree$makeEditorTree = F3(
 	function (isFocus, selectRef, _n0) {
-		var editorRef = _n0.j;
-		var children = _n0.l;
-		var icon = _n0.q;
-		var label = _n0.r;
+		var editorRef = _n0.k;
+		var children = _n0.m;
+		var icon = _n0.r;
+		var label = _n0.s;
 		return {
-			l: function () {
+			m: function () {
 				switch (children.$) {
 					case 0:
 						var _n2 = children.a;
@@ -21299,9 +21459,9 @@ var author$project$Panel$Tree$makeEditorTree = F3(
 						return author$project$Panel$Tree$ChildrenNone;
 				}
 			}(),
-			j: editorRef,
-			q: icon,
-			r: label,
+			k: editorRef,
+			r: icon,
+			s: label,
 			bm: _List_Nil,
 			bD: A2(
 				author$project$Panel$Tree$makeViewType,
@@ -21570,12 +21730,12 @@ var author$project$Panel$Tree$viewOpenChildrenItem = F6(
 						]))));
 	});
 var author$project$Panel$Tree$viewTreeItem = function (_n0) {
-	var icon = _n0.q;
-	var label = _n0.r;
-	var editorRef = _n0.j;
+	var icon = _n0.r;
+	var label = _n0.s;
+	var editorRef = _n0.k;
 	var viewType = _n0.bD;
 	var option = _n0.bm;
-	var children = _n0.l;
+	var children = _n0.m;
 	switch (children.$) {
 		case 2:
 			return A5(author$project$Panel$Tree$viewNoChildrenItem, icon, label, editorRef, viewType, option);
@@ -21598,7 +21758,7 @@ var author$project$Panel$Tree$viewTreeItem = function (_n0) {
 var author$project$Panel$Tree$viewTree = F2(
 	function (_n0, model) {
 		var project = _n0.aX;
-		var editorRef = _n0.j;
+		var editorRef = _n0.k;
 		var focus = _n0.az;
 		var width = _n0.ce;
 		return A2(
@@ -21613,7 +21773,7 @@ var author$project$Panel$Tree$viewTree = F2(
 	});
 var author$project$Panel$Tree$view = function (_n0) {
 	var project = _n0.aX;
-	var editorRef = _n0.j;
+	var editorRef = _n0.k;
 	var model = _n0.bZ;
 	var focus = _n0.az;
 	var width = _n0.ce;
@@ -21622,7 +21782,7 @@ var author$project$Panel$Tree$view = function (_n0) {
 			[author$project$Panel$Tree$viewTitle]),
 		A2(
 			author$project$Panel$Tree$viewTree,
-			{j: editorRef, az: focus, aX: project, ce: width},
+			{k: editorRef, az: focus, aX: project, ce: width},
 			model)) : _List_Nil;
 };
 var author$project$View$treePanel = function (model) {
@@ -21654,7 +21814,7 @@ var author$project$View$treePanel = function (model) {
 			elm$html$Html$map(author$project$Model$treePanelMsgToMsg),
 			author$project$Panel$Tree$view(
 				{
-					j: author$project$Model$getActiveEditor(model),
+					k: author$project$Model$getActiveEditor(model),
 					az: author$project$Model$isFocusTreePanel(model),
 					bZ: author$project$Model$getTreePanelModel(model),
 					aX: author$project$Model$getProject(model),
