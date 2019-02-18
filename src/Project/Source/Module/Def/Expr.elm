@@ -3,6 +3,7 @@ module Project.Source.Module.Def.Expr exposing
     , Operator(..)
     , Part(..)
     , Term(..)
+    , allOperator
     , empty
     , getHead
     , getOthers
@@ -13,6 +14,8 @@ module Project.Source.Module.Def.Expr exposing
     , isEmpty
     , make
     , map
+    , opToDescription
+    , opToString
     , removeBlankOpNoneTerm
     , replaceAndInsertHeadLastOp
     , replaceAndInsertHeadLastTerm
@@ -23,9 +26,10 @@ module Project.Source.Module.Def.Expr exposing
     , setOperatorAtOther
     , setTermAtOther
     , termFromMaybeLabel
+    , termToDescription
     , termToString
     , toString
-    , termToDescription, allOperator, opToDescription, opToString)
+    )
 
 import Project.Label as Label
 import Utility.ListExtra as ListExtra
@@ -34,14 +38,14 @@ import Utility.ListExtra as ListExtra
 {-| 式。項と演算子が交互に並んだもの。評価して値を作ることができる
 -}
 type Expr
-    = Expr Term (List ( Operator, Term ))
+    = ExprTermOp Term (List ( Operator, Term ))
 
 
 {-| 先頭の項と演算子と項の組のListから式をつくる
 -}
 make : Term -> List ( Operator, Term ) -> Expr
 make head others =
-    Expr head others
+    ExprTermOp head others
         |> removeBlankOpNoneTerm
 
 
@@ -49,28 +53,28 @@ make head others =
 -}
 empty : Expr
 empty =
-    Expr None []
+    ExprTermOp None []
 
 
 {-| 先頭の項を取得する
 -}
 getHead : Expr -> Term
-getHead (Expr head _) =
+getHead (ExprTermOp head _) =
     head
 
 
 {-| 先頭以外の演算子と項のListを取得する
 -}
 getOthers : Expr -> List ( Operator, Term )
-getOthers (Expr _ others) =
+getOthers (ExprTermOp _ others) =
     others
 
 
 {-| 先頭以外の演算子と項のListを加工する
 -}
 mapOthers : (List ( Operator, Term ) -> List ( Operator, Term )) -> Expr -> Expr
-mapOthers f (Expr head others) =
-    Expr
+mapOthers f (ExprTermOp head others) =
+    ExprTermOp
         head
         (f others)
 
@@ -78,10 +82,10 @@ mapOthers f (Expr head others) =
 {-| 空の演算子と項の連続を取り除く
 -}
 removeBlankOpNoneTerm : Expr -> Expr
-removeBlankOpNoneTerm (Expr head others) =
+removeBlankOpNoneTerm (ExprTermOp head others) =
     removeSetBlankOpNoneTermLoop
         others
-        (Expr head [])
+        (ExprTermOp head [])
 
 
 removeSetBlankOpNoneTermLoop : List ( Operator, Term ) -> Expr -> Expr
@@ -95,33 +99,33 @@ removeSetBlankOpNoneTermLoop rest expr =
 
         ( Blank, term ) :: xs ->
             case expr of
-                Expr None [] ->
+                ExprTermOp None [] ->
                     removeSetBlankOpNoneTermLoop
                         xs
-                        (Expr term [])
+                        (ExprTermOp term [])
 
-                Expr iHead (( iOp, None ) :: iOthers) ->
+                ExprTermOp iHead (( iOp, None ) :: iOthers) ->
                     removeSetBlankOpNoneTermLoop
                         xs
-                        (Expr iHead (( iOp, term ) :: iOthers))
+                        (ExprTermOp iHead (( iOp, term ) :: iOthers))
 
-                Expr iHead iOthers ->
+                ExprTermOp iHead iOthers ->
                     removeSetBlankOpNoneTermLoop
                         xs
-                        (Expr iHead (( Blank, term ) :: iOthers))
+                        (ExprTermOp iHead (( Blank, term ) :: iOthers))
 
         x :: xs ->
             case expr of
-                Expr iHead iOthers ->
+                ExprTermOp iHead iOthers ->
                     removeSetBlankOpNoneTermLoop
                         xs
-                        (Expr iHead (x :: iOthers))
+                        (ExprTermOp iHead (x :: iOthers))
 
 
 {-| 指定位置の演算子を取得
 -}
 getOperatorAt : Int -> Expr -> Maybe Operator
-getOperatorAt index (Expr _ others) =
+getOperatorAt index (ExprTermOp _ others) =
     others
         |> ListExtra.getAt index
         |> Maybe.map Tuple.first
@@ -130,7 +134,7 @@ getOperatorAt index (Expr _ others) =
 {-| 指定位置の項を取得
 -}
 getTermAt : Int -> Expr -> Maybe Term
-getTermAt index (Expr _ others) =
+getTermAt index (ExprTermOp _ others) =
     others
         |> ListExtra.getAt index
         |> Maybe.map Tuple.second
@@ -139,14 +143,14 @@ getTermAt index (Expr _ others) =
 {-| 空かどうか判断
 -}
 isEmpty : Expr -> Bool
-isEmpty (Expr head others) =
+isEmpty (ExprTermOp head others) =
     None == head && others == []
 
 
 {-| 文字列で表現(デバッグ用)
 -}
 toString : Expr -> String
-toString (Expr head others) =
+toString (ExprTermOp head others) =
     termToString head
         ++ (others
                 |> List.map
@@ -159,7 +163,7 @@ toString (Expr head others) =
 
 
 map : (Term -> a) -> (Operator -> a) -> Expr -> List a
-map termF opF (Expr head others) =
+map termF opF (ExprTermOp head others) =
     termF head
         :: (others
                 |> List.concatMap (\( op, term ) -> [ opF op, termF term ])
@@ -167,7 +171,7 @@ map termF opF (Expr head others) =
 
 
 indexedMap : (Int -> Term -> a) -> (Int -> Operator -> a) -> Expr -> List a
-indexedMap termF opF (Expr head others) =
+indexedMap termF opF (ExprTermOp head others) =
     termF 0 head
         :: (others
                 |> List.indexedMap (\i ( op, term ) -> [ opF i op, termF (1 + i) term ])
@@ -176,21 +180,21 @@ indexedMap termF opF (Expr head others) =
 
 
 insertHead : Term -> Operator -> Expr -> Expr
-insertHead term op (Expr head others) =
-    Expr
+insertHead term op (ExprTermOp head others) =
+    ExprTermOp
         term
         (( op, head ) :: others)
 
 
 insertAt : Int -> Operator -> Term -> Expr -> Expr
-insertAt index op term (Expr head others) =
-    Expr
+insertAt index op term (ExprTermOp head others) =
+    ExprTermOp
         head
         (ListExtra.insert index ( op, term ) others)
 
 
 insertABetweenOpAndTerm : Int -> Term -> Operator -> Expr -> Expr
-insertABetweenOpAndTerm index term op (Expr head others) =
+insertABetweenOpAndTerm index term op (ExprTermOp head others) =
     let
         left : ( Operator, Term )
         left =
@@ -210,7 +214,7 @@ insertABetweenOpAndTerm index term op (Expr head others) =
                 |> Maybe.withDefault None
             )
     in
-    Expr
+    ExprTermOp
         head
         (others
             |> ListExtra.setAt index left
@@ -227,8 +231,8 @@ insertABetweenOpAndTerm index term op (Expr head others) =
 
 -}
 replaceAndInsertHeadLastTerm : Term -> List ( Operator, Term ) -> Expr -> Expr
-replaceAndInsertHeadLastTerm term list (Expr _ others) =
-    Expr
+replaceAndInsertHeadLastTerm term list (ExprTermOp _ others) =
+    ExprTermOp
         term
         (list ++ others)
 
@@ -242,8 +246,8 @@ replaceAndInsertHeadLastTerm term list (Expr _ others) =
 
 -}
 replaceAndInsertHeadLastOp : Term -> List ( Operator, Term ) -> Operator -> Expr -> Expr
-replaceAndInsertHeadLastOp headTerm list lastOp (Expr _ others) =
-    Expr
+replaceAndInsertHeadLastOp headTerm list lastOp (ExprTermOp _ others) =
+    ExprTermOp
         headTerm
         (list ++ [ ( lastOp, None ) ] ++ others)
         |> removeBlankOpNoneTerm
@@ -382,7 +386,7 @@ replaceAndInsertTermLastOp index headTerm opTermList lastOp expr =
 
 -}
 setOperatorAtOther : Int -> Operator -> Expr -> Expr
-setOperatorAtOther index op (Expr head others) =
+setOperatorAtOther index op (ExprTermOp head others) =
     let
         term =
             others
@@ -390,7 +394,7 @@ setOperatorAtOther index op (Expr head others) =
                 |> Maybe.map Tuple.second
                 |> Maybe.withDefault None
     in
-    Expr
+    ExprTermOp
         head
         (others |> ListExtra.setAt index ( op, term ))
 
@@ -398,7 +402,7 @@ setOperatorAtOther index op (Expr head others) =
 {-| 指定位置の項を置き換える
 -}
 setTermAtOther : Int -> Term -> Expr -> Expr
-setTermAtOther index term (Expr head others) =
+setTermAtOther index term (ExprTermOp head others) =
     let
         op =
             others
@@ -406,7 +410,7 @@ setTermAtOther index term (Expr head others) =
                 |> Maybe.map Tuple.first
                 |> Maybe.withDefault Blank
     in
-    Expr
+    ExprTermOp
         head
         (others |> ListExtra.setAt index ( op, term ))
 

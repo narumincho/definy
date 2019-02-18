@@ -11,7 +11,7 @@ convert def =
 
 
 exprToSafeExpr : Expr.Expr -> Maybe SafeExpr
-exprToSafeExpr (Expr.Expr head others) =
+exprToSafeExpr (Expr.ExprTermOp head others) =
     let
         safeHeadMaybe : Maybe SafeTerm
         safeHeadMaybe =
