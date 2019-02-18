@@ -35,7 +35,13 @@ type Model
     = Model
         { moduleRef : Project.Source.ModuleRef
         , active : Active
+        , editState : Maybe EditState
         }
+
+
+type EditState
+    = EditStateText { row : Int, digit : Int }
+    | EditStateSelect { suggestIndex : Int, searchText : String }
 
 
 type Msg
@@ -85,8 +91,8 @@ type PartDefListActive
 
 type PartDefActive
     = ActivePartDefSelf
-    | ActivePartDefName (Maybe ( List ( Char, Bool ), Int ))
-    | ActivePartDefType (Maybe ( List ( Char, Bool ), Int ))
+    | ActivePartDefName
+    | ActivePartDefType
     | ActivePartDefExpr TermOpPos
 
 
@@ -122,15 +128,15 @@ type SectionPos
 当たっていたらKey.ArrowLeftなどのキー入力をpreventDefaultしない。ブラウザの基本機能(訂正など)を阻止しない
 -}
 isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
-isFocusDefaultUi (Model { active }) =
-    case active of
-        ActiveDescription ActiveDescriptionText ->
+isFocusDefaultUi (Model { active, editState }) =
+    case ( active, editState ) of
+        ( ActiveDescription ActiveDescriptionText, Just (EditStateText _) ) ->
             Just Panel.DefaultUi.MultiLineTextField
 
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefName (Just _) )) ->
+        ( ActivePartDefList (ActivePartDef ( _, ActivePartDefName )), Just (EditStateText _) ) ->
             Just Panel.DefaultUi.SingleLineTextField
 
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefType (Just _) )) ->
+        ( ActivePartDefList (ActivePartDef ( _, ActivePartDefType )), Just (EditStateText _) ) ->
             Just Panel.DefaultUi.SingleLineTextField
 
         _ ->
@@ -142,6 +148,7 @@ initModel moduleRef =
     Model
         { moduleRef = moduleRef
         , active = ActiveNone
+        , editState = Nothing
         }
 
 
@@ -244,10 +251,10 @@ activeTo active (Model rec) =
         ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
             [ EmitFocusEditTextAea ]
 
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefName Nothing )) ->
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefName )) ->
             [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
 
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefType Nothing )) ->
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefType )) ->
             [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
 
         ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr TermOpSelf )) ->
@@ -261,9 +268,6 @@ activeTo active (Model rec) =
 
         ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr (TermOpOp _) )) ->
             [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
-
-        _ ->
-            []
     )
 
 
@@ -288,17 +292,17 @@ selectLeft module_ active =
             -- 定義から前の定義へ
             ActivePartDefList (ActivePartDef ( index - 1, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
             -- 名前から定義へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
             -- 型から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefName ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             -- 式から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead )) ->
             -- 先頭の項の前から式へ
@@ -339,13 +343,13 @@ selectRight module_ active =
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
             -- 定義から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefName ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
             -- 名前から型へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
             -- 型から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
@@ -420,17 +424,17 @@ selectUp module_ active =
             -- 定義から前の定義へ
             ActivePartDefList (ActivePartDef ( index - 1, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
             -- 名前から定義へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
             -- 型から定義へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             -- 式から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead )) ->
             -- 先頭の項の前から式へ
@@ -443,9 +447,6 @@ selectUp module_ active =
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp _) )) ->
             -- 演算子から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
-
-        _ ->
-            active
 
 
 {-| 選択を下へ移動して、選択する対象を変える
@@ -465,11 +466,11 @@ selectDown module_ active =
             -- 定義から次の定義へ
             ActivePartDefList (ActivePartDef ( min (ModuleWithCache.getDefNum module_ - 1) (index + 1), ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
             -- 名前から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
             -- 型から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
@@ -512,7 +513,7 @@ selectFirstChild module_ active =
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
             -- 定義から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefName ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             -- 式から先頭の項へ
@@ -558,17 +559,11 @@ selectParent module_ active =
         ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
             ActivePartDefList ActivePartDefListSelf
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just _) )) ->
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just _) )) ->
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
@@ -582,17 +577,24 @@ selectParent module_ active =
 
 suggestionPrevOrSelectUp : ModuleWithCache.Module -> Project.Project -> Model -> ( Model, List Emit )
 suggestionPrevOrSelectUp module_ project (Model rec) =
-    case rec.active of
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex )) )) ->
+    case rec.editState of
+        Just (EditStateSelect { suggestIndex, searchText }) ->
             ( Model
                 { rec
-                    | active =
-                        ActivePartDefList
-                            (ActivePartDef
-                                ( index, ActivePartDefName (Just ( textAreaValue, max 0 (suggestIndex - 1) )) )
+                    | editState =
+                        Just
+                            (EditStateSelect
+                                { suggestIndex = max 0 (suggestIndex - 1)
+                                , searchText = searchText
+                                }
                             )
                 }
-            , suggestionSelectChangedThenNameChangeEmit suggestIndex index rec.moduleRef
+            , case rec.active of
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+                    suggestionSelectChangedThenNameChangeEmit suggestIndex index rec.moduleRef
+
+                _ ->
+                    []
             )
 
         _ ->
@@ -601,17 +603,43 @@ suggestionPrevOrSelectUp module_ project (Model rec) =
 
 suggestionPrevOrSelectDown : ModuleWithCache.Module -> Project.Project -> Model -> ( Model, List Emit )
 suggestionPrevOrSelectDown module_ project (Model rec) =
-    case rec.active of
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex )) )) ->
+    case rec.editState of
+        Just (EditStateSelect { suggestIndex, searchText }) ->
             ( Model
                 { rec
-                    | active =
-                        ActivePartDefList
-                            (ActivePartDef
-                                ( index, ActivePartDefName (Just ( textAreaValue, suggestIndex + 1 )) )
+                    | editState =
+                        Just
+                            (EditStateSelect
+                                { suggestIndex = suggestIndex + 1
+                                , searchText = searchText
+                                }
                             )
                 }
-            , suggestionSelectChangedThenNameChangeEmit suggestIndex index rec.moduleRef
+            , case rec.active of
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+                    suggestionSelectChangedThenNameChangeEmit suggestIndex index rec.moduleRef
+
+                _ ->
+                    []
+            )
+
+        Just (EditStateText _) ->
+            ( Model
+                { rec
+                    | editState =
+                        Just
+                            (EditStateSelect
+                                { suggestIndex = 1
+                                , searchText = "検索用文字列"
+                                }
+                            )
+                }
+            , case rec.active of
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+                    suggestionSelectChangedThenNameChangeEmit 1 index rec.moduleRef
+
+                _ ->
+                    []
             )
 
         _ ->
@@ -659,7 +687,7 @@ input string targetModule (Model rec) =
                 , [ EmitChangeReadMe { text = string, ref = rec.moduleRef } ]
                 )
 
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
                 let
                     ( active, emitList ) =
                         parserBeginWithName string index rec.moduleRef
@@ -668,7 +696,7 @@ input string targetModule (Model rec) =
                 , emitList
                 )
 
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType _ )) ->
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
                 let
                     ( active, emitList ) =
                         parserBeginWithType string index rec.moduleRef
@@ -722,20 +750,20 @@ parserBeginWithName : String -> Int -> Project.Source.ModuleRef -> ( Active, Lis
 parserBeginWithName string index moduleRef =
     case Parser.beginWithName (Parser.SimpleChar.fromString string) of
         Parser.BeginWithNameEndName { name, textAreaValue } ->
-            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefName (Just ( textAreaValue, 0 )) ))
+            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefName ))
             , [ EmitChangeName { name = name, index = index, ref = moduleRef } ]
             )
 
         Parser.BeginWithNameEndType { name, type_, textAreaValue } ->
             if Type.isEmpty type_ then
-                ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
+                ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
                 , [ EmitChangeName { name = name, index = index, ref = moduleRef }
                   , EmitSetTextAreaValue ""
                   ]
                 )
 
             else
-                ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just ( textAreaValue, 0 )) ))
+                ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
                 , [ EmitChangeName { name = name, index = index, ref = moduleRef }
                   , EmitChangeType { type_ = type_, index = index, ref = moduleRef }
                   , textAreaValueToSetTextEmit textAreaValue
@@ -786,7 +814,7 @@ parserBeginWithType : String -> Int -> Project.Source.ModuleRef -> ( Active, Lis
 parserBeginWithType string index moduleRef =
     case Parser.beginWithType (Parser.SimpleChar.fromString string) of
         Parser.BeginWithTypeEndType { type_, textAreaValue } ->
-            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just ( textAreaValue, 0 )) ))
+            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
             , [ EmitChangeType { type_ = type_, index = index, ref = moduleRef } ]
             )
 
@@ -1062,20 +1090,14 @@ partDefActiveToString partDefActive =
         ActivePartDefSelf ->
             "全体"
 
-        ActivePartDefName Nothing ->
-            "名前"
+        ActivePartDefName ->
+            "の名前"
 
-        ActivePartDefName (Just _) ->
-            "名前を編集中"
-
-        ActivePartDefType Nothing ->
-            "型"
-
-        ActivePartDefType (Just _) ->
-            "型を編集中"
+        ActivePartDefType ->
+            "の型"
 
         ActivePartDefExpr termOpPos ->
-            "式" ++ termOpPosToString termOpPos
+            "の式" ++ termOpPosToString termOpPos
 
 
 termOpPosToString : TermOpPos -> String
@@ -1413,8 +1435,8 @@ partDefViewNameAndType name type_ partDefActiveMaybe =
         [ subClass "partDef-nameAndType" ]
         [ partDefViewName name
             (case partDefActiveMaybe of
-                Just (ActivePartDefName textAreaValueAndIndexMaybe) ->
-                    Just textAreaValueAndIndexMaybe
+                Just ActivePartDefName ->
+                    Just Nothing
 
                 _ ->
                     Nothing
@@ -1422,8 +1444,8 @@ partDefViewNameAndType name type_ partDefActiveMaybe =
         , Html.text ":"
         , partDefViewType type_
             (case partDefActiveMaybe of
-                Just (ActivePartDefType textAreaValueAndIndexMaybe) ->
-                    Just textAreaValueAndIndexMaybe
+                Just ActivePartDefType ->
+                    Just Nothing
 
                 _ ->
                     Nothing
@@ -1458,7 +1480,7 @@ partDefNameNormalView name isActive =
                             []
 
                         else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefName Nothing, True )) ]
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefName, True )) ]
                        )
                 )
                 [ Html.text nameString ]
@@ -1474,7 +1496,7 @@ partDefNameNormalView name isActive =
                             []
 
                         else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefName Nothing, True )) ]
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefName, True )) ]
                        )
                 )
                 [ Html.text "NO NAME" ]
@@ -1579,7 +1601,7 @@ partDefTypeNormalView type_ isActive =
                             []
 
                         else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefType Nothing, True )) ]
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefType, True )) ]
                        )
                 )
                 [ Html.text nameString ]
@@ -1595,7 +1617,7 @@ partDefTypeNormalView type_ isActive =
                             []
 
                         else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefType Nothing, True )) ]
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefType, True )) ]
                        )
                 )
                 [ Html.text "NO TYPE" ]
