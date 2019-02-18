@@ -600,11 +600,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.a2.ak === region.bh.ak)
+	if (region.a2.al === region.bh.al)
 	{
-		return 'on line ' + region.a2.ak;
+		return 'on line ' + region.a2.al;
 	}
-	return 'on lines ' + region.a2.ak + ' through ' + region.bh.ak;
+	return 'on lines ' + region.a2.al + ' through ' + region.bh.al;
 }
 
 
@@ -3960,7 +3960,7 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 		impl.cd,
 		impl.b9,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.ap && impl.ap(sendToApp)
+			var divertHrefToApp = impl.aq && impl.aq(sendToApp)
 			var view = impl.cf;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
@@ -4035,7 +4035,7 @@ function _Browser_application(impl)
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		ap: function(sendToApp)
+		aq: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -5213,7 +5213,7 @@ var author$project$Project$Source$getModule = F2(
 		}
 	});
 var author$project$Project$Source$ModuleWithCache$defAndResultGetDef = function (_n0) {
-	var def = _n0.ah;
+	var def = _n0.ai;
 	return def;
 };
 var author$project$Project$Source$ModuleWithCache$getDefAndResultList = function (_n0) {
@@ -6220,7 +6220,7 @@ var author$project$Project$Source$ModuleWithCache$make = function (_n0) {
 		D: A2(
 			elm$core$List$map,
 			function (def) {
-				return {bd: elm$core$Maybe$Nothing, ah: def, aj: elm$core$Maybe$Nothing};
+				return {bd: elm$core$Maybe$Nothing, ai: def, ak: elm$core$Maybe$Nothing};
 			},
 			A2(elm$core$List$take, 65535, defList)),
 		aV: name,
@@ -6369,7 +6369,7 @@ var author$project$Project$init = {ba: author$project$Project$projectAuthor, bN:
 var author$project$Model$initModel = {
 	aQ: author$project$Panel$EditorGroup$initModel,
 	aC: 1,
-	am: _List_Nil,
+	an: _List_Nil,
 	a_: author$project$Project$init,
 	N: author$project$Model$SubModeNone,
 	a4: author$project$Panel$Tree$initModel,
@@ -9110,7 +9110,7 @@ var author$project$Project$Source$ModuleWithCache$addDef = F2(
 					rec.D,
 					_List_fromArray(
 						[
-							{bd: elm$core$Maybe$Nothing, ah: def, aj: elm$core$Maybe$Nothing}
+							{bd: elm$core$Maybe$Nothing, ai: def, ak: elm$core$Maybe$Nothing}
 						]))
 			});
 	});
@@ -9152,7 +9152,7 @@ var author$project$Project$Source$ModuleWithCache$setDef = F3(
 				D: A3(
 					author$project$Utility$ListExtra$setAt,
 					index,
-					{bd: elm$core$Maybe$Nothing, ah: def, aj: elm$core$Maybe$Nothing},
+					{bd: elm$core$Maybe$Nothing, ai: def, ak: elm$core$Maybe$Nothing},
 					rec.D)
 			});
 	});
@@ -10074,14 +10074,14 @@ var author$project$Parser$Expr$parseInPart = F4(
 	});
 var author$project$Parser$Expr$intLiteralIntermediatePush = F2(
 	function (num, _n0) {
-		var minus = _n0.al;
-		var digits = _n0.ai;
+		var minus = _n0.am;
+		var digits = _n0.aj;
 		return {
-			ai: _Utils_ap(
+			aj: _Utils_ap(
 				digits,
 				_List_fromArray(
 					[num])),
-			al: minus
+			am: minus
 		};
 	});
 var author$project$Parser$SimpleChar$numberToInt = function (number) {
@@ -10119,8 +10119,8 @@ var author$project$Parser$SimpleChar$listNumberToIntLoop = function (list) {
 };
 var author$project$Parser$SimpleChar$listNumberToInt = A2(elm$core$Basics$composeR, elm$core$List$reverse, author$project$Parser$SimpleChar$listNumberToIntLoop);
 var author$project$Parser$Expr$intLiteralIntermediateToInt = function (_n0) {
-	var minus = _n0.al;
-	var digits = _n0.ai;
+	var minus = _n0.am;
+	var digits = _n0.aj;
 	return minus ? (-author$project$Parser$SimpleChar$listNumberToInt(digits)) : author$project$Parser$SimpleChar$listNumberToInt(digits);
 };
 var author$project$Parser$Expr$parseIntLiteral = F4(
@@ -10524,9 +10524,9 @@ var author$project$Parser$Expr$parse = F2(
 					author$project$Parser$Expr$parseIntLiteral,
 					leftParenthesis,
 					{
-						ai: _List_fromArray(
+						aj: _List_fromArray(
 							[num]),
-						al: true
+						am: true
 					},
 					others,
 					_List_fromArray(
@@ -10622,9 +10622,9 @@ var author$project$Parser$Expr$parse = F2(
 									author$project$Parser$Expr$parseIntLiteral,
 									leftParenthesis,
 									{
-										ai: _List_fromArray(
+										aj: _List_fromArray(
 											[num]),
-										al: false
+										am: false
 									},
 									others,
 									_List_fromArray(
@@ -13357,15 +13357,15 @@ var author$project$Panel$Editor$Module$suggestionPrevOrSelectDown = F3(
 		var _n10 = rec.q;
 		if (!_n10.$) {
 			if (_n10.a.$ === 1) {
-				var suggestIndex = _n10.a.a.aq;
-				var searchText = _n10.a.a.ao;
+				var suggestIndex = _n10.a.a.af;
+				var searchText = _n10.a.a.ap;
 				return _Utils_Tuple2(
 					_Utils_update(
 						rec,
 						{
 							q: elm$core$Maybe$Just(
 								author$project$Panel$Editor$Module$EditStateSelect(
-									{ao: searchText, aq: suggestIndex + 1}))
+									{ap: searchText, af: suggestIndex + 1}))
 						}),
 					function () {
 						var _n11 = rec.h;
@@ -13386,7 +13386,7 @@ var author$project$Panel$Editor$Module$suggestionPrevOrSelectDown = F3(
 						{
 							q: elm$core$Maybe$Just(
 								author$project$Panel$Editor$Module$EditStateSelect(
-									{ao: '検索用文字列', aq: 1}))
+									{ap: '検索用文字列', af: 1}))
 						}),
 					function () {
 						var _n15 = rec.h;
@@ -13409,8 +13409,8 @@ var author$project$Panel$Editor$Module$suggestionPrevOrSelectUp = F3(
 		var rec = _n4;
 		var _n5 = rec.q;
 		if ((!_n5.$) && (_n5.a.$ === 1)) {
-			var suggestIndex = _n5.a.a.aq;
-			var searchText = _n5.a.a.ao;
+			var suggestIndex = _n5.a.a.af;
+			var searchText = _n5.a.a.ap;
 			return _Utils_Tuple2(
 				_Utils_update(
 					rec,
@@ -13418,8 +13418,8 @@ var author$project$Panel$Editor$Module$suggestionPrevOrSelectUp = F3(
 						q: elm$core$Maybe$Just(
 							author$project$Panel$Editor$Module$EditStateSelect(
 								{
-									ao: searchText,
-									aq: A2(elm$core$Basics$max, 0, suggestIndex - 1)
+									ap: searchText,
+									af: A2(elm$core$Basics$max, 0, suggestIndex - 1)
 								}))
 					}),
 				function () {
@@ -14753,7 +14753,7 @@ var author$project$Model$pushMsgListToMsgQueue = F2(
 		return _Utils_update(
 			rec,
 			{
-				am: _Utils_ap(rec.am, msgList)
+				an: _Utils_ap(rec.an, msgList)
 			});
 	});
 var author$project$Compiler$Marger$codeSection = function (codeList) {
@@ -15018,7 +15018,7 @@ var author$project$Project$Source$ModuleWithCache$defAndResultSetEvalResult = F2
 		return _Utils_update(
 			rec,
 			{
-				aj: elm$core$Maybe$Just(evalResult)
+				ak: elm$core$Maybe$Just(evalResult)
 			});
 	});
 var author$project$Project$Source$ModuleWithCache$setEvalResult = F2(
@@ -15098,10 +15098,10 @@ var author$project$Model$setWindowSize = F2(
 var author$project$Model$shiftMsgListFromMsgQueue = function (_n0) {
 	var rec = _n0;
 	return _Utils_Tuple2(
-		rec.am,
+		rec.an,
 		_Utils_update(
 			rec,
-			{am: _List_Nil}));
+			{an: _List_Nil}));
 };
 var author$project$Model$SubModeGutter = function (a) {
 	return {$: 2, a: a};
@@ -15401,7 +15401,7 @@ var author$project$NSvg$Polygon = function (a) {
 var author$project$NSvg$polygon = F3(
 	function (points, strokeStyle, fillStyle) {
 		return author$project$NSvg$Polygon(
-			{W: elm$core$Maybe$Nothing, B: fillStyle, an: points, v: strokeStyle});
+			{W: elm$core$Maybe$Nothing, B: fillStyle, ao: points, v: strokeStyle});
 	});
 var author$project$NSvg$StrokeNone = {$: 0};
 var author$project$NSvg$strokeNone = author$project$NSvg$StrokeNone;
@@ -15519,14 +15519,14 @@ var author$project$NSvg$translate = F2(
 					_Utils_update(
 						rec,
 						{
-							an: A2(
+							ao: A2(
 								elm$core$List$map,
 								function (_n2) {
 									var px = _n2.a;
 									var py = _n2.b;
 									return _Utils_Tuple2(px + x, py + y);
 								},
-								rec.an)
+								rec.ao)
 						}));
 			case 3:
 				var rec = nSvgElement.a;
@@ -17029,7 +17029,7 @@ var author$project$NSvg$elementToSvg = function (nSvgElement) {
 						author$project$NSvg$fillStyleToSvgAttributes(fillStyle))),
 				_List_Nil);
 		case 2:
-			var points = nSvgElement.a.an;
+			var points = nSvgElement.a.ao;
 			var strokeStyle = nSvgElement.a.v;
 			var fillStyle = nSvgElement.a.B;
 			var clickMsg = nSvgElement.a.W;
@@ -17170,7 +17170,7 @@ var author$project$NSvg$polygonWithClickEvent = F4(
 			{
 				W: elm$core$Maybe$Just(cliskMsg),
 				B: fillStyle,
-				an: points,
+				ao: points,
 				v: strokeStyle
 			});
 	});
@@ -19369,6 +19369,9 @@ var author$project$Panel$Editor$Module$addDefButton = A2(
 		[
 			elm$html$Html$text('+ 新しいパーツの定義')
 		]));
+var author$project$Panel$Editor$Module$DefActiveTo = function (a) {
+	return {$: 0, a: a};
+};
 var author$project$Panel$Editor$Module$activeHeadTermLeft = A2(
 	elm$html$Html$div,
 	_List_fromArray(
@@ -19524,8 +19527,8 @@ var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
 };
 var elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
 var elm$html$Html$map = elm$virtual_dom$VirtualDom$map;
-var author$project$Panel$Editor$Module$partDefViewExpr = F2(
-	function (expr, partDefExprActiveMaybe) {
+var author$project$Panel$Editor$Module$partDefViewExpr = F3(
+	function (expr, partDefExprActiveMaybe, editStateMaybe) {
 		return A2(
 			elm$html$Html$div,
 			_Utils_ap(
@@ -19548,7 +19551,8 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 								'click',
 								elm$json$Json$Decode$succeed(
 									_Utils_Tuple2(
-										author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$TermOpSelf),
+										author$project$Panel$Editor$Module$DefActiveTo(
+											author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$TermOpSelf)),
 										true)))
 							]);
 					}
@@ -19574,8 +19578,9 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 								A2(
 								elm$html$Html$map,
 								elm$core$Basics$always(
-									author$project$Panel$Editor$Module$ActivePartDefExpr(
-										A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$NoChildren))),
+									author$project$Panel$Editor$Module$DefActiveTo(
+										author$project$Panel$Editor$Module$ActivePartDefExpr(
+											A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$NoChildren)))),
 								A3(
 									author$project$Panel$Editor$Module$termViewOutput,
 									author$project$Project$Source$Module$Def$Expr$getHead(expr),
@@ -19592,7 +19597,11 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 							]),
 						A2(
 							elm$core$List$map,
-							elm$html$Html$map(author$project$Panel$Editor$Module$ActivePartDefExpr),
+							elm$html$Html$map(
+								function (m) {
+									return author$project$Panel$Editor$Module$DefActiveTo(
+										author$project$Panel$Editor$Module$ActivePartDefExpr(m));
+								}),
 							elm$core$List$concat(
 								A2(
 									elm$core$List$indexedMap,
@@ -19635,6 +19644,9 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 										}),
 									author$project$Project$Source$Module$Def$Expr$getOthers(expr))))))));
 	});
+var author$project$Panel$Editor$Module$DefInput = function (a) {
+	return {$: 1, a: a};
+};
 var elm$svg$Svg$Attributes$class = _VirtualDom_attribute('class');
 var author$project$NSvg$toHtmlWithClass = F3(
 	function (className, _n0, children) {
@@ -19761,108 +19773,133 @@ var author$project$Panel$Editor$Module$suggestionName = F2(
 						elm$core$Tuple$mapSecond(elm$html$Html$text),
 						author$project$Panel$Editor$Module$nameSuggestList))));
 	});
-var author$project$Panel$Editor$Module$textAreaValueToListHtml = elm$core$List$map(
-	function (_n0) {
-		var _char = _n0.a;
-		var bool = _n0.b;
-		return A2(
-			elm$html$Html$div,
-			_List_fromArray(
-				[
-					author$project$Panel$Editor$Module$subClass(
-					bool ? 'partDef-okChar' : 'partDef-errChar')
-				]),
-			_List_fromArray(
-				[
-					elm$html$Html$text(
-					elm$core$String$fromChar(_char))
-				]));
-	});
-var author$project$Panel$Editor$Module$partDefNameEditView = F3(
-	function (name, textAreaValue, suggestIndex) {
+var author$project$Panel$Editor$Module$partDefNameEditView = F2(
+	function (name, suggestIndex) {
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
 					author$project$Panel$Editor$Module$subClass('partDef-name-edit')
 				]),
-			_Utils_ap(
-				author$project$Panel$Editor$Module$textAreaValueToListHtml(textAreaValue),
-				_List_fromArray(
-					[
-						A2(author$project$Panel$Editor$Module$suggestionName, name, suggestIndex)
-					])));
-	});
-var author$project$Panel$Editor$Module$partDefNameNormalView = F2(
-	function (name, isActive) {
-		var _n0 = author$project$Project$Source$Module$Def$Name$toString(name);
-		if (!_n0.$) {
-			var nameString = _n0.a;
-			return A2(
-				elm$html$Html$div,
-				_Utils_ap(
+			_List_fromArray(
+				[
+					A2(
+					elm$html$Html$textarea,
 					_List_fromArray(
 						[
-							author$project$Panel$Editor$Module$subClassList(
-							_List_fromArray(
-								[
-									_Utils_Tuple2('partDef-name', true),
-									_Utils_Tuple2('partDef-element-active', isActive)
-								]))
+							elm$html$Html$Attributes$class('partDef-hideTextArea'),
+							elm$html$Html$Attributes$id('edit'),
+							elm$html$Html$Events$onInput(author$project$Panel$Editor$Module$DefInput)
 						]),
-					isActive ? _List_Nil : _List_fromArray(
-						[
-							A2(
-							elm$html$Html$Events$stopPropagationOn,
-							'click',
-							elm$json$Json$Decode$succeed(
-								_Utils_Tuple2(author$project$Panel$Editor$Module$ActivePartDefName, true)))
-						])),
-				_List_fromArray(
-					[
-						elm$html$Html$text(nameString)
-					]));
-		} else {
-			return A2(
-				elm$html$Html$div,
-				_Utils_ap(
+					_List_Nil),
+					A2(author$project$Panel$Editor$Module$suggestionName, name, suggestIndex)
+				]));
+	});
+var author$project$Panel$Editor$Module$partDefNameNormalView = function (name) {
+	var _n0 = author$project$Project$Source$Module$Def$Name$toString(name);
+	if (!_n0.$) {
+		var nameString = _n0.a;
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDef-name'),
+					A2(
+					elm$html$Html$Events$stopPropagationOn,
+					'click',
+					elm$json$Json$Decode$succeed(
+						_Utils_Tuple2(
+							author$project$Panel$Editor$Module$DefActiveTo(author$project$Panel$Editor$Module$ActivePartDefName),
+							true)))
+				]),
+			_List_fromArray(
+				[
+					elm$html$Html$text(nameString)
+				]));
+	} else {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDef-noName'),
+					A2(
+					elm$html$Html$Events$stopPropagationOn,
+					'click',
+					elm$json$Json$Decode$succeed(
+						_Utils_Tuple2(
+							author$project$Panel$Editor$Module$DefActiveTo(author$project$Panel$Editor$Module$ActivePartDefName),
+							true)))
+				]),
+			_List_fromArray(
+				[
+					elm$html$Html$text('NO NAME')
+				]));
+	}
+};
+var author$project$Panel$Editor$Module$partDefNameSelectView = function (name) {
+	var _n0 = author$project$Project$Source$Module$Def$Name$toString(name);
+	if (!_n0.$) {
+		var nameString = _n0.a;
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDef-name'),
+					author$project$Panel$Editor$Module$subClass('partDef-name-select')
+				]),
+			_List_fromArray(
+				[
+					elm$html$Html$text(nameString),
+					A2(
+					elm$html$Html$textarea,
 					_List_fromArray(
 						[
-							author$project$Panel$Editor$Module$subClassList(
-							_List_fromArray(
-								[
-									_Utils_Tuple2('partDef-noName', true),
-									_Utils_Tuple2('partDef-element-active', isActive)
-								]))
+							elm$html$Html$Attributes$class('partDef-hideTextArea'),
+							elm$html$Html$Attributes$id('edit'),
+							elm$html$Html$Events$onInput(author$project$Panel$Editor$Module$DefInput)
 						]),
-					isActive ? _List_Nil : _List_fromArray(
+					_List_Nil)
+				]));
+	} else {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDef-noName'),
+					author$project$Panel$Editor$Module$subClass('partDef-element-active')
+				]),
+			_List_fromArray(
+				[
+					elm$html$Html$text('NO NAME'),
+					A2(
+					elm$html$Html$textarea,
+					_List_fromArray(
 						[
-							A2(
-							elm$html$Html$Events$stopPropagationOn,
-							'click',
-							elm$json$Json$Decode$succeed(
-								_Utils_Tuple2(author$project$Panel$Editor$Module$ActivePartDefName, true)))
-						])),
-				_List_fromArray(
-					[
-						elm$html$Html$text('NO NAME')
-					]));
-		}
-	});
+							elm$html$Html$Attributes$class('partDef-hideTextArea'),
+							elm$html$Html$Attributes$id('edit'),
+							elm$html$Html$Events$onInput(author$project$Panel$Editor$Module$DefInput)
+						]),
+					_List_Nil)
+				]));
+	}
+};
 var author$project$Panel$Editor$Module$partDefViewName = F2(
-	function (name, textAreaValueAndIndexMaybeMaybe) {
-		if (!textAreaValueAndIndexMaybeMaybe.$) {
-			if (!textAreaValueAndIndexMaybeMaybe.a.$) {
-				var _n1 = textAreaValueAndIndexMaybeMaybe.a.a;
-				var textAreaValue = _n1.a;
-				var suggestIndex = _n1.b;
-				return A3(author$project$Panel$Editor$Module$partDefNameEditView, name, textAreaValue, suggestIndex);
+	function (name, editStateMaybeMaybe) {
+		if (!editStateMaybeMaybe.$) {
+			if (!editStateMaybeMaybe.a.$) {
+				if (!editStateMaybeMaybe.a.a.$) {
+					var _n1 = editStateMaybeMaybe.a.a;
+					return A2(author$project$Panel$Editor$Module$partDefNameEditView, name, 0);
+				} else {
+					var suggestIndex = editStateMaybeMaybe.a.a.a.af;
+					return A2(author$project$Panel$Editor$Module$partDefNameEditView, name, suggestIndex);
+				}
 			} else {
-				var _n2 = textAreaValueAndIndexMaybeMaybe.a;
-				return A2(author$project$Panel$Editor$Module$partDefNameNormalView, name, true);
+				var _n2 = editStateMaybeMaybe.a;
+				return author$project$Panel$Editor$Module$partDefNameSelectView(name);
 			}
 		} else {
-			return A2(author$project$Panel$Editor$Module$partDefNameNormalView, name, false);
+			return author$project$Panel$Editor$Module$partDefNameNormalView(name);
 		}
 	});
 var author$project$Project$Source$Module$Def$Type$validTypeToLabel = function (validType) {
@@ -19953,6 +19990,23 @@ var author$project$Panel$Editor$Module$suggestionType = F2(
 					true)
 				]));
 	});
+var author$project$Panel$Editor$Module$textAreaValueToListHtml = elm$core$List$map(
+	function (_n0) {
+		var _char = _n0.a;
+		var bool = _n0.b;
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass(
+					bool ? 'partDef-okChar' : 'partDef-errChar')
+				]),
+			_List_fromArray(
+				[
+					elm$html$Html$text(
+					elm$core$String$fromChar(_char))
+				]));
+	});
 var author$project$Panel$Editor$Module$partDefTypeEditView = F3(
 	function (type_, textAreaValue, suggestIndex) {
 		return A2(
@@ -19991,7 +20045,9 @@ var author$project$Panel$Editor$Module$partDefTypeNormalView = F2(
 							elm$html$Html$Events$stopPropagationOn,
 							'click',
 							elm$json$Json$Decode$succeed(
-								_Utils_Tuple2(author$project$Panel$Editor$Module$ActivePartDefType, true)))
+								_Utils_Tuple2(
+									author$project$Panel$Editor$Module$DefActiveTo(author$project$Panel$Editor$Module$ActivePartDefType),
+									true)))
 						])),
 				_List_fromArray(
 					[
@@ -20016,7 +20072,9 @@ var author$project$Panel$Editor$Module$partDefTypeNormalView = F2(
 							elm$html$Html$Events$stopPropagationOn,
 							'click',
 							elm$json$Json$Decode$succeed(
-								_Utils_Tuple2(author$project$Panel$Editor$Module$ActivePartDefType, true)))
+								_Utils_Tuple2(
+									author$project$Panel$Editor$Module$DefActiveTo(author$project$Panel$Editor$Module$ActivePartDefType),
+									true)))
 						])),
 				_List_fromArray(
 					[
@@ -20024,8 +20082,8 @@ var author$project$Panel$Editor$Module$partDefTypeNormalView = F2(
 					]));
 		}
 	});
-var author$project$Panel$Editor$Module$partDefViewType = F2(
-	function (type_, textAreaValueAndIndexMaybeMaybe) {
+var author$project$Panel$Editor$Module$partDefViewType = F3(
+	function (type_, textAreaValueAndIndexMaybeMaybe, editStateMaybe) {
 		if (!textAreaValueAndIndexMaybeMaybe.$) {
 			if (!textAreaValueAndIndexMaybeMaybe.a.$) {
 				var _n1 = textAreaValueAndIndexMaybeMaybe.a.a;
@@ -20040,8 +20098,8 @@ var author$project$Panel$Editor$Module$partDefViewType = F2(
 			return A2(author$project$Panel$Editor$Module$partDefTypeNormalView, type_, false);
 		}
 	});
-var author$project$Panel$Editor$Module$partDefViewNameAndType = F3(
-	function (name, type_, partDefActiveMaybe) {
+var author$project$Panel$Editor$Module$partDefViewNameAndType = F4(
+	function (name, type_, partDefActiveMaybe, editStateMaybe) {
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
@@ -20056,13 +20114,13 @@ var author$project$Panel$Editor$Module$partDefViewNameAndType = F3(
 					function () {
 						if ((!partDefActiveMaybe.$) && (partDefActiveMaybe.a.$ === 1)) {
 							var _n1 = partDefActiveMaybe.a;
-							return elm$core$Maybe$Just(elm$core$Maybe$Nothing);
+							return elm$core$Maybe$Just(editStateMaybe);
 						} else {
 							return elm$core$Maybe$Nothing;
 						}
 					}()),
 					elm$html$Html$text(':'),
-					A2(
+					A3(
 					author$project$Panel$Editor$Module$partDefViewType,
 					type_,
 					function () {
@@ -20072,7 +20130,8 @@ var author$project$Panel$Editor$Module$partDefViewNameAndType = F3(
 						} else {
 							return elm$core$Maybe$Nothing;
 						}
-					}())
+					}(),
+					editStateMaybe)
 				]));
 	});
 var author$project$Compiler$NoOp$coreEnumToString = function (coreEnum) {
@@ -20188,11 +20247,11 @@ var author$project$Project$Source$ModuleWithCache$defAndResultGetCompileResult =
 	return compileResult;
 };
 var author$project$Project$Source$ModuleWithCache$defAndResultGetEvalResult = function (_n0) {
-	var evalResult = _n0.aj;
+	var evalResult = _n0.ak;
 	return evalResult;
 };
-var author$project$Panel$Editor$Module$partDefView = F3(
-	function (index, defAndResult, partDefActiveMaybe) {
+var author$project$Panel$Editor$Module$partDefView = F4(
+	function (index, defAndResult, partDefActiveMaybe, editSateMaybe) {
 		var evalResult = author$project$Project$Source$ModuleWithCache$defAndResultGetEvalResult(defAndResult);
 		var def = author$project$Project$Source$ModuleWithCache$defAndResultGetDef(defAndResult);
 		var compileResult = author$project$Project$Source$ModuleWithCache$defAndResultGetCompileResult(defAndResult);
@@ -20214,7 +20273,9 @@ var author$project$Panel$Editor$Module$partDefView = F3(
 					elm$html$Html$Events$stopPropagationOn,
 					'click',
 					elm$json$Json$Decode$succeed(
-						_Utils_Tuple2(author$project$Panel$Editor$Module$ActivePartDefSelf, true)))
+						_Utils_Tuple2(
+							author$project$Panel$Editor$Module$DefActiveTo(author$project$Panel$Editor$Module$ActivePartDefSelf),
+							true)))
 				]),
 			_List_fromArray(
 				[
@@ -20226,12 +20287,13 @@ var author$project$Panel$Editor$Module$partDefView = F3(
 						]),
 					_List_fromArray(
 						[
-							A3(
+							A4(
 							author$project$Panel$Editor$Module$partDefViewNameAndType,
 							author$project$Project$Source$Module$Def$getName(def),
 							author$project$Project$Source$Module$Def$getType(def),
-							partDefActiveMaybe),
-							A2(
+							partDefActiveMaybe,
+							editSateMaybe),
+							A3(
 							author$project$Panel$Editor$Module$partDefViewExpr,
 							author$project$Project$Source$Module$Def$getExpr(def),
 							function () {
@@ -20241,13 +20303,14 @@ var author$project$Panel$Editor$Module$partDefView = F3(
 								} else {
 									return elm$core$Maybe$Nothing;
 								}
-							}())
+							}(),
+							editSateMaybe)
 						])),
 					A2(author$project$Panel$Editor$Module$resultArea, compileResult, evalResult)
 				]));
 	});
-var author$project$Panel$Editor$Module$partDefListView = F2(
-	function (defAndResultList, partDefActiveWithIndexMaybe) {
+var author$project$Panel$Editor$Module$partDefListView = F3(
+	function (defAndResultList, partDefActiveWithIndexMaybe, editStateMaybe) {
 		return A2(
 			elm$html$Html$div,
 			_List_fromArray(
@@ -20262,12 +20325,18 @@ var author$project$Panel$Editor$Module$partDefListView = F2(
 							return A2(
 								elm$html$Html$map,
 								function (m) {
-									return author$project$Panel$Editor$Module$ActiveTo(
-										author$project$Panel$Editor$Module$ActivePartDefList(
-											author$project$Panel$Editor$Module$ActivePartDef(
-												_Utils_Tuple2(index, m))));
+									if (!m.$) {
+										var ref = m.a;
+										return author$project$Panel$Editor$Module$ActiveTo(
+											author$project$Panel$Editor$Module$ActivePartDefList(
+												author$project$Panel$Editor$Module$ActivePartDef(
+													_Utils_Tuple2(index, ref))));
+									} else {
+										var string = m.a;
+										return author$project$Panel$Editor$Module$Input(string);
+									}
 								},
-								A3(
+								A4(
 									author$project$Panel$Editor$Module$partDefView,
 									index,
 									defAndResult,
@@ -20280,7 +20349,8 @@ var author$project$Panel$Editor$Module$partDefListView = F2(
 										} else {
 											return elm$core$Maybe$Nothing;
 										}
-									}()));
+									}(),
+									editStateMaybe));
 						}),
 					defAndResultList),
 				_List_fromArray(
@@ -20296,8 +20366,8 @@ var author$project$Panel$Editor$Module$partDefinitionsViewTitle = A2(
 		[
 			elm$html$Html$text('Part Definitions')
 		]));
-var author$project$Panel$Editor$Module$partDefinitionsView = F3(
-	function (isFocus, partDefListActiveMaybe, defAndResultList) {
+var author$project$Panel$Editor$Module$partDefinitionsView = F4(
+	function (isFocus, partDefListActiveMaybe, editStateMaybe, defAndResultList) {
 		return A2(
 			elm$html$Html$div,
 			_Utils_ap(
@@ -20321,40 +20391,22 @@ var author$project$Panel$Editor$Module$partDefinitionsView = F3(
 							]);
 					}
 				}()),
-			_Utils_ap(
-				_List_fromArray(
-					[
-						author$project$Panel$Editor$Module$partDefinitionsViewTitle,
-						A2(
-						author$project$Panel$Editor$Module$partDefListView,
-						defAndResultList,
-						function () {
-							if ((!partDefListActiveMaybe.$) && (partDefListActiveMaybe.a.$ === 1)) {
-								var partDefActiveWithIndex = partDefListActiveMaybe.a.a;
-								return elm$core$Maybe$Just(partDefActiveWithIndex);
-							} else {
-								return elm$core$Maybe$Nothing;
-							}
-						}())
-					]),
-				function () {
-					if (!partDefListActiveMaybe.$) {
-						return isFocus ? _List_fromArray(
-							[
-								A2(
-								elm$html$Html$textarea,
-								_List_fromArray(
-									[
-										elm$html$Html$Attributes$class('partDef-hideTextArea'),
-										elm$html$Html$Attributes$id('edit'),
-										elm$html$Html$Events$onInput(author$project$Panel$Editor$Module$Input)
-									]),
-								_List_Nil)
-							]) : _List_Nil;
-					} else {
-						return _List_Nil;
-					}
-				}()));
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$partDefinitionsViewTitle,
+					A3(
+					author$project$Panel$Editor$Module$partDefListView,
+					defAndResultList,
+					function () {
+						if ((!partDefListActiveMaybe.$) && (partDefListActiveMaybe.a.$ === 1)) {
+							var partDefActiveWithIndex = partDefListActiveMaybe.a.a;
+							return elm$core$Maybe$Just(partDefActiveWithIndex);
+						} else {
+							return elm$core$Maybe$Nothing;
+						}
+					}(),
+					editStateMaybe)
+				]));
 	});
 var author$project$Project$Source$ModuleWithCache$getName = function (_n0) {
 	var name = _n0.aV;
@@ -20368,6 +20420,7 @@ var author$project$Panel$Editor$Module$view = F3(
 	function (project, isFocus, _n0) {
 		var moduleRef = _n0.r;
 		var active = _n0.h;
+		var editState = _n0.q;
 		var targetModule = A2(
 			author$project$Project$Source$getModule,
 			moduleRef,
@@ -20395,7 +20448,7 @@ var author$project$Panel$Editor$Module$view = F3(
 							return elm$core$Maybe$Nothing;
 						}
 					}()),
-					A3(
+					A4(
 					author$project$Panel$Editor$Module$partDefinitionsView,
 					isFocus,
 					function () {
@@ -20406,6 +20459,7 @@ var author$project$Panel$Editor$Module$view = F3(
 							return elm$core$Maybe$Nothing;
 						}
 					}(),
+					editState,
 					author$project$Project$Source$ModuleWithCache$getDefAndResultList(targetModule))
 				]),
 			cb: author$project$Project$Label$toCapitalString(

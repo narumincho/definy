@@ -1328,16 +1328,6 @@ partDefinitionsView isFocus partDefListActiveMaybe editStateMaybe defAndResultLi
         ]
 
 
-editTextArea : Html.Html Msg
-editTextArea =
-    Html.textarea
-        [ Html.Attributes.class "partDef-hideTextArea"
-        , Html.Attributes.id "edit"
-        , Html.Events.onInput Input
-        ]
-        []
-
-
 partDefinitionsViewTitle : Html.Html Msg
 partDefinitionsViewTitle =
     Html.div
@@ -1368,14 +1358,22 @@ partDefListView defAndResultList partDefActiveWithIndexMaybe editStateMaybe =
                                 Nothing
                         )
                         editStateMaybe
-                        |> Html.map (\m -> ActiveTo (ActivePartDefList (ActivePartDef ( index, m ))))
+                        |> Html.map
+                            (\m ->
+                                case m of
+                                    DefActiveTo ref ->
+                                        ActiveTo (ActivePartDefList (ActivePartDef ( index, ref )))
+
+                                    DefInput string ->
+                                        Input string
+                            )
                 )
          )
             ++ [ addDefButton ]
         )
 
 
-partDefView : Int -> ModuleWithCache.DefAndResult -> Maybe PartDefActive -> Maybe EditState -> Html.Html PartDefActive
+partDefView : Int -> ModuleWithCache.DefAndResult -> Maybe PartDefActive -> Maybe EditState -> Html.Html DefViewMsg
 partDefView index defAndResult partDefActiveMaybe editSateMaybe =
     let
         def =
@@ -1394,7 +1392,7 @@ partDefView index defAndResult partDefActiveMaybe editSateMaybe =
             ]
         , Html.Events.stopPropagationOn "click"
             (Json.Decode.succeed
-                ( ActivePartDefSelf
+                ( DefActiveTo ActivePartDefSelf
                 , True
                 )
             )
@@ -1416,6 +1414,11 @@ partDefView index defAndResult partDefActiveMaybe editSateMaybe =
         ]
 
 
+type DefViewMsg
+    = DefActiveTo PartDefActive
+    | DefInput String
+
+
 resultArea : Maybe Compiler.CompileResult -> Maybe Int -> Html.Html msg
 resultArea compileResult evalResult =
     Html.div
@@ -1434,19 +1437,18 @@ resultArea compileResult evalResult =
 {------------------ Name  ------------------}
 
 
-partDefViewNameAndType : Name.Name -> Type.Type -> Maybe PartDefActive -> Maybe EditState -> Html.Html PartDefActive
+partDefViewNameAndType : Name.Name -> Type.Type -> Maybe PartDefActive -> Maybe EditState -> Html.Html DefViewMsg
 partDefViewNameAndType name type_ partDefActiveMaybe editStateMaybe =
     Html.div
         [ subClass "partDef-nameAndType" ]
         [ partDefViewName name
             (case partDefActiveMaybe of
                 Just ActivePartDefName ->
-                    Just Nothing
+                    Just editStateMaybe
 
                 _ ->
                     Nothing
             )
-            editStateMaybe
         , Html.text ":"
         , partDefViewType type_
             (case partDefActiveMaybe of
@@ -1460,62 +1462,84 @@ partDefViewNameAndType name type_ partDefActiveMaybe editStateMaybe =
         ]
 
 
-partDefViewName : Name.Name -> Maybe (Maybe ( List ( Char, Bool ), Int )) -> Maybe EditState -> Html.Html PartDefActive
-partDefViewName name textAreaValueAndIndexMaybeMaybe editStateMaybe =
-    case textAreaValueAndIndexMaybeMaybe of
-        Just (Just ( textAreaValue, suggestIndex )) ->
-            partDefNameEditView name textAreaValue suggestIndex
+partDefViewName : Name.Name -> Maybe (Maybe EditState) -> Html.Html DefViewMsg
+partDefViewName name editStateMaybeMaybe =
+    case editStateMaybeMaybe of
+        Just (Just EditStateText) ->
+            partDefNameEditView name 0
+
+        Just (Just (EditStateSelect { suggestIndex })) ->
+            partDefNameEditView name suggestIndex
 
         Just Nothing ->
-            partDefNameNormalView name True
+            partDefNameSelectView name
 
         Nothing ->
-            partDefNameNormalView name False
+            partDefNameNormalView name
 
 
-partDefNameNormalView : Name.Name -> Bool -> Html.Html PartDefActive
-partDefNameNormalView name isActive =
+partDefNameNormalView : Name.Name -> Html.Html DefViewMsg
+partDefNameNormalView name =
     case Name.toString name of
         Just nameString ->
             Html.div
-                ([ subClassList
-                    [ ( "partDef-name", True )
-                    , ( "partDef-element-active", isActive )
-                    ]
-                 ]
-                    ++ (if isActive then
-                            []
-
-                        else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefName, True )) ]
-                       )
-                )
+                [ subClass "partDef-name"
+                , Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( DefActiveTo ActivePartDefName, True ))
+                ]
                 [ Html.text nameString ]
 
         Nothing ->
             Html.div
-                ([ subClassList
-                    [ ( "partDef-noName", True )
-                    , ( "partDef-element-active", isActive )
-                    ]
-                 ]
-                    ++ (if isActive then
-                            []
-
-                        else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefName, True )) ]
-                       )
-                )
+                [ subClass "partDef-noName"
+                , Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( DefActiveTo ActivePartDefName, True ))
+                ]
                 [ Html.text "NO NAME" ]
 
 
-partDefNameEditView : Name.Name -> List ( Char, Bool ) -> Int -> Html.Html PartDefActive
-partDefNameEditView name textAreaValue suggestIndex =
+partDefNameSelectView : Name.Name -> Html.Html DefViewMsg
+partDefNameSelectView name =
+    case Name.toString name of
+        Just nameString ->
+            Html.div
+                [ subClass "partDef-name"
+                , subClass "partDef-name-select"
+                ]
+                [ Html.text nameString
+                , Html.textarea
+                    [ Html.Attributes.class "partDef-hideTextArea"
+                    , Html.Attributes.id "edit"
+                    , Html.Events.onInput DefInput
+                    ]
+                    []
+                ]
+
+        Nothing ->
+            Html.div
+                [ subClass "partDef-noName"
+                , subClass "partDef-element-active"
+                ]
+                [ Html.text "NO NAME"
+                , Html.textarea
+                    [ Html.Attributes.class "partDef-hideTextArea"
+                    , Html.Attributes.id "edit"
+                    , Html.Events.onInput DefInput
+                    ]
+                    []
+                ]
+
+
+partDefNameEditView : Name.Name -> Int -> Html.Html DefViewMsg
+partDefNameEditView name suggestIndex =
     Html.div
         [ subClass "partDef-name-edit" ]
-        (textAreaValueToListHtml textAreaValue
-            ++ [ suggestionName name suggestIndex ]
-        )
+        [ Html.textarea
+            [ Html.Attributes.class "partDef-hideTextArea"
+            , Html.Attributes.id "edit"
+            , Html.Events.onInput DefInput
+            ]
+            []
+        , suggestionName name suggestIndex
+        ]
 
 
 suggestionName : Name.Name -> Int -> Html.Html msg
@@ -1581,7 +1605,7 @@ nameSuggestList =
 {------------------ Type  ------------------}
 
 
-partDefViewType : Type.Type -> Maybe (Maybe ( List ( Char, Bool ), Int )) -> Maybe EditState -> Html.Html PartDefActive
+partDefViewType : Type.Type -> Maybe (Maybe ( List ( Char, Bool ), Int )) -> Maybe EditState -> Html.Html DefViewMsg
 partDefViewType type_ textAreaValueAndIndexMaybeMaybe editStateMaybe =
     case textAreaValueAndIndexMaybeMaybe of
         Just (Just ( textAreaValue, suggestIndex )) ->
@@ -1594,7 +1618,7 @@ partDefViewType type_ textAreaValueAndIndexMaybeMaybe editStateMaybe =
             partDefTypeNormalView type_ False
 
 
-partDefTypeNormalView : Type.Type -> Bool -> Html.Html PartDefActive
+partDefTypeNormalView : Type.Type -> Bool -> Html.Html DefViewMsg
 partDefTypeNormalView type_ isActive =
     case Type.toString type_ of
         Just nameString ->
@@ -1608,7 +1632,7 @@ partDefTypeNormalView type_ isActive =
                             []
 
                         else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefType, True )) ]
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( DefActiveTo ActivePartDefType, True )) ]
                        )
                 )
                 [ Html.text nameString ]
@@ -1624,13 +1648,13 @@ partDefTypeNormalView type_ isActive =
                             []
 
                         else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActivePartDefType, True )) ]
+                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( DefActiveTo ActivePartDefType, True )) ]
                        )
                 )
                 [ Html.text "NO TYPE" ]
 
 
-partDefTypeEditView : Type.Type -> List ( Char, Bool ) -> Int -> Html.Html PartDefActive
+partDefTypeEditView : Type.Type -> List ( Char, Bool ) -> Int -> Html.Html DefViewMsg
 partDefTypeEditView type_ textAreaValue suggestIndex =
     Html.div
         [ subClass "partDef-type-edit" ]
@@ -1679,7 +1703,7 @@ suggestTypeItem type_ subItem isSelect =
 {- ================= Expr ================= -}
 
 
-partDefViewExpr : Expr.Expr -> Maybe TermOpPos -> Maybe EditState -> Html.Html PartDefActive
+partDefViewExpr : Expr.Expr -> Maybe TermOpPos -> Maybe EditState -> Html.Html DefViewMsg
 partDefViewExpr expr partDefExprActiveMaybe editStateMaybe =
     Html.div
         ([ subClass "partDef-expr"
@@ -1690,7 +1714,7 @@ partDefViewExpr expr partDefExprActiveMaybe editStateMaybe =
 
                     _ ->
                         [ Html.Events.stopPropagationOn "click"
-                            (Json.Decode.succeed ( ActivePartDefExpr TermOpSelf, True ))
+                            (Json.Decode.succeed ( DefActiveTo (ActivePartDefExpr TermOpSelf), True ))
                         ]
                )
         )
@@ -1711,7 +1735,7 @@ partDefViewExpr expr partDefExprActiveMaybe editStateMaybe =
                             Nothing
                     )
                     Nothing
-                    |> Html.map (always (ActivePartDefExpr (TermOpTerm 0 NoChildren)))
+                    |> Html.map (always (DefActiveTo (ActivePartDefExpr (TermOpTerm 0 NoChildren))))
                ]
             ++ (Expr.getOthers expr
                     |> List.indexedMap
@@ -1736,7 +1760,7 @@ partDefViewExpr expr partDefExprActiveMaybe editStateMaybe =
                             ]
                         )
                     |> List.concat
-                    |> List.map (Html.map ActivePartDefExpr)
+                    |> List.map (Html.map (\m -> DefActiveTo (ActivePartDefExpr m)))
                )
         )
 
