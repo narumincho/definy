@@ -1753,7 +1753,7 @@ termNormalView term isActive =
         [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( (), True ))
         , subClassList
             [ ( "partDef-term", True )
-            , ( "partDef-element-active", isActive )
+            , ( "partDef-term-active", isActive )
             ]
         ]
         [ Html.text (Expr.termToString term) ]
@@ -1817,7 +1817,7 @@ opNormalView op isActive =
         [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( (), True ))
         , subClassList
             [ ( "partDef-op", True )
-            , ( "partDef-element-active", isActive )
+            , ( "partDef-op-active", isActive )
             ]
         ]
         [ Html.text (Expr.opToString op) ]

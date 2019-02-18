@@ -19683,7 +19683,7 @@ var author$project$Panel$Editor$Module$opNormalView = F2(
 					_List_fromArray(
 						[
 							_Utils_Tuple2('partDef-op', true),
-							_Utils_Tuple2('partDef-element-active', isActive)
+							_Utils_Tuple2('partDef-op-active', isActive)
 						]))
 				]),
 			_List_fromArray(
@@ -19845,7 +19845,7 @@ var author$project$Panel$Editor$Module$termNormalView = F2(
 					_List_fromArray(
 						[
 							_Utils_Tuple2('partDef-term', true),
-							_Utils_Tuple2('partDef-element-active', isActive)
+							_Utils_Tuple2('partDef-term-active', isActive)
 						]))
 				]),
 			_List_fromArray(

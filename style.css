@@ -593,6 +593,14 @@ img {
 
 .moduleEditor-partDef-term {
     display: flex;
+    padding: 3px 8px;
+}
+
+.moduleEditor-partDef-term-active {
+    border: solid 3px var(--accentColorBg);
+    border-radius: 2px;
+    display: flex;
+    padding: 0 5px;
 }
 
 .moduleEditor-partDef-term-edit {
@@ -608,7 +616,14 @@ img {
 
 .moduleEditor-partDef-op {
     display: flex;
-    padding: 0 8px;
+    padding: 3px 8px;
+}
+
+.moduleEditor-partDef-op-active {
+    border: solid 3px var(--accentColorBg);
+    border-radius: 2px;
+    display: flex;
+    padding: 0 5px;
 }
 
 .moduleEditor-partDef-op-edit {
