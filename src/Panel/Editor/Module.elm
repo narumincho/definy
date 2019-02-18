@@ -13,6 +13,7 @@ import Compiler
 import Html
 import Html.Attributes
 import Html.Events
+import Html.Keyed
 import Json.Decode
 import Json.Encode
 import NSvg
@@ -255,10 +256,10 @@ activeTo active (Model rec) =
             [ EmitFocusEditTextAea ]
 
         ActivePartDefList ActivePartDefListSelf ->
-            [ EmitFocusEditTextAea ]
+            []
 
         ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
-            [ EmitFocusEditTextAea ]
+            []
 
         ActivePartDefList (ActivePartDef ( _, ActivePartDefName )) ->
             [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
@@ -684,75 +685,69 @@ confirmMultiLineTextField active =
 
 input : String -> ModuleWithCache.Module -> Model -> ( Model, List Emit )
 input string targetModule (Model rec) =
-    if String.isEmpty (String.trim string) then
-        ( Model rec
-        , []
-        )
+    case rec.active of
+        ActiveDescription ActiveDescriptionText ->
+            ( Model rec
+            , [ EmitChangeReadMe { text = string, ref = rec.moduleRef } ]
+            )
 
-    else
-        case rec.active of
-            ActiveDescription ActiveDescriptionText ->
-                ( Model rec
-                , [ EmitChangeReadMe { text = string, ref = rec.moduleRef } ]
-                )
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+            let
+                ( active, emitList ) =
+                    parserBeginWithName string index rec.moduleRef
+            in
+            ( Model { rec | active = active, editState = Just EditStateText }
+            , emitList ++ [ EmitFocusEditTextAea ]
+            )
 
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
-                let
-                    ( active, emitList ) =
-                        parserBeginWithName string index rec.moduleRef
-                in
-                ( Model { rec | active = active, editState = Just EditStateText }
-                , emitList
-                )
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
+            let
+                ( active, emitList ) =
+                    parserBeginWithType string index rec.moduleRef
+            in
+            ( Model { rec | active = active, editState = Just EditStateText }
+            , emitList
+            )
 
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
-                let
-                    ( active, emitList ) =
-                        parserBeginWithType string index rec.moduleRef
-                in
-                ( Model { rec | active = active, editState = Just EditStateText }
-                , emitList
-                )
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
+            let
+                ( active, emitList ) =
+                    parserInExpr string index rec.moduleRef
+            in
+            ( Model { rec | active = active, editState = Just EditStateText }
+            , emitList
+            )
 
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
-                let
-                    ( active, emitList ) =
-                        parserInExpr string index rec.moduleRef
-                in
-                ( Model { rec | active = active, editState = Just EditStateText }
-                , emitList
-                )
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm termIndex _) )) ->
+            let
+                ( active, emitList ) =
+                    parserBeginWithTerm string
+                        index
+                        rec.moduleRef
+                        termIndex
+                        (ModuleWithCache.getDef index targetModule |> Maybe.withDefault Def.empty |> Def.getExpr)
+            in
+            ( Model { rec | active = active, editState = Just EditStateText }
+            , emitList
+            )
 
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm termIndex _) )) ->
-                let
-                    ( active, emitList ) =
-                        parserBeginWithTerm string
-                            index
-                            rec.moduleRef
-                            termIndex
-                            (ModuleWithCache.getDef index targetModule |> Maybe.withDefault Def.empty |> Def.getExpr)
-                in
-                ( Model { rec | active = active, editState = Just EditStateText }
-                , emitList
-                )
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp opIndex) )) ->
+            let
+                ( active, emitList ) =
+                    parserBeginWithOp string
+                        index
+                        rec.moduleRef
+                        opIndex
+                        (ModuleWithCache.getDef index targetModule |> Maybe.withDefault Def.empty |> Def.getExpr)
+            in
+            ( Model { rec | active = active, editState = Just EditStateText }
+            , emitList
+            )
 
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp opIndex) )) ->
-                let
-                    ( active, emitList ) =
-                        parserBeginWithOp string
-                            index
-                            rec.moduleRef
-                            opIndex
-                            (ModuleWithCache.getDef index targetModule |> Maybe.withDefault Def.empty |> Def.getExpr)
-                in
-                ( Model { rec | active = active, editState = Just EditStateText }
-                , emitList
-                )
-
-            _ ->
-                ( Model rec
-                , []
-                )
+        _ ->
+            ( Model rec
+            , []
+            )
 
 
 parserBeginWithName : String -> Int -> Project.Source.ModuleRef -> ( Active, List Emit )
@@ -1480,65 +1475,67 @@ partDefViewName name editStateMaybeMaybe =
 
 partDefNameNormalView : Name.Name -> Html.Html DefViewMsg
 partDefNameNormalView name =
-    case Name.toString name of
-        Just nameString ->
-            Html.div
-                [ subClass "partDef-name"
-                , Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( DefActiveTo ActivePartDefName, True ))
-                ]
-                [ Html.text nameString ]
+    Html.div
+        [ subClass "partDef-nameContainer"
+        , Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( DefActiveTo ActivePartDefName, True ))
+        ]
+        [ case Name.toString name of
+            Just nameString ->
+                Html.div
+                    [ subClass "partDef-nameText" ]
+                    [ Html.text nameString ]
 
-        Nothing ->
-            Html.div
-                [ subClass "partDef-noName"
-                , Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( DefActiveTo ActivePartDefName, True ))
-                ]
-                [ Html.text "NO NAME" ]
+            Nothing ->
+                Html.div
+                    [ subClass "partDef-nameTextNone" ]
+                    [ Html.text "NO NAME" ]
+        ]
 
 
 partDefNameSelectView : Name.Name -> Html.Html DefViewMsg
 partDefNameSelectView name =
-    case Name.toString name of
-        Just nameString ->
-            Html.div
-                [ subClass "partDef-name"
-                , subClass "partDef-name-select"
-                ]
-                [ Html.text nameString
-                , Html.textarea
-                    [ Html.Attributes.class "partDef-hideTextArea"
-                    , Html.Attributes.id "edit"
-                    , Html.Events.onInput DefInput
-                    ]
-                    []
-                ]
+    Html.Keyed.node "div"
+        [ subClass "partDef-nameContainer"
+        , subClass "partDef-element-active"
+        ]
+        [ ( "view"
+          , case Name.toString name of
+                Just nameString ->
+                    Html.div
+                        [ subClass "partDef-nameText" ]
+                        [ Html.text nameString ]
 
-        Nothing ->
-            Html.div
-                [ subClass "partDef-noName"
-                , subClass "partDef-element-active"
+                Nothing ->
+                    Html.div
+                        [ subClass "partDef-nameTextNone" ]
+                        [ Html.text "NO NAME" ]
+          )
+        , ( "input"
+          , Html.textarea
+                [ subClass "partDef-hideTextArea"
+                , Html.Attributes.id "edit"
+                , Html.Events.onInput DefInput
                 ]
-                [ Html.text "NO NAME"
-                , Html.textarea
-                    [ Html.Attributes.class "partDef-hideTextArea"
-                    , Html.Attributes.id "edit"
-                    , Html.Events.onInput DefInput
-                    ]
-                    []
-                ]
+                []
+          )
+        ]
 
 
 partDefNameEditView : Name.Name -> Int -> Html.Html DefViewMsg
 partDefNameEditView name suggestIndex =
-    Html.div
-        [ subClass "partDef-name-edit" ]
-        [ Html.textarea
-            [ Html.Attributes.class "partDef-hideTextArea"
-            , Html.Attributes.id "edit"
-            , Html.Events.onInput DefInput
-            ]
-            []
-        , suggestionName name suggestIndex
+    Html.Keyed.node "div"
+        [ subClass "partDef-nameContainer" ]
+        [ ( "input"
+          , Html.textarea
+                [ subClass "partDef-nameTextArea"
+                , Html.Attributes.id "edit"
+                , Html.Events.onInput DefInput
+                ]
+                []
+          )
+        , ( "suggest"
+          , suggestionName name suggestIndex
+          )
         ]
 
 

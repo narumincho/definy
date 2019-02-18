@@ -131,11 +131,11 @@ headAndLast list =
 last : List a -> Maybe a
 last list =
     case list of
-        [ a ] ->
-            Just a
-
         [] ->
             Nothing
+
+        [ a ] ->
+            Just a
 
         _ :: others ->
             last others

@@ -9461,15 +9461,13 @@ var author$project$Panel$Editor$Module$activeTo = F2(
 					default:
 						if (!active.a.$) {
 							var _n4 = active.a;
-							return _List_fromArray(
-								[author$project$Panel$Editor$Module$EmitFocusEditTextAea]);
+							return _List_Nil;
 						} else {
 							switch (active.a.a.b.$) {
 								case 0:
 									var _n5 = active.a.a;
 									var _n6 = _n5.b;
-									return _List_fromArray(
-										[author$project$Panel$Editor$Module$EmitFocusEditTextAea]);
+									return _List_Nil;
 								case 1:
 									var _n7 = active.a.a;
 									var _n8 = _n7.b;
@@ -12588,147 +12586,144 @@ var author$project$Panel$Editor$Module$parserInExpr = F3(
 					]));
 		}
 	});
-var elm$core$String$trim = _String_trim;
 var author$project$Panel$Editor$Module$input = F3(
 	function (string, targetModule, _n0) {
 		var rec = _n0;
-		if (elm$core$String$isEmpty(
-			elm$core$String$trim(string))) {
-			return _Utils_Tuple2(rec, _List_Nil);
-		} else {
-			var _n1 = rec.h;
-			_n1$6:
-			while (true) {
-				switch (_n1.$) {
-					case 1:
-						if (_n1.a === 1) {
-							var _n2 = _n1.a;
-							return _Utils_Tuple2(
-								rec,
-								_List_fromArray(
-									[
-										author$project$Panel$Editor$Module$EmitChangeReadMe(
-										{b6: rec.r, ca: string})
-									]));
-						} else {
-							break _n1$6;
-						}
-					case 2:
-						if (_n1.a.$ === 1) {
-							switch (_n1.a.a.b.$) {
-								case 1:
-									var _n3 = _n1.a.a;
-									var index = _n3.a;
-									var _n4 = _n3.b;
-									var _n5 = A3(author$project$Panel$Editor$Module$parserBeginWithName, string, index, rec.r);
-									var active = _n5.a;
-									var emitList = _n5.b;
-									return _Utils_Tuple2(
-										_Utils_update(
-											rec,
-											{
-												h: active,
-												q: elm$core$Maybe$Just(author$project$Panel$Editor$Module$EditStateText)
-											}),
-										emitList);
-								case 2:
-									var _n6 = _n1.a.a;
-									var index = _n6.a;
-									var _n7 = _n6.b;
-									var _n8 = A3(author$project$Panel$Editor$Module$parserBeginWithType, string, index, rec.r);
-									var active = _n8.a;
-									var emitList = _n8.b;
-									return _Utils_Tuple2(
-										_Utils_update(
-											rec,
-											{
-												h: active,
-												q: elm$core$Maybe$Just(author$project$Panel$Editor$Module$EditStateText)
-											}),
-										emitList);
-								case 3:
-									switch (_n1.a.a.b.a.$) {
-										case 0:
-											var _n9 = _n1.a.a;
-											var index = _n9.a;
-											var _n10 = _n9.b.a;
-											var _n11 = A3(author$project$Panel$Editor$Module$parserInExpr, string, index, rec.r);
-											var active = _n11.a;
-											var emitList = _n11.b;
-											return _Utils_Tuple2(
-												_Utils_update(
-													rec,
-													{
-														h: active,
-														q: elm$core$Maybe$Just(author$project$Panel$Editor$Module$EditStateText)
-													}),
-												emitList);
-										case 2:
-											var _n12 = _n1.a.a;
-											var index = _n12.a;
-											var _n13 = _n12.b.a;
-											var termIndex = _n13.a;
-											var _n14 = A5(
-												author$project$Panel$Editor$Module$parserBeginWithTerm,
-												string,
-												index,
-												rec.r,
-												termIndex,
-												author$project$Project$Source$Module$Def$getExpr(
-													A2(
-														elm$core$Maybe$withDefault,
-														author$project$Project$Source$Module$Def$empty,
-														A2(author$project$Project$Source$ModuleWithCache$getDef, index, targetModule))));
-											var active = _n14.a;
-											var emitList = _n14.b;
-											return _Utils_Tuple2(
-												_Utils_update(
-													rec,
-													{
-														h: active,
-														q: elm$core$Maybe$Just(author$project$Panel$Editor$Module$EditStateText)
-													}),
-												emitList);
-										case 3:
-											var _n15 = _n1.a.a;
-											var index = _n15.a;
-											var opIndex = _n15.b.a.a;
-											var _n16 = A5(
-												author$project$Panel$Editor$Module$parserBeginWithOp,
-												string,
-												index,
-												rec.r,
-												opIndex,
-												author$project$Project$Source$Module$Def$getExpr(
-													A2(
-														elm$core$Maybe$withDefault,
-														author$project$Project$Source$Module$Def$empty,
-														A2(author$project$Project$Source$ModuleWithCache$getDef, index, targetModule))));
-											var active = _n16.a;
-											var emitList = _n16.b;
-											return _Utils_Tuple2(
-												_Utils_update(
-													rec,
-													{
-														h: active,
-														q: elm$core$Maybe$Just(author$project$Panel$Editor$Module$EditStateText)
-													}),
-												emitList);
-										default:
-											break _n1$6;
-									}
-								default:
-									break _n1$6;
-							}
-						} else {
-							break _n1$6;
-						}
-					default:
+		var _n1 = rec.h;
+		_n1$6:
+		while (true) {
+			switch (_n1.$) {
+				case 1:
+					if (_n1.a === 1) {
+						var _n2 = _n1.a;
+						return _Utils_Tuple2(
+							rec,
+							_List_fromArray(
+								[
+									author$project$Panel$Editor$Module$EmitChangeReadMe(
+									{b6: rec.r, ca: string})
+								]));
+					} else {
 						break _n1$6;
-				}
+					}
+				case 2:
+					if (_n1.a.$ === 1) {
+						switch (_n1.a.a.b.$) {
+							case 1:
+								var _n3 = _n1.a.a;
+								var index = _n3.a;
+								var _n4 = _n3.b;
+								var _n5 = A3(author$project$Panel$Editor$Module$parserBeginWithName, string, index, rec.r);
+								var active = _n5.a;
+								var emitList = _n5.b;
+								return _Utils_Tuple2(
+									_Utils_update(
+										rec,
+										{
+											h: active,
+											q: elm$core$Maybe$Just(author$project$Panel$Editor$Module$EditStateText)
+										}),
+									_Utils_ap(
+										emitList,
+										_List_fromArray(
+											[author$project$Panel$Editor$Module$EmitFocusEditTextAea])));
+							case 2:
+								var _n6 = _n1.a.a;
+								var index = _n6.a;
+								var _n7 = _n6.b;
+								var _n8 = A3(author$project$Panel$Editor$Module$parserBeginWithType, string, index, rec.r);
+								var active = _n8.a;
+								var emitList = _n8.b;
+								return _Utils_Tuple2(
+									_Utils_update(
+										rec,
+										{
+											h: active,
+											q: elm$core$Maybe$Just(author$project$Panel$Editor$Module$EditStateText)
+										}),
+									emitList);
+							case 3:
+								switch (_n1.a.a.b.a.$) {
+									case 0:
+										var _n9 = _n1.a.a;
+										var index = _n9.a;
+										var _n10 = _n9.b.a;
+										var _n11 = A3(author$project$Panel$Editor$Module$parserInExpr, string, index, rec.r);
+										var active = _n11.a;
+										var emitList = _n11.b;
+										return _Utils_Tuple2(
+											_Utils_update(
+												rec,
+												{
+													h: active,
+													q: elm$core$Maybe$Just(author$project$Panel$Editor$Module$EditStateText)
+												}),
+											emitList);
+									case 2:
+										var _n12 = _n1.a.a;
+										var index = _n12.a;
+										var _n13 = _n12.b.a;
+										var termIndex = _n13.a;
+										var _n14 = A5(
+											author$project$Panel$Editor$Module$parserBeginWithTerm,
+											string,
+											index,
+											rec.r,
+											termIndex,
+											author$project$Project$Source$Module$Def$getExpr(
+												A2(
+													elm$core$Maybe$withDefault,
+													author$project$Project$Source$Module$Def$empty,
+													A2(author$project$Project$Source$ModuleWithCache$getDef, index, targetModule))));
+										var active = _n14.a;
+										var emitList = _n14.b;
+										return _Utils_Tuple2(
+											_Utils_update(
+												rec,
+												{
+													h: active,
+													q: elm$core$Maybe$Just(author$project$Panel$Editor$Module$EditStateText)
+												}),
+											emitList);
+									case 3:
+										var _n15 = _n1.a.a;
+										var index = _n15.a;
+										var opIndex = _n15.b.a.a;
+										var _n16 = A5(
+											author$project$Panel$Editor$Module$parserBeginWithOp,
+											string,
+											index,
+											rec.r,
+											opIndex,
+											author$project$Project$Source$Module$Def$getExpr(
+												A2(
+													elm$core$Maybe$withDefault,
+													author$project$Project$Source$Module$Def$empty,
+													A2(author$project$Project$Source$ModuleWithCache$getDef, index, targetModule))));
+										var active = _n16.a;
+										var emitList = _n16.b;
+										return _Utils_Tuple2(
+											_Utils_update(
+												rec,
+												{
+													h: active,
+													q: elm$core$Maybe$Just(author$project$Panel$Editor$Module$EditStateText)
+												}),
+											emitList);
+									default:
+										break _n1$6;
+								}
+							default:
+								break _n1$6;
+						}
+					} else {
+						break _n1$6;
+					}
+				default:
+					break _n1$6;
 			}
-			return _Utils_Tuple2(rec, _List_Nil);
 		}
+		return _Utils_Tuple2(rec, _List_Nil);
 	});
 var author$project$Panel$Editor$Module$ActivePartDefListSelf = {$: 0};
 var author$project$Panel$Editor$Module$ActivePartDefSelf = {$: 0};
@@ -19773,115 +19768,135 @@ var author$project$Panel$Editor$Module$suggestionName = F2(
 						elm$core$Tuple$mapSecond(elm$html$Html$text),
 						author$project$Panel$Editor$Module$nameSuggestList))));
 	});
+var elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
+	return _VirtualDom_keyedNode(
+		_VirtualDom_noScript(tag));
+};
+var elm$html$Html$Keyed$node = elm$virtual_dom$VirtualDom$keyedNode;
 var author$project$Panel$Editor$Module$partDefNameEditView = F2(
 	function (name, suggestIndex) {
-		return A2(
-			elm$html$Html$div,
+		return A3(
+			elm$html$Html$Keyed$node,
+			'div',
 			_List_fromArray(
 				[
-					author$project$Panel$Editor$Module$subClass('partDef-name-edit')
+					author$project$Panel$Editor$Module$subClass('partDef-nameContainer')
 				]),
 			_List_fromArray(
 				[
+					_Utils_Tuple2(
+					'input',
 					A2(
-					elm$html$Html$textarea,
-					_List_fromArray(
-						[
-							elm$html$Html$Attributes$class('partDef-hideTextArea'),
-							elm$html$Html$Attributes$id('edit'),
-							elm$html$Html$Events$onInput(author$project$Panel$Editor$Module$DefInput)
-						]),
-					_List_Nil),
-					A2(author$project$Panel$Editor$Module$suggestionName, name, suggestIndex)
+						elm$html$Html$textarea,
+						_List_fromArray(
+							[
+								author$project$Panel$Editor$Module$subClass('partDef-nameTextArea'),
+								elm$html$Html$Attributes$id('edit'),
+								elm$html$Html$Events$onInput(author$project$Panel$Editor$Module$DefInput)
+							]),
+						_List_Nil)),
+					_Utils_Tuple2(
+					'suggest',
+					A2(author$project$Panel$Editor$Module$suggestionName, name, suggestIndex))
 				]));
 	});
 var author$project$Panel$Editor$Module$partDefNameNormalView = function (name) {
-	var _n0 = author$project$Project$Source$Module$Def$Name$toString(name);
-	if (!_n0.$) {
-		var nameString = _n0.a;
-		return A2(
-			elm$html$Html$div,
-			_List_fromArray(
-				[
-					author$project$Panel$Editor$Module$subClass('partDef-name'),
-					A2(
-					elm$html$Html$Events$stopPropagationOn,
-					'click',
-					elm$json$Json$Decode$succeed(
-						_Utils_Tuple2(
-							author$project$Panel$Editor$Module$DefActiveTo(author$project$Panel$Editor$Module$ActivePartDefName),
-							true)))
-				]),
-			_List_fromArray(
-				[
-					elm$html$Html$text(nameString)
-				]));
-	} else {
-		return A2(
-			elm$html$Html$div,
-			_List_fromArray(
-				[
-					author$project$Panel$Editor$Module$subClass('partDef-noName'),
-					A2(
-					elm$html$Html$Events$stopPropagationOn,
-					'click',
-					elm$json$Json$Decode$succeed(
-						_Utils_Tuple2(
-							author$project$Panel$Editor$Module$DefActiveTo(author$project$Panel$Editor$Module$ActivePartDefName),
-							true)))
-				]),
-			_List_fromArray(
-				[
-					elm$html$Html$text('NO NAME')
-				]));
-	}
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				author$project$Panel$Editor$Module$subClass('partDef-nameContainer'),
+				A2(
+				elm$html$Html$Events$stopPropagationOn,
+				'click',
+				elm$json$Json$Decode$succeed(
+					_Utils_Tuple2(
+						author$project$Panel$Editor$Module$DefActiveTo(author$project$Panel$Editor$Module$ActivePartDefName),
+						true)))
+			]),
+		_List_fromArray(
+			[
+				function () {
+				var _n0 = author$project$Project$Source$Module$Def$Name$toString(name);
+				if (!_n0.$) {
+					var nameString = _n0.a;
+					return A2(
+						elm$html$Html$div,
+						_List_fromArray(
+							[
+								author$project$Panel$Editor$Module$subClass('partDef-nameText')
+							]),
+						_List_fromArray(
+							[
+								elm$html$Html$text(nameString)
+							]));
+				} else {
+					return A2(
+						elm$html$Html$div,
+						_List_fromArray(
+							[
+								author$project$Panel$Editor$Module$subClass('partDef-nameTextNone')
+							]),
+						_List_fromArray(
+							[
+								elm$html$Html$text('NO NAME')
+							]));
+				}
+			}()
+			]));
 };
 var author$project$Panel$Editor$Module$partDefNameSelectView = function (name) {
-	var _n0 = author$project$Project$Source$Module$Def$Name$toString(name);
-	if (!_n0.$) {
-		var nameString = _n0.a;
-		return A2(
-			elm$html$Html$div,
-			_List_fromArray(
-				[
-					author$project$Panel$Editor$Module$subClass('partDef-name'),
-					author$project$Panel$Editor$Module$subClass('partDef-name-select')
-				]),
-			_List_fromArray(
-				[
-					elm$html$Html$text(nameString),
-					A2(
+	return A3(
+		elm$html$Html$Keyed$node,
+		'div',
+		_List_fromArray(
+			[
+				author$project$Panel$Editor$Module$subClass('partDef-nameContainer'),
+				author$project$Panel$Editor$Module$subClass('partDef-element-active')
+			]),
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'view',
+				function () {
+					var _n0 = author$project$Project$Source$Module$Def$Name$toString(name);
+					if (!_n0.$) {
+						var nameString = _n0.a;
+						return A2(
+							elm$html$Html$div,
+							_List_fromArray(
+								[
+									author$project$Panel$Editor$Module$subClass('partDef-nameText')
+								]),
+							_List_fromArray(
+								[
+									elm$html$Html$text(nameString)
+								]));
+					} else {
+						return A2(
+							elm$html$Html$div,
+							_List_fromArray(
+								[
+									author$project$Panel$Editor$Module$subClass('partDef-nameTextNone')
+								]),
+							_List_fromArray(
+								[
+									elm$html$Html$text('NO NAME')
+								]));
+					}
+				}()),
+				_Utils_Tuple2(
+				'input',
+				A2(
 					elm$html$Html$textarea,
 					_List_fromArray(
 						[
-							elm$html$Html$Attributes$class('partDef-hideTextArea'),
+							author$project$Panel$Editor$Module$subClass('partDef-hideTextArea'),
 							elm$html$Html$Attributes$id('edit'),
 							elm$html$Html$Events$onInput(author$project$Panel$Editor$Module$DefInput)
 						]),
-					_List_Nil)
-				]));
-	} else {
-		return A2(
-			elm$html$Html$div,
-			_List_fromArray(
-				[
-					author$project$Panel$Editor$Module$subClass('partDef-noName'),
-					author$project$Panel$Editor$Module$subClass('partDef-element-active')
-				]),
-			_List_fromArray(
-				[
-					elm$html$Html$text('NO NAME'),
-					A2(
-					elm$html$Html$textarea,
-					_List_fromArray(
-						[
-							elm$html$Html$Attributes$class('partDef-hideTextArea'),
-							elm$html$Html$Attributes$id('edit'),
-							elm$html$Html$Events$onInput(author$project$Panel$Editor$Module$DefInput)
-						]),
-					_List_Nil)
-				]));
-	}
+					_List_Nil))
+			]));
 };
 var author$project$Panel$Editor$Module$partDefViewName = F2(
 	function (name, editStateMaybeMaybe) {

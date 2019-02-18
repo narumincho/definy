@@ -509,36 +509,43 @@ img {
     align-items: center;
 }
 
-.moduleEditor-partDef-name {
-    display: flex;
-    align-items: baseline;
+/*=================
+        Name
+=================*/
+
+.moduleEditor-partDef-nameContainer {
+    height: 38px;
+    position: relative;
+}
+
+.moduleEditor-partDef-nameText {
     padding: 4px;
     height: 38px;
     color: #d7ba7d;
     font-size: 20px;
     border-radius: 4px;
+    min-width: 32px;
 }
 
-.moduleEditor-partDef-noName {
+.moduleEditor-partDef-nameTextNone {
+    min-width: 32px;
     padding: 4px;
-    height: 38px;
+    height: 30px;
     background-color: #000;
     color: #666;
     font-size: 16px;
     border-radius: 4px;
 }
 
-.moduleEditor-partDef-name-edit {
-    display: flex;
-    align-items: baseline;
+.moduleEditor-partDef-nameTextArea {
     padding: 2px;
     border: solid #ddd 2px;
     height: 38px;
     color: #d7ba7d;
     font-size: 20px;
     border-radius: 4px;
-    min-width: 32px;
-    position: relative;
+    background-color: #000;
+    resize: none;
 }
 
 /*=================
@@ -715,10 +722,9 @@ img {
 }
 
 .moduleEditor-partDef-hideTextArea {
-    width: 10rem;
-    height: 0;
+    width: 12px;
+    height: 12px;
     padding: 0;
-    outline: none;
     border: 0;
     resize: none;
 }
