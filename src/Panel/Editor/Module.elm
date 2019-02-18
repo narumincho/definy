@@ -40,7 +40,7 @@ type Model
 
 
 type EditState
-    = EditStateText { row : Int, digit : Int }
+    = EditStateText
     | EditStateSelect { suggestIndex : Int, searchText : String }
 
 
@@ -130,13 +130,13 @@ type SectionPos
 isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
 isFocusDefaultUi (Model { active, editState }) =
     case ( active, editState ) of
-        ( ActiveDescription ActiveDescriptionText, Just (EditStateText _) ) ->
+        ( ActiveDescription ActiveDescriptionText, Just EditStateText ) ->
             Just Panel.DefaultUi.MultiLineTextField
 
-        ( ActivePartDefList (ActivePartDef ( _, ActivePartDefName )), Just (EditStateText _) ) ->
+        ( ActivePartDefList (ActivePartDef ( _, ActivePartDefName )), Just EditStateText ) ->
             Just Panel.DefaultUi.SingleLineTextField
 
-        ( ActivePartDefList (ActivePartDef ( _, ActivePartDefType )), Just (EditStateText _) ) ->
+        ( ActivePartDefList (ActivePartDef ( _, ActivePartDefType )), Just EditStateText ) ->
             Just Panel.DefaultUi.SingleLineTextField
 
         _ ->
@@ -234,7 +234,16 @@ update msg project (Model rec) =
 
 activeTo : Active -> Model -> ( Model, List Emit )
 activeTo active (Model rec) =
-    ( Model { rec | active = active }
+    ( Model
+        { rec
+            | active = active
+            , editState =
+                if rec.active == active then
+                    rec.editState
+
+                else
+                    Nothing
+        }
     , case active of
         ActiveNone ->
             []
@@ -623,7 +632,7 @@ suggestionPrevOrSelectDown module_ project (Model rec) =
                     []
             )
 
-        Just (EditStateText _) ->
+        Just EditStateText ->
             ( Model
                 { rec
                     | editState =
@@ -692,7 +701,7 @@ input string targetModule (Model rec) =
                     ( active, emitList ) =
                         parserBeginWithName string index rec.moduleRef
                 in
-                ( Model { rec | active = active }
+                ( Model { rec | active = active, editState = Just EditStateText }
                 , emitList
                 )
 
@@ -701,7 +710,7 @@ input string targetModule (Model rec) =
                     ( active, emitList ) =
                         parserBeginWithType string index rec.moduleRef
                 in
-                ( Model { rec | active = active }
+                ( Model { rec | active = active, editState = Just EditStateText }
                 , emitList
                 )
 
@@ -710,7 +719,7 @@ input string targetModule (Model rec) =
                     ( active, emitList ) =
                         parserInExpr string index rec.moduleRef
                 in
-                ( Model { rec | active = active }
+                ( Model { rec | active = active, editState = Just EditStateText }
                 , emitList
                 )
 
@@ -723,7 +732,7 @@ input string targetModule (Model rec) =
                             termIndex
                             (ModuleWithCache.getDef index targetModule |> Maybe.withDefault Def.empty |> Def.getExpr)
                 in
-                ( Model { rec | active = active }
+                ( Model { rec | active = active, editState = Just EditStateText }
                 , emitList
                 )
 
@@ -736,7 +745,7 @@ input string targetModule (Model rec) =
                             opIndex
                             (ModuleWithCache.getDef index targetModule |> Maybe.withDefault Def.empty |> Def.getExpr)
                 in
-                ( Model { rec | active = active }
+                ( Model { rec | active = active, editState = Just EditStateText }
                 , emitList
                 )
 
@@ -1030,7 +1039,7 @@ textAreaValueToSetTextEmit =
 モジュールエディタのModelで見た目を決める
 -}
 view : Project.Project -> Bool -> Model -> { title : String, body : List (Html.Html Msg) }
-view project isFocus (Model { moduleRef, active }) =
+view project isFocus (Model { moduleRef, active, editState }) =
     let
         targetModule =
             project
@@ -1058,6 +1067,7 @@ view project isFocus (Model { moduleRef, active }) =
                 _ ->
                     Nothing
             )
+            editState
             (ModuleWithCache.getDefAndResultList targetModule)
         ]
     }
@@ -1290,10 +1300,9 @@ focusEventJsonDecoder =
 
 
 {-| モジュールエディタのメインの要素であるパーツエディタを表示する
-partDefActiveMaybeAndIndexがJustならこのエディタ
 -}
-partDefinitionsView : Bool -> Maybe PartDefListActive -> List ModuleWithCache.DefAndResult -> Html.Html Msg
-partDefinitionsView isFocus partDefListActiveMaybe defAndResultList =
+partDefinitionsView : Bool -> Maybe PartDefListActive -> Maybe EditState -> List ModuleWithCache.DefAndResult -> Html.Html Msg
+partDefinitionsView isFocus partDefListActiveMaybe editStateMaybe defAndResultList =
     Html.div
         ([ subClass "partDefinitions"
          ]
@@ -1305,8 +1314,9 @@ partDefinitionsView isFocus partDefListActiveMaybe defAndResultList =
                         [ Html.Events.onClick (ActiveTo (ActivePartDefList ActivePartDefListSelf)) ]
                )
         )
-        ([ partDefinitionsViewTitle
-         , partDefListView defAndResultList
+        [ partDefinitionsViewTitle
+        , partDefListView
+            defAndResultList
             (case partDefListActiveMaybe of
                 Just (ActivePartDef partDefActiveWithIndex) ->
                     Just partDefActiveWithIndex
@@ -1314,25 +1324,18 @@ partDefinitionsView isFocus partDefListActiveMaybe defAndResultList =
                 _ ->
                     Nothing
             )
-         ]
-            ++ (case partDefListActiveMaybe of
-                    Just _ ->
-                        if isFocus then
-                            [ Html.textarea
-                                [ Html.Attributes.class "partDef-hideTextArea"
-                                , Html.Attributes.id "edit"
-                                , Html.Events.onInput Input
-                                ]
-                                []
-                            ]
+            editStateMaybe
+        ]
 
-                        else
-                            []
 
-                    Nothing ->
-                        []
-               )
-        )
+editTextArea : Html.Html Msg
+editTextArea =
+    Html.textarea
+        [ Html.Attributes.class "partDef-hideTextArea"
+        , Html.Attributes.id "edit"
+        , Html.Events.onInput Input
+        ]
+        []
 
 
 partDefinitionsViewTitle : Html.Html Msg
@@ -1342,8 +1345,8 @@ partDefinitionsViewTitle =
         [ Html.text "Part Definitions" ]
 
 
-partDefListView : List ModuleWithCache.DefAndResult -> Maybe ( Int, PartDefActive ) -> Html.Html Msg
-partDefListView defAndResultList partDefActiveWithIndexMaybe =
+partDefListView : List ModuleWithCache.DefAndResult -> Maybe ( Int, PartDefActive ) -> Maybe EditState -> Html.Html Msg
+partDefListView defAndResultList partDefActiveWithIndexMaybe editStateMaybe =
     Html.div
         [ subClass "partDefList"
         ]
@@ -1364,6 +1367,7 @@ partDefListView defAndResultList partDefActiveWithIndexMaybe =
                             _ ->
                                 Nothing
                         )
+                        editStateMaybe
                         |> Html.map (\m -> ActiveTo (ActivePartDefList (ActivePartDef ( index, m ))))
                 )
          )
@@ -1371,8 +1375,8 @@ partDefListView defAndResultList partDefActiveWithIndexMaybe =
         )
 
 
-partDefView : Int -> ModuleWithCache.DefAndResult -> Maybe PartDefActive -> Html.Html PartDefActive
-partDefView index defAndResult partDefActiveMaybe =
+partDefView : Int -> ModuleWithCache.DefAndResult -> Maybe PartDefActive -> Maybe EditState -> Html.Html PartDefActive
+partDefView index defAndResult partDefActiveMaybe editSateMaybe =
     let
         def =
             ModuleWithCache.defAndResultGetDef defAndResult
@@ -1397,7 +1401,7 @@ partDefView index defAndResult partDefActiveMaybe =
         ]
         [ Html.div
             [ subClass "partDef-defArea" ]
-            [ partDefViewNameAndType (Def.getName def) (Def.getType def) partDefActiveMaybe
+            [ partDefViewNameAndType (Def.getName def) (Def.getType def) partDefActiveMaybe editSateMaybe
             , partDefViewExpr (Def.getExpr def)
                 (case partDefActiveMaybe of
                     Just (ActivePartDefExpr partDefExprActive) ->
@@ -1406,6 +1410,7 @@ partDefView index defAndResult partDefActiveMaybe =
                     _ ->
                         Nothing
                 )
+                editSateMaybe
             ]
         , resultArea compileResult evalResult
         ]
@@ -1429,8 +1434,8 @@ resultArea compileResult evalResult =
 {------------------ Name  ------------------}
 
 
-partDefViewNameAndType : Name.Name -> Type.Type -> Maybe PartDefActive -> Html.Html PartDefActive
-partDefViewNameAndType name type_ partDefActiveMaybe =
+partDefViewNameAndType : Name.Name -> Type.Type -> Maybe PartDefActive -> Maybe EditState -> Html.Html PartDefActive
+partDefViewNameAndType name type_ partDefActiveMaybe editStateMaybe =
     Html.div
         [ subClass "partDef-nameAndType" ]
         [ partDefViewName name
@@ -1441,6 +1446,7 @@ partDefViewNameAndType name type_ partDefActiveMaybe =
                 _ ->
                     Nothing
             )
+            editStateMaybe
         , Html.text ":"
         , partDefViewType type_
             (case partDefActiveMaybe of
@@ -1450,11 +1456,12 @@ partDefViewNameAndType name type_ partDefActiveMaybe =
                 _ ->
                     Nothing
             )
+            editStateMaybe
         ]
 
 
-partDefViewName : Name.Name -> Maybe (Maybe ( List ( Char, Bool ), Int )) -> Html.Html PartDefActive
-partDefViewName name textAreaValueAndIndexMaybeMaybe =
+partDefViewName : Name.Name -> Maybe (Maybe ( List ( Char, Bool ), Int )) -> Maybe EditState -> Html.Html PartDefActive
+partDefViewName name textAreaValueAndIndexMaybeMaybe editStateMaybe =
     case textAreaValueAndIndexMaybeMaybe of
         Just (Just ( textAreaValue, suggestIndex )) ->
             partDefNameEditView name textAreaValue suggestIndex
@@ -1574,8 +1581,8 @@ nameSuggestList =
 {------------------ Type  ------------------}
 
 
-partDefViewType : Type.Type -> Maybe (Maybe ( List ( Char, Bool ), Int )) -> Html.Html PartDefActive
-partDefViewType type_ textAreaValueAndIndexMaybeMaybe =
+partDefViewType : Type.Type -> Maybe (Maybe ( List ( Char, Bool ), Int )) -> Maybe EditState -> Html.Html PartDefActive
+partDefViewType type_ textAreaValueAndIndexMaybeMaybe editStateMaybe =
     case textAreaValueAndIndexMaybeMaybe of
         Just (Just ( textAreaValue, suggestIndex )) ->
             partDefTypeEditView type_ textAreaValue suggestIndex
@@ -1672,8 +1679,8 @@ suggestTypeItem type_ subItem isSelect =
 {- ================= Expr ================= -}
 
 
-partDefViewExpr : Expr.Expr -> Maybe TermOpPos -> Html.Html PartDefActive
-partDefViewExpr expr partDefExprActiveMaybe =
+partDefViewExpr : Expr.Expr -> Maybe TermOpPos -> Maybe EditState -> Html.Html PartDefActive
+partDefViewExpr expr partDefExprActiveMaybe editStateMaybe =
     Html.div
         ([ subClass "partDef-expr"
          ]
