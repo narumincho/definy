@@ -87,36 +87,33 @@ type PartDefActive
     = ActivePartDefSelf
     | ActivePartDefName (Maybe ( List ( Char, Bool ), Int ))
     | ActivePartDefType (Maybe ( List ( Char, Bool ), Int ))
-    | ActivePartDefExpr PartDefExprActive
+    | ActivePartDefExpr TermOpPos
 
 
-{-| 式の中で選択している位置。式の長さを超えるところを指定しているならば、それは式の末尾を表す
+{-| TermとOpが交互にあるの式の中で選択している位置。式の長さを超えるところを指定しているならば、それは式の末尾を表す
 -}
-type PartDefExprActive
-    = ActivePartDefExprSelf
-    | ActiveExprHead --     |abc + def + 28
-    | ActiveExprTerm Int (Maybe TermPos) (Maybe (List ( Char, Bool ))) -- [abc]+ def + 28  Intの範囲は0..255
-    | ActiveExprOp Int (Maybe TermPos) (Maybe (List ( Char, Bool ))) --  abc[+]def + 28  Intの範囲は0..254
-
-
 type TermOpPos
-    = TermOpHead
-    | Term Int (Maybe TermPos)
-    | Op Int
+    = TermOpSelf
+    | TermOpHead
+    | TermOpTerm Int TermType -- [abc]+ def + 28  Intの範囲は0..255
+    | TermOpOp Int --  abc[+]def + 28  Intの範囲は0..254
 
 
-type TermPos
-    = TermOp TermOpPos
+type TermType
+    = NoChildren
+    | Parenthesis TermOpPos
     | Lambda LambdaPos
 
 
 type LambdaPos
-    = SectionHead
+    = LambdaSelf
+    | SectionHead
     | Section Int SectionPos
 
 
 type SectionPos
-    = Pattern
+    = SectionSelf
+    | Pattern
     | Guard
     | Expr TermOpPos
 
@@ -253,16 +250,16 @@ activeTo active (Model rec) =
         ActivePartDefList (ActivePartDef ( _, ActivePartDefType Nothing )) ->
             [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
 
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr ActivePartDefExprSelf )) ->
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr TermOpSelf )) ->
             [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
 
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr ActiveExprHead )) ->
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr TermOpHead )) ->
             [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
 
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr (ActiveExprTerm _ _ Nothing) )) ->
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr (TermOpTerm _ _) )) ->
             [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
 
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr (ActiveExprOp _ _ Nothing) )) ->
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr (TermOpOp _) )) ->
             [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
 
         _ ->
@@ -299,25 +296,25 @@ selectLeft module_ active =
             -- 型から名前へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             -- 式から名前へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead )) ->
             -- 先頭の項の前から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0 _ _) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 _) )) ->
             -- 先頭の項から先頭の項の前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp opIndex _ _) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp opIndex) )) ->
             -- 演算子から前の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm opIndex Nothing Nothing) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm opIndex NoChildren) ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm termIndex _ _) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm termIndex NoChildren) )) ->
             -- 項から前の演算子へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp (termIndex - 1) Nothing Nothing) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp (termIndex - 1)) ))
 
         _ ->
             active
@@ -350,17 +347,17 @@ selectRight module_ active =
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
             -- 型から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             -- 式から最初の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0 Nothing Nothing) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 NoChildren) ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead )) ->
             -- 先頭の項の前から先頭の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0 Nothing Nothing) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 NoChildren) ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm termIndex _ _) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm termIndex _) )) ->
             -- 項から次の演算子へ
             let
                 exprTermCount =
@@ -372,12 +369,12 @@ selectRight module_ active =
                         |> Maybe.withDefault 0
             in
             if exprTermCount < termIndex + 1 then
-                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
             else
-                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp termIndex Nothing Nothing) ))
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp termIndex) ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp opIndex _ _) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp opIndex) )) ->
             -- 演算子から次の項へ
             let
                 exprTermCount =
@@ -389,10 +386,10 @@ selectRight module_ active =
                         |> Maybe.withDefault 0
             in
             if exprTermCount < opIndex + 1 then
-                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
             else
-                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm (opIndex + 1) Nothing Nothing) ))
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm (opIndex + 1) NoChildren) ))
 
         _ ->
             active
@@ -431,21 +428,21 @@ selectUp module_ active =
             -- 型から定義へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             -- 式から名前へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead )) ->
             -- 先頭の項の前から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm _ _ Nothing) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm _ _) )) ->
             -- 項から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp _ _ Nothing) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp _) )) ->
             -- 演算子から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
         _ ->
             active
@@ -470,27 +467,27 @@ selectDown module_ active =
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing )) ->
             -- 名前から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing )) ->
             -- 型から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             -- 式から定義へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActiveExprHead )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead )) ->
             -- 先頭の項の前から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm _ _ Nothing) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm _ NoChildren) )) ->
             -- 項から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp _ _ Nothing) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp _) )) ->
             -- 演算子から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
         _ ->
             active
@@ -517,9 +514,9 @@ selectFirstChild module_ active =
             -- 定義から名前へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefName Nothing ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             -- 式から先頭の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm 0 Nothing Nothing) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 NoChildren) ))
 
         _ ->
             active
@@ -546,7 +543,7 @@ selectLastChild module_ active =
         ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
             -- 定義から式へ
             ActivePartDefList
-                (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+                (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
         _ ->
             active
@@ -573,11 +570,11 @@ selectParent module_ active =
         ActivePartDefList (ActivePartDef ( index, ActivePartDefType (Just _) )) ->
             ActivePartDefList (ActivePartDef ( index, ActivePartDefType Nothing ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr _ )) ->
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
         _ ->
             active
@@ -680,7 +677,7 @@ input string targetModule (Model rec) =
                 , emitList
                 )
 
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf )) ->
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
                 let
                     ( active, emitList ) =
                         parserInExpr string index rec.moduleRef
@@ -689,7 +686,7 @@ input string targetModule (Model rec) =
                 , emitList
                 )
 
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprTerm termIndex _ _) )) ->
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm termIndex _) )) ->
                 let
                     ( active, emitList ) =
                         parserBeginWithTerm string
@@ -702,7 +699,7 @@ input string targetModule (Model rec) =
                 , emitList
                 )
 
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (ActiveExprOp opIndex _ _) )) ->
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp opIndex) )) ->
                 let
                     ( active, emitList ) =
                         parserBeginWithOp string
@@ -751,10 +748,10 @@ parserBeginWithName string index moduleRef =
                     ( index
                     , ActivePartDefExpr
                         (if headTerm == Expr.None && opAndTermList == [] then
-                            ActivePartDefExprSelf
+                            TermOpSelf
 
                          else
-                            ActiveExprTerm (List.length opAndTermList) Nothing (Just textAreaValue)
+                            TermOpTerm (List.length opAndTermList) NoChildren
                         )
                     )
                 )
@@ -773,7 +770,9 @@ parserBeginWithName string index moduleRef =
         Parser.BeginWithNameEndExprOp { name, type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
             ( ActivePartDefList
                 (ActivePartDef
-                    ( index, ActivePartDefExpr (ActiveExprOp (List.length opAndTermList) Nothing (Just textAreaValue)) )
+                    ( index
+                    , ActivePartDefExpr (TermOpOp (List.length opAndTermList))
+                    )
                 )
             , [ EmitChangeName { name = name, index = index, ref = moduleRef }
               , EmitChangeType { type_ = type_, index = index, ref = moduleRef }
@@ -798,17 +797,10 @@ parserBeginWithType string index moduleRef =
                     , ActivePartDefExpr
                         (case List.length opAndTermList of
                             0 ->
-                                ActivePartDefExprSelf
+                                TermOpSelf
 
                             length ->
-                                ActiveExprTerm length
-                                    Nothing
-                                    (if textAreaValue == [] then
-                                        Nothing
-
-                                     else
-                                        Just textAreaValue
-                                    )
+                                TermOpTerm length NoChildren
                         )
                     )
                 )
@@ -819,7 +811,7 @@ parserBeginWithType string index moduleRef =
             )
 
         Parser.BeginWithTypeEndExprOp { type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
-            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr ActivePartDefExprSelf ))
+            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
             , [ EmitChangeType { type_ = type_, index = index, ref = moduleRef }
               , EmitChangeExpr { expr = Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.None ) ]), index = index, ref = moduleRef }
               , textAreaValueToSetTextEmit textAreaValue
@@ -835,15 +827,9 @@ parserInExpr string index moduleRef =
                 (ActivePartDef
                     ( index
                     , ActivePartDefExpr
-                        (ActiveExprTerm
+                        (TermOpTerm
                             (List.length opAndTermList)
-                            Nothing
-                            (if getLastTerm headTerm opAndTermList == Expr.None then
-                                Nothing
-
-                             else
-                                Just textAreaValue
-                            )
+                            NoChildren
                         )
                     )
                 )
@@ -861,15 +847,8 @@ parserInExpr string index moduleRef =
                 (ActivePartDef
                     ( index
                     , ActivePartDefExpr
-                        (ActiveExprOp
+                        (TermOpOp
                             (List.length opAndTermList)
-                            Nothing
-                            (if lastOp == Expr.Blank then
-                                Nothing
-
-                             else
-                                Just textAreaValue
-                            )
                         )
                     )
                 )
@@ -887,15 +866,9 @@ parserBeginWithTerm string index moduleRef termIndex expr =
                 (ActivePartDef
                     ( index
                     , ActivePartDefExpr
-                        (ActiveExprTerm
+                        (TermOpTerm
                             (termIndex + List.length opAndTermList)
-                            Nothing
-                            (if getLastTerm headTerm opAndTermList == Expr.None then
-                                Nothing
-
-                             else
-                                Just textAreaValue
-                            )
+                            NoChildren
                         )
                     )
                 )
@@ -925,15 +898,8 @@ parserBeginWithTerm string index moduleRef termIndex expr =
                 (ActivePartDef
                     ( index
                     , ActivePartDefExpr
-                        (ActiveExprOp
+                        (TermOpOp
                             (termIndex + List.length opAndTermList)
-                            Nothing
-                            (if lastOp == Expr.Blank then
-                                Nothing
-
-                             else
-                                Just textAreaValue
-                            )
                         )
                     )
                 )
@@ -962,15 +928,9 @@ parserBeginWithOp string index moduleRef opIndex expr =
                 (ActivePartDef
                     ( index
                     , ActivePartDefExpr
-                        (ActiveExprTerm
+                        (TermOpTerm
                             (opIndex + 1 + List.length termAndOpList)
-                            Nothing
-                            (if lastTerm == Expr.None then
-                                Nothing
-
-                             else
-                                Just textAreaValue
-                            )
+                            NoChildren
                         )
                     )
                 )
@@ -988,15 +948,8 @@ parserBeginWithOp string index moduleRef opIndex expr =
                 (ActivePartDef
                     ( index
                     , ActivePartDefExpr
-                        (ActiveExprOp
+                        (TermOpOp
                             (opIndex + List.length termAndOpList)
-                            Nothing
-                            (if getLastOp headOp termAndOpList == Expr.Blank then
-                                Nothing
-
-                             else
-                                Just textAreaValue
-                            )
                         )
                     )
                 )
@@ -1121,23 +1074,66 @@ partDefActiveToString partDefActive =
         ActivePartDefType (Just _) ->
             "型を編集中"
 
-        ActivePartDefExpr ActivePartDefExprSelf ->
-            "式全体"
+        ActivePartDefExpr termOpPos ->
+            "式" ++ termOpPosToString termOpPos
 
-        ActivePartDefExpr ActiveExprHead ->
-            "先頭の項の前"
 
-        ActivePartDefExpr (ActiveExprTerm index _ Nothing) ->
-            String.fromInt index ++ "番目の項"
+termOpPosToString : TermOpPos -> String
+termOpPosToString termOpPos =
+    case termOpPos of
+        TermOpSelf ->
+            "自体"
 
-        ActivePartDefExpr (ActiveExprTerm index _ (Just _)) ->
-            String.fromInt index ++ "番目の項を編集中"
+        TermOpHead ->
+            "の中の先頭"
 
-        ActivePartDefExpr (ActiveExprOp index _ Nothing) ->
-            String.fromInt index ++ "番目の演算子"
+        TermOpTerm index childTermOp ->
+            "の中の" ++ String.fromInt index ++ "番目の項" ++ termTypeToString childTermOp
 
-        ActivePartDefExpr (ActiveExprOp index _ (Just _)) ->
-            String.fromInt index ++ "番目の演算子を編集中"
+        TermOpOp index ->
+            "の中の" ++ String.fromInt index ++ "番目の演算子"
+
+
+termTypeToString : TermType -> String
+termTypeToString termType =
+    case termType of
+        NoChildren ->
+            "自体(項)"
+
+        Parenthesis termOpPos ->
+            termOpPosToString termOpPos
+
+        Lambda lambdaPos ->
+            "ラムダ" ++ lambdaPosToString lambdaPos
+
+
+lambdaPosToString : LambdaPos -> String
+lambdaPosToString lambdaPos =
+    case lambdaPos of
+        LambdaSelf ->
+            "自体(ラ)"
+
+        SectionHead ->
+            "のSectionの先頭"
+
+        Section index sectionPos ->
+            "の" ++ String.fromInt index ++ "番目のSection" ++ sectionPosToString sectionPos
+
+
+sectionPosToString : SectionPos -> String
+sectionPosToString sectionPos =
+    case sectionPos of
+        SectionSelf ->
+            "自体(セ)"
+
+        Pattern ->
+            "のパターン"
+
+        Guard ->
+            "のガード"
+
+        Expr termOpPos ->
+            "の式" ++ termOpPosToString termOpPos
 
 
 
@@ -1654,24 +1650,24 @@ suggestTypeItem type_ subItem isSelect =
 {- ================= Expr ================= -}
 
 
-partDefViewExpr : Expr.Expr -> Maybe PartDefExprActive -> Html.Html PartDefActive
+partDefViewExpr : Expr.Expr -> Maybe TermOpPos -> Html.Html PartDefActive
 partDefViewExpr expr partDefExprActiveMaybe =
     Html.div
         ([ subClass "partDef-expr"
          ]
             ++ (case partDefExprActiveMaybe of
-                    Just ActivePartDefExprSelf ->
+                    Just TermOpSelf ->
                         [ subClass "partDef-element-active" ]
 
                     _ ->
                         [ Html.Events.stopPropagationOn "click"
-                            (Json.Decode.succeed ( ActivePartDefExpr ActivePartDefExprSelf, True ))
+                            (Json.Decode.succeed ( ActivePartDefExpr TermOpSelf, True ))
                         ]
                )
         )
         ([ Html.text "=" ]
             ++ (case partDefExprActiveMaybe of
-                    Just ActiveExprHead ->
+                    Just TermOpHead ->
                         [ activeHeadTermLeft ]
 
                     _ ->
@@ -1679,35 +1675,26 @@ partDefViewExpr expr partDefExprActiveMaybe =
                )
             ++ [ termViewOutput (Expr.getHead expr)
                     (case partDefExprActiveMaybe of
-                        Just (ActiveExprTerm 0 _ textAreaValueMaybe) ->
-                            Just textAreaValueMaybe
+                        Just (TermOpTerm 0 termPos) ->
+                            Just termPos
 
                         _ ->
                             Nothing
                     )
-                    |> Html.map (always (ActivePartDefExpr (ActiveExprTerm 0 Nothing Nothing)))
+                    Nothing
+                    |> Html.map (always (ActivePartDefExpr (TermOpTerm 0 NoChildren)))
                ]
             ++ (Expr.getOthers expr
                     |> List.indexedMap
                         (\index ( op, term ) ->
                             [ opViewOutput op
-                                (case partDefExprActiveMaybe of
-                                    Just (ActiveExprOp i _ textAreaValueMaybe) ->
-                                        if i == index then
-                                            Just textAreaValueMaybe
-
-                                        else
-                                            Nothing
-
-                                    _ ->
-                                        Nothing
-                                )
-                                |> Html.map (always (ActiveExprOp index Nothing Nothing))
+                                (partDefExprActiveMaybe == Just (TermOpOp index))
+                                |> Html.map (always (TermOpOp index))
                             , termViewOutput term
                                 (case partDefExprActiveMaybe of
-                                    Just (ActiveExprTerm i _ textAreaValueMaybe) ->
+                                    Just (TermOpTerm i termOpPos) ->
                                         if i == index + 1 then
-                                            Just textAreaValueMaybe
+                                            Just termOpPos
 
                                         else
                                             Nothing
@@ -1715,7 +1702,8 @@ partDefViewExpr expr partDefExprActiveMaybe =
                                     _ ->
                                         Nothing
                                 )
-                                |> Html.map (always (ActiveExprTerm (index + 1) Nothing Nothing))
+                                Nothing
+                                |> Html.map (always (TermOpTerm (index + 1) NoChildren))
                             ]
                         )
                     |> List.concat
@@ -1734,13 +1722,10 @@ Nothing: 選択されていない
 Just Nothing: 選択されている
 Just (Just textAreaValue): 編集中
 -}
-termViewOutput : Expr.Term -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html ()
-termViewOutput term textAreaValueMaybeMaybe =
+termViewOutput : Expr.Term -> Maybe TermType -> Maybe (List ( Char, Bool )) -> Html.Html ()
+termViewOutput term termPosMaybe textAreaValueMaybeMaybe =
     case textAreaValueMaybeMaybe of
-        Just (Just textAreaValue) ->
-            termEditView term textAreaValue
-
-        Just Nothing ->
+        Just _ ->
             termNormalView term True
 
         Nothing ->
@@ -1798,17 +1783,9 @@ suggestionTerm term =
 {------------------ Operator  ------------------}
 
 
-opViewOutput : Expr.Operator -> Maybe (Maybe (List ( Char, Bool ))) -> Html.Html ()
-opViewOutput op textAreaValueMaybeMaybe =
-    case textAreaValueMaybeMaybe of
-        Just (Just textAreaValue) ->
-            opEditView op textAreaValue
-
-        Just Nothing ->
-            opNormalView op True
-
-        Nothing ->
-            opNormalView op False
+opViewOutput : Expr.Operator -> Bool -> Html.Html ()
+opViewOutput op isSelected =
+    opNormalView op isSelected
 
 
 opNormalView : Expr.Operator -> Bool -> Html.Html ()
