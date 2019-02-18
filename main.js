@@ -6075,19 +6075,19 @@ var author$project$Project$Source$Module$Def$Expr$Add = 8;
 var author$project$Project$Source$Module$Def$Expr$Int32Literal = function (a) {
 	return {$: 0, a: a};
 };
-var author$project$Project$Source$Module$Def$Expr$Expr = F2(
+var author$project$Project$Source$Module$Def$Expr$ExprTermOp = F2(
 	function (a, b) {
 		return {$: 0, a: a, b: b};
 	});
 var author$project$Project$Source$Module$Def$Expr$None = {$: 3};
-var author$project$Project$Source$Module$Def$Expr$empty = A2(author$project$Project$Source$Module$Def$Expr$Expr, author$project$Project$Source$Module$Def$Expr$None, _List_Nil);
+var author$project$Project$Source$Module$Def$Expr$empty = A2(author$project$Project$Source$Module$Def$Expr$ExprTermOp, author$project$Project$Source$Module$Def$Expr$None, _List_Nil);
 var author$project$Project$Source$Module$Def$Expr$Blank = 15;
 var author$project$Project$Source$Module$Def$Expr$mapOthers = F2(
 	function (f, _n0) {
 		var head = _n0.a;
 		var others = _n0.b;
 		return A2(
-			author$project$Project$Source$Module$Def$Expr$Expr,
+			author$project$Project$Source$Module$Def$Expr$ExprTermOp,
 			head,
 			f(others));
 	});
@@ -6120,7 +6120,7 @@ var author$project$Project$Source$Module$Def$Expr$removeSetBlankOpNoneTermLoop =
 								if (expr.a.$ === 3) {
 									var _n7 = expr.a;
 									var $temp$rest = xs,
-										$temp$expr = A2(author$project$Project$Source$Module$Def$Expr$Expr, term, _List_Nil);
+										$temp$expr = A2(author$project$Project$Source$Module$Def$Expr$ExprTermOp, term, _List_Nil);
 									rest = $temp$rest;
 									expr = $temp$expr;
 									continue removeSetBlankOpNoneTermLoop;
@@ -6137,7 +6137,7 @@ var author$project$Project$Source$Module$Def$Expr$removeSetBlankOpNoneTermLoop =
 									var iOthers = _n8.b;
 									var $temp$rest = xs,
 										$temp$expr = A2(
-										author$project$Project$Source$Module$Def$Expr$Expr,
+										author$project$Project$Source$Module$Def$Expr$ExprTermOp,
 										iHead,
 										A2(
 											elm$core$List$cons,
@@ -6155,7 +6155,7 @@ var author$project$Project$Source$Module$Def$Expr$removeSetBlankOpNoneTermLoop =
 						var iOthers = expr.b;
 						var $temp$rest = xs,
 							$temp$expr = A2(
-							author$project$Project$Source$Module$Def$Expr$Expr,
+							author$project$Project$Source$Module$Def$Expr$ExprTermOp,
 							iHead,
 							A2(
 								elm$core$List$cons,
@@ -6172,7 +6172,7 @@ var author$project$Project$Source$Module$Def$Expr$removeSetBlankOpNoneTermLoop =
 					var iOthers = expr.b;
 					var $temp$rest = xs,
 						$temp$expr = A2(
-						author$project$Project$Source$Module$Def$Expr$Expr,
+						author$project$Project$Source$Module$Def$Expr$ExprTermOp,
 						iHead,
 						A2(elm$core$List$cons, x, iOthers));
 					rest = $temp$rest;
@@ -6188,12 +6188,12 @@ var author$project$Project$Source$Module$Def$Expr$removeBlankOpNoneTerm = functi
 	return A2(
 		author$project$Project$Source$Module$Def$Expr$removeSetBlankOpNoneTermLoop,
 		others,
-		A2(author$project$Project$Source$Module$Def$Expr$Expr, head, _List_Nil));
+		A2(author$project$Project$Source$Module$Def$Expr$ExprTermOp, head, _List_Nil));
 };
 var author$project$Project$Source$Module$Def$Expr$make = F2(
 	function (head, others) {
 		return author$project$Project$Source$Module$Def$Expr$removeBlankOpNoneTerm(
-			A2(author$project$Project$Source$Module$Def$Expr$Expr, head, others));
+			A2(author$project$Project$Source$Module$Def$Expr$ExprTermOp, head, others));
 	});
 var author$project$Project$Source$Module$Def$Name$Name = function (a) {
 	return {$: 1, a: a};
@@ -12237,7 +12237,7 @@ var author$project$Project$Source$Module$Def$Expr$replaceAndInsertHeadLastOp = F
 		var others = _n0.b;
 		return author$project$Project$Source$Module$Def$Expr$removeBlankOpNoneTerm(
 			A2(
-				author$project$Project$Source$Module$Def$Expr$Expr,
+				author$project$Project$Source$Module$Def$Expr$ExprTermOp,
 				headTerm,
 				_Utils_ap(
 					list,
@@ -12252,7 +12252,7 @@ var author$project$Project$Source$Module$Def$Expr$replaceAndInsertHeadLastTerm =
 	function (term, list, _n0) {
 		var others = _n0.b;
 		return A2(
-			author$project$Project$Source$Module$Def$Expr$Expr,
+			author$project$Project$Source$Module$Def$Expr$ExprTermOp,
 			term,
 			_Utils_ap(list, others));
 	});
