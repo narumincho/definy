@@ -104,7 +104,42 @@ init =
                                     [ Label.oo, Label.oi, Label.on, Label.ot ]
                                 )
                         , type_ = Type.empty
-                        , expr = Expr.empty
+                        , expr =
+                            Expr.make
+                                (Expr.Int32Literal 1)
+                                [ ( Expr.Add
+                                  , Expr.Int32Literal 2
+                                  )
+                                , ( Expr.Add
+                                  , Expr.Parentheses
+                                        (Expr.make
+                                            (Expr.Int32Literal 3)
+                                            [ ( Expr.Add
+                                              , Expr.Int32Literal 4
+                                              )
+                                            , ( Expr.Add
+                                              , Expr.Parentheses
+                                                    (Expr.make
+                                                        (Expr.Int32Literal 5)
+                                                        [ ( Expr.Add
+                                                          , Expr.Parentheses
+                                                                (Expr.make
+                                                                    (Expr.Parentheses (Expr.make (Expr.Int32Literal 6) []))
+                                                                    [ ( Expr.Add
+                                                                      , Expr.Int32Literal 7
+                                                                      )
+                                                                    ]
+                                                                )
+                                                          )
+                                                        ]
+                                                    )
+                                              )
+                                            , ( Expr.Add, Expr.Int32Literal 8 )
+                                            ]
+                                        )
+                                  )
+                                , ( Expr.Add, Expr.Int32Literal 9 )
+                                ]
                         }
                     ]
                 , readMe = ""

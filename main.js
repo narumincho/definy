@@ -6075,6 +6075,9 @@ var author$project$Project$Source$Module$Def$Expr$Add = 8;
 var author$project$Project$Source$Module$Def$Expr$Int32Literal = function (a) {
 	return {$: 0, a: a};
 };
+var author$project$Project$Source$Module$Def$Expr$Parentheses = function (a) {
+	return {$: 2, a: a};
+};
 var author$project$Project$Source$Module$Def$Expr$ExprTermOp = F2(
 	function (a, b) {
 		return {$: 0, a: a, b: b};
@@ -6297,7 +6300,58 @@ var author$project$Project$Source$init = {
 				[
 					author$project$Project$Source$Module$Def$make(
 					{
-						aO: author$project$Project$Source$Module$Def$Expr$empty,
+						aO: A2(
+							author$project$Project$Source$Module$Def$Expr$make,
+							author$project$Project$Source$Module$Def$Expr$Int32Literal(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8,
+									author$project$Project$Source$Module$Def$Expr$Int32Literal(2)),
+									_Utils_Tuple2(
+									8,
+									author$project$Project$Source$Module$Def$Expr$Parentheses(
+										A2(
+											author$project$Project$Source$Module$Def$Expr$make,
+											author$project$Project$Source$Module$Def$Expr$Int32Literal(3),
+											_List_fromArray(
+												[
+													_Utils_Tuple2(
+													8,
+													author$project$Project$Source$Module$Def$Expr$Int32Literal(4)),
+													_Utils_Tuple2(
+													8,
+													author$project$Project$Source$Module$Def$Expr$Parentheses(
+														A2(
+															author$project$Project$Source$Module$Def$Expr$make,
+															author$project$Project$Source$Module$Def$Expr$Int32Literal(5),
+															_List_fromArray(
+																[
+																	_Utils_Tuple2(
+																	8,
+																	author$project$Project$Source$Module$Def$Expr$Parentheses(
+																		A2(
+																			author$project$Project$Source$Module$Def$Expr$make,
+																			author$project$Project$Source$Module$Def$Expr$Parentheses(
+																				A2(
+																					author$project$Project$Source$Module$Def$Expr$make,
+																					author$project$Project$Source$Module$Def$Expr$Int32Literal(6),
+																					_List_Nil)),
+																			_List_fromArray(
+																				[
+																					_Utils_Tuple2(
+																					8,
+																					author$project$Project$Source$Module$Def$Expr$Int32Literal(7))
+																				]))))
+																])))),
+													_Utils_Tuple2(
+													8,
+													author$project$Project$Source$Module$Def$Expr$Int32Literal(8))
+												])))),
+									_Utils_Tuple2(
+									8,
+									author$project$Project$Source$Module$Def$Expr$Int32Literal(9))
+								])),
 						aS: author$project$Project$Source$Module$Def$Name$fromLabel(
 							A2(
 								author$project$Project$Label$make,
@@ -9461,10 +9515,10 @@ var author$project$Panel$Editor$Module$activeTo = F2(
 														author$project$Panel$Editor$Module$EmitFocusEditTextAea
 													]);
 											case 2:
-												if (active.a.a.b.a.b.$ === 1) {
+												if (active.a.a.b.a.c.$ === 1) {
 													var _n15 = active.a.a;
 													var _n16 = _n15.b.a;
-													var _n17 = _n16.b;
+													var _n17 = _n16.c;
 													return _List_fromArray(
 														[
 															author$project$Panel$Editor$Module$EmitSetTextAreaValue(''),
@@ -9474,10 +9528,10 @@ var author$project$Panel$Editor$Module$activeTo = F2(
 													break _n1$11;
 												}
 											default:
-												if (active.a.a.b.a.b.$ === 1) {
+												if (active.a.a.b.a.c.$ === 1) {
 													var _n18 = active.a.a;
 													var _n19 = _n18.b.a;
-													var _n20 = _n19.b;
+													var _n20 = _n19.c;
 													return _List_fromArray(
 														[
 															author$project$Panel$Editor$Module$EmitSetTextAreaValue(''),
@@ -9505,13 +9559,13 @@ var author$project$Panel$Editor$Module$confirmMultiLineTextField = function (act
 var author$project$Panel$Editor$Module$EmitChangeReadMe = function (a) {
 	return {$: 0, a: a};
 };
-var author$project$Panel$Editor$Module$ActiveExprOp = F2(
-	function (a, b) {
-		return {$: 3, a: a, b: b};
+var author$project$Panel$Editor$Module$ActiveExprOp = F3(
+	function (a, b, c) {
+		return {$: 3, a: a, b: b, c: c};
 	});
-var author$project$Panel$Editor$Module$ActiveExprTerm = F2(
-	function (a, b) {
-		return {$: 2, a: a, b: b};
+var author$project$Panel$Editor$Module$ActiveExprTerm = F3(
+	function (a, b, c) {
+		return {$: 2, a: a, b: b, c: c};
 	});
 var author$project$Panel$Editor$Module$ActivePartDefExpr = function (a) {
 	return {$: 3, a: a};
@@ -11683,9 +11737,10 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 							_Utils_Tuple2(
 								index,
 								author$project$Panel$Editor$Module$ActivePartDefExpr(
-									(_Utils_eq(headTerm, author$project$Project$Source$Module$Def$Expr$None) && _Utils_eq(opAndTermList, _List_Nil)) ? author$project$Panel$Editor$Module$ActivePartDefExprSelf : A2(
+									(_Utils_eq(headTerm, author$project$Project$Source$Module$Def$Expr$None) && _Utils_eq(opAndTermList, _List_Nil)) ? author$project$Panel$Editor$Module$ActivePartDefExprSelf : A3(
 										author$project$Panel$Editor$Module$ActiveExprTerm,
 										elm$core$List$length(opAndTermList),
+										elm$core$Maybe$Nothing,
 										elm$core$Maybe$Just(textAreaValue)))))),
 					_Utils_ap(
 						_List_fromArray(
@@ -11724,9 +11779,10 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 							_Utils_Tuple2(
 								index,
 								author$project$Panel$Editor$Module$ActivePartDefExpr(
-									A2(
+									A3(
 										author$project$Panel$Editor$Module$ActiveExprOp,
 										elm$core$List$length(opAndTermList),
+										elm$core$Maybe$Nothing,
 										elm$core$Maybe$Just(textAreaValue)))))),
 					_List_fromArray(
 						[
@@ -12145,9 +12201,10 @@ var author$project$Panel$Editor$Module$parserBeginWithOp = F5(
 						_Utils_Tuple2(
 							index,
 							author$project$Panel$Editor$Module$ActivePartDefExpr(
-								A2(
+								A3(
 									author$project$Panel$Editor$Module$ActiveExprTerm,
 									(opIndex + 1) + elm$core$List$length(termAndOpList),
+									elm$core$Maybe$Nothing,
 									_Utils_eq(lastTerm, author$project$Project$Source$Module$Def$Expr$None) ? elm$core$Maybe$Nothing : elm$core$Maybe$Just(textAreaValue)))))),
 				_List_fromArray(
 					[
@@ -12169,9 +12226,10 @@ var author$project$Panel$Editor$Module$parserBeginWithOp = F5(
 						_Utils_Tuple2(
 							index,
 							author$project$Panel$Editor$Module$ActivePartDefExpr(
-								A2(
+								A3(
 									author$project$Panel$Editor$Module$ActiveExprOp,
 									opIndex + elm$core$List$length(termAndOpList),
+									elm$core$Maybe$Nothing,
 									(A2(author$project$Panel$Editor$Module$getLastOp, headOp, termAndOpList) === 15) ? elm$core$Maybe$Nothing : elm$core$Maybe$Just(textAreaValue)))))),
 				_Utils_ap(
 					_List_fromArray(
@@ -12323,9 +12381,10 @@ var author$project$Panel$Editor$Module$parserBeginWithTerm = F5(
 						_Utils_Tuple2(
 							index,
 							author$project$Panel$Editor$Module$ActivePartDefExpr(
-								A2(
+								A3(
 									author$project$Panel$Editor$Module$ActiveExprTerm,
 									termIndex + elm$core$List$length(opAndTermList),
+									elm$core$Maybe$Nothing,
 									_Utils_eq(
 										A2(author$project$Panel$Editor$Module$getLastTerm, headTerm, opAndTermList),
 										author$project$Project$Source$Module$Def$Expr$None) ? elm$core$Maybe$Nothing : elm$core$Maybe$Just(textAreaValue)))))),
@@ -12354,9 +12413,10 @@ var author$project$Panel$Editor$Module$parserBeginWithTerm = F5(
 						_Utils_Tuple2(
 							index,
 							author$project$Panel$Editor$Module$ActivePartDefExpr(
-								A2(
+								A3(
 									author$project$Panel$Editor$Module$ActiveExprOp,
 									termIndex + elm$core$List$length(opAndTermList),
+									elm$core$Maybe$Nothing,
 									(lastOp === 15) ? elm$core$Maybe$Nothing : elm$core$Maybe$Just(textAreaValue)))))),
 				_List_fromArray(
 					[
@@ -12455,9 +12515,10 @@ var author$project$Panel$Editor$Module$parserBeginWithType = F3(
 											return author$project$Panel$Editor$Module$ActivePartDefExprSelf;
 										} else {
 											var length = _n1;
-											return A2(
+											return A3(
 												author$project$Panel$Editor$Module$ActiveExprTerm,
 												length,
+												elm$core$Maybe$Nothing,
 												_Utils_eq(textAreaValue, _List_Nil) ? elm$core$Maybe$Nothing : elm$core$Maybe$Just(textAreaValue));
 										}
 									}())))),
@@ -12553,9 +12614,10 @@ var author$project$Panel$Editor$Module$parserInExpr = F3(
 						_Utils_Tuple2(
 							index,
 							author$project$Panel$Editor$Module$ActivePartDefExpr(
-								A2(
+								A3(
 									author$project$Panel$Editor$Module$ActiveExprTerm,
 									elm$core$List$length(opAndTermList),
+									elm$core$Maybe$Nothing,
 									_Utils_eq(
 										A2(author$project$Panel$Editor$Module$getLastTerm, headTerm, opAndTermList),
 										author$project$Project$Source$Module$Def$Expr$None) ? elm$core$Maybe$Nothing : elm$core$Maybe$Just(textAreaValue)))))),
@@ -12584,9 +12646,10 @@ var author$project$Panel$Editor$Module$parserInExpr = F3(
 						_Utils_Tuple2(
 							index,
 							author$project$Panel$Editor$Module$ActivePartDefExpr(
-								A2(
+								A3(
 									author$project$Panel$Editor$Module$ActiveExprOp,
 									elm$core$List$length(opAndTermList),
+									elm$core$Maybe$Nothing,
 									(lastOp === 15) ? elm$core$Maybe$Nothing : elm$core$Maybe$Just(textAreaValue)))))),
 				_List_fromArray(
 					[
@@ -12801,11 +12864,11 @@ var author$project$Panel$Editor$Module$selectDown = F2(
 													index,
 													author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$ActivePartDefExprSelf))));
 									case 2:
-										if (active.a.a.b.a.b.$ === 1) {
+										if (active.a.a.b.a.c.$ === 1) {
 											var _n11 = active.a.a;
 											var index = _n11.a;
 											var _n12 = _n11.b.a;
-											var _n13 = _n12.b;
+											var _n13 = _n12.c;
 											return author$project$Panel$Editor$Module$ActivePartDefList(
 												author$project$Panel$Editor$Module$ActivePartDef(
 													_Utils_Tuple2(
@@ -12815,11 +12878,11 @@ var author$project$Panel$Editor$Module$selectDown = F2(
 											break _n0$9;
 										}
 									default:
-										if (active.a.a.b.a.b.$ === 1) {
+										if (active.a.a.b.a.c.$ === 1) {
 											var _n14 = active.a.a;
 											var index = _n14.a;
 											var _n15 = _n14.b.a;
-											var _n16 = _n15.b;
+											var _n16 = _n15.c;
 											return author$project$Panel$Editor$Module$ActivePartDefList(
 												author$project$Panel$Editor$Module$ActivePartDef(
 													_Utils_Tuple2(
@@ -12879,7 +12942,7 @@ var author$project$Panel$Editor$Module$selectFirstChild = F2(
 											_Utils_Tuple2(
 												index,
 												author$project$Panel$Editor$Module$ActivePartDefExpr(
-													A2(author$project$Panel$Editor$Module$ActiveExprTerm, 0, elm$core$Maybe$Nothing)))));
+													A3(author$project$Panel$Editor$Module$ActiveExprTerm, 0, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing)))));
 								} else {
 									break _n0$5;
 								}
@@ -13012,7 +13075,7 @@ var author$project$Panel$Editor$Module$selectLeft = F2(
 												_Utils_Tuple2(
 													index,
 													author$project$Panel$Editor$Module$ActivePartDefExpr(
-														A2(author$project$Panel$Editor$Module$ActiveExprTerm, opIndex, elm$core$Maybe$Nothing)))));
+														A3(author$project$Panel$Editor$Module$ActiveExprTerm, opIndex, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing)))));
 									default:
 										if (!active.a.a.b.a.a) {
 											var _n14 = active.a.a;
@@ -13033,7 +13096,7 @@ var author$project$Panel$Editor$Module$selectLeft = F2(
 													_Utils_Tuple2(
 														index,
 														author$project$Panel$Editor$Module$ActivePartDefExpr(
-															A2(author$project$Panel$Editor$Module$ActiveExprOp, termIndex - 1, elm$core$Maybe$Nothing)))));
+															A3(author$project$Panel$Editor$Module$ActiveExprOp, termIndex - 1, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing)))));
 										}
 								}
 						}
@@ -13196,7 +13259,7 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 												_Utils_Tuple2(
 													index,
 													author$project$Panel$Editor$Module$ActivePartDefExpr(
-														A2(author$project$Panel$Editor$Module$ActiveExprTerm, 0, elm$core$Maybe$Nothing)))));
+														A3(author$project$Panel$Editor$Module$ActiveExprTerm, 0, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing)))));
 									case 1:
 										var _n11 = active.a.a;
 										var index = _n11.a;
@@ -13206,7 +13269,7 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 												_Utils_Tuple2(
 													index,
 													author$project$Panel$Editor$Module$ActivePartDefExpr(
-														A2(author$project$Panel$Editor$Module$ActiveExprTerm, 0, elm$core$Maybe$Nothing)))));
+														A3(author$project$Panel$Editor$Module$ActiveExprTerm, 0, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing)))));
 									case 2:
 										var _n13 = active.a.a;
 										var index = _n13.a;
@@ -13234,7 +13297,7 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 												_Utils_Tuple2(
 													index,
 													author$project$Panel$Editor$Module$ActivePartDefExpr(
-														A2(author$project$Panel$Editor$Module$ActiveExprOp, termIndex, elm$core$Maybe$Nothing)))));
+														A3(author$project$Panel$Editor$Module$ActiveExprOp, termIndex, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing)))));
 									default:
 										var _n15 = active.a.a;
 										var index = _n15.a;
@@ -13262,7 +13325,7 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 												_Utils_Tuple2(
 													index,
 													author$project$Panel$Editor$Module$ActivePartDefExpr(
-														A2(author$project$Panel$Editor$Module$ActiveExprTerm, opIndex + 1, elm$core$Maybe$Nothing)))));
+														A3(author$project$Panel$Editor$Module$ActiveExprTerm, opIndex + 1, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing)))));
 								}
 						}
 					}
@@ -13341,11 +13404,11 @@ var author$project$Panel$Editor$Module$selectUp = F2(
 													index,
 													author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$ActivePartDefExprSelf))));
 									case 2:
-										if (active.a.a.b.a.b.$ === 1) {
+										if (active.a.a.b.a.c.$ === 1) {
 											var _n14 = active.a.a;
 											var index = _n14.a;
 											var _n15 = _n14.b.a;
-											var _n16 = _n15.b;
+											var _n16 = _n15.c;
 											return author$project$Panel$Editor$Module$ActivePartDefList(
 												author$project$Panel$Editor$Module$ActivePartDef(
 													_Utils_Tuple2(
@@ -13355,11 +13418,11 @@ var author$project$Panel$Editor$Module$selectUp = F2(
 											break _n0$11;
 										}
 									default:
-										if (active.a.a.b.a.b.$ === 1) {
+										if (active.a.a.b.a.c.$ === 1) {
 											var _n17 = active.a.a;
 											var index = _n17.a;
 											var _n18 = _n17.b.a;
-											var _n19 = _n18.b;
+											var _n19 = _n18.c;
 											return author$project$Panel$Editor$Module$ActivePartDefList(
 												author$project$Panel$Editor$Module$ActivePartDef(
 													_Utils_Tuple2(
@@ -19059,10 +19122,10 @@ var author$project$Panel$Editor$Module$partDefActiveToString = function (partDef
 					var _n4 = partDefActive.a;
 					return '先頭の項の前';
 				case 2:
-					if (partDefActive.a.b.$ === 1) {
+					if (partDefActive.a.c.$ === 1) {
 						var _n5 = partDefActive.a;
 						var index = _n5.a;
-						var _n6 = _n5.b;
+						var _n6 = _n5.c;
 						return elm$core$String$fromInt(index) + '番目の項';
 					} else {
 						var _n7 = partDefActive.a;
@@ -19070,10 +19133,10 @@ var author$project$Panel$Editor$Module$partDefActiveToString = function (partDef
 						return elm$core$String$fromInt(index) + '番目の項を編集中';
 					}
 				default:
-					if (partDefActive.a.b.$ === 1) {
+					if (partDefActive.a.c.$ === 1) {
 						var _n8 = partDefActive.a;
 						var index = _n8.a;
-						var _n9 = _n8.b;
+						var _n9 = _n8.c;
 						return elm$core$String$fromInt(index) + '番目の演算子';
 					} else {
 						var _n10 = partDefActive.a;
@@ -19862,14 +19925,14 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 								elm$html$Html$map,
 								elm$core$Basics$always(
 									author$project$Panel$Editor$Module$ActivePartDefExpr(
-										A2(author$project$Panel$Editor$Module$ActiveExprTerm, 0, elm$core$Maybe$Nothing))),
+										A3(author$project$Panel$Editor$Module$ActiveExprTerm, 0, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing))),
 								A2(
 									author$project$Panel$Editor$Module$termViewOutput,
 									author$project$Project$Source$Module$Def$Expr$getHead(expr),
 									function () {
 										if (((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 2)) && (!partDefExprActiveMaybe.a.a)) {
 											var _n5 = partDefExprActiveMaybe.a;
-											var textAreaValueMaybe = _n5.b;
+											var textAreaValueMaybe = _n5.c;
 											return elm$core$Maybe$Just(textAreaValueMaybe);
 										} else {
 											return elm$core$Maybe$Nothing;
@@ -19891,7 +19954,7 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 													A2(
 													elm$html$Html$map,
 													elm$core$Basics$always(
-														A2(author$project$Panel$Editor$Module$ActiveExprOp, index, elm$core$Maybe$Nothing)),
+														A3(author$project$Panel$Editor$Module$ActiveExprOp, index, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing)),
 													A2(
 														author$project$Panel$Editor$Module$opViewOutput,
 														op,
@@ -19899,7 +19962,7 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 															if ((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 3)) {
 																var _n8 = partDefExprActiveMaybe.a;
 																var i = _n8.a;
-																var textAreaValueMaybe = _n8.b;
+																var textAreaValueMaybe = _n8.c;
 																return _Utils_eq(i, index) ? elm$core$Maybe$Just(textAreaValueMaybe) : elm$core$Maybe$Nothing;
 															} else {
 																return elm$core$Maybe$Nothing;
@@ -19908,7 +19971,7 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 													A2(
 													elm$html$Html$map,
 													elm$core$Basics$always(
-														A2(author$project$Panel$Editor$Module$ActiveExprTerm, index + 1, elm$core$Maybe$Nothing)),
+														A3(author$project$Panel$Editor$Module$ActiveExprTerm, index + 1, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing)),
 													A2(
 														author$project$Panel$Editor$Module$termViewOutput,
 														term,
@@ -19916,7 +19979,7 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F2(
 															if ((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 2)) {
 																var _n10 = partDefExprActiveMaybe.a;
 																var i = _n10.a;
-																var textAreaValueMaybe = _n10.b;
+																var textAreaValueMaybe = _n10.c;
 																return _Utils_eq(i, index + 1) ? elm$core$Maybe$Just(textAreaValueMaybe) : elm$core$Maybe$Nothing;
 															} else {
 																return elm$core$Maybe$Nothing;

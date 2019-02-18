@@ -1702,7 +1702,7 @@ partDefViewExpr expr partDefExprActiveMaybe =
                                     _ ->
                                         Nothing
                                 )
-                                |> Html.map (always (ActiveExprOp index Nothing))
+                                |> Html.map (always (ActiveExprOp index Nothing Nothing))
                             , termViewOutput term
                                 (case partDefExprActiveMaybe of
                                     Just (ActiveExprTerm i _ textAreaValueMaybe) ->
@@ -1715,7 +1715,7 @@ partDefViewExpr expr partDefExprActiveMaybe =
                                     _ ->
                                         Nothing
                                 )
-                                |> Html.map (always (ActiveExprTerm (index + 1) Nothing))
+                                |> Html.map (always (ActiveExprTerm (index + 1) Nothing Nothing))
                             ]
                         )
                     |> List.concat
