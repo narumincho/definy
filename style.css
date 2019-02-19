@@ -594,6 +594,15 @@ img {
     border-radius: 4px;
 }
 
+/*=================
+        TermOp
+=================*/
+
+.moduleEditor-partDef-termOp {
+    display: flex;
+    align-items: center;
+}
+
 .moduleEditor-partDef-term {
     display: flex;
     padding: 3px 8px;

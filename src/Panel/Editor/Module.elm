@@ -1715,14 +1715,23 @@ partDefViewExpr expr termOpPosMaybe editStateMaybe =
                         ]
                )
         )
-        ([ Html.text "=" ]
-            ++ (case termOpPosMaybe of
-                    Just TermOpHead ->
-                        [ activeHeadTermLeft ]
+        [ Html.text "="
+        , termOpView termOpPosMaybe editStateMaybe expr
+            |> Html.map (\m -> DefActiveTo (ActivePartDefExpr m))
+        ]
 
-                    _ ->
-                        []
-               )
+
+termOpView : Maybe TermOpPos -> Maybe EditState -> Expr.Expr -> Html.Html TermOpPos
+termOpView termOpPosMaybe editStateMaybe expr =
+    Html.div
+        [ subClass "partDef-termOp" ]
+        ((case termOpPosMaybe of
+            Just TermOpHead ->
+                [ activeHeadTermLeft ]
+
+            _ ->
+                []
+         )
             ++ [ (case termOpPosMaybe of
                     Just (TermOpTerm 0 termPos) ->
                         termViewOutput (Expr.getHead expr)
@@ -1734,11 +1743,9 @@ partDefViewExpr expr termOpPosMaybe editStateMaybe =
                             Nothing
                             Nothing
                  )
-                    |> Html.map (always (DefActiveTo (ActivePartDefExpr (TermOpTerm 0 NoChildren))))
+                    |> Html.map (always (TermOpTerm 0 NoChildren))
                ]
-            ++ (partDefViewTermOpList (Expr.getOthers expr) editStateMaybe termOpPosMaybe
-                    |> List.map (Html.map (\m -> DefActiveTo (ActivePartDefExpr m)))
-               )
+            ++ partDefViewTermOpList (Expr.getOthers expr) editStateMaybe termOpPosMaybe
         )
 
 

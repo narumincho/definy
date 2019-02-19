@@ -19594,6 +19594,55 @@ var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
 	var head = _n0.a;
 	return head;
 };
+var author$project$Panel$Editor$Module$termOpView = F3(
+	function (termOpPosMaybe, editStateMaybe, expr) {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					author$project$Panel$Editor$Module$subClass('partDef-termOp')
+				]),
+			_Utils_ap(
+				function () {
+					if ((!termOpPosMaybe.$) && (termOpPosMaybe.a.$ === 1)) {
+						var _n1 = termOpPosMaybe.a;
+						return _List_fromArray(
+							[author$project$Panel$Editor$Module$activeHeadTermLeft]);
+					} else {
+						return _List_Nil;
+					}
+				}(),
+				_Utils_ap(
+					_List_fromArray(
+						[
+							A2(
+							elm$html$Html$map,
+							elm$core$Basics$always(
+								A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$NoChildren)),
+							function () {
+								if (((!termOpPosMaybe.$) && (termOpPosMaybe.a.$ === 2)) && (!termOpPosMaybe.a.a)) {
+									var _n3 = termOpPosMaybe.a;
+									var termPos = _n3.b;
+									return A3(
+										author$project$Panel$Editor$Module$termViewOutput,
+										author$project$Project$Source$Module$Def$Expr$getHead(expr),
+										elm$core$Maybe$Just(termPos),
+										editStateMaybe);
+								} else {
+									return A3(
+										author$project$Panel$Editor$Module$termViewOutput,
+										author$project$Project$Source$Module$Def$Expr$getHead(expr),
+										elm$core$Maybe$Nothing,
+										elm$core$Maybe$Nothing);
+								}
+							}())
+						]),
+					A3(
+						author$project$Panel$Editor$Module$partDefViewTermOpList,
+						author$project$Project$Source$Module$Def$Expr$getOthers(expr),
+						editStateMaybe,
+						termOpPosMaybe))));
+	});
 var author$project$Panel$Editor$Module$partDefViewExpr = F3(
 	function (expr, termOpPosMaybe, editStateMaybe) {
 		return A2(
@@ -19624,60 +19673,17 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F3(
 							]);
 					}
 				}()),
-			_Utils_ap(
-				_List_fromArray(
-					[
-						elm$html$Html$text('=')
-					]),
-				_Utils_ap(
-					function () {
-						if ((!termOpPosMaybe.$) && (termOpPosMaybe.a.$ === 1)) {
-							var _n3 = termOpPosMaybe.a;
-							return _List_fromArray(
-								[author$project$Panel$Editor$Module$activeHeadTermLeft]);
-						} else {
-							return _List_Nil;
-						}
-					}(),
-					_Utils_ap(
-						_List_fromArray(
-							[
-								A2(
-								elm$html$Html$map,
-								elm$core$Basics$always(
-									author$project$Panel$Editor$Module$DefActiveTo(
-										author$project$Panel$Editor$Module$ActivePartDefExpr(
-											A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$NoChildren)))),
-								function () {
-									if (((!termOpPosMaybe.$) && (termOpPosMaybe.a.$ === 2)) && (!termOpPosMaybe.a.a)) {
-										var _n5 = termOpPosMaybe.a;
-										var termPos = _n5.b;
-										return A3(
-											author$project$Panel$Editor$Module$termViewOutput,
-											author$project$Project$Source$Module$Def$Expr$getHead(expr),
-											elm$core$Maybe$Just(termPos),
-											editStateMaybe);
-									} else {
-										return A3(
-											author$project$Panel$Editor$Module$termViewOutput,
-											author$project$Project$Source$Module$Def$Expr$getHead(expr),
-											elm$core$Maybe$Nothing,
-											elm$core$Maybe$Nothing);
-									}
-								}())
-							]),
-						A2(
-							elm$core$List$map,
-							elm$html$Html$map(
-								function (m) {
-									return author$project$Panel$Editor$Module$DefActiveTo(
-										author$project$Panel$Editor$Module$ActivePartDefExpr(m));
-								}),
-							A3(
-								author$project$Panel$Editor$Module$partDefViewTermOpList,
-								author$project$Project$Source$Module$Def$Expr$getOthers(expr),
-								editStateMaybe,
-								termOpPosMaybe))))));
+			_List_fromArray(
+				[
+					elm$html$Html$text('='),
+					A2(
+					elm$html$Html$map,
+					function (m) {
+						return author$project$Panel$Editor$Module$DefActiveTo(
+							author$project$Panel$Editor$Module$ActivePartDefExpr(m));
+					},
+					A3(author$project$Panel$Editor$Module$termOpView, termOpPosMaybe, editStateMaybe, expr))
+				]));
 	});
 var author$project$Panel$Editor$Module$DefInput = function (a) {
 	return {$: 1, a: a};
