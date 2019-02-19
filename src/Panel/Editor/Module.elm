@@ -1793,13 +1793,17 @@ partDefViewTermOpList termOpList editStateMaybe termOpPosMaybe =
 -}
 termViewOutput : Expr.Term -> Maybe TermType -> Maybe EditState -> Html.Html TermType
 termViewOutput term termTypeMaybe editStateMaybe =
+    let
+        isSelect =
+            (termTypeMaybe |> Maybe.map termTypeIsSelectSelf) == Just True
+    in
     case term of
         Expr.Int32Literal _ ->
             Html.div
                 [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( NoChildren, True ))
                 , subClassList
                     [ ( "partDef-term", True )
-                    , ( "partDef-term-active", termTypeMaybe == Just NoChildren )
+                    , ( "partDef-term-active", isSelect )
                     ]
                 ]
                 [ Html.text (Expr.termToString term) ]
@@ -1809,7 +1813,7 @@ termViewOutput term termTypeMaybe editStateMaybe =
                 [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( NoChildren, True ))
                 , subClassList
                     [ ( "partDef-term", True )
-                    , ( "partDef-term-active", termTypeMaybe == Just NoChildren )
+                    , ( "partDef-term-active", isSelect )
                     ]
                 ]
                 [ Html.text (Expr.termToString term) ]
@@ -1819,7 +1823,7 @@ termViewOutput term termTypeMaybe editStateMaybe =
                 [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( Parenthesis TermOpSelf, True ))
                 , subClassList
                     [ ( "partDef-term", True )
-                    , ( "partDef-term-active", termTypeMaybe == Just (Parenthesis TermOpSelf) )
+                    , ( "partDef-term-active", isSelect )
                     ]
                 ]
                 [ Html.text "("
@@ -1842,10 +1846,26 @@ termViewOutput term termTypeMaybe editStateMaybe =
                 [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( NoChildren, True ))
                 , subClassList
                     [ ( "partDef-term", True )
-                    , ( "partDef-term-active", termTypeMaybe == Just NoChildren )
+                    , ( "partDef-term-active", isSelect )
                     ]
                 ]
                 [ Html.text "ばつ" ]
+
+
+termTypeIsSelectSelf : TermType -> Bool
+termTypeIsSelectSelf termType =
+    case termType of
+        NoChildren ->
+            True
+
+        Parenthesis TermOpSelf ->
+            True
+
+        Lambda LambdaSelf ->
+            True
+
+        _ ->
+            False
 
 
 termEditView : Expr.Term -> List ( Char, Bool ) -> Html.Html msg

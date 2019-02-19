@@ -606,14 +606,14 @@ img {
 .moduleEditor-partDef-term {
     display: flex;
     align-items: center;
-    padding: 3px 8px;
+    padding: 3px 4px;
 }
 
 .moduleEditor-partDef-term-active {
     border: solid 3px var(--accentColorBg);
     border-radius: 2px;
     display: flex;
-    padding: 0 5px;
+    padding: 0 1px;
 }
 
 .moduleEditor-partDef-term-edit {

@@ -19450,6 +19450,30 @@ var author$project$Panel$Editor$Module$opViewOutput = F2(
 	function (op, isSelected) {
 		return A2(author$project$Panel$Editor$Module$opNormalView, op, isSelected);
 	});
+var author$project$Panel$Editor$Module$termTypeIsSelectSelf = function (termType) {
+	_n0$3:
+	while (true) {
+		switch (termType.$) {
+			case 0:
+				return true;
+			case 1:
+				if (!termType.a.$) {
+					var _n1 = termType.a;
+					return true;
+				} else {
+					break _n0$3;
+				}
+			default:
+				if (!termType.a.$) {
+					var _n2 = termType.a;
+					return true;
+				} else {
+					break _n0$3;
+				}
+		}
+	}
+	return false;
+};
 var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
 	var head = _n0.a;
 	return head;
@@ -19594,6 +19618,9 @@ var author$project$Panel$Editor$Module$termOpView = F3(
 	});
 var author$project$Panel$Editor$Module$termViewOutput = F3(
 	function (term, termTypeMaybe, editStateMaybe) {
+		var isSelect = _Utils_eq(
+			A2(elm$core$Maybe$map, author$project$Panel$Editor$Module$termTypeIsSelectSelf, termTypeMaybe),
+			elm$core$Maybe$Just(true));
 		switch (term.$) {
 			case 0:
 				return A2(
@@ -19609,11 +19636,7 @@ var author$project$Panel$Editor$Module$termViewOutput = F3(
 							_List_fromArray(
 								[
 									_Utils_Tuple2('partDef-term', true),
-									_Utils_Tuple2(
-									'partDef-term-active',
-									_Utils_eq(
-										termTypeMaybe,
-										elm$core$Maybe$Just(author$project$Panel$Editor$Module$NoChildren)))
+									_Utils_Tuple2('partDef-term-active', isSelect)
 								]))
 						]),
 					_List_fromArray(
@@ -19635,11 +19658,7 @@ var author$project$Panel$Editor$Module$termViewOutput = F3(
 							_List_fromArray(
 								[
 									_Utils_Tuple2('partDef-term', true),
-									_Utils_Tuple2(
-									'partDef-term-active',
-									_Utils_eq(
-										termTypeMaybe,
-										elm$core$Maybe$Just(author$project$Panel$Editor$Module$NoChildren)))
+									_Utils_Tuple2('partDef-term-active', isSelect)
 								]))
 						]),
 					_List_fromArray(
@@ -19664,12 +19683,7 @@ var author$project$Panel$Editor$Module$termViewOutput = F3(
 							_List_fromArray(
 								[
 									_Utils_Tuple2('partDef-term', true),
-									_Utils_Tuple2(
-									'partDef-term-active',
-									_Utils_eq(
-										termTypeMaybe,
-										elm$core$Maybe$Just(
-											author$project$Panel$Editor$Module$Parenthesis(author$project$Panel$Editor$Module$TermOpSelf))))
+									_Utils_Tuple2('partDef-term-active', isSelect)
 								]))
 						]),
 					_List_fromArray(
@@ -19706,11 +19720,7 @@ var author$project$Panel$Editor$Module$termViewOutput = F3(
 							_List_fromArray(
 								[
 									_Utils_Tuple2('partDef-term', true),
-									_Utils_Tuple2(
-									'partDef-term-active',
-									_Utils_eq(
-										termTypeMaybe,
-										elm$core$Maybe$Just(author$project$Panel$Editor$Module$NoChildren)))
+									_Utils_Tuple2('partDef-term-active', isSelect)
 								]))
 						]),
 					_List_fromArray(
