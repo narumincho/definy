@@ -19538,14 +19538,64 @@ var author$project$Panel$Editor$Module$termViewOutput = F3(
 		}
 		return A2(author$project$Panel$Editor$Module$termNormalView, term, false);
 	});
+var elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
+var elm$html$Html$map = elm$virtual_dom$VirtualDom$map;
+var author$project$Panel$Editor$Module$partDefViewTermOpList = F3(
+	function (termOpList, editStateMaybe, termOpPosMaybe) {
+		return elm$core$List$concat(
+			A2(
+				elm$core$List$indexedMap,
+				F2(
+					function (index, _n0) {
+						var op = _n0.a;
+						var term = _n0.b;
+						return _List_fromArray(
+							[
+								A2(
+								elm$html$Html$map,
+								elm$core$Basics$always(
+									author$project$Panel$Editor$Module$TermOpOp(index)),
+								A2(
+									author$project$Panel$Editor$Module$opViewOutput,
+									op,
+									_Utils_eq(
+										termOpPosMaybe,
+										elm$core$Maybe$Just(
+											author$project$Panel$Editor$Module$TermOpOp(index))))),
+								A2(
+								elm$html$Html$map,
+								elm$core$Basics$always(
+									A2(author$project$Panel$Editor$Module$TermOpTerm, index + 1, author$project$Panel$Editor$Module$NoChildren)),
+								function () {
+									if ((!termOpPosMaybe.$) && (termOpPosMaybe.a.$ === 2)) {
+										var _n2 = termOpPosMaybe.a;
+										var i = _n2.a;
+										var termOpPos = _n2.b;
+										return _Utils_eq(i, index + 1) ? A3(
+											author$project$Panel$Editor$Module$termViewOutput,
+											term,
+											elm$core$Maybe$Just(termOpPos),
+											editStateMaybe) : ((_Utils_eq(
+											index,
+											elm$core$List$length(termOpList) - 1) && (_Utils_cmp(index, i) < 0)) ? A3(
+											author$project$Panel$Editor$Module$termViewOutput,
+											term,
+											elm$core$Maybe$Just(termOpPos),
+											editStateMaybe) : A3(author$project$Panel$Editor$Module$termViewOutput, term, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing));
+									} else {
+										return A3(author$project$Panel$Editor$Module$termViewOutput, term, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing);
+									}
+								}())
+							]);
+					}),
+				termOpList));
+	});
 var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
 	var head = _n0.a;
 	return head;
 };
-var elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
-var elm$html$Html$map = elm$virtual_dom$VirtualDom$map;
 var author$project$Panel$Editor$Module$partDefViewExpr = F3(
-	function (expr, partDefExprActiveMaybe, editStateMaybe) {
+	function (expr, termOpPosMaybe, editStateMaybe) {
 		return A2(
 			elm$html$Html$div,
 			_Utils_ap(
@@ -19554,8 +19604,8 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F3(
 						author$project$Panel$Editor$Module$subClass('partDef-expr')
 					]),
 				function () {
-					if ((!partDefExprActiveMaybe.$) && (!partDefExprActiveMaybe.a.$)) {
-						var _n1 = partDefExprActiveMaybe.a;
+					if ((!termOpPosMaybe.$) && (!termOpPosMaybe.a.$)) {
+						var _n1 = termOpPosMaybe.a;
 						return _List_fromArray(
 							[
 								author$project$Panel$Editor$Module$subClass('partDef-element-active')
@@ -19581,8 +19631,8 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F3(
 					]),
 				_Utils_ap(
 					function () {
-						if ((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 1)) {
-							var _n3 = partDefExprActiveMaybe.a;
+						if ((!termOpPosMaybe.$) && (termOpPosMaybe.a.$ === 1)) {
+							var _n3 = termOpPosMaybe.a;
 							return _List_fromArray(
 								[author$project$Panel$Editor$Module$activeHeadTermLeft]);
 						} else {
@@ -19599,8 +19649,8 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F3(
 										author$project$Panel$Editor$Module$ActivePartDefExpr(
 											A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$NoChildren)))),
 								function () {
-									if (((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 2)) && (!partDefExprActiveMaybe.a.a)) {
-										var _n5 = partDefExprActiveMaybe.a;
+									if (((!termOpPosMaybe.$) && (termOpPosMaybe.a.$ === 2)) && (!termOpPosMaybe.a.a)) {
+										var _n5 = termOpPosMaybe.a;
 										var termPos = _n5.b;
 										return A3(
 											author$project$Panel$Editor$Module$termViewOutput,
@@ -19623,54 +19673,11 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F3(
 									return author$project$Panel$Editor$Module$DefActiveTo(
 										author$project$Panel$Editor$Module$ActivePartDefExpr(m));
 								}),
-							elm$core$List$concat(
-								A2(
-									elm$core$List$indexedMap,
-									F2(
-										function (index, _n6) {
-											var op = _n6.a;
-											var term = _n6.b;
-											return _List_fromArray(
-												[
-													A2(
-													elm$html$Html$map,
-													elm$core$Basics$always(
-														author$project$Panel$Editor$Module$TermOpOp(index)),
-													A2(
-														author$project$Panel$Editor$Module$opViewOutput,
-														op,
-														_Utils_eq(
-															partDefExprActiveMaybe,
-															elm$core$Maybe$Just(
-																author$project$Panel$Editor$Module$TermOpOp(index))))),
-													A2(
-													elm$html$Html$map,
-													elm$core$Basics$always(
-														A2(author$project$Panel$Editor$Module$TermOpTerm, index + 1, author$project$Panel$Editor$Module$NoChildren)),
-													function () {
-														if ((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 2)) {
-															var _n8 = partDefExprActiveMaybe.a;
-															var i = _n8.a;
-															var termOpPos = _n8.b;
-															return _Utils_eq(i, index + 1) ? A3(
-																author$project$Panel$Editor$Module$termViewOutput,
-																term,
-																elm$core$Maybe$Just(termOpPos),
-																editStateMaybe) : ((_Utils_eq(
-																index,
-																elm$core$List$length(
-																	author$project$Project$Source$Module$Def$Expr$getOthers(expr)) - 1) && (_Utils_cmp(index, i) < 0)) ? A3(
-																author$project$Panel$Editor$Module$termViewOutput,
-																term,
-																elm$core$Maybe$Just(termOpPos),
-																editStateMaybe) : A3(author$project$Panel$Editor$Module$termViewOutput, term, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing));
-														} else {
-															return A3(author$project$Panel$Editor$Module$termViewOutput, term, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing);
-														}
-													}())
-												]);
-										}),
-									author$project$Project$Source$Module$Def$Expr$getOthers(expr))))))));
+							A3(
+								author$project$Panel$Editor$Module$partDefViewTermOpList,
+								author$project$Project$Source$Module$Def$Expr$getOthers(expr),
+								editStateMaybe,
+								termOpPosMaybe))))));
 	});
 var author$project$Panel$Editor$Module$DefInput = function (a) {
 	return {$: 1, a: a};

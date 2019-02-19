@@ -1701,11 +1701,11 @@ suggestTypeItem type_ subItem isSelect =
 
 
 partDefViewExpr : Expr.Expr -> Maybe TermOpPos -> Maybe EditState -> Html.Html DefViewMsg
-partDefViewExpr expr partDefExprActiveMaybe editStateMaybe =
+partDefViewExpr expr termOpPosMaybe editStateMaybe =
     Html.div
         ([ subClass "partDef-expr"
          ]
-            ++ (case partDefExprActiveMaybe of
+            ++ (case termOpPosMaybe of
                     Just TermOpSelf ->
                         [ subClass "partDef-element-active" ]
 
@@ -1716,14 +1716,14 @@ partDefViewExpr expr partDefExprActiveMaybe editStateMaybe =
                )
         )
         ([ Html.text "=" ]
-            ++ (case partDefExprActiveMaybe of
+            ++ (case termOpPosMaybe of
                     Just TermOpHead ->
                         [ activeHeadTermLeft ]
 
                     _ ->
                         []
                )
-            ++ [ (case partDefExprActiveMaybe of
+            ++ [ (case termOpPosMaybe of
                     Just (TermOpTerm 0 termPos) ->
                         termViewOutput (Expr.getHead expr)
                             (Just termPos)
@@ -1736,41 +1736,46 @@ partDefViewExpr expr partDefExprActiveMaybe editStateMaybe =
                  )
                     |> Html.map (always (DefActiveTo (ActivePartDefExpr (TermOpTerm 0 NoChildren))))
                ]
-            ++ (Expr.getOthers expr
-                    |> List.indexedMap
-                        (\index ( op, term ) ->
-                            [ opViewOutput op
-                                (partDefExprActiveMaybe == Just (TermOpOp index))
-                                |> Html.map (always (TermOpOp index))
-                            , (case partDefExprActiveMaybe of
-                                Just (TermOpTerm i termOpPos) ->
-                                    if i == index + 1 then
-                                        termViewOutput term
-                                            (Just termOpPos)
-                                            editStateMaybe
-
-                                    else if index == List.length (Expr.getOthers expr) - 1 && index < i then
-                                        termViewOutput term
-                                            (Just termOpPos)
-                                            editStateMaybe
-
-                                    else
-                                        termViewOutput term
-                                            Nothing
-                                            Nothing
-
-                                _ ->
-                                    termViewOutput term
-                                        Nothing
-                                        Nothing
-                              )
-                                |> Html.map (always (TermOpTerm (index + 1) NoChildren))
-                            ]
-                        )
-                    |> List.concat
+            ++ (partDefViewTermOpList (Expr.getOthers expr) editStateMaybe termOpPosMaybe
                     |> List.map (Html.map (\m -> DefActiveTo (ActivePartDefExpr m)))
                )
         )
+
+
+partDefViewTermOpList : List ( Expr.Operator, Expr.Term ) -> Maybe EditState -> Maybe TermOpPos -> List (Html.Html TermOpPos)
+partDefViewTermOpList termOpList editStateMaybe termOpPosMaybe =
+    termOpList
+        |> List.indexedMap
+            (\index ( op, term ) ->
+                [ opViewOutput op
+                    (termOpPosMaybe == Just (TermOpOp index))
+                    |> Html.map (always (TermOpOp index))
+                , (case termOpPosMaybe of
+                    Just (TermOpTerm i termOpPos) ->
+                        if i == index + 1 then
+                            termViewOutput term
+                                (Just termOpPos)
+                                editStateMaybe
+
+                        else if index == List.length termOpList - 1 && index < i then
+                            termViewOutput term
+                                (Just termOpPos)
+                                editStateMaybe
+
+                        else
+                            termViewOutput term
+                                Nothing
+                                Nothing
+
+                    _ ->
+                        termViewOutput term
+                            Nothing
+                            Nothing
+                  )
+                    |> Html.map (always (TermOpTerm (index + 1) NoChildren))
+                ]
+            )
+        |> List.concat
 
 
 
