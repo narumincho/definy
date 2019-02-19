@@ -237,7 +237,7 @@ activeTo : Active -> Model -> ( Model, List Emit )
 activeTo active (Model rec) =
     ( Model
         { rec
-            | active = active
+            | active = Debug.log "active" active
             , editState =
                 if rec.active == active then
                     rec.editState
@@ -1779,7 +1779,7 @@ partDefViewTermOpList termOpList editStateMaybe termOpPosMaybe =
                             Nothing
                             Nothing
                   )
-                    |> Html.map (always (TermOpTerm (index + 1) NoChildren))
+                    |> Html.map (\m -> TermOpTerm (index + 1) m)
                 ]
             )
         |> List.concat
@@ -1820,7 +1820,7 @@ termViewOutput term termTypeMaybe editStateMaybe =
 
         Expr.Parentheses expr ->
             Html.div
-                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( Parenthesis TermOpSelf, True ))
+                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( NoChildren, True ))
                 , subClassList
                     [ ( "partDef-term", True )
                     , ( "partDef-term-active", isSelect )
