@@ -516,11 +516,10 @@ img {
 .moduleEditor-partDef-nameContainer {
     height: 38px;
     position: relative;
+    padding: 4px;
 }
 
 .moduleEditor-partDef-nameText {
-    padding: 4px;
-    height: 38px;
     color: #d7ba7d;
     font-size: 20px;
     border-radius: 4px;
@@ -529,8 +528,6 @@ img {
 
 .moduleEditor-partDef-nameTextNone {
     min-width: 32px;
-    padding: 4px;
-    height: 30px;
     background-color: #000;
     color: #666;
     font-size: 16px;
@@ -538,9 +535,8 @@ img {
 }
 
 .moduleEditor-partDef-nameTextArea {
-    padding: 2px;
     border: solid #ddd 2px;
-    height: 38px;
+    height: 32px;
     color: #d7ba7d;
     font-size: 20px;
     border-radius: 4px;
@@ -722,26 +718,10 @@ img {
 }
 
 .moduleEditor-partDef-hideTextArea {
-    width: 12px;
+    width: 20px;
     height: 12px;
     padding: 0;
     border: 0;
     resize: none;
-}
-
-/* 問題がない文字 */
-
-.moduleEditor-partDef-okChar {
-    color: #d7ba7d;
-}
-
-/* 使えない文字(編集内) */
-
-.moduleEditor-partDef-errChar {
-    color: #e45959;
-}
-
-.moduleEditor-partDef-addPartDef {
-    width: 7rem;
-    padding: .5rem;
+    overflow: hidden;
 }

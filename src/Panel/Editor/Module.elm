@@ -1723,15 +1723,17 @@ partDefViewExpr expr partDefExprActiveMaybe editStateMaybe =
                     _ ->
                         []
                )
-            ++ [ termViewOutput (Expr.getHead expr)
-                    (case partDefExprActiveMaybe of
-                        Just (TermOpTerm 0 termPos) ->
-                            Just termPos
+            ++ [ (case partDefExprActiveMaybe of
+                    Just (TermOpTerm 0 termPos) ->
+                        termViewOutput (Expr.getHead expr)
+                            (Just termPos)
+                            editStateMaybe
 
-                        _ ->
+                    _ ->
+                        termViewOutput (Expr.getHead expr)
                             Nothing
-                    )
-                    Nothing
+                            Nothing
+                 )
                     |> Html.map (always (DefActiveTo (ActivePartDefExpr (TermOpTerm 0 NoChildren))))
                ]
             ++ (Expr.getOthers expr
@@ -1740,19 +1742,28 @@ partDefViewExpr expr partDefExprActiveMaybe editStateMaybe =
                             [ opViewOutput op
                                 (partDefExprActiveMaybe == Just (TermOpOp index))
                                 |> Html.map (always (TermOpOp index))
-                            , termViewOutput term
-                                (case partDefExprActiveMaybe of
-                                    Just (TermOpTerm i termOpPos) ->
-                                        if i == index + 1 then
-                                            Just termOpPos
+                            , (case partDefExprActiveMaybe of
+                                Just (TermOpTerm i termOpPos) ->
+                                    if i == index + 1 then
+                                        termViewOutput term
+                                            (Just termOpPos)
+                                            editStateMaybe
 
-                                        else
+                                    else if index == List.length (Expr.getOthers expr) - 1 && index < i then
+                                        termViewOutput term
+                                            (Just termOpPos)
+                                            editStateMaybe
+
+                                    else
+                                        termViewOutput term
+                                            Nothing
                                             Nothing
 
-                                    _ ->
+                                _ ->
+                                    termViewOutput term
                                         Nothing
-                                )
-                                Nothing
+                                        Nothing
+                              )
                                 |> Html.map (always (TermOpTerm (index + 1) NoChildren))
                             ]
                         )
@@ -1772,13 +1783,19 @@ Nothing: 選択されていない
 Just Nothing: 選択されている
 Just (Just textAreaValue): 編集中
 -}
-termViewOutput : Expr.Term -> Maybe TermType -> Maybe (List ( Char, Bool )) -> Html.Html ()
-termViewOutput term termPosMaybe textAreaValueMaybeMaybe =
-    case textAreaValueMaybeMaybe of
-        Just _ ->
+termViewOutput : Expr.Term -> Maybe TermType -> Maybe EditState -> Html.Html ()
+termViewOutput term termPosMaybe editStateMaybe =
+    case termPosMaybe of
+        Just NoChildren ->
             termNormalView term True
 
-        Nothing ->
+        Just (Parenthesis TermOpSelf) ->
+            termNormalView term True
+
+        Just (Lambda LambdaSelf) ->
+            termNormalView term True
+
+        _ ->
             termNormalView term False
 
 

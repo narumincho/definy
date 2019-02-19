@@ -19509,12 +19509,34 @@ var author$project$Panel$Editor$Module$termNormalView = F2(
 				]));
 	});
 var author$project$Panel$Editor$Module$termViewOutput = F3(
-	function (term, termPosMaybe, textAreaValueMaybeMaybe) {
-		if (!textAreaValueMaybeMaybe.$) {
-			return A2(author$project$Panel$Editor$Module$termNormalView, term, true);
-		} else {
-			return A2(author$project$Panel$Editor$Module$termNormalView, term, false);
+	function (term, termPosMaybe, editStateMaybe) {
+		_n0$3:
+		while (true) {
+			if (!termPosMaybe.$) {
+				switch (termPosMaybe.a.$) {
+					case 0:
+						var _n1 = termPosMaybe.a;
+						return A2(author$project$Panel$Editor$Module$termNormalView, term, true);
+					case 1:
+						if (!termPosMaybe.a.a.$) {
+							var _n2 = termPosMaybe.a.a;
+							return A2(author$project$Panel$Editor$Module$termNormalView, term, true);
+						} else {
+							break _n0$3;
+						}
+					default:
+						if (!termPosMaybe.a.a.$) {
+							var _n3 = termPosMaybe.a.a;
+							return A2(author$project$Panel$Editor$Module$termNormalView, term, true);
+						} else {
+							break _n0$3;
+						}
+				}
+			} else {
+				break _n0$3;
+			}
 		}
+		return A2(author$project$Panel$Editor$Module$termNormalView, term, false);
 	});
 var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
 	var head = _n0.a;
@@ -19576,19 +19598,23 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F3(
 									author$project$Panel$Editor$Module$DefActiveTo(
 										author$project$Panel$Editor$Module$ActivePartDefExpr(
 											A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$NoChildren)))),
-								A3(
-									author$project$Panel$Editor$Module$termViewOutput,
-									author$project$Project$Source$Module$Def$Expr$getHead(expr),
-									function () {
-										if (((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 2)) && (!partDefExprActiveMaybe.a.a)) {
-											var _n5 = partDefExprActiveMaybe.a;
-											var termPos = _n5.b;
-											return elm$core$Maybe$Just(termPos);
-										} else {
-											return elm$core$Maybe$Nothing;
-										}
-									}(),
-									elm$core$Maybe$Nothing))
+								function () {
+									if (((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 2)) && (!partDefExprActiveMaybe.a.a)) {
+										var _n5 = partDefExprActiveMaybe.a;
+										var termPos = _n5.b;
+										return A3(
+											author$project$Panel$Editor$Module$termViewOutput,
+											author$project$Project$Source$Module$Def$Expr$getHead(expr),
+											elm$core$Maybe$Just(termPos),
+											editStateMaybe);
+									} else {
+										return A3(
+											author$project$Panel$Editor$Module$termViewOutput,
+											author$project$Project$Source$Module$Def$Expr$getHead(expr),
+											elm$core$Maybe$Nothing,
+											elm$core$Maybe$Nothing);
+									}
+								}())
 							]),
 						A2(
 							elm$core$List$map,
@@ -19621,20 +19647,27 @@ var author$project$Panel$Editor$Module$partDefViewExpr = F3(
 													elm$html$Html$map,
 													elm$core$Basics$always(
 														A2(author$project$Panel$Editor$Module$TermOpTerm, index + 1, author$project$Panel$Editor$Module$NoChildren)),
-													A3(
-														author$project$Panel$Editor$Module$termViewOutput,
-														term,
-														function () {
-															if ((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 2)) {
-																var _n8 = partDefExprActiveMaybe.a;
-																var i = _n8.a;
-																var termOpPos = _n8.b;
-																return _Utils_eq(i, index + 1) ? elm$core$Maybe$Just(termOpPos) : elm$core$Maybe$Nothing;
-															} else {
-																return elm$core$Maybe$Nothing;
-															}
-														}(),
-														elm$core$Maybe$Nothing))
+													function () {
+														if ((!partDefExprActiveMaybe.$) && (partDefExprActiveMaybe.a.$ === 2)) {
+															var _n8 = partDefExprActiveMaybe.a;
+															var i = _n8.a;
+															var termOpPos = _n8.b;
+															return _Utils_eq(i, index + 1) ? A3(
+																author$project$Panel$Editor$Module$termViewOutput,
+																term,
+																elm$core$Maybe$Just(termOpPos),
+																editStateMaybe) : ((_Utils_eq(
+																index,
+																elm$core$List$length(
+																	author$project$Project$Source$Module$Def$Expr$getOthers(expr)) - 1) && (_Utils_cmp(index, i) < 0)) ? A3(
+																author$project$Panel$Editor$Module$termViewOutput,
+																term,
+																elm$core$Maybe$Just(termOpPos),
+																editStateMaybe) : A3(author$project$Panel$Editor$Module$termViewOutput, term, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing));
+														} else {
+															return A3(author$project$Panel$Editor$Module$termViewOutput, term, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing);
+														}
+													}())
 												]);
 										}),
 									author$project$Project$Source$Module$Def$Expr$getOthers(expr))))))));
