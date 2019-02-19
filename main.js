@@ -19367,6 +19367,9 @@ var author$project$Panel$Editor$Module$addDefButton = A2(
 var author$project$Panel$Editor$Module$DefActiveTo = function (a) {
 	return {$: 0, a: a};
 };
+var author$project$Panel$Editor$Module$Parenthesis = function (a) {
+	return {$: 1, a: a};
+};
 var author$project$Panel$Editor$Module$activeHeadTermLeft = A2(
 	elm$html$Html$div,
 	_List_fromArray(
@@ -19447,6 +19450,10 @@ var author$project$Panel$Editor$Module$opViewOutput = F2(
 	function (op, isSelected) {
 		return A2(author$project$Panel$Editor$Module$opNormalView, op, isSelected);
 	});
+var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
+	var head = _n0.a;
+	return head;
+};
 var author$project$Project$Source$Module$Def$Expr$termToString = function (term) {
 	switch (term.$) {
 		case 0:
@@ -19484,60 +19491,6 @@ var author$project$Project$Source$Module$Def$Expr$toString = function (_n0) {
 				},
 				others)));
 };
-var author$project$Panel$Editor$Module$termNormalView = F2(
-	function (term, isActive) {
-		return A2(
-			elm$html$Html$div,
-			_List_fromArray(
-				[
-					A2(
-					elm$html$Html$Events$stopPropagationOn,
-					'click',
-					elm$json$Json$Decode$succeed(
-						_Utils_Tuple2(0, true))),
-					author$project$Panel$Editor$Module$subClassList(
-					_List_fromArray(
-						[
-							_Utils_Tuple2('partDef-term', true),
-							_Utils_Tuple2('partDef-term-active', isActive)
-						]))
-				]),
-			_List_fromArray(
-				[
-					elm$html$Html$text(
-					author$project$Project$Source$Module$Def$Expr$termToString(term))
-				]));
-	});
-var author$project$Panel$Editor$Module$termViewOutput = F3(
-	function (term, termPosMaybe, editStateMaybe) {
-		_n0$3:
-		while (true) {
-			if (!termPosMaybe.$) {
-				switch (termPosMaybe.a.$) {
-					case 0:
-						var _n1 = termPosMaybe.a;
-						return A2(author$project$Panel$Editor$Module$termNormalView, term, true);
-					case 1:
-						if (!termPosMaybe.a.a.$) {
-							var _n2 = termPosMaybe.a.a;
-							return A2(author$project$Panel$Editor$Module$termNormalView, term, true);
-						} else {
-							break _n0$3;
-						}
-					default:
-						if (!termPosMaybe.a.a.$) {
-							var _n3 = termPosMaybe.a.a;
-							return A2(author$project$Panel$Editor$Module$termNormalView, term, true);
-						} else {
-							break _n0$3;
-						}
-				}
-			} else {
-				break _n0$3;
-			}
-		}
-		return A2(author$project$Panel$Editor$Module$termNormalView, term, false);
-	});
 var elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
 var elm$html$Html$map = elm$virtual_dom$VirtualDom$map;
 var author$project$Panel$Editor$Module$partDefViewTermOpList = F3(
@@ -19546,9 +19499,9 @@ var author$project$Panel$Editor$Module$partDefViewTermOpList = F3(
 			A2(
 				elm$core$List$indexedMap,
 				F2(
-					function (index, _n0) {
-						var op = _n0.a;
-						var term = _n0.b;
+					function (index, _n6) {
+						var op = _n6.a;
+						var term = _n6.b;
 						return _List_fromArray(
 							[
 								A2(
@@ -19568,9 +19521,9 @@ var author$project$Panel$Editor$Module$partDefViewTermOpList = F3(
 									A2(author$project$Panel$Editor$Module$TermOpTerm, index + 1, author$project$Panel$Editor$Module$NoChildren)),
 								function () {
 									if ((!termOpPosMaybe.$) && (termOpPosMaybe.a.$ === 2)) {
-										var _n2 = termOpPosMaybe.a;
-										var i = _n2.a;
-										var termOpPos = _n2.b;
+										var _n8 = termOpPosMaybe.a;
+										var i = _n8.a;
+										var termOpPos = _n8.b;
 										return _Utils_eq(i, index + 1) ? A3(
 											author$project$Panel$Editor$Module$termViewOutput,
 											term,
@@ -19590,10 +19543,6 @@ var author$project$Panel$Editor$Module$partDefViewTermOpList = F3(
 					}),
 				termOpList));
 	});
-var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
-	var head = _n0.a;
-	return head;
-};
 var author$project$Panel$Editor$Module$termOpView = F3(
 	function (termOpPosMaybe, editStateMaybe, expr) {
 		return A2(
@@ -19605,7 +19554,7 @@ var author$project$Panel$Editor$Module$termOpView = F3(
 			_Utils_ap(
 				function () {
 					if ((!termOpPosMaybe.$) && (termOpPosMaybe.a.$ === 1)) {
-						var _n1 = termOpPosMaybe.a;
+						var _n3 = termOpPosMaybe.a;
 						return _List_fromArray(
 							[author$project$Panel$Editor$Module$activeHeadTermLeft]);
 					} else {
@@ -19621,8 +19570,8 @@ var author$project$Panel$Editor$Module$termOpView = F3(
 								A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$NoChildren)),
 							function () {
 								if (((!termOpPosMaybe.$) && (termOpPosMaybe.a.$ === 2)) && (!termOpPosMaybe.a.a)) {
-									var _n3 = termOpPosMaybe.a;
-									var termPos = _n3.b;
+									var _n5 = termOpPosMaybe.a;
+									var termPos = _n5.b;
 									return A3(
 										author$project$Panel$Editor$Module$termViewOutput,
 										author$project$Project$Source$Module$Def$Expr$getHead(expr),
@@ -19642,6 +19591,133 @@ var author$project$Panel$Editor$Module$termOpView = F3(
 						author$project$Project$Source$Module$Def$Expr$getOthers(expr),
 						editStateMaybe,
 						termOpPosMaybe))));
+	});
+var author$project$Panel$Editor$Module$termViewOutput = F3(
+	function (term, termTypeMaybe, editStateMaybe) {
+		switch (term.$) {
+			case 0:
+				return A2(
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							A2(
+							elm$html$Html$Events$stopPropagationOn,
+							'click',
+							elm$json$Json$Decode$succeed(
+								_Utils_Tuple2(author$project$Panel$Editor$Module$NoChildren, true))),
+							author$project$Panel$Editor$Module$subClassList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('partDef-term', true),
+									_Utils_Tuple2(
+									'partDef-term-active',
+									_Utils_eq(
+										termTypeMaybe,
+										elm$core$Maybe$Just(author$project$Panel$Editor$Module$NoChildren)))
+								]))
+						]),
+					_List_fromArray(
+						[
+							elm$html$Html$text(
+							author$project$Project$Source$Module$Def$Expr$termToString(term))
+						]));
+			case 1:
+				return A2(
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							A2(
+							elm$html$Html$Events$stopPropagationOn,
+							'click',
+							elm$json$Json$Decode$succeed(
+								_Utils_Tuple2(author$project$Panel$Editor$Module$NoChildren, true))),
+							author$project$Panel$Editor$Module$subClassList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('partDef-term', true),
+									_Utils_Tuple2(
+									'partDef-term-active',
+									_Utils_eq(
+										termTypeMaybe,
+										elm$core$Maybe$Just(author$project$Panel$Editor$Module$NoChildren)))
+								]))
+						]),
+					_List_fromArray(
+						[
+							elm$html$Html$text(
+							author$project$Project$Source$Module$Def$Expr$termToString(term))
+						]));
+			case 2:
+				var expr = term.a;
+				return A2(
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							A2(
+							elm$html$Html$Events$stopPropagationOn,
+							'click',
+							elm$json$Json$Decode$succeed(
+								_Utils_Tuple2(
+									author$project$Panel$Editor$Module$Parenthesis(author$project$Panel$Editor$Module$TermOpSelf),
+									true))),
+							author$project$Panel$Editor$Module$subClassList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('partDef-term', true),
+									_Utils_Tuple2(
+									'partDef-term-active',
+									_Utils_eq(
+										termTypeMaybe,
+										elm$core$Maybe$Just(
+											author$project$Panel$Editor$Module$Parenthesis(author$project$Panel$Editor$Module$TermOpSelf))))
+								]))
+						]),
+					_List_fromArray(
+						[
+							elm$html$Html$text('('),
+							A2(
+							elm$html$Html$map,
+							author$project$Panel$Editor$Module$Parenthesis,
+							A3(
+								author$project$Panel$Editor$Module$termOpView,
+								function () {
+									if ((!termTypeMaybe.$) && (termTypeMaybe.a.$ === 1)) {
+										var termOpPos = termTypeMaybe.a.a;
+										return elm$core$Maybe$Just(termOpPos);
+									} else {
+										return elm$core$Maybe$Nothing;
+									}
+								}(),
+								editStateMaybe,
+								expr)),
+							elm$html$Html$text(')')
+						]));
+			default:
+				return A2(
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							A2(
+							elm$html$Html$Events$stopPropagationOn,
+							'click',
+							elm$json$Json$Decode$succeed(
+								_Utils_Tuple2(author$project$Panel$Editor$Module$NoChildren, true))),
+							author$project$Panel$Editor$Module$subClassList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('partDef-term', true),
+									_Utils_Tuple2(
+									'partDef-term-active',
+									_Utils_eq(
+										termTypeMaybe,
+										elm$core$Maybe$Just(author$project$Panel$Editor$Module$NoChildren)))
+								]))
+						]),
+					_List_fromArray(
+						[
+							elm$html$Html$text('ばつ')
+						]));
+		}
 	});
 var author$project$Panel$Editor$Module$partDefViewExpr = F3(
 	function (expr, termOpPosMaybe, editStateMaybe) {

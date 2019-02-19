@@ -1789,38 +1789,63 @@ partDefViewTermOpList termOpList editStateMaybe termOpPosMaybe =
 {------------------ Term  ------------------}
 
 
-{-| 編集していない項の表示
-Maybe (Maybe (List (Char, Bool))) の値は
-Nothing: 選択されていない
-Just Nothing: 選択されている
-Just (Just textAreaValue): 編集中
+{-| 項の表示
 -}
-termViewOutput : Expr.Term -> Maybe TermType -> Maybe EditState -> Html.Html ()
-termViewOutput term termPosMaybe editStateMaybe =
-    case termPosMaybe of
-        Just NoChildren ->
-            termNormalView term True
+termViewOutput : Expr.Term -> Maybe TermType -> Maybe EditState -> Html.Html TermType
+termViewOutput term termTypeMaybe editStateMaybe =
+    case term of
+        Expr.Int32Literal _ ->
+            Html.div
+                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( NoChildren, True ))
+                , subClassList
+                    [ ( "partDef-term", True )
+                    , ( "partDef-term-active", termTypeMaybe == Just NoChildren )
+                    ]
+                ]
+                [ Html.text (Expr.termToString term) ]
 
-        Just (Parenthesis TermOpSelf) ->
-            termNormalView term True
+        Expr.Part _ ->
+            Html.div
+                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( NoChildren, True ))
+                , subClassList
+                    [ ( "partDef-term", True )
+                    , ( "partDef-term-active", termTypeMaybe == Just NoChildren )
+                    ]
+                ]
+                [ Html.text (Expr.termToString term) ]
 
-        Just (Lambda LambdaSelf) ->
-            termNormalView term True
+        Expr.Parentheses expr ->
+            Html.div
+                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( Parenthesis TermOpSelf, True ))
+                , subClassList
+                    [ ( "partDef-term", True )
+                    , ( "partDef-term-active", termTypeMaybe == Just (Parenthesis TermOpSelf) )
+                    ]
+                ]
+                [ Html.text "("
+                , termOpView
+                    (case termTypeMaybe of
+                        Just (Parenthesis termOpPos) ->
+                            Just termOpPos
 
-        _ ->
-            termNormalView term False
+                        _ ->
+                            Nothing
+                    )
+                    editStateMaybe
+                    expr
+                    |> Html.map Parenthesis
+                , Html.text ")"
+                ]
 
-
-termNormalView : Expr.Term -> Bool -> Html.Html ()
-termNormalView term isActive =
-    Html.div
-        [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( (), True ))
-        , subClassList
-            [ ( "partDef-term", True )
-            , ( "partDef-term-active", isActive )
-            ]
-        ]
-        [ Html.text (Expr.termToString term) ]
+        Expr.None ->
+            Html.div
+                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( NoChildren, True ))
+                , subClassList
+                    [ ( "partDef-term", True )
+                    , ( "partDef-term-active", termTypeMaybe == Just NoChildren )
+                    ]
+                ]
+                [ Html.text "ばつ" ]
 
 
 termEditView : Expr.Term -> List ( Char, Bool ) -> Html.Html msg

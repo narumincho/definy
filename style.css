@@ -605,6 +605,7 @@ img {
 
 .moduleEditor-partDef-term {
     display: flex;
+    align-items: center;
     padding: 3px 8px;
 }
 
