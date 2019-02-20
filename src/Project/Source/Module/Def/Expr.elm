@@ -29,7 +29,7 @@ module Project.Source.Module.Def.Expr exposing
     , termToDescription
     , termToString
     , toString
-    )
+    , getTermFromIndex)
 
 import Project.Label as Label
 import Utility.ListExtra as ListExtra
@@ -77,6 +77,18 @@ mapOthers f (ExprTermOp head others) =
     ExprTermOp
         head
         (f others)
+
+
+getTermFromIndex : Int -> Expr -> Maybe Term
+getTermFromIndex index expr =
+    if index == 0 then
+        Just (getHead expr)
+
+    else
+        expr
+            |> getOthers
+            |> ListExtra.getAt (index - 1)
+            |> Maybe.map Tuple.second
 
 
 {-| 空の演算子と項の連続を取り除く

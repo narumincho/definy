@@ -328,81 +328,6 @@ selectLeft module_ active =
             active
 
 
-{-| 選択を右へ移動して、選択する対象を変える
--}
-selectRight : ModuleWithCache.Module -> Active -> Active
-selectRight module_ active =
-    case active of
-        ActiveNone ->
-            -- 何も選択していないところから概要欄へ
-            ActiveDescription ActiveDescriptionSelf
-
-        ActiveDescription ActiveDescriptionSelf ->
-            -- 概要欄から概要欄編集へ
-            ActiveDescription ActiveDescriptionText
-
-        ActivePartDefList ActivePartDefListSelf ->
-            -- 定義リストから
-            ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
-            -- 定義から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
-            -- 名前から型へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
-            -- 型から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
-            -- 式から最初の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 TypeNoChildren) ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead )) ->
-            -- 先頭の項の前から先頭の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 TypeNoChildren) ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm termIndex _) )) ->
-            -- 項から次の演算子へ
-            let
-                exprTermCount =
-                    module_
-                        |> ModuleWithCache.getDef index
-                        |> Maybe.map Def.getExpr
-                        |> Maybe.map Expr.getOthers
-                        |> Maybe.map List.length
-                        |> Maybe.withDefault 0
-            in
-            if exprTermCount < termIndex + 1 then
-                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
-
-            else
-                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp termIndex) ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp opIndex) )) ->
-            -- 演算子から次の項へ
-            let
-                exprTermCount =
-                    module_
-                        |> ModuleWithCache.getDef index
-                        |> Maybe.map Def.getExpr
-                        |> Maybe.map Expr.getOthers
-                        |> Maybe.map List.length
-                        |> Maybe.withDefault 0
-            in
-            if exprTermCount < opIndex + 1 then
-                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
-
-            else
-                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm (opIndex + 1) TypeNoChildren) ))
-
-        _ ->
-            active
-
-
 termOpPosLeft : TermOpPos -> Maybe TermOpPos
 termOpPosLeft termOpPos =
     case termOpPos of
@@ -475,6 +400,156 @@ lambdaPosLeft lambdaPos =
 
 sectionPosLeft : SectionPos -> Maybe SectionPos
 sectionPosLeft sectionPos =
+    case sectionPos of
+        SectionSelf ->
+            Nothing
+
+        Pattern ->
+            Just SectionSelf
+
+        Guard ->
+            Just Pattern
+
+        Expr termOpPos ->
+            case termOpPosLeft termOpPos of
+                Just movedTermOpPos ->
+                    Just (Expr movedTermOpPos)
+
+                Nothing ->
+                    Just Guard
+
+
+{-| 選択を右へ移動して、選択する対象を変える
+-}
+selectRight : ModuleWithCache.Module -> Active -> Active
+selectRight module_ active =
+    case active of
+        ActiveNone ->
+            -- 何も選択していないところから概要欄へ
+            ActiveDescription ActiveDescriptionSelf
+
+        ActiveDescription ActiveDescriptionSelf ->
+            -- 概要欄から概要欄編集へ
+            ActiveDescription ActiveDescriptionText
+
+        ActivePartDefList ActivePartDefListSelf ->
+            -- 定義リストから
+            ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
+            -- 定義から名前へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefName ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+            -- 名前から型へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
+            -- 型から式へ
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr termOpPos )) ->
+            -- 式の中の移動
+            let
+                exprMaybe =
+                    module_
+                        |> ModuleWithCache.getDef index
+                        |> Maybe.map Def.getExpr
+            in
+            case termOpPosRight exprMaybe termOpPos of
+                Just movedTermOpPos ->
+                    ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr movedTermOpPos ))
+
+                Nothing ->
+                    ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+
+        _ ->
+            active
+
+
+termOpPosRight : Maybe Expr.Expr -> TermOpPos -> Maybe TermOpPos
+termOpPosRight exprMaybe termOpPos =
+    case exprMaybe of
+        Just expr ->
+            let
+                termCount =
+                    expr
+                        |> Expr.getOthers
+                        |> List.length
+            in
+            case termOpPos of
+                TermOpSelf ->
+                    Nothing
+
+                TermOpHead ->
+                    Just (TermOpTerm 0 TypeNoChildren)
+
+                TermOpTerm termIndex termType ->
+                    if termCount < termIndex then
+                        Just TermOpSelf
+
+                    else
+                        case termTypeRight (Expr.getTermFromIndex termIndex expr) termType of
+                            Just movedTermType ->
+                                Just (TermOpTerm termIndex movedTermType)
+
+                            Nothing ->
+                                if termCount == termIndex then
+                                    Just TermOpSelf
+
+                                else
+                                    Just (TermOpOp termIndex)
+
+                TermOpOp opIndex ->
+                    if termCount < opIndex then
+                        Just TermOpSelf
+
+                    else
+                        Just (TermOpTerm (opIndex + 1) TypeNoChildren)
+
+        Nothing ->
+            Nothing
+
+
+termTypeRight : Maybe Expr.Term -> TermType -> Maybe TermType
+termTypeRight termMaybe termType =
+    case ( termMaybe, termType ) of
+        ( _, TypeNoChildren ) ->
+            Nothing
+
+        ( Just (Expr.Parentheses expr), TypeParenthesis termOpPos ) ->
+            termOpPosRight (Just expr) termOpPos
+                |> Maybe.map TypeParenthesis
+
+        ( _, TypeParenthesis termOpPos ) ->
+            termOpPosRight Nothing termOpPos
+                |> Maybe.map TypeParenthesis
+
+        ( _, TypeLambda lambdaPos ) ->
+            lambdaPosRight lambdaPos
+                |> Maybe.map TypeLambda
+
+
+lambdaPosRight : LambdaPos -> Maybe LambdaPos
+lambdaPosRight lambdaPos =
+    case lambdaPos of
+        LambdaSelf ->
+            Nothing
+
+        SectionHead ->
+            Just (Section 0 SectionSelf)
+
+        Section sectionIndex sectionPos ->
+            case sectionPosRight sectionPos of
+                Just movedSectionPos ->
+                    Just (Section sectionIndex movedSectionPos)
+
+                Nothing ->
+                    Just (Section (sectionIndex + 1) SectionSelf)
+
+
+sectionPosRight : SectionPos -> Maybe SectionPos
+sectionPosRight sectionPos =
     case sectionPos of
         SectionSelf ->
             Nothing

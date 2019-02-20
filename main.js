@@ -17368,10 +17368,139 @@ var author$project$Panel$Editor$Module$selectParent = F2(
 		}
 		return active;
 	});
+var author$project$Panel$Editor$Module$sectionPosRight = function (sectionPos) {
+	switch (sectionPos.$) {
+		case 'SectionSelf':
+			return elm$core$Maybe$Nothing;
+		case 'Pattern':
+			return elm$core$Maybe$Just(author$project$Panel$Editor$Module$SectionSelf);
+		case 'Guard':
+			return elm$core$Maybe$Just(author$project$Panel$Editor$Module$Pattern);
+		default:
+			var termOpPos = sectionPos.a;
+			var _n1 = author$project$Panel$Editor$Module$termOpPosLeft(termOpPos);
+			if (_n1.$ === 'Just') {
+				var movedTermOpPos = _n1.a;
+				return elm$core$Maybe$Just(
+					author$project$Panel$Editor$Module$Expr(movedTermOpPos));
+			} else {
+				return elm$core$Maybe$Just(author$project$Panel$Editor$Module$Guard);
+			}
+	}
+};
+var author$project$Panel$Editor$Module$lambdaPosRight = function (lambdaPos) {
+	switch (lambdaPos.$) {
+		case 'LambdaSelf':
+			return elm$core$Maybe$Nothing;
+		case 'SectionHead':
+			return elm$core$Maybe$Just(
+				A2(author$project$Panel$Editor$Module$Section, 0, author$project$Panel$Editor$Module$SectionSelf));
+		default:
+			var sectionIndex = lambdaPos.a;
+			var sectionPos = lambdaPos.b;
+			var _n1 = author$project$Panel$Editor$Module$sectionPosRight(sectionPos);
+			if (_n1.$ === 'Just') {
+				var movedSectionPos = _n1.a;
+				return elm$core$Maybe$Just(
+					A2(author$project$Panel$Editor$Module$Section, sectionIndex, movedSectionPos));
+			} else {
+				return elm$core$Maybe$Just(
+					A2(author$project$Panel$Editor$Module$Section, sectionIndex + 1, author$project$Panel$Editor$Module$SectionSelf));
+			}
+	}
+};
 var author$project$Project$Source$Module$Def$Expr$getOthers = function (_n0) {
 	var others = _n0.b;
 	return others;
 };
+var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
+	var head = _n0.a;
+	return head;
+};
+var author$project$Project$Source$Module$Def$Expr$getTermFromIndex = F2(
+	function (index, expr) {
+		return (!index) ? elm$core$Maybe$Just(
+			author$project$Project$Source$Module$Def$Expr$getHead(expr)) : A2(
+			elm$core$Maybe$map,
+			elm$core$Tuple$second,
+			A2(
+				author$project$Utility$ListExtra$getAt,
+				index - 1,
+				author$project$Project$Source$Module$Def$Expr$getOthers(expr)));
+	});
+var author$project$Panel$Editor$Module$termOpPosRight = F2(
+	function (exprMaybe, termOpPos) {
+		if (exprMaybe.$ === 'Just') {
+			var expr = exprMaybe.a;
+			var termCount = elm$core$List$length(
+				author$project$Project$Source$Module$Def$Expr$getOthers(expr));
+			switch (termOpPos.$) {
+				case 'TermOpSelf':
+					return elm$core$Maybe$Nothing;
+				case 'TermOpHead':
+					return elm$core$Maybe$Just(
+						A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$TypeNoChildren));
+				case 'TermOpTerm':
+					var termIndex = termOpPos.a;
+					var termType = termOpPos.b;
+					if (_Utils_cmp(termCount, termIndex) < 0) {
+						return elm$core$Maybe$Just(author$project$Panel$Editor$Module$TermOpSelf);
+					} else {
+						var _n4 = A2(
+							author$project$Panel$Editor$Module$termTypeRight,
+							A2(author$project$Project$Source$Module$Def$Expr$getTermFromIndex, termIndex, expr),
+							termType);
+						if (_n4.$ === 'Just') {
+							var movedTermType = _n4.a;
+							return elm$core$Maybe$Just(
+								A2(author$project$Panel$Editor$Module$TermOpTerm, termIndex, movedTermType));
+						} else {
+							return _Utils_eq(termCount, termIndex) ? elm$core$Maybe$Just(author$project$Panel$Editor$Module$TermOpSelf) : elm$core$Maybe$Just(
+								author$project$Panel$Editor$Module$TermOpOp(termIndex));
+						}
+					}
+				default:
+					var opIndex = termOpPos.a;
+					return (_Utils_cmp(termCount, opIndex) < 0) ? elm$core$Maybe$Just(author$project$Panel$Editor$Module$TermOpSelf) : elm$core$Maybe$Just(
+						A2(author$project$Panel$Editor$Module$TermOpTerm, opIndex + 1, author$project$Panel$Editor$Module$TypeNoChildren));
+			}
+		} else {
+			return elm$core$Maybe$Nothing;
+		}
+	});
+var author$project$Panel$Editor$Module$termTypeRight = F2(
+	function (termMaybe, termType) {
+		var _n0 = _Utils_Tuple2(termMaybe, termType);
+		switch (_n0.b.$) {
+			case 'TypeNoChildren':
+				var _n1 = _n0.b;
+				return elm$core$Maybe$Nothing;
+			case 'TypeParenthesis':
+				if ((_n0.a.$ === 'Just') && (_n0.a.a.$ === 'Parentheses')) {
+					var expr = _n0.a.a.a;
+					var termOpPos = _n0.b.a;
+					return A2(
+						elm$core$Maybe$map,
+						author$project$Panel$Editor$Module$TypeParenthesis,
+						A2(
+							author$project$Panel$Editor$Module$termOpPosRight,
+							elm$core$Maybe$Just(expr),
+							termOpPos));
+				} else {
+					var termOpPos = _n0.b.a;
+					return A2(
+						elm$core$Maybe$map,
+						author$project$Panel$Editor$Module$TypeParenthesis,
+						A2(author$project$Panel$Editor$Module$termOpPosRight, elm$core$Maybe$Nothing, termOpPos));
+				}
+			default:
+				var lambdaPos = _n0.b.a;
+				return A2(
+					elm$core$Maybe$map,
+					author$project$Panel$Editor$Module$TypeLambda,
+					author$project$Panel$Editor$Module$lambdaPosRight(lambdaPos));
+		}
+	});
 var author$project$Panel$Editor$Module$selectRight = F2(
 	function (module_, active) {
 		switch (active.$) {
@@ -17416,82 +17545,25 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 										index,
 										author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$TermOpSelf))));
 						default:
-							switch (active.a.a.b.a.$) {
-								case 'TermOpSelf':
-									var _n9 = active.a.a;
-									var index = _n9.a;
-									var _n10 = _n9.b.a;
-									return author$project$Panel$Editor$Module$ActivePartDefList(
-										author$project$Panel$Editor$Module$ActivePartDef(
-											_Utils_Tuple2(
-												index,
-												author$project$Panel$Editor$Module$ActivePartDefExpr(
-													A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$TypeNoChildren)))));
-								case 'TermOpHead':
-									var _n11 = active.a.a;
-									var index = _n11.a;
-									var _n12 = _n11.b.a;
-									return author$project$Panel$Editor$Module$ActivePartDefList(
-										author$project$Panel$Editor$Module$ActivePartDef(
-											_Utils_Tuple2(
-												index,
-												author$project$Panel$Editor$Module$ActivePartDefExpr(
-													A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$TypeNoChildren)))));
-								case 'TermOpTerm':
-									var _n13 = active.a.a;
-									var index = _n13.a;
-									var _n14 = _n13.b.a;
-									var termIndex = _n14.a;
-									var exprTermCount = A2(
-										elm$core$Maybe$withDefault,
-										0,
-										A2(
-											elm$core$Maybe$map,
-											elm$core$List$length,
-											A2(
-												elm$core$Maybe$map,
-												author$project$Project$Source$Module$Def$Expr$getOthers,
-												A2(
-													elm$core$Maybe$map,
-													author$project$Project$Source$Module$Def$getExpr,
-													A2(author$project$Project$Source$ModuleWithCache$getDef, index, module_)))));
-									return (_Utils_cmp(exprTermCount, termIndex + 1) < 0) ? author$project$Panel$Editor$Module$ActivePartDefList(
-										author$project$Panel$Editor$Module$ActivePartDef(
-											_Utils_Tuple2(
-												index,
-												author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$TermOpSelf)))) : author$project$Panel$Editor$Module$ActivePartDefList(
-										author$project$Panel$Editor$Module$ActivePartDef(
-											_Utils_Tuple2(
-												index,
-												author$project$Panel$Editor$Module$ActivePartDefExpr(
-													author$project$Panel$Editor$Module$TermOpOp(termIndex)))));
-								default:
-									var _n15 = active.a.a;
-									var index = _n15.a;
-									var opIndex = _n15.b.a.a;
-									var exprTermCount = A2(
-										elm$core$Maybe$withDefault,
-										0,
-										A2(
-											elm$core$Maybe$map,
-											elm$core$List$length,
-											A2(
-												elm$core$Maybe$map,
-												author$project$Project$Source$Module$Def$Expr$getOthers,
-												A2(
-													elm$core$Maybe$map,
-													author$project$Project$Source$Module$Def$getExpr,
-													A2(author$project$Project$Source$ModuleWithCache$getDef, index, module_)))));
-									return (_Utils_cmp(exprTermCount, opIndex + 1) < 0) ? author$project$Panel$Editor$Module$ActivePartDefList(
-										author$project$Panel$Editor$Module$ActivePartDef(
-											_Utils_Tuple2(
-												index,
-												author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$TermOpSelf)))) : author$project$Panel$Editor$Module$ActivePartDefList(
-										author$project$Panel$Editor$Module$ActivePartDef(
-											_Utils_Tuple2(
-												index,
-												author$project$Panel$Editor$Module$ActivePartDefExpr(
-													A2(author$project$Panel$Editor$Module$TermOpTerm, opIndex + 1, author$project$Panel$Editor$Module$TypeNoChildren)))));
+							var _n9 = active.a.a;
+							var index = _n9.a;
+							var termOpPos = _n9.b.a;
+							var exprMaybe = A2(
+								elm$core$Maybe$map,
+								author$project$Project$Source$Module$Def$getExpr,
+								A2(author$project$Project$Source$ModuleWithCache$getDef, index, module_));
+							var _n10 = A2(author$project$Panel$Editor$Module$termOpPosRight, exprMaybe, termOpPos);
+							if (_n10.$ === 'Just') {
+								var movedTermOpPos = _n10.a;
+								return author$project$Panel$Editor$Module$ActivePartDefList(
+									author$project$Panel$Editor$Module$ActivePartDef(
+										_Utils_Tuple2(
+											index,
+											author$project$Panel$Editor$Module$ActivePartDefExpr(movedTermOpPos))));
+							} else {
+								return author$project$Panel$Editor$Module$ActivePartDefList(
+									author$project$Panel$Editor$Module$ActivePartDef(
+										_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefSelf)));
 							}
 					}
 				}
@@ -23740,10 +23812,6 @@ var author$project$Panel$Editor$Module$termTypeIsSelectSelf = function (termType
 		}
 	}
 	return false;
-};
-var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
-	var head = _n0.a;
-	return head;
 };
 var author$project$Project$Source$Module$Def$Expr$termToString = function (term) {
 	switch (term.$) {
