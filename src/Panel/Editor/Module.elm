@@ -107,9 +107,9 @@ type TermOpPos
 
 
 type TermType
-    = NoChildren
-    | Parenthesis TermOpPos
-    | Lambda LambdaPos
+    = TypeNoChildren
+    | TypeParenthesis TermOpPos
+    | TypeLambda LambdaPos
 
 
 type LambdaPos
@@ -310,25 +310,19 @@ selectLeft module_ active =
             -- 型から名前へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefName ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
-            -- 式から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType ))
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr termOpPos )) ->
+            -- 式から型へ
+            ActivePartDefList
+                (ActivePartDef
+                    ( index
+                    , case termOpPosLeft termOpPos of
+                        Just movedTermOpPos ->
+                            ActivePartDefExpr movedTermOpPos
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead )) ->
-            -- 先頭の項の前から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 _) )) ->
-            -- 先頭の項から先頭の項の前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp opIndex) )) ->
-            -- 演算子から前の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm opIndex NoChildren) ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm termIndex NoChildren) )) ->
-            -- 項から前の演算子へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp (termIndex - 1)) ))
+                        Nothing ->
+                            ActivePartDefType
+                    )
+                )
 
         _ ->
             active
@@ -365,11 +359,11 @@ selectRight module_ active =
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             -- 式から最初の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 NoChildren) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 TypeNoChildren) ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead )) ->
             -- 先頭の項の前から先頭の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 NoChildren) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 TypeNoChildren) ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm termIndex _) )) ->
             -- 項から次の演算子へ
@@ -403,10 +397,101 @@ selectRight module_ active =
                 ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
             else
-                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm (opIndex + 1) NoChildren) ))
+                ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm (opIndex + 1) TypeNoChildren) ))
 
         _ ->
             active
+
+
+termOpPosLeft : TermOpPos -> Maybe TermOpPos
+termOpPosLeft termOpPos =
+    case termOpPos of
+        TermOpSelf ->
+            Nothing
+
+        TermOpHead ->
+            Just TermOpSelf
+
+        TermOpTerm 0 termType ->
+            case termTypeLeft termType of
+                Just movedTermType ->
+                    Just (TermOpTerm 0 movedTermType)
+
+                Nothing ->
+                    Just TermOpHead
+
+        TermOpTerm termIndex termType ->
+            case termTypeLeft termType of
+                Just movedTermType ->
+                    Just (TermOpTerm termIndex movedTermType)
+
+                Nothing ->
+                    Just (TermOpOp (termIndex - 1))
+
+        TermOpOp opIndex ->
+            Just (TermOpTerm opIndex TypeNoChildren)
+
+
+termTypeLeft : TermType -> Maybe TermType
+termTypeLeft termType =
+    case termType of
+        TypeNoChildren ->
+            Nothing
+
+        TypeParenthesis termOpPos ->
+            termOpPosLeft termOpPos
+                |> Maybe.map TypeParenthesis
+
+        TypeLambda lambdaPos ->
+            lambdaPosLeft lambdaPos
+                |> Maybe.map TypeLambda
+
+
+lambdaPosLeft : LambdaPos -> Maybe LambdaPos
+lambdaPosLeft lambdaPos =
+    case lambdaPos of
+        LambdaSelf ->
+            Nothing
+
+        SectionHead ->
+            Just LambdaSelf
+
+        Section 0 sectionPos ->
+            case sectionPosLeft sectionPos of
+                Just movedSectionPos ->
+                    Just (Section 0 movedSectionPos)
+
+                Nothing ->
+                    Just SectionHead
+
+        Section sectionIndex sectionPos ->
+            case sectionPosLeft sectionPos of
+                Just movedSectionPos ->
+                    Just (Section sectionIndex movedSectionPos)
+
+                Nothing ->
+                    Just SectionHead
+
+
+sectionPosLeft : SectionPos -> Maybe SectionPos
+sectionPosLeft sectionPos =
+    case sectionPos of
+        SectionSelf ->
+            Nothing
+
+        Pattern ->
+            Just SectionSelf
+
+        Guard ->
+            Just Pattern
+
+        Expr termOpPos ->
+            case termOpPosLeft termOpPos of
+                Just movedTermOpPos ->
+                    Just (Expr movedTermOpPos)
+
+                Nothing ->
+                    Just Guard
 
 
 {-| 選択を上へ移動して、選択する対象を変える
@@ -492,7 +577,7 @@ selectDown module_ active =
             -- 先頭の項の前から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm _ NoChildren) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm _ TypeNoChildren) )) ->
             -- 項から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
@@ -527,7 +612,7 @@ selectFirstChild module_ active =
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             -- 式から先頭の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 NoChildren) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 TypeNoChildren) ))
 
         _ ->
             active
@@ -783,7 +868,7 @@ parserBeginWithName string index moduleRef =
                             TermOpSelf
 
                          else
-                            TermOpTerm (List.length opAndTermList) NoChildren
+                            TermOpTerm (List.length opAndTermList) TypeNoChildren
                         )
                     )
                 )
@@ -832,7 +917,7 @@ parserBeginWithType string index moduleRef =
                                 TermOpSelf
 
                             length ->
-                                TermOpTerm length NoChildren
+                                TermOpTerm length TypeNoChildren
                         )
                     )
                 )
@@ -861,7 +946,7 @@ parserInExpr string index moduleRef =
                     , ActivePartDefExpr
                         (TermOpTerm
                             (List.length opAndTermList)
-                            NoChildren
+                            TypeNoChildren
                         )
                     )
                 )
@@ -900,7 +985,7 @@ parserBeginWithTerm string index moduleRef termIndex expr =
                     , ActivePartDefExpr
                         (TermOpTerm
                             (termIndex + List.length opAndTermList)
-                            NoChildren
+                            TypeNoChildren
                         )
                     )
                 )
@@ -962,7 +1047,7 @@ parserBeginWithOp string index moduleRef opIndex expr =
                     , ActivePartDefExpr
                         (TermOpTerm
                             (opIndex + 1 + List.length termAndOpList)
-                            NoChildren
+                            TypeNoChildren
                         )
                     )
                 )
@@ -1124,13 +1209,13 @@ termOpPosToString termOpPos =
 termTypeToString : TermType -> String
 termTypeToString termType =
     case termType of
-        NoChildren ->
+        TypeNoChildren ->
             "自体(項)"
 
-        Parenthesis termOpPos ->
+        TypeParenthesis termOpPos ->
             termOpPosToString termOpPos
 
-        Lambda lambdaPos ->
+        TypeLambda lambdaPos ->
             "ラムダ" ++ lambdaPosToString lambdaPos
 
 
@@ -1743,7 +1828,7 @@ termOpView termOpPosMaybe editStateMaybe expr =
                             Nothing
                             Nothing
                  )
-                    |> Html.map (always (TermOpTerm 0 NoChildren))
+                    |> Html.map (always (TermOpTerm 0 TypeNoChildren))
                ]
             ++ partDefViewTermOpList (Expr.getOthers expr) editStateMaybe termOpPosMaybe
         )
@@ -1800,7 +1885,7 @@ termViewOutput term termTypeMaybe editStateMaybe =
     case term of
         Expr.Int32Literal _ ->
             Html.div
-                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( NoChildren, True ))
+                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( TypeNoChildren, True ))
                 , subClassList
                     [ ( "partDef-term", True )
                     , ( "partDef-term-active", isSelect )
@@ -1810,7 +1895,7 @@ termViewOutput term termTypeMaybe editStateMaybe =
 
         Expr.Part _ ->
             Html.div
-                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( NoChildren, True ))
+                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( TypeNoChildren, True ))
                 , subClassList
                     [ ( "partDef-term", True )
                     , ( "partDef-term-active", isSelect )
@@ -1820,7 +1905,7 @@ termViewOutput term termTypeMaybe editStateMaybe =
 
         Expr.Parentheses expr ->
             Html.div
-                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( NoChildren, True ))
+                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( TypeNoChildren, True ))
                 , subClassList
                     [ ( "partDef-term", True )
                     , ( "partDef-term-active", isSelect )
@@ -1829,7 +1914,7 @@ termViewOutput term termTypeMaybe editStateMaybe =
                 [ Html.text "("
                 , termOpView
                     (case termTypeMaybe of
-                        Just (Parenthesis termOpPos) ->
+                        Just (TypeParenthesis termOpPos) ->
                             Just termOpPos
 
                         _ ->
@@ -1837,13 +1922,13 @@ termViewOutput term termTypeMaybe editStateMaybe =
                     )
                     editStateMaybe
                     expr
-                    |> Html.map Parenthesis
+                    |> Html.map TypeParenthesis
                 , Html.text ")"
                 ]
 
         Expr.None ->
             Html.div
-                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( NoChildren, True ))
+                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( TypeNoChildren, True ))
                 , subClassList
                     [ ( "partDef-term", True )
                     , ( "partDef-term-active", isSelect )
@@ -1855,13 +1940,13 @@ termViewOutput term termTypeMaybe editStateMaybe =
 termTypeIsSelectSelf : TermType -> Bool
 termTypeIsSelectSelf termType =
     case termType of
-        NoChildren ->
+        TypeNoChildren ->
             True
 
-        Parenthesis TermOpSelf ->
+        TypeParenthesis TermOpSelf ->
             True
 
-        Lambda LambdaSelf ->
+        TypeLambda LambdaSelf ->
             True
 
         _ ->

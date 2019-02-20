@@ -13761,7 +13761,6 @@ var author$project$Panel$Editor$Module$EmitChangeName = function (a) {
 var author$project$Panel$Editor$Module$EmitChangeType = function (a) {
 	return {$: 'EmitChangeType', a: a};
 };
-var author$project$Panel$Editor$Module$NoChildren = {$: 'NoChildren'};
 var author$project$Panel$Editor$Module$TermOpOp = function (a) {
 	return {$: 'TermOpOp', a: a};
 };
@@ -13770,6 +13769,7 @@ var author$project$Panel$Editor$Module$TermOpTerm = F2(
 	function (a, b) {
 		return {$: 'TermOpTerm', a: a, b: b};
 	});
+var author$project$Panel$Editor$Module$TypeNoChildren = {$: 'TypeNoChildren'};
 var elm$core$String$fromList = _String_fromList;
 var author$project$Panel$Editor$Module$textAreaValueToSetTextEmit = A2(
 	elm$core$Basics$composeR,
@@ -15922,7 +15922,7 @@ var author$project$Panel$Editor$Module$parserBeginWithName = F3(
 									(_Utils_eq(headTerm, author$project$Project$Source$Module$Def$Expr$None) && _Utils_eq(opAndTermList, _List_Nil)) ? author$project$Panel$Editor$Module$TermOpSelf : A2(
 										author$project$Panel$Editor$Module$TermOpTerm,
 										elm$core$List$length(opAndTermList),
-										author$project$Panel$Editor$Module$NoChildren))))),
+										author$project$Panel$Editor$Module$TypeNoChildren))))),
 					_Utils_ap(
 						_List_fromArray(
 							[
@@ -16363,7 +16363,7 @@ var author$project$Panel$Editor$Module$parserBeginWithOp = F5(
 								A2(
 									author$project$Panel$Editor$Module$TermOpTerm,
 									(opIndex + 1) + elm$core$List$length(termAndOpList),
-									author$project$Panel$Editor$Module$NoChildren))))),
+									author$project$Panel$Editor$Module$TypeNoChildren))))),
 				_List_fromArray(
 					[
 						author$project$Panel$Editor$Module$EmitChangeExpr(
@@ -16529,7 +16529,7 @@ var author$project$Panel$Editor$Module$parserBeginWithTerm = F5(
 								A2(
 									author$project$Panel$Editor$Module$TermOpTerm,
 									termIndex + elm$core$List$length(opAndTermList),
-									author$project$Panel$Editor$Module$NoChildren))))),
+									author$project$Panel$Editor$Module$TypeNoChildren))))),
 				_Utils_ap(
 					_List_fromArray(
 						[
@@ -16650,7 +16650,7 @@ var author$project$Panel$Editor$Module$parserBeginWithType = F3(
 											return author$project$Panel$Editor$Module$TermOpSelf;
 										} else {
 											var length = _n1;
-											return A2(author$project$Panel$Editor$Module$TermOpTerm, length, author$project$Panel$Editor$Module$NoChildren);
+											return A2(author$project$Panel$Editor$Module$TermOpTerm, length, author$project$Panel$Editor$Module$TypeNoChildren);
 										}
 									}())))),
 					_List_fromArray(
@@ -16748,7 +16748,7 @@ var author$project$Panel$Editor$Module$parserInExpr = F3(
 								A2(
 									author$project$Panel$Editor$Module$TermOpTerm,
 									elm$core$List$length(opAndTermList),
-									author$project$Panel$Editor$Module$NoChildren))))),
+									author$project$Panel$Editor$Module$TypeNoChildren))))),
 				_Utils_ap(
 					_List_fromArray(
 						[
@@ -17001,7 +17001,7 @@ var author$project$Panel$Editor$Module$selectDown = F2(
 													index,
 													author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$TermOpSelf))));
 									case 'TermOpTerm':
-										if (active.a.a.b.a.b.$ === 'NoChildren') {
+										if (active.a.a.b.a.b.$ === 'TypeNoChildren') {
 											var _n11 = active.a.a;
 											var index = _n11.a;
 											var _n12 = _n11.b.a;
@@ -17071,7 +17071,7 @@ var author$project$Panel$Editor$Module$selectFirstChild = F2(
 											_Utils_Tuple2(
 												index,
 												author$project$Panel$Editor$Module$ActivePartDefExpr(
-													A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$NoChildren)))));
+													A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$TypeNoChildren)))));
 								} else {
 									break _n0$5;
 								}
@@ -17123,110 +17123,190 @@ var author$project$Panel$Editor$Module$selectLastChild = F2(
 		}
 		return active;
 	});
+var author$project$Panel$Editor$Module$Expr = function (a) {
+	return {$: 'Expr', a: a};
+};
+var author$project$Panel$Editor$Module$Guard = {$: 'Guard'};
+var author$project$Panel$Editor$Module$LambdaSelf = {$: 'LambdaSelf'};
+var author$project$Panel$Editor$Module$Pattern = {$: 'Pattern'};
+var author$project$Panel$Editor$Module$Section = F2(
+	function (a, b) {
+		return {$: 'Section', a: a, b: b};
+	});
+var author$project$Panel$Editor$Module$SectionHead = {$: 'SectionHead'};
+var author$project$Panel$Editor$Module$SectionSelf = {$: 'SectionSelf'};
 var author$project$Panel$Editor$Module$TermOpHead = {$: 'TermOpHead'};
+var author$project$Panel$Editor$Module$TypeLambda = function (a) {
+	return {$: 'TypeLambda', a: a};
+};
+var author$project$Panel$Editor$Module$TypeParenthesis = function (a) {
+	return {$: 'TypeParenthesis', a: a};
+};
+var author$project$Panel$Editor$Module$lambdaPosLeft = function (lambdaPos) {
+	switch (lambdaPos.$) {
+		case 'LambdaSelf':
+			return elm$core$Maybe$Nothing;
+		case 'SectionHead':
+			return elm$core$Maybe$Just(author$project$Panel$Editor$Module$LambdaSelf);
+		default:
+			if (!lambdaPos.a) {
+				var sectionPos = lambdaPos.b;
+				var _n7 = author$project$Panel$Editor$Module$sectionPosLeft(sectionPos);
+				if (_n7.$ === 'Just') {
+					var movedSectionPos = _n7.a;
+					return elm$core$Maybe$Just(
+						A2(author$project$Panel$Editor$Module$Section, 0, movedSectionPos));
+				} else {
+					return elm$core$Maybe$Just(author$project$Panel$Editor$Module$SectionHead);
+				}
+			} else {
+				var sectionIndex = lambdaPos.a;
+				var sectionPos = lambdaPos.b;
+				var _n8 = author$project$Panel$Editor$Module$sectionPosLeft(sectionPos);
+				if (_n8.$ === 'Just') {
+					var movedSectionPos = _n8.a;
+					return elm$core$Maybe$Just(
+						A2(author$project$Panel$Editor$Module$Section, sectionIndex, movedSectionPos));
+				} else {
+					return elm$core$Maybe$Just(author$project$Panel$Editor$Module$SectionHead);
+				}
+			}
+	}
+};
+var author$project$Panel$Editor$Module$sectionPosLeft = function (sectionPos) {
+	switch (sectionPos.$) {
+		case 'SectionSelf':
+			return elm$core$Maybe$Nothing;
+		case 'Pattern':
+			return elm$core$Maybe$Just(author$project$Panel$Editor$Module$SectionSelf);
+		case 'Guard':
+			return elm$core$Maybe$Just(author$project$Panel$Editor$Module$Pattern);
+		default:
+			var termOpPos = sectionPos.a;
+			var _n5 = author$project$Panel$Editor$Module$termOpPosLeft(termOpPos);
+			if (_n5.$ === 'Just') {
+				var movedTermOpPos = _n5.a;
+				return elm$core$Maybe$Just(
+					author$project$Panel$Editor$Module$Expr(movedTermOpPos));
+			} else {
+				return elm$core$Maybe$Just(author$project$Panel$Editor$Module$Guard);
+			}
+	}
+};
+var author$project$Panel$Editor$Module$termOpPosLeft = function (termOpPos) {
+	switch (termOpPos.$) {
+		case 'TermOpSelf':
+			return elm$core$Maybe$Nothing;
+		case 'TermOpHead':
+			return elm$core$Maybe$Just(author$project$Panel$Editor$Module$TermOpSelf);
+		case 'TermOpTerm':
+			if (!termOpPos.a) {
+				var termType = termOpPos.b;
+				var _n2 = author$project$Panel$Editor$Module$termTypeLeft(termType);
+				if (_n2.$ === 'Just') {
+					var movedTermType = _n2.a;
+					return elm$core$Maybe$Just(
+						A2(author$project$Panel$Editor$Module$TermOpTerm, 0, movedTermType));
+				} else {
+					return elm$core$Maybe$Just(author$project$Panel$Editor$Module$TermOpHead);
+				}
+			} else {
+				var termIndex = termOpPos.a;
+				var termType = termOpPos.b;
+				var _n3 = author$project$Panel$Editor$Module$termTypeLeft(termType);
+				if (_n3.$ === 'Just') {
+					var movedTermType = _n3.a;
+					return elm$core$Maybe$Just(
+						A2(author$project$Panel$Editor$Module$TermOpTerm, termIndex, movedTermType));
+				} else {
+					return elm$core$Maybe$Just(
+						author$project$Panel$Editor$Module$TermOpOp(termIndex - 1));
+				}
+			}
+		default:
+			var opIndex = termOpPos.a;
+			return elm$core$Maybe$Just(
+				A2(author$project$Panel$Editor$Module$TermOpTerm, opIndex, author$project$Panel$Editor$Module$TypeNoChildren));
+	}
+};
+var author$project$Panel$Editor$Module$termTypeLeft = function (termType) {
+	switch (termType.$) {
+		case 'TypeNoChildren':
+			return elm$core$Maybe$Nothing;
+		case 'TypeParenthesis':
+			var termOpPos = termType.a;
+			return A2(
+				elm$core$Maybe$map,
+				author$project$Panel$Editor$Module$TypeParenthesis,
+				author$project$Panel$Editor$Module$termOpPosLeft(termOpPos));
+		default:
+			var lambdaPos = termType.a;
+			return A2(
+				elm$core$Maybe$map,
+				author$project$Panel$Editor$Module$TypeLambda,
+				author$project$Panel$Editor$Module$lambdaPosLeft(lambdaPos));
+	}
+};
 var author$project$Panel$Editor$Module$selectLeft = F2(
 	function (module_, active) {
-		_n0$11:
-		while (true) {
-			switch (active.$) {
-				case 'ActiveNone':
-					return author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf);
-				case 'ActivePartDefList':
-					if (active.a.$ === 'ActivePartDefListSelf') {
-						var _n1 = active.a;
-						return author$project$Panel$Editor$Module$ActiveDescription(author$project$Panel$Editor$Module$ActiveDescriptionSelf);
-					} else {
-						switch (active.a.a.b.$) {
-							case 'ActivePartDefSelf':
-								if (!active.a.a.a) {
-									var _n2 = active.a.a;
-									var _n3 = _n2.b;
-									return author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf);
-								} else {
-									var _n4 = active.a.a;
-									var index = _n4.a;
-									var _n5 = _n4.b;
-									return author$project$Panel$Editor$Module$ActivePartDefList(
-										author$project$Panel$Editor$Module$ActivePartDef(
-											_Utils_Tuple2(index - 1, author$project$Panel$Editor$Module$ActivePartDefSelf)));
-								}
-							case 'ActivePartDefName':
-								var _n6 = active.a.a;
-								var index = _n6.a;
-								var _n7 = _n6.b;
+		switch (active.$) {
+			case 'ActiveNone':
+				return author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf);
+			case 'ActivePartDefList':
+				if (active.a.$ === 'ActivePartDefListSelf') {
+					var _n1 = active.a;
+					return author$project$Panel$Editor$Module$ActiveDescription(author$project$Panel$Editor$Module$ActiveDescriptionSelf);
+				} else {
+					switch (active.a.a.b.$) {
+						case 'ActivePartDefSelf':
+							if (!active.a.a.a) {
+								var _n2 = active.a.a;
+								var _n3 = _n2.b;
+								return author$project$Panel$Editor$Module$ActivePartDefList(author$project$Panel$Editor$Module$ActivePartDefListSelf);
+							} else {
+								var _n4 = active.a.a;
+								var index = _n4.a;
+								var _n5 = _n4.b;
 								return author$project$Panel$Editor$Module$ActivePartDefList(
 									author$project$Panel$Editor$Module$ActivePartDef(
-										_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefSelf)));
-							case 'ActivePartDefType':
-								var _n8 = active.a.a;
-								var index = _n8.a;
-								var _n9 = _n8.b;
-								return author$project$Panel$Editor$Module$ActivePartDefList(
-									author$project$Panel$Editor$Module$ActivePartDef(
-										_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefName)));
-							default:
-								switch (active.a.a.b.a.$) {
-									case 'TermOpSelf':
-										var _n10 = active.a.a;
-										var index = _n10.a;
-										var _n11 = _n10.b.a;
-										return author$project$Panel$Editor$Module$ActivePartDefList(
-											author$project$Panel$Editor$Module$ActivePartDef(
-												_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefType)));
-									case 'TermOpHead':
-										var _n12 = active.a.a;
-										var index = _n12.a;
-										var _n13 = _n12.b.a;
-										return author$project$Panel$Editor$Module$ActivePartDefList(
-											author$project$Panel$Editor$Module$ActivePartDef(
-												_Utils_Tuple2(
-													index,
-													author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$TermOpSelf))));
-									case 'TermOpOp':
-										var _n16 = active.a.a;
-										var index = _n16.a;
-										var opIndex = _n16.b.a.a;
-										return author$project$Panel$Editor$Module$ActivePartDefList(
-											author$project$Panel$Editor$Module$ActivePartDef(
-												_Utils_Tuple2(
-													index,
-													author$project$Panel$Editor$Module$ActivePartDefExpr(
-														A2(author$project$Panel$Editor$Module$TermOpTerm, opIndex, author$project$Panel$Editor$Module$NoChildren)))));
-									default:
-										if (!active.a.a.b.a.a) {
-											var _n14 = active.a.a;
-											var index = _n14.a;
-											var _n15 = _n14.b.a;
-											return author$project$Panel$Editor$Module$ActivePartDefList(
-												author$project$Panel$Editor$Module$ActivePartDef(
-													_Utils_Tuple2(
-														index,
-														author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$TermOpHead))));
-										} else {
-											if (active.a.a.b.a.b.$ === 'NoChildren') {
-												var _n17 = active.a.a;
-												var index = _n17.a;
-												var _n18 = _n17.b.a;
-												var termIndex = _n18.a;
-												var _n19 = _n18.b;
-												return author$project$Panel$Editor$Module$ActivePartDefList(
-													author$project$Panel$Editor$Module$ActivePartDef(
-														_Utils_Tuple2(
-															index,
-															author$project$Panel$Editor$Module$ActivePartDefExpr(
-																author$project$Panel$Editor$Module$TermOpOp(termIndex - 1)))));
+										_Utils_Tuple2(index - 1, author$project$Panel$Editor$Module$ActivePartDefSelf)));
+							}
+						case 'ActivePartDefName':
+							var _n6 = active.a.a;
+							var index = _n6.a;
+							var _n7 = _n6.b;
+							return author$project$Panel$Editor$Module$ActivePartDefList(
+								author$project$Panel$Editor$Module$ActivePartDef(
+									_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefSelf)));
+						case 'ActivePartDefType':
+							var _n8 = active.a.a;
+							var index = _n8.a;
+							var _n9 = _n8.b;
+							return author$project$Panel$Editor$Module$ActivePartDefList(
+								author$project$Panel$Editor$Module$ActivePartDef(
+									_Utils_Tuple2(index, author$project$Panel$Editor$Module$ActivePartDefName)));
+						default:
+							var _n10 = active.a.a;
+							var index = _n10.a;
+							var termOpPos = _n10.b.a;
+							return author$project$Panel$Editor$Module$ActivePartDefList(
+								author$project$Panel$Editor$Module$ActivePartDef(
+									_Utils_Tuple2(
+										index,
+										function () {
+											var _n11 = author$project$Panel$Editor$Module$termOpPosLeft(termOpPos);
+											if (_n11.$ === 'Just') {
+												var movedTermOpPos = _n11.a;
+												return author$project$Panel$Editor$Module$ActivePartDefExpr(movedTermOpPos);
 											} else {
-												break _n0$11;
+												return author$project$Panel$Editor$Module$ActivePartDefType;
 											}
-										}
-								}
-						}
+										}())));
 					}
-				default:
-					break _n0$11;
-			}
+				}
+			default:
+				return active;
 		}
-		return active;
 	});
 var author$project$Panel$Editor$Module$selectParent = F2(
 	function (module_, active) {
@@ -17346,7 +17426,7 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 											_Utils_Tuple2(
 												index,
 												author$project$Panel$Editor$Module$ActivePartDefExpr(
-													A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$NoChildren)))));
+													A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$TypeNoChildren)))));
 								case 'TermOpHead':
 									var _n11 = active.a.a;
 									var index = _n11.a;
@@ -17356,7 +17436,7 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 											_Utils_Tuple2(
 												index,
 												author$project$Panel$Editor$Module$ActivePartDefExpr(
-													A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$NoChildren)))));
+													A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$TypeNoChildren)))));
 								case 'TermOpTerm':
 									var _n13 = active.a.a;
 									var index = _n13.a;
@@ -17411,7 +17491,7 @@ var author$project$Panel$Editor$Module$selectRight = F2(
 											_Utils_Tuple2(
 												index,
 												author$project$Panel$Editor$Module$ActivePartDefExpr(
-													A2(author$project$Panel$Editor$Module$TermOpTerm, opIndex + 1, author$project$Panel$Editor$Module$NoChildren)))));
+													A2(author$project$Panel$Editor$Module$TermOpTerm, opIndex + 1, author$project$Panel$Editor$Module$TypeNoChildren)))));
 							}
 					}
 				}
@@ -23227,9 +23307,9 @@ var author$project$Panel$Editor$Module$termOpPosToString = function (termOpPos) 
 };
 var author$project$Panel$Editor$Module$termTypeToString = function (termType) {
 	switch (termType.$) {
-		case 'NoChildren':
+		case 'TypeNoChildren':
 			return '自体(項)';
-		case 'Parenthesis':
+		case 'TypeParenthesis':
 			var termOpPos = termType.a;
 			return author$project$Panel$Editor$Module$termOpPosToString(termOpPos);
 		default:
@@ -23557,9 +23637,6 @@ var author$project$Panel$Editor$Module$addDefButton = A2(
 var author$project$Panel$Editor$Module$DefActiveTo = function (a) {
 	return {$: 'DefActiveTo', a: a};
 };
-var author$project$Panel$Editor$Module$Parenthesis = function (a) {
-	return {$: 'Parenthesis', a: a};
-};
 var author$project$Panel$Editor$Module$activeHeadTermLeft = A2(
 	elm$html$Html$div,
 	_List_fromArray(
@@ -23644,9 +23721,9 @@ var author$project$Panel$Editor$Module$termTypeIsSelectSelf = function (termType
 	_n0$3:
 	while (true) {
 		switch (termType.$) {
-			case 'NoChildren':
+			case 'TypeNoChildren':
 				return true;
-			case 'Parenthesis':
+			case 'TypeParenthesis':
 				if (termType.a.$ === 'TermOpSelf') {
 					var _n1 = termType.a;
 					return true;
@@ -23780,7 +23857,7 @@ var author$project$Panel$Editor$Module$termOpView = F3(
 							A2(
 							elm$html$Html$map,
 							elm$core$Basics$always(
-								A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$NoChildren)),
+								A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$TypeNoChildren)),
 							function () {
 								if (((termOpPosMaybe.$ === 'Just') && (termOpPosMaybe.a.$ === 'TermOpTerm')) && (!termOpPosMaybe.a.a)) {
 									var _n5 = termOpPosMaybe.a;
@@ -23820,7 +23897,7 @@ var author$project$Panel$Editor$Module$termViewOutput = F3(
 							elm$html$Html$Events$stopPropagationOn,
 							'click',
 							elm$json$Json$Decode$succeed(
-								_Utils_Tuple2(author$project$Panel$Editor$Module$NoChildren, true))),
+								_Utils_Tuple2(author$project$Panel$Editor$Module$TypeNoChildren, true))),
 							author$project$Panel$Editor$Module$subClassList(
 							_List_fromArray(
 								[
@@ -23842,7 +23919,7 @@ var author$project$Panel$Editor$Module$termViewOutput = F3(
 							elm$html$Html$Events$stopPropagationOn,
 							'click',
 							elm$json$Json$Decode$succeed(
-								_Utils_Tuple2(author$project$Panel$Editor$Module$NoChildren, true))),
+								_Utils_Tuple2(author$project$Panel$Editor$Module$TypeNoChildren, true))),
 							author$project$Panel$Editor$Module$subClassList(
 							_List_fromArray(
 								[
@@ -23865,7 +23942,7 @@ var author$project$Panel$Editor$Module$termViewOutput = F3(
 							elm$html$Html$Events$stopPropagationOn,
 							'click',
 							elm$json$Json$Decode$succeed(
-								_Utils_Tuple2(author$project$Panel$Editor$Module$NoChildren, true))),
+								_Utils_Tuple2(author$project$Panel$Editor$Module$TypeNoChildren, true))),
 							author$project$Panel$Editor$Module$subClassList(
 							_List_fromArray(
 								[
@@ -23878,11 +23955,11 @@ var author$project$Panel$Editor$Module$termViewOutput = F3(
 							elm$html$Html$text('('),
 							A2(
 							elm$html$Html$map,
-							author$project$Panel$Editor$Module$Parenthesis,
+							author$project$Panel$Editor$Module$TypeParenthesis,
 							A3(
 								author$project$Panel$Editor$Module$termOpView,
 								function () {
-									if ((termTypeMaybe.$ === 'Just') && (termTypeMaybe.a.$ === 'Parenthesis')) {
+									if ((termTypeMaybe.$ === 'Just') && (termTypeMaybe.a.$ === 'TypeParenthesis')) {
 										var termOpPos = termTypeMaybe.a.a;
 										return elm$core$Maybe$Just(termOpPos);
 									} else {
@@ -23902,7 +23979,7 @@ var author$project$Panel$Editor$Module$termViewOutput = F3(
 							elm$html$Html$Events$stopPropagationOn,
 							'click',
 							elm$json$Json$Decode$succeed(
-								_Utils_Tuple2(author$project$Panel$Editor$Module$NoChildren, true))),
+								_Utils_Tuple2(author$project$Panel$Editor$Module$TypeNoChildren, true))),
 							author$project$Panel$Editor$Module$subClassList(
 							_List_fromArray(
 								[
@@ -25972,4 +26049,4 @@ var elm$browser$Browser$document = _Browser_document;
 var author$project$Main$main = elm$browser$Browser$document(
 	{init: author$project$Main$init, subscriptions: author$project$Main$subscriptions, update: author$project$Update$update, view: author$project$View$view});
 _Platform_export({'Main':{'init':author$project$Main$main(
-	elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Key.Key":{"args":[],"type":"{ key : Key.OneKey, ctrl : Basics.Bool, shift : Basics.Bool, alt : Basics.Bool }"},"Panel.EditorGroup.EditorIndex":{"args":[],"type":"( Panel.EditorGroup.EditorIndexRow, Panel.EditorGroup.EditorIndexColumn )"}},"unions":{"Model.Msg":{"args":[],"tags":{"KeyPressed":["Maybe.Maybe Key.Key"],"KeyPrevented":[],"MouseMove":["{ x : Basics.Int, y : Basics.Int }"],"MouseUp":[],"ReceiveCompiledData":["{ ref : Project.Source.ModuleRef, index : Basics.Int, compileResult : Compiler.CompileResult }"],"ReceiveResultValue":["{ ref : List.List Basics.Int, index : Basics.Int, result : Basics.Int }"],"ToResizeGutterMode":["Model.Gutter"],"FocusTo":["Model.Focus"],"WindowResize":["{ width : Basics.Int, height : Basics.Int }"],"TreePanelMsg":["Panel.Tree.Msg"],"EditorPanelMsg":["Panel.EditorGroup.Msg"],"ChangeEditorResource":["Panel.EditorTypeRef.EditorTypeRef"],"OpenCommandPalette":[],"CloseCommandPalette":[],"ChangeReadMe":["{ text : String.String, ref : Project.Source.ModuleRef }"],"ChangeName":["{ name : Project.Source.Module.Def.Name.Name, index : Basics.Int, ref : Project.Source.ModuleRef }"],"ChangeType":["{ type_ : Project.Source.Module.Def.Type.Type, index : Basics.Int, ref : Project.Source.ModuleRef }"],"ChangeExpr":["{ expr : Project.Source.Module.Def.Expr.Expr, index : Basics.Int, ref : Project.Source.ModuleRef }"],"AddPartDef":["{ ref : Project.Source.ModuleRef }"]}},"Compiler.CompileResult":{"args":[],"tags":{"Success":["{ noOp : Compiler.NoOp.NoOp, opt : Compiler.Opt.Opt, binary : List.List Basics.Int }"],"FailureAtNoOpToOpt":["{ noOp : Compiler.NoOp.NoOp }"],"FailureAll":[]}},"Key.OneKey":{"args":[],"tags":{"Backquote":[],"Backslash":[],"Backspace":[],"BracketLeft":[],"BracketRight":[],"Comma":[],"Digit0":[],"Digit1":[],"Digit2":[],"Digit3":[],"Digit4":[],"Digit5":[],"Digit6":[],"Digit7":[],"Digit8":[],"Digit9":[],"Equal":[],"IntlRo":[],"IntlYen":[],"KeyA":[],"KeyB":[],"KeyC":[],"KeyD":[],"KeyE":[],"KeyF":[],"KeyG":[],"KeyH":[],"KeyI":[],"KeyJ":[],"KeyK":[],"KeyL":[],"KeyM":[],"KeyN":[],"KeyO":[],"KeyP":[],"KeyQ":[],"KeyR":[],"KeyS":[],"KeyT":[],"KeyU":[],"KeyV":[],"KeyW":[],"KeyX":[],"KeyY":[],"KeyZ":[],"Minus":[],"Period":[],"Quote":[],"Semicolon":[],"Slash":[],"Alt":[],"ContextMenu":[],"Control":[],"Enter":[],"Shift":[],"Space":[],"Tab":[],"Convert":[],"KanaMode":[],"NonConvert":[],"Escape":[],"F1":[],"F2":[],"F3":[],"F4":[],"F5":[],"F6":[],"F7":[],"F8":[],"F9":[],"F10":[],"F11":[],"F12":[],"Delete":[],"End":[],"Home":[],"PageDown":[],"PageUp":[],"ArrowDown":[],"ArrowLeft":[],"ArrowRight":[],"ArrowUp":[],"Numpad0":[],"Numpad1":[],"Numpad2":[],"Numpad3":[],"Numpad4":[],"Numpad5":[],"Numpad6":[],"Numpad7":[],"Numpad8":[],"Numpad9":[],"NumpadAdd":[],"NumpadBackspace":[],"NumpadClear":[],"NumpadDecimal":[],"NumpadDivide":[],"NumpadEnter":[],"NumpadEqual":[],"NumpadMultiply":[],"NumpadSubtract":[]}},"Model.Focus":{"args":[],"tags":{"FocusTreePanel":[],"FocusEditorGroupPanel":[]}},"Model.Gutter":{"args":[],"tags":{"SideBarGutter":[],"GutterEditorGroupPanelVertical":["Panel.EditorGroup.GutterVertical"],"GutterEditorGroupPanelHorizontal":["Panel.EditorGroup.GutterHorizontal"]}},"Panel.EditorGroup.Msg":{"args":[],"tags":{"ChangeActiveEditor":["Panel.EditorGroup.EditorIndex"],"OpenEditor":["Panel.EditorGroup.OpenEditorPosition"],"CloseEditor":["Panel.EditorGroup.EditorIndex"],"MouseEnterOpenEditorGutter":["Panel.EditorGroup.OpenEditorPosition"],"MouseLeaveOpenEditorGutter":[],"EditorItemMsg":["{ msg : Panel.EditorGroup.EditorItemMsg, ref : Panel.EditorGroup.EditorIndex }"],"EditorItemMsgToActive":["Panel.EditorGroup.EditorItemMsg"],"GrabVerticalGutter":["Panel.EditorGroup.GutterVertical"],"GrabHorizontalGutter":["Panel.EditorGroup.GutterHorizontal"],"Focus":[],"Blur":[]}},"Panel.EditorTypeRef.EditorTypeRef":{"args":[],"tags":{"EditorProject":["Project.ProjectRef"],"EditorKeyConfig":[]}},"Panel.Tree.Msg":{"args":[],"tags":{"TreeOpen":["Panel.EditorTypeRef.EditorTypeRef"],"TreeClose":["Panel.EditorTypeRef.EditorTypeRef"],"SelectUp":[],"SelectDown":[],"SelectParentOrTreeClose":[],"SelectFirstChildOrTreeOpen":[],"ToFocusEditorPanel":[],"OpenEditor":["Panel.EditorTypeRef.EditorTypeRef"],"SelectAndOpenKeyConfig":[]}},"Project.Source.ModuleRef":{"args":[],"tags":{"Core":[],"CoreInt32":[],"SampleModule":[]}},"Project.Source.Module.Def.Expr.Expr":{"args":[],"tags":{"ExprTermOp":["Project.Source.Module.Def.Expr.Term","List.List ( Project.Source.Module.Def.Expr.Operator, Project.Source.Module.Def.Expr.Term )"]}},"Project.Source.Module.Def.Name.Name":{"args":[],"tags":{"NoName":[],"Name":["Project.Label.Label"]}},"Project.Source.Module.Def.Type.Type":{"args":[],"tags":{"Valid":["Project.Source.Module.Def.Type.ValidType"],"Invalid":["Project.Label.Label"],"Empty":[]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Compiler.NoOp.NoOp":{"args":[],"tags":{"Core":["Compiler.NoOp.CoreEnum"],"Int":["Basics.Int"],"Ref":["Basics.Int"],"Call1":["Compiler.NoOp.NoOp","Compiler.NoOp.NoOp"],"Call2":["Compiler.NoOp.NoOp","Compiler.NoOp.NoOp","Compiler.NoOp.NoOp"]}},"Compiler.Opt.Opt":{"args":[],"tags":{"I32Add":["Compiler.Opt.Opt","Compiler.Opt.Opt"],"I32Sub":["Compiler.Opt.Opt","Compiler.Opt.Opt"],"I32Mul":["Compiler.Opt.Opt","Compiler.Opt.Opt"],"I32Const":["Basics.Int"],"Call":["Basics.Int"]}},"Panel.EditorGroup.EditorIndexColumn":{"args":[],"tags":{"EditorRefTop":[],"EditorRefBottom":[]}},"Panel.EditorGroup.EditorIndexRow":{"args":[],"tags":{"EditorRefLeft":[],"EditorRefCenter":[],"EditorRefRight":[]}},"Panel.EditorGroup.EditorItemMsg":{"args":[],"tags":{"EditorKeyConfigMsg":["Panel.Editor.EditorKeyConfig.Msg"],"ModuleEditorMsg":["Panel.Editor.Module.Msg"]}},"Panel.EditorGroup.GutterHorizontal":{"args":[],"tags":{"GutterHorizontalLeft":[],"GutterHorizontalCenter":[],"GutterHorizontalRight":[]}},"Panel.EditorGroup.GutterVertical":{"args":[],"tags":{"GutterVerticalLeft":[],"GutterVerticalRight":[]}},"Panel.EditorGroup.OpenEditorPosition":{"args":[],"tags":{"OpenEditorPositionRightRow":[],"OpenEditorPositionLeftBottom":[],"OpenEditorPositionCenterBottom":[],"OpenEditorPositionRightBottom":[]}},"Project.ProjectRef":{"args":[],"tags":{"ProjectRoot":[],"Document":[],"Config":[],"Source":[],"Module":["Project.Source.ModuleRef"]}},"Project.Label.Label":{"args":[],"tags":{"Label":["Project.Label.Head","List.List Project.Label.Others"]}},"Project.Source.Module.Def.Expr.Operator":{"args":[],"tags":{"Pipe":[],"Or":[],"And":[],"Equal":[],"NotEqual":[],"LessThan":[],"LessThanOrEqual":[],"Concat":[],"Add":[],"Sub":[],"Mul":[],"Div":[],"Factorial":[],"Compose":[],"App":[],"Blank":[]}},"Project.Source.Module.Def.Expr.Term":{"args":[],"tags":{"Int32Literal":["Basics.Int"],"Part":["Project.Source.Module.Def.Expr.Part"],"Parentheses":["Project.Source.Module.Def.Expr.Expr"],"None":[]}},"Project.Source.Module.Def.Type.ValidType":{"args":[],"tags":{"TypeInt":[]}},"Compiler.NoOp.CoreEnum":{"args":[],"tags":{"Plus":[],"Minus":[],"Mul":[]}},"Panel.Editor.EditorKeyConfig.Msg":{"args":[],"tags":{"SelectKey":["Key.OneKey"],"KeyDown":["Key.OneKey"],"KeyUp":["Key.OneKey"],"ChangeInputDevice":["Panel.Editor.EditorKeyConfig.InputDevice"]}},"Panel.Editor.Module.Msg":{"args":[],"tags":{"ActiveTo":["Panel.Editor.Module.Active"],"SelectLeft":[],"SelectRight":[],"SelectUp":[],"SelectDown":[],"SelectFirstChild":[],"SelectLastChild":[],"SelectParent":[],"SuggestionNextOrSelectDown":[],"SuggestionPrevOrSelectUp":[],"Input":["String.String"],"ToEditMode":[],"ConfirmMultiLineTextField":[],"AddPartDef":[],"FocusThisEditor":[],"BlurThisEditor":[]}},"Project.Label.Head":{"args":[],"tags":{"Head":["Project.Label.Alphabet"]}},"Project.Label.Others":{"args":[],"tags":{"Capital":["Project.Label.Alphabet"],"Small":["Project.Label.Alphabet"],"Digits":["Project.Label.Digits"]}},"Project.Source.Module.Def.Expr.Part":{"args":[],"tags":{"ValidPart":["Basics.Int"],"InvalidPart":["Project.Label.Label"]}},"Panel.Editor.EditorKeyConfig.InputDevice":{"args":[],"tags":{"Keyboard":[],"Mouse":[],"Gamepad":[],"MidiKeyboard":[]}},"Panel.Editor.Module.Active":{"args":[],"tags":{"ActiveNone":[],"ActiveDescription":["Panel.Editor.Module.DescriptionActive"],"ActivePartDefList":["Panel.Editor.Module.PartDefListActive"]}},"Project.Label.Alphabet":{"args":[],"tags":{"A":[],"B":[],"C":[],"D":[],"E":[],"F":[],"G":[],"H":[],"I":[],"J":[],"K":[],"L":[],"M":[],"N":[],"O":[],"P":[],"Q":[],"R":[],"S":[],"T":[],"U":[],"V":[],"W":[],"X":[],"Y":[],"Z":[]}},"Project.Label.Digits":{"args":[],"tags":{"N0":[],"N1":[],"N2":[],"N3":[],"N4":[],"N5":[],"N6":[],"N7":[],"N8":[],"N9":[]}},"Panel.Editor.Module.DescriptionActive":{"args":[],"tags":{"ActiveDescriptionSelf":[],"ActiveDescriptionText":[]}},"Panel.Editor.Module.PartDefListActive":{"args":[],"tags":{"ActivePartDefListSelf":[],"ActivePartDef":["( Basics.Int, Panel.Editor.Module.PartDefActive )"]}},"Panel.Editor.Module.PartDefActive":{"args":[],"tags":{"ActivePartDefSelf":[],"ActivePartDefName":[],"ActivePartDefType":[],"ActivePartDefExpr":["Panel.Editor.Module.TermOpPos"]}},"Panel.Editor.Module.TermOpPos":{"args":[],"tags":{"TermOpSelf":[],"TermOpHead":[],"TermOpTerm":["Basics.Int","Panel.Editor.Module.TermType"],"TermOpOp":["Basics.Int"]}},"Panel.Editor.Module.TermType":{"args":[],"tags":{"NoChildren":[],"Parenthesis":["Panel.Editor.Module.TermOpPos"],"Lambda":["Panel.Editor.Module.LambdaPos"]}},"Panel.Editor.Module.LambdaPos":{"args":[],"tags":{"LambdaSelf":[],"SectionHead":[],"Section":["Basics.Int","Panel.Editor.Module.SectionPos"]}},"Panel.Editor.Module.SectionPos":{"args":[],"tags":{"SectionSelf":[],"Pattern":[],"Guard":[],"Expr":["Panel.Editor.Module.TermOpPos"]}}}}})}});}(this));
+	elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Key.Key":{"args":[],"type":"{ key : Key.OneKey, ctrl : Basics.Bool, shift : Basics.Bool, alt : Basics.Bool }"},"Panel.EditorGroup.EditorIndex":{"args":[],"type":"( Panel.EditorGroup.EditorIndexRow, Panel.EditorGroup.EditorIndexColumn )"}},"unions":{"Model.Msg":{"args":[],"tags":{"KeyPressed":["Maybe.Maybe Key.Key"],"KeyPrevented":[],"MouseMove":["{ x : Basics.Int, y : Basics.Int }"],"MouseUp":[],"ReceiveCompiledData":["{ ref : Project.Source.ModuleRef, index : Basics.Int, compileResult : Compiler.CompileResult }"],"ReceiveResultValue":["{ ref : List.List Basics.Int, index : Basics.Int, result : Basics.Int }"],"ToResizeGutterMode":["Model.Gutter"],"FocusTo":["Model.Focus"],"WindowResize":["{ width : Basics.Int, height : Basics.Int }"],"TreePanelMsg":["Panel.Tree.Msg"],"EditorPanelMsg":["Panel.EditorGroup.Msg"],"ChangeEditorResource":["Panel.EditorTypeRef.EditorTypeRef"],"OpenCommandPalette":[],"CloseCommandPalette":[],"ChangeReadMe":["{ text : String.String, ref : Project.Source.ModuleRef }"],"ChangeName":["{ name : Project.Source.Module.Def.Name.Name, index : Basics.Int, ref : Project.Source.ModuleRef }"],"ChangeType":["{ type_ : Project.Source.Module.Def.Type.Type, index : Basics.Int, ref : Project.Source.ModuleRef }"],"ChangeExpr":["{ expr : Project.Source.Module.Def.Expr.Expr, index : Basics.Int, ref : Project.Source.ModuleRef }"],"AddPartDef":["{ ref : Project.Source.ModuleRef }"]}},"Compiler.CompileResult":{"args":[],"tags":{"Success":["{ noOp : Compiler.NoOp.NoOp, opt : Compiler.Opt.Opt, binary : List.List Basics.Int }"],"FailureAtNoOpToOpt":["{ noOp : Compiler.NoOp.NoOp }"],"FailureAll":[]}},"Key.OneKey":{"args":[],"tags":{"Backquote":[],"Backslash":[],"Backspace":[],"BracketLeft":[],"BracketRight":[],"Comma":[],"Digit0":[],"Digit1":[],"Digit2":[],"Digit3":[],"Digit4":[],"Digit5":[],"Digit6":[],"Digit7":[],"Digit8":[],"Digit9":[],"Equal":[],"IntlRo":[],"IntlYen":[],"KeyA":[],"KeyB":[],"KeyC":[],"KeyD":[],"KeyE":[],"KeyF":[],"KeyG":[],"KeyH":[],"KeyI":[],"KeyJ":[],"KeyK":[],"KeyL":[],"KeyM":[],"KeyN":[],"KeyO":[],"KeyP":[],"KeyQ":[],"KeyR":[],"KeyS":[],"KeyT":[],"KeyU":[],"KeyV":[],"KeyW":[],"KeyX":[],"KeyY":[],"KeyZ":[],"Minus":[],"Period":[],"Quote":[],"Semicolon":[],"Slash":[],"Alt":[],"ContextMenu":[],"Control":[],"Enter":[],"Shift":[],"Space":[],"Tab":[],"Convert":[],"KanaMode":[],"NonConvert":[],"Escape":[],"F1":[],"F2":[],"F3":[],"F4":[],"F5":[],"F6":[],"F7":[],"F8":[],"F9":[],"F10":[],"F11":[],"F12":[],"Delete":[],"End":[],"Home":[],"PageDown":[],"PageUp":[],"ArrowDown":[],"ArrowLeft":[],"ArrowRight":[],"ArrowUp":[],"Numpad0":[],"Numpad1":[],"Numpad2":[],"Numpad3":[],"Numpad4":[],"Numpad5":[],"Numpad6":[],"Numpad7":[],"Numpad8":[],"Numpad9":[],"NumpadAdd":[],"NumpadBackspace":[],"NumpadClear":[],"NumpadDecimal":[],"NumpadDivide":[],"NumpadEnter":[],"NumpadEqual":[],"NumpadMultiply":[],"NumpadSubtract":[]}},"Model.Focus":{"args":[],"tags":{"FocusTreePanel":[],"FocusEditorGroupPanel":[]}},"Model.Gutter":{"args":[],"tags":{"SideBarGutter":[],"GutterEditorGroupPanelVertical":["Panel.EditorGroup.GutterVertical"],"GutterEditorGroupPanelHorizontal":["Panel.EditorGroup.GutterHorizontal"]}},"Panel.EditorGroup.Msg":{"args":[],"tags":{"ChangeActiveEditor":["Panel.EditorGroup.EditorIndex"],"OpenEditor":["Panel.EditorGroup.OpenEditorPosition"],"CloseEditor":["Panel.EditorGroup.EditorIndex"],"MouseEnterOpenEditorGutter":["Panel.EditorGroup.OpenEditorPosition"],"MouseLeaveOpenEditorGutter":[],"EditorItemMsg":["{ msg : Panel.EditorGroup.EditorItemMsg, ref : Panel.EditorGroup.EditorIndex }"],"EditorItemMsgToActive":["Panel.EditorGroup.EditorItemMsg"],"GrabVerticalGutter":["Panel.EditorGroup.GutterVertical"],"GrabHorizontalGutter":["Panel.EditorGroup.GutterHorizontal"],"Focus":[],"Blur":[]}},"Panel.EditorTypeRef.EditorTypeRef":{"args":[],"tags":{"EditorProject":["Project.ProjectRef"],"EditorKeyConfig":[]}},"Panel.Tree.Msg":{"args":[],"tags":{"TreeOpen":["Panel.EditorTypeRef.EditorTypeRef"],"TreeClose":["Panel.EditorTypeRef.EditorTypeRef"],"SelectUp":[],"SelectDown":[],"SelectParentOrTreeClose":[],"SelectFirstChildOrTreeOpen":[],"ToFocusEditorPanel":[],"OpenEditor":["Panel.EditorTypeRef.EditorTypeRef"],"SelectAndOpenKeyConfig":[]}},"Project.Source.ModuleRef":{"args":[],"tags":{"Core":[],"CoreInt32":[],"SampleModule":[]}},"Project.Source.Module.Def.Expr.Expr":{"args":[],"tags":{"ExprTermOp":["Project.Source.Module.Def.Expr.Term","List.List ( Project.Source.Module.Def.Expr.Operator, Project.Source.Module.Def.Expr.Term )"]}},"Project.Source.Module.Def.Name.Name":{"args":[],"tags":{"NoName":[],"Name":["Project.Label.Label"]}},"Project.Source.Module.Def.Type.Type":{"args":[],"tags":{"Valid":["Project.Source.Module.Def.Type.ValidType"],"Invalid":["Project.Label.Label"],"Empty":[]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Compiler.NoOp.NoOp":{"args":[],"tags":{"Core":["Compiler.NoOp.CoreEnum"],"Int":["Basics.Int"],"Ref":["Basics.Int"],"Call1":["Compiler.NoOp.NoOp","Compiler.NoOp.NoOp"],"Call2":["Compiler.NoOp.NoOp","Compiler.NoOp.NoOp","Compiler.NoOp.NoOp"]}},"Compiler.Opt.Opt":{"args":[],"tags":{"I32Add":["Compiler.Opt.Opt","Compiler.Opt.Opt"],"I32Sub":["Compiler.Opt.Opt","Compiler.Opt.Opt"],"I32Mul":["Compiler.Opt.Opt","Compiler.Opt.Opt"],"I32Const":["Basics.Int"],"Call":["Basics.Int"]}},"Panel.EditorGroup.EditorIndexColumn":{"args":[],"tags":{"EditorRefTop":[],"EditorRefBottom":[]}},"Panel.EditorGroup.EditorIndexRow":{"args":[],"tags":{"EditorRefLeft":[],"EditorRefCenter":[],"EditorRefRight":[]}},"Panel.EditorGroup.EditorItemMsg":{"args":[],"tags":{"EditorKeyConfigMsg":["Panel.Editor.EditorKeyConfig.Msg"],"ModuleEditorMsg":["Panel.Editor.Module.Msg"]}},"Panel.EditorGroup.GutterHorizontal":{"args":[],"tags":{"GutterHorizontalLeft":[],"GutterHorizontalCenter":[],"GutterHorizontalRight":[]}},"Panel.EditorGroup.GutterVertical":{"args":[],"tags":{"GutterVerticalLeft":[],"GutterVerticalRight":[]}},"Panel.EditorGroup.OpenEditorPosition":{"args":[],"tags":{"OpenEditorPositionRightRow":[],"OpenEditorPositionLeftBottom":[],"OpenEditorPositionCenterBottom":[],"OpenEditorPositionRightBottom":[]}},"Project.ProjectRef":{"args":[],"tags":{"ProjectRoot":[],"Document":[],"Config":[],"Source":[],"Module":["Project.Source.ModuleRef"]}},"Project.Label.Label":{"args":[],"tags":{"Label":["Project.Label.Head","List.List Project.Label.Others"]}},"Project.Source.Module.Def.Expr.Operator":{"args":[],"tags":{"Pipe":[],"Or":[],"And":[],"Equal":[],"NotEqual":[],"LessThan":[],"LessThanOrEqual":[],"Concat":[],"Add":[],"Sub":[],"Mul":[],"Div":[],"Factorial":[],"Compose":[],"App":[],"Blank":[]}},"Project.Source.Module.Def.Expr.Term":{"args":[],"tags":{"Int32Literal":["Basics.Int"],"Part":["Project.Source.Module.Def.Expr.Part"],"Parentheses":["Project.Source.Module.Def.Expr.Expr"],"None":[]}},"Project.Source.Module.Def.Type.ValidType":{"args":[],"tags":{"TypeInt":[]}},"Compiler.NoOp.CoreEnum":{"args":[],"tags":{"Plus":[],"Minus":[],"Mul":[]}},"Panel.Editor.EditorKeyConfig.Msg":{"args":[],"tags":{"SelectKey":["Key.OneKey"],"KeyDown":["Key.OneKey"],"KeyUp":["Key.OneKey"],"ChangeInputDevice":["Panel.Editor.EditorKeyConfig.InputDevice"]}},"Panel.Editor.Module.Msg":{"args":[],"tags":{"ActiveTo":["Panel.Editor.Module.Active"],"SelectLeft":[],"SelectRight":[],"SelectUp":[],"SelectDown":[],"SelectFirstChild":[],"SelectLastChild":[],"SelectParent":[],"SuggestionNextOrSelectDown":[],"SuggestionPrevOrSelectUp":[],"Input":["String.String"],"ToEditMode":[],"ConfirmMultiLineTextField":[],"AddPartDef":[],"FocusThisEditor":[],"BlurThisEditor":[]}},"Project.Label.Head":{"args":[],"tags":{"Head":["Project.Label.Alphabet"]}},"Project.Label.Others":{"args":[],"tags":{"Capital":["Project.Label.Alphabet"],"Small":["Project.Label.Alphabet"],"Digits":["Project.Label.Digits"]}},"Project.Source.Module.Def.Expr.Part":{"args":[],"tags":{"ValidPart":["Basics.Int"],"InvalidPart":["Project.Label.Label"]}},"Panel.Editor.EditorKeyConfig.InputDevice":{"args":[],"tags":{"Keyboard":[],"Mouse":[],"Gamepad":[],"MidiKeyboard":[]}},"Panel.Editor.Module.Active":{"args":[],"tags":{"ActiveNone":[],"ActiveDescription":["Panel.Editor.Module.DescriptionActive"],"ActivePartDefList":["Panel.Editor.Module.PartDefListActive"]}},"Project.Label.Alphabet":{"args":[],"tags":{"A":[],"B":[],"C":[],"D":[],"E":[],"F":[],"G":[],"H":[],"I":[],"J":[],"K":[],"L":[],"M":[],"N":[],"O":[],"P":[],"Q":[],"R":[],"S":[],"T":[],"U":[],"V":[],"W":[],"X":[],"Y":[],"Z":[]}},"Project.Label.Digits":{"args":[],"tags":{"N0":[],"N1":[],"N2":[],"N3":[],"N4":[],"N5":[],"N6":[],"N7":[],"N8":[],"N9":[]}},"Panel.Editor.Module.DescriptionActive":{"args":[],"tags":{"ActiveDescriptionSelf":[],"ActiveDescriptionText":[]}},"Panel.Editor.Module.PartDefListActive":{"args":[],"tags":{"ActivePartDefListSelf":[],"ActivePartDef":["( Basics.Int, Panel.Editor.Module.PartDefActive )"]}},"Panel.Editor.Module.PartDefActive":{"args":[],"tags":{"ActivePartDefSelf":[],"ActivePartDefName":[],"ActivePartDefType":[],"ActivePartDefExpr":["Panel.Editor.Module.TermOpPos"]}},"Panel.Editor.Module.TermOpPos":{"args":[],"tags":{"TermOpSelf":[],"TermOpHead":[],"TermOpTerm":["Basics.Int","Panel.Editor.Module.TermType"],"TermOpOp":["Basics.Int"]}},"Panel.Editor.Module.TermType":{"args":[],"tags":{"TypeNoChildren":[],"TypeParenthesis":["Panel.Editor.Module.TermOpPos"],"TypeLambda":["Panel.Editor.Module.LambdaPos"]}},"Panel.Editor.Module.LambdaPos":{"args":[],"tags":{"LambdaSelf":[],"SectionHead":[],"Section":["Basics.Int","Panel.Editor.Module.SectionPos"]}},"Panel.Editor.Module.SectionPos":{"args":[],"tags":{"SectionSelf":[],"Pattern":[],"Guard":[],"Expr":["Panel.Editor.Module.TermOpPos"]}}}}})}});}(this));
