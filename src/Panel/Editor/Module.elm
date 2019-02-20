@@ -237,7 +237,7 @@ activeTo : Active -> Model -> ( Model, List Emit )
 activeTo active (Model rec) =
     ( Model
         { rec
-            | active = Debug.log "active" active
+            | active = active
             , editState =
                 if rec.active == active then
                     rec.editState
@@ -447,6 +447,9 @@ selectRight module_ active =
         ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
             -- 型から式へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
+
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr termOpPos )) ->
             -- 式の中の移動
@@ -735,14 +738,87 @@ selectParent module_ active =
         ActivePartDefList (ActivePartDef ( index, ActivePartDefType )) ->
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr termOpPos )) ->
+            case termOpPosParent termOpPos of
+                Just movedTermOpPos ->
+                    ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr movedTermOpPos ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr _ )) ->
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
+                Nothing ->
+                    ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
         _ ->
             active
+
+
+termOpPosParent : TermOpPos -> Maybe TermOpPos
+termOpPosParent termOpPos =
+    case termOpPos of
+        TermOpSelf ->
+            Nothing
+
+        TermOpHead ->
+            Just TermOpSelf
+
+        TermOpTerm termIndex termType ->
+            case termTypeParent termType of
+                Just movedTermType ->
+                    Just (TermOpTerm termIndex movedTermType)
+
+                Nothing ->
+                    Just TermOpSelf
+
+        TermOpOp _ ->
+            Just TermOpSelf
+
+
+termTypeParent : TermType -> Maybe TermType
+termTypeParent termType =
+    case termType of
+        TypeNoChildren ->
+            Nothing
+
+        TypeParenthesis termOpPos ->
+            termOpPosParent termOpPos
+                |> Maybe.map TypeParenthesis
+
+        TypeLambda lambdaPos ->
+            lambdaPosParent lambdaPos
+                |> Maybe.map TypeLambda
+
+
+lambdaPosParent : LambdaPos -> Maybe LambdaPos
+lambdaPosParent lambdaPos =
+    case lambdaPos of
+        LambdaSelf ->
+            Nothing
+
+        SectionHead ->
+            Just LambdaSelf
+
+        Section index sectionPos ->
+            sectionPosParent sectionPos
+                |> Maybe.map (Section index)
+
+
+sectionPosParent : SectionPos -> Maybe SectionPos
+sectionPosParent sectionPos =
+    case sectionPos of
+        SectionSelf ->
+            Nothing
+
+        Pattern ->
+            Just SectionSelf
+
+        Guard ->
+            Just SectionSelf
+
+        Expr termOpPos ->
+            case termOpPosParent termOpPos of
+                Just movedTermOpPos ->
+                    Just (Expr movedTermOpPos)
+
+                Nothing ->
+                    Just SectionSelf
 
 
 suggestionPrevOrSelectUp : ModuleWithCache.Module -> Project.Project -> Model -> ( Model, List Emit )
