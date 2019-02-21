@@ -78,7 +78,8 @@ mapOthers f (ExprTermOp head others) =
         head
         (f others)
 
-
+{-| n番目の項を取得する 0始まりでOthersのindexとずれる
+-}
 getTermFromIndex : Int -> Expr -> Maybe Term
 getTermFromIndex index expr =
     if index == 0 then

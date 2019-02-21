@@ -12824,7 +12824,7 @@ var author$project$Panel$Editor$Module$selectDown = F2(
 	});
 var author$project$Panel$Editor$Module$ActiveDescriptionText = 1;
 var author$project$Panel$Editor$Module$TermOpHead = {$: 1};
-var author$project$Panel$Editor$Module$TypeParenthesis = function (a) {
+var author$project$Panel$Editor$Module$TypeParentheses = function (a) {
 	return {$: 1, a: a};
 };
 var author$project$Project$Source$Module$Def$Expr$getHead = function (_n0) {
@@ -12856,7 +12856,7 @@ var elm$core$Maybe$andThen = F2(
 		}
 	});
 var author$project$Panel$Editor$Module$termOpPosFirstChild = F2(
-	function (expr, termOpPos) {
+	function (exprMaybe, termOpPos) {
 		switch (termOpPos.$) {
 			case 0:
 				return A2(author$project$Panel$Editor$Module$TermOpTerm, 0, author$project$Panel$Editor$Module$TypeNoChildren);
@@ -12865,14 +12865,14 @@ var author$project$Panel$Editor$Module$termOpPosFirstChild = F2(
 			case 2:
 				var termIndex = termOpPos.a;
 				var termType = termOpPos.b;
-				var term = A2(
+				var termMaybe = A2(
 					elm$core$Maybe$andThen,
 					author$project$Project$Source$Module$Def$Expr$getTermFromIndex(termIndex),
-					expr);
+					exprMaybe);
 				return A2(
 					author$project$Panel$Editor$Module$TermOpTerm,
 					termIndex,
-					A2(author$project$Panel$Editor$Module$termTypeFirstChild, term, termType));
+					A2(author$project$Panel$Editor$Module$termTypeFirstChild, termMaybe, termType));
 			default:
 				var opIndex = termOpPos.a;
 				return author$project$Panel$Editor$Module$TermOpOp(opIndex);
@@ -12885,14 +12885,14 @@ var author$project$Panel$Editor$Module$termTypeFirstChild = F2(
 			if (_n0.b.$ === 1) {
 				var expr = _n0.a.a.a;
 				var termOpPos = _n0.b.a;
-				return author$project$Panel$Editor$Module$TypeParenthesis(
+				return author$project$Panel$Editor$Module$TypeParentheses(
 					A2(
 						author$project$Panel$Editor$Module$termOpPosFirstChild,
 						elm$core$Maybe$Just(expr),
 						termOpPos));
 			} else {
 				var expr = _n0.a.a.a;
-				return author$project$Panel$Editor$Module$TypeParenthesis(
+				return author$project$Panel$Editor$Module$TypeParentheses(
 					A2(
 						author$project$Panel$Editor$Module$termOpPosFirstChild,
 						elm$core$Maybe$Just(expr),
@@ -12953,9 +12953,71 @@ var author$project$Panel$Editor$Module$selectFirstChild = F2(
 		}
 		return active;
 	});
+var author$project$Panel$Editor$Module$termOpPosLastChild = F2(
+	function (exprMaybe, termOpPos) {
+		var lastTermIndex = A2(
+			elm$core$Maybe$withDefault,
+			0,
+			A2(
+				elm$core$Maybe$map,
+				A2(elm$core$Basics$composeR, author$project$Project$Source$Module$Def$Expr$getOthers, elm$core$List$length),
+				exprMaybe));
+		switch (termOpPos.$) {
+			case 0:
+				return A2(author$project$Panel$Editor$Module$TermOpTerm, lastTermIndex, author$project$Panel$Editor$Module$TypeNoChildren);
+			case 1:
+				return author$project$Panel$Editor$Module$TermOpHead;
+			case 2:
+				var termIndex = termOpPos.a;
+				var termType = termOpPos.b;
+				var termMaybe = A2(
+					elm$core$Maybe$andThen,
+					author$project$Project$Source$Module$Def$Expr$getTermFromIndex(termIndex),
+					exprMaybe);
+				return A2(
+					author$project$Panel$Editor$Module$TermOpTerm,
+					termIndex,
+					A2(author$project$Panel$Editor$Module$termTypeLastChild, termMaybe, termType));
+			default:
+				var opIndex = termOpPos.a;
+				return author$project$Panel$Editor$Module$TermOpOp(opIndex);
+		}
+	});
+var author$project$Panel$Editor$Module$termTypeLastChild = F2(
+	function (termMaybe, termType) {
+		var _n0 = _Utils_Tuple2(termMaybe, termType);
+		_n0$2:
+		while (true) {
+			if ((!_n0.a.$) && (_n0.a.a.$ === 2)) {
+				switch (_n0.b.$) {
+					case 1:
+						var expr = _n0.a.a.a;
+						var termOpPos = _n0.b.a;
+						return author$project$Panel$Editor$Module$TypeParentheses(
+							A2(
+								author$project$Panel$Editor$Module$termOpPosLastChild,
+								elm$core$Maybe$Just(expr),
+								termOpPos));
+					case 0:
+						var expr = _n0.a.a.a;
+						var _n1 = _n0.b;
+						return author$project$Panel$Editor$Module$TypeParentheses(
+							A2(
+								author$project$Panel$Editor$Module$termOpPosLastChild,
+								elm$core$Maybe$Just(expr),
+								author$project$Panel$Editor$Module$TermOpSelf));
+					default:
+						break _n0$2;
+				}
+			} else {
+				break _n0$2;
+			}
+		}
+		return termType;
+	});
 var author$project$Panel$Editor$Module$selectLastChild = F2(
 	function (module_, active) {
-		_n0$4:
+		_n0$5:
 		while (true) {
 			switch (active.$) {
 				case 0:
@@ -12965,7 +13027,7 @@ var author$project$Panel$Editor$Module$selectLastChild = F2(
 						var _n1 = active.a;
 						return author$project$Panel$Editor$Module$ActiveDescription(1);
 					} else {
-						break _n0$4;
+						break _n0$5;
 					}
 				default:
 					if (!active.a.$) {
@@ -12976,17 +13038,32 @@ var author$project$Panel$Editor$Module$selectLastChild = F2(
 									author$project$Project$Source$ModuleWithCache$getDefNum(module_) - 1,
 									author$project$Panel$Editor$Module$ActivePartDefSelf)));
 					} else {
-						if (!active.a.a.b.$) {
-							var _n3 = active.a.a;
-							var index = _n3.a;
-							var _n4 = _n3.b;
-							return author$project$Panel$Editor$Module$ActivePartDefList(
-								author$project$Panel$Editor$Module$ActivePartDef(
-									_Utils_Tuple2(
-										index,
-										author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$TermOpSelf))));
-						} else {
-							break _n0$4;
+						switch (active.a.a.b.$) {
+							case 0:
+								var _n3 = active.a.a;
+								var index = _n3.a;
+								var _n4 = _n3.b;
+								return author$project$Panel$Editor$Module$ActivePartDefList(
+									author$project$Panel$Editor$Module$ActivePartDef(
+										_Utils_Tuple2(
+											index,
+											author$project$Panel$Editor$Module$ActivePartDefExpr(author$project$Panel$Editor$Module$TermOpSelf))));
+							case 3:
+								var _n5 = active.a.a;
+								var index = _n5.a;
+								var termOpPos = _n5.b.a;
+								var exprMaybe = A2(
+									elm$core$Maybe$map,
+									author$project$Project$Source$Module$Def$getExpr,
+									A2(author$project$Project$Source$ModuleWithCache$getDef, index, module_));
+								return author$project$Panel$Editor$Module$ActivePartDefList(
+									author$project$Panel$Editor$Module$ActivePartDef(
+										_Utils_Tuple2(
+											index,
+											author$project$Panel$Editor$Module$ActivePartDefExpr(
+												A2(author$project$Panel$Editor$Module$termOpPosLastChild, exprMaybe, termOpPos)))));
+							default:
+								break _n0$5;
 						}
 					}
 			}
@@ -13103,7 +13180,7 @@ var author$project$Panel$Editor$Module$termTypeLeft = function (termType) {
 			var termOpPos = termType.a;
 			return A2(
 				elm$core$Maybe$map,
-				author$project$Panel$Editor$Module$TypeParenthesis,
+				author$project$Panel$Editor$Module$TypeParentheses,
 				author$project$Panel$Editor$Module$termOpPosLeft(termOpPos));
 		default:
 			var lambdaPos = termType.a;
@@ -13238,7 +13315,7 @@ var author$project$Panel$Editor$Module$termTypeParent = function (termType) {
 			var termOpPos = termType.a;
 			return A2(
 				elm$core$Maybe$map,
-				author$project$Panel$Editor$Module$TypeParenthesis,
+				author$project$Panel$Editor$Module$TypeParentheses,
 				author$project$Panel$Editor$Module$termOpPosParent(termOpPos));
 		default:
 			var lambdaPos = termType.a;
@@ -13402,7 +13479,7 @@ var author$project$Panel$Editor$Module$termTypeRight = F2(
 					var termOpPos = _n0.b.a;
 					return A2(
 						elm$core$Maybe$map,
-						author$project$Panel$Editor$Module$TypeParenthesis,
+						author$project$Panel$Editor$Module$TypeParentheses,
 						A2(
 							author$project$Panel$Editor$Module$termOpPosRight,
 							elm$core$Maybe$Just(expr),
@@ -13411,7 +13488,7 @@ var author$project$Panel$Editor$Module$termTypeRight = F2(
 					var termOpPos = _n0.b.a;
 					return A2(
 						elm$core$Maybe$map,
-						author$project$Panel$Editor$Module$TypeParenthesis,
+						author$project$Panel$Editor$Module$TypeParentheses,
 						A2(author$project$Panel$Editor$Module$termOpPosRight, elm$core$Maybe$Nothing, termOpPos));
 				}
 			default:
@@ -19976,7 +20053,7 @@ var author$project$Panel$Editor$Module$termViewOutput = F3(
 							elm$html$Html$text('('),
 							A2(
 							elm$html$Html$map,
-							author$project$Panel$Editor$Module$TypeParenthesis,
+							author$project$Panel$Editor$Module$TypeParentheses,
 							A3(
 								author$project$Panel$Editor$Module$termOpView,
 								function () {

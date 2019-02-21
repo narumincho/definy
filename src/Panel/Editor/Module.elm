@@ -108,7 +108,7 @@ type TermOpPos
 
 type TermType
     = TypeNoChildren
-    | TypeParenthesis TermOpPos
+    | TypeParentheses TermOpPos
     | TypeLambda LambdaPos
 
 
@@ -363,9 +363,9 @@ termTypeLeft termType =
         TypeNoChildren ->
             Nothing
 
-        TypeParenthesis termOpPos ->
+        TypeParentheses termOpPos ->
             termOpPosLeft termOpPos
-                |> Maybe.map TypeParenthesis
+                |> Maybe.map TypeParentheses
 
         TypeLambda lambdaPos ->
             lambdaPosLeft lambdaPos
@@ -520,13 +520,13 @@ termTypeRight termMaybe termType =
         ( _, TypeNoChildren ) ->
             Nothing
 
-        ( Just (Expr.Parentheses expr), TypeParenthesis termOpPos ) ->
+        ( Just (Expr.Parentheses expr), TypeParentheses termOpPos ) ->
             termOpPosRight (Just expr) termOpPos
-                |> Maybe.map TypeParenthesis
+                |> Maybe.map TypeParentheses
 
-        ( _, TypeParenthesis termOpPos ) ->
+        ( _, TypeParentheses termOpPos ) ->
             termOpPosRight Nothing termOpPos
-                |> Maybe.map TypeParenthesis
+                |> Maybe.map TypeParentheses
 
         ( _, TypeLambda lambdaPos ) ->
             lambdaPosRight lambdaPos
@@ -705,7 +705,7 @@ selectFirstChild module_ active =
 {-| 選択を最初の子供に移動する。デフォルトでSpaceとCtrl+→の動作
 -}
 termOpPosFirstChild : Maybe Expr.Expr -> TermOpPos -> TermOpPos
-termOpPosFirstChild expr termOpPos =
+termOpPosFirstChild exprMaybe termOpPos =
     case termOpPos of
         TermOpSelf ->
             TermOpTerm 0 TypeNoChildren
@@ -715,11 +715,11 @@ termOpPosFirstChild expr termOpPos =
 
         TermOpTerm termIndex termType ->
             let
-                term =
-                    expr
+                termMaybe =
+                    exprMaybe
                         |> Maybe.andThen (Expr.getTermFromIndex termIndex)
             in
-            TermOpTerm termIndex (termTypeFirstChild term termType)
+            TermOpTerm termIndex (termTypeFirstChild termMaybe termType)
 
         TermOpOp opIndex ->
             TermOpOp opIndex
@@ -728,17 +728,17 @@ termOpPosFirstChild expr termOpPos =
 termTypeFirstChild : Maybe Expr.Term -> TermType -> TermType
 termTypeFirstChild termMaybe termType =
     case ( termMaybe, termType ) of
-        ( Just (Expr.Parentheses expr), TypeParenthesis termOpPos ) ->
-            TypeParenthesis (termOpPosFirstChild (Just expr) termOpPos)
+        ( Just (Expr.Parentheses expr), TypeParentheses termOpPos ) ->
+            TypeParentheses (termOpPosFirstChild (Just expr) termOpPos)
 
         ( Just (Expr.Parentheses expr), _ ) ->
-            TypeParenthesis (termOpPosFirstChild (Just expr) TermOpSelf)
+            TypeParentheses (termOpPosFirstChild (Just expr) TermOpSelf)
 
         ( _, _ ) ->
             termType
 
 
-{-| 選択を選択していたものからその子供の末尾へ移動する
+{-| 選択を最後の子供に移動する。デフォルトでCtrl+←を押すとこの動作をする
 -}
 selectLastChild : ModuleWithCache.Module -> Active -> Active
 selectLastChild module_ active =
@@ -761,8 +761,59 @@ selectLastChild module_ active =
             ActivePartDefList
                 (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr termOpPos )) ->
+            let
+                exprMaybe =
+                    module_
+                        |> ModuleWithCache.getDef index
+                        |> Maybe.map Def.getExpr
+            in
+            -- 式の中身
+            ActivePartDefList
+                (ActivePartDef ( index, ActivePartDefExpr (termOpPosLastChild exprMaybe termOpPos) ))
+
         _ ->
             active
+
+
+termOpPosLastChild : Maybe Expr.Expr -> TermOpPos -> TermOpPos
+termOpPosLastChild exprMaybe termOpPos =
+    let
+        lastTermIndex =
+            exprMaybe
+                |> Maybe.map (Expr.getOthers >> List.length)
+                |> Maybe.withDefault 0
+    in
+    case termOpPos of
+        TermOpSelf ->
+            TermOpTerm lastTermIndex TypeNoChildren
+
+        TermOpHead ->
+            TermOpHead
+
+        TermOpTerm termIndex termType ->
+            let
+                termMaybe =
+                    exprMaybe
+                        |> Maybe.andThen (Expr.getTermFromIndex termIndex)
+            in
+            TermOpTerm termIndex (termTypeLastChild termMaybe termType)
+
+        TermOpOp opIndex ->
+            TermOpOp opIndex
+
+
+termTypeLastChild : Maybe Expr.Term -> TermType -> TermType
+termTypeLastChild termMaybe termType =
+    case ( termMaybe, termType ) of
+        ( Just (Expr.Parentheses expr), TypeParentheses termOpPos ) ->
+            TypeParentheses (termOpPosLastChild (Just expr) termOpPos)
+
+        ( Just (Expr.Parentheses expr), TypeNoChildren ) ->
+            TypeParentheses (termOpPosLastChild (Just expr) TermOpSelf)
+
+        ( _, _ ) ->
+            termType
 
 
 {-| 選択を親に変更する。デフォルトでEnterキーを押すとこの動作をする
@@ -821,9 +872,9 @@ termTypeParent termType =
         TypeNoChildren ->
             Nothing
 
-        TypeParenthesis termOpPos ->
+        TypeParentheses termOpPos ->
             termOpPosParent termOpPos
-                |> Maybe.map TypeParenthesis
+                |> Maybe.map TypeParentheses
 
         TypeLambda lambdaPos ->
             lambdaPosParent lambdaPos
@@ -1407,7 +1458,7 @@ termTypeToString termType =
         TypeNoChildren ->
             "自体(項)"
 
-        TypeParenthesis termOpPos ->
+        TypeParentheses termOpPos ->
             termOpPosToString termOpPos
 
         TypeLambda lambdaPos ->
@@ -2109,7 +2160,7 @@ termViewOutput term termTypeMaybe editStateMaybe =
                 [ Html.text "("
                 , termOpView
                     (case termTypeMaybe of
-                        Just (TypeParenthesis termOpPos) ->
+                        Just (TypeParentheses termOpPos) ->
                             Just termOpPos
 
                         _ ->
@@ -2117,7 +2168,7 @@ termViewOutput term termTypeMaybe editStateMaybe =
                     )
                     editStateMaybe
                     expr
-                    |> Html.map TypeParenthesis
+                    |> Html.map TypeParentheses
                 , Html.text ")"
                 ]
 
@@ -2138,7 +2189,7 @@ termTypeIsSelectSelf termType =
         TypeNoChildren ->
             True
 
-        TypeParenthesis TermOpSelf ->
+        TypeParentheses TermOpSelf ->
             True
 
         TypeLambda LambdaSelf ->
