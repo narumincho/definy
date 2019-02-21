@@ -54,7 +54,7 @@ type alias State =
     }
 
 
-{-| TODO かっこ(Parentheses)も正しくNoOpに変換する
+{-| 項をNoOpに変換する
 -}
 termToNoOp : SafeTerm -> NoOp
 termToNoOp safeTerm =
@@ -66,7 +66,7 @@ termToNoOp safeTerm =
             NoOp.Ref ref
 
         Parentheses safeExpr ->
-            NoOp.Int 100
+            convert safeExpr
 
 
 {-| TODO 他の演算子も正しくNoOpに変換する

@@ -2126,7 +2126,7 @@ termViewOutput : Expr.Term -> Maybe TermType -> Maybe EditState -> Html.Html Ter
 termViewOutput term termTypeMaybe editStateMaybe =
     let
         isSelect =
-            (termTypeMaybe |> Maybe.map termTypeIsSelectSelf) == Just True
+            (termTypeMaybe |> Maybe.map (termTypeIsSelectSelf term)) == Just True
     in
     case term of
         Expr.Int32Literal _ ->
@@ -2183,16 +2183,28 @@ termViewOutput term termTypeMaybe editStateMaybe =
                 [ Html.text "ばつ" ]
 
 
-termTypeIsSelectSelf : TermType -> Bool
-termTypeIsSelectSelf termType =
-    case termType of
-        TypeNoChildren ->
+termTypeIsSelectSelf : Expr.Term -> TermType -> Bool
+termTypeIsSelectSelf term termType =
+    case ( term, termType ) of
+        ( _, TypeNoChildren ) ->
             True
 
-        TypeParentheses TermOpSelf ->
+        ( _, TypeParentheses TermOpSelf ) ->
             True
 
-        TypeLambda LambdaSelf ->
+        ( _, TypeLambda LambdaSelf ) ->
+            True
+
+        ( Expr.Int32Literal _, TypeParentheses _ ) ->
+            True
+
+        ( Expr.Int32Literal _, TypeLambda _ ) ->
+            True
+
+        ( Expr.Part _, TypeParentheses _ ) ->
+            True
+
+        ( Expr.Part _, TypeLambda _ ) ->
             True
 
         _ ->

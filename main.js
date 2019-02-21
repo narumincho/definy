@@ -4968,6 +4968,12 @@ var author$project$Compiler$NoOp$Call2 = F3(
 	function (a, b, c) {
 		return {$: 4, a: a, b: b, c: c};
 	});
+var author$project$Compiler$NoOp$Int = function (a) {
+	return {$: 1, a: a};
+};
+var author$project$Compiler$NoOp$Ref = function (a) {
+	return {$: 2, a: a};
+};
 var author$project$Compiler$SafeExpr$bindingOrderToInt = function (order) {
 	switch (order) {
 		case 0:
@@ -5132,34 +5138,15 @@ var author$project$Compiler$SafeExprToNoOp$opToNoOp = function (op) {
 			return author$project$Compiler$NoOp$Core(0);
 	}
 };
-var author$project$Compiler$NoOp$Int = function (a) {
-	return {$: 1, a: a};
-};
-var author$project$Compiler$NoOp$Ref = function (a) {
-	return {$: 2, a: a};
-};
-var author$project$Compiler$SafeExprToNoOp$termToNoOp = function (safeTerm) {
-	switch (safeTerm.$) {
-		case 0:
-			var _int = safeTerm.a;
-			return author$project$Compiler$NoOp$Int(_int);
-		case 1:
-			var ref = safeTerm.a;
-			return author$project$Compiler$NoOp$Ref(ref);
-		default:
-			var safeExpr = safeTerm.a;
-			return author$project$Compiler$NoOp$Int(100);
-	}
-};
-var author$project$Compiler$SafeExprToNoOp$convert = function (_n0) {
-	var head = _n0.a;
-	var others = _n0.b;
+var author$project$Compiler$SafeExprToNoOp$convert = function (_n1) {
+	var head = _n1.a;
+	var others = _n1.b;
 	if (!others.b) {
 		return author$project$Compiler$SafeExprToNoOp$termToNoOp(head);
 	} else {
-		var _n2 = others.a;
-		var op = _n2.a;
-		var term = _n2.b;
+		var _n3 = others.a;
+		var op = _n3.a;
+		var term = _n3.b;
 		var xs = others.b;
 		var a = author$project$Compiler$SafeExprToNoOp$convertLoop(
 			{
@@ -5173,6 +5160,19 @@ var author$project$Compiler$SafeExprToNoOp$convert = function (_n0) {
 			author$project$Compiler$SafeExprToNoOp$opToNoOp(a.Q),
 			author$project$Compiler$SafeExprToNoOp$convert(a.S),
 			author$project$Compiler$SafeExprToNoOp$convert(a.U));
+	}
+};
+var author$project$Compiler$SafeExprToNoOp$termToNoOp = function (safeTerm) {
+	switch (safeTerm.$) {
+		case 0:
+			var _int = safeTerm.a;
+			return author$project$Compiler$NoOp$Int(_int);
+		case 1:
+			var ref = safeTerm.a;
+			return author$project$Compiler$NoOp$Ref(ref);
+		default:
+			var safeExpr = safeTerm.a;
+			return author$project$Compiler$SafeExprToNoOp$convert(safeExpr);
 	}
 };
 var author$project$Compiler$compile = function (def) {
@@ -19817,30 +19817,71 @@ var author$project$Panel$Editor$Module$opViewOutput = F2(
 	function (op, isSelected) {
 		return A2(author$project$Panel$Editor$Module$opNormalView, op, isSelected);
 	});
-var author$project$Panel$Editor$Module$termTypeIsSelectSelf = function (termType) {
-	_n0$3:
-	while (true) {
-		switch (termType.$) {
-			case 0:
-				return true;
-			case 1:
-				if (!termType.a.$) {
-					var _n1 = termType.a;
-					return true;
-				} else {
-					break _n0$3;
+var author$project$Panel$Editor$Module$termTypeIsSelectSelf = F2(
+	function (term, termType) {
+		var _n0 = _Utils_Tuple2(term, termType);
+		_n0$1:
+		while (true) {
+			_n0$2:
+			while (true) {
+				_n0$7:
+				while (true) {
+					switch (_n0.b.$) {
+						case 0:
+							var _n1 = _n0.b;
+							return true;
+						case 1:
+							switch (_n0.a.$) {
+								case 0:
+									if (!_n0.b.a.$) {
+										break _n0$1;
+									} else {
+										return true;
+									}
+								case 1:
+									if (!_n0.b.a.$) {
+										break _n0$1;
+									} else {
+										return true;
+									}
+								default:
+									if (!_n0.b.a.$) {
+										break _n0$1;
+									} else {
+										break _n0$7;
+									}
+							}
+						default:
+							switch (_n0.a.$) {
+								case 0:
+									if (!_n0.b.a.$) {
+										break _n0$2;
+									} else {
+										return true;
+									}
+								case 1:
+									if (!_n0.b.a.$) {
+										break _n0$2;
+									} else {
+										return true;
+									}
+								default:
+									if (!_n0.b.a.$) {
+										break _n0$2;
+									} else {
+										break _n0$7;
+									}
+							}
+					}
 				}
-			default:
-				if (!termType.a.$) {
-					var _n2 = termType.a;
-					return true;
-				} else {
-					break _n0$3;
-				}
+				return false;
+			}
+			var _n3 = _n0.b.a;
+			return true;
 		}
-	}
-	return false;
-};
+		var _n2 = _n0.b.a;
+		return true;
+	});
 var author$project$Project$Source$Module$Def$Expr$termToString = function (term) {
 	switch (term.$) {
 		case 0:
@@ -19983,7 +20024,10 @@ var author$project$Panel$Editor$Module$termOpView = F3(
 var author$project$Panel$Editor$Module$termViewOutput = F3(
 	function (term, termTypeMaybe, editStateMaybe) {
 		var isSelect = _Utils_eq(
-			A2(elm$core$Maybe$map, author$project$Panel$Editor$Module$termTypeIsSelectSelf, termTypeMaybe),
+			A2(
+				elm$core$Maybe$map,
+				author$project$Panel$Editor$Module$termTypeIsSelectSelf(term),
+				termTypeMaybe),
 			elm$core$Maybe$Just(true));
 		switch (term.$) {
 			case 0:
