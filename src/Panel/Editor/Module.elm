@@ -688,12 +688,54 @@ selectFirstChild module_ active =
             -- 定義から名前へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefName ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr termOpPos )) ->
             -- 式から先頭の項へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm 0 TypeNoChildren) ))
+            let
+                exprMaybe =
+                    module_
+                        |> ModuleWithCache.getDef index
+                        |> Maybe.map Def.getExpr
+            in
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (termOpPosFirstChild exprMaybe termOpPos) ))
 
         _ ->
             active
+
+
+{-| 選択を最初の子供に移動する。デフォルトでSpaceとCtrl+→の動作
+-}
+termOpPosFirstChild : Maybe Expr.Expr -> TermOpPos -> TermOpPos
+termOpPosFirstChild expr termOpPos =
+    case termOpPos of
+        TermOpSelf ->
+            TermOpTerm 0 TypeNoChildren
+
+        TermOpHead ->
+            TermOpHead
+
+        TermOpTerm termIndex termType ->
+            let
+                term =
+                    expr
+                        |> Maybe.andThen (Expr.getTermFromIndex termIndex)
+            in
+            TermOpTerm termIndex (termTypeFirstChild term termType)
+
+        TermOpOp opIndex ->
+            TermOpOp opIndex
+
+
+termTypeFirstChild : Maybe Expr.Term -> TermType -> TermType
+termTypeFirstChild termMaybe termType =
+    case ( termMaybe, termType ) of
+        ( Just (Expr.Parentheses expr), TypeParenthesis termOpPos ) ->
+            TypeParenthesis (termOpPosFirstChild (Just expr) termOpPos)
+
+        ( Just (Expr.Parentheses expr), _ ) ->
+            TypeParenthesis (termOpPosFirstChild (Just expr) TermOpSelf)
+
+        ( _, _ ) ->
+            termType
 
 
 {-| 選択を選択していたものからその子供の末尾へ移動する
@@ -723,6 +765,8 @@ selectLastChild module_ active =
             active
 
 
+{-| 選択を親に変更する。デフォルトでEnterキーを押すとこの動作をする
+-}
 selectParent : ModuleWithCache.Module -> Active -> Active
 selectParent module_ active =
     case active of
