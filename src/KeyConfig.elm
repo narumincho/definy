@@ -217,50 +217,37 @@ treePanelKeyDown { key, ctrl, shift, alt } =
 {-| エディタグループパネルのキー入力
 -}
 editorGroupPanelKeyDown : Key.Key -> List Panel.EditorGroup.Msg
-editorGroupPanelKeyDown { key, ctrl, shift, alt } =
+editorGroupPanelKeyDown key =
+    moduleEditorKeyMsg key
+        |> List.map
+            (Panel.EditorGroup.ModuleEditorMsg
+                >> Panel.EditorGroup.EditorItemMsgToActive
+            )
+
+
+moduleEditorKeyMsg : Key.Key -> List Panel.Editor.Module.Msg
+moduleEditorKeyMsg { key, ctrl, shift, alt } =
     case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
                 Key.ArrowLeft ->
-                    [ Panel.EditorGroup.EditorItemMsgToActive
-                        (Panel.EditorGroup.ModuleEditorMsg
-                            Panel.Editor.Module.SelectLeft
-                        )
-                    ]
+                    [ Panel.Editor.Module.SelectLeft ]
 
                 Key.ArrowRight ->
-                    [ Panel.EditorGroup.EditorItemMsgToActive
-                        (Panel.EditorGroup.ModuleEditorMsg
-                            Panel.Editor.Module.SelectRight
-                        )
-                    ]
+                    [ Panel.Editor.Module.SelectRight ]
 
                 Key.ArrowUp ->
-                    [ Panel.EditorGroup.EditorItemMsgToActive
-                        (Panel.EditorGroup.ModuleEditorMsg
-                            Panel.Editor.Module.SuggestionPrevOrSelectUp
-                        )
-                    ]
+                    [ Panel.Editor.Module.SuggestionPrevOrSelectUp ]
 
                 Key.ArrowDown ->
-                    [ Panel.EditorGroup.EditorItemMsgToActive
-                        (Panel.EditorGroup.ModuleEditorMsg
-                            Panel.Editor.Module.SuggestionNextOrSelectDown
-                        )
+                    [ Panel.Editor.Module.SuggestionNextOrSelectDown
                     ]
 
                 Key.Space ->
-                    [ Panel.EditorGroup.EditorItemMsgToActive
-                        (Panel.EditorGroup.ModuleEditorMsg
-                            Panel.Editor.Module.SelectFirstChild
-                        )
-                    ]
+                    [ Panel.Editor.Module.SelectFirstChild ]
 
                 Key.Enter ->
-                    [ Panel.EditorGroup.EditorItemMsgToActive
-                        (Panel.EditorGroup.ModuleEditorMsg
-                            Panel.Editor.Module.SelectParent
-                        )
+                    [ Panel.Editor.Module.ConfirmSingleLineTextFieldOrSelectParent
                     ]
 
                 _ ->
@@ -269,25 +256,13 @@ editorGroupPanelKeyDown { key, ctrl, shift, alt } =
         ( True, False, False ) ->
             case key of
                 Key.ArrowLeft ->
-                    [ Panel.EditorGroup.EditorItemMsgToActive
-                        (Panel.EditorGroup.ModuleEditorMsg
-                            Panel.Editor.Module.SelectLastChild
-                        )
-                    ]
+                    [ Panel.Editor.Module.SelectLastChild ]
 
                 Key.ArrowRight ->
-                    [ Panel.EditorGroup.EditorItemMsgToActive
-                        (Panel.EditorGroup.ModuleEditorMsg
-                            Panel.Editor.Module.SelectFirstChild
-                        )
-                    ]
+                    [ Panel.Editor.Module.SelectFirstChild ]
 
                 Key.Enter ->
-                    [ Panel.EditorGroup.EditorItemMsgToActive
-                        (Panel.EditorGroup.ModuleEditorMsg
-                            Panel.Editor.Module.ConfirmMultiLineTextField
-                        )
-                    ]
+                    [ Panel.Editor.Module.ConfirmMultiLineTextField ]
 
                 _ ->
                     []

@@ -514,8 +514,8 @@ img {
 =================*/
 
 .moduleEditor-partDef-nameContainer {
-    height: 38px;
     position: relative;
+    height: 38px;
     padding: 4px;
 }
 
@@ -537,7 +537,7 @@ img {
 .moduleEditor-partDef-nameTextArea {
     border: solid #ddd 2px;
     height: 32px;
-    color: #d7ba7d;
+    color: #ddd;
     font-size: 20px;
     border-radius: 4px;
     background-color: #000;
@@ -548,38 +548,35 @@ img {
         Type
 =================*/
 
-.moduleEditor-partDef-type {
-    display: flex;
-    align-items: baseline;
-    padding: 4px;
+.moduleEditor-partDef-typeContainer {
+    position: relative;
     height: 32px;
+    padding: 4px;
+}
+
+.moduleEditor-partDef-typeText {
     color: #4ec9b0;
     font-size: 16px;
     border-radius: 4px;
+    min-width: 32px;
 }
 
-.moduleEditor-partDef-noType {
-    display: flex;
-    align-items: baseline;
-    padding: 4px;
-    height: 32px;
+.moduleEditor-partDef-typeTextNone {
+    min-width: 32px;
     background-color: #000;
     color: #666;
     font-size: 16px;
     border-radius: 4px;
 }
 
-.moduleEditor-partDef-type-edit {
-    display: flex;
-    align-items: baseline;
-    padding: 2px;
-    border: solid 2px #ddd;
-    height: 32px;
-    color: #4ec9b0;
+.moduleEditor-partDef-typeTextArea {
+    border: solid #ddd 2px;
+    height: 26px;
+    color: #ddd;
     font-size: 16px;
     border-radius: 4px;
-    min-width: 32px;
-    position: relative;
+    background-color: #000;
+    resize: none;
 }
 
 /*=================

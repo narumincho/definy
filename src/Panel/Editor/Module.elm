@@ -17,7 +17,6 @@ import Html.Keyed
 import Json.Decode
 import Json.Encode
 import NSvg
-import Palette.X11
 import Panel.DefaultUi
 import Parser
 import Parser.SimpleChar
@@ -59,6 +58,8 @@ type Msg
     | Input String
     | ToEditMode
     | ConfirmMultiLineTextField
+    | ConfirmSingleLineTextField
+    | ConfirmSingleLineTextFieldOrSelectParent
     | AddPartDef
     | FocusThisEditor
     | BlurThisEditor
@@ -208,6 +209,19 @@ update msg project (Model rec) =
         ConfirmMultiLineTextField ->
             update (ActiveTo (confirmMultiLineTextField rec.active)) project (Model rec)
 
+        ConfirmSingleLineTextField ->
+            ( Model { rec | editState = Nothing }
+            , [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
+            )
+
+        ConfirmSingleLineTextFieldOrSelectParent ->
+            case rec.editState of
+                Just _ ->
+                    update ConfirmSingleLineTextField project (Model rec)
+
+                Nothing ->
+                    update SelectParent project (Model rec)
+
         AddPartDef ->
             ( Model rec
             , [ EmitAddPartDef { ref = rec.moduleRef } ]
@@ -261,22 +275,7 @@ activeTo active (Model rec) =
         ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
             []
 
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefName )) ->
-            [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
-
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefType )) ->
-            [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
-
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr TermOpSelf )) ->
-            [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
-
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr TermOpHead )) ->
-            [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
-
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr (TermOpTerm _ _) )) ->
-            [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
-
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr (TermOpOp _) )) ->
+        ActivePartDefList (ActivePartDef ( _, _ )) ->
             [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
     )
 
@@ -1760,7 +1759,6 @@ resultArea compileResult evalResult =
 
 
 {- ================= Name And Type ================= -}
-{------------------ Name  ------------------}
 
 
 partDefViewNameAndType : Name.Name -> Type.Type -> Maybe PartDefActive -> Maybe EditState -> Html.Html DefViewMsg
@@ -1779,13 +1777,16 @@ partDefViewNameAndType name type_ partDefActiveMaybe editStateMaybe =
         , partDefViewType type_
             (case partDefActiveMaybe of
                 Just ActivePartDefType ->
-                    Just Nothing
+                    Just editStateMaybe
 
                 _ ->
                     Nothing
             )
-            editStateMaybe
         ]
+
+
+
+{------------------ Name  ------------------}
 
 
 partDefViewName : Name.Name -> Maybe (Maybe EditState) -> Html.Html DefViewMsg
@@ -1933,62 +1934,86 @@ nameSuggestList =
 {------------------ Type  ------------------}
 
 
-partDefViewType : Type.Type -> Maybe (Maybe ( List ( Char, Bool ), Int )) -> Maybe EditState -> Html.Html DefViewMsg
-partDefViewType type_ textAreaValueAndIndexMaybeMaybe editStateMaybe =
-    case textAreaValueAndIndexMaybeMaybe of
-        Just (Just ( textAreaValue, suggestIndex )) ->
-            partDefTypeEditView type_ textAreaValue suggestIndex
+partDefViewType : Type.Type -> Maybe (Maybe EditState) -> Html.Html DefViewMsg
+partDefViewType type_ editStateMaybe =
+    case editStateMaybe of
+        Just (Just EditStateText) ->
+            partDefTypeEditView type_ 0
+
+        Just (Just (EditStateSelect { suggestIndex })) ->
+            partDefTypeEditView type_ suggestIndex
 
         Just Nothing ->
-            partDefTypeNormalView type_ True
+            partDefTypeSelectView type_
 
         Nothing ->
-            partDefTypeNormalView type_ False
+            partDefTypeNormalView type_
 
 
-partDefTypeNormalView : Type.Type -> Bool -> Html.Html DefViewMsg
-partDefTypeNormalView type_ isActive =
-    case Type.toString type_ of
-        Just nameString ->
-            Html.div
-                ([ subClassList
-                    [ ( "partDef-type", True )
-                    , ( "partDef-element-active", isActive )
-                    ]
-                 ]
-                    ++ (if isActive then
-                            []
-
-                        else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( DefActiveTo ActivePartDefType, True )) ]
-                       )
-                )
-                [ Html.text nameString ]
-
-        Nothing ->
-            Html.div
-                ([ subClassList
-                    [ ( "partDef-noType", True )
-                    , ( "partDef-element-active", isActive )
-                    ]
-                 ]
-                    ++ (if isActive then
-                            []
-
-                        else
-                            [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( DefActiveTo ActivePartDefType, True )) ]
-                       )
-                )
-                [ Html.text "NO TYPE" ]
-
-
-partDefTypeEditView : Type.Type -> List ( Char, Bool ) -> Int -> Html.Html DefViewMsg
-partDefTypeEditView type_ textAreaValue suggestIndex =
+partDefTypeNormalView : Type.Type -> Html.Html DefViewMsg
+partDefTypeNormalView type_ =
     Html.div
-        [ subClass "partDef-type-edit" ]
-        (textAreaValueToListHtml textAreaValue
-            ++ [ suggestionType type_ suggestIndex ]
-        )
+        [ subClass "partDef-typeContainer"
+        , Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( DefActiveTo ActivePartDefType, True ))
+        ]
+        [ case Type.toString type_ of
+            Just typeString ->
+                Html.div
+                    [ subClass "partDef-typeText" ]
+                    [ Html.text typeString ]
+
+            Nothing ->
+                Html.div
+                    [ subClass "partDef-typeTextNone" ]
+                    [ Html.text "NO TYPE" ]
+        ]
+
+
+partDefTypeSelectView : Type.Type -> Html.Html DefViewMsg
+partDefTypeSelectView type_ =
+    Html.Keyed.node "div"
+        [ subClass "partDef-typeContainer"
+        , subClass "partDef-element-active"
+        ]
+        [ ( "view"
+          , case Type.toString type_ of
+                Just typeString ->
+                    Html.div
+                        [ subClass "partDef-typeText" ]
+                        [ Html.text typeString ]
+
+                Nothing ->
+                    Html.div
+                        [ subClass "partDef-typeTextNone" ]
+                        [ Html.text "NO TYPE" ]
+          )
+        , ( "input"
+          , Html.textarea
+                [ subClass "partDef-hideTextArea"
+                , Html.Attributes.id "edit"
+                , Html.Events.onInput DefInput
+                ]
+                []
+          )
+        ]
+
+
+partDefTypeEditView : Type.Type -> Int -> Html.Html DefViewMsg
+partDefTypeEditView type_ suggestIndex =
+    Html.Keyed.node "div"
+        [ subClass "partDef-typeContainer" ]
+        [ ( "input"
+          , Html.textarea
+                [ subClass "partDef-typeTextArea"
+                , Html.Attributes.id "edit"
+                , Html.Events.onInput DefInput
+                ]
+                []
+          )
+        , ( "suggest"
+          , suggestionType type_ suggestIndex
+          )
+        ]
 
 
 suggestionType : Type.Type -> Int -> Html.Html msg
