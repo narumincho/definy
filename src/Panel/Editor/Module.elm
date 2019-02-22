@@ -1641,6 +1641,7 @@ partDefinitionsView isFocus partDefListActiveMaybe editStateMaybe defAndResultLi
         )
         [ partDefinitionsViewTitle
         , partDefListView
+            isFocus
             defAndResultList
             (case partDefListActiveMaybe of
                 Just (ActivePartDef partDefActiveWithIndex) ->
@@ -1660,8 +1661,8 @@ partDefinitionsViewTitle =
         [ Html.text "Part Definitions" ]
 
 
-partDefListView : List ModuleWithCache.DefAndResult -> Maybe ( Int, PartDefActive ) -> Maybe EditState -> Html.Html Msg
-partDefListView defAndResultList partDefActiveWithIndexMaybe editStateMaybe =
+partDefListView : Bool -> List ModuleWithCache.DefAndResult -> Maybe ( Int, PartDefActive ) -> Maybe EditState -> Html.Html Msg
+partDefListView isFocus defAndResultList partDefActiveWithIndexMaybe editStateMaybe =
     Html.div
         [ subClass "partDefList"
         ]
@@ -1669,6 +1670,7 @@ partDefListView defAndResultList partDefActiveWithIndexMaybe editStateMaybe =
             |> List.indexedMap
                 (\index defAndResult ->
                     partDefView
+                        isFocus
                         index
                         defAndResult
                         (case partDefActiveWithIndexMaybe of
@@ -1698,8 +1700,8 @@ partDefListView defAndResultList partDefActiveWithIndexMaybe editStateMaybe =
         )
 
 
-partDefView : Int -> ModuleWithCache.DefAndResult -> Maybe PartDefActive -> Maybe EditState -> Html.Html DefViewMsg
-partDefView index defAndResult partDefActiveMaybe editSateMaybe =
+partDefView : Bool -> Int -> ModuleWithCache.DefAndResult -> Maybe PartDefActive -> Maybe EditState -> Html.Html DefViewMsg
+partDefView isFocus index defAndResult partDefActiveMaybe editSateMaybe =
     let
         def =
             ModuleWithCache.defAndResultGetDef defAndResult
@@ -1718,7 +1720,7 @@ partDefView index defAndResult partDefActiveMaybe editSateMaybe =
         , Html.Events.stopPropagationOn "click"
             (Json.Decode.succeed
                 ( DefActiveTo ActivePartDefSelf
-                , True
+                , isFocus
                 )
             )
         ]
@@ -1843,12 +1845,7 @@ partDefNameSelectView name =
                         [ Html.text "NO NAME" ]
           )
         , ( "input"
-          , Html.textarea
-                [ subClass "partDef-hideTextArea"
-                , Html.Attributes.id "edit"
-                , Html.Events.onInput DefInput
-                ]
-                []
+          , hideTextArea
           )
         ]
 
@@ -1988,12 +1985,7 @@ partDefTypeSelectView type_ =
                         [ Html.text "NO TYPE" ]
           )
         , ( "input"
-          , Html.textarea
-                [ subClass "partDef-hideTextArea"
-                , Html.Attributes.id "edit"
-                , Html.Events.onInput DefInput
-                ]
-                []
+          , hideTextArea
           )
         ]
 
@@ -2377,6 +2369,20 @@ activeHeadTermLeft =
             [ subClass "partDef-caret" ]
             []
         ]
+
+
+
+{--Hide Text Area --}
+
+
+hideTextArea : Html.Html DefViewMsg
+hideTextArea =
+    Html.textarea
+        [ subClass "partDef-hideTextArea"
+        , Html.Attributes.id "edit"
+        , Html.Events.onInput DefInput
+        ]
+        []
 
 
 addDefButton : Html.Html Msg

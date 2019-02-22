@@ -1156,6 +1156,10 @@ projectRefToEditorItem projectRef =
 
 view : Project.Project -> { width : Int, height : Int } -> Bool -> Maybe Gutter -> Model -> List (Html.Html Msg)
 view project { width, height } isFocus gutter (Model { group, activeEditorIndex, mouseOverOpenEditorPosition }) =
+    let
+        ( activeEditorRow, activeEditorColumn ) =
+            activeEditorIndex
+    in
     (case group of
         RowOne { left } ->
             [ editorColumn
@@ -1163,7 +1167,7 @@ view project { width, height } isFocus gutter (Model { group, activeEditorIndex,
                 left
                 { width = width - 2, height = height }
                 OpenEditorPositionLeftBottom
-                activeEditorIndex
+                (Just activeEditorColumn)
                 EditorRefLeft
                 (gutter == Just (GutterHorizontal GutterHorizontalLeft))
                 True
@@ -1176,7 +1180,13 @@ view project { width, height } isFocus gutter (Model { group, activeEditorIndex,
                 left
                 { width = (width - 4) * leftWidth // 1000, height = height }
                 OpenEditorPositionLeftBottom
-                activeEditorIndex
+                (case activeEditorRow of
+                    EditorRefLeft ->
+                        Just activeEditorColumn
+
+                    _ ->
+                        Nothing
+                )
                 EditorRefLeft
                 (gutter == Just (GutterHorizontal GutterHorizontalLeft))
                 False
@@ -1188,7 +1198,13 @@ view project { width, height } isFocus gutter (Model { group, activeEditorIndex,
                 center
                 { width = (width - 4) * (1000 - leftWidth) // 1000, height = height }
                 OpenEditorPositionCenterBottom
-                activeEditorIndex
+                (case activeEditorRow of
+                    EditorRefLeft ->
+                        Nothing
+
+                    _ ->
+                        Just activeEditorColumn
+                )
                 EditorRefCenter
                 (gutter == Just (GutterHorizontal GutterHorizontalCenter))
                 False
@@ -1201,7 +1217,16 @@ view project { width, height } isFocus gutter (Model { group, activeEditorIndex,
                 left
                 { width = (width - 4) * leftWidth // 1000, height = height }
                 OpenEditorPositionLeftBottom
-                activeEditorIndex
+                (case activeEditorRow of
+                    EditorRefLeft ->
+                        Just activeEditorColumn
+
+                    EditorRefCenter ->
+                        Nothing
+
+                    EditorRefRight ->
+                        Nothing
+                )
                 EditorRefLeft
                 (gutter == Just (GutterHorizontal GutterHorizontalLeft))
                 False
@@ -1213,7 +1238,16 @@ view project { width, height } isFocus gutter (Model { group, activeEditorIndex,
                 center
                 { width = (width - 4) * centerWidth // 1000, height = height }
                 OpenEditorPositionCenterBottom
-                activeEditorIndex
+                (case activeEditorRow of
+                    EditorRefLeft ->
+                        Nothing
+
+                    EditorRefCenter ->
+                        Just activeEditorColumn
+
+                    EditorRefRight ->
+                        Nothing
+                )
                 EditorRefCenter
                 (gutter == Just (GutterHorizontal GutterHorizontalCenter))
                 False
@@ -1225,7 +1259,16 @@ view project { width, height } isFocus gutter (Model { group, activeEditorIndex,
                 right
                 { width = (width - 4) * (1000 - leftWidth - centerWidth) // 1000, height = height }
                 OpenEditorPositionRightBottom
-                activeEditorIndex
+                (case activeEditorRow of
+                    EditorRefLeft ->
+                        Nothing
+
+                    EditorRefCenter ->
+                        Nothing
+
+                    EditorRefRight ->
+                        Just activeEditorColumn
+                )
                 EditorRefRight
                 (gutter == Just (GutterHorizontal GutterHorizontalRight))
                 False
@@ -1386,8 +1429,10 @@ addBottom =
     ]
 
 
-editorColumn : Project.Project -> ColumnGroup -> { width : Int, height : Int } -> OpenEditorPosition -> EditorIndex -> EditorIndexRow -> Bool -> Bool -> Html.Html Msg
-editorColumn project columnGroup { width, height } showEditorPosition activeEditorRef editorRefRow isGutterActive isOne =
+{-| エディタの縦に2つ並んでいるか1つの表示
+-}
+editorColumn : Project.Project -> ColumnGroup -> { width : Int, height : Int } -> OpenEditorPosition -> Maybe EditorIndexColumn -> EditorIndexRow -> Bool -> Bool -> Html.Html Msg
+editorColumn project columnGroup { width, height } openEditorPosition activeEditorIndexColumnMaybe editorRefRow isGutterActive isOne =
     Html.div
         [ subClass "column"
         , Html.Attributes.style "width" (String.fromInt width ++ "px")
@@ -1395,25 +1440,27 @@ editorColumn project columnGroup { width, height } showEditorPosition activeEdit
         (case columnGroup of
             ColumnOne { top } ->
                 [ editorItemView
-                    project
-                    top
-                    { width = width, height = height - 2 }
-                    ( editorRefRow, EditorRefTop )
-                    (( editorRefRow, EditorRefTop ) == activeEditorRef)
-                    isOne
-                , editorColumnAddGutter showEditorPosition
+                    { project = project
+                    , editorItem = top
+                    , editorIndex = ( editorRefRow, EditorRefTop )
+                    , width = width
+                    , height = height - 2
+                    , isActive = Just EditorRefTop == activeEditorIndexColumnMaybe
+                    , isOne = isOne
+                    }
+                , editorColumnAddGutter openEditorPosition
                 ]
 
             ColumnTwo { top, bottom, topHeight } ->
                 [ editorItemView
-                    project
-                    top
-                    { width = width
+                    { project = project
+                    , editorItem = top
+                    , editorIndex = ( editorRefRow, EditorRefTop )
+                    , width = width
                     , height = (height - 2) * topHeight // 1000
+                    , isActive = Just EditorRefTop == activeEditorIndexColumnMaybe
+                    , isOne = False
                     }
-                    ( editorRefRow, EditorRefTop )
-                    (( editorRefRow, EditorRefTop ) == activeEditorRef)
-                    False
                 , horizontalGutter
                     (case editorRefRow of
                         EditorRefLeft ->
@@ -1427,14 +1474,14 @@ editorColumn project columnGroup { width, height } showEditorPosition activeEdit
                     )
                     isGutterActive
                 , editorItemView
-                    project
-                    bottom
-                    { width = width
+                    { project = project
+                    , editorItem = bottom
+                    , editorIndex = ( editorRefRow, EditorRefBottom )
+                    , width = width
                     , height = (height - 2) * (1000 - topHeight) // 1000
+                    , isActive = Just EditorRefBottom == activeEditorIndexColumnMaybe
+                    , isOne = False
                     }
-                    ( editorRefRow, EditorRefBottom )
-                    (( editorRefRow, EditorRefBottom ) == activeEditorRef)
-                    False
                 ]
         )
 
@@ -1471,12 +1518,12 @@ editorColumnAddGutter showEditorPosition =
 
 {-| それぞれのエディタの表示
 -}
-editorItemView : Project.Project -> EditorItem -> { width : Int, height : Int } -> EditorIndex -> Bool -> Bool -> Html.Html Msg
-editorItemView project item { width, height } editorRef isActive isOne =
+editorItemView : { project : Project.Project, editorItem : EditorItem, editorIndex : EditorIndex, width : Int, height : Int, isActive : Bool, isOne : Bool } -> Html.Html Msg
+editorItemView { project, editorItem, editorIndex, width, height, isActive, isOne } =
     let
         childItem : { title : String, body : List (Html.Html Msg) }
         childItem =
-            case item of
+            case editorItem of
                 ProjectEditor _ ->
                     Panel.Editor.Project.view
 
@@ -1497,7 +1544,7 @@ editorItemView project item { width, height } editorRef isActive isOne =
                     { title = viewItem.title
                     , body =
                         viewItem.body
-                            |> List.map (Html.map (\m -> EditorItemMsg { msg = ModuleEditorMsg m, ref = editorRef }))
+                            |> List.map (Html.map (\m -> EditorItemMsg { msg = ModuleEditorMsg m, ref = editorIndex }))
                     }
 
                 EditorKeyConfig model ->
@@ -1508,7 +1555,7 @@ editorItemView project item { width, height } editorRef isActive isOne =
                     { title = viewItem.title
                     , body =
                         viewItem.body
-                            |> List.map (Html.map (\m -> EditorItemMsg { msg = EditorKeyConfigMsg m, ref = editorRef }))
+                            |> List.map (Html.map (\m -> EditorItemMsg { msg = EditorKeyConfigMsg m, ref = editorIndex }))
                     }
     in
     Html.div
@@ -1526,12 +1573,12 @@ editorItemView project item { width, height } editorRef isActive isOne =
                     []
 
                 else
-                    [ Html.Events.onClick (ChangeActiveEditor editorRef) ]
+                    [ Html.Events.onClick (ChangeActiveEditor editorIndex) ]
                )
         )
         ([ editorTitle
             childItem.title
-            editorRef
+            editorIndex
             isOne
          ]
             ++ childItem.body
