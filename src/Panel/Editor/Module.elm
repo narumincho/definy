@@ -1749,7 +1749,7 @@ type DefViewMsg
 resultArea : Maybe Compiler.CompileResult -> Maybe Int -> Html.Html msg
 resultArea compileResult evalResult =
     Html.div
-        [ subClass "partDef-resultArea " ]
+        [ subClass "partDef-resultArea" ]
         [ Html.div
             []
             [ Html.text (compileResult |> Maybe.map Compiler.compileResultToString |> Maybe.withDefault "コンパイル結果がない") ]
@@ -2051,8 +2051,7 @@ suggestTypeItem type_ subItem isSelect =
 partDefViewExpr : Expr.Expr -> Maybe TermOpPos -> Maybe EditState -> Html.Html DefViewMsg
 partDefViewExpr expr termOpPosMaybe editStateMaybe =
     Html.div
-        ([ subClass "partDef-expr"
-         ]
+        ([ subClass "partDef-expr" ]
             ++ (case termOpPosMaybe of
                     Just TermOpSelf ->
                         [ subClass "partDef-element-active" ]
@@ -2067,6 +2066,16 @@ partDefViewExpr expr termOpPosMaybe editStateMaybe =
         , termOpView termOpPosMaybe editStateMaybe expr
             |> Html.map (\m -> DefActiveTo (ActivePartDefExpr m))
         ]
+
+
+
+--    case (termOpPosMaybe, editStateMaybe) of
+--        (Just TermOpSelf, Nothing) ->
+--            Html.Keyed.node "div"
+--                [ subClass "partDef-expr" ]
+--                [ ("view", eaf), ("input", hideT)
+--                ]
+--
 
 
 termOpView : Maybe TermOpPos -> Maybe EditState -> Expr.Expr -> Html.Html TermOpPos
@@ -2193,11 +2202,11 @@ termViewOutput term termTypeMaybe editStateMaybe =
             Html.div
                 [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( TypeNoChildren, True ))
                 , subClassList
-                    [ ( "partDef-term", True )
+                    [ ( "partDef-term-none", True )
                     , ( "partDef-term-active", isSelect )
                     ]
                 ]
-                [ Html.text "ばつ" ]
+                []
 
 
 termTypeIsSelectSelf : Expr.Term -> TermType -> Bool

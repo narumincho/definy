@@ -7919,9 +7919,12 @@ var author$project$Key$fromKeyEventObject = A2(
 	});
 var elm$json$Json$Decode$value = _Json_decodeValue;
 var author$project$Main$keyDown = _Platform_incomingPort('keyDown', elm$json$Json$Decode$value);
-var elm$json$Json$Decode$int = _Json_decodeInt;
-var author$project$Main$keyPrevented = _Platform_incomingPort('keyPrevented', elm$json$Json$Decode$int);
+var elm$json$Json$Decode$null = _Json_decodeNull;
+var author$project$Main$keyPrevented = _Platform_incomingPort(
+	'keyPrevented',
+	elm$json$Json$Decode$null(0));
 var elm$json$Json$Decode$andThen = _Json_andThen;
+var elm$json$Json$Decode$int = _Json_decodeInt;
 var elm$json$Json$Decode$list = _Json_decodeList;
 var elm$json$Json$Decode$succeed = _Json_succeed;
 var author$project$Main$runResult = _Platform_incomingPort(
@@ -20091,14 +20094,11 @@ var author$project$Panel$Editor$Module$termViewOutput = F3(
 							author$project$Panel$Editor$Module$subClassList(
 							_List_fromArray(
 								[
-									_Utils_Tuple2('partDef-term', true),
+									_Utils_Tuple2('partDef-term-none', true),
 									_Utils_Tuple2('partDef-term-active', isSelect)
 								]))
 						]),
-					_List_fromArray(
-						[
-							elm$html$Html$text('ばつ')
-						]));
+					_List_Nil);
 		}
 	});
 var author$project$Panel$Editor$Module$partDefViewExpr = F3(
@@ -20749,7 +20749,7 @@ var author$project$Panel$Editor$Module$resultArea = F2(
 			elm$html$Html$div,
 			_List_fromArray(
 				[
-					author$project$Panel$Editor$Module$subClass('partDef-resultArea ')
+					author$project$Panel$Editor$Module$subClass('partDef-resultArea')
 				]),
 			_List_fromArray(
 				[

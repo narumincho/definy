@@ -597,7 +597,7 @@ img {
 
 .moduleEditor-partDef-termOp {
     display: flex;
-    align-items: center;
+    /* align-items: center; */
 }
 
 .moduleEditor-partDef-term {
@@ -624,15 +624,22 @@ img {
     position: relative;
 }
 
+.moduleEditor-partDef-term-none {
+    background-color: #000;
+    width: 32px;
+    height: 23px;
+    border-radius: 2px;
+}
+
 .moduleEditor-partDef-op {
     display: flex;
     padding: 3px 8px;
+    align-items: center;
 }
 
 .moduleEditor-partDef-op-active {
     border: solid 3px var(--accentColorBg);
     border-radius: 2px;
-    display: flex;
     padding: 0 5px;
 }
 
@@ -657,7 +664,7 @@ img {
 .moduleEditor-partDef-caret {
     display: block;
     width: 2px;
-    height: 24px;
+    height: 100%;
     left: -1px;
     background: #f09936;
 }

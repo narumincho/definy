@@ -24,7 +24,7 @@
         app.ports.preventDefaultBeforeKeyEvent.subscribe((_) => {
             console.log("直前のキー入力のデフォルト動作を取り消す", prevKeyEvent);
             prevKeyEvent.preventDefault();
-            app.ports.keyPrevented.send(0); // 0 はダミーデータ(送らないとなぜかエラーになる)
+            app.ports.keyPrevented.send(null);
         });
         /* テキストエリア(<textarea id="edit">)に値を設定(編集する前の初期設定用) */
         app.ports.setTextAreaValue.subscribe((text) => {

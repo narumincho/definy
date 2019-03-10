@@ -24,7 +24,7 @@ port input : ({ text : String, caretPos : Int } -> msg) -> Sub msg
 port keyDown : (Json.Decode.Value -> msg) -> Sub msg
 
 
-port keyPrevented : (Int -> msg) -> Sub msg
+port keyPrevented : (() -> msg) -> Sub msg
 
 
 port windowResize : ({ width : Int, height : Int } -> msg) -> Sub msg
