@@ -12,9 +12,7 @@ import View
 
 
 {-
-   cd D:/Definy | elm make src/Main.elm --output main.js --optimize
-
-   elm make src/Main.elm --output main.js --optimize
+   Set-Location D:/Definy | elm make src/Main.elm --output hosting_root/main.js --optimize
 -}
 
 
