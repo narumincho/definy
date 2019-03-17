@@ -10,12 +10,6 @@ import Update
 import View
 
 
-
-{-
-   Set-Location D:/Definy | elm make src/Main.elm --output hosting_root/main.js --optimize
--}
-
-
 port input : ({ text : String, caretPos : Int } -> msg) -> Sub msg
 
 
