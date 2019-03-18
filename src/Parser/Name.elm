@@ -151,7 +151,7 @@ maybeLabelToName : Maybe Label.Label -> Name
 maybeLabelToName mLabel =
     case mLabel of
         Just label ->
-            Name.fromLabel label
+            Name.SafeName (Name.safeNamefromLabel label)
 
         Nothing ->
             Name.noName

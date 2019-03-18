@@ -715,20 +715,23 @@ img {
     color: var(--accentColorText);
 }
 
-.moduleEditor-partDef-suggestion-item-subItem {
+.moduleEditor-partDef-suggestion-item-subText {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    color: #999;
-    stroke: #999;
 }
 
-.moduleEditor-partDef-suggestion-item-subItem-select {
+.moduleEditor-partDef-suggestion-item-subText-select {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     color: var(--accentColorText);
     stroke: var(--accentColorText);
 }
 
-.moduleEditor-partDef-suggestion-keyIcon {
+.moduleEditor-partDef-suggestion-item-enterIcon {
+    color: var(--accentColorText);
+    stroke: var(--accentColorText);
     height: 20px;
 }
 

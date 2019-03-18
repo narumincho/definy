@@ -131,8 +131,8 @@ mapExpr =
 -}
 toString : Def -> String
 toString (Def { name, type_, expr }) =
-    (Name.toString name |> Maybe.withDefault "<NO NAME>")
+    Name.toString name
         ++ ":"
-        ++ (Type.toString type_ |> Maybe.withDefault "<NO TYPE>")
+        ++ (Type.toString type_ |> Maybe.withDefault "[NO TYPE]")
         ++ "="
         ++ Expr.toString expr

@@ -1,18 +1,28 @@
 module Project.Source.Module.Def.Name exposing
-    ( Name
+    ( Name(..)
+    , SafeName
     , fromLabel
-    , isNoName
     , noName
+    , safeNameToString
+    , safeNamefromLabel
     , toString
-    , toTextAreaValue
     )
 
 import Project.Label as Label
 
 
+{-| 定義の中の名前。名無しも含めることができる
+-}
 type Name
     = NoName
-    | Name Label.Label
+    | SafeName SafeName
+
+
+{-| 定義の中の名前のうち、名無しを含めることができないもの。
+候補に使える
+-}
+type SafeName
+    = SafeName_ Label.Label
 
 
 {-| 名前を指定しない
@@ -22,41 +32,35 @@ noName =
     NoName
 
 
-{-| Labelから名前をつくる
+{-| LabelからNameをつくる
 -}
 fromLabel : Label.Label -> Name
 fromLabel =
-    Name
+    safeNamefromLabel >> SafeName
+
+
+{-| LabelからSafeNameをつくる
+-}
+safeNamefromLabel : Label.Label -> SafeName
+safeNamefromLabel =
+    SafeName_
+
+
+{-| (デバッグ用)名前を文字列で表現
+名無しの場合は[NO NAME]になる
+-}
+toString : Name -> String
+toString name =
+    case name of
+        NoName ->
+            "[NO NAME]"
+
+        SafeName safeName ->
+            safeNameToString safeName
 
 
 {-| 名前を文字列で表現
 -}
-toString : Name -> Maybe String
-toString name =
-    case name of
-        NoName ->
-            Nothing
-
-        Name l ->
-            Just (Label.toSmallString l)
-
-
-{-| 名前を決めていない名前かどうか
--}
-isNoName : Name -> Bool
-isNoName name =
-    name == NoName
-
-
-{-| 入力欄の値に変換する
--}
-toTextAreaValue : Name -> List ( Char, Bool )
-toTextAreaValue name =
-    case name of
-        NoName ->
-            []
-
-        Name label ->
-            Label.toSmallString label
-                |> String.toList
-                |> List.map (\x -> ( x, True ))
+safeNameToString : SafeName -> String
+safeNameToString (SafeName_ label) =
+    Label.toSmallString label

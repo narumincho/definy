@@ -45,7 +45,7 @@ EditStateSelect 下に表示してる候補を選択している
 -}
 type EditState
     = EditStateText
-    | EditStateSelect { suggestIndex : Int, searchText : String }
+    | EditStateSelect { suggestIndex : Int, searchText : Name.Name }
 
 
 type Msg
@@ -925,23 +925,51 @@ suggestionPrevOrSelectUp : ModuleWithCache.Module -> Project.Project -> Model ->
 suggestionPrevOrSelectUp module_ project (Model rec) =
     case rec.editState of
         Just (EditStateSelect { suggestIndex, searchText }) ->
-            ( Model
-                { rec
-                    | editState =
-                        Just
-                            (EditStateSelect
-                                { suggestIndex = max 0 (suggestIndex - 1)
-                                , searchText = searchText
-                                }
-                            )
-                }
-            , case rec.active of
-                ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
-                    suggestionSelectChangedThenNameChangeEmit suggestIndex index rec.moduleRef
+            if suggestIndex - 1 < 0 then
+                ( Model
+                    { rec
+                        | editState =
+                            Just EditStateText
+                    }
+                , case rec.active of
+                    ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+                        [ EmitChangeName
+                            { name = searchText
+                            , index = index
+                            , ref = rec.moduleRef
+                            }
+                        , EmitSetTextAreaValue
+                            (case searchText of
+                                Name.NoName ->
+                                    ""
 
-                _ ->
-                    []
-            )
+                                Name.SafeName safeName ->
+                                    Name.safeNameToString safeName
+                            )
+                        ]
+
+                    _ ->
+                        []
+                )
+
+            else
+                ( Model
+                    { rec
+                        | editState =
+                            Just
+                                (EditStateSelect
+                                    { suggestIndex = max 0 (suggestIndex - 1)
+                                    , searchText = searchText
+                                    }
+                                )
+                    }
+                , case rec.active of
+                    ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+                        suggestionSelectChangedThenNameChangeEmit (suggestIndex - 1) index rec.moduleRef
+
+                    _ ->
+                        []
+                )
 
         _ ->
             update SelectUp project (Model rec)
@@ -963,26 +991,35 @@ suggestionPrevOrSelectDown module_ project (Model rec) =
                 }
             , case rec.active of
                 ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
-                    suggestionSelectChangedThenNameChangeEmit suggestIndex index rec.moduleRef
+                    suggestionSelectChangedThenNameChangeEmit (suggestIndex + 1) index rec.moduleRef
 
                 _ ->
                     []
             )
 
         Just EditStateText ->
+            let
+                searchText =
+                    case rec.active of
+                        ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
+                            module_ |> ModuleWithCache.getDef index |> Maybe.withDefault Def.empty |> Def.getName
+
+                        _ ->
+                            Name.noName
+            in
             ( Model
                 { rec
                     | editState =
                         Just
                             (EditStateSelect
-                                { suggestIndex = 1
-                                , searchText = "検索用文字列"
+                                { suggestIndex = 0
+                                , searchText = searchText
                                 }
                             )
                 }
             , case rec.active of
                 ActivePartDefList (ActivePartDef ( index, ActivePartDefName )) ->
-                    suggestionSelectChangedThenNameChangeEmit 1 index rec.moduleRef
+                    suggestionSelectChangedThenNameChangeEmit 0 index rec.moduleRef
 
                 _ ->
                     []
@@ -997,12 +1034,12 @@ suggestionSelectChangedThenNameChangeEmit suggestIndex defIndex moduleRef =
     case nameSuggestList |> Utility.ListExtra.getAt suggestIndex of
         Just ( suggestName, _ ) ->
             [ EmitChangeName
-                { name = suggestName
+                { name = Name.SafeName suggestName
                 , index = defIndex
                 , ref = moduleRef
                 }
             , EmitSetTextAreaValue
-                (Name.toString suggestName |> Maybe.withDefault "")
+                (Name.safeNameToString suggestName)
             ]
 
         Nothing ->
@@ -1802,11 +1839,8 @@ partDefViewNameAndType name type_ partDefActiveMaybe editStateMaybe =
 partDefViewName : Name.Name -> Maybe (Maybe EditState) -> Html.Html DefViewMsg
 partDefViewName name editStateMaybeMaybe =
     case editStateMaybeMaybe of
-        Just (Just EditStateText) ->
-            partDefNameEditView name 0
-
-        Just (Just (EditStateSelect { suggestIndex })) ->
-            partDefNameEditView name suggestIndex
+        Just (Just editState) ->
+            partDefNameEditView name editState
 
         Just Nothing ->
             partDefNameSelectView name
@@ -1821,13 +1855,13 @@ partDefNameNormalView name =
         [ subClass "partDef-nameContainer"
         , Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( DefActiveTo ActivePartDefName, True ))
         ]
-        [ case Name.toString name of
-            Just nameString ->
+        [ case name of
+            Name.SafeName safeName ->
                 Html.div
                     [ subClass "partDef-nameText" ]
-                    [ Html.text nameString ]
+                    [ Html.text (Name.safeNameToString safeName) ]
 
-            Nothing ->
+            Name.NoName ->
                 Html.div
                     [ subClass "partDef-nameTextNone" ]
                     [ Html.text "NO NAME" ]
@@ -1841,13 +1875,13 @@ partDefNameSelectView name =
         , subClass "partDef-element-active"
         ]
         [ ( "view"
-          , case Name.toString name of
-                Just nameString ->
+          , case name of
+                Name.SafeName safeName ->
                     Html.div
                         [ subClass "partDef-nameText" ]
-                        [ Html.text nameString ]
+                        [ Html.text (Name.safeNameToString safeName) ]
 
-                Nothing ->
+                Name.NoName ->
                     Html.div
                         [ subClass "partDef-nameTextNone" ]
                         [ Html.text "NO NAME" ]
@@ -1858,8 +1892,8 @@ partDefNameSelectView name =
         ]
 
 
-partDefNameEditView : Name.Name -> Int -> Html.Html DefViewMsg
-partDefNameEditView name suggestIndex =
+partDefNameEditView : Name.Name -> EditState -> Html.Html DefViewMsg
+partDefNameEditView name editState =
     Html.Keyed.node "div"
         [ subClass "partDef-nameContainer" ]
         [ ( "input"
@@ -1871,67 +1905,105 @@ partDefNameEditView name suggestIndex =
                 []
           )
         , ( "suggest"
-          , suggestionName name suggestIndex
+          , suggestionName name editState
           )
         ]
 
 
-suggestionName : Name.Name -> Int -> Html.Html msg
-suggestionName name index =
+suggestionName : Name.Name -> EditState -> Html.Html msg
+suggestionName name editState =
     Html.div
         [ subClass "partDef-suggestion" ]
-        (([ ( name, enterIcon ) ]
-            ++ (nameSuggestList |> List.map (Tuple.mapSecond Html.text))
-         )
-            |> List.indexedMap
-                (\i ( n, subItem ) ->
-                    suggestNameItem n subItem (i == index)
-                )
+        (case editState of
+            EditStateText ->
+                [ suggestNameItem
+                    (nameToEditorStyleString name)
+                    ""
+                    True
+                ]
+                    ++ (nameSuggestList
+                            |> List.map
+                                (\( safeName, subText ) ->
+                                    suggestNameItem (Name.safeNameToString safeName) subText False
+                                )
+                       )
+
+            EditStateSelect { suggestIndex, searchText } ->
+                [ suggestNameItem (nameToEditorStyleString searchText) "" False ]
+                    ++ (nameSuggestList
+                            |> List.indexedMap
+                                (\index ( safeName, subText ) ->
+                                    suggestNameItem (Name.safeNameToString safeName) subText (index == suggestIndex)
+                                )
+                       )
         )
 
 
-suggestNameItem : Name.Name -> Html.Html msg -> Bool -> Html.Html msg
-suggestNameItem name subItem isSelect =
+nameToEditorStyleString : Name.Name -> String
+nameToEditorStyleString name =
+    case name of
+        Name.SafeName n ->
+            Name.safeNameToString n
+
+        Name.NoName ->
+            "名前を決めない"
+
+
+suggestNameItem : String -> String -> Bool -> Html.Html msg
+suggestNameItem mainText subText isSelect =
     Html.div
         [ subClassList
             [ ( "partDef-suggestion-item", True )
             , ( "partDef-suggestion-item-select", isSelect )
             ]
         ]
-        [ Html.div
+        ([ Html.div
             [ subClassList
                 [ ( "partDef-suggestion-item-text", True )
                 , ( "partDef-suggestion-item-text-select", isSelect )
                 ]
             ]
-            [ Html.text (Name.toString name |> Maybe.withDefault "<NO NAME>") ]
-        , Html.div
-            [ subClassList
-                [ ( "partDef-suggestion-item-subItem", True )
-                , ( "partDef-suggestion-item-subItem-select", isSelect )
-                ]
-            ]
-            [ subItem ]
-        ]
+            [ Html.text mainText ]
+         ]
+            ++ (if subText == "" then
+                    []
+
+                else
+                    [ Html.div
+                        [ subClassList
+                            [ ( "partDef-suggestion-item-subText", True )
+                            , ( "partDef-suggestion-item-subText-select", isSelect )
+                            ]
+                        ]
+                        [ Html.text subText ]
+                    ]
+               )
+            ++ (if isSelect then
+                    [ enterIcon ]
+
+                else
+                    []
+               )
+        )
 
 
 enterIcon : Html.Html msg
 enterIcon =
     NSvg.toHtmlWithClass
-        "moduleEditor-partDef-suggestion-keyIcon"
+        "moduleEditor-partDef-suggestion-item-enterIcon"
         { x = 0, y = 0, width = 38, height = 32 }
         [ NSvg.polygon [ ( 4, 4 ), ( 34, 4 ), ( 34, 28 ), ( 12, 28 ), ( 12, 16 ), ( 4, 16 ) ] NSvg.strokeNone NSvg.fillNone
         , NSvg.path "M30,8 V20 H16 L18,18 M16,20 L18,22" NSvg.strokeNone NSvg.fillNone
         ]
 
 
-nameSuggestList : List ( Name.Name, String )
+nameSuggestList : List ( Name.SafeName, String )
 nameSuggestList =
-    [ ( Name.fromLabel (L.make L.hg [ L.oa, L.om, L.oe ]), "ゲーム" )
-    , ( Name.fromLabel (L.make L.hh [ L.oe, L.or, L.oo ]), "主人公" )
-    , ( Name.fromLabel (L.make L.hb [ L.oe, L.oa, L.ou, L.ot, L.oi, L.of_, L.ou, L.ol, L.oG, L.oi, L.or, L.ol ]), "美少女" )
-    , ( Name.fromLabel (L.make L.hm [ L.oo, L.on, L.os, L.ot, L.oe, L.or ]), "モンスター" )
-    , ( Name.fromLabel (L.make L.hw [ L.oo, L.or, L.ol, L.od ]), "世界" )
+    [ ( Name.safeNamefromLabel (L.make L.hg [ L.oa, L.om, L.oe ]), "ゲーム" )
+    , ( Name.safeNamefromLabel (L.make L.hh [ L.oe, L.or, L.oo ]), "主人公" )
+    , ( Name.safeNamefromLabel (L.make L.hb [ L.oe, L.oa, L.ou, L.ot, L.oi, L.of_, L.ou, L.ol, L.oG, L.oi, L.or, L.ol ]), "美少女" )
+    , ( Name.safeNamefromLabel (L.make L.hm [ L.oo, L.on, L.os, L.ot, L.oe, L.or ]), "モンスター" )
+    , ( Name.safeNamefromLabel (L.make L.hw [ L.oo, L.or, L.ol, L.od ]), "世界" )
     ]
 
 
@@ -2070,10 +2142,18 @@ partDefViewExpr expr termOpPosMaybe editStateMaybe =
                         ]
                )
         )
-        [ Html.text "="
-        , termOpView termOpPosMaybe editStateMaybe expr
+        ([ Html.text "="
+         , termOpView termOpPosMaybe editStateMaybe expr
             |> Html.map (\m -> DefActiveTo (ActivePartDefExpr m))
-        ]
+         ]
+            ++ (case termOpPosMaybe of
+                    Just _ ->
+                        [ hideTextArea ]
+
+                    Nothing ->
+                        []
+               )
+        )
 
 
 

@@ -1,11 +1,7 @@
 port module Update exposing (update)
 
-import Compiler
-import Key
 import KeyConfig
 import Model exposing (Model, Msg)
-import Suggestion
-import Task
 
 
 
