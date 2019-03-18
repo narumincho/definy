@@ -39,6 +39,10 @@ type Model
         }
 
 
+{-| 編集状態
+EditStateText テキストを編集している
+EditStateSelect 下に表示してる候補を選択している
+-}
 type EditState
     = EditStateText
     | EditStateSelect { suggestIndex : Int, searchText : String }
@@ -75,6 +79,8 @@ type Emit
     | EmitFocusEditTextAea
 
 
+{-| 選択している要素
+-}
 type Active
     = ActiveNone
     | ActiveDescription DescriptionActive
@@ -995,6 +1001,8 @@ suggestionSelectChangedThenNameChangeEmit suggestIndex defIndex moduleRef =
                 , index = defIndex
                 , ref = moduleRef
                 }
+            , EmitSetTextAreaValue
+                (Name.toString suggestName |> Maybe.withDefault "")
             ]
 
         Nothing ->

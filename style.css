@@ -691,6 +691,7 @@ img {
     padding: 2px;
     font-size: 16px;
     width: 220px;
+    z-index: 5;
 }
 
 .moduleEditor-partDef-suggestion-item {

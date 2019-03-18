@@ -2,13 +2,13 @@
 
 New Programming Language and Tool for Web. like Elm.
 
-[Demo](https://narumincho.com/definy/20190317/)
+[Demo](https://definy-lang.firebaseapp.com/)
 
 # Definy
 
 ゲームとツールを手軽に作れるプログラミング言語とエディタ。[Elm](https://elm-lang.org/)でできているWebアプリ。まだ、ぜんぜんできていない。
 
-[ここ](https://narumincho.com/definy/20190317/)で動作を確認できる
+[ここ](https://definy-lang.firebaseapp.com/)で動作を確認できる
 
 ## コンパイル方法
 
@@ -44,5 +44,7 @@ cleancss style.css -o hosting_root/style.css
 `/src/` : Definyのコード。Elmで書かれている。
 
 `/elm.json` : Elmのソースコードの情報が含まれている。ソースコードのフォルダは`src`だとか、バージョンが`1.0.1`の`elm/svg`を使っているとか。
+
+`/firebase.json` : サーバーでファイルをどのように扱うかの設定が書かれている。
 
 `/style.css` : 圧縮する前のCSS。Definyエディタの見た目を決めている。
