@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>Definy 読み込み中</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
     <link rel="icon" href="/assets/icon.png">
 </head>
 
 <body>
-    <script src="main.js"></script>
+    <script src="/main.js"></script>
     <script>
         /* Elmを起動!! */
         const app = Elm.Main.init();
@@ -44,7 +44,7 @@
             })
         })
         /* コンパイル結果(WASM)を実行 */
-        app.ports.run.subscribe((compileResult) => {
+        app.ports.run.subscribe(compileResult => {
             WebAssembly.instantiate(new Uint8Array(compileResult.wasm)).then(result => {
                 const exportFunc = result.instance.exports;
                 const resultValue = exportFunc[0]();

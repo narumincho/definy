@@ -173,21 +173,19 @@ img {
     color: #aaa;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: auto;
 }
 
-.editorGroupPanel-editor-active {
+.editorGroupPanel-editor--active {
     background-color: #222;
     color: #ddd;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
 }
 
 .editorGroupPanel-editorTitle {
     display: flex;
     align-items: center;
     height: 40px;
+    box-shadow: 0 2px 4px rgba(0,0,0,.4);
 }
 
 .editorGroupPanel-editorTitle-text {
@@ -205,6 +203,11 @@ img {
     padding: .2rem;
     flex-shrink: 0;
 }
+
+.editorGroupPanel-editorBody {
+    overflow: auto;
+}
+
 
 .editorGroupPanel-openEditorIcon {
     height: 50px;
@@ -472,6 +475,19 @@ img {
     gap: 16px;
     flex-direction: column;
     padding: 8px 0 0 0;
+}
+
+.moduleEditor-partDefList-addPartDef {
+    padding: .5rem;
+    background-color: #444;
+    border: none;
+    color: #fff;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+}
+
+.moduleEditor-partDefList-addPartDef:hover {
+    background-color: #666;
 }
 
 .moduleEditor-partDef {

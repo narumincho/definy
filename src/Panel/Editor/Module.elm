@@ -45,7 +45,7 @@ EditStateSelect 下に表示してる候補を選択している
 -}
 type EditState
     = EditStateText
-    | EditStateSelect { suggestIndex : Int, searchText : Name.Name }
+    | EditStateSelect { suggestIndex : Int, searchText : Name.Name } -- TODO 名前の候補しかうまく行ってなくね?
 
 
 type Msg
@@ -2486,7 +2486,7 @@ addDefButton : Html.Html Msg
 addDefButton =
     Html.button
         [ Html.Events.onClick AddPartDef
-        , subClass "partDef-addPartDef"
+        , subClass "partDefList-addPartDef"
         ]
         [ Html.text "+ 新しいパーツの定義" ]
 

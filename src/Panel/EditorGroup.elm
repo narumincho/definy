@@ -1559,13 +1559,7 @@ editorItemView { project, editorItem, editorIndex, width, height, isActive, isOn
                     }
     in
     Html.div
-        ([ subClass
-            (if isActive then
-                "editor-active"
-
-             else
-                "editor"
-            )
+        ([ subClassList [ ( "editor", True ), ( "editor--active", isActive ) ]
          , Html.Attributes.style "width" (String.fromInt width ++ "px")
          , Html.Attributes.style "height" (String.fromInt height ++ "px")
          ]
@@ -1576,13 +1570,14 @@ editorItemView { project, editorItem, editorIndex, width, height, isActive, isOn
                     [ Html.Events.onClick (ChangeActiveEditor editorIndex) ]
                )
         )
-        ([ editorTitle
+        [ editorTitle
             childItem.title
             editorIndex
             isOne
-         ]
-            ++ childItem.body
-        )
+        , Html.div
+            [ subClass "editorBody" ]
+            childItem.body
+        ]
 
 
 {-| エディタのタイトル。closeableはパネルが1つのときにとじるボタンをなくすためにある
@@ -1627,3 +1622,10 @@ editorTitleCloseIcon editorRef =
 subClass : String -> Html.Attribute msg
 subClass sub =
     Html.Attributes.class ("editorGroupPanel-" ++ sub)
+
+
+subClassList : List ( String, Bool ) -> Html.Attribute msg
+subClassList list =
+    list
+        |> List.map (Tuple.mapFirst (\sub -> "editorGroupPanel-" ++ sub))
+        |> Html.Attributes.classList

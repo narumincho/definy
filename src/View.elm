@@ -67,8 +67,14 @@ treePanel model =
 -}
 editorGroupPanel : Model -> Html Msg
 editorGroupPanel model =
+    let
+        { width, height } =
+            Model.getEditorGroupPanelSize model
+    in
     Html.div
         ([ Html.Attributes.class "editorGroupPanel"
+         , Html.Attributes.style "width" (String.fromInt width ++ "px")
+         , Html.Attributes.style "height" (String.fromInt height ++ "px")
          ]
             ++ (if Model.isFocusEditorGroupPanel model then
                     []
@@ -83,7 +89,7 @@ editorGroupPanel model =
         )
         (Panel.EditorGroup.view
             (Model.getProject model)
-            (Model.getEditorGroupPanelSize model)
+            { width = width, height = height }
             (Model.isFocusEditorGroupPanel model)
             (Model.getEditorGroupPanelGutter model)
             (Model.getEditorGroupPanelModel model)
