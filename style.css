@@ -1,6 +1,9 @@
+/* Google Fonts Roboto UI用フォント */
+
 @import url("https://fonts.googleapis.com/css?family=Roboto");
+/* M+ M Type-2 regular コード用フォント */
+
 @font-face {
-    /* M+ M Type-2 regular */
     font-family: "mplus-2m-regular";
     src: url("assets/mplus-2m-regular-sub.woff") format("woff");
 }
@@ -18,6 +21,7 @@ body {
     margin: 0;
     display: flex;
     overflow: hidden;
+    font-family: "Roboto";
 }
 
 * {
@@ -52,11 +56,8 @@ img {
 .treePanel-title {
     color: #b9d09b;
     margin: 0;
-    padding: .2rem;
-    font-size: 2rem;
-    font-family: "Segoe UI";
-    font-weight: 300;
-    letter-spacing: 0.08rem;
+    padding: 3px;
+    font-size: 32px;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     user-select: none;
     text-align: center;
@@ -72,7 +73,6 @@ img {
     grid-template-rows: 1fr;
     height: 30px;
     user-select: none;
-    font-family: "Segoe UI";
     font-size: 1.2rem;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.20);
     background-color: #252525;
@@ -88,7 +88,6 @@ img {
     /* height: 30px; */
     user-select: none;
     color: #888;
-    font-family: "Segoe UI";
     font-size: 1.2rem;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     background-color: #252525;
@@ -186,12 +185,11 @@ img {
     display: flex;
     align-items: center;
     height: 40px;
-    box-shadow: 0 2px 4px rgba(0,0,0,.4);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .4);
 }
 
 .editorGroupPanel-editorTitle-text {
     flex-grow: 1;
-    font-family: "Roboto";
     font-size: 24px;
     padding: 0 12px;
     line-height: 1.2;
@@ -208,7 +206,6 @@ img {
 .editorGroupPanel-editorBody {
     overflow: auto;
 }
-
 
 .editorGroupPanel-openEditorIcon {
     height: 50px;
@@ -381,7 +378,6 @@ img {
 }
 
 .moduleEditor-description-title {
-    font-family: "Roboto";
     font-size: 16px;
     padding: 0 24px;
     line-height: 1.2;
@@ -462,7 +458,6 @@ img {
 }
 
 .moduleEditor-partDefinitions-title {
-    font-family: "Roboto";
     font-size: 16px;
     padding: 0 24px;
     line-height: 1.2;
@@ -606,6 +601,7 @@ img {
     align-items: center;
     padding: 4px;
     border-radius: 4px;
+    font-family: "mplus-2m-regular";
 }
 
 /*=================
