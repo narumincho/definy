@@ -5,7 +5,15 @@ module Compiler.NoOp exposing
     , toString
     )
 
+{-|
 
+    演算子のない形式
+
+-}
+
+
+{-| 演算子のない形式
+-}
 type NoOp
     = Core CoreEnum
     | Int Int

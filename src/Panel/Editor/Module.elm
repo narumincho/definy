@@ -36,6 +36,7 @@ type Model
         { moduleRef : Project.Source.ModuleRef
         , active : Active
         , editState : Maybe EditState
+        , compileResultVisible : List CompileResultVisible
         }
 
 
@@ -46,6 +47,11 @@ EditStateSelect 下に表示してる候補を選択している
 type EditState
     = EditStateText
     | EditStateSelect { suggestIndex : Int, searchText : Name.Name } -- TODO 名前の候補しかうまく行ってなくね?
+
+
+type CompileResultVisible
+    = CompileResultVisibleValue
+    | CompileResultVisibleWasmSExpr
 
 
 type Msg
@@ -157,6 +163,7 @@ initModel moduleRef =
         { moduleRef = moduleRef
         , active = ActiveNone
         , editState = Nothing
+        , compileResultVisible = []
         }
 
 
@@ -2468,20 +2475,25 @@ activeHeadTermLeft =
         ]
 
 
+{-|
 
-{--Hide Text Area --}
+    Hide Text Area
+    ユーザーからテキストの入力を受け取る隠れた<input type="text">要素
 
-
+-}
 hideTextArea : Html.Html DefViewMsg
 hideTextArea =
-    Html.textarea
+    Html.input
         [ subClass "partDef-hideTextArea"
         , Html.Attributes.id "edit"
         , Html.Events.onInput DefInput
+        , Html.Attributes.type_ "text"
         ]
         []
 
 
+{-| 定義を1つ追加するボタン
+-}
 addDefButton : Html.Html Msg
 addDefButton =
     Html.button

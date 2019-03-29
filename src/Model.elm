@@ -57,8 +57,6 @@ import Panel.EditorGroup
 import Panel.EditorTypeRef
 import Panel.Tree
 import Project
-import Project.Document
-import Project.Label as Label
 import Project.Source
 import Project.Source.Module.Def as Def
 import Project.Source.Module.Def.Expr as Expr
