@@ -1,5 +1,5 @@
 module Panel.EditorGroup exposing
-    ( EditorItemMsg(..)
+    ( EditorMsg(..)
     , Emit(..)
     , Gutter(..)
     , GutterHorizontal
@@ -38,6 +38,7 @@ import Project.Source
 import Project.Source.Module.Def.Expr as Expr
 import Project.Source.Module.Def.Name as Name
 import Project.Source.Module.Def.Type as Type
+import Utility.ListExtra
 import Utility.Map
 
 
@@ -75,18 +76,18 @@ type Group
 -}
 type ColumnGroup
     = ColumnOne
-        { top : EditorItem
+        { top : EditorModel
         }
     | ColumnTwo
-        { top : EditorItem
-        , bottom : EditorItem
+        { top : EditorModel
+        , bottom : EditorModel
         , topHeight : Int -- Max 1000
         }
 
 
 {-| 各エディタのModelを保持する
 -}
-type EditorItem
+type EditorModel
     = ProjectEditor Panel.Editor.Project.Model
     | DocumentEditor Panel.Editor.Document.Model
     | ConfigEditor Panel.Editor.Config.Model
@@ -104,16 +105,29 @@ type alias EditorIndex =
 {-| 横方向。左、真ん中、右
 -}
 type EditorIndexRow
-    = EditorRefLeft
-    | EditorRefCenter
-    | EditorRefRight
+    = EditorIndexLeft
+    | EditorIndexCenter
+    | EditorIndexRight
 
 
 {-| 縦方向。上、下
 -}
 type EditorIndexColumn
-    = EditorRefTop
-    | EditorRefBottom
+    = EditorIndexTop
+    | EditorIndexBottom
+
+
+{-| すべてのエディタの指し位置
+-}
+editorIndexAllValue : List EditorIndex
+editorIndexAllValue =
+    [ ( EditorIndexLeft, EditorIndexTop )
+    , ( EditorIndexLeft, EditorIndexBottom )
+    , ( EditorIndexCenter, EditorIndexTop )
+    , ( EditorIndexCenter, EditorIndexBottom )
+    , ( EditorIndexRight, EditorIndexTop )
+    , ( EditorIndexRight, EditorIndexBottom )
+    ]
 
 
 {-| リサイズのためにつかむガター
@@ -123,11 +137,15 @@ type Gutter
     | GutterHorizontal GutterHorizontal
 
 
+{-| 垂直向きで左右に動かすガター | |
+-}
 type GutterVertical
     = GutterVerticalLeft
     | GutterVerticalRight
 
 
+{-| 水平向きで上下に動かすガター - - -
+-}
 type GutterHorizontal
     = GutterHorizontalLeft
     | GutterHorizontalCenter
@@ -142,19 +160,22 @@ type Msg
     | CloseEditor EditorIndex -- エディタを削除する
     | MouseEnterOpenEditorGutter OpenEditorPosition -- マウスがGutterの上を通る
     | MouseLeaveOpenEditorGutter -- マウスがGutterの上から離れる
-    | EditorItemMsg { msg : EditorItemMsg, ref : EditorIndex } -- 内包しているエディタへのMsg
-    | EditorItemMsgToActive EditorItemMsg -- アクティブなエディタへのMsg
+    | FireClickEventInCapturePhase String -- エディタをクリックしてアクティブにする
+    | EditorItemMsg { msg : EditorMsg, ref : EditorIndex } -- 内包しているエディタへのMsg
+    | EditorItemMsgToActive EditorMsg -- アクティブなエディタへのMsg
     | GrabVerticalGutter GutterVertical -- |垂直Gutterをつかむ
     | GrabHorizontalGutter GutterHorizontal -- -水平Gutterをつかむ
     | Focus -- フォーカスが当たる
     | Blur -- フォカスが外れる
 
 
-type EditorItemMsg
+type EditorMsg
     = EditorKeyConfigMsg Panel.Editor.EditorKeyConfig.Msg
     | ModuleEditorMsg Panel.Editor.Module.Msg
 
 
+{-| 開くエディタの位置
+-}
 type OpenEditorPosition
     = OpenEditorPositionRightRow
     | OpenEditorPositionLeftBottom
@@ -170,6 +191,7 @@ type Emit
     | EmitChangeReadMe { text : String, ref : Project.Source.ModuleRef }
     | EmitSetTextAreaValue String
     | EmitFocusEditTextAea
+    | EmitSetClickEventListenerInCapturePhase String
     | EmitChangeName { name : Name.Name, index : Int, ref : Project.Source.ModuleRef }
     | EmitAddPartDef { ref : Project.Source.ModuleRef }
     | EmitChangeType { type_ : Type.Type, index : Int, ref : Project.Source.ModuleRef }
@@ -178,18 +200,20 @@ type Emit
 
 {-| 初期Model
 -}
-initModel : Model
+initModel : ( Model, List Emit )
 initModel =
-    Model
+    ( Model
         { group =
             RowOne
                 { left =
                     ColumnOne
                         { top = ModuleEditor (Panel.Editor.Module.initModel Project.Source.SampleModule) }
                 }
-        , activeEditorIndex = ( EditorRefLeft, EditorRefTop )
+        , activeEditorIndex = ( EditorIndexLeft, EditorIndexTop )
         , mouseOverOpenEditorPosition = Nothing
         }
+    , [ EmitSetClickEventListenerInCapturePhase (editorIndexToIdString ( EditorIndexLeft, EditorIndexTop )) ]
+    )
 
 
 {-| 開いていてかつ選択していてアクティブなエディタ(参照,種類)を取得する
@@ -240,13 +264,15 @@ update msg project model =
             updateChangeActiveEditor project activeEditorIndex model
 
         OpenEditor openEditorIndex ->
-            ( case openEditor (getActiveEditorRef model) openEditorIndex (getGroup model) of
-                ( newGroup, newActiveEditorRef ) ->
-                    model
-                        |> setGroup newGroup
-                        |> setActiveEditorRef newActiveEditorRef
-                        |> mouseLeaveAddGutter
-            , []
+            let
+                ( newGroup, newActiveEditorIndex ) =
+                    openEditor (getActiveEditorRef model) openEditorIndex (getGroup model)
+            in
+            ( model
+                |> setGroup newGroup
+                |> setActiveEditorRef newActiveEditorIndex
+                |> mouseLeaveAddGutter
+            , [ EmitSetClickEventListenerInCapturePhase (editorIndexToIdString newActiveEditorIndex) ]
             )
 
         CloseEditor hideEditorRef ->
@@ -264,6 +290,11 @@ update msg project model =
 
         MouseLeaveOpenEditorGutter ->
             ( mouseLeaveAddGutter model
+            , []
+            )
+
+        FireClickEventInCapturePhase idString ->
+            ( fireClickEventInCapturePhase idString model
             , []
             )
 
@@ -359,7 +390,7 @@ updateChangeActiveEditor project index model =
 
 {-| エディタにフォーカスが当たったことを知らせて、新しいエディタとEmitを返す
 -}
-focusEditor : Project.Project -> EditorItem -> ( EditorItem, List Emit )
+focusEditor : Project.Project -> EditorModel -> ( EditorModel, List Emit )
 focusEditor project editorItem =
     case editorItem of
         ModuleEditor model ->
@@ -377,7 +408,7 @@ focusEditor project editorItem =
 
 {-| エディタにフォーカスが外れたことを知らせて、新しいエディタとEmitを返す
 -}
-blurEditor : Project.Project -> EditorItem -> ( EditorItem, List Emit )
+blurEditor : Project.Project -> EditorModel -> ( EditorModel, List Emit )
 blurEditor project editorItem =
     case editorItem of
         ModuleEditor model ->
@@ -393,7 +424,7 @@ blurEditor project editorItem =
             ( editorItem, [] )
 
 
-updateEditor : EditorItemMsg -> Project.Project -> EditorItem -> ( EditorItem, List Emit )
+updateEditor : EditorMsg -> Project.Project -> EditorModel -> ( EditorModel, List Emit )
 updateEditor editorItemMsg project editorItem =
     case ( editorItemMsg, editorItem ) of
         ( ModuleEditorMsg msg, ModuleEditor model ) ->
@@ -473,7 +504,7 @@ openEditor activeEditorIndex showEditorPosition group =
         |> Maybe.withDefault ( group, activeEditorIndex )
 
 
-openEditorRowOne : ColumnGroup -> OpenEditorPosition -> EditorItem -> Maybe ( Group, EditorIndex )
+openEditorRowOne : ColumnGroup -> OpenEditorPosition -> EditorModel -> Maybe ( Group, EditorIndex )
 openEditorRowOne column addEditorPosition item =
     case addEditorPosition of
         OpenEditorPositionRightRow ->
@@ -483,7 +514,7 @@ openEditorRowOne column addEditorPosition item =
                     , center = ColumnOne { top = item }
                     , leftWidth = 500
                     }
-                , ( EditorRefCenter, EditorRefTop )
+                , ( EditorIndexCenter, EditorIndexTop )
                 )
 
         OpenEditorPositionLeftBottom ->
@@ -498,7 +529,7 @@ openEditorRowOne column addEditorPosition item =
                                     , topHeight = 500
                                     }
                             }
-                        , ( EditorRefLeft, EditorRefBottom )
+                        , ( EditorIndexLeft, EditorIndexBottom )
                         )
 
                 ColumnTwo _ ->
@@ -514,7 +545,7 @@ openEditorRowTwo :
     , leftWidth : Int
     }
     -> OpenEditorPosition
-    -> EditorItem
+    -> EditorModel
     -> Maybe ( Group, EditorIndex )
 openEditorRowTwo rec addEditorPosition item =
     case addEditorPosition of
@@ -527,7 +558,7 @@ openEditorRowTwo rec addEditorPosition item =
                     , leftWidth = 333
                     , centerWidth = 333
                     }
-                , ( EditorRefRight, EditorRefTop )
+                , ( EditorIndexRight, EditorIndexTop )
                 )
 
         OpenEditorPositionLeftBottom ->
@@ -543,7 +574,7 @@ openEditorRowTwo rec addEditorPosition item =
                                         , topHeight = 500
                                         }
                             }
-                        , ( EditorRefLeft, EditorRefBottom )
+                        , ( EditorIndexLeft, EditorIndexBottom )
                         )
 
                 ColumnTwo _ ->
@@ -562,7 +593,7 @@ openEditorRowTwo rec addEditorPosition item =
                                         , topHeight = 500
                                         }
                             }
-                        , ( EditorRefCenter, EditorRefBottom )
+                        , ( EditorIndexCenter, EditorIndexBottom )
                         )
 
                 ColumnTwo _ ->
@@ -580,7 +611,7 @@ openEditorRowThree :
     , centerWidth : Int
     }
     -> OpenEditorPosition
-    -> EditorItem
+    -> EditorModel
     -> Maybe ( Group, EditorIndex )
 openEditorRowThree rec addEditorPosition item =
     case addEditorPosition of
@@ -597,7 +628,7 @@ openEditorRowThree rec addEditorPosition item =
                                         , topHeight = 500
                                         }
                             }
-                        , ( EditorRefLeft, EditorRefBottom )
+                        , ( EditorIndexLeft, EditorIndexBottom )
                         )
 
                 ColumnTwo _ ->
@@ -616,7 +647,7 @@ openEditorRowThree rec addEditorPosition item =
                                         , topHeight = 500
                                         }
                             }
-                        , ( EditorRefCenter, EditorRefBottom )
+                        , ( EditorIndexCenter, EditorIndexBottom )
                         )
 
                 ColumnTwo _ ->
@@ -635,7 +666,7 @@ openEditorRowThree rec addEditorPosition item =
                                         , topHeight = 500
                                         }
                             }
-                        , ( EditorRefRight, EditorRefBottom )
+                        , ( EditorIndexRight, EditorIndexBottom )
                         )
 
                 ColumnTwo _ ->
@@ -652,7 +683,7 @@ closeEditor index group =
     case group of
         RowOne rec ->
             case index of
-                ( EditorRefLeft, editorRefColumn ) ->
+                ( EditorIndexLeft, editorRefColumn ) ->
                     closeEditorColumn editorRefColumn rec.left
                         |> Maybe.map (\col -> RowOne { rec | left = col })
                         |> Maybe.withDefault group
@@ -662,13 +693,13 @@ closeEditor index group =
 
         RowTwo rec ->
             case Tuple.first index of
-                EditorRefLeft ->
+                EditorIndexLeft ->
                     closeEditorColumn (Tuple.second index) rec.left
                         |> Maybe.map (\col -> RowTwo { rec | left = col })
                         |> Maybe.withDefault
                             (RowOne { left = rec.center })
 
-                EditorRefCenter ->
+                EditorIndexCenter ->
                     closeEditorColumn (Tuple.second index) rec.center
                         |> Maybe.map (\col -> RowTwo { rec | center = col })
                         |> Maybe.withDefault
@@ -679,7 +710,7 @@ closeEditor index group =
 
         RowThree rec ->
             case Tuple.first index of
-                EditorRefLeft ->
+                EditorIndexLeft ->
                     closeEditorColumn (Tuple.second index) rec.left
                         |> Maybe.map (\col -> RowThree { rec | left = col })
                         |> Maybe.withDefault
@@ -690,7 +721,7 @@ closeEditor index group =
                                 }
                             )
 
-                EditorRefCenter ->
+                EditorIndexCenter ->
                     closeEditorColumn (Tuple.second index) rec.center
                         |> Maybe.map (\col -> RowThree { rec | center = col })
                         |> Maybe.withDefault
@@ -701,7 +732,7 @@ closeEditor index group =
                                 }
                             )
 
-                EditorRefRight ->
+                EditorIndexRight ->
                     closeEditorColumn (Tuple.second index) rec.right
                         |> Maybe.map (\col -> RowThree { rec | right = col })
                         |> Maybe.withDefault
@@ -719,10 +750,10 @@ closeEditorColumn editorRefColumn columnGroup =
         ( _, ColumnOne _ ) ->
             Nothing
 
-        ( EditorRefTop, ColumnTwo { bottom } ) ->
+        ( EditorIndexTop, ColumnTwo { bottom } ) ->
             Just (ColumnOne { top = bottom })
 
-        ( EditorRefBottom, ColumnTwo { top } ) ->
+        ( EditorIndexBottom, ColumnTwo { top } ) ->
             Just (ColumnOne { top = top })
 
 
@@ -908,6 +939,20 @@ resizeInColumn columnGroup mouseRelY editorHeight =
 
 
 
+{- ======= エディタをアクティブにするクリック ======== -}
+
+
+fireClickEventInCapturePhase : String -> Model -> Model
+fireClickEventInCapturePhase idString model =
+    case editorIndexFromIdString idString of
+        Just editorIndex ->
+            setActiveEditorRef editorIndex model
+
+        Nothing ->
+            model
+
+
+
 {- ======= グループ(エディタの集まり) ======== -}
 
 
@@ -951,26 +996,26 @@ setActiveEditorRef ( rowRef, colRef ) model =
         |> setActiveEditorRefUnsafe
             (case getGroup model of
                 RowOne { left } ->
-                    ( EditorRefLeft, adjustColumnRef left colRef )
+                    ( EditorIndexLeft, adjustColumnRef left colRef )
 
                 RowTwo { left, center } ->
                     case rowRef of
-                        EditorRefLeft ->
-                            ( EditorRefLeft, adjustColumnRef left colRef )
+                        EditorIndexLeft ->
+                            ( EditorIndexLeft, adjustColumnRef left colRef )
 
                         _ ->
-                            ( EditorRefCenter, adjustColumnRef center colRef )
+                            ( EditorIndexCenter, adjustColumnRef center colRef )
 
                 RowThree { left, center, right } ->
                     case rowRef of
-                        EditorRefLeft ->
-                            ( EditorRefLeft, adjustColumnRef left colRef )
+                        EditorIndexLeft ->
+                            ( EditorIndexLeft, adjustColumnRef left colRef )
 
-                        EditorRefCenter ->
-                            ( EditorRefCenter, adjustColumnRef center colRef )
+                        EditorIndexCenter ->
+                            ( EditorIndexCenter, adjustColumnRef center colRef )
 
-                        EditorRefRight ->
-                            ( EditorRefRight, adjustColumnRef right colRef )
+                        EditorIndexRight ->
+                            ( EditorIndexRight, adjustColumnRef right colRef )
             )
 
 
@@ -980,7 +1025,7 @@ adjustColumnRef : ColumnGroup -> EditorIndexColumn -> EditorIndexColumn
 adjustColumnRef columnGroup editorRefColumn =
     case columnGroup of
         ColumnOne _ ->
-            EditorRefTop
+            EditorIndexTop
 
         ColumnTwo _ ->
             editorRefColumn
@@ -998,7 +1043,7 @@ normalizeActiveEditorRef =
     mapActiveEditorRef identity
 
 
-changeEditorItem : EditorItem -> Model -> Model
+changeEditorItem : EditorModel -> Model -> Model
 changeEditorItem item model =
     model
         |> mapGroup (setEditorItem (getActiveEditorRef model) item)
@@ -1006,7 +1051,7 @@ changeEditorItem item model =
 
 {-| エディタの位置を受け取って、エディタの中身(Modelとか)を返す
 -}
-getEditorItem : EditorIndex -> Group -> EditorItem
+getEditorItem : EditorIndex -> Group -> EditorModel
 getEditorItem editorRef rowGroup =
     getEditorItemColumn (Tuple.second editorRef)
         (case rowGroup of
@@ -1015,7 +1060,7 @@ getEditorItem editorRef rowGroup =
 
             RowTwo { left, center } ->
                 case Tuple.first editorRef of
-                    EditorRefLeft ->
+                    EditorIndexLeft ->
                         left
 
                     _ ->
@@ -1023,18 +1068,18 @@ getEditorItem editorRef rowGroup =
 
             RowThree { left, center, right } ->
                 case Tuple.first editorRef of
-                    EditorRefLeft ->
+                    EditorIndexLeft ->
                         left
 
-                    EditorRefCenter ->
+                    EditorIndexCenter ->
                         center
 
-                    EditorRefRight ->
+                    EditorIndexRight ->
                         right
         )
 
 
-getEditorItemColumn : EditorIndexColumn -> ColumnGroup -> EditorItem
+getEditorItemColumn : EditorIndexColumn -> ColumnGroup -> EditorModel
 getEditorItemColumn editorRefCol colGroup =
     case colGroup of
         ColumnOne { top } ->
@@ -1042,16 +1087,16 @@ getEditorItemColumn editorRefCol colGroup =
 
         ColumnTwo { top, bottom } ->
             case editorRefCol of
-                EditorRefTop ->
+                EditorIndexTop ->
                     top
 
-                EditorRefBottom ->
+                EditorIndexBottom ->
                     bottom
 
 
 {-| エディタの中身を上書きする。指定するエディタの位置がないものだったらその左や上を上書きする
 -}
-setEditorItem : EditorIndex -> EditorItem -> Group -> Group
+setEditorItem : EditorIndex -> EditorModel -> Group -> Group
 setEditorItem editorRef item group =
     case group of
         RowOne recRow ->
@@ -1064,7 +1109,7 @@ setEditorItem editorRef item group =
         RowTwo recRow ->
             RowTwo
                 (case Tuple.first editorRef of
-                    EditorRefLeft ->
+                    EditorIndexLeft ->
                         { recRow
                             | left =
                                 setEditorItemColumn (Tuple.second editorRef) item recRow.left
@@ -1080,19 +1125,19 @@ setEditorItem editorRef item group =
         RowThree recRow ->
             RowThree
                 (case Tuple.first editorRef of
-                    EditorRefLeft ->
+                    EditorIndexLeft ->
                         { recRow
                             | left =
                                 setEditorItemColumn (Tuple.second editorRef) item recRow.left
                         }
 
-                    EditorRefCenter ->
+                    EditorIndexCenter ->
                         { recRow
                             | center =
                                 setEditorItemColumn (Tuple.second editorRef) item recRow.center
                         }
 
-                    EditorRefRight ->
+                    EditorIndexRight ->
                         { recRow
                             | right =
                                 setEditorItemColumn (Tuple.second editorRef) item recRow.right
@@ -1100,7 +1145,7 @@ setEditorItem editorRef item group =
                 )
 
 
-setEditorItemColumn : EditorIndexColumn -> EditorItem -> ColumnGroup -> ColumnGroup
+setEditorItemColumn : EditorIndexColumn -> EditorModel -> ColumnGroup -> ColumnGroup
 setEditorItemColumn editorRefCol item columnGroup =
     case columnGroup of
         ColumnOne recCol ->
@@ -1109,17 +1154,17 @@ setEditorItemColumn editorRefCol item columnGroup =
         ColumnTwo recCol ->
             ColumnTwo
                 (case editorRefCol of
-                    EditorRefTop ->
+                    EditorIndexTop ->
                         { recCol | top = item }
 
-                    EditorRefBottom ->
+                    EditorIndexBottom ->
                         { recCol | bottom = item }
                 )
 
 
 {-| エディタの位置とエディタを加工する関数でGroupを更新する
 -}
-mapAtEditorItem : EditorIndex -> (EditorItem -> EditorItem) -> Group -> Group
+mapAtEditorItem : EditorIndex -> (EditorModel -> EditorModel) -> Group -> Group
 mapAtEditorItem ref =
     Utility.Map.toMapper
         (getEditorItem ref)
@@ -1128,7 +1173,7 @@ mapAtEditorItem ref =
 
 {-| 編集対象からエディタの初期値を返す
 -}
-projectRefToEditorItem : Panel.EditorTypeRef.EditorTypeRef -> EditorItem
+projectRefToEditorItem : Panel.EditorTypeRef.EditorTypeRef -> EditorModel
 projectRefToEditorItem projectRef =
     case projectRef of
         Panel.EditorTypeRef.EditorProject Project.ProjectRoot ->
@@ -1168,7 +1213,7 @@ view project { width, height } isFocus gutter (Model { group, activeEditorIndex,
                 { width = width - 2, height = height }
                 OpenEditorPositionLeftBottom
                 (Just activeEditorColumn)
-                EditorRefLeft
+                EditorIndexLeft
                 (gutter == Just (GutterHorizontal GutterHorizontalLeft))
                 True
             , editorRowAddGutter
@@ -1181,13 +1226,13 @@ view project { width, height } isFocus gutter (Model { group, activeEditorIndex,
                 { width = (width - 4) * leftWidth // 1000, height = height }
                 OpenEditorPositionLeftBottom
                 (case activeEditorRow of
-                    EditorRefLeft ->
+                    EditorIndexLeft ->
                         Just activeEditorColumn
 
                     _ ->
                         Nothing
                 )
-                EditorRefLeft
+                EditorIndexLeft
                 (gutter == Just (GutterHorizontal GutterHorizontalLeft))
                 False
             , verticalGutter
@@ -1199,13 +1244,13 @@ view project { width, height } isFocus gutter (Model { group, activeEditorIndex,
                 { width = (width - 4) * (1000 - leftWidth) // 1000, height = height }
                 OpenEditorPositionCenterBottom
                 (case activeEditorRow of
-                    EditorRefLeft ->
+                    EditorIndexLeft ->
                         Nothing
 
                     _ ->
                         Just activeEditorColumn
                 )
-                EditorRefCenter
+                EditorIndexCenter
                 (gutter == Just (GutterHorizontal GutterHorizontalCenter))
                 False
             , editorRowAddGutter
@@ -1218,16 +1263,16 @@ view project { width, height } isFocus gutter (Model { group, activeEditorIndex,
                 { width = (width - 4) * leftWidth // 1000, height = height }
                 OpenEditorPositionLeftBottom
                 (case activeEditorRow of
-                    EditorRefLeft ->
+                    EditorIndexLeft ->
                         Just activeEditorColumn
 
-                    EditorRefCenter ->
+                    EditorIndexCenter ->
                         Nothing
 
-                    EditorRefRight ->
+                    EditorIndexRight ->
                         Nothing
                 )
-                EditorRefLeft
+                EditorIndexLeft
                 (gutter == Just (GutterHorizontal GutterHorizontalLeft))
                 False
             , verticalGutter
@@ -1239,16 +1284,16 @@ view project { width, height } isFocus gutter (Model { group, activeEditorIndex,
                 { width = (width - 4) * centerWidth // 1000, height = height }
                 OpenEditorPositionCenterBottom
                 (case activeEditorRow of
-                    EditorRefLeft ->
+                    EditorIndexLeft ->
                         Nothing
 
-                    EditorRefCenter ->
+                    EditorIndexCenter ->
                         Just activeEditorColumn
 
-                    EditorRefRight ->
+                    EditorIndexRight ->
                         Nothing
                 )
-                EditorRefCenter
+                EditorIndexCenter
                 (gutter == Just (GutterHorizontal GutterHorizontalCenter))
                 False
             , verticalGutter
@@ -1260,16 +1305,16 @@ view project { width, height } isFocus gutter (Model { group, activeEditorIndex,
                 { width = (width - 4) * (1000 - leftWidth - centerWidth) // 1000, height = height }
                 OpenEditorPositionRightBottom
                 (case activeEditorRow of
-                    EditorRefLeft ->
+                    EditorIndexLeft ->
                         Nothing
 
-                    EditorRefCenter ->
+                    EditorIndexCenter ->
                         Nothing
 
-                    EditorRefRight ->
+                    EditorIndexRight ->
                         Just activeEditorColumn
                 )
-                EditorRefRight
+                EditorIndexRight
                 (gutter == Just (GutterHorizontal GutterHorizontalRight))
                 False
             ]
@@ -1442,10 +1487,10 @@ editorColumn project columnGroup { width, height } openEditorPosition activeEdit
                 [ editorItemView
                     { project = project
                     , editorItem = top
-                    , editorIndex = ( editorRefRow, EditorRefTop )
+                    , editorIndex = ( editorRefRow, EditorIndexTop )
                     , width = width
                     , height = height - 2
-                    , isActive = Just EditorRefTop == activeEditorIndexColumnMaybe
+                    , isActive = Just EditorIndexTop == activeEditorIndexColumnMaybe
                     , isOne = isOne
                     }
                 , editorColumnAddGutter openEditorPosition
@@ -1455,31 +1500,31 @@ editorColumn project columnGroup { width, height } openEditorPosition activeEdit
                 [ editorItemView
                     { project = project
                     , editorItem = top
-                    , editorIndex = ( editorRefRow, EditorRefTop )
+                    , editorIndex = ( editorRefRow, EditorIndexTop )
                     , width = width
                     , height = (height - 2) * topHeight // 1000
-                    , isActive = Just EditorRefTop == activeEditorIndexColumnMaybe
+                    , isActive = Just EditorIndexTop == activeEditorIndexColumnMaybe
                     , isOne = False
                     }
                 , horizontalGutter
                     (case editorRefRow of
-                        EditorRefLeft ->
+                        EditorIndexLeft ->
                             GutterHorizontalLeft
 
-                        EditorRefCenter ->
+                        EditorIndexCenter ->
                             GutterHorizontalCenter
 
-                        EditorRefRight ->
+                        EditorIndexRight ->
                             GutterHorizontalRight
                     )
                     isGutterActive
                 , editorItemView
                     { project = project
                     , editorItem = bottom
-                    , editorIndex = ( editorRefRow, EditorRefBottom )
+                    , editorIndex = ( editorRefRow, EditorIndexBottom )
                     , width = width
                     , height = (height - 2) * (1000 - topHeight) // 1000
-                    , isActive = Just EditorRefBottom == activeEditorIndexColumnMaybe
+                    , isActive = Just EditorIndexBottom == activeEditorIndexColumnMaybe
                     , isOne = False
                     }
                 ]
@@ -1518,50 +1563,17 @@ editorColumnAddGutter showEditorPosition =
 
 {-| それぞれのエディタの表示
 -}
-editorItemView : { project : Project.Project, editorItem : EditorItem, editorIndex : EditorIndex, width : Int, height : Int, isActive : Bool, isOne : Bool } -> Html.Html Msg
+editorItemView : { project : Project.Project, editorItem : EditorModel, editorIndex : EditorIndex, width : Int, height : Int, isActive : Bool, isOne : Bool } -> Html.Html Msg
 editorItemView { project, editorItem, editorIndex, width, height, isActive, isOne } =
     let
-        childItem : { title : String, body : List (Html.Html Msg) }
-        childItem =
-            case editorItem of
-                ProjectEditor _ ->
-                    Panel.Editor.Project.view
-
-                DocumentEditor _ ->
-                    Panel.Editor.Document.view
-
-                ConfigEditor _ ->
-                    Panel.Editor.Config.view
-
-                SourceEditor _ ->
-                    Panel.Editor.Source.view
-
-                ModuleEditor moduleEditorModel ->
-                    let
-                        viewItem =
-                            Panel.Editor.Module.view project isActive moduleEditorModel
-                    in
-                    { title = viewItem.title
-                    , body =
-                        viewItem.body
-                            |> List.map (Html.map (\m -> EditorItemMsg { msg = ModuleEditorMsg m, ref = editorIndex }))
-                    }
-
-                EditorKeyConfig model ->
-                    let
-                        viewItem =
-                            Panel.Editor.EditorKeyConfig.view model
-                    in
-                    { title = viewItem.title
-                    , body =
-                        viewItem.body
-                            |> List.map (Html.map (\m -> EditorItemMsg { msg = EditorKeyConfigMsg m, ref = editorIndex }))
-                    }
+        { title, body } =
+            editorTitleAndBody editorIndex isActive project editorItem
     in
     Html.div
         ([ subClassList [ ( "editor", True ), ( "editor--active", isActive ) ]
          , Html.Attributes.style "width" (String.fromInt width ++ "px")
          , Html.Attributes.style "height" (String.fromInt height ++ "px")
+         , Html.Attributes.id (editorIndexToIdString editorIndex)
          ]
             ++ (if isActive then
                     []
@@ -1570,14 +1582,76 @@ editorItemView { project, editorItem, editorIndex, width, height, isActive, isOn
                     [ Html.Events.onClick (ChangeActiveEditor editorIndex) ]
                )
         )
-        [ editorTitle
-            childItem.title
-            editorIndex
-            isOne
-        , Html.div
-            [ subClass "editorBody" ]
-            childItem.body
+        [ editorTitle title editorIndex isOne
+        , Html.div [ subClass "editorBody" ] body
         ]
+
+
+editorIndexToIdString : EditorIndex -> String
+editorIndexToIdString editorIndex =
+    [ "editor"
+    , case Tuple.first editorIndex of
+        EditorIndexLeft ->
+            "left"
+
+        EditorIndexCenter ->
+            "center"
+
+        EditorIndexRight ->
+            "right"
+    , case Tuple.second editorIndex of
+        EditorIndexTop ->
+            "top"
+
+        EditorIndexBottom ->
+            "bottom"
+    ]
+        |> String.join "-"
+
+
+editorIndexFromIdString : String -> Maybe EditorIndex
+editorIndexFromIdString idString =
+    Utility.ListExtra.getFirstSatisfyElement
+        (\x -> editorIndexToIdString x == idString)
+        editorIndexAllValue
+
+
+editorTitleAndBody : EditorIndex -> Bool -> Project.Project -> EditorModel -> { title : String, body : List (Html.Html Msg) }
+editorTitleAndBody editorIndex isActive project editorItem =
+    case editorItem of
+        ProjectEditor _ ->
+            Panel.Editor.Project.view
+
+        DocumentEditor _ ->
+            Panel.Editor.Document.view
+
+        ConfigEditor _ ->
+            Panel.Editor.Config.view
+
+        SourceEditor _ ->
+            Panel.Editor.Source.view
+
+        ModuleEditor moduleEditorModel ->
+            let
+                viewItem =
+                    Panel.Editor.Module.view project isActive moduleEditorModel
+            in
+            { title = viewItem.title
+            , body =
+                viewItem.body
+                    |> List.map (Html.map (\m -> EditorItemMsg { msg = ModuleEditorMsg m, ref = editorIndex }))
+            }
+
+        EditorKeyConfig model ->
+            let
+                viewItem =
+                    Panel.Editor.EditorKeyConfig.view model
+            in
+            { title = viewItem.title
+            , body =
+                viewItem.body
+                    |> List.map (Html.map (\m -> EditorItemMsg { msg = EditorKeyConfigMsg m, ref = editorIndex }))
+            }
 
 
 {-| エディタのタイトル。closeableはパネルが1つのときにとじるボタンをなくすためにある

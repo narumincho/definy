@@ -43,6 +43,35 @@
                 document.getElementById("edit").focus();
             })
         })
+        /* クリックイベントをキャプチャフェーズで登録する。登録できるのは1つまで */
+        const eventAdded = new Map();
+        app.ports.setClickEventListenerInCapturePhase.subscribe(id => {
+            requestAnimationFrame(() => {
+                const element = document.getElementById(id);
+                if(element===undefined) {
+                    console.log(`id=${id}の要素がない`)
+                    return;
+                }
+                const beforeEventListner = eventAdded.get(id);
+                if (beforeEventListner !== undefined) {
+                    element.removeEventListener("click", beforeEventListner);
+                    console.log(`id=${id}からキャプチャフェーズのクリックイベントを削除`);
+                }
+                const f = e => {
+                    app.ports.fireClickEventInCapturePhase.send(id);
+                };
+                eventAdded.set(id, f);
+
+                console.log(`id=${id}にキャプチャフェーズのクリックイベントを追加`);
+
+                element.addEventListener("click", f, { capture: true });
+            })
+        });
+        /* クリックイベントをキャプチャフェーズで登録したリスナを削除する */
+        // app.ports.deleteClickEventListenerInCapturePhase.subscribe(id => {
+        //     document.getElementById(id).removeEventListener("click", eventAdded.get(id));
+        //     eventAdded.delete(id)
+        // });
         /* コンパイル結果(WASM)を実行 */
         app.ports.run.subscribe(compileResult => {
             WebAssembly.instantiate(new Uint8Array(compileResult.wasm)).then(result => {

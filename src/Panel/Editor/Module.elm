@@ -2497,7 +2497,8 @@ hideTextArea =
 addDefButton : Html.Html Msg
 addDefButton =
     Html.button
-        [ Html.Events.onClick AddPartDef
+        [ Html.Events.stopPropagationOn "click"
+            (Json.Decode.succeed ( AddPartDef, True ))
         , subClass "partDefList-addPartDef"
         ]
         [ Html.text "+ 新しいパーツの定義" ]

@@ -3,7 +3,7 @@ module Utility.ListExtra exposing
     , getAt, setAt, mapAt, deleteAt
     , getFirstJust, last, headAndLast
     , fromMaybe
-    , listTupleListToTupleList, takeFromMaybe
+    , getFirstSatisfyElement, listTupleListToTupleList, takeFromMaybe
     )
 
 {-| 標準のListで足りないListに対する操作をおこなう
@@ -202,3 +202,19 @@ listTupleListToTupleList list =
 
         [] ->
             ( [], [] )
+
+
+{-| 要素を先頭から関数に適用して、Trueになった最初の要素を取得する。
+-}
+getFirstSatisfyElement : (a -> Bool) -> List a -> Maybe a
+getFirstSatisfyElement f list =
+    case list of
+        x :: xs ->
+            if f x then
+                Just x
+
+            else
+                getFirstSatisfyElement f xs
+
+        [] ->
+            Nothing

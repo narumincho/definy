@@ -6,7 +6,6 @@ import Json.Decode
 import Key
 import Model exposing (Model, Msg)
 import Task
-import Update
 import View
 
 
@@ -25,21 +24,17 @@ port windowResize : ({ width : Int, height : Int } -> msg) -> Sub msg
 port runResult : ({ ref : List Int, index : Int, result : Int } -> msg) -> Sub msg
 
 
+port fireClickEventInCapturePhase : (String -> msg) -> Sub msg
+
+
 main : Program () Model Msg
 main =
     Browser.document
-        { init = init
+        { init = always Model.init
         , view = View.view
-        , update = Update.update
+        , update = Model.update
         , subscriptions = subscriptions
         }
-
-
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( Model.initModel
-    , Model.initCmd Model.initModel
-    )
 
 
 subscriptions : Model -> Sub Msg
@@ -49,6 +44,7 @@ subscriptions model =
          , keyPrevented (always Model.KeyPrevented)
          , windowResize Model.WindowResize
          , runResult Model.ReceiveResultValue
+         , fireClickEventInCapturePhase Model.FireClickEventInCapturePhase
          ]
             ++ (if Model.isCaptureMouseEvent model then
                     [ Browser.Events.onMouseMove
