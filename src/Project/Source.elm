@@ -49,13 +49,25 @@ type Source
 --        }
 
 
-init : Source
+init : ( Source, List Emit )
 init =
-    Source
-        { core = initCore
-        , coreInt32 = initCoreInt32
-        , sampleModule = initSampleModule
+    let
+        ( core, coreEmit ) =
+            initCore
+
+        ( coreInt32, coreInt32Emit ) =
+            initCoreInt32
+
+        ( sampleModule, sampleModuleEmit ) =
+            initSampleModule
+    in
+    ( Source
+        { core = core
+        , coreInt32 = coreInt32
+        , sampleModule = sampleModule
         }
+    , coreEmit ++ coreInt32Emit ++ sampleModuleEmit
+    )
 
 
 type Msg
@@ -95,9 +107,9 @@ update msg source =
             )
 
 
-initCore : ModuleWithCache.ModuleWithResult
+initCore : ( ModuleWithCache.ModuleWithResult, List Emit )
 initCore =
-    Module.makeUnit
+    ModuleWithCache.init
         { name = Label.make Label.hc [ Label.oo, Label.or, Label.oe ]
         , readMe = "プログラムに最低限必要なものが含まれている標準ライブラリ。足し算引き算、論理演算などの演算や、リスト、辞書、集合などの基本データ構造を含む"
         , typeDefList = []
@@ -109,12 +121,12 @@ initCore =
                 }
             ]
         }
-        |> ModuleWithCache.fromModuleUnit
+        |> Tuple.mapSecond (List.map (\moduleEmit -> EmitModule { moduleIndex = SourceIndex.Core, moduleEmit = moduleEmit }))
 
 
-initCoreInt32 : ModuleWithCache.ModuleWithResult
+initCoreInt32 : ( ModuleWithCache.ModuleWithResult, List Emit )
 initCoreInt32 =
-    Module.makeUnit
+    ModuleWithCache.init
         { name = Label.make Label.hi [ Label.on, Label.ot, Label.o3, Label.o2 ]
         , readMe = "WebAssemblyでサポートされている32bit符号付き整数を扱えるようになる"
         , typeDefList =
@@ -153,12 +165,12 @@ initCoreInt32 =
                 }
             ]
         }
-        |> ModuleWithCache.fromModuleUnit
+        |> Tuple.mapSecond (List.map (\moduleEmit -> EmitModule { moduleIndex = SourceIndex.CoreInt32, moduleEmit = moduleEmit }))
 
 
-initSampleModule : ModuleWithCache.ModuleWithResult
+initSampleModule : ( ModuleWithCache.ModuleWithResult, List Emit )
 initSampleModule =
-    Module.makeUnit
+    ModuleWithCache.init
         { name = sampleModuleName
         , readMe = ""
         , typeDefList = []
@@ -209,7 +221,7 @@ initSampleModule =
                 }
             ]
         }
-        |> ModuleWithCache.fromModuleUnit
+        |> Tuple.mapSecond (List.map (\moduleEmit -> EmitModule { moduleIndex = SourceIndex.SampleModule, moduleEmit = moduleEmit }))
 
 
 {-| SampleModule

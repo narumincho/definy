@@ -127,12 +127,12 @@ type TermType
 
 type LambdaPos
     = LambdaSelf
-    | SectionHead
-    | Section Int SectionPos
+    | BranchHead
+    | Branch Int BranchPos
 
 
-type SectionPos
-    = SectionSelf
+type BranchPos
+    = BranchSelf
     | Pattern
     | Guard
     | Expr TermOpPos
@@ -390,34 +390,34 @@ lambdaPosLeft lambdaPos =
         LambdaSelf ->
             Nothing
 
-        SectionHead ->
+        BranchHead ->
             Just LambdaSelf
 
-        Section 0 sectionPos ->
-            case sectionPosLeft sectionPos of
-                Just movedSectionPos ->
-                    Just (Section 0 movedSectionPos)
+        Branch 0 branchPos ->
+            case branchPosLeft branchPos of
+                Just movedBranchPos ->
+                    Just (Branch 0 movedBranchPos)
 
                 Nothing ->
-                    Just SectionHead
+                    Just BranchHead
 
-        Section sectionIndex sectionPos ->
-            case sectionPosLeft sectionPos of
-                Just movedSectionPos ->
-                    Just (Section sectionIndex movedSectionPos)
+        Branch branchIndex branchPos ->
+            case branchPosLeft branchPos of
+                Just movedBranchPos ->
+                    Just (Branch branchIndex movedBranchPos)
 
                 Nothing ->
-                    Just SectionHead
+                    Just BranchHead
 
 
-sectionPosLeft : SectionPos -> Maybe SectionPos
-sectionPosLeft sectionPos =
-    case sectionPos of
-        SectionSelf ->
+branchPosLeft : BranchPos -> Maybe BranchPos
+branchPosLeft branchPos =
+    case branchPos of
+        BranchSelf ->
             Nothing
 
         Pattern ->
-            Just SectionSelf
+            Just BranchSelf
 
         Guard ->
             Just Pattern
@@ -551,26 +551,26 @@ lambdaPosRight lambdaPos =
         LambdaSelf ->
             Nothing
 
-        SectionHead ->
-            Just (Section 0 SectionSelf)
+        BranchHead ->
+            Just (Branch 0 BranchSelf)
 
-        Section sectionIndex sectionPos ->
-            case sectionPosRight sectionPos of
-                Just movedSectionPos ->
-                    Just (Section sectionIndex movedSectionPos)
+        Branch branchIndex branchPos ->
+            case branchPosRight branchPos of
+                Just movedBranchPos ->
+                    Just (Branch branchIndex movedBranchPos)
 
                 Nothing ->
-                    Just (Section (sectionIndex + 1) SectionSelf)
+                    Just (Branch (branchIndex + 1) BranchSelf)
 
 
-sectionPosRight : SectionPos -> Maybe SectionPos
-sectionPosRight sectionPos =
-    case sectionPos of
-        SectionSelf ->
+branchPosRight : BranchPos -> Maybe BranchPos
+branchPosRight branchPos =
+    case branchPos of
+        BranchSelf ->
             Nothing
 
         Pattern ->
-            Just SectionSelf
+            Just BranchSelf
 
         Guard ->
             Just Pattern
@@ -899,25 +899,25 @@ lambdaPosParent lambdaPos =
         LambdaSelf ->
             Nothing
 
-        SectionHead ->
+        BranchHead ->
             Just LambdaSelf
 
-        Section index sectionPos ->
-            sectionPosParent sectionPos
-                |> Maybe.map (Section index)
+        Branch index branchPos ->
+            branchPosParent branchPos
+                |> Maybe.map (Branch index)
 
 
-sectionPosParent : SectionPos -> Maybe SectionPos
-sectionPosParent sectionPos =
-    case sectionPos of
-        SectionSelf ->
+branchPosParent : BranchPos -> Maybe BranchPos
+branchPosParent branchPos =
+    case branchPos of
+        BranchSelf ->
             Nothing
 
         Pattern ->
-            Just SectionSelf
+            Just BranchSelf
 
         Guard ->
-            Just SectionSelf
+            Just BranchSelf
 
         Expr termOpPos ->
             case termOpPosParent termOpPos of
@@ -925,7 +925,7 @@ sectionPosParent sectionPos =
                     Just (Expr movedTermOpPos)
 
                 Nothing ->
-                    Just SectionSelf
+                    Just BranchSelf
 
 
 suggestionPrevOrSelectUp : ModuleWithCache.ModuleWithResult -> Project.Project -> Model -> ( Model, List Emit )
@@ -1613,18 +1613,18 @@ lambdaPosToString lambdaPos =
         LambdaSelf ->
             "自体(ラ)"
 
-        SectionHead ->
-            "のSectionの先頭"
+        BranchHead ->
+            "のBranchの先頭"
 
-        Section index sectionPos ->
-            "の" ++ String.fromInt index ++ "番目のSection" ++ sectionPosToString sectionPos
+        Branch index branchPos ->
+            "の" ++ String.fromInt index ++ "番目のBranch" ++ branchPosToString branchPos
 
 
-sectionPosToString : SectionPos -> String
-sectionPosToString sectionPos =
-    case sectionPos of
-        SectionSelf ->
-            "自体(セ)"
+branchPosToString : BranchPos -> String
+branchPosToString branchPos =
+    case branchPos of
+        BranchSelf ->
+            "自体(ブ)"
 
         Pattern ->
             "のパターン"
@@ -1817,7 +1817,6 @@ partDefListView isFocus defAndResultList partDefActiveWithIndexMaybe editStateMa
                 (\index ( partDef, result ) ->
                     partDefView
                         isFocus
-                        index
                         partDef
                         result
                         (case partDefActiveWithIndexMaybe of
@@ -1847,15 +1846,8 @@ partDefListView isFocus defAndResultList partDefActiveWithIndexMaybe editStateMa
         )
 
 
-partDefView : Bool -> Int -> PartDef.PartDef -> ModuleWithCache.CompileAndRunResult -> Maybe PartDefActive -> Maybe EditState -> Html.Html DefViewMsg
-partDefView isFocus index partDef compileAndRunResult partDefActiveMaybe editSateMaybe =
-    let
-        compileResult =
-            ModuleWithCache.compileAndRunResultGetCompileResult compileAndRunResult
-
-        evalResult =
-            ModuleWithCache.compileAndRunResultGetRunResult compileAndRunResult
-    in
+partDefView : Bool -> PartDef.PartDef -> ModuleWithCache.CompileAndRunResult -> Maybe PartDefActive -> Maybe EditState -> Html.Html DefViewMsg
+partDefView isFocus partDef compileAndRunResult partDefActiveMaybe editSateMaybe =
     Html.div
         [ subClassList
             [ ( "partDef", True )
@@ -1881,7 +1873,7 @@ partDefView isFocus index partDef compileAndRunResult partDefActiveMaybe editSat
                 )
                 editSateMaybe
             ]
-        , resultArea compileResult evalResult
+        , resultArea compileAndRunResult
         ]
 
 
@@ -1890,16 +1882,26 @@ type DefViewMsg
     | DefInput String
 
 
-resultArea : Maybe Compiler.CompileResult -> Maybe Int -> Html.Html msg
-resultArea compileResult evalResult =
+resultArea : ModuleWithCache.CompileAndRunResult -> Html.Html msg
+resultArea compileAndRunResult =
     Html.div
         [ subClass "partDef-resultArea" ]
         [ Html.div
             []
-            [ Html.text (compileResult |> Maybe.map Compiler.compileResultToString |> Maybe.withDefault "コンパイル結果がない") ]
+            [ Html.text
+                (ModuleWithCache.compileAndRunResultGetCompileResult compileAndRunResult
+                    |> Maybe.map Compiler.compileResultToString
+                    |> Maybe.withDefault "コンパイル中……"
+                )
+            ]
         , Html.div
             []
-            [ Html.text (evalResult |> Maybe.map String.fromInt |> Maybe.withDefault "評価結果がない") ]
+            [ Html.text
+                (ModuleWithCache.compileAndRunResultGetRunResult compileAndRunResult
+                    |> Maybe.map String.fromInt
+                    |> Maybe.withDefault "評価結果がない"
+                )
+            ]
         ]
 
 

@@ -1,4 +1,25 @@
-module Project.Source.Module exposing (Module, addEmptyPartDefAndData, allPartDefIndex, existPartDefName, getData, getName, getPartDef, getPartDefAndData, getPartDefAndDataList, getReadMe, make, makeUnit, map, setData, setName, setPartDefAndData, setPartDefExpr, setPartDefName, setPartDefType, setReadMe)
+module Project.Source.Module exposing
+    ( Module
+    , addEmptyPartDefAndData
+    , allPartDefIndex
+    , existPartDefName
+    , getData
+    , getName
+    , getPartDef
+    , getPartDefAndData
+    , getPartDefAndDataList
+    , getReadMe
+    , make
+    , makeUnit
+    , map
+    , setData
+    , setName
+    , setPartDefAndData
+    , setPartDefExpr
+    , setPartDefName
+    , setPartDefType
+    , setReadMe
+    )
 
 import Array
 import Project.Label as Label
@@ -205,7 +226,7 @@ getPartDefAndData (ModuleIndex.PartDefIndex defIndex) (Module { partDefAndDataLi
 -}
 setPartDefAndData : ModuleIndex.PartDefIndex -> ( PartDef.PartDef, a ) -> Module a -> Maybe (Module a)
 setPartDefAndData (ModuleIndex.PartDefIndex defIndex) ( partDef, data ) (Module rec) =
-    if Module rec |> existPartDefName (partDef |> PartDef.getName) then
+    if Module rec |> existPartDefName (ModuleIndex.PartDefIndex defIndex) (partDef |> PartDef.getName) then
         Nothing
 
     else
@@ -248,12 +269,19 @@ setData (ModuleIndex.PartDefIndex defIndex) data (Module rec) =
 {-| すでに指定した名前がモジュールに定義されているか
 無名はかぶったとしてみなせれない
 -}
-existPartDefName : Name.Name -> Module a -> Bool
-existPartDefName name =
+existPartDefName : ModuleIndex.PartDefIndex -> Name.Name -> Module a -> Bool
+existPartDefName index name =
     case name of
         Name.SafeName safeName ->
             getPartDefAndDataList
-                >> List.map (Tuple.first >> PartDef.getName)
+                >> List.indexedMap
+                    (\i ( partDef, _ ) ->
+                        if ModuleIndex.PartDefIndex i == index then
+                            Name.NoName
+
+                        else
+                            PartDef.getName partDef
+                    )
                 >> List.member (Name.SafeName safeName)
 
         Name.NoName ->

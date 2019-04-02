@@ -5,13 +5,13 @@ module Project.Source.ModuleWithCache exposing
     , Msg(..)
     , compileAndRunResultGetCompileResult
     , compileAndRunResultGetRunResult
-    , fromModuleUnit
     , getName
     , getPartDef
     , getPartDefAndResult
     , getPartDefAndResultList
     , getPartDefNum
     , getReadMe
+    , init
     , update
     )
 
@@ -145,9 +145,20 @@ update msg moduleWithResult =
 
 {-| 結果を持たない、純粋なモジュールから結果を持つモジュールに変換する
 -}
-fromModuleUnit : Module.Module () -> ModuleWithResult
-fromModuleUnit =
-    Module.map (always emptyCompileAndRunResult)
+init : { name : Label.Label, readMe : String, typeDefList : List TypeDef.TypeDef, partDefList : List PartDef.PartDef } -> ( ModuleWithResult, List Emit )
+init { name, readMe, typeDefList, partDefList } =
+    let
+        module_ =
+            Module.make
+                { name = name
+                , readMe = readMe
+                , typeDefList = typeDefList
+                , partDefAndDataList = partDefList |> List.map (\s -> ( s, emptyCompileAndRunResult ))
+                }
+    in
+    ( module_
+    , module_ |> Module.allPartDefIndex |> List.map EmitCompile
+    )
 
 
 {-| Moduleの名前を取得する

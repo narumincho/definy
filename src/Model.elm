@@ -1,9 +1,7 @@
 port module Model exposing
-    ( Focus
-    , GutterType(..)
+    ( GutterType(..)
     , Model
     , Msg
-    , closeCommandPalette
     , editorPanelMsgToMsg
     , editorPanelUpdate
     , focusToEditorGroupPanel
@@ -13,30 +11,17 @@ port module Model exposing
     , getEditorGroupPanelGutter
     , getEditorGroupPanelModel
     , getEditorGroupPanelSize
-    , getFocus
     , getGutterType
     , getProject
     , getTreePanelModel
     , getTreePanelWidth
-    , getWindowSize
     , init
-    , isCaptureMouseEvent
-    , isFocusDefaultUi
     , isFocusEditorGroupPanel
     , isFocusTreePanel
-    , isOpenCommandPalette
     , isTreePanelGutter
-    , mouseMove
-    , mouseUp
-    , openCommandPalette
-    , openEditor
-    , setFocus
-    , setWindowSize
     , subscriptions
-    , toGutterMode
     , toTreePanelGutterMode
     , treePanelMsgToMsg
-    , treePanelUpdate
     , update
     )
 
@@ -56,11 +41,6 @@ import Panel.Tree
 import Project
 import Project.SocrceIndex
 import Project.Source
-import Project.Source.Module
-import Project.Source.Module.PartDef as PartDef
-import Project.Source.Module.PartDef.Expr as Expr
-import Project.Source.Module.PartDef.Name as Name
-import Project.Source.Module.PartDef.Type as Type
 import Project.Source.ModuleIndex
 import Project.Source.ModuleWithCache
 import Task
@@ -133,7 +113,7 @@ type Msg
     | ChangeEditorResource Panel.EditorTypeRef.EditorTypeRef -- エディタの対象を変える
     | OpenCommandPalette -- コマンドパレットを開く
     | CloseCommandPalette -- コマンドパレッドを閉じる
-    | SourceMsg Project.Source.Msg -- ソースへのメッセージ
+    | ProjectMsg Project.Msg -- プロジェクトへのメッセージ
 
 
 {-| 全体を表現する
@@ -187,9 +167,12 @@ init =
         ( editorPanelModel, emitListFromEditorPanel ) =
             Panel.EditorGroup.initModel
 
+        ( project, projectEmitList ) =
+            Project.init
+
         model =
             Model
-                { project = Project.init
+                { project = project
                 , focus = FocusEditorGroupPanel
                 , subMode = SubModeNone
                 , treePanelModel = Panel.Tree.initModel
@@ -199,24 +182,17 @@ init =
                 , msgQueue = []
                 }
 
-        source =
-            model
-                |> getProject
-                |> Project.getSource
+        ( msgList, cmd ) =
+            projectEmitList
+                |> List.map (projectEmitToMsgAndCmd (getProject model))
+                |> List.map (Tuple.mapSecond List.singleton)
+                |> Utility.ListExtra.listTupleListToTupleList
+                |> Tuple.mapSecond Cmd.batch
     in
-    ( model
-    , Cmd.batch
-        (source
-            |> Project.Source.allModuleRef
-            |> List.concatMap
-                (\moduleRef ->
-                    source
-                        |> Project.Source.getModule moduleRef
-                        |> Project.Source.Module.allPartDefIndex
-                        |> List.map (compileCmd source moduleRef)
-                )
-        )
-    )
+    updateFromList
+        msgList
+        model
+        |> Tuple.mapSecond (\c -> Cmd.batch [ cmd, c ])
 
 
 
@@ -267,7 +243,7 @@ focusToEditorGroupPanel =
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    case Debug.log "msg" msg of
         KeyPressed key ->
             case keyDown key model of
                 [] ->
@@ -353,8 +329,8 @@ update msg model =
             , Cmd.none
             )
 
-        SourceMsg sMsg ->
-            model |> sourceMsg sMsg
+        ProjectMsg sMsg ->
+            model |> projectMsg sMsg
 
 
 updateFromList : List Msg -> Model -> ( Model, Cmd Msg )
@@ -375,14 +351,16 @@ updateFromList msgList model =
 receiveCompileResult : { ref : Project.SocrceIndex.ModuleIndex, index : Project.Source.ModuleIndex.PartDefIndex, compileResult : Compiler.CompileResult } -> Model -> ( Model, Cmd Msg )
 receiveCompileResult { ref, index, compileResult } =
     update
-        (SourceMsg
-            (Project.Source.MsgModule
-                { moduleIndex = ref
-                , moduleMsg =
-                    Project.Source.ModuleWithCache.MsgReceiveCompileResult
-                        index
-                        compileResult
-                }
+        (ProjectMsg
+            (Project.SourceMsg
+                (Project.Source.MsgModule
+                    { moduleIndex = ref
+                    , moduleMsg =
+                        Project.Source.ModuleWithCache.MsgReceiveCompileResult
+                            index
+                            compileResult
+                    }
+                )
             )
         )
 
@@ -392,14 +370,16 @@ receiveResultValue { ref, index, result } model =
     case ref |> Project.SocrceIndex.moduleIndexFromListInt of
         Just moduleIndex ->
             update
-                (SourceMsg
-                    (Project.Source.MsgModule
-                        { moduleIndex = moduleIndex
-                        , moduleMsg =
-                            Project.Source.ModuleWithCache.MsgReceiveRunResult
-                                (index |> Project.Source.ModuleIndex.PartDefIndex)
-                                result
-                        }
+                (ProjectMsg
+                    (Project.SourceMsg
+                        (Project.Source.MsgModule
+                            { moduleIndex = moduleIndex
+                            , moduleMsg =
+                                Project.Source.ModuleWithCache.MsgReceiveRunResult
+                                    (index |> Project.Source.ModuleIndex.PartDefIndex)
+                                    result
+                            }
+                        )
                     )
                 )
                 model
@@ -698,10 +678,6 @@ mouseMove { x, y } model =
             model
 
 
-
--- ここを通ったら無駄なマウスイベントを排除できなかったことになる
-
-
 treePanelResizeFromGutter : Int -> Int -> Int
 treePanelResizeFromGutter maxLimit x =
     if x < 80 then
@@ -800,7 +776,7 @@ editorPanelEmitToMsg emit =
             )
 
         Panel.EditorGroup.EmitToSourceMsg msg ->
-            ( [ SourceMsg msg ]
+            ( [ ProjectMsg (Project.SourceMsg msg) ]
             , []
             )
 
@@ -1181,29 +1157,38 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
             []
 
 
-{-| ソースを変更する
+{-| プロジェクトの情報を変更する
 -}
-sourceMsg : Project.Source.Msg -> Model -> ( Model, Cmd Msg )
-sourceMsg msg (Model rec) =
+projectMsg : Project.Msg -> Model -> ( Model, Cmd Msg )
+projectMsg msg model =
     let
-        ( newSource, emitList ) =
-            Project.Source.update msg (Project.getSource rec.project)
+        ( newProject, projectEmitList ) =
+            model
+                |> getProject
+                |> Project.update msg
 
         ( msgList, cmd ) =
-            emitList
-                |> List.map (sourceEmitToMsgAndCmd (Project.getSource rec.project))
+            projectEmitList
+                |> List.map (projectEmitToMsgAndCmd (getProject model))
                 |> List.map (Tuple.mapSecond List.singleton)
                 |> Utility.ListExtra.listTupleListToTupleList
                 |> Tuple.mapSecond Cmd.batch
 
         newModel =
-            Model
-                { rec | project = rec.project |> Project.setSource newSource }
+            model
+                |> setProject newProject
     in
     updateFromList
         msgList
         newModel
         |> Tuple.mapSecond (\c -> Cmd.batch [ cmd, c ])
+
+
+projectEmitToMsgAndCmd : Project.Project -> Project.Emit -> ( List Msg, Cmd Msg )
+projectEmitToMsgAndCmd project emit =
+    case emit of
+        Project.EmitSource sourceEmit ->
+            sourceEmitToMsgAndCmd (Project.getSource project) sourceEmit
 
 
 sourceEmitToMsgAndCmd : Project.Source.Source -> Project.Source.Emit -> ( List Msg, Cmd Msg )

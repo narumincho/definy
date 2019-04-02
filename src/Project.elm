@@ -1,28 +1,19 @@
 module Project exposing
-    ( Project, ProjectRef(..), init, projectRefSetEmpty, ProjectRefSet
-    , getName
+    ( Emit(..)
+    , Msg(..)
+    , Project
+    , ProjectRef(..)
     , getAuthor
-    , getSource, listIntToModuleRef, mapSource, moduleRefToListInt, projectRefToListInt
-    , setSource)
+    , getName
+    , getSource
+    , init
+    , mapSource
+    , setSource
+    , update
+    )
 
 {-| プロジェクト。アプリを構成するものすべて。
 プログラムのソースやドキュメント、実行設定まで
-
-
-# Project
-
-@docs Project, ProjectRef, init, projectRefSetEmpty, ProjectRefSet
-
-
-# Name
-
-@docs getName
-
-
-# Author
-
-@docs getAuthor
-
 -}
 
 import Project.Config as Config
@@ -47,7 +38,7 @@ type Project
 
 
 type Msg
-    = SourceMsg
+    = SourceMsg Source.Msg
 
 
 {-| プロジェクトの部分の参照
@@ -64,67 +55,42 @@ type alias ProjectRefSet =
     Set.Any.AnySet (List Int) ProjectRef
 
 
-projectRefSetEmpty : ProjectRefSet
-projectRefSetEmpty =
-    Set.Any.empty projectRefToListInt
-
-
-projectRefToListInt : ProjectRef -> List Int
-projectRefToListInt projectRef =
-    case projectRef of
-        ProjectRoot ->
-            []
-
-        Document ->
-            [ 0 ]
-
-        Config ->
-            [ 1 ]
-
-        Source ->
-            [ 2 ]
-
-        Module moduleRef ->
-            [ 3 ] ++ moduleRefToListInt moduleRef
-
-
-moduleRefToListInt : SourceIndex.ModuleIndex -> List Int
-moduleRefToListInt moduleRef =
-    case moduleRef of
-        SourceIndex.Core ->
-            [ 0 ]
-
-        SourceIndex.CoreInt32 ->
-            [ 1 ]
-
-        SourceIndex.SampleModule ->
-            [ 2 ]
-
-
-listIntToModuleRef : List Int -> SourceIndex.ModuleIndex
-listIntToModuleRef list =
-    case list of
-        [ 0 ] ->
-            SourceIndex.Core
-
-        [ 1 ] ->
-            SourceIndex.CoreInt32
-
-        _ ->
-            SourceIndex.SampleModule
+type Emit
+    = EmitSource Source.Emit
 
 
 {-| プロジェクトの初期値
 -}
-init : Project
+init : ( Project, List Emit )
 init =
-    Project
+    let
+        ( source, sourceEmit ) =
+            Source.init
+    in
+    ( Project
         { name = projectName
         , author = projectAuthor
         , document = Document.init
         , config = Config.init
-        , source = Source.init
+        , source = source
         }
+    , sourceEmit |> List.map EmitSource
+    )
+
+
+{-| プロジェクトを更新する
+-}
+update : Msg -> Project -> ( Project, List Emit )
+update msg project =
+    case msg of
+        SourceMsg sourceMsg ->
+            let
+                ( newSource, emitList ) =
+                    Source.update sourceMsg (getSource project)
+            in
+            ( project |> setSource newSource
+            , emitList |> List.map EmitSource
+            )
 
 
 projectName : Label.Label
