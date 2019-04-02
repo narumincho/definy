@@ -45,7 +45,7 @@ treePanel model =
                     []
 
                 else
-                    [ Html.Events.onClick (Model.FocusTo Model.FocusTreePanel) ]
+                    [ Html.Events.onClick Model.focusToTreePanel ]
                )
             ++ (Model.getGutterType model
                     |> Maybe.map gutterTypeToCursorStyle
@@ -80,7 +80,7 @@ editorGroupPanel model =
                     []
 
                 else
-                    [ Html.Events.onClick (Model.FocusTo Model.FocusEditorGroupPanel) ]
+                    [ Html.Events.onClick Model.focusToEditorGroupPanel ]
                )
             ++ (Model.getGutterType model
                     |> Maybe.map gutterTypeToCursorStyle
@@ -97,7 +97,7 @@ editorGroupPanel model =
         )
 
 
-{-| ツリーパネルの幅を変更するためにつかむところ
+{-| ツリーパネルの幅を変更するためにつかむところ | ガター
 -}
 verticalGutter : Bool -> Html.Html Msg
 verticalGutter isGutterMode =

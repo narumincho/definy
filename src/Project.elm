@@ -3,7 +3,7 @@ module Project exposing
     , getName
     , getAuthor
     , getSource, listIntToModuleRef, mapSource, moduleRefToListInt, projectRefToListInt
-    )
+    , setSource)
 
 {-| プロジェクト。アプリを構成するものすべて。
 プログラムのソースやドキュメント、実行設定まで
@@ -28,8 +28,8 @@ module Project exposing
 import Project.Config as Config
 import Project.Document as Document
 import Project.Label as Label
+import Project.SocrceIndex as SourceIndex
 import Project.Source as Source
-import Project.Source.ModuleWithCache
 import Set.Any
 import Utility.Map
 
@@ -46,15 +46,18 @@ type Project
         }
 
 
+type Msg
+    = SourceMsg
+
+
 {-| プロジェクトの部分の参照
-TODO 今後 Source (List Int)のようにしてモジュールの位置を持てるように
 -}
 type ProjectRef
     = ProjectRoot
     | Document
     | Config
     | Source
-    | Module Source.ModuleRef
+    | Module SourceIndex.ModuleIndex
 
 
 type alias ProjectRefSet =
@@ -85,30 +88,30 @@ projectRefToListInt projectRef =
             [ 3 ] ++ moduleRefToListInt moduleRef
 
 
-moduleRefToListInt : Source.ModuleRef -> List Int
+moduleRefToListInt : SourceIndex.ModuleIndex -> List Int
 moduleRefToListInt moduleRef =
     case moduleRef of
-        Source.Core ->
+        SourceIndex.Core ->
             [ 0 ]
 
-        Source.CoreInt32 ->
+        SourceIndex.CoreInt32 ->
             [ 1 ]
 
-        Source.SampleModule ->
+        SourceIndex.SampleModule ->
             [ 2 ]
 
 
-listIntToModuleRef : List Int -> Source.ModuleRef
+listIntToModuleRef : List Int -> SourceIndex.ModuleIndex
 listIntToModuleRef list =
     case list of
         [ 0 ] ->
-            Source.Core
+            SourceIndex.Core
 
         [ 1 ] ->
-            Source.CoreInt32
+            SourceIndex.CoreInt32
 
         _ ->
-            Source.SampleModule
+            SourceIndex.SampleModule
 
 
 {-| プロジェクトの初期値

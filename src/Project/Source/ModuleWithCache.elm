@@ -1,310 +1,209 @@
 module Project.Source.ModuleWithCache exposing
-    ( DefAndResult
-    , Module(..)
-    , addDef
-    , defAndResultGetCompileResult
-    , defAndResultGetDef
-    , defAndResultGetEvalResult
-    , getDef
-    , getDefAndResultList
-    , getDefList
-    , getDefNum
+    ( CompileAndRunResult
+    , Emit(..)
+    , ModuleWithResult
+    , Msg(..)
+    , compileAndRunResultGetCompileResult
+    , compileAndRunResultGetRunResult
+    , fromModuleUnit
     , getName
+    , getPartDef
+    , getPartDefAndResult
+    , getPartDefAndResultList
+    , getPartDefNum
     , getReadMe
-    , make
-    , mapDef
-    , setCompileResult
-    , setDefExpr
-    , setDefName
-    , setDefType
-    , setEvalResult
-    , setName
-    , setReadMe
+    , update
     )
 
 import Compiler
-import Compiler.Marger
 import Project.Label as Label
-import Project.Source.Module.Def as Def
-import Project.Source.Module.Def.Expr
-import Project.Source.Module.Def.Name
-import Project.Source.Module.Def.Type
+import Project.Source.Module as Module
+import Project.Source.Module.PartDef as PartDef
+import Project.Source.Module.PartDef.Expr as Expr
+import Project.Source.Module.PartDef.Name as Name
+import Project.Source.Module.PartDef.Type as Type
 import Project.Source.Module.TypeDef as TypeDef
-import Utility.ListExtra
-import Utility.Map
+import Project.Source.ModuleIndex as ModuleIndex
 
 
-type Module
-    = Module
-        { name : Label.Label
-        , typeDefList : List TypeDef.TypeDef
-        , defAndCacheList : List DefAndResult
-        , readMe : String
+{-| エディタ用のモジュール。各パーツ定義にコンパイル結果を持つ。
+-}
+type alias ModuleWithResult =
+    Module.Module CompileAndRunResult
+
+
+{-| コンパイル結果と実行結果
+-}
+type CompileAndRunResult
+    = CompileAndRunResult
+        { compileResult : Maybe Compiler.CompileResult
+        , runResult : Maybe Int
         }
 
 
-type DefAndResult
-    = DefAndResult
-        { def : Def.Def
-        , compileResult : Maybe Compiler.CompileResult
-        , evalResult : Maybe Int
+emptyCompileAndRunResult : CompileAndRunResult
+emptyCompileAndRunResult =
+    CompileAndRunResult
+        { compileResult = Nothing
+        , runResult = Nothing
         }
 
 
-make : { name : Label.Label, defList : List Def.Def, readMe : String } -> Module
-make { name, defList, readMe } =
-    Module
-        { name = name
-        , typeDefList = []
-        , defAndCacheList =
-            defList
-                |> List.take 65535
-                -- 定義の数の上限
-                |> List.map
-                    (\def ->
-                        DefAndResult
-                            { def = def
-                            , compileResult = Nothing
-                            , evalResult = Nothing
-                            }
+type Msg
+    = MsgSetReadMe String
+    | MsgAddDef
+    | MsgSetName ModuleIndex.PartDefIndex Name.Name
+    | MsgSetType ModuleIndex.PartDefIndex Type.Type
+    | MsgSetExpr ModuleIndex.PartDefIndex Expr.Expr
+    | MsgReceiveCompileResult ModuleIndex.PartDefIndex Compiler.CompileResult
+    | MsgReceiveRunResult ModuleIndex.PartDefIndex Int
+
+
+type Emit
+    = EmitCompile ModuleIndex.PartDefIndex
+    | EmitRun ModuleIndex.PartDefIndex (List Int)
+    | ErrorOverPartCountLimit
+    | ErrorDuplicatePartDefName ModuleIndex.PartDefIndex
+
+
+update : Msg -> ModuleWithResult -> ( ModuleWithResult, List Emit )
+update msg moduleWithResult =
+    case msg of
+        MsgSetReadMe readMe ->
+            ( moduleWithResult
+                |> Module.setReadMe readMe
+            , []
+            )
+
+        MsgAddDef ->
+            case moduleWithResult |> Module.addEmptyPartDefAndData emptyCompileAndRunResult of
+                Just ( newModule, newIndex ) ->
+                    ( newModule
+                    , [ EmitCompile newIndex ]
                     )
-        , readMe = readMe
-        }
+
+                Nothing ->
+                    ( moduleWithResult
+                    , [ ErrorOverPartCountLimit ]
+                    )
+
+        MsgSetName partDefIndex name ->
+            case moduleWithResult |> Module.setPartDefName partDefIndex name of
+                Just newModule ->
+                    ( newModule
+                    , []
+                    )
+
+                Nothing ->
+                    ( moduleWithResult
+                    , [ ErrorDuplicatePartDefName partDefIndex ]
+                    )
+
+        MsgSetType partDefIndex type_ ->
+            ( moduleWithResult
+                |> Module.setPartDefType partDefIndex type_
+            , [ EmitCompile partDefIndex ]
+            )
+
+        MsgSetExpr partDefIndex expr ->
+            ( moduleWithResult
+                |> Module.setPartDefExpr partDefIndex expr
+            , [ EmitCompile partDefIndex ]
+            )
+
+        MsgReceiveCompileResult partDefIndex compileResult ->
+            case moduleWithResult |> Module.getData partDefIndex of
+                Just (CompileAndRunResult rec) ->
+                    ( moduleWithResult
+                        |> Module.setData partDefIndex (CompileAndRunResult { rec | compileResult = Just compileResult })
+                    , case Compiler.getBinary compileResult of
+                        Just binary ->
+                            [ EmitRun partDefIndex binary ]
+
+                        Nothing ->
+                            []
+                    )
+
+                Nothing ->
+                    ( moduleWithResult
+                    , []
+                    )
+
+        MsgReceiveRunResult partDefIndex int ->
+            case moduleWithResult |> Module.getData partDefIndex of
+                Just (CompileAndRunResult rec) ->
+                    ( moduleWithResult
+                        |> Module.setData partDefIndex (CompileAndRunResult { rec | runResult = Just int })
+                    , []
+                    )
+
+                Nothing ->
+                    ( moduleWithResult
+                    , []
+                    )
+
+
+{-| 結果を持たない、純粋なモジュールから結果を持つモジュールに変換する
+-}
+fromModuleUnit : Module.Module () -> ModuleWithResult
+fromModuleUnit =
+    Module.map (always emptyCompileAndRunResult)
 
 
 {-| Moduleの名前を取得する
 -}
-getName : Module -> Label.Label
-getName (Module { name }) =
-    name
-
-
-{-| Moduleの名前を設定する
--}
-setName : Label.Label -> Module -> Module
-setName name (Module rec) =
-    Module
-        { rec | name = name }
+getName : ModuleWithResult -> Label.Label
+getName =
+    Module.getName
 
 
 {-| ModuleのReadMeを取得する
 -}
-getReadMe : Module -> String
-getReadMe (Module { readMe }) =
-    readMe
+getReadMe : ModuleWithResult -> String
+getReadMe =
+    Module.getReadMe
 
 
-{-| ModuleのReadMeを設定する
+{-| Moduleで定義されているPartDefとそのコンパイル結果と評価結果のListを取得する
 -}
-setReadMe : String -> Module -> Module
-setReadMe string (Module rec) =
-    Module
-        { rec | readMe = string }
+getPartDefAndResultList : ModuleWithResult -> List ( PartDef.PartDef, CompileAndRunResult )
+getPartDefAndResultList =
+    Module.getPartDefAndDataList
 
 
-{-| Moduleで定義されているDefとそのコンパイル結果と評価結果のListを取得する
+{-| 指定した位置にあるPartDefと結果を取得する
 -}
-getDefAndResultList : Module -> List DefAndResult
-getDefAndResultList (Module { defAndCacheList }) =
-    defAndCacheList
+getPartDefAndResult : ModuleIndex.PartDefIndex -> ModuleWithResult -> Maybe ( PartDef.PartDef, CompileAndRunResult )
+getPartDefAndResult =
+    Module.getPartDefAndData
 
 
-{-| Moduleで定義されているDefとそのコンパイル結果と評価結果のListを設定する
+{-| 指定した位置にあるPartDefを取得する
 -}
-setDefAndResultList : List DefAndResult -> Module -> Module
-setDefAndResultList defAndResultList (Module rec) =
-    Module
-        { rec | defAndCacheList = defAndResultList }
+getPartDef : ModuleIndex.PartDefIndex -> ModuleWithResult -> Maybe PartDef.PartDef
+getPartDef index =
+    getPartDefAndResult index >> Maybe.map Tuple.first
 
 
-{-| Moduleで定義されているDefとそのコンパイル結果と評価結果のListを加工する
+{-| パーツ定義の個数を取得する
 -}
-mapDefAndResultList : (List DefAndResult -> List DefAndResult) -> Module -> Module
-mapDefAndResultList =
-    Utility.Map.toMapper
-        getDefAndResultList
-        setDefAndResultList
+getPartDefNum : ModuleWithResult -> Int
+getPartDefNum =
+    getPartDefAndResultList >> List.length
 
 
-{-| Moduleで定義されているDefとそのコンパイル結果と評価結果を取得する
+
+{- =============================================
+                 CompileAndRunResult
+   =============================================
 -}
-getDefAndResult : Int -> Module -> Maybe DefAndResult
-getDefAndResult index =
-    getDefAndResultList >> Utility.ListExtra.getAt index
 
 
-{-| Moduleで定義されているDefとそのコンパイル結果と評価結果を設定する
--}
-setDefAndResult : Int -> DefAndResult -> Module -> Module
-setDefAndResult index defAndResult =
-    mapDefAndResultList
-        (Utility.ListExtra.setAt index defAndResult)
-
-
-{-| Moduleで定義されているDefとそのコンパイル結果と評価結果を加工する
--}
-mapDefAndResult : Int -> (DefAndResult -> DefAndResult) -> Module -> Module
-mapDefAndResult index =
-    Utility.Map.toMapperGetterMaybe
-        (getDefAndResult index)
-        (setDefAndResult index)
-
-
-{-| Moduleで定義されているDefのListを取得する
--}
-getDefList : Module -> List Def.Def
-getDefList =
-    getDefAndResultList >> List.map defAndResultGetDef
-
-
-{-| Moduleで定義されているDefを取得する
--}
-getDef : Int -> Module -> Maybe Def.Def
-getDef index module_ =
-    getDefList module_
-        |> Utility.ListExtra.getAt index
-
-
-{-| コンパイル結果と評価結果がない定義を設定
--}
-setDef : Int -> Def.Def -> Module -> Module
-setDef index def (Module rec) =
-    Module
-        { rec
-            | defAndCacheList =
-                rec.defAndCacheList
-                    |> Utility.ListExtra.setAt index
-                        (DefAndResult
-                            { def = def
-                            , compileResult = Nothing
-                            , evalResult = Nothing
-                            }
-                        )
-        }
-
-
-{-| 定義を加工する
--}
-mapDef : Int -> (Def.Def -> Def.Def) -> Module -> Module
-mapDef index =
-    Utility.Map.toMapperGetterMaybe
-        (getDef index)
-        (setDef index)
-
-
-setCompileResult : Int -> Compiler.CompileResult -> Module -> Module
-setCompileResult index compileResult =
-    mapDefAndResult index
-        (defAndResultSetCompileResult compileResult)
-
-
-setEvalResult : Int -> Int -> Module -> Module
-setEvalResult index evalResult =
-    mapDefAndResult index
-        (defAndResultSetEvalResult evalResult)
-
-
-{-| 定義の個数
--}
-getDefNum : Module -> Int
-getDefNum =
-    getDefList >> List.length
-
-
-{-| 指定したindexの定義の名前を設定する。なければ、なにもしない
--}
-setDefName : Int -> Project.Source.Module.Def.Name.Name -> Module -> Module
-setDefName index name module_ =
-    case getDef index module_ of
-        Just def ->
-            module_
-                |> setDef index (def |> Def.setName name)
-
-        Nothing ->
-            module_
-
-
-{-| 指定したindexの定義の型を設定する。なければ、なにもしない
--}
-setDefType : Int -> Project.Source.Module.Def.Type.Type -> Module -> Module
-setDefType index type_ module_ =
-    case getDef index module_ of
-        Just def ->
-            module_
-                |> setDef index (def |> Def.setType type_)
-
-        Nothing ->
-            module_
-
-
-{-| 指定したindexの定義の式を設定する。なければ、なにもしない
--}
-setDefExpr : Int -> Project.Source.Module.Def.Expr.Expr -> Module -> Module
-setDefExpr index expr module_ =
-    case getDef index module_ of
-        Just def ->
-            module_
-                |> setDef index (def |> Def.setExpr expr)
-
-        Nothing ->
-            module_
-
-
-{-| 定義を末尾に追加する
--}
-addDef : Def.Def -> Module -> Module
-addDef def (Module rec) =
-    Module
-        { rec
-            | defAndCacheList =
-                if 65535 <= List.length rec.defAndCacheList then
-                    List.take 65535 rec.defAndCacheList
-
-                else
-                    rec.defAndCacheList
-                        ++ [ DefAndResult
-                                { def = def
-                                , compileResult = Nothing
-                                , evalResult = Nothing
-                                }
-                           ]
-        }
-
-
-defAndResultGetDef : DefAndResult -> Def.Def
-defAndResultGetDef (DefAndResult { def }) =
-    def
-
-
-defAndResultGetCompileResult : DefAndResult -> Maybe Compiler.CompileResult
-defAndResultGetCompileResult (DefAndResult { compileResult }) =
+compileAndRunResultGetCompileResult : CompileAndRunResult -> Maybe Compiler.CompileResult
+compileAndRunResultGetCompileResult (CompileAndRunResult { compileResult }) =
     compileResult
 
 
-defAndResultGetEvalResult : DefAndResult -> Maybe Int
-defAndResultGetEvalResult (DefAndResult { evalResult }) =
-    evalResult
-
-
-defAndResultSetDef : Def.Def -> DefAndResult -> DefAndResult
-defAndResultSetDef def (DefAndResult rec) =
-    DefAndResult
-        { rec
-            | def = def
-        }
-
-
-defAndResultSetCompileResult : Compiler.CompileResult -> DefAndResult -> DefAndResult
-defAndResultSetCompileResult compileResult (DefAndResult rec) =
-    DefAndResult
-        { rec
-            | compileResult = Just compileResult
-        }
-
-
-defAndResultSetEvalResult : Int -> DefAndResult -> DefAndResult
-defAndResultSetEvalResult evalResult (DefAndResult rec) =
-    DefAndResult
-        { rec
-            | evalResult = Just evalResult
-        }
+compileAndRunResultGetRunResult : CompileAndRunResult -> Maybe Int
+compileAndRunResultGetRunResult (CompileAndRunResult { runResult }) =
+    runResult

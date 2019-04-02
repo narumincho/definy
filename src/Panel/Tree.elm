@@ -1,32 +1,13 @@
 module Panel.Tree exposing
-    ( Model, Msg(..), initModel
+    ( Emit(..)
+    , Model
+    , Msg(..)
+    , initModel
     , update
     , view
-    , Emit(..)
     )
 
 {-| 画面左側に表示されるパネルで、モジュールのツリーを表示する。プロジェクトのモジュールの階層構造を変えるとこができる
-
-
-# Model,Msg
-
-@docs Model, Msg, ToSelfMsg, ToParentMsg, initModel
-
-
-# 自分自身に向けたMsgで更新
-
-@docs update
-
-
-# 親のMsgから更新
-
-@docs keyPress
-
-
-# 見た目
-
-@docs view
-
 -}
 
 import Color
@@ -38,6 +19,7 @@ import Palette.X11
 import Panel.EditorTypeRef
 import Project
 import Project.Label as Label
+import Project.SocrceIndex
 import Project.Source
 import Utility.ListExtra
 import Utility.Map
@@ -107,7 +89,7 @@ isTreeOpen projectRef (OpenCloseData { isProjectRootOpen, isSourceOpen, isCoreOp
         Panel.EditorTypeRef.EditorProject Project.Source ->
             isSourceOpen
 
-        Panel.EditorTypeRef.EditorProject (Project.Module Project.Source.Core) ->
+        Panel.EditorTypeRef.EditorProject (Project.Module Project.SocrceIndex.Core) ->
             isCoreOpen
 
         _ ->
@@ -131,7 +113,7 @@ openTree editorRef (OpenCloseData rec) =
                     | isSourceOpen = True
                 }
 
-        Panel.EditorTypeRef.EditorProject (Project.Module Project.Source.Core) ->
+        Panel.EditorTypeRef.EditorProject (Project.Module Project.SocrceIndex.Core) ->
             OpenCloseData
                 { rec
                     | isCoreOpen = True
@@ -158,7 +140,7 @@ closeTree editorRef (OpenCloseData rec) =
                     | isSourceOpen = False
                 }
 
-        Panel.EditorTypeRef.EditorProject (Project.Module Project.Source.Core) ->
+        Panel.EditorTypeRef.EditorProject (Project.Module Project.SocrceIndex.Core) ->
             OpenCloseData
                 { rec
                     | isCoreOpen = False
@@ -587,18 +569,18 @@ baseTree project =
                 , icon = sourceIcon
                 , children =
                     [ BaseTree
-                        { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.Source.SampleModule)
+                        { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.SocrceIndex.SampleModule)
                         , label = "SampleModule"
                         , icon = moduleIcon
                         , children = []
                         }
                     , BaseTree
-                        { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.Source.Core)
+                        { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.SocrceIndex.Core)
                         , label = "Core"
                         , icon = moduleIcon
                         , children =
                             [ BaseTree
-                                { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.Source.CoreInt32)
+                                { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.SocrceIndex.CoreInt32)
                                 , label = "Int32"
                                 , icon = moduleIcon
                                 , children = []

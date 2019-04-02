@@ -1,17 +1,17 @@
-module Project.Source.Module.Def exposing
-    ( Def, make
+module Project.Source.Module.PartDef exposing
+    ( PartDef, make
     , getName, setName, mapName
     , getType, setType, mapType
     , getExpr, setExpr, mapExpr
     , empty, toString
     )
 
-{-| Def ある対象について1つの定義をすることができる
+{-| PartDef ある対象について1つの定義をすることができる
 
 
-# Def
+# PartDef
 
-@docs Def, make
+@docs PartDef, make
 
 
 # Name
@@ -30,16 +30,16 @@ module Project.Source.Module.Def exposing
 
 -}
 
-import Project.Source.Module.Def.Expr as Expr exposing (Expr)
-import Project.Source.Module.Def.Name as Name exposing (Name)
-import Project.Source.Module.Def.Type as Type exposing (Type)
+import Project.Source.Module.PartDef.Expr as Expr exposing (Expr)
+import Project.Source.Module.PartDef.Name as Name exposing (Name)
+import Project.Source.Module.PartDef.Type as Type exposing (Type)
 import Utility.Map
 
 
 {-| 定義
 -}
-type Def
-    = Def
+type PartDef
+    = PartDef
         { name : Name
         , type_ : Type
         , expr : Expr
@@ -48,16 +48,16 @@ type Def
 
 {-| 新しく定義を作成する
 -}
-make : { name : Name, type_ : Type, expr : Expr } -> Def
+make : { name : Name, type_ : Type, expr : Expr } -> PartDef
 make rec =
-    Def rec
+    PartDef rec
 
 
 {-| 空の定義を作成する
 -}
-empty : Def
+empty : PartDef
 empty =
-    Def
+    PartDef
         { name = Name.noName
         , type_ = Type.empty
         , expr = Expr.empty
@@ -66,71 +66,71 @@ empty =
 
 {-| 名前を取得する
 -}
-getName : Def -> Name
-getName (Def { name }) =
+getName : PartDef -> Name
+getName (PartDef { name }) =
     name
 
 
 {-| 名前を設定する
 -}
-setName : Name -> Def -> Def
-setName name (Def rec) =
-    Def { rec | name = name }
+setName : Name -> PartDef -> PartDef
+setName name (PartDef rec) =
+    PartDef { rec | name = name }
 
 
 {-| 名前を加工する
 -}
-mapName : (Name -> Name) -> Def -> Def
+mapName : (Name -> Name) -> PartDef -> PartDef
 mapName =
     Utility.Map.toMapper getName setName
 
 
 {-| 型を取得する
 -}
-getType : Def -> Type
-getType (Def { type_ }) =
+getType : PartDef -> Type
+getType (PartDef { type_ }) =
     type_
 
 
 {-| 型を設定する
 -}
-setType : Type -> Def -> Def
-setType type_ (Def rec) =
-    Def { rec | type_ = type_ }
+setType : Type -> PartDef -> PartDef
+setType type_ (PartDef rec) =
+    PartDef { rec | type_ = type_ }
 
 
 {-| 型を加工する
 -}
-mapType : (Type -> Type) -> Def -> Def
+mapType : (Type -> Type) -> PartDef -> PartDef
 mapType =
     Utility.Map.toMapper getType setType
 
 
 {-| 式を取得する
 -}
-getExpr : Def -> Expr
-getExpr (Def { expr }) =
+getExpr : PartDef -> Expr
+getExpr (PartDef { expr }) =
     expr
 
 
 {-| 式を設定する
 -}
-setExpr : Expr -> Def -> Def
-setExpr expr (Def rec) =
-    Def { rec | expr = expr }
+setExpr : Expr -> PartDef -> PartDef
+setExpr expr (PartDef rec) =
+    PartDef { rec | expr = expr }
 
 
 {-| 式を加工する
 -}
-mapExpr : (Expr -> Expr) -> Def -> Def
+mapExpr : (Expr -> Expr) -> PartDef -> PartDef
 mapExpr =
     Utility.Map.toMapper getExpr setExpr
 
 
 {-| 定義を文字列にする。デバッグ用
 -}
-toString : Def -> String
-toString (Def { name, type_, expr }) =
+toString : PartDef -> String
+toString (PartDef { name, type_, expr }) =
     Name.toString name
         ++ ":"
         ++ (Type.toString type_ |> Maybe.withDefault "[NO TYPE]")

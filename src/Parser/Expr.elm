@@ -5,11 +5,13 @@ module Parser.Expr exposing
     , parseStartOp
     , parseStartTerm
     , takeTerm
-    , takeTermListTO, takeTermListOT)
+    , takeTermListOT
+    , takeTermListTO
+    )
 
 import Parser.SimpleChar as SimpleChar exposing (SimpleChar(..), Symbol(..))
 import Project.Label as Label exposing (Label)
-import Project.Source.Module.Def.Expr as Expr exposing (Operator, Term)
+import Project.Source.Module.PartDef.Expr as Expr exposing (Operator, Term)
 
 
 {-| 始まりがTermの構文解析結果
@@ -34,7 +36,9 @@ type ParseTermResult
 type TermWithParenthesis
     = TermWithParenthesis Int Term Int
 
-{-| TODO デバッグ用 カッコを無視して項を取りだす -}
+
+{-| TODO デバッグ用 カッコを無視して項を取りだす
+-}
 takeTerm : TermWithParenthesis -> Term
 takeTerm (TermWithParenthesis _ term _) =
     term

@@ -1,16 +1,13 @@
 port module Model exposing
-    ( Focus(..)
+    ( Focus
     , GutterType(..)
     , Model
-    , Msg(..)
-    , addPartDef
-    , changeExpr
-    , changeName
-    , changeReadMe
-    , changeType
+    , Msg
     , closeCommandPalette
     , editorPanelMsgToMsg
     , editorPanelUpdate
+    , focusToEditorGroupPanel
+    , focusToTreePanel
     , getActiveEditor
     , getCommandPaletteModel
     , getEditorGroupPanelGutter
@@ -33,10 +30,9 @@ port module Model exposing
     , mouseUp
     , openCommandPalette
     , openEditor
-    , receiveCompiledData
-    , receiveResultValue
     , setFocus
     , setWindowSize
+    , subscriptions
     , toGutterMode
     , toTreePanelGutterMode
     , treePanelMsgToMsg
@@ -47,7 +43,9 @@ port module Model exposing
 {-| すべての状態を管理する
 -}
 
+import Browser.Events
 import Compiler
+import Json.Decode
 import Key
 import Panel.CommandPalette
 import Panel.DefaultUi
@@ -56,11 +54,14 @@ import Panel.EditorGroup
 import Panel.EditorTypeRef
 import Panel.Tree
 import Project
+import Project.SocrceIndex
 import Project.Source
-import Project.Source.Module.Def as Def
-import Project.Source.Module.Def.Expr as Expr
-import Project.Source.Module.Def.Name as Name
-import Project.Source.Module.Def.Type as Type
+import Project.Source.Module
+import Project.Source.Module.PartDef as PartDef
+import Project.Source.Module.PartDef.Expr as Expr
+import Project.Source.Module.PartDef.Name as Name
+import Project.Source.Module.PartDef.Type as Type
+import Project.Source.ModuleIndex
 import Project.Source.ModuleWithCache
 import Task
 import Utility.ListExtra
@@ -82,6 +83,24 @@ port preventDefaultBeforeKeyEvent : () -> Cmd msg
 port run : { ref : List Int, index : Int, wasm : List Int } -> Cmd msg
 
 
+port input : ({ text : String, caretPos : Int } -> msg) -> Sub msg
+
+
+port keyPressed : (Json.Decode.Value -> msg) -> Sub msg
+
+
+port keyPrevented : (() -> msg) -> Sub msg
+
+
+port windowResize : ({ width : Int, height : Int } -> msg) -> Sub msg
+
+
+port runResult : ({ ref : List Int, index : Int, result : Int } -> msg) -> Sub msg
+
+
+port fireClickEventInCapturePhase : (String -> msg) -> Sub msg
+
+
 
 --port deleteClickEventListenerInCapturePhase : String -> Cmd msg
 
@@ -94,8 +113,18 @@ type Msg
     | MouseMove { x : Int, y : Int } -- マウスの移動
     | MouseUp -- マウスのボタンを離した
     | FireClickEventInCapturePhase String -- 外側から発生するクリックイベントを受け取った
-    | ReceiveCompiledData { ref : Project.Source.ModuleRef, index : Int, compileResult : Compiler.CompileResult } -- コンパイルの結果を受け取った
-    | ReceiveResultValue { ref : List Int, index : Int, result : Int } -- 実行結果を受け取った
+    | ReceiveCompiledData
+        { ref : Project.SocrceIndex.ModuleIndex
+        , index : Project.Source.ModuleIndex.PartDefIndex
+        , compileResult : Compiler.CompileResult
+        }
+      -- コンパイルの結果を受け取った
+    | ReceiveRunResult
+        { ref : List Int
+        , index : Int
+        , result : Int
+        }
+      -- 実行結果を受け取った
     | ToResizeGutterMode Gutter -- リサイズモードに移行
     | FocusTo Focus -- フォーカスを移動
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
@@ -104,11 +133,7 @@ type Msg
     | ChangeEditorResource Panel.EditorTypeRef.EditorTypeRef -- エディタの対象を変える
     | OpenCommandPalette -- コマンドパレットを開く
     | CloseCommandPalette -- コマンドパレッドを閉じる
-    | ChangeReadMe { text : String, ref : Project.Source.ModuleRef } -- モジュールのReadMeを変更する
-    | ChangeName { name : Name.Name, index : Int, ref : Project.Source.ModuleRef } -- 定義の名前を変更する
-    | ChangeType { type_ : Type.Type, index : Int, ref : Project.Source.ModuleRef } -- 定義の型を変更する
-    | ChangeExpr { expr : Expr.Expr, index : Int, ref : Project.Source.ModuleRef } -- 定義の式を変更する
-    | AddPartDef { ref : Project.Source.ModuleRef } -- 定義を追加する
+    | SourceMsg Project.Source.Msg -- ソースへのメッセージ
 
 
 {-| 全体を表現する
@@ -185,13 +210,9 @@ init =
             |> Project.Source.allModuleRef
             |> List.concatMap
                 (\moduleRef ->
-                    let
-                        defNum =
-                            source
-                                |> Project.Source.getModule moduleRef
-                                |> Project.Source.ModuleWithCache.getDefNum
-                    in
-                    List.range 0 defNum
+                    source
+                        |> Project.Source.getModule moduleRef
+                        |> Project.Source.Module.allPartDefIndex
                         |> List.map (compileCmd source moduleRef)
                 )
         )
@@ -219,6 +240,20 @@ treePanelMsgToMsg =
 editorPanelMsgToMsg : Panel.EditorGroup.Msg -> Msg
 editorPanelMsgToMsg =
     EditorPanelMsg
+
+
+{-| ツリーパネルにフォーカスをあわせる
+-}
+focusToTreePanel : Msg
+focusToTreePanel =
+    FocusTo FocusTreePanel
+
+
+{-| エディタグループパネルにフォーカスをあわせる
+-}
+focusToEditorGroupPanel : Msg
+focusToEditorGroupPanel =
+    FocusTo FocusEditorGroupPanel
 
 
 
@@ -268,23 +303,10 @@ update msg model =
             updateFromList listMsg newModel
 
         ReceiveCompiledData data ->
-            let
-                ( newModel, wasmAndRefMaybe ) =
-                    receiveCompiledData data model
-            in
-            ( newModel
-            , case wasmAndRefMaybe of
-                Just wasmAndRef ->
-                    run wasmAndRef
+            receiveCompileResult data model
 
-                Nothing ->
-                    Cmd.none
-            )
-
-        ReceiveResultValue data ->
-            ( receiveResultValue data model
-            , Cmd.none
-            )
+        ReceiveRunResult data ->
+            receiveResultValue data model
 
         ToResizeGutterMode gutter ->
             ( toGutterMode gutter model
@@ -331,28 +353,8 @@ update msg model =
             , Cmd.none
             )
 
-        ChangeReadMe data ->
-            ( changeReadMe data model
-            , Cmd.none
-            )
-
-        ChangeName data ->
-            ( changeName data model
-            , Cmd.none
-            )
-
-        ChangeType data ->
-            ( changeType data model
-            , Cmd.none
-            )
-
-        ChangeExpr data ->
-            changeExpr data model
-
-        AddPartDef data ->
-            ( addPartDef data model
-            , Cmd.none
-            )
+        SourceMsg sMsg ->
+            model |> sourceMsg sMsg
 
 
 updateFromList : List Msg -> Model -> ( Model, Cmd Msg )
@@ -368,6 +370,44 @@ updateFromList msgList model =
 
         [] ->
             ( model, Cmd.none )
+
+
+receiveCompileResult : { ref : Project.SocrceIndex.ModuleIndex, index : Project.Source.ModuleIndex.PartDefIndex, compileResult : Compiler.CompileResult } -> Model -> ( Model, Cmd Msg )
+receiveCompileResult { ref, index, compileResult } =
+    update
+        (SourceMsg
+            (Project.Source.MsgModule
+                { moduleIndex = ref
+                , moduleMsg =
+                    Project.Source.ModuleWithCache.MsgReceiveCompileResult
+                        index
+                        compileResult
+                }
+            )
+        )
+
+
+receiveResultValue : { ref : List Int, index : Int, result : Int } -> Model -> ( Model, Cmd Msg )
+receiveResultValue { ref, index, result } model =
+    case ref |> Project.SocrceIndex.moduleIndexFromListInt of
+        Just moduleIndex ->
+            update
+                (SourceMsg
+                    (Project.Source.MsgModule
+                        { moduleIndex = moduleIndex
+                        , moduleMsg =
+                            Project.Source.ModuleWithCache.MsgReceiveRunResult
+                                (index |> Project.Source.ModuleIndex.PartDefIndex)
+                                result
+                        }
+                    )
+                )
+                model
+
+        Nothing ->
+            ( model
+            , Cmd.none
+            )
 
 
 
@@ -684,47 +724,6 @@ mouseUp (Model rec) =
         }
 
 
-{-| コンパイルの結果を受け取った
--}
-receiveCompiledData :
-    { ref : Project.Source.ModuleRef, index : Int, compileResult : Compiler.CompileResult }
-    -> Model
-    -> ( Model, Maybe { ref : List Int, index : Int, wasm : List Int } )
-receiveCompiledData { ref, index, compileResult } model =
-    ( model
-        |> mapProject
-            (Project.mapSource
-                (Project.Source.mapModule ref
-                    (Project.Source.ModuleWithCache.setCompileResult index compileResult)
-                )
-            )
-    , case Compiler.getBinary compileResult of
-        Just wasm ->
-            Just
-                { ref = Project.moduleRefToListInt ref
-                , index = index
-                , wasm = wasm
-                }
-
-        Nothing ->
-            Nothing
-    )
-
-
-receiveResultValue :
-    { ref : List Int, index : Int, result : Int }
-    -> Model
-    -> Model
-receiveResultValue { ref, index, result } =
-    mapProject
-        (Project.mapSource
-            (Project.Source.mapModule
-                (Project.listIntToModuleRef ref)
-                (Project.Source.ModuleWithCache.setEvalResult index result)
-            )
-        )
-
-
 {-| ツリーパネルの更新
 -}
 treePanelUpdate : Panel.Tree.Msg -> Model -> ( Model, Maybe Msg )
@@ -785,11 +784,6 @@ editorPanelEmitToMsg emit =
             , []
             )
 
-        Panel.EditorGroup.EmitChangeReadMe { text, ref } ->
-            ( [ ChangeReadMe { text = text, ref = ref } ]
-            , []
-            )
-
         Panel.EditorGroup.EmitSetTextAreaValue string ->
             ( []
             , [ setTextAreaValue string ]
@@ -805,23 +799,8 @@ editorPanelEmitToMsg emit =
             , [ setClickEventListenerInCapturePhase idString ]
             )
 
-        Panel.EditorGroup.EmitChangeName { name, index, ref } ->
-            ( [ ChangeName { name = name, index = index, ref = ref } ]
-            , []
-            )
-
-        Panel.EditorGroup.EmitAddPartDef { ref } ->
-            ( [ AddPartDef { ref = ref } ]
-            , []
-            )
-
-        Panel.EditorGroup.EmitChangeType { type_, index, ref } ->
-            ( [ ChangeType { type_ = type_, index = index, ref = ref } ]
-            , []
-            )
-
-        Panel.EditorGroup.EmitChangeExpr { expr, index, ref } ->
-            ( [ ChangeExpr { expr = expr, index = index, ref = ref } ]
+        Panel.EditorGroup.EmitToSourceMsg msg ->
+            ( [ SourceMsg msg ]
             , []
             )
 
@@ -841,9 +820,7 @@ setProject project (Model rec) =
 
 mapProject : (Project.Project -> Project.Project) -> Model -> Model
 mapProject =
-    Utility.Map.toMapper
-        getProject
-        setProject
+    Utility.Map.toMapper getProject setProject
 
 
 {-| 開いているエディタを取得する
@@ -917,91 +894,6 @@ isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
 isFocusDefaultUi model =
     getEditorGroupPanelModel model
         |> Panel.EditorGroup.isFocusDefaultUi
-
-
-changeReadMe : { text : String, ref : Project.Source.ModuleRef } -> Model -> Model
-changeReadMe { text, ref } model =
-    model
-        |> mapProject
-            (Project.mapSource
-                (Project.Source.mapModule ref (Project.Source.ModuleWithCache.setReadMe text))
-            )
-
-
-changeName : { name : Name.Name, index : Int, ref : Project.Source.ModuleRef } -> Model -> Model
-changeName { name, index, ref } =
-    mapProject
-        (Project.mapSource
-            (Project.Source.mapModule
-                ref
-                (Project.Source.ModuleWithCache.setDefName index name)
-            )
-        )
-
-
-changeType : { type_ : Type.Type, index : Int, ref : Project.Source.ModuleRef } -> Model -> Model
-changeType { type_, index, ref } =
-    mapProject
-        (Project.mapSource
-            (Project.Source.mapModule
-                ref
-                (Project.Source.ModuleWithCache.setDefType index type_)
-            )
-        )
-
-
-changeExpr : { expr : Expr.Expr, index : Int, ref : Project.Source.ModuleRef } -> Model -> ( Model, Cmd Msg )
-changeExpr { expr, index, ref } model =
-    let
-        newModel =
-            model
-                |> mapProject
-                    (Project.mapSource
-                        (Project.Source.mapModule
-                            ref
-                            (Project.Source.ModuleWithCache.setDefExpr index expr)
-                        )
-                    )
-    in
-    ( newModel
-    , compileCmd (newModel |> getProject |> Project.getSource) ref index
-    )
-
-
-compileCmd : Project.Source.Source -> Project.Source.ModuleRef -> Int -> Cmd Msg
-compileCmd source moduleRef index =
-    let
-        targetDefMaybe =
-            source
-                |> Project.Source.getModule moduleRef
-                |> Project.Source.ModuleWithCache.getDef index
-    in
-    case targetDefMaybe of
-        Just targetDef ->
-            Task.succeed targetDef
-                |> Task.andThen
-                    (\def ->
-                        Task.succeed (Compiler.compile def)
-                    )
-                |> Task.perform
-                    (\compileResult ->
-                        ReceiveCompiledData
-                            { ref = moduleRef
-                            , index = index
-                            , compileResult = compileResult
-                            }
-                    )
-
-        Nothing ->
-            Cmd.none
-
-
-addPartDef : { ref : Project.Source.ModuleRef } -> Model -> Model
-addPartDef { ref } =
-    mapProject
-        (Project.mapSource
-            (Project.Source.mapModule ref (Project.Source.ModuleWithCache.addDef Def.empty))
-        )
 
 
 
@@ -1287,3 +1179,127 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
 
         _ ->
             []
+
+
+{-| ソースを変更する
+-}
+sourceMsg : Project.Source.Msg -> Model -> ( Model, Cmd Msg )
+sourceMsg msg (Model rec) =
+    let
+        ( newSource, emitList ) =
+            Project.Source.update msg (Project.getSource rec.project)
+
+        ( msgList, cmd ) =
+            emitList
+                |> List.map (sourceEmitToMsgAndCmd (Project.getSource rec.project))
+                |> List.map (Tuple.mapSecond List.singleton)
+                |> Utility.ListExtra.listTupleListToTupleList
+                |> Tuple.mapSecond Cmd.batch
+
+        newModel =
+            Model
+                { rec | project = rec.project |> Project.setSource newSource }
+    in
+    updateFromList
+        msgList
+        newModel
+        |> Tuple.mapSecond (\c -> Cmd.batch [ cmd, c ])
+
+
+sourceEmitToMsgAndCmd : Project.Source.Source -> Project.Source.Emit -> ( List Msg, Cmd Msg )
+sourceEmitToMsgAndCmd source emit =
+    case emit of
+        Project.Source.EmitModule { moduleIndex, moduleEmit } ->
+            case moduleEmit of
+                Project.Source.ModuleWithCache.EmitCompile partDefIndex ->
+                    ( []
+                    , compileCmd source moduleIndex partDefIndex
+                    )
+
+                Project.Source.ModuleWithCache.EmitRun partDefIndex binary ->
+                    ( []
+                    , runCmd moduleIndex partDefIndex binary
+                    )
+
+                Project.Source.ModuleWithCache.ErrorOverPartCountLimit ->
+                    ( []
+                      --TODO エラーの握りしめ
+                    , Cmd.none
+                    )
+
+                Project.Source.ModuleWithCache.ErrorDuplicatePartDefName partDefIndex ->
+                    ( []
+                      --TODO エラーの握りしめ
+                    , Cmd.none
+                    )
+
+
+compileCmd : Project.Source.Source -> Project.SocrceIndex.ModuleIndex -> Project.Source.ModuleIndex.PartDefIndex -> Cmd Msg
+compileCmd source moduleRef partDefIndex =
+    let
+        targetPartDefMaybe =
+            source
+                |> Project.Source.getModule moduleRef
+                |> Project.Source.ModuleWithCache.getPartDef partDefIndex
+    in
+    case targetPartDefMaybe of
+        Just targetDef ->
+            Task.succeed targetDef
+                |> Task.andThen
+                    (\def ->
+                        Task.succeed (Compiler.compile def)
+                    )
+                |> Task.perform
+                    (\compileResult ->
+                        ReceiveCompiledData
+                            { ref = moduleRef
+                            , index = partDefIndex
+                            , compileResult = compileResult
+                            }
+                    )
+
+        Nothing ->
+            Cmd.none
+
+
+runCmd : Project.SocrceIndex.ModuleIndex -> Project.Source.ModuleIndex.PartDefIndex -> List Int -> Cmd Msg
+runCmd moduleRef partDefIndex wasm =
+    run
+        { ref = moduleRef |> Project.SocrceIndex.moduleIndexToListInt
+        , index = partDefIndex |> Project.Source.ModuleIndex.partDefIndexToInt
+        , wasm = wasm
+        }
+
+
+
+{- ================================================================
+                           Subscription
+   ================================================================
+-}
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        ([ keyPressed (Key.fromKeyEventObject >> KeyPressed)
+         , keyPrevented (always KeyPrevented)
+         , windowResize WindowResize
+         , runResult ReceiveRunResult
+         , fireClickEventInCapturePhase FireClickEventInCapturePhase
+         ]
+            ++ (if isCaptureMouseEvent model then
+                    [ Browser.Events.onMouseMove
+                        (Json.Decode.map2 (\x y -> MouseMove { x = x, y = y })
+                            (Json.Decode.field "clientX" Json.Decode.int)
+                            (Json.Decode.field "clientY" Json.Decode.int)
+                        )
+                    , Browser.Events.onMouseUp
+                        (Json.Decode.succeed MouseUp)
+                    , Browser.Events.onVisibilityChange
+                        (always MouseUp)
+                    ]
+
+                else
+                    []
+               )
+        )

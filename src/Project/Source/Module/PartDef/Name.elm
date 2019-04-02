@@ -1,4 +1,4 @@
-module Project.Source.Module.Def.Name exposing
+module Project.Source.Module.PartDef.Name exposing
     ( Name(..)
     , SafeName
     , fromLabel

@@ -1,11 +1,11 @@
 module Compiler.DefToSafeExpr exposing (convert)
 
 import Compiler.SafeExpr exposing (SafeExpr(..), SafeOperator(..), SafeTerm(..))
-import Project.Source.Module.Def as Def
-import Project.Source.Module.Def.Expr as Expr
+import Project.Source.Module.PartDef as Def
+import Project.Source.Module.PartDef.Expr as Expr
 
 
-convert : Def.Def -> Maybe SafeExpr
+convert : Def.PartDef -> Maybe SafeExpr
 convert def =
     exprToSafeExpr (Def.getExpr def)
 

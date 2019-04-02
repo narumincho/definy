@@ -1,9 +1,8 @@
-module Project.Source.Module.Def.Type exposing
-    ( Type
+module Project.Source.Module.PartDef.Type exposing
+    ( Type(..)
     , ValidType
     , empty
     , fromLabel
-    , int
     , isEmpty
     , toString
     , validInt
@@ -11,11 +10,11 @@ module Project.Source.Module.Def.Type exposing
     )
 
 import Project.Label as Label
+import Project.SocrceIndex as SourceIndex
 
 
 type Type
-    = Valid ValidType
-    | Invalid Label.Label
+    = Valid SourceIndex.TypeIndex
     | Empty
 
 
@@ -28,13 +27,6 @@ type ValidType
 validInt : ValidType
 validInt =
     TypeInt
-
-
-{-| 32bit整数
--}
-int : Type
-int =
-    Valid validInt
 
 
 {-| 正しい型を文字列にする
@@ -66,26 +58,21 @@ isEmpty type_ =
 
 
 {-| Labelから型をつくる
+TODO この情報だけからじゃ作れない
 -}
 fromLabel : Label.Label -> Type
 fromLabel label =
-    if label == Label.make Label.hi [ Label.on, Label.ot ] then
-        Valid TypeInt
-
-    else
-        Invalid label
+    Empty
 
 
 {-| 型を文字列にする
+TODO この情報だけからじゃ作れない
 -}
 toString : Type -> Maybe String
 toString type_ =
     case type_ of
-        Valid validType ->
-            Just (Label.toCapitalString (validTypeToLabel validType))
-
-        Invalid label ->
-            Just (Label.toCapitalString label)
+        Valid _ ->
+            Just "TYPE"
 
         Empty ->
             Nothing

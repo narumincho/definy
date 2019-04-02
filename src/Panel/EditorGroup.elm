@@ -34,10 +34,11 @@ import Panel.Editor.Project
 import Panel.Editor.Source
 import Panel.EditorTypeRef
 import Project
+import Project.SocrceIndex
 import Project.Source
-import Project.Source.Module.Def.Expr as Expr
-import Project.Source.Module.Def.Name as Name
-import Project.Source.Module.Def.Type as Type
+import Project.Source.Module.PartDef.Expr as Expr
+import Project.Source.Module.PartDef.Name as Name
+import Project.Source.Module.PartDef.Type as Type
 import Utility.ListExtra
 import Utility.Map
 
@@ -188,14 +189,10 @@ type OpenEditorPosition
 type Emit
     = EmitVerticalGutterModeOn GutterVertical
     | EmitHorizontalGutterModeOn GutterHorizontal
-    | EmitChangeReadMe { text : String, ref : Project.Source.ModuleRef }
     | EmitSetTextAreaValue String
     | EmitFocusEditTextAea
     | EmitSetClickEventListenerInCapturePhase String
-    | EmitChangeName { name : Name.Name, index : Int, ref : Project.Source.ModuleRef }
-    | EmitAddPartDef { ref : Project.Source.ModuleRef }
-    | EmitChangeType { type_ : Type.Type, index : Int, ref : Project.Source.ModuleRef }
-    | EmitChangeExpr { expr : Expr.Expr, index : Int, ref : Project.Source.ModuleRef }
+    | EmitToSourceMsg Project.Source.Msg
 
 
 {-| 初期Model
@@ -207,7 +204,7 @@ initModel =
             RowOne
                 { left =
                     ColumnOne
-                        { top = ModuleEditor (Panel.Editor.Module.initModel Project.Source.SampleModule) }
+                        { top = ModuleEditor (Panel.Editor.Module.initModel Project.SocrceIndex.SampleModule) }
                 }
         , activeEditorIndex = ( EditorIndexLeft, EditorIndexTop )
         , mouseOverOpenEditorPosition = Nothing
@@ -456,26 +453,14 @@ updateEditor editorItemMsg project editorItem =
 moduleEditorEmitToEmit : Panel.Editor.Module.Emit -> Emit
 moduleEditorEmitToEmit emit =
     case emit of
-        Panel.Editor.Module.EmitChangeReadMe { text, ref } ->
-            EmitChangeReadMe { text = text, ref = ref }
+        Panel.Editor.Module.EmitMsgToSource msg ->
+            EmitToSourceMsg msg
 
         Panel.Editor.Module.EmitSetTextAreaValue text ->
             EmitSetTextAreaValue text
 
         Panel.Editor.Module.EmitFocusEditTextAea ->
             EmitFocusEditTextAea
-
-        Panel.Editor.Module.EmitChangeName { name, index, ref } ->
-            EmitChangeName { name = name, index = index, ref = ref }
-
-        Panel.Editor.Module.EmitAddPartDef { ref } ->
-            EmitAddPartDef { ref = ref }
-
-        Panel.Editor.Module.EmitChangeType { type_, index, ref } ->
-            EmitChangeType { type_ = type_, index = index, ref = ref }
-
-        Panel.Editor.Module.EmitChangeExpr { expr, index, ref } ->
-            EmitChangeExpr { expr = expr, index = index, ref = ref }
 
 
 {-| 右端と下の端にある表示するエディタを増やすのボタンをおしたら、エディタ全体がどう変わるかと新しくアクティブになるエディタを返す

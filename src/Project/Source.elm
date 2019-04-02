@@ -1,19 +1,33 @@
-module Project.Source exposing (ModuleRef(..), Source, allModuleRef, getModule, init, mapModule, setModule)
+module Project.Source exposing
+    ( Emit(..)
+    , Msg(..)
+    , Source
+    , allModuleRef
+    , getModule
+    , init
+    , mapModule
+    , setModule
+    , update
+    )
 
 import Project.Label as Label
-import Project.Source.Module.Def as Def
-import Project.Source.Module.Def.Expr as Expr
-import Project.Source.Module.Def.Name as Name
-import Project.Source.Module.Def.Type as Type
+import Project.SocrceIndex as SourceIndex
+import Project.Source.Module as Module
+import Project.Source.Module.PartDef as Def
+import Project.Source.Module.PartDef.Expr as Expr
+import Project.Source.Module.PartDef.Name as PartDefName
+import Project.Source.Module.PartDef.Type as PartDefType
+import Project.Source.Module.TypeDef as TypeDef
+import Project.Source.ModuleIndex as ModuleIndex
 import Project.Source.ModuleWithCache as ModuleWithCache
 import Utility.Map
 
 
 type Source
     = Source
-        { core : ModuleWithCache.Module
-        , coreInt32 : ModuleWithCache.Module
-        , sampleModule : ModuleWithCache.Module
+        { core : ModuleWithCache.ModuleWithResult
+        , coreInt32 : ModuleWithCache.ModuleWithResult
+        , sampleModule : ModuleWithCache.ModuleWithResult
         }
 
 
@@ -28,17 +42,6 @@ type Source
            }
        | RootModuleModule Module
 -}
-
-
-{-| モジュールの参照
--}
-type ModuleRef
-    = Core
-    | CoreInt32
-    | SampleModule
-
-
-
 --type Module
 --    = Module
 --        { module_ : ModuleWithCache.Module
@@ -49,102 +52,164 @@ type ModuleRef
 init : Source
 init =
     Source
-        { core =
-            ModuleWithCache.make
-                { name = Label.make Label.hc [ Label.oo, Label.or, Label.oe ]
-                , defList =
-                    [ Def.make
-                        { name = Name.fromLabel (Label.make Label.ha [ Label.ob, Label.os ])
-                        , type_ = Type.empty
-                        , expr = Expr.empty
-                        }
-                    ]
-                , readMe = "プログラムに最低限必要なものが含まれている標準ライブラリ。足し算引き算、論理演算などの演算や、リスト、辞書、集合などの基本データ構造を含む"
-                }
-        , coreInt32 =
-            ModuleWithCache.make
-                { name = Label.make Label.hi [ Label.on, Label.ot, Label.o3, Label.o2 ]
-                , defList =
-                    [ Def.make
-                        { name =
-                            Name.fromLabel
-                                (Label.make Label.ho
-                                    [ Label.on, Label.oe, Label.oP, Label.ol, Label.ou, Label.os, Label.oT, Label.ow, Label.oo ]
-                                )
-                        , type_ = Type.int
-                        , expr =
-                            Expr.make
-                                (Expr.Int32Literal 1)
-                                [ ( Expr.Add
-                                  , Expr.Int32Literal 2
-                                  )
-                                ]
-                        }
-                    , Def.make
-                        { name =
-                            Name.fromLabel
-                                (Label.make Label.ha
-                                    [ Label.od, Label.od ]
-                                )
-                        , type_ = Type.int
-                        , expr =
-                            Expr.empty
-                        }
-                    ]
-                , readMe = "WebAssemblyでサポートされている32bit符号付き整数を扱えるようになる"
-                }
-        , sampleModule =
-            ModuleWithCache.make
-                { name = sampleModuleName
-                , defList =
-                    [ Def.make
-                        { name =
-                            Name.fromLabel
-                                (Label.make Label.hp
-                                    [ Label.oo, Label.oi, Label.on, Label.ot ]
-                                )
-                        , type_ = Type.empty
-                        , expr =
-                            Expr.make
-                                (Expr.Int32Literal 1)
-                                [ ( Expr.Add
-                                  , Expr.Int32Literal 2
-                                  )
-                                , ( Expr.Add
-                                  , Expr.Parentheses
-                                        (Expr.make
-                                            (Expr.Int32Literal 3)
-                                            [ ( Expr.Add
-                                              , Expr.Int32Literal 4
-                                              )
-                                            , ( Expr.Add
-                                              , Expr.Parentheses
-                                                    (Expr.make
-                                                        (Expr.Int32Literal 5)
-                                                        [ ( Expr.Add
-                                                          , Expr.Parentheses
-                                                                (Expr.make
-                                                                    (Expr.Parentheses (Expr.make (Expr.Int32Literal 6) []))
-                                                                    [ ( Expr.Add
-                                                                      , Expr.Int32Literal 7
-                                                                      )
-                                                                    ]
-                                                                )
-                                                          )
-                                                        ]
-                                                    )
-                                              )
-                                            , ( Expr.Add, Expr.Int32Literal 8 )
-                                            ]
-                                        )
-                                  )
-                                , ( Expr.Add, Expr.Int32Literal 9 )
-                                ]
-                        }
-                    ]
-                , readMe = ""
-                }
+        { core = initCore
+        , coreInt32 = initCoreInt32
+        , sampleModule = initSampleModule
         }
+
+
+type Msg
+    = MsgModule
+        { moduleIndex : SourceIndex.ModuleIndex
+        , moduleMsg : ModuleWithCache.Msg
+        }
+
+
+type Emit
+    = EmitModule
+        { moduleIndex : SourceIndex.ModuleIndex
+        , moduleEmit : ModuleWithCache.Emit
+        }
+
+
+update : Msg -> Source -> ( Source, List Emit )
+update msg source =
+    case msg of
+        MsgModule { moduleIndex, moduleMsg } ->
+            let
+                ( newModule, emitList ) =
+                    source
+                        |> getModule moduleIndex
+                        |> ModuleWithCache.update moduleMsg
+            in
+            ( source
+                |> setModule moduleIndex newModule
+            , emitList
+                |> List.map
+                    (\e ->
+                        EmitModule
+                            { moduleIndex = moduleIndex
+                            , moduleEmit = e
+                            }
+                    )
+            )
+
+
+initCore : ModuleWithCache.ModuleWithResult
+initCore =
+    Module.makeUnit
+        { name = Label.make Label.hc [ Label.oo, Label.or, Label.oe ]
+        , readMe = "プログラムに最低限必要なものが含まれている標準ライブラリ。足し算引き算、論理演算などの演算や、リスト、辞書、集合などの基本データ構造を含む"
+        , typeDefList = []
+        , partDefList =
+            [ Def.make
+                { name = PartDefName.fromLabel (Label.make Label.ha [ Label.ob, Label.os ])
+                , type_ = PartDefType.empty
+                , expr = Expr.empty
+                }
+            ]
+        }
+        |> ModuleWithCache.fromModuleUnit
+
+
+initCoreInt32 : ModuleWithCache.ModuleWithResult
+initCoreInt32 =
+    Module.makeUnit
+        { name = Label.make Label.hi [ Label.on, Label.ot, Label.o3, Label.o2 ]
+        , readMe = "WebAssemblyでサポートされている32bit符号付き整数を扱えるようになる"
+        , typeDefList =
+            [ TypeDef.typeDefInt ]
+        , partDefList =
+            [ Def.make
+                { name =
+                    PartDefName.fromLabel
+                        (Label.make Label.ho
+                            [ Label.on, Label.oe, Label.oP, Label.ol, Label.ou, Label.os, Label.oT, Label.ow, Label.oo ]
+                        )
+                , type_ =
+                    PartDefType.Valid
+                        (SourceIndex.TypeIndex
+                            { moduleIndex = SourceIndex.CoreInt32
+                            , typeIndex = ModuleIndex.TypeDefIndex 0
+                            }
+                        )
+                , expr =
+                    Expr.make
+                        (Expr.Int32Literal 1)
+                        [ ( Expr.Add
+                          , Expr.Int32Literal 2
+                          )
+                        ]
+                }
+            , Def.make
+                { name =
+                    PartDefName.fromLabel
+                        (Label.make Label.ha
+                            [ Label.od, Label.od ]
+                        )
+                , type_ = PartDefType.empty
+                , expr =
+                    Expr.empty
+                }
+            ]
+        }
+        |> ModuleWithCache.fromModuleUnit
+
+
+initSampleModule : ModuleWithCache.ModuleWithResult
+initSampleModule =
+    Module.makeUnit
+        { name = sampleModuleName
+        , readMe = ""
+        , typeDefList = []
+        , partDefList =
+            [ Def.make
+                { name =
+                    PartDefName.fromLabel
+                        (Label.make Label.hp
+                            [ Label.oo, Label.oi, Label.on, Label.ot ]
+                        )
+                , type_ = PartDefType.empty
+                , expr =
+                    Expr.make
+                        (Expr.Int32Literal 1)
+                        [ ( Expr.Add
+                          , Expr.Int32Literal 2
+                          )
+                        , ( Expr.Add
+                          , Expr.Parentheses
+                                (Expr.make
+                                    (Expr.Int32Literal 3)
+                                    [ ( Expr.Add
+                                      , Expr.Int32Literal 4
+                                      )
+                                    , ( Expr.Add
+                                      , Expr.Parentheses
+                                            (Expr.make
+                                                (Expr.Int32Literal 5)
+                                                [ ( Expr.Add
+                                                  , Expr.Parentheses
+                                                        (Expr.make
+                                                            (Expr.Parentheses (Expr.make (Expr.Int32Literal 6) []))
+                                                            [ ( Expr.Add
+                                                              , Expr.Int32Literal 7
+                                                              )
+                                                            ]
+                                                        )
+                                                  )
+                                                ]
+                                            )
+                                      )
+                                    , ( Expr.Add, Expr.Int32Literal 8 )
+                                    ]
+                                )
+                          )
+                        , ( Expr.Add, Expr.Int32Literal 9 )
+                        ]
+                }
+            ]
+        }
+        |> ModuleWithCache.fromModuleUnit
 
 
 {-| SampleModule
@@ -158,49 +223,49 @@ sampleModuleName =
 
 {-| 参照からモジュールを取得する
 -}
-getModule : ModuleRef -> Source -> ModuleWithCache.Module
+getModule : SourceIndex.ModuleIndex -> Source -> ModuleWithCache.ModuleWithResult
 getModule moduleRef (Source source) =
     case moduleRef of
-        Core ->
+        SourceIndex.Core ->
             source.core
 
-        CoreInt32 ->
+        SourceIndex.CoreInt32 ->
             source.coreInt32
 
-        SampleModule ->
+        SourceIndex.SampleModule ->
             source.sampleModule
 
 
 {-| 参照からモジュールを設定する
 -}
-setModule : ModuleRef -> ModuleWithCache.Module -> Source -> Source
+setModule : SourceIndex.ModuleIndex -> ModuleWithCache.ModuleWithResult -> Source -> Source
 setModule moduleRef module_ (Source rec) =
     case moduleRef of
-        Core ->
+        SourceIndex.Core ->
             Source
                 { rec | core = module_ }
 
-        CoreInt32 ->
+        SourceIndex.CoreInt32 ->
             Source
                 { rec | coreInt32 = module_ }
 
-        SampleModule ->
+        SourceIndex.SampleModule ->
             Source
                 { rec | sampleModule = module_ }
 
 
 {-| 参照からモジュールを加工する
 -}
-mapModule : ModuleRef -> (ModuleWithCache.Module -> ModuleWithCache.Module) -> Source -> Source
+mapModule : SourceIndex.ModuleIndex -> (ModuleWithCache.ModuleWithResult -> ModuleWithCache.ModuleWithResult) -> Source -> Source
 mapModule moduleRef =
     Utility.Map.toMapper
         (getModule moduleRef)
         (setModule moduleRef)
 
 
-allModuleRef : Source -> List ModuleRef
+allModuleRef : Source -> List SourceIndex.ModuleIndex
 allModuleRef _ =
-    [ Core
-    , CoreInt32
-    , SampleModule
+    [ SourceIndex.Core
+    , SourceIndex.CoreInt32
+    , SourceIndex.SampleModule
     ]

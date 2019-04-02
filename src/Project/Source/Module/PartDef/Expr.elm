@@ -1,4 +1,4 @@
-module Project.Source.Module.Def.Expr exposing
+module Project.Source.Module.PartDef.Expr exposing
     ( Expr(..)
     , Operator(..)
     , Part(..)
@@ -7,6 +7,7 @@ module Project.Source.Module.Def.Expr exposing
     , empty
     , getHead
     , getOthers
+    , getTermFromIndex
     , indexedMap
     , insertABetweenOpAndTerm
     , insertAt
@@ -29,7 +30,7 @@ module Project.Source.Module.Def.Expr exposing
     , termToDescription
     , termToString
     , toString
-    , getTermFromIndex)
+    )
 
 import Project.Label as Label
 import Utility.ListExtra as ListExtra
@@ -77,6 +78,7 @@ mapOthers f (ExprTermOp head others) =
     ExprTermOp
         head
         (f others)
+
 
 {-| n番目の項を取得する 0始まりでOthersのindexとずれる
 -}
