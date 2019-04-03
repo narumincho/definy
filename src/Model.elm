@@ -248,6 +248,13 @@ update msg model =
                     , preventDefaultBeforeKeyEvent ()
                     )
 
+        KeyPrevented ->
+            let
+                ( listMsg, newModel ) =
+                    model |> shiftMsgListFromMsgQueue
+            in
+            updateFromList listMsg newModel
+
         MouseMove position ->
             ( mouseMove position model
             , Cmd.none
@@ -264,13 +271,6 @@ update msg model =
                     (EditorPanelMsg
                         (Panel.EditorGroup.FireClickEventInCapturePhase idString)
                     )
-
-        KeyPrevented ->
-            let
-                ( listMsg, newModel ) =
-                    model |> shiftMsgListFromMsgQueue
-            in
-            updateFromList listMsg newModel
 
         ReceiveCompiledData data ->
             receiveCompileResult data model
@@ -340,6 +340,326 @@ updateFromList msgList model =
 
         [] ->
             ( model, Cmd.none )
+
+
+
+{- =================================================
+                       キー入力
+   =================================================
+-}
+
+
+{-| キー入力をより具体的なMsgに変換する
+-}
+keyDown : Maybe Key.Key -> Model -> List Msg
+keyDown keyMaybe model =
+    case keyMaybe of
+        Just key ->
+            case editorReservedKey (isOpenCommandPalette model) key of
+                x :: xs ->
+                    x :: xs
+
+                [] ->
+                    case isFocusDefaultUi model of
+                        Just Panel.DefaultUi.MultiLineTextField ->
+                            if multiLineTextFieldReservedKey key then
+                                []
+
+                            else
+                                keyDownEachPanel key model
+
+                        Just Panel.DefaultUi.SingleLineTextField ->
+                            if singleLineTextFieldReservedKey key then
+                                []
+
+                            else
+                                keyDownEachPanel key model
+
+                        Nothing ->
+                            keyDownEachPanel key model
+
+        Nothing ->
+            []
+
+
+keyDownEachPanel : Key.Key -> Model -> List Msg
+keyDownEachPanel key model =
+    case getFocus model of
+        FocusTreePanel ->
+            treePanelKeyDown key
+                |> List.map TreePanelMsg
+
+        FocusEditorGroupPanel ->
+            editorGroupPanelKeyDown key
+                |> List.map EditorPanelMsg
+
+
+{-| Definyによって予約されたキー。どのパネルにフォーカスが当たっていてもこれを優先する
+-}
+editorReservedKey : Bool -> Key.Key -> List Msg
+editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
+    if isOpenPalette then
+        case ( ctrl, shift, alt ) of
+            ( False, False, False ) ->
+                case key of
+                    Key.Escape ->
+                        [ CloseCommandPalette ]
+
+                    Key.F1 ->
+                        [ OpenCommandPalette ]
+
+                    _ ->
+                        []
+
+            _ ->
+                []
+
+    else
+        case ( ctrl, shift, alt ) of
+            -- 開いているけどキー入力を無視するために必要
+            ( False, False, False ) ->
+                case key of
+                    Key.F1 ->
+                        [ OpenCommandPalette ]
+
+                    _ ->
+                        []
+
+            ( False, False, True ) ->
+                case key of
+                    Key.Digit0 ->
+                        [ FocusTo FocusTreePanel ]
+
+                    Key.Digit1 ->
+                        [ FocusTo FocusEditorGroupPanel ]
+
+                    Key.Minus ->
+                        [ TreePanelMsg Panel.Tree.SelectAndOpenKeyConfig ]
+
+                    _ ->
+                        []
+
+            _ ->
+                []
+
+
+{-|
+
+<textarea>で入力したときに予約されているであろうキーならTrue、そうでないならFalse。
+複数行入力を想定している
+予約さるであろう動作を邪魔させないためにある。
+Model.isFocusTextAreaがTrueになったときにまずこれを優先する
+
+-}
+multiLineTextFieldReservedKey : Key.Key -> Bool
+multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
+    case ( ctrl, shift, alt ) of
+        ( False, False, False ) ->
+            case key of
+                Key.ArrowLeft ->
+                    True
+
+                Key.ArrowRight ->
+                    True
+
+                Key.ArrowUp ->
+                    True
+
+                Key.ArrowDown ->
+                    True
+
+                Key.Enter ->
+                    True
+
+                Key.Backspace ->
+                    True
+
+                _ ->
+                    False
+
+        _ ->
+            False
+
+
+{-| <input type="text">で入力したときに予約されているであろうキーならTrue。そうでないなたFalse。
+1行の入力を想定している
+予約さるであろう動作を邪魔させないためにある。
+-}
+singleLineTextFieldReservedKey : Key.Key -> Bool
+singleLineTextFieldReservedKey { key, ctrl, alt, shift } =
+    case ( ctrl, shift, alt ) of
+        ( False, False, False ) ->
+            case key of
+                Key.ArrowLeft ->
+                    True
+
+                Key.ArrowRight ->
+                    True
+
+                Key.Backspace ->
+                    True
+
+                _ ->
+                    False
+
+        _ ->
+            False
+
+
+
+{- -------------------------------------------------
+             各パネルのキー入力。 キー -> メッセージ
+   -------------------------------------------------
+-}
+
+
+{-| ツリーパネルのキー入力
+-}
+treePanelKeyDown : Key.Key -> List Panel.Tree.Msg
+treePanelKeyDown { key, ctrl, shift, alt } =
+    case ( ctrl, shift, alt ) of
+        ( False, False, False ) ->
+            case key of
+                Key.ArrowUp ->
+                    [ Panel.Tree.SelectUp ]
+
+                Key.ArrowDown ->
+                    [ Panel.Tree.SelectDown ]
+
+                Key.ArrowLeft ->
+                    [ Panel.Tree.SelectParentOrTreeClose ]
+
+                Key.ArrowRight ->
+                    [ Panel.Tree.SelectFirstChildOrTreeOpen ]
+
+                Key.Enter ->
+                    [ Panel.Tree.ToFocusEditorPanel ]
+
+                _ ->
+                    []
+
+        _ ->
+            []
+
+
+{-| エディタグループパネルのキー入力
+-}
+editorGroupPanelKeyDown : Key.Key -> List Panel.EditorGroup.Msg
+editorGroupPanelKeyDown key =
+    moduleEditorKeyMsg key
+        |> List.map
+            (Panel.EditorGroup.ModuleEditorMsg
+                >> Panel.EditorGroup.EditorItemMsgToActive
+            )
+
+
+moduleEditorKeyMsg : Key.Key -> List Panel.Editor.Module.Msg
+moduleEditorKeyMsg { key, ctrl, shift, alt } =
+    case ( ctrl, shift, alt ) of
+        ( False, False, False ) ->
+            case key of
+                Key.ArrowLeft ->
+                    [ Panel.Editor.Module.SelectLeft ]
+
+                Key.ArrowRight ->
+                    [ Panel.Editor.Module.SelectRight ]
+
+                Key.ArrowUp ->
+                    [ Panel.Editor.Module.SuggestionPrevOrSelectUp ]
+
+                Key.ArrowDown ->
+                    [ Panel.Editor.Module.SuggestionNextOrSelectDown
+                    ]
+
+                Key.Space ->
+                    [ Panel.Editor.Module.SelectFirstChild ]
+
+                Key.Enter ->
+                    [ Panel.Editor.Module.ConfirmSingleLineTextFieldOrSelectParent
+                    ]
+
+                _ ->
+                    []
+
+        ( True, False, False ) ->
+            case key of
+                Key.ArrowLeft ->
+                    [ Panel.Editor.Module.SelectLastChild ]
+
+                Key.ArrowRight ->
+                    [ Panel.Editor.Module.SelectFirstChild ]
+
+                Key.Enter ->
+                    [ Panel.Editor.Module.ConfirmMultiLineTextField ]
+
+                _ ->
+                    []
+
+        _ ->
+            []
+
+
+
+{- =================================================
+                       マウス入力
+   =================================================
+-}
+
+
+{-| マウスを動かした
+-}
+mouseMove : { x : Int, y : Int } -> Model -> Model
+mouseMove { x, y } model =
+    case getGutterMode model of
+        Just SideBarGutter ->
+            model
+                |> setTreePanelWidth
+                    (treePanelResizeFromGutter (getWindowSize model).width x)
+
+        Just (GutterEditorGroupPanelVertical gutter) ->
+            model
+                |> mapEditorGroupPanelModel
+                    (Panel.EditorGroup.resizeFromVerticalGutter
+                        { mouseRelX = max 0 (x - getTreePanelWidth model)
+                        , editorWidth = (getWindowSize model).width - getTreePanelWidth model
+                        }
+                        gutter
+                    )
+
+        Just (GutterEditorGroupPanelHorizontal gutter) ->
+            model
+                |> mapEditorGroupPanelModel
+                    (Panel.EditorGroup.resizeFromHorizontalGutter
+                        { mouseRelY = max 0 y
+                        , editorHeight = (getWindowSize model).height
+                        }
+                        gutter
+                    )
+
+        Nothing ->
+            model
+
+
+treePanelResizeFromGutter : Int -> Int -> Int
+treePanelResizeFromGutter maxLimit x =
+    if x < 80 then
+        0
+
+    else if x < 120 then
+        120
+
+    else
+        min maxLimit x
+
+
+{-| マウスのボタンを離した
+-}
+mouseUp : Model -> Model
+mouseUp (Model rec) =
+    Model
+        { rec
+            | subMode = SubModeNone
+        }
 
 
 receiveCompileResult : { ref : Project.SocrceIndex.ModuleIndex, index : Project.Source.ModuleIndex.PartDefIndex, compileResult : Compiler.CompileResult } -> Model -> ( Model, Cmd Msg )
@@ -638,62 +958,6 @@ toGutterMode gutter (Model rec) =
         }
 
 
-{-| マウスを動かした
--}
-mouseMove : { x : Int, y : Int } -> Model -> Model
-mouseMove { x, y } model =
-    case getGutterMode model of
-        Just SideBarGutter ->
-            model
-                |> setTreePanelWidth
-                    (treePanelResizeFromGutter (getWindowSize model).width x)
-
-        Just (GutterEditorGroupPanelVertical gutter) ->
-            model
-                |> mapEditorGroupPanelModel
-                    (Panel.EditorGroup.resizeFromVerticalGutter
-                        { mouseRelX = max 0 (x - getTreePanelWidth model)
-                        , editorWidth = (getWindowSize model).width - getTreePanelWidth model
-                        }
-                        gutter
-                    )
-
-        Just (GutterEditorGroupPanelHorizontal gutter) ->
-            model
-                |> mapEditorGroupPanelModel
-                    (Panel.EditorGroup.resizeFromHorizontalGutter
-                        { mouseRelY = max 0 y
-                        , editorHeight = (getWindowSize model).height
-                        }
-                        gutter
-                    )
-
-        Nothing ->
-            model
-
-
-treePanelResizeFromGutter : Int -> Int -> Int
-treePanelResizeFromGutter maxLimit x =
-    if x < 80 then
-        0
-
-    else if x < 120 then
-        120
-
-    else
-        min maxLimit x
-
-
-{-| マウスのボタンを離した
--}
-mouseUp : Model -> Model
-mouseUp (Model rec) =
-    Model
-        { rec
-            | subMode = SubModeNone
-        }
-
-
 {-| ツリーパネルの更新
 -}
 treePanelUpdate : Panel.Tree.Msg -> Model -> ( Model, Maybe Msg )
@@ -889,271 +1153,6 @@ shiftMsgListFromMsgQueue (Model rec) =
     , Model
         { rec | msgQueue = [] }
     )
-
-
-
-{-
-
-   キー入力を管理する。今はまだ固定なので、キーコンフィグの設定を表す型はない
-
--}
-
-
-{-| キー入力をより具体的なMsgに変換する
--}
-keyDown : Maybe Key.Key -> Model -> List Msg
-keyDown keyMaybe model =
-    case keyMaybe of
-        Just key ->
-            case editorReservedKey (isOpenCommandPalette model) key of
-                x :: xs ->
-                    x :: xs
-
-                [] ->
-                    case isFocusDefaultUi model of
-                        Just Panel.DefaultUi.MultiLineTextField ->
-                            if multiLineTextFieldReservedKey key then
-                                []
-
-                            else
-                                keyDownEachPanel key model
-
-                        Just Panel.DefaultUi.SingleLineTextField ->
-                            if singleLineTextFieldReservedKey key then
-                                []
-
-                            else
-                                keyDownEachPanel key model
-
-                        Nothing ->
-                            keyDownEachPanel key model
-
-        Nothing ->
-            []
-
-
-keyDownEachPanel : Key.Key -> Model -> List Msg
-keyDownEachPanel key model =
-    case getFocus model of
-        FocusTreePanel ->
-            treePanelKeyDown key
-                |> List.map TreePanelMsg
-
-        FocusEditorGroupPanel ->
-            editorGroupPanelKeyDown key
-                |> List.map EditorPanelMsg
-
-
-{-| Definyによって予約されたキー。どのパネルにフォーカスが当たっていてもこれを優先する
--}
-editorReservedKey : Bool -> Key.Key -> List Msg
-editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
-    if isOpenPalette then
-        case ( ctrl, shift, alt ) of
-            ( False, False, False ) ->
-                case key of
-                    Key.Escape ->
-                        [ CloseCommandPalette ]
-
-                    Key.F1 ->
-                        [ OpenCommandPalette ]
-
-                    _ ->
-                        []
-
-            _ ->
-                []
-
-    else
-        case ( ctrl, shift, alt ) of
-            -- 開いているけどキー入力を無視するために必要
-            ( False, False, False ) ->
-                case key of
-                    Key.F1 ->
-                        [ OpenCommandPalette ]
-
-                    _ ->
-                        []
-
-            ( False, False, True ) ->
-                case key of
-                    Key.Digit0 ->
-                        [ FocusTo FocusTreePanel ]
-
-                    Key.Digit1 ->
-                        [ FocusTo FocusEditorGroupPanel ]
-
-                    Key.Minus ->
-                        [ TreePanelMsg Panel.Tree.SelectAndOpenKeyConfig ]
-
-                    _ ->
-                        []
-
-            _ ->
-                []
-
-
-
-{- ==============================================
-       キー入力をDefinyで処理しない例外のような処理
-   =================================================
--}
-
-
-{-|
-
-<textarea>で入力したときに予約されているであろうキーならTrue、そうでないならFalse。
-複数行入力を想定している
-予約さるであろう動作を邪魔させないためにある。
-Model.isFocusTextAreaがTrueになったときにまずこれを優先する
-
--}
-multiLineTextFieldReservedKey : Key.Key -> Bool
-multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
-    case ( ctrl, shift, alt ) of
-        ( False, False, False ) ->
-            case key of
-                Key.ArrowLeft ->
-                    True
-
-                Key.ArrowRight ->
-                    True
-
-                Key.ArrowUp ->
-                    True
-
-                Key.ArrowDown ->
-                    True
-
-                Key.Enter ->
-                    True
-
-                Key.Backspace ->
-                    True
-
-                _ ->
-                    False
-
-        _ ->
-            False
-
-
-{-| <input type="text">で入力したときに予約されているであろうキーならTrue。そうでないなたFalse。
-1行の入力を想定している
-予約さるであろう動作を邪魔させないためにある。
--}
-singleLineTextFieldReservedKey : Key.Key -> Bool
-singleLineTextFieldReservedKey { key, ctrl, alt, shift } =
-    case ( ctrl, shift, alt ) of
-        ( False, False, False ) ->
-            case key of
-                Key.ArrowLeft ->
-                    True
-
-                Key.ArrowRight ->
-                    True
-
-                Key.Backspace ->
-                    True
-
-                _ ->
-                    False
-
-        _ ->
-            False
-
-
-
-{- =================================================
-             各パネルのキー入力。 キー -> メッセージ
-   =================================================
--}
-
-
-{-| ツリーパネルのキー入力
--}
-treePanelKeyDown : Key.Key -> List Panel.Tree.Msg
-treePanelKeyDown { key, ctrl, shift, alt } =
-    case ( ctrl, shift, alt ) of
-        ( False, False, False ) ->
-            case key of
-                Key.ArrowUp ->
-                    [ Panel.Tree.SelectUp ]
-
-                Key.ArrowDown ->
-                    [ Panel.Tree.SelectDown ]
-
-                Key.ArrowLeft ->
-                    [ Panel.Tree.SelectParentOrTreeClose ]
-
-                Key.ArrowRight ->
-                    [ Panel.Tree.SelectFirstChildOrTreeOpen ]
-
-                Key.Enter ->
-                    [ Panel.Tree.ToFocusEditorPanel ]
-
-                _ ->
-                    []
-
-        _ ->
-            []
-
-
-{-| エディタグループパネルのキー入力
--}
-editorGroupPanelKeyDown : Key.Key -> List Panel.EditorGroup.Msg
-editorGroupPanelKeyDown key =
-    moduleEditorKeyMsg key
-        |> List.map
-            (Panel.EditorGroup.ModuleEditorMsg
-                >> Panel.EditorGroup.EditorItemMsgToActive
-            )
-
-
-moduleEditorKeyMsg : Key.Key -> List Panel.Editor.Module.Msg
-moduleEditorKeyMsg { key, ctrl, shift, alt } =
-    case ( ctrl, shift, alt ) of
-        ( False, False, False ) ->
-            case key of
-                Key.ArrowLeft ->
-                    [ Panel.Editor.Module.SelectLeft ]
-
-                Key.ArrowRight ->
-                    [ Panel.Editor.Module.SelectRight ]
-
-                Key.ArrowUp ->
-                    [ Panel.Editor.Module.SuggestionPrevOrSelectUp ]
-
-                Key.ArrowDown ->
-                    [ Panel.Editor.Module.SuggestionNextOrSelectDown
-                    ]
-
-                Key.Space ->
-                    [ Panel.Editor.Module.SelectFirstChild ]
-
-                Key.Enter ->
-                    [ Panel.Editor.Module.ConfirmSingleLineTextFieldOrSelectParent
-                    ]
-
-                _ ->
-                    []
-
-        ( True, False, False ) ->
-            case key of
-                Key.ArrowLeft ->
-                    [ Panel.Editor.Module.SelectLastChild ]
-
-                Key.ArrowRight ->
-                    [ Panel.Editor.Module.SelectFirstChild ]
-
-                Key.Enter ->
-                    [ Panel.Editor.Module.ConfirmMultiLineTextField ]
-
-                _ ->
-                    []
-
-        _ ->
-            []
 
 
 {-| プロジェクトの情報を変更する
