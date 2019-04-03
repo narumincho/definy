@@ -186,7 +186,7 @@ fromMaybe aMaybe =
             []
 
 
-{-| それぞれがリストのタプルのリストを、2つのリストが入ったタプルにする
+{-| それぞれがリストのタプルのリストを、リストが入ったタプルにする
 -}
 listTupleListToTupleList : List ( List a, List b ) -> ( List a, List b )
 listTupleListToTupleList list =

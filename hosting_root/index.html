@@ -20,9 +20,15 @@
             prevKeyEvent = e;
             app.ports.keyPressed.send(e);
         });
-        /* 直前のキー入力のデフォルト動作を取り消す */
+        /*
+            直前のキー入力のデフォルト動作を取り消す
+            なぜかElmのコンパイルをデバッグモードでやるとキー動作を防げない
+        */
         app.ports.preventDefaultBeforeKeyEvent.subscribe((_) => {
             console.log("直前のキー入力のデフォルト動作を取り消す", prevKeyEvent);
+            if (prevKeyEvent.currentTarget === null) {
+                console.log("キーイベントの送信先オブジェクトがない!キー動作を無効化できないと思われる")
+            }
             prevKeyEvent.preventDefault();
             app.ports.keyPrevented.send(null);
         });
@@ -48,7 +54,7 @@
         app.ports.setClickEventListenerInCapturePhase.subscribe(id => {
             requestAnimationFrame(() => {
                 const element = document.getElementById(id);
-                if(element===undefined) {
+                if (element === undefined) {
                     console.log(`id=${id}の要素がない`)
                     return;
                 }
@@ -77,6 +83,7 @@
             WebAssembly.instantiate(new Uint8Array(compileResult.wasm)).then(result => {
                 const exportFunc = result.instance.exports;
                 const resultValue = exportFunc[0]();
+                console.info(resultValue);
                 app.ports.runResult.send({
                     ref: compileResult.ref,
                     index: compileResult.index,

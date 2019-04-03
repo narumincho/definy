@@ -167,8 +167,9 @@ init =
         ( editorPanelModel, emitListFromEditorPanel ) =
             Panel.EditorGroup.initModel
 
-        ( project, projectEmitList ) =
+        ( project, ( msgList, cmd ) ) =
             Project.init
+                |> projectUpdateReturnToProjectAndMsgListAndCmd
 
         model =
             Model
@@ -181,13 +182,6 @@ init =
                 , windowSize = { width = 0, height = 0 }
                 , msgQueue = []
                 }
-
-        ( msgList, cmd ) =
-            projectEmitList
-                |> List.map (projectEmitToMsgAndCmd (getProject model))
-                |> List.map (Tuple.mapSecond List.singleton)
-                |> Utility.ListExtra.listTupleListToTupleList
-                |> Tuple.mapSecond Cmd.batch
     in
     updateFromList
         msgList
@@ -243,7 +237,7 @@ focusToEditorGroupPanel =
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case Debug.log "msg" msg of
+    case msg of
         KeyPressed key ->
             case keyDown key model of
                 [] ->
@@ -868,8 +862,13 @@ isOpenCommandPalette (Model { subMode }) =
 -}
 isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
 isFocusDefaultUi model =
-    getEditorGroupPanelModel model
-        |> Panel.EditorGroup.isFocusDefaultUi
+    case getFocus model of
+        FocusTreePanel ->
+            Nothing
+
+        FocusEditorGroupPanel ->
+            getEditorGroupPanelModel model
+                |> Panel.EditorGroup.isFocusDefaultUi
 
 
 
@@ -1162,17 +1161,11 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
 projectMsg : Project.Msg -> Model -> ( Model, Cmd Msg )
 projectMsg msg model =
     let
-        ( newProject, projectEmitList ) =
+        ( newProject, ( msgList, cmd ) ) =
             model
                 |> getProject
                 |> Project.update msg
-
-        ( msgList, cmd ) =
-            projectEmitList
-                |> List.map (projectEmitToMsgAndCmd (getProject model))
-                |> List.map (Tuple.mapSecond List.singleton)
-                |> Utility.ListExtra.listTupleListToTupleList
-                |> Tuple.mapSecond Cmd.batch
+                |> projectUpdateReturnToProjectAndMsgListAndCmd
 
         newModel =
             model
@@ -1182,6 +1175,16 @@ projectMsg msg model =
         msgList
         newModel
         |> Tuple.mapSecond (\c -> Cmd.batch [ cmd, c ])
+
+
+projectUpdateReturnToProjectAndMsgListAndCmd : ( Project.Project, List Project.Emit ) -> ( Project.Project, ( List Msg, Cmd Msg ) )
+projectUpdateReturnToProjectAndMsgListAndCmd ( project, emitList ) =
+    ( project
+    , emitList
+        |> List.map (projectEmitToMsgAndCmd project >> Tuple.mapSecond List.singleton)
+        |> Utility.ListExtra.listTupleListToTupleList
+        |> Tuple.mapSecond Cmd.batch
+    )
 
 
 projectEmitToMsgAndCmd : Project.Project -> Project.Emit -> ( List Msg, Cmd Msg )
