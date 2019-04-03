@@ -654,14 +654,14 @@ parseInPart leftParenthesis label rest textAreaValue =
         ASpace :: others ->
             Rest
                 { termOrOpList =
-                    [ Term (TermWithParenthesis leftParenthesis (Expr.termFromMaybeLabel label) 0) ]
+                    [ Term (TermWithParenthesis leftParenthesis Expr.None 0) ]
                 , rest = others
                 }
 
         (ASymbol symbol char) :: _ ->
             Rest
                 { termOrOpList =
-                    [ Term (TermWithParenthesis leftParenthesis (Expr.termFromMaybeLabel label) 0) ]
+                    [ Term (TermWithParenthesis leftParenthesis Expr.None 0) ]
                 , rest = rest
                 }
 
@@ -700,6 +700,6 @@ parseInPart leftParenthesis label rest textAreaValue =
         [] ->
             End
                 { termOrOpList =
-                    [ Term (TermWithParenthesis leftParenthesis (Expr.termFromMaybeLabel label) 0) ]
+                    [ Term (TermWithParenthesis leftParenthesis Expr.None 0) ]
                 , textAreaValue = textAreaValue
                 }

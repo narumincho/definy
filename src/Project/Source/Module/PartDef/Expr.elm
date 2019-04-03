@@ -1,7 +1,6 @@
 module Project.Source.Module.PartDef.Expr exposing
     ( Expr(..)
     , Operator(..)
-    , Part(..)
     , Term(..)
     , allOperator
     , empty
@@ -26,17 +25,25 @@ module Project.Source.Module.PartDef.Expr exposing
     , replaceAndInsertTermLastTerm
     , setOperatorAtOther
     , setTermAtOther
-    , termFromMaybeLabel
     , termToDescription
     , termToString
     , toString
     )
 
 import Project.Label as Label
+import Project.SocrceIndex as SocrceIndex
 import Utility.ListExtra as ListExtra
 
 
+
+{- ===================================
+               Expr
+   ===================================
+-}
+
+
 {-| 式。項と演算子が交互に並んだもの。評価して値を作ることができる
+eval : Expr -> Value
 -}
 type Expr
     = ExprTermOp Term (List ( Operator, Term ))
@@ -439,14 +446,9 @@ setTermAtOther index term (ExprTermOp head others) =
 
 type Term
     = Int32Literal Int
-    | Part Part
+    | Part SocrceIndex.PartIndex
     | Parentheses Expr
     | None
-
-
-type Part
-    = ValidPart Int
-    | InvalidPart Label.Label
 
 
 integerToListCharBool : Int -> List ( Char, Bool )
@@ -456,29 +458,14 @@ integerToListCharBool i =
         |> List.map (\char -> ( char, True ))
 
 
-{-| ラベルから名前による参照の項をつくるが、 NothingならNoneという項を返す
--}
-termFromMaybeLabel : Maybe Label.Label -> Term
-termFromMaybeLabel mLabel =
-    case mLabel of
-        Just label ->
-            Part (InvalidPart label)
-
-        Nothing ->
-            None
-
-
 termToString : Term -> String
 termToString term =
     case term of
         Int32Literal i ->
             String.fromInt i
 
-        Part (ValidPart ref) ->
-            "!(" ++ String.fromInt ref ++ ")"
-
-        Part (InvalidPart label) ->
-            Label.toSmallString label
+        Part ref ->
+            "(ref)"
 
         None ->
             "✗"
@@ -493,11 +480,8 @@ termToDescription term =
         Int32Literal i ->
             ( String.fromInt i, "Int32リテラル" )
 
-        Part (ValidPart ref) ->
-            ( "正しい参照=" ++ String.fromInt ref, "パーツによる参照" )
-
-        Part (InvalidPart label) ->
-            ( "不正な参照=" ++ Label.toSmallString label, "パーツによる参照" )
+        Part (SocrceIndex.PartIndex { moduleIndex, partIndex }) ->
+            ( "パーツ", "パーツによる参照" )
 
         None ->
             ( "不正な項", "" )
