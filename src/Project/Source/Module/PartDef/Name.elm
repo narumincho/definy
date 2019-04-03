@@ -3,8 +3,8 @@ module Project.Source.Module.PartDef.Name exposing
     , SafeName
     , fromLabel
     , noName
+    , safeNameFromLabel
     , safeNameToString
-    , safeNamefromLabel
     , toString
     )
 
@@ -36,13 +36,13 @@ noName =
 -}
 fromLabel : Label.Label -> Name
 fromLabel =
-    safeNamefromLabel >> SafeName
+    safeNameFromLabel >> SafeName
 
 
 {-| LabelからSafeNameをつくる
 -}
-safeNamefromLabel : Label.Label -> SafeName
-safeNamefromLabel =
+safeNameFromLabel : Label.Label -> SafeName
+safeNameFromLabel =
     SafeName_
 
 

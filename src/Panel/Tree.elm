@@ -183,64 +183,64 @@ type Emit
 {-| ツリーパネルを更新する
 メッセージとモデルと親から情報を受け取り、新しいモデルと親へのエミット
 -}
-update : Msg -> Panel.EditorTypeRef.EditorTypeRef -> Project.Project -> Model -> ( Model, Maybe Emit )
+update : Msg -> Panel.EditorTypeRef.EditorTypeRef -> Project.Project -> Model -> ( Model, List Emit )
 update msg editorRef project model =
     case msg of
         TreeOpen ref ->
             ( model |> mapOpenCloseData (openTree ref)
-            , Nothing
+            , []
             )
 
         TreeClose ref ->
             ( model |> mapOpenCloseData (closeTree ref)
-            , Nothing
+            , []
             )
 
         SelectUp ->
             ( model
-            , Just (EmitOpenEditor (selectUp project (getOpenCloseData model) editorRef))
+            , [ EmitOpenEditor (selectUp project (getOpenCloseData model) editorRef) ]
             )
 
         SelectDown ->
             ( model
-            , Just (EmitOpenEditor (selectDown project (getOpenCloseData model) editorRef))
+            , [ EmitOpenEditor (selectDown project (getOpenCloseData model) editorRef) ]
             )
 
         SelectParentOrTreeClose ->
             if isTreeOpen editorRef (getOpenCloseData model) then
                 ( model |> mapOpenCloseData (closeTree editorRef)
-                , Nothing
+                , []
                 )
 
             else
                 ( model
-                , Just (EmitOpenEditor (selectToParent project (getOpenCloseData model) editorRef))
+                , [ EmitOpenEditor (selectToParent project (getOpenCloseData model) editorRef) ]
                 )
 
         SelectFirstChildOrTreeOpen ->
             if isTreeOpen editorRef (getOpenCloseData model) then
                 ( model
-                , Just (EmitOpenEditor (selectDown project (getOpenCloseData model) editorRef))
+                , [ EmitOpenEditor (selectDown project (getOpenCloseData model) editorRef) ]
                 )
 
             else
                 ( model |> mapOpenCloseData (openTree editorRef)
-                , Nothing
+                , []
                 )
 
         ToFocusEditorPanel ->
             ( model
-            , Just EmitFocusToEditorGroup
+            , [ EmitFocusToEditorGroup ]
             )
 
         OpenEditor projectRef ->
             ( model
-            , Just (EmitOpenEditor projectRef)
+            , [ EmitOpenEditor projectRef ]
             )
 
         SelectAndOpenKeyConfig ->
             ( model
-            , Just (EmitOpenEditor Panel.EditorTypeRef.EditorKeyConfig)
+            , [ EmitOpenEditor Panel.EditorTypeRef.EditorKeyConfig ]
             )
 
 

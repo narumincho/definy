@@ -231,7 +231,7 @@ getActiveEditor model =
             Panel.EditorTypeRef.EditorProject Project.Source
 
         ModuleEditor editorModel ->
-            Panel.EditorTypeRef.EditorProject (Project.Module (Panel.Editor.Module.getModuleRef editorModel))
+            Panel.EditorTypeRef.EditorProject (Project.Module (Panel.Editor.Module.getTargetModuleIndex editorModel))
 
         EditorKeyConfig _ ->
             Panel.EditorTypeRef.EditorKeyConfig

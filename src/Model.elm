@@ -93,12 +93,6 @@ type Msg
     | MouseMove { x : Int, y : Int } -- マウスの移動
     | MouseUp -- マウスのボタンを離した
     | FireClickEventInCapturePhase String -- 外側から発生するクリックイベントを受け取った
-    | ReceiveCompiledData
-        { ref : Project.SourceIndex.ModuleIndex
-        , index : Project.Source.ModuleIndex.PartDefIndex
-        , compileResult : Compiler.CompileResult
-        }
-      -- コンパイルの結果を受け取った
     | ReceiveRunResult
         { ref : List Int
         , index : Int
@@ -253,7 +247,7 @@ update msg model =
                 ( listMsg, newModel ) =
                     model |> shiftMsgListFromMsgQueue
             in
-            updateFromList listMsg newModel
+            newModel |> updateFromList listMsg
 
         MouseMove position ->
             ( mouseMove position model
@@ -272,9 +266,6 @@ update msg model =
                         (Panel.EditorGroup.FireClickEventInCapturePhase idString)
                     )
 
-        ReceiveCompiledData data ->
-            receiveCompileResult data model
-
         ReceiveRunResult data ->
             receiveResultValue data model
 
@@ -284,10 +275,13 @@ update msg model =
             )
 
         FocusTo focus ->
-            case setFocus focus model of
-                ( newModel, newMsgList, newCmdList ) ->
-                    updateFromList newMsgList newModel
-                        |> Tuple.mapSecond (\next -> Cmd.batch (newCmdList ++ [ next ]))
+            let
+                ( newModel, newMsgList, newCmdList ) =
+                    setFocus focus model
+            in
+            newModel
+                |> updateFromList newMsgList
+                |> Tuple.mapSecond (\next -> Cmd.batch (newCmdList ++ [ next ]))
 
         WindowResize { width, height } ->
             ( setWindowSize { width = width, height = height } model
@@ -295,18 +289,21 @@ update msg model =
             )
 
         TreePanelMsg treePanelMsg ->
-            case treePanelUpdate treePanelMsg model of
-                ( newModel, Just newMsg ) ->
-                    update newMsg newModel
-
-                ( newModel, Nothing ) ->
-                    ( newModel, Cmd.none )
+            let
+                ( newModel, msgList ) =
+                    treePanelUpdate treePanelMsg model
+            in
+            newModel |> updateFromList msgList
 
         EditorPanelMsg editorPanelMsg ->
-            case editorPanelUpdate editorPanelMsg model of
-                ( newModel, newMsgList, newCmdList ) ->
-                    updateFromList newMsgList newModel
-                        |> Tuple.mapSecond (\next -> Cmd.batch (newCmdList ++ [ next ]))
+            let
+                ( newModel, newMsgList, newCmdList ) =
+                    model
+                        |> editorPanelUpdate editorPanelMsg
+            in
+            newModel
+                |> updateFromList newMsgList
+                |> Tuple.mapSecond (\next -> Cmd.batch (newCmdList ++ [ next ]))
 
         ChangeEditorResource editorRef ->
             ( openEditor editorRef model
@@ -357,10 +354,10 @@ keyDown keyMaybe model =
         Just key ->
             case editorReservedKey (isOpenCommandPalette model) key of
                 x :: xs ->
-                    x :: xs
+                    Debug.log "ReservedKey" (x :: xs)
 
                 [] ->
-                    case isFocusDefaultUi model of
+                    case Debug.log "default UI" (isFocusDefaultUi model) of
                         Just Panel.DefaultUi.MultiLineTextField ->
                             if multiLineTextFieldReservedKey key then
                                 []
@@ -453,6 +450,10 @@ Model.isFocusTextAreaがTrueになったときにまずこれを優先する
 -}
 multiLineTextFieldReservedKey : Key.Key -> Bool
 multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
+    let
+        _ =
+            Debug.log "muti line check" ()
+    in
     case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
@@ -472,6 +473,60 @@ multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
                     True
 
                 Key.Backspace ->
+                    True
+
+                _ ->
+                    False
+
+        ( True, False, False ) ->
+            case key of
+                Key.ArrowLeft ->
+                    True
+
+                Key.ArrowRight ->
+                    True
+
+                Key.ArrowUp ->
+                    True
+
+                Key.ArrowDown ->
+                    True
+
+                Key.Backspace ->
+                    True
+
+                _ ->
+                    False
+
+        ( False, True, False ) ->
+            case key of
+                Key.ArrowLeft ->
+                    True
+
+                Key.ArrowRight ->
+                    True
+
+                Key.ArrowUp ->
+                    True
+
+                Key.ArrowDown ->
+                    True
+
+                _ ->
+                    False
+
+        ( True, True, False ) ->
+            case key of
+                Key.ArrowLeft ->
+                    True
+
+                Key.ArrowRight ->
+                    True
+
+                Key.ArrowUp ->
+                    True
+
+                Key.ArrowDown ->
                     True
 
                 _ ->
@@ -660,23 +715,6 @@ mouseUp (Model rec) =
         { rec
             | subMode = SubModeNone
         }
-
-
-receiveCompileResult : { ref : Project.SourceIndex.ModuleIndex, index : Project.Source.ModuleIndex.PartDefIndex, compileResult : Compiler.CompileResult } -> Model -> ( Model, Cmd Msg )
-receiveCompileResult { ref, index, compileResult } =
-    update
-        (ProjectMsg
-            (Project.SourceMsg
-                (Project.Source.MsgModule
-                    { moduleIndex = ref
-                    , moduleMsg =
-                        Project.Source.ModuleWithCache.MsgReceiveCompileResult
-                            index
-                            compileResult
-                    }
-                )
-            )
-        )
 
 
 receiveResultValue : { ref : List Int, index : Int, result : Int } -> Model -> ( Model, Cmd Msg )
@@ -960,13 +998,19 @@ toGutterMode gutter (Model rec) =
 
 {-| ツリーパネルの更新
 -}
-treePanelUpdate : Panel.Tree.Msg -> Model -> ( Model, Maybe Msg )
+treePanelUpdate : Panel.Tree.Msg -> Model -> ( Model, List Msg )
 treePanelUpdate msg model =
-    case Panel.Tree.update msg (getActiveEditor model) (getProject model) (getTreePanelModel model) of
-        ( treeModel, emitMsg ) ->
-            ( model |> setTreePanelModel treeModel
-            , emitMsg |> Maybe.map treePanelEmitToMsg
-            )
+    let
+        ( treeModel, emitMsg ) =
+            getTreePanelModel model
+                |> Panel.Tree.update
+                    msg
+                    (getActiveEditor model)
+                    (getProject model)
+    in
+    ( model |> setTreePanelModel treeModel
+    , emitMsg |> List.map treePanelEmitToMsg
+    )
 
 
 {-| ツリーパネルで発生したEmitを全体のMsgに変換する
@@ -1131,7 +1175,8 @@ isFocusDefaultUi model =
             Nothing
 
         FocusEditorGroupPanel ->
-            getEditorGroupPanelModel model
+            model
+                |> getEditorGroupPanelModel
                 |> Panel.EditorGroup.isFocusDefaultUi
 
 
@@ -1238,11 +1283,17 @@ compileCmd source moduleRef partDefIndex =
                     )
                 |> Task.perform
                     (\compileResult ->
-                        ReceiveCompiledData
-                            { ref = moduleRef
-                            , index = partDefIndex
-                            , compileResult = compileResult
-                            }
+                        ProjectMsg
+                            (Project.SourceMsg
+                                (Project.Source.MsgModule
+                                    { moduleIndex = moduleRef
+                                    , moduleMsg =
+                                        Project.Source.ModuleWithCache.MsgReceiveCompileResult
+                                            partDefIndex
+                                            compileResult
+                                    }
+                                )
+                            )
                     )
 
         Nothing ->
