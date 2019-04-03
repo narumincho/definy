@@ -31,7 +31,7 @@ module Project.Source.Module.PartDef.Expr exposing
     )
 
 import Project.Label as Label
-import Project.SocrceIndex as SocrceIndex
+import Project.SourceIndex as SocrceIndex
 import Utility.ListExtra as ListExtra
 
 

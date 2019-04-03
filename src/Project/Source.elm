@@ -11,7 +11,6 @@ module Project.Source exposing
     )
 
 import Project.Label as Label
-import Project.SocrceIndex as SourceIndex
 import Project.Source.Module as Module
 import Project.Source.Module.PartDef as Def
 import Project.Source.Module.PartDef.Expr as Expr
@@ -20,6 +19,7 @@ import Project.Source.Module.PartDef.Type as PartDefType
 import Project.Source.Module.TypeDef as TypeDef
 import Project.Source.ModuleIndex as ModuleIndex
 import Project.Source.ModuleWithCache as ModuleWithCache
+import Project.SourceIndex as SourceIndex
 import Utility.Map
 
 

@@ -39,10 +39,10 @@ import Panel.EditorGroup
 import Panel.EditorTypeRef
 import Panel.Tree
 import Project
-import Project.SocrceIndex
 import Project.Source
 import Project.Source.ModuleIndex
 import Project.Source.ModuleWithCache
+import Project.SourceIndex
 import Task
 import Utility.ListExtra
 import Utility.Map
@@ -94,7 +94,7 @@ type Msg
     | MouseUp -- マウスのボタンを離した
     | FireClickEventInCapturePhase String -- 外側から発生するクリックイベントを受け取った
     | ReceiveCompiledData
-        { ref : Project.SocrceIndex.ModuleIndex
+        { ref : Project.SourceIndex.ModuleIndex
         , index : Project.Source.ModuleIndex.PartDefIndex
         , compileResult : Compiler.CompileResult
         }
@@ -662,7 +662,7 @@ mouseUp (Model rec) =
         }
 
 
-receiveCompileResult : { ref : Project.SocrceIndex.ModuleIndex, index : Project.Source.ModuleIndex.PartDefIndex, compileResult : Compiler.CompileResult } -> Model -> ( Model, Cmd Msg )
+receiveCompileResult : { ref : Project.SourceIndex.ModuleIndex, index : Project.Source.ModuleIndex.PartDefIndex, compileResult : Compiler.CompileResult } -> Model -> ( Model, Cmd Msg )
 receiveCompileResult { ref, index, compileResult } =
     update
         (ProjectMsg
@@ -681,7 +681,7 @@ receiveCompileResult { ref, index, compileResult } =
 
 receiveResultValue : { ref : List Int, index : Int, result : Int } -> Model -> ( Model, Cmd Msg )
 receiveResultValue { ref, index, result } model =
-    case ref |> Project.SocrceIndex.moduleIndexFromListInt of
+    case ref |> Project.SourceIndex.moduleIndexFromListInt of
         Just moduleIndex ->
             update
                 (ProjectMsg
@@ -1221,7 +1221,7 @@ sourceEmitToMsgAndCmd source emit =
                     )
 
 
-compileCmd : Project.Source.Source -> Project.SocrceIndex.ModuleIndex -> Project.Source.ModuleIndex.PartDefIndex -> Cmd Msg
+compileCmd : Project.Source.Source -> Project.SourceIndex.ModuleIndex -> Project.Source.ModuleIndex.PartDefIndex -> Cmd Msg
 compileCmd source moduleRef partDefIndex =
     let
         targetPartDefMaybe =
@@ -1249,10 +1249,10 @@ compileCmd source moduleRef partDefIndex =
             Cmd.none
 
 
-runCmd : Project.SocrceIndex.ModuleIndex -> Project.Source.ModuleIndex.PartDefIndex -> List Int -> Cmd Msg
+runCmd : Project.SourceIndex.ModuleIndex -> Project.Source.ModuleIndex.PartDefIndex -> List Int -> Cmd Msg
 runCmd moduleRef partDefIndex wasm =
     run
-        { ref = moduleRef |> Project.SocrceIndex.moduleIndexToListInt
+        { ref = moduleRef |> Project.SourceIndex.moduleIndexToListInt
         , index = partDefIndex |> Project.Source.ModuleIndex.partDefIndexToInt
         , wasm = wasm
         }

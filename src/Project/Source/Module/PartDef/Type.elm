@@ -10,7 +10,7 @@ module Project.Source.Module.PartDef.Type exposing
     )
 
 import Project.Label as Label
-import Project.SocrceIndex as SourceIndex
+import Project.SourceIndex as SourceIndex
 
 
 type Type

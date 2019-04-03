@@ -1,4 +1,4 @@
-module Project.SocrceIndex exposing
+module Project.SourceIndex exposing
     ( ModuleIndex(..)
     , PartIndex(..)
     , TypeIndex(..)

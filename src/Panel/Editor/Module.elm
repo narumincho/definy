@@ -22,7 +22,6 @@ import Parser
 import Parser.SimpleChar
 import Project
 import Project.Label as L
-import Project.SocrceIndex as SourceIndex
 import Project.Source as Source
 import Project.Source.Module as Module
 import Project.Source.Module.PartDef as PartDef
@@ -32,6 +31,7 @@ import Project.Source.Module.PartDef.Type as Type
 import Project.Source.Module.TypeDef as TypeDef
 import Project.Source.ModuleIndex as ModuleIndex
 import Project.Source.ModuleWithCache as ModuleWithCache
+import Project.SourceIndex as SourceIndex
 import Utility.ListExtra
 
 

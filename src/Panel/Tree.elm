@@ -19,8 +19,7 @@ import Palette.X11
 import Panel.EditorTypeRef
 import Project
 import Project.Label as Label
-import Project.SocrceIndex
-import Project.Source
+import Project.SourceIndex
 import Utility.ListExtra
 import Utility.Map
 
@@ -89,7 +88,7 @@ isTreeOpen projectRef (OpenCloseData { isProjectRootOpen, isSourceOpen, isCoreOp
         Panel.EditorTypeRef.EditorProject Project.Source ->
             isSourceOpen
 
-        Panel.EditorTypeRef.EditorProject (Project.Module Project.SocrceIndex.Core) ->
+        Panel.EditorTypeRef.EditorProject (Project.Module Project.SourceIndex.Core) ->
             isCoreOpen
 
         _ ->
@@ -113,7 +112,7 @@ openTree editorRef (OpenCloseData rec) =
                     | isSourceOpen = True
                 }
 
-        Panel.EditorTypeRef.EditorProject (Project.Module Project.SocrceIndex.Core) ->
+        Panel.EditorTypeRef.EditorProject (Project.Module Project.SourceIndex.Core) ->
             OpenCloseData
                 { rec
                     | isCoreOpen = True
@@ -140,7 +139,7 @@ closeTree editorRef (OpenCloseData rec) =
                     | isSourceOpen = False
                 }
 
-        Panel.EditorTypeRef.EditorProject (Project.Module Project.SocrceIndex.Core) ->
+        Panel.EditorTypeRef.EditorProject (Project.Module Project.SourceIndex.Core) ->
             OpenCloseData
                 { rec
                     | isCoreOpen = False
@@ -569,18 +568,18 @@ baseTree project =
                 , icon = sourceIcon
                 , children =
                     [ BaseTree
-                        { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.SocrceIndex.SampleModule)
+                        { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.SourceIndex.SampleModule)
                         , label = "SampleModule"
                         , icon = moduleIcon
                         , children = []
                         }
                     , BaseTree
-                        { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.SocrceIndex.Core)
+                        { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.SourceIndex.Core)
                         , label = "Core"
                         , icon = moduleIcon
                         , children =
                             [ BaseTree
-                                { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.SocrceIndex.CoreInt32)
+                                { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.SourceIndex.CoreInt32)
                                 , label = "Int32"
                                 , icon = moduleIcon
                                 , children = []

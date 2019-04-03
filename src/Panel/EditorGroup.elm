@@ -34,11 +34,11 @@ import Panel.Editor.Project
 import Panel.Editor.Source
 import Panel.EditorTypeRef
 import Project
-import Project.SocrceIndex
 import Project.Source
 import Project.Source.Module.PartDef.Expr as Expr
 import Project.Source.Module.PartDef.Name as Name
 import Project.Source.Module.PartDef.Type as Type
+import Project.SourceIndex
 import Utility.ListExtra
 import Utility.Map
 
@@ -204,7 +204,7 @@ initModel =
             RowOne
                 { left =
                     ColumnOne
-                        { top = ModuleEditor (Panel.Editor.Module.initModel Project.SocrceIndex.SampleModule) }
+                        { top = ModuleEditor (Panel.Editor.Module.initModel Project.SourceIndex.SampleModule) }
                 }
         , activeEditorIndex = ( EditorIndexLeft, EditorIndexTop )
         , mouseOverOpenEditorPosition = Nothing

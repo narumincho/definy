@@ -1,10 +1,10 @@
 module Compiler.DefToSafeExpr exposing (convert)
 
 import Compiler.SafeExpr exposing (SafeExpr(..), SafeOperator(..), SafeTerm(..))
-import Project.SocrceIndex as SourceIndex
 import Project.Source.Module.PartDef as Def
 import Project.Source.Module.PartDef.Expr as Expr
 import Project.Source.ModuleIndex as ModuleIndex
+import Project.SourceIndex as SourceIndex
 
 
 convert : Def.PartDef -> Maybe SafeExpr

@@ -19,8 +19,8 @@ module Project exposing
 import Project.Config as Config
 import Project.Document as Document
 import Project.Label as Label
-import Project.SocrceIndex as SourceIndex
 import Project.Source as Source
+import Project.SourceIndex as SourceIndex
 import Set.Any
 import Utility.Map
 
