@@ -368,20 +368,20 @@ img {
 =====================================================================
 ================================================================== */
 
-/* ================
-    Description
-=================*/
+/* ============================================
+                     Read Me
+==============================================*/
 
-.moduleEditor-description {
+.moduleEditor-readMe {
     padding: 16px 8px;
 }
 
-.moduleEditor-description-active {
+.moduleEditor-readMe-active {
     background-color: #f09936;
     color: #111;
 }
 
-.moduleEditor-description-title {
+.moduleEditor-readMe-title {
     font-size: 16px;
     padding: 0 24px;
     line-height: 1.2;
@@ -390,11 +390,11 @@ img {
     letter-spacing: 0.15px;
 }
 
-.moduleEditor-description-inputArea {
+.moduleEditor-readMe-inputArea {
     padding: 8px 0 0 0;
 }
 
-.moduleEditor-description-container {
+.moduleEditor-readMe-container {
     position: relative;
     padding: 16px;
     border-radius: 4px;
@@ -402,12 +402,12 @@ img {
     background-color: #383838;
 }
 
-.moduleEditor-description-container-active {
+.moduleEditor-readMe-container-active {
     border: solid #f09936 3px;
     padding: 13px;
 }
 
-.moduleEditor-description-measure {
+.moduleEditor-readMe-measure {
     font-size: 16px;
     font-family: sans-serif;
     overflow-wrap: break-word;
@@ -416,16 +416,7 @@ img {
     color: transparent;
 }
 
-.moduleEditor-description-measure-lastLine {
-    font-size: 16px;
-    font-family: sans-serif;
-    overflow-wrap: break-word;
-    pointer-events: none;
-    white-space: pre-wrap;
-    color: transparent;
-}
-
-.moduleEditor-description-textarea {
+.moduleEditor-readMe-textarea {
     overflow-wrap: break-word;
     background-color: transparent;
     position: absolute;
@@ -442,7 +433,7 @@ img {
     outline: none;
 }
 
-.moduleEditor-description-textarea-focus {
+.moduleEditor-readMe-textarea-focus {
     padding: 13px;
 }
 

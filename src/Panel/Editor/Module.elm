@@ -89,13 +89,13 @@ type Emit
 -}
 type Active
     = ActiveNone
-    | ActiveDescription DescriptionActive
+    | ActiveReadMe ReadMeActive
     | ActivePartDefList PartDefListActive
 
 
-type DescriptionActive
-    = ActiveDescriptionSelf
-    | ActiveDescriptionText
+type ReadMeActive
+    = ActiveReadMeSelf
+    | ActiveReadMeText
 
 
 type PartDefListActive
@@ -144,7 +144,7 @@ type BranchPos
 isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
 isFocusDefaultUi (Model { active, editState }) =
     case ( active, editState ) of
-        ( ActiveDescription ActiveDescriptionText, Just EditStateText ) ->
+        ( ActiveReadMe ActiveReadMeText, Just EditStateText ) ->
             Just Panel.DefaultUi.MultiLineTextField
 
         ( ActivePartDefList (ActivePartDef ( _, ActivePartDefName )), Just EditStateText ) ->
@@ -250,8 +250,8 @@ update msg project (Model rec) =
                 { rec
                     | active =
                         case rec.active of
-                            ActiveDescription ActiveDescriptionText ->
-                                ActiveDescription ActiveDescriptionSelf
+                            ActiveReadMe ActiveReadMeText ->
+                                ActiveReadMe ActiveReadMeSelf
 
                             _ ->
                                 rec.active
@@ -276,10 +276,10 @@ activeTo active (Model rec) =
         ActiveNone ->
             []
 
-        ActiveDescription ActiveDescriptionSelf ->
+        ActiveReadMe ActiveReadMeSelf ->
             []
 
-        ActiveDescription ActiveDescriptionText ->
+        ActiveReadMe ActiveReadMeText ->
             [ EmitFocusEditTextAea ]
 
         ActivePartDefList ActivePartDefListSelf ->
@@ -304,7 +304,7 @@ selectLeft module_ active =
 
         ActivePartDefList ActivePartDefListSelf ->
             -- 定義リストから概要欄へ
-            ActiveDescription ActiveDescriptionSelf
+            ActiveReadMe ActiveReadMeSelf
 
         ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf )) ->
             -- 先頭の定義から定義リストへ
@@ -438,11 +438,11 @@ selectRight module_ active =
     case active of
         ActiveNone ->
             -- 何も選択していないところから概要欄へ
-            ActiveDescription ActiveDescriptionSelf
+            ActiveReadMe ActiveReadMeSelf
 
-        ActiveDescription ActiveDescriptionSelf ->
+        ActiveReadMe ActiveReadMeSelf ->
             -- 概要欄から概要欄編集へ
-            ActiveDescription ActiveDescriptionText
+            ActiveReadMe ActiveReadMeText
 
         ActivePartDefList ActivePartDefListSelf ->
             -- 定義リストから
@@ -593,13 +593,13 @@ selectUp module_ active =
             -- 何も選択していないところから定義リストへ
             ActivePartDefList ActivePartDefListSelf
 
-        ActiveDescription _ ->
+        ActiveReadMe _ ->
             -- 概要欄から概要欄へ
-            ActiveDescription ActiveDescriptionSelf
+            ActiveReadMe ActiveReadMeSelf
 
         ActivePartDefList ActivePartDefListSelf ->
             -- 定義リストから概要欄へ
-            ActiveDescription ActiveDescriptionSelf
+            ActiveReadMe ActiveReadMeSelf
 
         ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf )) ->
             -- 先頭の定義から定義リストへ
@@ -641,9 +641,9 @@ selectDown module_ active =
     case active of
         ActiveNone ->
             -- 何も選択していないところから概要へ
-            ActiveDescription ActiveDescriptionSelf
+            ActiveReadMe ActiveReadMeSelf
 
-        ActiveDescription _ ->
+        ActiveReadMe _ ->
             -- 概要欄から定義リストへ
             ActivePartDefList ActivePartDefListSelf
 
@@ -686,11 +686,11 @@ selectFirstChild module_ active =
     case active of
         ActiveNone ->
             -- 何も選択していないところから概要へ
-            ActiveDescription ActiveDescriptionSelf
+            ActiveReadMe ActiveReadMeSelf
 
-        ActiveDescription ActiveDescriptionSelf ->
+        ActiveReadMe ActiveReadMeSelf ->
             -- 概要欄から概要欄のテキスト入力へ
-            ActiveDescription ActiveDescriptionText
+            ActiveReadMe ActiveReadMeText
 
         ActivePartDefList ActivePartDefListSelf ->
             -- 定義リストから先頭の定義へ
@@ -759,9 +759,9 @@ selectLastChild module_ active =
             -- 何も選択していないところから定義リストへ
             ActivePartDefList ActivePartDefListSelf
 
-        ActiveDescription ActiveDescriptionSelf ->
+        ActiveReadMe ActiveReadMeSelf ->
             -- 概要欄から概要欄のテキスト入力へ
-            ActiveDescription ActiveDescriptionText
+            ActiveReadMe ActiveReadMeText
 
         ActivePartDefList ActivePartDefListSelf ->
             -- 定義リストから最後の定義リストへ
@@ -833,8 +833,8 @@ termTypeLastChild termMaybe termType =
 selectParent : ModuleWithCache.ModuleWithResult -> Active -> Active
 selectParent module_ active =
     case active of
-        ActiveDescription ActiveDescriptionText ->
-            ActiveDescription ActiveDescriptionSelf
+        ActiveReadMe ActiveReadMeText ->
+            ActiveReadMe ActiveReadMeSelf
 
         ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
             ActivePartDefList ActivePartDefListSelf
@@ -1066,8 +1066,8 @@ suggestionSelectChangedThenNameChangeEmit suggestIndex defIndex moduleRef =
 confirmMultiLineTextField : Active -> Active
 confirmMultiLineTextField active =
     case active of
-        ActiveDescription ActiveDescriptionText ->
-            ActiveDescription ActiveDescriptionSelf
+        ActiveReadMe ActiveReadMeText ->
+            ActiveReadMe ActiveReadMeSelf
 
         _ ->
             active
@@ -1080,7 +1080,7 @@ confirmMultiLineTextField active =
 input : String -> ModuleWithCache.ModuleWithResult -> Model -> ( Model, List Emit )
 input string targetModule (Model rec) =
     case rec.active of
-        ActiveDescription ActiveDescriptionText ->
+        ActiveReadMe ActiveReadMeText ->
             ( Model rec
             , [ EmitMsgToSource
                     (Source.MsgModule
@@ -1517,11 +1517,11 @@ view project isFocus (Model { moduleRef, active, editState }) =
     { title = L.toCapitalString (ModuleWithCache.getName targetModule)
     , body =
         [ Html.div [] [ Html.text (activeToString active) ]
-        , descriptionView (ModuleWithCache.getReadMe targetModule)
+        , readMeView (ModuleWithCache.getReadMe targetModule)
             isFocus
             (case active of
-                ActiveDescription descriptionActive ->
-                    Just descriptionActive
+                ActiveReadMe readMeActive ->
+                    Just readMeActive
 
                 _ ->
                     Nothing
@@ -1547,10 +1547,10 @@ activeToString active =
         ActiveNone ->
             "アクティブなし"
 
-        ActiveDescription ActiveDescriptionSelf ->
+        ActiveReadMe ActiveReadMeSelf ->
             "概要欄"
 
-        ActiveDescription ActiveDescriptionText ->
+        ActiveReadMe ActiveReadMeText ->
             "概要欄のテキストを編集している"
 
         ActivePartDefList ActivePartDefListSelf ->
@@ -1637,15 +1637,15 @@ branchPosToString branchPos =
 
 
 
-{- ===== descriptionView ===== -}
+{- ===== readMe View ===== -}
 
 
-descriptionView : String -> Bool -> Maybe DescriptionActive -> Html.Html Msg
-descriptionView description isFocus descriptionActiveMaybe =
+readMeView : String -> Bool -> Maybe ReadMeActive -> Html.Html Msg
+readMeView readMe isFocus readMeActiveMaybe =
     let
         editHere =
-            case descriptionActiveMaybe of
-                Just ActiveDescriptionText ->
+            case readMeActiveMaybe of
+                Just ActiveReadMeText ->
                     isFocus
 
                 _ ->
@@ -1653,53 +1653,53 @@ descriptionView description isFocus descriptionActiveMaybe =
     in
     Html.div
         ([ subClassList
-            [ ( "description", True )
-            , ( "description-active", descriptionActiveMaybe == Just ActiveDescriptionSelf )
+            [ ( "readMe", True )
+            , ( "readMe-active", readMeActiveMaybe == Just ActiveReadMeSelf )
             ]
          ]
-            ++ (case descriptionActiveMaybe of
-                    Just ActiveDescriptionSelf ->
+            ++ (case readMeActiveMaybe of
+                    Just ActiveReadMeSelf ->
                         []
 
                     _ ->
-                        [ Html.Events.onClick (ActiveTo (ActiveDescription ActiveDescriptionSelf)) ]
+                        [ Html.Events.onClick (ActiveTo (ActiveReadMe ActiveReadMeSelf)) ]
                )
         )
-        [ descriptionViewTitle
-        , descriptionViewInputArea description isFocus descriptionActiveMaybe
+        [ readMeViewTitle
+        , readMeViewInputArea readMe isFocus readMeActiveMaybe
         ]
 
 
-descriptionViewTitle : Html.Html Msg
-descriptionViewTitle =
+readMeViewTitle : Html.Html Msg
+readMeViewTitle =
     Html.h2
-        [ subClass "description-title" ]
-        [ Html.text "Description" ]
+        [ subClass "readMe-title" ]
+        [ Html.text "ReadMe" ]
 
 
-descriptionViewInputArea : String -> Bool -> Maybe DescriptionActive -> Html.Html Msg
-descriptionViewInputArea description isFocus descriptionActiveMaybe =
-    Html.div [ subClass "description-inputArea" ]
+readMeViewInputArea : String -> Bool -> Maybe ReadMeActive -> Html.Html Msg
+readMeViewInputArea readMe isFocus readMeActiveMaybe =
+    Html.div [ subClass "readMe-inputArea" ]
         [ Html.div
             [ subClassList
-                [ ( "description-container", True )
-                , ( "description-container-active", descriptionActiveMaybe == Just ActiveDescriptionText )
+                [ ( "readMe-container", True )
+                , ( "readMe-container-active", readMeActiveMaybe == Just ActiveReadMeText )
                 ]
             ]
-            [ descriptionViewMeasure description
-            , descriptionViewTextArea description isFocus descriptionActiveMaybe
+            [ readMeViewMeasure readMe
+            , readMeViewTextArea readMe isFocus readMeActiveMaybe
             ]
         ]
 
 
-descriptionViewMeasure : String -> Html.Html Msg
-descriptionViewMeasure description =
+readMeViewMeasure : String -> Html.Html Msg
+readMeViewMeasure readMe =
     let
         lineList =
-            description |> String.lines
+            readMe |> String.lines
     in
     Html.div
-        [ subClass "description-measure" ]
+        [ subClass "readMe-measure" ]
         ((lineList
             |> List.map Html.text
             |> List.intersperse (Html.br [] [])
@@ -1713,27 +1713,27 @@ descriptionViewMeasure description =
         )
 
 
-descriptionViewTextArea : String -> Bool -> Maybe DescriptionActive -> Html.Html Msg
-descriptionViewTextArea description isFocus descriptionActiveMaybe =
+readMeViewTextArea : String -> Bool -> Maybe ReadMeActive -> Html.Html Msg
+readMeViewTextArea readMe isFocus readMeActiveMaybe =
     Html.textarea
-        ([ subClass "description-textarea"
+        ([ subClass "readMe-textarea"
          ]
-            ++ (case descriptionActiveMaybe of
-                    Just ActiveDescriptionSelf ->
-                        [ Html.Attributes.property "value" (Json.Encode.string description)
+            ++ (case readMeActiveMaybe of
+                    Just ActiveReadMeSelf ->
+                        [ Html.Attributes.property "value" (Json.Encode.string readMe)
                         ]
                             ++ (if isFocus then
                                     [ Html.Events.stopPropagationOn "click" focusEventJsonDecoder ]
 
                                 else
-                                    [ Html.Events.onClick (ActiveTo (ActiveDescription ActiveDescriptionText)) ]
+                                    [ Html.Events.onClick (ActiveTo (ActiveReadMe ActiveReadMeText)) ]
                                )
 
-                    Just ActiveDescriptionText ->
+                    Just ActiveReadMeText ->
                         [ Html.Events.onInput Input
-                        , Html.Attributes.property "value" (Json.Encode.string description)
+                        , Html.Attributes.property "value" (Json.Encode.string readMe)
                         , Html.Events.stopPropagationOn "click" focusEventJsonDecoder
-                        , subClass "description-textarea-focus"
+                        , subClass "readMe-textarea-focus"
                         ]
                             ++ (if isFocus then
                                     [ Html.Attributes.id "edit" ]
@@ -1745,12 +1745,12 @@ descriptionViewTextArea description isFocus descriptionActiveMaybe =
                     Nothing ->
                         if isFocus then
                             [ Html.Events.stopPropagationOn "click" focusEventJsonDecoder
-                            , Html.Attributes.property "value" (Json.Encode.string description)
+                            , Html.Attributes.property "value" (Json.Encode.string readMe)
                             ]
 
                         else
-                            [ Html.Events.onClick (ActiveTo (ActiveDescription ActiveDescriptionText))
-                            , Html.Attributes.property "value" (Json.Encode.string description)
+                            [ Html.Events.onClick (ActiveTo (ActiveReadMe ActiveReadMeText))
+                            , Html.Attributes.property "value" (Json.Encode.string readMe)
                             ]
                )
         )
@@ -1760,12 +1760,12 @@ descriptionViewTextArea description isFocus descriptionActiveMaybe =
 focusEventJsonDecoder : Json.Decode.Decoder ( Msg, Bool )
 focusEventJsonDecoder =
     Json.Decode.succeed
-        ( ActiveTo (ActiveDescription ActiveDescriptionText), True )
+        ( ActiveTo (ActiveReadMe ActiveReadMeText), True )
 
 
 
 {- ==================================================
-         part definitions パーツの定義
+            part definitions パーツの定義
    ==================================================
 -}
 
@@ -1880,6 +1880,10 @@ partDefView isFocus partDef compileAndRunResult partDefActiveMaybe editSateMaybe
 type DefViewMsg
     = DefActiveTo PartDefActive
     | DefInput String
+
+
+
+{- ================= Result ================= -}
 
 
 resultArea : ModuleWithCache.CompileAndRunResult -> Html.Html msg
