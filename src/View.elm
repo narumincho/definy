@@ -37,7 +37,10 @@ view model =
 treePanel : Model -> Html Msg
 treePanel model =
     Html.div
-        ([ Html.Attributes.class "treePanel"
+        ([ Html.Attributes.classList
+            [ ( "treePanel", True )
+            , ( "treePanel-focus", Model.isFocusTreePanel model )
+            ]
          , Html.Attributes.style "width"
             (String.fromInt (Model.getTreePanelWidth model) ++ "px")
          ]

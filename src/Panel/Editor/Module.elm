@@ -116,7 +116,7 @@ type TypeEdit
 {-| TermとOpが交互にあるの式の中で選択している位置。式の長さを超えるところを指定しているならば、それは式の末尾を表す
 -}
 type TermOpPos
-    = TermOpSelf ExprEdit
+    = TermOpSelf
     | TermOpHead
     | TermOpTerm Int TermType -- [abc]+ def + 28  Intの範囲は0..255
     | TermOpOp Int --  abc[+]def + 28  Intの範囲は0..254
@@ -129,7 +129,7 @@ type ExprEdit
 
 
 type TermType
-    = TypeNoChildren
+    = TypeNoChildren ExprEdit
     | TypeParentheses TermOpPos
     | TypeLambda LambdaPos
 
@@ -152,7 +152,7 @@ type BranchPos
 -}
 isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
 isFocusDefaultUi (Model { active }) =
-    case Debug.log "モジュールエディタでのフォーカス" active of
+    case active of
         ActiveReadMe ActiveReadMeText ->
             Just Panel.DefaultUi.MultiLineTextField
 
@@ -223,13 +223,13 @@ update msg project model =
             model |> setActive project (selectDown targetModule active)
 
         SelectFirstChild ->
-            model |> update (ActiveTo (selectFirstChild targetModule active)) project
+            model |> setActive project (selectFirstChild targetModule active)
 
         SelectLastChild ->
-            model |> update (ActiveTo (selectLastChild targetModule active)) project
+            model |> setActive project (selectLastChild targetModule active)
 
         SelectParent ->
-            model |> update (ActiveTo (selectParent targetModule active)) project
+            model |> setActive project (selectParent targetModule active)
 
         SuggestionPrevOrSelectUp ->
             model |> suggestionPrevOrSelectUp targetModule project
@@ -385,11 +385,11 @@ selectLeft module_ active =
 termOpPosLeft : TermOpPos -> Maybe TermOpPos
 termOpPosLeft termOpPos =
     case termOpPos of
-        TermOpSelf _ ->
+        TermOpSelf ->
             Nothing
 
         TermOpHead ->
-            Just (TermOpSelf ExprEditSelect)
+            Just TermOpSelf
 
         TermOpTerm 0 termType ->
             case termTypeLeft termType of
@@ -408,13 +408,13 @@ termOpPosLeft termOpPos =
                     Just (TermOpOp (termIndex - 1))
 
         TermOpOp opIndex ->
-            Just (TermOpTerm opIndex TypeNoChildren)
+            Just (TermOpTerm opIndex (TypeNoChildren ExprEditSelect))
 
 
 termTypeLeft : TermType -> Maybe TermType
 termTypeLeft termType =
     case termType of
-        TypeNoChildren ->
+        TypeNoChildren _ ->
             Nothing
 
         TypeParentheses termOpPos ->
@@ -500,9 +500,9 @@ selectRight module_ active =
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefType _ )) ->
             -- 型から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf ExprEditSelect) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf _) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr termOpPos )) ->
@@ -535,15 +535,15 @@ termOpPosRight exprMaybe termOpPos =
                         |> List.length
             in
             case termOpPos of
-                TermOpSelf _ ->
+                TermOpSelf ->
                     Nothing
 
                 TermOpHead ->
-                    Just (TermOpTerm 0 TypeNoChildren)
+                    Just (TermOpTerm 0 (TypeNoChildren ExprEditSelect))
 
                 TermOpTerm termIndex termType ->
                     if termCount < termIndex then
-                        Just (TermOpSelf ExprEditSelect)
+                        Just TermOpSelf
 
                     else
                         case termTypeRight (Expr.getTermFromIndex termIndex expr) termType of
@@ -552,17 +552,17 @@ termOpPosRight exprMaybe termOpPos =
 
                             Nothing ->
                                 if termCount == termIndex then
-                                    Just (TermOpSelf ExprEditSelect)
+                                    Just TermOpSelf
 
                                 else
                                     Just (TermOpOp termIndex)
 
                 TermOpOp opIndex ->
                     if termCount < opIndex then
-                        Just (TermOpSelf ExprEditSelect)
+                        Just TermOpSelf
 
                     else
-                        Just (TermOpTerm (opIndex + 1) TypeNoChildren)
+                        Just (TermOpTerm (opIndex + 1) (TypeNoChildren ExprEditSelect))
 
         Nothing ->
             Nothing
@@ -571,7 +571,7 @@ termOpPosRight exprMaybe termOpPos =
 termTypeRight : Maybe Expr.Term -> TermType -> Maybe TermType
 termTypeRight termMaybe termType =
     case ( termMaybe, termType ) of
-        ( _, TypeNoChildren ) ->
+        ( _, TypeNoChildren _ ) ->
             Nothing
 
         ( Just (Expr.Parentheses expr), TypeParentheses termOpPos ) ->
@@ -659,21 +659,21 @@ selectUp module_ active =
             -- 型から定義へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf _) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             -- 式から名前へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefType TypeEditSelect ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead )) ->
             -- 先頭の項の前から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf ExprEditSelect) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm _ _) )) ->
             -- 項から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf ExprEditSelect) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp _) )) ->
             -- 演算子から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf ExprEditSelect) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
 
 {-| 選択を下へ移動して、選択する対象を変える
@@ -695,27 +695,27 @@ selectDown module_ active =
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
             -- 名前から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf ExprEditSelect) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefType _ )) ->
             -- 型から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf ExprEditSelect) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf _) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
             -- 式から定義へ
             ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead )) ->
             -- 先頭の項の前から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf ExprEditSelect) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm _ TypeNoChildren) )) ->
+        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm _ (TypeNoChildren _)) )) ->
             -- 項から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf ExprEditSelect) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp _) )) ->
             -- 演算子から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf ExprEditSelect) ))
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
         _ ->
             active
@@ -761,8 +761,8 @@ selectFirstChild module_ active =
 termOpPosFirstChild : Maybe Expr.Expr -> TermOpPos -> TermOpPos
 termOpPosFirstChild exprMaybe termOpPos =
     case termOpPos of
-        TermOpSelf _ ->
-            TermOpTerm 0 TypeNoChildren
+        TermOpSelf ->
+            TermOpTerm 0 (TypeNoChildren ExprEditSelect)
 
         TermOpHead ->
             TermOpHead
@@ -786,7 +786,7 @@ termTypeFirstChild termMaybe termType =
             TypeParentheses (termOpPosFirstChild (Just expr) termOpPos)
 
         ( Just (Expr.Parentheses expr), _ ) ->
-            TypeParentheses (termOpPosFirstChild (Just expr) (TermOpSelf ExprEditSelect))
+            TypeParentheses (termOpPosFirstChild (Just expr) TermOpSelf)
 
         ( _, _ ) ->
             termType
@@ -813,7 +813,7 @@ selectLastChild module_ active =
         ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
             -- 定義から式へ
             ActivePartDefList
-                (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf ExprEditSelect) ))
+                (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr termOpPos )) ->
             let
@@ -839,8 +839,8 @@ termOpPosLastChild exprMaybe termOpPos =
                 |> Maybe.withDefault 0
     in
     case termOpPos of
-        TermOpSelf _ ->
-            TermOpTerm lastTermIndex TypeNoChildren
+        TermOpSelf ->
+            TermOpTerm lastTermIndex (TypeNoChildren ExprEditSelect)
 
         TermOpHead ->
             TermOpHead
@@ -863,8 +863,8 @@ termTypeLastChild termMaybe termType =
         ( Just (Expr.Parentheses expr), TypeParentheses termOpPos ) ->
             TypeParentheses (termOpPosLastChild (Just expr) termOpPos)
 
-        ( Just (Expr.Parentheses expr), TypeNoChildren ) ->
-            TypeParentheses (termOpPosLastChild (Just expr) (TermOpSelf ExprEditSelect))
+        ( Just (Expr.Parentheses expr), TypeNoChildren _ ) ->
+            TypeParentheses (termOpPosLastChild (Just expr) TermOpSelf)
 
         ( _, _ ) ->
             termType
@@ -902,11 +902,11 @@ selectParent module_ active =
 termOpPosParent : TermOpPos -> Maybe TermOpPos
 termOpPosParent termOpPos =
     case termOpPos of
-        TermOpSelf _ ->
+        TermOpSelf ->
             Nothing
 
         TermOpHead ->
-            Just (TermOpSelf ExprEditSelect)
+            Just TermOpSelf
 
         TermOpTerm termIndex termType ->
             case termTypeParent termType of
@@ -914,16 +914,16 @@ termOpPosParent termOpPos =
                     Just (TermOpTerm termIndex movedTermType)
 
                 Nothing ->
-                    Just (TermOpSelf ExprEditSelect)
+                    Just TermOpSelf
 
         TermOpOp _ ->
-            Just (TermOpSelf ExprEditSelect)
+            Just TermOpSelf
 
 
 termTypeParent : TermType -> Maybe TermType
 termTypeParent termType =
     case termType of
-        TypeNoChildren ->
+        TypeNoChildren _ ->
             Nothing
 
         TypeParentheses termOpPos ->
@@ -1188,8 +1188,8 @@ confirmSingleLineTextField active =
 confirmTermOpPos : TermOpPos -> TermOpPos
 confirmTermOpPos termOpPos =
     case termOpPos of
-        TermOpSelf _ ->
-            TermOpSelf ExprEditSelect
+        TermOpSelf ->
+            TermOpSelf
 
         TermOpHead ->
             TermOpHead
@@ -1204,8 +1204,8 @@ confirmTermOpPos termOpPos =
 confirmTermType : TermType -> TermType
 confirmTermType termType =
     case termType of
-        TypeNoChildren ->
-            TypeNoChildren
+        TypeNoChildren _ ->
+            TypeNoChildren ExprEditSelect
 
         TypeParentheses termOpPos ->
             TypeParentheses (confirmTermOpPos termOpPos)
@@ -1217,29 +1217,80 @@ confirmTermType termType =
 {-| デフォルトではEnterキーを押した時の動作。テキスト編集中なら確定にして、それ以外なら親に移動する
 -}
 confirmSingleLineTextFieldOrSelectParent : ModuleWithCache.ModuleWithResult -> Active -> Active
-confirmSingleLineTextFieldOrSelectParent module_ active =
+confirmSingleLineTextFieldOrSelectParent targetModule active =
+    if isNeedConfirmSingleLineTextField active then
+        confirmSingleLineTextField active
+
+    else
+        selectParent targetModule active
+
+
+isNeedConfirmSingleLineTextField : Active -> Bool
+isNeedConfirmSingleLineTextField active =
     case active of
+        ActiveNone ->
+            False
+
+        ActiveReadMe _ ->
+            False
+
+        ActivePartDefList ActivePartDefListSelf ->
+            False
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
+            False
+
         ActivePartDefList (ActivePartDef ( _, ActivePartDefName NameEditText )) ->
-            confirmSingleLineTextField active
+            True
 
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefType _ )) ->
-            confirmSingleLineTextField active
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefName (NameEditSuggestionSelect _) )) ->
+            True
 
-        ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefExpr termOpPos )) ->
-            confirmSingleLineTextField active
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefName NameEditSelect )) ->
+            False
 
-        -- TODO
-        _ ->
-            selectParent module_ active
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefType TypeEditSelect )) ->
+            False
 
-
-
--- TODO
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr termOpPos )) ->
+            isNeedConfirmSingleLineTextFieldTermOp termOpPos
 
 
-confirmSingleLineTextFieldOrSelectParentTermOp : TermOpPos -> TermOpPos
-confirmSingleLineTextFieldOrSelectParentTermOp termOpPos =
-    termOpPos
+{-| TODO
+-}
+isNeedConfirmSingleLineTextFieldTermOp : TermOpPos -> Bool
+isNeedConfirmSingleLineTextFieldTermOp termOpPos =
+    case termOpPos of
+        TermOpSelf ->
+            False
+
+        TermOpHead ->
+            False
+
+        TermOpTerm _ termType ->
+            isNeedConfirmSingleLineTextFieldTermType termType
+
+        TermOpOp _ ->
+            False
+
+
+isNeedConfirmSingleLineTextFieldTermType : TermType -> Bool
+isNeedConfirmSingleLineTextFieldTermType termType =
+    case termType of
+        TypeNoChildren ExprEditSelect ->
+            False
+
+        TypeNoChildren ExprEditText ->
+            True
+
+        TypeNoChildren (ExprEditSelectSuggestion _) ->
+            True
+
+        TypeParentheses termOpPos ->
+            isNeedConfirmSingleLineTextFieldTermOp termOpPos
+
+        TypeLambda _ ->
+            False
 
 
 
@@ -1297,7 +1348,7 @@ inputInPartDefList string project targetModule partDefListActive model =
                 ActivePartDef ( index, ActivePartDefType _ ) ->
                     parserBeginWithType string index (getTargetModuleIndex model)
 
-                ActivePartDef ( index, ActivePartDefExpr (TermOpSelf _) ) ->
+                ActivePartDef ( index, ActivePartDefExpr TermOpSelf ) ->
                     parserInExpr string index (getTargetModuleIndex model)
 
                 ActivePartDef ( _, ActivePartDefExpr TermOpHead ) ->
@@ -1377,10 +1428,10 @@ parserBeginWithName string index moduleRef =
                     ( index
                     , ActivePartDefExpr
                         (if headTerm == Expr.None && opAndTermList == [] then
-                            TermOpSelf ExprEditSelect
+                            TermOpSelf
 
                          else
-                            TermOpTerm (List.length opAndTermList) TypeNoChildren
+                            TermOpTerm (List.length opAndTermList) (TypeNoChildren ExprEditSelect)
                         )
                     )
                 )
@@ -1429,10 +1480,10 @@ parserBeginWithType string index moduleRef =
                     , ActivePartDefExpr
                         (case List.length opAndTermList of
                             0 ->
-                                TermOpSelf ExprEditSelect
+                                TermOpSelf
 
                             length ->
-                                TermOpTerm length TypeNoChildren
+                                TermOpTerm length (TypeNoChildren ExprEditSelect)
                         )
                     )
                 )
@@ -1445,7 +1496,7 @@ parserBeginWithType string index moduleRef =
             )
 
         Parser.BeginWithTypeEndExprOp { type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
-            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpSelf ExprEditSelect) ))
+            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
             , [ emitSetType moduleRef (ModuleIndex.PartDefIndex index) type_
               , emitSetExpr moduleRef
                     (ModuleIndex.PartDefIndex index)
@@ -1465,7 +1516,7 @@ parserInExpr string index moduleRef =
                     , ActivePartDefExpr
                         (TermOpTerm
                             (List.length opAndTermList)
-                            TypeNoChildren
+                            (TypeNoChildren ExprEditSelect)
                         )
                     )
                 )
@@ -1509,7 +1560,7 @@ parserBeginWithTerm string index moduleRef termIndex expr =
                     , ActivePartDefExpr
                         (TermOpTerm
                             (termIndex + List.length opAndTermList)
-                            TypeNoChildren
+                            (TypeNoChildren ExprEditSelect)
                         )
                     )
                 )
@@ -1579,7 +1630,7 @@ parserBeginWithOp string index moduleRef opIndex expr =
                     , ActivePartDefExpr
                         (TermOpTerm
                             (opIndex + 1 + List.length termAndOpList)
-                            TypeNoChildren
+                            (TypeNoChildren ExprEditSelect)
                         )
                     )
                 )
@@ -1781,18 +1832,8 @@ partDefActiveToString partDefActive =
 termOpPosToString : TermOpPos -> String
 termOpPosToString termOpPos =
     case termOpPos of
-        TermOpSelf edit ->
+        TermOpSelf ->
             "自体"
-                ++ (case edit of
-                        ExprEditSelect ->
-                            "選択"
-
-                        ExprEditText ->
-                            "テキスト編集"
-
-                        ExprEditSelectSuggestion _ ->
-                            "候補選択"
-                   )
 
         TermOpHead ->
             "の中の先頭"
@@ -1807,8 +1848,18 @@ termOpPosToString termOpPos =
 termTypeToString : TermType -> String
 termTypeToString termType =
     case termType of
-        TypeNoChildren ->
+        TypeNoChildren edit ->
             "自体(項)"
+                ++ (case edit of
+                        ExprEditSelect ->
+                            "選択"
+
+                        ExprEditText ->
+                            "テキスト編集"
+
+                        ExprEditSelectSuggestion _ ->
+                            "候補選択"
+                   )
 
         TypeParentheses termOpPos ->
             termOpPosToString termOpPos
@@ -2452,12 +2503,12 @@ partDefViewExpr expr termOpPosMaybe =
     Html.div
         ([ subClass "partDef-expr" ]
             ++ (case termOpPosMaybe of
-                    Just (TermOpSelf _) ->
+                    Just TermOpSelf ->
                         [ subClass "partDef-element-active" ]
 
                     _ ->
                         [ Html.Events.stopPropagationOn "click"
-                            (Json.Decode.succeed ( DefActiveTo (ActivePartDefExpr (TermOpSelf ExprEditSelect)), True ))
+                            (Json.Decode.succeed ( DefActiveTo (ActivePartDefExpr TermOpSelf), True ))
                         ]
                )
         )
@@ -2495,7 +2546,7 @@ termOpView termOpPosMaybe expr =
                         termViewOutput (Expr.getHead expr)
                             Nothing
                  )
-                    |> Html.map (always (TermOpTerm 0 TypeNoChildren))
+                    |> Html.map (always (TermOpTerm 0 (TypeNoChildren ExprEditSelect)))
                ]
             ++ partDefViewTermOpList (Expr.getOthers expr) termOpPosMaybe
         )
@@ -2548,7 +2599,9 @@ termViewOutput term termTypeMaybe =
     case term of
         Expr.Int32Literal _ ->
             Html.div
-                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( TypeNoChildren, True ))
+                [ Html.Events.stopPropagationOn
+                    "click"
+                    (Json.Decode.succeed ( TypeNoChildren ExprEditSelect, True ))
                 , subClassList
                     [ ( "partDef-term", True )
                     , ( "partDef-term-active", isSelect )
@@ -2558,7 +2611,8 @@ termViewOutput term termTypeMaybe =
 
         Expr.Part _ ->
             Html.div
-                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( TypeNoChildren, True ))
+                [ Html.Events.stopPropagationOn "click"
+                    (Json.Decode.succeed ( TypeNoChildren ExprEditSelect, True ))
                 , subClassList
                     [ ( "partDef-term", True )
                     , ( "partDef-term-active", isSelect )
@@ -2568,7 +2622,8 @@ termViewOutput term termTypeMaybe =
 
         Expr.Parentheses expr ->
             Html.div
-                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( TypeNoChildren, True ))
+                [ Html.Events.stopPropagationOn "click"
+                    (Json.Decode.succeed ( TypeNoChildren ExprEditSelect, True ))
                 , subClassList
                     [ ( "partDef-term", True )
                     , ( "partDef-term-active", isSelect )
@@ -2590,7 +2645,8 @@ termViewOutput term termTypeMaybe =
 
         Expr.None ->
             Html.div
-                [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( TypeNoChildren, True ))
+                [ Html.Events.stopPropagationOn "click"
+                    (Json.Decode.succeed ( TypeNoChildren ExprEditSelect, True ))
                 , subClassList
                     [ ( "partDef-term-none", True )
                     , ( "partDef-term-active", isSelect )
@@ -2602,10 +2658,10 @@ termViewOutput term termTypeMaybe =
 termTypeIsSelectSelf : Expr.Term -> TermType -> Bool
 termTypeIsSelectSelf term termType =
     case ( term, termType ) of
-        ( _, TypeNoChildren ) ->
+        ( _, TypeNoChildren _ ) ->
             True
 
-        ( _, TypeParentheses (TermOpSelf _) ) ->
+        ( _, TypeParentheses TermOpSelf ) ->
             True
 
         ( _, TypeLambda LambdaSelf ) ->

@@ -479,7 +479,7 @@ viewTitle =
 viewTree : { project : Project.Project, editorRef : Panel.EditorTypeRef.EditorTypeRef, focus : Bool, width : Int } -> Model -> List (Html.Html Msg)
 viewTree { project, editorRef, focus, width } model =
     projectToProjectTree project editorRef focus (getOpenCloseData model)
-        |> List.map viewTreeItem
+        |> List.map (viewTreeItem focus)
 
 
 projectToProjectTree : Project.Project -> Panel.EditorTypeRef.EditorTypeRef -> Bool -> OpenCloseData -> List EditorTree
@@ -698,40 +698,47 @@ makeViewType isSameRef focus =
             ViewTypeNone
 
 
-viewTypeToClass : ViewType -> Maybe (Html.Attribute Msg)
-viewTypeToClass viewType =
-    case viewType of
-        ViewTypeNone ->
-            Nothing
+viewTypeToClass : Bool -> ViewType -> List (Html.Attribute Msg)
+viewTypeToClass focus viewType =
+    (if focus then
+        [ treePanelClass "item--focus" ]
 
-        ViewTypeActive ->
-            Just (treePanelClass "item--active")
+     else
+        []
+    )
+        ++ (case viewType of
+                ViewTypeNone ->
+                    []
 
-        ViewTypeSelect ->
-            Just (treePanelClass "item--select")
+                ViewTypeActive ->
+                    [ treePanelClass "item--active" ]
+
+                ViewTypeSelect ->
+                    [ treePanelClass "item--select" ]
+           )
 
 
 {-| ツリーの1つの項目
 選択しているプロジェクトの参照、プロジェクトのツリー、フォーカスがあたっているか
 -}
-viewTreeItem : EditorTree -> Html.Html Msg
-viewTreeItem (EditorTree { icon, label, editorRef, viewType, option, children }) =
+viewTreeItem : Bool -> EditorTree -> Html.Html Msg
+viewTreeItem focus (EditorTree { icon, label, editorRef, viewType, option, children }) =
     case children of
         ChildrenNone ->
-            viewNoChildrenItem icon label editorRef viewType option
+            viewNoChildrenItem focus icon label editorRef viewType option
 
         ChildrenClose ->
-            viewCloseChildrenItem icon label editorRef viewType option
+            viewCloseChildrenItem focus icon label editorRef viewType option
 
         ChildrenOpen ( x, xs ) ->
-            viewOpenChildrenItem icon label editorRef viewType option ( x, xs )
+            viewOpenChildrenItem focus icon label editorRef viewType option ( x, xs )
 
 
-viewNoChildrenItem : Icon -> String -> Panel.EditorTypeRef.EditorTypeRef -> ViewType -> List Option -> Html.Html Msg
-viewNoChildrenItem icon label editorRef viewType optionList =
+viewNoChildrenItem : Bool -> Icon -> String -> Panel.EditorTypeRef.EditorTypeRef -> ViewType -> List Option -> Html.Html Msg
+viewNoChildrenItem focus icon label editorRef viewType optionList =
     Html.div
         ([ treePanelClass "item", Html.Attributes.tabindex 0 ]
-            ++ Utility.ListExtra.fromMaybe (viewTypeToClass viewType)
+            ++ viewTypeToClass focus viewType
         )
         ([ itemContent viewType editorRef icon label ]
             ++ (case optionList of
@@ -744,13 +751,13 @@ viewNoChildrenItem icon label editorRef viewType optionList =
         )
 
 
-viewCloseChildrenItem : Icon -> String -> Panel.EditorTypeRef.EditorTypeRef -> ViewType -> List Option -> Html.Html Msg
-viewCloseChildrenItem icon label editorRef viewType optionList =
+viewCloseChildrenItem : Bool -> Icon -> String -> Panel.EditorTypeRef.EditorTypeRef -> ViewType -> List Option -> Html.Html Msg
+viewCloseChildrenItem focus icon label editorRef viewType optionList =
     Html.div
         ([ treePanelClass "item"
          , Html.Attributes.tabindex 0
          ]
-            ++ Utility.ListExtra.fromMaybe (viewTypeToClass viewType)
+            ++ viewTypeToClass focus viewType
         )
         ([ treeCloseIcon editorRef viewType
          , itemContent viewType editorRef icon label
@@ -765,13 +772,13 @@ viewCloseChildrenItem icon label editorRef viewType optionList =
         )
 
 
-viewOpenChildrenItem : Icon -> String -> Panel.EditorTypeRef.EditorTypeRef -> ViewType -> List Option -> ( EditorTree, List EditorTree ) -> Html.Html Msg
-viewOpenChildrenItem icon label editorRef viewType optionList ( headTree, restTree ) =
+viewOpenChildrenItem : Bool -> Icon -> String -> Panel.EditorTypeRef.EditorTypeRef -> ViewType -> List Option -> ( EditorTree, List EditorTree ) -> Html.Html Msg
+viewOpenChildrenItem focus icon label editorRef viewType optionList ( headTree, restTree ) =
     Html.div
         ([ treePanelClass "itemWithChildren"
          , Html.Attributes.tabindex 0
          ]
-            ++ Utility.ListExtra.fromMaybe (viewTypeToClass viewType)
+            ++ viewTypeToClass focus viewType
         )
         ([ treeOpenIcon editorRef viewType
          , itemContent viewType editorRef icon label
@@ -784,7 +791,7 @@ viewOpenChildrenItem icon label editorRef viewType optionList ( headTree, restTr
                         []
                )
             ++ [ Html.div [ treePanelClass "item-children" ]
-                    (viewTreeItem headTree :: (restTree |> List.map viewTreeItem))
+                    (viewTreeItem focus headTree :: (restTree |> List.map (viewTreeItem focus)))
                ]
         )
 

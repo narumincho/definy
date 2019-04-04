@@ -354,10 +354,10 @@ keyDown keyMaybe model =
         Just key ->
             case editorReservedKey (isOpenCommandPalette model) key of
                 x :: xs ->
-                    Debug.log "ReservedKey" (x :: xs)
+                    (x :: xs)
 
                 [] ->
-                    case Debug.log "default UI" (isFocusDefaultUi model) of
+                    case (isFocusDefaultUi model) of
                         Just Panel.DefaultUi.MultiLineTextField ->
                             if multiLineTextFieldReservedKey key then
                                 []
@@ -450,10 +450,6 @@ Model.isFocusTextAreaがTrueになったときにまずこれを優先する
 -}
 multiLineTextFieldReservedKey : Key.Key -> Bool
 multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
-    let
-        _ =
-            Debug.log "muti line check" ()
-    in
     case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
