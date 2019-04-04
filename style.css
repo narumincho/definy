@@ -209,6 +209,7 @@ img {
 
 .editorGroupPanel-editorBody {
     overflow: auto;
+    flex-grow: 1;
 }
 
 .editorGroupPanel-openEditorIcon {
@@ -377,8 +378,7 @@ img {
 }
 
 .moduleEditor-readMe-active {
-    background-color: #f09936;
-    color: #111;
+    border-left: solid 4px #f09936;
 }
 
 .moduleEditor-readMe-title {
@@ -448,8 +448,7 @@ img {
 }
 
 .moduleEditor-partDefinitions-active {
-    background-color: #f09936;
-    color: #111;
+    border-left: solid 4px #f09936;
 }
 
 .moduleEditor-partDefinitions-title {
@@ -513,7 +512,7 @@ img {
     height: 38px;
     padding: 0;
     font-family: "mplus-2m-regular";
-    align-items: center;
+    align-items: baseline;
 }
 
 /*=================
@@ -522,7 +521,7 @@ img {
 
 .moduleEditor-partDef-nameContainer {
     position: relative;
-    height: 38px;
+    height: 32px;
     padding: 4px;
 }
 

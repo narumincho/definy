@@ -4,14 +4,14 @@ module Project.Source exposing
     , Source
     , allModuleRef
     , getModule
+    , getTypeName
     , init
     , mapModule
     , setModule
     , update
     )
 
-import Project.Label as Label
-import Project.Source.Module as Module
+import Project.Label as L
 import Project.Source.Module.PartDef as Def
 import Project.Source.Module.PartDef.Expr as Expr
 import Project.Source.Module.PartDef.Name as PartDefName
@@ -110,12 +110,12 @@ update msg source =
 initCore : ( ModuleWithCache.ModuleWithResult, List Emit )
 initCore =
     ModuleWithCache.init
-        { name = Label.make Label.hc [ Label.oo, Label.or, Label.oe ]
+        { name = L.make L.hc [ L.oo, L.or, L.oe ]
         , readMe = "プログラムに最低限必要なものが含まれている標準ライブラリ。足し算引き算、論理演算などの演算や、リスト、辞書、集合などの基本データ構造を含む"
         , typeDefList = []
         , partDefList =
             [ Def.make
-                { name = PartDefName.fromLabel (Label.make Label.ha [ Label.ob, Label.os ])
+                { name = PartDefName.fromLabel (L.make L.ha [ L.ob, L.os ])
                 , type_ = PartDefType.empty
                 , expr = Expr.empty
                 }
@@ -127,7 +127,7 @@ initCore =
 initCoreInt32 : ( ModuleWithCache.ModuleWithResult, List Emit )
 initCoreInt32 =
     ModuleWithCache.init
-        { name = Label.make Label.hi [ Label.on, Label.ot, Label.o3, Label.o2 ]
+        { name = L.make L.hi [ L.on, L.ot, L.o3, L.o2 ]
         , readMe = "WebAssemblyでサポートされている32bit符号付き整数を扱えるようになる"
         , typeDefList =
             [ TypeDef.typeDefInt ]
@@ -135,8 +135,8 @@ initCoreInt32 =
             [ Def.make
                 { name =
                     PartDefName.fromLabel
-                        (Label.make Label.ho
-                            [ Label.on, Label.oe, Label.oP, Label.ol, Label.ou, Label.os, Label.oT, Label.ow, Label.oo ]
+                        (L.make L.ho
+                            [ L.on, L.oe, L.oP, L.ol, L.ou, L.os, L.oT, L.ow, L.oo ]
                         )
                 , type_ =
                     PartDefType.Valid
@@ -156,8 +156,8 @@ initCoreInt32 =
             , Def.make
                 { name =
                     PartDefName.fromLabel
-                        (Label.make Label.ha
-                            [ Label.od, Label.od ]
+                        (L.make L.ha
+                            [ L.od, L.od ]
                         )
                 , type_ = PartDefType.empty
                 , expr =
@@ -178,8 +178,8 @@ initSampleModule =
             [ Def.make
                 { name =
                     PartDefName.fromLabel
-                        (Label.make Label.hp
-                            [ Label.oo, Label.oi, Label.on, Label.ot ]
+                        (L.make L.hp
+                            [ L.oo, L.oi, L.on, L.ot ]
                         )
                 , type_ = PartDefType.empty
                 , expr =
@@ -226,11 +226,11 @@ initSampleModule =
 
 {-| SampleModule
 -}
-sampleModuleName : Label.Label
+sampleModuleName : L.Label
 sampleModuleName =
-    Label.make
-        Label.hs
-        [ Label.oa, Label.om, Label.op, Label.ol, Label.oe, Label.oM, Label.oo, Label.od, Label.ou, Label.ol, Label.oe ]
+    L.make
+        L.hs
+        [ L.oa, L.om, L.op, L.ol, L.oe, L.oM, L.oo, L.od, L.ou, L.ol, L.oe ]
 
 
 {-| 参照からモジュールを取得する
@@ -281,3 +281,16 @@ allModuleRef _ =
     , SourceIndex.CoreInt32
     , SourceIndex.SampleModule
     ]
+
+
+getTypeName : PartDefType.Type -> Source -> Maybe L.Label
+getTypeName type_ source =
+    case type_ of
+        PartDefType.Valid (SourceIndex.TypeIndex { moduleIndex, typeIndex }) ->
+            source
+                |> getModule moduleIndex
+                |> ModuleWithCache.getTypeDef typeIndex
+                |> Maybe.map TypeDef.getName
+
+        PartDefType.Empty ->
+            Nothing

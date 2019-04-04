@@ -33,7 +33,7 @@
             app.ports.keyPrevented.send(null);
         });
         /* テキストエリア(<textarea id="edit">)に値を設定(編集する前の初期設定用) */
-        app.ports.setTextAreaValue.subscribe((text) => {
+        app.ports.setTextAreaValue.subscribe(text => {
             console.log(`テキストエリア(<textarea id="eidt">)に${text}を設定しようとしている`);
             requestAnimationFrame(() => {
                 const edit = document.getElementById("edit");
@@ -42,14 +42,22 @@
                 }
             });
         })
-        /* テキストエリア(<textarea id="edit">)に強制的にフォーカスさせる */
+        // app.ports.selectAllTextAreaValue.subscribe(()=>{
+        //     console.log("テキストエリアの値を全て選択しようとしている")
+        //     const editElement = document.getElementById("edit");
+        //     editElement.selectionStart = 0;
+        //     editElement.selectionEnd = editElement.value.length;
+        // })
+        /* テキストエリア(<textarea|input id="edit">)に強制的にフォーカスさせる */
         app.ports.focusTextArea.subscribe(e => {
             console.log(`<textarea id="eidt">にフォーカス`);
             requestAnimationFrame(() => {
                 document.getElementById("edit").focus();
             })
         })
-        /* クリックイベントをキャプチャフェーズで登録する。登録できるのは1つまで */
+        /* クリックイベントをキャプチャフェーズで登録する。登録できるのは1つまで
+           登録するために呼び出すのは面倒くさい、固定にしてシンプルに
+        */
         const eventAdded = new Map();
         app.ports.setClickEventListenerInCapturePhase.subscribe(id => {
             requestAnimationFrame(() => {

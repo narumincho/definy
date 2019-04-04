@@ -211,16 +211,16 @@ update msg project model =
             model |> setActive project toActive
 
         SelectLeft ->
-            model |> update (ActiveTo (selectLeft targetModule active)) project
+            model |> setActive project (selectLeft targetModule active)
 
         SelectRight ->
-            model |> update (ActiveTo (selectRight targetModule active)) project
+            model |> setActive project (selectRight targetModule active)
 
         SelectUp ->
-            model |> update (ActiveTo (selectUp targetModule active)) project
+            model |> setActive project (selectUp targetModule active)
 
         SelectDown ->
-            model |> update (ActiveTo (selectDown targetModule active)) project
+            model |> setActive project (selectDown targetModule active)
 
         SelectFirstChild ->
             model |> update (ActiveTo (selectFirstChild targetModule active)) project
@@ -252,7 +252,7 @@ update msg project model =
             model |> update (ActiveTo (confirmSingleLineTextField active)) project
 
         ConfirmSingleLineTextFieldOrSelectParent ->
-            confirmSingleLineTextFieldOrSelectParent model
+            model |> setActive project (confirmSingleLineTextFieldOrSelectParent targetModule active)
 
         AddPartDef ->
             ( model
@@ -1214,13 +1214,32 @@ confirmTermType termType =
             TypeLambda lambdaPos
 
 
-{-| TODO
+{-| デフォルトではEnterキーを押した時の動作。テキスト編集中なら確定にして、それ以外なら親に移動する
 -}
-confirmSingleLineTextFieldOrSelectParent : Model -> ( Model, List Emit )
-confirmSingleLineTextFieldOrSelectParent model =
-    ( model
-    , []
-    )
+confirmSingleLineTextFieldOrSelectParent : ModuleWithCache.ModuleWithResult -> Active -> Active
+confirmSingleLineTextFieldOrSelectParent module_ active =
+    case active of
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefName NameEditText )) ->
+            confirmSingleLineTextField active
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefType _ )) ->
+            confirmSingleLineTextField active
+
+        ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefExpr termOpPos )) ->
+            confirmSingleLineTextField active
+
+        -- TODO
+        _ ->
+            selectParent module_ active
+
+
+
+-- TODO
+
+
+confirmSingleLineTextFieldOrSelectParentTermOp : TermOpPos -> TermOpPos
+confirmSingleLineTextFieldOrSelectParentTermOp termOpPos =
+    termOpPos
 
 
 
@@ -2454,16 +2473,6 @@ partDefViewExpr expr termOpPosMaybe =
                         []
                )
         )
-
-
-
---    case (termOpPosMaybe, editStateMaybe) of
---        (Just TermOpSelf, Nothing) ->
---            Html.Keyed.node "div"
---                [ subClass "partDef-expr" ]
---                [ ("view", eaf), ("input", hideT)
---                ]
---
 
 
 termOpView : Maybe TermOpPos -> Expr.Expr -> Html.Html TermOpPos

@@ -9,6 +9,8 @@ module Project.Source.Module exposing
     , getPartDefAndData
     , getPartDefAndDataList
     , getReadMe
+    , getTypeDef
+    , getTypeDefList
     , make
     , makeUnit
     , map
@@ -187,6 +189,20 @@ setReadMe : String -> Module a -> Module a
 setReadMe string (Module rec) =
     Module
         { rec | readMe = string }
+
+
+{-| 型定義TypeDefのListを取得する
+-}
+getTypeDefList : Module a -> List TypeDef.TypeDef
+getTypeDefList (Module { typeDefList }) =
+    typeDefList |> Array.toList
+
+
+{-| 指定した位置にある型定義TypeDefを取得する
+-}
+getTypeDef : ModuleIndex.TypeDefIndex -> Module a -> Maybe TypeDef.TypeDef
+getTypeDef (ModuleIndex.TypeDefIndex index) (Module { typeDefList }) =
+    typeDefList |> Array.get index
 
 
 {-| パーツ定義とデータのListを取得する

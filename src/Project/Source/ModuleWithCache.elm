@@ -11,6 +11,7 @@ module Project.Source.ModuleWithCache exposing
     , getPartDefAndResultList
     , getPartDefNum
     , getReadMe
+    , getTypeDef
     , init
     , update
     )
@@ -173,6 +174,13 @@ getName =
 getReadMe : ModuleWithResult -> String
 getReadMe =
     Module.getReadMe
+
+
+{-| 指定した位置にあるTypeDefを取得する
+-}
+getTypeDef : ModuleIndex.TypeDefIndex -> ModuleWithResult -> Maybe TypeDef.TypeDef
+getTypeDef =
+    Module.getTypeDef
 
 
 {-| Moduleで定義されているPartDefとそのコンパイル結果と評価結果のListを取得する
