@@ -58,7 +58,6 @@
         /* クリックイベントをキャプチャフェーズで登録する。登録できるのは1つまで
            登録するために呼び出すのは面倒くさい、固定にしてシンプルに
         */
-        const eventAdded = new Map();
         app.ports.setClickEventListenerInCapturePhase.subscribe(id => {
             requestAnimationFrame(() => {
                 const element = document.getElementById(id);
@@ -66,19 +65,11 @@
                     console.log(`id=${id}の要素がない`)
                     return;
                 }
-                const beforeEventListner = eventAdded.get(id);
-                if (beforeEventListner !== undefined) {
-                    element.removeEventListener("click", beforeEventListner);
-                    console.log(`id=${id}からキャプチャフェーズのクリックイベントを削除`);
-                }
-                const f = e => {
-                    app.ports.fireClickEventInCapturePhase.send(id);
-                };
-                eventAdded.set(id, f);
-
                 console.log(`id=${id}にキャプチャフェーズのクリックイベントを追加`);
-
-                element.addEventListener("click", f, { capture: true });
+                element.addEventListener("click", e => {
+                    app.ports.fireClickEventInCapturePhase.send(id);
+                }, { capture: true }
+                );
             })
         });
         /* クリックイベントをキャプチャフェーズで登録したリスナを削除する */

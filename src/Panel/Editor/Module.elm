@@ -1768,6 +1768,8 @@ view project isFocus (Model { moduleRef, active }) =
                 _ ->
                     Nothing
             )
+        , typeDefinitionsView
+            isFocus
         , partDefinitionsView
             isFocus
             (case active of
@@ -1898,7 +1900,10 @@ branchPosToString branchPos =
 
 
 
-{- ===== readMe View ===== -}
+{- ==================================================
+                readMe 説明文 View
+   ==================================================
+-}
 
 
 readMeView : String -> Bool -> Maybe ReadMeActive -> Html.Html Msg
@@ -1913,14 +1918,10 @@ readMeView readMe isFocus readMeActiveMaybe =
                     False
     in
     Html.div
-        ([ subClassList
-            [ ( "readMe", True )
-            , ( "readMe-active", readMeActiveMaybe == Just ActiveReadMeSelf )
-            ]
-         ]
+        ([ subClass "section" ]
             ++ (case readMeActiveMaybe of
                     Just ActiveReadMeSelf ->
-                        []
+                        [ subClass "section-active" ]
 
                     _ ->
                         [ Html.Events.onClick (ActiveTo (ActiveReadMe ActiveReadMeSelf)) ]
@@ -1934,7 +1935,7 @@ readMeView readMe isFocus readMeActiveMaybe =
 readMeViewTitle : Html.Html Msg
 readMeViewTitle =
     Html.h2
-        [ subClass "readMe-title" ]
+        [ subClass "section-title" ]
         [ Html.text "ReadMe" ]
 
 
@@ -2026,7 +2027,30 @@ focusEventJsonDecoder =
 
 
 {- ==================================================
-            part definitions パーツの定義
+            Type Definitions 型の定義
+   ==================================================
+-}
+
+
+typeDefinitionsView : Bool -> Html.Html Msg
+typeDefinitionsView isFocus =
+    Html.div
+        [ subClass "section" ]
+        [ typeDefinitionsViewTitle
+        , Html.text "型の定義"
+        ]
+
+
+typeDefinitionsViewTitle : Html.Html Msg
+typeDefinitionsViewTitle =
+    Html.div
+        [ subClass "section-title" ]
+        [ Html.text "Type Definitions" ]
+
+
+
+{- ==================================================
+            Part Definitions パーツの定義
    ==================================================
 -}
 
@@ -2036,11 +2060,11 @@ focusEventJsonDecoder =
 partDefinitionsView : Bool -> Maybe PartDefListActive -> List ( PartDef.PartDef, ModuleWithCache.CompileAndRunResult ) -> Html.Html Msg
 partDefinitionsView isFocus partDefListActiveMaybe partDefAndResultList =
     Html.div
-        ([ subClass "partDefinitions"
+        ([ subClass "section"
          ]
             ++ (case partDefListActiveMaybe of
                     Just ActivePartDefListSelf ->
-                        [ subClass "partDefinitions-active" ]
+                        [ subClass "section-active" ]
 
                     _ ->
                         [ Html.Events.onClick (ActiveTo (ActivePartDefList ActivePartDefListSelf)) ]
@@ -2063,7 +2087,7 @@ partDefinitionsView isFocus partDefListActiveMaybe partDefAndResultList =
 partDefinitionsViewTitle : Html.Html Msg
 partDefinitionsViewTitle =
     Html.div
-        [ subClass "partDefinitions-title" ]
+        [ subClass "section-title" ]
         [ Html.text "Part Definitions" ]
 
 

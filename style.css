@@ -8,6 +8,28 @@
     src: url("assets/mplus-2m-regular-sub.woff") format("woff");
 }
 
+::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #999a;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .3);
+}
+
+::-webkit-scrollbar-corner {
+    background-color: #999a;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #aaa;
+}
+
+::-webkit-scrollbar-track {
+    border-left: solid 1px #999a;
+}
+
 html {
     width: 100%;
     height: 100%;
@@ -53,6 +75,7 @@ img {
 .treePanel-focus {
     background-color: #2d2d2d;
 }
+
 /* ==================================================================
                             Tree Panel
 ================================================================== */
@@ -102,11 +125,12 @@ img {
 
 .treePanel-item--focus {
     background-color: #2d2d2d;
+    color: #ccc;
 }
 
 .treePanel-item--active {
     background-color: #c9c9c92d;
-    color: #eee;
+    color: #ddd;
 }
 
 .treePanel-item--select {
@@ -375,20 +399,18 @@ img {
 =====================================================================
 ================================================================== */
 
-/* ============================================
-                     Read Me
-==============================================*/
-
-.moduleEditor-readMe {
+.moduleEditor-section {
     padding: 16px 8px;
+    display: flex;
+    flex-direction: column;
 }
 
-.moduleEditor-readMe-active {
+.moduleEditor-section-active {
     border-left: solid 4px #f09936;
     padding: 16px 8px 16px 4px;
 }
 
-.moduleEditor-readMe-title {
+.moduleEditor-section-title {
     font-size: 16px;
     padding: 0 24px;
     line-height: 1.2;
@@ -396,6 +418,10 @@ img {
     margin: 0;
     letter-spacing: 0.15px;
 }
+
+/* ============================================
+                     Read Me
+==============================================*/
 
 .moduleEditor-readMe-inputArea {
     padding: 8px 0 0 0;
@@ -447,26 +473,6 @@ img {
 /* ==================================================================
                             part Def
 ================================================================== */
-
-.moduleEditor-partDefinitions {
-    padding: 16px 8px;
-    display: flex;
-    flex-direction: column;
-}
-
-.moduleEditor-partDefinitions-active {
-    border-left: solid 4px #f09936;
-    padding: 16px 8px 16px 4px;
-}
-
-.moduleEditor-partDefinitions-title {
-    font-size: 16px;
-    padding: 0 24px;
-    line-height: 1.2;
-    font-weight: 400;
-    margin: 0;
-    letter-spacing: 0.15px;
-}
 
 .moduleEditor-partDefList {
     display: grid;
