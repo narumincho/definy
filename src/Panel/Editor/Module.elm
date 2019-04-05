@@ -90,7 +90,7 @@ type ReadMeActive
 
 type PartDefListActive
     = ActivePartDefListSelf
-    | ActivePartDef ( Int, PartDefActive )
+    | ActivePartDef ( ModuleIndex.PartDefIndex, PartDefActive )
 
 
 type PartDefActive
@@ -309,7 +309,7 @@ setActive project active (Model rec) =
                 let
                     name =
                         targetModule
-                            |> ModuleWithCache.getPartDef (ModuleIndex.PartDefIndex index)
+                            |> ModuleWithCache.getPartDef index
                             |> Maybe.map
                                 (PartDef.getName
                                     >> (\n ->
@@ -348,13 +348,13 @@ selectLeft module_ active =
             -- 定義リストから概要欄へ
             ActiveReadMe ActiveReadMeSelf
 
-        ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf )) ->
+        ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex 0, ActivePartDefSelf )) ->
             -- 先頭の定義から定義リストへ
             ActivePartDefList ActivePartDefListSelf
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
+        ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex index, ActivePartDefSelf )) ->
             -- 定義から前の定義へ
-            ActivePartDefList (ActivePartDef ( index - 1, ActivePartDefSelf ))
+            ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex (index - 1), ActivePartDefSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
             -- 名前から定義へ
@@ -488,7 +488,7 @@ selectRight module_ active =
 
         ActivePartDefList ActivePartDefListSelf ->
             -- 定義リストから
-            ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf ))
+            ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex 0, ActivePartDefSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
             -- 定義から名前へ
@@ -510,7 +510,7 @@ selectRight module_ active =
             let
                 exprMaybe =
                     module_
-                        |> Module.getPartDef (ModuleIndex.PartDefIndex index)
+                        |> Module.getPartDef index
                         |> Maybe.map PartDef.getExpr
             in
             case termOpPosRight exprMaybe termOpPos of
@@ -643,13 +643,13 @@ selectUp module_ active =
             -- 定義リストから概要欄へ
             ActiveReadMe ActiveReadMeSelf
 
-        ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf )) ->
+        ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex 0, ActivePartDefSelf )) ->
             -- 先頭の定義から定義リストへ
             ActivePartDefList ActivePartDefListSelf
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
+        ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex index, ActivePartDefSelf )) ->
             -- 定義から前の定義へ
-            ActivePartDefList (ActivePartDef ( index - 1, ActivePartDefSelf ))
+            ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex (index - 1), ActivePartDefSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
             -- 名前から定義へ
@@ -689,9 +689,14 @@ selectDown module_ active =
             -- 概要欄から定義リストへ
             ActivePartDefList ActivePartDefListSelf
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
+        ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex index, ActivePartDefSelf )) ->
             -- 定義から次の定義へ
-            ActivePartDefList (ActivePartDef ( min (ModuleWithCache.getPartDefNum module_ - 1) (index + 1), ActivePartDefSelf ))
+            ActivePartDefList
+                (ActivePartDef
+                    ( ModuleIndex.PartDefIndex (min (ModuleWithCache.getPartDefNum module_ - 1) (index + 1))
+                    , ActivePartDefSelf
+                    )
+                )
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
             -- 名前から式へ
@@ -736,7 +741,7 @@ selectFirstChild module_ active =
 
         ActivePartDefList ActivePartDefListSelf ->
             -- 定義リストから先頭の定義へ
-            ActivePartDefList (ActivePartDef ( 0, ActivePartDefSelf ))
+            ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex 0, ActivePartDefSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
             -- 定義から名前へ
@@ -747,7 +752,7 @@ selectFirstChild module_ active =
             let
                 exprMaybe =
                     module_
-                        |> ModuleWithCache.getPartDef (ModuleIndex.PartDefIndex index)
+                        |> ModuleWithCache.getPartDef index
                         |> Maybe.map PartDef.getExpr
             in
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (termOpPosFirstChild exprMaybe termOpPos) ))
@@ -808,7 +813,7 @@ selectLastChild module_ active =
         ActivePartDefList ActivePartDefListSelf ->
             -- 定義リストから最後の定義リストへ
             ActivePartDefList
-                (ActivePartDef ( ModuleWithCache.getPartDefNum module_ - 1, ActivePartDefSelf ))
+                (ActivePartDef ( ModuleIndex.PartDefIndex (ModuleWithCache.getPartDefNum module_ - 1), ActivePartDefSelf ))
 
         ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
             -- 定義から式へ
@@ -819,7 +824,7 @@ selectLastChild module_ active =
             let
                 exprMaybe =
                     module_
-                        |> ModuleWithCache.getPartDef (ModuleIndex.PartDefIndex index)
+                        |> ModuleWithCache.getPartDef index
                         |> Maybe.map PartDef.getExpr
             in
             -- 式の中身
@@ -1039,7 +1044,7 @@ suggestionPrev project model =
                 ( newModel
                 , suggestionSelectChangedThenNameChangeEmit
                     (index - 1)
-                    (ModuleIndex.PartDefIndex partDefIndex)
+                    partDefIndex
                     (getTargetModuleIndex newModel)
                     ++ emitList
                 )
@@ -1094,7 +1099,7 @@ suggestionNext module_ project model =
             ( newModel
             , suggestionSelectChangedThenNameChangeEmit
                 (index + 1)
-                (ModuleIndex.PartDefIndex partDefIndex)
+                partDefIndex
                 (getTargetModuleIndex newModel)
                 ++ emitList
             )
@@ -1103,7 +1108,7 @@ suggestionNext module_ project model =
             let
                 searchName =
                     module_
-                        |> ModuleWithCache.getPartDef (ModuleIndex.PartDefIndex partDefIndex)
+                        |> ModuleWithCache.getPartDef partDefIndex
                         |> Maybe.map PartDef.getName
                         |> Maybe.withDefault Name.NoName
 
@@ -1127,7 +1132,7 @@ suggestionNext module_ project model =
             ( newModel
             , suggestionSelectChangedThenNameChangeEmit
                 0
-                (ModuleIndex.PartDefIndex partDefIndex)
+                partDefIndex
                 (getTargetModuleIndex newModel)
                 ++ emitList
             )
@@ -1361,7 +1366,7 @@ inputInPartDefList string project targetModule partDefListActive model =
                         index
                         (getTargetModuleIndex model)
                         termIndex
-                        (ModuleWithCache.getPartDef (ModuleIndex.PartDefIndex index)
+                        (ModuleWithCache.getPartDef index
                             targetModule
                             |> Maybe.withDefault PartDef.empty
                             |> PartDef.getExpr
@@ -1373,7 +1378,7 @@ inputInPartDefList string project targetModule partDefListActive model =
                         (getTargetModuleIndex model)
                         opIndex
                         (ModuleWithCache.getPartDef
-                            (ModuleIndex.PartDefIndex index)
+                            index
                             targetModule
                             |> Maybe.withDefault PartDef.empty
                             |> PartDef.getExpr
@@ -1398,26 +1403,26 @@ inputInPartDefList string project targetModule partDefListActive model =
     )
 
 
-parserBeginWithName : String -> Int -> SourceIndex.ModuleIndex -> ( Active, List Emit )
-parserBeginWithName string index moduleRef =
+parserBeginWithName : String -> ModuleIndex.PartDefIndex -> SourceIndex.ModuleIndex -> ( Active, List Emit )
+parserBeginWithName string partDefIndex moduleRef =
     case Parser.beginWithName (Parser.SimpleChar.fromString string) of
         Parser.BeginWithNameEndName { name, textAreaValue } ->
-            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefName NameEditText ))
-            , [ emitSetName moduleRef (ModuleIndex.PartDefIndex index) name ]
+            ( ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName NameEditText ))
+            , [ emitSetName moduleRef partDefIndex name ]
             )
 
         Parser.BeginWithNameEndType { name, type_, textAreaValue } ->
             if Type.isEmpty type_ then
-                ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType TypeEditSelect ))
-                , [ emitSetName moduleRef (ModuleIndex.PartDefIndex index) name
+                ( ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefType TypeEditSelect ))
+                , [ emitSetName moduleRef partDefIndex name
                   , EmitSetTextAreaValue ""
                   ]
                 )
 
             else
-                ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType TypeEditSelect ))
-                , [ emitSetName moduleRef (ModuleIndex.PartDefIndex index) name
-                  , emitSetType moduleRef (ModuleIndex.PartDefIndex index) type_
+                ( ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefType TypeEditSelect ))
+                , [ emitSetName moduleRef partDefIndex name
+                  , emitSetType moduleRef partDefIndex type_
                   , textAreaValueToSetTextEmit textAreaValue
                   ]
                 )
@@ -1425,7 +1430,7 @@ parserBeginWithName string index moduleRef =
         Parser.BeginWithNameEndExprTerm { name, type_, headTerm, opAndTermList, textAreaValue } ->
             ( ActivePartDefList
                 (ActivePartDef
-                    ( index
+                    ( partDefIndex
                     , ActivePartDefExpr
                         (if headTerm == Expr.None && opAndTermList == [] then
                             TermOpSelf
@@ -1435,48 +1440,48 @@ parserBeginWithName string index moduleRef =
                         )
                     )
                 )
-            , [ emitSetName moduleRef (ModuleIndex.PartDefIndex index) name
+            , [ emitSetName moduleRef partDefIndex name
               , EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
               ]
                 ++ (if Type.isEmpty type_ then
                         []
 
                     else
-                        [ emitSetType moduleRef (ModuleIndex.PartDefIndex index) type_ ]
+                        [ emitSetType moduleRef partDefIndex type_ ]
                    )
-                ++ [ emitSetExpr moduleRef (ModuleIndex.PartDefIndex index) (Expr.make headTerm opAndTermList)
+                ++ [ emitSetExpr moduleRef partDefIndex (Expr.make headTerm opAndTermList)
                    ]
             )
 
         Parser.BeginWithNameEndExprOp { name, type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
             ( ActivePartDefList
                 (ActivePartDef
-                    ( index
+                    ( partDefIndex
                     , ActivePartDefExpr (TermOpOp (List.length opAndTermList))
                     )
                 )
-            , [ emitSetName moduleRef (ModuleIndex.PartDefIndex index) name
-              , emitSetType moduleRef (ModuleIndex.PartDefIndex index) type_
+            , [ emitSetName moduleRef partDefIndex name
+              , emitSetType moduleRef partDefIndex type_
               , emitSetExpr moduleRef
-                    (ModuleIndex.PartDefIndex index)
+                    partDefIndex
                     (Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.None ) ]))
               , textAreaValueToSetTextEmit textAreaValue
               ]
             )
 
 
-parserBeginWithType : String -> Int -> SourceIndex.ModuleIndex -> ( Active, List Emit )
-parserBeginWithType string index moduleRef =
+parserBeginWithType : String -> ModuleIndex.PartDefIndex -> SourceIndex.ModuleIndex -> ( Active, List Emit )
+parserBeginWithType string partDefIndex moduleRef =
     case Parser.beginWithType (Parser.SimpleChar.fromString string) of
         Parser.BeginWithTypeEndType { type_, textAreaValue } ->
-            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefType TypeEditSelect ))
-            , [ emitSetType moduleRef (ModuleIndex.PartDefIndex index) type_ ]
+            ( ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefType TypeEditSelect ))
+            , [ emitSetType moduleRef partDefIndex type_ ]
             )
 
         Parser.BeginWithTypeEndExprTerm { type_, headTerm, opAndTermList, textAreaValue } ->
             ( ActivePartDefList
                 (ActivePartDef
-                    ( index
+                    ( partDefIndex
                     , ActivePartDefExpr
                         (case List.length opAndTermList of
                             0 ->
@@ -1487,26 +1492,26 @@ parserBeginWithType string index moduleRef =
                         )
                     )
                 )
-            , [ emitSetType moduleRef (ModuleIndex.PartDefIndex index) type_
+            , [ emitSetType moduleRef partDefIndex type_
               , emitSetExpr moduleRef
-                    (ModuleIndex.PartDefIndex index)
+                    partDefIndex
                     (Expr.make headTerm opAndTermList)
               , textAreaValueToSetTextEmit textAreaValue
               ]
             )
 
         Parser.BeginWithTypeEndExprOp { type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
-            ( ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
-            , [ emitSetType moduleRef (ModuleIndex.PartDefIndex index) type_
+            ( ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefExpr TermOpSelf ))
+            , [ emitSetType moduleRef partDefIndex type_
               , emitSetExpr moduleRef
-                    (ModuleIndex.PartDefIndex index)
+                    partDefIndex
                     (Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.None ) ]))
               , textAreaValueToSetTextEmit textAreaValue
               ]
             )
 
 
-parserInExpr : String -> Int -> SourceIndex.ModuleIndex -> ( Active, List Emit )
+parserInExpr : String -> ModuleIndex.PartDefIndex -> SourceIndex.ModuleIndex -> ( Active, List Emit )
 parserInExpr string index moduleRef =
     case Parser.beginWithExprHead (Parser.SimpleChar.fromString string) of
         Parser.BeginWithExprHeadEndTerm { headTerm, opAndTermList, textAreaValue } ->
@@ -1521,7 +1526,7 @@ parserInExpr string index moduleRef =
                     )
                 )
             , [ emitSetExpr moduleRef
-                    (ModuleIndex.PartDefIndex index)
+                    index
                     (Expr.make headTerm opAndTermList)
               ]
                 ++ (if opAndTermList == [] then
@@ -1543,20 +1548,20 @@ parserInExpr string index moduleRef =
                     )
                 )
             , [ emitSetExpr moduleRef
-                    (ModuleIndex.PartDefIndex index)
+                    index
                     (Expr.make headTerm opAndTermList)
               , textAreaValueToSetTextEmit textAreaValue
               ]
             )
 
 
-parserBeginWithTerm : String -> Int -> SourceIndex.ModuleIndex -> Int -> Expr.Expr -> ( Active, List Emit )
-parserBeginWithTerm string index moduleRef termIndex expr =
+parserBeginWithTerm : String -> ModuleIndex.PartDefIndex -> SourceIndex.ModuleIndex -> Int -> Expr.Expr -> ( Active, List Emit )
+parserBeginWithTerm string partDefIndex moduleRef termIndex expr =
     case Parser.beginWithExprTerm 0 (Parser.SimpleChar.fromString string) of
         Parser.BeginWithTermEndTerm { headTerm, opAndTermList, textAreaValue } ->
             ( ActivePartDefList
                 (ActivePartDef
-                    ( index
+                    ( partDefIndex
                     , ActivePartDefExpr
                         (TermOpTerm
                             (termIndex + List.length opAndTermList)
@@ -1569,7 +1574,7 @@ parserBeginWithTerm string index moduleRef termIndex expr =
                         { moduleIndex = moduleRef
                         , moduleMsg =
                             ModuleWithCache.MsgSetExpr
-                                (ModuleIndex.PartDefIndex index)
+                                partDefIndex
                                 (expr
                                     |> (if termIndex == 0 then
                                             Expr.replaceAndInsertHeadLastTerm headTerm opAndTermList
@@ -1592,7 +1597,7 @@ parserBeginWithTerm string index moduleRef termIndex expr =
         Parser.BeginWithTermEndOp { headTerm, opAndTermList, lastOp, textAreaValue } ->
             ( ActivePartDefList
                 (ActivePartDef
-                    ( index
+                    ( partDefIndex
                     , ActivePartDefExpr
                         (TermOpOp
                             (termIndex + List.length opAndTermList)
@@ -1604,7 +1609,7 @@ parserBeginWithTerm string index moduleRef termIndex expr =
                         { moduleIndex = moduleRef
                         , moduleMsg =
                             ModuleWithCache.MsgSetExpr
-                                (ModuleIndex.PartDefIndex index)
+                                partDefIndex
                                 (expr
                                     |> (if termIndex == 0 then
                                             Expr.replaceAndInsertHeadLastOp headTerm opAndTermList lastOp
@@ -1620,13 +1625,13 @@ parserBeginWithTerm string index moduleRef termIndex expr =
             )
 
 
-parserBeginWithOp : String -> Int -> SourceIndex.ModuleIndex -> Int -> Expr.Expr -> ( Active, List Emit )
-parserBeginWithOp string index moduleRef opIndex expr =
+parserBeginWithOp : String -> ModuleIndex.PartDefIndex -> SourceIndex.ModuleIndex -> Int -> Expr.Expr -> ( Active, List Emit )
+parserBeginWithOp string partDefIndex moduleRef opIndex expr =
     case Parser.beginWithExprOp 0 (Parser.SimpleChar.fromString string) of
         Parser.BeginWithOpEndTerm { headOp, termAndOpList, lastTerm, textAreaValue } ->
             ( ActivePartDefList
                 (ActivePartDef
-                    ( index
+                    ( partDefIndex
                     , ActivePartDefExpr
                         (TermOpTerm
                             (opIndex + 1 + List.length termAndOpList)
@@ -1639,7 +1644,7 @@ parserBeginWithOp string index moduleRef opIndex expr =
                         { moduleIndex = moduleRef
                         , moduleMsg =
                             ModuleWithCache.MsgSetExpr
-                                (ModuleIndex.PartDefIndex index)
+                                partDefIndex
                                 (expr |> Expr.replaceAndInsertOpLastOp opIndex headOp termAndOpList)
                         }
                     )
@@ -1650,7 +1655,7 @@ parserBeginWithOp string index moduleRef opIndex expr =
         Parser.BeginWithOpEndOp { headOp, termAndOpList, textAreaValue } ->
             ( ActivePartDefList
                 (ActivePartDef
-                    ( index
+                    ( partDefIndex
                     , ActivePartDefExpr
                         (TermOpOp
                             (opIndex + List.length termAndOpList)
@@ -1662,7 +1667,7 @@ parserBeginWithOp string index moduleRef opIndex expr =
                         { moduleIndex = moduleRef
                         , moduleMsg =
                             ModuleWithCache.MsgSetExpr
-                                (ModuleIndex.PartDefIndex index)
+                                partDefIndex
                                 (expr |> Expr.replaceAndInsertOpLastOp opIndex headOp termAndOpList)
                         }
                     )
@@ -1799,7 +1804,7 @@ activeToString active =
         ActivePartDefList ActivePartDefListSelf ->
             "パーツエディタ全体"
 
-        ActivePartDefList (ActivePartDef ( index, partDefActive )) ->
+        ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex index, partDefActive )) ->
             String.fromInt index
                 ++ "番目の定義"
                 ++ (partDefActive |> partDefActiveToString)
@@ -2055,7 +2060,7 @@ typeDefinitionsViewTitle =
 -}
 
 
-{-| モジュールエディタのメインの要素であるパーツエディタを表示する
+{-| パーツエディタの表示
 -}
 partDefinitionsView : Bool -> Maybe PartDefListActive -> List ( PartDef.PartDef, ModuleWithCache.CompileAndRunResult ) -> Html.Html Msg
 partDefinitionsView isFocus partDefListActiveMaybe partDefAndResultList =
@@ -2067,7 +2072,9 @@ partDefinitionsView isFocus partDefListActiveMaybe partDefAndResultList =
                         [ subClass "section-active" ]
 
                     _ ->
-                        [ Html.Events.onClick (ActiveTo (ActivePartDefList ActivePartDefListSelf)) ]
+                        [ Html.Events.onClick
+                            (ActiveTo (ActivePartDefList ActivePartDefListSelf))
+                        ]
                )
         )
         [ partDefinitionsViewTitle
@@ -2091,7 +2098,7 @@ partDefinitionsViewTitle =
         [ Html.text "Part Definitions" ]
 
 
-partDefListView : Bool -> List ( PartDef.PartDef, ModuleWithCache.CompileAndRunResult ) -> Maybe ( Int, PartDefActive ) -> Html.Html Msg
+partDefListView : Bool -> List ( PartDef.PartDef, ModuleWithCache.CompileAndRunResult ) -> Maybe ( ModuleIndex.PartDefIndex, PartDefActive ) -> Html.Html Msg
 partDefListView isFocus defAndResultList partDefActiveWithIndexMaybe =
     Html.div
         [ subClass "partDefList"
@@ -2105,7 +2112,7 @@ partDefListView isFocus defAndResultList partDefActiveWithIndexMaybe =
                         result
                         (case partDefActiveWithIndexMaybe of
                             Just ( i, partDefActive ) ->
-                                if i == index then
+                                if i == ModuleIndex.PartDefIndex index then
                                     Just partDefActive
 
                                 else
@@ -2118,7 +2125,7 @@ partDefListView isFocus defAndResultList partDefActiveWithIndexMaybe =
                             (\m ->
                                 case m of
                                     DefActiveTo ref ->
-                                        ActiveTo (ActivePartDefList (ActivePartDef ( index, ref )))
+                                        ActiveTo (ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex index, ref )))
 
                                     DefInput string ->
                                         Input string
