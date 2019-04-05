@@ -57,6 +57,8 @@ type Msg
     | SelectFirstChild
     | SelectLastChild
     | SelectParent
+    | SuggestionNext
+    | SuggestionPrev
     | SuggestionNextOrSelectDown
     | SuggestionPrevOrSelectUp
     | Input String
@@ -231,6 +233,12 @@ update msg project model =
         SelectParent ->
             model |> setActive project (selectParent targetModule active)
 
+        SuggestionNext ->
+            model |> suggestionNext targetModule project
+
+        SuggestionPrev ->
+            model |> suggestionPrev targetModule project
+
         SuggestionPrevOrSelectUp ->
             model |> suggestionPrevOrSelectUp targetModule project
 
@@ -246,10 +254,10 @@ update msg project model =
             )
 
         ConfirmMultiLineTextField ->
-            model |> update (ActiveTo (confirmMultiLineTextField active)) project
+            model |> setActive project (confirmMultiLineTextField active)
 
         ConfirmSingleLineTextField ->
-            model |> update (ActiveTo (confirmSingleLineTextField active)) project
+            model |> setActive project (confirmSingleLineTextField active)
 
         ConfirmSingleLineTextFieldOrSelectParent ->
             model |> setActive project (confirmSingleLineTextFieldOrSelectParent targetModule active)
@@ -335,7 +343,14 @@ setActive project active (Model rec) =
     )
 
 
-{-| 選択を左へ移動して、選択する対象を変える
+
+{- =========================================================
+          ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+   =========================================================
+-}
+
+
+{-| 左のものを選択する
 -}
 selectLeft : ModuleWithCache.ModuleWithResult -> Active -> Active
 selectLeft module_ active =
@@ -473,7 +488,14 @@ branchPosLeft branchPos =
                     Just Guard
 
 
-{-| 選択を右へ移動して、選択する対象を変える
+
+{- =========================================================
+            →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→
+   =========================================================
+-}
+
+
+{-| 右のものを選択する
 -}
 selectRight : ModuleWithCache.ModuleWithResult -> Active -> Active
 selectRight module_ active =
@@ -626,7 +648,14 @@ branchPosRight branchPos =
                     Just Guard
 
 
-{-| 選択を上へ移動して、選択する対象を変える
+
+{- =========================================================
+           ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+   =========================================================
+-}
+
+
+{-| ↑ 上のものを選択する
 -}
 selectUp : ModuleWithCache.ModuleWithResult -> Active -> Active
 selectUp module_ active =
@@ -676,7 +705,14 @@ selectUp module_ active =
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
 
-{-| 選択を下へ移動して、選択する対象を変える
+
+{- =========================================================
+           ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+   =========================================================
+-}
+
+
+{-| 下のものを選択する
 -}
 selectDown : ModuleWithCache.ModuleWithResult -> Active -> Active
 selectDown module_ active =
@@ -726,7 +762,14 @@ selectDown module_ active =
             active
 
 
-{-| 選択を選択していたものからその子供の先頭へ移動する
+
+{- =========================================================
+                          子の先頭へ
+   =========================================================
+-}
+
+
+{-| 選択を最初の子供に移動する。デフォルトでSpaceとCtrl+→の動作
 -}
 selectFirstChild : ModuleWithCache.ModuleWithResult -> Active -> Active
 selectFirstChild module_ active =
@@ -761,8 +804,6 @@ selectFirstChild module_ active =
             active
 
 
-{-| 選択を最初の子供に移動する。デフォルトでSpaceとCtrl+→の動作
--}
 termOpPosFirstChild : Maybe Expr.Expr -> TermOpPos -> TermOpPos
 termOpPosFirstChild exprMaybe termOpPos =
     case termOpPos of
@@ -795,6 +836,13 @@ termTypeFirstChild termMaybe termType =
 
         ( _, _ ) ->
             termType
+
+
+
+{- =========================================================
+                          子の末尾へ
+   =========================================================
+-}
 
 
 {-| 選択を最後の子供に移動する。デフォルトでCtrl+←を押すとこの動作をする
@@ -873,6 +921,13 @@ termTypeLastChild termMaybe termType =
 
         ( _, _ ) ->
             termType
+
+
+
+{- =========================================================
+                            親へ
+   =========================================================
+-}
 
 
 {-| 選択を親に変更する。デフォルトでEnterキーを押すとこの動作をする
@@ -975,101 +1030,11 @@ branchPosParent branchPos =
                     Just BranchSelf
 
 
-{-| 候補の選択を前にもどるか、候補が表示されていない状態なら上の要素を選択する
+
+{- =========================================================
+                    候補の選択を次に進める
+   =========================================================
 -}
-suggestionPrevOrSelectUp : ModuleWithCache.ModuleWithResult -> Project.Project -> Model -> ( Model, List Emit )
-suggestionPrevOrSelectUp module_ project model =
-    model
-        |> (case getActive model of
-                ActivePartDefList (ActivePartDef ( _, ActivePartDefName (NameEditSuggestionSelect _) )) ->
-                    suggestionPrev project
-
-                _ ->
-                    update SelectUp project
-           )
-
-
-{-| 候補の選択を次にもどる
--}
-suggestionPrev : Project.Project -> Model -> ( Model, List Emit )
-suggestionPrev project model =
-    case getActive model of
-        ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
-            if index - 1 < 0 then
-                let
-                    ( newModel, emitList ) =
-                        model
-                            |> setActive
-                                project
-                                (ActivePartDefList
-                                    (ActivePartDef
-                                        ( partDefIndex
-                                        , ActivePartDefName NameEditText
-                                        )
-                                    )
-                                )
-                in
-                ( newModel
-                , [ EmitMsgToSource
-                        (Source.MsgModule
-                            { moduleIndex =
-                                getTargetModuleIndex newModel
-                            , moduleMsg =
-                                ModuleWithCache.MsgSetName (ModuleIndex.PartDefIndex index) searchName
-                            }
-                        )
-                  ]
-                    ++ emitList
-                )
-
-            else
-                let
-                    ( newModel, emitList ) =
-                        model
-                            |> setActive
-                                project
-                                (ActivePartDefList
-                                    (ActivePartDef
-                                        ( partDefIndex
-                                        , ActivePartDefName
-                                            (NameEditSuggestionSelect
-                                                { index = index - 1
-                                                , searchName = searchName
-                                                }
-                                            )
-                                        )
-                                    )
-                                )
-                in
-                ( newModel
-                , suggestionSelectChangedThenNameChangeEmit
-                    (index - 1)
-                    partDefIndex
-                    (getTargetModuleIndex newModel)
-                    ++ emitList
-                )
-
-        _ ->
-            ( model
-            , []
-            )
-
-
-{-| 候補の選択を次に進めるか、候補が表示されていない状態なら下の要素を選択する
--}
-suggestionNextOrSelectDown : ModuleWithCache.ModuleWithResult -> Project.Project -> Model -> ( Model, List Emit )
-suggestionNextOrSelectDown module_ project model =
-    model
-        |> (case getActive model of
-                ActivePartDefList (ActivePartDef ( _, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
-                    suggestionNext module_ project
-
-                ActivePartDefList (ActivePartDef ( _, ActivePartDefName NameEditText )) ->
-                    suggestionNext module_ project
-
-                _ ->
-                    update SelectDown project
-           )
 
 
 {-| 候補の選択を次に進める
@@ -1143,6 +1108,79 @@ suggestionNext module_ project model =
             )
 
 
+
+{- =========================================================
+                    候補の選択を前に戻す
+   =========================================================
+-}
+
+
+{-| 候補の選択を前に戻す
+-}
+suggestionPrev : ModuleWithCache.ModuleWithResult -> Project.Project -> Model -> ( Model, List Emit )
+suggestionPrev targetModule project model =
+    case getActive model of
+        ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
+            if index - 1 < 0 then
+                let
+                    ( newModel, emitList ) =
+                        model
+                            |> setActive
+                                project
+                                (ActivePartDefList
+                                    (ActivePartDef
+                                        ( partDefIndex
+                                        , ActivePartDefName NameEditText
+                                        )
+                                    )
+                                )
+                in
+                ( newModel
+                , [ EmitMsgToSource
+                        (Source.MsgModule
+                            { moduleIndex =
+                                getTargetModuleIndex newModel
+                            , moduleMsg =
+                                ModuleWithCache.MsgSetName (ModuleIndex.PartDefIndex index) searchName
+                            }
+                        )
+                  ]
+                    ++ emitList
+                )
+
+            else
+                let
+                    ( newModel, emitList ) =
+                        model
+                            |> setActive
+                                project
+                                (ActivePartDefList
+                                    (ActivePartDef
+                                        ( partDefIndex
+                                        , ActivePartDefName
+                                            (NameEditSuggestionSelect
+                                                { index = index - 1
+                                                , searchName = searchName
+                                                }
+                                            )
+                                        )
+                                    )
+                                )
+                in
+                ( newModel
+                , suggestionSelectChangedThenNameChangeEmit
+                    (index - 1)
+                    partDefIndex
+                    (getTargetModuleIndex newModel)
+                    ++ emitList
+                )
+
+        _ ->
+            ( model
+            , []
+            )
+
+
 suggestionSelectChangedThenNameChangeEmit : Int -> ModuleIndex.PartDefIndex -> SourceIndex.ModuleIndex -> List Emit
 suggestionSelectChangedThenNameChangeEmit suggestIndex partDefIndex moduleRef =
     case nameSuggestList |> Utility.ListExtra.getAt suggestIndex of
@@ -1160,7 +1198,14 @@ suggestionSelectChangedThenNameChangeEmit suggestIndex partDefIndex moduleRef =
             []
 
 
-{-| 複数行入力の確定。概要や文字列リテラルでの入力を確定にする
+
+{- =========================================================
+                       複数行入力の確定
+   =========================================================
+-}
+
+
+{-| 複数行入力の確定。概要や文字列リテラルでの入力を確定にする。デフォルトでCtrl+Enter
 -}
 confirmMultiLineTextField : Active -> Active
 confirmMultiLineTextField active =
@@ -1170,6 +1215,13 @@ confirmMultiLineTextField active =
 
         _ ->
             active
+
+
+
+{- =========================================================
+                       単一行入力の確定
+   =========================================================
+-}
 
 
 {-| 単一行入力の確定。名前や型、式の入力を確定にする
@@ -1219,89 +1271,15 @@ confirmTermType termType =
             TypeLambda lambdaPos
 
 
-{-| デフォルトではEnterキーを押した時の動作。テキスト編集中なら確定にして、それ以外なら親に移動する
+
+{- =========================================================
+                         テキスト入力
+   =========================================================
 -}
-confirmSingleLineTextFieldOrSelectParent : ModuleWithCache.ModuleWithResult -> Active -> Active
-confirmSingleLineTextFieldOrSelectParent targetModule active =
-    if isNeedConfirmSingleLineTextField active then
-        confirmSingleLineTextField active
-
-    else
-        selectParent targetModule active
 
 
-isNeedConfirmSingleLineTextField : Active -> Bool
-isNeedConfirmSingleLineTextField active =
-    case active of
-        ActiveNone ->
-            False
-
-        ActiveReadMe _ ->
-            False
-
-        ActivePartDefList ActivePartDefListSelf ->
-            False
-
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
-            False
-
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefName NameEditText )) ->
-            True
-
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefName (NameEditSuggestionSelect _) )) ->
-            True
-
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefName NameEditSelect )) ->
-            False
-
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefType TypeEditSelect )) ->
-            False
-
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr termOpPos )) ->
-            isNeedConfirmSingleLineTextFieldTermOp termOpPos
-
-
-{-| TODO
+{-| テキストで文字を入力されたら
 -}
-isNeedConfirmSingleLineTextFieldTermOp : TermOpPos -> Bool
-isNeedConfirmSingleLineTextFieldTermOp termOpPos =
-    case termOpPos of
-        TermOpSelf ->
-            False
-
-        TermOpHead ->
-            False
-
-        TermOpTerm _ termType ->
-            isNeedConfirmSingleLineTextFieldTermType termType
-
-        TermOpOp _ ->
-            False
-
-
-isNeedConfirmSingleLineTextFieldTermType : TermType -> Bool
-isNeedConfirmSingleLineTextFieldTermType termType =
-    case termType of
-        TypeNoChildren ExprEditSelect ->
-            False
-
-        TypeNoChildren ExprEditText ->
-            True
-
-        TypeNoChildren (ExprEditSelectSuggestion _) ->
-            True
-
-        TypeParentheses termOpPos ->
-            isNeedConfirmSingleLineTextFieldTermOp termOpPos
-
-        TypeLambda _ ->
-            False
-
-
-
-{- =================== Input ==================== -}
-
-
 input : String -> Project.Project -> ModuleWithCache.ModuleWithResult -> Model -> ( Model, List Emit )
 input string project targetModule model =
     case getActive model of
@@ -1681,20 +1659,6 @@ parserBeginWithOp string partDefIndex moduleRef opIndex expr =
             )
 
 
-getLastTerm : Expr.Term -> List ( Expr.Operator, Expr.Term ) -> Expr.Term
-getLastTerm headTerm opAndTermList =
-    Utility.ListExtra.last opAndTermList
-        |> Maybe.map Tuple.second
-        |> Maybe.withDefault headTerm
-
-
-getLastOp : Expr.Operator -> List ( Expr.Term, Expr.Operator ) -> Expr.Operator
-getLastOp headOp termAndOpList =
-    Utility.ListExtra.last termAndOpList
-        |> Maybe.map Tuple.second
-        |> Maybe.withDefault headOp
-
-
 textAreaValueToSetTextEmit : List ( Char, Bool ) -> Emit
 textAreaValueToSetTextEmit =
     List.map Tuple.first >> String.fromList >> EmitSetTextAreaValue
@@ -1737,6 +1701,121 @@ emitSetExpr moduleIndex partDefIndex expr =
                 ModuleWithCache.MsgSetExpr partDefIndex expr
             }
         )
+
+
+
+{- =========================================================
+                         複合した動作
+   =========================================================
+-}
+
+
+{-| 候補の選択を前にもどるか、候補が表示されていない状態なら上の要素を選択する
+-}
+suggestionPrevOrSelectUp : ModuleWithCache.ModuleWithResult -> Project.Project -> Model -> ( Model, List Emit )
+suggestionPrevOrSelectUp targetModule project model =
+    model
+        |> (case getActive model of
+                ActivePartDefList (ActivePartDef ( _, ActivePartDefName (NameEditSuggestionSelect _) )) ->
+                    suggestionPrev targetModule project
+
+                _ ->
+                    update SelectUp project
+           )
+
+
+{-| 候補の選択を次に進めるか、候補が表示されていない状態なら下の要素を選択する
+-}
+suggestionNextOrSelectDown : ModuleWithCache.ModuleWithResult -> Project.Project -> Model -> ( Model, List Emit )
+suggestionNextOrSelectDown module_ project model =
+    model
+        |> (case getActive model of
+                ActivePartDefList (ActivePartDef ( _, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
+                    suggestionNext module_ project
+
+                ActivePartDefList (ActivePartDef ( _, ActivePartDefName NameEditText )) ->
+                    suggestionNext module_ project
+
+                _ ->
+                    update SelectDown project
+           )
+
+
+{-| デフォルトではEnterキーを押した時の動作。テキスト編集中なら確定にして、それ以外なら親に移動する
+-}
+confirmSingleLineTextFieldOrSelectParent : ModuleWithCache.ModuleWithResult -> Active -> Active
+confirmSingleLineTextFieldOrSelectParent targetModule active =
+    if isNeedConfirmSingleLineTextField active then
+        confirmSingleLineTextField active
+
+    else
+        selectParent targetModule active
+
+
+isNeedConfirmSingleLineTextField : Active -> Bool
+isNeedConfirmSingleLineTextField active =
+    case active of
+        ActiveNone ->
+            False
+
+        ActiveReadMe _ ->
+            False
+
+        ActivePartDefList ActivePartDefListSelf ->
+            False
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
+            False
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefName NameEditText )) ->
+            True
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefName (NameEditSuggestionSelect _) )) ->
+            True
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefName NameEditSelect )) ->
+            False
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefType TypeEditSelect )) ->
+            False
+
+        ActivePartDefList (ActivePartDef ( _, ActivePartDefExpr termOpPos )) ->
+            isNeedConfirmSingleLineTextFieldTermOp termOpPos
+
+
+isNeedConfirmSingleLineTextFieldTermOp : TermOpPos -> Bool
+isNeedConfirmSingleLineTextFieldTermOp termOpPos =
+    case termOpPos of
+        TermOpSelf ->
+            False
+
+        TermOpHead ->
+            False
+
+        TermOpTerm _ termType ->
+            isNeedConfirmSingleLineTextFieldTermType termType
+
+        TermOpOp _ ->
+            False
+
+
+isNeedConfirmSingleLineTextFieldTermType : TermType -> Bool
+isNeedConfirmSingleLineTextFieldTermType termType =
+    case termType of
+        TypeNoChildren ExprEditSelect ->
+            False
+
+        TypeNoChildren ExprEditText ->
+            True
+
+        TypeNoChildren (ExprEditSelectSuggestion _) ->
+            True
+
+        TypeParentheses termOpPos ->
+            isNeedConfirmSingleLineTextFieldTermOp termOpPos
+
+        TypeLambda _ ->
+            False
 
 
 
