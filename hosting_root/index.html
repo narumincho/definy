@@ -55,8 +55,7 @@
                 document.getElementById("edit").focus();
             })
         })
-        /* クリックイベントをキャプチャフェーズで登録する。登録できるのは1つまで
-           登録するために呼び出すのは面倒くさい、固定にしてシンプルに
+        /* クリックイベントをキャプチャフェーズで登録する。複数登録しないように。
         */
         app.ports.setClickEventListenerInCapturePhase.subscribe(id => {
             requestAnimationFrame(() => {

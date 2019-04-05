@@ -158,12 +158,17 @@ type GutterType
 init : ( Model, Cmd Msg )
 init =
     let
-        ( editorPanelModel, emitListFromEditorPanel ) =
+        ( editorPanelModel, emitListFromEditorGroupPanel ) =
             Panel.EditorGroup.initModel
 
-        ( project, ( msgList, cmd ) ) =
+        ( project, ( msgListFromProject, cmdFromProject ) ) =
             Project.init
                 |> projectUpdateReturnToProjectAndMsgListAndCmd
+
+        ( msgFromEditorGroupPanel, cmdFromEditorGroupPanel ) =
+            emitListFromEditorGroupPanel
+                |> List.map editorPanelEmitToMsg
+                |> Utility.ListExtra.listTupleListToTupleList
 
         model =
             Model
@@ -178,9 +183,13 @@ init =
                 }
     in
     updateFromList
-        msgList
+        (msgListFromProject ++ msgFromEditorGroupPanel)
         model
-        |> Tuple.mapSecond (\c -> Cmd.batch [ cmd, c ])
+        |> Tuple.mapSecond
+            (\c ->
+                Cmd.batch
+                    ([ cmdFromProject ] ++ cmdFromEditorGroupPanel ++ [ c ])
+            )
 
 
 
@@ -261,10 +270,8 @@ update msg model =
 
         FireClickEventInCapturePhase idString ->
             model
-                |> update
-                    (EditorPanelMsg
-                        (Panel.EditorGroup.FireClickEventInCapturePhase idString)
-                    )
+                |> editorPanelUpdate
+                    (Panel.EditorGroup.FireClickEventInCapturePhase idString)
 
         ReceiveRunResult data ->
             receiveResultValue data model
@@ -275,35 +282,18 @@ update msg model =
             )
 
         FocusTo focus ->
-            let
-                ( newModel, newMsgList, newCmdList ) =
-                    setFocus focus model
-            in
-            newModel
-                |> updateFromList newMsgList
-                |> Tuple.mapSecond (\next -> Cmd.batch (newCmdList ++ [ next ]))
+            setFocus focus model
 
         WindowResize { width, height } ->
-            ( setWindowSize { width = width, height = height } model
+            ( model |> setWindowSize { width = width, height = height }
             , Cmd.none
             )
 
         TreePanelMsg treePanelMsg ->
-            let
-                ( newModel, msgList ) =
-                    treePanelUpdate treePanelMsg model
-            in
-            newModel |> updateFromList msgList
+            model |> treePanelUpdate treePanelMsg
 
         EditorPanelMsg editorPanelMsg ->
-            let
-                ( newModel, newMsgList, newCmdList ) =
-                    model
-                        |> editorPanelUpdate editorPanelMsg
-            in
-            newModel
-                |> updateFromList newMsgList
-                |> Tuple.mapSecond (\next -> Cmd.batch (newCmdList ++ [ next ]))
+            model |> editorPanelUpdate editorPanelMsg
 
         ChangeEditorResource editorRef ->
             ( openEditor editorRef model
@@ -321,7 +311,7 @@ update msg model =
             )
 
         ProjectMsg sMsg ->
-            model |> projectMsg sMsg
+            model |> projectUpdate sMsg
 
 
 updateFromList : List Msg -> Model -> ( Model, Cmd Msg )
@@ -354,10 +344,10 @@ keyDown keyMaybe model =
         Just key ->
             case editorReservedKey (isOpenCommandPalette model) key of
                 x :: xs ->
-                    (x :: xs)
+                    x :: xs
 
                 [] ->
-                    case (isFocusDefaultUi model) of
+                    case isFocusDefaultUi model of
                         Just Panel.DefaultUi.MultiLineTextField ->
                             if multiLineTextFieldReservedKey key then
                                 []
@@ -559,7 +549,7 @@ singleLineTextFieldReservedKey { key, ctrl, alt, shift } =
 
 
 {- -------------------------------------------------
-             各パネルのキー入力。 キー -> メッセージ
+                 各パネルのキー入力
    -------------------------------------------------
 -}
 
@@ -604,6 +594,8 @@ editorGroupPanelKeyDown key =
             )
 
 
+{-| モジュールエディタのキー入力
+-}
 moduleEditorKeyMsg : Key.Key -> List Panel.Editor.Module.Msg
 moduleEditorKeyMsg { key, ctrl, shift, alt } =
     case ( ctrl, shift, alt ) of
@@ -717,8 +709,8 @@ receiveResultValue : { ref : List Int, index : Int, result : Int } -> Model -> (
 receiveResultValue { ref, index, result } model =
     case ref |> Project.SourceIndex.moduleIndexFromListInt of
         Just moduleIndex ->
-            update
-                (ProjectMsg
+            model
+                |> projectUpdate
                     (Project.SourceMsg
                         (Project.Source.MsgModule
                             { moduleIndex = moduleIndex
@@ -729,8 +721,6 @@ receiveResultValue { ref, index, result } model =
                             }
                         )
                     )
-                )
-                model
 
         Nothing ->
             ( model
@@ -775,50 +765,16 @@ isFocusEditorGroupPanel model =
 
 {-| フォーカスする要素を変更する。それによって発生するCmdもある
 -}
-setFocus : Focus -> Model -> ( Model, List Msg, List (Cmd Msg) )
+setFocus : Focus -> Model -> ( Model, Cmd Msg )
 setFocus focus (Model rec) =
     case focus of
         FocusTreePanel ->
-            let
-                focusMovedModel =
-                    Model { rec | focus = FocusTreePanel }
-
-                ( editorPanelModel, editorPanelEmit ) =
-                    Panel.EditorGroup.update
-                        Panel.EditorGroup.Blur
-                        (getProject focusMovedModel)
-                        (getEditorGroupPanelModel focusMovedModel)
-
-                ( nextMsg, cmd ) =
-                    editorPanelEmit
-                        |> List.map editorPanelEmitToMsg
-                        |> Utility.ListExtra.listTupleListToTupleList
-            in
-            ( focusMovedModel |> setEditorGroupPanelModel editorPanelModel
-            , nextMsg
-            , cmd
-            )
+            Model { rec | focus = FocusTreePanel }
+                |> editorPanelUpdate Panel.EditorGroup.Blur
 
         FocusEditorGroupPanel ->
-            let
-                focusMovedModel =
-                    Model { rec | focus = FocusEditorGroupPanel }
-
-                ( editorPanelModel, emitMsg ) =
-                    Panel.EditorGroup.update
-                        Panel.EditorGroup.Focus
-                        (getProject focusMovedModel)
-                        (getEditorGroupPanelModel focusMovedModel)
-
-                ( nextMsg, cmd ) =
-                    emitMsg
-                        |> List.map editorPanelEmitToMsg
-                        |> Utility.ListExtra.listTupleListToTupleList
-            in
-            ( focusMovedModel |> setEditorGroupPanelModel editorPanelModel
-            , nextMsg
-            , cmd
-            )
+            Model { rec | focus = FocusEditorGroupPanel }
+                |> editorPanelUpdate Panel.EditorGroup.Focus
 
 
 
@@ -994,7 +950,7 @@ toGutterMode gutter (Model rec) =
 
 {-| ツリーパネルの更新
 -}
-treePanelUpdate : Panel.Tree.Msg -> Model -> ( Model, List Msg )
+treePanelUpdate : Panel.Tree.Msg -> Model -> ( Model, Cmd Msg )
 treePanelUpdate msg model =
     let
         ( treeModel, emitMsg ) =
@@ -1004,9 +960,9 @@ treePanelUpdate msg model =
                     (getActiveEditor model)
                     (getProject model)
     in
-    ( model |> setTreePanelModel treeModel
-    , emitMsg |> List.map treePanelEmitToMsg
-    )
+    model
+        |> setTreePanelModel treeModel
+        |> updateFromList (emitMsg |> List.map treePanelEmitToMsg)
 
 
 {-| ツリーパネルで発生したEmitを全体のMsgに変換する
@@ -1023,7 +979,7 @@ treePanelEmitToMsg emit =
 
 {-| エディタグループパネルの更新
 -}
-editorPanelUpdate : Panel.EditorGroup.Msg -> Model -> ( Model, List Msg, List (Cmd Msg) )
+editorPanelUpdate : Panel.EditorGroup.Msg -> Model -> ( Model, Cmd Msg )
 editorPanelUpdate msg model =
     let
         ( editorPanelModel, emitMsg ) =
@@ -1037,10 +993,10 @@ editorPanelUpdate msg model =
                 |> List.map editorPanelEmitToMsg
                 |> Utility.ListExtra.listTupleListToTupleList
     in
-    ( model |> setEditorGroupPanelModel editorPanelModel
-    , nextMsg
-    , cmd
-    )
+    model
+        |> setEditorGroupPanelModel editorPanelModel
+        |> updateFromList nextMsg
+        |> Tuple.mapSecond (\next -> Cmd.batch (cmd ++ [ next ]))
 
 
 {-| エディタグループパネルの更新
@@ -1196,10 +1152,17 @@ shiftMsgListFromMsgQueue (Model rec) =
     )
 
 
-{-| プロジェクトの情報を変更する
+
+{- =====================================
+        プロジェクトの情報を変更する
+   =====================================
 -}
-projectMsg : Project.Msg -> Model -> ( Model, Cmd Msg )
-projectMsg msg model =
+
+
+{-| プロジェクトの更新
+-}
+projectUpdate : Project.Msg -> Model -> ( Model, Cmd Msg )
+projectUpdate msg model =
     let
         ( newProject, ( msgList, cmd ) ) =
             model
