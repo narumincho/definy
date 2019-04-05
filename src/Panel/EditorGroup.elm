@@ -1666,11 +1666,11 @@ editorTitleCloseIcon editorRef =
             [ NSvg.line
                 ( 1, 1 )
                 ( 11, 11 )
-                (NSvg.strokeColor Palette.X11.white)
+                (NSvg.strokeWidth 2)
             , NSvg.line
                 ( 11, 1 )
                 ( 1, 11 )
-                (NSvg.strokeColor Palette.X11.white)
+                (NSvg.strokeWidth 2)
             ]
         ]
 

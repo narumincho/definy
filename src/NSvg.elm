@@ -6,6 +6,7 @@ module NSvg exposing
     , fillNone, fillColor
     , rect, rectWithClickEvent, circle, polygon, polygonWithClickEvent, path, line
     , translate
+    , strokeWidth
     )
 
 {-| 標準のelm/svgは型がゆるいのでできるだけ間違わないように型をつけた新しいSVGの表現を作った
@@ -148,7 +149,7 @@ offsetTranslate ( x, y ) =
 type StrokeStyle
     = StrokeNone
     | Stroke
-        { color : Color
+        { color : Maybe Color
         , width : Int
         , strokeLineJoin : StrokeLineJoin
         }
@@ -174,7 +175,7 @@ strokeNone =
 strokeColor : Color -> StrokeStyle
 strokeColor color =
     Stroke
-        { color = color
+        { color = Just color
         , width = 1
         , strokeLineJoin = StrokeLineJoinMiter
         }
@@ -185,7 +186,18 @@ strokeColor color =
 strokeColorWidth : Color -> Int -> StrokeStyle
 strokeColorWidth color width =
     Stroke
-        { color = color
+        { color = Just color
+        , width = width
+        , strokeLineJoin = StrokeLineJoinMiter
+        }
+
+
+{-| 幅のみ指定。色はCSSで上書きする用
+-}
+strokeWidth : Int -> StrokeStyle
+strokeWidth width =
+    Stroke
+        { color = Nothing
         , width = width
         , strokeLineJoin = StrokeLineJoinMiter
         }
@@ -196,7 +208,7 @@ strokeColorWidth color width =
 strokeColorAndStrokeLineJoinRound : Color -> StrokeStyle
 strokeColorAndStrokeLineJoinRound color =
     Stroke
-        { color = color
+        { color = Just color
         , width = 1
         , strokeLineJoin = StrokeLineJoinRound
         }
@@ -211,8 +223,13 @@ strokeStyleToSvgAttributes strokeStyle =
             []
 
         Stroke { color, width, strokeLineJoin } ->
-            [ Sa.stroke (Color.toHexString color)
-            ]
+            (case color of
+                Just c ->
+                    [ Sa.stroke (Color.toHexString c) ]
+
+                Nothing ->
+                    []
+            )
                 ++ (if width == 1 then
                         []
 

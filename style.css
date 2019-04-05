@@ -231,10 +231,22 @@ img {
 }
 
 .editorGroupPanel-editorTitle-closeIcon {
-    width: 1.5rem;
-    height: 1.5rem;
-    padding: .2rem;
+    width: 40px;
+    height: 40px;
+    padding: 12px;
     flex-shrink: 0;
+    stroke: #ddd;
+    cursor: pointer;
+}
+
+.editorGroupPanel-editorTitle-closeIcon:hover {
+    stroke: #000;
+    background-color: red;
+}
+
+.editorGroupPanel-editorTitle-closeIcon:active {
+    stroke: #000;
+    background-color: #f44336;
 }
 
 .editorGroupPanel-editorBody {
