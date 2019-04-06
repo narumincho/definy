@@ -1,4 +1,4 @@
-module Project.Source.Module.TypeDef exposing (TypeDef, getName, typeDefInt)
+module Project.Source.Module.TypeDef exposing (TypeDef, getName, getTagNum, typeDefInt)
 
 {-| 型の定義
 -}
@@ -48,6 +48,19 @@ type Parameter
 getName : TypeDef -> L.Label
 getName (TypeDef { name }) =
     name
+
+
+{-| 型のタグの個数を取得する
+Kernelだった場合は1を返す
+-}
+getTagNum : TypeDef -> Int
+getTagNum (TypeDef { content }) =
+    case content of
+        TagOrKernelTag tagList ->
+            List.length tagList
+
+        TagOrKernelKernel _ ->
+            1
 
 
 {-| デバッグ用。Intの型定義

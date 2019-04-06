@@ -99,7 +99,7 @@ type TypeDefListActive
 type TypeDefActive
     = ActiveTypeDefSelf
     | ActiveTypeDefName LabelEdit
-    | ActiveTypeDefTagList ( Int, TypeDefTagActive )
+    | ActiveTypeDefTagList ( ModuleIndex.TypeDefTagIndex, TypeDefTagActive )
 
 
 type TypeDefTagActive
@@ -110,7 +110,7 @@ type TypeDefTagActive
 type LabelEdit
     = LabelEditSelect
     | LabelEditText
-    | LabelEditSggestion
+    | LabelEditSuggestion
         { index : Int
         , searchName : L.Label
         }
@@ -800,43 +800,21 @@ activeUp module_ active =
                 Nothing ->
                     ActiveReadMe ActiveReadMeSelf
 
-        ActiveTypeDefList _ ->
-            ActiveReadMe ActiveReadMeSelf
+        ActiveTypeDefList typeDefListActive ->
+            case typeDefListActiveUp typeDefListActive of
+                Just movedTypeDefListActive ->
+                    ActiveTypeDefList movedTypeDefListActive
 
-        ActivePartDefList ActivePartDefListSelf ->
-            ActiveTypeDefList ActiveTypeDefListSelf
+                Nothing ->
+                    ActiveReadMe ActiveReadMeSelf
 
-        ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex 0, ActivePartDefSelf )) ->
-            -- 先頭の定義から定義リストへ
-            ActivePartDefList ActivePartDefListSelf
+        ActivePartDefList partDefListActive ->
+            case partDefListActiveUp partDefListActive of
+                Just movedPartDefListActive ->
+                    ActivePartDefList movedPartDefListActive
 
-        ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex index, ActivePartDefSelf )) ->
-            -- 定義から前の定義へ
-            ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex (index - 1), ActivePartDefSelf ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
-            -- 名前から定義へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType _ )) ->
-            -- 型から定義へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
-            -- 式から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType TypeEditSelect ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead )) ->
-            -- 先頭の項の前から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm _ _) )) ->
-            -- 項から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp _) )) ->
-            -- 演算子から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
+                Nothing ->
+                    ActiveTypeDefList ActiveTypeDefListSelf
 
 
 readMeActiveUp : ReadMeActive -> Maybe ReadMeActive
@@ -873,15 +851,15 @@ typeDefActiveUp typeDefActive =
         ActiveTypeDefName _ ->
             Just ActiveTypeDefSelf
 
-        ActiveTypeDefTagList ( index, tagList ) ->
+        ActiveTypeDefTagList ( ModuleIndex.TypeDefTagIndex index, tagList ) ->
             case typeDefTagListUp tagList of
                 Just movedTagList ->
                     Just
-                        (ActiveTypeDefTagList ( index, movedTagList ))
+                        (ActiveTypeDefTagList ( ModuleIndex.TypeDefTagIndex index, movedTagList ))
 
                 Nothing ->
                     Just
-                        (ActiveTypeDefTagList ( index + 1, ActiveTypeDefTagName LabelEditSelect ))
+                        (ActiveTypeDefTagList ( ModuleIndex.TypeDefTagIndex (index + 1), ActiveTypeDefTagName LabelEditSelect ))
 
 
 typeDefTagListUp : TypeDefTagActive -> Maybe TypeDefTagActive
@@ -894,6 +872,37 @@ typeDefTagListUp typeDefTagActive =
             Nothing
 
 
+partDefListActiveUp : PartDefListActive -> Maybe PartDefListActive
+partDefListActiveUp partDefListActive =
+    case partDefListActive of
+        ActivePartDefListSelf ->
+            Nothing
+
+        ActivePartDef ( ModuleIndex.PartDefIndex 0, ActivePartDefSelf ) ->
+            Just ActivePartDefListSelf
+
+        ActivePartDef ( ModuleIndex.PartDefIndex index, ActivePartDefSelf ) ->
+            Just (ActivePartDef ( ModuleIndex.PartDefIndex (index - 1), ActivePartDefSelf ))
+
+        ActivePartDef ( index, ActivePartDefName _ ) ->
+            Just (ActivePartDef ( index, ActivePartDefSelf ))
+
+        ActivePartDef ( index, ActivePartDefType _ ) ->
+            Just (ActivePartDef ( index, ActivePartDefSelf ))
+
+        ActivePartDef ( index, ActivePartDefExpr TermOpSelf ) ->
+            Just (ActivePartDef ( index, ActivePartDefType TypeEditSelect ))
+
+        ActivePartDef ( index, ActivePartDefExpr TermOpHead ) ->
+            Just (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
+
+        ActivePartDef ( index, ActivePartDefExpr (TermOpTerm _ _) ) ->
+            Just (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
+
+        ActivePartDef ( index, ActivePartDefExpr (TermOpOp _) ) ->
+            Just (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
+
+
 
 {- =========================================================
            ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
@@ -904,51 +913,146 @@ typeDefTagListUp typeDefTagActive =
 {-| 下のものを選択する
 -}
 activeDown : ModuleWithCache.ModuleWithResult -> Active -> Active
-activeDown module_ active =
+activeDown targetModule active =
     case active of
         ActiveNone ->
             -- 何も選択していないところから概要へ
             ActiveReadMe ActiveReadMeSelf
 
-        ActiveReadMe _ ->
-            -- 概要欄から定義リストへ
-            ActivePartDefList ActivePartDefListSelf
+        ActiveReadMe readMeActive ->
+            case readMeActiveDown readMeActive of
+                Just movedReadMe ->
+                    ActiveReadMe movedReadMe
 
-        ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex index, ActivePartDefSelf )) ->
-            -- 定義から次の定義へ
-            ActivePartDefList
-                (ActivePartDef
-                    ( ModuleIndex.PartDefIndex (min (ModuleWithCache.getPartDefNum module_ - 1) (index + 1))
-                    , ActivePartDefSelf
-                    )
-                )
+                Nothing ->
+                    ActiveTypeDefList ActiveTypeDefListSelf
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
-            -- 名前から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
+        ActiveTypeDefList typeDefListActive ->
+            case typeDefListActiveDown typeDefListActive of
+                Just movedTypeDefListActive ->
+                    ActiveTypeDefList movedTypeDefListActive
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType _ )) ->
-            -- 型から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
+                Nothing ->
+                    ActivePartDefList ActivePartDefListSelf
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
-            -- 式から定義へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+        ActivePartDefList partDefListActive ->
+            case partDefListActiveDown targetModule partDefListActive of
+                Just movedPartDefListActive ->
+                    ActivePartDefList movedPartDefListActive
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead )) ->
-            -- 先頭の項の前から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
+                Nothing ->
+                    ActivePartDefList ActivePartDefListSelf
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpTerm _ (TypeNoChildren _)) )) ->
-            -- 項から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (TermOpOp _) )) ->
-            -- 演算子から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
+readMeActiveDown : ReadMeActive -> Maybe ReadMeActive
+readMeActiveDown readMeActive =
+    case readMeActive of
+        ActiveReadMeSelf ->
+            Nothing
 
-        _ ->
-            active
+        ActiveReadMeText ->
+            Just ActiveReadMeSelf
+
+
+typeDefListActiveDown : TypeDefListActive -> Maybe TypeDefListActive
+typeDefListActiveDown typeDefListActive =
+    case typeDefListActive of
+        ActiveTypeDefListSelf ->
+            Nothing
+
+        ActiveTypeDef ( ModuleIndex.TypeDefIndex index, typeDefActive ) ->
+            case typeDefActiveDown typeDefActive of
+                Just movedTypeDefActive ->
+                    Just (ActiveTypeDef ( ModuleIndex.TypeDefIndex index, movedTypeDefActive ))
+
+                Nothing ->
+                    Just (ActiveTypeDef ( ModuleIndex.TypeDefIndex (index + 1), ActiveTypeDefSelf ))
+
+
+typeDefActiveDown : TypeDefActive -> Maybe TypeDefActive
+typeDefActiveDown typeDefActive =
+    case typeDefActive of
+        ActiveTypeDefSelf ->
+            Nothing
+
+        ActiveTypeDefName _ ->
+            Just (ActiveTypeDefTagList ( ModuleIndex.TypeDefTagIndex 0, ActiveTypeDefTagName LabelEditSelect ))
+
+        ActiveTypeDefTagList ( ModuleIndex.TypeDefTagIndex index, typeDefTagActive ) ->
+            case typeDefTagActiveDown typeDefTagActive of
+                Just movedTypeDefTagActive ->
+                    Just (ActiveTypeDefTagList ( ModuleIndex.TypeDefTagIndex index, movedTypeDefTagActive ))
+
+                Nothing ->
+                    Just (ActiveTypeDefTagList ( ModuleIndex.TypeDefTagIndex (index + 1), ActiveTypeDefTagName LabelEditSelect ))
+
+
+typeDefTagActiveDown : TypeDefTagActive -> Maybe TypeDefTagActive
+typeDefTagActiveDown typeDefTagActive =
+    case typeDefTagActive of
+        ActiveTypeDefTagName _ ->
+            Nothing
+
+        ActiveTypeDefTagParameter ->
+            Nothing
+
+
+partDefListActiveDown : ModuleWithCache.ModuleWithResult -> PartDefListActive -> Maybe PartDefListActive
+partDefListActiveDown targetModule partDefListActive =
+    case partDefListActive of
+        ActivePartDefListSelf ->
+            Nothing
+
+        ActivePartDef ( ModuleIndex.PartDefIndex index, partDefActive ) ->
+            case partDefActiveDown (targetModule |> ModuleWithCache.getPartDef (ModuleIndex.PartDefIndex index) |> Maybe.withDefault PartDef.empty) partDefActive of
+                Just movedPartDefActive ->
+                    Just (ActivePartDef ( ModuleIndex.PartDefIndex index, movedPartDefActive ))
+
+                Nothing ->
+                    if index + 1 < ModuleWithCache.getPartDefNum targetModule then
+                        Just
+                            (ActivePartDef ( ModuleIndex.PartDefIndex (index + 1), ActivePartDefSelf ))
+
+                    else
+                        Nothing
+
+
+partDefActiveDown : PartDef.PartDef -> PartDefActive -> Maybe PartDefActive
+partDefActiveDown partDef partDefActive =
+    case partDefActive of
+        ActivePartDefSelf ->
+            Nothing
+
+        ActivePartDefName _ ->
+            Just (ActivePartDefExpr TermOpSelf)
+
+        ActivePartDefType _ ->
+            Just (ActivePartDefExpr TermOpSelf)
+
+        ActivePartDefExpr termOpPos ->
+            case termOpPosDown (partDef |> PartDef.getExpr) termOpPos of
+                Just movedTermOpPos ->
+                    Just (ActivePartDefExpr movedTermOpPos)
+
+                Nothing ->
+                    Nothing
+
+
+termOpPosDown : Expr.Expr -> TermOpPos -> Maybe TermOpPos
+termOpPosDown expr termOpPos =
+    case termOpPos of
+        TermOpSelf ->
+            Nothing
+
+        TermOpHead ->
+            Just TermOpSelf
+
+        -- TODO term type 式の途中で改行することを考えたら、この処理は画面幅を式の長さに依存する
+        TermOpTerm int termType ->
+            Just (TermOpTerm int termType)
+
+        TermOpOp _ ->
+            Just TermOpSelf
 
 
 
@@ -961,40 +1065,99 @@ activeDown module_ active =
 {-| 選択を最初の子供に移動する。デフォルトでSpaceとCtrl+→の動作
 -}
 activeToFirstChild : ModuleWithCache.ModuleWithResult -> Active -> Active
-activeToFirstChild module_ active =
+activeToFirstChild targetModule active =
     case active of
         ActiveNone ->
-            -- 何も選択していないところから概要へ
             ActiveReadMe ActiveReadMeSelf
 
-        ActiveReadMe ActiveReadMeSelf ->
-            -- 概要欄から概要欄のテキスト入力へ
-            ActiveReadMe ActiveReadMeText
+        ActiveReadMe readMeActive ->
+            ActiveReadMe (readMeActiveToFirstChild readMeActive)
 
-        ActivePartDefList ActivePartDefListSelf ->
-            -- 定義リストから先頭の定義へ
-            ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex 0, ActivePartDefSelf ))
+        ActiveTypeDefList typeDefListActive ->
+            ActiveTypeDefList (typeDefListActiveToFirstChild typeDefListActive)
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
-            -- 定義から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName NameEditSelect ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr termOpPos )) ->
-            -- 式から先頭の項へ
-            let
-                exprMaybe =
-                    module_
-                        |> ModuleWithCache.getPartDef index
-                        |> Maybe.map PartDef.getExpr
-            in
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr (termOpPosFirstChild exprMaybe termOpPos) ))
-
-        _ ->
-            active
+        ActivePartDefList partDefListActive ->
+            ActivePartDefList (partDefListActiveToFirstChild targetModule partDefListActive)
 
 
-termOpPosFirstChild : Maybe Expr.Expr -> TermOpPos -> TermOpPos
-termOpPosFirstChild exprMaybe termOpPos =
+readMeActiveToFirstChild : ReadMeActive -> ReadMeActive
+readMeActiveToFirstChild readMeActive =
+    case readMeActive of
+        ActiveReadMeSelf ->
+            ActiveReadMeText
+
+        ActiveReadMeText ->
+            ActiveReadMeText
+
+
+typeDefListActiveToFirstChild : TypeDefListActive -> TypeDefListActive
+typeDefListActiveToFirstChild typeDefListActive =
+    case typeDefListActive of
+        ActiveTypeDefListSelf ->
+            ActiveTypeDef ( ModuleIndex.TypeDefIndex 0, ActiveTypeDefSelf )
+
+        ActiveTypeDef ( typeDefIndex, typeDefActive ) ->
+            ActiveTypeDef ( typeDefIndex, typeDefActiveToFirstChild typeDefActive )
+
+
+typeDefActiveToFirstChild : TypeDefActive -> TypeDefActive
+typeDefActiveToFirstChild typeDefActive =
+    case typeDefActive of
+        ActiveTypeDefSelf ->
+            ActiveTypeDefName LabelEditSelect
+
+        ActiveTypeDefName labelEdit ->
+            ActiveTypeDefName labelEdit
+
+        ActiveTypeDefTagList ( index, typeDefTagActive ) ->
+            ActiveTypeDefTagList ( index, typeDefTagListActiveToFirstChild typeDefTagActive )
+
+
+typeDefTagListActiveToFirstChild : TypeDefTagActive -> TypeDefTagActive
+typeDefTagListActiveToFirstChild typeDefTagActive =
+    case typeDefTagActive of
+        ActiveTypeDefTagName labelEdit ->
+            ActiveTypeDefTagName labelEdit
+
+        ActiveTypeDefTagParameter ->
+            ActiveTypeDefTagParameter
+
+
+partDefListActiveToFirstChild : ModuleWithCache.ModuleWithResult -> PartDefListActive -> PartDefListActive
+partDefListActiveToFirstChild targetModule partDefListActive =
+    case partDefListActive of
+        ActivePartDefListSelf ->
+            ActivePartDef ( ModuleIndex.PartDefIndex 0, ActivePartDefSelf )
+
+        ActivePartDef ( partDefIndex, partDefActive ) ->
+            ActivePartDef
+                ( partDefIndex
+                , partDefActiveToFirstChild
+                    (ModuleWithCache.getPartDef partDefIndex targetModule
+                        |> Maybe.withDefault PartDef.empty
+                    )
+                    partDefActive
+                )
+
+
+partDefActiveToFirstChild : PartDef.PartDef -> PartDefActive -> PartDefActive
+partDefActiveToFirstChild partDef partDefActive =
+    case partDefActive of
+        ActivePartDefSelf ->
+            ActivePartDefName NameEditSelect
+
+        ActivePartDefName nameEdit ->
+            ActivePartDefName nameEdit
+
+        ActivePartDefType typeEdit ->
+            ActivePartDefType typeEdit
+
+        ActivePartDefExpr termOpPos ->
+            ActivePartDefExpr (termOpPosToFirstChild (PartDef.getExpr partDef) termOpPos)
+
+
+termOpPosToFirstChild : Expr.Expr -> TermOpPos -> TermOpPos
+termOpPosToFirstChild expr termOpPos =
     case termOpPos of
         TermOpSelf ->
             TermOpTerm 0 (TypeNoChildren ExprEditSelect)
@@ -1003,12 +1166,13 @@ termOpPosFirstChild exprMaybe termOpPos =
             TermOpHead
 
         TermOpTerm termIndex termType ->
-            let
-                termMaybe =
-                    exprMaybe
-                        |> Maybe.andThen (Expr.getTermFromIndex termIndex)
-            in
-            TermOpTerm termIndex (termTypeFirstChild termMaybe termType)
+            TermOpTerm termIndex
+                (termTypeFirstChild
+                    (expr
+                        |> Expr.getTermFromIndex termIndex
+                    )
+                    termType
+                )
 
         TermOpOp opIndex ->
             TermOpOp opIndex
@@ -1018,10 +1182,10 @@ termTypeFirstChild : Maybe Expr.Term -> TermType -> TermType
 termTypeFirstChild termMaybe termType =
     case ( termMaybe, termType ) of
         ( Just (Expr.Parentheses expr), TypeParentheses termOpPos ) ->
-            TypeParentheses (termOpPosFirstChild (Just expr) termOpPos)
+            TypeParentheses (termOpPosToFirstChild expr termOpPos)
 
         ( Just (Expr.Parentheses expr), _ ) ->
-            TypeParentheses (termOpPosFirstChild (Just expr) TermOpSelf)
+            TypeParentheses (termOpPosToFirstChild expr TermOpSelf)
 
         ( _, _ ) ->
             termType
@@ -1037,48 +1201,108 @@ termTypeFirstChild termMaybe termType =
 {-| 選択を最後の子供に移動する。デフォルトでCtrl+←を押すとこの動作をする
 -}
 activeToLastChild : ModuleWithCache.ModuleWithResult -> Active -> Active
-activeToLastChild module_ active =
+activeToLastChild targetModule active =
     case active of
         ActiveNone ->
-            -- 何も選択していないところから定義リストへ
             ActivePartDefList ActivePartDefListSelf
 
-        ActiveReadMe ActiveReadMeSelf ->
-            -- 概要欄から概要欄のテキスト入力へ
-            ActiveReadMe ActiveReadMeText
+        ActiveReadMe readMeActive ->
+            ActiveReadMe (readMeActiveToLastChild readMeActive)
 
-        ActivePartDefList ActivePartDefListSelf ->
-            -- 定義リストから最後の定義リストへ
-            ActivePartDefList
-                (ActivePartDef ( ModuleIndex.PartDefIndex (ModuleWithCache.getPartDefNum module_ - 1), ActivePartDefSelf ))
+        ActiveTypeDefList typeDefListActive ->
+            ActiveTypeDefList (typeDefListActiveToLastChild targetModule typeDefListActive)
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
-            -- 定義から式へ
-            ActivePartDefList
-                (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr termOpPos )) ->
-            let
-                exprMaybe =
-                    module_
-                        |> ModuleWithCache.getPartDef index
-                        |> Maybe.map PartDef.getExpr
-            in
-            -- 式の中身
-            ActivePartDefList
-                (ActivePartDef ( index, ActivePartDefExpr (termOpPosLastChild exprMaybe termOpPos) ))
-
-        _ ->
-            active
+        ActivePartDefList partDefListActive ->
+            ActivePartDefList (partDefListActiveToLastChild targetModule partDefListActive)
 
 
-termOpPosLastChild : Maybe Expr.Expr -> TermOpPos -> TermOpPos
-termOpPosLastChild exprMaybe termOpPos =
+readMeActiveToLastChild : ReadMeActive -> ReadMeActive
+readMeActiveToLastChild readMeActive =
+    case readMeActive of
+        ActiveReadMeSelf ->
+            ActiveReadMeText
+
+        ActiveReadMeText ->
+            ActiveReadMeText
+
+
+typeDefListActiveToLastChild : ModuleWithCache.ModuleWithResult -> TypeDefListActive -> TypeDefListActive
+typeDefListActiveToLastChild targetModule typeDefListActive =
+    case typeDefListActive of
+        ActiveTypeDefListSelf ->
+            ActiveTypeDef
+                ( ModuleIndex.TypeDefIndex (ModuleWithCache.getTypeDefNum targetModule - 1)
+                , ActiveTypeDefSelf
+                )
+
+        ActiveTypeDef ( typeDefIndex, typeDefActive ) ->
+            ActiveTypeDef
+                ( typeDefIndex
+                , typeDefActiveToLastChild (targetModule |> ModuleWithCache.getTypeDef typeDefIndex) typeDefActive
+                )
+
+
+typeDefActiveToLastChild : Maybe TypeDef.TypeDef -> TypeDefActive -> TypeDefActive
+typeDefActiveToLastChild typeDefMaybe typeDefActive =
+    case typeDefActive of
+        ActiveTypeDefSelf ->
+            ActiveTypeDefTagList
+                ( ModuleIndex.TypeDefTagIndex
+                    (typeDefMaybe
+                        |> Maybe.map TypeDef.getTagNum
+                        |> Maybe.withDefault 1
+                    )
+                , ActiveTypeDefTagName LabelEditSelect
+                )
+
+        ActiveTypeDefName labelEdit ->
+            ActiveTypeDefName labelEdit
+
+        ActiveTypeDefTagList ( typeDefTagIndex, typeDefTagActive ) ->
+            ActiveTypeDefTagList ( typeDefTagIndex, typeDefTagActive )
+
+
+partDefListActiveToLastChild : ModuleWithCache.ModuleWithResult -> PartDefListActive -> PartDefListActive
+partDefListActiveToLastChild targetModule partDefListActive =
+    case partDefListActive of
+        ActivePartDefListSelf ->
+            ActivePartDef ( ModuleIndex.PartDefIndex (ModuleWithCache.getPartDefNum targetModule - 1), ActivePartDefSelf )
+
+        ActivePartDef ( partDefIndex, partDefActive ) ->
+            ActivePartDef
+                ( partDefIndex
+                , partDefActiveToLastChild
+                    (targetModule
+                        |> ModuleWithCache.getPartDef partDefIndex
+                        |> Maybe.withDefault PartDef.empty
+                    )
+                    partDefActive
+                )
+
+
+partDefActiveToLastChild : PartDef.PartDef -> PartDefActive -> PartDefActive
+partDefActiveToLastChild partDef partDefActive =
+    case partDefActive of
+        ActivePartDefSelf ->
+            ActivePartDefExpr TermOpSelf
+
+        ActivePartDefName nameEdit ->
+            ActivePartDefName nameEdit
+
+        ActivePartDefType typeEdit ->
+            ActivePartDefType typeEdit
+
+        ActivePartDefExpr termOpPos ->
+            ActivePartDefExpr (termOpPosToLastChild (PartDef.getExpr partDef) termOpPos)
+
+
+termOpPosToLastChild : Expr.Expr -> TermOpPos -> TermOpPos
+termOpPosToLastChild exprMaybe termOpPos =
     let
         lastTermIndex =
             exprMaybe
-                |> Maybe.map (Expr.getOthers >> List.length)
-                |> Maybe.withDefault 0
+                |> Expr.getOthers
+                |> List.length
     in
     case termOpPos of
         TermOpSelf ->
@@ -1091,7 +1315,7 @@ termOpPosLastChild exprMaybe termOpPos =
             let
                 termMaybe =
                     exprMaybe
-                        |> Maybe.andThen (Expr.getTermFromIndex termIndex)
+                        |> Expr.getTermFromIndex termIndex
             in
             TermOpTerm termIndex (termTypeLastChild termMaybe termType)
 
@@ -1103,10 +1327,10 @@ termTypeLastChild : Maybe Expr.Term -> TermType -> TermType
 termTypeLastChild termMaybe termType =
     case ( termMaybe, termType ) of
         ( Just (Expr.Parentheses expr), TypeParentheses termOpPos ) ->
-            TypeParentheses (termOpPosLastChild (Just expr) termOpPos)
+            TypeParentheses (termOpPosToLastChild expr termOpPos)
 
         ( Just (Expr.Parentheses expr), TypeNoChildren _ ) ->
-            TypeParentheses (termOpPosLastChild (Just expr) TermOpSelf)
+            TypeParentheses (termOpPosToLastChild expr TermOpSelf)
 
         ( _, _ ) ->
             termType
@@ -1122,34 +1346,127 @@ termTypeLastChild termMaybe termType =
 {-| 選択を親に変更する。デフォルトでEnterキーを押すとこの動作をする
 -}
 activeToParent : ModuleWithCache.ModuleWithResult -> Active -> Active
-activeToParent module_ active =
+activeToParent targetModule active =
     case active of
-        ActiveReadMe ActiveReadMeText ->
-            ActiveReadMe ActiveReadMeSelf
+        ActiveNone ->
+            ActiveNone
 
-        ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
-            ActivePartDefList ActivePartDefListSelf
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType _ )) ->
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
-
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr termOpPos )) ->
-            case termOpPosParent termOpPos of
-                Just movedTermOpPos ->
-                    ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr movedTermOpPos ))
+        ActiveReadMe readMeActive ->
+            case readMeActiveToParent readMeActive of
+                Just movedReadMeActive ->
+                    ActiveReadMe movedReadMeActive
 
                 Nothing ->
-                    ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+                    ActiveReadMe ActiveReadMeSelf
 
-        _ ->
-            active
+        ActiveTypeDefList typeDefListActive ->
+            case typeDefListActiveToParent typeDefListActive of
+                Just movedTypeDefListActive ->
+                    ActiveTypeDefList movedTypeDefListActive
+
+                Nothing ->
+                    ActiveTypeDefList ActiveTypeDefListSelf
+
+        ActivePartDefList partDefListActive ->
+            case partDefListActiveToParent partDefListActive of
+                Just movedPartDefListActive ->
+                    ActivePartDefList movedPartDefListActive
+
+                Nothing ->
+                    ActivePartDefList ActivePartDefListSelf
 
 
-termOpPosParent : TermOpPos -> Maybe TermOpPos
-termOpPosParent termOpPos =
+readMeActiveToParent : ReadMeActive -> Maybe ReadMeActive
+readMeActiveToParent readMeActive =
+    case readMeActive of
+        ActiveReadMeSelf ->
+            Nothing
+
+        ActiveReadMeText ->
+            Just ActiveReadMeSelf
+
+
+typeDefListActiveToParent : TypeDefListActive -> Maybe TypeDefListActive
+typeDefListActiveToParent typeDefListActive =
+    case typeDefListActive of
+        ActiveTypeDefListSelf ->
+            Nothing
+
+        ActiveTypeDef ( typeDefIndex, typeDefActive ) ->
+            case typeDefActiveToParent typeDefActive of
+                Just movedTypeDefActive ->
+                    Just (ActiveTypeDef ( typeDefIndex, movedTypeDefActive ))
+
+                Nothing ->
+                    Just ActiveTypeDefListSelf
+
+
+typeDefActiveToParent : TypeDefActive -> Maybe TypeDefActive
+typeDefActiveToParent typeDefActive =
+    case typeDefActive of
+        ActiveTypeDefSelf ->
+            Nothing
+
+        ActiveTypeDefName _ ->
+            Just ActiveTypeDefSelf
+
+        ActiveTypeDefTagList ( typeDefTagIndex, typeDefTagActive ) ->
+            case typeDefTagToParent typeDefTagActive of
+                Just movedTagActive ->
+                    Just (ActiveTypeDefTagList ( typeDefTagIndex, movedTagActive ))
+
+                Nothing ->
+                    Just ActiveTypeDefSelf
+
+
+typeDefTagToParent : TypeDefTagActive -> Maybe TypeDefTagActive
+typeDefTagToParent typeDefTagActive =
+    case typeDefTagActive of
+        ActiveTypeDefTagName labelEdit ->
+            Nothing
+
+        ActiveTypeDefTagParameter ->
+            Nothing
+
+
+partDefListActiveToParent : PartDefListActive -> Maybe PartDefListActive
+partDefListActiveToParent typeDefListActive =
+    case typeDefListActive of
+        ActivePartDefListSelf ->
+            Nothing
+
+        ActivePartDef ( partDefIndex, partDefActive ) ->
+            case partDefActiveToParent partDefActive of
+                Just moved ->
+                    Just (ActivePartDef ( partDefIndex, moved ))
+
+                Nothing ->
+                    Just ActivePartDefListSelf
+
+
+partDefActiveToParent : PartDefActive -> Maybe PartDefActive
+partDefActiveToParent partDefActive =
+    case partDefActive of
+        ActivePartDefSelf ->
+            Nothing
+
+        ActivePartDefName _ ->
+            Just ActivePartDefSelf
+
+        ActivePartDefType _ ->
+            Just ActivePartDefSelf
+
+        ActivePartDefExpr termOpPos ->
+            case termOpPosToParent termOpPos of
+                Just moved ->
+                    Just (ActivePartDefExpr moved)
+
+                Nothing ->
+                    Just ActivePartDefSelf
+
+
+termOpPosToParent : TermOpPos -> Maybe TermOpPos
+termOpPosToParent termOpPos =
     case termOpPos of
         TermOpSelf ->
             Nothing
@@ -1158,7 +1475,7 @@ termOpPosParent termOpPos =
             Just TermOpSelf
 
         TermOpTerm termIndex termType ->
-            case termTypeParent termType of
+            case termTypeToParent termType of
                 Just movedTermType ->
                     Just (TermOpTerm termIndex movedTermType)
 
@@ -1169,23 +1486,23 @@ termOpPosParent termOpPos =
             Just TermOpSelf
 
 
-termTypeParent : TermType -> Maybe TermType
-termTypeParent termType =
+termTypeToParent : TermType -> Maybe TermType
+termTypeToParent termType =
     case termType of
         TypeNoChildren _ ->
             Nothing
 
         TypeParentheses termOpPos ->
-            termOpPosParent termOpPos
+            termOpPosToParent termOpPos
                 |> Maybe.map TypeParentheses
 
         TypeLambda lambdaPos ->
-            lambdaPosParent lambdaPos
+            lambdaPosToParent lambdaPos
                 |> Maybe.map TypeLambda
 
 
-lambdaPosParent : LambdaPos -> Maybe LambdaPos
-lambdaPosParent lambdaPos =
+lambdaPosToParent : LambdaPos -> Maybe LambdaPos
+lambdaPosToParent lambdaPos =
     case lambdaPos of
         LambdaSelf ->
             Nothing
@@ -1194,12 +1511,12 @@ lambdaPosParent lambdaPos =
             Just LambdaSelf
 
         Branch index branchPos ->
-            branchPosParent branchPos
+            branchPosToParent branchPos
                 |> Maybe.map (Branch index)
 
 
-branchPosParent : BranchPos -> Maybe BranchPos
-branchPosParent branchPos =
+branchPosToParent : BranchPos -> Maybe BranchPos
+branchPosToParent branchPos =
     case branchPos of
         BranchSelf ->
             Nothing
@@ -1211,7 +1528,7 @@ branchPosParent branchPos =
             Just BranchSelf
 
         Expr termOpPos ->
-            case termOpPosParent termOpPos of
+            case termOpPosToParent termOpPos of
                 Just movedTermOpPos ->
                     Just (Expr movedTermOpPos)
 
