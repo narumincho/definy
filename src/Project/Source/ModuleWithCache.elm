@@ -12,6 +12,8 @@ module Project.Source.ModuleWithCache exposing
     , getPartDefNum
     , getReadMe
     , getTypeDef
+    , getTypeDefList
+    , getTypeDefNum
     , init
     , update
     )
@@ -176,11 +178,25 @@ getReadMe =
     Module.getReadMe
 
 
+{-| Moduleで定義されているTypeDefのListを取得する
+-}
+getTypeDefList : ModuleWithResult -> List TypeDef.TypeDef
+getTypeDefList =
+    Module.getTypeDefList
+
+
 {-| 指定した位置にあるTypeDefを取得する
 -}
 getTypeDef : ModuleIndex.TypeDefIndex -> ModuleWithResult -> Maybe TypeDef.TypeDef
 getTypeDef =
     Module.getTypeDef
+
+
+{-| 型定義の個数を取得する
+-}
+getTypeDefNum : ModuleWithResult -> Int
+getTypeDefNum =
+    Module.getTypeDefList >> List.length
 
 
 {-| Moduleで定義されているPartDefとそのコンパイル結果と評価結果のListを取得する

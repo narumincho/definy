@@ -602,10 +602,10 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
         ( False, False, False ) ->
             case key of
                 Key.ArrowLeft ->
-                    [ Panel.Editor.Module.SelectLeft ]
+                    [ Panel.Editor.Module.ActiveLeft ]
 
                 Key.ArrowRight ->
-                    [ Panel.Editor.Module.SelectRight ]
+                    [ Panel.Editor.Module.ActiveRight ]
 
                 Key.ArrowUp ->
                     [ Panel.Editor.Module.SuggestionPrevOrSelectUp ]
@@ -615,7 +615,7 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
                     ]
 
                 Key.Space ->
-                    [ Panel.Editor.Module.SelectFirstChild ]
+                    [ Panel.Editor.Module.ActiveToFirstChild ]
 
                 Key.Enter ->
                     [ Panel.Editor.Module.ConfirmSingleLineTextFieldOrSelectParent
@@ -627,10 +627,10 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
         ( True, False, False ) ->
             case key of
                 Key.ArrowLeft ->
-                    [ Panel.Editor.Module.SelectLastChild ]
+                    [ Panel.Editor.Module.ActiveToLastChild ]
 
                 Key.ArrowRight ->
-                    [ Panel.Editor.Module.SelectFirstChild ]
+                    [ Panel.Editor.Module.ActiveToFirstChild ]
 
                 Key.Enter ->
                     [ Panel.Editor.Module.ConfirmMultiLineTextField ]

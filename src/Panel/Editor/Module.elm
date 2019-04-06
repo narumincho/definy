@@ -50,13 +50,13 @@ type CompileResultVisible
 
 type Msg
     = ActiveTo Active
-    | SelectLeft
-    | SelectRight
-    | SelectUp
-    | SelectDown
-    | SelectFirstChild
-    | SelectLastChild
-    | SelectParent
+    | ActiveLeft
+    | ActiveRight
+    | ActiveUp
+    | ActiveDown
+    | ActiveToFirstChild
+    | ActiveToLastChild
+    | ActiveToParent
     | SuggestionNext
     | SuggestionPrev
     | SuggestionNextOrSelectDown
@@ -82,12 +82,38 @@ type Emit
 type Active
     = ActiveNone
     | ActiveReadMe ReadMeActive
+    | ActiveTypeDefList TypeDefListActive
     | ActivePartDefList PartDefListActive
 
 
 type ReadMeActive
     = ActiveReadMeSelf
     | ActiveReadMeText
+
+
+type TypeDefListActive
+    = ActiveTypeDefListSelf
+    | ActiveTypeDef ( ModuleIndex.TypeDefIndex, TypeDefActive )
+
+
+type TypeDefActive
+    = ActiveTypeDefSelf
+    | ActiveTypeDefName LabelEdit
+    | ActiveTypeDefTagList ( Int, TypeDefTagActive )
+
+
+type TypeDefTagActive
+    = ActiveTypeDefTagName LabelEdit
+    | ActiveTypeDefTagParameter
+
+
+type LabelEdit
+    = LabelEditSelect
+    | LabelEditText
+    | LabelEditSggestion
+        { index : Int
+        , searchName : L.Label
+        }
 
 
 type PartDefListActive
@@ -212,26 +238,26 @@ update msg project model =
         ActiveTo toActive ->
             model |> setActive project toActive
 
-        SelectLeft ->
-            model |> setActive project (selectLeft targetModule active)
+        ActiveLeft ->
+            model |> setActive project (activeLeft targetModule active)
 
-        SelectRight ->
-            model |> setActive project (selectRight targetModule active)
+        ActiveRight ->
+            model |> setActive project (activeRight targetModule active)
 
-        SelectUp ->
-            model |> setActive project (selectUp targetModule active)
+        ActiveUp ->
+            model |> setActive project (activeUp targetModule active)
 
-        SelectDown ->
-            model |> setActive project (selectDown targetModule active)
+        ActiveDown ->
+            model |> setActive project (activeDown targetModule active)
 
-        SelectFirstChild ->
-            model |> setActive project (selectFirstChild targetModule active)
+        ActiveToFirstChild ->
+            model |> setActive project (activeToFirstChild targetModule active)
 
-        SelectLastChild ->
-            model |> setActive project (selectLastChild targetModule active)
+        ActiveToLastChild ->
+            model |> setActive project (activeToLastChild targetModule active)
 
-        SelectParent ->
-            model |> setActive project (selectParent targetModule active)
+        ActiveToParent ->
+            model |> setActive project (activeToParent targetModule active)
 
         SuggestionNext ->
             model |> suggestionNext targetModule project
@@ -307,36 +333,34 @@ setActive project active (Model rec) =
             ActiveReadMe ActiveReadMeText ->
                 [ EmitFocusEditTextAea ]
 
+            ActiveTypeDefList _ ->
+                []
+
             ActivePartDefList ActivePartDefListSelf ->
                 []
 
             ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
                 []
 
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
+            ActivePartDefList (ActivePartDef ( _, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
                 let
                     name =
-                        targetModule
-                            |> ModuleWithCache.getPartDef index
-                            |> Maybe.map
-                                (PartDef.getName
-                                    >> (\n ->
-                                            case n of
-                                                Name.NoName ->
-                                                    ""
+                        suggestionNameList
+                            |> Utility.ListExtra.getAt index
+                            |> Maybe.map (Tuple.first >> Name.safeNameToString)
+                            |> Maybe.withDefault
+                                (case searchName of
+                                    Name.NoName ->
+                                        ""
 
-                                                Name.SafeName safeName ->
-                                                    Name.safeNameToString safeName
-                                       )
+                                    Name.SafeName safeName ->
+                                        Name.safeNameToString safeName
                                 )
-                            |> Maybe.withDefault "名前の取得失敗"
                 in
                 [ EmitSetTextAreaValue name, EmitFocusEditTextAea ]
 
-            -- TODO 選択状態なら選択する
-            ActivePartDefList (ActivePartDef ( index, _ )) ->
+            ActivePartDefList (ActivePartDef ( _, _ )) ->
                 [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
-        -- TODO テキスト表現を設定する
 
       else
         []
@@ -352,49 +376,103 @@ setActive project active (Model rec) =
 
 {-| 左のものを選択する
 -}
-selectLeft : ModuleWithCache.ModuleWithResult -> Active -> Active
-selectLeft module_ active =
+activeLeft : ModuleWithCache.ModuleWithResult -> Active -> Active
+activeLeft targetModule active =
     case active of
         ActiveNone ->
-            -- 何も選択していないところから定義リストへ
             ActivePartDefList ActivePartDefListSelf
 
-        ActivePartDefList ActivePartDefListSelf ->
-            -- 定義リストから概要欄へ
-            ActiveReadMe ActiveReadMeSelf
+        ActiveReadMe readMeActive ->
+            ActiveReadMe (readMeActiveLeft readMeActive)
 
-        ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex 0, ActivePartDefSelf )) ->
-            -- 先頭の定義から定義リストへ
-            ActivePartDefList ActivePartDefListSelf
+        ActiveTypeDefList typeDefListActive ->
+            ActiveTypeDefList (typeDefListActiveLeft typeDefListActive)
 
-        ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex index, ActivePartDefSelf )) ->
-            -- 定義から前の定義へ
-            ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex (index - 1), ActivePartDefSelf ))
+        ActivePartDefList activePartDefList ->
+            ActivePartDefList (partDefListActiveLeft activePartDefList)
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
+
+readMeActiveLeft : ReadMeActive -> ReadMeActive
+readMeActiveLeft readMeActive =
+    case readMeActive of
+        ActiveReadMeSelf ->
+            ActiveReadMeSelf
+
+        ActiveReadMeText ->
+            ActiveReadMeSelf
+
+
+typeDefListActiveLeft : TypeDefListActive -> TypeDefListActive
+typeDefListActiveLeft typeDefListActive =
+    case typeDefListActive of
+        ActiveTypeDefListSelf ->
+            ActiveTypeDefListSelf
+
+        ActiveTypeDef ( index, typeDefActive ) ->
+            case typeDefActiveLeft typeDefActive of
+                Just movedTypeDefActive ->
+                    ActiveTypeDef ( index, movedTypeDefActive )
+
+                Nothing ->
+                    ActiveTypeDefListSelf
+
+
+typeDefActiveLeft : TypeDefActive -> Maybe TypeDefActive
+typeDefActiveLeft typeDefActive =
+    case typeDefActive of
+        ActiveTypeDefSelf ->
+            Nothing
+
+        ActiveTypeDefName _ ->
+            Just ActiveTypeDefSelf
+
+        ActiveTypeDefTagList ( index, typeDefTagActive ) ->
+            case typeDefTagActiveLeft typeDefTagActive of
+                Just movedTypeDefTagActive ->
+                    Just (ActiveTypeDefTagList ( index, movedTypeDefTagActive ))
+
+                Nothing ->
+                    Just ActiveTypeDefSelf
+
+
+typeDefTagActiveLeft : TypeDefTagActive -> Maybe TypeDefTagActive
+typeDefTagActiveLeft typeDefTagActive =
+    case typeDefTagActive of
+        ActiveTypeDefTagName _ ->
+            Nothing
+
+        ActiveTypeDefTagParameter ->
+            Just (ActiveTypeDefTagName LabelEditSelect)
+
+
+partDefListActiveLeft : PartDefListActive -> PartDefListActive
+partDefListActiveLeft partDefListActive =
+    case partDefListActive of
+        ActivePartDefListSelf ->
+            ActivePartDefListSelf
+
+        ActivePartDef ( _, ActivePartDefSelf ) ->
+            ActivePartDefListSelf
+
+        ActivePartDef ( index, ActivePartDefName _ ) ->
             -- 名前から定義へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
+            ActivePartDef ( index, ActivePartDefSelf )
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType _ )) ->
+        ActivePartDef ( index, ActivePartDefType _ ) ->
             -- 型から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName NameEditSelect ))
+            ActivePartDef ( index, ActivePartDefName NameEditSelect )
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr termOpPos )) ->
+        ActivePartDef ( index, ActivePartDefExpr termOpPos ) ->
             -- 式から型へ
-            ActivePartDefList
-                (ActivePartDef
-                    ( index
-                    , case termOpPosLeft termOpPos of
-                        Just movedTermOpPos ->
-                            ActivePartDefExpr movedTermOpPos
+            ActivePartDef
+                ( index
+                , case termOpPosLeft termOpPos of
+                    Just movedTermOpPos ->
+                        ActivePartDefExpr movedTermOpPos
 
-                        Nothing ->
-                            ActivePartDefType TypeEditSelect
-                    )
+                    Nothing ->
+                        ActivePartDefType TypeEditSelect
                 )
-
-        _ ->
-            active
 
 
 termOpPosLeft : TermOpPos -> Maybe TermOpPos
@@ -497,53 +575,103 @@ branchPosLeft branchPos =
 
 {-| 右のものを選択する
 -}
-selectRight : ModuleWithCache.ModuleWithResult -> Active -> Active
-selectRight module_ active =
+activeRight : ModuleWithCache.ModuleWithResult -> Active -> Active
+activeRight targetModule active =
     case active of
         ActiveNone ->
-            -- 何も選択していないところから概要欄へ
             ActiveReadMe ActiveReadMeSelf
 
-        ActiveReadMe ActiveReadMeSelf ->
-            -- 概要欄から概要欄編集へ
-            ActiveReadMe ActiveReadMeText
+        ActiveReadMe readMeActive ->
+            ActiveReadMe (readMeActiveRight readMeActive)
 
-        ActivePartDefList ActivePartDefListSelf ->
-            -- 定義リストから
-            ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex 0, ActivePartDefSelf ))
+        ActiveTypeDefList typeDefListActive ->
+            ActiveTypeDefList (typeDefListActiveRight typeDefListActive)
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
+        ActivePartDefList partDefListActive ->
+            ActivePartDefList (partDefListActiveRight targetModule partDefListActive)
+
+
+readMeActiveRight : ReadMeActive -> ReadMeActive
+readMeActiveRight readMeActive =
+    case readMeActive of
+        ActiveReadMeSelf ->
+            ActiveReadMeText
+
+        ActiveReadMeText ->
+            ActiveReadMeText
+
+
+typeDefListActiveRight : TypeDefListActive -> TypeDefListActive
+typeDefListActiveRight typeDefListActive =
+    case typeDefListActive of
+        ActiveTypeDefListSelf ->
+            ActiveTypeDef ( ModuleIndex.TypeDefIndex 0, ActiveTypeDefSelf )
+
+        ActiveTypeDef ( index, typeDefActive ) ->
+            ActiveTypeDef ( index, typeDefActiveRight typeDefActive )
+
+
+typeDefActiveRight : TypeDefActive -> TypeDefActive
+typeDefActiveRight typeDefActive =
+    case typeDefActive of
+        ActiveTypeDefSelf ->
+            ActiveTypeDefName LabelEditSelect
+
+        ActiveTypeDefName nameEdit ->
+            ActiveTypeDefName nameEdit
+
+        ActiveTypeDefTagList ( index, typeDefTagActive ) ->
+            ActiveTypeDefTagList
+                ( index
+                , typeDefTagListActiveRight typeDefTagActive
+                )
+
+
+typeDefTagListActiveRight : TypeDefTagActive -> TypeDefTagActive
+typeDefTagListActiveRight typeDefTagActive =
+    case typeDefTagActive of
+        ActiveTypeDefTagName _ ->
+            ActiveTypeDefTagParameter
+
+        ActiveTypeDefTagParameter ->
+            ActiveTypeDefTagParameter
+
+
+partDefListActiveRight : ModuleWithCache.ModuleWithResult -> PartDefListActive -> PartDefListActive
+partDefListActiveRight targetModule partDefListActive =
+    case partDefListActive of
+        ActivePartDefListSelf ->
+            ActivePartDef ( ModuleIndex.PartDefIndex 0, ActivePartDefSelf )
+
+        ActivePartDef ( index, ActivePartDefSelf ) ->
             -- 定義から名前へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefName NameEditSelect ))
+            ActivePartDef ( index, ActivePartDefName NameEditSelect )
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefName _ )) ->
+        ActivePartDef ( index, ActivePartDefName _ ) ->
             -- 名前から型へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefType TypeEditSelect ))
+            ActivePartDef ( index, ActivePartDefType TypeEditSelect )
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefType _ )) ->
+        ActivePartDef ( index, ActivePartDefType _ ) ->
             -- 型から式へ
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
+            ActivePartDef ( index, ActivePartDefExpr TermOpSelf )
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf )) ->
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpHead ))
+        ActivePartDef ( index, ActivePartDefExpr TermOpSelf ) ->
+            ActivePartDef ( index, ActivePartDefExpr TermOpHead )
 
-        ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr termOpPos )) ->
+        ActivePartDef ( index, ActivePartDefExpr termOpPos ) ->
             -- 式の中の移動
             let
                 exprMaybe =
-                    module_
+                    targetModule
                         |> Module.getPartDef index
                         |> Maybe.map PartDef.getExpr
             in
             case termOpPosRight exprMaybe termOpPos of
                 Just movedTermOpPos ->
-                    ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr movedTermOpPos ))
+                    ActivePartDef ( index, ActivePartDefExpr movedTermOpPos )
 
                 Nothing ->
-                    ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf ))
-
-        _ ->
-            active
+                    ActivePartDef ( index, ActivePartDefSelf )
 
 
 termOpPosRight : Maybe Expr.Expr -> TermOpPos -> Maybe TermOpPos
@@ -657,20 +785,26 @@ branchPosRight branchPos =
 
 {-| ↑ 上のものを選択する
 -}
-selectUp : ModuleWithCache.ModuleWithResult -> Active -> Active
-selectUp module_ active =
+activeUp : ModuleWithCache.ModuleWithResult -> Active -> Active
+activeUp module_ active =
     case active of
         ActiveNone ->
             -- 何も選択していないところから定義リストへ
             ActivePartDefList ActivePartDefListSelf
 
-        ActiveReadMe _ ->
-            -- 概要欄から概要欄へ
+        ActiveReadMe readMeActive ->
+            case readMeActiveUp readMeActive of
+                Just movedReadMeActive ->
+                    ActiveReadMe movedReadMeActive
+
+                Nothing ->
+                    ActiveReadMe ActiveReadMeSelf
+
+        ActiveTypeDefList _ ->
             ActiveReadMe ActiveReadMeSelf
 
         ActivePartDefList ActivePartDefListSelf ->
-            -- 定義リストから概要欄へ
-            ActiveReadMe ActiveReadMeSelf
+            ActiveTypeDefList ActiveTypeDefListSelf
 
         ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex 0, ActivePartDefSelf )) ->
             -- 先頭の定義から定義リストへ
@@ -705,6 +839,61 @@ selectUp module_ active =
             ActivePartDefList (ActivePartDef ( index, ActivePartDefExpr TermOpSelf ))
 
 
+readMeActiveUp : ReadMeActive -> Maybe ReadMeActive
+readMeActiveUp readMeActive =
+    case readMeActive of
+        ActiveReadMeSelf ->
+            Nothing
+
+        ActiveReadMeText ->
+            Just ActiveReadMeSelf
+
+
+typeDefListActiveUp : TypeDefListActive -> Maybe TypeDefListActive
+typeDefListActiveUp typeDefListActive =
+    case typeDefListActive of
+        ActiveTypeDefListSelf ->
+            Nothing
+
+        ActiveTypeDef ( ModuleIndex.TypeDefIndex typeDefIndex, typeDefActive ) ->
+            case typeDefActiveUp typeDefActive of
+                Just movedTypeDefActive ->
+                    Just (ActiveTypeDef ( ModuleIndex.TypeDefIndex typeDefIndex, movedTypeDefActive ))
+
+                Nothing ->
+                    Just (ActiveTypeDef ( ModuleIndex.TypeDefIndex (typeDefIndex + 1), ActiveTypeDefSelf ))
+
+
+typeDefActiveUp : TypeDefActive -> Maybe TypeDefActive
+typeDefActiveUp typeDefActive =
+    case typeDefActive of
+        ActiveTypeDefSelf ->
+            Nothing
+
+        ActiveTypeDefName _ ->
+            Just ActiveTypeDefSelf
+
+        ActiveTypeDefTagList ( index, tagList ) ->
+            case typeDefTagListUp tagList of
+                Just movedTagList ->
+                    Just
+                        (ActiveTypeDefTagList ( index, movedTagList ))
+
+                Nothing ->
+                    Just
+                        (ActiveTypeDefTagList ( index + 1, ActiveTypeDefTagName LabelEditSelect ))
+
+
+typeDefTagListUp : TypeDefTagActive -> Maybe TypeDefTagActive
+typeDefTagListUp typeDefTagActive =
+    case typeDefTagActive of
+        ActiveTypeDefTagName _ ->
+            Nothing
+
+        ActiveTypeDefTagParameter ->
+            Nothing
+
+
 
 {- =========================================================
            ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
@@ -714,8 +903,8 @@ selectUp module_ active =
 
 {-| 下のものを選択する
 -}
-selectDown : ModuleWithCache.ModuleWithResult -> Active -> Active
-selectDown module_ active =
+activeDown : ModuleWithCache.ModuleWithResult -> Active -> Active
+activeDown module_ active =
     case active of
         ActiveNone ->
             -- 何も選択していないところから概要へ
@@ -771,8 +960,8 @@ selectDown module_ active =
 
 {-| 選択を最初の子供に移動する。デフォルトでSpaceとCtrl+→の動作
 -}
-selectFirstChild : ModuleWithCache.ModuleWithResult -> Active -> Active
-selectFirstChild module_ active =
+activeToFirstChild : ModuleWithCache.ModuleWithResult -> Active -> Active
+activeToFirstChild module_ active =
     case active of
         ActiveNone ->
             -- 何も選択していないところから概要へ
@@ -847,8 +1036,8 @@ termTypeFirstChild termMaybe termType =
 
 {-| 選択を最後の子供に移動する。デフォルトでCtrl+←を押すとこの動作をする
 -}
-selectLastChild : ModuleWithCache.ModuleWithResult -> Active -> Active
-selectLastChild module_ active =
+activeToLastChild : ModuleWithCache.ModuleWithResult -> Active -> Active
+activeToLastChild module_ active =
     case active of
         ActiveNone ->
             -- 何も選択していないところから定義リストへ
@@ -932,8 +1121,8 @@ termTypeLastChild termMaybe termType =
 
 {-| 選択を親に変更する。デフォルトでEnterキーを押すとこの動作をする
 -}
-selectParent : ModuleWithCache.ModuleWithResult -> Active -> Active
-selectParent module_ active =
+activeToParent : ModuleWithCache.ModuleWithResult -> Active -> Active
+activeToParent module_ active =
     case active of
         ActiveReadMe ActiveReadMeText ->
             ActiveReadMe ActiveReadMeSelf
@@ -1053,7 +1242,7 @@ suggestionNext module_ project model =
                                     ( partDefIndex
                                     , ActivePartDefName
                                         (NameEditSuggestionSelect
-                                            { index = index + 1
+                                            { index = min (List.length suggestionNameList - 1) (index + 1)
                                             , searchName = searchName
                                             }
                                         )
@@ -1063,7 +1252,7 @@ suggestionNext module_ project model =
             in
             ( newModel
             , suggestionSelectChangedThenNameChangeEmit
-                (index + 1)
+                (min (List.length suggestionNameList - 1) (index + 1))
                 partDefIndex
                 (getTargetModuleIndex newModel)
                 ++ emitList
@@ -1146,6 +1335,15 @@ suggestionPrev targetModule project model =
                         )
                   ]
                     ++ emitList
+                    ++ [ EmitSetTextAreaValue
+                            (case searchName of
+                                Name.NoName ->
+                                    "no/name"
+
+                                Name.SafeName safeName ->
+                                    Name.safeNameToString safeName
+                            )
+                       ]
                 )
 
             else
@@ -1183,7 +1381,7 @@ suggestionPrev targetModule project model =
 
 suggestionSelectChangedThenNameChangeEmit : Int -> ModuleIndex.PartDefIndex -> SourceIndex.ModuleIndex -> List Emit
 suggestionSelectChangedThenNameChangeEmit suggestIndex partDefIndex moduleRef =
-    case nameSuggestList |> Utility.ListExtra.getAt suggestIndex of
+    case suggestionNameList |> Utility.ListExtra.getAt suggestIndex of
         Just ( suggestName, _ ) ->
             [ EmitMsgToSource
                 (Source.MsgModule
@@ -1196,6 +1394,17 @@ suggestionSelectChangedThenNameChangeEmit suggestIndex partDefIndex moduleRef =
 
         Nothing ->
             []
+
+
+suggestionNameList : List ( Name.SafeName, String )
+suggestionNameList =
+    [ ( L.make L.hg [ L.oa, L.om, L.oe ], "ゲーム" )
+    , ( L.make L.hh [ L.oe, L.or, L.oo ], "主人公" )
+    , ( L.make L.hb [ L.oe, L.oa, L.ou, L.ot, L.oi, L.of_, L.ou, L.ol, L.oG, L.oi, L.or, L.ol ], "美少女" )
+    , ( L.make L.hm [ L.oo, L.on, L.os, L.ot, L.oe, L.or ], "モンスター" )
+    , ( L.make L.hw [ L.oo, L.or, L.ol, L.od ], "世界" )
+    ]
+        |> List.map (Tuple.mapFirst Name.safeNameFromLabel)
 
 
 
@@ -1283,16 +1492,21 @@ confirmTermType termType =
 input : String -> Project.Project -> ModuleWithCache.ModuleWithResult -> Model -> ( Model, List Emit )
 input string project targetModule model =
     case getActive model of
-        ActiveReadMe activeReadMe ->
-            model |> inputInReadMe string activeReadMe
-
-        ActivePartDefList activePartDefList ->
-            model |> inputInPartDefList string project targetModule activePartDefList
-
         ActiveNone ->
             ( model
             , []
             )
+
+        ActiveReadMe activeReadMe ->
+            model |> inputInReadMe string activeReadMe
+
+        ActiveTypeDefList _ ->
+            ( model
+            , []
+            )
+
+        ActivePartDefList activePartDefList ->
+            model |> inputInPartDefList string project targetModule activePartDefList
 
 
 {-| ReadMeがアクティブな時の入力
@@ -1720,7 +1934,7 @@ suggestionPrevOrSelectUp targetModule project model =
                     suggestionPrev targetModule project
 
                 _ ->
-                    update SelectUp project
+                    update ActiveUp project
            )
 
 
@@ -1737,7 +1951,7 @@ suggestionNextOrSelectDown module_ project model =
                     suggestionNext module_ project
 
                 _ ->
-                    update SelectDown project
+                    update ActiveDown project
            )
 
 
@@ -1749,7 +1963,7 @@ confirmSingleLineTextFieldOrSelectParent targetModule active =
         confirmSingleLineTextField active
 
     else
-        selectParent targetModule active
+        activeToParent targetModule active
 
 
 isNeedConfirmSingleLineTextField : Active -> Bool
@@ -1759,6 +1973,9 @@ isNeedConfirmSingleLineTextField active =
             False
 
         ActiveReadMe _ ->
+            False
+
+        ActiveTypeDefList _ ->
             False
 
         ActivePartDefList ActivePartDefListSelf ->
@@ -1854,6 +2071,13 @@ view project isFocus (Model { moduleRef, active }) =
             )
         , typeDefinitionsView
             isFocus
+            (case active of
+                ActiveTypeDefList typeDefListActive ->
+                    Just typeDefListActive
+
+                _ ->
+                    Nothing
+            )
         , partDefinitionsView
             isFocus
             (case active of
@@ -1871,22 +2095,13 @@ view project isFocus (Model { moduleRef, active }) =
 activeToString : Active -> String
 activeToString active =
     case active of
-        ActiveNone ->
-            "アクティブなし"
-
-        ActiveReadMe ActiveReadMeSelf ->
-            "概要欄"
-
-        ActiveReadMe ActiveReadMeText ->
-            "概要欄のテキストを編集している"
-
-        ActivePartDefList ActivePartDefListSelf ->
-            "パーツエディタ全体"
-
         ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex index, partDefActive )) ->
             String.fromInt index
                 ++ "番目の定義"
                 ++ (partDefActive |> partDefActiveToString)
+
+        _ ->
+            ""
 
 
 partDefActiveToString : PartDefActive -> String
@@ -2116,10 +2331,20 @@ focusEventJsonDecoder =
 -}
 
 
-typeDefinitionsView : Bool -> Html.Html Msg
-typeDefinitionsView isFocus =
+typeDefinitionsView : Bool -> Maybe TypeDefListActive -> Html.Html Msg
+typeDefinitionsView isFocus typeDefListActiveMaybe =
     Html.div
-        [ subClass "section" ]
+        ([ subClass "section" ]
+            ++ (case typeDefListActiveMaybe of
+                    Just typeDefListActive ->
+                        [ subClass "section-active" ]
+
+                    Nothing ->
+                        [ Html.Events.onClick
+                            (ActiveTo (ActiveTypeDefList ActiveTypeDefListSelf))
+                        ]
+               )
+        )
         [ typeDefinitionsViewTitle
         , Html.text "型の定義"
         ]
@@ -2395,7 +2620,7 @@ suggestionName name suggestSelectDataMaybe =
         (case suggestSelectDataMaybe of
             Just { index, searchName } ->
                 [ suggestNameItem (nameToEditorStyleString searchName) "" False ]
-                    ++ (nameSuggestList
+                    ++ (suggestionNameList
                             |> List.indexedMap
                                 (\i ( safeName, subText ) ->
                                     suggestNameItem (Name.safeNameToString safeName) subText (i == index)
@@ -2408,7 +2633,7 @@ suggestionName name suggestSelectDataMaybe =
                     ""
                     True
                 ]
-                    ++ (nameSuggestList
+                    ++ (suggestionNameList
                             |> List.map
                                 (\( safeName, subText ) ->
                                     suggestNameItem (Name.safeNameToString safeName) subText False
@@ -2473,17 +2698,6 @@ enterIcon =
         [ NSvg.polygon [ ( 4, 4 ), ( 34, 4 ), ( 34, 28 ), ( 12, 28 ), ( 12, 16 ), ( 4, 16 ) ] NSvg.strokeNone NSvg.fillNone
         , NSvg.path "M30,8 V20 H16 L18,18 M16,20 L18,22" NSvg.strokeNone NSvg.fillNone
         ]
-
-
-nameSuggestList : List ( Name.SafeName, String )
-nameSuggestList =
-    [ ( L.make L.hg [ L.oa, L.om, L.oe ], "ゲーム" )
-    , ( L.make L.hh [ L.oe, L.or, L.oo ], "主人公" )
-    , ( L.make L.hb [ L.oe, L.oa, L.ou, L.ot, L.oi, L.of_, L.ou, L.ol, L.oG, L.oi, L.or, L.ol ], "美少女" )
-    , ( L.make L.hm [ L.oo, L.on, L.os, L.ot, L.oe, L.or ], "モンスター" )
-    , ( L.make L.hw [ L.oo, L.or, L.ol, L.od ], "世界" )
-    ]
-        |> List.map (Tuple.mapFirst Name.safeNameFromLabel)
 
 
 
