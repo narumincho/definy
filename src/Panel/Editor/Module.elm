@@ -75,6 +75,7 @@ type Emit
     = EmitMsgToSource Source.Msg
     | EmitSetTextAreaValue String
     | EmitFocusEditTextAea
+    | EmitElementScrollIntoView String
 
 
 {-| 選択している要素
@@ -328,21 +329,21 @@ setActive project active (Model rec) =
                 []
 
             ActiveReadMe ActiveReadMeSelf ->
-                []
+                [ EmitElementScrollIntoView readMeId ]
 
             ActiveReadMe ActiveReadMeText ->
-                [ EmitFocusEditTextAea ]
+                [ EmitFocusEditTextAea, EmitElementScrollIntoView readMeId ]
 
             ActiveTypeDefList _ ->
-                []
+                [ EmitElementScrollIntoView typeDefId ]
 
             ActivePartDefList ActivePartDefListSelf ->
-                []
+                [ EmitElementScrollIntoView partDefinitionId ]
 
-            ActivePartDefList (ActivePartDef ( _, ActivePartDefSelf )) ->
-                []
+            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
+                [ EmitElementScrollIntoView (partDefId index) ]
 
-            ActivePartDefList (ActivePartDef ( _, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
+            ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
                 let
                     name =
                         suggestionNameList
@@ -357,10 +358,16 @@ setActive project active (Model rec) =
                                         Name.safeNameToString safeName
                                 )
                 in
-                [ EmitSetTextAreaValue name, EmitFocusEditTextAea ]
+                [ EmitFocusEditTextAea
+                , EmitSetTextAreaValue name
+                , EmitElementScrollIntoView (partDefId partDefIndex)
+                ]
 
-            ActivePartDefList (ActivePartDef ( _, _ )) ->
-                [ EmitSetTextAreaValue "", EmitFocusEditTextAea ]
+            ActivePartDefList (ActivePartDef ( partDefIndex, _ )) ->
+                [ EmitFocusEditTextAea
+                , EmitSetTextAreaValue ""
+                , EmitElementScrollIntoView (partDefId partDefIndex)
+                ]
 
       else
         []
@@ -2377,7 +2384,7 @@ view project isFocus (Model { moduleRef, active }) =
     { title = L.toCapitalString (ModuleWithCache.getName targetModule)
     , body =
         [ Html.div [] [ Html.text (activeToString active) ]
-        , readMeView (ModuleWithCache.getReadMe targetModule)
+        , readMeView
             isFocus
             (case active of
                 ActiveReadMe readMeActive ->
@@ -2386,6 +2393,7 @@ view project isFocus (Model { moduleRef, active }) =
                 _ ->
                     Nothing
             )
+            (ModuleWithCache.getReadMe targetModule)
         , typeDefinitionsView
             isFocus
             (case active of
@@ -2395,6 +2403,7 @@ view project isFocus (Model { moduleRef, active }) =
                 _ ->
                     Nothing
             )
+            (ModuleWithCache.getTypeDefList targetModule)
         , partDefinitionsView
             isFocus
             (case active of
@@ -2522,8 +2531,8 @@ branchPosToString branchPos =
 -}
 
 
-readMeView : String -> Bool -> Maybe ReadMeActive -> Html.Html Msg
-readMeView readMe isFocus readMeActiveMaybe =
+readMeView : Bool -> Maybe ReadMeActive -> String -> Html.Html Msg
+readMeView isFocus readMeActiveMaybe readMe =
     let
         editHere =
             case readMeActiveMaybe of
@@ -2542,10 +2551,21 @@ readMeView readMe isFocus readMeActiveMaybe =
                     _ ->
                         [ Html.Events.onClick (ActiveTo (ActiveReadMe ActiveReadMeSelf)) ]
                )
+            ++ (if isFocus then
+                    [ Html.Attributes.id readMeId ]
+
+                else
+                    []
+               )
         )
         [ readMeViewTitle
-        , readMeViewInputArea readMe isFocus readMeActiveMaybe
+        , readMeViewInputArea readMe isFocus (readMeActiveMaybe == Just ActiveReadMeText)
         ]
+
+
+readMeId : String
+readMeId =
+    "moduleEditor-readme"
 
 
 readMeViewTitle : Html.Html Msg
@@ -2555,17 +2575,17 @@ readMeViewTitle =
         [ Html.text "ReadMe" ]
 
 
-readMeViewInputArea : String -> Bool -> Maybe ReadMeActive -> Html.Html Msg
-readMeViewInputArea readMe isFocus readMeActiveMaybe =
+readMeViewInputArea : String -> Bool -> Bool -> Html.Html Msg
+readMeViewInputArea readMe isFocus isActive =
     Html.div [ subClass "readMe-inputArea" ]
         [ Html.div
             [ subClassList
                 [ ( "readMe-container", True )
-                , ( "readMe-container-active", readMeActiveMaybe == Just ActiveReadMeText )
+                , ( "readMe-container-active", isActive )
                 ]
             ]
             [ readMeViewMeasure readMe
-            , readMeViewTextArea readMe isFocus readMeActiveMaybe
+            , readMeViewTextArea readMe isFocus isActive
             ]
         ]
 
@@ -2591,54 +2611,37 @@ readMeViewMeasure readMe =
         )
 
 
-readMeViewTextArea : String -> Bool -> Maybe ReadMeActive -> Html.Html Msg
-readMeViewTextArea readMe isFocus readMeActiveMaybe =
+readMeViewTextArea : String -> Bool -> Bool -> Html.Html Msg
+readMeViewTextArea readMe isFocus isActive =
     Html.textarea
-        ([ subClass "readMe-textarea"
-         ]
-            ++ (case readMeActiveMaybe of
-                    Just ActiveReadMeSelf ->
-                        [ Html.Attributes.property "value" (Json.Encode.string readMe)
-                        ]
-                            ++ (if isFocus then
-                                    [ Html.Events.stopPropagationOn "click" focusEventJsonDecoder ]
+        ([ subClass "readMe-textarea" ]
+            ++ (if isActive then
+                    [ Html.Events.onInput Input
+                    , subClass "readMe-textarea-focus"
+                    , Html.Attributes.property "value" (Json.Encode.string readMe)
+                    ]
+                        ++ (if isFocus then
+                                [ Html.Attributes.id "edit" ]
 
-                                else
-                                    [ Html.Events.onClick (ActiveTo (ActiveReadMe ActiveReadMeText)) ]
-                               )
+                            else
+                                []
+                           )
 
-                    Just ActiveReadMeText ->
-                        [ Html.Events.onInput Input
-                        , Html.Attributes.property "value" (Json.Encode.string readMe)
-                        , Html.Events.stopPropagationOn "click" focusEventJsonDecoder
-                        , subClass "readMe-textarea-focus"
-                        ]
-                            ++ (if isFocus then
-                                    [ Html.Attributes.id "edit" ]
-
-                                else
-                                    []
-                               )
-
-                    Nothing ->
-                        if isFocus then
-                            [ Html.Events.stopPropagationOn "click" focusEventJsonDecoder
-                            , Html.Attributes.property "value" (Json.Encode.string readMe)
-                            ]
-
-                        else
-                            [ Html.Events.onClick (ActiveTo (ActiveReadMe ActiveReadMeText))
-                            , Html.Attributes.property "value" (Json.Encode.string readMe)
-                            ]
+                else
+                    [ Html.Attributes.property "value" (Json.Encode.string readMe)
+                    , readMeTextClickEvent
+                    ]
                )
         )
         []
 
 
-focusEventJsonDecoder : Json.Decode.Decoder ( Msg, Bool )
-focusEventJsonDecoder =
-    Json.Decode.succeed
-        ( ActiveTo (ActiveReadMe ActiveReadMeText), True )
+readMeTextClickEvent : Html.Attribute Msg
+readMeTextClickEvent =
+    Html.Events.stopPropagationOn "click"
+        (Json.Decode.succeed
+            ( ActiveTo (ActiveReadMe ActiveReadMeText), True )
+        )
 
 
 
@@ -2648,23 +2651,42 @@ focusEventJsonDecoder =
 -}
 
 
-typeDefinitionsView : Bool -> Maybe TypeDefListActive -> Html.Html Msg
-typeDefinitionsView isFocus typeDefListActiveMaybe =
+typeDefinitionsView : Bool -> Maybe TypeDefListActive -> List TypeDef.TypeDef -> Html.Html Msg
+typeDefinitionsView isFocus typeDefListActiveMaybe typeDefList =
     Html.div
         ([ subClass "section" ]
             ++ (case typeDefListActiveMaybe of
-                    Just typeDefListActive ->
+                    Just ActiveTypeDefListSelf ->
                         [ subClass "section-active" ]
 
-                    Nothing ->
+                    _ ->
                         [ Html.Events.onClick
                             (ActiveTo (ActiveTypeDefList ActiveTypeDefListSelf))
                         ]
                )
+            ++ (if isFocus then
+                    [ Html.Attributes.id typeDefId ]
+
+                else
+                    []
+               )
         )
         [ typeDefinitionsViewTitle
-        , Html.text "型の定義"
+        , typeDefListView
+            (case typeDefListActiveMaybe of
+                Just (ActiveTypeDef typeDefIndexAndActive) ->
+                    Just typeDefIndexAndActive
+
+                _ ->
+                    Nothing
+            )
+            typeDefList
         ]
+
+
+typeDefId : String
+typeDefId =
+    "moduleEditor-typeDef"
 
 
 typeDefinitionsViewTitle : Html.Html Msg
@@ -2672,6 +2694,46 @@ typeDefinitionsViewTitle =
     Html.div
         [ subClass "section-title" ]
         [ Html.text "Type Definitions" ]
+
+
+typeDefListView : Maybe ( ModuleIndex.TypeDefIndex, TypeDefActive ) -> List TypeDef.TypeDef -> Html.Html Msg
+typeDefListView typeDefIndexAndActive typeDefList =
+    Html.div
+        [ subClass "defList" ]
+        (typeDefList
+            |> List.indexedMap
+                (\index typeDef ->
+                    typeDefView
+                        (case typeDefIndexAndActive of
+                            Just ( activeIndex, typeDefActive ) ->
+                                if ModuleIndex.TypeDefIndex index == activeIndex then
+                                    Just typeDefActive
+
+                                else
+                                    Nothing
+
+                            Nothing ->
+                                Nothing
+                        )
+                        typeDef
+                )
+        )
+
+
+typeDefView : Maybe TypeDefActive -> TypeDef.TypeDef -> Html.Html Msg
+typeDefView typeDefActive typeDef =
+    Html.div
+        ([ subClass "typeDef"
+         ]
+            ++ (case typeDefActive of
+                    Just ActiveTypeDefSelf ->
+                        [ subClass "typeDef-active" ]
+
+                    _ ->
+                        []
+               )
+        )
+        [ Html.text (TypeDef.toString typeDef) ]
 
 
 
@@ -2697,6 +2759,12 @@ partDefinitionsView isFocus partDefListActiveMaybe partDefAndResultList =
                             (ActiveTo (ActivePartDefList ActivePartDefListSelf))
                         ]
                )
+            ++ (if isFocus then
+                    [ Html.Attributes.id partDefinitionId ]
+
+                else
+                    []
+               )
         )
         [ partDefinitionsViewTitle
         , partDefListView
@@ -2712,6 +2780,11 @@ partDefinitionsView isFocus partDefListActiveMaybe partDefAndResultList =
         ]
 
 
+partDefinitionId : String
+partDefinitionId =
+    "moduleEditor-partDef"
+
+
 partDefinitionsViewTitle : Html.Html Msg
 partDefinitionsViewTitle =
     Html.div
@@ -2722,13 +2795,13 @@ partDefinitionsViewTitle =
 partDefListView : Bool -> List ( PartDef.PartDef, ModuleWithCache.CompileAndRunResult ) -> Maybe ( ModuleIndex.PartDefIndex, PartDefActive ) -> Html.Html Msg
 partDefListView isFocus defAndResultList partDefActiveWithIndexMaybe =
     Html.div
-        [ subClass "partDefList"
-        ]
+        [ subClass "defList" ]
         ((defAndResultList
             |> List.indexedMap
                 (\index ( partDef, result ) ->
                     partDefView
                         isFocus
+                        (ModuleIndex.PartDefIndex index)
                         partDef
                         result
                         (case partDefActiveWithIndexMaybe of
@@ -2757,20 +2830,32 @@ partDefListView isFocus defAndResultList partDefActiveWithIndexMaybe =
         )
 
 
-partDefView : Bool -> PartDef.PartDef -> ModuleWithCache.CompileAndRunResult -> Maybe PartDefActive -> Html.Html DefViewMsg
-partDefView isFocus partDef compileAndRunResult partDefActiveMaybe =
+partDefId : ModuleIndex.PartDefIndex -> String
+partDefId (ModuleIndex.PartDefIndex index) =
+    "moduleEditor-partDef-" ++ String.fromInt index
+
+
+partDefView : Bool -> ModuleIndex.PartDefIndex -> PartDef.PartDef -> ModuleWithCache.CompileAndRunResult -> Maybe PartDefActive -> Html.Html DefViewMsg
+partDefView isFocus index partDef compileAndRunResult partDefActiveMaybe =
     Html.div
-        [ subClassList
+        ([ subClassList
             [ ( "partDef", True )
             , ( "partDef-active", partDefActiveMaybe == Just ActivePartDefSelf )
             ]
-        , Html.Events.stopPropagationOn "click"
+         , Html.Events.stopPropagationOn "click"
             (Json.Decode.succeed
                 ( DefActiveTo ActivePartDefSelf
                 , isFocus
                 )
             )
-        ]
+         ]
+            ++ (if isFocus then
+                    [ Html.Attributes.id (partDefId index) ]
+
+                else
+                    []
+               )
+        )
         [ Html.div
             [ subClass "partDef-defArea" ]
             [ partDefViewNameAndType (PartDef.getName partDef) (PartDef.getType partDef) partDefActiveMaybe

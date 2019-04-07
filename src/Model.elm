@@ -63,6 +63,9 @@ port preventDefaultBeforeKeyEvent : () -> Cmd msg
 port run : { ref : List Int, index : Int, wasm : List Int } -> Cmd msg
 
 
+port elementScrollIntoView : String -> Cmd msg
+
+
 port input : ({ text : String, caretPos : Int } -> msg) -> Sub msg
 
 
@@ -79,10 +82,6 @@ port runResult : ({ ref : List Int, index : Int, result : Int } -> msg) -> Sub m
 
 
 port fireClickEventInCapturePhase : (String -> msg) -> Sub msg
-
-
-
---port deleteClickEventListenerInCapturePhase : String -> Cmd msg
 
 
 {-| 全体の入力を表すメッセージ
@@ -1032,6 +1031,11 @@ editorPanelEmitToMsg emit =
         Panel.EditorGroup.EmitToSourceMsg msg ->
             ( [ ProjectMsg (Project.SourceMsg msg) ]
             , []
+            )
+
+        Panel.EditorGroup.EmitElementScrollIntoView id ->
+            ( []
+            , [ elementScrollIntoView id ]
             )
 
 

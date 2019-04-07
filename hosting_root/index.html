@@ -71,11 +71,15 @@
                 );
             })
         });
-        /* クリックイベントをキャプチャフェーズで登録したリスナを削除する */
-        // app.ports.deleteClickEventListenerInCapturePhase.subscribe(id => {
-        //     document.getElementById(id).removeEventListener("click", eventAdded.get(id));
-        //     eventAdded.delete(id)
-        // });
+        /* 指定されたidの要素が表示されるようにスクロールさせる */
+        app.ports.elementScrollIntoView.subscribe(id => {
+            requestAnimationFrame(() => {
+                const element = document.getElementById(id);
+                if (element !== null) {
+                    element.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            })
+        });
         /* コンパイル結果(WASM)を実行 */
         app.ports.run.subscribe(compileResult => {
             WebAssembly.instantiate(new Uint8Array(compileResult.wasm)).then(result => {

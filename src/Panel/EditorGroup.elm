@@ -190,6 +190,7 @@ type Emit
     | EmitFocusEditTextAea
     | EmitSetClickEventListenerInCapturePhase String
     | EmitToSourceMsg Project.Source.Msg
+    | EmitElementScrollIntoView String
 
 
 {-| 初期Model
@@ -458,6 +459,9 @@ moduleEditorEmitToEmit emit =
 
         Panel.Editor.Module.EmitFocusEditTextAea ->
             EmitFocusEditTextAea
+
+        Panel.Editor.Module.EmitElementScrollIntoView id ->
+            EmitElementScrollIntoView id
 
 
 {-| 右端と下の端にある表示するエディタを増やすのボタンをおしたら、エディタ全体がどう変わるかと新しくアクティブになるエディタを返す

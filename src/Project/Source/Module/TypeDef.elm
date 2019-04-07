@@ -1,4 +1,4 @@
-module Project.Source.Module.TypeDef exposing (TypeDef, getName, getTagNum, typeDefInt)
+module Project.Source.Module.TypeDef exposing (TypeDef, getName, getTagNum, toString, typeDefInt)
 
 {-| 型の定義
 -}
@@ -35,7 +35,7 @@ type Tag
 {-| 根底で定義された型
 -}
 type KernelType
-    = Int
+    = I32
 
 
 type Parameter
@@ -70,5 +70,36 @@ typeDefInt =
     TypeDef
         { name = L.make L.hi [ L.on, L.ot, L.o3, L.o2 ]
         , content =
-            TagOrKernelKernel Int
+            TagOrKernelKernel I32
         }
+
+
+{-| 文字列化。デバッグ用
+-}
+toString : TypeDef -> String
+toString (TypeDef { name, content }) =
+    L.toCapitalString name
+        ++ "="
+        ++ tagOrKernelToString content
+
+
+tagOrKernelToString : TagOrKernel -> String
+tagOrKernelToString tagOrKernel =
+    case tagOrKernel of
+        TagOrKernelTag list ->
+            list |> List.map tagToString |> String.join "|"
+
+        TagOrKernelKernel I32 ->
+            "[Kernel::wasm::i32]"
+
+
+tagToString : Tag -> String
+tagToString (Tag { name, parameter }) =
+    L.toCapitalString name
+        ++ (case parameter of
+                NoParameter ->
+                    ""
+
+                OneParameter _ ->
+                    "パラメーター付き"
+           )

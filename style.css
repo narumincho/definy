@@ -416,6 +416,9 @@ img {
     display: flex;
     flex-direction: column;
 }
+/* ------------------------------------
+               Read Me
+------------------------------------ */
 
 .moduleEditor-section-active {
     border-left: solid 4px #f09936;
@@ -429,6 +432,15 @@ img {
     font-weight: 400;
     margin: 0;
     letter-spacing: 0.15px;
+}
+/* ------------------------------------
+                 Def
+------------------------------------ */
+.moduleEditor-defList {
+    display: grid;
+    gap: 16px;
+    flex-direction: column;
+    padding: 8px 0 0 0;
 }
 
 /* ============================================
@@ -485,13 +497,24 @@ img {
 /* ==================================================================
                             part Def
 ================================================================== */
-
-.moduleEditor-partDefList {
-    display: grid;
-    gap: 16px;
+.moduleEditor-typeDef {
+    display: flex;
     flex-direction: column;
-    padding: 8px 0 0 0;
+    padding: 8px;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4);
+    background-color: #383838;
+    color: #ddd;
+    border-radius: 4px;
 }
+
+.moduleEditor-typeDef-active {
+    border-left: solid 5px #f09936;
+    padding: 8px 8px 8px 3px;
+}
+
+/* ==================================================================
+                            part Def
+================================================================== */
 
 .moduleEditor-partDefList-addPartDef {
     padding: .5rem;
@@ -769,8 +792,8 @@ img {
 }
 
 .moduleEditor-partDef-hideTextArea {
-    width: 20px;
-    height: 12px;
+    width: 40px;
+    height: 18px;
     padding: 0;
     border: 0;
     resize: none;
