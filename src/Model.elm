@@ -433,7 +433,7 @@ editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
 
 <textarea>で入力したときに予約されているであろうキーならTrue、そうでないならFalse。
 複数行入力を想定している
-予約さるであろう動作を邪魔させないためにある。
+ブラウザやOSで予約されているであろう動作を邪魔させないためにある。
 Model.isFocusTextAreaがTrueになったときにまずこれを優先する
 
 -}
@@ -523,7 +523,7 @@ multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
 
 {-| <input type="text">で入力したときに予約されているであろうキーならTrue。そうでないなたFalse。
 1行の入力を想定している
-予約さるであろう動作を邪魔させないためにある。
+ブラウザやOSで予約されているであろう動作を邪魔させないためにある。
 -}
 singleLineTextFieldReservedKey : Key.Key -> Bool
 singleLineTextFieldReservedKey { key, ctrl, alt, shift } =

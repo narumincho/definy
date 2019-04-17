@@ -363,11 +363,14 @@ setActive project active (Model rec) =
                 , EmitElementScrollIntoView (partDefId partDefIndex)
                 ]
 
-            ActivePartDefList (ActivePartDef ( partDefIndex, _ )) ->
+            ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName NameEditSelect )) ->
                 [ EmitFocusEditTextAea
                 , EmitSetTextAreaValue ""
                 , EmitElementScrollIntoView (partDefId partDefIndex)
                 ]
+
+            _ ->
+                []
 
       else
         []
@@ -462,15 +465,12 @@ partDefListActiveLeft partDefListActive =
             ActivePartDefListSelf
 
         ActivePartDef ( index, ActivePartDefName _ ) ->
-            -- 名前から定義へ
             ActivePartDef ( index, ActivePartDefSelf )
 
         ActivePartDef ( index, ActivePartDefType _ ) ->
-            -- 型から名前へ
             ActivePartDef ( index, ActivePartDefName NameEditSelect )
 
         ActivePartDef ( index, ActivePartDefExpr termOpPos ) ->
-            -- 式から型へ
             ActivePartDef
                 ( index
                 , case termOpPosLeft termOpPos of
@@ -1863,6 +1863,11 @@ inputInPartDefList string project targetModule partDefListActive model =
     let
         ( active, emitList ) =
             case partDefListActive of
+                ActivePartDefListSelf ->
+                    ( getActive model
+                    , []
+                    )
+
                 ActivePartDef ( index, ActivePartDefName _ ) ->
                     parserBeginWithName string index (getTargetModuleIndex model)
 
@@ -1901,11 +1906,6 @@ inputInPartDefList string project targetModule partDefListActive model =
                         )
 
                 ActivePartDef ( _, ActivePartDefSelf ) ->
-                    ( getActive model
-                    , []
-                    )
-
-                ActivePartDefListSelf ->
                     ( getActive model
                     , []
                     )
@@ -2869,7 +2869,7 @@ partDefView isFocus index partDef compileAndRunResult partDefActiveMaybe =
                         Nothing
                 )
             ]
-        , resultArea compileAndRunResult
+        , partDefResultView compileAndRunResult
         ]
 
 
@@ -2882,8 +2882,8 @@ type DefViewMsg
 {- ================= Result ================= -}
 
 
-resultArea : ModuleWithCache.CompileAndRunResult -> Html.Html msg
-resultArea compileAndRunResult =
+partDefResultView : ModuleWithCache.CompileAndRunResult -> Html.Html msg
+partDefResultView compileAndRunResult =
     Html.div
         [ subClass "partDef-resultArea" ]
         [ Html.div
@@ -2991,9 +2991,7 @@ partDefNameSelectView name =
                         [ subClass "partDef-nameTextNone" ]
                         [ Html.text "NO NAME" ]
           )
-        , ( "input"
-          , hideTextArea
-          )
+        , ( "input", hideInputElement )
         ]
 
 
@@ -3002,7 +3000,7 @@ partDefNameEditView name suggestSelectDataMaybe =
     Html.Keyed.node "div"
         [ subClass "partDef-nameContainer" ]
         [ ( "input"
-          , Html.textarea
+          , Html.input
                 [ subClass "partDef-nameTextArea"
                 , Html.Attributes.id "edit"
                 , Html.Events.onInput DefInput
@@ -3155,7 +3153,7 @@ partDefTypeSelectView type_ =
                         [ Html.text "NO TYPE" ]
           )
         , ( "input"
-          , hideTextArea
+          , hideInputElement
           )
         ]
 
@@ -3165,7 +3163,7 @@ partDefTypeEditView type_ suggestIndex =
     Html.Keyed.node "div"
         [ subClass "partDef-typeContainer" ]
         [ ( "input"
-          , Html.textarea
+          , Html.input
                 [ subClass "partDef-typeTextArea"
                 , Html.Attributes.id "edit"
                 , Html.Events.onInput DefInput
@@ -3244,7 +3242,7 @@ partDefViewExpr expr termOpPosMaybe =
          ]
             ++ (case termOpPosMaybe of
                     Just _ ->
-                        [ hideTextArea ]
+                        [ hideInputElement ]
 
                     Nothing ->
                         []
@@ -3558,13 +3556,12 @@ activeHeadTermLeft =
     ユーザーからテキストの入力を受け取る隠れた<input type="text">
 
 -}
-hideTextArea : Html.Html DefViewMsg
-hideTextArea =
+hideInputElement : Html.Html DefViewMsg
+hideInputElement =
     Html.input
         [ subClass "partDef-hideTextArea"
         , Html.Attributes.id "edit"
         , Html.Events.onInput DefInput
-        , Html.Attributes.type_ "text"
         ]
         []
 
