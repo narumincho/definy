@@ -391,7 +391,7 @@ focusEditor project editorItem =
         ModuleEditor model ->
             let
                 ( newModel, emitMaybe ) =
-                    Panel.Editor.Module.update Panel.Editor.Module.FocusThisEditor project model
+                    Panel.Editor.Module.update Panel.Editor.Module.MsgFocusThisEditor project model
             in
             ( ModuleEditor newModel
             , emitMaybe |> List.map moduleEditorEmitToEmit
@@ -409,7 +409,7 @@ blurEditor project editorItem =
         ModuleEditor model ->
             let
                 ( newModel, emitMaybe ) =
-                    Panel.Editor.Module.update Panel.Editor.Module.BlurThisEditor project model
+                    Panel.Editor.Module.update Panel.Editor.Module.MsgBlurThisEditor project model
             in
             ( ModuleEditor newModel
             , emitMaybe |> List.map moduleEditorEmitToEmit

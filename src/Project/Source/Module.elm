@@ -1,6 +1,7 @@
 module Project.Source.Module exposing
     ( Module
     , addEmptyPartDefAndData
+    , addTypeDef
     , allPartDefIndex
     , existPartDefName
     , getData
@@ -205,6 +206,50 @@ getTypeDef (ModuleIndex.TypeDefIndex index) (Module { typeDefList }) =
     typeDefList |> Array.get index
 
 
+{-| 末尾に型定義を追加する
+-}
+addTypeDef : Label.Label -> Module a -> Maybe (Module a)
+addTypeDef nameLabel (Module rec) =
+    if typeDefMaxNum <= Array.length rec.typeDefList then
+        Nothing
+
+    else if existTypeDefName Nothing nameLabel (Module rec) then
+        Nothing
+
+    else
+        Just
+            (Module
+                { rec
+                    | typeDefList = Array.append rec.typeDefList (Array.fromList [ TypeDef.make nameLabel ])
+                }
+            )
+
+
+{-| 指定した名前の型定義がモジュールにすでに定義されているか
+TypeDefIndexは前と同じ名前を設定した場合検知しないようにするため
+-}
+existTypeDefName : Maybe ModuleIndex.TypeDefIndex -> Label.Label -> Module a -> Bool
+existTypeDefName passIndexMaybe name =
+    case passIndexMaybe of
+        Just passIndex ->
+            getTypeDefList
+                >> List.indexedMap
+                    (\i typeDef ->
+                        if ModuleIndex.TypeDefIndex i == passIndex then
+                            []
+
+                        else
+                            [ TypeDef.getName typeDef ]
+                    )
+                >> List.concat
+                >> List.member name
+
+        Nothing ->
+            getTypeDefList
+                >> List.map TypeDef.getName
+                >> List.member name
+
+
 {-| パーツ定義とデータのListを取得する
 -}
 getPartDefAndDataList : Module a -> List ( PartDef.PartDef, a )
@@ -283,16 +328,16 @@ setData (ModuleIndex.PartDefIndex defIndex) data (Module rec) =
 
 
 {-| すでに指定した名前がモジュールに定義されているか
-無名はかぶったとしてみなせれない
+無名はかぶったとしてみなせれない。PartDefIndexは前と同じ位置で同じ名前を設定した場合検知しないようにするため
 -}
 existPartDefName : ModuleIndex.PartDefIndex -> Name.Name -> Module a -> Bool
-existPartDefName index name =
+existPartDefName passIndex name =
     case name of
         Name.SafeName safeName ->
             getPartDefAndDataList
                 >> List.indexedMap
                     (\i ( partDef, _ ) ->
-                        if ModuleIndex.PartDefIndex i == index then
+                        if ModuleIndex.PartDefIndex i == passIndex then
                             Name.NoName
 
                         else

@@ -601,23 +601,23 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
         ( False, False, False ) ->
             case key of
                 Key.ArrowLeft ->
-                    [ Panel.Editor.Module.ActiveLeft ]
+                    [ Panel.Editor.Module.MsgActiveLeft ]
 
                 Key.ArrowRight ->
-                    [ Panel.Editor.Module.ActiveRight ]
+                    [ Panel.Editor.Module.MsgActiveRight ]
 
                 Key.ArrowUp ->
-                    [ Panel.Editor.Module.SuggestionPrevOrSelectUp ]
+                    [ Panel.Editor.Module.MsgSuggestionPrevOrSelectUp ]
 
                 Key.ArrowDown ->
-                    [ Panel.Editor.Module.SuggestionNextOrSelectDown
+                    [ Panel.Editor.Module.MsgSuggestionNextOrSelectDown
                     ]
 
                 Key.Space ->
-                    [ Panel.Editor.Module.ActiveToFirstChild ]
+                    [ Panel.Editor.Module.MsgActiveToFirstChild ]
 
                 Key.Enter ->
-                    [ Panel.Editor.Module.ConfirmSingleLineTextFieldOrSelectParent
+                    [ Panel.Editor.Module.MsgConfirmSingleLineTextFieldOrSelectParent
                     ]
 
                 _ ->
@@ -626,13 +626,13 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
         ( True, False, False ) ->
             case key of
                 Key.ArrowLeft ->
-                    [ Panel.Editor.Module.ActiveToLastChild ]
+                    [ Panel.Editor.Module.MsgActiveToLastChild ]
 
                 Key.ArrowRight ->
-                    [ Panel.Editor.Module.ActiveToFirstChild ]
+                    [ Panel.Editor.Module.MsgActiveToFirstChild ]
 
                 Key.Enter ->
-                    [ Panel.Editor.Module.ConfirmMultiLineTextField ]
+                    [ Panel.Editor.Module.MsgConfirmMultiLineTextField ]
 
                 _ ->
                     []

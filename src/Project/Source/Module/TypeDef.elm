@@ -1,4 +1,4 @@
-module Project.Source.Module.TypeDef exposing (TypeDef, getName, getTagNum, toString, typeDefInt)
+module Project.Source.Module.TypeDef exposing (TypeDef, getName, getTagNum, make, toString, typeDefInt)
 
 {-| 型の定義
 -}
@@ -41,6 +41,16 @@ type KernelType
 type Parameter
     = NoParameter
     | OneParameter ModuleIndex.TypeDefIndex
+
+
+{-| 指定した名前の型定義をつくる
+-}
+make : L.Label -> TypeDef
+make nameLabel =
+    TypeDef
+        { name = nameLabel
+        , content = TagOrKernelTag []
+        }
 
 
 {-| 型の名前を取得する

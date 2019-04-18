@@ -54,7 +54,8 @@ emptyCompileAndRunResult =
 
 type Msg
     = MsgSetReadMe String
-    | MsgAddDef
+    | MsgAddPartDef
+    | MsgAddTypeDef
     | MsgSetName ModuleIndex.PartDefIndex Name.Name
     | MsgSetType ModuleIndex.PartDefIndex Type.Type
     | MsgSetExpr ModuleIndex.PartDefIndex Expr.Expr
@@ -78,7 +79,7 @@ update msg moduleWithResult =
             , []
             )
 
-        MsgAddDef ->
+        MsgAddPartDef ->
             case moduleWithResult |> Module.addEmptyPartDefAndData emptyCompileAndRunResult of
                 Just ( newModule, newIndex ) ->
                     ( newModule
@@ -88,6 +89,18 @@ update msg moduleWithResult =
                 Nothing ->
                     ( moduleWithResult
                     , [ ErrorOverPartCountLimit ]
+                    )
+
+        MsgAddTypeDef ->
+            case moduleWithResult |> Module.addTypeDef (Label.make Label.ha []) of
+                Just newModule ->
+                    ( newModule
+                    , []
+                    )
+
+                Nothing ->
+                    ( moduleWithResult
+                    , []
                     )
 
         MsgSetName partDefIndex name ->

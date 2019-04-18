@@ -49,26 +49,27 @@ type CompileResultVisible
 
 
 type Msg
-    = ActiveTo Active
-    | ActiveLeft
-    | ActiveRight
-    | ActiveUp
-    | ActiveDown
-    | ActiveToFirstChild
-    | ActiveToLastChild
-    | ActiveToParent
-    | SuggestionNext
-    | SuggestionPrev
-    | SuggestionNextOrSelectDown
-    | SuggestionPrevOrSelectUp
-    | Input String
-    | ToEditMode
-    | ConfirmMultiLineTextField
-    | ConfirmSingleLineTextField
-    | ConfirmSingleLineTextFieldOrSelectParent
-    | AddPartDef
-    | FocusThisEditor
-    | BlurThisEditor
+    = MsgActiveTo Active
+    | MsgActiveLeft
+    | MsgActiveRight
+    | MsgActiveUp
+    | MsgActiveDown
+    | MsgActiveToFirstChild
+    | MsgActiveToLastChild
+    | MsgActiveToParent
+    | MsgSuggestionNext
+    | MsgSuggestionPrev
+    | MsgSuggestionNextOrSelectDown
+    | MsgSuggestionPrevOrSelectUp
+    | MsgInput String
+    | MsgToEditMode
+    | MsgConfirmMultiLineTextField
+    | MsgConfirmSingleLineTextField
+    | MsgConfirmSingleLineTextFieldOrSelectParent
+    | MsgAddPartDef
+    | MsgAddTypeDef
+    | MsgFocusThisEditor
+    | MsgBlurThisEditor
 
 
 type Emit
@@ -236,77 +237,88 @@ update msg project model =
                 |> getActive
     in
     case msg of
-        ActiveTo toActive ->
+        MsgActiveTo toActive ->
             model |> setActive project toActive
 
-        ActiveLeft ->
+        MsgActiveLeft ->
             model |> setActive project (activeLeft targetModule active)
 
-        ActiveRight ->
+        MsgActiveRight ->
             model |> setActive project (activeRight targetModule active)
 
-        ActiveUp ->
+        MsgActiveUp ->
             model |> setActive project (activeUp targetModule active)
 
-        ActiveDown ->
+        MsgActiveDown ->
             model |> setActive project (activeDown targetModule active)
 
-        ActiveToFirstChild ->
+        MsgActiveToFirstChild ->
             model |> setActive project (activeToFirstChild targetModule active)
 
-        ActiveToLastChild ->
+        MsgActiveToLastChild ->
             model |> setActive project (activeToLastChild targetModule active)
 
-        ActiveToParent ->
+        MsgActiveToParent ->
             model |> setActive project (activeToParent targetModule active)
 
-        SuggestionNext ->
+        MsgSuggestionNext ->
             model |> suggestionNext targetModule project
 
-        SuggestionPrev ->
+        MsgSuggestionPrev ->
             model |> suggestionPrev targetModule project
 
-        SuggestionPrevOrSelectUp ->
+        MsgSuggestionPrevOrSelectUp ->
             model |> suggestionPrevOrSelectUp targetModule project
 
-        SuggestionNextOrSelectDown ->
+        MsgSuggestionNextOrSelectDown ->
             model |> suggestionNextOrSelectDown targetModule project
 
-        Input string ->
+        MsgInput string ->
             model |> input string project targetModule
 
-        ToEditMode ->
+        MsgToEditMode ->
             ( model
             , []
             )
 
-        ConfirmMultiLineTextField ->
+        MsgConfirmMultiLineTextField ->
             model |> setActive project (confirmMultiLineTextField active)
 
-        ConfirmSingleLineTextField ->
+        MsgConfirmSingleLineTextField ->
             model |> setActive project (confirmSingleLineTextField active)
 
-        ConfirmSingleLineTextFieldOrSelectParent ->
+        MsgConfirmSingleLineTextFieldOrSelectParent ->
             model |> setActive project (confirmSingleLineTextFieldOrSelectParent targetModule active)
 
-        AddPartDef ->
+        MsgAddPartDef ->
             ( model
             , [ EmitMsgToSource
                     (Source.MsgModule
                         { moduleIndex = getTargetModuleIndex model
-                        , moduleMsg = ModuleWithCache.MsgAddDef
+                        , moduleMsg = ModuleWithCache.MsgAddPartDef
                         }
                     )
               ]
             )
 
-        FocusThisEditor ->
+        MsgAddTypeDef ->
+            ( model
+            , [ EmitMsgToSource
+                    (Source.MsgModule
+                        { moduleIndex = getTargetModuleIndex model
+                        , moduleMsg = ModuleWithCache.MsgAddTypeDef
+                        }
+                    )
+              ]
+            )
+
+        MsgFocusThisEditor ->
             ( model
             , []
             )
 
-        BlurThisEditor ->
-            model |> update ConfirmMultiLineTextField project
+        MsgBlurThisEditor ->
+            model |> update MsgConfirmMultiLineTextField project
 
 
 {-| アクティブな対象を変更する
@@ -337,44 +349,138 @@ setActive project active (Model rec) =
             ActiveTypeDefList _ ->
                 [ EmitElementScrollIntoView typeDefId ]
 
-            ActivePartDefList ActivePartDefListSelf ->
-                [ EmitElementScrollIntoView partDefinitionId ]
-
-            ActivePartDefList (ActivePartDef ( index, ActivePartDefSelf )) ->
-                [ EmitElementScrollIntoView (partDefId index) ]
-
-            ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
-                let
-                    name =
-                        suggestionNameList
-                            |> Utility.ListExtra.getAt index
-                            |> Maybe.map (Tuple.first >> Name.safeNameToString)
-                            |> Maybe.withDefault
-                                (case searchName of
-                                    Name.NoName ->
-                                        ""
-
-                                    Name.SafeName safeName ->
-                                        Name.safeNameToString safeName
-                                )
-                in
-                [ EmitFocusEditTextAea
-                , EmitSetTextAreaValue name
-                , EmitElementScrollIntoView (partDefId partDefIndex)
-                ]
-
-            ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName NameEditSelect )) ->
-                [ EmitFocusEditTextAea
-                , EmitSetTextAreaValue ""
-                , EmitElementScrollIntoView (partDefId partDefIndex)
-                ]
-
-            _ ->
-                []
+            ActivePartDefList partDefListActive ->
+                setActivePartDefList partDefListActive
 
       else
         []
     )
+
+
+setActivePartDefList : PartDefListActive -> List Emit
+setActivePartDefList partDefListActive =
+    case partDefListActive of
+        ActivePartDefListSelf ->
+            [ EmitElementScrollIntoView partDefinitionId ]
+
+        ActivePartDef ( partDefIndex, ActivePartDefSelf ) ->
+            [ EmitElementScrollIntoView (partDefId partDefIndex)
+            ]
+
+        ActivePartDef ( partDefIndex, ActivePartDefName NameEditSelect ) ->
+            [ EmitFocusEditTextAea
+            , EmitSetTextAreaValue ""
+            , EmitElementScrollIntoView (partDefId partDefIndex)
+            ]
+
+        ActivePartDef ( partDefIndex, ActivePartDefName NameEditText ) ->
+            [ EmitFocusEditTextAea
+            , EmitElementScrollIntoView (partDefId partDefIndex)
+            ]
+
+        ActivePartDef ( partDefIndex, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) ) ->
+            let
+                name =
+                    suggestionNameList
+                        |> Utility.ListExtra.getAt index
+                        |> Maybe.map (Tuple.first >> Name.safeNameToString)
+                        |> Maybe.withDefault
+                            (case searchName of
+                                Name.NoName ->
+                                    ""
+
+                                Name.SafeName safeName ->
+                                    Name.safeNameToString safeName
+                            )
+            in
+            [ EmitFocusEditTextAea
+            , EmitSetTextAreaValue name
+            , EmitElementScrollIntoView (partDefId partDefIndex)
+            ]
+
+        ActivePartDef ( partDefIndex, ActivePartDefType TypeEditSelect ) ->
+            [ EmitFocusEditTextAea
+            , EmitSetTextAreaValue ""
+            , EmitElementScrollIntoView (partDefId partDefIndex)
+            ]
+
+        ActivePartDef ( partDefIndex, ActivePartDefExpr termOpPos ) ->
+            [ EmitElementScrollIntoView (partDefId partDefIndex) ]
+                ++ setActiveTermOpPos termOpPos
+
+
+setActiveTermOpPos : TermOpPos -> List Emit
+setActiveTermOpPos termOpPos =
+    case termOpPos of
+        TermOpSelf ->
+            [ EmitFocusEditTextAea
+            , EmitSetTextAreaValue ""
+            ]
+
+        TermOpHead ->
+            [ EmitFocusEditTextAea
+            , EmitSetTextAreaValue ""
+            ]
+
+        TermOpTerm _ termType ->
+            setActiveTermType termType
+
+        TermOpOp _ ->
+            [ EmitFocusEditTextAea
+            , EmitSetTextAreaValue ""
+            ]
+
+
+setActiveTermType : TermType -> List Emit
+setActiveTermType termType =
+    case termType of
+        TypeNoChildren ExprEditSelect ->
+            [ EmitFocusEditTextAea
+            , EmitSetTextAreaValue ""
+            ]
+
+        TypeNoChildren ExprEditText ->
+            [ EmitFocusEditTextAea
+            ]
+
+        TypeNoChildren (ExprEditSelectSuggestion _) ->
+            [ EmitFocusEditTextAea
+            ]
+
+        TypeParentheses termOpPos ->
+            setActiveTermOpPos termOpPos
+
+        TypeLambda lambdaPos ->
+            setActiveLambdaPos lambdaPos
+
+
+setActiveLambdaPos : LambdaPos -> List Emit
+setActiveLambdaPos lambdaPos =
+    case lambdaPos of
+        LambdaSelf ->
+            []
+
+        BranchHead ->
+            []
+
+        Branch int branchPos ->
+            setActiveBranchPos branchPos
+
+
+setActiveBranchPos : BranchPos -> List Emit
+setActiveBranchPos branchPos =
+    case branchPos of
+        BranchSelf ->
+            []
+
+        Pattern ->
+            []
+
+        Guard ->
+            []
+
+        Expr termOpPos ->
+            setActiveTermOpPos termOpPos
 
 
 
@@ -1553,39 +1659,43 @@ branchPosToParent branchPos =
 {-| 候補の選択を次に進める
 -}
 suggestionNext : ModuleWithCache.ModuleWithResult -> Project.Project -> Model -> ( Model, List Emit )
-suggestionNext module_ project model =
+suggestionNext targetModule project model =
     case getActive model of
         ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
-            let
-                ( newModel, emitList ) =
-                    model
-                        |> setActive
-                            project
-                            (ActivePartDefList
-                                (ActivePartDef
-                                    ( partDefIndex
-                                    , ActivePartDefName
-                                        (NameEditSuggestionSelect
-                                            { index = min (List.length suggestionNameList - 1) (index + 1)
-                                            , searchName = searchName
-                                            }
+            if List.length suggestionNameList - 1 < index + 1 then
+                nameEditSuggestionToEditText partDefIndex searchName project model
+
+            else
+                let
+                    ( newModel, emitList ) =
+                        model
+                            |> setActive
+                                project
+                                (ActivePartDefList
+                                    (ActivePartDef
+                                        ( partDefIndex
+                                        , ActivePartDefName
+                                            (NameEditSuggestionSelect
+                                                { index = min (List.length suggestionNameList - 1) (index + 1)
+                                                , searchName = searchName
+                                                }
+                                            )
                                         )
                                     )
                                 )
-                            )
-            in
-            ( newModel
-            , suggestionSelectChangedThenNameChangeEmit
-                (min (List.length suggestionNameList - 1) (index + 1))
-                partDefIndex
-                (getTargetModuleIndex newModel)
-                ++ emitList
-            )
+                in
+                ( newModel
+                , suggestionSelectChangedThenNameChangeEmit
+                    (min (List.length suggestionNameList - 1) (index + 1))
+                    partDefIndex
+                    (getTargetModuleIndex newModel)
+                    ++ emitList
+                )
 
         ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName NameEditText )) ->
             let
                 searchName =
-                    module_
+                    targetModule
                         |> ModuleWithCache.getPartDef partDefIndex
                         |> Maybe.map PartDef.getName
                         |> Maybe.withDefault Name.NoName
@@ -1633,42 +1743,42 @@ suggestionNext module_ project model =
 suggestionPrev : ModuleWithCache.ModuleWithResult -> Project.Project -> Model -> ( Model, List Emit )
 suggestionPrev targetModule project model =
     case getActive model of
-        ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
-            if index - 1 < 0 then
-                let
-                    ( newModel, emitList ) =
-                        model
-                            |> setActive
-                                project
-                                (ActivePartDefList
-                                    (ActivePartDef
-                                        ( partDefIndex
-                                        , ActivePartDefName NameEditText
+        ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName NameEditText )) ->
+            let
+                searchName =
+                    targetModule
+                        |> ModuleWithCache.getPartDef partDefIndex
+                        |> Maybe.map PartDef.getName
+                        |> Maybe.withDefault Name.NoName
+
+                ( newModel, emitList ) =
+                    model
+                        |> setActive
+                            project
+                            (ActivePartDefList
+                                (ActivePartDef
+                                    ( partDefIndex
+                                    , ActivePartDefName
+                                        (NameEditSuggestionSelect
+                                            { index = List.length suggestionNameList - 1
+                                            , searchName = searchName
+                                            }
                                         )
                                     )
                                 )
-                in
-                ( newModel
-                , [ EmitMsgToSource
-                        (Source.MsgModule
-                            { moduleIndex =
-                                getTargetModuleIndex newModel
-                            , moduleMsg =
-                                ModuleWithCache.MsgSetName (ModuleIndex.PartDefIndex index) searchName
-                            }
-                        )
-                  ]
-                    ++ emitList
-                    ++ [ EmitSetTextAreaValue
-                            (case searchName of
-                                Name.NoName ->
-                                    "no/name"
-
-                                Name.SafeName safeName ->
-                                    Name.safeNameToString safeName
                             )
-                       ]
-                )
+            in
+            ( newModel
+            , suggestionSelectChangedThenNameChangeEmit
+                (List.length suggestionNameList - 1)
+                partDefIndex
+                (getTargetModuleIndex newModel)
+                ++ emitList
+            )
+
+        ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
+            if index - 1 < 0 then
+                nameEditSuggestionToEditText partDefIndex searchName project model
 
             else
                 let
@@ -1701,6 +1811,44 @@ suggestionPrev targetModule project model =
             ( model
             , []
             )
+
+
+{-| 名前の候補選択モードからテキスト編集モードへ
+-}
+nameEditSuggestionToEditText : ModuleIndex.PartDefIndex -> Name.Name -> Project.Project -> Model -> ( Model, List Emit )
+nameEditSuggestionToEditText partDefIndex searchName project model =
+    let
+        ( newModel, emitList ) =
+            model
+                |> setActive
+                    project
+                    (ActivePartDefList
+                        (ActivePartDef
+                            ( partDefIndex
+                            , ActivePartDefName NameEditText
+                            )
+                        )
+                    )
+    in
+    ( newModel
+    , [ EmitMsgToSource
+            (Source.MsgModule
+                { moduleIndex = getTargetModuleIndex newModel
+                , moduleMsg = ModuleWithCache.MsgSetName partDefIndex searchName
+                }
+            )
+      ]
+        ++ emitList
+        ++ [ EmitSetTextAreaValue
+                (case searchName of
+                    Name.NoName ->
+                        ""
+
+                    Name.SafeName safeName ->
+                        Name.safeNameToString safeName
+                )
+           ]
+    )
 
 
 suggestionSelectChangedThenNameChangeEmit : Int -> ModuleIndex.PartDefIndex -> SourceIndex.ModuleIndex -> List Emit
@@ -2254,28 +2402,31 @@ suggestionPrevOrSelectUp : ModuleWithCache.ModuleWithResult -> Project.Project -
 suggestionPrevOrSelectUp targetModule project model =
     model
         |> (case getActive model of
+                ActivePartDefList (ActivePartDef ( _, ActivePartDefName NameEditText )) ->
+                    suggestionPrev targetModule project
+
                 ActivePartDefList (ActivePartDef ( _, ActivePartDefName (NameEditSuggestionSelect _) )) ->
                     suggestionPrev targetModule project
 
                 _ ->
-                    update ActiveUp project
+                    update MsgActiveUp project
            )
 
 
 {-| 候補の選択を次に進めるか、候補が表示されていない状態なら下の要素を選択する
 -}
 suggestionNextOrSelectDown : ModuleWithCache.ModuleWithResult -> Project.Project -> Model -> ( Model, List Emit )
-suggestionNextOrSelectDown module_ project model =
+suggestionNextOrSelectDown targetModule project model =
     model
         |> (case getActive model of
-                ActivePartDefList (ActivePartDef ( _, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
-                    suggestionNext module_ project
-
                 ActivePartDefList (ActivePartDef ( _, ActivePartDefName NameEditText )) ->
-                    suggestionNext module_ project
+                    suggestionNext targetModule project
+
+                ActivePartDefList (ActivePartDef ( _, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
+                    suggestionNext targetModule project
 
                 _ ->
-                    update ActiveDown project
+                    update MsgActiveDown project
            )
 
 
@@ -2549,7 +2700,7 @@ readMeView isFocus readMeActiveMaybe readMe =
                         [ subClass "section-active" ]
 
                     _ ->
-                        [ Html.Events.onClick (ActiveTo (ActiveReadMe ActiveReadMeSelf)) ]
+                        [ Html.Events.onClick (MsgActiveTo (ActiveReadMe ActiveReadMeSelf)) ]
                )
             ++ (if isFocus then
                     [ Html.Attributes.id readMeId ]
@@ -2616,7 +2767,7 @@ readMeViewTextArea readMe isFocus isActive =
     Html.textarea
         ([ subClass "readMe-textarea" ]
             ++ (if isActive then
-                    [ Html.Events.onInput Input
+                    [ Html.Events.onInput MsgInput
                     , subClass "readMe-textarea-focus"
                     , Html.Attributes.property "value" (Json.Encode.string readMe)
                     ]
@@ -2640,7 +2791,7 @@ readMeTextClickEvent : Html.Attribute Msg
 readMeTextClickEvent =
     Html.Events.stopPropagationOn "click"
         (Json.Decode.succeed
-            ( ActiveTo (ActiveReadMe ActiveReadMeText), True )
+            ( MsgActiveTo (ActiveReadMe ActiveReadMeText), True )
         )
 
 
@@ -2661,7 +2812,7 @@ typeDefinitionsView isFocus typeDefListActiveMaybe typeDefList =
 
                     _ ->
                         [ Html.Events.onClick
-                            (ActiveTo (ActiveTypeDefList ActiveTypeDefListSelf))
+                            (MsgActiveTo (ActiveTypeDefList ActiveTypeDefListSelf))
                         ]
                )
             ++ (if isFocus then
@@ -2700,7 +2851,7 @@ typeDefListView : Maybe ( ModuleIndex.TypeDefIndex, TypeDefActive ) -> List Type
 typeDefListView typeDefIndexAndActive typeDefList =
     Html.div
         [ subClass "defList" ]
-        (typeDefList
+        ((typeDefList
             |> List.indexedMap
                 (\index typeDef ->
                     typeDefView
@@ -2717,6 +2868,8 @@ typeDefListView typeDefIndexAndActive typeDefList =
                         )
                         typeDef
                 )
+         )
+            ++ [ addTypeDefButton ]
         )
 
 
@@ -2734,6 +2887,18 @@ typeDefView typeDefActive typeDef =
                )
         )
         [ Html.text (TypeDef.toString typeDef) ]
+
+
+{-| 定義を末尾に1つ追加するボタン
+-}
+addTypeDefButton : Html.Html Msg
+addTypeDefButton =
+    Html.button
+        [ Html.Events.stopPropagationOn "click"
+            (Json.Decode.succeed ( MsgAddTypeDef, True ))
+        , subClass "defList-addButton"
+        ]
+        [ Html.text "+ 新しい型定義" ]
 
 
 
@@ -2756,7 +2921,7 @@ partDefinitionsView isFocus partDefListActiveMaybe partDefAndResultList =
 
                     _ ->
                         [ Html.Events.onClick
-                            (ActiveTo (ActivePartDefList ActivePartDefListSelf))
+                            (MsgActiveTo (ActivePartDefList ActivePartDefListSelf))
                         ]
                )
             ++ (if isFocus then
@@ -2819,14 +2984,14 @@ partDefListView isFocus defAndResultList partDefActiveWithIndexMaybe =
                             (\m ->
                                 case m of
                                     DefActiveTo ref ->
-                                        ActiveTo (ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex index, ref )))
+                                        MsgActiveTo (ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex index, ref )))
 
                                     DefInput string ->
-                                        Input string
+                                        MsgInput string
                             )
                 )
          )
-            ++ [ addDefButton ]
+            ++ [ addPartDefButton ]
         )
 
 
@@ -3568,14 +3733,14 @@ hideInputElement =
 
 {-| 定義を末尾に1つ追加するボタン
 -}
-addDefButton : Html.Html Msg
-addDefButton =
+addPartDefButton : Html.Html Msg
+addPartDefButton =
     Html.button
         [ Html.Events.stopPropagationOn "click"
-            (Json.Decode.succeed ( AddPartDef, True ))
-        , subClass "partDefList-addPartDef"
+            (Json.Decode.succeed ( MsgAddPartDef, True ))
+        , subClass "defList-addButton"
         ]
-        [ Html.text "+ 新しいパーツの定義" ]
+        [ Html.text "+ 新しいパーツ定義" ]
 
 
 subClass : String -> Html.Attribute msg

@@ -433,9 +433,9 @@ img {
     margin: 0;
     letter-spacing: 0.15px;
 }
-/* ------------------------------------
-                 Def
------------------------------------- */
+/* ------------------------------------------------------------
+            Def List (TypeDefと PartDefの共通スタイル)
+------------------------------------------------------------ */
 .moduleEditor-defList {
     display: grid;
     gap: 16px;
@@ -443,6 +443,19 @@ img {
     padding: 8px 0 0 0;
 }
 
+
+.moduleEditor-defList-addButton {
+    padding: .5rem;
+    background-color: #444;
+    border: none;
+    color: #fff;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+}
+
+.moduleEditor-defList-addButton:hover {
+    background-color: #666;
+}
 /* ============================================
                      Read Me
 ==============================================*/
@@ -495,7 +508,7 @@ img {
 }
 
 /* ==================================================================
-                            part Def
+                            Type Def
 ================================================================== */
 .moduleEditor-typeDef {
     display: flex;
@@ -515,19 +528,6 @@ img {
 /* ==================================================================
                             part Def
 ================================================================== */
-
-.moduleEditor-partDefList-addPartDef {
-    padding: .5rem;
-    background-color: #444;
-    border: none;
-    color: #fff;
-    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4);
-    cursor: pointer;
-}
-
-.moduleEditor-partDefList-addPartDef:hover {
-    background-color: #666;
-}
 
 .moduleEditor-partDef {
     display: flex;
@@ -744,7 +744,6 @@ img {
     left: 0;
     background-color: #2d2d2d;
     border: solid 1px #999;
-    padding: 2px;
     font-size: 16px;
     width: 220px;
     z-index: 5;
@@ -753,7 +752,9 @@ img {
 .moduleEditor-partDef-suggestion-item {
     display: flex;
     align-items: center;
-    height: 24px;
+    height: 28px;
+    padding: 2px;
+    border-bottom: solid #484848 1px;
 }
 
 .moduleEditor-partDef-suggestion-item-select {
