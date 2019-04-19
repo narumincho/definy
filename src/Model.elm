@@ -643,6 +643,17 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
                 _ ->
                     []
 
+        ( False, False, True ) ->
+            case key of
+                Key.ArrowUp ->
+                    [ Panel.Editor.Module.MsgIncreaseValue ]
+
+                Key.ArrowDown ->
+                    [ Panel.Editor.Module.MsgDecreaseValue ]
+
+                _ ->
+                    []
+
         _ ->
             []
 

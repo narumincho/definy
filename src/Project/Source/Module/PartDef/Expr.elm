@@ -7,13 +7,13 @@ module Project.Source.Module.PartDef.Expr exposing
     , getHead
     , getOthers
     , getTermFromIndex
-    , indexedMap
     , insertABetweenOpAndTerm
     , insertAt
     , insertHead
     , isEmpty
     , make
-    , map
+    , mapHeadTerm
+    , mapTermAt
     , opToDescription
     , opToString
     , removeBlankOpNoneTerm
@@ -184,21 +184,32 @@ toString (ExprTermOp head others) =
            )
 
 
-map : (Term -> a) -> (Operator -> a) -> Expr -> List a
-map termF opF (ExprTermOp head others) =
-    termF head
-        :: (others
-                |> List.concatMap (\( op, term ) -> [ opF op, termF term ])
-           )
+mapHeadTerm : (Term -> Term) -> Expr -> Expr
+mapHeadTerm f (ExprTermOp head others) =
+    ExprTermOp (f head) others
 
 
-indexedMap : (Int -> Term -> a) -> (Int -> Operator -> a) -> Expr -> List a
-indexedMap termF opF (ExprTermOp head others) =
-    termF 0 head
-        :: (others
-                |> List.indexedMap (\i ( op, term ) -> [ opF i op, termF (1 + i) term ])
-                |> List.concat
-           )
+mapTermAt : Int -> (Term -> Term) -> Expr -> Expr
+mapTermAt index f (ExprTermOp head others) =
+    if index == 0 then
+        ExprTermOp
+            (f head)
+            others
+
+    else
+        ExprTermOp head
+            (others
+                |> List.indexedMap
+                    (\i ( op, term ) ->
+                        ( op
+                        , if i == index - 1 then
+                            f term
+
+                          else
+                            term
+                        )
+                    )
+            )
 
 
 insertHead : Term -> Operator -> Expr -> Expr

@@ -70,6 +70,8 @@ type Msg
     | MsgConfirmSingleLineTextFieldOrSelectParent
     | MsgAddPartDef
     | MsgAddTypeDef
+    | MsgIncreaseValue
+    | MsgDecreaseValue
     | MsgChangeResultVisible ModuleIndex.PartDefIndex ResultVisible
     | MsgFocusThisEditor
     | MsgBlurThisEditor
@@ -314,6 +316,12 @@ update msg project model =
                     )
               ]
             )
+
+        MsgIncreaseValue ->
+            model |> increaseValue targetModule
+
+        MsgDecreaseValue ->
+            model |> decreaseValue targetModule
 
         MsgChangeResultVisible partDefIndex resultVisible ->
             model
@@ -2404,6 +2412,164 @@ emitSetExpr moduleIndex partDefIndex expr =
                 ModuleWithCache.MsgSetExpr partDefIndex expr
             }
         )
+
+
+
+{- =========================================================
+                        値を増やす
+   =========================================================
+-}
+
+
+increaseValue : ModuleWithCache.ModuleWithResult -> Model -> ( Model, List Emit )
+increaseValue targetModule model =
+    case getActive model of
+        ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefExpr termOpPos )) ->
+            ( model
+            , [ EmitMsgToSource
+                    (Source.MsgModule
+                        { moduleIndex = getTargetModuleIndex model
+                        , moduleMsg =
+                            ModuleWithCache.MsgSetExpr
+                                partDefIndex
+                                (termOpPosIncreaseValue
+                                    termOpPos
+                                    (targetModule
+                                        |> ModuleWithCache.getPartDef partDefIndex
+                                        |> Maybe.map PartDef.getExpr
+                                        |> Maybe.withDefault Expr.empty
+                                    )
+                                )
+                        }
+                    )
+              ]
+            )
+
+        _ ->
+            ( model
+            , []
+            )
+
+
+termOpPosIncreaseValue : TermOpPos -> Expr.Expr -> Expr.Expr
+termOpPosIncreaseValue termOpPos expr =
+    case termOpPos of
+        TermOpSelf ->
+            expr
+
+        TermOpHead ->
+            expr
+
+        TermOpTerm index termType ->
+            expr
+                |> Expr.mapTermAt index (termTypeIncreaseValue termType)
+
+        TermOpOp int ->
+            expr
+
+
+termTypeIncreaseValue : TermType -> Expr.Term -> Expr.Term
+termTypeIncreaseValue termType term =
+    case term of
+        Expr.Int32Literal int ->
+            Expr.Int32Literal (int + 1)
+
+        Expr.Part _ ->
+            term
+
+        Expr.Parentheses expr ->
+            case termType of
+                TypeNoChildren _ ->
+                    term
+
+                TypeParentheses termOpPos ->
+                    Expr.Parentheses
+                        (termOpPosIncreaseValue termOpPos expr)
+
+                TypeLambda _ ->
+                    term
+
+        Expr.None ->
+            term
+
+
+
+{- =========================================================
+                        値を減らす
+   =========================================================
+-}
+
+
+decreaseValue : ModuleWithCache.ModuleWithResult -> Model -> ( Model, List Emit )
+decreaseValue targetModule model =
+    case getActive model of
+        ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefExpr termOpPos )) ->
+            ( model
+            , [ EmitMsgToSource
+                    (Source.MsgModule
+                        { moduleIndex = getTargetModuleIndex model
+                        , moduleMsg =
+                            ModuleWithCache.MsgSetExpr
+                                partDefIndex
+                                (termOpPosDecreaseValue
+                                    termOpPos
+                                    (targetModule
+                                        |> ModuleWithCache.getPartDef partDefIndex
+                                        |> Maybe.map PartDef.getExpr
+                                        |> Maybe.withDefault Expr.empty
+                                    )
+                                )
+                        }
+                    )
+              ]
+            )
+
+        _ ->
+            ( model
+            , []
+            )
+
+
+termOpPosDecreaseValue : TermOpPos -> Expr.Expr -> Expr.Expr
+termOpPosDecreaseValue termOpPos expr =
+    case termOpPos of
+        TermOpSelf ->
+            expr
+
+        TermOpHead ->
+            expr
+
+        TermOpTerm index termType ->
+            expr
+                |> Expr.mapTermAt index (termTypeDecreaseValue termType)
+
+        TermOpOp int ->
+            expr
+
+
+termTypeDecreaseValue : TermType -> Expr.Term -> Expr.Term
+termTypeDecreaseValue termType term =
+    case term of
+        Expr.Int32Literal int ->
+            Expr.Int32Literal (int - 1)
+
+        Expr.Part _ ->
+            term
+
+        Expr.Parentheses expr ->
+            case termType of
+                TypeNoChildren _ ->
+                    term
+
+                TypeParentheses termOpPos ->
+                    Expr.Parentheses
+                        (termOpPosDecreaseValue termOpPos expr)
+
+                TypeLambda _ ->
+                    term
+
+        Expr.None ->
+            term
 
 
 
