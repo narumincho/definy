@@ -80,6 +80,11 @@ img {
                             Tree Panel
 ================================================================== */
 
+.treePanel-title-area {
+    display: flex;
+    justify-content: space-between;
+}
+
 .treePanel-title {
     color: #b9d09b;
     margin: 0;
@@ -93,6 +98,16 @@ img {
     letter-spacing: 0.08rem;
 }
 
+.treePanel-closeButton {
+    width: 2rem;
+    font-size: 1rem;
+    background-color: #000;
+    color: #fff;
+}
+
+.treePanel-closeButton:hover {
+    background-color: #333;
+}
 /* ==================================================================
                         Tree Panel - Item
 ================================================================== */
@@ -366,38 +381,41 @@ img {
 
 /* ==================================================================
 =====================================================================
-                        Editor Key Config
+                            Editor
 =====================================================================
 ================================================================== */
-
-.editorKeyConfig-keyboard {
-    padding: 0 1rem;
-}
-
-.editorKeyConfig-sourceTab {
+.editor-tab {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
     position: relative;
 }
 
-.editorKeyConfig-sourceTab-item {
+.editor-tab-item {
     padding: 8px;
     text-align: center;
     border-bottom: transparent solid 2px;
     color: #ccc;
 }
 
-.editorKeyConfig-sourceTab-item:hover {
+.editor-tab-item:hover {
     background-color: #111;
     color: #ddd;
 }
 
-.editorKeyConfig-sourceTab-item-select {
+.editor-tab-item-select {
     padding: .5rem;
     text-align: center;
     border-bottom: #4ec9b0 solid 2px;
     color: #eee;
+}
+/* ==================================================================
+=====================================================================
+                        Editor Key Config
+=====================================================================
+================================================================== */
+
+.editorKeyConfig-keyboard {
+    padding: 0 1rem;
 }
 
 .editorKeyConfig-msgCard {
@@ -554,6 +572,10 @@ img {
     flex-direction: column;
     text-align: right;
     flex-grow: 1;
+}
+
+.moduleEditor-partDef-resultArea-resultValue {
+    font-size: 3rem;
 }
 
 .moduleEditor-partDef-nameAndType {

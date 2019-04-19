@@ -113,17 +113,19 @@ isInputKeyboardDirect (Model { selectedKey }) =
 inputSourceTab : InputDevice -> Html.Html Msg
 inputSourceTab selectedDevice =
     Html.div
-        [ Html.Attributes.class "editorKeyConfig-sourceTab" ]
+        [ Html.Attributes.class "editor-tab"
+        , Html.Attributes.style "grid-template-columns" "1fr 1fr 1fr 1fr"
+        ]
         ([ ( "キーボード", Keyboard ), ( "マウス", Mouse ), ( "ゲームパッド", Gamepad ), ( "MIDIキーボード", MidiKeyboard ) ]
             |> List.map
                 (\( text, device ) ->
                     Html.div
                         [ Html.Attributes.class
                             (if device == selectedDevice then
-                                "editorKeyConfig-sourceTab-item-select"
+                                "editor-tab-item-select"
 
                              else
-                                "editorKeyConfig-sourceTab-item"
+                                "editor-tab-item"
                             )
                         , Html.Events.onClick (ChangeInputDevice device)
                         ]

@@ -19,7 +19,7 @@ module Project.Source.ModuleWithCache exposing
     )
 
 import Compiler
-import Project.Label as Label
+import Project.Label as L
 import Project.Source.Module as Module
 import Project.Source.Module.PartDef as PartDef
 import Project.Source.Module.PartDef.Expr as Expr
@@ -92,16 +92,9 @@ update msg moduleWithResult =
                     )
 
         MsgAddTypeDef ->
-            case moduleWithResult |> Module.addTypeDef (Label.make Label.ha []) of
-                Just newModule ->
-                    ( newModule
-                    , []
-                    )
-
-                Nothing ->
-                    ( moduleWithResult
-                    , []
-                    )
+            ( addTypeDef moduleWithResult
+            , []
+            )
 
         MsgSetName partDefIndex name ->
             case moduleWithResult |> Module.setPartDefName partDefIndex name of
@@ -161,7 +154,7 @@ update msg moduleWithResult =
 
 {-| 結果を持たない、純粋なモジュールから結果を持つモジュールに変換する
 -}
-init : { name : Label.Label, readMe : String, typeDefList : List TypeDef.TypeDef, partDefList : List PartDef.PartDef } -> ( ModuleWithResult, List Emit )
+init : { name : L.Label, readMe : String, typeDefList : List TypeDef.TypeDef, partDefList : List PartDef.PartDef } -> ( ModuleWithResult, List Emit )
 init { name, readMe, typeDefList, partDefList } =
     let
         module_ =
@@ -179,9 +172,16 @@ init { name, readMe, typeDefList, partDefList } =
 
 {-| Moduleの名前を取得する
 -}
-getName : ModuleWithResult -> Label.Label
+getName : ModuleWithResult -> L.Label
 getName =
     Module.getName
+
+
+
+{- =============================================
+                    Read Me
+   =============================================
+-}
 
 
 {-| ModuleのReadMeを取得する
@@ -189,6 +189,13 @@ getName =
 getReadMe : ModuleWithResult -> String
 getReadMe =
     Module.getReadMe
+
+
+
+{- =============================================
+                   Type Def
+   =============================================
+-}
 
 
 {-| Moduleで定義されているTypeDefのListを取得する
@@ -210,6 +217,44 @@ getTypeDef =
 getTypeDefNum : ModuleWithResult -> Int
 getTypeDefNum =
     Module.getTypeDefList >> List.length
+
+
+{-| 型定義を追加。名前はA-Zでないものを使う
+-}
+addTypeDef : ModuleWithResult -> ModuleWithResult
+addTypeDef =
+    addTypeDefLoop typeDefDefaultName
+
+
+addTypeDefLoop : List L.Label -> ModuleWithResult -> ModuleWithResult
+addTypeDefLoop labelList moduleWithResult =
+    case labelList of
+        x :: xs ->
+            case moduleWithResult |> Module.addTypeDef x of
+                Just newModule ->
+                    newModule
+
+                Nothing ->
+                    addTypeDefLoop xs moduleWithResult
+
+        [] ->
+            moduleWithResult
+
+
+typeDefDefaultName : List L.Label
+typeDefDefaultName =
+    [ L.make L.ha []
+    , L.make L.hb []
+    , L.make L.hc []
+    , L.make L.hd []
+    ]
+
+
+
+{- =============================================
+                   Part Def
+   =============================================
+-}
 
 
 {-| Moduleで定義されているPartDefとそのコンパイル結果と評価結果のListを取得する

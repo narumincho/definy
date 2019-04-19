@@ -9,6 +9,7 @@ module Panel.Editor.Module exposing
     , view
     )
 
+import Array
 import Compiler
 import Html
 import Html.Attributes
@@ -32,6 +33,7 @@ import Project.Source.Module.TypeDef as TypeDef
 import Project.Source.ModuleIndex as ModuleIndex
 import Project.Source.ModuleWithCache as ModuleWithCache
 import Project.SourceIndex as SourceIndex
+import Utility.ArrayExtra
 import Utility.ListExtra
 
 
@@ -39,13 +41,13 @@ type Model
     = Model
         { moduleRef : SourceIndex.ModuleIndex
         , active : Active
-        , compileResultVisible : List CompileResultVisible
+        , resultVisible : Array.Array ResultVisible
         }
 
 
-type CompileResultVisible
-    = CompileResultVisibleValue
-    | CompileResultVisibleWasmSExpr
+type ResultVisible
+    = ResultVisibleValue
+    | ResultVisibleWasmSExpr
 
 
 type Msg
@@ -68,6 +70,7 @@ type Msg
     | MsgConfirmSingleLineTextFieldOrSelectParent
     | MsgAddPartDef
     | MsgAddTypeDef
+    | MsgChangeResultVisible ModuleIndex.PartDefIndex ResultVisible
     | MsgFocusThisEditor
     | MsgBlurThisEditor
 
@@ -201,7 +204,7 @@ initModel moduleRef =
     Model
         { moduleRef = moduleRef
         , active = ActiveNone
-        , compileResultVisible = []
+        , resultVisible = Array.fromList []
         }
 
 
@@ -311,6 +314,13 @@ update msg project model =
                     )
               ]
             )
+
+        MsgChangeResultVisible partDefIndex resultVisible ->
+            model
+                |> changeResultVisible
+                    (targetModule |> ModuleWithCache.getPartDefNum)
+                    partDefIndex
+                    resultVisible
 
         MsgFocusThisEditor ->
             ( model
@@ -952,7 +962,11 @@ typeDefListActiveUp typeDefListActive =
                     Just (ActiveTypeDef ( ModuleIndex.TypeDefIndex typeDefIndex, movedTypeDefActive ))
 
                 Nothing ->
-                    Just (ActiveTypeDef ( ModuleIndex.TypeDefIndex (typeDefIndex + 1), ActiveTypeDefSelf ))
+                    if typeDefIndex <= 0 then
+                        Just ActiveTypeDefListSelf
+
+                    else
+                        Just (ActiveTypeDef ( ModuleIndex.TypeDefIndex (typeDefIndex - 1), ActiveTypeDefSelf ))
 
 
 typeDefActiveUp : TypeDefActive -> Maybe TypeDefActive
@@ -971,8 +985,11 @@ typeDefActiveUp typeDefActive =
                         (ActiveTypeDefTagList ( ModuleIndex.TypeDefTagIndex index, movedTagList ))
 
                 Nothing ->
-                    Just
-                        (ActiveTypeDefTagList ( ModuleIndex.TypeDefTagIndex (index + 1), ActiveTypeDefTagName LabelEditSelect ))
+                    if index <= 0 then
+                        Nothing
+
+                    else
+                        Just (ActiveTypeDefTagList ( ModuleIndex.TypeDefTagIndex (index - 1), ActiveTypeDefTagName LabelEditSelect ))
 
 
 typeDefTagListUp : TypeDefTagActive -> Maybe TypeDefTagActive
@@ -2391,6 +2408,26 @@ emitSetExpr moduleIndex partDefIndex expr =
 
 
 {- =========================================================
+                   結果の表示を切り替える
+   =========================================================
+-}
+
+
+changeResultVisible : Int -> ModuleIndex.PartDefIndex -> ResultVisible -> Model -> ( Model, List Emit )
+changeResultVisible partDefNum (ModuleIndex.PartDefIndex index) resultVisivle (Model rec) =
+    ( Model
+        { rec
+            | resultVisible =
+                rec.resultVisible
+                    |> Utility.ArrayExtra.setLength partDefNum ResultVisibleValue
+                    |> Array.set index resultVisivle
+        }
+    , []
+    )
+
+
+
+{- =========================================================
                          複合した動作
    =========================================================
 -}
@@ -2525,7 +2562,7 @@ isNeedConfirmSingleLineTextFieldTermType termType =
 モジュールエディタのModelで見た目を決める
 -}
 view : Project.Project -> Bool -> Model -> { title : String, body : List (Html.Html Msg) }
-view project isFocus (Model { moduleRef, active }) =
+view project isFocus (Model { moduleRef, active, resultVisible }) =
     let
         targetModule =
             project
@@ -2556,6 +2593,7 @@ view project isFocus (Model { moduleRef, active }) =
             )
             (ModuleWithCache.getTypeDefList targetModule)
         , partDefinitionsView
+            resultVisible
             isFocus
             (case active of
                 ActivePartDefList partDefListActive ->
@@ -2867,13 +2905,14 @@ typeDefListView typeDefIndexAndActive typeDefList =
                                 Nothing
                         )
                         typeDef
+                        |> Html.map (\m -> MsgActiveTo (ActiveTypeDefList (ActiveTypeDef ( ModuleIndex.TypeDefIndex index, m ))))
                 )
          )
             ++ [ addTypeDefButton ]
         )
 
 
-typeDefView : Maybe TypeDefActive -> TypeDef.TypeDef -> Html.Html Msg
+typeDefView : Maybe TypeDefActive -> TypeDef.TypeDef -> Html.Html TypeDefActive
 typeDefView typeDefActive typeDef =
     Html.div
         ([ subClass "typeDef"
@@ -2883,7 +2922,7 @@ typeDefView typeDefActive typeDef =
                         [ subClass "typeDef-active" ]
 
                     _ ->
-                        []
+                        [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActiveTypeDefSelf, True )) ]
                )
         )
         [ Html.text (TypeDef.toString typeDef) ]
@@ -2910,8 +2949,8 @@ addTypeDefButton =
 
 {-| パーツエディタの表示
 -}
-partDefinitionsView : Bool -> Maybe PartDefListActive -> List ( PartDef.PartDef, ModuleWithCache.CompileAndRunResult ) -> Html.Html Msg
-partDefinitionsView isFocus partDefListActiveMaybe partDefAndResultList =
+partDefinitionsView : Array.Array ResultVisible -> Bool -> Maybe PartDefListActive -> List ( PartDef.PartDef, ModuleWithCache.CompileAndRunResult ) -> Html.Html Msg
+partDefinitionsView resultVisibleList isFocus partDefListActiveMaybe partDefAndResultList =
     Html.div
         ([ subClass "section"
          ]
@@ -2933,6 +2972,7 @@ partDefinitionsView isFocus partDefListActiveMaybe partDefAndResultList =
         )
         [ partDefinitionsViewTitle
         , partDefListView
+            resultVisibleList
             isFocus
             partDefAndResultList
             (case partDefListActiveMaybe of
@@ -2957,14 +2997,15 @@ partDefinitionsViewTitle =
         [ Html.text "Part Definitions" ]
 
 
-partDefListView : Bool -> List ( PartDef.PartDef, ModuleWithCache.CompileAndRunResult ) -> Maybe ( ModuleIndex.PartDefIndex, PartDefActive ) -> Html.Html Msg
-partDefListView isFocus defAndResultList partDefActiveWithIndexMaybe =
+partDefListView : Array.Array ResultVisible -> Bool -> List ( PartDef.PartDef, ModuleWithCache.CompileAndRunResult ) -> Maybe ( ModuleIndex.PartDefIndex, PartDefActive ) -> Html.Html Msg
+partDefListView resultVisibleList isFocus defAndResultList partDefActiveWithIndexMaybe =
     Html.div
         [ subClass "defList" ]
         ((defAndResultList
             |> List.indexedMap
                 (\index ( partDef, result ) ->
                     partDefView
+                        (resultVisibleList |> Array.get index |> Maybe.withDefault ResultVisibleValue)
                         isFocus
                         (ModuleIndex.PartDefIndex index)
                         partDef
@@ -2983,10 +3024,13 @@ partDefListView isFocus defAndResultList partDefActiveWithIndexMaybe =
                         |> Html.map
                             (\m ->
                                 case m of
-                                    DefActiveTo ref ->
+                                    PartDefActiveTo ref ->
                                         MsgActiveTo (ActivePartDefList (ActivePartDef ( ModuleIndex.PartDefIndex index, ref )))
 
-                                    DefInput string ->
+                                    PartDefChangeResultVisible resultVisible ->
+                                        MsgChangeResultVisible (ModuleIndex.PartDefIndex index) resultVisible
+
+                                    PartDefInput string ->
                                         MsgInput string
                             )
                 )
@@ -3000,8 +3044,8 @@ partDefId (ModuleIndex.PartDefIndex index) =
     "moduleEditor-partDef-" ++ String.fromInt index
 
 
-partDefView : Bool -> ModuleIndex.PartDefIndex -> PartDef.PartDef -> ModuleWithCache.CompileAndRunResult -> Maybe PartDefActive -> Html.Html DefViewMsg
-partDefView isFocus index partDef compileAndRunResult partDefActiveMaybe =
+partDefView : ResultVisible -> Bool -> ModuleIndex.PartDefIndex -> PartDef.PartDef -> ModuleWithCache.CompileAndRunResult -> Maybe PartDefActive -> Html.Html PartDefViewMsg
+partDefView resultVisible isFocus index partDef compileAndRunResult partDefActiveMaybe =
     Html.div
         ([ subClassList
             [ ( "partDef", True )
@@ -3009,7 +3053,7 @@ partDefView isFocus index partDef compileAndRunResult partDefActiveMaybe =
             ]
          , Html.Events.stopPropagationOn "click"
             (Json.Decode.succeed
-                ( DefActiveTo ActivePartDefSelf
+                ( PartDefActiveTo ActivePartDefSelf
                 , isFocus
                 )
             )
@@ -3034,47 +3078,84 @@ partDefView isFocus index partDef compileAndRunResult partDefActiveMaybe =
                         Nothing
                 )
             ]
-        , partDefResultView compileAndRunResult
+        , partDefResultView resultVisible compileAndRunResult
+            |> Html.map PartDefChangeResultVisible
         ]
 
 
-type DefViewMsg
-    = DefActiveTo PartDefActive
-    | DefInput String
+type PartDefViewMsg
+    = PartDefActiveTo PartDefActive
+    | PartDefChangeResultVisible ResultVisible
+    | PartDefInput String
 
 
 
 {- ================= Result ================= -}
 
 
-partDefResultView : ModuleWithCache.CompileAndRunResult -> Html.Html msg
-partDefResultView compileAndRunResult =
+partDefResultView : ResultVisible -> ModuleWithCache.CompileAndRunResult -> Html.Html ResultVisible
+partDefResultView resultVisible compileAndRunResult =
     Html.div
         [ subClass "partDef-resultArea" ]
-        [ Html.div
-            []
-            [ Html.text
-                (ModuleWithCache.compileAndRunResultGetCompileResult compileAndRunResult
-                    |> Maybe.map Compiler.compileResultToString
-                    |> Maybe.withDefault "コンパイル中……"
-                )
+        ([ Html.div
+            [ Html.Attributes.class "editor-tab"
+            , Html.Attributes.style "grid-template-columns" "1fr 1fr"
             ]
-        , Html.div
-            []
-            [ Html.text
-                (ModuleWithCache.compileAndRunResultGetRunResult compileAndRunResult
-                    |> Maybe.map String.fromInt
-                    |> Maybe.withDefault "評価結果がない"
+            [ Html.div
+                (case resultVisible of
+                    ResultVisibleValue ->
+                        [ Html.Attributes.class "editor-tab-item-select" ]
+
+                    ResultVisibleWasmSExpr ->
+                        [ Html.Attributes.class "editor-tab-item"
+                        , Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ResultVisibleValue, True ))
+                        ]
                 )
+                [ Html.text "評価結果" ]
+            , Html.div
+                (case resultVisible of
+                    ResultVisibleValue ->
+                        [ Html.Attributes.class "editor-tab-item"
+                        , Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( ResultVisibleWasmSExpr, False ))
+                        ]
+
+                    ResultVisibleWasmSExpr ->
+                        [ Html.Attributes.class "editor-tab-item-select" ]
+                )
+                [ Html.text "wasmのS式" ]
             ]
-        ]
+         ]
+            ++ (case resultVisible of
+                    ResultVisibleValue ->
+                        [ Html.div
+                            [ subClass "partDef-resultArea-resultValue" ]
+                            [ Html.text
+                                (ModuleWithCache.compileAndRunResultGetRunResult compileAndRunResult
+                                    |> Maybe.map String.fromInt
+                                    |> Maybe.withDefault "評価結果がない"
+                                )
+                            ]
+                        ]
+
+                    ResultVisibleWasmSExpr ->
+                        [ Html.div
+                            []
+                            [ Html.text
+                                (ModuleWithCache.compileAndRunResultGetCompileResult compileAndRunResult
+                                    |> Maybe.map Compiler.compileResultToString
+                                    |> Maybe.withDefault "コンパイル中……"
+                                )
+                            ]
+                        ]
+               )
+        )
 
 
 
 {- ================= Name And Type ================= -}
 
 
-partDefViewNameAndType : Name.Name -> Type.Type -> Maybe PartDefActive -> Html.Html DefViewMsg
+partDefViewNameAndType : Name.Name -> Type.Type -> Maybe PartDefActive -> Html.Html PartDefViewMsg
 partDefViewNameAndType name type_ partDefActiveMaybe =
     Html.div
         [ subClass "partDef-nameAndType" ]
@@ -3102,7 +3183,7 @@ partDefViewNameAndType name type_ partDefActiveMaybe =
 {------------------ Name  ------------------}
 
 
-partDefViewName : Name.Name -> Maybe NameEdit -> Html.Html DefViewMsg
+partDefViewName : Name.Name -> Maybe NameEdit -> Html.Html PartDefViewMsg
 partDefViewName name nameEditMaybe =
     case nameEditMaybe of
         Just NameEditText ->
@@ -3118,12 +3199,12 @@ partDefViewName name nameEditMaybe =
             partDefNameNormalView name
 
 
-partDefNameNormalView : Name.Name -> Html.Html DefViewMsg
+partDefNameNormalView : Name.Name -> Html.Html PartDefViewMsg
 partDefNameNormalView name =
     Html.div
         [ subClass "partDef-nameContainer"
         , Html.Events.stopPropagationOn "click"
-            (Json.Decode.succeed ( DefActiveTo (ActivePartDefName NameEditSelect), True ))
+            (Json.Decode.succeed ( PartDefActiveTo (ActivePartDefName NameEditSelect), True ))
         ]
         [ case name of
             Name.SafeName safeName ->
@@ -3138,7 +3219,7 @@ partDefNameNormalView name =
         ]
 
 
-partDefNameSelectView : Name.Name -> Html.Html DefViewMsg
+partDefNameSelectView : Name.Name -> Html.Html PartDefViewMsg
 partDefNameSelectView name =
     Html.Keyed.node "div"
         [ subClass "partDef-nameContainer"
@@ -3160,7 +3241,7 @@ partDefNameSelectView name =
         ]
 
 
-partDefNameEditView : Name.Name -> Maybe { index : Int, searchName : Name.Name } -> Html.Html DefViewMsg
+partDefNameEditView : Name.Name -> Maybe { index : Int, searchName : Name.Name } -> Html.Html PartDefViewMsg
 partDefNameEditView name suggestSelectDataMaybe =
     Html.Keyed.node "div"
         [ subClass "partDef-nameContainer" ]
@@ -3168,7 +3249,7 @@ partDefNameEditView name suggestSelectDataMaybe =
           , Html.input
                 [ subClass "partDef-nameTextArea"
                 , Html.Attributes.id "edit"
-                , Html.Events.onInput DefInput
+                , Html.Events.onInput PartDefInput
                 ]
                 []
           )
@@ -3269,7 +3350,7 @@ enterIcon =
 {------------------ Type  ------------------}
 
 
-partDefViewType : Type.Type -> Maybe TypeEdit -> Html.Html DefViewMsg
+partDefViewType : Type.Type -> Maybe TypeEdit -> Html.Html PartDefViewMsg
 partDefViewType type_ typeEditMaybe =
     case typeEditMaybe of
         Just TypeEditSelect ->
@@ -3279,12 +3360,12 @@ partDefViewType type_ typeEditMaybe =
             partDefTypeNormalView type_
 
 
-partDefTypeNormalView : Type.Type -> Html.Html DefViewMsg
+partDefTypeNormalView : Type.Type -> Html.Html PartDefViewMsg
 partDefTypeNormalView type_ =
     Html.div
         [ subClass "partDef-typeContainer"
         , Html.Events.stopPropagationOn "click"
-            (Json.Decode.succeed ( DefActiveTo (ActivePartDefType TypeEditSelect), True ))
+            (Json.Decode.succeed ( PartDefActiveTo (ActivePartDefType TypeEditSelect), True ))
         ]
         [ case Type.toString type_ of
             Just typeString ->
@@ -3299,7 +3380,7 @@ partDefTypeNormalView type_ =
         ]
 
 
-partDefTypeSelectView : Type.Type -> Html.Html DefViewMsg
+partDefTypeSelectView : Type.Type -> Html.Html PartDefViewMsg
 partDefTypeSelectView type_ =
     Html.Keyed.node "div"
         [ subClass "partDef-typeContainer"
@@ -3323,7 +3404,7 @@ partDefTypeSelectView type_ =
         ]
 
 
-partDefTypeEditView : Type.Type -> Int -> Html.Html DefViewMsg
+partDefTypeEditView : Type.Type -> Int -> Html.Html PartDefViewMsg
 partDefTypeEditView type_ suggestIndex =
     Html.Keyed.node "div"
         [ subClass "partDef-typeContainer" ]
@@ -3331,7 +3412,7 @@ partDefTypeEditView type_ suggestIndex =
           , Html.input
                 [ subClass "partDef-typeTextArea"
                 , Html.Attributes.id "edit"
-                , Html.Events.onInput DefInput
+                , Html.Events.onInput PartDefInput
                 ]
                 []
           )
@@ -3387,7 +3468,7 @@ suggestTypeItem type_ subItem isSelect =
 {- ================= Expr ================= -}
 
 
-partDefViewExpr : Expr.Expr -> Maybe TermOpPos -> Html.Html DefViewMsg
+partDefViewExpr : Expr.Expr -> Maybe TermOpPos -> Html.Html PartDefViewMsg
 partDefViewExpr expr termOpPosMaybe =
     Html.div
         ([ subClass "partDef-expr" ]
@@ -3397,13 +3478,13 @@ partDefViewExpr expr termOpPosMaybe =
 
                     _ ->
                         [ Html.Events.stopPropagationOn "click"
-                            (Json.Decode.succeed ( DefActiveTo (ActivePartDefExpr TermOpSelf), True ))
+                            (Json.Decode.succeed ( PartDefActiveTo (ActivePartDefExpr TermOpSelf), True ))
                         ]
                )
         )
         ([ Html.text "="
          , termOpView termOpPosMaybe expr
-            |> Html.map (\m -> DefActiveTo (ActivePartDefExpr m))
+            |> Html.map (\m -> PartDefActiveTo (ActivePartDefExpr m))
          ]
             ++ (case termOpPosMaybe of
                     Just _ ->
@@ -3721,12 +3802,12 @@ activeHeadTermLeft =
     ユーザーからテキストの入力を受け取る隠れた<input type="text">
 
 -}
-hideInputElement : Html.Html DefViewMsg
+hideInputElement : Html.Html PartDefViewMsg
 hideInputElement =
     Html.input
         [ subClass "partDef-hideTextArea"
         , Html.Attributes.id "edit"
-        , Html.Events.onInput DefInput
+        , Html.Events.onInput PartDefInput
         ]
         []
 

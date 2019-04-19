@@ -167,6 +167,7 @@ type Msg
     | ToFocusEditorPanel -- デフォルトでEnterの動作
     | OpenEditor Panel.EditorTypeRef.EditorTypeRef -- エディタを開く
     | SelectAndOpenKeyConfig -- キーコンフィッグを選択して開く
+    | CloseSidePanel -- サイドパネルを閉じる
 
 
 {-| 全体に送るメッセージ
@@ -174,6 +175,7 @@ type Msg
 type Emit
     = EmitFocusToEditorGroup -- エディタグループにフォーカスを移動
     | EmitOpenEditor Panel.EditorTypeRef.EditorTypeRef -- エディタを開く
+    | EmitCloseSidePanel
 
 
 
@@ -241,6 +243,11 @@ update msg editorRef project model =
         SelectAndOpenKeyConfig ->
             ( model
             , [ EmitOpenEditor Panel.EditorTypeRef.EditorKeyConfig ]
+            )
+
+        CloseSidePanel ->
+            ( model
+            , [ EmitCloseSidePanel ]
             )
 
 
@@ -438,7 +445,10 @@ isExistInChildren (SimpleTree { children }) target =
 
 
 
-{- ====================== View ====================== -}
+{- ==================================================
+                       View
+   ====================================================
+-}
 
 
 {-| ModuleTreePanelの表示
@@ -470,8 +480,17 @@ view { project, editorRef, model, focus, width } =
 -}
 viewTitle : Html.Html Msg
 viewTitle =
-    Html.div [ treePanelClass "title" ]
-        [ Html.text "Definy" ]
+    Html.div
+        [ treePanelClass "title-area" ]
+        [ Html.div
+            [ treePanelClass "title" ]
+            [ Html.text "Definy" ]
+        , Html.button
+            [ Html.Events.onClick CloseSidePanel
+            , treePanelClass "closeButton"
+            ]
+            [ Html.text "◀" ]
+        ]
 
 
 {-| ツリービュー本体

@@ -99,6 +99,7 @@ type Msg
         }
       -- 実行結果を受け取った
     | ToResizeGutterMode Gutter -- リサイズモードに移行
+    | CloseSidePanel -- サイドパネルを閉じる
     | FocusTo Focus -- フォーカスを移動
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
     | TreePanelMsg Panel.Tree.Msg -- ツリーパネル独自のメッセージ
@@ -277,6 +278,11 @@ update msg model =
 
         ToResizeGutterMode gutter ->
             ( toGutterMode gutter model
+            , Cmd.none
+            )
+
+        CloseSidePanel ->
+            ( model |> setTreePanelWidth 0
             , Cmd.none
             )
 
@@ -974,6 +980,9 @@ treePanelEmitToMsg emit =
 
         Panel.Tree.EmitOpenEditor editorRef ->
             ChangeEditorResource editorRef
+
+        Panel.Tree.EmitCloseSidePanel ->
+            CloseSidePanel
 
 
 {-| エディタグループパネルの更新
