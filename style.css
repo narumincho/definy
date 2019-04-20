@@ -548,12 +548,13 @@ img {
 ================================================================== */
 
 .moduleEditor-partDef {
-    display: flex;
+    display: grid;
     padding: 8px;
     box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4);
     background-color: #383838;
     color: #ddd;
     border-radius: 4px;
+    grid-template-columns: 1fr 1fr;
 }
 
 .moduleEditor-partDef-active {

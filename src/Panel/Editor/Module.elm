@@ -51,7 +51,8 @@ type ResultVisible
 
 
 type Msg
-    = MsgActiveTo Active
+    = MsgNone
+    | MsgActiveTo Active
     | MsgActiveLeft
     | MsgActiveRight
     | MsgActiveUp
@@ -242,6 +243,9 @@ update msg project model =
                 |> getActive
     in
     case msg of
+        MsgNone ->
+            ( model, [] )
+
         MsgActiveTo toActive ->
             model |> setActive project toActive
 
@@ -3198,6 +3202,9 @@ partDefListView resultVisibleList isFocus defAndResultList partDefActiveWithInde
 
                                     PartDefInput string ->
                                         MsgInput string
+
+                                    PartDefNone ->
+                                        MsgNone
                             )
                 )
          )
@@ -3253,6 +3260,7 @@ type PartDefViewMsg
     = PartDefActiveTo PartDefActive
     | PartDefChangeResultVisible ResultVisible
     | PartDefInput String
+    | PartDefNone
 
 
 
@@ -3416,6 +3424,7 @@ partDefNameEditView name suggestSelectDataMaybe =
                 [ subClass "partDef-nameTextArea"
                 , Html.Attributes.id "edit"
                 , Html.Events.onInput PartDefInput
+                , Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( PartDefNone, True ))
                 ]
                 []
           )
