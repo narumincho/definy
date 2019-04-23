@@ -1,6 +1,7 @@
 module Project.Source.Module.PartDef.Expr exposing
     ( Expr(..)
     , Operator(..)
+    , OperatorBindingOrder(..)
     , Term(..)
     , allOperator
     , empty
@@ -27,6 +28,7 @@ module Project.Source.Module.PartDef.Expr exposing
     , setTermAtOther
     , termToDescription
     , termToString
+    , toBindingOrder
     , toString
     )
 
@@ -658,6 +660,8 @@ opToShortDescription op =
             "不正な演算子"
 
 
+{-| 演算子の結合の強さ。O0が最弱。O7が最強
+-}
 type OperatorBindingOrder
     = O0
     | O1

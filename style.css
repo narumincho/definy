@@ -108,6 +108,7 @@ img {
 .treePanel-closeButton:hover {
     background-color: #333;
 }
+
 /* ==================================================================
                         Tree Panel - Item
 ================================================================== */
@@ -267,6 +268,9 @@ img {
 .editorGroupPanel-editorBody {
     overflow: auto;
     flex-grow: 1;
+    display: grid;
+    align-content: flex-start;
+    gap: 8px;
 }
 
 .editorGroupPanel-openEditorIcon {
@@ -384,6 +388,7 @@ img {
                             Editor
 =====================================================================
 ================================================================== */
+
 .editor-tab {
     display: grid;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
@@ -408,6 +413,7 @@ img {
     border-bottom: #4ec9b0 solid 2px;
     color: #eee;
 }
+
 /* ==================================================================
 =====================================================================
                         Editor Key Config
@@ -430,37 +436,33 @@ img {
 ================================================================== */
 
 .moduleEditor-section {
-    padding: 16px 8px;
-    display: flex;
-    flex-direction: column;
+    padding: 8px;
+    display: grid;
+    gap: 16px;
 }
-/* ------------------------------------
-               Read Me
------------------------------------- */
 
 .moduleEditor-section-active {
     border-left: solid 4px #f09936;
-    padding: 16px 8px 16px 4px;
+    padding: 8px 8px 8px 4px;
 }
 
 .moduleEditor-section-title {
-    font-size: 16px;
-    padding: 0 24px;
+    font-size: 20px;
     line-height: 1.2;
     font-weight: 400;
     margin: 0;
     letter-spacing: 0.15px;
 }
+
 /* ------------------------------------------------------------
             Def List (TypeDefと PartDefの共通スタイル)
 ------------------------------------------------------------ */
+
 .moduleEditor-defList {
     display: grid;
     gap: 16px;
     flex-direction: column;
-    padding: 8px 0 0 0;
 }
-
 
 .moduleEditor-defList-addButton {
     padding: .5rem;
@@ -474,15 +476,12 @@ img {
 .moduleEditor-defList-addButton:hover {
     background-color: #666;
 }
+
 /* ============================================
                      Read Me
 ==============================================*/
 
 .moduleEditor-readMe-inputArea {
-    padding: 8px 0 0 0;
-}
-
-.moduleEditor-readMe-container {
     position: relative;
     padding: 16px;
     border-radius: 4px;
@@ -490,7 +489,7 @@ img {
     background-color: #383838;
 }
 
-.moduleEditor-readMe-container-active {
+.moduleEditor-readMe-inputArea-active {
     border: solid #f09936 3px;
     padding: 13px;
 }
@@ -528,6 +527,7 @@ img {
 /* ==================================================================
                             Type Def
 ================================================================== */
+
 .moduleEditor-typeDef {
     display: flex;
     flex-direction: column;
@@ -661,15 +661,34 @@ img {
         Expr
 =================*/
 
-.moduleEditor-partDef-expr {
+.moduleEditor-partDef-exprArea {
     display: flex;
-    height: 32px;
-    align-items: center;
+    align-items: baseline;
     padding: 4px;
     border-radius: 4px;
     font-family: "mplus-2m-regular";
 }
 
+.moduleEditor-partDef-exprArea-width {
+    color: orange;
+}
+
+.moduleEditor-partDef-expr {
+    font-family: "mplus-2m-regular";
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2px;
+    font-size: 16px;
+}
+
+.moduleEditor-partDef-expr-line {
+    display: flex;
+}
+
+.moduleEditor-partDef-newTerm {
+    overflow: hidden;
+    background-color: #111;
+}
 /*=================
         TermOp
 =================*/

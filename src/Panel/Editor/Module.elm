@@ -18,6 +18,7 @@ import Html.Keyed
 import Json.Decode
 import Json.Encode
 import NSvg
+import Palette.X11
 import Panel.DefaultUi
 import Parser
 import Parser.SimpleChar
@@ -2731,8 +2732,8 @@ isNeedConfirmSingleLineTextFieldTermType termType =
 このエディタが全体にとってフォーカスが当たっているか当たっていないかのBoolと
 モジュールエディタのModelで見た目を決める
 -}
-view : Project.Project -> Bool -> Model -> { title : String, body : List (Html.Html Msg) }
-view project isFocus (Model { moduleRef, active, resultVisible }) =
+view : Int -> Project.Project -> Bool -> Model -> { title : String, body : List (Html.Html Msg) }
+view width project isFocus (Model { moduleRef, active, resultVisible }) =
     let
         targetModule =
             project
@@ -2763,6 +2764,7 @@ view project isFocus (Model { moduleRef, active, resultVisible }) =
             )
             (ModuleWithCache.getTypeDefList targetModule)
         , partDefinitionsView
+            width
             resultVisible
             isFocus
             (case active of
@@ -2936,16 +2938,14 @@ readMeViewTitle =
 
 readMeViewInputArea : String -> Bool -> Bool -> Html.Html Msg
 readMeViewInputArea readMe isFocus isActive =
-    Html.div [ subClass "readMe-inputArea" ]
-        [ Html.div
-            [ subClassList
-                [ ( "readMe-container", True )
-                , ( "readMe-container-active", isActive )
-                ]
+    Html.div
+        [ subClassList
+            [ ( "readMe-inputArea", True )
+            , ( "readMe-inputArea-active", isActive )
             ]
-            [ readMeViewMeasure readMe
-            , readMeViewTextArea readMe isFocus isActive
-            ]
+        ]
+        [ readMeViewMeasure readMe
+        , readMeViewTextArea readMe isFocus isActive
         ]
 
 
@@ -2978,6 +2978,7 @@ readMeViewTextArea readMe isFocus isActive =
                     [ Html.Events.onInput MsgInput
                     , subClass "readMe-textarea-focus"
                     , Html.Attributes.property "value" (Json.Encode.string readMe)
+                    , Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( MsgNone, True ))
                     ]
                         ++ (if isFocus then
                                 [ Html.Attributes.id "edit" ]
@@ -3119,8 +3120,8 @@ addTypeDefButton =
 
 {-| パーツエディタの表示
 -}
-partDefinitionsView : Array.Array ResultVisible -> Bool -> Maybe PartDefListActive -> List ( PartDef.PartDef, ModuleWithCache.CompileAndRunResult ) -> Html.Html Msg
-partDefinitionsView resultVisibleList isFocus partDefListActiveMaybe partDefAndResultList =
+partDefinitionsView : Int -> Array.Array ResultVisible -> Bool -> Maybe PartDefListActive -> List ( PartDef.PartDef, ModuleWithCache.CompileAndRunResult ) -> Html.Html Msg
+partDefinitionsView width resultVisibleList isFocus partDefListActiveMaybe partDefAndResultList =
     Html.div
         ([ subClass "section"
          ]
@@ -3142,6 +3143,7 @@ partDefinitionsView resultVisibleList isFocus partDefListActiveMaybe partDefAndR
         )
         [ partDefinitionsViewTitle
         , partDefListView
+            width
             resultVisibleList
             isFocus
             partDefAndResultList
@@ -3167,14 +3169,15 @@ partDefinitionsViewTitle =
         [ Html.text "Part Definitions" ]
 
 
-partDefListView : Array.Array ResultVisible -> Bool -> List ( PartDef.PartDef, ModuleWithCache.CompileAndRunResult ) -> Maybe ( ModuleIndex.PartDefIndex, PartDefActive ) -> Html.Html Msg
-partDefListView resultVisibleList isFocus defAndResultList partDefActiveWithIndexMaybe =
+partDefListView : Int -> Array.Array ResultVisible -> Bool -> List ( PartDef.PartDef, ModuleWithCache.CompileAndRunResult ) -> Maybe ( ModuleIndex.PartDefIndex, PartDefActive ) -> Html.Html Msg
+partDefListView width resultVisibleList isFocus defAndResultList partDefActiveWithIndexMaybe =
     Html.div
         [ subClass "defList" ]
         ((defAndResultList
             |> List.indexedMap
                 (\index ( partDef, result ) ->
                     partDefView
+                        (width - 16)
                         (resultVisibleList |> Array.get index |> Maybe.withDefault ResultVisibleValue)
                         isFocus
                         (ModuleIndex.PartDefIndex index)
@@ -3217,8 +3220,8 @@ partDefId (ModuleIndex.PartDefIndex index) =
     "moduleEditor-partDef-" ++ String.fromInt index
 
 
-partDefView : ResultVisible -> Bool -> ModuleIndex.PartDefIndex -> PartDef.PartDef -> ModuleWithCache.CompileAndRunResult -> Maybe PartDefActive -> Html.Html PartDefViewMsg
-partDefView resultVisible isFocus index partDef compileAndRunResult partDefActiveMaybe =
+partDefView : Int -> ResultVisible -> Bool -> ModuleIndex.PartDefIndex -> PartDef.PartDef -> ModuleWithCache.CompileAndRunResult -> Maybe PartDefActive -> Html.Html PartDefViewMsg
+partDefView width resultVisible isFocus index partDef compileAndRunResult partDefActiveMaybe =
     Html.div
         ([ subClassList
             [ ( "partDef", True )
@@ -3242,6 +3245,7 @@ partDefView resultVisible isFocus index partDef compileAndRunResult partDefActiv
             [ subClass "partDef-defArea" ]
             [ partDefViewNameAndType (PartDef.getName partDef) (PartDef.getType partDef) partDefActiveMaybe
             , partDefViewExpr
+                ((width - 16) // 2)
                 (PartDef.getExpr partDef)
                 (case partDefActiveMaybe of
                     Just (ActivePartDefExpr partDefExprActive) ->
@@ -3643,10 +3647,10 @@ suggestTypeItem type_ subItem isSelect =
 {- ================= Expr ================= -}
 
 
-partDefViewExpr : Expr.Expr -> Maybe TermOpPos -> Html.Html PartDefViewMsg
-partDefViewExpr expr termOpPosMaybe =
+partDefViewExpr : Int -> Expr.Expr -> Maybe TermOpPos -> Html.Html PartDefViewMsg
+partDefViewExpr width expr termOpPosMaybe =
     Html.div
-        ([ subClass "partDef-expr" ]
+        ([ subClass "partDef-exprArea" ]
             ++ (case termOpPosMaybe of
                     Just TermOpSelf ->
                         [ subClass "partDef-element-active" ]
@@ -3657,18 +3661,246 @@ partDefViewExpr expr termOpPosMaybe =
                         ]
                )
         )
-        ([ Html.text "="
-         , termOpView termOpPosMaybe expr
-            |> Html.map (\m -> PartDefActiveTo (ActivePartDefExpr m))
-         ]
-            ++ (case termOpPosMaybe of
-                    Just _ ->
-                        [ hideInputElement ]
+        [ Html.text "="
+        , Html.div
+            [ subClass "partDef-expr" ]
+            ([ termOpView termOpPosMaybe expr
+                |> Html.map (\m -> PartDefActiveTo (ActivePartDefExpr m))
+             , exprLengthView expr
+             , Html.div
+                [ subClass "partDef-expr-line" ]
+                (newTermOpView termOpPosMaybe expr
+                    |> List.map (Html.map (\m -> PartDefActiveTo (ActivePartDefExpr m)))
+                )
+             ]
+                ++ (case termOpPosMaybe of
+                        Just _ ->
+                            [ hideInputElement ]
 
-                    Nothing ->
-                        []
-               )
-        )
+                        Nothing ->
+                            []
+                   )
+            )
+        ]
+
+
+exprLengthView : Expr.Expr -> Html.Html msg
+exprLengthView expr =
+    Html.div
+        [ subClass "partDef-exprArea-width" ]
+        [ Html.text (String.fromInt (exprLength expr)) ]
+
+
+exprLength : Expr.Expr -> Int
+exprLength expr =
+    (expr |> Expr.getHead |> termLength)
+        + (expr
+            |> Expr.getOthers
+            |> List.map (\( op, term ) -> Debug.log ("length:" ++ Expr.termToString term) (opLength op + termLength term))
+            |> List.sum
+          )
+
+
+termLength : Expr.Term -> Int
+termLength term =
+    case term of
+        Expr.Int32Literal int ->
+            (if int == 0 then
+                1
+
+             else if int < 0 then
+                floor (logBase 10 (toFloat -int)) + 2
+
+             else
+                floor (logBase 10 (toFloat int)) + 1
+            )
+                * 9
+
+        Expr.Part _ ->
+            18
+
+        Expr.Parentheses expr ->
+            exprLength expr + parenthesisWidth * 2
+
+        Expr.None ->
+            36
+
+
+parenthesisWidth : Int
+parenthesisWidth =
+    9
+
+
+opLength : Expr.Operator -> Int
+opLength op =
+    opPaddingLength op
+        * 2
+        + ((case op of
+                Expr.Pipe ->
+                    1
+
+                Expr.Or ->
+                    1
+
+                Expr.And ->
+                    1
+
+                Expr.Equal ->
+                    1
+
+                Expr.NotEqual ->
+                    2
+
+                Expr.LessThan ->
+                    1
+
+                Expr.LessThanOrEqual ->
+                    2
+
+                Expr.Concat ->
+                    2
+
+                Expr.Add ->
+                    1
+
+                Expr.Sub ->
+                    1
+
+                Expr.Mul ->
+                    1
+
+                Expr.Div ->
+                    1
+
+                Expr.Factorial ->
+                    1
+
+                Expr.Compose ->
+                    2
+
+                Expr.App ->
+                    0
+
+                Expr.Blank ->
+                    2
+           )
+            * 9
+          )
+
+
+opPaddingLength : Expr.Operator -> Int
+opPaddingLength op =
+    (case Expr.toBindingOrder op of
+        Expr.O0 ->
+            7
+
+        Expr.O1 ->
+            8
+
+        Expr.O2 ->
+            6
+
+        Expr.O3 ->
+            5
+
+        Expr.O4 ->
+            4
+
+        Expr.O5 ->
+            3
+
+        Expr.O6 ->
+            2
+
+        Expr.O7 ->
+            1
+    )
+        * 2
+
+
+newTermOpView : Maybe TermOpPos -> Expr.Expr -> List (Html.Html TermOpPos)
+newTermOpView termOpPosMaybe expr =
+    (case termOpPosMaybe of
+        Just TermOpHead ->
+            [ activeHeadTermLeft ]
+
+        _ ->
+            []
+    )
+        ++ newTermOpHeadView (Expr.getHead expr)
+        ++ newTermOpOthersView (Expr.getOthers expr)
+
+
+newTermOpHeadView : Expr.Term -> List (Html.Html TermOpPos)
+newTermOpHeadView term =
+    newTermView
+        term
+        |> List.map (Html.map (\m -> TermOpTerm 0 m))
+
+
+newTermOpOthersView : List ( Expr.Operator, Expr.Term ) -> List (Html.Html TermOpPos)
+newTermOpOthersView others =
+    others
+        |> List.indexedMap
+            (\index ( op, term ) ->
+                [ newOpView op
+                    |> List.map (Html.map (always (TermOpOp index)))
+                , newTermView term
+                    |> List.map (Html.map (\m -> TermOpTerm (index + 1) m))
+                ]
+            )
+        |> List.concat
+        |> List.concat
+
+
+newTermView : Expr.Term -> List (Html.Html TermType)
+newTermView term =
+    case term of
+        Expr.Int32Literal int ->
+            [ Html.div
+                [ subClass "partDef-newTerm"
+                , Html.Attributes.style "width" (String.fromInt (termLength term) ++ "px")
+                ]
+                [ Html.text (Expr.termToString term) ]
+            ]
+
+        Expr.Part partIndex ->
+            []
+
+        Expr.Parentheses expr ->
+            [ parenthesesLeftView ]
+                ++ (newTermOpView Nothing expr
+                        |> List.map (Html.map TypeParentheses)
+                   )
+                ++ [ parenthesesRightView ]
+
+        Expr.None ->
+            []
+
+
+parenthesesLeftView : Html.Html msg
+parenthesesLeftView =
+    Html.div
+        [ Html.Attributes.style "width" (String.fromInt parenthesisWidth ++ "px") ]
+        [ Html.text "(" ]
+
+
+parenthesesRightView : Html.Html msg
+parenthesesRightView =
+    Html.div
+        [ Html.Attributes.style "width" (String.fromInt parenthesisWidth ++ "px") ]
+        [ Html.text ")" ]
+
+
+newOpView : Expr.Operator -> List (Html.Html ())
+newOpView op =
+    [ Html.div
+        [ Html.Events.stopPropagationOn "click" (Json.Decode.succeed ( (), True ))
+        , Html.Attributes.style "width" (String.fromInt (opLength op) ++ "px")
+        , Html.Attributes.style "padding" ("0 " ++ String.fromInt (opPaddingLength op) ++ "px")
+        ]
+        [ Html.text (Expr.opToString op) ]
+    ]
 
 
 termOpView : Maybe TermOpPos -> Expr.Expr -> Html.Html TermOpPos

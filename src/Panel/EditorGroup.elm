@@ -1553,7 +1553,7 @@ editorItemView : { project : Project.Project, editorItem : EditorModel, editorIn
 editorItemView { project, editorItem, editorIndex, width, height, isActive, isOne } =
     let
         { title, body } =
-            editorTitleAndBody editorIndex isActive project editorItem
+            editorTitleAndBody width editorIndex isActive project editorItem
     in
     Html.div
         ([ subClassList [ ( "editor", True ), ( "editor--active", isActive ) ]
@@ -1602,8 +1602,8 @@ editorIndexFromIdString idString =
         editorIndexAllValue
 
 
-editorTitleAndBody : EditorIndex -> Bool -> Project.Project -> EditorModel -> { title : String, body : List (Html.Html Msg) }
-editorTitleAndBody editorIndex isActive project editorItem =
+editorTitleAndBody : Int -> EditorIndex -> Bool -> Project.Project -> EditorModel -> { title : String, body : List (Html.Html Msg) }
+editorTitleAndBody width editorIndex isActive project editorItem =
     case editorItem of
         ProjectEditor _ ->
             Panel.Editor.Project.view
@@ -1620,7 +1620,7 @@ editorTitleAndBody editorIndex isActive project editorItem =
         ModuleEditor moduleEditorModel ->
             let
                 viewItem =
-                    Panel.Editor.Module.view project isActive moduleEditorModel
+                    Panel.Editor.Module.view width project isActive moduleEditorModel
             in
             { title = viewItem.title
             , body =
