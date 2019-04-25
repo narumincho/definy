@@ -3696,7 +3696,7 @@ exprLength expr =
     (expr |> Expr.getHead |> termLength)
         + (expr
             |> Expr.getOthers
-            |> List.map (\( op, term ) -> Debug.log ("length:" ++ Expr.termToString term) (opLength op + termLength term))
+            |> List.map (\( op, term ) -> opLength op + termLength term)
             |> List.sum
           )
 

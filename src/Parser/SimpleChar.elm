@@ -58,7 +58,6 @@ type Symbol
     | RightSquareBracket -- ]
     | CircumflexAccent -- ^
     | LowLine -- _
-    | GraveAccent -- `
     | LeftCurlyBracket -- {
     | VerticalLine -- |
     | RightCurlyBracket -- }
@@ -144,7 +143,7 @@ fromChar char =
     else if f "&＆" then
         Just (ASymbol Ampersand char)
 
-    else if f "'’" then
+    else if f "'’`‘" then
         Just (ASymbol Apostrophe char)
 
     else if f "(（" then
@@ -203,9 +202,6 @@ fromChar char =
 
     else if f "_＿" then
         Just (ASymbol LowLine char)
-
-    else if f "`‘" then
-        Just (ASymbol GraveAccent char)
 
     else if f "{｛" then
         Just (ASymbol LeftCurlyBracket char)
