@@ -3245,7 +3245,7 @@ partDefView width resultVisible isFocus index partDef compileAndRunResult partDe
             [ subClass "partDef-defArea" ]
             [ partDefViewNameAndType (PartDef.getName partDef) (PartDef.getType partDef) partDefActiveMaybe
             , partDefViewExpr
-                ((width - 16) // 2)
+                (width - 16 - 260)
                 (PartDef.getExpr partDef)
                 (case partDefActiveMaybe of
                     Just (ActivePartDefExpr partDefExprActive) ->
@@ -3661,12 +3661,12 @@ partDefViewExpr width expr termOpPosMaybe =
                         ]
                )
         )
-        [ Html.text "="
+        [ exprEqualSign
         , Html.div
             [ subClass "partDef-expr" ]
             ([ termOpView termOpPosMaybe expr
                 |> Html.map (\m -> PartDefActiveTo (ActivePartDefExpr m))
-             , exprLengthView expr
+             , exprLengthView expr (width - 20)
              , Html.div
                 [ subClass "partDef-expr-line" ]
                 (newTermOpView termOpPosMaybe expr
@@ -3684,11 +3684,18 @@ partDefViewExpr width expr termOpPosMaybe =
         ]
 
 
-exprLengthView : Expr.Expr -> Html.Html msg
-exprLengthView expr =
+exprEqualSign : Html.Html msg
+exprEqualSign =
+    Html.div
+        [ subClass "partDef-equalSign" ]
+        [ Html.text "=" ]
+
+
+exprLengthView : Expr.Expr -> Int -> Html.Html msg
+exprLengthView expr areaWidth =
     Html.div
         [ subClass "partDef-exprArea-width" ]
-        [ Html.text (String.fromInt (exprLength expr)) ]
+        [ Html.text (String.fromInt (exprLength expr) ++ "/" ++ String.fromInt areaWidth) ]
 
 
 exprLength : Expr.Expr -> Int
@@ -3696,7 +3703,10 @@ exprLength expr =
     (expr |> Expr.getHead |> termLength)
         + (expr
             |> Expr.getOthers
-            |> List.map (\( op, term ) -> opLength op + termLength term)
+            |> List.map
+                (\( op, term ) ->
+                    opLength op + termLength term
+                )
             |> List.sum
           )
 

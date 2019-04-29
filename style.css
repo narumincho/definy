@@ -554,7 +554,7 @@ img {
     background-color: #383838;
     color: #ddd;
     border-radius: 4px;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 260px;
 }
 
 .moduleEditor-partDef-active {
@@ -572,7 +572,7 @@ img {
     display: flex;
     flex-direction: column;
     text-align: right;
-    flex-grow: 1;
+    width: 260px;
 }
 
 .moduleEditor-partDef-resultArea-resultValue {
@@ -664,9 +664,12 @@ img {
 .moduleEditor-partDef-exprArea {
     display: flex;
     align-items: baseline;
-    padding: 4px;
     border-radius: 4px;
     font-family: "mplus-2m-regular";
+}
+
+.moduleEditor-partDef-equalSign {
+    width: 20px;
 }
 
 .moduleEditor-partDef-exprArea-width {
@@ -689,6 +692,7 @@ img {
     overflow: hidden;
     background-color: #111;
 }
+
 /*=================
         TermOp
 =================*/
