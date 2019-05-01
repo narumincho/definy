@@ -3244,7 +3244,7 @@ partDefView width resultVisible isFocus index partDef compileAndRunResult partDe
         [ Html.div
             [ subClass "partDef-defArea" ]
             [ partDefViewNameAndType (PartDef.getName partDef) (PartDef.getType partDef) partDefActiveMaybe
-            , partDefViewExpr
+            , partDefViewExprArea
                 (width - 16 - 260)
                 (PartDef.getExpr partDef)
                 (case partDefActiveMaybe of
@@ -3647,13 +3647,13 @@ suggestTypeItem type_ subItem isSelect =
 {- ================= Expr ================= -}
 
 
-partDefViewExpr : Int -> Expr.Expr -> Maybe TermOpPos -> Html.Html PartDefViewMsg
-partDefViewExpr width expr termOpPosMaybe =
+partDefViewExprArea : Int -> Expr.Expr -> Maybe TermOpPos -> Html.Html PartDefViewMsg
+partDefViewExprArea width expr termOpPosMaybe =
     Html.div
         ([ subClass "partDef-exprArea" ]
             ++ (case termOpPosMaybe of
                     Just TermOpSelf ->
-                        [ subClass "partDef-element-active" ]
+                        []
 
                     _ ->
                         [ Html.Events.stopPropagationOn "click"
@@ -3662,25 +3662,7 @@ partDefViewExpr width expr termOpPosMaybe =
                )
         )
         [ exprEqualSign
-        , Html.div
-            [ subClass "partDef-expr" ]
-            ([ termOpView termOpPosMaybe expr
-                |> Html.map (\m -> PartDefActiveTo (ActivePartDefExpr m))
-             , exprLengthView expr (width - 20)
-             , Html.div
-                [ subClass "partDef-expr-line" ]
-                (newTermOpView termOpPosMaybe expr
-                    |> List.map (Html.map (\m -> PartDefActiveTo (ActivePartDefExpr m)))
-                )
-             ]
-                ++ (case termOpPosMaybe of
-                        Just _ ->
-                            [ hideInputElement ]
-
-                        Nothing ->
-                            []
-                   )
-            )
+        , partDefViewExpr (width - 20) expr termOpPosMaybe
         ]
 
 
@@ -3691,11 +3673,47 @@ exprEqualSign =
         [ Html.text "=" ]
 
 
+partDefViewExpr : Int -> Expr.Expr -> Maybe TermOpPos -> Html.Html PartDefViewMsg
+partDefViewExpr width expr termOpPosMaybe =
+    Html.div
+        [ subClassList
+            [ ( "partDef-expr", True ), ( "partDef-element-active", termOpPosMaybe == Just TermOpSelf ) ]
+        ]
+        ([ Html.div
+            [ subClass "partDef-expr-line" ]
+            (newTermOpView termOpPosMaybe expr
+                |> List.map (Html.map (\m -> PartDefActiveTo (ActivePartDefExpr m)))
+            )
+         , exprLengthView expr width
+         ]
+            ++ (case termOpPosMaybe of
+                    Just _ ->
+                        [ hideInputElement ]
+
+                    Nothing ->
+                        []
+               )
+        )
+
+
 exprLengthView : Expr.Expr -> Int -> Html.Html msg
 exprLengthView expr areaWidth =
+    let
+        exprWidth =
+            exprLength expr
+    in
     Html.div
         [ subClass "partDef-exprArea-width" ]
-        [ Html.text (String.fromInt (exprLength expr) ++ "/" ++ String.fromInt areaWidth) ]
+        [ Html.text
+            ((String.fromInt exprWidth ++ "/" ++ String.fromInt areaWidth)
+                ++ (if exprWidth < areaWidth then
+                        "(OK)"
+
+                    else
+                        "(NG)"
+                   )
+            )
+        ]
 
 
 exprLength : Expr.Expr -> Int

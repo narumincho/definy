@@ -85,6 +85,7 @@
             WebAssembly.instantiate(new Uint8Array(compileResult.wasm)).then(result => {
                 const exportFunc = result.instance.exports;
                 const resultValue = exportFunc[0]();
+                console.log(result);
                 console.log("WASMの実行結果", resultValue);
                 app.ports.runResult.send({
                     ref: compileResult.ref,

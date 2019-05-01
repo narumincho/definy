@@ -663,7 +663,6 @@ img {
 
 .moduleEditor-partDef-exprArea {
     display: flex;
-    align-items: baseline;
     border-radius: 4px;
     font-family: "mplus-2m-regular";
 }
@@ -682,6 +681,7 @@ img {
     grid-template-columns: 1fr;
     gap: 2px;
     font-size: 16px;
+    padding: 4px;
 }
 
 .moduleEditor-partDef-expr-line {
@@ -690,7 +690,7 @@ img {
 
 .moduleEditor-partDef-newTerm {
     overflow: hidden;
-    background-color: #111;
+    /* background-color: #111; */
 }
 
 /*=================
