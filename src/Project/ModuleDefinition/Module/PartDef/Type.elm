@@ -1,4 +1,4 @@
-module Project.Source.Module.PartDef.Type exposing
+module Project.ModuleDefinition.Module.PartDef.Type exposing
     ( Type(..)
     , ValidType
     , empty
@@ -9,8 +9,8 @@ module Project.Source.Module.PartDef.Type exposing
     , validTypeToString
     )
 
-import Project.Label as Label
-import Project.SourceIndex as SourceIndex
+import Label
+import Project.ModuleDefinitionIndex as SourceIndex
 
 
 type Type

@@ -3,12 +3,12 @@ module View exposing (view)
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
+import Label
 import Model exposing (Model, Msg)
 import Panel.CommandPalette
 import Panel.EditorGroup
 import Panel.Tree
 import Project
-import Project.Label
 import Utility.ListExtra
 
 
@@ -16,7 +16,7 @@ import Utility.ListExtra
 -}
 view : Model -> { title : String, body : List (Html Msg) }
 view model =
-    { title = "Definy 0 - " ++ Project.Label.toCapitalString (Project.getName (Model.getProject model))
+    { title = "Definy 0 - " ++ Label.toCapitalString (Project.getName (Model.getProject model))
     , body =
         [ treePanel model
         , verticalGutter (Model.isTreePanelGutter model)

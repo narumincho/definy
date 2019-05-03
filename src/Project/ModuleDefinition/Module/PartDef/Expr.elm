@@ -1,4 +1,4 @@
-module Project.Source.Module.PartDef.Expr exposing
+module Project.ModuleDefinition.Module.PartDef.Expr exposing
     ( Expr(..)
     , Operator(..)
     , OperatorBindingOrder(..)
@@ -32,8 +32,7 @@ module Project.Source.Module.PartDef.Expr exposing
     , toString
     )
 
-import Project.Label as Label
-import Project.SourceIndex as SocrceIndex
+import Project.ModuleDefinitionIndex as SocrceIndex
 import Utility.ListExtra as ListExtra
 
 

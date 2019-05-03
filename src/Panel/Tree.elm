@@ -14,14 +14,14 @@ import Color
 import Html
 import Html.Attributes
 import Html.Events
-import NSvg
+import Label
 import Palette.X11
-import Panel.EditorTypeRef
+import Panel.EditorItemSource
 import Project
-import Project.Label as Label
-import Project.SourceIndex
+import Project.ModuleDefinitionIndex
 import Utility.ListExtra
 import Utility.Map
+import Utility.NSvg as NSvg
 
 
 {-| とりうる状態を保持するModel
@@ -38,8 +38,7 @@ type Model
 type OpenCloseData
     = OpenCloseData
         { isProjectRootOpen : Bool
-        , isSourceOpen : Bool
-        , isCoreOpen : Bool
+        , isModuleDefinitionOpen : Bool
         }
 
 
@@ -51,8 +50,7 @@ initModel =
         { openCloseData =
             OpenCloseData
                 { isProjectRootOpen = True
-                , isSourceOpen = True
-                , isCoreOpen = True
+                , isModuleDefinitionOpen = True
                 }
         }
 
@@ -79,17 +77,14 @@ mapOpenCloseData =
 
 {-| 指定したエディタRefの表示が開いているか
 -}
-isTreeOpen : Panel.EditorTypeRef.EditorTypeRef -> OpenCloseData -> Bool
-isTreeOpen projectRef (OpenCloseData { isProjectRootOpen, isSourceOpen, isCoreOpen }) =
+isTreeOpen : Panel.EditorItemSource.EditorItemSource -> OpenCloseData -> Bool
+isTreeOpen projectRef (OpenCloseData { isProjectRootOpen, isModuleDefinitionOpen }) =
     case projectRef of
-        Panel.EditorTypeRef.EditorProject Project.ProjectRoot ->
+        Panel.EditorItemSource.ProjectRoot ->
             isProjectRootOpen
 
-        Panel.EditorTypeRef.EditorProject Project.Source ->
-            isSourceOpen
-
-        Panel.EditorTypeRef.EditorProject (Project.Module Project.SourceIndex.Core) ->
-            isCoreOpen
+        Panel.EditorItemSource.ModuleDefinition ->
+            isModuleDefinitionOpen
 
         _ ->
             False
@@ -97,25 +92,19 @@ isTreeOpen projectRef (OpenCloseData { isProjectRootOpen, isSourceOpen, isCoreOp
 
 {-| 指定したエディタRefの表示を開く
 -}
-openTree : Panel.EditorTypeRef.EditorTypeRef -> OpenCloseData -> OpenCloseData
+openTree : Panel.EditorItemSource.EditorItemSource -> OpenCloseData -> OpenCloseData
 openTree editorRef (OpenCloseData rec) =
     case editorRef of
-        Panel.EditorTypeRef.EditorProject Project.ProjectRoot ->
+        Panel.EditorItemSource.ProjectRoot ->
             OpenCloseData
                 { rec
                     | isProjectRootOpen = True
                 }
 
-        Panel.EditorTypeRef.EditorProject Project.Source ->
+        Panel.EditorItemSource.ModuleDefinition ->
             OpenCloseData
                 { rec
-                    | isSourceOpen = True
-                }
-
-        Panel.EditorTypeRef.EditorProject (Project.Module Project.SourceIndex.Core) ->
-            OpenCloseData
-                { rec
-                    | isCoreOpen = True
+                    | isModuleDefinitionOpen = True
                 }
 
         _ ->
@@ -124,25 +113,19 @@ openTree editorRef (OpenCloseData rec) =
 
 {-| 指定したエディタRefの表示を閉じる
 -}
-closeTree : Panel.EditorTypeRef.EditorTypeRef -> OpenCloseData -> OpenCloseData
+closeTree : Panel.EditorItemSource.EditorItemSource -> OpenCloseData -> OpenCloseData
 closeTree editorRef (OpenCloseData rec) =
     case editorRef of
-        Panel.EditorTypeRef.EditorProject Project.ProjectRoot ->
+        Panel.EditorItemSource.ProjectRoot ->
             OpenCloseData
                 { rec
                     | isProjectRootOpen = False
                 }
 
-        Panel.EditorTypeRef.EditorProject Project.Source ->
+        Panel.EditorItemSource.ModuleDefinition ->
             OpenCloseData
                 { rec
-                    | isSourceOpen = False
-                }
-
-        Panel.EditorTypeRef.EditorProject (Project.Module Project.SourceIndex.Core) ->
-            OpenCloseData
-                { rec
-                    | isCoreOpen = False
+                    | isModuleDefinitionOpen = False
                 }
 
         _ ->
@@ -158,14 +141,14 @@ type FocusModel
 {-| TreePanelが受け取るMsg
 -}
 type Msg
-    = TreeOpen Panel.EditorTypeRef.EditorTypeRef
-    | TreeClose Panel.EditorTypeRef.EditorTypeRef
+    = TreeOpen Panel.EditorItemSource.EditorItemSource
+    | TreeClose Panel.EditorItemSource.EditorItemSource
     | SelectUp -- デフォルトで↑キーの操作
     | SelectDown -- デフォルトで↓キーの操作
     | SelectParentOrTreeClose -- デフォルトで←キーの操作
     | SelectFirstChildOrTreeOpen -- デフォルトで→キーの操作
     | ToFocusEditorPanel -- デフォルトでEnterの動作
-    | OpenEditor Panel.EditorTypeRef.EditorTypeRef -- エディタを開く
+    | OpenEditor Panel.EditorItemSource.EditorItemSource -- エディタを開く
     | SelectAndOpenKeyConfig -- キーコンフィッグを選択して開く
     | CloseSidePanel -- サイドパネルを閉じる
 
@@ -174,7 +157,7 @@ type Msg
 -}
 type Emit
     = EmitFocusToEditorGroup -- エディタグループにフォーカスを移動
-    | EmitOpenEditor Panel.EditorTypeRef.EditorTypeRef -- エディタを開く
+    | EmitOpenEditor Panel.EditorItemSource.EditorItemSource -- エディタを開く
     | EmitCloseSidePanel
 
 
@@ -185,7 +168,7 @@ type Emit
 {-| ツリーパネルを更新する
 メッセージとモデルと親から情報を受け取り、新しいモデルと親へのエミット
 -}
-update : Msg -> Panel.EditorTypeRef.EditorTypeRef -> Project.Project -> Model -> ( Model, List Emit )
+update : Msg -> Panel.EditorItemSource.EditorItemSource -> Project.Project -> Model -> ( Model, List Emit )
 update msg editorRef project model =
     case msg of
         TreeOpen ref ->
@@ -242,7 +225,7 @@ update msg editorRef project model =
 
         SelectAndOpenKeyConfig ->
             ( model
-            , [ EmitOpenEditor Panel.EditorTypeRef.EditorKeyConfig ]
+            , [ EmitOpenEditor Panel.EditorItemSource.EditorKeyConfig ]
             )
 
         CloseSidePanel ->
@@ -253,17 +236,17 @@ update msg editorRef project model =
 
 type SelectUpResult
     = UpNoExistThisTree
-    | UpPrevious Panel.EditorTypeRef.EditorTypeRef
-    | UpExist Panel.EditorTypeRef.EditorTypeRef
+    | UpPrevious Panel.EditorItemSource.EditorItemSource
+    | UpExist Panel.EditorItemSource.EditorItemSource
 
 
 {-| 上を選択する
 -}
-selectUp : Project.Project -> OpenCloseData -> Panel.EditorTypeRef.EditorTypeRef -> Panel.EditorTypeRef.EditorTypeRef
+selectUp : Project.Project -> OpenCloseData -> Panel.EditorItemSource.EditorItemSource -> Panel.EditorItemSource.EditorItemSource
 selectUp project openCloseData selectedRef =
     case selectUpListLoop ( Nothing, simpleProjectTree project openCloseData ) selectedRef of
         UpNoExistThisTree ->
-            Panel.EditorTypeRef.EditorProject Project.ProjectRoot
+            Panel.EditorItemSource.ProjectRoot
 
         UpPrevious ref ->
             ref
@@ -272,7 +255,7 @@ selectUp project openCloseData selectedRef =
             ref
 
 
-selectUpLoop : SimpleTree -> Panel.EditorTypeRef.EditorTypeRef -> SelectUpResult
+selectUpLoop : SimpleTree -> Panel.EditorItemSource.EditorItemSource -> SelectUpResult
 selectUpLoop (SimpleTree { editorRef, children }) target =
     if editorRef == target then
         UpPrevious editorRef
@@ -289,7 +272,7 @@ selectUpLoop (SimpleTree { editorRef, children }) target =
                 UpExist ref
 
 
-selectUpListLoop : ( Maybe SimpleTree, List SimpleTree ) -> Panel.EditorTypeRef.EditorTypeRef -> SelectUpResult
+selectUpListLoop : ( Maybe SimpleTree, List SimpleTree ) -> Panel.EditorItemSource.EditorItemSource -> SelectUpResult
 selectUpListLoop ( prev, list ) target =
     case list of
         [] ->
@@ -312,7 +295,7 @@ selectUpListLoop ( prev, list ) target =
                     UpExist ref
 
 
-getTailRef : SimpleTree -> Panel.EditorTypeRef.EditorTypeRef
+getTailRef : SimpleTree -> Panel.EditorItemSource.EditorItemSource
 getTailRef (SimpleTree { editorRef, children }) =
     case children of
         ChildrenNone ->
@@ -328,14 +311,14 @@ getTailRef (SimpleTree { editorRef, children }) =
 
 
 type SelectDownResult
-    = DownExist Panel.EditorTypeRef.EditorTypeRef
-    | DownNext Panel.EditorTypeRef.EditorTypeRef
+    = DownExist Panel.EditorItemSource.EditorItemSource
+    | DownNext Panel.EditorItemSource.EditorItemSource
     | DownNoExistThisTree
 
 
 {-| 下を選択する
 -}
-selectDown : Project.Project -> OpenCloseData -> Panel.EditorTypeRef.EditorTypeRef -> Panel.EditorTypeRef.EditorTypeRef
+selectDown : Project.Project -> OpenCloseData -> Panel.EditorItemSource.EditorItemSource -> Panel.EditorItemSource.EditorItemSource
 selectDown project openCloseData selectedRef =
     case selectDownListLoop (simpleProjectTree project openCloseData) selectedRef of
         DownExist ref ->
@@ -345,10 +328,10 @@ selectDown project openCloseData selectedRef =
             ref
 
         DownNoExistThisTree ->
-            Panel.EditorTypeRef.EditorProject Project.ProjectRoot
+            Panel.EditorItemSource.ProjectRoot
 
 
-selectDownLoop : SimpleTree -> Panel.EditorTypeRef.EditorTypeRef -> SelectDownResult
+selectDownLoop : SimpleTree -> Panel.EditorItemSource.EditorItemSource -> SelectDownResult
 selectDownLoop (SimpleTree { editorRef, children }) target =
     if target == editorRef then
         case children of
@@ -373,7 +356,7 @@ selectDownLoop (SimpleTree { editorRef, children }) target =
                 selectDownListLoop (x :: xs) target
 
 
-selectDownListLoop : List SimpleTree -> Panel.EditorTypeRef.EditorTypeRef -> SelectDownResult
+selectDownListLoop : List SimpleTree -> Panel.EditorItemSource.EditorItemSource -> SelectDownResult
 selectDownListLoop list target =
     case list of
         [] ->
@@ -398,17 +381,17 @@ selectDownListLoop list target =
 
 {-| 親を選択する
 -}
-selectToParent : Project.Project -> OpenCloseData -> Panel.EditorTypeRef.EditorTypeRef -> Panel.EditorTypeRef.EditorTypeRef
+selectToParent : Project.Project -> OpenCloseData -> Panel.EditorItemSource.EditorItemSource -> Panel.EditorItemSource.EditorItemSource
 selectToParent project openCloseData selectedRef =
     case selectToParentLoop (simpleProjectTree project openCloseData) selectedRef of
         Just ref ->
             ref
 
         Nothing ->
-            Panel.EditorTypeRef.EditorProject Project.ProjectRoot
+            Panel.EditorItemSource.ProjectRoot
 
 
-selectToParentLoop : List SimpleTree -> Panel.EditorTypeRef.EditorTypeRef -> Maybe Panel.EditorTypeRef.EditorTypeRef
+selectToParentLoop : List SimpleTree -> Panel.EditorItemSource.EditorItemSource -> Maybe Panel.EditorItemSource.EditorItemSource
 selectToParentLoop list target =
     case list of
         [] ->
@@ -431,7 +414,7 @@ selectToParentLoop list target =
                         selectToParentLoop xs target
 
 
-isExistInChildren : SimpleTree -> Panel.EditorTypeRef.EditorTypeRef -> Bool
+isExistInChildren : SimpleTree -> Panel.EditorItemSource.EditorItemSource -> Bool
 isExistInChildren (SimpleTree { children }) target =
     case children of
         ChildrenNone ->
@@ -455,7 +438,7 @@ isExistInChildren (SimpleTree { children }) target =
 -}
 view :
     { project : Project.Project
-    , editorRef : Panel.EditorTypeRef.EditorTypeRef
+    , editorRef : Panel.EditorItemSource.EditorItemSource
     , width : Int
     , model : Model
     , focus : Bool
@@ -495,13 +478,13 @@ viewTitle =
 
 {-| ツリービュー本体
 -}
-viewTree : { project : Project.Project, editorRef : Panel.EditorTypeRef.EditorTypeRef, focus : Bool, width : Int } -> Model -> List (Html.Html Msg)
+viewTree : { project : Project.Project, editorRef : Panel.EditorItemSource.EditorItemSource, focus : Bool, width : Int } -> Model -> List (Html.Html Msg)
 viewTree { project, editorRef, focus, width } model =
     projectToProjectTree project editorRef focus (getOpenCloseData model)
         |> List.map (viewTreeItem focus)
 
 
-projectToProjectTree : Project.Project -> Panel.EditorTypeRef.EditorTypeRef -> Bool -> OpenCloseData -> List EditorTree
+projectToProjectTree : Project.Project -> Panel.EditorItemSource.EditorItemSource -> Bool -> OpenCloseData -> List EditorTree
 projectToProjectTree project editorRef isFocus openCloseData =
     simpleProjectTree project openCloseData
         |> List.map (makeEditorTree isFocus editorRef)
@@ -515,7 +498,7 @@ simpleProjectTree project openCloseData =
         |> List.map (baseTreeToSimpleProjectTree openCloseData)
 
 
-makeEditorTree : Bool -> Panel.EditorTypeRef.EditorTypeRef -> SimpleTree -> EditorTree
+makeEditorTree : Bool -> Panel.EditorItemSource.EditorItemSource -> SimpleTree -> EditorTree
 makeEditorTree isFocus selectRef (SimpleTree { editorRef, children, icon, label }) =
     EditorTree
         { icon = icon
@@ -565,52 +548,46 @@ baseTreeToSimpleProjectTree openCloseData (BaseTree { editorRef, label, icon, ch
 baseTree : Project.Project -> List BaseTree
 baseTree project =
     [ BaseTree
-        { editorRef = Panel.EditorTypeRef.EditorProject Project.ProjectRoot
-        , label = Label.toSmallString (Project.getAuthor project) ++ "/" ++ Label.toCapitalString (Project.getName project)
+        { editorRef = Panel.EditorItemSource.ProjectRoot
+        , label = Label.toCapitalString (Project.getName project)
         , icon = defaultProjectIcon
         , children =
             [ BaseTree
-                { editorRef = Panel.EditorTypeRef.EditorProject Project.Document
+                { editorRef = Panel.EditorItemSource.Document
                 , label = "Document"
                 , icon = documentIcon
                 , children = []
                 }
             , BaseTree
-                { editorRef = Panel.EditorTypeRef.EditorProject Project.Config
-                , label = "Default IO Config"
+                { editorRef = Panel.EditorItemSource.ProjectImport
+                , label = "Project Import"
                 , icon = configIcon
-                , children = []
+                , children =
+                    [ BaseTree
+                        { editorRef = Panel.EditorItemSource.ProjectRoot
+                        , label = "Core Project"
+                        , icon = defaultProjectIcon
+                        , children = []
+                        }
+                    ]
                 }
             , BaseTree
-                { editorRef = Panel.EditorTypeRef.EditorProject Project.Source
-                , label = "Source"
+                { editorRef = Panel.EditorItemSource.ModuleDefinition
+                , label = "Module Definition"
                 , icon = sourceIcon
                 , children =
                     [ BaseTree
-                        { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.SourceIndex.SampleModule)
+                        { editorRef = Panel.EditorItemSource.Module Project.ModuleDefinitionIndex.SampleModule
                         , label = "SampleModule"
                         , icon = moduleIcon
                         , children = []
-                        }
-                    , BaseTree
-                        { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.SourceIndex.Core)
-                        , label = "Core"
-                        , icon = moduleIcon
-                        , children =
-                            [ BaseTree
-                                { editorRef = Panel.EditorTypeRef.EditorProject (Project.Module Project.SourceIndex.CoreInt32)
-                                , label = "Int32"
-                                , icon = moduleIcon
-                                , children = []
-                                }
-                            ]
                         }
                     ]
                 }
             ]
         }
     , BaseTree
-        { editorRef = Panel.EditorTypeRef.EditorKeyConfig
+        { editorRef = Panel.EditorItemSource.EditorKeyConfig
         , label = "Editor Key Config"
         , icon = moduleIcon
         , children = []
@@ -622,7 +599,7 @@ baseTree project =
 -}
 type BaseTree
     = BaseTree
-        { editorRef : Panel.EditorTypeRef.EditorTypeRef
+        { editorRef : Panel.EditorItemSource.EditorItemSource
         , label : String
         , icon : Icon
         , children : List BaseTree
@@ -633,7 +610,7 @@ type BaseTree
 -}
 type SimpleTree
     = SimpleTree
-        { editorRef : Panel.EditorTypeRef.EditorTypeRef
+        { editorRef : Panel.EditorItemSource.EditorItemSource
         , label : String
         , icon : Icon
         , children : Children SimpleTree
@@ -648,7 +625,7 @@ type EditorTree
     = EditorTree
         { icon : Icon
         , label : String
-        , editorRef : Panel.EditorTypeRef.EditorTypeRef
+        , editorRef : Panel.EditorItemSource.EditorItemSource
         , viewType : ViewType
         , option : List Option
         , children : Children EditorTree
@@ -674,7 +651,7 @@ childrenToList children =
             []
 
 
-simpleTreeGetEditorRef : SimpleTree -> Panel.EditorTypeRef.EditorTypeRef
+simpleTreeGetEditorRef : SimpleTree -> Panel.EditorItemSource.EditorItemSource
 simpleTreeGetEditorRef (SimpleTree { editorRef }) =
     editorRef
 
@@ -698,7 +675,7 @@ type Option
     = Option
         { icon : Icon
         , label : String
-        , clickMsg : Project.ProjectRef -> Msg
+        , clickMsg : Msg
         }
 
 
@@ -753,7 +730,7 @@ viewTreeItem focus (EditorTree { icon, label, editorRef, viewType, option, child
             viewOpenChildrenItem focus icon label editorRef viewType option ( x, xs )
 
 
-viewNoChildrenItem : Bool -> Icon -> String -> Panel.EditorTypeRef.EditorTypeRef -> ViewType -> List Option -> Html.Html Msg
+viewNoChildrenItem : Bool -> Icon -> String -> Panel.EditorItemSource.EditorItemSource -> ViewType -> List Option -> Html.Html Msg
 viewNoChildrenItem focus icon label editorRef viewType optionList =
     Html.div
         ([ treePanelClass "item", Html.Attributes.tabindex 0 ]
@@ -770,7 +747,7 @@ viewNoChildrenItem focus icon label editorRef viewType optionList =
         )
 
 
-viewCloseChildrenItem : Bool -> Icon -> String -> Panel.EditorTypeRef.EditorTypeRef -> ViewType -> List Option -> Html.Html Msg
+viewCloseChildrenItem : Bool -> Icon -> String -> Panel.EditorItemSource.EditorItemSource -> ViewType -> List Option -> Html.Html Msg
 viewCloseChildrenItem focus icon label editorRef viewType optionList =
     Html.div
         ([ treePanelClass "item"
@@ -791,7 +768,7 @@ viewCloseChildrenItem focus icon label editorRef viewType optionList =
         )
 
 
-viewOpenChildrenItem : Bool -> Icon -> String -> Panel.EditorTypeRef.EditorTypeRef -> ViewType -> List Option -> ( EditorTree, List EditorTree ) -> Html.Html Msg
+viewOpenChildrenItem : Bool -> Icon -> String -> Panel.EditorItemSource.EditorItemSource -> ViewType -> List Option -> ( EditorTree, List EditorTree ) -> Html.Html Msg
 viewOpenChildrenItem focus icon label editorRef viewType optionList ( headTree, restTree ) =
     Html.div
         ([ treePanelClass "itemWithChildren"
@@ -821,7 +798,7 @@ viewOpenChildrenItem focus icon label editorRef viewType optionList ( headTree, 
 
 {-| ツリーが閉じているときのアイコン ▷ クリックして開く
 -}
-treeCloseIcon : Panel.EditorTypeRef.EditorTypeRef -> ViewType -> Html.Html Msg
+treeCloseIcon : Panel.EditorItemSource.EditorItemSource -> ViewType -> Html.Html Msg
 treeCloseIcon editorRef viewType =
     Html.div
         [ treePanelClass "item-openCloseIcon"
@@ -835,7 +812,7 @@ treeCloseIcon editorRef viewType =
 
 {-| ツリーが開いているときのアイコン ▽ クリックして閉じる
 -}
-treeOpenIcon : Panel.EditorTypeRef.EditorTypeRef -> ViewType -> Html.Html Msg
+treeOpenIcon : Panel.EditorItemSource.EditorItemSource -> ViewType -> Html.Html Msg
 treeOpenIcon editorRef viewType =
     Html.div
         [ treePanelClass "item-openCloseIcon"
@@ -849,7 +826,7 @@ treeOpenIcon editorRef viewType =
 
 {-| ツリーのアイテムのアイコンとテキスト
 -}
-itemContent : ViewType -> Panel.EditorTypeRef.EditorTypeRef -> Icon -> String -> Html.Html Msg
+itemContent : ViewType -> Panel.EditorItemSource.EditorItemSource -> Icon -> String -> Html.Html Msg
 itemContent viewType editorRef icon label =
     Html.div
         [ treePanelClass "item-content"

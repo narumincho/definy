@@ -1,4 +1,4 @@
-module Project.Source.ModuleWithCache exposing
+module Project.ModuleDefinition.ModuleWithCache exposing
     ( CompileAndRunResult
     , Emit(..)
     , ModuleWithResult
@@ -19,14 +19,14 @@ module Project.Source.ModuleWithCache exposing
     )
 
 import Compiler
-import Project.Label as L
-import Project.Source.Module as Module
-import Project.Source.Module.PartDef as PartDef
-import Project.Source.Module.PartDef.Expr as Expr
-import Project.Source.Module.PartDef.Name as Name
-import Project.Source.Module.PartDef.Type as Type
-import Project.Source.Module.TypeDef as TypeDef
-import Project.Source.ModuleIndex as ModuleIndex
+import Label as L
+import Project.ModuleDefinition.Module as Module
+import Project.ModuleDefinition.Module.PartDef as PartDef
+import Project.ModuleDefinition.Module.PartDef.Expr as Expr
+import Project.ModuleDefinition.Module.PartDef.Name as Name
+import Project.ModuleDefinition.Module.PartDef.Type as Type
+import Project.ModuleDefinition.Module.TypeDef as TypeDef
+import Project.ModuleDefinition.ModuleIndex as ModuleIndex
 
 
 {-| エディタ用のモジュール。各パーツ定義にコンパイル結果を持つ。

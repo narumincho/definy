@@ -3,9 +3,9 @@ module Parser.Name exposing
     , parse
     )
 
+import Label
 import Parser.SimpleChar as SimpleChar exposing (SimpleChar(..), Symbol(..))
-import Project.Label as Label
-import Project.Source.Module.PartDef.Name as Name exposing (Name)
+import Project.ModuleDefinition.Module.PartDef.Name as Name exposing (Name)
 
 
 type ParserResult

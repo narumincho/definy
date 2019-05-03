@@ -1,4 +1,4 @@
-module Project.Source.ModuleIndex exposing
+module Project.ModuleDefinition.ModuleIndex exposing
     ( PartDefIndex(..)
     , TypeDefIndex(..)
     , TypeDefTagIndex(..)

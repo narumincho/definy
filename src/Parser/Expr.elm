@@ -9,9 +9,9 @@ module Parser.Expr exposing
     , takeTermListTO
     )
 
+import Label
 import Parser.SimpleChar as SimpleChar exposing (SimpleChar(..), Symbol(..))
-import Project.Label as Label exposing (Label)
-import Project.Source.Module.PartDef.Expr as Expr exposing (Operator, Term)
+import Project.ModuleDefinition.Module.PartDef.Expr as Expr exposing (Operator, Term)
 
 
 {-| 始まりがTermの構文解析結果

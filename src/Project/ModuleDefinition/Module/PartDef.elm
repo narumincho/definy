@@ -1,4 +1,4 @@
-module Project.Source.Module.PartDef exposing
+module Project.ModuleDefinition.Module.PartDef exposing
     ( PartDef, make
     , getName, setName, mapName
     , getType, setType, mapType
@@ -30,9 +30,9 @@ module Project.Source.Module.PartDef exposing
 
 -}
 
-import Project.Source.Module.PartDef.Expr as Expr exposing (Expr)
-import Project.Source.Module.PartDef.Name as Name exposing (Name)
-import Project.Source.Module.PartDef.Type as Type exposing (Type)
+import Project.ModuleDefinition.Module.PartDef.Expr as Expr exposing (Expr)
+import Project.ModuleDefinition.Module.PartDef.Name as Name exposing (Name)
+import Project.ModuleDefinition.Module.PartDef.Type as Type exposing (Type)
 import Utility.Map
 
 

@@ -1,10 +1,10 @@
-module Project.Source.Module.TypeDef exposing (TypeDef, getName, getTagNum, make, toString, typeDefInt)
+module Project.ModuleDefinition.Module.TypeDef exposing (TypeDef, getName, getTagNum, make, toString, typeDefInt)
 
 {-| 型の定義
 -}
 
-import Project.Label as L
-import Project.Source.ModuleIndex as ModuleIndex
+import Label as L
+import Project.ModuleDefinition.ModuleIndex as ModuleIndex
 
 
 {-| 型の定義

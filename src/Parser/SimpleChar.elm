@@ -20,7 +20,7 @@ module Parser.SimpleChar exposing
 全角や半角の区別をなくし、空白も1つにした
 -}
 
-import Project.Label as L
+import Label as L
 
 
 type SimpleChar

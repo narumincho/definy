@@ -23,21 +23,21 @@ module Panel.EditorGroup exposing
 import Html
 import Html.Attributes
 import Html.Events
-import NSvg
 import Palette.X11
 import Panel.DefaultUi
-import Panel.Editor.Config
 import Panel.Editor.Document
 import Panel.Editor.EditorKeyConfig
 import Panel.Editor.Module
+import Panel.Editor.ModuleDefinition
 import Panel.Editor.Project
-import Panel.Editor.Source
-import Panel.EditorTypeRef
+import Panel.Editor.ProjectImport
+import Panel.EditorItemSource
 import Project
-import Project.Source
-import Project.SourceIndex
+import Project.ModuleDefinition
+import Project.ModuleDefinitionIndex
 import Utility.ListExtra
 import Utility.Map
+import Utility.NSvg as NSvg
 
 
 {-| とりうる値を保持するModel
@@ -88,8 +88,8 @@ type ColumnGroup
 type EditorModel
     = ProjectEditor Panel.Editor.Project.Model
     | DocumentEditor Panel.Editor.Document.Model
-    | ConfigEditor Panel.Editor.Config.Model
-    | SourceEditor Panel.Editor.Source.Model
+    | ConfigEditor Panel.Editor.ProjectImport.Model
+    | SourceEditor Panel.Editor.ModuleDefinition.Model
     | ModuleEditor Panel.Editor.Module.Model
     | EditorKeyConfig Panel.Editor.EditorKeyConfig.Model
 
@@ -189,7 +189,7 @@ type Emit
     | EmitSetTextAreaValue String
     | EmitFocusEditTextAea
     | EmitSetClickEventListenerInCapturePhase String
-    | EmitToSourceMsg Project.Source.Msg
+    | EmitToSourceMsg Project.ModuleDefinition.Msg
     | EmitElementScrollIntoView String
 
 
@@ -202,7 +202,7 @@ initModel =
             RowOne
                 { left =
                     ColumnOne
-                        { top = ModuleEditor (Panel.Editor.Module.initModel Project.SourceIndex.SampleModule) }
+                        { top = ModuleEditor (Panel.Editor.Module.initModel Project.ModuleDefinitionIndex.SampleModule) }
                 }
         , activeEditorIndex = ( EditorIndexLeft, EditorIndexTop )
         , mouseOverOpenEditorPosition = Nothing
@@ -213,26 +213,26 @@ initModel =
 
 {-| 開いていてかつ選択していてアクティブなエディタ(参照,種類)を取得する
 -}
-getActiveEditor : Model -> Panel.EditorTypeRef.EditorTypeRef
+getActiveEditor : Model -> Panel.EditorItemSource.EditorItemSource
 getActiveEditor model =
     case getEditorItem (getActiveEditorRef model) (getGroup model) of
         ProjectEditor _ ->
-            Panel.EditorTypeRef.EditorProject Project.ProjectRoot
+            Panel.EditorItemSource.ProjectRoot
 
         DocumentEditor _ ->
-            Panel.EditorTypeRef.EditorProject Project.Document
+            Panel.EditorItemSource.Document
 
         ConfigEditor _ ->
-            Panel.EditorTypeRef.EditorProject Project.Config
+            Panel.EditorItemSource.ProjectImport
 
         SourceEditor _ ->
-            Panel.EditorTypeRef.EditorProject Project.Source
+            Panel.EditorItemSource.ModuleDefinition
 
         ModuleEditor editorModel ->
-            Panel.EditorTypeRef.EditorProject (Project.Module (Panel.Editor.Module.getTargetModuleIndex editorModel))
+            Panel.EditorItemSource.Module (Panel.Editor.Module.getTargetModuleIndex editorModel)
 
         EditorKeyConfig _ ->
-            Panel.EditorTypeRef.EditorKeyConfig
+            Panel.EditorItemSource.EditorKeyConfig
 
 
 {-| テキストエリアにフォーカスが当たっているか。
@@ -773,7 +773,7 @@ mouseLeaveAddGutter (Model rec) =
 
 {-| エディタで編集表示するものを変える
 -}
-changeActiveEditorResource : Panel.EditorTypeRef.EditorTypeRef -> Model -> Model
+changeActiveEditorResource : Panel.EditorItemSource.EditorItemSource -> Model -> Model
 changeActiveEditorResource projectRef model =
     changeEditorItem (projectRefToEditorItem projectRef) model
 
@@ -1159,25 +1159,25 @@ mapAtEditorItem ref =
 
 {-| 編集対象からエディタの初期値を返す
 -}
-projectRefToEditorItem : Panel.EditorTypeRef.EditorTypeRef -> EditorModel
+projectRefToEditorItem : Panel.EditorItemSource.EditorItemSource -> EditorModel
 projectRefToEditorItem projectRef =
     case projectRef of
-        Panel.EditorTypeRef.EditorProject Project.ProjectRoot ->
+        Panel.EditorItemSource.ProjectRoot ->
             ProjectEditor Panel.Editor.Project.initModel
 
-        Panel.EditorTypeRef.EditorProject Project.Document ->
+        Panel.EditorItemSource.Document ->
             DocumentEditor Panel.Editor.Document.initModel
 
-        Panel.EditorTypeRef.EditorProject Project.Config ->
-            ConfigEditor Panel.Editor.Config.initModel
+        Panel.EditorItemSource.ProjectImport ->
+            ConfigEditor Panel.Editor.ProjectImport.initModel
 
-        Panel.EditorTypeRef.EditorProject Project.Source ->
-            SourceEditor Panel.Editor.Source.initModel
+        Panel.EditorItemSource.ModuleDefinition ->
+            SourceEditor Panel.Editor.ModuleDefinition.initModel
 
-        Panel.EditorTypeRef.EditorProject (Project.Module moduleRef) ->
+        Panel.EditorItemSource.Module moduleRef ->
             ModuleEditor (Panel.Editor.Module.initModel moduleRef)
 
-        Panel.EditorTypeRef.EditorKeyConfig ->
+        Panel.EditorItemSource.EditorKeyConfig ->
             EditorKeyConfig Panel.Editor.EditorKeyConfig.initModel
 
 
@@ -1612,10 +1612,10 @@ editorTitleAndBody width editorIndex isActive project editorItem =
             Panel.Editor.Document.view
 
         ConfigEditor _ ->
-            Panel.Editor.Config.view
+            Panel.Editor.ProjectImport.view
 
         SourceEditor _ ->
-            Panel.Editor.Source.view
+            Panel.Editor.ModuleDefinition.view
 
         ModuleEditor moduleEditorModel ->
             let

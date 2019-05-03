@@ -8,9 +8,8 @@ import Html
 import Html.Attributes
 import Html.Events
 import Key
-import NSvg exposing (NSvg)
 import Palette.X11 as P
-import Set.Any
+import Utility.NSvg as NSvg exposing (NSvg)
 
 
 type Model

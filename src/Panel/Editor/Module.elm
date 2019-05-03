@@ -17,25 +17,24 @@ import Html.Events
 import Html.Keyed
 import Json.Decode
 import Json.Encode
-import NSvg
-import Palette.X11
+import Label as L
 import Panel.DefaultUi
 import Parser
 import Parser.SimpleChar
 import Project
-import Project.Label as L
-import Project.Source as Source
-import Project.Source.Module as Module
-import Project.Source.Module.PartDef as PartDef
-import Project.Source.Module.PartDef.Expr as Expr
-import Project.Source.Module.PartDef.Name as Name
-import Project.Source.Module.PartDef.Type as Type
-import Project.Source.Module.TypeDef as TypeDef
-import Project.Source.ModuleIndex as ModuleIndex
-import Project.Source.ModuleWithCache as ModuleWithCache
-import Project.SourceIndex as SourceIndex
+import Project.ModuleDefinition as Source
+import Project.ModuleDefinition.Module as Module
+import Project.ModuleDefinition.Module.PartDef as PartDef
+import Project.ModuleDefinition.Module.PartDef.Expr as Expr
+import Project.ModuleDefinition.Module.PartDef.Name as Name
+import Project.ModuleDefinition.Module.PartDef.Type as Type
+import Project.ModuleDefinition.Module.TypeDef as TypeDef
+import Project.ModuleDefinition.ModuleIndex as ModuleIndex
+import Project.ModuleDefinition.ModuleWithCache as ModuleWithCache
+import Project.ModuleDefinitionIndex as SourceIndex
 import Utility.ArrayExtra
 import Utility.ListExtra
+import Utility.NSvg as NSvg
 
 
 type Model
@@ -2753,6 +2752,7 @@ view width project isFocus (Model { moduleRef, active, resultVisible }) =
                     Nothing
             )
             (ModuleWithCache.getReadMe targetModule)
+        , importModuleView
         , typeDefinitionsView
             isFocus
             (case active of
@@ -3006,6 +3006,36 @@ readMeTextClickEvent =
 
 
 {- ==================================================
+            Module Import 参照するモジュールの一覧
+   ==================================================
+-}
+
+
+importModuleView : Html.Html msg
+importModuleView =
+    Html.div
+        [ subClass "section" ]
+        [ importModuleViewTitle
+        , importModuleViewBody
+        ]
+
+
+importModuleViewTitle : Html.Html msg
+importModuleViewTitle =
+    Html.div
+        [ subClass "section-title" ]
+        [ Html.text "Module Import" ]
+
+
+importModuleViewBody : Html.Html msg
+importModuleViewBody =
+    Html.div
+        []
+        []
+
+
+
+{- ==================================================
             Type Definitions 型の定義
    ==================================================
 -}
@@ -3224,7 +3254,8 @@ partDefView : Int -> ResultVisible -> Bool -> ModuleIndex.PartDefIndex -> PartDe
 partDefView width resultVisible isFocus index partDef compileAndRunResult partDefActiveMaybe =
     Html.div
         ([ subClassList
-            [ ( "partDef", True )
+            [ ( "partDef", width < 700 )
+            , ( "partDef-wide", 700 <= width )
             , ( "partDef-active", partDefActiveMaybe == Just ActivePartDefSelf )
             ]
          , Html.Events.stopPropagationOn "click"
@@ -3605,17 +3636,21 @@ suggestionType : Type.Type -> Int -> Html.Html msg
 suggestionType type_ suggestIndex =
     Html.div
         [ subClass "partDef-suggestion" ]
-        [ suggestTypeItem
-            (Type.Valid
-                (SourceIndex.TypeIndex
-                    { moduleIndex = SourceIndex.CoreInt32
-                    , typeIndex = ModuleIndex.TypeDefIndex 0
-                    }
-                )
-            )
-            (Html.text "32bit整数")
-            True
-        ]
+        []
+
+
+
+--        [ suggestTypeItem
+--            (Type.Valid
+--                (SourceIndex.TypeIndex
+--                    { moduleIndex = SourceIndex.CoreInt32
+--                    , typeIndex = ModuleIndex.TypeDefIndex 0
+--                    }
+--                )
+--            )
+--            (Html.text "32bit整数")
+--            True
+--        ]
 
 
 suggestTypeItem : Type.Type -> Html.Html msg -> Bool -> Html.Html msg

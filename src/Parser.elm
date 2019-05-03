@@ -13,11 +13,11 @@ module Parser exposing
 
 import Parser.Expr as ExprParser
 import Parser.Name as NameParser
-import Parser.SimpleChar as SimpleChar exposing (SimpleChar)
+import Parser.SimpleChar exposing (SimpleChar)
 import Parser.Type as TypeParser
-import Project.Source.Module.PartDef.Expr as Expr
-import Project.Source.Module.PartDef.Name as Name
-import Project.Source.Module.PartDef.Type as Type
+import Project.ModuleDefinition.Module.PartDef.Expr as Expr
+import Project.ModuleDefinition.Module.PartDef.Name as Name
+import Project.ModuleDefinition.Module.PartDef.Type as Type
 
 
 {-| 名前始まりの解析の結果

@@ -1,4 +1,4 @@
-module NSvg exposing
+module Utility.NSvg exposing
     ( NSvg, StrokeStyle, FillStyle
     , toHtml, toHtmlWithClass
     , strokeNone, strokeColor, strokeColorWidth

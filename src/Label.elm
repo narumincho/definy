@@ -1,4 +1,4 @@
-module Project.Label exposing
+module Label exposing
     ( Head
     , Label
     , Others

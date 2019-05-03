@@ -5,7 +5,6 @@ module Compiler exposing
     , getBinary
     )
 
-import Array exposing (Array)
 import Compiler.DefToSafeExpr as DefToSafeExpr
 import Compiler.Marger
 import Compiler.NoOp as NoOp
@@ -14,7 +13,7 @@ import Compiler.Opt as Opt
 import Compiler.OptToBinary as OptToBinary
 import Compiler.SafeExpr as SafeExpr
 import Compiler.SafeExprToNoOp as SafeExprToNoOp
-import Project.Source.Module.PartDef as Def
+import Project.ModuleDefinition.Module.PartDef as Def
 
 
 type CompileResult

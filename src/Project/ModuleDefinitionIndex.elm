@@ -1,4 +1,4 @@
-module Project.SourceIndex exposing
+module Project.ModuleDefinitionIndex exposing
     ( ModuleIndex(..)
     , PartIndex(..)
     , TypeIndex(..)
@@ -6,16 +6,13 @@ module Project.SourceIndex exposing
     , moduleIndexToListInt
     )
 
-import Project.Source.ModuleIndex as ModuleIndex
+import Project.ModuleDefinition.ModuleIndex as ModuleIndex
 
 
-{-| ソース内でのモジュールの位置、参照、インデックス
-TODO その時々で変わるものを固定にしている
+{-| プロジェクトのモジュール定義の中でのモジュールの位置、参照、インデックス
 -}
 type ModuleIndex
-    = Core
-    | CoreInt32
-    | SampleModule
+    = SampleModule
 
 
 {-| 型の参照
@@ -44,12 +41,6 @@ moduleIndexToListInt index =
         SampleModule ->
             [ 0 ]
 
-        Core ->
-            [ 1 ]
-
-        CoreInt32 ->
-            [ 1, 0 ]
-
 
 {-| JSとやり取りするする形式から扱いやすい形式にする
 -}
@@ -58,12 +49,6 @@ moduleIndexFromListInt intList =
     case intList of
         [ 0 ] ->
             Just SampleModule
-
-        [ 1 ] ->
-            Just Core
-
-        [ 1, 0 ] ->
-            Just CoreInt32
 
         _ ->
             Nothing

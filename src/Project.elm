@@ -2,12 +2,9 @@ module Project exposing
     ( Emit(..)
     , Msg(..)
     , Project
-    , ProjectRef(..)
-    , getAuthor
     , getName
     , getSource
     , init
-    , mapSource
     , setSource
     , update
     )
@@ -16,13 +13,9 @@ module Project exposing
 プログラムのソースやドキュメント、実行設定まで
 -}
 
-import Project.Config as Config
+import Label
 import Project.Document as Document
-import Project.Label as Label
-import Project.Source as Source
-import Project.SourceIndex as SourceIndex
-import Set.Any
-import Utility.Map
+import Project.ModuleDefinition as Source
 
 
 {-| プロジェクト
@@ -30,29 +23,13 @@ import Utility.Map
 type Project
     = Project
         { name : Label.Label
-        , author : Label.Label
         , document : Document.Document
-        , config : Config.Config
-        , source : Source.Source
+        , source : Source.ModuleDefinition
         }
 
 
 type Msg
     = SourceMsg Source.Msg
-
-
-{-| プロジェクトの部分の参照
--}
-type ProjectRef
-    = ProjectRoot
-    | Document
-    | Config
-    | Source
-    | Module SourceIndex.ModuleIndex
-
-
-type alias ProjectRefSet =
-    Set.Any.AnySet (List Int) ProjectRef
 
 
 type Emit
@@ -61,17 +38,15 @@ type Emit
 
 {-| プロジェクトの初期値
 -}
-init : ( Project, List Emit )
-init =
+init : Label.Label -> ( Project, List Emit )
+init name =
     let
         ( source, sourceEmit ) =
             Source.init
     in
     ( Project
         { name = projectName
-        , author = projectAuthor
         , document = Document.init
-        , config = Config.init
         , source = source
         }
     , sourceEmit |> List.map EmitSource
@@ -112,11 +87,6 @@ projectName =
         ]
 
 
-projectAuthor : Label.Label
-projectAuthor =
-    Label.make Label.hu [ Label.os, Label.oe, Label.or ]
-
-
 {-| プロジェクト名を取得
 -}
 getName : Project -> Label.Label
@@ -124,32 +94,16 @@ getName (Project { name }) =
     name
 
 
-{-| プロジェクトを作った人の名前を取得
--}
-getAuthor : Project -> Label.Label
-getAuthor (Project { author }) =
-    author
-
-
 {-| プロジェクトのソース (モジュールがたくさん入ったもの)を取得する
 -}
-getSource : Project -> Source.Source
+getSource : Project -> Source.ModuleDefinition
 getSource (Project { source }) =
     source
 
 
 {-| プロジェクトのソース (モジュールがたくさん入ったもの)を設定する
 -}
-setSource : Source.Source -> Project -> Project
+setSource : Source.ModuleDefinition -> Project -> Project
 setSource source (Project rec) =
     Project
         { rec | source = source }
-
-
-{-| プロジェクトのソース (モジュールがたくさん入ったもの)を加工する
--}
-mapSource : (Source.Source -> Source.Source) -> Project -> Project
-mapSource =
-    Utility.Map.toMapper
-        getSource
-        setSource

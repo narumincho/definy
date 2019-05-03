@@ -32,17 +32,18 @@ import Browser.Events
 import Compiler
 import Json.Decode
 import Key
+import Label
 import Panel.CommandPalette
 import Panel.DefaultUi
 import Panel.Editor.Module
 import Panel.EditorGroup
-import Panel.EditorTypeRef
+import Panel.EditorItemSource
 import Panel.Tree
 import Project
-import Project.Source
-import Project.Source.ModuleIndex
-import Project.Source.ModuleWithCache
-import Project.SourceIndex
+import Project.ModuleDefinition
+import Project.ModuleDefinition.ModuleIndex
+import Project.ModuleDefinition.ModuleWithCache
+import Project.ModuleDefinitionIndex
 import Task
 import Utility.ListExtra
 import Utility.Map
@@ -104,7 +105,7 @@ type Msg
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
     | TreePanelMsg Panel.Tree.Msg -- ツリーパネル独自のメッセージ
     | EditorPanelMsg Panel.EditorGroup.Msg -- エディタパネル独自のメッセージ
-    | ChangeEditorResource Panel.EditorTypeRef.EditorTypeRef -- エディタの対象を変える
+    | ChangeEditorResource Panel.EditorItemSource.EditorItemSource -- エディタの対象を変える
     | OpenCommandPalette -- コマンドパレットを開く
     | CloseCommandPalette -- コマンドパレッドを閉じる
     | ProjectMsg Project.Msg -- プロジェクトへのメッセージ
@@ -163,6 +164,7 @@ init =
 
         ( project, ( msgListFromProject, cmdFromProject ) ) =
             Project.init
+                (Label.make Label.hi [ Label.on, Label.oi, Label.ot ])
                 |> projectUpdateReturnToProjectAndMsgListAndCmd
 
         ( msgFromEditorGroupPanel, cmdFromEditorGroupPanel ) =
@@ -441,6 +443,7 @@ editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
 複数行入力を想定している
 ブラウザやOSで予約されているであろう動作を邪魔させないためにある。
 Model.isFocusTextAreaがTrueになったときにまずこれを優先する
+
 
 -}
 multiLineTextFieldReservedKey : Key.Key -> Bool
@@ -723,16 +726,16 @@ mouseUp (Model rec) =
 
 receiveResultValue : { ref : List Int, index : Int, result : Int } -> Model -> ( Model, Cmd Msg )
 receiveResultValue { ref, index, result } model =
-    case ref |> Project.SourceIndex.moduleIndexFromListInt of
+    case ref |> Project.ModuleDefinitionIndex.moduleIndexFromListInt of
         Just moduleIndex ->
             model
                 |> projectUpdate
                     (Project.SourceMsg
-                        (Project.Source.MsgModule
+                        (Project.ModuleDefinition.MsgModule
                             { moduleIndex = moduleIndex
                             , moduleMsg =
-                                Project.Source.ModuleWithCache.MsgReceiveRunResult
-                                    (index |> Project.Source.ModuleIndex.PartDefIndex)
+                                Project.ModuleDefinition.ModuleWithCache.MsgReceiveRunResult
+                                    (index |> Project.ModuleDefinition.ModuleIndex.PartDefIndex)
                                     result
                             }
                         )
@@ -1079,7 +1082,7 @@ mapProject =
 
 {-| 開いているエディタを取得する
 -}
-getActiveEditor : Model -> Panel.EditorTypeRef.EditorTypeRef
+getActiveEditor : Model -> Panel.EditorItemSource.EditorItemSource
 getActiveEditor model =
     getEditorGroupPanelModel model
         |> Panel.EditorGroup.getActiveEditor
@@ -1087,7 +1090,7 @@ getActiveEditor model =
 
 {-| エディタを開く
 -}
-openEditor : Panel.EditorTypeRef.EditorTypeRef -> Model -> Model
+openEditor : Panel.EditorItemSource.EditorItemSource -> Model -> Model
 openEditor editorRef =
     mapEditorGroupPanelModel (Panel.EditorGroup.changeActiveEditorResource editorRef)
 
@@ -1221,41 +1224,41 @@ projectEmitToMsgAndCmd project emit =
             sourceEmitToMsgAndCmd (Project.getSource project) sourceEmit
 
 
-sourceEmitToMsgAndCmd : Project.Source.Source -> Project.Source.Emit -> ( List Msg, Cmd Msg )
+sourceEmitToMsgAndCmd : Project.ModuleDefinition.ModuleDefinition -> Project.ModuleDefinition.Emit -> ( List Msg, Cmd Msg )
 sourceEmitToMsgAndCmd source emit =
     case emit of
-        Project.Source.EmitModule { moduleIndex, moduleEmit } ->
+        Project.ModuleDefinition.EmitModule { moduleIndex, moduleEmit } ->
             case moduleEmit of
-                Project.Source.ModuleWithCache.EmitCompile partDefIndex ->
+                Project.ModuleDefinition.ModuleWithCache.EmitCompile partDefIndex ->
                     ( []
                     , compileCmd source moduleIndex partDefIndex
                     )
 
-                Project.Source.ModuleWithCache.EmitRun partDefIndex binary ->
+                Project.ModuleDefinition.ModuleWithCache.EmitRun partDefIndex binary ->
                     ( []
                     , runCmd moduleIndex partDefIndex binary
                     )
 
-                Project.Source.ModuleWithCache.ErrorOverPartCountLimit ->
+                Project.ModuleDefinition.ModuleWithCache.ErrorOverPartCountLimit ->
                     ( []
                       --TODO エラーの握りしめ
                     , Cmd.none
                     )
 
-                Project.Source.ModuleWithCache.ErrorDuplicatePartDefName partDefIndex ->
+                Project.ModuleDefinition.ModuleWithCache.ErrorDuplicatePartDefName partDefIndex ->
                     ( []
                       --TODO エラーの握りしめ
                     , Cmd.none
                     )
 
 
-compileCmd : Project.Source.Source -> Project.SourceIndex.ModuleIndex -> Project.Source.ModuleIndex.PartDefIndex -> Cmd Msg
+compileCmd : Project.ModuleDefinition.ModuleDefinition -> Project.ModuleDefinitionIndex.ModuleIndex -> Project.ModuleDefinition.ModuleIndex.PartDefIndex -> Cmd Msg
 compileCmd source moduleRef partDefIndex =
     let
         targetPartDefMaybe =
             source
-                |> Project.Source.getModule moduleRef
-                |> Project.Source.ModuleWithCache.getPartDef partDefIndex
+                |> Project.ModuleDefinition.getModule moduleRef
+                |> Project.ModuleDefinition.ModuleWithCache.getPartDef partDefIndex
     in
     case targetPartDefMaybe of
         Just targetDef ->
@@ -1268,10 +1271,10 @@ compileCmd source moduleRef partDefIndex =
                     (\compileResult ->
                         ProjectMsg
                             (Project.SourceMsg
-                                (Project.Source.MsgModule
+                                (Project.ModuleDefinition.MsgModule
                                     { moduleIndex = moduleRef
                                     , moduleMsg =
-                                        Project.Source.ModuleWithCache.MsgReceiveCompileResult
+                                        Project.ModuleDefinition.ModuleWithCache.MsgReceiveCompileResult
                                             partDefIndex
                                             compileResult
                                     }
@@ -1283,11 +1286,11 @@ compileCmd source moduleRef partDefIndex =
             Cmd.none
 
 
-runCmd : Project.SourceIndex.ModuleIndex -> Project.Source.ModuleIndex.PartDefIndex -> List Int -> Cmd Msg
+runCmd : Project.ModuleDefinitionIndex.ModuleIndex -> Project.ModuleDefinition.ModuleIndex.PartDefIndex -> List Int -> Cmd Msg
 runCmd moduleRef partDefIndex wasm =
     run
-        { ref = moduleRef |> Project.SourceIndex.moduleIndexToListInt
-        , index = partDefIndex |> Project.Source.ModuleIndex.partDefIndexToInt
+        { ref = moduleRef |> Project.ModuleDefinitionIndex.moduleIndexToListInt
+        , index = partDefIndex |> Project.ModuleDefinition.ModuleIndex.partDefIndexToInt
         , wasm = wasm
         }
 
