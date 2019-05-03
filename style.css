@@ -1,11 +1,21 @@
 /* Google Fonts Roboto UI用フォント */
 
-@import url("https://fonts.googleapis.com/css?family=Roboto");
-/* M+ M Type-2 regular コード用フォント */
+@font-face {
+    font-family: "Roboto";
+    font-style: normal;
+    font-weight: 400;
+    src: local("Roboto"), local("Roboto-Regular"), url("https://fonts.gstatic.com/s/roboto/v19/KFOmCnqEu92Fr1Mu4mxK.woff2") format('woff2');
+}
+
+/*
+    M+ M Type-2 regular コード用フォント (http://mplus-fonts.osdn.jp/about.html)
+    M      : プログラミング用として識別性を重視しつつ素直な字形を目指した半角固定幅
+    Type-2 : 従来的なゴシック体の雰囲気を残しつつ現代的な表情も併せ持つ
+*/
 
 @font-face {
     font-family: "mplus-2m-regular";
-    src: url("assets/mplus-2m-regular-sub.woff") format("woff");
+    src: local("M+ 2m"), url("/assets/mplus-2m-regular-sub.woff") format("woff");
 }
 
 ::-webkit-scrollbar {
@@ -626,6 +636,7 @@ img {
     height: 32px;
     color: #ddd;
     font-size: 20px;
+    font-family: "mplus-2m-regular";
     border-radius: 4px;
     background-color: #000;
     resize: none;
