@@ -17,58 +17,44 @@ const schema = new graphql.GraphQLSchema({
         name: "RootQueryType",
         description: "RootQueryTypeの説明。たぶんルートのクエリの型なんだと思う",
         fields: {
-            "hello": {
+            hello: {
                 type: graphql.GraphQLNonNull(graphql.GraphQLString),
                 resolve: () => "hello world!",
                 description: "世界に挨拶する"
             },
-            "join": {
-                type: graphql.GraphQLNonNull(graphql.GraphQLString),
-                resolve: (source, { text }, context, info) => {
-                    return "textは" + text
-                },
-                args: {
-                    "text": {
-                        type: graphql.GraphQLString,
-                        description: "結合する対象の文字列",
-                        defaultValue: "defaultValue"
-                    }
-                },
-                description: "指定した文字列に\"textは\"を頭につける。うまくいくかどうかわからない"
-            },
-            "setData": {
+            setData: {
                 type: new graphql.GraphQLObjectType({
                     name: "stringDataBase",
                     fields: {
-                        "id": {
+                        id: {
                             type: graphql.GraphQLID,
                             description: "ランダムに生成されるID"
                         },
-                        "text": {
+                        text: {
                             type: graphql.GraphQLString,
                             description: "前後の空白が取り除かれたテキスト"
                         },
-                        "createdAt": {
+                        createdAt: {
                             type: graphql.GraphQLFloat,
-                            description: "投稿された日付。JSのnew Date().getTime()で取得できるようなUNIX timeにミリ秒の情報を加えた(x1000した)もの"
+                            description: "投稿された日時。JSのnew Date().getTime()で取得できるようなUNIX timeにミリ秒の情報を加えた(x1000した)もの"
                         }
                     }
                 }),
                 resolve: async (source, args, context, info) => {
                     const text: string = args.text
                     const documentReference = await dataBaseCollection.add({
-                        "text": text.trim(),
-                        "createdAt": admin.firestore.FieldValue.serverTimestamp()
+                        text: text.trim(),
+                        createdAt: admin.firestore.FieldValue.serverTimestamp()
                     })
-                    const documentData = (await documentReference.get()).data() as { text: string, date: FirebaseFirestore.Timestamp }
+                    const documentData = (await documentReference.get()).data() as { text: string, createdAt: FirebaseFirestore.Timestamp }
                     return {
-                        "id": documentReference.id,
-                        "text": documentData.text,
-                        "createdAt": documentData.date.toMillis()
+                        id: documentReference.id,
+                        text: documentData.text,
+                        createdAt: documentData.createdAt.toMillis()
                     }
                 },
                 args: {
-                    "text": {
+                    text: {
                         type: graphql.GraphQLNonNull(graphql.GraphQLString),
                         description: "設定する文字列"
                     }
