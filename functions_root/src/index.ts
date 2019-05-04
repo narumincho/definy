@@ -2,14 +2,12 @@ import * as functions from "firebase-functions"
 import * as admin from "firebase-admin"
 import * as graphql from "graphql"
 import * as graphalExpress from "express-graphql"
-import { Firestore } from "@google-cloud/firestore";
 
 admin.initializeApp();
 const dataBase = admin.firestore();
 const dataBaseCollection = dataBase.collection("stringDataBase");
 
-
-console.log("サーバーのプログラムが読み込まれたぜ")
+console.log("サーバーのプログラムが読み込まれた")
 
 /** データベースで保存するデータの形式を決めるスキーマ */
 const schema = new graphql.GraphQLSchema({
