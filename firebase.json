@@ -8,5 +8,8 @@
                 "function": "api"
             }
         ]
+    },
+    "functions": {
+        "source": "functions_root"
     }
 }
