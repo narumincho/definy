@@ -736,15 +736,7 @@ viewNoChildrenItem focus icon label editorRef viewType optionList =
         ([ treePanelClass "item", Html.Attributes.tabindex 0 ]
             ++ viewTypeToClass focus viewType
         )
-        ([ itemContent viewType editorRef icon label ]
-            ++ (case optionList of
-                    _ :: _ ->
-                        [ optionButton ]
-
-                    [] ->
-                        []
-               )
-        )
+        [ itemContent viewType editorRef icon label ]
 
 
 viewCloseChildrenItem : Bool -> Icon -> String -> Panel.EditorItemSource.EditorItemSource -> ViewType -> List Option -> Html.Html Msg
@@ -755,17 +747,9 @@ viewCloseChildrenItem focus icon label editorRef viewType optionList =
          ]
             ++ viewTypeToClass focus viewType
         )
-        ([ treeCloseIcon editorRef viewType
-         , itemContent viewType editorRef icon label
-         ]
-            ++ (case optionList of
-                    _ :: _ ->
-                        [ optionButton ]
-
-                    [] ->
-                        []
-               )
-        )
+        [ treeCloseIcon editorRef viewType
+        , itemContent viewType editorRef icon label
+        ]
 
 
 viewOpenChildrenItem : Bool -> Icon -> String -> Panel.EditorItemSource.EditorItemSource -> ViewType -> List Option -> ( EditorTree, List EditorTree ) -> Html.Html Msg
@@ -779,13 +763,6 @@ viewOpenChildrenItem focus icon label editorRef viewType optionList ( headTree, 
         ([ treeOpenIcon editorRef viewType
          , itemContent viewType editorRef icon label
          ]
-            ++ (case optionList of
-                    _ :: _ ->
-                        [ optionButton ]
-
-                    [] ->
-                        []
-               )
             ++ [ Html.div [ treePanelClass "item-children" ]
                     (viewTreeItem focus headTree :: (restTree |> List.map (viewTreeItem focus)))
                ]
@@ -973,19 +950,6 @@ moduleIcon =
                     |> NSvg.translate { x = 5, y = 5 }
                 ]
         }
-
-
-optionButton : Html.Html Msg
-optionButton =
-    Html.div
-        [ treePanelClass "item-option" ]
-        [ NSvg.toHtml
-            { x = 0, y = 0, width = 20, height = 30 }
-            [ NSvg.circle 2 NSvg.strokeNone (NSvg.fillColor Palette.X11.white) |> NSvg.translate { x = 10, y = 7 }
-            , NSvg.circle 2 NSvg.strokeNone (NSvg.fillColor Palette.X11.white) |> NSvg.translate { x = 10, y = 15 }
-            , NSvg.circle 2 NSvg.strokeNone (NSvg.fillColor Palette.X11.white) |> NSvg.translate { x = 10, y = 23 }
-            ]
-        ]
 
 
 {-| TODO 整列のことを考える

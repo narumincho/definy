@@ -444,7 +444,6 @@ editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
 ブラウザやOSで予約されているであろう動作を邪魔させないためにある。
 Model.isFocusTextAreaがTrueになったときにまずこれを優先する
 
-
 -}
 multiLineTextFieldReservedKey : Key.Key -> Bool
 multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
@@ -892,7 +891,10 @@ getTreePanelWidth model =
         width =
             getVerticalGutterX model - verticalGutterWidth // 2
     in
-    if width < 120 then
+    if (getWindowSize model).width < 500 then
+        0
+
+    else if width < 120 then
         0
 
     else
