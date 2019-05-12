@@ -3,26 +3,23 @@ module View exposing (view)
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
-import Label
 import Model exposing (Model, Msg)
 import Panel.CommandPalette
 import Panel.EditorGroup
 import Panel.Side
-import Panel.Tree
-import Project
 import Utility.ListExtra
 
 
 {-| 見た目を定義する
 -}
-view : Model -> { title : String, body : List (Html Msg) }
+view : Model -> Html Msg
 view model =
-    { title = "Definy 0 - " ++ Label.toCapitalString (Project.getName (Model.getProject model))
-    , body =
-        [ treePanel model
-        , verticalGutter (Model.isTreePanelGutter model)
-        , editorGroupPanel model
-        ]
+    Html.div
+        [ Html.Attributes.id "elm-app" ]
+        ([ sidePanel model
+         , verticalGutter (Model.isTreePanelGutter model)
+         , editorGroupPanel model
+         ]
             ++ (case Model.getCommandPaletteModel model of
                     Just commandPaletteModel ->
                         [ Panel.CommandPalette.view commandPaletteModel ]
@@ -30,13 +27,13 @@ view model =
                     Nothing ->
                         []
                )
-    }
+        )
 
 
-{-| プロジェクトの構造を表示、操作する
+{-| サイドパネルの表示
 -}
-treePanel : Model -> Html Msg
-treePanel model =
+sidePanel : Model -> Html Msg
+sidePanel model =
     Html.div
         ([ Html.Attributes.classList
             [ ( "treePanel", True )
@@ -56,12 +53,14 @@ treePanel model =
                     |> Utility.ListExtra.fromMaybe
                )
         )
-        (Panel.Side.view Panel.Side.initModel
+        (Panel.Side.view
+            (Model.getCurrentUser model)
+            Panel.Side.initModel
             |> List.map (Html.map Model.sidePanelMsgToMsg)
         )
 
 
-{-| エディタグループの表示、操作する
+{-| エディタグループパネルの表示
 -}
 editorGroupPanel : Model -> Html Msg
 editorGroupPanel model =

@@ -5,13 +5,11 @@ import Model
 import View
 
 
-main : Platform.Program () Model.Model Model.Msg
+main : Platform.Program { url : String, user : Maybe { name : String, imageUrl : String, token : String } } Model.Model Model.Msg
 main =
-    Browser.application
+    Browser.element
         { init = Model.init
         , view = View.view
         , update = Model.update
         , subscriptions = Model.subscriptions
-        , onUrlRequest = Model.onUrlRequest
-        , onUrlChange = Model.onUrlChange
         }

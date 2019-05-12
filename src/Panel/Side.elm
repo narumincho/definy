@@ -4,6 +4,7 @@ module Panel.Side exposing
     , Msg(..)
     , Tab
     , initModel
+    , update
     , view
     )
 
@@ -12,6 +13,8 @@ module Panel.Side exposing
 
 import Html
 import Html.Attributes as A
+import Html.Events
+import User
 
 
 type Model
@@ -19,17 +22,16 @@ type Model
 
 
 type Msg
-    = Msg
+    = LogOut
+    | SelectUp
+    | SelectDown
+    | SelectParentOrTreeClose
+    | SelectFirstChildOrTreeOpen
+    | ToFocusEditorPanel
 
 
 type Emit
-    = Emit
-
-
-initModel : Model
-initModel =
-    Model
-        { selectTab = ModuleTree }
+    = EmitLogOut
 
 
 type Tab
@@ -41,10 +43,30 @@ type Tab
     | ToDoList
 
 
-view : Model -> List (Html.Html msg)
-view (Model { selectTab }) =
+initModel : Model
+initModel =
+    Model
+        { selectTab = ModuleTree }
+
+
+update : Msg -> Model -> ( Model, List Emit )
+update msg model =
+    case msg of
+        LogOut ->
+            ( model
+            , [ EmitLogOut ]
+            )
+
+        _ ->
+            ( model
+            , []
+            )
+
+
+view : Maybe User.User -> Model -> List (Html.Html Msg)
+view user (Model { selectTab }) =
     [ definyLogo
-    , user
+    , userView user
     , project
     ]
 
@@ -71,11 +93,32 @@ definyLogo =
         ]
 
 
-user : Html.Html msg
-user =
+userView : Maybe User.User -> Html.Html Msg
+userView userMaybe =
     Html.div
-        [ A.style "color" "#ddd" ]
-        [ Html.text "userName" ]
+        [ A.style "color" "#ddd"
+        ]
+        (case userMaybe of
+            Just user ->
+                [ Html.div
+                    [ A.style "display" "flex" ]
+                    [ Html.img
+                        [ A.style "clip-path" "circle(50% at center)"
+                        , A.src (User.getgoogleAccountImageUrl user)
+                        ]
+                        []
+                    , Html.div
+                        []
+                        [ Html.text (User.getGoogleAccountName user) ]
+                    ]
+                , Html.button
+                    [ Html.Events.onClick LogOut ]
+                    [ Html.text "ログアウトする" ]
+                ]
+
+            Nothing ->
+                [ Html.text "ログインしていない" ]
+        )
 
 
 project : Html.Html msg

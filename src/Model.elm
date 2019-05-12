@@ -8,12 +8,13 @@ port module Model exposing
     , focusToTreePanel
     , getActiveEditor
     , getCommandPaletteModel
+    , getCurrentUser
     , getEditorGroupPanelGutter
     , getEditorGroupPanelModel
     , getEditorGroupPanelSize
     , getGutterType
     , getProject
-    , getTreePanelModel
+    , getSidePanelModel
     , getTreePanelWidth
     , init
     , isFocusEditorGroupPanel
@@ -32,7 +33,6 @@ port module Model exposing
 
 import Browser
 import Browser.Events
-import Browser.Navigation
 import Compiler
 import Json.Decode
 import Key
@@ -42,7 +42,7 @@ import Panel.DefaultUi
 import Panel.Editor.Module
 import Panel.EditorGroup
 import Panel.EditorItemSource
-import Panel.Tree
+import Panel.Side
 import Project
 import Project.ModuleDefinition
 import Project.ModuleDefinition.ModuleIndex
@@ -50,6 +50,7 @@ import Project.ModuleDefinition.ModuleWithCache
 import Project.ModuleDefinitionIndex
 import Task
 import Url
+import User
 import Utility.ListExtra
 import Utility.Map
 
@@ -70,6 +71,9 @@ port run : { ref : List Int, index : Int, wasm : List Int } -> Cmd msg
 
 
 port elementScrollIntoView : String -> Cmd msg
+
+
+port logOut : () -> Cmd msg
 
 
 port input : ({ text : String, caretPos : Int } -> msg) -> Sub msg
@@ -108,7 +112,7 @@ type Msg
     | CloseSidePanel -- サイドパネルを閉じる
     | FocusTo Focus -- フォーカスを移動
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
-    | SidePanelMsg Panel.Tree.Msg -- ツリーパネル独自のメッセージ
+    | SidePanelMsg Panel.Side.Msg -- ツリーパネル独自のメッセージ
     | EditorPanelMsg Panel.EditorGroup.Msg -- エディタパネル独自のメッセージ
     | ChangeEditorResource Panel.EditorItemSource.EditorItemSource -- エディタの対象を変える
     | OpenCommandPalette -- コマンドパレットを開く
@@ -116,6 +120,7 @@ type Msg
     | ProjectMsg Project.Msg -- プロジェクトへのメッセージ
     | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url.Url
+    | LogOut
 
 
 {-| 全体を表現する
@@ -125,11 +130,12 @@ type Model
         { project : Project.Project
         , focus : Focus
         , subMode : SubMode
-        , treePanelModel : Panel.Tree.Model
+        , sidePanelModel : Panel.Side.Model
         , editorGroupPanelModel : Panel.EditorGroup.Model
-        , treePanelWidth : Int
+        , sidePanelWidth : Int
         , windowSize : { width : Int, height : Int }
         , msgQueue : List Msg
+        , user : Maybe User.User
         }
 
 
@@ -163,8 +169,8 @@ type GutterType
     | GutterTypeHorizontal
 
 
-init : () -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
-init flag url key =
+init : { url : String, user : Maybe { name : String, imageUrl : String, token : String } } -> ( Model, Cmd Msg )
+init { user } =
     let
         ( editorPanelModel, emitListFromEditorGroupPanel ) =
             Panel.EditorGroup.initModel
@@ -184,11 +190,20 @@ init flag url key =
                 { project = project
                 , focus = FocusEditorGroupPanel
                 , subMode = SubModeNone
-                , treePanelModel = Panel.Tree.initModel
+                , sidePanelModel = Panel.Side.initModel
                 , editorGroupPanelModel = editorPanelModel
-                , treePanelWidth = 250
+                , sidePanelWidth = 250
                 , windowSize = { width = 0, height = 0 }
                 , msgQueue = []
+                , user =
+                    user
+                        |> Maybe.map
+                            (\{ name, imageUrl } ->
+                                User.make
+                                    { googleAccountName = name
+                                    , googleAccountImageUrl = imageUrl
+                                    }
+                            )
                 }
     in
     updateFromList
@@ -212,7 +227,7 @@ toTreePanelGutterMode =
 
 {-| サイドパネルのMsgを全体のMsgに変換する
 -}
-sidePanelMsgToMsg : Panel.Tree.Msg -> Msg
+sidePanelMsgToMsg : Panel.Side.Msg -> Msg
 sidePanelMsgToMsg =
     SidePanelMsg
 
@@ -301,7 +316,7 @@ update msg model =
             )
 
         CloseSidePanel ->
-            ( model |> setTreePanelWidth 0
+            ( model |> setSidePanelWidth 0
             , Cmd.none
             )
 
@@ -313,8 +328,8 @@ update msg model =
             , Cmd.none
             )
 
-        SidePanelMsg treePanelMsg ->
-            model |> treePanelUpdate treePanelMsg
+        SidePanelMsg sidePanelMsg ->
+            model |> sidePanelUpdate sidePanelMsg
 
         EditorPanelMsg editorPanelMsg ->
             model |> editorPanelUpdate editorPanelMsg
@@ -345,6 +360,11 @@ update msg model =
         OnUrlChange url ->
             ( model
             , Cmd.none
+            )
+
+        LogOut ->
+            ( model
+            , logOut ()
             )
 
 
@@ -407,7 +427,7 @@ keyDownEachPanel : Key.Key -> Model -> List Msg
 keyDownEachPanel key model =
     case getFocus model of
         FocusTreePanel ->
-            treePanelKeyDown key
+            sidePanelKeyDown key
                 |> List.map SidePanelMsg
 
         FocusEditorGroupPanel ->
@@ -453,9 +473,6 @@ editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
 
                     Key.Digit1 ->
                         [ FocusTo FocusEditorGroupPanel ]
-
-                    Key.Minus ->
-                        [ SidePanelMsg Panel.Tree.SelectAndOpenKeyConfig ]
 
                     _ ->
                         []
@@ -588,27 +605,27 @@ singleLineTextFieldReservedKey { key, ctrl, alt, shift } =
 -}
 
 
-{-| ツリーパネルのキー入力
+{-| サイドパネルのキー入力
 -}
-treePanelKeyDown : Key.Key -> List Panel.Tree.Msg
-treePanelKeyDown { key, ctrl, shift, alt } =
+sidePanelKeyDown : Key.Key -> List Panel.Side.Msg
+sidePanelKeyDown { key, ctrl, shift, alt } =
     case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
                 Key.ArrowUp ->
-                    [ Panel.Tree.SelectUp ]
+                    [ Panel.Side.SelectUp ]
 
                 Key.ArrowDown ->
-                    [ Panel.Tree.SelectDown ]
+                    [ Panel.Side.SelectDown ]
 
                 Key.ArrowLeft ->
-                    [ Panel.Tree.SelectParentOrTreeClose ]
+                    [ Panel.Side.SelectParentOrTreeClose ]
 
                 Key.ArrowRight ->
-                    [ Panel.Tree.SelectFirstChildOrTreeOpen ]
+                    [ Panel.Side.SelectFirstChildOrTreeOpen ]
 
                 Key.Enter ->
-                    [ Panel.Tree.ToFocusEditorPanel ]
+                    [ Panel.Side.ToFocusEditorPanel ]
 
                 _ ->
                     []
@@ -701,7 +718,7 @@ mouseMove { x, y } model =
     case getGutterMode model of
         Just SideBarGutter ->
             model
-                |> setTreePanelWidth
+                |> setSidePanelWidth
                     (treePanelResizeFromGutter (getWindowSize model).width x)
 
         Just (GutterEditorGroupPanelVertical gutter) ->
@@ -838,22 +855,22 @@ isTreePanelGutter model =
             False
 
 
-getTreePanelModel : Model -> Panel.Tree.Model
-getTreePanelModel (Model { treePanelModel }) =
-    treePanelModel
+getSidePanelModel : Model -> Panel.Side.Model
+getSidePanelModel (Model { sidePanelModel }) =
+    sidePanelModel
 
 
-setTreePanelModel : Panel.Tree.Model -> Model -> Model
-setTreePanelModel moduleTreePanelModel (Model rec) =
+setSidePanelModel : Panel.Side.Model -> Model -> Model
+setSidePanelModel sidePanelModel (Model rec) =
     Model
         { rec
-            | treePanelModel = moduleTreePanelModel
+            | sidePanelModel = sidePanelModel
         }
 
 
-mapTreePanelModel : (Panel.Tree.Model -> Panel.Tree.Model) -> Model -> Model
-mapTreePanelModel =
-    Utility.Map.toMapper getTreePanelModel setTreePanelModel
+getCurrentUser : Model -> Maybe User.User
+getCurrentUser (Model { user }) =
+    user
 
 
 
@@ -900,15 +917,15 @@ getEditorGroupPanelGutter model =
 {-| ツリーパネルとエディタパネルの間にあるリサイズバーのX座標
 -}
 getVerticalGutterX : Model -> Int
-getVerticalGutterX (Model { treePanelWidth }) =
-    treePanelWidth
+getVerticalGutterX (Model { sidePanelWidth }) =
+    sidePanelWidth
 
 
-setTreePanelWidth : Int -> Model -> Model
-setTreePanelWidth width (Model rec) =
+setSidePanelWidth : Int -> Model -> Model
+setSidePanelWidth width (Model rec) =
     Model
         { rec
-            | treePanelWidth = width
+            | sidePanelWidth = width
         }
 
 
@@ -996,36 +1013,28 @@ toGutterMode gutter (Model rec) =
         }
 
 
-{-| ツリーパネルの更新
+{-| サイドパネルの更新
 -}
-treePanelUpdate : Panel.Tree.Msg -> Model -> ( Model, Cmd Msg )
-treePanelUpdate msg model =
+sidePanelUpdate : Panel.Side.Msg -> Model -> ( Model, Cmd Msg )
+sidePanelUpdate msg model =
     let
-        ( treeModel, emitMsg ) =
-            getTreePanelModel model
-                |> Panel.Tree.update
+        ( sidePanelModel, emitMsg ) =
+            getSidePanelModel model
+                |> Panel.Side.update
                     msg
-                    (getActiveEditor model)
-                    (getProject model)
     in
     model
-        |> setTreePanelModel treeModel
-        |> updateFromList (emitMsg |> List.map treePanelEmitToMsg)
+        |> setSidePanelModel sidePanelModel
+        |> updateFromList (emitMsg |> List.map sidePanelEmitToMsg)
 
 
 {-| ツリーパネルで発生したEmitを全体のMsgに変換する
 -}
-treePanelEmitToMsg : Panel.Tree.Emit -> Msg
-treePanelEmitToMsg emit =
+sidePanelEmitToMsg : Panel.Side.Emit -> Msg
+sidePanelEmitToMsg emit =
     case emit of
-        Panel.Tree.EmitFocusToEditorGroup ->
-            FocusTo FocusEditorGroupPanel
-
-        Panel.Tree.EmitOpenEditor editorRef ->
-            ChangeEditorResource editorRef
-
-        Panel.Tree.EmitCloseSidePanel ->
-            CloseSidePanel
+        Panel.Side.EmitLogOut ->
+            LogOut
 
 
 {-| エディタグループパネルの更新
