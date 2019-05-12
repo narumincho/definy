@@ -7,9 +7,11 @@ import View
 
 main : Platform.Program () Model.Model Model.Msg
 main =
-    Browser.document
-        { init = always Model.init
+    Browser.application
+        { init = Model.init
         , view = View.view
         , update = Model.update
         , subscriptions = Model.subscriptions
+        , onUrlRequest = Model.onUrlRequest
+        , onUrlChange = Model.onUrlChange
         }

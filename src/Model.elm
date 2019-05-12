@@ -19,16 +19,20 @@ port module Model exposing
     , isFocusEditorGroupPanel
     , isFocusTreePanel
     , isTreePanelGutter
+    , onUrlChange
+    , onUrlRequest
+    , sidePanelMsgToMsg
     , subscriptions
     , toTreePanelGutterMode
-    , treePanelMsgToMsg
     , update
     )
 
 {-| すべての状態を管理する
 -}
 
+import Browser
 import Browser.Events
+import Browser.Navigation
 import Compiler
 import Json.Decode
 import Key
@@ -45,6 +49,7 @@ import Project.ModuleDefinition.ModuleIndex
 import Project.ModuleDefinition.ModuleWithCache
 import Project.ModuleDefinitionIndex
 import Task
+import Url
 import Utility.ListExtra
 import Utility.Map
 
@@ -103,12 +108,14 @@ type Msg
     | CloseSidePanel -- サイドパネルを閉じる
     | FocusTo Focus -- フォーカスを移動
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
-    | TreePanelMsg Panel.Tree.Msg -- ツリーパネル独自のメッセージ
+    | SidePanelMsg Panel.Tree.Msg -- ツリーパネル独自のメッセージ
     | EditorPanelMsg Panel.EditorGroup.Msg -- エディタパネル独自のメッセージ
     | ChangeEditorResource Panel.EditorItemSource.EditorItemSource -- エディタの対象を変える
     | OpenCommandPalette -- コマンドパレットを開く
     | CloseCommandPalette -- コマンドパレッドを閉じる
     | ProjectMsg Project.Msg -- プロジェクトへのメッセージ
+    | OnUrlRequest Browser.UrlRequest
+    | OnUrlChange Url.Url
 
 
 {-| 全体を表現する
@@ -156,8 +163,8 @@ type GutterType
     | GutterTypeHorizontal
 
 
-init : ( Model, Cmd Msg )
-init =
+init : () -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
+init flag url key =
     let
         ( editorPanelModel, emitListFromEditorGroupPanel ) =
             Panel.EditorGroup.initModel
@@ -203,11 +210,11 @@ toTreePanelGutterMode =
     ToResizeGutterMode SideBarGutter
 
 
-{-| ツリーパネルのMsgを全体のMsgに変換する
+{-| サイドパネルのMsgを全体のMsgに変換する
 -}
-treePanelMsgToMsg : Panel.Tree.Msg -> Msg
-treePanelMsgToMsg =
-    TreePanelMsg
+sidePanelMsgToMsg : Panel.Tree.Msg -> Msg
+sidePanelMsgToMsg =
+    SidePanelMsg
 
 
 {-| エディタパネルのMsgを全体のMsgに変換する
@@ -229,6 +236,16 @@ focusToTreePanel =
 focusToEditorGroupPanel : Msg
 focusToEditorGroupPanel =
     FocusTo FocusEditorGroupPanel
+
+
+onUrlRequest : Browser.UrlRequest -> Msg
+onUrlRequest =
+    OnUrlRequest
+
+
+onUrlChange : Url.Url -> Msg
+onUrlChange =
+    OnUrlChange
 
 
 
@@ -296,7 +313,7 @@ update msg model =
             , Cmd.none
             )
 
-        TreePanelMsg treePanelMsg ->
+        SidePanelMsg treePanelMsg ->
             model |> treePanelUpdate treePanelMsg
 
         EditorPanelMsg editorPanelMsg ->
@@ -319,6 +336,16 @@ update msg model =
 
         ProjectMsg sMsg ->
             model |> projectUpdate sMsg
+
+        OnUrlRequest urlRequest ->
+            ( model
+            , Cmd.none
+            )
+
+        OnUrlChange url ->
+            ( model
+            , Cmd.none
+            )
 
 
 updateFromList : List Msg -> Model -> ( Model, Cmd Msg )
@@ -381,7 +408,7 @@ keyDownEachPanel key model =
     case getFocus model of
         FocusTreePanel ->
             treePanelKeyDown key
-                |> List.map TreePanelMsg
+                |> List.map SidePanelMsg
 
         FocusEditorGroupPanel ->
             editorGroupPanelKeyDown key
@@ -428,7 +455,7 @@ editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
                         [ FocusTo FocusEditorGroupPanel ]
 
                     Key.Minus ->
-                        [ TreePanelMsg Panel.Tree.SelectAndOpenKeyConfig ]
+                        [ SidePanelMsg Panel.Tree.SelectAndOpenKeyConfig ]
 
                     _ ->
                         []

@@ -1,7 +1,9 @@
 {
     "hosting": {
         "public": "hosting_root",
-        "ignore": [],
+        "ignore": [
+            "node_modules/**"
+        ],
         "rewrites": [
             {
                 "source": "/api",

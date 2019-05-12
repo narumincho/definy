@@ -132,12 +132,6 @@ closeTree editorRef (OpenCloseData rec) =
             OpenCloseData rec
 
 
-{-| フォーカスがあたっているときに持てる状態
--}
-type FocusModel
-    = FocusModel { isNewModuleNameInputMode : Bool }
-
-
 {-| TreePanelが受け取るMsg
 -}
 type Msg

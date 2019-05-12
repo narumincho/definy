@@ -89,12 +89,6 @@ img {
 /* ==================================================================
                             Tree Panel
 ================================================================== */
-
-.treePanel-title-area {
-    display: flex;
-    justify-content: space-between;
-}
-
 .treePanel-title {
     color: #b9d09b;
     margin: 0;

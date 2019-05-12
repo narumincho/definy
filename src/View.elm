@@ -7,6 +7,7 @@ import Label
 import Model exposing (Model, Msg)
 import Panel.CommandPalette
 import Panel.EditorGroup
+import Panel.Side
 import Panel.Tree
 import Project
 import Utility.ListExtra
@@ -55,14 +56,8 @@ treePanel model =
                     |> Utility.ListExtra.fromMaybe
                )
         )
-        (Panel.Tree.view
-            { project = Model.getProject model
-            , editorRef = Model.getActiveEditor model
-            , focus = Model.isFocusTreePanel model
-            , width = Model.getTreePanelWidth model
-            , model = Model.getTreePanelModel model
-            }
-            |> List.map (Html.map Model.treePanelMsgToMsg)
+        (Panel.Side.view Panel.Side.initModel
+            |> List.map (Html.map Model.sidePanelMsgToMsg)
         )
 
 
