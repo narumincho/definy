@@ -34,20 +34,14 @@
                     client_id: "8347840964-gaqmes8h53is7pbon1jel1qfbjm7jt9g.apps.googleusercontent.com"
                 });
                 const user = googleAuth.currentUser.get();
-                // document.getElementById("signInButton").addEventListener("click", () => {
-                //     googleAuth.signIn({
-                //         scope: "profile",
-                //         prompt: "select_account"
-                //     }).then(onSignIn).catch(onFailureSignIn)
-                // })
                 // gapi.signin2.render("signInButton", {
                 //     scope: "profile",
                 //     width: 240,
                 //     height: 50,
                 //     longtitle: true,
                 //     theme: "dark",
-                //     onsuccess: onSignIn,
-                //     onfailure: onFailureSignIn
+                //     onsuccess: console.log,
+                //     onfailure: console.log
                 // });
 
                 /* Elmを起動!! */
@@ -145,11 +139,25 @@
                     // e.preventDefault();
                 })
 
-                app.ports.logOut.subscribe(() => {
+                /* サインイン */
+                app.ports.signInRequest.subscribe(() => {
+                    googleAuth.signIn({
+                        scope: "profile",
+                        prompt: "select_account"
+                    }).then((googleUser) => {
+                        app.ports.signInResponse.send(getUserData(googleUser))
+                    }).catch(e => {
+                        console.log("signInしなかった", e)
+                    })
+                })
+                /* サインアウト */
+                app.ports.signOutRequest.subscribe(() => {
                     googleAuth.signOut().then(() => {
                         console.log("ユーザーがサインアウトした");
+                        app.ports.signOutResponse.send(null);
                     });
                 })
+
             });
         }
     </script>

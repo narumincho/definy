@@ -55,6 +55,10 @@ import Utility.ListExtra
 import Utility.Map
 
 
+
+{- Cmd (Elm → JavaScript) -}
+
+
 port setTextAreaValue : String -> Cmd msg
 
 
@@ -73,7 +77,14 @@ port run : { ref : List Int, index : Int, wasm : List Int } -> Cmd msg
 port elementScrollIntoView : String -> Cmd msg
 
 
-port logOut : () -> Cmd msg
+port signOutRequest : () -> Cmd msg
+
+
+port signInRequest : () -> Cmd msg
+
+
+
+{- Sub (JavaScript → Elm) -}
 
 
 port input : ({ text : String, caretPos : Int } -> msg) -> Sub msg
@@ -92,6 +103,12 @@ port runResult : ({ ref : List Int, index : Int, result : Int } -> msg) -> Sub m
 
 
 port fireClickEventInCapturePhase : (String -> msg) -> Sub msg
+
+
+port signInResponse : ({ name : String, imageUrl : String, token : String } -> msg) -> Sub msg
+
+
+port signOutResponse : (() -> msg) -> Sub msg
 
 
 {-| 全体の入力を表すメッセージ
@@ -120,7 +137,10 @@ type Msg
     | ProjectMsg Project.Msg -- プロジェクトへのメッセージ
     | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url.Url
-    | LogOut
+    | SignInRequest -- サインインを要求する
+    | SignOutRequest -- サインアウトを要求する
+    | SignInResponse { name : String, imageUrl : String, token : String } -- サインインした
+    | SignOutResponse -- サインインした
 
 
 {-| 全体を表現する
@@ -362,9 +382,29 @@ update msg model =
             , Cmd.none
             )
 
-        LogOut ->
+        SignInRequest ->
             ( model
-            , logOut ()
+            , signInRequest ()
+            )
+
+        SignOutRequest ->
+            ( model
+            , signOutRequest ()
+            )
+
+        SignInResponse { name, imageUrl } ->
+            ( model
+                |> singIn
+                    (User.make
+                        { googleAccountName = name, googleAccountImageUrl = imageUrl }
+                    )
+            , Cmd.none
+            )
+
+        SignOutResponse ->
+            ( model
+                |> singOut
+            , Cmd.none
             )
 
 
@@ -873,6 +913,18 @@ getCurrentUser (Model { user }) =
     user
 
 
+singIn : User.User -> Model -> Model
+singIn user (Model rec) =
+    Model
+        { rec | user = Just user }
+
+
+singOut : Model -> Model
+singOut (Model rec) =
+    Model
+        { rec | user = Nothing }
+
+
 
 {- ============ Editor Group Panel ============= -}
 
@@ -1033,8 +1085,11 @@ sidePanelUpdate msg model =
 sidePanelEmitToMsg : Panel.Side.Emit -> Msg
 sidePanelEmitToMsg emit =
     case emit of
-        Panel.Side.EmitLogOut ->
-            LogOut
+        Panel.Side.EmitSingOutRequest ->
+            SignOutRequest
+
+        Panel.Side.EmitSingInRequest ->
+            SignInRequest
 
 
 {-| エディタグループパネルの更新
@@ -1348,6 +1403,8 @@ subscriptions model =
          , windowResize WindowResize
          , runResult ReceiveRunResult
          , fireClickEventInCapturePhase FireClickEventInCapturePhase
+         , signInResponse SignInResponse
+         , signOutResponse (always SignOutResponse)
          ]
             ++ (if isCaptureMouseEvent model then
                     [ Browser.Events.onMouseMove

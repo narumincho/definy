@@ -22,7 +22,8 @@ type Model
 
 
 type Msg
-    = LogOut
+    = SignOutRequest
+    | SingInRequest
     | SelectUp
     | SelectDown
     | SelectParentOrTreeClose
@@ -31,7 +32,8 @@ type Msg
 
 
 type Emit
-    = EmitLogOut
+    = EmitSingOutRequest
+    | EmitSingInRequest
 
 
 type Tab
@@ -52,9 +54,14 @@ initModel =
 update : Msg -> Model -> ( Model, List Emit )
 update msg model =
     case msg of
-        LogOut ->
+        SignOutRequest ->
             ( model
-            , [ EmitLogOut ]
+            , [ EmitSingOutRequest ]
+            )
+
+        SingInRequest ->
+            ( model
+            , [ EmitSingInRequest ]
             )
 
         _ ->
@@ -112,12 +119,15 @@ userView userMaybe =
                         [ Html.text (User.getGoogleAccountName user) ]
                     ]
                 , Html.button
-                    [ Html.Events.onClick LogOut ]
-                    [ Html.text "ログアウトする" ]
+                    [ Html.Events.onClick SignOutRequest ]
+                    [ Html.text "サインアウトする" ]
                 ]
 
             Nothing ->
-                [ Html.text "ログインしていない" ]
+                [ Html.button
+                    [ Html.Events.onClick SingInRequest ]
+                    [ Html.text "Googleでサインイン" ]
+                ]
         )
 
 
