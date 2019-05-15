@@ -7,12 +7,9 @@
     <title>Definy 読み込み中</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="icon" href="/assets/icon.png">
-</head>
 
-<body>
-    <div id="elm-app"></div>
-    <script src="/main.js"></script>
-    <script>
+    <script src="/main.js" defer></script>
+    <script type="module">
         const getUserData = (googleUser) => {
             console.log("user", googleUser);
             const profile = googleUser.getBasicProfile();
@@ -27,27 +24,25 @@
             }
         }
 
+        document.getElementById("elm-app").innerText = "Googleの認証に必要なスクリプトをダウンロード中……";
+
         window.googleSignInInit = () => {
             console.log("Googleでのソーシャルログイン")
-            gapi.load("auth2", async () => {
-                const googleAuth = await gapi.auth2.init({
+            window.gapi.load("auth2", async () => {
+                const googleAuth = await window.gapi.auth2.init({
                     client_id: "8347840964-gaqmes8h53is7pbon1jel1qfbjm7jt9g.apps.googleusercontent.com"
                 });
                 const user = googleAuth.currentUser.get();
-                // gapi.signin2.render("signInButton", {
-                //     scope: "profile",
-                //     width: 240,
-                //     height: 50,
-                //     longtitle: true,
-                //     theme: "dark",
-                //     onsuccess: console.log,
-                //     onfailure: console.log
-                // });
-
                 /* Elmを起動!! */
-                const app = Elm.Main.init({
+                const userData = getUserData(user);
+                if (userData !== null) {
+                    console.log("token", userData.token)
+                } else {
+                    console.log("ユーザーはサインインしていない")
+                }
+                const app = window.Elm.Main.init({
                     node: document.getElementById("elm-app"),
-                    flags: { url: location.href, user: getUserData(user) }
+                    flags: { url: location.href, user: userData }
                 });
                 let prevKeyEvent;
                 /* キー入力 */
@@ -145,7 +140,9 @@
                         scope: "profile",
                         prompt: "select_account"
                     }).then((googleUser) => {
-                        app.ports.signInResponse.send(getUserData(googleUser))
+                        const userData = getUserData(googleUser);
+                        console.log("token", userData.token)
+                        app.ports.signInResponse.send(userData)
                     }).catch(e => {
                         console.log("signInしなかった", e)
                     })
@@ -161,7 +158,11 @@
             });
         }
     </script>
-    <script src="https://apis.google.com/js/platform.js?onload=googleSignInInit" async defer></script>
+    <script src="https://apis.google.com/js/platform.js?onload=googleSignInInit" defer></script>
+</head>
+
+<body>
+    <div id="elm-app">プログラムをダウンロード中……</div>
 </body>
 
 </html>

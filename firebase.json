@@ -1,13 +1,19 @@
 {
     "hosting": {
         "public": "hosting_root",
-        "ignore": [
-            "node_modules/**"
-        ],
+        "ignore": ["node_modules/**"],
         "rewrites": [
             {
                 "source": "/api",
                 "function": "api"
+            },
+            {
+                "source": "/social_login/line",
+                "function": "lineLogIn"
+            },
+            {
+                "source": "/social_login/line_code_receiver",
+                "function": "lineLogInCodeReceiver"
             }
         ]
     },

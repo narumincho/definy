@@ -14,6 +14,7 @@ module Panel.Side exposing
 import Html
 import Html.Attributes as A
 import Html.Events
+import Url.Builder
 import User
 
 
@@ -104,6 +105,8 @@ userView : Maybe User.User -> Html.Html Msg
 userView userMaybe =
     Html.div
         [ A.style "color" "#ddd"
+        , A.style "display" "flex"
+        , A.style "flex-direction" "column"
         ]
         (case userMaybe of
             Just user ->
@@ -127,6 +130,17 @@ userView userMaybe =
                 [ Html.button
                     [ Html.Events.onClick SingInRequest ]
                     [ Html.text "Googleでサインイン" ]
+                , Html.a
+                    [ A.href
+                        (Url.Builder.absolute
+                            [ "social_login", "line" ]
+                            []
+                        )
+                    , A.style "background-color" "#fff"
+                    , A.style "color" "#111"
+                    , A.style "text-decoration" "none"
+                    ]
+                    [ Html.text "LINEでサインイン" ]
                 ]
         )
 
