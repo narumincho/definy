@@ -24,7 +24,6 @@ type Model
 
 type Msg
     = SignOutRequest
-    | SingInRequest
     | SelectUp
     | SelectDown
     | SelectParentOrTreeClose
@@ -34,7 +33,6 @@ type Msg
 
 type Emit
     = EmitSingOutRequest
-    | EmitSingInRequest
 
 
 type Tab
@@ -58,11 +56,6 @@ update msg model =
         SignOutRequest ->
             ( model
             , [ EmitSingOutRequest ]
-            )
-
-        SingInRequest ->
-            ( model
-            , [ EmitSingInRequest ]
             )
 
         _ ->
@@ -127,9 +120,18 @@ userView userMaybe =
                 ]
 
             Nothing ->
-                [ Html.button
-                    [ Html.Events.onClick SingInRequest ]
-                    [ Html.text "Googleでサインイン" ]
+                [ Html.a
+                    [ A.href
+                        (Url.Builder.absolute
+                            [ "social_login", "google" ]
+                            []
+                        )
+                    , A.style "background-color" "#fff"
+                    , A.style "color" "#111"
+                    , A.style "text-decoration" "none"
+                    , A.style "text-align" "center"
+                    ]
+                    [ Html.text "Googleでログイン" ]
                 , Html.a
                     [ A.href
                         (Url.Builder.absolute
@@ -139,8 +141,9 @@ userView userMaybe =
                     , A.style "background-color" "#fff"
                     , A.style "color" "#111"
                     , A.style "text-decoration" "none"
+                    , A.style "text-align" "center"
                     ]
-                    [ Html.text "LINEでサインイン" ]
+                    [ Html.text "LINEでログイン" ]
                 ]
         )
 

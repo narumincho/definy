@@ -1,16 +1,12 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import * as firebase from "firebase";
 import * as graphql from "graphql";
 import * as graphalExpress from "express-graphql";
-import * as googleAuthLibrary from "google-auth-library";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
+import * as secret from "./secret";
+import * as jwt from "jsonwebtoken";
 
 admin.initializeApp();
-firebase.initializeApp({
-    apiKey: functions.config().api.key,
-    projectId: "definy-lang"
-});
 
 const dataBase = admin.firestore();
 const dataBaseUserCollection: FirebaseFirestore.CollectionReference = dataBase.collection(
@@ -19,32 +15,41 @@ const dataBaseUserCollection: FirebaseFirestore.CollectionReference = dataBase.c
 const dataBaseLineStateCollection: FirebaseFirestore.CollectionReference = dataBase.collection(
     "lineState"
 );
-const googleAuth2Client = new googleAuthLibrary.OAuth2Client(
-    "8347840964-gaqmes8h53is7pbon1jel1qfbjm7jt9g.apps.googleusercontent.com"
+const dataBaseGoogleStateCollection: FirebaseFirestore.CollectionReference = dataBase.collection(
+    "googleState"
 );
-const lineSignUpRedirectUri = "https://definy-lang.firebaseapp.com/social_login/line_code_receiver" as const;
-const lineSignUpClientId = "1574443672" as const;
-const lineSingUpSecret: string = functions.config().line_sign_up.secret;
+const lineLogInRedirectUri = "https://definy-lang.firebaseapp.com/social_login/line_code_receiver" as const;
+const lineLogInClientId = "1574443672" as const;
+const lineLogInSecret: string = secret.lineLogInSecret;
+const googleLogInClientId = "8347840964-l3796imv2d11d0qi8cnb6r48n5jabk9t.apps.googleusercontent.com" as const;
+const googleLogInRedirectUri = "https://definy-lang.firebaseapp.com/social_login/google_receiver" as const;
+const googleLogInSecret: string = secret.googleLogInSecret;
+const refreshSecretKey: string = secret.refreshSecretKey;
+const accessSecretKey: string = secret.accessSecretKey;
 
 console.log("サーバーのプログラムが読み込まれた");
 
+/* =====================================================================
+ *                          API (GraphQL)
+ * =====================================================================
+ */
 const userType = new graphql.GraphQLObjectType({
     name: "User",
     fields: {
         id: {
-            type: graphql.GraphQLID,
+            type: graphql.GraphQLNonNull(graphql.GraphQLID),
             description: "ランダムに生成されるユーザーのID"
         },
         displayName: {
-            type: graphql.GraphQLString,
+            type: graphql.GraphQLNonNull(graphql.GraphQLString),
             description: "表示名"
         },
         imageUrl: {
-            type: graphql.GraphQLString,
+            type: graphql.GraphQLNonNull(graphql.GraphQLString),
             description: "ユーザーの画像のURL(ソーシャルログイン元)"
         },
         createdAt: {
-            type: graphql.GraphQLFloat,
+            type: graphql.GraphQLNonNull(graphql.GraphQLFloat),
             description:
                 "ユーザーが作成された日時。UNIX timeにミリ秒の情報を加えた(x1000した)もの"
         }
@@ -58,9 +63,43 @@ const schema = new graphql.GraphQLSchema({
         description: "データを取得できる",
         fields: {
             hello: {
+                description: "世界に挨拶する",
                 type: graphql.GraphQLNonNull(graphql.GraphQLString),
-                resolve: () => "hello world!",
-                description: "世界に挨拶する"
+                resolve: () => "hello world!"
+            },
+            user: {
+                description: "ユーザーの情報をユーザーIDから取得する",
+                type: userType,
+                args: {
+                    id: {
+                        description: "ユーザーID",
+                        type: graphql.GraphQLNonNull(graphql.GraphQLString)
+                    }
+                },
+                resolve: async (source, args, context, info) => {
+                    const id: string = args.id;
+                    const user: FirebaseFirestore.DocumentSnapshot = await dataBaseUserCollection
+                        .doc(id)
+                        .get();
+                    if (!user.exists) {
+                        throw new Error(`user id=${id} is not exists`);
+                        return;
+                    }
+                    const userData = user.data() as FirebaseFirestore.DocumentData;
+                    return {
+                        id: id,
+                        displayName: userData.displayName,
+                        imageUrl: userData.imageUrl,
+                        createdAt: userData.createdAt
+                    };
+                }
+            },
+            allUser: {
+                description: "すべてのユーザーを取得する",
+                type: graphql.GraphQLNonNull(graphql.GraphQLList(userType)),
+                resolve: async (source, args, context, info) => {
+                    return [];
+                }
             }
         }
     }),
@@ -68,72 +107,34 @@ const schema = new graphql.GraphQLSchema({
         name: "Mutations",
         description: "データを作成、更新ができる",
         fields: {
-            singInWithGoogle: {
-                type: userType,
-                resolve: async (source, args, context, info) => {
-                    const idToken: string = args.idToken;
-                    console.log("トークンの正当性チェックをする", idToken);
-                    const ticket = await googleAuth2Client.verifyIdToken({
-                        idToken: idToken,
-                        audience: [
-                            "8347840964-gaqmes8h53is7pbon1jel1qfbjm7jt9g.apps.googleusercontent.com"
-                        ]
-                    });
-                    const payload = ticket.getPayload() as {
-                        sub: string;
-                        name: string;
-                        picture: string;
-                    };
-                    const googleAccountId = payload.sub;
-                    const googleAccountName = payload.name;
-                    const googleAccountImageUrl = payload.picture;
-                    console.log("googleアカウントの情報を取得!", {
-                        id: googleAccountId,
-                        displayName: googleAccountName,
-                        imageUrl: googleAccountImageUrl
-                    });
-                    const exsitsData: FirebaseFirestore.QuerySnapshot = await dataBaseUserCollection
-                        .where("googleAccountId", "==", googleAccountId)
-                        .get();
-                    if (!exsitsData.empty) {
-                        console.log("ユーザーが存在した");
-                        const doc: FirebaseFirestore.QueryDocumentSnapshot =
-                            exsitsData.docs[0];
-                        const docData = doc.data();
-                        // TODO アカウントの表示名の更新をここでやる?
-                        return {
-                            id: doc.id,
-                            displayName: docData.googleAccountName,
-                            imageUrl: docData.googleAccountImageUrl,
-                            createdAt: doc.createTime.toMillis()
-                        };
+            getAccessToken: {
+                type: new graphql.GraphQLObjectType({
+                    name: "AccessTokenAndRefreshToken",
+                    description:
+                        "各種データにアクセスするためのAccessTokenと、それを再発行してもらう新しいRefreshToken",
+                    fields: {
+                        accessToken: {
+                            type: graphql.GraphQLNonNull(graphql.GraphQLString),
+                            description:
+                                "各種データにアクセスするために必要なトークン"
+                        },
+                        refeshToken: {
+                            type: graphql.GraphQLNonNull(graphql.GraphQLString),
+                            description:
+                                "AccessTokenを再発行してもらうのに必要なトークン"
+                        }
                     }
-                    const documentReference = await dataBaseUserCollection.add({
-                        googleAccountId: googleAccountId,
-                        googleAccountName: googleAccountName,
-                        googleAccountImageUrl: googleAccountImageUrl
-                    });
-                    const docRef = await documentReference.get();
-                    const doc = docRef.data() as {
-                        googleAccountId: string;
-                        googleAccountName: string;
-                        googleAccountImageUrl: string;
-                    };
-
-                    return {
-                        id: documentReference.id,
-                        displayName: doc.googleAccountName,
-                        imageUrl: doc.googleAccountImageUrl,
-                        createdAt: (docRef.createTime as FirebaseFirestore.Timestamp).toMillis()
-                    };
-                },
+                }),
                 args: {
-                    idToken: {
+                    refeshToken: {
                         type: graphql.GraphQLNonNull(graphql.GraphQLString),
                         description:
-                            "Google Sign-In for Websites (https://developers.google.com/identity/sign-in/web/backend-auth)で手に入れられるidToken"
+                            "初回時、ソーシャルログインでログインしたあとhttps://definy-lang.firebaseapp.comにリダイレクトしたときに、クエリに?refreshToken=がついてあるのでそれを使う。それ以降はここで得た新しいrefeshTokenを使う"
                     }
-                }
+                },
+                resolve: async (source, args, context, info) => {},
+                description:
+                    "RefreshTokenから、各種データにアクセスするためのAccessTokenと、それを再発行してもらう新しいRefreshTokenを得る"
             }
         }
     })
@@ -143,16 +144,151 @@ export const api = functions.https.onRequest(
     graphalExpress({ schema: schema, graphiql: true })
 );
 
-const queryToString = (queryMap: Map<string, string>): string => {
-    const result = [];
-    for (const [key, value] of queryMap.entries()) {
-        result.push(key + "=" + encodeURIComponent(value));
+/* =====================================================================
+ *                              Google
+ * =====================================================================
+ */
+export const googleLogIn = functions.https.onRequest(
+    async (request, response) => {
+        const ref = await dataBaseGoogleStateCollection.add({});
+        response.redirect(
+            "https://accounts.google.com/o/oauth2/v2/auth?" +
+                queryToString(
+                    new Map([
+                        ["response_type", "code"],
+                        ["client_id", googleLogInClientId],
+                        ["redirect_uri", googleLogInRedirectUri],
+                        ["scope", "profile openid"],
+                        ["state", ref.id]
+                    ])
+                )
+        );
     }
-    return result.join("&");
-};
+);
 
-/*
- *  LINE
+/**
+ * Googleでログインをしたあとのリダイレクト先
+ */
+export const googleLogInReceiver = functions.https.onRequest(
+    async (request, response) => {
+        console.log("Googleからのクエリだよー", request.query);
+        const code: string | undefined = request.query.code;
+        const state: string | undefined = request.query.state;
+        if (code === undefined || state === undefined) {
+            console.log("Googleからcodeかstateが送られて来なかった");
+            response.send(
+                "Google Server Error. need code and state query in redirect url"
+            );
+            return;
+        }
+        const docRef: FirebaseFirestore.DocumentReference = dataBaseGoogleStateCollection.doc(
+            state
+        );
+        const doc: FirebaseFirestore.DocumentSnapshot = await docRef.get();
+        if (!doc.exists) {
+            console.log("Googleのログインで生成していないstateを指定された");
+            response.send(
+                `Google LogIn Error: definy do not generate state =${state}`
+            );
+            return;
+        }
+        docRef.delete();
+
+        // ここでhttps://www.googleapis.com/oauth2/v4/tokenにqueryのcodeをつけて送信。IDトークンを取得する
+        const googleData = googleTokenResponseToData(
+            await axios.post(
+                "https://www.googleapis.com/oauth2/v4/token",
+                queryToString(
+                    new Map([
+                        ["grant_type", "authorization_code"],
+                        ["code", code],
+                        ["redirect_uri", googleLogInRedirectUri],
+                        ["client_id", googleLogInClientId],
+                        ["client_secret", googleLogInSecret]
+                    ])
+                ),
+                {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
+                }
+            )
+        );
+        console.log("googleData", googleData);
+        // 取得したidトークンからプロフィール画像と名前とLINEのIDを取得する
+        const exsitsData: FirebaseFirestore.QuerySnapshot = await dataBaseUserCollection
+            .where("googleAccountId", "==", googleData.sub)
+            .get();
+        // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
+        if (!exsitsData.empty) {
+            console.log("LINEで登録したユーザーがいた");
+            const doc: FirebaseFirestore.QueryDocumentSnapshot =
+                exsitsData.docs[0];
+            const docData = doc.data();
+            // TODO アカウントの表示名の更新をここでやる?
+            const refreshId = createRefreshId();
+            doc.ref.update({
+                newestRefreshId: refreshId
+            });
+            response.redirect(
+                "/?" +
+                    queryToString(
+                        new Map([
+                            [
+                                "refreshToken",
+                                createRefreshToken(doc.id, refreshId)
+                            ],
+                            ["accessToken", createAccessToken(doc.id, true)]
+                        ])
+                    )
+            );
+            return;
+        }
+        // ユーザーが存在しないなら作成し、リフレッシュトークンを返す
+        console.log("LINEで登録したユーザーがいなかった");
+        const refreshId = createRefreshId();
+        const newUserData = await dataBaseUserCollection.add({
+            googleAccountId: googleData.sub,
+            displayName: googleData.name,
+            imageUrl: googleData.picture,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            newestRefreshId: refreshId
+        });
+        response.redirect(
+            "/?" +
+                queryToString(
+                    new Map([
+                        [
+                            "refreshToken",
+                            createRefreshToken(newUserData.id, refreshId)
+                        ],
+                        ["accessToken", createAccessToken(newUserData.id, true)]
+                    ])
+                )
+        );
+    }
+);
+
+const googleTokenResponseToData = (
+    response: AxiosResponse<{ id_token: string }>
+): {
+    iss: "https://accounts.google.com";
+    sub: string;
+    name: string;
+    picture: string;
+} => {
+    const idToken = response.data.id_token;
+    console.log("googleIdToken id_token=", idToken);
+    return jwt.decode(idToken) as {
+        iss: "https://accounts.google.com";
+        sub: string;
+        name: string;
+        picture: string;
+    };
+};
+/* =====================================================================
+ *                              LINE
+ * =====================================================================
  */
 export const lineLogIn = functions.https.onRequest(
     async (request, response) => {
@@ -162,8 +298,8 @@ export const lineLogIn = functions.https.onRequest(
                 queryToString(
                     new Map([
                         ["response_type", "code"],
-                        ["client_id", lineSignUpClientId],
-                        ["redirect_uri", lineSignUpRedirectUri],
+                        ["client_id", lineLogInClientId],
+                        ["redirect_uri", lineLogInRedirectUri],
                         ["scope", "profile openid"],
                         ["state", ref.id]
                     ])
@@ -180,10 +316,15 @@ export const lineLogInCodeReceiver = functions.https.onRequest(
         const state: string | undefined = request.query.state;
         if (code === undefined || state === undefined) {
             console.log("LINEからcodeかstateが送られて来なかった");
-            response.send("LINE Server Error");
+            response.send(
+                "LINE Server Error. need code and state query in redirect url"
+            );
             return;
         }
-        const doc = await dataBaseLineStateCollection.doc(state).get();
+        const docRef: FirebaseFirestore.DocumentReference = dataBaseLineStateCollection.doc(
+            state
+        );
+        const doc: FirebaseFirestore.DocumentSnapshot = await docRef.get();
         if (!doc.exists) {
             console.log("lineのログインで生成していないstateを指定された");
             response.send(
@@ -191,74 +332,176 @@ export const lineLogInCodeReceiver = functions.https.onRequest(
             );
             return;
         }
+        docRef.delete();
 
-        // ここでhttps://api.line.me/oauth2/v2.1/tokenにqueryのcodeをつけて送信。idトークンを取得する
-        const lineTokenResponse = await axios.post(
-            "https://api.line.me/oauth2/v2.1/token",
-            queryToString(
-                new Map([
-                    ["grant_type", "authorization_code"],
-                    ["code", code],
-                    ["redirect_uri", lineSignUpRedirectUri],
-                    ["client_id", lineSignUpClientId],
-                    ["client_secret", lineSingUpSecret]
-                ])
-            ),
-            {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
+        // ここでhttps://api.line.me/oauth2/v2.1/tokenにqueryのcodeをつけて送信。IDトークンを取得する
+        const lineData = await lineTokenResponseToData(
+            await axios.post(
+                "https://api.line.me/oauth2/v2.1/token",
+                queryToString(
+                    new Map([
+                        ["grant_type", "authorization_code"],
+                        ["code", code],
+                        ["redirect_uri", lineLogInRedirectUri],
+                        ["client_id", lineLogInClientId],
+                        ["client_secret", lineLogInSecret]
+                    ])
+                ),
+                {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
                 }
-            }
+            )
         );
-        console.log("lineTokenResponse.data", lineTokenResponse.data);
-        // 取得したidトークンが正しいものか確認して、そこからプロフィール画像と名前とLINEのIDを取得する
+
+        // 取得したidトークンからプロフィール画像と名前とLINEのIDを取得する
+        const exsitsData: FirebaseFirestore.QuerySnapshot = await dataBaseUserCollection
+            .where("lineAccountId", "==", lineData.sub)
+            .get();
         // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
-        // ユーザーが存在しないなら作成する。リフレッシュトークンを返す
-        // でもここで返すのはDefinyの初期表示データ(HTML)だから、リフレッシュトークンだけ返すっていうのはできない
-        // じゃあその前段階のidTokenを返すのはどうだろう。idTokenにはユーザーIDとその署名が入っているがこれも漏れたらというかアクセストークンと同じくらいの権限だなこれ
-        response.redirect("/?refreshToken=refreshToken");
+        if (!exsitsData.empty) {
+            console.log("LINEで登録したユーザーがいた");
+            const doc: FirebaseFirestore.QueryDocumentSnapshot =
+                exsitsData.docs[0];
+            const docData = doc.data();
+            // TODO アカウントの表示名の更新をここでやる?
+            const refreshId = createRefreshId();
+            doc.ref.update({
+                newestRefreshId: refreshId
+            });
+            response.redirect(
+                "/?" +
+                    queryToString(
+                        new Map([
+                            [
+                                "refreshToken",
+                                createRefreshToken(doc.id, refreshId)
+                            ],
+                            ["accessToken", createAccessToken(doc.id, true)]
+                        ])
+                    )
+            );
+            return;
+        }
+        // ユーザーが存在しないなら作成し、リフレッシュトークンを返す
+        console.log("LINEで登録したユーザーがいなかった");
+        const refreshId = createRefreshId();
+        const newUserData = await dataBaseUserCollection.add({
+            lineAccountId: lineData.sub,
+            displayName: lineData.name,
+            imageUrl: lineData.picture,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            newestRefreshId: refreshId
+        });
+        response.redirect(
+            "/?" +
+                queryToString(
+                    new Map([
+                        [
+                            "refreshToken",
+                            createRefreshToken(newUserData.id, refreshId)
+                        ],
+                        ["accessToken", createAccessToken(newUserData.id, true)]
+                    ])
+                )
+        );
     }
 );
-/*
 
-            setData: {
-                type: new graphql.GraphQLObjectType({
-                    name: "stringDataBase",
-                    fields: {
-                        id: {
-                            type: graphql.GraphQLID,
-                            description: "ランダムに生成されるID"
-                        },
-                        text: {
-                            type: graphql.GraphQLString,
-                            description: "前後の空白が取り除かれたテキスト"
-                        },
-                        createdAt: {
-                            type: graphql.GraphQLFloat,
-                            description: "投稿された日時。JSのnew Date().getTime()で取得できるようなUNIX timeにミリ秒の情報を加えた(x1000した)もの"
-                        }
-                    }
-                }),
-                resolve: async (source, args, context, info) => {
-                    const text: string = args.text
-                    const documentReference = await dataBaseCollection.add({
-                        text: text.trim(),
-                        createdAt: admin.firestore.FieldValue.serverTimestamp()
-                    })
-                    const documentData = (await documentReference.get()).data() as { text: string, createdAt: FirebaseFirestore.Timestamp }
-                    return {
-                        id: documentReference.id,
-                        text: documentData.text,
-                        createdAt: documentData.createdAt.toMillis()
-                    }
-                },
-                args: {
-                    text: {
-                        type: graphql.GraphQLNonNull(graphql.GraphQLString),
-                        description: "設定する文字列"
-                    }
-                },
-                description: "データベースに文字列をアップロードする"
-            },
+/**
+ * LINEのtokenのレスポンスから情報を取得する
+ */
+const lineTokenResponseToData = (
+    response: AxiosResponse<{ id_token: string }>
+): Promise<{
+    iss: "https://access.line.me";
+    sub: string;
+    name: string;
+    picture: string;
+}> =>
+    new Promise((resolve, reject) => {
+        const idToken = response.data.id_token;
+        console.log("lineToken id_token=", idToken);
+        jwt.verify(
+            idToken,
+            lineLogInSecret,
+            { algorithms: ["HS256"] },
+            (err, decoded) => {
+                if (err) {
+                    console.log(
+                        "lineTokenの正当性チェックで正当でないと判断された!"
+                    );
+                    reject("token invalid!");
+                    return;
+                }
+                resolve(decoded as {
+                    iss: "https://access.line.me";
+                    sub: string;
+                    name: string;
+                    picture: string;
+                });
+            }
+        );
+    });
 
-*/
+/**
+ * URLのクエリやapplication/x-www-form-urlencodedのデータを作るときに使う
+ * @param queryMap keyとvalueのMap
+ */
+const queryToString = (queryMap: Map<string, string>): string => {
+    const result = [];
+    for (const [key, value] of queryMap.entries()) {
+        result.push(key + "=" + encodeURIComponent(value));
+    }
+    return result.join("&");
+};
+
+/**
+ * ランダムなリフレッシュトークン用のIDを生成する
+ */
+const createRefreshId = (): string => {
+    let id = "";
+    const charTable: string =
+        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for (let i = 0; i < 15; i++) {
+        id += charTable[(Math.random() * charTable.length) | 0];
+    }
+    return id;
+};
+
+/**
+ * リフレッシュトークンを作成する 有効期限はなし
+ * @param uid ユーザーID
+ * @param refreshId リフレッシュトークンが最新のものか調べるためのもの
+ */
+const createRefreshToken = (uid: string, refreshId: string): string => {
+    return jwt.sign(
+        {
+            sub: uid,
+            jti: refreshId
+        },
+        refreshSecretKey,
+        { algorithm: "HS256" }
+    );
+};
+
+/**
+ * アクセストークンを作成する。有効期限は作成時から15分後。
+ * リフレッシュトークンで作成した場合はプロジェクト削除などの重要な操作はできないようにする。
+ * @param uid ユーザーID
+ * @param byRefreshToken リフレッシュトークンから作成したか
+ */
+const createAccessToken = (uid: string, byRefreshToken: boolean): string => {
+    const time = new Date();
+    time.setUTCMinutes(time.getUTCMinutes() + 15);
+    return jwt.sign(
+        {
+            sub: uid,
+            ref: byRefreshToken, //リフレッシュトークンでログインしたか
+            exp: Math.round(time.getTime() / 1000) // 有効期限
+        },
+        accessSecretKey,
+        { algorithm: "HS256" }
+    );
+};
