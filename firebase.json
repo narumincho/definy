@@ -15,6 +15,22 @@
                 "function": "googleLogInReceiver"
             },
             {
+                "source": "/social_login/github",
+                "function": "gitHubLogIn"
+            },
+            {
+                "source": "/social_login/github_receiver",
+                "function": "gitHubLogInReceiver"
+            },
+            {
+                "source": "/social_login/twitter",
+                "function": "twitterLogIn"
+            },
+            {
+                "source": "/social_login/twitter_receiver",
+                "function": "twitterLogInReceiver"
+            },
+            {
                 "source": "/social_login/line",
                 "function": "lineLogIn"
             },

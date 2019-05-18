@@ -98,8 +98,8 @@ userView : Maybe User.User -> Html.Html Msg
 userView userMaybe =
     Html.div
         [ A.style "color" "#ddd"
-        , A.style "display" "flex"
-        , A.style "flex-direction" "column"
+        , A.style "display" "grid"
+        , A.style "gap" "10px"
         ]
         (case userMaybe of
             Just user ->
@@ -132,6 +132,30 @@ userView userMaybe =
                     , A.style "text-align" "center"
                     ]
                     [ Html.text "Googleでログイン" ]
+                , Html.a
+                    [ A.href
+                        (Url.Builder.absolute
+                            [ "social_login", "github" ]
+                            []
+                        )
+                    , A.style "background-color" "#fff"
+                    , A.style "color" "#111"
+                    , A.style "text-decoration" "none"
+                    , A.style "text-align" "center"
+                    ]
+                    [ Html.text "GitHubでログイン" ]
+                , Html.a
+                    [ A.href
+                        (Url.Builder.absolute
+                            [ "social_login", "twitter" ]
+                            []
+                        )
+                    , A.style "background-color" "#fff"
+                    , A.style "color" "#111"
+                    , A.style "text-decoration" "none"
+                    , A.style "text-align" "center"
+                    ]
+                    [ Html.text "Twitterでログイン" ]
                 , Html.a
                     [ A.href
                         (Url.Builder.absolute
