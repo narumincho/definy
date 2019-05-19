@@ -1,6 +1,6 @@
 {
     "hosting": {
-        "public": "hosting_root/dist",
+        "public": "client/dist",
         "rewrites": [
             {
                 "source": "/api",
@@ -41,6 +41,6 @@
         ]
     },
     "functions": {
-        "source": "functions_root/dist"
+        "source": "server/dist"
     }
 }

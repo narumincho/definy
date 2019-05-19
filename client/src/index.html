@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Definy 読み込み中</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="icon" href="/assets/icon.png">
+
+    <script src="/main.js" defer></script>
+    <script type="module">
+        const elmAppElement = document.getElementById("elm-app");
+        elmAppElement.innerText = "プログラムの読み込み中……";
+        requestAnimationFrame(() => {
+            const app = window.Elm.Main.init({
+                node: elmAppElement,
+                flags: { url: location.href, user: null }
+            });
+            let prevKeyEvent;
+            /* キー入力 */
+            window.addEventListener("keydown", (e) => {
+                prevKeyEvent = e;
+                app.ports.keyPressed.send(e);
+            })
+            /*
+                直前のキー入力のデフォルト動作を取り消す
+                なぜかElmのコンパイルをデバッグモードでやるとキー動作を防げない
+            */
+            app.ports.preventDefaultBeforeKeyEvent.subscribe((_) => {
+                console.log("直前のキー入力のデフォルト動作を取り消す", prevKeyEvent);
+                if (prevKeyEvent.currentTarget === null) {
+                    console.log("キーイベントの送信先オブジェクトがない!キー動作を無効化できないと思われる")
+                }
+                prevKeyEvent.preventDefault();
+                app.ports.keyPrevented.send(null);
+            });
+            /* テキストエリア(<textarea id="edit">)に値を設定(編集する前の初期設定用) */
+            app.ports.setTextAreaValue.subscribe(text => {
+                console.log(`テキストエリア(<textarea id="eidt">)に${text}を設定しようとしている`);
+                requestAnimationFrame(() => {
+                    const edit = document.getElementById("edit");
+                    if (edit.value !== text) {
+                        edit.value = text;
+                    }
+                });
+            })
+            // app.ports.selectAllTextAreaValue.subscribe(()=>{
+            //     console.log("テキストエリアの値を全て選択しようとしている")
+            //     const editElement = document.getElementById("edit");
+            //     editElement.selectionStart = 0;
+            //     editElement.selectionEnd = editElement.value.length;
+            // })
+            /* テキストエリア(<textarea|input id="edit">)に強制的にフォーカスさせる */
+            app.ports.focusTextArea.subscribe(e => {
+                console.log(`<textarea id="eidt">にフォーカス`);
+                requestAnimationFrame(() => {
+                    document.getElementById("edit").focus();
+                })
+            })
+            /* クリックイベントをキャプチャフェーズで登録する。複数登録しないように。
+            */
+            app.ports.setClickEventListenerInCapturePhase.subscribe(id => {
+                requestAnimationFrame(() => {
+                    const element = document.getElementById(id);
+                    if (element === undefined) {
+                        console.log(`id=${id}の要素がない`)
+                        return;
+                    }
+                    console.log(`id=${id}にキャプチャフェーズのクリックイベントを追加`);
+                    element.addEventListener("click", e => {
+                        app.ports.fireClickEventInCapturePhase.send(id);
+                    }, { capture: true }
+                    );
+                })
+            });
+            /* 指定されたidの要素が表示されるようにスクロールさせる */
+            app.ports.elementScrollIntoView.subscribe(id => {
+                requestAnimationFrame(() => {
+                    const element = document.getElementById(id);
+                    if (element !== null) {
+                        element.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }
+                })
+            });
+            /* コンパイル結果(WASM)を実行 */
+            app.ports.run.subscribe(compileResult => {
+                WebAssembly.instantiate(new Uint8Array(compileResult.wasm)).then(result => {
+                    const exportFunc = result.instance.exports;
+                    const resultValue = exportFunc[0]();
+                    console.log(result);
+                    console.log("WASMの実行結果", resultValue);
+                    app.ports.runResult.send({
+                        ref: compileResult.ref,
+                        index: compileResult.index,
+                        result: resultValue
+                    });
+                });
+            });
+            /* ウィンドウサイズを変えたら */
+            const windowResizeSend = (e) => {
+                app.ports.windowResize.send({ width: innerWidth, height: innerHeight });
+            }
+            windowResizeSend();
+            window.addEventListener("resize", windowResizeSend);
+            window.addEventListener("contextmenu", (e) => {
+                // e.preventDefault();
+            })
+        });
+
+    </script>
+</head>
+
+<body>
+<div id="elm-app">プログラムをダウンロード中……</div>
+</body>
+
+</html>
