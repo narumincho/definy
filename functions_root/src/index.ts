@@ -3,10 +3,10 @@ import * as admin from "firebase-admin";
 import * as graphql from "graphql";
 import * as graphalExpress from "express-graphql";
 import axios, { AxiosResponse } from "axios";
-import * as secret from "./secret";
 import * as jwt from "jsonwebtoken";
 import { URLSearchParams } from "url";
-import LogInWithTwitter from "./twitterLogIn";
+import * as secret from "./lib/secret";
+import * as logInWithTwitter from "./lib/twitterLogIn";
 
 admin.initializeApp();
 
@@ -41,7 +41,7 @@ const lineLogInSecret: string = secret.lineLogInSecret;
 const refreshSecretKey: string = secret.refreshSecretKey;
 const accessSecretKey: string = secret.accessSecretKey;
 
-console.log("サーバーのプログラムが読み込まれた");
+console.log("サーバーのプログラムが読み込まれた in lib folder");
 /* =====================================================================
  *                          API (GraphQL)
  * =====================================================================
@@ -445,12 +445,11 @@ query {
  */
 export const twitterLogIn = functions.https.onRequest(
     async (request, response) => {
-        const logInTwitter = new LogInWithTwitter(
+        const { tokenSecret, url } = await logInWithTwitter.login(
             twitterLogInClientId,
             twitterLogInSecret,
             twitterLogInRedirectUri
         );
-        const { tokenSecret, url } = await logInTwitter.login();
         await dataBaseTwitterStateCollection.doc("last").set({
             tokenSecret: tokenSecret
         });
@@ -462,11 +461,6 @@ export const twitterLogIn = functions.https.onRequest(
 // こんなようなURLが帰ってきた
 export const twitterLogInReceiver = functions.https.onRequest(
     async (request, response) => {
-        const logInTwitter = new LogInWithTwitter(
-            twitterLogInClientId,
-            twitterLogInSecret,
-            twitterLogInRedirectUri
-        );
         const oauthToken: string | undefined = request.query.oauth_token;
         const oauthVerifier: string | undefined = request.query.oauth_verifier;
         if (oauthToken === undefined || oauthVerifier === undefined) {
@@ -489,7 +483,9 @@ export const twitterLogInReceiver = functions.https.onRequest(
             return;
         }
 
-        const twitterData = await logInTwitter.callback(
+        const twitterData = await logInWithTwitter.callback(
+            twitterLogInClientId,
+            twitterLogInSecret,
             oauthToken,
             oauthVerifier,
             lastData.tokenSecret
