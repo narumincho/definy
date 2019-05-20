@@ -48,6 +48,7 @@ import Project.ModuleDefinition
 import Project.ModuleDefinition.ModuleIndex
 import Project.ModuleDefinition.ModuleWithCache
 import Project.ModuleDefinitionIndex
+import SocialLoginService
 import Task
 import Url
 import User
@@ -75,6 +76,18 @@ port run : { ref : List Int, index : Int, wasm : List Int } -> Cmd msg
 
 
 port elementScrollIntoView : String -> Cmd msg
+
+
+port logInWithGoogle : () -> Cmd msg
+
+
+port logInWithGitHub : () -> Cmd msg
+
+
+port logInWithTwitter : () -> Cmd msg
+
+
+port logInWithLine : () -> Cmd msg
 
 
 
@@ -125,7 +138,8 @@ type Msg
     | ProjectMsg Project.Msg -- プロジェクトへのメッセージ
     | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url.Url
-    | SignOutRequest -- サインアウトを要求する
+    | LogOutRequest -- ログアウトを要求する
+    | LogInRequest SocialLoginService.SocialLoginService
 
 
 {-| 全体を表現する
@@ -367,10 +381,26 @@ update msg model =
             , Cmd.none
             )
 
-        SignOutRequest ->
+        LogOutRequest ->
             ( model
                 |> singOut
             , Cmd.none
+            )
+
+        LogInRequest socialLoginService ->
+            ( model
+            , case socialLoginService of
+                SocialLoginService.Google ->
+                    logInWithGoogle ()
+
+                SocialLoginService.GitHub ->
+                    logInWithGitHub ()
+
+                SocialLoginService.Twitter ->
+                    logInWithTwitter ()
+
+                SocialLoginService.Line ->
+                    logInWithLine ()
             )
 
 
@@ -1042,10 +1072,14 @@ sidePanelUpdate msg model =
 
 {-| ツリーパネルで発生したEmitを全体のMsgに変換する
 -}
+sidePanelEmitToMsg : Panel.Side.Emit -> Msg
 sidePanelEmitToMsg emit =
     case emit of
-        Panel.Side.EmitSingOutRequest ->
-            SignOutRequest
+        Panel.Side.EmitLogOutRequest ->
+            LogOutRequest
+
+        Panel.Side.EmitLogInRequest service ->
+            LogInRequest service
 
 
 {-| エディタグループパネルの更新

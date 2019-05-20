@@ -1,11 +1,11 @@
 import * as crypto from "crypto";
-import * as OAuth from "oauth-1.0a";
-import axios from "axios";
+import OAuth from "./oauthForTwitter";
+import axios, { AxiosError } from "axios";
 import { URLSearchParams } from "url";
 
-const TW_REQ_TOKEN_URL = "https://api.twitter.com/oauth/request_token";
-const TW_AUTH_URL = "https://api.twitter.com/oauth/authenticate";
-const TW_ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token";
+const requestTokenUrl = "https://api.twitter.com/oauth/request_token";
+const authUrl = "https://api.twitter.com/oauth/authenticate";
+const AccessTokenUrl = "https://api.twitter.com/oauth/access_token";
 
 const initOAuth = (consumerKey: string, consumerSecret: string) =>
     new OAuth({
@@ -13,8 +13,8 @@ const initOAuth = (consumerKey: string, consumerSecret: string) =>
             key: consumerKey,
             secret: consumerSecret
         },
-        signature_method: "HMAC-SHA1",
-        hash_function: (baseString, key) =>
+        signatureMethod: "HMAC-SHA1",
+        hashFunction: (baseString, key) =>
             crypto
                 .createHmac("sha1", key)
                 .update(baseString)
@@ -31,7 +31,7 @@ export const login = async (
     url: string;
 }> => {
     const requestData = {
-        url: TW_REQ_TOKEN_URL,
+        url: requestTokenUrl,
         method: "POST",
         data: {
             oauth_callback: callbackUrl
@@ -41,7 +41,9 @@ export const login = async (
     // Get a "request token"
     const oauth = initOAuth(consumerKey, consumerSecret);
     const reqponse = await axios.post(requestData.url, requestData.data, {
-        headers: oauth.toHeader(oauth.authorize(requestData))
+        headers: {
+            Authorization: oauth.toHeaderString(oauth.authorize(requestData))
+        }
     });
     const query = new URLSearchParams(reqponse.data.toString());
 
@@ -55,7 +57,7 @@ export const login = async (
     // Redirect visitor to this URL to authorize the app
     return {
         tokenSecret: query.get("oauth_token_secret") as string,
-        url: `${TW_AUTH_URL}?${new URLSearchParams({
+        url: `${authUrl}?${new URLSearchParams({
             oauth_token: query.get("oauth_token") as string
         }).toString()}`
     };
@@ -69,11 +71,11 @@ export const callback = async (
     oauthVerifier: string,
     tokenSecret: string
 ): Promise<{
-    userName: string;
+    screenName: string;
     userId: string;
 }> => {
     const requestData = {
-        url: TW_ACCESS_TOKEN_URL,
+        url: AccessTokenUrl,
         method: "POST",
         data: {
             oauth_token: oauthToken,
@@ -85,49 +87,64 @@ export const callback = async (
     // Get a user "access token" and "access token secret"
     const oauth = initOAuth(consumerKey, consumerSecret);
     const response = await axios.post(requestData.url, requestData.data, {
-        headers: oauth.toHeader(oauth.authorize(requestData))
+        headers: {
+            Authorization: oauth.toHeaderString(oauth.authorize(requestData))
+        }
     });
     // Ready to make signed requests on behalf of the user
     const query = new URLSearchParams(response.data.toString());
 
     /** Twitterの隠れたID */
     const userId = query.get("user_id") as string;
+    /** @ で始まるID */
+    const screenName = query.get("screen_name") as string;
+
     await getUserDisplayNameAndPicture(
-        oauth,
+        consumerKey,
+        consumerSecret,
         query.get("oauth_token") as string,
         query.get("oauth_token_secret") as string,
-        oauthVerifier,
-        userId
+        screenName
     );
 
     return {
-        userName: query.get("screen_name") as string,
-        userId: query.get("user_id") as string
+        screenName: screenName,
+        userId: userId
     };
 };
 
 const getUserDisplayNameAndPicture = async (
-    oauth: OAuth,
+    consumerKey: string,
+    consumerSecret: string,
     oauthToken: string,
     tokenSecret: string,
-    oauth_verifier: string,
-    userId: string
+    screenName: string
 ) => {
     const requestData = {
-        url: "https://api.twitter.com/1.1/users/show.json",
+        url:
+            "https://api.twitter.com/1.1/users/show.json?" +
+            new URLSearchParams({ screen_name: screenName }),
         method: "GET",
         data: {
             oauth_token: oauthToken,
-            oauth_token_secret: tokenSecret,
-            oauth_verifier: oauth_verifier
+            oauth_token_secret: tokenSecret
         }
     };
-    const response = await axios.get(
-        "https://api.twitter.com/1.1/users/show.json?" +
-            new URLSearchParams({ user_id: userId }),
-        {
-            headers: oauth.toHeader(oauth.authorize(requestData))
-        }
-    );
-    console.log("twitter show.json = ", response.data);
+    const oauth = initOAuth(consumerKey, consumerSecret);
+    console.log("screen_nameで再挑戦", screenName);
+    try {
+        const response = await axios.get(requestData.url, {
+            headers: {
+                Authorization:
+                    oauth.toHeaderString(oauth.authorize(requestData)) +
+                    `,screen_name=${encodeURIComponent("@" + screenName)}`
+            }
+        });
+        console.log("twitter show.json = ", response.data);
+    } catch (e) {
+        console.error("response data", e.response.data);
+        console.error("response status", e.response.status);
+        console.error("response statusText", e.response.statusText);
+        console.error("response headers", e.response.headers);
+    }
 };

@@ -41,7 +41,7 @@ const lineLogInSecret: string = secret.lineLogInSecret;
 const refreshSecretKey: string = secret.refreshSecretKey;
 const accessSecretKey: string = secret.accessSecretKey;
 
-console.log("サーバーのプログラムが読み込まれた in lib folder");
+console.log("サーバーのプログラムが読み込まれた");
 /* =====================================================================
  *                          API (GraphQL)
  * =====================================================================
@@ -73,7 +73,8 @@ const userType = new graphql.GraphQLObjectType({
 const schema = new graphql.GraphQLSchema({
     query: new graphql.GraphQLObjectType({
         name: "Query",
-        description: "データを取得できる",
+        description:
+            "データを取得できる。データを取得したときに影響は他に及ばさない",
         fields: {
             hello: {
                 description: "世界に挨拶する",
@@ -120,6 +121,76 @@ const schema = new graphql.GraphQLSchema({
         name: "Mutations",
         description: "データを作成、更新ができる",
         fields: {
+            getGoogleLogInUrl: {
+                type: graphql.GraphQLNonNull(graphql.GraphQLString),
+                resolve: async (source, args, context, info) => {
+                    const ref = await dataBaseGoogleStateCollection.add({});
+                    return (
+                        "https://accounts.google.com/o/oauth2/v2/auth?" +
+                        new URLSearchParams({
+                            response_type: "code",
+                            client_id: googleLogInClientId,
+                            redirect_uri: googleLogInRedirectUri,
+                            scope: "profile openid",
+                            state: ref.id
+                        }).toString()
+                    );
+                },
+                description:
+                    "Googleで新規登録かログインするための情報を得る。受け取ったURLをlocation.hrefに代入するとかして、Googleの認証画面へ"
+            },
+            getGitHubLogInUrl: {
+                type: graphql.GraphQLNonNull(graphql.GraphQLString),
+                resolve: async (source, args, context, info) => {
+                    const ref = await dataBaseGitHubStateCollection.add({});
+                    return (
+                        "https://github.com/login/oauth/authorize?" +
+                        new URLSearchParams({
+                            response_type: "code",
+                            client_id: gitHubLogInClientId,
+                            redirect_uri: gitHubLogInRedirectUri,
+                            scope: "read:user",
+                            state: ref.id
+                        }).toString()
+                    );
+                },
+                description:
+                    "GitHubで新規登録かログインするためのURLを得る。受け取ったURLをlocation.hrefに代入するとかして、GitHubの認証画面へ"
+            },
+            getTwitterLogInUrl: {
+                type: graphql.GraphQLNonNull(graphql.GraphQLString),
+                resolve: async (source, args, context, info) => {
+                    const { tokenSecret, url } = await logInWithTwitter.login(
+                        twitterLogInClientId,
+                        twitterLogInSecret,
+                        twitterLogInRedirectUri
+                    );
+                    await dataBaseTwitterStateCollection.doc("last").set({
+                        tokenSecret: tokenSecret
+                    });
+                    return url;
+                },
+                description:
+                    "Twitterで新規登録かログインするためのURLを得る。受け取ったURLをlocation.hrefに代入するとかして、Twitterの認証画面へ"
+            },
+            getLineLogInUrl: {
+                type: graphql.GraphQLNonNull(graphql.GraphQLString),
+                resolve: async (source, args, context, info) => {
+                    const ref = await dataBaseLineStateCollection.add({});
+                    return (
+                        "https://access.line.me/oauth2/v2.1/authorize?" +
+                        new URLSearchParams({
+                            response_type: "code",
+                            client_id: lineLogInClientId,
+                            redirect_uri: lineLogInRedirectUri,
+                            scope: "profile openid",
+                            state: ref.id
+                        }).toString()
+                    );
+                },
+                description:
+                    "LINEで新規登録かログインするためのURLを得る。受け取ったURLをlocation.hrefに代入するとかして、LINEの認証画面へ"
+            },
             getAccessToken: {
                 type: new graphql.GraphQLObjectType({
                     name: "AccessTokenAndRefreshToken",
@@ -161,24 +232,6 @@ export const api = functions.https.onRequest(
  *                              Google
  * =====================================================================
  */
-export const googleLogIn = functions.https.onRequest(
-    async (request, response) => {
-        const ref = await dataBaseGoogleStateCollection.add({});
-        response.redirect(
-            "https://accounts.google.com/o/oauth2/v2/auth?" +
-                new URLSearchParams(
-                    new Map([
-                        ["response_type", "code"],
-                        ["client_id", googleLogInClientId],
-                        ["redirect_uri", googleLogInRedirectUri],
-                        ["scope", "profile openid"],
-                        ["state", ref.id]
-                    ])
-                ).toString()
-        );
-    }
-);
-
 /**
  * Googleでログインをしたあとのリダイレクト先
  */
@@ -303,23 +356,6 @@ const googleTokenResponseToData = (
  *                              GitHub
  * =====================================================================
  */
-export const gitHubLogIn = functions.https.onRequest(
-    async (request, response) => {
-        const ref = await dataBaseGitHubStateCollection.add({});
-        response.redirect(
-            "https://github.com/login/oauth/authorize?" +
-                new URLSearchParams(
-                    new Map([
-                        ["response_type", "code"],
-                        ["client_id", gitHubLogInClientId],
-                        ["redirect_uri", gitHubLogInRedirectUri],
-                        ["scope", "read:user"],
-                        ["state", ref.id]
-                    ])
-                ).toString()
-        );
-    }
-);
 /** GitHubでログインをしたあとのリダイレクト先 */
 export const gitHubLogInReceiver = functions.https.onRequest(
     async (request, response) => {
@@ -443,20 +479,6 @@ query {
  *                             Twitter
  * =====================================================================
  */
-export const twitterLogIn = functions.https.onRequest(
-    async (request, response) => {
-        const { tokenSecret, url } = await logInWithTwitter.login(
-            twitterLogInClientId,
-            twitterLogInSecret,
-            twitterLogInRedirectUri
-        );
-        await dataBaseTwitterStateCollection.doc("last").set({
-            tokenSecret: tokenSecret
-        });
-        response.redirect(url);
-    }
-);
-
 // https://definy-lang.firebaseapp.com/social_login/twitter_receiver?oauth_token=KF8BhAAAAAAA-elOAAABasnr89A&oauth_verifier=gjPOKoPD7ZG3wytwexrQmPWRQhCYNjLE
 // こんなようなURLが帰ってきた
 export const twitterLogInReceiver = functions.https.onRequest(
@@ -524,8 +546,11 @@ export const twitterLogInReceiver = functions.https.onRequest(
         const refreshId = createRefreshId();
         const newUserData = await dataBaseUserCollection.add({
             twitterAccountId: twitterData.userId,
-            displayName: twitterData.userName,
-            imageUrl: "",
+            displayName: twitterData.screenName,
+            imageUrl:
+                "https://twitter.com/" +
+                twitterData.screenName +
+                "/profile_image?size=original",
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             newestRefreshId: refreshId
         });
@@ -547,26 +572,8 @@ export const twitterLogInReceiver = functions.https.onRequest(
  *                              LINE
  * =====================================================================
  */
-export const lineLogIn = functions.https.onRequest(
-    async (request, response) => {
-        const ref = await dataBaseLineStateCollection.add({});
-        response.redirect(
-            "https://access.line.me/oauth2/v2.1/authorize?" +
-                new URLSearchParams(
-                    new Map([
-                        ["response_type", "code"],
-                        ["client_id", lineLogInClientId],
-                        ["redirect_uri", lineLogInRedirectUri],
-                        ["scope", "profile openid"],
-                        ["state", ref.id]
-                    ])
-                ).toString()
-        );
-    }
-);
-
 /** LINEでログインをしたあとのリダイレクト先 */
-export const lineLogInCodeReceiver = functions.https.onRequest(
+export const lineLogInReceiver = functions.https.onRequest(
     async (request, response) => {
         console.log("lineLogInCodeReceiver", request.query);
         const code: string | undefined = request.query.code;

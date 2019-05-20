@@ -7,36 +7,20 @@
                 "function": "api"
             },
             {
-                "source": "/social_login/google",
-                "function": "googleLogIn"
-            },
-            {
                 "source": "/social_login/google_receiver",
                 "function": "googleLogInReceiver"
-            },
-            {
-                "source": "/social_login/github",
-                "function": "gitHubLogIn"
             },
             {
                 "source": "/social_login/github_receiver",
                 "function": "gitHubLogInReceiver"
             },
             {
-                "source": "/social_login/twitter",
-                "function": "twitterLogIn"
-            },
-            {
                 "source": "/social_login/twitter_receiver",
                 "function": "twitterLogInReceiver"
             },
             {
-                "source": "/social_login/line",
-                "function": "lineLogIn"
-            },
-            {
-                "source": "/social_login/line_code_receiver",
-                "function": "lineLogInCodeReceiver"
+                "source": "/social_login/line_receiver",
+                "function": "lineLogInReceiver"
             }
         ]
     },

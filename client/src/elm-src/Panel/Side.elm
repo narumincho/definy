@@ -14,12 +14,12 @@ module Panel.Side exposing
 import Html
 import Html.Attributes as A
 import Html.Events
-import Url.Builder
+import SocialLoginService
 import User
 
 
 type Model
-    = Model { selectTab : Tab }
+    = Model { selectTab : Tab, waitLogInUrl : Maybe SocialLoginService.SocialLoginService }
 
 
 type Msg
@@ -29,10 +29,12 @@ type Msg
     | SelectParentOrTreeClose
     | SelectFirstChildOrTreeOpen
     | ToFocusEditorPanel
+    | LogInRequest SocialLoginService.SocialLoginService
 
 
 type Emit
-    = EmitSingOutRequest
+    = EmitLogOutRequest
+    | EmitLogInRequest SocialLoginService.SocialLoginService
 
 
 type Tab
@@ -47,27 +49,35 @@ type Tab
 initModel : Model
 initModel =
     Model
-        { selectTab = ModuleTree }
+        { selectTab = ModuleTree, waitLogInUrl = Nothing }
 
 
 update : Msg -> Model -> ( Model, List Emit )
-update msg model =
+update msg (Model rec) =
     case msg of
         SignOutRequest ->
-            ( model
-            , [ EmitSingOutRequest ]
+            ( Model rec
+            , [ EmitLogOutRequest ]
+            )
+
+        LogInRequest service ->
+            ( Model
+                { rec
+                    | waitLogInUrl = Just service
+                }
+            , [ EmitLogInRequest service ]
             )
 
         _ ->
-            ( model
+            ( Model rec
             , []
             )
 
 
 view : Maybe User.User -> Model -> List (Html.Html Msg)
-view user (Model { selectTab }) =
+view user (Model { selectTab, waitLogInUrl }) =
     [ definyLogo
-    , userView user
+    , userView user waitLogInUrl
     , project
     ]
 
@@ -94,15 +104,15 @@ definyLogo =
         ]
 
 
-userView : Maybe User.User -> Html.Html Msg
-userView userMaybe =
+userView : Maybe User.User -> Maybe SocialLoginService.SocialLoginService -> Html.Html Msg
+userView userMaybe logInServiceMaybe =
     Html.div
         [ A.style "color" "#ddd"
         , A.style "display" "grid"
         , A.style "gap" "10px"
         ]
-        (case userMaybe of
-            Just user ->
+        (case ( userMaybe, logInServiceMaybe ) of
+            ( Just user, _ ) ->
                 [ Html.div
                     [ A.style "display" "flex" ]
                     [ Html.img
@@ -119,49 +129,36 @@ userView userMaybe =
                     [ Html.text "サインアウトする" ]
                 ]
 
-            Nothing ->
-                [ Html.a
-                    [ A.href
-                        (Url.Builder.absolute
-                            [ "social_login", "google" ]
-                            []
-                        )
+            ( Nothing, Just service ) ->
+                [ Html.text (SocialLoginService.serviceName service ++ "のURLを発行中") ]
+
+            ( Nothing, Nothing ) ->
+                [ Html.button
+                    [ Html.Events.onClick (LogInRequest SocialLoginService.Google)
                     , A.style "background-color" "#fff"
                     , A.style "color" "#111"
                     , A.style "text-decoration" "none"
                     , A.style "text-align" "center"
                     ]
                     [ Html.text "Googleでログイン" ]
-                , Html.a
-                    [ A.href
-                        (Url.Builder.absolute
-                            [ "social_login", "github" ]
-                            []
-                        )
+                , Html.button
+                    [ Html.Events.onClick (LogInRequest SocialLoginService.GitHub)
                     , A.style "background-color" "#fff"
                     , A.style "color" "#111"
                     , A.style "text-decoration" "none"
                     , A.style "text-align" "center"
                     ]
                     [ Html.text "GitHubでログイン" ]
-                , Html.a
-                    [ A.href
-                        (Url.Builder.absolute
-                            [ "social_login", "twitter" ]
-                            []
-                        )
+                , Html.button
+                    [ Html.Events.onClick (LogInRequest SocialLoginService.Twitter)
                     , A.style "background-color" "#fff"
                     , A.style "color" "#111"
                     , A.style "text-decoration" "none"
                     , A.style "text-align" "center"
                     ]
                     [ Html.text "Twitterでログイン" ]
-                , Html.a
-                    [ A.href
-                        (Url.Builder.absolute
-                            [ "social_login", "line" ]
-                            []
-                        )
+                , Html.button
+                    [ Html.Events.onClick (LogInRequest SocialLoginService.Line)
                     , A.style "background-color" "#fff"
                     , A.style "color" "#111"
                     , A.style "text-decoration" "none"

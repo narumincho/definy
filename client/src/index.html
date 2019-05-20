@@ -106,13 +106,59 @@
             window.addEventListener("contextmenu", (e) => {
                 // e.preventDefault();
             })
+            const callApi = (query, callBack) => {
+                fetch("/api", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        variables: null
+                    })
+                }).then(response =>
+                    response.json()
+                ).then(json => {
+                    callBack(json.data)
+                })
+            }
+
+            app.ports.logInWithGoogle.subscribe(() => {
+                callApi(`
+mutation {
+    getGoogleLogInUrl
+}
+`, data => { location.href = data.getGoogleLogInUrl })
+            });
+            app.ports.logInWithGitHub.subscribe(() => {
+                callApi(`
+mutation {
+    getGitHubLogInUrl
+}
+`, data => { location.href = data.getGitHubLogInUrl })
+            });
+            app.ports.logInWithTwitter.subscribe(() => {
+                callApi(`
+mutation {
+    getTwitterLogInUrl
+}
+`, data => { location.href = data.getTwitterLogInUrl })
+            });
+            app.ports.logInWithLine.subscribe(() => {
+                callApi(`
+mutation {
+    getTwitterLogInUrl
+}
+`, data => { location.href = data.getTwitterLogInUrl })
+
+            });
         });
 
     </script>
 </head>
 
 <body>
-<div id="elm-app">プログラムをダウンロード中……</div>
+    <div id="elm-app">プログラムをダウンロード中……</div>
 </body>
 
 </html>
