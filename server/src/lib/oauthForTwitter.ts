@@ -1,295 +1,157 @@
+import * as crypto from "crypto";
+import { URL, URLSearchParams } from "url";
+
 /**
  * TwitterのためにつくったOAuth認証。OAuth 1.0 Revision A
  * 仕様書 https://oauth.net/core/1.0a/
  * 仕様書の日本語翻訳 https://openid-foundation-japan.github.io/rfc5849.ja.html
  */
 
+const signatureMethod = "HMAC-SHA1";
+const hashFunction = (data: string, key: string) =>
+    crypto
+        .createHmac("sha1", key)
+        .update(data)
+        .digest("base64");
+
 /**
- * Constructor
- * @param {Object} opts consumer key (API key) and secret
+ * OAuth request authorize
  */
-export default class OAuth {
-    private consumer: Consumer;
-    private version = "1.0" as const;
-    private parameter_seperator = ", " as const;
-    private last_ampersand = true as const;
-    private signature_method: string;
-    private hash_function: HashFunction;
-
-    constructor(opts: {
-        consumer: Consumer;
-        hashFunction: HashFunction;
-        signatureMethod: string;
-    }) {
-        this.consumer = opts.consumer;
-
-        this.signature_method = opts.signatureMethod;
-
-        this.hash_function = opts.hashFunction;
-
-        if (!opts.hashFunction) {
-            throw new Error("hash_function option is required");
-        }
-
-        this.hash_function = opts.hashFunction;
-    }
-
-    /**
-     * OAuth request authorize
-     */
-    authorize = (request: RequestOptions): Authorization => {
-        const data: Data = {
-            oauth_consumer_key: this.consumer.key,
-            oauth_nonce: createNonce(),
-            oauth_signature_method: this.signature_method,
-            oauth_timestamp: this.getTimeStamp(),
-            oauth_version: this.version
-        };
-        return {
+export const getAuthorizationHeaderValue = (
+    consumerApiKey: Consumer,
+    tokenSecret: string | null,
+    requestUrl: URL,
+    requestMethod: "POST" | "GET",
+    requestData: Map<string, string>
+): string => {
+    const data: Map<string, string> = new Map([
+        ["oauth_consumer_key", consumerApiKey.key],
+        ["oauth_nonce", createNonce()],
+        ["oauth_signature_method", signatureMethod],
+        ["oauth_timestamp", getTimeStampString()],
+        ["oauth_version", "1.0"]
+    ]);
+    const headerString = toHeaderString(
+        new Map([
             ...data,
-            oauth_signature: this.getSignature(request, undefined, data)
-        };
-    };
-
-    /**
-     * Create a OAuth Signature
-     */
-    getSignature = (
-        request: RequestOptions,
-        token_secret: string | undefined,
-        oauth_data: Data
-    ): string =>
-        this.hash_function(
-            this.getBaseString(request, oauth_data),
-            this.getSigningKey(token_secret)
-        );
-
-    /**
-     * Base String = Method + Base Url + ParameterString
-     * @param  {Object} request data
-     * @param  {Object} OAuth data
-     * @return {String} Base String
-     */
-    getBaseString = (request: RequestOptions, oauth_data: Data): string =>
-        request.method.toUpperCase() +
-        "&" +
-        this.percentEncode(this.getBaseUrl(request.url)) +
-        "&" +
-        this.percentEncode(this.getParameterString(request, oauth_data));
-
-    /**
-     * Get data from url
-     * -> merge with oauth data
-     * -> percent encode key & value
-     * -> sort
-     */
-    getParameterString = (
-        request: RequestOptions,
-        oauth_data: Data
-    ): string => {
-        var base_string_data = sortObject(
-            this.percentEncodeData(
-                mergeObject(
-                    oauth_data,
-                    mergeObject(request.data, this.deParamUrl(request.url))
+            ...requestData, // urlからのパラメーターは不要なのか? headerにつけるのはoauth_のキーから始まるもののみ
+            [
+                "oauth_signature",
+                getSignature(
+                    requestUrl,
+                    requestMethod,
+                    requestData,
+                    consumerApiKey,
+                    tokenSecret,
+                    data
                 )
-            )
+            ]
+        ])
+    );
+    console.log("header string", headerString);
+    return headerString;
+};
+
+/**
+ * Get OAuth data as Header
+ */
+const toHeaderString = (data: Map<string, string>): string =>
+    "OAuth " +
+    mapToSortedArray(data)
+        .map(
+            ([key, value]) => `${percentEncode(key)}="${percentEncode(value)}"`
+        )
+        .join(", ");
+
+/**
+ * Create a OAuth Signature
+ */
+const getSignature = (
+    requestUrl: URL,
+    requestMethod: "POST" | "GET",
+    requestData: Map<string, string>,
+    consumerApiKey: Consumer,
+    tokenSecret: string | null,
+    oauthData: Map<string, string>
+): string =>
+    hashFunction(
+        getBaseString(requestUrl, requestMethod, requestData, oauthData),
+        getSigningKey(consumerApiKey, tokenSecret)
+    );
+
+/**
+ * Base String = Method + Base Url + ParameterString
+ */
+const getBaseString = (
+    requestUrl: URL,
+    requestMethod: "POST" | "GET",
+    requestData: Map<string, string>,
+    oauth_data: Map<string, string>
+): string => {
+    const base =
+        requestMethod +
+        "&" +
+        percentEncode(requestUrl.origin + requestUrl.pathname) +
+        "&" +
+        percentEncode(
+            getParameterString(requestUrl.searchParams, requestData, oauth_data)
         );
+    console.log("base", base);
+    return base;
+};
+/**
+ * Get data from url
+ * -> merge with oauth data
+ * -> percent encode key & value
+ * -> sort
+ */
+const getParameterString = (
+    requestUrlSerchParms: URLSearchParams,
+    requestData: Map<string, string>,
+    oauthData: Map<string, string>
+): string =>
+    [...oauthData, ...requestData, ...requestUrlSerchParms.entries()]
+        .sort()
+        .map(([key, value]) => {
+            console.log("parameter", key, value);
+            return percentEncode(key) + "=" + percentEncode(value);
+        })
+        .join("&");
 
-        var data_str = "";
+/**
+ * Create a Signing Key
+ */
+const getSigningKey = (
+    consumerApiKey: Consumer,
+    tokenSecret: string | null
+): string => {
+    return (
+        percentEncode(consumerApiKey.secret) +
+        "&" +
+        (tokenSecret === null ? "" : percentEncode(tokenSecret))
+    );
+};
 
-        //base_string_data to string
-        for (var i = 0; i < base_string_data.length; i++) {
-            var key = base_string_data[i].key;
-            var value = base_string_data[i].value;
-            // check if the value is an array
-            // this means that this key has multiple values
-            if (value && Array.isArray(value)) {
-                // sort the array first
-                value.sort();
+/**
+ * Form data encoding.
+ */
+const percentEncode = (str: string): string =>
+    encodeURIComponent(str)
+        .replace(/\!/g, "%21")
+        .replace(/\*/g, "%2A")
+        .replace(/\'/g, "%27")
+        .replace(/\(/g, "%28")
+        .replace(/\)/g, "%29");
 
-                var valString = "";
-                // serialize all values for this key: e.g. formkey=formvalue1&formkey=formvalue2
-                value.forEach((item, i) => {
-                    valString += key + "=" + item;
-                    if (i < value.length) {
-                        valString += "&";
-                    }
-                });
-                data_str += valString;
-            } else {
-                data_str += key + "=" + value + "&";
-            }
-        }
-
-        //remove the last character
-        data_str = data_str.substr(0, data_str.length - 1);
-        return data_str;
-    };
-
-    /**
-     * Create a Signing Key
-     */
-    getSigningKey = (token_secret: string | undefined): string => {
-        token_secret = token_secret || "";
-
-        if (!this.last_ampersand && !token_secret) {
-            return this.percentEncode(this.consumer.secret);
-        }
-
-        return (
-            this.percentEncode(this.consumer.secret) +
-            "&" +
-            this.percentEncode(token_secret)
-        );
-    };
-
-    /**
-     * Get base url
-     */
-    getBaseUrl = (url: string) => {
-        return url.split("?")[0];
-    };
-
-    /**
-     * Get data from String
-     * @param  {String} string
-     * @return {Object}
-     */
-    deParam = (string: string): Param => {
-        var arr = string.split("&");
-        var data = {};
-
-        for (let i = 0; i < arr.length; i++) {
-            var item = arr[i].split("=");
-
-            // '' value
-            item[1] = item[1] || "";
-
-            // check if the key already exists
-            // this can occur if the QS part of the url contains duplicate keys like this: ?formkey=formvalue1&formkey=formvalue2
-            if (data[item[0]]) {
-                // the key exists already
-                if (!Array.isArray(data[item[0]])) {
-                    // replace the value with an array containing the already present value
-                    data[item[0]] = [data[item[0]]];
-                }
-                // and add the new found value to it
-                data[item[0]].push(decodeURIComponent(item[1]));
-            } else {
-                // it doesn't exist, just put the found value in the data object
-                data[item[0]] = decodeURIComponent(item[1]);
-            }
-        }
-
-        return data;
-    };
-
-    /**
-     * Get data from url
-     */
-    deParamUrl = (url: string): Param => {
-        var tmp = url.split("?");
-
-        if (tmp.length === 1) {
-            return {};
-        }
-
-        return this.deParam(tmp[1]);
-    };
-
-    /**
-     * Form data encoding.
-     */
-    percentEncode = (str: string): string =>
-        encodeURIComponent(str)
-            .replace(/\!/g, "%21")
-            .replace(/\*/g, "%2A")
-            .replace(/\'/g, "%27")
-            .replace(/\(/g, "%28")
-            .replace(/\)/g, "%29");
-
-    /**
-     * Percent Encode Object
-     */
-    percentEncodeData = data => {
-        var result = {};
-
-        for (var key in data) {
-            var value = data[key];
-            // check if the value is an array
-            if (value && Array.isArray(value)) {
-                var newValue = [];
-                // percentEncode every value
-                value.forEach(val => {
-                    newValue.push(this.percentEncode(val));
-                });
-                value = newValue;
-            } else {
-                value = this.percentEncode(value);
-            }
-            result[this.percentEncode(key)] = value;
-        }
-
-        return result;
-    };
-
-    /**
-     * Get OAuth data as Header
-     */
-    toHeaderString = (oauth_data: Authorization): string => {
-        var sorted = sortObject(oauth_data);
-
-        var header_value = "OAuth ";
-
-        for (let i = 0; i < sorted.length; i++) {
-            if (sorted[i].key.indexOf("oauth_") !== 0) continue;
-
-            header_value +=
-                this.percentEncode(sorted[i].key) +
-                '="' +
-                this.percentEncode(sorted[i].value) +
-                '"' +
-                this.parameter_seperator;
-        }
-
-        return header_value.substr(
-            0,
-            header_value.length - this.parameter_seperator.length
-        ); //cut the last chars
-    };
-
-    /**
-     * Get Current Unix TimeStamp
-     */
-    getTimeStamp = (): number => Math.floor(new Date().getTime() / 1000);
-}
+/**
+ * Get Current Unix TimeStamp
+ */
+const getTimeStampString = (): string =>
+    Math.floor(new Date().getTime() / 1000).toString();
 
 interface Consumer {
     key: string;
     secret: string;
-}
-
-type HashFunction = (base_string: any, key: any) => string;
-
-interface Data {
-    oauth_consumer_key: string;
-    oauth_nonce: string;
-    oauth_signature_method: string;
-    oauth_timestamp: number;
-    oauth_version: string;
-    oauth_token?: string;
-    oauth_body_hash?: string;
-}
-
-interface Authorization extends Data {
-    oauth_signature: string;
-}
-
-interface RequestOptions {
-    url: string;
-    method: string;
-    data: any;
 }
 
 interface Param {
@@ -297,7 +159,7 @@ interface Param {
 }
 
 /**
- * Create a random word characters string with input length
+ * ランダムなNonceをつくる
  */
 const createNonce = (): string => {
     const word_characters =
@@ -314,30 +176,7 @@ const createNonce = (): string => {
 };
 
 /**
- * Merge object
+ * マップをキーでソートしたArray<[string, string]>を返す
  */
-const mergeObject = <T, U>(obj1: T, obj2: U): T & U => ({ ...obj1, ...obj2 });
-
-/**
- * Sort object by key
- * @param  {Object} data
- * @return {Array} sorted array
- */
-const sortObject = <O extends { [k: string]: any }, K extends string>(
-    data: O
-): Array<{ key: keyof O; value: O[K] }> => {
-    var keys = Object.keys(data);
-    var result = [];
-
-    keys.sort();
-
-    for (var i = 0; i < keys.length; i++) {
-        var key = keys[i];
-        result.push({
-            key: key,
-            value: data[key]
-        });
-    }
-
-    return result;
-};
+const mapToSortedArray = (map: Map<string, string>): Array<[string, string]> =>
+    [...map.entries()].sort();

@@ -1,19 +1,14 @@
 {
-  "compilerOptions": {
-    "target": "es2019",
-    "module": "commonjs",
-    "lib": [
-      "es2019",
-      "esnext.asynciterable"
-    ],
-    "strict": true,
-    "moduleResolution": "node",
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "removeComments": true,
-    "outDir": "../dist"
-  },
-  "files": [
-    "./index.ts"
-  ]
+    "compilerOptions": {
+        "target": "es2019",
+        "module": "commonjs",
+        "lib": ["es2019", "esnext.asynciterable"],
+        "strict": true,
+        "moduleResolution": "node",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "removeComments": true,
+        "outDir": "../dist"
+    },
+    "files": ["./index.ts"]
 }

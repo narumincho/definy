@@ -11,10 +11,9 @@
     "dependencies": {
         "axios": "^0.18.0",
         "express-graphql": "^0.8.0",
-        "firebase-admin": "^7.3.0",
+        "firebase-admin": "^7.4.0",
         "firebase-functions": "^2.3.1",
         "graphql": "^14.3.0",
-        "oauth-1.0a": "^2.2.5",
         "reflect-metadata": "^0.1.13",
         "type-graphql": "^0.17.4"
     },

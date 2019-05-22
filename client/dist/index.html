@@ -130,21 +130,21 @@ mutation {
 }
 `, data => { location.href = data.getGoogleLogInUrl })
             });
-            app.ports.logInWithGitHub.subscribe(async () => {
+            app.ports.logInWithGitHub.subscribe(() => {
                 callApi(`
 mutation {
     getGitHubLogInUrl
 }
 `, data => { location.href = data.getGitHubLogInUrl })
             });
-            app.ports.logInWithTwitter.subscribe(async () => {
+            app.ports.logInWithTwitter.subscribe(() => {
                 callApi(`
 mutation {
     getTwitterLogInUrl
 }
 `, data => { location.href = data.getTwitterLogInUrl })
             });
-            app.ports.logInWithLine.subscribe(async () => {
+            app.ports.logInWithLine.subscribe(() => {
                 callApi(`
 mutation {
     getTwitterLogInUrl

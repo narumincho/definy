@@ -26,6 +26,7 @@ const dataBaseTwitterStateCollection: FirebaseFirestore.CollectionReference = da
 const dataBaseLineStateCollection: FirebaseFirestore.CollectionReference = dataBase.collection(
     "lineState"
 );
+
 const googleLogInRedirectUri = "https://definy-lang.firebaseapp.com/social_login/google_receiver" as const;
 const googleLogInClientId = "8347840964-l3796imv2d11d0qi8cnb6r48n5jabk9t.apps.googleusercontent.com" as const;
 const googleLogInSecret: string = secret.googleLogInSecret;
@@ -546,11 +547,8 @@ export const twitterLogInReceiver = functions.https.onRequest(
         const refreshId = createRefreshId();
         const newUserData = await dataBaseUserCollection.add({
             twitterAccountId: twitterData.userId,
-            displayName: twitterData.screenName,
-            imageUrl:
-                "https://twitter.com/" +
-                twitterData.screenName +
-                "/profile_image?size=original",
+            displayName: twitterData.name,
+            imageUrl: twitterData.picture.toString(),
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             newestRefreshId: refreshId
         });
