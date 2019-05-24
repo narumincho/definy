@@ -4,9 +4,10 @@ import * as graphql from "graphql";
 import * as graphalExpress from "express-graphql";
 import axios, { AxiosResponse } from "axios";
 import * as jwt from "jsonwebtoken";
-import { URLSearchParams } from "url";
+import { URLSearchParams, URL } from "url";
 import * as secret from "./lib/secret";
 import * as logInWithTwitter from "./lib/twitterLogIn";
+import { user } from "firebase-functions/lib/providers/auth";
 
 admin.initializeApp();
 
@@ -161,7 +162,10 @@ const schema = new graphql.GraphQLSchema({
             getTwitterLogInUrl: {
                 type: graphql.GraphQLNonNull(graphql.GraphQLString),
                 resolve: async (source, args, context, info) => {
-                    const { tokenSecret, url } = await logInWithTwitter.login(
+                    const {
+                        tokenSecret,
+                        url
+                    } = await logInWithTwitter.getLoginUrl(
                         twitterLogInClientId,
                         twitterLogInSecret,
                         twitterLogInRedirectUri
@@ -288,7 +292,7 @@ export const googleLogInReceiver = functions.https.onRequest(
             .get();
         // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
         if (!exsitsData.empty) {
-            console.log("LINEで登録したユーザーがいた");
+            console.log("Googleで登録したユーザーがいた");
             const doc: FirebaseFirestore.QueryDocumentSnapshot =
                 exsitsData.docs[0];
             const docData = doc.data();
@@ -312,7 +316,7 @@ export const googleLogInReceiver = functions.https.onRequest(
             return;
         }
         // ユーザーが存在しないなら作成し、リフレッシュトークンを返す
-        console.log("LINEで登録したユーザーがいなかった");
+        console.log("Googleで登録したユーザーがいなかった");
         const refreshId = createRefreshId();
         const newUserData = await dataBaseUserCollection.add({
             googleAccountId: googleData.sub,
@@ -321,6 +325,7 @@ export const googleLogInReceiver = functions.https.onRequest(
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             newestRefreshId: refreshId
         });
+        await getAndSaveUserImage(newUserData.id, new URL(googleData.picture));
         response.redirect(
             "/?" +
                 new URLSearchParams(
@@ -462,6 +467,7 @@ query {
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             newestRefreshId: refreshId
         });
+        await getAndSaveUserImage(newUserData.id, new URL(userData.avatarUrl));
         response.redirect(
             "/?" +
                 new URLSearchParams(
@@ -504,7 +510,7 @@ export const twitterLogInReceiver = functions.https.onRequest(
             return;
         }
 
-        const twitterData = await logInWithTwitter.callback(
+        const twitterData = await logInWithTwitter.authn(
             twitterLogInClientId,
             twitterLogInSecret,
             oauthToken,
@@ -512,14 +518,8 @@ export const twitterLogInReceiver = functions.https.onRequest(
             lastData.tokenSecret
         );
 
-        if (twitterData === null) {
-            console.error("ユーザー情報を取得できなかった");
-            response.send("ユーザー情報を取得できなかった");
-            return;
-        }
-
         const exsitsData: FirebaseFirestore.QuerySnapshot = await dataBaseUserCollection
-            .where("twitterAccountId", "==", twitterData.userId)
+            .where("twitterAccountId", "==", twitterData.twitterUserId)
             .get();
         // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
         if (!exsitsData.empty) {
@@ -549,36 +549,50 @@ export const twitterLogInReceiver = functions.https.onRequest(
         // ユーザーが存在しないなら作成し、リフレッシュトークンを返す
         console.log("Twitterで登録したユーザーがいなかった");
         const refreshId = createRefreshId();
-        const newUserData = await dataBaseUserCollection.add({
-            twitterAccountId: twitterData.userId,
-            displayName: twitterData.name,
-            image: twitterData.picture,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            newestRefreshId: refreshId
-        });
-        const userImageFile = admin
-            .storage()
-            .bucket()
-            .file("user_image/" + newUserData.id + ".jpg");
-        const stream = userImageFile.createWriteStream();
-        stream.write(twitterData.picture);
-        stream.end(() => {
-            response.redirect(
-                "/?" +
-                    new URLSearchParams(
-                        new Map([
-                            [
-                                "refreshToken",
-                                createRefreshToken(newUserData.id, refreshId)
-                            ],
-                            [
-                                "accessToken",
-                                createAccessToken(newUserData.id, true)
-                            ]
-                        ])
-                    ).toString()
-            );
-        });
+
+        switch (twitterData.c) {
+            case logInWithTwitter.AuthReturnC.NormalAccount: {
+                const userId = (await dataBaseUserCollection.add({
+                    twitterAccountId: twitterData.twitterUserId,
+                    displayName: twitterData.name,
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                    newestRefreshId: refreshId
+                })).id;
+                await getAndSaveUserImage(userId, twitterData.imageUrl);
+                response.redirect(
+                    "/?" +
+                        new URLSearchParams(
+                            new Map([
+                                [
+                                    "refreshToken",
+                                    createRefreshToken(userId, refreshId)
+                                ],
+                                ["accessToken", createAccessToken(userId, true)]
+                            ])
+                        ).toString()
+                );
+            }
+            case logInWithTwitter.AuthReturnC.SecretAccount: {
+                const userId = (await dataBaseUserCollection.add({
+                    twitterAccountId: twitterData.twitterUserId,
+                    displayName: "名無しさん",
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                    newestRefreshId: refreshId
+                })).id;
+                response.redirect(
+                    "/?" +
+                        new URLSearchParams(
+                            new Map([
+                                [
+                                    "refreshToken",
+                                    createRefreshToken(userId, refreshId)
+                                ],
+                                ["accessToken", createAccessToken(userId, true)]
+                            ])
+                        ).toString()
+                );
+            }
+        }
     }
 );
 /* =====================================================================
@@ -670,6 +684,7 @@ export const lineLogInReceiver = functions.https.onRequest(
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             newestRefreshId: refreshId
         });
+        await getAndSaveUserImage(newUserData.id, new URL(lineData.picture));
         response.redirect(
             "/?" +
                 new URLSearchParams(
@@ -769,3 +784,32 @@ const createAccessToken = (uid: string, byRefreshToken: boolean): string => {
         { algorithm: "HS256" }
     );
 };
+
+/**
+ * ユーザーのプロフィール画像の取得と保存
+ * @param userId DefinyのuserId
+ * @param imageUrl 画像のURL
+ */
+const getAndSaveUserImage = async (
+    userId: string,
+    imageUrl: URL
+): Promise<void> =>
+    new Promise(async (resolve, reject) => {
+        const response = await axios.get(imageUrl.toString(), {
+            responseType: "arraybuffer"
+        });
+        const arrayBuffer: ArrayBuffer = response.data;
+        const mimeType: string = response.headers["content-type"];
+
+        const userImageFile = admin
+            .storage()
+            .bucket()
+            .file("user_image/" + userId);
+        const stream = userImageFile.createWriteStream({
+            metadata: { contentType: mimeType }
+        });
+        stream.write(arrayBuffer);
+        stream.end(() => {
+            resolve();
+        });
+    });

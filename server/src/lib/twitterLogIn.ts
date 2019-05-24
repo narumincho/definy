@@ -1,6 +1,7 @@
 import * as oauthForTwitter from "./oauthForTwitter";
 import axios from "axios";
 import { URLSearchParams, URL } from "url";
+import { user } from "firebase-functions/lib/providers/auth";
 
 const requestTokenUrl = new URL("https://api.twitter.com/oauth/request_token");
 const authUrl = new URL("https://api.twitter.com/oauth/authenticate");
@@ -9,8 +10,8 @@ const accessTokenUrl: URL = new URL(
 );
 const bearerTokenUrl = new URL("https://api.twitter.com/oauth2/token");
 
-/** ログイン処理 */
-export const login = async (
+/** ログインするためのURLを取得 */
+export const getLoginUrl = async (
     consumerKey: string,
     consumerSecret: string,
     callbackUrl: string
@@ -45,17 +46,13 @@ export const login = async (
     };
 };
 
-export const callback = async (
+export const authn = async (
     consumerKey: string,
     consumerSecret: string,
     oauthToken: string,
     oauthVerifier: string,
     tokenSecret: string
-): Promise<{
-    name: string;
-    picture: ArrayBuffer;
-    userId: string;
-} | null> => {
+): Promise<AuthReturn> => {
     const response = await axios.post(
         accessTokenUrl.toString(),
         {
@@ -87,14 +84,36 @@ export const callback = async (
 
     try {
         return {
+            c: AuthReturnC.NormalAccount,
             name: await getUserName(consumerKey, consumerSecret, screenName),
-            picture: await getUserImage(screenName),
-            userId: userId
+            imageUrl: new URL(
+                `https://twitter.com/${screenName}/profile_image?size=original`
+            ),
+            twitterUserId: userId
         };
     } catch (error) {
-        return null;
+        return { c: AuthReturnC.SecretAccount, twitterUserId: userId };
     }
 };
+
+type AuthReturn = NormalAccount | SecretAccount;
+
+export const enum AuthReturnC {
+    NormalAccount,
+    SecretAccount
+}
+
+interface NormalAccount {
+    c: AuthReturnC.NormalAccount;
+    twitterUserId: string;
+    imageUrl: URL;
+    name: string;
+}
+
+interface SecretAccount {
+    c: AuthReturnC.SecretAccount;
+    twitterUserId: string;
+}
 
 /** Twitterの表示名を取得する
  * @param screenName @から始まるID (@の文字は含まない)
@@ -130,13 +149,4 @@ const getUserName = async (
     });
 
     return userData.data.name;
-};
-
-const getUserImage = async (screenName: string): Promise<ArrayBuffer> => {
-    const response = await axios.get(
-        `https://twitter.com/${screenName}/profile_image?size=original`,
-        { responseType: "arraybuffer" }
-    );
-    const imageArrayBuffer: ArrayBuffer = response.data;
-    return imageArrayBuffer;
 };
