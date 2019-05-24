@@ -7,7 +7,6 @@ import * as jwt from "jsonwebtoken";
 import { URLSearchParams, URL } from "url";
 import * as secret from "./lib/secret";
 import * as logInWithTwitter from "./lib/twitterLogIn";
-import { user } from "firebase-functions/lib/providers/auth";
 
 admin.initializeApp();
 
