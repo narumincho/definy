@@ -10,14 +10,15 @@
 }
 
 /*
-    M+ M Type-2 regular コード用フォント (http://mplus-fonts.osdn.jp/about.html)
-    M      : プログラミング用として識別性を重視しつつ素直な字形を目指した半角固定幅
-    Type-2 : 従来的なゴシック体の雰囲気を残しつつ現代的な表情も併せ持つ
+    Hack typeface https://github.com/source-foundry/Hack
+    License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
 */
 
 @font-face {
-    font-family: "mplus-2m-regular";
-    src: local("M+ 2m"), url("/assets/mplus-2m-regular-sub.woff") format("woff");
+    font-family: "Hack";
+    font-weight: 400;
+    font-style: normal;
+    src: url("/assets/hack-regular-subset.woff2") format("woff2");
 }
 
 ::-webkit-scrollbar {
@@ -604,7 +605,7 @@ img {
     display: flex;
     height: 38px;
     padding: 0;
-    font-family: "mplus-2m-regular";
+    font-family: "Hack";
     align-items: baseline;
 }
 
@@ -638,7 +639,7 @@ img {
     height: 32px;
     color: #ddd;
     font-size: 20px;
-    font-family: "mplus-2m-regular";
+    font-family: "Hack";
     border-radius: 4px;
     background-color: #000;
     resize: none;
@@ -686,7 +687,7 @@ img {
 .moduleEditor-partDef-exprArea {
     display: flex;
     border-radius: 4px;
-    font-family: "mplus-2m-regular";
+    font-family: "Hack";
 }
 
 .moduleEditor-partDef-equalSign {
@@ -698,7 +699,7 @@ img {
 }
 
 .moduleEditor-partDef-expr {
-    font-family: "mplus-2m-regular";
+    font-family: "Hack";
     display: grid;
     grid-template-columns: 1fr;
     gap: 2px;

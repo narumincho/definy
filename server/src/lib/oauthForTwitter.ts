@@ -48,7 +48,6 @@ export const getAuthorizationHeaderValue = (
             ]
         ])
     );
-    console.log("header string", headerString);
     return headerString;
 };
 
@@ -87,18 +86,14 @@ const getBaseString = (
     requestMethod: "POST" | "GET",
     requestData: Map<string, string>,
     oauth_data: Map<string, string>
-): string => {
-    const base =
-        requestMethod +
-        "&" +
-        percentEncode(requestUrl.origin + requestUrl.pathname) +
-        "&" +
-        percentEncode(
-            getParameterString(requestUrl.searchParams, requestData, oauth_data)
-        );
-    console.log("base", base);
-    return base;
-};
+): string =>
+    requestMethod +
+    "&" +
+    percentEncode(requestUrl.origin + requestUrl.pathname) +
+    "&" +
+    percentEncode(
+        getParameterString(requestUrl.searchParams, requestData, oauth_data)
+    );
 /**
  * Get data from url
  * -> merge with oauth data
@@ -112,10 +107,7 @@ const getParameterString = (
 ): string =>
     [...oauthData, ...requestData, ...requestUrlSerchParms.entries()]
         .sort()
-        .map(([key, value]) => {
-            console.log("parameter", key, value);
-            return percentEncode(key) + "=" + percentEncode(value);
-        })
+        .map(([key, value]) => percentEncode(key) + "=" + percentEncode(value))
         .join("&");
 
 /**

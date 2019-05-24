@@ -480,8 +480,6 @@ query {
  *                             Twitter
  * =====================================================================
  */
-// https://definy-lang.firebaseapp.com/social_login/twitter_receiver?oauth_token=KF8BhAAAAAAA-elOAAABasnr89A&oauth_verifier=gjPOKoPD7ZG3wytwexrQmPWRQhCYNjLE
-// こんなようなURLが帰ってきた
 export const twitterLogInReceiver = functions.https.onRequest(
     async (request, response) => {
         const oauthToken: string | undefined = request.query.oauth_token;
@@ -513,6 +511,12 @@ export const twitterLogInReceiver = functions.https.onRequest(
             oauthVerifier,
             lastData.tokenSecret
         );
+
+        if (twitterData === null) {
+            console.error("ユーザー情報を取得できなかった");
+            response.send("ユーザー情報を取得できなかった");
+            return;
+        }
 
         const exsitsData: FirebaseFirestore.QuerySnapshot = await dataBaseUserCollection
             .where("twitterAccountId", "==", twitterData.userId)
@@ -548,22 +552,33 @@ export const twitterLogInReceiver = functions.https.onRequest(
         const newUserData = await dataBaseUserCollection.add({
             twitterAccountId: twitterData.userId,
             displayName: twitterData.name,
-            imageUrl: twitterData.picture.toString(),
+            image: twitterData.picture,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             newestRefreshId: refreshId
         });
-        response.redirect(
-            "/?" +
-                new URLSearchParams(
-                    new Map([
-                        [
-                            "refreshToken",
-                            createRefreshToken(newUserData.id, refreshId)
-                        ],
-                        ["accessToken", createAccessToken(newUserData.id, true)]
-                    ])
-                ).toString()
-        );
+        const userImageFile = admin
+            .storage()
+            .bucket()
+            .file("user_image/" + newUserData.id + ".jpg");
+        const stream = userImageFile.createWriteStream();
+        stream.write(twitterData.picture);
+        stream.end(() => {
+            response.redirect(
+                "/?" +
+                    new URLSearchParams(
+                        new Map([
+                            [
+                                "refreshToken",
+                                createRefreshToken(newUserData.id, refreshId)
+                            ],
+                            [
+                                "accessToken",
+                                createAccessToken(newUserData.id, true)
+                            ]
+                        ])
+                    ).toString()
+            );
+        });
     }
 );
 /* =====================================================================

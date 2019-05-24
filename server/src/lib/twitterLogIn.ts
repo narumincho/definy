@@ -1,5 +1,5 @@
 import * as oauthForTwitter from "./oauthForTwitter";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import { URLSearchParams, URL } from "url";
 
 const requestTokenUrl = new URL("https://api.twitter.com/oauth/request_token");
@@ -45,7 +45,6 @@ export const login = async (
     };
 };
 
-/** 多分これはTwitterから送られてきたトークンを解釈するところ */
 export const callback = async (
     consumerKey: string,
     consumerSecret: string,
@@ -54,10 +53,9 @@ export const callback = async (
     tokenSecret: string
 ): Promise<{
     name: string;
-    picture: URL;
+    picture: ArrayBuffer;
     userId: string;
-}> => {
-    // Get a user "access token" and "access token secret"
+} | null> => {
     const response = await axios.post(
         accessTokenUrl.toString(),
         {
@@ -81,43 +79,64 @@ export const callback = async (
             }
         }
     );
-    // Ready to make signed requests on behalf of the user
     const query = new URLSearchParams(response.data.toString());
-
     /** Twitterの隠れたID */
     const userId = query.get("user_id") as string;
     /** @ で始まるID この文字列には@ が含まれていない */
     const screenName = query.get("screen_name") as string;
 
-    const userDataUrl = new URL(
-        "https://api.twitter.com/1.1/users/show.json?" +
-            new URLSearchParams({ screen_name: screenName })
-    );
-    console.log("このscreen idのツイッターアカウントで登録!", screenName);
+    try {
+        return {
+            name: await getUserName(consumerKey, consumerSecret, screenName),
+            picture: await getUserImage(screenName),
+            userId: userId
+        };
+    } catch (error) {
+        return null;
+    }
+};
 
-    const userDataResponse = await axios.get(userDataUrl.toString(), {
-        headers: {
-            Authorization: oauthForTwitter.getAuthorizationHeaderValue(
-                { key: consumerKey, secret: consumerSecret },
-                tokenSecret,
-                userDataUrl,
-                "GET",
-                new Map([
-                    ["oauth_token", query.get("oauth_token") as string],
-                    [
-                        "oauth_token_secret",
-                        query.get("oauth_token_secret") as string
-                    ]
-                ])
-            )
+/** Twitterの表示名を取得する
+ * @param screenName @から始まるID (@の文字は含まない)
+ */
+const getUserName = async (
+    consumerApiKey: string,
+    consumerApiSecret: string,
+    screenName: string
+): Promise<string> => {
+    const bearerToken = await axios.post(
+        bearerTokenUrl.toString(),
+        new URLSearchParams({
+            grant_type: "client_credentials"
+        }).toString(),
+        {
+            auth: {
+                username: consumerApiKey,
+                password: consumerApiSecret
+            },
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
         }
+    );
+
+    const bearerAccessToken = bearerToken.data.access_token;
+
+    const userDataUrl = new URL("https://api.twitter.com/1.1/users/show.json");
+    userDataUrl.searchParams.set("screen_name", screenName);
+
+    const userData = await axios.get(userDataUrl.toString(), {
+        headers: { Authorization: "Bearer " + bearerAccessToken }
     });
 
-    return {
-        name: userDataResponse.data.name,
-        picture: new URL(
-            `https://twitter.com/${screenName}/profile_image?size=original`
-        ),
-        userId: userId
-    };
+    return userData.data.name;
+};
+
+const getUserImage = async (screenName: string): Promise<ArrayBuffer> => {
+    const response = await axios.get(
+        `https://twitter.com/${screenName}/profile_image?size=original`,
+        { responseType: "arraybuffer" }
+    );
+    const imageArrayBuffer: ArrayBuffer = response.data;
+    return imageArrayBuffer;
 };

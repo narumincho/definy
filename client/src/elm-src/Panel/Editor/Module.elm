@@ -2753,6 +2753,7 @@ view width project isFocus (Model { moduleRef, active, resultVisible }) =
             )
             (ModuleWithCache.getReadMe targetModule)
         , importModuleView
+        , operatorSettingView
         , typeDefinitionsView
             isFocus
             (case active of
@@ -3032,6 +3033,21 @@ importModuleViewBody =
     Html.div
         []
         []
+
+
+
+{- ==================================================
+         Operator Setting
+   ==================================================
+-}
+
+
+operatorSettingView : Html.Html msg
+operatorSettingView =
+    Html.div
+        [ subClass "section" ]
+        [ Html.div [ subClass "section-title" ] [ Html.text "Operator Setting" ]
+        ]
 
 
 
