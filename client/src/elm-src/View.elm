@@ -55,7 +55,7 @@ sidePanel model =
         )
         (Panel.Side.view
             (Model.getCurrentUser model)
-            Panel.Side.initModel
+            (Model.getSidePanelModel model)
             |> List.map (Html.map Model.sidePanelMsgToMsg)
         )
 

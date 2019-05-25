@@ -127,33 +127,42 @@
                 })
             }
 
+            const jumpPage = (url) => {
+                requestAnimationFrame(() => {
+                    location.href = url;
+                })
+            }
+
             app.ports.logInWithGoogle.subscribe(() => {
                 callApi(`
 mutation {
     getGoogleLogInUrl
 }
-`, data => { location.href = data.getGoogleLogInUrl })
+`, data => { jumpPage(data.getGoogleLogInUrl) })
             });
+
             app.ports.logInWithGitHub.subscribe(() => {
                 callApi(`
 mutation {
     getGitHubLogInUrl
 }
-`, data => { location.href = data.getGitHubLogInUrl })
+`, data => { jumpPage(data.getGitHubLogInUrl) })
             });
+
             app.ports.logInWithTwitter.subscribe(() => {
                 callApi(`
 mutation {
     getTwitterLogInUrl
 }
-`, data => { location.href = data.getTwitterLogInUrl })
+`, data => { jumpPage(data.getTwitterLogInUrl) })
             });
+
             app.ports.logInWithLine.subscribe(() => {
                 callApi(`
 mutation {
     getLineLogInUrl
 }
-`, data => { location.href = data.getLineLogInUrl })
+`, data => { jumpPage(data.getLineLogInUrl) })
 
             });
         });
