@@ -84,7 +84,7 @@ view (Model { selectedKey, inputDevice }) =
              ]
                 ++ (case inputDevice of
                         Keyboard ->
-                            [ NSvg.toHtml { x = 0, y = 0, width = 6500, height = 1800 } (keyboard selectedKey) ]
+                            [ NSvg.toHtml { x = 0, y = 0, width = 6500, height = 1800 } Nothing (keyboard selectedKey) ]
 
                         Mouse ->
                             [ Html.text "マウスの画面" ]

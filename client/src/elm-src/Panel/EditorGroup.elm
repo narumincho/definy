@@ -1403,6 +1403,7 @@ openEditorButton { width, height } group openEditorPosition =
         ]
         [ NSvg.toHtml
             { x = 0, y = 0, width = 26, height = 26 }
+            Nothing
             (([ NSvg.rect
                     { width = 24, height = 24 }
                     (NSvg.strokeColor Palette.X11.white)
@@ -1667,6 +1668,7 @@ editorTitleCloseIcon editorRef =
         ]
         [ NSvg.toHtml
             { x = 0, y = 0, width = 12, height = 12 }
+            Nothing
             [ NSvg.line
                 ( 1, 1 )
                 ( 11, 11 )

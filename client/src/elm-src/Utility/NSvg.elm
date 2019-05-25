@@ -43,19 +43,36 @@ type NSvg msg
     | Line { x0 : Int, y0 : Int, x1 : Int, y1 : Int, strokeStyle : StrokeStyle }
 
 
-toHtml : { x : Int, y : Int, width : Int, height : Int } -> List (NSvg msg) -> Html.Html msg
-toHtml { x, y, width, height } children =
+toHtml : { x : Int, y : Int, width : Int, height : Int } -> Maybe { width : Int, height : Int, padding : Int } -> List (NSvg msg) -> Html.Html msg
+toHtml viewBox size children =
     S.svg
-        [ Sa.viewBox
-            (String.fromInt x
+        ([ Sa.viewBox
+            (String.fromInt viewBox.x
                 ++ " "
-                ++ String.fromInt y
+                ++ String.fromInt viewBox.y
                 ++ " "
-                ++ String.fromInt width
+                ++ String.fromInt viewBox.width
                 ++ " "
-                ++ String.fromInt height
+                ++ String.fromInt viewBox.height
             )
-        ]
+         ]
+            ++ (case size of
+                    Just { width, height, padding } ->
+                        [ Sa.style
+                            ("width:"
+                                ++ String.fromInt width
+                                ++ "px; height:"
+                                ++ String.fromInt height
+                                ++ "px; padding:"
+                                ++ String.fromInt padding
+                                ++ "px"
+                            )
+                        ]
+
+                    Nothing ->
+                        []
+               )
+        )
         (children |> List.map elementToSvg)
 
 
