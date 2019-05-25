@@ -3793,7 +3793,7 @@ termLength term =
              else
                 floor (logBase 10 (toFloat int)) + 1
             )
-                * 9
+                * 10
 
         Expr.Part _ ->
             18

@@ -113,6 +113,7 @@ userView userMaybe logInServiceMaybe =
         [ A.style "color" "#ddd"
         , A.style "display" "grid"
         , A.style "gap" "10px"
+        , A.style "padding" "8px"
         ]
         (case ( userMaybe, logInServiceMaybe ) of
             ( Just user, _ ) ->
@@ -147,9 +148,7 @@ userView userMaybe logInServiceMaybe =
                     , A.style "padding" "0"
                     ]
                     [ googleIcon
-                    , Html.div
-                        [ A.style "flex-grow" "1" ]
-                        [ Html.text "Googleでログイン" ]
+                    , logInButtonText "Googleでログイン"
                     ]
                 , Html.button
                     [ Html.Events.onClick (LogInRequest SocialLoginService.GitHub)
@@ -162,9 +161,7 @@ userView userMaybe logInServiceMaybe =
                     , A.style "padding" "0"
                     ]
                     [ gitHubIcon
-                    , Html.div
-                        [ A.style "flex-grow" "1" ]
-                        [ Html.text "GitHubでログイン" ]
+                    , logInButtonText "GitHubでログイン"
                     ]
                 , Html.button
                     [ Html.Events.onClick (LogInRequest SocialLoginService.Twitter)
@@ -177,9 +174,7 @@ userView userMaybe logInServiceMaybe =
                     , A.style "padding" "0"
                     ]
                     [ twitterIcon
-                    , Html.div
-                        [ A.style "flex-grow" "1" ]
-                        [ Html.text "Twitterでログイン" ]
+                    , logInButtonText "Twitterでログイン"
                     ]
                 , Html.button
                     [ Html.Events.onClick (LogInRequest SocialLoginService.Line)
@@ -195,17 +190,23 @@ userView userMaybe logInServiceMaybe =
                         [ A.src "/assets/line_icon120.png"
                         , A.style "width" "36px"
                         , A.style "height" "36px"
-                        , A.style "border-right" "solid 1px #003c00"
+                        , A.style "border-right" "solid 0.5px #003c00"
                         , A.style "padding" "2px"
                         ]
                         []
-                    , Html.div
-                        [ A.style "flex-grow" "1"
-                        ]
-                        [ Html.text "LINEでログイン" ]
+                    , logInButtonText "LINEでログイン"
                     ]
                 ]
         )
+
+
+logInButtonText : String -> Html.Html msg
+logInButtonText text =
+    Html.div
+        [ A.style "flex-grow" "1"
+        , A.style "font-weight" "bold"
+        ]
+        [ Html.text text ]
 
 
 project : Html.Html msg
