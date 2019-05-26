@@ -22,7 +22,17 @@ import Utility.NSvg as NSvg exposing (NSvg)
 
 
 type Model
-    = Model { selectTab : Tab, waitLogInUrl : Maybe SocialLoginService.SocialLoginService }
+    = Model
+        { selectTab : Tab
+        , waitLogInUrl : Maybe SocialLoginService.SocialLoginService
+        , mouseOverElement : MouseState
+        }
+
+
+type MouseState
+    = MouseStateNone
+    | MouseStateEnter SocialLoginService.SocialLoginService
+    | MouseStateDown SocialLoginService.SocialLoginService
 
 
 type Msg
@@ -33,6 +43,10 @@ type Msg
     | SelectFirstChildOrTreeOpen
     | ToFocusEditorPanel
     | LogInRequest SocialLoginService.SocialLoginService
+    | MouseEnterLogInButton SocialLoginService.SocialLoginService
+    | MouseLeave
+    | MouseDownLogInButton SocialLoginService.SocialLoginService
+    | MouseUp
 
 
 type Emit
@@ -52,7 +66,10 @@ type Tab
 initModel : Model
 initModel =
     Model
-        { selectTab = ModuleTree, waitLogInUrl = Nothing }
+        { selectTab = ModuleTree
+        , waitLogInUrl = Nothing
+        , mouseOverElement = MouseStateNone
+        }
 
 
 update : Msg -> Model -> ( Model, List Emit )
@@ -71,6 +88,41 @@ update msg (Model rec) =
             , [ EmitLogInRequest service ]
             )
 
+        MouseEnterLogInButton service ->
+            ( Model
+                { rec | mouseOverElement = MouseStateEnter service }
+            , []
+            )
+
+        MouseLeave ->
+            ( Model
+                { rec | mouseOverElement = MouseStateNone }
+            , []
+            )
+
+        MouseDownLogInButton service ->
+            ( Model
+                { rec | mouseOverElement = MouseStateDown service }
+            , []
+            )
+
+        MouseUp ->
+            ( Model
+                { rec
+                    | mouseOverElement =
+                        case rec.mouseOverElement of
+                            MouseStateNone ->
+                                MouseStateNone
+
+                            MouseStateEnter element ->
+                                MouseStateEnter element
+
+                            MouseStateDown element ->
+                                MouseStateEnter element
+                }
+            , []
+            )
+
         _ ->
             ( Model rec
             , []
@@ -78,9 +130,9 @@ update msg (Model rec) =
 
 
 view : Maybe User.User -> Model -> List (Html.Html Msg)
-view user (Model { selectTab, waitLogInUrl }) =
+view user (Model { selectTab, waitLogInUrl, mouseOverElement }) =
     [ definyLogo
-    , userView user waitLogInUrl
+    , userView user waitLogInUrl mouseOverElement
     , project
     ]
 
@@ -107,8 +159,8 @@ definyLogo =
         ]
 
 
-userView : Maybe User.User -> Maybe SocialLoginService.SocialLoginService -> Html.Html Msg
-userView userMaybe logInServiceMaybe =
+userView : Maybe User.User -> Maybe SocialLoginService.SocialLoginService -> MouseState -> Html.Html Msg
+userView userMaybe logInServiceMaybe mouseState =
     Html.div
         [ A.style "color" "#ddd"
         , A.style "display" "grid"
@@ -137,60 +189,51 @@ userView userMaybe logInServiceMaybe =
                 [ Html.text (SocialLoginService.serviceName service ++ "のURLを発行中") ]
 
             ( Nothing, Nothing ) ->
-                [ Html.button
-                    [ Html.Events.onClick (LogInRequest SocialLoginService.Google)
-                    , A.style "background-color" "#fff"
-                    , A.style "color" "#111"
-                    , A.style "border-radius" "4px"
-                    , A.style "border" "none"
-                    , A.style "display" "flex"
-                    , A.style "align-items" "center"
-                    , A.style "padding" "0"
-                    ]
-                    [ googleIcon
-                    , logInButtonText "Googleでログイン"
-                    ]
-                , Html.button
-                    [ Html.Events.onClick (LogInRequest SocialLoginService.GitHub)
-                    , A.style "background-color" "#fff"
-                    , A.style "border-radius" "4px"
-                    , A.style "border" "none"
-                    , A.style "color" "#111"
-                    , A.style "display" "flex"
-                    , A.style "align-items" "center"
-                    , A.style "padding" "0"
-                    ]
-                    [ gitHubIcon
-                    , logInButtonText "GitHubでログイン"
-                    ]
-                , Html.button
-                    [ Html.Events.onClick (LogInRequest SocialLoginService.Twitter)
-                    , A.style "background-color" "#fff"
-                    , A.style "border-radius" "4px"
-                    , A.style "border" "none"
-                    , A.style "color" "#111"
-                    , A.style "display" "flex"
-                    , A.style "align-items" "center"
-                    , A.style "padding" "0"
-                    ]
-                    [ twitterIcon
-                    , logInButtonText "Twitterでログイン"
-                    ]
+                [ logInButtonNoLine mouseState googleIcon SocialLoginService.Google
+                , logInButtonNoLine mouseState gitHubIcon SocialLoginService.GitHub
+                , logInButtonNoLine mouseState twitterIcon SocialLoginService.Twitter
                 , Html.button
                     [ Html.Events.onClick (LogInRequest SocialLoginService.Line)
-                    , A.style "background-color" "#00b300"
+                    , Html.Events.onMouseEnter (MouseEnterLogInButton SocialLoginService.Line)
+                    , Html.Events.onMouseLeave MouseLeave
+                    , Html.Events.onMouseDown (MouseDownLogInButton SocialLoginService.Line)
+                    , Html.Events.onMouseUp MouseUp
+                    , A.style "background-color"
+                        (case mouseState of
+                            MouseStateEnter SocialLoginService.Line ->
+                                "#00e000"
+
+                            MouseStateDown SocialLoginService.Line ->
+                                "#00b300"
+
+                            _ ->
+                                "#00c300"
+                        )
                     , A.style "border-radius" "4px"
                     , A.style "border" "none"
                     , A.style "color" "#FFF"
                     , A.style "display" "flex"
                     , A.style "align-items" "center"
                     , A.style "padding" "0"
+                    , A.style "cursor" "pointer"
                     ]
                     [ Html.img
                         [ A.src "/assets/line_icon120.png"
                         , A.style "width" "36px"
                         , A.style "height" "36px"
-                        , A.style "border-right" "solid 0.5px #003c00"
+                        , A.style "border-right"
+                            ("solid 1px "
+                                ++ (case mouseState of
+                                        MouseStateEnter SocialLoginService.Line ->
+                                            "#00c900"
+
+                                        MouseStateDown SocialLoginService.Line ->
+                                            "#009800"
+
+                                        _ ->
+                                            "#00b300"
+                                   )
+                            )
                         , A.style "padding" "2px"
                         ]
                         []
@@ -198,6 +241,46 @@ userView userMaybe logInServiceMaybe =
                     ]
                 ]
         )
+
+
+logInButtonNoLine : MouseState -> Html.Html Msg -> SocialLoginService.SocialLoginService -> Html.Html Msg
+logInButtonNoLine mouseSate icon service =
+    Html.button
+        [ Html.Events.onClick (LogInRequest service)
+        , Html.Events.onMouseEnter (MouseEnterLogInButton service)
+        , Html.Events.onMouseLeave MouseLeave
+        , Html.Events.onMouseDown (MouseDownLogInButton service)
+        , Html.Events.onMouseUp MouseUp
+        , A.style "background-color"
+            (case mouseSate of
+                MouseStateDown s ->
+                    if s == service then
+                        "#ccc"
+
+                    else
+                        "#e8e8e8"
+
+                MouseStateEnter s ->
+                    if s == service then
+                        "#fff"
+
+                    else
+                        "#e8e8e8"
+
+                MouseStateNone ->
+                    "e8e8e8"
+            )
+        , A.style "border-radius" "4px"
+        , A.style "border" "none"
+        , A.style "color" "#111"
+        , A.style "display" "flex"
+        , A.style "align-items" "center"
+        , A.style "padding" "0"
+        , A.style "cursor" "pointer"
+        ]
+        [ icon
+        , logInButtonText (SocialLoginService.serviceName service ++ "でログイン")
+        ]
 
 
 logInButtonText : String -> Html.Html msg
