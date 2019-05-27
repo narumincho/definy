@@ -18,7 +18,7 @@ export const getLoginUrl = async (
     tokenSecret: string;
     url: URL;
 }> => {
-    const reqponse = await axios.post(
+    const response = await axios.post(
         requestTokenUrl.toString(),
         { oauth_callback: callbackUrl },
         {
@@ -34,7 +34,7 @@ export const getLoginUrl = async (
         }
     );
 
-    const query = new URLSearchParams(reqponse.data.toString());
+    const query = new URLSearchParams(response.data.toString());
 
     // Redirect visitor to this URL to authorize the app
     authUrl.searchParams.set("oauth_token", query.get("oauth_token") as string);
@@ -250,11 +250,11 @@ const getBaseString = (
  * -> sort
  */
 const getParameterString = (
-    requestUrlSerchParms: URLSearchParams,
+    requestUrlSearchParams: URLSearchParams,
     requestData: Map<string, string>,
     oauthData: Map<string, string>
 ): string =>
-    [...oauthData, ...requestData, ...requestUrlSerchParms.entries()]
+    [...oauthData, ...requestData, ...requestUrlSearchParams.entries()]
         .sort()
         .map(([key, value]) => percentEncode(key) + "=" + percentEncode(value))
         .join("&");
