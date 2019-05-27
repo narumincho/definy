@@ -119,7 +119,7 @@ const schema = new graphql.GraphQLSchema({
         }
     }),
     mutation: new graphql.GraphQLObjectType({
-        name: "Mutations",
+        name: "Mutation",
         description: "データを作成、更新ができる",
         fields: {
             getGoogleLogInUrl: {
@@ -138,7 +138,7 @@ const schema = new graphql.GraphQLSchema({
                     );
                 },
                 description:
-                    "Googleで新規登録かログインするための情報を得る。受け取ったURLをlocation.hrefに代入するとかして、Googleの認証画面へ"
+                    "Googleで新規登録かログインするためのURLを得る。受け取ったURLをlocation.hrefに代入するとかして、Googleの認証画面へ"
             },
             getGitHubLogInUrl: {
                 type: graphql.GraphQLNonNull(graphql.GraphQLString),
@@ -485,6 +485,7 @@ query {
  *                             Twitter
  * =====================================================================
  */
+/** Twitterでログインしたあとのリダイレクト先 */
 export const twitterLogInReceiver = functions.https.onRequest(
     async (request, response) => {
         const oauthToken: string | undefined = request.query.oauth_token;
