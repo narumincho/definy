@@ -262,7 +262,7 @@ export const googleLogInReceiver = functions.https.onRequest(
             );
             return;
         }
-        docRef.delete();
+        await docRef.delete();
 
         // ここでhttps://www.googleapis.com/oauth2/v4/tokenにqueryのcodeをつけて送信。IDトークンを取得する
         const googleData = googleTokenResponseToData(
@@ -367,10 +367,10 @@ export const gitHubLogInReceiver = functions.https.onRequest(
         const code: string | undefined = request.query.code;
         const state: string | undefined = request.query.state;
         if (code === undefined || state === undefined) {
-            console.log("GitHubからcodeかstateが送られて来なかった");
-            response.send(
-                "GitHub Server Error. need code and state query in redirect url"
+            console.log(
+                "GitHubからcodeかstateが送られて来なかった。ユーザーがキャンセルした?"
             );
+            response.redirect("/");
             return;
         }
         const docRef: FirebaseFirestore.DocumentReference = dataBaseGitHubStateCollection.doc(
@@ -384,7 +384,7 @@ export const gitHubLogInReceiver = functions.https.onRequest(
             );
             return;
         }
-        docRef.delete();
+        await docRef.delete();
         // ここでhttps://github.com/login/oauth/access_tokenにqueryのcodeをつけて送信。IDトークンを取得する
         const gitHubAccessToken = (await axios.post(
             "https://github.com/login/oauth/access_token?",
@@ -492,11 +492,9 @@ export const twitterLogInReceiver = functions.https.onRequest(
         const oauthVerifier: string | undefined = request.query.oauth_verifier;
         if (oauthToken === undefined || oauthVerifier === undefined) {
             console.error(
-                "Twitterからoauth_tokenかoauth_verifierが送られて来なかった"
+                "Twitterからoauth_tokenかoauth_verifierが送られて来なかった。ユーザーがキャンセルした?"
             );
-            response.send(
-                "Twitter Server Error. need oauth_token and oauth_verifier query in redirect url"
-            );
+            response.redirect("/");
             return;
         }
         const lastData:
@@ -606,10 +604,10 @@ export const lineLogInReceiver = functions.https.onRequest(
         const code: string | undefined = request.query.code;
         const state: string | undefined = request.query.state;
         if (code === undefined || state === undefined) {
-            console.log("LINEからcodeかstateが送られて来なかった");
-            response.send(
-                "LINE Server Error. need code and state query in redirect url"
+            console.log(
+                "LINEからcodeかstateが送られて来なかった。ユーザーがキャンセルした?"
             );
+            response.redirect("/");
             return;
         }
         const docRef: FirebaseFirestore.DocumentReference = dataBaseLineStateCollection.doc(
@@ -623,7 +621,7 @@ export const lineLogInReceiver = functions.https.onRequest(
             );
             return;
         }
-        docRef.delete();
+        await docRef.delete();
 
         // ここでhttps://api.line.me/oauth2/v2.1/tokenにqueryのcodeをつけて送信。IDトークンを取得する
         const lineData = await lineTokenResponseToData(
