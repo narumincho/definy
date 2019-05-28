@@ -1,7 +1,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as graphql from "graphql";
-import * as graphalExpress from "express-graphql";
+import * as graphqlExpress from "express-graphql";
 import axios, { AxiosResponse } from "axios";
 import * as jwt from "jsonwebtoken";
 import { URLSearchParams, URL } from "url";
@@ -206,7 +206,7 @@ const schema = new graphql.GraphQLSchema({
                             description:
                                 "各種データにアクセスするために必要なトークン"
                         },
-                        refeshToken: {
+                        refreshToken: {
                             type: graphql.GraphQLNonNull(graphql.GraphQLString),
                             description:
                                 "AccessTokenを再発行してもらうのに必要なトークン"
@@ -214,7 +214,7 @@ const schema = new graphql.GraphQLSchema({
                     }
                 }),
                 args: {
-                    refeshToken: {
+                    refreshToken: {
                         type: graphql.GraphQLNonNull(graphql.GraphQLString),
                         description:
                             "初回時、ソーシャルログインでログインしたあとhttps://definy-lang.firebaseapp.comにリダイレクトしたときに、クエリに?refreshToken=がついてあるのでそれを使う。それ以降はここで得た新しいrefeshTokenを使う"
@@ -229,7 +229,7 @@ const schema = new graphql.GraphQLSchema({
 });
 
 export const api = functions.https.onRequest(
-    graphalExpress({ schema: schema, graphiql: true })
+    graphqlExpress({ schema: schema, graphiql: true })
 );
 
 /* =====================================================================
@@ -241,14 +241,13 @@ export const api = functions.https.onRequest(
  */
 export const googleLogInReceiver = functions.https.onRequest(
     async (request, response) => {
-        console.log("Googleからのクエリだよー", request.query);
         const code: string | undefined = request.query.code;
         const state: string | undefined = request.query.state;
         if (code === undefined || state === undefined) {
-            console.log("Googleからcodeかstateが送られて来なかった");
-            response.send(
-                "Google Server Error. need code and state query in redirect url"
+            console.log(
+                "Googleからcodeかstateが送られて来なかった。ユーザーがキャンセルした?"
             );
+            response.redirect("/");
             return;
         }
         const docRef: FirebaseFirestore.DocumentReference = dataBaseGoogleStateCollection.doc(
@@ -256,7 +255,10 @@ export const googleLogInReceiver = functions.https.onRequest(
         );
         const doc: FirebaseFirestore.DocumentSnapshot = await docRef.get();
         if (!doc.exists) {
-            console.log("Googleのログインで生成していないstateを指定された");
+            console.log(
+                "Googleのログインで生成していないstateを指定された",
+                state
+            );
             response.send(
                 `Google LogIn Error: definy do not generate state =${state}`
             );
@@ -286,15 +288,14 @@ export const googleLogInReceiver = functions.https.onRequest(
         );
         console.log("googleData", googleData);
         // 取得したidトークンからプロフィール画像と名前とLINEのIDを取得する
-        const exsitsData: FirebaseFirestore.QuerySnapshot = await dataBaseUserCollection
+        const existsData: FirebaseFirestore.QuerySnapshot = await dataBaseUserCollection
             .where("googleAccountId", "==", googleData.sub)
             .get();
         // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
-        if (!exsitsData.empty) {
+        if (!existsData.empty) {
             console.log("Googleで登録したユーザーがいた");
             const doc: FirebaseFirestore.QueryDocumentSnapshot =
-                exsitsData.docs[0];
-            const docData = doc.data();
+                existsData.docs[0];
             // TODO アカウントの表示名の更新をここでやる?
             const refreshId = createRefreshId();
             doc.ref.update({
@@ -378,7 +379,10 @@ export const gitHubLogInReceiver = functions.https.onRequest(
         );
         const doc: FirebaseFirestore.DocumentSnapshot = await docRef.get();
         if (!doc.exists) {
-            console.log("GitHubのログインで生成していないstateを指定された");
+            console.log(
+                "GitHubのログインで生成していないstateを指定された",
+                state
+            );
             response.send(
                 `GitHub LogIn Error: definy do not generate state =${state}`
             );
@@ -428,15 +432,14 @@ query {
                 }
             }
         )).data.data.viewer;
-        const exsitsData: FirebaseFirestore.QuerySnapshot = await dataBaseUserCollection
+        const existsData: FirebaseFirestore.QuerySnapshot = await dataBaseUserCollection
             .where("gitHubAccountId", "==", userData.id)
             .get();
         // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
-        if (!exsitsData.empty) {
+        if (!existsData.empty) {
             console.log("LINEで登録したユーザーがいた");
             const doc: FirebaseFirestore.QueryDocumentSnapshot =
-                exsitsData.docs[0];
-            const docData = doc.data();
+                existsData.docs[0];
             // TODO アカウントの表示名の更新をここでやる?
             const refreshId = createRefreshId();
             doc.ref.update({
@@ -504,7 +507,7 @@ export const twitterLogInReceiver = functions.https.onRequest(
             .get()).data();
         if (lastData === undefined) {
             console.error("Twitterの最後に保存したtokenSecretがない");
-            response.send("Twitter LogIn Databese error: 最後のデータがない");
+            response.send("Twitter LogIn Database error: 最後のデータがない");
             return;
         }
 
@@ -516,15 +519,14 @@ export const twitterLogInReceiver = functions.https.onRequest(
             lastData.tokenSecret
         );
 
-        const exsitsData: FirebaseFirestore.QuerySnapshot = await dataBaseUserCollection
+        const existsData: FirebaseFirestore.QuerySnapshot = await dataBaseUserCollection
             .where("twitterAccountId", "==", twitterData.twitterUserId)
             .get();
         // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
-        if (!exsitsData.empty) {
+        if (!existsData.empty) {
             console.log("Twitterで登録したユーザーがいた");
             const doc: FirebaseFirestore.QueryDocumentSnapshot =
-                exsitsData.docs[0];
-            const docData = doc.data();
+                existsData.docs[0];
             // TODO アカウントの表示名の更新をここでやる?
             const refreshId = createRefreshId();
             doc.ref.update({
@@ -544,7 +546,7 @@ export const twitterLogInReceiver = functions.https.onRequest(
             );
             return;
         }
-        // ユーザーが存在しないなら作成し、リフレッシュトークンを返す
+        // ユーザーが存在しないならユーザーを作成し、リフレッシュトークンを返す
         console.log("Twitterで登録したユーザーがいなかった");
         const refreshId = createRefreshId();
 
@@ -615,7 +617,10 @@ export const lineLogInReceiver = functions.https.onRequest(
         );
         const doc: FirebaseFirestore.DocumentSnapshot = await docRef.get();
         if (!doc.exists) {
-            console.log("lineのログインで生成していないstateを指定された");
+            console.log(
+                "lineのログインで生成していないstateを指定された",
+                state
+            );
             response.send(
                 `LINE LogIn Error: definy do not generate state =${state}`
             );
@@ -644,14 +649,14 @@ export const lineLogInReceiver = functions.https.onRequest(
             )
         );
 
-        const exsitsData: FirebaseFirestore.QuerySnapshot = await dataBaseUserCollection
+        const existsData: FirebaseFirestore.QuerySnapshot = await dataBaseUserCollection
             .where("lineAccountId", "==", lineData.sub)
             .get();
         // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
-        if (!exsitsData.empty) {
+        if (!existsData.empty) {
             console.log("LINEで登録したユーザーがいた");
             const doc: FirebaseFirestore.QueryDocumentSnapshot =
-                exsitsData.docs[0];
+                existsData.docs[0];
             const docData = doc.data();
             // TODO アカウントの表示名の更新をここでやる?
             const refreshId = createRefreshId();
