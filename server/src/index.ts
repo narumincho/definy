@@ -762,7 +762,7 @@ const createRefreshToken = (uid: string, refreshId: string): string => {
         {
             sub: uid,
             jti: refreshId
-        },
+        } as object,
         refreshSecretKey,
         { algorithm: "HS256" }
     );
@@ -782,7 +782,7 @@ const createAccessToken = (uid: string, byRefreshToken: boolean): string => {
             sub: uid,
             ref: byRefreshToken, //リフレッシュトークンでログインしたか
             exp: Math.round(time.getTime() / 1000) // 有効期限
-        },
+        } as object,
         accessSecretKey,
         { algorithm: "HS256" }
     );
