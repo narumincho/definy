@@ -460,7 +460,7 @@ query {
             return;
         }
         // ユーザーが存在しないなら作成し、リフレッシュトークンを返す
-        console.log("LINEで登録したユーザーがいなかった");
+        console.log("GitHubで登録したユーザーがいなかった");
         const refreshId = createRefreshId();
         const newUserData = await dataBaseUserCollection.add({
             gitHubAccountId: userData.id,
