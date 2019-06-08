@@ -42,6 +42,13 @@ const lineLogInSecret: string = secret.lineLogInSecret;
 const refreshSecretKey: string = secret.refreshSecretKey;
 const accessSecretKey: string = secret.accessSecretKey;
 
+const tokenUrl = (accessToken: string, refreshToken: string): URL => {
+    const url = new URL("https://definy-lang.web.app/");
+    url.searchParams.append("accessToken", accessToken);
+    url.searchParams.append("refreshToken", refreshToken);
+    return url;
+};
+
 console.log("サーバーのプログラムが読み込まれた");
 /* =====================================================================
  *                          API (GraphQL)
@@ -302,16 +309,10 @@ export const googleLogInReceiver = functions.https.onRequest(
                 newestRefreshId: refreshId
             });
             response.redirect(
-                "/?" +
-                    new URLSearchParams(
-                        new Map([
-                            [
-                                "refreshToken",
-                                createRefreshToken(doc.id, refreshId)
-                            ],
-                            ["accessToken", createAccessToken(doc.id, true)]
-                        ])
-                    ).toString
+                tokenUrl(
+                    createAccessToken(doc.id, true),
+                    createRefreshToken(doc.id, refreshId)
+                ).toString()
             );
             return;
         }
@@ -327,16 +328,10 @@ export const googleLogInReceiver = functions.https.onRequest(
         });
         await getAndSaveUserImage(newUserData.id, new URL(googleData.picture));
         response.redirect(
-            "/?" +
-                new URLSearchParams(
-                    new Map([
-                        [
-                            "refreshToken",
-                            createRefreshToken(newUserData.id, refreshId)
-                        ],
-                        ["accessToken", createAccessToken(newUserData.id, true)]
-                    ])
-                ).toString()
+            tokenUrl(
+                createAccessToken(newUserData.id, true),
+                createRefreshToken(newUserData.id, refreshId)
+            ).toString()
         );
     }
 );
@@ -446,16 +441,10 @@ query {
                 newestRefreshId: refreshId
             });
             response.redirect(
-                "/?" +
-                    new URLSearchParams(
-                        new Map([
-                            [
-                                "refreshToken",
-                                createRefreshToken(doc.id, refreshId)
-                            ],
-                            ["accessToken", createAccessToken(doc.id, true)]
-                        ])
-                    ).toString()
+                tokenUrl(
+                    createAccessToken(doc.id, true),
+                    createRefreshToken(doc.id, refreshId)
+                ).toString()
             );
             return;
         }
@@ -471,16 +460,10 @@ query {
         });
         await getAndSaveUserImage(newUserData.id, new URL(userData.avatarUrl));
         response.redirect(
-            "/?" +
-                new URLSearchParams(
-                    new Map([
-                        [
-                            "refreshToken",
-                            createRefreshToken(newUserData.id, refreshId)
-                        ],
-                        ["accessToken", createAccessToken(newUserData.id, true)]
-                    ])
-                ).toString()
+            tokenUrl(
+                createAccessToken(doc.id, true),
+                createRefreshToken(doc.id, refreshId)
+            ).toString()
         );
     }
 );
@@ -533,16 +516,10 @@ export const twitterLogInReceiver = functions.https.onRequest(
                 newestRefreshId: refreshId
             });
             response.redirect(
-                "/?" +
-                    new URLSearchParams(
-                        new Map([
-                            [
-                                "refreshToken",
-                                createRefreshToken(doc.id, refreshId)
-                            ],
-                            ["accessToken", createAccessToken(doc.id, true)]
-                        ])
-                    ).toString()
+                tokenUrl(
+                    createAccessToken(doc.id, true),
+                    createRefreshToken(doc.id, refreshId)
+                ).toString()
             );
             return;
         }
@@ -560,16 +537,10 @@ export const twitterLogInReceiver = functions.https.onRequest(
                 })).id;
                 await getAndSaveUserImage(userId, twitterData.imageUrl);
                 response.redirect(
-                    "/?" +
-                        new URLSearchParams(
-                            new Map([
-                                [
-                                    "refreshToken",
-                                    createRefreshToken(userId, refreshId)
-                                ],
-                                ["accessToken", createAccessToken(userId, true)]
-                            ])
-                        ).toString()
+                    tokenUrl(
+                        createAccessToken(userId, true),
+                        createRefreshToken(userId, refreshId)
+                    ).toString()
                 );
             }
             case logInWithTwitter.AuthReturnC.SecretAccount: {
@@ -664,16 +635,10 @@ export const lineLogInReceiver = functions.https.onRequest(
                 newestRefreshId: refreshId
             });
             response.redirect(
-                "/?" +
-                    new URLSearchParams(
-                        new Map([
-                            [
-                                "refreshToken",
-                                createRefreshToken(doc.id, refreshId)
-                            ],
-                            ["accessToken", createAccessToken(doc.id, true)]
-                        ])
-                    ).toString()
+                tokenUrl(
+                    createAccessToken(doc.id, true),
+                    createRefreshToken(doc.id, refreshId)
+                ).toString()
             );
             return;
         }
@@ -689,16 +654,10 @@ export const lineLogInReceiver = functions.https.onRequest(
         });
         await getAndSaveUserImage(newUserData.id, new URL(lineData.picture));
         response.redirect(
-            "/?" +
-                new URLSearchParams(
-                    new Map([
-                        [
-                            "refreshToken",
-                            createRefreshToken(newUserData.id, refreshId)
-                        ],
-                        ["accessToken", createAccessToken(newUserData.id, true)]
-                    ])
-                ).toString()
+            tokenUrl(
+                createAccessToken(newUserData.id, true),
+                createRefreshToken(newUserData.id, refreshId)
+            ).toString()
         );
     }
 );

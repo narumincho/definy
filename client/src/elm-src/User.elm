@@ -1,4 +1,4 @@
-module User exposing (User, getGoogleAccountName, getgoogleAccountImageUrl, make)
+module User exposing (User, getDisplayName, getImageUrl, make)
 
 
 type User
@@ -13,11 +13,11 @@ make =
     User
 
 
-getGoogleAccountName : User -> String
-getGoogleAccountName (User { googleAccountName }) =
+getDisplayName : User -> String
+getDisplayName (User { googleAccountName }) =
     googleAccountName
 
 
-getgoogleAccountImageUrl : User -> String
-getgoogleAccountImageUrl (User { googleAccountImageUrl }) =
+getImageUrl : User -> String
+getImageUrl (User { googleAccountImageUrl }) =
     googleAccountImageUrl

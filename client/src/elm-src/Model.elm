@@ -679,7 +679,7 @@ sidePanelKeyDown { key, ctrl, shift, alt } =
                     [ Panel.Side.SelectFirstChildOrTreeOpen ]
 
                 Key.Enter ->
-                    [ Panel.Side.ToFocusEditorPanel ]
+                    [ Panel.Side.SelectItem ]
 
                 _ ->
                     []

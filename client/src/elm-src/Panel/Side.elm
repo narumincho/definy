@@ -25,8 +25,8 @@ import Utility.NSvg as NSvg exposing (NSvg)
 type Model
     = Model
         { selectTab : Tab
-        , waitLogInUrl : Maybe Data.SocialLoginService.SocialLoginService
-        , mouseOverElement : MouseState
+        , logInState : LogInState
+        , mouseState : MouseState
         }
 
 
@@ -42,7 +42,9 @@ type Msg
     | SelectDown
     | SelectParentOrTreeClose
     | SelectFirstChildOrTreeOpen
-    | ToFocusEditorPanel
+    | SelectItem
+    | ShowServiceSelectView
+    | HideServiceSelectView
     | LogInRequest Data.SocialLoginService.SocialLoginService
     | MouseEnterLogInButton Data.SocialLoginService.SocialLoginService
     | MouseLeave
@@ -68,9 +70,15 @@ initModel : Model
 initModel =
     Model
         { selectTab = ModuleTree
-        , waitLogInUrl = Nothing
-        , mouseOverElement = MouseStateNone
+        , logInState = LogInStateNormal
+        , mouseState = MouseStateNone
         }
+
+
+type LogInState
+    = LogInStateNormal
+    | LogInStateShowSelectServiceView
+    | LogInStateWaitUrl Data.SocialLoginService.SocialLoginService
 
 
 update : Msg -> Model -> ( Model, List Emit )
@@ -81,37 +89,51 @@ update msg (Model rec) =
             , [ EmitLogOutRequest ]
             )
 
+        ShowServiceSelectView ->
+            ( Model
+                { rec
+                    | logInState = LogInStateShowSelectServiceView
+                }
+            , []
+            )
+
+        HideServiceSelectView ->
+            ( Model
+                { rec | logInState = LogInStateNormal }
+            , []
+            )
+
         LogInRequest service ->
             ( Model
                 { rec
-                    | waitLogInUrl = Just service
+                    | logInState = LogInStateWaitUrl service
                 }
             , [ EmitLogInRequest service ]
             )
 
         MouseEnterLogInButton service ->
             ( Model
-                { rec | mouseOverElement = MouseStateEnter service }
+                { rec | mouseState = MouseStateEnter service }
             , []
             )
 
         MouseLeave ->
             ( Model
-                { rec | mouseOverElement = MouseStateNone }
+                { rec | mouseState = MouseStateNone }
             , []
             )
 
         MouseDownLogInButton service ->
             ( Model
-                { rec | mouseOverElement = MouseStateDown service }
+                { rec | mouseState = MouseStateDown service }
             , []
             )
 
         MouseUp ->
             ( Model
                 { rec
-                    | mouseOverElement =
-                        case rec.mouseOverElement of
+                    | mouseState =
+                        case rec.mouseState of
                             MouseStateNone ->
                                 MouseStateNone
 
@@ -131,9 +153,14 @@ update msg (Model rec) =
 
 
 view : { user : Maybe User.User, language : Data.Language.Language } -> Model -> List (Html.Html Msg)
-view { user, language } (Model { selectTab, waitLogInUrl, mouseOverElement }) =
+view { user, language } (Model { selectTab, logInState, mouseState }) =
     [ definyLogo
-    , userView user language waitLogInUrl mouseOverElement
+    , userView
+        { user = user
+        , language = language
+        , logInState = logInState
+        , mouseState = mouseState
+        }
     , tools
     ]
 
@@ -160,26 +187,32 @@ definyLogo =
         ]
 
 
-userView : Maybe User.User -> Data.Language.Language -> Maybe Data.SocialLoginService.SocialLoginService -> MouseState -> Html.Html Msg
-userView userMaybe language logInServiceMaybe mouseState =
+userView :
+    { user : Maybe User.User
+    , language : Data.Language.Language
+    , logInState : LogInState
+    , mouseState : MouseState
+    }
+    -> Html.Html Msg
+userView { user, language, logInState, mouseState } =
     Html.div
         [ A.style "color" "#ddd"
         , A.style "display" "grid"
         , A.style "gap" "10px"
         , A.style "padding" "8px"
         ]
-        (case ( userMaybe, logInServiceMaybe ) of
-            ( Just user, _ ) ->
+        (case user of
+            Just u ->
                 [ Html.div
                     [ A.style "display" "flex" ]
                     [ Html.img
                         [ A.style "clip-path" "circle(50% at center)"
-                        , A.src (User.getgoogleAccountImageUrl user)
+                        , A.src (User.getImageUrl u)
                         ]
                         []
                     , Html.div
                         []
-                        [ Html.text (User.getGoogleAccountName user) ]
+                        [ Html.text (User.getDisplayName u) ]
                     ]
                 , Html.button
                     [ Html.Events.onClick SignOutRequest ]
@@ -197,27 +230,68 @@ userView userMaybe language logInServiceMaybe mouseState =
                     ]
                 ]
 
-            ( Nothing, Just service ) ->
-                [ Html.text
-                    (case language of
-                        Data.Language.Japanese ->
-                            Data.SocialLoginService.serviceName service ++ "のURLを発行中"
+            Nothing ->
+                case logInState of
+                    LogInStateNormal ->
+                        logInStateNormalView language
 
-                        Data.Language.Esperanto ->
-                            "Elsendante la URL de " ++ Data.SocialLoginService.serviceName service
+                    LogInStateShowSelectServiceView ->
+                        serviceSelectView language mouseState
 
-                        Data.Language.English ->
-                            "Issuing the URL of " ++ Data.SocialLoginService.serviceName service
-                    )
-                ]
-
-            ( Nothing, Nothing ) ->
-                [ logInButtonNoLine mouseState googleIcon language Data.SocialLoginService.Google
-                , logInButtonNoLine mouseState gitHubIcon language Data.SocialLoginService.GitHub
-                , logInButtonNoLine mouseState twitterIcon language Data.SocialLoginService.Twitter
-                , logInButtonLine mouseState language
-                ]
+                    LogInStateWaitUrl socialLoginService ->
+                        waitUrlView language socialLoginService
         )
+
+
+logInStateNormalView : Data.Language.Language -> List (Html.Html Msg)
+logInStateNormalView language =
+    [ Html.button
+        [ Html.Events.onClick ShowServiceSelectView
+        , A.style "cursor" "pointer"
+        ]
+        [ Html.text
+            (case language of
+                Data.Language.Japanese ->
+                    "ログイン"
+
+                Data.Language.Esperanto ->
+                    "Ensaluti"
+
+                Data.Language.English ->
+                    "Log In"
+            )
+        ]
+    ]
+
+
+serviceSelectView : Data.Language.Language -> MouseState -> List (Html.Html Msg)
+serviceSelectView language mouseState =
+    [ Html.button
+        [ Html.Events.onClick HideServiceSelectView
+        , A.style "cursor" "pointer"
+        ]
+        [ Html.text "▲" ]
+    , logInButtonNoLine mouseState googleIcon language Data.SocialLoginService.Google
+    , logInButtonNoLine mouseState gitHubIcon language Data.SocialLoginService.GitHub
+    , logInButtonNoLine mouseState twitterIcon language Data.SocialLoginService.Twitter
+    , logInButtonLine mouseState language
+    ]
+
+
+waitUrlView : Data.Language.Language -> Data.SocialLoginService.SocialLoginService -> List (Html.Html Msg)
+waitUrlView language service =
+    [ Html.text
+        (case language of
+            Data.Language.Japanese ->
+                Data.SocialLoginService.serviceName service ++ "のURLを発行中"
+
+            Data.Language.Esperanto ->
+                "Elsendante la URL de " ++ Data.SocialLoginService.serviceName service
+
+            Data.Language.English ->
+                "Issuing the URL of " ++ Data.SocialLoginService.serviceName service
+        )
+    ]
 
 
 logInButtonNoLine : MouseState -> Html.Html Msg -> Data.Language.Language -> Data.SocialLoginService.SocialLoginService -> Html.Html Msg
