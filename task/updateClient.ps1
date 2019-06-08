@@ -8,6 +8,12 @@ elm make ./elm-src/Main.elm --output ../beforeMinifiy.js --optimize;
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Compile Elm OK";
 
+Write-Output "Call Compile ...";
+$Host.UI.RawUI.ForegroundColor = "Gray";
+npx tsc;
+$Host.UI.RawUI.ForegroundColor = "Yellow";
+Write-Output "Call Compile OK";
+
 Set-Location -Path ../;
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Minify JavaScript ...";
