@@ -13,6 +13,7 @@ port module Model exposing
     , getEditorGroupPanelModel
     , getEditorGroupPanelSize
     , getGutterType
+    , getLanguage
     , getProject
     , getSidePanelModel
     , getTreePanelWidth
@@ -34,6 +35,8 @@ port module Model exposing
 import Browser
 import Browser.Events
 import Compiler
+import Data.Language
+import Data.SocialLoginService
 import Json.Decode
 import Key
 import Label
@@ -48,7 +51,6 @@ import Project.ModuleDefinition
 import Project.ModuleDefinition.ModuleIndex
 import Project.ModuleDefinition.ModuleWithCache
 import Project.ModuleDefinitionIndex
-import SocialLoginService
 import Task
 import Url
 import User
@@ -112,6 +114,9 @@ port runResult : ({ ref : List Int, index : Int, result : Int } -> msg) -> Sub m
 port fireClickEventInCapturePhase : (String -> msg) -> Sub msg
 
 
+port changeLanguage : (String -> msg) -> Sub msg
+
+
 {-| 全体の入力を表すメッセージ
 -}
 type Msg
@@ -139,7 +144,8 @@ type Msg
     | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url.Url
     | LogOutRequest -- ログアウトを要求する
-    | LogInRequest SocialLoginService.SocialLoginService
+    | LogInRequest Data.SocialLoginService.SocialLoginService
+    | ChangeLanguage String -- 使用言語が変わった
 
 
 {-| 全体を表現する
@@ -155,6 +161,7 @@ type Model
         , windowSize : { width : Int, height : Int }
         , msgQueue : List Msg
         , user : Maybe User.User
+        , language : Data.Language.Language
         }
 
 
@@ -188,8 +195,13 @@ type GutterType
     | GutterTypeHorizontal
 
 
-init : { url : String, user : Maybe { name : String, imageUrl : String, token : String } } -> ( Model, Cmd Msg )
-init { user } =
+init :
+    { url : String
+    , user : Maybe { name : String, imageUrl : String, token : String }
+    , language : String
+    }
+    -> ( Model, Cmd Msg )
+init { user, language } =
     let
         ( editorPanelModel, emitListFromEditorGroupPanel ) =
             Panel.EditorGroup.initModel
@@ -223,6 +235,7 @@ init { user } =
                                     , googleAccountImageUrl = imageUrl
                                     }
                             )
+                , language = Data.Language.languageFromString language
                 }
     in
     updateFromList
@@ -390,17 +403,22 @@ update msg model =
         LogInRequest socialLoginService ->
             ( model
             , case socialLoginService of
-                SocialLoginService.Google ->
+                Data.SocialLoginService.Google ->
                     logInWithGoogle ()
 
-                SocialLoginService.GitHub ->
+                Data.SocialLoginService.GitHub ->
                     logInWithGitHub ()
 
-                SocialLoginService.Twitter ->
+                Data.SocialLoginService.Twitter ->
                     logInWithTwitter ()
 
-                SocialLoginService.Line ->
+                Data.SocialLoginService.Line ->
                     logInWithLine ()
+            )
+
+        ChangeLanguage string ->
+            ( model |> setLanguage string
+            , Cmd.none
             )
 
 
@@ -1378,6 +1396,19 @@ runCmd moduleRef partDefIndex wasm =
         }
 
 
+getLanguage : Model -> Data.Language.Language
+getLanguage (Model { language }) =
+    language
+
+
+setLanguage : String -> Model -> Model
+setLanguage string (Model rec) =
+    Model
+        { rec
+            | language = Data.Language.languageFromString string
+        }
+
+
 
 {- ================================================================
                            Subscription
@@ -1393,6 +1424,7 @@ subscriptions model =
          , windowResize WindowResize
          , runResult ReceiveRunResult
          , fireClickEventInCapturePhase FireClickEventInCapturePhase
+         , changeLanguage ChangeLanguage
          ]
             ++ (if isCaptureMouseEvent model then
                     [ Browser.Events.onMouseMove

@@ -54,7 +54,9 @@ sidePanel model =
                )
         )
         (Panel.Side.view
-            (Model.getCurrentUser model)
+            { user = Model.getCurrentUser model
+            , language = Model.getLanguage model
+            }
             (Model.getSidePanelModel model)
             |> List.map (Html.map Model.sidePanelMsgToMsg)
         )
@@ -86,7 +88,7 @@ editorGroupPanel model =
         )
         (Panel.EditorGroup.view
             (Model.getProject model)
-            { width = width, height = height }
+            { width = width, height = height, language = Model.getLanguage model }
             (Model.isFocusEditorGroupPanel model)
             (Model.getEditorGroupPanelGutter model)
             (Model.getEditorGroupPanelModel model)

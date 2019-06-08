@@ -12,11 +12,12 @@ module Panel.Side exposing
 -}
 
 import Color
+import Data.Language
+import Data.SocialLoginService
 import Html
 import Html.Attributes as A
 import Html.Events
 import Palette.X11
-import SocialLoginService
 import User
 import Utility.NSvg as NSvg exposing (NSvg)
 
@@ -24,15 +25,15 @@ import Utility.NSvg as NSvg exposing (NSvg)
 type Model
     = Model
         { selectTab : Tab
-        , waitLogInUrl : Maybe SocialLoginService.SocialLoginService
+        , waitLogInUrl : Maybe Data.SocialLoginService.SocialLoginService
         , mouseOverElement : MouseState
         }
 
 
 type MouseState
     = MouseStateNone
-    | MouseStateEnter SocialLoginService.SocialLoginService
-    | MouseStateDown SocialLoginService.SocialLoginService
+    | MouseStateEnter Data.SocialLoginService.SocialLoginService
+    | MouseStateDown Data.SocialLoginService.SocialLoginService
 
 
 type Msg
@@ -42,16 +43,16 @@ type Msg
     | SelectParentOrTreeClose
     | SelectFirstChildOrTreeOpen
     | ToFocusEditorPanel
-    | LogInRequest SocialLoginService.SocialLoginService
-    | MouseEnterLogInButton SocialLoginService.SocialLoginService
+    | LogInRequest Data.SocialLoginService.SocialLoginService
+    | MouseEnterLogInButton Data.SocialLoginService.SocialLoginService
     | MouseLeave
-    | MouseDownLogInButton SocialLoginService.SocialLoginService
+    | MouseDownLogInButton Data.SocialLoginService.SocialLoginService
     | MouseUp
 
 
 type Emit
     = EmitLogOutRequest
-    | EmitLogInRequest SocialLoginService.SocialLoginService
+    | EmitLogInRequest Data.SocialLoginService.SocialLoginService
 
 
 type Tab
@@ -129,11 +130,11 @@ update msg (Model rec) =
             )
 
 
-view : Maybe User.User -> Model -> List (Html.Html Msg)
-view user (Model { selectTab, waitLogInUrl, mouseOverElement }) =
+view : { user : Maybe User.User, language : Data.Language.Language } -> Model -> List (Html.Html Msg)
+view { user, language } (Model { selectTab, waitLogInUrl, mouseOverElement }) =
     [ definyLogo
-    , userView user waitLogInUrl mouseOverElement
-    , project
+    , userView user language waitLogInUrl mouseOverElement
+    , tools
     ]
 
 
@@ -159,8 +160,8 @@ definyLogo =
         ]
 
 
-userView : Maybe User.User -> Maybe SocialLoginService.SocialLoginService -> MouseState -> Html.Html Msg
-userView userMaybe logInServiceMaybe mouseState =
+userView : Maybe User.User -> Data.Language.Language -> Maybe Data.SocialLoginService.SocialLoginService -> MouseState -> Html.Html Msg
+userView userMaybe language logInServiceMaybe mouseState =
     Html.div
         [ A.style "color" "#ddd"
         , A.style "display" "grid"
@@ -182,69 +183,45 @@ userView userMaybe logInServiceMaybe mouseState =
                     ]
                 , Html.button
                     [ Html.Events.onClick SignOutRequest ]
-                    [ Html.text "サインアウトする" ]
+                    [ Html.text
+                        (case language of
+                            Data.Language.Japanese ->
+                                "サインアウトする"
+
+                            Data.Language.Esperanto ->
+                                "Elsaluti"
+
+                            Data.Language.English ->
+                                "Sign Out"
+                        )
+                    ]
                 ]
 
             ( Nothing, Just service ) ->
-                [ Html.text (SocialLoginService.serviceName service ++ "のURLを発行中") ]
+                [ Html.text
+                    (case language of
+                        Data.Language.Japanese ->
+                            Data.SocialLoginService.serviceName service ++ "のURLを発行中"
+
+                        Data.Language.Esperanto ->
+                            "Elsendante la URL de " ++ Data.SocialLoginService.serviceName service
+
+                        Data.Language.English ->
+                            "Issuing the URL of " ++ Data.SocialLoginService.serviceName service
+                    )
+                ]
 
             ( Nothing, Nothing ) ->
-                [ logInButtonNoLine mouseState googleIcon SocialLoginService.Google
-                , logInButtonNoLine mouseState gitHubIcon SocialLoginService.GitHub
-                , logInButtonNoLine mouseState twitterIcon SocialLoginService.Twitter
-                , Html.button
-                    [ Html.Events.onClick (LogInRequest SocialLoginService.Line)
-                    , Html.Events.onMouseEnter (MouseEnterLogInButton SocialLoginService.Line)
-                    , Html.Events.onMouseLeave MouseLeave
-                    , Html.Events.onMouseDown (MouseDownLogInButton SocialLoginService.Line)
-                    , Html.Events.onMouseUp MouseUp
-                    , A.style "background-color"
-                        (case mouseState of
-                            MouseStateEnter SocialLoginService.Line ->
-                                "#00e000"
-
-                            MouseStateDown SocialLoginService.Line ->
-                                "#00b300"
-
-                            _ ->
-                                "#00c300"
-                        )
-                    , A.style "border-radius" "4px"
-                    , A.style "border" "none"
-                    , A.style "color" "#FFF"
-                    , A.style "display" "flex"
-                    , A.style "align-items" "center"
-                    , A.style "padding" "0"
-                    , A.style "cursor" "pointer"
-                    ]
-                    [ Html.img
-                        [ A.src "/assets/line_icon120.png"
-                        , A.style "width" "36px"
-                        , A.style "height" "36px"
-                        , A.style "border-right"
-                            ("solid 1px "
-                                ++ (case mouseState of
-                                        MouseStateEnter SocialLoginService.Line ->
-                                            "#00c900"
-
-                                        MouseStateDown SocialLoginService.Line ->
-                                            "#009800"
-
-                                        _ ->
-                                            "#00b300"
-                                   )
-                            )
-                        , A.style "padding" "2px"
-                        ]
-                        []
-                    , logInButtonText "LINEでログイン"
-                    ]
+                [ logInButtonNoLine mouseState googleIcon language Data.SocialLoginService.Google
+                , logInButtonNoLine mouseState gitHubIcon language Data.SocialLoginService.GitHub
+                , logInButtonNoLine mouseState twitterIcon language Data.SocialLoginService.Twitter
+                , logInButtonLine mouseState language
                 ]
         )
 
 
-logInButtonNoLine : MouseState -> Html.Html Msg -> SocialLoginService.SocialLoginService -> Html.Html Msg
-logInButtonNoLine mouseSate icon service =
+logInButtonNoLine : MouseState -> Html.Html Msg -> Data.Language.Language -> Data.SocialLoginService.SocialLoginService -> Html.Html Msg
+logInButtonNoLine mouseSate icon language service =
     Html.button
         [ Html.Events.onClick (LogInRequest service)
         , Html.Events.onMouseEnter (MouseEnterLogInButton service)
@@ -279,7 +256,78 @@ logInButtonNoLine mouseSate icon service =
         , A.style "cursor" "pointer"
         ]
         [ icon
-        , logInButtonText (SocialLoginService.serviceName service ++ "でログイン")
+        , logInButtonText
+            (case language of
+                Data.Language.Japanese ->
+                    Data.SocialLoginService.serviceName service ++ "でログイン"
+
+                Data.Language.Esperanto ->
+                    "Ensalutu kun " ++ Data.SocialLoginService.serviceName service
+
+                Data.Language.English ->
+                    "Sign in with " ++ Data.SocialLoginService.serviceName service
+            )
+        ]
+
+
+logInButtonLine : MouseState -> Data.Language.Language -> Html.Html Msg
+logInButtonLine mouseState language =
+    Html.button
+        [ Html.Events.onClick (LogInRequest Data.SocialLoginService.Line)
+        , Html.Events.onMouseEnter (MouseEnterLogInButton Data.SocialLoginService.Line)
+        , Html.Events.onMouseLeave MouseLeave
+        , Html.Events.onMouseDown (MouseDownLogInButton Data.SocialLoginService.Line)
+        , Html.Events.onMouseUp MouseUp
+        , A.style "background-color"
+            (case mouseState of
+                MouseStateEnter Data.SocialLoginService.Line ->
+                    "#00e000"
+
+                MouseStateDown Data.SocialLoginService.Line ->
+                    "#00b300"
+
+                _ ->
+                    "#00c300"
+            )
+        , A.style "border-radius" "4px"
+        , A.style "border" "none"
+        , A.style "color" "#FFF"
+        , A.style "display" "flex"
+        , A.style "align-items" "center"
+        , A.style "padding" "0"
+        , A.style "cursor" "pointer"
+        ]
+        [ Html.img
+            [ A.src "/assets/line_icon120.png"
+            , A.style "width" "36px"
+            , A.style "height" "36px"
+            , A.style "border-right"
+                ("solid 1px "
+                    ++ (case mouseState of
+                            MouseStateEnter Data.SocialLoginService.Line ->
+                                "#00c900"
+
+                            MouseStateDown Data.SocialLoginService.Line ->
+                                "#009800"
+
+                            _ ->
+                                "#00b300"
+                       )
+                )
+            , A.style "padding" "2px"
+            ]
+            []
+        , logInButtonText
+            (case language of
+                Data.Language.Japanese ->
+                    "LINEでログイン"
+
+                Data.Language.Esperanto ->
+                    "Ensalutu kun LINE"
+
+                Data.Language.English ->
+                    "Log in with LINE"
+            )
         ]
 
 
@@ -292,32 +340,22 @@ logInButtonText text =
         [ Html.text text ]
 
 
+tools : Html.Html msg
+tools =
+    Html.div
+        [ A.style "color" "#ddd" ]
+        [ project
+        , searchIcon
+        , versionIcon
+        , toDoListIcon
+        ]
+
+
 project : Html.Html msg
 project =
     Html.div
-        [ A.style "color" "#ddd" ]
-        [ Html.text "projectName" ]
-
-
-documentIcon : Html.Html msg
-documentIcon =
-    Html.div
         []
-        [ Html.text "document" ]
-
-
-moduleTreeIcon : Html.Html msg
-moduleTreeIcon =
-    Html.div
-        []
-        [ Html.text "ModuleTree" ]
-
-
-projectImport : Html.Html msg
-projectImport =
-    Html.div
-        []
-        [ Html.text "projectImport" ]
+        [ Html.text "document, Module, ProjectImport" ]
 
 
 searchIcon : Html.Html msg

@@ -20,6 +20,7 @@ module Panel.EditorGroup exposing
 また、編集画面を分割することもできる
 -}
 
+import Data.Language
 import Html
 import Html.Attributes
 import Html.Events
@@ -1185,8 +1186,8 @@ projectRefToEditorItem projectRef =
 {- ====================== View ====================== -}
 
 
-view : Project.Project -> { width : Int, height : Int } -> Bool -> Maybe Gutter -> Model -> List (Html.Html Msg)
-view project { width, height } isFocus gutter (Model { group, activeEditorIndex, mouseOverOpenEditorPosition }) =
+view : Project.Project -> { width : Int, height : Int, language : Data.Language.Language } -> Bool -> Maybe Gutter -> Model -> List (Html.Html Msg)
+view project { width, height, language } isFocus gutter (Model { group, activeEditorIndex, mouseOverOpenEditorPosition }) =
     let
         ( activeEditorRow, activeEditorColumn ) =
             activeEditorIndex
