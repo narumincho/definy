@@ -3,6 +3,7 @@ module Project exposing
     , Msg(..)
     , Project
     , getName
+    , getOwnerName
     , getSource
     , init
     , setSource
@@ -23,6 +24,7 @@ import Project.ModuleDefinition as Source
 type Project
     = Project
         { name : Label.Label
+        , ownerName : Label.Label
         , document : Document.Document
         , source : Source.ModuleDefinition
         }
@@ -38,14 +40,15 @@ type Emit
 
 {-| プロジェクトの初期値
 -}
-init : Label.Label -> ( Project, List Emit )
-init name =
+init : ( Project, List Emit )
+init =
     let
         ( source, sourceEmit ) =
             Source.init
     in
     ( Project
-        { name = projectName
+        { name = sampleProject
+        , ownerName = sampleOwnerName
         , document = Document.init
         , source = source
         }
@@ -68,8 +71,24 @@ update msg project =
             )
 
 
-projectName : Label.Label
-projectName =
+sampleOwnerName : Label.Label
+sampleOwnerName =
+    Label.make
+        Label.hs
+        [ Label.oa
+        , Label.om
+        , Label.op
+        , Label.ol
+        , Label.oe
+        , Label.oU
+        , Label.os
+        , Label.oe
+        , Label.or
+        ]
+
+
+sampleProject : Label.Label
+sampleProject =
     Label.make
         Label.hs
         [ Label.oa
@@ -92,6 +111,13 @@ projectName =
 getName : Project -> Label.Label
 getName (Project { name }) =
     name
+
+
+{-| プロジェクトの管理者の名前
+-}
+getOwnerName : Project -> Label.Label
+getOwnerName (Project { ownerName }) =
+    ownerName
 
 
 {-| プロジェクトのソース (モジュールがたくさん入ったもの)を取得する

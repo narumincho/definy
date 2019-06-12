@@ -17,7 +17,9 @@ import Data.SocialLoginService
 import Html
 import Html.Attributes as A
 import Html.Events
+import Label
 import Palette.X11
+import Project
 import User
 import Utility.NSvg as NSvg exposing (NSvg)
 
@@ -152,8 +154,15 @@ update msg (Model rec) =
             )
 
 
-view : { user : Maybe User.User, language : Data.Language.Language } -> Model -> List (Html.Html Msg)
-view { user, language } (Model { selectTab, logInState, mouseState }) =
+
+{- =======================================================
+                        View
+   =======================================================
+-}
+
+
+view : { user : Maybe User.User, language : Data.Language.Language, project : Project.Project } -> Model -> List (Html.Html Msg)
+view { user, language, project } (Model { selectTab, logInState, mouseState }) =
     [ definyLogo
     , userView
         { user = user
@@ -161,6 +170,9 @@ view { user, language } (Model { selectTab, logInState, mouseState }) =
         , logInState = logInState
         , mouseState = mouseState
         }
+    , projectOwnerAndName
+        (Project.getOwnerName project)
+        (Project.getName project)
     , tools
     ]
 
@@ -414,40 +426,47 @@ logInButtonText text =
         [ Html.text text ]
 
 
+projectOwnerAndName : Label.Label -> Label.Label -> Html.Html msg
+projectOwnerAndName ownerName projectName =
+    Html.div
+        [ A.style "color" "#ddd" ]
+        [ Html.text (Label.toCapitalString ownerName ++ "/" ++ Label.toCapitalString projectName) ]
+
+
 tools : Html.Html msg
 tools =
     Html.div
         [ A.style "color" "#ddd" ]
-        [ project
-        , searchIcon
-        , versionIcon
-        , toDoListIcon
+        [ projectTab
+        , searchTab
+        , versionTab
+        , toDoListTab
         ]
 
 
-project : Html.Html msg
-project =
+projectTab : Html.Html msg
+projectTab =
     Html.div
         []
         [ Html.text "document, Module, ProjectImport" ]
 
 
-searchIcon : Html.Html msg
-searchIcon =
+searchTab : Html.Html msg
+searchTab =
     Html.div
         []
         [ Html.text "search" ]
 
 
-versionIcon : Html.Html msg
-versionIcon =
+versionTab : Html.Html msg
+versionTab =
     Html.div
         []
         [ Html.text "version" ]
 
 
-toDoListIcon : Html.Html msg
-toDoListIcon =
+toDoListTab : Html.Html msg
+toDoListTab =
     Html.div
         []
         [ Html.text "TODO List" ]

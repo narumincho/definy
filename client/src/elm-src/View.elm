@@ -56,6 +56,7 @@ sidePanel model =
         (Panel.Side.view
             { user = Model.getCurrentUser model
             , language = Model.getLanguage model
+            , project = Model.getProject model
             }
             (Model.getSidePanelModel model)
             |> List.map (Html.map Model.sidePanelMsgToMsg)

@@ -208,7 +208,6 @@ init { user, language } =
 
         ( project, ( msgListFromProject, cmdFromProject ) ) =
             Project.init
-                (Label.make Label.hi [ Label.on, Label.oi, Label.ot ])
                 |> projectUpdateReturnToProjectAndMsgListAndCmd
 
         ( msgFromEditorGroupPanel, cmdFromEditorGroupPanel ) =
