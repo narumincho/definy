@@ -6,6 +6,7 @@
         "strict": true,
         "moduleResolution": "node",
         "removeComments": true,
+        "newLine": "LF",
         "outDir": "../dist"
     },
     "files": ["./index.ts"]

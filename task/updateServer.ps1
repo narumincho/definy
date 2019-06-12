@@ -4,7 +4,7 @@ Set-Location -Path ./server/src;
 
 Write-Output "Compile TypeScript ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";
-npx tsc;
+tsc;
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Compile TypeScript OK";
 Set-Location -Path ../;
