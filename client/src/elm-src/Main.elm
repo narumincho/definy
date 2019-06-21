@@ -5,7 +5,14 @@ import Model
 import View
 
 
-main : Platform.Program { url : String, user : Maybe { name : String, imageUrl : String, token : String }, language : String } Model.Model Model.Msg
+main :
+    Platform.Program
+        { url : String
+        , user : Maybe { name : String, imageUrl : String, token : String }
+        , language : String
+        }
+        Model.Model
+        Model.Msg
 main =
     Browser.element
         { init = Model.init
