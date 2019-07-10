@@ -17,7 +17,7 @@
     },
     "devDependencies": {
         "@types/express-graphql": "^0.8.0",
-        "@types/node": "^12.6.1",
+        "@types/node": "^12.6.2",
         "typescript": "^3.5.3"
     },
     "engines": {
