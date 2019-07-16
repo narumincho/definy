@@ -2,13 +2,13 @@
 
 New Programming Language and Tool for Web. like Elm.
 
-[Demo](https://definy-lang.firebaseapp.com/)
+[Demo](https://definy-lang.web.app/)
 
 # Definy
 
 ゲームとツールを手軽に作れるプログラミング言語とエディタ。[Elm](https://elm-lang.org/)でできている Web アプリ。**まだ、ぜんぜんできていない**
 
-[ここ](https://definy-lang.firebaseapp.com/)で動作を確認できる
+[ここ](https://definy-lang.web.app/)で動作を確認できる
 
 ## 特徴
 
