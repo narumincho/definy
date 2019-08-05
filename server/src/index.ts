@@ -7,6 +7,7 @@ import * as jwt from "jsonwebtoken";
 import { URLSearchParams, URL } from "url";
 import * as secret from "./lib/secret";
 import * as logInWithTwitter from "./lib/twitterLogIn";
+import * as s from "./lib/schema";
 
 admin.initializeApp();
 
@@ -79,52 +80,7 @@ const userType = new graphql.GraphQLObjectType({
 
 /** データベースで保存するデータの形式を決めるスキーマ */
 const schema = new graphql.GraphQLSchema({
-    query: new graphql.GraphQLObjectType({
-        name: "Query",
-        description:
-            "データを取得できる。データを取得したときに影響は他に及ばさない",
-        fields: {
-            hello: {
-                description: "世界に挨拶する",
-                type: graphql.GraphQLNonNull(graphql.GraphQLString),
-                resolve: () => "hello world!"
-            },
-            user: {
-                description: "ユーザーの情報をユーザーIDから取得する",
-                type: userType,
-                args: {
-                    id: {
-                        description: "ユーザーID",
-                        type: graphql.GraphQLNonNull(graphql.GraphQLString)
-                    }
-                },
-                resolve: async (source, args, context, info) => {
-                    const id: string = args.id;
-                    const user: FirebaseFirestore.DocumentSnapshot = await dataBaseUserCollection
-                        .doc(id)
-                        .get();
-                    if (!user.exists) {
-                        throw new Error(`user id=${id} is not exists`);
-                        return;
-                    }
-                    const userData = user.data() as FirebaseFirestore.DocumentData;
-                    return {
-                        id: id,
-                        displayName: userData.displayName,
-                        imageUrl: userData.imageUrl,
-                        createdAt: userData.createdAt
-                    };
-                }
-            },
-            allUser: {
-                description: "すべてのユーザーを取得する",
-                type: graphql.GraphQLNonNull(graphql.GraphQLList(userType)),
-                resolve: async (source, args, context, info) => {
-                    return [];
-                }
-            }
-        }
-    }),
+    query: s.query,
     mutation: new graphql.GraphQLObjectType({
         name: "Mutation",
         description: "データを作成、更新ができる",
@@ -201,35 +157,6 @@ const schema = new graphql.GraphQLSchema({
                 },
                 description:
                     "LINEで新規登録かログインするためのURLを得る。受け取ったURLをlocation.hrefに代入するとかして、LINEの認証画面へ"
-            },
-            getAccessToken: {
-                type: new graphql.GraphQLObjectType({
-                    name: "AccessTokenAndRefreshToken",
-                    description:
-                        "各種データにアクセスするためのAccessTokenと、それを再発行してもらう新しいRefreshToken",
-                    fields: {
-                        accessToken: {
-                            type: graphql.GraphQLNonNull(graphql.GraphQLString),
-                            description:
-                                "各種データにアクセスするために必要なトークン"
-                        },
-                        refreshToken: {
-                            type: graphql.GraphQLNonNull(graphql.GraphQLString),
-                            description:
-                                "AccessTokenを再発行してもらうのに必要なトークン"
-                        }
-                    }
-                }),
-                args: {
-                    refreshToken: {
-                        type: graphql.GraphQLNonNull(graphql.GraphQLString),
-                        description:
-                            "初回時、ソーシャルログインでログインしたあとhttps://definy-lang.firebaseapp.comにリダイレクトしたときに、クエリに?refreshToken=がついてあるのでそれを使う。それ以降はここで得た新しいrefeshTokenを使う"
-                    }
-                },
-                resolve: async (source, args, context, info) => {},
-                description:
-                    "RefreshTokenから、各種データにアクセスするためのAccessTokenと、それを再発行してもらう新しいRefreshTokenを得る"
             }
         }
     })

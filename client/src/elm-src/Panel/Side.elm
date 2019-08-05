@@ -12,14 +12,19 @@ module Panel.Side exposing
 -}
 
 import Color
+import Css
 import Data.Language
 import Data.SocialLoginService
 import Html
 import Html.Attributes as A
 import Html.Events
+import Html.Styled
+import Html.Styled.Attributes
 import Label
 import Palette.X11
 import Project
+import Svg.Styled
+import Svg.Styled.Attributes
 import User
 import Utility.NSvg as NSvg exposing (NSvg)
 
@@ -435,48 +440,107 @@ projectOwnerAndName ownerName projectName =
 
 tools : Html.Html msg
 tools =
-    Html.div
-        [ A.style "color" "#ddd" ]
-        [ projectTab
-        , searchTab
-        , versionTab
-        , toDoListTab
+    Html.Styled.div
+        [ Html.Styled.Attributes.css
+            [ Css.displayFlex ]
+        ]
+        [ Html.Styled.div
+            [ Html.Styled.Attributes.css
+                [ Css.height (Css.px 48)
+                , Css.property "display" "grid"
+                , Css.property "grid-template-columns" "1fr 1fr 1fr"
+                ]
+            ]
+            [ projectTab
+            , searchTab
+            , toDoTab
+            ]
+        , Html.Styled.text "body"
+        ]
+        |> Html.Styled.toUnstyled
+
+
+projectTab : Html.Styled.Html msg
+projectTab =
+    Html.Styled.div
+        [ Html.Styled.Attributes.css
+            [ Css.displayFlex
+            , Css.justifyContent Css.center
+            , Css.alignItems Css.center
+            ]
+        ]
+        [ Svg.Styled.svg
+            [ Svg.Styled.Attributes.viewBox "0 0 500 500"
+            , Svg.Styled.Attributes.css
+                [ Css.width (Css.px 48)
+                , Css.height (Css.px 48)
+                ]
+            ]
+            [ Svg.Styled.rect
+                [ Svg.Styled.Attributes.x "95"
+                , Svg.Styled.Attributes.y "45"
+                , Svg.Styled.Attributes.width "300"
+                , Svg.Styled.Attributes.height "150"
+                , Svg.Styled.Attributes.stroke "rgb(0,0,0)"
+                , Svg.Styled.Attributes.fill "rgb(200,200,200)"
+                ]
+                []
+            , Svg.Styled.rect
+                [ Svg.Styled.Attributes.x "185"
+                , Svg.Styled.Attributes.y "237"
+                , Svg.Styled.Attributes.width "210"
+                , Svg.Styled.Attributes.height "86"
+                , Svg.Styled.Attributes.stroke "rgb(0,0,0)"
+                , Svg.Styled.Attributes.fill "rgb(200,200,200)"
+                ]
+                []
+            , Svg.Styled.rect
+                [ Svg.Styled.Attributes.x "185"
+                , Svg.Styled.Attributes.y "360"
+                , Svg.Styled.Attributes.width "210"
+                , Svg.Styled.Attributes.height "86"
+                , Svg.Styled.Attributes.stroke "rgb(0,0,0)"
+                , Svg.Styled.Attributes.fill "rgb(200,200,200)"
+                ]
+                []
+            , Svg.Styled.polyline
+                [ Svg.Styled.Attributes.points "114.804 193.017 112.57 406.425 186.592 405.866"
+                , Svg.Styled.Attributes.stroke "rgb(200,200,200)"
+                , Svg.Styled.Attributes.fill "none"
+                ]
+                []
+            , Svg.Styled.polyline
+                [ Svg.Styled.Attributes.points "13.732 284.916 185.52 285.196"
+                , Svg.Styled.Attributes.stroke "rgb(200,200,200)"
+                , Svg.Styled.Attributes.fill "none"
+                ]
+                []
+            ]
         ]
 
 
-projectTab : Html.Html msg
-projectTab =
-    Html.div
-        []
-        [ Html.text "document, Module, ProjectImport" ]
-
-
-searchTab : Html.Html msg
+searchTab : Html.Styled.Html msg
 searchTab =
-    Html.div
-        []
-        [ Html.text "search" ]
+    Html.Styled.div
+        [ Html.Styled.Attributes.css
+            [ Css.displayFlex
+            , Css.justifyContent Css.center
+            , Css.alignItems Css.center
+            ]
+        ]
+        [ Html.Styled.text "search" ]
 
 
-versionTab : Html.Html msg
-versionTab =
-    Html.div
-        []
-        [ Html.text "version" ]
-
-
-toDoListTab : Html.Html msg
-toDoListTab =
-    Html.div
-        []
-        [ Html.text "TODO List" ]
-
-
-instanceIcon : Html.Html msg
-instanceIcon =
-    Html.div
-        []
-        [ Html.text "Instance" ]
+toDoTab : Html.Styled.Html msg
+toDoTab =
+    Html.Styled.div
+        [ Html.Styled.Attributes.css
+            [ Css.displayFlex
+            , Css.justifyContent Css.center
+            , Css.alignItems Css.center
+            ]
+        ]
+        [ Html.Styled.text "TODO" ]
 
 
 gitHubIcon : Html.Html msg

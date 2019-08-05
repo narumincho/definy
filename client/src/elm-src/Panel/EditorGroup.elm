@@ -1564,7 +1564,7 @@ editorItemView { project, editorItem, editorIndex, width, height, isActive, isOn
          , Html.Attributes.id (editorIndexToIdString editorIndex)
          ]
             ++ (if isActive then
-                    []
+                    [ Html.Attributes.style "outline" "solid 2px orange" ]
 
                 else
                     [ Html.Events.onClick (ChangeActiveEditor editorIndex) ]
