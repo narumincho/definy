@@ -1,6 +1,7 @@
 import * as g from "graphql";
 import * as type from "./type";
 import Maybe from "graphql/tsutils/Maybe";
+import { initializedAdmin } from "./initializedAdmin";
 
 const makeObjectFieldMap = <Type extends { [k in string]: unknown }>(
     args: Type extends { id: string }
@@ -311,19 +312,123 @@ const moduleGraphQLType: g.GraphQLObjectType<
             })
         })
 });
+
+const firestore = initializedAdmin.firestore();
+const userCollection = firestore.collection("user");
+const dataCollection = firestore.collection("data");
+
+const writeSample = makeQueryOrMutationField<{}, string>({
+    type: g.GraphQLNonNull(g.GraphQLString),
+    args: {},
+    description: "書き込みサンプル",
+    resolve: async (source, args, context, info) => {
+        for (let i = 0; i < 1000; i) {
+            const name = createRandomName();
+
+            await dataCollection.add({
+                userId: (await userCollection.add({
+                    name: name
+                })).id,
+                userName: name
+            });
+        }
+        return "ok";
+    }
+});
+
+const readOptSample = makeQueryOrMutationField<{}, Array<string>>({
+    type: g.GraphQLNonNull(g.GraphQLList(g.GraphQLNonNull(g.GraphQLString))),
+    args: {},
+    description: "読み込みサンプル",
+    resolve: async (source, args, context, info) => {
+        const docs = (await dataCollection.get()).docs;
+        const result: Array<string> = [];
+        for (const d of docs) {
+            result.push(d.data().userName);
+        }
+        return result;
+    }
+});
+
+const readNoOptSample = makeQueryOrMutationField<{}, Array<string>>({
+    type: g.GraphQLNonNull(g.GraphQLList(g.GraphQLNonNull(g.GraphQLString))),
+    args: {},
+    description: "読み込みサンプル",
+    resolve: async (source, args, context, info) => {
+        const docs = (await dataCollection.get()).docs;
+        const result: Array<string> = [];
+        for (const d of docs) {
+            const userId = d.data().userId;
+            const userData = (await userCollection.doc(userId).get()).data();
+            if (userData === undefined) {
+                return ["存在しないユーザ"];
+            }
+            result.push(userData.name);
+        }
+        return result;
+    }
+});
+
+const getData = makeQueryOrMutationField<{}, Array<string>>({
+    type: g.GraphQLNonNull(g.GraphQLList(g.GraphQLNonNull(g.GraphQLString))),
+    args: {},
+    description: "読み込みサンプル",
+    resolve: async (source, args, context, info) => {
+        const docs = (await dataCollection.get()).docs;
+        const result: Array<string> = [];
+        for (const d of docs) {
+            result.push(JSON.stringify(d.data()));
+        }
+        return result;
+    }
+});
+
+const deleteSample = makeQueryOrMutationField<{}, string>({
+    type: g.GraphQLNonNull(g.GraphQLString),
+    args: {},
+    description: "リセットして消す",
+    resolve: async (source, args, context, info) => {
+        const docs = (await userCollection.get()).docs;
+        for (const d of docs) {
+            await d.ref.delete();
+        }
+        console.log("user ok. run data");
+        const dataDocs = (await dataCollection.get()).docs;
+        await Promise.all(dataDocs.map(e => e.ref.delete()));
+        return "ok!";
+    }
+});
+
+const createRandomName = (): string => {
+    let result = "";
+    const charTable = "abcdefghijklmnopqrstuvwxyz";
+    for (let i = 0; i < 30; i++) {
+        result += charTable[Math.floor(charTable.length * Math.random())];
+    }
+    return result;
+};
 /*  =============================================================
                             Schema
     =============================================================
 */
-export const query = new g.GraphQLObjectType({
-    name: "Query",
-    description:
-        "データを取得できる。データを取得したときに影響は他に及ばさない",
-    fields: {
-        getUser
-    }
-});
-
 export const schema = new g.GraphQLSchema({
-    query
+    query: new g.GraphQLObjectType({
+        name: "Query",
+        description:
+            "データを取得できる。データを取得したときに影響は他に及ばさない",
+        fields: {
+            getUser,
+            getData
+        }
+    }),
+    mutation: new g.GraphQLObjectType({
+        name: "Mutation",
+        description: "データを作成、更新ができる",
+        fields: {
+            writeSample,
+            readNoOptSample,
+            readOptSample,
+            deleteSample
+        }
+    })
 });

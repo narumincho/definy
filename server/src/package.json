@@ -18,8 +18,8 @@
     },
     "devDependencies": {
         "@types/express-graphql": "^0.8.0",
-        "@types/jsonwebtoken": "^8.3.2",
-        "@types/node": "^12.6.9",
+        "@types/jsonwebtoken": "^8.3.3",
+        "@types/node": "^12.7.1",
         "typescript": "^3.5.3"
     },
     "engines": {

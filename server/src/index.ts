@@ -1,17 +1,16 @@
 import * as functions from "firebase-functions";
+import { initializedAdmin } from "./lib/initializedAdmin";
 import * as admin from "firebase-admin";
 import * as graphql from "graphql";
 import * as graphqlExpress from "express-graphql";
 import axios, { AxiosResponse } from "axios";
 import * as jwt from "jsonwebtoken";
 import { URLSearchParams, URL } from "url";
-import * as secret from "./lib/secret";
+import * as secret from "./lib/key";
 import * as logInWithTwitter from "./lib/twitterLogIn";
 import * as s from "./lib/schema";
 
-admin.initializeApp();
-
-const dataBase = admin.firestore();
+const dataBase = initializedAdmin.firestore();
 const dataBaseUserCollection: FirebaseFirestore.CollectionReference = dataBase.collection(
     "user"
 );
@@ -78,93 +77,9 @@ const userType = new graphql.GraphQLObjectType({
     }
 });
 
-/** データベースで保存するデータの形式を決めるスキーマ */
-const schema = new graphql.GraphQLSchema({
-    query: s.query,
-    mutation: new graphql.GraphQLObjectType({
-        name: "Mutation",
-        description: "データを作成、更新ができる",
-        fields: {
-            getGoogleLogInUrl: {
-                type: graphql.GraphQLNonNull(graphql.GraphQLString),
-                resolve: async (source, args, context, info) => {
-                    const ref = await dataBaseGoogleStateCollection.add({});
-                    return (
-                        "https://accounts.google.com/o/oauth2/v2/auth?" +
-                        new URLSearchParams({
-                            response_type: "code",
-                            client_id: googleLogInClientId,
-                            redirect_uri: googleLogInRedirectUri,
-                            scope: "profile openid",
-                            state: ref.id
-                        }).toString()
-                    );
-                },
-                description:
-                    "Googleで新規登録かログインするためのURLを得る。受け取ったURLをlocation.hrefに代入するとかして、Googleの認証画面へ"
-            },
-            getGitHubLogInUrl: {
-                type: graphql.GraphQLNonNull(graphql.GraphQLString),
-                resolve: async (source, args, context, info) => {
-                    const ref = await dataBaseGitHubStateCollection.add({});
-                    return (
-                        "https://github.com/login/oauth/authorize?" +
-                        new URLSearchParams({
-                            response_type: "code",
-                            client_id: gitHubLogInClientId,
-                            redirect_uri: gitHubLogInRedirectUri,
-                            scope: "read:user",
-                            state: ref.id
-                        }).toString()
-                    );
-                },
-                description:
-                    "GitHubで新規登録かログインするためのURLを得る。受け取ったURLをlocation.hrefに代入するとかして、GitHubの認証画面へ"
-            },
-            getTwitterLogInUrl: {
-                type: graphql.GraphQLNonNull(graphql.GraphQLString),
-                resolve: async (source, args, context, info) => {
-                    const {
-                        tokenSecret,
-                        url
-                    } = await logInWithTwitter.getLoginUrl(
-                        twitterLogInClientId,
-                        twitterLogInSecret,
-                        twitterLogInRedirectUri
-                    );
-                    await dataBaseTwitterStateCollection.doc("last").set({
-                        tokenSecret: tokenSecret
-                    });
-                    return url;
-                },
-                description:
-                    "Twitterで新規登録かログインするためのURLを得る。受け取ったURLをlocation.hrefに代入するとかして、Twitterの認証画面へ"
-            },
-            getLineLogInUrl: {
-                type: graphql.GraphQLNonNull(graphql.GraphQLString),
-                resolve: async (source, args, context, info) => {
-                    const ref = await dataBaseLineStateCollection.add({});
-                    return (
-                        "https://access.line.me/oauth2/v2.1/authorize?" +
-                        new URLSearchParams({
-                            response_type: "code",
-                            client_id: lineLogInClientId,
-                            redirect_uri: lineLogInRedirectUri,
-                            scope: "profile openid",
-                            state: ref.id
-                        }).toString()
-                    );
-                },
-                description:
-                    "LINEで新規登録かログインするためのURLを得る。受け取ったURLをlocation.hrefに代入するとかして、LINEの認証画面へ"
-            }
-        }
-    })
-});
-
-export const api = functions.https.onRequest(
-    graphqlExpress({ schema: schema, graphiql: true })
-);
+export const api = functions
+    .runWith({ memory: "2GB" })
+    .https.onRequest(graphqlExpress({ schema: s.schema, graphiql: true }));
 
 /* =====================================================================
  *                              Google
@@ -250,7 +165,7 @@ export const googleLogInReceiver = functions.https.onRequest(
             googleAccountId: googleData.sub,
             displayName: googleData.name,
             imageUrl: googleData.picture,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: admin.firestore.Timestamp.now(),
             newestRefreshId: refreshId
         });
         await getAndSaveUserImage(newUserData.id, new URL(googleData.picture));
