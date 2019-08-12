@@ -39,7 +39,6 @@ import Data.Language
 import Data.SocialLoginService
 import Json.Decode
 import Key
-import Label
 import Panel.CommandPalette
 import Panel.DefaultUi
 import Panel.Editor.Module

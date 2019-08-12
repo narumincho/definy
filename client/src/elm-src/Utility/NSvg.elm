@@ -242,7 +242,7 @@ strokeStyleToSvgAttributes strokeStyle =
         Stroke { color, width, strokeLineJoin } ->
             (case color of
                 Just c ->
-                    [ Sa.stroke (Color.toHexString c) ]
+                    [ Sa.stroke (Color.toHex c) ]
 
                 Nothing ->
                     []
@@ -299,7 +299,7 @@ fillStyleToSvgAttributes fillStyle =
             [ Sa.fill "none" ]
 
         FillWithColor { color } ->
-            [ Sa.fill (Color.toHexString color) ]
+            [ Sa.fill (Color.toHex color) ]
 
 
 clickMsgToSvgAttributes : Maybe msg -> List (S.Attribute msg)
