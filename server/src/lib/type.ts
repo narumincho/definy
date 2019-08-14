@@ -1,6 +1,47 @@
 // 外部に公開する型
 import * as g from "graphql";
 /*  =============================================================
+                            LogInService
+    =============================================================
+*/
+const logInServiceValues = {
+    google: {
+        description:
+            "Google https://developers.google.com/identity/sign-in/web/"
+    },
+    gitHub: {
+        description:
+            "GitHub https://developer.github.com/v3/guides/basics-of-authentication/"
+    },
+    line: {
+        description: "LINE https://developers.line.biz/ja/docs/line-login/"
+    }
+};
+
+type LogInService = keyof (typeof logInServiceValues);
+
+export const logInServiceGraphQLType = new g.GraphQLEnumType({
+    name: "AccountService",
+    values: logInServiceValues,
+    description: "ソーシャルログインを提供するサービス"
+});
+/*  =============================================================
+                       LogInServiceAndId
+    =============================================================
+*/
+/**
+ * ソーシャルログインで利用するサービス名とそのアカウントIDをセットにしたもの
+ */
+export type LogInServiceAndId = {
+    service: LogInService;
+    serviceId: string;
+};
+
+export const logInServiceAndIdToString = (
+    logInAccountServiceId: LogInServiceAndId
+) => logInAccountServiceId.service + "_" + logInAccountServiceId.serviceId;
+
+/*  =============================================================
                             User
     =============================================================
 */
@@ -9,7 +50,7 @@ export type User = {
     name: Label;
     image: Image;
     createdAt: Date;
-    leaderProjectList: Array<Project>;
+    leaderProjects: Array<Project>;
     editingProjects: Array<Project>;
 };
 
@@ -71,7 +112,7 @@ type PartDefinition = {
 /**
  * Definyでよく使う識別子 最初の1文字はアルファベット、それ以降は数字と大文字アルファベット、小文字のアルファベット。1文字以上63文字以下
  */
-type Label = string & { __simpleNameBrand: never };
+export type Label = string & { __simpleNameBrand: never };
 
 export const labelFromString = (text: string): Label => {
     if (text.length < 1) {
@@ -129,11 +170,11 @@ type ImageIO = {
  * Id。各種リソースを識別するために使うID。
  * URLでも使うので、大文字と小文字の差を持たせるべきではないので。小文字に統一して、大文字は一切使わない。長さは24文字
  */
-type Id = string & { idBrand: never };
+export type Id = string & { idBrand: never };
 
 export const idFromString = (string: string): Id => string as Id;
 
-const createRandomId = (): Id => {
+export const createRandomId = (): Id => {
     let id = "";
     const chars = "0123456789abcdefghijklmnopqrstuvwxyz";
     for (let i = 0; i < 24; i++) {
