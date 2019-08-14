@@ -4,7 +4,6 @@ module Data.SocialLoginService exposing (SocialLoginService(..), serviceName)
 type SocialLoginService
     = Google
     | GitHub
-    | Twitter
     | Line
 
 
@@ -16,9 +15,6 @@ serviceName service =
 
         GitHub ->
             "GitHub"
-
-        Twitter ->
-            "Twitter"
 
         Line ->
             "LINE"

@@ -290,7 +290,6 @@ serviceSelectView language mouseState =
         [ Html.text "▲" ]
     , logInButtonNoLine mouseState googleIcon language Data.SocialLoginService.Google
     , logInButtonNoLine mouseState gitHubIcon language Data.SocialLoginService.GitHub
-    , logInButtonNoLine mouseState twitterIcon language Data.SocialLoginService.Twitter
     , logInButtonLine mouseState language
     ]
 
