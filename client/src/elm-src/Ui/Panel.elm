@@ -1,15 +1,18 @@
 module Ui.Panel exposing
-    ( FixFix
-    , FixGrow
-    , GrowFix
-    , GrowGrow
+    ( FitStyle(..)
+    , FixFix(..)
+    , FixGrow(..)
+    , GrowFix(..)
+    , GrowGrow(..)
     , HorizontalAlignment
+    , ImageRendering(..)
     , VerticalAlignment
     , bottom
     , centerX
     , centerY
     , left
     , right
+    , toHtml
     , top
     )
 
@@ -88,12 +91,18 @@ type GrowGrow msg
         { dataUrl : String
         , fitStyle : FitStyle
         , alternativeText : String
+        , rendering : ImageRendering
         }
 
 
 type FitStyle
     = Contain
     | Cover
+
+
+type ImageRendering
+    = ImageRenderingPixelated
+    | ImageRenderingAuto
 
 
 type Border
@@ -166,7 +175,7 @@ growGrowToHtml growGrow =
                 [ Html.Styled.Attributes.css
                     [ Css.width (Css.pct 100)
                     , Css.height (Css.pct 100)
-                    , Css.color (Css.hex (Color.toHex color))
+                    , Css.color (Css.hex (Color.toRGBString color))
                     ]
                 ]
                 []
@@ -197,12 +206,12 @@ growGrowToHtml growGrow =
                 ]
                 [ Html.Styled.text text ]
 
-        ImageFromDataUrl { dataUrl, fitStyle, alternativeText } ->
-            Html.Styled.div
+        ImageFromDataUrl { dataUrl, fitStyle, alternativeText, rendering } ->
+            Html.Styled.img
                 [ Html.Styled.Attributes.css
-                    [ Css.width (Css.pct 100)
-                    , Css.height (Css.pct 100)
-                    , Css.property "object-fit"
+                    ([ Css.width (Css.pct 100)
+                     , Css.height (Css.pct 100)
+                     , Css.property "object-fit"
                         (case fitStyle of
                             Contain ->
                                 "contain"
@@ -210,7 +219,16 @@ growGrowToHtml growGrow =
                             Cover ->
                                 "cover"
                         )
-                    ]
+                     , Css.display Css.block
+                     ]
+                        ++ (case rendering of
+                                ImageRenderingAuto ->
+                                    []
+
+                                ImageRenderingPixelated ->
+                                    [ Css.property "image-rendering" "pixelated" ]
+                           )
+                    )
                 , Html.Styled.Attributes.src
                     (if String.startsWith "data:" dataUrl then
                         dataUrl
