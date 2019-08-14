@@ -19,7 +19,7 @@ module Project.ModuleDefinition.ModuleWithCache exposing
     )
 
 import Compiler
-import Label as L
+import Data.Label as L
 import Project.ModuleDefinition.Module as Module
 import Project.ModuleDefinition.Module.PartDef as PartDef
 import Project.ModuleDefinition.Module.PartDef.Expr as Expr

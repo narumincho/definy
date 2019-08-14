@@ -8,7 +8,7 @@ module Project.ModuleDefinition.Module.PartDef.Name exposing
     , toString
     )
 
-import Label
+import Data.Label as Label
 
 
 {-| 定義の中の名前。名無しも含めることができる

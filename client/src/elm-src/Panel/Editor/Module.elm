@@ -11,13 +11,13 @@ module Panel.Editor.Module exposing
 
 import Array
 import Compiler
+import Data.Label as L
 import Html
 import Html.Attributes
 import Html.Events
 import Html.Keyed
 import Json.Decode
 import Json.Encode
-import Label as L
 import Panel.DefaultUi
 import Parser
 import Parser.SimpleChar

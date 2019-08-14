@@ -3,7 +3,7 @@ module Project.ModuleDefinition.Module.TypeDef exposing (TypeDef, getName, getTa
 {-| 型の定義
 -}
 
-import Label as L
+import Data.Label as L
 import Project.ModuleDefinition.ModuleIndex as ModuleIndex
 
 

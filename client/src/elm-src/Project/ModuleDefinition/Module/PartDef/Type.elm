@@ -9,7 +9,7 @@ module Project.ModuleDefinition.Module.PartDef.Type exposing
     , validTypeToString
     )
 
-import Label
+import Data.Label as Label
 import Project.ModuleDefinitionIndex as SourceIndex
 
 

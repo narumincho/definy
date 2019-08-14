@@ -1,4 +1,4 @@
-module Label exposing
+module Data.Label exposing
     ( Head
     , Label
     , Others

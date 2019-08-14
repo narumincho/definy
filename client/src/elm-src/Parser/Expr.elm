@@ -9,7 +9,7 @@ module Parser.Expr exposing
     , takeTermListTO
     )
 
-import Label
+import Data.Label as Label
 import Parser.SimpleChar as SimpleChar exposing (SimpleChar(..), Symbol(..))
 import Project.ModuleDefinition.Module.PartDef.Expr as Expr exposing (Operator, Term)
 

@@ -3,7 +3,7 @@ module Parser.Name exposing
     , parse
     )
 
-import Label
+import Data.Label as Label
 import Parser.SimpleChar as SimpleChar exposing (SimpleChar(..), Symbol(..))
 import Project.ModuleDefinition.Module.PartDef.Name as Name exposing (Name)
 

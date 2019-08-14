@@ -25,7 +25,7 @@ module Project.ModuleDefinition.Module exposing
     )
 
 import Array
-import Label
+import Data.Label as Label
 import Project.ModuleDefinition.Module.PartDef as PartDef
 import Project.ModuleDefinition.Module.PartDef.Expr as Expr
 import Project.ModuleDefinition.Module.PartDef.Name as Name

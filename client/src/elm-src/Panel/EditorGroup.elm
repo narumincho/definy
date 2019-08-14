@@ -26,10 +26,8 @@ import Html.Attributes
 import Html.Events
 import Palette.X11
 import Panel.DefaultUi
-import Panel.Editor.Document
 import Panel.Editor.EditorKeyConfig
 import Panel.Editor.Module
-import Panel.Editor.ModuleDefinition
 import Panel.Editor.Project
 import Panel.Editor.ProjectImport
 import Panel.EditorItemSource
@@ -88,9 +86,7 @@ type ColumnGroup
 -}
 type EditorModel
     = ProjectEditor Panel.Editor.Project.Model
-    | DocumentEditor Panel.Editor.Document.Model
     | ConfigEditor Panel.Editor.ProjectImport.Model
-    | SourceEditor Panel.Editor.ModuleDefinition.Model
     | ModuleEditor Panel.Editor.Module.Model
     | EditorKeyConfig Panel.Editor.EditorKeyConfig.Model
 
@@ -220,14 +216,8 @@ getActiveEditor model =
         ProjectEditor _ ->
             Panel.EditorItemSource.ProjectRoot
 
-        DocumentEditor _ ->
-            Panel.EditorItemSource.Document
-
         ConfigEditor _ ->
             Panel.EditorItemSource.ProjectImport
-
-        SourceEditor _ ->
-            Panel.EditorItemSource.ModuleDefinition
 
         ModuleEditor editorModel ->
             Panel.EditorItemSource.Module (Panel.Editor.Module.getTargetModuleIndex editorModel)
@@ -1166,14 +1156,8 @@ projectRefToEditorItem projectRef =
         Panel.EditorItemSource.ProjectRoot ->
             ProjectEditor Panel.Editor.Project.initModel
 
-        Panel.EditorItemSource.Document ->
-            DocumentEditor Panel.Editor.Document.initModel
-
         Panel.EditorItemSource.ProjectImport ->
             ConfigEditor Panel.Editor.ProjectImport.initModel
-
-        Panel.EditorItemSource.ModuleDefinition ->
-            SourceEditor Panel.Editor.ModuleDefinition.initModel
 
         Panel.EditorItemSource.Module moduleRef ->
             ModuleEditor (Panel.Editor.Module.initModel moduleRef)
@@ -1610,14 +1594,8 @@ editorTitleAndBody width editorIndex isActive project editorItem =
         ProjectEditor _ ->
             Panel.Editor.Project.view
 
-        DocumentEditor _ ->
-            Panel.Editor.Document.view
-
         ConfigEditor _ ->
             Panel.Editor.ProjectImport.view
-
-        SourceEditor _ ->
-            Panel.Editor.ModuleDefinition.view
 
         ModuleEditor moduleEditorModel ->
             let

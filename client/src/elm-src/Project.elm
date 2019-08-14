@@ -14,7 +14,7 @@ module Project exposing
 プログラムのソースやドキュメント、実行設定まで
 -}
 
-import Label
+import Data.Label as Label
 import Project.Document as Document
 import Project.ModuleDefinition as Source
 

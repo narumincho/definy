@@ -11,11 +11,10 @@ module Panel.Tree exposing
 -}
 
 import Color
+import Data.Label
 import Html
 import Html.Attributes
 import Html.Events
-import Label
-import Palette.X11
 import Panel.EditorItemSource
 import Project
 import Project.ModuleDefinitionIndex
@@ -83,9 +82,6 @@ isTreeOpen projectRef (OpenCloseData { isProjectRootOpen, isModuleDefinitionOpen
         Panel.EditorItemSource.ProjectRoot ->
             isProjectRootOpen
 
-        Panel.EditorItemSource.ModuleDefinition ->
-            isModuleDefinitionOpen
-
         _ ->
             False
 
@@ -101,12 +97,6 @@ openTree editorRef (OpenCloseData rec) =
                     | isProjectRootOpen = True
                 }
 
-        Panel.EditorItemSource.ModuleDefinition ->
-            OpenCloseData
-                { rec
-                    | isModuleDefinitionOpen = True
-                }
-
         _ ->
             OpenCloseData rec
 
@@ -120,12 +110,6 @@ closeTree editorRef (OpenCloseData rec) =
             OpenCloseData
                 { rec
                     | isProjectRootOpen = False
-                }
-
-        Panel.EditorItemSource.ModuleDefinition ->
-            OpenCloseData
-                { rec
-                    | isModuleDefinitionOpen = False
                 }
 
         _ ->
@@ -543,16 +527,10 @@ baseTree : Project.Project -> List BaseTree
 baseTree project =
     [ BaseTree
         { editorRef = Panel.EditorItemSource.ProjectRoot
-        , label = Label.toCapitalString (Project.getName project)
+        , label = Data.Label.toCapitalString (Project.getName project)
         , icon = defaultProjectIcon
         , children =
             [ BaseTree
-                { editorRef = Panel.EditorItemSource.Document
-                , label = "Document"
-                , icon = documentIcon
-                , children = []
-                }
-            , BaseTree
                 { editorRef = Panel.EditorItemSource.ProjectImport
                 , label = "Project Import"
                 , icon = configIcon
@@ -566,17 +544,10 @@ baseTree project =
                     ]
                 }
             , BaseTree
-                { editorRef = Panel.EditorItemSource.ModuleDefinition
-                , label = "Module Definition"
-                , icon = sourceIcon
-                , children =
-                    [ BaseTree
-                        { editorRef = Panel.EditorItemSource.Module Project.ModuleDefinitionIndex.SampleModule
-                        , label = "SampleModule"
-                        , icon = moduleIcon
-                        , children = []
-                        }
-                    ]
+                { editorRef = Panel.EditorItemSource.Module Project.ModuleDefinitionIndex.SampleModule
+                , label = "SampleModule"
+                , icon = moduleIcon
+                , children = []
                 }
             ]
         }
@@ -777,6 +748,7 @@ treeCloseIcon editorRef viewType =
         ]
         [ NSvg.toHtml
             { x = 0, y = 0, width = 20, height = 30 }
+            Nothing
             [ NSvg.polygon [ ( 5, 8 ), ( 18, 14 ), ( 5, 20 ) ] NSvg.strokeNone (NSvg.fillColor (iconColor viewType)) ]
         ]
 
@@ -791,6 +763,7 @@ treeOpenIcon editorRef viewType =
         ]
         [ NSvg.toHtml
             { x = 0, y = 0, width = 20, height = 30 }
+            Nothing
             [ NSvg.polygon [ ( 4, 8 ), ( 16, 8 ), ( 10, 21 ) ] NSvg.strokeNone (NSvg.fillColor (iconColor viewType)) ]
         ]
 

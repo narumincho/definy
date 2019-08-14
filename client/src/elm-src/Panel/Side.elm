@@ -13,6 +13,7 @@ module Panel.Side exposing
 
 import Color
 import Css
+import Data.Label
 import Data.Language
 import Data.SocialLoginService
 import Html
@@ -20,7 +21,6 @@ import Html.Attributes as A
 import Html.Events
 import Html.Styled
 import Html.Styled.Attributes
-import Label
 import Palette.X11
 import Project
 import Svg.Styled
@@ -431,11 +431,11 @@ logInButtonText text =
         [ Html.text text ]
 
 
-projectOwnerAndName : Label.Label -> Label.Label -> Html.Html msg
+projectOwnerAndName : Data.Label.Label -> Data.Label.Label -> Html.Html msg
 projectOwnerAndName ownerName projectName =
     Html.div
         [ A.style "color" "#ddd" ]
-        [ Html.text (Label.toCapitalString ownerName ++ "/" ++ Label.toCapitalString projectName) ]
+        [ Html.text (Data.Label.toCapitalString ownerName ++ "/" ++ Data.Label.toCapitalString projectName) ]
 
 
 tools : Html.Html msg

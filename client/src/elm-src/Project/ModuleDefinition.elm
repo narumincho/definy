@@ -10,7 +10,7 @@ module Project.ModuleDefinition exposing
     , update
     )
 
-import Label as L
+import Data.Label as L
 import Project.ModuleDefinition.Module.PartDef as Def
 import Project.ModuleDefinition.Module.PartDef.Expr as Expr
 import Project.ModuleDefinition.Module.PartDef.Name as PartDefName
