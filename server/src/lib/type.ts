@@ -1,5 +1,5 @@
-// 外部に公開する型
 import * as g from "graphql";
+import { URL } from "url";
 /*  =============================================================
                             LogInService
     =============================================================
@@ -18,7 +18,7 @@ const logInServiceValues = {
     }
 };
 
-type LogInService = keyof (typeof logInServiceValues);
+export type LogInService = keyof (typeof logInServiceValues);
 
 export const logInServiceGraphQLType = new g.GraphQLEnumType({
     name: "AccountService",
@@ -262,3 +262,16 @@ const base64EncodedPngTypeConfig: g.GraphQLScalarTypeConfig<
 export const base64EncodedPngGraphQLType = new g.GraphQLScalarType(
     base64EncodedPngTypeConfig
 );
+
+/*  ===================================
+ *              URL
+ * ====================================
+ */
+const urlTypeScalarTypeConfig: g.GraphQLScalarTypeConfig<URL, string> = {
+    name: "URL",
+    description: `URL 文字列で指定する 例"https://narumincho.com/definy/spec.html"`,
+    serialize: (url: URL): string => url.toString(),
+    parseValue: (value: string): URL => new URL(value)
+};
+
+export const urlGraphQLType = new g.GraphQLScalarType(urlTypeScalarTypeConfig);

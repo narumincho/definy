@@ -2,18 +2,17 @@ import axios, { AxiosResponse } from "axios";
 import * as database from "./database";
 import * as key from "./key";
 import { URL, URLSearchParams } from "url";
+import * as tool from "./tool";
 import * as jwt from "jsonwebtoken";
-import * as type from "./type";
 
-const domain = "https://definy-lang.web.app/";
-const homeUrl = new URL(domain);
+const domain = "definy-lang.web.app";
+const homeUrl = tool.urlFromString(domain);
 
 const createAccessTokenUrl = (userId: string, randomId: string): URL => {
-    const url = new URL(domain);
-    url.hash = new URLSearchParams({
-        accessToken: createAccessToken(userId, randomId)
-    }).toString();
-    return url;
+    return tool.urlFromStringWithFragment(
+        domain,
+        new Map([["accessToken", createAccessToken(userId, randomId)]])
+    );
 };
 
 /**
@@ -56,7 +55,7 @@ export const googleLogInReceiver = async (
     }
     // TODO ユーザーがキャンセルした場合、stateを削除できるのでは?
 
-    if (!(await database.checkExistsGoogleState(state))) {
+    if (!(await database.checkExistsAndDeleteState("google", state))) {
         return {
             type: "error",
             message: `Google LogIn Error: Definy dose not generate state(=${state})`
@@ -98,7 +97,7 @@ export const googleLogInReceiver = async (
     const userImageId = await database.saveUserImageFromUrl(
         new URL(googleData.picture)
     );
-    const accessTokenRandomId = createRandomId();
+    const accessTokenRandomId = tool.createRandomString();
     const userId = await database.addUser({
         name: googleData.name,
         imageId: userImageId,
@@ -150,7 +149,7 @@ export const gitHubLogInReceiver = async (
             url: homeUrl
         };
     }
-    if (!(await database.checkExistsGitHubState(state))) {
+    if (!(await database.checkExistsAndDeleteState("gitHub", state))) {
         return {
             type: "error",
             message: `GitHub LogIn Error: Definy dose not generate state(=${state})`
@@ -214,7 +213,7 @@ query {
     }
     // ユーザーが存在しないなら作成し、リフレッシュトークンを返す
     console.log("GitHubで登録したユーザーがいなかった");
-    const accessTokenRandomId = createRandomId();
+    const accessTokenRandomId = tool.createRandomString();
     const imageId = await database.saveUserImageFromUrl(
         new URL(userData.avatarUrl)
     );
@@ -248,7 +247,7 @@ export const lineLogInReceiver = async (
             url: homeUrl
         };
     }
-    if (!(await database.checkExistsLineState(state))) {
+    if (!(await database.checkExistsAndDeleteState("line", state))) {
         return {
             type: "error",
             message: `LINE LogIn Error: Definy dose not generate state(=${state})`
@@ -290,7 +289,7 @@ export const lineLogInReceiver = async (
     }
     // ユーザーが存在しないなら作成し、リフレッシュトークンを返す
     console.log("LINEで登録したユーザーがいなかった");
-    const accessTokenRandomId = createRandomId();
+    const accessTokenRandomId = tool.createRandomString();
     const imageId = await database.saveUserImageFromUrl(
         new URL(lineData.picture)
     );
@@ -344,16 +343,3 @@ const lineTokenResponseToData = (
             }
         );
     });
-
-/**
- * ランダムなリフレッシュトークン用のIDを生成する
- */
-const createRandomId = (): string => {
-    let id = "";
-    const charTable: string =
-        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    for (let i = 0; i < 15; i++) {
-        id += charTable[(Math.random() * charTable.length) | 0];
-    }
-    return id;
-};

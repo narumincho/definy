@@ -4,25 +4,28 @@ import axios, { AxiosResponse } from "axios";
 import { URL } from "url";
 
 /**
- * 指定したGoogleログインのstateがDefinyによって発行したものかどうか調べ、あったらそのstateを削除する
+ * OpenId ConnectのStateを生成して保存する
+ * リプレイアタックを防いだり、他のサーバーがつくマートのクライアントIDを使って発行しても自分が発行したものと見比べて識別できるようにする
  */
-export const checkExistsGoogleState = async (state: string): Promise<boolean> =>
-    databaseLow.existsGoogleStateAndDeleteAndGetUserId(state);
+export const generateAndWriteLogInState = async (
+    logInService: type.LogInService
+): Promise<string> => {
+    const state = type.createRandomId();
+    await databaseLow.writeGoogleLogInState(logInService, state);
+    return state;
+};
 
 /**
- * 指定したGitHubログインのstateがDefinyによって発行したものかどうか調べ、あったらそのstateを削除する
+ * 指定したサービスのtateがDefinyによって発行したものかどうか調べ、あったらそのstateを削除する
  */
-export const checkExistsGitHubState = async (
+export const checkExistsAndDeleteState = async (
+    logInService: type.LogInService,
     state: string
-): Promise<string | null> =>
-    databaseLow.existsGitHubStateAndDeleteAndGetUserId(state);
-/**
- * 指定したLINEログインのstateがDefinyによって発行したものかどうか調べ、あったらそのstateを削除する
- */
-export const checkExistsLineState = async (
-    state: string
-): Promise<string | null> =>
-    databaseLow.existsLineStateAndDeleteAndGetUserId(state);
+): Promise<boolean> =>
+    await databaseLow.existsGoogleStateAndDeleteAndGetUserId(
+        logInService,
+        state
+    );
 
 /**
  * ユーザーの画像をURLから保存する

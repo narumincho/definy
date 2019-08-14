@@ -7,9 +7,18 @@ const storage = app.storage();
 const userImageBucket = storage.bucket("definy-user-image");
 
 const dataBaseUserCollection = dataBase.collection("user");
-const googleStateCollection = dataBase.collection("googleState");
-const gitHubStateCollection = dataBase.collection("gitHubState");
-const lineStateCollection = dataBase.collection("lineState");
+const collectionFromLogInState = (
+    logInService: type.LogInService
+): FirebaseFirestore.CollectionReference => {
+    switch (logInService) {
+        case "google":
+            return dataBase.collection("googleState");
+        case "gitHub":
+            return dataBase.collection("gitHubState");
+        case "line":
+            return dataBase.collection("lineState");
+    }
+};
 
 export type UserData = {
     id: string;
@@ -21,48 +30,31 @@ export type UserData = {
 };
 
 /**
- * Googleへのstateが存在することを確認し、存在するなら削除する
+ * ソーシャルログイン stateを保存する
+ */
+export const writeGoogleLogInState = async (
+    logInService: type.LogInService,
+    state: string
+): Promise<void> => {
+    await collectionFromLogInState(logInService)
+        .doc(state)
+        .create({});
+};
+
+/**
+ * ソーシャルログイン stateが存在することを確認し、存在するなら削除する
  */
 export const existsGoogleStateAndDeleteAndGetUserId = async (
+    logInService: type.LogInService,
     state: string
 ): Promise<boolean> => {
-    const docRef = googleStateCollection.doc(state);
+    const docRef = collectionFromLogInState(logInService).doc(state);
     const data = (await docRef.get()).data();
     if (data === undefined) {
         return false;
     }
     await docRef.delete();
     return true;
-};
-
-/**
- * GitHubへのstateが存在することを確認し、存在するなら削除する
- */
-export const existsGitHubStateAndDeleteAndGetUserId = async (
-    state: string
-): Promise<string | null> => {
-    const docRef = gitHubStateCollection.doc(state);
-    const data = (await docRef.get()).data();
-    if (data === undefined) {
-        return null;
-    }
-    await docRef.delete();
-    return data.userId;
-};
-
-/**
- * LINEへのstateが存在することを確認し、存在するなら削除する
- */
-export const existsLineStateAndDeleteAndGetUserId = async (
-    state: string
-): Promise<string | null> => {
-    const docRef = lineStateCollection.doc(state);
-    const data = (await docRef.get()).data();
-    if (data === undefined) {
-        return null;
-    }
-    await docRef.delete();
-    return data.userId;
 };
 
 /**
