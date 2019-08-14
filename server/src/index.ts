@@ -2,6 +2,7 @@ import * as functions from "firebase-functions";
 import * as graphqlExpress from "express-graphql";
 import * as schema from "./lib/schema";
 import * as libLogInCallback from "./lib/logInCallback";
+import * as express from "express";
 
 console.log("サーバーのプログラムが読み込まれた");
 /* =====================================================================
@@ -19,23 +20,25 @@ export const api = functions
  */
 export const logInCallback = functions.https.onRequest(
     async (request, response) => {
-        let result: libLogInCallback.Response;
         switch (request.path) {
             case "/google":
-                result = await libLogInCallback.googleLogInReceiver(
-                    request.query
+                sendResponseFromLogInCallbackResponse(
+                    await libLogInCallback.googleLogInReceiver(request.query),
+                    response
                 );
-                break;
+                return;
             case "/gitHub":
-                result = await libLogInCallback.gitHubLogInReceiver(
-                    request.query
+                sendResponseFromLogInCallbackResponse(
+                    await libLogInCallback.gitHubLogInReceiver(request.query),
+                    response
                 );
-                break;
+                return;
             case "/line":
-                result = await libLogInCallback.lineLogInReceiver(
-                    request.query
+                sendResponseFromLogInCallbackResponse(
+                    await libLogInCallback.lineLogInReceiver(request.query),
+                    response
                 );
-                break;
+                return;
             default:
                 response
                     .status(400)
@@ -44,12 +47,18 @@ export const logInCallback = functions.https.onRequest(
                     );
                 return;
         }
-        switch (result.type) {
-            case "error":
-                response.status(400).send(result.message);
-                return;
-            case "redirect":
-                response.send(result.url.toString());
-        }
     }
 );
+
+const sendResponseFromLogInCallbackResponse = (
+    result: libLogInCallback.Response,
+    response: express.Response
+): void => {
+    switch (result.type) {
+        case "error":
+            response.status(400).send(result.message);
+            return;
+        case "redirect":
+            response.send(result.url.toString());
+    }
+};

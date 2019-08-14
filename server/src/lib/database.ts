@@ -2,6 +2,7 @@ import * as databaseLow from "./databaseLow";
 import * as type from "./type";
 import axios, { AxiosResponse } from "axios";
 import { URL } from "url";
+import * as tool from "./tool";
 
 /**
  * OpenId ConnectのStateを生成して保存する
@@ -10,7 +11,7 @@ import { URL } from "url";
 export const generateAndWriteLogInState = async (
     logInService: type.LogInService
 ): Promise<string> => {
-    const state = type.createRandomId();
+    const state = tool.createRandomString();
     await databaseLow.writeGoogleLogInState(logInService, state);
     return state;
 };
