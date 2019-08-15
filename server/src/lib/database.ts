@@ -94,22 +94,34 @@ export const addUser = async (data: {
  * @param userId
  */
 export const getUser = async (userId: type.UserId): Promise<UserLowCost> =>
-    databaseLowUserToLowCost(userId, await databaseLow.getUserData(userId));
-
-const databaseLowUserToLowCost = (
-    userId: type.UserId,
-    userData: databaseLow.UserData
-): UserLowCost => {
-    return {
+    databaseLowUserToLowCost({
         id: userId,
-        name: userData.name,
+        data: await databaseLow.getUserData(userId)
+    });
+
+/**
+ *
+ */
+export const getAllUser = async (): Promise<Array<UserLowCost>> =>
+    (await databaseLow.getAllUserData()).map(databaseLowUserToLowCost);
+
+const databaseLowUserToLowCost = ({
+    id,
+    data
+}: {
+    id: type.UserId;
+    data: databaseLow.UserData;
+}): UserLowCost => {
+    return {
+        id: id,
+        name: data.name,
         image: {
-            id: userData.imageId
+            id: data.imageId
         },
-        introduction: userData.introduction,
-        createdAt: userData.createdAt.toDate(),
-        editingProjects: userData.editingProjects.map(id => ({ id: id })),
-        leaderProjects: userData.leaderProjects.map(id => ({ id: id }))
+        introduction: data.introduction,
+        createdAt: data.createdAt.toDate(),
+        editingProjects: data.editingProjects.map(id => ({ id: id })),
+        leaderProjects: data.leaderProjects.map(id => ({ id: id }))
     };
 };
 
@@ -161,25 +173,34 @@ export const addProject = async (data: {
 export const getProject = async (
     projectId: type.ProjectId
 ): Promise<ProjectLowCost> => {
-    return databaseLowProjectToLowCost(
-        projectId,
-        await databaseLow.getProject(projectId)
-    );
+    return databaseLowProjectToLowCost({
+        id: projectId,
+        data: await databaseLow.getProject(projectId)
+    });
 };
 
-const databaseLowProjectToLowCost = (
-    projectId: type.ProjectId,
-    projectData: databaseLow.ProjectData
-): ProjectLowCost => ({
-    id: projectId,
-    name: projectData.name,
+/**
+ * 全てのプロジェクトのデータを取得する
+ */
+export const getAllProject = async (): Promise<Array<ProjectLowCost>> =>
+    (await databaseLow.getAllProject()).map(databaseLowProjectToLowCost);
+
+const databaseLowProjectToLowCost = ({
+    id,
+    data
+}: {
+    id: type.ProjectId;
+    data: databaseLow.ProjectData;
+}): ProjectLowCost => ({
+    id: id,
+    name: data.name,
     leader: {
-        id: projectData.leaderId
+        id: data.leaderId
     },
-    editors: projectData.editorsId.map(id => ({ id: id })),
-    createdAt: projectData.createdAt.toDate(),
-    updateAt: projectData.updateAt.toDate(),
-    modules: projectData.modulesId.map(id => ({ id: id }))
+    editors: data.editorsId.map(id => ({ id: id })),
+    createdAt: data.createdAt.toDate(),
+    updateAt: data.updateAt.toDate(),
+    modules: data.modulesId.map(id => ({ id: id }))
 });
 
 /**

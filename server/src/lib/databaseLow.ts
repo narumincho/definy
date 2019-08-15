@@ -37,7 +37,7 @@ export type UserData = {
 };
 
 /**
- * ユーザーの情報を追加する
+ * ユーザーのデータを追加する
  * @param userData ユーザー情報
  * @returns ユーザーのID
  */
@@ -48,7 +48,7 @@ export const addUser = async (userData: UserData): Promise<type.UserId> => {
 };
 
 /**
- * ユーザーの情報を取得する
+ * ユーザーのデータを取得する
  * @param userId
  */
 export const getUserData = async (userId: type.UserId): Promise<UserData> => {
@@ -58,6 +58,17 @@ export const getUserData = async (userId: type.UserId): Promise<UserData> => {
     }
     return userData as UserData;
 };
+
+/**
+ * 全てのユーザーのデータを取得する
+ */
+export const getAllUserData = async (): Promise<
+    Array<{ id: type.UserId; data: UserData }>
+> =>
+    (await userCollection.get()).docs.map(doc => ({
+        id: doc.id as type.UserId,
+        data: doc.data() as UserData
+    }));
 
 /**
  * Firebase Cloud Storageのバケット "definy-user-image" で新しくファイルを作成する
@@ -124,6 +135,9 @@ export const addProject = async (
     return projectId;
 };
 
+/**
+ * Idで指定したプロジェクトのデータを取得する
+ */
 export const getProject = async (
     projectId: type.ProjectId
 ): Promise<ProjectData> => {
@@ -133,6 +147,17 @@ export const getProject = async (
     }
     return projectData as ProjectData;
 };
+
+/**
+ * 全てのプロジェクトのデータを取得する
+ */
+export const getAllProject = async (): Promise<
+    Array<{ id: type.ProjectId; data: ProjectData }>
+> =>
+    (await projectCollection.get()).docs.map(doc => ({
+        id: doc.id as type.ProjectId,
+        data: doc.data() as ProjectData
+    }));
 /* ==========================================
                 Timestamp
    ==========================================

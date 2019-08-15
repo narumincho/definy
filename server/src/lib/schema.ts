@@ -458,7 +458,7 @@ export const schema = new g.GraphQLSchema({
                     g.GraphQLList(g.GraphQLNonNull(userGraphQLType))
                 ),
                 resolve: async args => {
-                    return [];
+                    return await database.getAllUser();
                 },
                 description: "全てユーザーを取得する"
             }),
@@ -484,7 +484,7 @@ export const schema = new g.GraphQLSchema({
                     g.GraphQLList(g.GraphQLNonNull(projectGraphQLType))
                 ),
                 resolve: async args => {
-                    return [];
+                    return database.getAllProject();
                 },
                 description: "全てのプロジェクトを取得する"
             })
