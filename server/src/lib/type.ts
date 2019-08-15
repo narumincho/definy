@@ -67,9 +67,10 @@ export type Project = {
     id: ProjectId;
     name: Label;
     leader: User;
-    editor: Array<User>;
+    editors: Array<User>;
+    updateAt: Date;
     createdAt: Date;
-    rootModule: Module;
+    modules: Array<Module>;
 };
 
 export type ProjectId = Id & { __projectIdBrand: never };
@@ -207,10 +208,10 @@ export type Image = {
 };
 
 export type ImageId = Id & { __imageIdBrand: never };
-/** ===================================
- *                Id
- * ====================================
- */
+/*  =============================================================
+                            Id
+    =============================================================
+*/
 /**
  * Id。各種リソースを識別するために使うID。
  * URLでも使うので、大文字と小文字の差を持たせるべきではないので。小文字に統一して、大文字は一切使わない。長さは24文字
@@ -251,10 +252,10 @@ const idTypeConfig: g.GraphQLScalarTypeConfig<Id, string> = {
 };
 
 export const idGraphQLType = new g.GraphQLScalarType(idTypeConfig);
-/** ===================================
- *            DateTime
- * ====================================
- */
+/*  =============================================================
+                            DateTime
+    =============================================================
+*/
 const dateTimeTypeConfig: g.GraphQLScalarTypeConfig<Date, number> = {
     name: "DateTime",
     description:
@@ -274,10 +275,10 @@ const dateTimeTypeConfig: g.GraphQLScalarTypeConfig<Date, number> = {
 };
 
 export const dateTimeGraphQLType = new g.GraphQLScalarType(dateTimeTypeConfig);
-/** ===================================
- *          Base64Encoded Png
- * ====================================
- */
+/*  =============================================================
+                        Base64Encoded Png
+    =============================================================
+*/
 
 export type Base64EncodedPng = string & { __base64EncodedBrand: never };
 
@@ -307,11 +308,10 @@ const base64EncodedPngTypeConfig: g.GraphQLScalarTypeConfig<
 export const base64EncodedPngGraphQLType = new g.GraphQLScalarType(
     base64EncodedPngTypeConfig
 );
-
-/*  ===================================
- *              URL
- * ====================================
- */
+/*  =============================================================
+                                URL
+    =============================================================
+*/
 const urlTypeScalarTypeConfig: g.GraphQLScalarTypeConfig<URL, string> = {
     name: "URL",
     description: `URL 文字列で指定する 例"https://narumincho.com/definy/spec.html"`,
@@ -320,3 +320,9 @@ const urlTypeScalarTypeConfig: g.GraphQLScalarTypeConfig<URL, string> = {
 };
 
 export const urlGraphQLType = new g.GraphQLScalarType(urlTypeScalarTypeConfig);
+/*  =============================================================
+                            AccessToken
+    =============================================================
+*/
+export const accessTokenDescription =
+    "アクセストークン。getLogInUrlで取得したログインURLのページからリダイレクトするときのクエリパラメータについてくる。";

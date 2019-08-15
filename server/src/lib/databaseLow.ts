@@ -20,6 +20,7 @@ const collectionFromLogInState = (
             return dataBase.collection("lineState");
     }
 };
+const projectCollection = dataBase.collection("project");
 
 /* ==========================================
                     User
@@ -32,6 +33,7 @@ export type UserData = {
     createdAt: firestore.Timestamp;
     leaderProjects: Array<type.ProjectId>;
     editingProjects: Array<type.ProjectId>;
+    lastAccessTokenJti: string;
 };
 
 /**
@@ -52,7 +54,7 @@ export const addUser = async (userData: UserData): Promise<type.UserId> => {
 export const getUserData = async (userId: type.UserId): Promise<UserData> => {
     const userData = (await userCollection.doc(userId).get()).data();
     if (userData === undefined) {
-        throw new Error(`There was no user with user ID ${userId}`);
+        throw new Error(`There was no user with userId = ${userId}`);
     }
     return userData as UserData;
 };
@@ -106,14 +108,31 @@ export const existsGoogleStateAndDeleteAndGetUserId = async (
    ==========================================
 */
 export type ProjectData = {
-    id: type.ProjectId;
     name: type.Label;
     leaderId: type.UserId;
     editorsId: Array<type.UserId>;
     createdAt: firestore.Timestamp;
+    updateAt: firestore.Timestamp;
     modulesId: Array<type.ModuleId>;
 };
 
+export const addProject = async (
+    data: ProjectData
+): Promise<type.ProjectId> => {
+    const projectId = type.createRandomId() as type.ProjectId;
+    await projectCollection.doc(projectId).set(data);
+    return projectId;
+};
+
+export const getProject = async (
+    projectId: type.ProjectId
+): Promise<ProjectData> => {
+    const projectData = (await projectCollection.doc(projectId).get()).data();
+    if (projectData === undefined) {
+        throw new Error(`There was no project with projectId = ${projectId}`);
+    }
+    return projectData as ProjectData;
+};
 /* ==========================================
                 Timestamp
    ==========================================

@@ -2,7 +2,7 @@ import * as g from "graphql";
 import * as type from "./type";
 import * as key from "./key";
 import Maybe from "graphql/tsutils/Maybe";
-import { URL } from "url";
+import { URL, resolve } from "url";
 import * as tool from "./tool";
 import * as database from "./database";
 
@@ -39,22 +39,18 @@ const makeObjectField = <
     Type extends { [k in string]: unknown } & { id: string },
     Key extends keyof Type,
     T extends { [k in string]: unknown } // for allがあればなぁ
->(args: {
+>(data: {
     type: g.GraphQLOutputType;
     args: { [k in keyof T]: { type: g.GraphQLInputType } };
-    resolve: (
-        source: Return<Type>,
-        args: T,
-        context: void,
-        info: g.GraphQLResolveInfo
-    ) => Promise<Return<Type[Key]>>;
+    resolve: (source: Return<Type>, args: T) => Promise<Return<Type[Key]>>;
     description: string;
 }): GraphQLFieldConfigWithArgs<Type, Key> =>
     ({
-        type: args.type,
-        args: args.args,
-        resolve: args.resolve as any,
-        description: args.description
+        type: data.type,
+        args: data.args,
+        resolve: (source, args, context, info) =>
+            args.resolve(source, args) as any,
+        description: data.description
     } as GraphQLFieldConfigWithArgs<Type, Key>);
 
 /** resolveで返すべき部分型を生成する */
@@ -71,7 +67,7 @@ type ReturnLoop<Type> = {
 const makeQueryOrMutationField = <
     Args extends { [k in string]: unknown },
     Type
->(args: {
+>(data: {
     type: g.GraphQLOutputType;
     args: {
         [a in keyof Args]: {
@@ -79,14 +75,16 @@ const makeQueryOrMutationField = <
             description: Maybe<string>;
         }
     };
-    resolve: (
-        source: void,
-        args: Args,
-        context: void,
-        info: g.GraphQLResolveInfo
-    ) => Promise<Return<Type>>;
+    resolve: (args: Args) => Promise<Return<Type>>;
     description: string;
-}): g.GraphQLFieldConfig<void, void, any> => args;
+}): g.GraphQLFieldConfig<void, void, any> => {
+    return {
+        type: data.type,
+        args: data.args,
+        resolve: (source, args, context, info) => data.resolve(args),
+        description: data.description
+    };
+};
 
 /**
  * 新規登録かログインするためのURLを得る。
@@ -102,7 +100,7 @@ const getLogInUrl = makeQueryOrMutationField<
             description: type.logInServiceGraphQLType.description
         }
     },
-    resolve: async (source, args, context, info) => {
+    resolve: async args => {
         const accountService = args.service;
         switch (accountService) {
             case "google": {
@@ -184,7 +182,7 @@ const userGraphQLType: g.GraphQLObjectType<
                 type: g.GraphQLNonNull(g.GraphQLString),
                 description: "名前",
                 args: {},
-                resolve: async (source, args, context, info) => {
+                resolve: async (source, args) => {
                     if (source.name === undefined) {
                         return (await setUserData(source)).name;
                     }
@@ -195,7 +193,7 @@ const userGraphQLType: g.GraphQLObjectType<
                 type: g.GraphQLNonNull(imageGraphQLType),
                 description: "丸くて小さいプロフィール画像",
                 args: {},
-                resolve: async (source, args, context, info) => {
+                resolve: async (source, args) => {
                     if (source.image === undefined) {
                         return (await setUserData(source)).image;
                     }
@@ -206,7 +204,7 @@ const userGraphQLType: g.GraphQLObjectType<
                 type: g.GraphQLNonNull(g.GraphQLString),
                 description: "紹介文",
                 args: {},
-                resolve: async (source, args, context, info) => {
+                resolve: async (source, args) => {
                     if (source.introduction === undefined) {
                         return (await setUserData(source)).introduction;
                     }
@@ -217,7 +215,7 @@ const userGraphQLType: g.GraphQLObjectType<
                 type: g.GraphQLNonNull(type.dateTimeGraphQLType),
                 description: "作成された日時",
                 args: {},
-                resolve: async (source, args, context, info) => {
+                resolve: async (source, args) => {
                     if (source.createdAt === undefined) {
                         return (await setUserData(source)).createdAt;
                     }
@@ -230,7 +228,7 @@ const userGraphQLType: g.GraphQLObjectType<
                 ),
                 description: "リーダーになっているプロジェクト",
                 args: {},
-                resolve: async (source, args, context, info) => {
+                resolve: async (source, args) => {
                     if (source.leaderProjects === undefined) {
                         return (await setUserData(source)).leaderProjects;
                     }
@@ -243,7 +241,7 @@ const userGraphQLType: g.GraphQLObjectType<
                 ),
                 description: "制作に参加しているプロジェクト",
                 args: {},
-                resolve: async (source, args, context, info) => {
+                resolve: async (source, args) => {
                     if (source.editingProjects === undefined) {
                         return (await setUserData(source)).editingProjects;
                     }
@@ -257,25 +255,34 @@ const imageGraphQLType = new g.GraphQLObjectType({
     name: "Image",
     fields: () =>
         makeObjectFieldMap<type.Image>({
-            id: makeObjectField({
+            id: {
                 type: g.GraphQLNonNull(g.GraphQLString),
                 description:
-                    "画像ID。https://us-central1-definy-lang.cloudfunctions.net/{id} のURLから画像を得ることができる",
-                args: {},
-                resolve: async (source, args, context, info) => {
-                    return "作成中";
-                }
-            }),
+                    "画像ID。https://us-central1-definy-lang.cloudfunctions.net/{id} のURLから画像を得ることができる"
+            },
             base64EncodedPng: makeObjectField({
                 type: g.GraphQLNonNull(type.base64EncodedPngGraphQLType),
                 description: "Base64で表現されたPNG画像",
                 args: {},
-                resolve: async (source, args, context, info) => {
+                resolve: async (source, args) => {
                     return type.base64EncodedPngFromString("base64imageDummy");
                 }
             })
         })
 });
+
+const setProjectData = async (
+    source: Return<type.Project>
+): ReturnType<typeof database.getProject> => {
+    const projectData = await database.getProject(source.id);
+    source.name = projectData.name;
+    source.leader = projectData.leader;
+    source.editors = projectData.editors;
+    source.createdAt = projectData.createdAt;
+    source.updateAt = projectData.updateAt;
+    source.modules = projectData.modules;
+    return projectData;
+};
 
 const projectGraphQLType = new g.GraphQLObjectType({
     name: "Project",
@@ -289,44 +296,70 @@ const projectGraphQLType = new g.GraphQLObjectType({
                 type: g.GraphQLNonNull(type.labelGraphQLType),
                 description: "プロジェクト名",
                 args: {},
-                resolve: async (source, args, context, info) => {
-                    return type.labelFromString("sorena");
+                resolve: async (source, args) => {
+                    if (source.name === undefined) {
+                        return (await setProjectData(source)).name;
+                    }
+                    return source.name;
                 }
             }),
             leader: makeObjectField({
                 type: g.GraphQLNonNull(userGraphQLType),
                 description: "管理者",
                 args: {},
-                resolve: async (source, args, context, info) => {
-                    return { id: type.idFromString("a") as type.UserId };
+                resolve: async (source, args) => {
+                    if (source.leader === undefined) {
+                        return (await setProjectData(source)).leader;
+                    }
+                    return source.leader;
                 }
             }),
-            editor: makeObjectField({
+            editors: makeObjectField({
                 type: g.GraphQLNonNull(
                     g.GraphQLList(g.GraphQLNonNull(userGraphQLType))
                 ),
-                description: "編集に参加した人",
+                description: "編集に参加できる人",
                 args: {},
-                resolve: async (source, args, context, info) => {
-                    return [];
+                resolve: async (source, args) => {
+                    if (source.editors === undefined) {
+                        return (await setProjectData(source)).editors;
+                    }
+                    return source.editors;
                 }
             }),
             createdAt: makeObjectField({
                 type: g.GraphQLNonNull(type.dateTimeGraphQLType),
                 description: "作成日時",
                 args: {},
-                resolve: async (source, args, context, info) => {
-                    return new Date();
+                resolve: async (source, args) => {
+                    if (source.createdAt === undefined) {
+                        return (await setProjectData(source)).createdAt;
+                    }
+                    return source.createdAt;
                 }
             }),
-            rootModule: makeObjectField({
-                type: g.GraphQLNonNull(moduleGraphQLType),
+            updateAt: makeObjectField({
+                type: g.GraphQLNonNull(type.dateTimeGraphQLType),
+                description: "更新日時",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.updateAt === undefined) {
+                        return (await setProjectData(source)).updateAt;
+                    }
+                    return source.updateAt;
+                }
+            }),
+            modules: makeObjectField({
+                type: g.GraphQLNonNull(
+                    g.GraphQLNonNull(g.GraphQLList(moduleGraphQLType))
+                ),
                 description: "コードが書かれたモジュール",
                 args: {},
-                resolve: async (source, args, context, info) => {
-                    return {
-                        id: type.idFromString("moduleId") as type.ModuleId
-                    };
+                resolve: async (source, args) => {
+                    if (source.modules === undefined) {
+                        return (await setProjectData(source)).modules;
+                    }
+                    return source.modules;
                 }
             })
         })
@@ -351,7 +384,7 @@ const moduleGraphQLType: g.GraphQLObjectType<
                 description:
                     "モジュールの名前 リストをパスとして階層構造となす。",
                 args: {},
-                resolve: async (source, args, context, info) => {
+                resolve: async (source, args) => {
                     return [type.labelFromString("dummyName")];
                 }
             }),
@@ -361,7 +394,7 @@ const moduleGraphQLType: g.GraphQLObjectType<
                 ),
                 description: "編集した人",
                 args: {},
-                resolve: async (source, args, context, info) => {
+                resolve: async (source, args) => {
                     return [];
                 }
             }),
@@ -369,7 +402,7 @@ const moduleGraphQLType: g.GraphQLObjectType<
                 type: g.GraphQLNonNull(projectGraphQLType),
                 description: "所属しているプロジェクト",
                 args: {},
-                resolve: async (source, args, context, info) => {
+                resolve: async (source, args) => {
                     return {
                         id: type.idFromString(
                             "dummyProjectId"
@@ -381,7 +414,7 @@ const moduleGraphQLType: g.GraphQLObjectType<
                 type: g.GraphQLNonNull(type.dateTimeGraphQLType),
                 description: "作成日時",
                 args: {},
-                resolve: async (source, args, context, info) => {
+                resolve: async (source, args) => {
                     return new Date();
                 }
             }),
@@ -389,34 +422,11 @@ const moduleGraphQLType: g.GraphQLObjectType<
                 type: g.GraphQLNonNull(type.dateTimeGraphQLType),
                 description: "更新日時",
                 args: {},
-                resolve: async (source, args, context, info) => {
+                resolve: async (source, args) => {
                     return new Date();
                 }
             })
         })
-});
-
-const user = makeQueryOrMutationField<{ userId: type.UserId }, type.User>({
-    args: {
-        userId: {
-            type: g.GraphQLNonNull(type.idGraphQLType),
-            description: "ユーザーを識別するためのID"
-        }
-    },
-    type: g.GraphQLNonNull(g.GraphQLID),
-    resolve: async (source, args, info, context) => {
-        return await database.getUser(args.userId);
-    },
-    description: "ユーザーの情報を取得する"
-});
-
-const allUser = makeQueryOrMutationField<{}, Array<type.User>>({
-    args: {},
-    type: g.GraphQLNonNull(g.GraphQLList(g.GraphQLNonNull(userGraphQLType))),
-    resolve: async (source, args, context, info) => {
-        return [];
-    },
-    description: "全てユーザーを取得する"
 });
 
 /*  =============================================================
@@ -429,15 +439,171 @@ export const schema = new g.GraphQLSchema({
         description:
             "データを取得できる。データを取得したときに影響は他に及ばさない",
         fields: {
-            user,
-            allUser
+            user: makeQueryOrMutationField<{ userId: type.UserId }, type.User>({
+                args: {
+                    userId: {
+                        type: g.GraphQLNonNull(type.idGraphQLType),
+                        description: "ユーザーを識別するためのID"
+                    }
+                },
+                type: g.GraphQLNonNull(userGraphQLType),
+                resolve: async args => {
+                    return await database.getUser(args.userId);
+                },
+                description: "ユーザーの情報を取得する"
+            }),
+            allUser: makeQueryOrMutationField<{}, Array<type.User>>({
+                args: {},
+                type: g.GraphQLNonNull(
+                    g.GraphQLList(g.GraphQLNonNull(userGraphQLType))
+                ),
+                resolve: async args => {
+                    return [];
+                },
+                description: "全てユーザーを取得する"
+            }),
+            getProject: makeQueryOrMutationField<
+                { projectId: type.ProjectId },
+                type.Project
+            >({
+                args: {
+                    projectId: {
+                        type: g.GraphQLNonNull(type.idGraphQLType),
+                        description: "プロジェクトを識別するためのID"
+                    }
+                },
+                type: g.GraphQLNonNull(projectGraphQLType),
+                resolve: async args => {
+                    return database.getProject(args.projectId);
+                },
+                description: "プロジェクトの情報を取得する"
+            }),
+            allProject: makeQueryOrMutationField<{}, Array<type.Project>>({
+                args: {},
+                type: g.GraphQLNonNull(
+                    g.GraphQLList(g.GraphQLNonNull(projectGraphQLType))
+                ),
+                resolve: async args => {
+                    return [];
+                },
+                description: "全てのプロジェクトを取得する"
+            })
         }
     }),
     mutation: new g.GraphQLObjectType({
         name: "Mutation",
         description: "データを作成、更新ができる",
         fields: {
-            getLogInUrl
+            getLogInUrl: makeQueryOrMutationField<
+                { service: type.LogInService },
+                URL
+            >({
+                type: g.GraphQLNonNull(type.urlGraphQLType),
+                args: {
+                    service: {
+                        type: g.GraphQLNonNull(type.logInServiceGraphQLType),
+                        description: type.logInServiceGraphQLType.description
+                    }
+                },
+                resolve: async args => {
+                    switch (args.service) {
+                        case "google": {
+                            return tool.urlFromStringWithQuery(
+                                "accounts.google.com/o/oauth2/v2/auth",
+                                new Map([
+                                    ["response_type", "code"],
+                                    ["client_id", key.googleLogInClientId],
+                                    [
+                                        "redirect_uri",
+                                        key.googleLogInRedirectUri
+                                    ],
+                                    ["scope", "profile openid"],
+                                    [
+                                        "state",
+                                        await database.generateAndWriteLogInState(
+                                            "google"
+                                        )
+                                    ]
+                                ])
+                            );
+                        }
+                        case "gitHub": {
+                            return tool.urlFromStringWithQuery(
+                                "github.com/login/oauth/authorize",
+                                new Map([
+                                    ["response_type", "code"],
+                                    ["client_id", key.gitHubLogInClientId],
+                                    [
+                                        "redirect_uri",
+                                        key.gitHubLogInRedirectUri
+                                    ],
+                                    ["scope", "read:user"],
+                                    [
+                                        "state",
+                                        await database.generateAndWriteLogInState(
+                                            "gitHub"
+                                        )
+                                    ]
+                                ])
+                            );
+                        }
+                        case "line":
+                            return tool.urlFromStringWithQuery(
+                                "access.line.me/oauth2/v2.1/authorize",
+                                new Map([
+                                    ["response_type", "code"],
+                                    ["client_id", key.lineLogInClientId],
+                                    ["redirect_uri", key.lineLogInRedirectUri],
+                                    ["scope", "profile openid"],
+                                    [
+                                        "state",
+                                        await database.generateAndWriteLogInState(
+                                            "line"
+                                        )
+                                    ]
+                                ])
+                            );
+                    }
+                },
+                description:
+                    "新規登録かログインするためのURLを得る。受け取ったURLをlocation.hrefに代入するとかして、各サービスの認証画面へ"
+            }),
+            addProject: makeQueryOrMutationField<
+                {
+                    accessToken: string;
+                    name: type.Label;
+                    editors: Array<type.UserId>;
+                },
+                type.Project
+            >({
+                args: {
+                    accessToken: {
+                        type: g.GraphQLNonNull(g.GraphQLString),
+                        description: type.accessTokenDescription
+                    },
+                    name: {
+                        type: g.GraphQLNonNull(type.labelGraphQLType),
+                        description: "プロジェクトの名前"
+                    },
+                    editors: {
+                        type: g.GraphQLNonNull(
+                            g.GraphQLList(g.GraphQLNonNull(userGraphQLType))
+                        ),
+                        description: "編集可能にしたい人"
+                    }
+                },
+                type: g.GraphQLNonNull(projectGraphQLType),
+                resolve: async args => {
+                    return database.addProject({
+                        name: args.name,
+                        editors: args.editors,
+                        leaderId: await database.verifyAccessToken(
+                            args.accessToken
+                        )
+                    });
+                },
+                description: "プロジェクトを作成する"
+            })
         }
     })
 });
