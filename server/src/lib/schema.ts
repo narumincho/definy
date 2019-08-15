@@ -351,7 +351,7 @@ const projectGraphQLType = new g.GraphQLObjectType({
             }),
             modules: makeObjectField({
                 type: g.GraphQLNonNull(
-                    g.GraphQLNonNull(g.GraphQLList(moduleGraphQLType))
+                    g.GraphQLList(g.GraphQLList(moduleGraphQLType))
                 ),
                 description: "コードが書かれたモジュール",
                 args: {},
