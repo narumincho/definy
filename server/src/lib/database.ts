@@ -39,26 +39,8 @@ export const saveUserImageFromUrl = async (url: URL): Promise<string> => {
     });
     const mimeType: string = response.headers["content-type"];
     const fileName = type.createRandomId();
-    await databaseLow.saveFileToCloudStorageUserImage(
-        fileName,
-        response.data,
-        mimeType
-    );
+    await databaseLow.saveUserImage(fileName, response.data, mimeType);
     return fileName;
-};
-
-/**
- * TODO
- * ユーザーを追加する
- * @param data
- */
-export const addUser = async (data: {
-    name: string;
-    imageId: string;
-    logInServiceAndId: type.LogInServiceAndId;
-    lastAccessTokenJti: string;
-}): Promise<string> => {
-    return type.createRandomId();
 };
 
 /**
@@ -70,4 +52,60 @@ export const getUserFromLogInService = (
     logInServiceAndId: type.LogInServiceAndId
 ): type.User & { lastAccessTokenJti: string } | null => {
     return null;
+};
+
+type UserLowCost = {
+    id: type.UserId;
+    name: type.UserName;
+    image: {
+        id: type.ImageId;
+    };
+    introduction: string;
+    createdAt: Date;
+    leaderProjects: Array<{ id: type.ProjectId }>;
+    editingProjects: Array<{ id: type.ProjectId }>;
+};
+
+/**
+ * ユーザーを追加する
+ */
+export const addUser = async (data: {
+    name: type.UserName;
+    imageId: type.ImageId;
+    logInServiceAndId: type.LogInServiceAndId;
+    lastAccessTokenJti: string;
+}): Promise<string> => {
+    const userId = await databaseLow.addUser({
+        name: data.name,
+        imageId: data.imageId,
+        introduction: "",
+        editingProjects: [],
+        leaderProjects: [],
+        createdAt: databaseLow.getNowTimestamp()
+    });
+    return userId;
+};
+
+/**
+ * ユーザーの情報を取得する
+ * @param userId
+ */
+export const getUser = async (userId: type.UserId): Promise<UserLowCost> =>
+    databaseLowUserToLowCost(userId, await databaseLow.getUserData(userId));
+
+const databaseLowUserToLowCost = (
+    userId: type.UserId,
+    userData: databaseLow.UserData
+): UserLowCost => {
+    return {
+        id: userId,
+        name: userData.name,
+        image: {
+            id: userData.imageId
+        },
+        introduction: userData.introduction,
+        createdAt: userData.createdAt.toDate(),
+        editingProjects: userData.editingProjects.map(id => ({ id: id })),
+        leaderProjects: userData.leaderProjects.map(id => ({ id: id }))
+    };
 };

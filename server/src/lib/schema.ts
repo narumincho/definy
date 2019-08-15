@@ -155,6 +155,19 @@ const getLogInUrl = makeQueryOrMutationField<
         "新規登録かログインするためのURLを得る。受け取ったURLをlocation.hrefに代入するとかして、各サービスの認証画面へ"
 });
 
+const setUserData = async (
+    source: Return<type.User>
+): ReturnType<typeof database.getUser> => {
+    const userData = await database.getUser(source.id);
+    source.name = userData.name;
+    source.image = userData.image;
+    source.introduction = userData.introduction;
+    source.createdAt = userData.createdAt;
+    source.leaderProjects = userData.leaderProjects;
+    source.editingProjects = userData.editingProjects;
+    return userData;
+};
+
 const userGraphQLType: g.GraphQLObjectType<
     type.User,
     void,
@@ -173,7 +186,7 @@ const userGraphQLType: g.GraphQLObjectType<
                 args: {},
                 resolve: async (source, args, context, info) => {
                     if (source.name === undefined) {
-                        return type.labelFromString("sampleUserName");
+                        return (await setUserData(source)).name;
                     }
                     return source.name;
                 }
@@ -184,11 +197,20 @@ const userGraphQLType: g.GraphQLObjectType<
                 args: {},
                 resolve: async (source, args, context, info) => {
                     if (source.image === undefined) {
-                        return {
-                            id: "id"
-                        };
+                        return (await setUserData(source)).image;
                     }
                     return source.image;
+                }
+            }),
+            introduction: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "紹介文",
+                args: {},
+                resolve: async (source, args, context, info) => {
+                    if (source.introduction === undefined) {
+                        return (await setUserData(source)).introduction;
+                    }
+                    return source.introduction;
                 }
             }),
             createdAt: makeObjectField({
@@ -197,7 +219,7 @@ const userGraphQLType: g.GraphQLObjectType<
                 args: {},
                 resolve: async (source, args, context, info) => {
                     if (source.createdAt === undefined) {
-                        return new Date();
+                        return (await setUserData(source)).createdAt;
                     }
                     return source.createdAt;
                 }
@@ -210,7 +232,7 @@ const userGraphQLType: g.GraphQLObjectType<
                 args: {},
                 resolve: async (source, args, context, info) => {
                     if (source.leaderProjects === undefined) {
-                        return [];
+                        return (await setUserData(source)).leaderProjects;
                     }
                     return source.leaderProjects;
                 }
@@ -223,7 +245,7 @@ const userGraphQLType: g.GraphQLObjectType<
                 args: {},
                 resolve: async (source, args, context, info) => {
                     if (source.editingProjects === undefined) {
-                        return [];
+                        return (await setUserData(source)).editingProjects;
                     }
                     return source.editingProjects;
                 }
@@ -276,7 +298,7 @@ const projectGraphQLType = new g.GraphQLObjectType({
                 description: "管理者",
                 args: {},
                 resolve: async (source, args, context, info) => {
-                    return { id: type.idFromString("a") };
+                    return { id: type.idFromString("a") as type.UserId };
                 }
             }),
             editor: makeObjectField({
@@ -302,7 +324,9 @@ const projectGraphQLType = new g.GraphQLObjectType({
                 description: "コードが書かれたモジュール",
                 args: {},
                 resolve: async (source, args, context, info) => {
-                    return { id: type.idFromString("moduleId") };
+                    return {
+                        id: type.idFromString("moduleId") as type.ModuleId
+                    };
                 }
             })
         })
@@ -321,11 +345,14 @@ const moduleGraphQLType: g.GraphQLObjectType<
                 description: "モジュールを識別するためのID"
             },
             name: makeObjectField({
-                type: g.GraphQLNonNull(type.labelGraphQLType),
-                description: "",
+                type: g.GraphQLNonNull(
+                    g.GraphQLList(g.GraphQLNonNull(type.labelGraphQLType))
+                ),
+                description:
+                    "モジュールの名前 リストをパスとして階層構造となす。",
                 args: {},
                 resolve: async (source, args, context, info) => {
-                    return type.labelFromString("dummyName");
+                    return [type.labelFromString("dummyName")];
                 }
             }),
             editor: makeObjectField({
@@ -338,14 +365,16 @@ const moduleGraphQLType: g.GraphQLObjectType<
                     return [];
                 }
             }),
-            childModules: makeObjectField({
-                type: g.GraphQLNonNull(
-                    g.GraphQLList(g.GraphQLNonNull(moduleGraphQLType))
-                ),
-                description: "サブモジュール",
+            project: makeObjectField({
+                type: g.GraphQLNonNull(projectGraphQLType),
+                description: "所属しているプロジェクト",
                 args: {},
                 resolve: async (source, args, context, info) => {
-                    return [];
+                    return {
+                        id: type.idFromString(
+                            "dummyProjectId"
+                        ) as type.ProjectId
+                    };
                 }
             }),
             createdAt: makeObjectField({
@@ -367,7 +396,7 @@ const moduleGraphQLType: g.GraphQLObjectType<
         })
 });
 
-const user = makeQueryOrMutationField<{ userId: string }, type.User>({
+const user = makeQueryOrMutationField<{ userId: type.UserId }, type.User>({
     args: {
         userId: {
             type: g.GraphQLNonNull(type.idGraphQLType),
@@ -376,9 +405,7 @@ const user = makeQueryOrMutationField<{ userId: string }, type.User>({
     },
     type: g.GraphQLNonNull(g.GraphQLID),
     resolve: async (source, args, info, context) => {
-        return {
-            id: type.idFromString(args.userId)
-        };
+        return await database.getUser(args.userId);
     },
     description: "ユーザーの情報を取得する"
 });

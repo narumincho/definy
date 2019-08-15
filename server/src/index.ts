@@ -22,19 +22,19 @@ export const logInCallback = functions.https.onRequest(
     async (request, response) => {
         switch (request.path) {
             case "/google":
-                sendResponseFromLogInCallbackResponse(
+                sendResponseFromLogInCallbackResult(
                     await libLogInCallback.googleLogInReceiver(request.query),
                     response
                 );
                 return;
             case "/gitHub":
-                sendResponseFromLogInCallbackResponse(
+                sendResponseFromLogInCallbackResult(
                     await libLogInCallback.gitHubLogInReceiver(request.query),
                     response
                 );
                 return;
             case "/line":
-                sendResponseFromLogInCallbackResponse(
+                sendResponseFromLogInCallbackResult(
                     await libLogInCallback.lineLogInReceiver(request.query),
                     response
                 );
@@ -50,8 +50,8 @@ export const logInCallback = functions.https.onRequest(
     }
 );
 
-const sendResponseFromLogInCallbackResponse = (
-    result: libLogInCallback.Response,
+const sendResponseFromLogInCallbackResult = (
+    result: libLogInCallback.Result,
     response: express.Response
 ): void => {
     switch (result.type) {

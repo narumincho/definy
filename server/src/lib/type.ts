@@ -41,25 +41,30 @@ export const logInServiceAndIdToString = (
     logInAccountServiceId: LogInServiceAndId
 ) => logInAccountServiceId.service + "_" + logInAccountServiceId.serviceId;
 
+/*
+    Graph QL で使うような相互に参照するものも作れる型
+*/
 /*  =============================================================
                             User
     =============================================================
 */
 export type User = {
-    id: Id;
-    name: Label;
+    id: UserId;
+    name: UserName;
     image: Image;
+    introduction: string;
     createdAt: Date;
     leaderProjects: Array<Project>;
     editingProjects: Array<Project>;
 };
 
+export type UserId = Id & { __userIdBrand: never };
 /*  =============================================================
                             Project
     =============================================================
 */
 export type Project = {
-    id: Id;
+    id: ProjectId;
     name: Label;
     leader: User;
     editor: Array<User>;
@@ -67,44 +72,50 @@ export type Project = {
     rootModule: Module;
 };
 
+export type ProjectId = Id & { __projectIdBrand: never };
 /*  =============================================================
                             Module
     =============================================================
 */
 export type Module = {
-    id: Id;
-    name: Label;
-    childModules: Array<Module>;
+    id: ModuleId;
+    name: Array<Label>;
+    project: Project;
     editor: Array<User>;
     createdAt: Date;
     updateAt: Date;
 };
 
+export type ModuleId = Id & { __moduleIdBrand: never };
 /*  =============================================================
                          Type Definition
     =============================================================
 */
-type TypeDefinition = {
-    id: Id;
+export type TypeDefinition = {
+    id: TypeId;
     name: Label;
 };
 
-type TypeValue = {
+export type TypeValue = {
     versionId: Id;
     versionDate: Date;
     name: Label;
     value: Array<Label>;
 };
+
+export type TypeId = Id & { __typeIdBrand: never };
 /*  =============================================================
                          Part Definition
     =============================================================
 */
 
-type PartDefinition = {
-    id: Id;
+export type PartDefinition = {
+    id: PartId;
     name: Label;
     createdAt: PartDefinition;
 };
+
+export type PartId = Id & { __partIdBrand: never };
 /*  =============================================================
                             Label
     =============================================================
@@ -116,17 +127,17 @@ export type Label = string & { __simpleNameBrand: never };
 
 export const labelFromString = (text: string): Label => {
     if (text.length < 1) {
-        throw new Error(`label is empty. label length must be 1～63`);
+        throw new Error(`Label is empty. Label length must be 1～63`);
     }
     if (63 < text.length) {
         throw new Error(
-            `label(=${text}) length is ${
+            `Label(=${text}) length is ${
                 text.length
-            }. too long. label length must be 1～63`
+            }. too long. Label length must be 1～63`
         );
     }
     if (!"abcdefghijklmnopqrstuvwxyz".includes(text[0])) {
-        throw new Error("label first char must be match /[a-z]/");
+        throw new Error("Label first char must be match /[a-z]/");
     }
     for (const char of text.substring(1)) {
         if (
@@ -134,7 +145,7 @@ export const labelFromString = (text: string): Label => {
                 char
             )
         ) {
-            throw new Error("label char must be match /[a-zA-Z0-9]/");
+            throw new Error("Label char must be match /[a-zA-Z0-9]/");
         }
     }
     return text as Label;
@@ -150,27 +161,61 @@ const labelTypeConfig: g.GraphQLScalarTypeConfig<Label, string> = {
 
 export const labelGraphQLType = new g.GraphQLScalarType(labelTypeConfig);
 /*  =============================================================
+                            UserName
+    =============================================================
+*/
+export type UserName = string & { __userNameBrand: never };
+
+export const userNameFromString = (text: string): UserName => {
+    if (text.trim() !== text) {
+        throw new Error("UserName contains spaces at both ends");
+    }
+    if (/[\u{0000}-\u{001f}]/u.test(text)) {
+        throw new Error(
+            `UserName contains ASCII control characters (U+0000 to U+001F)`
+        );
+    }
+    if (text.length < 1) {
+        throw new Error(`UserName is empty. UserName length must be 1～50`);
+    }
+    if (50 < text.length) {
+        throw new Error(
+            `UserName(=${text}) length is ${
+                text.length
+            }. too long. Label length must be 1～63`
+        );
+    }
+    return text as UserName;
+};
+
+const userNameTypeConfig: g.GraphQLScalarTypeConfig<UserName, string> = {
+    name: "UserName",
+    description:
+        "ユーザー名。ASCIIの制御文字U+0000～U+001Fを含めることができない。両端に空白を含めることができない。長さは1～50文字。すべて空白の名前はできない",
+    serialize: (value: UserName) => value,
+    parseValue: (value: string) => userNameFromString(value)
+};
+
+export const userNameGraphQLType = new g.GraphQLScalarType(userNameTypeConfig);
+/*  =============================================================
                             Image
     =============================================================
 */
 export type Image = {
-    id: string;
+    id: ImageId;
     base64EncodedPng: Base64EncodedPng;
 };
 
-type ImageIO = {
-    id: string;
-    base64EncodedPng: Base64EncodedPng;
-};
+export type ImageId = Id & { __imageIdBrand: never };
 /** ===================================
- *            Id
+ *                Id
  * ====================================
  */
 /**
  * Id。各種リソースを識別するために使うID。
  * URLでも使うので、大文字と小文字の差を持たせるべきではないので。小文字に統一して、大文字は一切使わない。長さは24文字
  */
-export type Id = string & { idBrand: never };
+export type Id = string & { __idBrand: never };
 
 export const idFromString = (string: string): Id => string as Id;
 
@@ -198,7 +243,7 @@ const idTypeConfig: g.GraphQLScalarTypeConfig<Id, string> = {
                     char
                 )
             ) {
-                throw new Error("label char must be match /[a-zA-Z0-9]/");
+                throw new Error("Id char must be match /[a-zA-Z0-9]/");
             }
         }
         return value as Id;

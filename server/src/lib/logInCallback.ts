@@ -4,6 +4,7 @@ import * as key from "./key";
 import { URL, URLSearchParams } from "url";
 import * as tool from "./tool";
 import * as jwt from "jsonwebtoken";
+import * as type from "./type";
 
 const domain = "definy-lang.web.app";
 const homeUrl = tool.urlFromString(domain);
@@ -29,7 +30,7 @@ const createAccessToken = (userId: string, randomId: string): string => {
     return jwt.sign(payload, key.accessTokenSecretKey, { algorithm: "HS256" });
 };
 
-export type Response =
+export type Result =
     | { type: "redirect"; url: URL }
     | { type: "error"; message: string };
 /* =====================================================================
@@ -41,7 +42,7 @@ export type Response =
  */
 export const googleLogInReceiver = async (
     query: { [key in string]: unknown }
-): Promise<Response> => {
+): Promise<Result> => {
     const code: unknown = query.code;
     const state: unknown = query.state;
     if (typeof code !== "string" || typeof state !== "string") {
@@ -99,8 +100,8 @@ export const googleLogInReceiver = async (
     );
     const accessTokenRandomId = tool.createRandomString();
     const userId = await database.addUser({
-        name: googleData.name,
-        imageId: userImageId,
+        name: type.userNameFromString(googleData.name.trim()),
+        imageId: userImageId as type.ImageId,
         logInServiceAndId: {
             service: "google",
             serviceId: googleData.sub
@@ -137,7 +138,7 @@ const googleTokenResponseToData = (
 /** GitHubでログインをしたあとのリダイレクト先 */
 export const gitHubLogInReceiver = async (
     query: { [key in string]: unknown }
-): Promise<Response> => {
+): Promise<Result> => {
     const code: unknown = query.code;
     const state: unknown = query.state;
     if (typeof code !== "string" || typeof state !== "string") {
@@ -218,8 +219,8 @@ query {
         new URL(userData.avatarUrl)
     );
     const userId = await database.addUser({
-        name: userData.name,
-        imageId: imageId,
+        name: type.userNameFromString(userData.name.trim()),
+        imageId: imageId as type.ImageId,
         lastAccessTokenJti: accessTokenRandomId,
         logInServiceAndId: {
             service: "gitHub",
@@ -238,7 +239,7 @@ query {
 /** LINEでログインをしたあとのリダイレクト先 */
 export const lineLogInReceiver = async (
     query: { [key in string]: unknown }
-): Promise<Response> => {
+): Promise<Result> => {
     const code: unknown = query.code;
     const state: unknown = query.state;
     if (typeof code !== "string" || typeof state !== "string") {
@@ -294,8 +295,8 @@ export const lineLogInReceiver = async (
         new URL(lineData.picture)
     );
     const userId = await database.addUser({
-        name: lineData.name,
-        imageId: imageId,
+        name: type.userNameFromString(lineData.name.trim()),
+        imageId: imageId as type.ImageId,
         lastAccessTokenJti: accessTokenRandomId,
         logInServiceAndId: {
             service: "line",
