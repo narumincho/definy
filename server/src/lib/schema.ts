@@ -375,6 +375,7 @@ const setModule = async (
     source.editors = moduleData.editors;
     source.createdAt = moduleData.createdAt;
     source.updateAt = moduleData.updateAt;
+    source.description = moduleData.description;
     source.typeDefinitions = moduleData.typeDefinitions;
     source.partDefinitions = moduleData.partDefinitions;
     return moduleData;
@@ -450,6 +451,17 @@ const moduleGraphQLType: g.GraphQLObjectType<
                         return (await setModule(source)).updateAt;
                     }
                     return source.updateAt;
+                }
+            }),
+            description: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "モジュールの説明",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.description === undefined) {
+                        return (await setModule(source)).description;
+                    }
+                    return source.description;
                 }
             }),
             typeDefinitions: makeObjectField({
@@ -693,7 +705,7 @@ export const schema = new g.GraphQLSchema({
                     },
                     editors: {
                         type: g.GraphQLNonNull(
-                            g.GraphQLList(g.GraphQLNonNull(userGraphQLType))
+                            g.GraphQLList(g.GraphQLNonNull(type.idGraphQLType))
                         ),
                         description: "編集可能にしたい人"
                     }

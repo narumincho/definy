@@ -223,6 +223,7 @@ type ModuleLowCost = {
     editors: Array<{ id: type.UserId }>;
     createdAt: Date;
     updateAt: Date;
+    description: string;
     typeDefinitions: Array<{ id: type.TypeId }>;
     partDefinitions: Array<{ id: type.PartId }>;
 };
@@ -260,6 +261,7 @@ const databaseLowModuleToLowCost = ({
     editors: data.editorIds.map(id => ({ id: id })),
     createdAt: data.createdAt.toDate(),
     updateAt: data.createdAt.toDate(),
+    description: data.description,
     typeDefinitions: data.typeDefinitionIds.map(id => ({ id: id })),
     partDefinitions: data.partDefinitionIds.map(id => ({ id: id }))
 });

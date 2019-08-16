@@ -81,6 +81,7 @@ export type Module = {
     editors: Array<User>;
     createdAt: Date;
     updateAt: Date;
+    description: string;
     typeDefinitions: Array<TypeDefinition>;
     partDefinitions: Array<PartDefinition>;
 };

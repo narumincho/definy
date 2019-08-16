@@ -178,6 +178,7 @@ export type ModuleData = {
     editorIds: Array<type.UserId>;
     createdAt: firestore.Timestamp;
     updateAt: firestore.Timestamp;
+    description: string;
     typeDefinitionIds: Array<type.TypeId>;
     partDefinitionIds: Array<type.PartId>;
 };

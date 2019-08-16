@@ -1,4 +1,4 @@
-module Project.ModuleDefinition.Module.PartDef.Expr exposing
+module Project.ModuleDefinition.Module.Expr exposing
     ( Expr(..)
     , Operator(..)
     , OperatorBindingOrder(..)
