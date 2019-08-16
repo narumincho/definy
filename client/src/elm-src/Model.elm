@@ -47,8 +47,8 @@ import Panel.EditorItemSource
 import Panel.Side
 import Project
 import Project.ModuleDefinition
+import Project.ModuleDefinition.CompileResult
 import Project.ModuleDefinition.ModuleIndex
-import Project.ModuleDefinition.ModuleWithCache
 import Project.ModuleDefinitionIndex
 import Task
 import Url
@@ -829,7 +829,7 @@ receiveResultValue { ref, index, result } model =
                         (Project.ModuleDefinition.MsgModule
                             { moduleIndex = moduleIndex
                             , moduleMsg =
-                                Project.ModuleDefinition.ModuleWithCache.MsgReceiveRunResult
+                                Project.ModuleDefinition.CompileResult.MsgReceiveRunResult
                                     (index |> Project.ModuleDefinition.ModuleIndex.PartDefIndex)
                                     result
                             }
@@ -1328,23 +1328,23 @@ sourceEmitToMsgAndCmd source emit =
     case emit of
         Project.ModuleDefinition.EmitModule { moduleIndex, moduleEmit } ->
             case moduleEmit of
-                Project.ModuleDefinition.ModuleWithCache.EmitCompile partDefIndex ->
+                Project.ModuleDefinition.CompileResult.EmitCompile partDefIndex ->
                     ( []
                     , compileCmd source moduleIndex partDefIndex
                     )
 
-                Project.ModuleDefinition.ModuleWithCache.EmitRun partDefIndex binary ->
+                Project.ModuleDefinition.CompileResult.EmitRun partDefIndex binary ->
                     ( []
                     , runCmd moduleIndex partDefIndex binary
                     )
 
-                Project.ModuleDefinition.ModuleWithCache.ErrorOverPartCountLimit ->
+                Project.ModuleDefinition.CompileResult.ErrorOverPartCountLimit ->
                     ( []
                       --TODO エラーの握りしめ
                     , Cmd.none
                     )
 
-                Project.ModuleDefinition.ModuleWithCache.ErrorDuplicatePartDefName partDefIndex ->
+                Project.ModuleDefinition.CompileResult.ErrorDuplicatePartDefName partDefIndex ->
                     ( []
                       --TODO エラーの握りしめ
                     , Cmd.none
@@ -1357,7 +1357,7 @@ compileCmd source moduleRef partDefIndex =
         targetPartDefMaybe =
             source
                 |> Project.ModuleDefinition.getModule moduleRef
-                |> Project.ModuleDefinition.ModuleWithCache.getPartDef partDefIndex
+                |> Project.ModuleDefinition.CompileResult.getPartDef partDefIndex
     in
     case targetPartDefMaybe of
         Just targetDef ->
@@ -1373,7 +1373,7 @@ compileCmd source moduleRef partDefIndex =
                                 (Project.ModuleDefinition.MsgModule
                                     { moduleIndex = moduleRef
                                     , moduleMsg =
-                                        Project.ModuleDefinition.ModuleWithCache.MsgReceiveCompileResult
+                                        Project.ModuleDefinition.CompileResult.MsgReceiveCompileResult
                                             partDefIndex
                                             compileResult
                                     }

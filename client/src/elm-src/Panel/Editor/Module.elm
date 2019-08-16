@@ -11,7 +11,13 @@ module Panel.Editor.Module exposing
 
 import Array
 import Compiler
+import Data.Id
 import Data.Label as L
+import Data.Project as Project
+import Data.Project.Expr as Expr
+import Data.Project.Module as Module
+import Data.Project.PartDef as PartDef
+import Data.Project.TypeDef as TypeDef
 import Html
 import Html.Attributes
 import Html.Events
@@ -21,17 +27,6 @@ import Json.Encode
 import Panel.DefaultUi
 import Parser
 import Parser.SimpleChar
-import Project
-import Project.ModuleDefinition as Source
-import Project.ModuleDefinition.Module as Module
-import Project.ModuleDefinition.Module.PartDef as PartDef
-import Project.ModuleDefinition.Module.PartDef.Expr as Expr
-import Project.ModuleDefinition.Module.PartDef.Name as Name
-import Project.ModuleDefinition.Module.PartDef.Type as Type
-import Project.ModuleDefinition.Module.TypeDef as TypeDef
-import Project.ModuleDefinition.ModuleIndex as ModuleIndex
-import Project.ModuleDefinition.ModuleWithCache as ModuleWithCache
-import Project.ModuleDefinitionIndex as SourceIndex
 import Utility.ArrayExtra
 import Utility.ListExtra
 import Utility.NSvg as NSvg

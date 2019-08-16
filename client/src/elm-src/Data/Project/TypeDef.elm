@@ -1,10 +1,17 @@
-module Project.ModuleDefinition.Module.TypeDef exposing (TypeDef, getName, getTagNum, make, toString, typeDefInt)
+module Data.Project.TypeDef exposing
+    ( TypeDef
+    , getName
+    , getTagNum
+    , make
+    , toString
+    , typeDefInt
+    )
 
 {-| 型の定義
 -}
 
+import Data.Id as Id
 import Data.Label as L
-import Project.ModuleDefinition.ModuleIndex as ModuleIndex
 
 
 {-| 型の定義
@@ -40,7 +47,7 @@ type KernelType
 
 type Parameter
     = NoParameter
-    | OneParameter ModuleIndex.TypeDefIndex
+    | OneParameter Id.TypeId
 
 
 {-| 指定した名前の型定義をつくる

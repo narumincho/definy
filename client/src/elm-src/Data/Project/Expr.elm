@@ -1,4 +1,4 @@
-module Project.ModuleDefinition.Module.Expr exposing
+module Data.Project.Expr exposing
     ( Expr(..)
     , Operator(..)
     , OperatorBindingOrder(..)
@@ -32,7 +32,7 @@ module Project.ModuleDefinition.Module.Expr exposing
     , toString
     )
 
-import Project.ModuleDefinitionIndex as SocrceIndex
+import Data.Id as Id
 import Utility.ListExtra as ListExtra
 
 
@@ -458,7 +458,7 @@ setTermAtOther index term (ExprTermOp head others) =
 
 type Term
     = Int32Literal Int
-    | Part SocrceIndex.PartIndex
+    | Part Id.PartId
     | Parentheses Expr
     | None
 
@@ -492,8 +492,8 @@ termToDescription term =
         Int32Literal i ->
             ( String.fromInt i, "Int32リテラル" )
 
-        Part (SocrceIndex.PartIndex { moduleIndex, partIndex }) ->
-            ( "パーツ", "パーツによる参照" )
+        Part (Id.PartId id) ->
+            ( "パーツ", "パーツによる参照(" ++ id ++ ")" )
 
         None ->
             ( "不正な項", "" )

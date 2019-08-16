@@ -1,4 +1,4 @@
-module Project.ModuleDefinition.Module exposing
+module Data.Project.Module exposing
     ( Module
     , addEmptyPartDefAndData
     , addTypeDef
@@ -9,29 +9,20 @@ module Project.ModuleDefinition.Module exposing
     , getPartDef
     , getPartDefAndData
     , getPartDefAndDataList
-    , getReadMe
     , getTypeDef
     , getTypeDefList
     , make
-    , makeUnit
-    , map
     , setData
     , setName
     , setPartDefAndData
     , setPartDefExpr
     , setPartDefName
     , setPartDefType
-    , setReadMe
     )
 
 import Array
 import Data.Label as Label
-import Project.ModuleDefinition.Module.PartDef as PartDef
-import Project.ModuleDefinition.Module.PartDef.Expr as Expr
-import Project.ModuleDefinition.Module.PartDef.Name as Name
-import Project.ModuleDefinition.Module.PartDef.Type as Type
 import Project.ModuleDefinition.Module.TypeDef as TypeDef
-import Project.ModuleDefinition.ModuleIndex as ModuleIndex
 
 
 {-| モジュール。aには各パーツ定義(PartDef)に保存しておきたいデータの型を指定する
@@ -46,59 +37,45 @@ ModuleWithCacheと違うところは、コンパイル結果を持たない、�
   - パーツ定義の個数は0～65535こ
 
 -}
-type Module a
+type Module
     = Module
-        { name : Label.Label
-        , readMe : String
-        , typeDefList : Array.Array TypeDef.TypeDef
-        , partDefAndDataList : Array.Array ( PartDef.PartDef, a )
+        { id : ModuleId
+        , name : List Label.Label
+        , description : String
+        , typeDefinitions : List TypeDef.TypeDef
+        , partDefinitions : List PartDef.PartDef
         }
+
+
+type ModuleId
+    = ModuleId String
 
 
 {-| 空のモジュールを作成する
 -}
-init : Label.Label -> Module a
+init : List Label.Label -> Module
 init name =
     Module
-        { name = name
-        , readMe = ""
-        , typeDefList = Array.empty
-        , partDefAndDataList = Array.empty
+        { id = ModuleId "emptyId"
+        , name = name
+        , description = ""
+        , typeDefinitions = []
+        , partDefinitions = []
         }
 
 
-{-| デバッグ用。モジュールを作成する
-型定義や名前定義で名前がかぶっていたら最初の方を優先する
+{-| モジュールを作成する
 -}
-make : { name : Label.Label, readMe : String, typeDefList : List TypeDef.TypeDef, partDefAndDataList : List ( PartDef.PartDef, a ) } -> Module a
-make { name, readMe, typeDefList, partDefAndDataList } =
+make :
+    { id : ModuleId
+    , name : List Label.Label
+    , description : String
+    , typeDefinitions : List TypeDef.TypeDef
+    , partDefinitions : List PartDef.PartDef
+    }
+    -> Module
+make =
     Module
-        { name = name
-        , readMe = readMe
-        , typeDefList =
-            typeDefList
-                |> deleteTypeDefWithDuplicateName
-                |> List.take typeDefMaxNum
-                |> Array.fromList
-        , partDefAndDataList =
-            partDefAndDataList
-                |> deletePartDefAndDataWithDuplicateName
-                |> List.take partDefMaxNum
-                |> Array.fromList
-        }
-
-
-{-| デバッグ用。別にデータを持たないモジュールを作成する
-型定義や名前定義で名前がかぶっていたら最初の方を優先する
--}
-makeUnit : { name : Label.Label, readMe : String, typeDefList : List TypeDef.TypeDef, partDefList : List PartDef.PartDef } -> Module ()
-makeUnit { name, readMe, typeDefList, partDefList } =
-    make
-        { name = name
-        , readMe = readMe
-        , typeDefList = typeDefList
-        , partDefAndDataList = partDefList |> List.map (\s -> ( s, () ))
-        }
 
 
 typeDefMaxNum : Int
@@ -109,18 +86,6 @@ typeDefMaxNum =
 partDefMaxNum : Int
 partDefMaxNum =
     65535
-
-
-map : (a -> b) -> Module a -> Module b
-map f (Module { name, readMe, typeDefList, partDefAndDataList }) =
-    Module
-        { name = name
-        , readMe = readMe
-        , typeDefList = typeDefList
-        , partDefAndDataList =
-            partDefAndDataList
-                |> Array.map (Tuple.mapSecond f)
-        }
 
 
 {-| 型定義で名前がかぶっていたら、その型定義を削除する。最初の要素を優先する
@@ -165,31 +130,31 @@ deletePartDefAndDataWithDuplicateName =
 
 {-| Moduleの名前を取得する
 -}
-getName : Module a -> Label.Label
+getName : Module -> List Label.Label
 getName (Module { name }) =
     name
 
 
 {-| Moduleの名前を設定する
 -}
-setName : Label.Label -> Module a -> Module a
-setName label (Module rec) =
-    Module { rec | name = label }
+setName : List Label.Label -> Module -> Module
+setName name (Module rec) =
+    Module { rec | name = name }
 
 
-{-| ModuleのReadMeを取得する
+{-| ModuleのDescriptionを取得する
 -}
-getReadMe : Module a -> String
-getReadMe (Module { readMe }) =
-    readMe
+getDescription : Module -> String
+getDescription (Module { description }) =
+    description
 
 
-{-| ModuleのReadMeを設定する
+{-| ModuleのDescriptionを設定する
 -}
-setReadMe : String -> Module a -> Module a
-setReadMe string (Module rec) =
+setDescription : String -> Module -> Module
+setDescription description (Module rec) =
     Module
-        { rec | readMe = string }
+        { rec | description = description }
 
 
 {-| 型定義TypeDefのListを取得する
@@ -301,21 +266,21 @@ setPartDefAndData (ModuleIndex.PartDefIndex defIndex) ( partDef, data ) (Module 
 
 {-| 指定した位置にあるパーツ定義を取得する
 -}
-getPartDef : ModuleIndex.PartDefIndex -> Module a -> Maybe PartDef.PartDef
+getPartDef : ModuleIndex.PartDefIndex -> Module -> Maybe PartDef.PartDef
 getPartDef (ModuleIndex.PartDefIndex defIndex) (Module { partDefAndDataList }) =
     partDefAndDataList |> Array.get defIndex |> Maybe.map Tuple.first
 
 
 {-| 指定した位置にあるデータを取得する
 -}
-getData : ModuleIndex.PartDefIndex -> Module a -> Maybe a
+getData : ModuleIndex.PartDefIndex -> Module -> Maybe a
 getData (ModuleIndex.PartDefIndex defIndex) (Module { partDefAndDataList }) =
     partDefAndDataList |> Array.get defIndex |> Maybe.map Tuple.second
 
 
 {-| 指定した位置にあるパーツ定義とデータを設定する
 -}
-setData : ModuleIndex.PartDefIndex -> a -> Module a -> Module a
+setData : ModuleIndex.PartDefIndex -> a -> Module -> Module
 setData (ModuleIndex.PartDefIndex defIndex) data (Module rec) =
     case rec.partDefAndDataList |> Array.get defIndex of
         Just ( partDef, _ ) ->
@@ -330,7 +295,7 @@ setData (ModuleIndex.PartDefIndex defIndex) data (Module rec) =
 {-| すでに指定した名前がモジュールに定義されているか
 無名はかぶったとしてみなせれない。PartDefIndexは前と同じ位置で同じ名前を設定した場合検知しないようにするため
 -}
-existPartDefName : ModuleIndex.PartDefIndex -> Name.Name -> Module a -> Bool
+existPartDefName : ModuleIndex.PartDefIndex -> Name.Name -> Module -> Bool
 existPartDefName passIndex name =
     case name of
         Name.SafeName safeName ->
@@ -351,7 +316,7 @@ existPartDefName passIndex name =
 
 {-| すべてのパーツ定義のIndex
 -}
-allPartDefIndex : Module a -> List ModuleIndex.PartDefIndex
+allPartDefIndex : Module -> List ModuleIndex.PartDefIndex
 allPartDefIndex module_ =
     List.range
         0
@@ -368,7 +333,7 @@ allPartDefIndex module_ =
 
 {-| 指定した位置にあるパーツ定義の名前を変更する。他の名前とかぶっていた場合はNothing
 -}
-setPartDefName : ModuleIndex.PartDefIndex -> Name.Name -> Module a -> Maybe (Module a)
+setPartDefName : ModuleIndex.PartDefIndex -> Name.Name -> Module -> Maybe Module
 setPartDefName partDefIndex name module_ =
     case module_ |> getPartDefAndData partDefIndex of
         Just ( partDef, data ) ->
@@ -382,7 +347,7 @@ setPartDefName partDefIndex name module_ =
 
 {-| 指定した位置にあるパーツ定義の型を変更する
 -}
-setPartDefType : ModuleIndex.PartDefIndex -> Type.Type -> Module a -> Module a
+setPartDefType : ModuleIndex.PartDefIndex -> Type.Type -> Module -> Module
 setPartDefType partDefIndex type_ module_ =
     case module_ |> getPartDefAndData partDefIndex of
         Just ( partDef, data ) ->
@@ -397,7 +362,7 @@ setPartDefType partDefIndex type_ module_ =
 
 {-| 指定した位置にあるパーツ定義の式を変更する
 -}
-setPartDefExpr : ModuleIndex.PartDefIndex -> Expr.Expr -> Module a -> Module a
+setPartDefExpr : ModuleIndex.PartDefIndex -> Expr.Expr -> Module -> Module
 setPartDefExpr partDefIndex expr module_ =
     case module_ |> getPartDefAndData partDefIndex of
         Just ( partDef, data ) ->
