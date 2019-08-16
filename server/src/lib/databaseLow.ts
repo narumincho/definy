@@ -21,7 +21,7 @@ const collectionFromLogInState = (
     }
 };
 const projectCollection = dataBase.collection("project");
-
+const moduleCollection = dataBase.collection("module");
 /* ==========================================
                     User
    ==========================================
@@ -34,6 +34,7 @@ export type UserData = {
     leaderProjects: Array<type.ProjectId>;
     editingProjects: Array<type.ProjectId>;
     lastAccessTokenJti: string;
+    logInServiceAndId: type.LogInServiceAndId;
 };
 
 /**
@@ -51,7 +52,7 @@ export const addUser = async (userData: UserData): Promise<type.UserId> => {
  * ユーザーのデータを取得する
  * @param userId
  */
-export const getUserData = async (userId: type.UserId): Promise<UserData> => {
+export const getUser = async (userId: type.UserId): Promise<UserData> => {
     const userData = (await userCollection.doc(userId).get()).data();
     if (userData === undefined) {
         throw new Error(`There was no user with userId = ${userId}`);
@@ -62,13 +63,22 @@ export const getUserData = async (userId: type.UserId): Promise<UserData> => {
 /**
  * 全てのユーザーのデータを取得する
  */
-export const getAllUserData = async (): Promise<
+export const getAllUser = async (): Promise<
     Array<{ id: type.UserId; data: UserData }>
 > =>
     (await userCollection.get()).docs.map(doc => ({
         id: doc.id as type.UserId,
         data: doc.data() as UserData
     }));
+
+export const searchUsers = async <T extends keyof UserData>(
+    filed: T,
+    operator: firestore.WhereFilterOp,
+    value: UserData[T]
+): Promise<Array<{ id: type.UserId; data: UserData }>> =>
+    (await userCollection.where(filed, operator, value).get()).docs.map(
+        doc => ({ id: doc.id as type.UserId, data: doc.data() as UserData })
+    );
 
 /**
  * Firebase Cloud Storageのバケット "definy-user-image" で新しくファイルを作成する
@@ -121,7 +131,7 @@ export const existsGoogleStateAndDeleteAndGetUserId = async (
 export type ProjectData = {
     name: type.Label;
     leaderId: type.UserId;
-    editorsId: Array<type.UserId>;
+    editorIds: Array<type.UserId>;
     createdAt: firestore.Timestamp;
     updateAt: firestore.Timestamp;
     modulesId: Array<type.ModuleId>;
@@ -158,6 +168,48 @@ export const getAllProject = async (): Promise<
         id: doc.id as type.ProjectId,
         data: doc.data() as ProjectData
     }));
+/* ==========================================
+                Module
+   ==========================================
+*/
+export type ModuleData = {
+    name: Array<type.Label>;
+    projectId: type.ProjectId;
+    editorIds: Array<type.UserId>;
+    createdAt: firestore.Timestamp;
+    updateAt: firestore.Timestamp;
+    typeDefinitionIds: Array<type.TypeId>;
+    partDefinitionIds: Array<type.PartId>;
+};
+
+export const addModule = async (data: ModuleData): Promise<type.ModuleId> => {
+    const moduleId = type.createRandomId() as type.ModuleId;
+    await moduleCollection.doc(moduleId).set(data);
+    return moduleId;
+};
+
+export const getModule = async (
+    moduleId: type.ModuleId
+): Promise<ModuleData> => {
+    const moduleData = (await moduleCollection.doc(moduleId).get()).data();
+    if (moduleData === undefined) {
+        throw new Error(`There was no module with moduleId = ${moduleId}`);
+    }
+    return moduleData as ModuleData;
+};
+
+export const getAllModule = async (): Promise<
+    Array<{ id: type.ModuleId; data: ModuleData }>
+> =>
+    (await moduleCollection.get()).docs.map(doc => ({
+        id: doc.id as type.ModuleId,
+        data: doc.data() as ModuleData
+    }));
+/* ==========================================
+                Type Definition
+   ==========================================
+*/
+
 /* ==========================================
                 Timestamp
    ==========================================

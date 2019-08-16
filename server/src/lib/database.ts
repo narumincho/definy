@@ -46,14 +46,24 @@ export const saveUserImageFromUrl = async (url: URL): Promise<string> => {
 };
 
 /**
- * TODO ユーザーが存在するときの処理
  * ソーシャルログインのアカウントからユーザーを取得する
  * @param logInServiceAndId
  */
-export const getUserFromLogInService = (
+export const getUserFromLogInService = async (
     logInServiceAndId: type.LogInServiceAndId
-): type.User & { lastAccessTokenJti: string } | null => {
-    return null;
+): Promise<(UserLowCost & { lastAccessTokenJti: string }) | null> => {
+    const userDataAndId = (await databaseLow.searchUsers(
+        "logInServiceAndId",
+        "==",
+        logInServiceAndId
+    ))[0];
+    if (userDataAndId === undefined) {
+        return null;
+    }
+    return {
+        ...databaseLowUserToLowCost(userDataAndId),
+        lastAccessTokenJti: userDataAndId.data.lastAccessTokenJti
+    };
 };
 
 type UserLowCost = {
@@ -84,7 +94,8 @@ export const addUser = async (data: {
         editingProjects: [],
         leaderProjects: [],
         createdAt: databaseLow.getNowTimestamp(),
-        lastAccessTokenJti: data.lastAccessTokenJti
+        lastAccessTokenJti: data.lastAccessTokenJti,
+        logInServiceAndId: data.logInServiceAndId
     });
     return userId;
 };
@@ -96,14 +107,14 @@ export const addUser = async (data: {
 export const getUser = async (userId: type.UserId): Promise<UserLowCost> =>
     databaseLowUserToLowCost({
         id: userId,
-        data: await databaseLow.getUserData(userId)
+        data: await databaseLow.getUser(userId)
     });
 
 /**
  *
  */
 export const getAllUser = async (): Promise<Array<UserLowCost>> =>
-    (await databaseLow.getAllUserData()).map(databaseLowUserToLowCost);
+    (await databaseLow.getAllUser()).map(databaseLowUserToLowCost);
 
 const databaseLowUserToLowCost = ({
     id,
@@ -149,7 +160,7 @@ export const addProject = async (data: {
     const projectId = await databaseLow.addProject({
         name: data.name,
         leaderId: data.leaderId,
-        editorsId: data.editors,
+        editorIds: data.editors,
         createdAt: now,
         updateAt: now,
         modulesId: [] // TODO ルートモジュールの追加
@@ -197,10 +208,60 @@ const databaseLowProjectToLowCost = ({
     leader: {
         id: data.leaderId
     },
-    editors: data.editorsId.map(id => ({ id: id })),
+    editors: data.editorIds.map(id => ({ id: id })),
     createdAt: data.createdAt.toDate(),
     updateAt: data.updateAt.toDate(),
     modules: data.modulesId.map(id => ({ id: id }))
+});
+
+type ModuleLowCost = {
+    id: type.ModuleId;
+    name: Array<type.Label>;
+    project: {
+        id: type.ProjectId;
+    };
+    editors: Array<{ id: type.UserId }>;
+    createdAt: Date;
+    updateAt: Date;
+    typeDefinitions: Array<{ id: type.TypeId }>;
+    partDefinitions: Array<{ id: type.PartId }>;
+};
+
+/**
+ * 指定したモジュールを取得する
+ * @param moduleId
+ */
+export const getModule = async (
+    moduleId: type.ModuleId
+): Promise<ModuleLowCost> =>
+    databaseLowModuleToLowCost({
+        id: moduleId,
+        data: await databaseLow.getModule(moduleId)
+    });
+
+/**
+ * 全てのモジュールを取得する
+ */
+export const getAllModule = async (): Promise<Array<ModuleLowCost>> =>
+    (await databaseLow.getAllModule()).map(databaseLowModuleToLowCost);
+
+const databaseLowModuleToLowCost = ({
+    id,
+    data
+}: {
+    id: type.ModuleId;
+    data: databaseLow.ModuleData;
+}): ModuleLowCost => ({
+    id: id,
+    name: data.name,
+    project: {
+        id: data.projectId
+    },
+    editors: data.editorIds.map(id => ({ id: id })),
+    createdAt: data.createdAt.toDate(),
+    updateAt: data.createdAt.toDate(),
+    typeDefinitions: data.typeDefinitionIds.map(id => ({ id: id })),
+    partDefinitions: data.partDefinitionIds.map(id => ({ id: id }))
 });
 
 /**
@@ -216,7 +277,7 @@ export const verifyAccessToken = async (
     if (typeof decoded.sub !== "string" || typeof decoded.jti !== "string") {
         throw new Error("invalid access token");
     }
-    const userData = await databaseLow.getUserData(decoded.sub as type.UserId);
+    const userData = await databaseLow.getUser(decoded.sub as type.UserId);
     if (userData.lastAccessTokenJti !== decoded.jti) {
         throw new Error("アクセストークンが無効になりました");
     }

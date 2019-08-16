@@ -83,15 +83,18 @@ export const googleLogInReceiver = async (
         )
     );
     // 取得したidトークンからプロフィール画像と名前とLINEのIDを取得する
-    const user = database.getUserFromLogInService({
+    const definyUserData = await database.getUserFromLogInService({
         service: "google",
         serviceId: googleData.sub
     });
     // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
-    if (user !== null) {
+    if (definyUserData !== null) {
         return {
             type: "redirect",
-            url: createAccessTokenUrl(user.id, user.lastAccessTokenJti)
+            url: createAccessTokenUrl(
+                definyUserData.id,
+                definyUserData.lastAccessTokenJti
+            )
         };
     }
     // ユーザーが存在しないならユーザーを作成する
@@ -276,16 +279,19 @@ export const lineLogInReceiver = async (
         )
     );
 
-    const userData = await database.getUserFromLogInService({
+    const definyUserData = await database.getUserFromLogInService({
         service: "line",
         serviceId: lineData.sub
     });
 
     // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
-    if (userData !== null) {
+    if (definyUserData !== null) {
         return {
             type: "redirect",
-            url: createAccessTokenUrl(userData.id, userData.lastAccessTokenJti)
+            url: createAccessTokenUrl(
+                definyUserData.id,
+                definyUserData.lastAccessTokenJti
+            )
         };
     }
     // ユーザーが存在しないなら作成し、リフレッシュトークンを返す

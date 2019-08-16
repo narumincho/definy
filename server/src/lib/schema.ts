@@ -362,8 +362,23 @@ const projectGraphQLType = new g.GraphQLObjectType({
                     return source.modules;
                 }
             })
-        })
+        }),
+    description: "プロジェクト。ゲームやツール1つに対応する"
 });
+
+const setModule = async (
+    source: Return<type.Module>
+): ReturnType<typeof database.getModule> => {
+    const moduleData = await database.getModule(source.id);
+    source.name = moduleData.name;
+    source.project = moduleData.project;
+    source.editors = moduleData.editors;
+    source.createdAt = moduleData.createdAt;
+    source.updateAt = moduleData.updateAt;
+    source.typeDefinitions = moduleData.typeDefinitions;
+    source.partDefinitions = moduleData.partDefinitions;
+    return moduleData;
+};
 
 const moduleGraphQLType: g.GraphQLObjectType<
     type.Module,
@@ -385,17 +400,23 @@ const moduleGraphQLType: g.GraphQLObjectType<
                     "モジュールの名前 リストをパスとして階層構造となす。",
                 args: {},
                 resolve: async (source, args) => {
-                    return [type.labelFromString("dummyName")];
+                    if (source.name === undefined) {
+                        return (await setModule(source)).name;
+                    }
+                    return source.name;
                 }
             }),
-            editor: makeObjectField({
+            editors: makeObjectField({
                 type: g.GraphQLNonNull(
                     g.GraphQLList(g.GraphQLNonNull(userGraphQLType))
                 ),
                 description: "編集した人",
                 args: {},
                 resolve: async (source, args) => {
-                    return [];
+                    if (source.editors === undefined) {
+                        return (await setModule(source)).editors;
+                    }
+                    return source.editors;
                 }
             }),
             project: makeObjectField({
@@ -403,11 +424,105 @@ const moduleGraphQLType: g.GraphQLObjectType<
                 description: "所属しているプロジェクト",
                 args: {},
                 resolve: async (source, args) => {
-                    return {
-                        id: type.idFromString(
-                            "dummyProjectId"
-                        ) as type.ProjectId
-                    };
+                    if (source.project === undefined) {
+                        return (await setModule(source)).project;
+                    }
+                    return source.project;
+                }
+            }),
+            createdAt: makeObjectField({
+                type: g.GraphQLNonNull(type.dateTimeGraphQLType),
+                description: "作成日時",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.createdAt === undefined) {
+                        return (await setModule(source)).createdAt;
+                    }
+                    return source.createdAt;
+                }
+            }),
+            updateAt: makeObjectField({
+                type: g.GraphQLNonNull(type.dateTimeGraphQLType),
+                description: "更新日時",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.updateAt === undefined) {
+                        return (await setModule(source)).updateAt;
+                    }
+                    return source.updateAt;
+                }
+            }),
+            typeDefinitions: makeObjectField({
+                type: g.GraphQLNonNull(
+                    g.GraphQLList(g.GraphQLNonNull(typeDefinitionGraphQLType))
+                ),
+                description: "このモジュールにある型の定義",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.typeDefinitions === undefined) {
+                        return (await setModule(source)).typeDefinitions;
+                    }
+                    return source.typeDefinitions;
+                }
+            }),
+            partDefinitions: makeObjectField({
+                type: g.GraphQLNonNull(
+                    g.GraphQLList(g.GraphQLNonNull(partDefinitionGraphQLType))
+                ),
+                description: "このモジュールにあるパーツ定義",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.partDefinitions === undefined) {
+                        return (await setModule(source)).partDefinitions;
+                    }
+                    return source.partDefinitions;
+                }
+            })
+        }),
+    description: "モジュール。複数の定義をまとめたもの。"
+});
+
+const typeDefinitionGraphQLType = new g.GraphQLObjectType<
+    type.TypeDefinition,
+    void,
+    any
+>({
+    name: "TypeDefinition",
+    fields: () =>
+        makeObjectFieldMap<type.TypeDefinition>({
+            id: {
+                type: g.GraphQLNonNull(type.idGraphQLType),
+                description: "型を識別するためのもの"
+            },
+            name: makeObjectField({
+                type: g.GraphQLNonNull(type.labelGraphQLType),
+                description: "型の名前",
+                args: {},
+                resolve: async (source, args) => {
+                    return type.labelFromString("typeDummyName");
+                }
+            })
+        })
+});
+
+const partDefinitionGraphQLType = new g.GraphQLObjectType<
+    type.PartDefinition,
+    void,
+    any
+>({
+    name: "PartDefinition",
+    fields: () =>
+        makeObjectFieldMap<type.PartDefinition>({
+            id: {
+                type: g.GraphQLNonNull(type.idGraphQLType),
+                description: "パーツを識別するためのもの"
+            },
+            name: makeObjectField({
+                type: g.GraphQLNonNull(type.labelGraphQLType),
+                description: "パーツの名前",
+                args: {},
+                resolve: async (source, args) => {
+                    return type.labelFromString("partDummyName");
                 }
             }),
             createdAt: makeObjectField({
@@ -417,18 +532,9 @@ const moduleGraphQLType: g.GraphQLObjectType<
                 resolve: async (source, args) => {
                     return new Date();
                 }
-            }),
-            updateAt: makeObjectField({
-                type: g.GraphQLNonNull(type.dateTimeGraphQLType),
-                description: "更新日時",
-                args: {},
-                resolve: async (source, args) => {
-                    return new Date();
-                }
             })
         })
 });
-
 /*  =============================================================
                             Schema
     =============================================================

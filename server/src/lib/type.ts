@@ -37,10 +37,6 @@ export type LogInServiceAndId = {
     serviceId: string;
 };
 
-export const logInServiceAndIdToString = (
-    logInAccountServiceId: LogInServiceAndId
-) => logInAccountServiceId.service + "_" + logInAccountServiceId.serviceId;
-
 /*
     Graph QL で使うような相互に参照するものも作れる型
 */
@@ -82,9 +78,11 @@ export type Module = {
     id: ModuleId;
     name: Array<Label>;
     project: Project;
-    editor: Array<User>;
+    editors: Array<User>;
     createdAt: Date;
     updateAt: Date;
+    typeDefinitions: Array<TypeDefinition>;
+    partDefinitions: Array<PartDefinition>;
 };
 
 export type ModuleId = Id & { __moduleIdBrand: never };
@@ -113,7 +111,7 @@ export type TypeId = Id & { __typeIdBrand: never };
 export type PartDefinition = {
     id: PartId;
     name: Label;
-    createdAt: PartDefinition;
+    createdAt: Date;
 };
 
 export type PartId = Id & { __partIdBrand: never };
