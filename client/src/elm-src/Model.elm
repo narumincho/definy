@@ -34,7 +34,6 @@ port module Model exposing
 
 import Browser
 import Browser.Events
-import Compiler
 import Data.Language
 import Data.Project
 import Data.SocialLoginService
@@ -47,7 +46,6 @@ import Panel.Editor.Module
 import Panel.EditorGroup
 import Panel.EditorItemSource
 import Panel.Side
-import Task
 import Url
 import Utility.ListExtra
 import Utility.Map
@@ -69,9 +67,6 @@ port focusTextArea : () -> Cmd msg
 port preventDefaultBeforeKeyEvent : () -> Cmd msg
 
 
-port run : { ref : List Int, index : Int, wasm : List Int } -> Cmd msg
-
-
 port elementScrollIntoView : String -> Cmd msg
 
 
@@ -81,17 +76,11 @@ port logInWithGoogle : () -> Cmd msg
 port logInWithGitHub : () -> Cmd msg
 
 
-port logInWithTwitter : () -> Cmd msg
-
-
 port logInWithLine : () -> Cmd msg
 
 
 
 {- Sub (JavaScript → Elm) -}
-
-
-port input : ({ text : String, caretPos : Int } -> msg) -> Sub msg
 
 
 port keyPressed : (Json.Decode.Value -> msg) -> Sub msg

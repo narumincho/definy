@@ -69,23 +69,10 @@ requestAnimationFrame(() => {
             }
         });
     });
-    app.ports.run.subscribe(compileResult => {
-        WebAssembly.instantiate(new Uint8Array(compileResult.wasm)).then(result => {
-            const exportFunc = result.instance.exports;
-            const resultValue = exportFunc[0]();
-            console.log(result);
-            console.log("WASMの実行結果", resultValue);
-            app.ports.runResult.send({
-                ref: compileResult.ref,
-                index: compileResult.index,
-                result: resultValue
-            });
-        });
-    });
     const windowResizeSend = () => {
         app.ports.windowResize.send({
-            width: window.innerWidth,
-            height: window.innerHeight
+            width: innerWidth,
+            height: innerHeight
         });
     };
     windowResizeSend();
@@ -127,15 +114,6 @@ getGitHubLogInUrl
 }
 `, data => {
             jumpPage(data.getGitHubLogInUrl);
-        });
-    });
-    app.ports.logInWithTwitter.subscribe(() => {
-        callApi(`
-mutation {
-getTwitterLogInUrl
-}
-`, data => {
-            jumpPage(data.getTwitterLogInUrl);
         });
     });
     app.ports.logInWithLine.subscribe(() => {

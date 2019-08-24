@@ -1,4 +1,3 @@
-"use strict";
 interface Window {
     Elm: {
         Main: {
@@ -6,13 +5,34 @@ interface Window {
         };
     };
 }
+type SubForElmCmd<T> = {
+    subscribe: (arg: (value: T) => void) => void;
+};
+
+type CmdForElmSub<T> = {
+    send: (value: T) => void;
+};
 
 interface ElmApp {
     ports: {
-        [key: string]: {
-            subscribe: (arg: (value: any) => void) => void;
-            send: (value: unknown) => void;
-        };
+        setTextAreaValue: SubForElmCmd<string>;
+        setClickEventListenerInCapturePhase: SubForElmCmd<string>;
+        focusTextArea: SubForElmCmd<null>;
+        preventDefaultBeforeKeyEvent: SubForElmCmd<null>;
+        elementScrollIntoView: SubForElmCmd<string>;
+        logInWithGoogle: SubForElmCmd<null>;
+        logInWithGitHub: SubForElmCmd<null>;
+        logInWithLine: SubForElmCmd<null>;
+        keyPressed: CmdForElmSub<KeyboardEvent>;
+        keyPrevented: CmdForElmSub<null>;
+        windowResize: CmdForElmSub<{ width: number; height: number }>;
+        runResult: CmdForElmSub<{
+            ref: Array<number>;
+            index: number;
+            result: number;
+        }>;
+        fireClickEventInCapturePhase: CmdForElmSub<string>;
+        changeLanguage: CmdForElmSub<string>;
     };
 }
 
@@ -88,7 +108,9 @@ requestAnimationFrame(() => {
             }
             console.log(`id=${id}にキャプチャフェーズのクリックイベントを追加`);
             if (element === null) {
-                console.warn(`id=${id}へのキャプチャフェーズのクリックイベントを追加に失敗`);
+                console.warn(
+                    `id=${id}へのキャプチャフェーズのクリックイベントを追加に失敗`
+                );
                 return;
             }
             element.addEventListener(
@@ -109,27 +131,11 @@ requestAnimationFrame(() => {
             }
         });
     });
-    /* コンパイル結果(WASM)を実行 */
-    app.ports.run.subscribe(compileResult => {
-        WebAssembly.instantiate(new Uint8Array(compileResult.wasm)).then(
-            result => {
-                const exportFunc = result.instance.exports;
-                const resultValue = exportFunc[0]();
-                console.log(result);
-                console.log("WASMの実行結果", resultValue);
-                app.ports.runResult.send({
-                    ref: compileResult.ref,
-                    index: compileResult.index,
-                    result: resultValue
-                });
-            }
-        );
-    });
     /* ウィンドウサイズを変えたら */
     const windowResizeSend = () => {
         app.ports.windowResize.send({
-            width: window.innerWidth,
-            height: window.innerHeight
+            width: innerWidth,
+            height: innerHeight
         });
     };
     windowResizeSend();
@@ -182,19 +188,6 @@ getGitHubLogInUrl
 `,
             data => {
                 jumpPage(data.getGitHubLogInUrl);
-            }
-        );
-    });
-
-    app.ports.logInWithTwitter.subscribe(() => {
-        callApi(
-            `
-mutation {
-getTwitterLogInUrl
-}
-`,
-            data => {
-                jumpPage(data.getTwitterLogInUrl);
             }
         );
     });
