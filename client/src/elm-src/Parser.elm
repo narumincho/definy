@@ -11,37 +11,37 @@ module Parser exposing
     , beginWithType
     )
 
+import Data.Label as Label
+import Data.Project.Expr as Expr
+import Data.Project.PartDef as PartDef
 import Parser.Expr as ExprParser
 import Parser.Name as NameParser
 import Parser.SimpleChar exposing (SimpleChar)
 import Parser.Type as TypeParser
-import Project.ModuleDefinition.Module.PartDef.Expr as Expr
-import Project.ModuleDefinition.Module.PartDef.Name as Name
-import Project.ModuleDefinition.Module.PartDef.Type as Type
 
 
 {-| 名前始まりの解析の結果
 -}
 type BeginWithNameResult
     = BeginWithNameEndName
-        { name : Name.Name
+        { name : Maybe Label.Label
         , textAreaValue : List ( Char, Bool )
         }
     | BeginWithNameEndType
-        { name : Name.Name
-        , type_ : Type.Type
+        { name : Maybe Label.Label
+        , type_ : PartDef.Type
         , textAreaValue : List ( Char, Bool )
         }
     | BeginWithNameEndExprTerm
-        { name : Name.Name
-        , type_ : Type.Type
+        { name : Maybe Label.Label
+        , type_ : PartDef.Type
         , headTerm : Expr.Term
         , opAndTermList : List ( Expr.Operator, Expr.Term )
         , textAreaValue : List ( Char, Bool )
         }
     | BeginWithNameEndExprOp
-        { name : Name.Name
-        , type_ : Type.Type
+        { name : Maybe Label.Label
+        , type_ : PartDef.Type
         , headTerm : Expr.Term
         , opAndTermList : List ( Expr.Operator, Expr.Term )
         , lastOp : Expr.Operator
@@ -53,17 +53,17 @@ type BeginWithNameResult
 -}
 type BeginWithTypeResult
     = BeginWithTypeEndType
-        { type_ : Type.Type
+        { type_ : PartDef.Type
         , textAreaValue : List ( Char, Bool )
         }
     | BeginWithTypeEndExprTerm
-        { type_ : Type.Type
+        { type_ : PartDef.Type
         , headTerm : Expr.Term
         , opAndTermList : List ( Expr.Operator, Expr.Term )
         , textAreaValue : List ( Char, Bool )
         }
     | BeginWithTypeEndExprOp
-        { type_ : Type.Type
+        { type_ : PartDef.Type
         , headTerm : Expr.Term
         , opAndTermList : List ( Expr.Operator, Expr.Term )
         , lastOp : Expr.Operator
@@ -165,7 +165,7 @@ beginWithName list =
                 ExprParser.TermLastTerm { head, others, textAreaValue } ->
                     BeginWithNameEndExprTerm
                         { name = name
-                        , type_ = Type.empty
+                        , type_ = PartDef.emptyType
                         , headTerm = ExprParser.takeTerm head
                         , opAndTermList = ExprParser.takeTermListOT others
                         , textAreaValue = textAreaValue
@@ -174,7 +174,7 @@ beginWithName list =
                 ExprParser.TermLastOp { head, others, last, textAreaValue } ->
                     BeginWithNameEndExprOp
                         { name = name
-                        , type_ = Type.empty
+                        , type_ = PartDef.emptyType
                         , headTerm = ExprParser.takeTerm head
                         , opAndTermList = ExprParser.takeTermListOT others
                         , lastOp = last

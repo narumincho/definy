@@ -47,8 +47,8 @@ optToWatLikeList opt =
         Opt.I32Const v ->
             [ I32Const v ]
 
-        Opt.Call defNum ->
-            [ Call defNum ]
+        Opt.Call _ ->
+            [ Call 0 ]
 
 
 watLikeToBinary : WatLike -> List Int

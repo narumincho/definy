@@ -1,13 +1,19 @@
-module Data.Project exposing (Project(..), ProjectId)
+module Data.Project exposing
+    ( Project
+    , getLeaderName
+    , getName
+    , sample
+    )
 
 import Data.Id as Id
 import Data.Label as Label
+import Data.Project.Module
 import Time
 
 
 type Project
     = Project
-        { id : ProjectId
+        { id : Id.ProjectId
         , name : Label.Label
         , leader : Id.UserId
         , editors : List Id.UserId
@@ -17,5 +23,38 @@ type Project
         }
 
 
-type ProjectId
-    = ProjectId String
+getName : Project -> Label.Label
+getName (Project { name }) =
+    name
+
+
+getLeaderName : Project -> String
+getLeaderName _ =
+    "キャッシュから読み込みたい"
+
+
+sample : Project
+sample =
+    Project
+        { id = Id.ProjectId "sample"
+        , name =
+            Label.from Label.hs
+                [ Label.oa
+                , Label.om
+                , Label.op
+                , Label.ol
+                , Label.oe
+                , Label.oP
+                , Label.or
+                , Label.oo
+                , Label.oj
+                , Label.oe
+                , Label.oc
+                , Label.ot
+                ]
+        , leader = Id.UserId "sampleProjectLeader"
+        , editors = []
+        , updateAt = Time.millisToPosix 0
+        , createdAt = Time.millisToPosix 0
+        , modules = [ Id.ModuleId "sampleModuleId" ]
+        }

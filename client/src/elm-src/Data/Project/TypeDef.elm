@@ -85,7 +85,7 @@ getTagNum (TypeDef { content }) =
 typeDefInt : TypeDef
 typeDefInt =
     TypeDef
-        { name = L.make L.hi [ L.on, L.ot, L.o3, L.o2 ]
+        { name = L.from L.hi [ L.on, L.ot, L.o3, L.o2 ]
         , content =
             TagOrKernelKernel I32
         }

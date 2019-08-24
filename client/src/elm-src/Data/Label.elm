@@ -2,6 +2,7 @@ module Data.Label exposing
     ( Head
     , Label
     , Others
+    , from
     , fromHead
     , ha
     , hb
@@ -29,7 +30,6 @@ module Data.Label exposing
     , hx
     , hy
     , hz
-    , make
     , o0
     , o1
     , o2
@@ -132,8 +132,8 @@ type Label
     = Label Head (List Others)
 
 
-make : Head -> List Others -> Label
-make head othersList =
+from : Head -> List Others -> Label
+from head othersList =
     Label head (List.take 63 othersList)
 
 

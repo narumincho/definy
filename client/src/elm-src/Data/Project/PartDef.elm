@@ -1,14 +1,18 @@
 module Data.Project.PartDef exposing
     ( PartDef
+    , Type
     , empty
+    , emptyType
     , getExpr
     , getName
     , getType
+    , isEmptyType
     , make
     , setExpr
     , setName
     , setType
     , toString
+    , typeToString
     )
 
 import Data.Id as Id
@@ -109,6 +113,16 @@ type Type
     = Function Type Type
     | Ref Id.TypeId
     | Empty
+
+
+emptyType : Type
+emptyType =
+    Empty
+
+
+isEmptyType : Type -> Bool
+isEmptyType type_ =
+    type_ == Empty
 
 
 typeToString : Type -> String

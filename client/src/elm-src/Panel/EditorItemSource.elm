@@ -1,10 +1,10 @@
 module Panel.EditorItemSource exposing (EditorItemSource(..))
 
-import Project.ModuleDefinitionIndex
+import Data.Id
 
 
 type EditorItemSource
     = ProjectRoot
     | ProjectImport
-    | Module Project.ModuleDefinitionIndex.ModuleIndex
+    | Module Data.Id.ModuleId
     | EditorKeyConfig

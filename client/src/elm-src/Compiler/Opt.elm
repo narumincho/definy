@@ -1,12 +1,14 @@
 module Compiler.Opt exposing (Opt(..), toString)
 
+import Data.Id
+
 
 type Opt
     = I32Add Opt Opt
     | I32Sub Opt Opt
     | I32Mul Opt Opt
     | I32Const Int
-    | Call Int
+    | Call Data.Id.PartId
 
 
 toString : Opt -> String
@@ -24,5 +26,5 @@ toString opt =
         I32Const v ->
             "[i32.const " ++ String.fromInt v ++ "]"
 
-        Call f ->
-            "(call" ++ String.fromInt f ++ ")"
+        Call (Data.Id.PartId partId) ->
+            "(call" ++ partId ++ ")"

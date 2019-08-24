@@ -10,8 +10,8 @@ module Parser.Expr exposing
     )
 
 import Data.Label as Label
+import Data.Project.Expr as Expr exposing (Operator, Term)
 import Parser.SimpleChar as SimpleChar exposing (SimpleChar(..), Symbol(..))
-import Project.ModuleDefinition.Module.PartDef.Expr as Expr exposing (Operator, Term)
 
 
 {-| 始まりがTermの構文解析結果

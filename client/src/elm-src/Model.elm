@@ -36,7 +36,9 @@ import Browser
 import Browser.Events
 import Compiler
 import Data.Language
+import Data.Project
 import Data.SocialLoginService
+import Data.User
 import Json.Decode
 import Key
 import Panel.CommandPalette
@@ -45,14 +47,8 @@ import Panel.Editor.Module
 import Panel.EditorGroup
 import Panel.EditorItemSource
 import Panel.Side
-import Project
-import Project.ModuleDefinition
-import Project.ModuleDefinition.CompileResult
-import Project.ModuleDefinition.ModuleIndex
-import Project.ModuleDefinitionIndex
 import Task
 import Url
-import User
 import Utility.ListExtra
 import Utility.Map
 
@@ -139,7 +135,6 @@ type Msg
     | ChangeEditorResource Panel.EditorItemSource.EditorItemSource -- エディタの対象を変える
     | OpenCommandPalette -- コマンドパレットを開く
     | CloseCommandPalette -- コマンドパレッドを閉じる
-    | ProjectMsg Project.Msg -- プロジェクトへのメッセージ
     | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url.Url
     | LogOutRequest -- ログアウトを要求する
@@ -151,7 +146,7 @@ type Msg
 -}
 type Model
     = Model
-        { project : Project.Project
+        { project : Data.Project.Project
         , focus : Focus
         , subMode : SubMode
         , sidePanelModel : Panel.Side.Model
@@ -159,7 +154,7 @@ type Model
         , sidePanelWidth : Int
         , windowSize : { width : Int, height : Int }
         , msgQueue : List Msg
-        , user : Maybe User.User
+        , user : Maybe Data.User.User
         , language : Data.Language.Language
         }
 
@@ -205,10 +200,6 @@ init { user, language } =
         ( editorPanelModel, emitListFromEditorGroupPanel ) =
             Panel.EditorGroup.initModel
 
-        ( project, ( msgListFromProject, cmdFromProject ) ) =
-            Project.init
-                |> projectUpdateReturnToProjectAndMsgListAndCmd
-
         ( msgFromEditorGroupPanel, cmdFromEditorGroupPanel ) =
             emitListFromEditorGroupPanel
                 |> List.map editorPanelEmitToMsg
@@ -216,7 +207,7 @@ init { user, language } =
 
         model =
             Model
-                { project = project
+                { project = Data.Project.sample
                 , focus = FocusEditorGroupPanel
                 , subMode = SubModeNone
                 , sidePanelModel = Panel.Side.initModel
@@ -228,21 +219,18 @@ init { user, language } =
                     user
                         |> Maybe.map
                             (\{ name, imageUrl } ->
-                                User.make
-                                    { googleAccountName = name
-                                    , googleAccountImageUrl = imageUrl
-                                    }
+                                Data.User.fromName name
                             )
                 , language = Data.Language.languageFromString language
                 }
     in
     updateFromList
-        (msgListFromProject ++ msgFromEditorGroupPanel)
+        msgFromEditorGroupPanel
         model
         |> Tuple.mapSecond
             (\c ->
                 Cmd.batch
-                    ([ cmdFromProject ] ++ cmdFromEditorGroupPanel ++ [ c ])
+                    (cmdFromEditorGroupPanel ++ [ c ])
             )
 
 
@@ -338,7 +326,9 @@ update msg model =
                     (Panel.EditorGroup.FireClickEventInCapturePhase idString)
 
         ReceiveRunResult data ->
-            receiveResultValue data model
+            ( model
+            , Cmd.none
+            )
 
         ToResizeGutterMode gutter ->
             ( toGutterMode gutter model
@@ -379,9 +369,6 @@ update msg model =
             , Cmd.none
             )
 
-        ProjectMsg sMsg ->
-            model |> projectUpdate sMsg
-
         OnUrlRequest urlRequest ->
             ( model
             , Cmd.none
@@ -406,9 +393,6 @@ update msg model =
 
                 Data.SocialLoginService.GitHub ->
                     logInWithGitHub ()
-
-                Data.SocialLoginService.Twitter ->
-                    logInWithTwitter ()
 
                 Data.SocialLoginService.Line ->
                     logInWithLine ()
@@ -819,29 +803,6 @@ mouseUp (Model rec) =
         }
 
 
-receiveResultValue : { ref : List Int, index : Int, result : Int } -> Model -> ( Model, Cmd Msg )
-receiveResultValue { ref, index, result } model =
-    case ref |> Project.ModuleDefinitionIndex.moduleIndexFromListInt of
-        Just moduleIndex ->
-            model
-                |> projectUpdate
-                    (Project.SourceMsg
-                        (Project.ModuleDefinition.MsgModule
-                            { moduleIndex = moduleIndex
-                            , moduleMsg =
-                                Project.ModuleDefinition.CompileResult.MsgReceiveRunResult
-                                    (index |> Project.ModuleDefinition.ModuleIndex.PartDefIndex)
-                                    result
-                            }
-                        )
-                    )
-
-        Nothing ->
-            ( model
-            , Cmd.none
-            )
-
-
 
 {- ============ フォーカス 編集している要素について ============= -}
 
@@ -920,7 +881,7 @@ setSidePanelModel sidePanelModel (Model rec) =
         }
 
 
-getCurrentUser : Model -> Maybe User.User
+getCurrentUser : Model -> Maybe Data.User.User
 getCurrentUser (Model { user }) =
     user
 
@@ -1150,33 +1111,28 @@ editorPanelEmitToMsg emit =
             , [ setClickEventListenerInCapturePhase idString ]
             )
 
-        Panel.EditorGroup.EmitToSourceMsg msg ->
-            ( [ ProjectMsg (Project.SourceMsg msg) ]
-            , []
-            )
-
         Panel.EditorGroup.EmitElementScrollIntoView id ->
             ( []
             , [ elementScrollIntoView id ]
             )
 
+        Panel.EditorGroup.EmitNone ->
+            ( []
+            , []
+            )
+
 
 {-| プロジェクトを取得する
 -}
-getProject : Model -> Project.Project
+getProject : Model -> Data.Project.Project
 getProject (Model { project }) =
     project
 
 
-setProject : Project.Project -> Model -> Model
+setProject : Data.Project.Project -> Model -> Model
 setProject project (Model rec) =
     Model
         { rec | project = project }
-
-
-mapProject : (Project.Project -> Project.Project) -> Model -> Model
-mapProject =
-    Utility.Map.toMapper getProject setProject
 
 
 {-| 開いているエディタを取得する
@@ -1276,122 +1232,6 @@ shiftMsgListFromMsgQueue (Model rec) =
     , Model
         { rec | msgQueue = [] }
     )
-
-
-
-{- =====================================
-        プロジェクトの情報を変更する
-   =====================================
--}
-
-
-{-| プロジェクトの更新
--}
-projectUpdate : Project.Msg -> Model -> ( Model, Cmd Msg )
-projectUpdate msg model =
-    let
-        ( newProject, ( msgList, cmd ) ) =
-            model
-                |> getProject
-                |> Project.update msg
-                |> projectUpdateReturnToProjectAndMsgListAndCmd
-
-        newModel =
-            model
-                |> setProject newProject
-    in
-    updateFromList
-        msgList
-        newModel
-        |> Tuple.mapSecond (\c -> Cmd.batch [ cmd, c ])
-
-
-projectUpdateReturnToProjectAndMsgListAndCmd : ( Project.Project, List Project.Emit ) -> ( Project.Project, ( List Msg, Cmd Msg ) )
-projectUpdateReturnToProjectAndMsgListAndCmd ( project, emitList ) =
-    ( project
-    , emitList
-        |> List.map (projectEmitToMsgAndCmd project >> Tuple.mapSecond List.singleton)
-        |> Utility.ListExtra.listTupleListToTupleList
-        |> Tuple.mapSecond Cmd.batch
-    )
-
-
-projectEmitToMsgAndCmd : Project.Project -> Project.Emit -> ( List Msg, Cmd Msg )
-projectEmitToMsgAndCmd project emit =
-    case emit of
-        Project.EmitSource sourceEmit ->
-            sourceEmitToMsgAndCmd (Project.getSource project) sourceEmit
-
-
-sourceEmitToMsgAndCmd : Project.ModuleDefinition.ModuleDefinition -> Project.ModuleDefinition.Emit -> ( List Msg, Cmd Msg )
-sourceEmitToMsgAndCmd source emit =
-    case emit of
-        Project.ModuleDefinition.EmitModule { moduleIndex, moduleEmit } ->
-            case moduleEmit of
-                Project.ModuleDefinition.CompileResult.EmitCompile partDefIndex ->
-                    ( []
-                    , compileCmd source moduleIndex partDefIndex
-                    )
-
-                Project.ModuleDefinition.CompileResult.EmitRun partDefIndex binary ->
-                    ( []
-                    , runCmd moduleIndex partDefIndex binary
-                    )
-
-                Project.ModuleDefinition.CompileResult.ErrorOverPartCountLimit ->
-                    ( []
-                      --TODO エラーの握りしめ
-                    , Cmd.none
-                    )
-
-                Project.ModuleDefinition.CompileResult.ErrorDuplicatePartDefName partDefIndex ->
-                    ( []
-                      --TODO エラーの握りしめ
-                    , Cmd.none
-                    )
-
-
-compileCmd : Project.ModuleDefinition.ModuleDefinition -> Project.ModuleDefinitionIndex.ModuleIndex -> Project.ModuleDefinition.ModuleIndex.PartDefIndex -> Cmd Msg
-compileCmd source moduleRef partDefIndex =
-    let
-        targetPartDefMaybe =
-            source
-                |> Project.ModuleDefinition.getModule moduleRef
-                |> Project.ModuleDefinition.CompileResult.getPartDef partDefIndex
-    in
-    case targetPartDefMaybe of
-        Just targetDef ->
-            Task.succeed targetDef
-                |> Task.andThen
-                    (\def ->
-                        Task.succeed (Compiler.compile def)
-                    )
-                |> Task.perform
-                    (\compileResult ->
-                        ProjectMsg
-                            (Project.SourceMsg
-                                (Project.ModuleDefinition.MsgModule
-                                    { moduleIndex = moduleRef
-                                    , moduleMsg =
-                                        Project.ModuleDefinition.CompileResult.MsgReceiveCompileResult
-                                            partDefIndex
-                                            compileResult
-                                    }
-                                )
-                            )
-                    )
-
-        Nothing ->
-            Cmd.none
-
-
-runCmd : Project.ModuleDefinitionIndex.ModuleIndex -> Project.ModuleDefinition.ModuleIndex.PartDefIndex -> List Int -> Cmd Msg
-runCmd moduleRef partDefIndex wasm =
-    run
-        { ref = moduleRef |> Project.ModuleDefinitionIndex.moduleIndexToListInt
-        , index = partDefIndex |> Project.ModuleDefinition.ModuleIndex.partDefIndexToInt
-        , wasm = wasm
-        }
 
 
 getLanguage : Model -> Data.Language.Language

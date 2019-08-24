@@ -11,9 +11,8 @@ import Compiler.NoOp as NoOp
 import Compiler.NoOpToOpt as NoOpToOpt
 import Compiler.Opt as Opt
 import Compiler.OptToBinary as OptToBinary
-import Compiler.SafeExpr as SafeExpr
 import Compiler.SafeExprToNoOp as SafeExprToNoOp
-import Project.ModuleDefinition.Module.PartDef as Def
+import Data.Project.PartDef as PartDef
 
 
 type CompileResult
@@ -28,7 +27,7 @@ type CompileResult
     | FailureAll
 
 
-compile : Def.PartDef -> CompileResult
+compile : PartDef.PartDef -> CompileResult
 compile def =
     case DefToSafeExpr.convert def of
         Just safeExpr ->

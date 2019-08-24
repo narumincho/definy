@@ -4,14 +4,14 @@ module Parser.Name exposing
     )
 
 import Data.Label as Label
+import Data.Project.PartDef as PartDef
 import Parser.SimpleChar as SimpleChar exposing (SimpleChar(..), Symbol(..))
-import Project.ModuleDefinition.Module.PartDef.Name as Name exposing (Name)
 
 
 type ParserResult
-    = NameEnd Name (List ( Char, Bool ))
-    | NameToType Name (List SimpleChar)
-    | NameToExpr Name (List SimpleChar)
+    = NameEnd (Maybe Label.Label) (List ( Char, Bool ))
+    | NameToType (Maybe Label.Label) (List SimpleChar)
+    | NameToExpr (Maybe Label.Label) (List SimpleChar)
 
 
 
@@ -24,7 +24,7 @@ parse : List SimpleChar -> ParserResult
 parse list =
     case list of
         [] ->
-            NameEnd Name.noName []
+            NameEnd Nothing []
 
         ASpace :: others ->
             parse others
@@ -33,10 +33,10 @@ parse list =
             parse others
 
         (ASymbol Colon _) :: others ->
-            NameToType Name.noName others
+            NameToType Nothing others
 
         (ASymbol EqualsSign _) :: others ->
-            NameToExpr Name.noName others
+            NameToExpr Nothing others
 
         (ASymbol _ _) :: others ->
             parse others
@@ -84,10 +84,10 @@ inName label rest capital textAreaValue =
             inName label others True textAreaValue
 
         (ASymbol Colon _) :: others ->
-            NameToType (maybeLabelToName label) others
+            NameToType label others
 
         (ASymbol EqualsSign _) :: others ->
-            NameToExpr (maybeLabelToName label) others
+            NameToExpr label others
 
         (ASymbol _ char) :: others ->
             inName
@@ -144,14 +144,4 @@ inName label rest capital textAreaValue =
                 (textAreaValue ++ [ ( char, False ) ])
 
         [] ->
-            NameEnd (maybeLabelToName label) textAreaValue
-
-
-maybeLabelToName : Maybe Label.Label -> Name
-maybeLabelToName mLabel =
-    case mLabel of
-        Just label ->
-            Name.SafeName (Name.safeNameFromLabel label)
-
-        Nothing ->
-            Name.noName
+            NameEnd label textAreaValue

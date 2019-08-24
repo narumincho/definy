@@ -9,6 +9,8 @@ module Compiler.SafeExpr exposing
     , toString
     )
 
+import Data.Id
+
 
 type SafeExpr
     = SafeExpr SafeTerm (List ( SafeOperator, SafeTerm ))
@@ -16,7 +18,7 @@ type SafeExpr
 
 type SafeTerm
     = Int32Literal Int
-    | Part Int
+    | Part Data.Id.PartId
     | Parentheses SafeExpr
 
 
@@ -66,8 +68,8 @@ termToString safeTerm =
         Int32Literal i ->
             String.fromInt i
 
-        Part ref ->
-            "!(" ++ String.fromInt ref ++ ")"
+        Part (Data.Id.PartId id) ->
+            "!(" ++ id ++ ")"
 
         Parentheses expr ->
             "(" ++ toString expr ++ ")"

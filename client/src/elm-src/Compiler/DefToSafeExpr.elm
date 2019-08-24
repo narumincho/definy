@@ -1,10 +1,9 @@
 module Compiler.DefToSafeExpr exposing (convert)
 
 import Compiler.SafeExpr exposing (SafeExpr(..), SafeOperator(..), SafeTerm(..))
-import Project.ModuleDefinition.Module.PartDef as Def
-import Project.ModuleDefinition.Module.PartDef.Expr as Expr
-import Project.ModuleDefinition.ModuleIndex as ModuleIndex
-import Project.ModuleDefinitionIndex as SourceIndex
+import Data.Id
+import Data.Project.Expr as Expr
+import Data.Project.PartDef as Def
 
 
 convert : Def.PartDef -> Maybe SafeExpr
@@ -51,12 +50,8 @@ termToSafeTerm term =
         Expr.Int32Literal int ->
             Just (Int32Literal int)
 
-        Expr.Part (SourceIndex.PartIndex { partIndex }) ->
-            let
-                (ModuleIndex.PartDefIndex index) =
-                    partIndex
-            in
-            Just (Part index)
+        Expr.Part id ->
+            Just (Part id)
 
         Expr.Parentheses expr ->
             case exprToSafeExpr expr of

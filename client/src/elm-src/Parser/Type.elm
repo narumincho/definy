@@ -4,17 +4,17 @@ module Parser.Type exposing
     )
 
 import Data.Label as Label
+import Data.Project.PartDef as PartDef
 import Parser.SimpleChar as SimpleChar exposing (SimpleChar(..))
-import Project.ModuleDefinition.Module.PartDef.Type as Type exposing (Type)
 
 
 type ParserResult
     = TypeEnd
-        { type_ : Type
+        { type_ : PartDef.Type
         , textAreaValue : List ( Char, Bool )
         }
     | TypeToExpr
-        { type_ : Type
+        { type_ : PartDef.Type
         , rest : List SimpleChar
         }
 
@@ -27,7 +27,7 @@ parse list =
 
         (ASymbol SimpleChar.EqualsSign char) :: others ->
             TypeToExpr
-                { type_ = Type.empty
+                { type_ = PartDef.emptyType
                 , rest = others
                 }
 
@@ -63,7 +63,7 @@ parse list =
 
         [] ->
             TypeEnd
-                { type_ = Type.empty
+                { type_ = PartDef.emptyType
                 , textAreaValue = []
                 }
 
@@ -82,13 +82,13 @@ inTypeParser label rest textAreaValue =
             case label of
                 Just l ->
                     TypeToExpr
-                        { type_ = Type.fromLabel l
+                        { type_ = PartDef.emptyType -- TODO l から検索をする
                         , rest = others
                         }
 
                 Nothing ->
                     TypeToExpr
-                        { type_ = Type.empty
+                        { type_ = PartDef.emptyType
                         , rest = others
                         }
 
@@ -126,12 +126,12 @@ inTypeParser label rest textAreaValue =
             case label of
                 Just l ->
                     TypeEnd
-                        { type_ = Type.fromLabel l
+                        { type_ = PartDef.emptyType -- TODO l から検索をする
                         , textAreaValue = textAreaValue
                         }
 
                 Nothing ->
                     TypeEnd
-                        { type_ = Type.empty
+                        { type_ = PartDef.emptyType
                         , textAreaValue = textAreaValue
                         }

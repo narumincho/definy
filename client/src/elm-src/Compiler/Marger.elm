@@ -1,6 +1,13 @@
-module Compiler.Marger exposing (codeSection, exportSection, functionSection, marge, typeSection, wasmBinaryMagic, wasmBinaryVersion)
+module Compiler.Marger exposing
+    ( codeSection
+    , exportSection
+    , functionSection
+    , marge
+    , typeSection
+    , wasmBinaryMagic
+    , wasmBinaryVersion
+    )
 
-import Array exposing (Array)
 import Compiler.BinaryEncoding as BinaryEncoding
 
 

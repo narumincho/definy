@@ -15,17 +15,17 @@ import Color
 import Css
 import Data.Label
 import Data.Language
+import Data.Project
 import Data.SocialLoginService
+import Data.User
 import Html
 import Html.Attributes as A
 import Html.Events
 import Html.Styled
 import Html.Styled.Attributes
 import Palette.X11
-import Project
 import Svg.Styled
 import Svg.Styled.Attributes
-import User
 import Utility.NSvg as NSvg exposing (NSvg)
 
 
@@ -166,7 +166,7 @@ update msg (Model rec) =
 -}
 
 
-view : { user : Maybe User.User, language : Data.Language.Language, project : Project.Project } -> Model -> List (Html.Html Msg)
+view : { user : Maybe Data.User.User, language : Data.Language.Language, project : Data.Project.Project } -> Model -> List (Html.Html Msg)
 view { user, language, project } (Model { selectTab, logInState, mouseState }) =
     [ definyLogo
     , userView
@@ -176,8 +176,8 @@ view { user, language, project } (Model { selectTab, logInState, mouseState }) =
         , mouseState = mouseState
         }
     , projectOwnerAndName
-        (Project.getOwnerName project)
-        (Project.getName project)
+        (Data.Project.getLeaderName project)
+        (Data.Project.getName project)
     , tools
     ]
 
@@ -205,7 +205,7 @@ definyLogo =
 
 
 userView :
-    { user : Maybe User.User
+    { user : Maybe Data.User.User
     , language : Data.Language.Language
     , logInState : LogInState
     , mouseState : MouseState
@@ -224,12 +224,12 @@ userView { user, language, logInState, mouseState } =
                     [ A.style "display" "flex" ]
                     [ Html.img
                         [ A.style "clip-path" "circle(50% at center)"
-                        , A.src (User.getImageUrl u)
+                        , A.src (Data.User.getImageUrl u)
                         ]
                         []
                     , Html.div
                         []
-                        [ Html.text (User.getDisplayName u) ]
+                        [ Html.text (Data.User.getName u) ]
                     ]
                 , Html.button
                     [ Html.Events.onClick SignOutRequest ]
@@ -430,11 +430,11 @@ logInButtonText text =
         [ Html.text text ]
 
 
-projectOwnerAndName : Data.Label.Label -> Data.Label.Label -> Html.Html msg
-projectOwnerAndName ownerName projectName =
+projectOwnerAndName : String -> Data.Label.Label -> Html.Html msg
+projectOwnerAndName leaderName projectName =
     Html.div
         [ A.style "color" "#ddd" ]
-        [ Html.text (Data.Label.toCapitalString ownerName ++ "/" ++ Data.Label.toCapitalString projectName) ]
+        [ Html.text (leaderName ++ "/" ++ Data.Label.toCapitalString projectName) ]
 
 
 tools : Html.Html msg

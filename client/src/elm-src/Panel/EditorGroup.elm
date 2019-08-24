@@ -20,7 +20,9 @@ module Panel.EditorGroup exposing
 また、編集画面を分割することもできる
 -}
 
+import Data.Id
 import Data.Language
+import Data.Project
 import Html
 import Html.Attributes
 import Html.Events
@@ -31,9 +33,6 @@ import Panel.Editor.Module
 import Panel.Editor.Project
 import Panel.Editor.ProjectImport
 import Panel.EditorItemSource
-import Project
-import Project.ModuleDefinition
-import Project.ModuleDefinitionIndex
 import Utility.ListExtra
 import Utility.Map
 import Utility.NSvg as NSvg
@@ -186,8 +185,8 @@ type Emit
     | EmitSetTextAreaValue String
     | EmitFocusEditTextAea
     | EmitSetClickEventListenerInCapturePhase String
-    | EmitToSourceMsg Project.ModuleDefinition.Msg
     | EmitElementScrollIntoView String
+    | EmitNone
 
 
 {-| 初期Model
@@ -199,7 +198,7 @@ initModel =
             RowOne
                 { left =
                     ColumnOne
-                        { top = ModuleEditor (Panel.Editor.Module.initModel Project.ModuleDefinitionIndex.SampleModule) }
+                        { top = ModuleEditor (Panel.Editor.Module.initModel (Data.Id.ModuleId "")) }
                 }
         , activeEditorIndex = ( EditorIndexLeft, EditorIndexTop )
         , mouseOverOpenEditorPosition = Nothing
@@ -243,11 +242,11 @@ isFocusDefaultUi model =
 {- ====================== Update ====================== -}
 
 
-update : Msg -> Project.Project -> Model -> ( Model, List Emit )
+update : Msg -> Data.Project.Project -> Model -> ( Model, List Emit )
 update msg project model =
     case msg of
         ChangeActiveEditor activeEditorIndex ->
-            updateChangeActiveEditor project activeEditorIndex model
+            updateChangeActiveEditor activeEditorIndex project model
 
         OpenEditor openEditorIndex ->
             let
@@ -347,8 +346,8 @@ update msg project model =
             )
 
 
-updateChangeActiveEditor : Project.Project -> EditorIndex -> Model -> ( Model, List Emit )
-updateChangeActiveEditor project index model =
+updateChangeActiveEditor : EditorIndex -> Data.Project.Project -> Model -> ( Model, List Emit )
+updateChangeActiveEditor index project model =
     let
         ( beforeActiveEditorNewModel, beforeActiveEmit ) =
             model
@@ -376,7 +375,7 @@ updateChangeActiveEditor project index model =
 
 {-| エディタにフォーカスが当たったことを知らせて、新しいエディタとEmitを返す
 -}
-focusEditor : Project.Project -> EditorModel -> ( EditorModel, List Emit )
+focusEditor : Data.Project.Project -> EditorModel -> ( EditorModel, List Emit )
 focusEditor project editorItem =
     case editorItem of
         ModuleEditor model ->
@@ -392,9 +391,9 @@ focusEditor project editorItem =
             ( editorItem, [] )
 
 
-{-| エディタにフォーカスが外れたことを知らせて、新しいエディタとEmitを返す
+{-| エディタにフォーカスが外れたことを知らせて、エディタのModelを更新してEmitを返す
 -}
-blurEditor : Project.Project -> EditorModel -> ( EditorModel, List Emit )
+blurEditor : Data.Project.Project -> EditorModel -> ( EditorModel, List Emit )
 blurEditor project editorItem =
     case editorItem of
         ModuleEditor model ->
@@ -410,7 +409,7 @@ blurEditor project editorItem =
             ( editorItem, [] )
 
 
-updateEditor : EditorMsg -> Project.Project -> EditorModel -> ( EditorModel, List Emit )
+updateEditor : EditorMsg -> Data.Project.Project -> EditorModel -> ( EditorModel, List Emit )
 updateEditor editorItemMsg project editorItem =
     case ( editorItemMsg, editorItem ) of
         ( ModuleEditorMsg msg, ModuleEditor model ) ->
@@ -442,9 +441,6 @@ updateEditor editorItemMsg project editorItem =
 moduleEditorEmitToEmit : Panel.Editor.Module.Emit -> Emit
 moduleEditorEmitToEmit emit =
     case emit of
-        Panel.Editor.Module.EmitMsgToSource msg ->
-            EmitToSourceMsg msg
-
         Panel.Editor.Module.EmitSetTextAreaValue text ->
             EmitSetTextAreaValue text
 
@@ -453,6 +449,9 @@ moduleEditorEmitToEmit emit =
 
         Panel.Editor.Module.EmitElementScrollIntoView id ->
             EmitElementScrollIntoView id
+
+        Panel.Editor.Module.None ->
+            EmitNone
 
 
 {-| 右端と下の端にある表示するエディタを増やすのボタンをおしたら、エディタ全体がどう変わるかと新しくアクティブになるエディタを返す
@@ -1170,7 +1169,13 @@ projectRefToEditorItem projectRef =
 {- ====================== View ====================== -}
 
 
-view : Project.Project -> { width : Int, height : Int, language : Data.Language.Language } -> Bool -> Maybe Gutter -> Model -> List (Html.Html Msg)
+view :
+    Data.Project.Project
+    -> { width : Int, height : Int, language : Data.Language.Language }
+    -> Bool
+    -> Maybe Gutter
+    -> Model
+    -> List (Html.Html Msg)
 view project { width, height, language } isFocus gutter (Model { group, activeEditorIndex, mouseOverOpenEditorPosition }) =
     let
         ( activeEditorRow, activeEditorColumn ) =
@@ -1448,7 +1453,16 @@ addBottom =
 
 {-| エディタの縦に2つ並んでいるか1つの表示
 -}
-editorColumn : Project.Project -> ColumnGroup -> { width : Int, height : Int } -> OpenEditorPosition -> Maybe EditorIndexColumn -> EditorIndexRow -> Bool -> Bool -> Html.Html Msg
+editorColumn :
+    Data.Project.Project
+    -> ColumnGroup
+    -> { width : Int, height : Int }
+    -> OpenEditorPosition
+    -> Maybe EditorIndexColumn
+    -> EditorIndexRow
+    -> Bool
+    -> Bool
+    -> Html.Html Msg
 editorColumn project columnGroup { width, height } openEditorPosition activeEditorIndexColumnMaybe editorRefRow isGutterActive isOne =
     Html.div
         [ subClass "column"
@@ -1535,7 +1549,16 @@ editorColumnAddGutter showEditorPosition =
 
 {-| それぞれのエディタの表示
 -}
-editorItemView : { project : Project.Project, editorItem : EditorModel, editorIndex : EditorIndex, width : Int, height : Int, isActive : Bool, isOne : Bool } -> Html.Html Msg
+editorItemView :
+    { project : Data.Project.Project
+    , editorItem : EditorModel
+    , editorIndex : EditorIndex
+    , width : Int
+    , height : Int
+    , isActive : Bool
+    , isOne : Bool
+    }
+    -> Html.Html Msg
 editorItemView { project, editorItem, editorIndex, width, height, isActive, isOne } =
     let
         { title, body } =
@@ -1588,7 +1611,13 @@ editorIndexFromIdString idString =
         editorIndexAllValue
 
 
-editorTitleAndBody : Int -> EditorIndex -> Bool -> Project.Project -> EditorModel -> { title : String, body : List (Html.Html Msg) }
+editorTitleAndBody :
+    Int
+    -> EditorIndex
+    -> Bool
+    -> Data.Project.Project
+    -> EditorModel
+    -> { title : String, body : List (Html.Html Msg) }
 editorTitleAndBody width editorIndex isActive project editorItem =
     case editorItem of
         ProjectEditor _ ->
