@@ -224,7 +224,7 @@ type ModuleLowCost = {
     createdAt: Date;
     updateAt: Date;
     description: string;
-    typeDefinitions: Array<{ id: type.TypeId }>;
+    typeDefinitions: Array<{ id: type.TypeBody }>;
     partDefinitions: Array<{ id: type.PartId }>;
 };
 

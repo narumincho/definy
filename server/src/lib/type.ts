@@ -61,15 +61,80 @@ export type UserId = Id & { __userIdBrand: never };
 */
 export type Project = {
     id: ProjectId;
-    name: Label;
-    leader: User;
-    editors: Array<User>;
-    updateAt: Date;
-    createdAt: Date;
-    modules: Array<Module>;
+    masterBranch: Branch;
+    branches: Array<Branch>;
 };
 
 export type ProjectId = Id & { __projectIdBrand: never };
+
+export type Branch = {
+    id: BranchId;
+    name: Label;
+    description: string;
+    head: Commit;
+};
+
+export type BranchId = Id & { __branchIdBrand: never };
+
+export type Commit = {
+    id: CommitId;
+    parentCommits: Array<Commit>;
+    tag: null | string | Version;
+    projectName: string;
+    projectDescription: string;
+    author: User;
+    date: Date;
+    commitSummary: string;
+    commitDescription: string;
+    typeData: Array<{
+        typeId: TypeId;
+        module: Module;
+        name: Label;
+        type: TypeBody;
+    }>;
+    partData: Array<{
+        partId: PartId;
+        module: Module;
+        name: Label;
+        type: Type;
+        expr: Expr;
+    }>;
+    modules: Array<Module>;
+    dependencies: Array<{
+        projectId: ProjectId;
+        version: DependencyVersion;
+    }>;
+};
+
+export type CommitId = Id & { __commitIdBrand: never };
+
+/** 他のプロジェクトを利用するときに指定するバージョンの形式。メジャーバージョンだけを維持して最新のものを指定するのがデフォルト(メジャーが0のときはマイナーまで固定) 開発バージョンやバージョンがpatchまで完全一致に指定することも可能 */
+export type DependencyVersion =
+    | { type: "initialRelease"; major: 0; minor: number }
+    | { type: "release"; major: number }
+    | { type: "commitWithTag"; tag: string | Version };
+
+export type Version = {
+    major: number;
+    minor: number;
+    patch: number;
+};
+
+/**
+ * 正式版のプロジェクト
+ */
+export type ReleaseProject = {
+    id: ReleaseProjectId;
+    name: Label;
+    leader: User;
+    editors: Array<User>;
+    project: Project;
+    modules: Array<Module>;
+    createdAt: Date;
+    dependencies: Array<Project>;
+};
+
+export type ReleaseProjectId = Id & { __preReleaseProjectBrand: never };
 /*  =============================================================
                             Module
     =============================================================
@@ -82,28 +147,21 @@ export type Module = {
     createdAt: Date;
     updateAt: Date;
     description: string;
-    typeDefinitions: Array<TypeDefinition>;
-    partDefinitions: Array<PartDefinition>;
 };
 
 export type ModuleId = Id & { __moduleIdBrand: never };
 /*  =============================================================
-                         Type Definition
+                             Type Body
     =============================================================
 */
-export type TypeDefinition = {
-    id: TypeId;
-    name: Label;
-};
-
-export type TypeValue = {
-    versionId: Id;
-    versionDate: Date;
-    name: Label;
-    value: Array<Label>;
-};
-
 export type TypeId = Id & { __typeIdBrand: never };
+
+export type TypeBody = {
+    id: TypeBodyId;
+    name: Label;
+};
+
+export type TypeBodyId = Id & { __typeBodyIdBrand: never };
 /*  =============================================================
                          Part Definition
     =============================================================
@@ -113,9 +171,31 @@ export type PartDefinition = {
     id: PartId;
     name: Label;
     createdAt: Date;
+    type: Array<Type>;
+    expr: Expr;
 };
 
 export type PartId = Id & { __partIdBrand: never };
+
+export type Type =
+    | {
+          type: "core";
+          value: "number";
+      }
+    | { type: "func"; value: Array<Type> };
+
+export type Expr = {
+    id: ExprId;
+    value: Array<TermOrParenthesis>;
+};
+
+export type ExprId = Id & { __partExprBrand: never };
+
+type TermOrParenthesis =
+    | { type: "(" }
+    | { type: ")" }
+    | { type: "int32"; value: number }
+    | { type: "core"; value: "add" | "sub" | "mul" | "div" };
 /*  =============================================================
                             Label
     =============================================================
@@ -131,9 +211,7 @@ export const labelFromString = (text: string): Label => {
     }
     if (63 < text.length) {
         throw new Error(
-            `Label(=${text}) length is ${
-                text.length
-            }. too long. Label length must be 1～63`
+            `Label(=${text}) length is ${text.length}. too long. Label length must be 1～63`
         );
     }
     if (!"abcdefghijklmnopqrstuvwxyz".includes(text[0])) {
@@ -180,9 +258,7 @@ export const userNameFromString = (text: string): UserName => {
     }
     if (50 < text.length) {
         throw new Error(
-            `UserName(=${text}) length is ${
-                text.length
-            }. too long. Label length must be 1～63`
+            `UserName(=${text}) length is ${text.length}. too long. Label length must be 1～63`
         );
     }
     return text as UserName;

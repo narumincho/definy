@@ -1,11 +1,13 @@
 import * as admin from "firebase-admin";
 import * as type from "./type";
 import * as firestore from "@google-cloud/firestore";
+import * as stream from "stream";
 
 const app = admin.initializeApp();
 const dataBase = app.firestore();
 const storage = app.storage();
 const userImageBucket = storage.bucket("definy-user-image");
+const projectBucket = storage.bucket("definy-project");
 
 const userCollection = dataBase.collection("user");
 const collectionFromLogInState = (
@@ -21,6 +23,24 @@ const collectionFromLogInState = (
     }
 };
 const projectCollection = dataBase.collection("project");
+const releaseProjectCollection = (
+    projectId: type.ProjectId,
+    version: type.Version
+) =>
+    projectCollection
+        .doc(projectId)
+        .collection("release")
+        .doc(`v${version.major}.${version.minor}.${version.patch}`);
+
+const preReleaseProjectCollection = (
+    projectId: type.ProjectId,
+    preReleaseProjectId: type.ReleaseProjectId
+) =>
+    projectCollection
+        .doc(projectId)
+        .collection("preRelease")
+        .doc(preReleaseProjectId);
+
 const moduleCollection = dataBase.collection("module");
 /* ==========================================
                     User
@@ -92,6 +112,13 @@ export const saveUserImage = async (
     await file.save(buffer, { contentType: mimeType });
 };
 
+/**
+ * Firebase Cloud Storageのバケット "definy-user-image" のファイルを読み込むReadable Streamを取得する
+ * @param fileId ファイルID
+ */
+export const getUserImageReadableStream = (fileId: string): stream.Readable =>
+    userImageBucket.file(fileId).createReadStream();
+
 /* ==========================================
                 Log In
    ==========================================
@@ -129,12 +156,8 @@ export const existsGoogleStateAndDeleteAndGetUserId = async (
    ==========================================
 */
 export type ProjectData = {
-    name: type.Label;
-    leaderId: type.UserId;
-    editorIds: Array<type.UserId>;
-    createdAt: firestore.Timestamp;
-    updateAt: firestore.Timestamp;
-    modulesId: Array<type.ModuleId>;
+    masterBranch: type.BranchId;
+    branches: Array<type.BranchId>;
 };
 
 export const addProject = async (
@@ -168,19 +191,55 @@ export const getAllProject = async (): Promise<
         id: doc.id as type.ProjectId,
         data: doc.data() as ProjectData
     }));
+
+/* ==========================================
+                Branch
+   ==========================================
+*/
+export type BranchData = {
+    name: type.Label;
+    description: string;
+    head: type.CommitId;
+};
+
+export type CommitData = {
+    parentCommitIds: Array<type.CommitId>;
+    tag: null | string | type.Version;
+    projectName: string;
+    projectDescription: string;
+    author: type.UserId;
+    date: firestore.Timestamp;
+    commitSummary: string;
+    commitDescription: string;
+    typeData: Array<{
+        typeId: type.TypeId;
+        moduleId: type.ModuleId;
+        name: type.Label;
+        typeBody: type.TypeBodyId;
+    }>;
+    partData: Array<{
+        partId: type.PartId;
+        moduleId: type.ModuleId;
+        name: type.Label;
+        type: type.Type;
+        expr: type.ExprId;
+    }>;
+    modules: Array<type.ModuleId>;
+    dependencies: Array<{
+        projectId: type.ProjectId;
+        version: type.DependencyVersion;
+    }>;
+};
+
 /* ==========================================
                 Module
    ==========================================
 */
 export type ModuleData = {
     name: Array<type.Label>;
-    projectId: type.ProjectId;
-    editorIds: Array<type.UserId>;
     createdAt: firestore.Timestamp;
     updateAt: firestore.Timestamp;
     description: string;
-    typeDefinitionIds: Array<type.TypeId>;
-    partDefinitionIds: Array<type.PartId>;
 };
 
 export const addModule = async (data: ModuleData): Promise<type.ModuleId> => {
@@ -210,6 +269,10 @@ export const getAllModule = async (): Promise<
                 Type Definition
    ==========================================
 */
+
+export type TypeData = {
+    name: type.Label;
+};
 
 /* ==========================================
                 Timestamp

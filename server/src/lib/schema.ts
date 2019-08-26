@@ -14,13 +14,13 @@ const makeObjectFieldMap = <Type extends { [k in string]: unknown }>(
                         type: g.GraphQLOutputType;
                         description: string;
                     }
-                  : GraphQLFieldConfigWithArgs<Type, Key>
+                  : GraphQLFieldConfigWithArgs<Type, Key>;
           })
         : {
               [Key in keyof Type]: {
                   type: g.GraphQLOutputType;
                   description: string;
-              }
+              };
           }
 ): g.GraphQLFieldConfigMap<Type, void, any> => args;
 
@@ -73,7 +73,7 @@ const makeQueryOrMutationField = <
         [a in keyof Args]: {
             type: g.GraphQLInputType;
             description: Maybe<string>;
-        }
+        };
     };
     resolve: (args: Args) => Promise<Return<Type>>;
     description: string;
@@ -277,10 +277,10 @@ const setProjectData = async (
     const projectData = await database.getProject(source.id);
     source.name = projectData.name;
     source.leader = projectData.leader;
-    source.editors = projectData.editors;
+    source.userWithEditPermission = projectData.editors;
     source.createdAt = projectData.createdAt;
     source.updateAt = projectData.updateAt;
-    source.modules = projectData.modules;
+    source.releaseProjects = projectData.modules;
     return projectData;
 };
 
@@ -314,17 +314,28 @@ const projectGraphQLType = new g.GraphQLObjectType({
                     return source.leader;
                 }
             }),
-            editors: makeObjectField({
+            editor: makeObjectField({
+                type: g.GraphQLNonNull(userGraphQLType),
+                description: "最後に編集した人",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.editor === undefined) {
+                        return (await setProjectData(source)).editor;
+                    }
+                    return source.editor;
+                }
+            }),
+            UserWithEditPermission: makeObjectField({
                 type: g.GraphQLNonNull(
                     g.GraphQLList(g.GraphQLNonNull(userGraphQLType))
                 ),
                 description: "編集に参加できる人",
                 args: {},
                 resolve: async (source, args) => {
-                    if (source.editors === undefined) {
+                    if (source.UserWithEditPermission === undefined) {
                         return (await setProjectData(source)).editors;
                     }
-                    return source.editors;
+                    return source.UserWithEditPermission;
                 }
             }),
             createdAt: makeObjectField({
@@ -349,17 +360,17 @@ const projectGraphQLType = new g.GraphQLObjectType({
                     return source.updateAt;
                 }
             }),
-            modules: makeObjectField({
+            releaseProjects: makeObjectField({
                 type: g.GraphQLNonNull(
                     g.GraphQLList(g.GraphQLList(moduleGraphQLType))
                 ),
                 description: "コードが書かれたモジュール",
                 args: {},
                 resolve: async (source, args) => {
-                    if (source.modules === undefined) {
+                    if (source.releaseProject === undefined) {
                         return (await setProjectData(source)).modules;
                     }
-                    return source.modules;
+                    return source.releaseProject;
                 }
             })
         }),
@@ -495,13 +506,13 @@ const moduleGraphQLType: g.GraphQLObjectType<
 });
 
 const typeDefinitionGraphQLType = new g.GraphQLObjectType<
-    type.TypeDefinition,
+    type.TypeBody,
     void,
     any
 >({
     name: "TypeDefinition",
     fields: () =>
-        makeObjectFieldMap<type.TypeDefinition>({
+        makeObjectFieldMap<type.TypeBody>({
             id: {
                 type: g.GraphQLNonNull(type.idGraphQLType),
                 description: "型を識別するためのもの"

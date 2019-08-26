@@ -3,6 +3,7 @@ import * as graphqlExpress from "express-graphql";
 import * as schema from "./lib/schema";
 import * as libLogInCallback from "./lib/logInCallback";
 import * as express from "express";
+import * as databaseLow from "./lib/databaseLow";
 
 console.log("サーバーのプログラムが読み込まれた");
 /* =====================================================================
@@ -62,3 +63,40 @@ const sendResponseFromLogInCallbackResult = (
             response.send(result.url.toString());
     }
 };
+
+/* =====================================================================
+ *                              File
+ * =====================================================================
+ */
+
+export const file = functions.https.onRequest(async (request, response) => {
+    response.setHeader(
+        "access-control-allow-origin",
+        "https://definy-lang.web.app/"
+    );
+    response.setHeader("vary", "Origin");
+    if (request.method === "OPTIONS") {
+        response.setHeader(
+            "access-control-allow-methods",
+            "POST, GET, OPTIONS"
+        );
+        response.setHeader("access-control-allow-headers", "content-type");
+        response.status(200).send("");
+        return;
+    }
+    const parameter = request.path.split("/");
+    const fileCategory: string | undefined = parameter[1];
+    const fileId: string | undefined = parameter[2];
+    if (fileCategory === undefined || fileId === undefined) {
+        response.status(400).send("invalid file parameter");
+        return;
+    }
+    if (request.method === "GET") {
+        switch (fileCategory) {
+            case "user-image":
+                databaseLow.getUserImageReadableStream(fileId).pipe(response);
+                return;
+        }
+    }
+    response.status(400).send("invalid file parameter");
+});
