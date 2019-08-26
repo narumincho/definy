@@ -34,12 +34,12 @@ port module Model exposing
 
 import Browser
 import Browser.Events
+import Data.Key
 import Data.Language
 import Data.Project
 import Data.SocialLoginService
 import Data.User
 import Json.Decode
-import Key
 import Panel.CommandPalette
 import Panel.DefaultUi
 import Panel.Editor.Module
@@ -104,7 +104,7 @@ port changeLanguage : (String -> msg) -> Sub msg
 {-| 全体の入力を表すメッセージ
 -}
 type Msg
-    = KeyPressed (Maybe Key.Key) -- キーボードから入力
+    = KeyPressed (Maybe Data.Key.Key) -- キーボードから入力
     | KeyPrevented -- キーボードの入力のデフォルト動作を取り消した後
     | MouseMove { x : Int, y : Int } -- マウスの移動
     | MouseUp -- マウスのボタンを離した
@@ -417,7 +417,7 @@ updateFromList msgList model =
 
 {-| キー入力をより具体的なMsgに変換する
 -}
-keyDown : Maybe Key.Key -> Model -> List Msg
+keyDown : Maybe Data.Key.Key -> Model -> List Msg
 keyDown keyMaybe model =
     case keyMaybe of
         Just key ->
@@ -448,7 +448,7 @@ keyDown keyMaybe model =
             []
 
 
-keyDownEachPanel : Key.Key -> Model -> List Msg
+keyDownEachPanel : Data.Key.Key -> Model -> List Msg
 keyDownEachPanel key model =
     case getFocus model of
         FocusTreePanel ->
@@ -462,16 +462,16 @@ keyDownEachPanel key model =
 
 {-| Definyによって予約されたキー。どのパネルにフォーカスが当たっていてもこれを優先する
 -}
-editorReservedKey : Bool -> Key.Key -> List Msg
+editorReservedKey : Bool -> Data.Key.Key -> List Msg
 editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
     if isOpenPalette then
         case ( ctrl, shift, alt ) of
             ( False, False, False ) ->
                 case key of
-                    Key.Escape ->
+                    Data.Key.Escape ->
                         [ CloseCommandPalette ]
 
-                    Key.F1 ->
+                    Data.Key.F1 ->
                         [ OpenCommandPalette ]
 
                     _ ->
@@ -485,7 +485,7 @@ editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
             -- 開いているけどキー入力を無視するために必要
             ( False, False, False ) ->
                 case key of
-                    Key.F1 ->
+                    Data.Key.F1 ->
                         [ OpenCommandPalette ]
 
                     _ ->
@@ -493,10 +493,10 @@ editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
 
             ( False, False, True ) ->
                 case key of
-                    Key.Digit0 ->
+                    Data.Key.Digit0 ->
                         [ FocusTo FocusTreePanel ]
 
-                    Key.Digit1 ->
+                    Data.Key.Digit1 ->
                         [ FocusTo FocusEditorGroupPanel ]
 
                     _ ->
@@ -514,27 +514,27 @@ editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
 Model.isFocusTextAreaがTrueになったときにまずこれを優先する
 
 -}
-multiLineTextFieldReservedKey : Key.Key -> Bool
+multiLineTextFieldReservedKey : Data.Key.Key -> Bool
 multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
     case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
-                Key.ArrowLeft ->
+                Data.Key.ArrowLeft ->
                     True
 
-                Key.ArrowRight ->
+                Data.Key.ArrowRight ->
                     True
 
-                Key.ArrowUp ->
+                Data.Key.ArrowUp ->
                     True
 
-                Key.ArrowDown ->
+                Data.Key.ArrowDown ->
                     True
 
-                Key.Enter ->
+                Data.Key.Enter ->
                     True
 
-                Key.Backspace ->
+                Data.Key.Backspace ->
                     True
 
                 _ ->
@@ -542,19 +542,19 @@ multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
 
         ( True, False, False ) ->
             case key of
-                Key.ArrowLeft ->
+                Data.Key.ArrowLeft ->
                     True
 
-                Key.ArrowRight ->
+                Data.Key.ArrowRight ->
                     True
 
-                Key.ArrowUp ->
+                Data.Key.ArrowUp ->
                     True
 
-                Key.ArrowDown ->
+                Data.Key.ArrowDown ->
                     True
 
-                Key.Backspace ->
+                Data.Key.Backspace ->
                     True
 
                 _ ->
@@ -562,16 +562,16 @@ multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
 
         ( False, True, False ) ->
             case key of
-                Key.ArrowLeft ->
+                Data.Key.ArrowLeft ->
                     True
 
-                Key.ArrowRight ->
+                Data.Key.ArrowRight ->
                     True
 
-                Key.ArrowUp ->
+                Data.Key.ArrowUp ->
                     True
 
-                Key.ArrowDown ->
+                Data.Key.ArrowDown ->
                     True
 
                 _ ->
@@ -579,16 +579,16 @@ multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
 
         ( True, True, False ) ->
             case key of
-                Key.ArrowLeft ->
+                Data.Key.ArrowLeft ->
                     True
 
-                Key.ArrowRight ->
+                Data.Key.ArrowRight ->
                     True
 
-                Key.ArrowUp ->
+                Data.Key.ArrowUp ->
                     True
 
-                Key.ArrowDown ->
+                Data.Key.ArrowDown ->
                     True
 
                 _ ->
@@ -602,18 +602,18 @@ multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
 1行の入力を想定している
 ブラウザやOSで予約されているであろう動作を邪魔させないためにある。
 -}
-singleLineTextFieldReservedKey : Key.Key -> Bool
+singleLineTextFieldReservedKey : Data.Key.Key -> Bool
 singleLineTextFieldReservedKey { key, ctrl, alt, shift } =
     case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
-                Key.ArrowLeft ->
+                Data.Key.ArrowLeft ->
                     True
 
-                Key.ArrowRight ->
+                Data.Key.ArrowRight ->
                     True
 
-                Key.Backspace ->
+                Data.Key.Backspace ->
                     True
 
                 _ ->
@@ -632,24 +632,24 @@ singleLineTextFieldReservedKey { key, ctrl, alt, shift } =
 
 {-| サイドパネルのキー入力
 -}
-sidePanelKeyDown : Key.Key -> List Panel.Side.Msg
+sidePanelKeyDown : Data.Key.Key -> List Panel.Side.Msg
 sidePanelKeyDown { key, ctrl, shift, alt } =
     case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
-                Key.ArrowUp ->
+                Data.Key.ArrowUp ->
                     [ Panel.Side.SelectUp ]
 
-                Key.ArrowDown ->
+                Data.Key.ArrowDown ->
                     [ Panel.Side.SelectDown ]
 
-                Key.ArrowLeft ->
+                Data.Key.ArrowLeft ->
                     [ Panel.Side.SelectParentOrTreeClose ]
 
-                Key.ArrowRight ->
+                Data.Key.ArrowRight ->
                     [ Panel.Side.SelectFirstChildOrTreeOpen ]
 
-                Key.Enter ->
+                Data.Key.Enter ->
                     [ Panel.Side.SelectItem ]
 
                 _ ->
@@ -661,7 +661,7 @@ sidePanelKeyDown { key, ctrl, shift, alt } =
 
 {-| エディタグループパネルのキー入力
 -}
-editorGroupPanelKeyDown : Key.Key -> List Panel.EditorGroup.Msg
+editorGroupPanelKeyDown : Data.Key.Key -> List Panel.EditorGroup.Msg
 editorGroupPanelKeyDown key =
     moduleEditorKeyMsg key
         |> List.map
@@ -672,28 +672,28 @@ editorGroupPanelKeyDown key =
 
 {-| モジュールエディタのキー入力
 -}
-moduleEditorKeyMsg : Key.Key -> List Panel.Editor.Module.Msg
+moduleEditorKeyMsg : Data.Key.Key -> List Panel.Editor.Module.Msg
 moduleEditorKeyMsg { key, ctrl, shift, alt } =
     case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
-                Key.ArrowLeft ->
+                Data.Key.ArrowLeft ->
                     [ Panel.Editor.Module.MsgActiveLeft ]
 
-                Key.ArrowRight ->
+                Data.Key.ArrowRight ->
                     [ Panel.Editor.Module.MsgActiveRight ]
 
-                Key.ArrowUp ->
+                Data.Key.ArrowUp ->
                     [ Panel.Editor.Module.MsgSuggestionPrevOrSelectUp ]
 
-                Key.ArrowDown ->
+                Data.Key.ArrowDown ->
                     [ Panel.Editor.Module.MsgSuggestionNextOrSelectDown
                     ]
 
-                Key.Space ->
+                Data.Key.Space ->
                     [ Panel.Editor.Module.MsgActiveToFirstChild ]
 
-                Key.Enter ->
+                Data.Key.Enter ->
                     [ Panel.Editor.Module.MsgConfirmSingleLineTextFieldOrSelectParent
                     ]
 
@@ -702,13 +702,13 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
 
         ( True, False, False ) ->
             case key of
-                Key.ArrowLeft ->
+                Data.Key.ArrowLeft ->
                     [ Panel.Editor.Module.MsgActiveToLastChild ]
 
-                Key.ArrowRight ->
+                Data.Key.ArrowRight ->
                     [ Panel.Editor.Module.MsgActiveToFirstChild ]
 
-                Key.Enter ->
+                Data.Key.Enter ->
                     [ Panel.Editor.Module.MsgConfirmMultiLineTextField ]
 
                 _ ->
@@ -716,10 +716,10 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
 
         ( False, False, True ) ->
             case key of
-                Key.ArrowUp ->
+                Data.Key.ArrowUp ->
                     [ Panel.Editor.Module.MsgIncreaseValue ]
 
-                Key.ArrowDown ->
+                Data.Key.ArrowDown ->
                     [ Panel.Editor.Module.MsgDecreaseValue ]
 
                 _ ->
@@ -1246,7 +1246,7 @@ setLanguage string (Model rec) =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        ([ keyPressed (Key.fromKeyEventObject >> KeyPressed)
+        ([ keyPressed (Data.Key.fromKeyEventObject >> KeyPressed)
          , keyPrevented (always KeyPrevented)
          , windowResize WindowResize
          , runResult ReceiveRunResult

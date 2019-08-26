@@ -1,4 +1,4 @@
-module Key exposing
+module Data.Key exposing
     ( Key
     , OneKey(..)
     , fromKeyEventObject

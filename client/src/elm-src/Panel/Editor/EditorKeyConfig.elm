@@ -4,10 +4,10 @@ module Panel.Editor.EditorKeyConfig exposing (Model(..), Msg, initModel, isInput
 -}
 
 import Color
+import Data.Key as Key
 import Html
 import Html.Attributes
 import Html.Events
-import Key
 import Palette.X11 as P
 import Utility.NSvg as NSvg exposing (NSvg)
 
