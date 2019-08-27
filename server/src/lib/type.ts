@@ -50,8 +50,7 @@ export type User = {
     image: Image;
     introduction: string;
     createdAt: Date;
-    leaderProjects: Array<Project>;
-    editingProjects: Array<Project>;
+    branches: Array<Branch>;
 };
 
 export type UserId = Id & { __userIdBrand: never };
@@ -70,6 +69,7 @@ export type ProjectId = Id & { __projectIdBrand: never };
 export type Branch = {
     id: BranchId;
     name: Label;
+    project: Project;
     description: string;
     head: Commit;
 };
@@ -90,7 +90,8 @@ export type Commit = {
         typeId: TypeId;
         module: Module;
         name: Label;
-        type: TypeBody;
+        body: TypeBody;
+        exposingBody: boolean;
     }>;
     partData: Array<{
         partId: PartId;
@@ -98,6 +99,7 @@ export type Commit = {
         name: Label;
         type: Type;
         expr: Expr;
+        exposing: boolean;
     }>;
     modules: Array<Module>;
     dependencies: Array<{
@@ -120,21 +122,6 @@ export type Version = {
     patch: number;
 };
 
-/**
- * 正式版のプロジェクト
- */
-export type ReleaseProject = {
-    id: ReleaseProjectId;
-    name: Label;
-    leader: User;
-    editors: Array<User>;
-    project: Project;
-    modules: Array<Module>;
-    createdAt: Date;
-    dependencies: Array<Project>;
-};
-
-export type ReleaseProjectId = Id & { __preReleaseProjectBrand: never };
 /*  =============================================================
                             Module
     =============================================================
@@ -143,10 +130,8 @@ export type Module = {
     id: ModuleId;
     name: Array<Label>;
     project: Project;
-    editors: Array<User>;
-    createdAt: Date;
-    updateAt: Date;
     description: string;
+    exposing: boolean;
 };
 
 export type ModuleId = Id & { __moduleIdBrand: never };
@@ -157,11 +142,18 @@ export type ModuleId = Id & { __moduleIdBrand: never };
 export type TypeId = Id & { __typeIdBrand: never };
 
 export type TypeBody = {
-    id: TypeBodyId;
-    name: Label;
+    type: "tagList";
+    tags: Array<TypeTag>;
 };
 
 export type TypeBodyId = Id & { __typeBodyIdBrand: never };
+
+export type TypeTag = {
+    name: Label;
+    parameter: Type | null;
+};
+
+export type KernelType = "JsNumber" | "JsString" | "JsArray" | "Function";
 /*  =============================================================
                          Part Definition
     =============================================================
@@ -178,10 +170,7 @@ export type PartDefinition = {
 export type PartId = Id & { __partIdBrand: never };
 
 export type Type =
-    | {
-          type: "core";
-          value: "number";
-      }
+    | { type: "ref"; id: TypeId }
     | { type: "func"; value: Array<Type> };
 
 export type Expr = {

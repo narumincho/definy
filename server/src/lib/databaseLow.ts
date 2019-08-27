@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import * as type from "./type";
 import * as firestore from "@google-cloud/firestore";
 import * as stream from "stream";
+import e = require("express");
 
 const app = admin.initializeApp();
 const dataBase = app.firestore();
@@ -51,8 +52,7 @@ export type UserData = {
     imageId: type.ImageId;
     introduction: string;
     createdAt: firestore.Timestamp;
-    leaderProjects: Array<type.ProjectId>;
-    editingProjects: Array<type.ProjectId>;
+    branches: Array<type.Branch>;
     lastAccessTokenJti: string;
     logInServiceAndId: type.LogInServiceAndId;
 };
@@ -198,6 +198,7 @@ export const getAllProject = async (): Promise<
 */
 export type BranchData = {
     name: type.Label;
+    projectId: type.ProjectId;
     description: string;
     head: type.CommitId;
 };
@@ -211,35 +212,40 @@ export type CommitData = {
     date: firestore.Timestamp;
     commitSummary: string;
     commitDescription: string;
-    typeData: Array<{
-        typeId: type.TypeId;
-        moduleId: type.ModuleId;
-        name: type.Label;
-        typeBody: type.TypeBodyId;
-    }>;
-    partData: Array<{
-        partId: type.PartId;
-        moduleId: type.ModuleId;
-        name: type.Label;
-        type: type.Type;
-        expr: type.ExprId;
-    }>;
-    modules: Array<type.ModuleId>;
     dependencies: Array<{
         projectId: type.ProjectId;
         version: type.DependencyVersion;
     }>;
 };
+// Commitの中のTypeDefDataやPartDefDataはCloud Storageで FlatBuffersのファイルとして保存しておく?
 
+// Commitのサブコレクションとして
+export type TypeDefData = {
+    typeId: type.TypeId;
+    moduleId: type.ModuleId;
+    name: type.Label;
+    typeBody: type.TypeBodyId;
+};
+
+// Commitのサブコレクションとして
+export type PartDefData = {
+    partId: type.PartId;
+    moduleId: type.ModuleId;
+    name: type.Label;
+    type: type.Type;
+    expr: type.ExprId;
+};
 /* ==========================================
                 Module
    ==========================================
 */
+
+// Commitのサブコレクションとして
 export type ModuleData = {
     name: Array<type.Label>;
-    createdAt: firestore.Timestamp;
-    updateAt: firestore.Timestamp;
+    project: type.ProjectId;
     description: string;
+    exposing: boolean;
 };
 
 export const addModule = async (data: ModuleData): Promise<type.ModuleId> => {
@@ -266,13 +272,22 @@ export const getAllModule = async (): Promise<
         data: doc.data() as ModuleData
     }));
 /* ==========================================
-                Type Definition
+                Type Body
    ==========================================
 */
 
-export type TypeData = {
-    name: type.Label;
-};
+export type TypeBodyData =
+    | {
+          type: "tagList";
+          tags: Array<type.TypeTag>;
+      }
+    | { type: "kernelType"; kernelType: type.KernelType };
+
+/* ==========================================
+                    Expr
+   ==========================================
+*/
+export type ExprData = {};
 
 /* ==========================================
                 Timestamp
