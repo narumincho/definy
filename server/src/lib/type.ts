@@ -77,7 +77,7 @@ export type Branch = {
 export type BranchId = Id & { __branchIdBrand: never };
 
 export type Commit = {
-    id: CommitId;
+    id: CommitObjectHash;
     parentCommits: Array<Commit>;
     tag: null | string | Version;
     projectName: string;
@@ -93,7 +93,7 @@ export type Commit = {
     }>;
 };
 
-export type CommitId = Id & { __commitIdBrand: never };
+export type CommitObjectHash = string & { __commitObjectBrand: never };
 
 /** 他のプロジェクトを利用するときに指定するバージョンの形式。メジャーバージョンだけを維持して最新のものを指定するのがデフォルト(メジャーが0のときはマイナーまで固定) 開発バージョンやバージョンがpatchまで完全一致に指定することも可能 */
 export type DependencyVersion =
@@ -108,16 +108,16 @@ export type Version = {
 };
 
 /** 0～fで64文字 256bit SHA-256のハッシュ値 */
-export type PartDefObjectHash = string & { __partDefObjectBrand: never };
+export type ModuleSnapshotHash = string & { __moduleObjectHashBrand: never };
 
 /** 0～fで64文字 256bit SHA-256のハッシュ値 */
-export type TypeDefObjectHash = string & { __typeDefObjectBrand: never };
+export type TypeDefSnapshotHash = string & { __typeDefObjectBrand: never };
 
 /** 0～fで64文字 256bit SHA-256のハッシュ値 */
-export type ModuleObjectHash = string & { __moduleObjectHashBrand: never };
+export type PartDefSnapshotHash = string & { __partDefObjectBrand: never };
 
 /** 0～fで64文字 256bit SHA-256のハッシュ値 */
-export type ExprObjectHash = string & { __exprObjectHashBrand: never };
+export type ExprSnapshotHash = string & { __exprObjectHashBrand: never };
 /*  =============================================================
                             Module
     =============================================================
@@ -137,16 +137,6 @@ export type ModuleId = Id & { __moduleIdBrand: never };
 */
 export type TypeId = Id & { __typeIdBrand: never };
 
-export type TypeBody = {
-    type: "tagList";
-    tags: Array<TypeTag>;
-};
-
-export type TypeTag = {
-    name: Label;
-    parameter: Type | null;
-};
-
 export type KernelType = "JsNumber" | "JsString" | "JsArray" | "Function";
 /*  =============================================================
                          Part Definition
@@ -163,18 +153,17 @@ export type PartDefinition = {
 
 export type PartId = Id & { __partIdBrand: never };
 
-export type Type =
-    | { type: "ref"; id: TypeId }
-    | { type: "func"; value: Array<Type> };
+export type Type = { type: "(" } | { type: ")" } | { type: "ref"; id: TypeId };
 
 export type Expr = {
     value: Array<TermOrParenthesis>;
 };
 
-type TermOrParenthesis =
+export type TermOrParenthesis =
     | { type: "(" }
     | { type: ")" }
     | { type: "int32"; value: number }
+    | { type: "part"; value: PartId }
     | { type: "core"; value: "add" | "sub" | "mul" | "div" };
 /*  =============================================================
                             Label

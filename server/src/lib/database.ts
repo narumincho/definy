@@ -237,7 +237,7 @@ export const getModule = async (
 ): Promise<ModuleLowCost> =>
     databaseLowModuleToLowCost({
         id: moduleId,
-        data: await databaseLow.getModule(moduleId)
+        data: await databaseLow.getModuleSnapshot(moduleId)
     });
 
 /**

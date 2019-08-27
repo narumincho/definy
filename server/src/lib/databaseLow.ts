@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import * as type from "./type";
 import * as firestore from "@google-cloud/firestore";
 import * as stream from "stream";
-import e = require("express");
+import * as crypto from "crypto";
 
 const app = admin.initializeApp();
 const dataBase = app.firestore();
@@ -34,6 +34,8 @@ const releaseProjectCollection = (
         .doc(`v${version.major}.${version.minor}.${version.patch}`);
 
 const moduleCollection = dataBase.collection("module");
+const branchCollection = dataBase.collection("branch");
+const commitCollection = dataBase.collection("commit");
 const typeCollection = dataBase.collection("type");
 const partCollection = dataBase.collection("part");
 const exprCollection = dataBase.collection("expr");
@@ -149,7 +151,8 @@ export const existsGoogleStateAndDeleteAndGetUserId = async (
                 Project
    ==========================================
 */
-// コレクションProject。KeyはProjectId
+
+// コレクションはProject。KeyはProjectId
 export type ProjectData = {
     masterBranch: type.BranchId;
     branches: Array<type.BranchId>;
@@ -159,7 +162,7 @@ export const addProject = async (
     data: ProjectData
 ): Promise<type.ProjectId> => {
     const projectId = type.createRandomId() as type.ProjectId;
-    await projectCollection.doc(projectId).set(data);
+    await projectCollection.doc(projectId).create(data);
     return projectId;
 };
 
@@ -177,6 +180,16 @@ export const getProject = async (
 };
 
 /**
+ * プロジェクトのデータを変更する
+ */
+export const updateProject = async (
+    projectId: type.ProjectId,
+    projectData: Partial<ProjectData>
+): Promise<void> => {
+    await projectCollection.doc(projectId).update(projectData);
+};
+
+/**
  * 全てのプロジェクトのデータを取得する
  */
 export const getAllProject = async (): Promise<
@@ -191,17 +204,53 @@ export const getAllProject = async (): Promise<
                 Branch
    ==========================================
 */
-// コレクションはBranch。KeyはBranchId
+
+// コレクションはbranch。KeyはBranchId
 export type BranchData = {
     name: type.Label;
     projectId: type.ProjectId;
     description: string;
-    head: type.CommitId;
+    head: type.CommitObjectHash;
 };
 
-// コレクションはCommit。KeyはCommitId
+/**
+ * ブランチを作成する
+ * @param data
+ */
+export const addBranch = async (data: BranchData): Promise<type.BranchId> => {
+    const branchId = type.createRandomId() as type.BranchId;
+    await branchCollection.doc(branchId).create(data);
+    return branchId;
+};
+
+/**
+ * ブランチを取得する
+ */
+export const getBranch = async (id: type.BranchId): Promise<BranchData> => {
+    const branchData = (await branchCollection.doc(id).get()).data();
+    if (branchData === undefined) {
+        throw new Error(`There was no branch with branchId = ${id}`);
+    }
+    return branchData as BranchData;
+};
+
+/**
+ * ブランチを更新する
+ */
+export const updateBranch = async (
+    id: type.BranchId,
+    data: Partial<BranchData>
+): Promise<void> => {
+    await branchCollection.doc(id).update(data);
+};
+/* ==========================================
+                Commit
+   ==========================================
+*/
+
+// コレクションはcommit。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type CommitData = {
-    parentCommitIds: Array<type.CommitId>;
+    parentCommitIds: Array<type.CommitObjectHash>;
     tag: null | string | type.Version;
     projectName: string;
     projectDescription: string;
@@ -210,57 +259,198 @@ export type CommitData = {
     commitSummary: string;
     commitDescription: string;
     treeModuleId: type.ModuleId;
-    tree: type.ModuleObjectHash;
+    tree: type.ModuleSnapshotHash;
     dependencies: Array<{
         projectId: type.ProjectId;
         version: type.DependencyVersion;
     }>;
 };
 
-// コレクションはModule。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
-export type ModuleObjectData = {
+/**
+ * コミットを作成する。存在するものをさらに作成したらエラー
+ */
+export const addCommit = async (
+    data: CommitData
+): Promise<type.CommitObjectHash> => {
+    const hash = createHash(data);
+    await commitCollection.doc(hash).create(data);
+    return hash as type.CommitObjectHash;
+};
+
+/**
+ * コミットを取得する
+ */
+export const getCommit = async (
+    hash: type.CommitObjectHash
+): Promise<CommitData> => {
+    const commitData = (await commitCollection.doc(hash).get()).data();
+    if (commitData === undefined) {
+        throw new Error(`There was no commit with commitHash = ${hash}`);
+    }
+    return commitData as CommitData;
+};
+/* ==========================================
+            Module (スナップショット)
+   ==========================================
+*/
+
+// コレクションはmodule。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
+export type ModuleSnapshotData = {
     name: type.Label | null; // 直下のときはnull
-    childModule: { [key in type.ModuleId]: type.ModuleObjectHash };
-    typeDefs: { [key in type.TypeId]: type.TypeDefObjectHash };
-    partDefs: { [key in type.PartId]: type.PartDefObjectHash };
+    childModule: { [key in type.ModuleId]: type.ModuleSnapshotHash };
+    typeDefs: { [key in type.TypeId]: type.TypeDefSnapshotHash };
+    partDefs: { [key in type.PartId]: type.PartDefSnapshotHash };
     description: string;
     exposing: boolean;
 };
 
-// コレクションはTypeDef。ー度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
-export type TypeDefData = {
-    moduleId: type.ModuleId;
-    name: type.Label;
-    description: string;
-    typeBody: TypeBodyData;
+/**
+ * モジュールのスナップショットを作成する。存在するものをさらに追加しようとしたら何もしない。
+ */
+export const addModuleSnapshot = async (
+    data: ModuleSnapshotData
+): Promise<type.ModuleSnapshotHash> => {
+    const hash = createHash(data) as type.ModuleSnapshotHash;
+    if ((await moduleCollection.doc(hash).get()).exists) {
+        return hash;
+    }
+    await moduleCollection.doc(hash).create(data);
+    return hash;
 };
 
-// コレクションはPartDef。ー度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
-export type PartDefData = {
-    moduleId: type.ModuleId;
-    name: type.Label;
-    description: string;
-    type: type.Type;
-    expr: type.ExprObjectHash;
+/**
+ * モジュールのスナップショットを取得する
+ */
+export const getModuleSnapshot = async (
+    hash: type.ModuleSnapshotHash
+): Promise<ModuleSnapshotData> => {
+    const moduleData = (await moduleCollection.doc(hash).get()).data();
+    if (moduleData === undefined) {
+        throw new Error(`There was no module snapshot with hash = ${hash}`);
+    }
+    return moduleData as ModuleSnapshotData;
 };
+
 /* ==========================================
-                Type Body
+            Type Def (スナップショット)
    ==========================================
 */
 
-export type TypeBodyData =
-    | {
-          type: "tagList";
-          tags: Array<type.TypeTag>;
-      }
-    | { type: "kernelType"; kernelType: type.KernelType };
+// コレクションはtype。ー度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
+export type TypeDefSnapshot = {
+    moduleId: type.ModuleId;
+    name: type.Label;
+    description: string;
+    typeBody:
+        | {
+              type: "tag";
+              tags: Array<{ name: type.Label; parameter: Array<type.Type> }>;
+          }
+        | { type: "kernel"; kernelType: type.KernelType };
+};
 
+/**
+ * 型定義のスナップショットを作成する。存在するものをさらに追加しようとしたら何もしない。
+ */
+export const addTypeDefSnapshot = async (
+    data: TypeDefSnapshot
+): Promise<type.TypeDefSnapshotHash> => {
+    const hash = createHash(data) as type.TypeDefSnapshotHash;
+    if ((await typeCollection.doc(hash).get()).exists) {
+        return hash;
+    }
+    await typeCollection.doc(hash).create(data);
+    return hash;
+};
+
+/**
+ * 型定義のスナップショットを取得する
+ */
+export const getTypeDefSnapshot = async (
+    hash: type.TypeDefSnapshotHash
+): Promise<TypeDefSnapshot> => {
+    const typeDefSnapshot = (await typeCollection.doc(hash).get()).data();
+    if (typeDefSnapshot === undefined) {
+        throw new Error(`There was no typeDef snapshot with hash = ${hash}`);
+    }
+    return typeDefSnapshot as TypeDefSnapshot;
+};
 /* ==========================================
-                    Expr
+            Part Def (スナップショット)
    ==========================================
 */
-export type ExprData = {};
 
+// コレクションはpart。ー度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
+export type PartDefSnapshot = {
+    moduleId: type.ModuleId;
+    name: type.Label;
+    description: string;
+    type: Array<type.Type>;
+    expr: type.ExprSnapshotHash;
+};
+
+/**
+ * パーツ定義のスナップショットを作成する。存在するものをさらに追加しようとしたら何もしない。
+ */
+export const addPartDefSnapshot = async (
+    data: PartDefSnapshot
+): Promise<type.PartDefSnapshotHash> => {
+    const hash = createHash(data) as type.PartDefSnapshotHash;
+    if ((await partCollection.doc(hash).get()).exists) {
+        return hash;
+    }
+    await partCollection.doc(hash).create(data);
+    return hash;
+};
+
+/**
+ * パーツ定義のスナップショットを取得する
+ */
+export const getPartDefSnapShot = async (
+    hash: type.PartDefSnapshotHash
+): Promise<PartDefSnapshot> => {
+    const partDefSnapshot = (await partCollection.doc(hash).get()).data();
+    if (partDefSnapshot === undefined) {
+        throw new Error(`There was no partDef snapshot with hash = ${hash}`);
+    }
+    return partDefSnapshot as PartDefSnapshot;
+};
+/* ==========================================
+            Expr (スナップショット)
+   ==========================================
+*/
+
+// コレクションはexpr。ー度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
+export type ExprSnapshot = {
+    value: Array<type.TermOrParenthesis>;
+};
+
+/**
+ * 式のスナップショットを作成する。存在するものをさらに追加しようとしたら何もしない。
+ */
+export const addExprSnapshot = async (
+    data: ExprSnapshot
+): Promise<type.ExprSnapshotHash> => {
+    const hash = createHash(data) as type.ExprSnapshotHash;
+    if ((await exprCollection.doc(hash).get()).exists) {
+        return hash;
+    }
+    await exprCollection.doc(hash).create(data);
+    return hash;
+};
+
+/**
+ * 式のスナップショットを取得する
+ */
+export const getExprSnapshot = async (
+    hash: type.ExprSnapshotHash
+): Promise<ExprSnapshot> => {
+    const exprSnapshot = (await exprCollection.doc(hash).get()).data();
+    if (exprSnapshot === undefined) {
+        throw new Error(`There was no expr snapshot with hash = ${hash}`);
+    }
+    return exprSnapshot as ExprSnapshot;
+};
 /* ==========================================
                 Timestamp
    ==========================================
@@ -270,3 +460,13 @@ export type ExprData = {};
  */
 export const getNowTimestamp = (): firestore.Timestamp =>
     admin.firestore.Timestamp.now();
+
+/* ==========================================
+                SHA-256 Hash
+   ==========================================
+*/
+const createHash = (data: unknown): string =>
+    crypto
+        .createHash("sha256")
+        .update(JSON.stringify(data))
+        .digest("hex");
