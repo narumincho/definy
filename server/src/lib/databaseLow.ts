@@ -33,16 +33,10 @@ const releaseProjectCollection = (
         .collection("release")
         .doc(`v${version.major}.${version.minor}.${version.patch}`);
 
-const preReleaseProjectCollection = (
-    projectId: type.ProjectId,
-    preReleaseProjectId: type.ReleaseProjectId
-) =>
-    projectCollection
-        .doc(projectId)
-        .collection("preRelease")
-        .doc(preReleaseProjectId);
-
 const moduleCollection = dataBase.collection("module");
+const typeCollection = dataBase.collection("type");
+const partCollection = dataBase.collection("part");
+const exprCollection = dataBase.collection("expr");
 /* ==========================================
                     User
    ==========================================
@@ -155,6 +149,7 @@ export const existsGoogleStateAndDeleteAndGetUserId = async (
                 Project
    ==========================================
 */
+// コレクションProject。KeyはProjectId
 export type ProjectData = {
     masterBranch: type.BranchId;
     branches: Array<type.BranchId>;
@@ -196,6 +191,7 @@ export const getAllProject = async (): Promise<
                 Branch
    ==========================================
 */
+// コレクションはBranch。KeyはBranchId
 export type BranchData = {
     name: type.Label;
     projectId: type.ProjectId;
@@ -203,6 +199,7 @@ export type BranchData = {
     head: type.CommitId;
 };
 
+// コレクションはCommit。KeyはCommitId
 export type CommitData = {
     parentCommitIds: Array<type.CommitId>;
     tag: null | string | type.Version;
@@ -212,65 +209,40 @@ export type CommitData = {
     date: firestore.Timestamp;
     commitSummary: string;
     commitDescription: string;
+    treeModuleId: type.ModuleId;
+    tree: type.ModuleObjectHash;
     dependencies: Array<{
         projectId: type.ProjectId;
         version: type.DependencyVersion;
     }>;
 };
-// Commitの中のTypeDefDataやPartDefDataはCloud Storageで FlatBuffersのファイルとして保存しておく?
 
-// Commitのサブコレクションとして
-export type TypeDefData = {
-    typeId: type.TypeId;
-    moduleId: type.ModuleId;
-    name: type.Label;
-    typeBody: type.TypeBodyId;
-};
-
-// Commitのサブコレクションとして
-export type PartDefData = {
-    partId: type.PartId;
-    moduleId: type.ModuleId;
-    name: type.Label;
-    type: type.Type;
-    expr: type.ExprId;
-};
-/* ==========================================
-                Module
-   ==========================================
-*/
-
-// Commitのサブコレクションとして
-export type ModuleData = {
-    name: Array<type.Label>;
-    project: type.ProjectId;
+// コレクションはModule。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
+export type ModuleObjectData = {
+    name: type.Label | null; // 直下のときはnull
+    childModule: { [key in type.ModuleId]: type.ModuleObjectHash };
+    typeDefs: { [key in type.TypeId]: type.TypeDefObjectHash };
+    partDefs: { [key in type.PartId]: type.PartDefObjectHash };
     description: string;
     exposing: boolean;
 };
 
-export const addModule = async (data: ModuleData): Promise<type.ModuleId> => {
-    const moduleId = type.createRandomId() as type.ModuleId;
-    await moduleCollection.doc(moduleId).set(data);
-    return moduleId;
+// コレクションはTypeDef。ー度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
+export type TypeDefData = {
+    moduleId: type.ModuleId;
+    name: type.Label;
+    description: string;
+    typeBody: TypeBodyData;
 };
 
-export const getModule = async (
-    moduleId: type.ModuleId
-): Promise<ModuleData> => {
-    const moduleData = (await moduleCollection.doc(moduleId).get()).data();
-    if (moduleData === undefined) {
-        throw new Error(`There was no module with moduleId = ${moduleId}`);
-    }
-    return moduleData as ModuleData;
+// コレクションはPartDef。ー度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
+export type PartDefData = {
+    moduleId: type.ModuleId;
+    name: type.Label;
+    description: string;
+    type: type.Type;
+    expr: type.ExprObjectHash;
 };
-
-export const getAllModule = async (): Promise<
-    Array<{ id: type.ModuleId; data: ModuleData }>
-> =>
-    (await moduleCollection.get()).docs.map(doc => ({
-        id: doc.id as type.ModuleId,
-        data: doc.data() as ModuleData
-    }));
 /* ==========================================
                 Type Body
    ==========================================

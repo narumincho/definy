@@ -86,21 +86,6 @@ export type Commit = {
     date: Date;
     commitSummary: string;
     commitDescription: string;
-    typeData: Array<{
-        typeId: TypeId;
-        module: Module;
-        name: Label;
-        body: TypeBody;
-        exposingBody: boolean;
-    }>;
-    partData: Array<{
-        partId: PartId;
-        module: Module;
-        name: Label;
-        type: Type;
-        expr: Expr;
-        exposing: boolean;
-    }>;
     modules: Array<Module>;
     dependencies: Array<{
         projectId: ProjectId;
@@ -122,6 +107,17 @@ export type Version = {
     patch: number;
 };
 
+/** 0～fで64文字 256bit SHA-256のハッシュ値 */
+export type PartDefObjectHash = string & { __partDefObjectBrand: never };
+
+/** 0～fで64文字 256bit SHA-256のハッシュ値 */
+export type TypeDefObjectHash = string & { __typeDefObjectBrand: never };
+
+/** 0～fで64文字 256bit SHA-256のハッシュ値 */
+export type ModuleObjectHash = string & { __moduleObjectHashBrand: never };
+
+/** 0～fで64文字 256bit SHA-256のハッシュ値 */
+export type ExprObjectHash = string & { __exprObjectHashBrand: never };
 /*  =============================================================
                             Module
     =============================================================
@@ -145,8 +141,6 @@ export type TypeBody = {
     type: "tagList";
     tags: Array<TypeTag>;
 };
-
-export type TypeBodyId = Id & { __typeBodyIdBrand: never };
 
 export type TypeTag = {
     name: Label;
@@ -174,11 +168,8 @@ export type Type =
     | { type: "func"; value: Array<Type> };
 
 export type Expr = {
-    id: ExprId;
     value: Array<TermOrParenthesis>;
 };
-
-export type ExprId = Id & { __partExprBrand: never };
 
 type TermOrParenthesis =
     | { type: "(" }
