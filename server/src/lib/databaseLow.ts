@@ -24,15 +24,6 @@ const collectionFromLogInState = (
     }
 };
 const projectCollection = dataBase.collection("project");
-const releaseProjectCollection = (
-    projectId: type.ProjectId,
-    version: type.Version
-) =>
-    projectCollection
-        .doc(projectId)
-        .collection("release")
-        .doc(`v${version.major}.${version.minor}.${version.patch}`);
-
 const moduleCollection = dataBase.collection("module");
 const branchCollection = dataBase.collection("branch");
 const commitCollection = dataBase.collection("commit");
@@ -48,7 +39,7 @@ export type UserData = {
     imageId: type.ImageId;
     introduction: string;
     createdAt: firestore.Timestamp;
-    branches: Array<type.Branch>;
+    branchIds: Array<type.BranchId>;
     lastAccessTokenJti: string;
     logInServiceAndId: type.LogInServiceAndId;
 };
@@ -217,10 +208,11 @@ export type BranchData = {
  * ブランチを作成する
  * @param data
  */
-export const addBranch = async (data: BranchData): Promise<type.BranchId> => {
-    const branchId = type.createRandomId() as type.BranchId;
-    await branchCollection.doc(branchId).create(data);
-    return branchId;
+export const addBranch = async (
+    id: type.BranchId,
+    data: BranchData
+): Promise<void> => {
+    await branchCollection.doc(id).create(data);
 };
 
 /**
