@@ -33,8 +33,10 @@ export const logInServiceGraphQLType = new g.GraphQLEnumType({
  * ソーシャルログインで利用するサービス名とそのアカウントIDをセットにしたもの
  */
 export type LogInServiceAndId = {
+    /** サービスの種類 */
     service: LogInService;
-    serviceId: string;
+    /** サービス内でのアカウントID */
+    accountId: string;
 };
 
 /*
@@ -111,9 +113,6 @@ export type Version = {
 export type ModuleSnapshotHash = string & { __moduleObjectHashBrand: never };
 
 /** 0～fで64文字 256bit SHA-256のハッシュ値 */
-export type TypeDefSnapshotHash = string & { __typeDefObjectBrand: never };
-
-/** 0～fで64文字 256bit SHA-256のハッシュ値 */
 export type PartDefSnapshotHash = string & { __partDefObjectBrand: never };
 
 /** 0～fで64文字 256bit SHA-256のハッシュ値 */
@@ -132,10 +131,23 @@ export type Module = {
 
 export type ModuleId = Id & { __moduleIdBrand: never };
 /*  =============================================================
-                             Type Body
+                        Type Def Snapshot
     =============================================================
 */
 export type TypeId = Id & { __typeIdBrand: never };
+
+/** 0～fで64文字 256bit SHA-256のハッシュ値 */
+export type TypeDefSnapshotHash = string & { __typeDefObjectBrand: never };
+
+export type TypeBody =
+    | {
+          type: "tag";
+          tags: Array<{ name: Label; parameter: Array<Type> }>;
+      }
+    | {
+          type: "kernel";
+          kernelType: KernelType;
+      };
 
 export type KernelType = "JsNumber" | "JsString" | "JsArray" | "Function";
 /*  =============================================================

@@ -244,14 +244,14 @@ export const updateBranch = async (
 export type CommitData = {
     parentCommitIds: Array<type.CommitObjectHash>;
     tag: null | string | type.Version;
-    projectName: string;
-    projectDescription: string;
-    author: type.UserId;
+    authorId: type.UserId;
     date: firestore.Timestamp;
     commitSummary: string;
     commitDescription: string;
-    treeModuleId: type.ModuleId;
-    tree: type.ModuleSnapshotHash;
+    projectName: string;
+    projectDescription: string;
+    rootModuleId: type.ModuleId;
+    rootModuleSnapshot: type.ModuleSnapshotHash;
     dependencies: Array<{
         projectId: type.ProjectId;
         version: type.DependencyVersion;
@@ -282,16 +282,25 @@ export const getCommit = async (
     return commitData as CommitData;
 };
 /* ==========================================
-            Module (スナップショット)
+                Module Snapshot
    ==========================================
 */
 
 // コレクションはmodule。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type ModuleSnapshotData = {
     name: type.Label | null; // 直下のときはnull
-    childModule: { [key in type.ModuleId]: type.ModuleSnapshotHash };
-    typeDefs: { [key in type.TypeId]: type.TypeDefSnapshotHash };
-    partDefs: { [key in type.PartId]: type.PartDefSnapshotHash };
+    children: Array<{
+        id: type.ModuleId;
+        hash: type.ModuleSnapshotHash;
+    }>;
+    typeDefs: Array<{
+        id: type.TypeId;
+        hash: type.TypeDefSnapshotHash;
+    }>;
+    partDefs: Array<{
+        id: type.PartId;
+        hash: type.PartDefSnapshotHash;
+    }>;
     description: string;
     exposing: boolean;
 };
@@ -324,21 +333,15 @@ export const getModuleSnapshot = async (
 };
 
 /* ==========================================
-            Type Def (スナップショット)
+                Type Def Snapshot
    ==========================================
 */
 
 // コレクションはtype。ー度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type TypeDefSnapshot = {
-    moduleId: type.ModuleId;
     name: type.Label;
     description: string;
-    typeBody:
-        | {
-              type: "tag";
-              tags: Array<{ name: type.Label; parameter: Array<type.Type> }>;
-          }
-        | { type: "kernel"; kernelType: type.KernelType };
+    body: type.TypeBody;
 };
 
 /**
@@ -368,13 +371,12 @@ export const getTypeDefSnapshot = async (
     return typeDefSnapshot as TypeDefSnapshot;
 };
 /* ==========================================
-            Part Def (スナップショット)
+                Part Def Snapshot
    ==========================================
 */
 
 // コレクションはpart。ー度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type PartDefSnapshot = {
-    moduleId: type.ModuleId;
     name: type.Label;
     description: string;
     type: Array<type.Type>;
@@ -408,7 +410,7 @@ export const getPartDefSnapShot = async (
     return partDefSnapshot as PartDefSnapshot;
 };
 /* ==========================================
-            Expr (スナップショット)
+                Expr Snapshot
    ==========================================
 */
 

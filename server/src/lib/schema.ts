@@ -9,7 +9,7 @@ import * as database from "./database";
 const makeObjectFieldMap = <Type extends { [k in string]: unknown }>(
     args: Type extends { id: string }
         ? ({
-              [Key in keyof Type]: Key extends "id"
+              [Key in keyof Type]: Key extends ("id" | "hash")
                   ? {
                         type: g.GraphQLOutputType;
                         description: string;
@@ -36,7 +36,8 @@ type GraphQLFieldConfigWithArgs<
 };
 
 const makeObjectField = <
-    Type extends { [k in string]: unknown } & { id: string },
+    Type extends { [k in string]: unknown } &
+        ({ id: string } | { hash: string }),
     Key extends keyof Type,
     T extends { [k in string]: unknown } // for allがあればなぁ
 >(data: {
@@ -61,8 +62,9 @@ type Return<Type> = Type extends Array<infer E>
 /** resolveで返すべき部分型を生成する型関数のループ */
 type ReturnLoop<Type> = {
     0: { [k in keyof Type]: Return<Type[k]> };
-    1: { id: string } & { [k in keyof Type]?: Return<Type[k]> };
-}[Type extends { id: string } ? 1 : 0];
+    1: ({ id: string } | { hash: string }) &
+        { [k in keyof Type]?: Return<Type[k]> };
+}[Type extends ({ id: string } | { hash: string }) ? 1 : 0];
 
 const makeQueryOrMutationField = <
     Args extends { [k in string]: unknown },
@@ -726,12 +728,31 @@ export const schema = new g.GraphQLSchema({
                     return database.addProject({
                         name: args.name,
                         editors: args.editors,
-                        leaderId: await database.verifyAccessToken(
+                        userId: await database.verifyAccessToken(
                             args.accessToken
                         )
                     });
                 },
                 description: "プロジェクトを作成する"
+            }),
+            pushProject: makeQueryOrMutationField<
+                { accessToken: string },
+                boolean
+            >({
+                args: {
+                    accessToken: {
+                        type: g.GraphQLNonNull(g.GraphQLString),
+                        description: type.accessTokenDescription
+                    },
+                    commmits: {},
+                    branchHead,
+                    moduleSnapshot,
+                    partDefSnapshot,
+                    typeSnapshot
+                },
+                type: g.GraphQLNonNull(g.GraphQLBoolean),
+                resolve: async args => {},
+                description: "プロジェクトのCommitを保存する"
             })
         }
     })
