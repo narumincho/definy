@@ -142,7 +142,7 @@ export type TypeDefSnapshotHash = string & { __typeDefObjectBrand: never };
 export type TypeBody =
     | {
           type: "tag";
-          tags: Array<{ name: Label; parameter: Array<Type> }>;
+          tags: Array<{ name: Label; parameter: Array<TypeTermOrParenthesis> }>;
       }
     | {
           type: "kernel";
@@ -159,13 +159,16 @@ export type PartDefinition = {
     id: PartId;
     name: Label;
     createdAt: Date;
-    type: Array<Type>;
+    type: Array<TypeTermOrParenthesis>;
     expr: Expr;
 };
 
 export type PartId = Id & { __partIdBrand: never };
 
-export type Type = { type: "(" } | { type: ")" } | { type: "ref"; id: TypeId };
+export type TypeTermOrParenthesis =
+    | { type: "(" }
+    | { type: ")" }
+    | { type: "ref"; id: TypeId };
 
 export type Expr = {
     value: Array<TermOrParenthesis>;

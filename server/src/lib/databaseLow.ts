@@ -379,7 +379,7 @@ export const getTypeDefSnapshot = async (
 export type PartDefSnapshot = {
     name: type.Label;
     description: string;
-    type: Array<type.Type>;
+    type: Array<type.TypeTermOrParenthesis>;
     expr: type.ExprSnapshotHash;
 };
 
