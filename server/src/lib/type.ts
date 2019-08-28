@@ -68,6 +68,11 @@ export type Project = {
 
 export type ProjectId = Id & { __projectIdBrand: never };
 
+/*  =============================================================
+                            Branch
+    =============================================================
+*/
+
 export type Branch = {
     id: BranchId;
     name: Label;
@@ -78,8 +83,13 @@ export type Branch = {
 
 export type BranchId = Id & { __branchIdBrand: never };
 
+/*  =============================================================
+                            Commit
+    =============================================================
+*/
+
 export type Commit = {
-    id: CommitObjectHash;
+    hash: CommitHash;
     parentCommits: Array<Commit>;
     tag: null | string | Version;
     projectName: string;
@@ -88,14 +98,15 @@ export type Commit = {
     date: Date;
     commitSummary: string;
     commitDescription: string;
-    modules: Array<Module>;
+    rootModuleId: ModuleId;
+    rootModuleSnapshot: ModuleSnapshot;
     dependencies: Array<{
-        projectId: ProjectId;
+        project: Project;
         version: DependencyVersion;
     }>;
 };
 
-export type CommitObjectHash = string & { __commitObjectBrand: never };
+export type CommitHash = string & { __commitObjectBrand: never };
 
 /** 他のプロジェクトを利用するときに指定するバージョンの形式。メジャーバージョンだけを維持して最新のものを指定するのがデフォルト(メジャーが0のときはマイナーまで固定) 開発バージョンやバージョンがpatchまで完全一致に指定することも可能 */
 export type DependencyVersion =
@@ -109,22 +120,28 @@ export type Version = {
     patch: number;
 };
 
+/*  =============================================================
+                        Module Snapshot
+    =============================================================
+*/
 /** 0～fで64文字 256bit SHA-256のハッシュ値 */
 export type ModuleSnapshotHash = string & { __moduleObjectHashBrand: never };
 
-/** 0～fで64文字 256bit SHA-256のハッシュ値 */
-export type PartDefSnapshotHash = string & { __partDefObjectBrand: never };
-
-/** 0～fで64文字 256bit SHA-256のハッシュ値 */
-export type ExprSnapshotHash = string & { __exprObjectHashBrand: never };
-/*  =============================================================
-                            Module
-    =============================================================
-*/
-export type Module = {
-    id: ModuleId;
-    name: Array<Label>;
-    project: Project;
+export type ModuleSnapshot = {
+    hash: ModuleId;
+    name: Label | null;
+    children: Array<{
+        id: ModuleId;
+        snapshot: ModuleSnapshot;
+    }>;
+    typeDefs: Array<{
+        id: TypeId;
+        snapshot: TypeDefSnapshot;
+    }>;
+    partDefs: Array<{
+        id: PartId;
+        snapshot: PartDefSnapshot;
+    }>;
     description: string;
     exposing: boolean;
 };
@@ -135,6 +152,13 @@ export type ModuleId = Id & { __moduleIdBrand: never };
     =============================================================
 */
 export type TypeId = Id & { __typeIdBrand: never };
+
+export type TypeDefSnapshot = {
+    hash: TypeDefSnapshotHash;
+    name: Label;
+    description: string;
+    body: TypeBody;
+};
 
 /** 0～fで64文字 256bit SHA-256のハッシュ値 */
 export type TypeDefSnapshotHash = string & { __typeDefObjectBrand: never };
@@ -151,17 +175,20 @@ export type TypeBody =
 
 export type KernelType = "JsNumber" | "JsString" | "JsArray" | "Function";
 /*  =============================================================
-                         Part Definition
+                        Part Def Snapshot
     =============================================================
 */
 
-export type PartDefinition = {
-    id: PartId;
+export type PartDefSnapshot = {
+    hash: PartDefSnapshotHash;
     name: Label;
-    createdAt: Date;
+    description: string;
     type: Array<TypeTermOrParenthesis>;
     expr: Expr;
 };
+
+/** 0～fで64文字 256bit SHA-256のハッシュ値 */
+export type PartDefSnapshotHash = string & { __partDefObjectBrand: never };
 
 export type PartId = Id & { __partIdBrand: never };
 
@@ -170,9 +197,17 @@ export type TypeTermOrParenthesis =
     | { type: ")" }
     | { type: "ref"; id: TypeId };
 
+/*  =============================================================
+                            Expr Snapshot
+    =============================================================
+*/
 export type Expr = {
+    hash: ExprSnapshotHash;
     value: Array<TermOrParenthesis>;
 };
+
+/** 0～fで64文字 256bit SHA-256のハッシュ値 */
+export type ExprSnapshotHash = string & { __exprObjectHashBrand: never };
 
 export type TermOrParenthesis =
     | { type: "(" }

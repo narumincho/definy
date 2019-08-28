@@ -189,7 +189,7 @@ export const addProject = async (data: {
     });
     await databaseLow.addBranch(masterBranchId, {
         description: "",
-        head: initialCommitHash,
+        headHash: initialCommitHash,
         name: type.labelFromString("master"),
         projectId: projectId
     });
@@ -244,6 +244,9 @@ type BranchLowCost = {
         id: type.ProjectId;
     };
     description: string;
+    head: {
+        hash: type.CommitHash;
+    };
 };
 
 export const addBranch = async (
@@ -257,7 +260,7 @@ export const addBranch = async (
         projectId: type.ProjectId;
         version: type.DependencyVersion;
     }>,
-    parentCommitHashes: Array<type.CommitObjectHash>,
+    parentCommitHashes: Array<type.CommitHash>,
     projectName: string,
     projectDescription: string,
     tag: string | type.Version | null,
@@ -282,13 +285,14 @@ export const addBranch = async (
         name: name,
         description: description,
         projectId: projectId,
-        head: branchHeadCommitHash
+        headHash: branchHeadCommitHash
     });
     return {
         id: branchId,
         name: name,
         description: description,
-        project: { id: projectId }
+        project: { id: projectId },
+        head: { hash: branchHeadCommitHash }
     };
 };
 
@@ -310,16 +314,17 @@ const databaseLowBranchToLowCost = ({
     project: {
         id: data.projectId
     },
-    description: data.description
+    description: data.description,
+    head: { hash: data.headHash }
 });
 /* ==========================================
                    Commit
    ==========================================
 */
 type CommitLowCost = {
-    hash: type.CommitObjectHash;
+    hash: type.CommitHash;
     parentCommits: Array<{
-        hash: type.CommitObjectHash;
+        hash: type.CommitHash;
     }>;
     tag: null | string | type.Version;
     projectName: string;
@@ -343,7 +348,7 @@ type CommitLowCost = {
 };
 
 export const addCommit = async (data: {
-    parentCommitHashes: Array<type.CommitObjectHash>;
+    parentCommitHashes: Array<type.CommitHash>;
     tag: null | string | type.Version;
     authorId: type.UserId;
     commitSummary: string;
@@ -368,7 +373,9 @@ export const addCommit = async (data: {
     });
 };
 
-const getCommit = async (hash: type.CommitObjectHash): Promise<CommitLowCost> =>
+export const getCommit = async (
+    hash: type.CommitHash
+): Promise<CommitLowCost> =>
     databaseLowCommitToLowCost({
         hash: hash,
         data: await databaseLow.getCommit(hash)
@@ -378,7 +385,7 @@ const databaseLowCommitToLowCost = ({
     hash,
     data
 }: {
-    hash: type.CommitObjectHash;
+    hash: type.CommitHash;
     data: databaseLow.CommitData;
 }): CommitLowCost => ({
     hash: hash,

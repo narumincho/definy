@@ -201,7 +201,7 @@ export type BranchData = {
     name: type.Label;
     projectId: type.ProjectId;
     description: string;
-    head: type.CommitObjectHash;
+    headHash: type.CommitHash;
 };
 
 /**
@@ -242,7 +242,7 @@ export const updateBranch = async (
 
 // コレクションはcommit。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type CommitData = {
-    parentCommitHashes: Array<type.CommitObjectHash>;
+    parentCommitHashes: Array<type.CommitHash>;
     tag: null | string | type.Version;
     authorId: type.UserId;
     date: firestore.Timestamp;
@@ -261,20 +261,16 @@ export type CommitData = {
 /**
  * コミットを作成する。存在するものをさらに作成したらエラー
  */
-export const addCommit = async (
-    data: CommitData
-): Promise<type.CommitObjectHash> => {
+export const addCommit = async (data: CommitData): Promise<type.CommitHash> => {
     const hash = createHash(data);
     await commitCollection.doc(hash).create(data);
-    return hash as type.CommitObjectHash;
+    return hash as type.CommitHash;
 };
 
 /**
  * コミットを取得する
  */
-export const getCommit = async (
-    hash: type.CommitObjectHash
-): Promise<CommitData> => {
+export const getCommit = async (hash: type.CommitHash): Promise<CommitData> => {
     const commitData = (await commitCollection.doc(hash).get()).data();
     if (commitData === undefined) {
         throw new Error(`There was no commit with commitHash = ${hash}`);

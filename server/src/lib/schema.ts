@@ -380,7 +380,7 @@ const projectGraphQLType = new g.GraphQLObjectType({
 });
 
 const setModule = async (
-    source: Return<type.Module>
+    source: Return<type.ModuleSnapshot>
 ): ReturnType<typeof database.getModule> => {
     const moduleData = await database.getModule(source.id);
     source.name = moduleData.name;
@@ -395,13 +395,13 @@ const setModule = async (
 };
 
 const moduleGraphQLType: g.GraphQLObjectType<
-    type.Module,
+    type.ModuleSnapshot,
     void,
     any
 > = new g.GraphQLObjectType({
     name: "Module",
     fields: () =>
-        makeObjectFieldMap<type.Module>({
+        makeObjectFieldMap<type.ModuleSnapshot>({
             id: {
                 type: g.GraphQLNonNull(type.idGraphQLType),
                 description: "モジュールを識別するためのID"
@@ -531,13 +531,13 @@ const typeDefinitionGraphQLType = new g.GraphQLObjectType<
 });
 
 const partDefinitionGraphQLType = new g.GraphQLObjectType<
-    type.PartDefinition,
+    type.PartDefSnapshot,
     void,
     any
 >({
     name: "PartDefinition",
     fields: () =>
-        makeObjectFieldMap<type.PartDefinition>({
+        makeObjectFieldMap<type.PartDefSnapshot>({
             id: {
                 type: g.GraphQLNonNull(type.idGraphQLType),
                 description: "パーツを識別するためのもの"
