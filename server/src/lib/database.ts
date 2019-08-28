@@ -440,19 +440,34 @@ type ModuleSnapshotLowCost = {
     exposing: boolean;
 };
 
+export const addModuleSnapshot = async (
+    data: databaseLow.ModuleSnapshotData
+): Promise<ModuleSnapshotLowCost> => {
+    const hash = await databaseLow.addModuleSnapshot(data);
+    return databaseLowModuleSnapshotToLowCost({
+        hash: hash,
+        data: data
+    });
+};
+
 /**
- * 指定したモジュールを取得する
- * @param moduleId
+ * 指定したモジュールのスナップショットを取得する
  */
-export const getModule = async (
+export const getModuleSnapshot = async (
     hash: type.ModuleSnapshotHash
 ): Promise<ModuleSnapshotLowCost> =>
-    databaseLowModuleToLowCost(hash, await databaseLow.getModuleSnapshot(hash));
+    databaseLowModuleSnapshotToLowCost({
+        hash: hash,
+        data: await databaseLow.getModuleSnapshot(hash)
+    });
 
-const databaseLowModuleToLowCost = (
-    hash: type.ModuleSnapshotHash,
-    data: databaseLow.ModuleSnapshotData
-): ModuleSnapshotLowCost => ({
+const databaseLowModuleSnapshotToLowCost = ({
+    hash,
+    data
+}: {
+    hash: type.ModuleSnapshotHash;
+    data: databaseLow.ModuleSnapshotData;
+}): ModuleSnapshotLowCost => ({
     hash: hash,
     name: data.name,
     children: data.children.map(m => ({
