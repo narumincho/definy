@@ -7,7 +7,7 @@ import * as jwt from "jsonwebtoken";
 import * as key from "./key";
 
 /* ==========================================
-                User
+                    User
    ==========================================
 */
 
@@ -139,6 +139,7 @@ const databaseLowUserToLowCost = ({
         branches: data.branchIds.map(id => ({ id: id }))
     };
 };
+
 /* ==========================================
                 Project
    ==========================================
@@ -152,6 +153,9 @@ type ProjectLowCost = {
     branches: Array<{
         id: type.BranchId;
     }>;
+    taggedCommits: Array<{
+        hash: type.CommitHash;
+    }>;
 };
 
 /**
@@ -162,14 +166,6 @@ export const addProject = async (data: {
     userId: type.UserId;
     editors: Array<type.UserId>;
 }): Promise<ProjectLowCost> => {
-    const initialCommitEmptyModule = await databaseLow.addModuleSnapshot({
-        children: [],
-        description: "",
-        exposing: true,
-        name: null,
-        partDefs: [],
-        typeDefs: []
-    });
     const initialCommitHash = (await addCommit({
         authorId: data.userId,
         commitDescription: "",
@@ -179,13 +175,15 @@ export const addProject = async (data: {
         projectDescription: "",
         projectName: data.name,
         tag: null,
-        rootModuleSnapshotHash: initialCommitEmptyModule,
-        rootModuleId: type.createRandomId() as type.ModuleId
+        children: [],
+        partDefs: [],
+        typeDefs: []
     })).hash;
     const masterBranchId = type.createRandomId() as type.BranchId;
     const projectId = await databaseLow.addProject({
         branches: [],
-        masterBranch: masterBranchId
+        masterBranch: masterBranchId,
+        taggedCommitHashes: []
     });
     await databaseLow.addBranch(masterBranchId, {
         description: "",
@@ -199,7 +197,8 @@ export const addProject = async (data: {
         branches: [],
         masterBranch: {
             id: masterBranchId
-        }
+        },
+        taggedCommits: []
     };
 };
 
@@ -230,13 +229,14 @@ const databaseLowProjectToLowCost = ({
 }): ProjectLowCost => ({
     id: id,
     branches: data.branches.map(id => ({ id: id })),
-    masterBranch: { id: data.masterBranch }
+    masterBranch: { id: data.masterBranch },
+    taggedCommits: data.taggedCommitHashes.map(hash => ({ hash: hash }))
 });
+
 /* ==========================================
                 Branch
    ==========================================
 */
-
 type BranchLowCost = {
     id: type.BranchId;
     name: type.Label;
@@ -264,8 +264,18 @@ export const addBranch = async (
     projectName: string,
     projectDescription: string,
     tag: string | type.Version | null,
-    rootModuleSnapshot: type.ModuleSnapshotHash,
-    rootModuleId: type.ModuleId
+    children: Array<{
+        id: type.ModuleId;
+        hash: type.ModuleSnapshotHash;
+    }>,
+    typeDefs: Array<{
+        id: type.TypeId;
+        hash: type.TypeDefSnapshotHash;
+    }>,
+    partDefs: Array<{
+        id: type.PartId;
+        hash: type.PartDefSnapshotHash;
+    }>
 ): Promise<BranchLowCost> => {
     const branchHeadCommitHash = (await addCommit({
         authorId: userId,
@@ -275,9 +285,10 @@ export const addBranch = async (
         parentCommitHashes: parentCommitHashes,
         projectName: projectName,
         projectDescription: projectDescription,
+        partDefs: partDefs,
+        typeDefs: typeDefs,
         tag: tag,
-        rootModuleSnapshotHash: rootModuleSnapshot,
-        rootModuleId: rootModuleId
+        children: children
     })).hash;
 
     const branchId = type.createRandomId() as type.BranchId;
@@ -317,6 +328,7 @@ const databaseLowBranchToLowCost = ({
     description: data.description,
     head: { hash: data.headHash }
 });
+
 /* ==========================================
                    Commit
    ==========================================
@@ -327,18 +339,32 @@ type CommitLowCost = {
         hash: type.CommitHash;
     }>;
     tag: null | string | type.Version;
-    projectName: string;
-    projectDescription: string;
+    commitSummary: string;
+    commitDescription: string;
     author: {
         id: type.UserId;
     };
     date: Date;
-    commitSummary: string;
-    commitDescription: string;
-    rootModuleId: type.ModuleId;
-    rootModuleSnapshot: {
-        hash: type.ModuleSnapshotHash;
-    };
+    projectName: string;
+    projectDescription: string;
+    children: Array<{
+        id: type.ModuleId;
+        snapshot: {
+            hash: type.ModuleSnapshotHash;
+        };
+    }>;
+    typeDefs: Array<{
+        id: type.TypeId;
+        snapshot: {
+            hash: type.TypeDefSnapshotHash;
+        };
+    }>;
+    partDefs: Array<{
+        id: type.PartId;
+        snapshot: {
+            hash: type.PartDefSnapshotHash;
+        };
+    }>;
     dependencies: Array<{
         project: {
             id: type.ProjectId;
@@ -355,8 +381,18 @@ export const addCommit = async (data: {
     commitDescription: string;
     projectName: string;
     projectDescription: string;
-    rootModuleId: type.ModuleId;
-    rootModuleSnapshotHash: type.ModuleSnapshotHash;
+    children: Array<{
+        id: type.ModuleId;
+        hash: type.ModuleSnapshotHash;
+    }>;
+    typeDefs: Array<{
+        id: type.TypeId;
+        hash: type.TypeDefSnapshotHash;
+    }>;
+    partDefs: Array<{
+        id: type.PartId;
+        hash: type.PartDefSnapshotHash;
+    }>;
     dependencies: Array<{
         projectId: type.ProjectId;
         version: type.DependencyVersion;
@@ -399,10 +435,18 @@ const databaseLowCommitToLowCost = ({
     commitDescription: data.commitDescription,
     projectName: data.projectName,
     projectDescription: data.projectDescription,
-    rootModuleId: data.rootModuleId,
-    rootModuleSnapshot: {
-        hash: data.rootModuleSnapshotHash
-    },
+    children: data.children.map(child => ({
+        id: child.id,
+        snapshot: { hash: child.hash }
+    })),
+    typeDefs: data.typeDefs.map(t => ({
+        id: t.id,
+        snapshot: { hash: t.hash }
+    })),
+    partDefs: data.partDefs.map(p => ({
+        id: p.id,
+        snapshot: { hash: p.hash }
+    })),
     dependencies: data.dependencies.map(dependency => ({
         project: {
             id: dependency.projectId
@@ -410,14 +454,14 @@ const databaseLowCommitToLowCost = ({
         version: dependency.version
     }))
 });
+
 /* ==========================================
                Module Snapshot
    ==========================================
 */
-
 type ModuleSnapshotLowCost = {
     hash: type.ModuleSnapshotHash;
-    name: type.Label | null;
+    name: type.Label;
     children: Array<{
         id: type.ModuleId;
         snapshot: {
@@ -485,6 +529,7 @@ const databaseLowModuleSnapshotToLowCost = ({
     description: data.description,
     exposing: data.exposing
 });
+
 /* ==========================================
                Type Def Snapshot
    ==========================================
@@ -534,6 +579,7 @@ const databaseLowTypeDefSnapshotToLowCost = ({
     description: data.description,
     body: data.body
 });
+
 /* ==========================================
                Part Def Snapshot
    ==========================================
@@ -594,6 +640,7 @@ const databaseLowPartDefSnapshotToLowCost = ({
         hash: data.exprHash
     }
 });
+
 /* ==========================================
                Expr Def Snapshot
    ==========================================

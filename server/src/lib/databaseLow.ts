@@ -147,6 +147,7 @@ export const existsGoogleStateAndDeleteAndGetUserId = async (
 export type ProjectData = {
     masterBranch: type.BranchId;
     branches: Array<type.BranchId>;
+    taggedCommitHashes: Array<type.CommitHash>;
 };
 
 export const addProject = async (
@@ -250,8 +251,18 @@ export type CommitData = {
     commitDescription: string;
     projectName: string;
     projectDescription: string;
-    rootModuleId: type.ModuleId;
-    rootModuleSnapshotHash: type.ModuleSnapshotHash;
+    children: Array<{
+        id: type.ModuleId;
+        hash: type.ModuleSnapshotHash;
+    }>;
+    typeDefs: Array<{
+        id: type.TypeId;
+        hash: type.TypeDefSnapshotHash;
+    }>;
+    partDefs: Array<{
+        id: type.PartId;
+        hash: type.PartDefSnapshotHash;
+    }>;
     dependencies: Array<{
         projectId: type.ProjectId;
         version: type.DependencyVersion;
@@ -284,7 +295,7 @@ export const getCommit = async (hash: type.CommitHash): Promise<CommitData> => {
 
 // コレクションはmodule。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type ModuleSnapshotData = {
-    name: type.Label | null; // 直下のときはnull
+    name: type.Label;
     children: Array<{
         id: type.ModuleId;
         hash: type.ModuleSnapshotHash;
