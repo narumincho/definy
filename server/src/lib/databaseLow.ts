@@ -242,7 +242,7 @@ export const updateBranch = async (
 
 // コレクションはcommit。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type CommitData = {
-    parentCommitIds: Array<type.CommitObjectHash>;
+    parentCommitHashes: Array<type.CommitObjectHash>;
     tag: null | string | type.Version;
     authorId: type.UserId;
     date: firestore.Timestamp;
@@ -251,7 +251,7 @@ export type CommitData = {
     projectName: string;
     projectDescription: string;
     rootModuleId: type.ModuleId;
-    rootModuleSnapshot: type.ModuleSnapshotHash;
+    rootModuleSnapshotHash: type.ModuleSnapshotHash;
     dependencies: Array<{
         projectId: type.ProjectId;
         version: type.DependencyVersion;
@@ -380,7 +380,7 @@ export type PartDefSnapshot = {
     name: type.Label;
     description: string;
     type: Array<type.TypeTermOrParenthesis>;
-    expr: type.ExprSnapshotHash;
+    exprHash: type.ExprSnapshotHash;
 };
 
 /**

@@ -175,11 +175,11 @@ export const addProject = async (data: {
         commitDescription: "",
         commitSummary: "initial commit",
         dependencies: [],
-        parentCommitIds: [],
+        parentCommitHashes: [],
         projectDescription: "",
         projectName: data.name,
         tag: null,
-        rootModuleSnapshot: initialCommitEmptyModule,
+        rootModuleSnapshotHash: initialCommitEmptyModule,
         rootModuleId: type.createRandomId() as type.ModuleId
     })).hash;
     const masterBranchId = type.createRandomId() as type.BranchId;
@@ -257,7 +257,7 @@ export const addBranch = async (
         projectId: type.ProjectId;
         version: type.DependencyVersion;
     }>,
-    parentCommitIds: Array<type.CommitObjectHash>,
+    parentCommitHashes: Array<type.CommitObjectHash>,
     projectName: string,
     projectDescription: string,
     tag: string | type.Version | null,
@@ -269,11 +269,11 @@ export const addBranch = async (
         commitSummary: commitSummary,
         commitDescription: commitDescription,
         dependencies: dependencies,
-        parentCommitIds: parentCommitIds,
+        parentCommitHashes: parentCommitHashes,
         projectName: projectName,
         projectDescription: projectDescription,
         tag: tag,
-        rootModuleSnapshot: rootModuleSnapshot,
+        rootModuleSnapshotHash: rootModuleSnapshot,
         rootModuleId: rootModuleId
     })).hash;
 
@@ -291,6 +291,27 @@ export const addBranch = async (
         project: { id: projectId }
     };
 };
+
+export const getBranch = async (id: type.BranchId): Promise<BranchLowCost> =>
+    databaseLowBranchToLowCost({
+        id: id,
+        data: await databaseLow.getBranch(id)
+    });
+
+const databaseLowBranchToLowCost = ({
+    id,
+    data
+}: {
+    id: type.BranchId;
+    data: databaseLow.BranchData;
+}): BranchLowCost => ({
+    id: id,
+    name: data.name,
+    project: {
+        id: data.projectId
+    },
+    description: data.description
+});
 /* ==========================================
                    Commit
    ==========================================
@@ -322,7 +343,7 @@ type CommitLowCost = {
 };
 
 export const addCommit = async (data: {
-    parentCommitIds: Array<type.CommitObjectHash>;
+    parentCommitHashes: Array<type.CommitObjectHash>;
     tag: null | string | type.Version;
     authorId: type.UserId;
     commitSummary: string;
@@ -330,7 +351,7 @@ export const addCommit = async (data: {
     projectName: string;
     projectDescription: string;
     rootModuleId: type.ModuleId;
-    rootModuleSnapshot: type.ModuleSnapshotHash;
+    rootModuleSnapshotHash: type.ModuleSnapshotHash;
     dependencies: Array<{
         projectId: type.ProjectId;
         version: type.DependencyVersion;
@@ -338,42 +359,50 @@ export const addCommit = async (data: {
 }): Promise<CommitLowCost> => {
     const now = databaseLow.getNowTimestamp();
     const commitHash = await databaseLow.addCommit({
-        parentCommitIds: data.parentCommitIds,
-        tag: data.tag,
-        authorId: data.authorId,
         date: now,
-        commitSummary: data.commitSummary,
-        commitDescription: data.commitDescription,
-        projectName: data.projectName,
-        projectDescription: data.projectDescription,
-        rootModuleSnapshot: data.rootModuleSnapshot,
-        rootModuleId: data.rootModuleId,
-        dependencies: data.dependencies
+        ...data
     });
-    return {
+    return databaseLowCommitToLowCost({
         hash: commitHash,
-        parentCommits: data.parentCommitIds.map(hash => ({ hash: hash })),
-        tag: data.tag,
-        author: {
-            id: data.authorId
-        },
-        date: now.toDate(),
-        commitSummary: data.commitSummary,
-        commitDescription: data.commitDescription,
-        projectName: data.projectName,
-        projectDescription: data.projectDescription,
-        rootModuleId: data.rootModuleId,
-        rootModuleSnapshot: {
-            hash: data.rootModuleSnapshot
-        },
-        dependencies: data.dependencies.map(dependency => ({
-            project: {
-                id: dependency.projectId
-            },
-            version: dependency.version
-        }))
-    };
+        data: { date: now, ...data }
+    });
 };
+
+const getCommit = async (hash: type.CommitObjectHash): Promise<CommitLowCost> =>
+    databaseLowCommitToLowCost({
+        hash: hash,
+        data: await databaseLow.getCommit(hash)
+    });
+
+const databaseLowCommitToLowCost = ({
+    hash,
+    data
+}: {
+    hash: type.CommitObjectHash;
+    data: databaseLow.CommitData;
+}): CommitLowCost => ({
+    hash: hash,
+    parentCommits: data.parentCommitHashes.map(hash => ({ hash: hash })),
+    tag: data.tag,
+    author: {
+        id: data.authorId
+    },
+    date: data.date.toDate(),
+    commitSummary: data.commitSummary,
+    commitDescription: data.commitDescription,
+    projectName: data.projectName,
+    projectDescription: data.projectDescription,
+    rootModuleId: data.rootModuleId,
+    rootModuleSnapshot: {
+        hash: data.rootModuleSnapshotHash
+    },
+    dependencies: data.dependencies.map(dependency => ({
+        project: {
+            id: dependency.projectId
+        },
+        version: dependency.version
+    }))
+});
 /* ==========================================
                Module Snapshot
    ==========================================
@@ -445,7 +474,7 @@ type TypeDefSnapshotLowCost = {
     body: type.TypeBody;
 };
 
-export const addTypeDef = async (
+export const addTypeDefSnapshot = async (
     name: type.Label,
     description: string,
     body: type.TypeBody
@@ -462,6 +491,27 @@ export const addTypeDef = async (
         body: body
     };
 };
+
+export const getTypeDefSnapshot = async (
+    hash: type.TypeDefSnapshotHash
+): Promise<TypeDefSnapshotLowCost> =>
+    databaseLowTypeDefSnapshotToLowCost({
+        hash: hash,
+        data: await databaseLow.getTypeDefSnapshot(hash)
+    });
+
+const databaseLowTypeDefSnapshotToLowCost = ({
+    hash,
+    data
+}: {
+    hash: type.TypeDefSnapshotHash;
+    data: databaseLow.TypeDefSnapshot;
+}): TypeDefSnapshotLowCost => ({
+    hash: hash,
+    name: data.name,
+    description: data.description,
+    body: data.body
+});
 /* ==========================================
                Part Def Snapshot
    ==========================================
@@ -486,7 +536,7 @@ export const addPartDefSnapshot = async (
         name: name,
         description: description,
         type: type,
-        expr: expr
+        exprHash: expr
     });
     return {
         hash: hash,
@@ -498,6 +548,30 @@ export const addPartDefSnapshot = async (
         }
     };
 };
+
+export const getPartDefSnapshot = async (
+    hash: type.PartDefSnapshotHash
+): Promise<PartDefSnapshotLowCost> =>
+    databaseLowPartDefSnapshotToLowCost({
+        hash: hash,
+        data: await databaseLow.getPartDefSnapShot(hash)
+    });
+
+const databaseLowPartDefSnapshotToLowCost = ({
+    hash,
+    data
+}: {
+    hash: type.PartDefSnapshotHash;
+    data: databaseLow.PartDefSnapshot;
+}): PartDefSnapshotLowCost => ({
+    hash: hash,
+    name: data.name,
+    description: data.description,
+    type: data.type,
+    expr: {
+        hash: data.exprHash
+    }
+});
 /* ==========================================
                Expr Def Snapshot
    ==========================================
@@ -516,6 +590,25 @@ export const addExprDefSnapshot = async (
         value: value
     };
 };
+
+export const getExprDefSnapshot = async (
+    hash: type.ExprSnapshotHash
+): Promise<ExprSnapshotLowCost> =>
+    databaseLowExprDefSnapshotToLowCost({
+        hash: hash,
+        data: await databaseLow.getExprSnapshot(hash)
+    });
+
+const databaseLowExprDefSnapshotToLowCost = ({
+    hash,
+    data
+}: {
+    hash: type.ExprSnapshotHash;
+    data: databaseLow.ExprSnapshot;
+}): ExprSnapshotLowCost => ({
+    hash: hash,
+    value: data.value
+});
 /* ==========================================
                verifyAccessToken
    ==========================================
