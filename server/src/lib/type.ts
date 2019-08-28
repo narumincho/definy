@@ -92,7 +92,7 @@ export type BranchId = string & { __branchIdBrand: never };
 export type Commit = {
     hash: CommitHash;
     parentCommits: Array<Commit>;
-    tag: null | string | Version;
+    tag: null | CommitTagName | Version;
     projectName: string;
     projectDescription: string;
     author: User;
@@ -111,19 +111,26 @@ export type Commit = {
         id: PartId;
         snapshot: PartDefSnapshot;
     }>;
-    dependencies: Array<{
-        project: Project;
-        version: DependencyVersion;
-    }>;
+    dependencies: Array<Dependency>;
 };
 
 export type CommitHash = string & { __commitObjectBrand: never };
 
+export type CommitTagName = {
+    text: string;
+};
+
+export type Dependency = {
+    project: Project;
+    version: DependencyVersion;
+};
+
 /** 他のプロジェクトを利用するときに指定するバージョンの形式。メジャーバージョンだけを維持して最新のものを指定するのがデフォルト(メジャーが0のときはマイナーまで固定) 開発バージョンやバージョンがpatchまで完全一致に指定することも可能 */
-export type DependencyVersion =
-    | { type: "initialRelease"; major: 0; minor: number }
-    | { type: "release"; major: number }
-    | { type: "commitWithTag"; tag: string | Version };
+export type DependencyVersion = InitialRelease | Release | Version;
+
+export type InitialRelease = { type: "initialRelease"; minor: number };
+
+export type Release = { type: "release"; major: number };
 
 export type Version = {
     major: number;

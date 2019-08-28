@@ -338,7 +338,7 @@ type CommitLowCost = {
     parentCommits: Array<{
         hash: type.CommitHash;
     }>;
-    tag: null | string | type.Version;
+    tag: null | type.CommitTagName | type.Version;
     commitSummary: string;
     commitDescription: string;
     author: {
@@ -426,7 +426,7 @@ const databaseLowCommitToLowCost = ({
 }): CommitLowCost => ({
     hash: hash,
     parentCommits: data.parentCommitHashes.map(hash => ({ hash: hash })),
-    tag: data.tag,
+    tag: typeof data.tag === "string" ? { text: data.tag } : data.tag,
     author: {
         id: data.authorId
     },

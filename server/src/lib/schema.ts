@@ -177,7 +177,7 @@ const userGraphQLType: g.GraphQLObjectType<
     type.User,
     void,
     any
-> = new g.GraphQLObjectType({
+> = new g.GraphQLObjectType<type.User>({
     name: "User",
     fields: () =>
         makeObjectFieldMap<type.User>({
@@ -277,7 +277,11 @@ const setProjectData = async (
     return projectData;
 };
 
-const projectGraphQLType = new g.GraphQLObjectType({
+const projectGraphQLType: g.GraphQLObjectType<
+    type.Project,
+    void,
+    any
+> = new g.GraphQLObjectType({
     name: "Project",
     fields: () =>
         makeObjectFieldMap<type.Project>({
@@ -334,10 +338,50 @@ const branchGraphQLType = new g.GraphQLObjectType({
                 type: g.GraphQLNonNull(type.idGraphQLType),
                 description: "ブランチを識別するためのID"
             },
-            name: makeObjectField({}),
-            project: makeObjectField({}),
-            description: makeObjectField({}),
-            head: makeObjectField({})
+            name: makeObjectField({
+                type: g.GraphQLNonNull(type.labelGraphQLType),
+                description: "ブランチの名前",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.name === undefined) {
+                        return (await setBranch(source)).name;
+                    }
+                    return source.name;
+                }
+            }),
+            project: makeObjectField({
+                type: g.GraphQLNonNull(projectGraphQLType),
+                description: "ブランチが所属するプロジェクト",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.project === undefined) {
+                        return (await setBranch(source)).project;
+                    }
+                    return source.project;
+                }
+            }),
+            description: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "ブランチの説明",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.description === undefined) {
+                        return (await setBranch(source)).description;
+                    }
+                    return source.description;
+                }
+            }),
+            head: makeObjectField({
+                type: g.GraphQLNonNull(commitGraphQLType),
+                description: "ブランチの最新のコミット",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.head === undefined) {
+                        return (await setBranch(source)).head;
+                    }
+                    return source.head;
+                }
+            })
         }),
     description: "複数のコミットを1列に並べて整理するもの"
 });
@@ -358,7 +402,11 @@ const setBranch = async (
    ==========================================
 */
 
-const commitGraphQLType = new g.GraphQLObjectType({
+const commitGraphQLType: g.GraphQLObjectType<
+    type.Commit,
+    void,
+    any
+> = new g.GraphQLObjectType({
     name: "Commit",
     fields: () =>
         makeObjectFieldMap<type.Commit>({
@@ -366,18 +414,138 @@ const commitGraphQLType = new g.GraphQLObjectType({
                 type: g.GraphQLNonNull(type.hashGraphQLType),
                 description: "コミットから導き出されるハッシュ値"
             },
-            parentCommits: makeObjectField({}),
-            tag: makeObjectField({}),
-            commitSummary: makeObjectField({}),
-            commitDescription: makeObjectField({}),
-            author: makeObjectField({}),
-            date: makeObjectField({}),
-            projectName: makeObjectField({}),
-            projectDescription: makeObjectField({}),
-            children: makeObjectField({}),
-            typeDefs: makeObjectField({}),
-            partDefs: makeObjectField({}),
-            dependencies: makeObjectField({})
+            parentCommits: makeObjectField({
+                type: graphQLNonNullList(commitGraphQLType),
+                description: "親(前回の)のコミット",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.parentCommits === undefined) {
+                        return (await setCommit(source)).parentCommits;
+                    }
+                    return source.parentCommits;
+                }
+            }),
+            tag: makeObjectField({
+                type: commitTagGraphQLType,
+                description: "コミットをわかりやすく区別するためのタグ",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.tag === undefined) {
+                        return (await setCommit(source)).tag;
+                    }
+                    return source.tag;
+                }
+            }),
+            commitSummary: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "どんな変更をしたかの簡潔な説明",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.commitSummary === undefined) {
+                        return (await setCommit(source)).commitSummary;
+                    }
+                    return source.commitSummary;
+                }
+            }),
+            commitDescription: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "どんな変更をしたかの詳しい説明",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.commitDescription === undefined) {
+                        return (await setCommit(source)).commitDescription;
+                    }
+                    return source.commitDescription;
+                }
+            }),
+            author: makeObjectField({
+                type: g.GraphQLNonNull(userGraphQLType),
+                description: "コミットを作成したユーザー",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.author === undefined) {
+                        return (await setCommit(source)).author;
+                    }
+                    return source.author;
+                }
+            }),
+            date: makeObjectField({
+                type: g.GraphQLNonNull(type.dateTimeGraphQLType),
+                description: "コミットが作成された日時",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.date === undefined) {
+                        return (await setCommit(source)).date;
+                    }
+                    return source.date;
+                }
+            }),
+            projectName: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "プロジェクト名",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.projectName === undefined) {
+                        return (await setCommit(source)).projectName;
+                    }
+                    return source.projectName;
+                }
+            }),
+            projectDescription: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "プロジェクトの説明文",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.projectDescription === undefined) {
+                        return (await setCommit(source)).projectDescription;
+                    }
+                    return source.projectDescription;
+                }
+            }),
+            children: makeObjectField({
+                type: graphQLNonNullList(moduleSnapshotGraphQLType),
+                description: "子のモジュール",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.children === undefined) {
+                        return (await setCommit(source)).children;
+                    }
+                    return source.children;
+                }
+            }),
+            typeDefs: makeObjectField({
+                type: graphQLNonNullList(typeDefSnapshotGraphQLType),
+                description: "型定義",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.typeDefs === undefined) {
+                        return (await setCommit(source)).typeDefs;
+                    }
+                    return source.typeDefs;
+                }
+            }),
+            partDefs: makeObjectField({
+                type: graphQLNonNullList(partDefinitionGraphQLType),
+                description: "パーツ定義",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.partDefs === undefined) {
+                        return (await setCommit(source)).partDefs;
+                    }
+                    return source.partDefs;
+                }
+            }),
+            dependencies: makeObjectField({
+                type: graphQLNonNullList(dependencyGraphQLType),
+                description: "使っている外部のプロジェクト",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.dependencies === undefined) {
+                        return (await setCommit(source)).dependencies;
+                    }
+                    return source.dependencies;
+                }
+            })
         })
 });
 
@@ -395,6 +563,100 @@ const setCommit = async (
     source.dependencies = data.dependencies;
     return data;
 };
+
+const commitTagGraphQLType = new g.GraphQLUnionType({
+    name: "commitTag",
+    description: "コミット時につけられるタグ",
+    types: () => [commitTagName, versionGraphQLType]
+});
+
+const commitTagName = new g.GraphQLObjectType({
+    name: "CommitTagName",
+    description: "コミットのタグを文字列で表現する",
+    fields: () =>
+        makeObjectFieldMap<type.CommitTagName>({
+            text: {
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "文字列"
+            }
+        })
+});
+
+const versionGraphQLType = new g.GraphQLObjectType({
+    name: "Version",
+    description: "バージョン",
+    fields: () =>
+        makeObjectFieldMap<type.Version>({
+            major: {
+                type: g.GraphQLNonNull(g.GraphQLInt),
+                description: "メジャー"
+            },
+            minor: {
+                type: g.GraphQLNonNull(g.GraphQLInt),
+                description: "マイナー"
+            },
+            patch: {
+                type: g.GraphQLNonNull(g.GraphQLInt),
+                description: "パッチ"
+            }
+        })
+});
+
+const dependencyGraphQLType = new g.GraphQLObjectType({
+    name: "Dependency",
+    description: "依存プロジェクト",
+    fields: () =>
+        makeObjectFieldMap<type.Dependency>({
+            project: {
+                type: g.GraphQLNonNull(projectGraphQLType),
+                description: "プロジェクト"
+            },
+            version: {
+                type: g.GraphQLNonNull(dependencyVersionGraphQLType),
+                description: "バージョン"
+            }
+        })
+});
+
+const dependencyVersionGraphQLType = new g.GraphQLUnionType({
+    name: "DependencyVersion",
+    description: "依存プロジェクトのバージョンの指定",
+    types: () => [
+        initialReleaseGraphQLType,
+        releaseGraphQLType,
+        versionGraphQLType
+    ]
+});
+
+const initialReleaseGraphQLType = new g.GraphQLObjectType({
+    name: "InitialRelease",
+    description: "初期リリースのプロジェクトのバージョンの指定",
+    fields: makeObjectFieldMap<type.InitialRelease>({
+        minor: {
+            type: g.GraphQLNonNull(g.GraphQLInt),
+            description: "マイナー"
+        },
+        type: {
+            type: g.GraphQLNonNull(g.GraphQLString),
+            description: "常に initialRelease"
+        }
+    })
+});
+
+const releaseGraphQLType = new g.GraphQLObjectType({
+    name: "Release",
+    description: "リリースしたプロジェクトのバージョン指定",
+    fields: makeObjectFieldMap<type.Release>({
+        major: {
+            type: g.GraphQLNonNull(g.GraphQLInt),
+            description: "メジャー"
+        },
+        type: {
+            type: g.GraphQLNonNull(g.GraphQLString),
+            description: "常に release"
+        }
+    })
+});
 /* ==========================================
                Module Snapshot
    ==========================================
@@ -452,7 +714,7 @@ const moduleSnapshotGraphQLType: g.GraphQLObjectType<
             }),
             typeDefs: makeObjectField({
                 type: g.GraphQLNonNull(
-                    g.GraphQLList(g.GraphQLNonNull(typeDefinitionGraphQLType))
+                    g.GraphQLList(g.GraphQLNonNull(typeDefSnapshotGraphQLType))
                 ),
                 description: "このモジュールにある型の定義",
                 args: {},
@@ -506,30 +768,53 @@ const moduleSnapshotGraphQLType: g.GraphQLObjectType<
                Type Def Snapshot
    ==========================================
 */
-const typeDefinitionGraphQLType = new g.GraphQLObjectType<
-    type.TypeBody,
+const typeDefSnapshotGraphQLType = new g.GraphQLObjectType<
+    type.TypeDefSnapshot,
     void,
     any
 >({
     name: "TypeDefinition",
     fields: () =>
-        makeObjectFieldMap<type.TypeBody>({
-            id: {
-                type: g.GraphQLNonNull(type.idGraphQLType),
-                description: "型を識別するためのもの"
+        makeObjectFieldMap<type.TypeDefSnapshot>({
+            hash: {
+                type: g.GraphQLNonNull(type.hashGraphQLType),
+                description: "型のスナップショットから導き出されるハッシュ値"
             },
             name: makeObjectField({
                 type: g.GraphQLNonNull(type.labelGraphQLType),
                 description: "型の名前",
                 args: {},
                 resolve: async (source, args) => {
-                    return type.labelFromString("typeDummyName");
+                    if (source.name === undefined) {
+                        return (await setTypeDefSnapshot(source)).name;
+                    }
+                    return source.name;
                 }
-            })
+            }),
+            description: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.description === undefined) {
+                        return (await setTypeDefSnapshot(source)).description;
+                    }
+                    return source.description;
+                }
+            }),
+            body: makeObjectField({})
         })
 });
 
-const setTypeDefSnapshot = () => {};
+const setTypeDefSnapshot = async (
+    source: Return<type.TypeDefSnapshot>
+): ReturnType<typeof database.getTypeDefSnapshot> => {
+    const data = await database.getTypeDefSnapshot(source.hash);
+    source.name = data.name;
+    source.description = data.description;
+    source.body = data.body;
+    return data;
+};
 /* ==========================================
                Part Def Snapshot
    ==========================================
