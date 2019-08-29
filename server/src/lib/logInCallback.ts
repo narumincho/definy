@@ -85,7 +85,7 @@ export const googleLogInReceiver = async (
     // 取得したidトークンからプロフィール画像と名前とLINEのIDを取得する
     const definyUserData = await database.getUserFromLogInService({
         service: "google",
-        serviceId: googleData.sub
+        accountId: googleData.sub
     });
     // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
     if (definyUserData !== null) {
@@ -107,7 +107,7 @@ export const googleLogInReceiver = async (
         imageId: userImageId as type.ImageId,
         logInServiceAndId: {
             service: "google",
-            serviceId: googleData.sub
+            accountId: googleData.sub
         },
         lastAccessTokenJti: accessTokenRandomId
     });
@@ -204,7 +204,7 @@ query {
     )).data.data.viewer;
     const definyUserData = await database.getUserFromLogInService({
         service: "gitHub",
-        serviceId: userData.id
+        accountId: userData.id
     });
     if (definyUserData !== null) {
         return {
@@ -227,7 +227,7 @@ query {
         lastAccessTokenJti: accessTokenRandomId,
         logInServiceAndId: {
             service: "gitHub",
-            serviceId: userData.id
+            accountId: userData.id
         }
     });
     return {
@@ -281,7 +281,7 @@ export const lineLogInReceiver = async (
 
     const definyUserData = await database.getUserFromLogInService({
         service: "line",
-        serviceId: lineData.sub
+        accountId: lineData.sub
     });
 
     // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
@@ -306,7 +306,7 @@ export const lineLogInReceiver = async (
         lastAccessTokenJti: accessTokenRandomId,
         logInServiceAndId: {
             service: "line",
-            serviceId: lineData.sub
+            accountId: lineData.sub
         }
     });
     return {
