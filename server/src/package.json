@@ -13,13 +13,13 @@
         "express-graphql": "^0.9.0",
         "firebase-admin": "^8.4.0",
         "firebase-functions": "^3.2.0",
-        "graphql": "^14.5.3",
+        "graphql": "^14.5.4",
         "jsonwebtoken": "^8.5.1"
     },
     "devDependencies": {
         "@types/jsonwebtoken": "^8.3.3",
         "@types/node": "^12.7.2",
-        "typescript": "^3.6.1-rc"
+        "typescript": "^3.6.2"
     },
     "engines": {
         "node": "10"
