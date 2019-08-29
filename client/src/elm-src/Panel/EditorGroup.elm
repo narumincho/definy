@@ -1,6 +1,6 @@
 module Panel.EditorGroup exposing
-    ( EditorMsg(..)
-    , Emit(..)
+    ( Cmd(..)
+    , EditorMsg(..)
     , Gutter(..)
     , GutterHorizontal
     , GutterVertical
@@ -177,21 +177,21 @@ type OpenEditorPosition
     | OpenEditorPositionRightBottom
 
 
-{-| EditorGroupから発生する外へのエミット
+{-| EditorGroupから発生するコマンド
 -}
-type Emit
-    = EmitVerticalGutterModeOn GutterVertical
-    | EmitHorizontalGutterModeOn GutterHorizontal
-    | EmitSetTextAreaValue String
-    | EmitFocusEditTextAea
-    | EmitSetClickEventListenerInCapturePhase String
-    | EmitElementScrollIntoView String
-    | EmitNone
+type Cmd
+    = CmdVerticalGutterModeOn GutterVertical
+    | CmdHorizontalGutterModeOn GutterHorizontal
+    | CmdSetTextAreaValue String
+    | CmdFocusEditTextAea
+    | CmdSetClickEventListenerInCapturePhase String
+    | CmdElementScrollIntoView String
+    | CmdNone
 
 
 {-| 初期Model
 -}
-initModel : ( Model, List Emit )
+initModel : ( Model, List Cmd )
 initModel =
     ( Model
         { group =
@@ -203,7 +203,7 @@ initModel =
         , activeEditorIndex = ( EditorIndexLeft, EditorIndexTop )
         , mouseOverOpenEditorPosition = Nothing
         }
-    , [ EmitSetClickEventListenerInCapturePhase (editorIndexToIdString ( EditorIndexLeft, EditorIndexTop )) ]
+    , [ CmdSetClickEventListenerInCapturePhase (editorIndexToIdString ( EditorIndexLeft, EditorIndexTop )) ]
     )
 
 
@@ -242,7 +242,7 @@ isFocusDefaultUi model =
 {- ====================== Update ====================== -}
 
 
-update : Msg -> Data.Project.Project -> Model -> ( Model, List Emit )
+update : Msg -> Data.Project.Project -> Model -> ( Model, List Cmd )
 update msg project model =
     case msg of
         ChangeActiveEditor activeEditorIndex ->
@@ -257,7 +257,7 @@ update msg project model =
                 |> setGroup newGroup
                 |> setActiveEditorRef newActiveEditorIndex
                 |> mouseLeaveAddGutter
-            , [ EmitSetClickEventListenerInCapturePhase (editorIndexToIdString newActiveEditorIndex) ]
+            , [ CmdSetClickEventListenerInCapturePhase (editorIndexToIdString newActiveEditorIndex) ]
             )
 
         CloseEditor hideEditorRef ->
@@ -285,17 +285,17 @@ update msg project model =
 
         GrabHorizontalGutter gutter ->
             ( model
-            , [ EmitHorizontalGutterModeOn gutter ]
+            , [ CmdHorizontalGutterModeOn gutter ]
             )
 
         GrabVerticalGutter gutter ->
             ( model
-            , [ EmitVerticalGutterModeOn gutter ]
+            , [ CmdVerticalGutterModeOn gutter ]
             )
 
         EditorItemMsg rec ->
             let
-                ( newEditorItem, emit ) =
+                ( newEditorItem, cmdList ) =
                     model
                         |> getGroup
                         |> getEditorItem rec.ref
@@ -303,12 +303,12 @@ update msg project model =
             in
             ( model
                 |> mapGroup (setEditorItem rec.ref newEditorItem)
-            , emit
+            , cmdList
             )
 
         EditorItemMsgToActive editorItemMsg ->
             let
-                ( newEditorItem, emit ) =
+                ( newEditorItem, cmdList ) =
                     model
                         |> getGroup
                         |> getEditorItem (getActiveEditorRef model)
@@ -316,12 +316,12 @@ update msg project model =
             in
             ( model
                 |> mapGroup (setEditorItem (getActiveEditorRef model) newEditorItem)
-            , emit
+            , cmdList
             )
 
         Focus ->
             let
-                ( newEditorItem, emit ) =
+                ( newEditorItem, cmdList ) =
                     model
                         |> getGroup
                         |> getEditorItem (getActiveEditorRef model)
@@ -329,12 +329,12 @@ update msg project model =
             in
             ( model
                 |> mapGroup (setEditorItem (getActiveEditorRef model) newEditorItem)
-            , emit
+            , cmdList
             )
 
         Blur ->
             let
-                ( newEditorItem, emit ) =
+                ( newEditorItem, cmdList ) =
                     model
                         |> getGroup
                         |> getEditorItem (getActiveEditorRef model)
@@ -342,14 +342,14 @@ update msg project model =
             in
             ( model
                 |> mapGroup (setEditorItem (getActiveEditorRef model) newEditorItem)
-            , emit
+            , cmdList
             )
 
 
-updateChangeActiveEditor : EditorIndex -> Data.Project.Project -> Model -> ( Model, List Emit )
+updateChangeActiveEditor : EditorIndex -> Data.Project.Project -> Model -> ( Model, List Cmd )
 updateChangeActiveEditor index project model =
     let
-        ( beforeActiveEditorNewModel, beforeActiveEmit ) =
+        ( beforeActiveEditorNewModel, beforeActiveCmd ) =
             model
                 |> getGroup
                 |> getEditorItem (getActiveEditorRef model)
@@ -361,7 +361,7 @@ updateChangeActiveEditor index project model =
                 |> setActiveEditorRef index
                 |> mouseLeaveAddGutter
 
-        ( newEditorItem, emit ) =
+        ( newEditorItem, cmd ) =
             newModel
                 |> getGroup
                 |> getEditorItem index
@@ -369,56 +369,56 @@ updateChangeActiveEditor index project model =
     in
     ( newModel
         |> mapGroup (setEditorItem index newEditorItem)
-    , beforeActiveEmit ++ emit
+    , beforeActiveCmd ++ cmd
     )
 
 
-{-| エディタにフォーカスが当たったことを知らせて、新しいエディタとEmitを返す
+{-| エディタにフォーカスが当たったことを知らせる
 -}
-focusEditor : Data.Project.Project -> EditorModel -> ( EditorModel, List Emit )
+focusEditor : Data.Project.Project -> EditorModel -> ( EditorModel, List Cmd )
 focusEditor project editorItem =
     case editorItem of
         ModuleEditor model ->
             let
-                ( newModel, emitMaybe ) =
+                ( newModel, cmdList ) =
                     Panel.Editor.Module.update Panel.Editor.Module.MsgFocusThisEditor project model
             in
             ( ModuleEditor newModel
-            , emitMaybe |> List.map moduleEditorEmitToEmit
+            , cmdList |> List.map moduleEditorCmdToCmd
             )
 
         _ ->
             ( editorItem, [] )
 
 
-{-| エディタにフォーカスが外れたことを知らせて、エディタのModelを更新してEmitを返す
+{-| エディタにフォーカスが外れたことを知らせる
 -}
-blurEditor : Data.Project.Project -> EditorModel -> ( EditorModel, List Emit )
+blurEditor : Data.Project.Project -> EditorModel -> ( EditorModel, List Cmd )
 blurEditor project editorItem =
     case editorItem of
         ModuleEditor model ->
             let
-                ( newModel, emitMaybe ) =
+                ( newModel, cmdList ) =
                     Panel.Editor.Module.update Panel.Editor.Module.MsgBlurThisEditor project model
             in
             ( ModuleEditor newModel
-            , emitMaybe |> List.map moduleEditorEmitToEmit
+            , cmdList |> List.map moduleEditorCmdToCmd
             )
 
         _ ->
             ( editorItem, [] )
 
 
-updateEditor : EditorMsg -> Data.Project.Project -> EditorModel -> ( EditorModel, List Emit )
+updateEditor : EditorMsg -> Data.Project.Project -> EditorModel -> ( EditorModel, List Cmd )
 updateEditor editorItemMsg project editorItem =
     case ( editorItemMsg, editorItem ) of
         ( ModuleEditorMsg msg, ModuleEditor model ) ->
             let
-                ( newModel, emitList ) =
+                ( newModel, cmdList ) =
                     Panel.Editor.Module.update msg project model
             in
             ( ModuleEditor newModel
-            , emitList |> List.map moduleEditorEmitToEmit
+            , cmdList |> List.map moduleEditorCmdToCmd
             )
 
         ( EditorKeyConfigMsg msg, EditorKeyConfig model ) ->
@@ -436,22 +436,20 @@ updateEditor editorItemMsg project editorItem =
             )
 
 
-{-| モジュールエディタのEmitをEditorGroupのEmitに変換する
--}
-moduleEditorEmitToEmit : Panel.Editor.Module.Emit -> Emit
-moduleEditorEmitToEmit emit =
-    case emit of
-        Panel.Editor.Module.EmitSetTextAreaValue text ->
-            EmitSetTextAreaValue text
+moduleEditorCmdToCmd : Panel.Editor.Module.Cmd -> Cmd
+moduleEditorCmdToCmd cmd =
+    case cmd of
+        Panel.Editor.Module.CmdSetTextAreaValue text ->
+            CmdSetTextAreaValue text
 
-        Panel.Editor.Module.EmitFocusEditTextAea ->
-            EmitFocusEditTextAea
+        Panel.Editor.Module.CmdFocusEditTextAea ->
+            CmdFocusEditTextAea
 
-        Panel.Editor.Module.EmitElementScrollIntoView id ->
-            EmitElementScrollIntoView id
+        Panel.Editor.Module.CmdElementScrollIntoView id ->
+            CmdElementScrollIntoView id
 
         Panel.Editor.Module.None ->
-            EmitNone
+            CmdNone
 
 
 {-| 右端と下の端にある表示するエディタを増やすのボタンをおしたら、エディタ全体がどう変わるかと新しくアクティブになるエディタを返す

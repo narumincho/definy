@@ -17,6 +17,7 @@ import Panel.Editor.Module
 import Panel.EditorGroup
 import Panel.EditorItemSource
 import Panel.Side
+import Task
 import Url
 import Utility.ListExtra
 import Utility.Map
@@ -178,13 +179,8 @@ init :
     -> ( Model, Cmd Msg )
 init { user, language } =
     let
-        ( editorPanelModel, emitListFromEditorGroupPanel ) =
+        ( editorPanelModel, editorGroupPanelCmd ) =
             Panel.EditorGroup.initModel
-
-        ( msgFromEditorGroupPanel, cmdFromEditorGroupPanel ) =
-            emitListFromEditorGroupPanel
-                |> List.map editorPanelEmitToMsg
-                |> Utility.ListExtra.listTupleListToTupleList
 
         model =
             Model
@@ -205,14 +201,11 @@ init { user, language } =
                 , language = Data.Language.languageFromString language
                 }
     in
-    updateFromList
-        msgFromEditorGroupPanel
-        model
-        |> Tuple.mapSecond
-            (\c ->
-                Cmd.batch
-                    (cmdFromEditorGroupPanel ++ [ c ])
-            )
+    ( model
+    , editorGroupPanelCmd
+        |> List.map editorPanelCmdToCmd
+        |> Cmd.batch
+    )
 
 
 
@@ -1018,26 +1011,29 @@ toGutterMode gutter (Model rec) =
 sidePanelUpdate : Panel.Side.Msg -> Model -> ( Model, Cmd Msg )
 sidePanelUpdate msg model =
     let
-        ( sidePanelModel, emitMsg ) =
+        ( sidePanelModel, cmdList ) =
             getSidePanelModel model
                 |> Panel.Side.update
                     msg
     in
-    model
+    ( model
         |> setSidePanelModel sidePanelModel
-        |> updateFromList (emitMsg |> List.map sidePanelEmitToMsg)
+    , cmdList |> List.map sidePanelCmdToCmd |> Cmd.batch
+    )
 
 
-{-| ツリーパネルで発生したEmitを全体のMsgに変換する
+{-| ツリーパネルで発生したCmdを全体のCmdに変換する
 -}
-sidePanelEmitToMsg : Panel.Side.Emit -> Msg
-sidePanelEmitToMsg emit =
-    case emit of
-        Panel.Side.EmitLogOutRequest ->
-            LogOutRequest
+sidePanelCmdToCmd : Panel.Side.Cmd -> Cmd Msg
+sidePanelCmdToCmd cmd =
+    case cmd of
+        Panel.Side.CmdLogOutRequest ->
+            Task.succeed LogOutRequest
+                |> Task.perform identity
 
-        Panel.Side.EmitLogInRequest service ->
-            LogInRequest service
+        Panel.Side.CmdLogInRequest service ->
+            Task.succeed (LogInRequest service)
+                |> Task.perform identity
 
 
 {-| エディタグループパネルの更新
@@ -1045,62 +1041,46 @@ sidePanelEmitToMsg emit =
 editorPanelUpdate : Panel.EditorGroup.Msg -> Model -> ( Model, Cmd Msg )
 editorPanelUpdate msg model =
     let
-        ( editorPanelModel, emitMsg ) =
+        ( editorPanelModel, cmdList ) =
             Panel.EditorGroup.update
                 msg
                 (getProject model)
                 (getEditorGroupPanelModel model)
-
-        ( nextMsg, cmd ) =
-            emitMsg
-                |> List.map editorPanelEmitToMsg
-                |> Utility.ListExtra.listTupleListToTupleList
     in
-    model
-        |> setEditorGroupPanelModel editorPanelModel
-        |> updateFromList nextMsg
-        |> Tuple.mapSecond (\next -> Cmd.batch (cmd ++ [ next ]))
+    ( model |> setEditorGroupPanelModel editorPanelModel
+    , cmdList |> List.map editorPanelCmdToCmd |> Cmd.batch
+    )
 
 
 {-| エディタグループパネルの更新
 -}
-editorPanelEmitToMsg : Panel.EditorGroup.Emit -> ( List Msg, List (Cmd Msg) )
-editorPanelEmitToMsg emit =
-    case emit of
-        Panel.EditorGroup.EmitVerticalGutterModeOn gutterVertical ->
-            ( [ ToResizeGutterMode (GutterEditorGroupPanelVertical gutterVertical) ]
-            , []
-            )
+editorPanelCmdToCmd : Panel.EditorGroup.Cmd -> Cmd Msg
+editorPanelCmdToCmd cmd =
+    case cmd of
+        Panel.EditorGroup.CmdVerticalGutterModeOn gutterVertical ->
+            Task.succeed
+                (ToResizeGutterMode (GutterEditorGroupPanelVertical gutterVertical))
+                |> Task.perform identity
 
-        Panel.EditorGroup.EmitHorizontalGutterModeOn gutterHorizontal ->
-            ( [ ToResizeGutterMode (GutterEditorGroupPanelHorizontal gutterHorizontal) ]
-            , []
-            )
+        Panel.EditorGroup.CmdHorizontalGutterModeOn gutterHorizontal ->
+            Task.succeed
+                (ToResizeGutterMode (GutterEditorGroupPanelHorizontal gutterHorizontal))
+                |> Task.perform identity
 
-        Panel.EditorGroup.EmitSetTextAreaValue string ->
-            ( []
-            , [ setTextAreaValue string ]
-            )
+        Panel.EditorGroup.CmdSetTextAreaValue string ->
+            setTextAreaValue string
 
-        Panel.EditorGroup.EmitFocusEditTextAea ->
-            ( []
-            , [ focusTextArea () ]
-            )
+        Panel.EditorGroup.CmdFocusEditTextAea ->
+            focusTextArea ()
 
-        Panel.EditorGroup.EmitSetClickEventListenerInCapturePhase idString ->
-            ( []
-            , [ setClickEventListenerInCapturePhase idString ]
-            )
+        Panel.EditorGroup.CmdSetClickEventListenerInCapturePhase idString ->
+            setClickEventListenerInCapturePhase idString
 
-        Panel.EditorGroup.EmitElementScrollIntoView id ->
-            ( []
-            , [ elementScrollIntoView id ]
-            )
+        Panel.EditorGroup.CmdElementScrollIntoView id ->
+            elementScrollIntoView id
 
-        Panel.EditorGroup.EmitNone ->
-            ( []
-            , []
-            )
+        Panel.EditorGroup.CmdNone ->
+            Cmd.none
 
 
 {-| プロジェクトを取得する

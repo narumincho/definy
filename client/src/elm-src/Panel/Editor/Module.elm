@@ -1,5 +1,5 @@
 module Panel.Editor.Module exposing
-    ( Emit(..)
+    ( Cmd(..)
     , Model
     , Msg(..)
     , getTargetModuleIndex
@@ -74,10 +74,10 @@ type Msg
     | MsgBlurThisEditor
 
 
-type Emit
-    = EmitSetTextAreaValue String
-    | EmitFocusEditTextAea
-    | EmitElementScrollIntoView String
+type Cmd
+    = CmdSetTextAreaValue String
+    | CmdFocusEditTextAea
+    | CmdElementScrollIntoView String
     | None
 
 
@@ -226,7 +226,7 @@ getActive (Model { active }) =
 -}
 
 
-update : Msg -> Data.Project.Project -> Model -> ( Model, List Emit )
+update : Msg -> Data.Project.Project -> Model -> ( Model, List Cmd )
 update msg project model =
     let
         targetModule =
@@ -327,7 +327,7 @@ update msg project model =
 
 {-| アクティブな対象を変更する
 -}
-setActive : Data.Project.Project -> Active -> Model -> ( Model, List Emit )
+setActive : Data.Project.Project -> Active -> Model -> ( Model, List Cmd )
 setActive project active (Model rec) =
     let
         targetModule =
@@ -343,13 +343,13 @@ setActive project active (Model rec) =
                 []
 
             ActiveReadMe ActiveReadMeSelf ->
-                [ EmitElementScrollIntoView readMeId ]
+                [ CmdElementScrollIntoView readMeId ]
 
             ActiveReadMe ActiveReadMeText ->
-                [ EmitFocusEditTextAea, EmitElementScrollIntoView readMeId ]
+                [ CmdFocusEditTextAea, CmdElementScrollIntoView readMeId ]
 
             ActiveTypeDefList _ ->
-                [ EmitElementScrollIntoView typeDefId ]
+                [ CmdElementScrollIntoView typeDefId ]
 
             ActivePartDefList partDefListActive ->
                 setActivePartDefList partDefListActive
@@ -359,25 +359,25 @@ setActive project active (Model rec) =
     )
 
 
-setActivePartDefList : PartDefListActive -> List Emit
+setActivePartDefList : PartDefListActive -> List Cmd
 setActivePartDefList partDefListActive =
     case partDefListActive of
         ActivePartDefListSelf ->
-            [ EmitElementScrollIntoView partDefinitionId ]
+            [ CmdElementScrollIntoView partDefinitionId ]
 
         ActivePartDef ( partDefIndex, ActivePartDefSelf ) ->
-            [ EmitElementScrollIntoView (partDefElementId partDefIndex)
+            [ CmdElementScrollIntoView (partDefElementId partDefIndex)
             ]
 
         ActivePartDef ( partDefIndex, ActivePartDefName NameEditSelect ) ->
-            [ EmitFocusEditTextAea
-            , EmitSetTextAreaValue ""
-            , EmitElementScrollIntoView (partDefElementId partDefIndex)
+            [ CmdFocusEditTextAea
+            , CmdSetTextAreaValue ""
+            , CmdElementScrollIntoView (partDefElementId partDefIndex)
             ]
 
         ActivePartDef ( partDefIndex, ActivePartDefName NameEditText ) ->
-            [ EmitFocusEditTextAea
-            , EmitElementScrollIntoView (partDefElementId partDefIndex)
+            [ CmdFocusEditTextAea
+            , CmdElementScrollIntoView (partDefElementId partDefIndex)
             ]
 
         ActivePartDef ( partDefIndex, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) ) ->
@@ -388,58 +388,58 @@ setActivePartDefList partDefListActive =
                         |> Maybe.map (Tuple.first >> L.toSmallString)
                         |> Maybe.withDefault ""
             in
-            [ EmitFocusEditTextAea
-            , EmitSetTextAreaValue name
-            , EmitElementScrollIntoView (partDefElementId partDefIndex)
+            [ CmdFocusEditTextAea
+            , CmdSetTextAreaValue name
+            , CmdElementScrollIntoView (partDefElementId partDefIndex)
             ]
 
         ActivePartDef ( partDefIndex, ActivePartDefType TypeEditSelect ) ->
-            [ EmitFocusEditTextAea
-            , EmitSetTextAreaValue ""
-            , EmitElementScrollIntoView (partDefElementId partDefIndex)
+            [ CmdFocusEditTextAea
+            , CmdSetTextAreaValue ""
+            , CmdElementScrollIntoView (partDefElementId partDefIndex)
             ]
 
         ActivePartDef ( partDefIndex, ActivePartDefExpr termOpPos ) ->
-            [ EmitElementScrollIntoView (partDefElementId partDefIndex) ]
+            [ CmdElementScrollIntoView (partDefElementId partDefIndex) ]
                 ++ setActiveTermOpPos termOpPos
 
 
-setActiveTermOpPos : TermOpPos -> List Emit
+setActiveTermOpPos : TermOpPos -> List Cmd
 setActiveTermOpPos termOpPos =
     case termOpPos of
         TermOpSelf ->
-            [ EmitFocusEditTextAea
-            , EmitSetTextAreaValue ""
+            [ CmdFocusEditTextAea
+            , CmdSetTextAreaValue ""
             ]
 
         TermOpHead ->
-            [ EmitFocusEditTextAea
-            , EmitSetTextAreaValue ""
+            [ CmdFocusEditTextAea
+            , CmdSetTextAreaValue ""
             ]
 
         TermOpTerm _ termType ->
             setActiveTermType termType
 
         TermOpOp _ ->
-            [ EmitFocusEditTextAea
-            , EmitSetTextAreaValue ""
+            [ CmdFocusEditTextAea
+            , CmdSetTextAreaValue ""
             ]
 
 
-setActiveTermType : TermType -> List Emit
+setActiveTermType : TermType -> List Cmd
 setActiveTermType termType =
     case termType of
         TypeNoChildren ExprEditSelect ->
-            [ EmitFocusEditTextAea
-            , EmitSetTextAreaValue ""
+            [ CmdFocusEditTextAea
+            , CmdSetTextAreaValue ""
             ]
 
         TypeNoChildren ExprEditText ->
-            [ EmitFocusEditTextAea
+            [ CmdFocusEditTextAea
             ]
 
         TypeNoChildren (ExprEditSelectSuggestion _) ->
-            [ EmitFocusEditTextAea
+            [ CmdFocusEditTextAea
             ]
 
         TypeParentheses termOpPos ->
@@ -449,7 +449,7 @@ setActiveTermType termType =
             setActiveLambdaPos lambdaPos
 
 
-setActiveLambdaPos : LambdaPos -> List Emit
+setActiveLambdaPos : LambdaPos -> List Cmd
 setActiveLambdaPos lambdaPos =
     case lambdaPos of
         LambdaSelf ->
@@ -462,7 +462,7 @@ setActiveLambdaPos lambdaPos =
             setActiveBranchPos branchPos
 
 
-setActiveBranchPos : BranchPos -> List Emit
+setActiveBranchPos : BranchPos -> List Cmd
 setActiveBranchPos branchPos =
     case branchPos of
         BranchSelf ->
@@ -1662,7 +1662,7 @@ branchPosToParent branchPos =
 
 {-| 候補の選択を次に進める
 -}
-suggestionNext : Data.Project.Module.Module -> Data.Project.Project -> Model -> ( Model, List Emit )
+suggestionNext : Data.Project.Module.Module -> Data.Project.Project -> Model -> ( Model, List Cmd )
 suggestionNext targetModule project model =
     case getActive model of
         ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
@@ -1671,7 +1671,7 @@ suggestionNext targetModule project model =
 
             else
                 let
-                    ( newModel, emitList ) =
+                    ( newModel, cmdList ) =
                         model
                             |> setActive
                                 project
@@ -1689,11 +1689,11 @@ suggestionNext targetModule project model =
                                 )
                 in
                 ( newModel
-                , suggestionSelectChangedThenNameChangeEmit
+                , suggestionSelectChangedThenNameChangeCmd
                     (min (List.length suggestionNameList - 1) (index + 1))
                     partDefIndex
                     (getTargetModuleIndex newModel)
-                    ++ emitList
+                    ++ cmdList
                 )
 
         ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName NameEditText )) ->
@@ -1701,7 +1701,7 @@ suggestionNext targetModule project model =
                 searchName =
                     Nothing
 
-                ( newModel, emitList ) =
+                ( newModel, cmdList ) =
                     model
                         |> setActive
                             project
@@ -1719,11 +1719,11 @@ suggestionNext targetModule project model =
                             )
             in
             ( newModel
-            , suggestionSelectChangedThenNameChangeEmit
+            , suggestionSelectChangedThenNameChangeCmd
                 0
                 partDefIndex
                 (getTargetModuleIndex newModel)
-                ++ emitList
+                ++ cmdList
             )
 
         _ ->
@@ -1741,7 +1741,7 @@ suggestionNext targetModule project model =
 
 {-| 候補の選択を前に戻す
 -}
-suggestionPrev : Data.Project.Module.Module -> Data.Project.Project -> Model -> ( Model, List Emit )
+suggestionPrev : Data.Project.Module.Module -> Data.Project.Project -> Model -> ( Model, List Cmd )
 suggestionPrev targetModule project model =
     case getActive model of
         ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName NameEditText )) ->
@@ -1749,7 +1749,7 @@ suggestionPrev targetModule project model =
                 searchName =
                     Nothing
 
-                ( newModel, emitList ) =
+                ( newModel, cmdList ) =
                     model
                         |> setActive
                             project
@@ -1767,11 +1767,11 @@ suggestionPrev targetModule project model =
                             )
             in
             ( newModel
-            , suggestionSelectChangedThenNameChangeEmit
+            , suggestionSelectChangedThenNameChangeCmd
                 (List.length suggestionNameList - 1)
                 partDefIndex
                 (getTargetModuleIndex newModel)
-                ++ emitList
+                ++ cmdList
             )
 
         ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName (NameEditSuggestionSelect { index, searchName }) )) ->
@@ -1780,7 +1780,7 @@ suggestionPrev targetModule project model =
 
             else
                 let
-                    ( newModel, emitList ) =
+                    ( newModel, cmdList ) =
                         model
                             |> setActive
                                 project
@@ -1798,11 +1798,11 @@ suggestionPrev targetModule project model =
                                 )
                 in
                 ( newModel
-                , suggestionSelectChangedThenNameChangeEmit
+                , suggestionSelectChangedThenNameChangeCmd
                     (index - 1)
                     partDefIndex
                     (getTargetModuleIndex newModel)
-                    ++ emitList
+                    ++ cmdList
                 )
 
         _ ->
@@ -1813,10 +1813,10 @@ suggestionPrev targetModule project model =
 
 {-| 名前の候補選択モードからテキスト編集モードへ
 -}
-nameEditSuggestionToEditText : Data.Id.PartId -> Maybe L.Label -> Data.Project.Project -> Model -> ( Model, List Emit )
+nameEditSuggestionToEditText : Data.Id.PartId -> Maybe L.Label -> Data.Project.Project -> Model -> ( Model, List Cmd )
 nameEditSuggestionToEditText partDefIndex searchName project model =
     let
-        ( newModel, emitList ) =
+        ( newModel, cmdList ) =
             model
                 |> setActive
                     project
@@ -1830,15 +1830,15 @@ nameEditSuggestionToEditText partDefIndex searchName project model =
     in
     ( newModel
     , []
-        ++ emitList
-        ++ [ EmitSetTextAreaValue
+        ++ cmdList
+        ++ [ CmdSetTextAreaValue
                 (searchName |> Maybe.map L.toSmallString |> Maybe.withDefault "")
            ]
     )
 
 
-suggestionSelectChangedThenNameChangeEmit : Int -> Data.Id.PartId -> Data.Id.ModuleId -> List Emit
-suggestionSelectChangedThenNameChangeEmit suggestIndex partDefId moduleId =
+suggestionSelectChangedThenNameChangeCmd : Int -> Data.Id.PartId -> Data.Id.ModuleId -> List Cmd
+suggestionSelectChangedThenNameChangeCmd suggestIndex partDefId moduleId =
     case suggestionNameList |> Utility.ListExtra.getAt suggestIndex of
         Just ( suggestName, _ ) ->
             []
@@ -1939,7 +1939,7 @@ confirmTermType termType =
 
 {-| テキストで文字を入力されたら
 -}
-input : String -> Data.Project.Project -> Data.Project.Module.Module -> Model -> ( Model, List Emit )
+input : String -> Data.Project.Project -> Data.Project.Module.Module -> Model -> ( Model, List Cmd )
 input string project targetModule model =
     case getActive model of
         ActiveNone ->
@@ -1961,7 +1961,7 @@ input string project targetModule model =
 
 {-| ReadMeがアクティブな時の入力
 -}
-inputInReadMe : String -> ReadMeActive -> Model -> ( Model, List Emit )
+inputInReadMe : String -> ReadMeActive -> Model -> ( Model, List Cmd )
 inputInReadMe string readMeActive model =
     case readMeActive of
         ActiveReadMeText ->
@@ -1977,10 +1977,10 @@ inputInReadMe string readMeActive model =
 
 {-| PartDefListがアクティブな時の入力
 -}
-inputInPartDefList : String -> Data.Project.Project -> Data.Project.Module.Module -> PartDefListActive -> Model -> ( Model, List Emit )
+inputInPartDefList : String -> Data.Project.Project -> Data.Project.Module.Module -> PartDefListActive -> Model -> ( Model, List Cmd )
 inputInPartDefList string project targetModule partDefListActive model =
     let
-        ( active, emitList ) =
+        ( active, cmdList ) =
             case partDefListActive of
                 ActivePartDefListSelf ->
                     ( getActive model
@@ -2020,36 +2020,36 @@ inputInPartDefList string project targetModule partDefListActive model =
                     , []
                     )
 
-        ( newModel, activeEmitList ) =
+        ( newModel, activeCmdList ) =
             model
                 |> setActive project active
     in
     ( newModel
-    , emitList ++ activeEmitList
+    , cmdList ++ activeCmdList
     )
 
 
-parserBeginWithName : String -> Data.Id.PartId -> Data.Id.ModuleId -> ( Active, List Emit )
+parserBeginWithName : String -> Data.Id.PartId -> Data.Id.ModuleId -> ( Active, List Cmd )
 parserBeginWithName string partDefIndex moduleRef =
     case Parser.beginWithName (Parser.SimpleChar.fromString string) of
         Parser.BeginWithNameEndName { name, textAreaValue } ->
             ( ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefName NameEditText ))
-            , [ emitSetName moduleRef partDefIndex name ]
+            , [ cmdSetName moduleRef partDefIndex name ]
             )
 
         Parser.BeginWithNameEndType { name, type_, textAreaValue } ->
             if Data.Project.PartDef.isEmptyType type_ then
                 ( ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefType TypeEditSelect ))
-                , [ emitSetName moduleRef partDefIndex name
-                  , EmitSetTextAreaValue ""
+                , [ cmdSetName moduleRef partDefIndex name
+                  , CmdSetTextAreaValue ""
                   ]
                 )
 
             else
                 ( ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefType TypeEditSelect ))
-                , [ emitSetName moduleRef partDefIndex name
-                  , emitSetType moduleRef partDefIndex type_
-                  , textAreaValueToSetTextEmit textAreaValue
+                , [ cmdSetName moduleRef partDefIndex name
+                  , cmdSetType moduleRef partDefIndex type_
+                  , textAreaValueToSetTextCmd textAreaValue
                   ]
                 )
 
@@ -2066,16 +2066,16 @@ parserBeginWithName string partDefIndex moduleRef =
                         )
                     )
                 )
-            , [ emitSetName moduleRef partDefIndex name
-              , EmitSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
+            , [ cmdSetName moduleRef partDefIndex name
+              , CmdSetTextAreaValue (textAreaValue |> List.map Tuple.first |> String.fromList)
               ]
                 ++ (if Data.Project.PartDef.isEmptyType type_ then
                         []
 
                     else
-                        [ emitSetType moduleRef partDefIndex type_ ]
+                        [ cmdSetType moduleRef partDefIndex type_ ]
                    )
-                ++ [ emitSetExpr moduleRef partDefIndex (Expr.make headTerm opAndTermList)
+                ++ [ cmdSetExpr moduleRef partDefIndex (Expr.make headTerm opAndTermList)
                    ]
             )
 
@@ -2086,22 +2086,22 @@ parserBeginWithName string partDefIndex moduleRef =
                     , ActivePartDefExpr (TermOpOp (List.length opAndTermList))
                     )
                 )
-            , [ emitSetName moduleRef partDefIndex name
-              , emitSetType moduleRef partDefIndex type_
-              , emitSetExpr moduleRef
+            , [ cmdSetName moduleRef partDefIndex name
+              , cmdSetType moduleRef partDefIndex type_
+              , cmdSetExpr moduleRef
                     partDefIndex
                     (Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.None ) ]))
-              , textAreaValueToSetTextEmit textAreaValue
+              , textAreaValueToSetTextCmd textAreaValue
               ]
             )
 
 
-parserBeginWithType : String -> Data.Id.PartId -> Data.Id.ModuleId -> ( Active, List Emit )
+parserBeginWithType : String -> Data.Id.PartId -> Data.Id.ModuleId -> ( Active, List Cmd )
 parserBeginWithType string partDefIndex moduleRef =
     case Parser.beginWithType (Parser.SimpleChar.fromString string) of
         Parser.BeginWithTypeEndType { type_, textAreaValue } ->
             ( ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefType TypeEditSelect ))
-            , [ emitSetType moduleRef partDefIndex type_ ]
+            , [ cmdSetType moduleRef partDefIndex type_ ]
             )
 
         Parser.BeginWithTypeEndExprTerm { type_, headTerm, opAndTermList, textAreaValue } ->
@@ -2118,26 +2118,26 @@ parserBeginWithType string partDefIndex moduleRef =
                         )
                     )
                 )
-            , [ emitSetType moduleRef partDefIndex type_
-              , emitSetExpr moduleRef
+            , [ cmdSetType moduleRef partDefIndex type_
+              , cmdSetExpr moduleRef
                     partDefIndex
                     (Expr.make headTerm opAndTermList)
-              , textAreaValueToSetTextEmit textAreaValue
+              , textAreaValueToSetTextCmd textAreaValue
               ]
             )
 
         Parser.BeginWithTypeEndExprOp { type_, headTerm, opAndTermList, lastOp, textAreaValue } ->
             ( ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefExpr TermOpSelf ))
-            , [ emitSetType moduleRef partDefIndex type_
-              , emitSetExpr moduleRef
+            , [ cmdSetType moduleRef partDefIndex type_
+              , cmdSetExpr moduleRef
                     partDefIndex
                     (Expr.make headTerm (opAndTermList ++ [ ( lastOp, Expr.None ) ]))
-              , textAreaValueToSetTextEmit textAreaValue
+              , textAreaValueToSetTextCmd textAreaValue
               ]
             )
 
 
-parserInExpr : String -> Data.Id.PartId -> Data.Id.ModuleId -> ( Active, List Emit )
+parserInExpr : String -> Data.Id.PartId -> Data.Id.ModuleId -> ( Active, List Cmd )
 parserInExpr string index moduleRef =
     case Parser.beginWithExprHead (Parser.SimpleChar.fromString string) of
         Parser.BeginWithExprHeadEndTerm { headTerm, opAndTermList, textAreaValue } ->
@@ -2151,7 +2151,7 @@ parserInExpr string index moduleRef =
                         )
                     )
                 )
-            , [ emitSetExpr moduleRef
+            , [ cmdSetExpr moduleRef
                     index
                     (Expr.make headTerm opAndTermList)
               ]
@@ -2159,7 +2159,7 @@ parserInExpr string index moduleRef =
                         []
 
                     else
-                        [ textAreaValueToSetTextEmit textAreaValue ]
+                        [ textAreaValueToSetTextCmd textAreaValue ]
                    )
             )
 
@@ -2173,15 +2173,15 @@ parserInExpr string index moduleRef =
                         )
                     )
                 )
-            , [ emitSetExpr moduleRef
+            , [ cmdSetExpr moduleRef
                     index
                     (Expr.make headTerm opAndTermList)
-              , textAreaValueToSetTextEmit textAreaValue
+              , textAreaValueToSetTextCmd textAreaValue
               ]
             )
 
 
-parserBeginWithTerm : String -> Data.Id.PartId -> Data.Id.ModuleId -> Int -> Expr.Expr -> ( Active, List Emit )
+parserBeginWithTerm : String -> Data.Id.PartId -> Data.Id.ModuleId -> Int -> Expr.Expr -> ( Active, List Cmd )
 parserBeginWithTerm string partDefIndex moduleRef termIndex expr =
     case Parser.beginWithExprTerm 0 (Parser.SimpleChar.fromString string) of
         Parser.BeginWithTermEndTerm { headTerm, opAndTermList, textAreaValue } ->
@@ -2200,7 +2200,7 @@ parserBeginWithTerm string partDefIndex moduleRef termIndex expr =
                         []
 
                     else
-                        [ textAreaValueToSetTextEmit textAreaValue ]
+                        [ textAreaValueToSetTextCmd textAreaValue ]
                    )
             )
 
@@ -2214,11 +2214,11 @@ parserBeginWithTerm string partDefIndex moduleRef termIndex expr =
                         )
                     )
                 )
-            , [ textAreaValueToSetTextEmit textAreaValue ]
+            , [ textAreaValueToSetTextCmd textAreaValue ]
             )
 
 
-parserBeginWithOp : String -> Data.Id.PartId -> Data.Id.ModuleId -> Int -> Expr.Expr -> ( Active, List Emit )
+parserBeginWithOp : String -> Data.Id.PartId -> Data.Id.ModuleId -> Int -> Expr.Expr -> ( Active, List Cmd )
 parserBeginWithOp string partDefIndex moduleRef opIndex expr =
     case Parser.beginWithExprOp 0 (Parser.SimpleChar.fromString string) of
         Parser.BeginWithOpEndTerm { headOp, termAndOpList, lastTerm, textAreaValue } ->
@@ -2232,7 +2232,7 @@ parserBeginWithOp string partDefIndex moduleRef opIndex expr =
                         )
                     )
                 )
-            , [ textAreaValueToSetTextEmit textAreaValue ]
+            , [ textAreaValueToSetTextCmd textAreaValue ]
             )
 
         Parser.BeginWithOpEndOp { headOp, termAndOpList, textAreaValue } ->
@@ -2250,34 +2250,34 @@ parserBeginWithOp string partDefIndex moduleRef opIndex expr =
                         []
 
                     else
-                        [ textAreaValueToSetTextEmit textAreaValue ]
+                        [ textAreaValueToSetTextCmd textAreaValue ]
                    )
             )
 
 
-textAreaValueToSetTextEmit : List ( Char, Bool ) -> Emit
-textAreaValueToSetTextEmit =
-    List.map Tuple.first >> String.fromList >> EmitSetTextAreaValue
+textAreaValueToSetTextCmd : List ( Char, Bool ) -> Cmd
+textAreaValueToSetTextCmd =
+    List.map Tuple.first >> String.fromList >> CmdSetTextAreaValue
 
 
-{-| 名前を変更させるためのEmit
+{-| 名前を変更させるためのCmd
 -}
-emitSetName : Data.Id.ModuleId -> Data.Id.PartId -> Maybe L.Label -> Emit
-emitSetName moduleIndex partDefIndex name =
+cmdSetName : Data.Id.ModuleId -> Data.Id.PartId -> Maybe L.Label -> Cmd
+cmdSetName moduleIndex partDefIndex name =
     None
 
 
-{-| 型を変更させるためのEmit
+{-| 型を変更させるためのCmd
 -}
-emitSetType : Data.Id.ModuleId -> Data.Id.PartId -> Data.Project.PartDef.Type -> Emit
-emitSetType moduleIndex partDefIndex type_ =
+cmdSetType : Data.Id.ModuleId -> Data.Id.PartId -> Data.Project.PartDef.Type -> Cmd
+cmdSetType moduleIndex partDefIndex type_ =
     None
 
 
-{-| 式を変更させるためのEmit
+{-| 式を変更させるためのCmd
 -}
-emitSetExpr : Data.Id.ModuleId -> Data.Id.PartId -> Expr.Expr -> Emit
-emitSetExpr moduleIndex partDefIndex expr =
+cmdSetExpr : Data.Id.ModuleId -> Data.Id.PartId -> Expr.Expr -> Cmd
+cmdSetExpr moduleIndex partDefIndex expr =
     None
 
 
@@ -2288,7 +2288,7 @@ emitSetExpr moduleIndex partDefIndex expr =
 -}
 
 
-increaseValue : Data.Project.Module.Module -> Model -> ( Model, List Emit )
+increaseValue : Data.Project.Module.Module -> Model -> ( Model, List Cmd )
 increaseValue targetModule model =
     case getActive model of
         ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefExpr termOpPos )) ->
@@ -2351,7 +2351,7 @@ termTypeIncreaseValue termType term =
 -}
 
 
-decreaseValue : Data.Project.Module.Module -> Model -> ( Model, List Emit )
+decreaseValue : Data.Project.Module.Module -> Model -> ( Model, List Cmd )
 decreaseValue targetModule model =
     case getActive model of
         ActivePartDefList (ActivePartDef ( partDefIndex, ActivePartDefExpr termOpPos )) ->
@@ -2414,7 +2414,7 @@ termTypeDecreaseValue termType term =
 -}
 
 
-changeResultVisible : Int -> Data.Id.PartId -> ResultVisible -> Model -> ( Model, List Emit )
+changeResultVisible : Int -> Data.Id.PartId -> ResultVisible -> Model -> ( Model, List Cmd )
 changeResultVisible partDefNum (Data.Id.PartId index) resultVisivle (Model rec) =
     ( Model
         { rec
@@ -2435,7 +2435,7 @@ changeResultVisible partDefNum (Data.Id.PartId index) resultVisivle (Model rec) 
 
 {-| 候補の選択を前にもどるか、候補が表示されていない状態なら上の要素を選択する
 -}
-suggestionPrevOrSelectUp : Data.Project.Module.Module -> Data.Project.Project -> Model -> ( Model, List Emit )
+suggestionPrevOrSelectUp : Data.Project.Module.Module -> Data.Project.Project -> Model -> ( Model, List Cmd )
 suggestionPrevOrSelectUp targetModule project model =
     model
         |> (case getActive model of
@@ -2452,7 +2452,7 @@ suggestionPrevOrSelectUp targetModule project model =
 
 {-| 候補の選択を次に進めるか、候補が表示されていない状態なら下の要素を選択する
 -}
-suggestionNextOrSelectDown : Data.Project.Module.Module -> Data.Project.Project -> Model -> ( Model, List Emit )
+suggestionNextOrSelectDown : Data.Project.Module.Module -> Data.Project.Project -> Model -> ( Model, List Cmd )
 suggestionNextOrSelectDown targetModule project model =
     model
         |> (case getActive model of

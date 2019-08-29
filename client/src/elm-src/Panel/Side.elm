@@ -1,5 +1,5 @@
 module Panel.Side exposing
-    ( Emit(..)
+    ( Cmd(..)
     , Model
     , Msg(..)
     , Tab
@@ -59,9 +59,9 @@ type Msg
     | MouseUp
 
 
-type Emit
-    = EmitLogOutRequest
-    | EmitLogInRequest Data.SocialLoginService.SocialLoginService
+type Cmd
+    = CmdLogOutRequest
+    | CmdLogInRequest Data.SocialLoginService.SocialLoginService
 
 
 type Tab
@@ -88,12 +88,12 @@ type LogInState
     | LogInStateWaitUrl Data.SocialLoginService.SocialLoginService
 
 
-update : Msg -> Model -> ( Model, List Emit )
+update : Msg -> Model -> ( Model, List Cmd )
 update msg (Model rec) =
     case msg of
         SignOutRequest ->
             ( Model rec
-            , [ EmitLogOutRequest ]
+            , [ CmdLogOutRequest ]
             )
 
         ShowServiceSelectView ->
@@ -115,7 +115,7 @@ update msg (Model rec) =
                 { rec
                     | logInState = LogInStateWaitUrl service
                 }
-            , [ EmitLogInRequest service ]
+            , [ CmdLogInRequest service ]
             )
 
         MouseEnterLogInButton service ->

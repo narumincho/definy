@@ -33,8 +33,8 @@ type Msg
     | ChangeInputDevice InputDevice
 
 
-type Emit
-    = Emit
+type Cmd
+    = Cmd
 
 
 initModel : Model
@@ -45,7 +45,7 @@ initModel =
         }
 
 
-update : Msg -> Model -> ( Model, Maybe Emit )
+update : Msg -> Model -> ( Model, Maybe Cmd )
 update msg (Model rec) =
     case msg of
         SelectKey oneKey ->
