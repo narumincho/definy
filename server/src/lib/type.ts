@@ -181,17 +181,46 @@ export type TypeDefSnapshot = {
 /** 0～fで64文字 256bit SHA-256のハッシュ値 */
 export type TypeDefSnapshotHash = string & { __typeDefObjectBrand: never };
 
-export type TypeBody =
-    | {
-          type: "tag";
-          tags: Array<{ name: Label; parameter: Array<TypeTermOrParenthesis> }>;
-      }
-    | {
-          type: "kernel";
-          kernelType: KernelType;
-      };
+export type TypeBody = TypeBodyTags | TypeBodyKernel;
 
-export type KernelType = "JsNumber" | "JsString" | "JsArray" | "Function";
+export type TypeBodyTags = {
+    type: "tag";
+    tags: Array<TypeBodyTag>;
+};
+
+export type TypeBodyTag = {
+    name: Label;
+    description: string;
+    parameter: Array<TypeTermOrParenthesis>;
+};
+
+export type TypeBodyKernel = {
+    type: "kernel";
+    kernelType: KernelType;
+};
+
+export type KernelType = keyof (typeof kernelTypeValues);
+
+const kernelTypeValues = {
+    jsNumber: {
+        description: "JavaScriptのnumber"
+    },
+    jsString: {
+        description: "JavaScriptのstring"
+    },
+    jsArray: {
+        description: "JavaScriptのArray"
+    },
+    jsFunction: {
+        description: "JavaScriptのFunction"
+    }
+};
+
+export const kernelTypeGraphQLType = new g.GraphQLEnumType({
+    name: "KernelType",
+    description: "内部で表現された型",
+    values: kernelTypeValues
+});
 /*  =============================================================
                         Part Def Snapshot
     =============================================================
@@ -202,7 +231,7 @@ export type PartDefSnapshot = {
     name: Label;
     description: string;
     type: Array<TypeTermOrParenthesis>;
-    expr: Expr;
+    expr: ExprSnapshot;
 };
 
 /** 0～fで64文字 256bit SHA-256のハッシュ値 */
@@ -211,15 +240,24 @@ export type PartDefSnapshotHash = string & { __partDefObjectBrand: never };
 export type PartId = string & { __partIdBrand: never };
 
 export type TypeTermOrParenthesis =
-    | { type: "(" }
-    | { type: ")" }
-    | { type: "ref"; id: TypeId };
+    | TypeTermParenthesisStart
+    | TypeTermParenthesisEnd
+    | TypeTermRef;
 
+export type TypeTermParenthesisStart = {
+    type: "(";
+};
+
+export type TypeTermParenthesisEnd = {
+    type: ")";
+};
+
+export type TypeTermRef = { type: "ref"; typeId: TypeId };
 /*  =============================================================
                             Expr Snapshot
     =============================================================
 */
-export type Expr = {
+export type ExprSnapshot = {
     hash: ExprSnapshotHash;
     value: Array<TermOrParenthesis>;
 };
@@ -228,11 +266,40 @@ export type Expr = {
 export type ExprSnapshotHash = string & { __exprObjectHashBrand: never };
 
 export type TermOrParenthesis =
-    | { type: "(" }
-    | { type: ")" }
-    | { type: "int32"; value: number }
-    | { type: "part"; value: PartId }
-    | { type: "core"; value: "add" | "sub" | "mul" | "div" };
+    | TermParenthesisStart
+    | TermParenthesisEnd
+    | TermNumber
+    | TermPartRef
+    | TermKernel;
+
+export type TermParenthesisStart = { type: "(" };
+export type TermParenthesisEnd = { type: ")" };
+export type TermNumber = { type: "number"; value: number };
+export type TermPartRef = { type: "part"; partId: PartId };
+export type TermKernel = { type: "kernel"; value: KernelTerm };
+
+const kernelTermValues = {
+    add: {
+        description: "+"
+    },
+    sub: {
+        description: "-"
+    },
+    mul: {
+        description: "*"
+    },
+    div: {
+        description: "/"
+    }
+};
+
+export type KernelTerm = keyof typeof kernelTermValues;
+
+export const kernelTermGraphQLType = new g.GraphQLEnumType({
+    name: "KernelTerm",
+    description: "内部で表現された項",
+    values: kernelTermValues
+});
 /*  =============================================================
                             Label
     =============================================================

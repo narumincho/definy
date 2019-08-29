@@ -642,7 +642,7 @@ const databaseLowPartDefSnapshotToLowCost = ({
 });
 
 /* ==========================================
-               Expr Def Snapshot
+               Expr Snapshot
    ==========================================
 */
 type ExprSnapshotLowCost = {
@@ -660,7 +660,7 @@ export const addExprDefSnapshot = async (
     };
 };
 
-export const getExprDefSnapshot = async (
+export const getExprSnapshot = async (
     hash: type.ExprSnapshotHash
 ): Promise<ExprSnapshotLowCost> =>
     databaseLowExprDefSnapshotToLowCost({

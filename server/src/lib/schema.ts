@@ -186,7 +186,7 @@ const userGraphQLType: g.GraphQLObjectType<
                 description: "ユーザーを識別するためのID"
             },
             name: makeObjectField({
-                type: g.GraphQLNonNull(g.GraphQLString),
+                type: g.GraphQLNonNull(type.userNameGraphQLType),
                 description: "名前",
                 args: {},
                 resolve: async (source, args) => {
@@ -793,7 +793,7 @@ const typeDefSnapshotGraphQLType = new g.GraphQLObjectType<
             }),
             description: makeObjectField({
                 type: g.GraphQLNonNull(g.GraphQLString),
-                description: "",
+                description: "型の説明",
                 args: {},
                 resolve: async (source, args) => {
                     if (source.description === undefined) {
@@ -802,7 +802,17 @@ const typeDefSnapshotGraphQLType = new g.GraphQLObjectType<
                     return source.description;
                 }
             }),
-            body: makeObjectField({})
+            body: makeObjectField({
+                type: g.GraphQLNonNull(typeBodyGraphQLType),
+                description: "",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.body === undefined) {
+                        return (await setTypeDefSnapshot(source)).body;
+                    }
+                    return source.body;
+                }
+            })
         })
 });
 
@@ -815,6 +825,107 @@ const setTypeDefSnapshot = async (
     source.body = data.body;
     return data;
 };
+
+const typeBodyGraphQLType = new g.GraphQLUnionType({
+    name: "TypeBody",
+    description: "型がどんなものか表現する",
+    types: () => [typeBodyTags, typeBodyKernel]
+});
+
+const typeBodyTags = new g.GraphQLObjectType({
+    name: "TypeBodyTags",
+    description: "型の本体をタグで構成する",
+    fields: () =>
+        makeObjectFieldMap<type.TypeBodyTags>({
+            type: {
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "常に tag"
+            },
+            tags: {
+                type: graphQLNonNullList(typeBodyTag),
+                description: "タグ"
+            }
+        })
+});
+
+const typeBodyTag = new g.GraphQLObjectType({
+    name: "TypeBodyTag",
+    description: "タグとパラメータ",
+    fields: () =>
+        makeObjectFieldMap<type.TypeBodyTag>({
+            name: {
+                type: g.GraphQLNonNull(type.labelGraphQLType),
+                description: "タグの名前"
+            },
+            description: {
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "タグの説明"
+            },
+            parameter: {
+                type: graphQLNonNullList(typeTermOrParenthesisGraphQLType),
+                description: "タグにつける型"
+            }
+        })
+});
+
+const typeTermOrParenthesisGraphQLType = new g.GraphQLUnionType({
+    name: "TypeTermOrParenthesis",
+    description: "",
+    types: () => [typeTermParenthesisStart, typeTermParenthesisEnd, typeTermRef]
+});
+
+const typeTermParenthesisStart = new g.GraphQLObjectType({
+    name: "TypeTermParenthesisStart",
+    description: "カッコの始まり",
+    fields: makeObjectFieldMap<type.TypeTermParenthesisStart>({
+        type: {
+            type: g.GraphQLNonNull(g.GraphQLString),
+            description: "常に ("
+        }
+    })
+});
+
+const typeTermParenthesisEnd = new g.GraphQLObjectType({
+    name: "TypeTermParenthesisEnd",
+    description: "カッコの終わり",
+    fields: makeObjectFieldMap<type.TypeTermParenthesisEnd>({
+        type: {
+            type: g.GraphQLNonNull(g.GraphQLString),
+            description: "常に )"
+        }
+    })
+});
+
+const typeTermRef = new g.GraphQLObjectType({
+    name: "TypeTermRef",
+    description: "参照",
+    fields: makeObjectFieldMap<type.TypeTermRef>({
+        typeId: {
+            type: g.GraphQLNonNull(type.idGraphQLType),
+            description: "型を示すID"
+        },
+        type: {
+            type: g.GraphQLNonNull(g.GraphQLString),
+            description: "常にref"
+        }
+    })
+});
+
+const typeBodyKernel = new g.GraphQLObjectType({
+    name: "TypeBodyKernel",
+    description: "型を内部ものを使って表現する",
+    fields: makeObjectFieldMap<type.TypeBodyKernel>({
+        type: {
+            type: g.GraphQLNonNull(g.GraphQLString),
+            description: "常に kernel"
+        },
+        kernelType: {
+            type: g.GraphQLNonNull(type.kernelTypeGraphQLType),
+            description: "どの内部表現か"
+        }
+    })
+});
+
 /* ==========================================
                Part Def Snapshot
    ==========================================
@@ -827,9 +938,10 @@ const partDefinitionGraphQLType = new g.GraphQLObjectType<
     name: "PartDefinition",
     fields: () =>
         makeObjectFieldMap<type.PartDefSnapshot>({
-            id: {
+            hash: {
                 type: g.GraphQLNonNull(type.idGraphQLType),
-                description: "パーツを識別するためのもの"
+                description:
+                    "パーツののスナップショットから導き出されるハッシュ値"
             },
             name: makeObjectField({
                 type: g.GraphQLNonNull(type.labelGraphQLType),
@@ -839,25 +951,164 @@ const partDefinitionGraphQLType = new g.GraphQLObjectType<
                     return type.labelFromString("partDummyName");
                 }
             }),
-            createdAt: makeObjectField({
-                type: g.GraphQLNonNull(type.dateTimeGraphQLType),
-                description: "作成日時",
+            description: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "パーツの説明",
                 args: {},
                 resolve: async (source, args) => {
-                    return new Date();
+                    if (source.description === undefined) {
+                        return (await setPartDefSnapshot(source)).description;
+                    }
+                    return source.description;
+                }
+            }),
+            type: makeObjectField({
+                type: graphQLNonNullList(typeTermOrParenthesisGraphQLType),
+                description: "パーツの型",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.type === undefined) {
+                        return (await setPartDefSnapshot(source)).type;
+                    }
+                    return source.type;
+                }
+            }),
+            expr: makeObjectField({
+                type: graphQLNonNullList(termOrParenthesisGraphQLType),
+                description: "パーツの式",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.expr === undefined) {
+                        return (await setPartDefSnapshot(source)).expr;
+                    }
+                    return source.expr;
                 }
             })
         })
 });
 
-const setPartDefSnapshot = () => {};
+const setPartDefSnapshot = async (
+    source: Return<type.PartDefSnapshot>
+): ReturnType<typeof database.getPartDefSnapshot> => {
+    const data = await database.getPartDefSnapshot(source.hash);
+    source.name = data.name;
+    source.description = data.description;
+    source.type = data.type;
+    source.expr = data.expr;
+    return data;
+};
+
+const termOrParenthesisGraphQLType = new g.GraphQLUnionType({
+    name: "TermOrParenthesis",
+    description: "式を表現する項かカッコ",
+    types: () => [
+        termParenthesisStart,
+        termParenthesisEnd,
+        termNumber,
+        termPartRef,
+        termKernel
+    ]
+});
+
+const termParenthesisStart = new g.GraphQLObjectType({
+    name: "TermParenthesisStart",
+    description: "カッコの始まり",
+    fields: makeObjectFieldMap<type.TermParenthesisStart>({
+        type: {
+            type: g.GraphQLNonNull(g.GraphQLString),
+            description: "常に ("
+        }
+    })
+});
+
+const termParenthesisEnd = new g.GraphQLObjectType({
+    name: "TermParenthesisEnd",
+    description: "カッコの終わり",
+    fields: makeObjectFieldMap<type.TermParenthesisEnd>({
+        type: {
+            type: g.GraphQLNonNull(g.GraphQLString),
+            description: "常に )"
+        }
+    })
+});
+
+const termNumber = new g.GraphQLObjectType({
+    name: "TermNumber",
+    description: "Numberの項",
+    fields: makeObjectFieldMap<type.TermNumber>({
+        type: {
+            type: g.GraphQLNonNull(g.GraphQLString),
+            description: "常に number"
+        },
+        value: {
+            type: g.GraphQLNonNull(g.GraphQLFloat),
+            description: "数値"
+        }
+    })
+});
+
+const termPartRef = new g.GraphQLObjectType({
+    name: "TermPartRef",
+    description: "パーツから値を得る",
+    fields: makeObjectFieldMap<type.TermPartRef>({
+        type: {
+            type: g.GraphQLNonNull(g.GraphQLString),
+            description: "常に part"
+        },
+        partId: {
+            type: g.GraphQLNonNull(type.idGraphQLType),
+            description: "パーツのID"
+        }
+    })
+});
+
+const termKernel = new g.GraphQLObjectType({
+    name: "TermKernel",
+    description: "内部で表現された項",
+    fields: makeObjectFieldMap<type.TermKernel>({
+        type: {
+            type: g.GraphQLNonNull(g.GraphQLString),
+            description: "常に kernel"
+        },
+        value: {
+            type: g.GraphQLNonNull(type.kernelTermGraphQLType),
+            description: "種類"
+        }
+    })
+});
 /* ==========================================
-               Expr Def Snapshot
+               Expr Snapshot
    ==========================================
 */
-const exprSnapshotGraphQLType = new g.GraphQLObjectType({});
+const exprSnapshotGraphQLType = new g.GraphQLObjectType({
+    name: "ExprDefSnapshot",
+    description: "式",
+    fields: makeObjectFieldMap<type.ExprSnapshot>({
+        hash: {
+            type: g.GraphQLNonNull(type.hashGraphQLType),
+            description: "式のスナップショットから導き出されるハッシュ値"
+        },
+        value: makeObjectField({
+            type: graphQLNonNullList(termOrParenthesisGraphQLType),
+            description: "項の羅列",
+            args: {},
+            resolve: async (source, args) => {
+                if (source.value === undefined) {
+                    return (await setExprDefSnapshot(source)).value;
+                }
+                return source.value;
+            }
+        })
+    })
+});
 
-const exprDefSnapshot = () => {};
+const setExprDefSnapshot = async (
+    source: Return<type.ExprSnapshot>
+): ReturnType<typeof database.getExprSnapshot> => {
+    const data = await database.getExprSnapshot(source.hash);
+    source.value = data.value;
+    return data;
+};
 /*  =============================================================
                             Schema
     =============================================================
@@ -883,9 +1134,7 @@ export const schema = new g.GraphQLSchema({
             }),
             allUser: makeQueryOrMutationField<{}, Array<type.User>>({
                 args: {},
-                type: g.GraphQLNonNull(
-                    g.GraphQLList(g.GraphQLNonNull(userGraphQLType))
-                ),
+                type: graphQLNonNullList(userGraphQLType),
                 resolve: async args => {
                     return await database.getAllUser();
                 },
@@ -1032,25 +1281,6 @@ export const schema = new g.GraphQLSchema({
                     });
                 },
                 description: "プロジェクトを作成する"
-            }),
-            pushProject: makeQueryOrMutationField<
-                { accessToken: string },
-                boolean
-            >({
-                args: {
-                    accessToken: {
-                        type: g.GraphQLNonNull(g.GraphQLString),
-                        description: type.accessTokenDescription
-                    },
-                    commmits: {},
-                    branchHead,
-                    moduleSnapshot,
-                    partDefSnapshot,
-                    typeSnapshot
-                },
-                type: g.GraphQLNonNull(g.GraphQLBoolean),
-                resolve: async args => {},
-                description: "プロジェクトのCommitを保存する"
             })
         }
     })
