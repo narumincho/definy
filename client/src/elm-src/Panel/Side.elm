@@ -222,12 +222,7 @@ userView { user, language, logInState, mouseState } =
             Just u ->
                 [ Html.div
                     [ A.style "display" "flex" ]
-                    [ Html.img
-                        [ A.style "clip-path" "circle(50% at center)"
-                        , A.src (Data.User.getImageUrl u)
-                        ]
-                        []
-                    , Html.div
+                    [ Html.div
                         []
                         [ Html.text (Data.User.getName u) ]
                     ]

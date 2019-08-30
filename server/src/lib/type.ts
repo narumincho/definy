@@ -382,11 +382,11 @@ export const userNameGraphQLType = new g.GraphQLScalarType(userNameTypeConfig);
     =============================================================
 */
 export type Image = {
-    id: ImageId;
+    hash: FileHash;
     base64EncodedPng: Base64EncodedPng;
 };
 
-export type ImageId = string & { __imageIdBrand: never };
+export type FileHash = string & { __fileHashBrand: never };
 /*  =============================================================
                             Id
     =============================================================
@@ -407,7 +407,7 @@ export const createRandomId = (): string => {
 const idTypeConfig: g.GraphQLScalarTypeConfig<string, string> = {
     name: "Id",
     description:
-        "Id。各種リソースを識別するために使うID。URLでも使うので、小文字に統一して、大文字は一切使わない。長さは24文字",
+        "Id。各種リソースを識別するために使うID。使う文字はabcdefghijklmnopqrstuvwxyz0123456789。長さは24文字",
     serialize: (value: string): string => value,
     parseValue: (value: unknown): string => {
         if (typeof value !== "string") {

@@ -75,7 +75,7 @@ type UserLowCost = {
     id: type.UserId;
     name: type.UserName;
     image: {
-        id: type.ImageId;
+        hash: type.FileHash;
     };
     introduction: string;
     createdAt: Date;
@@ -89,13 +89,13 @@ type UserLowCost = {
  */
 export const addUser = async (data: {
     name: type.UserName;
-    imageId: type.ImageId;
+    imageId: type.FileHash;
     logInServiceAndId: type.LogInServiceAndId;
     lastAccessTokenJti: string;
 }): Promise<string> => {
     const userId = await databaseLow.addUser({
         name: data.name,
-        imageId: data.imageId,
+        imageHash: data.imageId,
         introduction: "",
         createdAt: databaseLow.getNowTimestamp(),
         branchIds: [],
@@ -132,7 +132,7 @@ const databaseLowUserToLowCost = ({
         id: id,
         name: data.name,
         image: {
-            id: data.imageId
+            hash: data.imageHash
         },
         introduction: data.introduction,
         createdAt: data.createdAt.toDate(),

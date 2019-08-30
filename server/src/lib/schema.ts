@@ -247,10 +247,10 @@ const imageGraphQLType = new g.GraphQLObjectType({
     name: "Image",
     fields: () =>
         makeObjectFieldMap<type.Image>({
-            id: {
+            hash: {
                 type: g.GraphQLNonNull(g.GraphQLString),
                 description:
-                    "画像ID。https://us-central1-definy-lang.cloudfunctions.net/{id} のURLから画像を得ることができる"
+                    "画像ID。https://us-central1-definy-lang.cloudfunctions.net/{hash} のURLから画像を得ることができる"
             },
             base64EncodedPng: makeObjectField({
                 type: g.GraphQLNonNull(type.base64EncodedPngGraphQLType),

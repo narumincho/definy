@@ -36,7 +36,7 @@ const exprCollection = dataBase.collection("expr");
 */
 export type UserData = {
     name: type.UserName;
-    imageId: type.ImageId;
+    imageHash: type.FileHash;
     introduction: string;
     createdAt: firestore.Timestamp;
     branchIds: Array<type.BranchId>;
