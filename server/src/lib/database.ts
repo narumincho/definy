@@ -45,7 +45,7 @@ export const saveUserImageFromUrl = async (url: URL): Promise<string> => {
         responseType: "arraybuffer"
     });
     const mimeType: string = response.headers["content-type"];
-    const fileName = type.createRandomId();
+    const fileName = type.createHashFromBuffer(response.data);
     await databaseLow.saveUserImage(fileName, response.data, mimeType);
     return fileName;
 };

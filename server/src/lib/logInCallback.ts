@@ -104,7 +104,7 @@ export const googleLogInReceiver = async (
     const accessTokenRandomId = tool.createRandomString();
     const userId = await database.addUser({
         name: type.userNameFromString(googleData.name.trim()),
-        imageId: userImageId as type.ImageId,
+        imageId: userImageId as type.FileHash,
         logInServiceAndId: {
             service: "google",
             accountId: googleData.sub
@@ -223,7 +223,7 @@ query {
     );
     const userId = await database.addUser({
         name: type.userNameFromString(userData.name.trim()),
-        imageId: imageId as type.ImageId,
+        imageId: imageId as type.FileHash,
         lastAccessTokenJti: accessTokenRandomId,
         logInServiceAndId: {
             service: "gitHub",
@@ -302,7 +302,7 @@ export const lineLogInReceiver = async (
     );
     const userId = await database.addUser({
         name: type.userNameFromString(lineData.name.trim()),
-        imageId: imageId as type.ImageId,
+        imageId: imageId as type.FileHash,
         lastAccessTokenJti: accessTokenRandomId,
         logInServiceAndId: {
             service: "line",

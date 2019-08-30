@@ -2,7 +2,6 @@ import * as admin from "firebase-admin";
 import * as type from "./type";
 import * as firestore from "@google-cloud/firestore";
 import * as stream from "stream";
-import * as crypto from "crypto";
 
 const app = admin.initializeApp();
 const dataBase = app.firestore();
@@ -273,7 +272,7 @@ export type CommitData = {
  * コミットを作成する。存在するものをさらに作成したらエラー
  */
 export const addCommit = async (data: CommitData): Promise<type.CommitHash> => {
-    const hash = createHash(data);
+    const hash = type.createHash(data);
     await commitCollection.doc(hash).create(data);
     return hash as type.CommitHash;
 };
@@ -318,7 +317,7 @@ export type ModuleSnapshotData = {
 export const addModuleSnapshot = async (
     data: ModuleSnapshotData
 ): Promise<type.ModuleSnapshotHash> => {
-    const hash = createHash(data) as type.ModuleSnapshotHash;
+    const hash = type.createHash(data) as type.ModuleSnapshotHash;
     if ((await moduleCollection.doc(hash).get()).exists) {
         return hash;
     }
@@ -357,7 +356,7 @@ export type TypeDefSnapshot = {
 export const addTypeDefSnapshot = async (
     data: TypeDefSnapshot
 ): Promise<type.TypeDefSnapshotHash> => {
-    const hash = createHash(data) as type.TypeDefSnapshotHash;
+    const hash = type.createHash(data) as type.TypeDefSnapshotHash;
     if ((await typeCollection.doc(hash).get()).exists) {
         return hash;
     }
@@ -396,7 +395,7 @@ export type PartDefSnapshot = {
 export const addPartDefSnapshot = async (
     data: PartDefSnapshot
 ): Promise<type.PartDefSnapshotHash> => {
-    const hash = createHash(data) as type.PartDefSnapshotHash;
+    const hash = type.createHash(data) as type.PartDefSnapshotHash;
     if ((await partCollection.doc(hash).get()).exists) {
         return hash;
     }
@@ -432,7 +431,7 @@ export type ExprSnapshot = {
 export const addExprSnapshot = async (
     data: ExprSnapshot
 ): Promise<type.ExprSnapshotHash> => {
-    const hash = createHash(data) as type.ExprSnapshotHash;
+    const hash = type.createHash(data) as type.ExprSnapshotHash;
     if ((await exprCollection.doc(hash).get()).exists) {
         return hash;
     }
@@ -461,13 +460,3 @@ export const getExprSnapshot = async (
  */
 export const getNowTimestamp = (): firestore.Timestamp =>
     admin.firestore.Timestamp.now();
-
-/* ==========================================
-                SHA-256 Hash
-   ==========================================
-*/
-const createHash = (data: unknown): string =>
-    crypto
-        .createHash("sha256")
-        .update(JSON.stringify(data))
-        .digest("hex");

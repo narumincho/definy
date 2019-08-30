@@ -1,5 +1,7 @@
 import * as g from "graphql";
 import { URL } from "url";
+import * as crypto from "crypto";
+
 /*  =============================================================
                             LogInService
     =============================================================
@@ -453,6 +455,22 @@ const hashTypeConfig: g.GraphQLScalarTypeConfig<string, string> = {
 };
 
 export const hashGraphQLType = new g.GraphQLScalarType(hashTypeConfig);
+
+/* ==========================================
+                SHA-256 Hash
+   ==========================================
+*/
+export const createHash = (data: unknown): string =>
+    crypto
+        .createHash("sha256")
+        .update(JSON.stringify(data))
+        .digest("hex");
+
+export const createHashFromBuffer = (data: Buffer): string =>
+    crypto
+        .createHash("sha256")
+        .update(data)
+        .digest("hex");
 
 /*  =============================================================
                             DateTime
