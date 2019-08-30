@@ -36,13 +36,10 @@ interface ElmApp {
     };
 }
 
-const elmAppElement = document.getElementById("elm-app") as HTMLElement;
-elmAppElement.innerText = "プログラムの読み込み中……";
 requestAnimationFrame(() => {
     const language = window.navigator.languages[0];
     const app = window.Elm.Main.init({
-        node: elmAppElement,
-        flags: { url: location.href, user: null, language: language }
+        flags: { language: language }
     });
     let prevKeyEvent: KeyboardEvent;
     /* キー入力 */

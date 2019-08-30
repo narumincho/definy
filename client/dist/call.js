@@ -1,11 +1,8 @@
 "use strict";
-const elmAppElement = document.getElementById("elm-app");
-elmAppElement.innerText = "プログラムの読み込み中……";
 requestAnimationFrame(() => {
     const language = window.navigator.languages[0];
     const app = window.Elm.Main.init({
-        node: elmAppElement,
-        flags: { url: location.href, user: null, language: language }
+        flags: { language: language }
     });
     let prevKeyEvent;
     window.addEventListener("keydown", e => {

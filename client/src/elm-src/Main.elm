@@ -2,6 +2,7 @@ port module Main exposing (main)
 
 import Browser
 import Browser.Events
+import Browser.Navigation
 import Data.Key
 import Data.Language
 import Data.Project
@@ -21,23 +22,6 @@ import Task
 import Url
 import Utility.ListExtra
 import Utility.Map
-
-
-main :
-    Platform.Program
-        { url : String
-        , user : Maybe { name : String, imageUrl : String, token : String }
-        , language : String
-        }
-        Model
-        Msg
-main =
-    Browser.element
-        { init = init
-        , view = view
-        , update = update
-        , subscriptions = subscriptions
-        }
 
 
 {-| すべての状態を管理する
@@ -138,13 +122,14 @@ type Model
         , msgQueue : List Msg
         , user : Maybe Data.User.User
         , language : Data.Language.Language
+        , navigationKey : Browser.Navigation.Key
         }
 
 
 {-| フォーカスしているものとフォーカス時に持てる状態を表す
 -}
 type Focus
-    = FocusTreePanel
+    = FocusSidePanel
     | FocusEditorGroupPanel
 
 
@@ -171,13 +156,24 @@ type GutterType
     | GutterTypeHorizontal
 
 
+main : Platform.Program { language : String } Model Msg
+main =
+    Browser.application
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        , onUrlRequest = OnUrlRequest
+        , onUrlChange = OnUrlChange
+        }
+
+
 init :
-    { url : String
-    , user : Maybe { name : String, imageUrl : String, token : String }
-    , language : String
-    }
+    { language : String }
+    -> Url.Url
+    -> Browser.Navigation.Key
     -> ( Model, Cmd Msg )
-init { user, language } =
+init { language } url navigationKey =
     let
         ( editorPanelModel, editorGroupPanelCmd ) =
             Panel.EditorGroup.initModel
@@ -192,13 +188,9 @@ init { user, language } =
                 , sidePanelWidth = 250
                 , windowSize = { width = 0, height = 0 }
                 , msgQueue = []
-                , user =
-                    user
-                        |> Maybe.map
-                            (\{ name, imageUrl } ->
-                                Data.User.fromName name
-                            )
+                , user = Just (Data.User.fromName "sorena")
                 , language = Data.Language.languageFromString language
+                , navigationKey = navigationKey
                 }
     in
     ( model
@@ -206,53 +198,6 @@ init { user, language } =
         |> List.map editorPanelCmdToCmd
         |> Cmd.batch
     )
-
-
-
-{- =============== Msg ================ -}
-
-
-toTreePanelGutterMode : Msg
-toTreePanelGutterMode =
-    ToResizeGutterMode SideBarGutter
-
-
-{-| サイドパネルのMsgを全体のMsgに変換する
--}
-sidePanelMsgToMsg : Panel.Side.Msg -> Msg
-sidePanelMsgToMsg =
-    SidePanelMsg
-
-
-{-| エディタパネルのMsgを全体のMsgに変換する
--}
-editorPanelMsgToMsg : Panel.EditorGroup.Msg -> Msg
-editorPanelMsgToMsg =
-    EditorPanelMsg
-
-
-{-| ツリーパネルにフォーカスをあわせる
--}
-focusToTreePanel : Msg
-focusToTreePanel =
-    FocusTo FocusTreePanel
-
-
-{-| エディタグループパネルにフォーカスをあわせる
--}
-focusToEditorGroupPanel : Msg
-focusToEditorGroupPanel =
-    FocusTo FocusEditorGroupPanel
-
-
-onUrlRequest : Browser.UrlRequest -> Msg
-onUrlRequest =
-    OnUrlRequest
-
-
-onUrlChange : Url.Url -> Msg
-onUrlChange =
-    OnUrlChange
 
 
 
@@ -282,7 +227,7 @@ update msg model =
                 ( listMsg, newModel ) =
                     model |> shiftMsgListFromMsgQueue
             in
-            newModel |> updateFromList listMsg
+            newModel |> updateFromMsgList listMsg
 
         MouseMove position ->
             ( mouseMove position model
@@ -343,16 +288,6 @@ update msg model =
             , Cmd.none
             )
 
-        OnUrlRequest urlRequest ->
-            ( model
-            , Cmd.none
-            )
-
-        OnUrlChange url ->
-            ( model
-            , Cmd.none
-            )
-
         LogOutRequest ->
             ( model
                 |> singOut
@@ -377,16 +312,24 @@ update msg model =
             , Cmd.none
             )
 
+        OnUrlRequest urlRequest ->
+            model |> onUrlRequest urlRequest
 
-updateFromList : List Msg -> Model -> ( Model, Cmd Msg )
-updateFromList msgList model =
+        OnUrlChange url ->
+            ( model
+            , Cmd.none
+            )
+
+
+updateFromMsgList : List Msg -> Model -> ( Model, Cmd Msg )
+updateFromMsgList msgList model =
     case msgList of
         msg :: tailMsg ->
             let
                 ( newModel, cmd ) =
                     update msg model
             in
-            updateFromList tailMsg newModel
+            updateFromMsgList tailMsg newModel
                 |> Tuple.mapSecond (\next -> Cmd.batch [ cmd, next ])
 
         [] ->
@@ -436,7 +379,7 @@ keyDown keyMaybe model =
 keyDownEachPanel : Data.Key.Key -> Model -> List Msg
 keyDownEachPanel key model =
     case getFocus model of
-        FocusTreePanel ->
+        FocusSidePanel ->
             sidePanelKeyDown key
                 |> List.map SidePanelMsg
 
@@ -479,7 +422,7 @@ editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
             ( False, False, True ) ->
                 case key of
                     Data.Key.Digit0 ->
-                        [ FocusTo FocusTreePanel ]
+                        [ FocusTo FocusSidePanel ]
 
                     Data.Key.Digit1 ->
                         [ FocusTo FocusEditorGroupPanel ]
@@ -793,7 +736,7 @@ getFocus (Model { focus }) =
 isFocusTreePanel : Model -> Bool
 isFocusTreePanel model =
     case getFocus model of
-        FocusTreePanel ->
+        FocusSidePanel ->
             True
 
         FocusEditorGroupPanel ->
@@ -805,7 +748,7 @@ isFocusTreePanel model =
 isFocusEditorGroupPanel : Model -> Bool
 isFocusEditorGroupPanel model =
     case getFocus model of
-        FocusTreePanel ->
+        FocusSidePanel ->
             False
 
         FocusEditorGroupPanel ->
@@ -817,8 +760,8 @@ isFocusEditorGroupPanel model =
 setFocus : Focus -> Model -> ( Model, Cmd Msg )
 setFocus focus (Model rec) =
     case focus of
-        FocusTreePanel ->
-            Model { rec | focus = FocusTreePanel }
+        FocusSidePanel ->
+            Model { rec | focus = FocusSidePanel }
                 |> editorPanelUpdate Panel.EditorGroup.Blur
 
         FocusEditorGroupPanel ->
@@ -1166,7 +1109,7 @@ isOpenCommandPalette (Model { subMode }) =
 isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
 isFocusDefaultUi model =
     case getFocus model of
-        FocusTreePanel ->
+        FocusSidePanel ->
             Nothing
 
         FocusEditorGroupPanel ->
@@ -1208,6 +1151,18 @@ setLanguage string (Model rec) =
         }
 
 
+onUrlRequest : Browser.UrlRequest -> Model -> ( Model, Cmd Msg )
+onUrlRequest urlRequest (Model rec) =
+    ( Model rec
+    , case urlRequest of
+        Browser.Internal url ->
+            Browser.Navigation.pushUrl rec.navigationKey (Url.toString url)
+
+        Browser.External urlString ->
+            Browser.Navigation.load urlString
+    )
+
+
 
 {- ================================================================
                                View
@@ -1217,14 +1172,14 @@ setLanguage string (Model rec) =
 
 {-| 見た目を定義する
 -}
-view : Model -> Html.Html Msg
+view : Model -> Browser.Document Msg
 view model =
-    Html.div
-        [ Html.Attributes.id "elm-app" ]
-        ([ sidePanel model
-         , verticalGutter (isTreePanelGutter model)
-         , editorGroupPanel model
-         ]
+    { title = "Definy"
+    , body =
+        [ sidePanel model
+        , verticalGutter (isTreePanelGutter model)
+        , editorGroupPanel model
+        ]
             ++ (case getCommandPaletteModel model of
                     Just commandPaletteModel ->
                         [ Panel.CommandPalette.view commandPaletteModel ]
@@ -1232,7 +1187,7 @@ view model =
                     Nothing ->
                         []
                )
-        )
+    }
 
 
 {-| サイドパネルの表示
@@ -1251,7 +1206,7 @@ sidePanel model =
                     []
 
                 else
-                    [ Html.Events.onClick focusToTreePanel ]
+                    [ Html.Events.onClick (FocusTo FocusSidePanel) ]
                )
             ++ (getGutterType model
                     |> Maybe.map gutterTypeToCursorStyle
@@ -1264,7 +1219,7 @@ sidePanel model =
             , project = getProject model
             }
             (getSidePanelModel model)
-            |> List.map (Html.map sidePanelMsgToMsg)
+            |> List.map (Html.map SidePanelMsg)
         )
 
 
@@ -1285,7 +1240,7 @@ editorGroupPanel model =
                     []
 
                 else
-                    [ Html.Events.onClick focusToEditorGroupPanel ]
+                    [ Html.Events.onClick (FocusTo FocusEditorGroupPanel) ]
                )
             ++ (getGutterType model
                     |> Maybe.map gutterTypeToCursorStyle
@@ -1298,11 +1253,11 @@ editorGroupPanel model =
             (isFocusEditorGroupPanel model)
             (getEditorGroupPanelGutter model)
             (getEditorGroupPanelModel model)
-            |> List.map (Html.map editorPanelMsgToMsg)
+            |> List.map (Html.map EditorPanelMsg)
         )
 
 
-{-| ツリーパネルの幅を変更するためにつかむところ | ガター
+{-| サイドパネルの幅を変更するためにつかむところ | ガター
 -}
 verticalGutter : Bool -> Html.Html Msg
 verticalGutter isGutterMode =
@@ -1314,7 +1269,7 @@ verticalGutter isGutterMode =
              else
                 "gutter-vertical"
             )
-        , Html.Events.onMouseDown toTreePanelGutterMode
+        , Html.Events.onMouseDown (ToResizeGutterMode SideBarGutter)
         ]
         []
 
