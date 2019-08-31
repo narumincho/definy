@@ -4,7 +4,6 @@ module Parser.Name exposing
     )
 
 import Data.Label as Label
-import Data.Project.PartDef as PartDef
 import Parser.SimpleChar as SimpleChar exposing (SimpleChar(..), Symbol(..))
 
 

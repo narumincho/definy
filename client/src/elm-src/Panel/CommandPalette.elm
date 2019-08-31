@@ -20,6 +20,7 @@ view model =
     Html.Styled.div
         [ Html.Styled.Attributes.css
             [ Css.position Css.absolute
+            , Css.top Css.zero
             , Style.textColor
             , Css.backgroundColor (Css.rgb 0 0 0)
             , Css.width (Css.px 560)

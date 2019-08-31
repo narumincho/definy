@@ -21,7 +21,7 @@ verticalGutter isResizing =
                 [ Css.width (Css.px 2)
                 , Css.flexShrink Css.zero
                 , Css.after
-                    [ Css.property "content" ""
+                    [ Css.property "content" "\"\""
                     , Css.display Css.block
                     , Css.height (Css.pct 100)
                     , Css.width (Css.px 6)
@@ -39,7 +39,7 @@ verticalGutter isResizing =
                 , Css.hover
                     [ Css.backgroundColor (Css.rgb 102 102 102) ]
                 , Css.after
-                    [ Css.property "content" ""
+                    [ Css.property "content" "\"\""
                     , Css.cursor Css.ewResize
                     , Css.display Css.block
                     , Css.height (Css.pct 100)
@@ -63,7 +63,7 @@ horizontalGutter isResizing =
                 [ Css.height (Css.px 2)
                 , Css.flexShrink Css.zero
                 , Css.after
-                    [ Css.property "content" ""
+                    [ Css.property "content" "\"\""
                     , Css.display Css.block
                     , Css.width (Css.pct 100)
                     , Css.height (Css.px 6)
@@ -81,7 +81,7 @@ horizontalGutter isResizing =
                 , Css.hover
                     [ Css.backgroundColor (Css.rgb 102 102 102) ]
                 , Css.after
-                    [ Css.property "content" ""
+                    [ Css.property "content" "\"\""
                     , Css.display Css.block
                     , Css.width (Css.pct 100)
                     , Css.height (Css.px 12)

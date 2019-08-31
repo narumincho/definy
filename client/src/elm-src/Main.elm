@@ -22,7 +22,6 @@ import Panel.Side
 import Panel.Style
 import Task
 import Url
-import Utility.ListExtra
 import Utility.Map
 
 
@@ -1178,10 +1177,27 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Definy"
     , body =
-        [ sidePanel model
-        , Panel.Style.verticalGutter (isTreePanelGutter model)
-            |> Html.Styled.map (always (ToResizeGutterMode SideBarGutter))
-        , editorGroupPanel model
+        [ Html.Styled.div
+            [ Html.Styled.Attributes.css
+                ([ Css.width (Css.pct 100)
+                 , Css.height (Css.pct 100)
+                 , Css.displayFlex
+                 , Css.overflow Css.hidden
+                 ]
+                    ++ (case getGutterType model of
+                            Just gutterType ->
+                                [ gutterTypeToCursorStyle gutterType ]
+
+                            Nothing ->
+                                []
+                       )
+                )
+            ]
+            [ sidePanel model
+            , Panel.Style.verticalGutter (isTreePanelGutter model)
+                |> Html.Styled.map (always (ToResizeGutterMode SideBarGutter))
+            , editorGroupPanel model
+            ]
         ]
             ++ (case getCommandPaletteModel model of
                     Just commandPaletteModel ->
@@ -1204,16 +1220,7 @@ sidePanel model =
             , ( "treePanel-focus", isFocusTreePanel model )
             ]
          , Html.Styled.Attributes.css
-            ([ Css.width (Css.px (toFloat (getTreePanelWidth model)))
-             ]
-                ++ (case getGutterType model of
-                        Just gutterType ->
-                            [ gutterTypeToCursorStyle gutterType ]
-
-                        Nothing ->
-                            []
-                   )
-            )
+            [ Css.width (Css.px (toFloat (getTreePanelWidth model))) ]
          ]
             ++ (if isFocusTreePanel model then
                     []
@@ -1243,17 +1250,9 @@ editorGroupPanel model =
     Html.Styled.div
         ([ Html.Styled.Attributes.class "editorGroupPanel"
          , Html.Styled.Attributes.css
-            ([ Css.width (Css.px (toFloat width))
-             , Css.height (Css.px (toFloat height))
-             ]
-                ++ (case getGutterType model of
-                        Just gutterType ->
-                            [ gutterTypeToCursorStyle gutterType ]
-
-                        Nothing ->
-                            []
-                   )
-            )
+            [ Css.width (Css.px (toFloat width))
+            , Css.height (Css.px (toFloat height))
+            ]
          ]
             ++ (if isFocusEditorGroupPanel model then
                     []

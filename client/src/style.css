@@ -3,7 +3,6 @@
 @font-face {
     font-family: "Roboto";
     font-style: normal;
-    font-weight: 400;
     src: local("Roboto"), local("Roboto-Regular"),
         url("https://fonts.gstatic.com/s/roboto/v19/KFOmCnqEu92Fr1Mu4mxK.woff2")
             format("woff2");
@@ -53,7 +52,6 @@ body {
     width: 100%;
     height: 100%;
     margin: 0;
-    display: flex;
     overflow: hidden;
     font-family: "Roboto";
 }
