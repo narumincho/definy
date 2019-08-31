@@ -24,13 +24,9 @@ import Css
 import Data.Id
 import Data.Language
 import Data.Project
-import Html
-import Html.Attributes
-import Html.Events
 import Html.Styled
 import Html.Styled.Attributes
 import Html.Styled.Events
-import Palette.X11
 import Panel.DefaultUi
 import Panel.Editor.EditorKeyConfig
 import Panel.Editor.Module
@@ -1435,9 +1431,7 @@ editorTitleAndBody width editorIndex isActive project editorItem =
             , body =
                 viewItem.body
                     |> List.map
-                        (Html.Styled.fromUnstyled
-                            >> Html.Styled.map (\m -> EditorItemMsg { msg = ModuleEditorMsg m, ref = editorIndex })
-                        )
+                        (Html.Styled.map (\m -> EditorItemMsg { msg = ModuleEditorMsg m, ref = editorIndex }))
             }
 
         EditorKeyConfig model ->

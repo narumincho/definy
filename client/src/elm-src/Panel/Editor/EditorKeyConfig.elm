@@ -6,9 +6,6 @@ module Panel.Editor.EditorKeyConfig exposing (Model(..), Msg, initModel, isInput
 import Color
 import Css
 import Data.Key as Key
-import Html
-import Html.Attributes
-import Html.Events
 import Html.Styled
 import Html.Styled.Attributes
 import Html.Styled.Events
