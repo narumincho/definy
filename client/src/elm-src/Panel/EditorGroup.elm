@@ -1298,9 +1298,11 @@ editorColumn :
     -> Html.Styled.Html Msg
 editorColumn project columnGroup { width, height } openEditorPosition activeEditorIndexColumnMaybe editorRefRow isGutterActive isOne =
     Html.Styled.div
-        [ subClass "column"
-        , Html.Styled.Attributes.css
-            [ Css.width (Css.px (toFloat width)) ]
+        [ Html.Styled.Attributes.css
+            [ Css.width (Css.px (toFloat width))
+            , Css.displayFlex
+            , Css.flexDirection Css.column
+            ]
         ]
         (case columnGroup of
             ColumnOne { top } ->
@@ -1376,16 +1378,27 @@ editorItemView { project, editorItem, editorIndex, width, height, isActive, isOn
             editorTitleAndBody width editorIndex isActive project editorItem
     in
     Html.Styled.div
-        ([ subClassList [ ( "editor", True ), ( "editor--active", isActive ) ]
-         , Html.Styled.Attributes.css
+        ([ Html.Styled.Attributes.css
             ([ Css.width (Css.px (toFloat width))
              , Css.height (Css.px (toFloat height))
+             , Css.backgroundColor
+                (if isActive then
+                    Css.rgb 34 34 34
+
+                 else
+                    Css.rgb 24 24 24
+                )
+             , Css.displayFlex
+             , Css.flexDirection Css.column
+             , Css.overflow Css.auto
              ]
                 ++ (if isActive then
-                        [ Css.outline3 (Css.px 2) Css.solid (Css.rgb 255 165 0) ]
+                        [ Css.outline3 (Css.px 2) Css.solid (Css.rgb 255 165 0)
+                        , Css.color (Css.rgb 170 170 170)
+                        ]
 
                     else
-                        []
+                        [ Style.textColor ]
                    )
             )
          , Html.Styled.Attributes.id (editorIndexToIdString editorIndex)
@@ -1398,7 +1411,13 @@ editorItemView { project, editorItem, editorIndex, width, height, isActive, isOn
                )
         )
         [ editorTitle title editorIndex isOne
-        , Html.Styled.div [ subClass "editorBody" ] body
+        , Html.Styled.div
+            [ Html.Styled.Attributes.css
+                [ Css.overflow Css.auto
+                , Css.flexGrow (Css.int 1)
+                ]
+            ]
+            body
         ]
 
 
@@ -1481,9 +1500,23 @@ editorTitleAndBody width editorIndex isActive project editorItem =
 editorTitle : String -> EditorIndex -> Bool -> Html.Styled.Html Msg
 editorTitle title editorRef closeable =
     Html.Styled.div
-        [ subClass "editorTitle" ]
+        [ Html.Styled.Attributes.css
+            [ Css.flexShrink Css.zero
+            , Css.displayFlex
+            , Css.alignItems Css.center
+            , Css.height (Css.px 40)
+            , Css.boxShadow4 Css.zero (Css.px 2) (Css.px 4) (Css.rgba 0 0 0 0.4)
+            ]
+        ]
         ([ Html.Styled.div
-            [ subClass "editorTitle-text" ]
+            [ Html.Styled.Attributes.css
+                [ Css.flexGrow (Css.int 1)
+                , Css.fontSize (Css.rem 1.5)
+                , Css.padding2 Css.zero (Css.px 12)
+                , Css.lineHeight (Css.num 1.2)
+                , Css.letterSpacing (Css.px 0.15)
+                ]
+            ]
             [ Html.Styled.text title ]
          ]
             ++ (if closeable then
@@ -1499,9 +1532,23 @@ editorTitle title editorRef closeable =
 -}
 editorTitleCloseIcon : EditorIndex -> Html.Styled.Html Msg
 editorTitleCloseIcon editorRef =
-    Html.Styled.div
-        [ Html.Styled.Events.onClick (CloseEditor editorRef)
-        , subClass "editorTitle-closeIcon"
+    Html.Styled.button
+        [ Html.Styled.Attributes.css
+            [ Css.width (Css.px 40)
+            , Css.height (Css.px 40)
+            , Css.padding (Css.px 12)
+            , Css.flexShrink Css.zero
+            , Css.property "stroke" "rgb(221,221,221)"
+            , Css.hover
+                [ Css.property "stroke" "rgb(0,0,0)"
+                , Css.backgroundColor (Css.rgb 255 0 0)
+                ]
+            , Css.active
+                [ Css.property "stroke" "rgb(0,0,0)"
+                , Css.backgroundColor (Css.rgb 244 67 54)
+                ]
+            ]
+        , Html.Styled.Events.onClick (CloseEditor editorRef)
         ]
         [ NSvg.toHtml
             { x = 0, y = 0, width = 12, height = 12 }
@@ -1516,15 +1563,3 @@ editorTitleCloseIcon editorRef =
                 (NSvg.strokeWidth 2)
             ]
         ]
-
-
-subClass : String -> Html.Styled.Attribute msg
-subClass sub =
-    Html.Styled.Attributes.class ("editorGroupPanel-" ++ sub)
-
-
-subClassList : List ( String, Bool ) -> Html.Styled.Attribute msg
-subClassList list =
-    list
-        |> List.map (Tuple.mapFirst (\sub -> "editorGroupPanel-" ++ sub))
-        |> Html.Styled.Attributes.classList
