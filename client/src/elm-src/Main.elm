@@ -1023,6 +1023,11 @@ editorPanelCmdToCmd cmd =
         Panel.EditorGroup.CmdElementScrollIntoView id ->
             elementScrollIntoView id
 
+        Panel.EditorGroup.CmdFocusHere ->
+            Task.succeed
+                (FocusTo FocusEditorGroupPanel)
+                |> Task.perform identity
+
         Panel.EditorGroup.CmdNone ->
             Cmd.none
 
@@ -1215,12 +1220,20 @@ view model =
 sidePanel : Model -> Html.Styled.Html Msg
 sidePanel model =
     Html.Styled.div
-        ([ Html.Styled.Attributes.classList
-            [ ( "treePanel", True )
-            , ( "treePanel-focus", isFocusTreePanel model )
+        ([ Html.Styled.Attributes.css
+            [ Css.backgroundColor
+                (if isFocusTreePanel model then
+                    Css.rgb 45 45 45
+
+                 else
+                    Css.rgb 17 17 17
+                )
+            , Css.displayFlex
+            , Css.flexDirection Css.column
+            , Css.flexShrink Css.zero
+            , Css.overflowY Css.auto
+            , Css.width (Css.px (toFloat (getTreePanelWidth model)))
             ]
-         , Html.Styled.Attributes.css
-            [ Css.width (Css.px (toFloat (getTreePanelWidth model))) ]
          ]
             ++ (if isFocusTreePanel model then
                     []
@@ -1247,28 +1260,13 @@ editorGroupPanel model =
         { width, height } =
             getEditorGroupPanelSize model
     in
-    Html.Styled.div
-        ([ Html.Styled.Attributes.class "editorGroupPanel"
-         , Html.Styled.Attributes.css
-            [ Css.width (Css.px (toFloat width))
-            , Css.height (Css.px (toFloat height))
-            ]
-         ]
-            ++ (if isFocusEditorGroupPanel model then
-                    []
-
-                else
-                    [ Html.Styled.Events.onClick (FocusTo FocusEditorGroupPanel) ]
-               )
-        )
-        (Panel.EditorGroup.view
-            (getProject model)
-            { width = width, height = height, language = getLanguage model }
-            (isFocusEditorGroupPanel model)
-            (getEditorGroupPanelGutter model)
-            (getEditorGroupPanelModel model)
-            |> List.map (Html.Styled.map EditorPanelMsg)
-        )
+    Panel.EditorGroup.view
+        (getProject model)
+        { width = width, height = height, language = getLanguage model }
+        (isFocusEditorGroupPanel model)
+        (getEditorGroupPanelGutter model)
+        (getEditorGroupPanelModel model)
+        |> Html.Styled.map EditorPanelMsg
 
 
 gutterTypeToCursorStyle : GutterType -> Css.Style

@@ -297,7 +297,8 @@ logInButtonLine language =
         [ Html.Styled.img
             [ Html.Styled.Attributes.src "/assets/line_icon120.png"
             , Html.Styled.Attributes.css
-                [ Css.width (Css.px 36)
+                [ Css.display Css.block
+                , Css.width (Css.px 36)
                 , Css.height (Css.px 36)
                 , Css.padding (Css.px 2)
                 , Css.borderRight3

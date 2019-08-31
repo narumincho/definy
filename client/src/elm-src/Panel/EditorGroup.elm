@@ -184,6 +184,7 @@ type Cmd
     | CmdFocusEditTextAea
     | CmdSetClickEventListenerInCapturePhase String
     | CmdElementScrollIntoView String
+    | CmdFocusHere
     | CmdNone
 
 
@@ -314,7 +315,7 @@ update msg project model =
             in
             ( model
                 |> mapGroup (setEditorItem (getActiveEditorRef model) newEditorItem)
-            , cmdList
+            , cmdList ++ [ CmdFocusHere ]
             )
 
         Blur ->
@@ -1133,123 +1134,138 @@ view :
     -> Bool
     -> Maybe Gutter
     -> Model
-    -> List (Html.Styled.Html Msg)
+    -> Html.Styled.Html Msg
 view project { width, height, language } isFocus gutter (Model { group, activeEditorIndex }) =
     let
         ( activeEditorRow, activeEditorColumn ) =
             activeEditorIndex
     in
-    case group of
-        RowOne { left } ->
-            [ editorColumn
-                project
-                left
-                { width = width - 2, height = height }
-                OpenEditorPositionLeftBottom
-                (Just activeEditorColumn)
-                EditorIndexLeft
-                (gutter == Just (GutterHorizontal GutterHorizontalLeft))
-                True
+    Html.Styled.div
+        ([ Html.Styled.Attributes.class "editorGroupPanel"
+         , Html.Styled.Attributes.css
+            [ Css.width (Css.px (toFloat width))
+            , Css.height (Css.px (toFloat height))
             ]
+         ]
+            ++ (if isFocus then
+                    []
 
-        RowTwo { left, center, leftWidth } ->
-            [ editorColumn
-                project
-                left
-                { width = (width - 4) * leftWidth // 1000, height = height }
-                OpenEditorPositionLeftBottom
-                (case activeEditorRow of
-                    EditorIndexLeft ->
-                        Just activeEditorColumn
+                else
+                    [ Html.Styled.Events.onClick Focus ]
+               )
+        )
+        (case group of
+            RowOne { left } ->
+                [ editorColumn
+                    project
+                    left
+                    { width = width - 2, height = height }
+                    OpenEditorPositionLeftBottom
+                    (Just activeEditorColumn)
+                    EditorIndexLeft
+                    (gutter == Just (GutterHorizontal GutterHorizontalLeft))
+                    True
+                ]
 
-                    _ ->
-                        Nothing
-                )
-                EditorIndexLeft
-                (gutter == Just (GutterHorizontal GutterHorizontalLeft))
-                False
-            , verticalGutter
-                GutterVerticalLeft
-                (gutter == Just (GutterVertical GutterVerticalLeft))
-            , editorColumn
-                project
-                center
-                { width = (width - 4) * (1000 - leftWidth) // 1000, height = height }
-                OpenEditorPositionCenterBottom
-                (case activeEditorRow of
-                    EditorIndexLeft ->
-                        Nothing
+            RowTwo { left, center, leftWidth } ->
+                [ editorColumn
+                    project
+                    left
+                    { width = (width - 4) * leftWidth // 1000, height = height }
+                    OpenEditorPositionLeftBottom
+                    (case activeEditorRow of
+                        EditorIndexLeft ->
+                            Just activeEditorColumn
 
-                    _ ->
-                        Just activeEditorColumn
-                )
-                EditorIndexCenter
-                (gutter == Just (GutterHorizontal GutterHorizontalCenter))
-                False
-            ]
+                        _ ->
+                            Nothing
+                    )
+                    EditorIndexLeft
+                    (gutter == Just (GutterHorizontal GutterHorizontalLeft))
+                    False
+                , verticalGutter
+                    GutterVerticalLeft
+                    (gutter == Just (GutterVertical GutterVerticalLeft))
+                , editorColumn
+                    project
+                    center
+                    { width = (width - 4) * (1000 - leftWidth) // 1000, height = height }
+                    OpenEditorPositionCenterBottom
+                    (case activeEditorRow of
+                        EditorIndexLeft ->
+                            Nothing
 
-        RowThree { left, center, right, leftWidth, centerWidth } ->
-            [ editorColumn
-                project
-                left
-                { width = (width - 4) * leftWidth // 1000, height = height }
-                OpenEditorPositionLeftBottom
-                (case activeEditorRow of
-                    EditorIndexLeft ->
-                        Just activeEditorColumn
+                        _ ->
+                            Just activeEditorColumn
+                    )
+                    EditorIndexCenter
+                    (gutter == Just (GutterHorizontal GutterHorizontalCenter))
+                    False
+                ]
 
-                    EditorIndexCenter ->
-                        Nothing
+            RowThree { left, center, right, leftWidth, centerWidth } ->
+                [ editorColumn
+                    project
+                    left
+                    { width = (width - 4) * leftWidth // 1000, height = height }
+                    OpenEditorPositionLeftBottom
+                    (case activeEditorRow of
+                        EditorIndexLeft ->
+                            Just activeEditorColumn
 
-                    EditorIndexRight ->
-                        Nothing
-                )
-                EditorIndexLeft
-                (gutter == Just (GutterHorizontal GutterHorizontalLeft))
-                False
-            , verticalGutter
-                GutterVerticalLeft
-                (gutter == Just (GutterVertical GutterVerticalLeft))
-            , editorColumn
-                project
-                center
-                { width = (width - 4) * centerWidth // 1000, height = height }
-                OpenEditorPositionCenterBottom
-                (case activeEditorRow of
-                    EditorIndexLeft ->
-                        Nothing
+                        EditorIndexCenter ->
+                            Nothing
 
-                    EditorIndexCenter ->
-                        Just activeEditorColumn
+                        EditorIndexRight ->
+                            Nothing
+                    )
+                    EditorIndexLeft
+                    (gutter == Just (GutterHorizontal GutterHorizontalLeft))
+                    False
+                , verticalGutter
+                    GutterVerticalLeft
+                    (gutter == Just (GutterVertical GutterVerticalLeft))
+                , editorColumn
+                    project
+                    center
+                    { width = (width - 4) * centerWidth // 1000, height = height }
+                    OpenEditorPositionCenterBottom
+                    (case activeEditorRow of
+                        EditorIndexLeft ->
+                            Nothing
 
-                    EditorIndexRight ->
-                        Nothing
-                )
-                EditorIndexCenter
-                (gutter == Just (GutterHorizontal GutterHorizontalCenter))
-                False
-            , verticalGutter
-                GutterVerticalRight
-                (gutter == Just (GutterVertical GutterVerticalRight))
-            , editorColumn
-                project
-                right
-                { width = (width - 4) * (1000 - leftWidth - centerWidth) // 1000, height = height }
-                OpenEditorPositionRightBottom
-                (case activeEditorRow of
-                    EditorIndexLeft ->
-                        Nothing
+                        EditorIndexCenter ->
+                            Just activeEditorColumn
 
-                    EditorIndexCenter ->
-                        Nothing
+                        EditorIndexRight ->
+                            Nothing
+                    )
+                    EditorIndexCenter
+                    (gutter == Just (GutterHorizontal GutterHorizontalCenter))
+                    False
+                , verticalGutter
+                    GutterVerticalRight
+                    (gutter == Just (GutterVertical GutterVerticalRight))
+                , editorColumn
+                    project
+                    right
+                    { width = (width - 4) * (1000 - leftWidth - centerWidth) // 1000, height = height }
+                    OpenEditorPositionRightBottom
+                    (case activeEditorRow of
+                        EditorIndexLeft ->
+                            Nothing
 
-                    EditorIndexRight ->
-                        Just activeEditorColumn
-                )
-                EditorIndexRight
-                (gutter == Just (GutterHorizontal GutterHorizontalRight))
-                False
-            ]
+                        EditorIndexCenter ->
+                            Nothing
+
+                        EditorIndexRight ->
+                            Just activeEditorColumn
+                    )
+                    EditorIndexRight
+                    (gutter == Just (GutterHorizontal GutterHorizontalRight))
+                    False
+                ]
+        )
 
 
 {-| | エディタの幅を変更するときにつかむガター

@@ -48,7 +48,7 @@ toHtml :
     -> Html.Styled.Html msg
 toHtml viewBox size children =
     S.svg
-        ([ Sa.viewBox
+        [ Sa.viewBox
             (String.fromInt viewBox.x
                 ++ " "
                 ++ String.fromInt viewBox.y
@@ -57,20 +57,19 @@ toHtml viewBox size children =
                 ++ " "
                 ++ String.fromInt viewBox.height
             )
-         ]
-            ++ (case size of
-                    Just { width, height, padding } ->
-                        [ Sa.css
-                            [ Css.width (Css.px (toFloat width))
-                            , Css.height (Css.px (toFloat height))
-                            , Css.padding (Css.px (toFloat padding))
-                            ]
-                        ]
+        , Sa.css
+            (case size of
+                Just { width, height, padding } ->
+                    [ Css.display Css.block
+                    , Css.width (Css.px (toFloat width))
+                    , Css.height (Css.px (toFloat height))
+                    , Css.padding (Css.px (toFloat padding))
+                    ]
 
-                    Nothing ->
-                        []
-               )
-        )
+                Nothing ->
+                    [ Css.display Css.block ]
+            )
+        ]
         (children |> List.map elementToSvg)
 
 
