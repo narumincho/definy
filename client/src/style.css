@@ -8,7 +8,6 @@
         url("https://fonts.gstatic.com/s/roboto/v19/KFOmCnqEu92Fr1Mu4mxK.woff2")
             format("woff2");
 }
-
 /*
     Hack typeface https://github.com/source-foundry/Hack
     License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
@@ -87,33 +86,6 @@ img {
 
 .treePanel-focus {
     background-color: #2d2d2d;
-}
-
-/* ==================================================================
-                            Tree Panel
-================================================================== */
-.treePanel-title {
-    color: #b9d09b;
-    margin: 0;
-    padding: 3px;
-    font-size: 32px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    user-select: none;
-    text-align: center;
-    font-family: "Segoe UI";
-    font-weight: 300;
-    letter-spacing: 0.08rem;
-}
-
-.treePanel-closeButton {
-    width: 2rem;
-    font-size: 1rem;
-    background-color: #000;
-    color: #fff;
-}
-
-.treePanel-closeButton:hover {
-    background-color: #333;
 }
 
 /* ==================================================================
@@ -291,107 +263,6 @@ img {
 
 /* ==================================================================
 =====================================================================
-                                Gutter
-=====================================================================
-================================================================== */
-
-/* vertical */
-
-.gutter-vertical {
-    width: 2px;
-    background-color: #444;
-    flex-shrink: 0;
-}
-
-.gutter-vertical:hover {
-    background-color: #666;
-}
-
-.gutter-vertical::after {
-    content: "";
-    cursor: ew-resize;
-    display: block;
-    height: 100%;
-    width: 12px;
-    position: relative;
-    left: -5px;
-    z-index: 10;
-}
-
-.gutter-vertical-active {
-    width: 2px;
-    flex-shrink: 0;
-}
-
-.gutter-vertical-active::after {
-    content: "";
-    cursor: ew-resize;
-    display: block;
-    height: 100%;
-    width: 6px;
-    position: relative;
-    left: -2px;
-    z-index: 10;
-    background-color: #fff;
-}
-
-/* horizontal */
-
-.gutter-horizontal {
-    height: 2px;
-    background-color: #444;
-    flex-shrink: 0;
-}
-
-.gutter-horizontal:hover {
-    background-color: #666;
-}
-
-.gutter-horizontal::after {
-    content: "";
-    cursor: ns-resize;
-    display: block;
-    width: 100%;
-    height: 12px;
-    position: relative;
-    top: -5px;
-    z-index: 10;
-}
-
-.gutter-horizontal-active {
-    height: 2px;
-    flex-shrink: 0;
-}
-
-.gutter-horizontal-active::after {
-    content: "";
-    cursor: ns-resize;
-    display: block;
-    width: 100%;
-    height: 6px;
-    position: relative;
-    top: -2px;
-    z-index: 10;
-    background-color: #fff;
-}
-
-/* ==================================================================
-=====================================================================
-                        Command Palette
-=====================================================================
-===================================================================*/
-
-.commandPalette {
-    position: absolute;
-    color: #fff;
-    background-color: #000;
-    width: 35rem;
-    padding: 2rem;
-    z-index: 2;
-}
-
-/* ==================================================================
-=====================================================================
                             Editor
 =====================================================================
 ================================================================== */
@@ -419,21 +290,6 @@ img {
     text-align: center;
     border-bottom: #4ec9b0 solid 2px;
     color: #eee;
-}
-
-/* ==================================================================
-=====================================================================
-                        Editor Key Config
-=====================================================================
-================================================================== */
-
-.editorKeyConfig-keyboard {
-    padding: 0 1rem;
-}
-
-.editorKeyConfig-msgCard {
-    width: 100px;
-    border: #fff solid 1px;
 }
 
 /* ==================================================================

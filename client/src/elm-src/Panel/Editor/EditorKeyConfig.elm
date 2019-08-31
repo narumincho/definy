@@ -4,10 +4,14 @@ module Panel.Editor.EditorKeyConfig exposing (Model(..), Msg, initModel, isInput
 -}
 
 import Color
+import Css
 import Data.Key as Key
 import Html
 import Html.Attributes
 import Html.Events
+import Html.Styled
+import Html.Styled.Attributes
+import Html.Styled.Events
 import Palette.X11 as P
 import Utility.NSvg as NSvg exposing (NSvg)
 
@@ -75,11 +79,14 @@ update msg (Model rec) =
             )
 
 
-view : Model -> { title : String, body : List (Html.Html Msg) }
+view : Model -> { title : String, body : List (Html.Styled.Html Msg) }
 view (Model { selectedKey, inputDevice }) =
     { title = "エディタのキーコンフィグ"
     , body =
-        [ Html.div [ Html.Attributes.class "editorKeyConfig-keyboard" ]
+        [ Html.Styled.div
+            [ Html.Styled.Attributes.css
+                [ Css.padding2 Css.zero (Css.px 16) ]
+            ]
             ([ inputSourceTab inputDevice
              ]
                 ++ (case inputDevice of
@@ -87,18 +94,18 @@ view (Model { selectedKey, inputDevice }) =
                             [ NSvg.toHtml { x = 0, y = 0, width = 6500, height = 1800 } Nothing (keyboard selectedKey) ]
 
                         Mouse ->
-                            [ Html.text "マウスの画面" ]
+                            [ Html.Styled.text "マウスの画面" ]
 
                         Gamepad ->
-                            [ Html.text "ゲームパッドの画面" ]
+                            [ Html.Styled.text "ゲームパッドの画面" ]
 
                         MidiKeyboard ->
-                            [ Html.text "MIDIキーボードの画面" ]
+                            [ Html.Styled.text "MIDIキーボードの画面" ]
                    )
                 ++ ([ "Up", "Down", "Select Parent Or Tree Close", "Select First Child Or TreeOpen" ]
-                        |> List.map (\text -> Html.div [ Html.Attributes.class "editorKeyConfig-msgCard" ] [ Html.text text ])
+                        |> List.map messageCard
                    )
-                ++ [ Html.text "ゲームパッドの操作を受け付けるかどうかCtrlとWを押したときにWのメッセージを送信するかどうかと、GamePadとMIDIキーボードの入力" ]
+                ++ [ Html.Styled.text "ゲームパッドの操作を受け付けるかどうかCtrlとWを押したときにWのメッセージを送信するかどうかと、GamePadとMIDIキーボードの入力" ]
             )
         ]
     }
@@ -109,28 +116,31 @@ isInputKeyboardDirect (Model { selectedKey }) =
     selectedKey == Nothing
 
 
-inputSourceTab : InputDevice -> Html.Html Msg
+inputSourceTab : InputDevice -> Html.Styled.Html Msg
 inputSourceTab selectedDevice =
-    Html.div
-        [ Html.Attributes.class "editor-tab"
-        , Html.Attributes.style "grid-template-columns" "1fr 1fr 1fr 1fr"
+    Html.Styled.div
+        [ Html.Styled.Attributes.class "editor-tab"
+        , Html.Styled.Attributes.css
+            [ Css.property "grid-template-columns" "1fr 1fr 1fr 1fr" ]
         ]
         ([ ( "キーボード", Keyboard ), ( "マウス", Mouse ), ( "ゲームパッド", Gamepad ), ( "MIDIキーボード", MidiKeyboard ) ]
-            |> List.map
-                (\( text, device ) ->
-                    Html.div
-                        [ Html.Attributes.class
-                            (if device == selectedDevice then
-                                "editor-tab-item-select"
-
-                             else
-                                "editor-tab-item"
-                            )
-                        , Html.Events.onClick (ChangeInputDevice device)
-                        ]
-                        [ Html.text text ]
-                )
+            |> List.map (inputSourceTabItem selectedDevice)
         )
+
+
+inputSourceTabItem : InputDevice -> ( String, InputDevice ) -> Html.Styled.Html Msg
+inputSourceTabItem selectedDevice ( text, device ) =
+    Html.Styled.div
+        [ Html.Styled.Attributes.class
+            (if device == selectedDevice then
+                "editor-tab-item-select"
+
+             else
+                "editor-tab-item"
+            )
+        , Html.Styled.Events.onClick (ChangeInputDevice device)
+        ]
+        [ Html.Styled.text text ]
 
 
 keyboard : Maybe Key.OneKey -> List (NSvg Msg)
@@ -1002,3 +1012,14 @@ numpad0Key =
 numpadDecimal : List (NSvg Msg)
 numpadDecimal =
     periodKey
+
+
+messageCard : String -> Html.Styled.Html msg
+messageCard text =
+    Html.Styled.div
+        [ Html.Styled.Attributes.css
+            [ Css.width (Css.px 100)
+            , Css.border3 (Css.px 1) Css.solid (Css.rgb 255 255 255)
+            ]
+        ]
+        [ Html.Styled.text text ]

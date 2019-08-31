@@ -20,12 +20,16 @@ module Panel.EditorGroup exposing
 また、編集画面を分割することもできる
 -}
 
+import Css
 import Data.Id
 import Data.Language
 import Data.Project
 import Html
 import Html.Attributes
 import Html.Events
+import Html.Styled
+import Html.Styled.Attributes
+import Html.Styled.Events
 import Palette.X11
 import Panel.DefaultUi
 import Panel.Editor.EditorKeyConfig
@@ -33,6 +37,7 @@ import Panel.Editor.Module
 import Panel.Editor.Project
 import Panel.Editor.ProjectImport
 import Panel.EditorItemSource
+import Panel.Style as Style
 import Utility.ListExtra
 import Utility.Map
 import Utility.NSvg as NSvg
@@ -44,7 +49,6 @@ type Model
     = Model
         { group : Group
         , activeEditorIndex : EditorIndex
-        , mouseOverOpenEditorPosition : Maybe OpenEditorPosition
         }
 
 
@@ -152,8 +156,6 @@ type Msg
     = ChangeActiveEditor EditorIndex -- 他のエディタへアクティブなエディタを変更する
     | OpenEditor OpenEditorPosition -- エディタを表示する
     | CloseEditor EditorIndex -- エディタを削除する
-    | MouseEnterOpenEditorGutter OpenEditorPosition -- マウスがGutterの上を通る
-    | MouseLeaveOpenEditorGutter -- マウスがGutterの上から離れる
     | FireClickEventInCapturePhase String -- エディタをクリックしてアクティブにする
     | EditorItemMsg { msg : EditorMsg, ref : EditorIndex } -- 内包しているエディタへのMsg
     | EditorItemMsgToActive EditorMsg -- アクティブなエディタへのMsg
@@ -201,7 +203,6 @@ initModel =
                         { top = ModuleEditor (Panel.Editor.Module.initModel (Data.Id.ModuleId "")) }
                 }
         , activeEditorIndex = ( EditorIndexLeft, EditorIndexTop )
-        , mouseOverOpenEditorPosition = Nothing
         }
     , [ CmdSetClickEventListenerInCapturePhase (editorIndexToIdString ( EditorIndexLeft, EditorIndexTop )) ]
     )
@@ -256,7 +257,6 @@ update msg project model =
             ( model
                 |> setGroup newGroup
                 |> setActiveEditorRef newActiveEditorIndex
-                |> mouseLeaveAddGutter
             , [ CmdSetClickEventListenerInCapturePhase (editorIndexToIdString newActiveEditorIndex) ]
             )
 
@@ -264,17 +264,6 @@ update msg project model =
             ( model
                 |> mapGroup (closeEditor hideEditorRef)
                 |> normalizeActiveEditorRef
-                |> mouseLeaveAddGutter
-            , []
-            )
-
-        MouseEnterOpenEditorGutter openEditorPosition ->
-            ( mouseOverAddGutter openEditorPosition model
-            , []
-            )
-
-        MouseLeaveOpenEditorGutter ->
-            ( mouseLeaveAddGutter model
             , []
             )
 
@@ -359,7 +348,6 @@ updateChangeActiveEditor index project model =
             model
                 |> mapGroup (setEditorItem (getActiveEditorRef model) beforeActiveEditorNewModel)
                 |> setActiveEditorRef index
-                |> mouseLeaveAddGutter
 
         ( newEditorItem, cmd ) =
             newModel
@@ -729,30 +717,6 @@ closeEditorColumn editorRefColumn columnGroup =
 
         ( EditorIndexBottom, ColumnTwo { top } ) ->
             Just (ColumnOne { top = top })
-
-
-
-{- ====================== マウスとGutter ====================== -}
-
-
-{-| エディタ追加ガターの上にマウスがきた
--}
-mouseOverAddGutter : OpenEditorPosition -> Model -> Model
-mouseOverAddGutter openEditorPosition (Model rec) =
-    Model
-        { rec
-            | mouseOverOpenEditorPosition = Just openEditorPosition
-        }
-
-
-{-| エディタ追加ガターからマウスが離れた
--}
-mouseLeaveAddGutter : Model -> Model
-mouseLeaveAddGutter (Model rec) =
-    Model
-        { rec
-            | mouseOverOpenEditorPosition = Nothing
-        }
 
 
 
@@ -1173,13 +1137,13 @@ view :
     -> Bool
     -> Maybe Gutter
     -> Model
-    -> List (Html.Html Msg)
-view project { width, height, language } isFocus gutter (Model { group, activeEditorIndex, mouseOverOpenEditorPosition }) =
+    -> List (Html.Styled.Html Msg)
+view project { width, height, language } isFocus gutter (Model { group, activeEditorIndex }) =
     let
         ( activeEditorRow, activeEditorColumn ) =
             activeEditorIndex
     in
-    (case group of
+    case group of
         RowOne { left } ->
             [ editorColumn
                 project
@@ -1190,7 +1154,6 @@ view project { width, height, language } isFocus gutter (Model { group, activeEd
                 EditorIndexLeft
                 (gutter == Just (GutterHorizontal GutterHorizontalLeft))
                 True
-            , editorRowAddGutter
             ]
 
         RowTwo { left, center, leftWidth } ->
@@ -1227,7 +1190,6 @@ view project { width, height, language } isFocus gutter (Model { group, activeEd
                 EditorIndexCenter
                 (gutter == Just (GutterHorizontal GutterHorizontalCenter))
                 False
-            , editorRowAddGutter
             ]
 
         RowThree { left, center, right, leftWidth, centerWidth } ->
@@ -1292,161 +1254,14 @@ view project { width, height, language } isFocus gutter (Model { group, activeEd
                 (gutter == Just (GutterHorizontal GutterHorizontalRight))
                 False
             ]
-    )
-        ++ List.map (Html.map never)
-            (case mouseOverOpenEditorPosition of
-                Just openEditorPosition ->
-                    [ openEditorButton { width = width, height = height } group openEditorPosition ]
-
-                Nothing ->
-                    []
-            )
 
 
 {-| | エディタの幅を変更するときにつかむガター
 -}
-verticalGutter : GutterVertical -> Bool -> Html.Html Msg
-verticalGutter gutter isActive =
-    Html.div
-        [ Html.Attributes.class
-            (if isActive then
-                "gutter-vertical-active"
-
-             else
-                "gutter-vertical"
-            )
-        , Html.Events.onMouseDown (GrabVerticalGutter gutter)
-        ]
-        []
-
-
-{-| 右端にある、エディタを横に追加するガター
--}
-editorRowAddGutter : Html.Html Msg
-editorRowAddGutter =
-    Html.div
-        [ Html.Attributes.class "gutter-vertical"
-        , Html.Events.onClick (OpenEditor OpenEditorPositionRightRow)
-        , Html.Events.onMouseEnter (MouseEnterOpenEditorGutter OpenEditorPositionRightRow)
-        , Html.Events.onMouseLeave MouseLeaveOpenEditorGutter
-        ]
-        []
-
-
-{-| エディタを追加する。ということが分かるようにするアイコン
--}
-openEditorButton : { width : Int, height : Int } -> Group -> OpenEditorPosition -> Html.Html Never
-openEditorButton { width, height } group openEditorPosition =
-    let
-        ( x, bottom ) =
-            case openEditorPosition of
-                OpenEditorPositionRightRow ->
-                    ( width - 30
-                    , height // 2 - 30
-                    )
-
-                OpenEditorPositionLeftBottom ->
-                    ( case group of
-                        RowOne _ ->
-                            width // 2
-
-                        RowTwo { leftWidth } ->
-                            floor (toFloat width * toFloat leftWidth / 1000 / 2)
-
-                        RowThree { leftWidth } ->
-                            floor (toFloat width * toFloat leftWidth / 1000 / 2)
-                    , 10
-                    )
-
-                OpenEditorPositionCenterBottom ->
-                    ( case group of
-                        RowOne _ ->
-                            width // 2
-
-                        RowTwo { leftWidth } ->
-                            floor (toFloat width * toFloat ((1000 + leftWidth) // 2) / 1000)
-
-                        RowThree { leftWidth, centerWidth } ->
-                            floor (toFloat width * toFloat (leftWidth + centerWidth // 2) / 1000)
-                    , 10
-                    )
-
-                OpenEditorPositionRightBottom ->
-                    ( case group of
-                        RowOne _ ->
-                            width // 2
-
-                        RowTwo { leftWidth } ->
-                            floor (toFloat width * (toFloat (1000 - leftWidth) / 1000) / 2)
-
-                        RowThree { leftWidth, centerWidth } ->
-                            floor (toFloat width * (toFloat (1000 + leftWidth + centerWidth) / 1000 / 2))
-                    , 10
-                    )
-    in
-    Html.div
-        [ Html.Attributes.class "editorGroupPanel-openEditorIcon"
-        , Html.Attributes.style "left" (String.fromInt (x - 30) ++ "px")
-        , Html.Attributes.style "bottom" (String.fromInt bottom ++ "px")
-        ]
-        [ NSvg.toHtml
-            { x = 0, y = 0, width = 26, height = 26 }
-            Nothing
-            (([ NSvg.rect
-                    { width = 24, height = 24 }
-                    (NSvg.strokeColor Palette.X11.white)
-                    NSvg.fillNone
-              ]
-                ++ (case openEditorPosition of
-                        OpenEditorPositionRightRow ->
-                            case group of
-                                RowOne _ ->
-                                    twoRowAddRight
-
-                                RowTwo _ ->
-                                    threeRowAddRight
-
-                                RowThree _ ->
-                                    []
-
-                        _ ->
-                            addBottom
-                   )
-             )
-                |> List.map (NSvg.translate { x = 1, y = 1 })
-            )
-        ]
-
-
-twoRowAddRight : List (NSvg.NSvg Never)
-twoRowAddRight =
-    [ NSvg.line ( 9, 0 ) ( 9, 24 ) (NSvg.strokeColor Palette.X11.white)
-    , NSvg.line ( 7, 8 ) ( 7, 16 ) (NSvg.strokeColor Palette.X11.white)
-        |> NSvg.translate { x = 9, y = 0 }
-    , NSvg.line ( 3, 12 ) ( 11, 12 ) (NSvg.strokeColor Palette.X11.white)
-        |> NSvg.translate { x = 9, y = 0 }
-    ]
-
-
-threeRowAddRight : List (NSvg.NSvg Never)
-threeRowAddRight =
-    [ NSvg.line ( 5, 0 ) ( 5, 24 ) (NSvg.strokeColor Palette.X11.white)
-    , NSvg.line ( 11, 0 ) ( 11, 24 ) (NSvg.strokeColor Palette.X11.white)
-    , NSvg.line ( 7, 8 ) ( 7, 16 ) (NSvg.strokeColor Palette.X11.white)
-        |> NSvg.translate { x = 11, y = 0 }
-    , NSvg.line ( 3, 12 ) ( 11, 12 ) (NSvg.strokeColor Palette.X11.white)
-        |> NSvg.translate { x = 11, y = 0 }
-    ]
-
-
-addBottom : List (NSvg.NSvg Never)
-addBottom =
-    [ NSvg.line ( 0, 9 ) ( 24, 9 ) (NSvg.strokeColor Palette.X11.white)
-    , NSvg.line ( 8, 7 ) ( 16, 7 ) (NSvg.strokeColor Palette.X11.white)
-        |> NSvg.translate { x = 0, y = 9 }
-    , NSvg.line ( 12, 3 ) ( 12, 11 ) (NSvg.strokeColor Palette.X11.white)
-        |> NSvg.translate { x = 0, y = 9 }
-    ]
+verticalGutter : GutterVertical -> Bool -> Html.Styled.Html Msg
+verticalGutter gutter isResizing =
+    Style.verticalGutter isResizing
+        |> Html.Styled.map (always (GrabVerticalGutter gutter))
 
 
 {-| エディタの縦に2つ並んでいるか1つの表示
@@ -1460,11 +1275,12 @@ editorColumn :
     -> EditorIndexRow
     -> Bool
     -> Bool
-    -> Html.Html Msg
+    -> Html.Styled.Html Msg
 editorColumn project columnGroup { width, height } openEditorPosition activeEditorIndexColumnMaybe editorRefRow isGutterActive isOne =
-    Html.div
+    Html.Styled.div
         [ subClass "column"
-        , Html.Attributes.style "width" (String.fromInt width ++ "px")
+        , Html.Styled.Attributes.css
+            [ Css.width (Css.px (toFloat width)) ]
         ]
         (case columnGroup of
             ColumnOne { top } ->
@@ -1477,7 +1293,6 @@ editorColumn project columnGroup { width, height } openEditorPosition activeEdit
                     , isActive = Just EditorIndexTop == activeEditorIndexColumnMaybe
                     , isOne = isOne
                     }
-                , editorColumnAddGutter openEditorPosition
                 ]
 
             ColumnTwo { top, bottom, topHeight } ->
@@ -1517,32 +1332,10 @@ editorColumn project columnGroup { width, height } openEditorPosition activeEdit
 
 {-| エディタの高さを変更するガター
 -}
-horizontalGutter : GutterHorizontal -> Bool -> Html.Html Msg
-horizontalGutter gutter isActive =
-    Html.div
-        [ Html.Attributes.class
-            (if isActive then
-                "gutter-horizontal-active"
-
-             else
-                "gutter-horizontal"
-            )
-        , Html.Events.onMouseDown (GrabHorizontalGutter gutter)
-        ]
-        []
-
-
-{-| 下にある、エディタを下に追加するガター
--}
-editorColumnAddGutter : OpenEditorPosition -> Html.Html Msg
-editorColumnAddGutter showEditorPosition =
-    Html.div
-        [ Html.Attributes.class "gutter-horizontal"
-        , Html.Events.onClick (OpenEditor showEditorPosition)
-        , Html.Events.onMouseEnter (MouseEnterOpenEditorGutter showEditorPosition)
-        , Html.Events.onMouseLeave MouseLeaveOpenEditorGutter
-        ]
-        []
+horizontalGutter : GutterHorizontal -> Bool -> Html.Styled.Html Msg
+horizontalGutter gutter isResizing =
+    Style.horizontalGutter isResizing
+        |> Html.Styled.map (always (GrabHorizontalGutter gutter))
 
 
 {-| それぞれのエディタの表示
@@ -1556,27 +1349,36 @@ editorItemView :
     , isActive : Bool
     , isOne : Bool
     }
-    -> Html.Html Msg
+    -> Html.Styled.Html Msg
 editorItemView { project, editorItem, editorIndex, width, height, isActive, isOne } =
     let
         { title, body } =
             editorTitleAndBody width editorIndex isActive project editorItem
     in
-    Html.div
+    Html.Styled.div
         ([ subClassList [ ( "editor", True ), ( "editor--active", isActive ) ]
-         , Html.Attributes.style "width" (String.fromInt width ++ "px")
-         , Html.Attributes.style "height" (String.fromInt height ++ "px")
-         , Html.Attributes.id (editorIndexToIdString editorIndex)
+         , Html.Styled.Attributes.css
+            ([ Css.width (Css.px (toFloat width))
+             , Css.height (Css.px (toFloat height))
+             ]
+                ++ (if isActive then
+                        [ Css.outline3 (Css.px 2) Css.solid (Css.rgb 255 165 0) ]
+
+                    else
+                        []
+                   )
+            )
+         , Html.Styled.Attributes.id (editorIndexToIdString editorIndex)
          ]
             ++ (if isActive then
-                    [ Html.Attributes.style "outline" "solid 2px orange" ]
+                    []
 
                 else
-                    [ Html.Events.onClick (ChangeActiveEditor editorIndex) ]
+                    [ Html.Styled.Events.onClick (ChangeActiveEditor editorIndex) ]
                )
         )
         [ editorTitle title editorIndex isOne
-        , Html.div [ subClass "editorBody" ] body
+        , Html.Styled.div [ subClass "editorBody" ] body
         ]
 
 
@@ -1615,7 +1417,7 @@ editorTitleAndBody :
     -> Bool
     -> Data.Project.Project
     -> EditorModel
-    -> { title : String, body : List (Html.Html Msg) }
+    -> { title : String, body : List (Html.Styled.Html Msg) }
 editorTitleAndBody width editorIndex isActive project editorItem =
     case editorItem of
         ProjectEditor _ ->
@@ -1632,7 +1434,10 @@ editorTitleAndBody width editorIndex isActive project editorItem =
             { title = viewItem.title
             , body =
                 viewItem.body
-                    |> List.map (Html.map (\m -> EditorItemMsg { msg = ModuleEditorMsg m, ref = editorIndex }))
+                    |> List.map
+                        (Html.Styled.fromUnstyled
+                            >> Html.Styled.map (\m -> EditorItemMsg { msg = ModuleEditorMsg m, ref = editorIndex })
+                        )
             }
 
         EditorKeyConfig model ->
@@ -1643,17 +1448,25 @@ editorTitleAndBody width editorIndex isActive project editorItem =
             { title = viewItem.title
             , body =
                 viewItem.body
-                    |> List.map (Html.map (\m -> EditorItemMsg { msg = EditorKeyConfigMsg m, ref = editorIndex }))
+                    |> List.map
+                        (Html.Styled.map
+                            (\m ->
+                                EditorItemMsg
+                                    { msg = EditorKeyConfigMsg m, ref = editorIndex }
+                            )
+                        )
             }
 
 
 {-| エディタのタイトル。closeableはパネルが1つのときにとじるボタンをなくすためにある
 -}
-editorTitle : String -> EditorIndex -> Bool -> Html.Html Msg
+editorTitle : String -> EditorIndex -> Bool -> Html.Styled.Html Msg
 editorTitle title editorRef closeable =
-    Html.div
+    Html.Styled.div
         [ subClass "editorTitle" ]
-        ([ Html.div [ subClass "editorTitle-text" ] [ Html.text title ]
+        ([ Html.Styled.div
+            [ subClass "editorTitle-text" ]
+            [ Html.Styled.text title ]
          ]
             ++ (if closeable then
                     []
@@ -1666,10 +1479,10 @@ editorTitle title editorRef closeable =
 
 {-| エディタを閉じるときに押すボタン
 -}
-editorTitleCloseIcon : EditorIndex -> Html.Html Msg
+editorTitleCloseIcon : EditorIndex -> Html.Styled.Html Msg
 editorTitleCloseIcon editorRef =
-    Html.div
-        [ Html.Events.onClick (CloseEditor editorRef)
+    Html.Styled.div
+        [ Html.Styled.Events.onClick (CloseEditor editorRef)
         , subClass "editorTitle-closeIcon"
         ]
         [ NSvg.toHtml
@@ -1687,13 +1500,13 @@ editorTitleCloseIcon editorRef =
         ]
 
 
-subClass : String -> Html.Attribute msg
+subClass : String -> Html.Styled.Attribute msg
 subClass sub =
-    Html.Attributes.class ("editorGroupPanel-" ++ sub)
+    Html.Styled.Attributes.class ("editorGroupPanel-" ++ sub)
 
 
-subClassList : List ( String, Bool ) -> Html.Attribute msg
+subClassList : List ( String, Bool ) -> Html.Styled.Attribute msg
 subClassList list =
     list
         |> List.map (Tuple.mapFirst (\sub -> "editorGroupPanel-" ++ sub))
-        |> Html.Attributes.classList
+        |> Html.Styled.Attributes.classList

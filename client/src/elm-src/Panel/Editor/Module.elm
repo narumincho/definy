@@ -23,6 +23,7 @@ import Html
 import Html.Attributes
 import Html.Events
 import Html.Keyed
+import Html.Styled
 import Json.Decode
 import Json.Encode
 import Panel.DefaultUi
@@ -3385,7 +3386,7 @@ suggestNameItem mainText subText isSelect =
                     ]
                )
             ++ (if isSelect then
-                    [ enterIcon ]
+                    [ enterIcon |> Html.Styled.toUnstyled ]
 
                 else
                     []
@@ -3393,7 +3394,7 @@ suggestNameItem mainText subText isSelect =
         )
 
 
-enterIcon : Html.Html msg
+enterIcon : Html.Styled.Html msg
 enterIcon =
     NSvg.toHtmlWithClass
         "moduleEditor-partDef-suggestion-item-enterIcon"
@@ -3470,20 +3471,6 @@ suggestionType type_ suggestIndex =
     Html.div
         [ subClass "partDef-suggestion" ]
         []
-
-
-
---        [ suggestTypeItem
---            (Type.Valid
---                (SourceIndex.TypeIndex
---                    { moduleIndex = SourceIndex.CoreInt32
---                    , typeIndex = ModuleIndex.TypeDefIndex 0
---                    }
---                )
---            )
---            (Html.text "32bit整数")
---            True
---        ]
 
 
 suggestTypeItem : Data.Project.PartDef.Type -> Html.Html msg -> Bool -> Html.Html msg

@@ -18,12 +18,11 @@ import Data.Language
 import Data.Project
 import Data.SocialLoginService
 import Data.User
-import Html
-import Html.Attributes as A
-import Html.Events
 import Html.Styled
 import Html.Styled.Attributes
+import Html.Styled.Events
 import Palette.X11
+import Panel.Style as Style
 import Svg.Styled
 import Svg.Styled.Attributes
 import Utility.NSvg as NSvg exposing (NSvg)
@@ -33,14 +32,7 @@ type Model
     = Model
         { selectTab : Tab
         , logInState : LogInState
-        , mouseState : MouseState
         }
-
-
-type MouseState
-    = MouseStateNone
-    | MouseStateEnter Data.SocialLoginService.SocialLoginService
-    | MouseStateDown Data.SocialLoginService.SocialLoginService
 
 
 type Msg
@@ -53,10 +45,6 @@ type Msg
     | ShowServiceSelectView
     | HideServiceSelectView
     | LogInRequest Data.SocialLoginService.SocialLoginService
-    | MouseEnterLogInButton Data.SocialLoginService.SocialLoginService
-    | MouseLeave
-    | MouseDownLogInButton Data.SocialLoginService.SocialLoginService
-    | MouseUp
 
 
 type Cmd
@@ -78,7 +66,6 @@ initModel =
     Model
         { selectTab = ModuleTree
         , logInState = LogInStateNormal
-        , mouseState = MouseStateNone
         }
 
 
@@ -118,41 +105,6 @@ update msg (Model rec) =
             , [ CmdLogInRequest service ]
             )
 
-        MouseEnterLogInButton service ->
-            ( Model
-                { rec | mouseState = MouseStateEnter service }
-            , []
-            )
-
-        MouseLeave ->
-            ( Model
-                { rec | mouseState = MouseStateNone }
-            , []
-            )
-
-        MouseDownLogInButton service ->
-            ( Model
-                { rec | mouseState = MouseStateDown service }
-            , []
-            )
-
-        MouseUp ->
-            ( Model
-                { rec
-                    | mouseState =
-                        case rec.mouseState of
-                            MouseStateNone ->
-                                MouseStateNone
-
-                            MouseStateEnter element ->
-                                MouseStateEnter element
-
-                            MouseStateDown element ->
-                                MouseStateEnter element
-                }
-            , []
-            )
-
         _ ->
             ( Model rec
             , []
@@ -166,14 +118,19 @@ update msg (Model rec) =
 -}
 
 
-view : { user : Maybe Data.User.User, language : Data.Language.Language, project : Data.Project.Project } -> Model -> List (Html.Html Msg)
-view { user, language, project } (Model { selectTab, logInState, mouseState }) =
+view :
+    { user : Maybe Data.User.User
+    , language : Data.Language.Language
+    , project : Data.Project.Project
+    }
+    -> Model
+    -> List (Html.Styled.Html Msg)
+view { user, language, project } (Model { selectTab, logInState }) =
     [ definyLogo
     , userView
         { user = user
         , language = language
         , logInState = logInState
-        , mouseState = mouseState
         }
     , projectOwnerAndName
         (Data.Project.getLeaderName project)
@@ -182,25 +139,25 @@ view { user, language, project } (Model { selectTab, logInState, mouseState }) =
     ]
 
 
-definyLogo : Html.Html msg
+definyLogo : Html.Styled.Html msg
 definyLogo =
-    Html.div
-        [ A.style "display" "flex"
-        , A.style "justify-content" "center"
-        ]
-        [ Html.div
-            [ A.style "color" "#b9d09b"
-            , A.style "margin" "0"
-            , A.style "padding" "3px"
-            , A.style "font-size" "32px"
-            , A.style "text-shadow" "0 1px 2px rgba(0, 0, 0, 0.2)"
-            , A.style "user-select" "none"
-            , A.style "text-align" "center"
-            , A.style "font-family" "Segoe UI"
-            , A.style "font-weight" "300"
-            , A.style "letter-spacing" "0.08rem"
+    Html.Styled.div
+        [ Html.Styled.Attributes.css
+            [ Css.displayFlex
+            , Css.justifyContent Css.center
             ]
-            [ Html.text "Definy" ]
+        ]
+        [ Html.Styled.div
+            [ Html.Styled.Attributes.css
+                [ Css.color (Css.rgb 185 208 155)
+                , Css.padding (Css.px 3)
+                , Css.fontSize (Css.rem 2)
+                , Css.textShadow4 Css.zero (Css.px 1) (Css.px 2) (Css.rgba 0 0 0 0.2)
+                , Css.property "user-select" "none"
+                , Css.fontWeight (Css.int 300)
+                ]
+            ]
+            [ Html.Styled.text "Definy" ]
         ]
 
 
@@ -208,37 +165,26 @@ userView :
     { user : Maybe Data.User.User
     , language : Data.Language.Language
     , logInState : LogInState
-    , mouseState : MouseState
     }
-    -> Html.Html Msg
-userView { user, language, logInState, mouseState } =
-    Html.div
-        [ A.style "color" "#ddd"
-        , A.style "display" "grid"
-        , A.style "gap" "10px"
-        , A.style "padding" "8px"
+    -> Html.Styled.Html Msg
+userView { user, language, logInState } =
+    Html.Styled.div
+        [ Html.Styled.Attributes.css
+            [ Style.textColor
+            , Css.property "display" "grid"
+            , Css.property "gap" "10px"
+            , Css.padding (Css.px 8)
+            ]
         ]
         (case user of
             Just u ->
-                [ Html.div
-                    [ A.style "display" "flex" ]
-                    [ Html.div
-                        []
-                        [ Html.text (Data.User.getName u) ]
+                [ Html.Styled.div
+                    [ Html.Styled.Attributes.css
+                        [ Css.displayFlex ]
                     ]
-                , Html.button
-                    [ Html.Events.onClick SignOutRequest ]
-                    [ Html.text
-                        (case language of
-                            Data.Language.Japanese ->
-                                "サインアウトする"
-
-                            Data.Language.Esperanto ->
-                                "Elsaluti"
-
-                            Data.Language.English ->
-                                "Sign Out"
-                        )
+                    [ Html.Styled.div
+                        []
+                        [ Html.Styled.text (Data.User.getName u) ]
                     ]
                 ]
 
@@ -248,20 +194,21 @@ userView { user, language, logInState, mouseState } =
                         logInStateNormalView language
 
                     LogInStateShowSelectServiceView ->
-                        serviceSelectView language mouseState
+                        serviceSelectView language
 
                     LogInStateWaitUrl socialLoginService ->
                         waitUrlView language socialLoginService
         )
 
 
-logInStateNormalView : Data.Language.Language -> List (Html.Html Msg)
+logInStateNormalView : Data.Language.Language -> List (Html.Styled.Html Msg)
 logInStateNormalView language =
-    [ Html.button
-        [ Html.Events.onClick ShowServiceSelectView
-        , A.style "cursor" "pointer"
+    [ Html.Styled.button
+        [ Html.Styled.Events.onClick ShowServiceSelectView
+        , Html.Styled.Attributes.css
+            [ Css.cursor Css.pointer ]
         ]
-        [ Html.text
+        [ Html.Styled.text
             (case language of
                 Data.Language.Japanese ->
                     "ログイン"
@@ -276,69 +223,42 @@ logInStateNormalView language =
     ]
 
 
-serviceSelectView : Data.Language.Language -> MouseState -> List (Html.Html Msg)
-serviceSelectView language mouseState =
-    [ Html.button
-        [ Html.Events.onClick HideServiceSelectView
-        , A.style "cursor" "pointer"
+serviceSelectView : Data.Language.Language -> List (Html.Styled.Html Msg)
+serviceSelectView language =
+    [ Html.Styled.button
+        [ Html.Styled.Events.onClick HideServiceSelectView
+        , Html.Styled.Attributes.css
+            [ Css.cursor Css.pointer ]
         ]
-        [ Html.text "▲" ]
-    , logInButtonNoLine mouseState googleIcon language Data.SocialLoginService.Google
-    , logInButtonNoLine mouseState gitHubIcon language Data.SocialLoginService.GitHub
-    , logInButtonLine mouseState language
+        [ Html.Styled.text "▲" ]
+    , logInButtonNoLine googleIcon language Data.SocialLoginService.Google
+    , logInButtonNoLine gitHubIcon language Data.SocialLoginService.GitHub
+    , logInButtonLine language
     ]
 
 
-waitUrlView : Data.Language.Language -> Data.SocialLoginService.SocialLoginService -> List (Html.Html Msg)
-waitUrlView language service =
-    [ Html.text
-        (case language of
-            Data.Language.Japanese ->
-                Data.SocialLoginService.serviceName service ++ "のURLを発行中"
-
-            Data.Language.Esperanto ->
-                "Elsendante la URL de " ++ Data.SocialLoginService.serviceName service
-
-            Data.Language.English ->
-                "Issuing the URL of " ++ Data.SocialLoginService.serviceName service
-        )
-    ]
-
-
-logInButtonNoLine : MouseState -> Html.Html Msg -> Data.Language.Language -> Data.SocialLoginService.SocialLoginService -> Html.Html Msg
-logInButtonNoLine mouseSate icon language service =
-    Html.button
-        [ Html.Events.onClick (LogInRequest service)
-        , Html.Events.onMouseEnter (MouseEnterLogInButton service)
-        , Html.Events.onMouseLeave MouseLeave
-        , Html.Events.onMouseDown (MouseDownLogInButton service)
-        , Html.Events.onMouseUp MouseUp
-        , A.style "background-color"
-            (case mouseSate of
-                MouseStateDown s ->
-                    if s == service then
-                        "#ccc"
-
-                    else
-                        "#e8e8e8"
-
-                MouseStateEnter s ->
-                    if s == service then
-                        "#fff"
-
-                    else
-                        "#e8e8e8"
-
-                MouseStateNone ->
-                    "e8e8e8"
-            )
-        , A.style "border-radius" "4px"
-        , A.style "border" "none"
-        , A.style "color" "#111"
-        , A.style "display" "flex"
-        , A.style "align-items" "center"
-        , A.style "padding" "0"
-        , A.style "cursor" "pointer"
+logInButtonNoLine :
+    Html.Styled.Html Msg
+    -> Data.Language.Language
+    -> Data.SocialLoginService.SocialLoginService
+    -> Html.Styled.Html Msg
+logInButtonNoLine icon language service =
+    Html.Styled.button
+        [ Html.Styled.Events.onClick (LogInRequest service)
+        , Html.Styled.Attributes.css
+            [ Css.backgroundColor (Css.rgb 232 232 232)
+            , Css.borderRadius (Css.px 4)
+            , Css.border2 Css.zero Css.none
+            , Css.color (Css.rgb 17 17 17)
+            , Css.displayFlex
+            , Css.alignItems Css.center
+            , Css.padding Css.zero
+            , Css.cursor Css.pointer
+            , Css.hover
+                [ Css.backgroundColor (Css.rgb 255 255 255) ]
+            , Css.active
+                [ Css.backgroundColor (Css.rgb 204 204 204) ]
+            ]
         ]
         [ icon
         , logInButtonText
@@ -355,51 +275,40 @@ logInButtonNoLine mouseSate icon language service =
         ]
 
 
-logInButtonLine : MouseState -> Data.Language.Language -> Html.Html Msg
-logInButtonLine mouseState language =
-    Html.button
-        [ Html.Events.onClick (LogInRequest Data.SocialLoginService.Line)
-        , Html.Events.onMouseEnter (MouseEnterLogInButton Data.SocialLoginService.Line)
-        , Html.Events.onMouseLeave MouseLeave
-        , Html.Events.onMouseDown (MouseDownLogInButton Data.SocialLoginService.Line)
-        , Html.Events.onMouseUp MouseUp
-        , A.style "background-color"
-            (case mouseState of
-                MouseStateEnter Data.SocialLoginService.Line ->
-                    "#00e000"
-
-                MouseStateDown Data.SocialLoginService.Line ->
-                    "#00b300"
-
-                _ ->
-                    "#00c300"
-            )
-        , A.style "border-radius" "4px"
-        , A.style "border" "none"
-        , A.style "color" "#FFF"
-        , A.style "display" "flex"
-        , A.style "align-items" "center"
-        , A.style "padding" "0"
-        , A.style "cursor" "pointer"
+logInButtonLine : Data.Language.Language -> Html.Styled.Html Msg
+logInButtonLine language =
+    Html.Styled.button
+        [ Html.Styled.Events.onClick (LogInRequest Data.SocialLoginService.Line)
+        , Html.Styled.Attributes.css
+            [ Css.backgroundColor (Css.rgb 0 195 0)
+            , Css.borderRadius (Css.px 4)
+            , Css.border2 Css.zero Css.none
+            , Css.color (Css.rgb 255 255 255)
+            , Css.displayFlex
+            , Css.alignItems Css.center
+            , Css.padding Css.zero
+            , Css.cursor Css.pointer
+            , Css.hover
+                [ Css.backgroundColor (Css.rgb 0 224 0) ]
+            , Css.active
+                [ Css.backgroundColor (Css.rgb 0 179 0) ]
+            ]
         ]
-        [ Html.img
-            [ A.src "/assets/line_icon120.png"
-            , A.style "width" "36px"
-            , A.style "height" "36px"
-            , A.style "border-right"
-                ("solid 1px "
-                    ++ (case mouseState of
-                            MouseStateEnter Data.SocialLoginService.Line ->
-                                "#00c900"
-
-                            MouseStateDown Data.SocialLoginService.Line ->
-                                "#009800"
-
-                            _ ->
-                                "#00b300"
-                       )
-                )
-            , A.style "padding" "2px"
+        [ Html.Styled.img
+            [ Html.Styled.Attributes.src "/assets/line_icon120.png"
+            , Html.Styled.Attributes.css
+                [ Css.width (Css.px 36)
+                , Css.height (Css.px 36)
+                , Css.padding (Css.px 2)
+                , Css.borderRight3
+                    (Css.px 1)
+                    Css.solid
+                    (Css.rgb 0 179 0)
+                , Css.hover
+                    [ Css.borderRightColor (Css.rgb 0 201 0) ]
+                , Css.active
+                    [ Css.borderRightColor (Css.rgb 0 152 0) ]
+                ]
             ]
             []
         , logInButtonText
@@ -416,23 +325,46 @@ logInButtonLine mouseState language =
         ]
 
 
-logInButtonText : String -> Html.Html msg
+waitUrlView :
+    Data.Language.Language
+    -> Data.SocialLoginService.SocialLoginService
+    -> List (Html.Styled.Html Msg)
+waitUrlView language service =
+    [ Html.Styled.text
+        (case language of
+            Data.Language.Japanese ->
+                Data.SocialLoginService.serviceName service ++ "のURLを発行中"
+
+            Data.Language.Esperanto ->
+                "Elsendante la URL de " ++ Data.SocialLoginService.serviceName service
+
+            Data.Language.English ->
+                "Issuing the URL of " ++ Data.SocialLoginService.serviceName service
+        )
+    ]
+
+
+logInButtonText : String -> Html.Styled.Html msg
 logInButtonText text =
-    Html.div
-        [ A.style "flex-grow" "1"
-        , A.style "font-weight" "bold"
+    Html.Styled.div
+        [ Html.Styled.Attributes.css
+            [ Css.flexGrow (Css.int 1)
+            , Css.fontWeight Css.bold
+            ]
         ]
-        [ Html.text text ]
+        [ Html.Styled.text text ]
 
 
-projectOwnerAndName : String -> Data.Label.Label -> Html.Html msg
+projectOwnerAndName : String -> Data.Label.Label -> Html.Styled.Html msg
 projectOwnerAndName leaderName projectName =
-    Html.div
-        [ A.style "color" "#ddd" ]
-        [ Html.text (leaderName ++ "/" ++ Data.Label.toCapitalString projectName) ]
+    Html.Styled.div
+        [ Html.Styled.Attributes.css
+            [ Style.textColor ]
+        ]
+        [ Html.Styled.text (leaderName ++ "/" ++ Data.Label.toCapitalString projectName) ]
 
 
-tools : Html.Html msg
+tools : Html.Styled.Html msg
 tools =
     Html.Styled.div
         [ Html.Styled.Attributes.css
@@ -451,7 +383,6 @@ tools =
             ]
         , Html.Styled.text "body"
         ]
-        |> Html.Styled.toUnstyled
 
 
 projectTab : Html.Styled.Html msg
@@ -537,7 +468,7 @@ toDoTab =
         [ Html.Styled.text "TODO" ]
 
 
-gitHubIcon : Html.Html msg
+gitHubIcon : Html.Styled.Html msg
 gitHubIcon =
     NSvg.toHtml
         { x = 0, y = 0, width = 20, height = 20 }
@@ -549,7 +480,7 @@ gitHubIcon =
         ]
 
 
-googleIcon : Html.Html msg
+googleIcon : Html.Styled.Html msg
 googleIcon =
     NSvg.toHtml
         { x = 0, y = 0, width = 20, height = 20 }
@@ -573,7 +504,7 @@ googleIcon =
         ]
 
 
-twitterIcon : Html.Html msg
+twitterIcon : Html.Styled.Html msg
 twitterIcon =
     NSvg.toHtml
         { x = 0, y = 0, width = 20, height = 20 }

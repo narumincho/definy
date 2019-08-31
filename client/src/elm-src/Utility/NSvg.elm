@@ -1,38 +1,36 @@
 module Utility.NSvg exposing
-    ( NSvg, StrokeStyle, FillStyle
-    , toHtml, toHtmlWithClass
-    , strokeNone, strokeColor, strokeColorWidth
+    ( FillStyle
+    , NSvg
+    , StrokeStyle
+    , circle
+    , fillColor
+    , fillNone
+    , line
+    , path
+    , polygon
+    , polygonWithClickEvent
+    , rect
+    , rectWithClickEvent
+    , strokeColor
     , strokeColorAndStrokeLineJoinRound
-    , fillNone, fillColor
-    , rect, rectWithClickEvent, circle, polygon, polygonWithClickEvent, path, line
-    , translate
+    , strokeColorWidth
+    , strokeNone
     , strokeWidth
+    , toHtml
+    , toHtmlWithClass
+    , translate
     )
 
 {-| 標準のelm/svgは型がゆるいのでできるだけ間違わないように型をつけた新しいSVGの表現を作った
 要素を作ってから移動もできる
-
-@docs NSvg, StrokeStyle, FillStyle
-
-@docs toHtml, toHtmlWithClass
-
-@docs strokeNone, strokeColor, strokeColorWidth
-
-@docs strokeColorAndStrokeLineJoinRound
-
-@docs fillNone, fillColor
-
-@docs rect, rectWithClickEvent, circle, polygon, polygonWithClickEvent, path, line
-
-@docs translate
-
 -}
 
 import Color exposing (Color)
-import Html
-import Svg as S
-import Svg.Attributes as Sa
-import Svg.Events as Se
+import Css
+import Html.Styled
+import Svg.Styled as S
+import Svg.Styled.Attributes as Sa
+import Svg.Styled.Events as Se
 
 
 type NSvg msg
@@ -43,7 +41,11 @@ type NSvg msg
     | Line { x0 : Int, y0 : Int, x1 : Int, y1 : Int, strokeStyle : StrokeStyle }
 
 
-toHtml : { x : Int, y : Int, width : Int, height : Int } -> Maybe { width : Int, height : Int, padding : Int } -> List (NSvg msg) -> Html.Html msg
+toHtml :
+    { x : Int, y : Int, width : Int, height : Int }
+    -> Maybe { width : Int, height : Int, padding : Int }
+    -> List (NSvg msg)
+    -> Html.Styled.Html msg
 toHtml viewBox size children =
     S.svg
         ([ Sa.viewBox
@@ -58,15 +60,11 @@ toHtml viewBox size children =
          ]
             ++ (case size of
                     Just { width, height, padding } ->
-                        [ Sa.style
-                            ("width:"
-                                ++ String.fromInt width
-                                ++ "px; height:"
-                                ++ String.fromInt height
-                                ++ "px; padding:"
-                                ++ String.fromInt padding
-                                ++ "px"
-                            )
+                        [ Sa.css
+                            [ Css.width (Css.px (toFloat width))
+                            , Css.height (Css.px (toFloat height))
+                            , Css.padding (Css.px (toFloat padding))
+                            ]
                         ]
 
                     Nothing ->
@@ -76,7 +74,11 @@ toHtml viewBox size children =
         (children |> List.map elementToSvg)
 
 
-toHtmlWithClass : String -> { x : Int, y : Int, width : Int, height : Int } -> List (NSvg msg) -> Html.Html msg
+toHtmlWithClass :
+    String
+    -> { x : Int, y : Int, width : Int, height : Int }
+    -> List (NSvg msg)
+    -> Html.Styled.Html msg
 toHtmlWithClass className { x, y, width, height } children =
     S.svg
         [ Sa.viewBox

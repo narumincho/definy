@@ -3,14 +3,15 @@ port module Main exposing (main)
 import Browser
 import Browser.Events
 import Browser.Navigation
+import Css
 import Data.Key
 import Data.Language
 import Data.Project
 import Data.SocialLoginService
 import Data.User
-import Html
-import Html.Attributes
-import Html.Events
+import Html.Styled
+import Html.Styled.Attributes
+import Html.Styled.Events
 import Json.Decode
 import Panel.CommandPalette
 import Panel.DefaultUi
@@ -18,6 +19,7 @@ import Panel.Editor.Module
 import Panel.EditorGroup
 import Panel.EditorItemSource
 import Panel.Side
+import Panel.Style
 import Task
 import Url
 import Utility.ListExtra
@@ -1177,7 +1179,8 @@ view model =
     { title = "Definy"
     , body =
         [ sidePanel model
-        , verticalGutter (isTreePanelGutter model)
+        , Panel.Style.verticalGutter (isTreePanelGutter model)
+            |> Html.Styled.map (always (ToResizeGutterMode SideBarGutter))
         , editorGroupPanel model
         ]
             ++ (case getCommandPaletteModel model of
@@ -1187,30 +1190,36 @@ view model =
                     Nothing ->
                         []
                )
+            |> List.map Html.Styled.toUnstyled
     }
 
 
 {-| サイドパネルの表示
 -}
-sidePanel : Model -> Html.Html Msg
+sidePanel : Model -> Html.Styled.Html Msg
 sidePanel model =
-    Html.div
-        ([ Html.Attributes.classList
+    Html.Styled.div
+        ([ Html.Styled.Attributes.classList
             [ ( "treePanel", True )
             , ( "treePanel-focus", isFocusTreePanel model )
             ]
-         , Html.Attributes.style "width"
-            (String.fromInt (getTreePanelWidth model) ++ "px")
+         , Html.Styled.Attributes.css
+            ([ Css.width (Css.px (toFloat (getTreePanelWidth model)))
+             ]
+                ++ (case getGutterType model of
+                        Just gutterType ->
+                            [ gutterTypeToCursorStyle gutterType ]
+
+                        Nothing ->
+                            []
+                   )
+            )
          ]
             ++ (if isFocusTreePanel model then
                     []
 
                 else
-                    [ Html.Events.onClick (FocusTo FocusSidePanel) ]
-               )
-            ++ (getGutterType model
-                    |> Maybe.map gutterTypeToCursorStyle
-                    |> Utility.ListExtra.fromMaybe
+                    [ Html.Styled.Events.onClick (FocusTo FocusSidePanel) ]
                )
         )
         (Panel.Side.view
@@ -1219,32 +1228,38 @@ sidePanel model =
             , project = getProject model
             }
             (getSidePanelModel model)
-            |> List.map (Html.map SidePanelMsg)
+            |> List.map (Html.Styled.map SidePanelMsg)
         )
 
 
 {-| エディタグループパネルの表示
 -}
-editorGroupPanel : Model -> Html.Html Msg
+editorGroupPanel : Model -> Html.Styled.Html Msg
 editorGroupPanel model =
     let
         { width, height } =
             getEditorGroupPanelSize model
     in
-    Html.div
-        ([ Html.Attributes.class "editorGroupPanel"
-         , Html.Attributes.style "width" (String.fromInt width ++ "px")
-         , Html.Attributes.style "height" (String.fromInt height ++ "px")
+    Html.Styled.div
+        ([ Html.Styled.Attributes.class "editorGroupPanel"
+         , Html.Styled.Attributes.css
+            ([ Css.width (Css.px (toFloat width))
+             , Css.height (Css.px (toFloat height))
+             ]
+                ++ (case getGutterType model of
+                        Just gutterType ->
+                            [ gutterTypeToCursorStyle gutterType ]
+
+                        Nothing ->
+                            []
+                   )
+            )
          ]
             ++ (if isFocusEditorGroupPanel model then
                     []
 
                 else
-                    [ Html.Events.onClick (FocusTo FocusEditorGroupPanel) ]
-               )
-            ++ (getGutterType model
-                    |> Maybe.map gutterTypeToCursorStyle
-                    |> Utility.ListExtra.fromMaybe
+                    [ Html.Styled.Events.onClick (FocusTo FocusEditorGroupPanel) ]
                )
         )
         (Panel.EditorGroup.view
@@ -1253,49 +1268,20 @@ editorGroupPanel model =
             (isFocusEditorGroupPanel model)
             (getEditorGroupPanelGutter model)
             (getEditorGroupPanelModel model)
-            |> List.map (Html.map EditorPanelMsg)
+            |> List.map (Html.Styled.map EditorPanelMsg)
         )
 
 
-{-| サイドパネルの幅を変更するためにつかむところ | ガター
--}
-verticalGutter : Bool -> Html.Html Msg
-verticalGutter isGutterMode =
-    Html.div
-        [ Html.Attributes.class
-            (if isGutterMode then
-                "gutter-vertical-active"
-
-             else
-                "gutter-vertical"
-            )
-        , Html.Events.onMouseDown (ToResizeGutterMode SideBarGutter)
-        ]
-        []
-
-
-gutterTypeToCursorStyle : GutterType -> Html.Attribute msg
+gutterTypeToCursorStyle : GutterType -> Css.Style
 gutterTypeToCursorStyle gutterType =
     case gutterType of
         GutterTypeVertical ->
-            cursorEWResize
+            -- ↔
+            Css.cursor Css.ewResize
 
         GutterTypeHorizontal ->
-            cursorNSResize
-
-
-{-| VerticalGutterをつかんだときのマウスの形状 ↔
--}
-cursorEWResize : Html.Attribute msg
-cursorEWResize =
-    Html.Attributes.style "cursor" "ew-resize"
-
-
-{-| HorizontalGutterをつかんだときのマウスの形状 ↕
--}
-cursorNSResize : Html.Attribute msg
-cursorNSResize =
-    Html.Attributes.style "cursor" "ns-resize"
+            -- ↕
+            Css.cursor Css.nsResize
 
 
 

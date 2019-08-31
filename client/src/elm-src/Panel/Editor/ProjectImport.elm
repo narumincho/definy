@@ -1,6 +1,6 @@
 module Panel.Editor.ProjectImport exposing (Model, initModel, view)
 
-import Html
+import Html.Styled
 
 
 type Model
@@ -12,12 +12,12 @@ initModel =
     Model
 
 
-view : { title : String, body : List (Html.Html msg) }
+view : { title : String, body : List (Html.Styled.Html msg) }
 view =
     { title = "Project Import"
     , body =
-        [ Html.ul []
-            [ Html.li [] [ Html.text "ここでは外部から読み込むプロジェクトの一覧を表示する。package.json、package-lock.json、elm.jsonのようなもの" ]
-            ]
+        [ Html.Styled.div
+            []
+            [ Html.Styled.text "ここでは外部から読み込むプロジェクトの一覧を表示する。package.json、package-lock.json、elm.jsonのようなもの" ]
         ]
     }
