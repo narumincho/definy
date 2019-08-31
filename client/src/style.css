@@ -3,17 +3,6 @@
                         Editor Group Panel
 =====================================================================
 ===================================================================*/
-
-.editorGroupPanel {
-    flex-grow: 1;
-    background-color: #181818;
-    color: #ddd;
-    overflow: hidden;
-    display: flex;
-    user-select: none;
-    position: relative;
-}
-
 .editorGroupPanel-column {
     display: flex;
     flex-direction: column;

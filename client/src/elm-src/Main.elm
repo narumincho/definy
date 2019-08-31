@@ -668,35 +668,35 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
 {-| マウスを動かした
 -}
 mouseMove : { x : Int, y : Int } -> Model -> Model
-mouseMove { x, y } model =
-    case getGutterMode model of
+mouseMove { x, y } (Model rec) =
+    case getGutterMode (Model rec) of
         Just SideBarGutter ->
-            model
+            Model rec
                 |> setSidePanelWidth
-                    (treePanelResizeFromGutter (getWindowSize model).width x)
+                    (treePanelResizeFromGutter rec.windowSize.width x)
 
         Just (GutterEditorGroupPanelVertical gutter) ->
-            model
+            Model rec
                 |> mapEditorGroupPanelModel
                     (Panel.EditorGroup.resizeFromVerticalGutter
-                        { mouseRelX = max 0 (x - getTreePanelWidth model)
-                        , editorWidth = (getWindowSize model).width - getTreePanelWidth model
+                        { mouseRelX = max 0 (x - getTreePanelWidth (Model rec))
+                        , editorWidth = rec.windowSize.width - getTreePanelWidth (Model rec)
                         }
                         gutter
                     )
 
         Just (GutterEditorGroupPanelHorizontal gutter) ->
-            model
+            Model rec
                 |> mapEditorGroupPanelModel
                     (Panel.EditorGroup.resizeFromHorizontalGutter
                         { mouseRelY = max 0 y
-                        , editorHeight = (getWindowSize model).height
+                        , editorHeight = rec.windowSize.height
                         }
                         gutter
                     )
 
         Nothing ->
-            model
+            Model rec
 
 
 treePanelResizeFromGutter : Int -> Int -> Int
@@ -734,8 +734,8 @@ getFocus (Model { focus }) =
 
 {-| ツリーパネルにフォーカスが当たっているかどうか
 -}
-isFocusTreePanel : Model -> Bool
-isFocusTreePanel model =
+isFocusSidePanel : Model -> Bool
+isFocusSidePanel model =
     case getFocus model of
         FocusSidePanel ->
             True
@@ -867,12 +867,12 @@ setSidePanelWidth width (Model rec) =
 
 
 getTreePanelWidth : Model -> Int
-getTreePanelWidth model =
+getTreePanelWidth (Model rec) =
     let
         width =
-            getVerticalGutterX model - verticalGutterWidth // 2
+            getVerticalGutterX (Model rec) - verticalGutterWidth // 2
     in
-    if (getWindowSize model).width < 500 then
+    if rec.windowSize.width < 500 then
         0
 
     else if width < 120 then
@@ -882,11 +882,9 @@ getTreePanelWidth model =
         width
 
 
-getEditorGroupPanelSize : Model -> { width : Int, height : Int }
-getEditorGroupPanelSize model =
-    { width = (getWindowSize model).width - (getTreePanelWidth model + verticalGutterWidth)
-    , height = (getWindowSize model).height
-    }
+getEditorGroupPanelWidth : Model -> Int
+getEditorGroupPanelWidth (Model rec) =
+    rec.windowSize.width - (getTreePanelWidth (Model rec) + verticalGutterWidth)
 
 
 verticalGutterWidth : Int
@@ -909,11 +907,6 @@ getGutterType model =
                     GutterEditorGroupPanelHorizontal _ ->
                         GutterTypeHorizontal
             )
-
-
-getWindowSize : Model -> { width : Int, height : Int }
-getWindowSize (Model { windowSize }) =
-    windowSize
 
 
 setWindowSize : { width : Int, height : Int } -> Model -> Model
@@ -977,6 +970,10 @@ sidePanelCmdToCmd cmd =
 
         Panel.Side.CmdLogInRequest service ->
             Task.succeed (LogInRequest service)
+                |> Task.perform identity
+
+        Panel.Side.CmdFocusHere ->
+            Task.succeed (FocusTo FocusSidePanel)
                 |> Task.perform identity
 
 
@@ -1215,60 +1212,6 @@ view model =
     }
 
 
-{-| サイドパネルの表示
--}
-sidePanel : Model -> Html.Styled.Html Msg
-sidePanel model =
-    Html.Styled.div
-        ([ Html.Styled.Attributes.css
-            [ Css.backgroundColor
-                (if isFocusTreePanel model then
-                    Css.rgb 45 45 45
-
-                 else
-                    Css.rgb 17 17 17
-                )
-            , Css.displayFlex
-            , Css.flexDirection Css.column
-            , Css.flexShrink Css.zero
-            , Css.overflowY Css.auto
-            , Css.width (Css.px (toFloat (getTreePanelWidth model)))
-            ]
-         ]
-            ++ (if isFocusTreePanel model then
-                    []
-
-                else
-                    [ Html.Styled.Events.onClick (FocusTo FocusSidePanel) ]
-               )
-        )
-        (Panel.Side.view
-            { user = getCurrentUser model
-            , language = getLanguage model
-            , project = getProject model
-            }
-            (getSidePanelModel model)
-            |> List.map (Html.Styled.map SidePanelMsg)
-        )
-
-
-{-| エディタグループパネルの表示
--}
-editorGroupPanel : Model -> Html.Styled.Html Msg
-editorGroupPanel model =
-    let
-        { width, height } =
-            getEditorGroupPanelSize model
-    in
-    Panel.EditorGroup.view
-        (getProject model)
-        { width = width, height = height, language = getLanguage model }
-        (isFocusEditorGroupPanel model)
-        (getEditorGroupPanelGutter model)
-        (getEditorGroupPanelModel model)
-        |> Html.Styled.map EditorPanelMsg
-
-
 gutterTypeToCursorStyle : GutterType -> Css.Style
 gutterTypeToCursorStyle gutterType =
     case gutterType of
@@ -1279,6 +1222,38 @@ gutterTypeToCursorStyle gutterType =
         GutterTypeHorizontal ->
             -- ↕
             Css.cursor Css.nsResize
+
+
+{-| サイドパネルの表示
+-}
+sidePanel : Model -> Html.Styled.Html Msg
+sidePanel (Model rec) =
+    Panel.Side.view
+        { width = getTreePanelWidth (Model rec)
+        , height = rec.windowSize.height
+        , user = getCurrentUser (Model rec)
+        , language = getLanguage (Model rec)
+        , project = getProject (Model rec)
+        , focus = isFocusSidePanel (Model rec)
+        }
+        (getSidePanelModel (Model rec))
+        |> Html.Styled.map SidePanelMsg
+
+
+{-| エディタグループパネルの表示
+-}
+editorGroupPanel : Model -> Html.Styled.Html Msg
+editorGroupPanel (Model rec) =
+    Panel.EditorGroup.view
+        (getProject (Model rec))
+        { width = getEditorGroupPanelWidth (Model rec)
+        , height = rec.windowSize.height
+        , language = getLanguage (Model rec)
+        , focus = isFocusEditorGroupPanel (Model rec)
+        , gutter = getEditorGroupPanelGutter (Model rec)
+        }
+        (getEditorGroupPanelModel (Model rec))
+        |> Html.Styled.map EditorPanelMsg
 
 
 

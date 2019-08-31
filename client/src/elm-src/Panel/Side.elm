@@ -45,11 +45,13 @@ type Msg
     | ShowServiceSelectView
     | HideServiceSelectView
     | LogInRequest Data.SocialLoginService.SocialLoginService
+    | Focus
 
 
 type Cmd
     = CmdLogOutRequest
     | CmdLogInRequest Data.SocialLoginService.SocialLoginService
+    | CmdFocusHere
 
 
 type Tab
@@ -105,6 +107,11 @@ update msg (Model rec) =
             , [ CmdLogInRequest service ]
             )
 
+        Focus ->
+            ( Model rec
+            , [ CmdFocusHere ]
+            )
+
         _ ->
             ( Model rec
             , []
@@ -119,24 +126,50 @@ update msg (Model rec) =
 
 
 view :
-    { user : Maybe Data.User.User
+    { width : Int
+    , height : Int
+    , user : Maybe Data.User.User
     , language : Data.Language.Language
     , project : Data.Project.Project
+    , focus : Bool
     }
     -> Model
-    -> List (Html.Styled.Html Msg)
-view { user, language, project } (Model { selectTab, logInState }) =
-    [ definyLogo
-    , userView
-        { user = user
-        , language = language
-        , logInState = logInState
-        }
-    , projectOwnerAndName
-        (Data.Project.getLeaderName project)
-        (Data.Project.getName project)
-    , tools
-    ]
+    -> Html.Styled.Html Msg
+view { user, language, project, focus, width } (Model { selectTab, logInState }) =
+    Html.Styled.div
+        ([ Html.Styled.Attributes.css
+            [ Css.backgroundColor
+                (if focus then
+                    Css.rgb 45 45 45
+
+                 else
+                    Css.rgb 17 17 17
+                )
+            , Css.displayFlex
+            , Css.flexDirection Css.column
+            , Css.flexShrink Css.zero
+            , Css.overflowY Css.auto
+            , Css.width (Css.px (toFloat width))
+            ]
+         ]
+            ++ (if focus then
+                    []
+
+                else
+                    [ Html.Styled.Events.onClick Focus ]
+               )
+        )
+        [ definyLogo
+        , userView
+            { user = user
+            , language = language
+            , logInState = logInState
+            }
+        , projectOwnerAndName
+            (Data.Project.getLeaderName project)
+            (Data.Project.getName project)
+        , tools
+        ]
 
 
 definyLogo : Html.Styled.Html msg

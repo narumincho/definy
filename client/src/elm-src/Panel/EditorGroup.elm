@@ -1130,24 +1130,32 @@ projectRefToEditorItem projectRef =
 
 view :
     Data.Project.Project
-    -> { width : Int, height : Int, language : Data.Language.Language }
-    -> Bool
-    -> Maybe Gutter
+    ->
+        { width : Int
+        , height : Int
+        , language : Data.Language.Language
+        , focus : Bool
+        , gutter : Maybe Gutter
+        }
     -> Model
     -> Html.Styled.Html Msg
-view project { width, height, language } isFocus gutter (Model { group, activeEditorIndex }) =
+view project { width, height, language, focus, gutter } (Model { group, activeEditorIndex }) =
     let
         ( activeEditorRow, activeEditorColumn ) =
             activeEditorIndex
     in
     Html.Styled.div
-        ([ Html.Styled.Attributes.class "editorGroupPanel"
-         , Html.Styled.Attributes.css
+        ([ Html.Styled.Attributes.css
             [ Css.width (Css.px (toFloat width))
             , Css.height (Css.px (toFloat height))
+            , Css.backgroundColor (Css.rgb 24 24 24)
+            , Style.textColor
+            , Css.overflow Css.hidden
+            , Css.displayFlex
+            , Css.position Css.relative
             ]
          ]
-            ++ (if isFocus then
+            ++ (if focus then
                     []
 
                 else
