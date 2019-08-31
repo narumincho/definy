@@ -11,7 +11,7 @@ textColor =
     Css.color (Css.rgb 221 221 221)
 
 
-{-| サイドパネルの幅を変更するためにつかむところ | ガター
+{-| パネルの幅を変更するためにつかむところ | ガター
 -}
 verticalGutter : Bool -> Html.Styled.Html ()
 verticalGutter isResizing =
@@ -55,6 +55,8 @@ verticalGutter isResizing =
         []
 
 
+{-| パネルの高さを変更するためにつかむところ - ガター
+-}
 horizontalGutter : Bool -> Html.Styled.Html ()
 horizontalGutter isResizing =
     Html.Styled.div

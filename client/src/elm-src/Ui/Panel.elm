@@ -12,13 +12,11 @@ module Ui.Panel exposing
     , centerY
     , left
     , right
-    , toHtml
     , top
     )
 
 import Color
 import Css
-import Html
 import Html.Styled
 import Html.Styled.Attributes
 
@@ -126,11 +124,6 @@ type TextAlign
     | TextAlignEnd
     | TextAlignCenter
     | TextAlignJustify
-
-
-toHtml : GrowGrow msg -> Html.Html msg
-toHtml =
-    growGrowToHtml >> Html.Styled.toUnstyled
 
 
 growGrowToHtml : GrowGrow msg -> Html.Styled.Html msg
