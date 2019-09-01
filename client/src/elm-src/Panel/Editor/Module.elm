@@ -10,9 +10,10 @@ module Panel.Editor.Module exposing
     )
 
 import Array
+import Color
 import Compiler
 import Css
-import Data.Id
+import Data.IdHash as IdHash
 import Data.Label as L
 import Data.Project
 import Data.Project.CompileResult
@@ -27,6 +28,7 @@ import Html.Styled.Keyed
 import Json.Decode
 import Json.Encode
 import Panel.DefaultUi
+import Panel.Style as Style
 import Parser
 import Parser.SimpleChar
 import Utility.ArrayExtra
@@ -36,7 +38,7 @@ import Utility.NSvg as NSvg
 
 type Model
     = Model
-        { moduleRef : Data.Id.ModuleId
+        { moduleRef : IdHash.ModuleId
         , active : Active
         , resultVisible : Array.Array ResultVisible
         }
@@ -70,7 +72,7 @@ type Msg
     | MsgAddTypeDef
     | MsgIncreaseValue
     | MsgDecreaseValue
-    | MsgChangeResultVisible Data.Id.PartId ResultVisible
+    | MsgChangeResultVisible IdHash.PartId ResultVisible
     | MsgFocusThisEditor
     | MsgBlurThisEditor
 
@@ -86,6 +88,8 @@ type Cmd
 -}
 type Active
     = ActiveNone
+    | ActiveModuleImport
+    | ActiveOperatorSetting
     | ActiveReadMe ReadMeActive
     | ActiveTypeDefList TypeDefListActive
     | ActivePartDefList PartDefListActive
@@ -98,13 +102,13 @@ type ReadMeActive
 
 type TypeDefListActive
     = ActiveTypeDefListSelf
-    | ActiveTypeDef ( Data.Id.TypeId, TypeDefActive )
+    | ActiveTypeDef ( IdHash.TypeId, TypeDefActive )
 
 
 type TypeDefActive
     = ActiveTypeDefSelf
     | ActiveTypeDefName LabelEdit
-    | ActiveTypeDefTagList ( Data.Id.TypeId, TypeDefTagActive )
+    | ActiveTypeDefTagList ( IdHash.TypeId, TypeDefTagActive )
 
 
 type TypeDefTagActive
@@ -123,7 +127,7 @@ type LabelEdit
 
 type PartDefListActive
     = ActivePartDefListSelf
-    | ActivePartDef ( Data.Id.PartId, PartDefActive )
+    | ActivePartDef ( IdHash.PartId, PartDefActive )
 
 
 type PartDefActive
@@ -199,7 +203,7 @@ isFocusDefaultUi (Model { active }) =
             Nothing
 
 
-initModel : Data.Id.ModuleId -> Model
+initModel : IdHash.ModuleId -> Model
 initModel moduleId =
     Model
         { moduleRef = moduleId
@@ -208,7 +212,7 @@ initModel moduleId =
         }
 
 
-getTargetModuleIndex : Model -> Data.Id.ModuleId
+getTargetModuleIndex : Model -> IdHash.ModuleId
 getTargetModuleIndex (Model { moduleRef }) =
     moduleRef
 
@@ -341,6 +345,12 @@ setActive project active (Model rec) =
     , if rec.active /= active then
         case active of
             ActiveNone ->
+                []
+
+            ActiveModuleImport ->
+                []
+
+            ActiveOperatorSetting ->
                 []
 
             ActiveReadMe ActiveReadMeSelf ->
@@ -496,6 +506,12 @@ activeLeft targetModule active =
 
         ActiveReadMe readMeActive ->
             ActiveReadMe (readMeActiveLeft readMeActive)
+
+        ActiveModuleImport ->
+            active
+
+        ActiveOperatorSetting ->
+            active
 
         ActiveTypeDefList typeDefListActive ->
             ActiveTypeDefList (typeDefListActiveLeft typeDefListActive)
@@ -693,6 +709,12 @@ activeRight targetModule active =
         ActiveReadMe readMeActive ->
             ActiveReadMe (readMeActiveRight readMeActive)
 
+        ActiveModuleImport ->
+            active
+
+        ActiveOperatorSetting ->
+            active
+
         ActiveTypeDefList typeDefListActive ->
             ActiveTypeDefList (typeDefListActiveRight typeDefListActive)
 
@@ -715,7 +737,7 @@ typeDefListActiveRight typeDefListActive =
     case typeDefListActive of
         ActiveTypeDefListSelf ->
             ActiveTypeDef
-                ( Data.Id.TypeId "moduleFirst"
+                ( IdHash.TypeId "moduleFirst"
                 , ActiveTypeDefSelf
                 )
 
@@ -753,7 +775,7 @@ partDefListActiveRight : Data.Project.Module.Module -> PartDefListActive -> Part
 partDefListActiveRight targetModule partDefListActive =
     case partDefListActive of
         ActivePartDefListSelf ->
-            ActivePartDef ( Data.Id.PartId "firstPartDefId", ActivePartDefSelf )
+            ActivePartDef ( IdHash.PartId "firstPartDefId", ActivePartDefSelf )
 
         ActivePartDef ( index, ActivePartDefSelf ) ->
             -- 定義から名前へ
@@ -902,6 +924,12 @@ activeUp module_ active =
             -- 何も選択していないところから定義リストへ
             ActivePartDefList ActivePartDefListSelf
 
+        ActiveModuleImport ->
+            active
+
+        ActiveOperatorSetting ->
+            active
+
         ActiveReadMe readMeActive ->
             case readMeActiveUp readMeActive of
                 Just movedReadMeActive ->
@@ -998,7 +1026,7 @@ partDefListActiveUp partDefListActive =
         ActivePartDefListSelf ->
             Nothing
 
-        ActivePartDef ( Data.Id.PartId "first", ActivePartDefSelf ) ->
+        ActivePartDef ( IdHash.PartId "first", ActivePartDefSelf ) ->
             Just ActivePartDefListSelf
 
         ActivePartDef ( partId, ActivePartDefSelf ) ->
@@ -1047,6 +1075,12 @@ activeDown targetModule active =
 
                 Nothing ->
                     ActiveTypeDefList ActiveTypeDefListSelf
+
+        ActiveModuleImport ->
+            active
+
+        ActiveOperatorSetting ->
+            active
 
         ActiveTypeDefList typeDefListActive ->
             case typeDefListActiveDown typeDefListActive of
@@ -1098,7 +1132,7 @@ typeDefActiveDown typeDefActive =
             Nothing
 
         ActiveTypeDefName _ ->
-            Just (ActiveTypeDefTagList ( Data.Id.TypeId "firstTypeId", ActiveTypeDefTagName LabelEditSelect ))
+            Just (ActiveTypeDefTagList ( IdHash.TypeId "firstTypeId", ActiveTypeDefTagName LabelEditSelect ))
 
         ActiveTypeDefTagList ( typeId, typeDefTagActive ) ->
             case typeDefTagActiveDown typeDefTagActive of
@@ -1197,6 +1231,12 @@ activeToFirstChild targetModule active =
         ActiveReadMe readMeActive ->
             ActiveReadMe (readMeActiveToFirstChild readMeActive)
 
+        ActiveModuleImport ->
+            active
+
+        ActiveOperatorSetting ->
+            active
+
         ActiveTypeDefList typeDefListActive ->
             ActiveTypeDefList (typeDefListActiveToFirstChild typeDefListActive)
 
@@ -1218,7 +1258,7 @@ typeDefListActiveToFirstChild : TypeDefListActive -> TypeDefListActive
 typeDefListActiveToFirstChild typeDefListActive =
     case typeDefListActive of
         ActiveTypeDefListSelf ->
-            ActiveTypeDef ( Data.Id.TypeId "firstTypeId", ActiveTypeDefSelf )
+            ActiveTypeDef ( IdHash.TypeId "firstTypeId", ActiveTypeDefSelf )
 
         ActiveTypeDef ( typeDefIndex, typeDefActive ) ->
             ActiveTypeDef ( typeDefIndex, typeDefActiveToFirstChild typeDefActive )
@@ -1251,7 +1291,7 @@ partDefListActiveToFirstChild : Data.Project.Module.Module -> PartDefListActive 
 partDefListActiveToFirstChild targetModule partDefListActive =
     case partDefListActive of
         ActivePartDefListSelf ->
-            ActivePartDef ( Data.Id.PartId "firstTypeId", ActivePartDefSelf )
+            ActivePartDef ( IdHash.PartId "firstTypeId", ActivePartDefSelf )
 
         ActivePartDef ( partDefIndex, partDefActive ) ->
             ActivePartDef
@@ -1332,6 +1372,12 @@ activeToLastChild targetModule active =
         ActiveReadMe readMeActive ->
             ActiveReadMe (readMeActiveToLastChild readMeActive)
 
+        ActiveModuleImport ->
+            active
+
+        ActiveOperatorSetting ->
+            active
+
         ActiveTypeDefList typeDefListActive ->
             ActiveTypeDefList (typeDefListActiveToLastChild targetModule typeDefListActive)
 
@@ -1354,7 +1400,7 @@ typeDefListActiveToLastChild targetModule typeDefListActive =
     case typeDefListActive of
         ActiveTypeDefListSelf ->
             ActiveTypeDef
-                ( Data.Id.TypeId "lastTypeId"
+                ( IdHash.TypeId "lastTypeId"
                 , ActiveTypeDefSelf
                 )
 
@@ -1371,7 +1417,7 @@ typeDefActiveToLastChild typeDefMaybe typeDefActive =
     case typeDefActive of
         ActiveTypeDefSelf ->
             ActiveTypeDefTagList
-                ( Data.Id.TypeId "last"
+                ( IdHash.TypeId "last"
                 , ActiveTypeDefTagName LabelEditSelect
                 )
 
@@ -1386,7 +1432,7 @@ partDefListActiveToLastChild : Data.Project.Module.Module -> PartDefListActive -
 partDefListActiveToLastChild targetModule partDefListActive =
     case partDefListActive of
         ActivePartDefListSelf ->
-            ActivePartDef ( Data.Id.PartId "lastPartId", ActivePartDefSelf )
+            ActivePartDef ( IdHash.PartId "lastPartId", ActivePartDefSelf )
 
         ActivePartDef ( partDefIndex, partDefActive ) ->
             ActivePartDef
@@ -1476,6 +1522,12 @@ activeToParent targetModule active =
 
                 Nothing ->
                     ActiveReadMe ActiveReadMeSelf
+
+        ActiveModuleImport ->
+            active
+
+        ActiveOperatorSetting ->
+            active
 
         ActiveTypeDefList typeDefListActive ->
             case typeDefListActiveToParent typeDefListActive of
@@ -1814,7 +1866,7 @@ suggestionPrev targetModule project model =
 
 {-| 名前の候補選択モードからテキスト編集モードへ
 -}
-nameEditSuggestionToEditText : Data.Id.PartId -> Maybe L.Label -> Data.Project.Project -> Model -> ( Model, List Cmd )
+nameEditSuggestionToEditText : IdHash.PartId -> Maybe L.Label -> Data.Project.Project -> Model -> ( Model, List Cmd )
 nameEditSuggestionToEditText partDefIndex searchName project model =
     let
         ( newModel, cmdList ) =
@@ -1838,7 +1890,7 @@ nameEditSuggestionToEditText partDefIndex searchName project model =
     )
 
 
-suggestionSelectChangedThenNameChangeCmd : Int -> Data.Id.PartId -> Data.Id.ModuleId -> List Cmd
+suggestionSelectChangedThenNameChangeCmd : Int -> IdHash.PartId -> IdHash.ModuleId -> List Cmd
 suggestionSelectChangedThenNameChangeCmd suggestIndex partDefId moduleId =
     case suggestionNameList |> Utility.ListExtra.getAt suggestIndex of
         Just ( suggestName, _ ) ->
@@ -1948,6 +2000,16 @@ input string project targetModule model =
             , []
             )
 
+        ActiveModuleImport ->
+            ( model
+            , []
+            )
+
+        ActiveOperatorSetting ->
+            ( model
+            , []
+            )
+
         ActiveReadMe activeReadMe ->
             model |> inputInReadMe string activeReadMe
 
@@ -2030,7 +2092,7 @@ inputInPartDefList string project targetModule partDefListActive model =
     )
 
 
-parserBeginWithName : String -> Data.Id.PartId -> Data.Id.ModuleId -> ( Active, List Cmd )
+parserBeginWithName : String -> IdHash.PartId -> IdHash.ModuleId -> ( Active, List Cmd )
 parserBeginWithName string partDefIndex moduleRef =
     case Parser.beginWithName (Parser.SimpleChar.fromString string) of
         Parser.BeginWithNameEndName { name, textAreaValue } ->
@@ -2097,7 +2159,7 @@ parserBeginWithName string partDefIndex moduleRef =
             )
 
 
-parserBeginWithType : String -> Data.Id.PartId -> Data.Id.ModuleId -> ( Active, List Cmd )
+parserBeginWithType : String -> IdHash.PartId -> IdHash.ModuleId -> ( Active, List Cmd )
 parserBeginWithType string partDefIndex moduleRef =
     case Parser.beginWithType (Parser.SimpleChar.fromString string) of
         Parser.BeginWithTypeEndType { type_, textAreaValue } ->
@@ -2138,7 +2200,7 @@ parserBeginWithType string partDefIndex moduleRef =
             )
 
 
-parserInExpr : String -> Data.Id.PartId -> Data.Id.ModuleId -> ( Active, List Cmd )
+parserInExpr : String -> IdHash.PartId -> IdHash.ModuleId -> ( Active, List Cmd )
 parserInExpr string index moduleRef =
     case Parser.beginWithExprHead (Parser.SimpleChar.fromString string) of
         Parser.BeginWithExprHeadEndTerm { headTerm, opAndTermList, textAreaValue } ->
@@ -2182,7 +2244,7 @@ parserInExpr string index moduleRef =
             )
 
 
-parserBeginWithTerm : String -> Data.Id.PartId -> Data.Id.ModuleId -> Int -> Expr.Expr -> ( Active, List Cmd )
+parserBeginWithTerm : String -> IdHash.PartId -> IdHash.ModuleId -> Int -> Expr.Expr -> ( Active, List Cmd )
 parserBeginWithTerm string partDefIndex moduleRef termIndex expr =
     case Parser.beginWithExprTerm 0 (Parser.SimpleChar.fromString string) of
         Parser.BeginWithTermEndTerm { headTerm, opAndTermList, textAreaValue } ->
@@ -2219,7 +2281,7 @@ parserBeginWithTerm string partDefIndex moduleRef termIndex expr =
             )
 
 
-parserBeginWithOp : String -> Data.Id.PartId -> Data.Id.ModuleId -> Int -> Expr.Expr -> ( Active, List Cmd )
+parserBeginWithOp : String -> IdHash.PartId -> IdHash.ModuleId -> Int -> Expr.Expr -> ( Active, List Cmd )
 parserBeginWithOp string partDefIndex moduleRef opIndex expr =
     case Parser.beginWithExprOp 0 (Parser.SimpleChar.fromString string) of
         Parser.BeginWithOpEndTerm { headOp, termAndOpList, lastTerm, textAreaValue } ->
@@ -2263,21 +2325,21 @@ textAreaValueToSetTextCmd =
 
 {-| 名前を変更させるためのCmd
 -}
-cmdSetName : Data.Id.ModuleId -> Data.Id.PartId -> Maybe L.Label -> Cmd
+cmdSetName : IdHash.ModuleId -> IdHash.PartId -> Maybe L.Label -> Cmd
 cmdSetName moduleIndex partDefIndex name =
     None
 
 
 {-| 型を変更させるためのCmd
 -}
-cmdSetType : Data.Id.ModuleId -> Data.Id.PartId -> Data.Project.PartDef.Type -> Cmd
+cmdSetType : IdHash.ModuleId -> IdHash.PartId -> Data.Project.PartDef.Type -> Cmd
 cmdSetType moduleIndex partDefIndex type_ =
     None
 
 
 {-| 式を変更させるためのCmd
 -}
-cmdSetExpr : Data.Id.ModuleId -> Data.Id.PartId -> Expr.Expr -> Cmd
+cmdSetExpr : IdHash.ModuleId -> IdHash.PartId -> Expr.Expr -> Cmd
 cmdSetExpr moduleIndex partDefIndex expr =
     None
 
@@ -2415,8 +2477,8 @@ termTypeDecreaseValue termType term =
 -}
 
 
-changeResultVisible : Int -> Data.Id.PartId -> ResultVisible -> Model -> ( Model, List Cmd )
-changeResultVisible partDefNum (Data.Id.PartId index) resultVisivle (Model rec) =
+changeResultVisible : Int -> IdHash.PartId -> ResultVisible -> Model -> ( Model, List Cmd )
+changeResultVisible partDefNum (IdHash.PartId index) resultVisivle (Model rec) =
     ( Model
         { rec
             | resultVisible =
@@ -2486,6 +2548,12 @@ isNeedConfirmSingleLineTextField active =
             False
 
         ActiveReadMe _ ->
+            False
+
+        ActiveModuleImport ->
+            False
+
+        ActiveOperatorSetting ->
             False
 
         ActiveTypeDefList _ ->
@@ -2563,12 +2631,13 @@ isNeedConfirmSingleLineTextFieldTermType termType =
 モジュールエディタのModelで見た目を決める
 -}
 view :
-    Int
-    -> Data.Project.Project
-    -> Bool
+    { width : Int
+    , project : Data.Project.Project
+    , focus : Bool
+    }
     -> Model
     -> { title : String, body : List (Html.Styled.Html Msg) }
-view width project isFocus (Model { moduleRef, active, resultVisible }) =
+view { width, project, focus } (Model { moduleRef, active, resultVisible }) =
     let
         targetModule =
             Data.Project.Module.sampleModule
@@ -2580,7 +2649,7 @@ view width project isFocus (Model { moduleRef, active, resultVisible }) =
     , body =
         [ Html.Styled.div [] [ Html.Styled.text (activeToString active) ]
         , readMeView
-            isFocus
+            focus
             (case active of
                 ActiveReadMe readMeActive ->
                     Just readMeActive
@@ -2589,10 +2658,10 @@ view width project isFocus (Model { moduleRef, active, resultVisible }) =
                     Nothing
             )
             (Data.Project.Module.getDescription targetModule)
-        , importModuleView
-        , operatorSettingView
+        , moduleImportView focus (active == ActiveModuleImport)
+        , operatorSettingView focus (active == ActiveOperatorSetting)
         , typeDefinitionsView
-            isFocus
+            focus
             (case active of
                 ActiveTypeDefList typeDefListActive ->
                     Just typeDefListActive
@@ -2604,7 +2673,7 @@ view width project isFocus (Model { moduleRef, active, resultVisible }) =
         , partDefinitionsView
             width
             resultVisible
-            isFocus
+            focus
             (case active of
                 ActivePartDefList partDefListActive ->
                     Just partDefListActive
@@ -2620,7 +2689,7 @@ view width project isFocus (Model { moduleRef, active, resultVisible }) =
 activeToString : Active -> String
 activeToString active =
     case active of
-        ActivePartDefList (ActivePartDef ( Data.Id.PartId id, partDefActive )) ->
+        ActivePartDefList (ActivePartDef ( IdHash.PartId id, partDefActive )) ->
             id
                 ++ "の定義"
                 ++ (partDefActive |> partDefActiveToString)
@@ -2723,6 +2792,52 @@ branchPosToString branchPos =
             "の式" ++ termOpPosToString termOpPos
 
 
+sectionContainer :
+    { id : String
+    , focus : Bool
+    , active : Bool
+    , activeLocation : Active
+    , title : String
+    }
+    -> Html.Styled.Html Msg
+    -> Html.Styled.Html Msg
+sectionContainer { id, focus, active, activeLocation, title } child =
+    Html.Styled.div
+        ([ Html.Styled.Attributes.css
+            ([ Css.property "display" "grid"
+             , Css.property "gap" "16px"
+             ]
+                ++ (if active then
+                        [ Css.borderLeft3 (Css.px 4) Css.solid Style.activeColor
+                        , Css.padding4 (Css.px 8) (Css.px 8) (Css.px 8) (Css.px 4)
+                        ]
+
+                    else
+                        [ Css.padding (Css.px 8) ]
+                   )
+            )
+         , Html.Styled.Events.onClick (MsgActiveTo activeLocation)
+         ]
+            ++ (if focus then
+                    [ Html.Styled.Attributes.id id ]
+
+                else
+                    []
+               )
+        )
+        [ Html.Styled.div
+            [ Html.Styled.Attributes.css
+                [ Css.fontSize (Css.rem 1.25)
+                , Css.lineHeight (Css.num 1.2)
+                , Css.fontWeight (Css.int 400)
+                , Css.letterSpacing (Css.px 0.15)
+                ]
+            ]
+            []
+        , child
+        ]
+
+
 
 {- ==================================================
                 readMe 説明文 View
@@ -2731,35 +2846,15 @@ branchPosToString branchPos =
 
 
 readMeView : Bool -> Maybe ReadMeActive -> String -> Html.Styled.Html Msg
-readMeView isFocus readMeActiveMaybe readMe =
-    let
-        editHere =
-            case readMeActiveMaybe of
-                Just ActiveReadMeText ->
-                    isFocus
-
-                _ ->
-                    False
-    in
-    Html.Styled.div
-        ([ subClass "section" ]
-            ++ (case readMeActiveMaybe of
-                    Just ActiveReadMeSelf ->
-                        [ subClass "section-active" ]
-
-                    _ ->
-                        [ Html.Styled.Events.onClick (MsgActiveTo (ActiveReadMe ActiveReadMeSelf)) ]
-               )
-            ++ (if isFocus then
-                    [ Html.Styled.Attributes.id readMeId ]
-
-                else
-                    []
-               )
-        )
-        [ readMeViewTitle
-        , readMeViewInputArea readMe isFocus (readMeActiveMaybe == Just ActiveReadMeText)
-        ]
+readMeView focus readMeActiveMaybe readMe =
+    sectionContainer
+        { id = readMeId
+        , focus = focus
+        , active = readMeActiveMaybe == Just ActiveReadMeSelf
+        , activeLocation = ActiveReadMe ActiveReadMeSelf
+        , title = "ReadMe"
+        }
+        (readMeViewInputArea readMe focus (readMeActiveMaybe == Just ActiveReadMeText))
 
 
 readMeId : String
@@ -2767,39 +2862,60 @@ readMeId =
     "moduleEditor-readme"
 
 
-readMeViewTitle : Html.Styled.Html Msg
-readMeViewTitle =
-    Html.Styled.h2
-        [ subClass "section-title" ]
-        [ Html.Styled.text "ReadMe" ]
-
-
 readMeViewInputArea : String -> Bool -> Bool -> Html.Styled.Html Msg
 readMeViewInputArea readMe isFocus isActive =
     Html.Styled.div
-        [ subClassList
-            [ ( "readMe-inputArea", True )
-            , ( "readMe-inputArea-active", isActive )
-            ]
+        [ Html.Styled.Attributes.css
+            ([ Css.position Css.relative
+             , Css.padding
+                (Css.px
+                    (if isActive then
+                        13
+
+                     else
+                        16
+                    )
+                )
+             , Css.borderRadius (Css.px 4)
+             , Css.boxShadow4 Css.zero (Css.px 4) (Css.px 2) (Css.rgba 0 0 0 0.2)
+             , Css.backgroundColor (Css.rgb 56 56 56)
+             ]
+                ++ (if isActive then
+                        [ Css.border3 (Css.px 3) Css.solid (Css.rgb 240 153 54) ]
+
+                    else
+                        []
+                   )
+            )
         ]
         [ readMeViewMeasure readMe
         , readMeViewTextArea readMe isFocus isActive
         ]
 
 
+{-| テキストボックスの高さを自動で合わせるためのもの
+-}
 readMeViewMeasure : String -> Html.Styled.Html Msg
 readMeViewMeasure readMe =
     let
-        lineList =
+        lines =
             readMe |> String.lines
     in
     Html.Styled.div
-        [ subClass "readMe-measure" ]
-        ((lineList
+        [ Html.Styled.Attributes.css
+            [ Css.fontSize (Css.rem 1)
+            , Css.fontFamily Css.sansSerif
+            , Css.overflowWrap Css.breakWord
+            , Css.pointerEvents Css.none
+            , Css.whiteSpace Css.preWrap
+            , Css.color Css.transparent
+            ]
+        ]
+        ((lines
             |> List.map Html.Styled.text
             |> List.intersperse (Html.Styled.br [] [])
          )
-            ++ (if Utility.ListExtra.last lineList == Just "" then
+            ++ (if Utility.ListExtra.last lines == Just "" then
                     [ Html.Styled.div [] [ Html.Styled.text "_" ] ]
 
                 else
@@ -2811,10 +2927,27 @@ readMeViewMeasure readMe =
 readMeViewTextArea : String -> Bool -> Bool -> Html.Styled.Html Msg
 readMeViewTextArea readMe isFocus isActive =
     Html.Styled.textarea
-        ([ subClass "readMe-textarea" ]
+        ([ Html.Styled.Attributes.css
+            [ Css.overflowWrap Css.breakWord
+            , Css.backgroundColor Css.transparent
+            , Css.position Css.absolute
+            , Css.left Css.zero
+            , Css.top Css.zero
+            , Css.width (Css.pct 100)
+            , Css.height (Css.pct 100)
+            , Css.padding (Css.px 16)
+            , Css.resize Css.none
+            , Style.textColorStyle
+            , Css.fontSize (Css.rem 1)
+            , Css.fontFamily Css.sansSerif
+            , Css.border2 Css.zero Css.none
+            , Css.outline Css.none
+            ]
+         ]
             ++ (if isActive then
                     [ Html.Styled.Events.onInput MsgInput
-                    , subClass "readMe-textarea-focus"
+                    , Html.Styled.Attributes.css
+                        [ Css.padding (Css.px 13) ]
                     , Html.Styled.Attributes.property "value" (Json.Encode.string readMe)
                     , Html.Styled.Events.stopPropagationOn "click" (Json.Decode.succeed ( MsgNone, True ))
                     ]
@@ -2849,20 +2982,21 @@ readMeTextClickEvent =
 -}
 
 
-importModuleView : Html.Styled.Html msg
-importModuleView =
-    Html.Styled.div
-        [ subClass "section" ]
-        [ importModuleViewTitle
-        , importModuleViewBody
-        ]
+moduleImportView : Bool -> Bool -> Html.Styled.Html Msg
+moduleImportView focus active =
+    sectionContainer
+        { id = importModuleId
+        , focus = focus
+        , active = active
+        , activeLocation = ActiveModuleImport
+        , title = "Module Import"
+        }
+        importModuleViewBody
 
 
-importModuleViewTitle : Html.Styled.Html msg
-importModuleViewTitle =
-    Html.Styled.div
-        [ subClass "section-title" ]
-        [ Html.Styled.text "Module Import" ]
+importModuleId : String
+importModuleId =
+    "importModuleId"
 
 
 importModuleViewBody : Html.Styled.Html msg
@@ -2874,17 +3008,29 @@ importModuleViewBody =
 
 
 {- ==================================================
-         Operator Setting
+         Operator Setting 演算子の設定
    ==================================================
 -}
 
 
-operatorSettingView : Html.Styled.Html msg
-operatorSettingView =
-    Html.Styled.div
-        [ subClass "section" ]
-        [ Html.Styled.div [ subClass "section-title" ] [ Html.Styled.text "Operator Setting" ]
-        ]
+operatorSettingView : Bool -> Bool -> Html.Styled.Html Msg
+operatorSettingView focus active =
+    sectionContainer
+        { id = operatorSettingId
+        , focus = focus
+        , active = active
+        , activeLocation = ActiveOperatorSetting
+        , title = "Operator Setting"
+        }
+        (Html.Styled.div
+            []
+            []
+        )
+
+
+operatorSettingId : String
+operatorSettingId =
+    "operatorSetting"
 
 
 
@@ -2895,27 +3041,15 @@ operatorSettingView =
 
 
 typeDefinitionsView : Bool -> Maybe TypeDefListActive -> List Data.Project.TypeDef.TypeDef -> Html.Styled.Html Msg
-typeDefinitionsView isFocus typeDefListActiveMaybe typeDefList =
-    Html.Styled.div
-        ([ subClass "section" ]
-            ++ (case typeDefListActiveMaybe of
-                    Just ActiveTypeDefListSelf ->
-                        [ subClass "section-active" ]
-
-                    _ ->
-                        [ Html.Styled.Events.onClick
-                            (MsgActiveTo (ActiveTypeDefList ActiveTypeDefListSelf))
-                        ]
-               )
-            ++ (if isFocus then
-                    [ Html.Styled.Attributes.id typeDefId ]
-
-                else
-                    []
-               )
-        )
-        [ typeDefinitionsViewTitle
-        , typeDefListView
+typeDefinitionsView focus typeDefListActiveMaybe typeDefList =
+    sectionContainer
+        { id = typeDefId
+        , focus = focus
+        , active = typeDefListActiveMaybe == Just ActiveTypeDefListSelf
+        , activeLocation = ActiveTypeDefList ActiveTypeDefListSelf
+        , title = "Type Definitions"
+        }
+        (typeDefListView
             (case typeDefListActiveMaybe of
                 Just (ActiveTypeDef typeDefIndexAndActive) ->
                     Just typeDefIndexAndActive
@@ -2924,7 +3058,7 @@ typeDefinitionsView isFocus typeDefListActiveMaybe typeDefList =
                     Nothing
             )
             []
-        ]
+        )
 
 
 typeDefId : String
@@ -2932,46 +3066,89 @@ typeDefId =
     "moduleEditor-typeDef"
 
 
-typeDefinitionsViewTitle : Html.Styled.Html Msg
-typeDefinitionsViewTitle =
-    Html.Styled.div
-        [ subClass "section-title" ]
-        [ Html.Styled.text "Type Definitions" ]
-
-
-typeDefListView : Maybe ( Data.Id.TypeId, TypeDefActive ) -> List Data.Id.TypeId -> Html.Styled.Html Msg
+typeDefListView : Maybe ( IdHash.TypeId, TypeDefActive ) -> List { id : IdHash.TypeId, hash : IdHash.TypeHash } -> Html.Styled.Html Msg
 typeDefListView typeDefIndexAndActive typeDefList =
     Html.Styled.div
-        [ subClass "defList" ]
-        [ addTypeDefButton ]
+        [ Html.Styled.Attributes.css
+            [ Css.property "display" "grid"
+            , Css.property "gap" "16px"
+            ]
+        ]
+        (typeDefList
+            |> List.map
+                (\{ id, hash } ->
+                    typeDefView
+                        (case typeDefIndexAndActive of
+                            Just ( activeId, typeDefActive ) ->
+                                if id == activeId then
+                                    Just typeDefActive
+
+                                else
+                                    Nothing
+
+                            Nothing ->
+                                Nothing
+                        )
+                        (TypeDefStateLoading
+                            { id = id
+                            , hash = hash
+                            }
+                        )
+                        |> Html.Styled.map (\m -> MsgActiveTo (ActiveTypeDefList (ActiveTypeDef ( id, m ))))
+                )
+        )
 
 
-typeDefView : Maybe TypeDefActive -> Data.Project.TypeDef.TypeDef -> Html.Styled.Html TypeDefActive
-typeDefView typeDefActive typeDef =
+typeDefView : Maybe TypeDefActive -> TypeDefState -> Html.Styled.Html TypeDefActive
+typeDefView typeDefActive typeDefState =
     Html.Styled.div
-        ([ subClass "typeDef"
-         ]
-            ++ (case typeDefActive of
-                    Just ActiveTypeDefSelf ->
-                        [ subClass "typeDef-active" ]
+        ([ Html.Styled.Attributes.css
+            ([ Css.displayFlex
+             , Css.flexDirection Css.column
+             , Css.padding (Css.px 8)
+             , Css.boxShadow4 Css.zero (Css.px 3) (Css.px 5) (Css.rgba 0 0 0 0.4)
+             , Css.backgroundColor (Css.rgb 56 56 56)
+             , Style.textColorStyle
+             , Css.borderRadius (Css.px 4)
+             ]
+                ++ (if typeDefActive == Just ActiveTypeDefSelf then
+                        [ Css.borderLeft3 (Css.px 5) Css.solid Style.activeColor
+                        , Css.padding4 (Css.px 8) (Css.px 8) (Css.px 8) (Css.px 3)
+                        ]
 
-                    _ ->
-                        [ Html.Styled.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActiveTypeDefSelf, True )) ]
+                    else
+                        []
+                   )
+            )
+         ]
+            ++ (if typeDefActive == Just ActiveTypeDefSelf then
+                    []
+
+                else
+                    [ Html.Styled.Events.stopPropagationOn "click" (Json.Decode.succeed ( ActiveTypeDefSelf, True )) ]
                )
         )
-        [ Html.Styled.text (Data.Project.TypeDef.toString typeDef) ]
+        [ Html.Styled.text
+            (case typeDefState of
+                TypeDefStateLoading { id, hash } ->
+                    let
+                        ( IdHash.TypeId idString, IdHash.TypeHash hashString ) =
+                            ( id, hash )
+                    in
+                    "読み込み中 id=" ++ idString ++ ", hash=" ++ hashString
 
-
-{-| 定義を末尾に1つ追加するボタン
--}
-addTypeDefButton : Html.Styled.Html Msg
-addTypeDefButton =
-    Html.Styled.button
-        [ Html.Styled.Events.stopPropagationOn "click"
-            (Json.Decode.succeed ( MsgAddTypeDef, True ))
-        , subClass "defList-addButton"
+                TypeDefStateNormal typeDef ->
+                    Data.Project.TypeDef.toString typeDef
+            )
         ]
-        [ Html.Styled.text "+ 新しい型定義" ]
+
+
+type TypeDefState
+    = TypeDefStateLoading
+        { id : IdHash.TypeId
+        , hash : IdHash.TypeHash
+        }
+    | TypeDefStateNormal Data.Project.TypeDef.TypeDef
 
 
 
@@ -2990,31 +3167,18 @@ partDefinitionsView :
     -> Maybe PartDefListActive
     -> List ( Data.Project.PartDef.PartDef, Data.Project.CompileResult.CompileResult )
     -> Html.Styled.Html Msg
-partDefinitionsView width resultVisibleList isFocus partDefListActiveMaybe partDefAndResultList =
-    Html.Styled.div
-        ([ subClass "section"
-         ]
-            ++ (case partDefListActiveMaybe of
-                    Just ActivePartDefListSelf ->
-                        [ subClass "section-active" ]
-
-                    _ ->
-                        [ Html.Styled.Events.onClick
-                            (MsgActiveTo (ActivePartDefList ActivePartDefListSelf))
-                        ]
-               )
-            ++ (if isFocus then
-                    [ Html.Styled.Attributes.id partDefinitionId ]
-
-                else
-                    []
-               )
-        )
-        [ partDefinitionsViewTitle
-        , partDefListView
+partDefinitionsView width resultVisibleList focus partDefListActiveMaybe partDefAndResultList =
+    sectionContainer
+        { id = partDefinitionId
+        , focus = focus
+        , active = partDefListActiveMaybe == Just ActivePartDefListSelf
+        , activeLocation = ActivePartDefList ActivePartDefListSelf
+        , title = "Part Definitions"
+        }
+        (partDefListView
             width
             resultVisibleList
-            isFocus
+            focus
             []
             (case partDefListActiveMaybe of
                 Just (ActivePartDef partDefActiveWithIndex) ->
@@ -3023,7 +3187,7 @@ partDefinitionsView width resultVisibleList isFocus partDefListActiveMaybe partD
                 _ ->
                     Nothing
             )
-        ]
+        )
 
 
 partDefinitionId : String
@@ -3031,24 +3195,21 @@ partDefinitionId =
     "moduleEditor-partDef"
 
 
-partDefinitionsViewTitle : Html.Styled.Html Msg
-partDefinitionsViewTitle =
-    Html.Styled.div
-        [ subClass "section-title" ]
-        [ Html.Styled.text "Part Definitions" ]
-
-
 partDefListView :
     Int
     -> Array.Array ResultVisible
     -> Bool
-    -> List ( Data.Id.PartId, Data.Project.CompileResult.CompileResult )
-    -> Maybe ( Data.Id.PartId, PartDefActive )
+    -> List ( IdHash.PartId, Data.Project.CompileResult.CompileResult )
+    -> Maybe ( IdHash.PartId, PartDefActive )
     -> Html.Styled.Html Msg
 partDefListView width resultVisibleList isFocus defAndResultList partDefActiveWithIndexMaybe =
     Html.Styled.div
-        [ subClass "defList" ]
-        ((defAndResultList
+        [ Html.Styled.Attributes.css
+            [ Css.property "display" "grid"
+            , Css.property "gap" "16px"
+            ]
+        ]
+        (defAndResultList
             |> List.map
                 (\( partId, result ) ->
                     partDefView
@@ -3085,13 +3246,11 @@ partDefListView width resultVisibleList isFocus defAndResultList partDefActiveWi
                                         MsgNone
                             )
                 )
-         )
-            ++ [ addPartDefButton ]
         )
 
 
-partDefElementId : Data.Id.PartId -> String
-partDefElementId (Data.Id.PartId id) =
+partDefElementId : IdHash.PartId -> String
+partDefElementId (IdHash.PartId id) =
     "moduleEditor-partDef-" ++ id
 
 
@@ -3099,18 +3258,36 @@ partDefView :
     Int
     -> ResultVisible
     -> Bool
-    -> Data.Id.PartId
+    -> IdHash.PartId
     -> Data.Project.PartDef.PartDef
     -> Data.Project.CompileResult.CompileResult
     -> Maybe PartDefActive
     -> Html.Styled.Html PartDefViewMsg
 partDefView width resultVisible isFocus index partDef compileAndRunResult partDefActiveMaybe =
     Html.Styled.div
-        ([ subClassList
-            [ ( "partDef", width < 700 )
-            , ( "partDef-wide", 700 <= width )
-            , ( "partDef-active", partDefActiveMaybe == Just ActivePartDefSelf )
-            ]
+        ([ Html.Styled.Attributes.css
+            ([ Css.property "display" "grid"
+             , Css.padding (Css.px 8)
+             , Css.boxShadow4 Css.zero (Css.px 3) (Css.px 5) (Css.rgba 0 0 0 0.4)
+             , Css.backgroundColor (Css.rgb 56 56 56)
+             , Style.textColorStyle
+             , Css.borderRadius (Css.px 4)
+             ]
+                ++ (if 700 <= width then
+                        [ Css.property "grid-template-columns" "1fr 260px" ]
+
+                    else
+                        []
+                   )
+                ++ (if partDefActiveMaybe == Just ActivePartDefSelf then
+                        [ Css.borderLeft3 (Css.px 5) Css.solid Style.activeColor
+                        , Css.padding4 (Css.px 8) (Css.px 8) (Css.px 8) (Css.px 3)
+                        ]
+
+                    else
+                        []
+                   )
+            )
          , Html.Styled.Events.stopPropagationOn "click"
             (Json.Decode.succeed
                 ( PartDefActiveTo ActivePartDefSelf
@@ -3126,7 +3303,12 @@ partDefView width resultVisible isFocus index partDef compileAndRunResult partDe
                )
         )
         [ Html.Styled.div
-            [ subClass "partDef-defArea" ]
+            [ Html.Styled.Attributes.css
+                [ Css.displayFlex
+                , Css.flexDirection Css.column
+                , Css.flexShrink Css.zero
+                ]
+            ]
             [ partDefViewNameAndType (Data.Project.PartDef.getName partDef) (Data.Project.PartDef.getType partDef) partDefActiveMaybe
             , partDefViewExprArea
                 (width - 16 - 260)
@@ -3158,59 +3340,39 @@ type PartDefViewMsg
 partDefResultView : ResultVisible -> Data.Project.CompileResult.CompileResult -> Html.Styled.Html ResultVisible
 partDefResultView resultVisible compileAndRunResult =
     Html.Styled.div
-        [ subClass "partDef-resultArea" ]
-        ([ Html.Styled.div
-            [ Html.Styled.Attributes.class "editor-tab"
-            , Html.Styled.Attributes.style "grid-template-columns" "1fr 1fr"
+        [ Html.Styled.Attributes.css
+            [ Css.displayFlex
+            , Css.flexDirection Css.column
+            , Css.textAlign Css.right
+            , Css.width (Css.px 260)
             ]
-            [ Html.Styled.div
-                (case resultVisible of
-                    ResultVisibleValue ->
-                        [ Html.Styled.Attributes.class "editor-tab-item-select" ]
+        ]
+        [ Style.tabContainer
+            resultVisible
+            [ ( ResultVisibleValue, "評価結果" ), ( ResultVisibleWasmSExpr, "WASMのS式" ) ]
+        , case resultVisible of
+            ResultVisibleValue ->
+                Html.Styled.div
+                    [ Html.Styled.Attributes.css
+                        [ Css.fontSize (Css.rem 3) ]
+                    ]
+                    [ Html.Styled.text
+                        (Data.Project.CompileResult.getRunResult compileAndRunResult
+                            |> Maybe.map String.fromInt
+                            |> Maybe.withDefault "評価結果がない"
+                        )
+                    ]
 
-                    ResultVisibleWasmSExpr ->
-                        [ Html.Styled.Attributes.class "editor-tab-item"
-                        , Html.Styled.Events.stopPropagationOn "click" (Json.Decode.succeed ( ResultVisibleValue, True ))
-                        ]
-                )
-                [ Html.Styled.text "評価結果" ]
-            , Html.Styled.div
-                (case resultVisible of
-                    ResultVisibleValue ->
-                        [ Html.Styled.Attributes.class "editor-tab-item"
-                        , Html.Styled.Events.stopPropagationOn "click" (Json.Decode.succeed ( ResultVisibleWasmSExpr, False ))
-                        ]
-
-                    ResultVisibleWasmSExpr ->
-                        [ Html.Styled.Attributes.class "editor-tab-item-select" ]
-                )
-                [ Html.Styled.text "wasmのS式" ]
-            ]
-         ]
-            ++ (case resultVisible of
-                    ResultVisibleValue ->
-                        [ Html.Styled.div
-                            [ subClass "partDef-resultArea-resultValue" ]
-                            [ Html.Styled.text
-                                (Data.Project.CompileResult.getRunResult compileAndRunResult
-                                    |> Maybe.map String.fromInt
-                                    |> Maybe.withDefault "評価結果がない"
-                                )
-                            ]
-                        ]
-
-                    ResultVisibleWasmSExpr ->
-                        [ Html.Styled.div
-                            []
-                            [ Html.Styled.text
-                                (Data.Project.CompileResult.getCompileResult compileAndRunResult
-                                    |> Maybe.map Compiler.compileResultToString
-                                    |> Maybe.withDefault "コンパイル中……"
-                                )
-                            ]
-                        ]
-               )
-        )
+            ResultVisibleWasmSExpr ->
+                Html.Styled.div
+                    []
+                    [ Html.Styled.text
+                        (Data.Project.CompileResult.getCompileResult compileAndRunResult
+                            |> Maybe.map Compiler.compileResultToString
+                            |> Maybe.withDefault "コンパイル中……"
+                        )
+                    ]
+        ]
 
 
 
@@ -3220,7 +3382,14 @@ partDefResultView resultVisible compileAndRunResult =
 partDefViewNameAndType : Maybe L.Label -> Data.Project.PartDef.Type -> Maybe PartDefActive -> Html.Styled.Html PartDefViewMsg
 partDefViewNameAndType name type_ partDefActiveMaybe =
     Html.Styled.div
-        [ subClass "partDef-nameAndType" ]
+        [ Html.Styled.Attributes.css
+            [ Css.displayFlex
+            , Css.height (Css.px 38)
+            , Css.padding Css.zero
+            , Style.fontHack
+            , Css.alignItems Css.baseline
+            ]
+        ]
         [ partDefViewName name
             (case partDefActiveMaybe of
                 Just (ActivePartDefName nameEdit) ->
@@ -3264,52 +3433,72 @@ partDefViewName name nameEditMaybe =
 partDefNameNormalView : Maybe L.Label -> Html.Styled.Html PartDefViewMsg
 partDefNameNormalView name =
     Html.Styled.div
-        [ subClass "partDef-nameContainer"
+        [ Html.Styled.Attributes.css [ partDefNameContainerStyle ]
         , Html.Styled.Events.stopPropagationOn "click"
             (Json.Decode.succeed ( PartDefActiveTo (ActivePartDefName NameEditSelect), True ))
         ]
-        [ case name of
-            Just safeName ->
-                Html.Styled.div
-                    [ subClass "partDef-nameText" ]
-                    [ Html.Styled.text (L.toSmallString safeName) ]
-
-            Nothing ->
-                Html.Styled.div
-                    [ subClass "partDef-nameTextNone" ]
-                    [ Html.Styled.text "NO NAME" ]
+        [ partDefNameView name
         ]
 
 
 partDefNameSelectView : Maybe L.Label -> Html.Styled.Html PartDefViewMsg
 partDefNameSelectView name =
     Html.Styled.Keyed.node "div"
-        [ subClass "partDef-nameContainer"
-        , subClass "partDef-element-active"
+        [ Html.Styled.Attributes.css
+            [ partDefNameContainerStyle
+            , elementActiveStyle
+            ]
         ]
         [ ( "view"
-          , case name of
-                Just safeName ->
-                    Html.Styled.div
-                        [ subClass "partDef-nameText" ]
-                        [ Html.Styled.text (L.toSmallString safeName) ]
-
-                Nothing ->
-                    Html.Styled.div
-                        [ subClass "partDef-nameTextNone" ]
-                        [ Html.Styled.text "NO NAME" ]
+          , partDefNameView name
           )
         , ( "input", hideInputElement )
         ]
 
 
+partDefNameView : Maybe L.Label -> Html.Styled.Html msg
+partDefNameView name =
+    case name of
+        Just safeName ->
+            Html.Styled.div
+                [ Html.Styled.Attributes.css
+                    [ Css.color (Css.rgb 215 186 125)
+                    , Css.fontSize (Css.rem 1.25)
+                    , Css.borderRadius (Css.px 4)
+                    , Css.minWidth (Css.px 32)
+                    ]
+                ]
+                [ Html.Styled.text (L.toSmallString safeName) ]
+
+        Nothing ->
+            Html.Styled.div
+                [ Html.Styled.Attributes.css
+                    [ Css.minWidth (Css.px 32)
+                    , Css.backgroundColor (Css.rgb 0 0 0)
+                    , Css.color (Css.rgb 102 102 102)
+                    , Css.fontSize (Css.rem 1)
+                    , Css.borderRadius (Css.px 4)
+                    ]
+                ]
+                [ Html.Styled.text "NO NAME" ]
+
+
 partDefNameEditView : Maybe L.Label -> Maybe { index : Int, searchName : Maybe L.Label } -> Html.Styled.Html PartDefViewMsg
 partDefNameEditView name suggestSelectDataMaybe =
     Html.Styled.Keyed.node "div"
-        [ subClass "partDef-nameContainer" ]
+        [ Html.Styled.Attributes.css [ partDefNameContainerStyle ] ]
         [ ( "input"
           , Html.Styled.input
-                [ subClass "partDef-nameTextArea"
+                [ Html.Styled.Attributes.css
+                    [ Css.border3 (Css.px 2) Css.solid (Css.rgb 221 221 221)
+                    , Css.height (Css.px 12)
+                    , Style.textColorStyle
+                    , Css.fontSize (Css.rem 1.25)
+                    , Style.fontHack
+                    , Css.borderRadius (Css.px 4)
+                    , Css.backgroundColor (Css.rgb 0 0 0)
+                    , Css.resize Css.none
+                    ]
                 , Html.Styled.Attributes.id "edit"
                 , Html.Styled.Events.onInput PartDefInput
                 , Html.Styled.Events.stopPropagationOn "click" (Json.Decode.succeed ( PartDefNone, True ))
@@ -3322,33 +3511,43 @@ partDefNameEditView name suggestSelectDataMaybe =
         ]
 
 
+partDefNameContainerStyle : Css.Style
+partDefNameContainerStyle =
+    Css.batch
+        [ Css.position Css.relative
+        , Css.height (Css.px 32)
+        , Css.padding (Css.px 4)
+        ]
+
+
+elementActiveStyle : Css.Style
+elementActiveStyle =
+    Css.batch
+        [ Css.border3 (Css.px 3) Css.solid Style.activeColor
+        , Css.padding (Css.px 1)
+        ]
+
+
 suggestionName : Maybe L.Label -> Maybe { index : Int, searchName : Maybe L.Label } -> Html.Styled.Html msg
 suggestionName name suggestSelectDataMaybe =
-    Html.Styled.div
-        [ subClass "partDef-suggestion" ]
-        (case suggestSelectDataMaybe of
-            Just { index, searchName } ->
-                [ suggestNameItem (nameToEditorStyleString searchName) "" False ]
+    case suggestSelectDataMaybe of
+        Just { index, searchName } ->
+            suggestion
+                index
+                ([ ( nameToEditorStyleString searchName, "" ) ]
                     ++ (suggestionNameList
-                            |> List.indexedMap
-                                (\i ( safeName, subText ) ->
-                                    suggestNameItem (L.toSmallString safeName) subText (i == index)
-                                )
+                            |> List.map (Tuple.mapFirst L.toSmallString)
                        )
+                )
 
-            Nothing ->
-                [ suggestNameItem
-                    (nameToEditorStyleString name)
-                    ""
-                    True
-                ]
+        Nothing ->
+            suggestion
+                0
+                ([ ( nameToEditorStyleString name, "" ) ]
                     ++ (suggestionNameList
-                            |> List.map
-                                (\( safeName, subText ) ->
-                                    suggestNameItem (L.toSmallString safeName) subText False
-                                )
+                            |> List.map (Tuple.mapFirst L.toSmallString)
                        )
-        )
+                )
 
 
 nameToEditorStyleString : Maybe L.Label -> String
@@ -3359,54 +3558,6 @@ nameToEditorStyleString name =
 
         Nothing ->
             "名前を決めない"
-
-
-suggestNameItem : String -> String -> Bool -> Html.Styled.Html msg
-suggestNameItem mainText subText isSelect =
-    Html.Styled.div
-        [ subClassList
-            [ ( "partDef-suggestion-item", True )
-            , ( "partDef-suggestion-item-select", isSelect )
-            ]
-        ]
-        ([ Html.Styled.div
-            [ subClassList
-                [ ( "partDef-suggestion-item-text", True )
-                , ( "partDef-suggestion-item-text-select", isSelect )
-                ]
-            ]
-            [ Html.Styled.text mainText ]
-         ]
-            ++ (if subText == "" then
-                    []
-
-                else
-                    [ Html.Styled.div
-                        [ subClassList
-                            [ ( "partDef-suggestion-item-subText", True )
-                            , ( "partDef-suggestion-item-subText-select", isSelect )
-                            ]
-                        ]
-                        [ Html.Styled.text subText ]
-                    ]
-               )
-            ++ (if isSelect then
-                    [ enterIcon ]
-
-                else
-                    []
-               )
-        )
-
-
-enterIcon : Html.Styled.Html msg
-enterIcon =
-    NSvg.toHtmlWithClass
-        "moduleEditor-partDef-suggestion-item-enterIcon"
-        { x = 0, y = 0, width = 38, height = 32 }
-        [ NSvg.polygon [ ( 4, 4 ), ( 34, 4 ), ( 34, 28 ), ( 12, 28 ), ( 12, 16 ), ( 4, 16 ) ] NSvg.strokeNone NSvg.fillNone
-        , NSvg.path "M30,8 V20 H16 L18,18 M16,20 L18,22" NSvg.strokeNone NSvg.fillNone
-        ]
 
 
 
@@ -3426,12 +3577,13 @@ partDefViewType type_ typeEditMaybe =
 partDefTypeNormalView : Data.Project.PartDef.Type -> Html.Styled.Html PartDefViewMsg
 partDefTypeNormalView type_ =
     Html.Styled.div
-        [ subClass "partDef-typeContainer"
+        [ Html.Styled.Attributes.css
+            [ typeDefContainerStyle ]
         , Html.Styled.Events.stopPropagationOn "click"
             (Json.Decode.succeed ( PartDefActiveTo (ActivePartDefType TypeEditSelect), True ))
         ]
         [ Html.Styled.div
-            [ subClass "partDef-typeText" ]
+            [ Html.Styled.Attributes.css [ typeDefTextStyle ] ]
             [ Html.Styled.text (Data.Project.PartDef.typeToString type_) ]
         ]
 
@@ -3439,12 +3591,14 @@ partDefTypeNormalView type_ =
 partDefTypeSelectView : Data.Project.PartDef.Type -> Html.Styled.Html PartDefViewMsg
 partDefTypeSelectView type_ =
     Html.Styled.Keyed.node "div"
-        [ subClass "partDef-typeContainer"
-        , subClass "partDef-element-active"
+        [ Html.Styled.Attributes.css
+            [ typeDefContainerStyle
+            , elementActiveStyle
+            ]
         ]
         [ ( "view"
           , Html.Styled.div
-                [ subClass "partDef-typeText" ]
+                [ Html.Styled.Attributes.css [ typeDefTextStyle ] ]
                 [ Html.Styled.text (Data.Project.PartDef.typeToString type_) ]
           )
         , ( "input"
@@ -3456,10 +3610,18 @@ partDefTypeSelectView type_ =
 partDefTypeEditView : Data.Project.PartDef.Type -> Int -> Html.Styled.Html PartDefViewMsg
 partDefTypeEditView type_ suggestIndex =
     Html.Styled.Keyed.node "div"
-        [ subClass "partDef-typeContainer" ]
+        [ Html.Styled.Attributes.css [ typeDefContainerStyle ] ]
         [ ( "input"
           , Html.Styled.input
-                [ subClass "partDef-typeTextArea"
+                [ Html.Styled.Attributes.css
+                    [ Css.border3 (Css.px 2) Css.solid (Css.rgb 221 221 221)
+                    , Css.height (Css.px 26)
+                    , Style.textColorStyle
+                    , Css.fontSize (Css.rem 1)
+                    , Css.borderRadius (Css.px 4)
+                    , Css.backgroundColor (Css.rgb 0 0 0)
+                    , Css.resize Css.none
+                    ]
                 , Html.Styled.Attributes.id "edit"
                 , Html.Styled.Events.onInput PartDefInput
                 ]
@@ -3471,36 +3633,30 @@ partDefTypeEditView type_ suggestIndex =
         ]
 
 
+typeDefContainerStyle : Css.Style
+typeDefContainerStyle =
+    Css.batch
+        [ Css.position Css.relative
+        , Css.height (Css.px 32)
+        , Css.padding (Css.px 4)
+        ]
+
+
+typeDefTextStyle : Css.Style
+typeDefTextStyle =
+    Css.batch
+        [ Css.color (Css.rgb 78 201 176)
+        , Css.fontSize (Css.rem 1)
+        , Css.borderRadius (Css.px 4)
+        , Css.minWidth (Css.px 32)
+        ]
+
+
 suggestionType : Data.Project.PartDef.Type -> Int -> Html.Styled.Html msg
 suggestionType type_ suggestIndex =
-    Html.Styled.div
-        [ subClass "partDef-suggestion" ]
-        []
-
-
-suggestTypeItem : Data.Project.PartDef.Type -> Html.Styled.Html msg -> Bool -> Html.Styled.Html msg
-suggestTypeItem type_ subItem isSelect =
-    Html.Styled.div
-        [ subClassList
-            [ ( "partDef-suggestion-item", True )
-            , ( "partDef-suggestion-item-select", isSelect )
-            ]
-        ]
-        [ Html.Styled.div
-            [ subClassList
-                [ ( "partDef-suggestion-item-text", True )
-                , ( "partDef-suggestion-item-text-select", isSelect )
-                ]
-            ]
-            [ Html.Styled.text (Data.Project.PartDef.typeToString type_) ]
-        , Html.Styled.div
-            [ subClassList
-                [ ( "partDef-suggestion-item-subItem", True )
-                , ( "partDef-suggestion-item-subItem-select", isSelect )
-                ]
-            ]
-            [ subItem ]
-        ]
+    suggestion
+        suggestIndex
+        [ ( Data.Project.PartDef.typeToString type_, "" ) ]
 
 
 
@@ -3510,7 +3666,12 @@ suggestTypeItem type_ subItem isSelect =
 partDefViewExprArea : Int -> Expr.Expr -> Maybe TermOpPos -> Html.Styled.Html PartDefViewMsg
 partDefViewExprArea width expr termOpPosMaybe =
     Html.Styled.div
-        ([ subClass "partDef-exprArea" ]
+        ([ Html.Styled.Attributes.css
+            [ Css.displayFlex
+            , Css.borderRadius (Css.px 4)
+            , Style.fontHack
+            ]
+         ]
             ++ (case termOpPosMaybe of
                     Just TermOpSelf ->
                         []
@@ -3529,18 +3690,35 @@ partDefViewExprArea width expr termOpPosMaybe =
 exprEqualSign : Html.Styled.Html msg
 exprEqualSign =
     Html.Styled.div
-        [ subClass "partDef-equalSign" ]
+        [ Html.Styled.Attributes.css
+            [ Css.width (Css.px 20) ]
+        ]
         [ Html.Styled.text "=" ]
 
 
 partDefViewExpr : Int -> Expr.Expr -> Maybe TermOpPos -> Html.Styled.Html PartDefViewMsg
 partDefViewExpr width expr termOpPosMaybe =
     Html.Styled.div
-        [ subClassList
-            [ ( "partDef-expr", True ), ( "partDef-element-active", termOpPosMaybe == Just TermOpSelf ) ]
+        [ Html.Styled.Attributes.css
+            ([ Style.fontHack
+             , Css.property "display" "grid"
+             , Css.property "grid-template-columns" "1fr"
+             , Css.property "gap" "2px"
+             , Css.fontSize (Css.rem 1)
+             , Css.padding (Css.px 4)
+             ]
+                ++ (if termOpPosMaybe == Just TermOpSelf then
+                        [ elementActiveStyle ]
+
+                    else
+                        []
+                   )
+            )
         ]
         ([ Html.Styled.div
-            [ subClass "partDef-expr-line" ]
+            [ Html.Styled.Attributes.css
+                [ Css.displayFlex ]
+            ]
             (newTermOpView termOpPosMaybe expr
                 |> List.map (Html.Styled.map (\m -> PartDefActiveTo (ActivePartDefExpr m)))
             )
@@ -3563,7 +3741,9 @@ exprLengthView expr areaWidth =
             exprLength expr
     in
     Html.Styled.div
-        [ subClass "partDef-exprArea-width" ]
+        [ Html.Styled.Attributes.css
+            [ Css.color (Css.rgb 255 165 0) ]
+        ]
         [ Html.Styled.text
             ((String.fromInt exprWidth ++ "/" ++ String.fromInt areaWidth)
                 ++ (if exprWidth < areaWidth then
@@ -3746,9 +3926,10 @@ newTermView term =
     case term of
         Expr.Int32Literal int ->
             [ Html.Styled.div
-                [ subClass "partDef-newTerm"
-                , Html.Styled.Attributes.css
-                    [ Css.width (Css.px (toFloat (termLength term))) ]
+                [ Html.Styled.Attributes.css
+                    [ Css.width (Css.px (toFloat (termLength term)))
+                    , Css.overflow Css.hidden
+                    ]
                 ]
                 [ Html.Styled.text (Expr.termToString term) ]
             ]
@@ -3795,7 +3976,9 @@ newOpView op =
 termOpView : Maybe TermOpPos -> Expr.Expr -> Html.Styled.Html TermOpPos
 termOpView termOpPosMaybe expr =
     Html.Styled.div
-        [ subClass "partDef-termOp" ]
+        [ Html.Styled.Attributes.css
+            [ Css.displayFlex ]
+        ]
         ((case termOpPosMaybe of
             Just TermOpHead ->
                 [ activeHeadTermLeft ]
@@ -3865,39 +4048,34 @@ termViewOutput term termTypeMaybe =
         isSelect =
             (termTypeMaybe |> Maybe.map (termTypeIsSelectSelf term)) == Just True
     in
-    case term of
-        Expr.Int32Literal _ ->
-            Html.Styled.div
-                [ Html.Styled.Events.stopPropagationOn
-                    "click"
-                    (Json.Decode.succeed ( TypeNoChildren ExprEditSelect, True ))
-                , subClassList
-                    [ ( "partDef-term", True )
-                    , ( "partDef-term-active", isSelect )
-                    ]
-                ]
+    Html.Styled.div
+        [ Html.Styled.Events.stopPropagationOn
+            "click"
+            (Json.Decode.succeed ( TypeNoChildren ExprEditSelect, True ))
+        , Html.Styled.Attributes.css
+            ([ Css.displayFlex
+             , Css.alignItems Css.center
+             , Css.padding (Css.px 3)
+             ]
+                ++ (if isSelect then
+                        [ Css.border3 (Css.px 3) Css.solid Style.activeColor
+                        , Css.borderRadius (Css.px 2)
+                        , Css.padding Css.zero
+                        ]
+
+                    else
+                        []
+                   )
+            )
+        ]
+        (case term of
+            Expr.Int32Literal _ ->
                 [ Html.Styled.text (Expr.termToString term) ]
 
-        Expr.Part _ ->
-            Html.Styled.div
-                [ Html.Styled.Events.stopPropagationOn "click"
-                    (Json.Decode.succeed ( TypeNoChildren ExprEditSelect, True ))
-                , subClassList
-                    [ ( "partDef-term", True )
-                    , ( "partDef-term-active", isSelect )
-                    ]
-                ]
+            Expr.Part _ ->
                 [ Html.Styled.text (Expr.termToString term) ]
 
-        Expr.Parentheses expr ->
-            Html.Styled.div
-                [ Html.Styled.Events.stopPropagationOn "click"
-                    (Json.Decode.succeed ( TypeNoChildren ExprEditSelect, True ))
-                , subClassList
-                    [ ( "partDef-term", True )
-                    , ( "partDef-term-active", isSelect )
-                    ]
-                ]
+            Expr.Parentheses expr ->
                 [ Html.Styled.text "("
                 , termOpView
                     (case termTypeMaybe of
@@ -3912,16 +4090,9 @@ termViewOutput term termTypeMaybe =
                 , Html.Styled.text ")"
                 ]
 
-        Expr.None ->
-            Html.Styled.div
-                [ Html.Styled.Events.stopPropagationOn "click"
-                    (Json.Decode.succeed ( TypeNoChildren ExprEditSelect, True ))
-                , subClassList
-                    [ ( "partDef-term-none", True )
-                    , ( "partDef-term-active", isSelect )
-                    ]
-                ]
+            Expr.None ->
                 []
+        )
 
 
 termTypeIsSelectSelf : Expr.Term -> TermType -> Bool
@@ -3955,35 +4126,105 @@ termTypeIsSelectSelf term termType =
 termEditView : Expr.Term -> List ( Char, Bool ) -> Html.Styled.Html msg
 termEditView term textAreaValue =
     Html.Styled.div
-        [ subClass "partDef-term-edit" ]
+        [ Html.Styled.Attributes.css
+            [ Css.displayFlex
+            , Css.alignItems Css.baseline
+            , Css.border3 (Css.px 2) Css.solid (Css.rgb 221 221 221)
+            , Css.color (Css.rgb 78 201 176)
+            , Css.fontSize (Css.rem 1)
+            , Css.borderRadius (Css.px 4)
+            , Css.minWidth (Css.px 32)
+            , Css.position Css.relative
+            ]
+        ]
         (textAreaValueToListHtml textAreaValue
-            ++ [ suggestionTerm term ]
+            ++ [ suggestion 0 [ Expr.termToDescription term ] ]
         )
 
 
-suggestionTerm : Expr.Term -> Html.Styled.Html msg
-suggestionTerm term =
-    let
-        ( text, subItem ) =
-            Expr.termToDescription term
-    in
+suggestion : Int -> List ( String, String ) -> Html.Styled.Html msg
+suggestion selectedIndex items =
     Html.Styled.div
-        [ subClass "partDef-suggestion" ]
-        [ Html.Styled.div
-            [ subClass "partDef-suggestion-item"
-            , subClass "partDef-suggestion-item-select"
+        [ Html.Styled.Attributes.css
+            [ Css.position Css.absolute
+            , Css.top (Css.px 38)
+            , Css.left Css.zero
+            , Css.backgroundColor (Css.rgb 45 45 45)
+            , Css.border3 (Css.px 1) Css.solid (Css.rgb 153 153 153)
+            , Css.fontSize (Css.rem 1)
+            , Css.width (Css.px 220)
+            , Css.zIndex (Css.int 5)
             ]
-            [ Html.Styled.div
-                [ subClass "partDef-suggestion-item-text"
-                , subClass "partDef-suggestion-item-text-select"
-                ]
-                [ Html.Styled.text text ]
-            , Html.Styled.div
-                [ subClass "partDef-suggestion-item-subItem"
-                , subClass "partDef-suggestion-item-subItem-select"
-                ]
-                [ Html.Styled.text subItem ]
+        ]
+        (items
+            |> List.indexedMap
+                (\index item -> suggestionItem (index == selectedIndex) item)
+        )
+
+
+suggestionItem : Bool -> ( String, String ) -> Html.Styled.Html msg
+suggestionItem selected ( text, description ) =
+    Html.Styled.div
+        [ Html.Styled.Attributes.css
+            ([ Css.displayFlex
+             , Css.alignItems Css.center
+             , Css.height (Css.px 28)
+             , Css.padding (Css.px 2)
+             , Css.borderBottom3 (Css.px 1) Css.solid (Css.rgb 72 72 72)
+             ]
+                ++ (if selected then
+                        [ Css.backgroundColor Style.activeColor ]
+
+                    else
+                        []
+                   )
+            )
+        ]
+        ([ Html.Styled.div
+            [ Html.Styled.Attributes.css
+                ([ Css.overflow Css.hidden
+                 , Css.whiteSpace Css.noWrap
+                 , Css.textOverflow Css.ellipsis
+                 , Css.flexGrow (Css.int 1)
+                 ]
+                    ++ (if selected then
+                            [ Css.color (Css.rgb 17 17 17)
+                            , Css.property "stroke" "rgb(17,17,17)"
+                            ]
+
+                        else
+                            []
+                       )
+                )
             ]
+            [ Html.Styled.text text ]
+         , Html.Styled.div
+            [ Html.Styled.Attributes.css
+                [ Css.overflow Css.hidden
+                , Css.whiteSpace Css.noWrap
+                , Css.textOverflow Css.ellipsis
+                ]
+            ]
+            [ Html.Styled.text description ]
+         ]
+            ++ (if selected then
+                    [ enterIcon (Color.fromRGB ( 0.06, 0.06, 0.06 )) ]
+
+                else
+                    []
+               )
+        )
+
+
+enterIcon : Color.Color -> Html.Styled.Html msg
+enterIcon strokeColor =
+    NSvg.toHtml
+        { x = 0, y = 0, width = 40, height = 32 }
+        (Just { width = 25, height = 20, padding = 0 })
+        [ NSvg.polygon [ ( 5, 4 ), ( 35, 4 ), ( 35, 28 ), ( 13, 28 ), ( 13, 16 ), ( 5, 16 ) ]
+            (NSvg.strokeColor strokeColor)
+            NSvg.fillNone
+        , NSvg.path "M31,8 V20 H17 L19,18 M17,20 L19,22" (NSvg.strokeColor strokeColor) NSvg.fillNone
         ]
 
 
@@ -4000,10 +4241,21 @@ opNormalView : Expr.Operator -> Bool -> Html.Styled.Html ()
 opNormalView op isActive =
     Html.Styled.div
         [ Html.Styled.Events.stopPropagationOn "click" (Json.Decode.succeed ( (), True ))
-        , subClassList
-            [ ( "partDef-op", True )
-            , ( "partDef-op-active", isActive )
-            ]
+        , Html.Styled.Attributes.css
+            ([ Css.displayFlex
+             , Css.padding2 (Css.px 3) (Css.px 8)
+             , Css.alignItems Css.center
+             ]
+                ++ (if isActive then
+                        [ Css.border3 (Css.px 3) Css.solid Style.activeColor
+                        , Css.borderRadius (Css.px 2)
+                        , Css.padding2 Css.zero (Css.px 5)
+                        ]
+
+                    else
+                        []
+                   )
+            )
         ]
         [ Html.Styled.text (Expr.opToString op) ]
 
@@ -4011,57 +4263,20 @@ opNormalView op isActive =
 opEditView : Expr.Operator -> List ( Char, Bool ) -> Html.Styled.Html msg
 opEditView op textAreaValue =
     Html.Styled.div
-        [ subClass "partDef-op-edit" ]
+        [ Html.Styled.Attributes.css
+            [ Css.displayFlex
+            , Css.alignItems Css.baseline
+            , Css.border3 (Css.px 2) Css.solid (Css.rgb 221 221 221)
+            , Css.color (Css.rgb 78 201 176)
+            , Css.fontSize (Css.rem 1)
+            , Css.borderRadius (Css.px 4)
+            , Css.minWidth (Css.px 32)
+            , Css.position Css.relative
+            ]
+        ]
         (textAreaValueToListHtml textAreaValue
-            ++ [ suggestionOp op ]
+            ++ [ suggestion 0 (Expr.allOperator |> List.map Expr.opToDescription) ]
         )
-
-
-suggestionOp : Expr.Operator -> Html.Styled.Html msg
-suggestionOp op =
-    Html.Styled.div
-        [ subClass "partDef-suggestion" ]
-        ([ suggestionOpItem op True ]
-            ++ (Expr.allOperator
-                    |> List.filterMap
-                        (\o ->
-                            if o == op then
-                                Nothing
-
-                            else
-                                Just (suggestionOpItem o False)
-                        )
-               )
-        )
-
-
-suggestionOpItem : Expr.Operator -> Bool -> Html.Styled.Html msg
-suggestionOpItem op isSelect =
-    let
-        ( text, subItem ) =
-            Expr.opToDescription op
-    in
-    Html.Styled.div
-        [ subClassList
-            [ ( "partDef-suggestion-item", True )
-            , ( "partDef-suggestion-item-select", isSelect )
-            ]
-        ]
-        [ Html.Styled.div
-            [ subClassList
-                [ ( "partDef-suggestion-item-text", True )
-                , ( "partDef-suggestion-item-text-select", isSelect )
-                ]
-            ]
-            [ Html.Styled.text text ]
-        , Html.Styled.div
-            [ subClassList
-                [ ( "partDef-suggestion-item-subItem", True )
-                , ( "partDef-suggestion-item-subItem-select", isSelect )
-                ]
-            ]
-            [ Html.Styled.text subItem ]
-        ]
 
 
 {-| 編集しているものの入力途中の文字の表示
@@ -4069,15 +4284,17 @@ suggestionOpItem op isSelect =
 textAreaValueToListHtml : List ( Char, Bool ) -> List (Html.Styled.Html msg)
 textAreaValueToListHtml =
     List.map
-        (\( char, bool ) ->
+        (\( char, ok ) ->
             Html.Styled.div
-                [ subClass
-                    (if bool then
-                        "partDef-okChar"
+                [ Html.Styled.Attributes.css
+                    [ Css.color
+                        (if ok then
+                            Css.rgb 255 255 255
 
-                     else
-                        "partDef-errChar"
-                    )
+                         else
+                            Css.rgb 255 0 0
+                        )
+                    ]
                 ]
                 [ Html.Styled.text (String.fromChar char) ]
         )
@@ -4088,9 +4305,22 @@ textAreaValueToListHtml =
 activeHeadTermLeft : Html.Styled.Html msg
 activeHeadTermLeft =
     Html.Styled.div
-        [ subClass "partDef-caretBox" ]
+        [ Html.Styled.Attributes.css
+            [ Css.display Css.block
+            , Css.width Css.zero
+            , Css.overflow Css.visible
+            , Css.position Css.relative
+            ]
+        ]
         [ Html.Styled.div
-            [ subClass "partDef-caret" ]
+            [ Html.Styled.Attributes.css
+                [ Css.display Css.block
+                , Css.width (Css.px 2)
+                , Css.height (Css.pct 100)
+                , Css.left (Css.px -1)
+                , Css.backgroundColor Style.activeColor
+                ]
+            ]
             []
         ]
 
@@ -4104,36 +4334,15 @@ activeHeadTermLeft =
 hideInputElement : Html.Styled.Html PartDefViewMsg
 hideInputElement =
     Html.Styled.input
-        [ subClass "partDef-hideTextArea"
+        [ Html.Styled.Attributes.css
+            [ Css.width (Css.px 40)
+            , Css.height (Css.px 18)
+            , Css.padding Css.zero
+            , Css.border2 Css.zero Css.none
+            , Css.resize Css.none
+            , Css.overflow Css.hidden
+            ]
         , Html.Styled.Attributes.id "edit"
         , Html.Styled.Events.onInput PartDefInput
         ]
         []
-
-
-{-| 定義を末尾に1つ追加するボタン
--}
-addPartDefButton : Html.Styled.Html Msg
-addPartDefButton =
-    Html.Styled.button
-        [ Html.Styled.Events.stopPropagationOn "click"
-            (Json.Decode.succeed ( MsgAddPartDef, True ))
-        , subClass "defList-addButton"
-        ]
-        [ Html.Styled.text "+ 新しいパーツ定義" ]
-
-
-subClass : String -> Html.Styled.Attribute msg
-subClass class =
-    case class of
-        "" ->
-            Html.Styled.Attributes.class "moduleEditor"
-
-        _ ->
-            Html.Styled.Attributes.class ("moduleEditor-" ++ class)
-
-
-subClassList : List ( String, Bool ) -> Html.Styled.Attribute msg
-subClassList =
-    List.map (Tuple.mapFirst ((++) "moduleEditor-"))
-        >> Html.Styled.Attributes.classList

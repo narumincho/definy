@@ -21,7 +21,7 @@ view model =
         [ Html.Styled.Attributes.css
             [ Css.position Css.absolute
             , Css.top Css.zero
-            , Style.textColor
+            , Style.textColorStyle
             , Css.backgroundColor (Css.rgb 0 0 0)
             , Css.width (Css.px 560)
             , Css.padding (Css.px 32)

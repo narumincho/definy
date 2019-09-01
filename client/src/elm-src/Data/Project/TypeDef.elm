@@ -1,16 +1,15 @@
 module Data.Project.TypeDef exposing
     ( TypeDef
+    , from
     , getName
     , getTagNum
-    , make
     , toString
-    , typeDefInt
     )
 
 {-| 型の定義
 -}
 
-import Data.Id as Id
+import Data.IdHash as Id
 import Data.Label as L
 
 
@@ -18,7 +17,9 @@ import Data.Label as L
 -}
 type TypeDef
     = TypeDef
-        { name : L.Label
+        { id : Id.TypeId
+        , hash : Id.TypeHash
+        , name : L.Label
         , content : TagOrKernel
         }
 
@@ -50,14 +51,9 @@ type Parameter
     | OneParameter Id.TypeId
 
 
-{-| 指定した名前の型定義をつくる
--}
-make : L.Label -> TypeDef
-make nameLabel =
+from : { id : Id.TypeId, hash : Id.TypeHash, name : L.Label, content : TagOrKernel } -> TypeDef
+from =
     TypeDef
-        { name = nameLabel
-        , content = TagOrKernelTag []
-        }
 
 
 {-| 型の名前を取得する
@@ -78,17 +74,6 @@ getTagNum (TypeDef { content }) =
 
         TagOrKernelKernel _ ->
             1
-
-
-{-| デバッグ用。Intの型定義
--}
-typeDefInt : TypeDef
-typeDefInt =
-    TypeDef
-        { name = L.from L.hi [ L.on, L.ot, L.o3, L.o2 ]
-        , content =
-            TagOrKernelKernel I32
-        }
 
 
 {-| 文字列化。デバッグ用

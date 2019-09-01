@@ -1,7 +1,7 @@
 module Compiler.DefToSafeExpr exposing (convert)
 
 import Compiler.SafeExpr exposing (SafeExpr(..), SafeOperator(..), SafeTerm(..))
-import Data.Id
+import Data.IdHash
 import Data.Project.Expr as Expr
 import Data.Project.PartDef as Def
 

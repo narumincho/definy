@@ -15,7 +15,7 @@ module Data.Project.PartDef exposing
     , typeToString
     )
 
-import Data.Id as Id
+import Data.IdHash as Id
 import Data.Label as Label
 import Data.Project.Expr as Expr
 

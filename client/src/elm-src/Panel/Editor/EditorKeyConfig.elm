@@ -85,8 +85,7 @@ view (Model { selectedKey, inputDevice }) =
             [ Html.Styled.Attributes.css
                 [ Css.padding2 Css.zero (Css.px 16) ]
             ]
-            ([ inputSourceTab inputDevice
-             ]
+            ([ inputSourceTab inputDevice ]
                 ++ (case inputDevice of
                         Keyboard ->
                             [ NSvg.toHtml { x = 0, y = 0, width = 6500, height = 1800 } Nothing (keyboard selectedKey) ]
@@ -116,57 +115,14 @@ isInputKeyboardDirect (Model { selectedKey }) =
 
 inputSourceTab : InputDevice -> Html.Styled.Html Msg
 inputSourceTab selectedDevice =
-    Html.Styled.div
-        [ Html.Styled.Attributes.class "editor-tab"
-        , Html.Styled.Attributes.css
-            [ Css.property "display" "grid"
-            , Css.boxShadow4 Css.zero (Css.px 2) (Css.px 4) (Css.rgba 0 0 0 0.4)
-            , Css.position Css.relative
-            , Css.property "grid-template-columns" "1fr 1fr 1fr 1fr"
-            ]
+    Style.tabContainer
+        selectedDevice
+        [ ( Keyboard, "キーボード" )
+        , ( Mouse, "マウス" )
+        , ( Gamepad, "ゲームパッド" )
+        , ( MidiKeyboard, "MIDIキーボード" )
         ]
-        ([ ( "キーボード", Keyboard ), ( "マウス", Mouse ), ( "ゲームパッド", Gamepad ), ( "MIDIキーボード", MidiKeyboard ) ]
-            |> List.map (inputSourceTabItem selectedDevice)
-        )
-
-
-inputSourceTabItem : InputDevice -> ( String, InputDevice ) -> Html.Styled.Html Msg
-inputSourceTabItem selectedDevice ( text, device ) =
-    Html.Styled.div
-        [ Html.Styled.Attributes.class
-            (if device == selectedDevice then
-                "editor-tab-item-select"
-
-             else
-                "editor-tab-item"
-            )
-        , Html.Styled.Attributes.css
-            [ Css.padding (Css.px 8)
-            , Css.textAlign Css.center
-            , Css.borderBottom3
-                (Css.px 2)
-                Css.solid
-                (if device == selectedDevice then
-                    Css.rgb 78 201 176
-
-                 else
-                    Css.rgba 0 0 0 0
-                )
-            , Css.color
-                (if device == selectedDevice then
-                    Css.rgb 238 238 238
-
-                 else
-                    Css.rgb 204 204 204
-                )
-            , Css.hover
-                [ Css.backgroundColor (Css.rgb 17 17 17)
-                , Style.textColor
-                ]
-            ]
-        , Html.Styled.Events.onClick (ChangeInputDevice device)
-        ]
-        [ Html.Styled.text text ]
+        |> Html.Styled.map ChangeInputDevice
 
 
 keyboard : Maybe Key.OneKey -> List (NSvg Msg)

@@ -5,14 +5,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Definy</title>
-    <link rel="stylesheet" href="/style.css">
-    <!--
-        Hack typeface https://github.com/source-foundry/Hack
-        License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
-    -->
     <link rel="icon" href="/assets/icon.png">
 
     <style>
+        @font-face {
+            font-family: "Roboto";
+            font-style: normal;
+            font-weight: 400;
+            src: local("Roboto"), local("Roboto-Regular"),
+                url("https://fonts.gstatic.com/s/roboto/v19/KFOmCnqEu92Fr1Mu4mxK.woff2") format("woff2");
+        }
+
+        /*
+            Hack typeface https://github.com/source-foundry/Hack
+            License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
+        */
+
+        @font-face {
+            font-family: "Hack";
+            font-weight: 400;
+            font-style: normal;
+            src: url("/assets/hack-regular-subset.woff2") format("woff2");
+        }
+
         html {
             height: 100%;
         }

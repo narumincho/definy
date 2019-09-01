@@ -203,7 +203,7 @@ userView :
 userView { user, language, logInState } =
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ Style.textColor
+            [ Style.textColorStyle
             , Css.property "display" "grid"
             , Css.property "gap" "10px"
             , Css.padding (Css.px 8)
@@ -393,7 +393,7 @@ projectOwnerAndName : String -> Data.Label.Label -> Html.Styled.Html msg
 projectOwnerAndName leaderName projectName =
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ Style.textColor ]
+            [ Style.textColorStyle ]
         ]
         [ Html.Styled.text (leaderName ++ "/" ++ Data.Label.toCapitalString projectName) ]
 

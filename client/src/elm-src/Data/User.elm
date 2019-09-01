@@ -1,6 +1,6 @@
 module Data.User exposing (User, from, fromName, getId, getImageUrl, getName)
 
-import Data.Id as Id
+import Data.IdHash as Id
 import Time
 
 

@@ -1,7 +1,9 @@
-module Data.Id exposing
+module Data.IdHash exposing
     ( ModuleId(..)
+    , PartHash(..)
     , PartId(..)
     , ProjectId(..)
+    , TypeHash(..)
     , TypeId(..)
     , UserId(..)
     )
@@ -36,3 +38,15 @@ type TypeId
 -}
 type PartId
     = PartId String
+
+
+{-| 型のスナップショットを識別するためのハッシュ値
+-}
+type TypeHash
+    = TypeHash String
+
+
+{-| パーツのスナップショットを識別するためのハッシュ値
+-}
+type PartHash
+    = PartHash String

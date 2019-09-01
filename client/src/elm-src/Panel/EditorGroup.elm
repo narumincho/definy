@@ -21,7 +21,7 @@ module Panel.EditorGroup exposing
 -}
 
 import Css
-import Data.Id
+import Data.IdHash
 import Data.Language
 import Data.Project
 import Html.Styled
@@ -197,7 +197,7 @@ initModel =
             RowOne
                 { left =
                     ColumnOne
-                        { top = ModuleEditor (Panel.Editor.Module.initModel (Data.Id.ModuleId "")) }
+                        { top = ModuleEditor (Panel.Editor.Module.initModel (Data.IdHash.ModuleId "")) }
                 }
         , activeEditorIndex = ( EditorIndexLeft, EditorIndexTop )
         }
@@ -1149,7 +1149,7 @@ view project { width, height, language, focus, gutter } (Model { group, activeEd
             [ Css.width (Css.px (toFloat width))
             , Css.height (Css.px (toFloat height))
             , Css.backgroundColor (Css.rgb 24 24 24)
-            , Style.textColor
+            , Style.textColorStyle
             , Css.overflow Css.hidden
             , Css.displayFlex
             , Css.position Css.relative
@@ -1398,7 +1398,7 @@ editorItemView { project, editorItem, editorIndex, width, height, isActive, isOn
                         ]
 
                     else
-                        [ Style.textColor ]
+                        [ Style.textColorStyle ]
                    )
             )
          , Html.Styled.Attributes.id (editorIndexToIdString editorIndex)
@@ -1468,7 +1468,12 @@ editorTitleAndBody width editorIndex isActive project editorItem =
         ModuleEditor moduleEditorModel ->
             let
                 viewItem =
-                    Panel.Editor.Module.view width project isActive moduleEditorModel
+                    Panel.Editor.Module.view
+                        { width = width
+                        , project = project
+                        , focus = isActive
+                        }
+                        moduleEditorModel
             in
             { title = viewItem.title
             , body =

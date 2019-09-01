@@ -32,7 +32,7 @@ module Data.Project.Expr exposing
     , toString
     )
 
-import Data.Id as Id
+import Data.IdHash as Id
 import Utility.ListExtra as ListExtra
 
 

@@ -10,7 +10,7 @@ module Data.Project.Module exposing
     , setName
     )
 
-import Data.Id as Id
+import Data.IdHash as Id
 import Data.Label as Label
 import Data.Project.PartDef as PartDef
 import Data.Project.TypeDef as TypeDef

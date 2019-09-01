@@ -5,7 +5,7 @@ module Data.Project exposing
     , sample
     )
 
-import Data.Id as Id
+import Data.IdHash as Id
 import Data.Label as Label
 import Data.Project.Module
 import Time
