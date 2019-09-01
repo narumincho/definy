@@ -2,16 +2,19 @@ module Ui.Panel exposing
     ( FitStyle(..)
     , FixFix(..)
     , FixGrow(..)
+    , Font(..)
     , GrowFix(..)
     , GrowGrow(..)
     , HorizontalAlignment
     , ImageRendering(..)
+    , TextAlign(..)
     , VerticalAlignment
     , bottom
     , centerX
     , centerY
     , left
     , right
+    , toHtml
     , top
     )
 
@@ -82,8 +85,7 @@ type GrowGrow msg
         { textAlign : TextAlign
         , verticalAlignment : VerticalAlignment
         , text : String
-        , size : Float
-        , color : Color.Color
+        , font : Font
         }
     | ImageFromDataUrl
         { dataUrl : String
@@ -91,6 +93,7 @@ type GrowGrow msg
         , alternativeText : String
         , rendering : ImageRendering
         }
+    | DepthList (List (GrowGrow msg))
 
 
 type FitStyle
@@ -126,59 +129,110 @@ type TextAlign
     | TextAlignJustify
 
 
-growGrowToHtml : GrowGrow msg -> Html.Styled.Html msg
-growGrowToHtml growGrow =
+type Font
+    = Font
+        { typeface : String
+        , size : Int
+        , letterSpacing : Float
+        , color : Color.Color
+        }
+
+
+toHtml : GrowGrow msg -> Html.Styled.Html msg
+toHtml =
+    growGrowToHtml False
+
+
+growGrowToHtml : Bool -> GrowGrow msg -> Html.Styled.Html msg
+growGrowToHtml isSetGridPosition growGrow =
     case growGrow of
         FromFixFix { horizontalAlignment, verticalAlignment, fixFix } ->
             Html.Styled.div
                 [ Html.Styled.Attributes.css
-                    [ Css.width (Css.pct 100)
-                    , Css.height (Css.pct 100)
-                    , Css.displayFlex
-                    , horizontalAlignmentToStyle horizontalAlignment
-                    , verticalAlignmentToStyle verticalAlignment
-                    ]
+                    ([ Css.width (Css.pct 100)
+                     , Css.height (Css.pct 100)
+                     , Css.displayFlex
+                     , horizontalAlignmentToStyle horizontalAlignment
+                     , verticalAlignmentToStyle verticalAlignment
+                     , Css.overflow Css.hidden
+                     ]
+                        ++ (if isSetGridPosition then
+                                [ gridSetPosition ]
+
+                            else
+                                []
+                           )
+                    )
                 ]
                 [ fixFixToHtml fixFix ]
 
         FromFixGrow { horizontalAlignment, fixGrow } ->
             Html.Styled.div
                 [ Html.Styled.Attributes.css
-                    [ Css.width (Css.pct 100)
-                    , Css.height (Css.pct 100)
-                    , Css.displayFlex
-                    , horizontalAlignmentToStyle horizontalAlignment
-                    ]
+                    ([ Css.width (Css.pct 100)
+                     , Css.height (Css.pct 100)
+                     , Css.displayFlex
+                     , horizontalAlignmentToStyle horizontalAlignment
+                     , Css.overflow Css.hidden
+                     ]
+                        ++ (if isSetGridPosition then
+                                [ gridSetPosition ]
+
+                            else
+                                []
+                           )
+                    )
                 ]
                 [ fixGrowToHtml fixGrow ]
 
         FromGrowFix { verticalAlignment, growFix } ->
             Html.Styled.div
                 [ Html.Styled.Attributes.css
-                    [ Css.width (Css.pct 100)
-                    , Css.height (Css.pct 100)
-                    , Css.displayFlex
-                    , verticalAlignmentToStyle verticalAlignment
-                    ]
+                    ([ Css.width (Css.pct 100)
+                     , Css.height (Css.pct 100)
+                     , Css.displayFlex
+                     , verticalAlignmentToStyle verticalAlignment
+                     , Css.overflow Css.hidden
+                     ]
+                        ++ (if isSetGridPosition then
+                                [ gridSetPosition ]
+
+                            else
+                                []
+                           )
+                    )
                 ]
                 [ growFixToHtml growFix ]
 
         Box { padding, border, color } ->
             Html.Styled.div
                 [ Html.Styled.Attributes.css
-                    [ Css.width (Css.pct 100)
-                    , Css.height (Css.pct 100)
-                    , Css.color (Css.hex (Color.toRGBString color))
-                    ]
+                    ([ Css.width (Css.pct 100)
+                     , Css.height (Css.pct 100)
+                     , Css.color (Css.hex (Color.toRGBString color))
+                     , Css.overflow Css.hidden
+                     ]
+                        ++ (if isSetGridPosition then
+                                [ gridSetPosition ]
+
+                            else
+                                []
+                           )
+                    )
                 ]
                 []
 
-        Text { textAlign, verticalAlignment, text, color } ->
+        Text { textAlign, verticalAlignment, text, font } ->
+            let
+                (Font { typeface, size, letterSpacing, color }) =
+                    font
+            in
             Html.Styled.div
                 [ Html.Styled.Attributes.css
-                    [ Css.width (Css.pct 100)
-                    , Css.height (Css.pct 100)
-                    , Css.textAlign
+                    ([ Css.width (Css.pct 100)
+                     , Css.height (Css.pct 100)
+                     , Css.property "display" "grid"
+                     , Css.textAlign
                         (case textAlign of
                             TextAlignStart ->
                                 Css.start
@@ -192,10 +246,21 @@ growGrowToHtml growGrow =
                             TextAlignJustify ->
                                 Css.justify
                         )
-                    , verticalAlignmentToStyle verticalAlignment
-                    , Css.color (Css.hex (Color.toHex color))
-                    , Css.overflowWrap Css.breakWord
-                    ]
+                     , verticalAlignmentToStyle verticalAlignment
+                     , Css.color (Css.hex (Color.toHex color))
+                     , Css.fontSize (Css.px (toFloat size))
+                     , Css.fontFamilies [ Css.qt typeface ]
+                     , Css.letterSpacing (Css.px letterSpacing)
+                     , Css.overflowWrap Css.breakWord
+                     , Css.overflow Css.hidden
+                     ]
+                        ++ (if isSetGridPosition then
+                                [ gridSetPosition ]
+
+                            else
+                                []
+                           )
+                    )
                 ]
                 [ Html.Styled.text text ]
 
@@ -221,6 +286,12 @@ growGrowToHtml growGrow =
                                 ImageRenderingPixelated ->
                                     [ Css.property "image-rendering" "pixelated" ]
                            )
+                        ++ (if isSetGridPosition then
+                                [ gridSetPosition ]
+
+                            else
+                                []
+                           )
                     )
                 , Html.Styled.Attributes.src
                     (if String.startsWith "data:" dataUrl then
@@ -233,6 +304,26 @@ growGrowToHtml growGrow =
                 ]
                 []
 
+        DepthList list ->
+            Html.Styled.div
+                [ Html.Styled.Attributes.css
+                    [ Css.width (Css.pct 100)
+                    , Css.height (Css.pct 100)
+                    , Css.property "display" "grid"
+                    , Css.property "grid-template-rows" "1fr"
+                    , Css.property "grid-template-columns" "1fr"
+                    ]
+                ]
+                (list |> List.map (growGrowToHtml True))
+
+
+gridSetPosition : Css.Style
+gridSetPosition =
+    Css.batch
+        [ Css.property "grid-row" "1 / 2"
+        , Css.property "grid-column" "1 / 2"
+        ]
+
 
 fixFixToHtml : FixFix msg -> Html.Styled.Html msg
 fixFixToHtml fixFix =
@@ -242,9 +333,10 @@ fixFixToHtml fixFix =
                 [ Html.Styled.Attributes.css
                     [ Css.width (Css.px (toFloat width))
                     , Css.height (Css.px (toFloat height))
+                    , Css.overflow Css.hidden
                     ]
                 ]
-                [ growGrowToHtml growGrow ]
+                [ growGrowToHtml False growGrow ]
 
 
 fixGrowToHtml : FixGrow msg -> Html.Styled.Html msg
@@ -255,6 +347,7 @@ fixGrowToHtml fixGrow =
                 [ Html.Styled.Attributes.css
                     [ horizontalAlignmentToStyle horizontalAlignment
                     , Css.height (Css.pct 100)
+                    , Css.overflow Css.hidden
                     ]
                 ]
                 [ fixFixToHtml fixFix ]
@@ -264,9 +357,10 @@ fixGrowToHtml fixGrow =
                 [ Html.Styled.Attributes.css
                     [ Css.width (Css.px (toFloat width))
                     , Css.height (Css.pct 100)
+                    , Css.overflow Css.hidden
                     ]
                 ]
-                [ growGrowToHtml growGrow ]
+                [ growGrowToHtml False growGrow ]
 
 
 growFixToHtml : GrowFix msg -> Html.Styled.Html msg
@@ -277,6 +371,7 @@ growFixToHtml growFix =
                 [ Html.Styled.Attributes.css
                     [ verticalAlignmentToStyle verticalAlignment
                     , Css.width (Css.pct 100)
+                    , Css.overflow Css.hidden
                     ]
                 ]
                 [ fixFixToHtml fixFix ]
@@ -286,9 +381,10 @@ growFixToHtml growFix =
                 [ Html.Styled.Attributes.css
                     [ Css.width (Css.pct 100)
                     , Css.height (Css.px (toFloat height))
+                    , Css.overflow Css.hidden
                     ]
                 ]
-                [ growGrowToHtml growGrow ]
+                [ growGrowToHtml False growGrow ]
 
 
 {-| 横方向のそろえ方
@@ -362,7 +458,7 @@ horizontalAlignmentToStyle horizontalAlignment =
                 Css.center
 
             Right ->
-                Css.right
+                Css.end
         )
 
 

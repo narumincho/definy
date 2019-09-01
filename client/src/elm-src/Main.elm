@@ -13,6 +13,7 @@ import Html.Styled
 import Html.Styled.Attributes
 import Html.Styled.Events
 import Json.Decode
+import Palette.X11
 import Panel.CommandPalette
 import Panel.DefaultUi
 import Panel.Editor.Module
@@ -21,6 +22,7 @@ import Panel.EditorItemSource
 import Panel.Side
 import Panel.Style
 import Task
+import Ui.Panel
 import Url
 import Utility.Map
 
@@ -1195,10 +1197,33 @@ view model =
                        )
                 )
             ]
-            [ sidePanel model
-            , Panel.Style.verticalGutter (isTreePanelGutter model)
-                |> Html.Styled.map (always (ToResizeGutterMode SideBarGutter))
-            , editorGroupPanel model
+            [ Ui.Panel.DepthList
+                [ Ui.Panel.Text
+                    { textAlign = Ui.Panel.TextAlignStart
+                    , verticalAlignment = Ui.Panel.top
+                    , text = "調整中!"
+                    , font =
+                        Ui.Panel.Font
+                            { typeface = "Roboto"
+                            , size = 16
+                            , letterSpacing = 0.15
+                            , color = Palette.X11.black
+                            }
+                    }
+                , Ui.Panel.Text
+                    { textAlign = Ui.Panel.TextAlignEnd
+                    , verticalAlignment = Ui.Panel.bottom
+                    , text = "それな"
+                    , font =
+                        Ui.Panel.Font
+                            { typeface = "Roboto"
+                            , size = 48
+                            , letterSpacing = 0
+                            , color = Palette.X11.orange
+                            }
+                    }
+                ]
+                |> Ui.Panel.toHtml
             ]
         ]
             ++ (case getCommandPaletteModel model of
