@@ -38,7 +38,7 @@ export type UserData = {
     imageHash: type.FileHash;
     introduction: string;
     createdAt: firestore.Timestamp;
-    branchIds: Array<type.BranchId>;
+    branchIds: ReadonlyArray<type.BranchId>;
     lastAccessTokenJti: string;
     logInServiceAndId: type.LogInServiceAndId;
 };
@@ -70,7 +70,7 @@ export const getUser = async (userId: type.UserId): Promise<UserData> => {
  * 全てのユーザーのデータを取得する
  */
 export const getAllUser = async (): Promise<
-    Array<{ id: type.UserId; data: UserData }>
+    ReadonlyArray<{ id: type.UserId; data: UserData }>
 > =>
     (await userCollection.get()).docs.map(doc => ({
         id: doc.id as type.UserId,
@@ -145,8 +145,8 @@ export const existsGoogleStateAndDeleteAndGetUserId = async (
 // コレクションはProject。KeyはProjectId
 export type ProjectData = {
     masterBranch: type.BranchId;
-    branches: Array<type.BranchId>;
-    taggedCommitHashes: Array<type.CommitHash>;
+    branches: ReadonlyArray<type.BranchId>;
+    taggedCommitHashes: ReadonlyArray<type.CommitHash>;
 };
 
 export const addProject = async (
@@ -184,7 +184,7 @@ export const updateProject = async (
  * 全てのプロジェクトのデータを取得する
  */
 export const getAllProject = async (): Promise<
-    Array<{ id: type.ProjectId; data: ProjectData }>
+    ReadonlyArray<{ id: type.ProjectId; data: ProjectData }>
 > =>
     (await projectCollection.get()).docs.map(doc => ({
         id: doc.id as type.ProjectId,
@@ -242,7 +242,7 @@ export const updateBranch = async (
 
 // コレクションはcommit。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type CommitData = {
-    parentCommitHashes: Array<type.CommitHash>;
+    parentCommitHashes: ReadonlyArray<type.CommitHash>;
     tag: null | string | type.Version;
     authorId: type.UserId;
     date: firestore.Timestamp;
@@ -250,19 +250,19 @@ export type CommitData = {
     commitDescription: string;
     projectName: string;
     projectDescription: string;
-    children: Array<{
+    children: ReadonlyArray<{
         id: type.ModuleId;
         hash: type.ModuleSnapshotHash;
     }>;
-    typeDefs: Array<{
+    typeDefs: ReadonlyArray<{
         id: type.TypeId;
         hash: type.TypeDefSnapshotHash;
     }>;
-    partDefs: Array<{
+    partDefs: ReadonlyArray<{
         id: type.PartId;
         hash: type.PartDefSnapshotHash;
     }>;
-    dependencies: Array<{
+    dependencies: ReadonlyArray<{
         projectId: type.ProjectId;
         version: type.DependencyVersion;
     }>;
@@ -295,15 +295,15 @@ export const getCommit = async (hash: type.CommitHash): Promise<CommitData> => {
 // コレクションはmodule。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type ModuleSnapshotData = {
     name: type.Label;
-    children: Array<{
+    children: ReadonlyArray<{
         id: type.ModuleId;
         hash: type.ModuleSnapshotHash;
     }>;
-    typeDefs: Array<{
+    typeDefs: ReadonlyArray<{
         id: type.TypeId;
         hash: type.TypeDefSnapshotHash;
     }>;
-    partDefs: Array<{
+    partDefs: ReadonlyArray<{
         id: type.PartId;
         hash: type.PartDefSnapshotHash;
     }>;
@@ -385,7 +385,7 @@ export const getTypeDefSnapshot = async (
 export type PartDefSnapshot = {
     name: type.Label;
     description: string;
-    type: Array<type.TypeTermOrParenthesis>;
+    type: ReadonlyArray<type.TypeTermOrParenthesis>;
     exprHash: type.ExprSnapshotHash;
 };
 
@@ -422,7 +422,7 @@ export const getPartDefSnapShot = async (
 
 // コレクションはexpr。ー度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type ExprSnapshot = {
-    value: Array<type.TermOrParenthesis>;
+    readonly value: ReadonlyArray<type.TermOrParenthesis>;
 };
 
 /**

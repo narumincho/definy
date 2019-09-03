@@ -54,7 +54,7 @@ export type User = {
     image: Image;
     introduction: string;
     createdAt: Date;
-    branches: Array<Branch>;
+    branches: ReadonlyArray<Branch>;
 };
 
 export type UserId = string & { __userIdBrand: never };
@@ -65,8 +65,8 @@ export type UserId = string & { __userIdBrand: never };
 export type Project = {
     id: ProjectId;
     masterBranch: Branch;
-    branches: Array<Branch>;
-    taggedCommits: Array<Commit>;
+    branches: ReadonlyArray<Branch>;
+    taggedCommits: ReadonlyArray<Commit>;
 };
 
 export type ProjectId = string & { __projectIdBrand: never };
@@ -93,7 +93,7 @@ export type BranchId = string & { __branchIdBrand: never };
 
 export type Commit = {
     hash: CommitHash;
-    parentCommits: Array<Commit>;
+    parentCommits: ReadonlyArray<Commit>;
     tag: null | CommitTagName | Version;
     projectName: string;
     projectDescription: string;
@@ -101,19 +101,19 @@ export type Commit = {
     date: Date;
     commitSummary: string;
     commitDescription: string;
-    children: Array<{
+    children: ReadonlyArray<{
         id: ModuleId;
         snapshot: ModuleSnapshot;
     }>;
-    typeDefs: Array<{
+    typeDefs: ReadonlyArray<{
         id: TypeId;
         snapshot: TypeDefSnapshot;
     }>;
-    partDefs: Array<{
+    partDefs: ReadonlyArray<{
         id: PartId;
         snapshot: PartDefSnapshot;
     }>;
-    dependencies: Array<Dependency>;
+    dependencies: ReadonlyArray<Dependency>;
 };
 
 export type CommitHash = string & { __commitObjectBrand: never };
@@ -150,15 +150,15 @@ export type ModuleSnapshotHash = string & { __moduleObjectHashBrand: never };
 export type ModuleSnapshot = {
     hash: ModuleSnapshotHash;
     name: Label;
-    children: Array<{
+    children: ReadonlyArray<{
         id: ModuleId;
         snapshot: ModuleSnapshot;
     }>;
-    typeDefs: Array<{
+    typeDefs: ReadonlyArray<{
         id: TypeId;
         snapshot: TypeDefSnapshot;
     }>;
-    partDefs: Array<{
+    partDefs: ReadonlyArray<{
         id: PartId;
         snapshot: PartDefSnapshot;
     }>;
@@ -187,13 +187,13 @@ export type TypeBody = TypeBodyTags | TypeBodyKernel;
 
 export type TypeBodyTags = {
     type: "tag";
-    tags: Array<TypeBodyTag>;
+    tags: ReadonlyArray<TypeBodyTag>;
 };
 
 export type TypeBodyTag = {
     name: Label;
     description: string;
-    parameter: Array<TypeTermOrParenthesis>;
+    parameter: ReadonlyArray<TypeTermOrParenthesis>;
 };
 
 export type TypeBodyKernel = {
@@ -232,7 +232,7 @@ export type PartDefSnapshot = {
     hash: PartDefSnapshotHash;
     name: Label;
     description: string;
-    type: Array<TypeTermOrParenthesis>;
+    type: ReadonlyArray<TypeTermOrParenthesis>;
     expr: ExprSnapshot;
 };
 
@@ -261,7 +261,7 @@ export type TypeTermRef = { type: "ref"; typeId: TypeId };
 */
 export type ExprSnapshot = {
     hash: ExprSnapshotHash;
-    value: Array<TermOrParenthesis>;
+    value: ReadonlyArray<TermOrParenthesis>;
 };
 
 /** 0～fで64文字 256bit SHA-256のハッシュ値 */

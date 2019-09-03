@@ -72,14 +72,14 @@ export const getUserFromLogInService = async (
 };
 
 type UserLowCost = {
-    id: type.UserId;
-    name: type.UserName;
-    image: {
-        hash: type.FileHash;
+    readonly id: type.UserId;
+    readonly name: type.UserName;
+    readonly image: {
+        readonly hash: type.FileHash;
     };
-    introduction: string;
-    createdAt: Date;
-    branches: Array<{
+    readonly introduction: string;
+    readonly createdAt: Date;
+    readonly branches: ReadonlyArray<{
         id: type.BranchId;
     }>;
 };
@@ -146,15 +146,15 @@ const databaseLowUserToLowCost = ({
 */
 
 type ProjectLowCost = {
-    id: type.ProjectId;
-    masterBranch: {
-        id: type.BranchId;
+    readonly id: type.ProjectId;
+    readonly masterBranch: {
+        readonly id: type.BranchId;
     };
-    branches: Array<{
-        id: type.BranchId;
+    readonly branches: ReadonlyArray<{
+        readonly id: type.BranchId;
     }>;
-    taggedCommits: Array<{
-        hash: type.CommitHash;
+    readonly taggedCommits: ReadonlyArray<{
+        readonly hash: type.CommitHash;
     }>;
 };
 
@@ -164,7 +164,7 @@ type ProjectLowCost = {
 export const addProject = async (data: {
     name: string;
     userId: type.UserId;
-    editors: Array<type.UserId>;
+    editors: ReadonlyArray<type.UserId>;
 }): Promise<ProjectLowCost> => {
     const initialCommitHash = (await addCommit({
         authorId: data.userId,
@@ -238,14 +238,14 @@ const databaseLowProjectToLowCost = ({
    ==========================================
 */
 type BranchLowCost = {
-    id: type.BranchId;
-    name: type.Label;
-    project: {
-        id: type.ProjectId;
+    readonly id: type.BranchId;
+    readonly name: type.Label;
+    readonly project: {
+        readonly id: type.ProjectId;
     };
-    description: string;
-    head: {
-        hash: type.CommitHash;
+    readonly description: string;
+    readonly head: {
+        readonly hash: type.CommitHash;
     };
 };
 
@@ -256,23 +256,23 @@ export const addBranch = async (
     userId: type.UserId,
     commitSummary: string,
     commitDescription: string,
-    dependencies: Array<{
+    dependencies: ReadonlyArray<{
         projectId: type.ProjectId;
         version: type.DependencyVersion;
     }>,
-    parentCommitHashes: Array<type.CommitHash>,
+    parentCommitHashes: ReadonlyArray<type.CommitHash>,
     projectName: string,
     projectDescription: string,
     tag: string | type.Version | null,
-    children: Array<{
+    children: ReadonlyArray<{
         id: type.ModuleId;
         hash: type.ModuleSnapshotHash;
     }>,
-    typeDefs: Array<{
+    typeDefs: ReadonlyArray<{
         id: type.TypeId;
         hash: type.TypeDefSnapshotHash;
     }>,
-    partDefs: Array<{
+    partDefs: ReadonlyArray<{
         id: type.PartId;
         hash: type.PartDefSnapshotHash;
     }>
@@ -334,66 +334,66 @@ const databaseLowBranchToLowCost = ({
    ==========================================
 */
 type CommitLowCost = {
-    hash: type.CommitHash;
-    parentCommits: Array<{
-        hash: type.CommitHash;
+    readonly hash: type.CommitHash;
+    readonly parentCommits: ReadonlyArray<{
+        readonly hash: type.CommitHash;
     }>;
-    tag: null | type.CommitTagName | type.Version;
-    commitSummary: string;
-    commitDescription: string;
-    author: {
-        id: type.UserId;
+    readonly tag: null | type.CommitTagName | type.Version;
+    readonly commitSummary: string;
+    readonly commitDescription: string;
+    readonly author: {
+        readonly id: type.UserId;
     };
-    date: Date;
-    projectName: string;
-    projectDescription: string;
-    children: Array<{
-        id: type.ModuleId;
-        snapshot: {
-            hash: type.ModuleSnapshotHash;
+    readonly date: Date;
+    readonly projectName: string;
+    readonly projectDescription: string;
+    readonly children: ReadonlyArray<{
+        readonly id: type.ModuleId;
+        readonly snapshot: {
+            readonly hash: type.ModuleSnapshotHash;
         };
     }>;
-    typeDefs: Array<{
-        id: type.TypeId;
-        snapshot: {
-            hash: type.TypeDefSnapshotHash;
+    readonly typeDefs: ReadonlyArray<{
+        readonly id: type.TypeId;
+        readonly snapshot: {
+            readonly hash: type.TypeDefSnapshotHash;
         };
     }>;
-    partDefs: Array<{
-        id: type.PartId;
-        snapshot: {
-            hash: type.PartDefSnapshotHash;
+    readonly partDefs: ReadonlyArray<{
+        readonly id: type.PartId;
+        readonly snapshot: {
+            readonly hash: type.PartDefSnapshotHash;
         };
     }>;
-    dependencies: Array<{
-        project: {
-            id: type.ProjectId;
+    readonly dependencies: ReadonlyArray<{
+        readonly project: {
+            readonly id: type.ProjectId;
         };
-        version: type.DependencyVersion;
+        readonly version: type.DependencyVersion;
     }>;
 };
 
 export const addCommit = async (data: {
-    parentCommitHashes: Array<type.CommitHash>;
+    parentCommitHashes: ReadonlyArray<type.CommitHash>;
     tag: null | string | type.Version;
     authorId: type.UserId;
     commitSummary: string;
     commitDescription: string;
     projectName: string;
     projectDescription: string;
-    children: Array<{
+    children: ReadonlyArray<{
         id: type.ModuleId;
         hash: type.ModuleSnapshotHash;
     }>;
-    typeDefs: Array<{
+    typeDefs: ReadonlyArray<{
         id: type.TypeId;
         hash: type.TypeDefSnapshotHash;
     }>;
-    partDefs: Array<{
+    partDefs: ReadonlyArray<{
         id: type.PartId;
         hash: type.PartDefSnapshotHash;
     }>;
-    dependencies: Array<{
+    dependencies: ReadonlyArray<{
         projectId: type.ProjectId;
         version: type.DependencyVersion;
     }>;
@@ -460,28 +460,28 @@ const databaseLowCommitToLowCost = ({
    ==========================================
 */
 type ModuleSnapshotLowCost = {
-    hash: type.ModuleSnapshotHash;
-    name: type.Label;
-    children: Array<{
-        id: type.ModuleId;
-        snapshot: {
-            hash: type.ModuleSnapshotHash;
+    readonly hash: type.ModuleSnapshotHash;
+    readonly name: type.Label;
+    readonly children: ReadonlyArray<{
+        readonly id: type.ModuleId;
+        readonly snapshot: {
+            readonly hash: type.ModuleSnapshotHash;
         };
     }>;
-    typeDefs: Array<{
-        id: type.TypeId;
-        snapshot: {
-            hash: type.TypeDefSnapshotHash;
+    readonly typeDefs: ReadonlyArray<{
+        readonly id: type.TypeId;
+        readonly snapshot: {
+            readonly hash: type.TypeDefSnapshotHash;
         };
     }>;
-    partDefs: Array<{
-        id: type.PartId;
-        snapshot: {
-            hash: type.PartDefSnapshotHash;
+    readonly partDefs: ReadonlyArray<{
+        readonly id: type.PartId;
+        readonly snapshot: {
+            readonly hash: type.PartDefSnapshotHash;
         };
     }>;
-    description: string;
-    exposing: boolean;
+    readonly description: string;
+    readonly exposing: boolean;
 };
 
 export const addModuleSnapshot = async (
@@ -585,19 +585,19 @@ const databaseLowTypeDefSnapshotToLowCost = ({
    ==========================================
 */
 type PartDefSnapshotLowCost = {
-    hash: type.PartDefSnapshotHash;
-    name: type.Label;
-    description: string;
-    type: Array<type.TypeTermOrParenthesis>;
-    expr: {
-        hash: type.ExprSnapshotHash;
+    readonly hash: type.PartDefSnapshotHash;
+    readonly name: type.Label;
+    readonly description: string;
+    readonly type: ReadonlyArray<type.TypeTermOrParenthesis>;
+    readonly expr: {
+        readonly hash: type.ExprSnapshotHash;
     };
 };
 
 export const addPartDefSnapshot = async (
     name: type.Label,
     description: string,
-    type: Array<type.TypeTermOrParenthesis>,
+    type: ReadonlyArray<type.TypeTermOrParenthesis>,
     expr: type.ExprSnapshotHash
 ): Promise<PartDefSnapshotLowCost> => {
     const hash = await databaseLow.addPartDefSnapshot({
@@ -646,12 +646,12 @@ const databaseLowPartDefSnapshotToLowCost = ({
    ==========================================
 */
 type ExprSnapshotLowCost = {
-    hash: type.ExprSnapshotHash;
-    value: Array<type.TermOrParenthesis>;
+    readonly hash: type.ExprSnapshotHash;
+    readonly value: ReadonlyArray<type.TermOrParenthesis>;
 };
 
 export const addExprDefSnapshot = async (
-    value: Array<type.TermOrParenthesis>
+    value: ReadonlyArray<type.TermOrParenthesis>
 ): Promise<ExprSnapshotLowCost> => {
     const hash = await databaseLow.addExprSnapshot({ value: value });
     return {
