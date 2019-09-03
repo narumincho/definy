@@ -11,7 +11,6 @@ import Data.SocialLoginService
 import Data.User
 import Html.Styled
 import Html.Styled.Attributes
-import Html.Styled.Events
 import Json.Decode
 import Palette.X11
 import Panel.CommandPalette
@@ -20,7 +19,6 @@ import Panel.Editor.Module
 import Panel.EditorGroup
 import Panel.EditorItemSource
 import Panel.Side
-import Panel.Style
 import Task
 import Ui.Panel
 import Url
@@ -57,6 +55,9 @@ port logInWithGitHub : () -> Cmd msg
 
 
 port logInWithLine : () -> Cmd msg
+
+
+port getUserData : () -> Cmd msg
 
 
 
@@ -197,8 +198,10 @@ init { language } url navigationKey =
                 }
     in
     ( model
-    , editorGroupPanelCmd
+    , (editorGroupPanelCmd
         |> List.map editorPanelCmdToCmd
+      )
+        ++ [ getUserData () ]
         |> Cmd.batch
     )
 
@@ -1201,19 +1204,19 @@ view model =
                 [ Ui.Panel.Text
                     { textAlign = Ui.Panel.TextAlignStart
                     , verticalAlignment = Ui.Panel.top
-                    , text = "調整中!"
+                    , text = "welcomeページ 調整中!"
                     , font =
                         Ui.Panel.Font
                             { typeface = "Roboto"
                             , size = 16
                             , letterSpacing = 0.15
-                            , color = Palette.X11.black
+                            , color = Palette.X11.white
                             }
                     }
                 , Ui.Panel.Text
                     { textAlign = Ui.Panel.TextAlignEnd
                     , verticalAlignment = Ui.Panel.bottom
-                    , text = "それな"
+                    , text = "それな sample012"
                     , font =
                         Ui.Panel.Font
                             { typeface = "Roboto"

@@ -122,6 +122,45 @@ getLineLogInUrl
             jumpPage(data.getLineLogInUrl);
         });
     });
+    app.ports.getUserData.subscribe(() => {
+        console.log("ユーザーデータを取得したい");
+        const userDBRequest = indexedDB.open("user", 1);
+        userDBRequest.onupgradeneeded = event => {
+            console.log("ユーザーデータのDBが更新された");
+            const target = event.target;
+            const db = target.result;
+            const objectStore = db.createObjectStore("accessToken", {});
+            console.log(objectStore);
+        };
+        userDBRequest.onsuccess = event => {
+            console.log("ユーザーデータのDBに接続成功!");
+            const target = event.target;
+            const db = target.result;
+            console.log("db in success", db);
+            const transaction = db.transaction("accessToken", "readwrite");
+            transaction.oncomplete = event => {
+                console.log("トランザクションが成功した");
+                db.close();
+            };
+            transaction.onerror = event => {
+                console.log("トランザクションが失敗した");
+                db.close();
+            };
+            const accessTokenObjectStore = transaction.objectStore("accessToken");
+            const addRequest = accessTokenObjectStore.add(Math.random(), "lastLogInUser");
+            const getRequest = accessTokenObjectStore.get("lastLogInUser");
+            addRequest.onsuccess = event => {
+                console.log("書き込み完了!");
+            };
+            getRequest.onsuccess = event => {
+                console.log("読み込み完了!");
+                console.log(event.target.result);
+            };
+        };
+        userDBRequest.onerror = event => {
+            console.log("ユーザーデータのDBに接続できなかった");
+        };
+    });
     window.addEventListener("languagechange", () => {
         app.ports.changeLanguage.send(navigator.languages[0]);
     });
