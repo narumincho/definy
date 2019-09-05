@@ -2,6 +2,7 @@ module Ui.Panel exposing
     ( FitStyle(..)
     , FixFix(..)
     , FixGrow(..)
+    , FixGrowOrGrowGrow(..)
     , Font(..)
     , GrowFix(..)
     , GrowGrow(..)
@@ -9,6 +10,7 @@ module Ui.Panel exposing
     , ImageRendering(..)
     , TextAlign(..)
     , VerticalAlignment
+    , borderNone
     , bottom
     , centerX
     , centerY
@@ -18,7 +20,6 @@ module Ui.Panel exposing
     , top
     )
 
-import Color
 import Css
 import Html.Styled
 import Html.Styled.Attributes
@@ -79,7 +80,7 @@ type GrowGrow msg
     | Box
         { padding : Int
         , border : Border
-        , color : Color.Color
+        , color : Css.Color
         }
     | Text
         { textAlign : TextAlign
@@ -94,6 +95,12 @@ type GrowGrow msg
         , rendering : ImageRendering
         }
     | DepthList (List (GrowGrow msg))
+    | RowList (List (FixGrowOrGrowGrow msg))
+
+
+type FixGrowOrGrowGrow msg
+    = FixGrowOrGrowGrowFixGrow (FixGrow msg)
+    | FixGrowOrGrowGrowGrowGrow (GrowGrow msg)
 
 
 type FitStyle
@@ -108,17 +115,27 @@ type ImageRendering
 
 type Border
     = Border
-        { top : BorderStyle
-        , right : BorderStyle
-        , left : BorderStyle
-        , bottom : BorderStyle
+        { top : Maybe BorderStyle
+        , right : Maybe BorderStyle
+        , left : Maybe BorderStyle
+        , bottom : Maybe BorderStyle
         }
 
 
 type BorderStyle
     = BorderStyle
-        { color : Color.Color
+        { color : Css.Color
         , width : Int
+        }
+
+
+borderNone : Border
+borderNone =
+    Border
+        { top = Nothing
+        , right = Nothing
+        , left = Nothing
+        , bottom = Nothing
         }
 
 
@@ -134,7 +151,7 @@ type Font
         { typeface : String
         , size : Int
         , letterSpacing : Float
-        , color : Color.Color
+        , color : Css.Color
         }
 
 
@@ -209,7 +226,8 @@ growGrowToHtml isSetGridPosition growGrow =
                 [ Html.Styled.Attributes.css
                     ([ Css.width (Css.pct 100)
                      , Css.height (Css.pct 100)
-                     , Css.color (Css.hex (Color.toRGBString color))
+                     , Css.padding (Css.px (toFloat padding))
+                     , Css.backgroundColor color
                      , Css.overflow Css.hidden
                      ]
                         ++ (if isSetGridPosition then
@@ -247,7 +265,7 @@ growGrowToHtml isSetGridPosition growGrow =
                                 Css.justify
                         )
                      , verticalAlignmentToStyle verticalAlignment
-                     , Css.color (Css.hex (Color.toHex color))
+                     , Css.color color
                      , Css.fontSize (Css.px (toFloat size))
                      , Css.fontFamilies [ Css.qt typeface ]
                      , Css.letterSpacing (Css.px letterSpacing)
@@ -315,6 +333,41 @@ growGrowToHtml isSetGridPosition growGrow =
                     ]
                 ]
                 (list |> List.map (growGrowToHtml True))
+
+        RowList list ->
+            Html.Styled.div
+                [ Html.Styled.Attributes.css
+                    [ Css.width (Css.pct 100)
+                    , Css.height (Css.pct 100)
+                    , Css.property "display" "grid"
+                    , Css.property "grid-template-columns" (rowListGridTemplate list)
+                    ]
+                ]
+                (list
+                    |> List.map
+                        (\fixGrowOrGrowGrow ->
+                            case fixGrowOrGrowGrow of
+                                FixGrowOrGrowGrowFixGrow fixGrow ->
+                                    fixGrowToHtml fixGrow
+
+                                FixGrowOrGrowGrowGrowGrow g ->
+                                    growGrowToHtml False g
+                        )
+                )
+
+
+rowListGridTemplate : List (FixGrowOrGrowGrow msg) -> String
+rowListGridTemplate =
+    List.map
+        (\fixGrowOrGrowGrow ->
+            case fixGrowOrGrowGrow of
+                FixGrowOrGrowGrowFixGrow _ ->
+                    "auto"
+
+                FixGrowOrGrowGrowGrowGrow _ ->
+                    "1fr"
+        )
+        >> String.join " "
 
 
 gridSetPosition : Css.Style

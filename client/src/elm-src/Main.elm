@@ -1184,20 +1184,22 @@ view model =
                        )
                 )
             ]
-            [ Ui.Panel.DepthList
-                [ Page.Welcome.view Page.Welcome.init
-                , Ui.Panel.Text
-                    { textAlign = Ui.Panel.TextAlignEnd
-                    , verticalAlignment = Ui.Panel.bottom
-                    , text = "それな sample012"
-                    , font =
-                        Ui.Panel.Font
-                            { typeface = "Roboto"
-                            , size = 48
-                            , letterSpacing = 0
-                            , color = Palette.X11.orange
-                            }
-                    }
+            [ Ui.Panel.RowList
+                [ Ui.Panel.FixGrowOrGrowGrowFixGrow (Page.Welcome.view Page.Welcome.init)
+                , Ui.Panel.FixGrowOrGrowGrowGrowGrow
+                    (Ui.Panel.Text
+                        { textAlign = Ui.Panel.TextAlignEnd
+                        , verticalAlignment = Ui.Panel.bottom
+                        , text = "それな sample012"
+                        , font =
+                            Ui.Panel.Font
+                                { typeface = "Roboto"
+                                , size = 48
+                                , letterSpacing = 0
+                                , color = Css.rgb 255 255 255
+                                }
+                        }
+                    )
                 ]
                 |> Ui.Panel.toHtml
             ]

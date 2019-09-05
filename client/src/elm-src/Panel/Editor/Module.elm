@@ -4208,7 +4208,7 @@ suggestionItem selected ( text, description ) =
             [ Html.Styled.text description ]
          ]
             ++ (if selected then
-                    [ enterIcon (Color.fromRGB ( 0.06, 0.06, 0.06 )) ]
+                    [ enterIcon (Color.fromRGB ( 16, 16, 16 )) ]
 
                 else
                     []

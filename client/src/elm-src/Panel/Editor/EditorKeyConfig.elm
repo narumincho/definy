@@ -127,7 +127,7 @@ inputSourceTab selectedDevice =
 
 keyboard : Maybe Key.OneKey -> List (NSvg Msg)
 keyboard oneKey =
-    [ NSvg.rect { width = 6500, height = 1800 } (NSvg.strokeColorWidth P.white 3) NSvg.fillNone ]
+    [ NSvg.rect { width = 6500, height = 1800 } (NSvg.strokeColorWidth P.black 3) NSvg.fillNone ]
         ++ List.concat
             ((keyList
                 |> List.map (addKeyFrameAndClick oneKey)
