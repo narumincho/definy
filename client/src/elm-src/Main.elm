@@ -12,6 +12,7 @@ import Data.User
 import Html.Styled
 import Html.Styled.Attributes
 import Json.Decode
+import Page.Welcome
 import Palette.X11
 import Panel.CommandPalette
 import Panel.DefaultUi
@@ -57,7 +58,7 @@ port logInWithGitHub : () -> Cmd msg
 port logInWithLine : () -> Cmd msg
 
 
-port getUserData : () -> Cmd msg
+port requestAccessToken : () -> Cmd msg
 
 
 
@@ -73,10 +74,10 @@ port keyPrevented : (() -> msg) -> Sub msg
 port windowResize : ({ width : Int, height : Int } -> msg) -> Sub msg
 
 
-port runResult : ({ ref : List Int, index : Int, result : Int } -> msg) -> Sub msg
-
-
 port fireClickEventInCapturePhase : (String -> msg) -> Sub msg
+
+
+port responseAccessToken : (String -> msg) -> Sub msg
 
 
 port changeLanguage : (String -> msg) -> Sub msg
@@ -90,12 +91,6 @@ type Msg
     | MouseMove { x : Int, y : Int } -- マウスの移動
     | MouseUp -- マウスのボタンを離した
     | FireClickEventInCapturePhase String -- 外側から発生するクリックイベントを受け取った
-    | ReceiveRunResult
-        { ref : List Int
-        , index : Int
-        , result : Int
-        }
-      -- 実行結果を受け取った
     | ToResizeGutterMode Gutter -- リサイズモードに移行
     | CloseSidePanel -- サイドパネルを閉じる
     | FocusTo Focus -- フォーカスを移動
@@ -109,6 +104,7 @@ type Msg
     | OnUrlChange Url.Url
     | LogOutRequest -- ログアウトを要求する
     | LogInRequest Data.SocialLoginService.SocialLoginService
+    | ResponseAccessTokenFromIndexedDB String
     | ChangeLanguage String -- 使用言語が変わった
 
 
@@ -124,7 +120,7 @@ type Model
         , sidePanelWidth : Int
         , windowSize : { width : Int, height : Int }
         , msgQueue : List Msg
-        , user : Maybe Data.User.User
+        , logInState : Data.User.LogInState
         , language : Data.Language.Language
         , navigationKey : Browser.Navigation.Key
         }
@@ -192,7 +188,7 @@ init { language } url navigationKey =
                 , sidePanelWidth = 250
                 , windowSize = { width = 0, height = 0 }
                 , msgQueue = []
-                , user = Just (Data.User.fromName "sorena")
+                , logInState = Data.User.ReadAccessToken
                 , language = Data.Language.languageFromString language
                 , navigationKey = navigationKey
                 }
@@ -201,7 +197,7 @@ init { language } url navigationKey =
     , (editorGroupPanelCmd
         |> List.map editorPanelCmdToCmd
       )
-        ++ [ getUserData () ]
+        ++ [ requestAccessToken () ]
         |> Cmd.batch
     )
 
@@ -250,11 +246,6 @@ update msg model =
                 |> editorPanelUpdate
                     (Panel.EditorGroup.FireClickEventInCapturePhase idString)
 
-        ReceiveRunResult data ->
-            ( model
-            , Cmd.none
-            )
-
         ToResizeGutterMode gutter ->
             ( toGutterMode gutter model
             , Cmd.none
@@ -296,7 +287,6 @@ update msg model =
 
         LogOutRequest ->
             ( model
-                |> singOut
             , Cmd.none
             )
 
@@ -323,6 +313,11 @@ update msg model =
 
         OnUrlChange url ->
             ( model
+            , Cmd.none
+            )
+
+        ResponseAccessTokenFromIndexedDB accessToken ->
+            ( responseAccessTokenFromIndexedDB accessToken model
             , Cmd.none
             )
 
@@ -804,17 +799,6 @@ setSidePanelModel sidePanelModel (Model rec) =
         }
 
 
-getCurrentUser : Model -> Maybe Data.User.User
-getCurrentUser (Model { user }) =
-    user
-
-
-singOut : Model -> Model
-singOut (Model rec) =
-    Model
-        { rec | user = Nothing }
-
-
 
 {- ============ Editor Group Panel ============= -}
 
@@ -1201,18 +1185,7 @@ view model =
                 )
             ]
             [ Ui.Panel.DepthList
-                [ Ui.Panel.Text
-                    { textAlign = Ui.Panel.TextAlignStart
-                    , verticalAlignment = Ui.Panel.top
-                    , text = "welcomeページ 調整中!"
-                    , font =
-                        Ui.Panel.Font
-                            { typeface = "Roboto"
-                            , size = 16
-                            , letterSpacing = 0.15
-                            , color = Palette.X11.white
-                            }
-                    }
+                [ Page.Welcome.view Page.Welcome.init
                 , Ui.Panel.Text
                     { textAlign = Ui.Panel.TextAlignEnd
                     , verticalAlignment = Ui.Panel.bottom
@@ -1252,22 +1225,6 @@ gutterTypeToCursorStyle gutterType =
             Css.cursor Css.nsResize
 
 
-{-| サイドパネルの表示
--}
-sidePanel : Model -> Html.Styled.Html Msg
-sidePanel (Model rec) =
-    Panel.Side.view
-        { width = getTreePanelWidth (Model rec)
-        , height = rec.windowSize.height
-        , user = getCurrentUser (Model rec)
-        , language = getLanguage (Model rec)
-        , project = getProject (Model rec)
-        , focus = isFocusSidePanel (Model rec)
-        }
-        (getSidePanelModel (Model rec))
-        |> Html.Styled.map SidePanelMsg
-
-
 {-| エディタグループパネルの表示
 -}
 editorGroupPanel : Model -> Html.Styled.Html Msg
@@ -1284,6 +1241,23 @@ editorGroupPanel (Model rec) =
         |> Html.Styled.map EditorPanelMsg
 
 
+responseAccessTokenFromIndexedDB : String -> Model -> Model
+responseAccessTokenFromIndexedDB accessToken (Model rec) =
+    Model
+        { rec
+            | logInState =
+                case accessToken of
+                    "" ->
+                        Data.User.GuestUser Nothing
+
+                    "error" ->
+                        Data.User.GuestUser (Just Data.User.FailToReadIndexedDB)
+
+                    _ ->
+                        Data.User.GetAndVerifyingAccessToken (Data.User.AccessToken accessToken)
+        }
+
+
 
 {- ================================================================
                            Subscription
@@ -1297,7 +1271,7 @@ subscriptions model =
         ([ keyPressed (Data.Key.fromKeyEventObject >> KeyPressed)
          , keyPrevented (always KeyPrevented)
          , windowResize WindowResize
-         , runResult ReceiveRunResult
+         , responseAccessToken ResponseAccessTokenFromIndexedDB
          , fireClickEventInCapturePhase FireClickEventInCapturePhase
          , changeLanguage ChangeLanguage
          ]

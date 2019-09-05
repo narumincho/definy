@@ -29,10 +29,7 @@ import Utility.NSvg as NSvg exposing (NSvg)
 
 
 type Model
-    = Model
-        { selectTab : Tab
-        , logInState : LogInState
-        }
+    = Model { selectTab : Tab }
 
 
 type Msg
@@ -42,9 +39,6 @@ type Msg
     | SelectParentOrTreeClose
     | SelectFirstChildOrTreeOpen
     | SelectItem
-    | ShowServiceSelectView
-    | HideServiceSelectView
-    | LogInRequest Data.SocialLoginService.SocialLoginService
     | Focus
 
 
@@ -67,14 +61,7 @@ initModel : Model
 initModel =
     Model
         { selectTab = ModuleTree
-        , logInState = LogInStateNormal
         }
-
-
-type LogInState
-    = LogInStateNormal
-    | LogInStateShowSelectServiceView
-    | LogInStateWaitUrl Data.SocialLoginService.SocialLoginService
 
 
 update : Msg -> Model -> ( Model, List Cmd )
@@ -83,28 +70,6 @@ update msg (Model rec) =
         SignOutRequest ->
             ( Model rec
             , [ CmdLogOutRequest ]
-            )
-
-        ShowServiceSelectView ->
-            ( Model
-                { rec
-                    | logInState = LogInStateShowSelectServiceView
-                }
-            , []
-            )
-
-        HideServiceSelectView ->
-            ( Model
-                { rec | logInState = LogInStateNormal }
-            , []
-            )
-
-        LogInRequest service ->
-            ( Model
-                { rec
-                    | logInState = LogInStateWaitUrl service
-                }
-            , [ CmdLogInRequest service ]
             )
 
         Focus ->
@@ -128,14 +93,14 @@ update msg (Model rec) =
 view :
     { width : Int
     , height : Int
-    , user : Maybe Data.User.User
+    , logInState : Data.User.LogInState
     , language : Data.Language.Language
     , project : Data.Project.Project
     , focus : Bool
     }
     -> Model
     -> Html.Styled.Html Msg
-view { user, language, project, focus, width } (Model { selectTab, logInState }) =
+view { logInState, language, project, focus, width } (Model { selectTab }) =
     Html.Styled.div
         ([ Html.Styled.Attributes.css
             [ Css.backgroundColor
@@ -161,9 +126,8 @@ view { user, language, project, focus, width } (Model { selectTab, logInState })
         )
         [ definyLogo
         , userView
-            { user = user
+            { user = Nothing
             , language = language
-            , logInState = logInState
             }
         , projectOwnerAndName
             (Data.Project.getLeaderName project)
@@ -197,10 +161,9 @@ definyLogo =
 userView :
     { user : Maybe Data.User.User
     , language : Data.Language.Language
-    , logInState : LogInState
     }
     -> Html.Styled.Html Msg
-userView { user, language, logInState } =
+userView { user, language } =
     Html.Styled.div
         [ Html.Styled.Attributes.css
             [ Style.textColorStyle
@@ -222,23 +185,17 @@ userView { user, language, logInState } =
                 ]
 
             Nothing ->
-                case logInState of
-                    LogInStateNormal ->
-                        logInStateNormalView language
-
-                    LogInStateShowSelectServiceView ->
-                        serviceSelectView language
-
-                    LogInStateWaitUrl socialLoginService ->
-                        waitUrlView language socialLoginService
+                [ Html.Styled.div
+                    []
+                    []
+                ]
         )
 
 
 logInStateNormalView : Data.Language.Language -> List (Html.Styled.Html Msg)
 logInStateNormalView language =
-    [ Html.Styled.button
-        [ Html.Styled.Events.onClick ShowServiceSelectView
-        , Html.Styled.Attributes.css
+    [ Html.Styled.div
+        [ Html.Styled.Attributes.css
             [ Css.cursor Css.pointer ]
         ]
         [ Html.Styled.text
@@ -256,29 +213,14 @@ logInStateNormalView language =
     ]
 
 
-serviceSelectView : Data.Language.Language -> List (Html.Styled.Html Msg)
-serviceSelectView language =
-    [ Html.Styled.button
-        [ Html.Styled.Events.onClick HideServiceSelectView
-        , Html.Styled.Attributes.css
-            [ Css.cursor Css.pointer ]
-        ]
-        [ Html.Styled.text "▲" ]
-    , logInButtonNoLine googleIcon language Data.SocialLoginService.Google
-    , logInButtonNoLine gitHubIcon language Data.SocialLoginService.GitHub
-    , logInButtonLine language
-    ]
-
-
 logInButtonNoLine :
     Html.Styled.Html Msg
     -> Data.Language.Language
     -> Data.SocialLoginService.SocialLoginService
     -> Html.Styled.Html Msg
 logInButtonNoLine icon language service =
-    Html.Styled.button
-        [ Html.Styled.Events.onClick (LogInRequest service)
-        , Html.Styled.Attributes.css
+    Html.Styled.div
+        [ Html.Styled.Attributes.css
             [ Css.backgroundColor (Css.rgb 232 232 232)
             , Css.borderRadius (Css.px 4)
             , Css.border2 Css.zero Css.none
@@ -310,9 +252,8 @@ logInButtonNoLine icon language service =
 
 logInButtonLine : Data.Language.Language -> Html.Styled.Html Msg
 logInButtonLine language =
-    Html.Styled.button
-        [ Html.Styled.Events.onClick (LogInRequest Data.SocialLoginService.Line)
-        , Html.Styled.Attributes.css
+    Html.Styled.div
+        [ Html.Styled.Attributes.css
             [ Css.backgroundColor (Css.rgb 0 195 0)
             , Css.borderRadius (Css.px 4)
             , Css.border2 Css.zero Css.none

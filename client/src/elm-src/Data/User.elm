@@ -1,7 +1,33 @@
-module Data.User exposing (User, from, fromName, getId, getImageUrl, getName)
+module Data.User exposing
+    ( AccessTokenError(..)
+    , LogInState(..)
+    , AccessToken(..)
+    , User
+    , from
+    , fromName
+    , getId
+    , getImageUrl
+    , getName
+    )
 
 import Data.IdHash as Id
 import Time
+
+
+type LogInState
+    = ReadAccessToken
+    | GetAndVerifyingAccessToken AccessToken
+    | GuestUser (Maybe AccessTokenError)
+    | Ok User
+
+
+type AccessTokenError
+    = FailToReadIndexedDB
+    | AccessTokenIsInvalid
+
+
+type AccessToken
+    = AccessToken String
 
 
 type User

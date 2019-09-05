@@ -1,4 +1,4 @@
-module Page.Welcome exposing (Model)
+module Page.Welcome exposing (Model, init, view)
 
 import Palette.X11
 import Ui.Panel
@@ -14,6 +14,11 @@ type Msg
 
 type Cmd
     = Cmd
+
+
+init : Model
+init =
+    Model
 
 
 update : Msg -> Model -> ( Model, List Cmd )

@@ -23,15 +23,11 @@ interface ElmApp {
         logInWithGoogle: SubForElmCmd<null>;
         logInWithGitHub: SubForElmCmd<null>;
         logInWithLine: SubForElmCmd<null>;
-        getUserData: SubForElmCmd<null>;
+        requestAccessToken: SubForElmCmd<null>;
         keyPressed: CmdForElmSub<KeyboardEvent>;
         keyPrevented: CmdForElmSub<null>;
         windowResize: CmdForElmSub<{ width: number; height: number }>;
-        runResult: CmdForElmSub<{
-            ref: Array<number>;
-            index: number;
-            result: number;
-        }>;
+        responseAccessToken: CmdForElmSub<string | null>;
         fireClickEventInCapturePhase: CmdForElmSub<string>;
         changeLanguage: CmdForElmSub<string>;
     };
@@ -203,20 +199,14 @@ getLineLogInUrl
         );
     });
 
-    app.ports.getUserData.subscribe(() => {
-        console.log("ユーザーデータを取得したい");
+    app.ports.requestAccessToken.subscribe(() => {
         const userDBRequest: IDBOpenDBRequest = indexedDB.open("user", 1);
 
         userDBRequest.onupgradeneeded = event => {
             console.log("ユーザーデータのDBが更新された");
             const target = event.target as IDBOpenDBRequest;
             const db = target.result;
-            const objectStore = db.createObjectStore("accessToken", {});
-            // objectStore.createIndex("data", "data", {
-            //     multiEntry: false,
-            //     unique: true
-            // });
-            console.log(objectStore);
+            db.createObjectStore("accessToken", {});
         };
 
         userDBRequest.onsuccess = event => {
@@ -224,7 +214,7 @@ getLineLogInUrl
             const target = event.target as IDBOpenDBRequest;
             const db = target.result;
             console.log("db in success", db);
-            const transaction = db.transaction("accessToken", "readwrite");
+            const transaction = db.transaction("accessToken", "readonly");
             transaction.oncomplete = event => {
                 console.log("トランザクションが成功した");
                 db.close();
@@ -233,20 +223,25 @@ getLineLogInUrl
                 console.log("トランザクションが失敗した");
                 db.close();
             };
-            const accessTokenObjectStore = transaction.objectStore(
-                "accessToken"
-            );
-            const addRequest = accessTokenObjectStore.add(
-                Math.random(),
-                "lastLogInUser"
-            );
-            const getRequest = accessTokenObjectStore.get("lastLogInUser");
-            addRequest.onsuccess = event => {
-                console.log("書き込み完了!");
-            };
+            const getRequest = transaction
+                .objectStore("accessToken")
+                .get("lastLogInUser");
             getRequest.onsuccess = event => {
                 console.log("読み込み完了!");
-                console.log((event.target as IDBRequest).result);
+                const request = event.target as IDBRequest;
+                if (request.result === undefined) {
+                    app.ports.responseAccessToken.send("");
+                    return;
+                }
+                if (typeof request.result === "string") {
+                    app.ports.responseAccessToken.send(request.result);
+                    return;
+                }
+                app.ports.responseAccessToken.send("error");
+            };
+            getRequest.onerror = event => {
+                console.log("読み込み失敗");
+                app.ports.responseAccessToken.send("error");
             };
         };
 

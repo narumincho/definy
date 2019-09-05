@@ -122,22 +122,20 @@ getLineLogInUrl
             jumpPage(data.getLineLogInUrl);
         });
     });
-    app.ports.getUserData.subscribe(() => {
-        console.log("ユーザーデータを取得したい");
+    app.ports.requestAccessToken.subscribe(() => {
         const userDBRequest = indexedDB.open("user", 1);
         userDBRequest.onupgradeneeded = event => {
             console.log("ユーザーデータのDBが更新された");
             const target = event.target;
             const db = target.result;
-            const objectStore = db.createObjectStore("accessToken", {});
-            console.log(objectStore);
+            db.createObjectStore("accessToken", {});
         };
         userDBRequest.onsuccess = event => {
             console.log("ユーザーデータのDBに接続成功!");
             const target = event.target;
             const db = target.result;
             console.log("db in success", db);
-            const transaction = db.transaction("accessToken", "readwrite");
+            const transaction = db.transaction("accessToken", "readonly");
             transaction.oncomplete = event => {
                 console.log("トランザクションが成功した");
                 db.close();
@@ -146,15 +144,25 @@ getLineLogInUrl
                 console.log("トランザクションが失敗した");
                 db.close();
             };
-            const accessTokenObjectStore = transaction.objectStore("accessToken");
-            const addRequest = accessTokenObjectStore.add(Math.random(), "lastLogInUser");
-            const getRequest = accessTokenObjectStore.get("lastLogInUser");
-            addRequest.onsuccess = event => {
-                console.log("書き込み完了!");
-            };
+            const getRequest = transaction
+                .objectStore("accessToken")
+                .get("lastLogInUser");
             getRequest.onsuccess = event => {
                 console.log("読み込み完了!");
-                console.log(event.target.result);
+                const request = event.target;
+                if (request.result === undefined) {
+                    app.ports.responseAccessToken.send("");
+                    return;
+                }
+                if (typeof request.result === "string") {
+                    app.ports.responseAccessToken.send(request.result);
+                    return;
+                }
+                app.ports.responseAccessToken.send("error");
+            };
+            getRequest.onerror = event => {
+                console.log("読み込み失敗");
+                app.ports.responseAccessToken.send("error");
             };
         };
         userDBRequest.onerror = event => {
