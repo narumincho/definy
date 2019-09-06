@@ -13,7 +13,6 @@ import Html.Styled
 import Html.Styled.Attributes
 import Json.Decode
 import Page.Welcome
-import Palette.X11
 import Panel.CommandPalette
 import Panel.DefaultUi
 import Panel.Editor.Module
@@ -106,6 +105,7 @@ type Msg
     | LogInRequest Data.SocialLoginService.SocialLoginService
     | ResponseAccessTokenFromIndexedDB String
     | ChangeLanguage String -- 使用言語が変わった
+    | WelcomePageMsg Page.Welcome.Msg
 
 
 {-| 全体を表現する
@@ -318,6 +318,11 @@ update msg model =
 
         ResponseAccessTokenFromIndexedDB accessToken ->
             ( responseAccessTokenFromIndexedDB accessToken model
+            , Cmd.none
+            )
+
+        WelcomePageMsg _ ->
+            ( model
             , Cmd.none
             )
 
@@ -1184,23 +1189,8 @@ view model =
                        )
                 )
             ]
-            [ Ui.Panel.RowList
-                [ Ui.Panel.FixGrowOrGrowGrowFixGrow (Page.Welcome.view Page.Welcome.init)
-                , Ui.Panel.FixGrowOrGrowGrowGrowGrow
-                    (Ui.Panel.Text
-                        { textAlign = Ui.Panel.TextAlignEnd
-                        , verticalAlignment = Ui.Panel.bottom
-                        , text = "それな sample012"
-                        , font =
-                            Ui.Panel.Font
-                                { typeface = "Roboto"
-                                , size = 48
-                                , letterSpacing = 0
-                                , color = Css.rgb 255 255 255
-                                }
-                        }
-                    )
-                ]
+            [ Page.Welcome.view Page.Welcome.init
+                |> Ui.Panel.map WelcomePageMsg
                 |> Ui.Panel.toHtml
             ]
         ]
