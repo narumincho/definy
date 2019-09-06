@@ -1,5 +1,8 @@
 module Panel.Style exposing (activeColor, fontHack, horizontalGutter, tabContainer, textColorStyle, verticalGutter, verticalGutterPanel)
 
+{-| Definyで使うUIのパネルを定義する
+-}
+
 import Css
 import Html.Styled
 import Html.Styled.Attributes
@@ -66,16 +69,14 @@ verticalGutter isResizing =
         []
 
 
-verticalGutterPanel : Bool -> Bool -> Ui.Panel.FixGrow ()
+verticalGutterPanel : Bool -> Bool -> ( Ui.Panel.Size, Ui.Panel.Panel () )
 verticalGutterPanel isHover isGutter =
-    Ui.Panel.FixGrowFromGrowGrow
-        { width = 2
-        , growGrow =
-            Ui.Panel.panel
-                [ Ui.Panel.Click () ]
-                0
-                (Ui.Panel.Monochromatic (Css.rgb 0 255 0))
-        }
+    ( Ui.Panel.Fix 2
+    , Ui.Panel.panel
+        [ Ui.Panel.Click () ]
+        0
+        (Ui.Panel.Monochromatic (Css.rgb 0 255 0))
+    )
 
 
 {-| パネルの高さを変更するためにつかむところ - ガター
@@ -88,7 +89,7 @@ horizontalGutter isResizing =
                 [ Css.height (Css.px 2)
                 , Css.flexShrink Css.zero
                 , Css.after
-                    [ Css.property "content" "\"\""
+                    [ Css.property "content" (Css.qt "")
                     , Css.display Css.block
                     , Css.width (Css.pct 100)
                     , Css.height (Css.px 6)
@@ -106,7 +107,7 @@ horizontalGutter isResizing =
                 , Css.hover
                     [ Css.backgroundColor (Css.rgb 102 102 102) ]
                 , Css.after
-                    [ Css.property "content" "\"\""
+                    [ Css.property "content" (Css.qt "")
                     , Css.display Css.block
                     , Css.width (Css.pct 100)
                     , Css.height (Css.px 12)

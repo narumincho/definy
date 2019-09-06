@@ -1,15 +1,12 @@
 module Ui.Panel exposing
-    ( Event(..)
+    ( Content(..)
+    , Event(..)
     , FitStyle(..)
-    , FixFix(..)
-    , FixGrow(..)
-    , FixGrowOrGrowGrow(..)
     , Font(..)
-    , GrowFix(..)
-    , GrowGrow(..)
-    , GrowGrowContent(..)
     , HorizontalAlignment
     , ImageRendering(..)
+    , Panel(..)
+    , Size(..)
     , TextAlign(..)
     , VerticalAlignment
     , borderNone
@@ -18,7 +15,6 @@ module Ui.Panel exposing
     , centerY
     , left
     , map
-    , mapFixGrow
     , panel
     , right
     , toHtml
@@ -33,53 +29,17 @@ import Html.Styled.Events
 import Json.Decode
 
 
-{-| 横方向と縦方向で揃える位置が必要なパネル
--}
-type FixFix msg
-    = FixFixFromGrowGrow
-        { width : Int
-        , height : Int
-        , growGrow : GrowGrow msg
-        }
-
-
-{-| 幅は中身によって、高さは外の大きさによって決まるパネル
--}
-type FixGrow msg
-    = FixGrowFromFixFix
-        { horizontalAlignment : HorizontalAlignment
-        , fixFix : FixFix msg
-        }
-    | FixGrowFromGrowGrow
-        { width : Int
-        , growGrow : GrowGrow msg
-        }
-
-
-{-| 幅は外の大きさによって、高さは中身によって決まるパネル
--}
-type GrowFix msg
-    = GrowFixFromFixFix
-        { verticalAlignment : VerticalAlignment
-        , fixFix : FixFix msg
-        }
-    | GrowFixFromGrowGrow
-        { height : Int
-        , growGrow : GrowGrow msg
-        }
-
-
 {-| 幅と高さが外の大きさによってきまるパネル
 -}
-type GrowGrow msg
-    = GrowGrow
+type Panel msg
+    = Panel
         { events : List (Event msg)
         , padding : Int
-        , content : GrowGrowContent msg
+        , content : Content msg
         }
 
 
-type GrowGrowContent msg
+type Content msg
     = Text
         { textAlign : TextAlign
         , verticalAlignment : VerticalAlignment
@@ -93,13 +53,14 @@ type GrowGrowContent msg
         , rendering : ImageRendering
         }
     | Monochromatic Css.Color
-    | DepthList (List (GrowGrow msg))
-    | RowList (List (FixGrowOrGrowGrow msg))
+    | DepthList (List (Panel msg))
+    | RowList (List ( Size, Panel msg ))
+    | ColumnList (List ( Size, Panel msg ))
 
 
-type FixGrowOrGrowGrow msg
-    = FixGrowOrGrowGrowFixGrow (FixGrow msg)
-    | FixGrowOrGrowGrowGrowGrow (GrowGrow msg)
+type Size
+    = Flex Int
+    | Fix Int
 
 
 type FitStyle
@@ -175,43 +136,24 @@ type MouseEvent
         }
 
 
-toHtml : GrowGrow msg -> Html.Styled.Html msg
+toHtml : Panel msg -> Html.Styled.Html msg
 toHtml =
     growGrowToHtml False
 
 
-panel : List (Event msg) -> Int -> GrowGrowContent msg -> GrowGrow msg
+panel : List (Event msg) -> Int -> Content msg -> Panel msg
 panel events padding content =
-    GrowGrow
+    Panel
         { events = events
         , padding = padding
         , content = content
         }
 
 
-map : (a -> b) -> GrowGrow a -> GrowGrow b
-map func (GrowGrow { events, padding, content }) =
-    GrowGrow
-        { events =
-            events
-                |> List.map
-                    (\e ->
-                        case e of
-                            MouseEnter msg ->
-                                MouseEnter (msg >> func)
-
-                            MouseLeave msg ->
-                                MouseLeave (msg >> func)
-
-                            Click msg ->
-                                Click (func msg)
-
-                            MouseMove msg ->
-                                MouseMove (msg >> func)
-
-                            MouseDown msg ->
-                                MouseDown (msg >> func)
-                    )
+map : (a -> b) -> Panel a -> Panel b
+map func (Panel { events, padding, content }) =
+    Panel
+        { events = events |> List.map (mapEvent func)
         , padding = padding
         , content =
             case content of
@@ -229,49 +171,35 @@ map func (GrowGrow { events, padding, content }) =
 
                 RowList list ->
                     RowList
-                        (list
-                            |> List.map
-                                (\e ->
-                                    case e of
-                                        FixGrowOrGrowGrowGrowGrow growGrow ->
-                                            FixGrowOrGrowGrowGrowGrow (map func growGrow)
+                        (list |> List.map (Tuple.mapSecond (map func)))
 
-                                        FixGrowOrGrowGrowFixGrow fixGrow ->
-                                            FixGrowOrGrowGrowFixGrow (mapFixGrow func fixGrow)
-                                )
-                        )
+                ColumnList list ->
+                    ColumnList
+                        (list |> List.map (Tuple.mapSecond (map func)))
         }
 
 
-mapFixGrow : (a -> b) -> FixGrow a -> FixGrow b
-mapFixGrow func fixGrow =
-    case fixGrow of
-        FixGrowFromFixFix { horizontalAlignment, fixFix } ->
-            FixGrowFromFixFix
-                { horizontalAlignment = horizontalAlignment
-                , fixFix = mapFixFix func fixFix
-                }
+mapEvent : (a -> b) -> Event a -> Event b
+mapEvent func event =
+    case event of
+        MouseEnter msg ->
+            MouseEnter (msg >> func)
 
-        FixGrowFromGrowGrow { width, growGrow } ->
-            FixGrowFromGrowGrow
-                { width = width
-                , growGrow = map func growGrow
-                }
+        MouseLeave msg ->
+            MouseLeave (msg >> func)
 
+        Click msg ->
+            Click (func msg)
 
-mapFixFix : (a -> b) -> FixFix a -> FixFix b
-mapFixFix func fixFix =
-    case fixFix of
-        FixFixFromGrowGrow { width, height, growGrow } ->
-            FixFixFromGrowGrow
-                { width = width
-                , height = height
-                , growGrow = map func growGrow
-                }
+        MouseMove msg ->
+            MouseMove (msg >> func)
+
+        MouseDown msg ->
+            MouseDown (msg >> func)
 
 
-growGrowToHtml : Bool -> GrowGrow msg -> Html.Styled.Html msg
-growGrowToHtml isSetGridPosition (GrowGrow { events, padding, content }) =
+growGrowToHtml : Bool -> Panel msg -> Html.Styled.Html msg
+growGrowToHtml isSetGridPosition (Panel { events, padding, content }) =
     Html.Styled.div
         ([ Html.Styled.Attributes.css
             [ Css.width (Css.pct 100)
@@ -286,9 +214,9 @@ growGrowToHtml isSetGridPosition (GrowGrow { events, padding, content }) =
         (growGrowContentToListHtml content)
 
 
-growGrowContentToStyle : Bool -> GrowGrowContent msg -> Css.Style
+growGrowContentToStyle : Bool -> Content msg -> Css.Style
 growGrowContentToStyle isSetGridPosition content =
-    case content of
+    (case content of
         Text { textAlign, verticalAlignment, text, font } ->
             let
                 (Font { typeface, size, letterSpacing, color }) =
@@ -317,13 +245,6 @@ growGrowContentToStyle isSetGridPosition content =
             , Css.overflowWrap Css.breakWord
             , Css.overflow Css.hidden
             ]
-                ++ (if isSetGridPosition then
-                        [ gridSetPosition ]
-
-                    else
-                        []
-                   )
-                |> Css.batch
 
         ImageFromDataUrl { dataUrl, fitStyle, alternativeText, rendering } ->
             [ Css.property "object-fit"
@@ -343,51 +264,36 @@ growGrowContentToStyle isSetGridPosition content =
                         ImageRenderingPixelated ->
                             [ Css.property "image-rendering" "pixelated" ]
                    )
-                ++ (if isSetGridPosition then
-                        [ gridSetPosition ]
-
-                    else
-                        []
-                   )
-                |> Css.batch
 
         Monochromatic color ->
             [ Css.backgroundColor color ]
-                ++ (if isSetGridPosition then
-                        [ gridSetPosition ]
 
-                    else
-                        []
-                   )
-                |> Css.batch
-
-        DepthList list ->
+        DepthList _ ->
             [ Css.property "display" "grid"
             , Css.property "grid-template-rows" "1fr"
             , Css.property "grid-template-columns" "1fr"
             ]
-                ++ (if isSetGridPosition then
-                        [ gridSetPosition ]
-
-                    else
-                        []
-                   )
-                |> Css.batch
 
         RowList list ->
             [ Css.property "display" "grid"
-            , Css.property "grid-template-columns" (rowListGridTemplate list)
+            , Css.property "grid-template-columns" (rowListGridTemplate (list |> List.map Tuple.first))
             ]
-                ++ (if isSetGridPosition then
-                        [ gridSetPosition ]
 
-                    else
-                        []
-                   )
-                |> Css.batch
+        ColumnList list ->
+            [ Css.property "display" "grid"
+            , Css.property "grid-template-rows" (rowListGridTemplate (list |> List.map Tuple.first))
+            ]
+    )
+        ++ (if isSetGridPosition then
+                [ gridSetPosition ]
+
+            else
+                []
+           )
+        |> Css.batch
 
 
-growGrowContentToListAttributes : GrowGrowContent msg -> List (Html.Styled.Attribute msg)
+growGrowContentToListAttributes : Content msg -> List (Html.Styled.Attribute msg)
 growGrowContentToListAttributes content =
     case content of
         Text _ ->
@@ -411,6 +317,9 @@ growGrowContentToListAttributes content =
             []
 
         RowList _ ->
+            []
+
+        ColumnList _ ->
             []
 
 
@@ -458,7 +367,7 @@ mouseEventDecoder =
         (Json.Decode.field "buttons" Json.Decode.int)
 
 
-growGrowContentToListHtml : GrowGrowContent msg -> List (Html.Styled.Html msg)
+growGrowContentToListHtml : Content msg -> List (Html.Styled.Html msg)
 growGrowContentToListHtml content =
     case content of
         Text { text } ->
@@ -467,35 +376,31 @@ growGrowContentToListHtml content =
         ImageFromDataUrl _ ->
             []
 
+        Monochromatic color ->
+            []
+
         DepthList list ->
             list |> List.map (growGrowToHtml True)
 
         RowList list ->
             list
-                |> List.map
-                    (\fixGrowOrGrowGrow ->
-                        case fixGrowOrGrowGrow of
-                            FixGrowOrGrowGrowFixGrow fixGrow ->
-                                fixGrowToHtml fixGrow
+                |> List.map (Tuple.second >> growGrowToHtml False)
 
-                            FixGrowOrGrowGrowGrowGrow g ->
-                                growGrowToHtml False g
-                    )
-
-        Monochromatic color ->
-            []
+        ColumnList list ->
+            list
+                |> List.map (Tuple.second >> growGrowToHtml False)
 
 
-rowListGridTemplate : List (FixGrowOrGrowGrow msg) -> String
+rowListGridTemplate : List Size -> String
 rowListGridTemplate =
     List.map
-        (\fixGrowOrGrowGrow ->
-            case fixGrowOrGrowGrow of
-                FixGrowOrGrowGrowFixGrow _ ->
-                    "auto"
+        (\size ->
+            case size of
+                Flex int ->
+                    String.fromInt int ++ "fr"
 
-                FixGrowOrGrowGrowGrowGrow _ ->
-                    "1fr"
+                Fix int ->
+                    String.fromInt int ++ "px"
         )
         >> String.join " "
 
@@ -506,68 +411,6 @@ gridSetPosition =
         [ Css.property "grid-row" "1 / 2"
         , Css.property "grid-column" "1 / 2"
         ]
-
-
-fixFixToHtml : FixFix msg -> Html.Styled.Html msg
-fixFixToHtml fixFix =
-    case fixFix of
-        FixFixFromGrowGrow { width, height, growGrow } ->
-            Html.Styled.div
-                [ Html.Styled.Attributes.css
-                    [ Css.width (Css.px (toFloat width))
-                    , Css.height (Css.px (toFloat height))
-                    , Css.overflow Css.hidden
-                    ]
-                ]
-                [ growGrowToHtml False growGrow ]
-
-
-fixGrowToHtml : FixGrow msg -> Html.Styled.Html msg
-fixGrowToHtml fixGrow =
-    case fixGrow of
-        FixGrowFromFixFix { horizontalAlignment, fixFix } ->
-            Html.Styled.div
-                [ Html.Styled.Attributes.css
-                    [ horizontalAlignmentToStyle horizontalAlignment
-                    , Css.height (Css.pct 100)
-                    , Css.overflow Css.hidden
-                    ]
-                ]
-                [ fixFixToHtml fixFix ]
-
-        FixGrowFromGrowGrow { width, growGrow } ->
-            Html.Styled.div
-                [ Html.Styled.Attributes.css
-                    [ Css.width (Css.px (toFloat width))
-                    , Css.height (Css.pct 100)
-                    , Css.overflow Css.hidden
-                    ]
-                ]
-                [ growGrowToHtml False growGrow ]
-
-
-growFixToHtml : GrowFix msg -> Html.Styled.Html msg
-growFixToHtml growFix =
-    case growFix of
-        GrowFixFromFixFix { verticalAlignment, fixFix } ->
-            Html.Styled.div
-                [ Html.Styled.Attributes.css
-                    [ verticalAlignmentToStyle verticalAlignment
-                    , Css.width (Css.pct 100)
-                    , Css.overflow Css.hidden
-                    ]
-                ]
-                [ fixFixToHtml fixFix ]
-
-        GrowFixFromGrowGrow { height, growGrow } ->
-            Html.Styled.div
-                [ Html.Styled.Attributes.css
-                    [ Css.width (Css.pct 100)
-                    , Css.height (Css.px (toFloat height))
-                    , Css.overflow Css.hidden
-                    ]
-                ]
-                [ growGrowToHtml False growGrow ]
 
 
 {-| 横方向のそろえ方
