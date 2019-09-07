@@ -8,7 +8,7 @@ import Html.Styled
 import Html.Styled.Attributes
 import Html.Styled.Events
 import Json.Decode
-import Ui.Panel
+import Ui
 
 
 {-| 基本的な文字色(#ddd rgb(221,221,221))を設定する
@@ -69,23 +69,23 @@ verticalGutter isResizing =
         []
 
 
-verticalGutterPanel : Bool -> Bool -> ( Ui.Panel.Size, Ui.Panel.Panel () )
+verticalGutterPanel : Bool -> Bool -> ( Ui.Size, Ui.Panel () )
 verticalGutterPanel isHover isGutter =
-    ( Ui.Panel.Fix 2
-    , Ui.Panel.panel
-        [ Ui.Panel.Click () ]
-        [ Ui.Panel.Width 2 ]
-        (Ui.Panel.DepthList
-            [ Ui.Panel.panel
+    ( Ui.Fix 2
+    , Ui.panel
+        [ Ui.Click () ]
+        [ Ui.Width 2 ]
+        (Ui.DepthList
+            [ Ui.panel
                 []
-                [ Ui.Panel.Width 2 ]
-                (Ui.Panel.Monochromatic (Css.rgb 0 255 0))
-            , Ui.Panel.panel
+                [ Ui.Width 2 ]
+                (Ui.Monochromatic (Css.rgb 0 255 0))
+            , Ui.panel
                 []
-                [ Ui.Panel.Width 20
-                , Ui.Panel.Offset ( -9, 0 )
+                [ Ui.Width 20
+                , Ui.Offset ( -9, 0 )
                 ]
-                (Ui.Panel.Monochromatic (Css.rgba 255 120 0 0.4))
+                (Ui.Monochromatic (Css.rgba 255 120 0 0.4))
             ]
         )
     )

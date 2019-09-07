@@ -20,7 +20,7 @@ import Panel.EditorGroup
 import Panel.EditorItemSource
 import Panel.Side
 import Task
-import Ui.Panel
+import Ui
 import Url
 import Utility.Map
 
@@ -1190,8 +1190,8 @@ view model =
                 )
             ]
             [ Page.Welcome.view Page.Welcome.init
-                |> Ui.Panel.map WelcomePageMsg
-                |> Ui.Panel.toHtml
+                |> Ui.map WelcomePageMsg
+                |> Ui.toHtml
             ]
         ]
             ++ (case getCommandPaletteModel model of

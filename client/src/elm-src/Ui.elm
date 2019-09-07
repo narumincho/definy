@@ -1,4 +1,4 @@
-module Ui.Panel exposing
+module Ui exposing
     ( Content(..)
     , Event(..)
     , FitStyle(..)

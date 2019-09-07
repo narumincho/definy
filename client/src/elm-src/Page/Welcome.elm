@@ -2,7 +2,7 @@ module Page.Welcome exposing (Model, Msg, init, view)
 
 import Css
 import Panel.Style
-import Ui.Panel
+import Ui
 
 
 type Model
@@ -30,37 +30,37 @@ update msg model =
     )
 
 
-view : Model -> Ui.Panel.Panel Msg
+view : Model -> Ui.Panel Msg
 view (Model rec) =
-    Ui.Panel.panel
+    Ui.panel
         []
         []
-        (Ui.Panel.RowList
-            [ ( Ui.Panel.Fix rec.width, side { width = rec.width } )
-            , Panel.Style.verticalGutterPanel False False |> Tuple.mapSecond (Ui.Panel.map (always Msg))
-            , ( Ui.Panel.Flex 1, yggdrasil )
+        (Ui.RowList
+            [ ( Ui.Fix rec.width, side { width = rec.width } )
+            , Panel.Style.verticalGutterPanel False False |> Tuple.mapSecond (Ui.map (always Msg))
+            , ( Ui.Flex 1, yggdrasil )
             ]
         )
 
 
-side : { width : Int } -> Ui.Panel.Panel msg
+side : { width : Int } -> Ui.Panel msg
 side _ =
-    Ui.Panel.panel
+    Ui.panel
         []
         []
-        (Ui.Panel.DepthList
-            [ Ui.Panel.panel
+        (Ui.DepthList
+            [ Ui.panel
                 []
                 []
-                (Ui.Panel.Monochromatic (Css.rgb 32 32 32))
-            , Ui.Panel.panel
+                (Ui.Monochromatic (Css.rgb 32 32 32))
+            , Ui.panel
                 []
                 []
-                (Ui.Panel.Text
-                    { textAlign = Ui.Panel.TextAlignStart
-                    , verticalAlignment = Ui.Panel.CenterY
+                (Ui.Text
+                    { textAlign = Ui.TextAlignStart
+                    , verticalAlignment = Ui.CenterY
                     , font =
-                        Ui.Panel.Font
+                        Ui.Font
                             { typeface = "Roboto"
                             , size = 24
                             , letterSpacing = 0
@@ -73,17 +73,17 @@ side _ =
         )
 
 
-yggdrasil : Ui.Panel.Panel msg
+yggdrasil : Ui.Panel msg
 yggdrasil =
-    Ui.Panel.panel
+    Ui.panel
         []
         []
-        (Ui.Panel.Text
-            { textAlign = Ui.Panel.TextAlignCenter
-            , verticalAlignment = Ui.Panel.CenterY
+        (Ui.Text
+            { textAlign = Ui.TextAlignCenter
+            , verticalAlignment = Ui.CenterY
             , text = "ユグドラシル"
             , font =
-                Ui.Panel.Font
+                Ui.Font
                     { typeface = "Roboto"
                     , size = 24
                     , letterSpacing = 0
