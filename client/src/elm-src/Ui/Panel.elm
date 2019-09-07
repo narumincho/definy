@@ -3,22 +3,17 @@ module Ui.Panel exposing
     , Event(..)
     , FitStyle(..)
     , Font(..)
-    , HorizontalAlignment
+    , HorizontalAlignment(..)
     , ImageRendering(..)
     , Panel(..)
     , Size(..)
+    , Style(..)
     , TextAlign(..)
-    , VerticalAlignment
+    , VerticalAlignment(..)
     , borderNone
-    , bottom
-    , centerX
-    , centerY
-    , left
     , map
     , panel
-    , right
     , toHtml
-    , top
     )
 
 import Bitwise
@@ -34,9 +29,52 @@ import Json.Decode
 type Panel msg
     = Panel
         { events : List (Event msg)
-        , padding : Int
+        , style : StyleComputed
         , content : Content msg
         }
+
+
+{-| 各パネルで受け取れるイベント
+-}
+type Event msg
+    = MouseEnter (MouseState -> msg)
+    | MouseLeave (MouseState -> msg)
+    | Click msg
+    | MouseMove (MouseState -> msg)
+    | MouseDown (MouseState -> msg)
+
+
+{-| マウス系統のイベントで受け取れるマウスの状態
+-}
+type MouseState
+    = MouseState
+        { position : ( Float, Float )
+        , buttons :
+            { primary : Bool
+            , secondary : Bool
+            , auxiliary : Bool
+            , browserBack : Bool
+            , browserForward : Bool
+            }
+        }
+
+
+{-| どのパネルでも指定できるスタイル
+-}
+type StyleComputed
+    = StyleComputed
+        { padding : Int
+        , width : Maybe Int
+        , height : Maybe Int
+        , offset : Maybe ( Int, Int )
+        }
+
+
+type Style
+    = Padding Int
+    | Width Int
+    | Height Int
+    | Offset ( Int, Int )
 
 
 type Content msg
@@ -115,46 +153,61 @@ type Font
         }
 
 
-type Event msg
-    = MouseEnter (MouseEvent -> msg)
-    | MouseLeave (MouseEvent -> msg)
-    | Click msg
-    | MouseMove (MouseEvent -> msg)
-    | MouseDown (MouseEvent -> msg)
-
-
-type MouseEvent
-    = MouseEvent
-        { position : ( Float, Float )
-        , buttons :
-            { primary : Bool
-            , secondary : Bool
-            , auxiliary : Bool
-            , browserBack : Bool
-            , browserForward : Bool
-            }
-        }
-
-
 toHtml : Panel msg -> Html.Styled.Html msg
 toHtml =
-    growGrowToHtml False
+    panelToHtml (ChildrenStyle { gridPositionLeftTop = False, position = Nothing })
 
 
-panel : List (Event msg) -> Int -> Content msg -> Panel msg
-panel events padding content =
+{-| パネネルを作成する。スタイルは後に指定したものが優先される
+-}
+panel : List (Event msg) -> List Style -> Content msg -> Panel msg
+panel events style content =
     Panel
         { events = events
-        , padding = padding
+        , style = style |> List.reverse |> computeStyle
         , content = content
         }
 
 
+{-| スタイルをまとめる。先のものが優先される。
+-}
+computeStyle : List Style -> StyleComputed
+computeStyle list =
+    case list of
+        x :: xs ->
+            let
+                (StyleComputed rec) =
+                    computeStyle xs
+            in
+            (case x of
+                Padding padding ->
+                    { rec | padding = padding }
+
+                Width int ->
+                    { rec | width = Just int }
+
+                Height int ->
+                    { rec | height = Just int }
+
+                Offset position ->
+                    { rec | offset = Just position }
+            )
+                |> StyleComputed
+
+        [] ->
+            StyleComputed
+                { padding = 0
+                , width = Nothing
+                , height = Nothing
+                , offset = Nothing
+                }
+
+
 map : (a -> b) -> Panel a -> Panel b
-map func (Panel { events, padding, content }) =
+map func (Panel { events, style, content }) =
     Panel
         { events = events |> List.map (mapEvent func)
-        , padding = padding
+        , style = style
         , content =
             case content of
                 Text rec ->
@@ -198,15 +251,49 @@ mapEvent func event =
             MouseDown (msg >> func)
 
 
-growGrowToHtml : Bool -> Panel msg -> Html.Styled.Html msg
-growGrowToHtml isSetGridPosition (Panel { events, padding, content }) =
+type ChildrenStyle
+    = ChildrenStyle
+        { gridPositionLeftTop : Bool
+        , position : Maybe ( Int, Int )
+        }
+
+
+panelToHtml : ChildrenStyle -> Panel msg -> Html.Styled.Html msg
+panelToHtml isSetGridPosition (Panel { events, style, content }) =
+    let
+        (StyleComputed { padding, width, height, offset }) =
+            style
+    in
     Html.Styled.div
         ([ Html.Styled.Attributes.css
-            [ Css.width (Css.pct 100)
-            , Css.height (Css.pct 100)
-            , Css.padding (Css.pc (toFloat padding))
-            , growGrowContentToStyle isSetGridPosition content
-            ]
+            ([ case width of
+                Just w ->
+                    Css.width (Css.px (toFloat w))
+
+                Nothing ->
+                    Css.width (Css.pct 100)
+             , case height of
+                Just h ->
+                    Css.height (Css.px (toFloat h))
+
+                Nothing ->
+                    Css.height (Css.pct 100)
+             , Css.padding (Css.pc (toFloat padding))
+             , growGrowContentToStyle isSetGridPosition content
+             ]
+                ++ (case offset of
+                        Just ( left, top ) ->
+                            [ Css.transform
+                                (Css.translate2
+                                    (Css.px (toFloat left))
+                                    (Css.px (toFloat top))
+                                )
+                            ]
+
+                        Nothing ->
+                            []
+                   )
+            )
          ]
             ++ growGrowContentToListAttributes content
             ++ eventsToHtmlAttributes events
@@ -214,8 +301,8 @@ growGrowToHtml isSetGridPosition (Panel { events, padding, content }) =
         (growGrowContentToListHtml content)
 
 
-growGrowContentToStyle : Bool -> Content msg -> Css.Style
-growGrowContentToStyle isSetGridPosition content =
+growGrowContentToStyle : ChildrenStyle -> Content msg -> Css.Style
+growGrowContentToStyle (ChildrenStyle { gridPositionLeftTop, position }) content =
     (case content of
         Text { textAlign, verticalAlignment, text, font } ->
             let
@@ -284,11 +371,20 @@ growGrowContentToStyle isSetGridPosition content =
             , Css.property "grid-template-rows" (rowListGridTemplate (list |> List.map Tuple.first))
             ]
     )
-        ++ (if isSetGridPosition then
+        ++ (if gridPositionLeftTop then
                 [ gridSetPosition ]
 
             else
                 []
+           )
+        ++ (case position of
+                Just ( left, top ) ->
+                    [ Css.left (Css.px (toFloat left))
+                    , Css.top (Css.px (toFloat top))
+                    ]
+
+                Nothing ->
+                    []
            )
         |> Css.batch
 
@@ -347,11 +443,11 @@ eventToHtmlAttribute event =
             Html.Styled.Events.on "mousedown" (mouseEventDecoder |> Json.Decode.map msg)
 
 
-mouseEventDecoder : Json.Decode.Decoder MouseEvent
+mouseEventDecoder : Json.Decode.Decoder MouseState
 mouseEventDecoder =
     Json.Decode.map3
         (\clientX clientY buttons ->
-            MouseEvent
+            MouseState
                 { position = ( clientX, clientY )
                 , buttons =
                     { primary = (buttons |> Bitwise.and 1) /= 0
@@ -380,15 +476,39 @@ growGrowContentToListHtml content =
             []
 
         DepthList list ->
-            list |> List.map (growGrowToHtml True)
+            list
+                |> List.map
+                    (panelToHtml
+                        (ChildrenStyle
+                            { gridPositionLeftTop = True
+                            , position = Nothing
+                            }
+                        )
+                    )
 
         RowList list ->
             list
-                |> List.map (Tuple.second >> growGrowToHtml False)
+                |> List.map
+                    (Tuple.second
+                        >> panelToHtml
+                            (ChildrenStyle
+                                { gridPositionLeftTop = False
+                                , position = Nothing
+                                }
+                            )
+                    )
 
         ColumnList list ->
             list
-                |> List.map (Tuple.second >> growGrowToHtml False)
+                |> List.map
+                    (Tuple.second
+                        >> panelToHtml
+                            (ChildrenStyle
+                                { gridPositionLeftTop = False
+                                , position = Nothing
+                                }
+                            )
+                    )
 
 
 rowListGridTemplate : List Size -> String
@@ -421,54 +541,12 @@ type HorizontalAlignment
     | Right
 
 
-{-| 横方向のそろえ方。左によせる
--}
-left : HorizontalAlignment
-left =
-    Left
-
-
-{-| 横方向のそろえ方。中央にそろえる
--}
-centerX : HorizontalAlignment
-centerX =
-    CenterX
-
-
-{-| 横方向のそろえ方。右によせる
--}
-right : HorizontalAlignment
-right =
-    Right
-
-
 {-| 縦のそろえ方
 -}
 type VerticalAlignment
     = Top
     | CenterY
     | Bottom
-
-
-{-| 縦方向のそろえ方。上によせる
--}
-top : VerticalAlignment
-top =
-    Top
-
-
-{-| 縦方向のそろえ方。中央にそろえる
--}
-centerY : VerticalAlignment
-centerY =
-    CenterY
-
-
-{-| 縦方向のそろえ方。下によせる
--}
-bottom : VerticalAlignment
-bottom =
-    Bottom
 
 
 {-| 表示領域と表示幅と水平の揃え方からX座標を求める

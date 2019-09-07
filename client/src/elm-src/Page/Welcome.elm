@@ -34,7 +34,7 @@ view : Model -> Ui.Panel.Panel Msg
 view (Model rec) =
     Ui.Panel.panel
         []
-        0
+        []
         (Ui.Panel.RowList
             [ ( Ui.Panel.Fix rec.width, side { width = rec.width } )
             , Panel.Style.verticalGutterPanel False False |> Tuple.mapSecond (Ui.Panel.map (always Msg))
@@ -47,18 +47,18 @@ side : { width : Int } -> Ui.Panel.Panel msg
 side _ =
     Ui.Panel.panel
         []
-        0
+        []
         (Ui.Panel.DepthList
             [ Ui.Panel.panel
                 []
-                0
+                []
                 (Ui.Panel.Monochromatic (Css.rgb 32 32 32))
             , Ui.Panel.panel
                 []
-                0
+                []
                 (Ui.Panel.Text
                     { textAlign = Ui.Panel.TextAlignStart
-                    , verticalAlignment = Ui.Panel.centerY
+                    , verticalAlignment = Ui.Panel.CenterY
                     , font =
                         Ui.Panel.Font
                             { typeface = "Roboto"
@@ -77,10 +77,10 @@ yggdrasil : Ui.Panel.Panel msg
 yggdrasil =
     Ui.Panel.panel
         []
-        0
+        []
         (Ui.Panel.Text
             { textAlign = Ui.Panel.TextAlignCenter
-            , verticalAlignment = Ui.Panel.centerY
+            , verticalAlignment = Ui.Panel.CenterY
             , text = "ユグドラシル"
             , font =
                 Ui.Panel.Font

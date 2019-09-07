@@ -74,8 +74,20 @@ verticalGutterPanel isHover isGutter =
     ( Ui.Panel.Fix 2
     , Ui.Panel.panel
         [ Ui.Panel.Click () ]
-        0
-        (Ui.Panel.Monochromatic (Css.rgb 0 255 0))
+        [ Ui.Panel.Width 2 ]
+        (Ui.Panel.DepthList
+            [ Ui.Panel.panel
+                []
+                [ Ui.Panel.Width 2 ]
+                (Ui.Panel.Monochromatic (Css.rgb 0 255 0))
+            , Ui.Panel.panel
+                []
+                [ Ui.Panel.Width 20
+                , Ui.Panel.Offset ( -9, 0 )
+                ]
+                (Ui.Panel.Monochromatic (Css.rgba 255 120 0 0.4))
+            ]
+        )
     )
 
 
