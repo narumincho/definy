@@ -1,18 +1,23 @@
 module Ui exposing
-    ( Content(..)
+    ( Content
     , Event(..)
     , FitStyle(..)
     , Font(..)
     , HorizontalAlignment(..)
     , ImageRendering(..)
-    , Panel(..)
+    , Panel
     , Size(..)
     , Style(..)
     , TextAlign(..)
     , VerticalAlignment(..)
     , borderNone
+    , column
+    , depth
+    , image
     , map
-    , panel
+    , monochromatic
+    , row
+    , text
     , toHtml
     )
 
@@ -64,16 +69,16 @@ type MouseState
 type StyleComputed
     = StyleComputed
         { padding : Int
-        , width : Maybe Int
-        , height : Maybe Int
+        , width : Size
+        , height : Size
         , offset : Maybe ( Int, Int )
         }
 
 
 type Style
     = Padding Int
-    | Width Int
-    | Height Int
+    | Width Size
+    | Height Size
     | Offset ( Int, Int )
 
 
@@ -92,8 +97,8 @@ type Content msg
         }
     | Monochromatic Css.Color
     | DepthList (List (Panel msg))
-    | RowList (List ( Size, Panel msg ))
-    | ColumnList (List ( Size, Panel msg ))
+    | RowList (List (Panel msg))
+    | ColumnList (List (Panel msg))
 
 
 type Size
@@ -158,14 +163,88 @@ toHtml =
     panelToHtml (ChildrenStyle { gridPositionLeftTop = False, position = Nothing })
 
 
-{-| パネネルを作成する。スタイルは後に指定したものが優先される
--}
-panel : List (Event msg) -> List Style -> Content msg -> Panel msg
-panel events style content =
+text :
+    List (Event msg)
+    -> List Style
+    -> { textAlign : TextAlign, verticalAlignment : VerticalAlignment, font : Font }
+    -> String
+    -> Panel msg
+text events style textStyle string =
     Panel
         { events = events
         , style = style |> List.reverse |> computeStyle
-        , content = content
+        , content =
+            Text
+                { textAlign = textStyle.textAlign
+                , verticalAlignment = textStyle.verticalAlignment -- TODO 毎回高さの揃え方を聞くのはおかしい
+                , font = textStyle.font
+                , text = string
+                }
+        }
+
+
+image :
+    List (Event msg)
+    -> List Style
+    ->
+        { fitStyle : FitStyle
+        , alternativeText : String
+        , rendering : ImageRendering
+        }
+    -> String
+    -> Panel msg
+image events style imageStyle dataUrl =
+    Panel
+        { events = events
+        , style = style |> List.reverse |> computeStyle
+        , content =
+            ImageFromDataUrl
+                { fitStyle = imageStyle.fitStyle
+                , alternativeText = imageStyle.alternativeText
+                , rendering = imageStyle.rendering
+                , dataUrl = dataUrl
+                }
+        }
+
+
+monochromatic :
+    List (Event msg)
+    -> List Style
+    -> Css.Color
+    -> Panel msg
+monochromatic events style color =
+    Panel
+        { events = events
+        , style = style |> List.reverse |> computeStyle
+        , content =
+            Monochromatic color
+        }
+
+
+depth : List (Event msg) -> List Style -> List (Panel msg) -> Panel msg
+depth events style children =
+    Panel
+        { events = events
+        , style = style |> List.reverse |> computeStyle
+        , content = DepthList children
+        }
+
+
+row : List (Event msg) -> List Style -> List (Panel msg) -> Panel msg
+row events style children =
+    Panel
+        { events = events
+        , style = style |> List.reverse |> computeStyle
+        , content = RowList children
+        }
+
+
+column : List (Event msg) -> List Style -> List (Panel msg) -> Panel msg
+column events style children =
+    Panel
+        { events = events
+        , style = style |> List.reverse |> computeStyle
+        , content = ColumnList children
         }
 
 
@@ -183,11 +262,11 @@ computeStyle list =
                 Padding padding ->
                     { rec | padding = padding }
 
-                Width int ->
-                    { rec | width = Just int }
+                Width size ->
+                    { rec | width = size }
 
-                Height int ->
-                    { rec | height = Just int }
+                Height size ->
+                    { rec | height = size }
 
                 Offset position ->
                     { rec | offset = Just position }
@@ -197,8 +276,8 @@ computeStyle list =
         [] ->
             StyleComputed
                 { padding = 0
-                , width = Nothing
-                , height = Nothing
+                , width = Flex 1
+                , height = Flex 1
                 , offset = Nothing
                 }
 
@@ -224,11 +303,11 @@ map func (Panel { events, style, content }) =
 
                 RowList list ->
                     RowList
-                        (list |> List.map (Tuple.mapSecond (map func)))
+                        (list |> List.map (map func))
 
                 ColumnList list ->
                     ColumnList
-                        (list |> List.map (Tuple.mapSecond (map func)))
+                        (list |> List.map (map func))
         }
 
 
@@ -267,17 +346,17 @@ panelToHtml isSetGridPosition (Panel { events, style, content }) =
     Html.Styled.div
         ([ Html.Styled.Attributes.css
             ([ case width of
-                Just w ->
-                    Css.width (Css.px (toFloat w))
-
-                Nothing ->
+                Flex int ->
                     Css.width (Css.pct 100)
-             , case height of
-                Just h ->
-                    Css.height (Css.px (toFloat h))
 
-                Nothing ->
+                Fix w ->
+                    Css.width (Css.px (toFloat w))
+             , case height of
+                Flex int ->
                     Css.height (Css.pct 100)
+
+                Fix h ->
+                    Css.height (Css.px (toFloat h))
              , Css.padding (Css.pc (toFloat padding))
              , growGrowContentToStyle isSetGridPosition content
              ]
@@ -304,14 +383,14 @@ panelToHtml isSetGridPosition (Panel { events, style, content }) =
 growGrowContentToStyle : ChildrenStyle -> Content msg -> Css.Style
 growGrowContentToStyle (ChildrenStyle { gridPositionLeftTop, position }) content =
     (case content of
-        Text { textAlign, verticalAlignment, text, font } ->
+        Text rec ->
             let
                 (Font { typeface, size, letterSpacing, color }) =
-                    font
+                    rec.font
             in
             [ Css.property "display" "grid"
             , Css.textAlign
-                (case textAlign of
+                (case rec.textAlign of
                     TextAlignStart ->
                         Css.start
 
@@ -324,7 +403,7 @@ growGrowContentToStyle (ChildrenStyle { gridPositionLeftTop, position }) content
                     TextAlignJustify ->
                         Css.justify
                 )
-            , verticalAlignmentToStyle verticalAlignment
+            , verticalAlignmentToStyle rec.verticalAlignment
             , Css.color color
             , Css.fontSize (Css.px (toFloat size))
             , Css.fontFamilies [ Css.qt typeface ]
@@ -363,12 +442,12 @@ growGrowContentToStyle (ChildrenStyle { gridPositionLeftTop, position }) content
 
         RowList list ->
             [ Css.property "display" "grid"
-            , Css.property "grid-template-columns" (rowListGridTemplate (list |> List.map Tuple.first))
+            , Css.property "grid-template-columns" (panelListToGridTemplateColumns list)
             ]
 
         ColumnList list ->
             [ Css.property "display" "grid"
-            , Css.property "grid-template-rows" (rowListGridTemplate (list |> List.map Tuple.first))
+            , Css.property "grid-template-rows" (panelListToGridTemplateRows list)
             ]
     )
         ++ (if gridPositionLeftTop then
@@ -466,8 +545,8 @@ mouseEventDecoder =
 growGrowContentToListHtml : Content msg -> List (Html.Styled.Html msg)
 growGrowContentToListHtml content =
     case content of
-        Text { text } ->
-            [ Html.Styled.text text ]
+        Text rec ->
+            [ Html.Styled.text rec.text ]
 
         ImageFromDataUrl _ ->
             []
@@ -489,40 +568,65 @@ growGrowContentToListHtml content =
         RowList list ->
             list
                 |> List.map
-                    (Tuple.second
-                        >> panelToHtml
-                            (ChildrenStyle
-                                { gridPositionLeftTop = False
-                                , position = Nothing
-                                }
-                            )
+                    (panelToHtml
+                        (ChildrenStyle
+                            { gridPositionLeftTop = False
+                            , position = Nothing
+                            }
+                        )
                     )
 
         ColumnList list ->
             list
                 |> List.map
-                    (Tuple.second
-                        >> panelToHtml
-                            (ChildrenStyle
-                                { gridPositionLeftTop = False
-                                , position = Nothing
-                                }
-                            )
+                    (panelToHtml
+                        (ChildrenStyle
+                            { gridPositionLeftTop = False
+                            , position = Nothing
+                            }
+                        )
                     )
 
 
-rowListGridTemplate : List Size -> String
-rowListGridTemplate =
-    List.map
-        (\size ->
-            case size of
-                Flex int ->
-                    String.fromInt int ++ "fr"
-
-                Fix int ->
-                    String.fromInt int ++ "px"
-        )
+panelListToGridTemplateColumns : List (Panel msg) -> String
+panelListToGridTemplateColumns =
+    List.map panelToGridTemplateColumn
         >> String.join " "
+
+
+panelToGridTemplateColumn : Panel msg -> String
+panelToGridTemplateColumn (Panel { style }) =
+    let
+        (StyleComputed { width }) =
+            style
+    in
+    sizeToGridTemplate width
+
+
+panelListToGridTemplateRows : List (Panel msg) -> String
+panelListToGridTemplateRows =
+    List.map
+        panelToGridTemplateRow
+        >> String.join " "
+
+
+panelToGridTemplateRow : Panel msg -> String
+panelToGridTemplateRow (Panel { style }) =
+    let
+        (StyleComputed { height }) =
+            style
+    in
+    sizeToGridTemplate height
+
+
+sizeToGridTemplate : Size -> String
+sizeToGridTemplate size =
+    case size of
+        Flex int ->
+            String.fromInt int ++ "fr"
+
+        Fix int ->
+            String.fromInt int ++ "px"
 
 
 gridSetPosition : Css.Style

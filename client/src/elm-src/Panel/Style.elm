@@ -1,4 +1,4 @@
-module Panel.Style exposing (activeColor, fontHack, horizontalGutter, tabContainer, textColorStyle, verticalGutter, verticalGutterPanel)
+module Panel.Style exposing (activeColor, fontHack, gutterPanel, horizontalGutter, tabContainer, textColorStyle, verticalGutter)
 
 {-| Definyで使うUIのパネルを定義する
 -}
@@ -69,26 +69,22 @@ verticalGutter isResizing =
         []
 
 
-verticalGutterPanel : Bool -> Bool -> ( Ui.Size, Ui.Panel () )
-verticalGutterPanel isHover isGutter =
-    ( Ui.Fix 2
-    , Ui.panel
+gutterPanel : Bool -> Bool -> Ui.Panel ()
+gutterPanel isHover isGutter =
+    Ui.depth
         [ Ui.Click () ]
-        [ Ui.Width 2 ]
-        (Ui.DepthList
-            [ Ui.panel
-                []
-                [ Ui.Width 2 ]
-                (Ui.Monochromatic (Css.rgb 0 255 0))
-            , Ui.panel
-                []
-                [ Ui.Width 20
-                , Ui.Offset ( -9, 0 )
-                ]
-                (Ui.Monochromatic (Css.rgba 255 120 0 0.4))
+        [ Ui.Width (Ui.Fix 2) ]
+        [ Ui.monochromatic
+            []
+            [ Ui.Width (Ui.Fix 2) ]
+            (Css.rgb 0 255 0)
+        , Ui.monochromatic
+            []
+            [ Ui.Width (Ui.Fix 20)
+            , Ui.Offset ( -9, 0 )
             ]
-        )
-    )
+            (Css.rgba 255 120 0 0.4)
+        ]
 
 
 {-| パネルの高さを変更するためにつかむところ - ガター

@@ -32,62 +32,54 @@ update msg model =
 
 view : Model -> Ui.Panel Msg
 view (Model rec) =
-    Ui.panel
+    Ui.row
         []
         []
-        (Ui.RowList
-            [ ( Ui.Fix rec.width, side { width = rec.width } )
-            , Panel.Style.verticalGutterPanel False False |> Tuple.mapSecond (Ui.map (always Msg))
-            , ( Ui.Flex 1, yggdrasil )
-            ]
-        )
+        [ side { width = rec.width }
+        , Panel.Style.gutterPanel False False |> Ui.map (always Msg)
+        , yggdrasil
+        ]
 
 
 side : { width : Int } -> Ui.Panel msg
-side _ =
-    Ui.panel
+side { width } =
+    Ui.depth
         []
-        []
-        (Ui.DepthList
-            [ Ui.panel
-                []
-                []
-                (Ui.Monochromatic (Css.rgb 32 32 32))
-            , Ui.panel
-                []
-                []
-                (Ui.Text
-                    { textAlign = Ui.TextAlignStart
-                    , verticalAlignment = Ui.CenterY
-                    , font =
-                        Ui.Font
-                            { typeface = "Roboto"
-                            , size = 24
-                            , letterSpacing = 0
-                            , color = Css.rgb 255 192 0
-                            }
-                    , text = "Definyのロゴ、ログイン状態、検索欄、お気に入りのブランチ(プロジェクトでグループ)"
-                    }
-                )
-            ]
-        )
-
-
-yggdrasil : Ui.Panel msg
-yggdrasil =
-    Ui.panel
-        []
-        []
-        (Ui.Text
-            { textAlign = Ui.TextAlignCenter
+        [ Ui.Width (Ui.Fix width) ]
+        [ Ui.monochromatic
+            []
+            []
+            (Css.rgb 32 32 32)
+        , Ui.text
+            []
+            []
+            { textAlign = Ui.TextAlignStart
             , verticalAlignment = Ui.CenterY
-            , text = "ユグドラシル"
             , font =
                 Ui.Font
                     { typeface = "Roboto"
                     , size = 24
                     , letterSpacing = 0
-                    , color = Css.rgb 0 255 100
+                    , color = Css.rgb 255 192 0
                     }
             }
-        )
+            "Definyのロゴ、ログイン状態、検索欄、お気に入りのブランチ(プロジェクトでグループ)"
+        ]
+
+
+yggdrasil : Ui.Panel msg
+yggdrasil =
+    Ui.text
+        []
+        []
+        { textAlign = Ui.TextAlignCenter
+        , verticalAlignment = Ui.CenterY
+        , font =
+            Ui.Font
+                { typeface = "Roboto"
+                , size = 24
+                , letterSpacing = 0
+                , color = Css.rgb 0 255 100
+                }
+        }
+        "ユグドラシル。Definy全てのプロジェクトの依存関係がグラフになるモニュメント"
