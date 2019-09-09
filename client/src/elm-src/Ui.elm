@@ -9,7 +9,7 @@ module Ui exposing
     , Pointer
     , Size(..)
     , Style(..)
-    , TextAlign(..)
+    , TextAlignment(..)
     , VerticalAlignment(..)
     , borderNone
     , column
@@ -97,6 +97,8 @@ type StyleComputed
         , width : Size
         , height : Size
         , offset : Maybe ( Int, Int )
+        , verticalAlignment : Maybe VerticalAlignment
+        , textAlignment : Maybe TextAlignment
         }
 
 
@@ -105,13 +107,13 @@ type Style
     | Width Size
     | Height Size
     | Offset ( Int, Int )
+    | VerticalAlignment VerticalAlignment
+    | TextAlignment TextAlignment
 
 
 type Content msg
     = Text
-        { textAlign : TextAlign
-        , verticalAlignment : VerticalAlignment
-        , text : String
+        { text : String
         , font : Font
         }
     | ImageFromDataUrl
@@ -167,7 +169,7 @@ borderNone =
         }
 
 
-type TextAlign
+type TextAlignment
     = TextAlignStart
     | TextAlignEnd
     | TextAlignCenter
@@ -191,18 +193,16 @@ toHtml =
 text :
     List (Event msg)
     -> List Style
-    -> { textAlign : TextAlign, verticalAlignment : VerticalAlignment, font : Font }
+    -> Font
     -> String
     -> Panel msg
-text events style textStyle string =
+text events style font string =
     Panel
         { events = events
         , style = style |> List.reverse |> computeStyle
         , content =
             Text
-                { textAlign = textStyle.textAlign
-                , verticalAlignment = textStyle.verticalAlignment -- TODO 毎回高さの揃え方を聞くのはおかしい
-                , font = textStyle.font
+                { font = font
                 , text = string
                 }
         }
@@ -295,6 +295,12 @@ computeStyle list =
 
                 Offset position ->
                     { rec | offset = Just position }
+
+                VerticalAlignment v ->
+                    { rec | verticalAlignment = Just v }
+
+                TextAlignment align ->
+                    { rec | textAlignment = Just align }
             )
                 |> StyleComputed
 
@@ -304,6 +310,8 @@ computeStyle list =
                 , width = Flex 1
                 , height = Flex 1
                 , offset = Nothing
+                , verticalAlignment = Nothing
+                , textAlignment = Nothing
                 }
 
 
@@ -365,7 +373,7 @@ type ChildrenStyle
 panelToHtml : ChildrenStyle -> Panel msg -> Html.Styled.Html msg
 panelToHtml isSetGridPosition (Panel { events, style, content }) =
     let
-        (StyleComputed { padding, width, height, offset }) =
+        (StyleComputed { padding, width, height, offset, verticalAlignment, textAlignment }) =
             style
     in
     Html.Styled.div
@@ -383,7 +391,7 @@ panelToHtml isSetGridPosition (Panel { events, style, content }) =
                 Fix h ->
                     Css.height (Css.px (toFloat h))
              , Css.padding (Css.pc (toFloat padding))
-             , growGrowContentToStyle isSetGridPosition content
+             , growGrowContentToStyle textAlignment verticalAlignment isSetGridPosition content
              ]
                 ++ (case offset of
                         Just ( left, top ) ->
@@ -405,8 +413,8 @@ panelToHtml isSetGridPosition (Panel { events, style, content }) =
         (growGrowContentToListHtml content)
 
 
-growGrowContentToStyle : ChildrenStyle -> Content msg -> Css.Style
-growGrowContentToStyle (ChildrenStyle { gridPositionLeftTop, position }) content =
+growGrowContentToStyle : Maybe TextAlignment -> Maybe VerticalAlignment -> ChildrenStyle -> Content msg -> Css.Style
+growGrowContentToStyle textAlignment verticalAlignment (ChildrenStyle { gridPositionLeftTop, position }) content =
     (case content of
         Text rec ->
             let
@@ -414,21 +422,6 @@ growGrowContentToStyle (ChildrenStyle { gridPositionLeftTop, position }) content
                     rec.font
             in
             [ Css.property "display" "grid"
-            , Css.textAlign
-                (case rec.textAlign of
-                    TextAlignStart ->
-                        Css.start
-
-                    TextAlignEnd ->
-                        Css.end
-
-                    TextAlignCenter ->
-                        Css.center
-
-                    TextAlignJustify ->
-                        Css.justify
-                )
-            , verticalAlignmentToStyle rec.verticalAlignment
             , Css.color color
             , Css.fontSize (Css.px (toFloat size))
             , Css.fontFamilies [ Css.qt typeface ]
@@ -436,6 +429,34 @@ growGrowContentToStyle (ChildrenStyle { gridPositionLeftTop, position }) content
             , Css.overflowWrap Css.breakWord
             , Css.overflow Css.hidden
             ]
+                ++ (case textAlignment of
+                        Just t ->
+                            [ Css.textAlign
+                                (case t of
+                                    TextAlignStart ->
+                                        Css.start
+
+                                    TextAlignEnd ->
+                                        Css.end
+
+                                    TextAlignCenter ->
+                                        Css.center
+
+                                    TextAlignJustify ->
+                                        Css.justify
+                                )
+                            ]
+
+                        Nothing ->
+                            []
+                   )
+                ++ (case verticalAlignment of
+                        Just v ->
+                            [ verticalAlignmentToStyle v ]
+
+                        Nothing ->
+                            []
+                   )
 
         ImageFromDataUrl { dataUrl, fitStyle, alternativeText, rendering } ->
             [ Css.property "object-fit"
@@ -685,12 +706,22 @@ panelListToGridTemplateColumns =
 
 
 panelToGridTemplateColumn : Panel msg -> String
-panelToGridTemplateColumn (Panel { style }) =
+panelToGridTemplateColumn (Panel { style, content }) =
     let
-        (StyleComputed { width }) =
+        (StyleComputed { width, textAlignment }) =
             style
     in
-    sizeToGridTemplate width
+    case content of
+        Text _ ->
+            case textAlignment of
+                Just _ ->
+                    "1fr"
+
+                Nothing ->
+                    "auto"
+
+        _ ->
+            sizeToGridTemplate width
 
 
 panelListToGridTemplateRows : List (Panel msg) -> String
@@ -701,12 +732,22 @@ panelListToGridTemplateRows =
 
 
 panelToGridTemplateRow : Panel msg -> String
-panelToGridTemplateRow (Panel { style }) =
+panelToGridTemplateRow (Panel { style, content }) =
     let
-        (StyleComputed { height }) =
+        (StyleComputed { height, verticalAlignment }) =
             style
     in
-    sizeToGridTemplate height
+    case content of
+        Text _ ->
+            case verticalAlignment of
+                Just _ ->
+                    "1fr"
+
+                Nothing ->
+                    "auto"
+
+        _ ->
+            sizeToGridTemplate height
 
 
 sizeToGridTemplate : Size -> String
@@ -760,8 +801,6 @@ horizontalAlignmentToStyle horizontalAlignment =
         )
 
 
-{-| 表示領域と表示高さと垂直の揃え方からY座標を求める
--}
 verticalAlignmentToStyle : VerticalAlignment -> Css.Style
 verticalAlignmentToStyle verticalAlignment =
     Css.alignItems

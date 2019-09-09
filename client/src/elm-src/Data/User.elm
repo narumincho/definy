@@ -16,7 +16,7 @@ import Time
 
 type LogInState
     = ReadAccessToken
-    | GetAndVerifyingAccessToken AccessToken
+    | VerifyingAccessToken AccessToken
     | GuestUser (Maybe AccessTokenError)
     | Ok User
 

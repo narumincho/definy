@@ -8,6 +8,7 @@ module Page.Welcome exposing
     )
 
 import Css
+import Data.User
 import Panel.Style
 import Ui
 
@@ -51,7 +52,7 @@ update msg (Model rec) =
             case gutterMsg of
                 Panel.Style.GutterMsgPointerEnter ->
                     ( Model { rec | sideResizeMode = PointerEnter }
-                    , [ ConsoleLog "ポインターがリサイズのできる線の上に乗った" ]
+                    , []
                     )
 
                 Panel.Style.GutterMsgPointerLeave ->
@@ -65,24 +66,22 @@ update msg (Model rec) =
                             | sideResizeMode = Resize
                             , width = pointer |> Ui.pointerGetPosition |> Tuple.first |> floor
                         }
-                    , [ CmdToVerticalGutterMode
-                      , ConsoleLog (pointer |> Ui.pointerGetPosition |> Tuple.first |> String.fromFloat)
-                      ]
+                    , [ CmdToVerticalGutterMode ]
                     )
 
         PointerMove mouseState ->
             ( Model { rec | width = mouseState |> Ui.pointerGetPosition |> Tuple.first |> floor }
-            , [ ConsoleLog ("ポインターが動いた" ++ (mouseState |> Ui.pointerGetPosition |> Tuple.first |> String.fromFloat)) ]
+            , []
             )
 
         PointerUp ->
             ( Model { rec | sideResizeMode = None }
-            , [ ConsoleLog "ポインターを離した" ]
+            , []
             )
 
 
-view : Model -> Ui.Panel Msg
-view (Model rec) =
+view : Data.User.LogInState -> Model -> Ui.Panel Msg
+view logInState (Model rec) =
     Ui.row
         (case rec.sideResizeMode of
             Resize ->
@@ -92,7 +91,7 @@ view (Model rec) =
                 []
         )
         []
-        [ side { width = rec.width }
+        [ side { width = rec.width, logInState = logInState }
         , Panel.Style.gutterPanel
             (case rec.sideResizeMode of
                 None ->
@@ -109,29 +108,53 @@ view (Model rec) =
         ]
 
 
-side : { width : Int } -> Ui.Panel msg
-side { width } =
-    Ui.depth
+side : { width : Int, logInState : Data.User.LogInState } -> Ui.Panel msg
+side { width, logInState } =
+    Ui.column
         []
         [ Ui.Width (Ui.Fix width) ]
-        [ Ui.monochromatic
+        [ Ui.text
             []
             []
-            (Css.rgb 32 32 32)
-        , Ui.text
+            (Ui.Font
+                { typeface = "Roboto"
+                , size = 16
+                , letterSpacing = 0
+                , color = Css.rgb 221 221 221
+                }
+            )
+            (case logInState of
+                Data.User.ReadAccessToken ->
+                    "アクセストークン読み込み中"
+
+                Data.User.VerifyingAccessToken (Data.User.AccessToken accessTokenString) ->
+                    "アクセストークンを検証、ユーザーをリクエスト中 " ++ accessTokenString
+
+                Data.User.GuestUser _ ->
+                    "ゲストユーザー ログインする"
+
+                Data.User.Ok user ->
+                    Data.User.getName user
+            )
+        , Ui.depth
             []
             []
-            { textAlign = Ui.TextAlignStart
-            , verticalAlignment = Ui.CenterY
-            , font =
-                Ui.Font
+            [ Ui.monochromatic
+                []
+                []
+                (Css.rgb 32 32 32)
+            , Ui.text
+                []
+                []
+                (Ui.Font
                     { typeface = "Roboto"
                     , size = 24
                     , letterSpacing = 0
                     , color = Css.rgb 255 192 0
                     }
-            }
-            "Definyのロゴ、ログイン状態、検索欄、お気に入りのブランチ(プロジェクトでグループ)"
+                )
+                "Definyのロゴ、ログイン状態、検索欄、お気に入りのブランチ(プロジェクトでグループ)"
+            ]
         ]
 
 
@@ -140,14 +163,11 @@ yggdrasil =
     Ui.text
         []
         []
-        { textAlign = Ui.TextAlignCenter
-        , verticalAlignment = Ui.CenterY
-        , font =
-            Ui.Font
-                { typeface = "Roboto"
-                , size = 24
-                , letterSpacing = 0
-                , color = Css.rgb 0 255 100
-                }
-        }
+        (Ui.Font
+            { typeface = "Roboto"
+            , size = 24
+            , letterSpacing = 0
+            , color = Css.rgb 0 255 100
+            }
+        )
         "ユグドラシル。Definy全てのプロジェクトの依存関係がグラフになるモニュメント"

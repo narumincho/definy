@@ -872,7 +872,8 @@ view (Model rec) =
             ]
             (case rec.page of
                 Welcome welcomeModel ->
-                    [ Page.Welcome.view welcomeModel
+                    [ welcomeModel
+                        |> Page.Welcome.view rec.logInState
                         |> Ui.map (WelcomePageMsg >> PageMsg)
                         |> Ui.toHtml
                     ]
@@ -914,7 +915,7 @@ responseAccessTokenFromIndexedDB accessToken (Model rec) =
                         Data.User.GuestUser (Just Data.User.FailToReadIndexedDB)
 
                     _ ->
-                        Data.User.GetAndVerifyingAccessToken (Data.User.AccessToken accessToken)
+                        Data.User.VerifyingAccessToken (Data.User.AccessToken accessToken)
         }
 
 
