@@ -16,7 +16,6 @@ type CmdForElmSub<T> = {
 interface ElmApp {
     ports: {
         setTextAreaValue: SubForElmCmd<string>;
-        setClickEventListenerInCapturePhase: SubForElmCmd<string>;
         focusTextArea: SubForElmCmd<null>;
         preventDefaultBeforeKeyEvent: SubForElmCmd<null>;
         elementScrollIntoView: SubForElmCmd<string>;
@@ -24,11 +23,11 @@ interface ElmApp {
         logInWithGitHub: SubForElmCmd<null>;
         logInWithLine: SubForElmCmd<null>;
         requestAccessToken: SubForElmCmd<null>;
+        consoleLog: SubForElmCmd<string>;
         keyPressed: CmdForElmSub<KeyboardEvent>;
         keyPrevented: CmdForElmSub<null>;
         windowResize: CmdForElmSub<{ width: number; height: number }>;
         responseAccessToken: CmdForElmSub<string | null>;
-        fireClickEventInCapturePhase: CmdForElmSub<string>;
         changeLanguage: CmdForElmSub<string>;
     };
 }
@@ -89,31 +88,6 @@ requestAnimationFrame(() => {
                 return;
             }
             editElement.focus();
-        });
-    });
-    /* クリックイベントをキャプチャフェーズで登録する。複数登録しないように。
-     */
-    app.ports.setClickEventListenerInCapturePhase.subscribe(id => {
-        requestAnimationFrame(() => {
-            const element = document.getElementById(id);
-            if (element === undefined) {
-                console.log(`id=${id}の要素がない`);
-                return;
-            }
-            console.log(`id=${id}にキャプチャフェーズのクリックイベントを追加`);
-            if (element === null) {
-                console.warn(
-                    `id=${id}へのキャプチャフェーズのクリックイベントを追加に失敗`
-                );
-                return;
-            }
-            element.addEventListener(
-                "click",
-                e => {
-                    app.ports.fireClickEventInCapturePhase.send(id);
-                },
-                { capture: true }
-            );
         });
     });
     /* 指定されたidの要素が表示されるようにスクロールさせる */
@@ -248,6 +222,10 @@ getLineLogInUrl
         userDBRequest.onerror = event => {
             console.log("ユーザーデータのDBに接続できなかった");
         };
+    });
+
+    app.ports.consoleLog.subscribe(text => {
+        console.warn(text);
     });
 
     window.addEventListener("languagechange", () => {

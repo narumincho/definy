@@ -182,7 +182,6 @@ type Cmd
     | CmdHorizontalGutterModeOn GutterHorizontal
     | CmdSetTextAreaValue String
     | CmdFocusEditTextAea
-    | CmdSetClickEventListenerInCapturePhase String
     | CmdElementScrollIntoView String
     | CmdFocusHere
     | CmdNone
@@ -201,7 +200,7 @@ initModel =
                 }
         , activeEditorIndex = ( EditorIndexLeft, EditorIndexTop )
         }
-    , [ CmdSetClickEventListenerInCapturePhase (editorIndexToIdString ( EditorIndexLeft, EditorIndexTop )) ]
+    , []
     )
 
 
@@ -254,7 +253,7 @@ update msg project model =
             ( model
                 |> setGroup newGroup
                 |> setActiveEditorRef newActiveEditorIndex
-            , [ CmdSetClickEventListenerInCapturePhase (editorIndexToIdString newActiveEditorIndex) ]
+            , []
             )
 
         CloseEditor hideEditorRef ->

@@ -41,23 +41,6 @@ requestAnimationFrame(() => {
             editElement.focus();
         });
     });
-    app.ports.setClickEventListenerInCapturePhase.subscribe(id => {
-        requestAnimationFrame(() => {
-            const element = document.getElementById(id);
-            if (element === undefined) {
-                console.log(`id=${id}の要素がない`);
-                return;
-            }
-            console.log(`id=${id}にキャプチャフェーズのクリックイベントを追加`);
-            if (element === null) {
-                console.warn(`id=${id}へのキャプチャフェーズのクリックイベントを追加に失敗`);
-                return;
-            }
-            element.addEventListener("click", e => {
-                app.ports.fireClickEventInCapturePhase.send(id);
-            }, { capture: true });
-        });
-    });
     app.ports.elementScrollIntoView.subscribe(id => {
         requestAnimationFrame(() => {
             const element = document.getElementById(id);
@@ -168,6 +151,9 @@ getLineLogInUrl
         userDBRequest.onerror = event => {
             console.log("ユーザーデータのDBに接続できなかった");
         };
+    });
+    app.ports.consoleLog.subscribe(text => {
+        console.warn(text);
     });
     window.addEventListener("languagechange", () => {
         app.ports.changeLanguage.send(navigator.languages[0]);

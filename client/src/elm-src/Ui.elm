@@ -6,6 +6,7 @@ module Ui exposing
     , HorizontalAlignment(..)
     , ImageRendering(..)
     , Panel
+    , Pointer
     , Size(..)
     , Style(..)
     , TextAlign(..)
@@ -16,6 +17,7 @@ module Ui exposing
     , image
     , map
     , monochromatic
+    , pointerGetPosition
     , row
     , text
     , toHtml
@@ -23,10 +25,12 @@ module Ui exposing
 
 import Bitwise
 import Css
+import EverySet
 import Html.Styled
 import Html.Styled.Attributes
 import Html.Styled.Events
 import Json.Decode
+import Json.Decode.Pipeline
 
 
 {-| 幅と高さが外の大きさによってきまるパネル
@@ -42,26 +46,47 @@ type Panel msg
 {-| 各パネルで受け取れるイベント
 -}
 type Event msg
-    = MouseEnter (MouseState -> msg)
-    | MouseLeave (MouseState -> msg)
-    | Click msg
-    | MouseMove (MouseState -> msg)
-    | MouseDown (MouseState -> msg)
+    = PointerEnter (Pointer -> msg) -- マウスが要素の領域に入ってきた
+    | PointerLeave (Pointer -> msg) -- マウスが要素の領域から外れた
+    | Click msg -- マウスのボタンを話してクリックしたり、画面をタッチ、タップしたら
+    | PointerMove (Pointer -> msg) -- マウスが動いたら
+    | PointerDown (Pointer -> msg) -- マウスのボタンを押したら
 
 
-{-| マウス系統のイベントで受け取れるマウスの状態
+{-| ポインターのイベントで受け取れるマウスの状態
 -}
-type MouseState
-    = MouseState
-        { position : ( Float, Float )
-        , buttons :
-            { primary : Bool
-            , secondary : Bool
-            , auxiliary : Bool
-            , browserBack : Bool
-            , browserForward : Bool
-            }
+type Pointer
+    = Pointer
+        { id : Int -- 識別するためのID
+        , position : ( Float, Float ) -- 要素内での位置
+        , button : Maybe PointerButton -- 押したボタン。Nothingは最初のイベント以降で変更がなかったとき
+        , pressure : Float -- 圧力 0～1
+        , tangentialPressure : Float
+        , size : ( Float, Float )
+        , tilt : ( Float, Float )
+        , twist : Float
+        , type_ : PointerType
+        , isPrimary : Bool
+        , buttons : EverySet.EverySet PointerButton
+        , target : Bool
         }
+
+
+type PointerType
+    = Mouse
+    | Pen
+    | Touch
+    | PointerTypeUnknown String
+
+
+type PointerButton
+    = Primary
+    | Secondary
+    | Auxiliary
+    | BrowserBack
+    | BrowserForward
+    | Eraser
+    | PointerButtonUnknown Int
 
 
 {-| どのパネルでも指定できるスタイル
@@ -314,20 +339,20 @@ map func (Panel { events, style, content }) =
 mapEvent : (a -> b) -> Event a -> Event b
 mapEvent func event =
     case event of
-        MouseEnter msg ->
-            MouseEnter (msg >> func)
+        PointerEnter msg ->
+            PointerEnter (msg >> func)
 
-        MouseLeave msg ->
-            MouseLeave (msg >> func)
+        PointerLeave msg ->
+            PointerLeave (msg >> func)
 
         Click msg ->
             Click (func msg)
 
-        MouseMove msg ->
-            MouseMove (msg >> func)
+        PointerMove msg ->
+            PointerMove (msg >> func)
 
-        MouseDown msg ->
-            MouseDown (msg >> func)
+        PointerDown msg ->
+            PointerDown (msg >> func)
 
 
 type ChildrenStyle
@@ -506,40 +531,105 @@ eventsToHtmlAttributes =
 eventToHtmlAttribute : Event msg -> Html.Styled.Attribute msg
 eventToHtmlAttribute event =
     case event of
-        MouseEnter msg ->
-            Html.Styled.Events.on "mouseenter" (mouseEventDecoder |> Json.Decode.map msg)
+        PointerEnter msg ->
+            Html.Styled.Events.on "pointerenter" (pointerEventDecoder |> Json.Decode.map msg)
 
-        MouseLeave msg ->
-            Html.Styled.Events.on "mouseleave" (mouseEventDecoder |> Json.Decode.map msg)
+        PointerLeave msg ->
+            Html.Styled.Events.on "pointerleave" (pointerEventDecoder |> Json.Decode.map msg)
 
         Click msg ->
             Html.Styled.Events.onClick msg
 
-        MouseMove msg ->
-            Html.Styled.Events.on "mousemove" (mouseEventDecoder |> Json.Decode.map msg)
+        PointerMove msg ->
+            Html.Styled.Events.on "pointermove" (pointerEventDecoder |> Json.Decode.map msg)
 
-        MouseDown msg ->
-            Html.Styled.Events.on "mousedown" (mouseEventDecoder |> Json.Decode.map msg)
+        PointerDown msg ->
+            Html.Styled.Events.on "pointerdown" (pointerEventDecoder |> Json.Decode.map msg)
 
 
-mouseEventDecoder : Json.Decode.Decoder MouseState
-mouseEventDecoder =
-    Json.Decode.map3
-        (\clientX clientY buttons ->
-            MouseState
-                { position = ( clientX, clientY )
+pointerEventDecoder : Json.Decode.Decoder Pointer
+pointerEventDecoder =
+    Json.Decode.succeed
+        (\id clientX clientY button pressure tangentialPressure width height tiltX tiltY twist pointerType isPrimary buttons eventPhase ->
+            Pointer
+                { id = id
+                , position = ( clientX, clientY )
+                , button =
+                    if button == -1 then
+                        Nothing
+
+                    else
+                        Just
+                            (case button of
+                                0 ->
+                                    Primary
+
+                                1 ->
+                                    Auxiliary
+
+                                2 ->
+                                    Secondary
+
+                                3 ->
+                                    BrowserBack
+
+                                4 ->
+                                    BrowserForward
+
+                                5 ->
+                                    Eraser
+
+                                _ ->
+                                    PointerButtonUnknown button
+                            )
+                , pressure = pressure
+                , tangentialPressure = tangentialPressure
+                , size = ( width, height )
+                , tilt = ( tiltX, tiltY )
+                , twist = twist
+                , type_ =
+                    case pointerType of
+                        "mouse" ->
+                            Mouse
+
+                        "pen" ->
+                            Pen
+
+                        "touch" ->
+                            Touch
+
+                        _ ->
+                            PointerTypeUnknown pointerType
+                , isPrimary = isPrimary
                 , buttons =
-                    { primary = (buttons |> Bitwise.and 1) /= 0
-                    , secondary = (buttons |> Bitwise.and 2) /= 0
-                    , auxiliary = (buttons |> Bitwise.and 4) /= 0
-                    , browserBack = (buttons |> Bitwise.and 8) /= 0
-                    , browserForward = (buttons |> Bitwise.and 16) /= 0
-                    }
+                    [ ( Primary, (buttons |> Bitwise.and 1) /= 0 )
+                    , ( Secondary, (buttons |> Bitwise.and 2) /= 0 )
+                    , ( Auxiliary, (buttons |> Bitwise.and 4) /= 0 )
+                    , ( BrowserBack, (buttons |> Bitwise.and 8) /= 0 )
+                    , ( BrowserForward, (buttons |> Bitwise.and 16) /= 0 )
+                    , ( Eraser, (buttons |> Bitwise.and 32) /= 0 )
+                    ]
+                        |> List.filter Tuple.second
+                        |> List.map Tuple.first
+                        |> EverySet.fromList
+                , target = eventPhase == 2
                 }
         )
-        (Json.Decode.field "clientX" Json.Decode.float)
-        (Json.Decode.field "clientY" Json.Decode.float)
-        (Json.Decode.field "buttons" Json.Decode.int)
+        |> Json.Decode.Pipeline.required "pointerId" Json.Decode.int
+        |> Json.Decode.Pipeline.required "clientX" Json.Decode.float
+        |> Json.Decode.Pipeline.required "clientY" Json.Decode.float
+        |> Json.Decode.Pipeline.required "button" Json.Decode.int
+        |> Json.Decode.Pipeline.required "pressure" Json.Decode.float
+        |> Json.Decode.Pipeline.required "tangentialPressure" Json.Decode.float
+        |> Json.Decode.Pipeline.required "width" Json.Decode.float
+        |> Json.Decode.Pipeline.required "height" Json.Decode.float
+        |> Json.Decode.Pipeline.required "tiltX" Json.Decode.float
+        |> Json.Decode.Pipeline.required "tiltY" Json.Decode.float
+        |> Json.Decode.Pipeline.required "twist" Json.Decode.float
+        |> Json.Decode.Pipeline.required "pointerType" Json.Decode.string
+        |> Json.Decode.Pipeline.required "isPrimary" Json.Decode.bool
+        |> Json.Decode.Pipeline.required "buttons" Json.Decode.int
+        |> Json.Decode.Pipeline.required "eventPhase" Json.Decode.int
 
 
 growGrowContentToListHtml : Content msg -> List (Html.Styled.Html msg)
@@ -685,3 +775,8 @@ verticalAlignmentToStyle verticalAlignment =
             Bottom ->
                 Css.flexEnd
         )
+
+
+pointerGetPosition : Pointer -> ( Float, Float )
+pointerGetPosition (Pointer { position }) =
+    position

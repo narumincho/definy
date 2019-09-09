@@ -1,4 +1,11 @@
-module Page.Welcome exposing (Model, Msg, init, view)
+module Page.Welcome exposing
+    ( Cmd(..)
+    , Model
+    , Msg(..)
+    , init
+    , update
+    , view
+    )
 
 import Css
 import Panel.Style
@@ -6,37 +13,98 @@ import Ui
 
 
 type Model
-    = Model { width : Int }
+    = Model
+        { width : Int
+        , sideResizeMode : SideResizeMode
+        }
+
+
+type SideResizeMode
+    = None
+    | PointerEnter
+    | Resize
 
 
 type Msg
-    = Msg
+    = ToSideGutterMode Panel.Style.GutterMsg
+    | PointerMove Ui.Pointer
+    | PointerUp
 
 
 type Cmd
-    = Cmd
+    = CmdToVerticalGutterMode
+    | ConsoleLog String
 
 
 init : Model
 init =
     Model
-        { width = 250 }
+        { width = 250
+        , sideResizeMode = None
+        }
 
 
 update : Msg -> Model -> ( Model, List Cmd )
-update msg model =
-    ( model
-    , []
-    )
+update msg (Model rec) =
+    case msg of
+        ToSideGutterMode gutterMsg ->
+            case gutterMsg of
+                Panel.Style.GutterMsgPointerEnter ->
+                    ( Model { rec | sideResizeMode = PointerEnter }
+                    , [ ConsoleLog "ポインターがリサイズのできる線の上に乗った" ]
+                    )
+
+                Panel.Style.GutterMsgPointerLeave ->
+                    ( Model { rec | sideResizeMode = None }
+                    , []
+                    )
+
+                Panel.Style.GutterMsgToResizeMode pointer ->
+                    ( Model
+                        { rec
+                            | sideResizeMode = Resize
+                            , width = pointer |> Ui.pointerGetPosition |> Tuple.first |> floor
+                        }
+                    , [ CmdToVerticalGutterMode
+                      , ConsoleLog (pointer |> Ui.pointerGetPosition |> Tuple.first |> String.fromFloat)
+                      ]
+                    )
+
+        PointerMove mouseState ->
+            ( Model { rec | width = mouseState |> Ui.pointerGetPosition |> Tuple.first |> floor }
+            , [ ConsoleLog ("ポインターが動いた" ++ (mouseState |> Ui.pointerGetPosition |> Tuple.first |> String.fromFloat)) ]
+            )
+
+        PointerUp ->
+            ( Model { rec | sideResizeMode = None }
+            , [ ConsoleLog "ポインターを離した" ]
+            )
 
 
 view : Model -> Ui.Panel Msg
 view (Model rec) =
     Ui.row
-        []
+        (case rec.sideResizeMode of
+            Resize ->
+                [ Ui.PointerMove PointerMove ]
+
+            _ ->
+                []
+        )
         []
         [ side { width = rec.width }
-        , Panel.Style.gutterPanel False False |> Ui.map (always Msg)
+        , Panel.Style.gutterPanel
+            (case rec.sideResizeMode of
+                None ->
+                    Panel.Style.GutterModeNone
+
+                PointerEnter ->
+                    Panel.Style.GutterModePointerEnter
+
+                Resize ->
+                    Panel.Style.GutterModeResize
+            )
+            |> Ui.map ToSideGutterMode
         , yggdrasil
         ]
 

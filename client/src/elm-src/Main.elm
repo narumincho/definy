@@ -17,12 +17,10 @@ import Panel.CommandPalette
 import Panel.DefaultUi
 import Panel.Editor.Module
 import Panel.EditorGroup
-import Panel.EditorItemSource
 import Panel.Side
 import Task
 import Ui
 import Url
-import Utility.Map
 
 
 {-| すべての状態を管理する
@@ -34,9 +32,6 @@ import Utility.Map
 
 
 port setTextAreaValue : String -> Cmd msg
-
-
-port setClickEventListenerInCapturePhase : String -> Cmd msg
 
 
 port focusTextArea : () -> Cmd msg
@@ -60,6 +55,9 @@ port logInWithLine : () -> Cmd msg
 port requestAccessToken : () -> Cmd msg
 
 
+port consoleLog : String -> Cmd msg
+
+
 
 {- Sub (JavaScript → Elm) -}
 
@@ -73,9 +71,6 @@ port keyPrevented : (() -> msg) -> Sub msg
 port windowResize : ({ width : Int, height : Int } -> msg) -> Sub msg
 
 
-port fireClickEventInCapturePhase : (String -> msg) -> Sub msg
-
-
 port responseAccessToken : (String -> msg) -> Sub msg
 
 
@@ -87,16 +82,9 @@ port changeLanguage : (String -> msg) -> Sub msg
 type Msg
     = KeyPressed (Maybe Data.Key.Key) -- キーボードから入力
     | KeyPrevented -- キーボードの入力のデフォルト動作を取り消した後
-    | MouseMove { x : Int, y : Int } -- マウスの移動
-    | MouseUp -- マウスのボタンを離した
-    | FireClickEventInCapturePhase String -- 外側から発生するクリックイベントを受け取った
-    | ToResizeGutterMode Gutter -- リサイズモードに移行
-    | CloseSidePanel -- サイドパネルを閉じる
-    | FocusTo Focus -- フォーカスを移動
+    | PointerUp -- マウスのボタンを離した/タブの表示状態が変わった
+    | ToResizeGutterMode GutterType -- リサイズモードに移行
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
-    | SidePanelMsg Panel.Side.Msg -- ツリーパネル独自のメッセージ
-    | EditorPanelMsg Panel.EditorGroup.Msg -- エディタパネル独自のメッセージ
-    | ChangeEditorResource Panel.EditorItemSource.EditorItemSource -- エディタの対象を変える
     | OpenCommandPalette -- コマンドパレットを開く
     | CloseCommandPalette -- コマンドパレッドを閉じる
     | OnUrlRequest Browser.UrlRequest
@@ -105,7 +93,12 @@ type Msg
     | LogInRequest Data.SocialLoginService.SocialLoginService
     | ResponseAccessTokenFromIndexedDB String
     | ChangeLanguage String -- 使用言語が変わった
-    | WelcomePageMsg Page.Welcome.Msg
+    | PageMsg PageMsg
+    | NoOperation
+
+
+type PageMsg
+    = WelcomePageMsg Page.Welcome.Msg
 
 
 {-| 全体を表現する
@@ -113,11 +106,8 @@ type Msg
 type Model
     = Model
         { project : Data.Project.Project
-        , focus : Focus
         , subMode : SubMode
-        , sidePanelModel : Panel.Side.Model
-        , editorGroupPanelModel : Panel.EditorGroup.Model
-        , sidePanelWidth : Int
+        , page : PageModel
         , windowSize : { width : Int, height : Int }
         , msgQueue : List Msg
         , logInState : Data.User.LogInState
@@ -126,34 +116,19 @@ type Model
         }
 
 
-{-| フォーカスしているものとフォーカス時に持てる状態を表す
--}
-type Focus
-    = FocusSidePanel
-    | FocusEditorGroupPanel
-
-
 type SubMode
     = SubModeNone
     | SubModeCommandPalette Panel.CommandPalette.Model
-    | SubModeGutter Gutter
-
-
-{-| パネルのサイズを変えるときにつかむ、Gutterの種類を表す
--}
-type Gutter
-    = SideBarGutter
-    | GutterEditorGroupPanelVertical Panel.EditorGroup.GutterVertical
-    | GutterEditorGroupPanelHorizontal Panel.EditorGroup.GutterHorizontal
-
-
-
-{- Gutterの種類 -}
+    | SubModeGutter GutterType
 
 
 type GutterType
     = GutterTypeVertical
     | GutterTypeHorizontal
+
+
+type PageModel
+    = Welcome Page.Welcome.Model
 
 
 main : Platform.Program { language : String } Model Msg
@@ -181,11 +156,8 @@ init { language } url navigationKey =
         model =
             Model
                 { project = Data.Project.sample
-                , focus = FocusEditorGroupPanel
                 , subMode = SubModeNone
-                , sidePanelModel = Panel.Side.initModel
-                , editorGroupPanelModel = editorPanelModel
-                , sidePanelWidth = 250
+                , page = Welcome Page.Welcome.init
                 , windowSize = { width = 0, height = 0 }
                 , msgQueue = []
                 , logInState = Data.User.ReadAccessToken
@@ -212,86 +184,55 @@ init { language } url navigationKey =
 {-| Definy全体のUpdate
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update msg (Model rec) =
     case msg of
         KeyPressed key ->
-            case keyDown key model of
+            case keyDown key (Model rec) of
                 [] ->
-                    ( model, Cmd.none )
+                    ( Model rec, Cmd.none )
 
                 concreteMsgList ->
-                    ( model |> pushMsgListToMsgQueue concreteMsgList
+                    ( Model rec |> pushMsgListToMsgQueue concreteMsgList
                     , preventDefaultBeforeKeyEvent ()
                     )
 
         KeyPrevented ->
             let
                 ( listMsg, newModel ) =
-                    model |> shiftMsgListFromMsgQueue
+                    Model rec |> shiftMsgListFromMsgQueue
             in
             newModel |> updateFromMsgList listMsg
 
-        MouseMove position ->
-            ( mouseMove position model
-            , Cmd.none
-            )
-
-        MouseUp ->
-            ( mouseUp model
-            , Cmd.none
-            )
-
-        FireClickEventInCapturePhase idString ->
-            model
-                |> editorPanelUpdate
-                    (Panel.EditorGroup.FireClickEventInCapturePhase idString)
+        PointerUp ->
+            pointerUp (Model rec)
 
         ToResizeGutterMode gutter ->
-            ( toGutterMode gutter model
+            ( toGutterMode gutter (Model rec)
             , Cmd.none
             )
-
-        CloseSidePanel ->
-            ( model |> setSidePanelWidth 0
-            , Cmd.none
-            )
-
-        FocusTo focus ->
-            setFocus focus model
 
         WindowResize { width, height } ->
-            ( model |> setWindowSize { width = width, height = height }
-            , Cmd.none
-            )
-
-        SidePanelMsg sidePanelMsg ->
-            model |> sidePanelUpdate sidePanelMsg
-
-        EditorPanelMsg editorPanelMsg ->
-            model |> editorPanelUpdate editorPanelMsg
-
-        ChangeEditorResource editorRef ->
-            ( openEditor editorRef model
+            ( Model rec |> setWindowSize { width = width, height = height }
             , Cmd.none
             )
 
         OpenCommandPalette ->
-            ( openCommandPalette model
+            ( openCommandPalette (Model rec)
             , Cmd.none
             )
 
         CloseCommandPalette ->
-            ( closeCommandPalette model
+            ( closeCommandPalette (Model rec)
             , Cmd.none
             )
 
         LogOutRequest ->
-            ( model
+            ( Model rec
             , Cmd.none
             )
 
         LogInRequest socialLoginService ->
-            ( model
+            ( Model rec
             , case socialLoginService of
                 Data.SocialLoginService.Google ->
                     logInWithGoogle ()
@@ -304,25 +245,36 @@ update msg model =
             )
 
         ChangeLanguage string ->
-            ( model |> setLanguage string
+            ( Model rec |> setLanguage string
             , Cmd.none
             )
 
         OnUrlRequest urlRequest ->
-            model |> onUrlRequest urlRequest
+            Model rec |> onUrlRequest urlRequest
 
         OnUrlChange url ->
-            ( model
+            ( Model rec
             , Cmd.none
             )
 
         ResponseAccessTokenFromIndexedDB accessToken ->
-            ( responseAccessTokenFromIndexedDB accessToken model
+            ( Model rec |> responseAccessTokenFromIndexedDB accessToken
             , Cmd.none
             )
 
-        WelcomePageMsg _ ->
-            ( model
+        PageMsg pageMsg ->
+            case ( rec.page, pageMsg ) of
+                ( Welcome welcomeModel, WelcomePageMsg welcomePageMsg ) ->
+                    let
+                        ( newWelcomeModel, cmd ) =
+                            welcomeModel |> Page.Welcome.update welcomePageMsg
+                    in
+                    ( Model { rec | page = Welcome newWelcomeModel }
+                    , cmd |> List.map welcomePageCmdToCmd |> Cmd.batch
+                    )
+
+        NoOperation ->
+            ( Model rec
             , Cmd.none
             )
 
@@ -340,6 +292,17 @@ updateFromMsgList msgList model =
 
         [] ->
             ( model, Cmd.none )
+
+
+welcomePageCmdToCmd : Page.Welcome.Cmd -> Cmd Msg
+welcomePageCmdToCmd cmd =
+    case cmd of
+        Page.Welcome.CmdToVerticalGutterMode ->
+            Task.succeed (ToResizeGutterMode GutterTypeVertical)
+                |> Task.perform identity
+
+        Page.Welcome.ConsoleLog string ->
+            consoleLog string
 
 
 
@@ -383,15 +346,8 @@ keyDown keyMaybe model =
 
 
 keyDownEachPanel : Data.Key.Key -> Model -> List Msg
-keyDownEachPanel key model =
-    case getFocus model of
-        FocusSidePanel ->
-            sidePanelKeyDown key
-                |> List.map SidePanelMsg
-
-        FocusEditorGroupPanel ->
-            editorGroupPanelKeyDown key
-                |> List.map EditorPanelMsg
+keyDownEachPanel _ _ =
+    []
 
 
 {-| Definyによって予約されたキー。どのパネルにフォーカスが当たっていてもこれを優先する
@@ -421,17 +377,6 @@ editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
                 case key of
                     Data.Key.F1 ->
                         [ OpenCommandPalette ]
-
-                    _ ->
-                        []
-
-            ( False, False, True ) ->
-                case key of
-                    Data.Key.Digit0 ->
-                        [ FocusTo FocusSidePanel ]
-
-                    Data.Key.Digit1 ->
-                        [ FocusTo FocusEditorGroupPanel ]
 
                     _ ->
                         []
@@ -670,237 +615,33 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
 -}
 
 
-{-| マウスを動かした
+{-| マウスのボタンを離した、タッチを離した
 -}
-mouseMove : { x : Int, y : Int } -> Model -> Model
-mouseMove { x, y } (Model rec) =
-    case getGutterMode (Model rec) of
-        Just SideBarGutter ->
-            Model rec
-                |> setSidePanelWidth
-                    (treePanelResizeFromGutter rec.windowSize.width x)
+pointerUp : Model -> ( Model, Cmd Msg )
+pointerUp (Model rec) =
+    case rec.page of
+        Welcome model ->
+            let
+                ( newModel, cmd ) =
+                    model |> Page.Welcome.update Page.Welcome.PointerUp
+            in
+            ( Model
+                { rec
+                    | subMode =
+                        case rec.subMode of
+                            SubModeGutter _ ->
+                                SubModeNone
 
-        Just (GutterEditorGroupPanelVertical gutter) ->
-            Model rec
-                |> mapEditorGroupPanelModel
-                    (Panel.EditorGroup.resizeFromVerticalGutter
-                        { mouseRelX = max 0 (x - getTreePanelWidth (Model rec))
-                        , editorWidth = rec.windowSize.width - getTreePanelWidth (Model rec)
-                        }
-                        gutter
-                    )
-
-        Just (GutterEditorGroupPanelHorizontal gutter) ->
-            Model rec
-                |> mapEditorGroupPanelModel
-                    (Panel.EditorGroup.resizeFromHorizontalGutter
-                        { mouseRelY = max 0 y
-                        , editorHeight = rec.windowSize.height
-                        }
-                        gutter
-                    )
-
-        Nothing ->
-            Model rec
-
-
-treePanelResizeFromGutter : Int -> Int -> Int
-treePanelResizeFromGutter maxLimit x =
-    if x < 80 then
-        0
-
-    else if x < 120 then
-        120
-
-    else
-        min maxLimit x
-
-
-{-| マウスのボタンを離した
--}
-mouseUp : Model -> Model
-mouseUp (Model rec) =
-    Model
-        { rec
-            | subMode = SubModeNone
-        }
-
-
-
-{- ============ フォーカス 編集している要素について ============= -}
-
-
-{-| フォーカスしている要素を取得する
--}
-getFocus : Model -> Focus
-getFocus (Model { focus }) =
-    focus
-
-
-{-| ツリーパネルにフォーカスが当たっているかどうか
--}
-isFocusSidePanel : Model -> Bool
-isFocusSidePanel model =
-    case getFocus model of
-        FocusSidePanel ->
-            True
-
-        FocusEditorGroupPanel ->
-            False
-
-
-{-| エディタグループパネルにフォーカスが当たっているかどうか
--}
-isFocusEditorGroupPanel : Model -> Bool
-isFocusEditorGroupPanel model =
-    case getFocus model of
-        FocusSidePanel ->
-            False
-
-        FocusEditorGroupPanel ->
-            True
-
-
-{-| フォーカスする要素を変更する。それによって発生するCmdもある
--}
-setFocus : Focus -> Model -> ( Model, Cmd Msg )
-setFocus focus (Model rec) =
-    case focus of
-        FocusSidePanel ->
-            Model { rec | focus = FocusSidePanel }
-                |> editorPanelUpdate Panel.EditorGroup.Blur
-
-        FocusEditorGroupPanel ->
-            Model { rec | focus = FocusEditorGroupPanel }
-                |> editorPanelUpdate Panel.EditorGroup.Focus
+                            _ ->
+                                rec.subMode
+                    , page = Welcome newModel
+                }
+            , cmd |> List.map welcomePageCmdToCmd |> Cmd.batch
+            )
 
 
 
 {- ============ Tree Panel ============= -}
-
-
-{-| ツリーパネルの幅を変更するモードかどうか
--}
-isTreePanelGutter : Model -> Bool
-isTreePanelGutter model =
-    case getGutterMode model of
-        Just SideBarGutter ->
-            True
-
-        _ ->
-            False
-
-
-getSidePanelModel : Model -> Panel.Side.Model
-getSidePanelModel (Model { sidePanelModel }) =
-    sidePanelModel
-
-
-setSidePanelModel : Panel.Side.Model -> Model -> Model
-setSidePanelModel sidePanelModel (Model rec) =
-    Model
-        { rec
-            | sidePanelModel = sidePanelModel
-        }
-
-
-
-{- ============ Editor Group Panel ============= -}
-
-
-getEditorGroupPanelModel : Model -> Panel.EditorGroup.Model
-getEditorGroupPanelModel (Model { editorGroupPanelModel }) =
-    editorGroupPanelModel
-
-
-setEditorGroupPanelModel : Panel.EditorGroup.Model -> Model -> Model
-setEditorGroupPanelModel editorPanelModel (Model rec) =
-    Model
-        { rec
-            | editorGroupPanelModel = editorPanelModel
-        }
-
-
-mapEditorGroupPanelModel : (Panel.EditorGroup.Model -> Panel.EditorGroup.Model) -> Model -> Model
-mapEditorGroupPanelModel =
-    Utility.Map.toMapper getEditorGroupPanelModel setEditorGroupPanelModel
-
-
-{-| エディタグループパネルのGutterの状態を取得する
--}
-getEditorGroupPanelGutter : Model -> Maybe Panel.EditorGroup.Gutter
-getEditorGroupPanelGutter model =
-    case getGutterMode model of
-        Just (GutterEditorGroupPanelHorizontal gutter) ->
-            Just (Panel.EditorGroup.GutterHorizontal gutter)
-
-        Just (GutterEditorGroupPanelVertical gutter) ->
-            Just (Panel.EditorGroup.GutterVertical gutter)
-
-        _ ->
-            Nothing
-
-
-
-{- ============ パネルやウィンドウの幅高さ ============= -}
-
-
-{-| ツリーパネルとエディタパネルの間にあるリサイズバーのX座標
--}
-getVerticalGutterX : Model -> Int
-getVerticalGutterX (Model { sidePanelWidth }) =
-    sidePanelWidth
-
-
-setSidePanelWidth : Int -> Model -> Model
-setSidePanelWidth width (Model rec) =
-    Model
-        { rec
-            | sidePanelWidth = width
-        }
-
-
-getTreePanelWidth : Model -> Int
-getTreePanelWidth (Model rec) =
-    let
-        width =
-            getVerticalGutterX (Model rec) - verticalGutterWidth // 2
-    in
-    if rec.windowSize.width < 500 then
-        0
-
-    else if width < 120 then
-        0
-
-    else
-        width
-
-
-getEditorGroupPanelWidth : Model -> Int
-getEditorGroupPanelWidth (Model rec) =
-    rec.windowSize.width - (getTreePanelWidth (Model rec) + verticalGutterWidth)
-
-
-verticalGutterWidth : Int
-verticalGutterWidth =
-    2
-
-
-getGutterType : Model -> Maybe GutterType
-getGutterType model =
-    getGutterMode model
-        |> Maybe.map
-            (\gutter ->
-                case gutter of
-                    SideBarGutter ->
-                        GutterTypeVertical
-
-                    GutterEditorGroupPanelVertical _ ->
-                        GutterTypeVertical
-
-                    GutterEditorGroupPanelHorizontal _ ->
-                        GutterTypeHorizontal
-            )
 
 
 setWindowSize : { width : Int, height : Int } -> Model -> Model
@@ -913,11 +654,11 @@ setWindowSize { width, height } (Model rec) =
 
 isCaptureMouseEvent : Model -> Bool
 isCaptureMouseEvent model =
-    getGutterMode model /= Nothing
+    getGutterType model /= Nothing
 
 
-getGutterMode : Model -> Maybe Gutter
-getGutterMode (Model { subMode }) =
+getGutterType : Model -> Maybe GutterType
+getGutterType (Model { subMode }) =
     case subMode of
         SubModeNone ->
             Nothing
@@ -929,28 +670,12 @@ getGutterMode (Model { subMode }) =
             Just gutter
 
 
-toGutterMode : Gutter -> Model -> Model
+toGutterMode : GutterType -> Model -> Model
 toGutterMode gutter (Model rec) =
     Model
         { rec
             | subMode = SubModeGutter gutter
         }
-
-
-{-| サイドパネルの更新
--}
-sidePanelUpdate : Panel.Side.Msg -> Model -> ( Model, Cmd Msg )
-sidePanelUpdate msg model =
-    let
-        ( sidePanelModel, cmdList ) =
-            getSidePanelModel model
-                |> Panel.Side.update
-                    msg
-    in
-    ( model
-        |> setSidePanelModel sidePanelModel
-    , cmdList |> List.map sidePanelCmdToCmd |> Cmd.batch
-    )
 
 
 {-| ツリーパネルで発生したCmdを全体のCmdに変換する
@@ -967,24 +692,7 @@ sidePanelCmdToCmd cmd =
                 |> Task.perform identity
 
         Panel.Side.CmdFocusHere ->
-            Task.succeed (FocusTo FocusSidePanel)
-                |> Task.perform identity
-
-
-{-| エディタグループパネルの更新
--}
-editorPanelUpdate : Panel.EditorGroup.Msg -> Model -> ( Model, Cmd Msg )
-editorPanelUpdate msg model =
-    let
-        ( editorPanelModel, cmdList ) =
-            Panel.EditorGroup.update
-                msg
-                (getProject model)
-                (getEditorGroupPanelModel model)
-    in
-    ( model |> setEditorGroupPanelModel editorPanelModel
-    , cmdList |> List.map editorPanelCmdToCmd |> Cmd.batch
-    )
+            Cmd.none
 
 
 {-| エディタグループパネルの更新
@@ -992,14 +700,14 @@ editorPanelUpdate msg model =
 editorPanelCmdToCmd : Panel.EditorGroup.Cmd -> Cmd Msg
 editorPanelCmdToCmd cmd =
     case cmd of
-        Panel.EditorGroup.CmdVerticalGutterModeOn gutterVertical ->
+        Panel.EditorGroup.CmdVerticalGutterModeOn _ ->
             Task.succeed
-                (ToResizeGutterMode (GutterEditorGroupPanelVertical gutterVertical))
+                (ToResizeGutterMode GutterTypeVertical)
                 |> Task.perform identity
 
-        Panel.EditorGroup.CmdHorizontalGutterModeOn gutterHorizontal ->
+        Panel.EditorGroup.CmdHorizontalGutterModeOn _ ->
             Task.succeed
-                (ToResizeGutterMode (GutterEditorGroupPanelHorizontal gutterHorizontal))
+                (ToResizeGutterMode GutterTypeHorizontal)
                 |> Task.perform identity
 
         Panel.EditorGroup.CmdSetTextAreaValue string ->
@@ -1008,16 +716,11 @@ editorPanelCmdToCmd cmd =
         Panel.EditorGroup.CmdFocusEditTextAea ->
             focusTextArea ()
 
-        Panel.EditorGroup.CmdSetClickEventListenerInCapturePhase idString ->
-            setClickEventListenerInCapturePhase idString
-
         Panel.EditorGroup.CmdElementScrollIntoView id ->
             elementScrollIntoView id
 
         Panel.EditorGroup.CmdFocusHere ->
-            Task.succeed
-                (FocusTo FocusEditorGroupPanel)
-                |> Task.perform identity
+            Cmd.none
 
         Panel.EditorGroup.CmdNone ->
             Cmd.none
@@ -1034,21 +737,6 @@ setProject : Data.Project.Project -> Model -> Model
 setProject project (Model rec) =
     Model
         { rec | project = project }
-
-
-{-| 開いているエディタを取得する
--}
-getActiveEditor : Model -> Panel.EditorItemSource.EditorItemSource
-getActiveEditor model =
-    getEditorGroupPanelModel model
-        |> Panel.EditorGroup.getActiveEditor
-
-
-{-| エディタを開く
--}
-openEditor : Panel.EditorItemSource.EditorItemSource -> Model -> Model
-openEditor editorRef =
-    mapEditorGroupPanelModel (Panel.EditorGroup.changeActiveEditorResource editorRef)
 
 
 
@@ -1105,14 +793,7 @@ isOpenCommandPalette (Model { subMode }) =
 -}
 isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
 isFocusDefaultUi model =
-    case getFocus model of
-        FocusSidePanel ->
-            Nothing
-
-        FocusEditorGroupPanel ->
-            model
-                |> getEditorGroupPanelModel
-                |> Panel.EditorGroup.isFocusDefaultUi
+    Nothing
 
 
 
@@ -1170,7 +851,7 @@ onUrlRequest urlRequest (Model rec) =
 {-| 見た目を定義する
 -}
 view : Model -> Browser.Document Msg
-view model =
+view (Model rec) =
     { title = "Definy"
     , body =
         [ Html.Styled.div
@@ -1180,7 +861,7 @@ view model =
                  , Css.displayFlex
                  , Css.overflow Css.hidden
                  ]
-                    ++ (case getGutterType model of
+                    ++ (case getGutterType (Model rec) of
                             Just gutterType ->
                                 [ gutterTypeToCursorStyle gutterType ]
 
@@ -1189,12 +870,15 @@ view model =
                        )
                 )
             ]
-            [ Page.Welcome.view Page.Welcome.init
-                |> Ui.map WelcomePageMsg
-                |> Ui.toHtml
-            ]
+            (case rec.page of
+                Welcome welcomeModel ->
+                    [ Page.Welcome.view welcomeModel
+                        |> Ui.map (WelcomePageMsg >> PageMsg)
+                        |> Ui.toHtml
+                    ]
+            )
         ]
-            ++ (case getCommandPaletteModel model of
+            ++ (case getCommandPaletteModel (Model rec) of
                     Just commandPaletteModel ->
                         [ Panel.CommandPalette.view commandPaletteModel ]
 
@@ -1215,22 +899,6 @@ gutterTypeToCursorStyle gutterType =
         GutterTypeHorizontal ->
             -- ↕
             Css.cursor Css.nsResize
-
-
-{-| エディタグループパネルの表示
--}
-editorGroupPanel : Model -> Html.Styled.Html Msg
-editorGroupPanel (Model rec) =
-    Panel.EditorGroup.view
-        (getProject (Model rec))
-        { width = getEditorGroupPanelWidth (Model rec)
-        , height = rec.windowSize.height
-        , language = getLanguage (Model rec)
-        , focus = isFocusEditorGroupPanel (Model rec)
-        , gutter = getEditorGroupPanelGutter (Model rec)
-        }
-        (getEditorGroupPanelModel (Model rec))
-        |> Html.Styled.map EditorPanelMsg
 
 
 responseAccessTokenFromIndexedDB : String -> Model -> Model
@@ -1264,19 +932,13 @@ subscriptions model =
          , keyPrevented (always KeyPrevented)
          , windowResize WindowResize
          , responseAccessToken ResponseAccessTokenFromIndexedDB
-         , fireClickEventInCapturePhase FireClickEventInCapturePhase
          , changeLanguage ChangeLanguage
          ]
             ++ (if isCaptureMouseEvent model then
-                    [ Browser.Events.onMouseMove
-                        (Json.Decode.map2 (\x y -> MouseMove { x = x, y = y })
-                            (Json.Decode.field "clientX" Json.Decode.int)
-                            (Json.Decode.field "clientY" Json.Decode.int)
-                        )
-                    , Browser.Events.onMouseUp
-                        (Json.Decode.succeed MouseUp)
+                    [ Browser.Events.onMouseUp
+                        (Json.Decode.succeed PointerUp)
                     , Browser.Events.onVisibilityChange
-                        (always MouseUp)
+                        (always PointerUp)
                     ]
 
                 else

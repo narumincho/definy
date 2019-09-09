@@ -1,4 +1,14 @@
-module Panel.Style exposing (activeColor, fontHack, gutterPanel, horizontalGutter, tabContainer, textColorStyle, verticalGutter)
+module Panel.Style exposing
+    ( GutterMode(..)
+    , GutterMsg(..)
+    , activeColor
+    , fontHack
+    , gutterPanel
+    , horizontalGutter
+    , tabContainer
+    , textColorStyle
+    , verticalGutter
+    )
 
 {-| Definyで使うUIのパネルを定義する
 -}
@@ -69,22 +79,63 @@ verticalGutter isResizing =
         []
 
 
-gutterPanel : Bool -> Bool -> Ui.Panel ()
-gutterPanel isHover isGutter =
+gutterPanel : GutterMode -> Ui.Panel GutterMsg
+gutterPanel mode =
     Ui.depth
-        [ Ui.Click () ]
+        []
         [ Ui.Width (Ui.Fix 2) ]
-        [ Ui.monochromatic
-            []
-            [ Ui.Width (Ui.Fix 2) ]
-            (Css.rgb 0 255 0)
-        , Ui.monochromatic
-            []
-            [ Ui.Width (Ui.Fix 20)
-            , Ui.Offset ( -9, 0 )
-            ]
-            (Css.rgba 255 120 0 0.4)
-        ]
+        (case mode of
+            GutterModeNone ->
+                [ Ui.monochromatic
+                    []
+                    [ Ui.Width (Ui.Fix 2) ]
+                    (Css.rgb 68 68 68)
+                , Ui.monochromatic
+                    [ Ui.PointerDown GutterMsgToResizeMode
+                    , Ui.PointerEnter (always GutterMsgPointerEnter)
+                    ]
+                    [ Ui.Width (Ui.Fix 12)
+                    , Ui.Offset ( -5, 0 )
+                    ]
+                    (Css.rgba 0 0 0 0)
+                ]
+
+            GutterModePointerEnter ->
+                [ Ui.monochromatic
+                    []
+                    [ Ui.Width (Ui.Fix 2) ]
+                    (Css.rgb 102 102 102)
+                , Ui.monochromatic
+                    [ Ui.PointerDown GutterMsgToResizeMode
+                    , Ui.PointerLeave (always GutterMsgPointerLeave)
+                    ]
+                    [ Ui.Width (Ui.Fix 12)
+                    , Ui.Offset ( -5, 0 )
+                    ]
+                    (Css.rgba 0 0 0 0)
+                ]
+
+            GutterModeResize ->
+                [ Ui.monochromatic
+                    []
+                    [ Ui.Width (Ui.Fix 6)
+                    , Ui.Offset ( -2, 0 )
+                    ]
+                    (Css.rgb 255 255 255)
+                ]
+        )
+
+
+type GutterMode
+    = GutterModeNone
+    | GutterModePointerEnter
+    | GutterModeResize
+
+
+type GutterMsg
+    = GutterMsgPointerEnter
+    | GutterMsgPointerLeave
+    | GutterMsgToResizeMode Ui.Pointer
 
 
 {-| パネルの高さを変更するためにつかむところ - ガター
