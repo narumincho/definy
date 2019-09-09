@@ -9,26 +9,35 @@ import * as type from "./type";
 const domain = "definy-lang.web.app";
 const homeUrl = tool.urlFromString(domain);
 
-const createAccessTokenUrl = (userId: string, randomId: string): URL => {
+const createAccessTokenUrl = (
+    userId: string,
+    userName: string,
+    randomId: string
+): URL => {
     return tool.urlFromStringWithFragment(
         domain,
-        new Map([["accessToken", createAccessToken(userId, randomId)]])
+        new Map([
+            ["accessToken", createAccessToken(userId, userName, randomId)]
+        ])
     );
 };
 
 /**
  * アクセストークンを作成する
  * @param userId Definy内でのユーザーID
- * @param randomId トークンを無効化できるように区別するためのID
+ * @param randomId 最後に発行したトークンかどうか区別するためのID
  */
-const createAccessToken = (userId: string, randomId: string): string => {
-    const payload = {
-        sub: userId,
-        jti: randomId // 最後に発行したものか調べる用
-    };
-    /** アクセストークン */
-    return jwt.sign(payload, key.accessTokenSecretKey, { algorithm: "HS256" });
-};
+const createAccessToken = (
+    userId: string,
+    userName: string,
+    randomId: string
+): string =>
+    jwt.sign({ name: userName }, key.accessTokenSecretKey, {
+        algorithm: "HS256",
+        subject: userId,
+        expiresIn: "1h",
+        jwtid: randomId
+    });
 
 export type Result =
     | { type: "redirect"; url: URL }
@@ -93,6 +102,7 @@ export const googleLogInReceiver = async (
             type: "redirect",
             url: createAccessTokenUrl(
                 definyUserData.id,
+                definyUserData.name,
                 definyUserData.lastAccessTokenJti
             )
         };
@@ -113,7 +123,7 @@ export const googleLogInReceiver = async (
     });
     return {
         type: "redirect",
-        url: createAccessTokenUrl(userId, accessTokenRandomId)
+        url: createAccessTokenUrl(userId, googleData.name, accessTokenRandomId)
     };
 };
 
@@ -211,6 +221,7 @@ query {
             type: "redirect",
             url: createAccessTokenUrl(
                 definyUserData.id,
+                definyUserData.name,
                 definyUserData.lastAccessTokenJti
             )
         };
@@ -232,7 +243,7 @@ query {
     });
     return {
         type: "redirect",
-        url: createAccessTokenUrl(userId, accessTokenRandomId)
+        url: createAccessTokenUrl(userId, userData.name, accessTokenRandomId)
     };
 };
 /* =====================================================================
@@ -290,6 +301,7 @@ export const lineLogInReceiver = async (
             type: "redirect",
             url: createAccessTokenUrl(
                 definyUserData.id,
+                definyUserData.name,
                 definyUserData.lastAccessTokenJti
             )
         };
@@ -311,7 +323,7 @@ export const lineLogInReceiver = async (
     });
     return {
         type: "redirect",
-        url: createAccessTokenUrl(userId, accessTokenRandomId)
+        url: createAccessTokenUrl(userId, lineData.name, accessTokenRandomId)
     };
 };
 
