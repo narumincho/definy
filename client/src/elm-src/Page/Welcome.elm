@@ -113,7 +113,8 @@ side { width, logInState } =
     Ui.column
         []
         [ Ui.Width (Ui.Fix width) ]
-        [ Ui.text
+        [ titleLogo
+        , Ui.text
             []
             []
             (Ui.Font
@@ -156,6 +157,21 @@ side { width, logInState } =
                 "Definyのロゴ、ログイン状態、検索欄、お気に入りのブランチ(プロジェクトでグループ)"
             ]
         ]
+
+
+titleLogo : Ui.Panel msg
+titleLogo =
+    Ui.text
+        []
+        [ Ui.TextAlignment Ui.TextAlignCenter ]
+        (Ui.Font
+            { typeface = "Open Sans"
+            , size = 48
+            , letterSpacing = 0
+            , color = Css.rgb 185 208 155
+            }
+        )
+        "Definy"
 
 
 yggdrasil : Ui.Panel msg
