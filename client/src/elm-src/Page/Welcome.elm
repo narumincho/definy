@@ -40,7 +40,7 @@ type Cmd
 init : Model
 init =
     Model
-        { width = 250
+        { width = 400
         , sideResizeMode = None
         }
 
@@ -91,6 +91,7 @@ view logInState (Model rec) =
                 []
         )
         []
+        0
         [ side { width = rec.width, logInState = logInState }
         , Panel.Style.gutterPanel
             (case rec.sideResizeMode of
@@ -113,30 +114,9 @@ side { width, logInState } =
     Ui.column
         []
         [ Ui.Width (Ui.Fix width) ]
+        16
         [ titleLogo
-        , Ui.text
-            []
-            []
-            (Ui.Font
-                { typeface = "Roboto"
-                , size = 16
-                , letterSpacing = 0
-                , color = Css.rgb 221 221 221
-                }
-            )
-            (case logInState of
-                Data.User.ReadAccessToken ->
-                    "アクセストークン読み込み中"
-
-                Data.User.VerifyingAccessToken (Data.User.AccessToken accessTokenString) ->
-                    "アクセストークンを検証、ユーザーをリクエスト中 " ++ accessTokenString
-
-                Data.User.GuestUser _ ->
-                    "ゲストユーザー ログインする"
-
-                Data.User.Ok user ->
-                    Data.User.getName user
-            )
+        , userView logInState
         , Ui.depth
             []
             []
@@ -172,6 +152,67 @@ titleLogo =
             }
         )
         "Definy"
+
+
+userView : Data.User.LogInState -> Ui.Panel msg
+userView logInState =
+    Ui.column
+        []
+        []
+        8
+        ([ Ui.text
+            []
+            [ Ui.TextAlignment Ui.TextAlignCenter ]
+            (Ui.Font
+                { typeface = "Roboto"
+                , size = 16
+                , letterSpacing = 0
+                , color = Css.rgb 221 221 221
+                }
+            )
+            (case logInState of
+                Data.User.ReadAccessToken ->
+                    "アクセストークン読み込み中"
+
+                Data.User.VerifyingAccessToken (Data.User.AccessToken accessTokenString) ->
+                    "アクセストークンを検証、ユーザーをリクエスト中 " ++ accessTokenString
+
+                Data.User.GuestUser _ ->
+                    "ゲストユーザー"
+
+                Data.User.Ok user ->
+                    Data.User.getName user
+            )
+         ]
+            ++ (case logInState of
+                    Data.User.GuestUser _ ->
+                        [ Ui.column
+                            []
+                            []
+                            8
+                            [ Ui.depth
+                                []
+                                []
+                                [ Ui.monochromatic [] [] (Css.rgb 0 195 0)
+                                , Ui.text
+                                    []
+                                    []
+                                    (Ui.Font
+                                        { typeface = "Roboto"
+                                        , size = 16
+                                        , letterSpacing = 0
+                                        , color = Css.rgb 255 255 255
+                                        }
+                                    )
+                                    "LINEでログイン"
+                                ]
+                            ]
+                        ]
+
+                    _ ->
+                        []
+               )
+        )
 
 
 yggdrasil : Ui.Panel msg

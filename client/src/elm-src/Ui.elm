@@ -20,6 +20,7 @@ module Ui exposing
     , pointerGetPosition
     , row
     , text
+    , textWithAlignment
     , toHtml
     )
 
@@ -86,7 +87,7 @@ type PointerButton
     | BrowserBack
     | BrowserForward
     | Eraser
-    | PointerButtonUnknown Int
+    | PointerButtonUnknown Int -- 6番～31番
 
 
 {-| どのパネルでも指定できるスタイル
@@ -94,8 +95,8 @@ type PointerButton
 type StyleComputed
     = StyleComputed
         { padding : Int
-        , width : Size
-        , height : Size
+        , width : Maybe Size
+        , height : Maybe Size
         , offset : Maybe ( Int, Int )
         , verticalAlignment : Maybe VerticalAlignment
         , textAlignment : Maybe TextAlignment
@@ -115,6 +116,8 @@ type Content msg
     = Text
         { text : String
         , font : Font
+        , verticalAlignment : Maybe VerticalAlignment
+        , textAlignment : Maybe TextAlignment
         }
     | ImageFromDataUrl
         { dataUrl : String
@@ -124,8 +127,8 @@ type Content msg
         }
     | Monochromatic Css.Color
     | DepthList (List (Panel msg))
-    | RowList (List (Panel msg))
-    | ColumnList (List (Panel msg))
+    | RowList (List (Panel msg)) Int
+    | ColumnList (List (Panel msg)) Int
 
 
 type Size
@@ -204,6 +207,32 @@ text events style font string =
             Text
                 { font = font
                 , text = string
+                , verticalAlignment = Nothing
+                , textAlignment = Nothing
+                }
+        }
+
+
+textWithAlignment :
+    List (Event msg)
+    -> List Style
+    ->
+        { align : Maybe TextAlignment
+        , vertical : Maybe VerticalAlignment
+        , font : Font
+        }
+    -> String
+    -> Panel msg
+textWithAlignment events style { align, vertical, font } string =
+    Panel
+        { events = events
+        , style = style |> List.reverse |> computeStyle
+        , content =
+            Text
+                { font = font
+                , text = string
+                , verticalAlignment = vertical
+                , textAlignment = align
                 }
         }
 
@@ -255,21 +284,21 @@ depth events style children =
         }
 
 
-row : List (Event msg) -> List Style -> List (Panel msg) -> Panel msg
-row events style children =
+row : List (Event msg) -> List Style -> Int -> List (Panel msg) -> Panel msg
+row events style gap children =
     Panel
         { events = events
         , style = style |> List.reverse |> computeStyle
-        , content = RowList children
+        , content = RowList children gap
         }
 
 
-column : List (Event msg) -> List Style -> List (Panel msg) -> Panel msg
-column events style children =
+column : List (Event msg) -> List Style -> Int -> List (Panel msg) -> Panel msg
+column events style gap children =
     Panel
         { events = events
         , style = style |> List.reverse |> computeStyle
-        , content = ColumnList children
+        , content = ColumnList children gap
         }
 
 
@@ -288,10 +317,10 @@ computeStyle list =
                     { rec | padding = padding }
 
                 Width size ->
-                    { rec | width = size }
+                    { rec | width = Just size }
 
                 Height size ->
-                    { rec | height = size }
+                    { rec | height = Just size }
 
                 Offset position ->
                     { rec | offset = Just position }
@@ -307,8 +336,8 @@ computeStyle list =
         [] ->
             StyleComputed
                 { padding = 0
-                , width = Flex 1
-                , height = Flex 1
+                , width = Nothing
+                , height = Nothing
                 , offset = Nothing
                 , verticalAlignment = Nothing
                 , textAlignment = Nothing
@@ -334,13 +363,15 @@ map func (Panel { events, style, content }) =
                 DepthList list ->
                     DepthList (list |> List.map (map func))
 
-                RowList list ->
+                RowList list gap ->
                     RowList
                         (list |> List.map (map func))
+                        gap
 
-                ColumnList list ->
+                ColumnList list gap ->
                     ColumnList
                         (list |> List.map (map func))
+                        gap
         }
 
 
@@ -378,21 +409,29 @@ panelToHtml isSetGridPosition (Panel { events, style, content }) =
     in
     Html.Styled.div
         ([ Html.Styled.Attributes.css
-            ([ case width of
-                Flex int ->
-                    Css.width (Css.pct 100)
-
-                Fix w ->
-                    Css.width (Css.px (toFloat w))
-             , case height of
-                Flex int ->
-                    Css.height (Css.pct 100)
-
-                Fix h ->
-                    Css.height (Css.px (toFloat h))
-             , Css.padding (Css.pc (toFloat padding))
+            ([ Css.padding (Css.px (toFloat padding))
              , growGrowContentToStyle textAlignment verticalAlignment isSetGridPosition content
              ]
+                ++ (case width of
+                        Just (Flex int) ->
+                            [ Css.width (Css.pct 100) ]
+
+                        Just (Fix w) ->
+                            [ Css.width (Css.px (toFloat w)) ]
+
+                        Nothing ->
+                            []
+                   )
+                ++ (case height of
+                        Just (Flex int) ->
+                            [ Css.height (Css.pct 100) ]
+
+                        Just (Fix w) ->
+                            [ Css.height (Css.px (toFloat w)) ]
+
+                        Nothing ->
+                            []
+                   )
                 ++ (case offset of
                         Just ( left, top ) ->
                             [ Css.transform
@@ -486,14 +525,16 @@ growGrowContentToStyle textAlignment verticalAlignment (ChildrenStyle { gridPosi
             , Css.property "grid-template-columns" "1fr"
             ]
 
-        RowList list ->
+        RowList list gap ->
             [ Css.property "display" "grid"
             , Css.property "grid-template-columns" (panelListToGridTemplateColumns list)
+            , Css.property "gap" (String.fromInt gap ++ "px")
             ]
 
-        ColumnList list ->
+        ColumnList list gap ->
             [ Css.property "display" "grid"
             , Css.property "grid-template-rows" (panelListToGridTemplateRows list)
+            , Css.property "gap" (String.fromInt gap ++ "px")
             ]
     )
         ++ (if gridPositionLeftTop then
@@ -537,10 +578,10 @@ growGrowContentToListAttributes content =
         DepthList _ ->
             []
 
-        RowList _ ->
+        RowList _ _ ->
             []
 
-        ColumnList _ ->
+        ColumnList _ _ ->
             []
 
 
@@ -676,7 +717,7 @@ growGrowContentToListHtml content =
                         )
                     )
 
-        RowList list ->
+        RowList list _ ->
             list
                 |> List.map
                     (panelToHtml
@@ -687,7 +728,7 @@ growGrowContentToListHtml content =
                         )
                     )
 
-        ColumnList list ->
+        ColumnList list _ ->
             list
                 |> List.map
                     (panelToHtml
@@ -701,63 +742,145 @@ growGrowContentToListHtml content =
 
 panelListToGridTemplateColumns : List (Panel msg) -> String
 panelListToGridTemplateColumns =
-    List.map panelToGridTemplateColumn
+    List.map
+        (panelToGrowOrFixAutoWidth >> growOrFixAutoToGridTemplateString)
         >> String.join " "
-
-
-panelToGridTemplateColumn : Panel msg -> String
-panelToGridTemplateColumn (Panel { style, content }) =
-    let
-        (StyleComputed { width, textAlignment }) =
-            style
-    in
-    case content of
-        Text _ ->
-            case textAlignment of
-                Just _ ->
-                    "1fr"
-
-                Nothing ->
-                    "auto"
-
-        _ ->
-            sizeToGridTemplate width
 
 
 panelListToGridTemplateRows : List (Panel msg) -> String
 panelListToGridTemplateRows =
     List.map
-        panelToGridTemplateRow
+        (panelToGrowOrFixAutoHeight >> growOrFixAutoToGridTemplateString)
         >> String.join " "
 
 
-panelToGridTemplateRow : Panel msg -> String
-panelToGridTemplateRow (Panel { style, content }) =
+type GrowOrFixAuto
+    = Grow Int
+    | FixMaxContent
+
+
+growOrFixAutoToGridTemplateString : GrowOrFixAuto -> String
+growOrFixAutoToGridTemplateString growOrFixAuto =
+    case growOrFixAuto of
+        Grow int ->
+            String.fromInt int ++ "fr"
+
+        FixMaxContent ->
+            "max-content"
+
+
+panelToGrowOrFixAutoWidth : Panel msg -> GrowOrFixAuto
+panelToGrowOrFixAutoWidth (Panel { style, content }) =
+    let
+        (StyleComputed { width, textAlignment }) =
+            style
+    in
+    case width of
+        Just (Flex int) ->
+            Grow int
+
+        Just (Fix _) ->
+            FixMaxContent
+
+        Nothing ->
+            case content of
+                Text _ ->
+                    case textAlignment of
+                        Just _ ->
+                            Grow 1
+
+                        Nothing ->
+                            FixMaxContent
+
+                ImageFromDataUrl record ->
+                    Grow 1
+
+                Monochromatic color ->
+                    Grow 1
+
+                DepthList list ->
+                    if
+                        list
+                            |> List.any (\x -> panelToGrowOrFixAutoWidth x == FixMaxContent)
+                    then
+                        FixMaxContent
+
+                    else
+                        Grow 1
+
+                RowList list int ->
+                    if list |> List.all (\x -> panelToGrowOrFixAutoWidth x == FixMaxContent) then
+                        FixMaxContent
+
+                    else
+                        Grow 1
+
+                ColumnList list int ->
+                    if list |> List.all (\x -> panelToGrowOrFixAutoWidth x == FixMaxContent) then
+                        FixMaxContent
+
+                    else
+                        Grow 1
+
+
+panelToGrowOrFixAutoHeight : Panel msg -> GrowOrFixAuto
+panelToGrowOrFixAutoHeight (Panel { style, content }) =
     let
         (StyleComputed { height, verticalAlignment }) =
             style
     in
-    case content of
-        Text _ ->
-            case verticalAlignment of
-                Just _ ->
-                    "1fr"
+    case height of
+        Just (Flex int) ->
+            Grow int
 
-                Nothing ->
-                    "auto"
+        Just (Fix _) ->
+            FixMaxContent
 
-        _ ->
-            sizeToGridTemplate height
+        Nothing ->
+            case content of
+                Text record ->
+                    case verticalAlignment of
+                        Just _ ->
+                            Grow 1
 
+                        Nothing ->
+                            FixMaxContent
 
-sizeToGridTemplate : Size -> String
-sizeToGridTemplate size =
-    case size of
-        Flex int ->
-            String.fromInt int ++ "fr"
+                ImageFromDataUrl record ->
+                    Grow 1
 
-        Fix int ->
-            String.fromInt int ++ "px"
+                Monochromatic color ->
+                    Grow 1
+
+                DepthList list ->
+                    if
+                        list
+                            |> List.any (\x -> panelToGrowOrFixAutoHeight x == FixMaxContent)
+                    then
+                        FixMaxContent
+
+                    else
+                        Grow 1
+
+                RowList list int ->
+                    if
+                        list
+                            |> List.all (\x -> panelToGrowOrFixAutoHeight x == FixMaxContent)
+                    then
+                        FixMaxContent
+
+                    else
+                        Grow 1
+
+                ColumnList list int ->
+                    if
+                        list
+                            |> List.all (\x -> panelToGrowOrFixAutoHeight x == FixMaxContent)
+                    then
+                        FixMaxContent
+
+                    else
+                        Grow 1
 
 
 gridSetPosition : Css.Style
