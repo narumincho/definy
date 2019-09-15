@@ -383,7 +383,7 @@ const branchGraphQLType = new g.GraphQLObjectType({
                 }
             }),
             owner: makeObjectField({
-                type: g.GraphQLNonNull(g.GraphQLString),
+                type: g.GraphQLNonNull(userGraphQLType),
                 description: "ブランチの所有者",
                 args: {},
                 resolve: async (source, args) => {
