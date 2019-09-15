@@ -4,6 +4,7 @@ module Data.Label exposing
     , Others
     , from
     , fromHead
+    , fromString
     , ha
     , hb
     , hc
@@ -99,8 +100,7 @@ module Data.Label exposing
     , toSmallString
     )
 
-{-| あらゆるところでものを識別するために使うラベルを管理する
--}
+import Utility.ListExtra
 
 
 {-| あらゆるところでものを識別するために使うラベル
@@ -124,7 +124,7 @@ Parserの中間表現でも使う
 バイト表現は、やはり短い名前が多いので
 [(長さ-1)6bit][1文字6bit][1文字6bit]..
 a は |000000|000000|
-abcは |000002|000000|000001|000002|
+abcは |000010|000000|000001|000010|
 と表現できる
 
 -}
@@ -881,3 +881,374 @@ type Digits
     | N7
     | N8
     | N9
+
+
+fromString : String -> Maybe Label
+fromString string =
+    case String.uncons string of
+        Just ( head, others ) ->
+            case ( headFromChar head, others |> String.toList |> Utility.ListExtra.takeAllWithFilter othersFromChar ) of
+                ( Just h, Just o ) ->
+                    Just (Label h o)
+
+                ( _, _ ) ->
+                    Nothing
+
+        Nothing ->
+            Nothing
+
+
+headFromChar : Char -> Maybe Head
+headFromChar char =
+    case char of
+        'a' ->
+            Just ha
+
+        'b' ->
+            Just hb
+
+        'c' ->
+            Just hc
+
+        'd' ->
+            Just hd
+
+        'e' ->
+            Just he
+
+        'f' ->
+            Just hf
+
+        'g' ->
+            Just hg
+
+        'h' ->
+            Just hh
+
+        'i' ->
+            Just hi
+
+        'j' ->
+            Just hj
+
+        'k' ->
+            Just hk
+
+        'l' ->
+            Just hl
+
+        'm' ->
+            Just hm
+
+        'n' ->
+            Just hn
+
+        'o' ->
+            Just ho
+
+        'p' ->
+            Just hp
+
+        'q' ->
+            Just hq
+
+        'r' ->
+            Just hr
+
+        's' ->
+            Just hs
+
+        't' ->
+            Just ht
+
+        'u' ->
+            Just hu
+
+        'v' ->
+            Just hv
+
+        'w' ->
+            Just hw
+
+        'x' ->
+            Just hx
+
+        'y' ->
+            Just hy
+
+        'z' ->
+            Just hz
+
+        'A' ->
+            Just ha
+
+        'B' ->
+            Just hb
+
+        'C' ->
+            Just hc
+
+        'D' ->
+            Just hd
+
+        'E' ->
+            Just he
+
+        'F' ->
+            Just hf
+
+        'G' ->
+            Just hg
+
+        'H' ->
+            Just hh
+
+        'I' ->
+            Just hi
+
+        'J' ->
+            Just hj
+
+        'K' ->
+            Just hk
+
+        'L' ->
+            Just hl
+
+        'M' ->
+            Just hm
+
+        'N' ->
+            Just hn
+
+        'O' ->
+            Just ho
+
+        'P' ->
+            Just hp
+
+        'Q' ->
+            Just hq
+
+        'R' ->
+            Just hr
+
+        'S' ->
+            Just hs
+
+        'T' ->
+            Just ht
+
+        'U' ->
+            Just hu
+
+        'V' ->
+            Just hv
+
+        'W' ->
+            Just hw
+
+        'X' ->
+            Just hx
+
+        'Y' ->
+            Just hy
+
+        'Z' ->
+            Just hz
+
+        _ ->
+            Nothing
+
+
+othersFromChar : Char -> Maybe Others
+othersFromChar char =
+    case char of
+        'a' ->
+            Just oa
+
+        'b' ->
+            Just ob
+
+        'c' ->
+            Just oc
+
+        'd' ->
+            Just od
+
+        'e' ->
+            Just oe
+
+        'f' ->
+            Just of_
+
+        'g' ->
+            Just og
+
+        'h' ->
+            Just oh
+
+        'i' ->
+            Just oi
+
+        'j' ->
+            Just oj
+
+        'k' ->
+            Just ok
+
+        'l' ->
+            Just ol
+
+        'm' ->
+            Just om
+
+        'n' ->
+            Just on
+
+        'o' ->
+            Just oo
+
+        'p' ->
+            Just op
+
+        'q' ->
+            Just oq
+
+        'r' ->
+            Just or
+
+        's' ->
+            Just os
+
+        't' ->
+            Just ot
+
+        'u' ->
+            Just ou
+
+        'v' ->
+            Just ov
+
+        'w' ->
+            Just ow
+
+        'x' ->
+            Just ox
+
+        'y' ->
+            Just oy
+
+        'z' ->
+            Just oz
+
+        'A' ->
+            Just oA
+
+        'B' ->
+            Just oB
+
+        'C' ->
+            Just oC
+
+        'D' ->
+            Just oD
+
+        'E' ->
+            Just oE
+
+        'F' ->
+            Just oF
+
+        'G' ->
+            Just oG
+
+        'H' ->
+            Just oH
+
+        'I' ->
+            Just oI
+
+        'J' ->
+            Just oJ
+
+        'K' ->
+            Just oK
+
+        'L' ->
+            Just oL
+
+        'M' ->
+            Just oM
+
+        'N' ->
+            Just oN
+
+        'O' ->
+            Just oO
+
+        'P' ->
+            Just oP
+
+        'Q' ->
+            Just oQ
+
+        'R' ->
+            Just oR
+
+        'S' ->
+            Just oS
+
+        'T' ->
+            Just oT
+
+        'U' ->
+            Just oU
+
+        'V' ->
+            Just oV
+
+        'W' ->
+            Just oW
+
+        'X' ->
+            Just oX
+
+        'Y' ->
+            Just oY
+
+        'Z' ->
+            Just oZ
+
+        '0' ->
+            Just o0
+
+        '1' ->
+            Just o1
+
+        '2' ->
+            Just o2
+
+        '3' ->
+            Just o3
+
+        '4' ->
+            Just o4
+
+        '5' ->
+            Just o5
+
+        '6' ->
+            Just o6
+
+        '7' ->
+            Just o7
+
+        '8' ->
+            Just o8
+
+        '9' ->
+            Just o9
+
+        _ ->
+            Nothing

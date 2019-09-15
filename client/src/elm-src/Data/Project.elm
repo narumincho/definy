@@ -1,14 +1,24 @@
 module Data.Project exposing
     ( Project
+    , SimpleProject
     , getLeaderName
     , getName
     , sample
+    , simpleFrom
     )
 
 import Data.IdHash as Id
 import Data.Label as Label
 import Data.Project.Module
 import Time
+
+
+type SimpleProject
+    = SimpleProject
+        { id : Id.ProjectId
+        , name : Label.Label
+        , leader : Id.UserId
+        }
 
 
 type Project
@@ -58,3 +68,8 @@ sample =
         , createdAt = Time.millisToPosix 0
         , modules = [ Id.ModuleId "sampleModuleId" ]
         }
+
+
+simpleFrom : { id : Id.ProjectId, name : Label.Label, leader : Id.UserId } -> SimpleProject
+simpleFrom =
+    SimpleProject

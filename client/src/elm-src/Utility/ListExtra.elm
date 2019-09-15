@@ -3,7 +3,7 @@ module Utility.ListExtra exposing
     , getAt, setAt, mapAt, deleteAt
     , getFirstJust, last, headAndLast
     , fromMaybe
-    , getFirstSatisfyElement, listTupleListToTupleList, takeFromMaybe
+    , getFirstSatisfyElement, listTupleListToTupleList, takeAllFromMaybeList, takeAllWithFilter, takeFromMaybeList
     )
 
 {-| 標準のListで足りないListに対する操作をおこなう
@@ -160,17 +160,50 @@ getFirstJust f list =
 
 {-| Just aの要素を取り出す
 -}
-takeFromMaybe : List (Maybe a) -> List a
-takeFromMaybe list =
+takeFromMaybeList : List (Maybe a) -> List a
+takeFromMaybeList list =
     case list of
         (Just x) :: xs ->
-            x :: takeFromMaybe xs
+            x :: takeFromMaybeList xs
 
         Nothing :: xs ->
-            takeFromMaybe xs
+            takeFromMaybeList xs
 
         [] ->
             []
+
+
+{-| -}
+takeAllFromMaybeList : List (Maybe a) -> Maybe (List a)
+takeAllFromMaybeList list =
+    case list of
+        (Just x) :: xs ->
+            case takeAllFromMaybeList xs of
+                Just xss ->
+                    Just (x :: xss)
+
+                Nothing ->
+                    Nothing
+
+        _ ->
+            Nothing
+
+
+{-| filterMapですべてJustだったときの値を取り出す
+-}
+takeAllWithFilter : (a -> Maybe b) -> List a -> Maybe (List b)
+takeAllWithFilter func list =
+    case list of
+        x :: xs ->
+            case ( func x, takeAllWithFilter func xs ) of
+                ( Just xOk, Just xsOk ) ->
+                    Just (xOk :: xsOk)
+
+                ( _, _ ) ->
+                    Nothing
+
+        [] ->
+            Nothing
 
 
 {-| Just a なら [a]
