@@ -189,7 +189,8 @@ export const addProject = async (data: {
         description: "",
         headHash: initialCommitHash,
         name: type.labelFromString("master"),
-        projectId: projectId
+        projectId: projectId,
+        ownerId: data.userId
     });
 
     return {
@@ -247,6 +248,9 @@ type BranchLowCost = {
     readonly head: {
         readonly hash: type.CommitHash;
     };
+    readonly owner: {
+        readonly id: type.UserId;
+    };
 };
 
 export const addBranch = async (
@@ -296,14 +300,16 @@ export const addBranch = async (
         name: name,
         description: description,
         projectId: projectId,
-        headHash: branchHeadCommitHash
+        headHash: branchHeadCommitHash,
+        ownerId: userId
     });
     return {
         id: branchId,
         name: name,
         description: description,
         project: { id: projectId },
-        head: { hash: branchHeadCommitHash }
+        head: { hash: branchHeadCommitHash },
+        owner: { id: userId }
     };
 };
 
@@ -326,7 +332,8 @@ const databaseLowBranchToLowCost = ({
         id: data.projectId
     },
     description: data.description,
-    head: { hash: data.headHash }
+    head: { hash: data.headHash },
+    owner: { id: data.ownerId }
 });
 
 /* ==========================================

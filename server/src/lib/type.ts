@@ -82,6 +82,7 @@ export type Branch = {
     project: Project;
     description: string;
     head: Commit;
+    owner: User;
 };
 
 export type BranchId = string & { __branchIdBrand: never };

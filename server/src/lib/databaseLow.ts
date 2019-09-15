@@ -202,6 +202,7 @@ export type BranchData = {
     projectId: type.ProjectId;
     description: string;
     headHash: type.CommitHash;
+    ownerId: type.UserId;
 };
 
 /**

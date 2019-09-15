@@ -381,6 +381,17 @@ const branchGraphQLType = new g.GraphQLObjectType({
                     }
                     return source.head;
                 }
+            }),
+            owner: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "ブランチの所有者",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.owner === undefined) {
+                        return (await setBranch(source)).owner;
+                    }
+                    return source.owner;
+                }
             })
         }),
     description: "複数のコミットを1列に並べて整理するもの"
@@ -394,6 +405,7 @@ const setBranch = async (
     source.project = data.project;
     source.description = data.description;
     source.head = data.head;
+    source.owner = data.owner;
     return data;
 };
 
