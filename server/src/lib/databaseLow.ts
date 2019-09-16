@@ -250,6 +250,8 @@ export type CommitData = {
     commitSummary: string;
     commitDescription: string;
     projectName: string;
+    projectIconHash: type.FileHash;
+    projectImageHash: type.FileHash;
     projectDescription: string;
     children: ReadonlyArray<{
         id: type.ModuleId;

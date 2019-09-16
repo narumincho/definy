@@ -503,6 +503,28 @@ const commitGraphQLType: g.GraphQLObjectType<
                     return source.projectName;
                 }
             }),
+            projectIcon: makeObjectField({
+                type: g.GraphQLNonNull(imageGraphQLType),
+                description: "プロジェクトのアイコン画像",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.projectIcon === undefined) {
+                        return (await setCommit(source)).projectIcon;
+                    }
+                    return source.projectIcon;
+                }
+            }),
+            projectImage: makeObjectField({
+                type: g.GraphQLNonNull(imageGraphQLType),
+                description: "プロジェクトのパッケージデザイン",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.projectImage === undefined) {
+                        return (await setCommit(source)).projectImage;
+                    }
+                    return source.projectImage;
+                }
+            }),
             projectDescription: makeObjectField({
                 type: g.GraphQLNonNull(g.GraphQLString),
                 description: "プロジェクトの説明文",
@@ -568,6 +590,8 @@ const setCommit = async (
     source.parentCommits = data.parentCommits;
     source.tag = data.tag;
     source.projectName = data.projectName;
+    source.projectIcon = data.projectIcon;
+    source.projectImage = data.projectImage;
     source.projectDescription = data.projectDescription;
     source.children = data.children;
     source.typeDefs = data.typeDefs;

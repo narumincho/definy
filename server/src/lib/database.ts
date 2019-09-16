@@ -174,6 +174,8 @@ export const addProject = async (data: {
         parentCommitHashes: [],
         projectDescription: "",
         projectName: data.name,
+        projectIconHash: "" as type.FileHash,
+        projectImageHash: "" as type.FileHash,
         tag: null,
         children: [],
         partDefs: [],
@@ -266,6 +268,8 @@ export const addBranch = async (
     }>,
     parentCommitHashes: ReadonlyArray<type.CommitHash>,
     projectName: string,
+    projectIconHash: type.FileHash,
+    projectImageHash: type.FileHash,
     projectDescription: string,
     tag: string | type.Version | null,
     children: ReadonlyArray<{
@@ -288,6 +292,8 @@ export const addBranch = async (
         dependencies: dependencies,
         parentCommitHashes: parentCommitHashes,
         projectName: projectName,
+        projectIconHash: projectIconHash,
+        projectImageHash: projectImageHash,
         projectDescription: projectDescription,
         partDefs: partDefs,
         typeDefs: typeDefs,
@@ -353,6 +359,12 @@ type CommitLowCost = {
     };
     readonly date: Date;
     readonly projectName: string;
+    readonly projectIcon: {
+        hash: type.FileHash;
+    };
+    readonly projectImage: {
+        hash: type.FileHash;
+    };
     readonly projectDescription: string;
     readonly children: ReadonlyArray<{
         readonly id: type.ModuleId;
@@ -387,6 +399,8 @@ export const addCommit = async (data: {
     commitSummary: string;
     commitDescription: string;
     projectName: string;
+    projectIconHash: type.FileHash;
+    projectImageHash: type.FileHash;
     projectDescription: string;
     children: ReadonlyArray<{
         id: type.ModuleId;
@@ -441,6 +455,8 @@ const databaseLowCommitToLowCost = ({
     commitSummary: data.commitSummary,
     commitDescription: data.commitDescription,
     projectName: data.projectName,
+    projectIcon: { hash: data.projectIconHash },
+    projectImage: { hash: data.projectImageHash },
     projectDescription: data.projectDescription,
     children: data.children.map(child => ({
         id: child.id,

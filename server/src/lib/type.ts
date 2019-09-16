@@ -97,6 +97,8 @@ export type Commit = {
     parentCommits: ReadonlyArray<Commit>;
     tag: null | CommitTagName | Version;
     projectName: string;
+    projectIcon: Image;
+    projectImage: Image;
     projectDescription: string;
     author: User;
     date: Date;
