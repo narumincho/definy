@@ -83,7 +83,7 @@ gutterPanel : GutterMode -> Ui.Panel GutterMsg
 gutterPanel mode =
     Ui.depth
         []
-        [ Ui.Width (Ui.Fix 2) ]
+        [ Ui.Width (Ui.Fix 2), Ui.OverflowVisible ]
         (case mode of
             GutterModeNone ->
                 [ Ui.monochromatic

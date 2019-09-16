@@ -102,6 +102,7 @@ type StyleComputed
         , offset : Maybe ( Int, Int )
         , verticalAlignment : Maybe VerticalAlignment
         , textAlignment : Maybe TextAlignment
+        , overflowVisible : Bool
         }
 
 
@@ -112,6 +113,7 @@ type Style
     | Offset ( Int, Int )
     | VerticalAlignment VerticalAlignment
     | TextAlignment TextAlignment
+    | OverflowVisible
 
 
 type Content msg
@@ -351,6 +353,9 @@ computeStyle list =
 
                 TextAlignment align ->
                     { rec | textAlignment = Just align }
+
+                OverflowVisible ->
+                    { rec | overflowVisible = True }
             )
                 |> StyleComputed
 
@@ -362,6 +367,7 @@ computeStyle list =
                 , offset = Nothing
                 , verticalAlignment = Nothing
                 , textAlignment = Nothing
+                , overflowVisible = False
                 }
 
 
@@ -432,14 +438,13 @@ type ChildrenStyle
 panelToHtml : ChildrenStyle -> Panel msg -> Html.Styled.Html msg
 panelToHtml isSetGridPosition (Panel { events, style, content }) =
     let
-        (StyleComputed { padding, width, height, offset, verticalAlignment, textAlignment }) =
+        (StyleComputed { padding, width, height, offset, verticalAlignment, textAlignment, overflowVisible }) =
             style
     in
     Html.Styled.div
         ([ Html.Styled.Attributes.css
             ([ Css.padding (Css.px (toFloat padding))
-             , Css.overflow Css.hidden
-             , growGrowContentToStyle textAlignment verticalAlignment isSetGridPosition content
+             , growGrowContentToStyle textAlignment verticalAlignment isSetGridPosition overflowVisible content
              ]
                 ++ (case width of
                         Just (Flex int) ->
@@ -481,8 +486,8 @@ panelToHtml isSetGridPosition (Panel { events, style, content }) =
         (growGrowContentToListHtml content)
 
 
-growGrowContentToStyle : Maybe TextAlignment -> Maybe VerticalAlignment -> ChildrenStyle -> Content msg -> Css.Style
-growGrowContentToStyle textAlignment verticalAlignment (ChildrenStyle { gridPositionLeftTop, position }) content =
+growGrowContentToStyle : Maybe TextAlignment -> Maybe VerticalAlignment -> ChildrenStyle -> Bool -> Content msg -> Css.Style
+growGrowContentToStyle textAlignment verticalAlignment (ChildrenStyle { gridPositionLeftTop, position }) overflowVisible content =
     (case content of
         Text rec ->
             let
@@ -495,7 +500,6 @@ growGrowContentToStyle textAlignment verticalAlignment (ChildrenStyle { gridPosi
             , Css.fontFamilies [ Css.qt typeface ]
             , Css.letterSpacing (Css.px letterSpacing)
             , Css.overflowWrap Css.breakWord
-            , Css.overflow Css.hidden
             ]
                 ++ (case textAlignment of
                         Just t ->
@@ -569,6 +573,12 @@ growGrowContentToStyle textAlignment verticalAlignment (ChildrenStyle { gridPosi
             , Css.property "gap" (String.fromInt gap ++ "px")
             ]
     )
+        ++ (if overflowVisible then
+                []
+
+            else
+                [ Css.overflow Css.hidden ]
+           )
         ++ (if gridPositionLeftTop then
                 [ gridSetPosition ]
 
