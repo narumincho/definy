@@ -6,6 +6,7 @@ module Utility.NSvg exposing
     , fillColor
     , fillNone
     , line
+    , map
     , path
     , polygon
     , polygonWithClickEvent
@@ -17,7 +18,6 @@ module Utility.NSvg exposing
     , strokeNone
     , strokeWidth
     , toHtml
-    , toHtmlWithClass
     , translate
     )
 
@@ -69,27 +69,6 @@ toHtml viewBox size children =
                 Nothing ->
                     [ Css.display Css.block ]
             )
-        ]
-        (children |> List.map elementToSvg)
-
-
-toHtmlWithClass :
-    String
-    -> { x : Int, y : Int, width : Int, height : Int }
-    -> List (NSvg msg)
-    -> Html.Styled.Html msg
-toHtmlWithClass className { x, y, width, height } children =
-    S.svg
-        [ Sa.viewBox
-            (String.fromInt x
-                ++ " "
-                ++ String.fromInt y
-                ++ " "
-                ++ String.fromInt width
-                ++ " "
-                ++ String.fromInt height
-            )
-        , Sa.class className
         ]
         (children |> List.map elementToSvg)
 
@@ -146,6 +125,44 @@ elementToSvg nSvgElement =
                     ++ strokeStyleToSvgAttributes strokeStyle
                 )
                 []
+
+
+map : (a -> b) -> NSvg a -> NSvg b
+map func nSvgElement =
+    case nSvgElement of
+        Rect { x, y, width, height, strokeStyle, fillStyle, clickMsg } ->
+            Rect
+                { x = x
+                , y = y
+                , width = width
+                , height = height
+                , strokeStyle = strokeStyle
+                , fillStyle = fillStyle
+                , clickMsg = clickMsg |> Maybe.map func
+                }
+
+        Circle { cx, cy, r, strokeStyle, fillStyle } ->
+            Circle
+                { cx = cx
+                , cy = cy
+                , r = r
+                , strokeStyle = strokeStyle
+                , fillStyle = fillStyle
+                }
+
+        Polygon { points, strokeStyle, fillStyle, clickMsg } ->
+            Polygon
+                { points = points
+                , strokeStyle = strokeStyle
+                , fillStyle = fillStyle
+                , clickMsg = clickMsg |> Maybe.map func
+                }
+
+        Path record ->
+            Path record
+
+        Line record ->
+            Line record
 
 
 {-| 平行移動をtransform属性のtranslateで表現する
@@ -266,10 +283,7 @@ strokeStyleToSvgAttributes strokeStyle =
                    )
 
 
-{-|
-
-    塗りの表現
-
+{-| 塗りの表現
 -}
 type FillStyle
     = FillNone

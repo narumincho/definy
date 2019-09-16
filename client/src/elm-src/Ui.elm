@@ -14,14 +14,15 @@ module Ui exposing
     , borderNone
     , column
     , depth
-    , image
     , map
     , monochromatic
     , pointerGetPosition
+    , rasterImage
     , row
     , text
     , textWithAlignment
     , toHtml
+    , vectorImage
     )
 
 import Bitwise
@@ -32,6 +33,7 @@ import Html.Styled.Attributes
 import Html.Styled.Events
 import Json.Decode
 import Json.Decode.Pipeline
+import Utility.NSvg
 
 
 {-| 幅と高さが外の大きさによってきまるパネル
@@ -119,11 +121,16 @@ type Content msg
         , verticalAlignment : Maybe VerticalAlignment
         , textAlignment : Maybe TextAlignment
         }
-    | ImageFromDataUrl
+    | RasterImage
         { dataUrl : String
         , fitStyle : FitStyle
         , alternativeText : String
         , rendering : ImageRendering
+        }
+    | VectorImage
+        { fitStyle : FitStyle
+        , viewBox : { x : Int, y : Int, width : Int, height : Int }
+        , nSvgElements : List (Utility.NSvg.NSvg msg)
         }
     | Monochromatic Css.Color
     | DepthList (List (Panel msg))
@@ -237,7 +244,7 @@ textWithAlignment events style { align, vertical, font } string =
         }
 
 
-image :
+rasterImage :
     List (Event msg)
     -> List Style
     ->
@@ -247,17 +254,31 @@ image :
         }
     -> String
     -> Panel msg
-image events style imageStyle dataUrl =
+rasterImage events style imageStyle dataUrl =
     Panel
         { events = events
         , style = style |> List.reverse |> computeStyle
         , content =
-            ImageFromDataUrl
+            RasterImage
                 { fitStyle = imageStyle.fitStyle
                 , alternativeText = imageStyle.alternativeText
                 , rendering = imageStyle.rendering
                 , dataUrl = dataUrl
                 }
+        }
+
+
+vectorImage :
+    List (Event msg)
+    -> List Style
+    -> { fitStyle : FitStyle, viewBox : { x : Int, y : Int, width : Int, height : Int }, nSvgElements : List (Utility.NSvg.NSvg msg) }
+    -> Panel msg
+vectorImage events style content =
+    Panel
+        { events = events
+        , style = style |> List.reverse |> computeStyle
+        , content =
+            VectorImage content
         }
 
 
@@ -354,8 +375,15 @@ map func (Panel { events, style, content }) =
                 Text rec ->
                     Text rec
 
-                ImageFromDataUrl rec ->
-                    ImageFromDataUrl rec
+                RasterImage rec ->
+                    RasterImage rec
+
+                VectorImage { fitStyle, viewBox, nSvgElements } ->
+                    VectorImage
+                        { fitStyle = fitStyle
+                        , viewBox = viewBox
+                        , nSvgElements = nSvgElements |> List.map (Utility.NSvg.map func)
+                        }
 
                 Monochromatic color ->
                     Monochromatic color
@@ -410,6 +438,7 @@ panelToHtml isSetGridPosition (Panel { events, style, content }) =
     Html.Styled.div
         ([ Html.Styled.Attributes.css
             ([ Css.padding (Css.px (toFloat padding))
+             , Css.overflow Css.hidden
              , growGrowContentToStyle textAlignment verticalAlignment isSetGridPosition content
              ]
                 ++ (case width of
@@ -497,7 +526,7 @@ growGrowContentToStyle textAlignment verticalAlignment (ChildrenStyle { gridPosi
                             []
                    )
 
-        ImageFromDataUrl { dataUrl, fitStyle, alternativeText, rendering } ->
+        RasterImage { dataUrl, fitStyle, alternativeText, rendering } ->
             [ Css.property "object-fit"
                 (case fitStyle of
                     Contain ->
@@ -515,6 +544,9 @@ growGrowContentToStyle textAlignment verticalAlignment (ChildrenStyle { gridPosi
                         ImageRenderingPixelated ->
                             [ Css.property "image-rendering" "pixelated" ]
                    )
+
+        VectorImage _ ->
+            []
 
         Monochromatic color ->
             [ Css.backgroundColor color ]
@@ -561,7 +593,7 @@ growGrowContentToListAttributes content =
         Text _ ->
             []
 
-        ImageFromDataUrl { dataUrl, alternativeText } ->
+        RasterImage { dataUrl, alternativeText } ->
             [ Html.Styled.Attributes.src
                 (if String.startsWith "data:" dataUrl then
                     dataUrl
@@ -571,6 +603,9 @@ growGrowContentToListAttributes content =
                 )
             , Html.Styled.Attributes.alt alternativeText
             ]
+
+        VectorImage _ ->
+            []
 
         Monochromatic _ ->
             []
@@ -700,8 +735,13 @@ growGrowContentToListHtml content =
         Text rec ->
             [ Html.Styled.text rec.text ]
 
-        ImageFromDataUrl _ ->
+        RasterImage _ ->
             []
+
+        VectorImage { nSvgElements, viewBox } ->
+            [ nSvgElements
+                |> Utility.NSvg.toHtml viewBox Nothing
+            ]
 
         Monochromatic color ->
             []
@@ -792,10 +832,13 @@ panelToGrowOrFixAutoWidth (Panel { style, content }) =
                         Nothing ->
                             FixMaxContent
 
-                ImageFromDataUrl record ->
+                RasterImage _ ->
                     Grow 1
 
-                Monochromatic color ->
+                VectorImage _ ->
+                    Grow 1
+
+                Monochromatic _ ->
                     Grow 1
 
                 DepthList list ->
@@ -846,10 +889,13 @@ panelToGrowOrFixAutoHeight (Panel { style, content }) =
                         Nothing ->
                             FixMaxContent
 
-                ImageFromDataUrl record ->
+                RasterImage _ ->
                     Grow 1
 
-                Monochromatic color ->
+                VectorImage _ ->
+                    Grow 1
+
+                Monochromatic _ ->
                     Grow 1
 
                 DepthList list ->
