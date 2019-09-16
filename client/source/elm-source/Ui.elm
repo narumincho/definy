@@ -132,7 +132,7 @@ type Content msg
     | VectorImage
         { fitStyle : FitStyle
         , viewBox : { x : Int, y : Int, width : Int, height : Int }
-        , nSvgElements : List (VectorImage.Element msg)
+        , elements : List (VectorImage.Element msg)
         }
     | Monochromatic Css.Color
     | DepthList (List (Panel msg))
@@ -273,7 +273,7 @@ rasterImage events style imageStyle dataUrl =
 vectorImage :
     List (Event msg)
     -> List Style
-    -> { fitStyle : FitStyle, viewBox : { x : Int, y : Int, width : Int, height : Int }, nSvgElements : List (VectorImage.Element msg) }
+    -> { fitStyle : FitStyle, viewBox : { x : Int, y : Int, width : Int, height : Int }, elements : List (VectorImage.Element msg) }
     -> Panel msg
 vectorImage events style content =
     Panel
@@ -384,11 +384,11 @@ map func (Panel { events, style, content }) =
                 RasterImage rec ->
                     RasterImage rec
 
-                VectorImage { fitStyle, viewBox, nSvgElements } ->
+                VectorImage { fitStyle, viewBox, elements } ->
                     VectorImage
                         { fitStyle = fitStyle
                         , viewBox = viewBox
-                        , nSvgElements = nSvgElements |> List.map (VectorImage.map func)
+                        , elements = elements |> List.map (VectorImage.map func)
                         }
 
                 Monochromatic color ->
@@ -441,7 +441,13 @@ panelToHtml isSetGridPosition (Panel { events, style, content }) =
         (StyleComputed { padding, width, height, offset, verticalAlignment, textAlignment, overflowVisible }) =
             style
     in
-    Html.Styled.div
+    (case content of
+        RasterImage _ ->
+            Html.Styled.img
+
+        _ ->
+            Html.Styled.div
+    )
         ([ Html.Styled.Attributes.css
             ([ Css.padding (Css.px (toFloat padding))
              , growGrowContentToStyle textAlignment verticalAlignment isSetGridPosition overflowVisible content
@@ -748,12 +754,12 @@ growGrowContentToListHtml content =
         RasterImage _ ->
             []
 
-        VectorImage { nSvgElements, viewBox } ->
-            [ nSvgElements
+        VectorImage { elements, viewBox } ->
+            [ elements
                 |> VectorImage.toHtml viewBox Nothing
             ]
 
-        Monochromatic color ->
+        Monochromatic _ ->
             []
 
         DepthList list ->
