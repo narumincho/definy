@@ -29,6 +29,7 @@ interface ElmApp {
         windowResize: CmdForElmSub<{ width: number; height: number }>;
         responseAccessToken: CmdForElmSub<string | null>;
         changeLanguage: CmdForElmSub<string>;
+        subPointerUp: CmdForElmSub<null>;
     };
 }
 
@@ -230,5 +231,15 @@ getLineLogInUrl
 
     window.addEventListener("languagechange", () => {
         app.ports.changeLanguage.send(navigator.languages[0]);
+    });
+
+    window.addEventListener("pointerup", () => {
+        app.ports.subPointerUp.send(null);
+    });
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+            app.ports.subPointerUp.send(null);
+        }
     });
 });

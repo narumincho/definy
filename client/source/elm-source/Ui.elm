@@ -7,6 +7,7 @@ module Ui exposing
     , ImageRendering(..)
     , Panel
     , Pointer
+    , PointerImage(..)
     , Size(..)
     , Style(..)
     , TextAlignment(..)
@@ -103,6 +104,7 @@ type StyleComputed
         , verticalAlignment : Maybe VerticalAlignment
         , textAlignment : Maybe TextAlignment
         , overflowVisible : Bool
+        , pointerImage : Maybe PointerImage
         }
 
 
@@ -114,6 +116,12 @@ type Style
     | VerticalAlignment VerticalAlignment
     | TextAlignment TextAlignment
     | OverflowVisible
+    | PointerImage PointerImage
+
+
+type PointerImage
+    = HorizontalResize -- ew-resize ↔
+    | VerticalResize -- ns-resize ↕
 
 
 type Content msg
@@ -356,6 +364,9 @@ computeStyle list =
 
                 OverflowVisible ->
                     { rec | overflowVisible = True }
+
+                PointerImage image ->
+                    { rec | pointerImage = Just image }
             )
                 |> StyleComputed
 
@@ -368,6 +379,7 @@ computeStyle list =
                 , verticalAlignment = Nothing
                 , textAlignment = Nothing
                 , overflowVisible = False
+                , pointerImage = Nothing
                 }
 
 
@@ -436,11 +448,7 @@ type ChildrenStyle
 
 
 panelToHtml : ChildrenStyle -> Panel msg -> Html.Styled.Html msg
-panelToHtml isSetGridPosition (Panel { events, style, content }) =
-    let
-        (StyleComputed { padding, width, height, offset, verticalAlignment, textAlignment, overflowVisible }) =
-            style
-    in
+panelToHtml childrenStyle (Panel { events, style, content }) =
     (case content of
         RasterImage _ ->
             Html.Styled.img
@@ -448,48 +456,70 @@ panelToHtml isSetGridPosition (Panel { events, style, content }) =
         _ ->
             Html.Styled.div
     )
-        ([ Html.Styled.Attributes.css
-            ([ Css.padding (Css.px (toFloat padding))
-             , growGrowContentToStyle textAlignment verticalAlignment isSetGridPosition overflowVisible content
-             ]
-                ++ (case width of
-                        Just (Flex int) ->
-                            [ Css.width (Css.pct 100) ]
-
-                        Just (Fix w) ->
-                            [ Css.width (Css.px (toFloat w)) ]
-
-                        Nothing ->
-                            []
-                   )
-                ++ (case height of
-                        Just (Flex int) ->
-                            [ Css.height (Css.pct 100) ]
-
-                        Just (Fix w) ->
-                            [ Css.height (Css.px (toFloat w)) ]
-
-                        Nothing ->
-                            []
-                   )
-                ++ (case offset of
-                        Just ( left, top ) ->
-                            [ Css.transform
-                                (Css.translate2
-                                    (Css.px (toFloat left))
-                                    (Css.px (toFloat top))
-                                )
-                            ]
-
-                        Nothing ->
-                            []
-                   )
-            )
-         ]
+        ([ Html.Styled.Attributes.css [ panelToStyle style childrenStyle content ] ]
             ++ growGrowContentToListAttributes content
             ++ eventsToHtmlAttributes events
         )
         (growGrowContentToListHtml content)
+
+
+panelToStyle : StyleComputed -> ChildrenStyle -> Content msg -> Css.Style
+panelToStyle style childrenStyle content =
+    let
+        (StyleComputed record) =
+            style
+    in
+    [ Css.padding (Css.px (toFloat record.padding))
+    , growGrowContentToStyle
+        record.textAlignment
+        record.verticalAlignment
+        childrenStyle
+        record.overflowVisible
+        content
+    ]
+        ++ (case record.width of
+                Just (Flex int) ->
+                    [ Css.width (Css.pct 100) ]
+
+                Just (Fix w) ->
+                    [ Css.width (Css.px (toFloat w)) ]
+
+                Nothing ->
+                    []
+           )
+        ++ (case record.height of
+                Just (Flex int) ->
+                    [ Css.height (Css.pct 100) ]
+
+                Just (Fix w) ->
+                    [ Css.height (Css.px (toFloat w)) ]
+
+                Nothing ->
+                    []
+           )
+        ++ (case record.offset of
+                Just ( left, top ) ->
+                    [ Css.transform
+                        (Css.translate2
+                            (Css.px (toFloat left))
+                            (Css.px (toFloat top))
+                        )
+                    ]
+
+                Nothing ->
+                    []
+           )
+        ++ (case record.pointerImage of
+                Just HorizontalResize ->
+                    [ Css.cursor Css.ewResize ]
+
+                Just VerticalResize ->
+                    [ Css.cursor Css.ewResize ]
+
+                Nothing ->
+                    []
+           )
+        |> Css.batch
 
 
 growGrowContentToStyle : Maybe TextAlignment -> Maybe VerticalAlignment -> ChildrenStyle -> Bool -> Content msg -> Css.Style

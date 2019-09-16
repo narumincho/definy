@@ -1,7 +1,6 @@
 port module Main exposing (main)
 
 import Browser
-import Browser.Events
 import Browser.Navigation
 import Css
 import Data.Key
@@ -75,6 +74,9 @@ port responseAccessToken : (String -> msg) -> Sub msg
 
 
 port changeLanguage : (String -> msg) -> Sub msg
+
+
+port subPointerUp : (() -> msg) -> Sub msg
 
 
 {-| 全体の入力を表すメッセージ
@@ -854,30 +856,25 @@ view : Model -> Browser.Document Msg
 view (Model rec) =
     { title = "Definy"
     , body =
-        [ Html.Styled.div
-            [ Html.Styled.Attributes.css
-                ([ Css.width (Css.pct 100)
-                 , Css.height (Css.pct 100)
-                 , Css.displayFlex
-                 , Css.overflow Css.hidden
-                 ]
-                    ++ (case getGutterType (Model rec) of
-                            Just gutterType ->
-                                [ gutterTypeToCursorStyle gutterType ]
+        [ Ui.depth
+            []
+            ([ Ui.Width (Ui.Flex 1), Ui.Height (Ui.Flex 1) ]
+                ++ (case getGutterType (Model rec) of
+                        Just gutterType ->
+                            [ Ui.PointerImage (gutterTypeToCursorStyle gutterType) ]
 
-                            Nothing ->
-                                []
-                       )
-                )
-            ]
+                        Nothing ->
+                            []
+                   )
+            )
             (case rec.page of
                 Welcome welcomeModel ->
                     [ welcomeModel
                         |> Page.Welcome.view rec.logInState
                         |> Ui.map (WelcomePageMsg >> PageMsg)
-                        |> Ui.toHtml
                     ]
             )
+            |> Ui.toHtml
         ]
             ++ (case getCommandPaletteModel (Model rec) of
                     Just commandPaletteModel ->
@@ -890,16 +887,14 @@ view (Model rec) =
     }
 
 
-gutterTypeToCursorStyle : GutterType -> Css.Style
+gutterTypeToCursorStyle : GutterType -> Ui.PointerImage
 gutterTypeToCursorStyle gutterType =
     case gutterType of
         GutterTypeVertical ->
-            -- ↔
-            Css.cursor Css.ewResize
+            Ui.HorizontalResize
 
         GutterTypeHorizontal ->
-            -- ↕
-            Css.cursor Css.nsResize
+            Ui.VerticalResize
 
 
 responseAccessTokenFromIndexedDB : String -> Model -> Model
@@ -936,11 +931,7 @@ subscriptions model =
          , changeLanguage ChangeLanguage
          ]
             ++ (if isCaptureMouseEvent model then
-                    [ Browser.Events.onMouseUp
-                        (Json.Decode.succeed PointerUp)
-                    , Browser.Events.onVisibilityChange
-                        (always PointerUp)
-                    ]
+                    [ subPointerUp (always PointerUp) ]
 
                 else
                     []
