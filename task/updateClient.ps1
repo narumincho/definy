@@ -1,10 +1,10 @@
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Compile Client Code And Upload Firebase Server";
-Set-Location -Path ./client/src;
+Set-Location -Path ./client/source;
 
 Write-Output "Compile Elm ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";
-elm make ./elm-src/Main.elm --output ../beforeMinifiy.js --optimize;
+elm make ./elm-source/Main.elm --output ../beforeMinifiy.js --optimize;
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Compile Elm OK";
 
@@ -18,20 +18,20 @@ Set-Location -Path ../;
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Minify JavaScript ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";
-uglifyjs ./beforeMinifiy.js -o dist/main.js;
+uglifyjs ./beforeMinifiy.js -o distribution/main.js;
 Remove-Item ./beforeMinifiy.js;
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Minify JavaScript OK";
 
 Write-Output "Copy HTML ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";
-Copy-Item -Path ./src/index.html -Destination ./dist/index.html
+Copy-Item -Path ./source/index.html -Destination ./distribution/index.html
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Copy HTML OK";
 
 Write-Output "Copy assets ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";
-Copy-Item -Path ./src/assets/ -Destination ./dist/ -Recurse -Force
+Copy-Item -Path ./source/assets/ -Destination ./distribution/ -Recurse -Force
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Copy assets OK";
 

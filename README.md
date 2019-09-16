@@ -40,13 +40,13 @@ New Programming Language and Tool for Web. like Elm.
 ## フォルダとファイルの説明
 
 -   /client: クライアントのプログラム
--   /client/dist: クライアントのプログラムのコンパイル結果(distribution)
--   /client/src: クライアントのプログラムのソースコード(source)
+-   /client/distribution: クライアントのプログラムのコンパイル結果
+-   /client/source: クライアントのプログラムのソースコード
 
 *   /server: サーバーのプログラム
-*   /server/dist: サーバーのプログラムのコンパイル結果(distribution)
-*   /server/src: サーバーのプログラムのソースコード(source)
+*   /server/distribution: サーバーのプログラムのコンパイル結果
+*   /server/source: サーバーのプログラムのソースコード
 
--   /task: コンパイルをするための Windows PowerShell のスクリプトが入っている
+-   /task: コンパイルをするための PowerShell のスクリプトが入っている
 
 *   /firebase.json : サーバーでファイルをどのように扱うかの設定が書かれている

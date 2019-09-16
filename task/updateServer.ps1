@@ -1,6 +1,6 @@
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Compile Server Code And Upload Firebase Server";
-Set-Location -Path ./server/src;
+Set-Location -Path ./server/source;
 
 Write-Output "Compile TypeScript ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";
@@ -11,7 +11,7 @@ Set-Location -Path ../;
 
 Write-Output "Copy package.json ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";
-Copy-Item -Path ./src/package.json -Destination ./dist/package.json -Recurse -Force
+Copy-Item -Path ./source/package.json -Destination ./distribution/package.json -Recurse -Force
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Copy package.json OK";
 

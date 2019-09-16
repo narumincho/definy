@@ -1,6 +1,6 @@
 {
     "hosting": {
-        "public": "client/dist",
+        "public": "client/distribution",
         "rewrites": [
             {
                 "source": "/api",
@@ -15,16 +15,12 @@
                 "function": "gitHubLogInReceiver"
             },
             {
-                "source": "/social_login/twitter_receiver",
-                "function": "twitterLogInReceiver"
-            },
-            {
                 "source": "/social_login/line_receiver",
                 "function": "lineLogInReceiver"
             }
         ]
     },
     "functions": {
-        "source": "server/dist"
+        "source": "server/distribution"
     }
 }
