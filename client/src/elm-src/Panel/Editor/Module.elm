@@ -33,7 +33,7 @@ import Parser
 import Parser.SimpleChar
 import Utility.ArrayExtra
 import Utility.ListExtra
-import Utility.NSvg as NSvg
+import VectorImage
 
 
 type Model
@@ -4218,13 +4218,16 @@ suggestionItem selected ( text, description ) =
 
 enterIcon : Color.Color -> Html.Styled.Html msg
 enterIcon strokeColor =
-    NSvg.toHtml
+    VectorImage.toHtml
         { x = 0, y = 0, width = 40, height = 32 }
         (Just { width = 25, height = 20, padding = 0 })
-        [ NSvg.polygon [ ( 5, 4 ), ( 35, 4 ), ( 35, 28 ), ( 13, 28 ), ( 13, 16 ), ( 5, 16 ) ]
-            (NSvg.strokeColor strokeColor)
-            NSvg.fillNone
-        , NSvg.path "M31,8 V20 H17 L19,18 M17,20 L19,22" (NSvg.strokeColor strokeColor) NSvg.fillNone
+        [ VectorImage.polygon [ ( 5, 4 ), ( 35, 4 ), ( 35, 28 ), ( 13, 28 ), ( 13, 16 ), ( 5, 16 ) ]
+            (VectorImage.strokeColor strokeColor)
+            VectorImage.fillNone
+        , VectorImage.path
+            "M31,8 V20 H17 L19,18 M17,20 L19,22"
+            (VectorImage.strokeColor strokeColor)
+            VectorImage.fillNone
         ]
 
 

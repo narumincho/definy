@@ -33,7 +33,7 @@ import Html.Styled.Attributes
 import Html.Styled.Events
 import Json.Decode
 import Json.Decode.Pipeline
-import Utility.NSvg
+import VectorImage
 
 
 {-| 幅と高さが外の大きさによってきまるパネル
@@ -132,7 +132,7 @@ type Content msg
     | VectorImage
         { fitStyle : FitStyle
         , viewBox : { x : Int, y : Int, width : Int, height : Int }
-        , nSvgElements : List (Utility.NSvg.NSvg msg)
+        , nSvgElements : List (VectorImage.Element msg)
         }
     | Monochromatic Css.Color
     | DepthList (List (Panel msg))
@@ -273,7 +273,7 @@ rasterImage events style imageStyle dataUrl =
 vectorImage :
     List (Event msg)
     -> List Style
-    -> { fitStyle : FitStyle, viewBox : { x : Int, y : Int, width : Int, height : Int }, nSvgElements : List (Utility.NSvg.NSvg msg) }
+    -> { fitStyle : FitStyle, viewBox : { x : Int, y : Int, width : Int, height : Int }, nSvgElements : List (VectorImage.Element msg) }
     -> Panel msg
 vectorImage events style content =
     Panel
@@ -388,7 +388,7 @@ map func (Panel { events, style, content }) =
                     VectorImage
                         { fitStyle = fitStyle
                         , viewBox = viewBox
-                        , nSvgElements = nSvgElements |> List.map (Utility.NSvg.map func)
+                        , nSvgElements = nSvgElements |> List.map (VectorImage.map func)
                         }
 
                 Monochromatic color ->
@@ -750,7 +750,7 @@ growGrowContentToListHtml content =
 
         VectorImage { nSvgElements, viewBox } ->
             [ nSvgElements
-                |> Utility.NSvg.toHtml viewBox Nothing
+                |> VectorImage.toHtml viewBox Nothing
             ]
 
         Monochromatic color ->

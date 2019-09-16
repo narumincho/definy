@@ -36,7 +36,7 @@ import Panel.EditorItemSource
 import Panel.Style as Style
 import Utility.ListExtra
 import Utility.Map
-import Utility.NSvg as NSvg
+import VectorImage
 
 
 {-| とりうる値を保持するModel
@@ -1554,16 +1554,16 @@ editorTitleCloseIcon editorRef =
             ]
         , Html.Styled.Events.onClick (CloseEditor editorRef)
         ]
-        [ NSvg.toHtml
+        [ VectorImage.toHtml
             { x = 0, y = 0, width = 12, height = 12 }
             Nothing
-            [ NSvg.line
+            [ VectorImage.line
                 ( 1, 1 )
                 ( 11, 11 )
-                (NSvg.strokeWidth 2)
-            , NSvg.line
+                (VectorImage.strokeWidth 2)
+            , VectorImage.line
                 ( 11, 1 )
                 ( 1, 11 )
-                (NSvg.strokeWidth 2)
+                (VectorImage.strokeWidth 2)
             ]
         ]

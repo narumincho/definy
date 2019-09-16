@@ -1,6 +1,6 @@
-module Utility.NSvg exposing
-    ( FillStyle
-    , NSvg
+module VectorImage exposing
+    ( Element
+    , FillStyle
     , StrokeStyle
     , circle
     , fillColor
@@ -33,7 +33,7 @@ import Svg.Styled.Attributes as Sa
 import Svg.Styled.Events as Se
 
 
-type NSvg msg
+type Element msg
     = Rect { x : Int, y : Int, width : Int, height : Int, strokeStyle : StrokeStyle, fillStyle : FillStyle, clickMsg : Maybe msg }
     | Circle { cx : Int, cy : Int, r : Int, strokeStyle : StrokeStyle, fillStyle : FillStyle }
     | Polygon { points : List ( Int, Int ), strokeStyle : StrokeStyle, fillStyle : FillStyle, clickMsg : Maybe msg }
@@ -44,7 +44,7 @@ type NSvg msg
 toHtml :
     { x : Int, y : Int, width : Int, height : Int }
     -> Maybe { width : Int, height : Int, padding : Int }
-    -> List (NSvg msg)
+    -> List (Element msg)
     -> Html.Styled.Html msg
 toHtml viewBox size children =
     S.svg
@@ -73,7 +73,7 @@ toHtml viewBox size children =
         (children |> List.map elementToSvg)
 
 
-elementToSvg : NSvg msg -> S.Svg msg
+elementToSvg : Element msg -> S.Svg msg
 elementToSvg nSvgElement =
     case nSvgElement of
         Rect { x, y, width, height, strokeStyle, fillStyle, clickMsg } ->
@@ -127,7 +127,7 @@ elementToSvg nSvgElement =
                 []
 
 
-map : (a -> b) -> NSvg a -> NSvg b
+map : (a -> b) -> Element a -> Element b
 map func nSvgElement =
     case nSvgElement of
         Rect { x, y, width, height, strokeStyle, fillStyle, clickMsg } ->
@@ -329,7 +329,7 @@ clickMsgToSvgAttributes msg =
 
 {-| 四角形
 -}
-rect : { width : Int, height : Int } -> StrokeStyle -> FillStyle -> NSvg msg
+rect : { width : Int, height : Int } -> StrokeStyle -> FillStyle -> Element msg
 rect { width, height } strokeStyle fillStyle =
     Rect
         { x = 0
@@ -342,7 +342,7 @@ rect { width, height } strokeStyle fillStyle =
         }
 
 
-rectWithClickEvent : { width : Int, height : Int } -> StrokeStyle -> FillStyle -> msg -> NSvg msg
+rectWithClickEvent : { width : Int, height : Int } -> StrokeStyle -> FillStyle -> msg -> Element msg
 rectWithClickEvent { width, height } strokeStyle fillStyle clickMsg =
     Rect
         { x = 0
@@ -357,7 +357,7 @@ rectWithClickEvent { width, height } strokeStyle fillStyle clickMsg =
 
 {-| 正円 半径を指定する
 -}
-circle : Int -> StrokeStyle -> FillStyle -> NSvg msg
+circle : Int -> StrokeStyle -> FillStyle -> Element msg
 circle r strokeStyle fillStyle =
     Circle
         { cx = 0, cy = 0, r = r, strokeStyle = strokeStyle, fillStyle = fillStyle }
@@ -365,7 +365,7 @@ circle r strokeStyle fillStyle =
 
 {-| 多角形(始点と終点は自動的につながる) XY座標のリストを指定する
 -}
-polygon : List ( Int, Int ) -> StrokeStyle -> FillStyle -> NSvg msg
+polygon : List ( Int, Int ) -> StrokeStyle -> FillStyle -> Element msg
 polygon points strokeStyle fillStyle =
     Polygon
         { points = points
@@ -375,7 +375,7 @@ polygon points strokeStyle fillStyle =
         }
 
 
-polygonWithClickEvent : List ( Int, Int ) -> StrokeStyle -> FillStyle -> msg -> NSvg msg
+polygonWithClickEvent : List ( Int, Int ) -> StrokeStyle -> FillStyle -> msg -> Element msg
 polygonWithClickEvent points strokeStyle fillStyle cliskMsg =
     Polygon
         { points = points
@@ -387,7 +387,7 @@ polygonWithClickEvent points strokeStyle fillStyle cliskMsg =
 
 {-| 汎用的な図形
 -}
-path : String -> StrokeStyle -> FillStyle -> NSvg msg
+path : String -> StrokeStyle -> FillStyle -> Element msg
 path d strokeStyle fillStyle =
     Path
         { d = d
@@ -399,7 +399,7 @@ path d strokeStyle fillStyle =
 
 {-| 原点から伸ばした直線
 -}
-lineFromOrigin : ( Int, Int ) -> StrokeStyle -> NSvg msg
+lineFromOrigin : ( Int, Int ) -> StrokeStyle -> Element msg
 lineFromOrigin ( x, y ) strokeStyle =
     Line
         { x0 = 0
@@ -410,7 +410,7 @@ lineFromOrigin ( x, y ) strokeStyle =
         }
 
 
-line : ( Int, Int ) -> ( Int, Int ) -> StrokeStyle -> NSvg msg
+line : ( Int, Int ) -> ( Int, Int ) -> StrokeStyle -> Element msg
 line ( x0, y0 ) ( x1, y1 ) strokeStyle =
     Line
         { x0 = x0
@@ -423,7 +423,7 @@ line ( x0, y0 ) ( x1, y1 ) strokeStyle =
 
 {-| 図形を移動する。pathは移動できない
 -}
-translate : { x : Int, y : Int } -> NSvg msg -> NSvg msg
+translate : { x : Int, y : Int } -> Element msg -> Element msg
 translate { x, y } nSvgElement =
     case nSvgElement of
         Rect rec ->
