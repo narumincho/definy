@@ -94,7 +94,7 @@ const graphQLNonNullList = (type: g.GraphQLNullableType) =>
  * 新規登録かログインするためのURLを得る。
  */
 const getLogInUrl = makeQueryOrMutationField<
-    { service: type.LogInService },
+    { service: type.SocialLoginService },
     URL
 >({
     type: g.GraphQLNonNull(type.urlGraphQLType),
@@ -156,18 +156,6 @@ const getLogInUrl = makeQueryOrMutationField<
     description:
         "新規登録かログインするためのURLを得る。受け取ったURLをlocation.hrefに代入するとかして、各サービスの認証画面へ"
 });
-
-const setUserData = async (
-    source: Return<type.User>
-): ReturnType<typeof database.getUser> => {
-    const userData = await database.getUser(source.id);
-    source.name = userData.name;
-    source.image = userData.image;
-    source.introduction = userData.introduction;
-    source.createdAt = userData.createdAt;
-    source.branches = userData.branches;
-    return userData;
-};
 
 /* ==========================================
                     User
@@ -243,6 +231,22 @@ const userGraphQLType: g.GraphQLObjectType<
         })
 });
 
+const setUserData = async (
+    source: Return<type.User>
+): ReturnType<typeof database.getUser> => {
+    const userData = await database.getUser(source.id);
+    source.name = userData.name;
+    source.image = userData.image;
+    source.introduction = userData.introduction;
+    source.createdAt = userData.createdAt;
+    source.branches = userData.branches;
+    return userData;
+};
+
+/* ==========================================
+                Image
+   ==========================================
+*/
 const imageGraphQLType = new g.GraphQLObjectType({
     name: "Image",
     fields: () =>
@@ -1208,80 +1212,7 @@ export const schema = new g.GraphQLSchema({
         name: "Mutation",
         description: "データを作成、更新ができる",
         fields: {
-            getLogInUrl: makeQueryOrMutationField<
-                { service: type.LogInService },
-                URL
-            >({
-                type: g.GraphQLNonNull(type.urlGraphQLType),
-                args: {
-                    service: {
-                        type: g.GraphQLNonNull(type.logInServiceGraphQLType),
-                        description: type.logInServiceGraphQLType.description
-                    }
-                },
-                resolve: async args => {
-                    switch (args.service) {
-                        case "google": {
-                            return tool.urlFromStringWithQuery(
-                                "accounts.google.com/o/oauth2/v2/auth",
-                                new Map([
-                                    ["response_type", "code"],
-                                    ["client_id", key.googleLogInClientId],
-                                    [
-                                        "redirect_uri",
-                                        key.googleLogInRedirectUri
-                                    ],
-                                    ["scope", "profile openid"],
-                                    [
-                                        "state",
-                                        await database.generateAndWriteLogInState(
-                                            "google"
-                                        )
-                                    ]
-                                ])
-                            );
-                        }
-                        case "gitHub": {
-                            return tool.urlFromStringWithQuery(
-                                "github.com/login/oauth/authorize",
-                                new Map([
-                                    ["response_type", "code"],
-                                    ["client_id", key.gitHubLogInClientId],
-                                    [
-                                        "redirect_uri",
-                                        key.gitHubLogInRedirectUri
-                                    ],
-                                    ["scope", "read:user"],
-                                    [
-                                        "state",
-                                        await database.generateAndWriteLogInState(
-                                            "gitHub"
-                                        )
-                                    ]
-                                ])
-                            );
-                        }
-                        case "line":
-                            return tool.urlFromStringWithQuery(
-                                "access.line.me/oauth2/v2.1/authorize",
-                                new Map([
-                                    ["response_type", "code"],
-                                    ["client_id", key.lineLogInClientId],
-                                    ["redirect_uri", key.lineLogInRedirectUri],
-                                    ["scope", "profile openid"],
-                                    [
-                                        "state",
-                                        await database.generateAndWriteLogInState(
-                                            "line"
-                                        )
-                                    ]
-                                ])
-                            );
-                    }
-                },
-                description:
-                    "新規登録かログインするためのURLを得る。受け取ったURLをlocation.hrefに代入するとかして、各サービスの認証画面へ"
-            }),
+            getLogInUrl: getLogInUrl,
             addProject: makeQueryOrMutationField<
                 {
                     accessToken: string;

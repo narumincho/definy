@@ -11,7 +11,7 @@ const projectBucket = storage.bucket("definy-project");
 
 const userCollection = dataBase.collection("user");
 const collectionFromLogInState = (
-    logInService: type.LogInService
+    logInService: type.SocialLoginService
 ): FirebaseFirestore.CollectionReference => {
     switch (logInService) {
         case "google":
@@ -113,7 +113,7 @@ export const getUserImageReadableStream = (fileId: string): stream.Readable =>
  * ソーシャルログイン stateを保存する
  */
 export const writeGoogleLogInState = async (
-    logInService: type.LogInService,
+    logInService: type.SocialLoginService,
     state: string
 ): Promise<void> => {
     await collectionFromLogInState(logInService)
@@ -125,7 +125,7 @@ export const writeGoogleLogInState = async (
  * ソーシャルログイン stateが存在することを確認し、存在するなら削除する
  */
 export const existsGoogleStateAndDeleteAndGetUserId = async (
-    logInService: type.LogInService,
+    logInService: type.SocialLoginService,
     state: string
 ): Promise<boolean> => {
     const docRef = collectionFromLogInState(logInService).doc(state);

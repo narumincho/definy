@@ -3,10 +3,10 @@ import { URL } from "url";
 import * as crypto from "crypto";
 
 /*  =============================================================
-                            LogInService
+                        SocialLoginService
     =============================================================
 */
-const logInServiceValues = {
+const socialLoginServiceValues = {
     google: {
         description:
             "Google https://developers.google.com/identity/sign-in/web/"
@@ -20,11 +20,11 @@ const logInServiceValues = {
     }
 };
 
-export type LogInService = keyof (typeof logInServiceValues);
+export type SocialLoginService = keyof (typeof socialLoginServiceValues);
 
 export const logInServiceGraphQLType = new g.GraphQLEnumType({
-    name: "AccountService",
-    values: logInServiceValues,
+    name: "SocialLoginService",
+    values: socialLoginServiceValues,
     description: "ソーシャルログインを提供するサービス"
 });
 /*  =============================================================
@@ -36,7 +36,7 @@ export const logInServiceGraphQLType = new g.GraphQLEnumType({
  */
 export type LogInServiceAndId = {
     /** サービスの種類 */
-    service: LogInService;
+    service: SocialLoginService;
     /** サービス内でのアカウントID */
     accountId: string;
 };

@@ -16,7 +16,7 @@ import * as key from "./key";
  * リプレイアタックを防いだり、他のサーバーがつくマートのクライアントIDを使って発行しても自分が発行したものと見比べて識別できるようにする
  */
 export const generateAndWriteLogInState = async (
-    logInService: type.LogInService
+    logInService: type.SocialLoginService
 ): Promise<string> => {
     const state = tool.createRandomString();
     await databaseLow.writeGoogleLogInState(logInService, state);
@@ -27,7 +27,7 @@ export const generateAndWriteLogInState = async (
  * 指定したサービスのtateがDefinyによって発行したものかどうか調べ、あったらそのstateを削除する
  */
 export const checkExistsAndDeleteState = async (
-    logInService: type.LogInService,
+    logInService: type.SocialLoginService,
     state: string
 ): Promise<boolean> =>
     await databaseLow.existsGoogleStateAndDeleteAndGetUserId(
