@@ -2,14 +2,12 @@ port module Main exposing (main)
 
 import Browser
 import Browser.Navigation
-import Css
 import Data.Key
 import Data.Language
 import Data.Project
 import Data.SocialLoginService
 import Data.User
 import Html.Styled
-import Html.Styled.Attributes
 import Json.Decode
 import Page.Welcome
 import Panel.CommandPalette

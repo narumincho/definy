@@ -9,6 +9,7 @@ module Page.Welcome exposing
 
 import Color
 import Css
+import Data.SocialLoginService
 import Data.User
 import Panel.Style
 import Ui
@@ -18,14 +19,16 @@ import VectorImage
 type Model
     = Model
         { width : Int
-        , sideResizeMode : SideResizeMode
+        , pointerState : PointerState
         }
 
 
-type SideResizeMode
+type PointerState
     = None
-    | PointerEnter
-    | Resize
+    | SideBarPointerEnter
+    | SideBarResize
+    | LogInButtonHover Data.SocialLoginService.SocialLoginService
+    | LogInButtonPressed Data.SocialLoginService.SocialLoginService
 
 
 type Msg
@@ -43,7 +46,7 @@ init : Model
 init =
     Model
         { width = 400
-        , sideResizeMode = None
+        , pointerState = None
         }
 
 
@@ -53,19 +56,19 @@ update msg (Model rec) =
         ToSideGutterMode gutterMsg ->
             case gutterMsg of
                 Panel.Style.GutterMsgPointerEnter ->
-                    ( Model { rec | sideResizeMode = PointerEnter }
+                    ( Model { rec | pointerState = SideBarPointerEnter }
                     , []
                     )
 
                 Panel.Style.GutterMsgPointerLeave ->
-                    ( Model { rec | sideResizeMode = None }
+                    ( Model { rec | pointerState = None }
                     , []
                     )
 
                 Panel.Style.GutterMsgToResizeMode pointer ->
                     ( Model
                         { rec
-                            | sideResizeMode = Resize
+                            | pointerState = SideBarResize
                             , width = pointer |> Ui.pointerGetPosition |> Tuple.first |> floor
                         }
                     , [ CmdToVerticalGutterMode ]
@@ -77,7 +80,7 @@ update msg (Model rec) =
             )
 
         PointerUp ->
-            ( Model { rec | sideResizeMode = None }
+            ( Model { rec | pointerState = None }
             , []
             )
 
@@ -85,8 +88,8 @@ update msg (Model rec) =
 view : Data.User.LogInState -> Model -> Ui.Panel Msg
 view logInState (Model rec) =
     Ui.row
-        (case rec.sideResizeMode of
-            Resize ->
+        (case rec.pointerState of
+            SideBarResize ->
                 [ Ui.PointerMove PointerMove ]
 
             _ ->
@@ -94,31 +97,35 @@ view logInState (Model rec) =
         )
         []
         0
-        [ side { width = rec.width, logInState = logInState }
+        [ side
+            { width = rec.width
+            , logInState = logInState
+            , pointerState = rec.pointerState
+            }
         , Panel.Style.gutterPanel
-            (case rec.sideResizeMode of
-                None ->
-                    Panel.Style.GutterModeNone
-
-                PointerEnter ->
+            (case rec.pointerState of
+                SideBarPointerEnter ->
                     Panel.Style.GutterModePointerEnter
 
-                Resize ->
+                SideBarResize ->
                     Panel.Style.GutterModeResize
+
+                _ ->
+                    Panel.Style.GutterModeNone
             )
             |> Ui.map ToSideGutterMode
         , yggdrasil
         ]
 
 
-side : { width : Int, logInState : Data.User.LogInState } -> Ui.Panel msg
-side { width, logInState } =
+side : { width : Int, logInState : Data.User.LogInState, pointerState : PointerState } -> Ui.Panel msg
+side { width, logInState, pointerState } =
     Ui.column
         []
         [ Ui.Width (Ui.Fix width) ]
         16
         [ titleLogo
-        , userView logInState
+        , userView pointerState logInState
         , Ui.depth
             []
             []
@@ -156,8 +163,8 @@ titleLogo =
         "Definy"
 
 
-userView : Data.User.LogInState -> Ui.Panel msg
-userView logInState =
+userView : PointerState -> Data.User.LogInState -> Ui.Panel msg
+userView pointerState logInState =
     Ui.column
         []
         []
@@ -193,8 +200,38 @@ userView logInState =
                             []
                             8
                             [ lineLogInButton
+                                (case pointerState of
+                                    LogInButtonHover Data.SocialLoginService.Line ->
+                                        LogInButtonModelHover
+
+                                    LogInButtonPressed Data.SocialLoginService.Line ->
+                                        LogInButtonModelPressed
+
+                                    _ ->
+                                        LogInButtonModelNone
+                                )
                             , gitHubLogInButton
+                                (case pointerState of
+                                    LogInButtonHover Data.SocialLoginService.GitHub ->
+                                        LogInButtonModelHover
+
+                                    LogInButtonPressed Data.SocialLoginService.GitHub ->
+                                        LogInButtonModelPressed
+
+                                    _ ->
+                                        LogInButtonModelNone
+                                )
                             , googleLogInButton
+                                (case pointerState of
+                                    LogInButtonHover Data.SocialLoginService.Google ->
+                                        LogInButtonModelHover
+
+                                    LogInButtonPressed Data.SocialLoginService.Google ->
+                                        LogInButtonModelPressed
+
+                                    _ ->
+                                        LogInButtonModelNone
+                                )
                             ]
                         ]
 
@@ -204,20 +241,39 @@ userView logInState =
         )
 
 
-lineLogInButton : Ui.Panel msg
-lineLogInButton =
+type LogInButtonModel
+    = LogInButtonModelNone
+    | LogInButtonModelHover
+    | LogInButtonModelPressed
+
+
+lineLogInButton : LogInButtonModel -> Ui.Panel msg
+lineLogInButton logInButtonModel =
     Ui.depth
         []
-        [ Ui.Height (Ui.Fix 32) ]
-        [ Ui.monochromatic [] [] (Css.rgb 0 195 0)
+        [ Ui.Height (Ui.Fix 48) ]
+        [ Ui.monochromatic []
+            []
+            (case logInButtonModel of
+                LogInButtonModelNone ->
+                    Css.rgb 0 195 0
+
+                LogInButtonModelHover ->
+                    Css.rgb 0 224 0
+
+                LogInButtonModelPressed ->
+                    Css.rgb 0 179 0
+            )
         , Ui.row
             []
             []
             0
-            [ lineIcon
+            [ lineIcon logInButtonModel
             , Ui.text
                 []
-                [ Ui.VerticalAlignment Ui.CenterY ]
+                [ Ui.VerticalAlignment Ui.CenterY
+                , Ui.TextAlignment Ui.TextAlignCenter
+                ]
                 (Ui.Font
                     { typeface = "Roboto"
                     , size = 16
@@ -230,12 +286,23 @@ lineLogInButton =
         ]
 
 
-gitHubLogInButton : Ui.Panel msg
-gitHubLogInButton =
+gitHubLogInButton : LogInButtonModel -> Ui.Panel msg
+gitHubLogInButton logInButtonModel =
     Ui.depth
         []
         [ Ui.Height (Ui.Fix 32) ]
-        [ Ui.monochromatic [] [] (Css.rgb 32 32 32)
+        [ Ui.monochromatic []
+            []
+            (case logInButtonModel of
+                LogInButtonModelNone ->
+                    Css.rgb 221 221 221
+
+                LogInButtonModelHover ->
+                    Css.rgb 238 238 238
+
+                LogInButtonModelPressed ->
+                    Css.rgb 204 204 204
+            )
         , Ui.row
             []
             []
@@ -243,12 +310,14 @@ gitHubLogInButton =
             [ gitHubIcon
             , Ui.text
                 []
-                [ Ui.VerticalAlignment Ui.CenterY ]
+                [ Ui.VerticalAlignment Ui.CenterY
+                , Ui.TextAlignment Ui.TextAlignCenter
+                ]
                 (Ui.Font
                     { typeface = "Roboto"
                     , size = 16
                     , letterSpacing = 0
-                    , color = Css.rgb 255 255 255
+                    , color = Css.rgb 17 17 17
                     }
                 )
                 "GitHubでログイン"
@@ -256,12 +325,23 @@ gitHubLogInButton =
         ]
 
 
-googleLogInButton : Ui.Panel msg
-googleLogInButton =
+googleLogInButton : LogInButtonModel -> Ui.Panel msg
+googleLogInButton logInButtonModel =
     Ui.depth
         []
-        [ Ui.Height (Ui.Fix 32) ]
-        [ Ui.monochromatic [] [] (Css.rgb 32 32 32)
+        [ Ui.Height (Ui.Fix 48) ]
+        [ Ui.monochromatic []
+            []
+            (case logInButtonModel of
+                LogInButtonModelNone ->
+                    Css.rgb 221 221 221
+
+                LogInButtonModelHover ->
+                    Css.rgb 238 238 238
+
+                LogInButtonModelPressed ->
+                    Css.rgb 204 204 204
+            )
         , Ui.row
             []
             []
@@ -269,12 +349,14 @@ googleLogInButton =
             [ googleIcon
             , Ui.text
                 []
-                [ Ui.VerticalAlignment Ui.CenterY ]
+                [ Ui.VerticalAlignment Ui.CenterY
+                , Ui.TextAlignment Ui.TextAlignCenter
+                ]
                 (Ui.Font
                     { typeface = "Roboto"
                     , size = 16
                     , letterSpacing = 0
-                    , color = Css.rgb 255 255 255
+                    , color = Css.rgb 17 17 17
                     }
                 )
                 "Googleでログイン"
@@ -282,11 +364,22 @@ googleLogInButton =
         ]
 
 
-lineIcon : Ui.Panel msg
-lineIcon =
+lineIcon : LogInButtonModel -> Ui.Panel msg
+lineIcon logInButtonModel =
     Ui.rasterImage
         []
-        [ Ui.Width (Ui.Fix 32), Ui.Padding 4 ]
+        [ Ui.Width (Ui.Fix 48)
+        , Ui.Padding 8
+        , case logInButtonModel of
+            LogInButtonModelNone ->
+                Ui.BorderRight { color = Css.rgb 0 179 0, width = 1 }
+
+            LogInButtonModelHover ->
+                Ui.BorderRight { color = Css.rgb 0 201 0, width = 1 }
+
+            LogInButtonModelPressed ->
+                Ui.BorderRight { color = Css.rgb 0 152 0, width = 1 }
+        ]
         { fitStyle = Ui.Contain
         , alternativeText = "LINEのロゴ"
         , rendering = Ui.ImageRenderingAuto
@@ -298,7 +391,7 @@ gitHubIcon : Ui.Panel msg
 gitHubIcon =
     Ui.vectorImage
         []
-        [ Ui.Width (Ui.Fix 32), Ui.Padding 8 ]
+        [ Ui.Width (Ui.Fix 48), Ui.Padding 8 ]
         { fitStyle = Ui.Contain
         , viewBox = { x = 0, y = 0, width = 20, height = 20 }
         , elements =
@@ -314,7 +407,7 @@ googleIcon : Ui.Panel msg
 googleIcon =
     Ui.vectorImage
         []
-        [ Ui.Width (Ui.Fix 32), Ui.Padding 8 ]
+        [ Ui.Width (Ui.Fix 48), Ui.Padding 8 ]
         { fitStyle = Ui.Contain
         , viewBox = { x = 0, y = 0, width = 20, height = 20 }
         , elements =

@@ -1,4 +1,7 @@
-module Data.SocialLoginService exposing (SocialLoginService(..), serviceName)
+module Data.SocialLoginService exposing
+    ( SocialLoginService(..)
+    , serviceName
+    )
 
 
 type SocialLoginService

@@ -12,7 +12,6 @@ module Ui exposing
     , Style(..)
     , TextAlignment(..)
     , VerticalAlignment(..)
-    , borderNone
     , column
     , depth
     , map
@@ -34,6 +33,7 @@ import Html.Styled.Attributes
 import Html.Styled.Events
 import Json.Decode
 import Json.Decode.Pipeline
+import Utility.ListExtra
 import VectorImage
 
 
@@ -105,6 +105,7 @@ type StyleComputed
         , textAlignment : Maybe TextAlignment
         , overflowVisible : Bool
         , pointerImage : Maybe PointerImage
+        , border : BorderStyle
         }
 
 
@@ -117,6 +118,11 @@ type Style
     | TextAlignment TextAlignment
     | OverflowVisible
     | PointerImage PointerImage
+    | Border { color : Css.Color, width : Int }
+    | BorderTop { color : Css.Color, width : Int }
+    | BorderBottom { color : Css.Color, width : Int }
+    | BorderLeft { color : Css.Color, width : Int }
+    | BorderRight { color : Css.Color, width : Int }
 
 
 type PointerImage
@@ -163,29 +169,12 @@ type ImageRendering
     | ImageRenderingAuto
 
 
-type Border
-    = Border
-        { top : Maybe BorderStyle
-        , right : Maybe BorderStyle
-        , left : Maybe BorderStyle
-        , bottom : Maybe BorderStyle
-        }
-
-
 type BorderStyle
     = BorderStyle
-        { color : Css.Color
-        , width : Int
-        }
-
-
-borderNone : Border
-borderNone =
-    Border
-        { top = Nothing
-        , right = Nothing
-        , left = Nothing
-        , bottom = Nothing
+        { top : Maybe { color : Css.Color, width : Int }
+        , right : Maybe { color : Css.Color, width : Int }
+        , left : Maybe { color : Css.Color, width : Int }
+        , bottom : Maybe { color : Css.Color, width : Int }
         }
 
 
@@ -367,20 +356,87 @@ computeStyle list =
 
                 PointerImage image ->
                     { rec | pointerImage = Just image }
+
+                Border record ->
+                    { rec
+                        | border =
+                            BorderStyle
+                                { top = Just record
+                                , bottom = Just record
+                                , left = Just record
+                                , right = Just record
+                                }
+                    }
+
+                BorderTop record ->
+                    let
+                        (BorderStyle borderStyle) =
+                            rec.border
+                    in
+                    { rec
+                        | border =
+                            BorderStyle
+                                { borderStyle | top = Just record }
+                    }
+
+                BorderBottom record ->
+                    let
+                        (BorderStyle borderStyle) =
+                            rec.border
+                    in
+                    { rec
+                        | border =
+                            BorderStyle
+                                { borderStyle | bottom = Just record }
+                    }
+
+                BorderLeft record ->
+                    let
+                        (BorderStyle borderStyle) =
+                            rec.border
+                    in
+                    { rec
+                        | border =
+                            BorderStyle
+                                { borderStyle | left = Just record }
+                    }
+
+                BorderRight record ->
+                    let
+                        (BorderStyle borderStyle) =
+                            rec.border
+                    in
+                    { rec
+                        | border =
+                            BorderStyle
+                                { borderStyle | right = Just record }
+                    }
             )
                 |> StyleComputed
 
         [] ->
-            StyleComputed
-                { padding = 0
-                , width = Nothing
-                , height = Nothing
-                , offset = Nothing
-                , verticalAlignment = Nothing
-                , textAlignment = Nothing
-                , overflowVisible = False
-                , pointerImage = Nothing
+            defaultStyle
+
+
+defaultStyle : StyleComputed
+defaultStyle =
+    StyleComputed
+        { padding = 0
+        , width = Nothing
+        , height = Nothing
+        , offset = Nothing
+        , verticalAlignment = Nothing
+        , textAlignment = Nothing
+        , overflowVisible = False
+        , pointerImage = Nothing
+        , border =
+            BorderStyle
+                { top = Nothing
+                , bottom = Nothing
+                , left = Nothing
+                , right = Nothing
                 }
+        }
 
 
 map : (a -> b) -> Panel a -> Panel b
@@ -476,6 +532,7 @@ panelToStyle style childrenStyle content =
         childrenStyle
         record.overflowVisible
         content
+    , borderStyleToStyle record.border
     ]
         ++ (case record.width of
                 Just (Flex int) ->
@@ -519,6 +576,33 @@ panelToStyle style childrenStyle content =
                 Nothing ->
                     []
            )
+        |> Css.batch
+
+
+borderStyleToStyle : BorderStyle -> Css.Style
+borderStyleToStyle (BorderStyle { top, bottom, left, right }) =
+    [ top
+        |> Maybe.map
+            (\{ width, color } ->
+                Css.borderTop3 (Css.px (toFloat width)) Css.solid color
+            )
+    , bottom
+        |> Maybe.map
+            (\{ width, color } ->
+                Css.borderBottom3 (Css.px (toFloat width)) Css.solid color
+            )
+    , left
+        |> Maybe.map
+            (\{ width, color } ->
+                Css.borderLeft3 (Css.px (toFloat width)) Css.solid color
+            )
+    , right
+        |> Maybe.map
+            (\{ width, color } ->
+                Css.borderRight3 (Css.px (toFloat width)) Css.solid color
+            )
+    ]
+        |> Utility.ListExtra.takeFromMaybeList
         |> Css.batch
 
 
