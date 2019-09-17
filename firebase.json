@@ -3,20 +3,8 @@
         "public": "client/distribution",
         "rewrites": [
             {
-                "source": "/api",
-                "function": "api"
-            },
-            {
-                "source": "/social_login/google_receiver",
-                "function": "googleLogInReceiver"
-            },
-            {
-                "source": "/social_login/github_receiver",
-                "function": "gitHubLogInReceiver"
-            },
-            {
-                "source": "/social_login/line_receiver",
-                "function": "lineLogInReceiver"
+                "source": "**",
+                "function": "indexHtml"
             }
         ]
     },

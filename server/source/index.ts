@@ -10,6 +10,106 @@ console.log("サーバーのプログラムが読み込まれた");
  *                          API (GraphQL)
  * =====================================================================
  */
+export const indexHtml = functions.https.onRequest((request, response) => {
+    if (request.host !== "definy-lang.web.app") {
+        response.redirect("https://definy-lang.web.app");
+    }
+    response.status(200);
+    response.setHeader("content-type", "text/html");
+    response.send(`<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Definy</title>
+    <link rel="icon" href="/assets/icon.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="og:url" content="https://definy-lang.web.app${request.url}">
+    <meta property="og:title" content="${escapeHtml(
+        "タイトル" + Math.random()
+    )}">
+    <meta property="og:site_name" content="Definy">
+    <meta property="og:description" content="${escapeHtml("説明文!")}">
+    <meta property="og:image" content="${escapeHtml(
+        "https://definy-lang.web.app/assets/icon.png"
+    )}">
+    <style>
+        @font-face {
+            font-family: "Roboto";
+            font-style: normal;
+            font-weight: 400;
+            src: local("Roboto"), local("Roboto-Regular"),
+                url("https://fonts.gstatic.com/s/roboto/v19/KFOmCnqEu92Fr1Mu4mxK.woff2") format("woff2");
+        }
+
+        @font-face {
+            font-family: "Open Sans";
+            font-style: normal;
+            font-weight: 300;
+            font-display: swap;
+            src: local("Open Sans Light"), local("OpenSans-Light"), url("https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UN_r8OUuhp.woff2") format("woff2");
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+
+        /*
+            Hack typeface https://github.com/source-foundry/Hack
+            License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
+        */
+
+        @font-face {
+            font-family: "Hack";
+            font-weight: 400;
+            font-style: normal;
+            src: url("/assets/hack-regular-subset.woff2") format("woff2");
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            height: 100%;
+            margin: 0;
+            background-color: black;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+    </style>
+
+    <script src="/main.js" defer></script>
+    <script src="/call.js" type="module"></script>
+</head>
+
+<body>
+    読み込み中……
+</body>
+
+</html>`);
+});
+
+const escapeHtml = (text: string): string =>
+    text.replace(/[&'`"<>]/g, (s: string): string =>
+        s === "&"
+            ? "&amp;"
+            : s === "'"
+            ? "&#x27;"
+            : s === "`"
+            ? "&#x60;"
+            : s === '"'
+            ? "&quot;"
+            : s === "<"
+            ? "&lt;"
+            : s === ">"
+            ? "&gt;"
+            : ""
+    );
+/* =====================================================================
+ *                          API (GraphQL)
+ * =====================================================================
+ */
 
 export const api = functions
     .runWith({ memory: "2GB" })

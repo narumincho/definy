@@ -23,12 +23,6 @@ Remove-Item ./beforeMinifiy.js;
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Minify JavaScript OK";
 
-Write-Output "Copy HTML ...";
-$Host.UI.RawUI.ForegroundColor = "Gray";
-Copy-Item -Path ./source/index.html -Destination ./distribution/index.html
-$Host.UI.RawUI.ForegroundColor = "Yellow";
-Write-Output "Copy HTML OK";
-
 Write-Output "Copy assets ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";
 Copy-Item -Path ./source/assets/ -Destination ./distribution/ -Recurse -Force
