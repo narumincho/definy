@@ -41,7 +41,7 @@ import VectorImage
 -}
 type Panel msg
     = Panel
-        { events : List (Event msg)
+        { events : EventComputed msg
         , style : StyleComputed
         , content : Content msg
         }
@@ -50,11 +50,21 @@ type Panel msg
 {-| 各パネルで受け取れるイベント
 -}
 type Event msg
-    = PointerEnter (Pointer -> msg) -- マウスが要素の領域に入ってきた
+    = Click msg -- マウスのボタンを話してクリックしたり、画面をタッチ、タップしたら
+    | PointerEnter (Pointer -> msg) -- マウスが要素の領域に入ってきた
     | PointerLeave (Pointer -> msg) -- マウスが要素の領域から外れた
-    | Click msg -- マウスのボタンを話してクリックしたり、画面をタッチ、タップしたら
     | PointerMove (Pointer -> msg) -- マウスが動いたら
     | PointerDown (Pointer -> msg) -- マウスのボタンを押したら
+
+
+type EventComputed msg
+    = EventComputed
+        { click : Maybe msg
+        , pointerEnter : Maybe (Pointer -> msg)
+        , pointerLeave : Maybe (Pointer -> msg)
+        , pointerMove : Maybe (Pointer -> msg)
+        , pointerDown : Maybe (Pointer -> msg)
+        }
 
 
 {-| ポインターのイベントで受け取れるマウスの状態
@@ -209,7 +219,7 @@ text :
     -> Panel msg
 text events style font string =
     Panel
-        { events = events
+        { events = events |> List.reverse |> computeEvents
         , style = style |> List.reverse |> computeStyle
         , content =
             Text
@@ -233,7 +243,7 @@ textWithAlignment :
     -> Panel msg
 textWithAlignment events style { align, vertical, font } string =
     Panel
-        { events = events
+        { events = events |> List.reverse |> computeEvents
         , style = style |> List.reverse |> computeStyle
         , content =
             Text
@@ -257,7 +267,7 @@ rasterImage :
     -> Panel msg
 rasterImage events style imageStyle dataUrl =
     Panel
-        { events = events
+        { events = events |> List.reverse |> computeEvents
         , style = style |> List.reverse |> computeStyle
         , content =
             RasterImage
@@ -276,7 +286,7 @@ vectorImage :
     -> Panel msg
 vectorImage events style content =
     Panel
-        { events = events
+        { events = events |> List.reverse |> computeEvents
         , style = style |> List.reverse |> computeStyle
         , content =
             VectorImage content
@@ -290,7 +300,7 @@ monochromatic :
     -> Panel msg
 monochromatic events style color =
     Panel
-        { events = events
+        { events = events |> List.reverse |> computeEvents
         , style = style |> List.reverse |> computeStyle
         , content =
             Monochromatic color
@@ -300,7 +310,7 @@ monochromatic events style color =
 depth : List (Event msg) -> List Style -> List (Panel msg) -> Panel msg
 depth events style children =
     Panel
-        { events = events
+        { events = events |> List.reverse |> computeEvents
         , style = style |> List.reverse |> computeStyle
         , content = DepthList children
         }
@@ -309,7 +319,7 @@ depth events style children =
 row : List (Event msg) -> List Style -> Int -> List (Panel msg) -> Panel msg
 row events style gap children =
     Panel
-        { events = events
+        { events = events |> List.reverse |> computeEvents
         , style = style |> List.reverse |> computeStyle
         , content = RowList children gap
         }
@@ -318,10 +328,46 @@ row events style gap children =
 column : List (Event msg) -> List Style -> Int -> List (Panel msg) -> Panel msg
 column events style gap children =
     Panel
-        { events = events
+        { events = events |> List.reverse |> computeEvents
         , style = style |> List.reverse |> computeStyle
         , content = ColumnList children gap
         }
+
+
+computeEvents : List (Event msg) -> EventComputed msg
+computeEvents events =
+    case events of
+        x :: xs ->
+            let
+                (EventComputed record) =
+                    computeEvents xs
+            in
+            (case x of
+                PointerEnter msgFunc ->
+                    { record | pointerEnter = Just msgFunc }
+
+                PointerLeave msgFunc ->
+                    { record | pointerLeave = Just msgFunc }
+
+                PointerMove msgFunc ->
+                    { record | pointerMove = Just msgFunc }
+
+                PointerDown msgFunc ->
+                    { record | pointerDown = Just msgFunc }
+
+                Click msg ->
+                    { record | click = Just msg }
+            )
+                |> EventComputed
+
+        [] ->
+            EventComputed
+                { pointerEnter = Nothing
+                , pointerLeave = Nothing
+                , pointerMove = Nothing
+                , pointerDown = Nothing
+                , click = Nothing
+                }
 
 
 {-| スタイルをまとめる。先のものが優先される。
@@ -448,7 +494,7 @@ defaultStyle =
 map : (a -> b) -> Panel a -> Panel b
 map func (Panel { events, style, content }) =
     Panel
-        { events = events |> List.map (mapEvent func)
+        { events = events |> mapEvent func
         , style = style
         , content =
             case content of
@@ -483,23 +529,15 @@ map func (Panel { events, style, content }) =
         }
 
 
-mapEvent : (a -> b) -> Event a -> Event b
-mapEvent func event =
-    case event of
-        PointerEnter msg ->
-            PointerEnter (msg >> func)
-
-        PointerLeave msg ->
-            PointerLeave (msg >> func)
-
-        Click msg ->
-            Click (func msg)
-
-        PointerMove msg ->
-            PointerMove (msg >> func)
-
-        PointerDown msg ->
-            PointerDown (msg >> func)
+mapEvent : (a -> b) -> EventComputed a -> EventComputed b
+mapEvent func (EventComputed record) =
+    EventComputed
+        { pointerEnter = record.pointerEnter |> Maybe.map (\msgFunc pointer -> msgFunc pointer |> func)
+        , pointerLeave = record.pointerLeave |> Maybe.map (\msgFunc pointer -> msgFunc pointer |> func)
+        , pointerMove = record.pointerMove |> Maybe.map (\msgFunc pointer -> msgFunc pointer |> func)
+        , pointerDown = record.pointerDown |> Maybe.map (\msgFunc pointer -> msgFunc pointer |> func)
+        , click = record.click |> Maybe.map func
+        }
 
 
 type ChildrenStyle
@@ -510,19 +548,52 @@ type ChildrenStyle
 
 
 panelToHtml : ChildrenStyle -> Panel msg -> Html.Styled.Html msg
-panelToHtml childrenStyle (Panel { events, style, content }) =
-    (case content of
-        RasterImage _ ->
-            Html.Styled.img
-
-        _ ->
-            Html.Styled.div
-    )
+panelToHtml childrenStyle panel =
+    let
+        (Panel { events, style, content }) =
+            panel
+    in
+    panelToHtmlElementType panel
         ([ Html.Styled.Attributes.css [ panelToStyle style childrenStyle content ] ]
             ++ growGrowContentToListAttributes content
             ++ eventsToHtmlAttributes events
         )
         (growGrowContentToListHtml content)
+
+
+panelToHtmlElementType :
+    Panel msg
+    -> List (Html.Styled.Attribute msg)
+    -> List (Html.Styled.Html msg)
+    -> Html.Styled.Html msg
+panelToHtmlElementType (Panel { content, events }) =
+    case content of
+        RasterImage _ ->
+            Html.Styled.img
+
+        _ ->
+            let
+                (EventComputed { click }) =
+                    events
+            in
+            case click of
+                Just _ ->
+                    -- Button要素がdisplay:gridできないバグへの対処も含めての入れ子 https://stackoverflow.com/questions/51815477/is-a-button-allowed-to-have-displaygrid
+                    \attributes children ->
+                        Html.Styled.button
+                            [ Html.Styled.Attributes.css
+                                [ Css.width (Css.pct 100)
+                                , Css.height (Css.pct 100)
+                                , Css.padding Css.zero
+                                , Css.border2 Css.zero Css.none
+                                , Css.backgroundColor Css.transparent
+                                , Css.cursor Css.pointer
+                                ]
+                            ]
+                            [ Html.Styled.div attributes children ]
+
+                Nothing ->
+                    Html.Styled.div
 
 
 panelToStyle : StyleComputed -> ChildrenStyle -> Content msg -> Css.Style
@@ -594,28 +665,31 @@ panelToStyle style childrenStyle content =
 
 borderStyleToStyle : BorderStyle -> Css.Style
 borderStyleToStyle (BorderStyle { top, bottom, left, right }) =
-    [ top
-        |> Maybe.map
-            (\{ width, color } ->
-                Css.borderTop3 (Css.px (toFloat width)) Css.solid color
-            )
-    , bottom
-        |> Maybe.map
-            (\{ width, color } ->
-                Css.borderBottom3 (Css.px (toFloat width)) Css.solid color
-            )
-    , left
-        |> Maybe.map
-            (\{ width, color } ->
-                Css.borderLeft3 (Css.px (toFloat width)) Css.solid color
-            )
-    , right
-        |> Maybe.map
-            (\{ width, color } ->
-                Css.borderRight3 (Css.px (toFloat width)) Css.solid color
-            )
-    ]
-        |> Utility.ListExtra.takeFromMaybeList
+    ([ Css.border2 Css.zero Css.none ]
+        ++ ([ top
+                |> Maybe.map
+                    (\{ width, color } ->
+                        Css.borderTop3 (Css.px (toFloat width)) Css.solid color
+                    )
+            , bottom
+                |> Maybe.map
+                    (\{ width, color } ->
+                        Css.borderBottom3 (Css.px (toFloat width)) Css.solid color
+                    )
+            , left
+                |> Maybe.map
+                    (\{ width, color } ->
+                        Css.borderLeft3 (Css.px (toFloat width)) Css.solid color
+                    )
+            , right
+                |> Maybe.map
+                    (\{ width, color } ->
+                        Css.borderRight3 (Css.px (toFloat width)) Css.solid color
+                    )
+            ]
+                |> Utility.ListExtra.takeFromMaybeList
+           )
+    )
         |> Css.batch
 
 
@@ -763,28 +837,20 @@ growGrowContentToListAttributes content =
             []
 
 
-eventsToHtmlAttributes : List (Event msg) -> List (Html.Styled.Attribute msg)
-eventsToHtmlAttributes =
-    List.map eventToHtmlAttribute
-
-
-eventToHtmlAttribute : Event msg -> Html.Styled.Attribute msg
-eventToHtmlAttribute event =
-    case event of
-        PointerEnter msg ->
-            Html.Styled.Events.on "pointerenter" (pointerEventDecoder |> Json.Decode.map msg)
-
-        PointerLeave msg ->
-            Html.Styled.Events.on "pointerleave" (pointerEventDecoder |> Json.Decode.map msg)
-
-        Click msg ->
-            Html.Styled.Events.onClick msg
-
-        PointerMove msg ->
-            Html.Styled.Events.on "pointermove" (pointerEventDecoder |> Json.Decode.map msg)
-
-        PointerDown msg ->
-            Html.Styled.Events.on "pointerdown" (pointerEventDecoder |> Json.Decode.map msg)
+eventsToHtmlAttributes : EventComputed msg -> List (Html.Styled.Attribute msg)
+eventsToHtmlAttributes (EventComputed record) =
+    [ record.pointerEnter
+        |> Maybe.map (\msg -> Html.Styled.Events.on "pointerenter" (pointerEventDecoder |> Json.Decode.map msg))
+    , record.pointerLeave
+        |> Maybe.map (\msg -> Html.Styled.Events.on "pointerleave" (pointerEventDecoder |> Json.Decode.map msg))
+    , record.pointerMove
+        |> Maybe.map (\msg -> Html.Styled.Events.on "pointermove" (pointerEventDecoder |> Json.Decode.map msg))
+    , record.pointerDown
+        |> Maybe.map (\msg -> Html.Styled.Events.on "pointerdown" (pointerEventDecoder |> Json.Decode.map msg))
+    , record.click
+        |> Maybe.map (\msg -> Html.Styled.Events.onClick msg)
+    ]
+        |> Utility.ListExtra.takeFromMaybeList
 
 
 pointerEventDecoder : Json.Decode.Decoder Pointer

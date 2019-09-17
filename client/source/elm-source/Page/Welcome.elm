@@ -35,6 +35,7 @@ type Msg
     = ToSideGutterMode Panel.Style.GutterMsg
     | PointerMove Ui.Pointer
     | PointerUp
+    | ToLogInPage Data.SocialLoginService.SocialLoginService
 
 
 type Cmd
@@ -84,6 +85,11 @@ update msg (Model rec) =
             , []
             )
 
+        ToLogInPage _ ->
+            ( Model rec
+            , []
+            )
+
 
 view : Data.User.LogInState -> Model -> Ui.Panel Msg
 view logInState (Model rec) =
@@ -118,7 +124,7 @@ view logInState (Model rec) =
         ]
 
 
-side : { width : Int, logInState : Data.User.LogInState, pointerState : PointerState } -> Ui.Panel msg
+side : { width : Int, logInState : Data.User.LogInState, pointerState : PointerState } -> Ui.Panel Msg
 side { width, logInState, pointerState } =
     Ui.column
         []
@@ -163,7 +169,7 @@ titleLogo =
         "Definy"
 
 
-userView : PointerState -> Data.User.LogInState -> Ui.Panel msg
+userView : PointerState -> Data.User.LogInState -> Ui.Panel Msg
 userView pointerState logInState =
     Ui.column
         []
@@ -247,10 +253,10 @@ type LogInButtonModel
     | LogInButtonModelPressed
 
 
-lineLogInButton : LogInButtonModel -> Ui.Panel msg
+lineLogInButton : LogInButtonModel -> Ui.Panel Msg
 lineLogInButton logInButtonModel =
     Ui.depth
-        []
+        [ Ui.Click (ToLogInPage Data.SocialLoginService.Line) ]
         [ Ui.Height (Ui.Fix 48), Ui.BorderRadius 8 ]
         [ Ui.monochromatic []
             []
@@ -286,10 +292,10 @@ lineLogInButton logInButtonModel =
         ]
 
 
-gitHubLogInButton : LogInButtonModel -> Ui.Panel msg
+gitHubLogInButton : LogInButtonModel -> Ui.Panel Msg
 gitHubLogInButton logInButtonModel =
     Ui.depth
-        []
+        [ Ui.Click (ToLogInPage Data.SocialLoginService.GitHub) ]
         [ Ui.Height (Ui.Fix 48), Ui.BorderRadius 8 ]
         [ Ui.monochromatic []
             []
@@ -325,10 +331,10 @@ gitHubLogInButton logInButtonModel =
         ]
 
 
-googleLogInButton : LogInButtonModel -> Ui.Panel msg
+googleLogInButton : LogInButtonModel -> Ui.Panel Msg
 googleLogInButton logInButtonModel =
     Ui.depth
-        []
+        [ Ui.Click (ToLogInPage Data.SocialLoginService.GitHub) ]
         [ Ui.Height (Ui.Fix 48), Ui.BorderRadius 8 ]
         [ Ui.monochromatic []
             []
@@ -431,7 +437,7 @@ googleIcon =
         }
 
 
-yggdrasil : Ui.Panel msg
+yggdrasil : Ui.Panel Msg
 yggdrasil =
     Ui.text
         []
