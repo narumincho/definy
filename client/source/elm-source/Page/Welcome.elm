@@ -167,7 +167,7 @@ userView : PointerState -> Data.User.LogInState -> Ui.Panel msg
 userView pointerState logInState =
     Ui.column
         []
-        []
+        [ Ui.Padding 8 ]
         8
         ([ Ui.text
             []
@@ -251,7 +251,7 @@ lineLogInButton : LogInButtonModel -> Ui.Panel msg
 lineLogInButton logInButtonModel =
     Ui.depth
         []
-        [ Ui.Height (Ui.Fix 48) ]
+        [ Ui.Height (Ui.Fix 48), Ui.BorderRadius 8 ]
         [ Ui.monochromatic []
             []
             (case logInButtonModel of
@@ -290,7 +290,7 @@ gitHubLogInButton : LogInButtonModel -> Ui.Panel msg
 gitHubLogInButton logInButtonModel =
     Ui.depth
         []
-        [ Ui.Height (Ui.Fix 32) ]
+        [ Ui.Height (Ui.Fix 48), Ui.BorderRadius 8 ]
         [ Ui.monochromatic []
             []
             (case logInButtonModel of
@@ -329,7 +329,7 @@ googleLogInButton : LogInButtonModel -> Ui.Panel msg
 googleLogInButton logInButtonModel =
     Ui.depth
         []
-        [ Ui.Height (Ui.Fix 48) ]
+        [ Ui.Height (Ui.Fix 48), Ui.BorderRadius 8 ]
         [ Ui.monochromatic []
             []
             (case logInButtonModel of
@@ -369,7 +369,7 @@ lineIcon logInButtonModel =
     Ui.rasterImage
         []
         [ Ui.Width (Ui.Fix 48)
-        , Ui.Padding 8
+        , Ui.Padding 4
         , case logInButtonModel of
             LogInButtonModelNone ->
                 Ui.BorderRight { color = Css.rgb 0 179 0, width = 1 }

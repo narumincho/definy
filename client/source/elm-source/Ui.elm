@@ -106,6 +106,7 @@ type StyleComputed
         , overflowVisible : Bool
         , pointerImage : Maybe PointerImage
         , border : BorderStyle
+        , borderRadius : Int
         }
 
 
@@ -123,6 +124,7 @@ type Style
     | BorderBottom { color : Css.Color, width : Int }
     | BorderLeft { color : Css.Color, width : Int }
     | BorderRight { color : Css.Color, width : Int }
+    | BorderRadius Int
 
 
 type PointerImage
@@ -411,6 +413,9 @@ computeStyle list =
                             BorderStyle
                                 { borderStyle | right = Just record }
                     }
+
+                BorderRadius int ->
+                    { rec | borderRadius = int }
             )
                 |> StyleComputed
 
@@ -436,6 +441,7 @@ defaultStyle =
                 , left = Nothing
                 , right = Nothing
                 }
+        , borderRadius = 0
         }
 
 
@@ -575,6 +581,13 @@ panelToStyle style childrenStyle content =
 
                 Nothing ->
                     []
+           )
+        ++ (case record.borderRadius of
+                0 ->
+                    []
+
+                _ ->
+                    [ Css.borderRadius (Css.px (toFloat record.borderRadius)) ]
            )
         |> Css.batch
 
