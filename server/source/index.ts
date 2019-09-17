@@ -24,6 +24,7 @@ export const indexHtml = functions.https.onRequest((request, response) => {
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Definy</title>
     <link rel="icon" href="/assets/icon.png">
+    <meta name="description" content="ブラウザで動作する革新的なプログラミング言語">
     <meta name="twitter:card" content="summary_large_image">
     <meta property="og:url" content="https://definy-lang.web.app${request.url}">
     <meta property="og:title" content="${escapeHtml(
@@ -200,3 +201,24 @@ export const file = functions.https.onRequest(async (request, response) => {
     }
     response.status(400).send("invalid file parameter");
 });
+
+/* =====================================================================
+ *                            Sitemap
+ * =====================================================================
+ */
+export const sitemap = functions
+    .region("us-central1")
+    .https.onRequest(async (request, response) => {
+        response.setHeader("content-type", "application/xml");
+        response.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${pathToXml("")}
+</urlset>`);
+    });
+
+const pathToXml = (path: string): string => `
+    <url>
+        <loc>https://definy-lang.web.app/${path}</loc>
+        <lastmod>2019-09-17</lastmod>
+    </url>
+`;

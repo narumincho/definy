@@ -3,6 +3,10 @@
         "public": "client/distribution",
         "rewrites": [
             {
+                "source": "sitemap",
+                "function": "sitemap"
+            },
+            {
                 "source": "**",
                 "function": "indexHtml"
             }
