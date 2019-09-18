@@ -126,12 +126,12 @@ export const getReadableStream = (fileHash: string): stream.Readable => {
 export const createAndWriteAccessToken = async (
     userId: type.UserId
 ): Promise<type.AccessToken> => {
-    const id = crypto.randomBytes(32).toString("hex");
+    const id = type.createAccessToken();
     await accessTokenCollection.doc(id).create({
         userId: userId,
         issuedAt: new Date()
     });
-    return id as type.AccessToken;
+    return id;
 };
 
 export const verifyAccessToken = async (
