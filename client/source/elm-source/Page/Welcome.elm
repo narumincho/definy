@@ -48,6 +48,7 @@ type Cmd
     = CmdToVerticalGutterMode
     | CmdConsoleLog String
     | CmdToLogInPage Data.SocialLoginService.SocialLoginService
+    | CmdJumpPage Url.Url
 
 
 init : Model
@@ -117,7 +118,7 @@ update msg (Model rec) =
             case result of
                 Ok url ->
                     ( Model rec
-                    , []
+                    , [ CmdJumpPage url ]
                     )
 
                 Err errorMessage ->

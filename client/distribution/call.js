@@ -105,7 +105,7 @@ getLineLogInUrl
             jumpPage(data.getLineLogInUrl);
         });
     });
-    app.ports.requestAccessToken.subscribe(() => {
+    app.ports.requestAccessTokenFromIndexedDB.subscribe(() => {
         const userDBRequest = indexedDB.open("user", 1);
         userDBRequest.onupgradeneeded = event => {
             console.log("ユーザーデータのDBが更新された");
@@ -134,18 +134,64 @@ getLineLogInUrl
                 console.log("読み込み完了!");
                 const request = event.target;
                 if (request.result === undefined) {
-                    app.ports.responseAccessToken.send("");
+                    app.ports.portResponseAccessTokenFromIndexedDB.send("");
                     return;
                 }
                 if (typeof request.result === "string") {
-                    app.ports.responseAccessToken.send(request.result);
+                    app.ports.portResponseAccessTokenFromIndexedDB.send(request.result);
                     return;
                 }
-                app.ports.responseAccessToken.send("error");
+                app.ports.portResponseAccessTokenFromIndexedDB.send("error");
             };
             getRequest.onerror = event => {
                 console.log("読み込み失敗");
-                app.ports.responseAccessToken.send("error");
+                app.ports.portResponseAccessTokenFromIndexedDB.send("error");
+            };
+        };
+        userDBRequest.onerror = event => {
+            console.log("ユーザーデータのDBに接続できなかった");
+        };
+    });
+    app.ports.writeAccessTokenToIndexedDB.subscribe(accessToken => {
+        const userDBRequest = indexedDB.open("user", 1);
+        userDBRequest.onupgradeneeded = event => {
+            console.log("ユーザーデータのDBが更新された");
+            const target = event.target;
+            const db = target.result;
+            db.createObjectStore("accessToken", {});
+        };
+        userDBRequest.onsuccess = event => {
+            console.log("ユーザーデータのDBに接続成功!");
+            const target = event.target;
+            const db = target.result;
+            const transaction = db.transaction("accessToken", "readwrite");
+            transaction.oncomplete = event => {
+                console.log("トランザクションが成功した");
+                db.close();
+            };
+            transaction.onerror = event => {
+                console.log("トランザクションが失敗した");
+                db.close();
+            };
+            const putRequest = transaction
+                .objectStore("accessToken")
+                .put(accessToken, "lastLogInUser");
+            putRequest.onsuccess = event => {
+                console.log("書き込み完了!");
+                const request = event.target;
+                if (request.result === undefined) {
+                    app.ports.portResponseAccessTokenFromIndexedDB.send("");
+                    return;
+                }
+                if (typeof request.result === "string") {
+                    app.ports.portResponseAccessTokenFromIndexedDB.send(request.result);
+                    return;
+                }
+                app.ports.portResponseAccessTokenFromIndexedDB.send("error");
+            };
+            putRequest.onerror = event => {
+                console.log("読み込み失敗");
+                app.ports.portResponseAccessTokenFromIndexedDB.send("error");
             };
         };
         userDBRequest.onerror = event => {

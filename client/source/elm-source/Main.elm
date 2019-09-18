@@ -5,6 +5,7 @@ import Browser
 import Browser.Navigation
 import Data.Key
 import Data.Language
+import Data.PageLocation
 import Data.Project
 import Data.SocialLoginService
 import Data.User
@@ -50,7 +51,10 @@ port logInWithGitHub : () -> Cmd msg
 port logInWithLine : () -> Cmd msg
 
 
-port requestAccessToken : () -> Cmd msg
+port requestAccessTokenFromIndexedDB : () -> Cmd msg
+
+
+port writeAccessTokenToIndexedDB : String -> Cmd msg
 
 
 port consoleLog : String -> Cmd msg
@@ -69,7 +73,7 @@ port keyPrevented : (() -> msg) -> Sub msg
 port windowResize : ({ width : Int, height : Int } -> msg) -> Sub msg
 
 
-port responseAccessToken : (String -> msg) -> Sub msg
+port portResponseAccessTokenFromIndexedDB : (String -> msg) -> Sub msg
 
 
 port changeLanguage : (String -> msg) -> Sub msg
@@ -151,6 +155,9 @@ init :
     -> ( Model, Cmd Msg )
 init { language } url navigationKey =
     let
+        ( tokenFromUrlMaybe, page ) =
+            Data.PageLocation.initFromUrl url
+
         ( editorPanelModel, editorGroupPanelCmd ) =
             Panel.EditorGroup.initModel
 
@@ -161,7 +168,13 @@ init { language } url navigationKey =
                 , page = Welcome Page.Welcome.init
                 , windowSize = { width = 0, height = 0 }
                 , msgQueue = []
-                , logInState = Data.User.ReadAccessToken
+                , logInState =
+                    case tokenFromUrlMaybe of
+                        Just accessToken ->
+                            Data.User.VerifyingAccessToken accessToken
+
+                        Nothing ->
+                            Data.User.ReadAccessToken
                 , language = Data.Language.languageFromString language
                 , navigationKey = navigationKey
                 }
@@ -170,7 +183,13 @@ init { language } url navigationKey =
     , (editorGroupPanelCmd
         |> List.map editorPanelCmdToCmd
       )
-        ++ [ requestAccessToken () ]
+        ++ (case tokenFromUrlMaybe of
+                Just accessToken ->
+                    [ writeAccessTokenToIndexedDB (Data.User.accessTokenToString accessToken) ]
+
+                Nothing ->
+                    [ requestAccessTokenFromIndexedDB () ]
+           )
         |> Cmd.batch
     )
 
@@ -309,6 +328,9 @@ welcomePageCmdToCmd cmd =
             Api.getLogInUrl
                 socialLoginService
                 (Page.Welcome.MsgGetLogInUrlResponse >> WelcomePageMsg >> PageMsg)
+
+        Page.Welcome.CmdJumpPage url ->
+            Browser.Navigation.load (Url.toString url)
 
 
 
@@ -931,7 +953,7 @@ subscriptions model =
         ([ keyPressed (Data.Key.fromKeyEventObject >> KeyPressed)
          , keyPrevented (always KeyPrevented)
          , windowResize WindowResize
-         , responseAccessToken ResponseAccessTokenFromIndexedDB
+         , portResponseAccessTokenFromIndexedDB ResponseAccessTokenFromIndexedDB
          , changeLanguage ChangeLanguage
          ]
             ++ (if isCaptureMouseEvent model then

@@ -114,7 +114,27 @@ const escapeHtml = (text: string): string =>
 
 export const api = functions
     .runWith({ memory: "2GB" })
-    .https.onRequest(graphqlExpress({ schema: schema.schema, graphiql: true }));
+    .https.onRequest((request, response) => {
+        console.log("API called");
+        response.setHeader(
+            "access-control-allow-origin",
+            "https://definy-lang.web.app"
+        );
+        response.setHeader("vary", "Origin");
+        if (request.method === "OPTIONS") {
+            response.setHeader(
+                "access-control-allow-methods",
+                "POST, GET, OPTIONS"
+            );
+            response.setHeader("access-control-allow-headers", "content-type");
+            response.status(200).send("");
+            return;
+        }
+        graphqlExpress({ schema: schema.schema, graphiql: true })(
+            request,
+            response
+        );
+    });
 
 /* =====================================================================
  *              ソーシャルログインをしたあとのリダイレクト先
@@ -145,7 +165,7 @@ export const logInCallback = functions.https.onRequest(
                 response
                     .status(400)
                     .send(
-                        "Definy doesn't support anything other than Google, GitHub and LINE"
+                        "Definy social login callback doesn't support anything other than Google, GitHub and LINE"
                     );
                 return;
         }
@@ -161,7 +181,7 @@ const sendResponseFromLogInCallbackResult = (
             response.status(400).send(result.message);
             return;
         case "redirect":
-            response.send(result.url.toString());
+            response.redirect(result.url.toString());
     }
 };
 

@@ -1,8 +1,10 @@
 module Data.User exposing
-    ( AccessTokenError(..)
+    ( AccessToken(..)
+    , AccessTokenError(..)
     , LogInState(..)
-    , AccessToken(..)
     , User
+    , accessTokenFromString
+    , accessTokenToString
     , from
     , fromName
     , getId
@@ -82,3 +84,13 @@ getName (User { name }) =
 getImageUrl : User -> String
 getImageUrl (User { imageId }) =
     "https://us-central1-definy-lang.cloudfunctions.net/file/user-image/" ++ imageId
+
+
+accessTokenFromString : String -> AccessToken
+accessTokenFromString =
+    AccessToken
+
+
+accessTokenToString : AccessToken -> String
+accessTokenToString (AccessToken string) =
+    string

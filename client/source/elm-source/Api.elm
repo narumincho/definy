@@ -1,4 +1,4 @@
-module Api exposing (..)
+module Api exposing (getLogInUrl)
 
 import Data.IdHash
 import Data.Label

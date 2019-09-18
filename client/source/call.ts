@@ -1,7 +1,7 @@
 interface Window {
-    Elm: {
-        Main: {
-            init: (flags: {}) => ElmApp;
+    readonly Elm: {
+        readonly Main: {
+            readonly init: (flags: {}) => ElmApp;
         };
     };
 }
@@ -14,22 +14,25 @@ type CmdForElmSub<T> = {
 };
 
 interface ElmApp {
-    ports: {
-        setTextAreaValue: SubForElmCmd<string>;
-        focusTextArea: SubForElmCmd<null>;
-        preventDefaultBeforeKeyEvent: SubForElmCmd<null>;
-        elementScrollIntoView: SubForElmCmd<string>;
-        logInWithGoogle: SubForElmCmd<null>;
-        logInWithGitHub: SubForElmCmd<null>;
-        logInWithLine: SubForElmCmd<null>;
-        requestAccessToken: SubForElmCmd<null>;
-        consoleLog: SubForElmCmd<string>;
-        keyPressed: CmdForElmSub<KeyboardEvent>;
-        keyPrevented: CmdForElmSub<null>;
-        windowResize: CmdForElmSub<{ width: number; height: number }>;
-        responseAccessToken: CmdForElmSub<string | null>;
-        changeLanguage: CmdForElmSub<string>;
-        subPointerUp: CmdForElmSub<null>;
+    readonly ports: {
+        readonly setTextAreaValue: SubForElmCmd<string>;
+        readonly focusTextArea: SubForElmCmd<null>;
+        readonly preventDefaultBeforeKeyEvent: SubForElmCmd<null>;
+        readonly elementScrollIntoView: SubForElmCmd<string>;
+        readonly logInWithGoogle: SubForElmCmd<null>;
+        readonly logInWithGitHub: SubForElmCmd<null>;
+        readonly logInWithLine: SubForElmCmd<null>;
+        readonly requestAccessTokenFromIndexedDB: SubForElmCmd<null>;
+        readonly writeAccessTokenToIndexedDB: SubForElmCmd<string>;
+        readonly consoleLog: SubForElmCmd<string>;
+        readonly keyPressed: CmdForElmSub<KeyboardEvent>;
+        readonly keyPrevented: CmdForElmSub<null>;
+        readonly windowResize: CmdForElmSub<{ width: number; height: number }>;
+        readonly portResponseAccessTokenFromIndexedDB: CmdForElmSub<
+            string | null
+        >;
+        readonly changeLanguage: CmdForElmSub<string>;
+        readonly subPointerUp: CmdForElmSub<null>;
     };
 }
 
@@ -174,7 +177,7 @@ getLineLogInUrl
         );
     });
 
-    app.ports.requestAccessToken.subscribe(() => {
+    app.ports.requestAccessTokenFromIndexedDB.subscribe(() => {
         const userDBRequest: IDBOpenDBRequest = indexedDB.open("user", 1);
 
         userDBRequest.onupgradeneeded = event => {
@@ -205,18 +208,73 @@ getLineLogInUrl
                 console.log("読み込み完了!");
                 const request = event.target as IDBRequest;
                 if (request.result === undefined) {
-                    app.ports.responseAccessToken.send("");
+                    app.ports.portResponseAccessTokenFromIndexedDB.send("");
                     return;
                 }
                 if (typeof request.result === "string") {
-                    app.ports.responseAccessToken.send(request.result);
+                    app.ports.portResponseAccessTokenFromIndexedDB.send(
+                        request.result
+                    );
                     return;
                 }
-                app.ports.responseAccessToken.send("error");
+                app.ports.portResponseAccessTokenFromIndexedDB.send("error");
             };
             getRequest.onerror = event => {
                 console.log("読み込み失敗");
-                app.ports.responseAccessToken.send("error");
+                app.ports.portResponseAccessTokenFromIndexedDB.send("error");
+            };
+        };
+
+        userDBRequest.onerror = event => {
+            console.log("ユーザーデータのDBに接続できなかった");
+        };
+    });
+
+    app.ports.writeAccessTokenToIndexedDB.subscribe(accessToken => {
+        const userDBRequest: IDBOpenDBRequest = indexedDB.open("user", 1);
+
+        userDBRequest.onupgradeneeded = event => {
+            console.log("ユーザーデータのDBが更新された");
+            const target = event.target as IDBOpenDBRequest;
+            const db = target.result;
+            db.createObjectStore("accessToken", {});
+        };
+
+        userDBRequest.onsuccess = event => {
+            console.log("ユーザーデータのDBに接続成功!");
+            const target = event.target as IDBOpenDBRequest;
+            const db = target.result;
+            const transaction = db.transaction("accessToken", "readwrite");
+            transaction.oncomplete = event => {
+                console.log("トランザクションが成功した");
+                db.close();
+            };
+            transaction.onerror = event => {
+                console.log("トランザクションが失敗した");
+                db.close();
+            };
+            const putRequest = transaction
+                .objectStore("accessToken")
+                .put(accessToken, "lastLogInUser");
+
+            putRequest.onsuccess = event => {
+                console.log("書き込み完了!");
+                const request = event.target as IDBRequest;
+                if (request.result === undefined) {
+                    app.ports.portResponseAccessTokenFromIndexedDB.send("");
+                    return;
+                }
+                if (typeof request.result === "string") {
+                    app.ports.portResponseAccessTokenFromIndexedDB.send(
+                        request.result
+                    );
+                    return;
+                }
+                app.ports.portResponseAccessTokenFromIndexedDB.send("error");
+            };
+            putRequest.onerror = event => {
+                console.log("読み込み失敗");
+                app.ports.portResponseAccessTokenFromIndexedDB.send("error");
             };
         };
 
