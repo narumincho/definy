@@ -215,7 +215,7 @@ export const file = functions.https.onRequest(async (request, response) => {
     if (request.method === "GET") {
         switch (fileCategory) {
             case "user-image":
-                databaseLow.getUserImageReadableStream(fileId).pipe(response);
+                databaseLow.getReadableStream(fileId).pipe(response);
                 return;
         }
     }

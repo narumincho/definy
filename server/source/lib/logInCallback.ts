@@ -9,35 +9,12 @@ import * as type from "./type";
 const domain = "definy-lang.web.app";
 const homeUrl = tool.urlFromString(domain);
 
-const createAccessTokenUrl = (
-    userId: string,
-    userName: string,
-    randomId: string
-): URL => {
+const createAccessTokenUrl = (accessToken: string): URL => {
     return tool.urlFromStringWithFragment(
         domain,
-        new Map([
-            ["accessToken", createAccessToken(userId, userName, randomId)]
-        ])
+        new Map([["accessToken", accessToken]])
     );
 };
-
-/**
- * アクセストークンを作成する
- * @param userId Definy内でのユーザーID
- * @param randomId 最後に発行したトークンかどうか区別するためのID
- */
-const createAccessToken = (
-    userId: string,
-    userName: string,
-    randomId: string
-): string =>
-    jwt.sign({ name: userName }, key.accessTokenSecretKey, {
-        algorithm: "HS256",
-        subject: userId,
-        expiresIn: "1h",
-        jwtid: randomId
-    });
 
 export type Result =
     | { type: "redirect"; url: URL }
@@ -98,32 +75,28 @@ export const googleLogInReceiver = async (
     });
     // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
     if (definyUserData !== null) {
+        const accessToken = await database.createAccessToken(definyUserData.id);
+        await database.updateLastAccessToken(definyUserData.id, accessToken);
         return {
             type: "redirect",
-            url: createAccessTokenUrl(
-                definyUserData.id,
-                definyUserData.name,
-                definyUserData.lastAccessTokenJti
-            )
+            url: createAccessTokenUrl(accessToken)
         };
     }
     // ユーザーが存在しないならユーザーを作成する
     const userImageId = await database.saveUserImageFromUrl(
         new URL(googleData.picture)
     );
-    const accessTokenRandomId = tool.createRandomString();
-    const userId = await database.addUser({
+    const { accessToken } = await database.addUser({
         name: type.userNameFromString(googleData.name.trim()),
         imageId: userImageId as type.FileHash,
         logInServiceAndId: {
             service: "google",
             accountId: googleData.sub
-        },
-        lastAccessTokenJti: accessTokenRandomId
+        }
     });
     return {
         type: "redirect",
-        url: createAccessTokenUrl(userId, googleData.name, accessTokenRandomId)
+        url: await createAccessTokenUrl(accessToken)
     };
 };
 
@@ -217,25 +190,21 @@ query {
         accountId: userData.id
     });
     if (definyUserData !== null) {
+        const accessToken = await database.createAccessToken(definyUserData.id);
+        await database.updateLastAccessToken(definyUserData.id, accessToken);
         return {
             type: "redirect",
-            url: createAccessTokenUrl(
-                definyUserData.id,
-                definyUserData.name,
-                definyUserData.lastAccessTokenJti
-            )
+            url: createAccessTokenUrl(accessToken)
         };
     }
     // ユーザーが存在しないなら作成し、リフレッシュトークンを返す
     console.log("GitHubで登録したユーザーがいなかった");
-    const accessTokenRandomId = tool.createRandomString();
     const imageId = await database.saveUserImageFromUrl(
         new URL(userData.avatarUrl)
     );
-    const userId = await database.addUser({
+    const { accessToken } = await database.addUser({
         name: type.userNameFromString(userData.name.trim()),
         imageId: imageId as type.FileHash,
-        lastAccessTokenJti: accessTokenRandomId,
         logInServiceAndId: {
             service: "gitHub",
             accountId: userData.id
@@ -243,7 +212,7 @@ query {
     });
     return {
         type: "redirect",
-        url: createAccessTokenUrl(userId, userData.name, accessTokenRandomId)
+        url: await createAccessTokenUrl(accessToken)
     };
 };
 /* =====================================================================
@@ -297,25 +266,21 @@ export const lineLogInReceiver = async (
 
     // そのあと、Definyにユーザーが存在するなら、そのユーザーのリフレッシュトークンを返す
     if (definyUserData !== null) {
+        const accessToken = await database.createAccessToken(definyUserData.id);
+        await database.updateLastAccessToken(definyUserData.id, accessToken);
         return {
             type: "redirect",
-            url: createAccessTokenUrl(
-                definyUserData.id,
-                definyUserData.name,
-                definyUserData.lastAccessTokenJti
-            )
+            url: createAccessTokenUrl(accessToken)
         };
     }
     // ユーザーが存在しないなら作成し、リフレッシュトークンを返す
     console.log("LINEで登録したユーザーがいなかった");
-    const accessTokenRandomId = tool.createRandomString();
     const imageId = await database.saveUserImageFromUrl(
         new URL(lineData.picture)
     );
-    const userId = await database.addUser({
+    const { accessToken } = await database.addUser({
         name: type.userNameFromString(lineData.name.trim()),
         imageId: imageId as type.FileHash,
-        lastAccessTokenJti: accessTokenRandomId,
         logInServiceAndId: {
             service: "line",
             accountId: lineData.sub
@@ -323,7 +288,7 @@ export const lineLogInReceiver = async (
     });
     return {
         type: "redirect",
-        url: createAccessTokenUrl(userId, lineData.name, accessTokenRandomId)
+        url: await createAccessTokenUrl(accessToken)
     };
 };
 

@@ -18,7 +18,7 @@ import * as key from "./key";
 export const generateAndWriteLogInState = async (
     logInService: type.SocialLoginService
 ): Promise<string> => {
-    const state = tool.createRandomString();
+    const state = type.createRandomId();
     await databaseLow.writeGoogleLogInState(logInService, state);
     return state;
 };
@@ -45,9 +45,7 @@ export const saveUserImageFromUrl = async (url: URL): Promise<string> => {
         responseType: "arraybuffer"
     });
     const mimeType: string = response.headers["content-type"];
-    const fileName = type.createHashFromBuffer(response.data);
-    await databaseLow.saveUserImage(fileName, response.data, mimeType);
-    return fileName;
+    return await databaseLow.saveFile(response.data, mimeType);
 };
 
 /**
@@ -56,7 +54,7 @@ export const saveUserImageFromUrl = async (url: URL): Promise<string> => {
  */
 export const getUserFromLogInService = async (
     logInServiceAndId: type.LogInServiceAndId
-): Promise<(UserLowCost & { lastAccessTokenJti: string }) | null> => {
+): Promise<(UserLowCost & { lastAccessToken: string }) | null> => {
     const userDataAndId = (await databaseLow.searchUsers(
         "logInServiceAndId",
         "==",
@@ -67,7 +65,7 @@ export const getUserFromLogInService = async (
     }
     return {
         ...databaseLowUserToLowCost(userDataAndId),
-        lastAccessTokenJti: userDataAndId.data.lastAccessTokenJti
+        lastAccessToken: userDataAndId.data.lastAccessToken
     };
 };
 
@@ -91,18 +89,19 @@ export const addUser = async (data: {
     name: type.UserName;
     imageId: type.FileHash;
     logInServiceAndId: type.LogInServiceAndId;
-    lastAccessTokenJti: string;
-}): Promise<string> => {
-    const userId = await databaseLow.addUser({
+}): Promise<{ userId: type.UserId; accessToken: type.AccessToken }> => {
+    const userId = type.createRandomId() as type.UserId;
+    const accessToken = await createAccessToken(userId);
+    await databaseLow.addUser(userId, {
         name: data.name,
         imageHash: data.imageId,
         introduction: "",
         createdAt: databaseLow.getNowTimestamp(),
         branchIds: [],
-        lastAccessTokenJti: data.lastAccessTokenJti,
+        lastAccessToken: accessToken,
         logInServiceAndId: data.logInServiceAndId
     });
-    return userId;
+    return { userId: userId, accessToken: accessToken };
 };
 
 /**
@@ -139,7 +138,17 @@ const databaseLowUserToLowCost = ({
         branches: data.branchIds.map(id => ({ id: id }))
     };
 };
-
+/**
+ * 最後のアクセストークンを変更する
+ * @param userId
+ * @param accessToken
+ */
+export const updateLastAccessToken = async (
+    userId: type.UserId,
+    accessToken: type.AccessToken
+): Promise<void> => {
+    await databaseLow.updateUser(userId, { lastAccessToken: accessToken });
+};
 /* ==========================================
                 Project
    ==========================================
@@ -702,26 +711,22 @@ const databaseLowExprDefSnapshotToLowCost = ({
     value: data.value
 });
 /* ==========================================
-               verifyAccessToken
+                AccessToken
    ==========================================
 */
 
 /**
- * アクセストークンの正当性チェックとidの取得
+ * アクセストークンを生成して、DBに保存する
+ * @param accessToken
+ */
+export const createAccessToken = async (
+    userId: type.UserId
+): Promise<type.AccessToken> =>
+    await databaseLow.createAndWriteAccessToken(userId);
+/**
+ * アクセストークンの正当性チェックとuserIdの取得
  * @param accessToken
  */
 export const verifyAccessToken = async (
-    accessToken: string
-): Promise<type.UserId> => {
-    const decoded = jwt.verify(accessToken, key.accessTokenSecretKey, {
-        algorithms: ["HS256"]
-    }) as { sub: unknown; jti: unknown };
-    if (typeof decoded.sub !== "string" || typeof decoded.jti !== "string") {
-        throw new Error("invalid access token");
-    }
-    const userData = await databaseLow.getUser(decoded.sub as type.UserId);
-    if (userData.lastAccessTokenJti !== decoded.jti) {
-        throw new Error("アクセストークンが無効になりました");
-    }
-    return decoded.sub as type.UserId;
-};
+    accessToken: type.AccessToken
+): Promise<type.UserId> => await databaseLow.verifyAccessToken(accessToken);

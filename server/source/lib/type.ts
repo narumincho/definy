@@ -397,33 +397,28 @@ export type FileHash = string & { __fileHashBrand: never };
     =============================================================
 */
 /**
- * Id。各種リソースを識別するために使うID。
- * URLでも使うので、大文字と小文字の差を持たせるべきではないので。小文字に統一して、大文字は一切使わない。長さは24文字
+ * Id。各種リソースを識別するために使うID。UUID(v4)やIPv6と同じ128bit, 16bytes
+ * 小文字に統一して、大文字は使わない。長さは32文字
  */
 export const createRandomId = (): string => {
-    let id = "";
-    const chars = "0123456789abcdefghijklmnopqrstuvwxyz";
-    for (let i = 0; i < 24; i++) {
-        id += chars[Math.floor(Math.random() * chars.length)];
-    }
-    return id;
+    return crypto.randomBytes(16).toString("hex");
 };
 
 const idTypeConfig: g.GraphQLScalarTypeConfig<string, string> = {
     name: "Id",
     description:
-        "Id。各種リソースを識別するために使うID。使う文字はabcdefghijklmnopqrstuvwxyz0123456789。長さは24文字",
+        "Id。各種リソースを識別するために使うID。使う文字は0123456789abcdef。長さは32文字",
     serialize: (value: string): string => value,
     parseValue: (value: unknown): string => {
         if (typeof value !== "string") {
             throw new Error("id must be string");
         }
-        if (value.length !== 24) {
-            throw new Error("Id length must be 24");
+        if (value.length !== 32) {
+            throw new Error("Id length must be 32");
         }
         for (const char of value) {
-            if (!"abcdefghijklmnopqrstuvwxyz0123456789".includes(char)) {
-                throw new Error("Id char must be match /[a-zA-Z0-9]/");
+            if (!"0123456789abcdef".includes(char)) {
+                throw new Error("Id char must be match /[0-9a-f]/");
             }
         }
         return value;
@@ -469,10 +464,12 @@ export const createHash = (data: unknown): string =>
         .update(JSON.stringify(data))
         .digest("hex");
 
-export const createHashFromBuffer = (data: Buffer): string =>
+export const createHashFromBuffer = (data: Buffer, mimeType: string): string =>
     crypto
         .createHash("sha256")
         .update(data)
+        .update(data.length.toString())
+        .update(mimeType)
         .digest("hex");
 
 /*  =============================================================
@@ -547,5 +544,39 @@ export const urlGraphQLType = new g.GraphQLScalarType(urlTypeScalarTypeConfig);
                             AccessToken
     =============================================================
 */
+/**
+ * Id。各種リソースを識別するために使うID。UUID(v4)やIPv6と同じ128bit, 16bytes
+ * 小文字に統一して、大文字は使わない。長さは32文字
+ */
+export const createAccessToken = (): AccessToken => {
+    return crypto.randomBytes(32).toString("hex") as AccessToken;
+};
+
 export const accessTokenDescription =
-    "アクセストークン。getLogInUrlで取得したログインURLのページからリダイレクトするときのクエリパラメータについてくる。";
+    "アクセストークン。getLogInUrlで取得したログインURLのページからリダイレクトするときのクエリパラメータについてくる。個人的なデータにアクセスするときに必要。使う文字は0123456789abcdef。長さは64文字";
+
+const accessTokenTypeConfig: g.GraphQLScalarTypeConfig<string, string> = {
+    name: "AccessToken",
+    description: accessTokenDescription,
+    serialize: (value: string): string => value,
+    parseValue: (value: unknown): string => {
+        if (typeof value !== "string") {
+            throw new Error("AccessToken must be string");
+        }
+        if (value.length !== 64) {
+            throw new Error("AccessToken length must be 64");
+        }
+        for (const char of value) {
+            if (!"0123456789abcdef".includes(char)) {
+                throw new Error("AccessToken char must be match /[0-9a-f]/");
+            }
+        }
+        return value;
+    }
+};
+
+export const accessTokenGraphQLType = new g.GraphQLScalarType(
+    accessTokenTypeConfig
+);
+
+export type AccessToken = string & { __accessTokenBrand: never };

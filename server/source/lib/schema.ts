@@ -1215,7 +1215,7 @@ export const schema = new g.GraphQLSchema({
             getLogInUrl: getLogInUrl,
             addProject: makeQueryOrMutationField<
                 {
-                    accessToken: string;
+                    accessToken: type.AccessToken;
                     name: type.Label;
                     editors: Array<type.UserId>;
                 },
@@ -1223,7 +1223,7 @@ export const schema = new g.GraphQLSchema({
             >({
                 args: {
                     accessToken: {
-                        type: g.GraphQLNonNull(g.GraphQLString),
+                        type: g.GraphQLNonNull(type.accessTokenGraphQLType),
                         description: type.accessTokenDescription
                     },
                     name: {

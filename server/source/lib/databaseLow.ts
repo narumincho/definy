@@ -2,14 +2,14 @@ import * as admin from "firebase-admin";
 import * as type from "./type";
 import * as firestore from "@google-cloud/firestore";
 import * as stream from "stream";
+import * as crypto from "crypto";
 
 const app = admin.initializeApp();
 const dataBase = app.firestore();
-const storage = app.storage();
-const userImageBucket = storage.bucket("definy-user-image");
-const projectBucket = storage.bucket("definy-project");
+const storageDefaultBucket = app.storage().bucket();
 
 const userCollection = dataBase.collection("user");
+const accessTokenCollection = dataBase.collection("accessToken");
 const collectionFromLogInState = (
     logInService: type.SocialLoginService
 ): FirebaseFirestore.CollectionReference => {
@@ -39,7 +39,7 @@ export type UserData = {
     introduction: string;
     createdAt: firestore.Timestamp;
     branchIds: ReadonlyArray<type.BranchId>;
-    lastAccessTokenJti: string;
+    lastAccessToken: string;
     logInServiceAndId: type.LogInServiceAndId;
 };
 
@@ -48,8 +48,10 @@ export type UserData = {
  * @param userData ユーザー情報
  * @returns ユーザーのID
  */
-export const addUser = async (userData: UserData): Promise<type.UserId> => {
-    const userId = type.createRandomId() as type.UserId;
+export const addUser = async (
+    userId: type.UserId,
+    userData: UserData
+): Promise<type.UserId> => {
     await userCollection.doc(userId).set(userData);
     return userId;
 };
@@ -64,6 +66,16 @@ export const getUser = async (userId: type.UserId): Promise<UserData> => {
         throw new Error(`There was no user with userId = ${userId}`);
     }
     return userData as UserData;
+};
+
+/**
+ * ユーザーのデータを更新する
+ */
+export const updateUser = async (
+    userId: type.UserId,
+    data: Partial<UserData>
+): Promise<void> => {
+    await userCollection.doc(userId).update(data);
 };
 
 /**
@@ -87,24 +99,56 @@ export const searchUsers = async <T extends keyof UserData>(
     );
 
 /**
- * Firebase Cloud Storageのバケット "definy-user-image" で新しくファイルを作成する
+ * Firebase Cloud Storage にファイルを保存する
+ * @returns ハッシュ値
  */
-export const saveUserImage = async (
-    fileName: string,
+export const saveFile = async (
     buffer: Buffer,
     mimeType: string
-): Promise<void> => {
-    const file = userImageBucket.file(fileName);
+): Promise<string> => {
+    const hash = type.createHashFromBuffer(buffer, mimeType);
+    const file = storageDefaultBucket.file(hash);
     await file.save(buffer, { contentType: mimeType });
+    return hash;
 };
 
 /**
- * Firebase Cloud Storageのバケット "definy-user-image" のファイルを読み込むReadable Streamを取得する
- * @param fileId ファイルID
+ * Firebase Cloud Storageからファイルを読み込むReadable Streamを取得する
+ * @param fileHash ファイルハッシュ
  */
-export const getUserImageReadableStream = (fileId: string): stream.Readable =>
-    userImageBucket.file(fileId).createReadStream();
+export const getReadableStream = (fileHash: string): stream.Readable => {
+    return storageDefaultBucket.file(fileHash).createReadStream();
+};
+/* ==========================================
+            Access Token
+   ==========================================
+*/
+export const createAndWriteAccessToken = async (
+    userId: type.UserId
+): Promise<type.AccessToken> => {
+    const id = crypto.randomBytes(32).toString("hex");
+    await accessTokenCollection.doc(id).create({
+        userId: userId,
+        issuedAt: new Date()
+    });
+    return id as type.AccessToken;
+};
 
+export const verifyAccessToken = async (
+    accessToken: type.AccessToken
+): Promise<type.UserId> => {
+    const data = (await accessTokenCollection.doc(accessToken).get()).data();
+    if (data === undefined) {
+        throw new Error("invalid access token");
+    }
+    if (
+        new Date().getTime() <
+        (data.issuedAt as Date).getTime() + 1000 * 60 * 5 // 5時間
+    ) {
+        throw new Error("access token has expired");
+    }
+    return data.userId as type.UserId;
+};
 /* ==========================================
                 Log In
    ==========================================
