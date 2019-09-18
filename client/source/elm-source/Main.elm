@@ -1,5 +1,6 @@
 port module Main exposing (main)
 
+import Api
 import Browser
 import Browser.Navigation
 import Data.Key
@@ -301,8 +302,13 @@ welcomePageCmdToCmd cmd =
             Task.succeed (ToResizeGutterMode GutterTypeVertical)
                 |> Task.perform identity
 
-        Page.Welcome.ConsoleLog string ->
+        Page.Welcome.CmdConsoleLog string ->
             consoleLog string
+
+        Page.Welcome.CmdToLogInPage socialLoginService ->
+            Api.getLogInUrl
+                socialLoginService
+                (Page.Welcome.MsgGetLogInUrlResponse >> WelcomePageMsg >> PageMsg)
 
 
 
@@ -623,7 +629,7 @@ pointerUp (Model rec) =
         Welcome model ->
             let
                 ( newModel, cmd ) =
-                    model |> Page.Welcome.update Page.Welcome.PointerUp
+                    model |> Page.Welcome.update Page.Welcome.MsgPointerUp
             in
             ( Model
                 { rec

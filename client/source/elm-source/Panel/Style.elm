@@ -5,6 +5,7 @@ module Panel.Style exposing
     , fontHack
     , gutterPanel
     , horizontalGutter
+    , normalFont
     , tabContainer
     , textColorStyle
     , verticalGutter
@@ -182,6 +183,16 @@ horizontalGutter isResizing =
         , Html.Styled.Events.onMouseDown ()
         ]
         []
+
+
+normalFont : Ui.Font
+normalFont =
+    Ui.Font
+        { typeface = "Roboto"
+        , size = 16
+        , letterSpacing = 0
+        , color = Css.rgb 255 255 255
+        }
 
 
 tabContainer : a -> List ( a, String ) -> Html.Styled.Html a

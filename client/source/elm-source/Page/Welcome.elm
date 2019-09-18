@@ -13,13 +13,15 @@ import Data.SocialLoginService
 import Data.User
 import Panel.Style
 import Ui
+import Url
 import VectorImage
 
 
 type Model
     = Model
         { width : Int
-        , pointerState : PointerState
+        , pointer : PointerState
+        , logInRequest : Maybe Data.SocialLoginService.SocialLoginService
         }
 
 
@@ -32,71 +34,104 @@ type PointerState
 
 
 type Msg
-    = ToSideGutterMode Panel.Style.GutterMsg
-    | PointerMove Ui.Pointer
-    | PointerUp
-    | ToLogInPage Data.SocialLoginService.SocialLoginService
+    = MsgToSideGutterMode Panel.Style.GutterMsg
+    | MsgPointerMove Ui.Pointer
+    | MsgPointerUp
+    | MsgLogInButtonEnter Data.SocialLoginService.SocialLoginService
+    | MsgLogInButtonLeave
+    | MsgLogInButtonPressed Data.SocialLoginService.SocialLoginService
+    | MsgToLogInPage Data.SocialLoginService.SocialLoginService
+    | MsgGetLogInUrlResponse (Result String Url.Url)
 
 
 type Cmd
     = CmdToVerticalGutterMode
-    | ConsoleLog String
+    | CmdConsoleLog String
+    | CmdToLogInPage Data.SocialLoginService.SocialLoginService
 
 
 init : Model
 init =
     Model
         { width = 400
-        , pointerState = None
+        , pointer = None
+        , logInRequest = Nothing
         }
 
 
 update : Msg -> Model -> ( Model, List Cmd )
 update msg (Model rec) =
     case msg of
-        ToSideGutterMode gutterMsg ->
+        MsgToSideGutterMode gutterMsg ->
             case gutterMsg of
                 Panel.Style.GutterMsgPointerEnter ->
-                    ( Model { rec | pointerState = SideBarPointerEnter }
+                    ( Model { rec | pointer = SideBarPointerEnter }
                     , []
                     )
 
                 Panel.Style.GutterMsgPointerLeave ->
-                    ( Model { rec | pointerState = None }
+                    ( Model { rec | pointer = None }
                     , []
                     )
 
                 Panel.Style.GutterMsgToResizeMode pointer ->
                     ( Model
                         { rec
-                            | pointerState = SideBarResize
+                            | pointer = SideBarResize
                             , width = pointer |> Ui.pointerGetPosition |> Tuple.first |> floor
                         }
                     , [ CmdToVerticalGutterMode ]
                     )
 
-        PointerMove mouseState ->
+        MsgPointerMove mouseState ->
             ( Model { rec | width = mouseState |> Ui.pointerGetPosition |> Tuple.first |> floor }
             , []
             )
 
-        PointerUp ->
-            ( Model { rec | pointerState = None }
+        MsgPointerUp ->
+            ( Model { rec | pointer = None }
             , []
             )
 
-        ToLogInPage _ ->
-            ( Model rec
+        MsgLogInButtonEnter service ->
+            ( Model { rec | pointer = LogInButtonHover service }
             , []
             )
+
+        MsgLogInButtonLeave ->
+            ( Model { rec | pointer = None }
+            , []
+            )
+
+        MsgLogInButtonPressed service ->
+            ( Model { rec | pointer = LogInButtonPressed service }
+            , []
+            )
+
+        MsgToLogInPage service ->
+            ( Model { rec | logInRequest = Just service }
+            , [ CmdToLogInPage service ]
+            )
+
+        MsgGetLogInUrlResponse result ->
+            case result of
+                Ok url ->
+                    ( Model rec
+                    , []
+                    )
+
+                Err errorMessage ->
+                    ( Model rec
+                    , [ CmdConsoleLog errorMessage ]
+                    )
 
 
 view : Data.User.LogInState -> Model -> Ui.Panel Msg
 view logInState (Model rec) =
     Ui.row
-        (case rec.pointerState of
+        (case rec.pointer of
             SideBarResize ->
-                [ Ui.PointerMove PointerMove ]
+                [ Ui.PointerMove MsgPointerMove ]
 
             _ ->
                 []
@@ -106,10 +141,11 @@ view logInState (Model rec) =
         [ side
             { width = rec.width
             , logInState = logInState
-            , pointerState = rec.pointerState
+            , pointer = rec.pointer
+            , logInRequest = rec.logInRequest
             }
         , Panel.Style.gutterPanel
-            (case rec.pointerState of
+            (case rec.pointer of
                 SideBarPointerEnter ->
                     Panel.Style.GutterModePointerEnter
 
@@ -119,19 +155,25 @@ view logInState (Model rec) =
                 _ ->
                     Panel.Style.GutterModeNone
             )
-            |> Ui.map ToSideGutterMode
+            |> Ui.map MsgToSideGutterMode
         , yggdrasil
         ]
 
 
-side : { width : Int, logInState : Data.User.LogInState, pointerState : PointerState } -> Ui.Panel Msg
-side { width, logInState, pointerState } =
+side :
+    { width : Int
+    , logInState : Data.User.LogInState
+    , pointer : PointerState
+    , logInRequest : Maybe Data.SocialLoginService.SocialLoginService
+    }
+    -> Ui.Panel Msg
+side { width, logInState, pointer, logInRequest } =
     Ui.column
         []
         [ Ui.Width (Ui.Fix width) ]
         16
         [ titleLogo
-        , userView pointerState logInState
+        , userView pointer logInState logInRequest
         , Ui.depth
             []
             []
@@ -169,8 +211,12 @@ titleLogo =
         "Definy"
 
 
-userView : PointerState -> Data.User.LogInState -> Ui.Panel Msg
-userView pointerState logInState =
+userView :
+    PointerState
+    -> Data.User.LogInState
+    -> Maybe Data.SocialLoginService.SocialLoginService
+    -> Ui.Panel Msg
+userView pointerState logInState logInRequest =
     Ui.column
         []
         [ Ui.Padding 8 ]
@@ -201,50 +247,65 @@ userView pointerState logInState =
          ]
             ++ (case logInState of
                     Data.User.GuestUser _ ->
-                        [ Ui.column
-                            []
-                            []
-                            8
-                            [ lineLogInButton
-                                (case pointerState of
-                                    LogInButtonHover Data.SocialLoginService.Line ->
-                                        LogInButtonModelHover
-
-                                    LogInButtonPressed Data.SocialLoginService.Line ->
-                                        LogInButtonModelPressed
-
-                                    _ ->
-                                        LogInButtonModelNone
-                                )
-                            , gitHubLogInButton
-                                (case pointerState of
-                                    LogInButtonHover Data.SocialLoginService.GitHub ->
-                                        LogInButtonModelHover
-
-                                    LogInButtonPressed Data.SocialLoginService.GitHub ->
-                                        LogInButtonModelPressed
-
-                                    _ ->
-                                        LogInButtonModelNone
-                                )
-                            , googleLogInButton
-                                (case pointerState of
-                                    LogInButtonHover Data.SocialLoginService.Google ->
-                                        LogInButtonModelHover
-
-                                    LogInButtonPressed Data.SocialLoginService.Google ->
-                                        LogInButtonModelPressed
-
-                                    _ ->
-                                        LogInButtonModelNone
-                                )
-                            ]
-                        ]
+                        guestUserView pointerState logInRequest
 
                     _ ->
                         []
                )
         )
+
+
+guestUserView : PointerState -> Maybe Data.SocialLoginService.SocialLoginService -> List (Ui.Panel Msg)
+guestUserView pointerState logInRequest =
+    case logInRequest of
+        Just service ->
+            [ Ui.text
+                []
+                []
+                Panel.Style.normalFont
+                (Data.SocialLoginService.serviceName service ++ "のURLを発行中")
+            ]
+
+        Nothing ->
+            [ Ui.column
+                []
+                []
+                8
+                [ googleLogInButton
+                    (case pointerState of
+                        LogInButtonHover Data.SocialLoginService.Google ->
+                            LogInButtonModelHover
+
+                        LogInButtonPressed Data.SocialLoginService.Google ->
+                            LogInButtonModelPressed
+
+                        _ ->
+                            LogInButtonModelNone
+                    )
+                , gitHubLogInButton
+                    (case pointerState of
+                        LogInButtonHover Data.SocialLoginService.GitHub ->
+                            LogInButtonModelHover
+
+                        LogInButtonPressed Data.SocialLoginService.GitHub ->
+                            LogInButtonModelPressed
+
+                        _ ->
+                            LogInButtonModelNone
+                    )
+                , lineLogInButton
+                    (case pointerState of
+                        LogInButtonHover Data.SocialLoginService.Line ->
+                            LogInButtonModelHover
+
+                        LogInButtonPressed Data.SocialLoginService.Line ->
+                            LogInButtonModelPressed
+
+                        _ ->
+                            LogInButtonModelNone
+                    )
+                ]
+            ]
 
 
 type LogInButtonModel
@@ -256,7 +317,11 @@ type LogInButtonModel
 lineLogInButton : LogInButtonModel -> Ui.Panel Msg
 lineLogInButton logInButtonModel =
     Ui.depth
-        [ Ui.Click (ToLogInPage Data.SocialLoginService.Line) ]
+        [ Ui.Click (MsgToLogInPage Data.SocialLoginService.Line)
+        , Ui.PointerEnter (always (MsgLogInButtonEnter Data.SocialLoginService.Line))
+        , Ui.PointerLeave (always (MsgLogInButtonEnter Data.SocialLoginService.Line))
+        , Ui.PointerDown (always (MsgLogInButtonPressed Data.SocialLoginService.Line))
+        ]
         [ Ui.Height (Ui.Fix 48), Ui.BorderRadius 8 ]
         [ Ui.monochromatic []
             []
@@ -295,7 +360,11 @@ lineLogInButton logInButtonModel =
 gitHubLogInButton : LogInButtonModel -> Ui.Panel Msg
 gitHubLogInButton logInButtonModel =
     Ui.depth
-        [ Ui.Click (ToLogInPage Data.SocialLoginService.GitHub) ]
+        [ Ui.Click (MsgToLogInPage Data.SocialLoginService.GitHub)
+        , Ui.PointerEnter (always (MsgLogInButtonEnter Data.SocialLoginService.GitHub))
+        , Ui.PointerLeave (always (MsgLogInButtonEnter Data.SocialLoginService.GitHub))
+        , Ui.PointerDown (always (MsgLogInButtonPressed Data.SocialLoginService.GitHub))
+        ]
         [ Ui.Height (Ui.Fix 48), Ui.BorderRadius 8 ]
         [ Ui.monochromatic []
             []
@@ -334,7 +403,11 @@ gitHubLogInButton logInButtonModel =
 googleLogInButton : LogInButtonModel -> Ui.Panel Msg
 googleLogInButton logInButtonModel =
     Ui.depth
-        [ Ui.Click (ToLogInPage Data.SocialLoginService.GitHub) ]
+        [ Ui.Click (MsgToLogInPage Data.SocialLoginService.GitHub)
+        , Ui.PointerEnter (always (MsgLogInButtonEnter Data.SocialLoginService.Google))
+        , Ui.PointerLeave (always (MsgLogInButtonEnter Data.SocialLoginService.Google))
+        , Ui.PointerDown (always (MsgLogInButtonPressed Data.SocialLoginService.Google))
+        ]
         [ Ui.Height (Ui.Fix 48), Ui.BorderRadius 8 ]
         [ Ui.monochromatic []
             []

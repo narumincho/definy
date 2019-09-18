@@ -2,14 +2,58 @@ module Api exposing (..)
 
 import Data.IdHash
 import Data.Label
-import Data.Project as Project
+import Data.Project
+import Data.SocialLoginService
 import Http
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp
 import Json.Encode as Je
+import Url
 
 
-getAllProjectIndex : (Result String (List Project.SimpleProject) -> msg) -> Cmd msg
+getLogInUrl : Data.SocialLoginService.SocialLoginService -> (Result String Url.Url -> msg) -> Cmd msg
+getLogInUrl service =
+    graphQlApiRequest
+        (Mutation
+            [ Field
+                { name = "getLogInUrl"
+                , args =
+                    [ ( "service"
+                      , GraphQLEnum
+                            (case service of
+                                Data.SocialLoginService.Google ->
+                                    "google"
+
+                                Data.SocialLoginService.GitHub ->
+                                    "gitHub"
+
+                                Data.SocialLoginService.Line ->
+                                    "line"
+                            )
+                      )
+                    ]
+                , return = []
+                }
+            ]
+        )
+        logInOrSignUpUrlResponseToResult
+
+
+logInOrSignUpUrlResponseToResult : Jd.Decoder Url.Url
+logInOrSignUpUrlResponseToResult =
+    Jd.field "getLogInUrl" Jd.string
+        |> Jd.andThen
+            (\urlString ->
+                case Url.fromString urlString of
+                    Just url ->
+                        Jd.succeed url
+
+                    Nothing ->
+                        Jd.fail "url format error"
+            )
+
+
+getAllProjectIndex : (Result String (List Data.Project.SimpleProject) -> msg) -> Cmd msg
 getAllProjectIndex =
     graphQlApiRequest
         (Query
@@ -32,11 +76,11 @@ getAllProjectIndex =
         )
 
 
-projectSimpleDecoder : Jd.Decoder Project.SimpleProject
+projectSimpleDecoder : Jd.Decoder Data.Project.SimpleProject
 projectSimpleDecoder =
     Jd.succeed
         (\id name leader ->
-            Project.simpleFrom
+            Data.Project.simpleFrom
                 { id = Data.IdHash.ProjectId id
                 , name = name
                 , leader = Data.IdHash.UserId leader
