@@ -549,11 +549,11 @@ export const urlGraphQLType = new g.GraphQLScalarType(urlTypeScalarTypeConfig);
  * 小文字に統一して、大文字は使わない。長さは32文字
  */
 export const createAccessToken = (): AccessToken => {
-    return crypto.randomBytes(32).toString("hex") as AccessToken;
+    return crypto.randomBytes(24).toString("hex") as AccessToken;
 };
 
 export const accessTokenDescription =
-    "アクセストークン。getLogInUrlで取得したログインURLのページからリダイレクトするときのクエリパラメータについてくる。個人的なデータにアクセスするときに必要。使う文字は0123456789abcdef。長さは64文字";
+    "アクセストークン。getLogInUrlで取得したログインURLのページからリダイレクトするときのクエリパラメータについてくる。個人的なデータにアクセスするときに必要。使う文字は0123456789abcdef。長さは48文字";
 
 const accessTokenTypeConfig: g.GraphQLScalarTypeConfig<string, string> = {
     name: "AccessToken",
@@ -563,8 +563,8 @@ const accessTokenTypeConfig: g.GraphQLScalarTypeConfig<string, string> = {
         if (typeof value !== "string") {
             throw new Error("AccessToken must be string");
         }
-        if (value.length !== 64) {
-            throw new Error("AccessToken length must be 64");
+        if (value.length !== 48) {
+            throw new Error("AccessToken length must be 48");
         }
         for (const char of value) {
             if (!"0123456789abcdef".includes(char)) {
