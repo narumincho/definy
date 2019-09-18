@@ -180,12 +180,19 @@ init { language } url navigationKey =
                 }
     in
     ( model
-    , (editorGroupPanelCmd
-        |> List.map editorPanelCmdToCmd
-      )
+    , [ Browser.Navigation.replaceUrl navigationKey
+            (page
+                |> Maybe.withDefault Data.PageLocation.InitWelcome
+                |> Data.PageLocation.initToUrlAsString
+            )
+      ]
+        ++ (editorGroupPanelCmd
+                |> List.map editorPanelCmdToCmd
+           )
         ++ (case tokenFromUrlMaybe of
                 Just accessToken ->
-                    [ writeAccessTokenToIndexedDB (Data.User.accessTokenToString accessToken) ]
+                    [ writeAccessTokenToIndexedDB (Data.User.accessTokenToString accessToken)
+                    ]
 
                 Nothing ->
                     [ requestAccessTokenFromIndexedDB () ]
