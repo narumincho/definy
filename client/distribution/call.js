@@ -73,38 +73,6 @@ requestAnimationFrame(() => {
             callBack(json.data);
         });
     };
-    const jumpPage = (url) => {
-        requestAnimationFrame(() => {
-            location.href = url;
-        });
-    };
-    app.ports.logInWithGoogle.subscribe(() => {
-        callApi(`
-mutation {
-getGoogleLogInUrl
-}
-`, data => {
-            jumpPage(data.getGoogleLogInUrl);
-        });
-    });
-    app.ports.logInWithGitHub.subscribe(() => {
-        callApi(`
-mutation {
-getGitHubLogInUrl
-}
-`, data => {
-            jumpPage(data.getGitHubLogInUrl);
-        });
-    });
-    app.ports.logInWithLine.subscribe(() => {
-        callApi(`
-mutation {
-getLineLogInUrl
-}
-`, data => {
-            jumpPage(data.getLineLogInUrl);
-        });
-    });
     app.ports.requestAccessTokenFromIndexedDB.subscribe(() => {
         const userDBRequest = indexedDB.open("user", 1);
         userDBRequest.onupgradeneeded = event => {
@@ -120,11 +88,11 @@ getLineLogInUrl
             console.log("db in success", db);
             const transaction = db.transaction("accessToken", "readonly");
             transaction.oncomplete = event => {
-                console.log("トランザクションが成功した");
+                console.log("アクセストークン読み込みのトランザクションが成功した");
                 db.close();
             };
             transaction.onerror = event => {
-                console.log("トランザクションが失敗した");
+                console.log("アクセストークン読み込みのトランザクションが失敗した");
                 db.close();
             };
             const getRequest = transaction
@@ -166,11 +134,11 @@ getLineLogInUrl
             const db = target.result;
             const transaction = db.transaction("accessToken", "readwrite");
             transaction.oncomplete = event => {
-                console.log("トランザクションが成功した");
+                console.log("アクセストークン保存のトランザクションが成功した");
                 db.close();
             };
             transaction.onerror = event => {
-                console.log("トランザクションが失敗した");
+                console.log("アクセストークン保存のトランザクションが失敗した");
                 db.close();
             };
             const putRequest = transaction
@@ -178,20 +146,9 @@ getLineLogInUrl
                 .put(accessToken, "lastLogInUser");
             putRequest.onsuccess = event => {
                 console.log("書き込み完了!");
-                const request = event.target;
-                if (request.result === undefined) {
-                    app.ports.portResponseAccessTokenFromIndexedDB.send("");
-                    return;
-                }
-                if (typeof request.result === "string") {
-                    app.ports.portResponseAccessTokenFromIndexedDB.send(request.result);
-                    return;
-                }
-                app.ports.portResponseAccessTokenFromIndexedDB.send("error");
             };
             putRequest.onerror = event => {
                 console.log("読み込み失敗");
-                app.ports.portResponseAccessTokenFromIndexedDB.send("error");
             };
         };
         userDBRequest.onerror = event => {

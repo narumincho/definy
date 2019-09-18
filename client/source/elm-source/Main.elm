@@ -7,7 +7,6 @@ import Data.Key
 import Data.Language
 import Data.PageLocation
 import Data.Project
-import Data.SocialLoginService
 import Data.User
 import Html.Styled
 import Json.Decode
@@ -40,15 +39,6 @@ port preventDefaultBeforeKeyEvent : () -> Cmd msg
 
 
 port elementScrollIntoView : String -> Cmd msg
-
-
-port logInWithGoogle : () -> Cmd msg
-
-
-port logInWithGitHub : () -> Cmd msg
-
-
-port logInWithLine : () -> Cmd msg
 
 
 port requestAccessTokenFromIndexedDB : () -> Cmd msg
@@ -95,7 +85,6 @@ type Msg
     | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url.Url
     | LogOutRequest -- ログアウトを要求する
-    | LogInRequest Data.SocialLoginService.SocialLoginService
     | ResponseAccessTokenFromIndexedDB String
     | ChangeLanguage String -- 使用言語が変わった
     | PageMsg PageMsg
@@ -256,19 +245,6 @@ update msg (Model rec) =
         LogOutRequest ->
             ( Model rec
             , Cmd.none
-            )
-
-        LogInRequest socialLoginService ->
-            ( Model rec
-            , case socialLoginService of
-                Data.SocialLoginService.Google ->
-                    logInWithGoogle ()
-
-                Data.SocialLoginService.GitHub ->
-                    logInWithGitHub ()
-
-                Data.SocialLoginService.Line ->
-                    logInWithLine ()
             )
 
         ChangeLanguage string ->
@@ -711,23 +687,6 @@ toGutterMode gutter (Model rec) =
         { rec
             | subMode = SubModeGutter gutter
         }
-
-
-{-| ツリーパネルで発生したCmdを全体のCmdに変換する
--}
-sidePanelCmdToCmd : Panel.Side.Cmd -> Cmd Msg
-sidePanelCmdToCmd cmd =
-    case cmd of
-        Panel.Side.CmdLogOutRequest ->
-            Task.succeed LogOutRequest
-                |> Task.perform identity
-
-        Panel.Side.CmdLogInRequest service ->
-            Task.succeed (LogInRequest service)
-                |> Task.perform identity
-
-        Panel.Side.CmdFocusHere ->
-            Cmd.none
 
 
 {-| エディタグループパネルの更新
