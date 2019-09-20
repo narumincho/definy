@@ -124,20 +124,22 @@ export const getReadableStream = (fileHash: string): stream.Readable => {
    ==========================================
 */
 export const createAndWriteAccessToken = async (
-    userId: type.UserId
-): Promise<type.AccessToken> => {
-    const id = type.createAccessToken();
-    await accessTokenCollection.doc(id).create({
+    accessTokenHash: type.AccessTokenHash,
+    userId: type.UserId,
+    issuedAt: FirebaseFirestore.Timestamp
+): Promise<void> => {
+    await accessTokenCollection.doc(accessTokenHash).create({
         userId: userId,
-        issuedAt: new Date()
+        issuedAt: issuedAt
     });
-    return id;
 };
 
 export const verifyAccessToken = async (
-    accessToken: type.AccessToken
+    accessTokenHash: type.AccessTokenHash
 ): Promise<type.UserId> => {
-    const data = (await accessTokenCollection.doc(accessToken).get()).data();
+    const data = (await accessTokenCollection
+        .doc(accessTokenHash)
+        .get()).data();
     if (data === undefined) {
         throw new Error("invalid access token");
     }

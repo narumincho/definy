@@ -552,6 +552,13 @@ export const createAccessToken = (): AccessToken => {
     return crypto.randomBytes(24).toString("hex") as AccessToken;
 };
 
+export const hashAccessToken = (accessToken: AccessToken): AccessTokenHash => {
+    return crypto
+        .createHash("sha256")
+        .update(accessToken) // TODO 文字列でやるよりもバイナリのほうがいいのでは?
+        .digest("hex") as AccessTokenHash;
+};
+
 export const accessTokenDescription =
     "アクセストークン。getLogInUrlで取得したログインURLのページからリダイレクトするときのクエリパラメータについてくる。個人的なデータにアクセスするときに必要。使う文字は0123456789abcdef。長さは48文字";
 
@@ -580,3 +587,5 @@ export const accessTokenGraphQLType = new g.GraphQLScalarType(
 );
 
 export type AccessToken = string & { __accessTokenBrand: never };
+
+export type AccessTokenHash = string & { __accessTokenHashBrand: never };

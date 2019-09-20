@@ -721,12 +721,20 @@ const databaseLowExprDefSnapshotToLowCost = ({
  */
 export const createAccessToken = async (
     userId: type.UserId
-): Promise<type.AccessToken> =>
-    await databaseLow.createAndWriteAccessToken(userId);
+): Promise<type.AccessToken> => {
+    const accessToken = type.createAccessToken();
+    await databaseLow.createAndWriteAccessToken(
+        type.hashAccessToken(accessToken),
+        userId,
+        databaseLow.getNowTimestamp()
+    );
+    return accessToken;
+};
 /**
  * アクセストークンの正当性チェックとuserIdの取得
  * @param accessToken
  */
 export const verifyAccessToken = async (
     accessToken: type.AccessToken
-): Promise<type.UserId> => await databaseLow.verifyAccessToken(accessToken);
+): Promise<type.UserId> =>
+    await databaseLow.verifyAccessToken(type.hashAccessToken(accessToken));
