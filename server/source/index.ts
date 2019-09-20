@@ -11,7 +11,7 @@ console.log("サーバーのプログラムが読み込まれた");
  * =====================================================================
  */
 export const indexHtml = functions.https.onRequest((request, response) => {
-    if (request.host !== "definy-lang.web.app") {
+    if (request.hostname !== "definy-lang.web.app") {
         response.redirect("https://definy-lang.web.app");
     }
     response.status(200);
