@@ -548,11 +548,18 @@ export const createAccessToken = (): AccessToken => {
     return crypto.randomBytes(24).toString("hex") as AccessToken;
 };
 
-export const hashAccessToken = (accessToken: AccessToken): AccessTokenHash => {
-    return crypto
+export const hashAccessToken = (accessToken: AccessToken): AccessTokenHash =>
+    crypto
         .createHash("sha256")
-        .update(accessToken) // TODO 文字列でやるよりもバイナリのほうがいいのでは?
+        .update(accessTokenToTypedArray(accessToken))
         .digest("hex") as AccessTokenHash;
+
+const accessTokenToTypedArray = (accessToken: AccessToken): Uint8Array => {
+    const binary = new Uint8Array(24);
+    for (let i = 0; i < 24; i++) {
+        binary[i] = Number.parseInt(accessToken.slice(i, i + 2), 16);
+    }
+    return binary;
 };
 
 export const accessTokenDescription =
