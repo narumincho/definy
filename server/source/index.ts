@@ -7,7 +7,7 @@ import * as databaseLow from "./lib/databaseLow";
 
 console.log("サーバーのプログラムが読み込まれた");
 /* =====================================================================
- *                          API (GraphQL)
+ *               Index Html ブラウザが最初にリクエストするところ
  * =====================================================================
  */
 export const indexHtml = functions.https.onRequest((request, response) => {
