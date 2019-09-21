@@ -65,7 +65,7 @@ export const getUserFromLogInService = async (
     }
     return {
         ...databaseLowUserToLowCost(userDataAndId),
-        lastAccessToken: userDataAndId.data.lastAccessToken
+        lastAccessToken: userDataAndId.data.lastAccessTokenHash
     };
 };
 
@@ -98,7 +98,7 @@ export const addUser = async (data: {
         introduction: "",
         createdAt: databaseLow.getNowTimestamp(),
         branchIds: [],
-        lastAccessToken: accessToken,
+        lastAccessTokenHash: type.hashAccessToken(accessToken),
         logInServiceAndId: data.logInServiceAndId
     });
     return { userId: userId, accessToken: accessToken };
@@ -147,7 +147,9 @@ export const updateLastAccessToken = async (
     userId: type.UserId,
     accessToken: type.AccessToken
 ): Promise<void> => {
-    await databaseLow.updateUser(userId, { lastAccessToken: accessToken });
+    await databaseLow.updateUser(userId, {
+        lastAccessTokenHash: type.hashAccessToken(accessToken)
+    });
 };
 /* ==========================================
                 Project

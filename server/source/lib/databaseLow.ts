@@ -39,7 +39,7 @@ export type UserData = {
     introduction: string;
     createdAt: firestore.Timestamp;
     branchIds: ReadonlyArray<type.BranchId>;
-    lastAccessToken: string;
+    lastAccessTokenHash: type.AccessTokenHash;
     logInServiceAndId: type.LogInServiceAndId;
 };
 

@@ -544,10 +544,6 @@ export const urlGraphQLType = new g.GraphQLScalarType(urlTypeScalarTypeConfig);
                             AccessToken
     =============================================================
 */
-/**
- * Id。各種リソースを識別するために使うID。UUID(v4)やIPv6と同じ128bit, 16bytes
- * 小文字に統一して、大文字は使わない。長さは32文字
- */
 export const createAccessToken = (): AccessToken => {
     return crypto.randomBytes(24).toString("hex") as AccessToken;
 };
