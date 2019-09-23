@@ -429,7 +429,7 @@ export const parseFileHash = (value: unknown): FileHash => {
         throw new Error("Hash length must be 64");
     }
     for (const char of value) {
-        if ("0123456789abcdef".includes(char)) {
+        if (!"0123456789abcdef".includes(char)) {
             throw new Error("Hash char must match /[0-9a-f]/");
         }
     }
