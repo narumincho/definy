@@ -4,6 +4,7 @@ import * as schema from "./lib/schema";
 import * as libLogInCallback from "./lib/logInCallback";
 import * as express from "express";
 import * as databaseLow from "./lib/databaseLow";
+import * as type from "./lib/type";
 
 console.log("サーバーのプログラムが読み込まれた");
 /* =====================================================================
@@ -205,19 +206,12 @@ export const file = functions.https.onRequest(async (request, response) => {
         response.status(200).send("");
         return;
     }
-    const parameter = request.path.split("/");
-    const fileCategory: string | undefined = parameter[1];
-    const fileId: string | undefined = parameter[2];
-    if (fileCategory === undefined || fileId === undefined) {
-        response.status(400).send("invalid file parameter");
-        return;
-    }
     if (request.method === "GET") {
-        switch (fileCategory) {
-            case "user-image":
-                databaseLow.getReadableStream(fileId).pipe(response);
-                return;
-        }
+        response.setHeader("cache-control", "public, max-age=31536000");
+        databaseLow
+            .getReadableStream(type.parseFileHash(request.path.slice(1)))
+            .pipe(response);
+        return;
     }
     response.status(400).send("invalid file parameter");
 });

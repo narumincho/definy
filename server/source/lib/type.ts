@@ -51,7 +51,7 @@ export type LogInServiceAndId = {
 export type User = {
     id: UserId;
     name: UserName;
-    image: Image;
+    image: FileHash;
     introduction: string;
     createdAt: Date;
     branches: ReadonlyArray<Branch>;
@@ -97,8 +97,8 @@ export type Commit = {
     parentCommits: ReadonlyArray<Commit>;
     tag: null | CommitTagName | Version;
     projectName: string;
-    projectIcon: Image;
-    projectImage: Image;
+    projectIcon: FileHash;
+    projectImage: FileHash;
     projectDescription: string;
     author: User;
     date: Date;
@@ -119,7 +119,7 @@ export type Commit = {
     dependencies: ReadonlyArray<Dependency>;
 };
 
-export type CommitHash = string & { __commitObjectBrand: never };
+export type CommitHash = string & { __commitObjectHashBrand: never };
 
 export type CommitTagName = {
     text: string;
@@ -383,16 +383,6 @@ const userNameTypeConfig: g.GraphQLScalarTypeConfig<UserName, string> = {
 
 export const userNameGraphQLType = new g.GraphQLScalarType(userNameTypeConfig);
 /*  =============================================================
-                            Image
-    =============================================================
-*/
-export type Image = {
-    hash: FileHash;
-    base64EncodedPng: Base64EncodedPng;
-};
-
-export type FileHash = string & { __fileHashBrand: never };
-/*  =============================================================
                             Id
     =============================================================
 */
@@ -428,32 +418,38 @@ const idTypeConfig: g.GraphQLScalarTypeConfig<string, string> = {
 export const idGraphQLType = new g.GraphQLScalarType(idTypeConfig);
 
 /*  =============================================================
-                            Hash
+                        File Hash
     =============================================================
 */
-const hashTypeConfig: g.GraphQLScalarTypeConfig<string, string> = {
+export const parseFileHash = (value: unknown): FileHash => {
+    if (typeof value !== "string") {
+        throw new Error("Hash must be string");
+    }
+    if (value.length !== 64) {
+        throw new Error("Hash length must be 64");
+    }
+    for (const char of value) {
+        if ("0123456789abcdef".includes(char)) {
+            throw new Error("Hash char must match /[0-9a-f]/");
+        }
+    }
+    return value as FileHash;
+};
+
+export type FileHash = string & { __hashBrand: never };
+
+const fileHashTypeConfig: g.GraphQLScalarTypeConfig<FileHash, string> = {
     name: "Hash",
     description:
         "SHA-256で得られたハッシュ値。hexスタイル。16進数でa-fは小文字、64文字",
-    serialize: (value: string): string => value,
-    parseValue: (value: unknown): string => {
-        if (typeof value !== "string") {
-            throw new Error("Hash must be string");
-        }
-        if (value.length !== 64) {
-            throw new Error("Hash length must be 64");
-        }
-        for (const char of value) {
-            if ("0123456789abcdef".includes(char)) {
-                throw new Error("Hash char must match /[0-9a-f]/");
-            }
-        }
-        return value;
-    }
+    serialize: (value: FileHash): string => value,
+    parseValue: parseFileHash
 };
 
-export const hashGraphQLType = new g.GraphQLScalarType(hashTypeConfig);
+export const hashGraphQLType = new g.GraphQLScalarType(fileHashTypeConfig);
 
+export const fileHashDescription =
+    "https://us-central1-definy-lang.cloudfunctions.net/file/{hash} のURLから画像を得ることができる";
 /* ==========================================
                 SHA-256 Hash
    ==========================================
@@ -464,13 +460,15 @@ export const createHash = (data: unknown): string =>
         .update(JSON.stringify(data))
         .digest("hex");
 
-export const createHashFromBuffer = (data: Buffer, mimeType: string): string =>
+export const createHashFromBuffer = (
+    data: Buffer,
+    mimeType: string
+): FileHash =>
     crypto
         .createHash("sha256")
         .update(data)
-        .update(data.length.toString())
-        .update(mimeType)
-        .digest("hex");
+        .update(mimeType, "utf8")
+        .digest("hex") as FileHash;
 
 /*  =============================================================
                             DateTime

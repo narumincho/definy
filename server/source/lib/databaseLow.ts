@@ -116,7 +116,7 @@ export const saveFile = async (
  * Firebase Cloud Storageからファイルを読み込むReadable Streamを取得する
  * @param fileHash ファイルハッシュ
  */
-export const getReadableStream = (fileHash: string): stream.Readable => {
+export const getReadableStream = (fileHash: type.FileHash): stream.Readable => {
     return storageDefaultBucket.file(fileHash).createReadStream();
 };
 /* ==========================================

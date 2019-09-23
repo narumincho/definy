@@ -185,8 +185,9 @@ const userGraphQLType: g.GraphQLObjectType<
                 }
             }),
             image: makeObjectField({
-                type: g.GraphQLNonNull(imageGraphQLType),
-                description: "丸くて小さいプロフィール画像",
+                type: g.GraphQLNonNull(type.hashGraphQLType),
+                description:
+                    "丸くて小さいプロフィール画像" + type.fileHashDescription,
                 args: {},
                 resolve: async (source, args) => {
                     if (source.image === undefined) {
@@ -242,30 +243,6 @@ const setUserData = async (
     source.branches = userData.branches;
     return userData;
 };
-
-/* ==========================================
-                Image
-   ==========================================
-*/
-const imageGraphQLType = new g.GraphQLObjectType({
-    name: "Image",
-    fields: () =>
-        makeObjectFieldMap<type.Image>({
-            hash: {
-                type: g.GraphQLNonNull(g.GraphQLString),
-                description:
-                    "画像ID。https://us-central1-definy-lang.cloudfunctions.net/{hash} のURLから画像を得ることができる"
-            },
-            base64EncodedPng: makeObjectField({
-                type: g.GraphQLNonNull(type.base64EncodedPngGraphQLType),
-                description: "Base64で表現されたPNG画像",
-                args: {},
-                resolve: async (source, args) => {
-                    return type.base64EncodedPngFromString("base64imageDummy");
-                }
-            })
-        })
-});
 
 /* ==========================================
                 Project
@@ -508,8 +485,9 @@ const commitGraphQLType: g.GraphQLObjectType<
                 }
             }),
             projectIcon: makeObjectField({
-                type: g.GraphQLNonNull(imageGraphQLType),
-                description: "プロジェクトのアイコン画像",
+                type: g.GraphQLNonNull(type.hashGraphQLType),
+                description:
+                    "プロジェクトのアイコン画像 " + type.fileHashDescription,
                 args: {},
                 resolve: async (source, args) => {
                     if (source.projectIcon === undefined) {
@@ -519,8 +497,10 @@ const commitGraphQLType: g.GraphQLObjectType<
                 }
             }),
             projectImage: makeObjectField({
-                type: g.GraphQLNonNull(imageGraphQLType),
-                description: "プロジェクトのパッケージデザイン",
+                type: g.GraphQLNonNull(type.hashGraphQLType),
+                description:
+                    "プロジェクトのパッケージデザイン " +
+                    type.fileHashDescription,
                 args: {},
                 resolve: async (source, args) => {
                     if (source.projectImage === undefined) {
@@ -1171,6 +1151,26 @@ export const schema = new g.GraphQLSchema({
                     return await database.getUser(args.userId);
                 },
                 description: "ユーザーの情報を取得する"
+            }),
+            userPrivate: makeQueryOrMutationField<
+                {
+                    accessToken: type.AccessToken;
+                },
+                type.User
+            >({
+                args: {
+                    accessToken: {
+                        type: g.GraphQLNonNull(type.accessTokenGraphQLType),
+                        description: type.accessTokenDescription
+                    }
+                },
+                type: g.GraphQLNonNull(userGraphQLType),
+                resolve: async args => {
+                    return await database.getUser(
+                        await database.verifyAccessToken(args.accessToken)
+                    );
+                },
+                description: "個人的なユーザーの情報を取得する"
             }),
             allUser: makeQueryOrMutationField<{}, Array<type.User>>({
                 args: {},
