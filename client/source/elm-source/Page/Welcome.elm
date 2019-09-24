@@ -404,7 +404,7 @@ gitHubLogInButton logInButtonModel =
 googleLogInButton : LogInButtonModel -> Ui.Panel Msg
 googleLogInButton logInButtonModel =
     Ui.depth
-        [ Ui.Click (MsgToLogInPage Data.SocialLoginService.GitHub)
+        [ Ui.Click (MsgToLogInPage Data.SocialLoginService.Google)
         , Ui.PointerEnter (always (MsgLogInButtonEnter Data.SocialLoginService.Google))
         , Ui.PointerLeave (always (MsgLogInButtonEnter Data.SocialLoginService.Google))
         , Ui.PointerDown (always (MsgLogInButtonPressed Data.SocialLoginService.Google))
