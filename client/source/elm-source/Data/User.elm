@@ -6,7 +6,6 @@ module Data.User exposing
     , accessTokenFromString
     , accessTokenToString
     , from
-    , fromName
     , getId
     , getImageUrl
     , getName
@@ -24,8 +23,8 @@ type LogInState
 
 
 type AccessTokenError
-    = FailToReadIndexedDB
-    | AccessTokenIsInvalid
+    = FailToReadIndexedDB -- IndexDBから正常にアクセストークンを読み取れなかった
+    | AccessTokenIsInvalid -- 無効なアクセストークンが含まれていた
 
 
 type AccessToken
@@ -36,39 +35,24 @@ type User
     = User
         { id : Id.UserId
         , name : String
-        , imageId : String
+        , imageFileHash : Id.ImageFileHash
         , introduction : String
         , createdAt : Time.Posix
-        , leaderProjectIds : List Id.ProjectId
-        , editingProjectIds : List Id.ProjectId
+        , branches : List Id.BranchId
         }
 
 
 from :
     { id : Id.UserId
     , name : String
-    , imageId : String
+    , imageFileHash : Id.ImageFileHash
     , introduction : String
     , createdAt : Time.Posix
-    , leaderProjectIds : List Id.ProjectId
-    , editingProjectIds : List Id.ProjectId
+    , branches : List Id.BranchId
     }
     -> User
 from =
     User
-
-
-fromName : String -> User
-fromName name =
-    User
-        { id = Id.UserId "sampleUser"
-        , name = name
-        , imageId = ""
-        , introduction = ""
-        , createdAt = Time.millisToPosix 0
-        , leaderProjectIds = []
-        , editingProjectIds = []
-        }
 
 
 getId : User -> Id.UserId
@@ -82,8 +66,12 @@ getName (User { name }) =
 
 
 getImageUrl : User -> String
-getImageUrl (User { imageId }) =
-    "https://us-central1-definy-lang.cloudfunctions.net/file/user-image/" ++ imageId
+getImageUrl (User { imageFileHash }) =
+    let
+        (Id.ImageFileHash hashString) =
+            imageFileHash
+    in
+    "https://us-central1-definy-lang.cloudfunctions.net/file/" ++ hashString
 
 
 accessTokenFromString : String -> AccessToken

@@ -1,13 +1,15 @@
-module Api exposing (getLogInUrl)
+module Api exposing (getLogInUrl, getUserPrivate)
 
 import Data.IdHash
 import Data.Label
 import Data.Project
 import Data.SocialLoginService
+import Data.User
 import Http
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp
 import Json.Encode as Je
+import Time
 import Url
 
 
@@ -51,6 +53,61 @@ logInOrSignUpUrlResponseToResult =
                     Nothing ->
                         Jd.fail "url format error"
             )
+
+
+getUserPrivate : Data.User.AccessToken -> (Result String Data.User.User -> msg) -> Cmd msg
+getUserPrivate accessToken =
+    graphQlApiRequest
+        (Query
+            [ Field
+                { name = "userPrivate"
+                , args =
+                    [ ( "accessToken", GraphQLString (Data.User.accessTokenToString accessToken) ) ]
+                , return =
+                    [ Field
+                        { name = "id"
+                        , args = []
+                        , return = []
+                        }
+                    , Field
+                        { name = "name"
+                        , args = []
+                        , return = []
+                        }
+                    , Field
+                        { name = "image"
+                        , args = []
+                        , return = []
+                        }
+                    , Field
+                        { name = "introduction"
+                        , args = []
+                        , return = []
+                        }
+                    , Field
+                        { name = "createdAt"
+                        , args = []
+                        , return = []
+                        }
+                    , Field
+                        { name = "branches"
+                        , args = []
+                        , return =
+                            [ Field
+                                { name = "id"
+                                , args = []
+                                , return = []
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        )
+        (Jd.field
+            "userPrivate"
+            userDecoder
+        )
 
 
 getAllProjectIndex : (Result String (List Data.Project.SimpleProject) -> msg) -> Cmd msg
@@ -103,6 +160,27 @@ labelDecoder =
                     Nothing ->
                         Jd.fail "ラベルに使えない文字が含まれていた"
             )
+
+
+userDecoder : Jd.Decoder Data.User.User
+userDecoder =
+    Jd.succeed
+        (\id name image introduction createdAt branches ->
+            Data.User.from
+                { id = Data.IdHash.UserId id
+                , name = name
+                , imageFileHash = Data.IdHash.ImageFileHash image
+                , introduction = introduction
+                , createdAt = Time.millisToPosix createdAt
+                , branches = branches |> List.map Data.IdHash.BranchId
+                }
+        )
+        |> Jdp.required "id" Jd.string
+        |> Jdp.required "name" Jd.string
+        |> Jdp.required "image" Jd.string
+        |> Jdp.required "introduction" Jd.string
+        |> Jdp.required "createdAt" Jd.int
+        |> Jdp.required "branches" (Jd.list Jd.string)
 
 
 

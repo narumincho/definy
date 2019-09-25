@@ -86,6 +86,7 @@ type Msg
     | OnUrlChange Url.Url
     | LogOutRequest -- ログアウトを要求する
     | ResponseAccessTokenFromIndexedDB String
+    | ResponseUserData (Result String Data.User.User) -- ユーザーの情報を受け取った
     | ChangeLanguage String -- 使用言語が変わった
     | PageMsg PageMsg
     | NoOperation
@@ -181,6 +182,7 @@ init { language } url navigationKey =
         ++ (case tokenFromUrlMaybe of
                 Just accessToken ->
                     [ writeAccessTokenToIndexedDB (Data.User.accessTokenToString accessToken)
+                    , Api.getUserPrivate accessToken ResponseUserData
                     ]
 
                 Nothing ->
@@ -261,9 +263,14 @@ update msg (Model rec) =
             )
 
         ResponseAccessTokenFromIndexedDB accessToken ->
-            ( Model rec |> responseAccessTokenFromIndexedDB accessToken
-            , Cmd.none
-            )
+            let
+                newModel =
+                    Model rec |> responseAccessTokenFromIndexedDB accessToken
+            in
+            ( newModel, requestUserData newModel )
+
+        ResponseUserData result ->
+            Model rec |> responseUserData result
 
         PageMsg pageMsg ->
             case ( rec.page, pageMsg ) of
@@ -904,6 +911,41 @@ responseAccessTokenFromIndexedDB accessToken (Model rec) =
                     _ ->
                         Data.User.VerifyingAccessToken (Data.User.AccessToken accessToken)
         }
+
+
+requestUserData : Model -> Cmd Msg
+requestUserData (Model rec) =
+    case rec.logInState of
+        Data.User.ReadAccessToken ->
+            Cmd.none
+
+        Data.User.VerifyingAccessToken accessToken ->
+            Api.getUserPrivate accessToken ResponseUserData
+
+        Data.User.GuestUser maybe ->
+            Cmd.none
+
+        Data.User.Ok user ->
+            Cmd.none
+
+
+responseUserData : Result String Data.User.User -> Model -> ( Model, Cmd Msg )
+responseUserData result (Model rec) =
+    case result of
+        Ok user ->
+            ( Model
+                { rec
+                    | logInState =
+                        Data.User.Ok user
+                }
+            , consoleLog "ユーザー情報の取得に成功!"
+            )
+
+        Err string ->
+            ( Model
+                { rec | logInState = Data.User.GuestUser (Just Data.User.AccessTokenIsInvalid) }
+            , consoleLog ("ユーザーの情報の取得に失敗 " ++ string)
+            )
 
 
 

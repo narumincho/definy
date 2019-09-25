@@ -1,5 +1,8 @@
 module Data.IdHash exposing
-    ( ModuleId(..)
+    ( BranchId(..)
+    , CommitHash(..)
+    , ImageFileHash(..)
+    , ModuleId(..)
     , PartHash(..)
     , PartId(..)
     , ProjectId(..)
@@ -8,18 +11,38 @@ module Data.IdHash exposing
     , UserId(..)
     )
 
-{-| ユーザーを識別するためのID
+{-| 様々なデータを識別するためのIDやハッシュ値の型が定義されている
 -}
 
 
+{-| ユーザーを識別するためのID
+-}
 type UserId
     = UserId String
+
+
+{-| 画像ファイルのハッシュ値
+-}
+type ImageFileHash
+    = ImageFileHash String
 
 
 {-| プロジェクトを識別するためのID
 -}
 type ProjectId
     = ProjectId String
+
+
+{-| ブランチを識別するためのID
+-}
+type BranchId
+    = BranchId String
+
+
+{-| コミットを識別するためのHash
+-}
+type CommitHash
+    = CommitHash String
 
 
 {-| モジュールを識別するためのID
