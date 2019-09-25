@@ -49,7 +49,7 @@ const makeObjectField = <
         type: data.type,
         args: data.args,
         resolve: (source, args, context, info) =>
-            args.resolve(source, args) as any,
+            data.resolve(source as any, args),
         description: data.description
     } as GraphQLFieldConfigWithArgs<Type, Key>);
 
@@ -1129,6 +1129,80 @@ const setExprDefSnapshot = async (
     source.value = data.value;
     return data;
 };
+
+/*  =============================================================
+                            Query
+    =============================================================
+*/
+const user = makeQueryOrMutationField<{ userId: type.UserId }, type.User>({
+    args: {
+        userId: {
+            type: g.GraphQLNonNull(type.idGraphQLType),
+            description: "ユーザーを識別するためのID"
+        }
+    },
+    type: g.GraphQLNonNull(userGraphQLType),
+    resolve: async args => {
+        return await database.getUser(args.userId);
+    },
+    description: "ユーザーの情報を取得する"
+});
+
+const userPrivate = makeQueryOrMutationField<
+    {
+        accessToken: type.AccessToken;
+    },
+    type.User
+>({
+    args: {
+        accessToken: {
+            type: g.GraphQLNonNull(type.accessTokenGraphQLType),
+            description: type.accessTokenDescription
+        }
+    },
+    type: g.GraphQLNonNull(userGraphQLType),
+    resolve: async args => {
+        return await database.getUser(
+            await database.verifyAccessToken(args.accessToken)
+        );
+    },
+    description: "個人的なユーザーの情報を取得する"
+});
+
+const allUser = makeQueryOrMutationField<{}, Array<type.User>>({
+    args: {},
+    type: graphQLNonNullList(userGraphQLType),
+    resolve: async args => {
+        return await database.getAllUser();
+    },
+    description: "全てユーザーを取得する"
+});
+
+const project = makeQueryOrMutationField<
+    { projectId: type.ProjectId },
+    type.Project
+>({
+    args: {
+        projectId: {
+            type: g.GraphQLNonNull(type.idGraphQLType),
+            description: "プロジェクトを識別するためのID"
+        }
+    },
+    type: g.GraphQLNonNull(projectGraphQLType),
+    resolve: async args => {
+        return database.getProject(args.projectId);
+    },
+    description: "プロジェクトの情報を取得する"
+});
+
+const allProject = makeQueryOrMutationField<{}, Array<type.Project>>({
+    args: {},
+    type: g.GraphQLNonNull(g.GraphQLList(g.GraphQLNonNull(projectGraphQLType))),
+    resolve: async args => {
+        return database.getAllProject();
+    },
+    description: "全てのプロジェクトを取得する"
+});
 /*  =============================================================
                             Schema
     =============================================================
@@ -1139,73 +1213,11 @@ export const schema = new g.GraphQLSchema({
         description:
             "データを取得できる。データを取得したときに影響は他に及ばさない",
         fields: {
-            user: makeQueryOrMutationField<{ userId: type.UserId }, type.User>({
-                args: {
-                    userId: {
-                        type: g.GraphQLNonNull(type.idGraphQLType),
-                        description: "ユーザーを識別するためのID"
-                    }
-                },
-                type: g.GraphQLNonNull(userGraphQLType),
-                resolve: async args => {
-                    return await database.getUser(args.userId);
-                },
-                description: "ユーザーの情報を取得する"
-            }),
-            userPrivate: makeQueryOrMutationField<
-                {
-                    accessToken: type.AccessToken;
-                },
-                type.User
-            >({
-                args: {
-                    accessToken: {
-                        type: g.GraphQLNonNull(type.accessTokenGraphQLType),
-                        description: type.accessTokenDescription
-                    }
-                },
-                type: g.GraphQLNonNull(userGraphQLType),
-                resolve: async args => {
-                    return await database.getUser(
-                        await database.verifyAccessToken(args.accessToken)
-                    );
-                },
-                description: "個人的なユーザーの情報を取得する"
-            }),
-            allUser: makeQueryOrMutationField<{}, Array<type.User>>({
-                args: {},
-                type: graphQLNonNullList(userGraphQLType),
-                resolve: async args => {
-                    return await database.getAllUser();
-                },
-                description: "全てユーザーを取得する"
-            }),
-            getProject: makeQueryOrMutationField<
-                { projectId: type.ProjectId },
-                type.Project
-            >({
-                args: {
-                    projectId: {
-                        type: g.GraphQLNonNull(type.idGraphQLType),
-                        description: "プロジェクトを識別するためのID"
-                    }
-                },
-                type: g.GraphQLNonNull(projectGraphQLType),
-                resolve: async args => {
-                    return database.getProject(args.projectId);
-                },
-                description: "プロジェクトの情報を取得する"
-            }),
-            allProject: makeQueryOrMutationField<{}, Array<type.Project>>({
-                args: {},
-                type: g.GraphQLNonNull(
-                    g.GraphQLList(g.GraphQLNonNull(projectGraphQLType))
-                ),
-                resolve: async args => {
-                    return database.getAllProject();
-                },
-                description: "全てのプロジェクトを取得する"
-            })
+            user,
+            userPrivate,
+            allUser,
+            project: project,
+            allProject
         }
     }),
     mutation: new g.GraphQLObjectType({

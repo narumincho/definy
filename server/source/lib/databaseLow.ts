@@ -123,15 +123,16 @@ export const getReadableStream = (fileHash: type.FileHash): stream.Readable => {
             Access Token
    ==========================================
 */
+type AccessTokenData = {
+    userId: type.UserId;
+    issuedAt: FirebaseFirestore.Timestamp;
+};
+
 export const createAndWriteAccessToken = async (
     accessTokenHash: type.AccessTokenHash,
-    userId: type.UserId,
-    issuedAt: FirebaseFirestore.Timestamp
+    data: AccessTokenData
 ): Promise<void> => {
-    await accessTokenCollection.doc(accessTokenHash).create({
-        userId: userId,
-        issuedAt: issuedAt
-    });
+    await accessTokenCollection.doc(accessTokenHash).create(data);
 };
 
 export const verifyAccessToken = async (
@@ -139,17 +140,17 @@ export const verifyAccessToken = async (
 ): Promise<type.UserId> => {
     const data = (await accessTokenCollection
         .doc(accessTokenHash)
-        .get()).data();
+        .get()).data() as (undefined | AccessTokenData);
     if (data === undefined) {
         throw new Error("invalid access token");
     }
     if (
-        new Date().getTime() <
-        (data.issuedAt as Date).getTime() + 1000 * 60 * 5 // 5時間
+        data.issuedAt.toMillis() + 1000 * 60 * 6 < // 6時間
+        new Date().getTime()
     ) {
         throw new Error("access token has expired");
     }
-    return data.userId as type.UserId;
+    return data.userId;
 };
 /* ==========================================
                 Log In

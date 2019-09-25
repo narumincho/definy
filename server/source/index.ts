@@ -9,6 +9,10 @@ import * as type from "./lib/type";
 console.log("サーバーのプログラムが読み込まれた");
 /* =====================================================================
  *               Index Html ブラウザが最初にリクエストするところ
+ *
+ *          https://definy-lang.web.app/ など
+ *              ↓ firebase.json rewrite
+ *          Cloud Functions for Firebase / indexHtml
  * =====================================================================
  */
 export const indexHtml = functions.https.onRequest((request, response) => {
@@ -108,11 +112,12 @@ const escapeHtml = (text: string): string =>
             ? "&gt;"
             : ""
     );
+
 /* =====================================================================
  *                          API (GraphQL)
+ *        https://us-central1-definy-lang.cloudfunctions.net/api
  * =====================================================================
  */
-
 export const api = functions
     .runWith({ memory: "2GB" })
     .https.onRequest((request, response) => {
@@ -139,6 +144,7 @@ export const api = functions
 
 /* =====================================================================
  *              ソーシャルログインをしたあとのリダイレクト先
+ *   https://us-central1-definy-lang.cloudfunctions.net/logInCallback
  * =====================================================================
  */
 export const logInCallback = functions.https.onRequest(
@@ -187,10 +193,10 @@ const sendResponseFromLogInCallbackResult = (
 };
 
 /* =====================================================================
- *                              File
+ *                 File バイナリファイルを欲しいときに利用する
+ *      https://us-central1-definy-lang.cloudfunctions.net/file
  * =====================================================================
  */
-
 export const file = functions.https.onRequest(async (request, response) => {
     response.setHeader(
         "access-control-allow-origin",
@@ -217,7 +223,8 @@ export const file = functions.https.onRequest(async (request, response) => {
 });
 
 /* =====================================================================
- *                            Sitemap
+ *                  Sitemap クローラーに対するサイトマップ
+ *    https://us-central1-definy-lang.cloudfunctions.net/sitemap
  * =====================================================================
  */
 export const sitemap = functions

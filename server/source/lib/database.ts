@@ -115,7 +115,7 @@ export const getUser = async (userId: type.UserId): Promise<UserLowCost> =>
     });
 
 /**
- *
+ *  全てのユーザーの情報を取得する
  */
 export const getAllUser = async (): Promise<Array<UserLowCost>> =>
     (await databaseLow.getAllUser()).map(databaseLowUserToLowCost);
@@ -126,18 +126,17 @@ const databaseLowUserToLowCost = ({
 }: {
     id: type.UserId;
     data: databaseLow.UserData;
-}): UserLowCost => {
-    return {
-        id: id,
-        name: data.name,
-        image: {
-            hash: data.imageHash
-        },
-        introduction: data.introduction,
-        createdAt: data.createdAt.toDate(),
-        branches: data.branchIds.map(id => ({ id: id }))
-    };
-};
+}): UserLowCost => ({
+    id: id,
+    name: data.name,
+    image: {
+        hash: data.imageHash
+    },
+    introduction: data.introduction,
+    createdAt: data.createdAt.toDate(),
+    branches: data.branchIds.map(id => ({ id: id }))
+});
+
 /**
  * 最後のアクセストークンを変更する
  * @param userId
@@ -727,8 +726,10 @@ export const createAccessToken = async (
     const accessToken = type.createAccessToken();
     await databaseLow.createAndWriteAccessToken(
         type.hashAccessToken(accessToken),
-        userId,
-        databaseLow.getNowTimestamp()
+        {
+            userId: userId,
+            issuedAt: databaseLow.getNowTimestamp()
+        }
     );
     return accessToken;
 };
