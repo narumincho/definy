@@ -51,7 +51,7 @@ export type LogInServiceAndId = {
 export type User = {
     id: UserId;
     name: UserName;
-    image: FileHash;
+    imageFileHash: FileHash;
     introduction: string;
     createdAt: Date;
     branches: ReadonlyArray<Branch>;
@@ -449,7 +449,7 @@ const fileHashTypeConfig: g.GraphQLScalarTypeConfig<FileHash, string> = {
 export const hashGraphQLType = new g.GraphQLScalarType(fileHashTypeConfig);
 
 export const fileHashDescription =
-    "https://us-central1-definy-lang.cloudfunctions.net/file/{hash} のURLから画像を得ることができる";
+    "https://us-central1-definy-lang.cloudfunctions.net/file/{hash} のURLからファイルを得ることができる";
 /* ==========================================
                 SHA-256 Hash
    ==========================================

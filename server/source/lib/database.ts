@@ -72,9 +72,7 @@ export const getUserFromLogInService = async (
 type UserLowCost = {
     readonly id: type.UserId;
     readonly name: type.UserName;
-    readonly image: {
-        readonly hash: type.FileHash;
-    };
+    readonly imageFileHash: type.FileHash;
     readonly introduction: string;
     readonly createdAt: Date;
     readonly branches: ReadonlyArray<{
@@ -129,9 +127,7 @@ const databaseLowUserToLowCost = ({
 }): UserLowCost => ({
     id: id,
     name: data.name,
-    image: {
-        hash: data.imageHash
-    },
+    imageFileHash: data.imageHash,
     introduction: data.introduction,
     createdAt: data.createdAt.toDate(),
     branches: data.branchIds.map(id => ({ id: id }))

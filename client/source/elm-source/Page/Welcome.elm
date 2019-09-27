@@ -239,7 +239,13 @@ userView pointerState logInState logInRequest =
                 Data.User.VerifyingAccessToken (Data.User.AccessToken accessTokenString) ->
                     "アクセストークンを検証、ユーザーをリクエスト中 " ++ accessTokenString
 
-                Data.User.GuestUser _ ->
+                Data.User.GuestUser (Just Data.User.FailToReadIndexedDB) ->
+                    "IndexedDBからデータを読み込めませんでした"
+
+                Data.User.GuestUser (Just Data.User.AccessTokenIsInvalid) ->
+                    "アクセストークンが無効でした"
+
+                Data.User.GuestUser Nothing ->
                     "ゲストユーザー"
 
                 Data.User.Ok user ->

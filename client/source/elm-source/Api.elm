@@ -75,7 +75,7 @@ getUserPrivate accessToken =
                         , return = []
                         }
                     , Field
-                        { name = "image"
+                        { name = "imageFileHash"
                         , args = []
                         , return = []
                         }
@@ -177,7 +177,7 @@ userDecoder =
         )
         |> Jdp.required "id" Jd.string
         |> Jdp.required "name" Jd.string
-        |> Jdp.required "image" Jd.string
+        |> Jdp.required "imageFileHash" Jd.string
         |> Jdp.required "introduction" Jd.string
         |> Jdp.required "createdAt" Jd.int
         |> Jdp.required "branches" (Jd.list Jd.string)

@@ -184,16 +184,16 @@ const userGraphQLType: g.GraphQLObjectType<
                     return source.name;
                 }
             }),
-            image: makeObjectField({
+            imageFileHash: makeObjectField({
                 type: g.GraphQLNonNull(type.hashGraphQLType),
                 description:
                     "丸くて小さいプロフィール画像" + type.fileHashDescription,
                 args: {},
                 resolve: async (source, args) => {
-                    if (source.image === undefined) {
-                        return (await setUserData(source)).image;
+                    if (source.imageFileHash === undefined) {
+                        return (await setUserData(source)).imageFileHash;
                     }
-                    return source.image;
+                    return source.imageFileHash;
                 }
             }),
             introduction: makeObjectField({
@@ -237,7 +237,7 @@ const setUserData = async (
 ): ReturnType<typeof database.getUser> => {
     const userData = await database.getUser(source.id);
     source.name = userData.name;
-    source.image = userData.image;
+    source.imageFileHash = userData.imageFileHash;
     source.introduction = userData.introduction;
     source.createdAt = userData.createdAt;
     source.branches = userData.branches;
