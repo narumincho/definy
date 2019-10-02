@@ -18,8 +18,8 @@
     },
     "devDependencies": {
         "@types/jsonwebtoken": "^8.3.4",
-        "@types/node": "^12.7.8",
-        "typescript": "^3.6.3"
+        "@types/node": "^12.7.9",
+        "typescript": "^3.7.0-beta"
     },
     "engines": {
         "node": "10"

@@ -4,7 +4,7 @@ Set-Location -Path ./server/source;
 
 Write-Output "Compile TypeScript ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";
-tsc;
+tsc.cmd;
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Compile TypeScript OK";
 Set-Location -Path ../;
@@ -17,7 +17,7 @@ Write-Output "Copy package.json OK";
 
 Write-Output "Upload to Firebase ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";
-firebase deploy --project definy-lang --only functions;
+firebase.ps1 deploy --project definy-lang --only functions;
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Upload to Firebase OK";
 Write-Output "Complete!";
