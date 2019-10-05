@@ -1,6 +1,17 @@
 {
     "hosting": {
         "public": "client/distribution",
+        "headers": [
+            {
+                "source": "main.js",
+                "headers": [
+                    {
+                        "key": "cache-control",
+                        "value": "max-age=31536000"
+                    }
+                ]
+            }
+        ],
         "rewrites": [
             {
                 "source": "sitemap",

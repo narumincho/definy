@@ -14,7 +14,14 @@ tsc.cmd;
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Call Compile OK";
 
-Set-Location -Path ../;
+Set-Location -Path ./serviceworker;
+Write-Output "ServiceWorker Compile ...";
+$Host.UI.RawUI.ForegroundColor = "Gray";
+tsc.cmd;
+$Host.UI.RawUI.ForegroundColor = "Yellow";
+Write-Output "ServiceWorker Compile OK";
+
+Set-Location -Path ../../;
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Minify JavaScript ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";

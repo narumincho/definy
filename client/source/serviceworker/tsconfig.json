@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "target": "es2019",
+        "strict": true,
+        "lib": ["es2019", "webworker"],
+        "removeComments": true,
+        "outDir": "../../distribution/",
+        "newLine": "LF"
+    },
+    "include": ["serviceworker.ts"]
+}

@@ -244,3 +244,7 @@ requestAnimationFrame(() => {
         }
     });
 });
+
+(async () => {
+    await navigator.serviceWorker.register("/serviceworker.js", { scope: "/" });
+})();
