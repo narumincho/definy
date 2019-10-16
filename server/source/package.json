@@ -17,8 +17,8 @@
         "jsonwebtoken": "^8.5.1"
     },
     "devDependencies": {
-        "@types/jsonwebtoken": "^8.3.4",
-        "@types/node": "^12.7.12",
+        "@types/jsonwebtoken": "^8.3.5",
+        "@types/node": "^12.11.1",
         "typescript": "^3.7.0-beta"
     },
     "engines": {
