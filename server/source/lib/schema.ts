@@ -1229,7 +1229,6 @@ export const schema = new g.GraphQLSchema({
                 {
                     accessToken: type.AccessToken;
                     name: type.Label;
-                    editors: Array<type.UserId>;
                 },
                 type.Project
             >({
@@ -1241,19 +1240,12 @@ export const schema = new g.GraphQLSchema({
                     name: {
                         type: g.GraphQLNonNull(type.labelGraphQLType),
                         description: "プロジェクトの名前"
-                    },
-                    editors: {
-                        type: g.GraphQLNonNull(
-                            g.GraphQLList(g.GraphQLNonNull(type.idGraphQLType))
-                        ),
-                        description: "編集可能にしたい人"
                     }
                 },
                 type: g.GraphQLNonNull(projectGraphQLType),
                 resolve: async args => {
                     return database.addProject({
                         name: args.name,
-                        editors: args.editors,
                         userId: await database.verifyAccessToken(
                             args.accessToken
                         )

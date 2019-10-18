@@ -170,7 +170,6 @@ type ProjectLowCost = {
 export const addProject = async (data: {
     name: string;
     userId: type.UserId;
-    editors: ReadonlyArray<type.UserId>;
 }): Promise<ProjectLowCost> => {
     const initialCommitHash = (await addCommit({
         authorId: data.userId,
