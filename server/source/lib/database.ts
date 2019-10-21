@@ -164,21 +164,21 @@ type ProjectLowCost = {
 /**
  * プロジェクトを追加する
  */
-export const addProject = async (data: {
-    name: string;
-    userId: type.UserId;
-}): Promise<ProjectLowCost> => {
+export const addProject = async (
+    userId: type.UserId
+): Promise<ProjectLowCost> => {
     const initialCommitHash = (await addCommit({
-        authorId: data.userId,
+        authorId: userId,
         commitDescription: "",
         commitSummary: "initial commit",
         dependencies: [],
         parentCommitHashes: [],
+        projectSummary: "",
         projectDescription: "",
-        projectName: data.name,
+        projectName: "",
         projectIconHash: "" as type.FileHash,
         projectImageHash: "" as type.FileHash,
-        tag: null,
+        releaseId: null,
         children: [],
         partDefs: [],
         typeDefs: []
@@ -190,11 +190,11 @@ export const addProject = async (data: {
         taggedCommitHashes: []
     });
     await databaseLow.addBranch(masterBranchId, {
-        description: "",
+        description: "プロジェクト作成時に自動的に作られるマスターブランチ",
         headHash: initialCommitHash,
         name: type.labelFromString("master"),
         projectId: projectId,
-        ownerId: data.userId
+        ownerId: userId
     });
 
     return {
@@ -255,6 +255,9 @@ type BranchLowCost = {
     readonly owner: {
         readonly id: type.UserId;
     };
+    readonly draftCommit: null | {
+        readonly hash: type.DraftCommitHash;
+    };
 };
 
 export const addBranch = async (
@@ -266,14 +269,15 @@ export const addBranch = async (
     commitDescription: string,
     dependencies: ReadonlyArray<{
         projectId: type.ProjectId;
-        version: type.DependencyVersion;
+        releaseId: type.ReleaseId;
     }>,
     parentCommitHashes: ReadonlyArray<type.CommitHash>,
     projectName: string,
     projectIconHash: type.FileHash,
     projectImageHash: type.FileHash,
+    projectSummary: string,
     projectDescription: string,
-    tag: string | type.Version | null,
+    releaseId: null | type.ReleaseId,
     children: ReadonlyArray<{
         id: type.ModuleId;
         hash: type.ModuleSnapshotHash;
@@ -296,10 +300,11 @@ export const addBranch = async (
         projectName: projectName,
         projectIconHash: projectIconHash,
         projectImageHash: projectImageHash,
+        projectSummary: projectSummary,
         projectDescription: projectDescription,
         partDefs: partDefs,
         typeDefs: typeDefs,
-        tag: tag,
+        releaseId: releaseId,
         children: children
     })).hash;
 
@@ -317,7 +322,8 @@ export const addBranch = async (
         description: description,
         project: { id: projectId },
         head: { hash: branchHeadCommitHash },
-        owner: { id: userId }
+        owner: { id: userId },
+        draftCommit: null
     };
 };
 
@@ -341,7 +347,8 @@ const databaseLowBranchToLowCost = ({
     },
     description: data.description,
     head: { hash: data.headHash },
-    owner: { id: data.ownerId }
+    owner: { id: data.ownerId },
+    draftCommit: null
 });
 
 /* ==========================================
@@ -353,9 +360,8 @@ type CommitLowCost = {
     readonly parentCommits: ReadonlyArray<{
         readonly hash: type.CommitHash;
     }>;
-    readonly tag: null | type.CommitTagName | type.Version;
-    readonly commitSummary: string;
-    readonly commitDescription: string;
+    readonly releaseId: null | type.ReleaseId;
+    readonly description: string;
     readonly author: {
         readonly id: type.UserId;
     };
@@ -367,6 +373,7 @@ type CommitLowCost = {
     readonly projectImage: {
         hash: type.FileHash;
     };
+    readonly projectSummary: string;
     readonly projectDescription: string;
     readonly children: ReadonlyArray<{
         readonly id: type.ModuleId;
@@ -390,19 +397,20 @@ type CommitLowCost = {
         readonly project: {
             readonly id: type.ProjectId;
         };
-        readonly version: type.DependencyVersion;
+        readonly releaseId: type.ReleaseId;
     }>;
 };
 
 export const addCommit = async (data: {
     parentCommitHashes: ReadonlyArray<type.CommitHash>;
-    tag: null | string | type.Version;
+    releaseId: null | type.ReleaseId;
     authorId: type.UserId;
     commitSummary: string;
     commitDescription: string;
     projectName: string;
     projectIconHash: type.FileHash;
     projectImageHash: type.FileHash;
+    projectSummary: string;
     projectDescription: string;
     children: ReadonlyArray<{
         id: type.ModuleId;
@@ -418,7 +426,7 @@ export const addCommit = async (data: {
     }>;
     dependencies: ReadonlyArray<{
         projectId: type.ProjectId;
-        version: type.DependencyVersion;
+        releaseId: type.ReleaseId;
     }>;
 }): Promise<CommitLowCost> => {
     const now = databaseLow.getNowTimestamp();
@@ -449,16 +457,16 @@ const databaseLowCommitToLowCost = ({
 }): CommitLowCost => ({
     hash: hash,
     parentCommits: data.parentCommitHashes.map(hash => ({ hash: hash })),
-    tag: typeof data.tag === "string" ? { text: data.tag } : data.tag,
+    releaseId: data.releaseId,
     author: {
         id: data.authorId
     },
     date: data.date.toDate(),
-    commitSummary: data.commitSummary,
-    commitDescription: data.commitDescription,
+    description: data.commitDescription,
     projectName: data.projectName,
     projectIcon: { hash: data.projectIconHash },
     projectImage: { hash: data.projectImageHash },
+    projectSummary: data.projectSummary,
     projectDescription: data.projectDescription,
     children: data.children.map(child => ({
         id: child.id,
@@ -476,7 +484,91 @@ const databaseLowCommitToLowCost = ({
         project: {
             id: dependency.projectId
         },
-        version: dependency.version
+        releaseId: dependency.releaseId
+    }))
+});
+
+/* ==========================================
+               Draft Commit
+   ==========================================
+*/
+type DraftCommitLowCost = {
+    readonly hash: type.DraftCommitHash;
+    readonly date: Date;
+    readonly description: string;
+    readonly isRelease: boolean;
+    readonly projectName: string;
+    readonly projectIconHash: type.FileHash;
+    readonly projectImageHash: type.FileHash;
+    readonly projectSummary: string;
+    readonly projectDescription: string;
+    readonly children: ReadonlyArray<{
+        readonly id: type.ModuleId;
+        readonly snapshot: {
+            readonly hash: type.ModuleSnapshotHash;
+        };
+    }>;
+    readonly typeDefs: ReadonlyArray<{
+        readonly id: type.TypeId;
+        readonly snapshot: {
+            readonly hash: type.TypeDefSnapshotHash;
+        };
+    }>;
+    readonly partDefs: ReadonlyArray<{
+        readonly id: type.PartId;
+        readonly snapshot: {
+            readonly hash: type.PartDefSnapshotHash;
+        };
+    }>;
+    readonly dependencies: ReadonlyArray<{
+        readonly project: {
+            readonly id: type.ProjectId;
+        };
+        readonly releaseId: type.ReleaseId;
+    }>;
+};
+
+export const getDraftCommit = async (
+    hash: type.DraftCommitHash
+): Promise<DraftCommitLowCost> =>
+    databaseLowDraftCommitToLowCost({
+        hash: hash,
+        data: await databaseLow.getDraftCommit(hash)
+    });
+
+const databaseLowDraftCommitToLowCost = ({
+    hash,
+    data
+}: {
+    hash: type.DraftCommitHash;
+    data: databaseLow.DraftCommitData;
+}): DraftCommitLowCost => ({
+    hash: hash,
+    date: data.date.toDate(),
+    description: data.description,
+    isRelease: data.isRelease,
+    projectName: data.projectName,
+    projectIconHash: data.projectIconHash,
+    projectImageHash: data.projectImageHash,
+    projectSummary: data.projectSummary,
+    projectDescription: data.projectDescription,
+    children: data.children.map(child => ({
+        id: child.id,
+        snapshot: { hash: child.hash }
+    })),
+    typeDefs: data.typeDefs.map(t => ({
+        id: t.id,
+        snapshot: { hash: t.hash }
+    })),
+    partDefs: data.partDefs.map(p => ({
+        id: p.id,
+        snapshot: { hash: p.hash }
+    })),
+    dependencies: data.dependencies.map(dependency => ({
+        project: {
+            id: dependency.projectId
+        },
+        releaseId: dependency.releaseId
     }))
 });
 

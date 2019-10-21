@@ -26,6 +26,7 @@ const projectCollection = dataBase.collection("project");
 const moduleCollection = dataBase.collection("module");
 const branchCollection = dataBase.collection("branch");
 const commitCollection = dataBase.collection("commit");
+const draftCommitCollection = dataBase.collection("draftCommit");
 const typeCollection = dataBase.collection("type");
 const partCollection = dataBase.collection("part");
 const exprCollection = dataBase.collection("expr");
@@ -52,7 +53,7 @@ export const addUser = async (
     userId: type.UserId,
     userData: UserData
 ): Promise<type.UserId> => {
-    await userCollection.doc(userId).set(userData);
+    await userCollection.doc(userId).create(userData);
     return userId;
 };
 
@@ -291,7 +292,7 @@ export const updateBranch = async (
 // コレクションはcommit。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type CommitData = {
     parentCommitHashes: ReadonlyArray<type.CommitHash>;
-    tag: null | string | type.Version;
+    releaseId: null | type.ReleaseId;
     authorId: type.UserId;
     date: firestore.Timestamp;
     commitSummary: string;
@@ -299,6 +300,7 @@ export type CommitData = {
     projectName: string;
     projectIconHash: type.FileHash;
     projectImageHash: type.FileHash;
+    projectSummary: string;
     projectDescription: string;
     children: ReadonlyArray<{
         id: type.ModuleId;
@@ -314,7 +316,7 @@ export type CommitData = {
     }>;
     dependencies: ReadonlyArray<{
         projectId: type.ProjectId;
-        version: type.DependencyVersion;
+        releaseId: type.ReleaseId;
     }>;
 };
 
@@ -337,6 +339,63 @@ export const getCommit = async (hash: type.CommitHash): Promise<CommitData> => {
     }
     return commitData as CommitData;
 };
+/* ==========================================
+                Draft Commit
+   ==========================================
+*/
+export type DraftCommitData = {
+    readonly date: firestore.Timestamp;
+    readonly description: string;
+    readonly isRelease: boolean;
+    readonly projectName: string;
+    readonly projectIconHash: type.FileHash;
+    readonly projectImageHash: type.FileHash;
+    readonly projectSummary: string;
+    readonly projectDescription: string;
+    readonly children: ReadonlyArray<{
+        readonly id: type.ModuleId;
+        readonly hash: type.ModuleSnapshotHash;
+    }>;
+    readonly typeDefs: ReadonlyArray<{
+        readonly id: type.TypeId;
+        readonly hash: type.TypeDefSnapshotHash;
+    }>;
+    readonly partDefs: ReadonlyArray<{
+        readonly id: type.PartId;
+        readonly hash: type.PartDefSnapshotHash;
+    }>;
+    readonly dependencies: ReadonlyArray<{
+        readonly projectId: type.ProjectId;
+        readonly releaseId: type.ReleaseId;
+    }>;
+};
+
+/**
+ * ドラフトコミットを作成する。存在するものをさらに作成したらエラー
+ */
+export const addDraftCommit = async (
+    data: CommitData
+): Promise<type.DraftCommitHash> => {
+    const hash = type.createHash(data);
+    await draftCommitCollection.doc(hash).create(data);
+    return hash as type.DraftCommitHash;
+};
+
+/**
+ * ドラフトコミットを取得する
+ */
+export const getDraftCommit = async (
+    hash: type.DraftCommitHash
+): Promise<DraftCommitData> => {
+    const commitData = (await commitCollection.doc(hash).get()).data();
+    if (commitData === undefined) {
+        throw new Error(
+            `There was no draft commit with draftCommitHash = ${hash}`
+        );
+    }
+    return commitData as DraftCommitData;
+};
+
 /* ==========================================
                 Module Snapshot
    ==========================================

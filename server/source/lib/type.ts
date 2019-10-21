@@ -66,7 +66,7 @@ export type Project = {
     id: ProjectId;
     masterBranch: Branch;
     branches: ReadonlyArray<Branch>;
-    taggedCommits: ReadonlyArray<Commit>;
+    taggedCommits: ReadonlyArray<Commit>; // ブランチのコミットを全て走査しなくていいように
 };
 
 export type ProjectId = string & { __projectIdBrand: never };
@@ -83,6 +83,7 @@ export type Branch = {
     description: string;
     head: Commit;
     owner: User;
+    draftCommit: null | DraftCommit;
 };
 
 export type BranchId = string & { __branchIdBrand: never };
@@ -94,54 +95,98 @@ export type BranchId = string & { __branchIdBrand: never };
 
 export type Commit = {
     hash: CommitHash;
+    /** 親コミット */
     parentCommits: ReadonlyArray<Commit>;
-    tag: null | CommitTagName | Version;
-    projectName: string;
-    projectIcon: FileHash;
-    projectImage: FileHash;
-    projectDescription: string;
+    /** リリースID */
+    releaseId: null | ReleaseId;
+    /** 作成者 */
     author: User;
+    /** 作成日時 */
     date: Date;
-    commitSummary: string;
-    commitDescription: string;
+    /** コミットの説明 最大1000文字 */
+    description: string;
+    /** プロジェクト名 最大50文字 */
+    projectName: string;
+    /** プロジェクトのアイコン */
+    projectIcon: FileHash;
+    /** プロジェクトの画像 */
+    projectImage: FileHash;
+    /** プロジェクトの簡潔な説明 最大150文字 */
+    projectSummary: string;
+    /** プロジェクトの詳しい説明 最大1000文字 */
+    projectDescription: string;
+    /** 直下以外のモジュール 最大3000こ */
     children: ReadonlyArray<{
         id: ModuleId;
         snapshot: ModuleSnapshot;
     }>;
+    /** 直下の型定義 最大300こ */
     typeDefs: ReadonlyArray<{
         id: TypeId;
         snapshot: TypeDefSnapshot;
     }>;
+    /** 直下のパーツ定義 最大5000こ */
     partDefs: ReadonlyArray<{
         id: PartId;
         snapshot: PartDefSnapshot;
     }>;
+    /** 依存プロジェクト 最大1000こ */
     dependencies: ReadonlyArray<Dependency>;
 };
 
 export type CommitHash = string & { __commitObjectHashBrand: never };
 
-export type CommitTagName = {
-    text: string;
+/** ブランチに対して1つまで? indexともいう。他人のドラフトコミットは見れない。プロジェクト名を決めずにやれると速くて便利
+ * 作者はブランチの所有者と同じになるのでいらない
+ * ドキュメントサイズ最大 1,048,576byte
+ */
+export type DraftCommit = {
+    hash: DraftCommitHash;
+    /** 作成日時 (この値を使ってハッシュ値を求めてしまうと編集していないのに変更したと判定されてしまう) */
+    date: Date;
+    /** コミットの説明 最大1000文字 */
+    description: string;
+    /** リリースとして公開する予定か */
+    isRelease: boolean;
+    /** プロジェクト名 最大50文字 */
+    projectName: string;
+    /** プロジェクトのアイコン */
+    projectIcon: FileHash;
+    /** プロジェクトの画像 */
+    projectImage: FileHash;
+    /** プロジェクトの簡潔な説明 最大150文字 */
+    projectSummary: string;
+    /** プロジェクトの詳しい説明 最大1000文字 */
+    projectDescription: string;
+    /** 直下以外のモジュール 最大3000こ */
+    children: ReadonlyArray<{
+        id: ModuleId;
+        snapshot: ModuleSnapshot;
+    }>;
+    /** 直下の型定義 最大300こ */
+    typeDefs: ReadonlyArray<{
+        id: TypeId;
+        snapshot: TypeDefSnapshot;
+    }>;
+    /** 直下のパーツ定義 最大5000こ */
+    partDefs: ReadonlyArray<{
+        id: PartId;
+        snapshot: PartDefSnapshot;
+    }>;
+    /** 依存プロジェクト 最大1000こ */
+    dependencies: ReadonlyArray<Dependency>;
 };
+
+export type DraftCommitHash = string & { __draftCommitIdBrand: never };
 
 export type Dependency = {
-    project: Project;
-    version: DependencyVersion;
+    project: Project; //32Byte
+    releaseId: ReleaseId; // 32Byte
 };
 
-/** 他のプロジェクトを利用するときに指定するバージョンの形式。メジャーバージョンだけを維持して最新のものを指定するのがデフォルト(メジャーが0のときはマイナーまで固定) 開発バージョンやバージョンがpatchまで完全一致に指定することも可能 */
-export type DependencyVersion = InitialRelease | Release | Version;
-
-export type InitialRelease = { type: "initialRelease"; minor: number };
-
-export type Release = { type: "release"; major: number };
-
-export type Version = {
-    major: number;
-    minor: number;
-    patch: number;
-};
+/** リリースしているコミットを表すもの。依存プロジェクトのバージョンを表すのに使う
+ */
+export type ReleaseId = string & { __releaseIdBrand: never };
 
 /*  =============================================================
                         Module Snapshot
