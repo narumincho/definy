@@ -429,37 +429,15 @@ const commitGraphQLType: g.GraphQLObjectType<
                     return source.parentCommits;
                 }
             }),
-            tag: makeObjectField({
-                type: commitTagGraphQLType,
-                description: "コミットをわかりやすく区別するためのタグ",
+            releaseId: makeObjectField({
+                type: type.idGraphQLType,
+                description: "リリースID",
                 args: {},
                 resolve: async (source, args) => {
-                    if (source.tag === undefined) {
-                        return (await setCommit(source)).tag;
+                    if (source.releaseId === undefined) {
+                        return await setCommit(source);
                     }
-                    return source.tag;
-                }
-            }),
-            commitSummary: makeObjectField({
-                type: g.GraphQLNonNull(g.GraphQLString),
-                description: "どんな変更をしたかの簡潔な説明",
-                args: {},
-                resolve: async (source, args) => {
-                    if (source.commitSummary === undefined) {
-                        return (await setCommit(source)).commitSummary;
-                    }
-                    return source.commitSummary;
-                }
-            }),
-            commitDescription: makeObjectField({
-                type: g.GraphQLNonNull(g.GraphQLString),
-                description: "どんな変更をしたかの詳しい説明",
-                args: {},
-                resolve: async (source, args) => {
-                    if (source.commitDescription === undefined) {
-                        return (await setCommit(source)).commitDescription;
-                    }
-                    return source.commitDescription;
+                    return source.releaseId;
                 }
             }),
             author: makeObjectField({
@@ -482,6 +460,17 @@ const commitGraphQLType: g.GraphQLObjectType<
                         return (await setCommit(source)).date;
                     }
                     return source.date;
+                }
+            }),
+            description: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "どんな変更をしたかの詳しい説明",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.description === undefined) {
+                        return (await setCommit(source)).commitDescription;
+                    }
+                    return source.description;
                 }
             }),
             projectName: makeObjectField({
@@ -520,9 +509,20 @@ const commitGraphQLType: g.GraphQLObjectType<
                     return source.projectImage;
                 }
             }),
+            projectSummary: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "プロジェクトの簡潔な説明",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.projectSummary === undefined) {
+                        return await setCommit(source);
+                    }
+                    return source.projectSummary;
+                }
+            }),
             projectDescription: makeObjectField({
                 type: g.GraphQLNonNull(g.GraphQLString),
-                description: "プロジェクトの説明文",
+                description: "プロジェクトの詳しい説明",
                 args: {},
                 resolve: async (source, args) => {
                     if (source.projectDescription === undefined) {
@@ -583,7 +583,7 @@ const setCommit = async (
 ): ReturnType<typeof database.getCommit> => {
     const data = await database.getCommit(source.hash);
     source.parentCommits = data.parentCommits;
-    source.tag = data.tag;
+    source.releaseId = data.tag;
     source.projectName = data.projectName;
     source.projectIcon = data.projectIcon;
     source.projectImage = data.projectImage;
@@ -595,44 +595,6 @@ const setCommit = async (
     return data;
 };
 
-const commitTagGraphQLType = new g.GraphQLUnionType({
-    name: "commitTag",
-    description: "コミット時につけられるタグ",
-    types: () => [commitTagName, versionGraphQLType]
-});
-
-const commitTagName = new g.GraphQLObjectType({
-    name: "CommitTagName",
-    description: "コミットのタグを文字列で表現する",
-    fields: () =>
-        makeObjectFieldMap<type.CommitTagName>({
-            text: {
-                type: g.GraphQLNonNull(g.GraphQLString),
-                description: "文字列"
-            }
-        })
-});
-
-const versionGraphQLType = new g.GraphQLObjectType({
-    name: "Version",
-    description: "バージョン",
-    fields: () =>
-        makeObjectFieldMap<type.ReleaseId>({
-            major: {
-                type: g.GraphQLNonNull(g.GraphQLInt),
-                description: "メジャー"
-            },
-            minor: {
-                type: g.GraphQLNonNull(g.GraphQLInt),
-                description: "マイナー"
-            },
-            patch: {
-                type: g.GraphQLNonNull(g.GraphQLInt),
-                description: "パッチ"
-            }
-        })
-});
-
 const dependencyGraphQLType = new g.GraphQLObjectType({
     name: "Dependency",
     description: "依存プロジェクト",
@@ -642,52 +604,15 @@ const dependencyGraphQLType = new g.GraphQLObjectType({
                 type: g.GraphQLNonNull(projectGraphQLType),
                 description: "プロジェクト"
             },
-            version: {
-                type: g.GraphQLNonNull(dependencyVersionGraphQLType),
-                description: "バージョン"
+            releaseId: {
+                type: g.GraphQLNonNull(type.idGraphQLType),
+                description: "リリースID"
             }
         })
 });
 
-const dependencyVersionGraphQLType = new g.GraphQLUnionType({
-    name: "DependencyVersion",
-    description: "依存プロジェクトのバージョンの指定",
-    types: () => [
-        initialReleaseGraphQLType,
-        releaseGraphQLType,
-        versionGraphQLType
-    ]
 });
 
-const initialReleaseGraphQLType = new g.GraphQLObjectType({
-    name: "InitialRelease",
-    description: "初期リリースのプロジェクトのバージョンの指定",
-    fields: makeObjectFieldMap<type.InitialRelease>({
-        minor: {
-            type: g.GraphQLNonNull(g.GraphQLInt),
-            description: "マイナー"
-        },
-        type: {
-            type: g.GraphQLNonNull(g.GraphQLString),
-            description: "常に initialRelease"
-        }
-    })
-});
-
-const releaseGraphQLType = new g.GraphQLObjectType({
-    name: "Release",
-    description: "リリースしたプロジェクトのバージョン指定",
-    fields: makeObjectFieldMap<type.Release>({
-        major: {
-            type: g.GraphQLNonNull(g.GraphQLInt),
-            description: "メジャー"
-        },
-        type: {
-            type: g.GraphQLNonNull(g.GraphQLString),
-            description: "常に release"
-        }
-    })
-});
 /* ==========================================
                Module Snapshot
    ==========================================
