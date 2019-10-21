@@ -187,7 +187,7 @@ export type Dependency = {
 
 /** リリースしているコミットを表すもの。依存プロジェクトのバージョンを表すのに使う
  */
-export type ReleaseId = string & { __releaseId: never };
+export type ReleaseId = string & { __releaseIdBrand: never };
 
 /*  =============================================================
                         Module Snapshot
