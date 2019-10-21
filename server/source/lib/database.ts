@@ -176,8 +176,8 @@ export const addProject = async (
         projectSummary: "",
         projectDescription: "",
         projectName: "",
-        projectIconHash: "" as type.FileHash,
-        projectImageHash: "" as type.FileHash,
+        projectIconHash: null,
+        projectImageHash: null,
         releaseId: null,
         children: [],
         partDefs: [],
@@ -368,10 +368,10 @@ type CommitLowCost = {
     readonly date: Date;
     readonly projectName: string;
     readonly projectIcon: {
-        hash: type.FileHash;
+        hash: type.FileHash | null;
     };
     readonly projectImage: {
-        hash: type.FileHash;
+        hash: type.FileHash | null;
     };
     readonly projectSummary: string;
     readonly projectDescription: string;
@@ -408,8 +408,8 @@ export const addCommit = async (data: {
     commitSummary: string;
     commitDescription: string;
     projectName: string;
-    projectIconHash: type.FileHash;
-    projectImageHash: type.FileHash;
+    projectIconHash: type.FileHash | null;
+    projectImageHash: type.FileHash | null;
     projectSummary: string;
     projectDescription: string;
     children: ReadonlyArray<{

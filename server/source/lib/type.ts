@@ -108,9 +108,9 @@ export type Commit = {
     /** プロジェクト名 最大50文字 */
     projectName: string;
     /** プロジェクトのアイコン */
-    projectIcon: FileHash;
+    projectIcon: FileHash | null;
     /** プロジェクトの画像 */
-    projectImage: FileHash;
+    projectImage: FileHash | null;
     /** プロジェクトの簡潔な説明 最大150文字 */
     projectSummary: string;
     /** プロジェクトの詳しい説明 最大1000文字 */

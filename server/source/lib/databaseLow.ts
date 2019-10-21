@@ -2,7 +2,6 @@ import * as admin from "firebase-admin";
 import * as type from "./type";
 import * as firestore from "@google-cloud/firestore";
 import * as stream from "stream";
-import * as crypto from "crypto";
 
 const app = admin.initializeApp();
 const dataBase = app.firestore();
@@ -246,11 +245,11 @@ export const getAllProject = async (): Promise<
 
 // コレクションはbranch。KeyはBranchId
 export type BranchData = {
-    name: type.Label;
-    projectId: type.ProjectId;
-    description: string;
-    headHash: type.CommitHash;
-    ownerId: type.UserId;
+    readonly name: type.Label;
+    readonly projectId: type.ProjectId;
+    readonly description: string;
+    readonly headHash: type.CommitHash;
+    readonly ownerId: type.UserId;
 };
 
 /**
@@ -291,32 +290,32 @@ export const updateBranch = async (
 
 // コレクションはcommit。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type CommitData = {
-    parentCommitHashes: ReadonlyArray<type.CommitHash>;
-    releaseId: null | type.ReleaseId;
-    authorId: type.UserId;
-    date: firestore.Timestamp;
-    commitSummary: string;
-    commitDescription: string;
-    projectName: string;
-    projectIconHash: type.FileHash;
-    projectImageHash: type.FileHash;
-    projectSummary: string;
-    projectDescription: string;
-    children: ReadonlyArray<{
-        id: type.ModuleId;
-        hash: type.ModuleSnapshotHash;
+    readonly parentCommitHashes: ReadonlyArray<type.CommitHash>;
+    readonly releaseId: null | type.ReleaseId;
+    readonly authorId: type.UserId;
+    readonly date: firestore.Timestamp;
+    readonly commitSummary: string;
+    readonly commitDescription: string;
+    readonly projectName: string;
+    readonly projectIconHash: type.FileHash | null;
+    readonly projectImageHash: type.FileHash | null;
+    readonly projectSummary: string;
+    readonly projectDescription: string;
+    readonly children: ReadonlyArray<{
+        readonly id: type.ModuleId;
+        readonly hash: type.ModuleSnapshotHash;
     }>;
-    typeDefs: ReadonlyArray<{
-        id: type.TypeId;
-        hash: type.TypeDefSnapshotHash;
+    readonly typeDefs: ReadonlyArray<{
+        readonly id: type.TypeId;
+        readonly hash: type.TypeDefSnapshotHash;
     }>;
-    partDefs: ReadonlyArray<{
-        id: type.PartId;
-        hash: type.PartDefSnapshotHash;
+    readonly partDefs: ReadonlyArray<{
+        readonly id: type.PartId;
+        readonly hash: type.PartDefSnapshotHash;
     }>;
-    dependencies: ReadonlyArray<{
-        projectId: type.ProjectId;
-        releaseId: type.ReleaseId;
+    readonly dependencies: ReadonlyArray<{
+        readonly projectId: type.ProjectId;
+        readonly releaseId: type.ReleaseId;
     }>;
 };
 
