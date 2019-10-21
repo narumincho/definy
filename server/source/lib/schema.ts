@@ -1336,7 +1336,6 @@ export const schema = new g.GraphQLSchema({
             addProject: makeQueryOrMutationField<
                 {
                     accessToken: type.AccessToken;
-                    name: type.Label;
                 },
                 type.Project
             >({
@@ -1344,20 +1343,15 @@ export const schema = new g.GraphQLSchema({
                     accessToken: {
                         type: g.GraphQLNonNull(type.accessTokenGraphQLType),
                         description: type.accessTokenDescription
-                    },
-                    name: {
-                        type: g.GraphQLNonNull(type.labelGraphQLType),
-                        description: "プロジェクトの名前"
                     }
                 },
                 type: g.GraphQLNonNull(projectGraphQLType),
                 resolve: async args => {
-                    return database.addProject({
-                        name: args.name,
-                        userId: await database.verifyAccessToken(
+                    return database.addProject(
+                        await database.verifyAccessToken(
                             args.accessToken
                         )
-                    });
+                    );
                 },
                 description: "プロジェクトを作成する"
             })

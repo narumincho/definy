@@ -164,19 +164,18 @@ type ProjectLowCost = {
 /**
  * プロジェクトを追加する
  */
-export const addProject = async (data: {
-    name: string;
-    userId: type.UserId;
-}): Promise<ProjectLowCost> => {
+export const addProject = async (
+    userId: type.UserId
+): Promise<ProjectLowCost> => {
     const initialCommitHash = (await addCommit({
-        authorId: data.userId,
+        authorId: userId,
         commitDescription: "",
         commitSummary: "initial commit",
         dependencies: [],
         parentCommitHashes: [],
         projectSummary: "",
         projectDescription: "",
-        projectName: data.name,
+        projectName: "",
         projectIconHash: "" as type.FileHash,
         projectImageHash: "" as type.FileHash,
         releaseId: null,
@@ -191,11 +190,11 @@ export const addProject = async (data: {
         taggedCommitHashes: []
     });
     await databaseLow.addBranch(masterBranchId, {
-        description: "",
+        description: "プロジェクト作成時に自動的に作られるマスターブランチ",
         headHash: initialCommitHash,
         name: type.labelFromString("master"),
         projectId: projectId,
-        ownerId: data.userId
+        ownerId: userId
     });
 
     return {
