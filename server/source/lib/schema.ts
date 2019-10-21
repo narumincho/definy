@@ -1348,9 +1348,7 @@ export const schema = new g.GraphQLSchema({
                 type: g.GraphQLNonNull(projectGraphQLType),
                 resolve: async args => {
                     return database.addProject(
-                        await database.verifyAccessToken(
-                            args.accessToken
-                        )
+                        await database.verifyAccessToken(args.accessToken)
                     );
                 },
                 description: "プロジェクトを作成する"

@@ -9,7 +9,7 @@ module Data.Project exposing
 
 import Data.IdHash as Id
 import Data.Label as Label
-import Data.Project.Module
+import Data.Project.Module as Module
 import Time
 
 

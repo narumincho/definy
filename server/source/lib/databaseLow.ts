@@ -146,7 +146,7 @@ export const verifyAccessToken = async (
         throw new Error("invalid access token");
     }
     if (
-        data.issuedAt.toMillis() + 1000 * 60 * 6 < // 6時間
+        data.issuedAt.toMillis() + 1000 * 60 * 60 * 6 < // 6時間
         new Date().getTime()
     ) {
         throw new Error("access token has expired");
