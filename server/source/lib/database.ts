@@ -2,9 +2,6 @@ import * as databaseLow from "./databaseLow";
 import * as type from "./type";
 import axios, { AxiosResponse } from "axios";
 import { URL } from "url";
-import * as tool from "./tool";
-import * as jwt from "jsonwebtoken";
-import * as key from "./key";
 
 /* ==========================================
                     User
