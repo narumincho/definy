@@ -679,7 +679,7 @@ const draftCommitGraphQLType = new g.GraphQLObjectType({
                 args: {},
                 resolve: async (source, args) => {
                     if (source.projectIcon === undefined) {
-                        return (await setDraftCommit(source)).projectIcon;
+                        return (await setDraftCommit(source)).projectIconHash;
                     }
                     return source.projectIcon;
                 }
@@ -692,7 +692,7 @@ const draftCommitGraphQLType = new g.GraphQLObjectType({
                 args: {},
                 resolve: async (source, args) => {
                     if (source.projectImage === undefined) {
-                        return (await setDraftCommit(source)).projectImage;
+                        return (await setDraftCommit(source)).projectImageHash;
                     }
                     return source.projectImage;
                 }
@@ -769,14 +769,14 @@ const draftCommitGraphQLType = new g.GraphQLObjectType({
 
 const setDraftCommit = async (
     source: Return<type.DraftCommit>
-): Promise<ReturnType<typeof database.getDraftCommit>> => {
+): ReturnType<typeof database.getDraftCommit> => {
     const data = await database.getDraftCommit(source.hash);
     source.date = data.date;
     source.description = data.description;
     source.isRelease = data.isRelease;
     source.projectName = data.projectName;
-    source.projectIcon = data.projectIcon;
-    source.projectImage = data.projectImage;
+    source.projectIcon = data.projectIconHash;
+    source.projectImage = data.projectImageHash;
     source.projectSummary = data.projectSummary;
     source.projectDescription = data.projectDescription;
     source.children = data.children;

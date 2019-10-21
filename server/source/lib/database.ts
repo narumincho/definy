@@ -362,7 +362,6 @@ type CommitLowCost = {
         readonly hash: type.CommitHash;
     }>;
     readonly releaseId: null | type.ReleaseId;
-    readonly commitSummary: string;
     readonly description: string;
     readonly author: {
         readonly id: type.UserId;
@@ -464,7 +463,6 @@ const databaseLowCommitToLowCost = ({
         id: data.authorId
     },
     date: data.date.toDate(),
-    commitSummary: data.commitSummary,
     description: data.commitDescription,
     projectName: data.projectName,
     projectIcon: { hash: data.projectIconHash },
@@ -496,12 +494,13 @@ const databaseLowCommitToLowCost = ({
    ==========================================
 */
 type DraftCommitLowCost = {
+    readonly hash: type.DraftCommitHash;
     readonly date: Date;
     readonly description: string;
     readonly isRelease: boolean;
     readonly projectName: string;
-    readonly projectIcon: type.FileHash;
-    readonly projectImage: type.FileHash;
+    readonly projectIconHash: type.FileHash;
+    readonly projectImageHash: type.FileHash;
     readonly projectSummary: string;
     readonly projectDescription: string;
     readonly children: ReadonlyArray<{
@@ -532,7 +531,48 @@ type DraftCommitLowCost = {
 
 export const getDraftCommit = async (
     hash: type.DraftCommitHash
-): DraftCommitLowCost => {};
+): Promise<DraftCommitLowCost> =>
+    databaseLowDraftCommitToLowCost({
+        hash: hash,
+        data: await databaseLow.getDraftCommit(hash)
+    });
+
+const databaseLowDraftCommitToLowCost = ({
+    hash,
+    data
+}: {
+    hash: type.DraftCommitHash;
+    data: databaseLow.DraftCommitData;
+}): DraftCommitLowCost => ({
+    hash: hash,
+    date: data.date.toDate(),
+    description: data.description,
+    isRelease: data.isRelease,
+    projectName: data.projectName,
+    projectIconHash: data.projectIconHash,
+    projectImageHash: data.projectImageHash,
+    projectSummary: data.projectSummary,
+    projectDescription: data.projectDescription,
+    children: data.children.map(child => ({
+        id: child.id,
+        snapshot: { hash: child.hash }
+    })),
+    typeDefs: data.typeDefs.map(t => ({
+        id: t.id,
+        snapshot: { hash: t.hash }
+    })),
+    partDefs: data.partDefs.map(p => ({
+        id: p.id,
+        snapshot: { hash: p.hash }
+    })),
+    dependencies: data.dependencies.map(dependency => ({
+        project: {
+            id: dependency.projectId
+        },
+        releaseId: dependency.releaseId
+    }))
+});
+
 /* ==========================================
                Module Snapshot
    ==========================================
