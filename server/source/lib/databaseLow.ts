@@ -34,13 +34,13 @@ const exprCollection = dataBase.collection("expr");
    ==========================================
 */
 export type UserData = {
-    name: type.UserName;
-    imageHash: type.FileHash;
-    introduction: string;
-    createdAt: firestore.Timestamp;
-    branchIds: ReadonlyArray<type.BranchId>;
-    lastAccessTokenHash: type.AccessTokenHash;
-    logInServiceAndId: type.LogInServiceAndId;
+    readonly name: type.UserName;
+    readonly imageHash: type.FileHash;
+    readonly introduction: string;
+    readonly createdAt: firestore.Timestamp;
+    readonly branchIds: ReadonlyArray<type.BranchId>;
+    readonly lastAccessTokenHash: type.AccessTokenHash;
+    readonly logInServiceAndId: type.LogInServiceAndId;
 };
 
 /**
@@ -124,8 +124,8 @@ export const getReadableStream = (fileHash: type.FileHash): stream.Readable => {
    ==========================================
 */
 type AccessTokenData = {
-    userId: type.UserId;
-    issuedAt: FirebaseFirestore.Timestamp;
+    readonly userId: type.UserId;
+    readonly issuedAt: FirebaseFirestore.Timestamp;
 };
 
 export const createAndWriteAccessToken = async (
@@ -191,9 +191,9 @@ export const existsGoogleStateAndDeleteAndGetUserId = async (
 
 // コレクションはProject。KeyはProjectId
 export type ProjectData = {
-    masterBranch: type.BranchId;
-    branches: ReadonlyArray<type.BranchId>;
-    taggedCommitHashes: ReadonlyArray<type.CommitHash>;
+    readonly masterBranch: type.BranchId;
+    readonly branches: ReadonlyArray<type.BranchId>;
+    readonly taggedCommitHashes: ReadonlyArray<type.CommitHash>;
 };
 
 export const addProject = async (
@@ -402,21 +402,21 @@ export const getDraftCommit = async (
 
 // コレクションはmodule。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type ModuleSnapshotData = {
-    name: type.Label;
-    children: ReadonlyArray<{
-        id: type.ModuleId;
-        hash: type.ModuleSnapshotHash;
+    readonly name: type.Label;
+    readonly children: ReadonlyArray<{
+        readonly id: type.ModuleId;
+        readonly hash: type.ModuleSnapshotHash;
     }>;
-    typeDefs: ReadonlyArray<{
-        id: type.TypeId;
-        hash: type.TypeDefSnapshotHash;
+    readonly typeDefs: ReadonlyArray<{
+        readonly id: type.TypeId;
+        readonly hash: type.TypeDefSnapshotHash;
     }>;
-    partDefs: ReadonlyArray<{
-        id: type.PartId;
-        hash: type.PartDefSnapshotHash;
+    readonly partDefs: ReadonlyArray<{
+        readonly id: type.PartId;
+        readonly hash: type.PartDefSnapshotHash;
     }>;
-    description: string;
-    exposing: boolean;
+    readonly description: string;
+    readonly exposing: boolean;
 };
 
 /**
@@ -453,9 +453,9 @@ export const getModuleSnapshot = async (
 
 // コレクションはtype。ー度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type TypeDefSnapshot = {
-    name: type.Label;
-    description: string;
-    body: type.TypeBody;
+    readonly name: type.Label;
+    readonly description: string;
+    readonly body: type.TypeBody;
 };
 
 /**
@@ -491,10 +491,10 @@ export const getTypeDefSnapshot = async (
 
 // コレクションはpart。ー度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type PartDefSnapshot = {
-    name: type.Label;
-    description: string;
-    type: ReadonlyArray<type.TypeTermOrParenthesis>;
-    exprHash: type.ExprSnapshotHash;
+    readonly name: type.Label;
+    readonly description: string;
+    readonly type: ReadonlyArray<type.TypeTermOrParenthesis>;
+    readonly exprHash: type.ExprSnapshotHash;
 };
 
 /**
