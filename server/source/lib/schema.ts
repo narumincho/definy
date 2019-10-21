@@ -373,6 +373,17 @@ const branchGraphQLType = new g.GraphQLObjectType({
                     }
                     return source.owner;
                 }
+            }),
+            draftCommit: makeObjectField({
+                type: g.GraphQLNonNull(draftCommitGraphQLType),
+                description: "ドラフトコミット",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.draftCommit === undefined) {
+                        return await setBranch(source);
+                    }
+                    return source.draftCommit;
+                }
             })
         }),
     description: "複数のコミットを1列に並べて整理するもの"
