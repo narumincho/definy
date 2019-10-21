@@ -52,7 +52,7 @@ export const addUser = async (
     userId: type.UserId,
     userData: UserData
 ): Promise<type.UserId> => {
-    await userCollection.doc(userId).set(userData);
+    await userCollection.doc(userId).create(userData);
     return userId;
 };
 
@@ -291,7 +291,7 @@ export const updateBranch = async (
 // コレクションはcommit。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type CommitData = {
     parentCommitHashes: ReadonlyArray<type.CommitHash>;
-    tag: null | string | type.Version;
+    tag: null | string | type.ReleaseId;
     authorId: type.UserId;
     date: firestore.Timestamp;
     commitSummary: string;

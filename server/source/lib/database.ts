@@ -273,7 +273,7 @@ export const addBranch = async (
     projectIconHash: type.FileHash,
     projectImageHash: type.FileHash,
     projectDescription: string,
-    tag: string | type.Version | null,
+    tag: string | type.ReleaseId | null,
     children: ReadonlyArray<{
         id: type.ModuleId;
         hash: type.ModuleSnapshotHash;
@@ -353,7 +353,7 @@ type CommitLowCost = {
     readonly parentCommits: ReadonlyArray<{
         readonly hash: type.CommitHash;
     }>;
-    readonly tag: null | type.CommitTagName | type.Version;
+    readonly tag: null | type.CommitTagName | type.ReleaseId;
     readonly commitSummary: string;
     readonly commitDescription: string;
     readonly author: {
@@ -396,7 +396,7 @@ type CommitLowCost = {
 
 export const addCommit = async (data: {
     parentCommitHashes: ReadonlyArray<type.CommitHash>;
-    tag: null | string | type.Version;
+    tag: null | string | type.ReleaseId;
     authorId: type.UserId;
     commitSummary: string;
     commitDescription: string;

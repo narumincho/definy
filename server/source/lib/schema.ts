@@ -606,7 +606,7 @@ const versionGraphQLType = new g.GraphQLObjectType({
     name: "Version",
     description: "バージョン",
     fields: () =>
-        makeObjectFieldMap<type.Version>({
+        makeObjectFieldMap<type.ReleaseId>({
             major: {
                 type: g.GraphQLNonNull(g.GraphQLInt),
                 description: "メジャー"

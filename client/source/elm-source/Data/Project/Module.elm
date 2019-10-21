@@ -16,16 +16,15 @@ import Data.Project.PartDef as PartDef
 import Data.Project.TypeDef as TypeDef
 
 
-{-| モジュール。aには各パーツ定義(PartDef)に保存しておきたいデータの型を指定する
-ModuleWithCacheと違うところは、コンパイル結果を持たない、純粋にモジュールだけを表現するということ
+{-| モジュール
 
 
 ## 制約
 
   - 型定義で名前がかぶっていはいけない
   - パーツ定義で名前がかぶっていはいけない
-  - 型定義の個数は0～255こ
-  - パーツ定義の個数は0～65535こ
+  - 型定義の個数は0～300こ
+  - パーツ定義の個数は0～5000こ
 
 -}
 type Module
@@ -93,12 +92,12 @@ sampleModule =
 
 typeDefMaxNum : Int
 typeDefMaxNum =
-    255
+    300
 
 
 partDefMaxNum : Int
 partDefMaxNum =
-    65535
+    5000
 
 
 {-| 型定義で名前がかぶっていたら、その型定義を削除する。最初の要素を優先する
