@@ -179,7 +179,7 @@ export const addProject = async (data: {
         projectName: data.name,
         projectIconHash: "" as type.FileHash,
         projectImageHash: "" as type.FileHash,
-        tag: null,
+        releaseId: null,
         children: [],
         partDefs: [],
         typeDefs: []
@@ -256,6 +256,9 @@ type BranchLowCost = {
     readonly owner: {
         readonly id: type.UserId;
     };
+    readonly draftCommit: null | {
+        readonly hash: type.DraftCommitHash;
+    };
 };
 
 export const addBranch = async (
@@ -275,7 +278,7 @@ export const addBranch = async (
     projectImageHash: type.FileHash,
     projectSummary: string,
     projectDescription: string,
-    tag: string | type.ReleaseId | null,
+    releaseId: null | type.ReleaseId,
     children: ReadonlyArray<{
         id: type.ModuleId;
         hash: type.ModuleSnapshotHash;
@@ -302,7 +305,7 @@ export const addBranch = async (
         projectDescription: projectDescription,
         partDefs: partDefs,
         typeDefs: typeDefs,
-        tag: tag,
+        releaseId: releaseId,
         children: children
     })).hash;
 
@@ -320,7 +323,8 @@ export const addBranch = async (
         description: description,
         project: { id: projectId },
         head: { hash: branchHeadCommitHash },
-        owner: { id: userId }
+        owner: { id: userId },
+        draftCommit: null
     };
 };
 
@@ -344,7 +348,8 @@ const databaseLowBranchToLowCost = ({
     },
     description: data.description,
     head: { hash: data.headHash },
-    owner: { id: data.ownerId }
+    owner: { id: data.ownerId },
+    draftCommit: null
 });
 
 /* ==========================================
@@ -356,7 +361,7 @@ type CommitLowCost = {
     readonly parentCommits: ReadonlyArray<{
         readonly hash: type.CommitHash;
     }>;
-    readonly tag: null | type.CommitTagName | type.ReleaseId;
+    readonly releaseId: null | type.ReleaseId;
     readonly commitSummary: string;
     readonly description: string;
     readonly author: {
@@ -400,7 +405,7 @@ type CommitLowCost = {
 
 export const addCommit = async (data: {
     parentCommitHashes: ReadonlyArray<type.CommitHash>;
-    tag: null | string | type.ReleaseId;
+    releaseId: null | type.ReleaseId;
     authorId: type.UserId;
     commitSummary: string;
     commitDescription: string;
@@ -454,7 +459,7 @@ const databaseLowCommitToLowCost = ({
 }): CommitLowCost => ({
     hash: hash,
     parentCommits: data.parentCommitHashes.map(hash => ({ hash: hash })),
-    tag: typeof data.tag === "string" ? { text: data.tag } : data.tag,
+    releaseId: data.releaseId,
     author: {
         id: data.authorId
     },
@@ -486,6 +491,48 @@ const databaseLowCommitToLowCost = ({
     }))
 });
 
+/* ==========================================
+               Draft Commit
+   ==========================================
+*/
+type DraftCommitLowCost = {
+    readonly date: Date;
+    readonly description: string;
+    readonly isRelease: boolean;
+    readonly projectName: string;
+    readonly projectIcon: type.FileHash;
+    readonly projectImage: type.FileHash;
+    readonly projectSummary: string;
+    readonly projectDescription: string;
+    readonly children: ReadonlyArray<{
+        readonly id: type.ModuleId;
+        readonly snapshot: {
+            readonly hash: type.ModuleSnapshotHash;
+        };
+    }>;
+    readonly typeDefs: ReadonlyArray<{
+        readonly id: type.TypeId;
+        readonly snapshot: {
+            readonly hash: type.TypeDefSnapshotHash;
+        };
+    }>;
+    readonly partDefs: ReadonlyArray<{
+        readonly id: type.PartId;
+        readonly snapshot: {
+            readonly hash: type.PartDefSnapshotHash;
+        };
+    }>;
+    readonly dependencies: ReadonlyArray<{
+        readonly project: {
+            readonly id: type.ProjectId;
+        };
+        readonly releaseId: type.ReleaseId;
+    }>;
+};
+
+export const getDraftCommit = async (
+    hash: type.DraftCommitHash
+): DraftCommitLowCost => {};
 /* ==========================================
                Module Snapshot
    ==========================================

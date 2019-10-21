@@ -380,7 +380,7 @@ const branchGraphQLType = new g.GraphQLObjectType({
                 args: {},
                 resolve: async (source, args) => {
                     if (source.draftCommit === undefined) {
-                        return await setBranch(source);
+                        return await (await setBranch(source)).draftCommit;
                     }
                     return source.draftCommit;
                 }
@@ -398,6 +398,7 @@ const setBranch = async (
     source.description = data.description;
     source.head = data.head;
     source.owner = data.owner;
+    source.draftCommit = data.draftCommit;
     return data;
 };
 
@@ -583,7 +584,7 @@ const setCommit = async (
 ): ReturnType<typeof database.getCommit> => {
     const data = await database.getCommit(source.hash);
     source.parentCommits = data.parentCommits;
-    source.releaseId = data.tag;
+    source.releaseId = data.releaseId;
     source.author = data.author;
     source.date = data.date;
     source.description = data.description;
@@ -615,8 +616,175 @@ const dependencyGraphQLType = new g.GraphQLObjectType({
         })
 });
 
+/* ==========================================
+                Draft Commit
+   ==========================================
+*/
+const draftCommitGraphQLType = new g.GraphQLObjectType({
+    name: "DraftCommit",
+    fields: () =>
+        makeObjectFieldMap<type.DraftCommit>({
+            hash: {
+                type: type.hashGraphQLType,
+                description: "ドラフトコミットから導き出されるハッシュ値"
+            },
+            date: makeObjectField({
+                type: g.GraphQLNonNull(type.dateTimeGraphQLType),
+                description: "作成日時",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.date === undefined) {
+                        return (await setDraftCommit(source)).date;
+                    }
+                    return source.date;
+                }
+            }),
+            description: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "どんな変更をした/するのか説明",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.description === undefined) {
+                        return (await setDraftCommit(source)).description;
+                    }
+                    return source.description;
+                }
+            }),
+            isRelease: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLBoolean),
+                description: "リリースとして公開する予定か",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.isRelease === undefined) {
+                        return (await setDraftCommit(source)).isRelease;
+                    }
+                    return source.isRelease;
+                }
+            }),
+            projectName: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "プロジェクト名",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.projectName === undefined) {
+                        return (await setDraftCommit(source)).projectName;
+                    }
+                    return source.projectName;
+                }
+            }),
+            projectIcon: makeObjectField({
+                type: g.GraphQLNonNull(type.hashGraphQLType),
+                description:
+                    "プロジェクトのアイコン画像 " + type.fileHashDescription,
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.projectIcon === undefined) {
+                        return (await setDraftCommit(source)).projectIcon;
+                    }
+                    return source.projectIcon;
+                }
+            }),
+            projectImage: makeObjectField({
+                type: g.GraphQLNonNull(type.hashGraphQLType),
+                description:
+                    "プロジェクトのパッケージデザイン " +
+                    type.fileHashDescription,
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.projectImage === undefined) {
+                        return (await setDraftCommit(source)).projectImage;
+                    }
+                    return source.projectImage;
+                }
+            }),
+            projectSummary: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "プロジェクトの簡潔な説明",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.projectSummary === undefined) {
+                        return (await setDraftCommit(source)).projectSummary;
+                    }
+                    return source.projectSummary;
+                }
+            }),
+            projectDescription: makeObjectField({
+                type: g.GraphQLNonNull(g.GraphQLString),
+                description: "プロジェクトの詳しい説明",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.projectDescription === undefined) {
+                        return (await setDraftCommit(source))
+                            .projectDescription;
+                    }
+                    return source.projectDescription;
+                }
+            }),
+            children: makeObjectField({
+                type: graphQLNonNullList(moduleSnapshotGraphQLType),
+                description: "子のモジュール",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.children === undefined) {
+                        return (await setDraftCommit(source)).children;
+                    }
+                    return source.children;
+                }
+            }),
+            typeDefs: makeObjectField({
+                type: graphQLNonNullList(typeDefSnapshotGraphQLType),
+                description: "型定義",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.typeDefs === undefined) {
+                        return (await setDraftCommit(source)).typeDefs;
+                    }
+                    return source.typeDefs;
+                }
+            }),
+            partDefs: makeObjectField({
+                type: graphQLNonNullList(partDefinitionGraphQLType),
+                description: "パーツ定義",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.partDefs === undefined) {
+                        return (await setDraftCommit(source)).partDefs;
+                    }
+                    return source.partDefs;
+                }
+            }),
+            dependencies: makeObjectField({
+                type: graphQLNonNullList(dependencyGraphQLType),
+                description: "使っている外部のプロジェクト",
+                args: {},
+                resolve: async (source, args) => {
+                    if (source.dependencies === undefined) {
+                        return (await setDraftCommit(source)).dependencies;
+                    }
+                    return source.dependencies;
+                }
+            })
+        })
 });
 
+const setDraftCommit = async (
+    source: Return<type.DraftCommit>
+): Promise<ReturnType<typeof database.getDraftCommit>> => {
+    const data = await database.getDraftCommit(source.hash);
+    source.date = data.date;
+    source.description = data.description;
+    source.isRelease = data.isRelease;
+    source.projectName = data.projectName;
+    source.projectIcon = data.projectIcon;
+    source.projectImage = data.projectImage;
+    source.projectSummary = data.projectSummary;
+    source.projectDescription = data.projectDescription;
+    source.children = data.children;
+    source.typeDefs = data.typeDefs;
+    source.partDefs = data.partDefs;
+    source.dependencies = data.dependencies;
+    return data;
+};
 /* ==========================================
                Module Snapshot
    ==========================================

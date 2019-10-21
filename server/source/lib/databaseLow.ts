@@ -291,7 +291,7 @@ export const updateBranch = async (
 // コレクションはcommit。一度作成したら変更しない。KeyはJSONに変換したときのSHA-256でのハッシュ値
 export type CommitData = {
     parentCommitHashes: ReadonlyArray<type.CommitHash>;
-    tag: null | string | type.ReleaseId;
+    releaseId: null | type.ReleaseId;
     authorId: type.UserId;
     date: firestore.Timestamp;
     commitSummary: string;

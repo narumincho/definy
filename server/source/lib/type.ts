@@ -141,7 +141,8 @@ export type CommitHash = string & { __commitObjectHashBrand: never };
  * ドキュメントサイズ最大 1,048,576byte
  */
 export type DraftCommit = {
-    /** 作成日時 */
+    hash: DraftCommitHash;
+    /** 作成日時 (この値を使ってハッシュ値を求めてしまうと編集していないのに変更したと判定されてしまう) */
     date: Date;
     /** コミットの説明 最大1000文字 */
     description: string;
@@ -176,9 +177,7 @@ export type DraftCommit = {
     dependencies: ReadonlyArray<Dependency>;
 };
 
-export type CommitTagName = {
-    text: string;
-};
+export type DraftCommitHash = string & { __draftCommitIdBrand: never };
 
 export type Dependency = {
     project: Project; //32Byte
