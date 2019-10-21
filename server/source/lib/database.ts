@@ -174,6 +174,7 @@ export const addProject = async (data: {
         commitSummary: "initial commit",
         dependencies: [],
         parentCommitHashes: [],
+        projectSummary: "",
         projectDescription: "",
         projectName: data.name,
         projectIconHash: "" as type.FileHash,
@@ -266,12 +267,13 @@ export const addBranch = async (
     commitDescription: string,
     dependencies: ReadonlyArray<{
         projectId: type.ProjectId;
-        version: type.DependencyVersion;
+        releaseId: type.ReleaseId;
     }>,
     parentCommitHashes: ReadonlyArray<type.CommitHash>,
     projectName: string,
     projectIconHash: type.FileHash,
     projectImageHash: type.FileHash,
+    projectSummary: string,
     projectDescription: string,
     tag: string | type.ReleaseId | null,
     children: ReadonlyArray<{
@@ -296,6 +298,7 @@ export const addBranch = async (
         projectName: projectName,
         projectIconHash: projectIconHash,
         projectImageHash: projectImageHash,
+        projectSummary: projectSummary,
         projectDescription: projectDescription,
         partDefs: partDefs,
         typeDefs: typeDefs,
@@ -355,7 +358,7 @@ type CommitLowCost = {
     }>;
     readonly tag: null | type.CommitTagName | type.ReleaseId;
     readonly commitSummary: string;
-    readonly commitDescription: string;
+    readonly description: string;
     readonly author: {
         readonly id: type.UserId;
     };
@@ -367,6 +370,7 @@ type CommitLowCost = {
     readonly projectImage: {
         hash: type.FileHash;
     };
+    readonly projectSummary: string;
     readonly projectDescription: string;
     readonly children: ReadonlyArray<{
         readonly id: type.ModuleId;
@@ -390,7 +394,7 @@ type CommitLowCost = {
         readonly project: {
             readonly id: type.ProjectId;
         };
-        readonly version: type.DependencyVersion;
+        readonly releaseId: type.ReleaseId;
     }>;
 };
 
@@ -403,6 +407,7 @@ export const addCommit = async (data: {
     projectName: string;
     projectIconHash: type.FileHash;
     projectImageHash: type.FileHash;
+    projectSummary: string;
     projectDescription: string;
     children: ReadonlyArray<{
         id: type.ModuleId;
@@ -418,7 +423,7 @@ export const addCommit = async (data: {
     }>;
     dependencies: ReadonlyArray<{
         projectId: type.ProjectId;
-        version: type.DependencyVersion;
+        releaseId: type.ReleaseId;
     }>;
 }): Promise<CommitLowCost> => {
     const now = databaseLow.getNowTimestamp();
@@ -455,10 +460,11 @@ const databaseLowCommitToLowCost = ({
     },
     date: data.date.toDate(),
     commitSummary: data.commitSummary,
-    commitDescription: data.commitDescription,
+    description: data.commitDescription,
     projectName: data.projectName,
     projectIcon: { hash: data.projectIconHash },
     projectImage: { hash: data.projectImageHash },
+    projectSummary: data.projectSummary,
     projectDescription: data.projectDescription,
     children: data.children.map(child => ({
         id: child.id,
@@ -476,7 +482,7 @@ const databaseLowCommitToLowCost = ({
         project: {
             id: dependency.projectId
         },
-        version: dependency.version
+        releaseId: dependency.releaseId
     }))
 });
 

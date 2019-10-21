@@ -442,7 +442,7 @@ const commitGraphQLType: g.GraphQLObjectType<
             }),
             author: makeObjectField({
                 type: g.GraphQLNonNull(userGraphQLType),
-                description: "コミットを作成したユーザー",
+                description: "作成したユーザー",
                 args: {},
                 resolve: async (source, args) => {
                     if (source.author === undefined) {
@@ -453,7 +453,7 @@ const commitGraphQLType: g.GraphQLObjectType<
             }),
             date: makeObjectField({
                 type: g.GraphQLNonNull(type.dateTimeGraphQLType),
-                description: "コミットが作成された日時",
+                description: "作成日時",
                 args: {},
                 resolve: async (source, args) => {
                     if (source.date === undefined) {
@@ -464,11 +464,11 @@ const commitGraphQLType: g.GraphQLObjectType<
             }),
             description: makeObjectField({
                 type: g.GraphQLNonNull(g.GraphQLString),
-                description: "どんな変更をしたかの詳しい説明",
+                description: "どんな変更をしたかの説明",
                 args: {},
                 resolve: async (source, args) => {
                     if (source.description === undefined) {
-                        return (await setCommit(source)).commitDescription;
+                        return (await setCommit(source)).description;
                     }
                     return source.description;
                 }
@@ -515,7 +515,7 @@ const commitGraphQLType: g.GraphQLObjectType<
                 args: {},
                 resolve: async (source, args) => {
                     if (source.projectSummary === undefined) {
-                        return await setCommit(source);
+                        return (await setCommit(source)).projectSummary;
                     }
                     return source.projectSummary;
                 }
@@ -584,9 +584,13 @@ const setCommit = async (
     const data = await database.getCommit(source.hash);
     source.parentCommits = data.parentCommits;
     source.releaseId = data.tag;
+    source.author = data.author;
+    source.date = data.date;
+    source.description = data.description;
     source.projectName = data.projectName;
     source.projectIcon = data.projectIcon;
     source.projectImage = data.projectImage;
+    source.projectSummary = data.projectSummary;
     source.projectDescription = data.projectDescription;
     source.children = data.children;
     source.typeDefs = data.typeDefs;

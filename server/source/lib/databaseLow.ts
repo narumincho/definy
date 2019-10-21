@@ -299,6 +299,7 @@ export type CommitData = {
     projectName: string;
     projectIconHash: type.FileHash;
     projectImageHash: type.FileHash;
+    projectSummary: string;
     projectDescription: string;
     children: ReadonlyArray<{
         id: type.ModuleId;
@@ -314,7 +315,7 @@ export type CommitData = {
     }>;
     dependencies: ReadonlyArray<{
         projectId: type.ProjectId;
-        version: type.DependencyVersion;
+        releaseId: type.ReleaseId;
     }>;
 };
 
