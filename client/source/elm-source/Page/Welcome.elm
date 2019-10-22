@@ -241,19 +241,24 @@ userView pointerState logInState logInRequest =
                     ++ guestUserView pointerState logInRequest
 
             Data.User.Ok user ->
-                [ Ui.imageFromUrl
+                [ Ui.row
                     []
                     []
-                    { fitStyle = Ui.Contain
-                    , alternativeText = Data.User.getName user ++ "のプロフィール画像"
-                    , rendering = Ui.ImageRenderingAuto
-                    }
-                    (Data.User.getImageUrl user)
-                , Ui.text
-                    []
-                    []
-                    Panel.Style.normalFont
-                    (Data.User.getName user)
+                    8
+                    [ Ui.imageFromUrl
+                        []
+                        [ Ui.Width (Ui.Fix 32), Ui.Height (Ui.Fix 32) ]
+                        { fitStyle = Ui.Contain
+                        , alternativeText = Data.User.getName user ++ "のプロフィール画像"
+                        , rendering = Ui.ImageRenderingAuto
+                        }
+                        (Data.User.getImageUrl user)
+                    , Ui.text
+                        []
+                        []
+                        Panel.Style.normalFont
+                        (Data.User.getName user)
+                    ]
                 ]
         )
 
