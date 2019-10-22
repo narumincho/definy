@@ -1,4 +1,0 @@
-User-Agent: *
-Disallow:
-
-Sitemap: https://definy-lang.web.app/sitemap
