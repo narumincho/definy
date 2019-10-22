@@ -11,7 +11,7 @@ module Data.User exposing
     , getName
     )
 
-import Data.IdHash as Id
+import Data.IdHash as IdHash
 import Time
 
 
@@ -33,29 +33,29 @@ type AccessToken
 
 type User
     = User
-        { id : Id.UserId
+        { id : IdHash.UserId
         , name : String
-        , imageFileHash : Id.ImageFileHash
+        , imageFileHash : IdHash.ImageFileHash
         , introduction : String
         , createdAt : Time.Posix
-        , branches : List Id.BranchId
+        , branches : List IdHash.BranchId
         }
 
 
 from :
-    { id : Id.UserId
+    { id : IdHash.UserId
     , name : String
-    , imageFileHash : Id.ImageFileHash
+    , imageFileHash : IdHash.ImageFileHash
     , introduction : String
     , createdAt : Time.Posix
-    , branches : List Id.BranchId
+    , branches : List IdHash.BranchId
     }
     -> User
 from =
     User
 
 
-getId : User -> Id.UserId
+getId : User -> IdHash.UserId
 getId (User { id }) =
     id
 
@@ -68,7 +68,7 @@ getName (User { name }) =
 getImageUrl : User -> String
 getImageUrl (User { imageFileHash }) =
     let
-        (Id.ImageFileHash hashString) =
+        (IdHash.ImageFileHash hashString) =
             imageFileHash
     in
     "https://us-central1-definy-lang.cloudfunctions.net/file/" ++ hashString
