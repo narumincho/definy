@@ -1,4 +1,4 @@
-module Panel.Editor.Project exposing (Model, initModel, view)
+module Component.Editor.Project exposing (Model, initModel, view)
 
 import Html.Styled
 

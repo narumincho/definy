@@ -1,4 +1,4 @@
-module Panel.EditorItemSource exposing (EditorItemSource(..))
+module Component.EditorItemSource exposing (EditorItemSource(..))
 
 import Data.IdHash
 

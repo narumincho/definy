@@ -1,9 +1,9 @@
-module Panel.CommandPalette exposing (Model, initModel, view)
+module Component.CommandPalette exposing (Model, initModel, view)
 
+import Component.Style as Style
 import Css
 import Html.Styled
 import Html.Styled.Attributes
-import Panel.Style as Style
 
 
 type Model

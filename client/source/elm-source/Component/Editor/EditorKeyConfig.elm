@@ -1,15 +1,22 @@
-module Panel.Editor.EditorKeyConfig exposing (Model(..), Msg, initModel, isInputKeyboardDirect, update, view)
+module Component.Editor.EditorKeyConfig exposing
+    ( Model(..)
+    , Msg
+    , initModel
+    , isInputKeyboardDirect
+    , update
+    , view
+    )
 
 {-| どのキーを選択しているか、検索文字はなにか
 -}
 
 import Color
+import Component.Style as Style
 import Css
 import Data.Key as Key
 import Html.Styled
 import Html.Styled.Attributes
 import Palette.X11 as P
-import Panel.Style as Style
 import VectorImage
 
 

@@ -1,4 +1,4 @@
-module Panel.EditorGroup exposing
+module Component.EditorGroup exposing
     ( Cmd(..)
     , EditorMsg(..)
     , Gutter(..)
@@ -20,6 +20,13 @@ module Panel.EditorGroup exposing
 また、編集画面を分割することもできる
 -}
 
+import Component.DefaultUi
+import Component.Editor.EditorKeyConfig
+import Component.Editor.Module
+import Component.Editor.Project
+import Component.Editor.ProjectImport
+import Component.EditorItemSource
+import Component.Style as Style
 import Css
 import Data.IdHash
 import Data.Language
@@ -27,13 +34,6 @@ import Data.Project
 import Html.Styled
 import Html.Styled.Attributes
 import Html.Styled.Events
-import Panel.DefaultUi
-import Panel.Editor.EditorKeyConfig
-import Panel.Editor.Module
-import Panel.Editor.Project
-import Panel.Editor.ProjectImport
-import Panel.EditorItemSource
-import Panel.Style as Style
 import Utility.ListExtra
 import Utility.Map
 import VectorImage
@@ -84,10 +84,10 @@ type ColumnGroup
 {-| 各エディタのModelを保持する
 -}
 type EditorModel
-    = ProjectEditor Panel.Editor.Project.Model
-    | ConfigEditor Panel.Editor.ProjectImport.Model
-    | ModuleEditor Panel.Editor.Module.Model
-    | EditorKeyConfig Panel.Editor.EditorKeyConfig.Model
+    = ProjectEditor Component.Editor.Project.Model
+    | ConfigEditor Component.Editor.ProjectImport.Model
+    | ModuleEditor Component.Editor.Module.Model
+    | EditorKeyConfig Component.Editor.EditorKeyConfig.Model
 
 
 {-| 最大6個のエディタのどれを指しているのかを示す
@@ -162,8 +162,8 @@ type Msg
 
 
 type EditorMsg
-    = EditorKeyConfigMsg Panel.Editor.EditorKeyConfig.Msg
-    | ModuleEditorMsg Panel.Editor.Module.Msg
+    = EditorKeyConfigMsg Component.Editor.EditorKeyConfig.Msg
+    | ModuleEditorMsg Component.Editor.Module.Msg
 
 
 {-| 開くエディタの位置
@@ -196,7 +196,7 @@ initModel =
             RowOne
                 { left =
                     ColumnOne
-                        { top = ModuleEditor (Panel.Editor.Module.initModel (Data.IdHash.ModuleId "")) }
+                        { top = ModuleEditor (Component.Editor.Module.initModel (Data.IdHash.ModuleId "")) }
                 }
         , activeEditorIndex = ( EditorIndexLeft, EditorIndexTop )
         }
@@ -206,30 +206,30 @@ initModel =
 
 {-| 開いていてかつ選択していてアクティブなエディタ(参照,種類)を取得する
 -}
-getActiveEditor : Model -> Panel.EditorItemSource.EditorItemSource
+getActiveEditor : Model -> Component.EditorItemSource.EditorItemSource
 getActiveEditor model =
     case getEditorItem (getActiveEditorRef model) (getGroup model) of
         ProjectEditor _ ->
-            Panel.EditorItemSource.ProjectRoot
+            Component.EditorItemSource.ProjectRoot
 
         ConfigEditor _ ->
-            Panel.EditorItemSource.ProjectImport
+            Component.EditorItemSource.ProjectImport
 
         ModuleEditor editorModel ->
-            Panel.EditorItemSource.Module (Panel.Editor.Module.getTargetModuleIndex editorModel)
+            Component.EditorItemSource.Module (Component.Editor.Module.getTargetModuleIndex editorModel)
 
         EditorKeyConfig _ ->
-            Panel.EditorItemSource.EditorKeyConfig
+            Component.EditorItemSource.EditorKeyConfig
 
 
 {-| テキストエリアにフォーカスが当たっているか。
 当たっていたらKey.ArrowLeftなどのキー入力をpreventDefaultしない。ブラウザの基本機能(訂正など)を阻止しない
 -}
-isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
+isFocusDefaultUi : Model -> Maybe Component.DefaultUi.DefaultUi
 isFocusDefaultUi model =
     case getEditorItem (getActiveEditorRef model) (getGroup model) of
         ModuleEditor moduleEditorModel ->
-            Panel.Editor.Module.isFocusDefaultUi moduleEditorModel
+            Component.Editor.Module.isFocusDefaultUi moduleEditorModel
 
         _ ->
             Nothing
@@ -365,7 +365,10 @@ focusEditor project editorItem =
         ModuleEditor model ->
             let
                 ( newModel, cmdList ) =
-                    Panel.Editor.Module.update Panel.Editor.Module.MsgFocusThisEditor project model
+                    Component.Editor.Module.update
+                        Component.Editor.Module.MsgFocusThisEditor
+                        project
+                        model
             in
             ( ModuleEditor newModel
             , cmdList |> List.map moduleEditorCmdToCmd
@@ -383,7 +386,10 @@ blurEditor project editorItem =
         ModuleEditor model ->
             let
                 ( newModel, cmdList ) =
-                    Panel.Editor.Module.update Panel.Editor.Module.MsgBlurThisEditor project model
+                    Component.Editor.Module.update
+                        Component.Editor.Module.MsgBlurThisEditor
+                        project
+                        model
             in
             ( ModuleEditor newModel
             , cmdList |> List.map moduleEditorCmdToCmd
@@ -399,7 +405,7 @@ updateEditor editorItemMsg project editorItem =
         ( ModuleEditorMsg msg, ModuleEditor model ) ->
             let
                 ( newModel, cmdList ) =
-                    Panel.Editor.Module.update msg project model
+                    Component.Editor.Module.update msg project model
             in
             ( ModuleEditor newModel
             , cmdList |> List.map moduleEditorCmdToCmd
@@ -408,7 +414,7 @@ updateEditor editorItemMsg project editorItem =
         ( EditorKeyConfigMsg msg, EditorKeyConfig model ) ->
             let
                 ( newModel, _ ) =
-                    Panel.Editor.EditorKeyConfig.update msg model
+                    Component.Editor.EditorKeyConfig.update msg model
             in
             ( EditorKeyConfig newModel
             , []
@@ -420,19 +426,19 @@ updateEditor editorItemMsg project editorItem =
             )
 
 
-moduleEditorCmdToCmd : Panel.Editor.Module.Cmd -> Cmd
+moduleEditorCmdToCmd : Component.Editor.Module.Cmd -> Cmd
 moduleEditorCmdToCmd cmd =
     case cmd of
-        Panel.Editor.Module.CmdSetTextAreaValue text ->
+        Component.Editor.Module.CmdSetTextAreaValue text ->
             CmdSetTextAreaValue text
 
-        Panel.Editor.Module.CmdFocusEditTextAea ->
+        Component.Editor.Module.CmdFocusEditTextAea ->
             CmdFocusEditTextAea
 
-        Panel.Editor.Module.CmdElementScrollIntoView id ->
+        Component.Editor.Module.CmdElementScrollIntoView id ->
             CmdElementScrollIntoView id
 
-        Panel.Editor.Module.None ->
+        Component.Editor.Module.None ->
             CmdNone
 
 
@@ -721,7 +727,7 @@ closeEditorColumn editorRefColumn columnGroup =
 
 {-| エディタで編集表示するものを変える
 -}
-changeActiveEditorResource : Panel.EditorItemSource.EditorItemSource -> Model -> Model
+changeActiveEditorResource : Component.EditorItemSource.EditorItemSource -> Model -> Model
 changeActiveEditorResource projectRef model =
     changeEditorItem (projectRefToEditorItem projectRef) model
 
@@ -1107,20 +1113,20 @@ mapAtEditorItem ref =
 
 {-| 編集対象からエディタの初期値を返す
 -}
-projectRefToEditorItem : Panel.EditorItemSource.EditorItemSource -> EditorModel
+projectRefToEditorItem : Component.EditorItemSource.EditorItemSource -> EditorModel
 projectRefToEditorItem projectRef =
     case projectRef of
-        Panel.EditorItemSource.ProjectRoot ->
-            ProjectEditor Panel.Editor.Project.initModel
+        Component.EditorItemSource.ProjectRoot ->
+            ProjectEditor Component.Editor.Project.initModel
 
-        Panel.EditorItemSource.ProjectImport ->
-            ConfigEditor Panel.Editor.ProjectImport.initModel
+        Component.EditorItemSource.ProjectImport ->
+            ConfigEditor Component.Editor.ProjectImport.initModel
 
-        Panel.EditorItemSource.Module moduleRef ->
-            ModuleEditor (Panel.Editor.Module.initModel moduleRef)
+        Component.EditorItemSource.Module moduleRef ->
+            ModuleEditor (Component.Editor.Module.initModel moduleRef)
 
-        Panel.EditorItemSource.EditorKeyConfig ->
-            EditorKeyConfig Panel.Editor.EditorKeyConfig.initModel
+        Component.EditorItemSource.EditorKeyConfig ->
+            EditorKeyConfig Component.Editor.EditorKeyConfig.initModel
 
 
 
@@ -1459,15 +1465,15 @@ editorTitleAndBody :
 editorTitleAndBody width editorIndex isActive project editorItem =
     case editorItem of
         ProjectEditor _ ->
-            Panel.Editor.Project.view
+            Component.Editor.Project.view
 
         ConfigEditor _ ->
-            Panel.Editor.ProjectImport.view
+            Component.Editor.ProjectImport.view
 
         ModuleEditor moduleEditorModel ->
             let
                 viewItem =
-                    Panel.Editor.Module.view
+                    Component.Editor.Module.view
                         { width = width
                         , project = project
                         , focus = isActive
@@ -1484,7 +1490,7 @@ editorTitleAndBody width editorIndex isActive project editorItem =
         EditorKeyConfig model ->
             let
                 viewItem =
-                    Panel.Editor.EditorKeyConfig.view model
+                    Component.Editor.EditorKeyConfig.view model
             in
             { title = viewItem.title
             , body =

@@ -3,19 +3,19 @@ port module Main exposing (main)
 import Api
 import Browser
 import Browser.Navigation
+import Component.CommandPalette
+import Component.DefaultUi
+import Component.Editor.Module
+import Component.EditorGroup
+import Component.Notifications
+import Component.Side
 import Data.Key
 import Data.Language
 import Data.PageLocation
-import Data.Project
 import Data.User
 import Html.Styled
 import Json.Decode
 import Page.Welcome
-import Panel.CommandPalette
-import Panel.DefaultUi
-import Panel.Editor.Module
-import Panel.EditorGroup
-import Panel.Side
 import Task
 import Ui
 import Url
@@ -117,7 +117,7 @@ type Model
 
 type SubMode
     = SubModeNone
-    | SubModeCommandPalette Panel.CommandPalette.Model
+    | SubModeCommandPalette Component.CommandPalette.Model
     | SubModeGutter GutterType
 
 
@@ -159,9 +159,6 @@ init flag url navigationKey =
         ( tokenFromUrlMaybe, page ) =
             Data.PageLocation.initFromUrl url
 
-        ( editorPanelModel, editorGroupPanelCmd ) =
-            Panel.EditorGroup.initModel
-
         model =
             Model
                 { subMode = SubModeNone
@@ -187,9 +184,6 @@ init flag url navigationKey =
                 |> Data.PageLocation.initToUrlAsString
             )
       ]
-        ++ (editorGroupPanelCmd
-                |> List.map editorPanelCmdToCmd
-           )
         ++ (case tokenFromUrlMaybe of
                 Just accessToken ->
                     [ writeAccessTokenToIndexedDB (Data.User.accessTokenToString accessToken)
@@ -364,14 +358,14 @@ keyDown keyMaybe model =
 
                 [] ->
                     case isFocusDefaultUi model of
-                        Just Panel.DefaultUi.MultiLineTextField ->
+                        Just Component.DefaultUi.MultiLineTextField ->
                             if multiLineTextFieldReservedKey key then
                                 []
 
                             else
                                 keyDownEachPanel key model
 
-                        Just Panel.DefaultUi.SingleLineTextField ->
+                        Just Component.DefaultUi.SingleLineTextField ->
                             if singleLineTextFieldReservedKey key then
                                 []
 
@@ -551,25 +545,25 @@ singleLineTextFieldReservedKey { key, ctrl, alt, shift } =
 
 {-| サイドパネルのキー入力
 -}
-sidePanelKeyDown : Data.Key.Key -> List Panel.Side.Msg
+sidePanelKeyDown : Data.Key.Key -> List Component.Side.Msg
 sidePanelKeyDown { key, ctrl, shift, alt } =
     case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
                 Data.Key.ArrowUp ->
-                    [ Panel.Side.SelectUp ]
+                    [ Component.Side.SelectUp ]
 
                 Data.Key.ArrowDown ->
-                    [ Panel.Side.SelectDown ]
+                    [ Component.Side.SelectDown ]
 
                 Data.Key.ArrowLeft ->
-                    [ Panel.Side.SelectParentOrTreeClose ]
+                    [ Component.Side.SelectParentOrTreeClose ]
 
                 Data.Key.ArrowRight ->
-                    [ Panel.Side.SelectFirstChildOrTreeOpen ]
+                    [ Component.Side.SelectFirstChildOrTreeOpen ]
 
                 Data.Key.Enter ->
-                    [ Panel.Side.SelectItem ]
+                    [ Component.Side.SelectItem ]
 
                 _ ->
                     []
@@ -580,40 +574,40 @@ sidePanelKeyDown { key, ctrl, shift, alt } =
 
 {-| エディタグループパネルのキー入力
 -}
-editorGroupPanelKeyDown : Data.Key.Key -> List Panel.EditorGroup.Msg
+editorGroupPanelKeyDown : Data.Key.Key -> List Component.EditorGroup.Msg
 editorGroupPanelKeyDown key =
     moduleEditorKeyMsg key
         |> List.map
-            (Panel.EditorGroup.ModuleEditorMsg
-                >> Panel.EditorGroup.EditorItemMsgToActive
+            (Component.EditorGroup.ModuleEditorMsg
+                >> Component.EditorGroup.EditorItemMsgToActive
             )
 
 
 {-| モジュールエディタのキー入力
 -}
-moduleEditorKeyMsg : Data.Key.Key -> List Panel.Editor.Module.Msg
+moduleEditorKeyMsg : Data.Key.Key -> List Component.Editor.Module.Msg
 moduleEditorKeyMsg { key, ctrl, shift, alt } =
     case ( ctrl, shift, alt ) of
         ( False, False, False ) ->
             case key of
                 Data.Key.ArrowLeft ->
-                    [ Panel.Editor.Module.MsgActiveLeft ]
+                    [ Component.Editor.Module.MsgActiveLeft ]
 
                 Data.Key.ArrowRight ->
-                    [ Panel.Editor.Module.MsgActiveRight ]
+                    [ Component.Editor.Module.MsgActiveRight ]
 
                 Data.Key.ArrowUp ->
-                    [ Panel.Editor.Module.MsgSuggestionPrevOrSelectUp ]
+                    [ Component.Editor.Module.MsgSuggestionPrevOrSelectUp ]
 
                 Data.Key.ArrowDown ->
-                    [ Panel.Editor.Module.MsgSuggestionNextOrSelectDown
+                    [ Component.Editor.Module.MsgSuggestionNextOrSelectDown
                     ]
 
                 Data.Key.Space ->
-                    [ Panel.Editor.Module.MsgActiveToFirstChild ]
+                    [ Component.Editor.Module.MsgActiveToFirstChild ]
 
                 Data.Key.Enter ->
-                    [ Panel.Editor.Module.MsgConfirmSingleLineTextFieldOrSelectParent
+                    [ Component.Editor.Module.MsgConfirmSingleLineTextFieldOrSelectParent
                     ]
 
                 _ ->
@@ -622,13 +616,13 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
         ( True, False, False ) ->
             case key of
                 Data.Key.ArrowLeft ->
-                    [ Panel.Editor.Module.MsgActiveToLastChild ]
+                    [ Component.Editor.Module.MsgActiveToLastChild ]
 
                 Data.Key.ArrowRight ->
-                    [ Panel.Editor.Module.MsgActiveToFirstChild ]
+                    [ Component.Editor.Module.MsgActiveToFirstChild ]
 
                 Data.Key.Enter ->
-                    [ Panel.Editor.Module.MsgConfirmMultiLineTextField ]
+                    [ Component.Editor.Module.MsgConfirmMultiLineTextField ]
 
                 _ ->
                     []
@@ -636,10 +630,10 @@ moduleEditorKeyMsg { key, ctrl, shift, alt } =
         ( False, False, True ) ->
             case key of
                 Data.Key.ArrowUp ->
-                    [ Panel.Editor.Module.MsgIncreaseValue ]
+                    [ Component.Editor.Module.MsgIncreaseValue ]
 
                 Data.Key.ArrowDown ->
-                    [ Panel.Editor.Module.MsgDecreaseValue ]
+                    [ Component.Editor.Module.MsgDecreaseValue ]
 
                 _ ->
                     []
@@ -720,32 +714,32 @@ toGutterMode gutter (Model rec) =
 
 {-| エディタグループパネルの更新
 -}
-editorPanelCmdToCmd : Panel.EditorGroup.Cmd -> Cmd Msg
+editorPanelCmdToCmd : Component.EditorGroup.Cmd -> Cmd Msg
 editorPanelCmdToCmd cmd =
     case cmd of
-        Panel.EditorGroup.CmdVerticalGutterModeOn _ ->
+        Component.EditorGroup.CmdVerticalGutterModeOn _ ->
             Task.succeed
                 (ToResizeGutterMode GutterTypeVertical)
                 |> Task.perform identity
 
-        Panel.EditorGroup.CmdHorizontalGutterModeOn _ ->
+        Component.EditorGroup.CmdHorizontalGutterModeOn _ ->
             Task.succeed
                 (ToResizeGutterMode GutterTypeHorizontal)
                 |> Task.perform identity
 
-        Panel.EditorGroup.CmdSetTextAreaValue string ->
+        Component.EditorGroup.CmdSetTextAreaValue string ->
             setTextAreaValue string
 
-        Panel.EditorGroup.CmdFocusEditTextAea ->
+        Component.EditorGroup.CmdFocusEditTextAea ->
             focusTextArea ()
 
-        Panel.EditorGroup.CmdElementScrollIntoView id ->
+        Component.EditorGroup.CmdElementScrollIntoView id ->
             elementScrollIntoView id
 
-        Panel.EditorGroup.CmdFocusHere ->
+        Component.EditorGroup.CmdFocusHere ->
             Cmd.none
 
-        Panel.EditorGroup.CmdNone ->
+        Component.EditorGroup.CmdNone ->
             Cmd.none
 
 
@@ -759,7 +753,7 @@ openCommandPalette : Model -> Model
 openCommandPalette (Model rec) =
     Model
         { rec
-            | subMode = SubModeCommandPalette Panel.CommandPalette.initModel
+            | subMode = SubModeCommandPalette Component.CommandPalette.initModel
         }
 
 
@@ -773,7 +767,7 @@ closeCommandPalette (Model rec) =
 
 {-| コマンドパレッドの状態を取得する
 -}
-getCommandPaletteModel : Model -> Maybe Panel.CommandPalette.Model
+getCommandPaletteModel : Model -> Maybe Component.CommandPalette.Model
 getCommandPaletteModel (Model { subMode }) =
     case subMode of
         SubModeNone ->
@@ -801,7 +795,7 @@ isOpenCommandPalette (Model { subMode }) =
 
 {-| いまブラウザが入力を受け取る要素にフォーカスが当たっているかどうか。当たっていたらブラウザのデフォルト動作を邪魔しない
 -}
-isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
+isFocusDefaultUi : Model -> Maybe Component.DefaultUi.DefaultUi
 isFocusDefaultUi model =
     Nothing
 
@@ -875,18 +869,20 @@ view (Model rec) =
                             []
                    )
             )
-            (case rec.page of
+            ((case rec.page of
                 Welcome welcomeModel ->
                     [ welcomeModel
                         |> Page.Welcome.view rec.logInState
                         |> Ui.map (WelcomePageMsg >> PageMsg)
                     ]
+             )
+                ++ [ Component.Notifications.view ]
             )
             |> Ui.toHtml
         ]
             ++ (case getCommandPaletteModel (Model rec) of
                     Just commandPaletteModel ->
-                        [ Panel.CommandPalette.view commandPaletteModel ]
+                        [ Component.CommandPalette.view commandPaletteModel ]
 
                     Nothing ->
                         []

@@ -8,10 +8,10 @@ module Page.Welcome exposing
     )
 
 import Color
+import Component.Style
 import Css
 import Data.SocialLoginService
 import Data.User
-import Panel.Style
 import Ui
 import Url
 import VectorImage
@@ -34,7 +34,7 @@ type PointerState
 
 
 type Msg
-    = MsgToSideGutterMode Panel.Style.GutterMsg
+    = MsgToSideGutterMode Component.Style.GutterMsg
     | MsgPointerMove Ui.Pointer
     | MsgPointerUp
     | MsgLogInButtonEnter Data.SocialLoginService.SocialLoginService
@@ -69,17 +69,17 @@ update msg (Model rec) =
     case msg of
         MsgToSideGutterMode gutterMsg ->
             case gutterMsg of
-                Panel.Style.GutterMsgPointerEnter ->
+                Component.Style.GutterMsgPointerEnter ->
                     ( Model { rec | pointer = SideBarPointerEnter }
                     , []
                     )
 
-                Panel.Style.GutterMsgPointerLeave ->
+                Component.Style.GutterMsgPointerLeave ->
                     ( Model { rec | pointer = None }
                     , []
                     )
 
-                Panel.Style.GutterMsgToResizeMode pointer ->
+                Component.Style.GutterMsgToResizeMode pointer ->
                     ( Model
                         { rec
                             | pointer = SideBarResize
@@ -159,16 +159,16 @@ view logInState (Model rec) =
             , pointer = rec.pointer
             , logInRequest = rec.logInRequest
             }
-        , Panel.Style.gutterPanel
+        , Component.Style.gutterPanel
             (case rec.pointer of
                 SideBarPointerEnter ->
-                    Panel.Style.GutterModePointerEnter
+                    Component.Style.GutterModePointerEnter
 
                 SideBarResize ->
-                    Panel.Style.GutterModeResize
+                    Component.Style.GutterModeResize
 
                 _ ->
-                    Panel.Style.GutterModeNone
+                    Component.Style.GutterModeNone
             )
             |> Ui.map MsgToSideGutterMode
         , yggdrasil logInState
@@ -222,7 +222,7 @@ userView pointerState logInState logInRequest =
                 [ Ui.text
                     []
                     []
-                    Panel.Style.normalFont
+                    Component.Style.normalFont
                     "アクセストークンを読み込み中"
                 ]
 
@@ -230,7 +230,7 @@ userView pointerState logInState logInRequest =
                 [ Ui.text
                     []
                     []
-                    Panel.Style.normalFont
+                    Component.Style.normalFont
                     ("アクセストークンを検証、ユーザー情報をリクエスト中 "
                         ++ accessTokenString
                     )
@@ -240,7 +240,7 @@ userView pointerState logInState logInRequest =
                 [ Ui.text
                     []
                     []
-                    Panel.Style.normalFont
+                    Component.Style.normalFont
                     (case errorMaybe of
                         Just Data.User.FailToReadIndexedDB ->
                             "IndexedDBからデータを読み込めませんでした"
@@ -270,7 +270,7 @@ userView pointerState logInState logInRequest =
                     , Ui.text
                         []
                         []
-                        Panel.Style.normalFont
+                        Component.Style.normalFont
                         (Data.User.getName user)
                     ]
                 ]
@@ -284,7 +284,7 @@ guestUserView pointerState logInRequest =
             [ Ui.text
                 []
                 []
-                Panel.Style.normalFont
+                Component.Style.normalFont
                 (Data.SocialLoginService.serviceName service ++ "のURLを発行中")
             ]
 
@@ -541,39 +541,39 @@ yggdrasil logInState =
         [ Ui.text
             []
             []
-            Panel.Style.normalFont
+            Component.Style.normalFont
             "プロジェクト"
         , case logInState of
             Data.User.ReadingAccessToken ->
                 Ui.text
                     []
                     []
-                    Panel.Style.normalFont
+                    Component.Style.normalFont
                     "…"
 
             Data.User.VerifyingAccessToken _ ->
                 Ui.text
                     []
                     []
-                    Panel.Style.normalFont
+                    Component.Style.normalFont
                     "…"
 
             Data.User.GuestUser _ ->
                 Ui.text
                     [ Ui.Click MsgCreateProjectByGuest ]
                     []
-                    Panel.Style.normalFont
+                    Component.Style.normalFont
                     "プロジェクトをこの端末に新規作成"
 
             Data.User.Ok { accessToken } ->
                 Ui.text
                     [ Ui.Click (MsgCreateProject accessToken) ]
                     []
-                    Panel.Style.normalFont
+                    Component.Style.normalFont
                     "プロジェクトを新規作成"
         , Ui.text
             []
             []
-            Panel.Style.normalFont
+            Component.Style.normalFont
             "プロジェクト一覧 そのうちユーザーによって並び替える"
         ]

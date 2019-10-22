@@ -1,4 +1,4 @@
-module Panel.Editor.Module exposing
+module Component.Editor.Module exposing
     ( Cmd(..)
     , Model
     , Msg(..)
@@ -12,6 +12,8 @@ module Panel.Editor.Module exposing
 import Array
 import Color
 import Compiler
+import Component.DefaultUi
+import Component.Style as Style
 import Css
 import Data.IdHash as IdHash
 import Data.Label as L
@@ -27,8 +29,6 @@ import Html.Styled.Events
 import Html.Styled.Keyed
 import Json.Decode
 import Json.Encode
-import Panel.DefaultUi
-import Panel.Style as Style
 import Parser
 import Parser.SimpleChar
 import Utility.ArrayExtra
@@ -187,17 +187,17 @@ type BranchPos
 {-| テキストエリアにフォーカスが当たっているか。
 当たっていたらKey.ArrowLeftなどのキー入力をpreventDefaultしない。ブラウザの基本機能(訂正など)を阻止しない
 -}
-isFocusDefaultUi : Model -> Maybe Panel.DefaultUi.DefaultUi
+isFocusDefaultUi : Model -> Maybe Component.DefaultUi.DefaultUi
 isFocusDefaultUi (Model { active }) =
     case active of
         ActiveReadMe ActiveReadMeText ->
-            Just Panel.DefaultUi.MultiLineTextField
+            Just Component.DefaultUi.MultiLineTextField
 
         ActivePartDefList (ActivePartDef ( _, ActivePartDefName NameEditText )) ->
-            Just Panel.DefaultUi.SingleLineTextField
+            Just Component.DefaultUi.SingleLineTextField
 
         ActivePartDefList (ActivePartDef ( _, ActivePartDefName (NameEditSuggestionSelect _) )) ->
-            Just Panel.DefaultUi.SingleLineTextField
+            Just Component.DefaultUi.SingleLineTextField
 
         _ ->
             Nothing

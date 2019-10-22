@@ -1,4 +1,4 @@
-module Panel.Side exposing
+module Component.Side exposing
     ( Cmd(..)
     , Model
     , Msg(..)
@@ -22,7 +22,7 @@ import Html.Styled
 import Html.Styled.Attributes
 import Html.Styled.Events
 import Palette.X11
-import Panel.Style as Style
+import Component.Style as Style
 import Svg.Styled
 import Svg.Styled.Attributes
 import VectorImage

@@ -1,4 +1,4 @@
-module Panel.Style exposing
+module Component.Style exposing
     ( GutterMode(..)
     , GutterMsg(..)
     , activeColor
