@@ -15,10 +15,10 @@ type CmdForElmSub<T> = {
 
 interface ElmApp {
     readonly ports: {
-        readonly setTextAreaValue: SubForElmCmd<string>;
-        readonly focusTextArea: SubForElmCmd<null>;
+        // readonly setTextAreaValue: SubForElmCmd<string>;
+        // readonly focusElement: SubForElmCmd<string>;
         readonly preventDefaultBeforeKeyEvent: SubForElmCmd<null>;
-        readonly elementScrollIntoView: SubForElmCmd<string>;
+        // readonly elementScrollIntoView: SubForElmCmd<string>;
         readonly requestAccessTokenFromIndexedDB: SubForElmCmd<null>;
         readonly writeAccessTokenToIndexedDB: SubForElmCmd<string>;
         readonly consoleLog: SubForElmCmd<string>;
@@ -66,47 +66,47 @@ requestAnimationFrame(() => {
         app.ports.keyPrevented.send(null);
     });
     /* テキストエリア(<textarea id="edit">)に値を設定(編集する前の初期設定用) */
-    app.ports.setTextAreaValue.subscribe(text => {
-        console.log(
-            `テキストエリア(<textarea id="edit">)に${text}を設定しようとしている`
-        );
-        requestAnimationFrame(() => {
-            const edit = document.getElementById("edit") as
-                | HTMLInputElement
-                | HTMLTextAreaElement
-                | null;
-            if (edit === null) {
-                console.warn(
-                    `テキストエリア(id=edit)への値(${text})の設定に失敗した`
-                );
-                return;
-            }
-            if (edit.value !== text) {
-                edit.value = text;
-            }
-        });
-    });
-    /* テキストエリア(<textarea|input id="edit">)に強制的にフォーカスさせる */
-    app.ports.focusTextArea.subscribe(e => {
-        console.log(`<textarea id="eidt">にフォーカス`);
-        requestAnimationFrame(() => {
-            const editElement = document.getElementById("edit");
-            if (editElement === null) {
-                console.warn(`テキストエリア(id=edit)へのフォーカスに失敗した`);
-                return;
-            }
-            editElement.focus();
-        });
-    });
+    // app.ports.setTextAreaValue.subscribe(({ text, id }) => {
+    //     console.log(
+    //         `テキストエリア(<textarea id=${id}>)に${text}を設定しようとしている`
+    //     );
+    //     requestAnimationFrame(() => {
+    //         const edit = document.getElementById(id) as
+    //             | HTMLInputElement
+    //             | HTMLTextAreaElement
+    //             | null;
+    //         if (edit === null) {
+    //             console.warn(
+    //                 `テキストエリア(id=edit)への値(${text})の設定に失敗した`
+    //             );
+    //             return;
+    //         }
+    //         if (edit.value !== text) {
+    //             edit.value = text;
+    //         }
+    //     });
+    // });
+
+    // app.ports.focusElement.subscribe(id => {
+    //     console.log(`<element id=${id}>にフォーカス`);
+    //     requestAnimationFrame(() => {
+    //         const editElement = document.getElementById(id);
+    //         if (editElement === null) {
+    //             console.warn(`テキストエリア(id=edit)へのフォーカスに失敗した`);
+    //             return;
+    //         }
+    //         editElement.focus();
+    //     });
+    // });
     /* 指定されたidの要素が表示されるようにスクロールさせる */
-    app.ports.elementScrollIntoView.subscribe(id => {
-        requestAnimationFrame(() => {
-            const element = document.getElementById(id);
-            if (element !== null) {
-                element.scrollIntoView({ behavior: "smooth", block: "center" });
-            }
-        });
-    });
+    // app.ports.elementScrollIntoView.subscribe(id => {
+    //     requestAnimationFrame(() => {
+    //         const element = document.getElementById(id);
+    //         if (element !== null) {
+    //             element.scrollIntoView({ behavior: "smooth", block: "center" });
+    //         }
+    //     });
+    // });
     /* ウィンドウサイズを変えたら */
     const windowResizeSend = () => {
         app.ports.windowResize.send({

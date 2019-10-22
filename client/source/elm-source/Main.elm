@@ -29,10 +29,10 @@ import Url
 {- Cmd (Elm → JavaScript) -}
 
 
-port setTextAreaValue : String -> Cmd msg
+port setTextAreaValue : { text : String, id : String } -> Cmd msg
 
 
-port focusTextArea : () -> Cmd msg
+port focusElement : String -> Cmd msg
 
 
 port preventDefaultBeforeKeyEvent : () -> Cmd msg
@@ -728,10 +728,10 @@ editorPanelCmdToCmd cmd =
                 |> Task.perform identity
 
         Component.EditorGroup.CmdSetTextAreaValue string ->
-            setTextAreaValue string
+            setTextAreaValue { text = string, id = "edit" }
 
         Component.EditorGroup.CmdFocusEditTextAea ->
-            focusTextArea ()
+            focusElement "edit"
 
         Component.EditorGroup.CmdElementScrollIntoView id ->
             elementScrollIntoView id
