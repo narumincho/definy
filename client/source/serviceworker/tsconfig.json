@@ -7,5 +7,5 @@
         "outDir": "../../distribution/",
         "newLine": "LF"
     },
-    "include": ["serviceworker.ts"]
+    "files": ["serviceworker.ts"]
 }

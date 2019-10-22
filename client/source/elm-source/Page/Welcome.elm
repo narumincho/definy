@@ -175,25 +175,6 @@ side { width, logInState, pointer, logInRequest } =
         16
         [ titleLogo
         , userView pointer logInState logInRequest
-        , Ui.depth
-            []
-            []
-            [ Ui.monochromatic
-                []
-                []
-                (Css.rgb 32 32 32)
-            , Ui.text
-                []
-                []
-                (Ui.Font
-                    { typeface = "Roboto"
-                    , size = 24
-                    , letterSpacing = 0
-                    , color = Css.rgb 255 192 0
-                    }
-                )
-                "検索欄、所有しているブランチ、お気に入りのブランチ(プロジェクトまとめる)"
-            ]
         ]
 
 
@@ -222,43 +203,58 @@ userView pointerState logInState logInRequest =
         []
         [ Ui.Padding 8 ]
         8
-        ([ Ui.text
-            []
-            [ Ui.TextAlignment Ui.TextAlignCenter ]
-            (Ui.Font
-                { typeface = "Roboto"
-                , size = 16
-                , letterSpacing = 0
-                , color = Css.rgb 221 221 221
-                }
-            )
-            (case logInState of
-                Data.User.ReadAccessToken ->
-                    "アクセストークン読み込み中"
+        (case logInState of
+            Data.User.ReadAccessToken ->
+                [ Ui.text
+                    []
+                    []
+                    Panel.Style.normalFont
+                    "アクセストークンを読み込み中"
+                ]
 
-                Data.User.VerifyingAccessToken (Data.User.AccessToken accessTokenString) ->
-                    "アクセストークンを検証、ユーザーをリクエスト中 " ++ accessTokenString
+            Data.User.VerifyingAccessToken (Data.User.AccessToken accessTokenString) ->
+                [ Ui.text
+                    []
+                    []
+                    Panel.Style.normalFont
+                    ("アクセストークンを検証、ユーザー情報をリクエスト中 "
+                        ++ accessTokenString
+                    )
+                ]
 
-                Data.User.GuestUser (Just Data.User.FailToReadIndexedDB) ->
-                    "IndexedDBからデータを読み込めませんでした"
+            Data.User.GuestUser errorMaybe ->
+                [ Ui.text
+                    []
+                    []
+                    Panel.Style.normalFont
+                    (case errorMaybe of
+                        Just Data.User.FailToReadIndexedDB ->
+                            "IndexedDBからデータを読み込めませんでした"
 
-                Data.User.GuestUser (Just Data.User.AccessTokenIsInvalid) ->
-                    "アクセストークンが無効でした"
+                        Just Data.User.AccessTokenIsInvalid ->
+                            "アクセストークンが無効でした"
 
-                Data.User.GuestUser Nothing ->
-                    "ゲストユーザー"
+                        Nothing ->
+                            "ゲストユーザー"
+                    )
+                ]
+                    ++ guestUserView pointerState logInRequest
 
-                Data.User.Ok user ->
-                    Data.User.getName user
-            )
-         ]
-            ++ (case logInState of
-                    Data.User.GuestUser _ ->
-                        guestUserView pointerState logInRequest
-
-                    _ ->
-                        []
-               )
+            Data.User.Ok user ->
+                [ Ui.imageFromUrl
+                    []
+                    []
+                    { fitStyle = Ui.Contain
+                    , alternativeText = Data.User.getName user ++ "のプロフィール画像"
+                    , rendering = Ui.ImageRenderingAuto
+                    }
+                    (Data.User.getImageUrl user)
+                , Ui.text
+                    []
+                    []
+                    Panel.Style.normalFont
+                    (Data.User.getName user)
+                ]
         )
 
 
@@ -452,7 +448,7 @@ googleLogInButton logInButtonModel =
 
 lineIcon : LogInButtonModel -> Ui.Panel msg
 lineIcon logInButtonModel =
-    Ui.rasterImage
+    Ui.imageFromUrl
         []
         [ Ui.Width (Ui.Fix 48)
         , Ui.Padding 4

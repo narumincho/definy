@@ -4,8 +4,8 @@
         "strict": true,
         "lib": ["es2019", "dom"],
         "removeComments": true,
-        "outDir": "../distribution/",
+        "outDir": "../../distribution/",
         "newLine": "LF"
     },
-    "include": ["call.ts"]
+    "files": ["call.ts"]
 }

@@ -17,7 +17,7 @@ module Ui exposing
     , map
     , monochromatic
     , pointerGetPosition
-    , rasterImage
+    , imageFromUrl
     , row
     , text
     , textWithAlignment
@@ -149,8 +149,8 @@ type Content msg
         , verticalAlignment : Maybe VerticalAlignment
         , textAlignment : Maybe TextAlignment
         }
-    | RasterImage
-        { dataUrl : String
+    | ImageFromUrl
+        { url : String
         , fitStyle : FitStyle
         , alternativeText : String
         , rendering : ImageRendering
@@ -255,7 +255,7 @@ textWithAlignment events style { align, vertical, font } string =
         }
 
 
-rasterImage :
+imageFromUrl :
     List (Event msg)
     -> List Style
     ->
@@ -265,16 +265,16 @@ rasterImage :
         }
     -> String
     -> Panel msg
-rasterImage events style imageStyle dataUrl =
+imageFromUrl events style imageStyle url =
     Panel
         { events = events |> List.reverse |> computeEvents
         , style = style |> List.reverse |> computeStyle
         , content =
-            RasterImage
-                { fitStyle = imageStyle.fitStyle
+            ImageFromUrl
+                { url = url
+                , fitStyle = imageStyle.fitStyle
                 , alternativeText = imageStyle.alternativeText
                 , rendering = imageStyle.rendering
-                , dataUrl = dataUrl
                 }
         }
 
@@ -501,8 +501,8 @@ map func (Panel { events, style, content }) =
                 Text rec ->
                     Text rec
 
-                RasterImage rec ->
-                    RasterImage rec
+                ImageFromUrl rec ->
+                    ImageFromUrl rec
 
                 VectorImage { fitStyle, viewBox, elements } ->
                     VectorImage
@@ -568,7 +568,7 @@ panelToHtmlElementType :
     -> Html.Styled.Html msg
 panelToHtmlElementType (Panel { content, events }) =
     case content of
-        RasterImage _ ->
+        ImageFromUrl _ ->
             Html.Styled.img
 
         _ ->
@@ -737,7 +737,7 @@ growGrowContentToStyle textAlignment verticalAlignment (ChildrenStyle { gridPosi
                             []
                    )
 
-        RasterImage { dataUrl, fitStyle, alternativeText, rendering } ->
+        ImageFromUrl { fitStyle, rendering } ->
             [ Css.property "object-fit"
                 (case fitStyle of
                     Contain ->
@@ -810,14 +810,8 @@ growGrowContentToListAttributes content =
         Text _ ->
             []
 
-        RasterImage { dataUrl, alternativeText } ->
-            [ Html.Styled.Attributes.src
-                (if String.startsWith "data:" dataUrl then
-                    dataUrl
-
-                 else
-                    ""
-                )
+        ImageFromUrl { url, alternativeText } ->
+            [ Html.Styled.Attributes.src url
             , Html.Styled.Attributes.alt alternativeText
             ]
 
@@ -944,7 +938,7 @@ growGrowContentToListHtml content =
         Text rec ->
             [ Html.Styled.text rec.text ]
 
-        RasterImage _ ->
+        ImageFromUrl _ ->
             []
 
         VectorImage { elements, viewBox } ->
@@ -1041,7 +1035,7 @@ panelToGrowOrFixAutoWidth (Panel { style, content }) =
                         Nothing ->
                             FixMaxContent
 
-                RasterImage _ ->
+                ImageFromUrl _ ->
                     Grow 1
 
                 VectorImage _ ->
@@ -1098,7 +1092,7 @@ panelToGrowOrFixAutoHeight (Panel { style, content }) =
                         Nothing ->
                             FixMaxContent
 
-                RasterImage _ ->
+                ImageFromUrl _ ->
                     Grow 1
 
                 VectorImage _ ->
