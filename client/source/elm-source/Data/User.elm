@@ -16,10 +16,10 @@ import Time
 
 
 type LogInState
-    = ReadAccessToken
+    = ReadingAccessToken
     | VerifyingAccessToken AccessToken
     | GuestUser (Maybe AccessTokenError)
-    | Ok User
+    | Ok { user : User, accessToken : AccessToken }
 
 
 type AccessTokenError

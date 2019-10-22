@@ -30,13 +30,20 @@ interface ElmApp {
         >;
         readonly changeLanguage: CmdForElmSub<string>;
         readonly subPointerUp: CmdForElmSub<null>;
+        readonly changeNetworkConnection: CmdForElmSub<boolean>;
     };
 }
 
 requestAnimationFrame(() => {
-    const language = window.navigator.languages[0];
     const app = window.Elm.Main.init({
-        flags: { language: language }
+        flags: {
+            windowSize: {
+                width: innerWidth,
+                height: innerHeight
+            },
+            language: navigator.languages[0],
+            networkConnection: navigator.onLine
+        }
     });
     let prevKeyEvent: KeyboardEvent;
     /* キー入力 */
@@ -109,25 +116,6 @@ requestAnimationFrame(() => {
     };
     windowResizeSend();
     window.addEventListener("resize", windowResizeSend);
-    const callApi = (
-        query: string,
-        callBack: (arg: { [key: string]: any }) => void
-    ) => {
-        fetch("/api", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                query: query,
-                variables: null
-            })
-        })
-            .then(response => response.json())
-            .then(json => {
-                callBack(json.data);
-            });
-    };
 
     app.ports.requestAccessTokenFromIndexedDB.subscribe(() => {
         const userDBRequest: IDBOpenDBRequest = indexedDB.open("user", 1);
@@ -230,11 +218,11 @@ requestAnimationFrame(() => {
         console.warn(text);
     });
 
-    window.addEventListener("languagechange", () => {
+    addEventListener("languagechange", () => {
         app.ports.changeLanguage.send(navigator.languages[0]);
     });
 
-    window.addEventListener("pointerup", () => {
+    addEventListener("pointerup", () => {
         app.ports.subPointerUp.send(null);
     });
 
@@ -242,6 +230,14 @@ requestAnimationFrame(() => {
         if (document.visibilityState === "hidden") {
             app.ports.subPointerUp.send(null);
         }
+    });
+
+    addEventListener("online", e => {
+        app.ports.changeNetworkConnection.send(true);
+    });
+
+    addEventListener("offline", e => {
+        app.ports.changeNetworkConnection.send(false);
     });
 });
 

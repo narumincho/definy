@@ -69,6 +69,9 @@ port portResponseAccessTokenFromIndexedDB : (String -> msg) -> Sub msg
 port changeLanguage : (String -> msg) -> Sub msg
 
 
+port changeNetworkConnection : (Bool -> msg) -> Sub msg
+
+
 port subPointerUp : (() -> msg) -> Sub msg
 
 
@@ -88,6 +91,7 @@ type Msg
     | ResponseAccessTokenFromIndexedDB String
     | ResponseUserData (Result String Data.User.User) -- ユーザーの情報を受け取った
     | ChangeLanguage String -- 使用言語が変わった
+    | ChangeNetworkConnection Bool -- 接続状況が変わった
     | PageMsg PageMsg
     | NoOperation
 
@@ -100,14 +104,14 @@ type PageMsg
 -}
 type Model
     = Model
-        { project : Data.Project.Project
-        , subMode : SubMode
+        { subMode : SubMode
         , page : PageModel
         , windowSize : { width : Int, height : Int }
-        , msgQueue : List Msg
+        , messageQueue : List Msg
         , logInState : Data.User.LogInState
         , language : Data.Language.Language
         , navigationKey : Browser.Navigation.Key
+        , networkConnection : Bool
         }
 
 
@@ -126,7 +130,14 @@ type PageModel
     = Welcome Page.Welcome.Model
 
 
-main : Platform.Program { language : String } Model Msg
+type alias Flag =
+    { windowSize : { width : Int, height : Int }
+    , language : String
+    , networkConnection : Bool
+    }
+
+
+main : Platform.Program Flag Model Msg
 main =
     Browser.application
         { init = init
@@ -139,11 +150,11 @@ main =
 
 
 init :
-    { language : String }
+    Flag
     -> Url.Url
     -> Browser.Navigation.Key
     -> ( Model, Cmd Msg )
-init { language } url navigationKey =
+init flag url navigationKey =
     let
         ( tokenFromUrlMaybe, page ) =
             Data.PageLocation.initFromUrl url
@@ -153,20 +164,20 @@ init { language } url navigationKey =
 
         model =
             Model
-                { project = Data.Project.sample
-                , subMode = SubModeNone
+                { subMode = SubModeNone
                 , page = Welcome Page.Welcome.init
-                , windowSize = { width = 0, height = 0 }
-                , msgQueue = []
+                , windowSize = flag.windowSize
+                , messageQueue = []
                 , logInState =
                     case tokenFromUrlMaybe of
                         Just accessToken ->
                             Data.User.VerifyingAccessToken accessToken
 
                         Nothing ->
-                            Data.User.ReadAccessToken
-                , language = Data.Language.languageFromString language
+                            Data.User.ReadingAccessToken
+                , language = Data.Language.languageFromString flag.language
                 , navigationKey = navigationKey
+                , networkConnection = flag.networkConnection
                 }
     in
     ( model
@@ -288,6 +299,11 @@ update msg (Model rec) =
             , Cmd.none
             )
 
+        ChangeNetworkConnection connection ->
+            ( Model { rec | networkConnection = connection }
+            , Cmd.none
+            )
+
 
 updateFromMsgList : List Msg -> Model -> ( Model, Cmd Msg )
 updateFromMsgList msgList model =
@@ -321,6 +337,12 @@ welcomePageCmdToCmd cmd =
 
         Page.Welcome.CmdJumpPage url ->
             Browser.Navigation.load (Url.toString url)
+
+        Page.Welcome.CmdCreateProject accessToken ->
+            consoleLog "プロジェクトを新規作成する"
+
+        Page.Welcome.CmdCreateProjectByGuest ->
+            consoleLog "プロジェクトをこの端末に新規作成する"
 
 
 
@@ -727,19 +749,6 @@ editorPanelCmdToCmd cmd =
             Cmd.none
 
 
-{-| プロジェクトを取得する
--}
-getProject : Model -> Data.Project.Project
-getProject (Model { project }) =
-    project
-
-
-setProject : Data.Project.Project -> Model -> Model
-setProject project (Model rec) =
-    Model
-        { rec | project = project }
-
-
 
 {- ====== コマンドパレット ====== -}
 
@@ -805,15 +814,15 @@ pushMsgListToMsgQueue : List Msg -> Model -> Model
 pushMsgListToMsgQueue msgList (Model rec) =
     Model
         { rec
-            | msgQueue = rec.msgQueue ++ msgList
+            | messageQueue = rec.messageQueue ++ msgList
         }
 
 
 shiftMsgListFromMsgQueue : Model -> ( List Msg, Model )
 shiftMsgListFromMsgQueue (Model rec) =
-    ( rec.msgQueue
+    ( rec.messageQueue
     , Model
-        { rec | msgQueue = [] }
+        { rec | messageQueue = [] }
     )
 
 
@@ -916,7 +925,7 @@ responseAccessTokenFromIndexedDB accessToken (Model rec) =
 requestUserData : Model -> Cmd Msg
 requestUserData (Model rec) =
     case rec.logInState of
-        Data.User.ReadAccessToken ->
+        Data.User.ReadingAccessToken ->
             Cmd.none
 
         Data.User.VerifyingAccessToken accessToken ->
@@ -931,20 +940,28 @@ requestUserData (Model rec) =
 
 responseUserData : Result String Data.User.User -> Model -> ( Model, Cmd Msg )
 responseUserData result (Model rec) =
-    case result of
-        Ok user ->
+    case ( result, rec.logInState ) of
+        ( Ok user, Data.User.VerifyingAccessToken accessToken ) ->
             ( Model
                 { rec
                     | logInState =
-                        Data.User.Ok user
+                        Data.User.Ok
+                            { user = user
+                            , accessToken = accessToken
+                            }
                 }
             , consoleLog "ユーザー情報の取得に成功!"
             )
 
-        Err string ->
+        ( Err string, Data.User.VerifyingAccessToken _ ) ->
             ( Model
                 { rec | logInState = Data.User.GuestUser (Just Data.User.AccessTokenIsInvalid) }
             , consoleLog ("ユーザーの情報の取得に失敗 " ++ string)
+            )
+
+        ( _, _ ) ->
+            ( Model rec
+            , consoleLog "いらないときにユーザーの情報を受け取ってしまった"
             )
 
 
@@ -963,6 +980,7 @@ subscriptions model =
          , windowResize WindowResize
          , portResponseAccessTokenFromIndexedDB ResponseAccessTokenFromIndexedDB
          , changeLanguage ChangeLanguage
+         , changeNetworkConnection ChangeNetworkConnection
          ]
             ++ (if isCaptureMouseEvent model then
                     [ subPointerUp (always PointerUp) ]

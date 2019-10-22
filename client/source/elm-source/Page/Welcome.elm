@@ -42,6 +42,8 @@ type Msg
     | MsgLogInButtonPressed Data.SocialLoginService.SocialLoginService
     | MsgToLogInPage Data.SocialLoginService.SocialLoginService
     | MsgGetLogInUrlResponse (Result String Url.Url)
+    | MsgCreateProject Data.User.AccessToken
+    | MsgCreateProjectByGuest
 
 
 type Cmd
@@ -49,6 +51,8 @@ type Cmd
     | CmdConsoleLog String
     | CmdToLogInPage Data.SocialLoginService.SocialLoginService
     | CmdJumpPage Url.Url
+    | CmdCreateProject Data.User.AccessToken
+    | CmdCreateProjectByGuest
 
 
 init : Model
@@ -126,6 +130,16 @@ update msg (Model rec) =
                     , [ CmdConsoleLog errorMessage ]
                     )
 
+        MsgCreateProject accessToken ->
+            ( Model rec
+            , [ CmdCreateProject accessToken ]
+            )
+
+        MsgCreateProjectByGuest ->
+            ( Model rec
+            , [ CmdCreateProjectByGuest ]
+            )
+
 
 view : Data.User.LogInState -> Model -> Ui.Panel Msg
 view logInState (Model rec) =
@@ -157,7 +171,7 @@ view logInState (Model rec) =
                     Panel.Style.GutterModeNone
             )
             |> Ui.map MsgToSideGutterMode
-        , yggdrasil
+        , yggdrasil logInState
         ]
 
 
@@ -204,7 +218,7 @@ userView pointerState logInState logInRequest =
         [ Ui.Padding 8 ]
         8
         (case logInState of
-            Data.User.ReadAccessToken ->
+            Data.User.ReadingAccessToken ->
                 [ Ui.text
                     []
                     []
@@ -240,7 +254,7 @@ userView pointerState logInState logInRequest =
                 ]
                     ++ guestUserView pointerState logInRequest
 
-            Data.User.Ok user ->
+            Data.User.Ok { user, accessToken } ->
                 [ Ui.row
                     []
                     []
@@ -518,16 +532,48 @@ googleIcon =
         }
 
 
-yggdrasil : Ui.Panel Msg
-yggdrasil =
-    Ui.text
+yggdrasil : Data.User.LogInState -> Ui.Panel Msg
+yggdrasil logInState =
+    Ui.column
         []
         []
-        (Ui.Font
-            { typeface = "Roboto"
-            , size = 24
-            , letterSpacing = 0
-            , color = Css.rgb 0 255 100
-            }
-        )
-        "ユグドラシル。Definy全てのプロジェクトの依存関係がグラフになるモニュメント"
+        8
+        [ Ui.text
+            []
+            []
+            Panel.Style.normalFont
+            "プロジェクト"
+        , case logInState of
+            Data.User.ReadingAccessToken ->
+                Ui.text
+                    []
+                    []
+                    Panel.Style.normalFont
+                    "…"
+
+            Data.User.VerifyingAccessToken _ ->
+                Ui.text
+                    []
+                    []
+                    Panel.Style.normalFont
+                    "…"
+
+            Data.User.GuestUser _ ->
+                Ui.text
+                    [ Ui.Click MsgCreateProjectByGuest ]
+                    []
+                    Panel.Style.normalFont
+                    "プロジェクトをこの端末に新規作成"
+
+            Data.User.Ok { accessToken } ->
+                Ui.text
+                    [ Ui.Click (MsgCreateProject accessToken) ]
+                    []
+                    Panel.Style.normalFont
+                    "プロジェクトを新規作成"
+        , Ui.text
+            []
+            []
+            Panel.Style.normalFont
+            "プロジェクト一覧 そのうちユーザーによって並び替える"
+        ]
