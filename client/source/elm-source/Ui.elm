@@ -1,9 +1,9 @@
 module Ui exposing
-    ( Content
+    ( AlignItems(..)
+    , Content
     , Event(..)
     , FitStyle(..)
     , Font(..)
-    , HorizontalAlignment(..)
     , ImageRendering(..)
     , Panel
     , Pointer
@@ -11,13 +11,12 @@ module Ui exposing
     , Size(..)
     , Style(..)
     , TextAlignment(..)
-    , VerticalAlignment(..)
     , column
     , depth
+    , imageFromUrl
     , map
     , monochromatic
     , pointerGetPosition
-    , imageFromUrl
     , row
     , text
     , textWithAlignment
@@ -111,7 +110,7 @@ type StyleComputed
         , width : Maybe Size
         , height : Maybe Size
         , offset : Maybe ( Int, Int )
-        , verticalAlignment : Maybe VerticalAlignment
+        , verticalAlignment : Maybe AlignItems
         , textAlignment : Maybe TextAlignment
         , overflowVisible : Bool
         , pointerImage : Maybe PointerImage
@@ -125,7 +124,7 @@ type Style
     | Width Size
     | Height Size
     | Offset ( Int, Int )
-    | VerticalAlignment VerticalAlignment
+    | AlignItems AlignItems
     | TextAlignment TextAlignment
     | OverflowVisible
     | PointerImage PointerImage
@@ -146,7 +145,7 @@ type Content msg
     = Text
         { text : String
         , font : Font
-        , verticalAlignment : Maybe VerticalAlignment
+        , verticalAlignment : Maybe AlignItems
         , textAlignment : Maybe TextAlignment
         }
     | ImageFromUrl
@@ -236,7 +235,7 @@ textWithAlignment :
     -> List Style
     ->
         { align : Maybe TextAlignment
-        , vertical : Maybe VerticalAlignment
+        , vertical : Maybe AlignItems
         , font : Font
         }
     -> String
@@ -393,7 +392,7 @@ computeStyle list =
                 Offset position ->
                     { rec | offset = Just position }
 
-                VerticalAlignment v ->
+                AlignItems v ->
                     { rec | verticalAlignment = Just v }
 
                 TextAlignment align ->
@@ -693,7 +692,7 @@ borderStyleToStyle (BorderStyle { top, bottom, left, right }) =
         |> Css.batch
 
 
-growGrowContentToStyle : Maybe TextAlignment -> Maybe VerticalAlignment -> ChildrenStyle -> Bool -> Content msg -> Css.Style
+growGrowContentToStyle : Maybe TextAlignment -> Maybe AlignItems -> ChildrenStyle -> Bool -> Content msg -> Css.Style
 growGrowContentToStyle textAlignment verticalAlignment (ChildrenStyle { gridPositionLeftTop, position }) overflowVisible content =
     (case content of
         Text rec ->
@@ -731,7 +730,7 @@ growGrowContentToStyle textAlignment verticalAlignment (ChildrenStyle { gridPosi
                    )
                 ++ (case verticalAlignment of
                         Just v ->
-                            [ verticalAlignmentToStyle v ]
+                            [ alignItemsToStyle v ]
 
                         Nothing ->
                             []
@@ -1140,43 +1139,18 @@ gridSetPosition =
         ]
 
 
-{-| 横方向のそろえ方
--}
-type HorizontalAlignment
-    = Left
-    | CenterX
-    | Right
-
-
 {-| 縦のそろえ方
 -}
-type VerticalAlignment
+type AlignItems
     = Top
     | CenterY
     | Bottom
 
 
-{-| 表示領域と表示幅と水平の揃え方からX座標を求める
--}
-horizontalAlignmentToStyle : HorizontalAlignment -> Css.Style
-horizontalAlignmentToStyle horizontalAlignment =
-    Css.justifyContent
-        (case horizontalAlignment of
-            Left ->
-                Css.start
-
-            CenterX ->
-                Css.center
-
-            Right ->
-                Css.end
-        )
-
-
-verticalAlignmentToStyle : VerticalAlignment -> Css.Style
-verticalAlignmentToStyle verticalAlignment =
+alignItemsToStyle : AlignItems -> Css.Style
+alignItemsToStyle alignItems =
     Css.alignItems
-        (case verticalAlignment of
+        (case alignItems of
             Top ->
                 Css.flexStart
 

@@ -364,7 +364,7 @@ lineLogInButton logInButtonModel =
             [ lineIcon logInButtonModel
             , Ui.text
                 []
-                [ Ui.VerticalAlignment Ui.CenterY
+                [ Ui.AlignItems Ui.CenterY
                 , Ui.TextAlignment Ui.TextAlignCenter
                 ]
                 (Ui.Font
@@ -407,7 +407,7 @@ gitHubLogInButton logInButtonModel =
             [ gitHubIcon
             , Ui.text
                 []
-                [ Ui.VerticalAlignment Ui.CenterY
+                [ Ui.AlignItems Ui.CenterY
                 , Ui.TextAlignment Ui.TextAlignCenter
                 ]
                 (Ui.Font
@@ -450,7 +450,7 @@ googleLogInButton logInButtonModel =
             [ googleIcon
             , Ui.text
                 []
-                [ Ui.VerticalAlignment Ui.CenterY
+                [ Ui.AlignItems Ui.CenterY
                 , Ui.TextAlignment Ui.TextAlignCenter
                 ]
                 (Ui.Font
