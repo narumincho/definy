@@ -112,6 +112,7 @@ type Model
         , language : Data.Language.Language
         , navigationKey : Browser.Navigation.Key
         , networkConnection : Bool
+        , notificationModel : Component.Notifications.Model
         }
 
 
@@ -175,6 +176,14 @@ init flag url navigationKey =
                 , language = Data.Language.languageFromString flag.language
                 , navigationKey = navigationKey
                 , networkConnection = flag.networkConnection
+                , notificationModel =
+                    Component.Notifications.initModel
+                        |> (if flag.networkConnection then
+                                identity
+
+                            else
+                                Component.Notifications.addEvent Component.Notifications.OffLine
+                           )
                 }
     in
     ( model
@@ -294,7 +303,19 @@ update msg (Model rec) =
             )
 
         ChangeNetworkConnection connection ->
-            ( Model { rec | networkConnection = connection }
+            ( Model
+                { rec
+                    | networkConnection = connection
+                    , notificationModel =
+                        rec.notificationModel
+                            |> Component.Notifications.addEvent
+                                (if connection then
+                                    Component.Notifications.OnLine
+
+                                 else
+                                    Component.Notifications.OffLine
+                                )
+                }
             , Cmd.none
             )
 
@@ -876,7 +897,7 @@ view (Model rec) =
                         |> Ui.map (WelcomePageMsg >> PageMsg)
                     ]
              )
-                ++ [ Component.Notifications.view ]
+                ++ [ Component.Notifications.view rec.notificationModel ]
             )
             |> Ui.toHtml
         ]
@@ -945,13 +966,23 @@ responseUserData result (Model rec) =
                             { user = user
                             , accessToken = accessToken
                             }
+                    , notificationModel =
+                        rec.notificationModel
+                            |> Component.Notifications.addEvent
+                                (Component.Notifications.LogInSuccess user)
                 }
             , consoleLog "ユーザー情報の取得に成功!"
             )
 
         ( Err string, Data.User.VerifyingAccessToken _ ) ->
             ( Model
-                { rec | logInState = Data.User.GuestUser (Just Data.User.AccessTokenIsInvalid) }
+                { rec
+                    | logInState = Data.User.GuestUser (Just Data.User.AccessTokenIsInvalid)
+                    , notificationModel =
+                        rec.notificationModel
+                            |> Component.Notifications.addEvent
+                                Component.Notifications.LogInFailure
+                }
             , consoleLog ("ユーザーの情報の取得に失敗 " ++ string)
             )
 
