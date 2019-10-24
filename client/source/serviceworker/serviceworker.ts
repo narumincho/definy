@@ -15,7 +15,7 @@
         if (navigator.onLine) {
             if (e.request.url === "https://definy-lang.web.app/main.js") {
                 console.log("main.jsをオンライン時にリクエスト");
-                e.respondWith(fetch("/main.js", { cache: "no-cache" }));
+                e.respondWith(fetch("/main.js", { cache: "reload" }));
             }
             return;
         }
