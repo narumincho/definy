@@ -18,9 +18,9 @@
     },
     "devDependencies": {
         "@types/jsonwebtoken": "^8.3.5",
-        "@types/node": "^12.11.5",
+        "@types/node": "^12.11.7",
         "typescript": "^3.7.0-beta",
-        "uglify-js": "^3.6.3"
+        "uglify-js": "^3.6.4"
     },
     "engines": {
         "node": "10"
