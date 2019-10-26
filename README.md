@@ -1,14 +1,18 @@
 # Definy
 
+![Definyのスクリーンショット](https://repository-images.githubusercontent.com/168463361/72534f00-ec72-11e9-94f3-370ab473bc28)
+
 New Programming Language and Tool for Web. like Elm.
 
-[Demo](https://definy-lang.web.app/)
+[Latest Version](https://definy-lang.web.app/)
 
-# Definy
+[Old Version](https://definy-old.web.app/)
 
 ゲームとツールを手軽に作れて公開できるプログラミング言語とエディタ、ゲームエンジン、SNS。[Elm](https://elm-lang.org/)でできている Web アプリ。**まだ、ぜんぜんできていない**
 
 [ここ](https://definy-lang.web.app/)で動作を確認できる
+
+[古いバージョン](https://definy-old.web.app/)では WebAssembly を使って数値の足し算、引き算、掛け算ができる
 
 ## 特徴
 
