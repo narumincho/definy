@@ -87,6 +87,9 @@ export const indexHtml = functions.https.onRequest((request, response) => {
     </style>
 
     <script src="/main.js" defer></script>
+    <script src="/__/firebase/7.3.0/firebase-app.js" defer></script>
+    <script src="/__/firebase/7.3.0/firebase-firestore.js" defer></script>
+    <script src="/__/firebase/init.js" defer></script>
     <script src="/call.js" type="module"></script>
 </head>
 

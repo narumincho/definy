@@ -1,3 +1,5 @@
+/// <reference path="node_modules/firebase/index.d.ts" />
+
 interface Window {
     readonly Elm: {
         readonly Main: {
@@ -244,3 +246,12 @@ requestAnimationFrame(() => {
 (async () => {
     await navigator.serviceWorker.register("/serviceworker.js", { scope: "/" });
 })();
+
+{
+    const database = firebase.firestore();
+    const collection = database.collection("sampleCollection");
+    const document = collection.doc("sampleDocument");
+    document.onSnapshot(doc => {
+        console.log("update!", doc.data());
+    });
+}
