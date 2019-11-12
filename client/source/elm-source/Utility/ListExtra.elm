@@ -173,7 +173,8 @@ takeFromMaybeList list =
             []
 
 
-{-| -}
+{-| List (Maybe a)の中身が全てJust aならJust [a,a,a]にして1つでもNothingが入っていればNothing
+-}
 takeAllFromMaybeList : List (Maybe a) -> Maybe (List a)
 takeAllFromMaybeList list =
     case list of
