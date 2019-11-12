@@ -186,8 +186,11 @@ takeAllFromMaybeList list =
                 Nothing ->
                     Nothing
 
-        _ ->
+        Nothing :: _ ->
             Nothing
+
+        [] ->
+            Just []
 
 
 {-| filterMapですべてJustだったときの値を取り出す
