@@ -5,7 +5,7 @@
     "main": "index.js",
     "dependencies": {},
     "devDependencies": {
-        "firebase": "^7.3.0"
+        "firebase": "^7.4.0"
     },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
