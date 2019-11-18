@@ -1,5 +1,7 @@
 import * as firestoreType from "../../firestoreType";
 import { Elm } from "../main/source/Main.elm";
+import * as firebase from "firebase/app";
+import "firebase/firestore";
 
 const k: firestoreType.SampleType = {
     value: 43
@@ -219,11 +221,11 @@ requestAnimationFrame(() => {
     );
 })();
 
-// {
-//     const database = firebase.firestore();
-//     const collection = database.collection("sampleCollection");
-//     const document = collection.doc("sampleDocument");
-//     document.onSnapshot(doc => {
-//         console.log("update!", doc.data());
-//     });
-// }
+{
+    const database = firebase.firestore();
+    const collection = database.collection("sampleCollection");
+    const document = collection.doc("sampleDocument");
+    document.onSnapshot(doc => {
+        console.log("update!", doc.data());
+    });
+}

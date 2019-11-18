@@ -19,7 +19,8 @@
         "elm-hot": "^1.1.3",
         "node-elm-compiler": "^5.0.4",
         "parcel-bundler": "^1.12.4",
-        "typescript": "^3.7.2"
+        "typescript": "^3.7.2",
+        "firebase": "^7.4.0"
     },
     "engines": {
         "node": "10"
