@@ -1,43 +1,12 @@
-/// <reference path="node_modules/firebase/index.d.ts" />
+import * as firestoreType from "../../firestoreType";
+import { Elm } from "../main/source/Main.elm";
 
-interface Window {
-    readonly Elm: {
-        readonly Main: {
-            readonly init: (flags: {}) => ElmApp;
-        };
-    };
-}
-type SubForElmCmd<T> = {
-    subscribe: (arg: (value: T) => void) => void;
+const k: firestoreType.SampleType = {
+    value: 43
 };
-
-type CmdForElmSub<T> = {
-    send: (value: T) => void;
-};
-
-interface ElmApp {
-    readonly ports: {
-        // readonly setTextAreaValue: SubForElmCmd<string>;
-        // readonly focusElement: SubForElmCmd<string>;
-        readonly preventDefaultBeforeKeyEvent: SubForElmCmd<null>;
-        // readonly elementScrollIntoView: SubForElmCmd<string>;
-        readonly requestAccessTokenFromIndexedDB: SubForElmCmd<null>;
-        readonly writeAccessTokenToIndexedDB: SubForElmCmd<string>;
-        readonly consoleLog: SubForElmCmd<string>;
-        readonly keyPressed: CmdForElmSub<KeyboardEvent>;
-        readonly keyPrevented: CmdForElmSub<null>;
-        readonly windowResize: CmdForElmSub<{ width: number; height: number }>;
-        readonly portResponseAccessTokenFromIndexedDB: CmdForElmSub<
-            string | null
-        >;
-        readonly changeLanguage: CmdForElmSub<string>;
-        readonly subPointerUp: CmdForElmSub<null>;
-        readonly changeNetworkConnection: CmdForElmSub<boolean>;
-    };
-}
 
 requestAnimationFrame(() => {
-    const app = window.Elm.Main.init({
+    const app = Elm.Main.init({
         flags: {
             windowSize: {
                 width: innerWidth,
@@ -244,14 +213,17 @@ requestAnimationFrame(() => {
 });
 
 (async () => {
-    await navigator.serviceWorker.register("/serviceworker.js", { scope: "/" });
+    await navigator.serviceWorker.register(
+        "../serviceworker/serviceworker.ts",
+        { scope: "/" }
+    );
 })();
 
-{
-    const database = firebase.firestore();
-    const collection = database.collection("sampleCollection");
-    const document = collection.doc("sampleDocument");
-    document.onSnapshot(doc => {
-        console.log("update!", doc.data());
-    });
-}
+// {
+//     const database = firebase.firestore();
+//     const collection = database.collection("sampleCollection");
+//     const document = collection.doc("sampleDocument");
+//     document.onSnapshot(doc => {
+//         console.log("update!", doc.data());
+//     });
+// }

@@ -4,8 +4,14 @@
         "strict": true,
         "lib": ["es2019", "dom"],
         "removeComments": true,
-        "outDir": "../../distribution/",
-        "newLine": "LF"
+        "outDir": "../../hostingDistribution/",
+        "newLine": "LF",
+        "module": "none"
+        // "typeRoots": ["../hosting"]
     },
-    "files": ["call.ts"]
+    "include": [
+        "call.ts",
+        "../../firestoreType.d.ts",
+        "../main/source/Main.elm.d.ts"
+    ]
 }
