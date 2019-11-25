@@ -5,10 +5,5 @@
         "strict": true,
         "lib": ["es2019", "dom"],
         "newLine": "LF"
-    },
-    "include": [
-        "call.ts",
-        "../../firestoreType.d.ts",
-        "../main/source/Main.elm.d.ts"
-    ]
+    }
 }

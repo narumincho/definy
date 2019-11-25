@@ -153,25 +153,7 @@ view logInState (Model rec) =
         )
         []
         0
-        [ side
-            { width = rec.width
-            , logInState = logInState
-            , pointer = rec.pointer
-            , logInRequest = rec.logInRequest
-            }
-        , Component.Style.gutterPanel
-            (case rec.pointer of
-                SideBarPointerEnter ->
-                    Component.Style.GutterModePointerEnter
-
-                SideBarResize ->
-                    Component.Style.GutterModeResize
-
-                _ ->
-                    Component.Style.GutterModeNone
-            )
-            |> Ui.map MsgToSideGutterMode
-        , yggdrasil logInState
+        [ yggdrasil logInState
         ]
 
 
@@ -542,7 +524,7 @@ yggdrasil logInState =
             []
             []
             Component.Style.normalFont
-            "プロジェクト"
+            "調整中 プロジェクト (サイドバーはなくして全面に広げたい)"
         , case logInState of
             Data.User.ReadingAccessToken ->
                 Ui.text
