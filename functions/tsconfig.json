@@ -8,6 +8,5 @@
         "removeComments": true,
         "newLine": "LF",
         "outDir": "../functionsDistribution"
-    },
-    "files": ["./index.ts"]
+    }
 }

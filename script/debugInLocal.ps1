@@ -1,0 +1,1 @@
+./node_modules/.bin/parcel.ps1 ./hosting/index.html --open

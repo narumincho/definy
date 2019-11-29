@@ -1,10 +1,9 @@
 $Host.UI.RawUI.ForegroundColor = "Yellow";
-Write-Output "Compile Server Code And Upload Firebase Server";
-Set-Location -Path ./server/source;
+Write-Output "Deploy to Firebase Functions";
 
 Write-Output "Compile TypeScript ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";
-tsc.cmd;
+./node_modules/.bin/tsc.ps1 --project ./functions/tsconfig.json;
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Compile TypeScript OK";
 Set-Location -Path ../;
