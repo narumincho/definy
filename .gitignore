@@ -3,6 +3,7 @@ node_modules
 dist
 .cache
 .idea
+.firebase
 functionsDistribution
 build
 /functions/key.ts

@@ -12,7 +12,7 @@
         {
             "label": "deploy firebase hosting",
             "type": "shell",
-            "command": "./task/deployHosting.ps1",
+            "command": "./script/deployHosting.ps1",
             "group": "build",
             "problemMatcher": []
         },
