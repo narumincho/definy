@@ -1,9 +1,11 @@
 import * as firestoreType from "../../firestoreType";
 import { Elm } from "../main/source/Main.elm";
+import * as firebase from "firebase/app";
+import "firebase/firestore";
 
-// const k: firestoreType.SampleType = {
-//     value: 43
-// };
+const k: firestoreType.SampleType = {
+    value: 43
+};
 
 requestAnimationFrame(() => {
     const app = Elm.Main.init({
@@ -214,16 +216,24 @@ requestAnimationFrame(() => {
 
 // (async () => {
 //     await navigator.serviceWorker.register(
-//         "../serviceworker/serviceworker.ts",
+//         require("../serviceworker/serviceworker.ts"),
 //         { scope: "/" }
 //     );
 // })();
 
-// {
-//     const database = firebase.firestore();
-//     const collection = database.collection("sampleCollection");
-//     const document = collection.doc("sampleDocument");
-//     document.onSnapshot(doc => {
-//         console.log("update!", doc.data());
-//     });
-// }
+{
+    firebase.initializeApp({
+        apiKey: "AIzaSyAy7vTr9xBSF0d9pEWufU6EJd0AcUnANZk",
+        authDomain: "definy-lang.firebaseapp.com",
+        databaseURL: "https://definy-lang.firebaseio.com",
+        messagingSenderId: "8347840964",
+        projectId: "definy-lang",
+        storageBucket: "definy-lang.appspot.com"
+    });
+    const database = firebase.firestore();
+    const collection = database.collection("sampleCollection");
+    const document = collection.doc("sampleDocument");
+    document.onSnapshot(doc => {
+        console.log("update!", doc.data());
+    });
+}

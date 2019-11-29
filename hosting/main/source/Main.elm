@@ -132,7 +132,10 @@ type PageModel
 
 
 type alias Flag =
-    { windowSize : { width : Int, height : Int }
+    { windowSize :
+        { width : Int
+        , height : Int
+        }
     , language : String
     , networkConnection : Bool
     }
