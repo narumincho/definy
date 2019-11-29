@@ -43,14 +43,7 @@ New Programming Language and Tool for Web. like Elm.
 
 ## フォルダとファイルの説明
 
--   /client: クライアントのプログラム
--   /client/distribution: クライアントのプログラムのコンパイル結果
--   /client/source: クライアントのプログラムのソースコード
-
-*   /server: サーバーのプログラム
-*   /server/distribution: サーバーのプログラムのコンパイル結果
-*   /server/source: サーバーのプログラムのソースコード
-
--   /task: コンパイルをするための PowerShell のスクリプトが入っている
-
-*   /firebase.json : サーバーでファイルをどのように扱うかの設定が書かれている
+-   /hosting: Firebase Hosting で配信するクライアントのプログラム
+-   /functions: Firebase Functions のプログラム
+-   /script: デプロイやデバッグをするための PowerShell のスクリプトが入っている
+-   /firebase.json : サーバーでファイルをどのように扱うかの設定が書かれている
