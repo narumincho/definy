@@ -3,4 +3,6 @@ node_modules
 dist
 .cache
 .idea
-/functions/lib/key.ts
+functionsDistribution
+build
+/functions/key.ts

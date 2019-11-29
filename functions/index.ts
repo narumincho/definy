@@ -5,7 +5,7 @@ import * as libLogInCallback from "./lib/logInCallback";
 import * as express from "express";
 import * as databaseLow from "./lib/databaseLow";
 import * as type from "./lib/type";
-import * as firestoreType from "../firestoreType";
+import * as firestoreType from "./firestoreType";
 
 const f: firestoreType.SampleType = {
     value: 10

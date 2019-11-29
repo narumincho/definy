@@ -24,6 +24,22 @@
         ]
     },
     "functions": {
-        "source": "server/distribution"
+        "source": ".",
+        "ignore": [
+            "**/.git/**",
+            "**/.cache/**",
+            "**/.idea/**",
+            "**/.vscode/**",
+            "**/dist/**",
+            "**/build/**",
+            "**/functions/**",
+            "**/hosting/**",
+            "**/node_modules/**",
+            "**/script/**",
+            ".gitignore",
+            ".prettierrc",
+            "firestoreTypes.ts",
+            "README.md"
+        ]
     }
 }

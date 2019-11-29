@@ -1,4 +1,4 @@
-import * as firestoreType from "../../firestoreType";
+import * as firestoreType from "../../functions/firestoreType";
 import { Elm } from "../main/source/Main.elm";
 import * as firebase from "firebase/app";
 import "firebase/firestore";
