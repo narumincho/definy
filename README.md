@@ -2,7 +2,7 @@
 
 ![Definyのスクリーンショット](https://repository-images.githubusercontent.com/168463361/72534f00-ec72-11e9-94f3-370ab473bc28)
 
-New Programming Language and Tool for Web. like Elm.
+Definy is Web App for Web App.
 
 [Latest Version](https://definy-lang.web.app/)
 
