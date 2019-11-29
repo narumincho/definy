@@ -1,10 +1,10 @@
 import * as functions from "firebase-functions";
 import * as graphqlExpress from "express-graphql";
-import * as schema from "./lib/schema";
-import * as libLogInCallback from "./lib/logInCallback";
+import * as schema from "./schema";
+import * as libLogInCallback from "./logInCallback";
 import * as express from "express";
-import * as databaseLow from "./lib/databaseLow";
-import * as type from "./lib/type";
+import * as databaseLow from "./databaseLow";
+import * as type from "./type";
 import * as firestoreType from "./firestoreType";
 
 const f: firestoreType.SampleType = {
