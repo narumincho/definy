@@ -214,13 +214,6 @@ requestAnimationFrame(() => {
     });
 });
 
-// (async () => {
-//     await navigator.serviceWorker.register(
-//         require("../serviceworker/serviceworker.ts"),
-//         { scope: "/" }
-//     );
-// })();
-
 {
     firebase.initializeApp({
         apiKey: "AIzaSyAy7vTr9xBSF0d9pEWufU6EJd0AcUnANZk",

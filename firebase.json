@@ -39,7 +39,8 @@
             ".gitignore",
             ".prettierrc",
             "firestoreTypes.ts",
-            "README.md"
+            "README.md",
+            "firebase.json"
         ]
     }
 }

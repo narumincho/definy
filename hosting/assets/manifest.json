@@ -1,0 +1,15 @@
+{
+    "name": "Definy",
+    "short_name": "Definy",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "description": "Web App for Web App.",
+    "icons": [
+        {
+            "src": "/assets/icon.png",
+            "sizes": "180x180",
+            "type": "image/png"
+        }
+    ]
+}

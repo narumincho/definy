@@ -8,7 +8,9 @@ $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Compile Elm And Minify ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";
 
-./node_modules/.bin/parcel.ps1 build ./hosting/call/call.ts --out-file main.js
+./node_modules/.bin/parcel.ps1 build ./hosting/call/call.ts --out-dir hostingDistribution --out-file main.js
+
+./node_modules/.bin/tsc.ps1 --project ./hosting/serviceworker/tsconfig.json
 
 Write-Output "Upload to Firebase ...";
 $Host.UI.RawUI.ForegroundColor = "Gray";

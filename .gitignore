@@ -1,6 +1,7 @@
 elm-stuff
 node_modules
-dist
+debugDistribution
+hostingDistribution
 .cache
 .idea
 .firebase
