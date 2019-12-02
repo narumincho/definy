@@ -4,7 +4,7 @@
         "strict": true,
         "lib": ["es2019", "webworker"],
         "removeComments": true,
-        "outDir": "../../distribution/",
+        "outDir": "../../hostingDistribution",
         "newLine": "LF"
     },
     "files": ["serviceworker.ts"]

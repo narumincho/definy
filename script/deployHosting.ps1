@@ -2,7 +2,7 @@ $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Compile Hosting Files And Upload Firebase Server";
 
 Write-Output "Delete Dist Folder";
-Remove-Item .\dist -Recurse;
+Remove-Item .\hostingDistribution -Recurse;
 
 $Host.UI.RawUI.ForegroundColor = "Yellow";
 Write-Output "Compile Elm And Minify ...";

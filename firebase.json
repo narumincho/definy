@@ -1,6 +1,6 @@
 {
     "hosting": {
-        "public": "dist",
+        "public": "hostingDistribution",
         "headers": [
             {
                 "source": "main.js",
