@@ -5,11 +5,6 @@ import * as libLogInCallback from "./logInCallback";
 import * as express from "express";
 import * as databaseLow from "./databaseLow";
 import * as type from "./type";
-import * as firestoreType from "./firestoreType";
-
-const f: firestoreType.SampleType = {
-    value: 10
-};
 
 console.log("サーバーのプログラムが読み込まれた");
 /* =====================================================================

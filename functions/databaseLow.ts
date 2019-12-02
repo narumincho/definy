@@ -2,6 +2,12 @@ import * as admin from "firebase-admin";
 import * as type from "./type";
 import * as firestore from "@google-cloud/firestore";
 import * as stream from "stream";
+import * as firestoreType from "definy-firestore-type";
+
+const sampleUser: firestoreType.User = {
+    createdAt: firestore.Timestamp.now(),
+    name: "sorena"
+};
 
 const app = admin.initializeApp();
 const dataBase = app.firestore();
@@ -81,9 +87,10 @@ export const updateUser = async (
 /**
  * 全てのユーザーのデータを取得する
  */
-export const getAllUser = async (): Promise<
-    ReadonlyArray<{ id: type.UserId; data: UserData }>
-> =>
+export const getAllUser = async (): Promise<ReadonlyArray<{
+    id: type.UserId;
+    data: UserData;
+}>> =>
     (await userCollection.get()).docs.map(doc => ({
         id: doc.id as type.UserId,
         data: doc.data() as UserData
@@ -95,7 +102,10 @@ export const searchUsers = async <T extends keyof UserData>(
     value: UserData[T]
 ): Promise<Array<{ id: type.UserId; data: UserData }>> =>
     (await userCollection.where(filed, operator, value).get()).docs.map(
-        doc => ({ id: doc.id as type.UserId, data: doc.data() as UserData })
+        doc => ({
+            id: doc.id as type.UserId,
+            data: doc.data() as UserData
+        })
     );
 
 /**
@@ -138,9 +148,9 @@ export const createAndWriteAccessToken = async (
 export const verifyAccessToken = async (
     accessTokenHash: type.AccessTokenHash
 ): Promise<type.UserId> => {
-    const data = (await accessTokenCollection
-        .doc(accessTokenHash)
-        .get()).data() as (undefined | AccessTokenData);
+    const data = (
+        await accessTokenCollection.doc(accessTokenHash).get()
+    ).data() as undefined | AccessTokenData;
     if (data === undefined) {
         throw new Error("invalid access token");
     }
@@ -230,9 +240,10 @@ export const updateProject = async (
 /**
  * 全てのプロジェクトのデータを取得する
  */
-export const getAllProject = async (): Promise<
-    ReadonlyArray<{ id: type.ProjectId; data: ProjectData }>
-> =>
+export const getAllProject = async (): Promise<ReadonlyArray<{
+    id: type.ProjectId;
+    data: ProjectData;
+}>> =>
     (await projectCollection.get()).docs.map(doc => ({
         id: doc.id as type.ProjectId,
         data: doc.data() as ProjectData

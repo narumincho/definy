@@ -1,10 +1,11 @@
-import * as firestoreType from "../../functions/firestoreType";
+import * as firestoreType from "definy-firestore-type";
 import { Elm } from "../main/source/Main.elm";
 import * as firebase from "firebase/app";
 import "firebase/firestore";
 
-const k: firestoreType.SampleType = {
-    value: 43
+const sampleUser: firestoreType.User = {
+    createdAt: firebase.firestore.Timestamp.now(),
+    name: "sorena"
 };
 
 requestAnimationFrame(() => {
