@@ -5,7 +5,11 @@ import "firebase/firestore";
 
 const sampleUser: firestoreType.User = {
   createdAt: firebase.firestore.Timestamp.now(),
-  name: "sorena"
+  branchIds: ["fewwafaw" as firestoreType.BranchId],
+  imageHash: "sfaweeaw" as firestoreType.ImageHash,
+  introduction: "自己紹介" as firestoreType.UserIntroduction,
+  likedProjectIds: [],
+  name: "ユーザー名" as firestoreType.UserName
 };
 
 requestAnimationFrame(() => {
