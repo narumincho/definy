@@ -2,14 +2,12 @@
   "name": "definy",
   "version": "0.0.1",
   "description": "definy is web app for web app",
-  "main": "functionsDistribution/index.js",
   "author": "narumincho",
   "repository": {
     "type": "git",
     "url": "https://github.com/narumincho/Definy"
   },
   "license": "MIT",
-  "dependencies": {},
   "devDependencies": {
     "definy-firestore-type": "0.0.0",
     "elm-hot": "^1.1.4",
