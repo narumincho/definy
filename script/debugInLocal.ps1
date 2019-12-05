@@ -1,1 +1,1 @@
-./node_modules/.bin/parcel.ps1 ./hosting/index.html --out-dir debugDistribution --open
+.\node_modules\.bin\parcel.ps1 .\source\index.html --out-dir debugDistribution --open

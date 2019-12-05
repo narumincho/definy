@@ -1,10 +1,8 @@
 elm-stuff
 node_modules
 debugDistribution
-hostingDistribution
 .cache
 .idea
 .firebase
-functionsDistribution
+distribution
 build
-/functions/key.ts

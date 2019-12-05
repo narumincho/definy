@@ -10,16 +10,9 @@
       "problemMatcher": []
     },
     {
-      "label": "deploy firebase hosting",
+      "label": "deploy",
       "type": "shell",
-      "command": "./script/deployHosting.ps1",
-      "group": "build",
-      "problemMatcher": []
-    },
-    {
-      "label": "deploy firebase functions",
-      "type": "shell",
-      "command": "./script/deployFunctions.ps1",
+      "command": "./script/deploy.ps1",
       "group": "build",
       "problemMatcher": []
     }
