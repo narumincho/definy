@@ -20,7 +20,7 @@ const socialLoginServiceValues = {
     }
 };
 
-export type SocialLoginService = keyof (typeof socialLoginServiceValues);
+export type SocialLoginService = keyof typeof socialLoginServiceValues;
 
 export const logInServiceGraphQLType = new g.GraphQLEnumType({
     name: "SocialLoginService",
@@ -249,7 +249,7 @@ export type TypeBodyKernel = {
     kernelType: KernelType;
 };
 
-export type KernelType = keyof (typeof kernelTypeValues);
+export type KernelType = keyof typeof kernelTypeValues;
 
 const kernelTypeValues = {
     jsNumber: {
