@@ -1,9 +1,9 @@
 {
-    "compilerOptions": {
-        "target": "es2019",
-        "module": "commonjs",
-        "strict": true,
-        "lib": ["es2019", "dom"],
-        "newLine": "LF"
-    }
+  "compilerOptions": {
+    "target": "es2019",
+    "module": "commonjs",
+    "strict": true,
+    "lib": ["es2019", "dom"],
+    "newLine": "LF"
+  }
 }

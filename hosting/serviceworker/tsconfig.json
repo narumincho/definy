@@ -1,11 +1,11 @@
 {
-    "compilerOptions": {
-        "target": "es2019",
-        "strict": true,
-        "lib": ["es2019", "webworker"],
-        "removeComments": true,
-        "outDir": "../../hostingDistribution",
-        "newLine": "LF"
-    },
-    "files": ["serviceworker.ts"]
+  "compilerOptions": {
+    "target": "es2019",
+    "strict": true,
+    "lib": ["es2019", "webworker"],
+    "removeComments": true,
+    "outDir": "../../hostingDistribution",
+    "newLine": "LF"
+  },
+  "files": ["serviceworker.ts"]
 }

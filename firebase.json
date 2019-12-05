@@ -1,46 +1,46 @@
 {
-    "hosting": {
-        "public": "hostingDistribution",
+  "hosting": {
+    "public": "hostingDistribution",
+    "headers": [
+      {
+        "source": "main.js",
         "headers": [
-            {
-                "source": "main.js",
-                "headers": [
-                    {
-                        "key": "cache-control",
-                        "value": "max-age=31536000"
-                    }
-                ]
-            }
-        ],
-        "rewrites": [
-            {
-                "source": "sitemap",
-                "function": "sitemap"
-            },
-            {
-                "source": "**",
-                "function": "indexHtml"
-            }
+          {
+            "key": "cache-control",
+            "value": "max-age=31536000"
+          }
         ]
-    },
-    "functions": {
-        "source": ".",
-        "ignore": [
-            "**/.git/**",
-            "**/.cache/**",
-            "**/.idea/**",
-            "**/.vscode/**",
-            "**/dist/**",
-            "**/build/**",
-            "**/functions/**",
-            "**/hosting/**",
-            "**/node_modules/**",
-            "**/script/**",
-            ".gitignore",
-            ".prettierrc",
-            "firestoreTypes.ts",
-            "README.md",
-            "firebase.json"
-        ]
-    }
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "sitemap",
+        "function": "sitemap"
+      },
+      {
+        "source": "**",
+        "function": "indexHtml"
+      }
+    ]
+  },
+  "functions": {
+    "source": ".",
+    "ignore": [
+      "**/.git/**",
+      "**/.cache/**",
+      "**/.idea/**",
+      "**/.vscode/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/functions/**",
+      "**/hosting/**",
+      "**/node_modules/**",
+      "**/script/**",
+      ".gitignore",
+      ".prettierrc",
+      "firestoreTypes.ts",
+      "README.md",
+      "firebase.json"
+    ]
+  }
 }

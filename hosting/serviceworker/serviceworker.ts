@@ -1,32 +1,32 @@
 ((self: ServiceWorkerGlobalScope) => {
-    self.addEventListener("install", e => {
-        console.log(
-            "Service Worker内でServiceWorkerがブラウザにインストールされたことを検知した!"
-        );
-        e.waitUntil(self.skipWaiting());
-    });
+  self.addEventListener("install", e => {
+    console.log(
+      "Service Worker内でServiceWorkerがブラウザにインストールされたことを検知した!"
+    );
+    e.waitUntil(self.skipWaiting());
+  });
 
-    self.addEventListener("activate", e => {
-        console.log("Service Workerがアクティブな状態になった");
-        e.waitUntil(self.clients.claim());
-    });
+  self.addEventListener("activate", e => {
+    console.log("Service Workerがアクティブな状態になった");
+    e.waitUntil(self.clients.claim());
+  });
 
-    self.addEventListener("fetch", e => {
-        if (navigator.onLine) {
-            if (e.request.url === "https://definy-lang.web.app/main.js") {
-                console.log("main.jsをオンライン時にリクエスト");
-                e.respondWith(fetch("/main.js", { cache: "reload" }));
-            }
-            return;
-        }
-        const accept = e.request.headers.get("accept");
-        if (accept === null) {
-            return;
-        }
-        if (accept.includes("text/html")) {
-            e.respondWith(
-                new Response(
-                    `
+  self.addEventListener("fetch", e => {
+    if (navigator.onLine) {
+      if (e.request.url === "https://definy-lang.web.app/main.js") {
+        console.log("main.jsをオンライン時にリクエスト");
+        e.respondWith(fetch("/main.js", { cache: "reload" }));
+      }
+      return;
+    }
+    const accept = e.request.headers.get("accept");
+    if (accept === null) {
+      return;
+    }
+    if (accept.includes("text/html")) {
+      e.respondWith(
+        new Response(
+          `
 <!doctype html>
 <html>
 
@@ -89,9 +89,9 @@
 </body>
 
 </html>`,
-                    { headers: { "content-type": "text/html" } }
-                )
-            );
-        }
-    });
+          { headers: { "content-type": "text/html" } }
+        )
+      );
+    }
+  });
 })((self as unknown) as ServiceWorkerGlobalScope);
