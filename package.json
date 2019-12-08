@@ -11,7 +11,7 @@
   "devDependencies": {
     "definy-firestore-type": "0.0.2",
     "elm-hot": "^1.1.4",
-    "firebase": "^7.5.1",
+    "firebase": "^7.5.2",
     "node-elm-compiler": "^5.0.4",
     "parcel-bundler": "^1.12.4",
     "typed-firestore": "0.0.1",
