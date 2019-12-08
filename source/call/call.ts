@@ -2,6 +2,7 @@ import * as firestoreType from "definy-firestore-type";
 import { Elm } from "../main/source/Main.elm";
 import * as firebase from "firebase/app";
 import "firebase/firestore";
+import * as typedFirestore from "typed-firestore";
 
 const sampleUser: firestoreType.User = {
   createdAt: firebase.firestore.Timestamp.now(),
@@ -213,7 +214,7 @@ requestAnimationFrame(() => {
   });
 });
 
-{
+(async () => {
   firebase.initializeApp({
     apiKey: "AIzaSyAy7vTr9xBSF0d9pEWufU6EJd0AcUnANZk",
     authDomain: "definy-lang.firebaseapp.com",
@@ -222,10 +223,17 @@ requestAnimationFrame(() => {
     projectId: "definy-lang",
     storageBucket: "definy-lang.appspot.com"
   });
-  const database = firebase.firestore();
+  const database = firebase.firestore() as typedFirestore.TypedFirebaseFirestore<{
+    sampleCollection: { doc: { data: number }; col: {} };
+  }>;
   const collection = database.collection("sampleCollection");
   const document = collection.doc("sampleDocument");
   document.onSnapshot(doc => {
+    const data = doc.data();
     console.log("update!", doc.data());
   });
-}
+  const data = (await document.get()).data();
+  if (data === undefined) {
+    return;
+  }
+})();
