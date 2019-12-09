@@ -4,15 +4,6 @@ import * as firebase from "firebase/app";
 import "firebase/firestore";
 import * as typedFirestore from "typed-firestore";
 
-const sampleUser: firestoreType.User = {
-  createdAt: firebase.firestore.Timestamp.now(),
-  branchIds: ["fewwafaw" as firestoreType.BranchId],
-  imageHash: "sfaweeaw" as firestoreType.ImageHash,
-  introduction: "自己紹介" as firestoreType.UserIntroduction,
-  likedProjectIds: [],
-  name: "ユーザー名" as firestoreType.UserName
-};
-
 requestAnimationFrame(() => {
   const app = Elm.Main.init({
     flags: {
@@ -218,22 +209,16 @@ requestAnimationFrame(() => {
   firebase.initializeApp({
     apiKey: "AIzaSyAy7vTr9xBSF0d9pEWufU6EJd0AcUnANZk",
     authDomain: "definy-lang.firebaseapp.com",
-    databaseURL: "https://definy-lang.firebaseio.com",
-    messagingSenderId: "8347840964",
     projectId: "definy-lang",
     storageBucket: "definy-lang.appspot.com"
   });
-  const database = firebase.firestore() as typedFirestore.TypedFirebaseFirestore<{
-    sampleCollection: { doc: { data: number }; col: {} };
-  }>;
-  const collection = database.collection("sampleCollection");
-  const document = collection.doc("sampleDocument");
-  document.onSnapshot(doc => {
-    const data = doc.data();
-    console.log("update!", doc.data());
+  const database = (firebase.firestore() as unknown) as typedFirestore.TypedFirebaseFirestore<
+    firestoreType.Firestore
+  >;
+  const collection = database.collection("user");
+  collection.onSnapshot(snapShot => {
+    for (const doc of snapShot.docs) {
+      console.log(doc.data());
+    }
   });
-  const data = (await document.get()).data();
-  if (data === undefined) {
-    return;
-  }
 })();
