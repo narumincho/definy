@@ -9,12 +9,12 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "definy-firestore-type": "0.0.4",
+    "definy-firestore-type": "0.0.10",
     "elm-hot": "^1.1.4",
     "firebase": "^7.5.2",
     "node-elm-compiler": "^5.0.4",
     "parcel-bundler": "^1.12.4",
-    "typed-firestore": "0.0.6",
+    "typed-firestore": "0.0.8",
     "typescript": "^3.7.3"
   },
   "engines": {
