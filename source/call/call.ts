@@ -212,7 +212,7 @@ requestAnimationFrame(() => {
     projectId: "definy-lang",
     storageBucket: "definy-lang.appspot.com"
   });
-  const database = (firebase.firestore() as unknown) as typedFirestore.TypedFirebaseFirestore<
+  const database = (firebase.firestore() as unknown) as typedFirestore.Firestore<
     firestoreType.Firestore
   >;
   const collection = database.collection("user");
