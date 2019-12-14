@@ -3,6 +3,7 @@ import { Elm } from "../main/source/Main.elm";
 import * as firebase from "firebase/app";
 import "firebase/firestore";
 import * as typedFirestore from "typed-firestore";
+import * as sub from "./sub";
 
 const elmAppElement = document.createElement("div");
 
@@ -206,11 +207,11 @@ requestAnimationFrame(() => {
     }
   });
 
-  addEventListener("online", e => {
+  addEventListener("online", () => {
     app.ports.changeNetworkConnection.send(true);
   });
 
-  addEventListener("offline", e => {
+  addEventListener("offline", () => {
     app.ports.changeNetworkConnection.send(false);
   });
 });
@@ -232,3 +233,11 @@ requestAnimationFrame(() => {
     }
   });
 })();
+
+sub.consoleSub();
+
+navigator.serviceWorker
+  .register("../serviceworker.ts", { scope: "/" })
+  .then(() => {
+    console.log("serviceWorkerを登録した!");
+  });
