@@ -10,7 +10,12 @@ $Host.UI.RawUI.ForegroundColor = "Gray";
 
 .\node_modules\.bin\parcel.ps1 build .\source\call\call.ts --out-dir distribution --out-file main.js
 
-.\node_modules\.bin\tsc.ps1 --project .\source\serviceworker\tsconfig.json
+# parcelのパスのバグとスコープの問題を解決するために置換する
+(Get-Content .\distribution\main.js).Replace("navigator.serviceWorker.register(""/__\serviceworker.js", "navigator.serviceWorker.register(""/serviceworker.js") | Set-Content .\distribution\main.js
+
+Move-Item .\distribution\__\serviceworker.js .\distribution\
+Move-Item .\distribution\__\serviceworker.js.map .\distribution\
+Remove-Item .\distribution\__
 
 Copy-Item .\source\assets .\distribution -Recurse
 
