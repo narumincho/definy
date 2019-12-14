@@ -10,12 +10,11 @@ type InitPageLocation
     = InitWelcome
 
 
-initFromUrl : Url.Url -> ( Maybe Data.User.AccessToken, Maybe InitPageLocation )
+initFromUrl : String -> ( Maybe Data.User.AccessToken, Maybe InitPageLocation )
 initFromUrl url =
     let
         { path, hash } =
             url
-                |> Url.toString
                 |> Erl.parse
 
         fragmentDict =

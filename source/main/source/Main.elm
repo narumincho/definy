@@ -13,6 +13,7 @@ import Data.Key
 import Data.Language
 import Data.PageLocation
 import Data.User
+import Html
 import Html.Styled
 import Json.Decode
 import Page.Welcome
@@ -85,8 +86,6 @@ type Msg
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
     | OpenCommandPalette -- コマンドパレットを開く
     | CloseCommandPalette -- コマンドパレッドを閉じる
-    | OnUrlRequest Browser.UrlRequest
-    | OnUrlChange Url.Url
     | LogOutRequest -- ログアウトを要求する
     | ResponseAccessTokenFromIndexedDB String
     | ResponseUserData (Result String Data.User.User) -- ユーザーの情報を受け取った
@@ -110,7 +109,6 @@ type Model
         , messageQueue : List Msg
         , logInState : Data.User.LogInState
         , language : Data.Language.Language
-        , navigationKey : Browser.Navigation.Key
         , networkConnection : Bool
         , notificationModel : Component.Notifications.Model
         }
@@ -143,25 +141,21 @@ type alias Flag =
 
 main : Platform.Program Flag Model Msg
 main =
-    Browser.application
+    Browser.element
         { init = init
         , view = view
         , update = update
         , subscriptions = subscriptions
-        , onUrlRequest = OnUrlRequest
-        , onUrlChange = OnUrlChange
         }
 
 
 init :
     Flag
-    -> Url.Url
-    -> Browser.Navigation.Key
     -> ( Model, Cmd Msg )
-init flag url navigationKey =
+init flag =
     let
         ( tokenFromUrlMaybe, page ) =
-            Data.PageLocation.initFromUrl url
+            Data.PageLocation.initFromUrl ""
 
         model =
             Model
@@ -177,7 +171,6 @@ init flag url navigationKey =
                         Nothing ->
                             Data.User.ReadingAccessToken
                 , language = Data.Language.languageFromString flag.language
-                , navigationKey = navigationKey
                 , networkConnection = flag.networkConnection
                 , notificationModel =
                     Component.Notifications.initModel
@@ -190,21 +183,15 @@ init flag url navigationKey =
                 }
     in
     ( model
-    , [ Browser.Navigation.replaceUrl navigationKey
-            (page
-                |> Maybe.withDefault Data.PageLocation.InitWelcome
-                |> Data.PageLocation.initToUrlAsString
-            )
-      ]
-        ++ (case tokenFromUrlMaybe of
-                Just accessToken ->
-                    [ writeAccessTokenToIndexedDB (Data.User.accessTokenToString accessToken)
-                    , Api.getUserPrivate accessToken ResponseUserData
-                    ]
+    , (case tokenFromUrlMaybe of
+        Just accessToken ->
+            [ writeAccessTokenToIndexedDB (Data.User.accessTokenToString accessToken)
+            , Api.getUserPrivate accessToken ResponseUserData
+            ]
 
-                Nothing ->
-                    [ requestAccessTokenFromIndexedDB () ]
-           )
+        Nothing ->
+            [ requestAccessTokenFromIndexedDB () ]
+      )
         |> Cmd.batch
     )
 
@@ -268,14 +255,6 @@ update msg (Model rec) =
 
         ChangeLanguage string ->
             ( Model rec |> setLanguage string
-            , Cmd.none
-            )
-
-        OnUrlRequest urlRequest ->
-            Model rec |> onUrlRequest urlRequest
-
-        OnUrlChange url ->
-            ( Model rec
             , Cmd.none
             )
 
@@ -857,18 +836,6 @@ setLanguage string (Model rec) =
         }
 
 
-onUrlRequest : Browser.UrlRequest -> Model -> ( Model, Cmd Msg )
-onUrlRequest urlRequest (Model rec) =
-    ( Model rec
-    , case urlRequest of
-        Browser.Internal url ->
-            Browser.Navigation.pushUrl rec.navigationKey (Url.toString url)
-
-        Browser.External urlString ->
-            Browser.Navigation.load urlString
-    )
-
-
 
 {- ================================================================
                                View
@@ -878,11 +845,11 @@ onUrlRequest urlRequest (Model rec) =
 
 {-| 見た目を定義する
 -}
-view : Model -> Browser.Document Msg
+view : Model -> Html.Html Msg
 view (Model rec) =
-    { title = "Definy"
-    , body =
-        [ Ui.depth
+    Html.div
+        []
+        ([ Ui.depth
             []
             ([ Ui.Width (Ui.Flex 1), Ui.Height (Ui.Flex 1) ]
                 ++ (case getGutterType (Model rec) of
@@ -903,7 +870,7 @@ view (Model rec) =
                 ++ [ Component.Notifications.view rec.notificationModel ]
             )
             |> Ui.toHtml
-        ]
+         ]
             ++ (case getCommandPaletteModel (Model rec) of
                     Just commandPaletteModel ->
                         [ Component.CommandPalette.view commandPaletteModel ]
@@ -912,7 +879,7 @@ view (Model rec) =
                         []
                )
             |> List.map Html.Styled.toUnstyled
-    }
+        )
 
 
 gutterTypeToCursorStyle : GutterType -> Ui.PointerImage

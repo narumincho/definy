@@ -4,6 +4,9 @@ import * as firebase from "firebase/app";
 import "firebase/firestore";
 import * as typedFirestore from "typed-firestore";
 
+const elmAppElement = document.createElement("div");
+document.body.appendChild(elmAppElement);
+
 requestAnimationFrame(() => {
   const app = Elm.Main.init({
     flags: {
@@ -13,7 +16,8 @@ requestAnimationFrame(() => {
       },
       language: navigator.languages[0],
       networkConnection: navigator.onLine
-    }
+    },
+    node: elmAppElement
   });
   let prevKeyEvent: KeyboardEvent;
   /* キー入力 */
