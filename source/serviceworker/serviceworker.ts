@@ -81,11 +81,10 @@
     </style>
 
     <script src="/main.js" defer></script>
-    <script src="/call.js" type="module"></script>
 </head>
 
 <body>
-    オフライン。キャッシュからプログラミングを読み込めるか試行錯誤中
+    準備中……  (Definyはオフラインでも使えます!)
 </body>
 
 </html>`,

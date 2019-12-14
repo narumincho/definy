@@ -5,6 +5,12 @@ import "firebase/firestore";
 import * as typedFirestore from "typed-firestore";
 
 const elmAppElement = document.createElement("div");
+
+// bodyの子要素を削除
+document.documentElement.replaceChild(
+  document.body.cloneNode(false),
+  document.body
+);
 document.body.appendChild(elmAppElement);
 
 requestAnimationFrame(() => {
@@ -26,9 +32,9 @@ requestAnimationFrame(() => {
     app.ports.keyPressed.send(e);
   });
   /*
-        直前のキー入力のデフォルト動作を取り消す
-        なぜかElmのコンパイルをデバッグモードでやるとキー動作を防げない
-    */
+   * 直前のキー入力のデフォルト動作を取り消す
+   * なぜかElmのコンパイルをデバッグモードでやるとキー動作を防げない
+   */
   app.ports.preventDefaultBeforeKeyEvent.subscribe(_ => {
     console.log("直前のキー入力のデフォルト動作を取り消す", prevKeyEvent);
     if (prevKeyEvent.currentTarget === null) {

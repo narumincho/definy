@@ -17,7 +17,7 @@
     "typed-firestore": "0.0.10",
     "typescript": "^3.7.3"
   },
-  "engines": {
-    "node": "12"
-  }
+  "browserslist": [
+    "last 1 Chrome versions"
+  ]
 }
