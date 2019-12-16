@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "es2019",
+    "module": "None",
+    "strict": true,
+    "lib": ["es2019", "DOM"],
+    "newLine": "LF"
+  }
+}
