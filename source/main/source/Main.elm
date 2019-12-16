@@ -3,7 +3,6 @@ port module Main exposing (main)
 import Api
 import Browser
 import Browser.Navigation
-import Component.CommandPalette
 import Component.DefaultUi
 import Component.Editor.Module
 import Component.EditorGroup
@@ -84,8 +83,6 @@ type Msg
     | PointerUp -- マウスのボタンを離した/タブの表示状態が変わった
     | ToResizeGutterMode GutterType -- リサイズモードに移行
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
-    | OpenCommandPalette -- コマンドパレットを開く
-    | CloseCommandPalette -- コマンドパレッドを閉じる
     | LogOutRequest -- ログアウトを要求する
     | ResponseAccessTokenFromIndexedDB String
     | ResponseUserData (Result String Data.User.User) -- ユーザーの情報を受け取った
@@ -116,7 +113,6 @@ type Model
 
 type SubMode
     = SubModeNone
-    | SubModeCommandPalette Component.CommandPalette.Model
     | SubModeGutter GutterType
 
 
@@ -238,16 +234,6 @@ update msg (Model rec) =
             , Cmd.none
             )
 
-        OpenCommandPalette ->
-            ( openCommandPalette (Model rec)
-            , Cmd.none
-            )
-
-        CloseCommandPalette ->
-            ( closeCommandPalette (Model rec)
-            , Cmd.none
-            )
-
         LogOutRequest ->
             ( Model rec
             , Cmd.none
@@ -355,28 +341,23 @@ keyDown : Maybe Data.Key.Key -> Model -> List Msg
 keyDown keyMaybe model =
     case keyMaybe of
         Just key ->
-            case editorReservedKey (isOpenCommandPalette model) key of
-                x :: xs ->
-                    x :: xs
+            case isFocusDefaultUi model of
+                Just Component.DefaultUi.MultiLineTextField ->
+                    if multiLineTextFieldReservedKey key then
+                        []
 
-                [] ->
-                    case isFocusDefaultUi model of
-                        Just Component.DefaultUi.MultiLineTextField ->
-                            if multiLineTextFieldReservedKey key then
-                                []
+                    else
+                        keyDownEachPanel key model
 
-                            else
-                                keyDownEachPanel key model
+                Just Component.DefaultUi.SingleLineTextField ->
+                    if singleLineTextFieldReservedKey key then
+                        []
 
-                        Just Component.DefaultUi.SingleLineTextField ->
-                            if singleLineTextFieldReservedKey key then
-                                []
+                    else
+                        keyDownEachPanel key model
 
-                            else
-                                keyDownEachPanel key model
-
-                        Nothing ->
-                            keyDownEachPanel key model
+                Nothing ->
+                    keyDownEachPanel key model
 
         Nothing ->
             []
@@ -385,41 +366,6 @@ keyDown keyMaybe model =
 keyDownEachPanel : Data.Key.Key -> Model -> List Msg
 keyDownEachPanel _ _ =
     []
-
-
-{-| Definyによって予約されたキー。どのパネルにフォーカスが当たっていてもこれを優先する
--}
-editorReservedKey : Bool -> Data.Key.Key -> List Msg
-editorReservedKey isOpenPalette { key, ctrl, alt, shift } =
-    if isOpenPalette then
-        case ( ctrl, shift, alt ) of
-            ( False, False, False ) ->
-                case key of
-                    Data.Key.Escape ->
-                        [ CloseCommandPalette ]
-
-                    Data.Key.F1 ->
-                        [ OpenCommandPalette ]
-
-                    _ ->
-                        []
-
-            _ ->
-                []
-
-    else
-        case ( ctrl, shift, alt ) of
-            -- 開いているけどキー入力を無視するために必要
-            ( False, False, False ) ->
-                case key of
-                    Data.Key.F1 ->
-                        [ OpenCommandPalette ]
-
-                    _ ->
-                        []
-
-            _ ->
-                []
 
 
 {-|
@@ -700,9 +646,6 @@ getGutterType (Model { subMode }) =
         SubModeNone ->
             Nothing
 
-        SubModeCommandPalette _ ->
-            Nothing
-
         SubModeGutter gutter ->
             Just gutter
 
@@ -744,56 +687,6 @@ editorPanelCmdToCmd cmd =
 
         Component.EditorGroup.CmdNone ->
             Cmd.none
-
-
-
-{- ====== コマンドパレット ====== -}
-
-
-{-| コマンドパレットを開く
--}
-openCommandPalette : Model -> Model
-openCommandPalette (Model rec) =
-    Model
-        { rec
-            | subMode = SubModeCommandPalette Component.CommandPalette.initModel
-        }
-
-
-closeCommandPalette : Model -> Model
-closeCommandPalette (Model rec) =
-    Model
-        { rec
-            | subMode = SubModeNone
-        }
-
-
-{-| コマンドパレッドの状態を取得する
--}
-getCommandPaletteModel : Model -> Maybe Component.CommandPalette.Model
-getCommandPaletteModel (Model { subMode }) =
-    case subMode of
-        SubModeNone ->
-            Nothing
-
-        SubModeGutter _ ->
-            Nothing
-
-        SubModeCommandPalette model ->
-            Just model
-
-
-isOpenCommandPalette : Model -> Bool
-isOpenCommandPalette (Model { subMode }) =
-    case subMode of
-        SubModeNone ->
-            False
-
-        SubModeGutter _ ->
-            False
-
-        SubModeCommandPalette _ ->
-            True
 
 
 {-| いまブラウザが入力を受け取る要素にフォーカスが当たっているかどうか。当たっていたらブラウザのデフォルト動作を邪魔しない
@@ -847,39 +740,28 @@ setLanguage string (Model rec) =
 -}
 view : Model -> Html.Html Msg
 view (Model rec) =
-    Html.div
+    Ui.depth
         []
-        ([ Ui.depth
-            []
-            ([ Ui.Width (Ui.Flex 1), Ui.Height (Ui.Flex 1) ]
-                ++ (case getGutterType (Model rec) of
-                        Just gutterType ->
-                            [ Ui.PointerImage (gutterTypeToCursorStyle gutterType) ]
-
-                        Nothing ->
-                            []
-                   )
-            )
-            ((case rec.page of
-                Welcome welcomeModel ->
-                    [ welcomeModel
-                        |> Page.Welcome.view rec.logInState
-                        |> Ui.map (WelcomePageMsg >> PageMsg)
-                    ]
-             )
-                ++ [ Component.Notifications.view rec.notificationModel ]
-            )
-            |> Ui.toHtml
-         ]
-            ++ (case getCommandPaletteModel (Model rec) of
-                    Just commandPaletteModel ->
-                        [ Component.CommandPalette.view commandPaletteModel ]
+        ([ Ui.Width (Ui.Flex 1), Ui.Height (Ui.Flex 1) ]
+            ++ (case getGutterType (Model rec) of
+                    Just gutterType ->
+                        [ Ui.PointerImage (gutterTypeToCursorStyle gutterType) ]
 
                     Nothing ->
                         []
                )
-            |> List.map Html.Styled.toUnstyled
         )
+        ((case rec.page of
+            Welcome welcomeModel ->
+                [ welcomeModel
+                    |> Page.Welcome.view rec.logInState
+                    |> Ui.map (WelcomePageMsg >> PageMsg)
+                ]
+         )
+            ++ [ Component.Notifications.view rec.notificationModel ]
+        )
+        |> Ui.toHtml
+        |> Html.Styled.toUnstyled
 
 
 gutterTypeToCursorStyle : GutterType -> Ui.PointerImage
