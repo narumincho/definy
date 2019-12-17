@@ -5,6 +5,15 @@ import "firebase/firestore";
 import * as typedFirestore from "typed-firestore";
 import * as sub from "./sub";
 
+navigator.serviceWorker.register("../serviceworker.ts", { scope: "/" }).then(
+  () => {
+    console.log("serviceWorkerを登録した!");
+  },
+  () => {
+    console.log("serviceWorkerの登録に失敗しました");
+  }
+);
+
 const elmAppElement = document.createElement("div");
 
 // bodyの子要素を削除
@@ -235,9 +244,3 @@ requestAnimationFrame(() => {
 })();
 
 sub.consoleSub();
-
-navigator.serviceWorker
-  .register("../serviceworker.ts", { scope: "/" })
-  .then(() => {
-    console.log("serviceWorkerを登録した!");
-  });

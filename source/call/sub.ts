@@ -1,3 +1,3 @@
-export const consoleSub = () => {
+export const consoleSub = (): void => {
   console.log("サブ");
 };

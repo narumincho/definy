@@ -1,0 +1,40 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:prettier/recommended",
+    "prettier/@typescript-eslint"
+  ],
+  "plugins": ["@typescript-eslint"],
+  "env": { "node": true, "es6": true },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "sourceType": "module",
+    "project": "./source/tsconfig.json"
+  },
+  "rules": {
+    "no-template-curly-in-string": ["error"],
+    "eqeqeq": ["error", "always"],
+    "no-caller": ["error"],
+    "no-else-return": ["error", { "allowElseIf": false }],
+    "no-eval": ["error"],
+    "no-extend-native": ["error"],
+    "no-implicit-coercion": ["error"],
+    "prefer-arrow-callback": ["error"],
+    "camelcase": ["error"],
+    "@typescript-eslint/restrict-plus-operands": [
+      "error",
+      { "checkCompoundAssignments": true }
+    ],
+    "@typescript-eslint/array-type": ["error", { "default": "generic" }],
+    "@typescript-eslint/consistent-type-definitions": ["error", "type"],
+    "@typescript-eslint/no-dynamic-delete": ["error"],
+    "@typescript-eslint/no-require-imports": ["error"],
+    "@typescript-eslint/no-unnecessary-qualifier": ["error"],
+    "@typescript-eslint/no-unused-expressions": ["error"],
+    "@typescript-eslint/prefer-for-of": ["error"],
+    "@typescript-eslint/require-array-sort-compare": ["error"]
+  },
+  "ignorePatterns": ["webpack.config.js"]
+}
