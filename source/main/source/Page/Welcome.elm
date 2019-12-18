@@ -157,301 +157,17 @@ view logInState (Model rec) =
         ]
 
 
-side :
-    { width : Int
-    , logInState : Data.User.LogInState
-    , pointer : PointerState
-    , logInRequest : Maybe Data.SocialLoginService.SocialLoginService
-    }
-    -> Ui.Panel Msg
-side { width, logInState, pointer, logInRequest } =
-    Ui.column
-        []
-        [ Ui.Width (Ui.Fix width) ]
-        16
-        [ titleLogo
-        , userView pointer logInState logInRequest
-        ]
-
-
-titleLogo : Ui.Panel msg
-titleLogo =
-    Ui.text
-        []
-        [ Ui.TextAlignment Ui.TextAlignCenter ]
-        (Ui.Font
-            { typeface = "Open Sans"
-            , size = 48
-            , letterSpacing = 0
-            , color = Css.rgb 185 208 155
-            }
-        )
-        "Definy"
-
-
-userView :
-    PointerState
-    -> Data.User.LogInState
-    -> Maybe Data.SocialLoginService.SocialLoginService
-    -> Ui.Panel Msg
-userView pointerState logInState logInRequest =
-    Ui.column
-        []
-        [ Ui.Padding 8 ]
-        8
-        (case logInState of
-            Data.User.ReadingAccessToken ->
-                [ Ui.text
-                    []
-                    []
-                    Component.Style.normalFont
-                    "アクセストークンを読み込み中"
-                ]
-
-            Data.User.VerifyingAccessToken (Data.User.AccessToken accessTokenString) ->
-                [ Ui.text
-                    []
-                    []
-                    Component.Style.normalFont
-                    ("アクセストークンを検証、ユーザー情報をリクエスト中 "
-                        ++ accessTokenString
-                    )
-                ]
-
-            Data.User.GuestUser errorMaybe ->
-                [ Ui.text
-                    []
-                    []
-                    Component.Style.normalFont
-                    (case errorMaybe of
-                        Just Data.User.FailToReadIndexedDB ->
-                            "IndexedDBからデータを読み込めませんでした"
-
-                        Just Data.User.AccessTokenIsInvalid ->
-                            "アクセストークンが無効でした"
-
-                        Nothing ->
-                            "ゲストユーザー"
-                    )
-                ]
-                    ++ guestUserView pointerState logInRequest
-
-            Data.User.Ok { user, accessToken } ->
-                [ Ui.row
-                    []
-                    []
-                    8
-                    [ Ui.imageFromUrl
-                        []
-                        [ Ui.Width (Ui.Fix 32), Ui.Height (Ui.Fix 32) ]
-                        { fitStyle = Ui.Contain
-                        , alternativeText = Data.User.getName user ++ "のプロフィール画像"
-                        , rendering = Ui.ImageRenderingAuto
-                        }
-                        (Data.User.getImageUrl user)
-                    , Ui.text
-                        []
-                        []
-                        Component.Style.normalFont
-                        (Data.User.getName user)
-                    ]
-                ]
-        )
-
-
-guestUserView : PointerState -> Maybe Data.SocialLoginService.SocialLoginService -> List (Ui.Panel Msg)
-guestUserView pointerState logInRequest =
-    case logInRequest of
-        Just service ->
-            [ Ui.text
-                []
-                []
-                Component.Style.normalFont
-                (Data.SocialLoginService.serviceName service ++ "のURLを発行中")
-            ]
-
-        Nothing ->
-            [ Ui.column
-                []
-                []
-                8
-                [ googleLogInButton
-                    (case pointerState of
-                        LogInButtonHover Data.SocialLoginService.Google ->
-                            LogInButtonModelHover
-
-                        LogInButtonPressed Data.SocialLoginService.Google ->
-                            LogInButtonModelPressed
-
-                        _ ->
-                            LogInButtonModelNone
-                    )
-                , gitHubLogInButton
-                    (case pointerState of
-                        LogInButtonHover Data.SocialLoginService.GitHub ->
-                            LogInButtonModelHover
-
-                        LogInButtonPressed Data.SocialLoginService.GitHub ->
-                            LogInButtonModelPressed
-
-                        _ ->
-                            LogInButtonModelNone
-                    )
-                , lineLogInButton
-                    (case pointerState of
-                        LogInButtonHover Data.SocialLoginService.Line ->
-                            LogInButtonModelHover
-
-                        LogInButtonPressed Data.SocialLoginService.Line ->
-                            LogInButtonModelPressed
-
-                        _ ->
-                            LogInButtonModelNone
-                    )
-                ]
-            ]
-
-
 type LogInButtonModel
     = LogInButtonModelNone
     | LogInButtonModelHover
     | LogInButtonModelPressed
 
 
-lineLogInButton : LogInButtonModel -> Ui.Panel Msg
-lineLogInButton logInButtonModel =
-    Ui.depth
-        [ Ui.Click (MsgToLogInPage Data.SocialLoginService.Line)
-        , Ui.PointerEnter (always (MsgLogInButtonEnter Data.SocialLoginService.Line))
-        , Ui.PointerLeave (always (MsgLogInButtonEnter Data.SocialLoginService.Line))
-        , Ui.PointerDown (always (MsgLogInButtonPressed Data.SocialLoginService.Line))
-        ]
-        [ Ui.Height (Ui.Fix 48), Ui.BorderRadius 8 ]
-        [ Ui.monochromatic []
-            []
-            (case logInButtonModel of
-                LogInButtonModelNone ->
-                    Css.rgb 0 195 0
-
-                LogInButtonModelHover ->
-                    Css.rgb 0 224 0
-
-                LogInButtonModelPressed ->
-                    Css.rgb 0 179 0
-            )
-        , Ui.row
-            []
-            []
-            0
-            [ lineIcon logInButtonModel
-            , Ui.text
-                []
-                [ Ui.AlignItems Ui.CenterY
-                , Ui.TextAlignment Ui.TextAlignCenter
-                ]
-                (Ui.Font
-                    { typeface = "Roboto"
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 255 255 255
-                    }
-                )
-                "LINEでログイン"
-            ]
-        ]
-
-
-gitHubLogInButton : LogInButtonModel -> Ui.Panel Msg
-gitHubLogInButton logInButtonModel =
-    Ui.depth
-        [ Ui.Click (MsgToLogInPage Data.SocialLoginService.GitHub)
-        , Ui.PointerEnter (always (MsgLogInButtonEnter Data.SocialLoginService.GitHub))
-        , Ui.PointerLeave (always (MsgLogInButtonEnter Data.SocialLoginService.GitHub))
-        , Ui.PointerDown (always (MsgLogInButtonPressed Data.SocialLoginService.GitHub))
-        ]
-        [ Ui.Height (Ui.Fix 48), Ui.BorderRadius 8 ]
-        [ Ui.monochromatic []
-            []
-            (case logInButtonModel of
-                LogInButtonModelNone ->
-                    Css.rgb 221 221 221
-
-                LogInButtonModelHover ->
-                    Css.rgb 238 238 238
-
-                LogInButtonModelPressed ->
-                    Css.rgb 204 204 204
-            )
-        , Ui.row
-            []
-            []
-            0
-            [ gitHubIcon
-            , Ui.text
-                []
-                [ Ui.AlignItems Ui.CenterY
-                , Ui.TextAlignment Ui.TextAlignCenter
-                ]
-                (Ui.Font
-                    { typeface = "Roboto"
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 17 17 17
-                    }
-                )
-                "GitHubでログイン"
-            ]
-        ]
-
-
-googleLogInButton : LogInButtonModel -> Ui.Panel Msg
-googleLogInButton logInButtonModel =
-    Ui.depth
-        [ Ui.Click (MsgToLogInPage Data.SocialLoginService.Google)
-        , Ui.PointerEnter (always (MsgLogInButtonEnter Data.SocialLoginService.Google))
-        , Ui.PointerLeave (always (MsgLogInButtonEnter Data.SocialLoginService.Google))
-        , Ui.PointerDown (always (MsgLogInButtonPressed Data.SocialLoginService.Google))
-        ]
-        [ Ui.Height (Ui.Fix 48), Ui.BorderRadius 8 ]
-        [ Ui.monochromatic []
-            []
-            (case logInButtonModel of
-                LogInButtonModelNone ->
-                    Css.rgb 221 221 221
-
-                LogInButtonModelHover ->
-                    Css.rgb 238 238 238
-
-                LogInButtonModelPressed ->
-                    Css.rgb 204 204 204
-            )
-        , Ui.row
-            []
-            []
-            0
-            [ googleIcon
-            , Ui.text
-                []
-                [ Ui.AlignItems Ui.CenterY
-                , Ui.TextAlignment Ui.TextAlignCenter
-                ]
-                (Ui.Font
-                    { typeface = "Roboto"
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 17 17 17
-                    }
-                )
-                "Googleでログイン"
-            ]
-        ]
-
-
 lineIcon : LogInButtonModel -> Ui.Panel msg
 lineIcon logInButtonModel =
     Ui.imageFromUrl
         []
-        [ Ui.Width (Ui.Fix 48)
+        [ Ui.Width 48
         , Ui.Padding 4
         , case logInButtonModel of
             LogInButtonModelNone ->
@@ -474,7 +190,7 @@ gitHubIcon : Ui.Panel msg
 gitHubIcon =
     Ui.vectorImage
         []
-        [ Ui.Width (Ui.Fix 48), Ui.Padding 8 ]
+        [ Ui.Width 48, Ui.Padding 8 ]
         { fitStyle = Ui.Contain
         , viewBox = { x = 0, y = 0, width = 20, height = 20 }
         , elements =
@@ -490,7 +206,7 @@ googleIcon : Ui.Panel msg
 googleIcon =
     Ui.vectorImage
         []
-        [ Ui.Width (Ui.Fix 48), Ui.Padding 8 ]
+        [ Ui.Width 48, Ui.Padding 8 ]
         { fitStyle = Ui.Contain
         , viewBox = { x = 0, y = 0, width = 20, height = 20 }
         , elements =
@@ -520,42 +236,60 @@ yggdrasil logInState =
         []
         []
         8
-        [ Ui.text
+        [ Ui.textBox
             []
             []
-            Component.Style.normalFont
+            { align = Nothing
+            , vertical = Nothing
+            , font = Component.Style.normalFont
+            }
             "あらゆる点で調整中。ここはWelcomeページ"
         , case logInState of
             Data.User.ReadingAccessToken ->
-                Ui.text
+                Ui.textBox
                     []
                     []
-                    Component.Style.normalFont
+                    { align = Nothing
+                    , vertical = Nothing
+                    , font = Component.Style.normalFont
+                    }
                     "…"
 
             Data.User.VerifyingAccessToken _ ->
-                Ui.text
+                Ui.textBox
                     []
                     []
-                    Component.Style.normalFont
+                    { align = Nothing
+                    , vertical = Nothing
+                    , font = Component.Style.normalFont
+                    }
                     "…"
 
             Data.User.GuestUser _ ->
-                Ui.text
+                Ui.textBox
                     [ Ui.Click MsgCreateProjectByGuest ]
                     []
-                    Component.Style.normalFont
-                    "プロジェクトをこの端末に新規作成"
+                    { align = Nothing
+                    , vertical = Nothing
+                    , font = Component.Style.normalFont
+                    }
+                    "プロジェクトを作成するには登録が必要です"
 
             Data.User.Ok { accessToken } ->
-                Ui.text
+                Ui.textBox
                     [ Ui.Click (MsgCreateProject accessToken) ]
                     []
-                    Component.Style.normalFont
+                    { align = Nothing
+                    , vertical = Nothing
+                    , font = Component.Style.normalFont
+                    }
                     "プロジェクトを新規作成"
-        , Ui.text
+        , Ui.textBox
             []
             []
-            Component.Style.normalFont
-            "プロジェクト一覧 そのうちユーザーによって並び替える"
+            { align = Nothing
+            , vertical = Nothing
+            , font = Component.Style.normalFont
+            }
+            "プロジェクト一覧 そのうちユーザー応じてによって並び替える"
         ]

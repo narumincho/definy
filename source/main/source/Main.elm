@@ -710,14 +710,12 @@ view : Model -> Html.Html Msg
 view (Model rec) =
     Ui.depth
         []
-        ([ Ui.Width (Ui.Flex 1), Ui.Height (Ui.Flex 1) ]
-            ++ (case getGutterType (Model rec) of
-                    Just gutterType ->
-                        [ Ui.PointerImage (gutterTypeToCursorStyle gutterType) ]
+        (case getGutterType (Model rec) of
+            Just gutterType ->
+                [ Ui.PointerImage (gutterTypeToCursorStyle gutterType) ]
 
-                    Nothing ->
-                        []
-               )
+            Nothing ->
+                []
         )
         ((case rec.page of
             Welcome welcomeModel ->

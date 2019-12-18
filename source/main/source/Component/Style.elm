@@ -2,6 +2,7 @@ module Component.Style exposing
     ( GutterMode(..)
     , GutterMsg(..)
     , activeColor
+    , codeFontTypeface
     , fontHack
     , gutterPanel
     , horizontalGutter
@@ -84,7 +85,7 @@ gutterPanel : GutterMode -> Ui.Panel GutterMsg
 gutterPanel mode =
     Ui.depth
         []
-        [ Ui.Width (Ui.Fix 2)
+        [ Ui.Width 2
         , Ui.OverflowVisible
         , Ui.PointerImage Ui.HorizontalResize
         ]
@@ -92,13 +93,13 @@ gutterPanel mode =
             GutterModeNone ->
                 [ Ui.monochromatic
                     []
-                    [ Ui.Width (Ui.Fix 2) ]
+                    [ Ui.Width 2 ]
                     (Css.rgb 68 68 68)
                 , Ui.monochromatic
                     [ Ui.PointerDown GutterMsgToResizeMode
                     , Ui.PointerEnter (always GutterMsgPointerEnter)
                     ]
-                    [ Ui.Width (Ui.Fix 12)
+                    [ Ui.Width 12
                     , Ui.Offset ( -5, 0 )
                     ]
                     (Css.rgba 0 0 0 0)
@@ -107,13 +108,13 @@ gutterPanel mode =
             GutterModePointerEnter ->
                 [ Ui.monochromatic
                     []
-                    [ Ui.Width (Ui.Fix 2) ]
+                    [ Ui.Width 2 ]
                     (Css.rgb 102 102 102)
                 , Ui.monochromatic
                     [ Ui.PointerDown GutterMsgToResizeMode
                     , Ui.PointerLeave (always GutterMsgPointerLeave)
                     ]
-                    [ Ui.Width (Ui.Fix 12)
+                    [ Ui.Width 12
                     , Ui.Offset ( -5, 0 )
                     ]
                     (Css.rgba 0 0 0 0)
@@ -122,7 +123,7 @@ gutterPanel mode =
             GutterModeResize ->
                 [ Ui.monochromatic
                     []
-                    [ Ui.Width (Ui.Fix 6)
+                    [ Ui.Width 6
                     , Ui.Offset ( -2, 0 )
                     ]
                     (Css.rgb 255 255 255)
@@ -188,11 +189,16 @@ horizontalGutter isResizing =
 normalFont : Ui.Font
 normalFont =
     Ui.Font
-        { typeface = "Roboto"
+        { typeface = "'Hiragino Kaku Gothic Pro', 'ヒラギノ角ゴ Pro W3', メイリオ, Meiryo, 'ＭＳ Ｐゴシック', sans-serif"
         , size = 16
         , letterSpacing = 0
         , color = Css.rgb 255 255 255
         }
+
+
+codeFontTypeface : String
+codeFontTypeface =
+    "Hack"
 
 
 tabContainer : a -> List ( a, String ) -> Html.Styled.Html a

@@ -50,7 +50,7 @@ view (Model events) =
             (Css.rgba 0 0 0 0)
         , Ui.column
             []
-            [ Ui.Width (Ui.Fix 480) ]
+            [ Ui.Width 480 ]
             0
             [ Ui.monochromatic
                 []
@@ -69,63 +69,89 @@ mainView events =
         8
         (events
             |> List.reverse
-            |> List.map cardWithBackGround
+            |> List.map card
         )
-
-
-cardWithBackGround : Event -> Ui.Panel msg
-cardWithBackGround event =
-    Ui.depth
-        []
-        []
-        [ Ui.monochromatic
-            []
-            []
-            (Css.rgb 0 100 0)
-        , card event
-        ]
 
 
 card : Event -> Ui.Panel msg
 card event =
     case event of
         LogInSuccess user ->
-            Ui.row
-                []
-                [ Ui.Height (Ui.Fix 48), Ui.Padding 8 ]
-                0
-                [ Ui.imageFromUrl
-                    []
-                    [ Ui.Width (Ui.Fix 32), Ui.Height (Ui.Fix 32) ]
-                    { fitStyle = Ui.Contain
-                    , alternativeText = Data.User.getName user ++ "のプロフィール画像"
-                    , rendering = Ui.ImageRenderingAuto
-                    }
-                    (Data.User.getImageUrl user)
-                , Ui.text
-                    []
-                    [ Ui.AlignItems Ui.CenterY ]
-                    Style.normalFont
-                    ("「" ++ Data.User.getName user ++ "」としてログインしました")
-                ]
+            cardItem
+                (Just
+                    (Icon
+                        { alternativeText = Data.User.getName user ++ "のプロフィール画像"
+                        , rendering = Ui.ImageRenderingAuto
+                        , url = Data.User.getImageUrl user
+                        }
+                    )
+                )
+                ("「" ++ Data.User.getName user ++ "」としてログインしました")
 
         LogInFailure ->
-            Ui.text
-                []
-                [ Ui.Height (Ui.Fix 48), Ui.AlignItems Ui.CenterY, Ui.Padding 8 ]
-                Style.normalFont
+            cardItem
+                Nothing
                 "ログイン失敗"
 
         OnLine ->
-            Ui.text
-                []
-                [ Ui.Height (Ui.Fix 48), Ui.AlignItems Ui.CenterY, Ui.Padding 8 ]
-                Style.normalFont
+            cardItem
+                Nothing
                 "オンラインになりました"
 
         OffLine ->
-            Ui.text
-                []
-                [ Ui.Height (Ui.Fix 48), Ui.AlignItems Ui.CenterY, Ui.Padding 8 ]
-                Style.normalFont
+            cardItem
+                Nothing
                 "オフラインになりました"
+
+
+type Icon
+    = Icon
+        { alternativeText : String
+        , rendering : Ui.ImageRendering
+        , url : String
+        }
+
+
+cardItem : Maybe Icon -> String -> Ui.Panel msg
+cardItem iconMaybe text =
+    Ui.depth
+        []
+        [ Ui.Height 48 ]
+        [ Ui.monochromatic
+            []
+            []
+            (Css.rgb 0 100 0)
+        , case iconMaybe of
+            Just (Icon icon) ->
+                Ui.row
+                    []
+                    [ Ui.Padding 8 ]
+                    0
+                    [ Ui.imageFromUrl
+                        []
+                        [ Ui.Width 32, Ui.Height 32 ]
+                        { fitStyle = Ui.Contain
+                        , alternativeText = icon.alternativeText
+                        , rendering = icon.rendering
+                        }
+                        icon.url
+                    , Ui.textBox
+                        []
+                        []
+                        { align = Just Ui.TextAlignStart
+                        , vertical = Just Ui.CenterY
+                        , font = Style.normalFont
+                        }
+                        text
+                    ]
+
+            Nothing ->
+                Ui.textBox
+                    []
+                    [ Ui.Padding 8 ]
+                    { align = Just Ui.TextAlignStart
+                    , vertical = Just Ui.CenterY
+                    , font = Style.normalFont
+                    }
+                    "オフラインになりました"
+        ]
