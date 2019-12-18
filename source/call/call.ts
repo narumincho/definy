@@ -58,7 +58,7 @@ requestAnimationFrame(() => {
       }
     });
     navigator.serviceWorker
-      .register("../serviceworker.ts", { scope: "/" })
+      .register("../serviceWorker.ts", { scope: "/" })
       .then(
         () => {
           console.log("serviceWorkerを登録した!");
