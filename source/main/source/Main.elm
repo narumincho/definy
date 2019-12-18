@@ -4,10 +4,8 @@ import Api
 import Browser
 import Browser.Navigation
 import Component.DefaultUi
-import Component.Editor.Module
 import Component.EditorGroup
 import Component.Notifications
-import Component.Side
 import Data.Key
 import Data.Language
 import Data.PageLocation
@@ -558,112 +556,6 @@ singleLineTextFieldReservedKey { key, ctrl, alt, shift } =
 
         _ ->
             False
-
-
-
-{- -------------------------------------------------
-                 各パネルのキー入力
-   -------------------------------------------------
--}
-
-
-{-| サイドパネルのキー入力
--}
-sidePanelKeyDown : Data.Key.Key -> List Component.Side.Msg
-sidePanelKeyDown { key, ctrl, shift, alt } =
-    case ( ctrl, shift, alt ) of
-        ( False, False, False ) ->
-            case key of
-                Data.Key.ArrowUp ->
-                    [ Component.Side.SelectUp ]
-
-                Data.Key.ArrowDown ->
-                    [ Component.Side.SelectDown ]
-
-                Data.Key.ArrowLeft ->
-                    [ Component.Side.SelectParentOrTreeClose ]
-
-                Data.Key.ArrowRight ->
-                    [ Component.Side.SelectFirstChildOrTreeOpen ]
-
-                Data.Key.Enter ->
-                    [ Component.Side.SelectItem ]
-
-                _ ->
-                    []
-
-        _ ->
-            []
-
-
-{-| エディタグループパネルのキー入力
--}
-editorGroupPanelKeyDown : Data.Key.Key -> List Component.EditorGroup.Msg
-editorGroupPanelKeyDown key =
-    moduleEditorKeyMsg key
-        |> List.map
-            (Component.EditorGroup.ModuleEditorMsg
-                >> Component.EditorGroup.EditorItemMsgToActive
-            )
-
-
-{-| モジュールエディタのキー入力
--}
-moduleEditorKeyMsg : Data.Key.Key -> List Component.Editor.Module.Msg
-moduleEditorKeyMsg { key, ctrl, shift, alt } =
-    case ( ctrl, shift, alt ) of
-        ( False, False, False ) ->
-            case key of
-                Data.Key.ArrowLeft ->
-                    [ Component.Editor.Module.MsgActiveLeft ]
-
-                Data.Key.ArrowRight ->
-                    [ Component.Editor.Module.MsgActiveRight ]
-
-                Data.Key.ArrowUp ->
-                    [ Component.Editor.Module.MsgSuggestionPrevOrSelectUp ]
-
-                Data.Key.ArrowDown ->
-                    [ Component.Editor.Module.MsgSuggestionNextOrSelectDown
-                    ]
-
-                Data.Key.Space ->
-                    [ Component.Editor.Module.MsgActiveToFirstChild ]
-
-                Data.Key.Enter ->
-                    [ Component.Editor.Module.MsgConfirmSingleLineTextFieldOrSelectParent
-                    ]
-
-                _ ->
-                    []
-
-        ( True, False, False ) ->
-            case key of
-                Data.Key.ArrowLeft ->
-                    [ Component.Editor.Module.MsgActiveToLastChild ]
-
-                Data.Key.ArrowRight ->
-                    [ Component.Editor.Module.MsgActiveToFirstChild ]
-
-                Data.Key.Enter ->
-                    [ Component.Editor.Module.MsgConfirmMultiLineTextField ]
-
-                _ ->
-                    []
-
-        ( False, False, True ) ->
-            case key of
-                Data.Key.ArrowUp ->
-                    [ Component.Editor.Module.MsgIncreaseValue ]
-
-                Data.Key.ArrowDown ->
-                    [ Component.Editor.Module.MsgDecreaseValue ]
-
-                _ ->
-                    []
-
-        _ ->
-            []
 
 
 
