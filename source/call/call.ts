@@ -5,15 +5,6 @@ import "firebase/firestore";
 import * as typedFirestore from "typed-firestore";
 import * as sub from "./sub";
 
-navigator.serviceWorker.register("../serviceworker.ts", { scope: "/" }).then(
-  () => {
-    console.log("serviceWorkerを登録した!");
-  },
-  () => {
-    console.log("serviceWorkerの登録に失敗しました");
-  }
-);
-
 const elmAppElement = document.createElement("div");
 
 // bodyの子要素を削除
@@ -23,18 +14,46 @@ document.documentElement.replaceChild(
 );
 document.body.appendChild(elmAppElement);
 
+const checkWebGLSupport = (): boolean => {
+  try {
+    const context = document.createElement("canvas").getContext("webgl");
+    return context !== null;
+  } catch (e) {
+    return false;
+  }
+};
+
 requestAnimationFrame(() => {
+  const serviceWorkerSupport = "serviceWorker" in navigator;
   const app = Elm.Main.init({
     flags: {
+      url: location.href,
       windowSize: {
         width: innerWidth,
         height: innerHeight
       },
       language: navigator.languages[0],
-      networkConnection: navigator.onLine
+      networkConnection: navigator.onLine,
+      indexedDBSupport: "indexedDB" in window,
+      webGLSupport: checkWebGLSupport(),
+      serviceWorkerSupport: serviceWorkerSupport
     },
     node: elmAppElement
   });
+
+  if (serviceWorkerSupport) {
+    navigator.serviceWorker
+      .register("../serviceworker.ts", { scope: "/" })
+      .then(
+        () => {
+          console.log("serviceWorkerを登録した!");
+        },
+        () => {
+          console.log("serviceWorkerの登録に失敗しました");
+        }
+      );
+  }
+
   let prevKeyEvent: KeyboardEvent;
   /* キー入力 */
   window.addEventListener("keydown", e => {
@@ -55,57 +74,13 @@ requestAnimationFrame(() => {
     prevKeyEvent.preventDefault();
     app.ports.keyPrevented.send(null);
   });
-  /* テキストエリア(<textarea id="edit">)に値を設定(編集する前の初期設定用) */
-  // app.ports.setTextAreaValue.subscribe(({ text, id }) => {
-  //     console.log(
-  //         `テキストエリア(<textarea id=${id}>)に${text}を設定しようとしている`
-  //     );
-  //     requestAnimationFrame(() => {
-  //         const edit = document.getElementById(id) as
-  //             | HTMLInputElement
-  //             | HTMLTextAreaElement
-  //             | null;
-  //         if (edit === null) {
-  //             console.warn(
-  //                 `テキストエリア(id=edit)への値(${text})の設定に失敗した`
-  //             );
-  //             return;
-  //         }
-  //         if (edit.value !== text) {
-  //             edit.value = text;
-  //         }
-  //     });
-  // });
-
-  // app.ports.focusElement.subscribe(id => {
-  //     console.log(`<element id=${id}>にフォーカス`);
-  //     requestAnimationFrame(() => {
-  //         const editElement = document.getElementById(id);
-  //         if (editElement === null) {
-  //             console.warn(`テキストエリア(id=edit)へのフォーカスに失敗した`);
-  //             return;
-  //         }
-  //         editElement.focus();
-  //     });
-  // });
-  /* 指定されたidの要素が表示されるようにスクロールさせる */
-  // app.ports.elementScrollIntoView.subscribe(id => {
-  //     requestAnimationFrame(() => {
-  //         const element = document.getElementById(id);
-  //         if (element !== null) {
-  //             element.scrollIntoView({ behavior: "smooth", block: "center" });
-  //         }
-  //     });
-  // });
   /* ウィンドウサイズを変えたら */
-  const windowResizeSend = () => {
+  addEventListener("resize", (): void => {
     app.ports.windowResize.send({
       width: innerWidth,
       height: innerHeight
     });
-  };
-  windowResizeSend();
-  window.addEventListener("resize", windowResizeSend);
+  });
 
   app.ports.requestAccessTokenFromIndexedDB.subscribe(() => {
     const userDBRequest: IDBOpenDBRequest = indexedDB.open("user", 1);

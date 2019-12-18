@@ -75,6 +75,18 @@ port changeNetworkConnection : (Bool -> msg) -> Sub msg
 port subPointerUp : (() -> msg) -> Sub msg
 
 
+port serviceWorkerRegisterError : (() -> msg) -> Sub msg
+
+
+port serviceWorkerLoadingOfflineFiles : (() -> msg) -> Sub msg
+
+
+port serviceWorkerActivatedWithOfflineFiles : (() -> msg) -> Sub msg
+
+
+port serviceWorkerActivatedWithOutOfflineFiles : (() -> msg) -> Sub msg
+
+
 {-| 全体の入力を表すメッセージ
 -}
 type Msg
@@ -90,10 +102,18 @@ type Msg
     | ChangeNetworkConnection Bool -- 接続状況が変わった
     | PageMsg PageMsg
     | NoOperation
+    | ServiceWorkerMsg
 
 
 type PageMsg
     = WelcomePageMsg Page.Welcome.Msg
+
+
+type ServiceWorkerMsg
+    = ServiceWorkerMsgRegisterError
+    | ServiceWorkerMsgLoadingOfflineFiles
+    | ServiceWorkerMsgActivatedWithOfflineFiles
+    | ServiceWorkerMsgActivatedWithOutOfflineFiles
 
 
 {-| 全体を表現する
@@ -108,6 +128,8 @@ type Model
         , language : Data.Language.Language
         , networkConnection : Bool
         , notificationModel : Component.Notifications.Model
+        , browserSupport : BrowserSupport
+        , serviceWorker : ServiceWorker
         }
 
 
@@ -125,13 +147,33 @@ type PageModel
     = Welcome Page.Welcome.Model
 
 
+type BrowserSupport
+    = BrowserSupport
+        { indexedDB : Bool
+        , webGL : Bool
+        }
+
+
+type ServiceWorker
+    = ServiceWorkerNotSupport
+    | ServiceWorkerRegistering
+    | ServiceWorkerRegisterError
+    | ServiceWorkerLoadingOfflineFiles
+    | ServiceWorkerActivatedWithOfflineFiles
+    | ServiceWorkerActivatedWithOutOfflineFiles
+
+
 type alias Flag =
-    { windowSize :
+    { url : String
+    , windowSize :
         { width : Int
         , height : Int
         }
     , language : String
     , networkConnection : Bool
+    , indexedDBSupport : Bool
+    , webGLSupport : Bool
+    , serviceWorkerSupport : Bool
     }
 
 
@@ -151,7 +193,7 @@ init :
 init flag =
     let
         ( tokenFromUrlMaybe, page ) =
-            Data.PageLocation.initFromUrl ""
+            Data.PageLocation.initFromUrl flag.url
 
         model =
             Model
@@ -176,6 +218,17 @@ init flag =
                             else
                                 Component.Notifications.addEvent Component.Notifications.OffLine
                            )
+                , browserSupport =
+                    BrowserSupport
+                        { indexedDB = flag.indexedDBSupport
+                        , webGL = flag.webGLSupport
+                        }
+                , serviceWorker =
+                    if flag.serviceWorkerSupport then
+                        ServiceWorkerInstalling
+
+                    else
+                        ServiceWorkerNotSupport
                 }
     in
     ( model
@@ -860,6 +913,10 @@ subscriptions model =
          , portResponseAccessTokenFromIndexedDB ResponseAccessTokenFromIndexedDB
          , changeLanguage ChangeLanguage
          , changeNetworkConnection ChangeNetworkConnection
+         , serviceWorkerRegisterError ServiceWorkerMsgRegisterError
+         , serviceWorkerLoadingOfflineFiles ServiceWorkerMsgLoadingOfflineFiles
+         , serviceWorkerActivatedWithOfflineFiles ServiceWorkerMsgActivatedWithOfflineFiles
+         , serviceWorkerActivatedWithOutOfflineFiles ServiceWorkerMsgActivatedWithOutOfflineFiles
          ]
             ++ (if isCaptureMouseEvent model then
                     [ subPointerUp (always PointerUp) ]

@@ -10,12 +10,16 @@ export namespace Elm {
 }
 
 type Flags = {
+  url: string;
   windowSize: {
     width: number;
     height: number;
   };
   language: string;
   networkConnection: boolean;
+  indexedDBSupport: boolean;
+  webGLSupport: boolean;
+  serviceWorkerSupport: boolean;
 };
 
 type Ports = {
@@ -33,6 +37,10 @@ type Ports = {
   readonly changeLanguage: CmdForElmSub<string>;
   readonly subPointerUp: CmdForElmSub<null>;
   readonly changeNetworkConnection: CmdForElmSub<boolean>;
+  readonly serviceWorkerRegisterError: CmdForElmSub<null>;
+  readonly serviceWorkerLoadingOfflineFiles: CmdForElmSub<null>;
+  readonly serviceWorkerActivatedWithOfflineFiles: CmdForElmSub<null>;
+  readonly serviceWorkerActivatedWithOutOfflineFiles: CmdForElmSub<null>;
 };
 
 type SubForElmCmd<T> = {
