@@ -4,6 +4,7 @@ import * as firebase from "firebase/app";
 import "firebase/firestore";
 import * as typedFirestore from "typed-firestore";
 import * as sub from "./sub";
+import * as serviceWorkerPostData from "../serviceWorkerPostData";
 
 const elmAppElement = document.createElement("div");
 
@@ -42,6 +43,20 @@ requestAnimationFrame(() => {
   });
 
   if (serviceWorkerSupport) {
+    navigator.serviceWorker.addEventListener("message", e => {
+      const data: serviceWorkerPostData.ServiceWorkerToClientMessage = e.data;
+      switch (data) {
+        case "offlineFileLoadError":
+          app.ports.serviceWorkerActivatedWithOutOfflineFiles.send(null);
+          return;
+        case "offlineFileLoaded":
+          app.ports.serviceWorkerActivatedWithOfflineFiles.send(null);
+          return;
+        case "startOfflineFileLoading":
+          app.ports.serviceWorkerLoadingOfflineFiles.send(null);
+          return;
+      }
+    });
     navigator.serviceWorker
       .register("../serviceworker.ts", { scope: "/" })
       .then(

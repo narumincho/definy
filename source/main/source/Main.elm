@@ -102,7 +102,7 @@ type Msg
     | ChangeNetworkConnection Bool -- 接続状況が変わった
     | PageMsg PageMsg
     | NoOperation
-    | ServiceWorkerMsg
+    | ServiceWorkerMsg ServiceWorkerMsg
 
 
 type PageMsg
@@ -225,7 +225,7 @@ init flag =
                         }
                 , serviceWorker =
                     if flag.serviceWorkerSupport then
-                        ServiceWorkerInstalling
+                        ServiceWorkerRegistering
 
                     else
                         ServiceWorkerNotSupport
@@ -339,6 +339,28 @@ update msg (Model rec) =
                 }
             , Cmd.none
             )
+
+        ServiceWorkerMsg serviceWorkerMsg ->
+            case serviceWorkerMsg of
+                ServiceWorkerMsgRegisterError ->
+                    ( Model { rec | serviceWorker = ServiceWorkerRegisterError }
+                    , Cmd.none
+                    )
+
+                ServiceWorkerMsgLoadingOfflineFiles ->
+                    ( Model { rec | serviceWorker = ServiceWorkerLoadingOfflineFiles }
+                    , Cmd.none
+                    )
+
+                ServiceWorkerMsgActivatedWithOfflineFiles ->
+                    ( Model { rec | serviceWorker = ServiceWorkerActivatedWithOfflineFiles }
+                    , Cmd.none
+                    )
+
+                ServiceWorkerMsgActivatedWithOutOfflineFiles ->
+                    ( Model { rec | serviceWorker = ServiceWorkerActivatedWithOutOfflineFiles }
+                    , Cmd.none
+                    )
 
 
 updateFromMsgList : List Msg -> Model -> ( Model, Cmd Msg )
@@ -913,10 +935,22 @@ subscriptions model =
          , portResponseAccessTokenFromIndexedDB ResponseAccessTokenFromIndexedDB
          , changeLanguage ChangeLanguage
          , changeNetworkConnection ChangeNetworkConnection
-         , serviceWorkerRegisterError ServiceWorkerMsgRegisterError
-         , serviceWorkerLoadingOfflineFiles ServiceWorkerMsgLoadingOfflineFiles
-         , serviceWorkerActivatedWithOfflineFiles ServiceWorkerMsgActivatedWithOfflineFiles
-         , serviceWorkerActivatedWithOutOfflineFiles ServiceWorkerMsgActivatedWithOutOfflineFiles
+         , serviceWorkerRegisterError
+            (always
+                (ServiceWorkerMsg ServiceWorkerMsgRegisterError)
+            )
+         , serviceWorkerLoadingOfflineFiles
+            (always
+                (ServiceWorkerMsg ServiceWorkerMsgLoadingOfflineFiles)
+            )
+         , serviceWorkerActivatedWithOfflineFiles
+            (always
+                (ServiceWorkerMsg ServiceWorkerMsgActivatedWithOfflineFiles)
+            )
+         , serviceWorkerActivatedWithOutOfflineFiles
+            (always
+                (ServiceWorkerMsg ServiceWorkerMsgActivatedWithOutOfflineFiles)
+            )
          ]
             ++ (if isCaptureMouseEvent model then
                     [ subPointerUp (always PointerUp) ]

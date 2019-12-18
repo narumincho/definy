@@ -1,3 +1,5 @@
+import * as serviceWorkerPostData from "./serviceWorkerPostData";
+
 ((self: ServiceWorkerGlobalScope): void => {
   const codeFontKeyPath = "/codeFont";
   const iconKeyPath = "/icon";
@@ -34,30 +36,40 @@
       }
     );
 
+  const sendMessageToClient = (
+    message: serviceWorkerPostData.ServiceWorkerToClientMessage
+  ): void => {
+    self.clients
+      .matchAll()
+      .then(clients => clients.forEach(client => client.postMessage(message)));
+  };
+
   self.addEventListener("install", e => {
     console.log("Service Worker: Installing");
     e.waitUntil(
-      caches
-        .open("v0")
-        .then(cache =>
-          Promise.all([
-            saveToCache(
-              cache,
-              "/assets/hack-regular-subset.woff2",
-              codeFontKeyPath,
-              "コード用のフォント"
-            ),
-            saveToCache(cache, "/assets/icon.png", iconKeyPath, "アイコン"),
-            saveToCache(cache, "/", htmlKeyPath, "HTML"),
-            saveToCache(cache, "/main.js", programKeyPath, "プログラム")
-          ])
-        )
-        // Service Workerの更新時に即座に制御を開始させる
-        .then(self.skipWaiting)
+      self.skipWaiting()
+      // caches
+      //   .open("v0")
+      //   .then(cache =>
+      //     Promise.all([
+      //       saveToCache(
+      //         cache,
+      //         "/assets/hack-regular-subset.woff2",
+      //         codeFontKeyPath,
+      //         "コード用のフォント"
+      //       ),
+      //       saveToCache(cache, "/assets/icon.png", iconKeyPath, "アイコン"),
+      //       saveToCache(cache, "/", htmlKeyPath, "HTML"),
+      //       saveToCache(cache, "/main.js", programKeyPath, "プログラム")
+      //     ])
+      //   )
+      //   // Service Workerの更新時に即座に制御を開始させる
+      //   .then(self.skipWaiting)
     );
   });
 
   self.addEventListener("activate", e => {
+    sendMessageToClient("startOfflineFileLoading");
     console.log("Service Worker: Activated");
 
     e.waitUntil(self.clients.claim());
@@ -71,7 +83,17 @@
     if (accept === null) {
       return;
     }
-    //     if (accept.includes("text/html")) {
+    if (accept.includes("text/html")) {
+      caches
+        .open("v0")
+        .then(cache => cache.match(htmlKeyPath))
+        .then(response => {
+          if (response === undefined) {
+            return;
+          }
+          e.respondWith(response);
+        });
+    }
     //       e.respondWith(
     //         new Response(
     //           `
