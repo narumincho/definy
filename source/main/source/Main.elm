@@ -5,6 +5,7 @@ import Browser
 import Browser.Navigation
 import Component.DefaultUi
 import Component.EditorGroup
+import Component.Header
 import Component.Notifications
 import Data.Key
 import Data.Language
@@ -720,9 +721,15 @@ view (Model rec) =
         )
         ((case rec.page of
             Welcome welcomeModel ->
-                [ welcomeModel
-                    |> Page.Welcome.view rec.logInState
-                    |> Ui.map (WelcomePageMsg >> PageMsg)
+                [ Ui.column
+                    []
+                    []
+                    0
+                    [ Component.Header.view
+                    , welcomeModel
+                        |> Page.Welcome.view rec.logInState
+                        |> Ui.map (WelcomePageMsg >> PageMsg)
+                    ]
                 ]
          )
             ++ [ Component.Notifications.view rec.notificationModel ]

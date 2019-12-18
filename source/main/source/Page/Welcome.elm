@@ -524,7 +524,7 @@ yggdrasil logInState =
             []
             []
             Component.Style.normalFont
-            "調整中 プロジェクト (サイドバーはなくして全面に広げたい)"
+            "あらゆる点で調整中。ここはWelcomeページ"
         , case logInState of
             Data.User.ReadingAccessToken ->
                 Ui.text
