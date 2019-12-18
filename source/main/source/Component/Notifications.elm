@@ -138,8 +138,8 @@ cardItem iconMaybe text =
                     , Ui.textBox
                         []
                         []
-                        { align = Just Ui.TextAlignStart
-                        , vertical = Just Ui.CenterY
+                        { align = Ui.TextAlignStart
+                        , vertical = Ui.CenterY
                         , font = Style.normalFont
                         }
                         text
@@ -149,8 +149,8 @@ cardItem iconMaybe text =
                 Ui.textBox
                     []
                     [ Ui.Padding 8 ]
-                    { align = Just Ui.TextAlignStart
-                    , vertical = Just Ui.CenterY
+                    { align = Ui.TextAlignStart
+                    , vertical = Ui.CenterY
                     , font = Style.normalFont
                     }
                     "オフラインになりました"

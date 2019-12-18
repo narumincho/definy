@@ -236,59 +236,53 @@ yggdrasil logInState =
         []
         []
         8
-        [ Ui.textBox
+        [ Ui.textBoxFitHeight
             []
             []
-            { align = Nothing
-            , vertical = Nothing
+            { align = Ui.TextAlignStart
             , font = Component.Style.normalFont
             }
             "あらゆる点で調整中。ここはWelcomeページ"
         , case logInState of
             Data.User.ReadingAccessToken ->
-                Ui.textBox
+                Ui.textBoxFitHeight
                     []
                     []
-                    { align = Nothing
-                    , vertical = Nothing
+                    { align = Ui.TextAlignStart
                     , font = Component.Style.normalFont
                     }
                     "…"
 
             Data.User.VerifyingAccessToken _ ->
-                Ui.textBox
+                Ui.textBoxFitHeight
                     []
                     []
-                    { align = Nothing
-                    , vertical = Nothing
+                    { align = Ui.TextAlignStart
                     , font = Component.Style.normalFont
                     }
                     "…"
 
             Data.User.GuestUser _ ->
-                Ui.textBox
-                    [ Ui.Click MsgCreateProjectByGuest ]
+                Ui.textBoxFitHeight
                     []
-                    { align = Nothing
-                    , vertical = Nothing
+                    []
+                    { align = Ui.TextAlignStart
                     , font = Component.Style.normalFont
                     }
                     "プロジェクトを作成するには登録が必要です"
 
             Data.User.Ok { accessToken } ->
-                Ui.textBox
-                    [ Ui.Click (MsgCreateProject accessToken) ]
+                Ui.textBoxFitHeight
                     []
-                    { align = Nothing
-                    , vertical = Nothing
+                    []
+                    { align = Ui.TextAlignStart
                     , font = Component.Style.normalFont
                     }
                     "プロジェクトを新規作成"
-        , Ui.textBox
+        , Ui.textBoxFitHeight
             []
             []
-            { align = Nothing
-            , vertical = Nothing
+            { align = Ui.TextAlignStart
             , font = Component.Style.normalFont
             }
             "プロジェクト一覧 そのうちユーザー応じてによって並び替える"

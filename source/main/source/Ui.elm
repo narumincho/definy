@@ -18,6 +18,7 @@ module Ui exposing
     , pointerGetPosition
     , row
     , textBox
+    , textBoxFitHeight
     , toHtml
     , vectorImage
     )
@@ -138,8 +139,13 @@ type Content msg
     = TextBox
         { text : String
         , font : Font
-        , verticalAlignment : Maybe AlignItems
-        , textAlignment : Maybe TextAlignment
+        , verticalAlignment : AlignItems
+        , textAlignment : TextAlignment
+        }
+    | TextBoxFitHeight
+        { text : String
+        , font : Font
+        , textAlignment : TextAlignment
         }
     | ImageFromUrl
         { url : String
@@ -198,25 +204,44 @@ toHtml =
     panelToHtml (ChildrenStyle { gridPositionLeftTop = False, position = Nothing })
 
 
+{-| テキストを表示する
+-}
 textBox :
     List (Event msg)
     -> List Style
     ->
-        { align : Maybe TextAlignment
-        , vertical : Maybe AlignItems
+        { align : TextAlignment
+        , vertical : AlignItems
         , font : Font
         }
     -> String
     -> Panel msg
-textBox events style { align, vertical, font } string =
+textBox events style { align, vertical, font } text =
     Panel
         { events = events |> List.reverse |> computeEvents
         , style = style |> List.reverse |> computeStyle
         , content =
             TextBox
                 { font = font
-                , text = string
+                , text = text
                 , verticalAlignment = vertical
+                , textAlignment = align
+                }
+        }
+
+
+{-| テキストを表示する
+高さがフォントや中身の文字に応じて変化する
+-}
+textBoxFitHeight : List (Event msg) -> List Style -> { align : TextAlignment, font : Font } -> String -> Panel msg
+textBoxFitHeight events style { align, font } text =
+    Panel
+        { events = events |> List.reverse |> computeEvents
+        , style = style |> List.reverse |> computeStyle
+        , content =
+            TextBoxFitHeight
+                { font = font
+                , text = text
                 , textAlignment = align
                 }
         }
@@ -460,6 +485,9 @@ map func (Panel { events, style, content }) =
                 TextBox rec ->
                     TextBox rec
 
+                TextBoxFitHeight rec ->
+                    TextBoxFitHeight rec
+
                 ImageFromUrl rec ->
                     ImageFromUrl rec
 
@@ -664,35 +692,23 @@ contentToStyle (ChildrenStyle { gridPositionLeftTop, position }) overflowVisible
             , Css.fontFamilies [ Css.qt typeface ]
             , Css.letterSpacing (Css.px letterSpacing)
             , Css.overflowWrap Css.breakWord
+            , textAlignToStyle rec.textAlignment
+            , alignItemsToStyle rec.verticalAlignment
             ]
-                ++ (case rec.textAlignment of
-                        Just t ->
-                            [ Css.textAlign
-                                (case t of
-                                    TextAlignStart ->
-                                        Css.start
 
-                                    TextAlignEnd ->
-                                        Css.end
-
-                                    TextAlignCenter ->
-                                        Css.center
-
-                                    TextAlignJustify ->
-                                        Css.justify
-                                )
-                            ]
-
-                        Nothing ->
-                            []
-                   )
-                ++ (case rec.verticalAlignment of
-                        Just v ->
-                            [ alignItemsToStyle v ]
-
-                        Nothing ->
-                            []
-                   )
+        TextBoxFitHeight rec ->
+            let
+                (Font { typeface, size, letterSpacing, color }) =
+                    rec.font
+            in
+            [ Css.property "display" "grid"
+            , Css.color color
+            , Css.fontSize (Css.px (toFloat size))
+            , Css.fontFamilies [ Css.qt typeface ]
+            , Css.letterSpacing (Css.px letterSpacing)
+            , Css.overflowWrap Css.breakWord
+            , textAlignToStyle rec.textAlignment
+            ]
 
         ImageFromUrl { fitStyle, rendering } ->
             [ Css.property "object-fit"
@@ -767,6 +783,9 @@ growGrowContentToListAttributes : Content msg -> List (Html.Styled.Attribute msg
 growGrowContentToListAttributes content =
     case content of
         TextBox _ ->
+            []
+
+        TextBoxFitHeight _ ->
             []
 
         ImageFromUrl { url, alternativeText } ->
@@ -893,6 +912,9 @@ contentToListHtml content =
         TextBox rec ->
             [ Html.Styled.text rec.text ]
 
+        TextBoxFitHeight rec ->
+            [ Html.Styled.text rec.text ]
+
         ImageFromUrl _ ->
             []
 
@@ -968,24 +990,16 @@ growOrFixAutoToGridTemplateString growOrFixAuto =
 
 
 panelToGrowOrFixAutoWidth : Panel msg -> GrowOrFixAuto
-panelToGrowOrFixAutoWidth (Panel { style, content }) =
+panelToGrowOrFixAutoWidth (Panel { style }) =
     let
         (StyleComputed { width }) =
             style
     in
-    case ( width, content ) of
-        ( Just _, _ ) ->
+    case width of
+        Just _ ->
             FixMaxContent
 
-        ( Nothing, TextBox record ) ->
-            case record.textAlignment of
-                Just _ ->
-                    Grow
-
-                Nothing ->
-                    FixMaxContent
-
-        ( Nothing, _ ) ->
+        Nothing ->
             Grow
 
 
@@ -999,13 +1013,8 @@ panelToGrowOrFixAutoHeight (Panel { style, content }) =
         ( Just _, _ ) ->
             FixMaxContent
 
-        ( Nothing, TextBox record ) ->
-            case record.verticalAlignment of
-                Just _ ->
-                    Grow
-
-                Nothing ->
-                    FixMaxContent
+        ( Nothing, TextBoxFitHeight _ ) ->
+            FixMaxContent
 
         ( Nothing, _ ) ->
             Grow
@@ -1039,6 +1048,24 @@ alignItemsToStyle alignItems =
 
             Bottom ->
                 Css.flexEnd
+        )
+
+
+textAlignToStyle : TextAlignment -> Css.Style
+textAlignToStyle textAlignment =
+    Css.textAlign
+        (case textAlignment of
+            TextAlignStart ->
+                Css.start
+
+            TextAlignEnd ->
+                Css.end
+
+            TextAlignCenter ->
+                Css.center
+
+            TextAlignJustify ->
+                Css.justify
         )
 
 

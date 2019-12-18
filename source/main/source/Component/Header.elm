@@ -32,8 +32,8 @@ logo : Ui.Panel msg
 logo =
     Ui.textBox []
         [ Ui.Padding 8, Ui.Width 128 ]
-        { align = Just Ui.TextAlignStart
-        , vertical = Just Ui.CenterY
+        { align = Ui.TextAlignStart
+        , vertical = Ui.CenterY
         , font =
             Ui.Font
                 { typeface = Component.Style.codeFontTypeface
@@ -50,8 +50,8 @@ menuItem text =
     Ui.textBox
         []
         [ Ui.Width 128, Ui.Padding 8 ]
-        { align = Just Ui.TextAlignStart
-        , vertical = Just Ui.CenterY
+        { align = Ui.TextAlignStart
+        , vertical = Ui.CenterY
         , font =
             Ui.Font
                 { typeface = Component.Style.codeFontTypeface
