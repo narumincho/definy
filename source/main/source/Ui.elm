@@ -99,7 +99,6 @@ type PointerButton
     | BrowserBack
     | BrowserForward
     | Eraser
-    | PointerButtonUnknown Int -- 6番～31番
 
 
 {-| どのパネルでも指定できるスタイル
@@ -854,33 +853,27 @@ pointerEventDecoder =
                 { id = id
                 , position = ( clientX, clientY )
                 , button =
-                    if button == -1 then
-                        Nothing
+                    case button of
+                        0 ->
+                            Just Primary
 
-                    else
-                        Just
-                            (case button of
-                                0 ->
-                                    Primary
+                        1 ->
+                            Just Auxiliary
 
-                                1 ->
-                                    Auxiliary
+                        2 ->
+                            Just Secondary
 
-                                2 ->
-                                    Secondary
+                        3 ->
+                            Just BrowserBack
 
-                                3 ->
-                                    BrowserBack
+                        4 ->
+                            Just BrowserForward
 
-                                4 ->
-                                    BrowserForward
+                        5 ->
+                            Just Eraser
 
-                                5 ->
-                                    Eraser
-
-                                _ ->
-                                    PointerButtonUnknown button
-                            )
+                        _ ->
+                            Nothing
                 , pressure = pressure
                 , tangentialPressure = tangentialPressure
                 , size = ( width, height )
