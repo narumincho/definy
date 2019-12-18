@@ -51,26 +51,17 @@ view (Model events) =
         , Ui.column
             []
             [ Ui.Width 480 ]
-            0
-            [ Ui.monochromatic
+            8
+            (Ui.monochromatic
                 []
                 []
                 (Css.rgba 0 0 0 0)
-            , mainView events
-            ]
+                :: (events
+                        |> List.reverse
+                        |> List.map card
+                   )
+            )
         ]
-
-
-mainView : List Event -> Ui.Panel msg
-mainView events =
-    Ui.column
-        []
-        []
-        8
-        (events
-            |> List.reverse
-            |> List.map card
-        )
 
 
 card : Event -> Ui.Panel msg
