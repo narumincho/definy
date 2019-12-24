@@ -79,7 +79,7 @@ requestAnimationFrame(() => {
    * 直前のキー入力のデフォルト動作を取り消す
    * なぜかElmのコンパイルをデバッグモードでやるとキー動作を防げない
    */
-  app.ports.preventDefaultBeforeKeyEvent.subscribe(_ => {
+  app.ports.preventDefaultBeforeKeyEvent.subscribe(() => {
     console.log("直前のキー入力のデフォルト動作を取り消す", prevKeyEvent);
     if (prevKeyEvent.currentTarget === null) {
       console.log(
@@ -100,31 +100,31 @@ requestAnimationFrame(() => {
   app.ports.requestAccessTokenFromIndexedDB.subscribe(() => {
     const userDBRequest: IDBOpenDBRequest = indexedDB.open("user", 1);
 
-    userDBRequest.onupgradeneeded = event => {
+    userDBRequest.onupgradeneeded = (event): void => {
       console.log("ユーザーデータのDBが更新された");
       const target = event.target as IDBOpenDBRequest;
       const db = target.result;
       db.createObjectStore("accessToken", {});
     };
 
-    userDBRequest.onsuccess = event => {
+    userDBRequest.onsuccess = (event): void => {
       console.log("ユーザーデータのDBに接続成功!");
       const target = event.target as IDBOpenDBRequest;
       const db = target.result;
       console.log("db in success", db);
       const transaction = db.transaction("accessToken", "readonly");
-      transaction.oncomplete = event => {
+      transaction.oncomplete = (): void => {
         console.log("アクセストークン読み込みのトランザクションが成功した");
         db.close();
       };
-      transaction.onerror = event => {
+      transaction.onerror = (): void => {
         console.log("アクセストークン読み込みのトランザクションが失敗した");
         db.close();
       };
       const getRequest = transaction
         .objectStore("accessToken")
         .get("lastLogInUser");
-      getRequest.onsuccess = event => {
+      getRequest.onsuccess = (event): void => {
         console.log("読み込み完了!");
         const request = event.target as IDBRequest;
         if (request.result === undefined) {
@@ -137,13 +137,13 @@ requestAnimationFrame(() => {
         }
         app.ports.portResponseAccessTokenFromIndexedDB.send("error");
       };
-      getRequest.onerror = event => {
+      getRequest.onerror = (): void => {
         console.log("読み込み失敗");
         app.ports.portResponseAccessTokenFromIndexedDB.send("error");
       };
     };
 
-    userDBRequest.onerror = event => {
+    userDBRequest.onerror = (): void => {
       console.log("ユーザーデータのDBに接続できなかった");
     };
   });
@@ -151,23 +151,23 @@ requestAnimationFrame(() => {
   app.ports.writeAccessTokenToIndexedDB.subscribe(accessToken => {
     const userDBRequest: IDBOpenDBRequest = indexedDB.open("user", 1);
 
-    userDBRequest.onupgradeneeded = event => {
+    userDBRequest.onupgradeneeded = (event): void => {
       console.log("ユーザーデータのDBが更新された");
       const target = event.target as IDBOpenDBRequest;
       const db = target.result;
       db.createObjectStore("accessToken", {});
     };
 
-    userDBRequest.onsuccess = event => {
+    userDBRequest.onsuccess = (event): void => {
       console.log("ユーザーデータのDBに接続成功!");
       const target = event.target as IDBOpenDBRequest;
       const db = target.result;
       const transaction = db.transaction("accessToken", "readwrite");
-      transaction.oncomplete = event => {
+      transaction.oncomplete = (): void => {
         console.log("アクセストークン保存のトランザクションが成功した");
         db.close();
       };
-      transaction.onerror = event => {
+      transaction.onerror = (): void => {
         console.log("アクセストークン保存のトランザクションが失敗した");
         db.close();
       };
@@ -175,15 +175,15 @@ requestAnimationFrame(() => {
         .objectStore("accessToken")
         .put(accessToken, "lastLogInUser");
 
-      putRequest.onsuccess = event => {
+      putRequest.onsuccess = (): void => {
         console.log("書き込み完了!");
       };
-      putRequest.onerror = event => {
+      putRequest.onerror = (): void => {
         console.log("読み込み失敗");
       };
     };
 
-    userDBRequest.onerror = event => {
+    userDBRequest.onerror = (): void => {
       console.log("ユーザーデータのDBに接続できなかった");
     };
   });
@@ -215,7 +215,7 @@ requestAnimationFrame(() => {
   });
 });
 
-(async () => {
+(async (): Promise<void> => {
   firebase.initializeApp({
     apiKey: "AIzaSyAy7vTr9xBSF0d9pEWufU6EJd0AcUnANZk",
     authDomain: "definy-lang.firebaseapp.com",
