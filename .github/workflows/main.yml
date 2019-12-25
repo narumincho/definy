@@ -19,12 +19,12 @@ jobs:
       - name: Replace service worker path
         run: >-
           sed -i -e
-          's!register("/__/serviceworker.js!register(/serviceworker.js!g'
+          's!register("/__/serviceWorker.js!register("/serviceWorker.js!g'
           ./distribution/main.js
       - name: Move Service Worker
-        run: mv ./distribution/__/serviceworker.js ./distribution/serviceworker.js
+        run: mv ./distribution/__/serviceWorker.js ./distribution/serviceWorker.js
       - name: Move service worker map
-        run: mv ./distribution/__/serviceworker.js.map ./distribution/serviceworker.js.map
+        run: mv ./distribution/__/serviceWorker.js.map ./distribution/serviceWorker.js.map
       - name: Move Assets
         run: mv ./source/assets ./distribution/assets
       - name: deploy firebase hosting
