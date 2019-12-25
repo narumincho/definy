@@ -1,0 +1,36 @@
+name: build and deploy hosting
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    name: build and deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@master
+      - name: Install npm dependencies (npm install)
+        run: npm install
+      - name: Parcel build (npx parcel)
+        run: npx parcel build ./source/call/call.ts --out-dir ./distribution --out-file main.js;
+      - name: Replace service worker path
+        run: >-
+          sed -i -e
+          's!register("/__/serviceworker.js!register(/serviceworker.js!g'
+          ./distribution/main.js
+      - name: Move Service Worker
+        run: mv ./distribution/__/serviceworker.js ./distribution/serviceworker.js
+      - name: Move service worker map
+        run: mv ./distribution/__/serviceworker.js.map ./distribution/serviceworker.js.map
+      - name: Move Assets
+        run: mv ./source/assets ./distribution/assets
+      - name: deploy firebase hosting
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only hosting
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          PROJECT_ID: definy-lang
