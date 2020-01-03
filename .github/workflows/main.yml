@@ -12,8 +12,8 @@ jobs:
     steps:
       - name: checkout repository
         uses: actions/checkout@master
-      - name: Install npm dependencies (npm install)
-        run: npm install
+      - name: Install npm dependencies (npm ci)
+        run: npm ci
       - name: Parcel build (npx parcel)
         run: npx parcel build ./source/call/call.ts --out-dir ./distribution --out-file main.js;
       - name: Replace service worker path
