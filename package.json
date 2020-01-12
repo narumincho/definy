@@ -17,11 +17,11 @@
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.9.0",
     "eslint-plugin-prettier": "^3.1.2",
-    "firebase": "^7.6.1",
+    "firebase": "^7.6.2",
     "node-elm-compiler": "^5.0.4",
     "parcel-bundler": "^1.12.4",
     "prettier": "^1.19.1",
-    "typed-firestore": "^0.0.10",
+    "typed-firestore": "^0.0.11",
     "typescript": "^3.7.4"
   },
   "browserslist": [
