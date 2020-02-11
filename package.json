@@ -9,7 +9,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^2.19.0",
+    "@typescript-eslint/eslint-plugin": "^2.19.2",
     "@typescript-eslint/parser": "^2.19.0",
     "definy-firestore-type": "0.0.16",
     "elm": "^0.19.1-3",
