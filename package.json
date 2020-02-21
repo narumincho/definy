@@ -22,7 +22,7 @@
     "parcel-bundler": "^1.12.4",
     "prettier": "^1.19.1",
     "typed-firestore": "^0.0.11",
-    "typescript": "^3.7.5"
+    "typescript": "^3.8.2"
   },
   "browserslist": [
     "last 1 Chrome versions"
