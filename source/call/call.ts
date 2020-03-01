@@ -1,5 +1,4 @@
 import { Elm } from "../main/source/Main.elm";
-import "firebase/firestore";
 import * as serviceWorkerPostData from "../serviceWorkerPostData";
 
 const elmAppElement = document.createElement("div");
