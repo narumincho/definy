@@ -1,9 +1,5 @@
-import * as firestoreType from "definy-firestore-type";
 import { Elm } from "../main/source/Main.elm";
-import * as firebase from "firebase/app";
 import "firebase/firestore";
-import * as typedFirestore from "typed-firestore";
-import * as sub from "./sub";
 import * as serviceWorkerPostData from "../serviceWorkerPostData";
 
 const elmAppElement = document.createElement("div");
@@ -214,23 +210,3 @@ requestAnimationFrame(() => {
     app.ports.changeNetworkConnection.send(false);
   });
 });
-
-(async (): Promise<void> => {
-  firebase.initializeApp({
-    apiKey: "AIzaSyAy7vTr9xBSF0d9pEWufU6EJd0AcUnANZk",
-    authDomain: "definy-lang.firebaseapp.com",
-    projectId: "definy-lang",
-    storageBucket: "definy-lang.appspot.com"
-  });
-  const database = (firebase.firestore() as unknown) as typedFirestore.Firestore<
-    firestoreType.Firestore
-  >;
-  const collection = database.collection("user");
-  collection.onSnapshot(snapShot => {
-    for (const doc of snapShot.docs) {
-      console.log(doc.data());
-    }
-  });
-})();
-
-sub.consoleSub();
