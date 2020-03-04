@@ -21,9 +21,7 @@ view =
                 []
                 []
                 (Css.rgba 0 0 0 0)
-            , menuItem "ユーザー情報"
-            , menuItem "通知"
-            , menuItem "コルクボード"
+            , menuItem "ゲスト"
             ]
         ]
 
