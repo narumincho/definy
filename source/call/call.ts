@@ -1,5 +1,6 @@
 import { Elm } from "../main/source/Main.elm";
 import * as serviceWorkerPostData from "../serviceWorkerPostData";
+import * as common from "definy-common";
 
 const elmAppElement = document.createElement("div");
 
@@ -208,4 +209,25 @@ requestAnimationFrame(() => {
   addEventListener("offline", () => {
     app.ports.changeNetworkConnection.send(false);
   });
+
+  console.log("APIを呼んでみる");
+  fetch("https://us-central1-definy-lang.cloudfunctions.net/api", {
+    body: new Uint8Array(
+      common.data.encodeCustomRequestLogInUrlRequestData({
+        languageAndLocation: {
+          language: "Esperanto",
+          location: common.data.locationUser(
+            "e826237c70da15fd80cc03dfeb0985d4" as common.data.UserId
+          )
+        },
+        openIdConnectProvider: "Google"
+      })
+    ),
+    headers: [["content-type", "application/octet-stream"]]
+  })
+    .then(response => response.text())
+    .then(response => {
+      console.log("APIから返ってきた!");
+      console.log(response);
+    });
 });

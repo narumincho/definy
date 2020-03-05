@@ -23,5 +23,8 @@
   },
   "browserslist": [
     "last 1 Chrome versions"
-  ]
+  ],
+  "dependencies": {
+    "definy-common": "^0.1.0"
+  }
 }
