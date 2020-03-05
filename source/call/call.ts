@@ -212,6 +212,7 @@ requestAnimationFrame(() => {
 
   console.log("APIを呼んでみる");
   fetch("https://us-central1-definy-lang.cloudfunctions.net/api", {
+    method: "POST",
     body: new Uint8Array(
       common.data.encodeCustomRequestLogInUrlRequestData({
         languageAndLocation: {
