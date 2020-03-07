@@ -1,9 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es2019",
-    "module": "commonjs",
+    "target": "ES2020",
     "strict": true,
-    "lib": ["es2019", "dom", "WebWorker"],
+    "lib": ["ES2020", "DOM", "WebWorker"],
     "newLine": "LF"
   }
 }
