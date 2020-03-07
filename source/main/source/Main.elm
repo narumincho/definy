@@ -14,7 +14,7 @@ import Data.User
 import Html
 import Html.Styled
 import Json.Decode
-import Page.Welcome
+import Page.Home
 import Task
 import Ui
 import Url
@@ -105,7 +105,7 @@ type Msg
 
 
 type PageMsg
-    = WelcomePageMsg Page.Welcome.Msg
+    = WelcomePageMsg Page.Home.Msg
 
 
 type ServiceWorkerMsg
@@ -143,7 +143,7 @@ type GutterType
 
 
 type PageModel
-    = Welcome Page.Welcome.Model
+    = Welcome Page.Home.Model
 
 
 type BrowserSupport
@@ -197,7 +197,7 @@ init flag =
         model =
             Model
                 { subMode = SubModeNone
-                , page = Welcome Page.Welcome.init
+                , page = Welcome Page.Home.init
                 , windowSize = flag.windowSize
                 , messageQueue = []
                 , logInState =
@@ -311,7 +311,7 @@ update msg (Model rec) =
                 ( Welcome welcomeModel, WelcomePageMsg welcomePageMsg ) ->
                     let
                         ( newWelcomeModel, cmd ) =
-                            welcomeModel |> Page.Welcome.update welcomePageMsg
+                            welcomeModel |> Page.Home.update welcomePageMsg
                     in
                     ( Model { rec | page = Welcome newWelcomeModel }
                     , cmd |> List.map welcomePageCmdToCmd |> Cmd.batch
@@ -377,28 +377,28 @@ updateFromMsgList msgList model =
             ( model, Cmd.none )
 
 
-welcomePageCmdToCmd : Page.Welcome.Cmd -> Cmd Msg
+welcomePageCmdToCmd : Page.Home.Cmd -> Cmd Msg
 welcomePageCmdToCmd cmd =
     case cmd of
-        Page.Welcome.CmdToVerticalGutterMode ->
+        Page.Home.CmdToVerticalGutterMode ->
             Task.succeed (ToResizeGutterMode GutterTypeVertical)
                 |> Task.perform identity
 
-        Page.Welcome.CmdConsoleLog string ->
+        Page.Home.CmdConsoleLog string ->
             consoleLog string
 
-        Page.Welcome.CmdToLogInPage socialLoginService ->
+        Page.Home.CmdToLogInPage socialLoginService ->
             Api.getLogInUrl
                 socialLoginService
-                (Page.Welcome.MsgGetLogInUrlResponse >> WelcomePageMsg >> PageMsg)
+                (Page.Home.MsgGetLogInUrlResponse >> WelcomePageMsg >> PageMsg)
 
-        Page.Welcome.CmdJumpPage url ->
+        Page.Home.CmdJumpPage url ->
             Browser.Navigation.load (Url.toString url)
 
-        Page.Welcome.CmdCreateProject accessToken ->
+        Page.Home.CmdCreateProject accessToken ->
             consoleLog "プロジェクトを新規作成する"
 
-        Page.Welcome.CmdCreateProjectByGuest ->
+        Page.Home.CmdCreateProjectByGuest ->
             consoleLog "プロジェクトをこの端末に新規作成する"
 
 
@@ -574,7 +574,7 @@ pointerUp (Model rec) =
         Welcome model ->
             let
                 ( newModel, cmd ) =
-                    model |> Page.Welcome.update Page.Welcome.MsgPointerUp
+                    model |> Page.Home.update Page.Home.MsgPointerUp
             in
             ( Model
                 { rec
@@ -725,7 +725,7 @@ view (Model rec) =
                     0
                     [ Component.Header.view
                     , welcomeModel
-                        |> Page.Welcome.view rec.logInState
+                        |> Page.Home.view rec.logInState
                         |> Ui.map (WelcomePageMsg >> PageMsg)
                     ]
                 ]

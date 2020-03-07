@@ -1,4 +1,4 @@
-module Page.Welcome exposing
+module Page.Home exposing
     ( Cmd(..)
     , Model
     , Msg(..)
