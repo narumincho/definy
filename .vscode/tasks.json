@@ -1,19 +1,10 @@
 {
-  // tasks.json 形式の詳細についての資料は、
-  // https://go.microsoft.com/fwlink/?LinkId=733558 をご覧ください
   "version": "2.0.0",
   "tasks": [
     {
       "label": "debug in local",
       "type": "shell",
-      "command": "./script/debugInLocal.ps1",
-      "problemMatcher": []
-    },
-    {
-      "label": "deploy",
-      "type": "shell",
-      "command": "./script/deploy.ps1",
-      "group": "build",
+      "command": "./debugInLocal.ps1",
       "problemMatcher": []
     }
   ]
