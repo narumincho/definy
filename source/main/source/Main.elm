@@ -9,7 +9,6 @@ import Component.Header
 import Component.Notifications
 import Data.Key
 import Data.Language
-import Data.PageLocation
 import Data.User
 import Html
 import Html.Styled
