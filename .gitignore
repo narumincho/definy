@@ -3,6 +3,4 @@ node_modules
 debugDistribution
 .cache
 .idea
-.firebase
-distribution
 build
