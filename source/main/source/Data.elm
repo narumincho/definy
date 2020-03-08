@@ -218,6 +218,9 @@ openIdConnectProviderJsonDecoder =
 
                     "Line" ->
                         Jd.succeed Line
+
+                    _ ->
+                        Jd.fail ("OpenIdConnectProviderで不明なタグを受けたとった tag=" ++ tag)
             )
 
 
@@ -251,6 +254,9 @@ languageJsonDecoder =
 
                     "Esperanto" ->
                         Jd.succeed Esperanto
+
+                    _ ->
+                        Jd.fail ("Languageで不明なタグを受けたとった tag=" ++ tag)
             )
 
 
@@ -270,4 +276,7 @@ locationJsonDecoder =
 
                     "Project" ->
                         Jd.field "projectId" projectIdJsonDecoder |> Jd.map Project
+
+                    _ ->
+                        Jd.fail ("Locationで不明なタグを受けたとった tag=" ++ tag)
             )
