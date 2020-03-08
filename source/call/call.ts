@@ -1,6 +1,5 @@
 import { Elm } from "../../elm/source/Main.elm";
-import * as serviceWorkerPostData from "../serviceWorkerPostData";
-import * as common from "definy-common";
+import * as common from "../../node_modules/definy-common/distribution/main";
 
 const elmAppElement = document.createElement("div");
 

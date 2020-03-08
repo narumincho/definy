@@ -1,5 +1,3 @@
-import * as serviceWorkerPostData from "./serviceWorkerPostData";
-
 ((self: ServiceWorkerGlobalScope): void => {
   const codeFontKeyPath = "/codeFont";
   const iconKeyPath = "/icon";
