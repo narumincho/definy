@@ -10,6 +10,7 @@ module Page.Home exposing
 import Color
 import Component.Style
 import Css
+import Data
 import Data.SocialLoginService
 import Data.User
 import Ui
@@ -141,8 +142,8 @@ update msg (Model rec) =
             )
 
 
-view : Data.User.LogInState -> Model -> Ui.Panel Msg
-view logInState (Model rec) =
+view : Data.Language -> Data.User.LogInState -> Model -> Ui.Panel Msg
+view language logInState (Model rec) =
     Ui.row
         (case rec.pointer of
             SideBarResize ->
@@ -153,7 +154,7 @@ view logInState (Model rec) =
         )
         []
         0
-        [ yggdrasil logInState
+        [ yggdrasil language logInState
         ]
 
 
@@ -230,8 +231,8 @@ googleIcon =
         }
 
 
-yggdrasil : Data.User.LogInState -> Ui.Panel Msg
-yggdrasil logInState =
+yggdrasil : Data.Language -> Data.User.LogInState -> Ui.Panel Msg
+yggdrasil language logInState =
     Ui.column
         []
         []
@@ -242,7 +243,16 @@ yggdrasil logInState =
             { align = Ui.TextAlignStart
             , font = Component.Style.normalFont
             }
-            "ここはHome"
+            (case language of
+                Data.English ->
+                    "home"
+
+                Data.Japanese ->
+                    "ここはHome"
+
+                Data.Esperanto ->
+                    "Hejmo"
+            )
         , case logInState of
             Data.User.ReadingAccessToken ->
                 Ui.textBoxFitHeight

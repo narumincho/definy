@@ -7,7 +7,7 @@
   "description": "Web App for Web App.",
   "icons": [
     {
-      "src": "/assets/icon.png",
+      "src": "/icon",
       "sizes": "180x180",
       "type": "image/png"
     }

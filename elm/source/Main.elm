@@ -163,7 +163,7 @@ type alias Flag =
         { width : Int
         , height : Int
         }
-    , language : String
+    , language : Json.Decode.Value
     , networkConnection : Bool
     , indexedDBSupport : Bool
     , webGLSupport : Bool
@@ -202,7 +202,10 @@ init flag =
 
                         Nothing ->
                             Data.User.ReadingAccessToken
-                , language = Data.English
+                , language =
+                    flag.language
+                        |> Json.Decode.decodeValue Data.languageJsonDecoder
+                        |> Result.withDefault Data.English
                 , networkConnection = flag.networkConnection
                 , notificationModel =
                     Component.Notifications.initModel
@@ -707,7 +710,7 @@ view (Model rec) =
                     0
                     [ Component.Header.view
                     , welcomeModel
-                        |> Page.Home.view rec.logInState
+                        |> Page.Home.view rec.language rec.logInState
                         |> Ui.map (WelcomePageMsg >> PageMsg)
                     ]
                 ]

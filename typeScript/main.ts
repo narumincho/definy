@@ -38,20 +38,6 @@ requestAnimationFrame(() => {
   });
 
   if (serviceWorkerSupport) {
-    navigator.serviceWorker.addEventListener("message", e => {
-      const data = e.data;
-      switch (data) {
-        case "offlineFileLoadError":
-          app.ports.serviceWorkerActivatedWithOutOfflineFiles.send(null);
-          return;
-        case "offlineFileLoaded":
-          app.ports.serviceWorkerActivatedWithOfflineFiles.send(null);
-          return;
-        case "startOfflineFileLoading":
-          app.ports.serviceWorkerLoadingOfflineFiles.send(null);
-          return;
-      }
-    });
     navigator.serviceWorker.register("sw.ts", { scope: "/" }).then(
       () => {
         console.log("serviceWorkerを登録した!");
