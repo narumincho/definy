@@ -1,4 +1,4 @@
-import { Elm } from "../main/source/Main.elm";
+import { Elm } from "../../elm/source/Main.elm";
 import * as serviceWorkerPostData from "../serviceWorkerPostData";
 import * as common from "definy-common";
 
