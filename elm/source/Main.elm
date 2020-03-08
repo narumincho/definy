@@ -9,7 +9,6 @@ import Component.Header
 import Component.Notifications
 import Data
 import Data.Key
-import Data.Language
 import Data.User
 import Html
 import Html.Styled
@@ -65,9 +64,6 @@ port windowResize : ({ width : Int, height : Int } -> msg) -> Sub msg
 port portResponseAccessTokenFromIndexedDB : (String -> msg) -> Sub msg
 
 
-port changeLanguage : (String -> msg) -> Sub msg
-
-
 port changeNetworkConnection : (Bool -> msg) -> Sub msg
 
 
@@ -97,7 +93,6 @@ type Msg
     | LogOutRequest -- ログアウトを要求する
     | ResponseAccessTokenFromIndexedDB String
     | ResponseUserData (Result String Data.User.User) -- ユーザーの情報を受け取った
-    | ChangeLanguage String -- 使用言語が変わった
     | ChangeNetworkConnection Bool -- 接続状況が変わった
     | PageMsg PageMsg
     | NoOperation
@@ -124,7 +119,7 @@ type Model
         , windowSize : { width : Int, height : Int }
         , messageQueue : List Msg
         , logInState : Data.User.LogInState
-        , language : Data.Language.Language
+        , language : Data.Language
         , networkConnection : Bool
         , notificationModel : Component.Notifications.Model
         , browserSupport : BrowserSupport
@@ -207,7 +202,7 @@ init flag =
 
                         Nothing ->
                             Data.User.ReadingAccessToken
-                , language = Data.Language.languageFromString flag.language
+                , language = Data.English
                 , networkConnection = flag.networkConnection
                 , notificationModel =
                     Component.Notifications.initModel
@@ -288,11 +283,6 @@ update msg (Model rec) =
 
         LogOutRequest ->
             ( Model rec
-            , Cmd.none
-            )
-
-        ChangeLanguage string ->
-            ( Model rec |> setLanguage string
             , Cmd.none
             )
 
@@ -684,17 +674,9 @@ shiftMsgListFromMsgQueue (Model rec) =
     )
 
 
-getLanguage : Model -> Data.Language.Language
+getLanguage : Model -> Data.Language
 getLanguage (Model { language }) =
     language
-
-
-setLanguage : String -> Model -> Model
-setLanguage string (Model rec) =
-    Model
-        { rec
-            | language = Data.Language.languageFromString string
-        }
 
 
 
@@ -830,7 +812,6 @@ subscriptions model =
          , keyPrevented (always KeyPrevented)
          , windowResize WindowResize
          , portResponseAccessTokenFromIndexedDB ResponseAccessTokenFromIndexedDB
-         , changeLanguage ChangeLanguage
          , changeNetworkConnection ChangeNetworkConnection
          , serviceWorkerRegisterError
             (always

@@ -36,7 +36,6 @@ type Ports = {
     height: number;
   }>;
   readonly portResponseAccessTokenFromIndexedDB: CmdForElmSub<string | null>;
-  readonly changeLanguage: CmdForElmSub<string>;
   readonly subPointerUp: CmdForElmSub<null>;
   readonly changeNetworkConnection: CmdForElmSub<boolean>;
   readonly serviceWorkerRegisterError: CmdForElmSub<null>;

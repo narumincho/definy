@@ -242,7 +242,7 @@ yggdrasil logInState =
             { align = Ui.TextAlignStart
             , font = Component.Style.normalFont
             }
-            "あらゆる点で調整中。ここはWelcomeページ"
+            "ここはHome"
         , case logInState of
             Data.User.ReadingAccessToken ->
                 Ui.textBoxFitHeight

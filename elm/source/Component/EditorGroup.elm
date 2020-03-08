@@ -28,8 +28,8 @@ import Component.Editor.ProjectImport
 import Component.EditorItemSource
 import Component.Style as Style
 import Css
+import Data
 import Data.IdHash
-import Data.Language
 import Data.Project
 import Html.Styled
 import Html.Styled.Attributes
@@ -1138,7 +1138,7 @@ view :
     ->
         { width : Int
         , height : Int
-        , language : Data.Language.Language
+        , language : Data.Language
         , focus : Bool
         , gutter : Maybe Gutter
         }

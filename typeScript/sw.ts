@@ -34,9 +34,7 @@
       }
     );
 
-  const sendMessageToClient = (
-    message: serviceWorkerPostData.ServiceWorkerToClientMessage
-  ): void => {
+  const sendMessageToClient = (message: ServiceWorkerToClientMessage): void => {
     self.clients
       .matchAll()
       .then(clients => clients.forEach(client => client.postMessage(message)));

@@ -1,5 +1,5 @@
-import { Elm } from "../../elm/source/Main.elm";
-import * as common from "../../node_modules/definy-common/distribution/main";
+import { Elm } from "../elm/source/Main.elm";
+import * as common from "definy-common";
 
 const elmAppElement = document.createElement("div");
 
@@ -28,7 +28,7 @@ requestAnimationFrame(() => {
         width: innerWidth,
         height: innerHeight
       },
-      language: navigator.languages[0],
+      language: common.urlToLanguageAndLocation(location.href).language,
       networkConnection: navigator.onLine,
       indexedDBSupport: "indexedDB" in window,
       webGLSupport: checkWebGLSupport(),
@@ -39,7 +39,7 @@ requestAnimationFrame(() => {
 
   if (serviceWorkerSupport) {
     navigator.serviceWorker.addEventListener("message", e => {
-      const data: serviceWorkerPostData.ServiceWorkerToClientMessage = e.data;
+      const data = e.data;
       switch (data) {
         case "offlineFileLoadError":
           app.ports.serviceWorkerActivatedWithOutOfflineFiles.send(null);
@@ -52,16 +52,14 @@ requestAnimationFrame(() => {
           return;
       }
     });
-    navigator.serviceWorker
-      .register("../serviceWorker.ts", { scope: "/" })
-      .then(
-        () => {
-          console.log("serviceWorkerを登録した!");
-        },
-        () => {
-          console.log("serviceWorkerの登録に失敗しました");
-        }
-      );
+    navigator.serviceWorker.register("sw.ts", { scope: "/" }).then(
+      () => {
+        console.log("serviceWorkerを登録した!");
+      },
+      () => {
+        console.log("serviceWorkerの登録に失敗しました");
+      }
+    );
   }
 
   let prevKeyEvent: KeyboardEvent;
@@ -185,10 +183,6 @@ requestAnimationFrame(() => {
 
   app.ports.consoleLog.subscribe(text => {
     console.warn(text);
-  });
-
-  addEventListener("languagechange", () => {
-    app.ports.changeLanguage.send(navigator.languages[0]);
   });
 
   addEventListener("pointerup", () => {

@@ -1,5 +1,5 @@
 const parcel = require("parcel-bundler");
 
-new parcel(["./source/index.html"], {
+new parcel(["./index.html"], {
   outDir: "debugDistribution"
 }).serve(2520);
