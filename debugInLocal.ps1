@@ -1,1 +1,0 @@
-./node_modules/.bin/parcel.ps1 ./source/index.html --out-dir debugDistribution --open --port 2520
