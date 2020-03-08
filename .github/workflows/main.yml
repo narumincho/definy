@@ -26,7 +26,7 @@ jobs:
       - name: Move service worker map
         run: mv ./distribution/__/serviceWorker.js.map ./distribution/serviceWorker.js.map
       - name: Move Assets
-        run: mv ./source/assets ./distribution/
+        run: mv ./static/ ./distribution/
       - name: Rename icon.png to icon
         run: mv ./distribution/icon.png ./distribution/icon
       - name: deploy firebase hosting
