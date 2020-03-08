@@ -1,3 +1,5 @@
+import * as common from "definy-common";
+
 export namespace Elm {
   namespace Main {
     function init(args: {
@@ -15,7 +17,7 @@ type Flags = {
     width: number;
     height: number;
   };
-  language: string;
+  language: common.data.Language;
   networkConnection: boolean;
   indexedDBSupport: boolean;
   webGLSupport: boolean;

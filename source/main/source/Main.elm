@@ -7,6 +7,7 @@ import Component.DefaultUi
 import Component.EditorGroup
 import Component.Header
 import Component.Notifications
+import Data
 import Data.Key
 import Data.Language
 import Data.User
@@ -190,8 +191,8 @@ init :
     -> ( Model, Cmd Msg )
 init flag =
     let
-        ( tokenFromUrlMaybe, page ) =
-            Data.PageLocation.initFromUrl flag.url
+        tokenFromUrlMaybe =
+            Nothing
 
         model =
             Model
