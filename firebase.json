@@ -3,11 +3,11 @@
     "public": "distribution",
     "headers": [
       {
-        "source": "main.js",
+        "source": "icon",
         "headers": [
           {
-            "key": "cache-control",
-            "value": "max-age=31536000"
+            "key": "content-type",
+            "value": "image/png"
           }
         ]
       }
