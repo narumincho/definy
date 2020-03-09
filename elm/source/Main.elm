@@ -7,12 +7,14 @@ import Component.DefaultUi
 import Component.EditorGroup
 import Component.Header
 import Component.Notifications
+import Css
 import Data
 import Data.Key
 import Data.User
 import Html
 import Html.Styled
 import Json.Decode
+import Json.Encode
 import Page.Home
 import Task
 import Ui
@@ -48,6 +50,9 @@ port writeAccessTokenToIndexedDB : String -> Cmd msg
 port consoleLog : String -> Cmd msg
 
 
+port requestLogInUrl : Json.Encode.Value -> Cmd msg
+
+
 
 {- Sub (JavaScript → Elm) -}
 
@@ -70,18 +75,6 @@ port changeNetworkConnection : (Bool -> msg) -> Sub msg
 port subPointerUp : (() -> msg) -> Sub msg
 
 
-port serviceWorkerRegisterError : (() -> msg) -> Sub msg
-
-
-port serviceWorkerLoadingOfflineFiles : (() -> msg) -> Sub msg
-
-
-port serviceWorkerActivatedWithOfflineFiles : (() -> msg) -> Sub msg
-
-
-port serviceWorkerActivatedWithOutOfflineFiles : (() -> msg) -> Sub msg
-
-
 {-| 全体の入力を表すメッセージ
 -}
 type Msg
@@ -95,19 +88,12 @@ type Msg
     | ResponseUserData (Result String Data.User.User) -- ユーザーの情報を受け取った
     | ChangeNetworkConnection Bool -- 接続状況が変わった
     | PageMsg PageMsg
+    | LogInRequest
     | NoOperation
-    | ServiceWorkerMsg ServiceWorkerMsg
 
 
 type PageMsg
     = WelcomePageMsg Page.Home.Msg
-
-
-type ServiceWorkerMsg
-    = ServiceWorkerMsgRegisterError
-    | ServiceWorkerMsgLoadingOfflineFiles
-    | ServiceWorkerMsgActivatedWithOfflineFiles
-    | ServiceWorkerMsgActivatedWithOutOfflineFiles
 
 
 {-| 全体を表現する
@@ -123,7 +109,6 @@ type Model
         , networkConnection : Bool
         , notificationModel : Component.Notifications.Model
         , browserSupport : BrowserSupport
-        , serviceWorker : ServiceWorker
         }
 
 
@@ -146,15 +131,6 @@ type BrowserSupport
         { indexedDB : Bool
         , webGL : Bool
         }
-
-
-type ServiceWorker
-    = ServiceWorkerNotSupport
-    | ServiceWorkerRegistering
-    | ServiceWorkerRegisterError
-    | ServiceWorkerLoadingOfflineFiles
-    | ServiceWorkerActivatedWithOfflineFiles
-    | ServiceWorkerActivatedWithOutOfflineFiles
 
 
 type alias Flag =
@@ -220,12 +196,6 @@ init flag =
                         { indexedDB = flag.indexedDBSupport
                         , webGL = flag.webGLSupport
                         }
-                , serviceWorker =
-                    if flag.serviceWorkerSupport then
-                        ServiceWorkerRegistering
-
-                    else
-                        ServiceWorkerNotSupport
                 }
     in
     ( model
@@ -332,27 +302,18 @@ update msg (Model rec) =
             , Cmd.none
             )
 
-        ServiceWorkerMsg serviceWorkerMsg ->
-            case serviceWorkerMsg of
-                ServiceWorkerMsgRegisterError ->
-                    ( Model { rec | serviceWorker = ServiceWorkerRegisterError }
-                    , Cmd.none
-                    )
-
-                ServiceWorkerMsgLoadingOfflineFiles ->
-                    ( Model { rec | serviceWorker = ServiceWorkerLoadingOfflineFiles }
-                    , Cmd.none
-                    )
-
-                ServiceWorkerMsgActivatedWithOfflineFiles ->
-                    ( Model { rec | serviceWorker = ServiceWorkerActivatedWithOfflineFiles }
-                    , Cmd.none
-                    )
-
-                ServiceWorkerMsgActivatedWithOutOfflineFiles ->
-                    ( Model { rec | serviceWorker = ServiceWorkerActivatedWithOutOfflineFiles }
-                    , Cmd.none
-                    )
+        LogInRequest ->
+            ( Model rec
+            , requestLogInUrlTyped
+                { openIdConnectProvider = Data.Line
+                , urlData =
+                    { clientMode = Data.DebugMode 2520
+                    , location = Data.Home
+                    , language = rec.language
+                    , accessToken = Nothing
+                    }
+                }
+            )
 
 
 updateFromMsgList : List Msg -> Model -> ( Model, Cmd Msg )
@@ -713,6 +674,21 @@ view (Model rec) =
                         |> Page.Home.view rec.language rec.logInState
                         |> Ui.map (WelcomePageMsg >> PageMsg)
                     ]
+                , Ui.textBox
+                    [ Ui.Click LogInRequest
+                    ]
+                    []
+                    { align = Ui.TextAlignStart
+                    , vertical = Ui.CenterY
+                    , font =
+                        Ui.Font
+                            { typeface = "Hack"
+                            , size = 32
+                            , letterSpacing = 0
+                            , color = Css.rgb 255 255 255
+                            }
+                    }
+                    "LINEでログイン"
                 ]
          )
             ++ [ Component.Notifications.view rec.notificationModel ]
@@ -801,6 +777,12 @@ responseUserData result (Model rec) =
             )
 
 
+requestLogInUrlTyped : Data.RequestLogInUrlRequestData -> Cmd Msg
+requestLogInUrlTyped requestLogInUrlRequestData =
+    requestLogInUrl
+        (Data.requestLogInUrlRequestDataToJsonValue requestLogInUrlRequestData)
+
+
 
 {- ================================================================
                            Subscription
@@ -816,22 +798,6 @@ subscriptions model =
          , windowResize WindowResize
          , portResponseAccessTokenFromIndexedDB ResponseAccessTokenFromIndexedDB
          , changeNetworkConnection ChangeNetworkConnection
-         , serviceWorkerRegisterError
-            (always
-                (ServiceWorkerMsg ServiceWorkerMsgRegisterError)
-            )
-         , serviceWorkerLoadingOfflineFiles
-            (always
-                (ServiceWorkerMsg ServiceWorkerMsgLoadingOfflineFiles)
-            )
-         , serviceWorkerActivatedWithOfflineFiles
-            (always
-                (ServiceWorkerMsg ServiceWorkerMsgActivatedWithOfflineFiles)
-            )
-         , serviceWorkerActivatedWithOutOfflineFiles
-            (always
-                (ServiceWorkerMsg ServiceWorkerMsgActivatedWithOutOfflineFiles)
-            )
          ]
             ++ (if isCaptureMouseEvent model then
                     [ subPointerUp (always PointerUp) ]

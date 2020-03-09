@@ -29,6 +29,9 @@ type Ports = {
   readonly requestAccessTokenFromIndexedDB: SubForElmCmd<null>;
   readonly writeAccessTokenToIndexedDB: SubForElmCmd<string>;
   readonly consoleLog: SubForElmCmd<string>;
+  readonly requestLogInUrl: SubForElmCmd<
+    common.data.RequestLogInUrlRequestData
+  >;
   readonly keyPressed: CmdForElmSub<KeyboardEvent>;
   readonly keyPrevented: CmdForElmSub<null>;
   readonly windowResize: CmdForElmSub<{
@@ -36,12 +39,8 @@ type Ports = {
     height: number;
   }>;
   readonly portResponseAccessTokenFromIndexedDB: CmdForElmSub<string | null>;
-  readonly subPointerUp: CmdForElmSub<null>;
   readonly changeNetworkConnection: CmdForElmSub<boolean>;
-  readonly serviceWorkerRegisterError: CmdForElmSub<null>;
-  readonly serviceWorkerLoadingOfflineFiles: CmdForElmSub<null>;
-  readonly serviceWorkerActivatedWithOfflineFiles: CmdForElmSub<null>;
-  readonly serviceWorkerActivatedWithOutOfflineFiles: CmdForElmSub<null>;
+  readonly subPointerUp: CmdForElmSub<null>;
 };
 
 type SubForElmCmd<T> = {

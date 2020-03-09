@@ -28,7 +28,7 @@ requestAnimationFrame(() => {
         width: innerWidth,
         height: innerHeight
       },
-      language: common.urlToLanguageAndLocation(location.href).language,
+      language: common.urlDataFromUrl(location.href).language,
       networkConnection: navigator.onLine,
       indexedDBSupport: "indexedDB" in window,
       webGLSupport: checkWebGLSupport(),
@@ -189,28 +189,23 @@ requestAnimationFrame(() => {
     app.ports.changeNetworkConnection.send(false);
   });
 
-  console.log("APIを呼んでみる");
-  fetch(
-    "https://us-central1-definy-lang.cloudfunctions.net/api/requestLogInUrl",
-    {
-      method: "POST",
-      body: new Uint8Array(
-        common.data.encodeCustomRequestLogInUrlRequestData({
-          languageAndLocation: {
-            language: "Esperanto",
-            location: common.data.locationUser(
-              "e826237c70da15fd80cc03dfeb0985d4" as common.data.UserId
-            )
-          },
-          openIdConnectProvider: "Line"
-        })
-      ),
-      headers: [["content-type", "application/octet-stream"]]
-    }
-  )
-    .then(response => response.text())
-    .then(response => {
-      console.log("APIから返ってきた!");
-      console.log(response);
-    });
+  app.ports.requestLogInUrl.subscribe(requestData => {
+    fetch(
+      "https://us-central1-definy-lang.cloudfunctions.net/api/requestLogInUrl",
+      {
+        method: "POST",
+        body: new Uint8Array(
+          common.data.encodeRequestLogInUrlRequestData(requestData)
+        ),
+        headers: [["content-type", "application/octet-stream"]]
+      }
+    )
+      .then(response => response.arrayBuffer())
+      .then(response => {
+        console.log("APIから返ってきた!");
+        console.log(
+          common.data.decodeString(0, new Uint8Array(response)).result
+        );
+      });
+  });
 });

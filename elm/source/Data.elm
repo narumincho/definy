@@ -1,14 +1,21 @@
-module Data exposing (Language(..), LanguageAndLocation, Location(..), OpenIdConnectProvider(..), ProjectId(..), RequestLogInUrlRequestData, UserId(..), languageAndLocationJsonDecoder, languageAndLocationToJsonValue, languageJsonDecoder, languageToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, openIdConnectProviderJsonDecoder, openIdConnectProviderToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, requestLogInUrlRequestDataJsonDecoder, requestLogInUrlRequestDataToJsonValue, resultJsonDecoder, resultToJsonValue, userIdJsonDecoder, userIdToJsonValue)
+module Data exposing (AccessToken(..), ClientMode(..), Language(..), Location(..), OpenIdConnectProvider(..), ProjectId(..), RequestLogInUrlRequestData, UrlData, UserId(..), accessTokenJsonDecoder, accessTokenToJsonValue, clientModeJsonDecoder, clientModeToJsonValue, languageJsonDecoder, languageToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, openIdConnectProviderJsonDecoder, openIdConnectProviderToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, requestLogInUrlRequestDataJsonDecoder, requestLogInUrlRequestDataToJsonValue, resultJsonDecoder, resultToJsonValue, urlDataJsonDecoder, urlDataToJsonValue, userIdJsonDecoder, userIdToJsonValue)
 
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp
 import Json.Encode as Je
 
 
+{-| デバッグの状態と, デバッグ時ならアクセスしているポート番号
+-}
+type ClientMode
+    = DebugMode Int
+    | Release
+
+
 {-| ログインのURLを発行するために必要なデータ
 -}
 type alias RequestLogInUrlRequestData =
-    { openIdConnectProvider : OpenIdConnectProvider, languageAndLocation : LanguageAndLocation }
+    { openIdConnectProvider : OpenIdConnectProvider, urlData : UrlData }
 
 
 {-| プロバイダー (例: LINE, Google, GitHub)
@@ -19,10 +26,10 @@ type OpenIdConnectProvider
     | Line
 
 
-{-| 言語と場所. URLとして表現される. Googleなどの検索エンジンの都合( <https://support.google.com/webmasters/answer/182192?hl=ja> )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある
+{-| デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( <https://support.google.com/webmasters/answer/182192?hl=ja> )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時には <http://localhost:2520> のオリジンになってしまう
 -}
-type alias LanguageAndLocation =
-    { language : Language, location : Location }
+type alias UrlData =
+    { clientMode : ClientMode, location : Location, language : Language, accessToken : Maybe AccessToken }
 
 
 {-| 英語,日本語,エスペラント語などの言語
@@ -39,6 +46,10 @@ type Location
     = Home
     | User UserId
     | Project ProjectId
+
+
+type AccessToken
+    = AccessToken String
 
 
 type UserId
@@ -69,6 +80,11 @@ resultToJsonValue okToJsonValueFunction errorToJsonValueFunction result =
             Je.object [ ( "_", Je.string "Error" ), ( "error", errorToJsonValueFunction value ) ]
 
 
+accessTokenToJsonValue : AccessToken -> Je.Value
+accessTokenToJsonValue (AccessToken string) =
+    Je.string string
+
+
 userIdToJsonValue : UserId -> Je.Value
 userIdToJsonValue (UserId string) =
     Je.string string
@@ -79,13 +95,25 @@ projectIdToJsonValue (ProjectId string) =
     Je.string string
 
 
+{-| ClientModeのJSONへのエンコーダ
+-}
+clientModeToJsonValue : ClientMode -> Je.Value
+clientModeToJsonValue clientMode =
+    case clientMode of
+        DebugMode parameter ->
+            Je.object [ ( "_", Je.string "DebugMode" ), ( "int32", Je.int parameter ) ]
+
+        Release ->
+            Je.object [ ( "_", Je.string "Release" ) ]
+
+
 {-| RequestLogInUrlRequestDataのJSONへのエンコーダ
 -}
 requestLogInUrlRequestDataToJsonValue : RequestLogInUrlRequestData -> Je.Value
 requestLogInUrlRequestDataToJsonValue requestLogInUrlRequestData =
     Je.object
         [ ( "openIdConnectProvider", openIdConnectProviderToJsonValue requestLogInUrlRequestData.openIdConnectProvider )
-        , ( "languageAndLocation", languageAndLocationToJsonValue requestLogInUrlRequestData.languageAndLocation )
+        , ( "urlData", urlDataToJsonValue requestLogInUrlRequestData.urlData )
         ]
 
 
@@ -104,13 +132,15 @@ openIdConnectProviderToJsonValue openIdConnectProvider =
             Je.string "Line"
 
 
-{-| LanguageAndLocationのJSONへのエンコーダ
+{-| UrlDataのJSONへのエンコーダ
 -}
-languageAndLocationToJsonValue : LanguageAndLocation -> Je.Value
-languageAndLocationToJsonValue languageAndLocation =
+urlDataToJsonValue : UrlData -> Je.Value
+urlDataToJsonValue urlData =
     Je.object
-        [ ( "language", languageToJsonValue languageAndLocation.language )
-        , ( "location", locationToJsonValue languageAndLocation.location )
+        [ ( "clientMode", clientModeToJsonValue urlData.clientMode )
+        , ( "location", locationToJsonValue urlData.location )
+        , ( "language", languageToJsonValue urlData.language )
+        , ( "accessToken", maybeToJsonValue accessTokenToJsonValue urlData.accessToken )
         ]
 
 
@@ -178,6 +208,11 @@ resultJsonDecoder okDecoder errorDecoder =
             )
 
 
+accessTokenJsonDecoder : Jd.Decoder AccessToken
+accessTokenJsonDecoder =
+    Jd.map AccessToken Jd.string
+
+
 userIdJsonDecoder : Jd.Decoder UserId
 userIdJsonDecoder =
     Jd.map UserId Jd.string
@@ -188,18 +223,37 @@ projectIdJsonDecoder =
     Jd.map ProjectId Jd.string
 
 
+{-| ClientModeのJSON Decoder
+-}
+clientModeJsonDecoder : Jd.Decoder ClientMode
+clientModeJsonDecoder =
+    Jd.field "_" Jd.string
+        |> Jd.andThen
+            (\tag ->
+                case tag of
+                    "DebugMode" ->
+                        Jd.field "int32" Jd.int |> Jd.map DebugMode
+
+                    "Release" ->
+                        Jd.succeed Release
+
+                    _ ->
+                        Jd.fail ("ClientModeで不明なタグを受けたとった tag=" ++ tag)
+            )
+
+
 {-| RequestLogInUrlRequestDataのJSON Decoder
 -}
 requestLogInUrlRequestDataJsonDecoder : Jd.Decoder RequestLogInUrlRequestData
 requestLogInUrlRequestDataJsonDecoder =
     Jd.succeed
-        (\openIdConnectProvider languageAndLocation ->
+        (\openIdConnectProvider urlData ->
             { openIdConnectProvider = openIdConnectProvider
-            , languageAndLocation = languageAndLocation
+            , urlData = urlData
             }
         )
         |> Jdp.required "openIdConnectProvider" openIdConnectProviderJsonDecoder
-        |> Jdp.required "languageAndLocation" languageAndLocationJsonDecoder
+        |> Jdp.required "urlData" urlDataJsonDecoder
 
 
 {-| OpenIdConnectProviderのJSON Decoder
@@ -224,18 +278,22 @@ openIdConnectProviderJsonDecoder =
             )
 
 
-{-| LanguageAndLocationのJSON Decoder
+{-| UrlDataのJSON Decoder
 -}
-languageAndLocationJsonDecoder : Jd.Decoder LanguageAndLocation
-languageAndLocationJsonDecoder =
+urlDataJsonDecoder : Jd.Decoder UrlData
+urlDataJsonDecoder =
     Jd.succeed
-        (\language location ->
-            { language = language
+        (\clientMode location language accessToken ->
+            { clientMode = clientMode
             , location = location
+            , language = language
+            , accessToken = accessToken
             }
         )
-        |> Jdp.required "language" languageJsonDecoder
+        |> Jdp.required "clientMode" clientModeJsonDecoder
         |> Jdp.required "location" locationJsonDecoder
+        |> Jdp.required "language" languageJsonDecoder
+        |> Jdp.required "accessToken" (maybeJsonDecoder accessTokenJsonDecoder)
 
 
 {-| LanguageのJSON Decoder
