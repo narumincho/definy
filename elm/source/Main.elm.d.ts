@@ -12,16 +12,12 @@ export namespace Elm {
 }
 
 type Flags = {
-  url: string;
   windowSize: {
     width: number;
     height: number;
   };
-  language: common.data.Language;
+  urlData: common.data.UrlData;
   networkConnection: boolean;
-  indexedDBSupport: boolean;
-  webGLSupport: boolean;
-  serviceWorkerSupport: boolean;
 };
 
 type Ports = {

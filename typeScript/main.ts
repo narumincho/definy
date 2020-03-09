@@ -23,16 +23,12 @@ requestAnimationFrame(() => {
   const serviceWorkerSupport = "serviceWorker" in navigator;
   const app = Elm.Main.init({
     flags: {
-      url: location.href,
       windowSize: {
         width: innerWidth,
         height: innerHeight
       },
-      language: common.urlDataFromUrl(location.href).language,
-      networkConnection: navigator.onLine,
-      indexedDBSupport: "indexedDB" in window,
-      webGLSupport: checkWebGLSupport(),
-      serviceWorkerSupport: serviceWorkerSupport
+      urlData: common.urlDataFromUrl(location.href),
+      networkConnection: navigator.onLine
     },
     node: elmAppElement
   });
@@ -202,10 +198,10 @@ requestAnimationFrame(() => {
     )
       .then(response => response.arrayBuffer())
       .then(response => {
-        console.log("APIから返ってきた!");
-        console.log(
-          common.data.decodeString(0, new Uint8Array(response)).result
-        );
+        location.href = common.data.decodeString(
+          0,
+          new Uint8Array(response)
+        ).result;
       });
   });
 });

@@ -106,9 +106,9 @@ type Model
         , messageQueue : List Msg
         , logInState : Data.User.LogInState
         , language : Data.Language
+        , clientMode : Data.ClientMode
         , networkConnection : Bool
         , notificationModel : Component.Notifications.Model
-        , browserSupport : BrowserSupport
         }
 
 
@@ -126,24 +126,13 @@ type PageModel
     = Welcome Page.Home.Model
 
 
-type BrowserSupport
-    = BrowserSupport
-        { indexedDB : Bool
-        , webGL : Bool
-        }
-
-
 type alias Flag =
-    { url : String
-    , windowSize :
+    { windowSize :
         { width : Int
         , height : Int
         }
-    , language : Json.Decode.Value
+    , urlData : Json.Decode.Value
     , networkConnection : Bool
-    , indexedDBSupport : Bool
-    , webGLSupport : Bool
-    , serviceWorkerSupport : Bool
     }
 
 
@@ -162,6 +151,17 @@ init :
     -> ( Model, Cmd Msg )
 init flag =
     let
+        urlData : Data.UrlData
+        urlData =
+            flag.urlData
+                |> Json.Decode.decodeValue Data.urlDataJsonDecoder
+                |> Result.withDefault
+                    { clientMode = Data.Release
+                    , location = Data.Home
+                    , language = Data.English
+                    , accessToken = Nothing
+                    }
+
         tokenFromUrlMaybe =
             Nothing
 
@@ -178,10 +178,7 @@ init flag =
 
                         Nothing ->
                             Data.User.ReadingAccessToken
-                , language =
-                    flag.language
-                        |> Json.Decode.decodeValue Data.languageJsonDecoder
-                        |> Result.withDefault Data.English
+                , language = urlData.language
                 , networkConnection = flag.networkConnection
                 , notificationModel =
                     Component.Notifications.initModel
@@ -191,11 +188,7 @@ init flag =
                             else
                                 Component.Notifications.addEvent Component.Notifications.OffLine
                            )
-                , browserSupport =
-                    BrowserSupport
-                        { indexedDB = flag.indexedDBSupport
-                        , webGL = flag.webGLSupport
-                        }
+                , clientMode = urlData.clientMode
                 }
     in
     ( model
