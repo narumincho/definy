@@ -25,6 +25,6 @@
     "last 1 Chrome versions"
   ],
   "dependencies": {
-    "definy-common": "^0.1.4"
+    "definy-common": "^0.1.5"
   }
 }
