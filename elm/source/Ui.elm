@@ -25,7 +25,6 @@ module Ui exposing
 
 import Bitwise
 import Css
-import EverySet
 import Html.Styled
 import Html.Styled.Attributes
 import Html.Styled.Events
@@ -79,7 +78,7 @@ type Pointer
         , twist : Float
         , type_ : PointerType
         , isPrimary : Bool
-        , buttons : EverySet.EverySet PointerButton
+        , buttons : List PointerButton
         , target : Bool
         }
 
@@ -885,7 +884,6 @@ pointerEventDecoder =
                     ]
                         |> List.filter Tuple.second
                         |> List.map Tuple.first
-                        |> EverySet.fromList
                 , target = eventPhase == 2
                 }
         )
