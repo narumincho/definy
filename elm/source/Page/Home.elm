@@ -144,12 +144,11 @@ view language logInState (Model rec) =
     Ui.row
         (case rec.pointer of
             SideBarResize ->
-                [ Ui.PointerMove MsgPointerMove ]
+                [ Ui.onPointerMove MsgPointerMove ]
 
             _ ->
                 []
         )
-        []
         0
         [ projectList language logInState
         ]
@@ -159,10 +158,8 @@ projectList : Data.Language -> Data.User.LogInState -> Ui.Panel Msg
 projectList language logInState =
     Ui.column
         []
-        []
         8
         [ Ui.textBoxFitHeight
-            []
             []
             { align = Ui.TextAlignStart
             , font = Component.Style.normalFont
@@ -181,7 +178,6 @@ projectList language logInState =
             Data.User.ReadingAccessToken ->
                 Ui.textBoxFitHeight
                     []
-                    []
                     { align = Ui.TextAlignStart
                     , font = Component.Style.normalFont
                     }
@@ -189,7 +185,6 @@ projectList language logInState =
 
             Data.User.VerifyingAccessToken _ ->
                 Ui.textBoxFitHeight
-                    []
                     []
                     { align = Ui.TextAlignStart
                     , font = Component.Style.normalFont
@@ -199,7 +194,6 @@ projectList language logInState =
             Data.User.GuestUser _ ->
                 Ui.textBoxFitHeight
                     []
-                    []
                     { align = Ui.TextAlignStart
                     , font = Component.Style.normalFont
                     }
@@ -208,13 +202,11 @@ projectList language logInState =
             Data.User.Ok { accessToken } ->
                 Ui.textBoxFitHeight
                     []
-                    []
                     { align = Ui.TextAlignStart
                     , font = Component.Style.normalFont
                     }
                     "プロジェクトを新規作成"
         , Ui.textBoxFitHeight
-            []
             []
             { align = Ui.TextAlignStart
             , font = Component.Style.normalFont

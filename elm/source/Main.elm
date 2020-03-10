@@ -13,6 +13,7 @@ import Data.Key
 import Data.User
 import Html
 import Html.Styled
+import Icon
 import Json.Decode
 import Json.Encode
 import Page.Home
@@ -648,10 +649,9 @@ getLanguage (Model { language }) =
 view : Model -> Html.Html Msg
 view (Model rec) =
     Ui.depth
-        []
         (case getGutterType (Model rec) of
             Just gutterType ->
-                [ Ui.PointerImage (gutterTypeToCursorStyle gutterType) ]
+                [ Ui.pointerImage (gutterTypeToCursorStyle gutterType) ]
 
             Nothing ->
                 []
@@ -659,7 +659,6 @@ view (Model rec) =
         ((case rec.page of
             Welcome welcomeModel ->
                 [ Ui.column
-                    []
                     []
                     0
                     [ Component.Header.view
@@ -680,7 +679,6 @@ logInButton : Ui.Panel Msg
 logInButton =
     Ui.column
         []
-        []
         0
         [ lineLogInButton
         ]
@@ -688,21 +686,29 @@ logInButton =
 
 lineLogInButton : Ui.Panel Msg
 lineLogInButton =
-    Ui.textBox
-        [ Ui.Click LogInRequest
+    Ui.depth
+        [ Ui.onClick LogInRequest
         ]
-        []
-        { align = Ui.TextAlignStart
-        , vertical = Ui.CenterY
-        , font =
-            Ui.Font
-                { typeface = "Hack"
-                , size = 32
-                , letterSpacing = 0
-                , color = Css.rgb 255 255 255
+        [ Ui.monochromatic [] (Css.rgb 0 195 0)
+        , Ui.row
+            []
+            0
+            [ Icon.lineIcon Icon.LogInButtonModelNone
+            , Ui.textBox
+                []
+                { align = Ui.TextAlignStart
+                , vertical = Ui.CenterY
+                , font =
+                    Ui.Font
+                        { typeface = "Hack"
+                        , size = 16
+                        , letterSpacing = 0
+                        , color = Css.rgb 255 255 255
+                        }
                 }
-        }
-        "LINEでログイン"
+                "LINEでログイン"
+            ]
+        ]
 
 
 gutterTypeToCursorStyle : GutterType -> Ui.PointerImage

@@ -1,5 +1,6 @@
 module Ui exposing
     ( AlignItems(..)
+    , BorderStyle(..)
     , Content
     , FitStyle(..)
     , Font(..)

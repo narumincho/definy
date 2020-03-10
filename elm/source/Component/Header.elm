@@ -8,19 +8,15 @@ import Ui
 view : Ui.Panel msg
 view =
     Ui.depth
-        []
-        [ Ui.Height 56
-        ]
-        [ Ui.monochromatic [] [] (Css.rgb 36 36 36)
-        , Ui.row
+        [ Ui.height 56 ]
+        [ Ui.monochromatic
             []
+            (Css.rgb 36 36 36)
+        , Ui.row
             []
             0
             [ logo
-            , Ui.monochromatic
-                []
-                []
-                (Css.rgba 0 0 0 0)
+            , Ui.empty []
             , menuItem "ゲスト"
             ]
         ]
@@ -28,8 +24,8 @@ view =
 
 logo : Ui.Panel msg
 logo =
-    Ui.textBox []
-        [ Ui.Padding 8, Ui.Width 128 ]
+    Ui.textBox
+        [ Ui.padding 8, Ui.width 128 ]
         { align = Ui.TextAlignStart
         , vertical = Ui.CenterY
         , font =
@@ -46,8 +42,7 @@ logo =
 menuItem : String -> Ui.Panel msg
 menuItem text =
     Ui.textBox
-        []
-        [ Ui.Width 128, Ui.Padding 8 ]
+        [ Ui.width 128, Ui.padding 8 ]
         { align = Ui.TextAlignStart
         , vertical = Ui.CenterY
         , font =

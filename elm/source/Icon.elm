@@ -14,18 +14,23 @@ type LogInButtonModel
 lineIcon : LogInButtonModel -> Ui.Panel msg
 lineIcon logInButtonModel =
     Ui.imageFromUrl
-        []
-        [ Ui.Width 48
-        , Ui.Padding 4
-        , case logInButtonModel of
-            LogInButtonModelNone ->
-                Ui.BorderRight { color = Css.rgb 0 179 0, width = 1 }
+        [ Ui.width 48
+        , Ui.padding 4
+        , Ui.border
+            (Ui.BorderStyle
+                { color =
+                    case logInButtonModel of
+                        LogInButtonModelNone ->
+                            Css.rgb 0 179 0
 
-            LogInButtonModelHover ->
-                Ui.BorderRight { color = Css.rgb 0 201 0, width = 1 }
+                        LogInButtonModelHover ->
+                            Css.rgb 0 201 0
 
-            LogInButtonModelPressed ->
-                Ui.BorderRight { color = Css.rgb 0 152 0, width = 1 }
+                        LogInButtonModelPressed ->
+                            Css.rgb 0 152 0
+                , width = { top = 0, right = 1, left = 0, bottom = 0 }
+                }
+            )
         ]
         { fitStyle = Ui.Contain
         , alternativeText = "LINEのロゴ"
@@ -37,8 +42,7 @@ lineIcon logInButtonModel =
 gitHubIcon : Ui.Panel msg
 gitHubIcon =
     Ui.vectorImage
-        []
-        [ Ui.Width 48, Ui.Padding 8 ]
+        [ Ui.width 48, Ui.padding 8 ]
         { fitStyle = Ui.Contain
         , viewBox = { x = 0, y = 0, width = 20, height = 20 }
         , elements =
@@ -53,8 +57,7 @@ gitHubIcon =
 googleIcon : Ui.Panel msg
 googleIcon =
     Ui.vectorImage
-        []
-        [ Ui.Width 48, Ui.Padding 8 ]
+        [ Ui.width 48, Ui.padding 8 ]
         { fitStyle = Ui.Contain
         , viewBox = { x = 0, y = 0, width = 20, height = 20 }
         , elements =
