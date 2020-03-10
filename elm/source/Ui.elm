@@ -16,6 +16,7 @@ module Ui exposing
     , height
     , imageFromUrl
     , map
+    , monochromatic
     , offset
     , onClick
     , onPointerDown
@@ -340,6 +341,14 @@ vectorImage styleAndEventList content =
         { styleAndEvent = styleAndEventCompute styleAndEventList
         , content =
             VectorImage content
+        }
+
+
+monochromatic : List (StyleAndEvent message) -> Css.Color -> Panel message
+monochromatic styleAndEventList color =
+    Panel
+        { styleAndEvent = styleAndEventCompute styleAndEventList
+        , content = Monochromatic color
         }
 
 
