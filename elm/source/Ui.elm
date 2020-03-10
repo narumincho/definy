@@ -573,7 +573,13 @@ panelToHtmlElementType (Panel { styleAndEvent, content }) =
                                 , Css.cursor Css.pointer
                                 ]
                             ]
-                            [ Html.Styled.div attributes children ]
+                            [ Html.Styled.div
+                                (Html.Styled.Attributes.css
+                                    [ Css.width (Css.pct 100), Css.height (Css.pct 100) ]
+                                    :: attributes
+                                )
+                                children
+                            ]
 
                 Nothing ->
                     Html.Styled.div
@@ -645,6 +651,7 @@ panelToStyle (StyleAndEventComputed record) childrenStyle content =
 borderStyleToStyle : BorderStyle -> Css.Style
 borderStyleToStyle (BorderStyle record) =
     [ Css.borderColor record.color
+    , Css.borderStyle Css.solid
     , Css.borderWidth4
         (Css.px (toFloat record.width.top))
         (Css.px (toFloat record.width.right))

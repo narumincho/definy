@@ -104,7 +104,7 @@ type Model
     = Model
         { subMode : SubMode
         , page : PageModel
-        , windowSize : { width : Int, height : Int }
+        , windowSize : WindowSize
         , messageQueue : List Msg
         , logInState : Data.User.LogInState
         , language : Data.Language
@@ -112,6 +112,10 @@ type Model
         , networkConnection : Bool
         , notificationModel : Component.Notifications.Model
         }
+
+
+type alias WindowSize =
+    { width : Int, height : Int }
 
 
 type SubMode
@@ -670,7 +674,7 @@ view (Model rec) =
                     []
                     0
                     [ Component.Header.view
-                    , logInButton
+                    , logInButton rec.language rec.windowSize
                     , welcomeModel
                         |> Page.Home.view rec.language rec.logInState
                         |> Ui.map (WelcomePageMsg >> PageMsg)
@@ -683,29 +687,42 @@ view (Model rec) =
         |> Html.Styled.toUnstyled
 
 
-logInButton : Ui.Panel Msg
-logInButton =
-    Ui.row
-        [ Ui.height 64 ]
-        16
-        [ googleLogInButton
-        , gitHubLogInButton
-        , lineLogInButton
-        ]
+logInButton : Data.Language -> WindowSize -> Ui.Panel Msg
+logInButton language { width, height } =
+    if width < 512 then
+        Ui.column
+            [ Ui.height (48 * 3 + 32) ]
+            16
+            [ googleLogInButton language
+            , gitHubLogInButton language
+            , lineLogInButton language
+            ]
+
+    else
+        Ui.row
+            [ Ui.height 64, Ui.padding 8 ]
+            16
+            [ googleLogInButton language
+            , gitHubLogInButton language
+            , lineLogInButton language
+            ]
 
 
-googleLogInButton : Ui.Panel Msg
-googleLogInButton =
+googleLogInButton : Data.Language -> Ui.Panel Msg
+googleLogInButton language =
     Ui.depth
-        [ Ui.onClick (LogInRequest Data.Google) ]
+        [ Ui.onClick (LogInRequest Data.Google)
+        , Ui.borderRadius 8
+        , Ui.height 48
+        ]
         [ Ui.monochromatic
             []
             (Css.rgb 66 133 244)
         , Ui.row
             []
-            0
+            8
             [ Ui.depth
-                [ Ui.width 64, Ui.padding 8 ]
+                [ Ui.width 48 ]
                 [ Ui.monochromatic [] (Css.rgb 255 255 255)
                 , Icon.googleIcon
                 ]
@@ -720,21 +737,33 @@ googleLogInButton =
                         , color = Css.rgb 255 255 255
                         }
                 }
-                "Googleでログイン"
+                (case language of
+                    Data.English ->
+                        "Sign in with Google"
+
+                    Data.Japanese ->
+                        "Googleでログイン"
+
+                    Data.Esperanto ->
+                        "Ensalutu kun Google"
+                )
             ]
         ]
 
 
-gitHubLogInButton : Ui.Panel Msg
-gitHubLogInButton =
+gitHubLogInButton : Data.Language -> Ui.Panel Msg
+gitHubLogInButton language =
     Ui.depth
         [ Ui.onClick (LogInRequest Data.GitHub)
+        , Ui.borderRadius 8
+        , Ui.height 48
         ]
-        [ Ui.row
+        [ Ui.monochromatic [] (Css.rgb 32 32 32)
+        , Ui.row
             []
-            0
+            8
             [ Ui.depth
-                [ Ui.width 64, Ui.padding 8 ]
+                [ Ui.width 48 ]
                 [ Ui.monochromatic [] (Css.rgb 255 255 255)
                 , Icon.gitHubIcon
                 ]
@@ -749,21 +778,34 @@ gitHubLogInButton =
                         , color = Css.rgb 255 255 255
                         }
                 }
-                "GitHubでログイン"
+                (case language of
+                    Data.English ->
+                        "Sign in with GitHub"
+
+                    Data.Japanese ->
+                        "GitHubでログイン"
+
+                    Data.Esperanto ->
+                        "Ensalutu kun GitHub"
+                )
             ]
         ]
 
 
-lineLogInButton : Ui.Panel Msg
-lineLogInButton =
+lineLogInButton : Data.Language -> Ui.Panel Msg
+lineLogInButton language =
     Ui.depth
         [ Ui.onClick (LogInRequest Data.Line)
+        , Ui.borderRadius 8
+        , Ui.height 48
         ]
         [ Ui.monochromatic [] (Css.rgb 0 195 0)
         , Ui.row
             []
-            0
-            [ Icon.lineIcon Icon.LogInButtonModelNone
+            8
+            [ Ui.depth
+                [ Ui.width 48 ]
+                [ Icon.lineIcon Icon.LogInButtonModelNone ]
             , Ui.textBox
                 []
                 { align = Ui.TextAlignStart
@@ -776,7 +818,16 @@ lineLogInButton =
                         , color = Css.rgb 255 255 255
                         }
                 }
-                "LINEでログイン"
+                (case language of
+                    Data.English ->
+                        "Log in with LINE"
+
+                    Data.Japanese ->
+                        "LINEでログイン"
+
+                    Data.Esperanto ->
+                        "Ensalutu kun LINE"
+                )
             ]
         ]
 

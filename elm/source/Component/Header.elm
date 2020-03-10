@@ -17,7 +17,6 @@ view =
             0
             [ logo
             , Ui.empty []
-            , menuItem "ゲスト"
             ]
         ]
 
