@@ -7,12 +7,14 @@ import Component.DefaultUi
 import Component.EditorGroup
 import Component.Header
 import Component.Notifications
+import Component.Style
 import Css
 import Data
 import Data.Key
 import Data.User
 import Html
 import Html.Styled
+import Icon
 import Json.Decode
 import Json.Encode
 import Page.Home
@@ -88,7 +90,7 @@ type Msg
     | ResponseUserData (Result String Data.User.User) -- ユーザーの情報を受け取った
     | ChangeNetworkConnection Bool -- 接続状況が変わった
     | PageMsg PageMsg
-    | LogInRequest
+    | LogInRequest Data.OpenIdConnectProvider
     | NoOperation
 
 
@@ -102,7 +104,7 @@ type Model
     = Model
         { subMode : SubMode
         , page : PageModel
-        , windowSize : { width : Int, height : Int }
+        , windowSize : WindowSize
         , messageQueue : List Msg
         , logInState : Data.User.LogInState
         , language : Data.Language
@@ -110,6 +112,10 @@ type Model
         , networkConnection : Bool
         , notificationModel : Component.Notifications.Model
         }
+
+
+type alias WindowSize =
+    { width : Int, height : Int }
 
 
 type SubMode
@@ -295,18 +301,25 @@ update msg (Model rec) =
             , Cmd.none
             )
 
-        LogInRequest ->
+        LogInRequest openIdConnectProvider ->
             ( Model rec
             , requestLogInUrlTyped
-                { openIdConnectProvider = Data.Line
+                { openIdConnectProvider = openIdConnectProvider
                 , urlData =
-                    { clientMode = Data.DebugMode 2520
-                    , location = Data.Home
+                    { clientMode = rec.clientMode
+                    , location = pageModelToLocation rec.page
                     , language = rec.language
                     , accessToken = Nothing
                     }
                 }
             )
+
+
+pageModelToLocation : PageModel -> Data.Location
+pageModelToLocation pageModel =
+    case pageModel of
+        Welcome _ ->
+            Data.Home
 
 
 updateFromMsgList : List Msg -> Model -> ( Model, Cmd Msg )
@@ -648,10 +661,9 @@ getLanguage (Model { language }) =
 view : Model -> Html.Html Msg
 view (Model rec) =
     Ui.depth
-        []
         (case getGutterType (Model rec) of
             Just gutterType ->
-                [ Ui.PointerImage (gutterTypeToCursorStyle gutterType) ]
+                [ Ui.pointerImage (gutterTypeToCursorStyle gutterType) ]
 
             Nothing ->
                 []
@@ -660,34 +672,164 @@ view (Model rec) =
             Welcome welcomeModel ->
                 [ Ui.column
                     []
-                    []
                     0
                     [ Component.Header.view
+                    , logInButton rec.language rec.windowSize
                     , welcomeModel
                         |> Page.Home.view rec.language rec.logInState
                         |> Ui.map (WelcomePageMsg >> PageMsg)
                     ]
-                , Ui.textBox
-                    [ Ui.Click LogInRequest
-                    ]
-                    []
-                    { align = Ui.TextAlignStart
-                    , vertical = Ui.CenterY
-                    , font =
-                        Ui.Font
-                            { typeface = "Hack"
-                            , size = 32
-                            , letterSpacing = 0
-                            , color = Css.rgb 255 255 255
-                            }
-                    }
-                    "LINEでログイン"
                 ]
          )
             ++ [ Component.Notifications.view rec.notificationModel ]
         )
         |> Ui.toHtml
         |> Html.Styled.toUnstyled
+
+
+logInButton : Data.Language -> WindowSize -> Ui.Panel Msg
+logInButton language { width, height } =
+    if width < 512 then
+        Ui.column
+            [ Ui.height (48 * 3 + 32) ]
+            16
+            [ googleLogInButton language
+            , gitHubLogInButton language
+            , lineLogInButton language
+            ]
+
+    else
+        Ui.row
+            [ Ui.height 64, Ui.padding 8 ]
+            16
+            [ googleLogInButton language
+            , gitHubLogInButton language
+            , lineLogInButton language
+            ]
+
+
+googleLogInButton : Data.Language -> Ui.Panel Msg
+googleLogInButton language =
+    Ui.depth
+        [ Ui.onClick (LogInRequest Data.Google)
+        , Ui.borderRadius 8
+        , Ui.height 48
+        ]
+        [ Ui.monochromatic
+            []
+            (Css.rgb 66 133 244)
+        , Ui.row
+            []
+            8
+            [ Ui.depth
+                [ Ui.width 48 ]
+                [ Ui.monochromatic [] (Css.rgb 255 255 255)
+                , Icon.googleIcon
+                ]
+            , Ui.textBox []
+                { align = Ui.TextAlignStart
+                , vertical = Ui.CenterY
+                , font =
+                    Ui.Font
+                        { typeface = Component.Style.fontHackName
+                        , size = 16
+                        , letterSpacing = 0
+                        , color = Css.rgb 255 255 255
+                        }
+                }
+                (case language of
+                    Data.English ->
+                        "Sign in with Google"
+
+                    Data.Japanese ->
+                        "Googleでログイン"
+
+                    Data.Esperanto ->
+                        "Ensalutu kun Google"
+                )
+            ]
+        ]
+
+
+gitHubLogInButton : Data.Language -> Ui.Panel Msg
+gitHubLogInButton language =
+    Ui.depth
+        [ Ui.onClick (LogInRequest Data.GitHub)
+        , Ui.borderRadius 8
+        , Ui.height 48
+        ]
+        [ Ui.monochromatic [] (Css.rgb 32 32 32)
+        , Ui.row
+            []
+            8
+            [ Ui.depth
+                [ Ui.width 48 ]
+                [ Ui.monochromatic [] (Css.rgb 255 255 255)
+                , Icon.gitHubIcon
+                ]
+            , Ui.textBox []
+                { align = Ui.TextAlignStart
+                , vertical = Ui.CenterY
+                , font =
+                    Ui.Font
+                        { typeface = Component.Style.fontHackName
+                        , size = 16
+                        , letterSpacing = 0
+                        , color = Css.rgb 255 255 255
+                        }
+                }
+                (case language of
+                    Data.English ->
+                        "Sign in with GitHub"
+
+                    Data.Japanese ->
+                        "GitHubでログイン"
+
+                    Data.Esperanto ->
+                        "Ensalutu kun GitHub"
+                )
+            ]
+        ]
+
+
+lineLogInButton : Data.Language -> Ui.Panel Msg
+lineLogInButton language =
+    Ui.depth
+        [ Ui.onClick (LogInRequest Data.Line)
+        , Ui.borderRadius 8
+        , Ui.height 48
+        ]
+        [ Ui.monochromatic [] (Css.rgb 0 195 0)
+        , Ui.row
+            []
+            8
+            [ Ui.depth
+                [ Ui.width 48 ]
+                [ Icon.lineIcon Icon.LogInButtonModelNone ]
+            , Ui.textBox
+                []
+                { align = Ui.TextAlignStart
+                , vertical = Ui.CenterY
+                , font =
+                    Ui.Font
+                        { typeface = Component.Style.fontHackName
+                        , size = 16
+                        , letterSpacing = 0
+                        , color = Css.rgb 255 255 255
+                        }
+                }
+                (case language of
+                    Data.English ->
+                        "Log in with LINE"
+
+                    Data.Japanese ->
+                        "LINEでログイン"
+
+                    Data.Esperanto ->
+                        "Ensalutu kun LINE"
+                )
+            ]
+        ]
 
 
 gutterTypeToCursorStyle : GutterType -> Ui.PointerImage

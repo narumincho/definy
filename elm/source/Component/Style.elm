@@ -4,6 +4,7 @@ module Component.Style exposing
     , activeColor
     , codeFontTypeface
     , fontHack
+    , fontHackName
     , gutterPanel
     , horizontalGutter
     , normalFont
@@ -84,47 +85,40 @@ verticalGutter isResizing =
 gutterPanel : GutterMode -> Ui.Panel GutterMsg
 gutterPanel mode =
     Ui.depth
-        []
-        [ Ui.Width 2
-        , Ui.OverflowVisible
-        , Ui.PointerImage Ui.HorizontalResize
+        [ Ui.width 2
+        , Ui.overflowVisible
+        , Ui.pointerImage Ui.HorizontalResize
         ]
         (case mode of
             GutterModeNone ->
                 [ Ui.monochromatic
-                    []
-                    [ Ui.Width 2 ]
+                    [ Ui.width 2
+                    ]
                     (Css.rgb 68 68 68)
-                , Ui.monochromatic
-                    [ Ui.PointerDown GutterMsgToResizeMode
-                    , Ui.PointerEnter (always GutterMsgPointerEnter)
+                , Ui.empty
+                    [ Ui.width 12
+                    , Ui.offset ( -5, 0 )
+                    , Ui.onPointerDown GutterMsgToResizeMode
+                    , Ui.onPointerEnter (always GutterMsgPointerEnter)
                     ]
-                    [ Ui.Width 12
-                    , Ui.Offset ( -5, 0 )
-                    ]
-                    (Css.rgba 0 0 0 0)
                 ]
 
             GutterModePointerEnter ->
                 [ Ui.monochromatic
-                    []
-                    [ Ui.Width 2 ]
+                    [ Ui.width 2 ]
                     (Css.rgb 102 102 102)
-                , Ui.monochromatic
-                    [ Ui.PointerDown GutterMsgToResizeMode
-                    , Ui.PointerLeave (always GutterMsgPointerLeave)
+                , Ui.empty
+                    [ Ui.width 12
+                    , Ui.offset ( -5, 0 )
+                    , Ui.onPointerDown GutterMsgToResizeMode
+                    , Ui.onPointerLeave (always GutterMsgPointerLeave)
                     ]
-                    [ Ui.Width 12
-                    , Ui.Offset ( -5, 0 )
-                    ]
-                    (Css.rgba 0 0 0 0)
                 ]
 
             GutterModeResize ->
                 [ Ui.monochromatic
-                    []
-                    [ Ui.Width 6
-                    , Ui.Offset ( -2, 0 )
+                    [ Ui.width 6
+                    , Ui.offset ( -2, 0 )
                     ]
                     (Css.rgb 255 255 255)
                 ]
@@ -255,4 +249,9 @@ fontHack =
         font =
             Css.sansSerif
     in
-    Css.fontFamily { font | value = "Hack" }
+    Css.fontFamily { font | value = fontHackName }
+
+
+fontHackName : String
+fontHackName =
+    "Hack"

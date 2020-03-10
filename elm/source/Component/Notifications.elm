@@ -42,20 +42,15 @@ view : Model -> Ui.Panel msg
 view (Model events) =
     Ui.row
         []
-        []
         0
         [ Ui.monochromatic
             []
-            []
             (Css.rgba 0 0 0 0)
         , Ui.column
-            []
-            [ Ui.Width 480 ]
+            [ Ui.width 480 ]
             8
-            (Ui.monochromatic
+            (Ui.empty
                 []
-                []
-                (Css.rgba 0 0 0 0)
                 :: (events
                         |> List.reverse
                         |> List.map card
@@ -106,28 +101,23 @@ type Icon
 cardItem : Maybe Icon -> String -> Ui.Panel msg
 cardItem iconMaybe text =
     Ui.depth
-        []
-        [ Ui.Height 48 ]
+        [ Ui.height 48 ]
         [ Ui.monochromatic
-            []
             []
             (Css.rgb 0 100 0)
         , case iconMaybe of
             Just (Icon icon) ->
                 Ui.row
-                    []
-                    [ Ui.Padding 8 ]
+                    [ Ui.padding 8 ]
                     0
                     [ Ui.imageFromUrl
-                        []
-                        [ Ui.Width 32, Ui.Height 32 ]
+                        [ Ui.width 32, Ui.height 32 ]
                         { fitStyle = Ui.Contain
                         , alternativeText = icon.alternativeText
                         , rendering = icon.rendering
                         }
                         icon.url
                     , Ui.textBox
-                        []
                         []
                         { align = Ui.TextAlignStart
                         , vertical = Ui.CenterY
@@ -138,8 +128,7 @@ cardItem iconMaybe text =
 
             Nothing ->
                 Ui.textBox
-                    []
-                    [ Ui.Padding 8 ]
+                    [ Ui.padding 8 ]
                     { align = Ui.TextAlignStart
                     , vertical = Ui.CenterY
                     , font = Style.normalFont

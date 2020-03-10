@@ -25,7 +25,6 @@ module VectorImage exposing
 要素を作ってから移動もできる
 -}
 
-import Color exposing (Color)
 import Css
 import Html.Styled
 import Svg.Styled as S
@@ -184,7 +183,7 @@ offsetTranslate ( x, y ) =
 type StrokeStyle
     = StrokeNone
     | Stroke
-        { color : Maybe Color
+        { color : Maybe Css.Color
         , width : Int
         , strokeLineJoin : StrokeLineJoin
         }
@@ -207,7 +206,7 @@ strokeNone =
 
 {-| 線の色だけ指定。線の太さは初期値の1
 -}
-strokeColor : Color -> StrokeStyle
+strokeColor : Css.Color -> StrokeStyle
 strokeColor color =
     Stroke
         { color = Just color
@@ -218,7 +217,7 @@ strokeColor color =
 
 {-| 線の色と幅を指定
 -}
-strokeColorWidth : Color -> Int -> StrokeStyle
+strokeColorWidth : Css.Color -> Int -> StrokeStyle
 strokeColorWidth color width =
     Stroke
         { color = Just color
@@ -240,7 +239,7 @@ strokeWidth width =
 
 {-| 線の頂点は丸い線
 -}
-strokeColorAndStrokeLineJoinRound : Color -> StrokeStyle
+strokeColorAndStrokeLineJoinRound : Css.Color -> StrokeStyle
 strokeColorAndStrokeLineJoinRound color =
     Stroke
         { color = Just color
@@ -260,7 +259,7 @@ strokeStyleToSvgAttributes strokeStyle =
         Stroke { color, width, strokeLineJoin } ->
             (case color of
                 Just c ->
-                    [ Sa.stroke (Color.toHex c) ]
+                    [ Sa.stroke c.value ]
 
                 Nothing ->
                     []
@@ -287,7 +286,7 @@ strokeStyleToSvgAttributes strokeStyle =
 -}
 type FillStyle
     = FillNone
-    | FillWithColor { color : Color }
+    | FillWithColor { color : Css.Color }
 
 
 {-| 塗りつぶさない
@@ -299,7 +298,7 @@ fillNone =
 
 {-| 単色で塗りつぶす
 -}
-fillColor : Color -> FillStyle
+fillColor : Css.Color -> FillStyle
 fillColor color =
     FillWithColor
         { color = color }
@@ -314,7 +313,7 @@ fillStyleToSvgAttributes fillStyle =
             [ Sa.fill "none" ]
 
         FillWithColor { color } ->
-            [ Sa.fill (Color.toHex color) ]
+            [ Sa.fill color.value ]
 
 
 clickMsgToSvgAttributes : Maybe msg -> List (S.Attribute msg)

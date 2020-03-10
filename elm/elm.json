@@ -4,9 +4,7 @@
   "elm-version": "0.19.1",
   "dependencies": {
     "direct": {
-      "Gizra/elm-all-set": "1.0.1",
       "NoRedInk/elm-json-decode-pipeline": "1.0.0",
-      "RomanErnst/erl": "2.1.1",
       "elm/browser": "1.0.2",
       "elm/core": "1.0.5",
       "elm/http": "2.0.0",
@@ -14,7 +12,6 @@
       "elm/time": "1.0.0",
       "elm/url": "1.0.0",
       "rtfeldman/elm-css": "16.0.1",
-      "tesk9/palette": "2.0.0",
       "elm/html": "1.0.0"
     },
     "indirect": {
