@@ -91,22 +91,23 @@ type PointerButton
 
 {-| スタイルとイベント
 -}
-type alias StyleAndEventComputed message =
-    { padding : Int
-    , width : Maybe Int
-    , height : Maybe Int
-    , offset : Maybe ( Int, Int )
-    , overflowVisible : Bool
-    , pointerImage : Maybe PointerImage
-    , border : Maybe BorderStyle
-    , borderRadius : Int
-    , backGroundColor : Maybe Css.Color
-    , onClick : Maybe message
-    , onPointerEnter : Maybe (Pointer -> message)
-    , onPointerLeave : Maybe (Pointer -> message)
-    , onPointerMove : Maybe (Pointer -> message)
-    , onPointerDown : Maybe (Pointer -> message)
-    }
+type StyleAndEventComputed message
+    = StyleAndEventComputed
+        { padding : Int
+        , width : Maybe Int
+        , height : Maybe Int
+        , offset : Maybe ( Int, Int )
+        , overflowVisible : Bool
+        , pointerImage : Maybe PointerImage
+        , border : Maybe BorderStyle
+        , borderRadius : Int
+        , backGroundColor : Maybe Css.Color
+        , onClick : Maybe message
+        , onPointerEnter : Maybe (Pointer -> message)
+        , onPointerLeave : Maybe (Pointer -> message)
+        , onPointerMove : Maybe (Pointer -> message)
+        , onPointerDown : Maybe (Pointer -> message)
+        }
 
 
 type StyleAndEvent message
@@ -379,48 +380,50 @@ styleAndEventCompute list =
     case list of
         x :: xs ->
             let
-                rest =
+                (StyleAndEventComputed rest) =
                     styleAndEventCompute xs
             in
-            case x of
-                Padding int ->
-                    { rest | padding = int }
+            StyleAndEventComputed
+                (case x of
+                    Padding int ->
+                        { rest | padding = int }
 
-                Width int ->
-                    { rest | width = Just int }
+                    Width int ->
+                        { rest | width = Just int }
 
-                Height int ->
-                    { rest | height = Just int }
+                    Height int ->
+                        { rest | height = Just int }
 
-                Offset vector ->
-                    { rest | offset = Just vector }
+                    Offset vector ->
+                        { rest | offset = Just vector }
 
-                OverflowVisible ->
-                    { rest | overflowVisible = True }
+                    OverflowVisible ->
+                        { rest | overflowVisible = True }
 
-                PointerImage pointerImage_ ->
-                    { rest | pointerImage = Just pointerImage_ }
+                    PointerImage pointerImage_ ->
+                        { rest | pointerImage = Just pointerImage_ }
 
-                Border borderStyle ->
-                    { rest | border = Just borderStyle }
+                    Border borderStyle ->
+                        { rest | border = Just borderStyle }
 
-                BorderRadius int ->
-                    { rest | borderRadius = int }
+                    BorderRadius int ->
+                        { rest | borderRadius = int }
 
-                OnClick message ->
-                    { rest | onClick = Just message }
+                    OnClick message ->
+                        { rest | onClick = Just message }
 
-                OnPointerEnter function ->
-                    { rest | onPointerEnter = Just function }
+                    OnPointerEnter function ->
+                        { rest | onPointerEnter = Just function }
 
-                OnPointerLeave function ->
-                    { rest | onPointerLeave = Just function }
+                    OnPointerLeave function ->
+                        { rest | onPointerLeave = Just function }
 
-                OnPointerMove function ->
-                    { rest | onPointerMove = Just function }
+                    OnPointerMove function ->
+                        { rest | onPointerMove = Just function }
 
-                OnPointerDown function ->
-                    { rest | onPointerDown = Just function }
+                    OnPointerDown function ->
+                        { rest | onPointerDown = Just function }
+                )
 
         [] ->
             defaultStyleAndEvent
@@ -428,21 +431,22 @@ styleAndEventCompute list =
 
 defaultStyleAndEvent : StyleAndEventComputed message
 defaultStyleAndEvent =
-    { padding = 0
-    , width = Nothing
-    , height = Nothing
-    , offset = Nothing
-    , overflowVisible = False
-    , pointerImage = Nothing
-    , border = Nothing
-    , borderRadius = 0
-    , backGroundColor = Nothing
-    , onClick = Nothing
-    , onPointerEnter = Nothing
-    , onPointerLeave = Nothing
-    , onPointerMove = Nothing
-    , onPointerDown = Nothing
-    }
+    StyleAndEventComputed
+        { padding = 0
+        , width = Nothing
+        , height = Nothing
+        , offset = Nothing
+        , overflowVisible = False
+        , pointerImage = Nothing
+        , border = Nothing
+        , borderRadius = 0
+        , backGroundColor = Nothing
+        , onClick = Nothing
+        , onPointerEnter = Nothing
+        , onPointerLeave = Nothing
+        , onPointerMove = Nothing
+        , onPointerDown = Nothing
+        }
 
 
 map : (a -> b) -> Panel a -> Panel b
@@ -489,22 +493,23 @@ map func (Panel { styleAndEvent, content }) =
 
 
 styleAndEventMap : (a -> b) -> StyleAndEventComputed a -> StyleAndEventComputed b
-styleAndEventMap func styleAndEvent =
-    { padding = styleAndEvent.padding
-    , width = styleAndEvent.width
-    , height = styleAndEvent.height
-    , offset = styleAndEvent.offset
-    , overflowVisible = styleAndEvent.overflowVisible
-    , pointerImage = styleAndEvent.pointerImage
-    , border = styleAndEvent.border
-    , borderRadius = styleAndEvent.borderRadius
-    , backGroundColor = styleAndEvent.backGroundColor
-    , onClick = Maybe.map func styleAndEvent.onClick
-    , onPointerEnter = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) styleAndEvent.onPointerEnter
-    , onPointerLeave = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) styleAndEvent.onPointerLeave
-    , onPointerMove = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) styleAndEvent.onPointerLeave
-    , onPointerDown = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) styleAndEvent.onPointerDown
-    }
+styleAndEventMap func (StyleAndEventComputed record) =
+    StyleAndEventComputed
+        { padding = record.padding
+        , width = record.width
+        , height = record.height
+        , offset = record.offset
+        , overflowVisible = record.overflowVisible
+        , pointerImage = record.pointerImage
+        , border = record.border
+        , borderRadius = record.borderRadius
+        , backGroundColor = record.backGroundColor
+        , onClick = Maybe.map func record.onClick
+        , onPointerEnter = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) record.onPointerEnter
+        , onPointerLeave = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) record.onPointerLeave
+        , onPointerMove = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) record.onPointerLeave
+        , onPointerDown = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) record.onPointerDown
+        }
 
 
 type ChildrenStyle
@@ -540,7 +545,11 @@ panelToHtmlElementType (Panel { styleAndEvent, content }) =
             Html.Styled.img
 
         _ ->
-            case styleAndEvent.onClick of
+            let
+                (StyleAndEventComputed record) =
+                    styleAndEvent
+            in
+            case record.onClick of
                 Just _ ->
                     -- Button要素がdisplay:gridできないバグへの対処も含めての入れ子 https://stackoverflow.com/questions/51815477/is-a-button-allowed-to-have-displaygrid
                     \attributes children ->
@@ -561,32 +570,32 @@ panelToHtmlElementType (Panel { styleAndEvent, content }) =
 
 
 panelToStyle : StyleAndEventComputed message -> ChildrenStyle -> Content message -> Css.Style
-panelToStyle styleAndEvent childrenStyle content =
-    [ [ Css.padding (Css.px (toFloat styleAndEvent.padding))
+panelToStyle (StyleAndEventComputed record) childrenStyle content =
+    [ [ Css.padding (Css.px (toFloat record.padding))
       , contentToStyle
             childrenStyle
-            styleAndEvent.overflowVisible
+            record.overflowVisible
             content
       ]
-    , case styleAndEvent.border of
+    , case record.border of
         Just border_ ->
             [ borderStyleToStyle border_ ]
 
         Nothing ->
             []
-    , case styleAndEvent.width of
+    , case record.width of
         Just width_ ->
             [ Css.width (Css.px (toFloat width_)) ]
 
         Nothing ->
             []
-    , case styleAndEvent.height of
+    , case record.height of
         Just height_ ->
             [ Css.height (Css.px (toFloat height_)) ]
 
         Nothing ->
             []
-    , case styleAndEvent.offset of
+    , case record.offset of
         Just ( left, top ) ->
             [ Css.transform
                 (Css.translate2
@@ -597,7 +606,7 @@ panelToStyle styleAndEvent childrenStyle content =
 
         Nothing ->
             []
-    , case styleAndEvent.pointerImage of
+    , case record.pointerImage of
         Just HorizontalResize ->
             [ Css.cursor Css.ewResize ]
 
@@ -606,13 +615,13 @@ panelToStyle styleAndEvent childrenStyle content =
 
         Nothing ->
             []
-    , case styleAndEvent.borderRadius of
+    , case record.borderRadius of
         0 ->
             []
 
         _ ->
-            [ Css.borderRadius (Css.px (toFloat styleAndEvent.borderRadius)) ]
-    , case styleAndEvent.backGroundColor of
+            [ Css.borderRadius (Css.px (toFloat record.borderRadius)) ]
+    , case record.backGroundColor of
         Just color ->
             [ Css.backgroundColor color ]
 
@@ -775,16 +784,16 @@ growGrowContentToListAttributes content =
 {-| イベントをElmのイベントリスナーの属性に変換する
 -}
 eventsToHtmlAttributes : StyleAndEventComputed msg -> List (Html.Styled.Attribute msg)
-eventsToHtmlAttributes styleAndEvent =
-    [ styleAndEvent.onPointerEnter
+eventsToHtmlAttributes (StyleAndEventComputed record) =
+    [ record.onPointerEnter
         |> Maybe.map (\msg -> Html.Styled.Events.on "pointerenter" (pointerEventDecoder |> Json.Decode.map msg))
-    , styleAndEvent.onPointerLeave
+    , record.onPointerLeave
         |> Maybe.map (\msg -> Html.Styled.Events.on "pointerleave" (pointerEventDecoder |> Json.Decode.map msg))
-    , styleAndEvent.onPointerMove
+    , record.onPointerMove
         |> Maybe.map (\msg -> Html.Styled.Events.on "pointermove" (pointerEventDecoder |> Json.Decode.map msg))
-    , styleAndEvent.onPointerDown
+    , record.onPointerDown
         |> Maybe.map (\msg -> Html.Styled.Events.on "pointerdown" (pointerEventDecoder |> Json.Decode.map msg))
-    , styleAndEvent.onClick
+    , record.onClick
         |> Maybe.map (\msg -> Html.Styled.Events.onClick msg)
     ]
         |> Utility.ListExtra.takeFromMaybeList
@@ -956,7 +965,11 @@ growOrFixAutoToGridTemplateString growOrFixAuto =
 
 panelToGrowOrFixAutoWidth : Panel msg -> GrowOrFixAuto
 panelToGrowOrFixAutoWidth (Panel { styleAndEvent }) =
-    case styleAndEvent.width of
+    let
+        (StyleAndEventComputed record) =
+            styleAndEvent
+    in
+    case record.width of
         Just _ ->
             FixMaxContent
 
@@ -966,7 +979,11 @@ panelToGrowOrFixAutoWidth (Panel { styleAndEvent }) =
 
 panelToGrowOrFixAutoHeight : Panel msg -> GrowOrFixAuto
 panelToGrowOrFixAutoHeight (Panel { styleAndEvent, content }) =
-    case ( styleAndEvent.height, content ) of
+    let
+        (StyleAndEventComputed record) =
+            styleAndEvent
+    in
+    case ( record.height, content ) of
         ( Just _, _ ) ->
             FixMaxContent
 
