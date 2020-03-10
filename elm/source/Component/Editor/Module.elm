@@ -10,7 +10,6 @@ module Component.Editor.Module exposing
     )
 
 import Array
-import Color
 import Compiler
 import Component.DefaultUi
 import Component.Style as Style
@@ -4208,7 +4207,7 @@ suggestionItem selected ( text, description ) =
             [ Html.Styled.text description ]
          ]
             ++ (if selected then
-                    [ enterIcon (Color.fromRGB ( 16, 16, 16 )) ]
+                    [ enterIcon (Css.rgb 16 16 16) ]
 
                 else
                     []
@@ -4216,7 +4215,7 @@ suggestionItem selected ( text, description ) =
         )
 
 
-enterIcon : Color.Color -> Html.Styled.Html msg
+enterIcon : Css.Color -> Html.Styled.Html msg
 enterIcon strokeColor =
     VectorImage.toHtml
         { x = 0, y = 0, width = 40, height = 32 }

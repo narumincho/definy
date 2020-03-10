@@ -10,13 +10,11 @@ module Component.Editor.EditorKeyConfig exposing
 {-| どのキーを選択しているか、検索文字はなにか
 -}
 
-import Color
 import Component.Style as Style
 import Css
 import Data.Key as Key
 import Html.Styled
 import Html.Styled.Attributes
-import Palette.X11 as P
 import VectorImage
 
 
