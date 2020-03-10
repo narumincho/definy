@@ -57,7 +57,10 @@ gitHubIcon =
 googleIcon : Ui.Panel msg
 googleIcon =
     Ui.vectorImage
-        [ Ui.width 48, Ui.padding 8 ]
+        [ Ui.width 48
+        , Ui.height 48
+        , Ui.padding 8
+        ]
         { fitStyle = Ui.Contain
         , viewBox = { x = 0, y = 0, width = 20, height = 20 }
         , elements =

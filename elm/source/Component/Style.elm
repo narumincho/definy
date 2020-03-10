@@ -4,6 +4,7 @@ module Component.Style exposing
     , activeColor
     , codeFontTypeface
     , fontHack
+    , fontHackName
     , gutterPanel
     , horizontalGutter
     , normalFont
@@ -248,4 +249,9 @@ fontHack =
         font =
             Css.sansSerif
     in
-    Css.fontFamily { font | value = "Hack" }
+    Css.fontFamily { font | value = fontHackName }
+
+
+fontHackName : String
+fontHackName =
+    "Hack"

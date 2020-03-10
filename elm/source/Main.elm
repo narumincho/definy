@@ -7,6 +7,7 @@ import Component.DefaultUi
 import Component.EditorGroup
 import Component.Header
 import Component.Notifications
+import Component.Style
 import Css
 import Data
 import Data.Key
@@ -89,7 +90,7 @@ type Msg
     | ResponseUserData (Result String Data.User.User) -- ユーザーの情報を受け取った
     | ChangeNetworkConnection Bool -- 接続状況が変わった
     | PageMsg PageMsg
-    | LogInRequest
+    | LogInRequest Data.OpenIdConnectProvider
     | NoOperation
 
 
@@ -296,18 +297,25 @@ update msg (Model rec) =
             , Cmd.none
             )
 
-        LogInRequest ->
+        LogInRequest openIdConnectProvider ->
             ( Model rec
             , requestLogInUrlTyped
-                { openIdConnectProvider = Data.Line
+                { openIdConnectProvider = openIdConnectProvider
                 , urlData =
-                    { clientMode = Data.DebugMode 2520
-                    , location = Data.Home
+                    { clientMode = rec.clientMode
+                    , location = pageModelToLocation rec.page
                     , language = rec.language
                     , accessToken = Nothing
                     }
                 }
             )
+
+
+pageModelToLocation : PageModel -> Data.Location
+pageModelToLocation pageModel =
+    case pageModel of
+        Welcome _ ->
+            Data.Home
 
 
 updateFromMsgList : List Msg -> Model -> ( Model, Cmd Msg )
@@ -677,17 +685,79 @@ view (Model rec) =
 
 logInButton : Ui.Panel Msg
 logInButton =
-    Ui.column
-        []
-        0
-        [ lineLogInButton
+    Ui.row
+        [ Ui.height 64 ]
+        16
+        [ googleLogInButton
+        , gitHubLogInButton
+        , lineLogInButton
+        ]
+
+
+googleLogInButton : Ui.Panel Msg
+googleLogInButton =
+    Ui.depth
+        [ Ui.onClick (LogInRequest Data.Google) ]
+        [ Ui.monochromatic
+            []
+            (Css.rgb 66 133 244)
+        , Ui.row
+            []
+            0
+            [ Ui.depth
+                [ Ui.width 64, Ui.padding 8 ]
+                [ Ui.monochromatic [] (Css.rgb 255 255 255)
+                , Icon.googleIcon
+                ]
+            , Ui.textBox []
+                { align = Ui.TextAlignStart
+                , vertical = Ui.CenterY
+                , font =
+                    Ui.Font
+                        { typeface = Component.Style.fontHackName
+                        , size = 16
+                        , letterSpacing = 0
+                        , color = Css.rgb 255 255 255
+                        }
+                }
+                "Googleでログイン"
+            ]
+        ]
+
+
+gitHubLogInButton : Ui.Panel Msg
+gitHubLogInButton =
+    Ui.depth
+        [ Ui.onClick (LogInRequest Data.GitHub)
+        ]
+        [ Ui.row
+            []
+            0
+            [ Ui.depth
+                [ Ui.width 64, Ui.padding 8 ]
+                [ Ui.monochromatic [] (Css.rgb 255 255 255)
+                , Icon.gitHubIcon
+                ]
+            , Ui.textBox []
+                { align = Ui.TextAlignStart
+                , vertical = Ui.CenterY
+                , font =
+                    Ui.Font
+                        { typeface = Component.Style.fontHackName
+                        , size = 16
+                        , letterSpacing = 0
+                        , color = Css.rgb 255 255 255
+                        }
+                }
+                "GitHubでログイン"
+            ]
         ]
 
 
 lineLogInButton : Ui.Panel Msg
 lineLogInButton =
     Ui.depth
-        [ Ui.onClick LogInRequest
+        [ Ui.onClick (LogInRequest Data.Line)
         ]
         [ Ui.monochromatic [] (Css.rgb 0 195 0)
         , Ui.row
@@ -700,7 +770,7 @@ lineLogInButton =
                 , vertical = Ui.CenterY
                 , font =
                     Ui.Font
-                        { typeface = "Hack"
+                        { typeface = Component.Style.fontHackName
                         , size = 16
                         , letterSpacing = 0
                         , color = Css.rgb 255 255 255
