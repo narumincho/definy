@@ -663,31 +663,46 @@ view (Model rec) =
                     []
                     0
                     [ Component.Header.view
+                    , logInButton
                     , welcomeModel
                         |> Page.Home.view rec.language rec.logInState
                         |> Ui.map (WelcomePageMsg >> PageMsg)
                     ]
-                , Ui.textBox
-                    [ Ui.Click LogInRequest
-                    ]
-                    []
-                    { align = Ui.TextAlignStart
-                    , vertical = Ui.CenterY
-                    , font =
-                        Ui.Font
-                            { typeface = "Hack"
-                            , size = 32
-                            , letterSpacing = 0
-                            , color = Css.rgb 255 255 255
-                            }
-                    }
-                    "LINEでログイン"
                 ]
          )
             ++ [ Component.Notifications.view rec.notificationModel ]
         )
         |> Ui.toHtml
         |> Html.Styled.toUnstyled
+
+
+logInButton : Ui.Panel Msg
+logInButton =
+    Ui.column
+        []
+        []
+        0
+        [ lineLogInButton
+        ]
+
+
+lineLogInButton : Ui.Panel Msg
+lineLogInButton =
+    Ui.textBox
+        [ Ui.Click LogInRequest
+        ]
+        []
+        { align = Ui.TextAlignStart
+        , vertical = Ui.CenterY
+        , font =
+            Ui.Font
+                { typeface = "Hack"
+                , size = 32
+                , letterSpacing = 0
+                , color = Css.rgb 255 255 255
+                }
+        }
+        "LINEでログイン"
 
 
 gutterTypeToCursorStyle : GutterType -> Ui.PointerImage
