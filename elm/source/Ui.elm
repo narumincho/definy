@@ -101,11 +101,11 @@ type alias StyleAndEventComputed message =
     , border : Maybe BorderStyle
     , borderRadius : Int
     , backGroundColor : Maybe Css.Color
-    , click : Maybe message
-    , pointerEnter : Maybe (Pointer -> message)
-    , pointerLeave : Maybe (Pointer -> message)
-    , pointerMove : Maybe (Pointer -> message)
-    , pointerDown : Maybe (Pointer -> message)
+    , onClick : Maybe message
+    , onPointerEnter : Maybe (Pointer -> message)
+    , onPointerLeave : Maybe (Pointer -> message)
+    , onPointerMove : Maybe (Pointer -> message)
+    , onPointerDown : Maybe (Pointer -> message)
     }
 
 
@@ -271,7 +271,7 @@ onPointerDown =
 {-| テキストを表示する
 -}
 textBox :
-    StyleAndEventComputed message
+    List (StyleAndEvent message)
     ->
         { align : TextAlignment
         , vertical : AlignItems
@@ -279,9 +279,9 @@ textBox :
         }
     -> String
     -> Panel message
-textBox styleAndEvent { align, vertical, font } text =
+textBox styleAndEventList { align, vertical, font } text =
     Panel
-        { styleAndEvent = styleAndEvent
+        { styleAndEvent = styleAndEventCompute styleAndEventList
         , content =
             TextBox
                 { font = font
@@ -295,10 +295,10 @@ textBox styleAndEvent { align, vertical, font } text =
 {-| テキストを表示する
 高さがフォントや中身の文字に応じて変化する
 -}
-textBoxFitHeight : StyleAndEventComputed message -> { align : TextAlignment, font : Font } -> String -> Panel message
-textBoxFitHeight styleAndEvent { align, font } text =
+textBoxFitHeight : List (StyleAndEvent message) -> { align : TextAlignment, font : Font } -> String -> Panel message
+textBoxFitHeight styleAndEventList { align, font } text =
     Panel
-        { styleAndEvent = styleAndEvent
+        { styleAndEvent = styleAndEventCompute styleAndEventList
         , content =
             TextBoxFitHeight
                 { font = font
@@ -309,7 +309,7 @@ textBoxFitHeight styleAndEvent { align, font } text =
 
 
 imageFromUrl :
-    StyleAndEventComputed message
+    List (StyleAndEvent message)
     ->
         { fitStyle : FitStyle
         , alternativeText : String
@@ -317,9 +317,9 @@ imageFromUrl :
         }
     -> String
     -> Panel message
-imageFromUrl styleAndEvent imageStyle url =
+imageFromUrl styleAndEventList imageStyle url =
     Panel
-        { styleAndEvent = styleAndEvent
+        { styleAndEvent = styleAndEventCompute styleAndEventList
         , content =
             ImageFromUrl
                 { url = url
@@ -331,47 +331,99 @@ imageFromUrl styleAndEvent imageStyle url =
 
 
 vectorImage :
-    StyleAndEventComputed message
+    List (StyleAndEvent message)
     -> { fitStyle : FitStyle, viewBox : { x : Int, y : Int, width : Int, height : Int }, elements : List (VectorImage.Element message) }
     -> Panel message
-vectorImage styleAndEvent content =
+vectorImage styleAndEventList content =
     Panel
-        { styleAndEvent = styleAndEvent
+        { styleAndEvent = styleAndEventCompute styleAndEventList
         , content =
             VectorImage content
         }
 
 
-empty : StyleAndEventComputed message -> Panel message
-empty styleAndEvent =
+empty : List (StyleAndEvent message) -> Panel message
+empty styleAndEventList =
     Panel
-        { styleAndEvent = styleAndEvent
+        { styleAndEvent = styleAndEventCompute styleAndEventList
         , content = Empty
         }
 
 
-depth : StyleAndEventComputed message -> List (Panel message) -> Panel message
-depth styleAndEvent children =
+depth : List (StyleAndEvent message) -> List (Panel message) -> Panel message
+depth styleAndEventList children =
     Panel
-        { styleAndEvent = styleAndEvent
+        { styleAndEvent = styleAndEventCompute styleAndEventList
         , content = DepthList children
         }
 
 
-row : StyleAndEventComputed message -> Int -> List (Panel message) -> Panel message
-row styleAndEvent gap children =
+row : List (StyleAndEvent message) -> Int -> List (Panel message) -> Panel message
+row styleAndEventList gap children =
     Panel
-        { styleAndEvent = styleAndEvent
+        { styleAndEvent = styleAndEventCompute styleAndEventList
         , content = RowList children gap
         }
 
 
-column : StyleAndEventComputed message -> Int -> List (Panel message) -> Panel message
-column styleAndEvent gap children =
+column : List (StyleAndEvent message) -> Int -> List (Panel message) -> Panel message
+column styleAndEventList gap children =
     Panel
-        { styleAndEvent = styleAndEvent
+        { styleAndEvent = styleAndEventCompute styleAndEventList
         , content = ColumnList children gap
         }
+
+
+styleAndEventCompute : List (StyleAndEvent message) -> StyleAndEventComputed message
+styleAndEventCompute list =
+    case list of
+        x :: xs ->
+            let
+                rest =
+                    styleAndEventCompute xs
+            in
+            case x of
+                Padding int ->
+                    { rest | padding = int }
+
+                Width int ->
+                    { rest | width = Just int }
+
+                Height int ->
+                    { rest | height = Just int }
+
+                Offset vector ->
+                    { rest | offset = Just vector }
+
+                OverflowVisible ->
+                    { rest | overflowVisible = True }
+
+                PointerImage pointerImage_ ->
+                    { rest | pointerImage = Just pointerImage_ }
+
+                Border borderStyle ->
+                    { rest | border = Just borderStyle }
+
+                BorderRadius int ->
+                    { rest | borderRadius = int }
+
+                OnClick message ->
+                    { rest | onClick = Just message }
+
+                OnPointerEnter function ->
+                    { rest | onPointerEnter = Just function }
+
+                OnPointerLeave function ->
+                    { rest | onPointerLeave = Just function }
+
+                OnPointerMove function ->
+                    { rest | onPointerMove = Just function }
+
+                OnPointerDown function ->
+                    { rest | onPointerDown = Just function }
+
+        [] ->
+            defaultStyleAndEvent
 
 
 defaultStyleAndEvent : StyleAndEventComputed message
@@ -385,11 +437,11 @@ defaultStyleAndEvent =
     , border = Nothing
     , borderRadius = 0
     , backGroundColor = Nothing
-    , click = Nothing
-    , pointerEnter = Nothing
-    , pointerLeave = Nothing
-    , pointerMove = Nothing
-    , pointerDown = Nothing
+    , onClick = Nothing
+    , onPointerEnter = Nothing
+    , onPointerLeave = Nothing
+    , onPointerMove = Nothing
+    , onPointerDown = Nothing
     }
 
 
@@ -447,11 +499,11 @@ styleAndEventMap func styleAndEvent =
     , border = styleAndEvent.border
     , borderRadius = styleAndEvent.borderRadius
     , backGroundColor = styleAndEvent.backGroundColor
-    , click = Maybe.map func styleAndEvent.click
-    , pointerEnter = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) styleAndEvent.pointerEnter
-    , pointerLeave = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) styleAndEvent.pointerLeave
-    , pointerMove = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) styleAndEvent.pointerLeave
-    , pointerDown = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) styleAndEvent.pointerDown
+    , onClick = Maybe.map func styleAndEvent.onClick
+    , onPointerEnter = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) styleAndEvent.onPointerEnter
+    , onPointerLeave = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) styleAndEvent.onPointerLeave
+    , onPointerMove = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) styleAndEvent.onPointerLeave
+    , onPointerDown = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) styleAndEvent.onPointerDown
     }
 
 
@@ -488,7 +540,7 @@ panelToHtmlElementType (Panel { styleAndEvent, content }) =
             Html.Styled.img
 
         _ ->
-            case styleAndEvent.click of
+            case styleAndEvent.onClick of
                 Just _ ->
                     -- Button要素がdisplay:gridできないバグへの対処も含めての入れ子 https://stackoverflow.com/questions/51815477/is-a-button-allowed-to-have-displaygrid
                     \attributes children ->
@@ -724,15 +776,15 @@ growGrowContentToListAttributes content =
 -}
 eventsToHtmlAttributes : StyleAndEventComputed msg -> List (Html.Styled.Attribute msg)
 eventsToHtmlAttributes styleAndEvent =
-    [ styleAndEvent.pointerEnter
+    [ styleAndEvent.onPointerEnter
         |> Maybe.map (\msg -> Html.Styled.Events.on "pointerenter" (pointerEventDecoder |> Json.Decode.map msg))
-    , styleAndEvent.pointerLeave
+    , styleAndEvent.onPointerLeave
         |> Maybe.map (\msg -> Html.Styled.Events.on "pointerleave" (pointerEventDecoder |> Json.Decode.map msg))
-    , styleAndEvent.pointerMove
+    , styleAndEvent.onPointerMove
         |> Maybe.map (\msg -> Html.Styled.Events.on "pointermove" (pointerEventDecoder |> Json.Decode.map msg))
-    , styleAndEvent.pointerDown
+    , styleAndEvent.onPointerDown
         |> Maybe.map (\msg -> Html.Styled.Events.on "pointerdown" (pointerEventDecoder |> Json.Decode.map msg))
-    , styleAndEvent.click
+    , styleAndEvent.onClick
         |> Maybe.map (\msg -> Html.Styled.Events.onClick msg)
     ]
         |> Utility.ListExtra.takeFromMaybeList
