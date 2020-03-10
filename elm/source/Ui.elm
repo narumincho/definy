@@ -407,93 +407,91 @@ panelToHtmlElementType (Panel { styleAndEvent, content }) =
 
 panelToStyle : StyleAndEvent message -> ChildrenStyle -> Content message -> Css.Style
 panelToStyle styleAndEvent childrenStyle content =
-    [ Css.padding (Css.px (toFloat styleAndEvent.padding))
-    , contentToStyle
-        childrenStyle
-        styleAndEvent.overflowVisible
-        content
-    , borderStyleToStyle styleAndEvent.border
+    [ [ Css.padding (Css.px (toFloat styleAndEvent.padding))
+      , contentToStyle
+            childrenStyle
+            styleAndEvent.overflowVisible
+            content
+      , borderStyleToStyle styleAndEvent.border
+      ]
+    , case styleAndEvent.width of
+        Just width ->
+            [ Css.width (Css.px (toFloat width)) ]
+
+        Nothing ->
+            []
+    , case styleAndEvent.height of
+        Just height ->
+            [ Css.height (Css.px (toFloat height)) ]
+
+        Nothing ->
+            []
+    , case styleAndEvent.offset of
+        Just ( left, top ) ->
+            [ Css.transform
+                (Css.translate2
+                    (Css.px (toFloat left))
+                    (Css.px (toFloat top))
+                )
+            ]
+
+        Nothing ->
+            []
+    , case styleAndEvent.pointerImage of
+        Just HorizontalResize ->
+            [ Css.cursor Css.ewResize ]
+
+        Just VerticalResize ->
+            [ Css.cursor Css.ewResize ]
+
+        Nothing ->
+            []
+    , case styleAndEvent.borderRadius of
+        0 ->
+            []
+
+        _ ->
+            [ Css.borderRadius (Css.px (toFloat styleAndEvent.borderRadius)) ]
+    , case styleAndEvent.backGroundColor of
+        Just color ->
+            [ Css.backgroundColor color ]
+
+        Nothing ->
+            []
     ]
-        ++ (case styleAndEvent.width of
-                Just width ->
-                    [ Css.width (Css.px (toFloat width)) ]
-
-                Nothing ->
-                    []
-           )
-        ++ (case styleAndEvent.height of
-                Just height ->
-                    [ Css.height (Css.px (toFloat height)) ]
-
-                Nothing ->
-                    []
-           )
-        ++ (case styleAndEvent.offset of
-                Just ( left, top ) ->
-                    [ Css.transform
-                        (Css.translate2
-                            (Css.px (toFloat left))
-                            (Css.px (toFloat top))
-                        )
-                    ]
-
-                Nothing ->
-                    []
-           )
-        ++ (case styleAndEvent.pointerImage of
-                Just HorizontalResize ->
-                    [ Css.cursor Css.ewResize ]
-
-                Just VerticalResize ->
-                    [ Css.cursor Css.ewResize ]
-
-                Nothing ->
-                    []
-           )
-        ++ (case styleAndEvent.borderRadius of
-                0 ->
-                    []
-
-                _ ->
-                    [ Css.borderRadius (Css.px (toFloat styleAndEvent.borderRadius)) ]
-           )
-        ++ (case styleAndEvent.backGroundColor of
-                Just color ->
-                    [ Css.backgroundColor color ]
-
-                Nothing ->
-                    []
-           )
+        |> List.concat
         |> Css.batch
 
 
 borderStyleToStyle : BorderStyle -> Css.Style
-borderStyleToStyle (BorderStyle { top, bottom, left, right }) =
-    ([ Css.border2 Css.zero Css.none ]
-        ++ ([ top
-                |> Maybe.map
-                    (\{ width, color } ->
-                        Css.borderTop3 (Css.px (toFloat width)) Css.solid color
-                    )
-            , bottom
-                |> Maybe.map
-                    (\{ width, color } ->
-                        Css.borderBottom3 (Css.px (toFloat width)) Css.solid color
-                    )
-            , left
-                |> Maybe.map
-                    (\{ width, color } ->
-                        Css.borderLeft3 (Css.px (toFloat width)) Css.solid color
-                    )
-            , right
-                |> Maybe.map
-                    (\{ width, color } ->
-                        Css.borderRight3 (Css.px (toFloat width)) Css.solid color
-                    )
-            ]
-                |> Utility.ListExtra.takeFromMaybeList
-           )
-    )
+borderStyleToStyle (BorderStyle record) =
+    [ [ Css.border2 Css.zero Css.none ]
+    , case record.top of
+        Just { width, color } ->
+            [ Css.borderTop3 (Css.px (toFloat width)) Css.solid color ]
+
+        Nothing ->
+            []
+    , case record.bottom of
+        Just { width, color } ->
+            [ Css.borderBottom3 (Css.px (toFloat width)) Css.solid color ]
+
+        Nothing ->
+            []
+    , case record.left of
+        Just { width, color } ->
+            [ Css.borderLeft3 (Css.px (toFloat width)) Css.solid color ]
+
+        Nothing ->
+            []
+    , case record.right of
+        Just { width, color } ->
+            [ Css.borderRight3 (Css.px (toFloat width)) Css.solid color ]
+
+        Nothing ->
+            []
+    ]
+        |> List.concat
         |> Css.batch
 
 
