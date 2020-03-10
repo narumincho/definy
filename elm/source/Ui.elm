@@ -8,17 +8,30 @@ module Ui exposing
     , Pointer
     , PointerImage(..)
     , TextAlignment(..)
+    , border
+    , borderRadius
     , column
     , depth
+    , empty
+    , height
     , imageFromUrl
     , map
-    , monochromatic
+    , offset
+    , onClick
+    , onPointerDown
+    , onPointerEnter
+    , onPointerLeave
+    , onPointerMove
+    , overflowVisible
+    , padding
     , pointerGetPosition
+    , pointerImage
     , row
     , textBox
     , textBoxFitHeight
     , toHtml
     , vectorImage
+    , width
     )
 
 import Bitwise
@@ -36,7 +49,7 @@ import VectorImage
 -}
 type Panel message
     = Panel
-        { styleAndEvent : StyleAndEvent message
+        { styleAndEvent : StyleAndEventComputed message
         , content : Content message
         }
 
@@ -78,14 +91,14 @@ type PointerButton
 
 {-| スタイルとイベント
 -}
-type alias StyleAndEvent message =
+type alias StyleAndEventComputed message =
     { padding : Int
     , width : Maybe Int
     , height : Maybe Int
     , offset : Maybe ( Int, Int )
     , overflowVisible : Bool
     , pointerImage : Maybe PointerImage
-    , border : BorderStyle
+    , border : Maybe BorderStyle
     , borderRadius : Int
     , backGroundColor : Maybe Css.Color
     , click : Maybe message
@@ -94,6 +107,22 @@ type alias StyleAndEvent message =
     , pointerMove : Maybe (Pointer -> message)
     , pointerDown : Maybe (Pointer -> message)
     }
+
+
+type StyleAndEvent message
+    = Padding Int
+    | Width Int
+    | Height Int
+    | Offset ( Int, Int )
+    | OverflowVisible
+    | PointerImage PointerImage
+    | Border BorderStyle
+    | BorderRadius Int
+    | OnClick message
+    | OnPointerEnter (Pointer -> message)
+    | OnPointerLeave (Pointer -> message)
+    | OnPointerMove (Pointer -> message)
+    | OnPointerDown (Pointer -> message)
 
 
 type PointerImage
@@ -125,6 +154,7 @@ type Content msg
         , elements : List (VectorImage.Element msg)
         }
     | Monochromatic Css.Color
+    | Empty
     | DepthList (List (Panel msg))
     | RowList (List (Panel msg)) Int
     | ColumnList (List (Panel msg)) Int
@@ -142,10 +172,13 @@ type ImageRendering
 
 type BorderStyle
     = BorderStyle
-        { top : Maybe { color : Css.Color, width : Int }
-        , right : Maybe { color : Css.Color, width : Int }
-        , left : Maybe { color : Css.Color, width : Int }
-        , bottom : Maybe { color : Css.Color, width : Int }
+        { color : Css.Color
+        , width :
+            { top : Int
+            , right : Int
+            , left : Int
+            , bottom : Int
+            }
         }
 
 
@@ -170,10 +203,75 @@ toHtml =
     panelToHtml (ChildrenStyle { gridPositionLeftTop = False, position = Nothing })
 
 
+padding : Int -> StyleAndEvent message
+padding =
+    Padding
+
+
+width : Int -> StyleAndEvent message
+width =
+    Width
+
+
+height : Int -> StyleAndEvent message
+height =
+    Height
+
+
+offset : ( Int, Int ) -> StyleAndEvent message
+offset =
+    Offset
+
+
+overflowVisible : StyleAndEvent message
+overflowVisible =
+    OverflowVisible
+
+
+pointerImage : PointerImage -> StyleAndEvent message
+pointerImage =
+    PointerImage
+
+
+border : BorderStyle -> StyleAndEvent message
+border =
+    Border
+
+
+borderRadius : Int -> StyleAndEvent message
+borderRadius =
+    BorderRadius
+
+
+onClick : message -> StyleAndEvent message
+onClick =
+    OnClick
+
+
+onPointerEnter : (Pointer -> message) -> StyleAndEvent message
+onPointerEnter =
+    OnPointerEnter
+
+
+onPointerLeave : (Pointer -> message) -> StyleAndEvent message
+onPointerLeave =
+    OnPointerLeave
+
+
+onPointerMove : (Pointer -> message) -> StyleAndEvent message
+onPointerMove =
+    OnPointerMove
+
+
+onPointerDown : (Pointer -> message) -> StyleAndEvent message
+onPointerDown =
+    OnPointerDown
+
+
 {-| テキストを表示する
 -}
 textBox :
-    StyleAndEvent message
+    StyleAndEventComputed message
     ->
         { align : TextAlignment
         , vertical : AlignItems
@@ -197,7 +295,7 @@ textBox styleAndEvent { align, vertical, font } text =
 {-| テキストを表示する
 高さがフォントや中身の文字に応じて変化する
 -}
-textBoxFitHeight : StyleAndEvent message -> { align : TextAlignment, font : Font } -> String -> Panel msg
+textBoxFitHeight : StyleAndEventComputed message -> { align : TextAlignment, font : Font } -> String -> Panel message
 textBoxFitHeight styleAndEvent { align, font } text =
     Panel
         { styleAndEvent = styleAndEvent
@@ -211,7 +309,7 @@ textBoxFitHeight styleAndEvent { align, font } text =
 
 
 imageFromUrl :
-    StyleAndEvent message
+    StyleAndEventComputed message
     ->
         { fitStyle : FitStyle
         , alternativeText : String
@@ -233,7 +331,7 @@ imageFromUrl styleAndEvent imageStyle url =
 
 
 vectorImage :
-    StyleAndEvent message
+    StyleAndEventComputed message
     -> { fitStyle : FitStyle, viewBox : { x : Int, y : Int, width : Int, height : Int }, elements : List (VectorImage.Element message) }
     -> Panel message
 vectorImage styleAndEvent content =
@@ -244,7 +342,15 @@ vectorImage styleAndEvent content =
         }
 
 
-depth : StyleAndEvent message -> List (Panel message) -> Panel message
+empty : StyleAndEventComputed message -> Panel message
+empty styleAndEvent =
+    Panel
+        { styleAndEvent = styleAndEvent
+        , content = Empty
+        }
+
+
+depth : StyleAndEventComputed message -> List (Panel message) -> Panel message
 depth styleAndEvent children =
     Panel
         { styleAndEvent = styleAndEvent
@@ -252,7 +358,7 @@ depth styleAndEvent children =
         }
 
 
-row : StyleAndEvent message -> Int -> List (Panel message) -> Panel message
+row : StyleAndEventComputed message -> Int -> List (Panel message) -> Panel message
 row styleAndEvent gap children =
     Panel
         { styleAndEvent = styleAndEvent
@@ -260,7 +366,7 @@ row styleAndEvent gap children =
         }
 
 
-column : StyleAndEvent message -> Int -> List (Panel message) -> Panel message
+column : StyleAndEventComputed message -> Int -> List (Panel message) -> Panel message
 column styleAndEvent gap children =
     Panel
         { styleAndEvent = styleAndEvent
@@ -268,21 +374,15 @@ column styleAndEvent gap children =
         }
 
 
-defaultStyle : StyleAndEvent message
-defaultStyle =
+defaultStyleAndEvent : StyleAndEventComputed message
+defaultStyleAndEvent =
     { padding = 0
     , width = Nothing
     , height = Nothing
     , offset = Nothing
     , overflowVisible = False
     , pointerImage = Nothing
-    , border =
-        BorderStyle
-            { top = Nothing
-            , bottom = Nothing
-            , left = Nothing
-            , right = Nothing
-            }
+    , border = Nothing
     , borderRadius = 0
     , backGroundColor = Nothing
     , click = Nothing
@@ -318,6 +418,9 @@ map func (Panel { styleAndEvent, content }) =
                 Monochromatic color ->
                     Monochromatic color
 
+                Empty ->
+                    Empty
+
                 DepthList list ->
                     DepthList (list |> List.map (map func))
 
@@ -333,7 +436,7 @@ map func (Panel { styleAndEvent, content }) =
         }
 
 
-styleAndEventMap : (a -> b) -> StyleAndEvent a -> StyleAndEvent b
+styleAndEventMap : (a -> b) -> StyleAndEventComputed a -> StyleAndEventComputed b
 styleAndEventMap func styleAndEvent =
     { padding = styleAndEvent.padding
     , width = styleAndEvent.width
@@ -405,24 +508,29 @@ panelToHtmlElementType (Panel { styleAndEvent, content }) =
                     Html.Styled.div
 
 
-panelToStyle : StyleAndEvent message -> ChildrenStyle -> Content message -> Css.Style
+panelToStyle : StyleAndEventComputed message -> ChildrenStyle -> Content message -> Css.Style
 panelToStyle styleAndEvent childrenStyle content =
     [ [ Css.padding (Css.px (toFloat styleAndEvent.padding))
       , contentToStyle
             childrenStyle
             styleAndEvent.overflowVisible
             content
-      , borderStyleToStyle styleAndEvent.border
       ]
+    , case styleAndEvent.border of
+        Just border_ ->
+            [ borderStyleToStyle border_ ]
+
+        Nothing ->
+            []
     , case styleAndEvent.width of
-        Just width ->
-            [ Css.width (Css.px (toFloat width)) ]
+        Just width_ ->
+            [ Css.width (Css.px (toFloat width_)) ]
 
         Nothing ->
             []
     , case styleAndEvent.height of
-        Just height ->
-            [ Css.height (Css.px (toFloat height)) ]
+        Just height_ ->
+            [ Css.height (Css.px (toFloat height_)) ]
 
         Nothing ->
             []
@@ -465,43 +573,18 @@ panelToStyle styleAndEvent childrenStyle content =
 
 borderStyleToStyle : BorderStyle -> Css.Style
 borderStyleToStyle (BorderStyle record) =
-    [ [ Css.border2 Css.zero Css.none ]
-    , case record.top of
-        Just { width, color } ->
-            [ Css.borderTop3 (Css.px (toFloat width)) Css.solid color ]
-
-        Nothing ->
-            []
-    , case record.bottom of
-        Just { width, color } ->
-            [ Css.borderBottom3 (Css.px (toFloat width)) Css.solid color ]
-
-        Nothing ->
-            []
-    , case record.left of
-        Just { width, color } ->
-            [ Css.borderLeft3 (Css.px (toFloat width)) Css.solid color ]
-
-        Nothing ->
-            []
-    , case record.right of
-        Just { width, color } ->
-            [ Css.borderRight3 (Css.px (toFloat width)) Css.solid color ]
-
-        Nothing ->
-            []
+    [ Css.borderColor record.color
+    , Css.borderWidth4
+        (Css.px (toFloat record.width.top))
+        (Css.px (toFloat record.width.right))
+        (Css.px (toFloat record.width.bottom))
+        (Css.px (toFloat record.width.left))
     ]
-        |> List.concat
         |> Css.batch
 
 
-
---textAlignmentToStyle : Maybe TextAlignment -> Css.Style
---textAlignmentToStyle =
-
-
 contentToStyle : ChildrenStyle -> Bool -> Content msg -> Css.Style
-contentToStyle (ChildrenStyle { gridPositionLeftTop, position }) overflowVisible content =
+contentToStyle (ChildrenStyle { gridPositionLeftTop, position }) overflowVisible_ content =
     (case content of
         TextBox rec ->
             let
@@ -557,6 +640,9 @@ contentToStyle (ChildrenStyle { gridPositionLeftTop, position }) overflowVisible
         Monochromatic color ->
             [ Css.backgroundColor color ]
 
+        Empty ->
+            []
+
         DepthList _ ->
             [ Css.property "display" "grid"
             , Css.property "grid-template-rows" "1fr"
@@ -575,7 +661,7 @@ contentToStyle (ChildrenStyle { gridPositionLeftTop, position }) overflowVisible
             , Css.property "gap" (String.fromInt gap ++ "px")
             ]
     )
-        ++ (if overflowVisible then
+        ++ (if overflowVisible_ then
                 []
 
             else
@@ -621,6 +707,9 @@ growGrowContentToListAttributes content =
         Monochromatic _ ->
             []
 
+        Empty ->
+            []
+
         DepthList _ ->
             []
 
@@ -633,7 +722,7 @@ growGrowContentToListAttributes content =
 
 {-| イベントをElmのイベントリスナーの属性に変換する
 -}
-eventsToHtmlAttributes : StyleAndEvent msg -> List (Html.Styled.Attribute msg)
+eventsToHtmlAttributes : StyleAndEventComputed msg -> List (Html.Styled.Attribute msg)
 eventsToHtmlAttributes styleAndEvent =
     [ styleAndEvent.pointerEnter
         |> Maybe.map (\msg -> Html.Styled.Events.on "pointerenter" (pointerEventDecoder |> Json.Decode.map msg))
@@ -652,7 +741,7 @@ eventsToHtmlAttributes styleAndEvent =
 pointerEventDecoder : Json.Decode.Decoder Pointer
 pointerEventDecoder =
     Json.Decode.succeed
-        (\id clientX clientY button pressure tangentialPressure width height tiltX tiltY twist pointerType isPrimary buttons eventPhase ->
+        (\id clientX clientY button pressure tangentialPressure width_ height_ tiltX tiltY twist pointerType isPrimary buttons eventPhase ->
             Pointer
                 { id = id
                 , position = ( clientX, clientY )
@@ -680,7 +769,7 @@ pointerEventDecoder =
                             Nothing
                 , pressure = pressure
                 , tangentialPressure = tangentialPressure
-                , size = ( width, height )
+                , size = ( width_, height_ )
                 , tilt = ( tiltX, tiltY )
                 , twist = twist
                 , type_ =
@@ -745,6 +834,9 @@ contentToListHtml content =
             ]
 
         Monochromatic _ ->
+            []
+
+        Empty ->
             []
 
         DepthList list ->
