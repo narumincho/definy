@@ -1,42 +1,8 @@
-module Icon exposing (LogInButtonModel(..), gitHubIcon, googleIcon, lineIcon)
+module Icon exposing (gitHubIcon, googleIcon)
 
 import Css
 import Ui
 import VectorImage
-
-
-type LogInButtonModel
-    = LogInButtonModelNone
-    | LogInButtonModelHover
-    | LogInButtonModelPressed
-
-
-lineIcon : LogInButtonModel -> Ui.Panel msg
-lineIcon logInButtonModel =
-    Ui.imageFromUrl
-        [ Ui.width 48
-        , Ui.padding 4
-        , Ui.border
-            (Ui.BorderStyle
-                { color =
-                    case logInButtonModel of
-                        LogInButtonModelNone ->
-                            Css.rgb 0 179 0
-
-                        LogInButtonModelHover ->
-                            Css.rgb 0 201 0
-
-                        LogInButtonModelPressed ->
-                            Css.rgb 0 152 0
-                , width = { top = 0, right = 1, left = 0, bottom = 0 }
-                }
-            )
-        ]
-        { fitStyle = Ui.Contain
-        , alternativeText = "LINEのロゴ"
-        , rendering = Ui.ImageRenderingAuto
-        }
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAYAAAA5ZDbSAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3NpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NDkxMSwgMjAxMy8xMC8yOS0xMTo0NzoxNiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDphNTk0YTczYS0zNzEzLTRhMjktODgyYi0xYjg0ZWJkMjM5NGQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6Q0MwNENBMzQ5M0YyMTFFNDk1OEFENjBBMUJBQjkyMzkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6Q0MwMEVBMTg5M0YyMTFFNDk1OEFENjBBMUJBQjkyMzkiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChNYWNpbnRvc2gpIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MDAwNGE4MWQtN2M4ZS00MjQxLTg1NDYtZTY5YzBhNDg0Njc0IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOmE1OTRhNzNhLTM3MTMtNGEyOS04ODJiLTFiODRlYmQyMzk0ZCIvPiA8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"
 
 
 gitHubIcon : Ui.Panel msg

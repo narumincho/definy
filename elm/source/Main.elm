@@ -674,7 +674,7 @@ view (Model rec) =
                     []
                     0
                     [ Component.Header.view
-                    , logInButton rec.language rec.windowSize
+                    , logInButtonPanel rec.language rec.windowSize
                     , welcomeModel
                         |> Page.Home.view rec.language rec.logInState
                         |> Ui.map (WelcomePageMsg >> PageMsg)
@@ -687,24 +687,23 @@ view (Model rec) =
         |> Html.Styled.toUnstyled
 
 
-logInButton : Data.Language -> WindowSize -> Ui.Panel Msg
-logInButton language { width, height } =
+logInButtonPanel : Data.Language -> WindowSize -> Ui.Panel Msg
+logInButtonPanel language { width, height } =
     if width < 512 then
         Ui.column
-            [ Ui.height (48 * 3 + 32) ]
+            [ Ui.height (48 * 2 + 32) ]
             16
             [ googleLogInButton language
             , gitHubLogInButton language
-            , lineLogInButton language
             ]
 
     else
         Ui.row
             [ Ui.height 64, Ui.padding 8 ]
             16
-            [ googleLogInButton language
+            [ Ui.empty []
+            , googleLogInButton language
             , gitHubLogInButton language
-            , lineLogInButton language
             ]
 
 
@@ -714,6 +713,7 @@ googleLogInButton language =
         [ Ui.onClick (LogInRequest Data.Google)
         , Ui.borderRadius 8
         , Ui.height 48
+        , Ui.width 448
         ]
         [ Ui.monochromatic
             []
@@ -757,6 +757,7 @@ gitHubLogInButton language =
         [ Ui.onClick (LogInRequest Data.GitHub)
         , Ui.borderRadius 8
         , Ui.height 48
+        , Ui.width 448
         ]
         [ Ui.monochromatic [] (Css.rgb 32 32 32)
         , Ui.row
@@ -787,46 +788,6 @@ gitHubLogInButton language =
 
                     Data.Esperanto ->
                         "Ensalutu kun GitHub"
-                )
-            ]
-        ]
-
-
-lineLogInButton : Data.Language -> Ui.Panel Msg
-lineLogInButton language =
-    Ui.depth
-        [ Ui.onClick (LogInRequest Data.Line)
-        , Ui.borderRadius 8
-        , Ui.height 48
-        ]
-        [ Ui.monochromatic [] (Css.rgb 0 195 0)
-        , Ui.row
-            []
-            8
-            [ Ui.depth
-                [ Ui.width 48 ]
-                [ Icon.lineIcon Icon.LogInButtonModelNone ]
-            , Ui.textBox
-                []
-                { align = Ui.TextAlignStart
-                , vertical = Ui.CenterY
-                , font =
-                    Ui.Font
-                        { typeface = Component.Style.fontHackName
-                        , size = 16
-                        , letterSpacing = 0
-                        , color = Css.rgb 255 255 255
-                        }
-                }
-                (case language of
-                    Data.English ->
-                        "Log in with LINE"
-
-                    Data.Japanese ->
-                        "LINEでログイン"
-
-                    Data.Esperanto ->
-                        "Ensalutu kun LINE"
                 )
             ]
         ]
