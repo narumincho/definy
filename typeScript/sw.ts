@@ -18,54 +18,60 @@
     if (!accept.includes("text/html")) {
       return;
     }
-    e.respondWith(
-      new Response(
-        `<!doctype html>
-<html>
-
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Definy | オフライン</title>
-    <link rel="icon" href="/assets/icon.png">
-    <style>
-        /*
-            Hack typeface https://github.com/source-foundry/Hack
-            License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
-        */
-
-        @font-face {
-            font-family: "Hack";
-            font-weight: 400;
-            font-style: normal;
-            src: url("/hack-regular-subset.woff2") format("woff2");
-        }
-
-        html {
-            height: 100%;
-        }
-
-        body {
-            height: 100%;
-            margin: 0;
-            background-color: black;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-    </style>
-
-    <script src="/main.js" defer></script>
-</head>
-
-<body>
-    準備中……  (Definyはオフラインでも使えます!)
-</body>
-
-</html>`,
-        { headers: { "content-type": "text/html" } }
-      )
-    );
+    fetch(e.request.url).then(response => {
+      if (response.ok) {
+        e.respondWith(response);
+        return;
+      }
+      e.respondWith(
+        new Response(
+          `<!doctype html>
+  <html>
+  
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>Definy | オフライン</title>
+      <link rel="icon" href="icon">
+      <style>
+          /*
+              Hack typeface https://github.com/source-foundry/Hack
+              License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
+          */
+  
+          @font-face {
+              font-family: "Hack";
+              font-weight: 400;
+              font-style: normal;
+              src: url("/hack-regular-subset.woff2") format("woff2");
+          }
+  
+          html {
+              height: 100%;
+          }
+  
+          body {
+              height: 100%;
+              margin: 0;
+              background-color: black;
+          }
+  
+          * {
+              box-sizing: border-box;
+          }
+      </style>
+  
+      <script src="/main.js" defer></script>
+  </head>
+  
+  <body>
+      準備中……  (Definyはオフラインでも使えます!)
+  </body>
+  
+  </html>`,
+          { headers: { "content-type": "text/html" } }
+        )
+      );
+    });
   });
 })((self as unknown) as ServiceWorkerGlobalScope);
