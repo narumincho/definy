@@ -10,15 +10,6 @@ document.documentElement.replaceChild(
 );
 document.body.appendChild(elmAppElement);
 
-const checkWebGLSupport = (): boolean => {
-  try {
-    const context = document.createElement("canvas").getContext("webgl");
-    return context !== null;
-  } catch (e) {
-    return false;
-  }
-};
-
 requestAnimationFrame(() => {
   const serviceWorkerSupport = "serviceWorker" in navigator;
   const app = Elm.Main.init({
