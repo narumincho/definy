@@ -18,14 +18,15 @@
     if (!accept.includes("text/html")) {
       return;
     }
-    fetch(e.request.url).then(response => {
-      if (response.ok) {
-        e.respondWith(response);
-        return;
-      }
-      e.respondWith(
-        new Response(
-          `<!doctype html>
+    e.waitUntil(
+      fetch(e.request.url).then(response => {
+        if (response.ok) {
+          e.respondWith(response);
+          return;
+        }
+        e.respondWith(
+          new Response(
+            `<!doctype html>
   <html>
   
   <head>
@@ -69,9 +70,10 @@
   </body>
   
   </html>`,
-          { headers: { "content-type": "text/html" } }
-        )
-      );
-    });
+            { headers: { "content-type": "text/html" } }
+          )
+        );
+      })
+    );
   });
 })((self as unknown) as ServiceWorkerGlobalScope);
