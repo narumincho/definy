@@ -1,8 +1,14 @@
-module Data exposing (AccessToken(..), ClientMode(..), Language(..), Location(..), OpenIdConnectProvider(..), ProjectId(..), RequestLogInUrlRequestData, UrlData, UserId(..), accessTokenJsonDecoder, accessTokenToJsonValue, clientModeJsonDecoder, clientModeToJsonValue, languageJsonDecoder, languageToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, openIdConnectProviderJsonDecoder, openIdConnectProviderToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, requestLogInUrlRequestDataJsonDecoder, requestLogInUrlRequestDataToJsonValue, resultJsonDecoder, resultToJsonValue, urlDataJsonDecoder, urlDataToJsonValue, userIdJsonDecoder, userIdToJsonValue)
+module Data exposing (AccessToken(..), ClientMode(..), DateTime, FileHash(..), IdeaId(..), Language(..), Location(..), OpenIdConnectProvider(..), ProjectId(..), RequestLogInUrlRequestData, UrlData, UserId(..), UserPublic, accessTokenJsonDecoder, accessTokenToJsonValue, clientModeJsonDecoder, clientModeToJsonValue, dateTimeJsonDecoder, dateTimeToJsonValue, fileHashJsonDecoder, fileHashToJsonValue, ideaIdJsonDecoder, ideaIdToJsonValue, languageJsonDecoder, languageToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, openIdConnectProviderJsonDecoder, openIdConnectProviderToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, requestLogInUrlRequestDataJsonDecoder, requestLogInUrlRequestDataToJsonValue, resultJsonDecoder, resultToJsonValue, urlDataJsonDecoder, urlDataToJsonValue, userIdJsonDecoder, userIdToJsonValue, userPublicJsonDecoder, userPublicToJsonValue)
 
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp
 import Json.Encode as Je
+
+
+{-| 日時 最小単位は秒
+-}
+type alias DateTime =
+    { year : Int, month : Int, day : Int, hour : Int, minute : Int, second : Int }
 
 
 {-| デバッグの状態と, デバッグ時ならアクセスしているポート番号
@@ -23,7 +29,6 @@ type alias RequestLogInUrlRequestData =
 type OpenIdConnectProvider
     = Google
     | GitHub
-    | Line
 
 
 {-| デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( <https://support.google.com/webmasters/answer/182192?hl=ja> )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時には <http://localhost:2520> のオリジンになってしまう
@@ -48,6 +53,12 @@ type Location
     | Project ProjectId
 
 
+{-| ユーザーが公開している情報
+-}
+type alias UserPublic =
+    { name : String, imageHash : FileHash, introduction : String, createdAt : DateTime, likedProjectIdList : List ProjectId, developedProjectIdList : List ProjectId, commentedIdeaIdList : List IdeaId }
+
+
 type AccessToken
     = AccessToken String
 
@@ -58,6 +69,14 @@ type UserId
 
 type ProjectId
     = ProjectId String
+
+
+type IdeaId
+    = IdeaId String
+
+
+type FileHash
+    = FileHash String
 
 
 maybeToJsonValue : (a -> Je.Value) -> Maybe a -> Je.Value
@@ -95,6 +114,30 @@ projectIdToJsonValue (ProjectId string) =
     Je.string string
 
 
+ideaIdToJsonValue : IdeaId -> Je.Value
+ideaIdToJsonValue (IdeaId string) =
+    Je.string string
+
+
+fileHashToJsonValue : FileHash -> Je.Value
+fileHashToJsonValue (FileHash string) =
+    Je.string string
+
+
+{-| DateTimeのJSONへのエンコーダ
+-}
+dateTimeToJsonValue : DateTime -> Je.Value
+dateTimeToJsonValue dateTime =
+    Je.object
+        [ ( "year", Je.int dateTime.year )
+        , ( "month", Je.int dateTime.month )
+        , ( "day", Je.int dateTime.day )
+        , ( "hour", Je.int dateTime.hour )
+        , ( "minute", Je.int dateTime.minute )
+        , ( "second", Je.int dateTime.second )
+        ]
+
+
 {-| ClientModeのJSONへのエンコーダ
 -}
 clientModeToJsonValue : ClientMode -> Je.Value
@@ -127,9 +170,6 @@ openIdConnectProviderToJsonValue openIdConnectProvider =
 
         GitHub ->
             Je.string "GitHub"
-
-        Line ->
-            Je.string "Line"
 
 
 {-| UrlDataのJSONへのエンコーダ
@@ -172,6 +212,21 @@ locationToJsonValue location =
 
         Project parameter ->
             Je.object [ ( "_", Je.string "Project" ), ( "projectId", projectIdToJsonValue parameter ) ]
+
+
+{-| UserPublicのJSONへのエンコーダ
+-}
+userPublicToJsonValue : UserPublic -> Je.Value
+userPublicToJsonValue userPublic =
+    Je.object
+        [ ( "name", Je.string userPublic.name )
+        , ( "imageHash", fileHashToJsonValue userPublic.imageHash )
+        , ( "introduction", Je.string userPublic.introduction )
+        , ( "createdAt", dateTimeToJsonValue userPublic.createdAt )
+        , ( "likedProjectIdList", Je.list projectIdToJsonValue userPublic.likedProjectIdList )
+        , ( "developedProjectIdList", Je.list projectIdToJsonValue userPublic.developedProjectIdList )
+        , ( "commentedIdeaIdList", Je.list ideaIdToJsonValue userPublic.commentedIdeaIdList )
+        ]
 
 
 maybeJsonDecoder : Jd.Decoder a -> Jd.Decoder (Maybe a)
@@ -223,6 +278,38 @@ projectIdJsonDecoder =
     Jd.map ProjectId Jd.string
 
 
+ideaIdJsonDecoder : Jd.Decoder IdeaId
+ideaIdJsonDecoder =
+    Jd.map IdeaId Jd.string
+
+
+fileHashJsonDecoder : Jd.Decoder FileHash
+fileHashJsonDecoder =
+    Jd.map FileHash Jd.string
+
+
+{-| DateTimeのJSON Decoder
+-}
+dateTimeJsonDecoder : Jd.Decoder DateTime
+dateTimeJsonDecoder =
+    Jd.succeed
+        (\year month day hour minute second ->
+            { year = year
+            , month = month
+            , day = day
+            , hour = hour
+            , minute = minute
+            , second = second
+            }
+        )
+        |> Jdp.required "year" Jd.int
+        |> Jdp.required "month" Jd.int
+        |> Jdp.required "day" Jd.int
+        |> Jdp.required "hour" Jd.int
+        |> Jdp.required "minute" Jd.int
+        |> Jdp.required "second" Jd.int
+
+
 {-| ClientModeのJSON Decoder
 -}
 clientModeJsonDecoder : Jd.Decoder ClientMode
@@ -260,7 +347,7 @@ requestLogInUrlRequestDataJsonDecoder =
 -}
 openIdConnectProviderJsonDecoder : Jd.Decoder OpenIdConnectProvider
 openIdConnectProviderJsonDecoder =
-    Jd.field "_" Jd.string
+    Jd.string
         |> Jd.andThen
             (\tag ->
                 case tag of
@@ -269,9 +356,6 @@ openIdConnectProviderJsonDecoder =
 
                     "GitHub" ->
                         Jd.succeed GitHub
-
-                    "Line" ->
-                        Jd.succeed Line
 
                     _ ->
                         Jd.fail ("OpenIdConnectProviderで不明なタグを受けたとった tag=" ++ tag)
@@ -300,7 +384,7 @@ urlDataJsonDecoder =
 -}
 languageJsonDecoder : Jd.Decoder Language
 languageJsonDecoder =
-    Jd.field "_" Jd.string
+    Jd.string
         |> Jd.andThen
             (\tag ->
                 case tag of
@@ -338,3 +422,27 @@ locationJsonDecoder =
                     _ ->
                         Jd.fail ("Locationで不明なタグを受けたとった tag=" ++ tag)
             )
+
+
+{-| UserPublicのJSON Decoder
+-}
+userPublicJsonDecoder : Jd.Decoder UserPublic
+userPublicJsonDecoder =
+    Jd.succeed
+        (\name imageHash introduction createdAt likedProjectIdList developedProjectIdList commentedIdeaIdList ->
+            { name = name
+            , imageHash = imageHash
+            , introduction = introduction
+            , createdAt = createdAt
+            , likedProjectIdList = likedProjectIdList
+            , developedProjectIdList = developedProjectIdList
+            , commentedIdeaIdList = commentedIdeaIdList
+            }
+        )
+        |> Jdp.required "name" Jd.string
+        |> Jdp.required "imageHash" fileHashJsonDecoder
+        |> Jdp.required "introduction" Jd.string
+        |> Jdp.required "createdAt" dateTimeJsonDecoder
+        |> Jdp.required "likedProjectIdList" (Jd.list projectIdJsonDecoder)
+        |> Jdp.required "developedProjectIdList" (Jd.list projectIdJsonDecoder)
+        |> Jdp.required "commentedIdeaIdList" (Jd.list ideaIdJsonDecoder)
