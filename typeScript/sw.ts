@@ -19,18 +19,14 @@
       return;
     }
     e.respondWith(
-      fetch(e.request.url, { redirect: "follow" }).then(response => {
-        if (response.ok) {
-          return response;
-        }
-        return new Response(
-          `<!doctype html>
+      new Response(
+        `<!doctype html>
   <html>
   
   <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
-      <title>Definy | オフライン</title>
+      <title>Definy | Service WorkerからのindexHtml</title>
       <link rel="icon" href="icon">
       <style>
           /*
@@ -68,9 +64,8 @@
   </body>
   
   </html>`,
-          { headers: { "content-type": "text/html" } }
-        );
-      })
+        { headers: { "content-type": "text/html" } }
+      )
     );
   });
 })((self as unknown) as ServiceWorkerGlobalScope);
