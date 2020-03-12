@@ -19,7 +19,7 @@
       return;
     }
     e.respondWith(
-      fetch(e.request.url).then(response => {
+      fetch(e.request.url, { redirect: "follow" }).then(response => {
         if (response.ok) {
           return response;
         }
