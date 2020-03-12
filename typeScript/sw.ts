@@ -18,15 +18,13 @@
     if (!accept.includes("text/html")) {
       return;
     }
-    e.waitUntil(
+    e.respondWith(
       fetch(e.request.url).then(response => {
         if (response.ok) {
-          e.respondWith(response);
-          return;
+          return response;
         }
-        e.respondWith(
-          new Response(
-            `<!doctype html>
+        return new Response(
+          `<!doctype html>
   <html>
   
   <head>
@@ -70,8 +68,7 @@
   </body>
   
   </html>`,
-            { headers: { "content-type": "text/html" } }
-          )
+          { headers: { "content-type": "text/html" } }
         );
       })
     );
