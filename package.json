@@ -7,6 +7,9 @@
     "type": "git",
     "url": "https://github.com/narumincho/Definy"
   },
+  "scripts": {
+    "debugInLocal": "node debugInLocal.js"
+  },
   "license": "Apache-2.0",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^2.23.0",
@@ -25,6 +28,6 @@
     "last 1 Chrome versions"
   ],
   "dependencies": {
-    "definy-common": "^0.1.8"
+    "definy-common": "^0.1.10"
   }
 }

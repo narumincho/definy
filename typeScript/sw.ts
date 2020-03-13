@@ -1,5 +1,5 @@
 ((self: ServiceWorkerGlobalScope): void => {
-  self.addEventListener("install", e => {
+  self.addEventListener("install", () => {
     console.log("Service Worker: Installing");
   });
 
