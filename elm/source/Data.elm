@@ -31,7 +31,7 @@ type OpenIdConnectProvider
     | GitHub
 
 
-{-| デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( <https://support.google.com/webmasters/answer/182192?hl=ja> )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時には <http://localhost:2520> のオリジンになってしまう
+{-| デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( <https://support.google.com/webmasters/answer/182192?hl=ja> )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は <http://[::1]> になる
 -}
 type alias UrlData =
     { clientMode : ClientMode, location : Location, language : Language, accessToken : Maybe AccessToken }

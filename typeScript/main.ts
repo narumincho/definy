@@ -18,7 +18,7 @@ requestAnimationFrame(() => {
         width: innerWidth,
         height: innerHeight
       },
-      urlData: common.urlDataFromUrl(location.href),
+      urlData: common.urlDataFromUrl(new URL(location.href)),
       networkConnection: navigator.onLine
     },
     node: elmAppElement
