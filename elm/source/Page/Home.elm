@@ -174,38 +174,7 @@ projectList language logInState =
                 Data.Esperanto ->
                     "Hejmo"
             )
-        , case logInState of
-            Data.LogInState.ReadingAccessToken ->
-                Ui.textBoxFitHeight
-                    []
-                    { align = Ui.TextAlignStart
-                    , font = Component.Style.normalFont
-                    }
-                    "…"
-
-            Data.LogInState.VerifyingAccessToken _ ->
-                Ui.textBoxFitHeight
-                    []
-                    { align = Ui.TextAlignStart
-                    , font = Component.Style.normalFont
-                    }
-                    "…"
-
-            Data.LogInState.GuestUser ->
-                Ui.textBoxFitHeight
-                    []
-                    { align = Ui.TextAlignStart
-                    , font = Component.Style.normalFont
-                    }
-                    "プロジェクトを作成するには登録が必要です"
-
-            Data.LogInState.Ok { accessToken } ->
-                Ui.textBoxFitHeight
-                    []
-                    { align = Ui.TextAlignStart
-                    , font = Component.Style.normalFont
-                    }
-                    "プロジェクトを新規作成"
+        , createProjectButton language logInState
         , Ui.textBoxFitHeight
             []
             { align = Ui.TextAlignStart
@@ -222,3 +191,57 @@ projectList language logInState =
                     "Listo de projektoj"
             )
         ]
+
+
+createProjectButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
+createProjectButton language logInState =
+    case logInState of
+        Data.LogInState.ReadingAccessToken ->
+            Ui.textBoxFitHeight
+                []
+                { align = Ui.TextAlignStart
+                , font = Component.Style.normalFont
+                }
+                (case language of
+                    Data.English ->
+                        "Reading access token..."
+
+                    Data.Japanese ->
+                        "アクセストークン読込中……"
+
+                    Data.Esperanto ->
+                        "Legado de alira tokeno ..."
+                )
+
+        Data.LogInState.VerifyingAccessToken _ ->
+            Ui.textBoxFitHeight
+                []
+                { align = Ui.TextAlignStart
+                , font = Component.Style.normalFont
+                }
+                (case language of
+                    Data.English ->
+                        "Verifying..."
+
+                    Data.Japanese ->
+                        "認証中…"
+
+                    Data.Esperanto ->
+                        "Aŭtentigado ..."
+                )
+
+        Data.LogInState.GuestUser ->
+            Ui.textBoxFitHeight
+                []
+                { align = Ui.TextAlignStart
+                , font = Component.Style.normalFont
+                }
+                "プロジェクトを作成するには登録が必要です"
+
+        Data.LogInState.Ok { accessToken } ->
+            Ui.textBoxFitHeight
+                []
+                { align = Ui.TextAlignStart
+                , font = Component.Style.normalFont
+                }
+                "プロジェクトを新規作成"
