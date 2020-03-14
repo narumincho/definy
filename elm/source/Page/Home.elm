@@ -9,8 +9,8 @@ module Page.Home exposing
 
 import Component.Style
 import Data
+import Data.LogInState
 import Data.SocialLoginService
-import Data.User
 import Ui
 import Url
 
@@ -40,7 +40,7 @@ type Msg
     | MsgLogInButtonPressed Data.SocialLoginService.SocialLoginService
     | MsgToLogInPage Data.SocialLoginService.SocialLoginService
     | MsgGetLogInUrlResponse (Result String Url.Url)
-    | MsgCreateProject Data.User.AccessToken
+    | MsgCreateProject Data.AccessToken
     | MsgCreateProjectByGuest
 
 
@@ -49,7 +49,7 @@ type Cmd
     | CmdConsoleLog String
     | CmdToLogInPage Data.SocialLoginService.SocialLoginService
     | CmdJumpPage Url.Url
-    | CmdCreateProject Data.User.AccessToken
+    | CmdCreateProject Data.AccessToken
     | CmdCreateProjectByGuest
 
 
@@ -139,7 +139,7 @@ update msg (Model rec) =
             )
 
 
-view : Data.Language -> Data.User.LogInState -> Model -> Ui.Panel Msg
+view : Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Msg
 view language logInState (Model rec) =
     Ui.row
         (case rec.pointer of
@@ -154,7 +154,7 @@ view language logInState (Model rec) =
         ]
 
 
-projectList : Data.Language -> Data.User.LogInState -> Ui.Panel Msg
+projectList : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
 projectList language logInState =
     Ui.column
         []
@@ -175,7 +175,7 @@ projectList language logInState =
                     "Hejmo"
             )
         , case logInState of
-            Data.User.ReadingAccessToken ->
+            Data.LogInState.ReadingAccessToken ->
                 Ui.textBoxFitHeight
                     []
                     { align = Ui.TextAlignStart
@@ -183,7 +183,7 @@ projectList language logInState =
                     }
                     "…"
 
-            Data.User.VerifyingAccessToken _ ->
+            Data.LogInState.VerifyingAccessToken _ ->
                 Ui.textBoxFitHeight
                     []
                     { align = Ui.TextAlignStart
@@ -191,7 +191,7 @@ projectList language logInState =
                     }
                     "…"
 
-            Data.User.GuestUser _ ->
+            Data.LogInState.GuestUser ->
                 Ui.textBoxFitHeight
                     []
                     { align = Ui.TextAlignStart
@@ -199,7 +199,7 @@ projectList language logInState =
                     }
                     "プロジェクトを作成するには登録が必要です"
 
-            Data.User.Ok { accessToken } ->
+            Data.LogInState.Ok { accessToken } ->
                 Ui.textBoxFitHeight
                     []
                     { align = Ui.TextAlignStart

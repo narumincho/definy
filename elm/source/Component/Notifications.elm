@@ -9,7 +9,7 @@ module Component.Notifications exposing
 
 import Component.Style as Style
 import Css
-import Data.User
+import Data
 import Ui
 
 
@@ -18,7 +18,7 @@ type Model
 
 
 type Event
-    = LogInSuccess Data.User.User
+    = LogInSuccess Data.UserPublic
     | LogInFailure
     | OnLine
     | OffLine
@@ -66,13 +66,13 @@ card event =
             cardItem
                 (Just
                     (Icon
-                        { alternativeText = Data.User.getName user ++ "のプロフィール画像"
+                        { alternativeText = user.name ++ "のプロフィール画像"
                         , rendering = Ui.ImageRenderingAuto
-                        , url = Data.User.getImageUrl user
+                        , url = user.name -- TODO ユーザーのアイコン読み込みをコントロールしたい
                         }
                     )
                 )
-                ("「" ++ Data.User.getName user ++ "」としてログインしました")
+                ("「" ++ user.name ++ "」としてログインしました")
 
         LogInFailure ->
             cardItem

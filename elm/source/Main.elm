@@ -1,6 +1,5 @@
 port module Main exposing (main)
 
-import Api
 import Browser
 import Browser.Navigation
 import Component.DefaultUi
@@ -11,7 +10,7 @@ import Component.Style
 import Css
 import Data
 import Data.Key
-import Data.User
+import Data.LogInState
 import Html
 import Html.Styled
 import Icon
@@ -87,7 +86,7 @@ type Msg
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
     | LogOutRequest -- ログアウトを要求する
     | ResponseAccessTokenFromIndexedDB String
-    | ResponseUserData (Result String Data.User.User) -- ユーザーの情報を受け取った
+    | ResponseUserData (Maybe Data.UserPublic) -- ユーザーの情報を受け取った
     | ChangeNetworkConnection Bool -- 接続状況が変わった
     | PageMsg PageMsg
     | LogInRequest Data.OpenIdConnectProvider
@@ -106,7 +105,7 @@ type Model
         , page : PageModel
         , windowSize : WindowSize
         , messageQueue : List Msg
-        , logInState : Data.User.LogInState
+        , logInState : Data.LogInState.LogInState
         , language : Data.Language
         , clientMode : Data.ClientMode
         , networkConnection : Bool
@@ -180,10 +179,10 @@ init flag =
                 , logInState =
                     case tokenFromUrlMaybe of
                         Just accessToken ->
-                            Data.User.VerifyingAccessToken accessToken
+                            Data.LogInState.VerifyingAccessToken accessToken
 
                         Nothing ->
-                            Data.User.ReadingAccessToken
+                            Data.LogInState.ReadingAccessToken
                 , language = urlData.language
                 , networkConnection = flag.networkConnection
                 , notificationModel =
@@ -199,10 +198,8 @@ init flag =
     in
     ( model
     , (case tokenFromUrlMaybe of
-        Just accessToken ->
-            [ writeAccessTokenToIndexedDB (Data.User.accessTokenToString accessToken)
-            , Api.getUserPrivate accessToken ResponseUserData
-            ]
+        Just (Data.AccessToken accessToken) ->
+            [ writeAccessTokenToIndexedDB accessToken ]
 
         Nothing ->
             [ requestAccessTokenFromIndexedDB () ]
@@ -348,9 +345,7 @@ welcomePageCmdToCmd cmd =
             consoleLog string
 
         Page.Home.CmdToLogInPage socialLoginService ->
-            Api.getLogInUrl
-                socialLoginService
-                (Page.Home.MsgGetLogInUrlResponse >> WelcomePageMsg >> PageMsg)
+            Cmd.none
 
         Page.Home.CmdJumpPage url ->
             Browser.Navigation.load (Url.toString url)
@@ -810,40 +805,40 @@ responseAccessTokenFromIndexedDB accessToken (Model rec) =
             | logInState =
                 case accessToken of
                     "" ->
-                        Data.User.GuestUser Nothing
+                        Data.LogInState.GuestUser
 
                     "error" ->
-                        Data.User.GuestUser (Just Data.User.FailToReadIndexedDB)
+                        Data.LogInState.GuestUser
 
                     _ ->
-                        Data.User.VerifyingAccessToken (Data.User.AccessToken accessToken)
+                        Data.LogInState.VerifyingAccessToken (Data.AccessToken accessToken)
         }
 
 
 requestUserData : Model -> Cmd Msg
 requestUserData (Model rec) =
     case rec.logInState of
-        Data.User.ReadingAccessToken ->
+        Data.LogInState.ReadingAccessToken ->
             Cmd.none
 
-        Data.User.VerifyingAccessToken accessToken ->
-            Api.getUserPrivate accessToken ResponseUserData
-
-        Data.User.GuestUser maybe ->
+        Data.LogInState.VerifyingAccessToken accessToken ->
             Cmd.none
 
-        Data.User.Ok user ->
+        Data.LogInState.GuestUser ->
+            Cmd.none
+
+        Data.LogInState.Ok user ->
             Cmd.none
 
 
-responseUserData : Result String Data.User.User -> Model -> ( Model, Cmd Msg )
+responseUserData : Maybe Data.UserPublic -> Model -> ( Model, Cmd Msg )
 responseUserData result (Model rec) =
     case ( result, rec.logInState ) of
-        ( Ok user, Data.User.VerifyingAccessToken accessToken ) ->
+        ( Just user, Data.LogInState.VerifyingAccessToken accessToken ) ->
             ( Model
                 { rec
                     | logInState =
-                        Data.User.Ok
+                        Data.LogInState.Ok
                             { user = user
                             , accessToken = accessToken
                             }
@@ -855,16 +850,16 @@ responseUserData result (Model rec) =
             , consoleLog "ユーザー情報の取得に成功!"
             )
 
-        ( Err string, Data.User.VerifyingAccessToken _ ) ->
+        ( Nothing, Data.LogInState.VerifyingAccessToken _ ) ->
             ( Model
                 { rec
-                    | logInState = Data.User.GuestUser (Just Data.User.AccessTokenIsInvalid)
+                    | logInState = Data.LogInState.GuestUser
                     , notificationModel =
                         rec.notificationModel
                             |> Component.Notifications.addEvent
                                 Component.Notifications.LogInFailure
                 }
-            , consoleLog ("ユーザーの情報の取得に失敗 " ++ string)
+            , consoleLog "ユーザーの情報の取得に失敗"
             )
 
         ( _, _ ) ->
