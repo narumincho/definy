@@ -26,13 +26,16 @@ type Ports = {
   readonly requestLogInUrl: SubForElmCmd<
     common.data.RequestLogInUrlRequestData
   >;
+  readonly getUserByAccessToken: SubForElmCmd<common.data.AccessToken>;
+  readonly responseUserByAccessToken: CmdForElmSub<
+    common.data.Maybe<common.data.UserPublicAndUserId>
+  >;
   readonly keyPressed: CmdForElmSub<KeyboardEvent>;
   readonly keyPrevented: CmdForElmSub<null>;
   readonly windowResize: CmdForElmSub<{
     width: number;
     height: number;
   }>;
-  readonly portResponseAccessTokenFromIndexedDB: CmdForElmSub<string | null>;
   readonly changeNetworkConnection: CmdForElmSub<boolean>;
   readonly subPointerUp: CmdForElmSub<null>;
 };

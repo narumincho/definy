@@ -133,6 +133,22 @@ const writeAccessToken = (
     };
   });
 
+const callApi = <responseType>(
+  apiName: string,
+  binary: ReadonlyArray<number>,
+  decodeFunction: (
+    index: number,
+    binary: Uint8Array
+  ) => { result: responseType; nextIndex: number }
+): Promise<responseType> =>
+  fetch("https://us-central1-definy-lang.cloudfunctions.net/api/" + apiName, {
+    method: "POST",
+    body: new Uint8Array(binary),
+    headers: [["content-type", "application/octet-stream"]]
+  })
+    .then(response => response.arrayBuffer())
+    .then(response => decodeFunction(0, new Uint8Array(response)).result);
+
 const init = async (): Promise<void> => {
   const urlData = common.urlDataFromUrl(new URL(location.href));
   history.replaceState(
@@ -221,23 +237,23 @@ const init = async (): Promise<void> => {
   });
 
   app.ports.requestLogInUrl.subscribe(requestData => {
-    fetch(
-      "https://us-central1-definy-lang.cloudfunctions.net/api/requestLogInUrl",
-      {
-        method: "POST",
-        body: new Uint8Array(
-          common.data.encodeRequestLogInUrlRequestData(requestData)
-        ),
-        headers: [["content-type", "application/octet-stream"]]
-      }
-    )
-      .then(response => response.arrayBuffer())
-      .then(response => {
-        location.href = common.data.decodeString(
-          0,
-          new Uint8Array(response)
-        ).result;
-      });
+    callApi(
+      "requestLogInUrl",
+      common.data.encodeRequestLogInUrlRequestData(requestData),
+      common.data.decodeString
+    ).then(url => {
+      location.href = url;
+    });
+  });
+
+  app.ports.getUserByAccessToken.subscribe(accessToken => {
+    callApi(
+      "getUserByAccessToken",
+      common.data.encodeToken(accessToken),
+      common.data.decodeMaybe(common.data.decodeUserPublicAndUserId)
+    ).then(maybeUserPublicAndUserId => {
+      app.ports.responseUserByAccessToken.send(maybeUserPublicAndUserId);
+    });
   });
 };
 

@@ -18,7 +18,7 @@ type Model
 
 
 type Event
-    = LogInSuccess Data.UserPublic
+    = LogInSuccess Data.UserPublicAndUserId
     | LogInFailure
     | OnLine
     | OffLine
@@ -62,17 +62,10 @@ view (Model events) =
 card : Event -> Ui.Panel msg
 card event =
     case event of
-        LogInSuccess user ->
+        LogInSuccess userAndUserId ->
             cardItem
-                (Just
-                    (Icon
-                        { alternativeText = user.name ++ "のプロフィール画像"
-                        , rendering = Ui.ImageRenderingAuto
-                        , url = user.name -- TODO ユーザーのアイコン読み込みをコントロールしたい
-                        }
-                    )
-                )
-                ("「" ++ user.name ++ "」としてログインしました")
+                Nothing
+                ("「" ++ userAndUserId.userPublic.name ++ "」としてログインしました")
 
         LogInFailure ->
             cardItem
@@ -133,5 +126,5 @@ cardItem iconMaybe text =
                     , vertical = Ui.CenterY
                     , font = Style.normalFont
                     }
-                    "オフラインになりました"
+                    text
         ]

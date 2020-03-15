@@ -8,6 +8,7 @@ type LogInState
     | RequestLogInUrl Data.OpenIdConnectProvider
     | VerifyingAccessToken Data.AccessToken
     | Ok
-        { user : Data.UserPublic
-        , accessToken : Data.AccessToken
+        { accessToken : Data.AccessToken
+        , userId : Data.UserId
+        , user : Data.UserPublic
         }

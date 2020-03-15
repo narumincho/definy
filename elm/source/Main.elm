@@ -48,8 +48,14 @@ port consoleLog : String -> Cmd msg
 port requestLogInUrl : Json.Encode.Value -> Cmd msg
 
 
+port getUserByAccessToken : Json.Encode.Value -> Cmd msg
+
+
 
 {- Sub (JavaScript → Elm) -}
+
+
+port responseUserByAccessToken : (Json.Decode.Value -> msg) -> Sub msg
 
 
 port keyPressed : (Json.Decode.Value -> msg) -> Sub msg
@@ -59,9 +65,6 @@ port keyPrevented : (() -> msg) -> Sub msg
 
 
 port windowResize : ({ width : Int, height : Int } -> msg) -> Sub msg
-
-
-port portResponseAccessTokenFromIndexedDB : (String -> msg) -> Sub msg
 
 
 port changeNetworkConnection : (Bool -> msg) -> Sub msg
@@ -79,11 +82,10 @@ type Msg
     | ToResizeGutterMode GutterType -- リサイズモードに移行
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
     | LogOutRequest -- ログアウトを要求する
-    | ResponseAccessTokenFromIndexedDB String
-    | ResponseUserData (Maybe Data.UserPublic) -- ユーザーの情報を受け取った
     | ChangeNetworkConnection Bool -- 接続状況が変わった
     | PageMsg PageMsg
     | RequestLogInUrl Data.OpenIdConnectProvider
+    | ResponseUserDataFromAccessToken (Maybe (Maybe Data.UserPublicAndUserId))
     | NoOperation
 
 
@@ -185,7 +187,12 @@ init flag =
                    )
         , clientMode = urlData.clientMode
         }
-    , Cmd.none
+    , case urlData.accessToken of
+        Just accessToken ->
+            getUserByAccessTokenTyped accessToken
+
+        Nothing ->
+            Cmd.none
     )
 
 
@@ -236,16 +243,6 @@ update msg (Model rec) =
             , Cmd.none
             )
 
-        ResponseAccessTokenFromIndexedDB accessToken ->
-            let
-                newModel =
-                    Model rec |> responseAccessTokenFromIndexedDB accessToken
-            in
-            ( newModel, requestUserData newModel )
-
-        ResponseUserData result ->
-            Model rec |> responseUserData result
-
         PageMsg pageMsg ->
             case ( rec.page, pageMsg ) of
                 ( Welcome welcomeModel, WelcomePageMsg welcomePageMsg ) ->
@@ -256,11 +253,6 @@ update msg (Model rec) =
                     ( Model { rec | page = Welcome newWelcomeModel }
                     , cmd |> List.map welcomePageCmdToCmd |> Cmd.batch
                     )
-
-        NoOperation ->
-            ( Model rec
-            , Cmd.none
-            )
 
         ChangeNetworkConnection connection ->
             ( Model
@@ -290,6 +282,14 @@ update msg (Model rec) =
                     , accessToken = Nothing
                     }
                 }
+            )
+
+        ResponseUserDataFromAccessToken maybeUserPublicAndUserId ->
+            Model rec |> responseUserData maybeUserPublicAndUserId
+
+        NoOperation ->
+            ( Model rec
+            , Cmd.none
             )
 
 
@@ -620,9 +620,16 @@ shiftMsgListFromMsgQueue (Model rec) =
     )
 
 
-getLanguage : Model -> Data.Language
-getLanguage (Model { language }) =
-    language
+requestLogInUrlTyped : Data.RequestLogInUrlRequestData -> Cmd Msg
+requestLogInUrlTyped requestLogInUrlRequestData =
+    requestLogInUrl
+        (Data.requestLogInUrlRequestDataToJsonValue requestLogInUrlRequestData)
+
+
+getUserByAccessTokenTyped : Data.AccessToken -> Cmd Msg
+getUserByAccessTokenTyped accessToken =
+    getUserByAccessToken
+        (Data.accessTokenToJsonValue accessToken)
 
 
 
@@ -828,23 +835,6 @@ gutterTypeToCursorStyle gutterType =
             Ui.VerticalResize
 
 
-responseAccessTokenFromIndexedDB : String -> Model -> Model
-responseAccessTokenFromIndexedDB accessToken (Model rec) =
-    Model
-        { rec
-            | logInState =
-                case accessToken of
-                    "" ->
-                        Data.LogInState.GuestUser
-
-                    "error" ->
-                        Data.LogInState.GuestUser
-
-                    _ ->
-                        Data.LogInState.VerifyingAccessToken (Data.AccessToken accessToken)
-        }
-
-
 requestUserData : Model -> Cmd Msg
 requestUserData (Model rec) =
     case rec.logInState of
@@ -861,23 +851,36 @@ requestUserData (Model rec) =
             Cmd.none
 
 
-responseUserData : Maybe Data.UserPublic -> Model -> ( Model, Cmd Msg )
+responseUserData : Maybe (Maybe Data.UserPublicAndUserId) -> Model -> ( Model, Cmd Msg )
 responseUserData result (Model rec) =
     case ( result, rec.logInState ) of
-        ( Just user, Data.LogInState.VerifyingAccessToken accessToken ) ->
+        ( Just (Just userAndUserId), Data.LogInState.VerifyingAccessToken accessToken ) ->
             ( Model
                 { rec
                     | logInState =
                         Data.LogInState.Ok
-                            { user = user
-                            , accessToken = accessToken
+                            { accessToken = accessToken
+                            , userId = userAndUserId.userId
+                            , user = userAndUserId.userPublic
                             }
                     , notificationModel =
                         rec.notificationModel
                             |> Component.Notifications.addEvent
-                                (Component.Notifications.LogInSuccess user)
+                                (Component.Notifications.LogInSuccess userAndUserId)
                 }
             , consoleLog "ユーザー情報の取得に成功!"
+            )
+
+        ( Just Nothing, Data.LogInState.VerifyingAccessToken _ ) ->
+            ( Model
+                { rec
+                    | logInState = Data.LogInState.GuestUser
+                    , notificationModel =
+                        rec.notificationModel
+                            |> Component.Notifications.addEvent
+                                Component.Notifications.LogInFailure
+                }
+            , consoleLog "アクセストークンが無効だった"
             )
 
         ( Nothing, Data.LogInState.VerifyingAccessToken _ ) ->
@@ -889,19 +892,13 @@ responseUserData result (Model rec) =
                             |> Component.Notifications.addEvent
                                 Component.Notifications.LogInFailure
                 }
-            , consoleLog "ユーザーの情報の取得に失敗"
+            , consoleLog "ユーザーの情報のデコードに失敗"
             )
 
         ( _, _ ) ->
             ( Model rec
             , consoleLog "いらないときにユーザーの情報を受け取ってしまった"
             )
-
-
-requestLogInUrlTyped : Data.RequestLogInUrlRequestData -> Cmd Msg
-requestLogInUrlTyped requestLogInUrlRequestData =
-    requestLogInUrl
-        (Data.requestLogInUrlRequestDataToJsonValue requestLogInUrlRequestData)
 
 
 
@@ -917,8 +914,15 @@ subscriptions model =
         ([ keyPressed (Data.Key.fromKeyEventObject >> KeyPressed)
          , keyPrevented (always KeyPrevented)
          , windowResize WindowResize
-         , portResponseAccessTokenFromIndexedDB ResponseAccessTokenFromIndexedDB
          , changeNetworkConnection ChangeNetworkConnection
+         , responseUserByAccessToken
+            (\jsonValue ->
+                Json.Decode.decodeValue
+                    (Data.maybeJsonDecoder Data.userPublicAndUserIdJsonDecoder)
+                    jsonValue
+                    |> Result.toMaybe
+                    |> ResponseUserDataFromAccessToken
+            )
          ]
             ++ (if isCaptureMouseEvent model then
                     [ subPointerUp (always PointerUp) ]
