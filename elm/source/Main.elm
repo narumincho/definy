@@ -83,7 +83,7 @@ type Msg
     | ResponseUserData (Maybe Data.UserPublic) -- ユーザーの情報を受け取った
     | ChangeNetworkConnection Bool -- 接続状況が変わった
     | PageMsg PageMsg
-    | LogInRequest Data.OpenIdConnectProvider
+    | RequestLogInUrl Data.OpenIdConnectProvider
     | NoOperation
 
 
@@ -279,8 +279,8 @@ update msg (Model rec) =
             , Cmd.none
             )
 
-        LogInRequest openIdConnectProvider ->
-            ( Model rec
+        RequestLogInUrl openIdConnectProvider ->
+            ( Model { rec | logInState = Data.LogInState.RequestLogInUrl openIdConnectProvider }
             , requestLogInUrlTyped
                 { openIdConnectProvider = openIdConnectProvider
                 , urlData =
@@ -735,7 +735,7 @@ logInPanelLogInButton language { width, height } =
 googleLogInButton : Data.Language -> Ui.Panel Msg
 googleLogInButton language =
     Ui.depth
-        [ Ui.onClick (LogInRequest Data.OpenIdConnectProviderGoogle)
+        [ Ui.onClick (RequestLogInUrl Data.OpenIdConnectProviderGoogle)
         , Ui.borderRadius 8
         , Ui.height 48
         , Ui.width 448
@@ -779,7 +779,7 @@ googleLogInButton language =
 gitHubLogInButton : Data.Language -> Ui.Panel Msg
 gitHubLogInButton language =
     Ui.depth
-        [ Ui.onClick (LogInRequest Data.OpenIdConnectProviderGitHub)
+        [ Ui.onClick (RequestLogInUrl Data.OpenIdConnectProviderGitHub)
         , Ui.borderRadius 8
         , Ui.height 48
         , Ui.width 448
