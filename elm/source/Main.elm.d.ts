@@ -22,8 +22,6 @@ type Flags = {
 
 type Ports = {
   readonly preventDefaultBeforeKeyEvent: SubForElmCmd<null>;
-  readonly requestAccessTokenFromIndexedDB: SubForElmCmd<null>;
-  readonly writeAccessTokenToIndexedDB: SubForElmCmd<string>;
   readonly consoleLog: SubForElmCmd<string>;
   readonly requestLogInUrl: SubForElmCmd<
     common.data.RequestLogInUrlRequestData

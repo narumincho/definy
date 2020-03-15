@@ -17,6 +17,7 @@
     "no-template-curly-in-string": ["error"],
     "eqeqeq": ["error", "always"],
     "no-caller": ["error"],
+    "no-constant-condition": ["error", { "checkLoops": false }],
     "no-else-return": ["error", { "allowElseIf": false }],
     "no-eval": ["error"],
     "no-extend-native": ["error"],
@@ -35,7 +36,7 @@
     "@typescript-eslint/no-unnecessary-qualifier": ["error"],
     "@typescript-eslint/no-unused-expressions": ["error"],
     "@typescript-eslint/prefer-for-of": ["error"],
-    "@typescript-eslint/require-array-sort-compare": ["error"]
-  },
-  "ignorePatterns": ["webpack.config.js"]
+    "@typescript-eslint/require-array-sort-compare": ["error"],
+    "@typescript-eslint/no-use-before-define": ["error", { "variables": false }]
+  }
 }

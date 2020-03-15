@@ -196,7 +196,7 @@ projectList language logInState =
 createProjectButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
 createProjectButton language logInState =
     case logInState of
-        Data.LogInState.ReadingAccessToken ->
+        Data.LogInState.RequestLogInUrl _ ->
             Ui.textBoxFitHeight
                 []
                 { align = Ui.TextAlignStart
@@ -204,13 +204,13 @@ createProjectButton language logInState =
                 }
                 (case language of
                     Data.LanguageEnglish ->
-                        "Reading access token..."
+                        "..."
 
                     Data.LanguageJapanese ->
-                        "アクセストークン読込中……"
+                        "……"
 
                     Data.LanguageEsperanto ->
-                        "Legado de alira tokeno ..."
+                        "..."
                 )
 
         Data.LogInState.VerifyingAccessToken _ ->

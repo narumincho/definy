@@ -10,21 +10,140 @@ document.documentElement.replaceChild(
 );
 document.body.appendChild(elmAppElement);
 
-requestAnimationFrame(() => {
-  const serviceWorkerSupport = "serviceWorker" in navigator;
-  const app = Elm.Main.init({
-    flags: {
-      windowSize: {
-        width: innerWidth,
-        height: innerHeight
-      },
-      urlData: common.urlDataFromUrl(new URL(location.href)),
-      networkConnection: navigator.onLine
-    },
-    node: elmAppElement
+const getAccessToken = async (
+  urlData: common.data.UrlData
+): Promise<common.data.Maybe<common.data.AccessToken>> => {
+  switch (urlData.accessToken._) {
+    case "Just":
+      return urlData.accessToken;
+    case "Nothing":
+      return getAccessTokenFromIndexDB();
+  }
+};
+
+const getAccessTokenFromIndexDB = (): Promise<common.data.Maybe<
+  common.data.AccessToken
+>> =>
+  new Promise((resolve, reject) => {
+    if (!("indexedDB" in window)) {
+      console.log("indexDBをサポートしていなかった");
+      resolve(common.data.maybeNothing());
+    }
+    const userDBRequest: IDBOpenDBRequest = indexedDB.open("user", 1);
+
+    userDBRequest.onupgradeneeded = (event): void => {
+      console.log("ユーザーデータのDBが更新された");
+      const target = event.target as IDBOpenDBRequest;
+      const db = target.result;
+      db.createObjectStore("accessToken", {});
+    };
+
+    userDBRequest.onsuccess = (event): void => {
+      let accessToken: common.data.Maybe<common.data.AccessToken> = common.data.maybeNothing();
+      console.log("ユーザーデータのDBに接続成功!");
+      const target = event.target as IDBOpenDBRequest;
+      const db = target.result;
+      console.log("db in success", db);
+      const transaction = db.transaction("accessToken", "readonly");
+      transaction.oncomplete = (): void => {
+        console.log("アクセストークン読み込みのトランザクションが成功した");
+        db.close();
+        resolve(accessToken);
+      };
+      transaction.onerror = (): void => {
+        console.log("アクセストークン読み込みのトランザクションが失敗した");
+        db.close();
+        reject("read AccessToken Error: transaction failed");
+      };
+      const getRequest = transaction
+        .objectStore("accessToken")
+        .get("lastLogInUser");
+      getRequest.onsuccess = (event): void => {
+        console.log("読み込み完了!");
+        const request = event.target as IDBRequest;
+        if (request.result === undefined) {
+          return;
+        }
+        if (typeof request.result === "string") {
+          accessToken = common.data.maybeJust(
+            request.result as common.data.AccessToken
+          );
+          return;
+        }
+        reject("read AccessToken Error: AccessToken is not string");
+      };
+      getRequest.onerror = (): void => {
+        console.log("読み込み失敗");
+        reject("read AccessToken Error: Read Error");
+      };
+    };
+
+    userDBRequest.onerror = (): void => {
+      console.log("ユーザーデータのDBに接続できなかった");
+    };
   });
 
-  if (serviceWorkerSupport) {
+const writeAccessToken = (
+  accessToken: common.data.AccessToken
+): Promise<void> =>
+  new Promise((resolve, reject) => {
+    if (!("indexedDB" in window)) {
+      console.log("indexDBをサポートしていなかった");
+      resolve();
+    }
+
+    const userDBRequest: IDBOpenDBRequest = indexedDB.open("user", 1);
+
+    userDBRequest.onupgradeneeded = (event): void => {
+      console.log("ユーザーデータのDBが更新された");
+      const target = event.target as IDBOpenDBRequest;
+      const db = target.result;
+      db.createObjectStore("accessToken", {});
+    };
+
+    userDBRequest.onsuccess = (event): void => {
+      console.log("ユーザーデータのDBに接続成功!");
+      const target = event.target as IDBOpenDBRequest;
+      const db = target.result;
+      const transaction = db.transaction("accessToken", "readwrite");
+      transaction.oncomplete = (): void => {
+        console.log("アクセストークン保存のトランザクションが成功した");
+        db.close();
+        resolve();
+      };
+      transaction.onerror = (): void => {
+        console.log("アクセストークン保存のトランザクションが失敗した");
+        db.close();
+        reject("Write AccessToken Error: transaction failed");
+      };
+      const putRequest = transaction
+        .objectStore("accessToken")
+        .put(accessToken, "lastLogInUser");
+
+      putRequest.onsuccess = (): void => {
+        console.log("書き込み完了!");
+      };
+      putRequest.onerror = (): void => {
+        console.log("読み込み失敗");
+      };
+    };
+
+    userDBRequest.onerror = (): void => {
+      console.log("ユーザーデータのDBに接続できなかった");
+    };
+  });
+
+const init = async (): Promise<void> => {
+  const urlData = common.urlDataFromUrl(new URL(location.href));
+  history.replaceState(
+    "",
+    "",
+    common
+      .urlDataToUrl({ ...urlData, accessToken: common.data.maybeNothing() })
+      .toString()
+  );
+
+  if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.ts", { scope: "/" }).then(
       () => {
         console.log("serviceWorkerを登録した!");
@@ -34,6 +153,22 @@ requestAnimationFrame(() => {
       }
     );
   }
+
+  const accessToken = await getAccessToken(urlData);
+  if (accessToken._ === "Just") {
+    writeAccessToken(accessToken.value);
+  }
+  const app = Elm.Main.init({
+    flags: {
+      windowSize: {
+        width: innerWidth,
+        height: innerHeight
+      },
+      urlData: { ...urlData, accessToken: accessToken },
+      networkConnection: navigator.onLine
+    },
+    node: elmAppElement
+  });
 
   let prevKeyEvent: KeyboardEvent;
   /* キー入力 */
@@ -61,97 +196,6 @@ requestAnimationFrame(() => {
       width: innerWidth,
       height: innerHeight
     });
-  });
-
-  app.ports.requestAccessTokenFromIndexedDB.subscribe(() => {
-    const userDBRequest: IDBOpenDBRequest = indexedDB.open("user", 1);
-
-    userDBRequest.onupgradeneeded = (event): void => {
-      console.log("ユーザーデータのDBが更新された");
-      const target = event.target as IDBOpenDBRequest;
-      const db = target.result;
-      db.createObjectStore("accessToken", {});
-    };
-
-    userDBRequest.onsuccess = (event): void => {
-      console.log("ユーザーデータのDBに接続成功!");
-      const target = event.target as IDBOpenDBRequest;
-      const db = target.result;
-      console.log("db in success", db);
-      const transaction = db.transaction("accessToken", "readonly");
-      transaction.oncomplete = (): void => {
-        console.log("アクセストークン読み込みのトランザクションが成功した");
-        db.close();
-      };
-      transaction.onerror = (): void => {
-        console.log("アクセストークン読み込みのトランザクションが失敗した");
-        db.close();
-      };
-      const getRequest = transaction
-        .objectStore("accessToken")
-        .get("lastLogInUser");
-      getRequest.onsuccess = (event): void => {
-        console.log("読み込み完了!");
-        const request = event.target as IDBRequest;
-        if (request.result === undefined) {
-          app.ports.portResponseAccessTokenFromIndexedDB.send("");
-          return;
-        }
-        if (typeof request.result === "string") {
-          app.ports.portResponseAccessTokenFromIndexedDB.send(request.result);
-          return;
-        }
-        app.ports.portResponseAccessTokenFromIndexedDB.send("error");
-      };
-      getRequest.onerror = (): void => {
-        console.log("読み込み失敗");
-        app.ports.portResponseAccessTokenFromIndexedDB.send("error");
-      };
-    };
-
-    userDBRequest.onerror = (): void => {
-      console.log("ユーザーデータのDBに接続できなかった");
-    };
-  });
-
-  app.ports.writeAccessTokenToIndexedDB.subscribe(accessToken => {
-    const userDBRequest: IDBOpenDBRequest = indexedDB.open("user", 1);
-
-    userDBRequest.onupgradeneeded = (event): void => {
-      console.log("ユーザーデータのDBが更新された");
-      const target = event.target as IDBOpenDBRequest;
-      const db = target.result;
-      db.createObjectStore("accessToken", {});
-    };
-
-    userDBRequest.onsuccess = (event): void => {
-      console.log("ユーザーデータのDBに接続成功!");
-      const target = event.target as IDBOpenDBRequest;
-      const db = target.result;
-      const transaction = db.transaction("accessToken", "readwrite");
-      transaction.oncomplete = (): void => {
-        console.log("アクセストークン保存のトランザクションが成功した");
-        db.close();
-      };
-      transaction.onerror = (): void => {
-        console.log("アクセストークン保存のトランザクションが失敗した");
-        db.close();
-      };
-      const putRequest = transaction
-        .objectStore("accessToken")
-        .put(accessToken, "lastLogInUser");
-
-      putRequest.onsuccess = (): void => {
-        console.log("書き込み完了!");
-      };
-      putRequest.onerror = (): void => {
-        console.log("読み込み失敗");
-      };
-    };
-
-    userDBRequest.onerror = (): void => {
-      console.log("ユーザーデータのDBに接続できなかった");
-    };
   });
 
   app.ports.consoleLog.subscribe(text => {
@@ -195,4 +239,8 @@ requestAnimationFrame(() => {
         ).result;
       });
   });
+};
+
+requestAnimationFrame(() => {
+  init();
 });

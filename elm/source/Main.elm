@@ -42,12 +42,6 @@ port preventDefaultBeforeKeyEvent : () -> Cmd msg
 port elementScrollIntoView : String -> Cmd msg
 
 
-port requestAccessTokenFromIndexedDB : () -> Cmd msg
-
-
-port writeAccessTokenToIndexedDB : String -> Cmd msg
-
-
 port consoleLog : String -> Cmd msg
 
 
@@ -166,45 +160,32 @@ init flag =
                     , language = Data.LanguageEnglish
                     , accessToken = Nothing
                     }
-
-        tokenFromUrlMaybe =
-            Nothing
-
-        model =
-            Model
-                { subMode = SubModeNone
-                , page = Welcome Page.Home.init
-                , windowSize = flag.windowSize
-                , messageQueue = []
-                , logInState =
-                    case tokenFromUrlMaybe of
-                        Just accessToken ->
-                            Data.LogInState.VerifyingAccessToken accessToken
-
-                        Nothing ->
-                            Data.LogInState.ReadingAccessToken
-                , language = urlData.language
-                , networkConnection = flag.networkConnection
-                , notificationModel =
-                    Component.Notifications.initModel
-                        |> (if flag.networkConnection then
-                                identity
-
-                            else
-                                Component.Notifications.addEvent Component.Notifications.OffLine
-                           )
-                , clientMode = urlData.clientMode
-                }
     in
-    ( model
-    , (case tokenFromUrlMaybe of
-        Just (Data.AccessToken accessToken) ->
-            [ writeAccessTokenToIndexedDB accessToken ]
+    ( Model
+        { subMode = SubModeNone
+        , page = Welcome Page.Home.init
+        , windowSize = flag.windowSize
+        , messageQueue = []
+        , logInState =
+            case urlData.accessToken of
+                Just accessToken ->
+                    Data.LogInState.VerifyingAccessToken accessToken
 
-        Nothing ->
-            [ requestAccessTokenFromIndexedDB () ]
-      )
-        |> Cmd.batch
+                Nothing ->
+                    Data.LogInState.GuestUser
+        , language = urlData.language
+        , networkConnection = flag.networkConnection
+        , notificationModel =
+            Component.Notifications.initModel
+                |> (if flag.networkConnection then
+                        identity
+
+                    else
+                        Component.Notifications.addEvent Component.Notifications.OffLine
+                   )
+        , clientMode = urlData.clientMode
+        }
+    , Cmd.none
     )
 
 
@@ -669,7 +650,7 @@ view (Model rec) =
                     []
                     0
                     [ Component.Header.view
-                    , logInButtonPanel rec.language rec.windowSize
+                    , logInPanel rec.logInState rec.language rec.windowSize
                     , welcomeModel
                         |> Page.Home.view rec.language rec.logInState
                         |> Ui.map (WelcomePageMsg >> PageMsg)
@@ -682,8 +663,57 @@ view (Model rec) =
         |> Html.Styled.toUnstyled
 
 
-logInButtonPanel : Data.Language -> WindowSize -> Ui.Panel Msg
-logInButtonPanel language { width, height } =
+logInPanel : Data.LogInState.LogInState -> Data.Language -> WindowSize -> Ui.Panel Msg
+logInPanel logInState language windowSize =
+    case logInState of
+        Data.LogInState.GuestUser ->
+            logInPanelLogInButton language windowSize
+
+        Data.LogInState.RequestLogInUrl _ ->
+            Ui.textBox []
+                { align = Ui.TextAlignCenter
+                , vertical = Ui.CenterY
+                , font =
+                    Ui.Font
+                        { typeface = Component.Style.fontHackName
+                        , size = 16
+                        , letterSpacing = 0
+                        , color = Css.rgb 255 255 255
+                        }
+                }
+                "ログイン画面をリクエスト中……"
+
+        Data.LogInState.VerifyingAccessToken _ ->
+            Ui.textBox []
+                { align = Ui.TextAlignCenter
+                , vertical = Ui.CenterY
+                , font =
+                    Ui.Font
+                        { typeface = Component.Style.fontHackName
+                        , size = 16
+                        , letterSpacing = 0
+                        , color = Css.rgb 255 255 255
+                        }
+                }
+                "認証中……"
+
+        Data.LogInState.Ok record ->
+            Ui.textBox []
+                { align = Ui.TextAlignCenter
+                , vertical = Ui.CenterY
+                , font =
+                    Ui.Font
+                        { typeface = Component.Style.fontHackName
+                        , size = 16
+                        , letterSpacing = 0
+                        , color = Css.rgb 255 255 255
+                        }
+                }
+                "ログイン成功"
+
+
+logInPanelLogInButton : Data.Language -> WindowSize -> Ui.Panel Msg
+logInPanelLogInButton language { width, height } =
     if width < 512 then
         Ui.column
             [ Ui.height (48 * 2 + 32) ]
@@ -818,7 +848,7 @@ responseAccessTokenFromIndexedDB accessToken (Model rec) =
 requestUserData : Model -> Cmd Msg
 requestUserData (Model rec) =
     case rec.logInState of
-        Data.LogInState.ReadingAccessToken ->
+        Data.LogInState.RequestLogInUrl _ ->
             Cmd.none
 
         Data.LogInState.VerifyingAccessToken accessToken ->

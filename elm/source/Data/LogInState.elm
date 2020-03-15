@@ -4,9 +4,9 @@ import Data
 
 
 type LogInState
-    = ReadingAccessToken
+    = GuestUser
+    | RequestLogInUrl Data.OpenIdConnectProvider
     | VerifyingAccessToken Data.AccessToken
-    | GuestUser
     | Ok
         { user : Data.UserPublic
         , accessToken : Data.AccessToken
