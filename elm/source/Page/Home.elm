@@ -165,13 +165,13 @@ projectList language logInState =
             , font = Component.Style.normalFont
             }
             (case language of
-                Data.English ->
+                Data.LanguageEnglish ->
                     "home"
 
-                Data.Japanese ->
+                Data.LanguageJapanese ->
                     "ここはHome"
 
-                Data.Esperanto ->
+                Data.LanguageEsperanto ->
                     "Hejmo"
             )
         , createProjectButton language logInState
@@ -181,13 +181,13 @@ projectList language logInState =
             , font = Component.Style.normalFont
             }
             (case language of
-                Data.English ->
+                Data.LanguageEnglish ->
                     "List of projects"
 
-                Data.Japanese ->
+                Data.LanguageJapanese ->
                     "プロジェクト一覧"
 
-                Data.Esperanto ->
+                Data.LanguageEsperanto ->
                     "Listo de projektoj"
             )
         ]
@@ -203,13 +203,13 @@ createProjectButton language logInState =
                 , font = Component.Style.normalFont
                 }
                 (case language of
-                    Data.English ->
+                    Data.LanguageEnglish ->
                         "Reading access token..."
 
-                    Data.Japanese ->
+                    Data.LanguageJapanese ->
                         "アクセストークン読込中……"
 
-                    Data.Esperanto ->
+                    Data.LanguageEsperanto ->
                         "Legado de alira tokeno ..."
                 )
 
@@ -220,13 +220,13 @@ createProjectButton language logInState =
                 , font = Component.Style.normalFont
                 }
                 (case language of
-                    Data.English ->
+                    Data.LanguageEnglish ->
                         "Verifying..."
 
-                    Data.Japanese ->
+                    Data.LanguageJapanese ->
                         "認証中…"
 
-                    Data.Esperanto ->
+                    Data.LanguageEsperanto ->
                         "Aŭtentigado ..."
                 )
 

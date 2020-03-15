@@ -161,9 +161,9 @@ init flag =
             flag.urlData
                 |> Json.Decode.decodeValue Data.urlDataJsonDecoder
                 |> Result.withDefault
-                    { clientMode = Data.Release
-                    , location = Data.Home
-                    , language = Data.English
+                    { clientMode = Data.ClientModeRelease
+                    , location = Data.LocationHome
+                    , language = Data.LanguageEnglish
                     , accessToken = Nothing
                     }
 
@@ -316,7 +316,7 @@ pageModelToLocation : PageModel -> Data.Location
 pageModelToLocation pageModel =
     case pageModel of
         Welcome _ ->
-            Data.Home
+            Data.LocationHome
 
 
 updateFromMsgList : List Msg -> Model -> ( Model, Cmd Msg )
@@ -705,7 +705,7 @@ logInButtonPanel language { width, height } =
 googleLogInButton : Data.Language -> Ui.Panel Msg
 googleLogInButton language =
     Ui.depth
-        [ Ui.onClick (LogInRequest Data.Google)
+        [ Ui.onClick (LogInRequest Data.OpenIdConnectProviderGoogle)
         , Ui.borderRadius 8
         , Ui.height 48
         , Ui.width 448
@@ -733,13 +733,13 @@ googleLogInButton language =
                         }
                 }
                 (case language of
-                    Data.English ->
+                    Data.LanguageEnglish ->
                         "Sign in with Google"
 
-                    Data.Japanese ->
+                    Data.LanguageJapanese ->
                         "Googleでログイン"
 
-                    Data.Esperanto ->
+                    Data.LanguageEsperanto ->
                         "Ensalutu kun Google"
                 )
             ]
@@ -749,7 +749,7 @@ googleLogInButton language =
 gitHubLogInButton : Data.Language -> Ui.Panel Msg
 gitHubLogInButton language =
     Ui.depth
-        [ Ui.onClick (LogInRequest Data.GitHub)
+        [ Ui.onClick (LogInRequest Data.OpenIdConnectProviderGitHub)
         , Ui.borderRadius 8
         , Ui.height 48
         , Ui.width 448
@@ -775,13 +775,13 @@ gitHubLogInButton language =
                         }
                 }
                 (case language of
-                    Data.English ->
+                    Data.LanguageEnglish ->
                         "Sign in with GitHub"
 
-                    Data.Japanese ->
+                    Data.LanguageJapanese ->
                         "GitHubでログイン"
 
-                    Data.Esperanto ->
+                    Data.LanguageEsperanto ->
                         "Ensalutu kun GitHub"
                 )
             ]
