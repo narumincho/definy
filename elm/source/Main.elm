@@ -2,6 +2,7 @@ port module Main exposing (main)
 
 import Browser
 import Browser.Navigation
+import Command
 import Component.DefaultUi
 import Component.EditorGroup
 import Component.Header
@@ -11,6 +12,7 @@ import Css
 import Data
 import Data.Key
 import Data.LogInState
+import Dict
 import Html
 import Html.Styled
 import Icon
@@ -51,6 +53,9 @@ port requestLogInUrl : Json.Encode.Value -> Cmd msg
 port getUserByAccessToken : Json.Encode.Value -> Cmd msg
 
 
+port getImageBlobUrl : Json.Encode.Value -> Cmd msg
+
+
 
 {- Sub (JavaScript → Elm) -}
 
@@ -73,6 +78,9 @@ port changeNetworkConnection : (Bool -> msg) -> Sub msg
 port subPointerUp : (() -> msg) -> Sub msg
 
 
+port getImageBlobResponse : ({ blobUrl : String, fileHash : String } -> msg) -> Sub msg
+
+
 {-| 全体の入力を表すメッセージ
 -}
 type Msg
@@ -86,6 +94,7 @@ type Msg
     | PageMsg PageMsg
     | RequestLogInUrl Data.OpenIdConnectProvider
     | ResponseUserDataFromAccessToken (Maybe (Maybe Data.UserPublicAndUserId))
+    | ResponseGetImageBlob { blobUrl : String, fileHash : String }
     | NoOperation
 
 
@@ -106,6 +115,7 @@ type Model
         , clientMode : Data.ClientMode
         , networkConnection : Bool
         , notificationModel : Component.Notifications.Model
+        , imageBlobUrlDict : Dict.Dict String String
         }
 
 
@@ -162,6 +172,22 @@ init flag =
                     , language = Data.LanguageEnglish
                     , accessToken = Nothing
                     }
+
+        ( notificationsInitModel, notificationsInitCommand ) =
+            Component.Notifications.init
+
+        ( notificationsModel, notificationsCommand ) =
+            if flag.networkConnection then
+                ( notificationsInitModel
+                , Command.none
+                )
+
+            else
+                Component.Notifications.update
+                    (Component.Notifications.AddEvent
+                        Component.Notifications.OffLine
+                    )
+                    notificationsInitModel
     in
     ( Model
         { subMode = SubModeNone
@@ -177,22 +203,20 @@ init flag =
                     Data.LogInState.GuestUser
         , language = urlData.language
         , networkConnection = flag.networkConnection
-        , notificationModel =
-            Component.Notifications.initModel
-                |> (if flag.networkConnection then
-                        identity
-
-                    else
-                        Component.Notifications.addEvent Component.Notifications.OffLine
-                   )
+        , notificationModel = notificationsModel
         , clientMode = urlData.clientMode
+        , imageBlobUrlDict = Dict.empty
         }
-    , case urlData.accessToken of
-        Just accessToken ->
-            getUserByAccessTokenTyped accessToken
+    , Cmd.batch
+        [ case urlData.accessToken of
+            Just accessToken ->
+                getUserByAccessTokenTyped accessToken
 
-        Nothing ->
-            Cmd.none
+            Nothing ->
+                Cmd.none
+        , commandToMainCommand notificationsInitCommand
+        , commandToMainCommand notificationsCommand
+        ]
     )
 
 
@@ -255,20 +279,25 @@ update msg (Model rec) =
                     )
 
         ChangeNetworkConnection connection ->
-            ( Model
-                { rec
-                    | networkConnection = connection
-                    , notificationModel =
-                        rec.notificationModel
-                            |> Component.Notifications.addEvent
+            let
+                ( newNotificationModel, command ) =
+                    rec.notificationModel
+                        |> Component.Notifications.update
+                            (Component.Notifications.AddEvent
                                 (if connection then
                                     Component.Notifications.OnLine
 
                                  else
                                     Component.Notifications.OffLine
                                 )
+                            )
+            in
+            ( Model
+                { rec
+                    | networkConnection = connection
+                    , notificationModel = newNotificationModel
                 }
-            , Cmd.none
+            , commandToMainCommand command
             )
 
         RequestLogInUrl openIdConnectProvider ->
@@ -286,6 +315,18 @@ update msg (Model rec) =
 
         ResponseUserDataFromAccessToken maybeUserPublicAndUserId ->
             Model rec |> responseUserData maybeUserPublicAndUserId
+
+        ResponseGetImageBlob imageBlobAndFileHash ->
+            ( Model
+                { rec
+                    | imageBlobUrlDict =
+                        rec.imageBlobUrlDict
+                            |> Dict.insert
+                                imageBlobAndFileHash.fileHash
+                                imageBlobAndFileHash.blobUrl
+                }
+            , Cmd.none
+            )
 
         NoOperation ->
             ( Model rec
@@ -632,6 +673,12 @@ getUserByAccessTokenTyped accessToken =
         (Data.accessTokenToJsonValue accessToken)
 
 
+getImageBlobUrlTyped : Data.FileHashAndIsThumbnail -> Cmd Msg
+getImageBlobUrlTyped fileHashAndIsThumbnail =
+    getImageBlobUrl
+        (Data.fileHashAndIsThumbnailToJsonValue fileHashAndIsThumbnail)
+
+
 
 {- ================================================================
                                View
@@ -664,7 +711,7 @@ view (Model rec) =
                     ]
                 ]
          )
-            ++ [ Component.Notifications.view rec.notificationModel ]
+            ++ [ Component.Notifications.view rec.imageBlobUrlDict rec.notificationModel ]
         )
         |> Ui.toHtml
         |> Html.Styled.toUnstyled
@@ -855,6 +902,12 @@ responseUserData : Maybe (Maybe Data.UserPublicAndUserId) -> Model -> ( Model, C
 responseUserData result (Model rec) =
     case ( result, rec.logInState ) of
         ( Just (Just userAndUserId), Data.LogInState.VerifyingAccessToken accessToken ) ->
+            let
+                ( newNotificationModel, command ) =
+                    rec.notificationModel
+                        |> Component.Notifications.update
+                            (Component.Notifications.AddEvent (Component.Notifications.LogInSuccess userAndUserId))
+            in
             ( Model
                 { rec
                     | logInState =
@@ -863,42 +916,67 @@ responseUserData result (Model rec) =
                             , userId = userAndUserId.userId
                             , user = userAndUserId.userPublic
                             }
-                    , notificationModel =
-                        rec.notificationModel
-                            |> Component.Notifications.addEvent
-                                (Component.Notifications.LogInSuccess userAndUserId)
+                    , notificationModel = newNotificationModel
                 }
-            , consoleLog "ユーザー情報の取得に成功!"
+            , Cmd.batch
+                [ consoleLog "ユーザー情報の取得に成功!"
+                , commandToMainCommand command
+                ]
             )
 
         ( Just Nothing, Data.LogInState.VerifyingAccessToken _ ) ->
+            let
+                ( newNotificationModel, command ) =
+                    rec.notificationModel
+                        |> Component.Notifications.update
+                            (Component.Notifications.AddEvent Component.Notifications.LogInFailure)
+            in
             ( Model
                 { rec
                     | logInState = Data.LogInState.GuestUser
-                    , notificationModel =
-                        rec.notificationModel
-                            |> Component.Notifications.addEvent
-                                Component.Notifications.LogInFailure
+                    , notificationModel = newNotificationModel
                 }
-            , consoleLog "アクセストークンが無効だった"
+            , Cmd.batch
+                [ consoleLog "アクセストークンが無効だった"
+                , commandToMainCommand command
+                ]
             )
 
         ( Nothing, Data.LogInState.VerifyingAccessToken _ ) ->
+            let
+                ( newNotificationModel, command ) =
+                    rec.notificationModel
+                        |> Component.Notifications.update
+                            (Component.Notifications.AddEvent Component.Notifications.LogInFailure)
+            in
             ( Model
                 { rec
                     | logInState = Data.LogInState.GuestUser
-                    , notificationModel =
-                        rec.notificationModel
-                            |> Component.Notifications.addEvent
-                                Component.Notifications.LogInFailure
+                    , notificationModel = newNotificationModel
                 }
-            , consoleLog "ユーザーの情報のデコードに失敗"
+            , Cmd.batch
+                [ consoleLog "ユーザーの情報のデコードに失敗"
+                , commandToMainCommand command
+                ]
             )
 
         ( _, _ ) ->
             ( Model rec
             , consoleLog "いらないときにユーザーの情報を受け取ってしまった"
             )
+
+
+commandToMainCommand : Command.Command -> Cmd Msg
+commandToMainCommand command =
+    Cmd.batch
+        (List.map commandItemToMainCommand (Command.getListCommandItem command))
+
+
+commandItemToMainCommand : Command.CommandItem -> Cmd Msg
+commandItemToMainCommand commandItem =
+    case commandItem of
+        Command.GetBlobUrl fileHash ->
+            getImageBlobUrlTyped { fileHash = fileHash, isThumbnail = False }
 
 
 
@@ -923,6 +1001,7 @@ subscriptions model =
                     |> Result.toMaybe
                     |> ResponseUserDataFromAccessToken
             )
+         , getImageBlobResponse ResponseGetImageBlob
          ]
             ++ (if isCaptureMouseEvent model then
                     [ subPointerUp (always PointerUp) ]

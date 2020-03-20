@@ -2,14 +2,16 @@ module Component.Notifications exposing
     ( Event(..)
     , Message(..)
     , Model
-    , addEvent
-    , initModel
+    , init
+    , update
     , view
     )
 
+import Command
 import Component.Style as Style
 import Css
 import Data
+import Dict
 import Ui
 
 
@@ -28,18 +30,31 @@ type Message
     = AddEvent Event
 
 
-initModel : Model
-initModel =
-    Model []
+init : ( Model, Command.Command )
+init =
+    ( Model [], Command.none )
 
 
-addEvent : Event -> Model -> Model
-addEvent event (Model events) =
-    Model (event :: events)
+update :
+    Message
+    -> Model
+    -> ( Model, Command.Command )
+update message (Model rec) =
+    case message of
+        AddEvent (LogInSuccess userPublicAndUserId) ->
+            ( Model (LogInSuccess userPublicAndUserId :: rec)
+            , Command.getBlobUrl userPublicAndUserId.userPublic.imageHash
+            )
+
+        AddEvent event ->
+            ( Model (event :: rec), Command.none )
 
 
-view : Model -> Ui.Panel msg
-view (Model events) =
+view :
+    Dict.Dict String String
+    -> Model
+    -> Ui.Panel msg
+view imageBlobUrlDict (Model events) =
     Ui.row
         []
         0
@@ -53,18 +68,34 @@ view (Model events) =
                 []
                 :: (events
                         |> List.reverse
-                        |> List.map card
+                        |> List.map (cardListView imageBlobUrlDict)
                    )
             )
         ]
 
 
-card : Event -> Ui.Panel msg
-card event =
+cardListView : Dict.Dict String String -> Event -> Ui.Panel msg
+cardListView imageBlobUrlDict event =
     case event of
         LogInSuccess userAndUserId ->
+            let
+                (Data.FileHash fileHashAsString) =
+                    userAndUserId.userPublic.imageHash
+            in
             cardItem
-                Nothing
+                (case Dict.get fileHashAsString imageBlobUrlDict of
+                    Just blobUrl ->
+                        Just
+                            (Icon
+                                { alternativeText = userAndUserId.userPublic.name ++ "のプロフィール画像"
+                                , rendering = Ui.ImageRenderingPixelated
+                                , url = blobUrl
+                                }
+                            )
+
+                    Nothing ->
+                        Nothing
+                )
                 ("「" ++ userAndUserId.userPublic.name ++ "」としてログインしました")
 
         LogInFailure ->

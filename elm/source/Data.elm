@@ -1,4 +1,4 @@
-module Data exposing (AccessToken(..), BranchPartDefinition, Change(..), ClientMode(..), Comment, Condition(..), ConditionCapture, ConditionTag, DateTime, EvaluateExprError(..), EvaluatedExpr(..), Expr(..), FileHash(..), FileHashAndIsThumbnail, FunctionCall, Idea, IdeaId(..), IdeaItem(..), KernelCall, KernelExpr(..), LambdaBranch, Language(..), LocalPartId(..), LocalPartReference, Location(..), Module, ModuleId(..), OpenIdConnectProvider(..), PartDefinition, PartId(..), Project, ProjectId(..), RequestLogInUrlRequestData, Suggestion, TagId(..), TagReferenceIndex, Type, TypeBody(..), TypeBodyKernel(..), TypeBodyProductMember, TypeBodySumPattern, TypeDefinition, TypeError, TypeId(..), UrlData, UserId(..), UserPublic, UserPublicAndUserId, accessTokenJsonDecoder, accessTokenToJsonValue, branchPartDefinitionJsonDecoder, branchPartDefinitionToJsonValue, changeJsonDecoder, changeToJsonValue, clientModeJsonDecoder, clientModeToJsonValue, commentJsonDecoder, commentToJsonValue, conditionCaptureJsonDecoder, conditionCaptureToJsonValue, conditionJsonDecoder, conditionTagJsonDecoder, conditionTagToJsonValue, conditionToJsonValue, dateTimeJsonDecoder, dateTimeToJsonValue, evaluateExprErrorJsonDecoder, evaluateExprErrorToJsonValue, evaluatedExprJsonDecoder, evaluatedExprToJsonValue, exprJsonDecoder, exprToJsonValue, fileHashAndIsThumbnailJsonDecoder, fileHashAndIsThumbnailToJsonValue, fileHashJsonDecoder, fileHashToJsonValue, functionCallJsonDecoder, functionCallToJsonValue, ideaIdJsonDecoder, ideaIdToJsonValue, ideaItemJsonDecoder, ideaItemToJsonValue, ideaJsonDecoder, ideaToJsonValue, kernelCallJsonDecoder, kernelCallToJsonValue, kernelExprJsonDecoder, kernelExprToJsonValue, lambdaBranchJsonDecoder, lambdaBranchToJsonValue, languageJsonDecoder, languageToJsonValue, localPartIdJsonDecoder, localPartIdToJsonValue, localPartReferenceJsonDecoder, localPartReferenceToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, moduleIdJsonDecoder, moduleIdToJsonValue, moduleJsonDecoder, moduleToJsonValue, openIdConnectProviderJsonDecoder, openIdConnectProviderToJsonValue, partDefinitionJsonDecoder, partDefinitionToJsonValue, partIdJsonDecoder, partIdToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, projectJsonDecoder, projectToJsonValue, requestLogInUrlRequestDataJsonDecoder, requestLogInUrlRequestDataToJsonValue, resultJsonDecoder, resultToJsonValue, suggestionJsonDecoder, suggestionToJsonValue, tagIdJsonDecoder, tagIdToJsonValue, tagReferenceIndexJsonDecoder, tagReferenceIndexToJsonValue, typeBodyJsonDecoder, typeBodyKernelJsonDecoder, typeBodyKernelToJsonValue, typeBodyProductMemberJsonDecoder, typeBodyProductMemberToJsonValue, typeBodySumPatternJsonDecoder, typeBodySumPatternToJsonValue, typeBodyToJsonValue, typeDefinitionJsonDecoder, typeDefinitionToJsonValue, typeErrorJsonDecoder, typeErrorToJsonValue, typeIdJsonDecoder, typeIdToJsonValue, typeJsonDecoder, typeToJsonValue, urlDataJsonDecoder, urlDataToJsonValue, userIdJsonDecoder, userIdToJsonValue, userPublicAndUserIdJsonDecoder, userPublicAndUserIdToJsonValue, userPublicJsonDecoder, userPublicToJsonValue)
+module Data exposing (AccessToken(..), BranchPartDefinition, Change(..), ClientMode(..), Comment, Condition(..), ConditionCapture, ConditionTag, DateTime, EvaluateExprError(..), EvaluatedExpr(..), Expr(..), FileHash(..), FileHashAndIsThumbnail, FunctionCall, Idea, IdeaId(..), IdeaItem(..), KernelCall, KernelExpr(..), LambdaBranch, Language(..), LocalPartId(..), LocalPartReference, Location(..), Module, ModuleId(..), OpenIdConnectProvider(..), PartDefinition, PartId(..), Project, ProjectId(..), RequestLogInUrlRequestData, Suggestion, TagId(..), TagReferenceIndex, Type(..), TypeBody(..), TypeBodyKernel(..), TypeBodyProductMember, TypeBodySumPattern, TypeDefinition, TypeError, TypeId(..), UrlData, UserId(..), UserPublic, UserPublicAndUserId, accessTokenJsonDecoder, accessTokenToJsonValue, branchPartDefinitionJsonDecoder, branchPartDefinitionToJsonValue, changeJsonDecoder, changeToJsonValue, clientModeJsonDecoder, clientModeToJsonValue, commentJsonDecoder, commentToJsonValue, conditionCaptureJsonDecoder, conditionCaptureToJsonValue, conditionJsonDecoder, conditionTagJsonDecoder, conditionTagToJsonValue, conditionToJsonValue, dateTimeJsonDecoder, dateTimeToJsonValue, evaluateExprErrorJsonDecoder, evaluateExprErrorToJsonValue, evaluatedExprJsonDecoder, evaluatedExprToJsonValue, exprJsonDecoder, exprToJsonValue, fileHashAndIsThumbnailJsonDecoder, fileHashAndIsThumbnailToJsonValue, fileHashJsonDecoder, fileHashToJsonValue, functionCallJsonDecoder, functionCallToJsonValue, ideaIdJsonDecoder, ideaIdToJsonValue, ideaItemJsonDecoder, ideaItemToJsonValue, ideaJsonDecoder, ideaToJsonValue, kernelCallJsonDecoder, kernelCallToJsonValue, kernelExprJsonDecoder, kernelExprToJsonValue, lambdaBranchJsonDecoder, lambdaBranchToJsonValue, languageJsonDecoder, languageToJsonValue, localPartIdJsonDecoder, localPartIdToJsonValue, localPartReferenceJsonDecoder, localPartReferenceToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, moduleIdJsonDecoder, moduleIdToJsonValue, moduleJsonDecoder, moduleToJsonValue, openIdConnectProviderJsonDecoder, openIdConnectProviderToJsonValue, partDefinitionJsonDecoder, partDefinitionToJsonValue, partIdJsonDecoder, partIdToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, projectJsonDecoder, projectToJsonValue, requestLogInUrlRequestDataJsonDecoder, requestLogInUrlRequestDataToJsonValue, resultJsonDecoder, resultToJsonValue, suggestionJsonDecoder, suggestionToJsonValue, tagIdJsonDecoder, tagIdToJsonValue, tagReferenceIndexJsonDecoder, tagReferenceIndexToJsonValue, typeBodyJsonDecoder, typeBodyKernelJsonDecoder, typeBodyKernelToJsonValue, typeBodyProductMemberJsonDecoder, typeBodyProductMemberToJsonValue, typeBodySumPatternJsonDecoder, typeBodySumPatternToJsonValue, typeBodyToJsonValue, typeDefinitionJsonDecoder, typeDefinitionToJsonValue, typeErrorJsonDecoder, typeErrorToJsonValue, typeIdJsonDecoder, typeIdToJsonValue, typeJsonDecoder, typeToJsonValue, urlDataJsonDecoder, urlDataToJsonValue, userIdJsonDecoder, userIdToJsonValue, userPublicAndUserIdJsonDecoder, userPublicAndUserIdToJsonValue, userPublicJsonDecoder, userPublicToJsonValue)
 
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp
@@ -156,8 +156,8 @@ type alias PartDefinition =
 
 {-| 型
 -}
-type alias Type =
-    { reference : TypeId, parameter : List Type }
+type Type
+    = Type { reference : TypeId, parameter : List Type }
 
 
 {-| 式
@@ -223,16 +223,16 @@ type alias LambdaBranch =
 {-| ブランチの式を使う条件
 -}
 type Condition
-    = ConditionTag ConditionTag
-    | ConditionCapture ConditionCapture
+    = ConditionByTag ConditionTag
+    | ConditionByCapture ConditionCapture
     | ConditionAny
     | ConditionInt32 Int
 
 
 {-| タグによる条件
 -}
-type alias ConditionTag =
-    { tag : TagId, parameter : Maybe Condition }
+type ConditionTag
+    = ConditionTag { tag : TagId, parameter : Maybe Condition }
 
 
 {-| キャプチャパーツへのキャプチャ
@@ -655,10 +655,10 @@ partDefinitionToJsonValue partDefinition =
 {-| TypeのJSONへのエンコーダ
 -}
 typeToJsonValue : Type -> Je.Value
-typeToJsonValue type_ =
+typeToJsonValue (Type record) =
     Je.object
-        [ ( "reference", typeIdToJsonValue type_.reference )
-        , ( "parameter", Je.list typeToJsonValue type_.parameter )
+        [ ( "reference", typeIdToJsonValue record.reference )
+        , ( "parameter", Je.list typeToJsonValue record.parameter )
         ]
 
 
@@ -782,10 +782,10 @@ lambdaBranchToJsonValue lambdaBranch =
 conditionToJsonValue : Condition -> Je.Value
 conditionToJsonValue condition =
     case condition of
-        ConditionTag parameter ->
+        ConditionByTag parameter ->
             Je.object [ ( "_", Je.string "Tag" ), ( "conditionTag", conditionTagToJsonValue parameter ) ]
 
-        ConditionCapture parameter ->
+        ConditionByCapture parameter ->
             Je.object [ ( "_", Je.string "Capture" ), ( "conditionCapture", conditionCaptureToJsonValue parameter ) ]
 
         ConditionAny ->
@@ -798,10 +798,10 @@ conditionToJsonValue condition =
 {-| ConditionTagのJSONへのエンコーダ
 -}
 conditionTagToJsonValue : ConditionTag -> Je.Value
-conditionTagToJsonValue conditionTag =
+conditionTagToJsonValue (ConditionTag record) =
     Je.object
-        [ ( "tag", tagIdToJsonValue conditionTag.tag )
-        , ( "parameter", maybeToJsonValue conditionToJsonValue conditionTag.parameter )
+        [ ( "tag", tagIdToJsonValue record.tag )
+        , ( "parameter", maybeToJsonValue conditionToJsonValue record.parameter )
         ]
 
 
@@ -1371,9 +1371,10 @@ typeJsonDecoder : Jd.Decoder Type
 typeJsonDecoder =
     Jd.succeed
         (\reference parameter ->
-            { reference = reference
-            , parameter = parameter
-            }
+            Type
+                { reference = reference
+                , parameter = parameter
+                }
         )
         |> Jdp.required "reference" typeIdJsonDecoder
         |> Jdp.required "parameter" (Jd.lazy (\() -> Jd.list typeJsonDecoder))
@@ -1546,10 +1547,10 @@ conditionJsonDecoder =
             (\tag ->
                 case tag of
                     "Tag" ->
-                        Jd.field "conditionTag" conditionTagJsonDecoder |> Jd.map ConditionTag
+                        Jd.field "conditionTag" conditionTagJsonDecoder |> Jd.map ConditionByTag
 
                     "Capture" ->
-                        Jd.field "conditionCapture" conditionCaptureJsonDecoder |> Jd.map ConditionCapture
+                        Jd.field "conditionCapture" conditionCaptureJsonDecoder |> Jd.map ConditionByCapture
 
                     "Any" ->
                         Jd.succeed ConditionAny
@@ -1568,9 +1569,10 @@ conditionTagJsonDecoder : Jd.Decoder ConditionTag
 conditionTagJsonDecoder =
     Jd.succeed
         (\tag parameter ->
-            { tag = tag
-            , parameter = parameter
-            }
+            ConditionTag
+                { tag = tag
+                , parameter = parameter
+                }
         )
         |> Jdp.required "tag" tagIdJsonDecoder
         |> Jdp.required "parameter" (maybeJsonDecoder conditionJsonDecoder)

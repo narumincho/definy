@@ -21,6 +21,8 @@ const getAccessToken = async (
   }
 };
 
+const imageBlobUrlMap: Map<string, string> = new Map();
+
 const getAccessTokenFromIndexDB = (): Promise<common.data.Maybe<
   common.data.AccessToken
 >> =>
@@ -253,6 +255,31 @@ const init = async (): Promise<void> => {
       common.data.decodeMaybe(common.data.decodeUserPublicAndUserId)
     ).then(maybeUserPublicAndUserId => {
       app.ports.responseUserByAccessToken.send(maybeUserPublicAndUserId);
+    });
+  });
+
+  app.ports.getImageBlobUrl.subscribe(fileHashAndIsThumbnail => {
+    const blobUrl = imageBlobUrlMap.get(fileHashAndIsThumbnail.fileHash);
+    if (blobUrl !== undefined) {
+      app.ports.getImageBlobResponse.send({
+        blobUrl: blobUrl,
+        fileHash: fileHashAndIsThumbnail.fileHash
+      });
+      return;
+    }
+    callApi(
+      "getImageFile",
+      common.data.encodeFileHashAndIsThumbnail(fileHashAndIsThumbnail),
+      common.data.decodeBinary
+    ).then(pngBinary => {
+      const blob = new Blob([pngBinary], { type: "image/png" });
+      const blobUrl = URL.createObjectURL(blob);
+      imageBlobUrlMap.set(fileHashAndIsThumbnail.fileHash, blobUrl);
+      app.ports.getImageBlobResponse.send({
+        blobUrl: blobUrl,
+        fileHash: fileHashAndIsThumbnail.fileHash
+      });
+      console.log({ blobUrl });
     });
   });
 };
