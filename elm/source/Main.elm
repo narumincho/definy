@@ -92,6 +92,7 @@ type Msg
     | LogOutRequest -- ログアウトを要求する
     | ChangeNetworkConnection Bool -- 接続状況が変わった
     | PageMsg PageMsg
+    | NotificationMessage Component.Notifications.Message
     | RequestLogInUrl Data.OpenIdConnectProvider
     | ResponseUserDataFromAccessToken (Maybe (Maybe Data.UserPublicAndUserId))
     | ResponseGetImageBlob { blobUrl : String, fileHash : String }
@@ -277,6 +278,18 @@ update msg (Model rec) =
                     ( Model { rec | page = Welcome newWelcomeModel }
                     , cmd |> List.map welcomePageCmdToCmd |> Cmd.batch
                     )
+
+        NotificationMessage notificationMessage ->
+            let
+                ( newNotificationModel, command ) =
+                    Component.Notifications.update
+                        notificationMessage
+                        rec.notificationModel
+            in
+            ( Model
+                { rec | notificationModel = newNotificationModel }
+            , commandToMainCommand command
+            )
 
         ChangeNetworkConnection connection ->
             let
@@ -711,7 +724,9 @@ view (Model rec) =
                     ]
                 ]
          )
-            ++ [ Component.Notifications.view rec.imageBlobUrlDict rec.notificationModel ]
+            ++ [ Component.Notifications.view rec.imageBlobUrlDict rec.notificationModel
+                    |> Ui.map NotificationMessage
+               ]
         )
         |> Ui.toHtml
         |> Html.Styled.toUnstyled

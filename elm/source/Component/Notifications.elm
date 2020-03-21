@@ -7,11 +7,13 @@ module Component.Notifications exposing
     , view
     )
 
+import Array
 import Command
 import Component.Style as Style
 import Css
 import Data
 import Dict
+import Icon
 import Ui
 
 
@@ -28,6 +30,7 @@ type Event
 
 type Message
     = AddEvent Event
+    | DeleteAt Int
 
 
 init : ( Model, Command.Command )
@@ -39,21 +42,36 @@ update :
     Message
     -> Model
     -> ( Model, Command.Command )
-update message (Model rec) =
+update message (Model eventList) =
     case message of
         AddEvent (LogInSuccess userPublicAndUserId) ->
-            ( Model (LogInSuccess userPublicAndUserId :: rec)
+            ( Model (LogInSuccess userPublicAndUserId :: eventList)
             , Command.getBlobUrl userPublicAndUserId.userPublic.imageHash
             )
 
         AddEvent event ->
-            ( Model (event :: rec), Command.none )
+            ( Model (event :: eventList), Command.none )
+
+        DeleteAt index ->
+            let
+                eventListAsArray =
+                    eventList |> Array.fromList
+            in
+            ( Model
+                (Array.toList
+                    (Array.append
+                        (Array.slice 0 (index - 1) eventListAsArray)
+                        (Array.slice index (Array.length eventListAsArray - 1) eventListAsArray)
+                    )
+                )
+            , Command.none
+            )
 
 
 view :
     Dict.Dict String String
     -> Model
-    -> Ui.Panel msg
+    -> Ui.Panel Message
 view imageBlobUrlDict (Model events) =
     Ui.row
         []
@@ -68,14 +86,14 @@ view imageBlobUrlDict (Model events) =
                 []
                 :: (events
                         |> List.reverse
-                        |> List.map (cardListView imageBlobUrlDict)
+                        |> List.indexedMap (cardListView imageBlobUrlDict)
                    )
             )
         ]
 
 
-cardListView : Dict.Dict String String -> Event -> Ui.Panel msg
-cardListView imageBlobUrlDict event =
+cardListView : Dict.Dict String String -> Int -> Event -> Ui.Panel Message
+cardListView imageBlobUrlDict index event =
     case event of
         LogInSuccess userAndUserId ->
             let
@@ -83,6 +101,7 @@ cardListView imageBlobUrlDict event =
                     userAndUserId.userPublic.imageHash
             in
             cardItem
+                index
                 (case Dict.get fileHashAsString imageBlobUrlDict of
                     Just blobUrl ->
                         Just
@@ -100,16 +119,19 @@ cardListView imageBlobUrlDict event =
 
         LogInFailure ->
             cardItem
+                index
                 Nothing
                 "ログイン失敗"
 
         OnLine ->
             cardItem
+                index
                 Nothing
                 "オンラインになりました"
 
         OffLine ->
             cardItem
+                index
                 Nothing
                 "オフラインになりました"
 
@@ -122,8 +144,8 @@ type Icon
         }
 
 
-cardItem : Maybe Icon -> String -> Ui.Panel msg
-cardItem iconMaybe text =
+cardItem : Int -> Maybe Icon -> String -> Ui.Panel Message
+cardItem index iconMaybe text =
     Ui.depth
         [ Ui.height 48 ]
         [ Ui.monochromatic
@@ -148,14 +170,21 @@ cardItem iconMaybe text =
                         , font = Style.normalFont
                         }
                         text
+                    , Icon.close |> Ui.map (always (DeleteAt index))
                     ]
 
             Nothing ->
-                Ui.textBox
-                    [ Ui.padding 8 ]
-                    { align = Ui.TextAlignStart
-                    , vertical = Ui.CenterY
-                    , font = Style.normalFont
-                    }
-                    text
+                Ui.row
+                    []
+                    0
+                    [ Ui.textBox
+                        [ Ui.padding 8
+                        ]
+                        { align = Ui.TextAlignStart
+                        , vertical = Ui.CenterY
+                        , font = Style.normalFont
+                        }
+                        text
+                    , Icon.close |> Ui.map (always (DeleteAt index))
+                    ]
         ]

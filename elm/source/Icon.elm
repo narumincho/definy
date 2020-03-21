@@ -1,4 +1,4 @@
-module Icon exposing (gitHubIcon, googleIcon)
+module Icon exposing (close, gitHubIcon, googleIcon)
 
 import Css
 import Ui
@@ -47,4 +47,19 @@ googleIcon =
                 VectorImage.strokeNone
                 (VectorImage.fillColor (Css.rgb 234 67 53))
             ]
+        }
+
+
+close : Ui.Panel ()
+close =
+    Ui.vectorImage
+        [ Ui.width 32
+        , Ui.height 32
+        , Ui.padding 8
+        , Ui.onClick ()
+        ]
+        { fitStyle = Ui.Contain
+        , viewBox = { x = 0, y = 0, width = 10, height = 10 }
+        , elements =
+            [ VectorImage.line ( 1, 1 ) ( 9, 9 ) (VectorImage.strokeColor (Css.rgb 0 0 0)) ]
         }
