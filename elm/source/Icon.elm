@@ -61,5 +61,7 @@ close =
         { fitStyle = Ui.Contain
         , viewBox = { x = 0, y = 0, width = 10, height = 10 }
         , elements =
-            [ VectorImage.line ( 1, 1 ) ( 9, 9 ) (VectorImage.strokeColor (Css.rgb 0 0 0)) ]
+            [ VectorImage.line ( 1, 1 ) ( 9, 9 ) (VectorImage.strokeColor (Css.rgb 0 0 0))
+            , VectorImage.line ( 9, 1 ) ( 1, 9 ) (VectorImage.strokeColor (Css.rgb 0 0 0))
+            ]
         }
