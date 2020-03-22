@@ -502,62 +502,76 @@ defaultStyleAndEvent =
 map : (a -> b) -> Panel a -> Panel b
 map func panel =
     case panel of
-        TextBox record ->
+        TextBox (TextBoxAttributes record) ->
             TextBox
-                { styleAndEvent = styleAndEventMap func record.styleAndEvent
-                , text = record.text
-                , font = record.font
-                , verticalAlignment = record.verticalAlignment
-                , textAlignment = record.textAlignment
-                }
+                (TextBoxAttributes
+                    { styleAndEvent = styleAndEventMap func record.styleAndEvent
+                    , text = record.text
+                    , font = record.font
+                    , verticalAlignment = record.verticalAlignment
+                    , textAlignment = record.textAlignment
+                    }
+                )
 
-        TextBoxFitHeight record ->
+        TextBoxFitHeight (TextBoxFitHeightAttributes record) ->
             TextBoxFitHeight
-                { styleAndEvent = styleAndEventMap func record.styleAndEvent
-                , text = record.text
-                , font = record.font
-                , textAlignment = record.textAlignment
-                }
+                (TextBoxFitHeightAttributes
+                    { styleAndEvent = styleAndEventMap func record.styleAndEvent
+                    , text = record.text
+                    , font = record.font
+                    , textAlignment = record.textAlignment
+                    }
+                )
 
-        ImageFromUrl record ->
+        ImageFromUrl (ImageFromUrlAttributes record) ->
             ImageFromUrl
-                { styleAndEvent = styleAndEventMap func record.styleAndEvent
-                , url = String
-                , fitStyle = record.fitStyle
-                , alternativeText = String
-                , rendering = record.rendering
-                }
+                (ImageFromUrlAttributes
+                    { styleAndEvent = styleAndEventMap func record.styleAndEvent
+                    , url = String
+                    , fitStyle = record.fitStyle
+                    , alternativeText = String
+                    , rendering = record.rendering
+                    }
+                )
 
-        VectorImage record ->
+        VectorImage (VectorImageAttributes record) ->
             VectorImage
-                { styleAndEvent = styleAndEventMap func record.styleAndEvent
-                , fitStyle = record.fitStyle
-                , viewBox = record.viewBox
-                , elements = List.map (VectorImage.map func) record.elements
-                }
+                (VectorImageAttributes
+                    { styleAndEvent = styleAndEventMap func record.styleAndEvent
+                    , fitStyle = record.fitStyle
+                    , viewBox = record.viewBox
+                    , elements = List.map (VectorImage.map func) record.elements
+                    }
+                )
 
         Empty styleAndEvent ->
             Empty (styleAndEventMap func styleAndEvent)
 
-        DepthList record ->
+        DepthList (DepthListAttributes record) ->
             DepthList
-                { styleAndEvent = styleAndEventMap func record.styleAndEvent
-                , children = List.map (map func) record.children
-                }
+                (DepthListAttributes
+                    { styleAndEvent = styleAndEventMap func record.styleAndEvent
+                    , children = List.map (map func) record.children
+                    }
+                )
 
-        RowList record ->
+        RowList (RowListAttributes record) ->
             RowList
-                { styleAndEvent = styleAndEventMap func record.styleAndEvent
-                , gap = record.gap
-                , children = List.map (map func) record.children
-                }
+                (RowListAttributes
+                    { styleAndEvent = styleAndEventMap func record.styleAndEvent
+                    , gap = record.gap
+                    , children = List.map (map func) record.children
+                    }
+                )
 
-        ColumnList record ->
+        ColumnList (ColumnListAttributes record) ->
             ColumnList
-                { styleAndEvent = styleAndEventMap func record.styleAndEvent
-                , gap = record.gap
-                , children = List.map (map func) record.children
-                }
+                (ColumnListAttributes
+                    { styleAndEvent = styleAndEventMap func record.styleAndEvent
+                    , gap = record.gap
+                    , children = List.map (map func) record.children
+                    }
+                )
 
 
 styleAndEventMap : (a -> b) -> StyleAndEventComputed a -> StyleAndEventComputed b
