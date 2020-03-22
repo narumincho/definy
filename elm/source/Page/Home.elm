@@ -141,7 +141,7 @@ update msg (Model rec) =
 
 view : Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Msg
 view language logInState (Model rec) =
-    Ui.row
+    Ui.rowList
         (case rec.pointer of
             SideBarResize ->
                 [ Ui.onPointerMove MsgPointerMove ]

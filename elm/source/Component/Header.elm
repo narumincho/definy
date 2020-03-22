@@ -7,12 +7,12 @@ import Ui
 
 view : Ui.Panel msg
 view =
-    Ui.depth
+    Ui.depthList
         [ Ui.height 56 ]
         [ Ui.monochromatic
             []
             (Css.rgb 36 36 36)
-        , Ui.row
+        , Ui.rowList
             []
             0
             [ logo

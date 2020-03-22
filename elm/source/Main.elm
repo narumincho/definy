@@ -703,7 +703,7 @@ getImageBlobUrlTyped fileHashAndIsThumbnail =
 -}
 view : Model -> Html.Html Msg
 view (Model rec) =
-    Ui.depth
+    Ui.depthList
         (case getGutterType (Model rec) of
             Just gutterType ->
                 [ Ui.pointerImage (gutterTypeToCursorStyle gutterType) ]
@@ -792,7 +792,7 @@ logInPanelLogInButton language { width, height } =
             ]
 
     else
-        Ui.row
+        Ui.rowList
             [ Ui.height 64, Ui.padding 8 ]
             16
             [ Ui.empty []
@@ -803,7 +803,7 @@ logInPanelLogInButton language { width, height } =
 
 googleLogInButton : Data.Language -> Ui.Panel Msg
 googleLogInButton language =
-    Ui.depth
+    Ui.depthList
         [ Ui.onClick (RequestLogInUrl Data.OpenIdConnectProviderGoogle)
         , Ui.borderRadius 8
         , Ui.height 48
@@ -812,10 +812,10 @@ googleLogInButton language =
         [ Ui.monochromatic
             []
             (Css.rgb 66 133 244)
-        , Ui.row
+        , Ui.rowList
             []
             8
-            [ Ui.depth
+            [ Ui.depthList
                 [ Ui.width 48 ]
                 [ Ui.monochromatic [] (Css.rgb 255 255 255)
                 , Icon.googleIcon
@@ -847,17 +847,17 @@ googleLogInButton language =
 
 gitHubLogInButton : Data.Language -> Ui.Panel Msg
 gitHubLogInButton language =
-    Ui.depth
+    Ui.depthList
         [ Ui.onClick (RequestLogInUrl Data.OpenIdConnectProviderGitHub)
         , Ui.borderRadius 8
         , Ui.height 48
         , Ui.width 448
         ]
         [ Ui.monochromatic [] (Css.rgb 32 32 32)
-        , Ui.row
+        , Ui.rowList
             []
             8
-            [ Ui.depth
+            [ Ui.depthList
                 [ Ui.width 48 ]
                 [ Ui.monochromatic [] (Css.rgb 255 255 255)
                 , Icon.gitHubIcon

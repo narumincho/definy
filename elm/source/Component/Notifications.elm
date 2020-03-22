@@ -73,7 +73,7 @@ view :
     -> Model
     -> Ui.Panel Message
 view imageBlobUrlDict (Model events) =
-    Ui.row
+    Ui.rowList
         []
         0
         [ Ui.monochromatic
@@ -146,45 +146,44 @@ type Icon
 
 cardItem : Int -> Maybe Icon -> String -> Ui.Panel Message
 cardItem index iconMaybe text =
-    Ui.depth
-        [ Ui.height 48 ]
-        [ Ui.monochromatic
-            []
-            (Css.rgb 0 100 0)
-        , case iconMaybe of
-            Just (Icon icon) ->
-                Ui.row
-                    [ Ui.padding 8 ]
-                    0
-                    [ Ui.imageFromUrl
-                        [ Ui.width 32, Ui.height 32 ]
-                        { fitStyle = Ui.Contain
-                        , alternativeText = icon.alternativeText
-                        , rendering = icon.rendering
-                        }
-                        icon.url
-                    , Ui.textBox
-                        []
-                        { align = Ui.TextAlignStart
-                        , vertical = Ui.CenterY
-                        , font = Style.normalFont
-                        }
-                        text
-                    , Icon.close |> Ui.map (always (DeleteAt index))
-                    ]
-
-            Nothing ->
-                Ui.row
+    case iconMaybe of
+        Just (Icon icon) ->
+            Ui.rowList
+                [ Ui.padding 8
+                , Ui.height 48
+                , Ui.backGroundColor (Css.rgb 0 100 0)
+                ]
+                0
+                [ Ui.bitmapImage
+                    [ Ui.width 32, Ui.height 32 ]
+                    { fitStyle = Ui.Contain
+                    , alternativeText = icon.alternativeText
+                    , rendering = icon.rendering
+                    }
+                    icon.url
+                , Ui.textBox
                     []
-                    0
-                    [ Ui.textBox
-                        [ Ui.padding 8
-                        ]
-                        { align = Ui.TextAlignStart
-                        , vertical = Ui.CenterY
-                        , font = Style.normalFont
-                        }
-                        text
-                    , Icon.close |> Ui.map (always (DeleteAt index))
+                    { align = Ui.TextAlignStart
+                    , vertical = Ui.CenterY
+                    , font = Style.normalFont
+                    }
+                    text
+                , Icon.close |> Ui.map (always (DeleteAt index))
+                ]
+
+        Nothing ->
+            Ui.rowList
+                [ Ui.height 48
+                , Ui.backGroundColor (Css.rgb 0 100 0)
+                ]
+                0
+                [ Ui.textBox
+                    [ Ui.padding 8
                     ]
-        ]
+                    { align = Ui.TextAlignStart
+                    , vertical = Ui.CenterY
+                    , font = Style.normalFont
+                    }
+                    text
+                , Icon.close |> Ui.map (always (DeleteAt index))
+                ]

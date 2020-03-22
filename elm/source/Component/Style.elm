@@ -84,7 +84,7 @@ verticalGutter isResizing =
 
 gutterPanel : GutterMode -> Ui.Panel GutterMsg
 gutterPanel mode =
-    Ui.depth
+    Ui.depthList
         [ Ui.width 2
         , Ui.overflowVisible
         , Ui.pointerImage Ui.HorizontalResize
