@@ -17,7 +17,6 @@ module Ui exposing
     , height
     , imageFromUrl
     , map
-    , monochromatic
     , offset
     , onClick
     , onPointerDown
@@ -50,43 +49,71 @@ import VectorImage
 {-| デフォルトで幅と高さが外の大きさによって決まる,パネル
 -}
 type Panel message
-    = TextBox
+    = TextBox (TextBoxAttributes message)
+    | TextBoxFitHeight (TextBoxFitHeightAttributes message)
+    | ImageFromUrl (ImageFromUrlAttributes message)
+    | VectorImage (VectorImageAttributes message)
+    | Empty (StyleAndEventComputed message)
+    | DepthList (DepthListAttributes message)
+    | RowList (RowListAttributes message)
+    | ColumnList (ColumnListAttributes message)
+
+
+type TextBoxAttributes message
+    = TextBoxAttributes
         { styleAndEvent : StyleAndEventComputed message
         , text : String
         , font : Font
         , verticalAlignment : AlignItems
         , textAlignment : TextAlignment
         }
-    | TextBoxFitHeight
+
+
+type TextBoxFitHeightAttributes message
+    = TextBoxFitHeightAttributes
         { styleAndEvent : StyleAndEventComputed message
         , text : String
         , font : Font
         , textAlignment : TextAlignment
         }
-    | ImageFromUrl
+
+
+type ImageFromUrlAttributes message
+    = ImageFromUrlAttributes
         { styleAndEvent : StyleAndEventComputed message
         , url : String
         , fitStyle : FitStyle
         , alternativeText : String
         , rendering : ImageRendering
         }
-    | VectorImage
+
+
+type VectorImageAttributes message
+    = VectorImageAttributes
         { styleAndEvent : StyleAndEventComputed message
         , fitStyle : FitStyle
         , viewBox : { x : Int, y : Int, width : Int, height : Int }
         , elements : List (VectorImage.Element message)
         }
-    | Empty (StyleAndEventComputed message)
-    | DepthList
+
+
+type DepthListAttributes message
+    = DepthListAttributes
         { styleAndEvent : StyleAndEventComputed message
         , children : List (Panel message)
         }
-    | RowList
+
+
+type RowListAttributes message
+    = RowListAttributes
         { styleAndEvent : StyleAndEventComputed message
         , gap : Int
         , children : List (Panel message)
         }
-    | ColumnList
+
+
+type ColumnListAttributes message
+    = ColumnListAttributes
         { styleAndEvent : StyleAndEventComputed message
         , gap : Int
         , children : List (Panel message)
@@ -297,12 +324,14 @@ textBox :
     -> Panel message
 textBox styleAndEventList { align, vertical, font } text =
     TextBox
-        { styleAndEvent = styleAndEventCompute styleAndEventList
-        , font = font
-        , text = text
-        , verticalAlignment = vertical
-        , textAlignment = align
-        }
+        (TextBoxAttributes
+            { styleAndEvent = styleAndEventCompute styleAndEventList
+            , font = font
+            , text = text
+            , verticalAlignment = vertical
+            , textAlignment = align
+            }
+        )
 
 
 {-| テキストを表示する
@@ -311,11 +340,13 @@ textBox styleAndEventList { align, vertical, font } text =
 textBoxFitHeight : List (StyleAndEvent message) -> { align : TextAlignment, font : Font } -> String -> Panel message
 textBoxFitHeight styleAndEventList { align, font } text =
     TextBoxFitHeight
-        { styleAndEvent = styleAndEventCompute styleAndEventList
-        , font = font
-        , text = text
-        , textAlignment = align
-        }
+        (TextBoxFitHeightAttributes
+            { styleAndEvent = styleAndEventCompute styleAndEventList
+            , font = font
+            , text = text
+            , textAlignment = align
+            }
+        )
 
 
 imageFromUrl :
@@ -329,12 +360,14 @@ imageFromUrl :
     -> Panel message
 imageFromUrl styleAndEventList imageStyle url =
     ImageFromUrl
-        { styleAndEvent = styleAndEventCompute styleAndEventList
-        , url = url
-        , fitStyle = imageStyle.fitStyle
-        , alternativeText = imageStyle.alternativeText
-        , rendering = imageStyle.rendering
-        }
+        (ImageFromUrlAttributes
+            { styleAndEvent = styleAndEventCompute styleAndEventList
+            , url = url
+            , fitStyle = imageStyle.fitStyle
+            , alternativeText = imageStyle.alternativeText
+            , rendering = imageStyle.rendering
+            }
+        )
 
 
 vectorImage :
@@ -343,11 +376,13 @@ vectorImage :
     -> Panel message
 vectorImage styleAndEventList content =
     VectorImage
-        { styleAndEvent = styleAndEventCompute styleAndEventList
-        , fitStyle = content.fitStyle
-        , viewBox = content.viewBox
-        , elements = content.elements
-        }
+        (VectorImageAttributes
+            { styleAndEvent = styleAndEventCompute styleAndEventList
+            , fitStyle = content.fitStyle
+            , viewBox = content.viewBox
+            , elements = content.elements
+            }
+        )
 
 
 empty : List (StyleAndEvent message) -> Panel message
@@ -358,27 +393,33 @@ empty styleAndEventList =
 depth : List (StyleAndEvent message) -> List (Panel message) -> Panel message
 depth styleAndEventList children =
     DepthList
-        { styleAndEvent = styleAndEventCompute styleAndEventList
-        , children = children
-        }
+        (DepthListAttributes
+            { styleAndEvent = styleAndEventCompute styleAndEventList
+            , children = children
+            }
+        )
 
 
 row : List (StyleAndEvent message) -> Int -> List (Panel message) -> Panel message
 row styleAndEventList gap children =
     RowList
-        { styleAndEvent = styleAndEventCompute styleAndEventList
-        , gap = gap
-        , children = children
-        }
+        (RowListAttributes
+            { styleAndEvent = styleAndEventCompute styleAndEventList
+            , gap = gap
+            , children = children
+            }
+        )
 
 
 column : List (StyleAndEvent message) -> Int -> List (Panel message) -> Panel message
 column styleAndEventList gap children =
     ColumnList
-        { styleAndEvent = styleAndEventCompute styleAndEventList
-        , gap = gap
-        , children = children
-        }
+        (ColumnListAttributes
+            { styleAndEvent = styleAndEventCompute styleAndEventList
+            , gap = gap
+            , children = children
+            }
+        )
 
 
 styleAndEventCompute : List (StyleAndEvent message) -> StyleAndEventComputed message
@@ -826,10 +867,7 @@ contentToStyle (ChildrenStyle { gridPositionLeftTop, position }) overflowVisible
         VectorImage _ ->
             []
 
-        Monochromatic color ->
-            [ Css.backgroundColor color ]
-
-        Empty ->
+        Empty styleAndEvent ->
             []
 
         DepthList _ ->
