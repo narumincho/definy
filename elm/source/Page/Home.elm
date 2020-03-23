@@ -81,20 +81,14 @@ update msg (Model rec) =
 view : Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Msg
 view language logInState (Model rec) =
     Ui.column
-        (Ui.ColumnListAttributes
-            { style = []
-            , gap = 16
-            , children =
-                [ ( Ui.grow, projectList language logInState ) ]
-            }
-        )
+        [ Ui.gap 16 ]
+        [ ( Ui.grow, projectList language logInState ) ]
 
 
 projectList : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
 projectList language logInState =
-    { style = []
-    , gap = 8
-    , children =
+    Ui.column
+        [ Ui.gap 8 ]
         [ ( Ui.auto
           , { style = []
             , text =
@@ -139,9 +133,6 @@ projectList language logInState =
                 |> Ui.textBox
           )
         ]
-    }
-        |> Ui.ColumnListAttributes
-        |> Ui.column
 
 
 createProjectButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg

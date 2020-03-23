@@ -685,38 +685,32 @@ getImageBlobUrlTyped fileHashAndIsThumbnail =
 -}
 view : Model -> Html.Html Msg
 view (Model rec) =
-    { style =
-        case getGutterType (Model rec) of
+    Ui.depth
+        (case getGutterType (Model rec) of
             Just gutterType ->
                 [ Ui.pointerImage (gutterTypeToCursorStyle gutterType) ]
 
             Nothing ->
                 []
-    , children =
-        (case rec.page of
-            Welcome welcomeModel ->
-                [ { style = []
-                  , gap = 0
-                  , children =
-                        [ Component.Header.view rec.imageBlobUrlDict rec.logInState
-                        , logInPanel rec.logInState rec.language rec.windowSize
-                        , ( Ui.grow
-                          , welcomeModel
-                                |> Page.Home.view rec.language rec.logInState
-                                |> Ui.map (WelcomePageMsg >> PageMsg)
-                          )
-                        ]
-                  }
-                    |> Ui.ColumnListAttributes
-                    |> Ui.column
-                ]
         )
+        ((case rec.page of
+            Welcome welcomeModel ->
+                [ Ui.column
+                    []
+                    [ Component.Header.view rec.imageBlobUrlDict rec.logInState
+                    , logInPanel rec.logInState rec.language rec.windowSize
+                    , ( Ui.grow
+                      , welcomeModel
+                            |> Page.Home.view rec.language rec.logInState
+                            |> Ui.map (WelcomePageMsg >> PageMsg)
+                      )
+                    ]
+                ]
+         )
             ++ [ Component.Notifications.view rec.imageBlobUrlDict rec.notificationModel
                     |> Ui.map NotificationMessage
                ]
-    }
-        |> Ui.DepthListAttributes
-        |> Ui.depth
+        )
         |> Ui.toHtml
         |> Html.Styled.toUnstyled
 
@@ -778,41 +772,30 @@ logInPanelLogInButton language { width, height } =
     if width < 512 then
         ( Ui.fix (48 * 2 + 32)
         , Ui.column
-            (Ui.ColumnListAttributes
-                { style = []
-                , gap = 16
-                , children =
-                    [ ( Ui.fix 48, googleLogInButton language )
-                    , ( Ui.fix 48, gitHubLogInButton language )
-                    ]
-                }
-            )
+            [ Ui.gap 16 ]
+            [ ( Ui.fix 48, googleLogInButton language )
+            , ( Ui.fix 48, gitHubLogInButton language )
+            ]
         )
 
     else
         ( Ui.fix 64
         , Ui.row
-            (Ui.RowListAttributes
-                { style = [ Ui.padding 8 ]
-                , gap = 16
-                , children =
-                    [ ( Ui.grow, Ui.empty [] )
-                    , ( Ui.fix 448, googleLogInButton language )
-                    , ( Ui.fix 448, gitHubLogInButton language )
-                    ]
-                }
-            )
+            [ Ui.gap 16, Ui.padding 8 ]
+            [ ( Ui.grow, Ui.empty [] )
+            , ( Ui.fix 448, googleLogInButton language )
+            , ( Ui.fix 448, gitHubLogInButton language )
+            ]
         )
 
 
 googleLogInButton : Data.Language -> Ui.Panel Msg
 googleLogInButton language =
-    { style =
+    Ui.row
         [ Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.backgroundColor (Css.rgb 66 133 244)
+        , Ui.gap 8
         ]
-    , gap = 8
-    , children =
         [ ( Ui.fix 48, Icon.googleIcon (Css.rgb 255 255 255) )
         , ( Ui.grow
           , Ui.textBox
@@ -837,20 +820,16 @@ googleLogInButton language =
                 )
           )
         ]
-    }
-        |> Ui.RowListAttributes
-        |> Ui.row
         |> Ui.button [] (RequestLogInUrl Data.OpenIdConnectProviderGoogle)
 
 
 gitHubLogInButton : Data.Language -> Ui.Panel Msg
 gitHubLogInButton language =
-    { style =
+    Ui.row
         [ Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.backgroundColor (Css.rgb 32 32 32)
+        , Ui.gap 8
         ]
-    , gap = 8
-    , children =
         [ ( Ui.fix 48, Icon.gitHubIcon (Css.rgb 255 255 255) )
         , ( Ui.grow
           , Ui.textBox
@@ -875,9 +854,6 @@ gitHubLogInButton language =
                 )
           )
         ]
-    }
-        |> Ui.RowListAttributes
-        |> Ui.row
         |> Ui.button [] (RequestLogInUrl Data.OpenIdConnectProviderGitHub)
 
 

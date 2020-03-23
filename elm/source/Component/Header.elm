@@ -13,24 +13,19 @@ view : Dict.Dict String String -> Data.LogInState.LogInState -> ( Ui.Size, Ui.Pa
 view imageBlobUrlDict logInState =
     ( Ui.fix 56
     , Ui.row
-        (Ui.RowListAttributes
-            { style =
-                [ Ui.backgroundColor (Css.rgb 36 36 36) ]
-            , gap = 0
-            , children =
-                case logInState of
-                    Data.LogInState.GuestUser ->
-                        [ logo, ( Ui.grow, Ui.empty [] ), ( Ui.auto, guestItem ) ]
+        [ Ui.backgroundColor (Css.rgb 36 36 36) ]
+        (case logInState of
+            Data.LogInState.GuestUser ->
+                [ logo, ( Ui.grow, Ui.empty [] ), ( Ui.auto, guestItem ) ]
 
-                    Data.LogInState.RequestLogInUrl _ ->
-                        [ logo, ( Ui.grow, Ui.empty [] ) ]
+            Data.LogInState.RequestLogInUrl _ ->
+                [ logo, ( Ui.grow, Ui.empty [] ) ]
 
-                    Data.LogInState.VerifyingAccessToken _ ->
-                        [ logo, ( Ui.grow, Ui.empty [] ) ]
+            Data.LogInState.VerifyingAccessToken _ ->
+                [ logo, ( Ui.grow, Ui.empty [] ) ]
 
-                    Data.LogInState.Ok record ->
-                        [ logo, ( Ui.grow, Ui.empty [] ), ( Ui.auto, userIcon imageBlobUrlDict record.user ) ]
-            }
+            Data.LogInState.Ok record ->
+                [ logo, ( Ui.grow, Ui.empty [] ), ( Ui.auto, userIcon imageBlobUrlDict record.user ) ]
         )
     )
 
@@ -70,42 +65,38 @@ guestItem =
 userIcon : Dict.Dict String String -> Data.UserPublic -> Ui.Panel msg
 userIcon imageBlobUrlDict userData =
     Ui.row
-        (Ui.RowListAttributes
-            { style = []
-            , gap = 8
-            , children =
-                [ case SubData.getUserImage imageBlobUrlDict userData of
-                    Just blobUrl ->
-                        [ ( Ui.auto
-                          , Ui.bitmapImage
-                                (Ui.BitmapImageAttributes
-                                    { style = [ Ui.borderRadius (Ui.BorderRadiusPercent 50) ]
-                                    , url = blobUrl
-                                    , fitStyle = Ui.Contain
-                                    , alternativeText = userData.name ++ "のユーザーアイコン"
-                                    , rendering = Ui.ImageRenderingPixelated
-                                    }
-                                )
-                          )
-                        ]
-
-                    Nothing ->
-                        []
-                , [ ( Ui.auto
-                    , Ui.textBox
-                        (Ui.TextBoxAttributes
-                            { style = []
-                            , text = userData.name
-                            , typeface = Component.Style.normalTypeface
-                            , size = 16
-                            , letterSpacing = 0
-                            , color = Css.rgb 200 200 200
-                            , textAlignment = Ui.TextAlignCenter
+        [ Ui.gap 8 ]
+        ([ case SubData.getUserImage imageBlobUrlDict userData of
+            Just blobUrl ->
+                [ ( Ui.auto
+                  , Ui.bitmapImage
+                        (Ui.BitmapImageAttributes
+                            { style = [ Ui.borderRadius (Ui.BorderRadiusPercent 50) ]
+                            , url = blobUrl
+                            , fitStyle = Ui.Contain
+                            , alternativeText = userData.name ++ "のユーザーアイコン"
+                            , rendering = Ui.ImageRenderingPixelated
                             }
                         )
-                    )
-                  ]
+                  )
                 ]
-                    |> List.concat
-            }
+
+            Nothing ->
+                []
+         , [ ( Ui.auto
+             , Ui.textBox
+                (Ui.TextBoxAttributes
+                    { style = []
+                    , text = userData.name
+                    , typeface = Component.Style.normalTypeface
+                    , size = 16
+                    , letterSpacing = 0
+                    , color = Css.rgb 200 200 200
+                    , textAlignment = Ui.TextAlignCenter
+                    }
+                )
+             )
+           ]
+         ]
+            |> List.concat
         )

@@ -2,8 +2,6 @@ module Ui exposing
     ( BitmapImageAttributes(..)
     , BorderRadius(..)
     , BorderStyle(..)
-    , ColumnListAttributes(..)
-    , DepthListAttributes(..)
     , FitStyle(..)
     , ImageRendering(..)
     , Panel
@@ -45,7 +43,6 @@ import Html.Styled.Attributes
 import Html.Styled.Events
 import Json.Decode
 import Json.Decode.Pipeline
-import Utility.ListExtra
 import VectorImage
 
 
@@ -104,7 +101,6 @@ type DepthListAttributes message
 type RowListAttributes message
     = RowListAttributes
         { style : List Style
-        , gap : Int
         , children : List ( Size, Panel message )
         }
 
@@ -112,7 +108,6 @@ type RowListAttributes message
 type ColumnListAttributes message
     = ColumnListAttributes
         { style : List Style
-        , gap : Int
         , children : List ( Size, Panel message )
         }
 
@@ -360,23 +355,38 @@ button styleAndEvent clickMessage child =
 
 {-| パネルを同じ領域に重ねる
 -}
-depth : DepthListAttributes message -> Panel message
-depth =
+depth : List Style -> List (Panel message) -> Panel message
+depth styleList children =
     DepthList
+        (DepthListAttributes
+            { style = styleList
+            , children = children
+            }
+        )
 
 
 {-| 横方向に並べる
 -}
-row : RowListAttributes message -> Panel message
-row =
+row : List Style -> List ( Size, Panel message ) -> Panel message
+row styleList children =
     RowList
+        (RowListAttributes
+            { style = styleList
+            , children = children
+            }
+        )
 
 
 {-| 縦方向に並べる
 -}
-column : ColumnListAttributes message -> Panel message
-column =
+column : List Style -> List ( Size, Panel message ) -> Panel message
+column styleList children =
     ColumnList
+        (ColumnListAttributes
+            { style = styleList
+            , children = children
+            }
+        )
 
 
 styleAndEventCompute : List Style -> StyleComputed
@@ -475,7 +485,6 @@ map func panel =
             RowList
                 (RowListAttributes
                     { style = record.style
-                    , gap = record.gap
                     , children = List.map (Tuple.mapSecond (map func)) record.children
                     }
                 )
@@ -484,7 +493,6 @@ map func panel =
             ColumnList
                 (ColumnListAttributes
                     { style = record.style
-                    , gap = record.gap
                     , children = List.map (Tuple.mapSecond (map func)) record.children
                     }
                 )
@@ -547,7 +555,7 @@ textBoxToHtml sizeArea (TextBoxAttributes record) =
     in
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ panelToStyle False styleAndEventComputed
+            [ styleComputedToCss False styleAndEventComputed
             , Css.color record.color
             , Css.fontSize (Css.px (toFloat record.size))
             , Css.fontFamilies [ Css.qt record.typeface ]
@@ -589,7 +597,7 @@ imageFromUrlToHtml sizeArea (BitmapImageAttributes record) =
     in
     Html.Styled.img
         [ Html.Styled.Attributes.css
-            ([ panelToStyle False styleAndEventComputed
+            ([ styleComputedToCss False styleAndEventComputed
              , Css.property "object-fit"
                 (case record.fitStyle of
                     Contain ->
@@ -645,7 +653,7 @@ vectorImageToHtml sizeArea (VectorImageAttributes record) =
     in
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ panelToStyle False styleAndEventComputed
+            [ styleComputedToCss False styleAndEventComputed
             , Css.batch
                 (case sizeArea.width of
                     Fix px ->
@@ -681,7 +689,7 @@ emptyToHtml : SizeArea -> StyleComputed -> Html.Styled.Html message
 emptyToHtml sizeArea styleAndEvent =
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ panelToStyle False styleAndEvent
+            [ styleComputedToCss False styleAndEvent
             , Css.batch
                 (case sizeArea.width of
                     Fix px ->
@@ -717,7 +725,7 @@ buttonToHtml sizeArea (ButtonAttributes record) =
     in
     Html.Styled.button
         [ Html.Styled.Attributes.css
-            [ panelToStyle True styleAndEventComputed ]
+            [ styleComputedToCss True styleAndEventComputed ]
         , Html.Styled.Events.onClick
             record.clickMessage
         ]
@@ -735,7 +743,7 @@ depthListToHtml sizeArea (DepthListAttributes record) =
     in
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ panelToStyle False styleAndEventComputed
+            [ styleComputedToCss False styleAndEventComputed
             , Css.property "display" "grid"
             , Css.property "grid-template-rows" "1fr"
             , Css.property "grid-template-columns" "1fr"
@@ -779,13 +787,12 @@ rowListToHtml sizeArea (RowListAttributes record) =
     in
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ panelToStyle False styleAndEventComputed
+            [ styleComputedToCss False styleAndEventComputed
             , Css.property "display" "grid"
             , Css.property "grid-template-columns"
                 (sizeListToGridTemplate
                     (List.map Tuple.first record.children)
                 )
-            , Css.property "gap" (String.fromInt record.gap ++ "px")
             , Css.batch
                 (case sizeArea.width of
                     Fix px ->
@@ -828,13 +835,12 @@ columnListToHtml sizeArea (ColumnListAttributes record) =
     in
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ panelToStyle False styleAndEventComputed
+            [ styleComputedToCss False styleAndEventComputed
             , Css.property "display" "grid"
             , Css.property "grid-template-rows"
                 (sizeListToGridTemplate
                     (List.map Tuple.first record.children)
                 )
-            , Css.property "gap" (String.fromInt record.gap ++ "px")
             , case sizeArea.width of
                 Fix px ->
                     Css.width (Css.px (toFloat px))
@@ -926,8 +932,8 @@ sizeAreaSubtractPadding sizeArea (StyleComputed record) =
     }
 
 
-panelToStyle : Bool -> StyleComputed -> Css.Style
-panelToStyle isButtonElement (StyleComputed record) =
+styleComputedToCss : Bool -> StyleComputed -> Css.Style
+styleComputedToCss isButtonElement (StyleComputed record) =
     [ [ Css.padding (Css.px (toFloat record.padding)) ]
     , if isButtonElement then
         [ Css.cursor Css.pointer ]
@@ -994,6 +1000,12 @@ panelToStyle isButtonElement (StyleComputed record) =
 
             else
                 []
+    , case record.gap of
+        0 ->
+            []
+
+        size ->
+            [ Css.property "gap" (String.fromInt size ++ "px") ]
     ]
         |> List.concat
         |> Css.batch

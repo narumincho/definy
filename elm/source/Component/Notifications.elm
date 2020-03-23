@@ -75,17 +75,12 @@ view :
     -> Ui.Panel Message
 view imageBlobUrlDict (Model events) =
     Ui.row
-        (Ui.RowListAttributes
-            { style = []
-            , gap = 0
-            , children =
-                [ ( Ui.grow, Ui.empty [] )
-                , ( Ui.fix 480
-                  , cardListView imageBlobUrlDict events
-                  )
-                ]
-            }
-        )
+        []
+        [ ( Ui.grow, Ui.empty [] )
+        , ( Ui.fix 480
+          , cardListView imageBlobUrlDict events
+          )
+        ]
 
 
 cardListView :
@@ -94,19 +89,15 @@ cardListView :
     -> Ui.Panel Message
 cardListView imageBlobUrlDict eventList =
     Ui.column
-        (Ui.ColumnListAttributes
-            { style = []
-            , gap = 8
-            , children =
-                ( Ui.grow, Ui.empty [] )
-                    :: List.indexedMap
-                        (\index event ->
-                            ( Ui.fix 48
-                            , cardItem index (eventToCardStyle imageBlobUrlDict event)
-                            )
-                        )
-                        (List.reverse eventList)
-            }
+        [ Ui.gap 8 ]
+        (( Ui.grow, Ui.empty [] )
+            :: List.indexedMap
+                (\index event ->
+                    ( Ui.fix 48
+                    , cardItem index (eventToCardStyle imageBlobUrlDict event)
+                    )
+                )
+                (List.reverse eventList)
         )
 
 
@@ -168,11 +159,8 @@ cardItem : Int -> CardStyle -> Ui.Panel Message
 cardItem index (CardStyle record) =
     case record.icon of
         Just (Icon icon) ->
-            { style =
-                [ Ui.backgroundColor (Css.rgb 0 100 0)
-                ]
-            , gap = 0
-            , children =
+            Ui.row
+                [ Ui.backgroundColor (Css.rgb 0 100 0) ]
                 [ ( Ui.fix 48
                   , { style = [ Ui.padding 4 ]
                     , url = icon.url
@@ -197,29 +185,22 @@ cardItem index (CardStyle record) =
                   )
                 , ( Ui.fix 32, Ui.button [] (DeleteAt index) Icon.close )
                 ]
-            }
-                |> Ui.RowListAttributes
-                |> Ui.row
 
         Nothing ->
-            Ui.RowListAttributes
-                { style = [ Ui.backgroundColor (Css.rgb 0 100 0) ]
-                , gap = 0
-                , children =
-                    [ ( Ui.fix 32, Ui.empty [] )
-                    , ( Ui.grow
-                      , { style = [ Ui.padding 8 ]
-                        , text = record.text
-                        , typeface = Style.normalTypeface
-                        , size = 16
-                        , letterSpacing = 0
-                        , color = Css.rgb 255 255 255
-                        , textAlignment = Ui.TextAlignStart
-                        }
-                            |> Ui.TextBoxAttributes
-                            |> Ui.textBox
-                      )
-                    , ( Ui.fix 32, Icon.close |> Ui.map (always (DeleteAt index)) )
-                    ]
-                }
-                |> Ui.row
+            Ui.row
+                [ Ui.backgroundColor (Css.rgb 0 100 0) ]
+                [ ( Ui.fix 32, Ui.empty [] )
+                , ( Ui.grow
+                  , { style = [ Ui.padding 8 ]
+                    , text = record.text
+                    , typeface = Style.normalTypeface
+                    , size = 16
+                    , letterSpacing = 0
+                    , color = Css.rgb 255 255 255
+                    , textAlignment = Ui.TextAlignStart
+                    }
+                        |> Ui.TextBoxAttributes
+                        |> Ui.textBox
+                  )
+                , ( Ui.fix 32, Icon.close |> Ui.map (always (DeleteAt index)) )
+                ]
