@@ -82,7 +82,7 @@ view : Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Msg
 view language logInState (Model rec) =
     Ui.column
         (Ui.ColumnListAttributes
-            { styleAndEvent = []
+            { style = []
             , gap = 16
             , children =
                 [ ( Ui.grow, projectList language logInState ) ]
@@ -92,11 +92,11 @@ view language logInState (Model rec) =
 
 projectList : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
 projectList language logInState =
-    { styleAndEvent = []
+    { style = []
     , gap = 8
     , children =
         [ ( Ui.auto
-          , { styleAndEvent = []
+          , { style = []
             , text =
                 case language of
                     Data.LanguageEnglish ->
@@ -118,7 +118,7 @@ projectList language logInState =
           )
         , ( Ui.fix 48, createProjectButton language logInState )
         , ( Ui.grow
-          , { styleAndEvent = []
+          , { style = []
             , text =
                 case language of
                     Data.LanguageEnglish ->
@@ -148,7 +148,7 @@ createProjectButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Ms
 createProjectButton language logInState =
     case logInState of
         Data.LogInState.RequestLogInUrl _ ->
-            { styleAndEvent = []
+            { style = []
             , text = "......"
             , typeface = Component.Style.normalTypeface
             , size = 16
@@ -160,7 +160,7 @@ createProjectButton language logInState =
                 |> Ui.textBox
 
         Data.LogInState.VerifyingAccessToken _ ->
-            { styleAndEvent = []
+            { style = []
             , text =
                 case language of
                     Data.LanguageEnglish ->
@@ -181,7 +181,7 @@ createProjectButton language logInState =
                 |> Ui.textBox
 
         Data.LogInState.GuestUser ->
-            { styleAndEvent = []
+            { style = []
             , text =
                 case language of
                     Data.LanguageEnglish ->
@@ -202,7 +202,7 @@ createProjectButton language logInState =
                 |> Ui.textBox
 
         Data.LogInState.Ok { accessToken } ->
-            { styleAndEvent = []
+            { style = []
             , text =
                 case language of
                     Data.LanguageEnglish ->

@@ -685,7 +685,7 @@ getImageBlobUrlTyped fileHashAndIsThumbnail =
 -}
 view : Model -> Html.Html Msg
 view (Model rec) =
-    { styleAndEvent =
+    { style =
         case getGutterType (Model rec) of
             Just gutterType ->
                 [ Ui.pointerImage (gutterTypeToCursorStyle gutterType) ]
@@ -695,7 +695,7 @@ view (Model rec) =
     , children =
         (case rec.page of
             Welcome welcomeModel ->
-                [ { styleAndEvent = []
+                [ { style = []
                   , gap = 0
                   , children =
                         [ Component.Header.view rec.imageBlobUrlDict rec.logInState
@@ -731,7 +731,7 @@ logInPanel logInState language windowSize =
             ( Ui.auto
             , Ui.textBox
                 (Ui.TextBoxAttributes
-                    { styleAndEvent = []
+                    { style = []
                     , textAlignment = Ui.TextAlignCenter
                     , text = "ログイン画面をリクエスト中……"
                     , typeface = Component.Style.fontHackName
@@ -746,7 +746,7 @@ logInPanel logInState language windowSize =
             ( Ui.auto
             , Ui.textBox
                 (Ui.TextBoxAttributes
-                    { styleAndEvent = []
+                    { style = []
                     , textAlignment = Ui.TextAlignCenter
                     , text = "認証中……"
                     , typeface = Component.Style.fontHackName
@@ -761,7 +761,7 @@ logInPanel logInState language windowSize =
             ( Ui.auto
             , Ui.textBox
                 (Ui.TextBoxAttributes
-                    { styleAndEvent = []
+                    { style = []
                     , textAlignment = Ui.TextAlignCenter
                     , text = "ログイン成功"
                     , typeface = Component.Style.fontHackName
@@ -779,7 +779,7 @@ logInPanelLogInButton language { width, height } =
         ( Ui.fix (48 * 2 + 32)
         , Ui.column
             (Ui.ColumnListAttributes
-                { styleAndEvent = []
+                { style = []
                 , gap = 16
                 , children =
                     [ ( Ui.fix 48, googleLogInButton language )
@@ -793,7 +793,7 @@ logInPanelLogInButton language { width, height } =
         ( Ui.fix 64
         , Ui.row
             (Ui.RowListAttributes
-                { styleAndEvent = [ Ui.padding 8 ]
+                { style = [ Ui.padding 8 ]
                 , gap = 16
                 , children =
                     [ ( Ui.grow, Ui.empty [] )
@@ -807,7 +807,7 @@ logInPanelLogInButton language { width, height } =
 
 googleLogInButton : Data.Language -> Ui.Panel Msg
 googleLogInButton language =
-    { styleAndEvent =
+    { style =
         [ Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.backgroundColor (Css.rgb 66 133 244)
         ]
@@ -817,7 +817,7 @@ googleLogInButton language =
         , ( Ui.grow
           , Ui.textBox
                 (Ui.TextBoxAttributes
-                    { styleAndEvent = []
+                    { style = []
                     , textAlignment = Ui.TextAlignStart
                     , text =
                         case language of
@@ -845,7 +845,7 @@ googleLogInButton language =
 
 gitHubLogInButton : Data.Language -> Ui.Panel Msg
 gitHubLogInButton language =
-    { styleAndEvent =
+    { style =
         [ Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.backgroundColor (Css.rgb 32 32 32)
         ]
@@ -855,7 +855,7 @@ gitHubLogInButton language =
         , ( Ui.grow
           , Ui.textBox
                 (Ui.TextBoxAttributes
-                    { styleAndEvent = []
+                    { style = []
                     , textAlignment = Ui.TextAlignStart
                     , text =
                         case language of

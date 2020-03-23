@@ -24,16 +24,12 @@ module Ui exposing
     , depth
     , empty
     , fix
+    , gap
     , grow
     , map
     , offset
-    , onPointerDown
-    , onPointerEnter
-    , onPointerLeave
-    , onPointerMove
     , overflowVisible
     , padding
-    , pointerGetPosition
     , pointerImage
     , row
     , styleAndEventCompute
@@ -56,19 +52,20 @@ import VectorImage
 {-| デフォルトで幅と高さが外の大きさによって決まる,パネル
 -}
 type Panel message
-    = TextBox (TextBoxAttributes message)
-    | BitmapImage (BitmapImageAttributes message)
+    = TextBox TextBoxAttributes
+    | BitmapImage BitmapImageAttributes
     | VectorImage (VectorImageAttributes message)
-    | Empty (List (StyleAndEvent message))
+    | Empty (List Style)
     | DepthList (DepthListAttributes message)
     | RowList (RowListAttributes message)
     | ColumnList (ColumnListAttributes message)
     | Button (ButtonAttributes message)
+    | PointerPanel (PointerPanelAttributes message)
 
 
-type TextBoxAttributes message
+type TextBoxAttributes
     = TextBoxAttributes
-        { styleAndEvent : List (StyleAndEvent message)
+        { style : List Style
         , text : String
         , typeface : String
         , size : Int
@@ -78,9 +75,9 @@ type TextBoxAttributes message
         }
 
 
-type BitmapImageAttributes message
+type BitmapImageAttributes
     = BitmapImageAttributes
-        { styleAndEvent : List (StyleAndEvent message)
+        { style : List Style
         , url : String
         , fitStyle : FitStyle
         , alternativeText : String
@@ -90,7 +87,7 @@ type BitmapImageAttributes message
 
 type VectorImageAttributes message
     = VectorImageAttributes
-        { styleAndEvent : List (StyleAndEvent message)
+        { style : List Style
         , fitStyle : FitStyle
         , viewBox : { x : Int, y : Int, width : Int, height : Int }
         , elements : List (VectorImage.Element message)
@@ -99,14 +96,14 @@ type VectorImageAttributes message
 
 type DepthListAttributes message
     = DepthListAttributes
-        { styleAndEvent : List (StyleAndEvent message)
+        { style : List Style
         , children : List (Panel message)
         }
 
 
 type RowListAttributes message
     = RowListAttributes
-        { styleAndEvent : List (StyleAndEvent message)
+        { style : List Style
         , gap : Int
         , children : List ( Size, Panel message )
         }
@@ -114,7 +111,7 @@ type RowListAttributes message
 
 type ColumnListAttributes message
     = ColumnListAttributes
-        { styleAndEvent : List (StyleAndEvent message)
+        { style : List Style
         , gap : Int
         , children : List ( Size, Panel message )
         }
@@ -122,8 +119,19 @@ type ColumnListAttributes message
 
 type ButtonAttributes message
     = ButtonAttributes
-        { styleAndEvent : List (StyleAndEvent message)
+        { style : List Style
         , clickMessage : message
+        , child : Panel message
+        }
+
+
+type PointerPanelAttributes message
+    = PointerPanelAttributes
+        { style : List Style
+        , enterMessage : Maybe (Pointer -> message)
+        , leaveMessage : Maybe (Pointer -> message)
+        , moveMessage : Maybe (Pointer -> message)
+        , downMessage : Maybe (Pointer -> message)
         , child : Panel message
         }
 
@@ -198,8 +206,8 @@ type PointerButton
 
 {-| スタイルとイベント
 -}
-type StyleAndEventComputed message
-    = StyleAndEventComputed
+type StyleComputed
+    = StyleComputed
         { padding : Int
         , offset : Maybe ( Int, Int )
         , overflowVisible : Bool
@@ -207,14 +215,11 @@ type StyleAndEventComputed message
         , border : Maybe BorderStyle
         , borderRadius : BorderRadius
         , backGroundColor : Maybe Css.Color
-        , onPointerEnter : Maybe (Pointer -> message)
-        , onPointerLeave : Maybe (Pointer -> message)
-        , onPointerMove : Maybe (Pointer -> message)
-        , onPointerDown : Maybe (Pointer -> message)
+        , gap : Int
         }
 
 
-type StyleAndEvent message
+type Style
     = Padding Int
     | Offset ( Int, Int )
     | OverflowVisible
@@ -222,10 +227,7 @@ type StyleAndEvent message
     | Border BorderStyle
     | BorderRadius BorderRadius
     | BackGroundColor Css.Color
-    | OnPointerEnter (Pointer -> message)
-    | OnPointerLeave (Pointer -> message)
-    | OnPointerMove (Pointer -> message)
-    | OnPointerDown (Pointer -> message)
+    | Gap Int
 
 
 type BorderRadius
@@ -271,65 +273,52 @@ toHtml =
     panelToHtml { width = Grow, height = Grow }
 
 
-padding : Int -> StyleAndEvent message
+padding : Int -> Style
 padding =
     Padding
 
 
-offset : ( Int, Int ) -> StyleAndEvent message
+offset : ( Int, Int ) -> Style
 offset =
     Offset
 
 
-overflowVisible : StyleAndEvent message
+overflowVisible : Style
 overflowVisible =
     OverflowVisible
 
 
-pointerImage : PointerImage -> StyleAndEvent message
+pointerImage : PointerImage -> Style
 pointerImage =
     PointerImage
 
 
-border : BorderStyle -> StyleAndEvent message
+border : BorderStyle -> Style
 border =
     Border
 
 
-borderRadius : BorderRadius -> StyleAndEvent message
+borderRadius : BorderRadius -> Style
 borderRadius =
     BorderRadius
 
 
-backgroundColor : Css.Color -> StyleAndEvent message
+backgroundColor : Css.Color -> Style
 backgroundColor =
     BackGroundColor
 
 
-onPointerEnter : (Pointer -> message) -> StyleAndEvent message
-onPointerEnter =
-    OnPointerEnter
-
-
-onPointerLeave : (Pointer -> message) -> StyleAndEvent message
-onPointerLeave =
-    OnPointerLeave
-
-
-onPointerMove : (Pointer -> message) -> StyleAndEvent message
-onPointerMove =
-    OnPointerMove
-
-
-onPointerDown : (Pointer -> message) -> StyleAndEvent message
-onPointerDown =
-    OnPointerDown
+{-| rowやcolumnの間隔を開けることができる. デフォルトは0
+-}
+gap : Int -> Style
+gap =
+    Gap
 
 
 {-| テキストボックス
 -}
 textBox :
-    TextBoxAttributes message
+    TextBoxAttributes
     -> Panel message
 textBox =
     TextBox
@@ -337,7 +326,7 @@ textBox =
 
 {-| ビットマップ画像
 -}
-bitmapImage : BitmapImageAttributes message -> Panel message
+bitmapImage : BitmapImageAttributes -> Panel message
 bitmapImage =
     BitmapImage
 
@@ -351,18 +340,18 @@ vectorImage =
 
 {-| からのパネル
 -}
-empty : List (StyleAndEvent message) -> Panel message
+empty : List Style -> Panel message
 empty =
     Empty
 
 
 {-| ボタン
 -}
-button : List (StyleAndEvent message) -> message -> Panel message -> Panel message
+button : List Style -> message -> Panel message -> Panel message
 button styleAndEvent clickMessage child =
     Button
         (ButtonAttributes
-            { styleAndEvent = styleAndEvent
+            { style = styleAndEvent
             , clickMessage = clickMessage
             , child = child
             }
@@ -390,15 +379,15 @@ column =
     ColumnList
 
 
-styleAndEventCompute : List (StyleAndEvent message) -> StyleAndEventComputed message
+styleAndEventCompute : List Style -> StyleComputed
 styleAndEventCompute list =
     case list of
         x :: xs ->
             let
-                (StyleAndEventComputed rest) =
+                (StyleComputed rest) =
                     styleAndEventCompute xs
             in
-            StyleAndEventComputed
+            StyleComputed
                 (case x of
                     Padding int ->
                         { rest | padding = int }
@@ -421,26 +410,17 @@ styleAndEventCompute list =
                     BackGroundColor color ->
                         { rest | backGroundColor = Just color }
 
-                    OnPointerEnter function ->
-                        { rest | onPointerEnter = Just function }
-
-                    OnPointerLeave function ->
-                        { rest | onPointerLeave = Just function }
-
-                    OnPointerMove function ->
-                        { rest | onPointerMove = Just function }
-
-                    OnPointerDown function ->
-                        { rest | onPointerDown = Just function }
+                    Gap px ->
+                        { rest | gap = px }
                 )
 
         [] ->
             defaultStyleAndEvent
 
 
-defaultStyleAndEvent : StyleAndEventComputed message
+defaultStyleAndEvent : StyleComputed
 defaultStyleAndEvent =
-    StyleAndEventComputed
+    StyleComputed
         { padding = 0
         , offset = Nothing
         , overflowVisible = False
@@ -448,44 +428,23 @@ defaultStyleAndEvent =
         , border = Nothing
         , borderRadius = BorderRadiusPx 0
         , backGroundColor = Nothing
-        , onPointerEnter = Nothing
-        , onPointerLeave = Nothing
-        , onPointerMove = Nothing
-        , onPointerDown = Nothing
+        , gap = 0
         }
 
 
 map : (a -> b) -> Panel a -> Panel b
 map func panel =
     case panel of
-        TextBox (TextBoxAttributes record) ->
-            TextBox
-                (TextBoxAttributes
-                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
-                    , text = record.text
-                    , typeface = record.typeface
-                    , letterSpacing = record.letterSpacing
-                    , size = record.size
-                    , color = record.color
-                    , textAlignment = record.textAlignment
-                    }
-                )
+        TextBox textBoxAttributes ->
+            TextBox textBoxAttributes
 
-        BitmapImage (BitmapImageAttributes record) ->
-            BitmapImage
-                (BitmapImageAttributes
-                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
-                    , url = record.url
-                    , fitStyle = record.fitStyle
-                    , alternativeText = record.alternativeText
-                    , rendering = record.rendering
-                    }
-                )
+        BitmapImage bitmapImageAttributes ->
+            BitmapImage bitmapImageAttributes
 
         VectorImage (VectorImageAttributes record) ->
             VectorImage
                 (VectorImageAttributes
-                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
+                    { style = record.style
                     , fitStyle = record.fitStyle
                     , viewBox = record.viewBox
                     , elements = List.map (VectorImage.map func) record.elements
@@ -493,12 +452,12 @@ map func panel =
                 )
 
         Empty styleAndEvent ->
-            Empty (List.map (styleAndEventMap func) styleAndEvent)
+            Empty styleAndEvent
 
         Button (ButtonAttributes record) ->
             Button
                 (ButtonAttributes
-                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
+                    { style = record.style
                     , clickMessage = func record.clickMessage
                     , child = map func record.child
                     }
@@ -507,7 +466,7 @@ map func panel =
         DepthList (DepthListAttributes record) ->
             DepthList
                 (DepthListAttributes
-                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
+                    { style = record.style
                     , children = List.map (map func) record.children
                     }
                 )
@@ -515,7 +474,7 @@ map func panel =
         RowList (RowListAttributes record) ->
             RowList
                 (RowListAttributes
-                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
+                    { style = record.style
                     , gap = record.gap
                     , children = List.map (Tuple.mapSecond (map func)) record.children
                     }
@@ -524,48 +483,23 @@ map func panel =
         ColumnList (ColumnListAttributes record) ->
             ColumnList
                 (ColumnListAttributes
-                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
+                    { style = record.style
                     , gap = record.gap
                     , children = List.map (Tuple.mapSecond (map func)) record.children
                     }
                 )
 
-
-styleAndEventMap : (a -> b) -> StyleAndEvent a -> StyleAndEvent b
-styleAndEventMap func styleAndEvent =
-    case styleAndEvent of
-        Padding int ->
-            Padding int
-
-        Offset vector ->
-            Offset vector
-
-        OverflowVisible ->
-            OverflowVisible
-
-        PointerImage pointerImage_ ->
-            PointerImage pointerImage_
-
-        Border borderStyle ->
-            Border borderStyle
-
-        BorderRadius int ->
-            BorderRadius int
-
-        BackGroundColor color ->
-            BackGroundColor color
-
-        OnPointerEnter function ->
-            OnPointerEnter (\pointer -> func (function pointer))
-
-        OnPointerLeave function ->
-            OnPointerLeave (\pointer -> func (function pointer))
-
-        OnPointerMove function ->
-            OnPointerMove (\pointer -> func (function pointer))
-
-        OnPointerDown function ->
-            OnPointerDown (\pointer -> func (function pointer))
+        PointerPanel (PointerPanelAttributes record) ->
+            PointerPanel
+                (PointerPanelAttributes
+                    { style = record.style
+                    , enterMessage = Maybe.map (\msg pointer -> func (msg pointer)) record.enterMessage
+                    , leaveMessage = Maybe.map (\msg pointer -> func (msg pointer)) record.leaveMessage
+                    , moveMessage = Maybe.map (\msg pointer -> func (msg pointer)) record.moveMessage
+                    , downMessage = Maybe.map (\msg pointer -> func (msg pointer)) record.downMessage
+                    , child = map func record.child
+                    }
+                )
 
 
 type alias SizeArea =
@@ -601,15 +535,18 @@ panelToHtml sizeArea panel =
         ColumnList columnListAttributes ->
             columnListToHtml sizeArea columnListAttributes
 
+        PointerPanel pointerPanelAttributes ->
+            pointerPanelToHtml sizeArea pointerPanelAttributes
 
-textBoxToHtml : SizeArea -> TextBoxAttributes message -> Html.Styled.Html message
+
+textBoxToHtml : SizeArea -> TextBoxAttributes -> Html.Styled.Html message
 textBoxToHtml sizeArea (TextBoxAttributes record) =
     let
         styleAndEventComputed =
-            styleAndEventCompute record.styleAndEvent
+            styleAndEventCompute record.style
     in
     Html.Styled.div
-        ([ Html.Styled.Attributes.css
+        [ Html.Styled.Attributes.css
             [ panelToStyle False styleAndEventComputed
             , Css.color record.color
             , Css.fontSize (Css.px (toFloat record.size))
@@ -640,20 +577,18 @@ textBoxToHtml sizeArea (TextBoxAttributes record) =
                         [ Css.height Css.auto ]
                 )
             ]
-         ]
-            ++ eventsToHtmlAttributes styleAndEventComputed
-        )
+        ]
         [ Html.Styled.text record.text ]
 
 
-imageFromUrlToHtml : SizeArea -> BitmapImageAttributes message -> Html.Styled.Html message
+imageFromUrlToHtml : SizeArea -> BitmapImageAttributes -> Html.Styled.Html message
 imageFromUrlToHtml sizeArea (BitmapImageAttributes record) =
     let
         styleAndEventComputed =
-            styleAndEventCompute record.styleAndEvent
+            styleAndEventCompute record.style
     in
     Html.Styled.img
-        ([ Html.Styled.Attributes.css
+        [ Html.Styled.Attributes.css
             ([ panelToStyle False styleAndEventComputed
              , Css.property "object-fit"
                 (case record.fitStyle of
@@ -696,11 +631,9 @@ imageFromUrlToHtml sizeArea (BitmapImageAttributes record) =
                             ]
                    )
             )
-         , Html.Styled.Attributes.src record.url
-         , Html.Styled.Attributes.alt record.alternativeText
-         ]
-            ++ eventsToHtmlAttributes styleAndEventComputed
-        )
+        , Html.Styled.Attributes.src record.url
+        , Html.Styled.Attributes.alt record.alternativeText
+        ]
         []
 
 
@@ -708,10 +641,10 @@ vectorImageToHtml : SizeArea -> VectorImageAttributes message -> Html.Styled.Htm
 vectorImageToHtml sizeArea (VectorImageAttributes record) =
     let
         styleAndEventComputed =
-            styleAndEventCompute record.styleAndEvent
+            styleAndEventCompute record.style
     in
     Html.Styled.div
-        ([ Html.Styled.Attributes.css
+        [ Html.Styled.Attributes.css
             [ panelToStyle False styleAndEventComputed
             , Css.batch
                 (case sizeArea.width of
@@ -736,9 +669,7 @@ vectorImageToHtml sizeArea (VectorImageAttributes record) =
                         [ Css.height Css.auto ]
                 )
             ]
-         ]
-            ++ eventsToHtmlAttributes styleAndEventComputed
-        )
+        ]
         [ VectorImage.toHtml
             record.viewBox
             Nothing
@@ -746,10 +677,10 @@ vectorImageToHtml sizeArea (VectorImageAttributes record) =
         ]
 
 
-emptyToHtml : SizeArea -> StyleAndEventComputed message -> Html.Styled.Html message
+emptyToHtml : SizeArea -> StyleComputed -> Html.Styled.Html message
 emptyToHtml sizeArea styleAndEvent =
     Html.Styled.div
-        ([ Html.Styled.Attributes.css
+        [ Html.Styled.Attributes.css
             [ panelToStyle False styleAndEvent
             , Css.batch
                 (case sizeArea.width of
@@ -774,9 +705,7 @@ emptyToHtml sizeArea styleAndEvent =
                         [ Css.height Css.zero ]
                 )
             ]
-         ]
-            ++ eventsToHtmlAttributes styleAndEvent
-        )
+        ]
         []
 
 
@@ -784,7 +713,7 @@ buttonToHtml : SizeArea -> ButtonAttributes message -> Html.Styled.Html message
 buttonToHtml sizeArea (ButtonAttributes record) =
     let
         styleAndEventComputed =
-            styleAndEventCompute record.styleAndEvent
+            styleAndEventCompute record.style
     in
     Html.Styled.button
         [ Html.Styled.Attributes.css
@@ -802,42 +731,38 @@ depthListToHtml :
 depthListToHtml sizeArea (DepthListAttributes record) =
     let
         styleAndEventComputed =
-            styleAndEventCompute record.styleAndEvent
+            styleAndEventCompute record.style
     in
     Html.Styled.div
-        (List.concat
-            [ [ Html.Styled.Attributes.css
-                    [ panelToStyle False styleAndEventComputed
-                    , Css.property "display" "grid"
-                    , Css.property "grid-template-rows" "1fr"
-                    , Css.property "grid-template-columns" "1fr"
-                    , Css.batch
-                        (case sizeArea.width of
-                            Fix px ->
-                                [ Css.width (Css.px (toFloat px)) ]
+        [ Html.Styled.Attributes.css
+            [ panelToStyle False styleAndEventComputed
+            , Css.property "display" "grid"
+            , Css.property "grid-template-rows" "1fr"
+            , Css.property "grid-template-columns" "1fr"
+            , Css.batch
+                (case sizeArea.width of
+                    Fix px ->
+                        [ Css.width (Css.px (toFloat px)) ]
 
-                            Grow ->
-                                [ Css.width (Css.pct 100) ]
+                    Grow ->
+                        [ Css.width (Css.pct 100) ]
 
-                            Auto ->
-                                [ Css.width Css.auto ]
-                        )
-                    , Css.batch
-                        (case sizeArea.height of
-                            Fix px ->
-                                [ Css.height (Css.px (toFloat px)) ]
+                    Auto ->
+                        [ Css.width Css.auto ]
+                )
+            , Css.batch
+                (case sizeArea.height of
+                    Fix px ->
+                        [ Css.height (Css.px (toFloat px)) ]
 
-                            Grow ->
-                                [ Css.height (Css.pct 100) ]
+                    Grow ->
+                        [ Css.height (Css.pct 100) ]
 
-                            Auto ->
-                                [ Css.height Css.auto ]
-                        )
-                    ]
-              ]
-            , eventsToHtmlAttributes styleAndEventComputed
+                    Auto ->
+                        [ Css.height Css.auto ]
+                )
             ]
-        )
+        ]
         (List.map
             (panelToHtml
                 (sizeAreaSubtractPadding sizeArea styleAndEventComputed)
@@ -850,45 +775,41 @@ rowListToHtml : SizeArea -> RowListAttributes message -> Html.Styled.Html messag
 rowListToHtml sizeArea (RowListAttributes record) =
     let
         styleAndEventComputed =
-            styleAndEventCompute record.styleAndEvent
+            styleAndEventCompute record.style
     in
     Html.Styled.div
-        (List.concat
-            [ [ Html.Styled.Attributes.css
-                    [ panelToStyle False styleAndEventComputed
-                    , Css.property "display" "grid"
-                    , Css.property "grid-template-columns"
-                        (sizeListToGridTemplate
-                            (List.map Tuple.first record.children)
-                        )
-                    , Css.property "gap" (String.fromInt record.gap ++ "px")
-                    , Css.batch
-                        (case sizeArea.width of
-                            Fix px ->
-                                [ Css.width (Css.px (toFloat px)) ]
+        [ Html.Styled.Attributes.css
+            [ panelToStyle False styleAndEventComputed
+            , Css.property "display" "grid"
+            , Css.property "grid-template-columns"
+                (sizeListToGridTemplate
+                    (List.map Tuple.first record.children)
+                )
+            , Css.property "gap" (String.fromInt record.gap ++ "px")
+            , Css.batch
+                (case sizeArea.width of
+                    Fix px ->
+                        [ Css.width (Css.px (toFloat px)) ]
 
-                            Grow ->
-                                [ Css.width (Css.pct 100) ]
+                    Grow ->
+                        [ Css.width (Css.pct 100) ]
 
-                            Auto ->
-                                [ Css.width Css.auto ]
-                        )
-                    , Css.batch
-                        (case sizeArea.height of
-                            Fix px ->
-                                [ Css.height (Css.px (toFloat px)) ]
+                    Auto ->
+                        [ Css.width Css.auto ]
+                )
+            , Css.batch
+                (case sizeArea.height of
+                    Fix px ->
+                        [ Css.height (Css.px (toFloat px)) ]
 
-                            Grow ->
-                                [ Css.height (Css.pct 100) ]
+                    Grow ->
+                        [ Css.height (Css.pct 100) ]
 
-                            Auto ->
-                                [ Css.height Css.auto ]
-                        )
-                    ]
-              ]
-            , eventsToHtmlAttributes styleAndEventComputed
+                    Auto ->
+                        [ Css.height Css.auto ]
+                )
             ]
-        )
+        ]
         (List.map
             (\( size, panel ) ->
                 panelToHtml
@@ -903,45 +824,39 @@ columnListToHtml : SizeArea -> ColumnListAttributes message -> Html.Styled.Html 
 columnListToHtml sizeArea (ColumnListAttributes record) =
     let
         styleAndEventComputed =
-            styleAndEventCompute record.styleAndEvent
+            styleAndEventCompute record.style
     in
     Html.Styled.div
-        (List.concat
-            [ [ Html.Styled.Attributes.css
-                    [ panelToStyle False styleAndEventComputed
-                    , Css.property "display" "grid"
-                    , Css.property "grid-template-rows"
-                        (sizeListToGridTemplate
-                            (List.map Tuple.first record.children)
-                        )
-                    , Css.property "gap" (String.fromInt record.gap ++ "px")
-                    , Css.batch
-                        (case sizeArea.width of
-                            Fix px ->
-                                [ Css.width (Css.px (toFloat px)) ]
+        [ Html.Styled.Attributes.css
+            [ panelToStyle False styleAndEventComputed
+            , Css.property "display" "grid"
+            , Css.property "grid-template-rows"
+                (sizeListToGridTemplate
+                    (List.map Tuple.first record.children)
+                )
+            , Css.property "gap" (String.fromInt record.gap ++ "px")
+            , case sizeArea.width of
+                Fix px ->
+                    Css.width (Css.px (toFloat px))
 
-                            Grow ->
-                                [ Css.width (Css.pct 100) ]
+                Grow ->
+                    Css.width (Css.pct 100)
 
-                            Auto ->
-                                [ Css.width Css.auto ]
-                        )
-                    , Css.batch
-                        (case sizeArea.height of
-                            Fix px ->
-                                [ Css.height (Css.px (toFloat px)) ]
+                Auto ->
+                    Css.width Css.auto
+            , Css.batch
+                (case sizeArea.height of
+                    Fix px ->
+                        [ Css.height (Css.px (toFloat px)) ]
 
-                            Grow ->
-                                [ Css.height (Css.pct 100) ]
+                    Grow ->
+                        [ Css.height (Css.pct 100) ]
 
-                            Auto ->
-                                [ Css.height Css.auto ]
-                        )
-                    ]
-              ]
-            , eventsToHtmlAttributes styleAndEventComputed
+                    Auto ->
+                        [ Css.height Css.auto ]
+                )
             ]
-        )
+        ]
         (List.map
             (\( size, panel ) ->
                 panelToHtml
@@ -952,8 +867,48 @@ columnListToHtml sizeArea (ColumnListAttributes record) =
         )
 
 
-sizeAreaSubtractPadding : SizeArea -> StyleAndEventComputed message -> SizeArea
-sizeAreaSubtractPadding sizeArea (StyleAndEventComputed record) =
+pointerPanelToHtml : SizeArea -> PointerPanelAttributes message -> Html.Styled.Html message
+pointerPanelToHtml sizeArea (PointerPanelAttributes record) =
+    let
+        styleAndEventComputed =
+            styleAndEventCompute record.style
+    in
+    Html.Styled.div
+        (List.concat
+            [ case record.enterMessage of
+                Just msg ->
+                    [ Html.Styled.Events.on "pointerenter" (pointerEventDecoder |> Json.Decode.map msg) ]
+
+                Nothing ->
+                    []
+            , case record.leaveMessage of
+                Just msg ->
+                    [ Html.Styled.Events.on "pointerleave" (pointerEventDecoder |> Json.Decode.map msg) ]
+
+                Nothing ->
+                    []
+            , case record.moveMessage of
+                Just msg ->
+                    [ Html.Styled.Events.on "pointermove" (pointerEventDecoder |> Json.Decode.map msg) ]
+
+                Nothing ->
+                    []
+            , case record.downMessage of
+                Just msg ->
+                    [ Html.Styled.Events.on "pointerdown" (pointerEventDecoder |> Json.Decode.map msg) ]
+
+                Nothing ->
+                    []
+            ]
+        )
+        [ panelToHtml
+            (sizeAreaSubtractPadding sizeArea styleAndEventComputed)
+            record.child
+        ]
+
+
+sizeAreaSubtractPadding : SizeArea -> StyleComputed -> SizeArea
+sizeAreaSubtractPadding sizeArea (StyleComputed record) =
     { width =
         case sizeArea.width of
             Fix px ->
@@ -971,8 +926,8 @@ sizeAreaSubtractPadding sizeArea (StyleAndEventComputed record) =
     }
 
 
-panelToStyle : Bool -> StyleAndEventComputed message -> Css.Style
-panelToStyle isButtonElement (StyleAndEventComputed record) =
+panelToStyle : Bool -> StyleComputed -> Css.Style
+panelToStyle isButtonElement (StyleComputed record) =
     [ [ Css.padding (Css.px (toFloat record.padding)) ]
     , if isButtonElement then
         [ Css.cursor Css.pointer ]
@@ -1034,7 +989,11 @@ panelToStyle isButtonElement (StyleAndEventComputed record) =
             [ Css.backgroundColor color ]
 
         Nothing ->
-            []
+            if isButtonElement then
+                [ Css.backgroundColor Css.transparent ]
+
+            else
+                []
     ]
         |> List.concat
         |> Css.batch
@@ -1051,22 +1010,6 @@ borderStyleToStyle (BorderStyle record) =
         (Css.px (toFloat record.width.left))
     ]
         |> Css.batch
-
-
-{-| イベントをElmのイベントリスナーの属性に変換する
--}
-eventsToHtmlAttributes : StyleAndEventComputed msg -> List (Html.Styled.Attribute msg)
-eventsToHtmlAttributes (StyleAndEventComputed record) =
-    [ record.onPointerEnter
-        |> Maybe.map (\msg -> Html.Styled.Events.on "pointerenter" (pointerEventDecoder |> Json.Decode.map msg))
-    , record.onPointerLeave
-        |> Maybe.map (\msg -> Html.Styled.Events.on "pointerleave" (pointerEventDecoder |> Json.Decode.map msg))
-    , record.onPointerMove
-        |> Maybe.map (\msg -> Html.Styled.Events.on "pointermove" (pointerEventDecoder |> Json.Decode.map msg))
-    , record.onPointerDown
-        |> Maybe.map (\msg -> Html.Styled.Events.on "pointerdown" (pointerEventDecoder |> Json.Decode.map msg))
-    ]
-        |> Utility.ListExtra.takeFromMaybeList
 
 
 pointerEventDecoder : Json.Decode.Decoder Pointer
@@ -1167,14 +1110,6 @@ sizeListToGridTemplateItem size =
             "auto"
 
 
-gridSetPosition : Css.Style
-gridSetPosition =
-    Css.batch
-        [ Css.property "grid-row" "1 / 2"
-        , Css.property "grid-column" "1 / 2"
-        ]
-
-
 textAlignToStyle : TextAlignment -> Css.Style
 textAlignToStyle textAlignment =
     Css.textAlign
@@ -1188,8 +1123,3 @@ textAlignToStyle textAlignment =
             TextAlignCenter ->
                 Css.center
         )
-
-
-pointerGetPosition : Pointer -> ( Float, Float )
-pointerGetPosition (Pointer { position }) =
-    position

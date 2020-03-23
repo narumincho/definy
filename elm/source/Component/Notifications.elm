@@ -76,7 +76,7 @@ view :
 view imageBlobUrlDict (Model events) =
     Ui.row
         (Ui.RowListAttributes
-            { styleAndEvent = []
+            { style = []
             , gap = 0
             , children =
                 [ ( Ui.grow, Ui.empty [] )
@@ -95,7 +95,7 @@ cardListView :
 cardListView imageBlobUrlDict eventList =
     Ui.column
         (Ui.ColumnListAttributes
-            { styleAndEvent = []
+            { style = []
             , gap = 8
             , children =
                 ( Ui.grow, Ui.empty [] )
@@ -168,13 +168,13 @@ cardItem : Int -> CardStyle -> Ui.Panel Message
 cardItem index (CardStyle record) =
     case record.icon of
         Just (Icon icon) ->
-            { styleAndEvent =
+            { style =
                 [ Ui.backgroundColor (Css.rgb 0 100 0)
                 ]
             , gap = 0
             , children =
                 [ ( Ui.fix 48
-                  , { styleAndEvent = [ Ui.padding 4 ]
+                  , { style = [ Ui.padding 4 ]
                     , url = icon.url
                     , fitStyle = Ui.Contain
                     , alternativeText = icon.alternativeText
@@ -184,7 +184,7 @@ cardItem index (CardStyle record) =
                         |> Ui.bitmapImage
                   )
                 , ( Ui.grow
-                  , { styleAndEvent = [ Ui.padding 8 ]
+                  , { style = [ Ui.padding 8 ]
                     , text = record.text
                     , typeface = Style.normalTypeface
                     , size = 16
@@ -203,12 +203,12 @@ cardItem index (CardStyle record) =
 
         Nothing ->
             Ui.RowListAttributes
-                { styleAndEvent = [ Ui.backgroundColor (Css.rgb 0 100 0) ]
+                { style = [ Ui.backgroundColor (Css.rgb 0 100 0) ]
                 , gap = 0
                 , children =
                     [ ( Ui.fix 32, Ui.empty [] )
                     , ( Ui.grow
-                      , { styleAndEvent = [ Ui.padding 8 ]
+                      , { style = [ Ui.padding 8 ]
                         , text = record.text
                         , typeface = Style.normalTypeface
                         , size = 16

@@ -14,7 +14,7 @@ view imageBlobUrlDict logInState =
     ( Ui.fix 56
     , Ui.row
         (Ui.RowListAttributes
-            { styleAndEvent =
+            { style =
                 [ Ui.backgroundColor (Css.rgb 36 36 36) ]
             , gap = 0
             , children =
@@ -40,7 +40,7 @@ logo =
     ( Ui.auto
     , Ui.textBox
         (Ui.TextBoxAttributes
-            { styleAndEvent = [ Ui.padding 8 ]
+            { style = [ Ui.padding 8 ]
             , text = "Definy"
             , typeface = Component.Style.codeFontTypeface
             , size = 32
@@ -56,7 +56,7 @@ guestItem : Ui.Panel msg
 guestItem =
     Ui.textBox
         (Ui.TextBoxAttributes
-            { styleAndEvent = []
+            { style = []
             , text = "ゲスト"
             , typeface = Component.Style.normalTypeface
             , size = 16
@@ -71,7 +71,7 @@ userIcon : Dict.Dict String String -> Data.UserPublic -> Ui.Panel msg
 userIcon imageBlobUrlDict userData =
     Ui.row
         (Ui.RowListAttributes
-            { styleAndEvent = []
+            { style = []
             , gap = 8
             , children =
                 [ case SubData.getUserImage imageBlobUrlDict userData of
@@ -79,7 +79,7 @@ userIcon imageBlobUrlDict userData =
                         [ ( Ui.auto
                           , Ui.bitmapImage
                                 (Ui.BitmapImageAttributes
-                                    { styleAndEvent = [ Ui.borderRadius (Ui.BorderRadiusPercent 50) ]
+                                    { style = [ Ui.borderRadius (Ui.BorderRadiusPercent 50) ]
                                     , url = blobUrl
                                     , fitStyle = Ui.Contain
                                     , alternativeText = userData.name ++ "のユーザーアイコン"
@@ -94,7 +94,7 @@ userIcon imageBlobUrlDict userData =
                 , [ ( Ui.auto
                     , Ui.textBox
                         (Ui.TextBoxAttributes
-                            { styleAndEvent = []
+                            { style = []
                             , text = userData.name
                             , typeface = Component.Style.normalTypeface
                             , size = 16
