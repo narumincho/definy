@@ -1,4 +1,4 @@
-module Icon exposing (close, gitHubIcon, googleIcon)
+module Icon exposing (close, gitHubIcon, googleIcon, plus)
 
 import Css
 import Ui
@@ -61,6 +61,21 @@ close =
             , elements =
                 [ VectorImage.line ( 1, 1 ) ( 9, 9 ) (VectorImage.strokeColor (Css.rgb 0 0 0))
                 , VectorImage.line ( 9, 1 ) ( 1, 9 ) (VectorImage.strokeColor (Css.rgb 0 0 0))
+                ]
+            }
+        )
+
+
+plus : Ui.Panel message
+plus =
+    Ui.vectorImage
+        []
+        (Ui.VectorImageAttributes
+            { fitStyle = Ui.Contain
+            , viewBox = { x = 0, y = 0, width = 10, height = 10 }
+            , elements =
+                [ VectorImage.line ( 0, 5 ) ( 10, 5 ) (VectorImage.strokeColor (Css.rgb 200 200 200))
+                , VectorImage.line ( 5, 0 ) ( 5, 10 ) (VectorImage.strokeColor (Css.rgb 200 200 200))
                 ]
             }
         )

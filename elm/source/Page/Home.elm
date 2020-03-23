@@ -12,6 +12,7 @@ import Css
 import Data
 import Data.LogInState
 import Data.SocialLoginService
+import Icon
 import Ui
 import Url
 
@@ -156,26 +157,32 @@ createProjectButton language logInState =
                 )
 
         Data.LogInState.Ok { accessToken } ->
-            Ui.textBox
+            Ui.column
                 []
-                (Ui.TextBoxAttributes
-                    { text =
-                        case language of
-                            Data.LanguageEnglish ->
-                                "Create a new project"
+                [ ( Ui.fix 32, Icon.plus )
+                , ( Ui.auto
+                  , Ui.textBox
+                        []
+                        (Ui.TextBoxAttributes
+                            { text =
+                                case language of
+                                    Data.LanguageEnglish ->
+                                        "Create a new project"
 
-                            Data.LanguageJapanese ->
-                                "プロジェクトを新規作成"
+                                    Data.LanguageJapanese ->
+                                        "プロジェクトを新規作成"
 
-                            Data.LanguageEsperanto ->
-                                "Krei novan projekton"
-                    , typeface = Component.Style.normalTypeface
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 200 200 200
-                    , textAlignment = Ui.TextAlignStart
-                    }
-                )
+                                    Data.LanguageEsperanto ->
+                                        "Krei novan projekton"
+                            , typeface = Component.Style.normalTypeface
+                            , size = 16
+                            , letterSpacing = 0
+                            , color = Css.rgb 200 200 200
+                            , textAlignment = Ui.TextAlignStart
+                            }
+                        )
+                  )
+                ]
 
 
 projectLineFirstCreateButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
@@ -212,7 +219,7 @@ projectItem =
                 }
             )
         , Ui.textBox
-            [ Ui.alignSelf Ui.end ]
+            [ Ui.alignSelf Ui.end, Ui.backgroundColor (Css.rgba 0 0 0 0.6) ]
             (Ui.TextBoxAttributes
                 { text = "プロジェクト名"
                 , typeface = Component.Style.normalTypeface
