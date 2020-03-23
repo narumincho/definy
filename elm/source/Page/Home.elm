@@ -8,6 +8,7 @@ module Page.Home exposing
     )
 
 import Component.Style
+import Css
 import Data
 import Data.LogInState
 import Data.SocialLoginService
@@ -18,27 +19,12 @@ import Url
 type Model
     = Model
         { width : Int
-        , pointer : PointerState
         , logInRequest : Maybe Data.SocialLoginService.SocialLoginService
         }
 
 
-type PointerState
-    = None
-    | SideBarPointerEnter
-    | SideBarResize
-    | LogInButtonHover Data.SocialLoginService.SocialLoginService
-    | LogInButtonPressed Data.SocialLoginService.SocialLoginService
-
-
 type Msg
-    = MsgToSideGutterMode Component.Style.GutterMsg
-    | MsgPointerMove Ui.Pointer
-    | MsgPointerUp
-    | MsgLogInButtonEnter Data.SocialLoginService.SocialLoginService
-    | MsgLogInButtonLeave
-    | MsgLogInButtonPressed Data.SocialLoginService.SocialLoginService
-    | MsgToLogInPage Data.SocialLoginService.SocialLoginService
+    = MsgToLogInPage Data.SocialLoginService.SocialLoginService
     | MsgGetLogInUrlResponse (Result String Url.Url)
     | MsgCreateProject Data.AccessToken
     | MsgCreateProjectByGuest
@@ -57,7 +43,6 @@ init : Model
 init =
     Model
         { width = 400
-        , pointer = None
         , logInRequest = Nothing
         }
 
@@ -65,52 +50,6 @@ init =
 update : Msg -> Model -> ( Model, List Cmd )
 update msg (Model rec) =
     case msg of
-        MsgToSideGutterMode gutterMsg ->
-            case gutterMsg of
-                Component.Style.GutterMsgPointerEnter ->
-                    ( Model { rec | pointer = SideBarPointerEnter }
-                    , []
-                    )
-
-                Component.Style.GutterMsgPointerLeave ->
-                    ( Model { rec | pointer = None }
-                    , []
-                    )
-
-                Component.Style.GutterMsgToResizeMode pointer ->
-                    ( Model
-                        { rec
-                            | pointer = SideBarResize
-                            , width = pointer |> Ui.pointerGetPosition |> Tuple.first |> floor
-                        }
-                    , [ CmdToVerticalGutterMode ]
-                    )
-
-        MsgPointerMove mouseState ->
-            ( Model { rec | width = mouseState |> Ui.pointerGetPosition |> Tuple.first |> floor }
-            , []
-            )
-
-        MsgPointerUp ->
-            ( Model { rec | pointer = None }
-            , []
-            )
-
-        MsgLogInButtonEnter service ->
-            ( Model { rec | pointer = LogInButtonHover service }
-            , []
-            )
-
-        MsgLogInButtonLeave ->
-            ( Model { rec | pointer = None }
-            , []
-            )
-
-        MsgLogInButtonPressed service ->
-            ( Model { rec | pointer = LogInButtonPressed service }
-            , []
-            )
-
         MsgToLogInPage service ->
             ( Model { rec | logInRequest = Just service }
             , [ CmdToLogInPage service ]
@@ -141,85 +80,89 @@ update msg (Model rec) =
 
 view : Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Msg
 view language logInState (Model rec) =
-    Ui.rowList
-        (case rec.pointer of
-            SideBarResize ->
-                [ Ui.onPointerMove MsgPointerMove ]
-
-            _ ->
-                []
+    Ui.column
+        (Ui.ColumnListAttributes
+            { styleAndEvent = []
+            , gap = 16
+            , children =
+                [ ( Ui.grow, projectList language logInState ) ]
+            }
         )
-        0
-        [ projectList language logInState
-        ]
 
 
 projectList : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
 projectList language logInState =
-    Ui.column
-        []
-        8
-        [ Ui.textBoxFitHeight
-            []
-            { align = Ui.TextAlignStart
-            , font = Component.Style.normalFont
+    { styleAndEvent = []
+    , gap = 8
+    , children =
+        [ ( Ui.auto
+          , { styleAndEvent = []
+            , text =
+                case language of
+                    Data.LanguageEnglish ->
+                        "home"
+
+                    Data.LanguageJapanese ->
+                        "ここはHome"
+
+                    Data.LanguageEsperanto ->
+                        "Hejmo"
+            , typeface = Component.Style.normalTypeface
+            , size = 16
+            , letterSpacing = 0
+            , color = Css.rgb 200 200 200
+            , textAlignment = Ui.TextAlignStart
             }
-            (case language of
-                Data.LanguageEnglish ->
-                    "home"
+                |> Ui.TextBoxAttributes
+                |> Ui.textBox
+          )
+        , ( Ui.fix 48, createProjectButton language logInState )
+        , ( Ui.auto
+          , { styleAndEvent = []
+            , text =
+                case language of
+                    Data.LanguageEnglish ->
+                        "List of projects"
 
-                Data.LanguageJapanese ->
-                    "ここはHome"
+                    Data.LanguageJapanese ->
+                        "プロジェクト一覧"
 
-                Data.LanguageEsperanto ->
-                    "Hejmo"
-            )
-        , createProjectButton language logInState
-        , Ui.textBoxFitHeight
-            []
-            { align = Ui.TextAlignStart
-            , font = Component.Style.normalFont
+                    Data.LanguageEsperanto ->
+                        "Listo de projektoj"
+            , typeface = Component.Style.normalTypeface
+            , size = 16
+            , letterSpacing = 0
+            , color = Css.rgb 200 200 200
+            , textAlignment = Ui.TextAlignCenter
             }
-            (case language of
-                Data.LanguageEnglish ->
-                    "List of projects"
-
-                Data.LanguageJapanese ->
-                    "プロジェクト一覧"
-
-                Data.LanguageEsperanto ->
-                    "Listo de projektoj"
-            )
+                |> Ui.TextBoxAttributes
+                |> Ui.textBox
+          )
         ]
+    }
+        |> Ui.ColumnListAttributes
+        |> Ui.column
 
 
 createProjectButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
 createProjectButton language logInState =
     case logInState of
         Data.LogInState.RequestLogInUrl _ ->
-            Ui.textBoxFitHeight
-                []
-                { align = Ui.TextAlignStart
-                , font = Component.Style.normalFont
-                }
-                (case language of
-                    Data.LanguageEnglish ->
-                        "..."
-
-                    Data.LanguageJapanese ->
-                        "……"
-
-                    Data.LanguageEsperanto ->
-                        "..."
-                )
+            { styleAndEvent = []
+            , text = "......"
+            , typeface = Component.Style.normalTypeface
+            , size = 16
+            , letterSpacing = 0
+            , color = Css.rgb 200 200 200
+            , textAlignment = Ui.TextAlignStart
+            }
+                |> Ui.TextBoxAttributes
+                |> Ui.textBox
 
         Data.LogInState.VerifyingAccessToken _ ->
-            Ui.textBoxFitHeight
-                []
-                { align = Ui.TextAlignStart
-                , font = Component.Style.normalFont
-                }
-                (case language of
+            { styleAndEvent = []
+            , text =
+                case language of
                     Data.LanguageEnglish ->
                         "Verifying..."
 
@@ -228,20 +171,53 @@ createProjectButton language logInState =
 
                     Data.LanguageEsperanto ->
                         "Aŭtentigado ..."
-                )
+            , typeface = Component.Style.normalTypeface
+            , size = 16
+            , letterSpacing = 0
+            , color = Css.rgb 200 200 200
+            , textAlignment = Ui.TextAlignStart
+            }
+                |> Ui.TextBoxAttributes
+                |> Ui.textBox
 
         Data.LogInState.GuestUser ->
-            Ui.textBoxFitHeight
-                []
-                { align = Ui.TextAlignStart
-                , font = Component.Style.normalFont
-                }
-                "プロジェクトを作成するには登録が必要です"
+            { styleAndEvent = []
+            , text =
+                case language of
+                    Data.LanguageEnglish ->
+                        "Creating guest user projects has not been completed yet"
+
+                    Data.LanguageJapanese ->
+                        "ゲストユーザーのプロジェクトの作成は,まだできていない"
+
+                    Data.LanguageEsperanto ->
+                        "Krei projektojn de invititaj uzantoj ankoraŭ ne estas finita"
+            , typeface = Component.Style.normalTypeface
+            , size = 16
+            , letterSpacing = 0
+            , color = Css.rgb 200 200 200
+            , textAlignment = Ui.TextAlignStart
+            }
+                |> Ui.TextBoxAttributes
+                |> Ui.textBox
 
         Data.LogInState.Ok { accessToken } ->
-            Ui.textBoxFitHeight
-                []
-                { align = Ui.TextAlignStart
-                , font = Component.Style.normalFont
-                }
-                "プロジェクトを新規作成"
+            { styleAndEvent = []
+            , text =
+                case language of
+                    Data.LanguageEnglish ->
+                        "Create a new project"
+
+                    Data.LanguageJapanese ->
+                        "プロジェクトを新規作成"
+
+                    Data.LanguageEsperanto ->
+                        "Krei novan projekton"
+            , typeface = Component.Style.normalTypeface
+            , size = 16
+            , letterSpacing = 0
+            , color = Css.rgb 200 200 200
+            , textAlignment = Ui.TextAlignStart
+            }
+                |> Ui.TextBoxAttributes
+                |> Ui.textBox

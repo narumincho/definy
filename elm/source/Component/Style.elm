@@ -1,13 +1,11 @@
 module Component.Style exposing
-    ( GutterMode(..)
-    , GutterMsg(..)
+    ( GutterMsg(..)
     , activeColor
     , codeFontTypeface
     , fontHack
     , fontHackName
-    , gutterPanel
     , horizontalGutter
-    , normalFont
+    , normalTypeface
     , tabContainer
     , textColorStyle
     , verticalGutter
@@ -82,55 +80,6 @@ verticalGutter isResizing =
         []
 
 
-gutterPanel : GutterMode -> Ui.Panel GutterMsg
-gutterPanel mode =
-    Ui.depthList
-        [ Ui.width 2
-        , Ui.overflowVisible
-        , Ui.pointerImage Ui.HorizontalResize
-        ]
-        (case mode of
-            GutterModeNone ->
-                [ Ui.monochromatic
-                    [ Ui.width 2
-                    ]
-                    (Css.rgb 68 68 68)
-                , Ui.empty
-                    [ Ui.width 12
-                    , Ui.offset ( -5, 0 )
-                    , Ui.onPointerDown GutterMsgToResizeMode
-                    , Ui.onPointerEnter (always GutterMsgPointerEnter)
-                    ]
-                ]
-
-            GutterModePointerEnter ->
-                [ Ui.monochromatic
-                    [ Ui.width 2 ]
-                    (Css.rgb 102 102 102)
-                , Ui.empty
-                    [ Ui.width 12
-                    , Ui.offset ( -5, 0 )
-                    , Ui.onPointerDown GutterMsgToResizeMode
-                    , Ui.onPointerLeave (always GutterMsgPointerLeave)
-                    ]
-                ]
-
-            GutterModeResize ->
-                [ Ui.monochromatic
-                    [ Ui.width 6
-                    , Ui.offset ( -2, 0 )
-                    ]
-                    (Css.rgb 255 255 255)
-                ]
-        )
-
-
-type GutterMode
-    = GutterModeNone
-    | GutterModePointerEnter
-    | GutterModeResize
-
-
 type GutterMsg
     = GutterMsgPointerEnter
     | GutterMsgPointerLeave
@@ -180,14 +129,9 @@ horizontalGutter isResizing =
         []
 
 
-normalFont : Ui.Font
-normalFont =
-    Ui.Font
-        { typeface = "'Hiragino Kaku Gothic Pro', 'ヒラギノ角ゴ Pro W3', メイリオ, Meiryo, 'ＭＳ Ｐゴシック', sans-serif"
-        , size = 16
-        , letterSpacing = 0
-        , color = Css.rgb 255 255 255
-        }
+normalTypeface : String
+normalTypeface =
+    "'Hiragino Kaku Gothic Pro', 'ヒラギノ角ゴ Pro W3', メイリオ, Meiryo, 'ＭＳ Ｐゴシック', sans-serif"
 
 
 codeFontTypeface : String

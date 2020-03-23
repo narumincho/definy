@@ -1,5 +1,6 @@
 module Ui exposing
     ( BitmapImageAttributes(..)
+    , BorderRadius(..)
     , BorderStyle(..)
     , ColumnListAttributes(..)
     , DepthListAttributes(..)
@@ -9,16 +10,20 @@ module Ui exposing
     , Pointer
     , PointerImage(..)
     , RowListAttributes(..)
+    , Size
     , TextAlignment(..)
     , TextBoxAttributes(..)
     , VectorImageAttributes(..)
-    , backGroundColor
+    , auto
+    , backgroundColor
     , bitmapImage
     , border
     , borderRadius
     , column
-    , depthList
+    , depth
     , empty
+    , fix
+    , grow
     , map
     , offset
     , onClick
@@ -30,7 +35,7 @@ module Ui exposing
     , padding
     , pointerGetPosition
     , pointerImage
-    , rowList
+    , row
     , styleAndEventCompute
     , textBox
     , toHtml
@@ -54,7 +59,7 @@ type Panel message
     = TextBox (TextBoxAttributes message)
     | BitmapImage (BitmapImageAttributes message)
     | VectorImage (VectorImageAttributes message)
-    | Empty (StyleAndEventComputed message)
+    | Empty (List (StyleAndEvent message))
     | DepthList (DepthListAttributes message)
     | RowList (RowListAttributes message)
     | ColumnList (ColumnListAttributes message)
@@ -62,7 +67,7 @@ type Panel message
 
 type TextBoxAttributes message
     = TextBoxAttributes
-        { styleAndEvent : StyleAndEventComputed message
+        { styleAndEvent : List (StyleAndEvent message)
         , text : String
         , typeface : String
         , size : Int
@@ -74,7 +79,7 @@ type TextBoxAttributes message
 
 type BitmapImageAttributes message
     = BitmapImageAttributes
-        { styleAndEvent : StyleAndEventComputed message
+        { styleAndEvent : List (StyleAndEvent message)
         , url : String
         , fitStyle : FitStyle
         , alternativeText : String
@@ -84,7 +89,7 @@ type BitmapImageAttributes message
 
 type VectorImageAttributes message
     = VectorImageAttributes
-        { styleAndEvent : StyleAndEventComputed message
+        { styleAndEvent : List (StyleAndEvent message)
         , fitStyle : FitStyle
         , viewBox : { x : Int, y : Int, width : Int, height : Int }
         , elements : List (VectorImage.Element message)
@@ -93,14 +98,14 @@ type VectorImageAttributes message
 
 type DepthListAttributes message
     = DepthListAttributes
-        { styleAndEvent : StyleAndEventComputed message
+        { styleAndEvent : List (StyleAndEvent message)
         , children : List (Panel message)
         }
 
 
 type RowListAttributes message
     = RowListAttributes
-        { styleAndEvent : StyleAndEventComputed message
+        { styleAndEvent : List (StyleAndEvent message)
         , gap : Int
         , children : List ( Size, Panel message )
         }
@@ -108,7 +113,7 @@ type RowListAttributes message
 
 type ColumnListAttributes message
     = ColumnListAttributes
-        { styleAndEvent : StyleAndEventComputed message
+        { styleAndEvent : List (StyleAndEvent message)
         , gap : Int
         , children : List ( Size, Panel message )
         }
@@ -185,7 +190,7 @@ type StyleAndEventComputed message
         , overflowVisible : Bool
         , pointerImage : Maybe PointerImage
         , border : Maybe BorderStyle
-        , borderRadius : Int
+        , borderRadius : BorderRadius
         , backGroundColor : Maybe Css.Color
         , onClick : Maybe message
         , onPointerEnter : Maybe (Pointer -> message)
@@ -201,13 +206,18 @@ type StyleAndEvent message
     | OverflowVisible
     | PointerImage PointerImage
     | Border BorderStyle
-    | BorderRadius Int
+    | BorderRadius BorderRadius
     | BackGroundColor Css.Color
     | OnClick message
     | OnPointerEnter (Pointer -> message)
     | OnPointerLeave (Pointer -> message)
     | OnPointerMove (Pointer -> message)
     | OnPointerDown (Pointer -> message)
+
+
+type BorderRadius
+    = BorderRadiusPx Int
+    | BorderRadiusPercent Int
 
 
 type PointerImage
@@ -273,13 +283,13 @@ border =
     Border
 
 
-borderRadius : Int -> StyleAndEvent message
+borderRadius : BorderRadius -> StyleAndEvent message
 borderRadius =
     BorderRadius
 
 
-backGroundColor : Css.Color -> StyleAndEvent message
-backGroundColor =
+backgroundColor : Css.Color -> StyleAndEvent message
+backgroundColor =
     BackGroundColor
 
 
@@ -335,20 +345,20 @@ vectorImage =
 -}
 empty : List (StyleAndEvent message) -> Panel message
 empty styleAndEventList =
-    Empty (styleAndEventCompute styleAndEventList)
+    Empty styleAndEventList
 
 
 {-| パネルを同じ領域に重ねる
 -}
-depthList : DepthListAttributes message -> Panel message
-depthList =
+depth : DepthListAttributes message -> Panel message
+depth =
     DepthList
 
 
 {-| 横方向に並べる
 -}
-rowList : RowListAttributes message -> Panel message
-rowList =
+row : RowListAttributes message -> Panel message
+row =
     RowList
 
 
@@ -418,7 +428,7 @@ defaultStyleAndEvent =
         , overflowVisible = False
         , pointerImage = Nothing
         , border = Nothing
-        , borderRadius = 0
+        , borderRadius = BorderRadiusPx 0
         , backGroundColor = Nothing
         , onClick = Nothing
         , onPointerEnter = Nothing
@@ -434,7 +444,7 @@ map func panel =
         TextBox (TextBoxAttributes record) ->
             TextBox
                 (TextBoxAttributes
-                    { styleAndEvent = styleAndEventMap func record.styleAndEvent
+                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
                     , text = record.text
                     , typeface = record.typeface
                     , letterSpacing = record.letterSpacing
@@ -447,10 +457,10 @@ map func panel =
         BitmapImage (BitmapImageAttributes record) ->
             BitmapImage
                 (BitmapImageAttributes
-                    { styleAndEvent = styleAndEventMap func record.styleAndEvent
-                    , url = String
+                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
+                    , url = record.url
                     , fitStyle = record.fitStyle
-                    , alternativeText = String
+                    , alternativeText = record.alternativeText
                     , rendering = record.rendering
                     }
                 )
@@ -458,7 +468,7 @@ map func panel =
         VectorImage (VectorImageAttributes record) ->
             VectorImage
                 (VectorImageAttributes
-                    { styleAndEvent = styleAndEventMap func record.styleAndEvent
+                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
                     , fitStyle = record.fitStyle
                     , viewBox = record.viewBox
                     , elements = List.map (VectorImage.map func) record.elements
@@ -466,12 +476,12 @@ map func panel =
                 )
 
         Empty styleAndEvent ->
-            Empty (styleAndEventMap func styleAndEvent)
+            Empty (List.map (styleAndEventMap func) styleAndEvent)
 
         DepthList (DepthListAttributes record) ->
             DepthList
                 (DepthListAttributes
-                    { styleAndEvent = styleAndEventMap func record.styleAndEvent
+                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
                     , children = List.map (map func) record.children
                     }
                 )
@@ -479,7 +489,7 @@ map func panel =
         RowList (RowListAttributes record) ->
             RowList
                 (RowListAttributes
-                    { styleAndEvent = styleAndEventMap func record.styleAndEvent
+                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
                     , gap = record.gap
                     , children = List.map (Tuple.mapSecond (map func)) record.children
                     }
@@ -488,29 +498,51 @@ map func panel =
         ColumnList (ColumnListAttributes record) ->
             ColumnList
                 (ColumnListAttributes
-                    { styleAndEvent = styleAndEventMap func record.styleAndEvent
+                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
                     , gap = record.gap
                     , children = List.map (Tuple.mapSecond (map func)) record.children
                     }
                 )
 
 
-styleAndEventMap : (a -> b) -> StyleAndEventComputed a -> StyleAndEventComputed b
-styleAndEventMap func (StyleAndEventComputed record) =
-    StyleAndEventComputed
-        { padding = record.padding
-        , offset = record.offset
-        , overflowVisible = record.overflowVisible
-        , pointerImage = record.pointerImage
-        , border = record.border
-        , borderRadius = record.borderRadius
-        , backGroundColor = record.backGroundColor
-        , onClick = Maybe.map func record.onClick
-        , onPointerEnter = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) record.onPointerEnter
-        , onPointerLeave = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) record.onPointerLeave
-        , onPointerMove = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) record.onPointerLeave
-        , onPointerDown = Maybe.map (\msgFunc pointer -> msgFunc pointer |> func) record.onPointerDown
-        }
+styleAndEventMap : (a -> b) -> StyleAndEvent a -> StyleAndEvent b
+styleAndEventMap func styleAndEvent =
+    case styleAndEvent of
+        Padding int ->
+            Padding int
+
+        Offset vector ->
+            Offset vector
+
+        OverflowVisible ->
+            OverflowVisible
+
+        PointerImage pointerImage_ ->
+            PointerImage pointerImage_
+
+        Border borderStyle ->
+            Border borderStyle
+
+        BorderRadius int ->
+            BorderRadius int
+
+        BackGroundColor color ->
+            BackGroundColor color
+
+        OnClick message ->
+            OnClick (func message)
+
+        OnPointerEnter function ->
+            OnPointerEnter (\pointer -> func (function pointer))
+
+        OnPointerLeave function ->
+            OnPointerLeave (\pointer -> func (function pointer))
+
+        OnPointerMove function ->
+            OnPointerMove (\pointer -> func (function pointer))
+
+        OnPointerDown function ->
+            OnPointerDown (\pointer -> func (function pointer))
 
 
 type ChildrenStyle
@@ -538,7 +570,7 @@ panelToHtml childrenStyle panel =
             vectorImageToHtml vectorImageAttributes
 
         Empty styleAndEvent ->
-            emptyToHtml styleAndEvent
+            emptyToHtml (styleAndEventCompute styleAndEvent)
 
         DepthList depthListAttributes ->
             depthListToHtml depthListAttributes
@@ -552,11 +584,15 @@ panelToHtml childrenStyle panel =
 
 textBoxToHtml : TextBoxAttributes message -> Html.Styled.Html message
 textBoxToHtml (TextBoxAttributes record) =
-    case styleAndEventComputedGetClickEvent record.styleAndEvent of
+    let
+        styleAndEventComputed =
+            styleAndEventCompute record.styleAndEvent
+    in
+    case styleAndEventComputedGetClickEvent styleAndEventComputed of
         Just clickEvent ->
             Html.Styled.button
                 ([ Html.Styled.Attributes.css
-                    [ panelToStyle True record.styleAndEvent
+                    [ panelToStyle True styleAndEventComputed
                     , Css.color record.color
                     , Css.fontSize (Css.px (toFloat record.size))
                     , Css.fontFamilies [ Css.qt record.typeface ]
@@ -566,14 +602,14 @@ textBoxToHtml (TextBoxAttributes record) =
                     ]
                  , Html.Styled.Events.onClick clickEvent
                  ]
-                    ++ eventsToHtmlAttributes record.styleAndEvent
+                    ++ eventsToHtmlAttributes styleAndEventComputed
                 )
                 [ Html.Styled.text record.text ]
 
         Nothing ->
             Html.Styled.div
                 ([ Html.Styled.Attributes.css
-                    [ panelToStyle False record.styleAndEvent
+                    [ panelToStyle False styleAndEventComputed
                     , Css.color record.color
                     , Css.fontSize (Css.px (toFloat record.size))
                     , Css.fontFamilies [ Css.qt record.typeface ]
@@ -582,18 +618,22 @@ textBoxToHtml (TextBoxAttributes record) =
                     , textAlignToStyle record.textAlignment
                     ]
                  ]
-                    ++ eventsToHtmlAttributes record.styleAndEvent
+                    ++ eventsToHtmlAttributes styleAndEventComputed
                 )
                 [ Html.Styled.text record.text ]
 
 
 imageFromUrlToHtml : BitmapImageAttributes message -> Html.Styled.Html message
 imageFromUrlToHtml (BitmapImageAttributes record) =
-    case styleAndEventComputedGetClickEvent record.styleAndEvent of
+    let
+        styleAndEventComputed =
+            styleAndEventCompute record.styleAndEvent
+    in
+    case styleAndEventComputedGetClickEvent styleAndEventComputed of
         Just clickEvent ->
             Html.Styled.button
                 [ Html.Styled.Attributes.css
-                    [ panelToStyle True record.styleAndEvent
+                    [ panelToStyle True styleAndEventComputed
                     ]
                 , Html.Styled.Events.onClick clickEvent
                 ]
@@ -627,7 +667,7 @@ imageFromUrlToHtml (BitmapImageAttributes record) =
         Nothing ->
             Html.Styled.img
                 ([ Html.Styled.Attributes.css
-                    ([ panelToStyle False record.styleAndEvent
+                    ([ panelToStyle False styleAndEventComputed
                      , Css.property "object-fit"
                         (case record.fitStyle of
                             Contain ->
@@ -650,21 +690,25 @@ imageFromUrlToHtml (BitmapImageAttributes record) =
                  , Html.Styled.Attributes.src record.url
                  , Html.Styled.Attributes.alt record.alternativeText
                  ]
-                    ++ eventsToHtmlAttributes record.styleAndEvent
+                    ++ eventsToHtmlAttributes styleAndEventComputed
                 )
                 []
 
 
 vectorImageToHtml : VectorImageAttributes message -> Html.Styled.Html message
 vectorImageToHtml (VectorImageAttributes record) =
-    case styleAndEventComputedGetClickEvent record.styleAndEvent of
+    let
+        styleAndEventComputed =
+            styleAndEventCompute record.styleAndEvent
+    in
+    case styleAndEventComputedGetClickEvent styleAndEventComputed of
         Just clickEvent ->
             Html.Styled.button
                 ([ Html.Styled.Attributes.css
-                    [ panelToStyle False record.styleAndEvent ]
+                    [ panelToStyle False styleAndEventComputed ]
                  , Html.Styled.Events.onClick clickEvent
                  ]
-                    ++ eventsToHtmlAttributes record.styleAndEvent
+                    ++ eventsToHtmlAttributes styleAndEventComputed
                 )
                 [ VectorImage.toHtml
                     record.viewBox
@@ -675,9 +719,9 @@ vectorImageToHtml (VectorImageAttributes record) =
         Nothing ->
             Html.Styled.div
                 ([ Html.Styled.Attributes.css
-                    [ panelToStyle False record.styleAndEvent ]
+                    [ panelToStyle False styleAndEventComputed ]
                  ]
-                    ++ eventsToHtmlAttributes record.styleAndEvent
+                    ++ eventsToHtmlAttributes styleAndEventComputed
                 )
                 [ VectorImage.toHtml
                     record.viewBox
@@ -710,16 +754,20 @@ depthListToHtml :
     DepthListAttributes message
     -> Html.Styled.Html message
 depthListToHtml (DepthListAttributes record) =
+    let
+        styleAndEventComputed =
+            styleAndEventCompute record.styleAndEvent
+    in
     Html.Styled.div
         (List.concat
             [ [ Html.Styled.Attributes.css
-                    [ panelToStyle False record.styleAndEvent
+                    [ panelToStyle False styleAndEventComputed
                     , Css.property "display" "grid"
                     , Css.property "grid-template-rows" "1fr"
                     , Css.property "grid-template-columns" "1fr"
                     ]
               ]
-            , eventsToHtmlAttributes record.styleAndEvent
+            , eventsToHtmlAttributes styleAndEventComputed
             ]
         )
         (List.map
@@ -736,10 +784,14 @@ depthListToHtml (DepthListAttributes record) =
 
 rowListToHtml : RowListAttributes message -> Html.Styled.Html message
 rowListToHtml (RowListAttributes record) =
+    let
+        styleAndEventComputed =
+            styleAndEventCompute record.styleAndEvent
+    in
     Html.Styled.div
         (List.concat
             [ [ Html.Styled.Attributes.css
-                    [ panelToStyle False record.styleAndEvent
+                    [ panelToStyle False styleAndEventComputed
                     , Css.property "display" "grid"
                     , Css.property "grid-template-columns"
                         (sizeListToGridTemplate
@@ -748,7 +800,7 @@ rowListToHtml (RowListAttributes record) =
                     , Css.property "gap" (String.fromInt record.gap ++ "px")
                     ]
               ]
-            , eventsToHtmlAttributes record.styleAndEvent
+            , eventsToHtmlAttributes styleAndEventComputed
             ]
         )
         (List.map
@@ -767,10 +819,14 @@ rowListToHtml (RowListAttributes record) =
 
 columnListToHtml : ColumnListAttributes message -> Html.Styled.Html message
 columnListToHtml (ColumnListAttributes record) =
+    let
+        styleAndEventComputed =
+            styleAndEventCompute record.styleAndEvent
+    in
     Html.Styled.div
         (List.concat
             [ [ Html.Styled.Attributes.css
-                    [ panelToStyle False record.styleAndEvent
+                    [ panelToStyle False styleAndEventComputed
                     , Css.property "display" "grid"
                     , Css.property "grid-template-rows"
                         (sizeListToGridTemplate
@@ -779,7 +835,7 @@ columnListToHtml (ColumnListAttributes record) =
                     , Css.property "gap" (String.fromInt record.gap ++ "px")
                     ]
               ]
-            , eventsToHtmlAttributes record.styleAndEvent
+            , eventsToHtmlAttributes styleAndEventComputed
             ]
         )
         (List.map
@@ -835,15 +891,25 @@ panelToStyle isButtonElement (StyleAndEventComputed record) =
         Nothing ->
             []
     , case record.borderRadius of
-        0 ->
+        BorderRadiusPx 0 ->
             if isButtonElement then
                 [ Css.borderRadius Css.zero ]
 
             else
                 []
 
-        _ ->
-            [ Css.borderRadius (Css.px (toFloat record.borderRadius)) ]
+        BorderRadiusPercent 0 ->
+            if isButtonElement then
+                [ Css.borderRadius Css.zero ]
+
+            else
+                []
+
+        BorderRadiusPx size ->
+            [ Css.borderRadius (Css.px (toFloat size)) ]
+
+        BorderRadiusPercent percent ->
+            [ Css.borderRadius (Css.pct (toFloat percent)) ]
     , case record.backGroundColor of
         Just color ->
             [ Css.backgroundColor color ]
