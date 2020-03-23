@@ -89,49 +89,9 @@ projectList : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
 projectList language logInState =
     Ui.column
         [ Ui.gap 8 ]
-        [ ( Ui.auto
-          , { style = []
-            , text =
-                case language of
-                    Data.LanguageEnglish ->
-                        "home"
-
-                    Data.LanguageJapanese ->
-                        "ここはHome"
-
-                    Data.LanguageEsperanto ->
-                        "Hejmo"
-            , typeface = Component.Style.normalTypeface
-            , size = 16
-            , letterSpacing = 0
-            , color = Css.rgb 200 200 200
-            , textAlignment = Ui.TextAlignStart
-            }
-                |> Ui.TextBoxAttributes
-                |> Ui.textBox
-          )
-        , ( Ui.fix 48, createProjectButton language logInState )
-        , ( Ui.grow
-          , { style = []
-            , text =
-                case language of
-                    Data.LanguageEnglish ->
-                        "List of projects"
-
-                    Data.LanguageJapanese ->
-                        "プロジェクト一覧"
-
-                    Data.LanguageEsperanto ->
-                        "Listo de projektoj"
-            , typeface = Component.Style.normalTypeface
-            , size = 16
-            , letterSpacing = 0
-            , color = Css.rgb 200 200 200
-            , textAlignment = Ui.TextAlignCenter
-            }
-                |> Ui.TextBoxAttributes
-                |> Ui.textBox
-          )
+        [ ( Ui.fix 200, projectLineFirstCreateButton language logInState )
+        , ( Ui.fix 200, projectLine )
+        , ( Ui.fix 200, projectLine )
         ]
 
 
@@ -139,76 +99,127 @@ createProjectButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Ms
 createProjectButton language logInState =
     case logInState of
         Data.LogInState.RequestLogInUrl _ ->
-            { style = []
-            , text = "......"
-            , typeface = Component.Style.normalTypeface
-            , size = 16
-            , letterSpacing = 0
-            , color = Css.rgb 200 200 200
-            , textAlignment = Ui.TextAlignStart
-            }
-                |> Ui.TextBoxAttributes
-                |> Ui.textBox
+            Ui.textBox
+                []
+                (Ui.TextBoxAttributes
+                    { text = "......"
+                    , typeface = Component.Style.normalTypeface
+                    , size = 16
+                    , letterSpacing = 0
+                    , color = Css.rgb 200 200 200
+                    , textAlignment = Ui.TextAlignStart
+                    }
+                )
 
         Data.LogInState.VerifyingAccessToken _ ->
-            { style = []
-            , text =
-                case language of
-                    Data.LanguageEnglish ->
-                        "Verifying..."
+            Ui.textBox
+                []
+                (Ui.TextBoxAttributes
+                    { text =
+                        case language of
+                            Data.LanguageEnglish ->
+                                "Verifying..."
 
-                    Data.LanguageJapanese ->
-                        "認証中…"
+                            Data.LanguageJapanese ->
+                                "認証中…"
 
-                    Data.LanguageEsperanto ->
-                        "Aŭtentigado ..."
-            , typeface = Component.Style.normalTypeface
-            , size = 16
-            , letterSpacing = 0
-            , color = Css.rgb 200 200 200
-            , textAlignment = Ui.TextAlignStart
-            }
-                |> Ui.TextBoxAttributes
-                |> Ui.textBox
+                            Data.LanguageEsperanto ->
+                                "Aŭtentigado ..."
+                    , typeface = Component.Style.normalTypeface
+                    , size = 16
+                    , letterSpacing = 0
+                    , color = Css.rgb 200 200 200
+                    , textAlignment = Ui.TextAlignStart
+                    }
+                )
 
         Data.LogInState.GuestUser ->
-            { style = []
-            , text =
-                case language of
-                    Data.LanguageEnglish ->
-                        "Creating guest user projects has not been completed yet"
+            Ui.textBox
+                []
+                (Ui.TextBoxAttributes
+                    { text =
+                        case language of
+                            Data.LanguageEnglish ->
+                                "Creating guest user projects has not been completed yet"
 
-                    Data.LanguageJapanese ->
-                        "ゲストユーザーのプロジェクトの作成は,まだできていない"
+                            Data.LanguageJapanese ->
+                                "ゲストユーザーのプロジェクトの作成は,まだできていない"
 
-                    Data.LanguageEsperanto ->
-                        "Krei projektojn de invititaj uzantoj ankoraŭ ne estas finita"
-            , typeface = Component.Style.normalTypeface
-            , size = 16
-            , letterSpacing = 0
-            , color = Css.rgb 200 200 200
-            , textAlignment = Ui.TextAlignStart
-            }
-                |> Ui.TextBoxAttributes
-                |> Ui.textBox
+                            Data.LanguageEsperanto ->
+                                "Krei projektojn de invititaj uzantoj ankoraŭ ne estas finita"
+                    , typeface = Component.Style.normalTypeface
+                    , size = 16
+                    , letterSpacing = 0
+                    , color = Css.rgb 200 200 200
+                    , textAlignment = Ui.TextAlignStart
+                    }
+                )
 
         Data.LogInState.Ok { accessToken } ->
-            { style = []
-            , text =
-                case language of
-                    Data.LanguageEnglish ->
-                        "Create a new project"
+            Ui.textBox
+                []
+                (Ui.TextBoxAttributes
+                    { text =
+                        case language of
+                            Data.LanguageEnglish ->
+                                "Create a new project"
 
-                    Data.LanguageJapanese ->
-                        "プロジェクトを新規作成"
+                            Data.LanguageJapanese ->
+                                "プロジェクトを新規作成"
 
-                    Data.LanguageEsperanto ->
-                        "Krei novan projekton"
-            , typeface = Component.Style.normalTypeface
-            , size = 16
-            , letterSpacing = 0
-            , color = Css.rgb 200 200 200
-            , textAlignment = Ui.TextAlignStart
-            }
-                |> Ui.TextBoxAttributes
-                |> Ui.textBox
+                            Data.LanguageEsperanto ->
+                                "Krei novan projekton"
+                    , typeface = Component.Style.normalTypeface
+                    , size = 16
+                    , letterSpacing = 0
+                    , color = Css.rgb 200 200 200
+                    , textAlignment = Ui.TextAlignStart
+                    }
+                )
+
+
+projectLineFirstCreateButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
+projectLineFirstCreateButton language logInState =
+    Ui.row
+        [ Ui.gap 8 ]
+        [ ( Ui.fix 320, createProjectButton language logInState )
+        , ( Ui.fix 320, projectItem )
+        , ( Ui.fix 320, projectItem )
+        ]
+
+
+projectLine : Ui.Panel message
+projectLine =
+    Ui.row
+        [ Ui.gap 8 ]
+        [ ( Ui.fix 320, projectItem )
+        , ( Ui.fix 320, projectItem )
+        , ( Ui.fix 320, projectItem )
+        ]
+
+
+projectItem : Ui.Panel message
+projectItem =
+    Ui.depth
+        []
+        [ Ui.bitmapImage
+            []
+            (Ui.BitmapImageAttributes
+                { url = "https://narumincho.com/assets/definy20190212.jpg"
+                , fitStyle = Ui.Cover
+                , alternativeText = "プロジェクト画像"
+                , rendering = Ui.ImageRenderingPixelated
+                }
+            )
+        , Ui.textBox
+            [ Ui.alignSelf Ui.end ]
+            (Ui.TextBoxAttributes
+                { text = "プロジェクト名"
+                , typeface = Component.Style.normalTypeface
+                , size = 16
+                , letterSpacing = 0
+                , color = Css.rgb 200 200 200
+                , textAlignment = Ui.TextAlignStart
+                }
+            )
+        ]

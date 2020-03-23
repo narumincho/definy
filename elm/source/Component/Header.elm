@@ -34,9 +34,9 @@ logo : ( Ui.Size, Ui.Panel msg )
 logo =
     ( Ui.auto
     , Ui.textBox
+        [ Ui.padding 8 ]
         (Ui.TextBoxAttributes
-            { style = [ Ui.padding 8 ]
-            , text = "Definy"
+            { text = "Definy"
             , typeface = Component.Style.codeFontTypeface
             , size = 32
             , letterSpacing = 0
@@ -50,9 +50,9 @@ logo =
 guestItem : Ui.Panel msg
 guestItem =
     Ui.textBox
+        []
         (Ui.TextBoxAttributes
-            { style = []
-            , text = "ゲスト"
+            { text = "ゲスト"
             , typeface = Component.Style.normalTypeface
             , size = 16
             , letterSpacing = 0
@@ -70,9 +70,9 @@ userIcon imageBlobUrlDict userData =
             Just blobUrl ->
                 [ ( Ui.auto
                   , Ui.bitmapImage
+                        [ Ui.borderRadius (Ui.BorderRadiusPercent 50) ]
                         (Ui.BitmapImageAttributes
-                            { style = [ Ui.borderRadius (Ui.BorderRadiusPercent 50) ]
-                            , url = blobUrl
+                            { url = blobUrl
                             , fitStyle = Ui.Contain
                             , alternativeText = userData.name ++ "のユーザーアイコン"
                             , rendering = Ui.ImageRenderingPixelated
@@ -85,9 +85,9 @@ userIcon imageBlobUrlDict userData =
                 []
          , [ ( Ui.auto
              , Ui.textBox
+                [ Ui.alignSelf Ui.center ]
                 (Ui.TextBoxAttributes
-                    { style = []
-                    , text = userData.name
+                    { text = userData.name
                     , typeface = Component.Style.normalTypeface
                     , size = 16
                     , letterSpacing = 0

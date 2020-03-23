@@ -162,26 +162,27 @@ cardItem index (CardStyle record) =
             Ui.row
                 [ Ui.backgroundColor (Css.rgb 0 100 0) ]
                 [ ( Ui.fix 48
-                  , { style = [ Ui.padding 4 ]
-                    , url = icon.url
-                    , fitStyle = Ui.Contain
-                    , alternativeText = icon.alternativeText
-                    , rendering = Ui.ImageRenderingPixelated
-                    }
-                        |> Ui.BitmapImageAttributes
-                        |> Ui.bitmapImage
+                  , Ui.bitmapImage [ Ui.padding 4 ]
+                        (Ui.BitmapImageAttributes
+                            { url = icon.url
+                            , fitStyle = Ui.Contain
+                            , alternativeText = icon.alternativeText
+                            , rendering = Ui.ImageRenderingPixelated
+                            }
+                        )
                   )
                 , ( Ui.grow
-                  , { style = [ Ui.padding 8 ]
-                    , text = record.text
-                    , typeface = Style.normalTypeface
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 255 255 255
-                    , textAlignment = Ui.TextAlignStart
-                    }
-                        |> Ui.TextBoxAttributes
-                        |> Ui.textBox
+                  , Ui.textBox
+                        [ Ui.padding 8 ]
+                        (Ui.TextBoxAttributes
+                            { text = record.text
+                            , typeface = Style.normalTypeface
+                            , size = 16
+                            , letterSpacing = 0
+                            , color = Css.rgb 255 255 255
+                            , textAlignment = Ui.TextAlignStart
+                            }
+                        )
                   )
                 , ( Ui.fix 32, Ui.button [] (DeleteAt index) Icon.close )
                 ]
@@ -191,16 +192,17 @@ cardItem index (CardStyle record) =
                 [ Ui.backgroundColor (Css.rgb 0 100 0) ]
                 [ ( Ui.fix 32, Ui.empty [] )
                 , ( Ui.grow
-                  , { style = [ Ui.padding 8 ]
-                    , text = record.text
-                    , typeface = Style.normalTypeface
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 255 255 255
-                    , textAlignment = Ui.TextAlignStart
-                    }
-                        |> Ui.TextBoxAttributes
-                        |> Ui.textBox
+                  , Ui.textBox
+                        [ Ui.padding 8 ]
+                        (Ui.TextBoxAttributes
+                            { text = record.text
+                            , typeface = Style.normalTypeface
+                            , size = 16
+                            , letterSpacing = 0
+                            , color = Css.rgb 255 255 255
+                            , textAlignment = Ui.TextAlignStart
+                            }
+                        )
                   )
                 , ( Ui.fix 32, Icon.close |> Ui.map (always (DeleteAt index)) )
                 ]

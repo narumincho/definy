@@ -724,9 +724,9 @@ logInPanel logInState language windowSize =
         Data.LogInState.RequestLogInUrl _ ->
             ( Ui.auto
             , Ui.textBox
+                []
                 (Ui.TextBoxAttributes
-                    { style = []
-                    , textAlignment = Ui.TextAlignCenter
+                    { textAlignment = Ui.TextAlignCenter
                     , text = "ログイン画面をリクエスト中……"
                     , typeface = Component.Style.fontHackName
                     , size = 16
@@ -739,9 +739,9 @@ logInPanel logInState language windowSize =
         Data.LogInState.VerifyingAccessToken _ ->
             ( Ui.auto
             , Ui.textBox
+                []
                 (Ui.TextBoxAttributes
-                    { style = []
-                    , textAlignment = Ui.TextAlignCenter
+                    { textAlignment = Ui.TextAlignCenter
                     , text = "認証中……"
                     , typeface = Component.Style.fontHackName
                     , size = 16
@@ -754,9 +754,9 @@ logInPanel logInState language windowSize =
         Data.LogInState.Ok record ->
             ( Ui.auto
             , Ui.textBox
+                []
                 (Ui.TextBoxAttributes
-                    { style = []
-                    , textAlignment = Ui.TextAlignCenter
+                    { textAlignment = Ui.TextAlignCenter
                     , text = "ログイン成功"
                     , typeface = Component.Style.fontHackName
                     , size = 16
@@ -799,9 +799,9 @@ googleLogInButton language =
         [ ( Ui.fix 48, Icon.googleIcon (Css.rgb 255 255 255) )
         , ( Ui.grow
           , Ui.textBox
+                []
                 (Ui.TextBoxAttributes
-                    { style = []
-                    , textAlignment = Ui.TextAlignStart
+                    { textAlignment = Ui.TextAlignStart
                     , text =
                         case language of
                             Data.LanguageEnglish ->
@@ -833,9 +833,9 @@ gitHubLogInButton language =
         [ ( Ui.fix 48, Icon.gitHubIcon (Css.rgb 255 255 255) )
         , ( Ui.grow
           , Ui.textBox
+                []
                 (Ui.TextBoxAttributes
-                    { style = []
-                    , textAlignment = Ui.TextAlignStart
+                    { textAlignment = Ui.TextAlignStart
                     , text =
                         case language of
                             Data.LanguageEnglish ->
