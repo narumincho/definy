@@ -1,5 +1,5 @@
 module Ui exposing
-    ( AlignSelf
+    ( AlignOrJustifySelf
     , BitmapImageAttributes(..)
     , BorderRadius(..)
     , BorderStyle(..)
@@ -27,6 +27,7 @@ module Ui exposing
     , fix
     , gap
     , grow
+    , justifySelf
     , map
     , offset
     , overflowVisible
@@ -144,39 +145,39 @@ auto =
     Auto
 
 
-type AlignSelf
-    = AlignSelfStretch
-    | AlignSelfStart
-    | AlignSelfCenter
-    | AlignSelfEnd
+type AlignOrJustifySelf
+    = Stretch
+    | Start
+    | Center
+    | End
 
 
 {-| グリッドセル内で領域いっぱいに伸びる （デフォルト）
 -}
-stretch : AlignSelf
+stretch : AlignOrJustifySelf
 stretch =
-    AlignSelfStretch
+    Stretch
 
 
-{-| グリッドセル内で上に寄せる
+{-| グリッドセル内で上,左に寄せる
 -}
-start : AlignSelf
+start : AlignOrJustifySelf
 start =
-    AlignSelfStart
+    Start
 
 
 {-| グリッドセル内で中央に寄せる
 -}
-center : AlignSelf
+center : AlignOrJustifySelf
 center =
-    AlignSelfCenter
+    Center
 
 
-{-| グリッドセル内で下に寄せるg
+{-| グリッドセル内で下,右に寄せる
 -}
-end : AlignSelf
+end : AlignOrJustifySelf
 end =
-    AlignSelfEnd
+    End
 
 
 {-| ポインターのイベントで受け取れるマウスの状態
@@ -226,7 +227,8 @@ type StyleComputed
         , borderRadius : BorderRadius
         , backGroundColor : Maybe Css.Color
         , gap : Int
-        , alignSelf : AlignSelf
+        , alignSelf : AlignOrJustifySelf
+        , justifySelf : AlignOrJustifySelf
         }
 
 
@@ -239,7 +241,8 @@ type Style
     | BorderRadius BorderRadius
     | BackGroundColor Css.Color
     | Gap Int
-    | AlignSelf AlignSelf
+    | AlignSelf AlignOrJustifySelf
+    | JustifySelf AlignOrJustifySelf
 
 
 type BorderRadius
@@ -327,11 +330,18 @@ gap =
     Gap
 
 
-{-| グリッドセル内での揃え方を指定できる デフォルトはStretch
+{-| グリッドセル内での副軸(縦)方向の揃え方を指定できる. デフォルトはStretch
 -}
-alignSelf : AlignSelf -> Style
+alignSelf : AlignOrJustifySelf -> Style
 alignSelf =
     AlignSelf
+
+
+{-| グリッドセル内での主軸(横)方向の揃え方を指定できる デフォルトはStretch
+-}
+justifySelf : AlignOrJustifySelf -> Style
+justifySelf =
+    JustifySelf
 
 
 {-| テキストボックス
@@ -453,6 +463,9 @@ styleAndEventCompute list =
 
                     AlignSelf value ->
                         { rest | alignSelf = value }
+
+                    JustifySelf value ->
+                        { rest | justifySelf = value }
                 )
 
         [] ->
@@ -470,7 +483,8 @@ defaultStyleAndEvent =
         , borderRadius = BorderRadiusPx 0
         , backGroundColor = Nothing
         , gap = 0
-        , alignSelf = AlignSelfStretch
+        , alignSelf = Stretch
+        , justifySelf = Stretch
         }
 
 
@@ -591,22 +605,22 @@ textBoxToHtml gridCell sizeArea styleComputed (TextBoxAttributes record) =
             , gridCellToCssStyle gridCell
             , Css.batch
                 (case sizeArea.width of
-                    Fix px ->
-                        [ Css.width (Css.px (toFloat px)) ]
+                    Fix _ ->
+                        []
 
                     Grow ->
-                        [ Css.width (Css.pct 100) ]
+                        []
 
                     Auto ->
                         [ Css.width Css.auto ]
                 )
             , Css.batch
                 (case sizeArea.height of
-                    Fix px ->
-                        [ Css.height (Css.px (toFloat px)) ]
+                    Fix _ ->
+                        []
 
                     Grow ->
-                        [ Css.height (Css.pct 100) ]
+                        []
 
                     Auto ->
                         [ Css.height Css.auto ]
@@ -769,28 +783,6 @@ depthListToHtml gridCell sizeArea styleComputed children =
             , Css.property "grid-template-rows" "1fr"
             , Css.property "grid-template-columns" "1fr"
             , gridCellToCssStyle gridCell
-            , Css.batch
-                (case sizeArea.width of
-                    Fix px ->
-                        [ Css.width (Css.px (toFloat px)) ]
-
-                    Grow ->
-                        [ Css.width (Css.pct 100) ]
-
-                    Auto ->
-                        [ Css.width Css.auto ]
-                )
-            , Css.batch
-                (case sizeArea.height of
-                    Fix px ->
-                        [ Css.height (Css.px (toFloat px)) ]
-
-                    Grow ->
-                        [ Css.height (Css.pct 100) ]
-
-                    Auto ->
-                        [ Css.height Css.auto ]
-                )
             ]
         ]
         (List.map
@@ -813,28 +805,6 @@ rowListToHtml gridCell sizeArea styleComputed children =
                     (List.map Tuple.first children)
                 )
             , gridCellToCssStyle gridCell
-            , Css.batch
-                (case sizeArea.width of
-                    Fix px ->
-                        [ Css.width (Css.px (toFloat px)) ]
-
-                    Grow ->
-                        [ Css.width (Css.pct 100) ]
-
-                    Auto ->
-                        [ Css.width Css.auto ]
-                )
-            , Css.batch
-                (case sizeArea.height of
-                    Fix px ->
-                        [ Css.height (Css.px (toFloat px)) ]
-
-                    Grow ->
-                        [ Css.height (Css.pct 100) ]
-
-                    Auto ->
-                        [ Css.height Css.auto ]
-                )
             ]
         ]
         (List.indexedMap
@@ -859,26 +829,6 @@ columnListToHtml gridCell sizeArea styleComputed children =
                     (List.map Tuple.first children)
                 )
             , gridCellToCssStyle gridCell
-            , case sizeArea.width of
-                Fix px ->
-                    Css.width (Css.px (toFloat px))
-
-                Grow ->
-                    Css.width (Css.pct 100)
-
-                Auto ->
-                    Css.width Css.auto
-            , Css.batch
-                (case sizeArea.height of
-                    Fix px ->
-                        [ Css.height (Css.px (toFloat px)) ]
-
-                    Grow ->
-                        [ Css.height (Css.pct 100) ]
-
-                    Auto ->
-                        [ Css.height Css.auto ]
-                )
             ]
         ]
         (List.indexedMap
@@ -958,17 +908,31 @@ styleComputedToCssStyle isButtonElement (StyleComputed record) =
     [ [ Css.padding (Css.px (toFloat record.padding))
       , Css.alignSelf
             (case record.alignSelf of
-                AlignSelfStretch ->
+                Stretch ->
                     Css.stretch
 
-                AlignSelfStart ->
+                Start ->
                     Css.start
 
-                AlignSelfCenter ->
+                Center ->
                     Css.center
 
-                AlignSelfEnd ->
+                End ->
                     Css.end
+            )
+      , Css.property "justify-self"
+            (case record.justifySelf of
+                Stretch ->
+                    "stretch"
+
+                Start ->
+                    "start"
+
+                Center ->
+                    "center"
+
+                End ->
+                    "end"
             )
       ]
     , if isButtonElement then

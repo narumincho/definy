@@ -89,7 +89,7 @@ view language logInState (Model rec) =
 projectList : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
 projectList language logInState =
     Ui.column
-        [ Ui.gap 8 ]
+        [ Ui.gap 8, Ui.justifySelf Ui.center, Ui.padding 8 ]
         [ ( Ui.fix 200, projectLineFirstCreateButton language logInState )
         , ( Ui.fix 200, projectLine )
         , ( Ui.fix 200, projectLine )
@@ -219,7 +219,7 @@ projectItem =
                 }
             )
         , Ui.textBox
-            [ Ui.alignSelf Ui.end, Ui.backgroundColor (Css.rgba 0 0 0 0.6) ]
+            [ Ui.alignSelf Ui.end, Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
             (Ui.TextBoxAttributes
                 { text = "プロジェクト名"
                 , typeface = Component.Style.normalTypeface

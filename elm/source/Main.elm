@@ -753,17 +753,7 @@ logInPanel logInState language windowSize =
 
         Data.LogInState.Ok record ->
             ( Ui.auto
-            , Ui.textBox
-                []
-                (Ui.TextBoxAttributes
-                    { textAlignment = Ui.TextAlignCenter
-                    , text = "ログイン成功"
-                    , typeface = Component.Style.fontHackName
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 255 255 255
-                    }
-                )
+            , Ui.empty []
             )
 
 
