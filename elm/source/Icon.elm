@@ -49,11 +49,10 @@ googleIcon backgroundColor =
         |> Ui.vectorImage
 
 
-close : Ui.Panel ()
+close : Ui.Panel message
 close =
     { styleAndEvent =
         [ Ui.padding 8
-        , Ui.onClick ()
         ]
     , fitStyle = Ui.Contain
     , viewBox = { x = 0, y = 0, width = 10, height = 10 }

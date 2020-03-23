@@ -195,7 +195,7 @@ cardItem index (CardStyle record) =
                         |> Ui.TextBoxAttributes
                         |> Ui.textBox
                   )
-                , ( Ui.fix 32, Icon.close |> Ui.map (always (DeleteAt index)) )
+                , ( Ui.fix 32, Ui.button [] (DeleteAt index) Icon.close )
                 ]
             }
                 |> Ui.RowListAttributes

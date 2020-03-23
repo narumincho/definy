@@ -808,8 +808,7 @@ logInPanelLogInButton language { width, height } =
 googleLogInButton : Data.Language -> Ui.Panel Msg
 googleLogInButton language =
     { styleAndEvent =
-        [ Ui.onClick (RequestLogInUrl Data.OpenIdConnectProviderGoogle)
-        , Ui.borderRadius (Ui.BorderRadiusPx 8)
+        [ Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.backgroundColor (Css.rgb 66 133 244)
         ]
     , gap = 8
@@ -841,13 +840,13 @@ googleLogInButton language =
     }
         |> Ui.RowListAttributes
         |> Ui.row
+        |> Ui.button [] (RequestLogInUrl Data.OpenIdConnectProviderGoogle)
 
 
 gitHubLogInButton : Data.Language -> Ui.Panel Msg
 gitHubLogInButton language =
     { styleAndEvent =
-        [ Ui.onClick (RequestLogInUrl Data.OpenIdConnectProviderGitHub)
-        , Ui.borderRadius (Ui.BorderRadiusPx 8)
+        [ Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.backgroundColor (Css.rgb 32 32 32)
         ]
     , gap = 8
@@ -879,6 +878,7 @@ gitHubLogInButton language =
     }
         |> Ui.RowListAttributes
         |> Ui.row
+        |> Ui.button [] (RequestLogInUrl Data.OpenIdConnectProviderGitHub)
 
 
 gutterTypeToCursorStyle : GutterType -> Ui.PointerImage

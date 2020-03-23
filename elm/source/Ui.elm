@@ -19,6 +19,7 @@ module Ui exposing
     , bitmapImage
     , border
     , borderRadius
+    , button
     , column
     , depth
     , empty
@@ -26,7 +27,6 @@ module Ui exposing
     , grow
     , map
     , offset
-    , onClick
     , onPointerDown
     , onPointerEnter
     , onPointerLeave
@@ -63,6 +63,7 @@ type Panel message
     | DepthList (DepthListAttributes message)
     | RowList (RowListAttributes message)
     | ColumnList (ColumnListAttributes message)
+    | Button (ButtonAttributes message)
 
 
 type TextBoxAttributes message
@@ -116,6 +117,14 @@ type ColumnListAttributes message
         { styleAndEvent : List (StyleAndEvent message)
         , gap : Int
         , children : List ( Size, Panel message )
+        }
+
+
+type ButtonAttributes message
+    = ButtonAttributes
+        { styleAndEvent : List (StyleAndEvent message)
+        , clickMessage : message
+        , child : Panel message
         }
 
 
@@ -198,7 +207,6 @@ type StyleAndEventComputed message
         , border : Maybe BorderStyle
         , borderRadius : BorderRadius
         , backGroundColor : Maybe Css.Color
-        , onClick : Maybe message
         , onPointerEnter : Maybe (Pointer -> message)
         , onPointerLeave : Maybe (Pointer -> message)
         , onPointerMove : Maybe (Pointer -> message)
@@ -214,7 +222,6 @@ type StyleAndEvent message
     | Border BorderStyle
     | BorderRadius BorderRadius
     | BackGroundColor Css.Color
-    | OnClick message
     | OnPointerEnter (Pointer -> message)
     | OnPointerLeave (Pointer -> message)
     | OnPointerMove (Pointer -> message)
@@ -299,11 +306,6 @@ backgroundColor =
     BackGroundColor
 
 
-onClick : message -> StyleAndEvent message
-onClick =
-    OnClick
-
-
 onPointerEnter : (Pointer -> message) -> StyleAndEvent message
 onPointerEnter =
     OnPointerEnter
@@ -350,8 +352,21 @@ vectorImage =
 {-| からのパネル
 -}
 empty : List (StyleAndEvent message) -> Panel message
-empty styleAndEventList =
-    Empty styleAndEventList
+empty =
+    Empty
+
+
+{-| ボタン
+-}
+button : List (StyleAndEvent message) -> message -> Panel message -> Panel message
+button styleAndEvent clickMessage child =
+    Button
+        (ButtonAttributes
+            { styleAndEvent = styleAndEvent
+            , clickMessage = clickMessage
+            , child = child
+            }
+        )
 
 
 {-| パネルを同じ領域に重ねる
@@ -406,9 +421,6 @@ styleAndEventCompute list =
                     BackGroundColor color ->
                         { rest | backGroundColor = Just color }
 
-                    OnClick message ->
-                        { rest | onClick = Just message }
-
                     OnPointerEnter function ->
                         { rest | onPointerEnter = Just function }
 
@@ -436,7 +448,6 @@ defaultStyleAndEvent =
         , border = Nothing
         , borderRadius = BorderRadiusPx 0
         , backGroundColor = Nothing
-        , onClick = Nothing
         , onPointerEnter = Nothing
         , onPointerLeave = Nothing
         , onPointerMove = Nothing
@@ -483,6 +494,15 @@ map func panel =
 
         Empty styleAndEvent ->
             Empty (List.map (styleAndEventMap func) styleAndEvent)
+
+        Button (ButtonAttributes record) ->
+            Button
+                (ButtonAttributes
+                    { styleAndEvent = List.map (styleAndEventMap func) record.styleAndEvent
+                    , clickMessage = func record.clickMessage
+                    , child = map func record.child
+                    }
+                )
 
         DepthList (DepthListAttributes record) ->
             DepthList
@@ -535,9 +555,6 @@ styleAndEventMap func styleAndEvent =
         BackGroundColor color ->
             BackGroundColor color
 
-        OnClick message ->
-            OnClick (func message)
-
         OnPointerEnter function ->
             OnPointerEnter (\pointer -> func (function pointer))
 
@@ -549,11 +566,6 @@ styleAndEventMap func styleAndEvent =
 
         OnPointerDown function ->
             OnPointerDown (\pointer -> func (function pointer))
-
-
-styleAndEventComputedGetClickEvent : StyleAndEventComputed message -> Maybe message
-styleAndEventComputedGetClickEvent (StyleAndEventComputed record) =
-    record.onClick
 
 
 type alias SizeArea =
@@ -577,6 +589,9 @@ panelToHtml sizeArea panel =
         Empty styleAndEvent ->
             emptyToHtml sizeArea (styleAndEventCompute styleAndEvent)
 
+        Button buttonAttributes ->
+            buttonToHtml sizeArea buttonAttributes
+
         DepthList depthListAttributes ->
             depthListToHtml sizeArea depthListAttributes
 
@@ -593,61 +608,42 @@ textBoxToHtml sizeArea (TextBoxAttributes record) =
         styleAndEventComputed =
             styleAndEventCompute record.styleAndEvent
     in
-    case styleAndEventComputedGetClickEvent styleAndEventComputed of
-        Just clickEvent ->
-            Html.Styled.button
-                ([ Html.Styled.Attributes.css
-                    [ panelToStyle True styleAndEventComputed
-                    , Css.color record.color
-                    , Css.fontSize (Css.px (toFloat record.size))
-                    , Css.fontFamilies [ Css.qt record.typeface ]
-                    , Css.letterSpacing (Css.px record.letterSpacing)
-                    , Css.overflowWrap Css.breakWord
-                    , textAlignToStyle record.textAlignment
-                    , Css.batch
-                        (case sizeArea.width of
-                            Fix px ->
-                                [ Css.width (Css.px (toFloat px)) ]
+    Html.Styled.div
+        ([ Html.Styled.Attributes.css
+            [ panelToStyle False styleAndEventComputed
+            , Css.color record.color
+            , Css.fontSize (Css.px (toFloat record.size))
+            , Css.fontFamilies [ Css.qt record.typeface ]
+            , Css.letterSpacing (Css.px record.letterSpacing)
+            , Css.overflowWrap Css.breakWord
+            , textAlignToStyle record.textAlignment
+            , Css.batch
+                (case sizeArea.width of
+                    Fix px ->
+                        [ Css.width (Css.px (toFloat px)) ]
 
-                            Grow ->
-                                []
+                    Grow ->
+                        [ Css.width (Css.pct 100) ]
 
-                            Auto ->
-                                []
-                        )
-                    , Css.batch
-                        (case sizeArea.height of
-                            Fix px ->
-                                [ Css.height (Css.px (toFloat px)) ]
-
-                            Grow ->
-                                [ Css.height (Css.pct 100) ]
-
-                            Auto ->
-                                []
-                        )
-                    ]
-                 , Html.Styled.Events.onClick clickEvent
-                 ]
-                    ++ eventsToHtmlAttributes styleAndEventComputed
+                    Auto ->
+                        [ Css.width Css.auto ]
                 )
-                [ Html.Styled.text record.text ]
+            , Css.batch
+                (case sizeArea.height of
+                    Fix px ->
+                        [ Css.height (Css.px (toFloat px)) ]
 
-        Nothing ->
-            Html.Styled.div
-                ([ Html.Styled.Attributes.css
-                    [ panelToStyle False styleAndEventComputed
-                    , Css.color record.color
-                    , Css.fontSize (Css.px (toFloat record.size))
-                    , Css.fontFamilies [ Css.qt record.typeface ]
-                    , Css.letterSpacing (Css.px record.letterSpacing)
-                    , Css.overflowWrap Css.breakWord
-                    , textAlignToStyle record.textAlignment
-                    ]
-                 ]
-                    ++ eventsToHtmlAttributes styleAndEventComputed
+                    Grow ->
+                        [ Css.height (Css.pct 100) ]
+
+                    Auto ->
+                        [ Css.height Css.auto ]
                 )
-                [ Html.Styled.text record.text ]
+            ]
+         ]
+            ++ eventsToHtmlAttributes styleAndEventComputed
+        )
+        [ Html.Styled.text record.text ]
 
 
 imageFromUrlToHtml : SizeArea -> BitmapImageAttributes message -> Html.Styled.Html message
@@ -656,114 +652,56 @@ imageFromUrlToHtml sizeArea (BitmapImageAttributes record) =
         styleAndEventComputed =
             styleAndEventCompute record.styleAndEvent
     in
-    case styleAndEventComputedGetClickEvent styleAndEventComputed of
-        Just clickEvent ->
-            Html.Styled.button
-                [ Html.Styled.Attributes.css
-                    [ panelToStyle True styleAndEventComputed
-                    , Css.batch
-                        (case sizeArea.width of
-                            Fix px ->
-                                [ Css.width (Css.px (toFloat px)) ]
+    Html.Styled.img
+        ([ Html.Styled.Attributes.css
+            ([ panelToStyle False styleAndEventComputed
+             , Css.property "object-fit"
+                (case record.fitStyle of
+                    Contain ->
+                        "contain"
 
-                            Grow ->
-                                [ Css.width (Css.pct 100) ]
-
-                            Auto ->
-                                [ Css.width Css.auto ]
-                        )
-                    , Css.batch
-                        (case sizeArea.height of
-                            Fix px ->
-                                [ Css.height (Css.px (toFloat px)) ]
-
-                            Grow ->
-                                [ Css.height (Css.pct 100) ]
-
-                            Auto ->
-                                [ Css.height Css.auto ]
-                        )
-                    ]
-                , Html.Styled.Events.onClick clickEvent
-                ]
-                [ Html.Styled.img
-                    [ Html.Styled.Attributes.css
-                        ([ Css.property "object-fit"
-                            (case record.fitStyle of
-                                Contain ->
-                                    "contain"
-
-                                Cover ->
-                                    "cover"
-                            )
-                         , Css.display Css.block
-                         ]
-                            ++ (case record.rendering of
-                                    ImageRenderingAuto ->
-                                        []
-
-                                    ImageRenderingPixelated ->
-                                        [ Css.property "image-rendering" "pixelated"
-                                        ]
-                               )
-                        )
-                    , Html.Styled.Attributes.src record.url
-                    , Html.Styled.Attributes.alt record.alternativeText
-                    ]
-                    []
-                ]
-
-        Nothing ->
-            Html.Styled.img
-                ([ Html.Styled.Attributes.css
-                    ([ panelToStyle False styleAndEventComputed
-                     , Css.property "object-fit"
-                        (case record.fitStyle of
-                            Contain ->
-                                "contain"
-
-                            Cover ->
-                                "cover"
-                        )
-                     , Css.display Css.block
-                     , Css.batch
-                        (case sizeArea.width of
-                            Fix px ->
-                                [ Css.width (Css.px (toFloat px)) ]
-
-                            Grow ->
-                                [ Css.width (Css.pct 100) ]
-
-                            Auto ->
-                                [ Css.width Css.auto ]
-                        )
-                     , Css.batch
-                        (case sizeArea.height of
-                            Fix px ->
-                                [ Css.height (Css.px (toFloat px)) ]
-
-                            Grow ->
-                                [ Css.height (Css.pct 100) ]
-
-                            Auto ->
-                                [ Css.height Css.auto ]
-                        )
-                     ]
-                        ++ (case record.rendering of
-                                ImageRenderingAuto ->
-                                    []
-
-                                ImageRenderingPixelated ->
-                                    [ Css.property "image-rendering" "pixelated"
-                                    ]
-                           )
-                    )
-                 , Html.Styled.Attributes.src record.url
-                 , Html.Styled.Attributes.alt record.alternativeText
-                 ]
-                    ++ eventsToHtmlAttributes styleAndEventComputed
+                    Cover ->
+                        "cover"
                 )
-                []
+             , Css.display Css.block
+             , Css.batch
+                (case sizeArea.width of
+                    Fix px ->
+                        [ Css.width (Css.px (toFloat px)) ]
+
+                    Grow ->
+                        [ Css.width (Css.pct 100) ]
+
+                    Auto ->
+                        [ Css.width Css.auto ]
+                )
+             , Css.batch
+                (case sizeArea.height of
+                    Fix px ->
+                        [ Css.height (Css.px (toFloat px)) ]
+
+                    Grow ->
+                        [ Css.height (Css.pct 100) ]
+
+                    Auto ->
+                        [ Css.height Css.auto ]
+                )
+             ]
+                ++ (case record.rendering of
+                        ImageRenderingAuto ->
+                            []
+
+                        ImageRenderingPixelated ->
+                            [ Css.property "image-rendering" "pixelated"
+                            ]
+                   )
+            )
+         , Html.Styled.Attributes.src record.url
+         , Html.Styled.Attributes.alt record.alternativeText
+         ]
+            ++ eventsToHtmlAttributes styleAndEventComputed
+        )
+        []
 
 
 vectorImageToHtml : SizeArea -> VectorImageAttributes message -> Html.Styled.Html message
@@ -772,148 +710,89 @@ vectorImageToHtml sizeArea (VectorImageAttributes record) =
         styleAndEventComputed =
             styleAndEventCompute record.styleAndEvent
     in
-    case styleAndEventComputedGetClickEvent styleAndEventComputed of
-        Just clickEvent ->
-            Html.Styled.button
-                ([ Html.Styled.Attributes.css
-                    [ panelToStyle False styleAndEventComputed
-                    , Css.batch
-                        (case sizeArea.width of
-                            Fix px ->
-                                [ Css.width (Css.px (toFloat px)) ]
+    Html.Styled.div
+        ([ Html.Styled.Attributes.css
+            [ panelToStyle False styleAndEventComputed
+            , Css.batch
+                (case sizeArea.width of
+                    Fix px ->
+                        [ Css.width (Css.px (toFloat px)) ]
 
-                            Grow ->
-                                [ Css.width (Css.pct 100) ]
+                    Grow ->
+                        [ Css.width (Css.pct 100) ]
 
-                            Auto ->
-                                [ Css.width Css.auto ]
-                        )
-                    , Css.batch
-                        (case sizeArea.height of
-                            Fix px ->
-                                [ Css.height (Css.px (toFloat px)) ]
-
-                            Grow ->
-                                [ Css.height (Css.pct 100) ]
-
-                            Auto ->
-                                [ Css.height Css.auto ]
-                        )
-                    ]
-                 , Html.Styled.Events.onClick clickEvent
-                 ]
-                    ++ eventsToHtmlAttributes styleAndEventComputed
+                    Auto ->
+                        [ Css.width Css.auto ]
                 )
-                [ VectorImage.toHtml
-                    record.viewBox
-                    Nothing
-                    record.elements
-                ]
+            , Css.batch
+                (case sizeArea.height of
+                    Fix px ->
+                        [ Css.height (Css.px (toFloat px)) ]
 
-        Nothing ->
-            Html.Styled.div
-                ([ Html.Styled.Attributes.css
-                    [ panelToStyle False styleAndEventComputed
-                    , Css.batch
-                        (case sizeArea.width of
-                            Fix px ->
-                                [ Css.width (Css.px (toFloat px)) ]
+                    Grow ->
+                        [ Css.height (Css.pct 100) ]
 
-                            Grow ->
-                                [ Css.width (Css.pct 100) ]
-
-                            Auto ->
-                                [ Css.width Css.auto ]
-                        )
-                    , Css.batch
-                        (case sizeArea.height of
-                            Fix px ->
-                                [ Css.height (Css.px (toFloat px)) ]
-
-                            Grow ->
-                                [ Css.height (Css.pct 100) ]
-
-                            Auto ->
-                                [ Css.height Css.auto ]
-                        )
-                    ]
-                 ]
-                    ++ eventsToHtmlAttributes styleAndEventComputed
+                    Auto ->
+                        [ Css.height Css.auto ]
                 )
-                [ VectorImage.toHtml
-                    record.viewBox
-                    Nothing
-                    record.elements
-                ]
+            ]
+         ]
+            ++ eventsToHtmlAttributes styleAndEventComputed
+        )
+        [ VectorImage.toHtml
+            record.viewBox
+            Nothing
+            record.elements
+        ]
 
 
 emptyToHtml : SizeArea -> StyleAndEventComputed message -> Html.Styled.Html message
 emptyToHtml sizeArea styleAndEvent =
-    case styleAndEventComputedGetClickEvent styleAndEvent of
-        Just clickEvent ->
-            Html.Styled.button
-                ([ Html.Styled.Attributes.css
-                    [ panelToStyle True styleAndEvent
-                    , Css.batch
-                        (case sizeArea.width of
-                            Fix px ->
-                                [ Css.width (Css.px (toFloat px)) ]
+    Html.Styled.div
+        ([ Html.Styled.Attributes.css
+            [ panelToStyle False styleAndEvent
+            , Css.batch
+                (case sizeArea.width of
+                    Fix px ->
+                        [ Css.width (Css.px (toFloat px)) ]
 
-                            Grow ->
-                                [ Css.width (Css.pct 100) ]
+                    Grow ->
+                        [ Css.width (Css.pct 100) ]
 
-                            Auto ->
-                                [ Css.width Css.zero ]
-                        )
-                    , Css.batch
-                        (case sizeArea.height of
-                            Fix px ->
-                                [ Css.height (Css.px (toFloat px)) ]
-
-                            Grow ->
-                                [ Css.height (Css.pct 100) ]
-
-                            Auto ->
-                                [ Css.height Css.zero ]
-                        )
-                    ]
-                 , Html.Styled.Events.onClick clickEvent
-                 ]
-                    ++ eventsToHtmlAttributes styleAndEvent
+                    Auto ->
+                        [ Css.width Css.zero ]
                 )
-                []
+            , Css.batch
+                (case sizeArea.height of
+                    Fix px ->
+                        [ Css.height (Css.px (toFloat px)) ]
 
-        Nothing ->
-            Html.Styled.div
-                ([ Html.Styled.Attributes.css
-                    [ panelToStyle False styleAndEvent
-                    , Css.batch
-                        (case sizeArea.width of
-                            Fix px ->
-                                [ Css.width (Css.px (toFloat px)) ]
+                    Grow ->
+                        [ Css.height (Css.pct 100) ]
 
-                            Grow ->
-                                [ Css.width (Css.pct 100) ]
-
-                            Auto ->
-                                [ Css.width Css.zero ]
-                        )
-                    , Css.batch
-                        (case sizeArea.height of
-                            Fix px ->
-                                [ Css.height (Css.px (toFloat px)) ]
-
-                            Grow ->
-                                [ Css.height (Css.pct 100) ]
-
-                            Auto ->
-                                [ Css.height Css.zero ]
-                        )
-                    ]
-                 ]
-                    ++ eventsToHtmlAttributes styleAndEvent
+                    Auto ->
+                        [ Css.height Css.zero ]
                 )
-                []
+            ]
+         ]
+            ++ eventsToHtmlAttributes styleAndEvent
+        )
+        []
+
+
+buttonToHtml : SizeArea -> ButtonAttributes message -> Html.Styled.Html message
+buttonToHtml sizeArea (ButtonAttributes record) =
+    let
+        styleAndEventComputed =
+            styleAndEventCompute record.styleAndEvent
+    in
+    Html.Styled.button
+        [ Html.Styled.Attributes.css
+            [ panelToStyle True styleAndEventComputed ]
+        , Html.Styled.Events.onClick
+            record.clickMessage
+        ]
+        [ panelToHtml (sizeAreaSubtractPadding sizeArea styleAndEventComputed) record.child ]
 
 
 depthListToHtml :
@@ -1193,12 +1072,12 @@ eventsToHtmlAttributes (StyleAndEventComputed record) =
 pointerEventDecoder : Json.Decode.Decoder Pointer
 pointerEventDecoder =
     Json.Decode.succeed
-        (\id clientX clientY button pressure tangentialPressure width_ height_ tiltX tiltY twist pointerType isPrimary buttons eventPhase ->
+        (\id clientX clientY button_ pressure tangentialPressure width_ height_ tiltX tiltY twist pointerType isPrimary buttons eventPhase ->
             Pointer
                 { id = id
                 , position = ( clientX, clientY )
                 , button =
-                    case button of
+                    case button_ of
                         0 ->
                             Just Primary
 
