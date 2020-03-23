@@ -117,7 +117,7 @@ projectList language logInState =
                 |> Ui.textBox
           )
         , ( Ui.fix 48, createProjectButton language logInState )
-        , ( Ui.auto
+        , ( Ui.grow
           , { styleAndEvent = []
             , text =
                 case language of

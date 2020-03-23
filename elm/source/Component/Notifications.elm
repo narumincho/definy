@@ -169,13 +169,12 @@ cardItem index (CardStyle record) =
     case record.icon of
         Just (Icon icon) ->
             { styleAndEvent =
-                [ Ui.padding 8
-                , Ui.backgroundColor (Css.rgb 0 100 0)
+                [ Ui.backgroundColor (Css.rgb 0 100 0)
                 ]
             , gap = 0
             , children =
-                [ ( Ui.fix 32
-                  , { styleAndEvent = []
+                [ ( Ui.fix 48
+                  , { styleAndEvent = [ Ui.padding 4 ]
                     , url = icon.url
                     , fitStyle = Ui.Contain
                     , alternativeText = icon.alternativeText
@@ -185,7 +184,7 @@ cardItem index (CardStyle record) =
                         |> Ui.bitmapImage
                   )
                 , ( Ui.grow
-                  , { styleAndEvent = []
+                  , { styleAndEvent = [ Ui.padding 8 ]
                     , text = record.text
                     , typeface = Style.normalTypeface
                     , size = 16
@@ -207,8 +206,9 @@ cardItem index (CardStyle record) =
                 { styleAndEvent = [ Ui.backgroundColor (Css.rgb 0 100 0) ]
                 , gap = 0
                 , children =
-                    [ ( Ui.grow
-                      , { styleAndEvent = []
+                    [ ( Ui.fix 32, Ui.empty [] )
+                    , ( Ui.grow
+                      , { styleAndEvent = [ Ui.padding 8 ]
                         , text = record.text
                         , typeface = Style.normalTypeface
                         , size = 16

@@ -20,16 +20,16 @@ view imageBlobUrlDict logInState =
             , children =
                 case logInState of
                     Data.LogInState.GuestUser ->
-                        [ logo, ( Ui.auto, guestItem ) ]
+                        [ logo, ( Ui.grow, Ui.empty [] ), ( Ui.auto, guestItem ) ]
 
                     Data.LogInState.RequestLogInUrl _ ->
-                        [ logo ]
+                        [ logo, ( Ui.grow, Ui.empty [] ) ]
 
                     Data.LogInState.VerifyingAccessToken _ ->
-                        [ logo ]
+                        [ logo, ( Ui.grow, Ui.empty [] ) ]
 
                     Data.LogInState.Ok record ->
-                        [ logo, ( Ui.auto, userIcon imageBlobUrlDict record.user ) ]
+                        [ logo, ( Ui.grow, Ui.empty [] ), ( Ui.auto, userIcon imageBlobUrlDict record.user ) ]
             }
         )
     )
@@ -37,7 +37,7 @@ view imageBlobUrlDict logInState =
 
 logo : ( Ui.Size, Ui.Panel msg )
 logo =
-    ( Ui.fix 128
+    ( Ui.auto
     , Ui.textBox
         (Ui.TextBoxAttributes
             { styleAndEvent = [ Ui.padding 8 ]
@@ -46,7 +46,7 @@ logo =
             , size = 32
             , letterSpacing = 0
             , color = Css.rgb 185 208 155
-            , textAlignment = Ui.TextAlignCenter
+            , textAlignment = Ui.TextAlignStart
             }
         )
     )
