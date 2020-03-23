@@ -773,8 +773,8 @@ logInPanelLogInButton language { width, height } =
         , Ui.row
             [ Ui.gap 16, Ui.padding 8 ]
             [ ( Ui.grow, Ui.empty [] )
-            , ( Ui.fix 448, googleLogInButton language )
-            , ( Ui.fix 448, gitHubLogInButton language )
+            , ( Ui.fix 320, googleLogInButton language )
+            , ( Ui.fix 320, gitHubLogInButton language )
             ]
         )
 
@@ -786,10 +786,10 @@ googleLogInButton language =
         , Ui.backgroundColor (Css.rgb 66 133 244)
         , Ui.gap 8
         ]
-        [ ( Ui.fix 48, Icon.googleIcon (Css.rgb 255 255 255) )
+        [ ( Ui.fix 58, Icon.googleIcon (Css.rgb 255 255 255) )
         , ( Ui.grow
           , Ui.textBox
-                []
+                [ Ui.alignSelf Ui.center ]
                 (Ui.TextBoxAttributes
                     { textAlignment = Ui.TextAlignStart
                     , text =
@@ -803,7 +803,7 @@ googleLogInButton language =
                             Data.LanguageEsperanto ->
                                 "Ensalutu kun Google"
                     , typeface = Component.Style.fontHackName
-                    , size = 16
+                    , size = 20
                     , letterSpacing = 0
                     , color = Css.rgb 255 255 255
                     }
@@ -820,10 +820,10 @@ gitHubLogInButton language =
         , Ui.backgroundColor (Css.rgb 32 32 32)
         , Ui.gap 8
         ]
-        [ ( Ui.fix 48, Icon.gitHubIcon (Css.rgb 255 255 255) )
+        [ ( Ui.fix 58, Icon.gitHubIcon (Css.rgb 255 255 255) )
         , ( Ui.grow
           , Ui.textBox
-                []
+                [ Ui.alignSelf Ui.center ]
                 (Ui.TextBoxAttributes
                     { textAlignment = Ui.TextAlignStart
                     , text =
@@ -837,7 +837,7 @@ gitHubLogInButton language =
                             Data.LanguageEsperanto ->
                                 "Ensalutu kun GitHub"
                     , typeface = Component.Style.fontHackName
-                    , size = 16
+                    , size = 20
                     , letterSpacing = 0
                     , color = Css.rgb 255 255 255
                     }
