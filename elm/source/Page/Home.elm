@@ -91,7 +91,7 @@ projectList language logInState =
     Ui.column
         [ Ui.height Ui.stretch
         , Ui.gap 8
-        , Ui.width (Ui.auto Ui.center)
+        , Ui.width Ui.auto
         , Ui.padding 8
         ]
         [ projectLineFirstCreateButton language logInState
@@ -105,7 +105,7 @@ createProjectButton language logInState =
     case logInState of
         Data.LogInState.RequestLogInUrl _ ->
             Ui.textBox
-                [ Ui.width (Ui.fix 320 Ui.start), Ui.height (Ui.auto Ui.start) ]
+                [ Ui.width (Ui.fix 320) ]
                 (Ui.TextBoxAttributes
                     { text = "......"
                     , typeface = Component.Style.normalTypeface
@@ -118,7 +118,7 @@ createProjectButton language logInState =
 
         Data.LogInState.VerifyingAccessToken _ ->
             Ui.textBox
-                [ Ui.width (Ui.fix 320 Ui.start), Ui.height (Ui.auto Ui.start) ]
+                [ Ui.width (Ui.fix 320) ]
                 (Ui.TextBoxAttributes
                     { text =
                         case language of
@@ -140,7 +140,7 @@ createProjectButton language logInState =
 
         Data.LogInState.GuestUser ->
             Ui.textBox
-                [ Ui.width (Ui.fix 320 Ui.start), Ui.height (Ui.auto Ui.start) ]
+                [ Ui.width (Ui.fix 320) ]
                 (Ui.TextBoxAttributes
                     { text =
                         case language of
@@ -161,9 +161,9 @@ createProjectButton language logInState =
                 )
 
         Data.LogInState.Ok { accessToken } ->
-            Ui.column
-                [ Ui.width (Ui.fix 320 Ui.start)
-                , Ui.height (Ui.auto Ui.start)
+            Ui.depth
+                [ Ui.width (Ui.fix 320)
+                , Ui.height Ui.stretch
                 , Ui.border
                     (Ui.BorderStyle
                         { color = Css.rgb 200 200 200
@@ -176,34 +176,39 @@ createProjectButton language logInState =
                         }
                     )
                 ]
-                [ Icon.plus
-                , Ui.textBox
-                    [ Ui.height (Ui.auto Ui.center) ]
-                    (Ui.TextBoxAttributes
-                        { text =
-                            case language of
-                                Data.LanguageEnglish ->
-                                    "Create a new project"
+                [ ( ( Ui.Center, Ui.Center )
+                  , Ui.column
+                        []
+                        [ Icon.plus
+                        , Ui.textBox
+                            []
+                            (Ui.TextBoxAttributes
+                                { text =
+                                    case language of
+                                        Data.LanguageEnglish ->
+                                            "Create a new project"
 
-                                Data.LanguageJapanese ->
-                                    "プロジェクトを新規作成"
+                                        Data.LanguageJapanese ->
+                                            "プロジェクトを新規作成"
 
-                                Data.LanguageEsperanto ->
-                                    "Krei novan projekton"
-                        , typeface = Component.Style.normalTypeface
-                        , size = 16
-                        , letterSpacing = 0
-                        , color = Css.rgb 200 200 200
-                        , textAlignment = Ui.TextAlignStart
-                        }
-                    )
+                                        Data.LanguageEsperanto ->
+                                            "Krei novan projekton"
+                                , typeface = Component.Style.normalTypeface
+                                , size = 16
+                                , letterSpacing = 0
+                                , color = Css.rgb 200 200 200
+                                , textAlignment = Ui.TextAlignStart
+                                }
+                            )
+                        ]
+                  )
                 ]
 
 
 projectLineFirstCreateButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
 projectLineFirstCreateButton language logInState =
     Ui.row
-        [ Ui.gap 8, Ui.height (Ui.fix 200 Ui.start) ]
+        [ Ui.gap 8, Ui.height (Ui.fix 200) ]
         [ createProjectButton language logInState
         , projectItem
         , projectItem
@@ -213,7 +218,7 @@ projectLineFirstCreateButton language logInState =
 projectLine : Ui.Panel message
 projectLine =
     Ui.row
-        [ Ui.gap 8 ]
+        [ Ui.gap 8, Ui.height (Ui.fix 200) ]
         [ projectItem
         , projectItem
         , projectItem
@@ -223,25 +228,29 @@ projectLine =
 projectItem : Ui.Panel message
 projectItem =
     Ui.depth
-        [ Ui.width (Ui.fix 320 Ui.start) ]
-        [ Ui.bitmapImage
-            []
-            (Ui.BitmapImageAttributes
-                { url = "https://narumincho.com/assets/definy20190212.jpg"
-                , fitStyle = Ui.Cover
-                , alternativeText = "プロジェクト画像"
-                , rendering = Ui.ImageRenderingPixelated
-                }
-            )
-        , Ui.textBox
-            [ Ui.height (Ui.auto Ui.end), Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
-            (Ui.TextBoxAttributes
-                { text = "プロジェクト名"
-                , typeface = Component.Style.normalTypeface
-                , size = 16
-                , letterSpacing = 0
-                , color = Css.rgb 200 200 200
-                , textAlignment = Ui.TextAlignStart
-                }
-            )
+        [ Ui.width (Ui.fix 320), Ui.height Ui.stretch ]
+        [ ( ( Ui.Center, Ui.Center )
+          , Ui.bitmapImage
+                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                (Ui.BitmapImageAttributes
+                    { url = "https://narumincho.com/assets/definy20190212.jpg"
+                    , fitStyle = Ui.Cover
+                    , alternativeText = "プロジェクト画像"
+                    , rendering = Ui.ImageRenderingPixelated
+                    }
+                )
+          )
+        , ( ( Ui.Center, Ui.End )
+          , Ui.textBox
+                [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
+                (Ui.TextBoxAttributes
+                    { text = "プロジェクト名"
+                    , typeface = Component.Style.normalTypeface
+                    , size = 16
+                    , letterSpacing = 0
+                    , color = Css.rgb 200 200 200
+                    , textAlignment = Ui.TextAlignStart
+                    }
+                )
+          )
         ]

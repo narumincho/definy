@@ -8,8 +8,8 @@ import VectorImage
 gitHubIcon : Css.Color -> Ui.Panel msg
 gitHubIcon backgroundColor =
     Ui.vectorImage
-        [ Ui.width (Ui.fix 48 Ui.center)
-        , Ui.height (Ui.fix 48 Ui.center)
+        [ Ui.width (Ui.fix 48)
+        , Ui.height (Ui.fix 48)
         , Ui.padding 8
         , Ui.backgroundColor backgroundColor
         ]
@@ -29,8 +29,8 @@ gitHubIcon backgroundColor =
 googleIcon : Css.Color -> Ui.Panel msg
 googleIcon backgroundColor =
     Ui.vectorImage
-        [ Ui.width (Ui.fix 48 Ui.center)
-        , Ui.height (Ui.fix 48 Ui.center)
+        [ Ui.width (Ui.fix 48)
+        , Ui.height (Ui.fix 48)
         , Ui.padding 8
         , Ui.backgroundColor backgroundColor
         ]
@@ -77,7 +77,9 @@ close =
 plus : Ui.Panel message
 plus =
     Ui.vectorImage
-        [ Ui.width (Ui.fix 32 Ui.center), Ui.height (Ui.fix 32 Ui.center) ]
+        [ Ui.width (Ui.fix 32)
+        , Ui.height (Ui.fix 32)
+        ]
         (Ui.VectorImageAttributes
             { fitStyle = Ui.Contain
             , viewBox = { x = 0, y = 0, width = 10, height = 10 }

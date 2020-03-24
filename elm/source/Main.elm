@@ -686,27 +686,34 @@ getImageBlobUrlTyped fileHashAndIsThumbnail =
 view : Model -> Html.Html Msg
 view (Model rec) =
     Ui.depth
-        (case getGutterType (Model rec) of
-            Just gutterType ->
-                [ Ui.pointerImage (gutterTypeToCursorStyle gutterType) ]
+        (List.concat
+            [ [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+            , case getGutterType (Model rec) of
+                Just gutterType ->
+                    [ Ui.pointerImage (gutterTypeToCursorStyle gutterType) ]
 
-            Nothing ->
-                []
+                Nothing ->
+                    []
+            ]
         )
         ((case rec.page of
             Welcome welcomeModel ->
-                [ Ui.column
-                    []
-                    [ Component.Header.view rec.imageBlobUrlDict rec.logInState
-                    , logInPanel rec.logInState rec.language rec.windowSize
-                    , welcomeModel
-                        |> Page.Home.view rec.language rec.logInState
-                        |> Ui.map (WelcomePageMsg >> PageMsg)
-                    ]
+                [ ( ( Ui.Center, Ui.Center )
+                  , Ui.column
+                        [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                        [ Component.Header.view rec.imageBlobUrlDict rec.logInState
+                        , logInPanel rec.logInState rec.language rec.windowSize
+                        , welcomeModel
+                            |> Page.Home.view rec.language rec.logInState
+                            |> Ui.map (WelcomePageMsg >> PageMsg)
+                        ]
+                  )
                 ]
          )
-            ++ [ Component.Notifications.view rec.imageBlobUrlDict rec.notificationModel
+            ++ [ ( ( Ui.End, Ui.End )
+                 , Component.Notifications.view rec.imageBlobUrlDict rec.notificationModel
                     |> Ui.map NotificationMessage
+                 )
                ]
         )
         |> Ui.toHtml
@@ -721,7 +728,7 @@ logInPanel logInState language windowSize =
 
         Data.LogInState.RequestLogInUrl _ ->
             Ui.textBox
-                [ Ui.height (Ui.auto Ui.start) ]
+                [ Ui.height Ui.auto ]
                 (Ui.TextBoxAttributes
                     { textAlignment = Ui.TextAlignCenter
                     , text = "ログイン画面をリクエスト中……"
@@ -734,7 +741,7 @@ logInPanel logInState language windowSize =
 
         Data.LogInState.VerifyingAccessToken _ ->
             Ui.textBox
-                [ Ui.height (Ui.auto Ui.start) ]
+                [ Ui.height Ui.auto ]
                 (Ui.TextBoxAttributes
                     { textAlignment = Ui.TextAlignCenter
                     , text = "認証中……"
@@ -746,14 +753,14 @@ logInPanel logInState language windowSize =
                 )
 
         Data.LogInState.Ok record ->
-            Ui.empty [ Ui.height (Ui.auto Ui.start) ]
+            Ui.empty []
 
 
 logInPanelLogInButton : Data.Language -> WindowSize -> Ui.Panel Msg
 logInPanelLogInButton language { width, height } =
     if width < 512 then
         Ui.column
-            [ Ui.height (Ui.fix (48 * 2 + 32) Ui.start)
+            [ Ui.height (Ui.fix (48 * 2 + 32))
             , Ui.gap 16
             ]
             [ googleLogInButton True language
@@ -762,7 +769,7 @@ logInPanelLogInButton language { width, height } =
 
     else
         Ui.row
-            [ Ui.height (Ui.fix 64 Ui.start)
+            [ Ui.height (Ui.fix 64)
             , Ui.gap 16
             , Ui.padding 8
             ]
@@ -783,13 +790,13 @@ googleLogInButton stretch language =
                 Ui.stretch
 
              else
-                Ui.fix 320 Ui.start
+                Ui.fix 320
             )
-        , Ui.height (Ui.fix 48 Ui.start)
+        , Ui.height (Ui.fix 48)
         ]
         [ Icon.googleIcon (Css.rgb 255 255 255)
         , Ui.textBox
-            [ Ui.height (Ui.auto Ui.center) ]
+            [ Ui.height Ui.auto ]
             (Ui.TextBoxAttributes
                 { textAlignment = Ui.TextAlignStart
                 , text =
@@ -823,13 +830,13 @@ gitHubLogInButton stretch language =
                 Ui.stretch
 
              else
-                Ui.fix 320 Ui.start
+                Ui.fix 320
             )
-        , Ui.height (Ui.fix 48 Ui.start)
+        , Ui.height (Ui.fix 48)
         ]
         [ Icon.gitHubIcon (Css.rgb 255 255 255)
         , Ui.textBox
-            [ Ui.height (Ui.auto Ui.center) ]
+            [ Ui.height Ui.auto ]
             (Ui.TextBoxAttributes
                 { textAlignment = Ui.TextAlignStart
                 , text =

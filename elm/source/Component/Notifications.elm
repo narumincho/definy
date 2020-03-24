@@ -73,27 +73,14 @@ view :
     Dict.Dict String String
     -> Model
     -> Ui.Panel Message
-view imageBlobUrlDict (Model events) =
-    Ui.row
-        []
-        [ Ui.empty []
-        , cardListView imageBlobUrlDict events
-        ]
-
-
-cardListView :
-    Dict.Dict String String
-    -> List Event
-    -> Ui.Panel Message
-cardListView imageBlobUrlDict eventList =
+view imageBlobUrlDict (Model eventList) =
     Ui.column
-        [ Ui.width (Ui.fix 480 Ui.start), Ui.gap 8 ]
-        (Ui.empty []
-            :: List.indexedMap
-                (\index event ->
-                    cardItem index (eventToCardStyle imageBlobUrlDict event)
-                )
-                (List.reverse eventList)
+        [ Ui.width (Ui.fix 480), Ui.gap 8 ]
+        (List.indexedMap
+            (\index event ->
+                cardItem index (eventToCardStyle imageBlobUrlDict event)
+            )
+            (List.reverse eventList)
         )
 
 
@@ -155,11 +142,12 @@ cardItem : Int -> CardStyle -> Ui.Panel Message
 cardItem index (CardStyle record) =
     Ui.row
         [ Ui.backgroundColor (Css.rgb 0 100 0)
-        , Ui.height (Ui.fix 48 Ui.start)
+        , Ui.width Ui.stretch
+        , Ui.height (Ui.fix 48)
         ]
-        (case record.icon of
+        [ case record.icon of
             Just (Icon icon) ->
-                [ Ui.bitmapImage [ Ui.padding 4, Ui.width (Ui.fix 48 Ui.start) ]
+                Ui.bitmapImage [ Ui.padding 4, Ui.width (Ui.fix 48) ]
                     (Ui.BitmapImageAttributes
                         { url = icon.url
                         , fitStyle = Ui.Contain
@@ -167,33 +155,19 @@ cardItem index (CardStyle record) =
                         , rendering = Ui.ImageRenderingPixelated
                         }
                     )
-                , Ui.textBox
-                    [ Ui.padding 8 ]
-                    (Ui.TextBoxAttributes
-                        { text = record.text
-                        , typeface = Style.normalTypeface
-                        , size = 16
-                        , letterSpacing = 0
-                        , color = Css.rgb 255 255 255
-                        , textAlignment = Ui.TextAlignStart
-                        }
-                    )
-                , Ui.button [ Ui.width (Ui.fix 32 Ui.start) ] (DeleteAt index) Icon.close
-                ]
 
             Nothing ->
-                [ Ui.empty [ Ui.width (Ui.fix 32 Ui.start) ]
-                , Ui.textBox
-                    [ Ui.padding 8 ]
-                    (Ui.TextBoxAttributes
-                        { text = record.text
-                        , typeface = Style.normalTypeface
-                        , size = 16
-                        , letterSpacing = 0
-                        , color = Css.rgb 255 255 255
-                        , textAlignment = Ui.TextAlignStart
-                        }
-                    )
-                , Ui.button [ Ui.width (Ui.fix 32 Ui.start) ] (DeleteAt index) Icon.close
-                ]
-        )
+                Ui.empty [ Ui.width (Ui.fix 32) ]
+        , Ui.textBox
+            [ Ui.padding 8, Ui.width Ui.stretch ]
+            (Ui.TextBoxAttributes
+                { text = record.text
+                , typeface = Style.normalTypeface
+                , size = 16
+                , letterSpacing = 0
+                , color = Css.rgb 255 255 255
+                , textAlignment = Ui.TextAlignStart
+                }
+            )
+        , Ui.button [ Ui.width (Ui.fix 32) ] (DeleteAt index) Icon.close
+        ]

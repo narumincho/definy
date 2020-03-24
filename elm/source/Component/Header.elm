@@ -12,26 +12,32 @@ import Ui
 view : Dict.Dict String String -> Data.LogInState.LogInState -> Ui.Panel msg
 view imageBlobUrlDict logInState =
     Ui.row
-        [ Ui.backgroundColor (Css.rgb 36 36 36), Ui.height (Ui.fix 56 Ui.start) ]
+        [ Ui.backgroundColor (Css.rgb 36 36 36)
+        , Ui.width Ui.stretch
+        , Ui.height (Ui.fix 56)
+        ]
         (case logInState of
             Data.LogInState.GuestUser ->
-                [ logo, Ui.empty [], guestItem ]
+                [ logo, Ui.empty [ Ui.width Ui.stretch ], guestItem ]
 
             Data.LogInState.RequestLogInUrl _ ->
-                [ logo, Ui.empty [] ]
+                [ logo ]
 
             Data.LogInState.VerifyingAccessToken _ ->
-                [ logo, Ui.empty [] ]
+                [ logo ]
 
             Data.LogInState.Ok record ->
-                [ logo, Ui.empty [], userItem imageBlobUrlDict record.user ]
+                [ logo
+                , Ui.empty [ Ui.width Ui.stretch ]
+                , userItem imageBlobUrlDict record.user
+                ]
         )
 
 
 logo : Ui.Panel msg
 logo =
     Ui.textBox
-        [ Ui.padding 8, Ui.width (Ui.auto Ui.start) ]
+        [ Ui.padding 8 ]
         (Ui.TextBoxAttributes
             { text = "Definy"
             , typeface = Component.Style.codeFontTypeface
@@ -46,7 +52,7 @@ logo =
 guestItem : Ui.Panel msg
 guestItem =
     Ui.textBox
-        [ Ui.width (Ui.auto Ui.start) ]
+        []
         (Ui.TextBoxAttributes
             { text = "ゲスト"
             , typeface = Component.Style.normalTypeface
@@ -65,7 +71,10 @@ userItem imageBlobUrlDict userData =
         ([ case SubData.getUserImage imageBlobUrlDict userData of
             Just blobUrl ->
                 [ Ui.bitmapImage
-                    [ Ui.width (Ui.auto Ui.start), Ui.borderRadius (Ui.BorderRadiusPercent 50) ]
+                    [ Ui.width (Ui.fix 48)
+                    , Ui.height (Ui.fix 48)
+                    , Ui.borderRadius (Ui.BorderRadiusPercent 50)
+                    ]
                     (Ui.BitmapImageAttributes
                         { url = blobUrl
                         , fitStyle = Ui.Contain
@@ -78,7 +87,7 @@ userItem imageBlobUrlDict userData =
             Nothing ->
                 []
          , [ Ui.textBox
-                [ Ui.width (Ui.auto Ui.start), Ui.height (Ui.auto Ui.center) ]
+                []
                 (Ui.TextBoxAttributes
                     { text = userData.name
                     , typeface = Component.Style.normalTypeface
