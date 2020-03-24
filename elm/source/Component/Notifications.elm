@@ -76,10 +76,8 @@ view :
 view imageBlobUrlDict (Model events) =
     Ui.row
         []
-        [ ( Ui.grow, Ui.empty [] )
-        , ( Ui.fix 480
-          , cardListView imageBlobUrlDict events
-          )
+        [ Ui.empty []
+        , cardListView imageBlobUrlDict events
         ]
 
 
@@ -89,13 +87,11 @@ cardListView :
     -> Ui.Panel Message
 cardListView imageBlobUrlDict eventList =
     Ui.column
-        [ Ui.gap 8 ]
-        (( Ui.grow, Ui.empty [] )
+        [ Ui.width (Ui.fix 480 Ui.start), Ui.gap 8 ]
+        (Ui.empty []
             :: List.indexedMap
                 (\index event ->
-                    ( Ui.fix 48
-                    , cardItem index (eventToCardStyle imageBlobUrlDict event)
-                    )
+                    cardItem index (eventToCardStyle imageBlobUrlDict event)
                 )
                 (List.reverse eventList)
         )
@@ -157,52 +153,47 @@ type CardStyle
 
 cardItem : Int -> CardStyle -> Ui.Panel Message
 cardItem index (CardStyle record) =
-    case record.icon of
-        Just (Icon icon) ->
-            Ui.row
-                [ Ui.backgroundColor (Css.rgb 0 100 0) ]
-                [ ( Ui.fix 48
-                  , Ui.bitmapImage [ Ui.padding 4 ]
-                        (Ui.BitmapImageAttributes
-                            { url = icon.url
-                            , fitStyle = Ui.Contain
-                            , alternativeText = icon.alternativeText
-                            , rendering = Ui.ImageRenderingPixelated
-                            }
-                        )
-                  )
-                , ( Ui.grow
-                  , Ui.textBox
-                        [ Ui.padding 8 ]
-                        (Ui.TextBoxAttributes
-                            { text = record.text
-                            , typeface = Style.normalTypeface
-                            , size = 16
-                            , letterSpacing = 0
-                            , color = Css.rgb 255 255 255
-                            , textAlignment = Ui.TextAlignStart
-                            }
-                        )
-                  )
-                , ( Ui.fix 32, Ui.button [] (DeleteAt index) Icon.close )
+    Ui.row
+        [ Ui.backgroundColor (Css.rgb 0 100 0)
+        , Ui.height (Ui.fix 48 Ui.start)
+        ]
+        (case record.icon of
+            Just (Icon icon) ->
+                [ Ui.bitmapImage [ Ui.padding 4, Ui.width (Ui.fix 48 Ui.start) ]
+                    (Ui.BitmapImageAttributes
+                        { url = icon.url
+                        , fitStyle = Ui.Contain
+                        , alternativeText = icon.alternativeText
+                        , rendering = Ui.ImageRenderingPixelated
+                        }
+                    )
+                , Ui.textBox
+                    [ Ui.padding 8 ]
+                    (Ui.TextBoxAttributes
+                        { text = record.text
+                        , typeface = Style.normalTypeface
+                        , size = 16
+                        , letterSpacing = 0
+                        , color = Css.rgb 255 255 255
+                        , textAlignment = Ui.TextAlignStart
+                        }
+                    )
+                , Ui.button [ Ui.width (Ui.fix 32 Ui.start) ] (DeleteAt index) Icon.close
                 ]
 
-        Nothing ->
-            Ui.row
-                [ Ui.backgroundColor (Css.rgb 0 100 0) ]
-                [ ( Ui.fix 32, Ui.empty [] )
-                , ( Ui.grow
-                  , Ui.textBox
-                        [ Ui.padding 8 ]
-                        (Ui.TextBoxAttributes
-                            { text = record.text
-                            , typeface = Style.normalTypeface
-                            , size = 16
-                            , letterSpacing = 0
-                            , color = Css.rgb 255 255 255
-                            , textAlignment = Ui.TextAlignStart
-                            }
-                        )
-                  )
-                , ( Ui.fix 32, Icon.close |> Ui.map (always (DeleteAt index)) )
+            Nothing ->
+                [ Ui.empty [ Ui.width (Ui.fix 32 Ui.start) ]
+                , Ui.textBox
+                    [ Ui.padding 8 ]
+                    (Ui.TextBoxAttributes
+                        { text = record.text
+                        , typeface = Style.normalTypeface
+                        , size = 16
+                        , letterSpacing = 0
+                        , color = Css.rgb 255 255 255
+                        , textAlignment = Ui.TextAlignStart
+                        }
+                    )
+                , Ui.button [ Ui.width (Ui.fix 32 Ui.start) ] (DeleteAt index) Icon.close
                 ]
+        )

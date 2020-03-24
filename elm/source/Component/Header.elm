@@ -9,32 +9,29 @@ import SubData
 import Ui
 
 
-view : Dict.Dict String String -> Data.LogInState.LogInState -> ( Ui.Size, Ui.Panel msg )
+view : Dict.Dict String String -> Data.LogInState.LogInState -> Ui.Panel msg
 view imageBlobUrlDict logInState =
-    ( Ui.fix 56
-    , Ui.row
-        [ Ui.backgroundColor (Css.rgb 36 36 36) ]
+    Ui.row
+        [ Ui.backgroundColor (Css.rgb 36 36 36), Ui.height (Ui.fix 56 Ui.start) ]
         (case logInState of
             Data.LogInState.GuestUser ->
-                [ logo, ( Ui.grow, Ui.empty [] ), ( Ui.auto, guestItem ) ]
+                [ logo, Ui.empty [], guestItem ]
 
             Data.LogInState.RequestLogInUrl _ ->
-                [ logo, ( Ui.grow, Ui.empty [] ) ]
+                [ logo, Ui.empty [] ]
 
             Data.LogInState.VerifyingAccessToken _ ->
-                [ logo, ( Ui.grow, Ui.empty [] ) ]
+                [ logo, Ui.empty [] ]
 
             Data.LogInState.Ok record ->
-                [ logo, ( Ui.grow, Ui.empty [] ), ( Ui.auto, userIcon imageBlobUrlDict record.user ) ]
+                [ logo, Ui.empty [], userItem imageBlobUrlDict record.user ]
         )
-    )
 
 
-logo : ( Ui.Size, Ui.Panel msg )
+logo : Ui.Panel msg
 logo =
-    ( Ui.auto
-    , Ui.textBox
-        [ Ui.padding 8 ]
+    Ui.textBox
+        [ Ui.padding 8, Ui.width (Ui.auto Ui.start) ]
         (Ui.TextBoxAttributes
             { text = "Definy"
             , typeface = Component.Style.codeFontTypeface
@@ -44,13 +41,12 @@ logo =
             , textAlignment = Ui.TextAlignStart
             }
         )
-    )
 
 
 guestItem : Ui.Panel msg
 guestItem =
     Ui.textBox
-        []
+        [ Ui.width (Ui.auto Ui.start) ]
         (Ui.TextBoxAttributes
             { text = "ゲスト"
             , typeface = Component.Style.normalTypeface
@@ -62,30 +58,27 @@ guestItem =
         )
 
 
-userIcon : Dict.Dict String String -> Data.UserPublic -> Ui.Panel msg
-userIcon imageBlobUrlDict userData =
+userItem : Dict.Dict String String -> Data.UserPublic -> Ui.Panel msg
+userItem imageBlobUrlDict userData =
     Ui.row
         [ Ui.gap 8 ]
         ([ case SubData.getUserImage imageBlobUrlDict userData of
             Just blobUrl ->
-                [ ( Ui.auto
-                  , Ui.bitmapImage
-                        [ Ui.borderRadius (Ui.BorderRadiusPercent 50) ]
-                        (Ui.BitmapImageAttributes
-                            { url = blobUrl
-                            , fitStyle = Ui.Contain
-                            , alternativeText = userData.name ++ "のユーザーアイコン"
-                            , rendering = Ui.ImageRenderingPixelated
-                            }
-                        )
-                  )
+                [ Ui.bitmapImage
+                    [ Ui.width (Ui.auto Ui.start), Ui.borderRadius (Ui.BorderRadiusPercent 50) ]
+                    (Ui.BitmapImageAttributes
+                        { url = blobUrl
+                        , fitStyle = Ui.Contain
+                        , alternativeText = userData.name ++ "のユーザーアイコン"
+                        , rendering = Ui.ImageRenderingPixelated
+                        }
+                    )
                 ]
 
             Nothing ->
                 []
-         , [ ( Ui.auto
-             , Ui.textBox
-                [ Ui.alignSelf Ui.center ]
+         , [ Ui.textBox
+                [ Ui.width (Ui.auto Ui.start), Ui.height (Ui.auto Ui.center) ]
                 (Ui.TextBoxAttributes
                     { text = userData.name
                     , typeface = Component.Style.normalTypeface
@@ -95,7 +88,6 @@ userIcon imageBlobUrlDict userData =
                     , textAlignment = Ui.TextAlignCenter
                     }
                 )
-             )
            ]
          ]
             |> List.concat

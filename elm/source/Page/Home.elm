@@ -83,16 +83,20 @@ view : Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Msg
 view language logInState (Model rec) =
     Ui.column
         [ Ui.gap 16 ]
-        [ ( Ui.grow, projectList language logInState ) ]
+        [ projectList language logInState ]
 
 
 projectList : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
 projectList language logInState =
     Ui.column
-        [ Ui.gap 8, Ui.justifySelf Ui.center, Ui.padding 8 ]
-        [ ( Ui.fix 200, projectLineFirstCreateButton language logInState )
-        , ( Ui.fix 200, projectLine )
-        , ( Ui.fix 200, projectLine )
+        [ Ui.height Ui.stretch
+        , Ui.gap 8
+        , Ui.width (Ui.auto Ui.center)
+        , Ui.padding 8
+        ]
+        [ projectLineFirstCreateButton language logInState
+        , projectLine
+        , projectLine
         ]
 
 
@@ -101,7 +105,7 @@ createProjectButton language logInState =
     case logInState of
         Data.LogInState.RequestLogInUrl _ ->
             Ui.textBox
-                []
+                [ Ui.width (Ui.fix 320 Ui.start), Ui.height (Ui.auto Ui.start) ]
                 (Ui.TextBoxAttributes
                     { text = "......"
                     , typeface = Component.Style.normalTypeface
@@ -114,7 +118,7 @@ createProjectButton language logInState =
 
         Data.LogInState.VerifyingAccessToken _ ->
             Ui.textBox
-                []
+                [ Ui.width (Ui.fix 320 Ui.start), Ui.height (Ui.auto Ui.start) ]
                 (Ui.TextBoxAttributes
                     { text =
                         case language of
@@ -136,7 +140,7 @@ createProjectButton language logInState =
 
         Data.LogInState.GuestUser ->
             Ui.textBox
-                []
+                [ Ui.width (Ui.fix 320 Ui.start), Ui.height (Ui.auto Ui.start) ]
                 (Ui.TextBoxAttributes
                     { text =
                         case language of
@@ -158,40 +162,51 @@ createProjectButton language logInState =
 
         Data.LogInState.Ok { accessToken } ->
             Ui.column
-                []
-                [ ( Ui.fix 32, Icon.plus )
-                , ( Ui.auto
-                  , Ui.textBox
-                        []
-                        (Ui.TextBoxAttributes
-                            { text =
-                                case language of
-                                    Data.LanguageEnglish ->
-                                        "Create a new project"
-
-                                    Data.LanguageJapanese ->
-                                        "プロジェクトを新規作成"
-
-                                    Data.LanguageEsperanto ->
-                                        "Krei novan projekton"
-                            , typeface = Component.Style.normalTypeface
-                            , size = 16
-                            , letterSpacing = 0
-                            , color = Css.rgb 200 200 200
-                            , textAlignment = Ui.TextAlignStart
+                [ Ui.width (Ui.fix 320 Ui.start)
+                , Ui.height (Ui.auto Ui.start)
+                , Ui.border
+                    (Ui.BorderStyle
+                        { color = Css.rgb 200 200 200
+                        , width =
+                            { top = 1
+                            , right = 1
+                            , left = 1
+                            , bottom = 1
                             }
-                        )
-                  )
+                        }
+                    )
+                ]
+                [ Icon.plus
+                , Ui.textBox
+                    [ Ui.height (Ui.auto Ui.center) ]
+                    (Ui.TextBoxAttributes
+                        { text =
+                            case language of
+                                Data.LanguageEnglish ->
+                                    "Create a new project"
+
+                                Data.LanguageJapanese ->
+                                    "プロジェクトを新規作成"
+
+                                Data.LanguageEsperanto ->
+                                    "Krei novan projekton"
+                        , typeface = Component.Style.normalTypeface
+                        , size = 16
+                        , letterSpacing = 0
+                        , color = Css.rgb 200 200 200
+                        , textAlignment = Ui.TextAlignStart
+                        }
+                    )
                 ]
 
 
 projectLineFirstCreateButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
 projectLineFirstCreateButton language logInState =
     Ui.row
-        [ Ui.gap 8 ]
-        [ ( Ui.fix 320, createProjectButton language logInState )
-        , ( Ui.fix 320, projectItem )
-        , ( Ui.fix 320, projectItem )
+        [ Ui.gap 8, Ui.height (Ui.fix 200 Ui.start) ]
+        [ createProjectButton language logInState
+        , projectItem
+        , projectItem
         ]
 
 
@@ -199,16 +214,16 @@ projectLine : Ui.Panel message
 projectLine =
     Ui.row
         [ Ui.gap 8 ]
-        [ ( Ui.fix 320, projectItem )
-        , ( Ui.fix 320, projectItem )
-        , ( Ui.fix 320, projectItem )
+        [ projectItem
+        , projectItem
+        , projectItem
         ]
 
 
 projectItem : Ui.Panel message
 projectItem =
     Ui.depth
-        []
+        [ Ui.width (Ui.fix 320 Ui.start) ]
         [ Ui.bitmapImage
             []
             (Ui.BitmapImageAttributes
@@ -219,7 +234,7 @@ projectItem =
                 }
             )
         , Ui.textBox
-            [ Ui.alignSelf Ui.end, Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
+            [ Ui.height (Ui.auto Ui.end), Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
             (Ui.TextBoxAttributes
                 { text = "プロジェクト名"
                 , typeface = Component.Style.normalTypeface

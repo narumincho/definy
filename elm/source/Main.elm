@@ -699,11 +699,9 @@ view (Model rec) =
                     []
                     [ Component.Header.view rec.imageBlobUrlDict rec.logInState
                     , logInPanel rec.logInState rec.language rec.windowSize
-                    , ( Ui.grow
-                      , welcomeModel
-                            |> Page.Home.view rec.language rec.logInState
-                            |> Ui.map (WelcomePageMsg >> PageMsg)
-                      )
+                    , welcomeModel
+                        |> Page.Home.view rec.language rec.logInState
+                        |> Ui.map (WelcomePageMsg >> PageMsg)
                     ]
                 ]
          )
@@ -715,16 +713,15 @@ view (Model rec) =
         |> Html.Styled.toUnstyled
 
 
-logInPanel : Data.LogInState.LogInState -> Data.Language -> WindowSize -> ( Ui.Size, Ui.Panel Msg )
+logInPanel : Data.LogInState.LogInState -> Data.Language -> WindowSize -> Ui.Panel Msg
 logInPanel logInState language windowSize =
     case logInState of
         Data.LogInState.GuestUser ->
             logInPanelLogInButton language windowSize
 
         Data.LogInState.RequestLogInUrl _ ->
-            ( Ui.auto
-            , Ui.textBox
-                []
+            Ui.textBox
+                [ Ui.height (Ui.auto Ui.start) ]
                 (Ui.TextBoxAttributes
                     { textAlignment = Ui.TextAlignCenter
                     , text = "ログイン画面をリクエスト中……"
@@ -734,12 +731,10 @@ logInPanel logInState language windowSize =
                     , color = Css.rgb 255 255 255
                     }
                 )
-            )
 
         Data.LogInState.VerifyingAccessToken _ ->
-            ( Ui.auto
-            , Ui.textBox
-                []
+            Ui.textBox
+                [ Ui.height (Ui.auto Ui.start) ]
                 (Ui.TextBoxAttributes
                     { textAlignment = Ui.TextAlignCenter
                     , text = "認証中……"
@@ -749,100 +744,110 @@ logInPanel logInState language windowSize =
                     , color = Css.rgb 255 255 255
                     }
                 )
-            )
 
         Data.LogInState.Ok record ->
-            ( Ui.auto
-            , Ui.empty []
-            )
+            Ui.empty [ Ui.height (Ui.auto Ui.start) ]
 
 
-logInPanelLogInButton : Data.Language -> WindowSize -> ( Ui.Size, Ui.Panel Msg )
+logInPanelLogInButton : Data.Language -> WindowSize -> Ui.Panel Msg
 logInPanelLogInButton language { width, height } =
     if width < 512 then
-        ( Ui.fix (48 * 2 + 32)
-        , Ui.column
-            [ Ui.gap 16 ]
-            [ ( Ui.fix 48, googleLogInButton language )
-            , ( Ui.fix 48, gitHubLogInButton language )
+        Ui.column
+            [ Ui.height (Ui.fix (48 * 2 + 32) Ui.start)
+            , Ui.gap 16
             ]
-        )
+            [ googleLogInButton True language
+            , gitHubLogInButton True language
+            ]
 
     else
-        ( Ui.fix 64
-        , Ui.row
-            [ Ui.gap 16, Ui.padding 8 ]
-            [ ( Ui.grow, Ui.empty [] )
-            , ( Ui.fix 320, googleLogInButton language )
-            , ( Ui.fix 320, gitHubLogInButton language )
+        Ui.row
+            [ Ui.height (Ui.fix 64 Ui.start)
+            , Ui.gap 16
+            , Ui.padding 8
             ]
-        )
+            [ Ui.empty []
+            , googleLogInButton False language
+            , gitHubLogInButton False language
+            ]
 
 
-googleLogInButton : Data.Language -> Ui.Panel Msg
-googleLogInButton language =
+googleLogInButton : Bool -> Data.Language -> Ui.Panel Msg
+googleLogInButton stretch language =
     Ui.row
         [ Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.backgroundColor (Css.rgb 66 133 244)
         , Ui.gap 8
+        , Ui.width
+            (if stretch then
+                Ui.stretch
+
+             else
+                Ui.fix 320 Ui.start
+            )
+        , Ui.height (Ui.fix 48 Ui.start)
         ]
-        [ ( Ui.fix 58, Icon.googleIcon (Css.rgb 255 255 255) )
-        , ( Ui.grow
-          , Ui.textBox
-                [ Ui.alignSelf Ui.center ]
-                (Ui.TextBoxAttributes
-                    { textAlignment = Ui.TextAlignStart
-                    , text =
-                        case language of
-                            Data.LanguageEnglish ->
-                                "Sign in with Google"
+        [ Icon.googleIcon (Css.rgb 255 255 255)
+        , Ui.textBox
+            [ Ui.height (Ui.auto Ui.center) ]
+            (Ui.TextBoxAttributes
+                { textAlignment = Ui.TextAlignStart
+                , text =
+                    case language of
+                        Data.LanguageEnglish ->
+                            "Sign in with Google"
 
-                            Data.LanguageJapanese ->
-                                "Googleでログイン"
+                        Data.LanguageJapanese ->
+                            "Googleでログイン"
 
-                            Data.LanguageEsperanto ->
-                                "Ensalutu kun Google"
-                    , typeface = Component.Style.fontHackName
-                    , size = 20
-                    , letterSpacing = 0
-                    , color = Css.rgb 255 255 255
-                    }
-                )
-          )
+                        Data.LanguageEsperanto ->
+                            "Ensalutu kun Google"
+                , typeface = Component.Style.fontHackName
+                , size = 20
+                , letterSpacing = 0
+                , color = Css.rgb 255 255 255
+                }
+            )
         ]
         |> Ui.button [] (RequestLogInUrl Data.OpenIdConnectProviderGoogle)
 
 
-gitHubLogInButton : Data.Language -> Ui.Panel Msg
-gitHubLogInButton language =
+gitHubLogInButton : Bool -> Data.Language -> Ui.Panel Msg
+gitHubLogInButton stretch language =
     Ui.row
         [ Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.backgroundColor (Css.rgb 32 32 32)
         , Ui.gap 8
+        , Ui.width
+            (if stretch then
+                Ui.stretch
+
+             else
+                Ui.fix 320 Ui.start
+            )
+        , Ui.height (Ui.fix 48 Ui.start)
         ]
-        [ ( Ui.fix 58, Icon.gitHubIcon (Css.rgb 255 255 255) )
-        , ( Ui.grow
-          , Ui.textBox
-                [ Ui.alignSelf Ui.center ]
-                (Ui.TextBoxAttributes
-                    { textAlignment = Ui.TextAlignStart
-                    , text =
-                        case language of
-                            Data.LanguageEnglish ->
-                                "Sign in with GitHub"
+        [ Icon.gitHubIcon (Css.rgb 255 255 255)
+        , Ui.textBox
+            [ Ui.height (Ui.auto Ui.center) ]
+            (Ui.TextBoxAttributes
+                { textAlignment = Ui.TextAlignStart
+                , text =
+                    case language of
+                        Data.LanguageEnglish ->
+                            "Sign in with GitHub"
 
-                            Data.LanguageJapanese ->
-                                "GitHubでログイン"
+                        Data.LanguageJapanese ->
+                            "GitHubでログイン"
 
-                            Data.LanguageEsperanto ->
-                                "Ensalutu kun GitHub"
-                    , typeface = Component.Style.fontHackName
-                    , size = 20
-                    , letterSpacing = 0
-                    , color = Css.rgb 255 255 255
-                    }
-                )
-          )
+                        Data.LanguageEsperanto ->
+                            "Ensalutu kun GitHub"
+                , typeface = Component.Style.fontHackName
+                , size = 20
+                , letterSpacing = 0
+                , color = Css.rgb 255 255 255
+                }
+            )
         ]
         |> Ui.button [] (RequestLogInUrl Data.OpenIdConnectProviderGitHub)
 

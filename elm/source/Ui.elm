@@ -1,6 +1,5 @@
 module Ui exposing
-    ( AlignOrJustifySelf
-    , BitmapImageAttributes(..)
+    ( BitmapImageAttributes(..)
     , BorderRadius(..)
     , BorderStyle(..)
     , FitStyle(..)
@@ -8,11 +7,10 @@ module Ui exposing
     , Panel
     , Pointer
     , PointerImage(..)
-    , Size
+    , SizeAndAlignment
     , TextAlignment(..)
     , TextBoxAttributes(..)
     , VectorImageAttributes(..)
-    , alignSelf
     , auto
     , backgroundColor
     , bitmapImage
@@ -21,13 +19,13 @@ module Ui exposing
     , button
     , center
     , column
+    , computeStyle
     , depth
     , empty
     , end
     , fix
     , gap
-    , grow
-    , justifySelf
+    , height
     , map
     , offset
     , overflowVisible
@@ -36,10 +34,10 @@ module Ui exposing
     , row
     , start
     , stretch
-    , styleAndEventCompute
     , textBox
     , toHtml
     , vectorImage
+    , width
     )
 
 import Bitwise
@@ -56,7 +54,7 @@ import VectorImage
 -}
 type Panel message
     = Panel
-        { style : List Style
+        { style : StyleComputed
         , content : Content message
         }
 
@@ -67,8 +65,8 @@ type Content message
     | VectorImage (VectorImageAttributes message)
     | Empty
     | DepthList (List (Panel message))
-    | RowList (List ( Size, Panel message ))
-    | ColumnList (List ( Size, Panel message ))
+    | RowList (List (Panel message))
+    | ColumnList (List (Panel message))
     | Button (ButtonAttributes message)
     | PointerPanel (PointerPanelAttributes message)
 
@@ -118,64 +116,56 @@ type PointerPanelAttributes message
         }
 
 
-type Size
-    = Fix Int
-    | Grow
-    | Auto
+type SizeAndAlignment
+    = Fix Int Alignment
+    | Stretch
+    | Auto Alignment
 
 
 {-| 固定サイズにする
 -}
-fix : Int -> Size
+fix : Int -> Alignment -> SizeAndAlignment
 fix =
     Fix
 
 
-{-| 親の大きさに合わせる
+{-| 親の大きさに合わせる (デフォルト)
 -}
-grow : Size
-grow =
-    Grow
-
-
-{-| 中身に合わせる
--}
-auto : Size
-auto =
-    Auto
-
-
-type AlignOrJustifySelf
-    = Stretch
-    | Start
-    | Center
-    | End
-
-
-{-| グリッドセル内で領域いっぱいに伸びる （デフォルト）
--}
-stretch : AlignOrJustifySelf
+stretch : SizeAndAlignment
 stretch =
     Stretch
 
 
+{-| 中身に合わせる
+-}
+auto : Alignment -> SizeAndAlignment
+auto =
+    Auto
+
+
+type Alignment
+    = Start
+    | Center
+    | End
+
+
 {-| グリッドセル内で上,左に寄せる
 -}
-start : AlignOrJustifySelf
+start : Alignment
 start =
     Start
 
 
 {-| グリッドセル内で中央に寄せる
 -}
-center : AlignOrJustifySelf
+center : Alignment
 center =
     Center
 
 
 {-| グリッドセル内で下,右に寄せる
 -}
-end : AlignOrJustifySelf
+end : Alignment
 end =
     End
 
@@ -227,8 +217,8 @@ type StyleComputed
         , borderRadius : BorderRadius
         , backGroundColor : Maybe Css.Color
         , gap : Int
-        , alignSelf : AlignOrJustifySelf
-        , justifySelf : AlignOrJustifySelf
+        , width : SizeAndAlignment
+        , height : SizeAndAlignment
         }
 
 
@@ -241,8 +231,8 @@ type Style
     | BorderRadius BorderRadius
     | BackGroundColor Css.Color
     | Gap Int
-    | AlignSelf AlignOrJustifySelf
-    | JustifySelf AlignOrJustifySelf
+    | Width SizeAndAlignment
+    | Height SizeAndAlignment
 
 
 type BorderRadius
@@ -285,7 +275,7 @@ type TextAlignment
 
 toHtml : Panel msg -> Html.Styled.Html msg
 toHtml =
-    panelToHtml (GridCell { row = 0, column = 0 }) { width = Grow, height = Grow }
+    panelToHtml (GridCell { row = 0, column = 0 })
 
 
 padding : Int -> Style
@@ -330,18 +320,18 @@ gap =
     Gap
 
 
-{-| グリッドセル内での副軸(縦)方向の揃え方を指定できる. デフォルトはStretch
+{-| グリッドセル内でのパネルの横方向の伸ばし方と揃え方を指定できる. デフォルトはStretch
 -}
-alignSelf : AlignOrJustifySelf -> Style
-alignSelf =
-    AlignSelf
+width : SizeAndAlignment -> Style
+width =
+    Width
 
 
-{-| グリッドセル内での主軸(横)方向の揃え方を指定できる デフォルトはStretch
+{-| グリッドセル内でのパネルの縦方向の伸ばし方と揃え方を指定できる デフォルトはStretch
 -}
-justifySelf : AlignOrJustifySelf -> Style
-justifySelf =
-    JustifySelf
+height : SizeAndAlignment -> Style
+height =
+    Height
 
 
 {-| テキストボックス
@@ -349,7 +339,7 @@ justifySelf =
 textBox : List Style -> TextBoxAttributes -> Panel message
 textBox style textBoxAttributes =
     Panel
-        { style = style
+        { style = computeStyle style
         , content = TextBox textBoxAttributes
         }
 
@@ -359,7 +349,7 @@ textBox style textBoxAttributes =
 bitmapImage : List Style -> BitmapImageAttributes -> Panel message
 bitmapImage style bitmapImageAttributes =
     Panel
-        { style = style
+        { style = computeStyle style
         , content = BitmapImage bitmapImageAttributes
         }
 
@@ -369,7 +359,7 @@ bitmapImage style bitmapImageAttributes =
 vectorImage : List Style -> VectorImageAttributes message -> Panel message
 vectorImage style vectorImageAttributes =
     Panel
-        { style = style
+        { style = computeStyle style
         , content = VectorImage vectorImageAttributes
         }
 
@@ -378,7 +368,10 @@ vectorImage style vectorImageAttributes =
 -}
 empty : List Style -> Panel message
 empty style =
-    Panel { style = style, content = Empty }
+    Panel
+        { style = computeStyle style
+        , content = Empty
+        }
 
 
 {-| ボタン
@@ -386,7 +379,7 @@ empty style =
 button : List Style -> message -> Panel message -> Panel message
 button style clickMessage child =
     Panel
-        { style = style
+        { style = computeStyle style
         , content =
             Button
                 (ButtonAttributes
@@ -402,38 +395,38 @@ button style clickMessage child =
 depth : List Style -> List (Panel message) -> Panel message
 depth style children =
     Panel
-        { style = style
+        { style = computeStyle style
         , content = DepthList children
         }
 
 
 {-| 横方向に並べる
 -}
-row : List Style -> List ( Size, Panel message ) -> Panel message
+row : List Style -> List (Panel message) -> Panel message
 row style children =
     Panel
-        { style = style
+        { style = computeStyle style
         , content = RowList children
         }
 
 
 {-| 縦方向に並べる
 -}
-column : List Style -> List ( Size, Panel message ) -> Panel message
+column : List Style -> List (Panel message) -> Panel message
 column style children =
     Panel
-        { style = style
+        { style = computeStyle style
         , content = ColumnList children
         }
 
 
-styleAndEventCompute : List Style -> StyleComputed
-styleAndEventCompute list =
+computeStyle : List Style -> StyleComputed
+computeStyle list =
     case list of
         x :: xs ->
             let
                 (StyleComputed rest) =
-                    styleAndEventCompute xs
+                    computeStyle xs
             in
             StyleComputed
                 (case x of
@@ -461,19 +454,19 @@ styleAndEventCompute list =
                     Gap px ->
                         { rest | gap = px }
 
-                    AlignSelf value ->
-                        { rest | alignSelf = value }
+                    Width value ->
+                        { rest | width = value }
 
-                    JustifySelf value ->
-                        { rest | justifySelf = value }
+                    Height value ->
+                        { rest | height = value }
                 )
 
         [] ->
-            defaultStyleAndEvent
+            defaultStyleComputed
 
 
-defaultStyleAndEvent : StyleComputed
-defaultStyleAndEvent =
+defaultStyleComputed : StyleComputed
+defaultStyleComputed =
     StyleComputed
         { padding = 0
         , offset = Nothing
@@ -483,9 +476,24 @@ defaultStyleAndEvent =
         , borderRadius = BorderRadiusPx 0
         , backGroundColor = Nothing
         , gap = 0
-        , alignSelf = Stretch
-        , justifySelf = Stretch
+        , width = Stretch
+        , height = Stretch
         }
+
+
+panelGetStyle : Panel message -> StyleComputed
+panelGetStyle (Panel record) =
+    record.style
+
+
+styleComputedGetWidth : StyleComputed -> SizeAndAlignment
+styleComputedGetWidth (StyleComputed record) =
+    record.width
+
+
+styleComputedGetHeight : StyleComputed -> SizeAndAlignment
+styleComputedGetHeight (StyleComputed record) =
+    record.height
 
 
 map : (a -> b) -> Panel a -> Panel b
@@ -529,10 +537,10 @@ mapContent func content =
             DepthList (List.map (map func) children)
 
         RowList children ->
-            RowList (List.map (Tuple.mapSecond (map func)) children)
+            RowList (List.map (map func) children)
 
         ColumnList children ->
-            ColumnList (List.map (Tuple.mapSecond (map func)) children)
+            ColumnList (List.map (map func) children)
 
         PointerPanel (PointerPanelAttributes record) ->
             PointerPanel
@@ -546,53 +554,43 @@ mapContent func content =
                 )
 
 
-type alias SizeArea =
-    { width : Size
-    , height : Size
-    }
-
-
 type GridCell
     = GridCell { row : Int, column : Int }
 
 
-panelToHtml : GridCell -> SizeArea -> Panel msg -> Html.Styled.Html msg
-panelToHtml gridCell sizeArea (Panel record) =
-    let
-        styleAndEventComputed =
-            styleAndEventCompute record.style
-    in
+panelToHtml : GridCell -> Panel msg -> Html.Styled.Html msg
+panelToHtml gridCell (Panel record) =
     case record.content of
         TextBox textBoxAttributes ->
-            textBoxToHtml gridCell sizeArea styleAndEventComputed textBoxAttributes
+            textBoxToHtml gridCell record.style textBoxAttributes
 
         BitmapImage imageFromUrlAttributes ->
-            imageFromUrlToHtml gridCell sizeArea styleAndEventComputed imageFromUrlAttributes
+            imageFromUrlToHtml gridCell record.style imageFromUrlAttributes
 
         VectorImage vectorImageAttributes ->
-            vectorImageToHtml gridCell sizeArea styleAndEventComputed vectorImageAttributes
+            vectorImageToHtml gridCell record.style vectorImageAttributes
 
         Empty ->
-            emptyToHtml gridCell sizeArea styleAndEventComputed
+            emptyToHtml gridCell record.style
 
         Button buttonAttributes ->
-            buttonToHtml gridCell sizeArea styleAndEventComputed buttonAttributes
+            buttonToHtml gridCell record.style buttonAttributes
 
         DepthList depthListAttributes ->
-            depthListToHtml gridCell sizeArea styleAndEventComputed depthListAttributes
+            depthListToHtml gridCell record.style depthListAttributes
 
         RowList rowListAttributes ->
-            rowListToHtml gridCell sizeArea styleAndEventComputed rowListAttributes
+            rowListToHtml gridCell record.style rowListAttributes
 
         ColumnList columnListAttributes ->
-            columnListToHtml gridCell sizeArea styleAndEventComputed columnListAttributes
+            columnListToHtml gridCell record.style columnListAttributes
 
         PointerPanel pointerPanelAttributes ->
-            pointerPanelToHtml gridCell sizeArea styleAndEventComputed pointerPanelAttributes
+            pointerPanelToHtml gridCell record.style pointerPanelAttributes
 
 
-textBoxToHtml : GridCell -> SizeArea -> StyleComputed -> TextBoxAttributes -> Html.Styled.Html message
-textBoxToHtml gridCell sizeArea styleComputed (TextBoxAttributes record) =
+textBoxToHtml : GridCell -> StyleComputed -> TextBoxAttributes -> Html.Styled.Html message
+textBoxToHtml gridCell styleComputed (TextBoxAttributes record) =
     Html.Styled.div
         [ Html.Styled.Attributes.css
             [ styleComputedToCssStyle False styleComputed
@@ -603,35 +601,13 @@ textBoxToHtml gridCell sizeArea styleComputed (TextBoxAttributes record) =
             , Css.overflowWrap Css.breakWord
             , textAlignToStyle record.textAlignment
             , gridCellToCssStyle gridCell
-            , Css.batch
-                (case sizeArea.width of
-                    Fix _ ->
-                        []
-
-                    Grow ->
-                        []
-
-                    Auto ->
-                        [ Css.width Css.auto ]
-                )
-            , Css.batch
-                (case sizeArea.height of
-                    Fix _ ->
-                        []
-
-                    Grow ->
-                        []
-
-                    Auto ->
-                        [ Css.height Css.auto ]
-                )
             ]
         ]
         [ Html.Styled.text record.text ]
 
 
-imageFromUrlToHtml : GridCell -> SizeArea -> StyleComputed -> BitmapImageAttributes -> Html.Styled.Html message
-imageFromUrlToHtml gridCell sizeArea styleComputed (BitmapImageAttributes record) =
+imageFromUrlToHtml : GridCell -> StyleComputed -> BitmapImageAttributes -> Html.Styled.Html message
+imageFromUrlToHtml gridCell styleComputed (BitmapImageAttributes record) =
     Html.Styled.img
         [ Html.Styled.Attributes.css
             ([ styleComputedToCssStyle False styleComputed
@@ -645,28 +621,6 @@ imageFromUrlToHtml gridCell sizeArea styleComputed (BitmapImageAttributes record
                 )
              , Css.display Css.block
              , gridCellToCssStyle gridCell
-             , Css.batch
-                (case sizeArea.width of
-                    Fix px ->
-                        [ Css.width (Css.px (toFloat px)) ]
-
-                    Grow ->
-                        [ Css.width (Css.pct 100) ]
-
-                    Auto ->
-                        [ Css.width Css.auto ]
-                )
-             , Css.batch
-                (case sizeArea.height of
-                    Fix px ->
-                        [ Css.height (Css.px (toFloat px)) ]
-
-                    Grow ->
-                        [ Css.height (Css.pct 100) ]
-
-                    Auto ->
-                        [ Css.height Css.auto ]
-                )
              ]
                 ++ (case record.rendering of
                         ImageRenderingAuto ->
@@ -683,34 +637,12 @@ imageFromUrlToHtml gridCell sizeArea styleComputed (BitmapImageAttributes record
         []
 
 
-vectorImageToHtml : GridCell -> SizeArea -> StyleComputed -> VectorImageAttributes message -> Html.Styled.Html message
-vectorImageToHtml gridCell sizeArea styleComputed (VectorImageAttributes record) =
+vectorImageToHtml : GridCell -> StyleComputed -> VectorImageAttributes message -> Html.Styled.Html message
+vectorImageToHtml gridCell styleComputed (VectorImageAttributes record) =
     Html.Styled.div
         [ Html.Styled.Attributes.css
             [ styleComputedToCssStyle False styleComputed
             , gridCellToCssStyle gridCell
-            , Css.batch
-                (case sizeArea.width of
-                    Fix px ->
-                        [ Css.width (Css.px (toFloat px)) ]
-
-                    Grow ->
-                        [ Css.width (Css.pct 100) ]
-
-                    Auto ->
-                        [ Css.width Css.auto ]
-                )
-            , Css.batch
-                (case sizeArea.height of
-                    Fix px ->
-                        [ Css.height (Css.px (toFloat px)) ]
-
-                    Grow ->
-                        [ Css.height (Css.pct 100) ]
-
-                    Auto ->
-                        [ Css.height Css.auto ]
-                )
             ]
         ]
         [ VectorImage.toHtml
@@ -720,41 +652,19 @@ vectorImageToHtml gridCell sizeArea styleComputed (VectorImageAttributes record)
         ]
 
 
-emptyToHtml : GridCell -> SizeArea -> StyleComputed -> Html.Styled.Html message
-emptyToHtml gridCell sizeArea styleAndEvent =
+emptyToHtml : GridCell -> StyleComputed -> Html.Styled.Html message
+emptyToHtml gridCell styleAndEvent =
     Html.Styled.div
         [ Html.Styled.Attributes.css
             [ styleComputedToCssStyle False styleAndEvent
             , gridCellToCssStyle gridCell
-            , Css.batch
-                (case sizeArea.width of
-                    Fix px ->
-                        [ Css.width (Css.px (toFloat px)) ]
-
-                    Grow ->
-                        [ Css.width (Css.pct 100) ]
-
-                    Auto ->
-                        [ Css.width Css.zero ]
-                )
-            , Css.batch
-                (case sizeArea.height of
-                    Fix px ->
-                        [ Css.height (Css.px (toFloat px)) ]
-
-                    Grow ->
-                        [ Css.height (Css.pct 100) ]
-
-                    Auto ->
-                        [ Css.height Css.zero ]
-                )
             ]
         ]
         []
 
 
-buttonToHtml : GridCell -> SizeArea -> StyleComputed -> ButtonAttributes message -> Html.Styled.Html message
-buttonToHtml gridCell sizeArea styleComputed (ButtonAttributes record) =
+buttonToHtml : GridCell -> StyleComputed -> ButtonAttributes message -> Html.Styled.Html message
+buttonToHtml gridCell styleComputed (ButtonAttributes record) =
     Html.Styled.button
         [ Html.Styled.Attributes.css
             [ styleComputedToCssStyle True styleComputed
@@ -764,18 +674,12 @@ buttonToHtml gridCell sizeArea styleComputed (ButtonAttributes record) =
             record.clickMessage
         ]
         [ panelToHtml (GridCell { row = 0, column = 0 })
-            (sizeAreaSubtractPadding sizeArea styleComputed)
             record.child
         ]
 
 
-depthListToHtml :
-    GridCell
-    -> SizeArea
-    -> StyleComputed
-    -> List (Panel message)
-    -> Html.Styled.Html message
-depthListToHtml gridCell sizeArea styleComputed children =
+depthListToHtml : GridCell -> StyleComputed -> List (Panel message) -> Html.Styled.Html message
+depthListToHtml gridCell styleComputed children =
     Html.Styled.div
         [ Html.Styled.Attributes.css
             [ styleComputedToCssStyle False styleComputed
@@ -788,62 +692,61 @@ depthListToHtml gridCell sizeArea styleComputed children =
         (List.map
             (panelToHtml
                 (GridCell { row = 0, column = 0 })
-                (sizeAreaSubtractPadding sizeArea styleComputed)
             )
             children
         )
 
 
-rowListToHtml : GridCell -> SizeArea -> StyleComputed -> List ( Size, Panel message ) -> Html.Styled.Html message
-rowListToHtml gridCell sizeArea styleComputed children =
+rowListToHtml : GridCell -> StyleComputed -> List (Panel message) -> Html.Styled.Html message
+rowListToHtml gridCell styleComputed children =
     Html.Styled.div
         [ Html.Styled.Attributes.css
             [ styleComputedToCssStyle False styleComputed
             , Css.property "display" "grid"
             , Css.property "grid-template-columns"
                 (sizeListToGridTemplate
-                    (List.map Tuple.first children)
+                    (styleComputedGetWidth styleComputed)
+                    (List.map (panelGetStyle >> styleComputedGetWidth) children)
                 )
             , gridCellToCssStyle gridCell
             ]
         ]
         (List.indexedMap
-            (\index ( size, panel ) ->
+            (\index panel ->
                 panelToHtml
                     (GridCell { row = 0, column = index })
-                    (sizeAreaSubtractPadding { width = size, height = sizeArea.height } styleComputed)
                     panel
             )
             children
         )
 
 
-columnListToHtml : GridCell -> SizeArea -> StyleComputed -> List ( Size, Panel message ) -> Html.Styled.Html message
-columnListToHtml gridCell sizeArea styleComputed children =
+columnListToHtml : GridCell -> StyleComputed -> List (Panel message) -> Html.Styled.Html message
+columnListToHtml gridCell styleComputed children =
     Html.Styled.div
         [ Html.Styled.Attributes.css
             [ styleComputedToCssStyle False styleComputed
             , Css.property "display" "grid"
             , Css.property "grid-template-rows"
                 (sizeListToGridTemplate
-                    (List.map Tuple.first children)
+                    (styleComputedGetHeight styleComputed)
+                    (List.map (panelGetStyle >> styleComputedGetHeight) children)
                 )
             , gridCellToCssStyle gridCell
             ]
         ]
         (List.indexedMap
-            (\index ( size, panel ) ->
+            (\index panel ->
                 panelToHtml
                     (GridCell { row = index, column = 0 })
-                    (sizeAreaSubtractPadding { width = sizeArea.width, height = size } styleComputed)
                     panel
             )
             children
         )
 
 
-pointerPanelToHtml : GridCell -> SizeArea -> StyleComputed -> PointerPanelAttributes message -> Html.Styled.Html message
-pointerPanelToHtml gridCell sizeArea styleComputed (PointerPanelAttributes record) =
+pointerPanelToHtml : GridCell -> StyleComputed -> PointerPanelAttributes message -> Html.Styled.Html message
+pointerPanelToHtml gridCell styleComputed (PointerPanelAttributes record) =
     Html.Styled.div
         (List.concat
             [ [ Html.Styled.Attributes.css
@@ -879,62 +782,34 @@ pointerPanelToHtml gridCell sizeArea styleComputed (PointerPanelAttributes recor
         )
         [ panelToHtml
             (GridCell { row = 0, column = 0 })
-            (sizeAreaSubtractPadding sizeArea styleComputed)
             record.child
         ]
-
-
-sizeAreaSubtractPadding : SizeArea -> StyleComputed -> SizeArea
-sizeAreaSubtractPadding sizeArea (StyleComputed record) =
-    { width =
-        case sizeArea.width of
-            Fix px ->
-                Fix (px - record.padding)
-
-            _ ->
-                sizeArea.width
-    , height =
-        case sizeArea.height of
-            Fix px ->
-                Fix (px - record.padding)
-
-            _ ->
-                sizeArea.height
-    }
 
 
 styleComputedToCssStyle : Bool -> StyleComputed -> Css.Style
 styleComputedToCssStyle isButtonElement (StyleComputed record) =
     [ [ Css.padding (Css.px (toFloat record.padding))
-      , Css.alignSelf
-            (case record.alignSelf of
-                Stretch ->
-                    Css.stretch
-
-                Start ->
-                    Css.start
-
-                Center ->
-                    Css.center
-
-                End ->
-                    Css.end
-            )
-      , Css.property "justify-self"
-            (case record.justifySelf of
-                Stretch ->
-                    "stretch"
-
-                Start ->
-                    "start"
-
-                Center ->
-                    "center"
-
-                End ->
-                    "end"
-            )
+      , Css.property "justify-self" (sizeAndAlignmentToAlignmentCssValueAsString record.width)
+      , Css.property "align-self" (sizeAndAlignmentToAlignmentCssValueAsString record.height)
       ]
+    , case record.width of
+        Fix px _ ->
+            [ Css.width (Css.px (toFloat px)) ]
+
+        Stretch ->
+            [ Css.width (Css.pct 100) ]
+
+        Auto _ ->
+            [ Css.width Css.auto ]
+    , case record.height of
+        Fix px _ ->
+            [ Css.height (Css.px (toFloat px)) ]
+
+        Stretch ->
+            [ Css.height (Css.pct 100) ]
+
+        Auto _ ->
+            [ Css.height Css.auto ]
     , if isButtonElement then
         [ Css.cursor Css.pointer ]
 
@@ -1009,6 +884,32 @@ styleComputedToCssStyle isButtonElement (StyleComputed record) =
     ]
         |> List.concat
         |> Css.batch
+
+
+sizeAndAlignmentToAlignmentCssValueAsString : SizeAndAlignment -> String
+sizeAndAlignmentToAlignmentCssValueAsString sizeAndAlignment =
+    case sizeAndAlignment of
+        Fix _ alignment ->
+            alignmentToCssValueAsString alignment
+
+        Stretch ->
+            "stretch"
+
+        Auto alignment ->
+            alignmentToCssValueAsString alignment
+
+
+alignmentToCssValueAsString : Alignment -> String
+alignmentToCssValueAsString alignment =
+    case alignment of
+        Start ->
+            "start"
+
+        Center ->
+            "center"
+
+        End ->
+            "end"
 
 
 borderStyleToStyle : BorderStyle -> Css.Style
@@ -1102,23 +1003,34 @@ pointerEventDecoder =
         |> Json.Decode.Pipeline.required "eventPhase" Json.Decode.int
 
 
-sizeListToGridTemplate : List Size -> String
-sizeListToGridTemplate =
-    List.map
-        sizeListToGridTemplateItem
-        >> String.join " "
+sizeListToGridTemplate : SizeAndAlignment -> List SizeAndAlignment -> String
+sizeListToGridTemplate sizeAndAlignment panelList =
+    let
+        itemList : List String
+        itemList =
+            List.map
+                sizeListToGridTemplateItem
+                panelList
+                ++ (if sizeAndAlignment == Stretch && not (List.member Stretch panelList) then
+                        [ "1fr" ]
+
+                    else
+                        []
+                   )
+    in
+    String.join " " itemList
 
 
-sizeListToGridTemplateItem : Size -> String
+sizeListToGridTemplateItem : SizeAndAlignment -> String
 sizeListToGridTemplateItem size =
     case size of
-        Fix int ->
+        Fix int _ ->
             String.fromInt int ++ "px"
 
-        Grow ->
+        Stretch ->
             "1fr"
 
-        Auto ->
+        Auto _ ->
             "auto"
 
 
