@@ -10,6 +10,7 @@ gitHubIcon backgroundColor =
     Ui.vectorImage
         [ Ui.width (Ui.fix 48)
         , Ui.height (Ui.fix 48)
+        , Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.padding 8
         , Ui.backgroundColor backgroundColor
         ]
@@ -31,6 +32,7 @@ googleIcon backgroundColor =
     Ui.vectorImage
         [ Ui.width (Ui.fix 48)
         , Ui.height (Ui.fix 48)
+        , Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.padding 8
         , Ui.backgroundColor backgroundColor
         ]

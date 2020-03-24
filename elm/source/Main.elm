@@ -773,8 +773,7 @@ logInPanelLogInButton language { width, height } =
             , Ui.gap 16
             , Ui.padding 8
             ]
-            [ Ui.empty []
-            , googleLogInButton False language
+            [ googleLogInButton False language
             , gitHubLogInButton False language
             ]
 
