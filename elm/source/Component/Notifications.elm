@@ -14,6 +14,7 @@ import Css
 import Data
 import Dict
 import Icon
+import SubData
 import Ui
 
 
@@ -72,119 +73,104 @@ view :
     Dict.Dict String String
     -> Model
     -> Ui.Panel Message
-view imageBlobUrlDict (Model events) =
-    Ui.row
-        []
-        0
-        [ Ui.monochromatic
-            []
-            (Css.rgba 0 0 0 0)
-        , Ui.column
-            [ Ui.width 480 ]
-            8
-            (Ui.empty
-                []
-                :: (events
-                        |> List.reverse
-                        |> List.indexedMap (cardListView imageBlobUrlDict)
-                   )
-            )
+view imageBlobUrlDict (Model eventList) =
+    Ui.column
+        [ Ui.width (Ui.fix 512)
+        , Ui.gap 8
+        , Ui.padding 16
         ]
+        (List.indexedMap
+            (\index event ->
+                cardItem index (eventToCardStyle imageBlobUrlDict event)
+            )
+            (List.reverse eventList)
+        )
 
 
-cardListView : Dict.Dict String String -> Int -> Event -> Ui.Panel Message
-cardListView imageBlobUrlDict index event =
+eventToCardStyle : Dict.Dict String String -> Event -> CardStyle
+eventToCardStyle imageBlobUrlDict event =
     case event of
         LogInSuccess userAndUserId ->
-            let
-                (Data.FileHash fileHashAsString) =
-                    userAndUserId.userPublic.imageHash
-            in
-            cardItem
-                index
-                (case Dict.get fileHashAsString imageBlobUrlDict of
-                    Just blobUrl ->
-                        Just
-                            (Icon
-                                { alternativeText = userAndUserId.userPublic.name ++ "のプロフィール画像"
-                                , rendering = Ui.ImageRenderingPixelated
-                                , url = blobUrl
-                                }
-                            )
+            CardStyle
+                { icon =
+                    case SubData.getUserImage imageBlobUrlDict userAndUserId.userPublic of
+                        Just blobUrl ->
+                            Just
+                                (Icon
+                                    { alternativeText =
+                                        userAndUserId.userPublic.name ++ "のプロフィール画像"
+                                    , url = blobUrl
+                                    }
+                                )
 
-                    Nothing ->
-                        Nothing
-                )
-                ("「" ++ userAndUserId.userPublic.name ++ "」としてログインしました")
+                        Nothing ->
+                            Nothing
+                , text = "「" ++ userAndUserId.userPublic.name ++ "」としてログインしました"
+                }
 
         LogInFailure ->
-            cardItem
-                index
-                Nothing
-                "ログイン失敗"
+            CardStyle
+                { icon = Nothing
+                , text = "ログイン失敗"
+                }
 
         OnLine ->
-            cardItem
-                index
-                Nothing
-                "オンラインになりました"
+            CardStyle
+                { icon = Nothing
+                , text = "オンラインになりました"
+                }
 
         OffLine ->
-            cardItem
-                index
-                Nothing
-                "オフラインになりました"
+            CardStyle
+                { icon = Nothing
+                , text = "オフラインになりました"
+                }
 
 
 type Icon
     = Icon
         { alternativeText : String
-        , rendering : Ui.ImageRendering
         , url : String
         }
 
 
-cardItem : Int -> Maybe Icon -> String -> Ui.Panel Message
-cardItem index iconMaybe text =
-    Ui.depth
-        [ Ui.height 48 ]
-        [ Ui.monochromatic
-            []
-            (Css.rgb 0 100 0)
-        , case iconMaybe of
+type CardStyle
+    = CardStyle
+        { icon : Maybe Icon
+        , text : String
+        }
+
+
+cardItem : Int -> CardStyle -> Ui.Panel Message
+cardItem index (CardStyle record) =
+    Ui.row
+        [ Ui.backgroundColor (Css.rgb 0 100 0)
+        , Ui.width Ui.stretch
+        , Ui.height (Ui.fix 48)
+        ]
+        [ case record.icon of
             Just (Icon icon) ->
-                Ui.row
-                    [ Ui.padding 8 ]
-                    0
-                    [ Ui.imageFromUrl
-                        [ Ui.width 32, Ui.height 32 ]
-                        { fitStyle = Ui.Contain
+                Ui.bitmapImage [ Ui.padding 4, Ui.width (Ui.fix 48) ]
+                    (Ui.BitmapImageAttributes
+                        { url = icon.url
+                        , fitStyle = Ui.Contain
                         , alternativeText = icon.alternativeText
-                        , rendering = icon.rendering
+                        , rendering = Ui.ImageRenderingPixelated
                         }
-                        icon.url
-                    , Ui.textBox
-                        []
-                        { align = Ui.TextAlignStart
-                        , vertical = Ui.CenterY
-                        , font = Style.normalFont
-                        }
-                        text
-                    , Icon.close |> Ui.map (always (DeleteAt index))
-                    ]
+                    )
 
             Nothing ->
-                Ui.row
-                    []
-                    0
-                    [ Ui.textBox
-                        [ Ui.padding 8
-                        ]
-                        { align = Ui.TextAlignStart
-                        , vertical = Ui.CenterY
-                        , font = Style.normalFont
-                        }
-                        text
-                    , Icon.close |> Ui.map (always (DeleteAt index))
-                    ]
+                Ui.empty [ Ui.width (Ui.fix 32) ]
+        , Ui.text
+            [ Ui.padding 8, Ui.width Ui.stretch ]
+            (Ui.TextAttributes
+                { text = record.text
+                , typeface = Style.normalTypeface
+                , size = 16
+                , letterSpacing = 0
+                , color = Css.rgb 255 255 255
+                , textAlignment = Ui.TextAlignStart
+                }
+            )
+        , Ui.button [ Ui.width (Ui.fix 32) ] (DeleteAt index) Icon.close
         ]
