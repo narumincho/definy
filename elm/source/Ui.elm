@@ -554,8 +554,15 @@ panelToHtml gridCell alignmentOrStretch (Panel record) =
     let
         commonStyle =
             Css.batch
-                [ alignmentOrStretchToCssStyle alignmentOrStretch
+                [ alignmentOrStretchToCssStyle record.style alignmentOrStretch
                 , gridCellToCssStyle gridCell
+                , Css.batch
+                    (if isIncludeScrollInPanel (Panel record) then
+                        [ Css.overflow Css.auto ]
+
+                     else
+                        []
+                    )
                 ]
     in
     case record.content of
@@ -575,13 +582,13 @@ panelToHtml gridCell alignmentOrStretch (Panel record) =
             buttonToHtml commonStyle record.style buttonAttributes
 
         Depth depthListAttributes ->
-            depthListToHtml commonStyle record.style depthListAttributes
+            depthToHtml commonStyle record.style depthListAttributes
 
         Row rowListAttributes ->
-            rowListToHtml commonStyle record.style rowListAttributes
+            rowToHtml commonStyle record.style rowListAttributes
 
         Column columnListAttributes ->
-            columnListToHtml commonStyle record.style columnListAttributes
+            columnToHtml commonStyle record.style columnListAttributes
 
         PointerPanel pointerPanelAttributes ->
             pointerPanelToHtml commonStyle record.style pointerPanelAttributes
@@ -680,8 +687,8 @@ buttonToHtml commonStyle styleComputed (ButtonAttributes record) =
         ]
 
 
-depthListToHtml : Css.Style -> StyleComputed -> List ( ( Alignment, Alignment ), Panel message ) -> Html.Styled.Html message
-depthListToHtml commonStyle styleComputed children =
+depthToHtml : Css.Style -> StyleComputed -> List ( ( Alignment, Alignment ), Panel message ) -> Html.Styled.Html message
+depthToHtml commonStyle styleComputed children =
     Html.Styled.div
         [ Html.Styled.Attributes.css
             [ styleComputedToCssStyle False styleComputed
@@ -702,8 +709,8 @@ depthListToHtml commonStyle styleComputed children =
         )
 
 
-rowListToHtml : Css.Style -> StyleComputed -> List (Panel message) -> Html.Styled.Html message
-rowListToHtml commonStyle styleComputed children =
+rowToHtml : Css.Style -> StyleComputed -> List (Panel message) -> Html.Styled.Html message
+rowToHtml commonStyle styleComputed children =
     Html.Styled.div
         [ Html.Styled.Attributes.css
             [ styleComputedToCssStyle False styleComputed
@@ -727,8 +734,8 @@ rowListToHtml commonStyle styleComputed children =
         )
 
 
-columnListToHtml : Css.Style -> StyleComputed -> List (Panel message) -> Html.Styled.Html message
-columnListToHtml commonStyle styleComputed children =
+columnToHtml : Css.Style -> StyleComputed -> List (Panel message) -> Html.Styled.Html message
+columnToHtml commonStyle styleComputed children =
     Html.Styled.div
         [ Html.Styled.Attributes.css
             [ styleComputedToCssStyle False styleComputed
@@ -800,7 +807,6 @@ scrollBoxToHtml commonStyle styleComputed child =
         [ Html.Styled.Attributes.css
             [ commonStyle
             , styleComputedToCssStyle False styleComputed
-            , Css.overflow Css.auto
             ]
         ]
         [ panelToHtml (GridCell { row = 0, column = 0 }) StretchStretch child ]
@@ -809,7 +815,7 @@ scrollBoxToHtml commonStyle styleComputed child =
 styleComputedToCssStyle : Bool -> StyleComputed -> Css.Style
 styleComputedToCssStyle isButtonElement (StyleComputed record) =
     [ [ Css.padding (Css.px (toFloat record.padding))
-      , Css.overflow Css.auto
+      , Css.zIndex (Css.int 0)
       ]
     , case record.width of
         Fix px ->
@@ -1073,32 +1079,40 @@ type AlignmentOrStretch
     | StretchStretch
 
 
-alignmentOrStretchToCssStyle : AlignmentOrStretch -> Css.Style
-alignmentOrStretchToCssStyle alignmentOrStretch =
+alignmentOrStretchToCssStyle : StyleComputed -> AlignmentOrStretch -> Css.Style
+alignmentOrStretchToCssStyle (StyleComputed style) alignmentOrStretch =
     Css.batch
         (case alignmentOrStretch of
             Alignment ( x, y ) ->
                 [ justifySelf
-                    (case x of
-                        Start ->
-                            "start"
+                    (if style.width == Stretch then
+                        "stretch"
 
-                        Center ->
-                            "center"
+                     else
+                        case x of
+                            Start ->
+                                "start"
 
-                        End ->
-                            "end"
+                            Center ->
+                                "center"
+
+                            End ->
+                                "end"
                     )
                 , Css.alignSelf
-                    (case y of
-                        Start ->
-                            Css.start
+                    (if style.height == Stretch then
+                        Css.stretch
 
-                        Center ->
-                            Css.center
+                     else
+                        case y of
+                            Start ->
+                                Css.start
 
-                        End ->
-                            Css.end
+                            Center ->
+                                Css.center
+
+                            End ->
+                                Css.end
                     )
                 ]
 
@@ -1122,3 +1136,37 @@ alignmentOrStretchToCssStyle alignmentOrStretch =
 justifySelf : String -> Css.Style
 justifySelf =
     Css.property "justify-self"
+
+
+isIncludeScrollInPanel : Panel message -> Bool
+isIncludeScrollInPanel (Panel record) =
+    case record.content of
+        Text _ ->
+            False
+
+        BitmapImage _ ->
+            False
+
+        VectorImage _ ->
+            False
+
+        Empty ->
+            False
+
+        Depth list ->
+            List.any (\( _, panel ) -> isIncludeScrollInPanel panel) list
+
+        Row panels ->
+            List.any isIncludeScrollInPanel panels
+
+        Column panels ->
+            List.any isIncludeScrollInPanel panels
+
+        Button (ButtonAttributes attributes) ->
+            isIncludeScrollInPanel attributes.child
+
+        PointerPanel (PointerPanelAttributes attributes) ->
+            isIncludeScrollInPanel attributes.child
+
+        Scroll _ ->
+            True

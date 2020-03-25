@@ -75,7 +75,10 @@ view :
     -> Ui.Panel Message
 view imageBlobUrlDict (Model eventList) =
     Ui.column
-        [ Ui.width (Ui.fix 480), Ui.gap 8 ]
+        [ Ui.width (Ui.fix 512)
+        , Ui.gap 8
+        , Ui.padding 16
+        ]
         (List.indexedMap
             (\index event ->
                 cardItem index (eventToCardStyle imageBlobUrlDict event)
