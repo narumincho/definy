@@ -32,6 +32,7 @@ module Ui exposing
     , row
     , scroll
     , stretch
+    , stretchWithMaxSize
     , text
     , toHtml
     , vectorImage
@@ -117,7 +118,7 @@ type PointerPanelAttributes message
 
 type Size
     = Fix Int
-    | Stretch
+    | Stretch (Maybe Int)
     | Auto
 
 
@@ -132,7 +133,14 @@ fix =
 -}
 stretch : Size
 stretch =
-    Stretch
+    Stretch Nothing
+
+
+{-| 基本的に親のサイズになるように大きくなるが,指定した最大の大きさに収まるようにする
+-}
+stretchWithMaxSize : Int -> Size
+stretchWithMaxSize maxSize =
+    Stretch (Just maxSize)
 
 
 {-| 中身に合わせる
@@ -821,8 +829,15 @@ styleComputedToCssStyle isButtonElement (StyleComputed record) =
         Fix px ->
             [ Css.width (Css.px (toFloat px)) ]
 
-        Stretch ->
+        Stretch maxSizeMaybe ->
             [ Css.width (Css.pct 100) ]
+                ++ (case maxSizeMaybe of
+                        Just maxSize ->
+                            [ Css.maxWidth (Css.px (toFloat maxSize)) ]
+
+                        Nothing ->
+                            []
+                   )
 
         Auto ->
             [ Css.width Css.auto ]
@@ -830,8 +845,15 @@ styleComputedToCssStyle isButtonElement (StyleComputed record) =
         Fix px ->
             [ Css.height (Css.px (toFloat px)) ]
 
-        Stretch ->
+        Stretch maxSizeMaybe ->
             [ Css.height (Css.pct 100) ]
+                ++ (case maxSizeMaybe of
+                        Just maxSize ->
+                            [ Css.maxHeight (Css.px (toFloat maxSize)) ]
+
+                        Nothing ->
+                            []
+                   )
 
         Auto ->
             [ Css.height Css.auto ]
@@ -1010,12 +1032,12 @@ sizeListToGridTemplate sizeAndAlignment panelList =
             List.map
                 sizeListToGridTemplateItem
                 panelList
-                ++ (if List.member Stretch panelList then
+                ++ (if List.any isStretch panelList then
                         []
 
                     else
                         case sizeAndAlignment of
-                            Stretch ->
+                            Stretch _ ->
                                 [ "1fr" ]
 
                             Fix _ ->
@@ -1028,13 +1050,23 @@ sizeListToGridTemplate sizeAndAlignment panelList =
     String.join " " itemList
 
 
+isStretch : Size -> Bool
+isStretch size =
+    case size of
+        Stretch _ ->
+            True
+
+        _ ->
+            False
+
+
 sizeListToGridTemplateItem : Size -> String
 sizeListToGridTemplateItem size =
     case size of
         Fix int ->
             String.fromInt int ++ "px"
 
-        Stretch ->
+        Stretch _ ->
             "1fr"
 
         Auto ->
@@ -1085,7 +1117,7 @@ alignmentOrStretchToCssStyle (StyleComputed style) alignmentOrStretch =
         (case alignmentOrStretch of
             Alignment ( x, y ) ->
                 [ justifySelf
-                    (if style.width == Stretch then
+                    (if isStretch style.width then
                         "stretch"
 
                      else
@@ -1100,7 +1132,7 @@ alignmentOrStretchToCssStyle (StyleComputed style) alignmentOrStretch =
                                 "end"
                     )
                 , Css.alignSelf
-                    (if style.height == Stretch then
+                    (if isStretch style.height then
                         Css.stretch
 
                      else

@@ -112,7 +112,7 @@ createProjectButton language logInState =
     case logInState of
         Data.LogInState.RequestLogInUrl _ ->
             Ui.text
-                [ Ui.width (Ui.fix 320) ]
+                [ Ui.width (Ui.stretchWithMaxSize 320) ]
                 (Ui.TextAttributes
                     { text = "......"
                     , typeface = Component.Style.normalTypeface
@@ -125,7 +125,7 @@ createProjectButton language logInState =
 
         Data.LogInState.VerifyingAccessToken _ ->
             Ui.text
-                [ Ui.width (Ui.fix 320) ]
+                [ Ui.width (Ui.stretchWithMaxSize 320) ]
                 (Ui.TextAttributes
                     { text =
                         case language of
@@ -147,7 +147,7 @@ createProjectButton language logInState =
 
         Data.LogInState.GuestUser ->
             Ui.text
-                [ Ui.width (Ui.fix 320) ]
+                [ Ui.width (Ui.stretchWithMaxSize 320) ]
                 (Ui.TextAttributes
                     { text =
                         case language of
@@ -169,7 +169,7 @@ createProjectButton language logInState =
 
         Data.LogInState.Ok { accessToken } ->
             Ui.depth
-                [ Ui.width (Ui.fix 320)
+                [ Ui.width (Ui.stretchWithMaxSize 320)
                 , Ui.height Ui.stretch
                 , Ui.border
                     (Ui.BorderStyle
@@ -235,7 +235,7 @@ projectLine =
 projectItem : Ui.Panel message
 projectItem =
     Ui.depth
-        [ Ui.width (Ui.fix 320), Ui.height Ui.stretch ]
+        [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
         [ ( ( Ui.Center, Ui.Center )
           , Ui.bitmapImage
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
