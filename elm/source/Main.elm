@@ -727,9 +727,9 @@ logInPanel logInState language windowSize =
             logInPanelLogInButton language windowSize
 
         Data.LogInState.RequestLogInUrl _ ->
-            Ui.textBox
+            Ui.text
                 [ Ui.height Ui.auto ]
-                (Ui.TextBoxAttributes
+                (Ui.TextAttributes
                     { textAlignment = Ui.TextAlignCenter
                     , text = "ログイン画面をリクエスト中……"
                     , typeface = Component.Style.fontHackName
@@ -740,9 +740,9 @@ logInPanel logInState language windowSize =
                 )
 
         Data.LogInState.VerifyingAccessToken _ ->
-            Ui.textBox
+            Ui.text
                 [ Ui.height Ui.auto ]
-                (Ui.TextBoxAttributes
+                (Ui.TextAttributes
                     { textAlignment = Ui.TextAlignCenter
                     , text = "認証中……"
                     , typeface = Component.Style.fontHackName
@@ -794,9 +794,9 @@ googleLogInButton stretch language =
         , Ui.height (Ui.fix 48)
         ]
         [ Icon.googleIcon (Css.rgb 255 255 255)
-        , Ui.textBox
+        , Ui.text
             [ Ui.height Ui.auto ]
-            (Ui.TextBoxAttributes
+            (Ui.TextAttributes
                 { textAlignment = Ui.TextAlignStart
                 , text =
                     case language of
@@ -834,9 +834,9 @@ gitHubLogInButton stretch language =
         , Ui.height (Ui.fix 48)
         ]
         [ Icon.gitHubIcon (Css.rgb 255 255 255)
-        , Ui.textBox
+        , Ui.text
             [ Ui.height Ui.auto ]
-            (Ui.TextBoxAttributes
+            (Ui.TextAttributes
                 { textAlignment = Ui.TextAlignStart
                 , text =
                     case language of

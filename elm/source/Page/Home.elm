@@ -81,7 +81,7 @@ update msg (Model rec) =
 
 view : Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Msg
 view language logInState (Model rec) =
-    Ui.scrollBox
+    Ui.scroll
         [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
         (Ui.column
             [ Ui.gap 16, Ui.height Ui.stretch ]
@@ -111,9 +111,9 @@ createProjectButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Ms
 createProjectButton language logInState =
     case logInState of
         Data.LogInState.RequestLogInUrl _ ->
-            Ui.textBox
+            Ui.text
                 [ Ui.width (Ui.fix 320) ]
-                (Ui.TextBoxAttributes
+                (Ui.TextAttributes
                     { text = "......"
                     , typeface = Component.Style.normalTypeface
                     , size = 16
@@ -124,9 +124,9 @@ createProjectButton language logInState =
                 )
 
         Data.LogInState.VerifyingAccessToken _ ->
-            Ui.textBox
+            Ui.text
                 [ Ui.width (Ui.fix 320) ]
-                (Ui.TextBoxAttributes
+                (Ui.TextAttributes
                     { text =
                         case language of
                             Data.LanguageEnglish ->
@@ -146,9 +146,9 @@ createProjectButton language logInState =
                 )
 
         Data.LogInState.GuestUser ->
-            Ui.textBox
+            Ui.text
                 [ Ui.width (Ui.fix 320) ]
-                (Ui.TextBoxAttributes
+                (Ui.TextAttributes
                     { text =
                         case language of
                             Data.LanguageEnglish ->
@@ -187,9 +187,9 @@ createProjectButton language logInState =
                   , Ui.column
                         []
                         [ Icon.plus
-                        , Ui.textBox
+                        , Ui.text
                             []
-                            (Ui.TextBoxAttributes
+                            (Ui.TextAttributes
                                 { text =
                                     case language of
                                         Data.LanguageEnglish ->
@@ -248,9 +248,9 @@ projectItem =
                 )
           )
         , ( ( Ui.Center, Ui.End )
-          , Ui.textBox
+          , Ui.text
                 [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
-                (Ui.TextBoxAttributes
+                (Ui.TextAttributes
                     { text = "プロジェクト名"
                     , typeface = Component.Style.normalTypeface
                     , size = 16

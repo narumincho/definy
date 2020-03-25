@@ -36,9 +36,9 @@ view imageBlobUrlDict logInState =
 
 logo : Ui.Panel msg
 logo =
-    Ui.textBox
+    Ui.text
         [ Ui.padding 8 ]
-        (Ui.TextBoxAttributes
+        (Ui.TextAttributes
             { text = "Definy"
             , typeface = Component.Style.codeFontTypeface
             , size = 32
@@ -51,9 +51,9 @@ logo =
 
 guestItem : Ui.Panel msg
 guestItem =
-    Ui.textBox
+    Ui.text
         []
-        (Ui.TextBoxAttributes
+        (Ui.TextAttributes
             { text = "ゲスト"
             , typeface = Component.Style.normalTypeface
             , size = 16
@@ -86,9 +86,9 @@ userItem imageBlobUrlDict userData =
 
             Nothing ->
                 []
-         , [ Ui.textBox
+         , [ Ui.text
                 []
-                (Ui.TextBoxAttributes
+                (Ui.TextAttributes
                     { text = userData.name
                     , typeface = Component.Style.normalTypeface
                     , size = 16

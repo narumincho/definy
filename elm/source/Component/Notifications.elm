@@ -158,9 +158,9 @@ cardItem index (CardStyle record) =
 
             Nothing ->
                 Ui.empty [ Ui.width (Ui.fix 32) ]
-        , Ui.textBox
+        , Ui.text
             [ Ui.padding 8, Ui.width Ui.stretch ]
-            (Ui.TextBoxAttributes
+            (Ui.TextAttributes
                 { text = record.text
                 , typeface = Style.normalTypeface
                 , size = 16

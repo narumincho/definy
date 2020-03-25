@@ -10,7 +10,7 @@ module Ui exposing
     , PointerImage(..)
     , Size
     , TextAlignment(..)
-    , TextBoxAttributes(..)
+    , TextAttributes(..)
     , VectorImageAttributes(..)
     , auto
     , backgroundColor
@@ -19,7 +19,6 @@ module Ui exposing
     , borderRadius
     , button
     , column
-    , computeStyle
     , depth
     , empty
     , fix
@@ -31,9 +30,9 @@ module Ui exposing
     , padding
     , pointerImage
     , row
-    , scrollBox
+    , scroll
     , stretch
-    , textBox
+    , text
     , toHtml
     , vectorImage
     , width
@@ -59,20 +58,20 @@ type Panel message
 
 
 type Content message
-    = TextBox TextBoxAttributes
+    = Text TextAttributes
     | BitmapImage BitmapImageAttributes
     | VectorImage (VectorImageAttributes message)
     | Empty
-    | DepthList (List ( ( Alignment, Alignment ), Panel message ))
-    | RowList (List (Panel message))
-    | ColumnList (List (Panel message))
+    | Depth (List ( ( Alignment, Alignment ), Panel message ))
+    | Row (List (Panel message))
+    | Column (List (Panel message))
     | Button (ButtonAttributes message)
     | PointerPanel (PointerPanelAttributes message)
-    | ScrollBox (Panel message)
+    | Scroll (Panel message)
 
 
-type TextBoxAttributes
-    = TextBoxAttributes
+type TextAttributes
+    = TextAttributes
         { text : String
         , typeface : String
         , size : Int
@@ -315,11 +314,11 @@ height =
 
 {-| テキストボックス
 -}
-textBox : List Style -> TextBoxAttributes -> Panel message
-textBox style textBoxAttributes =
+text : List Style -> TextAttributes -> Panel message
+text style textBoxAttributes =
     Panel
         { style = computeStyle style
-        , content = TextBox textBoxAttributes
+        , content = Text textBoxAttributes
         }
 
 
@@ -371,11 +370,11 @@ button style clickMessage child =
 
 {-| 中身が領域より大きい場合,中身をスクロールできるようにする
 -}
-scrollBox : List Style -> Panel message -> Panel message
-scrollBox style child =
+scroll : List Style -> Panel message -> Panel message
+scroll style child =
     Panel
         { style = computeStyle style
-        , content = ScrollBox child
+        , content = Scroll child
         }
 
 
@@ -385,7 +384,7 @@ depth : List Style -> List ( ( Alignment, Alignment ), Panel message ) -> Panel 
 depth style children =
     Panel
         { style = computeStyle style
-        , content = DepthList children
+        , content = Depth children
         }
 
 
@@ -395,7 +394,7 @@ row : List Style -> List (Panel message) -> Panel message
 row style children =
     Panel
         { style = computeStyle style
-        , content = RowList children
+        , content = Row children
         }
 
 
@@ -405,7 +404,7 @@ column : List Style -> List (Panel message) -> Panel message
 column style children =
     Panel
         { style = computeStyle style
-        , content = ColumnList children
+        , content = Column children
         }
 
 
@@ -496,8 +495,8 @@ map func (Panel record) =
 mapContent : (a -> b) -> Content a -> Content b
 mapContent func content =
     case content of
-        TextBox textBoxAttributes ->
-            TextBox textBoxAttributes
+        Text textBoxAttributes ->
+            Text textBoxAttributes
 
         BitmapImage bitmapImageAttributes ->
             BitmapImage bitmapImageAttributes
@@ -522,14 +521,14 @@ mapContent func content =
                     }
                 )
 
-        DepthList children ->
-            DepthList (List.map (Tuple.mapSecond (map func)) children)
+        Depth children ->
+            Depth (List.map (Tuple.mapSecond (map func)) children)
 
-        RowList children ->
-            RowList (List.map (map func) children)
+        Row children ->
+            Row (List.map (map func) children)
 
-        ColumnList children ->
-            ColumnList (List.map (map func) children)
+        Column children ->
+            Column (List.map (map func) children)
 
         PointerPanel (PointerPanelAttributes record) ->
             PointerPanel
@@ -542,8 +541,8 @@ mapContent func content =
                     }
                 )
 
-        ScrollBox child ->
-            ScrollBox (map func child)
+        Scroll child ->
+            Scroll (map func child)
 
 
 type GridCell
@@ -560,7 +559,7 @@ panelToHtml gridCell alignmentOrStretch (Panel record) =
                 ]
     in
     case record.content of
-        TextBox textBoxAttributes ->
+        Text textBoxAttributes ->
             textBoxToHtml commonStyle record.style textBoxAttributes
 
         BitmapImage imageFromUrlAttributes ->
@@ -575,24 +574,24 @@ panelToHtml gridCell alignmentOrStretch (Panel record) =
         Button buttonAttributes ->
             buttonToHtml commonStyle record.style buttonAttributes
 
-        DepthList depthListAttributes ->
+        Depth depthListAttributes ->
             depthListToHtml commonStyle record.style depthListAttributes
 
-        RowList rowListAttributes ->
+        Row rowListAttributes ->
             rowListToHtml commonStyle record.style rowListAttributes
 
-        ColumnList columnListAttributes ->
+        Column columnListAttributes ->
             columnListToHtml commonStyle record.style columnListAttributes
 
         PointerPanel pointerPanelAttributes ->
             pointerPanelToHtml commonStyle record.style pointerPanelAttributes
 
-        ScrollBox child ->
+        Scroll child ->
             scrollBoxToHtml commonStyle record.style child
 
 
-textBoxToHtml : Css.Style -> StyleComputed -> TextBoxAttributes -> Html.Styled.Html message
-textBoxToHtml commonStyle styleComputed (TextBoxAttributes record) =
+textBoxToHtml : Css.Style -> StyleComputed -> TextAttributes -> Html.Styled.Html message
+textBoxToHtml commonStyle styleComputed (TextAttributes record) =
     Html.Styled.div
         [ Html.Styled.Attributes.css
             [ styleComputedToCssStyle False styleComputed
