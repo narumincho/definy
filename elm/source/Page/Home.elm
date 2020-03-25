@@ -81,9 +81,12 @@ update msg (Model rec) =
 
 view : Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Msg
 view language logInState (Model rec) =
-    Ui.column
-        [ Ui.gap 16 ]
-        [ projectList language logInState ]
+    Ui.scrollBox
+        [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+        (Ui.column
+            [ Ui.gap 16, Ui.height Ui.stretch ]
+            [ projectList language logInState ]
+        )
 
 
 projectList : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
@@ -95,6 +98,10 @@ projectList language logInState =
         , Ui.padding 8
         ]
         [ projectLineFirstCreateButton language logInState
+        , projectLine
+        , projectLine
+        , projectLine
+        , projectLine
         , projectLine
         , projectLine
         ]

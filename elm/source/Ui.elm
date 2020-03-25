@@ -31,6 +31,7 @@ module Ui exposing
     , padding
     , pointerImage
     , row
+    , scrollBox
     , stretch
     , textBox
     , toHtml
@@ -67,6 +68,7 @@ type Content message
     | ColumnList (List (Panel message))
     | Button (ButtonAttributes message)
     | PointerPanel (PointerPanelAttributes message)
+    | ScrollBox (Panel message)
 
 
 type TextBoxAttributes
@@ -367,6 +369,16 @@ button style clickMessage child =
         }
 
 
+{-| 中身が領域より大きい場合,中身をスクロールできるようにする
+-}
+scrollBox : List Style -> Panel message -> Panel message
+scrollBox style child =
+    Panel
+        { style = computeStyle style
+        , content = ScrollBox child
+        }
+
+
 {-| パネルを同じ領域に重ねる
 -}
 depth : List Style -> List ( ( Alignment, Alignment ), Panel message ) -> Panel message
@@ -530,6 +542,9 @@ mapContent func content =
                     }
                 )
 
+        ScrollBox child ->
+            ScrollBox (map func child)
+
 
 type GridCell
     = GridCell { row : Int, column : Int }
@@ -571,6 +586,9 @@ panelToHtml gridCell alignmentOrStretch (Panel record) =
 
         PointerPanel pointerPanelAttributes ->
             pointerPanelToHtml commonStyle record.style pointerPanelAttributes
+
+        ScrollBox child ->
+            scrollBoxToHtml commonStyle record.style child
 
 
 textBoxToHtml : Css.Style -> StyleComputed -> TextBoxAttributes -> Html.Styled.Html message
@@ -777,9 +795,23 @@ pointerPanelToHtml commonStyle styleComputed (PointerPanelAttributes record) =
         ]
 
 
+scrollBoxToHtml : Css.Style -> StyleComputed -> Panel message -> Html.Styled.Html message
+scrollBoxToHtml commonStyle styleComputed child =
+    Html.Styled.div
+        [ Html.Styled.Attributes.css
+            [ commonStyle
+            , styleComputedToCssStyle False styleComputed
+            , Css.overflow Css.auto
+            ]
+        ]
+        [ panelToHtml (GridCell { row = 0, column = 0 }) StretchStretch child ]
+
+
 styleComputedToCssStyle : Bool -> StyleComputed -> Css.Style
 styleComputedToCssStyle isButtonElement (StyleComputed record) =
-    [ [ Css.padding (Css.px (toFloat record.padding)) ]
+    [ [ Css.padding (Css.px (toFloat record.padding))
+      , Css.overflow Css.auto
+      ]
     , case record.width of
         Fix px ->
             [ Css.width (Css.px (toFloat px)) ]
