@@ -258,26 +258,26 @@ const init = async (): Promise<void> => {
     });
   });
 
-  app.ports.getImageBlobUrl.subscribe(fileHashAndIsThumbnail => {
-    const blobUrl = imageBlobUrlMap.get(fileHashAndIsThumbnail.fileHash);
+  app.ports.getImageBlobUrl.subscribe(fileHash => {
+    const blobUrl = imageBlobUrlMap.get(fileHash);
     if (blobUrl !== undefined) {
       app.ports.getImageBlobResponse.send({
         blobUrl: blobUrl,
-        fileHash: fileHashAndIsThumbnail.fileHash
+        fileHash: fileHash
       });
       return;
     }
     callApi(
       "getImageFile",
-      common.data.encodeFileHashAndIsThumbnail(fileHashAndIsThumbnail),
+      common.data.encodeToken(fileHash),
       common.data.decodeBinary
     ).then(pngBinary => {
       const blob = new Blob([pngBinary], { type: "image/png" });
       const blobUrl = URL.createObjectURL(blob);
-      imageBlobUrlMap.set(fileHashAndIsThumbnail.fileHash, blobUrl);
+      imageBlobUrlMap.set(fileHash, blobUrl);
       app.ports.getImageBlobResponse.send({
         blobUrl: blobUrl,
-        fileHash: fileHashAndIsThumbnail.fileHash
+        fileHash: fileHash
       });
       console.log({ blobUrl });
     });

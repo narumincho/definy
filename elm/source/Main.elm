@@ -668,10 +668,10 @@ getUserByAccessTokenTyped accessToken =
         (Data.accessTokenToJsonValue accessToken)
 
 
-getImageBlobUrlTyped : Data.FileHashAndIsThumbnail -> Cmd Msg
-getImageBlobUrlTyped fileHashAndIsThumbnail =
+getImageBlobUrlTyped : Data.FileHash -> Cmd Msg
+getImageBlobUrlTyped fileHash =
     getImageBlobUrl
-        (Data.fileHashAndIsThumbnailToJsonValue fileHashAndIsThumbnail)
+        (Data.fileHashToJsonValue fileHash)
 
 
 
@@ -962,7 +962,7 @@ commandItemToMainCommand : Command.CommandItem -> Cmd Msg
 commandItemToMainCommand commandItem =
     case commandItem of
         Command.GetBlobUrl fileHash ->
-            getImageBlobUrlTyped { fileHash = fileHash, isThumbnail = False }
+            getImageBlobUrlTyped fileHash
 
 
 
