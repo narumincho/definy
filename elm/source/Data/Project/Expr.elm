@@ -32,7 +32,7 @@ module Data.Project.Expr exposing
     , toString
     )
 
-import Data.IdHash as Id
+import Data
 import Utility.ListExtra as ListExtra
 
 
@@ -458,7 +458,7 @@ setTermAtOther index term (ExprTermOp head others) =
 
 type Term
     = Int32Literal Int
-    | Part Id.PartId
+    | Part Data.PartId
     | Parentheses Expr
     | None
 
@@ -492,7 +492,7 @@ termToDescription term =
         Int32Literal i ->
             ( String.fromInt i, "Int32リテラル" )
 
-        Part (Id.PartId id) ->
+        Part (Data.PartId id) ->
             ( "パーツ", "パーツによる参照(" ++ id ++ ")" )
 
         None ->

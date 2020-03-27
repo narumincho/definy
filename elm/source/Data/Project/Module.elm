@@ -10,7 +10,7 @@ module Data.Project.Module exposing
     , setName
     )
 
-import Data.IdHash as Id
+import Data
 import Data.Label as Label
 import Data.Project.PartDef as PartDef
 import Data.Project.TypeDef as TypeDef
@@ -29,11 +29,11 @@ import Data.Project.TypeDef as TypeDef
 -}
 type Module
     = Module
-        { id : Id.ModuleId
+        { id : Data.ModuleId
         , name : List Label.Label
         , description : String
-        , typeDefinitionIds : List Id.TypeId
-        , partDefinitionIds : List Id.PartId
+        , typeDefinitionIds : List Data.TypeId
+        , partDefinitionIds : List Data.PartId
         }
 
 
@@ -42,7 +42,7 @@ type Module
 init : List Label.Label -> Module
 init name =
     Module
-        { id = Id.ModuleId "emptyId"
+        { id = Data.ModuleId "emptyId"
         , name = name
         , description = ""
         , typeDefinitionIds = []
@@ -53,11 +53,11 @@ init name =
 {-| モジュールを作成する
 -}
 from :
-    { id : Id.ModuleId
+    { id : Data.ModuleId
     , name : List Label.Label
     , description : String
-    , typeDefinitionIds : List Id.TypeId
-    , partDefinitionIds : List Id.PartId
+    , typeDefinitionIds : List Data.TypeId
+    , partDefinitionIds : List Data.PartId
     }
     -> Module
 from =
@@ -67,7 +67,7 @@ from =
 sampleModule : Module
 sampleModule =
     Module
-        { id = Id.ModuleId "sampleModuleId"
+        { id = Data.ModuleId "sampleModuleId"
         , name =
             [ Label.from Label.hs
                 [ Label.oa
@@ -169,11 +169,11 @@ setDescription description (Module rec) =
         { rec | description = description }
 
 
-getPartDefinitionIds : Module -> List Id.PartId
+getPartDefinitionIds : Module -> List Data.PartId
 getPartDefinitionIds (Module { partDefinitionIds }) =
     partDefinitionIds
 
 
-getTypeDefinitionIds : Module -> List Id.TypeId
+getTypeDefinitionIds : Module -> List Data.TypeId
 getTypeDefinitionIds (Module { typeDefinitionIds }) =
     typeDefinitionIds

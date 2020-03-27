@@ -15,7 +15,7 @@ module Data.Project.PartDef exposing
     , typeToString
     )
 
-import Data.IdHash as Id
+import Data
 import Data.Label as Label
 import Data.Project.Expr as Expr
 
@@ -24,7 +24,7 @@ import Data.Project.Expr as Expr
 -}
 type PartDef
     = PartDef
-        { id : Id.PartId
+        { id : Data.PartId
         , name : Maybe Label.Label
         , type_ : Type
         , expr : Expr.Expr
@@ -33,7 +33,7 @@ type PartDef
 
 {-| 新しく定義を作成する
 -}
-make : { id : Id.PartId, name : Maybe Label.Label, type_ : Type, expr : Expr.Expr } -> PartDef
+make : { id : Data.PartId, name : Maybe Label.Label, type_ : Type, expr : Expr.Expr } -> PartDef
 make =
     PartDef
 
@@ -43,7 +43,7 @@ make =
 empty : PartDef
 empty =
     PartDef
-        { id = Id.PartId "emptyId" --TODO
+        { id = Data.PartId "emptyId" --TODO
         , name = Nothing
         , type_ = Empty
         , expr = Expr.empty
@@ -111,7 +111,7 @@ toString (PartDef { name, type_, expr }) =
 
 type Type
     = Function Type Type
-    | Ref Id.TypeId
+    | Ref Data.TypeId
     | Empty
 
 
@@ -131,7 +131,7 @@ typeToString type_ =
         Function inType outType ->
             typeToString inType ++ "→" ++ typeToString outType
 
-        Ref (Id.TypeId id) ->
+        Ref (Data.TypeId id) ->
             "(" ++ id ++ ")"
 
         Empty ->

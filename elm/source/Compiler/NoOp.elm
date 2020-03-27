@@ -5,15 +5,16 @@ module Compiler.NoOp exposing
     , toString
     )
 
-import Data.IdHash
-
-
 {-| 演算子のない形式
 -}
+
+import Data
+
+
 type NoOp
     = Core CoreEnum
     | Int Int
-    | Ref Data.IdHash.PartId
+    | Ref Data.PartId
     | Call1 NoOp NoOp
     | Call2 NoOp NoOp NoOp
 
@@ -33,7 +34,7 @@ toString noOp =
         Int x ->
             String.fromInt x
 
-        Ref (Data.IdHash.PartId defNum) ->
+        Ref (Data.PartId defNum) ->
             "!" ++ defNum
 
         Call1 f x ->

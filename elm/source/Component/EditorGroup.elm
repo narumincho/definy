@@ -29,7 +29,6 @@ import Component.EditorItemSource
 import Component.Style as Style
 import Css
 import Data
-import Data.IdHash
 import Data.Project
 import Html.Styled
 import Html.Styled.Attributes
@@ -196,7 +195,7 @@ initModel =
             RowOne
                 { left =
                     ColumnOne
-                        { top = ModuleEditor (Component.Editor.Module.initModel (Data.IdHash.ModuleId "")) }
+                        { top = ModuleEditor (Component.Editor.Module.initModel (Data.ModuleId "")) }
                 }
         , activeEditorIndex = ( EditorIndexLeft, EditorIndexTop )
         }

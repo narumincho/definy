@@ -7,29 +7,28 @@ module Data.Project exposing
     , simpleFrom
     )
 
-import Data.IdHash as Id
+import Data
 import Data.Label as Label
-import Data.Project.Module as Module
 import Time
 
 
 type SimpleProject
     = SimpleProject
-        { id : Id.ProjectId
+        { id : Data.ProjectId
         , name : Label.Label
-        , leader : Id.UserId
+        , leader : Data.UserId
         }
 
 
 type Project
     = Project
-        { id : Id.ProjectId
+        { id : Data.ProjectId
         , name : Label.Label
-        , leader : Id.UserId
-        , editors : List Id.UserId
+        , leader : Data.UserId
+        , editors : List Data.UserId
         , updateAt : Time.Posix
         , createdAt : Time.Posix
-        , modules : List Id.ModuleId
+        , modules : List Data.ModuleId
         }
 
 
@@ -46,7 +45,7 @@ getLeaderName _ =
 sample : Project
 sample =
     Project
-        { id = Id.ProjectId "sample"
+        { id = Data.ProjectId "sample"
         , name =
             Label.from Label.hs
                 [ Label.oa
@@ -62,14 +61,14 @@ sample =
                 , Label.oc
                 , Label.ot
                 ]
-        , leader = Id.UserId "sampleProjectLeader"
+        , leader = Data.UserId "sampleProjectLeader"
         , editors = []
         , updateAt = Time.millisToPosix 0
         , createdAt = Time.millisToPosix 0
-        , modules = [ Id.ModuleId "sampleModuleId" ]
+        , modules = [ Data.ModuleId "sampleModuleId" ]
         }
 
 
-simpleFrom : { id : Id.ProjectId, name : Label.Label, leader : Id.UserId } -> SimpleProject
+simpleFrom : { id : Data.ProjectId, name : Label.Label, leader : Data.UserId } -> SimpleProject
 simpleFrom =
     SimpleProject

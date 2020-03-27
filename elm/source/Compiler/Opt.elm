@@ -1,6 +1,6 @@
 module Compiler.Opt exposing (Opt(..), toString)
 
-import Data.IdHash
+import Data
 
 
 type Opt
@@ -8,7 +8,7 @@ type Opt
     | I32Sub Opt Opt
     | I32Mul Opt Opt
     | I32Const Int
-    | Call Data.IdHash.PartId
+    | Call Data.PartId
 
 
 toString : Opt -> String
@@ -26,5 +26,5 @@ toString opt =
         I32Const v ->
             "[i32.const " ++ String.fromInt v ++ "]"
 
-        Call (Data.IdHash.PartId partId) ->
+        Call (Data.PartId partId) ->
             "(call" ++ partId ++ ")"

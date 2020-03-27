@@ -1,10 +1,10 @@
 module Component.EditorItemSource exposing (EditorItemSource(..))
 
-import Data.IdHash
+import Data
 
 
 type EditorItemSource
     = ProjectRoot
     | ProjectImport
-    | Module Data.IdHash.ModuleId
+    | Module Data.ModuleId
     | EditorKeyConfig

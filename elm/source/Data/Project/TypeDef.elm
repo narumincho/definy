@@ -9,7 +9,7 @@ module Data.Project.TypeDef exposing
 {-| 型の定義
 -}
 
-import Data.IdHash as Id
+import Data
 import Data.Label as L
 
 
@@ -17,8 +17,7 @@ import Data.Label as L
 -}
 type TypeDef
     = TypeDef
-        { id : Id.TypeId
-        , hash : Id.TypeHash
+        { id : Data.TypeId
         , name : L.Label
         , content : TagOrKernel
         }
@@ -48,10 +47,10 @@ type KernelType
 
 type Parameter
     = NoParameter
-    | OneParameter Id.TypeId
+    | OneParameter Data.TypeId
 
 
-from : { id : Id.TypeId, hash : Id.TypeHash, name : L.Label, content : TagOrKernel } -> TypeDef
+from : { id : Data.TypeId, name : L.Label, content : TagOrKernel } -> TypeDef
 from =
     TypeDef
 
