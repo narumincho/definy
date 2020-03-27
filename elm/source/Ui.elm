@@ -5,6 +5,7 @@ module Ui exposing
     , BorderStyle(..)
     , FitStyle(..)
     , ImageRendering(..)
+    , LinkAttributes(..)
     , Panel
     , Pointer
     , PointerImage(..)
@@ -24,6 +25,7 @@ module Ui exposing
     , fix
     , gap
     , height
+    , link
     , map
     , offset
     , overflowVisible
@@ -67,6 +69,7 @@ type Content message
     | Row (List (Panel message))
     | Column (List (Panel message))
     | Button (ButtonAttributes message)
+    | Link (LinkAttributes message)
     | PointerPanel (PointerPanelAttributes message)
     | Scroll (Panel message)
 
@@ -104,6 +107,10 @@ type ButtonAttributes message
         { clickMessage : message
         , child : Panel message
         }
+
+
+type LinkAttributes message
+    = LinkAttributes { url : String, child : Panel message }
 
 
 type PointerPanelAttributes message
@@ -376,6 +383,16 @@ button style clickMessage child =
         }
 
 
+link : List Style -> String -> Panel message -> Panel message
+link style url child =
+    Panel
+        { style = computeStyle style
+        , content =
+            Link
+                (LinkAttributes { url = url, child = child })
+        }
+
+
 {-| 中身が領域より大きい場合,中身をスクロールできるようにする
 -}
 scroll : List Style -> Panel message -> Panel message
@@ -529,6 +546,14 @@ mapContent func content =
                     }
                 )
 
+        Link (LinkAttributes record) ->
+            Link
+                (LinkAttributes
+                    { url = record.url
+                    , child = map func record.child
+                    }
+                )
+
         Depth children ->
             Depth (List.map (Tuple.mapSecond (map func)) children)
 
@@ -588,6 +613,9 @@ panelToHtml gridCell alignmentOrStretch (Panel record) =
 
         Button buttonAttributes ->
             buttonToHtml commonStyle record.style buttonAttributes
+
+        Link linkAttributes ->
+            linkToHtml commonStyle record.style linkAttributes
 
         Depth depthListAttributes ->
             depthToHtml commonStyle record.style depthListAttributes
@@ -688,6 +716,21 @@ buttonToHtml commonStyle styleComputed (ButtonAttributes record) =
             ]
         , Html.Styled.Events.onClick
             record.clickMessage
+        ]
+        [ panelToHtml (GridCell { row = 0, column = 0 })
+            StretchStretch
+            record.child
+        ]
+
+
+linkToHtml : Css.Style -> StyleComputed -> LinkAttributes message -> Html.Styled.Html message
+linkToHtml commonStyle styleComputed (LinkAttributes record) =
+    Html.Styled.a
+        [ Html.Styled.Attributes.css
+            [ styleComputedToCssStyle False styleComputed
+            , commonStyle
+            ]
+        , Html.Styled.Attributes.href record.url
         ]
         [ panelToHtml (GridCell { row = 0, column = 0 })
             StretchStretch
@@ -1195,6 +1238,9 @@ isIncludeScrollInPanel (Panel record) =
             List.any isIncludeScrollInPanel panels
 
         Button (ButtonAttributes attributes) ->
+            isIncludeScrollInPanel attributes.child
+
+        Link (LinkAttributes attributes) ->
             isIncludeScrollInPanel attributes.child
 
         PointerPanel (PointerPanelAttributes attributes) ->

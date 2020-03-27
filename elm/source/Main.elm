@@ -691,7 +691,10 @@ view (Model rec) =
                         [ Component.Header.view rec.imageBlobUrlDict rec.logInState
                         , logInPanel rec.logInState rec.language rec.windowSize
                         , welcomeModel
-                            |> Page.Home.view rec.language rec.logInState
+                            |> Page.Home.view
+                                rec.clientMode
+                                rec.language
+                                rec.logInState
                             |> Ui.map (WelcomePageMsg >> PageMsg)
                         ]
                   )

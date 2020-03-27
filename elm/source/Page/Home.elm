@@ -11,6 +11,7 @@ import Component.Style
 import Css
 import Data
 import Data.LogInState
+import Data.UrlData
 import Icon
 import Ui
 
@@ -37,25 +38,25 @@ update msg _ =
             )
 
 
-view : Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Msg
-view language logInState _ =
+view : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Msg
+view clientMode language logInState _ =
     Ui.scroll
         [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
         (Ui.column
             [ Ui.gap 16, Ui.height Ui.stretch ]
-            [ projectList language logInState ]
+            [ projectList clientMode language logInState ]
         )
 
 
-projectList : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
-projectList language logInState =
+projectList : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
+projectList clientMode language logInState =
     Ui.column
         [ Ui.height Ui.stretch
         , Ui.gap 8
         , Ui.width Ui.auto
         , Ui.padding 8
         ]
-        [ projectLineFirstCreateButton language logInState
+        [ projectLineFirstCreateButton clientMode language logInState
         , projectLine
         , projectLine
         , projectLine
@@ -65,8 +66,8 @@ projectList language logInState =
         ]
 
 
-createProjectButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
-createProjectButton language logInState =
+createProjectButton : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
+createProjectButton clientMode language logInState =
     case logInState of
         Data.LogInState.RequestLogInUrl _ ->
             Ui.text
@@ -126,14 +127,20 @@ createProjectButton language logInState =
                 )
 
         Data.LogInState.Ok _ ->
-            createProjectButtonLogInOk language
+            createProjectButtonLogInOk clientMode language
 
 
-createProjectButtonLogInOk : Data.Language -> Ui.Panel Msg
-createProjectButtonLogInOk language =
-    Ui.button
+createProjectButtonLogInOk : Data.ClientMode -> Data.Language -> Ui.Panel Msg
+createProjectButtonLogInOk clientMode language =
+    Ui.link
         []
-        MsgCreateProject
+        (Data.UrlData.urlDataToString
+            { clientMode = clientMode
+            , location = Data.LocationCreateProject
+            , language = language
+            , accessToken = Nothing
+            }
+        )
         (Ui.depth
             [ Ui.width (Ui.stretchWithMaxSize 320)
             , Ui.height Ui.stretch
@@ -179,11 +186,11 @@ createProjectButtonLogInOk language =
         )
 
 
-projectLineFirstCreateButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
-projectLineFirstCreateButton language logInState =
+projectLineFirstCreateButton : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
+projectLineFirstCreateButton clientMode language logInState =
     Ui.row
         [ Ui.gap 8, Ui.height (Ui.fix 200) ]
-        [ createProjectButton language logInState
+        [ createProjectButton clientMode language logInState
         , projectItem
         , projectItem
         ]
