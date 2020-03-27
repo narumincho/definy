@@ -22,6 +22,7 @@ type Model
 
 type Msg
     = PushUrl Data.UrlData
+    | NoOp
 
 
 init : Model
@@ -35,6 +36,11 @@ update msg _ =
         PushUrl urlData ->
             ( Model
             , Command.pushUrl urlData
+            )
+
+        NoOp ->
+            ( Model
+            , Command.none
             )
 
 
@@ -142,51 +148,68 @@ createProjectButtonLogInOk clientMode language =
             }
     in
     Ui.link
-        []
-        (Data.UrlData.urlDataToString createProjectUrl)
-        (PushUrl createProjectUrl)
-        (Ui.depth
-            [ Ui.width (Ui.stretchWithMaxSize 320)
-            , Ui.height Ui.stretch
-            , Ui.border
-                (Ui.BorderStyle
-                    { color = Css.rgb 200 200 200
-                    , width =
-                        { top = 1
-                        , right = 1
-                        , left = 1
-                        , bottom = 1
-                        }
+        [ Ui.width (Ui.stretchWithMaxSize 320)
+        , Ui.height Ui.stretch
+        , Ui.border
+            (Ui.BorderStyle
+                { color = Css.rgb 200 200 200
+                , width =
+                    { top = 1
+                    , right = 1
+                    , left = 1
+                    , bottom = 1
                     }
-                )
-            ]
-            [ ( ( Ui.Center, Ui.Center )
-              , Ui.column
-                    []
-                    [ Icon.plus
-                    , Ui.text
-                        []
-                        (Ui.TextAttributes
-                            { text =
-                                case language of
-                                    Data.LanguageEnglish ->
-                                        "Create a new project"
-
-                                    Data.LanguageJapanese ->
-                                        "プロジェクトを新規作成"
-
-                                    Data.LanguageEsperanto ->
-                                        "Krei novan projekton"
-                            , typeface = Component.Style.normalTypeface
-                            , size = 16
-                            , letterSpacing = 0
-                            , color = Css.rgb 200 200 200
-                            , textAlignment = Ui.TextAlignStart
+                }
+            )
+        ]
+        (Ui.LinkAttributes
+            { url = Data.UrlData.urlDataToString createProjectUrl
+            , clickMessage = PushUrl createProjectUrl
+            , noOpMessage = NoOp
+            , child =
+                Ui.depth
+                    [ Ui.width (Ui.stretchWithMaxSize 320)
+                    , Ui.height Ui.stretch
+                    , Ui.border
+                        (Ui.BorderStyle
+                            { color = Css.rgb 200 200 200
+                            , width =
+                                { top = 1
+                                , right = 1
+                                , left = 1
+                                , bottom = 1
+                                }
                             }
                         )
                     ]
-              )
-            ]
+                    [ ( ( Ui.Center, Ui.Center )
+                      , Ui.column
+                            []
+                            [ Icon.plus
+                            , Ui.text
+                                []
+                                (Ui.TextAttributes
+                                    { text =
+                                        case language of
+                                            Data.LanguageEnglish ->
+                                                "Create a new project"
+
+                                            Data.LanguageJapanese ->
+                                                "プロジェクトを新規作成"
+
+                                            Data.LanguageEsperanto ->
+                                                "Krei novan projekton"
+                                    , typeface = Component.Style.normalTypeface
+                                    , size = 16
+                                    , letterSpacing = 0
+                                    , color = Css.rgb 200 200 200
+                                    , textAlignment = Ui.TextAlignStart
+                                    }
+                                )
+                            ]
+                      )
+                    ]
+            }
         )
 
 

@@ -110,7 +110,12 @@ type ButtonAttributes message
 
 
 type LinkAttributes message
-    = LinkAttributes { url : String, clickMessage : message, child : Panel message }
+    = LinkAttributes
+        { url : String
+        , clickMessage : message
+        , noOpMessage : message
+        , child : Panel message
+        }
 
 
 type PointerPanelAttributes message
@@ -383,18 +388,11 @@ button style clickMessage child =
         }
 
 
-link : List Style -> String -> message -> Panel message -> Panel message
-link style url clickMessage child =
+link : List Style -> LinkAttributes message -> Panel message
+link style linkAttributes =
     Panel
         { style = computeStyle style
-        , content =
-            Link
-                (LinkAttributes
-                    { url = url
-                    , clickMessage = clickMessage
-                    , child = child
-                    }
-                )
+        , content = Link linkAttributes
         }
 
 
@@ -556,6 +554,7 @@ mapContent func content =
                 (LinkAttributes
                     { url = record.url
                     , clickMessage = func record.clickMessage
+                    , noOpMessage = func record.noOpMessage
                     , child = map func record.child
                     }
                 )
@@ -738,11 +737,21 @@ linkToHtml commonStyle styleComputed (LinkAttributes record) =
             ]
         , Html.Styled.Attributes.href record.url
         , Html.Styled.Events.custom "click"
-            (Json.Decode.succeed
-                { message = record.clickMessage
-                , stopPropagation = True
-                , preventDefault = True
-                }
+            (Json.Decode.field "ctrlKey" Json.Decode.bool
+                |> Json.Decode.map
+                    (\ctrlKey ->
+                        if ctrlKey then
+                            { message = record.noOpMessage
+                            , stopPropagation = False
+                            , preventDefault = False
+                            }
+
+                        else
+                            { message = record.clickMessage
+                            , stopPropagation = True
+                            , preventDefault = True
+                            }
+                    )
             )
         ]
         [ panelToHtml (GridCell { row = 0, column = 0 })
