@@ -57,7 +57,7 @@ port getImageBlobUrl : Json.Encode.Value -> Cmd msg
 port createProject : Json.Encode.Value -> Cmd msg
 
 
-port changeLocation : Json.Encode.Value -> Cmd msg
+port pushUrl : Json.Encode.Value -> Cmd msg
 
 
 
@@ -959,6 +959,9 @@ commandItemToMainCommand commandItem =
 
         Command.ConsoleLog string ->
             consoleLog string
+
+        Command.PushUrl urlData ->
+            pushUrl (Data.urlDataToJsonValue urlData)
 
 
 

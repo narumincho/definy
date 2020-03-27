@@ -21,7 +21,7 @@ type Model
 
 
 type Msg
-    = MsgCreateProject
+    = PushUrl Data.UrlData
 
 
 init : Model
@@ -32,9 +32,9 @@ init =
 update : Msg -> Model -> ( Model, Command.Command )
 update msg _ =
     case msg of
-        MsgCreateProject ->
+        PushUrl urlData ->
             ( Model
-            , Command.none
+            , Command.pushUrl urlData
             )
 
 
@@ -132,15 +132,19 @@ createProjectButton clientMode language logInState =
 
 createProjectButtonLogInOk : Data.ClientMode -> Data.Language -> Ui.Panel Msg
 createProjectButtonLogInOk clientMode language =
-    Ui.link
-        []
-        (Data.UrlData.urlDataToString
+    let
+        createProjectUrl : Data.UrlData
+        createProjectUrl =
             { clientMode = clientMode
             , location = Data.LocationCreateProject
             , language = language
             , accessToken = Nothing
             }
-        )
+    in
+    Ui.link
+        []
+        (Data.UrlData.urlDataToString createProjectUrl)
+        (PushUrl createProjectUrl)
         (Ui.depth
             [ Ui.width (Ui.stretchWithMaxSize 320)
             , Ui.height Ui.stretch

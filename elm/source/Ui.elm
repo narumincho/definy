@@ -110,7 +110,7 @@ type ButtonAttributes message
 
 
 type LinkAttributes message
-    = LinkAttributes { url : String, child : Panel message }
+    = LinkAttributes { url : String, clickMessage : message, child : Panel message }
 
 
 type PointerPanelAttributes message
@@ -383,13 +383,18 @@ button style clickMessage child =
         }
 
 
-link : List Style -> String -> Panel message -> Panel message
-link style url child =
+link : List Style -> String -> message -> Panel message -> Panel message
+link style url clickMessage child =
     Panel
         { style = computeStyle style
         , content =
             Link
-                (LinkAttributes { url = url, child = child })
+                (LinkAttributes
+                    { url = url
+                    , clickMessage = clickMessage
+                    , child = child
+                    }
+                )
         }
 
 
@@ -550,6 +555,7 @@ mapContent func content =
             Link
                 (LinkAttributes
                     { url = record.url
+                    , clickMessage = func record.clickMessage
                     , child = map func record.child
                     }
                 )
@@ -731,6 +737,13 @@ linkToHtml commonStyle styleComputed (LinkAttributes record) =
             , commonStyle
             ]
         , Html.Styled.Attributes.href record.url
+        , Html.Styled.Events.custom "click"
+            (Json.Decode.succeed
+                { message = record.clickMessage
+                , stopPropagation = True
+                , preventDefault = True
+                }
+            )
         ]
         [ panelToHtml (GridCell { row = 0, column = 0 })
             StretchStretch

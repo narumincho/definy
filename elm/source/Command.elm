@@ -7,6 +7,7 @@ module Command exposing
     , getBlobUrl
     , getListCommandItem
     , none
+    , pushUrl
     )
 
 import Data
@@ -20,6 +21,7 @@ type CommandItem
     = GetBlobUrl Data.FileHash
     | CreateProject Data.CreateProjectParameter
     | ConsoleLog String
+    | PushUrl Data.UrlData
 
 
 getBlobUrl : Data.FileHash -> Command
@@ -35,6 +37,11 @@ createProject createProjectParameter =
 consoleLog : String -> Command
 consoleLog text =
     Command [ ConsoleLog text ]
+
+
+pushUrl : Data.UrlData -> Command
+pushUrl urlData =
+    Command [ PushUrl urlData ]
 
 
 none : Command

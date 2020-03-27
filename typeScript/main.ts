@@ -282,6 +282,16 @@ const init = async (): Promise<void> => {
       console.log({ blobUrl });
     });
   });
+  app.ports.pushUrl.subscribe(urlData => {
+    console.log("pushUrlを呼んだ");
+    history.pushState(
+      "",
+      "",
+      common
+        .urlDataToUrl({ ...urlData, accessToken: common.data.maybeNothing() })
+        .toString()
+    );
+  });
 };
 
 requestAnimationFrame(() => {

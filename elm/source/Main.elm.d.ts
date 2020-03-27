@@ -26,6 +26,7 @@ type Ports = {
   readonly requestLogInUrl: SubForElmCmd<data.RequestLogInUrlRequestData>;
   readonly getUserByAccessToken: SubForElmCmd<data.AccessToken>;
   readonly getImageBlobUrl: SubForElmCmd<data.FileHash>;
+  readonly pushUrl: SubForElmCmd<data.UrlData>;
 
   readonly responseUserByAccessToken: CmdForElmSub<
     data.Maybe<data.UserPublicAndUserId>
