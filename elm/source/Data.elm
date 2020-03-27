@@ -49,6 +49,7 @@ type Language
 -}
 type Location
     = LocationHome
+    | LocationCreateProject
     | LocationUser UserId
     | LocationProject ProjectId
 
@@ -460,6 +461,9 @@ locationToJsonValue location =
     case location of
         LocationHome ->
             Je.object [ ( "_", Je.string "Home" ) ]
+
+        LocationCreateProject ->
+            Je.object [ ( "_", Je.string "CreateProject" ) ]
 
         LocationUser parameter ->
             Je.object [ ( "_", Je.string "User" ), ( "userId", userIdToJsonValue parameter ) ]
@@ -1086,6 +1090,9 @@ locationJsonDecoder =
                 case tag of
                     "Home" ->
                         Jd.succeed LocationHome
+
+                    "CreateProject" ->
+                        Jd.succeed LocationCreateProject
 
                     "User" ->
                         Jd.field "userId" userIdJsonDecoder |> Jd.map LocationUser

@@ -1,4 +1,4 @@
-import * as common from "definy-common";
+import { data } from "definy-common";
 
 export namespace Elm {
   namespace Main {
@@ -12,25 +12,24 @@ export namespace Elm {
 }
 
 type Flags = {
-  windowSize: {
-    width: number;
-    height: number;
+  readonly windowSize: {
+    readonly width: number;
+    readonly height: number;
   };
-  urlData: common.data.UrlData;
-  networkConnection: boolean;
+  readonly urlData: data.UrlData;
+  readonly networkConnection: boolean;
 };
 
 type Ports = {
   readonly preventDefaultBeforeKeyEvent: SubForElmCmd<null>;
   readonly consoleLog: SubForElmCmd<string>;
-  readonly requestLogInUrl: SubForElmCmd<
-    common.data.RequestLogInUrlRequestData
-  >;
-  readonly getUserByAccessToken: SubForElmCmd<common.data.AccessToken>;
-  readonly getImageBlobUrl: SubForElmCmd<common.data.FileHash>;
+  readonly requestLogInUrl: SubForElmCmd<data.RequestLogInUrlRequestData>;
+  readonly getUserByAccessToken: SubForElmCmd<data.AccessToken>;
+  readonly getImageBlobUrl: SubForElmCmd<data.FileHash>;
+  readonly changeLocation: SubForElmCmd<data.UrlData>;
 
   readonly responseUserByAccessToken: CmdForElmSub<
-    common.data.Maybe<common.data.UserPublicAndUserId>
+    data.Maybe<data.UserPublicAndUserId>
   >;
   readonly keyPressed: CmdForElmSub<KeyboardEvent>;
   readonly keyPrevented: CmdForElmSub<null>;

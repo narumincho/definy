@@ -1,7 +1,6 @@
 port module Main exposing (main)
 
 import Browser
-import Browser.Navigation
 import Command
 import Component.DefaultUi
 import Component.EditorGroup
@@ -21,7 +20,6 @@ import Json.Encode
 import Page.Home
 import Task
 import Ui
-import Url
 
 
 {-| すべての状態を管理する
@@ -54,6 +52,12 @@ port getUserByAccessToken : Json.Encode.Value -> Cmd msg
 
 
 port getImageBlobUrl : Json.Encode.Value -> Cmd msg
+
+
+port createProject : Json.Encode.Value -> Cmd msg
+
+
+port changeLocation : Json.Encode.Value -> Cmd msg
 
 
 
@@ -276,7 +280,7 @@ update msg (Model rec) =
                             welcomeModel |> Page.Home.update welcomePageMsg
                     in
                     ( Model { rec | page = Welcome newWelcomeModel }
-                    , cmd |> List.map welcomePageCmdToCmd |> Cmd.batch
+                    , commandToMainCommand cmd
                     )
 
         NotificationMessage notificationMessage ->
@@ -367,29 +371,6 @@ updateFromMsgList msgList model =
 
         [] ->
             ( model, Cmd.none )
-
-
-welcomePageCmdToCmd : Page.Home.Cmd -> Cmd Msg
-welcomePageCmdToCmd cmd =
-    case cmd of
-        Page.Home.CmdToVerticalGutterMode ->
-            Task.succeed (ToResizeGutterMode GutterTypeVertical)
-                |> Task.perform identity
-
-        Page.Home.CmdConsoleLog string ->
-            consoleLog string
-
-        Page.Home.CmdToLogInPage socialLoginService ->
-            Cmd.none
-
-        Page.Home.CmdJumpPage url ->
-            Browser.Navigation.load (Url.toString url)
-
-        Page.Home.CmdCreateProject accessToken ->
-            consoleLog "プロジェクトを新規作成する"
-
-        Page.Home.CmdCreateProjectByGuest ->
-            consoleLog "プロジェクトをこの端末に新規作成する"
 
 
 
@@ -672,6 +653,12 @@ getImageBlobUrlTyped : Data.FileHash -> Cmd Msg
 getImageBlobUrlTyped fileHash =
     getImageBlobUrl
         (Data.fileHashToJsonValue fileHash)
+
+
+createProjectTyped : Data.CreateProjectParameter -> Cmd Msg
+createProjectTyped createProjectParameter =
+    createProject
+        (Data.createProjectParameterToJsonValue createProjectParameter)
 
 
 
@@ -963,6 +950,12 @@ commandItemToMainCommand commandItem =
     case commandItem of
         Command.GetBlobUrl fileHash ->
             getImageBlobUrlTyped fileHash
+
+        Command.CreateProject createProjectParameter ->
+            createProjectTyped createProjectParameter
+
+        Command.ConsoleLog string ->
+            consoleLog string
 
 
 

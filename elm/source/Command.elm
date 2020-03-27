@@ -2,6 +2,8 @@ module Command exposing
     ( Command
     , CommandItem(..)
     , batch
+    , consoleLog
+    , createProject
     , getBlobUrl
     , getListCommandItem
     , none
@@ -16,11 +18,23 @@ type Command
 
 type CommandItem
     = GetBlobUrl Data.FileHash
+    | CreateProject Data.CreateProjectParameter
+    | ConsoleLog String
 
 
 getBlobUrl : Data.FileHash -> Command
 getBlobUrl fileHash =
     Command [ GetBlobUrl fileHash ]
+
+
+createProject : Data.CreateProjectParameter -> Command
+createProject createProjectParameter =
+    Command [ CreateProject createProjectParameter ]
+
+
+consoleLog : String -> Command
+consoleLog text =
+    Command [ ConsoleLog text ]
 
 
 none : Command

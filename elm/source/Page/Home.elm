@@ -1,86 +1,44 @@
 module Page.Home exposing
-    ( Cmd(..)
-    , Model
+    ( Model
     , Msg(..)
     , init
     , update
     , view
     )
 
+import Command
 import Component.Style
 import Css
 import Data
 import Data.LogInState
-import Data.SocialLoginService
 import Icon
 import Ui
-import Url
 
 
 type Model
     = Model
-        { width : Int
-        , logInRequest : Maybe Data.SocialLoginService.SocialLoginService
-        }
 
 
 type Msg
-    = MsgToLogInPage Data.SocialLoginService.SocialLoginService
-    | MsgGetLogInUrlResponse (Result String Url.Url)
-    | MsgCreateProject Data.AccessToken
-    | MsgCreateProjectByGuest
-
-
-type Cmd
-    = CmdToVerticalGutterMode
-    | CmdConsoleLog String
-    | CmdToLogInPage Data.SocialLoginService.SocialLoginService
-    | CmdJumpPage Url.Url
-    | CmdCreateProject Data.AccessToken
-    | CmdCreateProjectByGuest
+    = MsgCreateProject
 
 
 init : Model
 init =
     Model
-        { width = 400
-        , logInRequest = Nothing
-        }
 
 
-update : Msg -> Model -> ( Model, List Cmd )
-update msg (Model rec) =
+update : Msg -> Model -> ( Model, Command.Command )
+update msg _ =
     case msg of
-        MsgToLogInPage service ->
-            ( Model { rec | logInRequest = Just service }
-            , [ CmdToLogInPage service ]
-            )
-
-        MsgGetLogInUrlResponse result ->
-            case result of
-                Ok url ->
-                    ( Model rec
-                    , [ CmdJumpPage url ]
-                    )
-
-                Err errorMessage ->
-                    ( Model rec
-                    , [ CmdConsoleLog errorMessage ]
-                    )
-
-        MsgCreateProject accessToken ->
-            ( Model rec
-            , [ CmdCreateProject accessToken ]
-            )
-
-        MsgCreateProjectByGuest ->
-            ( Model rec
-            , [ CmdCreateProjectByGuest ]
+        MsgCreateProject ->
+            ( Model
+            , Command.none
             )
 
 
 view : Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Msg
-view language logInState (Model rec) =
+view language logInState _ =
     Ui.scroll
         [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
         (Ui.column
@@ -167,49 +125,58 @@ createProjectButton language logInState =
                     }
                 )
 
-        Data.LogInState.Ok { accessToken } ->
-            Ui.depth
-                [ Ui.width (Ui.stretchWithMaxSize 320)
-                , Ui.height Ui.stretch
-                , Ui.border
-                    (Ui.BorderStyle
-                        { color = Css.rgb 200 200 200
-                        , width =
-                            { top = 1
-                            , right = 1
-                            , left = 1
-                            , bottom = 1
-                            }
+        Data.LogInState.Ok _ ->
+            createProjectButtonLogInOk language
+
+
+createProjectButtonLogInOk : Data.Language -> Ui.Panel Msg
+createProjectButtonLogInOk language =
+    Ui.button
+        []
+        MsgCreateProject
+        (Ui.depth
+            [ Ui.width (Ui.stretchWithMaxSize 320)
+            , Ui.height Ui.stretch
+            , Ui.border
+                (Ui.BorderStyle
+                    { color = Css.rgb 200 200 200
+                    , width =
+                        { top = 1
+                        , right = 1
+                        , left = 1
+                        , bottom = 1
                         }
-                    )
-                ]
-                [ ( ( Ui.Center, Ui.Center )
-                  , Ui.column
+                    }
+                )
+            ]
+            [ ( ( Ui.Center, Ui.Center )
+              , Ui.column
+                    []
+                    [ Icon.plus
+                    , Ui.text
                         []
-                        [ Icon.plus
-                        , Ui.text
-                            []
-                            (Ui.TextAttributes
-                                { text =
-                                    case language of
-                                        Data.LanguageEnglish ->
-                                            "Create a new project"
+                        (Ui.TextAttributes
+                            { text =
+                                case language of
+                                    Data.LanguageEnglish ->
+                                        "Create a new project"
 
-                                        Data.LanguageJapanese ->
-                                            "プロジェクトを新規作成"
+                                    Data.LanguageJapanese ->
+                                        "プロジェクトを新規作成"
 
-                                        Data.LanguageEsperanto ->
-                                            "Krei novan projekton"
-                                , typeface = Component.Style.normalTypeface
-                                , size = 16
-                                , letterSpacing = 0
-                                , color = Css.rgb 200 200 200
-                                , textAlignment = Ui.TextAlignStart
-                                }
-                            )
-                        ]
-                  )
-                ]
+                                    Data.LanguageEsperanto ->
+                                        "Krei novan projekton"
+                            , typeface = Component.Style.normalTypeface
+                            , size = 16
+                            , letterSpacing = 0
+                            , color = Css.rgb 200 200 200
+                            , textAlignment = Ui.TextAlignStart
+                            }
+                        )
+                    ]
+              )
+            ]
+        )
 
 
 projectLineFirstCreateButton : Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
