@@ -910,6 +910,7 @@ styleComputedToCssStyle : Bool -> StyleComputed -> Css.Style
 styleComputedToCssStyle isButtonElement (StyleComputed record) =
     [ [ Css.padding (Css.px (toFloat record.padding))
       , Css.zIndex (Css.int 0)
+      , Css.textDecoration Css.none
       ]
     , case record.width of
         Fix px ->
