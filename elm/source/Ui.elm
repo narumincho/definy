@@ -737,10 +737,10 @@ linkToHtml commonStyle styleComputed (LinkAttributes record) =
             ]
         , Html.Styled.Attributes.href record.url
         , Html.Styled.Events.custom "click"
-            (Json.Decode.field "ctrlKey" Json.Decode.bool
+            (clickEventButton
                 |> Json.Decode.map
-                    (\ctrlKey ->
-                        if ctrlKey then
+                    (\linkButton ->
+                        if linkButton.ctrlKey || linkButton.shiftKey || linkButton.metaKey then
                             { message = record.noOpMessage
                             , stopPropagation = False
                             , preventDefault = False
@@ -758,6 +758,27 @@ linkToHtml commonStyle styleComputed (LinkAttributes record) =
             StretchStretch
             record.child
         ]
+
+
+type alias LinkButton =
+    { ctrlKey : Bool
+    , shiftKey : Bool
+    , metaKey : Bool
+    }
+
+
+clickEventButton : Json.Decode.Decoder LinkButton
+clickEventButton =
+    Json.Decode.map3
+        (\ctrlKey shiftKey metaKey ->
+            { ctrlKey = ctrlKey
+            , shiftKey = shiftKey
+            , metaKey = metaKey
+            }
+        )
+        (Json.Decode.field "ctrlKey" Json.Decode.bool)
+        (Json.Decode.field "shitKey" Json.Decode.bool)
+        (Json.Decode.field "metaKey" Json.Decode.bool)
 
 
 depthToHtml : Css.Style -> StyleComputed -> List ( ( Alignment, Alignment ), Panel message ) -> Html.Styled.Html message
