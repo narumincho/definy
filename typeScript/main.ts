@@ -153,6 +153,7 @@ const callApi = <responseType>(
 
 const init = async (): Promise<void> => {
   const urlData = common.urlDataFromUrl(new URL(location.href));
+  console.log(urlData);
   history.replaceState(
     "",
     "",
@@ -279,7 +280,6 @@ const init = async (): Promise<void> => {
         blobUrl: blobUrl,
         fileHash: fileHash
       });
-      console.log({ blobUrl });
     });
   });
   app.ports.pushUrl.subscribe(urlData => {
