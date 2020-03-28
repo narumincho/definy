@@ -1,6 +1,6 @@
 module Page.Home exposing
-    ( Model
-    , Msg(..)
+    ( Message(..)
+    , Model
     , init
     , update
     , view
@@ -20,17 +20,17 @@ type Model
     = Model
 
 
-type Msg
+type Message
     = PushUrl Data.UrlData
     | NoOp
 
 
-init : Model
+init : ( Model, Command.Command )
 init =
-    Model
+    ( Model, Command.none )
 
 
-update : Msg -> Model -> ( Model, Command.Command )
+update : Message -> Model -> ( Model, Command.Command )
 update msg _ =
     case msg of
         PushUrl urlData ->
@@ -44,7 +44,7 @@ update msg _ =
             )
 
 
-view : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Msg
+view : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Message
 view clientMode language logInState _ =
     Ui.scroll
         [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
@@ -54,7 +54,7 @@ view clientMode language logInState _ =
         )
 
 
-projectList : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
+projectList : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Message
 projectList clientMode language logInState =
     Ui.column
         [ Ui.height Ui.stretch
@@ -72,7 +72,7 @@ projectList clientMode language logInState =
         ]
 
 
-createProjectButton : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
+createProjectButton : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Message
 createProjectButton clientMode language logInState =
     case logInState of
         Data.LogInState.RequestLogInUrl _ ->
@@ -136,7 +136,7 @@ createProjectButton clientMode language logInState =
             createProjectButtonLogInOk clientMode language
 
 
-createProjectButtonLogInOk : Data.ClientMode -> Data.Language -> Ui.Panel Msg
+createProjectButtonLogInOk : Data.ClientMode -> Data.Language -> Ui.Panel Message
 createProjectButtonLogInOk clientMode language =
     let
         createProjectUrl : Data.UrlData
@@ -213,7 +213,7 @@ createProjectButtonLogInOk clientMode language =
         )
 
 
-projectLineFirstCreateButton : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Msg
+projectLineFirstCreateButton : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Message
 projectLineFirstCreateButton clientMode language logInState =
     Ui.row
         [ Ui.gap 8, Ui.height (Ui.fix 200) ]

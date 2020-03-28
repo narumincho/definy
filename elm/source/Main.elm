@@ -17,6 +17,7 @@ import Html.Styled
 import Icon
 import Json.Decode
 import Json.Encode
+import Page.CreateProject
 import Page.Home
 import Task
 import Ui
@@ -98,7 +99,7 @@ type Msg
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
     | LogOutRequest -- ログアウトを要求する
     | ChangeNetworkConnection Bool -- 接続状況が変わった
-    | PageMsg PageMsg
+    | PageMsg PageMessage
     | NotificationMessage Component.Notifications.Message
     | RequestLogInUrl Data.OpenIdConnectProvider
     | ResponseUserDataFromAccessToken (Maybe (Maybe Data.UserPublicAndUserId))
@@ -107,8 +108,9 @@ type Msg
     | NoOperation
 
 
-type PageMsg
-    = WelcomePageMsg Page.Home.Msg
+type PageMessage
+    = PageMessageHome Page.Home.Message
+    | PageMessageCreateProject Page.CreateProject.Message
 
 
 {-| 全体を表現する
@@ -143,7 +145,8 @@ type GutterType
 
 
 type PageModel
-    = Welcome Page.Home.Model
+    = Home Page.Home.Model
+    | CreateProject Page.CreateProject.Model
 
 
 type alias Flag =
@@ -197,10 +200,13 @@ init flag =
                         Component.Notifications.OffLine
                     )
                     notificationsInitModel
+
+        ( pageInitModel, pageCommand ) =
+            pageInit urlData.location
     in
     ( Model
         { subMode = SubModeNone
-        , page = Welcome Page.Home.init
+        , page = pageInitModel
         , windowSize = flag.windowSize
         , messageQueue = []
         , logInState =
@@ -225,8 +231,29 @@ init flag =
                 Cmd.none
         , commandToMainCommand notificationsInitCommand
         , commandToMainCommand notificationsCommand
+        , commandToMainCommand pageCommand
         ]
     )
+
+
+pageInit : Data.Location -> ( PageModel, Command.Command )
+pageInit location =
+    case location of
+        Data.LocationHome ->
+            Page.Home.init
+                |> Tuple.mapFirst Home
+
+        Data.LocationCreateProject ->
+            Page.CreateProject.init
+                |> Tuple.mapFirst CreateProject
+
+        Data.LocationUser userId ->
+            Page.Home.init
+                |> Tuple.mapFirst Home
+
+        Data.LocationProject projectId ->
+            Page.Home.init
+                |> Tuple.mapFirst Home
 
 
 
@@ -278,13 +305,27 @@ update msg (Model rec) =
 
         PageMsg pageMsg ->
             case ( rec.page, pageMsg ) of
-                ( Welcome welcomeModel, WelcomePageMsg welcomePageMsg ) ->
+                ( Home pageModel, PageMessageHome pageMessage ) ->
                     let
-                        ( newWelcomeModel, cmd ) =
-                            welcomeModel |> Page.Home.update welcomePageMsg
+                        ( newPageModel, command ) =
+                            pageModel |> Page.Home.update pageMessage
                     in
-                    ( Model { rec | page = Welcome newWelcomeModel }
-                    , commandToMainCommand cmd
+                    ( Model { rec | page = Home newPageModel }
+                    , commandToMainCommand command
+                    )
+
+                ( CreateProject pageModel, PageMessageCreateProject pageMessage ) ->
+                    let
+                        ( newPageModel, command ) =
+                            Page.CreateProject.update pageMessage pageModel
+                    in
+                    ( Model { rec | page = CreateProject newPageModel }
+                    , commandToMainCommand command
+                    )
+
+                ( _, _ ) ->
+                    ( Model rec
+                    , Cmd.none
                     )
 
         NotificationMessage notificationMessage ->
@@ -363,8 +404,11 @@ update msg (Model rec) =
 pageModelToLocation : PageModel -> Data.Location
 pageModelToLocation pageModel =
     case pageModel of
-        Welcome _ ->
+        Home _ ->
             Data.LocationHome
+
+        CreateProject _ ->
+            Data.LocationCreateProject
 
 
 updateFromMsgList : List Msg -> Model -> ( Model, Cmd Msg )
@@ -692,31 +736,41 @@ view (Model rec) =
                     []
             ]
         )
-        ((case rec.page of
-            Welcome welcomeModel ->
-                [ ( ( Ui.Center, Ui.Center )
-                  , Ui.column
-                        [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                        [ Component.Header.view rec.imageBlobUrlDict rec.logInState
-                        , logInPanel rec.logInState rec.language rec.windowSize
-                        , welcomeModel
-                            |> Page.Home.view
-                                rec.clientMode
-                                rec.language
-                                rec.logInState
-                            |> Ui.map (WelcomePageMsg >> PageMsg)
-                        ]
-                  )
-                ]
-         )
-            ++ [ ( ( Ui.End, Ui.End )
-                 , Component.Notifications.view rec.imageBlobUrlDict rec.notificationModel
-                    |> Ui.map NotificationMessage
-                 )
-               ]
-        )
+        [ ( ( Ui.Center, Ui.Center )
+          , mainView (Model rec)
+          )
+        , ( ( Ui.End, Ui.End )
+          , Component.Notifications.view rec.imageBlobUrlDict rec.notificationModel
+                |> Ui.map NotificationMessage
+          )
+        ]
         |> Ui.toHtml
         |> Html.Styled.toUnstyled
+
+
+mainView : Model -> Ui.Panel Msg
+mainView (Model record) =
+    case record.page of
+        Home pageModel ->
+            Ui.column
+                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                [ Component.Header.view record.imageBlobUrlDict record.logInState
+                , logInPanel record.logInState record.language record.windowSize
+                , Page.Home.view
+                    record.clientMode
+                    record.language
+                    record.logInState
+                    pageModel
+                    |> Ui.map (PageMessageHome >> PageMsg)
+                ]
+
+        CreateProject pageModel ->
+            Ui.column
+                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                [ Component.Header.view record.imageBlobUrlDict record.logInState
+                , logInPanel record.logInState record.language record.windowSize
+                , Page.CreateProject.view pageModel
+                ]
 
 
 logInPanel : Data.LogInState.LogInState -> Data.Language -> WindowSize -> Ui.Panel Msg
