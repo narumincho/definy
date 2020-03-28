@@ -43,6 +43,7 @@ type Ports = {
     blobUrl: string;
     fileHash: string;
   }>;
+  readonly urlChanged: CmdForElmSub<data.UrlData>;
 };
 
 type SubForElmCmd<T> = {

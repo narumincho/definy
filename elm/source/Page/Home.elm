@@ -195,7 +195,7 @@ createProjectButtonLogInOk clientMode language =
                                                 "Create a new project"
 
                                             Data.LanguageJapanese ->
-                                                "プロジェクトを新規作成"
+                                                "プロジcoェクトを新規作成"
 
                                             Data.LanguageEsperanto ->
                                                 "Krei novan projekton"

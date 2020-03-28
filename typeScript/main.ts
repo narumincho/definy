@@ -292,6 +292,9 @@ const init = async (): Promise<void> => {
         .toString()
     );
   });
+  addEventListener("popstate", () => {
+    app.ports.urlChanged.send(common.urlDataFromUrl(new URL(location.href)));
+  });
 };
 
 requestAnimationFrame(() => {

@@ -85,6 +85,9 @@ port subPointerUp : (() -> msg) -> Sub msg
 port getImageBlobResponse : ({ blobUrl : String, fileHash : String } -> msg) -> Sub msg
 
 
+port urlChanged : (Json.Decode.Value -> msg) -> Sub msg
+
+
 {-| 全体の入力を表すメッセージ
 -}
 type Msg
@@ -100,6 +103,7 @@ type Msg
     | RequestLogInUrl Data.OpenIdConnectProvider
     | ResponseUserDataFromAccessToken (Maybe (Maybe Data.UserPublicAndUserId))
     | ResponseGetImageBlob { blobUrl : String, fileHash : String }
+    | UrlChange Data.UrlData
     | NoOperation
 
 
@@ -343,6 +347,11 @@ update msg (Model rec) =
                                 imageBlobAndFileHash.blobUrl
                 }
             , Cmd.none
+            )
+
+        UrlChange urlData ->
+            ( Model rec
+            , consoleLog "URL変更をElmで検知した"
             )
 
         NoOperation ->
@@ -987,6 +996,7 @@ subscriptions model =
                     |> ResponseUserDataFromAccessToken
             )
          , getImageBlobResponse ResponseGetImageBlob
+         , urlChangeTyped
          ]
             ++ (if isCaptureMouseEvent model then
                     [ subPointerUp (always PointerUp) ]
@@ -994,4 +1004,17 @@ subscriptions model =
                 else
                     []
                )
+        )
+
+
+urlChangeTyped : Sub Msg
+urlChangeTyped =
+    urlChanged
+        (\jsonValue ->
+            case Json.Decode.decodeValue Data.urlDataJsonDecoder jsonValue of
+                Ok urlData ->
+                    UrlChange urlData
+
+                Err _ ->
+                    NoOperation
         )
