@@ -12,13 +12,14 @@ document.documentElement.replaceChild(
 document.body.appendChild(elmAppElement);
 
 const getAccessToken = async (
+  database: IDBDatabase | null,
   urlData: common.data.UrlData
 ): Promise<common.data.Maybe<common.data.AccessToken>> => {
   switch (urlData.accessToken._) {
     case "Just":
       return common.data.maybeJust(urlData.accessToken.value);
     case "Nothing": {
-      const accessToken = await db.getAccessToken();
+      const accessToken = await db.getAccessToken(database);
       if (accessToken === null) {
         return common.data.maybeNothing();
       }
@@ -66,10 +67,11 @@ const init = async (): Promise<void> => {
       }
     );
   }
+  const database = await db.accessDatabase();
 
-  const accessToken = await getAccessToken(urlData);
+  const accessToken = await getAccessToken(database, urlData);
   if (accessToken._ === "Just") {
-    db.writeAccessToken(accessToken.value);
+    db.setAccessToken(database, accessToken.value);
   }
   const app = Elm.Main.init({
     flags: {
