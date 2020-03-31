@@ -55,10 +55,13 @@ port getUserByAccessToken : Json.Encode.Value -> Cmd msg
 port getImageBlobUrl : Json.Encode.Value -> Cmd msg
 
 
+port pushUrl : Json.Encode.Value -> Cmd msg
+
+
 port createProject : Json.Encode.Value -> Cmd msg
 
 
-port pushUrl : Json.Encode.Value -> Cmd msg
+port toValidProjectName : String -> Cmd msg
 
 
 
@@ -87,6 +90,9 @@ port getImageBlobResponse : ({ blobUrl : String, fileHash : String } -> msg) -> 
 
 
 port urlChanged : (Json.Decode.Value -> msg) -> Sub msg
+
+
+port toValidProjectNameResponse : ({ input : String, result : Maybe String } -> msg) -> Sub msg
 
 
 {-| 全体の入力を表すメッセージ
@@ -203,19 +209,21 @@ init flag =
 
         ( pageInitModel, pageCommand ) =
             pageInit urlData.location
-    in
-    ( Model
-        { subMode = SubModeNone
-        , page = pageInitModel
-        , windowSize = flag.windowSize
-        , messageQueue = []
-        , logInState =
+
+        logInState =
             case urlData.accessToken of
                 Just accessToken ->
                     Data.LogInState.VerifyingAccessToken accessToken
 
                 Nothing ->
                     Data.LogInState.GuestUser
+    in
+    ( Model
+        { subMode = SubModeNone
+        , page = pageInitModel
+        , windowSize = flag.windowSize
+        , messageQueue = []
+        , logInState = logInState
         , language = urlData.language
         , networkConnection = flag.networkConnection
         , notificationModel = notificationsModel
@@ -229,9 +237,9 @@ init flag =
 
             Nothing ->
                 Cmd.none
-        , commandToMainCommand notificationsInitCommand
-        , commandToMainCommand notificationsCommand
-        , commandToMainCommand pageCommand
+        , commandToMainCommand logInState notificationsInitCommand
+        , commandToMainCommand logInState notificationsCommand
+        , commandToMainCommand logInState pageCommand
         ]
     )
 
@@ -311,7 +319,7 @@ update msg (Model rec) =
                             pageModel |> Page.Home.update pageMessage
                     in
                     ( Model { rec | page = Home newPageModel }
-                    , commandToMainCommand command
+                    , commandToMainCommand rec.logInState command
                     )
 
                 ( CreateProject pageModel, PageMessageCreateProject pageMessage ) ->
@@ -320,7 +328,7 @@ update msg (Model rec) =
                             Page.CreateProject.update pageMessage pageModel
                     in
                     ( Model { rec | page = CreateProject newPageModel }
-                    , commandToMainCommand command
+                    , commandToMainCommand rec.logInState command
                     )
 
                 ( _, _ ) ->
@@ -337,7 +345,7 @@ update msg (Model rec) =
             in
             ( Model
                 { rec | notificationModel = newNotificationModel }
-            , commandToMainCommand command
+            , commandToMainCommand rec.logInState command
             )
 
         ChangeNetworkConnection connection ->
@@ -359,7 +367,7 @@ update msg (Model rec) =
                     | networkConnection = connection
                     , notificationModel = newNotificationModel
                 }
-            , commandToMainCommand command
+            , commandToMainCommand rec.logInState command
             )
 
         RequestLogInUrl openIdConnectProvider ->
@@ -769,7 +777,8 @@ mainView (Model record) =
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
                 [ Component.Header.view record.imageBlobUrlDict record.logInState
                 , logInPanel record.logInState record.language record.windowSize
-                , Page.CreateProject.view pageModel
+                , Page.CreateProject.view record.language record.logInState pageModel
+                    |> Ui.map (PageMessageCreateProject >> PageMsg)
                 ]
 
 
@@ -959,7 +968,7 @@ responseUserData result (Model rec) =
                 }
             , Cmd.batch
                 [ consoleLog "ユーザー情報の取得に成功!"
-                , commandToMainCommand command
+                , commandToMainCommand rec.logInState command
                 ]
             )
 
@@ -977,7 +986,7 @@ responseUserData result (Model rec) =
                 }
             , Cmd.batch
                 [ consoleLog "アクセストークンが無効だった"
-                , commandToMainCommand command
+                , commandToMainCommand rec.logInState command
                 ]
             )
 
@@ -995,7 +1004,7 @@ responseUserData result (Model rec) =
                 }
             , Cmd.batch
                 [ consoleLog "ユーザーの情報のデコードに失敗"
-                , commandToMainCommand command
+                , commandToMainCommand rec.logInState command
                 ]
             )
 
@@ -1005,26 +1014,37 @@ responseUserData result (Model rec) =
             )
 
 
-commandToMainCommand : Command.Command -> Cmd Msg
-commandToMainCommand command =
+commandToMainCommand : Data.LogInState.LogInState -> Command.Command -> Cmd Msg
+commandToMainCommand logInState command =
     Cmd.batch
-        (List.map commandItemToMainCommand (Command.getListCommandItem command))
+        (List.map (commandItemToMainCommand logInState) (Command.getListCommandItem command))
 
 
-commandItemToMainCommand : Command.CommandItem -> Cmd Msg
-commandItemToMainCommand commandItem =
+commandItemToMainCommand : Data.LogInState.LogInState -> Command.CommandItem -> Cmd Msg
+commandItemToMainCommand logInState commandItem =
     case commandItem of
         Command.GetBlobUrl fileHash ->
             getImageBlobUrlTyped fileHash
 
-        Command.CreateProject createProjectParameter ->
-            createProjectTyped createProjectParameter
+        Command.CreateProject projectName ->
+            case logInState of
+                Data.LogInState.Ok { accessToken } ->
+                    createProjectTyped
+                        { projectName = projectName
+                        , accessToken = accessToken
+                        }
+
+                _ ->
+                    Cmd.none
 
         Command.ConsoleLog string ->
             consoleLog string
 
         Command.PushUrl urlData ->
             pushUrl (Data.urlDataToJsonValue urlData)
+
+        Command.ToValidProjectName string ->
+            toValidProjectName string
 
 
 
@@ -1051,6 +1071,13 @@ subscriptions model =
             )
          , getImageBlobResponse ResponseGetImageBlob
          , urlChangeTyped
+         , toValidProjectNameResponse
+            (\response ->
+                PageMsg
+                    (PageMessageCreateProject
+                        (Page.CreateProject.ToValidProjectNameResponse response)
+                    )
+            )
          ]
             ++ (if isCaptureMouseEvent model then
                     [ subPointerUp (always PointerUp) ]

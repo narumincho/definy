@@ -295,6 +295,21 @@ const init = async (): Promise<void> => {
   addEventListener("popstate", () => {
     app.ports.urlChanged.send(common.urlDataFromUrl(new URL(location.href)));
   });
+  app.ports.createProject.subscribe(parameter => {
+    callApi(
+      "createProject",
+      common.data.encodeCreateProjectParameter(parameter),
+      common.data.decodeMaybe(common.data.decodeProject)
+    ).then(response => {
+      console.log("プロジェクト作成しました!", response);
+    });
+  });
+  app.ports.toValidProjectName.subscribe(projectName => {
+    app.ports.toValidProjectNameResponse.send({
+      input: projectName,
+      result: common.projectNameDecoder(projectName)
+    });
+  });
 };
 
 requestAnimationFrame(() => {

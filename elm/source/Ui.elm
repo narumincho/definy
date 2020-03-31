@@ -12,6 +12,7 @@ module Ui exposing
     , Size
     , TextAlignment(..)
     , TextAttributes(..)
+    , TextInputAttributes(..)
     , VectorImageAttributes(..)
     , auto
     , backgroundColor

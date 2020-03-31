@@ -27,6 +27,8 @@ type Ports = {
   readonly getUserByAccessToken: SubForElmCmd<data.AccessToken>;
   readonly getImageBlobUrl: SubForElmCmd<data.FileHash>;
   readonly pushUrl: SubForElmCmd<data.UrlData>;
+  readonly createProject: SubForElmCmd<data.CreateProjectParameter>;
+  readonly toValidProjectName: SubForElmCmd<string>;
 
   readonly responseUserByAccessToken: CmdForElmSub<
     data.Maybe<data.UserPublicAndUserId>
@@ -44,6 +46,10 @@ type Ports = {
     fileHash: string;
   }>;
   readonly urlChanged: CmdForElmSub<data.UrlData>;
+  readonly toValidProjectNameResponse: CmdForElmSub<{
+    input: string;
+    result: string | null;
+  }>;
 };
 
 type SubForElmCmd<T> = {
