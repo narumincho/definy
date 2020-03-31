@@ -5,6 +5,7 @@ module Component.Style exposing
     , fontHack
     , fontHackName
     , horizontalGutter
+    , normalText
     , normalTypeface
     , tabContainer
     , textColorStyle
@@ -132,6 +133,21 @@ horizontalGutter isResizing =
 normalTypeface : String
 normalTypeface =
     "'Hiragino Kaku Gothic Pro', 'ヒラギノ角ゴ Pro W3', メイリオ, Meiryo, 'ＭＳ Ｐゴシック', sans-serif"
+
+
+normalText : String -> Ui.Panel message
+normalText text =
+    Ui.text
+        []
+        (Ui.TextAttributes
+            { text = text
+            , typeface = normalTypeface
+            , size = 16
+            , letterSpacing = 0
+            , color = Css.rgb 200 200 200
+            , textAlignment = Ui.TextAlignCenter
+            }
+        )
 
 
 codeFontTypeface : String

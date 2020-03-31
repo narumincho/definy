@@ -12,6 +12,7 @@ module Ui exposing
     , Size
     , TextAlignment(..)
     , TextAttributes(..)
+    , TextInputAttributes(..)
     , VectorImageAttributes(..)
     , auto
     , backgroundColor
@@ -36,6 +37,7 @@ module Ui exposing
     , stretch
     , stretchWithMaxSize
     , text
+    , textInput
     , toHtml
     , vectorImage
     , width
@@ -72,6 +74,7 @@ type Content message
     | Link (LinkAttributes message)
     | PointerPanel (PointerPanelAttributes message)
     | Scroll (Panel message)
+    | TextInput (TextInputAttributes message)
 
 
 type TextAttributes
@@ -125,6 +128,14 @@ type PointerPanelAttributes message
         , moveMessage : Maybe (Pointer -> message)
         , downMessage : Maybe (Pointer -> message)
         , child : Panel message
+        }
+
+
+type TextInputAttributes message
+    = TextInputAttributes
+        { inputMessage : String -> message
+        , name : String
+        , multiLine : Bool
         }
 
 
@@ -436,6 +447,16 @@ column style children =
         }
 
 
+{-| 文字の入力ボックス
+-}
+textInput : List Style -> TextInputAttributes message -> Panel message
+textInput style attributes =
+    Panel
+        { style = computeStyle style
+        , content = TextInput attributes
+        }
+
+
 computeStyle : List Style -> StyleComputed
 computeStyle list =
     case list of
@@ -582,6 +603,15 @@ mapContent func content =
         Scroll child ->
             Scroll (map func child)
 
+        TextInput (TextInputAttributes record) ->
+            TextInput
+                (TextInputAttributes
+                    { inputMessage = \inputtedText -> func (record.inputMessage inputtedText)
+                    , name = record.name
+                    , multiLine = record.multiLine
+                    }
+                )
+
 
 type GridCell
     = GridCell { row : Int, column : Int }
@@ -604,38 +634,41 @@ panelToHtml gridCell alignmentOrStretch (Panel record) =
                 ]
     in
     case record.content of
-        Text textBoxAttributes ->
-            textBoxToHtml commonStyle record.style textBoxAttributes
+        Text attributes ->
+            textBoxToHtml commonStyle record.style attributes
 
-        BitmapImage imageFromUrlAttributes ->
-            imageFromUrlToHtml commonStyle record.style imageFromUrlAttributes
+        BitmapImage attributes ->
+            imageFromUrlToHtml commonStyle record.style attributes
 
-        VectorImage vectorImageAttributes ->
-            vectorImageToHtml commonStyle record.style vectorImageAttributes
+        VectorImage attributes ->
+            vectorImageToHtml commonStyle record.style attributes
 
         Empty ->
             emptyToHtml commonStyle record.style
 
-        Button buttonAttributes ->
-            buttonToHtml commonStyle record.style buttonAttributes
+        Button attributes ->
+            buttonToHtml commonStyle record.style attributes
 
-        Link linkAttributes ->
-            linkToHtml commonStyle record.style linkAttributes
+        Link attributes ->
+            linkToHtml commonStyle record.style attributes
 
-        Depth depthListAttributes ->
-            depthToHtml commonStyle record.style depthListAttributes
+        Depth attributes ->
+            depthToHtml commonStyle record.style attributes
 
-        Row rowListAttributes ->
-            rowToHtml commonStyle record.style rowListAttributes
+        Row attributes ->
+            rowToHtml commonStyle record.style attributes
 
-        Column columnListAttributes ->
-            columnToHtml commonStyle record.style columnListAttributes
+        Column attributes ->
+            columnToHtml commonStyle record.style attributes
 
-        PointerPanel pointerPanelAttributes ->
-            pointerPanelToHtml commonStyle record.style pointerPanelAttributes
+        PointerPanel attributes ->
+            pointerPanelToHtml commonStyle record.style attributes
 
         Scroll child ->
             scrollBoxToHtml commonStyle record.style child
+
+        TextInput attributes ->
+            textInputToHtml commonStyle record.style attributes
 
 
 textBoxToHtml : Css.Style -> StyleComputed -> TextAttributes -> Html.Styled.Html message
@@ -904,6 +937,24 @@ scrollBoxToHtml commonStyle styleComputed child =
             ]
         ]
         [ panelToHtml (GridCell { row = 0, column = 0 }) StretchStretch child ]
+
+
+textInputToHtml : Css.Style -> StyleComputed -> TextInputAttributes message -> Html.Styled.Html message
+textInputToHtml commonStyle styleComputed (TextInputAttributes attributes) =
+    (if attributes.multiLine then
+        Html.Styled.textarea
+
+     else
+        Html.Styled.input
+    )
+        [ Html.Styled.Attributes.css
+            [ commonStyle
+            , styleComputedToCssStyle False styleComputed
+            ]
+        , Html.Styled.Attributes.name attributes.name
+        , Html.Styled.Events.onInput attributes.inputMessage
+        ]
+        []
 
 
 styleComputedToCssStyle : Bool -> StyleComputed -> Css.Style
@@ -1292,3 +1343,6 @@ isIncludeScrollInPanel (Panel record) =
 
         Scroll _ ->
             True
+
+        TextInput _ ->
+            False

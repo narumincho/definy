@@ -8,6 +8,7 @@ module Command exposing
     , getListCommandItem
     , none
     , pushUrl
+    , toValidProjectName
     )
 
 import Data
@@ -19,9 +20,10 @@ type Command
 
 type CommandItem
     = GetBlobUrl Data.FileHash
-    | CreateProject Data.CreateProjectParameter
+    | CreateProject String
     | ConsoleLog String
     | PushUrl Data.UrlData
+    | ToValidProjectName String
 
 
 getBlobUrl : Data.FileHash -> Command
@@ -29,9 +31,9 @@ getBlobUrl fileHash =
     Command [ GetBlobUrl fileHash ]
 
 
-createProject : Data.CreateProjectParameter -> Command
-createProject createProjectParameter =
-    Command [ CreateProject createProjectParameter ]
+createProject : String -> Command
+createProject name =
+    Command [ CreateProject name ]
 
 
 consoleLog : String -> Command
@@ -42,6 +44,11 @@ consoleLog text =
 pushUrl : Data.UrlData -> Command
 pushUrl urlData =
     Command [ PushUrl urlData ]
+
+
+toValidProjectName : String -> Command
+toValidProjectName string =
+    Command [ ToValidProjectName string ]
 
 
 none : Command
