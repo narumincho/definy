@@ -83,7 +83,7 @@ view language logInState model =
 
 noLogInCannotCreateProjectText : Data.Language -> Ui.Panel message
 noLogInCannotCreateProjectText language =
-    Component.Style.normalText
+    Component.Style.normalText 24
         (case language of
             Data.LanguageJapanese ->
                 "プロジェクトを作成するにはログインする必要があります"
@@ -101,22 +101,22 @@ mainView language model =
     case model of
         NoInput ->
             Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                [ Ui.width Ui.stretch, Ui.height Ui.stretch, Ui.gap 16 ]
                 [ createProjectTitle language
                 , projectInputBox
                 ]
 
-        RequestToValidProjectName string ->
+        RequestToValidProjectName _ ->
             Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                [ Ui.width Ui.stretch, Ui.height Ui.stretch, Ui.gap 16 ]
                 [ createProjectTitle language
                 , projectInputBox
-                , Component.Style.normalText (checkingThatProjectNameIsValid language)
+                , Component.Style.normalText 24 (checkingThatProjectNameIsValid language)
                 ]
 
         DisplayedValidProjectName (Just validProjectName) ->
             Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                [ Ui.width Ui.stretch, Ui.height Ui.stretch, Ui.gap 16 ]
                 [ createProjectTitle language
                 , projectInputBox
                 , createButton language validProjectName
@@ -124,22 +124,24 @@ mainView language model =
 
         DisplayedValidProjectName Nothing ->
             Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                [ Ui.width Ui.stretch, Ui.height Ui.stretch, Ui.gap 16 ]
                 [ createProjectTitle language
                 , projectInputBox
-                , Component.Style.normalText (projectNameIsInvalid language)
+                , Component.Style.normalText 24 (projectNameIsInvalid language)
                 ]
 
         CreatingProject projectName ->
-            Ui.row
+            Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Style.normalText (creating language projectName)
+                [ Ui.empty [ Ui.height Ui.stretch ]
+                , Component.Style.normalText 24 (creating language projectName)
+                , Ui.empty [ Ui.height Ui.stretch ]
                 ]
 
 
 createProjectTitle : Data.Language -> Ui.Panel message
 createProjectTitle language =
-    Component.Style.normalText
+    Component.Style.normalText 32
         (case language of
             Data.LanguageEnglish ->
                 "Enter a name for the new project"
@@ -194,11 +196,12 @@ creating language projectName =
 projectInputBox : Ui.Panel Message
 projectInputBox =
     Ui.textInput
-        [ Ui.width (Ui.fix 400), Ui.height (Ui.fix 16) ]
+        [ Ui.width (Ui.fix 400), Ui.height (Ui.fix 40), Ui.padding 8 ]
         (Ui.TextInputAttributes
             { inputMessage = InputProjectName
             , name = "project-name"
             , multiLine = False
+            , fontSize = 24
             }
         )
 
@@ -206,7 +209,15 @@ projectInputBox =
 createButton : Data.Language -> String -> Ui.Panel Message
 createButton language validProjectName =
     Ui.button
-        [ Ui.backgroundColor (Css.rgb 10 10 10) ]
+        [ Ui.backgroundColor (Css.rgb 40 40 40)
+        , Ui.border
+            (Ui.BorderStyle
+                { color = Css.rgb 200 200 200
+                , width = { top = 1, right = 1, left = 1, bottom = 1 }
+                }
+            )
+        , Ui.padding 8
+        ]
         CreateProject
         (Ui.text
             [ Ui.width Ui.auto, Ui.height Ui.auto ]

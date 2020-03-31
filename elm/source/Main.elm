@@ -95,6 +95,9 @@ port urlChanged : (Json.Decode.Value -> msg) -> Sub msg
 port toValidProjectNameResponse : ({ input : String, result : Maybe String } -> msg) -> Sub msg
 
 
+port createProjectResponse : (Json.Decode.Value -> msg) -> Sub msg
+
+
 {-| 全体の入力を表すメッセージ
 -}
 type Msg
@@ -111,6 +114,7 @@ type Msg
     | ResponseUserDataFromAccessToken (Maybe (Maybe Data.UserPublicAndUserId))
     | ResponseGetImageBlob { blobUrl : String, fileHash : String }
     | UrlChange Data.UrlData
+    | CreateProjectResponse Data.Project
     | NoOperation
 
 
@@ -404,6 +408,11 @@ update msg (Model rec) =
             )
 
         NoOperation ->
+            ( Model rec
+            , Cmd.none
+            )
+
+        CreateProjectResponse project ->
             ( Model rec
             , Cmd.none
             )
@@ -1078,6 +1087,7 @@ subscriptions model =
                         (Page.CreateProject.ToValidProjectNameResponse response)
                     )
             )
+         , createProjectResponseTyped
          ]
             ++ (if isCaptureMouseEvent model then
                     [ subPointerUp (always PointerUp) ]
@@ -1095,6 +1105,19 @@ urlChangeTyped =
             case Json.Decode.decodeValue Data.urlDataJsonDecoder jsonValue of
                 Ok urlData ->
                     UrlChange urlData
+
+                Err _ ->
+                    NoOperation
+        )
+
+
+createProjectResponseTyped : Sub Msg
+createProjectResponseTyped =
+    createProjectResponse
+        (\jsonValue ->
+            case Json.Decode.decodeValue Data.projectJsonDecoder jsonValue of
+                Ok project ->
+                    CreateProjectResponse project
 
                 Err _ ->
                     NoOperation

@@ -136,6 +136,7 @@ type TextInputAttributes message
         { inputMessage : String -> message
         , name : String
         , multiLine : Bool
+        , fontSize : Int
         }
 
 
@@ -609,6 +610,7 @@ mapContent func content =
                     { inputMessage = \inputtedText -> func (record.inputMessage inputtedText)
                     , name = record.name
                     , multiLine = record.multiLine
+                    , fontSize = record.fontSize
                     }
                 )
 
@@ -950,6 +952,7 @@ textInputToHtml commonStyle styleComputed (TextInputAttributes attributes) =
         [ Html.Styled.Attributes.css
             [ commonStyle
             , styleComputedToCssStyle False styleComputed
+            , Css.fontSize (Css.px (toFloat attributes.fontSize))
             ]
         , Html.Styled.Attributes.name attributes.name
         , Html.Styled.Events.onInput attributes.inputMessage

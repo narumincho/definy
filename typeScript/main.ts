@@ -307,7 +307,7 @@ const init = async (): Promise<void> => {
   app.ports.toValidProjectName.subscribe(projectName => {
     app.ports.toValidProjectNameResponse.send({
       input: projectName,
-      result: common.projectNameDecoder(projectName)
+      result: common.stringToValidProjectName(projectName)
     });
   });
 };

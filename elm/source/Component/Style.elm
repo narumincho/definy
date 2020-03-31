@@ -135,14 +135,14 @@ normalTypeface =
     "'Hiragino Kaku Gothic Pro', 'ヒラギノ角ゴ Pro W3', メイリオ, Meiryo, 'ＭＳ Ｐゴシック', sans-serif"
 
 
-normalText : String -> Ui.Panel message
-normalText text =
+normalText : Int -> String -> Ui.Panel message
+normalText size text =
     Ui.text
         []
         (Ui.TextAttributes
             { text = text
             , typeface = normalTypeface
-            , size = 16
+            , size = size
             , letterSpacing = 0
             , color = Css.rgb 200 200 200
             , textAlignment = Ui.TextAlignCenter
