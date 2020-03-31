@@ -2,7 +2,19 @@ import { data } from "definy-common";
 
 const accessTokenObjectStoreName = "accessToken";
 const accessTokenKeyName = "lastLogInUser";
-const imageObjectStoreName = "image";
+const userObjectStoreName = "user";
+const projectObjectStoreName = "project";
+const fileObjectStoreName = "file";
+
+type UserData = {
+  value: data.UserPublic;
+  updateAt: Date;
+};
+
+type ProjectData = {
+  value: data.Project;
+  updateAt: Date;
+};
 
 /**
  * ブラウザでindexDBがサポートされているかどうか調べる
@@ -21,17 +33,17 @@ export const accessDatabase = (): Promise<IDBDatabase | null> =>
     }
     const dbRequest: IDBOpenDBRequest = indexedDB.open("main", 1);
 
-    dbRequest.onupgradeneeded = (event): void => {
-      console.log("ユーザーデータのDBが更新された");
-      const target = event.target as IDBOpenDBRequest;
-      const db = target.result;
+    dbRequest.onupgradeneeded = (): void => {
+      console.log("Databaseのversionが上がった");
+      const db = dbRequest.result;
       db.createObjectStore(accessTokenObjectStoreName, {});
-      db.createObjectStore(imageObjectStoreName, {});
+      db.createObjectStore(userObjectStoreName, {});
+      db.createObjectStore(projectObjectStoreName, {});
+      db.createObjectStore(fileObjectStoreName, {});
     };
 
-    dbRequest.onsuccess = (event): void => {
-      const target = event.target as IDBOpenDBRequest;
-      resolve(target.result);
+    dbRequest.onsuccess = (): void => {
+      resolve(dbRequest.result);
     };
 
     dbRequest.onerror = (): void => {
@@ -44,42 +56,25 @@ export const accessDatabase = (): Promise<IDBDatabase | null> =>
  */
 export const getAccessToken = (
   database: IDBDatabase | null
-): Promise<null | data.AccessToken> =>
+): Promise<undefined | data.AccessToken> =>
   new Promise((resolve, reject) => {
     if (database === null) {
-      return resolve(null);
+      resolve();
+      return;
     }
-    let accessToken: null | data.AccessToken = null;
     const transaction = database.transaction(
-      accessTokenObjectStoreName,
+      [accessTokenObjectStoreName],
       "readonly"
     );
-    transaction.oncomplete = (): void => {
-      console.log("アクセストークン読み込みのトランザクションが成功した");
-      resolve(accessToken);
-    };
-    transaction.onerror = (): void => {
-      console.log("アクセストークン読み込みのトランザクションが失敗した");
-      reject("read AccessToken Error: transaction failed");
-    };
+
     const getRequest = transaction
       .objectStore(accessTokenObjectStoreName)
       .get(accessTokenKeyName);
-    getRequest.onsuccess = (event): void => {
-      console.log("読み込み完了!");
-      const request = event.target as IDBRequest;
-      if (request.result === undefined) {
-        return;
-      }
-      if (typeof request.result === "string") {
-        accessToken = request.result as data.AccessToken;
-        return;
-      }
-      reject("read AccessToken Error: AccessToken is not string");
+    transaction.oncomplete = (): void => {
+      resolve(getRequest.result);
     };
-    getRequest.onerror = (): void => {
-      console.log("読み込み失敗");
-      reject("read AccessToken Error: Read Error");
+    transaction.onerror = (): void => {
+      reject("read AccessToken Error: transaction failed");
     };
   });
 
@@ -94,66 +89,194 @@ export const setAccessToken = (
 ): Promise<void> =>
   new Promise((resolve, reject) => {
     if (database === null) {
-      return resolve();
+      resolve();
+      return;
     }
     const transaction = database.transaction(
-      accessTokenObjectStoreName,
+      [accessTokenObjectStoreName],
       "readwrite"
     );
     transaction.oncomplete = (): void => {
-      console.log("アクセストークン保存のトランザクションが成功した");
       resolve();
     };
     transaction.onerror = (): void => {
-      console.log("アクセストークン保存のトランザクションが失敗した");
       reject("Write AccessToken Error: transaction failed");
     };
-    const putRequest = transaction
+    transaction
       .objectStore(accessTokenObjectStoreName)
       .put(accessToken, accessTokenKeyName);
-
-    putRequest.onsuccess = (): void => {
-      console.log("書き込み完了!");
-    };
-    putRequest.onerror = (): void => {
-      console.error("読み込み失敗");
-    };
   });
 
+/**
+ * ユーザーのデータをindexDBに書き込む
+ */
 export const getUser = (
   database: IDBDatabase | null,
   userId: data.UserId
-): Promise<null | data.UserPublic> =>
+): Promise<undefined | data.UserPublic> =>
   new Promise((resolve, reject) => {
-    resolve(null);
+    if (database === null) {
+      resolve();
+      return;
+    }
+    const transaction = database.transaction([userObjectStoreName], "readonly");
+
+    const getRequest: IDBRequest<UserData> = transaction
+      .objectStore(userObjectStoreName)
+      .get(userId);
+    transaction.oncomplete = (): void => {
+      resolve(
+        getRequest.result.updateAt.getTime() + 1000 * 30 < new Date().getTime()
+          ? getRequest.result.value
+          : undefined
+      );
+    };
+
+    transaction.onerror = (): void => {
+      reject("read user failed");
+    };
   });
 
+/**
+ * ユーザーのデータをindexDBから読み込む
+ */
 export const setUser = (
-  userId: data.UserId | null,
+  database: IDBDatabase | null,
+  userId: data.UserId,
   userData: data.UserPublic
 ): Promise<void> =>
   new Promise((resolve, reject) => {
-    resolve();
+    if (database === null) {
+      resolve();
+      return;
+    }
+    const transaction = database.transaction(
+      [userObjectStoreName],
+      "readwrite"
+    );
+
+    transaction.oncomplete = (): void => {
+      resolve();
+    };
+    transaction.onerror = (): void => {
+      reject("write user error: transaction failed");
+    };
+
+    const data: UserData = {
+      value: userData,
+      updateAt: new Date()
+    };
+    transaction.objectStore(userObjectStoreName).put(data, userId);
+  });
+
+export const getProject = (
+  database: IDBDatabase | null,
+  projectId: data.ProjectId
+): Promise<null | data.Project> =>
+  new Promise((resolve, reject) => {
+    if (database === null) {
+      resolve(null);
+      return;
+    }
+    const transaction = database.transaction(
+      [projectObjectStoreName],
+      "readonly"
+    );
+    const getRequest: IDBRequest<ProjectData> = transaction
+      .objectStore(projectObjectStoreName)
+      .get(projectId);
+
+    transaction.oncomplete = (): void => {
+      resolve(
+        getRequest.result.updateAt.getTime() + 1000 * 30 < new Date().getTime()
+          ? getRequest.result.value
+          : undefined
+      );
+    };
+
+    transaction.onerror = (): void => {
+      reject("read project failed");
+    };
+  });
+
+export const setProject = (
+  database: IDBDatabase | null,
+  projectId: data.ProjectId,
+  projectData: data.Project
+): Promise<void> =>
+  new Promise((resolve, reject) => {
+    if (database === null) {
+      resolve();
+      return;
+    }
+
+    const transaction = database.transaction(
+      [projectObjectStoreName],
+      "readwrite"
+    );
+
+    transaction.oncomplete = (): void => {
+      resolve();
+    };
+
+    transaction.onerror = (): void => {
+      reject("set project failed");
+    };
+
+    const data: ProjectData = {
+      value: projectData,
+      updateAt: new Date()
+    };
+    transaction.objectStore(projectObjectStoreName).put(data, projectId);
   });
 
 /**
- * PNG形式の画像を読み込む
+ * ファイルのバイナリを読み込む
  */
-export const getImage = (
+export const getFile = (
   database: IDBDatabase | null,
   fileHash: data.FileHash
-): Promise<null | Uint8Array> =>
+): Promise<undefined | Uint8Array> =>
   new Promise((resolve, reject) => {
-    resolve();
+    if (database === null) {
+      resolve();
+      return;
+    }
+    const transaction = database.transaction([fileObjectStoreName], "readonly");
+
+    const getRequest: IDBRequest<
+      Uint8Array | undefined
+    > = transaction.objectStore(fileObjectStoreName).get(fileHash);
+    transaction.oncomplete = (): void => {
+      resolve(getRequest.result);
+    };
+    transaction.onerror = (): void => {
+      reject("read image file failed");
+    };
   });
 
 /**
- * PNG形式の画像を書き込む
+ * ファイルのバイナリを書き込む
  */
-export const setImage = (
+export const setFile = (
+  database: IDBDatabase | null,
   fileHash: data.FileHash,
   image: Uint8Array
 ): Promise<void> =>
   new Promise((resolve, reject) => {
-    resolve();
+    if (database === null) {
+      resolve();
+      return;
+    }
+    const transaction = database.transaction(fileObjectStoreName, "readwrite");
+
+    transaction.oncomplete = (): void => {
+      resolve();
+    };
+
+    transaction.onerror = (): void => {
+      reject("set image failed");
+    };
+
+    transaction.objectStore(fileObjectStoreName).put(image, fileHash);
   });

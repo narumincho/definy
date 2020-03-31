@@ -20,7 +20,7 @@ const getAccessToken = async (
       return common.data.maybeJust(urlData.accessToken.value);
     case "Nothing": {
       const accessToken = await db.getAccessToken(database);
-      if (accessToken === null) {
+      if (accessToken === undefined) {
         return common.data.maybeNothing();
       }
       return common.data.maybeJust(accessToken);
@@ -152,6 +152,13 @@ const init = async (): Promise<void> => {
       common.data.decodeMaybe(common.data.decodeUserPublicAndUserId)
     ).then(maybeUserPublicAndUserId => {
       app.ports.responseUserByAccessToken.send(maybeUserPublicAndUserId);
+      if (maybeUserPublicAndUserId._ === "Just") {
+        db.setUser(
+          database,
+          maybeUserPublicAndUserId.value.userId,
+          maybeUserPublicAndUserId.value.userPublic
+        );
+      }
     });
   });
 
@@ -164,17 +171,30 @@ const init = async (): Promise<void> => {
       });
       return;
     }
-    callApi(
-      "getImageFile",
-      common.data.encodeToken(fileHash),
-      common.data.decodeBinary
-    ).then(pngBinary => {
-      const blob = new Blob([pngBinary], { type: "image/png" });
-      const blobUrl = URL.createObjectURL(blob);
-      imageBlobUrlMap.set(fileHash, blobUrl);
-      app.ports.getImageBlobResponse.send({
-        blobUrl: blobUrl,
-        fileHash: fileHash
+    db.getFile(database, fileHash).then(binaryInIndexDB => {
+      if (binaryInIndexDB !== undefined) {
+        const blob = new Blob([binaryInIndexDB], { type: "image/png" });
+        const blobUrl = URL.createObjectURL(blob);
+        imageBlobUrlMap.set(fileHash, blobUrl);
+        app.ports.getImageBlobResponse.send({
+          blobUrl: blobUrl,
+          fileHash: fileHash
+        });
+        return;
+      }
+      callApi(
+        "getImageFile",
+        common.data.encodeToken(fileHash),
+        common.data.decodeBinary
+      ).then(pngBinary => {
+        const blob = new Blob([pngBinary], { type: "image/png" });
+        const blobUrl = URL.createObjectURL(blob);
+        db.setFile(database, fileHash, pngBinary);
+        imageBlobUrlMap.set(fileHash, blobUrl);
+        app.ports.getImageBlobResponse.send({
+          blobUrl: blobUrl,
+          fileHash: fileHash
+        });
       });
     });
   });
