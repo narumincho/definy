@@ -206,7 +206,7 @@ projectInputBox =
 createButton : Data.Language -> String -> Ui.Panel Message
 createButton language validProjectName =
     Ui.button
-        []
+        [ Ui.backgroundColor (Css.rgb 10 10 10) ]
         CreateProject
         (Ui.text
             [ Ui.width Ui.auto, Ui.height Ui.auto ]
