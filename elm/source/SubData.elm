@@ -4,7 +4,7 @@ import Data
 import Dict
 
 
-getUserImage : Dict.Dict String String -> Data.UserPublic -> Maybe String
+getUserImage : Dict.Dict String String -> Data.User -> Maybe String
 getUserImage imageFileBlobDict userPublic =
     let
         (Data.FileHash hash) =

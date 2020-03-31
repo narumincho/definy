@@ -64,7 +64,7 @@ guestItem =
         )
 
 
-userItem : Dict.Dict String String -> Data.UserPublic -> Ui.Panel msg
+userItem : Dict.Dict String String -> Data.User -> Ui.Panel msg
 userItem imageBlobUrlDict userData =
     Ui.row
         [ Ui.gap 8 ]

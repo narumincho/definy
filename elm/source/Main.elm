@@ -111,7 +111,7 @@ type Msg
     | PageMsg PageMessage
     | NotificationMessage Component.Notifications.Message
     | RequestLogInUrl Data.OpenIdConnectProvider
-    | ResponseUserDataFromAccessToken (Maybe (Maybe Data.UserPublicAndUserId))
+    | ResponseUserDataFromAccessToken (Maybe (Maybe Data.UserAndUserId))
     | ResponseGetImageBlob { blobUrl : String, fileHash : String }
     | UrlChange Data.UrlData
     | CreateProjectResponse Data.Project
@@ -955,7 +955,7 @@ requestUserData (Model rec) =
             Cmd.none
 
 
-responseUserData : Maybe (Maybe Data.UserPublicAndUserId) -> Model -> ( Model, Cmd Msg )
+responseUserData : Maybe (Maybe Data.UserAndUserId) -> Model -> ( Model, Cmd Msg )
 responseUserData result (Model rec) =
     case ( result, rec.logInState ) of
         ( Just (Just userAndUserId), Data.LogInState.VerifyingAccessToken accessToken ) ->
@@ -971,7 +971,7 @@ responseUserData result (Model rec) =
                         Data.LogInState.Ok
                             { accessToken = accessToken
                             , userId = userAndUserId.userId
-                            , user = userAndUserId.userPublic
+                            , user = userAndUserId.user
                             }
                     , notificationModel = newNotificationModel
                 }
@@ -1073,7 +1073,7 @@ subscriptions model =
          , responseUserByAccessToken
             (\jsonValue ->
                 Json.Decode.decodeValue
-                    (Data.maybeJsonDecoder Data.userPublicAndUserIdJsonDecoder)
+                    (Data.maybeJsonDecoder Data.userAndUserIdJsonDecoder)
                     jsonValue
                     |> Result.toMaybe
                     |> ResponseUserDataFromAccessToken

@@ -149,14 +149,14 @@ const init = async (): Promise<void> => {
     callApi(
       "getUserByAccessToken",
       common.data.encodeToken(accessToken),
-      common.data.decodeMaybe(common.data.decodeUserPublicAndUserId)
+      common.data.decodeMaybe(common.data.decodeUserAndUserId)
     ).then(maybeUserPublicAndUserId => {
       app.ports.responseUserByAccessToken.send(maybeUserPublicAndUserId);
       if (maybeUserPublicAndUserId._ === "Just") {
         db.setUser(
           database,
           maybeUserPublicAndUserId.value.userId,
-          maybeUserPublicAndUserId.value.userPublic
+          maybeUserPublicAndUserId.value.user
         );
       }
     });
@@ -215,8 +215,15 @@ const init = async (): Promise<void> => {
     callApi(
       "createProject",
       common.data.encodeCreateProjectParameter(parameter),
-      common.data.decodeMaybe(common.data.decodeProject)
+      common.data.decodeMaybe(common.data.decodeProjectAndProjectId)
     ).then(response => {
+      if (response._ === "Just") {
+        db.setProject(
+          database,
+          response.value.projectId,
+          response.value.project
+        );
+      }
       console.log("プロジェクト作成しました!", response);
     });
   });

@@ -23,7 +23,7 @@ type Model
 
 
 type Event
-    = LogInSuccess Data.UserPublicAndUserId
+    = LogInSuccess Data.UserAndUserId
     | LogInFailure
     | OnLine
     | OffLine
@@ -47,7 +47,7 @@ update message (Model eventList) =
     case message of
         AddEvent (LogInSuccess userPublicAndUserId) ->
             ( Model (LogInSuccess userPublicAndUserId :: eventList)
-            , Command.getBlobUrl userPublicAndUserId.userPublic.imageHash
+            , Command.getBlobUrl userPublicAndUserId.user.imageHash
             )
 
         AddEvent event ->
@@ -93,19 +93,19 @@ eventToCardStyle imageBlobUrlDict event =
         LogInSuccess userAndUserId ->
             CardStyle
                 { icon =
-                    case SubData.getUserImage imageBlobUrlDict userAndUserId.userPublic of
+                    case SubData.getUserImage imageBlobUrlDict userAndUserId.user of
                         Just blobUrl ->
                             Just
                                 (Icon
                                     { alternativeText =
-                                        userAndUserId.userPublic.name ++ "のプロフィール画像"
+                                        userAndUserId.user.name ++ "のプロフィール画像"
                                     , url = blobUrl
                                     }
                                 )
 
                         Nothing ->
                             Nothing
-                , text = "「" ++ userAndUserId.userPublic.name ++ "」としてログインしました"
+                , text = "「" ++ userAndUserId.user.name ++ "」としてログインしました"
                 }
 
         LogInFailure ->

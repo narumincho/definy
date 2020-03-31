@@ -10,5 +10,5 @@ type LogInState
     | Ok
         { accessToken : Data.AccessToken
         , userId : Data.UserId
-        , user : Data.UserPublic
+        , user : Data.User
         }
