@@ -5,12 +5,12 @@ import Css
 import Data
 import Data.LogInState
 import Dict
-import SubData
+import ImageStore
 import Ui
 
 
-view : Dict.Dict String String -> Data.LogInState.LogInState -> Ui.Panel msg
-view imageBlobUrlDict logInState =
+view : ImageStore.ImageStore -> Data.LogInState.LogInState -> Ui.Panel msg
+view imageStore logInState =
     Ui.row
         [ Ui.backgroundColor (Css.rgb 36 36 36)
         , Ui.width Ui.stretch
@@ -29,7 +29,7 @@ view imageBlobUrlDict logInState =
             Data.LogInState.Ok record ->
                 [ logo
                 , Ui.empty [ Ui.width Ui.stretch ]
-                , userItem imageBlobUrlDict record.user
+                , userItem imageStore record.user
                 ]
         )
 
@@ -64,11 +64,11 @@ guestItem =
         )
 
 
-userItem : Dict.Dict String String -> Data.User -> Ui.Panel msg
-userItem imageBlobUrlDict userData =
+userItem : ImageStore.ImageStore -> Data.User -> Ui.Panel msg
+userItem imageStore userData =
     Ui.row
         [ Ui.gap 8 ]
-        ([ case SubData.getUserImage imageBlobUrlDict userData of
+        ([ case ImageStore.getUserImage imageStore userData of
             Just blobUrl ->
                 [ Ui.bitmapImage
                     [ Ui.width (Ui.fix 48)

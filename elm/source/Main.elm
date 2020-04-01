@@ -11,10 +11,10 @@ import Css
 import Data
 import Data.Key
 import Data.LogInState
-import Dict
 import Html
 import Html.Styled
 import Icon
+import ImageStore
 import Json.Decode
 import Json.Encode
 import Page.CreateProject
@@ -112,9 +112,9 @@ type Msg
     | NotificationMessage Component.Notifications.Message
     | RequestLogInUrl Data.OpenIdConnectProvider
     | ResponseUserDataFromAccessToken (Maybe (Maybe Data.UserAndUserId))
-    | ResponseGetImageBlob { blobUrl : String, fileHash : String }
+    | ResponseGetImageBlob { blobUrl : String, fileHash : Data.FileHash }
     | UrlChange Data.UrlData
-    | CreateProjectResponse Data.Project
+    | CreateProjectResponse (Maybe Data.ProjectAndProjectId)
     | NoOperation
 
 
@@ -136,7 +136,7 @@ type Model
         , clientMode : Data.ClientMode
         , networkConnection : Bool
         , notificationModel : Component.Notifications.Model
-        , imageBlobUrlDict : Dict.Dict String String
+        , imageStore : ImageStore.ImageStore
         }
 
 
@@ -232,7 +232,7 @@ init flag =
         , networkConnection = flag.networkConnection
         , notificationModel = notificationsModel
         , clientMode = urlData.clientMode
-        , imageBlobUrlDict = Dict.empty
+        , imageStore = ImageStore.empty
         }
     , Cmd.batch
         [ case urlData.accessToken of
@@ -353,26 +353,18 @@ update msg (Model rec) =
             )
 
         ChangeNetworkConnection connection ->
-            let
-                ( newNotificationModel, command ) =
-                    rec.notificationModel
-                        |> Component.Notifications.update
-                            (Component.Notifications.AddEvent
-                                (if connection then
-                                    Component.Notifications.OnLine
+            notificationAddEvent
+                (if connection then
+                    Component.Notifications.OnLine
 
-                                 else
-                                    Component.Notifications.OffLine
-                                )
-                            )
-            in
-            ( Model
-                { rec
-                    | networkConnection = connection
-                    , notificationModel = newNotificationModel
-                }
-            , commandToMainCommand rec.logInState command
-            )
+                 else
+                    Component.Notifications.OffLine
+                )
+                (Model rec)
+                |> Tuple.mapFirst
+                    (\(Model r) ->
+                        Model { r | networkConnection = connection }
+                    )
 
         RequestLogInUrl openIdConnectProvider ->
             ( Model { rec | logInState = Data.LogInState.RequestLogInUrl openIdConnectProvider }
@@ -393,11 +385,11 @@ update msg (Model rec) =
         ResponseGetImageBlob imageBlobAndFileHash ->
             ( Model
                 { rec
-                    | imageBlobUrlDict =
-                        rec.imageBlobUrlDict
-                            |> Dict.insert
-                                imageBlobAndFileHash.fileHash
-                                imageBlobAndFileHash.blobUrl
+                    | imageStore =
+                        ImageStore.add
+                            imageBlobAndFileHash.fileHash
+                            imageBlobAndFileHash.blobUrl
+                            rec.imageStore
                 }
             , Cmd.none
             )
@@ -412,10 +404,32 @@ update msg (Model rec) =
             , Cmd.none
             )
 
-        CreateProjectResponse project ->
-            ( Model rec
-            , Cmd.none
-            )
+        CreateProjectResponse projectAndIdMaybe ->
+            notificationAddEvent
+                (case projectAndIdMaybe of
+                    Just projectAndId ->
+                        Component.Notifications.CreatedProject projectAndId
+
+                    Nothing ->
+                        Component.Notifications.CreateProjectFailed
+                )
+                (Model rec)
+
+
+notificationAddEvent : Component.Notifications.Event -> Model -> ( Model, Cmd Msg )
+notificationAddEvent event (Model record) =
+    let
+        ( newNotificationModel, command ) =
+            record.notificationModel
+                |> Component.Notifications.update
+                    (Component.Notifications.AddEvent event)
+    in
+    ( Model
+        { record
+            | notificationModel = newNotificationModel
+        }
+    , commandToMainCommand record.logInState command
+    )
 
 
 pageModelToLocation : PageModel -> Data.Location
@@ -757,7 +771,7 @@ view (Model rec) =
           , mainView (Model rec)
           )
         , ( ( Ui.End, Ui.End )
-          , Component.Notifications.view rec.imageBlobUrlDict rec.notificationModel
+          , Component.Notifications.view rec.imageStore rec.notificationModel
                 |> Ui.map NotificationMessage
           )
         ]
@@ -771,7 +785,7 @@ mainView (Model record) =
         Home pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.imageBlobUrlDict record.logInState
+                [ Component.Header.view record.imageStore record.logInState
                 , logInPanel record.logInState record.language record.windowSize
                 , Page.Home.view
                     record.clientMode
@@ -784,7 +798,7 @@ mainView (Model record) =
         CreateProject pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.imageBlobUrlDict record.logInState
+                [ Component.Header.view record.imageStore record.logInState
                 , logInPanel record.logInState record.language record.windowSize
                 , Page.CreateProject.view record.language record.logInState pageModel
                     |> Ui.map (PageMessageCreateProject >> PageMsg)
@@ -1078,7 +1092,13 @@ subscriptions model =
                     |> Result.toMaybe
                     |> ResponseUserDataFromAccessToken
             )
-         , getImageBlobResponse ResponseGetImageBlob
+         , getImageBlobResponse
+            (\{ blobUrl, fileHash } ->
+                ResponseGetImageBlob
+                    { blobUrl = blobUrl
+                    , fileHash = Data.FileHash fileHash
+                    }
+            )
          , urlChangeTyped
          , toValidProjectNameResponse
             (\response ->
@@ -1115,9 +1135,15 @@ createProjectResponseTyped : Sub Msg
 createProjectResponseTyped =
     createProjectResponse
         (\jsonValue ->
-            case Json.Decode.decodeValue Data.projectJsonDecoder jsonValue of
-                Ok project ->
-                    CreateProjectResponse project
+            case
+                Json.Decode.decodeValue
+                    (Data.maybeJsonDecoder
+                        Data.projectAndProjectIdJsonDecoder
+                    )
+                    jsonValue
+            of
+                Ok projectAndIdMaybe ->
+                    CreateProjectResponse projectAndIdMaybe
 
                 Err _ ->
                     NoOperation

@@ -224,6 +224,7 @@ const init = async (): Promise<void> => {
           response.value.project
         );
       }
+      app.ports.createProjectResponse.send(response);
       console.log("プロジェクト作成しました!", response);
     });
   });

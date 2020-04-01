@@ -50,6 +50,9 @@ type Ports = {
     input: string;
     result: string | null;
   }>;
+  readonly createProjectResponse: CmdForElmSub<
+    data.Maybe<data.ProjectAndProjectId>
+  >;
 };
 
 type SubForElmCmd<T> = {

@@ -12,9 +12,8 @@ import Command
 import Component.Style as Style
 import Css
 import Data
-import Dict
 import Icon
-import SubData
+import ImageStore
 import Ui
 
 
@@ -27,6 +26,8 @@ type Event
     | LogInFailure
     | OnLine
     | OffLine
+    | CreatedProject Data.ProjectAndProjectId
+    | CreateProjectFailed
 
 
 type Message
@@ -45,9 +46,14 @@ update :
     -> ( Model, Command.Command )
 update message (Model eventList) =
     case message of
-        AddEvent (LogInSuccess userPublicAndUserId) ->
-            ( Model (LogInSuccess userPublicAndUserId :: eventList)
-            , Command.getBlobUrl userPublicAndUserId.user.imageHash
+        AddEvent (LogInSuccess userAndUserId) ->
+            ( Model (LogInSuccess userAndUserId :: eventList)
+            , Command.getBlobUrl userAndUserId.user.imageHash
+            )
+
+        AddEvent (CreatedProject projectAndId) ->
+            ( Model (CreatedProject projectAndId :: eventList)
+            , Command.getBlobUrl projectAndId.project.image
             )
 
         AddEvent event ->
@@ -70,10 +76,10 @@ update message (Model eventList) =
 
 
 view :
-    Dict.Dict String String
+    ImageStore.ImageStore
     -> Model
     -> Ui.Panel Message
-view imageBlobUrlDict (Model eventList) =
+view imageStore (Model eventList) =
     Ui.column
         [ Ui.width (Ui.fix 512)
         , Ui.gap 8
@@ -81,30 +87,27 @@ view imageBlobUrlDict (Model eventList) =
         ]
         (List.indexedMap
             (\index event ->
-                cardItem index (eventToCardStyle imageBlobUrlDict event)
+                cardItem index (eventToCardStyle imageStore event)
             )
-            (List.reverse eventList)
+            eventList
         )
 
 
-eventToCardStyle : Dict.Dict String String -> Event -> CardStyle
-eventToCardStyle imageBlobUrlDict event =
+eventToCardStyle : ImageStore.ImageStore -> Event -> CardStyle
+eventToCardStyle imageStore event =
     case event of
         LogInSuccess userAndUserId ->
             CardStyle
                 { icon =
-                    case SubData.getUserImage imageBlobUrlDict userAndUserId.user of
-                        Just blobUrl ->
-                            Just
-                                (Icon
+                    ImageStore.getUserImage imageStore userAndUserId.user
+                        |> Maybe.map
+                            (\blobUrl ->
+                                Icon
                                     { alternativeText =
                                         userAndUserId.user.name ++ "のプロフィール画像"
                                     , url = blobUrl
                                     }
-                                )
-
-                        Nothing ->
-                            Nothing
+                            )
                 , text = "「" ++ userAndUserId.user.name ++ "」としてログインしました"
                 }
 
@@ -124,6 +127,26 @@ eventToCardStyle imageBlobUrlDict event =
             CardStyle
                 { icon = Nothing
                 , text = "オフラインになりました"
+                }
+
+        CreatedProject projectAndId ->
+            CardStyle
+                { icon =
+                    ImageStore.getProjectIcon imageStore projectAndId.project
+                        |> Maybe.map
+                            (\blobUrl ->
+                                Icon
+                                    { alternativeText = projectAndId.project.name ++ "のアイコン"
+                                    , url = blobUrl
+                                    }
+                            )
+                , text = projectAndId.project.name ++ "を作成しました"
+                }
+
+        CreateProjectFailed ->
+            CardStyle
+                { icon = Nothing
+                , text = "プロジェクトの作成に失敗しました"
                 }
 
 
