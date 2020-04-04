@@ -41,10 +41,10 @@ const callApi = <responseType>(
   fetch("https://us-central1-definy-lang.cloudfunctions.net/api/" + apiName, {
     method: "POST",
     body: new Uint8Array(binary),
-    headers: [["content-type", "application/octet-stream"]]
+    headers: [["content-type", "application/octet-stream"]],
   })
-    .then(response => response.arrayBuffer())
-    .then(response => decodeFunction(0, new Uint8Array(response)).result);
+    .then((response) => response.arrayBuffer())
+    .then((response) => decodeFunction(0, new Uint8Array(response)).result);
 
 const init = async (): Promise<void> => {
   const urlData = common.urlDataFromUrl(new URL(location.href));
@@ -77,17 +77,17 @@ const init = async (): Promise<void> => {
     flags: {
       windowSize: {
         width: innerWidth,
-        height: innerHeight
+        height: innerHeight,
       },
       urlData: { ...urlData, accessToken: accessToken },
-      networkConnection: navigator.onLine
+      networkConnection: navigator.onLine,
     },
-    node: elmAppElement
+    node: elmAppElement,
   });
 
   let prevKeyEvent: KeyboardEvent;
   /* キー入力 */
-  window.addEventListener("keydown", e => {
+  window.addEventListener("keydown", (e) => {
     prevKeyEvent = e;
     app.ports.keyPressed.send(e);
   });
@@ -109,11 +109,11 @@ const init = async (): Promise<void> => {
   addEventListener("resize", (): void => {
     app.ports.windowResize.send({
       width: innerWidth,
-      height: innerHeight
+      height: innerHeight,
     });
   });
 
-  app.ports.consoleLog.subscribe(text => {
+  app.ports.consoleLog.subscribe((text) => {
     console.warn(text);
   });
 
@@ -135,22 +135,22 @@ const init = async (): Promise<void> => {
     app.ports.changeNetworkConnection.send(false);
   });
 
-  app.ports.requestLogInUrl.subscribe(requestData => {
+  app.ports.requestLogInUrl.subscribe((requestData) => {
     callApi(
       "requestLogInUrl",
       common.data.encodeRequestLogInUrlRequestData(requestData),
       common.data.decodeString
-    ).then(url => {
+    ).then((url) => {
       location.href = url;
     });
   });
 
-  app.ports.getUserByAccessToken.subscribe(accessToken => {
+  app.ports.getUserByAccessToken.subscribe((accessToken) => {
     callApi(
       "getUserByAccessToken",
       common.data.encodeToken(accessToken),
       common.data.decodeMaybe(common.data.decodeUserAndUserId)
-    ).then(maybeUserPublicAndUserId => {
+    ).then((maybeUserPublicAndUserId) => {
       app.ports.responseUserByAccessToken.send(maybeUserPublicAndUserId);
       if (maybeUserPublicAndUserId._ === "Just") {
         db.setUser(
@@ -162,23 +162,23 @@ const init = async (): Promise<void> => {
     });
   });
 
-  app.ports.getImageBlobUrl.subscribe(fileHash => {
+  app.ports.getImageBlobUrl.subscribe((fileHash) => {
     const blobUrl = imageBlobUrlMap.get(fileHash);
     if (blobUrl !== undefined) {
       app.ports.getImageBlobResponse.send({
         blobUrl: blobUrl,
-        fileHash: fileHash
+        fileHash: fileHash,
       });
       return;
     }
-    db.getFile(database, fileHash).then(binaryInIndexDB => {
+    db.getFile(database, fileHash).then((binaryInIndexDB) => {
       if (binaryInIndexDB !== undefined) {
         const blob = new Blob([binaryInIndexDB], { type: "image/png" });
         const blobUrl = URL.createObjectURL(blob);
         imageBlobUrlMap.set(fileHash, blobUrl);
         app.ports.getImageBlobResponse.send({
           blobUrl: blobUrl,
-          fileHash: fileHash
+          fileHash: fileHash,
         });
         return;
       }
@@ -186,19 +186,19 @@ const init = async (): Promise<void> => {
         "getImageFile",
         common.data.encodeToken(fileHash),
         common.data.decodeBinary
-      ).then(pngBinary => {
+      ).then((pngBinary) => {
         const blob = new Blob([pngBinary], { type: "image/png" });
         const blobUrl = URL.createObjectURL(blob);
         db.setFile(database, fileHash, pngBinary);
         imageBlobUrlMap.set(fileHash, blobUrl);
         app.ports.getImageBlobResponse.send({
           blobUrl: blobUrl,
-          fileHash: fileHash
+          fileHash: fileHash,
         });
       });
     });
   });
-  app.ports.pushUrl.subscribe(urlData => {
+  app.ports.pushUrl.subscribe((urlData) => {
     console.log("pushUrlを呼んだ");
     history.pushState(
       "",
@@ -211,12 +211,12 @@ const init = async (): Promise<void> => {
   addEventListener("popstate", () => {
     app.ports.urlChanged.send(common.urlDataFromUrl(new URL(location.href)));
   });
-  app.ports.createProject.subscribe(parameter => {
+  app.ports.createProject.subscribe((parameter) => {
     callApi(
       "createProject",
       common.data.encodeCreateProjectParameter(parameter),
       common.data.decodeMaybe(common.data.decodeProjectAndProjectId)
-    ).then(response => {
+    ).then((response) => {
       if (response._ === "Just") {
         db.setProject(
           database,
@@ -228,10 +228,10 @@ const init = async (): Promise<void> => {
       console.log("プロジェクト作成しました!", response);
     });
   });
-  app.ports.toValidProjectName.subscribe(projectName => {
+  app.ports.toValidProjectName.subscribe((projectName) => {
     app.ports.toValidProjectNameResponse.send({
       input: projectName,
-      result: common.stringToValidProjectName(projectName)
+      result: common.stringToValidProjectName(projectName),
     });
   });
 };

@@ -3,11 +3,11 @@
     console.log("Service Worker: Installing");
   });
 
-  self.addEventListener("activate", e => {
+  self.addEventListener("activate", (e) => {
     e.waitUntil(self.clients.claim());
   });
 
-  self.addEventListener("fetch", e => {
+  self.addEventListener("fetch", (e) => {
     console.log(
       "Service Workerを通って " + e.request.url + " をリクエスしようとしている"
     );

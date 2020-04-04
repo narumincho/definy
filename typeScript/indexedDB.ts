@@ -7,7 +7,7 @@ const projectObjectStoreName = "project";
 const fileObjectStoreName = "file";
 
 type UserData = {
-  value: data.UserPublic;
+  value: data.User;
   updateAt: Date;
 };
 
@@ -113,7 +113,7 @@ export const setAccessToken = (
 export const getUser = (
   database: IDBDatabase | null,
   userId: data.UserId
-): Promise<undefined | data.UserPublic> =>
+): Promise<undefined | data.User> =>
   new Promise((resolve, reject) => {
     if (database === null) {
       resolve();
@@ -143,7 +143,7 @@ export const getUser = (
 export const setUser = (
   database: IDBDatabase | null,
   userId: data.UserId,
-  userData: data.UserPublic
+  userData: data.User
 ): Promise<void> =>
   new Promise((resolve, reject) => {
     if (database === null) {
@@ -164,7 +164,7 @@ export const setUser = (
 
     const data: UserData = {
       value: userData,
-      updateAt: new Date()
+      updateAt: new Date(),
     };
     transaction.objectStore(userObjectStoreName).put(data, userId);
   });
@@ -225,7 +225,7 @@ export const setProject = (
 
     const data: ProjectData = {
       value: projectData,
-      updateAt: new Date()
+      updateAt: new Date(),
     };
     transaction.objectStore(projectObjectStoreName).put(data, projectId);
   });

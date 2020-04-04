@@ -31,7 +31,7 @@ type Ports = {
   readonly toValidProjectName: SubForElmCmd<string>;
 
   readonly responseUserByAccessToken: CmdForElmSub<
-    data.Maybe<data.UserPublicAndUserId>
+    data.Maybe<data.UserAndUserId>
   >;
   readonly keyPressed: CmdForElmSub<KeyboardEvent>;
   readonly keyPrevented: CmdForElmSub<null>;
