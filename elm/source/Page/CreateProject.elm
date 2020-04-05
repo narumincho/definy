@@ -27,7 +27,7 @@ type Message
 init : ( Model, Command.Command )
 init =
     ( NoInput
-    , Command.none
+    , Command.None
     )
 
 
@@ -36,38 +36,38 @@ update message model =
     case ( message, model ) of
         ( InputProjectName string, NoInput ) ->
             ( RequestToValidProjectName string
-            , Command.toValidProjectName string
+            , Command.ToValidProjectName string
             )
 
         ( InputProjectName string, RequestToValidProjectName _ ) ->
             ( RequestToValidProjectName string
-            , Command.toValidProjectName string
+            , Command.ToValidProjectName string
             )
 
         ( InputProjectName string, DisplayedValidProjectName _ ) ->
             ( RequestToValidProjectName string
-            , Command.toValidProjectName string
+            , Command.ToValidProjectName string
             )
 
         ( ToValidProjectNameResponse response, RequestToValidProjectName request ) ->
             if request == response.input then
                 ( DisplayedValidProjectName response.result
-                , Command.none
+                , Command.None
                 )
 
             else
                 ( model
-                , Command.none
+                , Command.None
                 )
 
         ( CreateProject, DisplayedValidProjectName (Just validProjectName) ) ->
             ( CreatingProject validProjectName
-            , Command.createProject validProjectName
+            , Command.CreateProject validProjectName
             )
 
         ( _, _ ) ->
             ( model
-            , Command.none
+            , Command.None
             )
 
 

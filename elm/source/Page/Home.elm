@@ -27,7 +27,7 @@ type Message
 
 init : ( Model, Command.Command )
 init =
-    ( Model, Command.none )
+    ( Model, Command.None )
 
 
 update : Message -> Model -> ( Model, Command.Command )
@@ -35,12 +35,12 @@ update msg _ =
     case msg of
         PushUrl urlData ->
             ( Model
-            , Command.pushUrl urlData
+            , Command.PushUrl urlData
             )
 
         NoOp ->
             ( Model
-            , Command.none
+            , Command.None
             )
 
 

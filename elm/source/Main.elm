@@ -218,7 +218,7 @@ init flag =
         ( notificationsModel, notificationsCommand ) =
             if flag.networkConnection then
                 ( notificationsInitModel
-                , Command.none
+                , Command.None
                 )
 
             else
@@ -1066,13 +1066,10 @@ responseUserData result (Model rec) =
 
 commandToMainCommand : Data.LogInState.LogInState -> Command.Command -> Cmd Msg
 commandToMainCommand logInState command =
-    Cmd.batch
-        (List.map (commandItemToMainCommand logInState) (Command.getListCommandItem command))
+    case command of
+        Command.None ->
+            Cmd.none
 
-
-commandItemToMainCommand : Data.LogInState.LogInState -> Command.CommandItem -> Cmd Msg
-commandItemToMainCommand logInState commandItem =
-    case commandItem of
         Command.GetBlobUrl fileHash ->
             getImageBlobUrlTyped fileHash
 
@@ -1095,6 +1092,9 @@ commandItemToMainCommand logInState commandItem =
 
         Command.ToValidProjectName string ->
             toValidProjectName string
+
+        Command.Batch commandList ->
+            Cmd.batch (List.map (commandToMainCommand logInState) commandList)
 
 
 

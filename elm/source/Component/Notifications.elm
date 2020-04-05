@@ -37,7 +37,7 @@ type Message
 
 init : ( Model, Command.Command )
 init =
-    ( Model [], Command.none )
+    ( Model [], Command.None )
 
 
 update :
@@ -48,16 +48,16 @@ update message (Model eventList) =
     case message of
         AddEvent (LogInSuccess userAndUserId) ->
             ( Model (LogInSuccess userAndUserId :: eventList)
-            , Command.getBlobUrl userAndUserId.user.imageHash
+            , Command.GetBlobUrl userAndUserId.user.imageHash
             )
 
         AddEvent (CreatedProject projectAndId) ->
             ( Model (CreatedProject projectAndId :: eventList)
-            , Command.getBlobUrl projectAndId.project.image
+            , Command.GetBlobUrl projectAndId.project.image
             )
 
         AddEvent event ->
-            ( Model (event :: eventList), Command.none )
+            ( Model (event :: eventList), Command.None )
 
         DeleteAt index ->
             let
@@ -71,7 +71,7 @@ update message (Model eventList) =
                         (Array.slice index (Array.length eventListAsArray - 1) eventListAsArray)
                     )
                 )
-            , Command.none
+            , Command.None
             )
 
 
