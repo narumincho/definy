@@ -64,6 +64,15 @@ port createProject : Json.Encode.Value -> Cmd msg
 port toValidProjectName : String -> Cmd msg
 
 
+port getAllProjectIdList : () -> Cmd msg
+
+
+port getProject : Json.Decode.Value -> Cmd msg
+
+
+port getProjectForceNotUseCache : Json.Decode.Value -> Cmd msg
+
+
 
 {- Sub (JavaScript → Elm) -}
 
@@ -98,6 +107,12 @@ port toValidProjectNameResponse : ({ input : String, result : Maybe String } -> 
 port createProjectResponse : (Json.Decode.Value -> msg) -> Sub msg
 
 
+port responseAllProjectId : (Json.Decode.Value -> msg) -> Sub msg
+
+
+port responseProject : (Json.Decode.Value -> msg) -> Sub msg
+
+
 {-| 全体の入力を表すメッセージ
 -}
 type Msg
@@ -116,6 +131,8 @@ type Msg
     | UrlChange Data.UrlData
     | CreateProjectResponse (Maybe Data.ProjectAndProjectId)
     | NoOperation
+    | GetAllProjectResponse (List Data.ProjectId)
+    | GetProjectResponse (Maybe Data.ProjectWithIdAndRespondTime)
 
 
 type PageMessage
@@ -414,6 +431,16 @@ update msg (Model rec) =
                         Component.Notifications.CreateProjectFailed
                 )
                 (Model rec)
+
+        GetAllProjectResponse _ ->
+            ( Model rec
+            , Cmd.none
+            )
+
+        GetProjectResponse _ ->
+            ( Model rec
+            , Cmd.none
+            )
 
 
 notificationAddEvent : Component.Notifications.Event -> Model -> ( Model, Cmd Msg )
@@ -1107,7 +1134,9 @@ subscriptions model =
                         (Page.CreateProject.ToValidProjectNameResponse response)
                     )
             )
-         , createProjectResponseTyped
+         , createProjectResponseSubscription
+         , getProjectResponseSubscription
+         , getAllProjectIdResponseSubscription
          ]
             ++ (if isCaptureMouseEvent model then
                     [ subPointerUp (always PointerUp) ]
@@ -1131,8 +1160,8 @@ urlChangeTyped =
         )
 
 
-createProjectResponseTyped : Sub Msg
-createProjectResponseTyped =
+createProjectResponseSubscription : Sub Msg
+createProjectResponseSubscription =
     createProjectResponse
         (\jsonValue ->
             case
@@ -1144,6 +1173,42 @@ createProjectResponseTyped =
             of
                 Ok projectAndIdMaybe ->
                     CreateProjectResponse projectAndIdMaybe
+
+                Err _ ->
+                    NoOperation
+        )
+
+
+getAllProjectIdResponseSubscription : Sub Msg
+getAllProjectIdResponseSubscription =
+    responseAllProjectId
+        (\jsonValue ->
+            case
+                Json.Decode.decodeValue
+                    (Json.Decode.list
+                        Data.projectIdJsonDecoder
+                    )
+                    jsonValue
+            of
+                Ok projectIdList ->
+                    GetAllProjectResponse projectIdList
+
+                Err _ ->
+                    NoOperation
+        )
+
+
+getProjectResponseSubscription : Sub Msg
+getProjectResponseSubscription =
+    responseProject
+        (\jsonValue ->
+            case
+                Json.Decode.decodeValue
+                    (Data.maybeJsonDecoder Data.projectWithIdAndRespondTimeJsonDecoder)
+                    jsonValue
+            of
+                Ok projectWithIdAndRespondTimeMaybe ->
+                    GetProjectResponse projectWithIdAndRespondTimeMaybe
 
                 Err _ ->
                     NoOperation

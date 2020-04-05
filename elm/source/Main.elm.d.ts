@@ -29,6 +29,9 @@ type Ports = {
   readonly pushUrl: SubForElmCmd<data.UrlData>;
   readonly createProject: SubForElmCmd<data.CreateProjectParameter>;
   readonly toValidProjectName: SubForElmCmd<string>;
+  readonly getAllProjectIdList: SubForElmCmd<null>;
+  readonly getProject: SubForElmCmd<data.ProjectId>;
+  readonly getProjectForceNotUseCache: SubForElmCmd<data.ProjectId>;
 
   readonly responseUserByAccessToken: CmdForElmSub<
     data.Maybe<data.UserAndUserId>
@@ -52,6 +55,10 @@ type Ports = {
   }>;
   readonly createProjectResponse: CmdForElmSub<
     data.Maybe<data.ProjectAndProjectId>
+  >;
+  readonly responseAllProjectId: CmdForElmSub<ReadonlyArray<data.ProjectId>>;
+  readonly responseProject: CmdForElmSub<
+    data.Maybe<data.ProjectWithIdAndRespondTime>
   >;
 };
 
