@@ -1,4 +1,4 @@
-module Data exposing (AccessToken(..), AccessTokenError(..), BranchPartDefinition, Change(..), ClientMode(..), Comment, Condition(..), ConditionCapture, ConditionTag, CreateProjectParameter, DateTime, EvaluateExprError(..), EvaluatedExpr(..), Expr(..), FileHash(..), FunctionCall, Idea, IdeaId(..), IdeaItem(..), KernelCall, KernelExpr(..), LambdaBranch, Language(..), LocalPartId(..), LocalPartReference, Location(..), Module, ModuleId(..), OpenIdConnectProvider(..), PartDefinition, PartId(..), Project, ProjectAndProjectId, ProjectCache, ProjectId(..), RequestLogInUrlRequestData, Suggestion, TagId(..), TagReferenceIndex, Type, TypeBody(..), TypeBodyKernel(..), TypeBodyProductMember, TypeBodySumPattern, TypeDefinition, TypeError, TypeId(..), UrlData, User, UserAndUserId, UserCache, UserId(..), accessTokenErrorJsonDecoder, accessTokenErrorToJsonValue, accessTokenJsonDecoder, accessTokenToJsonValue, branchPartDefinitionJsonDecoder, branchPartDefinitionToJsonValue, changeJsonDecoder, changeToJsonValue, clientModeJsonDecoder, clientModeToJsonValue, commentJsonDecoder, commentToJsonValue, conditionCaptureJsonDecoder, conditionCaptureToJsonValue, conditionJsonDecoder, conditionTagJsonDecoder, conditionTagToJsonValue, conditionToJsonValue, createProjectParameterJsonDecoder, createProjectParameterToJsonValue, dateTimeJsonDecoder, dateTimeToJsonValue, evaluateExprErrorJsonDecoder, evaluateExprErrorToJsonValue, evaluatedExprJsonDecoder, evaluatedExprToJsonValue, exprJsonDecoder, exprToJsonValue, fileHashJsonDecoder, fileHashToJsonValue, functionCallJsonDecoder, functionCallToJsonValue, ideaIdJsonDecoder, ideaIdToJsonValue, ideaItemJsonDecoder, ideaItemToJsonValue, ideaJsonDecoder, ideaToJsonValue, kernelCallJsonDecoder, kernelCallToJsonValue, kernelExprJsonDecoder, kernelExprToJsonValue, lambdaBranchJsonDecoder, lambdaBranchToJsonValue, languageJsonDecoder, languageToJsonValue, localPartIdJsonDecoder, localPartIdToJsonValue, localPartReferenceJsonDecoder, localPartReferenceToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, moduleIdJsonDecoder, moduleIdToJsonValue, moduleJsonDecoder, moduleToJsonValue, openIdConnectProviderJsonDecoder, openIdConnectProviderToJsonValue, partDefinitionJsonDecoder, partDefinitionToJsonValue, partIdJsonDecoder, partIdToJsonValue, projectAndProjectIdJsonDecoder, projectAndProjectIdToJsonValue, projectCacheJsonDecoder, projectCacheToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, projectJsonDecoder, projectToJsonValue, requestLogInUrlRequestDataJsonDecoder, requestLogInUrlRequestDataToJsonValue, resultJsonDecoder, resultToJsonValue, suggestionJsonDecoder, suggestionToJsonValue, tagIdJsonDecoder, tagIdToJsonValue, tagReferenceIndexJsonDecoder, tagReferenceIndexToJsonValue, typeBodyJsonDecoder, typeBodyKernelJsonDecoder, typeBodyKernelToJsonValue, typeBodyProductMemberJsonDecoder, typeBodyProductMemberToJsonValue, typeBodySumPatternJsonDecoder, typeBodySumPatternToJsonValue, typeBodyToJsonValue, typeDefinitionJsonDecoder, typeDefinitionToJsonValue, typeErrorJsonDecoder, typeErrorToJsonValue, typeIdJsonDecoder, typeIdToJsonValue, typeJsonDecoder, typeToJsonValue, urlDataJsonDecoder, urlDataToJsonValue, userAndUserIdJsonDecoder, userAndUserIdToJsonValue, userCacheJsonDecoder, userCacheToJsonValue, userIdJsonDecoder, userIdToJsonValue, userJsonDecoder, userToJsonValue)
+module Data exposing (AccessToken(..), AccessTokenError(..), BranchPartDefinition, Change(..), ClientMode(..), Comment, Condition(..), ConditionCapture, ConditionTag, CreateProjectParameter, DateTime, EvaluateExprError(..), EvaluatedExpr(..), Expr(..), FileHash(..), FunctionCall, Idea, IdeaId(..), IdeaItem(..), KernelCall, KernelExpr(..), LambdaBranch, Language(..), LocalPartId(..), LocalPartReference, Location(..), Module, ModuleId(..), OpenIdConnectProvider(..), PartDefinition, PartId(..), Project, ProjectAndProjectId, ProjectCache, ProjectId(..), ProjectWithIdAndRespondTime, RequestLogInUrlRequestData, Suggestion, TagId(..), TagReferenceIndex, Type, TypeBody(..), TypeBodyKernel(..), TypeBodyProductMember, TypeBodySumPattern, TypeDefinition, TypeError, TypeId(..), UrlData, User, UserAndUserId, UserCache, UserId(..), UserWithIdAndRespondTime, accessTokenErrorJsonDecoder, accessTokenErrorToJsonValue, accessTokenJsonDecoder, accessTokenToJsonValue, branchPartDefinitionJsonDecoder, branchPartDefinitionToJsonValue, changeJsonDecoder, changeToJsonValue, clientModeJsonDecoder, clientModeToJsonValue, commentJsonDecoder, commentToJsonValue, conditionCaptureJsonDecoder, conditionCaptureToJsonValue, conditionJsonDecoder, conditionTagJsonDecoder, conditionTagToJsonValue, conditionToJsonValue, createProjectParameterJsonDecoder, createProjectParameterToJsonValue, dateTimeJsonDecoder, dateTimeToJsonValue, evaluateExprErrorJsonDecoder, evaluateExprErrorToJsonValue, evaluatedExprJsonDecoder, evaluatedExprToJsonValue, exprJsonDecoder, exprToJsonValue, fileHashJsonDecoder, fileHashToJsonValue, functionCallJsonDecoder, functionCallToJsonValue, ideaIdJsonDecoder, ideaIdToJsonValue, ideaItemJsonDecoder, ideaItemToJsonValue, ideaJsonDecoder, ideaToJsonValue, kernelCallJsonDecoder, kernelCallToJsonValue, kernelExprJsonDecoder, kernelExprToJsonValue, lambdaBranchJsonDecoder, lambdaBranchToJsonValue, languageJsonDecoder, languageToJsonValue, localPartIdJsonDecoder, localPartIdToJsonValue, localPartReferenceJsonDecoder, localPartReferenceToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, moduleIdJsonDecoder, moduleIdToJsonValue, moduleJsonDecoder, moduleToJsonValue, openIdConnectProviderJsonDecoder, openIdConnectProviderToJsonValue, partDefinitionJsonDecoder, partDefinitionToJsonValue, partIdJsonDecoder, partIdToJsonValue, projectAndProjectIdJsonDecoder, projectAndProjectIdToJsonValue, projectCacheJsonDecoder, projectCacheToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, projectJsonDecoder, projectToJsonValue, projectWithIdAndRespondTimeJsonDecoder, projectWithIdAndRespondTimeToJsonValue, requestLogInUrlRequestDataJsonDecoder, requestLogInUrlRequestDataToJsonValue, resultJsonDecoder, resultToJsonValue, suggestionJsonDecoder, suggestionToJsonValue, tagIdJsonDecoder, tagIdToJsonValue, tagReferenceIndexJsonDecoder, tagReferenceIndexToJsonValue, typeBodyJsonDecoder, typeBodyKernelJsonDecoder, typeBodyKernelToJsonValue, typeBodyProductMemberJsonDecoder, typeBodyProductMemberToJsonValue, typeBodySumPatternJsonDecoder, typeBodySumPatternToJsonValue, typeBodyToJsonValue, typeDefinitionJsonDecoder, typeDefinitionToJsonValue, typeErrorJsonDecoder, typeErrorToJsonValue, typeIdJsonDecoder, typeIdToJsonValue, typeJsonDecoder, typeToJsonValue, urlDataJsonDecoder, urlDataToJsonValue, userAndUserIdJsonDecoder, userAndUserIdToJsonValue, userCacheJsonDecoder, userCacheToJsonValue, userIdJsonDecoder, userIdToJsonValue, userJsonDecoder, userToJsonValue, userWithIdAndRespondTimeJsonDecoder, userWithIdAndRespondTimeToJsonValue)
 
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp
@@ -285,6 +285,18 @@ type alias ProjectCache =
 -}
 type alias UserCache =
     { user : User, respondAt : DateTime }
+
+
+{-| プロジェクトのデータとIDと受け取った時間
+-}
+type alias ProjectWithIdAndRespondTime =
+    { project : Project, projectId : ProjectId, respondTime : DateTime }
+
+
+{-| ユーザーのデータとIDと受け取った時間
+-}
+type alias UserWithIdAndRespondTime =
+    { user : User, userId : UserId, respondTime : DateTime }
 
 
 type AccessToken
@@ -927,6 +939,28 @@ userCacheToJsonValue userCache =
     Je.object
         [ ( "user", userToJsonValue userCache.user )
         , ( "respondAt", dateTimeToJsonValue userCache.respondAt )
+        ]
+
+
+{-| ProjectWithIdAndRespondTimeのJSONへのエンコーダ
+-}
+projectWithIdAndRespondTimeToJsonValue : ProjectWithIdAndRespondTime -> Je.Value
+projectWithIdAndRespondTimeToJsonValue projectWithIdAndRespondTime =
+    Je.object
+        [ ( "project", projectToJsonValue projectWithIdAndRespondTime.project )
+        , ( "projectId", projectIdToJsonValue projectWithIdAndRespondTime.projectId )
+        , ( "respondTime", dateTimeToJsonValue projectWithIdAndRespondTime.respondTime )
+        ]
+
+
+{-| UserWithIdAndRespondTimeのJSONへのエンコーダ
+-}
+userWithIdAndRespondTimeToJsonValue : UserWithIdAndRespondTime -> Je.Value
+userWithIdAndRespondTimeToJsonValue userWithIdAndRespondTime =
+    Je.object
+        [ ( "user", userToJsonValue userWithIdAndRespondTime.user )
+        , ( "userId", userIdToJsonValue userWithIdAndRespondTime.userId )
+        , ( "respondTime", dateTimeToJsonValue userWithIdAndRespondTime.respondTime )
         ]
 
 
@@ -1787,3 +1821,35 @@ userCacheJsonDecoder =
         )
         |> Jdp.required "user" userJsonDecoder
         |> Jdp.required "respondAt" dateTimeJsonDecoder
+
+
+{-| ProjectWithIdAndRespondTimeのJSON Decoder
+-}
+projectWithIdAndRespondTimeJsonDecoder : Jd.Decoder ProjectWithIdAndRespondTime
+projectWithIdAndRespondTimeJsonDecoder =
+    Jd.succeed
+        (\project projectId respondTime ->
+            { project = project
+            , projectId = projectId
+            , respondTime = respondTime
+            }
+        )
+        |> Jdp.required "project" projectJsonDecoder
+        |> Jdp.required "projectId" projectIdJsonDecoder
+        |> Jdp.required "respondTime" dateTimeJsonDecoder
+
+
+{-| UserWithIdAndRespondTimeのJSON Decoder
+-}
+userWithIdAndRespondTimeJsonDecoder : Jd.Decoder UserWithIdAndRespondTime
+userWithIdAndRespondTimeJsonDecoder =
+    Jd.succeed
+        (\user userId respondTime ->
+            { user = user
+            , userId = userId
+            , respondTime = respondTime
+            }
+        )
+        |> Jdp.required "user" userJsonDecoder
+        |> Jdp.required "userId" userIdJsonDecoder
+        |> Jdp.required "respondTime" dateTimeJsonDecoder
