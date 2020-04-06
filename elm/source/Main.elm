@@ -454,14 +454,23 @@ update msg (Model rec) =
                     , Cmd.none
                     )
 
-        GetProjectResponse projectMaybe ->
+        GetProjectResponse projectCacheWithId ->
             case rec.page of
                 Home pageModel ->
                     let
                         ( newPageModel, command ) =
-                            Page.Home.update (Page.Home.ResponseProject projectMaybe) pageModel
+                            Page.Home.update (Page.Home.ResponseProject projectCacheWithId) pageModel
                     in
                     ( Model { rec | page = Home newPageModel }
+                    , commandToMainCommand rec.logInState command
+                    )
+
+                Project pageModel ->
+                    let
+                        ( newPageModel, command ) =
+                            Page.Project.update (Page.Project.ProjectResponse projectCacheWithId) pageModel
+                    in
+                    ( Model { rec | page = Project newPageModel }
                     , commandToMainCommand rec.logInState command
                     )
 
@@ -1033,22 +1042,6 @@ gutterTypeToCursorStyle gutterType =
 
         GutterTypeHorizontal ->
             Ui.VerticalResize
-
-
-requestUserData : Model -> Cmd Msg
-requestUserData (Model rec) =
-    case rec.logInState of
-        Data.LogInState.RequestLogInUrl _ ->
-            Cmd.none
-
-        Data.LogInState.VerifyingAccessToken accessToken ->
-            Cmd.none
-
-        Data.LogInState.GuestUser ->
-            Cmd.none
-
-        Data.LogInState.Ok user ->
-            Cmd.none
 
 
 responseUserData : Maybe (Maybe Data.UserAndUserId) -> Model -> ( Model, Cmd Msg )

@@ -7,32 +7,67 @@ import Ui
 
 
 type Model
-    = Model Data.ProjectId
+    = Loading Data.ProjectId
+    | Loaded Data.ProjectCacheWithId
 
 
 type Message
-    = Message
+    = ProjectResponse Data.ProjectCacheWithId
 
 
 init : Data.ProjectId -> ( Model, Command.Command )
 init projectId =
-    ( Model projectId
-    , Command.None
+    ( Loading projectId
+    , Command.GetProject projectId
     )
 
 
 getProjectId : Model -> Data.ProjectId
-getProjectId (Model projectId) =
-    projectId
+getProjectId model =
+    case model of
+        Loading projectId ->
+            projectId
+
+        Loaded projectCacheWithId ->
+            projectCacheWithId.projectId
 
 
 update : Message -> Model -> ( Model, Command.Command )
-update _ model =
-    ( model
-    , Command.None
-    )
+update message model =
+    case ( message, model ) of
+        ( ProjectResponse projectCacheWithId, Loading projectId ) ->
+            if projectCacheWithId.projectId == projectId then
+                ( Loaded projectCacheWithId
+                , case projectCacheWithId.projectCache of
+                    Just projectCache ->
+                        Command.Batch
+                            [ Command.GetBlobUrl projectCache.project.image
+                            , Command.GetBlobUrl projectCache.project.icon
+                            ]
+
+                    Nothing ->
+                        Command.None
+                )
+
+            else
+                ( model, Command.None )
+
+        ( _, _ ) ->
+            ( model, Command.None )
 
 
 view : Model -> Ui.Panel Message
-view (Model (Data.ProjectId projectId)) =
-    Component.Style.normalText 24 (projectId ++ "のプロジェクト詳細ページ")
+view model =
+    Component.Style.normalText 24
+        (case model of
+            Loading (Data.ProjectId projectIdAsString) ->
+                projectIdAsString ++ "のプロジェクト詳細ページ"
+
+            Loaded projectCacheWithId ->
+                case projectCacheWithId.projectCache of
+                    Just projectCache ->
+                        projectCache.project.name
+
+                    Nothing ->
+                        "プロジェクトが見つからなかった"
+        )
