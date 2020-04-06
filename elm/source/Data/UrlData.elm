@@ -33,7 +33,7 @@ locationToString location =
             "/user/" ++ userId
 
         Data.LocationProject (Data.ProjectId projectId) ->
-            "/project" ++ projectId
+            "/project/" ++ projectId
 
 
 languageToQueryString : Data.Language -> String

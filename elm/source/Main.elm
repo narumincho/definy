@@ -19,6 +19,7 @@ import Json.Decode
 import Json.Encode
 import Page.CreateProject
 import Page.Home
+import Page.Project
 import Task
 import Ui
 
@@ -138,6 +139,7 @@ type Msg
 type PageMessage
     = PageMessageHome Page.Home.Message
     | PageMessageCreateProject Page.CreateProject.Message
+    | PageMessageProject Page.Project.Message
 
 
 {-| 全体を表現する
@@ -174,6 +176,7 @@ type GutterType
 type PageModel
     = Home Page.Home.Model
     | CreateProject Page.CreateProject.Model
+    | Project Page.Project.Model
 
 
 type alias Flag =
@@ -281,8 +284,8 @@ pageInit location =
                 |> Tuple.mapFirst Home
 
         Data.LocationProject projectId ->
-            Page.Home.init
-                |> Tuple.mapFirst Home
+            Page.Project.init projectId
+                |> Tuple.mapFirst Project
 
 
 
@@ -489,6 +492,9 @@ pageModelToLocation pageModel =
 
         CreateProject _ ->
             Data.LocationCreateProject
+
+        Project model ->
+            Data.LocationProject (Page.Project.getProjectId model)
 
 
 updateFromMsgList : List Msg -> Model -> ( Model, Cmd Msg )
@@ -852,6 +858,16 @@ mainView (Model record) =
                 , logInPanel record.logInState record.language record.windowSize
                 , Page.CreateProject.view record.language record.logInState pageModel
                     |> Ui.map (PageMessageCreateProject >> PageMsg)
+                ]
+
+        Project pageModel ->
+            Ui.column
+                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                [ Component.Header.view record.imageStore record.logInState
+                , logInPanel record.logInState record.language record.windowSize
+                , Page.Project.view
+                    pageModel
+                    |> Ui.map (PageMessageProject >> PageMsg)
                 ]
 
 

@@ -161,24 +161,30 @@ projectListView clientMode language logInState imageStore projectList =
                     logInState
                     imageStore
                     [ a, b ]
-                    :: projectListViewLoop imageStore xs
+                    :: projectListViewLoop clientMode language imageStore xs
         )
 
 
-projectListViewLoop : ImageStore.ImageStore -> List Project -> List (Ui.Panel Message)
-projectListViewLoop imageStore projectList =
+projectListViewLoop :
+    Data.ClientMode
+    -> Data.Language
+    -> ImageStore.ImageStore
+    -> List Project
+    -> List (Ui.Panel Message)
+projectListViewLoop clientMode language imageStore projectList =
     case projectList of
         [] ->
             []
 
         a :: [] ->
-            [ projectLineView imageStore [ a ] ]
+            [ projectLineView clientMode language imageStore [ a ] ]
 
         a :: b :: [] ->
-            [ projectLineView imageStore [ a, b ] ]
+            [ projectLineView clientMode language imageStore [ a, b ] ]
 
         a :: b :: c :: xs ->
-            projectLineView imageStore [ a, b, c ] :: projectListViewLoop imageStore xs
+            projectLineView clientMode language imageStore [ a, b, c ]
+                :: projectListViewLoop clientMode language imageStore xs
 
 
 createProjectButton : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Message
@@ -335,81 +341,56 @@ projectLineViewWithCreateButton clientMode language logInState imageStore projec
     Ui.row
         [ Ui.gap 8, Ui.height (Ui.fix 200) ]
         (createProjectButton clientMode language logInState
-            :: List.map (projectItem imageStore) projectList
+            :: List.map (projectItem clientMode language imageStore) projectList
         )
 
 
 {-| プロジェクトの表示は1行3つまで
 -}
-projectLineView : ImageStore.ImageStore -> List Project -> Ui.Panel message
-projectLineView imageStore projectList =
+projectLineView : Data.ClientMode -> Data.Language -> ImageStore.ImageStore -> List Project -> Ui.Panel Message
+projectLineView clientMode language imageStore projectList =
     Ui.row
         [ Ui.gap 8, Ui.height (Ui.fix 200) ]
-        (List.map (projectItem imageStore) projectList)
+        (List.map (projectItem clientMode language imageStore) projectList)
 
 
-projectItem : ImageStore.ImageStore -> Project -> Ui.Panel message
-projectItem imageStore project =
-    Ui.depth
-        [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
-        [ ( ( Ui.Center, Ui.Center )
-          , projectItemImage imageStore project
-          )
-        , ( ( Ui.Center, Ui.End )
-          , Ui.row
-                [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
-                [ case project of
-                    Full projectCacheWithId ->
-                        case projectCacheWithId.projectCache of
-                            Just projectCache ->
-                                case ImageStore.getImageBlobUrl projectCache.project.icon imageStore of
-                                    Just blobUrl ->
-                                        Ui.bitmapImage
-                                            [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
-                                            (Ui.BitmapImageAttributes
-                                                { url = blobUrl
-                                                , fitStyle = Ui.Cover
-                                                , alternativeText = "プロジェクトアイコン"
-                                                , rendering = Ui.ImageRenderingPixelated
-                                                }
-                                            )
+projectItem : Data.ClientMode -> Data.Language -> ImageStore.ImageStore -> Project -> Ui.Panel Message
+projectItem clientMode language imageStore project =
+    let
+        projectUrl : Data.UrlData
+        projectUrl =
+            { clientMode = clientMode
+            , location =
+                Data.LocationProject
+                    (case project of
+                        OnlyId id ->
+                            id
 
-                                    Nothing ->
-                                        Ui.empty
-                                            [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
-
-                            Nothing ->
-                                Ui.empty
-                                    [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
-
-                    _ ->
-                        Ui.empty
-                            [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
-                , Ui.text
-                    []
-                    (Ui.TextAttributes
-                        { text =
-                            case project of
-                                OnlyId (Data.ProjectId idAsString) ->
-                                    "id = " ++ idAsString
-
-                                Full projectCacheWithId ->
-                                    case projectCacheWithId.projectCache of
-                                        Just projectCache ->
-                                            projectCache.project.name
-
-                                        Nothing ->
-                                            "プロジェクトが見つからなかった"
-                        , typeface = Component.Style.normalTypeface
-                        , size = 16
-                        , letterSpacing = 0
-                        , color = Css.rgb 200 200 200
-                        , textAlignment = Ui.TextAlignStart
-                        }
+                        Full projectCache ->
+                            projectCache.projectId
                     )
-                ]
-          )
-        ]
+            , language = language
+            , accessToken = Nothing
+            }
+    in
+    Ui.link
+        []
+        (Ui.LinkAttributes
+            { url = Data.UrlData.urlDataToString projectUrl
+            , clickMessage = PushUrl projectUrl
+            , noOpMessage = NoOp
+            , child =
+                Ui.depth
+                    [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
+                    [ ( ( Ui.Center, Ui.Center )
+                      , projectItemImage imageStore project
+                      )
+                    , ( ( Ui.Center, Ui.End )
+                      , projectItemText imageStore project
+                      )
+                    ]
+            }
+        )
 
 
 projectItemImage : ImageStore.ImageStore -> Project -> Ui.Panel message
@@ -438,3 +419,59 @@ projectItemImage imageStore project =
 
                 Nothing ->
                     Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+
+
+projectItemText : ImageStore.ImageStore -> Project -> Ui.Panel message
+projectItemText imageStore project =
+    Ui.row
+        [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
+        [ case project of
+            Full projectCacheWithId ->
+                case projectCacheWithId.projectCache of
+                    Just projectCache ->
+                        case ImageStore.getImageBlobUrl projectCache.project.icon imageStore of
+                            Just blobUrl ->
+                                Ui.bitmapImage
+                                    [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
+                                    (Ui.BitmapImageAttributes
+                                        { url = blobUrl
+                                        , fitStyle = Ui.Cover
+                                        , alternativeText = projectCache.project.name ++ "のアイコン"
+                                        , rendering = Ui.ImageRenderingPixelated
+                                        }
+                                    )
+
+                            Nothing ->
+                                Ui.empty
+                                    [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
+
+                    Nothing ->
+                        Ui.empty
+                            [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
+
+            _ ->
+                Ui.empty
+                    [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
+        , Ui.text
+            []
+            (Ui.TextAttributes
+                { text =
+                    case project of
+                        OnlyId (Data.ProjectId idAsString) ->
+                            "id = " ++ idAsString
+
+                        Full projectCacheWithId ->
+                            case projectCacheWithId.projectCache of
+                                Just projectCache ->
+                                    projectCache.project.name
+
+                                Nothing ->
+                                    "プロジェクトが見つからなかった"
+                , typeface = Component.Style.normalTypeface
+                , size = 16
+                , letterSpacing = 0
+                , color = Css.rgb 200 200 200
+                , textAlignment = Ui.TextAlignStart
+                }
+            )
+        ]
