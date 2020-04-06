@@ -154,11 +154,10 @@ const init = async (): Promise<void> => {
     ).then((maybeUserPublicAndUserId) => {
       app.ports.responseUserByAccessToken.send(maybeUserPublicAndUserId);
       if (maybeUserPublicAndUserId._ === "Just") {
-        db.setUser(
-          database,
-          maybeUserPublicAndUserId.value.userId,
-          maybeUserPublicAndUserId.value.user
-        );
+        db.setUser(database, maybeUserPublicAndUserId.value.userId, {
+          value: maybeUserPublicAndUserId.value.user,
+          respondAt: new Date(),
+        });
       }
     });
   });
@@ -244,29 +243,41 @@ const init = async (): Promise<void> => {
     );
   });
   app.ports.getProject.subscribe((projectId) => {
-    callApi(
-      "getProject",
-      data.encodeId(projectId),
-      data.decodeMaybe(data.decodeProject)
-    ).then((projectMaybe) => {
-      if (projectMaybe._ === "Just") {
-        const projectData = {
-          value: projectMaybe.value,
-          respondAt: new Date(),
-        };
-        db.setProject(database, projectId, projectData);
+    db.getProject(database, projectId).then((projectDataInIndexedDB) => {
+      if (projectDataInIndexedDB !== null) {
         app.ports.responseProject.send({
           projectCache: data.maybeJust({
-            project: projectData.value,
-            respondTime: common.util.timeFromDate(projectData.respondAt),
+            project: projectDataInIndexedDB.value,
+            respondTime: util.timeFromDate(projectDataInIndexedDB.respondAt),
           }),
           projectId: projectId,
         });
         return;
       }
-      app.ports.responseProject.send({
-        projectId: projectId,
-        projectCache: data.maybeNothing(),
+      callApi(
+        "getProject",
+        data.encodeId(projectId),
+        data.decodeMaybe(data.decodeProject)
+      ).then((projectMaybe) => {
+        if (projectMaybe._ === "Just") {
+          const projectData = {
+            value: projectMaybe.value,
+            respondAt: new Date(),
+          };
+          db.setProject(database, projectId, projectData);
+          app.ports.responseProject.send({
+            projectCache: data.maybeJust({
+              project: projectData.value,
+              respondTime: common.util.timeFromDate(projectData.respondAt),
+            }),
+            projectId: projectId,
+          });
+          return;
+        }
+        app.ports.responseProject.send({
+          projectId: projectId,
+          projectCache: data.maybeNothing(),
+        });
       });
     });
   });

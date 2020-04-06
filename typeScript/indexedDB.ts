@@ -125,7 +125,11 @@ export const getUser = (
       .objectStore(userObjectStoreName)
       .get(userId);
     transaction.oncomplete = (): void => {
-      resolve(getRequest.result);
+      resolve(
+        getRequest.result.respondAt.getTime() + 1000 * 30 < new Date().getTime()
+          ? getRequest.result
+          : undefined
+      );
     };
 
     transaction.onerror = (): void => {
@@ -139,7 +143,7 @@ export const getUser = (
 export const setUser = (
   database: IDBDatabase | null,
   userId: data.UserId,
-  userData: data.User
+  userData: UserData
 ): Promise<void> =>
   new Promise((resolve, reject) => {
     if (database === null) {
@@ -158,11 +162,7 @@ export const setUser = (
       reject("write user error: transaction failed");
     };
 
-    const data: UserData = {
-      value: userData,
-      respondAt: new Date(),
-    };
-    transaction.objectStore(userObjectStoreName).put(data, userId);
+    transaction.objectStore(userObjectStoreName).put(userData, userId);
   });
 
 /**
@@ -171,7 +171,7 @@ export const setUser = (
 export const getProject = (
   database: IDBDatabase | null,
   projectId: data.ProjectId
-): Promise<null | data.Project> =>
+): Promise<null | ProjectData> =>
   new Promise((resolve, reject) => {
     if (database === null) {
       resolve(null);
@@ -188,7 +188,7 @@ export const getProject = (
     transaction.oncomplete = (): void => {
       resolve(
         getRequest.result.respondAt.getTime() + 1000 * 30 < new Date().getTime()
-          ? getRequest.result.value
+          ? getRequest.result
           : undefined
       );
     };
