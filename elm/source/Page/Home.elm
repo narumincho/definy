@@ -17,59 +17,132 @@ import Ui
 
 
 type Model
-    = Model
+    = LoadingAllProject
+    | LoadedAllProject (List Project)
+
+
+type Project
+    = OnlyId Data.ProjectId
+    | Full (Maybe Data.ProjectWithIdAndRespondTime)
 
 
 type Message
     = PushUrl Data.UrlData
+    | ResponseAllProjectId (List Data.ProjectId)
+    | ResponseProject (Maybe Data.ProjectWithIdAndRespondTime)
     | NoOp
 
 
 init : ( Model, Command.Command )
 init =
-    ( Model, Command.None )
+    ( LoadingAllProject, Command.GetAllProjectId )
 
 
 update : Message -> Model -> ( Model, Command.Command )
-update msg _ =
+update msg model =
     case msg of
         PushUrl urlData ->
-            ( Model
+            ( model
             , Command.PushUrl urlData
             )
 
+        ResponseAllProjectId allProjectIdList ->
+            ( LoadedAllProject (List.map OnlyId allProjectIdList)
+            , Command.Batch (List.map Command.GetProject allProjectIdList)
+            )
+
+        ResponseProject projectMaybe ->
+            case model of
+                LoadingAllProject ->
+                    ( model
+                    , Command.None
+                    )
+
+                LoadedAllProject allProject ->
+                    ( LoadedAllProject (setProjectWithIdAnsRespondTime projectMaybe allProject)
+                    , Command.None
+                    )
+
         NoOp ->
-            ( Model
+            ( model
             , Command.None
             )
 
 
+setProjectWithIdAnsRespondTime : Maybe Data.ProjectWithIdAndRespondTime -> List Project -> List Project
+setProjectWithIdAnsRespondTime projectWithIdAndRespondTimeMaybe projectList =
+    projectList
+
+
+setProjectWithIdAnsRespondTimeLoop : Maybe Data.ProjectWithIdAndRespondTime -> List Project -> List Project -> List Project
+setProjectWithIdAnsRespondTimeLoop projectWithIdAndRespondTimeMaybe start end =
+    case end of
+        [] ->
+            []
+
+        (OnlyId id) :: xs ->
+            []
+
+        (Full _) :: xs ->
+            []
+
+
 view : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Message
-view clientMode language logInState _ =
+view clientMode language logInState model =
     Ui.scroll
         [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
         (Ui.column
             [ Ui.gap 16, Ui.height Ui.stretch ]
-            [ projectList clientMode language logInState ]
+            [ case model of
+                LoadingAllProject ->
+                    Component.Style.normalText 16 "プロジェクトの一覧を読込中"
+
+                LoadedAllProject allProject ->
+                    projectListView clientMode language logInState allProject
+            ]
         )
 
 
-projectList : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Message
-projectList clientMode language logInState =
+projectListView :
+    Data.ClientMode
+    -> Data.Language
+    -> Data.LogInState.LogInState
+    -> List Project
+    -> Ui.Panel Message
+projectListView clientMode language logInState projectList =
     Ui.column
         [ Ui.height Ui.stretch
         , Ui.gap 8
         , Ui.width Ui.auto
         , Ui.padding 8
         ]
-        [ projectLineFirstCreateButton clientMode language logInState
-        , projectLine
-        , projectLine
-        , projectLine
-        , projectLine
-        , projectLine
-        , projectLine
-        ]
+        (case projectList of
+            [] ->
+                [ projectLineViewWithCreateButton clientMode language logInState [] ]
+
+            a :: [] ->
+                [ projectLineViewWithCreateButton clientMode language logInState [ a ] ]
+
+            a :: b :: xs ->
+                projectLineViewWithCreateButton clientMode language logInState [ a, b ]
+                    :: projectListViewLoop xs
+        )
+
+
+projectListViewLoop : List Project -> List (Ui.Panel Message)
+projectListViewLoop projectList =
+    case projectList of
+        [] ->
+            []
+
+        a :: [] ->
+            [ projectLineView [ a ] ]
+
+        a :: b :: [] ->
+            [ projectLineView [ a, b ] ]
+
+        a :: b :: c :: xs ->
+            projectLineView [ a, b, c ] :: projectListViewLoop xs
 
 
 createProjectButton : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Message
@@ -213,46 +286,72 @@ createProjectButtonLogInOk clientMode language =
         )
 
 
-projectLineFirstCreateButton : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Message
-projectLineFirstCreateButton clientMode language logInState =
+{-| プロジェクトの表示は2つまで
+-}
+projectLineViewWithCreateButton :
+    Data.ClientMode
+    -> Data.Language
+    -> Data.LogInState.LogInState
+    -> List Project
+    -> Ui.Panel Message
+projectLineViewWithCreateButton clientMode language logInState projectList =
     Ui.row
         [ Ui.gap 8, Ui.height (Ui.fix 200) ]
-        [ createProjectButton clientMode language logInState
-        , projectItem
-        , projectItem
-        ]
+        (createProjectButton clientMode language logInState
+            :: List.map projectItem projectList
+        )
 
 
-projectLine : Ui.Panel message
-projectLine =
+{-| プロジェクトの表示は1行3つまで
+-}
+projectLineView : List Project -> Ui.Panel message
+projectLineView projectList =
     Ui.row
         [ Ui.gap 8, Ui.height (Ui.fix 200) ]
-        [ projectItem
-        , projectItem
-        , projectItem
-        ]
+        (List.map projectItem projectList)
 
 
-projectItem : Ui.Panel message
-projectItem =
+projectItem : Project -> Ui.Panel message
+projectItem project =
     Ui.depth
         [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
         [ ( ( Ui.Center, Ui.Center )
-          , Ui.bitmapImage
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                (Ui.BitmapImageAttributes
-                    { url = "https://narumincho.com/assets/definy20190212.jpg"
-                    , fitStyle = Ui.Cover
-                    , alternativeText = "プロジェクト画像"
-                    , rendering = Ui.ImageRenderingPixelated
-                    }
-                )
+          , case project of
+                OnlyId _ ->
+                    Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+
+                Full Nothing ->
+                    Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+
+                Full (Just projectWithIdAndRespondTime) ->
+                    let
+                        (Data.FileHash imageHash) =
+                            projectWithIdAndRespondTime.project.image
+                    in
+                    Ui.bitmapImage
+                        [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                        (Ui.BitmapImageAttributes
+                            { url = "https://us-central1-definy-lang.cloudfunctions.net/getFile/" ++ imageHash
+                            , fitStyle = Ui.Cover
+                            , alternativeText = "プロジェクト画像"
+                            , rendering = Ui.ImageRenderingPixelated
+                            }
+                        )
           )
         , ( ( Ui.Center, Ui.End )
           , Ui.text
                 [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
                 (Ui.TextAttributes
-                    { text = "プロジェクト名"
+                    { text =
+                        case project of
+                            OnlyId (Data.ProjectId idAsString) ->
+                                "id = " ++ idAsString
+
+                            Full Nothing ->
+                                "???"
+
+                            Full (Just projectWithIdAndRespondTime) ->
+                                projectWithIdAndRespondTime.project.name
                     , typeface = Component.Style.normalTypeface
                     , size = 16
                     , letterSpacing = 0

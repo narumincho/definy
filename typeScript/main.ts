@@ -1,5 +1,6 @@
 import { Elm } from "../elm/source/Main.elm";
 import * as common from "definy-common";
+import { data, util } from "definy-common";
 import * as db from "./indexedDB";
 
 const elmAppElement = document.createElement("div");
@@ -13,17 +14,17 @@ document.body.appendChild(elmAppElement);
 
 const getAccessToken = async (
   database: IDBDatabase | null,
-  urlData: common.data.UrlData
-): Promise<common.data.Maybe<common.data.AccessToken>> => {
+  urlData: data.UrlData
+): Promise<data.Maybe<data.AccessToken>> => {
   switch (urlData.accessToken._) {
     case "Just":
-      return common.data.maybeJust(urlData.accessToken.value);
+      return data.maybeJust(urlData.accessToken.value);
     case "Nothing": {
       const accessToken = await db.getAccessToken(database);
       if (accessToken === undefined) {
-        return common.data.maybeNothing();
+        return data.maybeNothing();
       }
-      return common.data.maybeJust(accessToken);
+      return data.maybeJust(accessToken);
     }
   }
 };
@@ -138,8 +139,8 @@ const init = async (): Promise<void> => {
   app.ports.requestLogInUrl.subscribe((requestData) => {
     callApi(
       "requestLogInUrl",
-      common.data.encodeRequestLogInUrlRequestData(requestData),
-      common.data.decodeString
+      data.encodeRequestLogInUrlRequestData(requestData),
+      data.decodeString
     ).then((url) => {
       location.href = url;
     });
@@ -148,8 +149,8 @@ const init = async (): Promise<void> => {
   app.ports.getUserByAccessToken.subscribe((accessToken) => {
     callApi(
       "getUserByAccessToken",
-      common.data.encodeToken(accessToken),
-      common.data.decodeMaybe(common.data.decodeUserAndUserId)
+      data.encodeToken(accessToken),
+      data.decodeMaybe(data.decodeUserAndUserId)
     ).then((maybeUserPublicAndUserId) => {
       app.ports.responseUserByAccessToken.send(maybeUserPublicAndUserId);
       if (maybeUserPublicAndUserId._ === "Just") {
@@ -184,8 +185,8 @@ const init = async (): Promise<void> => {
       }
       callApi(
         "getImageFile",
-        common.data.encodeToken(fileHash),
-        common.data.decodeBinary
+        data.encodeToken(fileHash),
+        data.decodeBinary
       ).then((pngBinary) => {
         const blob = new Blob([pngBinary], { type: "image/png" });
         const blobUrl = URL.createObjectURL(blob);
@@ -214,15 +215,14 @@ const init = async (): Promise<void> => {
   app.ports.createProject.subscribe((parameter) => {
     callApi(
       "createProject",
-      common.data.encodeCreateProjectParameter(parameter),
-      common.data.decodeMaybe(common.data.decodeProjectAndProjectId)
+      data.encodeCreateProjectParameter(parameter),
+      data.decodeMaybe(common.data.decodeProjectAndProjectId)
     ).then((response) => {
       if (response._ === "Just") {
-        db.setProject(
-          database,
-          response.value.projectId,
-          response.value.project
-        );
+        db.setProject(database, response.value.projectId, {
+          value: response.value.project,
+          respondAt: new Date(),
+        });
       }
       app.ports.createProjectResponse.send(response);
       console.log("プロジェクト作成しました!", response);
@@ -232,6 +232,39 @@ const init = async (): Promise<void> => {
     app.ports.toValidProjectNameResponse.send({
       input: projectName,
       result: common.stringToValidProjectName(projectName),
+    });
+  });
+  app.ports.getAllProjectIdList.subscribe(() => {
+    callApi("getAllProjectId", [], data.decodeList(data.decodeId)).then(
+      (idList) => {
+        const projectIdList = idList as ReadonlyArray<common.data.ProjectId>;
+        console.log("すべてのプロジェクトのID", projectIdList);
+        app.ports.responseAllProjectId.send(projectIdList);
+      }
+    );
+  });
+  app.ports.getProject.subscribe((projectId) => {
+    callApi(
+      "getProject",
+      data.encodeId(projectId),
+      data.decodeMaybe(data.decodeProject)
+    ).then((projectMaybe) => {
+      if (projectMaybe._ === "Just") {
+        const projectData = {
+          value: projectMaybe.value,
+          respondAt: new Date(),
+        };
+        db.setProject(database, projectId, projectData);
+        app.ports.responseProject.send(
+          common.data.maybeJust({
+            project: projectData.value,
+            projectId: projectId,
+            respondTime: common.util.dateTimeFromDate(projectData.respondAt),
+          })
+        );
+        return;
+      }
+      app.ports.responseProject.send(common.data.maybeNothing());
     });
   });
 };

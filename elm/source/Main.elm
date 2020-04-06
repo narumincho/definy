@@ -432,15 +432,37 @@ update msg (Model rec) =
                 )
                 (Model rec)
 
-        GetAllProjectResponse _ ->
-            ( Model rec
-            , Cmd.none
-            )
+        GetAllProjectResponse projectIdList ->
+            case rec.page of
+                Home pageModel ->
+                    let
+                        ( newPageModel, command ) =
+                            Page.Home.update (Page.Home.ResponseAllProjectId projectIdList) pageModel
+                    in
+                    ( Model { rec | page = Home newPageModel }
+                    , commandToMainCommand rec.logInState command
+                    )
 
-        GetProjectResponse _ ->
-            ( Model rec
-            , Cmd.none
-            )
+                _ ->
+                    ( Model rec
+                    , Cmd.none
+                    )
+
+        GetProjectResponse projectMaybe ->
+            case rec.page of
+                Home pageModel ->
+                    let
+                        ( newPageModel, command ) =
+                            Page.Home.update (Page.Home.ResponseProject projectMaybe) pageModel
+                    in
+                    ( Model { rec | page = Home newPageModel }
+                    , commandToMainCommand rec.logInState command
+                    )
+
+                _ ->
+                    ( Model rec
+                    , Cmd.none
+                    )
 
 
 notificationAddEvent : Component.Notifications.Event -> Model -> ( Model, Cmd Msg )
@@ -1092,6 +1114,12 @@ commandToMainCommand logInState command =
 
         Command.ToValidProjectName string ->
             toValidProjectName string
+
+        Command.GetAllProjectId ->
+            getAllProjectIdList ()
+
+        Command.GetProject projectId ->
+            getProject (Data.projectIdToJsonValue projectId)
 
         Command.Batch commandList ->
             Cmd.batch (List.map (commandToMainCommand logInState) commandList)

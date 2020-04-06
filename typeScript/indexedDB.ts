@@ -1,4 +1,4 @@
-import { data } from "definy-common";
+import { data, util } from "definy-common";
 
 const accessTokenObjectStoreName = "accessToken";
 const accessTokenKeyName = "lastLogInUser";
@@ -8,12 +8,12 @@ const fileObjectStoreName = "file";
 
 type UserData = {
   value: data.User;
-  updateAt: Date;
+  respondAt: Date;
 };
 
 type ProjectData = {
   value: data.Project;
-  updateAt: Date;
+  respondAt: Date;
 };
 
 /**
@@ -108,12 +108,12 @@ export const setAccessToken = (
   });
 
 /**
- * ユーザーのデータをindexDBに書き込む
+ * ユーザーのデータをindexedDBから読む
  */
 export const getUser = (
   database: IDBDatabase | null,
   userId: data.UserId
-): Promise<undefined | data.User> =>
+): Promise<undefined | UserData> =>
   new Promise((resolve, reject) => {
     if (database === null) {
       resolve();
@@ -125,11 +125,7 @@ export const getUser = (
       .objectStore(userObjectStoreName)
       .get(userId);
     transaction.oncomplete = (): void => {
-      resolve(
-        getRequest.result.updateAt.getTime() + 1000 * 30 < new Date().getTime()
-          ? getRequest.result.value
-          : undefined
-      );
+      resolve(getRequest.result);
     };
 
     transaction.onerror = (): void => {
@@ -138,7 +134,7 @@ export const getUser = (
   });
 
 /**
- * ユーザーのデータをindexDBから読み込む
+ * ユーザーのデータをindexedDBに書く
  */
 export const setUser = (
   database: IDBDatabase | null,
@@ -164,11 +160,14 @@ export const setUser = (
 
     const data: UserData = {
       value: userData,
-      updateAt: new Date(),
+      respondAt: new Date(),
     };
     transaction.objectStore(userObjectStoreName).put(data, userId);
   });
 
+/**
+ * プロジェクトのデータをindexedDBから読む
+ */
 export const getProject = (
   database: IDBDatabase | null,
   projectId: data.ProjectId
@@ -188,7 +187,7 @@ export const getProject = (
 
     transaction.oncomplete = (): void => {
       resolve(
-        getRequest.result.updateAt.getTime() + 1000 * 30 < new Date().getTime()
+        getRequest.result.respondAt.getTime() + 1000 * 30 < new Date().getTime()
           ? getRequest.result.value
           : undefined
       );
@@ -198,11 +197,13 @@ export const getProject = (
       reject("read project failed");
     };
   });
-
+/**
+ * プロジェクトのデータをindexedDBに書く
+ */
 export const setProject = (
   database: IDBDatabase | null,
   projectId: data.ProjectId,
-  projectData: data.Project
+  projectData: ProjectData
 ): Promise<void> =>
   new Promise((resolve, reject) => {
     if (database === null) {
@@ -223,11 +224,7 @@ export const setProject = (
       reject("set project failed");
     };
 
-    const data: ProjectData = {
-      value: projectData,
-      updateAt: new Date(),
-    };
-    transaction.objectStore(projectObjectStoreName).put(data, projectId);
+    transaction.objectStore(projectObjectStoreName).put(projectData, projectId);
   });
 
 /**

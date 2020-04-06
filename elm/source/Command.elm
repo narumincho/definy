@@ -10,4 +10,6 @@ type Command
     | ConsoleLog String
     | PushUrl Data.UrlData
     | ToValidProjectName String
+    | GetAllProjectId
+    | GetProject Data.ProjectId
     | Batch (List Command)
