@@ -132,7 +132,7 @@ type Msg
     | CreateProjectResponse (Maybe Data.ProjectAndProjectId)
     | NoOperation
     | GetAllProjectResponse (List Data.ProjectId)
-    | GetProjectResponse (Maybe Data.ProjectWithIdAndRespondTime)
+    | GetProjectResponse Data.ProjectCacheWithId
 
 
 type PageMessage
@@ -1232,7 +1232,7 @@ getProjectResponseSubscription =
         (\jsonValue ->
             case
                 Json.Decode.decodeValue
-                    (Data.maybeJsonDecoder Data.projectWithIdAndRespondTimeJsonDecoder)
+                    Data.projectCacheWithIdJsonDecoder
                     jsonValue
             of
                 Ok projectWithIdAndRespondTimeMaybe ->

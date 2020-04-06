@@ -255,16 +255,19 @@ const init = async (): Promise<void> => {
           respondAt: new Date(),
         };
         db.setProject(database, projectId, projectData);
-        app.ports.responseProject.send(
-          common.data.maybeJust({
+        app.ports.responseProject.send({
+          projectCache: data.maybeJust({
             project: projectData.value,
-            projectId: projectId,
-            respondTime: common.util.dateTimeFromDate(projectData.respondAt),
-          })
-        );
+            respondTime: common.util.timeFromDate(projectData.respondAt),
+          }),
+          projectId: projectId,
+        });
         return;
       }
-      app.ports.responseProject.send(common.data.maybeNothing());
+      app.ports.responseProject.send({
+        projectId: projectId,
+        projectCache: data.maybeNothing(),
+      });
     });
   });
 };

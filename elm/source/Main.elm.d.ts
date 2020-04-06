@@ -57,9 +57,8 @@ type Ports = {
     data.Maybe<data.ProjectAndProjectId>
   >;
   readonly responseAllProjectId: CmdForElmSub<ReadonlyArray<data.ProjectId>>;
-  readonly responseProject: CmdForElmSub<
-    data.Maybe<data.ProjectWithIdAndRespondTime>
-  >;
+  readonly responseProject: CmdForElmSub<data.ProjectCacheWithId>;
+  readonly responseUser: CmdForElmSub<data.UserCacheWithId>;
 };
 
 type SubForElmCmd<T> = {

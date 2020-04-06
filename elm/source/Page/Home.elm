@@ -23,13 +23,13 @@ type Model
 
 type Project
     = OnlyId Data.ProjectId
-    | Full (Maybe Data.ProjectWithIdAndRespondTime)
+    | Full Data.ProjectCacheWithId
 
 
 type Message
     = PushUrl Data.UrlData
     | ResponseAllProjectId (List Data.ProjectId)
-    | ResponseProject (Maybe Data.ProjectWithIdAndRespondTime)
+    | ResponseProject Data.ProjectCacheWithId
     | NoOp
 
 
@@ -69,22 +69,25 @@ update msg model =
             )
 
 
-setProjectWithIdAnsRespondTime : Maybe Data.ProjectWithIdAndRespondTime -> List Project -> List Project
-setProjectWithIdAnsRespondTime projectWithIdAndRespondTimeMaybe projectList =
-    projectList
-
-
-setProjectWithIdAnsRespondTimeLoop : Maybe Data.ProjectWithIdAndRespondTime -> List Project -> List Project -> List Project
-setProjectWithIdAnsRespondTimeLoop projectWithIdAndRespondTimeMaybe start end =
-    case end of
+setProjectWithIdAnsRespondTime : Data.ProjectCacheWithId -> List Project -> List Project
+setProjectWithIdAnsRespondTime projectCacheWithId projectList =
+    case projectList of
         [] ->
             []
 
         (OnlyId id) :: xs ->
-            []
+            if projectCacheWithId.projectId == id then
+                [ Full projectCacheWithId ] ++ xs
 
-        (Full _) :: xs ->
-            []
+            else
+                OnlyId id :: setProjectWithIdAnsRespondTime projectCacheWithId xs
+
+        (Full old) :: xs ->
+            if projectCacheWithId.projectId == old.projectId then
+                [ Full projectCacheWithId ] ++ xs
+
+            else
+                Full old :: setProjectWithIdAnsRespondTime projectCacheWithId xs
 
 
 view : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Message
@@ -268,7 +271,7 @@ createProjectButtonLogInOk clientMode language =
                                                 "Create a new project"
 
                                             Data.LanguageJapanese ->
-                                                "プロジcoェクトを新規作成"
+                                                "プロジェクトを新規作成"
 
                                             Data.LanguageEsperanto ->
                                                 "Krei novan projekton"
@@ -316,27 +319,7 @@ projectItem project =
     Ui.depth
         [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
         [ ( ( Ui.Center, Ui.Center )
-          , case project of
-                OnlyId _ ->
-                    Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-
-                Full Nothing ->
-                    Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-
-                Full (Just projectWithIdAndRespondTime) ->
-                    let
-                        (Data.FileHash imageHash) =
-                            projectWithIdAndRespondTime.project.image
-                    in
-                    Ui.bitmapImage
-                        [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                        (Ui.BitmapImageAttributes
-                            { url = "https://us-central1-definy-lang.cloudfunctions.net/getFile/" ++ imageHash
-                            , fitStyle = Ui.Cover
-                            , alternativeText = "プロジェクト画像"
-                            , rendering = Ui.ImageRenderingPixelated
-                            }
-                        )
+          , projectItemImage project
           )
         , ( ( Ui.Center, Ui.End )
           , Ui.text
@@ -347,11 +330,13 @@ projectItem project =
                             OnlyId (Data.ProjectId idAsString) ->
                                 "id = " ++ idAsString
 
-                            Full Nothing ->
-                                "???"
+                            Full projectCacheWithId ->
+                                case projectCacheWithId.projectCache of
+                                    Just projectCache ->
+                                        projectCache.project.name
 
-                            Full (Just projectWithIdAndRespondTime) ->
-                                projectWithIdAndRespondTime.project.name
+                                    Nothing ->
+                                        "プロジェクトが見つからなかった"
                     , typeface = Component.Style.normalTypeface
                     , size = 16
                     , letterSpacing = 0
@@ -361,3 +346,30 @@ projectItem project =
                 )
           )
         ]
+
+
+projectItemImage : Project -> Ui.Panel message
+projectItemImage project =
+    case project of
+        OnlyId _ ->
+            Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+
+        Full projectCacheWithId ->
+            case projectCacheWithId.projectCache of
+                Just projectCache ->
+                    let
+                        (Data.FileHash imageHash) =
+                            projectCache.project.image
+                    in
+                    Ui.bitmapImage
+                        [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                        (Ui.BitmapImageAttributes
+                            { url = "https://us-central1-definy-lang.cloudfunctions.net/getFile/" ++ imageHash
+                            , fitStyle = Ui.Cover
+                            , alternativeText = "プロジェクト画像"
+                            , rendering = Ui.ImageRenderingPixelated
+                            }
+                        )
+
+                Nothing ->
+                    Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
