@@ -16,14 +16,14 @@ type Message
 init : Data.ProjectId -> ( Model, Command.Command )
 init projectId =
     ( Model
-    , Command.none
+    , Command.None
     )
 
 
 update : Message -> Model -> ( Model, Command.Command )
 update _ model =
     ( model
-    , Command.none
+    , Command.None
     )
 
 

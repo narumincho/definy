@@ -840,6 +840,7 @@ mainView (Model record) =
                     record.clientMode
                     record.language
                     record.logInState
+                    record.imageStore
                     pageModel
                     |> Ui.map (PageMessageHome >> PageMsg)
                 ]

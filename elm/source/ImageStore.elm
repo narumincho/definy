@@ -1,4 +1,4 @@
-module ImageStore exposing (ImageStore, add, empty, getProjectIcon, getUserImage)
+module ImageStore exposing (ImageStore, add, empty, getImageBlobUrl)
 
 import Data
 import Dict
@@ -23,19 +23,6 @@ add (Data.FileHash hash) blobUrl (ImageStore dict) =
         (Dict.insert hash blobUrl dict)
 
 
-getUserImage : ImageStore -> Data.User -> Maybe String
-getUserImage (ImageStore imageFileBlobDict) user =
-    let
-        (Data.FileHash hash) =
-            user.imageHash
-    in
-    Dict.get hash imageFileBlobDict
-
-
-getProjectIcon : ImageStore -> Data.Project -> Maybe String
-getProjectIcon (ImageStore imageFileBlobDict) project =
-    let
-        (Data.FileHash hash) =
-            project.icon
-    in
+getImageBlobUrl : Data.FileHash -> ImageStore -> Maybe String
+getImageBlobUrl (Data.FileHash hash) (ImageStore imageFileBlobDict) =
     Dict.get hash imageFileBlobDict

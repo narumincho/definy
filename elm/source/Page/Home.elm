@@ -13,6 +13,7 @@ import Data
 import Data.LogInState
 import Data.UrlData
 import Icon
+import ImageStore
 import Ui
 
 
@@ -51,7 +52,7 @@ update msg model =
             , Command.Batch (List.map Command.GetProject allProjectIdList)
             )
 
-        ResponseProject projectMaybe ->
+        ResponseProject projectCacheWithId ->
             case model of
                 LoadingAllProject ->
                     ( model
@@ -59,8 +60,16 @@ update msg model =
                     )
 
                 LoadedAllProject allProject ->
-                    ( LoadedAllProject (setProjectWithIdAnsRespondTime projectMaybe allProject)
-                    , Command.None
+                    ( LoadedAllProject (setProjectWithIdAnsRespondTime projectCacheWithId allProject)
+                    , case projectCacheWithId.projectCache of
+                        Just projectCache ->
+                            Command.Batch
+                                [ Command.GetBlobUrl projectCache.project.icon
+                                , Command.GetBlobUrl projectCache.project.image
+                                ]
+
+                        Nothing ->
+                            Command.None
                     )
 
         NoOp ->
@@ -90,8 +99,14 @@ setProjectWithIdAnsRespondTime projectCacheWithId projectList =
                 Full old :: setProjectWithIdAnsRespondTime projectCacheWithId xs
 
 
-view : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Message
-view clientMode language logInState model =
+view :
+    Data.ClientMode
+    -> Data.Language
+    -> Data.LogInState.LogInState
+    -> ImageStore.ImageStore
+    -> Model
+    -> Ui.Panel Message
+view clientMode language logInState imageStore model =
     Ui.scroll
         [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
         (Ui.column
@@ -101,7 +116,7 @@ view clientMode language logInState model =
                     Component.Style.normalText 16 "プロジェクトの一覧を読込中"
 
                 LoadedAllProject allProject ->
-                    projectListView clientMode language logInState allProject
+                    projectListView clientMode language logInState imageStore allProject
             ]
         )
 
@@ -110,9 +125,10 @@ projectListView :
     Data.ClientMode
     -> Data.Language
     -> Data.LogInState.LogInState
+    -> ImageStore.ImageStore
     -> List Project
     -> Ui.Panel Message
-projectListView clientMode language logInState projectList =
+projectListView clientMode language logInState imageStore projectList =
     Ui.column
         [ Ui.height Ui.stretch
         , Ui.gap 8
@@ -121,31 +137,48 @@ projectListView clientMode language logInState projectList =
         ]
         (case projectList of
             [] ->
-                [ projectLineViewWithCreateButton clientMode language logInState [] ]
+                [ projectLineViewWithCreateButton
+                    clientMode
+                    language
+                    logInState
+                    imageStore
+                    []
+                ]
 
             a :: [] ->
-                [ projectLineViewWithCreateButton clientMode language logInState [ a ] ]
+                [ projectLineViewWithCreateButton
+                    clientMode
+                    language
+                    logInState
+                    imageStore
+                    [ a ]
+                ]
 
             a :: b :: xs ->
-                projectLineViewWithCreateButton clientMode language logInState [ a, b ]
-                    :: projectListViewLoop xs
+                projectLineViewWithCreateButton
+                    clientMode
+                    language
+                    logInState
+                    imageStore
+                    [ a, b ]
+                    :: projectListViewLoop imageStore xs
         )
 
 
-projectListViewLoop : List Project -> List (Ui.Panel Message)
-projectListViewLoop projectList =
+projectListViewLoop : ImageStore.ImageStore -> List Project -> List (Ui.Panel Message)
+projectListViewLoop imageStore projectList =
     case projectList of
         [] ->
             []
 
         a :: [] ->
-            [ projectLineView [ a ] ]
+            [ projectLineView imageStore [ a ] ]
 
         a :: b :: [] ->
-            [ projectLineView [ a, b ] ]
+            [ projectLineView imageStore [ a, b ] ]
 
         a :: b :: c :: xs ->
-            projectLineView [ a, b, c ] :: projectListViewLoop xs
+            projectLineView imageStore [ a, b, c ] :: projectListViewLoop imageStore xs
 
 
 createProjectButton : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Message
@@ -295,61 +328,92 @@ projectLineViewWithCreateButton :
     Data.ClientMode
     -> Data.Language
     -> Data.LogInState.LogInState
+    -> ImageStore.ImageStore
     -> List Project
     -> Ui.Panel Message
-projectLineViewWithCreateButton clientMode language logInState projectList =
+projectLineViewWithCreateButton clientMode language logInState imageStore projectList =
     Ui.row
         [ Ui.gap 8, Ui.height (Ui.fix 200) ]
         (createProjectButton clientMode language logInState
-            :: List.map projectItem projectList
+            :: List.map (projectItem imageStore) projectList
         )
 
 
 {-| プロジェクトの表示は1行3つまで
 -}
-projectLineView : List Project -> Ui.Panel message
-projectLineView projectList =
+projectLineView : ImageStore.ImageStore -> List Project -> Ui.Panel message
+projectLineView imageStore projectList =
     Ui.row
         [ Ui.gap 8, Ui.height (Ui.fix 200) ]
-        (List.map projectItem projectList)
+        (List.map (projectItem imageStore) projectList)
 
 
-projectItem : Project -> Ui.Panel message
-projectItem project =
+projectItem : ImageStore.ImageStore -> Project -> Ui.Panel message
+projectItem imageStore project =
     Ui.depth
         [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
         [ ( ( Ui.Center, Ui.Center )
-          , projectItemImage project
+          , projectItemImage imageStore project
           )
         , ( ( Ui.Center, Ui.End )
-          , Ui.text
+          , Ui.row
                 [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
-                (Ui.TextAttributes
-                    { text =
-                        case project of
-                            OnlyId (Data.ProjectId idAsString) ->
-                                "id = " ++ idAsString
-
-                            Full projectCacheWithId ->
-                                case projectCacheWithId.projectCache of
-                                    Just projectCache ->
-                                        projectCache.project.name
+                [ case project of
+                    Full projectCacheWithId ->
+                        case projectCacheWithId.projectCache of
+                            Just projectCache ->
+                                case ImageStore.getImageBlobUrl projectCache.project.icon imageStore of
+                                    Just blobUrl ->
+                                        Ui.bitmapImage
+                                            [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
+                                            (Ui.BitmapImageAttributes
+                                                { url = blobUrl
+                                                , fitStyle = Ui.Cover
+                                                , alternativeText = "プロジェクトアイコン"
+                                                , rendering = Ui.ImageRenderingPixelated
+                                                }
+                                            )
 
                                     Nothing ->
-                                        "プロジェクトが見つからなかった"
-                    , typeface = Component.Style.normalTypeface
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 200 200 200
-                    , textAlignment = Ui.TextAlignStart
-                    }
-                )
+                                        Ui.empty
+                                            [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
+
+                            Nothing ->
+                                Ui.empty
+                                    [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
+
+                    _ ->
+                        Ui.empty
+                            [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
+                , Ui.text
+                    []
+                    (Ui.TextAttributes
+                        { text =
+                            case project of
+                                OnlyId (Data.ProjectId idAsString) ->
+                                    "id = " ++ idAsString
+
+                                Full projectCacheWithId ->
+                                    case projectCacheWithId.projectCache of
+                                        Just projectCache ->
+                                            projectCache.project.name
+
+                                        Nothing ->
+                                            "プロジェクトが見つからなかった"
+                        , typeface = Component.Style.normalTypeface
+                        , size = 16
+                        , letterSpacing = 0
+                        , color = Css.rgb 200 200 200
+                        , textAlignment = Ui.TextAlignStart
+                        }
+                    )
+                ]
           )
         ]
 
 
-projectItemImage : Project -> Ui.Panel message
-projectItemImage project =
+projectItemImage : ImageStore.ImageStore -> Project -> Ui.Panel message
+projectItemImage imageStore project =
     case project of
         OnlyId _ ->
             Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
@@ -357,19 +421,20 @@ projectItemImage project =
         Full projectCacheWithId ->
             case projectCacheWithId.projectCache of
                 Just projectCache ->
-                    let
-                        (Data.FileHash imageHash) =
-                            projectCache.project.image
-                    in
-                    Ui.bitmapImage
-                        [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                        (Ui.BitmapImageAttributes
-                            { url = "https://us-central1-definy-lang.cloudfunctions.net/getFile/" ++ imageHash
-                            , fitStyle = Ui.Cover
-                            , alternativeText = "プロジェクト画像"
-                            , rendering = Ui.ImageRenderingPixelated
-                            }
-                        )
+                    case ImageStore.getImageBlobUrl projectCache.project.image imageStore of
+                        Just projectImageBlobUrl ->
+                            Ui.bitmapImage
+                                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                                (Ui.BitmapImageAttributes
+                                    { url = projectImageBlobUrl
+                                    , fitStyle = Ui.Cover
+                                    , alternativeText = "プロジェクト画像"
+                                    , rendering = Ui.ImageRenderingPixelated
+                                    }
+                                )
+
+                        Nothing ->
+                            Component.Style.normalText 16 "プロジェクトの画像を読込中"
 
                 Nothing ->
                     Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]

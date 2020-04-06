@@ -68,7 +68,7 @@ userItem : ImageStore.ImageStore -> Data.User -> Ui.Panel msg
 userItem imageStore userData =
     Ui.row
         [ Ui.gap 8 ]
-        ([ case ImageStore.getUserImage imageStore userData of
+        ([ case ImageStore.getImageBlobUrl userData.imageHash imageStore of
             Just blobUrl ->
                 [ Ui.bitmapImage
                     [ Ui.width (Ui.fix 48)

@@ -1,4 +1,4 @@
-import { data, util } from "definy-common";
+import { data } from "definy-common";
 
 const accessTokenObjectStoreName = "accessToken";
 const accessTokenKeyName = "lastLogInUser";
@@ -59,7 +59,7 @@ export const getAccessToken = (
 ): Promise<undefined | data.AccessToken> =>
   new Promise((resolve, reject) => {
     if (database === null) {
-      resolve();
+      resolve(undefined);
       return;
     }
     const transaction = database.transaction(
@@ -67,7 +67,9 @@ export const getAccessToken = (
       "readonly"
     );
 
-    const getRequest = transaction
+    const getRequest: IDBRequest<
+      undefined | data.AccessToken
+    > = transaction
       .objectStore(accessTokenObjectStoreName)
       .get(accessTokenKeyName);
     transaction.oncomplete = (): void => {
@@ -171,26 +173,22 @@ export const setUser = (
 export const getProject = (
   database: IDBDatabase | null,
   projectId: data.ProjectId
-): Promise<null | ProjectData> =>
+): Promise<undefined | ProjectData> =>
   new Promise((resolve, reject) => {
     if (database === null) {
-      resolve(null);
+      resolve(undefined);
       return;
     }
     const transaction = database.transaction(
       [projectObjectStoreName],
       "readonly"
     );
-    const getRequest: IDBRequest<ProjectData> = transaction
-      .objectStore(projectObjectStoreName)
-      .get(projectId);
+    const getRequest: IDBRequest<
+      ProjectData | undefined
+    > = transaction.objectStore(projectObjectStoreName).get(projectId);
 
     transaction.oncomplete = (): void => {
-      resolve(
-        getRequest.result.respondAt.getTime() + 1000 * 30 < new Date().getTime()
-          ? getRequest.result
-          : undefined
-      );
+      resolve(getRequest.result);
     };
 
     transaction.onerror = (): void => {

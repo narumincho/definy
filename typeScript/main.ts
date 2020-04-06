@@ -244,7 +244,7 @@ const init = async (): Promise<void> => {
   });
   app.ports.getProject.subscribe((projectId) => {
     db.getProject(database, projectId).then((projectDataInIndexedDB) => {
-      if (projectDataInIndexedDB !== null) {
+      if (projectDataInIndexedDB !== undefined) {
         app.ports.responseProject.send({
           projectCache: data.maybeJust({
             project: projectDataInIndexedDB.value,

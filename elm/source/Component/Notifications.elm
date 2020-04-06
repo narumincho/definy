@@ -99,7 +99,7 @@ eventToCardStyle imageStore event =
         LogInSuccess userAndUserId ->
             CardStyle
                 { icon =
-                    ImageStore.getUserImage imageStore userAndUserId.user
+                    ImageStore.getImageBlobUrl userAndUserId.user.imageHash imageStore
                         |> Maybe.map
                             (\blobUrl ->
                                 Icon
@@ -132,7 +132,7 @@ eventToCardStyle imageStore event =
         CreatedProject projectAndId ->
             CardStyle
                 { icon =
-                    ImageStore.getProjectIcon imageStore projectAndId.project
+                    ImageStore.getImageBlobUrl projectAndId.project.image imageStore
                         |> Maybe.map
                             (\blobUrl ->
                                 Icon
