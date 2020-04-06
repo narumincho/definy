@@ -20,6 +20,7 @@ import Json.Encode
 import Page.CreateProject
 import Page.Home
 import Page.Project
+import Page.User
 import Task
 import Ui
 
@@ -140,6 +141,7 @@ type PageMessage
     = PageMessageHome Page.Home.Message
     | PageMessageCreateProject Page.CreateProject.Message
     | PageMessageProject Page.Project.Message
+    | PageMessageUser Page.User.Message
 
 
 {-| 全体を表現する
@@ -177,6 +179,7 @@ type PageModel
     = Home Page.Home.Model
     | CreateProject Page.CreateProject.Model
     | Project Page.Project.Model
+    | User Page.User.Model
 
 
 type alias Flag =
@@ -280,8 +283,8 @@ pageInit location =
                 |> Tuple.mapFirst CreateProject
 
         Data.LocationUser userId ->
-            Page.Home.init
-                |> Tuple.mapFirst Home
+            Page.User.init userId
+                |> Tuple.mapFirst User
 
         Data.LocationProject projectId ->
             Page.Project.init projectId
@@ -495,6 +498,9 @@ pageModelToLocation pageModel =
 
         Project model ->
             Data.LocationProject (Page.Project.getProjectId model)
+
+        User model ->
+            Data.LocationUser (Page.User.getUserId model)
 
 
 updateFromMsgList : List Msg -> Model -> ( Model, Cmd Msg )
@@ -868,6 +874,16 @@ mainView (Model record) =
                 , Page.Project.view
                     pageModel
                     |> Ui.map (PageMessageProject >> PageMsg)
+                ]
+
+        User pageModel ->
+            Ui.column
+                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                [ Component.Header.view record.imageStore record.logInState
+                , logInPanel record.logInState record.language record.windowSize
+                , Page.User.view
+                    pageModel
+                    |> Ui.map (PageMessageUser >> PageMsg)
                 ]
 
 
