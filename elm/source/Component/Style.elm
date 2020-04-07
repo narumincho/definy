@@ -7,6 +7,7 @@ module Component.Style exposing
     , horizontalGutter
     , normalText
     , normalTypeface
+    , stretchText
     , tabContainer
     , textColorStyle
     , verticalGutter
@@ -135,6 +136,8 @@ normalTypeface =
     "'Hiragino Kaku Gothic Pro', 'ヒラギノ角ゴ Pro W3', メイリオ, Meiryo, 'ＭＳ Ｐゴシック', sans-serif"
 
 
+{-| よく使うテキスト. 文字サイズ,表示する文字を指定する. パネルのサイズは文字の大きさや量によって変わる
+-}
 normalText : Int -> String -> Ui.Panel message
 normalText size text =
     Ui.text
@@ -146,6 +149,23 @@ normalText size text =
             , letterSpacing = 0
             , color = Css.rgb 200 200 200
             , textAlignment = Ui.TextAlignCenter
+            }
+        )
+
+
+{-| 横方向に広がるテキスト. テキスト自体は左詰め
+-}
+stretchText : Int -> String -> Ui.Panel message
+stretchText size text =
+    Ui.text
+        [ Ui.width Ui.stretch ]
+        (Ui.TextAttributes
+            { text = text
+            , typeface = normalTypeface
+            , size = size
+            , letterSpacing = 0
+            , color = Css.rgb 200 200 200
+            , textAlignment = Ui.TextAlignStart
             }
         )
 

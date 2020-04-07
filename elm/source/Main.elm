@@ -881,6 +881,7 @@ mainView (Model record) =
                 [ Component.Header.view record.imageStore record.logInState
                 , logInPanel record.logInState record.language record.windowSize
                 , Page.Project.view
+                    record.imageStore
                     pageModel
                     |> Ui.map (PageMessageProject >> PageMsg)
                 ]
