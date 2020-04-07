@@ -150,14 +150,15 @@ const init = async (): Promise<void> => {
     callApi(
       "getUserByAccessToken",
       data.encodeToken(accessToken),
-      data.decodeMaybe(data.decodeUserAndUserId)
+      data.decodeMaybe(data.decodeUserSnapshotAndId)
     ).then((maybeUserPublicAndUserId) => {
       app.ports.responseUserByAccessToken.send(maybeUserPublicAndUserId);
       if (maybeUserPublicAndUserId._ === "Just") {
-        db.setUser(database, maybeUserPublicAndUserId.value.userId, {
-          value: maybeUserPublicAndUserId.value.user,
-          respondAt: new Date(),
-        });
+        db.setUser(
+          database,
+          maybeUserPublicAndUserId.value.id,
+          maybeUserPublicAndUserId.value.snapshot
+        );
       }
     });
   });
@@ -215,13 +216,10 @@ const init = async (): Promise<void> => {
     callApi(
       "createProject",
       data.encodeCreateProjectParameter(parameter),
-      data.decodeMaybe(common.data.decodeProjectAndProjectId)
+      data.decodeMaybe(common.data.decodeProjectSnapshotAndId)
     ).then((response) => {
       if (response._ === "Just") {
-        db.setProject(database, response.value.projectId, {
-          value: response.value.project,
-          respondAt: new Date(),
-        });
+        db.setProject(database, response.value.id, response.value.snapshot);
       }
       app.ports.createProjectResponse.send(response);
       console.log("プロジェクト作成しました!", response);
@@ -246,37 +244,27 @@ const init = async (): Promise<void> => {
     db.getProject(database, projectId).then((projectDataInIndexedDB) => {
       if (projectDataInIndexedDB !== undefined) {
         app.ports.responseProject.send({
-          projectCache: data.maybeJust({
-            project: projectDataInIndexedDB.value,
-            respondTime: util.timeFromDate(projectDataInIndexedDB.respondAt),
-          }),
-          projectId: projectId,
+          id: projectId,
+          snapshot: data.maybeJust(projectDataInIndexedDB),
         });
         return;
       }
       callApi(
         "getProject",
         data.encodeId(projectId),
-        data.decodeMaybe(data.decodeProject)
+        data.decodeMaybe(data.decodeProjectSnapshot)
       ).then((projectMaybe) => {
         if (projectMaybe._ === "Just") {
-          const projectData = {
-            value: projectMaybe.value,
-            respondAt: new Date(),
-          };
-          db.setProject(database, projectId, projectData);
+          db.setProject(database, projectId, projectMaybe.value);
           app.ports.responseProject.send({
-            projectCache: data.maybeJust({
-              project: projectData.value,
-              respondTime: common.util.timeFromDate(projectData.respondAt),
-            }),
-            projectId: projectId,
+            id: projectId,
+            snapshot: data.maybeJust(projectMaybe.value),
           });
           return;
         }
         app.ports.responseProject.send({
-          projectId: projectId,
-          projectCache: data.maybeNothing(),
+          id: projectId,
+          snapshot: data.maybeNothing(),
         });
       });
     });

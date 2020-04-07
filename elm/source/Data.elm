@@ -1,4 +1,4 @@
-module Data exposing (AccessToken(..), AccessTokenError(..), BranchPartDefinition, Change(..), ClientMode(..), Comment, Condition(..), ConditionCapture, ConditionTag, CreateProjectParameter, EvaluateExprError(..), EvaluatedExpr(..), Expr(..), FileHash(..), FunctionCall, Idea, IdeaId(..), IdeaItem(..), KernelCall, KernelExpr(..), LambdaBranch, Language(..), LocalPartId(..), LocalPartReference, Location(..), Module, ModuleId(..), OpenIdConnectProvider(..), PartDefinition, PartId(..), Project, ProjectAndProjectId, ProjectCache, ProjectCacheWithId, ProjectId(..), RequestLogInUrlRequestData, Suggestion, TagId(..), TagReferenceIndex, Time, Type, TypeBody(..), TypeBodyKernel(..), TypeBodyProductMember, TypeBodySumPattern, TypeDefinition, TypeError, TypeId(..), UrlData, User, UserAndUserId, UserCache, UserCacheWithId, UserId(..), accessTokenErrorJsonDecoder, accessTokenErrorToJsonValue, accessTokenJsonDecoder, accessTokenToJsonValue, branchPartDefinitionJsonDecoder, branchPartDefinitionToJsonValue, changeJsonDecoder, changeToJsonValue, clientModeJsonDecoder, clientModeToJsonValue, commentJsonDecoder, commentToJsonValue, conditionCaptureJsonDecoder, conditionCaptureToJsonValue, conditionJsonDecoder, conditionTagJsonDecoder, conditionTagToJsonValue, conditionToJsonValue, createProjectParameterJsonDecoder, createProjectParameterToJsonValue, evaluateExprErrorJsonDecoder, evaluateExprErrorToJsonValue, evaluatedExprJsonDecoder, evaluatedExprToJsonValue, exprJsonDecoder, exprToJsonValue, fileHashJsonDecoder, fileHashToJsonValue, functionCallJsonDecoder, functionCallToJsonValue, ideaIdJsonDecoder, ideaIdToJsonValue, ideaItemJsonDecoder, ideaItemToJsonValue, ideaJsonDecoder, ideaToJsonValue, kernelCallJsonDecoder, kernelCallToJsonValue, kernelExprJsonDecoder, kernelExprToJsonValue, lambdaBranchJsonDecoder, lambdaBranchToJsonValue, languageJsonDecoder, languageToJsonValue, localPartIdJsonDecoder, localPartIdToJsonValue, localPartReferenceJsonDecoder, localPartReferenceToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, moduleIdJsonDecoder, moduleIdToJsonValue, moduleJsonDecoder, moduleToJsonValue, openIdConnectProviderJsonDecoder, openIdConnectProviderToJsonValue, partDefinitionJsonDecoder, partDefinitionToJsonValue, partIdJsonDecoder, partIdToJsonValue, projectAndProjectIdJsonDecoder, projectAndProjectIdToJsonValue, projectCacheJsonDecoder, projectCacheToJsonValue, projectCacheWithIdJsonDecoder, projectCacheWithIdToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, projectJsonDecoder, projectToJsonValue, requestLogInUrlRequestDataJsonDecoder, requestLogInUrlRequestDataToJsonValue, resultJsonDecoder, resultToJsonValue, suggestionJsonDecoder, suggestionToJsonValue, tagIdJsonDecoder, tagIdToJsonValue, tagReferenceIndexJsonDecoder, tagReferenceIndexToJsonValue, timeJsonDecoder, timeToJsonValue, typeBodyJsonDecoder, typeBodyKernelJsonDecoder, typeBodyKernelToJsonValue, typeBodyProductMemberJsonDecoder, typeBodyProductMemberToJsonValue, typeBodySumPatternJsonDecoder, typeBodySumPatternToJsonValue, typeBodyToJsonValue, typeDefinitionJsonDecoder, typeDefinitionToJsonValue, typeErrorJsonDecoder, typeErrorToJsonValue, typeIdJsonDecoder, typeIdToJsonValue, typeJsonDecoder, typeToJsonValue, urlDataJsonDecoder, urlDataToJsonValue, userAndUserIdJsonDecoder, userAndUserIdToJsonValue, userCacheJsonDecoder, userCacheToJsonValue, userCacheWithIdJsonDecoder, userCacheWithIdToJsonValue, userIdJsonDecoder, userIdToJsonValue, userJsonDecoder, userToJsonValue)
+module Data exposing (AccessToken(..), AccessTokenError(..), BranchPartDefinition, Change(..), ClientMode(..), Comment, Condition(..), ConditionCapture, ConditionTag, CreateProjectParameter, EvaluateExprError(..), EvaluatedExpr(..), Expr(..), FileHash(..), FunctionCall, Idea, IdeaId(..), IdeaItem(..), IdeaSnapshotAndId, IdeaSnapshotMaybeAndId, KernelCall, KernelExpr(..), LambdaBranch, Language(..), LocalPartId(..), LocalPartReference, Location(..), Module, ModuleId(..), OpenIdConnectProvider(..), PartDefinition, PartId(..), ProjectId(..), ProjectSnapshot, ProjectSnapshotAndId, ProjectSnapshotMaybeAndId, RequestLogInUrlRequestData, Suggestion, TagId(..), TagReferenceIndex, Time, Type, TypeBody(..), TypeBodyKernel(..), TypeBodyProductMember, TypeBodySumPattern, TypeDefinition, TypeError, TypeId(..), UrlData, UserId(..), UserSnapshot, UserSnapshotAndId, UserSnapshotMaybeAndId, accessTokenErrorJsonDecoder, accessTokenErrorToJsonValue, accessTokenJsonDecoder, accessTokenToJsonValue, branchPartDefinitionJsonDecoder, branchPartDefinitionToJsonValue, changeJsonDecoder, changeToJsonValue, clientModeJsonDecoder, clientModeToJsonValue, commentJsonDecoder, commentToJsonValue, conditionCaptureJsonDecoder, conditionCaptureToJsonValue, conditionJsonDecoder, conditionTagJsonDecoder, conditionTagToJsonValue, conditionToJsonValue, createProjectParameterJsonDecoder, createProjectParameterToJsonValue, evaluateExprErrorJsonDecoder, evaluateExprErrorToJsonValue, evaluatedExprJsonDecoder, evaluatedExprToJsonValue, exprJsonDecoder, exprToJsonValue, fileHashJsonDecoder, fileHashToJsonValue, functionCallJsonDecoder, functionCallToJsonValue, ideaIdJsonDecoder, ideaIdToJsonValue, ideaItemJsonDecoder, ideaItemToJsonValue, ideaJsonDecoder, ideaSnapshotAndIdJsonDecoder, ideaSnapshotAndIdToJsonValue, ideaSnapshotMaybeAndIdJsonDecoder, ideaSnapshotMaybeAndIdToJsonValue, ideaToJsonValue, kernelCallJsonDecoder, kernelCallToJsonValue, kernelExprJsonDecoder, kernelExprToJsonValue, lambdaBranchJsonDecoder, lambdaBranchToJsonValue, languageJsonDecoder, languageToJsonValue, localPartIdJsonDecoder, localPartIdToJsonValue, localPartReferenceJsonDecoder, localPartReferenceToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, moduleIdJsonDecoder, moduleIdToJsonValue, moduleJsonDecoder, moduleToJsonValue, openIdConnectProviderJsonDecoder, openIdConnectProviderToJsonValue, partDefinitionJsonDecoder, partDefinitionToJsonValue, partIdJsonDecoder, partIdToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, projectSnapshotAndIdJsonDecoder, projectSnapshotAndIdToJsonValue, projectSnapshotJsonDecoder, projectSnapshotMaybeAndIdJsonDecoder, projectSnapshotMaybeAndIdToJsonValue, projectSnapshotToJsonValue, requestLogInUrlRequestDataJsonDecoder, requestLogInUrlRequestDataToJsonValue, resultJsonDecoder, resultToJsonValue, suggestionJsonDecoder, suggestionToJsonValue, tagIdJsonDecoder, tagIdToJsonValue, tagReferenceIndexJsonDecoder, tagReferenceIndexToJsonValue, timeJsonDecoder, timeToJsonValue, typeBodyJsonDecoder, typeBodyKernelJsonDecoder, typeBodyKernelToJsonValue, typeBodyProductMemberJsonDecoder, typeBodyProductMemberToJsonValue, typeBodySumPatternJsonDecoder, typeBodySumPatternToJsonValue, typeBodyToJsonValue, typeDefinitionJsonDecoder, typeDefinitionToJsonValue, typeErrorJsonDecoder, typeErrorToJsonValue, typeIdJsonDecoder, typeIdToJsonValue, typeJsonDecoder, typeToJsonValue, urlDataJsonDecoder, urlDataToJsonValue, userIdJsonDecoder, userIdToJsonValue, userSnapshotAndIdJsonDecoder, userSnapshotAndIdToJsonValue, userSnapshotJsonDecoder, userSnapshotMaybeAndIdJsonDecoder, userSnapshotMaybeAndIdToJsonValue, userSnapshotToJsonValue)
 
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp
@@ -50,38 +50,46 @@ type Language
 type Location
     = LocationHome
     | LocationCreateProject
+    | LocationCreateIdea ProjectId
     | LocationUser UserId
     | LocationProject ProjectId
+    | LocationIdea IdeaId
 
 
-{-| ユーザーが公開している情報
+{-| ユーザーのデータのスナップショット
 -}
-type alias User =
-    { name : String, imageHash : FileHash, introduction : String, createdAt : Time, likedProjectIdList : List ProjectId, developedProjectIdList : List ProjectId, commentedIdeaIdList : List IdeaId }
+type alias UserSnapshot =
+    { name : String, imageHash : FileHash, introduction : String, createTime : Time, likeProjectIdList : List ProjectId, developProjectIdList : List ProjectId, commentIdeaIdList : List IdeaId, getTime : Time }
 
 
 {-| 最初に自分の情報を得るときに返ってくるデータ
 -}
-type alias UserAndUserId =
-    { userId : UserId, user : User }
+type alias UserSnapshotAndId =
+    { id : UserId, snapshot : UserSnapshot }
 
 
 {-| プロジェクト
 -}
-type alias Project =
-    { name : String, icon : FileHash, image : FileHash, createdAt : Time, createdBy : UserId }
+type alias ProjectSnapshot =
+    { name : String, iconHash : FileHash, imageHash : FileHash, createTime : Time, createUser : UserId, updateTime : Time, getTime : Time }
 
 
 {-| プロジェクトを作成したときに返ってくるデータ
 -}
-type alias ProjectAndProjectId =
-    { projectId : ProjectId, project : Project }
+type alias ProjectSnapshotAndId =
+    { id : ProjectId, snapshot : ProjectSnapshot }
 
 
 {-| アイデア
 -}
 type alias Idea =
-    { name : String, createdBy : UserId, description : String, createdAt : Time, itemList : List IdeaItem }
+    { name : String, createUser : UserId, createTime : Time, projectId : ProjectId, itemList : List IdeaItem, updateTime : Time, getTime : Time }
+
+
+{-| アイデアとそのID. アイデア作成時に返ってくる
+-}
+type alias IdeaSnapshotAndId =
+    { id : IdeaId, snapshot : Idea }
 
 
 {-| アイデアのコメント
@@ -275,48 +283,42 @@ type AccessTokenError
     | AccessTokenErrorProjectNameIsInvalid
 
 
-{-| indexDBに格納したりする取得日時も含めたProject
+{-| Maybe プロジェクトのスナップショット と projectId. indexedDBからElmに渡す用
 -}
-type alias ProjectCache =
-    { project : Project, respondTime : Time }
+type alias ProjectSnapshotMaybeAndId =
+    { id : ProjectId, snapshot : Maybe ProjectSnapshot }
 
 
-{-| indexDBに格納したりする取得日も含めたUser
+{-| Maybe プロジェクトのスナップショット と userId. indexedDBからElmに渡す用
 -}
-type alias UserCache =
-    { user : User, respondTime : Time }
+type alias UserSnapshotMaybeAndId =
+    { id : UserId, snapshot : Maybe UserSnapshot }
 
 
-{-| プロジェクトのキャッシュデータとID. indexedDBからElmに渡す用
+{-| Maybe アイデア と ideaId. indexedDBからElmに渡す用
 -}
-type alias ProjectCacheWithId =
-    { projectCache : Maybe ProjectCache, projectId : ProjectId }
-
-
-{-| ユーザーのキャッシュデータとID. indexedDBからElmに渡す用
--}
-type alias UserCacheWithId =
-    { userCache : Maybe UserCache, userId : UserId }
+type alias IdeaSnapshotMaybeAndId =
+    { id : IdeaId, snapshot : Maybe Idea }
 
 
 type AccessToken
     = AccessToken String
 
 
-type UserId
-    = UserId String
-
-
 type ProjectId
     = ProjectId String
 
 
-type FileHash
-    = FileHash String
+type UserId
+    = UserId String
 
 
 type IdeaId
     = IdeaId String
+
+
+type FileHash
+    = FileHash String
 
 
 type PartId
@@ -364,23 +366,23 @@ accessTokenToJsonValue (AccessToken string) =
     Je.string string
 
 
-userIdToJsonValue : UserId -> Je.Value
-userIdToJsonValue (UserId string) =
-    Je.string string
-
-
 projectIdToJsonValue : ProjectId -> Je.Value
 projectIdToJsonValue (ProjectId string) =
     Je.string string
 
 
-fileHashToJsonValue : FileHash -> Je.Value
-fileHashToJsonValue (FileHash string) =
+userIdToJsonValue : UserId -> Je.Value
+userIdToJsonValue (UserId string) =
     Je.string string
 
 
 ideaIdToJsonValue : IdeaId -> Je.Value
 ideaIdToJsonValue (IdeaId string) =
+    Je.string string
+
+
+fileHashToJsonValue : FileHash -> Je.Value
+fileHashToJsonValue (FileHash string) =
     Je.string string
 
 
@@ -491,58 +493,67 @@ locationToJsonValue location =
         LocationCreateProject ->
             Je.object [ ( "_", Je.string "CreateProject" ) ]
 
+        LocationCreateIdea parameter ->
+            Je.object [ ( "_", Je.string "CreateIdea" ), ( "projectId", projectIdToJsonValue parameter ) ]
+
         LocationUser parameter ->
             Je.object [ ( "_", Je.string "User" ), ( "userId", userIdToJsonValue parameter ) ]
 
         LocationProject parameter ->
             Je.object [ ( "_", Je.string "Project" ), ( "projectId", projectIdToJsonValue parameter ) ]
 
+        LocationIdea parameter ->
+            Je.object [ ( "_", Je.string "Idea" ), ( "ideaId", ideaIdToJsonValue parameter ) ]
 
-{-| UserのJSONへのエンコーダ
+
+{-| UserSnapshotのJSONへのエンコーダ
 -}
-userToJsonValue : User -> Je.Value
-userToJsonValue user =
+userSnapshotToJsonValue : UserSnapshot -> Je.Value
+userSnapshotToJsonValue userSnapshot =
     Je.object
-        [ ( "name", Je.string user.name )
-        , ( "imageHash", fileHashToJsonValue user.imageHash )
-        , ( "introduction", Je.string user.introduction )
-        , ( "createdAt", timeToJsonValue user.createdAt )
-        , ( "likedProjectIdList", Je.list projectIdToJsonValue user.likedProjectIdList )
-        , ( "developedProjectIdList", Je.list projectIdToJsonValue user.developedProjectIdList )
-        , ( "commentedIdeaIdList", Je.list ideaIdToJsonValue user.commentedIdeaIdList )
+        [ ( "name", Je.string userSnapshot.name )
+        , ( "imageHash", fileHashToJsonValue userSnapshot.imageHash )
+        , ( "introduction", Je.string userSnapshot.introduction )
+        , ( "createTime", timeToJsonValue userSnapshot.createTime )
+        , ( "likeProjectIdList", Je.list projectIdToJsonValue userSnapshot.likeProjectIdList )
+        , ( "developProjectIdList", Je.list projectIdToJsonValue userSnapshot.developProjectIdList )
+        , ( "commentIdeaIdList", Je.list ideaIdToJsonValue userSnapshot.commentIdeaIdList )
+        , ( "getTime", timeToJsonValue userSnapshot.getTime )
         ]
 
 
-{-| UserAndUserIdのJSONへのエンコーダ
+{-| UserSnapshotAndIdのJSONへのエンコーダ
 -}
-userAndUserIdToJsonValue : UserAndUserId -> Je.Value
-userAndUserIdToJsonValue userAndUserId =
+userSnapshotAndIdToJsonValue : UserSnapshotAndId -> Je.Value
+userSnapshotAndIdToJsonValue userSnapshotAndId =
     Je.object
-        [ ( "userId", userIdToJsonValue userAndUserId.userId )
-        , ( "user", userToJsonValue userAndUserId.user )
+        [ ( "id", userIdToJsonValue userSnapshotAndId.id )
+        , ( "snapshot", userSnapshotToJsonValue userSnapshotAndId.snapshot )
         ]
 
 
-{-| ProjectのJSONへのエンコーダ
+{-| ProjectSnapshotのJSONへのエンコーダ
 -}
-projectToJsonValue : Project -> Je.Value
-projectToJsonValue project =
+projectSnapshotToJsonValue : ProjectSnapshot -> Je.Value
+projectSnapshotToJsonValue projectSnapshot =
     Je.object
-        [ ( "name", Je.string project.name )
-        , ( "icon", fileHashToJsonValue project.icon )
-        , ( "image", fileHashToJsonValue project.image )
-        , ( "createdAt", timeToJsonValue project.createdAt )
-        , ( "createdBy", userIdToJsonValue project.createdBy )
+        [ ( "name", Je.string projectSnapshot.name )
+        , ( "iconHash", fileHashToJsonValue projectSnapshot.iconHash )
+        , ( "imageHash", fileHashToJsonValue projectSnapshot.imageHash )
+        , ( "createTime", timeToJsonValue projectSnapshot.createTime )
+        , ( "createUser", userIdToJsonValue projectSnapshot.createUser )
+        , ( "updateTime", timeToJsonValue projectSnapshot.updateTime )
+        , ( "getTime", timeToJsonValue projectSnapshot.getTime )
         ]
 
 
-{-| ProjectAndProjectIdのJSONへのエンコーダ
+{-| ProjectSnapshotAndIdのJSONへのエンコーダ
 -}
-projectAndProjectIdToJsonValue : ProjectAndProjectId -> Je.Value
-projectAndProjectIdToJsonValue projectAndProjectId =
+projectSnapshotAndIdToJsonValue : ProjectSnapshotAndId -> Je.Value
+projectSnapshotAndIdToJsonValue projectSnapshotAndId =
     Je.object
-        [ ( "projectId", projectIdToJsonValue projectAndProjectId.projectId )
-        , ( "project", projectToJsonValue projectAndProjectId.project )
+        [ ( "id", projectIdToJsonValue projectSnapshotAndId.id )
+        , ( "snapshot", projectSnapshotToJsonValue projectSnapshotAndId.snapshot )
         ]
 
 
@@ -552,10 +563,22 @@ ideaToJsonValue : Idea -> Je.Value
 ideaToJsonValue idea =
     Je.object
         [ ( "name", Je.string idea.name )
-        , ( "createdBy", userIdToJsonValue idea.createdBy )
-        , ( "description", Je.string idea.description )
-        , ( "createdAt", timeToJsonValue idea.createdAt )
+        , ( "createUser", userIdToJsonValue idea.createUser )
+        , ( "createTime", timeToJsonValue idea.createTime )
+        , ( "projectId", projectIdToJsonValue idea.projectId )
         , ( "itemList", Je.list ideaItemToJsonValue idea.itemList )
+        , ( "updateTime", timeToJsonValue idea.updateTime )
+        , ( "getTime", timeToJsonValue idea.getTime )
+        ]
+
+
+{-| IdeaSnapshotAndIdのJSONへのエンコーダ
+-}
+ideaSnapshotAndIdToJsonValue : IdeaSnapshotAndId -> Je.Value
+ideaSnapshotAndIdToJsonValue ideaSnapshotAndId =
+    Je.object
+        [ ( "id", ideaIdToJsonValue ideaSnapshotAndId.id )
+        , ( "snapshot", ideaToJsonValue ideaSnapshotAndId.snapshot )
         ]
 
 
@@ -918,43 +941,33 @@ accessTokenErrorToJsonValue accessTokenError =
             Je.string "ProjectNameIsInvalid"
 
 
-{-| ProjectCacheのJSONへのエンコーダ
+{-| ProjectSnapshotMaybeAndIdのJSONへのエンコーダ
 -}
-projectCacheToJsonValue : ProjectCache -> Je.Value
-projectCacheToJsonValue projectCache =
+projectSnapshotMaybeAndIdToJsonValue : ProjectSnapshotMaybeAndId -> Je.Value
+projectSnapshotMaybeAndIdToJsonValue projectSnapshotMaybeAndId =
     Je.object
-        [ ( "project", projectToJsonValue projectCache.project )
-        , ( "respondTime", timeToJsonValue projectCache.respondTime )
+        [ ( "id", projectIdToJsonValue projectSnapshotMaybeAndId.id )
+        , ( "snapshot", maybeToJsonValue projectSnapshotToJsonValue projectSnapshotMaybeAndId.snapshot )
         ]
 
 
-{-| UserCacheのJSONへのエンコーダ
+{-| UserSnapshotMaybeAndIdのJSONへのエンコーダ
 -}
-userCacheToJsonValue : UserCache -> Je.Value
-userCacheToJsonValue userCache =
+userSnapshotMaybeAndIdToJsonValue : UserSnapshotMaybeAndId -> Je.Value
+userSnapshotMaybeAndIdToJsonValue userSnapshotMaybeAndId =
     Je.object
-        [ ( "user", userToJsonValue userCache.user )
-        , ( "respondTime", timeToJsonValue userCache.respondTime )
+        [ ( "id", userIdToJsonValue userSnapshotMaybeAndId.id )
+        , ( "snapshot", maybeToJsonValue userSnapshotToJsonValue userSnapshotMaybeAndId.snapshot )
         ]
 
 
-{-| ProjectCacheWithIdのJSONへのエンコーダ
+{-| IdeaSnapshotMaybeAndIdのJSONへのエンコーダ
 -}
-projectCacheWithIdToJsonValue : ProjectCacheWithId -> Je.Value
-projectCacheWithIdToJsonValue projectCacheWithId =
+ideaSnapshotMaybeAndIdToJsonValue : IdeaSnapshotMaybeAndId -> Je.Value
+ideaSnapshotMaybeAndIdToJsonValue ideaSnapshotMaybeAndId =
     Je.object
-        [ ( "projectCache", maybeToJsonValue projectCacheToJsonValue projectCacheWithId.projectCache )
-        , ( "projectId", projectIdToJsonValue projectCacheWithId.projectId )
-        ]
-
-
-{-| UserCacheWithIdのJSONへのエンコーダ
--}
-userCacheWithIdToJsonValue : UserCacheWithId -> Je.Value
-userCacheWithIdToJsonValue userCacheWithId =
-    Je.object
-        [ ( "userCache", maybeToJsonValue userCacheToJsonValue userCacheWithId.userCache )
-        , ( "userId", userIdToJsonValue userCacheWithId.userId )
+        [ ( "id", ideaIdToJsonValue ideaSnapshotMaybeAndId.id )
+        , ( "snapshot", maybeToJsonValue ideaToJsonValue ideaSnapshotMaybeAndId.snapshot )
         ]
 
 
@@ -997,24 +1010,24 @@ accessTokenJsonDecoder =
     Jd.map AccessToken Jd.string
 
 
-userIdJsonDecoder : Jd.Decoder UserId
-userIdJsonDecoder =
-    Jd.map UserId Jd.string
-
-
 projectIdJsonDecoder : Jd.Decoder ProjectId
 projectIdJsonDecoder =
     Jd.map ProjectId Jd.string
 
 
-fileHashJsonDecoder : Jd.Decoder FileHash
-fileHashJsonDecoder =
-    Jd.map FileHash Jd.string
+userIdJsonDecoder : Jd.Decoder UserId
+userIdJsonDecoder =
+    Jd.map UserId Jd.string
 
 
 ideaIdJsonDecoder : Jd.Decoder IdeaId
 ideaIdJsonDecoder =
     Jd.map IdeaId Jd.string
+
+
+fileHashJsonDecoder : Jd.Decoder FileHash
+fileHashJsonDecoder =
+    Jd.map FileHash Jd.string
 
 
 partIdJsonDecoder : Jd.Decoder PartId
@@ -1162,87 +1175,99 @@ locationJsonDecoder =
                     "CreateProject" ->
                         Jd.succeed LocationCreateProject
 
+                    "CreateIdea" ->
+                        Jd.field "projectId" projectIdJsonDecoder |> Jd.map LocationCreateIdea
+
                     "User" ->
                         Jd.field "userId" userIdJsonDecoder |> Jd.map LocationUser
 
                     "Project" ->
                         Jd.field "projectId" projectIdJsonDecoder |> Jd.map LocationProject
 
+                    "Idea" ->
+                        Jd.field "ideaId" ideaIdJsonDecoder |> Jd.map LocationIdea
+
                     _ ->
                         Jd.fail ("Locationで不明なタグを受けたとった tag=" ++ tag)
             )
 
 
-{-| UserのJSON Decoder
+{-| UserSnapshotのJSON Decoder
 -}
-userJsonDecoder : Jd.Decoder User
-userJsonDecoder =
+userSnapshotJsonDecoder : Jd.Decoder UserSnapshot
+userSnapshotJsonDecoder =
     Jd.succeed
-        (\name imageHash introduction createdAt likedProjectIdList developedProjectIdList commentedIdeaIdList ->
+        (\name imageHash introduction createTime likeProjectIdList developProjectIdList commentIdeaIdList getTime ->
             { name = name
             , imageHash = imageHash
             , introduction = introduction
-            , createdAt = createdAt
-            , likedProjectIdList = likedProjectIdList
-            , developedProjectIdList = developedProjectIdList
-            , commentedIdeaIdList = commentedIdeaIdList
+            , createTime = createTime
+            , likeProjectIdList = likeProjectIdList
+            , developProjectIdList = developProjectIdList
+            , commentIdeaIdList = commentIdeaIdList
+            , getTime = getTime
             }
         )
         |> Jdp.required "name" Jd.string
         |> Jdp.required "imageHash" fileHashJsonDecoder
         |> Jdp.required "introduction" Jd.string
-        |> Jdp.required "createdAt" timeJsonDecoder
-        |> Jdp.required "likedProjectIdList" (Jd.list projectIdJsonDecoder)
-        |> Jdp.required "developedProjectIdList" (Jd.list projectIdJsonDecoder)
-        |> Jdp.required "commentedIdeaIdList" (Jd.list ideaIdJsonDecoder)
+        |> Jdp.required "createTime" timeJsonDecoder
+        |> Jdp.required "likeProjectIdList" (Jd.list projectIdJsonDecoder)
+        |> Jdp.required "developProjectIdList" (Jd.list projectIdJsonDecoder)
+        |> Jdp.required "commentIdeaIdList" (Jd.list ideaIdJsonDecoder)
+        |> Jdp.required "getTime" timeJsonDecoder
 
 
-{-| UserAndUserIdのJSON Decoder
+{-| UserSnapshotAndIdのJSON Decoder
 -}
-userAndUserIdJsonDecoder : Jd.Decoder UserAndUserId
-userAndUserIdJsonDecoder =
+userSnapshotAndIdJsonDecoder : Jd.Decoder UserSnapshotAndId
+userSnapshotAndIdJsonDecoder =
     Jd.succeed
-        (\userId user ->
-            { userId = userId
-            , user = user
+        (\id snapshot ->
+            { id = id
+            , snapshot = snapshot
             }
         )
-        |> Jdp.required "userId" userIdJsonDecoder
-        |> Jdp.required "user" userJsonDecoder
+        |> Jdp.required "id" userIdJsonDecoder
+        |> Jdp.required "snapshot" userSnapshotJsonDecoder
 
 
-{-| ProjectのJSON Decoder
+{-| ProjectSnapshotのJSON Decoder
 -}
-projectJsonDecoder : Jd.Decoder Project
-projectJsonDecoder =
+projectSnapshotJsonDecoder : Jd.Decoder ProjectSnapshot
+projectSnapshotJsonDecoder =
     Jd.succeed
-        (\name icon image createdAt createdBy ->
+        (\name iconHash imageHash createTime createUser updateTime getTime ->
             { name = name
-            , icon = icon
-            , image = image
-            , createdAt = createdAt
-            , createdBy = createdBy
+            , iconHash = iconHash
+            , imageHash = imageHash
+            , createTime = createTime
+            , createUser = createUser
+            , updateTime = updateTime
+            , getTime = getTime
             }
         )
         |> Jdp.required "name" Jd.string
-        |> Jdp.required "icon" fileHashJsonDecoder
-        |> Jdp.required "image" fileHashJsonDecoder
-        |> Jdp.required "createdAt" timeJsonDecoder
-        |> Jdp.required "createdBy" userIdJsonDecoder
+        |> Jdp.required "iconHash" fileHashJsonDecoder
+        |> Jdp.required "imageHash" fileHashJsonDecoder
+        |> Jdp.required "createTime" timeJsonDecoder
+        |> Jdp.required "createUser" userIdJsonDecoder
+        |> Jdp.required "updateTime" timeJsonDecoder
+        |> Jdp.required "getTime" timeJsonDecoder
 
 
-{-| ProjectAndProjectIdのJSON Decoder
+{-| ProjectSnapshotAndIdのJSON Decoder
 -}
-projectAndProjectIdJsonDecoder : Jd.Decoder ProjectAndProjectId
-projectAndProjectIdJsonDecoder =
+projectSnapshotAndIdJsonDecoder : Jd.Decoder ProjectSnapshotAndId
+projectSnapshotAndIdJsonDecoder =
     Jd.succeed
-        (\projectId project ->
-            { projectId = projectId
-            , project = project
+        (\id snapshot ->
+            { id = id
+            , snapshot = snapshot
             }
         )
-        |> Jdp.required "projectId" projectIdJsonDecoder
-        |> Jdp.required "project" projectJsonDecoder
+        |> Jdp.required "id" projectIdJsonDecoder
+        |> Jdp.required "snapshot" projectSnapshotJsonDecoder
 
 
 {-| IdeaのJSON Decoder
@@ -1250,19 +1275,37 @@ projectAndProjectIdJsonDecoder =
 ideaJsonDecoder : Jd.Decoder Idea
 ideaJsonDecoder =
     Jd.succeed
-        (\name createdBy description createdAt itemList ->
+        (\name createUser createTime projectId itemList updateTime getTime ->
             { name = name
-            , createdBy = createdBy
-            , description = description
-            , createdAt = createdAt
+            , createUser = createUser
+            , createTime = createTime
+            , projectId = projectId
             , itemList = itemList
+            , updateTime = updateTime
+            , getTime = getTime
             }
         )
         |> Jdp.required "name" Jd.string
-        |> Jdp.required "createdBy" userIdJsonDecoder
-        |> Jdp.required "description" Jd.string
-        |> Jdp.required "createdAt" timeJsonDecoder
+        |> Jdp.required "createUser" userIdJsonDecoder
+        |> Jdp.required "createTime" timeJsonDecoder
+        |> Jdp.required "projectId" projectIdJsonDecoder
         |> Jdp.required "itemList" (Jd.list ideaItemJsonDecoder)
+        |> Jdp.required "updateTime" timeJsonDecoder
+        |> Jdp.required "getTime" timeJsonDecoder
+
+
+{-| IdeaSnapshotAndIdのJSON Decoder
+-}
+ideaSnapshotAndIdJsonDecoder : Jd.Decoder IdeaSnapshotAndId
+ideaSnapshotAndIdJsonDecoder =
+    Jd.succeed
+        (\id snapshot ->
+            { id = id
+            , snapshot = snapshot
+            }
+        )
+        |> Jdp.required "id" ideaIdJsonDecoder
+        |> Jdp.required "snapshot" ideaJsonDecoder
 
 
 {-| IdeaItemのJSON Decoder
@@ -1781,57 +1824,43 @@ accessTokenErrorJsonDecoder =
             )
 
 
-{-| ProjectCacheのJSON Decoder
+{-| ProjectSnapshotMaybeAndIdのJSON Decoder
 -}
-projectCacheJsonDecoder : Jd.Decoder ProjectCache
-projectCacheJsonDecoder =
+projectSnapshotMaybeAndIdJsonDecoder : Jd.Decoder ProjectSnapshotMaybeAndId
+projectSnapshotMaybeAndIdJsonDecoder =
     Jd.succeed
-        (\project respondTime ->
-            { project = project
-            , respondTime = respondTime
+        (\id snapshot ->
+            { id = id
+            , snapshot = snapshot
             }
         )
-        |> Jdp.required "project" projectJsonDecoder
-        |> Jdp.required "respondTime" timeJsonDecoder
+        |> Jdp.required "id" projectIdJsonDecoder
+        |> Jdp.required "snapshot" (maybeJsonDecoder projectSnapshotJsonDecoder)
 
 
-{-| UserCacheのJSON Decoder
+{-| UserSnapshotMaybeAndIdのJSON Decoder
 -}
-userCacheJsonDecoder : Jd.Decoder UserCache
-userCacheJsonDecoder =
+userSnapshotMaybeAndIdJsonDecoder : Jd.Decoder UserSnapshotMaybeAndId
+userSnapshotMaybeAndIdJsonDecoder =
     Jd.succeed
-        (\user respondTime ->
-            { user = user
-            , respondTime = respondTime
+        (\id snapshot ->
+            { id = id
+            , snapshot = snapshot
             }
         )
-        |> Jdp.required "user" userJsonDecoder
-        |> Jdp.required "respondTime" timeJsonDecoder
+        |> Jdp.required "id" userIdJsonDecoder
+        |> Jdp.required "snapshot" (maybeJsonDecoder userSnapshotJsonDecoder)
 
 
-{-| ProjectCacheWithIdのJSON Decoder
+{-| IdeaSnapshotMaybeAndIdのJSON Decoder
 -}
-projectCacheWithIdJsonDecoder : Jd.Decoder ProjectCacheWithId
-projectCacheWithIdJsonDecoder =
+ideaSnapshotMaybeAndIdJsonDecoder : Jd.Decoder IdeaSnapshotMaybeAndId
+ideaSnapshotMaybeAndIdJsonDecoder =
     Jd.succeed
-        (\projectCache projectId ->
-            { projectCache = projectCache
-            , projectId = projectId
+        (\id snapshot ->
+            { id = id
+            , snapshot = snapshot
             }
         )
-        |> Jdp.required "projectCache" (maybeJsonDecoder projectCacheJsonDecoder)
-        |> Jdp.required "projectId" projectIdJsonDecoder
-
-
-{-| UserCacheWithIdのJSON Decoder
--}
-userCacheWithIdJsonDecoder : Jd.Decoder UserCacheWithId
-userCacheWithIdJsonDecoder =
-    Jd.succeed
-        (\userCache userId ->
-            { userCache = userCache
-            , userId = userId
-            }
-        )
-        |> Jdp.required "userCache" (maybeJsonDecoder userCacheJsonDecoder)
-        |> Jdp.required "userId" userIdJsonDecoder
+        |> Jdp.required "id" ideaIdJsonDecoder
+        |> Jdp.required "snapshot" (maybeJsonDecoder ideaJsonDecoder)

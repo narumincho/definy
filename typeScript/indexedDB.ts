@@ -1,20 +1,10 @@
-import { data } from "definy-common";
+import { data, util } from "definy-common";
 
 const accessTokenObjectStoreName = "accessToken";
 const accessTokenKeyName = "lastLogInUser";
 const userObjectStoreName = "user";
 const projectObjectStoreName = "project";
 const fileObjectStoreName = "file";
-
-type UserData = {
-  value: data.User;
-  respondAt: Date;
-};
-
-type ProjectData = {
-  value: data.Project;
-  respondAt: Date;
-};
 
 /**
  * ブラウザでindexDBがサポートされているかどうか調べる
@@ -115,7 +105,7 @@ export const setAccessToken = (
 export const getUser = (
   database: IDBDatabase | null,
   userId: data.UserId
-): Promise<undefined | UserData> =>
+): Promise<undefined | data.UserSnapshot> =>
   new Promise((resolve, reject) => {
     if (database === null) {
       resolve();
@@ -123,15 +113,11 @@ export const getUser = (
     }
     const transaction = database.transaction([userObjectStoreName], "readonly");
 
-    const getRequest: IDBRequest<UserData> = transaction
-      .objectStore(userObjectStoreName)
-      .get(userId);
+    const getRequest: IDBRequest<
+      undefined | data.UserSnapshot
+    > = transaction.objectStore(userObjectStoreName).get(userId);
     transaction.oncomplete = (): void => {
-      resolve(
-        getRequest.result.respondAt.getTime() + 1000 * 30 < new Date().getTime()
-          ? getRequest.result
-          : undefined
-      );
+      resolve(getRequest.result);
     };
 
     transaction.onerror = (): void => {
@@ -140,31 +126,66 @@ export const getUser = (
   });
 
 /**
- * ユーザーのデータをindexedDBに書く
+ * 指定したユーザーIDのスナップショットがなかった場合, 指定したユーザースナップショットをindexedDBに書く
+ * 前にあったユーザースナップショットのgetTimeより新しかった場合, 指定したユーザースナップショットをindexedDBに書く
+ * そうでなければ何もしない
  */
 export const setUser = (
   database: IDBDatabase | null,
   userId: data.UserId,
-  userData: UserData
+  userSnapshot: data.UserSnapshot
 ): Promise<void> =>
   new Promise((resolve, reject) => {
     if (database === null) {
       resolve();
       return;
     }
+    const getTransaction = database.transaction(
+      [userObjectStoreName],
+      "readonly"
+    );
+    getTransaction.oncomplete = (): void => {
+      if (getRequest.result === undefined) {
+        setUserLow(database, userId, userSnapshot).then(resolve);
+        return;
+      }
+      if (
+        util.timeToDate(getRequest.result.getTime).getTime() <
+        util.timeToDate(userSnapshot.getTime).getTime()
+      ) {
+        setUserLow(database, userId, userSnapshot).then(resolve);
+        return;
+      }
+      resolve();
+    };
+    getTransaction.onerror = (): void => {
+      reject("write user error: get transaction failed");
+    };
+    const getRequest: IDBRequest<
+      undefined | data.UserSnapshot
+    > = getTransaction.objectStore(userObjectStoreName).get(userId);
+  });
+
+/**
+ * ユーザーのスナップショットを書き込む
+ */
+const setUserLow = (
+  database: IDBDatabase,
+  userId: data.UserId,
+  userSnapshot: data.UserSnapshot
+): Promise<void> =>
+  new Promise((resolve, reject) => {
     const transaction = database.transaction(
       [userObjectStoreName],
       "readwrite"
     );
-
     transaction.oncomplete = (): void => {
       resolve();
     };
     transaction.onerror = (): void => {
-      reject("write user error: transaction failed");
+      reject("write user error: write transaction failed");
     };
-
-    transaction.objectStore(userObjectStoreName).put(userData, userId);
+    transaction.objectStore(userObjectStoreName).put(userSnapshot, userId);
   });
 
 /**
@@ -173,7 +194,7 @@ export const setUser = (
 export const getProject = (
   database: IDBDatabase | null,
   projectId: data.ProjectId
-): Promise<undefined | ProjectData> =>
+): Promise<undefined | data.ProjectSnapshot> =>
   new Promise((resolve, reject) => {
     if (database === null) {
       resolve(undefined);
@@ -184,7 +205,7 @@ export const getProject = (
       "readonly"
     );
     const getRequest: IDBRequest<
-      ProjectData | undefined
+      undefined | data.ProjectSnapshot
     > = transaction.objectStore(projectObjectStoreName).get(projectId);
 
     transaction.oncomplete = (): void => {
@@ -195,13 +216,19 @@ export const getProject = (
       reject("read project failed");
     };
   });
+
+/**
+ * 指定したプロジェクトIDのプロジェクトスナップショットがなかった場合, 指定したプロジェクトスナップショットをindexedDBに書く
+ * 前にあったプロジェクトスナップショットのgetTimeより新しかった場合, 指定したプロジェクトスナップショットをindexedDBに書く
+ * そうでなければ何もしない
+ */
 /**
  * プロジェクトのデータをindexedDBに書く
  */
 export const setProject = (
   database: IDBDatabase | null,
   projectId: data.ProjectId,
-  projectData: ProjectData
+  projectSnapshot: data.ProjectSnapshot
 ): Promise<void> =>
   new Promise((resolve, reject) => {
     if (database === null) {
@@ -211,10 +238,21 @@ export const setProject = (
 
     const transaction = database.transaction(
       [projectObjectStoreName],
-      "readwrite"
+      "readonly"
     );
 
     transaction.oncomplete = (): void => {
+      if (getRequest.result === undefined) {
+        setProjectLow(database, projectId, projectSnapshot).then(resolve);
+        return;
+      }
+      if (
+        util.timeToDate(getRequest.result.getTime).getTime() <
+        util.timeToDate(projectSnapshot.getTime).getTime()
+      ) {
+        setProjectLow(database, projectId, projectSnapshot).then(resolve);
+        return;
+      }
       resolve();
     };
 
@@ -222,7 +260,33 @@ export const setProject = (
       reject("set project failed");
     };
 
-    transaction.objectStore(projectObjectStoreName).put(projectData, projectId);
+    const getRequest: IDBRequest<
+      undefined | data.ProjectSnapshot
+    > = transaction.objectStore(projectObjectStoreName).get(projectId);
+  });
+
+/**
+ * プロジェクトのスナップショットを書き込む
+ */
+const setProjectLow = (
+  database: IDBDatabase,
+  projectId: data.ProjectId,
+  projectSnapshot: data.ProjectSnapshot
+): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const transaction = database.transaction(
+      [projectObjectStoreName],
+      "readwrite"
+    );
+    transaction.oncomplete = (): void => {
+      resolve();
+    };
+    transaction.onerror = (): void => {
+      reject("write project error: write transaction failed");
+    };
+    transaction
+      .objectStore(projectObjectStoreName)
+      .put(projectSnapshot, projectId);
   });
 
 /**

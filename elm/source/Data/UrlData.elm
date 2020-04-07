@@ -29,11 +29,17 @@ locationToString location =
         Data.LocationCreateProject ->
             "/create-project"
 
+        Data.LocationCreateIdea (Data.ProjectId projectId) ->
+            "/project/" ++ projectId ++ "/create-idea"
+
         Data.LocationUser (Data.UserId userId) ->
             "/user/" ++ userId
 
         Data.LocationProject (Data.ProjectId projectId) ->
             "/project/" ++ projectId
+
+        Data.LocationIdea (Data.IdeaId ideaId) ->
+            "/idea/" ++ ideaId
 
 
 languageToQueryString : Data.Language -> String

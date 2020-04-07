@@ -9,6 +9,5 @@ type LogInState
     | VerifyingAccessToken Data.AccessToken
     | Ok
         { accessToken : Data.AccessToken
-        , userId : Data.UserId
-        , user : Data.User
+        , userSnapshotAndId : Data.UserSnapshotAndId
         }

@@ -34,7 +34,7 @@ type Ports = {
   readonly getProjectForceNotUseCache: SubForElmCmd<data.ProjectId>;
 
   readonly responseUserByAccessToken: CmdForElmSub<
-    data.Maybe<data.UserAndUserId>
+    data.Maybe<data.UserSnapshotAndId>
   >;
   readonly keyPressed: CmdForElmSub<KeyboardEvent>;
   readonly keyPrevented: CmdForElmSub<null>;
@@ -54,11 +54,11 @@ type Ports = {
     result: string | null;
   }>;
   readonly createProjectResponse: CmdForElmSub<
-    data.Maybe<data.ProjectAndProjectId>
+    data.Maybe<data.ProjectSnapshotAndId>
   >;
   readonly responseAllProjectId: CmdForElmSub<ReadonlyArray<data.ProjectId>>;
-  readonly responseProject: CmdForElmSub<data.ProjectCacheWithId>;
-  readonly responseUser: CmdForElmSub<data.UserCacheWithId>;
+  readonly responseProject: CmdForElmSub<data.ProjectSnapshotMaybeAndId>;
+  readonly responseUser: CmdForElmSub<data.UserSnapshotMaybeAndId>;
 };
 
 type SubForElmCmd<T> = {

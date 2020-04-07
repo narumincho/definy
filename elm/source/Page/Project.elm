@@ -9,11 +9,11 @@ import Ui
 
 type Model
     = Loading Data.ProjectId
-    | Loaded Data.ProjectCacheWithId
+    | Loaded Data.ProjectSnapshotMaybeAndId
 
 
 type Message
-    = ProjectResponse Data.ProjectCacheWithId
+    = ProjectResponse Data.ProjectSnapshotMaybeAndId
 
 
 init : Data.ProjectId -> ( Model, Command.Command )
@@ -30,20 +30,20 @@ getProjectId model =
             projectId
 
         Loaded projectCacheWithId ->
-            projectCacheWithId.projectId
+            projectCacheWithId.id
 
 
 update : Message -> Model -> ( Model, Command.Command )
 update message model =
     case ( message, model ) of
         ( ProjectResponse projectCacheWithId, Loading projectId ) ->
-            if projectCacheWithId.projectId == projectId then
+            if projectCacheWithId.id == projectId then
                 ( Loaded projectCacheWithId
-                , case projectCacheWithId.projectCache of
+                , case projectCacheWithId.snapshot of
                     Just projectCache ->
                         Command.Batch
-                            [ Command.GetBlobUrl projectCache.project.image
-                            , Command.GetBlobUrl projectCache.project.icon
+                            [ Command.GetBlobUrl projectCache.imageHash
+                            , Command.GetBlobUrl projectCache.iconHash
                             ]
 
                     Nothing ->
@@ -64,12 +64,15 @@ view imageStore model =
             loadingView projectId
 
         Loaded projectCacheWithId ->
-            case projectCacheWithId.projectCache of
+            case projectCacheWithId.snapshot of
                 Just projectCache ->
-                    normalView imageStore projectCacheWithId.projectId projectCache
+                    normalView imageStore
+                        { id = projectCacheWithId.id
+                        , snapshot = projectCache
+                        }
 
                 Nothing ->
-                    notFoundView projectCacheWithId.projectId
+                    notFoundView projectCacheWithId.id
 
 
 loadingView : Data.ProjectId -> Ui.Panel message
@@ -78,21 +81,25 @@ loadingView (Data.ProjectId projectIdAsString) =
         ("projectId = " ++ projectIdAsString ++ "のプロジェクトを読込中")
 
 
-normalView : ImageStore.ImageStore -> Data.ProjectId -> Data.ProjectCache -> Ui.Panel Message
-normalView imageStore (Data.ProjectId projectIdAsString) projectCache =
+normalView : ImageStore.ImageStore -> Data.ProjectSnapshotAndId -> Ui.Panel Message
+normalView imageStore projectSnapshotAndId =
+    let
+        (Data.ProjectId projectIdAsString) =
+            projectSnapshotAndId.id
+    in
     Ui.column
         [ Ui.gap 8 ]
         [ Component.Style.stretchText 12 projectIdAsString
         , Ui.row
             [ Ui.width Ui.stretch ]
-            [ case ImageStore.getImageBlobUrl projectCache.project.icon imageStore of
+            [ case ImageStore.getImageBlobUrl projectSnapshotAndId.snapshot.iconHash imageStore of
                 Just blobUrl ->
                     Ui.bitmapImage
                         [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
                         (Ui.BitmapImageAttributes
                             { url = blobUrl
                             , fitStyle = Ui.Contain
-                            , alternativeText = projectCache.project.name ++ "のアイコン"
+                            , alternativeText = projectSnapshotAndId.snapshot.name ++ "のアイコン"
                             , rendering = Ui.ImageRenderingPixelated
                             }
                         )
@@ -100,16 +107,16 @@ normalView imageStore (Data.ProjectId projectIdAsString) projectCache =
                 Nothing ->
                     Ui.empty
                         [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
-            , Component.Style.normalText 16 projectCache.project.name
+            , Component.Style.normalText 16 projectSnapshotAndId.snapshot.name
             ]
-        , case ImageStore.getImageBlobUrl projectCache.project.image imageStore of
+        , case ImageStore.getImageBlobUrl projectSnapshotAndId.snapshot.imageHash imageStore of
             Just blobUrl ->
                 Ui.bitmapImage
                     [ Ui.width (Ui.stretchWithMaxSize 640), Ui.height Ui.auto ]
                     (Ui.BitmapImageAttributes
                         { url = blobUrl
                         , fitStyle = Ui.Contain
-                        , alternativeText = projectCache.project.name ++ "のアイコン"
+                        , alternativeText = projectSnapshotAndId.snapshot.name ++ "のアイコン"
                         , rendering = Ui.ImageRenderingPixelated
                         }
                     )
@@ -117,7 +124,7 @@ normalView imageStore (Data.ProjectId projectIdAsString) projectCache =
             Nothing ->
                 Ui.depth
                     [ Ui.width (Ui.stretchWithMaxSize 640), Ui.height Ui.auto ]
-                    [ ( ( Ui.Center, Ui.Center ), Component.Style.normalText 16 (projectCache.project.name ++ "の画像を読込中") ) ]
+                    [ ( ( Ui.Center, Ui.Center ), Component.Style.normalText 16 (projectSnapshotAndId.snapshot.name ++ "の画像を読込中") ) ]
         , ideaListView
         ]
 

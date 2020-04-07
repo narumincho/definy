@@ -22,11 +22,11 @@ type Model
 
 
 type Event
-    = LogInSuccess Data.UserAndUserId
+    = LogInSuccess Data.UserSnapshotAndId
     | LogInFailure
     | OnLine
     | OffLine
-    | CreatedProject Data.ProjectAndProjectId
+    | CreatedProject Data.ProjectSnapshotAndId
     | CreateProjectFailed
 
 
@@ -48,12 +48,12 @@ update message (Model eventList) =
     case message of
         AddEvent (LogInSuccess userAndUserId) ->
             ( Model (LogInSuccess userAndUserId :: eventList)
-            , Command.GetBlobUrl userAndUserId.user.imageHash
+            , Command.GetBlobUrl userAndUserId.snapshot.imageHash
             )
 
         AddEvent (CreatedProject projectAndId) ->
             ( Model (CreatedProject projectAndId :: eventList)
-            , Command.GetBlobUrl projectAndId.project.image
+            , Command.GetBlobUrl projectAndId.snapshot.imageHash
             )
 
         AddEvent event ->
@@ -99,16 +99,16 @@ eventToCardStyle imageStore event =
         LogInSuccess userAndUserId ->
             CardStyle
                 { icon =
-                    ImageStore.getImageBlobUrl userAndUserId.user.imageHash imageStore
+                    ImageStore.getImageBlobUrl userAndUserId.snapshot.imageHash imageStore
                         |> Maybe.map
                             (\blobUrl ->
                                 Icon
                                     { alternativeText =
-                                        userAndUserId.user.name ++ "のプロフィール画像"
+                                        userAndUserId.snapshot.name ++ "のプロフィール画像"
                                     , url = blobUrl
                                     }
                             )
-                , text = "「" ++ userAndUserId.user.name ++ "」としてログインしました"
+                , text = "「" ++ userAndUserId.snapshot.name ++ "」としてログインしました"
                 }
 
         LogInFailure ->
@@ -132,15 +132,15 @@ eventToCardStyle imageStore event =
         CreatedProject projectAndId ->
             CardStyle
                 { icon =
-                    ImageStore.getImageBlobUrl projectAndId.project.image imageStore
+                    ImageStore.getImageBlobUrl projectAndId.snapshot.imageHash imageStore
                         |> Maybe.map
                             (\blobUrl ->
                                 Icon
-                                    { alternativeText = projectAndId.project.name ++ "のアイコン"
+                                    { alternativeText = projectAndId.snapshot.name ++ "のアイコン"
                                     , url = blobUrl
                                     }
                             )
-                , text = projectAndId.project.name ++ "を作成しました"
+                , text = projectAndId.snapshot.name ++ "を作成しました"
                 }
 
         CreateProjectFailed ->

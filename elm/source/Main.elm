@@ -17,8 +17,10 @@ import Icon
 import ImageStore
 import Json.Decode
 import Json.Encode
+import Page.CreateIdea
 import Page.CreateProject
 import Page.Home
+import Page.Idea
 import Page.Project
 import Page.User
 import Task
@@ -128,20 +130,22 @@ type Msg
     | PageMsg PageMessage
     | NotificationMessage Component.Notifications.Message
     | RequestLogInUrl Data.OpenIdConnectProvider
-    | ResponseUserDataFromAccessToken (Maybe (Maybe Data.UserAndUserId))
+    | ResponseUserDataFromAccessToken (Maybe (Maybe Data.UserSnapshotAndId))
     | ResponseGetImageBlob { blobUrl : String, fileHash : Data.FileHash }
     | UrlChange Data.UrlData
-    | CreateProjectResponse (Maybe Data.ProjectAndProjectId)
+    | CreateProjectResponse (Maybe Data.ProjectSnapshotAndId)
     | NoOperation
     | GetAllProjectResponse (List Data.ProjectId)
-    | GetProjectResponse Data.ProjectCacheWithId
+    | GetProjectResponse Data.ProjectSnapshotMaybeAndId
 
 
 type PageMessage
     = PageMessageHome Page.Home.Message
     | PageMessageCreateProject Page.CreateProject.Message
+    | PageMessageCreateIdea Page.CreateIdea.Message
     | PageMessageProject Page.Project.Message
     | PageMessageUser Page.User.Message
+    | PageMessageIdea Page.Idea.Message
 
 
 {-| 全体を表現する
@@ -178,8 +182,10 @@ type GutterType
 type PageModel
     = Home Page.Home.Model
     | CreateProject Page.CreateProject.Model
+    | CreateIdea Page.CreateIdea.Model
     | Project Page.Project.Model
     | User Page.User.Model
+    | Idea Page.Idea.Model
 
 
 type alias Flag =
@@ -282,6 +288,10 @@ pageInit location =
             Page.CreateProject.init
                 |> Tuple.mapFirst CreateProject
 
+        Data.LocationCreateIdea projectId ->
+            Page.CreateIdea.init projectId
+                |> Tuple.mapFirst CreateIdea
+
         Data.LocationUser userId ->
             Page.User.init userId
                 |> Tuple.mapFirst User
@@ -289,6 +299,10 @@ pageInit location =
         Data.LocationProject projectId ->
             Page.Project.init projectId
                 |> Tuple.mapFirst Project
+
+        Data.LocationIdea ideaId ->
+            Page.Idea.init ideaId
+                |> Tuple.mapFirst Idea
 
 
 
@@ -339,29 +353,13 @@ update msg (Model rec) =
             )
 
         PageMsg pageMsg ->
-            case ( rec.page, pageMsg ) of
-                ( Home pageModel, PageMessageHome pageMessage ) ->
-                    let
-                        ( newPageModel, command ) =
-                            pageModel |> Page.Home.update pageMessage
-                    in
-                    ( Model { rec | page = Home newPageModel }
-                    , commandToMainCommand rec.logInState command
-                    )
-
-                ( CreateProject pageModel, PageMessageCreateProject pageMessage ) ->
-                    let
-                        ( newPageModel, command ) =
-                            Page.CreateProject.update pageMessage pageModel
-                    in
-                    ( Model { rec | page = CreateProject newPageModel }
-                    , commandToMainCommand rec.logInState command
-                    )
-
-                ( _, _ ) ->
-                    ( Model rec
-                    , Cmd.none
-                    )
+            let
+                ( newPageModel, command ) =
+                    updatePage pageMsg (Model rec)
+            in
+            ( Model { rec | page = newPageModel }
+            , commandToMainCommand rec.logInState command
+            )
 
         NotificationMessage notificationMessage ->
             let
@@ -480,6 +478,39 @@ update msg (Model rec) =
                     )
 
 
+updatePage : PageMessage -> Model -> ( PageModel, Command.Command )
+updatePage pageMessage (Model record) =
+    case ( record.page, pageMessage ) of
+        ( Home model, PageMessageHome message ) ->
+            Page.Home.update message model
+                |> Tuple.mapFirst Home
+
+        ( CreateProject model, PageMessageCreateProject message ) ->
+            Page.CreateProject.update message model
+                |> Tuple.mapFirst CreateProject
+
+        ( CreateIdea model, PageMessageCreateIdea message ) ->
+            Page.CreateIdea.update message model
+                |> Tuple.mapFirst CreateIdea
+
+        ( Project model, PageMessageProject message ) ->
+            Page.Project.update message model
+                |> Tuple.mapFirst Project
+
+        ( User model, PageMessageUser message ) ->
+            Page.User.update message model
+                |> Tuple.mapFirst User
+
+        ( Idea model, PageMessageIdea message ) ->
+            Page.Idea.update message model
+                |> Tuple.mapFirst Idea
+
+        ( _, _ ) ->
+            ( record.page
+            , Command.None
+            )
+
+
 notificationAddEvent : Component.Notifications.Event -> Model -> ( Model, Cmd Msg )
 notificationAddEvent event (Model record) =
     let
@@ -505,11 +536,17 @@ pageModelToLocation pageModel =
         CreateProject _ ->
             Data.LocationCreateProject
 
+        CreateIdea model ->
+            Data.LocationCreateIdea (Page.CreateIdea.getProjectId model)
+
         Project model ->
             Data.LocationProject (Page.Project.getProjectId model)
 
         User model ->
             Data.LocationUser (Page.User.getUserId model)
+
+        Idea model ->
+            Data.LocationIdea (Page.Idea.getIdeaId model)
 
 
 updateFromMsgList : List Msg -> Model -> ( Model, Cmd Msg )
@@ -875,6 +912,15 @@ mainView (Model record) =
                     |> Ui.map (PageMessageCreateProject >> PageMsg)
                 ]
 
+        CreateIdea pageModel ->
+            Ui.column
+                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                [ Component.Header.view record.imageStore record.logInState
+                , logInPanel record.logInState record.language record.windowSize
+                , Page.CreateIdea.view pageModel
+                    |> Ui.map (PageMessageCreateIdea >> PageMsg)
+                ]
+
         Project pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
@@ -894,6 +940,16 @@ mainView (Model record) =
                 , Page.User.view
                     pageModel
                     |> Ui.map (PageMessageUser >> PageMsg)
+                ]
+
+        Idea pageModel ->
+            Ui.column
+                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                [ Component.Header.view record.imageStore record.logInState
+                , logInPanel record.logInState record.language record.windowSize
+                , Page.Idea.view
+                    pageModel
+                    |> Ui.map (PageMessageIdea >> PageMsg)
                 ]
 
 
@@ -1045,23 +1101,22 @@ gutterTypeToCursorStyle gutterType =
             Ui.VerticalResize
 
 
-responseUserData : Maybe (Maybe Data.UserAndUserId) -> Model -> ( Model, Cmd Msg )
+responseUserData : Maybe (Maybe Data.UserSnapshotAndId) -> Model -> ( Model, Cmd Msg )
 responseUserData result (Model rec) =
     case ( result, rec.logInState ) of
-        ( Just (Just userAndUserId), Data.LogInState.VerifyingAccessToken accessToken ) ->
+        ( Just (Just userSnapshotAndId), Data.LogInState.VerifyingAccessToken accessToken ) ->
             let
                 ( newNotificationModel, command ) =
                     rec.notificationModel
                         |> Component.Notifications.update
-                            (Component.Notifications.AddEvent (Component.Notifications.LogInSuccess userAndUserId))
+                            (Component.Notifications.AddEvent (Component.Notifications.LogInSuccess userSnapshotAndId))
             in
             ( Model
                 { rec
                     | logInState =
                         Data.LogInState.Ok
                             { accessToken = accessToken
-                            , userId = userAndUserId.userId
-                            , user = userAndUserId.user
+                            , userSnapshotAndId = userSnapshotAndId
                             }
                     , notificationModel = newNotificationModel
                 }
@@ -1169,7 +1224,7 @@ subscriptions model =
          , responseUserByAccessToken
             (\jsonValue ->
                 Json.Decode.decodeValue
-                    (Data.maybeJsonDecoder Data.userAndUserIdJsonDecoder)
+                    (Data.maybeJsonDecoder Data.userSnapshotAndIdJsonDecoder)
                     jsonValue
                     |> Result.toMaybe
                     |> ResponseUserDataFromAccessToken
@@ -1222,7 +1277,7 @@ createProjectResponseSubscription =
             case
                 Json.Decode.decodeValue
                     (Data.maybeJsonDecoder
-                        Data.projectAndProjectIdJsonDecoder
+                        Data.projectSnapshotAndIdJsonDecoder
                     )
                     jsonValue
             of
@@ -1259,7 +1314,7 @@ getProjectResponseSubscription =
         (\jsonValue ->
             case
                 Json.Decode.decodeValue
-                    Data.projectCacheWithIdJsonDecoder
+                    Data.projectSnapshotMaybeAndIdJsonDecoder
                     jsonValue
             of
                 Ok projectWithIdAndRespondTimeMaybe ->

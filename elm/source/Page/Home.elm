@@ -24,13 +24,13 @@ type Model
 
 type Project
     = OnlyId Data.ProjectId
-    | Full Data.ProjectCacheWithId
+    | Full Data.ProjectSnapshotMaybeAndId
 
 
 type Message
     = PushUrl Data.UrlData
     | ResponseAllProjectId (List Data.ProjectId)
-    | ResponseProject Data.ProjectCacheWithId
+    | ResponseProject Data.ProjectSnapshotMaybeAndId
     | NoOp
 
 
@@ -61,11 +61,11 @@ update msg model =
 
                 LoadedAllProject allProject ->
                     ( LoadedAllProject (setProjectWithIdAnsRespondTime projectCacheWithId allProject)
-                    , case projectCacheWithId.projectCache of
+                    , case projectCacheWithId.snapshot of
                         Just projectCache ->
                             Command.Batch
-                                [ Command.GetBlobUrl projectCache.project.icon
-                                , Command.GetBlobUrl projectCache.project.image
+                                [ Command.GetBlobUrl projectCache.iconHash
+                                , Command.GetBlobUrl projectCache.imageHash
                                 ]
 
                         Nothing ->
@@ -78,25 +78,25 @@ update msg model =
             )
 
 
-setProjectWithIdAnsRespondTime : Data.ProjectCacheWithId -> List Project -> List Project
-setProjectWithIdAnsRespondTime projectCacheWithId projectList =
+setProjectWithIdAnsRespondTime : Data.ProjectSnapshotMaybeAndId -> List Project -> List Project
+setProjectWithIdAnsRespondTime projectSnapshotMaybeAndId projectList =
     case projectList of
         [] ->
             []
 
         (OnlyId id) :: xs ->
-            if projectCacheWithId.projectId == id then
-                [ Full projectCacheWithId ] ++ xs
+            if projectSnapshotMaybeAndId.id == id then
+                [ Full projectSnapshotMaybeAndId ] ++ xs
 
             else
-                OnlyId id :: setProjectWithIdAnsRespondTime projectCacheWithId xs
+                OnlyId id :: setProjectWithIdAnsRespondTime projectSnapshotMaybeAndId xs
 
         (Full old) :: xs ->
-            if projectCacheWithId.projectId == old.projectId then
-                [ Full projectCacheWithId ] ++ xs
+            if projectSnapshotMaybeAndId.id == old.id then
+                [ Full projectSnapshotMaybeAndId ] ++ xs
 
             else
-                Full old :: setProjectWithIdAnsRespondTime projectCacheWithId xs
+                Full old :: setProjectWithIdAnsRespondTime projectSnapshotMaybeAndId xs
 
 
 view :
@@ -367,7 +367,7 @@ projectItem clientMode language imageStore project =
                             id
 
                         Full projectCache ->
-                            projectCache.projectId
+                            projectCache.id
                     )
             , language = language
             , accessToken = Nothing
@@ -400,9 +400,9 @@ projectItemImage imageStore project =
             Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
 
         Full projectCacheWithId ->
-            case projectCacheWithId.projectCache of
+            case projectCacheWithId.snapshot of
                 Just projectCache ->
-                    case ImageStore.getImageBlobUrl projectCache.project.image imageStore of
+                    case ImageStore.getImageBlobUrl projectCache.imageHash imageStore of
                         Just projectImageBlobUrl ->
                             Ui.bitmapImage
                                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
@@ -427,16 +427,16 @@ projectItemText imageStore project =
         [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
         [ case project of
             Full projectCacheWithId ->
-                case projectCacheWithId.projectCache of
-                    Just projectCache ->
-                        case ImageStore.getImageBlobUrl projectCache.project.icon imageStore of
+                case projectCacheWithId.snapshot of
+                    Just projectSnapshot ->
+                        case ImageStore.getImageBlobUrl projectSnapshot.iconHash imageStore of
                             Just blobUrl ->
                                 Ui.bitmapImage
                                     [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
                                     (Ui.BitmapImageAttributes
                                         { url = blobUrl
                                         , fitStyle = Ui.Cover
-                                        , alternativeText = projectCache.project.name ++ "のアイコン"
+                                        , alternativeText = projectSnapshot.name ++ "のアイコン"
                                         , rendering = Ui.ImageRenderingPixelated
                                         }
                                     )
@@ -461,9 +461,9 @@ projectItemText imageStore project =
                             "id = " ++ idAsString
 
                         Full projectCacheWithId ->
-                            case projectCacheWithId.projectCache of
-                                Just projectCache ->
-                                    projectCache.project.name
+                            case projectCacheWithId.snapshot of
+                                Just snapshot ->
+                                    snapshot.name
 
                                 Nothing ->
                                     "プロジェクトが見つからなかった"

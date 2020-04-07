@@ -29,7 +29,7 @@ view imageStore logInState =
             Data.LogInState.Ok record ->
                 [ logo
                 , Ui.empty [ Ui.width Ui.stretch ]
-                , userItem imageStore record.user
+                , userItem imageStore record.userSnapshotAndId.snapshot
                 ]
         )
 
@@ -64,7 +64,7 @@ guestItem =
         )
 
 
-userItem : ImageStore.ImageStore -> Data.User -> Ui.Panel msg
+userItem : ImageStore.ImageStore -> Data.UserSnapshot -> Ui.Panel msg
 userItem imageStore userData =
     Ui.row
         [ Ui.gap 8 ]
