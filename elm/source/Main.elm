@@ -426,6 +426,10 @@ update msg (Model rec) =
             )
 
         CreateProjectResponse projectAndIdMaybe ->
+            let
+                ( newPageModel, command ) =
+                    pageInit Data.LocationHome
+            in
             notificationAddEvent
                 (case projectAndIdMaybe of
                     Just projectAndId ->
@@ -435,6 +439,9 @@ update msg (Model rec) =
                         Component.Notifications.CreateProjectFailed
                 )
                 (Model rec)
+                |> Tuple.mapBoth
+                    (\(Model model) -> Model { model | page = newPageModel })
+                    (\cmd -> Cmd.batch [ cmd, commandToMainCommand rec.logInState command ])
 
         GetAllProjectResponse projectIdList ->
             case rec.page of
@@ -892,7 +899,7 @@ mainView (Model record) =
         Home pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.imageStore record.logInState
+                [ headerView (Model record)
                 , logInPanel record.logInState record.language record.windowSize
                 , Page.Home.view
                     record.clientMode
@@ -906,7 +913,7 @@ mainView (Model record) =
         CreateProject pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.imageStore record.logInState
+                [ headerView (Model record)
                 , logInPanel record.logInState record.language record.windowSize
                 , Page.CreateProject.view record.language record.logInState pageModel
                     |> Ui.map (PageMessageCreateProject >> PageMsg)
@@ -915,7 +922,7 @@ mainView (Model record) =
         CreateIdea pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.imageStore record.logInState
+                [ headerView (Model record)
                 , logInPanel record.logInState record.language record.windowSize
                 , Page.CreateIdea.view pageModel
                     |> Ui.map (PageMessageCreateIdea >> PageMsg)
@@ -924,7 +931,7 @@ mainView (Model record) =
         Project pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.imageStore record.logInState
+                [ headerView (Model record)
                 , logInPanel record.logInState record.language record.windowSize
                 , Page.Project.view
                     record.imageStore
@@ -935,7 +942,7 @@ mainView (Model record) =
         User pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.imageStore record.logInState
+                [ headerView (Model record)
                 , logInPanel record.logInState record.language record.windowSize
                 , Page.User.view
                     pageModel
@@ -945,12 +952,37 @@ mainView (Model record) =
         Idea pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.imageStore record.logInState
+                [ headerView (Model record)
                 , logInPanel record.logInState record.language record.windowSize
                 , Page.Idea.view
                     pageModel
                     |> Ui.map (PageMessageIdea >> PageMsg)
                 ]
+
+
+headerView : Model -> Ui.Panel Msg
+headerView (Model record) =
+    Component.Header.view
+        record.clientMode
+        record.language
+        record.imageStore
+        record.logInState
+        |> Ui.map (headerMessageToMsg record.clientMode record.language)
+
+
+headerMessageToMsg : Data.ClientMode -> Data.Language -> Component.Header.Message -> Msg
+headerMessageToMsg clientMode language message =
+    case message of
+        Component.Header.ToHome ->
+            UrlChange
+                { clientMode = clientMode
+                , language = language
+                , location = Data.LocationHome
+                , accessToken = Nothing
+                }
+
+        Component.Header.NoOperation ->
+            NoOperation
 
 
 logInPanel : Data.LogInState.LogInState -> Data.Language -> WindowSize -> Ui.Panel Msg

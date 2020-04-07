@@ -1,16 +1,21 @@
-module Component.Header exposing (view)
+module Component.Header exposing (Message(..), view)
 
 import Component.Style
 import Css
 import Data
 import Data.LogInState
-import Dict
+import Data.UrlData
 import ImageStore
 import Ui
 
 
-view : ImageStore.ImageStore -> Data.LogInState.LogInState -> Ui.Panel msg
-view imageStore logInState =
+type Message
+    = ToHome
+    | NoOperation
+
+
+view : Data.ClientMode -> Data.Language -> ImageStore.ImageStore -> Data.LogInState.LogInState -> Ui.Panel Message
+view clientMode language imageStore logInState =
     Ui.row
         [ Ui.backgroundColor (Css.rgb 36 36 36)
         , Ui.width Ui.stretch
@@ -18,33 +23,48 @@ view imageStore logInState =
         ]
         (case logInState of
             Data.LogInState.GuestUser ->
-                [ logo, Ui.empty [ Ui.width Ui.stretch ], guestItem ]
+                [ logo clientMode language, Ui.empty [ Ui.width Ui.stretch ], guestItem ]
 
             Data.LogInState.RequestLogInUrl _ ->
-                [ logo ]
+                [ logo clientMode language ]
 
             Data.LogInState.VerifyingAccessToken _ ->
-                [ logo ]
+                [ logo clientMode language ]
 
             Data.LogInState.Ok record ->
-                [ logo
+                [ logo clientMode language
                 , Ui.empty [ Ui.width Ui.stretch ]
                 , userItem imageStore record.userSnapshotAndId.snapshot
                 ]
         )
 
 
-logo : Ui.Panel msg
-logo =
-    Ui.text
-        [ Ui.padding 8 ]
-        (Ui.TextAttributes
-            { text = "Definy"
-            , typeface = Component.Style.codeFontTypeface
-            , size = 32
-            , letterSpacing = 0
-            , color = Css.rgb 185 208 155
-            , textAlignment = Ui.TextAlignStart
+logo : Data.ClientMode -> Data.Language -> Ui.Panel Message
+logo clientMode language =
+    Ui.link
+        []
+        (Ui.LinkAttributes
+            { url =
+                Data.UrlData.urlDataToString
+                    { clientMode = clientMode
+                    , language = language
+                    , location = Data.LocationHome
+                    , accessToken = Nothing
+                    }
+            , clickMessage = ToHome
+            , noOpMessage = NoOperation
+            , child =
+                Ui.text
+                    [ Ui.padding 8 ]
+                    (Ui.TextAttributes
+                        { text = "Definy"
+                        , typeface = Component.Style.codeFontTypeface
+                        , size = 32
+                        , letterSpacing = 0
+                        , color = Css.rgb 185 208 155
+                        , textAlignment = Ui.TextAlignStart
+                        }
+                    )
             }
         )
 

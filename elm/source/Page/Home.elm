@@ -374,7 +374,7 @@ projectItem clientMode language imageStore project =
             }
     in
     Ui.link
-        []
+        [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
         (Ui.LinkAttributes
             { url = Data.UrlData.urlDataToString projectUrl
             , clickMessage = PushUrl projectUrl
