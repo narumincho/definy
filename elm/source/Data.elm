@@ -14,7 +14,7 @@ type alias Time =
 {-| デバッグの状態と, デバッグ時ならアクセスしているポート番号
 -}
 type ClientMode
-    = ClientModeDebugMode Int
+    = ClientModeDebugMode
     | ClientModeRelease
 
 
@@ -24,14 +24,14 @@ type alias RequestLogInUrlRequestData =
     { openIdConnectProvider : OpenIdConnectProvider, urlData : UrlData }
 
 
-{-| プロバイダー (例: LINE, Google, GitHub)
+{-| ソーシャルログインを提供するプロバイダー (例: Google, GitHub)
 -}
 type OpenIdConnectProvider
     = OpenIdConnectProviderGoogle
     | OpenIdConnectProviderGitHub
 
 
-{-| デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( <https://support.google.com/webmasters/answer/182192?hl=ja> )で,URLにページの言語を入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は <http://[::1]> になる
+{-| デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( <https://support.google.com/webmasters/answer/182192?hl=ja> )で,URLにページの言語を入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は <http://localhost> になる
 -}
 type alias UrlData =
     { clientMode : ClientMode, location : Location, language : Language }
@@ -426,11 +426,11 @@ timeToJsonValue time =
 clientModeToJsonValue : ClientMode -> Je.Value
 clientModeToJsonValue clientMode =
     case clientMode of
-        ClientModeDebugMode parameter ->
-            Je.object [ ( "_", Je.string "DebugMode" ), ( "int32", Je.int parameter ) ]
+        ClientModeDebugMode ->
+            Je.string "DebugMode"
 
         ClientModeRelease ->
-            Je.object [ ( "_", Je.string "Release" ) ]
+            Je.string "Release"
 
 
 {-| RequestLogInUrlRequestDataのJSONへのエンコーダ
@@ -1072,12 +1072,12 @@ timeJsonDecoder =
 -}
 clientModeJsonDecoder : Jd.Decoder ClientMode
 clientModeJsonDecoder =
-    Jd.field "_" Jd.string
+    Jd.string
         |> Jd.andThen
             (\tag ->
                 case tag of
                     "DebugMode" ->
-                        Jd.field "int32" Jd.int |> Jd.map ClientModeDebugMode
+                        Jd.succeed ClientModeDebugMode
 
                     "Release" ->
                         Jd.succeed ClientModeRelease

@@ -21,8 +21,8 @@ urlDataFromUrl url =
 clientModeFromUrl : Url.Url -> Data.ClientMode
 clientModeFromUrl url =
     case ( url.protocol, url.host, url.port_ ) of
-        ( Url.Http, "[::1]", Just portNumber ) ->
-            Data.ClientModeDebugMode portNumber
+        ( Url.Http, "[::1]", Just 2520 ) ->
+            Data.ClientModeDebugMode
 
         ( _, _, _ ) ->
             Data.ClientModeRelease
@@ -89,22 +89,22 @@ urlDataToUrl : Data.UrlData -> Url.Url
 urlDataToUrl urlData =
     { protocol =
         case urlData.clientMode of
-            Data.ClientModeDebugMode _ ->
+            Data.ClientModeDebugMode ->
                 Url.Http
 
             Data.ClientModeRelease ->
                 Url.Https
     , host =
         case urlData.clientMode of
-            Data.ClientModeDebugMode _ ->
+            Data.ClientModeDebugMode ->
                 "[::1]"
 
             Data.ClientModeRelease ->
                 "definy.app"
     , port_ =
         case urlData.clientMode of
-            Data.ClientModeDebugMode portNumber ->
-                Just portNumber
+            Data.ClientModeDebugMode ->
+                Just 2520
 
             Data.ClientModeRelease ->
                 Nothing
