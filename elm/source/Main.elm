@@ -265,6 +265,7 @@ init flag url navigationKey =
         , commandToMainCommand logInState notificationsInitCommand
         , commandToMainCommand logInState notificationsCommand
         , commandToMainCommand logInState pageCommand
+        , Browser.Navigation.replaceUrl navigationKey (Url.toString (Data.UrlData.urlDataToUrl urlData))
         ]
     )
 

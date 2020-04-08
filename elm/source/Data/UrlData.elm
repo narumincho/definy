@@ -21,7 +21,7 @@ urlDataFromUrl url =
 clientModeFromUrl : Url.Url -> Data.ClientMode
 clientModeFromUrl url =
     case ( url.protocol, url.host, url.port_ ) of
-        ( Url.Http, "[::1]", Just 2520 ) ->
+        ( Url.Http, "localhost", Just 2520 ) ->
             Data.ClientModeDebugMode
 
         ( _, _, _ ) ->
@@ -97,7 +97,7 @@ urlDataToUrl urlData =
     , host =
         case urlData.clientMode of
             Data.ClientModeDebugMode ->
-                "[::1]"
+                "localhost"
 
             Data.ClientModeRelease ->
                 "definy.app"
@@ -109,7 +109,7 @@ urlDataToUrl urlData =
             Data.ClientModeRelease ->
                 Nothing
     , path = "/" ++ String.join "/" (locationToPathStringList urlData.location)
-    , query = Just ("?hl=" ++ languageToIdString urlData.language)
+    , query = Just ("hl=" ++ languageToIdString urlData.language)
     , fragment = Nothing
     }
 
