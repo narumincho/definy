@@ -1,6 +1,7 @@
 port module Main exposing (main)
 
 import Browser
+import Browser.Navigation
 import Command
 import Component.DefaultUi
 import Component.EditorGroup
@@ -11,7 +12,7 @@ import Css
 import Data
 import Data.Key
 import Data.LogInState
-import Html
+import Data.UrlData
 import Html.Styled
 import Icon
 import ImageStore
@@ -25,6 +26,7 @@ import Page.Project
 import Page.User
 import Task
 import Ui
+import Url
 
 
 {-| すべての状態を管理する
@@ -57,9 +59,6 @@ port getUserByAccessToken : Json.Encode.Value -> Cmd msg
 
 
 port getImageBlobUrl : Json.Encode.Value -> Cmd msg
-
-
-port pushUrl : Json.Encode.Value -> Cmd msg
 
 
 port createProject : Json.Encode.Value -> Cmd msg
@@ -102,9 +101,6 @@ port subPointerUp : (() -> msg) -> Sub msg
 port getImageBlobResponse : ({ blobUrl : String, fileHash : String } -> msg) -> Sub msg
 
 
-port urlChanged : (Json.Decode.Value -> msg) -> Sub msg
-
-
 port toValidProjectNameResponse : ({ input : String, result : Maybe String } -> msg) -> Sub msg
 
 
@@ -132,7 +128,8 @@ type Msg
     | RequestLogInUrl Data.OpenIdConnectProvider
     | ResponseUserDataFromAccessToken (Maybe (Maybe Data.UserSnapshotAndId))
     | ResponseGetImageBlob { blobUrl : String, fileHash : Data.FileHash }
-    | UrlChange Data.UrlData
+    | OnUrlRequest Browser.UrlRequest
+    | OnUrlChange Url.Url
     | CreateProjectResponse (Maybe Data.ProjectSnapshotAndId)
     | NoOperation
     | GetAllProjectResponse (List Data.ProjectId)
@@ -162,6 +159,7 @@ type Model
         , networkConnection : Bool
         , notificationModel : Component.Notifications.Model
         , imageStore : ImageStore.ImageStore
+        , navigationKey : Browser.Navigation.Key
         }
 
 
@@ -193,25 +191,25 @@ type alias Flag =
         { width : Int
         , height : Int
         }
-    , urlData : Json.Decode.Value
+    , accessTokenMaybe : Maybe String
     , networkConnection : Bool
     }
 
 
 main : Platform.Program Flag Model Msg
 main =
-    Browser.element
+    Browser.application
         { init = init
         , view = view
         , update = update
         , subscriptions = subscriptions
+        , onUrlRequest = OnUrlRequest
+        , onUrlChange = OnUrlChange
         }
 
 
-init :
-    Flag
-    -> ( Model, Cmd Msg )
-init flag =
+init : Flag -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
+init flag url navigationKey =
     let
         urlData : Data.UrlData
         urlData =
@@ -221,7 +219,6 @@ init flag =
                     { clientMode = Data.ClientModeRelease
                     , location = Data.LocationHome
                     , language = Data.LanguageEnglish
-                    , accessToken = Nothing
                     }
 
         ( notificationsInitModel, notificationsInitCommand ) =
@@ -262,6 +259,7 @@ init flag =
         , notificationModel = notificationsModel
         , clientMode = urlData.clientMode
         , imageStore = ImageStore.empty
+        , navigationKey = navigationKey
         }
     , Cmd.batch
         [ case urlData.accessToken of
@@ -415,9 +413,14 @@ update msg (Model rec) =
             , Cmd.none
             )
 
-        UrlChange urlData ->
+        OnUrlChange url ->
             ( Model rec
             , consoleLog "URL変更をElmで検知した"
+            )
+
+        OnUrlRequest urlRequest ->
+            ( Model rec
+            , Cmd.none
             )
 
         NoOperation ->
@@ -868,29 +871,33 @@ createProjectTyped createProjectParameter =
 
 {-| 見た目を定義する
 -}
-view : Model -> Html.Html Msg
+view : Model -> Browser.Document Msg
 view (Model rec) =
-    Ui.depth
-        (List.concat
-            [ [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-            , case getGutterType (Model rec) of
-                Just gutterType ->
-                    [ Ui.pointerImage (gutterTypeToCursorStyle gutterType) ]
+    { title = "Definy"
+    , body =
+        [ Ui.depth
+            (List.concat
+                [ [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                , case getGutterType (Model rec) of
+                    Just gutterType ->
+                        [ Ui.pointerImage (gutterTypeToCursorStyle gutterType) ]
 
-                Nothing ->
-                    []
+                    Nothing ->
+                        []
+                ]
+            )
+            [ ( ( Ui.Center, Ui.Center )
+              , mainView (Model rec)
+              )
+            , ( ( Ui.End, Ui.End )
+              , Component.Notifications.view rec.imageStore rec.notificationModel
+                    |> Ui.map NotificationMessage
+              )
             ]
-        )
-        [ ( ( Ui.Center, Ui.Center )
-          , mainView (Model rec)
-          )
-        , ( ( Ui.End, Ui.End )
-          , Component.Notifications.view rec.imageStore rec.notificationModel
-                |> Ui.map NotificationMessage
-          )
+            |> Ui.toHtml
+            |> Html.Styled.toUnstyled
         ]
-        |> Ui.toHtml
-        |> Html.Styled.toUnstyled
+    }
 
 
 mainView : Model -> Ui.Panel Msg
@@ -1224,7 +1231,9 @@ commandToMainCommand logInState command =
             consoleLog string
 
         Command.PushUrl urlData ->
-            pushUrl (Data.urlDataToJsonValue urlData)
+            Task.perform
+                identity
+                (Task.succeed (OnUrlRequest (Browser.Internal (Data.UrlData.urlDataToUrl urlData))))
 
         Command.ToValidProjectName string ->
             toValidProjectName string

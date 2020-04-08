@@ -43,29 +43,21 @@ logo : Data.ClientMode -> Data.Language -> Ui.Panel Message
 logo clientMode language =
     Ui.link
         []
-        (Ui.LinkAttributes
-            { url =
-                Data.UrlData.urlDataToString
-                    { clientMode = clientMode
-                    , language = language
-                    , location = Data.LocationHome
-                    , accessToken = Nothing
-                    }
-            , clickMessage = ToHome
-            , noOpMessage = NoOperation
-            , child =
-                Ui.text
-                    [ Ui.padding 8 ]
-                    (Ui.TextAttributes
-                        { text = "Definy"
-                        , typeface = Component.Style.codeFontTypeface
-                        , size = 32
-                        , letterSpacing = 0
-                        , color = Css.rgb 185 208 155
-                        , textAlignment = Ui.TextAlignStart
-                        }
-                    )
-            }
+        { clientMode = clientMode
+        , language = language
+        , location = Data.LocationHome
+        }
+        (Ui.text
+            [ Ui.padding 8 ]
+            (Ui.TextAttributes
+                { text = "Definy"
+                , typeface = Component.Style.codeFontTypeface
+                , size = 32
+                , letterSpacing = 0
+                , color = Css.rgb 185 208 155
+                , textAlignment = Ui.TextAlignStart
+                }
+            )
         )
 
 

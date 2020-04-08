@@ -31,10 +31,10 @@ type OpenIdConnectProvider
     | OpenIdConnectProviderGitHub
 
 
-{-| デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( <https://support.google.com/webmasters/answer/182192?hl=ja> )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は <http://[::1]> になる
+{-| デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( <https://support.google.com/webmasters/answer/182192?hl=ja> )で,URLにページの言語を入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は <http://[::1]> になる
 -}
 type alias UrlData =
-    { clientMode : ClientMode, location : Location, language : Language, accessToken : Maybe AccessToken }
+    { clientMode : ClientMode, location : Location, language : Language }
 
 
 {-| 英語,日本語,エスペラント語などの言語
@@ -301,10 +301,6 @@ type alias IdeaSnapshotMaybeAndId =
     { id : IdeaId, snapshot : Maybe Idea }
 
 
-type AccessToken
-    = AccessToken String
-
-
 type ProjectId
     = ProjectId String
 
@@ -341,6 +337,10 @@ type TagId
     = TagId String
 
 
+type AccessToken
+    = AccessToken String
+
+
 maybeToJsonValue : (a -> Je.Value) -> Maybe a -> Je.Value
 maybeToJsonValue toJsonValueFunction maybe =
     case maybe of
@@ -359,11 +359,6 @@ resultToJsonValue okToJsonValueFunction errorToJsonValueFunction result =
 
         Err value ->
             Je.object [ ( "_", Je.string "Error" ), ( "error", errorToJsonValueFunction value ) ]
-
-
-accessTokenToJsonValue : AccessToken -> Je.Value
-accessTokenToJsonValue (AccessToken string) =
-    Je.string string
 
 
 projectIdToJsonValue : ProjectId -> Je.Value
@@ -408,6 +403,11 @@ localPartIdToJsonValue (LocalPartId string) =
 
 tagIdToJsonValue : TagId -> Je.Value
 tagIdToJsonValue (TagId string) =
+    Je.string string
+
+
+accessTokenToJsonValue : AccessToken -> Je.Value
+accessTokenToJsonValue (AccessToken string) =
     Je.string string
 
 
@@ -463,7 +463,6 @@ urlDataToJsonValue urlData =
         [ ( "clientMode", clientModeToJsonValue urlData.clientMode )
         , ( "location", locationToJsonValue urlData.location )
         , ( "language", languageToJsonValue urlData.language )
-        , ( "accessToken", maybeToJsonValue accessTokenToJsonValue urlData.accessToken )
         ]
 
 
@@ -1005,11 +1004,6 @@ resultJsonDecoder okDecoder errorDecoder =
             )
 
 
-accessTokenJsonDecoder : Jd.Decoder AccessToken
-accessTokenJsonDecoder =
-    Jd.map AccessToken Jd.string
-
-
 projectIdJsonDecoder : Jd.Decoder ProjectId
 projectIdJsonDecoder =
     Jd.map ProjectId Jd.string
@@ -1053,6 +1047,11 @@ localPartIdJsonDecoder =
 tagIdJsonDecoder : Jd.Decoder TagId
 tagIdJsonDecoder =
     Jd.map TagId Jd.string
+
+
+accessTokenJsonDecoder : Jd.Decoder AccessToken
+accessTokenJsonDecoder =
+    Jd.map AccessToken Jd.string
 
 
 {-| TimeのJSON Decoder
@@ -1126,17 +1125,15 @@ openIdConnectProviderJsonDecoder =
 urlDataJsonDecoder : Jd.Decoder UrlData
 urlDataJsonDecoder =
     Jd.succeed
-        (\clientMode location language accessToken ->
+        (\clientMode location language ->
             { clientMode = clientMode
             , location = location
             , language = language
-            , accessToken = accessToken
             }
         )
         |> Jdp.required "clientMode" clientModeJsonDecoder
         |> Jdp.required "location" locationJsonDecoder
         |> Jdp.required "language" languageJsonDecoder
-        |> Jdp.required "accessToken" (maybeJsonDecoder accessTokenJsonDecoder)
 
 
 {-| LanguageのJSON Decoder

@@ -278,7 +278,7 @@ createProjectButtonLogInOk clientMode language =
             )
         ]
         (Ui.LinkAttributes
-            { url = Data.UrlData.urlDataToString createProjectUrl
+            { url = Data.UrlData.urlDataToUrl createProjectUrl
             , clickMessage = PushUrl createProjectUrl
             , noOpMessage = NoOp
             , child =
@@ -376,7 +376,7 @@ projectItem clientMode language imageStore project =
     Ui.link
         [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
         (Ui.LinkAttributes
-            { url = Data.UrlData.urlDataToString projectUrl
+            { url = Data.UrlData.urlDataToUrl projectUrl
             , clickMessage = PushUrl projectUrl
             , noOpMessage = NoOp
             , child =

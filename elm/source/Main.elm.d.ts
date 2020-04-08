@@ -16,7 +16,7 @@ type Flags = {
     readonly width: number;
     readonly height: number;
   };
-  readonly urlData: data.UrlData;
+  readonly accessTokenMaybe: null | string;
   readonly networkConnection: boolean;
 };
 
@@ -26,7 +26,6 @@ type Ports = {
   readonly requestLogInUrl: SubForElmCmd<data.RequestLogInUrlRequestData>;
   readonly getUserByAccessToken: SubForElmCmd<data.AccessToken>;
   readonly getImageBlobUrl: SubForElmCmd<data.FileHash>;
-  readonly pushUrl: SubForElmCmd<data.UrlData>;
   readonly createProject: SubForElmCmd<data.CreateProjectParameter>;
   readonly toValidProjectName: SubForElmCmd<string>;
   readonly getAllProjectIdList: SubForElmCmd<null>;
@@ -48,7 +47,6 @@ type Ports = {
     blobUrl: string;
     fileHash: string;
   }>;
-  readonly urlChanged: CmdForElmSub<data.UrlData>;
   readonly toValidProjectNameResponse: CmdForElmSub<{
     input: string;
     result: string | null;

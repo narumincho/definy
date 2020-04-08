@@ -10,6 +10,7 @@ module Ui exposing
     , Pointer
     , PointerImage(..)
     , Size
+    , Style
     , TextAlignment(..)
     , TextAttributes(..)
     , TextInputAttributes(..)
@@ -50,6 +51,7 @@ import Html.Styled.Attributes
 import Html.Styled.Events
 import Json.Decode
 import Json.Decode.Pipeline
+import Url
 import VectorImage
 
 
@@ -114,9 +116,7 @@ type ButtonAttributes message
 
 type LinkAttributes message
     = LinkAttributes
-        { url : String
-        , clickMessage : message
-        , noOpMessage : message
+        { url : Url.Url
         , child : Panel message
         }
 
@@ -400,11 +400,17 @@ button style clickMessage child =
         }
 
 
-link : List Style -> LinkAttributes message -> Panel message
-link style linkAttributes =
+link : List Style -> Url.Url -> Panel message -> Panel message
+link style url panel =
     Panel
         { style = computeStyle style
-        , content = Link linkAttributes
+        , content =
+            Link
+                (LinkAttributes
+                    { url = url
+                    , child = panel
+                    }
+                )
         }
 
 
@@ -575,8 +581,6 @@ mapContent func content =
             Link
                 (LinkAttributes
                     { url = record.url
-                    , clickMessage = func record.clickMessage
-                    , noOpMessage = func record.noOpMessage
                     , child = map func record.child
                     }
                 )
@@ -770,50 +774,12 @@ linkToHtml commonStyle styleComputed (LinkAttributes record) =
             [ styleComputedToCssStyle False styleComputed
             , commonStyle
             ]
-        , Html.Styled.Attributes.href record.url
-        , Html.Styled.Events.custom "click"
-            (clickEventButton
-                |> Json.Decode.map
-                    (\linkButton ->
-                        if linkButton.ctrlKey || linkButton.shiftKey || linkButton.metaKey then
-                            { message = record.noOpMessage
-                            , stopPropagation = False
-                            , preventDefault = False
-                            }
-
-                        else
-                            { message = record.clickMessage
-                            , stopPropagation = True
-                            , preventDefault = True
-                            }
-                    )
-            )
+        , Html.Styled.Attributes.href (Url.toString record.url)
         ]
         [ panelToHtml (GridCell { row = 0, column = 0 })
             StretchStretch
             record.child
         ]
-
-
-type alias LinkButton =
-    { ctrlKey : Bool
-    , shiftKey : Bool
-    , metaKey : Bool
-    }
-
-
-clickEventButton : Json.Decode.Decoder LinkButton
-clickEventButton =
-    Json.Decode.map3
-        (\ctrlKey shiftKey metaKey ->
-            { ctrlKey = ctrlKey
-            , shiftKey = shiftKey
-            , metaKey = metaKey
-            }
-        )
-        (Json.Decode.field "ctrlKey" Json.Decode.bool)
-        (Json.Decode.field "shitKey" Json.Decode.bool)
-        (Json.Decode.field "metaKey" Json.Decode.bool)
 
 
 depthToHtml : Css.Style -> StyleComputed -> List ( ( Alignment, Alignment ), Panel message ) -> Html.Styled.Html message

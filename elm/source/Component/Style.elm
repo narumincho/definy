@@ -5,6 +5,7 @@ module Component.Style exposing
     , fontHack
     , fontHackName
     , horizontalGutter
+    , link
     , normalText
     , normalTypeface
     , stretchText
@@ -17,6 +18,8 @@ module Component.Style exposing
 -}
 
 import Css
+import Data
+import Data.UrlData
 import Html.Styled
 import Html.Styled.Attributes
 import Html.Styled.Events
@@ -166,6 +169,18 @@ stretchText size text =
             , letterSpacing = 0
             , color = Css.rgb 200 200 200
             , textAlignment = Ui.TextAlignStart
+            }
+        )
+
+
+link : List Ui.Style -> Data.ClientMode -> Data.Language -> Data.Location -> Ui.Panel message -> Ui.Panel message
+link styleList clientMode language location =
+    Ui.link
+        styleList
+        (Data.UrlData.urlDataToUrl
+            { clientMode = clientMode
+            , language = language
+            , location = location
             }
         )
 
