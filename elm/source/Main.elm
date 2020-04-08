@@ -213,13 +213,7 @@ init flag url navigationKey =
     let
         urlData : Data.UrlData
         urlData =
-            flag.urlData
-                |> Json.Decode.decodeValue Data.urlDataJsonDecoder
-                |> Result.withDefault
-                    { clientMode = Data.ClientModeRelease
-                    , location = Data.LocationHome
-                    , language = Data.LanguageEnglish
-                    }
+            Data.UrlData.urlDataFromUrl url
 
         ( notificationsInitModel, notificationsInitCommand ) =
             Component.Notifications.init
@@ -241,9 +235,9 @@ init flag url navigationKey =
             pageInit urlData.location
 
         logInState =
-            case urlData.accessToken of
+            case flag.accessTokenMaybe of
                 Just accessToken ->
-                    Data.LogInState.VerifyingAccessToken accessToken
+                    Data.LogInState.VerifyingAccessToken (Data.AccessToken accessToken)
 
                 Nothing ->
                     Data.LogInState.GuestUser
@@ -262,9 +256,9 @@ init flag url navigationKey =
         , navigationKey = navigationKey
         }
     , Cmd.batch
-        [ case urlData.accessToken of
+        [ case flag.accessTokenMaybe of
             Just accessToken ->
-                getUserByAccessTokenTyped accessToken
+                getUserByAccessTokenTyped (Data.AccessToken accessToken)
 
             Nothing ->
                 Cmd.none
@@ -393,7 +387,6 @@ update msg (Model rec) =
                     { clientMode = rec.clientMode
                     , location = pageModelToLocation rec.page
                     , language = rec.language
-                    , accessToken = Nothing
                     }
                 }
             )
@@ -414,14 +407,39 @@ update msg (Model rec) =
             )
 
         OnUrlChange url ->
-            ( Model rec
-            , consoleLog "URL変更をElmで検知した"
+            let
+                urlData =
+                    Data.UrlData.urlDataFromUrl url
+
+                ( newPage, command ) =
+                    pageInit urlData.location
+            in
+            ( Model
+                { rec
+                    | page = newPage
+                    , clientMode = urlData.clientMode
+                    , language = urlData.language
+                }
+            , commandToMainCommand rec.logInState command
             )
 
         OnUrlRequest urlRequest ->
-            ( Model rec
-            , Cmd.none
-            )
+            case urlRequest of
+                Browser.Internal url ->
+                    ( Model rec
+                    , Browser.Navigation.pushUrl
+                        rec.navigationKey
+                        (Url.toString
+                            (Data.UrlData.urlDataToUrl
+                                (Data.UrlData.urlDataFromUrl url)
+                            )
+                        )
+                    )
+
+                Browser.External link ->
+                    ( Model rec
+                    , Browser.Navigation.pushUrl rec.navigationKey link
+                    )
 
         NoOperation ->
             ( Model rec
@@ -974,22 +992,6 @@ headerView (Model record) =
         record.language
         record.imageStore
         record.logInState
-        |> Ui.map (headerMessageToMsg record.clientMode record.language)
-
-
-headerMessageToMsg : Data.ClientMode -> Data.Language -> Component.Header.Message -> Msg
-headerMessageToMsg clientMode language message =
-    case message of
-        Component.Header.ToHome ->
-            UrlChange
-                { clientMode = clientMode
-                , language = language
-                , location = Data.LocationHome
-                , accessToken = Nothing
-                }
-
-        Component.Header.NoOperation ->
-            NoOperation
 
 
 logInPanel : Data.LogInState.LogInState -> Data.Language -> WindowSize -> Ui.Panel Msg
@@ -1277,7 +1279,6 @@ subscriptions model =
                     , fileHash = Data.FileHash fileHash
                     }
             )
-         , urlChangeTyped
          , toValidProjectNameResponse
             (\response ->
                 PageMsg
@@ -1295,19 +1296,6 @@ subscriptions model =
                 else
                     []
                )
-        )
-
-
-urlChangeTyped : Sub Msg
-urlChangeTyped =
-    urlChanged
-        (\jsonValue ->
-            case Json.Decode.decodeValue Data.urlDataJsonDecoder jsonValue of
-                Ok urlData ->
-                    UrlChange urlData
-
-                Err _ ->
-                    NoOperation
         )
 
 

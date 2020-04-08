@@ -73,6 +73,7 @@ const init = async (): Promise<void> => {
         width: innerWidth,
         height: innerHeight,
       },
+      accessTokenMaybe: accessToken._ === "Just" ? accessToken.value : null,
       networkConnection: navigator.onLine,
     },
     node: elmAppElement,
@@ -190,16 +191,6 @@ const init = async (): Promise<void> => {
         });
       });
     });
-  });
-  app.ports.pushUrl.subscribe((urlData) => {
-    console.log("pushUrlを呼んだ");
-    history.pushState(
-      "",
-      "",
-      common
-        .urlDataToUrl({ ...urlData, accessToken: common.data.maybeNothing() })
-        .toString()
-    );
   });
   app.ports.createProject.subscribe((parameter) => {
     callApi(

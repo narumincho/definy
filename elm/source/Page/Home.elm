@@ -253,16 +253,7 @@ createProjectButton clientMode language logInState =
 
 createProjectButtonLogInOk : Data.ClientMode -> Data.Language -> Ui.Panel Message
 createProjectButtonLogInOk clientMode language =
-    let
-        createProjectUrl : Data.UrlData
-        createProjectUrl =
-            { clientMode = clientMode
-            , location = Data.LocationCreateProject
-            , language = language
-            , accessToken = Nothing
-            }
-    in
-    Ui.link
+    Component.Style.link
         [ Ui.width (Ui.stretchWithMaxSize 320)
         , Ui.height Ui.stretch
         , Ui.border
@@ -277,54 +268,52 @@ createProjectButtonLogInOk clientMode language =
                 }
             )
         ]
-        (Ui.LinkAttributes
-            { url = Data.UrlData.urlDataToUrl createProjectUrl
-            , clickMessage = PushUrl createProjectUrl
-            , noOpMessage = NoOp
-            , child =
-                Ui.depth
-                    [ Ui.width (Ui.stretchWithMaxSize 320)
-                    , Ui.height Ui.stretch
-                    , Ui.border
-                        (Ui.BorderStyle
-                            { color = Css.rgb 200 200 200
-                            , width =
-                                { top = 1
-                                , right = 1
-                                , left = 1
-                                , bottom = 1
-                                }
+        { clientMode = clientMode
+        , location = Data.LocationCreateProject
+        , language = language
+        }
+        (Ui.depth
+            [ Ui.width (Ui.stretchWithMaxSize 320)
+            , Ui.height Ui.stretch
+            , Ui.border
+                (Ui.BorderStyle
+                    { color = Css.rgb 200 200 200
+                    , width =
+                        { top = 1
+                        , right = 1
+                        , left = 1
+                        , bottom = 1
+                        }
+                    }
+                )
+            ]
+            [ ( ( Ui.Center, Ui.Center )
+              , Ui.column
+                    []
+                    [ Icon.plus
+                    , Ui.text
+                        []
+                        (Ui.TextAttributes
+                            { text =
+                                case language of
+                                    Data.LanguageEnglish ->
+                                        "Create a new project"
+
+                                    Data.LanguageJapanese ->
+                                        "プロジェクトを新規作成"
+
+                                    Data.LanguageEsperanto ->
+                                        "Krei novan projekton"
+                            , typeface = Component.Style.normalTypeface
+                            , size = 16
+                            , letterSpacing = 0
+                            , color = Css.rgb 200 200 200
+                            , textAlignment = Ui.TextAlignStart
                             }
                         )
                     ]
-                    [ ( ( Ui.Center, Ui.Center )
-                      , Ui.column
-                            []
-                            [ Icon.plus
-                            , Ui.text
-                                []
-                                (Ui.TextAttributes
-                                    { text =
-                                        case language of
-                                            Data.LanguageEnglish ->
-                                                "Create a new project"
-
-                                            Data.LanguageJapanese ->
-                                                "プロジェクトを新規作成"
-
-                                            Data.LanguageEsperanto ->
-                                                "Krei novan projekton"
-                                    , typeface = Component.Style.normalTypeface
-                                    , size = 16
-                                    , letterSpacing = 0
-                                    , color = Css.rgb 200 200 200
-                                    , textAlignment = Ui.TextAlignStart
-                                    }
-                                )
-                            ]
-                      )
-                    ]
-            }
+              )
+            ]
         )
 
 
@@ -356,40 +345,29 @@ projectLineView clientMode language imageStore projectList =
 
 projectItem : Data.ClientMode -> Data.Language -> ImageStore.ImageStore -> Project -> Ui.Panel Message
 projectItem clientMode language imageStore project =
-    let
-        projectUrl : Data.UrlData
-        projectUrl =
-            { clientMode = clientMode
-            , location =
-                Data.LocationProject
-                    (case project of
-                        OnlyId id ->
-                            id
-
-                        Full projectCache ->
-                            projectCache.id
-                    )
-            , language = language
-            , accessToken = Nothing
-            }
-    in
-    Ui.link
+    Component.Style.link
         [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
-        (Ui.LinkAttributes
-            { url = Data.UrlData.urlDataToUrl projectUrl
-            , clickMessage = PushUrl projectUrl
-            , noOpMessage = NoOp
-            , child =
-                Ui.depth
-                    [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
-                    [ ( ( Ui.Center, Ui.Center )
-                      , projectItemImage imageStore project
-                      )
-                    , ( ( Ui.Center, Ui.End )
-                      , projectItemText imageStore project
-                      )
-                    ]
-            }
+        { clientMode = clientMode
+        , location =
+            Data.LocationProject
+                (case project of
+                    OnlyId id ->
+                        id
+
+                    Full projectCache ->
+                        projectCache.id
+                )
+        , language = language
+        }
+        (Ui.depth
+            [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
+            [ ( ( Ui.Center, Ui.Center )
+              , projectItemImage imageStore project
+              )
+            , ( ( Ui.Center, Ui.End )
+              , projectItemText imageStore project
+              )
+            ]
         )
 
 

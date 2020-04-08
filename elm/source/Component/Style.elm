@@ -173,16 +173,11 @@ stretchText size text =
         )
 
 
-link : List Ui.Style -> Data.ClientMode -> Data.Language -> Data.Location -> Ui.Panel message -> Ui.Panel message
-link styleList clientMode language location =
+link : List Ui.Style -> Data.UrlData -> Ui.Panel message -> Ui.Panel message
+link styleList urlData =
     Ui.link
         styleList
-        (Data.UrlData.urlDataToUrl
-            { clientMode = clientMode
-            , language = language
-            , location = location
-            }
-        )
+        (Data.UrlData.urlDataToUrl urlData)
 
 
 codeFontTypeface : String
