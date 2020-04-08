@@ -5,6 +5,7 @@ module Component.Style exposing
     , fontHack
     , fontHackName
     , horizontalGutter
+    , link
     , normalText
     , normalTypeface
     , stretchText
@@ -17,6 +18,8 @@ module Component.Style exposing
 -}
 
 import Css
+import Data
+import Data.UrlData
 import Html.Styled
 import Html.Styled.Attributes
 import Html.Styled.Events
@@ -168,6 +171,13 @@ stretchText size text =
             , textAlignment = Ui.TextAlignStart
             }
         )
+
+
+link : List Ui.Style -> Data.UrlData -> Ui.Panel message -> Ui.Panel message
+link styleList urlData =
+    Ui.link
+        styleList
+        (Data.UrlData.urlDataToUrl urlData)
 
 
 codeFontTypeface : String

@@ -1,20 +1,14 @@
-module Component.Header exposing (Message(..), view)
+module Component.Header exposing (view)
 
 import Component.Style
 import Css
 import Data
 import Data.LogInState
-import Data.UrlData
 import ImageStore
 import Ui
 
 
-type Message
-    = ToHome
-    | NoOperation
-
-
-view : Data.ClientMode -> Data.Language -> ImageStore.ImageStore -> Data.LogInState.LogInState -> Ui.Panel Message
+view : Data.ClientMode -> Data.Language -> ImageStore.ImageStore -> Data.LogInState.LogInState -> Ui.Panel message
 view clientMode language imageStore logInState =
     Ui.row
         [ Ui.backgroundColor (Css.rgb 36 36 36)
@@ -39,33 +33,25 @@ view clientMode language imageStore logInState =
         )
 
 
-logo : Data.ClientMode -> Data.Language -> Ui.Panel Message
+logo : Data.ClientMode -> Data.Language -> Ui.Panel message
 logo clientMode language =
-    Ui.link
+    Component.Style.link
         []
-        (Ui.LinkAttributes
-            { url =
-                Data.UrlData.urlDataToString
-                    { clientMode = clientMode
-                    , language = language
-                    , location = Data.LocationHome
-                    , accessToken = Nothing
-                    }
-            , clickMessage = ToHome
-            , noOpMessage = NoOperation
-            , child =
-                Ui.text
-                    [ Ui.padding 8 ]
-                    (Ui.TextAttributes
-                        { text = "Definy"
-                        , typeface = Component.Style.codeFontTypeface
-                        , size = 32
-                        , letterSpacing = 0
-                        , color = Css.rgb 185 208 155
-                        , textAlignment = Ui.TextAlignStart
-                        }
-                    )
-            }
+        { clientMode = clientMode
+        , language = language
+        , location = Data.LocationHome
+        }
+        (Ui.text
+            [ Ui.padding 8 ]
+            (Ui.TextAttributes
+                { text = "Definy"
+                , typeface = Component.Style.codeFontTypeface
+                , size = 32
+                , letterSpacing = 0
+                , color = Css.rgb 185 208 155
+                , textAlignment = Ui.TextAlignStart
+                }
+            )
         )
 
 

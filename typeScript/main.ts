@@ -1,6 +1,6 @@
 import { Elm } from "../elm/source/Main.elm";
 import * as common from "definy-common";
-import { data, util } from "definy-common";
+import { data } from "definy-common";
 import * as db from "./indexedDB";
 
 const elmAppElement = document.createElement("div");
@@ -14,11 +14,11 @@ document.body.appendChild(elmAppElement);
 
 const getAccessToken = async (
   database: IDBDatabase | null,
-  urlData: data.UrlData
+  accessTokenFromUrl: data.Maybe<data.AccessToken>
 ): Promise<data.Maybe<data.AccessToken>> => {
-  switch (urlData.accessToken._) {
+  switch (accessTokenFromUrl._) {
     case "Just":
-      return data.maybeJust(urlData.accessToken.value);
+      return data.maybeJust(accessTokenFromUrl.value);
     case "Nothing": {
       const accessToken = await db.getAccessToken(database);
       if (accessToken === undefined) {
@@ -48,16 +48,6 @@ const callApi = <responseType>(
     .then((response) => decodeFunction(0, new Uint8Array(response)).result);
 
 const init = async (): Promise<void> => {
-  const urlData = common.urlDataFromUrl(new URL(location.href));
-  console.log(urlData);
-  history.replaceState(
-    "",
-    "",
-    common
-      .urlDataToUrl({ ...urlData, accessToken: common.data.maybeNothing() })
-      .toString()
-  );
-
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.ts", { scope: "/" }).then(
       () => {
@@ -70,7 +60,10 @@ const init = async (): Promise<void> => {
   }
   const database = await db.accessDatabase();
 
-  const accessToken = await getAccessToken(database, urlData);
+  const accessToken = await getAccessToken(
+    database,
+    common.urlDataAndAccessTokenFromUrl(new URL(location.href)).accessToken
+  );
   if (accessToken._ === "Just") {
     db.setAccessToken(database, accessToken.value);
   }
@@ -80,7 +73,7 @@ const init = async (): Promise<void> => {
         width: innerWidth,
         height: innerHeight,
       },
-      urlData: { ...urlData, accessToken: accessToken },
+      accessTokenMaybe: accessToken._ === "Just" ? accessToken.value : null,
       networkConnection: navigator.onLine,
     },
     node: elmAppElement,
@@ -198,19 +191,6 @@ const init = async (): Promise<void> => {
         });
       });
     });
-  });
-  app.ports.pushUrl.subscribe((urlData) => {
-    console.log("pushUrlを呼んだ");
-    history.pushState(
-      "",
-      "",
-      common
-        .urlDataToUrl({ ...urlData, accessToken: common.data.maybeNothing() })
-        .toString()
-    );
-  });
-  addEventListener("popstate", () => {
-    app.ports.urlChanged.send(common.urlDataFromUrl(new URL(location.href)));
   });
   app.ports.createProject.subscribe((parameter) => {
     callApi(
