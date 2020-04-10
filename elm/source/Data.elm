@@ -1,4 +1,4 @@
-module Data exposing (AccessToken(..), AccessTokenError(..), BranchPartDefinition, Change(..), ClientMode(..), Comment, Condition(..), ConditionCapture, ConditionTag, CreateProjectParameter, EvaluateExprError(..), EvaluatedExpr(..), Expr(..), FileHash(..), FunctionCall, Idea, IdeaId(..), IdeaItem(..), IdeaSnapshotAndId, IdeaSnapshotMaybeAndId, KernelCall, KernelExpr(..), LambdaBranch, Language(..), LocalPartId(..), LocalPartReference, Location(..), Module, ModuleId(..), OpenIdConnectProvider(..), PartDefinition, PartId(..), ProjectId(..), ProjectSnapshot, ProjectSnapshotAndId, ProjectSnapshotMaybeAndId, RequestLogInUrlRequestData, Suggestion, TagId(..), TagReferenceIndex, Time, Type, TypeBody(..), TypeBodyKernel(..), TypeBodyProductMember, TypeBodySumPattern, TypeDefinition, TypeError, TypeId(..), UrlData, UserId(..), UserSnapshot, UserSnapshotAndId, UserSnapshotMaybeAndId, accessTokenErrorJsonDecoder, accessTokenErrorToJsonValue, accessTokenJsonDecoder, accessTokenToJsonValue, branchPartDefinitionJsonDecoder, branchPartDefinitionToJsonValue, changeJsonDecoder, changeToJsonValue, clientModeJsonDecoder, clientModeToJsonValue, commentJsonDecoder, commentToJsonValue, conditionCaptureJsonDecoder, conditionCaptureToJsonValue, conditionJsonDecoder, conditionTagJsonDecoder, conditionTagToJsonValue, conditionToJsonValue, createProjectParameterJsonDecoder, createProjectParameterToJsonValue, evaluateExprErrorJsonDecoder, evaluateExprErrorToJsonValue, evaluatedExprJsonDecoder, evaluatedExprToJsonValue, exprJsonDecoder, exprToJsonValue, fileHashJsonDecoder, fileHashToJsonValue, functionCallJsonDecoder, functionCallToJsonValue, ideaIdJsonDecoder, ideaIdToJsonValue, ideaItemJsonDecoder, ideaItemToJsonValue, ideaJsonDecoder, ideaSnapshotAndIdJsonDecoder, ideaSnapshotAndIdToJsonValue, ideaSnapshotMaybeAndIdJsonDecoder, ideaSnapshotMaybeAndIdToJsonValue, ideaToJsonValue, kernelCallJsonDecoder, kernelCallToJsonValue, kernelExprJsonDecoder, kernelExprToJsonValue, lambdaBranchJsonDecoder, lambdaBranchToJsonValue, languageJsonDecoder, languageToJsonValue, localPartIdJsonDecoder, localPartIdToJsonValue, localPartReferenceJsonDecoder, localPartReferenceToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, moduleIdJsonDecoder, moduleIdToJsonValue, moduleJsonDecoder, moduleToJsonValue, openIdConnectProviderJsonDecoder, openIdConnectProviderToJsonValue, partDefinitionJsonDecoder, partDefinitionToJsonValue, partIdJsonDecoder, partIdToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, projectSnapshotAndIdJsonDecoder, projectSnapshotAndIdToJsonValue, projectSnapshotJsonDecoder, projectSnapshotMaybeAndIdJsonDecoder, projectSnapshotMaybeAndIdToJsonValue, projectSnapshotToJsonValue, requestLogInUrlRequestDataJsonDecoder, requestLogInUrlRequestDataToJsonValue, resultJsonDecoder, resultToJsonValue, suggestionJsonDecoder, suggestionToJsonValue, tagIdJsonDecoder, tagIdToJsonValue, tagReferenceIndexJsonDecoder, tagReferenceIndexToJsonValue, timeJsonDecoder, timeToJsonValue, typeBodyJsonDecoder, typeBodyKernelJsonDecoder, typeBodyKernelToJsonValue, typeBodyProductMemberJsonDecoder, typeBodyProductMemberToJsonValue, typeBodySumPatternJsonDecoder, typeBodySumPatternToJsonValue, typeBodyToJsonValue, typeDefinitionJsonDecoder, typeDefinitionToJsonValue, typeErrorJsonDecoder, typeErrorToJsonValue, typeIdJsonDecoder, typeIdToJsonValue, typeJsonDecoder, typeToJsonValue, urlDataJsonDecoder, urlDataToJsonValue, userIdJsonDecoder, userIdToJsonValue, userSnapshotAndIdJsonDecoder, userSnapshotAndIdToJsonValue, userSnapshotJsonDecoder, userSnapshotMaybeAndIdJsonDecoder, userSnapshotMaybeAndIdToJsonValue, userSnapshotToJsonValue)
+module Data exposing (AccessToken(..), AccessTokenError(..), AddCommentParameter, BranchPartDefinition, Change(..), ClientMode(..), Comment, Condition(..), ConditionCapture, ConditionTag, CreateIdeaParameter, CreateProjectParameter, EvaluateExprError(..), EvaluatedExpr(..), Expr(..), FileHash(..), FunctionCall, IdeaId(..), IdeaItem(..), IdeaSnapshot, IdeaSnapshotAndId, IdeaSnapshotMaybeAndId, KernelCall, KernelExpr(..), LambdaBranch, Language(..), LocalPartId(..), LocalPartReference, Location(..), Module, ModuleId(..), OpenIdConnectProvider(..), PartDefinition, PartId(..), ProjectId(..), ProjectSnapshot, ProjectSnapshotAndId, ProjectSnapshotMaybeAndId, RequestLogInUrlRequestData, Suggestion, TagId(..), TagReferenceIndex, Time, Type, TypeBody(..), TypeBodyKernel(..), TypeBodyProductMember, TypeBodySumPattern, TypeDefinition, TypeError, TypeId(..), UrlData, UserId(..), UserSnapshot, UserSnapshotAndId, UserSnapshotMaybeAndId, accessTokenErrorJsonDecoder, accessTokenErrorToJsonValue, accessTokenJsonDecoder, accessTokenToJsonValue, addCommentParameterJsonDecoder, addCommentParameterToJsonValue, branchPartDefinitionJsonDecoder, branchPartDefinitionToJsonValue, changeJsonDecoder, changeToJsonValue, clientModeJsonDecoder, clientModeToJsonValue, commentJsonDecoder, commentToJsonValue, conditionCaptureJsonDecoder, conditionCaptureToJsonValue, conditionJsonDecoder, conditionTagJsonDecoder, conditionTagToJsonValue, conditionToJsonValue, createIdeaParameterJsonDecoder, createIdeaParameterToJsonValue, createProjectParameterJsonDecoder, createProjectParameterToJsonValue, evaluateExprErrorJsonDecoder, evaluateExprErrorToJsonValue, evaluatedExprJsonDecoder, evaluatedExprToJsonValue, exprJsonDecoder, exprToJsonValue, fileHashJsonDecoder, fileHashToJsonValue, functionCallJsonDecoder, functionCallToJsonValue, ideaIdJsonDecoder, ideaIdToJsonValue, ideaItemJsonDecoder, ideaItemToJsonValue, ideaSnapshotAndIdJsonDecoder, ideaSnapshotAndIdToJsonValue, ideaSnapshotJsonDecoder, ideaSnapshotMaybeAndIdJsonDecoder, ideaSnapshotMaybeAndIdToJsonValue, ideaSnapshotToJsonValue, kernelCallJsonDecoder, kernelCallToJsonValue, kernelExprJsonDecoder, kernelExprToJsonValue, lambdaBranchJsonDecoder, lambdaBranchToJsonValue, languageJsonDecoder, languageToJsonValue, localPartIdJsonDecoder, localPartIdToJsonValue, localPartReferenceJsonDecoder, localPartReferenceToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, moduleIdJsonDecoder, moduleIdToJsonValue, moduleJsonDecoder, moduleToJsonValue, openIdConnectProviderJsonDecoder, openIdConnectProviderToJsonValue, partDefinitionJsonDecoder, partDefinitionToJsonValue, partIdJsonDecoder, partIdToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, projectSnapshotAndIdJsonDecoder, projectSnapshotAndIdToJsonValue, projectSnapshotJsonDecoder, projectSnapshotMaybeAndIdJsonDecoder, projectSnapshotMaybeAndIdToJsonValue, projectSnapshotToJsonValue, requestLogInUrlRequestDataJsonDecoder, requestLogInUrlRequestDataToJsonValue, resultJsonDecoder, resultToJsonValue, suggestionJsonDecoder, suggestionToJsonValue, tagIdJsonDecoder, tagIdToJsonValue, tagReferenceIndexJsonDecoder, tagReferenceIndexToJsonValue, timeJsonDecoder, timeToJsonValue, typeBodyJsonDecoder, typeBodyKernelJsonDecoder, typeBodyKernelToJsonValue, typeBodyProductMemberJsonDecoder, typeBodyProductMemberToJsonValue, typeBodySumPatternJsonDecoder, typeBodySumPatternToJsonValue, typeBodyToJsonValue, typeDefinitionJsonDecoder, typeDefinitionToJsonValue, typeErrorJsonDecoder, typeErrorToJsonValue, typeIdJsonDecoder, typeIdToJsonValue, typeJsonDecoder, typeToJsonValue, urlDataJsonDecoder, urlDataToJsonValue, userIdJsonDecoder, userIdToJsonValue, userSnapshotAndIdJsonDecoder, userSnapshotAndIdToJsonValue, userSnapshotJsonDecoder, userSnapshotMaybeAndIdJsonDecoder, userSnapshotMaybeAndIdToJsonValue, userSnapshotToJsonValue)
 
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp
@@ -9,13 +9,6 @@ import Json.Encode as Je
 -}
 type alias Time =
     { day : Int, millisecond : Int }
-
-
-{-| デバッグの状態と, デバッグ時ならアクセスしているポート番号
--}
-type ClientMode
-    = ClientModeDebugMode
-    | ClientModeRelease
 
 
 {-| ログインのURLを発行するために必要なデータ
@@ -37,12 +30,11 @@ type alias UrlData =
     { clientMode : ClientMode, location : Location, language : Language }
 
 
-{-| 英語,日本語,エスペラント語などの言語
+{-| デバッグの状態と, デバッグ時ならアクセスしているポート番号
 -}
-type Language
-    = LanguageJapanese
-    | LanguageEnglish
-    | LanguageEsperanto
+type ClientMode
+    = ClientModeDebugMode
+    | ClientModeRelease
 
 
 {-| DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる
@@ -54,6 +46,14 @@ type Location
     | LocationUser UserId
     | LocationProject ProjectId
     | LocationIdea IdeaId
+
+
+{-| 英語,日本語,エスペラント語などの言語
+-}
+type Language
+    = LanguageJapanese
+    | LanguageEnglish
+    | LanguageEsperanto
 
 
 {-| ユーザーのデータのスナップショット
@@ -82,14 +82,14 @@ type alias ProjectSnapshotAndId =
 
 {-| アイデア
 -}
-type alias Idea =
+type alias IdeaSnapshot =
     { name : String, createUser : UserId, createTime : Time, projectId : ProjectId, itemList : List IdeaItem, updateTime : Time, getTime : Time }
 
 
 {-| アイデアとそのID. アイデア作成時に返ってくる
 -}
 type alias IdeaSnapshotAndId =
-    { id : IdeaId, snapshot : Idea }
+    { id : IdeaId, snapshot : IdeaSnapshot }
 
 
 {-| アイデアのコメント
@@ -129,6 +129,12 @@ type alias TypeDefinition =
     { name : String, parentList : List PartId, description : String }
 
 
+{-| パーツの定義
+-}
+type alias PartDefinition =
+    { name : String, parentList : List PartId, description : String, type_ : Type, expr : Maybe Expr, moduleId : ModuleId }
+
+
 {-| 型の定義本体
 -}
 type TypeBody
@@ -155,12 +161,6 @@ type TypeBodyKernel
     = TypeBodyKernelFunction
     | TypeBodyKernelInt32
     | TypeBodyKernelList
-
-
-{-| パーツの定義
--}
-type alias PartDefinition =
-    { name : String, parentList : List PartId, description : String, type_ : Type, expr : Maybe Expr, moduleId : ModuleId }
 
 
 {-| 型
@@ -276,6 +276,18 @@ type alias CreateProjectParameter =
     { accessToken : AccessToken, projectName : String }
 
 
+{-| アイデアを作成時に必要なパラメーター
+-}
+type alias CreateIdeaParameter =
+    { accessToken : AccessToken, ideaName : String, projectId : ProjectId }
+
+
+{-| アイデアにコメントを追加するときに必要なパラメーター
+-}
+type alias AddCommentParameter =
+    { accessToken : AccessToken, ideaId : IdeaId, comment : String }
+
+
 {-| アクセストークンに関するエラー
 -}
 type AccessTokenError
@@ -298,7 +310,7 @@ type alias UserSnapshotMaybeAndId =
 {-| Maybe アイデア と ideaId. indexedDBからElmに渡す用
 -}
 type alias IdeaSnapshotMaybeAndId =
-    { id : IdeaId, snapshot : Maybe Idea }
+    { id : IdeaId, snapshot : Maybe IdeaSnapshot }
 
 
 type ProjectId
@@ -321,12 +333,12 @@ type PartId
     = PartId String
 
 
-type TypeId
-    = TypeId String
-
-
 type ModuleId
     = ModuleId String
+
+
+type TypeId
+    = TypeId String
 
 
 type LocalPartId
@@ -386,13 +398,13 @@ partIdToJsonValue (PartId string) =
     Je.string string
 
 
-typeIdToJsonValue : TypeId -> Je.Value
-typeIdToJsonValue (TypeId string) =
+moduleIdToJsonValue : ModuleId -> Je.Value
+moduleIdToJsonValue (ModuleId string) =
     Je.string string
 
 
-moduleIdToJsonValue : ModuleId -> Je.Value
-moduleIdToJsonValue (ModuleId string) =
+typeIdToJsonValue : TypeId -> Je.Value
+typeIdToJsonValue (TypeId string) =
     Je.string string
 
 
@@ -419,18 +431,6 @@ timeToJsonValue time =
         [ ( "day", Je.int time.day )
         , ( "millisecond", Je.int time.millisecond )
         ]
-
-
-{-| ClientModeのJSONへのエンコーダ
--}
-clientModeToJsonValue : ClientMode -> Je.Value
-clientModeToJsonValue clientMode =
-    case clientMode of
-        ClientModeDebugMode ->
-            Je.string "DebugMode"
-
-        ClientModeRelease ->
-            Je.string "Release"
 
 
 {-| RequestLogInUrlRequestDataのJSONへのエンコーダ
@@ -466,19 +466,16 @@ urlDataToJsonValue urlData =
         ]
 
 
-{-| LanguageのJSONへのエンコーダ
+{-| ClientModeのJSONへのエンコーダ
 -}
-languageToJsonValue : Language -> Je.Value
-languageToJsonValue language =
-    case language of
-        LanguageJapanese ->
-            Je.string "Japanese"
+clientModeToJsonValue : ClientMode -> Je.Value
+clientModeToJsonValue clientMode =
+    case clientMode of
+        ClientModeDebugMode ->
+            Je.string "DebugMode"
 
-        LanguageEnglish ->
-            Je.string "English"
-
-        LanguageEsperanto ->
-            Je.string "Esperanto"
+        ClientModeRelease ->
+            Je.string "Release"
 
 
 {-| LocationのJSONへのエンコーダ
@@ -503,6 +500,21 @@ locationToJsonValue location =
 
         LocationIdea parameter ->
             Je.object [ ( "_", Je.string "Idea" ), ( "ideaId", ideaIdToJsonValue parameter ) ]
+
+
+{-| LanguageのJSONへのエンコーダ
+-}
+languageToJsonValue : Language -> Je.Value
+languageToJsonValue language =
+    case language of
+        LanguageJapanese ->
+            Je.string "Japanese"
+
+        LanguageEnglish ->
+            Je.string "English"
+
+        LanguageEsperanto ->
+            Je.string "Esperanto"
 
 
 {-| UserSnapshotのJSONへのエンコーダ
@@ -556,18 +568,18 @@ projectSnapshotAndIdToJsonValue projectSnapshotAndId =
         ]
 
 
-{-| IdeaのJSONへのエンコーダ
+{-| IdeaSnapshotのJSONへのエンコーダ
 -}
-ideaToJsonValue : Idea -> Je.Value
-ideaToJsonValue idea =
+ideaSnapshotToJsonValue : IdeaSnapshot -> Je.Value
+ideaSnapshotToJsonValue ideaSnapshot =
     Je.object
-        [ ( "name", Je.string idea.name )
-        , ( "createUser", userIdToJsonValue idea.createUser )
-        , ( "createTime", timeToJsonValue idea.createTime )
-        , ( "projectId", projectIdToJsonValue idea.projectId )
-        , ( "itemList", Je.list ideaItemToJsonValue idea.itemList )
-        , ( "updateTime", timeToJsonValue idea.updateTime )
-        , ( "getTime", timeToJsonValue idea.getTime )
+        [ ( "name", Je.string ideaSnapshot.name )
+        , ( "createUser", userIdToJsonValue ideaSnapshot.createUser )
+        , ( "createTime", timeToJsonValue ideaSnapshot.createTime )
+        , ( "projectId", projectIdToJsonValue ideaSnapshot.projectId )
+        , ( "itemList", Je.list ideaItemToJsonValue ideaSnapshot.itemList )
+        , ( "updateTime", timeToJsonValue ideaSnapshot.updateTime )
+        , ( "getTime", timeToJsonValue ideaSnapshot.getTime )
         ]
 
 
@@ -577,7 +589,7 @@ ideaSnapshotAndIdToJsonValue : IdeaSnapshotAndId -> Je.Value
 ideaSnapshotAndIdToJsonValue ideaSnapshotAndId =
     Je.object
         [ ( "id", ideaIdToJsonValue ideaSnapshotAndId.id )
-        , ( "snapshot", ideaToJsonValue ideaSnapshotAndId.snapshot )
+        , ( "snapshot", ideaSnapshotToJsonValue ideaSnapshotAndId.snapshot )
         ]
 
 
@@ -646,6 +658,20 @@ typeDefinitionToJsonValue typeDefinition =
         ]
 
 
+{-| PartDefinitionのJSONへのエンコーダ
+-}
+partDefinitionToJsonValue : PartDefinition -> Je.Value
+partDefinitionToJsonValue partDefinition =
+    Je.object
+        [ ( "name", Je.string partDefinition.name )
+        , ( "parentList", Je.list partIdToJsonValue partDefinition.parentList )
+        , ( "description", Je.string partDefinition.description )
+        , ( "type", typeToJsonValue partDefinition.type_ )
+        , ( "expr", maybeToJsonValue exprToJsonValue partDefinition.expr )
+        , ( "moduleId", moduleIdToJsonValue partDefinition.moduleId )
+        ]
+
+
 {-| TypeBodyのJSONへのエンコーダ
 -}
 typeBodyToJsonValue : TypeBody -> Je.Value
@@ -696,20 +722,6 @@ typeBodyKernelToJsonValue typeBodyKernel =
 
         TypeBodyKernelList ->
             Je.string "List"
-
-
-{-| PartDefinitionのJSONへのエンコーダ
--}
-partDefinitionToJsonValue : PartDefinition -> Je.Value
-partDefinitionToJsonValue partDefinition =
-    Je.object
-        [ ( "name", Je.string partDefinition.name )
-        , ( "parentList", Je.list partIdToJsonValue partDefinition.parentList )
-        , ( "description", Je.string partDefinition.description )
-        , ( "type", typeToJsonValue partDefinition.type_ )
-        , ( "expr", maybeToJsonValue exprToJsonValue partDefinition.expr )
-        , ( "moduleId", moduleIdToJsonValue partDefinition.moduleId )
-        ]
 
 
 {-| TypeのJSONへのエンコーダ
@@ -928,6 +940,28 @@ createProjectParameterToJsonValue createProjectParameter =
         ]
 
 
+{-| CreateIdeaParameterのJSONへのエンコーダ
+-}
+createIdeaParameterToJsonValue : CreateIdeaParameter -> Je.Value
+createIdeaParameterToJsonValue createIdeaParameter =
+    Je.object
+        [ ( "accessToken", accessTokenToJsonValue createIdeaParameter.accessToken )
+        , ( "ideaName", Je.string createIdeaParameter.ideaName )
+        , ( "projectId", projectIdToJsonValue createIdeaParameter.projectId )
+        ]
+
+
+{-| AddCommentParameterのJSONへのエンコーダ
+-}
+addCommentParameterToJsonValue : AddCommentParameter -> Je.Value
+addCommentParameterToJsonValue addCommentParameter =
+    Je.object
+        [ ( "accessToken", accessTokenToJsonValue addCommentParameter.accessToken )
+        , ( "ideaId", ideaIdToJsonValue addCommentParameter.ideaId )
+        , ( "comment", Je.string addCommentParameter.comment )
+        ]
+
+
 {-| AccessTokenErrorのJSONへのエンコーダ
 -}
 accessTokenErrorToJsonValue : AccessTokenError -> Je.Value
@@ -966,7 +1000,7 @@ ideaSnapshotMaybeAndIdToJsonValue : IdeaSnapshotMaybeAndId -> Je.Value
 ideaSnapshotMaybeAndIdToJsonValue ideaSnapshotMaybeAndId =
     Je.object
         [ ( "id", ideaIdToJsonValue ideaSnapshotMaybeAndId.id )
-        , ( "snapshot", maybeToJsonValue ideaToJsonValue ideaSnapshotMaybeAndId.snapshot )
+        , ( "snapshot", maybeToJsonValue ideaSnapshotToJsonValue ideaSnapshotMaybeAndId.snapshot )
         ]
 
 
@@ -1029,14 +1063,14 @@ partIdJsonDecoder =
     Jd.map PartId Jd.string
 
 
-typeIdJsonDecoder : Jd.Decoder TypeId
-typeIdJsonDecoder =
-    Jd.map TypeId Jd.string
-
-
 moduleIdJsonDecoder : Jd.Decoder ModuleId
 moduleIdJsonDecoder =
     Jd.map ModuleId Jd.string
+
+
+typeIdJsonDecoder : Jd.Decoder TypeId
+typeIdJsonDecoder =
+    Jd.map TypeId Jd.string
 
 
 localPartIdJsonDecoder : Jd.Decoder LocalPartId
@@ -1066,25 +1100,6 @@ timeJsonDecoder =
         )
         |> Jdp.required "day" Jd.int
         |> Jdp.required "millisecond" Jd.int
-
-
-{-| ClientModeのJSON Decoder
--}
-clientModeJsonDecoder : Jd.Decoder ClientMode
-clientModeJsonDecoder =
-    Jd.string
-        |> Jd.andThen
-            (\tag ->
-                case tag of
-                    "DebugMode" ->
-                        Jd.succeed ClientModeDebugMode
-
-                    "Release" ->
-                        Jd.succeed ClientModeRelease
-
-                    _ ->
-                        Jd.fail ("ClientModeで不明なタグを受けたとった tag=" ++ tag)
-            )
 
 
 {-| RequestLogInUrlRequestDataのJSON Decoder
@@ -1136,25 +1151,22 @@ urlDataJsonDecoder =
         |> Jdp.required "language" languageJsonDecoder
 
 
-{-| LanguageのJSON Decoder
+{-| ClientModeのJSON Decoder
 -}
-languageJsonDecoder : Jd.Decoder Language
-languageJsonDecoder =
+clientModeJsonDecoder : Jd.Decoder ClientMode
+clientModeJsonDecoder =
     Jd.string
         |> Jd.andThen
             (\tag ->
                 case tag of
-                    "Japanese" ->
-                        Jd.succeed LanguageJapanese
+                    "DebugMode" ->
+                        Jd.succeed ClientModeDebugMode
 
-                    "English" ->
-                        Jd.succeed LanguageEnglish
-
-                    "Esperanto" ->
-                        Jd.succeed LanguageEsperanto
+                    "Release" ->
+                        Jd.succeed ClientModeRelease
 
                     _ ->
-                        Jd.fail ("Languageで不明なタグを受けたとった tag=" ++ tag)
+                        Jd.fail ("ClientModeで不明なタグを受けたとった tag=" ++ tag)
             )
 
 
@@ -1186,6 +1198,28 @@ locationJsonDecoder =
 
                     _ ->
                         Jd.fail ("Locationで不明なタグを受けたとった tag=" ++ tag)
+            )
+
+
+{-| LanguageのJSON Decoder
+-}
+languageJsonDecoder : Jd.Decoder Language
+languageJsonDecoder =
+    Jd.string
+        |> Jd.andThen
+            (\tag ->
+                case tag of
+                    "Japanese" ->
+                        Jd.succeed LanguageJapanese
+
+                    "English" ->
+                        Jd.succeed LanguageEnglish
+
+                    "Esperanto" ->
+                        Jd.succeed LanguageEsperanto
+
+                    _ ->
+                        Jd.fail ("Languageで不明なタグを受けたとった tag=" ++ tag)
             )
 
 
@@ -1267,10 +1301,10 @@ projectSnapshotAndIdJsonDecoder =
         |> Jdp.required "snapshot" projectSnapshotJsonDecoder
 
 
-{-| IdeaのJSON Decoder
+{-| IdeaSnapshotのJSON Decoder
 -}
-ideaJsonDecoder : Jd.Decoder Idea
-ideaJsonDecoder =
+ideaSnapshotJsonDecoder : Jd.Decoder IdeaSnapshot
+ideaSnapshotJsonDecoder =
     Jd.succeed
         (\name createUser createTime projectId itemList updateTime getTime ->
             { name = name
@@ -1302,7 +1336,7 @@ ideaSnapshotAndIdJsonDecoder =
             }
         )
         |> Jdp.required "id" ideaIdJsonDecoder
-        |> Jdp.required "snapshot" ideaJsonDecoder
+        |> Jdp.required "snapshot" ideaSnapshotJsonDecoder
 
 
 {-| IdeaItemのJSON Decoder
@@ -1404,6 +1438,28 @@ typeDefinitionJsonDecoder =
         |> Jdp.required "description" Jd.string
 
 
+{-| PartDefinitionのJSON Decoder
+-}
+partDefinitionJsonDecoder : Jd.Decoder PartDefinition
+partDefinitionJsonDecoder =
+    Jd.succeed
+        (\name parentList description type_ expr moduleId ->
+            { name = name
+            , parentList = parentList
+            , description = description
+            , type_ = type_
+            , expr = expr
+            , moduleId = moduleId
+            }
+        )
+        |> Jdp.required "name" Jd.string
+        |> Jdp.required "parentList" (Jd.list partIdJsonDecoder)
+        |> Jdp.required "description" Jd.string
+        |> Jdp.required "type" typeJsonDecoder
+        |> Jdp.required "expr" (maybeJsonDecoder exprJsonDecoder)
+        |> Jdp.required "moduleId" moduleIdJsonDecoder
+
+
 {-| TypeBodyのJSON Decoder
 -}
 typeBodyJsonDecoder : Jd.Decoder TypeBody
@@ -1478,28 +1534,6 @@ typeBodyKernelJsonDecoder =
                     _ ->
                         Jd.fail ("TypeBodyKernelで不明なタグを受けたとった tag=" ++ tag)
             )
-
-
-{-| PartDefinitionのJSON Decoder
--}
-partDefinitionJsonDecoder : Jd.Decoder PartDefinition
-partDefinitionJsonDecoder =
-    Jd.succeed
-        (\name parentList description type_ expr moduleId ->
-            { name = name
-            , parentList = parentList
-            , description = description
-            , type_ = type_
-            , expr = expr
-            , moduleId = moduleId
-            }
-        )
-        |> Jdp.required "name" Jd.string
-        |> Jdp.required "parentList" (Jd.list partIdJsonDecoder)
-        |> Jdp.required "description" Jd.string
-        |> Jdp.required "type" typeJsonDecoder
-        |> Jdp.required "expr" (maybeJsonDecoder exprJsonDecoder)
-        |> Jdp.required "moduleId" moduleIdJsonDecoder
 
 
 {-| TypeのJSON Decoder
@@ -1802,6 +1836,38 @@ createProjectParameterJsonDecoder =
         |> Jdp.required "projectName" Jd.string
 
 
+{-| CreateIdeaParameterのJSON Decoder
+-}
+createIdeaParameterJsonDecoder : Jd.Decoder CreateIdeaParameter
+createIdeaParameterJsonDecoder =
+    Jd.succeed
+        (\accessToken ideaName projectId ->
+            { accessToken = accessToken
+            , ideaName = ideaName
+            , projectId = projectId
+            }
+        )
+        |> Jdp.required "accessToken" accessTokenJsonDecoder
+        |> Jdp.required "ideaName" Jd.string
+        |> Jdp.required "projectId" projectIdJsonDecoder
+
+
+{-| AddCommentParameterのJSON Decoder
+-}
+addCommentParameterJsonDecoder : Jd.Decoder AddCommentParameter
+addCommentParameterJsonDecoder =
+    Jd.succeed
+        (\accessToken ideaId comment ->
+            { accessToken = accessToken
+            , ideaId = ideaId
+            , comment = comment
+            }
+        )
+        |> Jdp.required "accessToken" accessTokenJsonDecoder
+        |> Jdp.required "ideaId" ideaIdJsonDecoder
+        |> Jdp.required "comment" Jd.string
+
+
 {-| AccessTokenErrorのJSON Decoder
 -}
 accessTokenErrorJsonDecoder : Jd.Decoder AccessTokenError
@@ -1860,4 +1926,4 @@ ideaSnapshotMaybeAndIdJsonDecoder =
             }
         )
         |> Jdp.required "id" ideaIdJsonDecoder
-        |> Jdp.required "snapshot" (maybeJsonDecoder ideaJsonDecoder)
+        |> Jdp.required "snapshot" (maybeJsonDecoder ideaSnapshotJsonDecoder)
