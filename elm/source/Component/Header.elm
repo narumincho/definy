@@ -28,7 +28,7 @@ view clientMode language imageStore logInState =
             Data.LogInState.Ok record ->
                 [ logo clientMode language
                 , Ui.empty [ Ui.width Ui.stretch ]
-                , userItem imageStore record.userSnapshotAndId.snapshot
+                , userItem clientMode language imageStore record.userSnapshotAndId
                 ]
         )
 
@@ -70,32 +70,40 @@ guestItem =
         )
 
 
-userItem : ImageStore.ImageStore -> Data.UserSnapshot -> Ui.Panel msg
-userItem imageStore userData =
-    Ui.row
-        [ Ui.gap 8 ]
-        ([ case ImageStore.getImageBlobUrl userData.imageHash imageStore of
-            Just blobUrl ->
-                [ Ui.bitmapImage
-                    [ Ui.width (Ui.fix 48)
-                    , Ui.height (Ui.fix 48)
-                    , Ui.borderRadius (Ui.BorderRadiusPercent 50)
-                    ]
-                    (Ui.BitmapImageAttributes
-                        { url = blobUrl
-                        , fitStyle = Ui.Contain
-                        , alternativeText = userData.name ++ "のユーザーアイコン"
-                        , rendering = Ui.ImageRenderingPixelated
-                        }
-                    )
-                ]
+userItem : Data.ClientMode -> Data.Language -> ImageStore.ImageStore -> Data.UserSnapshotAndId -> Ui.Panel msg
+userItem clientMode language imageStore userSnapshotAndId =
+    Component.Style.link
+        []
+        { clientMode = clientMode
+        , language = language
+        , location = Data.LocationUser userSnapshotAndId.id
+        }
+        (Ui.row
+            [ Ui.gap 8 ]
+            [ case ImageStore.getImageBlobUrl userSnapshotAndId.snapshot.imageHash imageStore of
+                Just blobUrl ->
+                    Ui.bitmapImage
+                        [ Ui.width (Ui.fix 48)
+                        , Ui.height (Ui.fix 48)
+                        , Ui.borderRadius (Ui.BorderRadiusPercent 50)
+                        ]
+                        (Ui.BitmapImageAttributes
+                            { url = blobUrl
+                            , fitStyle = Ui.Contain
+                            , alternativeText = userSnapshotAndId.snapshot.name ++ "のユーザーアイコン"
+                            , rendering = Ui.ImageRenderingPixelated
+                            }
+                        )
 
-            Nothing ->
-                []
-         , [ Ui.text
+                Nothing ->
+                    Ui.empty
+                        [ Ui.width (Ui.fix 48)
+                        , Ui.height (Ui.fix 48)
+                        ]
+            , Ui.text
                 []
                 (Ui.TextAttributes
-                    { text = userData.name
+                    { text = userSnapshotAndId.snapshot.name
                     , typeface = Component.Style.normalTypeface
                     , size = 16
                     , letterSpacing = 0
@@ -103,7 +111,5 @@ userItem imageStore userData =
                     , textAlignment = Ui.TextAlignCenter
                     }
                 )
-           ]
-         ]
-            |> List.concat
+            ]
         )
