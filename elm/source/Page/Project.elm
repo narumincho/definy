@@ -3,6 +3,7 @@ module Page.Project exposing (Message(..), Model, getProjectId, init, update, vi
 import Command
 import Component.Style
 import Data
+import Data.TimeZoneAndName
 import ImageStore
 import Ui
 
@@ -54,8 +55,8 @@ update message model =
                 ( model, Command.None )
 
 
-view : ImageStore.ImageStore -> Model -> Ui.Panel Message
-view imageStore model =
+view : Maybe Data.TimeZoneAndName.TimeZoneAndName -> ImageStore.ImageStore -> Model -> Ui.Panel Message
+view timeZoneAndNameMaybe imageStore model =
     case model of
         Loading projectId ->
             loadingView projectId
@@ -63,7 +64,9 @@ view imageStore model =
         Loaded projectCacheWithId ->
             case projectCacheWithId.snapshot of
                 Just projectCache ->
-                    normalView imageStore
+                    normalView
+                        timeZoneAndNameMaybe
+                        imageStore
                         { id = projectCacheWithId.id
                         , snapshot = projectCache
                         }
@@ -78,8 +81,12 @@ loadingView (Data.ProjectId projectIdAsString) =
         ("projectId = " ++ projectIdAsString ++ "のプロジェクトを読込中")
 
 
-normalView : ImageStore.ImageStore -> Data.ProjectSnapshotAndId -> Ui.Panel Message
-normalView imageStore projectSnapshotAndId =
+normalView :
+    Maybe Data.TimeZoneAndName.TimeZoneAndName
+    -> ImageStore.ImageStore
+    -> Data.ProjectSnapshotAndId
+    -> Ui.Panel Message
+normalView timeZoneAndNameMaybe imageStore projectSnapshotAndId =
     let
         (Data.ProjectId projectIdAsString) =
             projectSnapshotAndId.id
@@ -123,6 +130,16 @@ normalView imageStore projectSnapshotAndId =
                     [ Ui.width (Ui.stretchWithMaxSize 640), Ui.height Ui.auto ]
                     [ ( ( Ui.Center, Ui.Center ), Component.Style.normalText 16 (projectSnapshotAndId.snapshot.name ++ "の画像を読込中") ) ]
         , ideaListView
+        , Ui.row
+            [ Ui.gap 8 ]
+            [ Component.Style.normalText 16 "作成日時:"
+            , Component.Style.timeView timeZoneAndNameMaybe projectSnapshotAndId.snapshot.createTime
+            ]
+        , Ui.row
+            [ Ui.gap 8 ]
+            [ Component.Style.normalText 16 "更新日時:"
+            , Component.Style.timeView timeZoneAndNameMaybe projectSnapshotAndId.snapshot.updateTime
+            ]
         ]
 
 

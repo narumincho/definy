@@ -12,6 +12,7 @@ import Css
 import Data
 import Data.Key
 import Data.LogInState
+import Data.TimeZoneAndName
 import Data.UrlData
 import Html.Styled
 import Icon
@@ -137,7 +138,7 @@ type Msg
     | ResponseGetImageBlob { blobUrl : String, fileHash : Data.FileHash }
     | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url.Url
-    | ResponseTimeZone Time.Zone
+    | ResponseTimeZone Data.TimeZoneAndName.TimeZoneAndName
     | CreateProjectResponse (Maybe Data.ProjectSnapshotAndId)
     | NoOperation
     | AllProjectResponse (List Data.ProjectId)
@@ -169,7 +170,7 @@ type Model
         , notificationModel : Component.Notifications.Model
         , imageStore : ImageStore.ImageStore
         , navigationKey : Browser.Navigation.Key
-        , timeZone : Time.Zone
+        , timeZone : Maybe Data.TimeZoneAndName.TimeZoneAndName
         }
 
 
@@ -264,7 +265,7 @@ init flag url navigationKey =
         , clientMode = urlData.clientMode
         , imageStore = ImageStore.empty
         , navigationKey = navigationKey
-        , timeZone = Time.utc
+        , timeZone = Nothing
         }
     , Cmd.batch
         [ case flag.accessTokenMaybe of
@@ -277,7 +278,9 @@ init flag url navigationKey =
         , commandToMainCommand logInState notificationsCommand
         , commandToMainCommand logInState pageCommand
         , Browser.Navigation.replaceUrl navigationKey (Url.toString (Data.UrlData.urlDataToUrl urlData))
-        , Task.perform ResponseTimeZone Time.here
+        , Task.perform
+            ResponseTimeZone
+            (Task.map2 Data.TimeZoneAndName.from Time.getZoneName Time.here)
         ]
     )
 
@@ -454,8 +457,8 @@ update msg (Model rec) =
                     , Browser.Navigation.pushUrl rec.navigationKey link
                     )
 
-        ResponseTimeZone timeZone ->
-            ( Model { rec | timeZone = timeZone }
+        ResponseTimeZone timeZoneAndName ->
+            ( Model { rec | timeZone = Just timeZoneAndName }
             , Cmd.none
             )
 
@@ -995,6 +998,7 @@ mainView (Model record) =
                 [ headerView (Model record)
                 , logInPanel record.logInState record.language record.windowSize
                 , Page.Project.view
+                    record.timeZone
                     record.imageStore
                     pageModel
                     |> Ui.map (PageMessageProject >> PageMsg)

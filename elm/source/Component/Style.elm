@@ -20,6 +20,7 @@ module Component.Style exposing
 
 import Css
 import Data
+import Data.TimeZoneAndName
 import Data.UrlData
 import Html.Styled
 import Html.Styled.Attributes
@@ -187,40 +188,114 @@ codeFontTypeface =
     "Hack"
 
 
-timeView : Time.Zone -> Data.Time -> Ui.Panel message
-timeView zone time =
+timeView : Maybe Data.TimeZoneAndName.TimeZoneAndName -> Data.Time -> Ui.Panel message
+timeView timeZoneAndNameMaybe time =
     let
         posix =
-            Time.millisToPosix (time.day * 1000 * 60 * 60 * 24 + time.millisecond)
+            timeToPosix time
     in
-    normalText 16
-        (timeToString zone posix
-            ++ (if zone == Time.utc then
-                    "(UTC)"
+    case timeZoneAndNameMaybe of
+        Just timeZoneAndName ->
+            Ui.column
+                []
+                [ Ui.row [ Ui.gap 8 ]
+                    [ normalText 12 (Data.TimeZoneAndName.getTimeZoneName timeZoneAndName)
+                    , Ui.row [ Ui.gap 4 ]
+                        (timeToTimeTermList (Data.TimeZoneAndName.getTimeZone timeZoneAndName) posix
+                            |> List.map
+                                (\timeTerm ->
+                                    case timeTerm of
+                                        Number term ->
+                                            Ui.text
+                                                []
+                                                (Ui.TextAttributes
+                                                    { text = term
+                                                    , typeface = normalTypeface
+                                                    , size = 16
+                                                    , letterSpacing = 0
+                                                    , color = Css.rgb 200 200 200
+                                                    , textAlignment = Ui.TextAlignEnd
+                                                    }
+                                                )
 
-                else
-                    ""
-               )
-        )
+                                        Sign term ->
+                                            Ui.text
+                                                []
+                                                (Ui.TextAttributes
+                                                    { text = term
+                                                    , typeface = normalTypeface
+                                                    , size = 12
+                                                    , letterSpacing = 0
+                                                    , color = Css.rgb 160 160 160
+                                                    , textAlignment = Ui.TextAlignEnd
+                                                    }
+                                                )
+                                )
+                        )
+                    ]
+                , Ui.text
+                    [ Ui.width Ui.stretch ]
+                    (Ui.TextAttributes
+                        { text = utcTimeToString posix
+                        , typeface = normalTypeface
+                        , size = 12
+                        , letterSpacing = 0
+                        , color = Css.rgb 100 100 100
+                        , textAlignment = Ui.TextAlignEnd
+                        }
+                    )
+                ]
+
+        Nothing ->
+            normalText 16 (utcTimeToString posix)
 
 
-timeToString : Time.Zone -> Time.Posix -> String
-timeToString zone posix =
+timeToPosix : Data.Time -> Time.Posix
+timeToPosix time =
+    Time.millisToPosix (time.day * 1000 * 60 * 60 * 24 + time.millisecond)
+
+
+utcTimeToString : Time.Posix -> String
+utcTimeToString posix =
     String.concat
-        [ String.fromInt (Time.toYear zone posix)
+        [ String.fromInt (Time.toYear Time.utc posix)
         , "-"
-        , monthToString (Time.toMonth zone posix)
+        , monthToString (Time.toMonth Time.utc posix)
         , "-"
-        , String.padLeft 2 '0' (String.fromInt (Time.toDay zone posix))
+        , String.padLeft 2 '0' (String.fromInt (Time.toDay Time.utc posix))
         , "T"
-        , String.padLeft 2 '0' (String.fromInt (Time.toHour zone posix))
+        , String.padLeft 2 '0' (String.fromInt (Time.toHour Time.utc posix))
         , ":"
-        , String.padLeft 2 '0' (String.fromInt (Time.toMinute zone posix))
+        , String.padLeft 2 '0' (String.fromInt (Time.toMinute Time.utc posix))
         , ":"
-        , String.padLeft 2 '0' (String.fromInt (Time.toSecond zone posix))
+        , String.padLeft 2 '0' (String.fromInt (Time.toSecond Time.utc posix))
         , "."
-        , String.padLeft 3 '0' (String.fromInt (Time.toMillis zone posix))
+        , String.padLeft 3 '0' (String.fromInt (Time.toMillis Time.utc posix))
+        , "Z"
         ]
+
+
+timeToTimeTermList : Time.Zone -> Time.Posix -> List TimeTerm
+timeToTimeTermList zone posix =
+    [ Number (String.fromInt (Time.toYear zone posix))
+    , Sign "/"
+    , Number (monthToString (Time.toMonth zone posix))
+    , Sign "/"
+    , Number (String.padLeft 2 '0' (String.fromInt (Time.toDay zone posix)))
+    , Sign ""
+    , Number (String.padLeft 2 '0' (String.fromInt (Time.toHour zone posix)))
+    , Sign ":"
+    , Number (String.padLeft 2 '0' (String.fromInt (Time.toMinute zone posix)))
+    , Sign ":"
+    , Number (String.padLeft 2 '0' (String.fromInt (Time.toSecond zone posix)))
+    , Sign "."
+    , Number (String.padLeft 3 '0' (String.fromInt (Time.toMillis zone posix)))
+    ]
+
+
+type TimeTerm
+    = Number String
+    | Sign String
 
 
 monthToString : Time.Month -> String

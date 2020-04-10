@@ -3,6 +3,7 @@ module Page.User exposing (Message(..), Model, getUserId, init, update, view)
 import Command
 import Component.Style
 import Data
+import Data.TimeZoneAndName
 import ImageStore
 import Time
 import Ui
@@ -54,8 +55,8 @@ update message model =
                 )
 
 
-view : Time.Zone -> ImageStore.ImageStore -> Model -> Ui.Panel Message
-view timeZone imageStore model =
+view : Maybe Data.TimeZoneAndName.TimeZoneAndName -> ImageStore.ImageStore -> Model -> Ui.Panel Message
+view timeZoneAndNameMaybe imageStore model =
     case model of
         Loading (Data.UserId userIdAsString) ->
             Component.Style.normalText 24 (userIdAsString ++ "のユーザー詳細ページ")
@@ -64,7 +65,7 @@ view timeZone imageStore model =
             case userSnapshotMaybeAndId.snapshot of
                 Just userSnapshot ->
                     normalView
-                        timeZone
+                        timeZoneAndNameMaybe
                         imageStore
                         { snapshot = userSnapshot
                         , id = userSnapshotMaybeAndId.id
@@ -74,8 +75,12 @@ view timeZone imageStore model =
                     notFoundView userSnapshotMaybeAndId.id
 
 
-normalView : Time.Zone -> ImageStore.ImageStore -> Data.UserSnapshotAndId -> Ui.Panel Message
-normalView timeZone imageStore userSnapshotAndId =
+normalView :
+    Maybe Data.TimeZoneAndName.TimeZoneAndName
+    -> ImageStore.ImageStore
+    -> Data.UserSnapshotAndId
+    -> Ui.Panel Message
+normalView timeZoneAndNameMaybe imageStore userSnapshotAndId =
     Ui.column
         []
         [ Ui.row
@@ -101,7 +106,7 @@ normalView timeZone imageStore userSnapshotAndId =
         , Ui.row
             [ Ui.gap 16 ]
             [ Component.Style.normalText 16 "作成日時:"
-            , Component.Style.timeView timeZone userSnapshotAndId.snapshot.createTime
+            , Component.Style.timeView timeZoneAndNameMaybe userSnapshotAndId.snapshot.createTime
             ]
         ]
 
