@@ -28,6 +28,8 @@ type Ports = {
   readonly getImageBlobUrl: SubForElmCmd<data.FileHash>;
   readonly createProject: SubForElmCmd<data.CreateProjectParameter>;
   readonly toValidProjectName: SubForElmCmd<string>;
+
+  readonly getUser: SubForElmCmd<data.UserId>;
   readonly getAllProjectIdList: SubForElmCmd<null>;
   readonly getProject: SubForElmCmd<data.ProjectId>;
   readonly getProjectForceNotUseCache: SubForElmCmd<data.ProjectId>;

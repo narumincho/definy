@@ -25,6 +25,7 @@ import Page.Idea
 import Page.Project
 import Page.User
 import Task
+import Time
 import Ui
 import Url
 
@@ -65,6 +66,9 @@ port createProject : Json.Encode.Value -> Cmd msg
 
 
 port toValidProjectName : String -> Cmd msg
+
+
+port getUser : Json.Decode.Value -> Cmd msg
 
 
 port getAllProjectIdList : () -> Cmd msg
@@ -113,6 +117,9 @@ port responseAllProjectId : (Json.Decode.Value -> msg) -> Sub msg
 port responseProject : (Json.Decode.Value -> msg) -> Sub msg
 
 
+port responseUser : (Json.Decode.Value -> msg) -> Sub msg
+
+
 {-| 全体の入力を表すメッセージ
 -}
 type Msg
@@ -130,10 +137,12 @@ type Msg
     | ResponseGetImageBlob { blobUrl : String, fileHash : Data.FileHash }
     | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url.Url
+    | ResponseTimeZone Time.Zone
     | CreateProjectResponse (Maybe Data.ProjectSnapshotAndId)
     | NoOperation
-    | GetAllProjectResponse (List Data.ProjectId)
-    | GetProjectResponse Data.ProjectSnapshotMaybeAndId
+    | AllProjectResponse (List Data.ProjectId)
+    | ProjectResponse Data.ProjectSnapshotMaybeAndId
+    | UserResponse Data.UserSnapshotMaybeAndId
 
 
 type PageMessage
@@ -160,6 +169,7 @@ type Model
         , notificationModel : Component.Notifications.Model
         , imageStore : ImageStore.ImageStore
         , navigationKey : Browser.Navigation.Key
+        , timeZone : Time.Zone
         }
 
 
@@ -254,6 +264,7 @@ init flag url navigationKey =
         , clientMode = urlData.clientMode
         , imageStore = ImageStore.empty
         , navigationKey = navigationKey
+        , timeZone = Time.utc
         }
     , Cmd.batch
         [ case flag.accessTokenMaybe of
@@ -266,6 +277,7 @@ init flag url navigationKey =
         , commandToMainCommand logInState notificationsCommand
         , commandToMainCommand logInState pageCommand
         , Browser.Navigation.replaceUrl navigationKey (Url.toString (Data.UrlData.urlDataToUrl urlData))
+        , Task.perform ResponseTimeZone Time.here
         ]
     )
 
@@ -442,6 +454,11 @@ update msg (Model rec) =
                     , Browser.Navigation.pushUrl rec.navigationKey link
                     )
 
+        ResponseTimeZone timeZone ->
+            ( Model { rec | timeZone = timeZone }
+            , Cmd.none
+            )
+
         NoOperation ->
             ( Model rec
             , Cmd.none
@@ -465,7 +482,7 @@ update msg (Model rec) =
                     (\(Model model) -> Model { model | page = newPageModel })
                     (\cmd -> Cmd.batch [ cmd, commandToMainCommand rec.logInState command ])
 
-        GetAllProjectResponse projectIdList ->
+        AllProjectResponse projectIdList ->
             case rec.page of
                 Home pageModel ->
                     let
@@ -481,7 +498,7 @@ update msg (Model rec) =
                     , Cmd.none
                     )
 
-        GetProjectResponse projectCacheWithId ->
+        ProjectResponse projectCacheWithId ->
             case rec.page of
                 Home pageModel ->
                     let
@@ -498,6 +515,24 @@ update msg (Model rec) =
                             Page.Project.update (Page.Project.ProjectResponse projectCacheWithId) pageModel
                     in
                     ( Model { rec | page = Project newPageModel }
+                    , commandToMainCommand rec.logInState command
+                    )
+
+                _ ->
+                    ( Model rec
+                    , Cmd.none
+                    )
+
+        UserResponse userSnapshotMaybeAndId ->
+            case rec.page of
+                User pageModel ->
+                    let
+                        ( newPageModel, command ) =
+                            Page.User.update
+                                (Page.User.ResponseUserSnapshotMaybeAndId userSnapshotMaybeAndId)
+                                pageModel
+                    in
+                    ( Model { rec | page = User newPageModel }
                     , commandToMainCommand rec.logInState command
                     )
 
@@ -971,6 +1006,8 @@ mainView (Model record) =
                 [ headerView (Model record)
                 , logInPanel record.logInState record.language record.windowSize
                 , Page.User.view
+                    record.timeZone
+                    record.imageStore
                     pageModel
                     |> Ui.map (PageMessageUser >> PageMsg)
                 ]
@@ -1241,6 +1278,9 @@ commandToMainCommand logInState command =
         Command.ToValidProjectName string ->
             toValidProjectName string
 
+        Command.GetUser userId ->
+            getUser (Data.userIdToJsonValue userId)
+
         Command.GetAllProjectId ->
             getAllProjectIdList ()
 
@@ -1290,6 +1330,7 @@ subscriptions model =
          , createProjectResponseSubscription
          , getProjectResponseSubscription
          , getAllProjectIdResponseSubscription
+         , userResponseSubscription
          ]
             ++ (if isCaptureMouseEvent model then
                     [ subPointerUp (always PointerUp) ]
@@ -1331,7 +1372,7 @@ getAllProjectIdResponseSubscription =
                     jsonValue
             of
                 Ok projectIdList ->
-                    GetAllProjectResponse projectIdList
+                    AllProjectResponse projectIdList
 
                 Err _ ->
                     NoOperation
@@ -1348,7 +1389,20 @@ getProjectResponseSubscription =
                     jsonValue
             of
                 Ok projectWithIdAndRespondTimeMaybe ->
-                    GetProjectResponse projectWithIdAndRespondTimeMaybe
+                    ProjectResponse projectWithIdAndRespondTimeMaybe
+
+                Err _ ->
+                    NoOperation
+        )
+
+
+userResponseSubscription : Sub Msg
+userResponseSubscription =
+    responseUser
+        (\jsonValue ->
+            case Json.Decode.decodeValue Data.userSnapshotMaybeAndIdJsonDecoder jsonValue of
+                Ok userSnapshotMaybeAndId ->
+                    UserResponse userSnapshotMaybeAndId
 
                 Err _ ->
                     NoOperation

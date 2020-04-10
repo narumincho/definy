@@ -220,6 +220,36 @@ const init = async (): Promise<void> => {
       }
     );
   });
+
+  app.ports.getUser.subscribe((userId) => {
+    db.getUser(database, userId).then((userSnapshotInIndexedDB) => {
+      if (userSnapshotInIndexedDB !== undefined) {
+        app.ports.responseUser.send({
+          id: userId,
+          snapshot: data.maybeJust(userSnapshotInIndexedDB),
+        });
+      }
+      callApi(
+        "getUser",
+        data.encodeId(userId),
+        data.decodeMaybe(data.decodeUserSnapshot)
+      ).then((userSnapshotFromServer) => {
+        if (userSnapshotFromServer._ === "Just") {
+          db.setUser(database, userId, userSnapshotFromServer.value);
+          app.ports.responseUser.send({
+            id: userId,
+            snapshot: data.maybeJust(userSnapshotFromServer.value),
+          });
+          return;
+        }
+        app.ports.responseUser.send({
+          id: userId,
+          snapshot: data.maybeNothing(),
+        });
+      });
+    });
+  });
+
   app.ports.getProject.subscribe((projectId) => {
     db.getProject(database, projectId).then((projectDataInIndexedDB) => {
       if (projectDataInIndexedDB !== undefined) {

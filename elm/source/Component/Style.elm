@@ -11,6 +11,7 @@ module Component.Style exposing
     , stretchText
     , tabContainer
     , textColorStyle
+    , timeView
     , verticalGutter
     )
 
@@ -24,6 +25,7 @@ import Html.Styled
 import Html.Styled.Attributes
 import Html.Styled.Events
 import Json.Decode
+import Time
 import Ui
 
 
@@ -183,6 +185,82 @@ link styleList urlData =
 codeFontTypeface : String
 codeFontTypeface =
     "Hack"
+
+
+timeView : Time.Zone -> Data.Time -> Ui.Panel message
+timeView zone time =
+    let
+        posix =
+            Time.millisToPosix (time.day * 1000 * 60 * 60 * 24 + time.millisecond)
+    in
+    normalText 16
+        (timeToString zone posix
+            ++ (if zone == Time.utc then
+                    "(UTC)"
+
+                else
+                    ""
+               )
+        )
+
+
+timeToString : Time.Zone -> Time.Posix -> String
+timeToString zone posix =
+    String.concat
+        [ String.fromInt (Time.toYear zone posix)
+        , "-"
+        , monthToString (Time.toMonth zone posix)
+        , "-"
+        , String.padLeft 2 '0' (String.fromInt (Time.toDay zone posix))
+        , "T"
+        , String.padLeft 2 '0' (String.fromInt (Time.toHour zone posix))
+        , ":"
+        , String.padLeft 2 '0' (String.fromInt (Time.toMinute zone posix))
+        , ":"
+        , String.padLeft 2 '0' (String.fromInt (Time.toSecond zone posix))
+        , "."
+        , String.padLeft 3 '0' (String.fromInt (Time.toMillis zone posix))
+        ]
+
+
+monthToString : Time.Month -> String
+monthToString month =
+    case month of
+        Time.Jan ->
+            "01"
+
+        Time.Feb ->
+            "02"
+
+        Time.Mar ->
+            "03"
+
+        Time.Apr ->
+            "04"
+
+        Time.May ->
+            "05"
+
+        Time.Jun ->
+            "06"
+
+        Time.Jul ->
+            "07"
+
+        Time.Aug ->
+            "08"
+
+        Time.Sep ->
+            "09"
+
+        Time.Oct ->
+            "10"
+
+        Time.Nov ->
+            "11"
+
+        Time.Dec ->
+            "12"
 
 
 tabContainer : a -> List ( a, String ) -> Html.Styled.Html a

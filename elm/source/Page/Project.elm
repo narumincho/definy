@@ -35,9 +35,9 @@ getProjectId model =
 
 update : Message -> Model -> ( Model, Command.Command )
 update message model =
-    case ( message, model ) of
-        ( ProjectResponse projectCacheWithId, Loading projectId ) ->
-            if projectCacheWithId.id == projectId then
+    case message of
+        ProjectResponse projectCacheWithId ->
+            if projectCacheWithId.id == getProjectId model then
                 ( Loaded projectCacheWithId
                 , case projectCacheWithId.snapshot of
                     Just projectCache ->
@@ -52,9 +52,6 @@ update message model =
 
             else
                 ( model, Command.None )
-
-        ( _, _ ) ->
-            ( model, Command.None )
 
 
 view : ImageStore.ImageStore -> Model -> Ui.Panel Message

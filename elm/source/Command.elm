@@ -12,4 +12,5 @@ type Command
     | ToValidProjectName String
     | GetAllProjectId
     | GetProject Data.ProjectId
+    | GetUser Data.UserId
     | Batch (List Command)
