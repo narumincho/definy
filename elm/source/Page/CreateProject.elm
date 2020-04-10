@@ -5,6 +5,7 @@ import Component.Style
 import Css
 import Data
 import Data.LogInState
+import SubModel
 import Ui
 
 
@@ -71,14 +72,14 @@ update message model =
             )
 
 
-view : Data.Language -> Data.LogInState.LogInState -> Model -> Ui.Panel Message
-view language logInState model =
-    case logInState of
+view : SubModel.SubModel -> Model -> Ui.Panel Message
+view subModel model =
+    case SubModel.getLogInState subModel of
         Data.LogInState.Ok _ ->
-            mainView language model
+            mainView (SubModel.getLanguage subModel) model
 
         _ ->
-            noLogInCannotCreateProjectText language
+            noLogInCannotCreateProjectText (SubModel.getLanguage subModel)
 
 
 noLogInCannotCreateProjectText : Data.Language -> Ui.Panel message

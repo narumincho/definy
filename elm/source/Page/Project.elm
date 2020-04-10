@@ -5,6 +5,7 @@ import Component.Style
 import Data
 import Data.TimeZoneAndName
 import ImageStore
+import SubModel
 import Ui
 
 
@@ -55,8 +56,8 @@ update message model =
                 ( model, Command.None )
 
 
-view : Maybe Data.TimeZoneAndName.TimeZoneAndName -> ImageStore.ImageStore -> Model -> Ui.Panel Message
-view timeZoneAndNameMaybe imageStore model =
+view : SubModel.SubModel -> Model -> Ui.Panel Message
+view subModel model =
     case model of
         Loading projectId ->
             loadingView projectId
@@ -64,9 +65,7 @@ view timeZoneAndNameMaybe imageStore model =
         Loaded projectCacheWithId ->
             case projectCacheWithId.snapshot of
                 Just projectCache ->
-                    normalView
-                        timeZoneAndNameMaybe
-                        imageStore
+                    normalView subModel
                         { id = projectCacheWithId.id
                         , snapshot = projectCache
                         }
@@ -81,12 +80,8 @@ loadingView (Data.ProjectId projectIdAsString) =
         ("projectId = " ++ projectIdAsString ++ "のプロジェクトを読込中")
 
 
-normalView :
-    Maybe Data.TimeZoneAndName.TimeZoneAndName
-    -> ImageStore.ImageStore
-    -> Data.ProjectSnapshotAndId
-    -> Ui.Panel Message
-normalView timeZoneAndNameMaybe imageStore projectSnapshotAndId =
+normalView : SubModel.SubModel -> Data.ProjectSnapshotAndId -> Ui.Panel Message
+normalView subModel projectSnapshotAndId =
     let
         (Data.ProjectId projectIdAsString) =
             projectSnapshotAndId.id
@@ -96,7 +91,7 @@ normalView timeZoneAndNameMaybe imageStore projectSnapshotAndId =
         [ Component.Style.stretchText 12 projectIdAsString
         , Ui.row
             [ Ui.width Ui.stretch ]
-            [ case ImageStore.getImageBlobUrl projectSnapshotAndId.snapshot.iconHash imageStore of
+            [ case ImageStore.getImageBlobUrl projectSnapshotAndId.snapshot.iconHash (SubModel.getImageStore subModel) of
                 Just blobUrl ->
                     Ui.bitmapImage
                         [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
@@ -113,7 +108,7 @@ normalView timeZoneAndNameMaybe imageStore projectSnapshotAndId =
                         [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
             , Component.Style.normalText 16 projectSnapshotAndId.snapshot.name
             ]
-        , case ImageStore.getImageBlobUrl projectSnapshotAndId.snapshot.imageHash imageStore of
+        , case ImageStore.getImageBlobUrl projectSnapshotAndId.snapshot.imageHash (SubModel.getImageStore subModel) of
             Just blobUrl ->
                 Ui.bitmapImage
                     [ Ui.width (Ui.stretchWithMaxSize 640), Ui.height Ui.auto ]
@@ -133,12 +128,12 @@ normalView timeZoneAndNameMaybe imageStore projectSnapshotAndId =
         , Ui.row
             [ Ui.gap 8 ]
             [ Component.Style.normalText 16 "作成日時:"
-            , Component.Style.timeView timeZoneAndNameMaybe projectSnapshotAndId.snapshot.createTime
+            , Component.Style.timeView (SubModel.getTimeZoneAndNameMaybe subModel) projectSnapshotAndId.snapshot.createTime
             ]
         , Ui.row
             [ Ui.gap 8 ]
             [ Component.Style.normalText 16 "更新日時:"
-            , Component.Style.timeView timeZoneAndNameMaybe projectSnapshotAndId.snapshot.updateTime
+            , Component.Style.timeView (SubModel.getTimeZoneAndNameMaybe subModel) projectSnapshotAndId.snapshot.updateTime
             ]
         ]
 

@@ -5,42 +5,41 @@ import Css
 import Data
 import Data.LogInState
 import ImageStore
+import SubModel
 import Ui
 
 
-view : Data.ClientMode -> Data.Language -> ImageStore.ImageStore -> Data.LogInState.LogInState -> Ui.Panel message
-view clientMode language imageStore logInState =
+view : SubModel.SubModel -> Ui.Panel message
+view subModel =
     Ui.row
         [ Ui.backgroundColor (Css.rgb 36 36 36)
         , Ui.width Ui.stretch
         , Ui.height (Ui.fix 56)
         ]
-        (case logInState of
+        (case SubModel.getLogInState subModel of
             Data.LogInState.GuestUser ->
-                [ logo clientMode language, Ui.empty [ Ui.width Ui.stretch ], guestItem ]
+                [ logo subModel, Ui.empty [ Ui.width Ui.stretch ], guestItem ]
 
             Data.LogInState.RequestLogInUrl _ ->
-                [ logo clientMode language ]
+                [ logo subModel ]
 
             Data.LogInState.VerifyingAccessToken _ ->
-                [ logo clientMode language ]
+                [ logo subModel ]
 
             Data.LogInState.Ok record ->
-                [ logo clientMode language
+                [ logo subModel
                 , Ui.empty [ Ui.width Ui.stretch ]
-                , userItem clientMode language imageStore record.userSnapshotAndId
+                , userItem subModel record.userSnapshotAndId
                 ]
         )
 
 
-logo : Data.ClientMode -> Data.Language -> Ui.Panel message
-logo clientMode language =
-    Component.Style.link
+logo : SubModel.SubModel -> Ui.Panel message
+logo subModel =
+    Component.Style.sameLanguageLink
         []
-        { clientMode = clientMode
-        , language = language
-        , location = Data.LocationHome
-        }
+        subModel
+        Data.LocationHome
         (Ui.text
             [ Ui.padding 8 ]
             (Ui.TextAttributes
@@ -70,17 +69,18 @@ guestItem =
         )
 
 
-userItem : Data.ClientMode -> Data.Language -> ImageStore.ImageStore -> Data.UserSnapshotAndId -> Ui.Panel msg
-userItem clientMode language imageStore userSnapshotAndId =
-    Component.Style.link
+userItem : SubModel.SubModel -> Data.UserSnapshotAndId -> Ui.Panel msg
+userItem subModel userSnapshotAndId =
+    Component.Style.sameLanguageLink
         []
-        { clientMode = clientMode
-        , language = language
-        , location = Data.LocationUser userSnapshotAndId.id
-        }
+        subModel
+        (Data.LocationUser userSnapshotAndId.id)
         (Ui.row
             [ Ui.gap 8 ]
-            [ case ImageStore.getImageBlobUrl userSnapshotAndId.snapshot.imageHash imageStore of
+            [ case
+                ImageStore.getImageBlobUrl userSnapshotAndId.snapshot.imageHash
+                    (SubModel.getImageStore subModel)
+              of
                 Just blobUrl ->
                     Ui.bitmapImage
                         [ Ui.width (Ui.fix 48)

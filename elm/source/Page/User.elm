@@ -5,6 +5,7 @@ import Component.Style
 import Data
 import Data.TimeZoneAndName
 import ImageStore
+import SubModel
 import Time
 import Ui
 
@@ -55,8 +56,8 @@ update message model =
                 )
 
 
-view : Maybe Data.TimeZoneAndName.TimeZoneAndName -> ImageStore.ImageStore -> Model -> Ui.Panel Message
-view timeZoneAndNameMaybe imageStore model =
+view : SubModel.SubModel -> Model -> Ui.Panel Message
+view subModel model =
     case model of
         Loading (Data.UserId userIdAsString) ->
             Component.Style.normalText 24 (userIdAsString ++ "のユーザー詳細ページ")
@@ -65,8 +66,7 @@ view timeZoneAndNameMaybe imageStore model =
             case userSnapshotMaybeAndId.snapshot of
                 Just userSnapshot ->
                     normalView
-                        timeZoneAndNameMaybe
-                        imageStore
+                        subModel
                         { snapshot = userSnapshot
                         , id = userSnapshotMaybeAndId.id
                         }
@@ -75,17 +75,13 @@ view timeZoneAndNameMaybe imageStore model =
                     notFoundView userSnapshotMaybeAndId.id
 
 
-normalView :
-    Maybe Data.TimeZoneAndName.TimeZoneAndName
-    -> ImageStore.ImageStore
-    -> Data.UserSnapshotAndId
-    -> Ui.Panel Message
-normalView timeZoneAndNameMaybe imageStore userSnapshotAndId =
+normalView : SubModel.SubModel -> Data.UserSnapshotAndId -> Ui.Panel Message
+normalView subModel userSnapshotAndId =
     Ui.column
         []
         [ Ui.row
             []
-            [ case ImageStore.getImageBlobUrl userSnapshotAndId.snapshot.imageHash imageStore of
+            [ case ImageStore.getImageBlobUrl userSnapshotAndId.snapshot.imageHash (SubModel.getImageStore subModel) of
                 Just blobUrl ->
                     Ui.bitmapImage
                         []
@@ -106,7 +102,9 @@ normalView timeZoneAndNameMaybe imageStore userSnapshotAndId =
         , Ui.row
             [ Ui.gap 16 ]
             [ Component.Style.normalText 16 "作成日時:"
-            , Component.Style.timeView timeZoneAndNameMaybe userSnapshotAndId.snapshot.createTime
+            , Component.Style.timeView
+                (SubModel.getTimeZoneAndNameMaybe subModel)
+                userSnapshotAndId.snapshot.createTime
             ]
         ]
 

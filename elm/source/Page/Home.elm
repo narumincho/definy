@@ -11,9 +11,9 @@ import Component.Style
 import Css
 import Data
 import Data.LogInState
-import Data.UrlData
 import Icon
 import ImageStore
+import SubModel
 import Ui
 
 
@@ -100,13 +100,10 @@ setProjectWithIdAnsRespondTime projectSnapshotMaybeAndId projectList =
 
 
 view :
-    Data.ClientMode
-    -> Data.Language
-    -> Data.LogInState.LogInState
-    -> ImageStore.ImageStore
+    SubModel.SubModel
     -> Model
     -> Ui.Panel Message
-view clientMode language logInState imageStore model =
+view subModel model =
     Ui.scroll
         [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
         (Ui.column
@@ -116,19 +113,16 @@ view clientMode language logInState imageStore model =
                     Component.Style.normalText 16 "プロジェクトの一覧を読込中"
 
                 LoadedAllProject allProject ->
-                    projectListView clientMode language logInState imageStore allProject
+                    projectListView subModel allProject
             ]
         )
 
 
 projectListView :
-    Data.ClientMode
-    -> Data.Language
-    -> Data.LogInState.LogInState
-    -> ImageStore.ImageStore
+    SubModel.SubModel
     -> List Project
     -> Ui.Panel Message
-projectListView clientMode language logInState imageStore projectList =
+projectListView subModel projectList =
     Ui.column
         [ Ui.height Ui.stretch
         , Ui.gap 8
@@ -138,58 +132,47 @@ projectListView clientMode language logInState imageStore projectList =
         (case projectList of
             [] ->
                 [ projectLineViewWithCreateButton
-                    clientMode
-                    language
-                    logInState
-                    imageStore
+                    subModel
                     []
                 ]
 
             a :: [] ->
                 [ projectLineViewWithCreateButton
-                    clientMode
-                    language
-                    logInState
-                    imageStore
+                    subModel
                     [ a ]
                 ]
 
             a :: b :: xs ->
                 projectLineViewWithCreateButton
-                    clientMode
-                    language
-                    logInState
-                    imageStore
+                    subModel
                     [ a, b ]
-                    :: projectListViewLoop clientMode language imageStore xs
+                    :: projectListViewLoop subModel xs
         )
 
 
 projectListViewLoop :
-    Data.ClientMode
-    -> Data.Language
-    -> ImageStore.ImageStore
+    SubModel.SubModel
     -> List Project
     -> List (Ui.Panel Message)
-projectListViewLoop clientMode language imageStore projectList =
+projectListViewLoop subModel projectList =
     case projectList of
         [] ->
             []
 
         a :: [] ->
-            [ projectLineView clientMode language imageStore [ a ] ]
+            [ projectLineView subModel [ a ] ]
 
         a :: b :: [] ->
-            [ projectLineView clientMode language imageStore [ a, b ] ]
+            [ projectLineView subModel [ a, b ] ]
 
         a :: b :: c :: xs ->
-            projectLineView clientMode language imageStore [ a, b, c ]
-                :: projectListViewLoop clientMode language imageStore xs
+            projectLineView subModel [ a, b, c ]
+                :: projectListViewLoop subModel xs
 
 
-createProjectButton : Data.ClientMode -> Data.Language -> Data.LogInState.LogInState -> Ui.Panel Message
-createProjectButton clientMode language logInState =
-    case logInState of
+createProjectButton : SubModel.SubModel -> Ui.Panel Message
+createProjectButton subModel =
+    case SubModel.getLogInState subModel of
         Data.LogInState.RequestLogInUrl _ ->
             Ui.text
                 [ Ui.width (Ui.stretchWithMaxSize 320) ]
@@ -208,7 +191,7 @@ createProjectButton clientMode language logInState =
                 [ Ui.width (Ui.stretchWithMaxSize 320) ]
                 (Ui.TextAttributes
                     { text =
-                        case language of
+                        case SubModel.getLanguage subModel of
                             Data.LanguageEnglish ->
                                 "Verifying..."
 
@@ -230,7 +213,7 @@ createProjectButton clientMode language logInState =
                 [ Ui.width (Ui.stretchWithMaxSize 320) ]
                 (Ui.TextAttributes
                     { text =
-                        case language of
+                        case SubModel.getLanguage subModel of
                             Data.LanguageEnglish ->
                                 "Creating guest user projects has not been completed yet"
 
@@ -248,12 +231,12 @@ createProjectButton clientMode language logInState =
                 )
 
         Data.LogInState.Ok _ ->
-            createProjectButtonLogInOk clientMode language
+            createProjectButtonLogInOk subModel
 
 
-createProjectButtonLogInOk : Data.ClientMode -> Data.Language -> Ui.Panel Message
-createProjectButtonLogInOk clientMode language =
-    Component.Style.link
+createProjectButtonLogInOk : SubModel.SubModel -> Ui.Panel Message
+createProjectButtonLogInOk subModel =
+    Component.Style.sameLanguageLink
         [ Ui.width (Ui.stretchWithMaxSize 320)
         , Ui.height Ui.stretch
         , Ui.border
@@ -268,10 +251,8 @@ createProjectButtonLogInOk clientMode language =
                 }
             )
         ]
-        { clientMode = clientMode
-        , location = Data.LocationCreateProject
-        , language = language
-        }
+        subModel
+        Data.LocationCreateProject
         (Ui.depth
             [ Ui.width (Ui.stretchWithMaxSize 320)
             , Ui.height Ui.stretch
@@ -295,7 +276,7 @@ createProjectButtonLogInOk clientMode language =
                         []
                         (Ui.TextAttributes
                             { text =
-                                case language of
+                                case SubModel.getLanguage subModel of
                                     Data.LanguageEnglish ->
                                         "Create a new project"
 
@@ -319,53 +300,45 @@ createProjectButtonLogInOk clientMode language =
 
 {-| プロジェクトの表示は2つまで
 -}
-projectLineViewWithCreateButton :
-    Data.ClientMode
-    -> Data.Language
-    -> Data.LogInState.LogInState
-    -> ImageStore.ImageStore
-    -> List Project
-    -> Ui.Panel Message
-projectLineViewWithCreateButton clientMode language logInState imageStore projectList =
+projectLineViewWithCreateButton : SubModel.SubModel -> List Project -> Ui.Panel Message
+projectLineViewWithCreateButton subModel projectList =
     Ui.row
         [ Ui.gap 8, Ui.height (Ui.fix 200) ]
-        (createProjectButton clientMode language logInState
-            :: List.map (projectItem clientMode language imageStore) projectList
+        (createProjectButton subModel
+            :: List.map (projectItem subModel) projectList
         )
 
 
 {-| プロジェクトの表示は1行3つまで
 -}
-projectLineView : Data.ClientMode -> Data.Language -> ImageStore.ImageStore -> List Project -> Ui.Panel Message
-projectLineView clientMode language imageStore projectList =
+projectLineView : SubModel.SubModel -> List Project -> Ui.Panel Message
+projectLineView subModel projectList =
     Ui.row
         [ Ui.gap 8, Ui.height (Ui.fix 200) ]
-        (List.map (projectItem clientMode language imageStore) projectList)
+        (List.map (projectItem subModel) projectList)
 
 
-projectItem : Data.ClientMode -> Data.Language -> ImageStore.ImageStore -> Project -> Ui.Panel Message
-projectItem clientMode language imageStore project =
-    Component.Style.link
+projectItem : SubModel.SubModel -> Project -> Ui.Panel Message
+projectItem subModel project =
+    Component.Style.sameLanguageLink
         [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
-        { clientMode = clientMode
-        , location =
-            Data.LocationProject
-                (case project of
-                    OnlyId id ->
-                        id
+        subModel
+        (Data.LocationProject
+            (case project of
+                OnlyId id ->
+                    id
 
-                    Full projectCache ->
-                        projectCache.id
-                )
-        , language = language
-        }
+                Full projectCache ->
+                    projectCache.id
+            )
+        )
         (Ui.depth
             [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
             [ ( ( Ui.Center, Ui.Center )
-              , projectItemImage imageStore project
+              , projectItemImage (SubModel.getImageStore subModel) project
               )
             , ( ( Ui.Center, Ui.End )
-              , projectItemText imageStore project
+              , projectItemText (SubModel.getImageStore subModel) project
               )
             ]
         )

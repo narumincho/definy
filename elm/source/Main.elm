@@ -25,6 +25,7 @@ import Page.Home
 import Page.Idea
 import Page.Project
 import Page.User
+import SubModel
 import Task
 import Time
 import Ui
@@ -134,7 +135,7 @@ type Msg
     | PageMsg PageMessage
     | NotificationMessage Component.Notifications.Message
     | RequestLogInUrl Data.OpenIdConnectProvider
-    | ResponseUserDataFromAccessToken (Maybe (Maybe Data.UserSnapshotAndId))
+    | ResponseUserDataFromAccessToken (Maybe Data.UserSnapshotAndId)
     | ResponseGetImageBlob { blobUrl : String, fileHash : Data.FileHash }
     | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url.Url
@@ -161,21 +162,12 @@ type Model
     = Model
         { subMode : SubMode
         , page : PageModel
-        , windowSize : WindowSize
         , messageQueue : List Msg
-        , logInState : Data.LogInState.LogInState
-        , language : Data.Language
-        , clientMode : Data.ClientMode
+        , subModel : SubModel.SubModel
         , networkConnection : Bool
         , notificationModel : Component.Notifications.Model
-        , imageStore : ImageStore.ImageStore
         , navigationKey : Browser.Navigation.Key
-        , timeZone : Maybe Data.TimeZoneAndName.TimeZoneAndName
         }
-
-
-type alias WindowSize =
-    { width : Int, height : Int }
 
 
 type SubMode
@@ -256,16 +248,19 @@ init flag url navigationKey =
     ( Model
         { subMode = SubModeNone
         , page = pageInitModel
-        , windowSize = flag.windowSize
         , messageQueue = []
-        , logInState = logInState
-        , language = urlData.language
+        , subModel =
+            SubModel.from
+                { logInState = logInState
+                , language = urlData.language
+                , clientMode = urlData.clientMode
+                , imageStore = ImageStore.empty
+                , timeZoneAndNameMaybe = Nothing
+                , windowSize = flag.windowSize
+                }
         , networkConnection = flag.networkConnection
         , notificationModel = notificationsModel
-        , clientMode = urlData.clientMode
-        , imageStore = ImageStore.empty
         , navigationKey = navigationKey
-        , timeZone = Nothing
         }
     , Cmd.batch
         [ case flag.accessTokenMaybe of
@@ -351,7 +346,8 @@ update msg (Model rec) =
             )
 
         WindowResize { width, height } ->
-            ( Model rec |> setWindowSize { width = width, height = height }
+            ( Model
+                { rec | subModel = SubModel.setWindowSize { width = width, height = height } rec.subModel }
             , Cmd.none
             )
 
@@ -366,7 +362,7 @@ update msg (Model rec) =
                     updatePage pageMsg (Model rec)
             in
             ( Model { rec | page = newPageModel }
-            , commandToMainCommand rec.logInState command
+            , commandToMainCommand (SubModel.getLogInState rec.subModel) command
             )
 
         NotificationMessage notificationMessage ->
@@ -378,46 +374,60 @@ update msg (Model rec) =
             in
             ( Model
                 { rec | notificationModel = newNotificationModel }
-            , commandToMainCommand rec.logInState command
+            , commandToMainCommand (SubModel.getLogInState rec.subModel) command
             )
 
         ChangeNetworkConnection connection ->
-            notificationAddEvent
-                (if connection then
-                    Component.Notifications.OnLine
+            let
+                ( newNotificationModel, command ) =
+                    notificationAddEvent
+                        (if connection then
+                            Component.Notifications.OnLine
 
-                 else
-                    Component.Notifications.OffLine
-                )
-                (Model rec)
-                |> Tuple.mapFirst
-                    (\(Model r) ->
-                        Model { r | networkConnection = connection }
-                    )
+                         else
+                            Component.Notifications.OffLine
+                        )
+                        (Model rec)
+            in
+            ( Model
+                { rec
+                    | notificationModel = newNotificationModel
+                    , networkConnection = False
+                }
+            , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+            )
 
         RequestLogInUrl openIdConnectProvider ->
-            ( Model { rec | logInState = Data.LogInState.RequestLogInUrl openIdConnectProvider }
+            ( Model
+                { rec
+                    | subModel =
+                        SubModel.setLogInState
+                            (Data.LogInState.RequestLogInUrl openIdConnectProvider)
+                            rec.subModel
+                }
             , requestLogInUrlTyped
                 { openIdConnectProvider = openIdConnectProvider
                 , urlData =
-                    { clientMode = rec.clientMode
+                    { clientMode = SubModel.getClientMode rec.subModel
                     , location = pageModelToLocation rec.page
-                    , language = rec.language
+                    , language = SubModel.getLanguage rec.subModel
                     }
                 }
             )
 
-        ResponseUserDataFromAccessToken maybeUserPublicAndUserId ->
-            Model rec |> responseUserData maybeUserPublicAndUserId
+        ResponseUserDataFromAccessToken userSnapshotAndIdMaybe ->
+            Model rec |> responseUserDataFromAccessToken userSnapshotAndIdMaybe
 
         ResponseGetImageBlob imageBlobAndFileHash ->
             ( Model
                 { rec
-                    | imageStore =
-                        ImageStore.add
-                            imageBlobAndFileHash.fileHash
-                            imageBlobAndFileHash.blobUrl
-                            rec.imageStore
+                    | subModel =
+                        SubModel.mapImageStore
+                            (ImageStore.add
+                                imageBlobAndFileHash.fileHash
+                                imageBlobAndFileHash.blobUrl
+                            )
+                            rec.subModel
                 }
             , Cmd.none
             )
@@ -433,10 +443,13 @@ update msg (Model rec) =
             ( Model
                 { rec
                     | page = newPage
-                    , clientMode = urlData.clientMode
-                    , language = urlData.language
+                    , subModel =
+                        SubModel.setLanguageAndClientMode
+                            urlData.language
+                            urlData.clientMode
+                            rec.subModel
                 }
-            , commandToMainCommand rec.logInState command
+            , commandToMainCommand (SubModel.getLogInState rec.subModel) command
             )
 
         OnUrlRequest urlRequest ->
@@ -458,7 +471,7 @@ update msg (Model rec) =
                     )
 
         ResponseTimeZone timeZoneAndName ->
-            ( Model { rec | timeZone = Just timeZoneAndName }
+            ( Model { rec | subModel = SubModel.setTimeZoneAndName timeZoneAndName rec.subModel }
             , Cmd.none
             )
 
@@ -469,21 +482,31 @@ update msg (Model rec) =
 
         CreateProjectResponse projectAndIdMaybe ->
             let
-                ( newPageModel, command ) =
+                ( newPageModel, pageCommand ) =
                     pageInit Data.LocationHome
-            in
-            notificationAddEvent
-                (case projectAndIdMaybe of
-                    Just projectAndId ->
-                        Component.Notifications.CreatedProject projectAndId
 
-                    Nothing ->
-                        Component.Notifications.CreateProjectFailed
+                ( newNotificationModel, notificationCommand ) =
+                    notificationAddEvent
+                        (case projectAndIdMaybe of
+                            Just projectAndId ->
+                                Component.Notifications.CreatedProject projectAndId
+
+                            Nothing ->
+                                Component.Notifications.CreateProjectFailed
+                        )
+                        (Model rec)
+            in
+            ( Model
+                { rec
+                    | page = newPageModel
+                    , notificationModel = newNotificationModel
+                }
+            , commandToMainCommand
+                (SubModel.getLogInState rec.subModel)
+                (Command.Batch
+                    [ pageCommand, notificationCommand ]
                 )
-                (Model rec)
-                |> Tuple.mapBoth
-                    (\(Model model) -> Model { model | page = newPageModel })
-                    (\cmd -> Cmd.batch [ cmd, commandToMainCommand rec.logInState command ])
+            )
 
         AllProjectResponse projectIdList ->
             case rec.page of
@@ -493,7 +516,7 @@ update msg (Model rec) =
                             Page.Home.update (Page.Home.ResponseAllProjectId projectIdList) pageModel
                     in
                     ( Model { rec | page = Home newPageModel }
-                    , commandToMainCommand rec.logInState command
+                    , commandToMainCommand (SubModel.getLogInState rec.subModel) command
                     )
 
                 _ ->
@@ -509,7 +532,7 @@ update msg (Model rec) =
                             Page.Home.update (Page.Home.ResponseProject projectCacheWithId) pageModel
                     in
                     ( Model { rec | page = Home newPageModel }
-                    , commandToMainCommand rec.logInState command
+                    , commandToMainCommand (SubModel.getLogInState rec.subModel) command
                     )
 
                 Project pageModel ->
@@ -518,7 +541,7 @@ update msg (Model rec) =
                             Page.Project.update (Page.Project.ProjectResponse projectCacheWithId) pageModel
                     in
                     ( Model { rec | page = Project newPageModel }
-                    , commandToMainCommand rec.logInState command
+                    , commandToMainCommand (SubModel.getLogInState rec.subModel) command
                     )
 
                 _ ->
@@ -536,7 +559,7 @@ update msg (Model rec) =
                                 pageModel
                     in
                     ( Model { rec | page = User newPageModel }
-                    , commandToMainCommand rec.logInState command
+                    , commandToMainCommand (SubModel.getLogInState rec.subModel) command
                     )
 
                 _ ->
@@ -578,20 +601,14 @@ updatePage pageMessage (Model record) =
             )
 
 
-notificationAddEvent : Component.Notifications.Event -> Model -> ( Model, Cmd Msg )
+notificationAddEvent :
+    Component.Notifications.Event
+    -> Model
+    -> ( Component.Notifications.Model, Command.Command )
 notificationAddEvent event (Model record) =
-    let
-        ( newNotificationModel, command ) =
-            record.notificationModel
-                |> Component.Notifications.update
-                    (Component.Notifications.AddEvent event)
-    in
-    ( Model
-        { record
-            | notificationModel = newNotificationModel
-        }
-    , commandToMainCommand record.logInState command
-    )
+    record.notificationModel
+        |> Component.Notifications.update
+            (Component.Notifications.AddEvent event)
 
 
 pageModelToLocation : PageModel -> Data.Location
@@ -806,14 +823,6 @@ pointerUp model =
 {- ============ Tree Panel ============= -}
 
 
-setWindowSize : { width : Int, height : Int } -> Model -> Model
-setWindowSize { width, height } (Model rec) =
-    Model
-        { rec
-            | windowSize = { width = width, height = height }
-        }
-
-
 isCaptureMouseEvent : Model -> Bool
 isCaptureMouseEvent model =
     getGutterType model /= Nothing
@@ -947,7 +956,7 @@ view (Model rec) =
               , mainView (Model rec)
               )
             , ( ( Ui.End, Ui.End )
-              , Component.Notifications.view rec.imageStore rec.notificationModel
+              , Component.Notifications.view rec.subModel rec.notificationModel
                     |> Ui.map NotificationMessage
               )
             ]
@@ -963,31 +972,26 @@ mainView (Model record) =
         Home pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ headerView (Model record)
-                , logInPanel record.logInState record.language record.windowSize
-                , Page.Home.view
-                    record.clientMode
-                    record.language
-                    record.logInState
-                    record.imageStore
-                    pageModel
+                [ Component.Header.view record.subModel
+                , logInPanel record.subModel
+                , Page.Home.view record.subModel pageModel
                     |> Ui.map (PageMessageHome >> PageMsg)
                 ]
 
         CreateProject pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ headerView (Model record)
-                , logInPanel record.logInState record.language record.windowSize
-                , Page.CreateProject.view record.language record.logInState pageModel
+                [ Component.Header.view record.subModel
+                , logInPanel record.subModel
+                , Page.CreateProject.view record.subModel pageModel
                     |> Ui.map (PageMessageCreateProject >> PageMsg)
                 ]
 
         CreateIdea pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ headerView (Model record)
-                , logInPanel record.logInState record.language record.windowSize
+                [ Component.Header.view record.subModel
+                , logInPanel record.subModel
                 , Page.CreateIdea.view pageModel
                     |> Ui.map (PageMessageCreateIdea >> PageMsg)
                 ]
@@ -995,52 +999,37 @@ mainView (Model record) =
         Project pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ headerView (Model record)
-                , logInPanel record.logInState record.language record.windowSize
-                , Page.Project.view
-                    record.timeZone
-                    record.imageStore
-                    pageModel
+                [ Component.Header.view record.subModel
+                , logInPanel record.subModel
+                , Page.Project.view record.subModel pageModel
                     |> Ui.map (PageMessageProject >> PageMsg)
                 ]
 
         User pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ headerView (Model record)
-                , logInPanel record.logInState record.language record.windowSize
-                , Page.User.view
-                    record.timeZone
-                    record.imageStore
-                    pageModel
+                [ Component.Header.view record.subModel
+                , logInPanel record.subModel
+                , Page.User.view record.subModel pageModel
                     |> Ui.map (PageMessageUser >> PageMsg)
                 ]
 
         Idea pageModel ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ headerView (Model record)
-                , logInPanel record.logInState record.language record.windowSize
+                [ Component.Header.view record.subModel
+                , logInPanel record.subModel
                 , Page.Idea.view
                     pageModel
                     |> Ui.map (PageMessageIdea >> PageMsg)
                 ]
 
 
-headerView : Model -> Ui.Panel Msg
-headerView (Model record) =
-    Component.Header.view
-        record.clientMode
-        record.language
-        record.imageStore
-        record.logInState
-
-
-logInPanel : Data.LogInState.LogInState -> Data.Language -> WindowSize -> Ui.Panel Msg
-logInPanel logInState language windowSize =
-    case logInState of
+logInPanel : SubModel.SubModel -> Ui.Panel Msg
+logInPanel subModel =
+    case SubModel.getLogInState subModel of
         Data.LogInState.GuestUser ->
-            logInPanelLogInButton language windowSize
+            logInPanelLogInButton (SubModel.getLanguage subModel) (SubModel.getWindowSize subModel)
 
         Data.LogInState.RequestLogInUrl _ ->
             Ui.text
@@ -1072,7 +1061,7 @@ logInPanel logInState language windowSize =
             Ui.empty []
 
 
-logInPanelLogInButton : Data.Language -> WindowSize -> Ui.Panel Msg
+logInPanelLogInButton : Data.Language -> SubModel.WindowSize -> Ui.Panel Msg
 logInPanelLogInButton language { width, height } =
     if width < 512 then
         Ui.column
@@ -1184,10 +1173,10 @@ gutterTypeToCursorStyle gutterType =
             Ui.VerticalResize
 
 
-responseUserData : Maybe (Maybe Data.UserSnapshotAndId) -> Model -> ( Model, Cmd Msg )
-responseUserData result (Model rec) =
-    case ( result, rec.logInState ) of
-        ( Just (Just userSnapshotAndId), Data.LogInState.VerifyingAccessToken accessToken ) ->
+responseUserDataFromAccessToken : Maybe Data.UserSnapshotAndId -> Model -> ( Model, Cmd Msg )
+responseUserDataFromAccessToken userSnapshotAndIdMaybe (Model rec) =
+    case ( userSnapshotAndIdMaybe, SubModel.getLogInState rec.subModel ) of
+        ( Just userSnapshotAndId, Data.LogInState.VerifyingAccessToken accessToken ) ->
             let
                 ( newNotificationModel, command ) =
                     rec.notificationModel
@@ -1196,34 +1185,19 @@ responseUserData result (Model rec) =
             in
             ( Model
                 { rec
-                    | logInState =
-                        Data.LogInState.Ok
-                            { accessToken = accessToken
-                            , userSnapshotAndId = userSnapshotAndId
-                            }
+                    | subModel =
+                        SubModel.setLogInState
+                            (Data.LogInState.Ok
+                                { accessToken = accessToken
+                                , userSnapshotAndId = userSnapshotAndId
+                                }
+                            )
+                            rec.subModel
                     , notificationModel = newNotificationModel
                 }
             , Cmd.batch
                 [ consoleLog "ユーザー情報の取得に成功!"
-                , commandToMainCommand rec.logInState command
-                ]
-            )
-
-        ( Just Nothing, Data.LogInState.VerifyingAccessToken _ ) ->
-            let
-                ( newNotificationModel, command ) =
-                    rec.notificationModel
-                        |> Component.Notifications.update
-                            (Component.Notifications.AddEvent Component.Notifications.LogInFailure)
-            in
-            ( Model
-                { rec
-                    | logInState = Data.LogInState.GuestUser
-                    , notificationModel = newNotificationModel
-                }
-            , Cmd.batch
-                [ consoleLog "アクセストークンが無効だった"
-                , commandToMainCommand rec.logInState command
+                , commandToMainCommand (SubModel.getLogInState rec.subModel) command
                 ]
             )
 
@@ -1236,12 +1210,12 @@ responseUserData result (Model rec) =
             in
             ( Model
                 { rec
-                    | logInState = Data.LogInState.GuestUser
+                    | subModel = SubModel.setLogInState Data.LogInState.GuestUser rec.subModel
                     , notificationModel = newNotificationModel
                 }
             , Cmd.batch
-                [ consoleLog "ユーザーの情報のデコードに失敗"
-                , commandToMainCommand rec.logInState command
+                [ consoleLog "アクセストークンが無効だった"
+                , commandToMainCommand (SubModel.getLogInState rec.subModel) command
                 ]
             )
 
@@ -1311,11 +1285,16 @@ subscriptions model =
          , changeNetworkConnection ChangeNetworkConnection
          , responseUserByAccessToken
             (\jsonValue ->
-                Json.Decode.decodeValue
-                    (Data.maybeJsonDecoder Data.userSnapshotAndIdJsonDecoder)
-                    jsonValue
-                    |> Result.toMaybe
-                    |> ResponseUserDataFromAccessToken
+                case
+                    Json.Decode.decodeValue
+                        (Data.maybeJsonDecoder Data.userSnapshotAndIdJsonDecoder)
+                        jsonValue
+                of
+                    Ok userSnapshotAndIdMaybe ->
+                        ResponseUserDataFromAccessToken userSnapshotAndIdMaybe
+
+                    Err _ ->
+                        NoOperation
             )
          , getImageBlobResponse
             (\{ blobUrl, fileHash } ->

@@ -14,6 +14,7 @@ import Css
 import Data
 import Icon
 import ImageStore
+import SubModel
 import Ui
 
 
@@ -76,10 +77,10 @@ update message (Model eventList) =
 
 
 view :
-    ImageStore.ImageStore
+    SubModel.SubModel
     -> Model
     -> Ui.Panel Message
-view imageStore (Model eventList) =
+view subModel (Model eventList) =
     Ui.column
         [ Ui.width (Ui.fix 512)
         , Ui.gap 8
@@ -87,7 +88,7 @@ view imageStore (Model eventList) =
         ]
         (List.indexedMap
             (\index event ->
-                cardItem index (eventToCardStyle imageStore event)
+                cardItem index (eventToCardStyle (SubModel.getImageStore subModel) event)
             )
             eventList
         )

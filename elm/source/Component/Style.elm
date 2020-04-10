@@ -5,9 +5,9 @@ module Component.Style exposing
     , fontHack
     , fontHackName
     , horizontalGutter
-    , link
     , normalText
     , normalTypeface
+    , sameLanguageLink
     , stretchText
     , tabContainer
     , textColorStyle
@@ -26,6 +26,7 @@ import Html.Styled
 import Html.Styled.Attributes
 import Html.Styled.Events
 import Json.Decode
+import SubModel
 import Time
 import Ui
 
@@ -176,11 +177,18 @@ stretchText size text =
         )
 
 
-link : List Ui.Style -> Data.UrlData -> Ui.Panel message -> Ui.Panel message
-link styleList urlData =
+{-| 同じ言語のページへのリンク
+-}
+sameLanguageLink : List Ui.Style -> SubModel.SubModel -> Data.Location -> Ui.Panel message -> Ui.Panel message
+sameLanguageLink styleList subModel location =
     Ui.link
         styleList
-        (Data.UrlData.urlDataToUrl urlData)
+        (Data.UrlData.urlDataToUrl
+            { clientMode = SubModel.getClientMode subModel
+            , language = SubModel.getLanguage subModel
+            , location = location
+            }
+        )
 
 
 codeFontTypeface : String
