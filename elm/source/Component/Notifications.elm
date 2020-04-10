@@ -67,8 +67,8 @@ update message (Model eventList) =
             ( Model
                 (Array.toList
                     (Array.append
-                        (Array.slice 0 (index - 1) eventListAsArray)
-                        (Array.slice index (Array.length eventListAsArray - 1) eventListAsArray)
+                        (Array.slice 0 (max 0 index) eventListAsArray)
+                        (Array.slice (index + 1) (Array.length eventListAsArray) eventListAsArray)
                     )
                 )
             , Command.None
