@@ -11,7 +11,6 @@ import Component.Style
 import Css
 import Data
 import Data.LogInState
-import Icon
 import ImageStore
 import SubModel
 import Ui
@@ -271,7 +270,7 @@ createProjectButtonLogInOk subModel =
             [ ( ( Ui.Center, Ui.Center )
               , Ui.column
                     []
-                    [ Icon.plus
+                    [ Component.Style.plusIcon
                     , Ui.text
                         []
                         (Ui.TextAttributes

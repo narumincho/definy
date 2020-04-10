@@ -15,7 +15,6 @@ import Data.LogInState
 import Data.TimeZoneAndName
 import Data.UrlData
 import Html.Styled
-import Icon
 import ImageStore
 import Json.Decode
 import Json.Encode
@@ -1098,7 +1097,7 @@ googleLogInButton stretch language =
             )
         , Ui.height (Ui.fix 48)
         ]
-        [ Icon.googleIcon (Css.rgb 255 255 255)
+        [ Component.Style.googleIcon (Css.rgb 255 255 255)
         , Ui.text
             [ Ui.height Ui.auto ]
             (Ui.TextAttributes
@@ -1138,7 +1137,7 @@ gitHubLogInButton stretch language =
             )
         , Ui.height (Ui.fix 48)
         ]
-        [ Icon.gitHubIcon (Css.rgb 255 255 255)
+        [ Component.Style.gitHubIcon (Css.rgb 255 255 255)
         , Ui.text
             [ Ui.height Ui.auto ]
             (Ui.TextAttributes
