@@ -129,7 +129,7 @@ normalView subModel projectSnapshotAndId createUserMaybe =
     in
     Ui.column
         [ Ui.gap 8 ]
-        [ CommonUi.stretchText 12 projectIdAsString
+        [ CommonUi.subText projectIdAsString
         , Ui.row
             [ Ui.width Ui.stretch ]
             [ case SubModel.getImageBlobUrl projectSnapshotAndId.snapshot.iconHash subModel of
@@ -166,17 +166,23 @@ normalView subModel projectSnapshotAndId createUserMaybe =
                     [ Ui.width (Ui.stretchWithMaxSize 640), Ui.height Ui.auto ]
                     [ ( ( Ui.Center, Ui.Center ), CommonUi.normalText 16 (projectSnapshotAndId.snapshot.name ++ "の画像を読込中") ) ]
         , createUserView subModel projectSnapshotAndId.snapshot.createUser createUserMaybe
-        , ideaListView
         , createTime subModel projectSnapshotAndId.snapshot.createTime
         , updateTime subModel projectSnapshotAndId.snapshot.updateTime
+        , ideaListView subModel projectSnapshotAndId.id
         ]
 
 
-ideaListView : Ui.Panel Message
-ideaListView =
+ideaListView : SubModel.SubModel -> Data.ProjectId -> Ui.Panel Message
+ideaListView subModel projectId =
     Ui.column
         [ Ui.width Ui.stretch ]
-        [ CommonUi.stretchText 24 "アイデア" ]
+        [ CommonUi.stretchText 24 "アイデア"
+        , CommonUi.sameLanguageLink
+            []
+            subModel
+            (Data.LocationCreateIdea projectId)
+            (CommonUi.normalText 16 "アイデアを作成する")
+        ]
 
 
 notFoundView : Data.ProjectId -> Ui.Panel Message

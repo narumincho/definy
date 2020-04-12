@@ -13,6 +13,7 @@ module CommonUi exposing
     , plusIcon
     , sameLanguageLink
     , stretchText
+    , subText
     , tabContainer
     , textColorStyle
     , timeView
@@ -183,6 +184,8 @@ stretchText size text =
         )
 
 
+{-| 灰色で横に伸び,右寄りのテキスト
+-}
 subText : String -> Ui.Panel message
 subText text =
     Ui.text
