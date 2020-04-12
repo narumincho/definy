@@ -1,9 +1,8 @@
 module Page.Project exposing (Message(..), Model, getProjectId, init, update, view)
 
 import Command
-import Component.Style
+import CommonUi
 import Data
-import Data.TimeZoneAndName
 import ImageStore
 import SubModel
 import Ui
@@ -84,7 +83,7 @@ view subModel model =
 
 loadingView : Data.ProjectId -> Ui.Panel message
 loadingView (Data.ProjectId projectIdAsString) =
-    Component.Style.normalText 24
+    CommonUi.normalText 24
         ("projectId = " ++ projectIdAsString ++ "のプロジェクトを読込中")
 
 
@@ -96,7 +95,7 @@ normalView subModel projectSnapshotAndId createUserMaybe =
     in
     Ui.column
         [ Ui.gap 8 ]
-        [ Component.Style.stretchText 12 projectIdAsString
+        [ CommonUi.stretchText 12 projectIdAsString
         , Ui.row
             [ Ui.width Ui.stretch ]
             [ case ImageStore.getImageBlobUrl projectSnapshotAndId.snapshot.iconHash (SubModel.getImageStore subModel) of
@@ -114,7 +113,7 @@ normalView subModel projectSnapshotAndId createUserMaybe =
                 Nothing ->
                     Ui.empty
                         [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
-            , Component.Style.normalText 16 projectSnapshotAndId.snapshot.name
+            , CommonUi.normalText 16 projectSnapshotAndId.snapshot.name
             ]
         , case ImageStore.getImageBlobUrl projectSnapshotAndId.snapshot.imageHash (SubModel.getImageStore subModel) of
             Just blobUrl ->
@@ -131,17 +130,17 @@ normalView subModel projectSnapshotAndId createUserMaybe =
             Nothing ->
                 Ui.depth
                     [ Ui.width (Ui.stretchWithMaxSize 640), Ui.height Ui.auto ]
-                    [ ( ( Ui.Center, Ui.Center ), Component.Style.normalText 16 (projectSnapshotAndId.snapshot.name ++ "の画像を読込中") ) ]
+                    [ ( ( Ui.Center, Ui.Center ), CommonUi.normalText 16 (projectSnapshotAndId.snapshot.name ++ "の画像を読込中") ) ]
         , ideaListView
         , Ui.row
             [ Ui.gap 8 ]
-            [ Component.Style.normalText 16 "作成日時:"
-            , Component.Style.timeView (SubModel.getTimeZoneAndNameMaybe subModel) projectSnapshotAndId.snapshot.createTime
+            [ CommonUi.normalText 16 "作成日時:"
+            , CommonUi.timeView (SubModel.getTimeZoneAndNameMaybe subModel) projectSnapshotAndId.snapshot.createTime
             ]
         , Ui.row
             [ Ui.gap 8 ]
-            [ Component.Style.normalText 16 "更新日時:"
-            , Component.Style.timeView (SubModel.getTimeZoneAndNameMaybe subModel) projectSnapshotAndId.snapshot.updateTime
+            [ CommonUi.normalText 16 "更新日時:"
+            , CommonUi.timeView (SubModel.getTimeZoneAndNameMaybe subModel) projectSnapshotAndId.snapshot.updateTime
             ]
         ]
 
@@ -150,10 +149,10 @@ ideaListView : Ui.Panel Message
 ideaListView =
     Ui.column
         [ Ui.width Ui.stretch ]
-        [ Component.Style.stretchText 24 "アイデア" ]
+        [ CommonUi.stretchText 24 "アイデア" ]
 
 
 notFoundView : Data.ProjectId -> Ui.Panel Message
 notFoundView (Data.ProjectId projectIdAsString) =
-    Component.Style.normalText 24
+    CommonUi.normalText 24
         ("projectId = " ++ projectIdAsString ++ "のプロジェクトを見つからなかった")

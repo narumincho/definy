@@ -1,6 +1,6 @@
 module Component.Header exposing (view)
 
-import Component.Style
+import CommonUi
 import Css
 import Data
 import Data.LogInState
@@ -36,7 +36,7 @@ view subModel =
 
 logo : SubModel.SubModel -> Ui.Panel message
 logo subModel =
-    Component.Style.sameLanguageLink
+    CommonUi.sameLanguageLink
         []
         subModel
         Data.LocationHome
@@ -44,7 +44,7 @@ logo subModel =
             [ Ui.padding 8 ]
             (Ui.TextAttributes
                 { text = "Definy"
-                , typeface = Component.Style.codeFontTypeface
+                , typeface = CommonUi.codeFontTypeface
                 , size = 32
                 , letterSpacing = 0
                 , color = Css.rgb 185 208 155
@@ -60,7 +60,7 @@ guestItem =
         []
         (Ui.TextAttributes
             { text = "ゲスト"
-            , typeface = Component.Style.normalTypeface
+            , typeface = CommonUi.normalTypeface
             , size = 16
             , letterSpacing = 0
             , color = Css.rgb 200 200 200
@@ -71,7 +71,7 @@ guestItem =
 
 userItem : SubModel.SubModel -> Data.UserSnapshotAndId -> Ui.Panel msg
 userItem subModel userSnapshotAndId =
-    Component.Style.sameLanguageLink
+    CommonUi.sameLanguageLink
         []
         subModel
         (Data.LocationUser userSnapshotAndId.id)
@@ -104,7 +104,7 @@ userItem subModel userSnapshotAndId =
                 []
                 (Ui.TextAttributes
                     { text = userSnapshotAndId.snapshot.name
-                    , typeface = Component.Style.normalTypeface
+                    , typeface = CommonUi.normalTypeface
                     , size = 16
                     , letterSpacing = 0
                     , color = Css.rgb 200 200 200

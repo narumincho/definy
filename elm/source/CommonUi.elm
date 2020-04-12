@@ -1,4 +1,4 @@
-module Component.Style exposing
+module CommonUi exposing
     ( GutterMsg(..)
     , activeColor
     , closeIcon

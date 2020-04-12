@@ -7,7 +7,7 @@ module Page.Home exposing
     )
 
 import Command
-import Component.Style
+import CommonUi
 import Css
 import Data
 import Data.LogInState
@@ -109,7 +109,7 @@ view subModel model =
             [ Ui.gap 16, Ui.height Ui.stretch ]
             [ case model of
                 LoadingAllProject ->
-                    Component.Style.normalText 16 "プロジェクトの一覧を読込中"
+                    CommonUi.normalText 16 "プロジェクトの一覧を読込中"
 
                 LoadedAllProject allProject ->
                     projectListView subModel allProject
@@ -177,7 +177,7 @@ createProjectButton subModel =
                 [ Ui.width (Ui.stretchWithMaxSize 320) ]
                 (Ui.TextAttributes
                     { text = "......"
-                    , typeface = Component.Style.normalTypeface
+                    , typeface = CommonUi.normalTypeface
                     , size = 16
                     , letterSpacing = 0
                     , color = Css.rgb 200 200 200
@@ -199,7 +199,7 @@ createProjectButton subModel =
 
                             Data.LanguageEsperanto ->
                                 "Aŭtentigado ..."
-                    , typeface = Component.Style.normalTypeface
+                    , typeface = CommonUi.normalTypeface
                     , size = 16
                     , letterSpacing = 0
                     , color = Css.rgb 200 200 200
@@ -221,7 +221,7 @@ createProjectButton subModel =
 
                             Data.LanguageEsperanto ->
                                 "Krei projektojn de invititaj uzantoj ankoraŭ ne estas finita"
-                    , typeface = Component.Style.normalTypeface
+                    , typeface = CommonUi.normalTypeface
                     , size = 16
                     , letterSpacing = 0
                     , color = Css.rgb 200 200 200
@@ -235,7 +235,7 @@ createProjectButton subModel =
 
 createProjectButtonLogInOk : SubModel.SubModel -> Ui.Panel Message
 createProjectButtonLogInOk subModel =
-    Component.Style.sameLanguageLink
+    CommonUi.sameLanguageLink
         [ Ui.width (Ui.stretchWithMaxSize 320)
         , Ui.height Ui.stretch
         , Ui.border
@@ -270,7 +270,7 @@ createProjectButtonLogInOk subModel =
             [ ( ( Ui.Center, Ui.Center )
               , Ui.column
                     []
-                    [ Component.Style.plusIcon
+                    [ CommonUi.plusIcon
                     , Ui.text
                         []
                         (Ui.TextAttributes
@@ -284,7 +284,7 @@ createProjectButtonLogInOk subModel =
 
                                     Data.LanguageEsperanto ->
                                         "Krei novan projekton"
-                            , typeface = Component.Style.normalTypeface
+                            , typeface = CommonUi.normalTypeface
                             , size = 16
                             , letterSpacing = 0
                             , color = Css.rgb 200 200 200
@@ -319,7 +319,7 @@ projectLineView subModel projectList =
 
 projectItem : SubModel.SubModel -> Project -> Ui.Panel Message
 projectItem subModel project =
-    Component.Style.sameLanguageLink
+    CommonUi.sameLanguageLink
         [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
         subModel
         (Data.LocationProject
@@ -365,7 +365,7 @@ projectItemImage imageStore project =
                                 )
 
                         Nothing ->
-                            Component.Style.normalText 16 "プロジェクトの画像を読込中"
+                            CommonUi.normalText 16 "プロジェクトの画像を読込中"
 
                 Nothing ->
                     Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
@@ -417,7 +417,7 @@ projectItemText imageStore project =
 
                                 Nothing ->
                                     "プロジェクトが見つからなかった"
-                , typeface = Component.Style.normalTypeface
+                , typeface = CommonUi.normalTypeface
                 , size = 16
                 , letterSpacing = 0
                 , color = Css.rgb 200 200 200

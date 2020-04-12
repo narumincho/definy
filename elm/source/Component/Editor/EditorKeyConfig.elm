@@ -10,7 +10,7 @@ module Component.Editor.EditorKeyConfig exposing
 {-| どのキーを選択しているか、検索文字はなにか
 -}
 
-import Component.Style as Style
+import CommonUi
 import Css
 import Data.Key as Key
 import Html.Styled
@@ -119,7 +119,7 @@ isInputKeyboardDirect (Model { selectedKey }) =
 
 inputSourceTab : InputDevice -> Html.Styled.Html Msg
 inputSourceTab selectedDevice =
-    Style.tabContainer
+    CommonUi.tabContainer
         selectedDevice
         [ ( Keyboard, "キーボード" )
         , ( Mouse, "マウス" )

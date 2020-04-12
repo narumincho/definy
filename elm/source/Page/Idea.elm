@@ -1,7 +1,7 @@
 module Page.Idea exposing (Message(..), Model, getIdeaId, init, update, view)
 
 import Command
-import Component.Style
+import CommonUi
 import Data
 import Ui
 
@@ -35,4 +35,4 @@ update _ model =
 
 view : Model -> Ui.Panel Message
 view _ =
-    Component.Style.normalText 16 "アイデアの詳細ページ"
+    CommonUi.normalText 16 "アイデアの詳細ページ"

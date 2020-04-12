@@ -10,9 +10,9 @@ module Component.Editor.Module exposing
     )
 
 import Array
+import CommonUi
 import Compiler
 import Component.DefaultUi
-import Component.Style as Style
 import Css
 import Data
 import Data.Label as L
@@ -2807,7 +2807,7 @@ sectionContainer { id, focus, active, activeLocation, title } child =
              , Css.property "gap" "16px"
              ]
                 ++ (if active then
-                        [ Css.borderLeft3 (Css.px 4) Css.solid Style.activeColor
+                        [ Css.borderLeft3 (Css.px 4) Css.solid CommonUi.activeColor
                         , Css.padding4 (Css.px 8) (Css.px 8) (Css.px 8) (Css.px 4)
                         ]
 
@@ -2936,7 +2936,7 @@ readMeViewTextArea readMe isFocus isActive =
             , Css.height (Css.pct 100)
             , Css.padding (Css.px 16)
             , Css.resize Css.none
-            , Style.textColorStyle
+            , CommonUi.textColorStyle
             , Css.fontSize (Css.rem 1)
             , Css.fontFamily Css.sansSerif
             , Css.border2 Css.zero Css.none
@@ -3103,11 +3103,11 @@ typeDefView typeDefActive typeDefState =
              , Css.padding (Css.px 8)
              , Css.boxShadow4 Css.zero (Css.px 3) (Css.px 5) (Css.rgba 0 0 0 0.4)
              , Css.backgroundColor (Css.rgb 56 56 56)
-             , Style.textColorStyle
+             , CommonUi.textColorStyle
              , Css.borderRadius (Css.px 4)
              ]
                 ++ (if typeDefActive == Just ActiveTypeDefSelf then
-                        [ Css.borderLeft3 (Css.px 5) Css.solid Style.activeColor
+                        [ Css.borderLeft3 (Css.px 5) Css.solid CommonUi.activeColor
                         , Css.padding4 (Css.px 8) (Css.px 8) (Css.px 8) (Css.px 3)
                         ]
 
@@ -3258,7 +3258,7 @@ partDefView width resultVisible isFocus index partDef compileAndRunResult partDe
              , Css.padding (Css.px 8)
              , Css.boxShadow4 Css.zero (Css.px 3) (Css.px 5) (Css.rgba 0 0 0 0.4)
              , Css.backgroundColor (Css.rgb 56 56 56)
-             , Style.textColorStyle
+             , CommonUi.textColorStyle
              , Css.borderRadius (Css.px 4)
              ]
                 ++ (if 700 <= width then
@@ -3268,7 +3268,7 @@ partDefView width resultVisible isFocus index partDef compileAndRunResult partDe
                         []
                    )
                 ++ (if partDefActiveMaybe == Just ActivePartDefSelf then
-                        [ Css.borderLeft3 (Css.px 5) Css.solid Style.activeColor
+                        [ Css.borderLeft3 (Css.px 5) Css.solid CommonUi.activeColor
                         , Css.padding4 (Css.px 8) (Css.px 8) (Css.px 8) (Css.px 3)
                         ]
 
@@ -3335,7 +3335,7 @@ partDefResultView resultVisible compileAndRunResult =
             , Css.width (Css.px 260)
             ]
         ]
-        [ Style.tabContainer
+        [ CommonUi.tabContainer
             resultVisible
             [ ( ResultVisibleValue, "評価結果" ), ( ResultVisibleWasmSExpr, "WASMのS式" ) ]
         , case resultVisible of
@@ -3374,7 +3374,7 @@ partDefViewNameAndType name type_ partDefActiveMaybe =
             [ Css.displayFlex
             , Css.height (Css.px 38)
             , Css.padding Css.zero
-            , Style.fontHack
+            , CommonUi.fontHack
             , Css.alignItems Css.baseline
             ]
         ]
@@ -3480,9 +3480,9 @@ partDefNameEditView name suggestSelectDataMaybe =
                 [ Html.Styled.Attributes.css
                     [ Css.border3 (Css.px 2) Css.solid (Css.rgb 221 221 221)
                     , Css.height (Css.px 12)
-                    , Style.textColorStyle
+                    , CommonUi.textColorStyle
                     , Css.fontSize (Css.rem 1.25)
-                    , Style.fontHack
+                    , CommonUi.fontHack
                     , Css.borderRadius (Css.px 4)
                     , Css.backgroundColor (Css.rgb 0 0 0)
                     , Css.resize Css.none
@@ -3511,7 +3511,7 @@ partDefNameContainerStyle =
 elementActiveStyle : Css.Style
 elementActiveStyle =
     Css.batch
-        [ Css.border3 (Css.px 3) Css.solid Style.activeColor
+        [ Css.border3 (Css.px 3) Css.solid CommonUi.activeColor
         , Css.padding (Css.px 1)
         ]
 
@@ -3604,7 +3604,7 @@ partDefTypeEditView type_ suggestIndex =
                 [ Html.Styled.Attributes.css
                     [ Css.border3 (Css.px 2) Css.solid (Css.rgb 221 221 221)
                     , Css.height (Css.px 26)
-                    , Style.textColorStyle
+                    , CommonUi.textColorStyle
                     , Css.fontSize (Css.rem 1)
                     , Css.borderRadius (Css.px 4)
                     , Css.backgroundColor (Css.rgb 0 0 0)
@@ -3657,7 +3657,7 @@ partDefViewExprArea width expr termOpPosMaybe =
         ([ Html.Styled.Attributes.css
             [ Css.displayFlex
             , Css.borderRadius (Css.px 4)
-            , Style.fontHack
+            , CommonUi.fontHack
             ]
          ]
             ++ (case termOpPosMaybe of
@@ -3688,7 +3688,7 @@ partDefViewExpr : Int -> Expr.Expr -> Maybe TermOpPos -> Html.Styled.Html PartDe
 partDefViewExpr width expr termOpPosMaybe =
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            ([ Style.fontHack
+            ([ CommonUi.fontHack
              , Css.property "display" "grid"
              , Css.property "grid-template-columns" "1fr"
              , Css.property "gap" "2px"
@@ -4046,7 +4046,7 @@ termViewOutput term termTypeMaybe =
              , Css.padding (Css.px 3)
              ]
                 ++ (if isSelect then
-                        [ Css.border3 (Css.px 3) Css.solid Style.activeColor
+                        [ Css.border3 (Css.px 3) Css.solid CommonUi.activeColor
                         , Css.borderRadius (Css.px 2)
                         , Css.padding Css.zero
                         ]
@@ -4161,7 +4161,7 @@ suggestionItem selected ( text, description ) =
              , Css.borderBottom3 (Css.px 1) Css.solid (Css.rgb 72 72 72)
              ]
                 ++ (if selected then
-                        [ Css.backgroundColor Style.activeColor ]
+                        [ Css.backgroundColor CommonUi.activeColor ]
 
                     else
                         []
@@ -4238,7 +4238,7 @@ opNormalView op isActive =
              , Css.alignItems Css.center
              ]
                 ++ (if isActive then
-                        [ Css.border3 (Css.px 3) Css.solid Style.activeColor
+                        [ Css.border3 (Css.px 3) Css.solid CommonUi.activeColor
                         , Css.borderRadius (Css.px 2)
                         , Css.padding2 Css.zero (Css.px 5)
                         ]
@@ -4309,7 +4309,7 @@ activeHeadTermLeft =
                 , Css.width (Css.px 2)
                 , Css.height (Css.pct 100)
                 , Css.left (Css.px -1)
-                , Css.backgroundColor Style.activeColor
+                , Css.backgroundColor CommonUi.activeColor
                 ]
             ]
             []

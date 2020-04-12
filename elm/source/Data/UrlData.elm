@@ -3,7 +3,6 @@ module Data.UrlData exposing (urlDataFromUrl, urlDataToUrl)
 import Data
 import Dict
 import Url
-import Url.Builder
 import Url.Parser
 import Url.Parser.Query
 

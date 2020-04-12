@@ -9,7 +9,7 @@ module Component.Notifications exposing
 
 import Array
 import Command
-import Component.Style
+import CommonUi
 import Css
 import Data
 import ImageStore
@@ -188,12 +188,12 @@ cardItem index (CardStyle record) =
             [ Ui.padding 8, Ui.width Ui.stretch ]
             (Ui.TextAttributes
                 { text = record.text
-                , typeface = Component.Style.normalTypeface
+                , typeface = CommonUi.normalTypeface
                 , size = 16
                 , letterSpacing = 0
                 , color = Css.rgb 255 255 255
                 , textAlignment = Ui.TextAlignStart
                 }
             )
-        , Ui.button [ Ui.width (Ui.fix 32) ] (DeleteAt index) Component.Style.closeIcon
+        , Ui.button [ Ui.width (Ui.fix 32) ] (DeleteAt index) CommonUi.closeIcon
         ]

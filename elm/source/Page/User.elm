@@ -1,12 +1,10 @@
 module Page.User exposing (Message(..), Model, getUserId, init, update, view)
 
 import Command
-import Component.Style
+import CommonUi
 import Data
-import Data.TimeZoneAndName
 import ImageStore
 import SubModel
-import Time
 import Ui
 
 
@@ -60,7 +58,7 @@ view : SubModel.SubModel -> Model -> Ui.Panel Message
 view subModel model =
     case model of
         Loading (Data.UserId userIdAsString) ->
-            Component.Style.normalText 24 (userIdAsString ++ "のユーザー詳細ページ")
+            CommonUi.normalText 24 (userIdAsString ++ "のユーザー詳細ページ")
 
         Loaded userSnapshotMaybeAndId ->
             case userSnapshotMaybeAndId.snapshot of
@@ -96,13 +94,13 @@ normalView subModel userSnapshotAndId =
                 Nothing ->
                     Ui.empty
                         [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
-            , Component.Style.normalText 24 userSnapshotAndId.snapshot.name
+            , CommonUi.normalText 24 userSnapshotAndId.snapshot.name
             ]
-        , Component.Style.normalText 16 userSnapshotAndId.snapshot.introduction
+        , CommonUi.normalText 16 userSnapshotAndId.snapshot.introduction
         , Ui.row
             [ Ui.gap 16 ]
-            [ Component.Style.normalText 16 "作成日時:"
-            , Component.Style.timeView
+            [ CommonUi.normalText 16 "作成日時:"
+            , CommonUi.timeView
                 (SubModel.getTimeZoneAndNameMaybe subModel)
                 userSnapshotAndId.snapshot.createTime
             ]
@@ -111,4 +109,4 @@ normalView subModel userSnapshotAndId =
 
 notFoundView : Data.UserId -> Ui.Panel Message
 notFoundView (Data.UserId userId) =
-    Component.Style.normalText 24 ("userId=" ++ userId ++ " のユーザーをみつけられなかった")
+    CommonUi.normalText 24 ("userId=" ++ userId ++ " のユーザーをみつけられなかった")

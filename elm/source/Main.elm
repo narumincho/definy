@@ -3,11 +3,11 @@ port module Main exposing (main)
 import Browser
 import Browser.Navigation
 import Command
+import CommonUi
 import Component.DefaultUi
 import Component.EditorGroup
 import Component.Header
 import Component.Notifications
-import Component.Style
 import Css
 import Data
 import Data.Key
@@ -1036,7 +1036,7 @@ logInPanel subModel =
                 (Ui.TextAttributes
                     { textAlignment = Ui.TextAlignCenter
                     , text = "ログイン画面をリクエスト中……"
-                    , typeface = Component.Style.fontHackName
+                    , typeface = CommonUi.fontHackName
                     , size = 16
                     , letterSpacing = 0
                     , color = Css.rgb 255 255 255
@@ -1049,7 +1049,7 @@ logInPanel subModel =
                 (Ui.TextAttributes
                     { textAlignment = Ui.TextAlignCenter
                     , text = "認証中……"
-                    , typeface = Component.Style.fontHackName
+                    , typeface = CommonUi.fontHackName
                     , size = 16
                     , letterSpacing = 0
                     , color = Css.rgb 255 255 255
@@ -1097,7 +1097,7 @@ googleLogInButton stretch language =
             )
         , Ui.height (Ui.fix 48)
         ]
-        [ Component.Style.googleIcon (Css.rgb 255 255 255)
+        [ CommonUi.googleIcon (Css.rgb 255 255 255)
         , Ui.text
             [ Ui.height Ui.auto ]
             (Ui.TextAttributes
@@ -1112,7 +1112,7 @@ googleLogInButton stretch language =
 
                         Data.LanguageEsperanto ->
                             "Ensalutu kun Google"
-                , typeface = Component.Style.fontHackName
+                , typeface = CommonUi.fontHackName
                 , size = 20
                 , letterSpacing = 0
                 , color = Css.rgb 255 255 255
@@ -1137,7 +1137,7 @@ gitHubLogInButton stretch language =
             )
         , Ui.height (Ui.fix 48)
         ]
-        [ Component.Style.gitHubIcon (Css.rgb 255 255 255)
+        [ CommonUi.gitHubIcon (Css.rgb 255 255 255)
         , Ui.text
             [ Ui.height Ui.auto ]
             (Ui.TextAttributes
@@ -1152,7 +1152,7 @@ gitHubLogInButton stretch language =
 
                         Data.LanguageEsperanto ->
                             "Ensalutu kun GitHub"
-                , typeface = Component.Style.fontHackName
+                , typeface = CommonUi.fontHackName
                 , size = 20
                 , letterSpacing = 0
                 , color = Css.rgb 255 255 255

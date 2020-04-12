@@ -1,7 +1,7 @@
 module Page.CreateProject exposing (Message(..), Model, init, update, view)
 
 import Command
-import Component.Style
+import CommonUi
 import Css
 import Data
 import Data.LogInState
@@ -84,7 +84,7 @@ view subModel model =
 
 noLogInCannotCreateProjectText : Data.Language -> Ui.Panel message
 noLogInCannotCreateProjectText language =
-    Component.Style.normalText 24
+    CommonUi.normalText 24
         (case language of
             Data.LanguageJapanese ->
                 "プロジェクトを作成するにはログインする必要があります"
@@ -112,7 +112,7 @@ mainView language model =
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch, Ui.gap 16 ]
                 [ createProjectTitle language
                 , projectInputBox
-                , Component.Style.normalText 24 (checkingThatProjectNameIsValid language)
+                , CommonUi.normalText 24 (checkingThatProjectNameIsValid language)
                 ]
 
         DisplayedValidProjectName (Just validProjectName) ->
@@ -128,21 +128,21 @@ mainView language model =
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch, Ui.gap 16 ]
                 [ createProjectTitle language
                 , projectInputBox
-                , Component.Style.normalText 24 (projectNameIsInvalid language)
+                , CommonUi.normalText 24 (projectNameIsInvalid language)
                 ]
 
         CreatingProject projectName ->
             Ui.column
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
                 [ Ui.empty [ Ui.height Ui.stretch ]
-                , Component.Style.normalText 24 (creating language projectName)
+                , CommonUi.normalText 24 (creating language projectName)
                 , Ui.empty [ Ui.height Ui.stretch ]
                 ]
 
 
 createProjectTitle : Data.Language -> Ui.Panel message
 createProjectTitle language =
-    Component.Style.normalText 32
+    CommonUi.normalText 32
         (case language of
             Data.LanguageEnglish ->
                 "Enter a name for the new project"
@@ -233,7 +233,7 @@ createButton language validProjectName =
 
                         Data.LanguageEsperanto ->
                             "Kreu " ++ validProjectName
-                , typeface = Component.Style.normalTypeface
+                , typeface = CommonUi.normalTypeface
                 , size = 26
                 , letterSpacing = 0
                 , color = Css.rgb 200 200 200

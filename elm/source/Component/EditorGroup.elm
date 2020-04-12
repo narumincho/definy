@@ -20,13 +20,13 @@ module Component.EditorGroup exposing
 また、編集画面を分割することもできる
 -}
 
+import CommonUi
 import Component.DefaultUi
 import Component.Editor.EditorKeyConfig
 import Component.Editor.Module
 import Component.Editor.Project
 import Component.Editor.ProjectImport
 import Component.EditorItemSource
-import Component.Style as Style
 import Css
 import Data
 import Data.Project
@@ -1153,7 +1153,7 @@ view project { width, height, language, focus, gutter } (Model { group, activeEd
             [ Css.width (Css.px (toFloat width))
             , Css.height (Css.px (toFloat height))
             , Css.backgroundColor (Css.rgb 24 24 24)
-            , Style.textColorStyle
+            , CommonUi.textColorStyle
             , Css.overflow Css.hidden
             , Css.displayFlex
             , Css.position Css.relative
@@ -1284,7 +1284,7 @@ view project { width, height, language, focus, gutter } (Model { group, activeEd
 -}
 verticalGutter : GutterVertical -> Bool -> Html.Styled.Html Msg
 verticalGutter gutter isResizing =
-    Style.verticalGutter isResizing
+    CommonUi.verticalGutter isResizing
         |> Html.Styled.map (always (GrabVerticalGutter gutter))
 
 
@@ -1360,7 +1360,7 @@ editorColumn project columnGroup { width, height } openEditorPosition activeEdit
 -}
 horizontalGutter : GutterHorizontal -> Bool -> Html.Styled.Html Msg
 horizontalGutter gutter isResizing =
-    Style.horizontalGutter isResizing
+    CommonUi.horizontalGutter isResizing
         |> Html.Styled.map (always (GrabHorizontalGutter gutter))
 
 
@@ -1402,7 +1402,7 @@ editorItemView { project, editorItem, editorIndex, width, height, isActive, isOn
                         ]
 
                     else
-                        [ Style.textColorStyle ]
+                        [ CommonUi.textColorStyle ]
                    )
             )
          , Html.Styled.Attributes.id (editorIndexToIdString editorIndex)
