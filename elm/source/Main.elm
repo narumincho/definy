@@ -557,6 +557,17 @@ update msg (Model rec) =
                     , commandToMainCommand (SubModel.getLogInState rec.subModel) command
                     )
 
+                Project pageModel ->
+                    let
+                        ( newPageModel, command ) =
+                            Page.Project.update
+                                (Page.Project.ResponseUser userSnapshotMaybeAndId)
+                                pageModel
+                    in
+                    ( Model { rec | page = Project newPageModel }
+                    , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+                    )
+
                 _ ->
                     ( Model rec
                     , Cmd.none

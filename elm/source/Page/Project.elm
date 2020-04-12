@@ -18,6 +18,7 @@ type alias LoadedModel =
 
 type Message
     = ProjectResponse Data.ProjectSnapshotMaybeAndId
+    | ResponseUser Data.UserSnapshotMaybeAndId
 
 
 init : Data.ProjectId -> ( Model, Command.Command )
@@ -51,6 +52,7 @@ update message model =
                         Command.Batch
                             [ Command.GetBlobUrl projectCache.imageHash
                             , Command.GetBlobUrl projectCache.iconHash
+                            , Command.GetUser projectCache.createUser
                             ]
 
                     Nothing ->
@@ -59,6 +61,39 @@ update message model =
 
             else
                 ( model, Command.None )
+
+        ResponseUser userSnapshotMaybeAndId ->
+            case model of
+                Loading _ ->
+                    ( model
+                    , Command.None
+                    )
+
+                Loaded snapshotAndId ->
+                    case snapshotAndId.snapshotAndId.snapshot of
+                        Just projectSnapshot ->
+                            if projectSnapshot.createUser == userSnapshotMaybeAndId.id then
+                                case userSnapshotMaybeAndId.snapshot of
+                                    Just userSnapshot ->
+                                        ( Loaded
+                                            { snapshotAndId | user = Just userSnapshot }
+                                        , Command.GetBlobUrl userSnapshot.imageHash
+                                        )
+
+                                    Nothing ->
+                                        ( model
+                                        , Command.None
+                                        )
+
+                            else
+                                ( model
+                                , Command.None
+                                )
+
+                        Nothing ->
+                            ( model
+                            , Command.None
+                            )
 
 
 view : SubModel.SubModel -> Model -> Ui.Panel Message
@@ -130,17 +165,10 @@ normalView subModel projectSnapshotAndId createUserMaybe =
                 Ui.depth
                     [ Ui.width (Ui.stretchWithMaxSize 640), Ui.height Ui.auto ]
                     [ ( ( Ui.Center, Ui.Center ), CommonUi.normalText 16 (projectSnapshotAndId.snapshot.name ++ "の画像を読込中") ) ]
+        , createUserView subModel projectSnapshotAndId.snapshot.createUser createUserMaybe
         , ideaListView
-        , Ui.row
-            [ Ui.gap 8 ]
-            [ CommonUi.normalText 16 "作成日時:"
-            , CommonUi.timeView (SubModel.getTimeZoneAndNameMaybe subModel) projectSnapshotAndId.snapshot.createTime
-            ]
-        , Ui.row
-            [ Ui.gap 8 ]
-            [ CommonUi.normalText 16 "更新日時:"
-            , CommonUi.timeView (SubModel.getTimeZoneAndNameMaybe subModel) projectSnapshotAndId.snapshot.updateTime
-            ]
+        , createTime subModel projectSnapshotAndId.snapshot.createTime
+        , updateTime subModel projectSnapshotAndId.snapshot.updateTime
         ]
 
 
@@ -155,3 +183,30 @@ notFoundView : Data.ProjectId -> Ui.Panel Message
 notFoundView (Data.ProjectId projectIdAsString) =
     CommonUi.normalText 24
         ("projectId = " ++ projectIdAsString ++ "のプロジェクトを見つからなかった")
+
+
+createUserView : SubModel.SubModel -> Data.UserId -> Maybe Data.UserSnapshot -> Ui.Panel Message
+createUserView subModel userId userSnapshotMaybe =
+    Ui.row
+        [ Ui.width Ui.stretch, Ui.gap 8 ]
+        [ CommonUi.normalText 16 "作成者:"
+        , CommonUi.userView subModel userId userSnapshotMaybe
+        ]
+
+
+createTime : SubModel.SubModel -> Data.Time -> Ui.Panel Message
+createTime subModel time =
+    Ui.row
+        [ Ui.width Ui.stretch, Ui.gap 8 ]
+        [ CommonUi.normalText 16 "作成日時:"
+        , CommonUi.timeView (SubModel.getTimeZoneAndNameMaybe subModel) time
+        ]
+
+
+updateTime : SubModel.SubModel -> Data.Time -> Ui.Panel Message
+updateTime subModel time =
+    Ui.row
+        [ Ui.width Ui.stretch, Ui.gap 8 ]
+        [ CommonUi.normalText 16 "更新日時:"
+        , CommonUi.timeView (SubModel.getTimeZoneAndNameMaybe subModel) time
+        ]

@@ -16,6 +16,7 @@ module CommonUi exposing
     , tabContainer
     , textColorStyle
     , timeView
+    , userView
     , verticalGutter
     )
 
@@ -182,6 +183,21 @@ stretchText size text =
         )
 
 
+subText : String -> Ui.Panel message
+subText text =
+    Ui.text
+        [ Ui.width Ui.stretch ]
+        (Ui.TextAttributes
+            { text = text
+            , typeface = normalTypeface
+            , size = 12
+            , letterSpacing = 0
+            , color = Css.rgb 100 100 100
+            , textAlignment = Ui.TextAlignEnd
+            }
+        )
+
+
 {-| 同じ言語のページへのリンク
 -}
 sameLanguageLink : List Ui.Style -> SubModel.SubModel -> Data.Location -> Ui.Panel message -> Ui.Panel message
@@ -246,17 +262,7 @@ timeView timeZoneAndNameMaybe time =
                                 )
                         )
                     ]
-                , Ui.text
-                    [ Ui.width Ui.stretch ]
-                    (Ui.TextAttributes
-                        { text = utcTimeToString posix
-                        , typeface = normalTypeface
-                        , size = 12
-                        , letterSpacing = 0
-                        , color = Css.rgb 100 100 100
-                        , textAlignment = Ui.TextAlignEnd
-                        }
-                    )
+                , subText (utcTimeToString posix)
                 ]
 
         Nothing ->
@@ -499,3 +505,44 @@ plusIcon =
                 ]
             }
         )
+
+
+userView : SubModel.SubModel -> Data.UserId -> Maybe Data.UserSnapshot -> Ui.Panel message
+userView subModel userId userSnapshotMaybe =
+    let
+        (Data.UserId userIdAsString) =
+            userId
+    in
+    case userSnapshotMaybe of
+        Just userSnapshot ->
+            sameLanguageLink
+                [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgb 20 20 20), Ui.padding 8 ]
+                subModel
+                (Data.LocationUser userId)
+                (Ui.row
+                    [ Ui.width Ui.stretch, Ui.gap 8 ]
+                    [ case SubModel.getImageBlobUrl userSnapshot.imageHash subModel of
+                        Just blobUrl ->
+                            Ui.bitmapImage
+                                [ Ui.width (Ui.fix 24)
+                                , Ui.height (Ui.fix 24)
+                                , Ui.borderRadius (Ui.BorderRadiusPercent 50)
+                                ]
+                                (Ui.BitmapImageAttributes
+                                    { url = blobUrl
+                                    , fitStyle = Ui.Contain
+                                    , alternativeText = userSnapshot.name ++ "の画像"
+                                    , rendering = Ui.ImageRenderingPixelated
+                                    }
+                                )
+
+                        Nothing ->
+                            Ui.empty
+                                [ Ui.width (Ui.fix 24), Ui.height (Ui.fix 24) ]
+                    , normalText 16 userSnapshot.name
+                    , subText userIdAsString
+                    ]
+                )
+
+        Nothing ->
+            normalText 16 ("userId=" ++ userIdAsString)
