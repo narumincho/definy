@@ -1,9 +1,9 @@
-module SubModel exposing (SubModel, WindowSize, from, getClientMode, getImageStore, getLanguage, getLogInState, getTimeZoneAndNameMaybe, getWindowSize, mapImageStore, setClientMode, setLanguageAndClientMode, setLogInState, setTimeZoneAndName, setWindowSize)
+module SubModel exposing (SubModel, WindowSize, addImageBlobUrl, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getTimeZoneAndNameMaybe, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setTimeZoneAndName, setWindowSize)
 
 import Data
 import Data.LogInState
 import Data.TimeZoneAndName
-import ImageStore
+import Dict
 
 
 type SubModel
@@ -11,7 +11,7 @@ type SubModel
         { logInState : Data.LogInState.LogInState
         , language : Data.Language
         , clientMode : Data.ClientMode
-        , imageStore : ImageStore.ImageStore
+        , imageFileBlobDict : Dict.Dict String String
         , timeZoneAndNameMaybe : Maybe Data.TimeZoneAndName.TimeZoneAndName
         , windowSize : WindowSize
         }
@@ -25,13 +25,19 @@ from :
     { logInState : Data.LogInState.LogInState
     , language : Data.Language
     , clientMode : Data.ClientMode
-    , imageStore : ImageStore.ImageStore
     , timeZoneAndNameMaybe : Maybe Data.TimeZoneAndName.TimeZoneAndName
     , windowSize : WindowSize
     }
     -> SubModel
-from =
+from record =
     SubModel
+        { logInState = record.logInState
+        , language = record.language
+        , clientMode = record.clientMode
+        , imageFileBlobDict = Dict.empty
+        , timeZoneAndNameMaybe = record.timeZoneAndNameMaybe
+        , windowSize = record.windowSize
+        }
 
 
 getLogInState : SubModel -> Data.LogInState.LogInState
@@ -66,15 +72,10 @@ setLanguageAndClientMode language clientMode (SubModel record) =
         { record | language = language, clientMode = clientMode }
 
 
-getImageStore : SubModel -> ImageStore.ImageStore
-getImageStore (SubModel record) =
-    record.imageStore
-
-
-mapImageStore : (ImageStore.ImageStore -> ImageStore.ImageStore) -> SubModel -> SubModel
-mapImageStore imageStoreFunction (SubModel record) =
+addImageBlobUrl : Data.FileHash -> String -> SubModel -> SubModel
+addImageBlobUrl (Data.FileHash hash) blobUrl (SubModel record) =
     SubModel
-        { record | imageStore = imageStoreFunction record.imageStore }
+        { record | imageFileBlobDict = Dict.insert hash blobUrl record.imageFileBlobDict }
 
 
 getTimeZoneAndNameMaybe : SubModel -> Maybe Data.TimeZoneAndName.TimeZoneAndName
@@ -95,3 +96,8 @@ getWindowSize (SubModel record) =
 setWindowSize : WindowSize -> SubModel -> SubModel
 setWindowSize windowSize (SubModel record) =
     SubModel { record | windowSize = windowSize }
+
+
+getImageBlobUrl : Data.FileHash -> SubModel -> Maybe String
+getImageBlobUrl (Data.FileHash hash) (SubModel record) =
+    Dict.get hash record.imageFileBlobDict

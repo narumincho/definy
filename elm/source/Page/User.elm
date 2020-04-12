@@ -3,7 +3,6 @@ module Page.User exposing (Message(..), Model, getUserId, init, update, view)
 import Command
 import CommonUi
 import Data
-import ImageStore
 import SubModel
 import Ui
 
@@ -79,7 +78,7 @@ normalView subModel userSnapshotAndId =
         []
         [ Ui.row
             []
-            [ case ImageStore.getImageBlobUrl userSnapshotAndId.snapshot.imageHash (SubModel.getImageStore subModel) of
+            [ case SubModel.getImageBlobUrl userSnapshotAndId.snapshot.imageHash subModel of
                 Just blobUrl ->
                     Ui.bitmapImage
                         []

@@ -4,7 +4,6 @@ import CommonUi
 import Css
 import Data
 import Data.LogInState
-import ImageStore
 import SubModel
 import Ui
 
@@ -78,8 +77,7 @@ userItem subModel userSnapshotAndId =
         (Ui.row
             [ Ui.gap 8 ]
             [ case
-                ImageStore.getImageBlobUrl userSnapshotAndId.snapshot.imageHash
-                    (SubModel.getImageStore subModel)
+                SubModel.getImageBlobUrl userSnapshotAndId.snapshot.imageHash subModel
               of
                 Just blobUrl ->
                     Ui.bitmapImage

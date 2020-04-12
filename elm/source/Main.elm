@@ -15,7 +15,6 @@ import Data.LogInState
 import Data.TimeZoneAndName
 import Data.UrlData
 import Html.Styled
-import ImageStore
 import Json.Decode
 import Json.Encode
 import Page.CreateIdea
@@ -253,7 +252,6 @@ init flag url navigationKey =
                 { logInState = logInState
                 , language = urlData.language
                 , clientMode = urlData.clientMode
-                , imageStore = ImageStore.empty
                 , timeZoneAndNameMaybe = Nothing
                 , windowSize = flag.windowSize
                 }
@@ -421,11 +419,9 @@ update msg (Model rec) =
             ( Model
                 { rec
                     | subModel =
-                        SubModel.mapImageStore
-                            (ImageStore.add
-                                imageBlobAndFileHash.fileHash
-                                imageBlobAndFileHash.blobUrl
-                            )
+                        SubModel.addImageBlobUrl
+                            imageBlobAndFileHash.fileHash
+                            imageBlobAndFileHash.blobUrl
                             rec.subModel
                 }
             , Cmd.none

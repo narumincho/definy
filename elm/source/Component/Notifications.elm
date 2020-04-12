@@ -12,7 +12,6 @@ import Command
 import CommonUi
 import Css
 import Data
-import ImageStore
 import SubModel
 import Ui
 
@@ -87,19 +86,19 @@ view subModel (Model eventList) =
         ]
         (List.indexedMap
             (\index event ->
-                cardItem index (eventToCardStyle (SubModel.getImageStore subModel) event)
+                cardItem index (eventToCardStyle subModel event)
             )
             eventList
         )
 
 
-eventToCardStyle : ImageStore.ImageStore -> Event -> CardStyle
-eventToCardStyle imageStore event =
+eventToCardStyle : SubModel.SubModel -> Event -> CardStyle
+eventToCardStyle subModel event =
     case event of
         LogInSuccess userAndUserId ->
             CardStyle
                 { icon =
-                    ImageStore.getImageBlobUrl userAndUserId.snapshot.imageHash imageStore
+                    SubModel.getImageBlobUrl userAndUserId.snapshot.imageHash subModel
                         |> Maybe.map
                             (\blobUrl ->
                                 Icon
@@ -132,7 +131,7 @@ eventToCardStyle imageStore event =
         CreatedProject projectAndId ->
             CardStyle
                 { icon =
-                    ImageStore.getImageBlobUrl projectAndId.snapshot.imageHash imageStore
+                    SubModel.getImageBlobUrl projectAndId.snapshot.imageHash subModel
                         |> Maybe.map
                             (\blobUrl ->
                                 Icon

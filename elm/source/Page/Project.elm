@@ -3,7 +3,6 @@ module Page.Project exposing (Message(..), Model, getProjectId, init, update, vi
 import Command
 import CommonUi
 import Data
-import ImageStore
 import SubModel
 import Ui
 
@@ -98,7 +97,7 @@ normalView subModel projectSnapshotAndId createUserMaybe =
         [ CommonUi.stretchText 12 projectIdAsString
         , Ui.row
             [ Ui.width Ui.stretch ]
-            [ case ImageStore.getImageBlobUrl projectSnapshotAndId.snapshot.iconHash (SubModel.getImageStore subModel) of
+            [ case SubModel.getImageBlobUrl projectSnapshotAndId.snapshot.iconHash subModel of
                 Just blobUrl ->
                     Ui.bitmapImage
                         [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
@@ -115,7 +114,7 @@ normalView subModel projectSnapshotAndId createUserMaybe =
                         [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
             , CommonUi.normalText 16 projectSnapshotAndId.snapshot.name
             ]
-        , case ImageStore.getImageBlobUrl projectSnapshotAndId.snapshot.imageHash (SubModel.getImageStore subModel) of
+        , case SubModel.getImageBlobUrl projectSnapshotAndId.snapshot.imageHash subModel of
             Just blobUrl ->
                 Ui.bitmapImage
                     [ Ui.width (Ui.stretchWithMaxSize 640), Ui.height Ui.auto ]

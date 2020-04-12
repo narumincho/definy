@@ -11,7 +11,6 @@ import CommonUi
 import Css
 import Data
 import Data.LogInState
-import ImageStore
 import SubModel
 import Ui
 
@@ -334,17 +333,17 @@ projectItem subModel project =
         (Ui.depth
             [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
             [ ( ( Ui.Center, Ui.Center )
-              , projectItemImage (SubModel.getImageStore subModel) project
+              , projectItemImage subModel project
               )
             , ( ( Ui.Center, Ui.End )
-              , projectItemText (SubModel.getImageStore subModel) project
+              , projectItemText subModel project
               )
             ]
         )
 
 
-projectItemImage : ImageStore.ImageStore -> Project -> Ui.Panel message
-projectItemImage imageStore project =
+projectItemImage : SubModel.SubModel -> Project -> Ui.Panel message
+projectItemImage subModel project =
     case project of
         OnlyId _ ->
             Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
@@ -352,7 +351,7 @@ projectItemImage imageStore project =
         Full projectCacheWithId ->
             case projectCacheWithId.snapshot of
                 Just projectCache ->
-                    case ImageStore.getImageBlobUrl projectCache.imageHash imageStore of
+                    case SubModel.getImageBlobUrl projectCache.imageHash subModel of
                         Just projectImageBlobUrl ->
                             Ui.bitmapImage
                                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
@@ -371,15 +370,15 @@ projectItemImage imageStore project =
                     Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
 
 
-projectItemText : ImageStore.ImageStore -> Project -> Ui.Panel message
-projectItemText imageStore project =
+projectItemText : SubModel.SubModel -> Project -> Ui.Panel message
+projectItemText subModel project =
     Ui.row
         [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
         [ case project of
             Full projectCacheWithId ->
                 case projectCacheWithId.snapshot of
                     Just projectSnapshot ->
-                        case ImageStore.getImageBlobUrl projectSnapshot.iconHash imageStore of
+                        case SubModel.getImageBlobUrl projectSnapshot.iconHash subModel of
                             Just blobUrl ->
                                 Ui.bitmapImage
                                     [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
