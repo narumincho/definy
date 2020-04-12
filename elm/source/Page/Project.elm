@@ -11,7 +11,11 @@ import Ui
 
 type Model
     = Loading Data.ProjectId
-    | Loaded Data.ProjectSnapshotMaybeAndId
+    | Loaded LoadedModel
+
+
+type alias LoadedModel =
+    { snapshotAndId : Data.ProjectSnapshotMaybeAndId, user : Maybe Data.UserSnapshot }
 
 
 type Message
@@ -31,8 +35,8 @@ getProjectId model =
         Loading projectId ->
             projectId
 
-        Loaded projectCacheWithId ->
-            projectCacheWithId.id
+        Loaded { snapshotAndId } ->
+            snapshotAndId.id
 
 
 update : Message -> Model -> ( Model, Command.Command )
@@ -40,7 +44,10 @@ update message model =
     case message of
         ProjectResponse projectCacheWithId ->
             if projectCacheWithId.id == getProjectId model then
-                ( Loaded projectCacheWithId
+                ( Loaded
+                    { snapshotAndId = projectCacheWithId
+                    , user = Nothing
+                    }
                 , case projectCacheWithId.snapshot of
                     Just projectCache ->
                         Command.Batch
@@ -62,16 +69,17 @@ view subModel model =
         Loading projectId ->
             loadingView projectId
 
-        Loaded projectCacheWithId ->
-            case projectCacheWithId.snapshot of
+        Loaded { snapshotAndId, user } ->
+            case snapshotAndId.snapshot of
                 Just projectCache ->
                     normalView subModel
-                        { id = projectCacheWithId.id
+                        { id = snapshotAndId.id
                         , snapshot = projectCache
                         }
+                        user
 
                 Nothing ->
-                    notFoundView projectCacheWithId.id
+                    notFoundView snapshotAndId.id
 
 
 loadingView : Data.ProjectId -> Ui.Panel message
@@ -80,8 +88,8 @@ loadingView (Data.ProjectId projectIdAsString) =
         ("projectId = " ++ projectIdAsString ++ "のプロジェクトを読込中")
 
 
-normalView : SubModel.SubModel -> Data.ProjectSnapshotAndId -> Ui.Panel Message
-normalView subModel projectSnapshotAndId =
+normalView : SubModel.SubModel -> Data.ProjectSnapshotAndId -> Maybe Data.UserSnapshot -> Ui.Panel Message
+normalView subModel projectSnapshotAndId createUserMaybe =
     let
         (Data.ProjectId projectIdAsString) =
             projectSnapshotAndId.id
