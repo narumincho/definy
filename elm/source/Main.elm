@@ -65,7 +65,13 @@ port getImageBlobUrl : Json.Encode.Value -> Cmd msg
 port createProject : Json.Encode.Value -> Cmd msg
 
 
+port createIdea : Json.Encode.Value -> Cmd msg
+
+
 port toValidProjectName : String -> Cmd msg
+
+
+port toValidIdeaName : String -> Cmd msg
 
 
 port getUser : Json.Decode.Value -> Cmd msg
@@ -106,6 +112,9 @@ port getImageBlobResponse : ({ blobUrl : String, fileHash : String } -> msg) -> 
 
 
 port toValidProjectNameResponse : ({ input : String, result : Maybe String } -> msg) -> Sub msg
+
+
+port toValidIdeaNameResponse : ({ input : String, result : Maybe String } -> msg) -> Sub msg
 
 
 port createProjectResponse : (Json.Decode.Value -> msg) -> Sub msg
@@ -934,6 +943,12 @@ createProjectTyped createProjectParameter =
         (Data.createProjectParameterToJsonValue createProjectParameter)
 
 
+createIdeaTyped : Data.CreateIdeaParameter -> Cmd Msg
+createIdeaTyped createIdeaParameter =
+    createIdea
+        (Data.createIdeaParameterToJsonValue createIdeaParameter)
+
+
 
 {- ================================================================
                                View
@@ -998,7 +1013,7 @@ mainView (Model record) =
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
                 [ Component.Header.view record.subModel
                 , logInPanel record.subModel
-                , Page.CreateIdea.view pageModel
+                , Page.CreateIdea.view record.subModel pageModel
                     |> Ui.map (PageMessageCreateIdea >> PageMsg)
                 ]
 
@@ -1251,6 +1266,15 @@ commandToMainCommand logInState command =
                 _ ->
                     Cmd.none
 
+        Command.CreateIdea projectIdAndIdeaName ->
+            case logInState of
+                Data.LogInState.Ok { accessToken } ->
+                    createIdeaTyped
+                        { accessToken = accessToken, ideaName = projectIdAndIdeaName.ideaName, projectId = projectIdAndIdeaName.projectId }
+
+                _ ->
+                    Cmd.none
+
         Command.ConsoleLog string ->
             consoleLog string
 
@@ -1261,6 +1285,9 @@ commandToMainCommand logInState command =
 
         Command.ToValidProjectName string ->
             toValidProjectName string
+
+        Command.ToValidIdeaName string ->
+            toValidIdeaName string
 
         Command.GetUser userId ->
             getUser (Data.userIdToJsonValue userId)
@@ -1314,6 +1341,13 @@ subscriptions model =
                 PageMsg
                     (PageMessageCreateProject
                         (Page.CreateProject.ToValidProjectNameResponse response)
+                    )
+            )
+         , toValidIdeaNameResponse
+            (\response ->
+                PageMsg
+                    (PageMessageCreateIdea
+                        (Page.CreateIdea.ToValidIdeaNameResponse response)
                     )
             )
          , createProjectResponseSubscription

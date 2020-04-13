@@ -51,15 +51,13 @@ update message model =
             )
 
         ( ToValidProjectNameResponse response, RequestToValidProjectName request ) ->
-            if request == response.input then
-                ( DisplayedValidProjectName response.result
-                , Command.None
-                )
+            ( if request == response.input then
+                DisplayedValidProjectName response.result
 
-            else
-                ( model
-                , Command.None
-                )
+              else
+                model
+            , Command.None
+            )
 
         ( CreateProject, DisplayedValidProjectName (Just validProjectName) ) ->
             ( CreatingProject validProjectName

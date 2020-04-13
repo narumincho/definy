@@ -205,10 +205,26 @@ const init = async (): Promise<void> => {
       console.log("プロジェクト作成しました!", response);
     });
   });
+  app.ports.createIdea.subscribe((parameter) => {
+    callApi(
+      "createIdea",
+      data.encodeCreateIdeaParameter(parameter),
+      data.decodeMaybe(data.decodeIdeaSnapshotAndId)
+    ).then((response) => {
+      console.log("アイデアを作成しました", response);
+    });
+  });
+
   app.ports.toValidProjectName.subscribe((projectName) => {
     app.ports.toValidProjectNameResponse.send({
       input: projectName,
       result: common.stringToValidProjectName(projectName),
+    });
+  });
+  app.ports.toValidIdeaName.subscribe((ideaName) => {
+    app.ports.toValidIdeaNameResponse.send({
+      input: ideaName,
+      result: common.stringToValidIdeaName(ideaName),
     });
   });
   app.ports.getAllProjectIdList.subscribe(() => {
