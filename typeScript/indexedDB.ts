@@ -5,6 +5,7 @@ const accessTokenKeyName = "lastLogInUser";
 const userObjectStoreName = "user";
 const projectObjectStoreName = "project";
 const fileObjectStoreName = "file";
+const ideaObjectStoreName = "idea";
 
 /**
  * ブラウザでindexDBがサポートされているかどうか調べる
@@ -30,6 +31,7 @@ export const accessDatabase = (): Promise<IDBDatabase | null> =>
       db.createObjectStore(userObjectStoreName, {});
       db.createObjectStore(projectObjectStoreName, {});
       db.createObjectStore(fileObjectStoreName, {});
+      db.createObjectStore(ideaObjectStoreName, {});
     };
 
     dbRequest.onsuccess = (): void => {
@@ -218,12 +220,11 @@ export const getProject = (
   });
 
 /**
+ * プロジェクトのスナップショットをindexedDBに書く
+ *
  * 指定したプロジェクトIDのプロジェクトスナップショットがなかった場合, 指定したプロジェクトスナップショットをindexedDBに書く
  * 前にあったプロジェクトスナップショットのgetTimeより新しかった場合, 指定したプロジェクトスナップショットをindexedDBに書く
  * そうでなければ何もしない
- */
-/**
- * プロジェクトのデータをindexedDBに書く
  */
 export const setProject = (
   database: IDBDatabase | null,
@@ -338,4 +339,97 @@ export const setFile = (
     };
 
     transaction.objectStore(fileObjectStoreName).put(image, fileHash);
+  });
+
+export const getIdea = (
+  database: IDBDatabase | null,
+  ideaId: data.IdeaId
+): Promise<undefined | data.IdeaSnapshot> =>
+  new Promise((resolve, reject) => {
+    if (database === null) {
+      resolve();
+      return;
+    }
+    const transaction = database.transaction(
+      [ideaObjectStoreName],
+      "readwrite"
+    );
+
+    const getRequest: IDBRequest<
+      undefined | data.IdeaSnapshot
+    > = transaction.objectStore(userObjectStoreName).get(ideaId);
+
+    transaction.oncomplete = (): void => {
+      resolve(getRequest.result);
+    };
+
+    transaction.onerror = (): void => {
+      reject("read idea failed");
+    };
+  });
+
+/**
+ * アイデアのスナップショットをindexedDBに書く
+ *
+ * 指定したアイデアIDのアイデアスナップショットがなかった場合, 指定したアイデアスナップショットをindexedDBに書く
+ * 前にあったアイデアスナップショットのgetTimeより新しかった場合, 指定したアイデアスナップショットをindexedDBに書く
+ * そうでなければ何もしない
+ */
+export const setIdea = (
+  database: IDBDatabase | null,
+  ideaSnapshotAndId: data.IdeaSnapshotAndId
+): Promise<void> =>
+  new Promise((resolve, reject) => {
+    if (database === null) {
+      resolve();
+      return;
+    }
+
+    const transaction = database.transaction([ideaObjectStoreName], "readonly");
+
+    transaction.oncomplete = (): void => {
+      if (getRequest.result === undefined) {
+        setIdeaLow(database, ideaSnapshotAndId).then(resolve);
+        return;
+      }
+      if (
+        util.timeToDate(getRequest.result.getTime).getTime() <
+        util.timeToDate(ideaSnapshotAndId.snapshot.getTime).getTime()
+      ) {
+        setIdeaLow(database, ideaSnapshotAndId).then(resolve);
+        return;
+      }
+      resolve();
+    };
+
+    transaction.onerror = (): void => {
+      reject("set idea failed");
+    };
+
+    const getRequest: IDBRequest<
+      undefined | data.ProjectSnapshot
+    > = transaction.objectStore(ideaObjectStoreName).get(ideaSnapshotAndId.id);
+  });
+
+/**
+ * アイデアのスナップショットを書き込む
+ */
+const setIdeaLow = (
+  database: IDBDatabase,
+  ideaSnapshotAndId: data.IdeaSnapshotAndId
+): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const transaction = database.transaction(
+      [ideaObjectStoreName],
+      "readwrite"
+    );
+    transaction.oncomplete = (): void => {
+      resolve();
+    };
+    transaction.onerror = (): void => {
+      reject("write idea error:  write transaction failed");
+    };
+    transaction
+      .objectStore(ideaObjectStoreName)
+      .put(ideaSnapshotAndId.snapshot, ideaSnapshotAndId.id);
   });

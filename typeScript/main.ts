@@ -295,6 +295,41 @@ const init = async (): Promise<void> => {
       });
     });
   });
+
+  app.ports.getIdeaSnapshotAndIdListByProjectId.subscribe((projectId) => {
+    callApi(
+      "getIdeaSnapshotAndIdListByProjectId",
+      data.encodeId(projectId),
+      data.decodeList(data.decodeIdeaSnapshotAndId)
+    ).then((ideaSnapshotAndIdList) => {
+      for (const ideaSnapshotAndId of ideaSnapshotAndIdList) {
+        db.setIdea(database, ideaSnapshotAndId);
+      }
+      app.ports.responseIdeaSnapshotAndIdListByProjectId.send({
+        projectId: projectId,
+        ideaSnapshotAndIdList: ideaSnapshotAndIdList,
+      });
+    });
+  });
+
+  app.ports.getIdea.subscribe((ideaId) => {
+    callApi(
+      "getIdea",
+      data.encodeId(ideaId),
+      data.decodeMaybe(data.decodeIdeaSnapshot)
+    ).then((ideaSnapshotMaybe) => {
+      if (ideaSnapshotMaybe._ === "Just") {
+        db.setIdea(database, {
+          id: ideaId,
+          snapshot: ideaSnapshotMaybe.value,
+        });
+      }
+      app.ports.responseIdea.send({
+        id: ideaId,
+        snapshot: ideaSnapshotMaybe,
+      });
+    });
+  });
 };
 
 requestAnimationFrame(() => {

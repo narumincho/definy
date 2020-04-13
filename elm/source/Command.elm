@@ -15,4 +15,6 @@ type Command
     | GetAllProjectId
     | GetProject Data.ProjectId
     | GetUser Data.UserId
+    | GetIdea Data.IdeaId
+    | GetIdeaListByProjectId Data.ProjectId
     | Batch (List Command)

@@ -2,6 +2,7 @@ module Page.Project exposing (Message(..), Model, getProjectId, init, update, vi
 
 import Command
 import CommonUi
+import Css
 import Data
 import SubModel
 import Ui
@@ -9,16 +10,18 @@ import Ui
 
 type Model
     = Loading Data.ProjectId
+    | NotFound Data.ProjectId
     | Loaded LoadedModel
 
 
 type alias LoadedModel =
-    { snapshotAndId : Data.ProjectSnapshotMaybeAndId, user : Maybe Data.UserSnapshot }
+    { snapshotAndId : Data.ProjectSnapshotAndId, user : Maybe Data.UserSnapshot, ideaList : Maybe (List Data.IdeaSnapshotAndId) }
 
 
 type Message
     = ProjectResponse Data.ProjectSnapshotMaybeAndId
     | ResponseUser Data.UserSnapshotMaybeAndId
+    | ResponseIdeaList { projectId : Data.ProjectId, ideaSnapshotAndIdList : List Data.IdeaSnapshotAndId }
 
 
 init : Data.ProjectId -> ( Model, Command.Command )
@@ -34,66 +37,79 @@ getProjectId model =
         Loading projectId ->
             projectId
 
+        NotFound projectId ->
+            projectId
+
         Loaded { snapshotAndId } ->
             snapshotAndId.id
 
 
 update : Message -> Model -> ( Model, Command.Command )
 update message model =
-    case message of
-        ProjectResponse projectCacheWithId ->
-            if projectCacheWithId.id == getProjectId model then
-                ( Loaded
-                    { snapshotAndId = projectCacheWithId
-                    , user = Nothing
-                    }
-                , case projectCacheWithId.snapshot of
-                    Just projectCache ->
-                        Command.Batch
-                            [ Command.GetBlobUrl projectCache.imageHash
-                            , Command.GetBlobUrl projectCache.iconHash
-                            , Command.GetUser projectCache.createUser
+    case ( message, model ) of
+        ( ProjectResponse response, _ ) ->
+            if response.id == getProjectId model then
+                case response.snapshot of
+                    Just projectSnapshot ->
+                        ( Loaded
+                            { snapshotAndId =
+                                { id = response.id
+                                , snapshot = projectSnapshot
+                                }
+                            , user = Nothing
+                            , ideaList = Nothing
+                            }
+                        , Command.Batch
+                            [ Command.GetBlobUrl projectSnapshot.imageHash
+                            , Command.GetBlobUrl projectSnapshot.iconHash
+                            , Command.GetUser projectSnapshot.createUser
+                            , Command.GetIdeaListByProjectId (getProjectId model)
                             ]
+                        )
 
                     Nothing ->
-                        Command.None
-                )
+                        ( NotFound response.id
+                        , Command.None
+                        )
 
             else
                 ( model, Command.None )
 
-        ResponseUser userSnapshotMaybeAndId ->
-            case model of
-                Loading _ ->
-                    ( model
-                    , Command.None
-                    )
+        ( ResponseUser userSnapshotMaybeAndId, Loaded snapshotAndId ) ->
+            if snapshotAndId.snapshotAndId.snapshot.createUser == userSnapshotMaybeAndId.id then
+                case userSnapshotMaybeAndId.snapshot of
+                    Just userSnapshot ->
+                        ( Loaded
+                            { snapshotAndId | user = Just userSnapshot }
+                        , Command.GetBlobUrl userSnapshot.imageHash
+                        )
 
-                Loaded snapshotAndId ->
-                    case snapshotAndId.snapshotAndId.snapshot of
-                        Just projectSnapshot ->
-                            if projectSnapshot.createUser == userSnapshotMaybeAndId.id then
-                                case userSnapshotMaybeAndId.snapshot of
-                                    Just userSnapshot ->
-                                        ( Loaded
-                                            { snapshotAndId | user = Just userSnapshot }
-                                        , Command.GetBlobUrl userSnapshot.imageHash
-                                        )
+                    Nothing ->
+                        ( model
+                        , Command.None
+                        )
 
-                                    Nothing ->
-                                        ( model
-                                        , Command.None
-                                        )
+            else
+                ( model
+                , Command.None
+                )
 
-                            else
-                                ( model
-                                , Command.None
-                                )
+        ( ResponseIdeaList response, Loaded snapshotAndId ) ->
+            if getProjectId model == response.projectId then
+                ( Loaded
+                    { snapshotAndId | ideaList = Just response.ideaSnapshotAndIdList }
+                , Command.None
+                )
 
-                        Nothing ->
-                            ( model
-                            , Command.None
-                            )
+            else
+                ( model
+                , Command.None
+                )
+
+        ( _, _ ) ->
+            ( model
+            , Command.None
+            )
 
 
 view : SubModel.SubModel -> Model -> Ui.Panel Message
@@ -102,17 +118,11 @@ view subModel model =
         Loading projectId ->
             loadingView projectId
 
-        Loaded { snapshotAndId, user } ->
-            case snapshotAndId.snapshot of
-                Just projectCache ->
-                    normalView subModel
-                        { id = snapshotAndId.id
-                        , snapshot = projectCache
-                        }
-                        user
+        NotFound projectId ->
+            notFoundView projectId
 
-                Nothing ->
-                    notFoundView snapshotAndId.id
+        Loaded loadedModel ->
+            normalView subModel loadedModel
 
 
 loadingView : Data.ProjectId -> Ui.Panel message
@@ -121,25 +131,25 @@ loadingView (Data.ProjectId projectIdAsString) =
         ("projectId = " ++ projectIdAsString ++ "のプロジェクトを読込中")
 
 
-normalView : SubModel.SubModel -> Data.ProjectSnapshotAndId -> Maybe Data.UserSnapshot -> Ui.Panel Message
-normalView subModel projectSnapshotAndId createUserMaybe =
+normalView : SubModel.SubModel -> LoadedModel -> Ui.Panel Message
+normalView subModel loadedModel =
     let
         (Data.ProjectId projectIdAsString) =
-            projectSnapshotAndId.id
+            loadedModel.snapshotAndId.id
     in
     Ui.column
         [ Ui.gap 8 ]
         [ CommonUi.subText projectIdAsString
         , Ui.row
             [ Ui.width Ui.stretch ]
-            [ case SubModel.getImageBlobUrl projectSnapshotAndId.snapshot.iconHash subModel of
+            [ case SubModel.getImageBlobUrl loadedModel.snapshotAndId.snapshot.iconHash subModel of
                 Just blobUrl ->
                     Ui.bitmapImage
                         [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
                         (Ui.BitmapImageAttributes
                             { url = blobUrl
                             , fitStyle = Ui.Contain
-                            , alternativeText = projectSnapshotAndId.snapshot.name ++ "のアイコン"
+                            , alternativeText = loadedModel.snapshotAndId.snapshot.name ++ "のアイコン"
                             , rendering = Ui.ImageRenderingPixelated
                             }
                         )
@@ -147,16 +157,16 @@ normalView subModel projectSnapshotAndId createUserMaybe =
                 Nothing ->
                     Ui.empty
                         [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
-            , CommonUi.normalText 16 projectSnapshotAndId.snapshot.name
+            , CommonUi.normalText 16 loadedModel.snapshotAndId.snapshot.name
             ]
-        , case SubModel.getImageBlobUrl projectSnapshotAndId.snapshot.imageHash subModel of
+        , case SubModel.getImageBlobUrl loadedModel.snapshotAndId.snapshot.imageHash subModel of
             Just blobUrl ->
                 Ui.bitmapImage
                     [ Ui.width (Ui.stretchWithMaxSize 640), Ui.height Ui.auto ]
                     (Ui.BitmapImageAttributes
                         { url = blobUrl
                         , fitStyle = Ui.Contain
-                        , alternativeText = projectSnapshotAndId.snapshot.name ++ "のアイコン"
+                        , alternativeText = loadedModel.snapshotAndId.snapshot.name ++ "のアイコン"
                         , rendering = Ui.ImageRenderingPixelated
                         }
                     )
@@ -164,25 +174,60 @@ normalView subModel projectSnapshotAndId createUserMaybe =
             Nothing ->
                 Ui.depth
                     [ Ui.width (Ui.stretchWithMaxSize 640), Ui.height Ui.auto ]
-                    [ ( ( Ui.Center, Ui.Center ), CommonUi.normalText 16 (projectSnapshotAndId.snapshot.name ++ "の画像を読込中") ) ]
-        , createUserView subModel projectSnapshotAndId.snapshot.createUser createUserMaybe
-        , createTime subModel projectSnapshotAndId.snapshot.createTime
-        , updateTime subModel projectSnapshotAndId.snapshot.updateTime
-        , ideaListView subModel projectSnapshotAndId.id
+                    [ ( ( Ui.Center, Ui.Center ), CommonUi.normalText 16 (loadedModel.snapshotAndId.snapshot.name ++ "の画像を読込中") ) ]
+        , createUserView subModel loadedModel.snapshotAndId.snapshot.createUser loadedModel.user
+        , createTime subModel loadedModel.snapshotAndId.snapshot.createTime
+        , updateTime subModel loadedModel.snapshotAndId.snapshot.updateTime
+        , ideaListView subModel loadedModel.snapshotAndId.id loadedModel.ideaList
         ]
 
 
-ideaListView : SubModel.SubModel -> Data.ProjectId -> Ui.Panel Message
-ideaListView subModel projectId =
+ideaListView : SubModel.SubModel -> Data.ProjectId -> Maybe (List Data.IdeaSnapshotAndId) -> Ui.Panel Message
+ideaListView subModel projectId ideaSnapshotAndIdListMaybe =
     Ui.column
-        [ Ui.width Ui.stretch ]
-        [ CommonUi.stretchText 24 "アイデア"
-        , CommonUi.sameLanguageLink
-            []
+        [ Ui.width Ui.stretch
+        , Ui.gap 16
+        ]
+        ([ CommonUi.stretchText 24 "アイデア"
+         , CommonUi.sameLanguageLink
+            [ Ui.width Ui.stretch
+            , Ui.padding 8
+            , Ui.backgroundColor (Css.rgb 20 20 20)
+            ]
             subModel
             (Data.LocationCreateIdea projectId)
             (CommonUi.normalText 16 "アイデアを作成する")
-        ]
+         ]
+            ++ (case ideaSnapshotAndIdListMaybe of
+                    Just ideaSnapshotAndIdList ->
+                        List.map
+                            (ideaItemView subModel)
+                            ideaSnapshotAndIdList
+
+                    Nothing ->
+                        []
+               )
+        )
+
+
+ideaItemView : SubModel.SubModel -> Data.IdeaSnapshotAndId -> Ui.Panel message
+ideaItemView subModel ideaSnapshotAndId =
+    CommonUi.sameLanguageLink
+        [ Ui.width Ui.stretch ]
+        subModel
+        (Data.LocationIdea ideaSnapshotAndId.id)
+        (Ui.column
+            [ Ui.width Ui.stretch ]
+            [ CommonUi.stretchText 24 ideaSnapshotAndId.snapshot.name
+            , Ui.row
+                [ Ui.width Ui.stretch ]
+                [ CommonUi.normalText 16 "更新日時:"
+                , CommonUi.timeView
+                    (SubModel.getTimeZoneAndNameMaybe subModel)
+                    ideaSnapshotAndId.snapshot.updateTime
+                ]
+            ]
+        )
 
 
 notFoundView : Data.ProjectId -> Ui.Panel Message

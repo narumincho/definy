@@ -107,7 +107,7 @@ eventToCardStyle subModel event =
                                     , url = blobUrl
                                     }
                             )
-                , text = "「" ++ userAndUserId.snapshot.name ++ "」としてログインしました"
+                , text = "\"" ++ userAndUserId.snapshot.name ++ "\"としてログインしました"
                 }
 
         LogInFailure ->

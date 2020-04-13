@@ -86,6 +86,12 @@ port getProject : Json.Decode.Value -> Cmd msg
 port getProjectForceNotUseCache : Json.Decode.Value -> Cmd msg
 
 
+port getIdeaSnapshotAndIdListByProjectId : Json.Decode.Value -> Cmd msg
+
+
+port getIdea : Json.Decode.Value -> Cmd msg
+
+
 
 {- Sub (JavaScript → Elm) -}
 
@@ -129,6 +135,12 @@ port responseProject : (Json.Decode.Value -> msg) -> Sub msg
 port responseUser : (Json.Decode.Value -> msg) -> Sub msg
 
 
+port responseIdeaSnapshotAndIdListByProjectId : ({ projectId : Json.Decode.Value, ideaSnapshotAndIdList : Json.Decode.Value } -> msg) -> Sub msg
+
+
+port responseIdea : (Json.Decode.Value -> msg) -> Sub msg
+
+
 {-| 全体の入力を表すメッセージ
 -}
 type Msg
@@ -152,6 +164,8 @@ type Msg
     | AllProjectResponse (List Data.ProjectId)
     | ProjectResponse Data.ProjectSnapshotMaybeAndId
     | UserResponse Data.UserSnapshotMaybeAndId
+    | IdeaResponse Data.IdeaSnapshotMaybeAndId
+    | ResponseIdeaSnapshotAndIdListByProjectId { projectId : Data.ProjectId, ideaSnapshotAndIdList : List Data.IdeaSnapshotAndId }
 
 
 type PageMessage
@@ -571,6 +585,29 @@ update msg (Model rec) =
                         ( newPageModel, command ) =
                             Page.Project.update
                                 (Page.Project.ResponseUser userSnapshotMaybeAndId)
+                                pageModel
+                    in
+                    ( Model { rec | page = Project newPageModel }
+                    , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+                    )
+
+                _ ->
+                    ( Model rec
+                    , Cmd.none
+                    )
+
+        IdeaResponse ideaSnapshotMaybeAndId ->
+            ( Model rec
+            , Cmd.none
+            )
+
+        ResponseIdeaSnapshotAndIdListByProjectId projectIdAndIdeaSnapshotAndIdList ->
+            case rec.page of
+                Project pageModel ->
+                    let
+                        ( newPageModel, command ) =
+                            Page.Project.update
+                                (Page.Project.ResponseIdeaList projectIdAndIdeaSnapshotAndIdList)
                                 pageModel
                     in
                     ( Model { rec | page = Project newPageModel }
@@ -1298,6 +1335,12 @@ commandToMainCommand logInState command =
         Command.GetProject projectId ->
             getProject (Data.projectIdToJsonValue projectId)
 
+        Command.GetIdea ideaId ->
+            getIdea (Data.ideaIdToJsonValue ideaId)
+
+        Command.GetIdeaListByProjectId projectId ->
+            getIdeaSnapshotAndIdListByProjectId (Data.projectIdToJsonValue projectId)
+
         Command.Batch commandList ->
             Cmd.batch (List.map (commandToMainCommand logInState) commandList)
 
@@ -1350,10 +1393,83 @@ subscriptions model =
                         (Page.CreateIdea.ToValidIdeaNameResponse response)
                     )
             )
-         , createProjectResponseSubscription
-         , getProjectResponseSubscription
-         , getAllProjectIdResponseSubscription
-         , userResponseSubscription
+         , createProjectResponse
+            (\jsonValue ->
+                case
+                    Json.Decode.decodeValue
+                        (Data.maybeJsonDecoder
+                            Data.projectSnapshotAndIdJsonDecoder
+                        )
+                        jsonValue
+                of
+                    Ok projectAndIdMaybe ->
+                        CreateProjectResponse projectAndIdMaybe
+
+                    Err _ ->
+                        NoOperation
+            )
+         , responseAllProjectId
+            (\jsonValue ->
+                case
+                    Json.Decode.decodeValue
+                        (Json.Decode.list
+                            Data.projectIdJsonDecoder
+                        )
+                        jsonValue
+                of
+                    Ok projectIdList ->
+                        AllProjectResponse projectIdList
+
+                    Err _ ->
+                        NoOperation
+            )
+         , responseProject
+            (\jsonValue ->
+                case
+                    Json.Decode.decodeValue
+                        Data.projectSnapshotMaybeAndIdJsonDecoder
+                        jsonValue
+                of
+                    Ok projectWithIdAndRespondTimeMaybe ->
+                        ProjectResponse projectWithIdAndRespondTimeMaybe
+
+                    Err _ ->
+                        NoOperation
+            )
+         , responseUser
+            (\jsonValue ->
+                case Json.Decode.decodeValue Data.userSnapshotMaybeAndIdJsonDecoder jsonValue of
+                    Ok userSnapshotMaybeAndId ->
+                        UserResponse userSnapshotMaybeAndId
+
+                    Err _ ->
+                        NoOperation
+            )
+         , responseIdea
+            (\jsonValue ->
+                case Json.Decode.decodeValue Data.ideaSnapshotMaybeAndIdJsonDecoder jsonValue of
+                    Ok ideaSnapshotMaybe ->
+                        IdeaResponse ideaSnapshotMaybe
+
+                    Err _ ->
+                        NoOperation
+            )
+         , responseIdeaSnapshotAndIdListByProjectId
+            (\jsonValue ->
+                case
+                    ( Json.Decode.decodeValue Data.projectIdJsonDecoder jsonValue.projectId
+                    , Json.Decode.decodeValue (Json.Decode.list Data.ideaSnapshotAndIdJsonDecoder) jsonValue.ideaSnapshotAndIdList
+                    )
+                of
+                    ( Ok projectId, Ok ideaSnapshotAndIdList ) ->
+                        ResponseIdeaSnapshotAndIdListByProjectId
+                            { projectId = projectId
+                            , ideaSnapshotAndIdList = ideaSnapshotAndIdList
+                            }
+
+                    ( _, _ ) ->
+                        NoOperation
+            )
          ]
             ++ (if isCaptureMouseEvent model then
                     [ subPointerUp (always PointerUp) ]
@@ -1361,72 +1477,4 @@ subscriptions model =
                 else
                     []
                )
-        )
-
-
-createProjectResponseSubscription : Sub Msg
-createProjectResponseSubscription =
-    createProjectResponse
-        (\jsonValue ->
-            case
-                Json.Decode.decodeValue
-                    (Data.maybeJsonDecoder
-                        Data.projectSnapshotAndIdJsonDecoder
-                    )
-                    jsonValue
-            of
-                Ok projectAndIdMaybe ->
-                    CreateProjectResponse projectAndIdMaybe
-
-                Err _ ->
-                    NoOperation
-        )
-
-
-getAllProjectIdResponseSubscription : Sub Msg
-getAllProjectIdResponseSubscription =
-    responseAllProjectId
-        (\jsonValue ->
-            case
-                Json.Decode.decodeValue
-                    (Json.Decode.list
-                        Data.projectIdJsonDecoder
-                    )
-                    jsonValue
-            of
-                Ok projectIdList ->
-                    AllProjectResponse projectIdList
-
-                Err _ ->
-                    NoOperation
-        )
-
-
-getProjectResponseSubscription : Sub Msg
-getProjectResponseSubscription =
-    responseProject
-        (\jsonValue ->
-            case
-                Json.Decode.decodeValue
-                    Data.projectSnapshotMaybeAndIdJsonDecoder
-                    jsonValue
-            of
-                Ok projectWithIdAndRespondTimeMaybe ->
-                    ProjectResponse projectWithIdAndRespondTimeMaybe
-
-                Err _ ->
-                    NoOperation
-        )
-
-
-userResponseSubscription : Sub Msg
-userResponseSubscription =
-    responseUser
-        (\jsonValue ->
-            case Json.Decode.decodeValue Data.userSnapshotMaybeAndIdJsonDecoder jsonValue of
-                Ok userSnapshotMaybeAndId ->
-                    UserResponse userSnapshotMaybeAndId
-
-                Err _ ->
-                    NoOperation
         )

@@ -36,6 +36,8 @@ type Ports = {
   readonly getAllProjectIdList: SubForElmCmd<null>;
   readonly getProject: SubForElmCmd<data.ProjectId>;
   readonly getProjectForceNotUseCache: SubForElmCmd<data.ProjectId>;
+  readonly getIdeaSnapshotAndIdListByProjectId: SubForElmCmd<data.ProjectId>;
+  readonly getIdea: SubForElmCmd<data.IdeaId>;
 
   readonly responseUserByAccessToken: CmdForElmSub<
     data.Maybe<data.UserSnapshotAndId>
@@ -66,6 +68,11 @@ type Ports = {
   readonly responseAllProjectId: CmdForElmSub<ReadonlyArray<data.ProjectId>>;
   readonly responseProject: CmdForElmSub<data.ProjectSnapshotMaybeAndId>;
   readonly responseUser: CmdForElmSub<data.UserSnapshotMaybeAndId>;
+  readonly responseIdeaSnapshotAndIdListByProjectId: CmdForElmSub<{
+    projectId: data.ProjectId;
+    ideaSnapshotAndIdList: ReadonlyArray<data.IdeaSnapshotAndId>;
+  }>;
+  readonly responseIdea: CmdForElmSub<data.IdeaSnapshotMaybeAndId>;
 };
 
 type SubForElmCmd<T> = {
