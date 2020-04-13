@@ -1,4 +1,4 @@
-const parcel = require("parcel-bundler");
+const parcel = require("parcel");
 
 new parcel(["./index.html"], {
   outDir: "debugDistribution"
