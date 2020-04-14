@@ -242,7 +242,7 @@ const init = async (): Promise<void> => {
       if (userSnapshotInIndexedDB !== undefined) {
         app.ports.responseUser.send({
           id: userId,
-          snapshot: data.maybeJust(userSnapshotInIndexedDB),
+          snapshotMaybe: data.maybeJust(userSnapshotInIndexedDB),
         });
       }
       callApi(
@@ -254,13 +254,13 @@ const init = async (): Promise<void> => {
           db.setUser(database, userId, userSnapshotFromServer.value);
           app.ports.responseUser.send({
             id: userId,
-            snapshot: data.maybeJust(userSnapshotFromServer.value),
+            snapshotMaybe: data.maybeJust(userSnapshotFromServer.value),
           });
           return;
         }
         app.ports.responseUser.send({
           id: userId,
-          snapshot: data.maybeNothing(),
+          snapshotMaybe: data.maybeNothing(),
         });
       });
     });
@@ -271,7 +271,7 @@ const init = async (): Promise<void> => {
       if (projectDataInIndexedDB !== undefined) {
         app.ports.responseProject.send({
           id: projectId,
-          snapshot: data.maybeJust(projectDataInIndexedDB),
+          snapshotMaybe: data.maybeJust(projectDataInIndexedDB),
         });
         return;
       }
@@ -284,13 +284,13 @@ const init = async (): Promise<void> => {
           db.setProject(database, projectId, projectMaybe.value);
           app.ports.responseProject.send({
             id: projectId,
-            snapshot: data.maybeJust(projectMaybe.value),
+            snapshotMaybe: data.maybeJust(projectMaybe.value),
           });
           return;
         }
         app.ports.responseProject.send({
           id: projectId,
-          snapshot: data.maybeNothing(),
+          snapshotMaybe: data.maybeNothing(),
         });
       });
     });
@@ -326,7 +326,7 @@ const init = async (): Promise<void> => {
       }
       app.ports.responseIdea.send({
         id: ideaId,
-        snapshot: ideaSnapshotMaybe,
+        snapshotMaybe: ideaSnapshotMaybe,
       });
     });
   });

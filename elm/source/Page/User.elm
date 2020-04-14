@@ -8,11 +8,11 @@ import Ui
 
 type Model
     = Loading Data.UserId
-    | Loaded Data.UserSnapshotMaybeAndId
+    | Loaded Data.UserResponse
 
 
 type Message
-    = ResponseUserSnapshotMaybeAndId Data.UserSnapshotMaybeAndId
+    = ResponseUserSnapshotMaybeAndId Data.UserResponse
 
 
 init : Data.UserId -> ( Model, Message.Command )
@@ -38,7 +38,7 @@ update message model =
         ResponseUserSnapshotMaybeAndId userSnapshotMaybeAndId ->
             if userSnapshotMaybeAndId.id == getUserId model then
                 ( Loaded userSnapshotMaybeAndId
-                , case userSnapshotMaybeAndId.snapshot of
+                , case userSnapshotMaybeAndId.snapshotMaybe of
                     Just userSnapshot ->
                         Message.GetBlobUrl userSnapshot.imageHash
 
@@ -59,7 +59,7 @@ view subModel model =
             CommonUi.normalText 24 (userIdAsString ++ "のユーザー詳細ページ")
 
         Loaded userSnapshotMaybeAndId ->
-            case userSnapshotMaybeAndId.snapshot of
+            case userSnapshotMaybeAndId.snapshotMaybe of
                 Just userSnapshot ->
                     normalView
                         subModel

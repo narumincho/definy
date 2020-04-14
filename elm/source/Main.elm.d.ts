@@ -66,13 +66,13 @@ type Ports = {
     data.Maybe<data.ProjectSnapshotAndId>
   >;
   readonly responseAllProjectId: CmdForElmSub<ReadonlyArray<data.ProjectId>>;
-  readonly responseProject: CmdForElmSub<data.ProjectSnapshotMaybeAndId>;
-  readonly responseUser: CmdForElmSub<data.UserSnapshotMaybeAndId>;
+  readonly responseProject: CmdForElmSub<data.ProjectResponse>;
+  readonly responseUser: CmdForElmSub<data.UserResponse>;
   readonly responseIdeaSnapshotAndIdListByProjectId: CmdForElmSub<{
     projectId: data.ProjectId;
     ideaSnapshotAndIdList: ReadonlyArray<data.IdeaSnapshotAndId>;
   }>;
-  readonly responseIdea: CmdForElmSub<data.IdeaSnapshotMaybeAndId>;
+  readonly responseIdea: CmdForElmSub<data.IdeaResponse>;
 };
 
 type SubForElmCmd<T> = {

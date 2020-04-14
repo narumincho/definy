@@ -9,10 +9,11 @@ import Dict
 {-| 各ページの共通のレスポンス Message
 -}
 type CommonMessage
-    = ResponseUser Data.UserSnapshotMaybeAndId
-    | ResponseProject Data.ProjectSnapshotMaybeAndId
+    = ResponseUser Data.UserResponse
+    | ResponseProject Data.ProjectResponse
     | ResponseIdea Data.IdeaSnapshotAndId
     | ResponseAllProjectIdList { projectId : Data.ProjectId, ideaSnapshotAndIdList : List Data.IdeaSnapshotAndId }
+    | ResponseIdeaByProjectId Data.ResponseIdeaListByProjectId
 
 
 {-| 各ページに渡すべきModel

@@ -134,7 +134,7 @@ port responseProject : (Json.Decode.Value -> msg) -> Sub msg
 port responseUser : (Json.Decode.Value -> msg) -> Sub msg
 
 
-port responseIdeaSnapshotAndIdListByProjectId : ({ projectId : Json.Decode.Value, ideaSnapshotAndIdList : Json.Decode.Value } -> msg) -> Sub msg
+port responseIdeaSnapshotAndIdListByProjectId : (Json.Decode.Value -> msg) -> Sub msg
 
 
 port responseIdea : (Json.Decode.Value -> msg) -> Sub msg
@@ -161,10 +161,10 @@ type Msg
     | CreateProjectResponse (Maybe Data.ProjectSnapshotAndId)
     | NoOperation
     | AllProjectResponse (List Data.ProjectId)
-    | ProjectResponse Data.ProjectSnapshotMaybeAndId
-    | UserResponse Data.UserSnapshotMaybeAndId
-    | IdeaResponse Data.IdeaSnapshotMaybeAndId
-    | ResponseIdeaSnapshotAndIdListByProjectId { projectId : Data.ProjectId, ideaSnapshotAndIdList : List Data.IdeaSnapshotAndId }
+    | ProjectResponse Data.ProjectResponse
+    | UserResponse Data.UserResponse
+    | IdeaResponse Data.IdeaResponse
+    | ResponseIdeaSnapshotAndIdListByProjectId Data.ResponseIdeaListByProjectId
 
 
 type PageMessage
@@ -1426,7 +1426,7 @@ subscriptions model =
             (\jsonValue ->
                 case
                     Json.Decode.decodeValue
-                        Data.projectSnapshotMaybeAndIdJsonDecoder
+                        Data.projectResponseJsonDecoder
                         jsonValue
                 of
                     Ok projectWithIdAndRespondTimeMaybe ->
@@ -1437,7 +1437,7 @@ subscriptions model =
             )
          , responseUser
             (\jsonValue ->
-                case Json.Decode.decodeValue Data.userSnapshotMaybeAndIdJsonDecoder jsonValue of
+                case Json.Decode.decodeValue Data.userResponseJsonDecoder jsonValue of
                     Ok userSnapshotMaybeAndId ->
                         UserResponse userSnapshotMaybeAndId
 
@@ -1446,7 +1446,7 @@ subscriptions model =
             )
          , responseIdea
             (\jsonValue ->
-                case Json.Decode.decodeValue Data.ideaSnapshotMaybeAndIdJsonDecoder jsonValue of
+                case Json.Decode.decodeValue Data.ideaResponseJsonDecoder jsonValue of
                     Ok ideaSnapshotMaybe ->
                         IdeaResponse ideaSnapshotMaybe
 
@@ -1456,17 +1456,12 @@ subscriptions model =
          , responseIdeaSnapshotAndIdListByProjectId
             (\jsonValue ->
                 case
-                    ( Json.Decode.decodeValue Data.projectIdJsonDecoder jsonValue.projectId
-                    , Json.Decode.decodeValue (Json.Decode.list Data.ideaSnapshotAndIdJsonDecoder) jsonValue.ideaSnapshotAndIdList
-                    )
+                    Json.Decode.decodeValue Data.responseIdeaListByProjectIdJsonDecoder jsonValue
                 of
-                    ( Ok projectId, Ok ideaSnapshotAndIdList ) ->
-                        ResponseIdeaSnapshotAndIdListByProjectId
-                            { projectId = projectId
-                            , ideaSnapshotAndIdList = ideaSnapshotAndIdList
-                            }
+                    Ok ideaList ->
+                        ResponseIdeaSnapshotAndIdListByProjectId ideaList
 
-                    ( _, _ ) ->
+                    _ ->
                         NoOperation
             )
          ]

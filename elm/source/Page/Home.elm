@@ -21,13 +21,13 @@ type Model
 
 type Project
     = OnlyId Data.ProjectId
-    | Full Data.ProjectSnapshotMaybeAndId
+    | Full Data.ProjectResponse
 
 
 type Message
     = PushUrl Data.UrlData
     | ResponseAllProjectId (List Data.ProjectId)
-    | ResponseProject Data.ProjectSnapshotMaybeAndId
+    | ResponseProject Data.ProjectResponse
     | NoOp
 
 
@@ -58,7 +58,7 @@ update msg model =
 
                 LoadedAllProject allProject ->
                     ( LoadedAllProject (setProjectWithIdAnsRespondTime projectCacheWithId allProject)
-                    , case projectCacheWithId.snapshot of
+                    , case projectCacheWithId.snapshotMaybe of
                         Just projectCache ->
                             Message.Batch
                                 [ Message.GetBlobUrl projectCache.iconHash
@@ -75,7 +75,7 @@ update msg model =
             )
 
 
-setProjectWithIdAnsRespondTime : Data.ProjectSnapshotMaybeAndId -> List Project -> List Project
+setProjectWithIdAnsRespondTime : Data.ProjectResponse -> List Project -> List Project
 setProjectWithIdAnsRespondTime projectSnapshotMaybeAndId projectList =
     case projectList of
         [] ->
@@ -348,7 +348,7 @@ projectItemImage subModel project =
             Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
 
         Full projectCacheWithId ->
-            case projectCacheWithId.snapshot of
+            case projectCacheWithId.snapshotMaybe of
                 Just projectCache ->
                     case Message.getImageBlobUrl projectCache.imageHash subModel of
                         Just projectImageBlobUrl ->
@@ -375,7 +375,7 @@ projectItemText subModel project =
         [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
         [ case project of
             Full projectCacheWithId ->
-                case projectCacheWithId.snapshot of
+                case projectCacheWithId.snapshotMaybe of
                     Just projectSnapshot ->
                         case Message.getImageBlobUrl projectSnapshot.iconHash subModel of
                             Just blobUrl ->
@@ -409,7 +409,7 @@ projectItemText subModel project =
                             "id = " ++ idAsString
 
                         Full projectCacheWithId ->
-                            case projectCacheWithId.snapshot of
+                            case projectCacheWithId.snapshotMaybe of
                                 Just snapshot ->
                                     snapshot.name
 

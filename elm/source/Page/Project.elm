@@ -18,8 +18,8 @@ type alias LoadedModel =
 
 
 type Message
-    = ProjectResponse Data.ProjectSnapshotMaybeAndId
-    | ResponseUser Data.UserSnapshotMaybeAndId
+    = ProjectResponse Data.ProjectResponse
+    | ResponseUser Data.UserResponse
     | ResponseIdeaList { projectId : Data.ProjectId, ideaSnapshotAndIdList : List Data.IdeaSnapshotAndId }
 
 
@@ -48,7 +48,7 @@ update message model =
     case ( message, model ) of
         ( ProjectResponse response, _ ) ->
             if response.id == getProjectId model then
-                case response.snapshot of
+                case response.snapshotMaybe of
                     Just projectSnapshot ->
                         ( Loaded
                             { snapshotAndId =
@@ -76,7 +76,7 @@ update message model =
 
         ( ResponseUser userSnapshotMaybeAndId, Loaded snapshotAndId ) ->
             if snapshotAndId.snapshotAndId.snapshot.createUser == userSnapshotMaybeAndId.id then
-                case userSnapshotMaybeAndId.snapshot of
+                case userSnapshotMaybeAndId.snapshotMaybe of
                     Just userSnapshot ->
                         ( Loaded
                             { snapshotAndId | user = Just userSnapshot }
