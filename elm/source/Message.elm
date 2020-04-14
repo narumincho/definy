@@ -1,4 +1,4 @@
-module Message exposing (Command(..), SubModel, WindowSize, addImageBlobUrl, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getTimeZoneAndNameMaybe, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setTimeZoneAndName, setWindowSize)
+module Message exposing (Command(..), CommonMessage(..), SubModel, WindowSize, addImageBlobUrl, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getTimeZoneAndNameMaybe, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setTimeZoneAndName, setWindowSize)
 
 import Data
 import Data.LogInState
@@ -6,6 +6,17 @@ import Data.TimeZoneAndName
 import Dict
 
 
+{-| 各ページの共通のレスポンス Message
+-}
+type CommonMessage
+    = ResponseUser Data.UserSnapshotMaybeAndId
+    | ResponseProject Data.ProjectSnapshotMaybeAndId
+    | ResponseIdea Data.IdeaSnapshotAndId
+    | ResponseAllProjectIdList { projectId : Data.ProjectId, ideaSnapshotAndIdList : List Data.IdeaSnapshotAndId }
+
+
+{-| 各ページに渡すべきModel
+-}
 type SubModel
     = SubModel
         { logInState : Data.LogInState.LogInState
@@ -103,6 +114,8 @@ getImageBlobUrl (Data.FileHash hash) (SubModel record) =
     Dict.get hash record.imageFileBlobDict
 
 
+{-| 各ページの共通のCmd
+-}
 type Command
     = None
     | GetBlobUrl Data.FileHash

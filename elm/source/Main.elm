@@ -150,7 +150,7 @@ type Msg
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
     | LogOutRequest -- ログアウトを要求する
     | ChangeNetworkConnection Bool -- 接続状況が変わった
-    | PageMsg PageMessage
+    | PageMsg PageMessage -- ページ固有のメッセージ
     | NotificationMessage Component.Notifications.Message
     | RequestLogInUrl Data.OpenIdConnectProvider
     | ResponseUserDataFromAccessToken (Maybe Data.UserSnapshotAndId)
