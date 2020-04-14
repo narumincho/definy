@@ -1,9 +1,8 @@
 module Page.User exposing (Message(..), Model, getUserId, init, update, view)
 
-import Command
 import CommonUi
 import Data
-import SubModel
+import Message
 import Ui
 
 
@@ -16,10 +15,10 @@ type Message
     = ResponseUserSnapshotMaybeAndId Data.UserSnapshotMaybeAndId
 
 
-init : Data.UserId -> ( Model, Command.Command )
+init : Data.UserId -> ( Model, Message.Command )
 init userId =
     ( Loading userId
-    , Command.GetUser userId
+    , Message.GetUser userId
     )
 
 
@@ -33,7 +32,7 @@ getUserId model =
             userSnapshotMaybeAndId.id
 
 
-update : Message -> Model -> ( Model, Command.Command )
+update : Message -> Model -> ( Model, Message.Command )
 update message model =
     case message of
         ResponseUserSnapshotMaybeAndId userSnapshotMaybeAndId ->
@@ -41,19 +40,19 @@ update message model =
                 ( Loaded userSnapshotMaybeAndId
                 , case userSnapshotMaybeAndId.snapshot of
                     Just userSnapshot ->
-                        Command.GetBlobUrl userSnapshot.imageHash
+                        Message.GetBlobUrl userSnapshot.imageHash
 
                     Nothing ->
-                        Command.None
+                        Message.None
                 )
 
             else
                 ( model
-                , Command.None
+                , Message.None
                 )
 
 
-view : SubModel.SubModel -> Model -> Ui.Panel Message
+view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel model =
     case model of
         Loading (Data.UserId userIdAsString) ->
@@ -72,13 +71,13 @@ view subModel model =
                     notFoundView userSnapshotMaybeAndId.id
 
 
-normalView : SubModel.SubModel -> Data.UserSnapshotAndId -> Ui.Panel Message
+normalView : Message.SubModel -> Data.UserSnapshotAndId -> Ui.Panel Message
 normalView subModel userSnapshotAndId =
     Ui.column
         []
         [ Ui.row
             []
-            [ case SubModel.getImageBlobUrl userSnapshotAndId.snapshot.imageHash subModel of
+            [ case Message.getImageBlobUrl userSnapshotAndId.snapshot.imageHash subModel of
                 Just blobUrl ->
                     Ui.bitmapImage
                         []
@@ -100,7 +99,7 @@ normalView subModel userSnapshotAndId =
             [ Ui.gap 16 ]
             [ CommonUi.normalText 16 "作成日時:"
             , CommonUi.timeView
-                (SubModel.getTimeZoneAndNameMaybe subModel)
+                (Message.getTimeZoneAndNameMaybe subModel)
                 userSnapshotAndId.snapshot.createTime
             ]
         ]

@@ -1,10 +1,9 @@
 module Page.CreateIdea exposing (Message(..), Model, getProjectId, init, update, view)
 
-import Command
 import CommonUi
 import Data
 import Data.LogInState
-import SubModel
+import Message
 import Ui
 
 
@@ -31,13 +30,13 @@ type Message
     | CreateIdea
 
 
-init : Data.ProjectId -> ( Model, Command.Command )
+init : Data.ProjectId -> ( Model, Message.Command )
 init projectId =
     ( Model
         { projectId = projectId
         , ideaNameInput = NoInput
         }
-    , Command.None
+    , Message.None
     )
 
 
@@ -46,22 +45,22 @@ getProjectId (Model record) =
     record.projectId
 
 
-update : Message -> Model -> ( Model, Command.Command )
+update : Message -> Model -> ( Model, Message.Command )
 update message (Model record) =
     case ( message, record.ideaNameInput ) of
         ( InputIdeaName string, NoInput ) ->
             ( Model { record | ideaNameInput = RequestToValidIdeaName string }
-            , Command.ToValidIdeaName string
+            , Message.ToValidIdeaName string
             )
 
         ( InputIdeaName string, RequestToValidIdeaName _ ) ->
             ( Model { record | ideaNameInput = RequestToValidIdeaName string }
-            , Command.ToValidIdeaName string
+            , Message.ToValidIdeaName string
             )
 
         ( InputIdeaName string, DisplayedValidIdeaName _ ) ->
             ( Model { record | ideaNameInput = RequestToValidIdeaName string }
-            , Command.ToValidIdeaName string
+            , Message.ToValidIdeaName string
             )
 
         ( ToValidIdeaNameResponse response, RequestToValidIdeaName request ) ->
@@ -70,12 +69,12 @@ update message (Model record) =
 
               else
                 Model record
-            , Command.None
+            , Message.None
             )
 
         ( CreateIdea, DisplayedValidIdeaName (Just validIdeaName) ) ->
             ( Model { record | ideaNameInput = CreatingIdea validIdeaName }
-            , Command.CreateIdea
+            , Message.CreateIdea
                 { projectId = record.projectId
                 , ideaName = validIdeaName
                 }
@@ -83,18 +82,18 @@ update message (Model record) =
 
         ( _, _ ) ->
             ( Model record
-            , Command.None
+            , Message.None
             )
 
 
-view : SubModel.SubModel -> Model -> Ui.Panel Message
+view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel model =
-    case SubModel.getLogInState subModel of
+    case Message.getLogInState subModel of
         Data.LogInState.Ok _ ->
             mainView subModel model
 
         _ ->
-            noLogInCannotCreateIdeaView (SubModel.getLanguage subModel)
+            noLogInCannotCreateIdeaView (Message.getLanguage subModel)
 
 
 noLogInCannotCreateIdeaView : Data.Language -> Ui.Panel message
@@ -112,7 +111,7 @@ noLogInCannotCreateIdeaView language =
         )
 
 
-mainView : SubModel.SubModel -> Model -> Ui.Panel Message
+mainView : Message.SubModel -> Model -> Ui.Panel Message
 mainView subModel (Model record) =
     Ui.column
         []
@@ -126,7 +125,7 @@ mainView subModel (Model record) =
                 , fontSize = 16
                 }
             )
-        , ideaNameInfoView (SubModel.getLanguage subModel) record.ideaNameInput
+        , ideaNameInfoView (Message.getLanguage subModel) record.ideaNameInput
         , Ui.button
             []
             CreateIdea

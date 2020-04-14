@@ -8,11 +8,10 @@ module Component.Notifications exposing
     )
 
 import Array
-import Command
 import CommonUi
 import Css
 import Data
-import SubModel
+import Message
 import Ui
 
 
@@ -34,29 +33,29 @@ type Message
     | DeleteAt Int
 
 
-init : ( Model, Command.Command )
+init : ( Model, Message.Command )
 init =
-    ( Model [], Command.None )
+    ( Model [], Message.None )
 
 
 update :
     Message
     -> Model
-    -> ( Model, Command.Command )
+    -> ( Model, Message.Command )
 update message (Model eventList) =
     case message of
         AddEvent (LogInSuccess userAndUserId) ->
             ( Model (LogInSuccess userAndUserId :: eventList)
-            , Command.GetBlobUrl userAndUserId.snapshot.imageHash
+            , Message.GetBlobUrl userAndUserId.snapshot.imageHash
             )
 
         AddEvent (CreatedProject projectAndId) ->
             ( Model (CreatedProject projectAndId :: eventList)
-            , Command.GetBlobUrl projectAndId.snapshot.imageHash
+            , Message.GetBlobUrl projectAndId.snapshot.imageHash
             )
 
         AddEvent event ->
-            ( Model (event :: eventList), Command.None )
+            ( Model (event :: eventList), Message.None )
 
         DeleteAt index ->
             let
@@ -70,12 +69,12 @@ update message (Model eventList) =
                         (Array.slice (index + 1) (Array.length eventListAsArray) eventListAsArray)
                     )
                 )
-            , Command.None
+            , Message.None
             )
 
 
 view :
-    SubModel.SubModel
+    Message.SubModel
     -> Model
     -> Ui.Panel Message
 view subModel (Model eventList) =
@@ -92,13 +91,13 @@ view subModel (Model eventList) =
         )
 
 
-eventToCardStyle : SubModel.SubModel -> Event -> CardStyle
+eventToCardStyle : Message.SubModel -> Event -> CardStyle
 eventToCardStyle subModel event =
     case event of
         LogInSuccess userAndUserId ->
             CardStyle
                 { icon =
-                    SubModel.getImageBlobUrl userAndUserId.snapshot.imageHash subModel
+                    Message.getImageBlobUrl userAndUserId.snapshot.imageHash subModel
                         |> Maybe.map
                             (\blobUrl ->
                                 Icon
@@ -131,7 +130,7 @@ eventToCardStyle subModel event =
         CreatedProject projectAndId ->
             CardStyle
                 { icon =
-                    SubModel.getImageBlobUrl projectAndId.snapshot.imageHash subModel
+                    Message.getImageBlobUrl projectAndId.snapshot.imageHash subModel
                         |> Maybe.map
                             (\blobUrl ->
                                 Icon

@@ -32,7 +32,7 @@ import Html.Styled
 import Html.Styled.Attributes
 import Html.Styled.Events
 import Json.Decode
-import SubModel
+import Message
 import Time
 import Ui
 import VectorImage
@@ -203,13 +203,13 @@ subText text =
 
 {-| 同じ言語のページへのリンク
 -}
-sameLanguageLink : List Ui.Style -> SubModel.SubModel -> Data.Location -> Ui.Panel message -> Ui.Panel message
+sameLanguageLink : List Ui.Style -> Message.SubModel -> Data.Location -> Ui.Panel message -> Ui.Panel message
 sameLanguageLink styleList subModel location =
     Ui.link
         styleList
         (Data.UrlData.urlDataToUrl
-            { clientMode = SubModel.getClientMode subModel
-            , language = SubModel.getLanguage subModel
+            { clientMode = Message.getClientMode subModel
+            , language = Message.getLanguage subModel
             , location = location
             }
         )
@@ -510,7 +510,7 @@ plusIcon =
         )
 
 
-userView : SubModel.SubModel -> Data.UserId -> Maybe Data.UserSnapshot -> Ui.Panel message
+userView : Message.SubModel -> Data.UserId -> Maybe Data.UserSnapshot -> Ui.Panel message
 userView subModel userId userSnapshotMaybe =
     let
         (Data.UserId userIdAsString) =
@@ -524,7 +524,7 @@ userView subModel userId userSnapshotMaybe =
                 (Data.LocationUser userId)
                 (Ui.row
                     [ Ui.width Ui.stretch, Ui.gap 8 ]
-                    [ case SubModel.getImageBlobUrl userSnapshot.imageHash subModel of
+                    [ case Message.getImageBlobUrl userSnapshot.imageHash subModel of
                         Just blobUrl ->
                             Ui.bitmapImage
                                 [ Ui.width (Ui.fix 24)

@@ -4,18 +4,18 @@ import CommonUi
 import Css
 import Data
 import Data.LogInState
-import SubModel
+import Message
 import Ui
 
 
-view : SubModel.SubModel -> Ui.Panel message
+view : Message.SubModel -> Ui.Panel message
 view subModel =
     Ui.row
         [ Ui.backgroundColor (Css.rgb 36 36 36)
         , Ui.width Ui.stretch
         , Ui.height (Ui.fix 56)
         ]
-        (case SubModel.getLogInState subModel of
+        (case Message.getLogInState subModel of
             Data.LogInState.GuestUser ->
                 [ logo subModel, Ui.empty [ Ui.width Ui.stretch ], guestItem ]
 
@@ -33,7 +33,7 @@ view subModel =
         )
 
 
-logo : SubModel.SubModel -> Ui.Panel message
+logo : Message.SubModel -> Ui.Panel message
 logo subModel =
     CommonUi.sameLanguageLink
         []
@@ -68,7 +68,7 @@ guestItem =
         )
 
 
-userItem : SubModel.SubModel -> Data.UserSnapshotAndId -> Ui.Panel msg
+userItem : Message.SubModel -> Data.UserSnapshotAndId -> Ui.Panel msg
 userItem subModel userSnapshotAndId =
     CommonUi.sameLanguageLink
         []
@@ -77,7 +77,7 @@ userItem subModel userSnapshotAndId =
         (Ui.row
             [ Ui.gap 8 ]
             [ case
-                SubModel.getImageBlobUrl userSnapshotAndId.snapshot.imageHash subModel
+                Message.getImageBlobUrl userSnapshotAndId.snapshot.imageHash subModel
               of
                 Just blobUrl ->
                     Ui.bitmapImage

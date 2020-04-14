@@ -1,11 +1,10 @@
 module Page.CreateProject exposing (Message(..), Model, init, update, view)
 
-import Command
 import CommonUi
 import Css
 import Data
 import Data.LogInState
-import SubModel
+import Message
 import Ui
 
 
@@ -25,29 +24,29 @@ type Message
     | CreateProject
 
 
-init : ( Model, Command.Command )
+init : ( Model, Message.Command )
 init =
     ( NoInput
-    , Command.None
+    , Message.None
     )
 
 
-update : Message -> Model -> ( Model, Command.Command )
+update : Message -> Model -> ( Model, Message.Command )
 update message model =
     case ( message, model ) of
         ( InputProjectName string, NoInput ) ->
             ( RequestToValidProjectName string
-            , Command.ToValidProjectName string
+            , Message.ToValidProjectName string
             )
 
         ( InputProjectName string, RequestToValidProjectName _ ) ->
             ( RequestToValidProjectName string
-            , Command.ToValidProjectName string
+            , Message.ToValidProjectName string
             )
 
         ( InputProjectName string, DisplayedValidProjectName _ ) ->
             ( RequestToValidProjectName string
-            , Command.ToValidProjectName string
+            , Message.ToValidProjectName string
             )
 
         ( ToValidProjectNameResponse response, RequestToValidProjectName request ) ->
@@ -56,28 +55,28 @@ update message model =
 
               else
                 model
-            , Command.None
+            , Message.None
             )
 
         ( CreateProject, DisplayedValidProjectName (Just validProjectName) ) ->
             ( CreatingProject validProjectName
-            , Command.CreateProject validProjectName
+            , Message.CreateProject validProjectName
             )
 
         ( _, _ ) ->
             ( model
-            , Command.None
+            , Message.None
             )
 
 
-view : SubModel.SubModel -> Model -> Ui.Panel Message
+view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel model =
-    case SubModel.getLogInState subModel of
+    case Message.getLogInState subModel of
         Data.LogInState.Ok _ ->
-            mainView (SubModel.getLanguage subModel) model
+            mainView (Message.getLanguage subModel) model
 
         _ ->
-            noLogInCannotCreateProjectText (SubModel.getLanguage subModel)
+            noLogInCannotCreateProjectText (Message.getLanguage subModel)
 
 
 noLogInCannotCreateProjectText : Data.Language -> Ui.Panel message

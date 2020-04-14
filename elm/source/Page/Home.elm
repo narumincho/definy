@@ -6,12 +6,11 @@ module Page.Home exposing
     , view
     )
 
-import Command
 import CommonUi
 import Css
 import Data
 import Data.LogInState
-import SubModel
+import Message
 import Ui
 
 
@@ -32,47 +31,47 @@ type Message
     | NoOp
 
 
-init : ( Model, Command.Command )
+init : ( Model, Message.Command )
 init =
-    ( LoadingAllProject, Command.GetAllProjectId )
+    ( LoadingAllProject, Message.GetAllProjectId )
 
 
-update : Message -> Model -> ( Model, Command.Command )
+update : Message -> Model -> ( Model, Message.Command )
 update msg model =
     case msg of
         PushUrl urlData ->
             ( model
-            , Command.PushUrl urlData
+            , Message.PushUrl urlData
             )
 
         ResponseAllProjectId allProjectIdList ->
             ( LoadedAllProject (List.map OnlyId allProjectIdList)
-            , Command.Batch (List.map Command.GetProject allProjectIdList)
+            , Message.Batch (List.map Message.GetProject allProjectIdList)
             )
 
         ResponseProject projectCacheWithId ->
             case model of
                 LoadingAllProject ->
                     ( model
-                    , Command.None
+                    , Message.None
                     )
 
                 LoadedAllProject allProject ->
                     ( LoadedAllProject (setProjectWithIdAnsRespondTime projectCacheWithId allProject)
                     , case projectCacheWithId.snapshot of
                         Just projectCache ->
-                            Command.Batch
-                                [ Command.GetBlobUrl projectCache.iconHash
-                                , Command.GetBlobUrl projectCache.imageHash
+                            Message.Batch
+                                [ Message.GetBlobUrl projectCache.iconHash
+                                , Message.GetBlobUrl projectCache.imageHash
                                 ]
 
                         Nothing ->
-                            Command.None
+                            Message.None
                     )
 
         NoOp ->
             ( model
-            , Command.None
+            , Message.None
             )
 
 
@@ -98,7 +97,7 @@ setProjectWithIdAnsRespondTime projectSnapshotMaybeAndId projectList =
 
 
 view :
-    SubModel.SubModel
+    Message.SubModel
     -> Model
     -> Ui.Panel Message
 view subModel model =
@@ -117,7 +116,7 @@ view subModel model =
 
 
 projectListView :
-    SubModel.SubModel
+    Message.SubModel
     -> List Project
     -> Ui.Panel Message
 projectListView subModel projectList =
@@ -149,7 +148,7 @@ projectListView subModel projectList =
 
 
 projectListViewLoop :
-    SubModel.SubModel
+    Message.SubModel
     -> List Project
     -> List (Ui.Panel Message)
 projectListViewLoop subModel projectList =
@@ -168,9 +167,9 @@ projectListViewLoop subModel projectList =
                 :: projectListViewLoop subModel xs
 
 
-createProjectButton : SubModel.SubModel -> Ui.Panel Message
+createProjectButton : Message.SubModel -> Ui.Panel Message
 createProjectButton subModel =
-    case SubModel.getLogInState subModel of
+    case Message.getLogInState subModel of
         Data.LogInState.RequestLogInUrl _ ->
             Ui.text
                 [ Ui.width (Ui.stretchWithMaxSize 320) ]
@@ -189,7 +188,7 @@ createProjectButton subModel =
                 [ Ui.width (Ui.stretchWithMaxSize 320) ]
                 (Ui.TextAttributes
                     { text =
-                        case SubModel.getLanguage subModel of
+                        case Message.getLanguage subModel of
                             Data.LanguageEnglish ->
                                 "Verifying..."
 
@@ -211,7 +210,7 @@ createProjectButton subModel =
                 [ Ui.width (Ui.stretchWithMaxSize 320) ]
                 (Ui.TextAttributes
                     { text =
-                        case SubModel.getLanguage subModel of
+                        case Message.getLanguage subModel of
                             Data.LanguageEnglish ->
                                 "Creating guest user projects has not been completed yet"
 
@@ -232,7 +231,7 @@ createProjectButton subModel =
             createProjectButtonLogInOk subModel
 
 
-createProjectButtonLogInOk : SubModel.SubModel -> Ui.Panel Message
+createProjectButtonLogInOk : Message.SubModel -> Ui.Panel Message
 createProjectButtonLogInOk subModel =
     CommonUi.sameLanguageLink
         [ Ui.width (Ui.stretchWithMaxSize 320)
@@ -274,7 +273,7 @@ createProjectButtonLogInOk subModel =
                         []
                         (Ui.TextAttributes
                             { text =
-                                case SubModel.getLanguage subModel of
+                                case Message.getLanguage subModel of
                                     Data.LanguageEnglish ->
                                         "Create a new project"
 
@@ -298,7 +297,7 @@ createProjectButtonLogInOk subModel =
 
 {-| プロジェクトの表示は2つまで
 -}
-projectLineViewWithCreateButton : SubModel.SubModel -> List Project -> Ui.Panel Message
+projectLineViewWithCreateButton : Message.SubModel -> List Project -> Ui.Panel Message
 projectLineViewWithCreateButton subModel projectList =
     Ui.row
         [ Ui.gap 8, Ui.height (Ui.fix 200) ]
@@ -309,14 +308,14 @@ projectLineViewWithCreateButton subModel projectList =
 
 {-| プロジェクトの表示は1行3つまで
 -}
-projectLineView : SubModel.SubModel -> List Project -> Ui.Panel Message
+projectLineView : Message.SubModel -> List Project -> Ui.Panel Message
 projectLineView subModel projectList =
     Ui.row
         [ Ui.gap 8, Ui.height (Ui.fix 200) ]
         (List.map (projectItem subModel) projectList)
 
 
-projectItem : SubModel.SubModel -> Project -> Ui.Panel Message
+projectItem : Message.SubModel -> Project -> Ui.Panel Message
 projectItem subModel project =
     CommonUi.sameLanguageLink
         [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
@@ -342,7 +341,7 @@ projectItem subModel project =
         )
 
 
-projectItemImage : SubModel.SubModel -> Project -> Ui.Panel message
+projectItemImage : Message.SubModel -> Project -> Ui.Panel message
 projectItemImage subModel project =
     case project of
         OnlyId _ ->
@@ -351,7 +350,7 @@ projectItemImage subModel project =
         Full projectCacheWithId ->
             case projectCacheWithId.snapshot of
                 Just projectCache ->
-                    case SubModel.getImageBlobUrl projectCache.imageHash subModel of
+                    case Message.getImageBlobUrl projectCache.imageHash subModel of
                         Just projectImageBlobUrl ->
                             Ui.bitmapImage
                                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
@@ -370,7 +369,7 @@ projectItemImage subModel project =
                     Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
 
 
-projectItemText : SubModel.SubModel -> Project -> Ui.Panel message
+projectItemText : Message.SubModel -> Project -> Ui.Panel message
 projectItemText subModel project =
     Ui.row
         [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
@@ -378,7 +377,7 @@ projectItemText subModel project =
             Full projectCacheWithId ->
                 case projectCacheWithId.snapshot of
                     Just projectSnapshot ->
-                        case SubModel.getImageBlobUrl projectSnapshot.iconHash subModel of
+                        case Message.getImageBlobUrl projectSnapshot.iconHash subModel of
                             Just blobUrl ->
                                 Ui.bitmapImage
                                     [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]

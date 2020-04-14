@@ -1,10 +1,9 @@
 module Page.Project exposing (Message(..), Model, getProjectId, init, update, view)
 
-import Command
 import CommonUi
 import Css
 import Data
-import SubModel
+import Message
 import Ui
 
 
@@ -24,10 +23,10 @@ type Message
     | ResponseIdeaList { projectId : Data.ProjectId, ideaSnapshotAndIdList : List Data.IdeaSnapshotAndId }
 
 
-init : Data.ProjectId -> ( Model, Command.Command )
+init : Data.ProjectId -> ( Model, Message.Command )
 init projectId =
     ( Loading projectId
-    , Command.GetProject projectId
+    , Message.GetProject projectId
     )
 
 
@@ -44,7 +43,7 @@ getProjectId model =
             snapshotAndId.id
 
 
-update : Message -> Model -> ( Model, Command.Command )
+update : Message -> Model -> ( Model, Message.Command )
 update message model =
     case ( message, model ) of
         ( ProjectResponse response, _ ) ->
@@ -59,21 +58,21 @@ update message model =
                             , user = Nothing
                             , ideaList = Nothing
                             }
-                        , Command.Batch
-                            [ Command.GetBlobUrl projectSnapshot.imageHash
-                            , Command.GetBlobUrl projectSnapshot.iconHash
-                            , Command.GetUser projectSnapshot.createUser
-                            , Command.GetIdeaListByProjectId (getProjectId model)
+                        , Message.Batch
+                            [ Message.GetBlobUrl projectSnapshot.imageHash
+                            , Message.GetBlobUrl projectSnapshot.iconHash
+                            , Message.GetUser projectSnapshot.createUser
+                            , Message.GetIdeaListByProjectId (getProjectId model)
                             ]
                         )
 
                     Nothing ->
                         ( NotFound response.id
-                        , Command.None
+                        , Message.None
                         )
 
             else
-                ( model, Command.None )
+                ( model, Message.None )
 
         ( ResponseUser userSnapshotMaybeAndId, Loaded snapshotAndId ) ->
             if snapshotAndId.snapshotAndId.snapshot.createUser == userSnapshotMaybeAndId.id then
@@ -81,38 +80,38 @@ update message model =
                     Just userSnapshot ->
                         ( Loaded
                             { snapshotAndId | user = Just userSnapshot }
-                        , Command.GetBlobUrl userSnapshot.imageHash
+                        , Message.GetBlobUrl userSnapshot.imageHash
                         )
 
                     Nothing ->
                         ( model
-                        , Command.None
+                        , Message.None
                         )
 
             else
                 ( model
-                , Command.None
+                , Message.None
                 )
 
         ( ResponseIdeaList response, Loaded snapshotAndId ) ->
             if getProjectId model == response.projectId then
                 ( Loaded
                     { snapshotAndId | ideaList = Just response.ideaSnapshotAndIdList }
-                , Command.None
+                , Message.None
                 )
 
             else
                 ( model
-                , Command.None
+                , Message.None
                 )
 
         ( _, _ ) ->
             ( model
-            , Command.None
+            , Message.None
             )
 
 
-view : SubModel.SubModel -> Model -> Ui.Panel Message
+view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel model =
     case model of
         Loading projectId ->
@@ -131,7 +130,7 @@ loadingView (Data.ProjectId projectIdAsString) =
         ("projectId = " ++ projectIdAsString ++ "のプロジェクトを読込中")
 
 
-normalView : SubModel.SubModel -> LoadedModel -> Ui.Panel Message
+normalView : Message.SubModel -> LoadedModel -> Ui.Panel Message
 normalView subModel loadedModel =
     let
         (Data.ProjectId projectIdAsString) =
@@ -142,7 +141,7 @@ normalView subModel loadedModel =
         [ CommonUi.subText projectIdAsString
         , Ui.row
             [ Ui.width Ui.stretch ]
-            [ case SubModel.getImageBlobUrl loadedModel.snapshotAndId.snapshot.iconHash subModel of
+            [ case Message.getImageBlobUrl loadedModel.snapshotAndId.snapshot.iconHash subModel of
                 Just blobUrl ->
                     Ui.bitmapImage
                         [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
@@ -159,7 +158,7 @@ normalView subModel loadedModel =
                         [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
             , CommonUi.normalText 16 loadedModel.snapshotAndId.snapshot.name
             ]
-        , case SubModel.getImageBlobUrl loadedModel.snapshotAndId.snapshot.imageHash subModel of
+        , case Message.getImageBlobUrl loadedModel.snapshotAndId.snapshot.imageHash subModel of
             Just blobUrl ->
                 Ui.bitmapImage
                     [ Ui.width (Ui.stretchWithMaxSize 640), Ui.height Ui.auto ]
@@ -182,7 +181,7 @@ normalView subModel loadedModel =
         ]
 
 
-ideaListView : SubModel.SubModel -> Data.ProjectId -> Maybe (List Data.IdeaSnapshotAndId) -> Ui.Panel Message
+ideaListView : Message.SubModel -> Data.ProjectId -> Maybe (List Data.IdeaSnapshotAndId) -> Ui.Panel Message
 ideaListView subModel projectId ideaSnapshotAndIdListMaybe =
     Ui.column
         [ Ui.width Ui.stretch
@@ -210,7 +209,7 @@ ideaListView subModel projectId ideaSnapshotAndIdListMaybe =
         )
 
 
-ideaItemView : SubModel.SubModel -> Data.IdeaSnapshotAndId -> Ui.Panel message
+ideaItemView : Message.SubModel -> Data.IdeaSnapshotAndId -> Ui.Panel message
 ideaItemView subModel ideaSnapshotAndId =
     CommonUi.sameLanguageLink
         [ Ui.width Ui.stretch ]
@@ -223,7 +222,7 @@ ideaItemView subModel ideaSnapshotAndId =
                 [ Ui.width Ui.stretch ]
                 [ CommonUi.normalText 16 "更新日時:"
                 , CommonUi.timeView
-                    (SubModel.getTimeZoneAndNameMaybe subModel)
+                    (Message.getTimeZoneAndNameMaybe subModel)
                     ideaSnapshotAndId.snapshot.updateTime
                 ]
             ]
@@ -236,7 +235,7 @@ notFoundView (Data.ProjectId projectIdAsString) =
         ("projectId = " ++ projectIdAsString ++ "のプロジェクトを見つからなかった")
 
 
-createUserView : SubModel.SubModel -> Data.UserId -> Maybe Data.UserSnapshot -> Ui.Panel Message
+createUserView : Message.SubModel -> Data.UserId -> Maybe Data.UserSnapshot -> Ui.Panel Message
 createUserView subModel userId userSnapshotMaybe =
     Ui.row
         [ Ui.width Ui.stretch, Ui.gap 8 ]
@@ -245,19 +244,19 @@ createUserView subModel userId userSnapshotMaybe =
         ]
 
 
-createTime : SubModel.SubModel -> Data.Time -> Ui.Panel Message
+createTime : Message.SubModel -> Data.Time -> Ui.Panel Message
 createTime subModel time =
     Ui.row
         [ Ui.width Ui.stretch, Ui.gap 8 ]
         [ CommonUi.normalText 16 "作成日時:"
-        , CommonUi.timeView (SubModel.getTimeZoneAndNameMaybe subModel) time
+        , CommonUi.timeView (Message.getTimeZoneAndNameMaybe subModel) time
         ]
 
 
-updateTime : SubModel.SubModel -> Data.Time -> Ui.Panel Message
+updateTime : Message.SubModel -> Data.Time -> Ui.Panel Message
 updateTime subModel time =
     Ui.row
         [ Ui.width Ui.stretch, Ui.gap 8 ]
         [ CommonUi.normalText 16 "更新日時:"
-        , CommonUi.timeView (SubModel.getTimeZoneAndNameMaybe subModel) time
+        , CommonUi.timeView (Message.getTimeZoneAndNameMaybe subModel) time
         ]

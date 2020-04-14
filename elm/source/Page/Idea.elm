@@ -1,8 +1,8 @@
 module Page.Idea exposing (Message(..), Model, getIdeaId, init, update, view)
 
-import Command
 import CommonUi
 import Data
+import Message
 import Ui
 
 
@@ -14,10 +14,10 @@ type Message
     = Message
 
 
-init : Data.IdeaId -> ( Model, Command.Command )
+init : Data.IdeaId -> ( Model, Message.Command )
 init ideaId =
     ( Model ideaId
-    , Command.None
+    , Message.None
     )
 
 
@@ -26,10 +26,10 @@ getIdeaId (Model ideaId) =
     ideaId
 
 
-update : Message -> Model -> ( Model, Command.Command )
+update : Message -> Model -> ( Model, Message.Command )
 update _ model =
     ( model
-    , Command.None
+    , Message.None
     )
 
 

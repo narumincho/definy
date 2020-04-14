@@ -2,7 +2,6 @@ port module Main exposing (main)
 
 import Browser
 import Browser.Navigation
-import Command
 import CommonUi
 import Component.DefaultUi
 import Component.EditorGroup
@@ -17,13 +16,13 @@ import Data.UrlData
 import Html.Styled
 import Json.Decode
 import Json.Encode
+import Message
 import Page.CreateIdea
 import Page.CreateProject
 import Page.Home
 import Page.Idea
 import Page.Project
 import Page.User
-import SubModel
 import Task
 import Time
 import Ui
@@ -184,7 +183,7 @@ type Model
         { subMode : SubMode
         , page : PageModel
         , messageQueue : List Msg
-        , subModel : SubModel.SubModel
+        , subModel : Message.SubModel
         , networkConnection : Bool
         , notificationModel : Component.Notifications.Model
         , navigationKey : Browser.Navigation.Key
@@ -245,7 +244,7 @@ init flag url navigationKey =
         ( notificationsModel, notificationsCommand ) =
             if flag.networkConnection then
                 ( notificationsInitModel
-                , Command.None
+                , Message.None
                 )
 
             else
@@ -271,7 +270,7 @@ init flag url navigationKey =
         , page = pageInitModel
         , messageQueue = []
         , subModel =
-            SubModel.from
+            Message.from
                 { logInState = logInState
                 , language = urlData.language
                 , clientMode = urlData.clientMode
@@ -300,7 +299,7 @@ init flag url navigationKey =
     )
 
 
-pageInit : Data.Location -> ( PageModel, Command.Command )
+pageInit : Data.Location -> ( PageModel, Message.Command )
 pageInit location =
     case location of
         Data.LocationHome ->
@@ -367,7 +366,7 @@ update msg (Model rec) =
 
         WindowResize { width, height } ->
             ( Model
-                { rec | subModel = SubModel.setWindowSize { width = width, height = height } rec.subModel }
+                { rec | subModel = Message.setWindowSize { width = width, height = height } rec.subModel }
             , Cmd.none
             )
 
@@ -382,7 +381,7 @@ update msg (Model rec) =
                     updatePage pageMsg (Model rec)
             in
             ( Model { rec | page = newPageModel }
-            , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+            , commandToMainCommand (Message.getLogInState rec.subModel) command
             )
 
         NotificationMessage notificationMessage ->
@@ -394,7 +393,7 @@ update msg (Model rec) =
             in
             ( Model
                 { rec | notificationModel = newNotificationModel }
-            , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+            , commandToMainCommand (Message.getLogInState rec.subModel) command
             )
 
         ChangeNetworkConnection connection ->
@@ -414,23 +413,23 @@ update msg (Model rec) =
                     | notificationModel = newNotificationModel
                     , networkConnection = False
                 }
-            , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+            , commandToMainCommand (Message.getLogInState rec.subModel) command
             )
 
         RequestLogInUrl openIdConnectProvider ->
             ( Model
                 { rec
                     | subModel =
-                        SubModel.setLogInState
+                        Message.setLogInState
                             (Data.LogInState.RequestLogInUrl openIdConnectProvider)
                             rec.subModel
                 }
             , requestLogInUrlTyped
                 { openIdConnectProvider = openIdConnectProvider
                 , urlData =
-                    { clientMode = SubModel.getClientMode rec.subModel
+                    { clientMode = Message.getClientMode rec.subModel
                     , location = pageModelToLocation rec.page
-                    , language = SubModel.getLanguage rec.subModel
+                    , language = Message.getLanguage rec.subModel
                     }
                 }
             )
@@ -442,7 +441,7 @@ update msg (Model rec) =
             ( Model
                 { rec
                     | subModel =
-                        SubModel.addImageBlobUrl
+                        Message.addImageBlobUrl
                             imageBlobAndFileHash.fileHash
                             imageBlobAndFileHash.blobUrl
                             rec.subModel
@@ -462,12 +461,12 @@ update msg (Model rec) =
                 { rec
                     | page = newPage
                     , subModel =
-                        SubModel.setLanguageAndClientMode
+                        Message.setLanguageAndClientMode
                             urlData.language
                             urlData.clientMode
                             rec.subModel
                 }
-            , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+            , commandToMainCommand (Message.getLogInState rec.subModel) command
             )
 
         OnUrlRequest urlRequest ->
@@ -489,7 +488,7 @@ update msg (Model rec) =
                     )
 
         ResponseTimeZone timeZoneAndName ->
-            ( Model { rec | subModel = SubModel.setTimeZoneAndName timeZoneAndName rec.subModel }
+            ( Model { rec | subModel = Message.setTimeZoneAndName timeZoneAndName rec.subModel }
             , Cmd.none
             )
 
@@ -520,8 +519,8 @@ update msg (Model rec) =
                     , notificationModel = newNotificationModel
                 }
             , commandToMainCommand
-                (SubModel.getLogInState rec.subModel)
-                (Command.Batch
+                (Message.getLogInState rec.subModel)
+                (Message.Batch
                     [ pageCommand, notificationCommand ]
                 )
             )
@@ -534,7 +533,7 @@ update msg (Model rec) =
                             Page.Home.update (Page.Home.ResponseAllProjectId projectIdList) pageModel
                     in
                     ( Model { rec | page = Home newPageModel }
-                    , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+                    , commandToMainCommand (Message.getLogInState rec.subModel) command
                     )
 
                 _ ->
@@ -550,7 +549,7 @@ update msg (Model rec) =
                             Page.Home.update (Page.Home.ResponseProject projectCacheWithId) pageModel
                     in
                     ( Model { rec | page = Home newPageModel }
-                    , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+                    , commandToMainCommand (Message.getLogInState rec.subModel) command
                     )
 
                 Project pageModel ->
@@ -559,7 +558,7 @@ update msg (Model rec) =
                             Page.Project.update (Page.Project.ProjectResponse projectCacheWithId) pageModel
                     in
                     ( Model { rec | page = Project newPageModel }
-                    , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+                    , commandToMainCommand (Message.getLogInState rec.subModel) command
                     )
 
                 _ ->
@@ -577,7 +576,7 @@ update msg (Model rec) =
                                 pageModel
                     in
                     ( Model { rec | page = User newPageModel }
-                    , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+                    , commandToMainCommand (Message.getLogInState rec.subModel) command
                     )
 
                 Project pageModel ->
@@ -588,7 +587,7 @@ update msg (Model rec) =
                                 pageModel
                     in
                     ( Model { rec | page = Project newPageModel }
-                    , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+                    , commandToMainCommand (Message.getLogInState rec.subModel) command
                     )
 
                 _ ->
@@ -611,7 +610,7 @@ update msg (Model rec) =
                                 pageModel
                     in
                     ( Model { rec | page = Project newPageModel }
-                    , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+                    , commandToMainCommand (Message.getLogInState rec.subModel) command
                     )
 
                 _ ->
@@ -620,7 +619,7 @@ update msg (Model rec) =
                     )
 
 
-updatePage : PageMessage -> Model -> ( PageModel, Command.Command )
+updatePage : PageMessage -> Model -> ( PageModel, Message.Command )
 updatePage pageMessage (Model record) =
     case ( record.page, pageMessage ) of
         ( Home model, PageMessageHome message ) ->
@@ -649,14 +648,14 @@ updatePage pageMessage (Model record) =
 
         ( _, _ ) ->
             ( record.page
-            , Command.None
+            , Message.None
             )
 
 
 notificationAddEvent :
     Component.Notifications.Event
     -> Model
-    -> ( Component.Notifications.Model, Command.Command )
+    -> ( Component.Notifications.Model, Message.Command )
 notificationAddEvent event (Model record) =
     record.notificationModel
         |> Component.Notifications.update
@@ -1083,11 +1082,11 @@ mainView (Model record) =
                 ]
 
 
-logInPanel : SubModel.SubModel -> Ui.Panel Msg
+logInPanel : Message.SubModel -> Ui.Panel Msg
 logInPanel subModel =
-    case SubModel.getLogInState subModel of
+    case Message.getLogInState subModel of
         Data.LogInState.GuestUser ->
-            logInPanelLogInButton (SubModel.getLanguage subModel) (SubModel.getWindowSize subModel)
+            logInPanelLogInButton (Message.getLanguage subModel) (Message.getWindowSize subModel)
 
         Data.LogInState.RequestLogInUrl _ ->
             Ui.text
@@ -1119,7 +1118,7 @@ logInPanel subModel =
             Ui.empty []
 
 
-logInPanelLogInButton : Data.Language -> SubModel.WindowSize -> Ui.Panel Msg
+logInPanelLogInButton : Data.Language -> Message.WindowSize -> Ui.Panel Msg
 logInPanelLogInButton language { width, height } =
     if width < 512 then
         Ui.column
@@ -1233,7 +1232,7 @@ gutterTypeToCursorStyle gutterType =
 
 responseUserDataFromAccessToken : Maybe Data.UserSnapshotAndId -> Model -> ( Model, Cmd Msg )
 responseUserDataFromAccessToken userSnapshotAndIdMaybe (Model rec) =
-    case ( userSnapshotAndIdMaybe, SubModel.getLogInState rec.subModel ) of
+    case ( userSnapshotAndIdMaybe, Message.getLogInState rec.subModel ) of
         ( Just userSnapshotAndId, Data.LogInState.VerifyingAccessToken accessToken ) ->
             let
                 ( newNotificationModel, command ) =
@@ -1244,7 +1243,7 @@ responseUserDataFromAccessToken userSnapshotAndIdMaybe (Model rec) =
             ( Model
                 { rec
                     | subModel =
-                        SubModel.setLogInState
+                        Message.setLogInState
                             (Data.LogInState.Ok
                                 { accessToken = accessToken
                                 , userSnapshotAndId = userSnapshotAndId
@@ -1255,7 +1254,7 @@ responseUserDataFromAccessToken userSnapshotAndIdMaybe (Model rec) =
                 }
             , Cmd.batch
                 [ consoleLog "ユーザー情報の取得に成功!"
-                , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+                , commandToMainCommand (Message.getLogInState rec.subModel) command
                 ]
             )
 
@@ -1268,12 +1267,12 @@ responseUserDataFromAccessToken userSnapshotAndIdMaybe (Model rec) =
             in
             ( Model
                 { rec
-                    | subModel = SubModel.setLogInState Data.LogInState.GuestUser rec.subModel
+                    | subModel = Message.setLogInState Data.LogInState.GuestUser rec.subModel
                     , notificationModel = newNotificationModel
                 }
             , Cmd.batch
                 [ consoleLog "アクセストークンが無効だった"
-                , commandToMainCommand (SubModel.getLogInState rec.subModel) command
+                , commandToMainCommand (Message.getLogInState rec.subModel) command
                 ]
             )
 
@@ -1283,16 +1282,16 @@ responseUserDataFromAccessToken userSnapshotAndIdMaybe (Model rec) =
             )
 
 
-commandToMainCommand : Data.LogInState.LogInState -> Command.Command -> Cmd Msg
+commandToMainCommand : Data.LogInState.LogInState -> Message.Command -> Cmd Msg
 commandToMainCommand logInState command =
     case command of
-        Command.None ->
+        Message.None ->
             Cmd.none
 
-        Command.GetBlobUrl fileHash ->
+        Message.GetBlobUrl fileHash ->
             getImageBlobUrlTyped fileHash
 
-        Command.CreateProject projectName ->
+        Message.CreateProject projectName ->
             case logInState of
                 Data.LogInState.Ok { accessToken } ->
                     createProjectTyped
@@ -1303,7 +1302,7 @@ commandToMainCommand logInState command =
                 _ ->
                     Cmd.none
 
-        Command.CreateIdea projectIdAndIdeaName ->
+        Message.CreateIdea projectIdAndIdeaName ->
             case logInState of
                 Data.LogInState.Ok { accessToken } ->
                     createIdeaTyped
@@ -1312,36 +1311,36 @@ commandToMainCommand logInState command =
                 _ ->
                     Cmd.none
 
-        Command.ConsoleLog string ->
+        Message.ConsoleLog string ->
             consoleLog string
 
-        Command.PushUrl urlData ->
+        Message.PushUrl urlData ->
             Task.perform
                 identity
                 (Task.succeed (OnUrlRequest (Browser.Internal (Data.UrlData.urlDataToUrl urlData))))
 
-        Command.ToValidProjectName string ->
+        Message.ToValidProjectName string ->
             toValidProjectName string
 
-        Command.ToValidIdeaName string ->
+        Message.ToValidIdeaName string ->
             toValidIdeaName string
 
-        Command.GetUser userId ->
+        Message.GetUser userId ->
             getUser (Data.userIdToJsonValue userId)
 
-        Command.GetAllProjectId ->
+        Message.GetAllProjectId ->
             getAllProjectIdList ()
 
-        Command.GetProject projectId ->
+        Message.GetProject projectId ->
             getProject (Data.projectIdToJsonValue projectId)
 
-        Command.GetIdea ideaId ->
+        Message.GetIdea ideaId ->
             getIdea (Data.ideaIdToJsonValue ideaId)
 
-        Command.GetIdeaListByProjectId projectId ->
+        Message.GetIdeaListByProjectId projectId ->
             getIdeaSnapshotAndIdListByProjectId (Data.projectIdToJsonValue projectId)
 
-        Command.Batch commandList ->
+        Message.Batch commandList ->
             Cmd.batch (List.map (commandToMainCommand logInState) commandList)
 
 

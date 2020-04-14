@@ -1,4 +1,4 @@
-module SubModel exposing (SubModel, WindowSize, addImageBlobUrl, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getTimeZoneAndNameMaybe, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setTimeZoneAndName, setWindowSize)
+module Message exposing (Command(..), SubModel, WindowSize, addImageBlobUrl, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getTimeZoneAndNameMaybe, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setTimeZoneAndName, setWindowSize)
 
 import Data
 import Data.LogInState
@@ -101,3 +101,20 @@ setWindowSize windowSize (SubModel record) =
 getImageBlobUrl : Data.FileHash -> SubModel -> Maybe String
 getImageBlobUrl (Data.FileHash hash) (SubModel record) =
     Dict.get hash record.imageFileBlobDict
+
+
+type Command
+    = None
+    | GetBlobUrl Data.FileHash
+    | CreateProject String
+    | CreateIdea { projectId : Data.ProjectId, ideaName : String }
+    | ConsoleLog String
+    | PushUrl Data.UrlData
+    | ToValidProjectName String
+    | ToValidIdeaName String
+    | GetAllProjectId
+    | GetProject Data.ProjectId
+    | GetUser Data.UserId
+    | GetIdea Data.IdeaId
+    | GetIdeaListByProjectId Data.ProjectId
+    | Batch (List Command)
