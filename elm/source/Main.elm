@@ -125,6 +125,9 @@ port toValidIdeaNameResponse : ({ input : String, result : Maybe String } -> msg
 port createProjectResponse : (Json.Decode.Value -> msg) -> Sub msg
 
 
+port responseCreateIdea : (Json.Decode.Value -> msg) -> Sub msg
+
+
 port responseAllProjectId : (Json.Decode.Value -> msg) -> Sub msg
 
 
@@ -160,6 +163,7 @@ type Msg
     | OnUrlChange Url.Url
     | ResponseTimeZone Data.TimeZoneAndName.TimeZoneAndName
     | CreateProjectResponse (Maybe Data.ProjectSnapshotAndId)
+    | CreateIdeaResponse (Maybe Data.IdeaSnapshotAndId)
     | NoOperation
     | CommonMessage Message.CommonMessage
 
@@ -542,6 +546,22 @@ update msg (Model rec) =
                 )
             )
 
+        CreateIdeaResponse ideaSnapshotAndIdMaybe ->
+            case ideaSnapshotAndIdMaybe of
+                Just ideaSnapshotAndId ->
+                    let
+                        ( newPageModel, command ) =
+                            pageInit (Data.LocationIdea ideaSnapshotAndId.id)
+                    in
+                    ( Model { rec | page = newPageModel }
+                    , commandToMainCommand (Message.getLogInState rec.subModel) command
+                    )
+
+                Nothing ->
+                    ( Model rec
+                    , Cmd.none
+                    )
+
         CommonMessage commonMessage ->
             case rec.page of
                 Home pageModel ->
@@ -560,6 +580,12 @@ update msg (Model rec) =
                     mapPageModel
                         (Page.User.updateByCommonMessage commonMessage pageModel)
                         User
+                        (Model rec)
+
+                Idea pageModel ->
+                    mapPageModel
+                        (Page.Idea.updateByCommonMessage commonMessage pageModel)
+                        Idea
                         (Model rec)
 
                 _ ->
@@ -1033,6 +1059,7 @@ mainView (Model record) =
                 [ Component.Header.view record.subModel
                 , logInPanel record.subModel
                 , Page.Idea.view
+                    record.subModel
                     pageModel
                     |> Ui.map (PageMessageIdea >> PageMsg)
                 ]
@@ -1359,6 +1386,15 @@ subscriptions model =
                 of
                     Ok projectAndIdMaybe ->
                         CreateProjectResponse projectAndIdMaybe
+
+                    Err _ ->
+                        NoOperation
+            )
+         , responseCreateIdea
+            (\jsonValue ->
+                case Json.Decode.decodeValue (Data.maybeJsonDecoder Data.ideaSnapshotAndIdJsonDecoder) jsonValue of
+                    Ok ideaSnapshotMaybe ->
+                        CreateIdeaResponse ideaSnapshotMaybe
 
                     Err _ ->
                         NoOperation

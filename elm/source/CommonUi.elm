@@ -510,13 +510,13 @@ plusIcon =
         )
 
 
-userView : Message.SubModel -> Data.UserId -> Maybe (Maybe Data.UserSnapshot) -> Ui.Panel message
-userView subModel userId userSnapshotMaybeMaybe =
+userView : Message.SubModel -> Data.UserId -> Ui.Panel message
+userView subModel userId =
     let
         (Data.UserId userIdAsString) =
             userId
     in
-    case userSnapshotMaybeMaybe of
+    case Message.getUserSnapshot userId subModel of
         Just (Just userSnapshot) ->
             sameLanguageLink
                 [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgb 20 20 20), Ui.padding 8 ]

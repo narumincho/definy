@@ -227,7 +227,7 @@ createUserView subModel userId =
     Ui.row
         [ Ui.width Ui.stretch, Ui.gap 8 ]
         [ CommonUi.normalText 16 "作成者:"
-        , CommonUi.userView subModel userId (Message.getUserSnapshot userId subModel)
+        , CommonUi.userView subModel userId
         ]
 
 

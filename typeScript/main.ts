@@ -211,7 +211,7 @@ const init = async (): Promise<void> => {
       data.encodeCreateIdeaParameter(parameter),
       data.decodeMaybe(data.decodeIdeaSnapshotAndId)
     ).then((response) => {
-      console.log("アイデアを作成しました", response);
+      app.ports.responseCreateIdea.send(response);
     });
   });
 
