@@ -14,7 +14,7 @@ type Model
 
 
 type alias LoadedModel =
-    { snapshotAndId : Data.ProjectSnapshotAndId, user : Maybe Data.UserSnapshot, ideaList : Maybe (List Data.IdeaSnapshotAndId) }
+    { snapshotAndId : Data.ProjectSnapshotAndId, ideaList : Maybe (List Data.IdeaSnapshotAndId) }
 
 
 type Message
@@ -53,7 +53,6 @@ updateByCommonMessage message model =
                                 { id = response.id
                                 , snapshot = projectSnapshot
                                 }
-                            , user = Nothing
                             , ideaList = Nothing
                             }
                         , Message.Batch
@@ -71,25 +70,6 @@ updateByCommonMessage message model =
 
             else
                 ( model, Message.None )
-
-        ( Message.ResponseUser userSnapshotMaybeAndId, Loaded snapshotAndId ) ->
-            if snapshotAndId.snapshotAndId.snapshot.createUser == userSnapshotMaybeAndId.id then
-                case userSnapshotMaybeAndId.snapshotMaybe of
-                    Just userSnapshot ->
-                        ( Loaded
-                            { snapshotAndId | user = Just userSnapshot }
-                        , Message.GetBlobUrl userSnapshot.imageHash
-                        )
-
-                    Nothing ->
-                        ( model
-                        , Message.None
-                        )
-
-            else
-                ( model
-                , Message.None
-                )
 
         ( Message.ResponseIdeaListByProjectId response, Loaded snapshotAndId ) ->
             if getProjectId model == response.projectId then
@@ -181,7 +161,7 @@ normalView subModel loadedModel =
                 Ui.depth
                     [ Ui.width (Ui.stretchWithMaxSize 640), Ui.height Ui.auto ]
                     [ ( ( Ui.Center, Ui.Center ), CommonUi.normalText 16 (loadedModel.snapshotAndId.snapshot.name ++ "の画像を読込中") ) ]
-        , createUserView subModel loadedModel.snapshotAndId.snapshot.createUser loadedModel.user
+        , createUserView subModel loadedModel.snapshotAndId.snapshot.createUser
         , createTime subModel loadedModel.snapshotAndId.snapshot.createTime
         , updateTime subModel loadedModel.snapshotAndId.snapshot.updateTime
         , ideaListView subModel loadedModel.snapshotAndId.id loadedModel.ideaList
@@ -242,12 +222,12 @@ notFoundView (Data.ProjectId projectIdAsString) =
         ("projectId = " ++ projectIdAsString ++ "のプロジェクトを見つからなかった")
 
 
-createUserView : Message.SubModel -> Data.UserId -> Maybe Data.UserSnapshot -> Ui.Panel Message
-createUserView subModel userId userSnapshotMaybe =
+createUserView : Message.SubModel -> Data.UserId -> Ui.Panel Message
+createUserView subModel userId =
     Ui.row
         [ Ui.width Ui.stretch, Ui.gap 8 ]
         [ CommonUi.normalText 16 "作成者:"
-        , CommonUi.userView subModel userId userSnapshotMaybe
+        , CommonUi.userView subModel userId (Message.getUserSnapshot userId subModel)
         ]
 
 

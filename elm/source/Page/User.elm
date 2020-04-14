@@ -7,8 +7,7 @@ import Ui
 
 
 type Model
-    = Loading Data.UserId
-    | Loaded Data.UserResponse
+    = Model Data.UserId
 
 
 type Message
@@ -17,7 +16,7 @@ type Message
 
 init : Data.UserId -> ( Model, Message.Command )
 init userId =
-    ( Loading userId
+    ( Model userId
     , Message.GetUser userId
     )
 
@@ -25,32 +24,13 @@ init userId =
 getUserId : Model -> Data.UserId
 getUserId model =
     case model of
-        Loading userId ->
+        Model userId ->
             userId
-
-        Loaded userSnapshotMaybeAndId ->
-            userSnapshotMaybeAndId.id
 
 
 updateByCommonMessage : Message.CommonMessage -> Model -> ( Model, Message.Command )
 updateByCommonMessage message model =
     case message of
-        Message.ResponseUser userSnapshotMaybeAndId ->
-            if userSnapshotMaybeAndId.id == getUserId model then
-                ( Loaded userSnapshotMaybeAndId
-                , case userSnapshotMaybeAndId.snapshotMaybe of
-                    Just userSnapshot ->
-                        Message.GetBlobUrl userSnapshot.imageHash
-
-                    Nothing ->
-                        Message.None
-                )
-
-            else
-                ( model
-                , Message.None
-                )
-
         _ ->
             ( model
             , Message.None
@@ -67,22 +47,24 @@ update message model =
 
 
 view : Message.SubModel -> Model -> Ui.Panel Message
-view subModel model =
-    case model of
-        Loading (Data.UserId userIdAsString) ->
+view subModel (Model userId) =
+    case Message.getUserSnapshot userId subModel of
+        Just (Just userSnapshot) ->
+            normalView
+                subModel
+                { snapshot = userSnapshot
+                , id = userId
+                }
+
+        Just Nothing ->
+            notFoundView userId
+
+        Nothing ->
+            let
+                (Data.UserId userIdAsString) =
+                    userId
+            in
             CommonUi.normalText 24 (userIdAsString ++ "のユーザー詳細ページ")
-
-        Loaded userSnapshotMaybeAndId ->
-            case userSnapshotMaybeAndId.snapshotMaybe of
-                Just userSnapshot ->
-                    normalView
-                        subModel
-                        { snapshot = userSnapshot
-                        , id = userSnapshotMaybeAndId.id
-                        }
-
-                Nothing ->
-                    notFoundView userSnapshotMaybeAndId.id
 
 
 normalView : Message.SubModel -> Data.UserSnapshotAndId -> Ui.Panel Message

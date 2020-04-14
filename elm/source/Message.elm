@@ -1,4 +1,4 @@
-module Message exposing (Command(..), CommonMessage(..), SubModel, WindowSize, addImageBlobUrl, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getTimeZoneAndNameMaybe, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setTimeZoneAndName, setWindowSize)
+module Message exposing (Command(..), CommonMessage(..), SubModel, WindowSize, addImageBlobUrl, addUserSnapshot, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getTimeZoneAndNameMaybe, getUserSnapshot, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setTimeZoneAndName, setWindowSize)
 
 import Data
 import Data.LogInState
@@ -9,8 +9,7 @@ import Dict
 {-| 各ページの共通のレスポンス Message
 -}
 type CommonMessage
-    = ResponseUser Data.UserResponse
-    | ResponseProject Data.ProjectResponse
+    = ResponseProject Data.ProjectResponse
     | ResponseIdea Data.IdeaResponse
     | ResponseAllProjectIdList (List Data.ProjectId)
     | ResponseIdeaListByProjectId Data.ResponseIdeaListByProjectId
@@ -24,6 +23,7 @@ type SubModel
         , language : Data.Language
         , clientMode : Data.ClientMode
         , imageFileBlobDict : Dict.Dict String String
+        , userSnapshotDict : Dict.Dict String (Maybe Data.UserSnapshot)
         , timeZoneAndNameMaybe : Maybe Data.TimeZoneAndName.TimeZoneAndName
         , windowSize : WindowSize
         }
@@ -47,6 +47,7 @@ from record =
         , language = record.language
         , clientMode = record.clientMode
         , imageFileBlobDict = Dict.empty
+        , userSnapshotDict = Dict.empty
         , timeZoneAndNameMaybe = record.timeZoneAndNameMaybe
         , windowSize = record.windowSize
         }
@@ -90,6 +91,12 @@ addImageBlobUrl (Data.FileHash hash) blobUrl (SubModel record) =
         { record | imageFileBlobDict = Dict.insert hash blobUrl record.imageFileBlobDict }
 
 
+addUserSnapshot : Maybe Data.UserSnapshot -> Data.UserId -> SubModel -> SubModel
+addUserSnapshot userSnapshotMaybe (Data.UserId userId) (SubModel record) =
+    SubModel
+        { record | userSnapshotDict = Dict.insert userId userSnapshotMaybe record.userSnapshotDict }
+
+
 getTimeZoneAndNameMaybe : SubModel -> Maybe Data.TimeZoneAndName.TimeZoneAndName
 getTimeZoneAndNameMaybe (SubModel record) =
     record.timeZoneAndNameMaybe
@@ -113,6 +120,15 @@ setWindowSize windowSize (SubModel record) =
 getImageBlobUrl : Data.FileHash -> SubModel -> Maybe String
 getImageBlobUrl (Data.FileHash hash) (SubModel record) =
     Dict.get hash record.imageFileBlobDict
+
+
+{-| Nothing → サーバーに問い合わせ中
+Just Nothing → ユーザーが存在しなかった
+Just (Just a) → ユーザーが存在する
+-}
+getUserSnapshot : Data.UserId -> SubModel -> Maybe (Maybe Data.UserSnapshot)
+getUserSnapshot (Data.UserId userId) (SubModel record) =
+    Dict.get userId record.userSnapshotDict
 
 
 {-| 各ページの共通のCmd

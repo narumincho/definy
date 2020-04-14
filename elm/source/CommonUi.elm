@@ -510,14 +510,14 @@ plusIcon =
         )
 
 
-userView : Message.SubModel -> Data.UserId -> Maybe Data.UserSnapshot -> Ui.Panel message
-userView subModel userId userSnapshotMaybe =
+userView : Message.SubModel -> Data.UserId -> Maybe (Maybe Data.UserSnapshot) -> Ui.Panel message
+userView subModel userId userSnapshotMaybeMaybe =
     let
         (Data.UserId userIdAsString) =
             userId
     in
-    case userSnapshotMaybe of
-        Just userSnapshot ->
+    case userSnapshotMaybeMaybe of
+        Just (Just userSnapshot) ->
             sameLanguageLink
                 [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgb 20 20 20), Ui.padding 8 ]
                 subModel
@@ -547,5 +547,13 @@ userView subModel userId userSnapshotMaybe =
                     ]
                 )
 
+        Just Nothing ->
+            userNotFoundView
+
         Nothing ->
             normalText 16 ("userId=" ++ userIdAsString)
+
+
+userNotFoundView : Ui.Panel message
+userNotFoundView =
+    normalText 16 "ユーザーが見つからなかった"

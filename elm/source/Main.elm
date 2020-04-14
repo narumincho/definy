@@ -154,7 +154,8 @@ type Msg
     | NotificationMessage Component.Notifications.Message
     | RequestLogInUrl Data.OpenIdConnectProvider
     | ResponseUserDataFromAccessToken (Maybe Data.UserSnapshotAndId)
-    | ResponseGetImageBlob { blobUrl : String, fileHash : Data.FileHash }
+    | ResponseImageBlob { blobUrl : String, fileHash : Data.FileHash }
+    | ResponseUser Data.UserResponse
     | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url.Url
     | ResponseTimeZone Data.TimeZoneAndName.TimeZoneAndName
@@ -433,7 +434,7 @@ update msg (Model rec) =
         ResponseUserDataFromAccessToken userSnapshotAndIdMaybe ->
             Model rec |> responseUserDataFromAccessToken userSnapshotAndIdMaybe
 
-        ResponseGetImageBlob imageBlobAndFileHash ->
+        ResponseImageBlob imageBlobAndFileHash ->
             ( Model
                 { rec
                     | subModel =
@@ -443,6 +444,26 @@ update msg (Model rec) =
                             rec.subModel
                 }
             , Cmd.none
+            )
+
+        ResponseUser userResponse ->
+            ( Model
+                { rec
+                    | subModel =
+                        Message.addUserSnapshot
+                            userResponse.snapshotMaybe
+                            userResponse.id
+                            rec.subModel
+                }
+            , commandToMainCommand
+                (Message.getLogInState rec.subModel)
+                (case userResponse.snapshotMaybe of
+                    Just userSnapshot ->
+                        Message.GetBlobUrl userSnapshot.imageHash
+
+                    Nothing ->
+                        Message.None
+                )
             )
 
         OnUrlChange url ->
@@ -1308,7 +1329,7 @@ subscriptions model =
             )
          , getImageBlobResponse
             (\{ blobUrl, fileHash } ->
-                ResponseGetImageBlob
+                ResponseImageBlob
                     { blobUrl = blobUrl
                     , fileHash = Data.FileHash fileHash
                     }
@@ -1374,7 +1395,7 @@ subscriptions model =
             (\jsonValue ->
                 case Json.Decode.decodeValue Data.userResponseJsonDecoder jsonValue of
                     Ok userSnapshotMaybeAndId ->
-                        CommonMessage (Message.ResponseUser userSnapshotMaybeAndId)
+                        ResponseUser userSnapshotMaybeAndId
 
                     Err _ ->
                         NoOperation

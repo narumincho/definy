@@ -7,7 +7,9 @@ import Ui
 
 
 type Model
-    = Model Data.IdeaId
+    = Loading Data.IdeaId
+    | NotFound Data.IdeaId
+    | Loaded Data.IdeaSnapshotAndId
 
 
 type Message
@@ -16,14 +18,22 @@ type Message
 
 init : Data.IdeaId -> ( Model, Message.Command )
 init ideaId =
-    ( Model ideaId
+    ( Loading ideaId
     , Message.None
     )
 
 
 getIdeaId : Model -> Data.IdeaId
-getIdeaId (Model ideaId) =
-    ideaId
+getIdeaId model =
+    case model of
+        Loading ideaId ->
+            ideaId
+
+        NotFound ideaId ->
+            ideaId
+
+        Loaded ideaSnapshotAndId ->
+            ideaSnapshotAndId.id
 
 
 update : Message -> Model -> ( Model, Message.Command )
