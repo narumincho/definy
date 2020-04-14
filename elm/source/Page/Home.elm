@@ -173,60 +173,39 @@ createProjectButton : Message.SubModel -> Ui.Panel Message
 createProjectButton subModel =
     case Message.getLogInState subModel of
         Data.LogInState.RequestLogInUrl _ ->
-            Ui.text
-                [ Ui.width (Ui.stretchWithMaxSize 320) ]
-                (Ui.TextAttributes
-                    { text = "......"
-                    , typeface = CommonUi.normalTypeface
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 200 200 200
-                    , textAlignment = Ui.TextAlignStart
-                    }
-                )
+            CommonUi.maxWidthText
+                320
+                16
+                "......"
 
         Data.LogInState.VerifyingAccessToken _ ->
-            Ui.text
-                [ Ui.width (Ui.stretchWithMaxSize 320) ]
-                (Ui.TextAttributes
-                    { text =
-                        case Message.getLanguage subModel of
-                            Data.LanguageEnglish ->
-                                "Verifying..."
+            CommonUi.maxWidthText
+                320
+                16
+                (case Message.getLanguage subModel of
+                    Data.LanguageEnglish ->
+                        "Verifying..."
 
-                            Data.LanguageJapanese ->
-                                "認証中…"
+                    Data.LanguageJapanese ->
+                        "認証中…"
 
-                            Data.LanguageEsperanto ->
-                                "Aŭtentigado ..."
-                    , typeface = CommonUi.normalTypeface
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 200 200 200
-                    , textAlignment = Ui.TextAlignStart
-                    }
+                    Data.LanguageEsperanto ->
+                        "Aŭtentigado ..."
                 )
 
         Data.LogInState.GuestUser ->
-            Ui.text
-                [ Ui.width (Ui.stretchWithMaxSize 320) ]
-                (Ui.TextAttributes
-                    { text =
-                        case Message.getLanguage subModel of
-                            Data.LanguageEnglish ->
-                                "Creating guest user projects has not been completed yet"
+            CommonUi.maxWidthText
+                320
+                16
+                (case Message.getLanguage subModel of
+                    Data.LanguageEnglish ->
+                        "Creating guest user projects has not been completed yet"
 
-                            Data.LanguageJapanese ->
-                                "ゲストユーザーのプロジェクトの作成は,まだできていない"
+                    Data.LanguageJapanese ->
+                        "ゲストユーザーのプロジェクトの作成は,まだできていない"
 
-                            Data.LanguageEsperanto ->
-                                "Krei projektojn de invititaj uzantoj ankoraŭ ne estas finita"
-                    , typeface = CommonUi.normalTypeface
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 200 200 200
-                    , textAlignment = Ui.TextAlignStart
-                    }
+                    Data.LanguageEsperanto ->
+                        "Krei projektojn de invititaj uzantoj ankoraŭ ne estas finita"
                 )
 
         Data.LogInState.Ok _ ->
@@ -271,25 +250,17 @@ createProjectButtonLogInOk subModel =
               , Ui.column
                     []
                     [ CommonUi.plusIcon
-                    , Ui.text
-                        []
-                        (Ui.TextAttributes
-                            { text =
-                                case Message.getLanguage subModel of
-                                    Data.LanguageEnglish ->
-                                        "Create a new project"
+                    , CommonUi.normalText
+                        16
+                        (case Message.getLanguage subModel of
+                            Data.LanguageEnglish ->
+                                "Create a new project"
 
-                                    Data.LanguageJapanese ->
-                                        "プロジェクトを新規作成"
+                            Data.LanguageJapanese ->
+                                "プロジェクトを新規作成"
 
-                                    Data.LanguageEsperanto ->
-                                        "Krei novan projekton"
-                            , typeface = CommonUi.normalTypeface
-                            , size = 16
-                            , letterSpacing = 0
-                            , color = Css.rgb 200 200 200
-                            , textAlignment = Ui.TextAlignStart
-                            }
+                            Data.LanguageEsperanto ->
+                                "Krei novan projekton"
                         )
                     ]
               )
@@ -402,26 +373,18 @@ projectItemText subModel project =
             _ ->
                 Ui.empty
                     [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
-        , Ui.text
-            []
-            (Ui.TextAttributes
-                { text =
-                    case project of
-                        OnlyId (Data.ProjectId idAsString) ->
-                            "id = " ++ idAsString
+        , CommonUi.normalText
+            16
+            (case project of
+                OnlyId (Data.ProjectId idAsString) ->
+                    "id = " ++ idAsString
 
-                        Full projectCacheWithId ->
-                            case projectCacheWithId.snapshotMaybe of
-                                Just snapshot ->
-                                    snapshot.name
+                Full projectCacheWithId ->
+                    case projectCacheWithId.snapshotMaybe of
+                        Just snapshot ->
+                            snapshot.name
 
-                                Nothing ->
-                                    "プロジェクトが見つからなかった"
-                , typeface = CommonUi.normalTypeface
-                , size = 16
-                , letterSpacing = 0
-                , color = Css.rgb 200 200 200
-                , textAlignment = Ui.TextAlignStart
-                }
+                        Nothing ->
+                            "プロジェクトが見つからなかった"
             )
         ]

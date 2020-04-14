@@ -85,6 +85,7 @@ type TextAttributes
         , typeface : String
         , size : Int
         , letterSpacing : Float
+        , lineHeight : Float
         , color : Css.Color
         , textAlignment : TextAlignment
         }
@@ -686,6 +687,7 @@ textBoxToHtml commonStyle styleComputed (TextAttributes record) =
             , Css.fontSize (Css.px (toFloat record.size))
             , Css.fontFamilies [ Css.qt record.typeface ]
             , Css.letterSpacing (Css.px record.letterSpacing)
+            , Css.lineHeight (Css.num record.lineHeight)
             , Css.overflowWrap Css.breakWord
             , textAlignToStyle record.textAlignment
             , commonStyle

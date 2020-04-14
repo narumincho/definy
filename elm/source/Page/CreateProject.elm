@@ -206,35 +206,15 @@ projectInputBox =
 
 createButton : Data.Language -> String -> Ui.Panel Message
 createButton language validProjectName =
-    Ui.button
-        [ Ui.backgroundColor (Css.rgb 40 40 40)
-        , Ui.border
-            (Ui.BorderStyle
-                { color = Css.rgb 200 200 200
-                , width = { top = 1, right = 1, left = 1, bottom = 1 }
-                }
-            )
-        , Ui.padding 8
-        ]
+    CommonUi.button
         CreateProject
-        (Ui.text
-            [ Ui.width Ui.auto, Ui.height Ui.auto ]
-            (Ui.TextAttributes
-                { text =
-                    case language of
-                        Data.LanguageEnglish ->
-                            "Create " ++ validProjectName
+        (case language of
+            Data.LanguageEnglish ->
+                "Create " ++ validProjectName
 
-                        Data.LanguageJapanese ->
-                            validProjectName ++ "を新規作成!"
+            Data.LanguageJapanese ->
+                validProjectName ++ "を新規作成!"
 
-                        Data.LanguageEsperanto ->
-                            "Kreu " ++ validProjectName
-                , typeface = CommonUi.normalTypeface
-                , size = 26
-                , letterSpacing = 0
-                , color = Css.rgb 200 200 200
-                , textAlignment = Ui.TextAlignStart
-                }
-            )
+            Data.LanguageEsperanto ->
+                "Kreu " ++ validProjectName
         )

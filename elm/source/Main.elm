@@ -1072,30 +1072,10 @@ logInPanel subModel =
             logInPanelLogInButton (Message.getLanguage subModel) (Message.getWindowSize subModel)
 
         Data.LogInState.RequestLogInUrl _ ->
-            Ui.text
-                [ Ui.height Ui.auto ]
-                (Ui.TextAttributes
-                    { textAlignment = Ui.TextAlignCenter
-                    , text = "ログイン画面をリクエスト中……"
-                    , typeface = CommonUi.fontHackName
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 255 255 255
-                    }
-                )
+            CommonUi.normalText 16 "ログイン画面をリクエスト中……"
 
         Data.LogInState.VerifyingAccessToken _ ->
-            Ui.text
-                [ Ui.height Ui.auto ]
-                (Ui.TextAttributes
-                    { textAlignment = Ui.TextAlignCenter
-                    , text = "認証中……"
-                    , typeface = CommonUi.fontHackName
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 255 255 255
-                    }
-                )
+            CommonUi.normalText 16 "認証中……"
 
         Data.LogInState.Ok record ->
             Ui.empty []
@@ -1153,7 +1133,8 @@ googleLogInButton stretch language =
 
                         Data.LanguageEsperanto ->
                             "Ensalutu kun Google"
-                , typeface = CommonUi.fontHackName
+                , typeface = CommonUi.normalTypeface
+                , lineHeight = 1
                 , size = 20
                 , letterSpacing = 0
                 , color = Css.rgb 255 255 255
@@ -1193,8 +1174,9 @@ gitHubLogInButton stretch language =
 
                         Data.LanguageEsperanto ->
                             "Ensalutu kun GitHub"
-                , typeface = CommonUi.fontHackName
+                , typeface = CommonUi.normalTypeface
                 , size = 20
+                , lineHeight = 1
                 , letterSpacing = 0
                 , color = Css.rgb 255 255 255
                 }

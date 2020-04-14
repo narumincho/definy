@@ -182,16 +182,8 @@ cardItem index (CardStyle record) =
 
             Nothing ->
                 Ui.empty [ Ui.width (Ui.fix 32) ]
-        , Ui.text
-            [ Ui.padding 8, Ui.width Ui.stretch ]
-            (Ui.TextAttributes
-                { text = record.text
-                , typeface = CommonUi.normalTypeface
-                , size = 16
-                , letterSpacing = 0
-                , color = Css.rgb 255 255 255
-                , textAlignment = Ui.TextAlignStart
-                }
-            )
+        , CommonUi.stretchText
+            16
+            record.text
         , Ui.button [ Ui.width (Ui.fix 32) ] (DeleteAt index) CommonUi.closeIcon
         ]

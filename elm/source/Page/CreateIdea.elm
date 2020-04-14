@@ -115,22 +115,26 @@ mainView : Message.SubModel -> Model -> Ui.Panel Message
 mainView subModel (Model record) =
     Ui.column
         []
-        [ CommonUi.normalText 16 "アイデア作成. アイデア名を入力してください"
-        , Ui.textInput
+        ([ CommonUi.normalText 16 "アイデア作成. アイデア名を入力してください"
+         , Ui.textInput
             []
             (Ui.TextInputAttributes
                 { inputMessage = InputIdeaName
                 , name = "idea-name"
                 , multiLine = False
-                , fontSize = 16
+                , fontSize = 24
                 }
             )
-        , ideaNameInfoView (Message.getLanguage subModel) record.ideaNameInput
-        , Ui.button
-            []
-            CreateIdea
-            (CommonUi.normalText 16 "作成する")
-        ]
+         , ideaNameInfoView (Message.getLanguage subModel) record.ideaNameInput
+         ]
+            ++ (case record.ideaNameInput of
+                    DisplayedValidIdeaName (Just _) ->
+                        [ CommonUi.button CreateIdea "作成する" ]
+
+                    _ ->
+                        []
+               )
+        )
 
 
 ideaNameInfoView : Data.Language -> IdeaNameInput -> Ui.Panel message

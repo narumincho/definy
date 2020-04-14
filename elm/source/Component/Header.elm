@@ -46,6 +46,7 @@ logo subModel =
                 , typeface = CommonUi.codeFontTypeface
                 , size = 32
                 , letterSpacing = 0
+                , lineHeight = 1
                 , color = Css.rgb 185 208 155
                 , textAlignment = Ui.TextAlignStart
                 }
@@ -55,17 +56,9 @@ logo subModel =
 
 guestItem : Ui.Panel msg
 guestItem =
-    Ui.text
-        []
-        (Ui.TextAttributes
-            { text = "ゲスト"
-            , typeface = CommonUi.normalTypeface
-            , size = 16
-            , letterSpacing = 0
-            , color = Css.rgb 200 200 200
-            , textAlignment = Ui.TextAlignCenter
-            }
-        )
+    CommonUi.normalText
+        16
+        "ゲスト"
 
 
 userItem : Message.SubModel -> Data.UserSnapshotAndId -> Ui.Panel msg
@@ -98,16 +91,8 @@ userItem subModel userSnapshotAndId =
                         [ Ui.width (Ui.fix 48)
                         , Ui.height (Ui.fix 48)
                         ]
-            , Ui.text
-                []
-                (Ui.TextAttributes
-                    { text = userSnapshotAndId.snapshot.name
-                    , typeface = CommonUi.normalTypeface
-                    , size = 16
-                    , letterSpacing = 0
-                    , color = Css.rgb 200 200 200
-                    , textAlignment = Ui.TextAlignCenter
-                    }
-                )
+            , CommonUi.normalText
+                16
+                userSnapshotAndId.snapshot.name
             ]
         )

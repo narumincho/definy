@@ -1,6 +1,7 @@
 module CommonUi exposing
     ( GutterMsg(..)
     , activeColor
+    , button
     , closeIcon
     , codeFontTypeface
     , fontHack
@@ -8,6 +9,7 @@ module CommonUi exposing
     , gitHubIcon
     , googleIcon
     , horizontalGutter
+    , maxWidthText
     , normalText
     , normalTypeface
     , plusIcon
@@ -161,6 +163,7 @@ normalText size text =
             , typeface = normalTypeface
             , size = size
             , letterSpacing = 0
+            , lineHeight = 1.2
             , color = Css.rgb 200 200 200
             , textAlignment = Ui.TextAlignCenter
             }
@@ -178,6 +181,23 @@ stretchText size text =
             , typeface = normalTypeface
             , size = size
             , letterSpacing = 0
+            , lineHeight = 1.2
+            , color = Css.rgb 200 200 200
+            , textAlignment = Ui.TextAlignStart
+            }
+        )
+
+
+maxWidthText : Int -> Int -> String -> Ui.Panel message
+maxWidthText maxWidth size text =
+    Ui.text
+        [ Ui.width (Ui.stretchWithMaxSize maxWidth) ]
+        (Ui.TextAttributes
+            { text = text
+            , typeface = normalTypeface
+            , size = size
+            , letterSpacing = 0
+            , lineHeight = 1.2
             , color = Css.rgb 200 200 200
             , textAlignment = Ui.TextAlignStart
             }
@@ -195,6 +215,7 @@ subText text =
             , typeface = normalTypeface
             , size = 12
             , letterSpacing = 0
+            , lineHeight = 1.2
             , color = Css.rgb 100 100 100
             , textAlignment = Ui.TextAlignEnd
             }
@@ -245,6 +266,7 @@ timeView timeZoneAndNameMaybe time =
                                                     , typeface = normalTypeface
                                                     , size = 16
                                                     , letterSpacing = 0
+                                                    , lineHeight = 1
                                                     , color = Css.rgb 200 200 200
                                                     , textAlignment = Ui.TextAlignEnd
                                                     }
@@ -258,6 +280,7 @@ timeView timeZoneAndNameMaybe time =
                                                     , typeface = normalTypeface
                                                     , size = 12
                                                     , letterSpacing = 0
+                                                    , lineHeight = 1
                                                     , color = Css.rgb 160 160 160
                                                     , textAlignment = Ui.TextAlignEnd
                                                     }
@@ -557,3 +580,33 @@ userView subModel userId =
 userNotFoundView : Ui.Panel message
 userNotFoundView =
     normalText 16 "ユーザーが見つからなかった"
+
+
+button : message -> String -> Ui.Panel message
+button message text =
+    Ui.button
+        [ Ui.backgroundColor (Css.rgb 40 40 40)
+        , Ui.borderRadius (Ui.BorderRadiusPx 8)
+
+        --, Ui.border
+        --    (Ui.BorderStyle
+        --        { color = Css.rgb 200 200 200
+        --        , width = { top = 1, right = 1, left = 1, bottom = 1 }
+        --        }
+        --    )
+        , Ui.padding 16
+        ]
+        message
+        (Ui.text
+            [ Ui.width Ui.auto, Ui.height Ui.auto ]
+            (Ui.TextAttributes
+                { text = text
+                , typeface = normalTypeface
+                , size = 24
+                , letterSpacing = 0
+                , lineHeight = 1
+                , color = Css.rgb 200 200 200
+                , textAlignment = Ui.TextAlignStart
+                }
+            )
+        )
