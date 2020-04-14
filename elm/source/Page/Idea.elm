@@ -2,6 +2,7 @@ module Page.Idea exposing (Message(..), Model, getIdeaId, init, update, updateBy
 
 import CommonUi
 import Data
+import Data.LogInState
 import Message
 import Ui
 
@@ -9,11 +10,25 @@ import Ui
 type Model
     = Loading Data.IdeaId
     | NotFound Data.IdeaId
-    | Loaded Data.IdeaSnapshotAndId
+    | Loaded LoadedModel
+
+
+type alias LoadedModel =
+    { id : Data.IdeaId
+    , snapshot : Data.IdeaSnapshot
+    , comment : Comment
+    }
+
+
+type Comment
+    = Inputting String
+    | Sending
 
 
 type Message
-    = Message
+    = InputComment String
+    | Comment
+    | Suggestion
 
 
 init : Data.IdeaId -> ( Model, Message.Command )
@@ -42,7 +57,11 @@ updateByCommonMessage message model =
         Message.ResponseIdea idea ->
             case idea.snapshotMaybe of
                 Just snapshot ->
-                    ( Loaded { id = idea.id, snapshot = snapshot }
+                    ( Loaded
+                        { id = idea.id
+                        , snapshot = snapshot
+                        , comment = Inputting ""
+                        }
                     , Message.GetUser snapshot.createUser
                     )
 
@@ -58,10 +77,34 @@ updateByCommonMessage message model =
 
 
 update : Message -> Model -> ( Model, Message.Command )
-update _ model =
-    ( model
-    , Message.None
-    )
+update message model =
+    case ( message, model ) of
+        ( InputComment comment, Loaded loadedModel ) ->
+            ( Loaded
+                { loadedModel | comment = Inputting comment }
+            , Message.None
+            )
+
+        ( Comment, Loaded loadedModel ) ->
+            case loadedModel.comment of
+                Sending ->
+                    ( model
+                    , Message.None
+                    )
+
+                Inputting comment ->
+                    ( Loaded
+                        { loadedModel | comment = Sending }
+                    , Message.AddComment
+                        { ideaId = loadedModel.id
+                        , comment = comment
+                        }
+                    )
+
+        ( _, _ ) ->
+            ( model
+            , Message.None
+            )
 
 
 view : Message.SubModel -> Model -> Ui.Panel Message
@@ -87,50 +130,88 @@ notFoundView (Data.IdeaId ideaIdAsString) =
     CommonUi.normalText 16 ("ideaId = " ++ ideaIdAsString ++ " が見つからなかった")
 
 
-mainView : Message.SubModel -> Data.IdeaSnapshotAndId -> Ui.Panel Message
-mainView subModel ideaSnapshotAndId =
+mainView : Message.SubModel -> LoadedModel -> Ui.Panel Message
+mainView subModel loadedModel =
     let
         (Data.IdeaId ideaIdAsString) =
-            ideaSnapshotAndId.id
+            loadedModel.id
     in
     Ui.column
         [ Ui.width (Ui.stretchWithMaxSize 800), Ui.gap 8 ]
-        [ CommonUi.subText ideaIdAsString
-        , CommonUi.normalText 24 ideaSnapshotAndId.snapshot.name
-        , Ui.row
+        ([ CommonUi.subText ideaIdAsString
+         , CommonUi.normalText 24 loadedModel.snapshot.name
+         , Ui.row
             [ Ui.width Ui.stretch, Ui.gap 8 ]
             [ CommonUi.normalText 16 "いいだしっぺ"
-            , CommonUi.userView subModel ideaSnapshotAndId.snapshot.createUser
+            , CommonUi.userView subModel loadedModel.snapshot.createUser
             ]
-        , Ui.row
+         , Ui.row
             [ Ui.width Ui.stretch, Ui.gap 8 ]
             [ CommonUi.normalText 16 "作成日時"
             , CommonUi.timeView (Message.getTimeZoneAndNameMaybe subModel)
-                ideaSnapshotAndId.snapshot.createTime
+                loadedModel.snapshot.createTime
             ]
-        , Ui.row
+         , Ui.row
             [ Ui.width Ui.stretch, Ui.gap 8 ]
             [ CommonUi.normalText 16 "更新日時"
             , CommonUi.timeView (Message.getTimeZoneAndNameMaybe subModel)
-                ideaSnapshotAndId.snapshot.updateTime
+                loadedModel.snapshot.updateTime
             ]
-        , Ui.row
+         , Ui.row
             [ Ui.width Ui.stretch, Ui.gap 8 ]
             [ CommonUi.normalText 16 "取得日時"
             , CommonUi.timeView (Message.getTimeZoneAndNameMaybe subModel)
-                ideaSnapshotAndId.snapshot.getTime
+                loadedModel.snapshot.getTime
             ]
-        , Ui.column
-            []
-            (List.map (itemView subModel) ideaSnapshotAndId.snapshot.itemList)
-        ]
+         , Ui.column
+            [ Ui.width Ui.stretch, Ui.gap 8 ]
+            (List.map (itemView subModel) loadedModel.snapshot.itemList)
+         ]
+            ++ (case Message.getLogInState subModel of
+                    Data.LogInState.Ok _ ->
+                        [ Ui.column
+                            [ Ui.width Ui.stretch ]
+                            [ Ui.textInput
+                                [ Ui.width Ui.stretch ]
+                                (Ui.TextInputAttributes
+                                    { inputMessage = InputComment
+                                    , name = "comment"
+                                    , multiLine = True
+                                    , fontSize = 16
+                                    }
+                                )
+                            , CommonUi.button
+                                Comment
+                                "コメントする"
+                            ]
+                        , CommonUi.button
+                            Suggestion
+                            "編集提案をする"
+                        ]
+
+                    _ ->
+                        []
+               )
+        )
 
 
 itemView : Message.SubModel -> Data.IdeaItem -> Ui.Panel Message
 itemView subModel ideaItem =
     case ideaItem of
         Data.IdeaItemComment comment ->
-            CommonUi.normalText 16 "コメント"
+            Ui.row
+                [ Ui.width Ui.stretch ]
+                [ CommonUi.userView subModel comment.createdBy
+                , Ui.column
+                    [ Ui.width Ui.stretch ]
+                    [ CommonUi.stretchText 24 comment.body
+                    , CommonUi.timeView (Message.getTimeZoneAndNameMaybe subModel) comment.createdAt
+                    ]
+                ]
 
         Data.IdeaItemSuggestion suggestion ->
-            CommonUi.normalText 16 "提案"
+            CommonUi.normalText 24 "提案"
+
+
+
+--addCommentButton : Message.SubModel

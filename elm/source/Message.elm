@@ -138,6 +138,7 @@ type Command
     | GetBlobUrl Data.FileHash
     | CreateProject String
     | CreateIdea { projectId : Data.ProjectId, ideaName : String }
+    | AddComment { ideaId : Data.IdeaId, comment : String }
     | ConsoleLog String
     | PushUrl Data.UrlData
     | ToValidProjectName String

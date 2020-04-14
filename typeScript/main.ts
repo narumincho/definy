@@ -214,6 +214,18 @@ const init = async (): Promise<void> => {
       app.ports.responseCreateIdea.send(response);
     });
   });
+  app.ports.addComment.subscribe((parameter) => {
+    callApi(
+      "addComment",
+      data.encodeAddCommentParameter(parameter),
+      data.decodeMaybe(data.decodeIdeaSnapshot)
+    ).then((response) => {
+      app.ports.responseAddComment.send({
+        id: parameter.ideaId,
+        snapshotMaybe: response,
+      });
+    });
+  });
 
   app.ports.toValidProjectName.subscribe((projectName) => {
     app.ports.toValidProjectNameResponse.send({

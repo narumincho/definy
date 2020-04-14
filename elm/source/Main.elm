@@ -67,6 +67,9 @@ port createProject : Json.Encode.Value -> Cmd msg
 port createIdea : Json.Encode.Value -> Cmd msg
 
 
+port addComment : Json.Encode.Value -> Cmd msg
+
+
 port toValidProjectName : String -> Cmd msg
 
 
@@ -126,6 +129,9 @@ port createProjectResponse : (Json.Decode.Value -> msg) -> Sub msg
 
 
 port responseCreateIdea : (Json.Decode.Value -> msg) -> Sub msg
+
+
+port responseAddComment : (Json.Decode.Value -> msg) -> Sub msg
 
 
 port responseAllProjectId : (Json.Decode.Value -> msg) -> Sub msg
@@ -1276,6 +1282,20 @@ commandToMainCommand logInState command =
                 _ ->
                     Cmd.none
 
+        Message.AddComment ideaIdAndComment ->
+            case logInState of
+                Data.LogInState.Ok { accessToken } ->
+                    addComment
+                        (Data.addCommentParameterToJsonValue
+                            { ideaId = ideaIdAndComment.ideaId
+                            , comment = ideaIdAndComment.comment
+                            , accessToken = accessToken
+                            }
+                        )
+
+                _ ->
+                    Cmd.none
+
         Message.ConsoleLog string ->
             consoleLog string
 
@@ -1377,6 +1397,17 @@ subscriptions model =
                 case Json.Decode.decodeValue (Data.maybeJsonDecoder Data.ideaSnapshotAndIdJsonDecoder) jsonValue of
                     Ok ideaSnapshotMaybe ->
                         CreateIdeaResponse ideaSnapshotMaybe
+
+                    Err _ ->
+                        NoOperation
+            )
+         , responseAddComment
+            (\jsonValue ->
+                case
+                    Json.Decode.decodeValue Data.ideaResponseJsonDecoder jsonValue
+                of
+                    Ok ideaSnapshotMaybe ->
+                        CommonMessage (Message.ResponseIdea ideaSnapshotMaybe)
 
                     Err _ ->
                         NoOperation
