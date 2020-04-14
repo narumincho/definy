@@ -3,6 +3,7 @@ module Page.CreateIdea exposing (Message(..), Model, getProjectId, init, update,
 import Command
 import CommonUi
 import Data
+import Data.LogInState
 import SubModel
 import Ui
 
@@ -87,7 +88,32 @@ update message (Model record) =
 
 
 view : SubModel.SubModel -> Model -> Ui.Panel Message
-view subModel (Model record) =
+view subModel model =
+    case SubModel.getLogInState subModel of
+        Data.LogInState.Ok _ ->
+            mainView subModel model
+
+        _ ->
+            noLogInCannotCreateIdeaView (SubModel.getLanguage subModel)
+
+
+noLogInCannotCreateIdeaView : Data.Language -> Ui.Panel message
+noLogInCannotCreateIdeaView language =
+    CommonUi.normalText 24
+        (case language of
+            Data.LanguageJapanese ->
+                "アイデアを作成するにはログインする必要があります"
+
+            Data.LanguageEnglish ->
+                "You must be logged in to create a idea"
+
+            Data.LanguageEsperanto ->
+                "Vi devas esti ensalutinta por krei ideon"
+        )
+
+
+mainView : SubModel.SubModel -> Model -> Ui.Panel Message
+mainView subModel (Model record) =
     Ui.column
         []
         [ CommonUi.normalText 16 "アイデア作成. アイデア名を入力してください"
