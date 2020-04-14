@@ -1,4 +1,4 @@
-module Page.User exposing (Message(..), Model, getUserId, init, update, view)
+module Page.User exposing (Message(..), Model, getUserId, init, update, updateByCommonMessage, view)
 
 import CommonUi
 import Data
@@ -12,7 +12,7 @@ type Model
 
 
 type Message
-    = ResponseUserSnapshotMaybeAndId Data.UserResponse
+    = NoOperation
 
 
 init : Data.UserId -> ( Model, Message.Command )
@@ -32,10 +32,10 @@ getUserId model =
             userSnapshotMaybeAndId.id
 
 
-update : Message -> Model -> ( Model, Message.Command )
-update message model =
+updateByCommonMessage : Message.CommonMessage -> Model -> ( Model, Message.Command )
+updateByCommonMessage message model =
     case message of
-        ResponseUserSnapshotMaybeAndId userSnapshotMaybeAndId ->
+        Message.ResponseUser userSnapshotMaybeAndId ->
             if userSnapshotMaybeAndId.id == getUserId model then
                 ( Loaded userSnapshotMaybeAndId
                 , case userSnapshotMaybeAndId.snapshotMaybe of
@@ -50,6 +50,20 @@ update message model =
                 ( model
                 , Message.None
                 )
+
+        _ ->
+            ( model
+            , Message.None
+            )
+
+
+update : Message -> Model -> ( Model, Message.Command )
+update message model =
+    case message of
+        NoOperation ->
+            ( model
+            , Message.None
+            )
 
 
 view : Message.SubModel -> Model -> Ui.Panel Message

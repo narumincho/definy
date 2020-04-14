@@ -160,11 +160,7 @@ type Msg
     | ResponseTimeZone Data.TimeZoneAndName.TimeZoneAndName
     | CreateProjectResponse (Maybe Data.ProjectSnapshotAndId)
     | NoOperation
-    | AllProjectResponse (List Data.ProjectId)
-    | ProjectResponse Data.ProjectResponse
-    | UserResponse Data.UserResponse
-    | IdeaResponse Data.IdeaResponse
-    | ResponseIdeaSnapshotAndIdListByProjectId Data.ResponseIdeaListByProjectId
+    | CommonMessage Message.CommonMessage
 
 
 type PageMessage
@@ -525,98 +521,37 @@ update msg (Model rec) =
                 )
             )
 
-        AllProjectResponse projectIdList ->
+        CommonMessage commonMessage ->
             case rec.page of
                 Home pageModel ->
-                    let
-                        ( newPageModel, command ) =
-                            Page.Home.update (Page.Home.ResponseAllProjectId projectIdList) pageModel
-                    in
-                    ( Model { rec | page = Home newPageModel }
-                    , commandToMainCommand (Message.getLogInState rec.subModel) command
-                    )
-
-                _ ->
-                    ( Model rec
-                    , Cmd.none
-                    )
-
-        ProjectResponse projectCacheWithId ->
-            case rec.page of
-                Home pageModel ->
-                    let
-                        ( newPageModel, command ) =
-                            Page.Home.update (Page.Home.ResponseProject projectCacheWithId) pageModel
-                    in
-                    ( Model { rec | page = Home newPageModel }
-                    , commandToMainCommand (Message.getLogInState rec.subModel) command
-                    )
+                    mapPageModel
+                        (Page.Home.updateByCommonMessage commonMessage pageModel)
+                        Home
+                        (Model rec)
 
                 Project pageModel ->
-                    let
-                        ( newPageModel, command ) =
-                            Page.Project.update (Page.Project.ProjectResponse projectCacheWithId) pageModel
-                    in
-                    ( Model { rec | page = Project newPageModel }
-                    , commandToMainCommand (Message.getLogInState rec.subModel) command
-                    )
+                    mapPageModel
+                        (Page.Project.updateByCommonMessage commonMessage pageModel)
+                        Project
+                        (Model rec)
 
-                _ ->
-                    ( Model rec
-                    , Cmd.none
-                    )
-
-        UserResponse userSnapshotMaybeAndId ->
-            case rec.page of
                 User pageModel ->
-                    let
-                        ( newPageModel, command ) =
-                            Page.User.update
-                                (Page.User.ResponseUserSnapshotMaybeAndId userSnapshotMaybeAndId)
-                                pageModel
-                    in
-                    ( Model { rec | page = User newPageModel }
-                    , commandToMainCommand (Message.getLogInState rec.subModel) command
-                    )
-
-                Project pageModel ->
-                    let
-                        ( newPageModel, command ) =
-                            Page.Project.update
-                                (Page.Project.ResponseUser userSnapshotMaybeAndId)
-                                pageModel
-                    in
-                    ( Model { rec | page = Project newPageModel }
-                    , commandToMainCommand (Message.getLogInState rec.subModel) command
-                    )
+                    mapPageModel
+                        (Page.User.updateByCommonMessage commonMessage pageModel)
+                        User
+                        (Model rec)
 
                 _ ->
                     ( Model rec
                     , Cmd.none
                     )
 
-        IdeaResponse ideaSnapshotMaybeAndId ->
-            ( Model rec
-            , Cmd.none
-            )
 
-        ResponseIdeaSnapshotAndIdListByProjectId projectIdAndIdeaSnapshotAndIdList ->
-            case rec.page of
-                Project pageModel ->
-                    let
-                        ( newPageModel, command ) =
-                            Page.Project.update
-                                (Page.Project.ResponseIdeaList projectIdAndIdeaSnapshotAndIdList)
-                                pageModel
-                    in
-                    ( Model { rec | page = Project newPageModel }
-                    , commandToMainCommand (Message.getLogInState rec.subModel) command
-                    )
-
-                _ ->
-                    ( Model rec
-                    , Cmd.none
-                    )
+mapPageModel : ( pageModel, Message.Command ) -> (pageModel -> PageModel) -> Model -> ( Model, Cmd Msg )
+mapPageModel ( newPageModel, command ) pageModelFunction (Model record) =
+    ( Model { record | page = pageModelFunction newPageModel }
+    , commandToMainCommand (Message.getLogInState record.subModel) command
+    )
 
 
 updatePage : PageMessage -> Model -> ( PageModel, Message.Command )
@@ -1417,7 +1352,7 @@ subscriptions model =
                         jsonValue
                 of
                     Ok projectIdList ->
-                        AllProjectResponse projectIdList
+                        CommonMessage (Message.ResponseAllProjectIdList projectIdList)
 
                     Err _ ->
                         NoOperation
@@ -1430,7 +1365,7 @@ subscriptions model =
                         jsonValue
                 of
                     Ok projectWithIdAndRespondTimeMaybe ->
-                        ProjectResponse projectWithIdAndRespondTimeMaybe
+                        CommonMessage (Message.ResponseProject projectWithIdAndRespondTimeMaybe)
 
                     Err _ ->
                         NoOperation
@@ -1439,7 +1374,7 @@ subscriptions model =
             (\jsonValue ->
                 case Json.Decode.decodeValue Data.userResponseJsonDecoder jsonValue of
                     Ok userSnapshotMaybeAndId ->
-                        UserResponse userSnapshotMaybeAndId
+                        CommonMessage (Message.ResponseUser userSnapshotMaybeAndId)
 
                     Err _ ->
                         NoOperation
@@ -1447,8 +1382,8 @@ subscriptions model =
          , responseIdea
             (\jsonValue ->
                 case Json.Decode.decodeValue Data.ideaResponseJsonDecoder jsonValue of
-                    Ok ideaSnapshotMaybe ->
-                        IdeaResponse ideaSnapshotMaybe
+                    Ok ideaResponse ->
+                        CommonMessage (Message.ResponseIdea ideaResponse)
 
                     Err _ ->
                         NoOperation
@@ -1459,7 +1394,7 @@ subscriptions model =
                     Json.Decode.decodeValue Data.responseIdeaListByProjectIdJsonDecoder jsonValue
                 of
                     Ok ideaList ->
-                        ResponseIdeaSnapshotAndIdListByProjectId ideaList
+                        CommonMessage (Message.ResponseIdeaListByProjectId ideaList)
 
                     _ ->
                         NoOperation

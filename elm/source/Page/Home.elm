@@ -3,6 +3,7 @@ module Page.Home exposing
     , Model
     , init
     , update
+    , updateByCommonMessage
     , view
     )
 
@@ -25,10 +26,7 @@ type Project
 
 
 type Message
-    = PushUrl Data.UrlData
-    | ResponseAllProjectId (List Data.ProjectId)
-    | ResponseProject Data.ProjectResponse
-    | NoOp
+    = NoOperation
 
 
 init : ( Model, Message.Command )
@@ -36,20 +34,10 @@ init =
     ( LoadingAllProject, Message.GetAllProjectId )
 
 
-update : Message -> Model -> ( Model, Message.Command )
-update msg model =
-    case msg of
-        PushUrl urlData ->
-            ( model
-            , Message.PushUrl urlData
-            )
-
-        ResponseAllProjectId allProjectIdList ->
-            ( LoadedAllProject (List.map OnlyId allProjectIdList)
-            , Message.Batch (List.map Message.GetProject allProjectIdList)
-            )
-
-        ResponseProject projectCacheWithId ->
+updateByCommonMessage : Message.CommonMessage -> Model -> ( Model, Message.Command )
+updateByCommonMessage message model =
+    case message of
+        Message.ResponseProject projectResponse ->
             case model of
                 LoadingAllProject ->
                     ( model
@@ -57,8 +45,8 @@ update msg model =
                     )
 
                 LoadedAllProject allProject ->
-                    ( LoadedAllProject (setProjectWithIdAnsRespondTime projectCacheWithId allProject)
-                    , case projectCacheWithId.snapshotMaybe of
+                    ( LoadedAllProject (setProjectWithIdAnsRespondTime projectResponse allProject)
+                    , case projectResponse.snapshotMaybe of
                         Just projectCache ->
                             Message.Batch
                                 [ Message.GetBlobUrl projectCache.iconHash
@@ -69,7 +57,21 @@ update msg model =
                             Message.None
                     )
 
-        NoOp ->
+        Message.ResponseAllProjectIdList projectIdList ->
+            ( LoadedAllProject (List.map OnlyId projectIdList)
+            , Message.Batch (List.map Message.GetProject projectIdList)
+            )
+
+        _ ->
+            ( model
+            , Message.None
+            )
+
+
+update : Message -> Model -> ( Model, Message.Command )
+update msg model =
+    case msg of
+        NoOperation ->
             ( model
             , Message.None
             )

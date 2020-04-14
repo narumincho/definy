@@ -1,4 +1,4 @@
-module Page.Project exposing (Message(..), Model, getProjectId, init, update, view)
+module Page.Project exposing (Message(..), Model, getProjectId, init, update, updateByCommonMessage, view)
 
 import CommonUi
 import Css
@@ -18,9 +18,7 @@ type alias LoadedModel =
 
 
 type Message
-    = ProjectResponse Data.ProjectResponse
-    | ResponseUser Data.UserResponse
-    | ResponseIdeaList { projectId : Data.ProjectId, ideaSnapshotAndIdList : List Data.IdeaSnapshotAndId }
+    = NoOperation
 
 
 init : Data.ProjectId -> ( Model, Message.Command )
@@ -43,10 +41,10 @@ getProjectId model =
             snapshotAndId.id
 
 
-update : Message -> Model -> ( Model, Message.Command )
-update message model =
+updateByCommonMessage : Message.CommonMessage -> Model -> ( Model, Message.Command )
+updateByCommonMessage message model =
     case ( message, model ) of
-        ( ProjectResponse response, _ ) ->
+        ( Message.ResponseProject response, _ ) ->
             if response.id == getProjectId model then
                 case response.snapshotMaybe of
                     Just projectSnapshot ->
@@ -74,7 +72,7 @@ update message model =
             else
                 ( model, Message.None )
 
-        ( ResponseUser userSnapshotMaybeAndId, Loaded snapshotAndId ) ->
+        ( Message.ResponseUser userSnapshotMaybeAndId, Loaded snapshotAndId ) ->
             if snapshotAndId.snapshotAndId.snapshot.createUser == userSnapshotMaybeAndId.id then
                 case userSnapshotMaybeAndId.snapshotMaybe of
                     Just userSnapshot ->
@@ -93,7 +91,7 @@ update message model =
                 , Message.None
                 )
 
-        ( ResponseIdeaList response, Loaded snapshotAndId ) ->
+        ( Message.ResponseIdeaListByProjectId response, Loaded snapshotAndId ) ->
             if getProjectId model == response.projectId then
                 ( Loaded
                     { snapshotAndId | ideaList = Just response.ideaSnapshotAndIdList }
@@ -106,6 +104,15 @@ update message model =
                 )
 
         ( _, _ ) ->
+            ( model
+            , Message.None
+            )
+
+
+update : Message -> Model -> ( Model, Message.Command )
+update message model =
+    case message of
+        NoOperation ->
             ( model
             , Message.None
             )

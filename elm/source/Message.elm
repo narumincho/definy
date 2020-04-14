@@ -11,9 +11,9 @@ import Dict
 type CommonMessage
     = ResponseUser Data.UserResponse
     | ResponseProject Data.ProjectResponse
-    | ResponseIdea Data.IdeaSnapshotAndId
-    | ResponseAllProjectIdList { projectId : Data.ProjectId, ideaSnapshotAndIdList : List Data.IdeaSnapshotAndId }
-    | ResponseIdeaByProjectId Data.ResponseIdeaListByProjectId
+    | ResponseIdea Data.IdeaResponse
+    | ResponseAllProjectIdList (List Data.ProjectId)
+    | ResponseIdeaListByProjectId Data.ResponseIdeaListByProjectId
 
 
 {-| 各ページに渡すべきModel
