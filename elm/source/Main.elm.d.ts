@@ -37,7 +37,7 @@ type Ports = {
   readonly getAllProjectIdList: SubForElmCmd<null>;
   readonly getProject: SubForElmCmd<data.ProjectId>;
   readonly getProjectForceNotUseCache: SubForElmCmd<data.ProjectId>;
-  readonly getIdeaSnapshotAndIdListByProjectId: SubForElmCmd<data.ProjectId>;
+  readonly getIdeaAndIdListByProjectId: SubForElmCmd<data.ProjectId>;
   readonly getIdea: SubForElmCmd<data.IdeaId>;
 
   readonly responseUserByAccessToken: CmdForElmSub<

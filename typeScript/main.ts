@@ -308,9 +308,9 @@ const init = async (): Promise<void> => {
     });
   });
 
-  app.ports.getIdeaSnapshotAndIdListByProjectId.subscribe((projectId) => {
+  app.ports.getIdeaAndIdListByProjectId.subscribe((projectId) => {
     callApi(
-      "getIdeaSnapshotAndIdListByProjectId",
+      "getIdeaAndIdListByProjectId",
       data.encodeId(projectId),
       data.decodeList(data.decodeIdeaSnapshotAndId)
     ).then((ideaSnapshotAndIdList) => {

@@ -88,7 +88,7 @@ port getProject : Json.Decode.Value -> Cmd msg
 port getProjectForceNotUseCache : Json.Decode.Value -> Cmd msg
 
 
-port getIdeaSnapshotAndIdListByProjectId : Json.Decode.Value -> Cmd msg
+port getIdeaAndIdListByProjectId : Json.Decode.Value -> Cmd msg
 
 
 port getIdea : Json.Decode.Value -> Cmd msg
@@ -1323,7 +1323,7 @@ commandToMainCommand logInState command =
             getIdea (Data.ideaIdToJsonValue ideaId)
 
         Message.GetIdeaListByProjectId projectId ->
-            getIdeaSnapshotAndIdListByProjectId (Data.projectIdToJsonValue projectId)
+            getIdeaAndIdListByProjectId (Data.projectIdToJsonValue projectId)
 
         Message.Batch commandList ->
             Cmd.batch (List.map (commandToMainCommand logInState) commandList)

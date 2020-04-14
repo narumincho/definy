@@ -211,7 +211,3 @@ itemView subModel ideaItem =
 
         Data.IdeaItemSuggestion suggestion ->
             CommonUi.normalText 24 "提案"
-
-
-
---addCommentButton : Message.SubModel
