@@ -357,7 +357,7 @@ export const getIdea = (
 
     const getRequest: IDBRequest<
       undefined | data.IdeaSnapshot
-    > = transaction.objectStore(userObjectStoreName).get(ideaId);
+    > = transaction.objectStore(ideaObjectStoreName).get(ideaId);
 
     transaction.oncomplete = (): void => {
       resolve(getRequest.result);

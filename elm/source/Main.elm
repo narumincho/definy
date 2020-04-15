@@ -79,6 +79,9 @@ port toValidIdeaName : String -> Cmd msg
 port getUser : Json.Decode.Value -> Cmd msg
 
 
+port getUserForceNotUserCache : Json.Decode.Value -> Cmd msg
+
+
 port getAllProjectIdList : () -> Cmd msg
 
 

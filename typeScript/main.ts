@@ -256,6 +256,7 @@ const init = async (): Promise<void> => {
           id: userId,
           snapshotMaybe: data.maybeJust(userSnapshotInIndexedDB),
         });
+        return;
       }
       callApi(
         "getUser",
@@ -325,20 +326,30 @@ const init = async (): Promise<void> => {
   });
 
   app.ports.getIdea.subscribe((ideaId) => {
-    callApi(
-      "getIdea",
-      data.encodeId(ideaId),
-      data.decodeMaybe(data.decodeIdeaSnapshot)
-    ).then((ideaSnapshotMaybe) => {
-      if (ideaSnapshotMaybe._ === "Just") {
-        db.setIdea(database, {
+    db.getIdea(database, ideaId).then((ideaSnapshotInIndexedDB) => {
+      if (ideaSnapshotInIndexedDB !== undefined) {
+        app.ports.responseIdea.send({
           id: ideaId,
-          snapshot: ideaSnapshotMaybe.value,
+          snapshotMaybe: data.maybeJust(ideaSnapshotInIndexedDB),
         });
+        return;
       }
-      app.ports.responseIdea.send({
-        id: ideaId,
-        snapshotMaybe: ideaSnapshotMaybe,
+
+      callApi(
+        "getIdea",
+        data.encodeId(ideaId),
+        data.decodeMaybe(data.decodeIdeaSnapshot)
+      ).then((ideaSnapshotMaybe) => {
+        if (ideaSnapshotMaybe._ === "Just") {
+          db.setIdea(database, {
+            id: ideaId,
+            snapshot: ideaSnapshotMaybe.value,
+          });
+        }
+        app.ports.responseIdea.send({
+          id: ideaId,
+          snapshotMaybe: ideaSnapshotMaybe,
+        });
       });
     });
   });
