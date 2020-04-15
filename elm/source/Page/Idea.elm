@@ -148,20 +148,17 @@ mainView subModel loadedModel =
          , Ui.row
             [ Ui.width Ui.stretch, Ui.gap 8 ]
             [ CommonUi.normalText 16 "作成日時"
-            , CommonUi.timeView (Message.getTimeZoneAndNameMaybe subModel)
-                loadedModel.snapshot.createTime
+            , CommonUi.timeView subModel loadedModel.snapshot.createTime
             ]
          , Ui.row
             [ Ui.width Ui.stretch, Ui.gap 8 ]
             [ CommonUi.normalText 16 "更新日時"
-            , CommonUi.timeView (Message.getTimeZoneAndNameMaybe subModel)
-                loadedModel.snapshot.updateTime
+            , CommonUi.timeView subModel loadedModel.snapshot.updateTime
             ]
          , Ui.row
             [ Ui.width Ui.stretch, Ui.gap 8 ]
             [ CommonUi.normalText 16 "取得日時"
-            , CommonUi.timeView (Message.getTimeZoneAndNameMaybe subModel)
-                loadedModel.snapshot.getTime
+            , CommonUi.timeView subModel loadedModel.snapshot.getTime
             ]
          , Ui.column
             [ Ui.width Ui.stretch, Ui.gap 8 ]
@@ -205,7 +202,7 @@ itemView subModel ideaItem =
                 , Ui.column
                     [ Ui.width Ui.stretch ]
                     [ CommonUi.stretchText 24 comment.body
-                    , CommonUi.timeView (Message.getTimeZoneAndNameMaybe subModel) comment.createdAt
+                    , CommonUi.timeView subModel comment.createdAt
                     ]
                 ]
 

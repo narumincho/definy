@@ -162,8 +162,9 @@ normalView subModel loadedModel =
                     [ Ui.width (Ui.stretchWithMaxSize 640), Ui.height Ui.auto ]
                     [ ( ( Ui.Center, Ui.Center ), CommonUi.normalText 16 (loadedModel.snapshotAndId.snapshot.name ++ "の画像を読込中") ) ]
         , createUserView subModel loadedModel.snapshotAndId.snapshot.createUser
-        , createTime subModel loadedModel.snapshotAndId.snapshot.createTime
-        , updateTime subModel loadedModel.snapshotAndId.snapshot.updateTime
+        , createTimeView subModel loadedModel.snapshotAndId.snapshot.createTime
+        , updateTimeView subModel loadedModel.snapshotAndId.snapshot.updateTime
+        , getTimeView subModel loadedModel.snapshotAndId.snapshot.getTime
         , ideaListView subModel loadedModel.snapshotAndId.id loadedModel.ideaList
         ]
 
@@ -208,9 +209,7 @@ ideaItemView subModel ideaSnapshotAndId =
             , Ui.row
                 [ Ui.width Ui.stretch ]
                 [ CommonUi.normalText 16 "更新日時:"
-                , CommonUi.timeView
-                    (Message.getTimeZoneAndNameMaybe subModel)
-                    ideaSnapshotAndId.snapshot.updateTime
+                , CommonUi.timeView subModel ideaSnapshotAndId.snapshot.updateTime
                 ]
             ]
         )
@@ -231,19 +230,28 @@ createUserView subModel userId =
         ]
 
 
-createTime : Message.SubModel -> Data.Time -> Ui.Panel Message
-createTime subModel time =
+createTimeView : Message.SubModel -> Data.Time -> Ui.Panel Message
+createTimeView subModel time =
     Ui.row
         [ Ui.width Ui.stretch, Ui.gap 8 ]
         [ CommonUi.normalText 16 "作成日時:"
-        , CommonUi.timeView (Message.getTimeZoneAndNameMaybe subModel) time
+        , CommonUi.timeView subModel time
         ]
 
 
-updateTime : Message.SubModel -> Data.Time -> Ui.Panel Message
-updateTime subModel time =
+updateTimeView : Message.SubModel -> Data.Time -> Ui.Panel Message
+updateTimeView subModel time =
     Ui.row
         [ Ui.width Ui.stretch, Ui.gap 8 ]
         [ CommonUi.normalText 16 "更新日時:"
-        , CommonUi.timeView (Message.getTimeZoneAndNameMaybe subModel) time
+        , CommonUi.timeView subModel time
+        ]
+
+
+getTimeView : Message.SubModel -> Data.Time -> Ui.Panel Message
+getTimeView subModel time =
+    Ui.row
+        [ Ui.width Ui.stretch, Ui.gap 8 ]
+        [ CommonUi.normalText 16 "取得日時:"
+        , CommonUi.timeView subModel time
         ]

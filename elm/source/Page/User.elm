@@ -95,8 +95,13 @@ normalView subModel userSnapshotAndId =
             [ Ui.gap 16 ]
             [ CommonUi.normalText 16 "作成日時:"
             , CommonUi.timeView
-                (Message.getTimeZoneAndNameMaybe subModel)
+                subModel
                 userSnapshotAndId.snapshot.createTime
+            ]
+        , Ui.row
+            [ Ui.gap 16 ]
+            [ CommonUi.normalText 16 "取得日時:"
+            , CommonUi.timeView subModel userSnapshotAndId.snapshot.getTime
             ]
         ]
 

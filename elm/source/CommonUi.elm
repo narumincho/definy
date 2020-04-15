@@ -241,58 +241,65 @@ codeFontTypeface =
     "Hack"
 
 
-timeView : Maybe Data.TimeZoneAndName.TimeZoneAndName -> Data.Time -> Ui.Panel message
-timeView timeZoneAndNameMaybe time =
+timeView : Message.SubModel -> Data.Time -> Ui.Panel message
+timeView subModel time =
     let
         posix =
             timeToPosix time
     in
-    case timeZoneAndNameMaybe of
+    case Message.getTimeZoneAndNameMaybe subModel of
         Just timeZoneAndName ->
-            Ui.column
-                []
-                [ Ui.row [ Ui.gap 8 ]
-                    [ normalText 12 (Data.TimeZoneAndName.getTimeZoneName timeZoneAndName)
-                    , Ui.row [ Ui.gap 4 ]
-                        (timeToTimeTermList (Data.TimeZoneAndName.getTimeZone timeZoneAndName) posix
-                            |> List.map
-                                (\timeTerm ->
-                                    case timeTerm of
-                                        Number term ->
-                                            Ui.text
-                                                []
-                                                (Ui.TextAttributes
-                                                    { text = term
-                                                    , typeface = normalTypeface
-                                                    , size = 16
-                                                    , letterSpacing = 0
-                                                    , lineHeight = 1
-                                                    , color = Css.rgb 200 200 200
-                                                    , textAlignment = Ui.TextAlignEnd
-                                                    }
-                                                )
-
-                                        Sign term ->
-                                            Ui.text
-                                                []
-                                                (Ui.TextAttributes
-                                                    { text = term
-                                                    , typeface = normalTypeface
-                                                    , size = 12
-                                                    , letterSpacing = 0
-                                                    , lineHeight = 1
-                                                    , color = Css.rgb 160 160 160
-                                                    , textAlignment = Ui.TextAlignEnd
-                                                    }
-                                                )
-                                )
-                        )
-                    ]
-                , subText (utcTimeToString posix)
-                ]
+            timeViewWithTimeZoneAndName timeZoneAndName posix
 
         Nothing ->
             normalText 16 (utcTimeToString posix)
+
+
+timeViewWithTimeZoneAndName : Data.TimeZoneAndName.TimeZoneAndName -> Time.Posix -> Ui.Panel message
+timeViewWithTimeZoneAndName timeZoneAndName posix =
+    Ui.column
+        []
+        [ Ui.row [ Ui.gap 8 ]
+            [ normalText 12 (Data.TimeZoneAndName.getTimeZoneName timeZoneAndName)
+            , Ui.row [ Ui.gap 4 ]
+                (timeToTimeTermList (Data.TimeZoneAndName.getTimeZone timeZoneAndName) posix
+                    |> List.map timeTermView
+                )
+            ]
+        , subText (utcTimeToString posix)
+        ]
+
+
+timeTermView : TimeTerm -> Ui.Panel message
+timeTermView timeTerm =
+    case timeTerm of
+        Number term ->
+            Ui.text
+                []
+                (Ui.TextAttributes
+                    { text = term
+                    , typeface = normalTypeface
+                    , size = 16
+                    , letterSpacing = 0
+                    , lineHeight = 1
+                    , color = Css.rgb 200 200 200
+                    , textAlignment = Ui.TextAlignEnd
+                    }
+                )
+
+        Sign term ->
+            Ui.text
+                []
+                (Ui.TextAttributes
+                    { text = term
+                    , typeface = normalTypeface
+                    , size = 12
+                    , letterSpacing = 0
+                    , lineHeight = 1
+                    , color = Css.rgb 160 160 160
+                    , textAlignment = Ui.TextAlignEnd
+                    }
+                )
 
 
 timeToPosix : Data.Time -> Time.Posix
