@@ -4,15 +4,18 @@
 
 Definy is Web App for Web App.
 
-[Latest Version](https://definy-lang.web.app/)
+[Latest Version](https://definy.app/?hl=en)
 
 [Old Version](https://definy-old.web.app/)
 
 ゲームとツールを手軽に作れて公開できるプログラミング言語とエディタ、ゲームエンジン、SNS。[Elm](https://elm-lang.org/)でできている Web アプリ。**まだ、ぜんぜんできていない**
 
-[ここ](https://definy-lang.web.app/)で動作を確認できる
+[ここ](https://definy.app/?hl=ja)で動作を確認できる
 
 [古いバージョン](https://definy-old.web.app/)では WebAssembly を使って数値の足し算、引き算、掛け算ができる
+
+[Cloud Functions for Firestoreでの処理](https://github.com/narumincho/definy-functions)
+[共通の型の処理](https://github.com/narumincho/definy-common)
 
 ## 特徴
 
