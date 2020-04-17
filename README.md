@@ -14,11 +14,11 @@ Definy is Web App for Web App.
 
 [古いバージョン](https://definy-old.web.app/)では WebAssembly を使って数値の足し算、引き算、掛け算ができる
 
-- narumincho/definy-functions  
-[Cloud Functions for Firestoreでの処理](https://github.com/narumincho/definy-functions)
+- [narumincho/definy-functions](https://github.com/narumincho/definy-functions)  
+Cloud Functions for Firestoreでの処理
 
-- narumincho/definy-common  
-[共通の型の処理](https://github.com/narumincho/definy-common)
+- [narumincho/definy-common](https://github.com/narumincho/definy-common)  
+共通の型と処理
 
 ## 特徴
 
@@ -31,8 +31,7 @@ Definy is Web App for Web App.
 -   コード整形・圧縮ツールが不要
 -   Git より良いもの。意味の通ったバージョン管理システムがつく
 -   文法エラー、参照不明のエラーがない
--   一部できていなくても実行できる
--   名前を決めなくても式の評価結果を見れる
+-   一部できていなくても式の評価結果を見れる
 -   式の評価過程を手軽に見れる
 -   関数の実行結果や例をリアルタイムでグラフや表で表示してくれる
 -   独自のリテラルを作れる
@@ -49,7 +48,9 @@ Definy is Web App for Web App.
 
 ## フォルダとファイルの説明
 
--   /hosting: Firebase Hosting で配信するクライアントのプログラム
--   /functions: Firebase Functions のプログラム
--   /script: デプロイやデバッグをするための PowerShell のスクリプトが入っている
--   /firebase.json : サーバーでファイルをどのように扱うかの設定が書かれている
+- /.github: Firebase Hostingへのデプロイの処理が書かれている
+- /elm: Elmで書かれた主なコード
+- /static: 静的なファイルが置かれている
+- /typeScript: TypeScriptで書かれたブラウザのAPIを呼ぶようなコード
+- /firebase.json: サーバーでファイルをどのように扱うかの設定が書かれている
+- /index.html: Parcelで使うエントリーのファイル(リリース時には使わない)
