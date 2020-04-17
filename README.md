@@ -14,7 +14,10 @@ Definy is Web App for Web App.
 
 [古いバージョン](https://definy-old.web.app/)では WebAssembly を使って数値の足し算、引き算、掛け算ができる
 
+- narumincho/definy-functions  
 [Cloud Functions for Firestoreでの処理](https://github.com/narumincho/definy-functions)
+
+- narumincho/definy-common  
 [共通の型の処理](https://github.com/narumincho/definy-common)
 
 ## 特徴
