@@ -10,6 +10,7 @@ module CommonUi exposing
     , googleIcon
     , horizontalGutter
     , maxWidthText
+    , miniUserView
     , normalText
     , normalTypeface
     , plusIcon
@@ -586,7 +587,54 @@ userView subModel userId =
 
 userNotFoundView : Ui.Panel message
 userNotFoundView =
-    normalText 16 "ユーザーが見つからなかった"
+    normalText 16 "不明なユーザー"
+
+
+miniUserView : Message.SubModel -> Data.UserId -> Ui.Panel message
+miniUserView subModel userId =
+    let
+        (Data.UserId userIdAsString) =
+            userId
+    in
+    case Message.getUserSnapshot userId subModel of
+        Just (Just userSnapshot) ->
+            sameLanguageLink
+                [ Ui.backgroundColor (Css.rgb 20 20 20), Ui.padding 8 ]
+                subModel
+                (Data.LocationUser userId)
+                (Ui.column
+                    [ Ui.gap 8 ]
+                    [ Ui.row
+                        []
+                        [ case Message.getImageBlobUrl userSnapshot.imageHash subModel of
+                            Just blobUrl ->
+                                Ui.bitmapImage
+                                    [ Ui.width (Ui.fix 24)
+                                    , Ui.height (Ui.fix 24)
+                                    , Ui.borderRadius (Ui.BorderRadiusPercent 50)
+                                    ]
+                                    (Ui.BitmapImageAttributes
+                                        { url = blobUrl
+                                        , fitStyle = Ui.Contain
+                                        , alternativeText = userSnapshot.name ++ "の画像"
+                                        , rendering = Ui.ImageRenderingPixelated
+                                        }
+                                    )
+
+                            Nothing ->
+                                Ui.empty
+                                    [ Ui.width (Ui.fix 24), Ui.height (Ui.fix 24) ]
+                        , normalText 16 userSnapshot.name
+                        ]
+                    , subText userIdAsString
+                    ]
+                )
+
+        Just Nothing ->
+            userNotFoundView
+
+        Nothing ->
+            normalText 16 ("userId=" ++ userIdAsString)
 
 
 button : message -> String -> Ui.Panel message

@@ -51,6 +51,16 @@ getIdeaId model =
             ideaSnapshotAndId.id
 
 
+ideaItemGetUserId : Data.IdeaItem -> Maybe Data.UserId
+ideaItemGetUserId idea =
+    case idea of
+        Data.IdeaItemComment comment ->
+            Just comment.createdBy
+
+        Data.IdeaItemSuggestion _ ->
+            Nothing
+
+
 updateByCommonMessage : Message.CommonMessage -> Model -> ( Model, Message.Command )
 updateByCommonMessage message model =
     case message of
@@ -62,7 +72,11 @@ updateByCommonMessage message model =
                         , snapshot = snapshot
                         , comment = Inputting ""
                         }
-                    , Message.GetUser snapshot.createUser
+                    , Message.Batch
+                        (Message.GetUser snapshot.createUser
+                            :: List.map Message.GetUser
+                                (List.filterMap ideaItemGetUserId snapshot.itemList)
+                        )
                     )
 
                 Nothing ->
@@ -198,7 +212,7 @@ itemView subModel ideaItem =
         Data.IdeaItemComment comment ->
             Ui.row
                 [ Ui.width Ui.stretch ]
-                [ CommonUi.userView subModel comment.createdBy
+                [ CommonUi.miniUserView subModel comment.createdBy
                 , Ui.column
                     [ Ui.width Ui.stretch ]
                     [ CommonUi.stretchText 24 comment.body
