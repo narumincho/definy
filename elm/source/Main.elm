@@ -20,6 +20,7 @@ import Page.CreateProject
 import Page.Home
 import Page.Idea
 import Page.Project
+import Page.Suggestion
 import Page.User
 import Task
 import Time
@@ -182,6 +183,7 @@ type PageMessage
     | PageMessageProject Page.Project.Message
     | PageMessageUser Page.User.Message
     | PageMessageIdea Page.Idea.Message
+    | PageMessageSuggestion Page.Suggestion.Message
 
 
 {-| 全体を表現する
@@ -215,6 +217,7 @@ type PageModel
     | Project Page.Project.Model
     | User Page.User.Model
     | Idea Page.Idea.Model
+    | Suggestion Page.Suggestion.Model
 
 
 type alias Flag =
@@ -333,6 +336,10 @@ pageInit location =
         Data.LocationIdea ideaId ->
             Page.Idea.init ideaId
                 |> Tuple.mapFirst Idea
+
+        Data.LocationSuggestion suggestionId ->
+            Page.Suggestion.init suggestionId
+                |> Tuple.mapFirst Suggestion
 
 
 
@@ -665,6 +672,9 @@ pageModelToLocation pageModel =
         Idea model ->
             Data.LocationIdea (Page.Idea.getIdeaId model)
 
+        Suggestion model ->
+            Data.LocationSuggestion (Page.Suggestion.getSuggestionId model)
+
 
 updateFromMsgList : List Msg -> Model -> ( Model, Cmd Msg )
 updateFromMsgList msgList model =
@@ -871,6 +881,17 @@ mainView (Model record) =
                     record.subModel
                     pageModel
                     |> Ui.map (PageMessageIdea >> PageMsg)
+                ]
+
+        Suggestion pageModel ->
+            Ui.column
+                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                [ Component.Header.view record.subModel
+                , logInPanel record.subModel
+                , Page.Suggestion.view
+                    record.subModel
+                    pageModel
+                    |> Ui.map (PageMessageSuggestion >> PageMsg)
                 ]
 
 
