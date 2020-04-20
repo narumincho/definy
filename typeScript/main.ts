@@ -89,16 +89,16 @@ const init = async (): Promise<void> => {
    * 直前のキー入力のデフォルト動作を取り消す
    * なぜかElmのコンパイルをデバッグモードでやるとキー動作を防げない
    */
-  app.ports.preventDefaultBeforeKeyEvent.subscribe(() => {
-    console.log("直前のキー入力のデフォルト動作を取り消す", prevKeyEvent);
-    if (prevKeyEvent.currentTarget === null) {
-      console.log(
-        "キーイベントの送信先オブジェクトがない!キー動作を無効化できないと思われる"
-      );
-    }
-    prevKeyEvent.preventDefault();
-    app.ports.keyPrevented.send(null);
-  });
+  // app.ports.preventDefaultBeforeKeyEvent.subscribe(() => {
+  //   console.log("直前のキー入力のデフォルト動作を取り消す", prevKeyEvent);
+  //   if (prevKeyEvent.currentTarget === null) {
+  //     console.log(
+  //       "キーイベントの送信先オブジェクトがない!キー動作を無効化できないと思われる"
+  //     );
+  //   }
+  //   prevKeyEvent.preventDefault();
+  //   app.ports.keyPrevented.send(null);
+  // });
   /* ウィンドウサイズを変えたら */
   addEventListener("resize", (): void => {
     app.ports.windowResize.send({
