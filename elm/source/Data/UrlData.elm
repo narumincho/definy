@@ -138,11 +138,6 @@ locationToPathStringList location =
             [ "suggestion", suggestionId ]
 
 
-languageToQueryString : Data.Language -> String
-languageToQueryString language =
-    "?hl=" ++ languageToIdString language
-
-
 languageToIdString : Data.Language -> String
 languageToIdString language =
     case language of
