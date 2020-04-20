@@ -43,7 +43,6 @@ type Location
     = LocationHome
     | LocationCreateProject
     | LocationCreateIdea ProjectId
-    | LocationEditSuggestion SuggestionId
     | LocationUser UserId
     | LocationProject ProjectId
     | LocationIdea IdeaId
@@ -398,16 +397,16 @@ type ProjectId
     = ProjectId String
 
 
-type SuggestionId
-    = SuggestionId String
-
-
 type UserId
     = UserId String
 
 
 type IdeaId
     = IdeaId String
+
+
+type SuggestionId
+    = SuggestionId String
 
 
 type FileHash
@@ -459,11 +458,6 @@ projectIdToJsonValue (ProjectId string) =
     Je.string string
 
 
-suggestionIdToJsonValue : SuggestionId -> Je.Value
-suggestionIdToJsonValue (SuggestionId string) =
-    Je.string string
-
-
 userIdToJsonValue : UserId -> Je.Value
 userIdToJsonValue (UserId string) =
     Je.string string
@@ -471,6 +465,11 @@ userIdToJsonValue (UserId string) =
 
 ideaIdToJsonValue : IdeaId -> Je.Value
 ideaIdToJsonValue (IdeaId string) =
+    Je.string string
+
+
+suggestionIdToJsonValue : SuggestionId -> Je.Value
+suggestionIdToJsonValue (SuggestionId string) =
     Je.string string
 
 
@@ -572,9 +571,6 @@ locationToJsonValue location =
 
         LocationCreateIdea parameter ->
             Je.object [ ( "_", Je.string "CreateIdea" ), ( "projectId", projectIdToJsonValue parameter ) ]
-
-        LocationEditSuggestion parameter ->
-            Je.object [ ( "_", Je.string "EditSuggestion" ), ( "suggestionId", suggestionIdToJsonValue parameter ) ]
 
         LocationUser parameter ->
             Je.object [ ( "_", Je.string "User" ), ( "userId", userIdToJsonValue parameter ) ]
@@ -1315,11 +1311,6 @@ projectIdJsonDecoder =
     Jd.map ProjectId Jd.string
 
 
-suggestionIdJsonDecoder : Jd.Decoder SuggestionId
-suggestionIdJsonDecoder =
-    Jd.map SuggestionId Jd.string
-
-
 userIdJsonDecoder : Jd.Decoder UserId
 userIdJsonDecoder =
     Jd.map UserId Jd.string
@@ -1328,6 +1319,11 @@ userIdJsonDecoder =
 ideaIdJsonDecoder : Jd.Decoder IdeaId
 ideaIdJsonDecoder =
     Jd.map IdeaId Jd.string
+
+
+suggestionIdJsonDecoder : Jd.Decoder SuggestionId
+suggestionIdJsonDecoder =
+    Jd.map SuggestionId Jd.string
 
 
 fileHashJsonDecoder : Jd.Decoder FileHash
@@ -1458,9 +1454,6 @@ locationJsonDecoder =
 
                     "CreateIdea" ->
                         Jd.field "projectId" projectIdJsonDecoder |> Jd.map LocationCreateIdea
-
-                    "EditSuggestion" ->
-                        Jd.field "suggestionId" suggestionIdJsonDecoder |> Jd.map LocationEditSuggestion
 
                     "User" ->
                         Jd.field "userId" userIdJsonDecoder |> Jd.map LocationUser
