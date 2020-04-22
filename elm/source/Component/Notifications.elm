@@ -79,8 +79,9 @@ view :
     -> Ui.Panel Message
 view subModel (Model eventList) =
     Ui.column
-        [ Ui.width (Ui.fix 512)
-        , Ui.gap 8
+        (Ui.fix 512)
+        Ui.auto
+        [ Ui.gap 8
         , Ui.padding 16
         ]
         (List.indexedMap
@@ -165,13 +166,15 @@ type CardStyle
 cardItem : Int -> CardStyle -> Ui.Panel Message
 cardItem index (CardStyle record) =
     Ui.row
-        [ Ui.backgroundColor (Css.rgb 0 100 0)
-        , Ui.width Ui.stretch
-        , Ui.height (Ui.fix 48)
-        ]
+        Ui.stretch
+        (Ui.fix 48)
+        [ Ui.backgroundColor (Css.rgb 0 100 0) ]
         [ case record.icon of
             Just (Icon icon) ->
-                Ui.bitmapImage [ Ui.padding 4, Ui.width (Ui.fix 48) ]
+                Ui.bitmapImage
+                    (Ui.fix 48)
+                    (Ui.fix 48)
+                    [ Ui.padding 4 ]
                     (Ui.BitmapImageAttributes
                         { url = icon.url
                         , fitStyle = Ui.Contain
@@ -181,9 +184,9 @@ cardItem index (CardStyle record) =
                     )
 
             Nothing ->
-                Ui.empty [ Ui.width (Ui.fix 32) ]
+                Ui.empty (Ui.fix 32) (Ui.fix 32) []
         , CommonUi.stretchText
             16
             record.text
-        , Ui.button [ Ui.width (Ui.fix 32) ] (DeleteAt index) CommonUi.closeIcon
+        , Ui.button (Ui.fix 32) (Ui.fix 32) [] (DeleteAt index) CommonUi.closeIcon
         ]
