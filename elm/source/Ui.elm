@@ -26,7 +26,6 @@ module Ui exposing
     , empty
     , fix
     , gap
-    , height
     , link
     , map
     , offset
@@ -41,7 +40,6 @@ module Ui exposing
     , textInput
     , toHtml
     , vectorImage
-    , width
     )
 
 import Bitwise
@@ -60,6 +58,8 @@ import VectorImage
 type Panel message
     = Panel
         { style : StyleComputed
+        , width : Size
+        , height : Size
         , content : Content message
         }
 
@@ -228,8 +228,6 @@ type StyleComputed
         , borderRadius : BorderRadius
         , backGroundColor : Maybe Css.Color
         , gap : Int
-        , width : Size
-        , height : Size
         }
 
 
@@ -242,8 +240,6 @@ type Style
     | BorderRadius BorderRadius
     | BackGroundColor Css.Color
     | Gap Int
-    | Width Size
-    | Height Size
 
 
 type BorderRadius
@@ -331,66 +327,62 @@ gap =
     Gap
 
 
-{-| グリッドセル内でのパネルの横方向の伸ばし方と揃え方を指定できる. デフォルトはStretch
--}
-width : Size -> Style
-width =
-    Width
-
-
-{-| グリッドセル内でのパネルの縦方向の伸ばし方と揃え方を指定できる デフォルトはStretch
--}
-height : Size -> Style
-height =
-    Height
-
-
 {-| テキストボックス
 -}
-text : List Style -> TextAttributes -> Panel message
-text style textBoxAttributes =
+text : Size -> Size -> List Style -> TextAttributes -> Panel message
+text width height style textBoxAttributes =
     Panel
         { style = computeStyle style
+        , width = width
+        , height = height
         , content = Text textBoxAttributes
         }
 
 
 {-| ビットマップ画像
 -}
-bitmapImage : List Style -> BitmapImageAttributes -> Panel message
-bitmapImage style bitmapImageAttributes =
+bitmapImage : Size -> Size -> List Style -> BitmapImageAttributes -> Panel message
+bitmapImage width height style bitmapImageAttributes =
     Panel
         { style = computeStyle style
+        , width = width
+        , height = height
         , content = BitmapImage bitmapImageAttributes
         }
 
 
 {-| ベクター画像
 -}
-vectorImage : List Style -> VectorImageAttributes message -> Panel message
-vectorImage style vectorImageAttributes =
+vectorImage : Size -> Size -> List Style -> VectorImageAttributes message -> Panel message
+vectorImage width height style vectorImageAttributes =
     Panel
         { style = computeStyle style
+        , width = width
+        , height = height
         , content = VectorImage vectorImageAttributes
         }
 
 
 {-| からのパネル
 -}
-empty : List Style -> Panel message
-empty style =
+empty : Size -> Size -> List Style -> Panel message
+empty width height style =
     Panel
         { style = computeStyle style
+        , width = width
+        , height = height
         , content = Empty
         }
 
 
 {-| ボタン
 -}
-button : List Style -> message -> Panel message -> Panel message
-button style clickMessage child =
+button : Size -> Size -> List Style -> message -> Panel message -> Panel message
+button width height style clickMessage child =
     Panel
         { style = computeStyle style
+        , width = width
+        , height = height
         , content =
             Button
                 (ButtonAttributes
@@ -401,10 +393,12 @@ button style clickMessage child =
         }
 
 
-link : List Style -> Url.Url -> Panel message -> Panel message
-link style url panel =
+link : Size -> Size -> List Style -> Url.Url -> Panel message -> Panel message
+link width height style url panel =
     Panel
         { style = computeStyle style
+        , width = width
+        , height = height
         , content =
             Link
                 (LinkAttributes
@@ -417,50 +411,60 @@ link style url panel =
 
 {-| 中身が領域より大きい場合,中身をスクロールできるようにする
 -}
-scroll : List Style -> Panel message -> Panel message
-scroll style child =
+scroll : Size -> Size -> List Style -> Panel message -> Panel message
+scroll width height style child =
     Panel
         { style = computeStyle style
+        , width = width
+        , height = height
         , content = Scroll child
         }
 
 
 {-| パネルを同じ領域に重ねる
 -}
-depth : List Style -> List ( ( Alignment, Alignment ), Panel message ) -> Panel message
-depth style children =
+depth : Size -> Size -> List Style -> List ( ( Alignment, Alignment ), Panel message ) -> Panel message
+depth width height style children =
     Panel
         { style = computeStyle style
+        , width = width
+        , height = height
         , content = Depth children
         }
 
 
 {-| 横方向に並べる
 -}
-row : List Style -> List (Panel message) -> Panel message
-row style children =
+row : Size -> Size -> List Style -> List (Panel message) -> Panel message
+row width height style children =
     Panel
         { style = computeStyle style
+        , width = width
+        , height = height
         , content = Row children
         }
 
 
 {-| 縦方向に並べる
 -}
-column : List Style -> List (Panel message) -> Panel message
-column style children =
+column : Size -> Size -> List Style -> List (Panel message) -> Panel message
+column width height style children =
     Panel
         { style = computeStyle style
+        , width = width
+        , height = height
         , content = Column children
         }
 
 
 {-| 文字の入力ボックス
 -}
-textInput : List Style -> TextInputAttributes message -> Panel message
-textInput style attributes =
+textInput : Size -> Size -> List Style -> TextInputAttributes message -> Panel message
+textInput width height style attributes =
     Panel
         { style = computeStyle style
+        , width = width
+        , height = height
         , content = TextInput attributes
         }
 
@@ -498,12 +502,6 @@ computeStyle list =
 
                     Gap px ->
                         { rest | gap = px }
-
-                    Width value ->
-                        { rest | width = value }
-
-                    Height value ->
-                        { rest | height = value }
                 )
 
         [] ->
@@ -521,30 +519,15 @@ defaultStyleComputed =
         , borderRadius = BorderRadiusPx 0
         , backGroundColor = Nothing
         , gap = 0
-        , width = Auto
-        , height = Auto
         }
-
-
-panelGetStyle : Panel message -> StyleComputed
-panelGetStyle (Panel record) =
-    record.style
-
-
-styleComputedGetWidth : StyleComputed -> Size
-styleComputedGetWidth (StyleComputed record) =
-    record.width
-
-
-styleComputedGetHeight : StyleComputed -> Size
-styleComputedGetHeight (StyleComputed record) =
-    record.height
 
 
 map : (a -> b) -> Panel a -> Panel b
 map func (Panel record) =
     Panel
         { style = record.style
+        , width = record.width
+        , height = record.height
         , content = mapContent func record.content
         }
 
@@ -627,9 +610,14 @@ type GridCell
 panelToHtml : GridCell -> AlignmentOrStretch -> Panel msg -> Html.Styled.Html msg
 panelToHtml gridCell alignmentOrStretch (Panel record) =
     let
-        commonStyle =
+        commonStyle : Bool -> Css.Style
+        commonStyle isButtonElement =
             Css.batch
-                [ alignmentOrStretchToCssStyle record.style alignmentOrStretch
+                [ alignmentOrStretchToCssStyle
+                    record.width
+                    record.height
+                    record.style
+                    alignmentOrStretch
                 , gridCellToCssStyle gridCell
                 , Css.batch
                     (if isIncludeScrollInPanel (Panel record) then
@@ -638,52 +626,56 @@ panelToHtml gridCell alignmentOrStretch (Panel record) =
                      else
                         []
                     )
+                , styleComputedToCssStyle
+                    record.width
+                    record.height
+                    isButtonElement
+                    record.style
                 ]
     in
     case record.content of
         Text attributes ->
-            textBoxToHtml commonStyle record.style attributes
+            textBoxToHtml (commonStyle False) attributes
 
         BitmapImage attributes ->
-            imageFromUrlToHtml commonStyle record.style attributes
+            imageFromUrlToHtml (commonStyle False) attributes
 
         VectorImage attributes ->
-            vectorImageToHtml commonStyle record.style attributes
+            vectorImageToHtml (commonStyle False) attributes
 
         Empty ->
-            emptyToHtml commonStyle record.style
+            emptyToHtml (commonStyle False)
 
         Button attributes ->
-            buttonToHtml commonStyle record.style attributes
+            buttonToHtml (commonStyle True) attributes
 
         Link attributes ->
-            linkToHtml commonStyle record.style attributes
+            linkToHtml (commonStyle False) attributes
 
         Depth attributes ->
-            depthToHtml commonStyle record.style attributes
+            depthToHtml (commonStyle False) attributes
 
         Row attributes ->
-            rowToHtml commonStyle record.style attributes
+            rowToHtml record.width (commonStyle False) attributes
 
         Column attributes ->
-            columnToHtml commonStyle record.style attributes
+            columnToHtml record.height (commonStyle False) attributes
 
         PointerPanel attributes ->
-            pointerPanelToHtml commonStyle record.style attributes
+            pointerPanelToHtml (commonStyle False) attributes
 
         Scroll child ->
-            scrollBoxToHtml commonStyle record.style child
+            scrollBoxToHtml (commonStyle False) child
 
         TextInput attributes ->
-            textInputToHtml commonStyle record.style attributes
+            textInputToHtml (commonStyle False) attributes
 
 
-textBoxToHtml : Css.Style -> StyleComputed -> TextAttributes -> Html.Styled.Html message
-textBoxToHtml commonStyle styleComputed (TextAttributes record) =
+textBoxToHtml : Css.Style -> TextAttributes -> Html.Styled.Html message
+textBoxToHtml commonStyle (TextAttributes record) =
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ styleComputedToCssStyle False styleComputed
-            , Css.color record.color
+            [ Css.color record.color
             , Css.fontSize (Css.px (toFloat record.size))
             , Css.fontFamilies [ Css.qt record.typeface ]
             , Css.letterSpacing (Css.px record.letterSpacing)
@@ -696,12 +688,11 @@ textBoxToHtml commonStyle styleComputed (TextAttributes record) =
         [ Html.Styled.text record.text ]
 
 
-imageFromUrlToHtml : Css.Style -> StyleComputed -> BitmapImageAttributes -> Html.Styled.Html message
-imageFromUrlToHtml commonStyle styleComputed (BitmapImageAttributes record) =
+imageFromUrlToHtml : Css.Style -> BitmapImageAttributes -> Html.Styled.Html message
+imageFromUrlToHtml commonStyle (BitmapImageAttributes record) =
     Html.Styled.img
         [ Html.Styled.Attributes.css
-            ([ styleComputedToCssStyle False styleComputed
-             , Css.property "object-fit"
+            ([ Css.property "object-fit"
                 (case record.fitStyle of
                     Contain ->
                         "contain"
@@ -727,13 +718,11 @@ imageFromUrlToHtml commonStyle styleComputed (BitmapImageAttributes record) =
         []
 
 
-vectorImageToHtml : Css.Style -> StyleComputed -> VectorImageAttributes message -> Html.Styled.Html message
-vectorImageToHtml commonStyle styleComputed (VectorImageAttributes record) =
+vectorImageToHtml : Css.Style -> VectorImageAttributes message -> Html.Styled.Html message
+vectorImageToHtml commonStyle (VectorImageAttributes record) =
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ styleComputedToCssStyle False styleComputed
-            , commonStyle
-            ]
+            [ commonStyle ]
         ]
         [ VectorImage.toHtml
             record.viewBox
@@ -742,24 +731,20 @@ vectorImageToHtml commonStyle styleComputed (VectorImageAttributes record) =
         ]
 
 
-emptyToHtml : Css.Style -> StyleComputed -> Html.Styled.Html message
-emptyToHtml commonStyle styleAndEvent =
+emptyToHtml : Css.Style -> Html.Styled.Html message
+emptyToHtml commonStyle =
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ styleComputedToCssStyle False styleAndEvent
-            , commonStyle
-            ]
+            [ commonStyle ]
         ]
         []
 
 
-buttonToHtml : Css.Style -> StyleComputed -> ButtonAttributes message -> Html.Styled.Html message
-buttonToHtml commonStyle styleComputed (ButtonAttributes record) =
+buttonToHtml : Css.Style -> ButtonAttributes message -> Html.Styled.Html message
+buttonToHtml commonStyle (ButtonAttributes record) =
     Html.Styled.button
         [ Html.Styled.Attributes.css
-            [ styleComputedToCssStyle True styleComputed
-            , commonStyle
-            ]
+            [ commonStyle ]
         , Html.Styled.Events.onClick
             record.clickMessage
         ]
@@ -769,13 +754,11 @@ buttonToHtml commonStyle styleComputed (ButtonAttributes record) =
         ]
 
 
-linkToHtml : Css.Style -> StyleComputed -> LinkAttributes message -> Html.Styled.Html message
-linkToHtml commonStyle styleComputed (LinkAttributes record) =
+linkToHtml : Css.Style -> LinkAttributes message -> Html.Styled.Html message
+linkToHtml commonStyle (LinkAttributes record) =
     Html.Styled.a
         [ Html.Styled.Attributes.css
-            [ styleComputedToCssStyle False styleComputed
-            , commonStyle
-            ]
+            [ commonStyle ]
         , Html.Styled.Attributes.href (Url.toString record.url)
         ]
         [ panelToHtml (GridCell { row = 0, column = 0 })
@@ -784,12 +767,11 @@ linkToHtml commonStyle styleComputed (LinkAttributes record) =
         ]
 
 
-depthToHtml : Css.Style -> StyleComputed -> List ( ( Alignment, Alignment ), Panel message ) -> Html.Styled.Html message
-depthToHtml commonStyle styleComputed children =
+depthToHtml : Css.Style -> List ( ( Alignment, Alignment ), Panel message ) -> Html.Styled.Html message
+depthToHtml commonStyle children =
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ styleComputedToCssStyle False styleComputed
-            , Css.property "display" "grid"
+            [ Css.property "display" "grid"
             , Css.property "grid-template-rows" "1fr"
             , Css.property "grid-template-columns" "1fr"
             , commonStyle
@@ -806,16 +788,14 @@ depthToHtml commonStyle styleComputed children =
         )
 
 
-rowToHtml : Css.Style -> StyleComputed -> List (Panel message) -> Html.Styled.Html message
-rowToHtml commonStyle styleComputed children =
+rowToHtml : Size -> Css.Style -> List (Panel message) -> Html.Styled.Html message
+rowToHtml width commonStyle children =
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ styleComputedToCssStyle False styleComputed
-            , Css.property "display" "grid"
+            [ Css.property "display" "grid"
             , Css.property "grid-template-columns"
-                (sizeListToGridTemplate
-                    (styleComputedGetWidth styleComputed)
-                    (List.map (panelGetStyle >> styleComputedGetWidth) children)
+                (sizeListToGridTemplate width
+                    (List.map panelGetWidth children)
                 )
             , commonStyle
             ]
@@ -831,16 +811,14 @@ rowToHtml commonStyle styleComputed children =
         )
 
 
-columnToHtml : Css.Style -> StyleComputed -> List (Panel message) -> Html.Styled.Html message
-columnToHtml commonStyle styleComputed children =
+columnToHtml : Size -> Css.Style -> List (Panel message) -> Html.Styled.Html message
+columnToHtml height commonStyle children =
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ styleComputedToCssStyle False styleComputed
-            , Css.property "display" "grid"
+            [ Css.property "display" "grid"
             , Css.property "grid-template-rows"
-                (sizeListToGridTemplate
-                    (styleComputedGetHeight styleComputed)
-                    (List.map (panelGetStyle >> styleComputedGetHeight) children)
+                (sizeListToGridTemplate height
+                    (List.map panelGetHeight children)
                 )
             , commonStyle
             ]
@@ -856,13 +834,22 @@ columnToHtml commonStyle styleComputed children =
         )
 
 
-pointerPanelToHtml : Css.Style -> StyleComputed -> PointerPanelAttributes message -> Html.Styled.Html message
-pointerPanelToHtml commonStyle styleComputed (PointerPanelAttributes record) =
+panelGetWidth : Panel message -> Size
+panelGetWidth (Panel record) =
+    record.width
+
+
+panelGetHeight : Panel message -> Size
+panelGetHeight (Panel record) =
+    record.height
+
+
+pointerPanelToHtml : Css.Style -> PointerPanelAttributes message -> Html.Styled.Html message
+pointerPanelToHtml commonStyle (PointerPanelAttributes record) =
     Html.Styled.div
         (List.concat
             [ [ Html.Styled.Attributes.css
-                    [ styleComputedToCssStyle False styleComputed
-                    , commonStyle
+                    [ commonStyle
                     ]
               ]
             , case record.enterMessage of
@@ -898,19 +885,17 @@ pointerPanelToHtml commonStyle styleComputed (PointerPanelAttributes record) =
         ]
 
 
-scrollBoxToHtml : Css.Style -> StyleComputed -> Panel message -> Html.Styled.Html message
-scrollBoxToHtml commonStyle styleComputed child =
+scrollBoxToHtml : Css.Style -> Panel message -> Html.Styled.Html message
+scrollBoxToHtml commonStyle child =
     Html.Styled.div
         [ Html.Styled.Attributes.css
-            [ commonStyle
-            , styleComputedToCssStyle False styleComputed
-            ]
+            [ commonStyle ]
         ]
         [ panelToHtml (GridCell { row = 0, column = 0 }) StretchStretch child ]
 
 
-textInputToHtml : Css.Style -> StyleComputed -> TextInputAttributes message -> Html.Styled.Html message
-textInputToHtml commonStyle styleComputed (TextInputAttributes attributes) =
+textInputToHtml : Css.Style -> TextInputAttributes message -> Html.Styled.Html message
+textInputToHtml commonStyle (TextInputAttributes attributes) =
     (if attributes.multiLine then
         Html.Styled.textarea
 
@@ -919,7 +904,6 @@ textInputToHtml commonStyle styleComputed (TextInputAttributes attributes) =
     )
         [ Html.Styled.Attributes.css
             [ commonStyle
-            , styleComputedToCssStyle False styleComputed
             , Css.fontSize (Css.px (toFloat attributes.fontSize))
             , Css.color (Css.rgb 0 0 0)
             ]
@@ -929,13 +913,13 @@ textInputToHtml commonStyle styleComputed (TextInputAttributes attributes) =
         []
 
 
-styleComputedToCssStyle : Bool -> StyleComputed -> Css.Style
-styleComputedToCssStyle isButtonElement (StyleComputed record) =
+styleComputedToCssStyle : Size -> Size -> Bool -> StyleComputed -> Css.Style
+styleComputedToCssStyle width height isButtonElement (StyleComputed record) =
     [ [ Css.padding (Css.px (toFloat record.padding))
       , Css.zIndex (Css.int 0)
       , Css.textDecoration Css.none
       ]
-    , case record.width of
+    , case width of
         Fix px ->
             [ Css.width (Css.px (toFloat px)) ]
 
@@ -951,7 +935,7 @@ styleComputedToCssStyle isButtonElement (StyleComputed record) =
 
         Auto ->
             [ Css.width Css.auto ]
-    , case record.height of
+    , case height of
         Fix px ->
             [ Css.height (Css.px (toFloat px)) ]
 
@@ -1221,13 +1205,13 @@ type AlignmentOrStretch
     | StretchStretch
 
 
-alignmentOrStretchToCssStyle : StyleComputed -> AlignmentOrStretch -> Css.Style
-alignmentOrStretchToCssStyle (StyleComputed style) alignmentOrStretch =
+alignmentOrStretchToCssStyle : Size -> Size -> StyleComputed -> AlignmentOrStretch -> Css.Style
+alignmentOrStretchToCssStyle width height (StyleComputed style) alignmentOrStretch =
     Css.batch
         (case alignmentOrStretch of
             Alignment ( x, y ) ->
                 [ justifySelf
-                    (if isStretch style.width then
+                    (if isStretch width then
                         "stretch"
 
                      else
@@ -1242,7 +1226,7 @@ alignmentOrStretchToCssStyle (StyleComputed style) alignmentOrStretch =
                                 "end"
                     )
                 , Css.alignSelf
-                    (if isStretch style.height then
+                    (if isStretch height then
                         Css.stretch
 
                      else
