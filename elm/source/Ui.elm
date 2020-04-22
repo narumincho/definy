@@ -921,6 +921,7 @@ textInputToHtml commonStyle styleComputed (TextInputAttributes attributes) =
             [ commonStyle
             , styleComputedToCssStyle False styleComputed
             , Css.fontSize (Css.px (toFloat attributes.fontSize))
+            , Css.color (Css.rgb 0 0 0)
             ]
         , Html.Styled.Attributes.name attributes.name
         , Html.Styled.Events.onInput attributes.inputMessage
