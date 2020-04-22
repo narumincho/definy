@@ -119,7 +119,7 @@ mainView subModel (Model record) =
         []
         ([ CommonUi.normalText 16 "アイデア作成. アイデア名を入力してください"
          , Ui.textInput
-            Ui.stretch
+            (Ui.fix 400)
             Ui.auto
             []
             (Ui.TextInputAttributes

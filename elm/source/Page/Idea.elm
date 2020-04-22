@@ -113,15 +113,20 @@ update message model =
 
 view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel model =
-    case model of
-        Loading ideaId ->
-            loadingView ideaId
+    Ui.column
+        Ui.stretch
+        Ui.auto
+        []
+        [ case model of
+            Loading ideaId ->
+                loadingView ideaId
 
-        NotFound ideaId ->
-            notFoundView ideaId
+            NotFound ideaId ->
+                notFoundView ideaId
 
-        Loaded ideaSnapshotAndId ->
-            mainView subModel ideaSnapshotAndId
+            Loaded ideaSnapshotAndId ->
+                mainView subModel ideaSnapshotAndId
+        ]
 
 
 loadingView : Data.IdeaId -> Ui.Panel Message

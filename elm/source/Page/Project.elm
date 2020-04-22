@@ -101,15 +101,20 @@ update message model =
 
 view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel model =
-    case model of
-        Loading projectId ->
-            loadingView projectId
+    Ui.column
+        Ui.stretch
+        Ui.auto
+        []
+        [ case model of
+            Loading projectId ->
+                loadingView projectId
 
-        NotFound projectId ->
-            notFoundView projectId
+            NotFound projectId ->
+                notFoundView projectId
 
-        Loaded loadedModel ->
-            normalView subModel loadedModel
+            Loaded loadedModel ->
+                normalView subModel loadedModel
+        ]
 
 
 loadingView : Data.ProjectId -> Ui.Panel message
@@ -125,7 +130,7 @@ normalView subModel loadedModel =
             loadedModel.id
     in
     Ui.column
-        Ui.stretch
+        (Ui.stretchWithMaxSize 800)
         Ui.auto
         [ Ui.gap 8 ]
         [ CommonUi.subText projectIdAsString

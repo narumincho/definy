@@ -287,7 +287,7 @@ projectLineViewWithCreateButton subModel projectList =
 projectLineView : Message.SubModel -> List Project -> Ui.Panel Message
 projectLineView subModel projectList =
     Ui.row
-        Ui.auto
+        Ui.stretch
         (Ui.fix 200)
         [ Ui.gap 8 ]
         (List.map (projectItem subModel) projectList)

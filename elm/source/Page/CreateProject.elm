@@ -195,7 +195,7 @@ projectInputBox : Ui.Panel Message
 projectInputBox =
     Ui.textInput
         (Ui.fix 400)
-        (Ui.fix 400)
+        Ui.auto
         [ Ui.padding 8 ]
         (Ui.TextInputAttributes
             { inputMessage = InputProjectName
