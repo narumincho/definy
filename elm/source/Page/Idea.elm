@@ -220,25 +220,39 @@ itemBodyView subModel itemBody =
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
-                (CommonUi.normalText 16 "提案が作成された")
+                (CommonUi.normalText 16 "提案を作成した")
 
-        Data.ItemBodySuggestionApprovalPending suggestionId ->
+        Data.ItemBodySuggestionToApprovalPending suggestionId ->
             CommonUi.sameLanguageLink
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
-                (CommonUi.normalText 16 "提案を審議開始")
+                (CommonUi.normalText 16 "提案を承認待ちにした")
 
-        Data.ItemBodySuggestionApproved suggestionId ->
+        Data.ItemBodySuggestionCancelToApprovalPending suggestionId ->
             CommonUi.sameLanguageLink
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
-                (CommonUi.normalText 16 "提案が承認された")
+                (CommonUi.normalText 16 "承認待ちをキャンセルした")
 
-        Data.ItemBodySuggestionRejected suggestionId ->
+        Data.ItemBodySuggestionApprove suggestionId ->
             CommonUi.sameLanguageLink
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
-                (CommonUi.normalText 16 "提案が拒否された")
+                (CommonUi.normalText 16 "提案を承認した")
+
+        Data.ItemBodySuggestionReject suggestionId ->
+            CommonUi.sameLanguageLink
+                []
+                subModel
+                (Data.LocationSuggestion suggestionId)
+                (CommonUi.normalText 16 "提案を拒否した")
+
+        Data.ItemBodySuggestionCancelRejection suggestionId ->
+            CommonUi.sameLanguageLink
+                []
+                subModel
+                (Data.LocationSuggestion suggestionId)
+                (CommonUi.normalText 16 "提案の拒否をキャンセルした")
