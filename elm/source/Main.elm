@@ -3,8 +3,6 @@ port module Main exposing (main)
 import Browser
 import Browser.Navigation
 import CommonUi
-import Component.DefaultUi
-import Component.EditorGroup
 import Component.Header
 import Component.Notifications
 import Css
@@ -22,6 +20,7 @@ import Page.CreateProject
 import Page.Home
 import Page.Idea
 import Page.Project
+import Page.Suggestion
 import Page.User
 import Task
 import Time
@@ -184,6 +183,7 @@ type PageMessage
     | PageMessageProject Page.Project.Message
     | PageMessageUser Page.User.Message
     | PageMessageIdea Page.Idea.Message
+    | PageMessageSuggestion Page.Suggestion.Message
 
 
 {-| 全体を表現する
@@ -217,6 +217,7 @@ type PageModel
     | Project Page.Project.Model
     | User Page.User.Model
     | Idea Page.Idea.Model
+    | Suggestion Page.Suggestion.Model
 
 
 type alias Flag =
@@ -336,6 +337,10 @@ pageInit location =
             Page.Idea.init ideaId
                 |> Tuple.mapFirst Idea
 
+        Data.LocationSuggestion suggestionId ->
+            Page.Suggestion.init suggestionId
+                |> Tuple.mapFirst Suggestion
+
 
 
 {- ============================================
@@ -350,14 +355,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg (Model rec) =
     case msg of
         KeyPressed key ->
-            case keyDown key (Model rec) of
-                [] ->
-                    ( Model rec, Cmd.none )
-
-                concreteMsgList ->
-                    ( Model rec |> pushMsgListToMsgQueue concreteMsgList
-                    , preventDefaultBeforeKeyEvent ()
-                    )
+            ( Model rec, Cmd.none )
 
         KeyPrevented ->
             let
@@ -674,6 +672,9 @@ pageModelToLocation pageModel =
         Idea model ->
             Data.LocationIdea (Page.Idea.getIdeaId model)
 
+        Suggestion model ->
+            Data.LocationSuggestion (Page.Suggestion.getSuggestionId model)
+
 
 updateFromMsgList : List Msg -> Model -> ( Model, Cmd Msg )
 updateFromMsgList msgList model =
@@ -695,159 +696,6 @@ updateFromMsgList msgList model =
                        キー入力
    =================================================
 -}
-
-
-{-| キー入力をより具体的なMsgに変換する
--}
-keyDown : Maybe Data.Key.Key -> Model -> List Msg
-keyDown keyMaybe model =
-    case keyMaybe of
-        Just key ->
-            case isFocusDefaultUi model of
-                Just Component.DefaultUi.MultiLineTextField ->
-                    if multiLineTextFieldReservedKey key then
-                        []
-
-                    else
-                        keyDownEachPanel key model
-
-                Just Component.DefaultUi.SingleLineTextField ->
-                    if singleLineTextFieldReservedKey key then
-                        []
-
-                    else
-                        keyDownEachPanel key model
-
-                Nothing ->
-                    keyDownEachPanel key model
-
-        Nothing ->
-            []
-
-
-keyDownEachPanel : Data.Key.Key -> Model -> List Msg
-keyDownEachPanel _ _ =
-    []
-
-
-{-|
-
-<textarea>で入力したときに予約されているであろうキーならTrue、そうでないならFalse。
-複数行入力を想定している
-ブラウザやOSで予約されているであろう動作を邪魔させないためにある。
-Model.isFocusTextAreaがTrueになったときにまずこれを優先する
-
--}
-multiLineTextFieldReservedKey : Data.Key.Key -> Bool
-multiLineTextFieldReservedKey { key, ctrl, alt, shift } =
-    case ( ctrl, shift, alt ) of
-        ( False, False, False ) ->
-            case key of
-                Data.Key.ArrowLeft ->
-                    True
-
-                Data.Key.ArrowRight ->
-                    True
-
-                Data.Key.ArrowUp ->
-                    True
-
-                Data.Key.ArrowDown ->
-                    True
-
-                Data.Key.Enter ->
-                    True
-
-                Data.Key.Backspace ->
-                    True
-
-                _ ->
-                    False
-
-        ( True, False, False ) ->
-            case key of
-                Data.Key.ArrowLeft ->
-                    True
-
-                Data.Key.ArrowRight ->
-                    True
-
-                Data.Key.ArrowUp ->
-                    True
-
-                Data.Key.ArrowDown ->
-                    True
-
-                Data.Key.Backspace ->
-                    True
-
-                _ ->
-                    False
-
-        ( False, True, False ) ->
-            case key of
-                Data.Key.ArrowLeft ->
-                    True
-
-                Data.Key.ArrowRight ->
-                    True
-
-                Data.Key.ArrowUp ->
-                    True
-
-                Data.Key.ArrowDown ->
-                    True
-
-                _ ->
-                    False
-
-        ( True, True, False ) ->
-            case key of
-                Data.Key.ArrowLeft ->
-                    True
-
-                Data.Key.ArrowRight ->
-                    True
-
-                Data.Key.ArrowUp ->
-                    True
-
-                Data.Key.ArrowDown ->
-                    True
-
-                _ ->
-                    False
-
-        _ ->
-            False
-
-
-{-| <input type="text">で入力したときに予約されているであろうキーならTrue。そうでないなたFalse。
-1行の入力を想定している
-ブラウザやOSで予約されているであろう動作を邪魔させないためにある。
--}
-singleLineTextFieldReservedKey : Data.Key.Key -> Bool
-singleLineTextFieldReservedKey { key, ctrl, alt, shift } =
-    case ( ctrl, shift, alt ) of
-        ( False, False, False ) ->
-            case key of
-                Data.Key.ArrowLeft ->
-                    True
-
-                Data.Key.ArrowRight ->
-                    True
-
-                Data.Key.Backspace ->
-                    True
-
-                _ ->
-                    False
-
-        _ ->
-            False
-
-
-
 {- =================================================
                        マウス入力
    =================================================
@@ -886,44 +734,6 @@ toGutterMode gutter (Model rec) =
         { rec
             | subMode = SubModeGutter gutter
         }
-
-
-{-| エディタグループパネルの更新
--}
-editorPanelCmdToCmd : Component.EditorGroup.Cmd -> Cmd Msg
-editorPanelCmdToCmd cmd =
-    case cmd of
-        Component.EditorGroup.CmdVerticalGutterModeOn _ ->
-            Task.succeed
-                (ToResizeGutterMode GutterTypeVertical)
-                |> Task.perform identity
-
-        Component.EditorGroup.CmdHorizontalGutterModeOn _ ->
-            Task.succeed
-                (ToResizeGutterMode GutterTypeHorizontal)
-                |> Task.perform identity
-
-        Component.EditorGroup.CmdSetTextAreaValue string ->
-            setTextAreaValue { text = string, id = "edit" }
-
-        Component.EditorGroup.CmdFocusEditTextAea ->
-            focusElement "edit"
-
-        Component.EditorGroup.CmdElementScrollIntoView id ->
-            elementScrollIntoView id
-
-        Component.EditorGroup.CmdFocusHere ->
-            Cmd.none
-
-        Component.EditorGroup.CmdNone ->
-            Cmd.none
-
-
-{-| いまブラウザが入力を受け取る要素にフォーカスが当たっているかどうか。当たっていたらブラウザのデフォルト動作を邪魔しない
--}
-isFocusDefaultUi : Model -> Maybe Component.DefaultUi.DefaultUi
-isFocusDefaultUi model =
-    Nothing
 
 
 
@@ -1071,6 +881,17 @@ mainView (Model record) =
                     record.subModel
                     pageModel
                     |> Ui.map (PageMessageIdea >> PageMsg)
+                ]
+
+        Suggestion pageModel ->
+            Ui.column
+                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                [ Component.Header.view record.subModel
+                , logInPanel record.subModel
+                , Page.Suggestion.view
+                    record.subModel
+                    pageModel
+                    |> Ui.map (PageMessageSuggestion >> PageMsg)
                 ]
 
 
@@ -1464,7 +1285,7 @@ subscriptions model =
          , responseIdeaSnapshotAndIdListByProjectId
             (\jsonValue ->
                 case
-                    Json.Decode.decodeValue Data.responseIdeaListByProjectIdJsonDecoder jsonValue
+                    Json.Decode.decodeValue Data.ideaListByProjectIdResponseJsonDecoder jsonValue
                 of
                     Ok ideaList ->
                         CommonMessage (Message.ResponseIdeaListByProjectId ideaList)

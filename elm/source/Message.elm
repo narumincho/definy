@@ -12,7 +12,7 @@ type CommonMessage
     = ResponseProject Data.ProjectResponse
     | ResponseIdea Data.IdeaResponse
     | ResponseAllProjectIdList (List Data.ProjectId)
-    | ResponseIdeaListByProjectId Data.ResponseIdeaListByProjectId
+    | ResponseIdeaListByProjectId Data.IdeaListByProjectIdResponse
 
 
 {-| 各ページに渡すべきModel

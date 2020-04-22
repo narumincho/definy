@@ -51,16 +51,6 @@ getIdeaId model =
             ideaSnapshotAndId.id
 
 
-ideaItemGetUserId : Data.IdeaItem -> Maybe Data.UserId
-ideaItemGetUserId idea =
-    case idea of
-        Data.IdeaItemComment comment ->
-            Just comment.createdBy
-
-        Data.IdeaItemSuggestion _ ->
-            Nothing
-
-
 updateByCommonMessage : Message.CommonMessage -> Model -> ( Model, Message.Command )
 updateByCommonMessage message model =
     case message of
@@ -75,7 +65,7 @@ updateByCommonMessage message model =
                     , Message.Batch
                         (Message.GetUser snapshot.createUser
                             :: List.map Message.GetUser
-                                (List.filterMap ideaItemGetUserId snapshot.itemList)
+                                (List.map .createUserId snapshot.itemList)
                         )
                     )
 
@@ -208,17 +198,61 @@ mainView subModel loadedModel =
 
 itemView : Message.SubModel -> Data.IdeaItem -> Ui.Panel Message
 itemView subModel ideaItem =
-    case ideaItem of
-        Data.IdeaItemComment comment ->
-            Ui.row
-                [ Ui.width Ui.stretch ]
-                [ CommonUi.miniUserView subModel comment.createdBy
-                , Ui.column
-                    [ Ui.width Ui.stretch ]
-                    [ CommonUi.stretchText 24 comment.body
-                    , CommonUi.timeView subModel comment.createdAt
-                    ]
-                ]
+    Ui.row
+        [ Ui.width Ui.stretch ]
+        [ CommonUi.miniUserView subModel ideaItem.createUserId
+        , Ui.column
+            [ Ui.width Ui.stretch ]
+            [ itemBodyView subModel ideaItem.body
+            , CommonUi.timeView subModel ideaItem.createTime
+            ]
+        ]
 
-        Data.IdeaItemSuggestion suggestion ->
-            CommonUi.normalText 24 "提案"
+
+itemBodyView : Message.SubModel -> Data.ItemBody -> Ui.Panel Message
+itemBodyView subModel itemBody =
+    case itemBody of
+        Data.ItemBodyComment string ->
+            CommonUi.stretchText 24 string
+
+        Data.ItemBodySuggestionCreate suggestionId ->
+            CommonUi.sameLanguageLink
+                []
+                subModel
+                (Data.LocationSuggestion suggestionId)
+                (CommonUi.normalText 16 "提案を作成した")
+
+        Data.ItemBodySuggestionToApprovalPending suggestionId ->
+            CommonUi.sameLanguageLink
+                []
+                subModel
+                (Data.LocationSuggestion suggestionId)
+                (CommonUi.normalText 16 "提案を承認待ちにした")
+
+        Data.ItemBodySuggestionCancelToApprovalPending suggestionId ->
+            CommonUi.sameLanguageLink
+                []
+                subModel
+                (Data.LocationSuggestion suggestionId)
+                (CommonUi.normalText 16 "承認待ちをキャンセルした")
+
+        Data.ItemBodySuggestionApprove suggestionId ->
+            CommonUi.sameLanguageLink
+                []
+                subModel
+                (Data.LocationSuggestion suggestionId)
+                (CommonUi.normalText 16 "提案を承認した")
+
+        Data.ItemBodySuggestionReject suggestionId ->
+            CommonUi.sameLanguageLink
+                []
+                subModel
+                (Data.LocationSuggestion suggestionId)
+                (CommonUi.normalText 16 "提案を拒否した")
+
+        Data.ItemBodySuggestionCancelRejection suggestionId ->
+            CommonUi.sameLanguageLink
+                []
+                subModel
+                (Data.LocationSuggestion suggestionId)
+                (CommonUi.normalText 16 "提案の拒否をキャンセルした")

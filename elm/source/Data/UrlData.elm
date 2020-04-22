@@ -134,10 +134,8 @@ locationToPathStringList location =
         Data.LocationIdea (Data.IdeaId ideaId) ->
             [ "idea", ideaId ]
 
-
-languageToQueryString : Data.Language -> String
-languageToQueryString language =
-    "?hl=" ++ languageToIdString language
+        Data.LocationSuggestion (Data.SuggestionId suggestionId) ->
+            [ "suggestion", suggestionId ]
 
 
 languageToIdString : Data.Language -> String
