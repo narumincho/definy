@@ -602,31 +602,28 @@ miniUserView subModel userId =
                 [ Ui.backgroundColor (Css.rgb 20 20 20), Ui.padding 8 ]
                 subModel
                 (Data.LocationUser userId)
-                (Ui.column
-                    [ Ui.gap 8 ]
-                    [ Ui.row
-                        []
-                        [ case Message.getImageBlobUrl userSnapshot.imageHash subModel of
-                            Just blobUrl ->
-                                Ui.bitmapImage
-                                    [ Ui.width (Ui.fix 24)
-                                    , Ui.height (Ui.fix 24)
-                                    , Ui.borderRadius (Ui.BorderRadiusPercent 50)
-                                    ]
-                                    (Ui.BitmapImageAttributes
-                                        { url = blobUrl
-                                        , fitStyle = Ui.Contain
-                                        , alternativeText = userSnapshot.name ++ "の画像"
-                                        , rendering = Ui.ImageRenderingPixelated
-                                        }
-                                    )
+                (Ui.row
+                    []
+                    [ case Message.getImageBlobUrl userSnapshot.imageHash subModel of
+                        Just blobUrl ->
+                            Ui.bitmapImage
+                                [ Ui.width (Ui.fix 24)
+                                , Ui.height (Ui.fix 24)
+                                , Ui.borderRadius (Ui.BorderRadiusPercent 50)
+                                ]
+                                (Ui.BitmapImageAttributes
+                                    { url = blobUrl
+                                    , fitStyle = Ui.Contain
+                                    , alternativeText = userSnapshot.name ++ "の画像"
+                                    , rendering = Ui.ImageRenderingPixelated
+                                    }
+                                )
 
-                            Nothing ->
-                                Ui.empty
-                                    [ Ui.width (Ui.fix 24), Ui.height (Ui.fix 24) ]
-                        , normalText 16 userSnapshot.name
-                        ]
-                    , subText userIdAsString
+                        Nothing ->
+                            Ui.empty
+                                [ Ui.width (Ui.fix 24), Ui.height (Ui.fix 24) ]
+                    , normalText 16 userSnapshot.name
+                    , subText (String.slice 0 7 userIdAsString)
                     ]
                 )
 

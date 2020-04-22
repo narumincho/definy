@@ -832,8 +832,10 @@ mainView (Model record) =
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
                 [ Component.Header.view record.subModel
                 , logInPanel record.subModel
-                , Page.Home.view record.subModel pageModel
-                    |> Ui.map (PageMessageHome >> PageMsg)
+                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                    (Page.Home.view record.subModel pageModel
+                        |> Ui.map (PageMessageHome >> PageMsg)
+                    )
                 ]
 
         CreateProject pageModel ->
@@ -841,8 +843,10 @@ mainView (Model record) =
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
                 [ Component.Header.view record.subModel
                 , logInPanel record.subModel
-                , Page.CreateProject.view record.subModel pageModel
-                    |> Ui.map (PageMessageCreateProject >> PageMsg)
+                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                    (Page.CreateProject.view record.subModel pageModel
+                        |> Ui.map (PageMessageCreateProject >> PageMsg)
+                    )
                 ]
 
         CreateIdea pageModel ->
@@ -850,8 +854,10 @@ mainView (Model record) =
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
                 [ Component.Header.view record.subModel
                 , logInPanel record.subModel
-                , Page.CreateIdea.view record.subModel pageModel
-                    |> Ui.map (PageMessageCreateIdea >> PageMsg)
+                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                    (Page.CreateIdea.view record.subModel pageModel
+                        |> Ui.map (PageMessageCreateIdea >> PageMsg)
+                    )
                 ]
 
         Project pageModel ->
@@ -859,8 +865,10 @@ mainView (Model record) =
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
                 [ Component.Header.view record.subModel
                 , logInPanel record.subModel
-                , Page.Project.view record.subModel pageModel
-                    |> Ui.map (PageMessageProject >> PageMsg)
+                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                    (Page.Project.view record.subModel pageModel
+                        |> Ui.map (PageMessageProject >> PageMsg)
+                    )
                 ]
 
         User pageModel ->
@@ -868,8 +876,10 @@ mainView (Model record) =
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
                 [ Component.Header.view record.subModel
                 , logInPanel record.subModel
-                , Page.User.view record.subModel pageModel
-                    |> Ui.map (PageMessageUser >> PageMsg)
+                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                    (Page.User.view record.subModel pageModel
+                        |> Ui.map (PageMessageUser >> PageMsg)
+                    )
                 ]
 
         Idea pageModel ->
@@ -877,10 +887,12 @@ mainView (Model record) =
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
                 [ Component.Header.view record.subModel
                 , logInPanel record.subModel
-                , Page.Idea.view
-                    record.subModel
-                    pageModel
-                    |> Ui.map (PageMessageIdea >> PageMsg)
+                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                    (Page.Idea.view
+                        record.subModel
+                        pageModel
+                        |> Ui.map (PageMessageIdea >> PageMsg)
+                    )
                 ]
 
         Suggestion pageModel ->
@@ -888,10 +900,12 @@ mainView (Model record) =
                 [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
                 [ Component.Header.view record.subModel
                 , logInPanel record.subModel
-                , Page.Suggestion.view
-                    record.subModel
-                    pageModel
-                    |> Ui.map (PageMessageSuggestion >> PageMsg)
+                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                    (Page.Suggestion.view
+                        record.subModel
+                        pageModel
+                        |> Ui.map (PageMessageSuggestion >> PageMsg)
+                    )
                 ]
 
 

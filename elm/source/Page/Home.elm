@@ -103,18 +103,15 @@ view :
     -> Model
     -> Ui.Panel Message
 view subModel model =
-    Ui.scroll
-        [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-        (Ui.column
-            [ Ui.gap 16, Ui.height Ui.stretch ]
-            [ case model of
-                LoadingAllProject ->
-                    CommonUi.normalText 16 "プロジェクトの一覧を読込中"
+    Ui.column
+        [ Ui.gap 16, Ui.height Ui.stretch ]
+        [ case model of
+            LoadingAllProject ->
+                CommonUi.normalText 16 "プロジェクトの一覧を読込中"
 
-                LoadedAllProject allProject ->
-                    projectListView subModel allProject
-            ]
-        )
+            LoadedAllProject allProject ->
+                projectListView subModel allProject
+        ]
 
 
 projectListView :
@@ -125,7 +122,7 @@ projectListView subModel projectList =
     Ui.column
         [ Ui.height Ui.stretch
         , Ui.gap 8
-        , Ui.width Ui.auto
+        , Ui.width (Ui.stretchWithMaxSize 800)
         , Ui.padding 8
         ]
         (case projectList of
