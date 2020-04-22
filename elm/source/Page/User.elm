@@ -70,12 +70,18 @@ view subModel (Model userId) =
 normalView : Message.SubModel -> Data.UserSnapshotAndId -> Ui.Panel Message
 normalView subModel userSnapshotAndId =
     Ui.column
+        (Ui.stretchWithMaxSize 800)
+        Ui.auto
         []
         [ Ui.row
+            Ui.auto
+            Ui.auto
             []
             [ case Message.getImageBlobUrl userSnapshotAndId.snapshot.imageHash subModel of
                 Just blobUrl ->
                     Ui.bitmapImage
+                        (Ui.fix 32)
+                        (Ui.fix 32)
                         []
                         (Ui.BitmapImageAttributes
                             { url = blobUrl
@@ -86,22 +92,17 @@ normalView subModel userSnapshotAndId =
                         )
 
                 Nothing ->
-                    Ui.empty
-                        [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
+                    Ui.empty (Ui.fix 32) (Ui.fix 32) []
             , CommonUi.normalText 24 userSnapshotAndId.snapshot.name
             ]
         , CommonUi.normalText 16 userSnapshotAndId.snapshot.introduction
-        , Ui.row
-            [ Ui.gap 16 ]
-            [ CommonUi.normalText 16 "作成日時:"
-            , CommonUi.timeView
-                subModel
-                userSnapshotAndId.snapshot.createTime
-            ]
-        , Ui.row
-            [ Ui.gap 16 ]
-            [ CommonUi.normalText 16 "取得日時:"
-            , CommonUi.timeView subModel userSnapshotAndId.snapshot.getTime
+        , CommonUi.table
+            [ ( "作成日時"
+              , CommonUi.timeView
+                    subModel
+                    userSnapshotAndId.snapshot.createTime
+              )
+            , ( "取得日時", CommonUi.timeView subModel userSnapshotAndId.snapshot.getTime )
             ]
         ]
 

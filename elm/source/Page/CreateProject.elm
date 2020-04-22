@@ -96,45 +96,45 @@ noLogInCannotCreateProjectText language =
 
 mainView : Data.Language -> Model -> Ui.Panel Message
 mainView language model =
-    case model of
-        NoInput ->
-            Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch, Ui.gap 16 ]
+    Ui.column
+        Ui.stretch
+        Ui.auto
+        [ Ui.gap 16 ]
+        (case model of
+            NoInput ->
                 [ createProjectTitle language
                 , projectInputBox
                 ]
 
-        RequestToValidProjectName _ ->
-            Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch, Ui.gap 16 ]
+            RequestToValidProjectName _ ->
                 [ createProjectTitle language
                 , projectInputBox
                 , CommonUi.normalText 24 (checkingThatProjectNameIsValid language)
                 ]
 
-        DisplayedValidProjectName (Just validProjectName) ->
-            Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch, Ui.gap 16 ]
+            DisplayedValidProjectName (Just validProjectName) ->
                 [ createProjectTitle language
                 , projectInputBox
                 , createButton language validProjectName
                 ]
 
-        DisplayedValidProjectName Nothing ->
-            Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch, Ui.gap 16 ]
+            DisplayedValidProjectName Nothing ->
                 [ createProjectTitle language
                 , projectInputBox
                 , CommonUi.normalText 24 (projectNameIsInvalid language)
                 ]
 
-        CreatingProject projectName ->
-            Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Ui.empty [ Ui.height Ui.stretch ]
-                , CommonUi.normalText 24 (creating language projectName)
-                , Ui.empty [ Ui.height Ui.stretch ]
+            CreatingProject projectName ->
+                [ Ui.depth
+                    Ui.stretch
+                    Ui.stretch
+                    []
+                    [ ( ( Ui.Center, Ui.Center )
+                      , CommonUi.normalText 24 (creating language projectName)
+                      )
+                    ]
                 ]
+        )
 
 
 createProjectTitle : Data.Language -> Ui.Panel message
@@ -194,7 +194,9 @@ creating language projectName =
 projectInputBox : Ui.Panel Message
 projectInputBox =
     Ui.textInput
-        [ Ui.width (Ui.fix 400), Ui.height (Ui.fix 40), Ui.padding 8 ]
+        (Ui.fix 400)
+        (Ui.fix 400)
+        [ Ui.padding 8 ]
         (Ui.TextInputAttributes
             { inputMessage = InputProjectName
             , name = "project-name"

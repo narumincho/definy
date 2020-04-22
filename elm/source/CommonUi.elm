@@ -18,6 +18,7 @@ module CommonUi exposing
     , stretchText
     , subText
     , tabContainer
+    , table
     , textColorStyle
     , timeView
     , userView
@@ -158,6 +159,8 @@ normalTypeface =
 normalText : Int -> String -> Ui.Panel message
 normalText size text =
     Ui.text
+        Ui.auto
+        Ui.auto
         []
         (Ui.TextAttributes
             { text = text
@@ -176,7 +179,9 @@ normalText size text =
 stretchText : Int -> String -> Ui.Panel message
 stretchText size text =
     Ui.text
-        [ Ui.width Ui.stretch ]
+        Ui.stretch
+        Ui.auto
+        []
         (Ui.TextAttributes
             { text = text
             , typeface = normalTypeface
@@ -192,7 +197,9 @@ stretchText size text =
 maxWidthText : Int -> Int -> String -> Ui.Panel message
 maxWidthText maxWidth size text =
     Ui.text
-        [ Ui.width (Ui.stretchWithMaxSize maxWidth) ]
+        (Ui.stretchWithMaxSize maxWidth)
+        Ui.auto
+        []
         (Ui.TextAttributes
             { text = text
             , typeface = normalTypeface
@@ -210,7 +217,9 @@ maxWidthText maxWidth size text =
 subText : String -> Ui.Panel message
 subText text =
     Ui.text
-        [ Ui.width Ui.stretch ]
+        Ui.stretch
+        Ui.auto
+        []
         (Ui.TextAttributes
             { text = text
             , typeface = normalTypeface
@@ -225,9 +234,11 @@ subText text =
 
 {-| 同じ言語のページへのリンク
 -}
-sameLanguageLink : List Ui.Style -> Message.SubModel -> Data.Location -> Ui.Panel message -> Ui.Panel message
-sameLanguageLink styleList subModel location =
+sameLanguageLink : Ui.Size -> Ui.Size -> List Ui.Style -> Message.SubModel -> Data.Location -> Ui.Panel message -> Ui.Panel message
+sameLanguageLink width height styleList subModel location =
     Ui.link
+        width
+        height
         styleList
         (Data.UrlData.urlDataToUrl
             { clientMode = Message.getClientMode subModel
@@ -259,10 +270,18 @@ timeView subModel time =
 timeViewWithTimeZoneAndName : Data.TimeZoneAndName.TimeZoneAndName -> Time.Posix -> Ui.Panel message
 timeViewWithTimeZoneAndName timeZoneAndName posix =
     Ui.column
+        Ui.auto
+        Ui.auto
         []
-        [ Ui.row [ Ui.gap 8 ]
+        [ Ui.row
+            Ui.auto
+            Ui.auto
+            [ Ui.gap 8 ]
             [ normalText 12 (Data.TimeZoneAndName.getTimeZoneName timeZoneAndName)
-            , Ui.row [ Ui.gap 4 ]
+            , Ui.row
+                Ui.auto
+                Ui.auto
+                [ Ui.gap 4 ]
                 (timeToTimeTermList (Data.TimeZoneAndName.getTimeZone timeZoneAndName) posix
                     |> List.map timeTermView
                 )
@@ -276,6 +295,8 @@ timeTermView timeTerm =
     case timeTerm of
         Number term ->
             Ui.text
+                Ui.auto
+                Ui.auto
                 []
                 (Ui.TextAttributes
                     { text = term
@@ -290,6 +311,8 @@ timeTermView timeTerm =
 
         Sign term ->
             Ui.text
+                Ui.auto
+                Ui.auto
                 []
                 (Ui.TextAttributes
                     { text = term
@@ -391,6 +414,39 @@ monthToString month =
             "12"
 
 
+table : List ( String, Ui.Panel message ) -> Ui.Panel message
+table itemList =
+    Ui.column
+        Ui.stretch
+        Ui.auto
+        []
+        (List.map
+            (\( itemName, itemPanel ) ->
+                Ui.row
+                    Ui.stretch
+                    Ui.auto
+                    []
+                    [ Ui.text
+                        (Ui.stretchWithMaxSize 200)
+                        Ui.auto
+                        []
+                        (Ui.TextAttributes
+                            { text = itemName
+                            , typeface = normalTypeface
+                            , size = 16
+                            , letterSpacing = 0
+                            , lineHeight = 1.2
+                            , color = Css.rgb 200 200 200
+                            , textAlignment = Ui.TextAlignCenter
+                            }
+                        )
+                    , itemPanel
+                    ]
+            )
+            itemList
+        )
+
+
 tabContainer : a -> List ( a, String ) -> Html.Styled.Html a
 tabContainer selected allValues =
     Html.Styled.div
@@ -456,9 +512,9 @@ fontHackName =
 gitHubIcon : Css.Color -> Ui.Panel msg
 gitHubIcon backgroundColor =
     Ui.vectorImage
-        [ Ui.width (Ui.fix 48)
-        , Ui.height (Ui.fix 48)
-        , Ui.borderRadius (Ui.BorderRadiusPx 8)
+        (Ui.fix 48)
+        (Ui.fix 48)
+        [ Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.padding 8
         , Ui.backgroundColor backgroundColor
         ]
@@ -478,9 +534,9 @@ gitHubIcon backgroundColor =
 googleIcon : Css.Color -> Ui.Panel msg
 googleIcon backgroundColor =
     Ui.vectorImage
-        [ Ui.width (Ui.fix 48)
-        , Ui.height (Ui.fix 48)
-        , Ui.borderRadius (Ui.BorderRadiusPx 8)
+        (Ui.fix 48)
+        (Ui.fix 48)
+        [ Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.padding 8
         , Ui.backgroundColor backgroundColor
         ]
@@ -512,6 +568,8 @@ googleIcon backgroundColor =
 closeIcon : Ui.Panel message
 closeIcon =
     Ui.vectorImage
+        Ui.auto
+        Ui.auto
         [ Ui.padding 8 ]
         (Ui.VectorImageAttributes
             { fitStyle = Ui.Contain
@@ -527,9 +585,9 @@ closeIcon =
 plusIcon : Ui.Panel message
 plusIcon =
     Ui.vectorImage
-        [ Ui.width (Ui.fix 32)
-        , Ui.height (Ui.fix 32)
-        ]
+        (Ui.fix 32)
+        (Ui.fix 32)
+        []
         (Ui.VectorImageAttributes
             { fitStyle = Ui.Contain
             , viewBox = { x = 0, y = 0, width = 10, height = 10 }
@@ -550,17 +608,21 @@ userView subModel userId =
     case Message.getUserSnapshot userId subModel of
         Just (Just userSnapshot) ->
             sameLanguageLink
-                [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgb 20 20 20), Ui.padding 8 ]
+                Ui.stretch
+                Ui.auto
+                [ Ui.backgroundColor (Css.rgb 20 20 20), Ui.padding 8 ]
                 subModel
                 (Data.LocationUser userId)
                 (Ui.row
-                    [ Ui.width Ui.stretch, Ui.gap 8 ]
+                    Ui.stretch
+                    Ui.auto
+                    [ Ui.gap 8 ]
                     [ case Message.getImageBlobUrl userSnapshot.imageHash subModel of
                         Just blobUrl ->
                             Ui.bitmapImage
-                                [ Ui.width (Ui.fix 24)
-                                , Ui.height (Ui.fix 24)
-                                , Ui.borderRadius (Ui.BorderRadiusPercent 50)
+                                (Ui.fix 24)
+                                (Ui.fix 24)
+                                [ Ui.borderRadius (Ui.BorderRadiusPercent 50)
                                 ]
                                 (Ui.BitmapImageAttributes
                                     { url = blobUrl
@@ -571,8 +633,7 @@ userView subModel userId =
                                 )
 
                         Nothing ->
-                            Ui.empty
-                                [ Ui.width (Ui.fix 24), Ui.height (Ui.fix 24) ]
+                            Ui.empty (Ui.fix 24) (Ui.fix 24) []
                     , normalText 16 userSnapshot.name
                     , subText userIdAsString
                     ]
@@ -599,18 +660,21 @@ miniUserView subModel userId =
     case Message.getUserSnapshot userId subModel of
         Just (Just userSnapshot) ->
             sameLanguageLink
+                Ui.auto
+                Ui.auto
                 [ Ui.backgroundColor (Css.rgb 20 20 20), Ui.padding 8 ]
                 subModel
                 (Data.LocationUser userId)
                 (Ui.row
+                    Ui.auto
+                    Ui.auto
                     []
                     [ case Message.getImageBlobUrl userSnapshot.imageHash subModel of
                         Just blobUrl ->
                             Ui.bitmapImage
-                                [ Ui.width (Ui.fix 24)
-                                , Ui.height (Ui.fix 24)
-                                , Ui.borderRadius (Ui.BorderRadiusPercent 50)
-                                ]
+                                (Ui.fix 24)
+                                (Ui.fix 24)
+                                [ Ui.borderRadius (Ui.BorderRadiusPercent 50) ]
                                 (Ui.BitmapImageAttributes
                                     { url = blobUrl
                                     , fitStyle = Ui.Contain
@@ -620,8 +684,7 @@ miniUserView subModel userId =
                                 )
 
                         Nothing ->
-                            Ui.empty
-                                [ Ui.width (Ui.fix 24), Ui.height (Ui.fix 24) ]
+                            Ui.empty (Ui.fix 24) (Ui.fix 24) []
                     , normalText 16 userSnapshot.name
                     , subText (String.slice 0 7 userIdAsString)
                     ]
@@ -637,20 +700,17 @@ miniUserView subModel userId =
 button : message -> String -> Ui.Panel message
 button message text =
     Ui.button
+        Ui.auto
+        Ui.auto
         [ Ui.backgroundColor (Css.rgb 40 40 40)
         , Ui.borderRadius (Ui.BorderRadiusPx 8)
-
-        --, Ui.border
-        --    (Ui.BorderStyle
-        --        { color = Css.rgb 200 200 200
-        --        , width = { top = 1, right = 1, left = 1, bottom = 1 }
-        --        }
-        --    )
         , Ui.padding 16
         ]
         message
         (Ui.text
-            [ Ui.width Ui.auto, Ui.height Ui.auto ]
+            Ui.auto
+            Ui.auto
+            []
             (Ui.TextAttributes
                 { text = text
                 , typeface = normalTypeface

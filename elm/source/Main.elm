@@ -800,15 +800,14 @@ view (Model rec) =
     { title = "Definy"
     , body =
         [ Ui.depth
-            (List.concat
-                [ [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                , case getGutterType (Model rec) of
-                    Just gutterType ->
-                        [ Ui.pointerImage (gutterTypeToCursorStyle gutterType) ]
+            Ui.stretch
+            Ui.stretch
+            (case getGutterType (Model rec) of
+                Just gutterType ->
+                    [ Ui.pointerImage (gutterTypeToCursorStyle gutterType) ]
 
-                    Nothing ->
-                        []
-                ]
+                Nothing ->
+                    []
             )
             [ ( ( Ui.Center, Ui.Center )
               , mainView (Model rec)
@@ -826,87 +825,49 @@ view (Model rec) =
 
 mainView : Model -> Ui.Panel Msg
 mainView (Model record) =
-    case record.page of
-        Home pageModel ->
-            Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.subModel
-                , logInPanel record.subModel
-                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                    (Page.Home.view record.subModel pageModel
+    Ui.column
+        Ui.stretch
+        Ui.stretch
+        []
+        [ Component.Header.view record.subModel
+        , logInPanel record.subModel
+        , Ui.scroll Ui.stretch
+            Ui.stretch
+            []
+            (case record.page of
+                Home pageModel ->
+                    Page.Home.view record.subModel pageModel
                         |> Ui.map (PageMessageHome >> PageMsg)
-                    )
-                ]
 
-        CreateProject pageModel ->
-            Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.subModel
-                , logInPanel record.subModel
-                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                    (Page.CreateProject.view record.subModel pageModel
+                CreateProject pageModel ->
+                    Page.CreateProject.view record.subModel pageModel
                         |> Ui.map (PageMessageCreateProject >> PageMsg)
-                    )
-                ]
 
-        CreateIdea pageModel ->
-            Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.subModel
-                , logInPanel record.subModel
-                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                    (Page.CreateIdea.view record.subModel pageModel
+                CreateIdea pageModel ->
+                    Page.CreateIdea.view record.subModel pageModel
                         |> Ui.map (PageMessageCreateIdea >> PageMsg)
-                    )
-                ]
 
-        Project pageModel ->
-            Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.subModel
-                , logInPanel record.subModel
-                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                    (Page.Project.view record.subModel pageModel
+                Project pageModel ->
+                    Page.Project.view record.subModel pageModel
                         |> Ui.map (PageMessageProject >> PageMsg)
-                    )
-                ]
 
-        User pageModel ->
-            Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.subModel
-                , logInPanel record.subModel
-                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                    (Page.User.view record.subModel pageModel
+                User pageModel ->
+                    Page.User.view record.subModel pageModel
                         |> Ui.map (PageMessageUser >> PageMsg)
-                    )
-                ]
 
-        Idea pageModel ->
-            Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.subModel
-                , logInPanel record.subModel
-                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                    (Page.Idea.view
+                Idea pageModel ->
+                    Page.Idea.view
                         record.subModel
                         pageModel
                         |> Ui.map (PageMessageIdea >> PageMsg)
-                    )
-                ]
 
-        Suggestion pageModel ->
-            Ui.column
-                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                [ Component.Header.view record.subModel
-                , logInPanel record.subModel
-                , Ui.scroll [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
-                    (Page.Suggestion.view
+                Suggestion pageModel ->
+                    Page.Suggestion.view
                         record.subModel
                         pageModel
                         |> Ui.map (PageMessageSuggestion >> PageMsg)
-                    )
-                ]
+            )
+        ]
 
 
 logInPanel : Message.SubModel -> Ui.Panel Msg
@@ -922,24 +883,25 @@ logInPanel subModel =
             CommonUi.normalText 16 "認証中……"
 
         Data.LogInState.Ok record ->
-            Ui.empty []
+            Ui.empty Ui.auto Ui.auto []
 
 
 logInPanelLogInButton : Data.Language -> Message.WindowSize -> Ui.Panel Msg
 logInPanelLogInButton language { width, height } =
     if width < 512 then
         Ui.column
-            [ Ui.height (Ui.fix (48 * 2 + 32))
-            , Ui.gap 16
-            ]
+            (Ui.fix (48 * 2 + 32))
+            Ui.auto
+            [ Ui.gap 16 ]
             [ googleLogInButton True language
             , gitHubLogInButton True language
             ]
 
     else
         Ui.row
-            [ Ui.height (Ui.fix 64)
-            , Ui.gap 16
+            Ui.auto
+            (Ui.fix 64)
+            [ Ui.gap 16
             , Ui.padding 8
             ]
             [ googleLogInButton False language
@@ -950,21 +912,22 @@ logInPanelLogInButton language { width, height } =
 googleLogInButton : Bool -> Data.Language -> Ui.Panel Msg
 googleLogInButton stretch language =
     Ui.row
+        (if stretch then
+            Ui.stretch
+
+         else
+            Ui.fix 320
+        )
+        (Ui.fix 48)
         [ Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.backgroundColor (Css.rgb 66 133 244)
         , Ui.gap 8
-        , Ui.width
-            (if stretch then
-                Ui.stretch
-
-             else
-                Ui.fix 320
-            )
-        , Ui.height (Ui.fix 48)
         ]
         [ CommonUi.googleIcon (Css.rgb 255 255 255)
         , Ui.text
-            [ Ui.height Ui.auto ]
+            Ui.stretch
+            Ui.auto
+            []
             (Ui.TextAttributes
                 { textAlignment = Ui.TextAlignStart
                 , text =
@@ -985,27 +948,28 @@ googleLogInButton stretch language =
                 }
             )
         ]
-        |> Ui.button [] (RequestLogInUrl Data.OpenIdConnectProviderGoogle)
+        |> Ui.button Ui.auto Ui.auto [] (RequestLogInUrl Data.OpenIdConnectProviderGoogle)
 
 
 gitHubLogInButton : Bool -> Data.Language -> Ui.Panel Msg
 gitHubLogInButton stretch language =
     Ui.row
+        (if stretch then
+            Ui.stretch
+
+         else
+            Ui.fix 320
+        )
+        (Ui.fix 48)
         [ Ui.borderRadius (Ui.BorderRadiusPx 8)
         , Ui.backgroundColor (Css.rgb 32 32 32)
         , Ui.gap 8
-        , Ui.width
-            (if stretch then
-                Ui.stretch
-
-             else
-                Ui.fix 320
-            )
-        , Ui.height (Ui.fix 48)
         ]
         [ CommonUi.gitHubIcon (Css.rgb 255 255 255)
         , Ui.text
-            [ Ui.height Ui.auto ]
+            Ui.stretch
+            Ui.auto
+            []
             (Ui.TextAttributes
                 { textAlignment = Ui.TextAlignStart
                 , text =
@@ -1026,7 +990,7 @@ gitHubLogInButton stretch language =
                 }
             )
         ]
-        |> Ui.button [] (RequestLogInUrl Data.OpenIdConnectProviderGitHub)
+        |> Ui.button Ui.auto Ui.auto [] (RequestLogInUrl Data.OpenIdConnectProviderGitHub)
 
 
 gutterTypeToCursorStyle : GutterType -> Ui.PointerImage
