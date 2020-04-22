@@ -104,7 +104,9 @@ view :
     -> Ui.Panel Message
 view subModel model =
     Ui.column
-        [ Ui.gap 16, Ui.height Ui.stretch ]
+        Ui.stretch
+        Ui.auto
+        [ Ui.gap 16 ]
         [ case model of
             LoadingAllProject ->
                 CommonUi.normalText 16 "プロジェクトの一覧を読込中"
@@ -120,9 +122,9 @@ projectListView :
     -> Ui.Panel Message
 projectListView subModel projectList =
     Ui.column
-        [ Ui.height Ui.stretch
-        , Ui.gap 8
-        , Ui.width (Ui.stretchWithMaxSize 800)
+        (Ui.stretchWithMaxSize 800)
+        Ui.stretch
+        [ Ui.gap 8
         , Ui.padding 8
         ]
         (case projectList of
@@ -212,9 +214,9 @@ createProjectButton subModel =
 createProjectButtonLogInOk : Message.SubModel -> Ui.Panel Message
 createProjectButtonLogInOk subModel =
     CommonUi.sameLanguageLink
-        [ Ui.width (Ui.stretchWithMaxSize 320)
-        , Ui.height Ui.stretch
-        , Ui.border
+        (Ui.stretchWithMaxSize 320)
+        Ui.stretch
+        [ Ui.border
             (Ui.BorderStyle
                 { color = Css.rgb 200 200 200
                 , width =
@@ -229,9 +231,9 @@ createProjectButtonLogInOk subModel =
         subModel
         Data.LocationCreateProject
         (Ui.depth
-            [ Ui.width (Ui.stretchWithMaxSize 320)
-            , Ui.height Ui.stretch
-            , Ui.border
+            (Ui.stretchWithMaxSize 320)
+            Ui.stretch
+            [ Ui.border
                 (Ui.BorderStyle
                     { color = Css.rgb 200 200 200
                     , width =
@@ -245,6 +247,8 @@ createProjectButtonLogInOk subModel =
             ]
             [ ( ( Ui.Center, Ui.Center )
               , Ui.column
+                    Ui.auto
+                    Ui.auto
                     []
                     [ CommonUi.plusIcon
                     , CommonUi.normalText
@@ -270,7 +274,9 @@ createProjectButtonLogInOk subModel =
 projectLineViewWithCreateButton : Message.SubModel -> List Project -> Ui.Panel Message
 projectLineViewWithCreateButton subModel projectList =
     Ui.row
-        [ Ui.gap 8, Ui.height (Ui.fix 200) ]
+        Ui.auto
+        (Ui.fix 200)
+        [ Ui.gap 8 ]
         (createProjectButton subModel
             :: List.map (projectItem subModel) projectList
         )
@@ -281,14 +287,18 @@ projectLineViewWithCreateButton subModel projectList =
 projectLineView : Message.SubModel -> List Project -> Ui.Panel Message
 projectLineView subModel projectList =
     Ui.row
-        [ Ui.gap 8, Ui.height (Ui.fix 200) ]
+        Ui.stretch
+        (Ui.fix 200)
+        [ Ui.gap 8 ]
         (List.map (projectItem subModel) projectList)
 
 
 projectItem : Message.SubModel -> Project -> Ui.Panel Message
 projectItem subModel project =
     CommonUi.sameLanguageLink
-        [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
+        (Ui.stretchWithMaxSize 320)
+        Ui.stretch
+        []
         subModel
         (Data.LocationProject
             (case project of
@@ -300,7 +310,9 @@ projectItem subModel project =
             )
         )
         (Ui.depth
-            [ Ui.width (Ui.stretchWithMaxSize 320), Ui.height Ui.stretch ]
+            (Ui.stretchWithMaxSize 320)
+            Ui.stretch
+            []
             [ ( ( Ui.Center, Ui.Center )
               , projectItemImage subModel project
               )
@@ -315,7 +327,7 @@ projectItemImage : Message.SubModel -> Project -> Ui.Panel message
 projectItemImage subModel project =
     case project of
         OnlyId _ ->
-            Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+            Ui.empty Ui.stretch Ui.stretch []
 
         Full projectCacheWithId ->
             case projectCacheWithId.snapshotMaybe of
@@ -323,7 +335,9 @@ projectItemImage subModel project =
                     case Message.getImageBlobUrl projectCache.imageHash subModel of
                         Just projectImageBlobUrl ->
                             Ui.bitmapImage
-                                [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                                Ui.stretch
+                                Ui.stretch
+                                []
                                 (Ui.BitmapImageAttributes
                                     { url = projectImageBlobUrl
                                     , fitStyle = Ui.Cover
@@ -336,40 +350,47 @@ projectItemImage subModel project =
                             CommonUi.normalText 16 "プロジェクトの画像を読込中"
 
                 Nothing ->
-                    Ui.empty [ Ui.width Ui.stretch, Ui.height Ui.stretch ]
+                    Ui.empty Ui.stretch Ui.stretch []
 
 
 projectItemText : Message.SubModel -> Project -> Ui.Panel message
 projectItemText subModel project =
+    let
+        iconEmpty =
+            Ui.empty
+                (Ui.fix 32)
+                (Ui.fix 32)
+                []
+    in
     Ui.row
-        [ Ui.width Ui.stretch, Ui.backgroundColor (Css.rgba 0 0 0 0.6), Ui.padding 8 ]
+        Ui.stretch
+        Ui.auto
+        []
         [ case project of
             Full projectCacheWithId ->
-                case projectCacheWithId.snapshotMaybe of
-                    Just projectSnapshot ->
-                        case Message.getImageBlobUrl projectSnapshot.iconHash subModel of
-                            Just blobUrl ->
-                                Ui.bitmapImage
-                                    [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
-                                    (Ui.BitmapImageAttributes
-                                        { url = blobUrl
-                                        , fitStyle = Ui.Cover
-                                        , alternativeText = projectSnapshot.name ++ "のアイコン"
-                                        , rendering = Ui.ImageRenderingPixelated
-                                        }
+                projectCacheWithId.snapshotMaybe
+                    |> Maybe.andThen
+                        (\projectSnapshot ->
+                            Message.getImageBlobUrl projectSnapshot.iconHash subModel
+                                |> Maybe.map
+                                    (\blobUrl ->
+                                        Ui.bitmapImage
+                                            (Ui.fix 32)
+                                            (Ui.fix 32)
+                                            []
+                                            (Ui.BitmapImageAttributes
+                                                { url = blobUrl
+                                                , fitStyle = Ui.Cover
+                                                , alternativeText = projectSnapshot.name ++ "のアイコン"
+                                                , rendering = Ui.ImageRenderingPixelated
+                                                }
+                                            )
                                     )
-
-                            Nothing ->
-                                Ui.empty
-                                    [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
-
-                    Nothing ->
-                        Ui.empty
-                            [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
+                        )
+                    |> Maybe.withDefault iconEmpty
 
             _ ->
-                Ui.empty
-                    [ Ui.width (Ui.fix 32), Ui.height (Ui.fix 32) ]
+                iconEmpty
         , CommonUi.normalText
             16
             (case project of

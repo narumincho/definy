@@ -11,13 +11,12 @@ import Ui
 view : Message.SubModel -> Ui.Panel message
 view subModel =
     Ui.row
-        [ Ui.backgroundColor (Css.rgb 36 36 36)
-        , Ui.width Ui.stretch
-        , Ui.height (Ui.fix 56)
-        ]
+        Ui.stretch
+        (Ui.fix 56)
+        [ Ui.backgroundColor (Css.rgb 36 36 36) ]
         (case Message.getLogInState subModel of
             Data.LogInState.GuestUser ->
-                [ logo subModel, Ui.empty [ Ui.width Ui.stretch ], guestItem ]
+                [ logo subModel, Ui.empty Ui.stretch Ui.auto [], guestItem ]
 
             Data.LogInState.RequestLogInUrl _ ->
                 [ logo subModel ]
@@ -27,7 +26,7 @@ view subModel =
 
             Data.LogInState.Ok record ->
                 [ logo subModel
-                , Ui.empty [ Ui.width Ui.stretch ]
+                , Ui.empty Ui.stretch Ui.auto []
                 , userItem subModel record.userSnapshotAndId
                 ]
         )
@@ -36,10 +35,14 @@ view subModel =
 logo : Message.SubModel -> Ui.Panel message
 logo subModel =
     CommonUi.sameLanguageLink
+        Ui.auto
+        Ui.auto
         []
         subModel
         Data.LocationHome
         (Ui.text
+            Ui.auto
+            Ui.auto
             [ Ui.padding 8 ]
             (Ui.TextAttributes
                 { text = "Definy"
@@ -64,20 +67,23 @@ guestItem =
 userItem : Message.SubModel -> Data.UserSnapshotAndId -> Ui.Panel msg
 userItem subModel userSnapshotAndId =
     CommonUi.sameLanguageLink
+        Ui.auto
+        Ui.auto
         []
         subModel
         (Data.LocationUser userSnapshotAndId.id)
         (Ui.row
+            Ui.auto
+            Ui.auto
             [ Ui.gap 8 ]
             [ case
                 Message.getImageBlobUrl userSnapshotAndId.snapshot.imageHash subModel
               of
                 Just blobUrl ->
                     Ui.bitmapImage
-                        [ Ui.width (Ui.fix 48)
-                        , Ui.height (Ui.fix 48)
-                        , Ui.borderRadius (Ui.BorderRadiusPercent 50)
-                        ]
+                        (Ui.fix 48)
+                        (Ui.fix 48)
+                        [ Ui.borderRadius (Ui.BorderRadiusPercent 50) ]
                         (Ui.BitmapImageAttributes
                             { url = blobUrl
                             , fitStyle = Ui.Contain
@@ -88,9 +94,9 @@ userItem subModel userSnapshotAndId =
 
                 Nothing ->
                     Ui.empty
-                        [ Ui.width (Ui.fix 48)
-                        , Ui.height (Ui.fix 48)
-                        ]
+                        (Ui.fix 48)
+                        (Ui.fix 48)
+                        []
             , CommonUi.normalText
                 16
                 userSnapshotAndId.snapshot.name

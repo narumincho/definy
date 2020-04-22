@@ -113,15 +113,20 @@ update message model =
 
 view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel model =
-    case model of
-        Loading ideaId ->
-            loadingView ideaId
+    Ui.column
+        Ui.stretch
+        Ui.auto
+        []
+        [ case model of
+            Loading ideaId ->
+                loadingView ideaId
 
-        NotFound ideaId ->
-            notFoundView ideaId
+            NotFound ideaId ->
+                notFoundView ideaId
 
-        Loaded ideaSnapshotAndId ->
-            mainView subModel ideaSnapshotAndId
+            Loaded ideaSnapshotAndId ->
+                mainView subModel ideaSnapshotAndId
+        ]
 
 
 loadingView : Data.IdeaId -> Ui.Panel Message
@@ -141,68 +146,38 @@ mainView subModel loadedModel =
             loadedModel.id
     in
     Ui.column
-        [ Ui.width (Ui.stretchWithMaxSize 800), Ui.gap 8 ]
+        (Ui.stretchWithMaxSize 800)
+        Ui.auto
+        []
         ([ CommonUi.subText ideaIdAsString
          , CommonUi.normalText 24 loadedModel.snapshot.name
-         , Ui.row
-            [ Ui.width Ui.stretch, Ui.gap 8 ]
-            [ CommonUi.normalText 16 "いいだしっぺ"
-            , CommonUi.userView subModel loadedModel.snapshot.createUser
-            ]
-         , Ui.row
-            [ Ui.width Ui.stretch, Ui.gap 8 ]
-            [ CommonUi.normalText 16 "作成日時"
-            , CommonUi.timeView subModel loadedModel.snapshot.createTime
-            ]
-         , Ui.row
-            [ Ui.width Ui.stretch, Ui.gap 8 ]
-            [ CommonUi.normalText 16 "更新日時"
-            , CommonUi.timeView subModel loadedModel.snapshot.updateTime
-            ]
-         , Ui.row
-            [ Ui.width Ui.stretch, Ui.gap 8 ]
-            [ CommonUi.normalText 16 "取得日時"
-            , CommonUi.timeView subModel loadedModel.snapshot.getTime
+         , CommonUi.table
+            [ ( "いいだしっぺ", CommonUi.userView subModel loadedModel.snapshot.createUser )
+            , ( "作成日時", CommonUi.timeView subModel loadedModel.snapshot.createTime )
+            , ( "更新日時", CommonUi.timeView subModel loadedModel.snapshot.updateTime )
+            , ( "取得日時", CommonUi.timeView subModel loadedModel.snapshot.getTime )
             ]
          , Ui.column
-            [ Ui.width Ui.stretch, Ui.gap 8 ]
+            Ui.stretch
+            Ui.auto
+            [ Ui.gap 8 ]
             (List.map (itemView subModel) loadedModel.snapshot.itemList)
          ]
-            ++ (case Message.getLogInState subModel of
-                    Data.LogInState.Ok _ ->
-                        [ Ui.column
-                            [ Ui.width Ui.stretch ]
-                            [ Ui.textInput
-                                [ Ui.width Ui.stretch ]
-                                (Ui.TextInputAttributes
-                                    { inputMessage = InputComment
-                                    , name = "comment"
-                                    , multiLine = True
-                                    , fontSize = 16
-                                    }
-                                )
-                            , CommonUi.button
-                                Comment
-                                "コメントする"
-                            ]
-                        , CommonUi.button
-                            Suggestion
-                            "編集提案をする"
-                        ]
-
-                    _ ->
-                        []
-               )
+            ++ commentInputView subModel
         )
 
 
 itemView : Message.SubModel -> Data.IdeaItem -> Ui.Panel Message
 itemView subModel ideaItem =
     Ui.row
-        [ Ui.width Ui.stretch ]
+        Ui.stretch
+        Ui.auto
+        []
         [ CommonUi.miniUserView subModel ideaItem.createUserId
         , Ui.column
-            [ Ui.width Ui.stretch ]
+            Ui.stretch
+            Ui.auto
+            []
             [ itemBodyView subModel ideaItem.body
             , CommonUi.timeView subModel ideaItem.createTime
             ]
@@ -217,6 +192,8 @@ itemBodyView subModel itemBody =
 
         Data.ItemBodySuggestionCreate suggestionId ->
             CommonUi.sameLanguageLink
+                Ui.stretch
+                Ui.auto
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
@@ -224,6 +201,8 @@ itemBodyView subModel itemBody =
 
         Data.ItemBodySuggestionToApprovalPending suggestionId ->
             CommonUi.sameLanguageLink
+                Ui.stretch
+                Ui.auto
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
@@ -231,6 +210,8 @@ itemBodyView subModel itemBody =
 
         Data.ItemBodySuggestionCancelToApprovalPending suggestionId ->
             CommonUi.sameLanguageLink
+                Ui.stretch
+                Ui.auto
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
@@ -238,6 +219,8 @@ itemBodyView subModel itemBody =
 
         Data.ItemBodySuggestionApprove suggestionId ->
             CommonUi.sameLanguageLink
+                Ui.stretch
+                Ui.auto
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
@@ -245,6 +228,8 @@ itemBodyView subModel itemBody =
 
         Data.ItemBodySuggestionReject suggestionId ->
             CommonUi.sameLanguageLink
+                Ui.stretch
+                Ui.auto
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
@@ -252,7 +237,41 @@ itemBodyView subModel itemBody =
 
         Data.ItemBodySuggestionCancelRejection suggestionId ->
             CommonUi.sameLanguageLink
+                Ui.stretch
+                Ui.auto
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
                 (CommonUi.normalText 16 "提案の拒否をキャンセルした")
+
+
+commentInputView : Message.SubModel -> List (Ui.Panel Message)
+commentInputView subModel =
+    case Message.getLogInState subModel of
+        Data.LogInState.Ok _ ->
+            [ Ui.column
+                Ui.stretch
+                Ui.auto
+                []
+                [ Ui.textInput
+                    Ui.stretch
+                    Ui.auto
+                    []
+                    (Ui.TextInputAttributes
+                        { inputMessage = InputComment
+                        , name = "comment"
+                        , multiLine = True
+                        , fontSize = 16
+                        }
+                    )
+                , CommonUi.button
+                    Comment
+                    "コメントする"
+                ]
+            , CommonUi.button
+                Suggestion
+                "編集提案をする"
+            ]
+
+        _ ->
+            []

@@ -114,9 +114,13 @@ noLogInCannotCreateIdeaView language =
 mainView : Message.SubModel -> Model -> Ui.Panel Message
 mainView subModel (Model record) =
     Ui.column
+        Ui.stretch
+        Ui.auto
         []
         ([ CommonUi.normalText 16 "アイデア作成. アイデア名を入力してください"
          , Ui.textInput
+            (Ui.fix 400)
+            Ui.auto
             []
             (Ui.TextInputAttributes
                 { inputMessage = InputIdeaName
@@ -141,7 +145,7 @@ ideaNameInfoView : Data.Language -> IdeaNameInput -> Ui.Panel message
 ideaNameInfoView language ideaNameInput =
     case ideaNameInput of
         NoInput ->
-            Ui.empty []
+            Ui.empty Ui.auto Ui.auto []
 
         RequestToValidIdeaName string ->
             CommonUi.normalText 16
