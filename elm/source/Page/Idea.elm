@@ -11,6 +11,7 @@ type Model
     = Loading Data.IdeaId
     | NotFound Data.IdeaId
     | Loaded LoadedModel
+    | CreatingSuggestion Data.IdeaId
 
 
 type alias LoadedModel =
@@ -50,9 +51,12 @@ getIdeaId model =
         Loaded ideaSnapshotAndId ->
             ideaSnapshotAndId.id
 
+        CreatingSuggestion id ->
+            id
 
-updateByCommonMessage : Message.CommonMessage -> Model -> ( Model, Message.Command )
-updateByCommonMessage message model =
+
+updateByCommonMessage : Message.SubModel -> Message.CommonMessage -> Model -> ( Model, Message.Command )
+updateByCommonMessage subModel message model =
     case message of
         Message.ResponseIdea idea ->
             case idea.snapshotMaybe of
@@ -72,6 +76,23 @@ updateByCommonMessage message model =
                 Nothing ->
                     ( NotFound idea.id
                     , Message.None
+                    )
+
+        Message.ResponseAddSuggestion suggestionSnapshotAndIdMaybe ->
+            let
+                ideaId =
+                    getIdeaId model
+            in
+            case suggestionSnapshotAndIdMaybe of
+                Just suggestionSnapshotAndId ->
+                    ( Loading ideaId
+                    , Message.PushUrl
+                        (Message.urlDataSameLanguageClientMode (Data.LocationSuggestion suggestionSnapshotAndId.id) subModel)
+                    )
+
+                Nothing ->
+                    ( Loading ideaId
+                    , Message.GetIdea ideaId
                     )
 
         _ ->
@@ -105,6 +126,11 @@ update message model =
                         }
                     )
 
+        ( Suggestion, _ ) ->
+            ( CreatingSuggestion (getIdeaId model)
+            , Message.AddSuggestion (getIdeaId model)
+            )
+
         ( _, _ ) ->
             ( model
             , Message.None
@@ -126,6 +152,9 @@ view subModel model =
 
             Loaded ideaSnapshotAndId ->
                 mainView subModel ideaSnapshotAndId
+
+            CreatingSuggestion _ ->
+                CommonUi.normalText 16 "提案を作成中"
         ]
 
 

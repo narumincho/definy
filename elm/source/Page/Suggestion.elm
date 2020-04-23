@@ -1,4 +1,4 @@
-module Page.Suggestion exposing (Message, Model, getSuggestionId, init, update, view)
+module Page.Suggestion exposing (Message, Model, getSuggestionId, init, update, updateByCommonMessage, view)
 
 import CommonUi
 import Data
@@ -26,6 +26,13 @@ getSuggestionId (Model suggestionId) =
     suggestionId
 
 
+updateByCommonMessage : Message.CommonMessage -> Model -> ( Model, Message.Command )
+updateByCommonMessage commonMessage model =
+    ( model
+    , Message.None
+    )
+
+
 update : Message -> Model -> ( Model, Message.Command )
 update message model =
     ( model
@@ -35,4 +42,4 @@ update message model =
 
 view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel model =
-    CommonUi.normalText 16 "ここは提案の編集ページ"
+    CommonUi.normalText 16 "ここは提案のページ"

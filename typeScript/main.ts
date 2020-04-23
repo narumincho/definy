@@ -226,6 +226,16 @@ const init = async (): Promise<void> => {
       });
     });
   });
+  app.ports.addSuggestion.subscribe((parameter) => {
+    callApi(
+      "addSuggestion",
+      data.encodeAddSuggestionParameter(parameter),
+      data.decodeMaybe(data.decodeSuggestionSnapshotAndId)
+    ).then((response) => {
+      console.log(response);
+      app.ports.responseAddSuggestion.send(response);
+    });
+  });
 
   app.ports.toValidProjectName.subscribe((projectName) => {
     app.ports.toValidProjectNameResponse.send({

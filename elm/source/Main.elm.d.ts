@@ -29,6 +29,7 @@ type Ports = {
   readonly createProject: SubForElmCmd<data.CreateProjectParameter>;
   readonly createIdea: SubForElmCmd<data.CreateIdeaParameter>;
   readonly addComment: SubForElmCmd<data.AddCommentParameter>;
+  readonly addSuggestion: SubForElmCmd<data.AddSuggestionParameter>;
 
   readonly toValidProjectName: SubForElmCmd<string>;
   readonly toValidIdeaName: SubForElmCmd<string>;
@@ -71,6 +72,9 @@ type Ports = {
   readonly responseProject: CmdForElmSub<data.ProjectResponse>;
   readonly responseUser: CmdForElmSub<data.UserResponse>;
   readonly responseAddComment: CmdForElmSub<data.IdeaResponse>;
+  readonly responseAddSuggestion: CmdForElmSub<
+    data.Maybe<data.SuggestionSnapshotAndId>
+  >;
   readonly responseIdeaSnapshotAndIdListByProjectId: CmdForElmSub<{
     projectId: data.ProjectId;
     ideaSnapshotAndIdList: ReadonlyArray<data.IdeaSnapshotAndId>;

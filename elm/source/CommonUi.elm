@@ -241,10 +241,7 @@ sameLanguageLink width height styleList subModel location =
         height
         styleList
         (Data.UrlData.urlDataToUrl
-            { clientMode = Message.getClientMode subModel
-            , language = Message.getLanguage subModel
-            , location = location
-            }
+            (Message.urlDataSameLanguageClientMode location subModel)
         )
 
 

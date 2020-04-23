@@ -69,6 +69,9 @@ port createIdea : Json.Encode.Value -> Cmd msg
 port addComment : Json.Encode.Value -> Cmd msg
 
 
+port addSuggestion : Json.Encode.Value -> Cmd msg
+
+
 port toValidProjectName : String -> Cmd msg
 
 
@@ -134,6 +137,9 @@ port responseCreateIdea : (Json.Decode.Value -> msg) -> Sub msg
 
 
 port responseAddComment : (Json.Decode.Value -> msg) -> Sub msg
+
+
+port responseAddSuggestion : (Json.Decode.Value -> msg) -> Sub msg
 
 
 port responseAllProjectId : (Json.Decode.Value -> msg) -> Sub msg
@@ -570,35 +576,7 @@ update msg (Model rec) =
                     )
 
         CommonMessage commonMessage ->
-            case rec.page of
-                Home pageModel ->
-                    mapPageModel
-                        (Page.Home.updateByCommonMessage commonMessage pageModel)
-                        Home
-                        (Model rec)
-
-                Project pageModel ->
-                    mapPageModel
-                        (Page.Project.updateByCommonMessage commonMessage pageModel)
-                        Project
-                        (Model rec)
-
-                User pageModel ->
-                    mapPageModel
-                        (Page.User.updateByCommonMessage commonMessage pageModel)
-                        User
-                        (Model rec)
-
-                Idea pageModel ->
-                    mapPageModel
-                        (Page.Idea.updateByCommonMessage commonMessage pageModel)
-                        Idea
-                        (Model rec)
-
-                _ ->
-                    ( Model rec
-                    , Cmd.none
-                    )
+            commonMessageUpdate commonMessage (Model rec)
 
 
 mapPageModel : ( pageModel, Message.Command ) -> (pageModel -> PageModel) -> Model -> ( Model, Cmd Msg )
@@ -689,6 +667,45 @@ updateFromMsgList msgList model =
 
         [] ->
             ( model, Cmd.none )
+
+
+commonMessageUpdate : Message.CommonMessage -> Model -> ( Model, Cmd Msg )
+commonMessageUpdate commonMessage (Model record) =
+    case record.page of
+        Home pageModel ->
+            mapPageModel
+                (Page.Home.updateByCommonMessage commonMessage pageModel)
+                Home
+                (Model record)
+
+        Project pageModel ->
+            mapPageModel
+                (Page.Project.updateByCommonMessage commonMessage pageModel)
+                Project
+                (Model record)
+
+        User pageModel ->
+            mapPageModel
+                (Page.User.updateByCommonMessage commonMessage pageModel)
+                User
+                (Model record)
+
+        Idea pageModel ->
+            mapPageModel
+                (Page.Idea.updateByCommonMessage record.subModel commonMessage pageModel)
+                Idea
+                (Model record)
+
+        Suggestion pageModel ->
+            mapPageModel
+                (Page.Suggestion.updateByCommonMessage commonMessage pageModel)
+                Suggestion
+                (Model record)
+
+        _ ->
+            ( Model record
+            , Cmd.none
+            )
 
 
 
@@ -1098,6 +1115,19 @@ commandToMainCommand logInState command =
                 _ ->
                     Cmd.none
 
+        Message.AddSuggestion ideaId ->
+            case logInState of
+                Data.LogInState.Ok { accessToken } ->
+                    addSuggestion
+                        (Data.addSuggestionParameterToJsonValue
+                            { ideaId = ideaId
+                            , accessToken = accessToken
+                            }
+                        )
+
+                _ ->
+                    Cmd.none
+
         Message.ConsoleLog string ->
             consoleLog string
 
@@ -1210,6 +1240,15 @@ subscriptions model =
                 of
                     Ok ideaSnapshotMaybe ->
                         CommonMessage (Message.ResponseIdea ideaSnapshotMaybe)
+
+                    Err _ ->
+                        NoOperation
+            )
+         , responseAddSuggestion
+            (\jsonValue ->
+                case Json.Decode.decodeValue (Data.maybeJsonDecoder Data.suggestionSnapshotAndIdJsonDecoder) jsonValue of
+                    Ok suggestionSnapshotAndIdMaybe ->
+                        CommonMessage (Message.ResponseAddSuggestion suggestionSnapshotAndIdMaybe)
 
                     Err _ ->
                         NoOperation

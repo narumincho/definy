@@ -1,4 +1,4 @@
-module Message exposing (Command(..), CommonMessage(..), SubModel, WindowSize, addImageBlobUrl, addUserSnapshot, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getTimeZoneAndNameMaybe, getUserSnapshot, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setTimeZoneAndName, setWindowSize)
+module Message exposing (Command(..), CommonMessage(..), SubModel, WindowSize, addImageBlobUrl, addUserSnapshot, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getTimeZoneAndNameMaybe, getUserSnapshot, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setTimeZoneAndName, setWindowSize, urlDataSameLanguageClientMode)
 
 import Data
 import Data.LogInState
@@ -11,6 +11,7 @@ import Dict
 type CommonMessage
     = ResponseProject Data.ProjectResponse
     | ResponseIdea Data.IdeaResponse
+    | ResponseAddSuggestion (Maybe Data.SuggestionSnapshotAndId)
     | ResponseAllProjectIdList (List Data.ProjectId)
     | ResponseIdeaListByProjectId Data.IdeaListByProjectIdResponse
 
@@ -131,6 +132,16 @@ getUserSnapshot (Data.UserId userId) (SubModel record) =
     Dict.get userId record.userSnapshotDict
 
 
+{-| SubModelからClientModeとLanguageを読んで場所を加えたURL Dataを作る
+-}
+urlDataSameLanguageClientMode : Data.Location -> SubModel -> Data.UrlData
+urlDataSameLanguageClientMode location subModel =
+    { clientMode = getClientMode subModel
+    , language = getLanguage subModel
+    , location = location
+    }
+
+
 {-| 各ページの共通のCmd
 -}
 type Command
@@ -139,6 +150,7 @@ type Command
     | CreateProject String
     | CreateIdea { projectId : Data.ProjectId, ideaName : String }
     | AddComment { ideaId : Data.IdeaId, comment : String }
+    | AddSuggestion Data.IdeaId
     | ConsoleLog String
     | PushUrl Data.UrlData
     | ToValidProjectName String
