@@ -177,7 +177,7 @@ mainView subModel loadedModel =
     Ui.column
         (Ui.stretchWithMaxSize 800)
         Ui.auto
-        []
+        [ Ui.gap 16 ]
         ([ CommonUi.subText ideaIdAsString
          , CommonUi.normalText 24 loadedModel.snapshot.name
          , CommonUi.table

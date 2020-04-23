@@ -424,7 +424,7 @@ table itemList =
                     Ui.auto
                     []
                     [ Ui.text
-                        (Ui.stretchWithMaxSize 200)
+                        (Ui.fix 200)
                         Ui.auto
                         []
                         (Ui.TextAttributes
@@ -434,7 +434,7 @@ table itemList =
                             , letterSpacing = 0
                             , lineHeight = 1.2
                             , color = Css.rgb 200 200 200
-                            , textAlignment = Ui.TextAlignCenter
+                            , textAlignment = Ui.TextAlignStart
                             }
                         )
                     , itemPanel
