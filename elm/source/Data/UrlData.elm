@@ -61,6 +61,13 @@ locationFromPath path =
             else
                 Data.LocationHome
 
+        [ "", "suggestion", id ] ->
+            if isIdString id then
+                Data.LocationSuggestion (Data.SuggestionId id)
+
+            else
+                Data.LocationHome
+
         _ ->
             Data.LocationHome
 
