@@ -846,61 +846,78 @@ mainView (Model record) =
         Ui.stretch
         Ui.stretch
         []
-        [ Component.Header.view record.subModel
-        , logInPanel record.subModel
-        , Ui.scroll Ui.stretch
-            Ui.stretch
-            []
-            (case record.page of
-                Home pageModel ->
-                    Page.Home.view record.subModel pageModel
-                        |> Ui.map (PageMessageHome >> PageMsg)
+        (case Message.getLogInState record.subModel of
+            Data.LogInState.GuestUser ->
+                [ Component.Header.view record.subModel
+                , logInPanelLogInButton
+                    (Message.getLanguage record.subModel)
+                    (Message.getWindowSize record.subModel)
+                , mainContentView (Model record)
+                ]
 
-                CreateProject pageModel ->
-                    Page.CreateProject.view record.subModel pageModel
-                        |> Ui.map (PageMessageCreateProject >> PageMsg)
+            Data.LogInState.RequestLogInUrl _ ->
+                [ Component.Header.view record.subModel
+                , Ui.depth
+                    Ui.stretch
+                    Ui.stretch
+                    []
+                    [ ( ( Ui.Center, Ui.Center )
+                      , CommonUi.normalText 16 "ログイン画面をリクエスト中……"
+                      )
+                    ]
+                ]
 
-                CreateIdea pageModel ->
-                    Page.CreateIdea.view record.subModel pageModel
-                        |> Ui.map (PageMessageCreateIdea >> PageMsg)
+            Data.LogInState.VerifyingAccessToken _ ->
+                [ Component.Header.view record.subModel
+                , CommonUi.normalText 16 "認証中……"
+                , mainContentView (Model record)
+                ]
 
-                Project pageModel ->
-                    Page.Project.view record.subModel pageModel
-                        |> Ui.map (PageMessageProject >> PageMsg)
-
-                User pageModel ->
-                    Page.User.view record.subModel pageModel
-                        |> Ui.map (PageMessageUser >> PageMsg)
-
-                Idea pageModel ->
-                    Page.Idea.view
-                        record.subModel
-                        pageModel
-                        |> Ui.map (PageMessageIdea >> PageMsg)
-
-                Suggestion pageModel ->
-                    Page.Suggestion.view
-                        record.subModel
-                        pageModel
-                        |> Ui.map (PageMessageSuggestion >> PageMsg)
-            )
-        ]
+            Data.LogInState.Ok _ ->
+                [ Component.Header.view record.subModel
+                , mainContentView (Model record)
+                ]
+        )
 
 
-logInPanel : Message.SubModel -> Ui.Panel Msg
-logInPanel subModel =
-    case Message.getLogInState subModel of
-        Data.LogInState.GuestUser ->
-            logInPanelLogInButton (Message.getLanguage subModel) (Message.getWindowSize subModel)
+mainContentView : Model -> Ui.Panel Msg
+mainContentView (Model record) =
+    Ui.scroll Ui.stretch
+        Ui.stretch
+        []
+        (case record.page of
+            Home pageModel ->
+                Page.Home.view record.subModel pageModel
+                    |> Ui.map (PageMessageHome >> PageMsg)
 
-        Data.LogInState.RequestLogInUrl _ ->
-            CommonUi.normalText 16 "ログイン画面をリクエスト中……"
+            CreateProject pageModel ->
+                Page.CreateProject.view record.subModel pageModel
+                    |> Ui.map (PageMessageCreateProject >> PageMsg)
 
-        Data.LogInState.VerifyingAccessToken _ ->
-            CommonUi.normalText 16 "認証中……"
+            CreateIdea pageModel ->
+                Page.CreateIdea.view record.subModel pageModel
+                    |> Ui.map (PageMessageCreateIdea >> PageMsg)
 
-        Data.LogInState.Ok record ->
-            Ui.empty Ui.auto Ui.auto []
+            Project pageModel ->
+                Page.Project.view record.subModel pageModel
+                    |> Ui.map (PageMessageProject >> PageMsg)
+
+            User pageModel ->
+                Page.User.view record.subModel pageModel
+                    |> Ui.map (PageMessageUser >> PageMsg)
+
+            Idea pageModel ->
+                Page.Idea.view
+                    record.subModel
+                    pageModel
+                    |> Ui.map (PageMessageIdea >> PageMsg)
+
+            Suggestion pageModel ->
+                Page.Suggestion.view
+                    record.subModel
+                    pageModel
+                    |> Ui.map (PageMessageSuggestion >> PageMsg)
+        )
 
 
 logInPanelLogInButton : Data.Language -> Message.WindowSize -> Ui.Panel Msg
