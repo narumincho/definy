@@ -81,25 +81,12 @@ export const setAccessToken = (
   database: IDBDatabase | null,
   accessToken: data.AccessToken
 ): Promise<void> =>
-  new Promise((resolve, reject) => {
-    if (database === null) {
-      resolve();
-      return;
-    }
-    const transaction = database.transaction(
-      [accessTokenObjectStoreName],
-      "readwrite"
-    );
-    transaction.oncomplete = (): void => {
-      resolve();
-    };
-    transaction.onerror = (): void => {
-      reject("Write AccessToken Error: transaction failed");
-    };
-    transaction
-      .objectStore(accessTokenObjectStoreName)
-      .put(accessToken, accessTokenKeyName);
-  });
+  setLow<string, data.AccessToken>(
+    database,
+    accessTokenObjectStoreName,
+    accessTokenKeyName,
+    accessToken
+  );
 
 /**
  * ユーザーのデータをindexedDBから読む
@@ -137,58 +124,12 @@ export const setUser = (
   userId: data.UserId,
   userSnapshot: data.UserSnapshot
 ): Promise<void> =>
-  new Promise((resolve, reject) => {
-    if (database === null) {
-      resolve();
-      return;
-    }
-    const getTransaction = database.transaction(
-      [userObjectStoreName],
-      "readonly"
-    );
-    getTransaction.oncomplete = (): void => {
-      if (getRequest.result === undefined) {
-        setUserLow(database, userId, userSnapshot).then(resolve);
-        return;
-      }
-      if (
-        util.timeToDate(getRequest.result.getTime).getTime() <
-        util.timeToDate(userSnapshot.getTime).getTime()
-      ) {
-        setUserLow(database, userId, userSnapshot).then(resolve);
-        return;
-      }
-      resolve();
-    };
-    getTransaction.onerror = (): void => {
-      reject("write user error: get transaction failed");
-    };
-    const getRequest: IDBRequest<
-      undefined | data.UserSnapshot
-    > = getTransaction.objectStore(userObjectStoreName).get(userId);
-  });
-
-/**
- * ユーザーのスナップショットを書き込む
- */
-const setUserLow = (
-  database: IDBDatabase,
-  userId: data.UserId,
-  userSnapshot: data.UserSnapshot
-): Promise<void> =>
-  new Promise((resolve, reject) => {
-    const transaction = database.transaction(
-      [userObjectStoreName],
-      "readwrite"
-    );
-    transaction.oncomplete = (): void => {
-      resolve();
-    };
-    transaction.onerror = (): void => {
-      reject("write user error: write transaction failed");
-    };
-    transaction.objectStore(userObjectStoreName).put(userSnapshot, userId);
-  });
+  set<data.UserId, data.UserSnapshot>(
+    database,
+    userObjectStoreName,
+    userId,
+    userSnapshot
+  );
 
 /**
  * プロジェクトのデータをindexedDBから読む
@@ -231,64 +172,12 @@ export const setProject = (
   projectId: data.ProjectId,
   projectSnapshot: data.ProjectSnapshot
 ): Promise<void> =>
-  new Promise((resolve, reject) => {
-    if (database === null) {
-      resolve();
-      return;
-    }
-
-    const transaction = database.transaction(
-      [projectObjectStoreName],
-      "readonly"
-    );
-
-    transaction.oncomplete = (): void => {
-      if (getRequest.result === undefined) {
-        setProjectLow(database, projectId, projectSnapshot).then(resolve);
-        return;
-      }
-      if (
-        util.timeToDate(getRequest.result.getTime).getTime() <
-        util.timeToDate(projectSnapshot.getTime).getTime()
-      ) {
-        setProjectLow(database, projectId, projectSnapshot).then(resolve);
-        return;
-      }
-      resolve();
-    };
-
-    transaction.onerror = (): void => {
-      reject("set project failed");
-    };
-
-    const getRequest: IDBRequest<
-      undefined | data.ProjectSnapshot
-    > = transaction.objectStore(projectObjectStoreName).get(projectId);
-  });
-
-/**
- * プロジェクトのスナップショットを書き込む
- */
-const setProjectLow = (
-  database: IDBDatabase,
-  projectId: data.ProjectId,
-  projectSnapshot: data.ProjectSnapshot
-): Promise<void> =>
-  new Promise((resolve, reject) => {
-    const transaction = database.transaction(
-      [projectObjectStoreName],
-      "readwrite"
-    );
-    transaction.oncomplete = (): void => {
-      resolve();
-    };
-    transaction.onerror = (): void => {
-      reject("write project error: write transaction failed");
-    };
-    transaction
-      .objectStore(projectObjectStoreName)
-      .put(projectSnapshot, projectId);
-  });
+  set<data.ProjectId, data.ProjectSnapshot>(
+    database,
+    projectObjectStoreName,
+    projectId,
+    projectSnapshot
+  );
 
 /**
  * ファイルのバイナリを読み込む
@@ -323,23 +212,12 @@ export const setFile = (
   fileHash: data.FileHash,
   image: Uint8Array
 ): Promise<void> =>
-  new Promise((resolve, reject) => {
-    if (database === null) {
-      resolve();
-      return;
-    }
-    const transaction = database.transaction(fileObjectStoreName, "readwrite");
-
-    transaction.oncomplete = (): void => {
-      resolve();
-    };
-
-    transaction.onerror = (): void => {
-      reject("set image failed");
-    };
-
-    transaction.objectStore(fileObjectStoreName).put(image, fileHash);
-  });
+  setLow<data.FileHash, Uint8Array>(
+    database,
+    fileObjectStoreName,
+    fileHash,
+    image
+  );
 
 export const getIdea = (
   database: IDBDatabase | null,
@@ -379,57 +257,72 @@ export const setIdea = (
   database: IDBDatabase | null,
   ideaSnapshotAndId: data.IdeaSnapshotAndId
 ): Promise<void> =>
+  set<data.IdeaId, data.IdeaSnapshot>(
+    database,
+    ideaObjectStoreName,
+    ideaSnapshotAndId.id,
+    ideaSnapshotAndId.snapshot
+  );
+
+const set = <id extends string, data extends { getTime: data.Time }>(
+  database: IDBDatabase | null,
+  objectStoreName: string,
+  id: id,
+  data: data
+): Promise<void> =>
   new Promise((resolve, reject) => {
     if (database === null) {
       resolve();
       return;
     }
 
-    const transaction = database.transaction([ideaObjectStoreName], "readonly");
+    const transaction = database.transaction([objectStoreName], "readonly");
 
     transaction.oncomplete = (): void => {
       if (getRequest.result === undefined) {
-        setIdeaLow(database, ideaSnapshotAndId).then(resolve);
+        setLow(database, objectStoreName, id, data).then(resolve);
         return;
       }
       if (
         util.timeToDate(getRequest.result.getTime).getTime() <
-        util.timeToDate(ideaSnapshotAndId.snapshot.getTime).getTime()
+        util.timeToDate(data.getTime).getTime()
       ) {
-        setIdeaLow(database, ideaSnapshotAndId).then(resolve);
+        setLow(database, objectStoreName, id, data).then(resolve);
         return;
       }
       resolve();
     };
 
     transaction.onerror = (): void => {
-      reject("set idea failed");
+      reject("set before get getTime " + objectStoreName + " failed");
     };
 
-    const getRequest: IDBRequest<
-      undefined | data.ProjectSnapshot
-    > = transaction.objectStore(ideaObjectStoreName).get(ideaSnapshotAndId.id);
+    const getRequest: IDBRequest<undefined | data> = transaction
+      .objectStore(objectStoreName)
+      .get(id);
   });
 
-/**
- * アイデアのスナップショットを書き込む
- */
-const setIdeaLow = (
-  database: IDBDatabase,
-  ideaSnapshotAndId: data.IdeaSnapshotAndId
+const setLow = <id extends string, data>(
+  database: IDBDatabase | null,
+  objectStoreName: string,
+  id: id,
+  data: data
 ): Promise<void> =>
   new Promise((resolve, reject) => {
-    const transaction = database.transaction(
-      [ideaObjectStoreName],
-      "readwrite"
-    );
+    if (database === null) {
+      resolve();
+      return;
+    }
+
+    const transaction = database.transaction([objectStoreName], "readwrite");
+
     transaction.oncomplete = (): void => {
       resolve();
     };
+
     transaction.onerror = (): void => {
-      reject("write idea error:  write transaction failed");
+      reject("write " + objectStoreName + " error: write transaction failed");
     };
-    transaction
-      .objectStore(ideaObjectStoreName)
-      .put(ideaSnapshotAndId.snapshot, ideaSnapshotAndId.id);
+
+    transaction.objectStore(objectStoreName).put(data, id);
   });
