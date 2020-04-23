@@ -49,28 +49,11 @@ export const accessDatabase = (): Promise<IDBDatabase | null> =>
 export const getAccessToken = (
   database: IDBDatabase | null
 ): Promise<undefined | data.AccessToken> =>
-  new Promise((resolve, reject) => {
-    if (database === null) {
-      resolve(undefined);
-      return;
-    }
-    const transaction = database.transaction(
-      [accessTokenObjectStoreName],
-      "readonly"
-    );
-
-    const getRequest: IDBRequest<
-      undefined | data.AccessToken
-    > = transaction
-      .objectStore(accessTokenObjectStoreName)
-      .get(accessTokenKeyName);
-    transaction.oncomplete = (): void => {
-      resolve(getRequest.result);
-    };
-    transaction.onerror = (): void => {
-      reject("read AccessToken Error: transaction failed");
-    };
-  });
+  get<typeof accessTokenKeyName, data.AccessToken>(
+    database,
+    accessTokenObjectStoreName,
+    accessTokenKeyName
+  );
 
 /**
  * indexDBにアクセストークンを書き込む
@@ -81,7 +64,7 @@ export const setAccessToken = (
   database: IDBDatabase | null,
   accessToken: data.AccessToken
 ): Promise<void> =>
-  setLow<string, data.AccessToken>(
+  setLow<typeof accessTokenKeyName, data.AccessToken>(
     database,
     accessTokenObjectStoreName,
     accessTokenKeyName,
@@ -95,24 +78,7 @@ export const getUser = (
   database: IDBDatabase | null,
   userId: data.UserId
 ): Promise<undefined | data.UserSnapshot> =>
-  new Promise((resolve, reject) => {
-    if (database === null) {
-      resolve();
-      return;
-    }
-    const transaction = database.transaction([userObjectStoreName], "readonly");
-
-    const getRequest: IDBRequest<
-      undefined | data.UserSnapshot
-    > = transaction.objectStore(userObjectStoreName).get(userId);
-    transaction.oncomplete = (): void => {
-      resolve(getRequest.result);
-    };
-
-    transaction.onerror = (): void => {
-      reject("read user failed");
-    };
-  });
+  get<data.UserId, data.UserSnapshot>(database, userObjectStoreName, userId);
 
 /**
  * 指定したユーザーIDのスナップショットがなかった場合, 指定したユーザースナップショットをindexedDBに書く
@@ -138,27 +104,11 @@ export const getProject = (
   database: IDBDatabase | null,
   projectId: data.ProjectId
 ): Promise<undefined | data.ProjectSnapshot> =>
-  new Promise((resolve, reject) => {
-    if (database === null) {
-      resolve(undefined);
-      return;
-    }
-    const transaction = database.transaction(
-      [projectObjectStoreName],
-      "readonly"
-    );
-    const getRequest: IDBRequest<
-      undefined | data.ProjectSnapshot
-    > = transaction.objectStore(projectObjectStoreName).get(projectId);
-
-    transaction.oncomplete = (): void => {
-      resolve(getRequest.result);
-    };
-
-    transaction.onerror = (): void => {
-      reject("read project failed");
-    };
-  });
+  get<data.ProjectId, data.ProjectSnapshot>(
+    database,
+    projectObjectStoreName,
+    projectId
+  );
 
 /**
  * プロジェクトのスナップショットをindexedDBに書く
@@ -186,23 +136,7 @@ export const getFile = (
   database: IDBDatabase | null,
   fileHash: data.FileHash
 ): Promise<undefined | Uint8Array> =>
-  new Promise((resolve, reject) => {
-    if (database === null) {
-      resolve();
-      return;
-    }
-    const transaction = database.transaction([fileObjectStoreName], "readonly");
-
-    const getRequest: IDBRequest<
-      Uint8Array | undefined
-    > = transaction.objectStore(fileObjectStoreName).get(fileHash);
-    transaction.oncomplete = (): void => {
-      resolve(getRequest.result);
-    };
-    transaction.onerror = (): void => {
-      reject("read image file failed");
-    };
-  });
+  get<data.FileHash, Uint8Array>(database, fileObjectStoreName, fileHash);
 
 /**
  * ファイルのバイナリを書き込む
@@ -223,28 +157,7 @@ export const getIdea = (
   database: IDBDatabase | null,
   ideaId: data.IdeaId
 ): Promise<undefined | data.IdeaSnapshot> =>
-  new Promise((resolve, reject) => {
-    if (database === null) {
-      resolve();
-      return;
-    }
-    const transaction = database.transaction(
-      [ideaObjectStoreName],
-      "readwrite"
-    );
-
-    const getRequest: IDBRequest<
-      undefined | data.IdeaSnapshot
-    > = transaction.objectStore(ideaObjectStoreName).get(ideaId);
-
-    transaction.oncomplete = (): void => {
-      resolve(getRequest.result);
-    };
-
-    transaction.onerror = (): void => {
-      reject("read idea failed");
-    };
-  });
+  get<data.IdeaId, data.IdeaSnapshot>(database, ideaObjectStoreName, ideaId);
 
 /**
  * アイデアのスナップショットをindexedDBに書く
@@ -263,6 +176,33 @@ export const setIdea = (
     ideaSnapshotAndId.id,
     ideaSnapshotAndId.snapshot
   );
+
+const get = <id extends string, data>(
+  database: IDBDatabase | null,
+  objectStoreName: string,
+  id: id
+): Promise<data | undefined> =>
+  new Promise((resolve, reject) => {
+    if (database === null) {
+      resolve();
+      return;
+    }
+    const transaction = database.transaction(
+      [ideaObjectStoreName],
+      "readwrite"
+    );
+
+    transaction.oncomplete = (): void => {
+      resolve(getRequest.result);
+    };
+
+    transaction.onerror = (): void => {
+      reject("read " + objectStoreName + " failed");
+    };
+    const getRequest: IDBRequest<data | undefined> = transaction
+      .objectStore(ideaObjectStoreName)
+      .get(id);
+  });
 
 /**
  * データをindexedDBに書く
