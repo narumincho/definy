@@ -264,6 +264,13 @@ export const setIdea = (
     ideaSnapshotAndId.snapshot
   );
 
+/**
+ * データをindexedDBに書く
+ *
+ * 指定したIDのデータがなかった場合, 指定したデータをindexedDBに書く
+ * 指定したデータのgetTimeが 前にあったデータのgetTimeより新しかった場合, 指定したデータをindexedDBに書く
+ * そうでなければ何もしない
+ */
 const set = <id extends string, data extends { getTime: data.Time }>(
   database: IDBDatabase | null,
   objectStoreName: string,
