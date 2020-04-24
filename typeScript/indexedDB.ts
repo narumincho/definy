@@ -174,13 +174,14 @@ export const getIdea = (
  */
 export const setIdea = (
   database: IDBDatabase | null,
-  ideaSnapshotAndId: data.IdeaSnapshotAndId
+  id: data.IdeaId,
+  snapshot: data.IdeaSnapshot
 ): Promise<void> =>
   set<data.IdeaId, data.IdeaSnapshot>(
     database,
     ideaObjectStoreName,
-    ideaSnapshotAndId.id,
-    ideaSnapshotAndId.snapshot
+    id,
+    snapshot
   );
 
 export const getSuggestion = (

@@ -11,6 +11,7 @@ import Dict
 type CommonMessage
     = ResponseProject Data.ProjectResponse
     | ResponseIdea Data.IdeaResponse
+    | ResponseSuggestion Data.SuggestionResponse
     | ResponseAddSuggestion (Maybe Data.SuggestionSnapshotAndId)
     | ResponseAllProjectIdList (List Data.ProjectId)
     | ResponseIdeaListByProjectId Data.IdeaListByProjectIdResponse
@@ -159,5 +160,6 @@ type Command
     | GetProject Data.ProjectId
     | GetUser Data.UserId
     | GetIdea Data.IdeaId
+    | GetSuggestion Data.SuggestionId
     | GetIdeaListByProjectId Data.ProjectId
     | Batch (List Command)

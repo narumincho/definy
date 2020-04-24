@@ -99,6 +99,9 @@ port getIdeaAndIdListByProjectId : Json.Decode.Value -> Cmd msg
 port getIdea : Json.Decode.Value -> Cmd msg
 
 
+port getSuggestion : Json.Decode.Value -> Cmd msg
+
+
 
 {- Sub (JavaScript → Elm) -}
 
@@ -155,6 +158,9 @@ port responseIdeaSnapshotAndIdListByProjectId : (Json.Decode.Value -> msg) -> Su
 
 
 port responseIdea : (Json.Decode.Value -> msg) -> Sub msg
+
+
+port responseSuggestion : (Json.Decode.Value -> msg) -> Sub msg
 
 
 {-| 全体の入力を表すメッセージ
@@ -1171,6 +1177,9 @@ commandToMainCommand logInState command =
         Message.GetIdea ideaId ->
             getIdea (Data.ideaIdToJsonValue ideaId)
 
+        Message.GetSuggestion suggestionId ->
+            getSuggestion (Data.suggestionIdToJsonValue suggestionId)
+
         Message.GetIdeaListByProjectId projectId ->
             getIdeaAndIdListByProjectId (Data.projectIdToJsonValue projectId)
 
@@ -1312,6 +1321,15 @@ subscriptions model =
                 case Json.Decode.decodeValue Data.ideaResponseJsonDecoder jsonValue of
                     Ok ideaResponse ->
                         CommonMessage (Message.ResponseIdea ideaResponse)
+
+                    Err _ ->
+                        NoOperation
+            )
+         , responseSuggestion
+            (\jsonValue ->
+                case Json.Decode.decodeValue Data.suggestionResponseJsonDecoder jsonValue of
+                    Ok suggestionResponse ->
+                        CommonMessage (Message.ResponseSuggestion suggestionResponse)
 
                     Err _ ->
                         NoOperation

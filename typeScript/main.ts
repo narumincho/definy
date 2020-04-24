@@ -211,6 +211,9 @@ const init = async (): Promise<void> => {
       data.encodeCreateIdeaParameter(parameter),
       data.decodeMaybe(data.decodeIdeaSnapshotAndId)
     ).then((response) => {
+      if (response._ === "Just") {
+        db.setIdea(database, response.value.id, response.value.snapshot);
+      }
       app.ports.responseCreateIdea.send(response);
     });
   });
@@ -220,6 +223,9 @@ const init = async (): Promise<void> => {
       data.encodeAddCommentParameter(parameter),
       data.decodeMaybe(data.decodeIdeaSnapshot)
     ).then((response) => {
+      if (response._ === "Just") {
+        db.setIdea(database, parameter.ideaId, response.value);
+      }
       app.ports.responseAddComment.send({
         id: parameter.ideaId,
         snapshotMaybe: response,
@@ -232,6 +238,9 @@ const init = async (): Promise<void> => {
       data.encodeAddSuggestionParameter(parameter),
       data.decodeMaybe(data.decodeSuggestionSnapshotAndId)
     ).then((response) => {
+      if (response._ === "Just") {
+        db.setSuggestion(database, response.value.id, response.value.snapshot);
+      }
       console.log(response);
       app.ports.responseAddSuggestion.send(response);
     });
@@ -326,7 +335,7 @@ const init = async (): Promise<void> => {
       data.decodeList(data.decodeIdeaSnapshotAndId)
     ).then((ideaSnapshotAndIdList) => {
       for (const ideaSnapshotAndId of ideaSnapshotAndIdList) {
-        db.setIdea(database, ideaSnapshotAndId);
+        db.setIdea(database, ideaSnapshotAndId.id, ideaSnapshotAndId.snapshot);
       }
       app.ports.responseIdeaSnapshotAndIdListByProjectId.send({
         projectId: projectId,
@@ -351,14 +360,40 @@ const init = async (): Promise<void> => {
         data.decodeMaybe(data.decodeIdeaSnapshot)
       ).then((ideaSnapshotMaybe) => {
         if (ideaSnapshotMaybe._ === "Just") {
-          db.setIdea(database, {
-            id: ideaId,
-            snapshot: ideaSnapshotMaybe.value,
-          });
+          db.setIdea(database, ideaId, ideaSnapshotMaybe.value);
         }
         app.ports.responseIdea.send({
           id: ideaId,
           snapshotMaybe: ideaSnapshotMaybe,
+        });
+      });
+    });
+  });
+  app.ports.getSuggestion.subscribe((suggestionId) => {
+    db.getSuggestion(database, suggestionId).then((suggestionInIndexedDB) => {
+      if (suggestionInIndexedDB !== undefined) {
+        app.ports.responseSuggestion.send({
+          id: suggestionId,
+          snapshotMaybe: data.maybeJust(suggestionInIndexedDB),
+        });
+      }
+
+      callApi(
+        "getSuggestion",
+        data.encodeId(suggestionId),
+        data.decodeMaybe(data.decodeSuggestionSnapshot)
+      ).then((suggestionSnapshotMaybe) => {
+        if (suggestionSnapshotMaybe._ === "Just") {
+          db.setSuggestion(
+            database,
+            suggestionId,
+            suggestionSnapshotMaybe.value
+          );
+        }
+
+        app.ports.responseSuggestion.send({
+          id: suggestionId,
+          snapshotMaybe: suggestionSnapshotMaybe,
         });
       });
     });
