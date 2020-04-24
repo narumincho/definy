@@ -6,6 +6,9 @@ const userObjectStoreName = "user";
 const projectObjectStoreName = "project";
 const fileObjectStoreName = "file";
 const ideaObjectStoreName = "idea";
+const suggestionObjectStoreName = "suggestion";
+const partObjectStoreName = "part";
+const typePartObjectStoreName = "typePart";
 
 /**
  * ブラウザでindexDBがサポートされているかどうか調べる
@@ -32,6 +35,9 @@ export const accessDatabase = (): Promise<IDBDatabase | null> =>
       db.createObjectStore(projectObjectStoreName, {});
       db.createObjectStore(fileObjectStoreName, {});
       db.createObjectStore(ideaObjectStoreName, {});
+      db.createObjectStore(suggestionObjectStoreName, {});
+      db.createObjectStore(partObjectStoreName, {});
+      db.createObjectStore(typePartObjectStoreName, {});
     };
 
     dbRequest.onsuccess = (): void => {
@@ -175,6 +181,68 @@ export const setIdea = (
     ideaObjectStoreName,
     ideaSnapshotAndId.id,
     ideaSnapshotAndId.snapshot
+  );
+
+export const getSuggestion = (
+  database: IDBDatabase | null,
+  id: data.SuggestionId
+): Promise<data.SuggestionSnapshot | undefined> =>
+  get<data.SuggestionId, data.SuggestionSnapshot>(
+    database,
+    suggestionObjectStoreName,
+    id
+  );
+
+export const setSuggestion = (
+  database: IDBDatabase | null,
+  id: data.SuggestionId,
+  snapshot: data.SuggestionSnapshot
+): Promise<void> =>
+  set<data.SuggestionId, data.SuggestionSnapshot>(
+    database,
+    suggestionObjectStoreName,
+    id,
+    snapshot
+  );
+
+export const getPart = (
+  database: IDBDatabase | null,
+  id: data.PartId
+): Promise<data.PartSnapshot | undefined> =>
+  get<data.PartId, data.PartSnapshot>(database, partObjectStoreName, id);
+
+export const setPart = (
+  database: IDBDatabase | null,
+  id: data.PartId,
+  snapshot: data.PartSnapshot
+): Promise<void> =>
+  set<data.PartId, data.PartSnapshot>(
+    database,
+    partObjectStoreName,
+    id,
+    snapshot
+  );
+
+export const getTypePart = (
+  database: IDBDatabase | null,
+  id: data.TypePartId
+): Promise<data.TypePartSnapshot | undefined> =>
+  get<data.TypePartId, data.TypePartSnapshot>(
+    database,
+    typePartObjectStoreName,
+    id
+  );
+
+export const setTypePart = (
+  database: IDBDatabase | null,
+  id: data.TypePartId,
+  snapshot: data.TypePartSnapshot
+): Promise<void> =>
+  set<data.TypePartId, data.TypePartSnapshot>(
+    database,
+    typePartObjectStoreName,
+    id,
+    snapshot
   );
 
 const get = <id extends string, data>(
