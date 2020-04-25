@@ -291,16 +291,13 @@ const init = async (): Promise<void> => {
 
   app.ports.getUser.subscribe((userId) => {
     db.getUser(database, userId).then((userSnapshotInIndexedDB) => {
-      console.log("indexedDBから読んだ");
       if (userSnapshotInIndexedDB !== undefined) {
-        console.log("indexedDBにあった");
         app.ports.responseUser.send({
           id: userId,
           snapshotMaybe: data.maybeJust(userSnapshotInIndexedDB),
         });
         return;
       }
-      console.log("ないからサーバーに問い合わせる");
       getUserFromServerSetInIndexedDB(userId).then(app.ports.responseUser.send);
     });
   });

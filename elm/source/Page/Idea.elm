@@ -19,6 +19,7 @@ type alias LoadedModel =
     { id : Data.IdeaId
     , snapshot : Data.IdeaSnapshot
     , comment : Comment
+    , fresh : Bool
     }
 
 
@@ -63,17 +64,29 @@ updateByCommonMessage subModel message model =
             if idea.id == getIdeaId model then
                 case idea.snapshotMaybe of
                     Just snapshot ->
-                        ( Loaded
-                            { id = idea.id
-                            , snapshot = snapshot
-                            , comment = Inputting ""
-                            }
-                        , Message.Batch
-                            (Message.GetUser snapshot.createUser
-                                :: List.map Message.GetUser
-                                    (List.map .createUserId snapshot.itemList)
+                        if isFresh subModel snapshot then
+                            ( Loaded
+                                { id = idea.id
+                                , snapshot = snapshot
+                                , comment = Inputting ""
+                                , fresh = True
+                                }
+                            , Message.Batch
+                                (Message.GetUser snapshot.createUser
+                                    :: List.map Message.GetUser
+                                        (List.map .createUserId snapshot.itemList)
+                                )
                             )
-                        )
+
+                        else
+                            ( Loaded
+                                { id = idea.id
+                                , snapshot = snapshot
+                                , comment = Inputting ""
+                                , fresh = False
+                                }
+                            , Message.GetIdeaNoCache idea.id
+                            )
 
                     Nothing ->
                         ( NotFound idea.id
@@ -105,7 +118,7 @@ updateByCommonMessage subModel message model =
         Message.UpdateTime ->
             case model of
                 Loaded loadedModel ->
-                    if Data.TimeZoneAndName.isFresh 5000 (Message.getNowTime subModel) loadedModel.snapshot.getTime then
+                    if isFresh subModel loadedModel.snapshot then
                         ( model
                         , Message.None
                         )
@@ -124,6 +137,11 @@ updateByCommonMessage subModel message model =
             ( model
             , Message.None
             )
+
+
+isFresh : Message.SubModel -> Data.IdeaSnapshot -> Bool
+isFresh subModel ideaSnapshot =
+    Data.TimeZoneAndName.isFresh 5000 (Message.getNowTime subModel) ideaSnapshot.getTime
 
 
 update : Message -> Model -> ( Model, Message.Command )
@@ -205,6 +223,13 @@ mainView subModel loadedModel =
         [ Ui.gap 16 ]
         ([ CommonUi.subText ideaIdAsString
          , CommonUi.normalText 24 loadedModel.snapshot.name
+         , CommonUi.normalText 16
+            (if loadedModel.fresh then
+                "最新のデータです"
+
+             else
+                "最新のデータを取得中"
+            )
          , CommonUi.table
             [ ( "いいだしっぺ", CommonUi.userView subModel loadedModel.snapshot.createUser )
             , ( "作成日時", CommonUi.timeView subModel loadedModel.snapshot.createTime )
