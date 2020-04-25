@@ -256,13 +256,9 @@ const get = <id extends string, data>(
       resolve();
       return;
     }
-    const transaction = database.transaction(
-      [ideaObjectStoreName],
-      "readwrite"
-    );
+    const transaction = database.transaction([objectStoreName], "readwrite");
 
     transaction.oncomplete = (): void => {
-      console.log("transaction.oncomplete", getRequest.result);
       resolve(getRequest.result);
     };
 
@@ -271,12 +267,8 @@ const get = <id extends string, data>(
     };
 
     const getRequest: IDBRequest<data | undefined> = transaction
-      .objectStore(ideaObjectStoreName)
+      .objectStore(objectStoreName)
       .get(id);
-
-    getRequest.onsuccess = () => {
-      console.log("getRequest.onsuccess", getRequest.result);
-    };
   });
 
 /**
