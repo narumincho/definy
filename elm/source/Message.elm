@@ -158,8 +158,12 @@ type Command
     | ToValidIdeaName String
     | GetAllProjectId
     | GetProject Data.ProjectId
+    | GetProjectNoCache Data.ProjectId
     | GetUser Data.UserId
+    | GetUserNoCache Data.UserId
     | GetIdea Data.IdeaId
+    | GetIdeaNoCache Data.IdeaId
     | GetSuggestion Data.SuggestionId
+    | GetSuggestionNoCache Data.SuggestionId
     | GetIdeaListByProjectId Data.ProjectId
     | Batch (List Command)

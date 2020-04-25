@@ -268,6 +268,26 @@ const init = async (): Promise<void> => {
     );
   });
 
+  /**
+   * Userのデータをサーバーに問い合わせて取得して,その結果をindexedDBに保存して返す
+   */
+  const getUserFromServerSetInIndexedDB = (
+    userId: data.UserId
+  ): Promise<data.UserResponse> =>
+    callApi(
+      "getUser",
+      data.encodeId(userId),
+      data.decodeMaybe(data.decodeUserSnapshot)
+    ).then((userSnapshotFromServer) => {
+      if (userSnapshotFromServer._ === "Just") {
+        db.setUser(database, userId, userSnapshotFromServer.value);
+      }
+      return {
+        id: userId,
+        snapshotMaybe: userSnapshotFromServer,
+      };
+    });
+
   app.ports.getUser.subscribe((userId) => {
     db.getUser(database, userId).then((userSnapshotInIndexedDB) => {
       if (userSnapshotInIndexedDB !== undefined) {
@@ -277,26 +297,29 @@ const init = async (): Promise<void> => {
         });
         return;
       }
-      callApi(
-        "getUser",
-        data.encodeId(userId),
-        data.decodeMaybe(data.decodeUserSnapshot)
-      ).then((userSnapshotFromServer) => {
-        if (userSnapshotFromServer._ === "Just") {
-          db.setUser(database, userId, userSnapshotFromServer.value);
-          app.ports.responseUser.send({
-            id: userId,
-            snapshotMaybe: data.maybeJust(userSnapshotFromServer.value),
-          });
-          return;
-        }
-        app.ports.responseUser.send({
-          id: userId,
-          snapshotMaybe: data.maybeNothing(),
-        });
-      });
+      getUserFromServerSetInIndexedDB(userId).then(app.ports.responseUser.send);
     });
   });
+  app.ports.getUserNoCache.subscribe((userId) => {
+    getUserFromServerSetInIndexedDB(userId).then(app.ports.responseUser.send);
+  });
+
+  const getProjectFromServerSetInIndexedDB = (
+    projectId: data.ProjectId
+  ): Promise<data.ProjectResponse> =>
+    callApi(
+      "getProject",
+      data.encodeId(projectId),
+      data.decodeMaybe(data.decodeProjectSnapshot)
+    ).then((projectMaybe) => {
+      if (projectMaybe._ === "Just") {
+        db.setProject(database, projectId, projectMaybe.value);
+      }
+      return {
+        id: projectId,
+        snapshotMaybe: projectMaybe,
+      };
+    });
 
   app.ports.getProject.subscribe((projectId) => {
     db.getProject(database, projectId).then((projectDataInIndexedDB) => {
@@ -307,25 +330,15 @@ const init = async (): Promise<void> => {
         });
         return;
       }
-      callApi(
-        "getProject",
-        data.encodeId(projectId),
-        data.decodeMaybe(data.decodeProjectSnapshot)
-      ).then((projectMaybe) => {
-        if (projectMaybe._ === "Just") {
-          db.setProject(database, projectId, projectMaybe.value);
-          app.ports.responseProject.send({
-            id: projectId,
-            snapshotMaybe: data.maybeJust(projectMaybe.value),
-          });
-          return;
-        }
-        app.ports.responseProject.send({
-          id: projectId,
-          snapshotMaybe: data.maybeNothing(),
-        });
-      });
+      getProjectFromServerSetInIndexedDB(projectId).then(
+        app.ports.responseProject.send
+      );
     });
+  });
+  app.ports.getProjectNoCache.subscribe((projectId) => {
+    getProjectFromServerSetInIndexedDB(projectId).then(
+      app.ports.responseProject.send
+    );
   });
 
   app.ports.getIdeaAndIdListByProjectId.subscribe((projectId) => {
@@ -344,6 +357,22 @@ const init = async (): Promise<void> => {
     });
   });
 
+  const getIdeaFromServerSetInIndexedDB = (
+    ideaId: data.IdeaId
+  ): Promise<data.IdeaResponse> =>
+    callApi(
+      "getIdea",
+      data.encodeId(ideaId),
+      data.decodeMaybe(data.decodeIdeaSnapshot)
+    ).then((ideaSnapshotMaybe) => {
+      if (ideaSnapshotMaybe._ === "Just") {
+        db.setIdea(database, ideaId, ideaSnapshotMaybe.value);
+      }
+      return {
+        id: ideaId,
+        snapshotMaybe: ideaSnapshotMaybe,
+      };
+    });
   app.ports.getIdea.subscribe((ideaId) => {
     db.getIdea(database, ideaId).then((ideaSnapshotInIndexedDB) => {
       if (ideaSnapshotInIndexedDB !== undefined) {
@@ -353,22 +382,30 @@ const init = async (): Promise<void> => {
         });
         return;
       }
-
-      callApi(
-        "getIdea",
-        data.encodeId(ideaId),
-        data.decodeMaybe(data.decodeIdeaSnapshot)
-      ).then((ideaSnapshotMaybe) => {
-        if (ideaSnapshotMaybe._ === "Just") {
-          db.setIdea(database, ideaId, ideaSnapshotMaybe.value);
-        }
-        app.ports.responseIdea.send({
-          id: ideaId,
-          snapshotMaybe: ideaSnapshotMaybe,
-        });
-      });
+      getIdeaFromServerSetInIndexedDB(ideaId).then(app.ports.responseIdea.send);
     });
   });
+  app.ports.getIdeaNoCache.subscribe((ideaId) => {
+    getIdeaFromServerSetInIndexedDB(ideaId).then(app.ports.responseIdea.send);
+  });
+
+  const getSuggestionFromServerSetInIndexedDB = (
+    suggestionId: data.SuggestionId
+  ): Promise<data.SuggestionResponse> =>
+    callApi(
+      "getSuggestion",
+      data.encodeId(suggestionId),
+      data.decodeMaybe(data.decodeSuggestionSnapshot)
+    ).then((suggestionSnapshotMaybe) => {
+      if (suggestionSnapshotMaybe._ === "Just") {
+        db.setSuggestion(database, suggestionId, suggestionSnapshotMaybe.value);
+      }
+
+      return {
+        id: suggestionId,
+        snapshotMaybe: suggestionSnapshotMaybe,
+      };
+    });
   app.ports.getSuggestion.subscribe((suggestionId) => {
     db.getSuggestion(database, suggestionId).then((suggestionInIndexedDB) => {
       if (suggestionInIndexedDB !== undefined) {
@@ -377,26 +414,15 @@ const init = async (): Promise<void> => {
           snapshotMaybe: data.maybeJust(suggestionInIndexedDB),
         });
       }
-
-      callApi(
-        "getSuggestion",
-        data.encodeId(suggestionId),
-        data.decodeMaybe(data.decodeSuggestionSnapshot)
-      ).then((suggestionSnapshotMaybe) => {
-        if (suggestionSnapshotMaybe._ === "Just") {
-          db.setSuggestion(
-            database,
-            suggestionId,
-            suggestionSnapshotMaybe.value
-          );
-        }
-
-        app.ports.responseSuggestion.send({
-          id: suggestionId,
-          snapshotMaybe: suggestionSnapshotMaybe,
-        });
-      });
+      getSuggestionFromServerSetInIndexedDB(suggestionId).then(
+        app.ports.responseSuggestion.send
+      );
     });
+  });
+  app.ports.getSuggestionNoCache.subscribe((suggestionId) => {
+    getSuggestionFromServerSetInIndexedDB(suggestionId).then(
+      app.ports.responseSuggestion.send
+    );
   });
 };
 

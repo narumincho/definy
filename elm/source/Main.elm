@@ -81,7 +81,7 @@ port toValidIdeaName : String -> Cmd msg
 port getUser : Json.Decode.Value -> Cmd msg
 
 
-port getUserForceNotUserCache : Json.Decode.Value -> Cmd msg
+port getUserNoCache : Json.Decode.Value -> Cmd msg
 
 
 port getAllProjectIdList : () -> Cmd msg
@@ -90,7 +90,7 @@ port getAllProjectIdList : () -> Cmd msg
 port getProject : Json.Decode.Value -> Cmd msg
 
 
-port getProjectForceNotUseCache : Json.Decode.Value -> Cmd msg
+port getProjectNoCache : Json.Decode.Value -> Cmd msg
 
 
 port getIdeaAndIdListByProjectId : Json.Decode.Value -> Cmd msg
@@ -99,7 +99,13 @@ port getIdeaAndIdListByProjectId : Json.Decode.Value -> Cmd msg
 port getIdea : Json.Decode.Value -> Cmd msg
 
 
+port getIdeaNoCache : Json.Decode.Value -> Cmd msg
+
+
 port getSuggestion : Json.Decode.Value -> Cmd msg
+
+
+port getSuggestionNoCache : Json.Decode.Value -> Cmd msg
 
 
 
@@ -1168,17 +1174,29 @@ commandToMainCommand logInState command =
         Message.GetUser userId ->
             getUser (Data.userIdToJsonValue userId)
 
+        Message.GetUserNoCache userId ->
+            getUserNoCache (Data.userIdToJsonValue userId)
+
         Message.GetAllProjectId ->
             getAllProjectIdList ()
 
         Message.GetProject projectId ->
             getProject (Data.projectIdToJsonValue projectId)
 
+        Message.GetProjectNoCache projectId ->
+            getProjectNoCache (Data.projectIdToJsonValue projectId)
+
         Message.GetIdea ideaId ->
             getIdea (Data.ideaIdToJsonValue ideaId)
 
+        Message.GetIdeaNoCache ideaId ->
+            getIdeaNoCache (Data.ideaIdToJsonValue ideaId)
+
         Message.GetSuggestion suggestionId ->
             getSuggestion (Data.suggestionIdToJsonValue suggestionId)
+
+        Message.GetSuggestionNoCache suggestionId ->
+            getSuggestionNoCache (Data.suggestionIdToJsonValue suggestionId)
 
         Message.GetIdeaListByProjectId projectId ->
             getIdeaAndIdListByProjectId (Data.projectIdToJsonValue projectId)

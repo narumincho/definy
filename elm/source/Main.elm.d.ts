@@ -35,12 +35,16 @@ type Ports = {
   readonly toValidIdeaName: SubForElmCmd<string>;
 
   readonly getUser: SubForElmCmd<data.UserId>;
+  readonly getUserNoCache: SubForElmCmd<data.UserId>;
   readonly getAllProjectIdList: SubForElmCmd<null>;
   readonly getProject: SubForElmCmd<data.ProjectId>;
+  readonly getProjectNoCache: SubForElmCmd<data.ProjectId>;
   readonly getProjectForceNotUseCache: SubForElmCmd<data.ProjectId>;
   readonly getIdeaAndIdListByProjectId: SubForElmCmd<data.ProjectId>;
   readonly getIdea: SubForElmCmd<data.IdeaId>;
+  readonly getIdeaNoCache: SubForElmCmd<data.IdeaId>;
   readonly getSuggestion: SubForElmCmd<data.SuggestionId>;
+  readonly getSuggestionNoCache: SubForElmCmd<data.SuggestionId>;
 
   readonly responseUserByAccessToken: CmdForElmSub<
     data.Maybe<data.UserSnapshotAndId>
