@@ -1,7 +1,6 @@
 module Page.CreateProject exposing (Message(..), Model, init, update, view)
 
 import CommonUi
-import Css
 import Data
 import Data.LogInState
 import Message

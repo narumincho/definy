@@ -254,7 +254,7 @@ timeView : Message.SubModel -> Data.Time -> Ui.Panel message
 timeView subModel time =
     let
         posix =
-            timeToPosix time
+            Data.TimeZoneAndName.timeToPosix time
     in
     case Message.getTimeZoneAndNameMaybe subModel of
         Just timeZoneAndName ->
@@ -321,11 +321,6 @@ timeTermView timeTerm =
                     , textAlignment = Ui.TextAlignEnd
                     }
                 )
-
-
-timeToPosix : Data.Time -> Time.Posix
-timeToPosix time =
-    Time.millisToPosix (time.day * 1000 * 60 * 60 * 24 + time.millisecond)
 
 
 utcTimeToString : Time.Posix -> String

@@ -179,6 +179,7 @@ type Msg
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
     | LogOutRequest -- ログアウトを要求する
     | ChangeNetworkConnection Bool -- 接続状況が変わった
+    | UpdateTime Time.Posix -- 時間が過ぎた
     | PageMsg PageMessage -- ページ固有のメッセージ
     | NotificationMessage Component.Notifications.Message
     | RequestLogInUrl Data.OpenIdConnectProvider
@@ -243,6 +244,7 @@ type alias Flag =
         { width : Int
         , height : Int
         }
+    , nowTime : Data.Time
     , accessTokenMaybe : Maybe String
     , networkConnection : Bool
     }
@@ -304,6 +306,7 @@ init flag url navigationKey =
                 , language = urlData.language
                 , clientMode = urlData.clientMode
                 , timeZoneAndNameMaybe = Nothing
+                , nowTime = Data.TimeZoneAndName.timeToPosix flag.nowTime
                 , windowSize = flag.windowSize
                 }
         , networkConnection = flag.networkConnection
@@ -586,6 +589,11 @@ update msg (Model rec) =
                     ( Model rec
                     , Cmd.none
                     )
+
+        UpdateTime timePosix ->
+            commonMessageUpdate
+                Message.UpdateTime
+                (Model { rec | subModel = Message.setNowTime timePosix rec.subModel })
 
         CommonMessage commonMessage ->
             commonMessageUpdate commonMessage (Model rec)
@@ -1219,6 +1227,7 @@ subscriptions model =
          , keyPrevented (always KeyPrevented)
          , windowResize WindowResize
          , changeNetworkConnection ChangeNetworkConnection
+         , Time.every 1000 UpdateTime
          , responseUserByAccessToken
             (\jsonValue ->
                 case

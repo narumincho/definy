@@ -1,9 +1,10 @@
-module Message exposing (Command(..), CommonMessage(..), SubModel, WindowSize, addImageBlobUrl, addUserSnapshot, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getTimeZoneAndNameMaybe, getUserSnapshot, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setTimeZoneAndName, setWindowSize, urlDataSameLanguageClientMode)
+module Message exposing (Command(..), CommonMessage(..), SubModel, WindowSize, addImageBlobUrl, addUserSnapshot, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getNowTime, getTimeZoneAndNameMaybe, getUserSnapshot, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setNowTime, setTimeZoneAndName, setWindowSize, urlDataSameLanguageClientMode)
 
 import Data
 import Data.LogInState
 import Data.TimeZoneAndName
 import Dict
+import Time
 
 
 {-| 各ページの共通のレスポンス Message
@@ -15,6 +16,7 @@ type CommonMessage
     | ResponseAddSuggestion (Maybe Data.SuggestionSnapshotAndId)
     | ResponseAllProjectIdList (List Data.ProjectId)
     | ResponseIdeaListByProjectId Data.IdeaListByProjectIdResponse
+    | UpdateTime
 
 
 {-| 各ページに渡すべきModel
@@ -27,6 +29,7 @@ type SubModel
         , imageFileBlobDict : Dict.Dict String String
         , userSnapshotDict : Dict.Dict String (Maybe Data.UserSnapshot)
         , timeZoneAndNameMaybe : Maybe Data.TimeZoneAndName.TimeZoneAndName
+        , nowTime : Time.Posix
         , windowSize : WindowSize
         }
 
@@ -40,6 +43,7 @@ from :
     , language : Data.Language
     , clientMode : Data.ClientMode
     , timeZoneAndNameMaybe : Maybe Data.TimeZoneAndName.TimeZoneAndName
+    , nowTime : Time.Posix
     , windowSize : WindowSize
     }
     -> SubModel
@@ -51,6 +55,7 @@ from record =
         , imageFileBlobDict = Dict.empty
         , userSnapshotDict = Dict.empty
         , timeZoneAndNameMaybe = record.timeZoneAndNameMaybe
+        , nowTime = record.nowTime
         , windowSize = record.windowSize
         }
 
@@ -107,6 +112,16 @@ getTimeZoneAndNameMaybe (SubModel record) =
 setTimeZoneAndName : Data.TimeZoneAndName.TimeZoneAndName -> SubModel -> SubModel
 setTimeZoneAndName timeZoneAndName (SubModel record) =
     SubModel { record | timeZoneAndNameMaybe = Just timeZoneAndName }
+
+
+getNowTime : SubModel -> Time.Posix
+getNowTime (SubModel record) =
+    record.nowTime
+
+
+setNowTime : Time.Posix -> SubModel -> SubModel
+setNowTime timePosix (SubModel record) =
+    SubModel { record | nowTime = timePosix }
 
 
 getWindowSize : SubModel -> WindowSize

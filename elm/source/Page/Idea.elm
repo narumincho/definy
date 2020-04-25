@@ -3,6 +3,7 @@ module Page.Idea exposing (Message(..), Model, getIdeaId, init, update, updateBy
 import CommonUi
 import Data
 import Data.LogInState
+import Data.TimeZoneAndName
 import Message
 import Ui
 
@@ -59,24 +60,30 @@ updateByCommonMessage : Message.SubModel -> Message.CommonMessage -> Model -> ( 
 updateByCommonMessage subModel message model =
     case message of
         Message.ResponseIdea idea ->
-            case idea.snapshotMaybe of
-                Just snapshot ->
-                    ( Loaded
-                        { id = idea.id
-                        , snapshot = snapshot
-                        , comment = Inputting ""
-                        }
-                    , Message.Batch
-                        (Message.GetUser snapshot.createUser
-                            :: List.map Message.GetUser
-                                (List.map .createUserId snapshot.itemList)
+            if idea.id == getIdeaId model then
+                case idea.snapshotMaybe of
+                    Just snapshot ->
+                        ( Loaded
+                            { id = idea.id
+                            , snapshot = snapshot
+                            , comment = Inputting ""
+                            }
+                        , Message.Batch
+                            (Message.GetUser snapshot.createUser
+                                :: List.map Message.GetUser
+                                    (List.map .createUserId snapshot.itemList)
+                            )
                         )
-                    )
 
-                Nothing ->
-                    ( NotFound idea.id
-                    , Message.None
-                    )
+                    Nothing ->
+                        ( NotFound idea.id
+                        , Message.None
+                        )
+
+            else
+                ( model
+                , Message.None
+                )
 
         Message.ResponseAddSuggestion suggestionSnapshotAndIdMaybe ->
             let
@@ -93,6 +100,24 @@ updateByCommonMessage subModel message model =
                 Nothing ->
                     ( Loading ideaId
                     , Message.GetIdea ideaId
+                    )
+
+        Message.UpdateTime ->
+            case model of
+                Loaded loadedModel ->
+                    if Data.TimeZoneAndName.isFresh 5000 (Message.getNowTime subModel) loadedModel.snapshot.getTime then
+                        ( model
+                        , Message.None
+                        )
+
+                    else
+                        ( model
+                        , Message.GetIdeaNoCache loadedModel.id
+                        )
+
+                _ ->
+                    ( model
+                    , Message.None
                     )
 
         _ ->

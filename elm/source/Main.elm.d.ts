@@ -16,6 +16,7 @@ type Flags = {
     readonly width: number;
     readonly height: number;
   };
+  readonly nowTime: data.Time;
   readonly accessTokenMaybe: null | string;
   readonly networkConnection: boolean;
 };

@@ -262,15 +262,21 @@ const get = <id extends string, data>(
     );
 
     transaction.oncomplete = (): void => {
+      console.log("transaction.oncomplete", getRequest.result);
       resolve(getRequest.result);
     };
 
     transaction.onerror = (): void => {
       reject("read " + objectStoreName + " failed");
     };
+
     const getRequest: IDBRequest<data | undefined> = transaction
       .objectStore(ideaObjectStoreName)
       .get(id);
+
+    getRequest.onsuccess = () => {
+      console.log("getRequest.onsuccess", getRequest.result);
+    };
   });
 
 /**
