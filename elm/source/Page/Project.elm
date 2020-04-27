@@ -144,7 +144,7 @@ normalView subModel loadedModel =
         ]
 
 
-projectNameView : Message.SubModel -> Data.FileHash -> String -> Ui.Panel message
+projectNameView : Message.SubModel -> Data.ImageToken -> String -> Ui.Panel message
 projectNameView sugModel iconFileHash name =
     Ui.row
         Ui.stretch
@@ -173,7 +173,7 @@ projectNameView sugModel iconFileHash name =
         ]
 
 
-imageView : Message.SubModel -> Data.FileHash -> String -> Ui.Panel message
+imageView : Message.SubModel -> Data.ImageToken -> String -> Ui.Panel message
 imageView subModel imageToken projectName =
     case Message.getImageBlobUrl imageToken subModel of
         Just blobUrl ->

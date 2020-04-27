@@ -26,7 +26,7 @@ type Ports = {
   readonly consoleLog: SubForElmCmd<string>;
   readonly requestLogInUrl: SubForElmCmd<data.RequestLogInUrlRequestData>;
   readonly getUserByAccessToken: SubForElmCmd<data.AccessToken>;
-  readonly getImageBlobUrl: SubForElmCmd<data.FileHash>;
+  readonly getImageBlobUrl: SubForElmCmd<data.ImageToken>;
   readonly createProject: SubForElmCmd<data.CreateProjectParameter>;
   readonly createIdea: SubForElmCmd<data.CreateIdeaParameter>;
   readonly addComment: SubForElmCmd<data.AddCommentParameter>;
@@ -60,7 +60,7 @@ type Ports = {
   readonly subPointerUp: CmdForElmSub<null>;
   readonly getImageBlobResponse: CmdForElmSub<{
     blobUrl: string;
-    fileHash: string;
+    imageToken: string;
   }>;
   readonly toValidProjectNameResponse: CmdForElmSub<{
     input: string;

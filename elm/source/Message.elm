@@ -92,8 +92,8 @@ setLanguageAndClientMode language clientMode (SubModel record) =
         { record | language = language, clientMode = clientMode }
 
 
-addImageBlobUrl : Data.FileHash -> String -> SubModel -> SubModel
-addImageBlobUrl (Data.FileHash hash) blobUrl (SubModel record) =
+addImageBlobUrl : Data.ImageToken -> String -> SubModel -> SubModel
+addImageBlobUrl (Data.ImageToken hash) blobUrl (SubModel record) =
     SubModel
         { record | imageFileBlobDict = Dict.insert hash blobUrl record.imageFileBlobDict }
 
@@ -134,8 +134,8 @@ setWindowSize windowSize (SubModel record) =
     SubModel { record | windowSize = windowSize }
 
 
-getImageBlobUrl : Data.FileHash -> SubModel -> Maybe String
-getImageBlobUrl (Data.FileHash hash) (SubModel record) =
+getImageBlobUrl : Data.ImageToken -> SubModel -> Maybe String
+getImageBlobUrl (Data.ImageToken hash) (SubModel record) =
     Dict.get hash record.imageFileBlobDict
 
 
@@ -162,7 +162,7 @@ urlDataSameLanguageClientMode location subModel =
 -}
 type Command
     = None
-    | GetBlobUrl Data.FileHash
+    | GetBlobUrl Data.ImageToken
     | CreateProject String
     | CreateIdea { projectId : Data.ProjectId, ideaName : String }
     | AddComment { ideaId : Data.IdeaId, comment : String }

@@ -157,38 +157,38 @@ const init = async (): Promise<void> => {
     });
   });
 
-  app.ports.getImageBlobUrl.subscribe((fileHash) => {
-    const blobUrl = imageBlobUrlMap.get(fileHash);
+  app.ports.getImageBlobUrl.subscribe((imageToken) => {
+    const blobUrl = imageBlobUrlMap.get(imageToken);
     if (blobUrl !== undefined) {
       app.ports.getImageBlobResponse.send({
         blobUrl: blobUrl,
-        fileHash: fileHash,
+        imageToken: imageToken,
       });
       return;
     }
-    db.getFile(database, fileHash).then((binaryInIndexDB) => {
+    db.getFile(database, imageToken).then((binaryInIndexDB) => {
       if (binaryInIndexDB !== undefined) {
         const blob = new Blob([binaryInIndexDB], { type: "image/png" });
         const blobUrl = URL.createObjectURL(blob);
-        imageBlobUrlMap.set(fileHash, blobUrl);
+        imageBlobUrlMap.set(imageToken, blobUrl);
         app.ports.getImageBlobResponse.send({
           blobUrl: blobUrl,
-          fileHash: fileHash,
+          imageToken: imageToken,
         });
         return;
       }
       callApi(
         "getImageFile",
-        data.encodeToken(fileHash),
+        data.encodeToken(imageToken),
         data.decodeBinary
       ).then((pngBinary) => {
         const blob = new Blob([pngBinary], { type: "image/png" });
         const blobUrl = URL.createObjectURL(blob);
-        db.setFile(database, fileHash, pngBinary);
-        imageBlobUrlMap.set(fileHash, blobUrl);
+        db.setFile(database, imageToken, pngBinary);
+        imageBlobUrlMap.set(imageToken, blobUrl);
         app.ports.getImageBlobResponse.send({
           blobUrl: blobUrl,
-          fileHash: fileHash,
+          imageToken: imageToken,
         });
       });
     });

@@ -130,7 +130,7 @@ port changeNetworkConnection : (Bool -> msg) -> Sub msg
 port subPointerUp : (() -> msg) -> Sub msg
 
 
-port getImageBlobResponse : ({ blobUrl : String, fileHash : String } -> msg) -> Sub msg
+port getImageBlobResponse : ({ blobUrl : String, imageToken : String } -> msg) -> Sub msg
 
 
 port toValidProjectNameResponse : ({ input : String, result : Maybe String } -> msg) -> Sub msg
@@ -184,7 +184,7 @@ type Msg
     | NotificationMessage Component.Notifications.Message
     | RequestLogInUrl Data.OpenIdConnectProvider
     | ResponseUserDataFromAccessToken (Maybe Data.UserSnapshotAndId)
-    | ResponseImageBlob { blobUrl : String, fileHash : Data.FileHash }
+    | ResponseImageBlob { blobUrl : String, imageToken : Data.ImageToken }
     | ResponseUser Data.UserResponse
     | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url.Url
@@ -471,7 +471,7 @@ update msg (Model rec) =
                 { rec
                     | subModel =
                         Message.addImageBlobUrl
-                            imageBlobAndFileHash.fileHash
+                            imageBlobAndFileHash.imageToken
                             imageBlobAndFileHash.blobUrl
                             rec.subModel
                 }
@@ -805,10 +805,10 @@ getUserByAccessTokenTyped accessToken =
         (Data.accessTokenToJsonValue accessToken)
 
 
-getImageBlobUrlTyped : Data.FileHash -> Cmd Msg
+getImageBlobUrlTyped : Data.ImageToken -> Cmd Msg
 getImageBlobUrlTyped fileHash =
     getImageBlobUrl
-        (Data.fileHashToJsonValue fileHash)
+        (Data.imageTokenToJsonValue fileHash)
 
 
 createProjectTyped : Data.CreateProjectParameter -> Cmd Msg
@@ -1242,10 +1242,10 @@ subscriptions model =
                         NoOperation
             )
          , getImageBlobResponse
-            (\{ blobUrl, fileHash } ->
+            (\{ blobUrl, imageToken } ->
                 ResponseImageBlob
                     { blobUrl = blobUrl
-                    , fileHash = Data.FileHash fileHash
+                    , imageToken = Data.ImageToken imageToken
                     }
             )
          , toValidProjectNameResponse
