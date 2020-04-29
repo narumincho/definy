@@ -111,7 +111,7 @@ toString (PartDef { name, type_, expr }) =
 
 type Type
     = Function Type Type
-    | Ref Data.TypeId
+    | Ref Data.TypePartId
     | Empty
 
 

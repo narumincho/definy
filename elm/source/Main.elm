@@ -1,6 +1,7 @@
 port module Main exposing (main)
 
 import Browser
+import Browser.Dom
 import Browser.Navigation
 import CommonUi
 import Component.Header
@@ -172,8 +173,7 @@ port responseSuggestion : (Json.Decode.Value -> msg) -> Sub msg
 {-| 全体の入力を表すメッセージ
 -}
 type Msg
-    = KeyPressed (Maybe Data.Key.Key) -- キーボードから入力
-    | KeyPrevented -- キーボードの入力のデフォルト動作を取り消した後
+    = KeyPrevented -- キーボードの入力のデフォルト動作を取り消した後
     | PointerUp -- マウスのボタンを離した/タブの表示状態が変わった
     | ToResizeGutterMode GutterType -- リサイズモードに移行
     | WindowResize { width : Int, height : Int } -- ウィンドウサイズを変更
@@ -375,9 +375,6 @@ pageInit location =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg (Model rec) =
     case msg of
-        KeyPressed key ->
-            ( Model rec, Cmd.none )
-
         KeyPrevented ->
             let
                 ( listMsg, newModel ) =
@@ -941,7 +938,7 @@ mainContentView (Model record) =
 
 
 logInPanelLogInButton : Data.Language -> Message.WindowSize -> Ui.Panel Msg
-logInPanelLogInButton language { width, height } =
+logInPanelLogInButton language { width } =
     if width < 512 then
         Ui.column
             (Ui.fix (48 * 2 + 32))
@@ -1209,6 +1206,9 @@ commandToMainCommand logInState command =
         Message.GetIdeaListByProjectId projectId ->
             getIdeaAndIdListByProjectId (Data.projectIdToJsonValue projectId)
 
+        Message.FocusElement elementId ->
+            Task.attempt (always NoOperation) (Browser.Dom.focus elementId)
+
         Message.Batch commandList ->
             Cmd.batch (List.map (commandToMainCommand logInState) commandList)
 
@@ -1223,7 +1223,20 @@ commandToMainCommand logInState command =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        ([ keyPressed (Data.Key.fromKeyEventObject >> KeyPressed)
+        ([ keyPressed
+            (\jsonValue ->
+                case Data.Key.fromKeyEventObject jsonValue of
+                    Just key ->
+                        case keyToCommonCommand key of
+                            Just commonCommand ->
+                                CommonMessage (Message.CommonCommand commonCommand)
+
+                            Nothing ->
+                                NoOperation
+
+                    Nothing ->
+                        NoOperation
+            )
          , keyPrevented (always KeyPrevented)
          , windowResize WindowResize
          , changeNetworkConnection ChangeNetworkConnection
@@ -1380,3 +1393,22 @@ subscriptions model =
                     []
                )
         )
+
+
+keyToCommonCommand : Data.Key.Key -> Maybe Message.CommonCommand
+keyToCommonCommand key =
+    case key.key of
+        Data.Key.KeyW ->
+            Just Message.SelectUp
+
+        Data.Key.KeyS ->
+            Just Message.SelectDown
+
+        Data.Key.KeyA ->
+            Just Message.SelectLeft
+
+        Data.Key.KeyD ->
+            Just Message.SelectRight
+
+        _ ->
+            Nothing

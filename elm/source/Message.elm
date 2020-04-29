@@ -1,4 +1,4 @@
-module Message exposing (Command(..), CommonMessage(..), SubModel, WindowSize, addImageBlobUrl, addUserSnapshot, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getNowTime, getTimeZoneAndNameMaybe, getUserSnapshot, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setNowTime, setTimeZoneAndName, setWindowSize, urlDataSameLanguageClientMode)
+module Message exposing (Command(..), CommonCommand(..), CommonMessage(..), SubModel, WindowSize, addImageBlobUrl, addUserSnapshot, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getNowTime, getTimeZoneAndNameMaybe, getUserSnapshot, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setNowTime, setTimeZoneAndName, setWindowSize, urlDataSameLanguageClientMode)
 
 import Data
 import Data.LogInState
@@ -17,6 +17,20 @@ type CommonMessage
     | ResponseAllProjectIdList (List Data.ProjectId)
     | ResponseIdeaListByProjectId Data.IdeaListByProjectIdResponse
     | UpdateTime
+    | CommonCommand CommonCommand
+
+
+{-| 各ページに送る共通の動作
+-}
+type CommonCommand
+    = SelectUp
+    | SelectDown
+    | SelectLeft
+    | SelectRight
+    | SelectFirstChild
+    | SelectLastChild
+    | SelectParent
+    | SelectRoot
 
 
 {-| 各ページに渡すべきModel
@@ -35,7 +49,9 @@ type SubModel
 
 
 type alias WindowSize =
-    { width : Int, height : Int }
+    { width : Int
+    , height : Int
+    }
 
 
 from :
@@ -181,4 +197,5 @@ type Command
     | GetSuggestion Data.SuggestionId
     | GetSuggestionNoCache Data.SuggestionId
     | GetIdeaListByProjectId Data.ProjectId
+    | FocusElement String
     | Batch (List Command)

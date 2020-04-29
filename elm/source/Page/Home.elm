@@ -7,9 +7,11 @@ module Page.Home exposing
     , view
     )
 
+import Array
 import CommonUi
 import Css
 import Data
+import Data.Key
 import Data.LogInState
 import Message
 import Ui
@@ -17,7 +19,14 @@ import Ui
 
 type Model
     = LoadingAllProject
-    | LoadedAllProject (List Project)
+    | LoadedAllProject LoadedModel
+
+
+type LoadedModel
+    = LoadedModel
+        { selectProjectId : Maybe Data.ProjectId
+        , projectList : List Project
+        }
 
 
 type Project
@@ -27,6 +36,16 @@ type Project
 
 type Message
     = NoOperation
+
+
+projectGetId : Project -> Data.ProjectId
+projectGetId project =
+    case project of
+        OnlyId projectId ->
+            projectId
+
+        Full { id } ->
+            id
 
 
 init : ( Model, Message.Command )
@@ -44,8 +63,8 @@ updateByCommonMessage message model =
                     , Message.None
                     )
 
-                LoadedAllProject allProject ->
-                    ( LoadedAllProject (setProjectWithIdAnsRespondTime projectResponse allProject)
+                LoadedAllProject loadedModel ->
+                    ( LoadedAllProject (loadedModelSetProjectResponse projectResponse loadedModel)
                     , case projectResponse.snapshotMaybe of
                         Just projectCache ->
                             Message.Batch
@@ -58,14 +77,121 @@ updateByCommonMessage message model =
                     )
 
         Message.ResponseAllProjectIdList projectIdList ->
-            ( LoadedAllProject (List.map OnlyId projectIdList)
+            ( LoadedAllProject
+                (LoadedModel
+                    { projectList = projectIdList |> List.map OnlyId
+                    , selectProjectId = List.head projectIdList
+                    }
+                )
             , Message.Batch (List.map Message.GetProject projectIdList)
             )
+
+        Message.CommonCommand commonCommand ->
+            updateByCommonCommand
+                commonCommand
+                model
 
         _ ->
             ( model
             , Message.None
             )
+
+
+updateByCommonCommand : Message.CommonCommand -> Model -> ( Model, Message.Command )
+updateByCommonCommand command model =
+    case model of
+        LoadingAllProject ->
+            ( model
+            , Message.None
+            )
+
+        LoadedAllProject (LoadedModel record) ->
+            let
+                nowIndex =
+                    record.selectProjectId
+                        |> Maybe.andThen
+                            (\projectId ->
+                                projectListGetIndexByProjectId
+                                    projectId
+                                    record.projectList
+                            )
+                        |> Maybe.withDefault 0
+
+                newSelectProjectId : Maybe Data.ProjectId
+                newSelectProjectId =
+                    Array.get
+                        (selectIndexByCommonCommand
+                            (List.length record.projectList)
+                            nowIndex
+                            command
+                        )
+                        (Array.fromList record.projectList)
+                        |> Maybe.map projectGetId
+            in
+            ( LoadedAllProject
+                (LoadedModel
+                    { record | selectProjectId = newSelectProjectId }
+                )
+            , newSelectProjectId
+                |> Maybe.map (\projectId -> Message.FocusElement (projectElementId projectId))
+                |> Maybe.withDefault Message.None
+            )
+
+
+selectIndexByCommonCommand : Int -> Int -> Message.CommonCommand -> Int
+selectIndexByCommonCommand length nowIndex commonCommand =
+    let
+        lastIndex =
+            length - 1
+    in
+    case commonCommand of
+        Message.SelectUp ->
+            case nowIndex of
+                0 ->
+                    lastIndex
+
+                _ ->
+                    max 0 (nowIndex - 3)
+
+        Message.SelectDown ->
+            if nowIndex == lastIndex then
+                0
+
+            else
+                min lastIndex (nowIndex + 3)
+
+        Message.SelectLeft ->
+            case nowIndex of
+                0 ->
+                    lastIndex
+
+                _ ->
+                    max 0 (nowIndex - 1)
+
+        Message.SelectRight ->
+            if nowIndex == lastIndex then
+                0
+
+            else
+                min lastIndex (nowIndex + 1)
+
+        _ ->
+            nowIndex
+
+
+projectListGetIndexByProjectId : Data.ProjectId -> List Project -> Maybe Int
+projectListGetIndexByProjectId projectId projectList =
+    case projectList of
+        project :: others ->
+            if projectGetId project == projectId then
+                Just 0
+
+            else
+                projectListGetIndexByProjectId projectId others
+                    |> Maybe.map (\x -> x + 1)
+
+        [] ->
+            Nothing
 
 
 update : Message -> Model -> ( Model, Message.Command )
@@ -77,25 +203,26 @@ update msg model =
             )
 
 
-setProjectWithIdAnsRespondTime : Data.ProjectResponse -> List Project -> List Project
-setProjectWithIdAnsRespondTime projectSnapshotMaybeAndId projectList =
+loadedModelSetProjectResponse : Data.ProjectResponse -> LoadedModel -> LoadedModel
+loadedModelSetProjectResponse projectResponse (LoadedModel record) =
+    LoadedModel
+        { record
+            | projectList = projectListSetProjectResponse projectResponse record.projectList
+        }
+
+
+projectListSetProjectResponse : Data.ProjectResponse -> List Project -> List Project
+projectListSetProjectResponse projectSnapshotMaybeAndId projectList =
     case projectList of
         [] ->
             []
 
-        (OnlyId id) :: xs ->
-            if projectSnapshotMaybeAndId.id == id then
-                [ Full projectSnapshotMaybeAndId ] ++ xs
+        project :: projectOthers ->
+            if projectSnapshotMaybeAndId.id == projectGetId project then
+                Full projectSnapshotMaybeAndId :: projectOthers
 
             else
-                OnlyId id :: setProjectWithIdAnsRespondTime projectSnapshotMaybeAndId xs
-
-        (Full old) :: xs ->
-            if projectSnapshotMaybeAndId.id == old.id then
-                [ Full projectSnapshotMaybeAndId ] ++ xs
-
-            else
-                Full old :: setProjectWithIdAnsRespondTime projectSnapshotMaybeAndId xs
+                project :: projectListSetProjectResponse projectSnapshotMaybeAndId projectOthers
 
 
 view :
@@ -111,23 +238,23 @@ view subModel model =
             LoadingAllProject ->
                 CommonUi.normalText 16 "プロジェクトの一覧を読込中"
 
-            LoadedAllProject allProject ->
-                projectListView subModel allProject
+            LoadedAllProject loadedModel ->
+                projectListView subModel loadedModel
         ]
 
 
 projectListView :
     Message.SubModel
-    -> List Project
+    -> LoadedModel
     -> Ui.Panel Message
-projectListView subModel projectList =
+projectListView subModel (LoadedModel record) =
     Ui.column
         (Ui.stretchWithMaxSize 800)
         Ui.stretch
         [ Ui.gap 8
         , Ui.padding 8
         ]
-        (case projectList of
+        (case record.projectList of
             [] ->
                 [ projectLineViewWithCreateButton
                     subModel
@@ -298,16 +425,10 @@ projectItem subModel project =
     CommonUi.sameLanguageLink
         (Ui.stretchWithMaxSize 320)
         Ui.stretch
-        []
+        [ Ui.id (projectElementId (projectGetId project)) ]
         subModel
         (Data.LocationProject
-            (case project of
-                OnlyId id ->
-                    id
-
-                Full projectCache ->
-                    projectCache.id
-            )
+            (projectGetId project)
         )
         (Ui.depth
             (Ui.stretchWithMaxSize 320)
@@ -406,3 +527,8 @@ projectItemText subModel project =
                             "プロジェクトが見つからなかった"
             )
         ]
+
+
+projectElementId : Data.ProjectId -> String
+projectElementId (Data.ProjectId projectIdAsString) =
+    "project" ++ projectIdAsString
