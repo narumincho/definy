@@ -270,57 +270,65 @@ timeViewWithTimeZoneAndName timeZoneAndName posix =
         Ui.auto
         Ui.auto
         []
-        [ Ui.row
-            Ui.auto
-            Ui.auto
-            [ Ui.gap 8 ]
-            [ normalText 12 (Data.TimeZoneAndName.getTimeZoneName timeZoneAndName)
-            , Ui.row
-                Ui.auto
-                Ui.auto
-                [ Ui.gap 4 ]
-                (timeToTimeTermList (Data.TimeZoneAndName.getTimeZone timeZoneAndName) posix
-                    |> List.map timeTermView
-                )
-            ]
+        [ localTimeView (Data.TimeZoneAndName.getTimeZone timeZoneAndName) posix
         , subText (utcTimeToString posix)
         ]
 
 
-timeTermView : TimeTerm -> Ui.Panel message
-timeTermView timeTerm =
-    case timeTerm of
-        Number term ->
-            Ui.text
-                Ui.auto
-                Ui.auto
-                []
-                (Ui.TextAttributes
-                    { text = term
-                    , typeface = normalTypeface
-                    , size = 16
-                    , letterSpacing = 0
-                    , lineHeight = 1
-                    , color = Css.rgb 200 200 200
-                    , textAlignment = Ui.TextAlignEnd
-                    }
-                )
+localTimeView : Time.Zone -> Time.Posix -> Ui.Panel message
+localTimeView zone posix =
+    Ui.row
+        Ui.auto
+        Ui.auto
+        [ Ui.gap 4 ]
+        [ timeNumberView (String.fromInt (Time.toYear zone posix))
+        , timeSignView "/"
+        , timeNumberView (monthToString (Time.toMonth zone posix))
+        , timeSignView "/"
+        , timeNumberView (String.padLeft 2 '0' (String.fromInt (Time.toDay zone posix)))
+        , timeSignView ""
+        , timeNumberView (String.padLeft 2 '0' (String.fromInt (Time.toHour zone posix)))
+        , timeSignView ":"
+        , timeNumberView (String.padLeft 2 '0' (String.fromInt (Time.toMinute zone posix)))
+        , timeSignView ":"
+        , timeNumberView (String.padLeft 2 '0' (String.fromInt (Time.toSecond zone posix)))
+        ]
 
-        Sign term ->
-            Ui.text
-                Ui.auto
-                Ui.auto
-                []
-                (Ui.TextAttributes
-                    { text = term
-                    , typeface = normalTypeface
-                    , size = 12
-                    , letterSpacing = 0
-                    , lineHeight = 1
-                    , color = Css.rgb 160 160 160
-                    , textAlignment = Ui.TextAlignEnd
-                    }
-                )
+
+timeNumberView : String -> Ui.Panel message
+timeNumberView text =
+    Ui.text
+        Ui.auto
+        Ui.auto
+        []
+        (Ui.TextAttributes
+            { text = text
+            , typeface = normalTypeface
+            , size = 16
+            , letterSpacing = 0
+            , lineHeight = 1
+            , color = Css.rgb 200 200 200
+            , textAlignment = Ui.TextAlignEnd
+            }
+        )
+
+
+timeSignView : String -> Ui.Panel message
+timeSignView text =
+    Ui.text
+        Ui.auto
+        Ui.auto
+        []
+        (Ui.TextAttributes
+            { text = text
+            , typeface = normalTypeface
+            , size = 12
+            , letterSpacing = 0
+            , lineHeight = 1
+            , color = Css.rgb 160 160 160
+            , textAlignment = Ui.TextAlignEnd
+            }
+        )
 
 
 utcTimeToString : Time.Posix -> String
@@ -341,29 +349,6 @@ utcTimeToString posix =
         , String.padLeft 3 '0' (String.fromInt (Time.toMillis Time.utc posix))
         , "Z"
         ]
-
-
-timeToTimeTermList : Time.Zone -> Time.Posix -> List TimeTerm
-timeToTimeTermList zone posix =
-    [ Number (String.fromInt (Time.toYear zone posix))
-    , Sign "/"
-    , Number (monthToString (Time.toMonth zone posix))
-    , Sign "/"
-    , Number (String.padLeft 2 '0' (String.fromInt (Time.toDay zone posix)))
-    , Sign ""
-    , Number (String.padLeft 2 '0' (String.fromInt (Time.toHour zone posix)))
-    , Sign ":"
-    , Number (String.padLeft 2 '0' (String.fromInt (Time.toMinute zone posix)))
-    , Sign ":"
-    , Number (String.padLeft 2 '0' (String.fromInt (Time.toSecond zone posix)))
-    , Sign "."
-    , Number (String.padLeft 3 '0' (String.fromInt (Time.toMillis zone posix)))
-    ]
-
-
-type TimeTerm
-    = Number String
-    | Sign String
 
 
 monthToString : Time.Month -> String
