@@ -602,10 +602,10 @@ userView subModel userId =
                                 [ Ui.borderRadius (Ui.BorderRadiusPercent 50)
                                 ]
                                 (Ui.BitmapImageAttributes
-                                    { url = blobUrl
+                                    { blobUrl = blobUrl
                                     , fitStyle = Ui.Contain
                                     , alternativeText = userSnapshot.name ++ "の画像"
-                                    , rendering = Ui.ImageRenderingPixelated
+                                    , rendering = Ui.ImageRenderingAuto
                                     }
                                 )
 
@@ -653,10 +653,10 @@ miniUserView subModel userId =
                                 (Ui.fix 24)
                                 [ Ui.borderRadius (Ui.BorderRadiusPercent 50) ]
                                 (Ui.BitmapImageAttributes
-                                    { url = blobUrl
+                                    { blobUrl = blobUrl
                                     , fitStyle = Ui.Contain
                                     , alternativeText = userSnapshot.name ++ "の画像"
-                                    , rendering = Ui.ImageRenderingPixelated
+                                    , rendering = Ui.ImageRenderingAuto
                                     }
                                 )
 

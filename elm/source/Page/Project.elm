@@ -157,10 +157,10 @@ projectNameView sugModel iconFileHash name =
                     (Ui.fix 32)
                     []
                     (Ui.BitmapImageAttributes
-                        { url = blobUrl
+                        { blobUrl = blobUrl
                         , fitStyle = Ui.Contain
                         , alternativeText = name ++ "のアイコン"
-                        , rendering = Ui.ImageRenderingPixelated
+                        , rendering = Ui.ImageRenderingAuto
                         }
                     )
 
@@ -182,10 +182,10 @@ imageView subModel imageToken projectName =
                 Ui.auto
                 []
                 (Ui.BitmapImageAttributes
-                    { url = blobUrl
+                    { blobUrl = blobUrl
                     , fitStyle = Ui.Contain
                     , alternativeText = projectName ++ "のアイコン"
-                    , rendering = Ui.ImageRenderingPixelated
+                    , rendering = Ui.ImageRenderingAuto
                     }
                 )
 

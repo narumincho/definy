@@ -460,10 +460,10 @@ projectItemImage subModel project =
                                 Ui.stretch
                                 []
                                 (Ui.BitmapImageAttributes
-                                    { url = projectImageBlobUrl
+                                    { blobUrl = projectImageBlobUrl
                                     , fitStyle = Ui.Cover
                                     , alternativeText = "プロジェクト画像"
-                                    , rendering = Ui.ImageRenderingPixelated
+                                    , rendering = Ui.ImageRenderingAuto
                                     }
                                 )
 
@@ -500,10 +500,10 @@ projectItemText subModel project =
                                             (Ui.fix 32)
                                             []
                                             (Ui.BitmapImageAttributes
-                                                { url = blobUrl
+                                                { blobUrl = blobUrl
                                                 , fitStyle = Ui.Cover
                                                 , alternativeText = projectSnapshot.name ++ "のアイコン"
-                                                , rendering = Ui.ImageRenderingPixelated
+                                                , rendering = Ui.ImageRenderingAuto
                                                 }
                                             )
                                     )

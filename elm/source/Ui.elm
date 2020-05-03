@@ -94,7 +94,7 @@ type TextAttributes
 
 type BitmapImageAttributes
     = BitmapImageAttributes
-        { url : String
+        { blobUrl : String
         , fitStyle : FitStyle
         , alternativeText : String
         , rendering : ImageRendering
@@ -622,231 +622,291 @@ type GridCell
 
 
 panelToHtml : GridCell -> AlignmentOrStretch -> Panel msg -> Html.Styled.Html msg
-panelToHtml gridCell alignmentOrStretch (Panel record) =
-    let
-        commonAttributes : Bool -> List (Html.Styled.Attribute msg)
-        commonAttributes isButtonElement =
-            Html.Styled.Attributes.css
-                [ alignmentOrStretchToCssStyle
-                    record.width
-                    record.height
-                    record.style
-                    alignmentOrStretch
-                , gridCellToCssStyle gridCell
-                , Css.batch
-                    (if isIncludeScrollInPanel (Panel record) then
-                        [ Css.overflow Css.auto ]
+panelToHtml gridCell alignmentOrStretch panel =
+    domDataToHtml
+        gridCell
+        alignmentOrStretch
+        (contentToDomData panel)
+        panel
 
-                     else
-                        []
-                    )
-                , styleComputedToCssStyle
-                    record.width
-                    record.height
-                    isButtonElement
-                    record.style
-                ]
-                :: (case record.style of
-                        StyleComputed styleRecord ->
-                            case styleRecord.id of
-                                Just idString ->
-                                    [ Html.Styled.Attributes.id idString ]
 
-                                Nothing ->
-                                    []
-                   )
-    in
+type DomData message
+    = DomData
+        { node :
+            List (Html.Styled.Attribute message)
+            -> List (Html.Styled.Html message)
+            -> Html.Styled.Html message
+        , style : Css.Style
+        , attributes : List (Html.Styled.Attribute message)
+        , children : List (Html.Styled.Html message)
+        , isButtonElement : Bool
+        }
+
+
+domDataToHtml : GridCell -> AlignmentOrStretch -> DomData message -> Panel message -> Html.Styled.Html message
+domDataToHtml gridCell alignmentOrStretch (DomData domData) (Panel record) =
+    domData.node
+        (domData.attributes
+            ++ (Html.Styled.Attributes.css
+                    [ alignmentOrStretchToCssStyle
+                        record.width
+                        record.height
+                        record.style
+                        alignmentOrStretch
+                    , gridCellToCssStyle gridCell
+                    , Css.batch
+                        (if isIncludeScrollInPanel (Panel record) then
+                            [ Css.overflow Css.auto ]
+
+                         else
+                            []
+                        )
+                    , styleComputedToCssStyle
+                        record.width
+                        record.height
+                        domData.isButtonElement
+                        record.style
+                    , domData.style
+                    ]
+                    :: (case record.style of
+                            StyleComputed styleRecord ->
+                                case styleRecord.id of
+                                    Just idString ->
+                                        [ Html.Styled.Attributes.id idString ]
+
+                                    Nothing ->
+                                        []
+                       )
+               )
+        )
+        domData.children
+
+
+contentToDomData : Panel message -> DomData message
+contentToDomData (Panel record) =
     case record.content of
-        Text attributes ->
-            textBoxToHtml (commonAttributes False) attributes
+        Text textAttributes ->
+            textToDomData textAttributes
 
-        BitmapImage attributes ->
-            imageFromUrlToHtml (commonAttributes False) attributes
+        BitmapImage bitmapImageAttributes ->
+            bitmapImageToDomData bitmapImageAttributes
 
-        VectorImage attributes ->
-            vectorImageToHtml (commonAttributes False) attributes
+        VectorImage vectorImageAttributes ->
+            vectorImageToDomData vectorImageAttributes
 
         Empty ->
-            emptyToHtml (commonAttributes False)
+            emptyToDomData
 
-        Button attributes ->
-            buttonToHtml (commonAttributes True) attributes
+        Depth list ->
+            depthToDomData list
 
-        Link attributes ->
-            linkToHtml (commonAttributes False) attributes
+        Row panels ->
+            rowToDomData record.width panels
 
-        Depth attributes ->
-            depthToHtml (commonAttributes False) attributes
+        Column panels ->
+            columnToDomData record.height panels
 
-        Row attributes ->
-            rowToHtml record.width (commonAttributes False) attributes
+        Button buttonAttributes ->
+            buttonToDomData buttonAttributes
 
-        Column attributes ->
-            columnToHtml record.height (commonAttributes False) attributes
+        Link linkAttributes ->
+            linkToDomData linkAttributes
 
-        PointerPanel attributes ->
-            pointerPanelToHtml (commonAttributes False) attributes
+        PointerPanel pointerPanelAttributes ->
+            pointerPanelToDomData pointerPanelAttributes
 
-        Scroll child ->
-            scrollBoxToHtml (commonAttributes False) child
+        Scroll panel ->
+            scrollBoxToDomData panel
 
-        TextInput attributes ->
-            textInputToHtml (commonAttributes False) attributes
-
-
-textBoxToHtml : List (Html.Styled.Attribute message) -> TextAttributes -> Html.Styled.Html message
-textBoxToHtml commonAttributes (TextAttributes record) =
-    Html.Styled.div
-        (Html.Styled.Attributes.css
-            [ Css.color record.color
-            , Css.fontSize (Css.px (toFloat record.size))
-            , Css.fontFamilies [ Css.qt record.typeface ]
-            , Css.letterSpacing (Css.px record.letterSpacing)
-            , Css.lineHeight (Css.num record.lineHeight)
-            , Css.overflowWrap Css.breakWord
-            , textAlignToStyle record.textAlignment
-            ]
-            :: commonAttributes
-        )
-        [ Html.Styled.text record.text ]
+        TextInput textInputAttributes ->
+            textInputToDomData textInputAttributes
 
 
-imageFromUrlToHtml : List (Html.Styled.Attribute message) -> BitmapImageAttributes -> Html.Styled.Html message
-imageFromUrlToHtml commonAttributes (BitmapImageAttributes record) =
-    Html.Styled.img
-        ([ Html.Styled.Attributes.css
-            ([ Css.property "object-fit"
-                (case record.fitStyle of
-                    Contain ->
-                        "contain"
+textToDomData : TextAttributes -> DomData message
+textToDomData (TextAttributes record) =
+    DomData
+        { node = Html.Styled.div
+        , style =
+            Css.batch
+                [ Css.color record.color
+                , Css.fontSize (Css.px (toFloat record.size))
+                , Css.fontFamilies [ Css.qt record.typeface ]
+                , Css.letterSpacing (Css.px record.letterSpacing)
+                , Css.lineHeight (Css.num record.lineHeight)
+                , Css.overflowWrap Css.breakWord
+                , textAlignToStyle record.textAlignment
+                ]
+        , attributes = []
+        , children = [ Html.Styled.text record.text ]
+        , isButtonElement = False
+        }
 
-                    Cover ->
-                        "cover"
+
+bitmapImageToDomData : BitmapImageAttributes -> DomData message
+bitmapImageToDomData (BitmapImageAttributes record) =
+    DomData
+        { node = Html.Styled.img
+        , style =
+            Css.batch
+                ([ Css.property "object-fit"
+                    (case record.fitStyle of
+                        Contain ->
+                            "contain"
+
+                        Cover ->
+                            "cover"
+                    )
+                 , Css.display Css.block
+                 ]
+                    ++ (case record.rendering of
+                            ImageRenderingAuto ->
+                                []
+
+                            ImageRenderingPixelated ->
+                                [ Css.property "image-rendering" "pixelated" ]
+                       )
                 )
-             , Css.display Css.block
-             ]
-                ++ (case record.rendering of
-                        ImageRenderingAuto ->
-                            []
-
-                        ImageRenderingPixelated ->
-                            [ Css.property "image-rendering" "pixelated" ]
-                   )
-            )
-         , Html.Styled.Attributes.src record.url
-         , Html.Styled.Attributes.alt record.alternativeText
-         ]
-            ++ commonAttributes
-        )
-        []
-
-
-vectorImageToHtml : List (Html.Styled.Attribute message) -> VectorImageAttributes message -> Html.Styled.Html message
-vectorImageToHtml commonAttributes (VectorImageAttributes record) =
-    Html.Styled.div
-        commonAttributes
-        [ VectorImage.toHtml
-            record.viewBox
-            Nothing
-            record.elements
-        ]
-
-
-emptyToHtml : List (Html.Styled.Attribute message) -> Html.Styled.Html message
-emptyToHtml commonAttributes =
-    Html.Styled.div
-        commonAttributes
-        []
-
-
-buttonToHtml : List (Html.Styled.Attribute message) -> ButtonAttributes message -> Html.Styled.Html message
-buttonToHtml commonAttributes (ButtonAttributes record) =
-    Html.Styled.button
-        (Html.Styled.Events.onClick
-            record.clickMessage
-            :: commonAttributes
-        )
-        [ panelToHtml (GridCell { row = 0, column = 0 })
-            StretchStretch
-            record.child
-        ]
-
-
-linkToHtml : List (Html.Styled.Attribute message) -> LinkAttributes message -> Html.Styled.Html message
-linkToHtml commonAttributes (LinkAttributes record) =
-    Html.Styled.a
-        (Html.Styled.Attributes.href (Url.toString record.url) :: commonAttributes)
-        [ panelToHtml (GridCell { row = 0, column = 0 })
-            StretchStretch
-            record.child
-        ]
-
-
-depthToHtml : List (Html.Styled.Attribute message) -> List ( ( Alignment, Alignment ), Panel message ) -> Html.Styled.Html message
-depthToHtml commonAttributes children =
-    Html.Styled.div
-        (Html.Styled.Attributes.css
-            [ Css.property "display" "grid"
-            , Css.property "grid-template-rows" "1fr"
-            , Css.property "grid-template-columns" "1fr"
+        , attributes =
+            [ Html.Styled.Attributes.src record.blobUrl
+            , Html.Styled.Attributes.alt record.alternativeText
             ]
-            :: commonAttributes
-        )
-        (List.map
-            (\( alignment, panel ) ->
-                panelToHtml
-                    (GridCell { row = 0, column = 0 })
-                    (Alignment alignment)
-                    panel
-            )
-            children
-        )
+        , children = []
+        , isButtonElement = False
+        }
 
 
-rowToHtml : Size -> List (Html.Styled.Attribute message) -> List (Panel message) -> Html.Styled.Html message
-rowToHtml width commonAttributes children =
-    Html.Styled.div
-        (Html.Styled.Attributes.css
-            [ Css.property "display" "grid"
-            , Css.property "grid-template-columns"
-                (sizeListToGridTemplate width
-                    (List.map panelGetWidth children)
+vectorImageToDomData : VectorImageAttributes message -> DomData message
+vectorImageToDomData (VectorImageAttributes record) =
+    DomData
+        { node = Html.Styled.div
+        , style = Css.batch []
+        , attributes = []
+        , children =
+            [ VectorImage.toHtml
+                record.viewBox
+                Nothing
+                record.elements
+            ]
+        , isButtonElement = False
+        }
+
+
+emptyToDomData : DomData message
+emptyToDomData =
+    DomData
+        { node = Html.Styled.div
+        , style = Css.batch []
+        , attributes = []
+        , children = []
+        , isButtonElement = False
+        }
+
+
+buttonToDomData : ButtonAttributes message -> DomData message
+buttonToDomData (ButtonAttributes record) =
+    DomData
+        { node = Html.Styled.button
+        , style = Css.batch []
+        , attributes =
+            [ Html.Styled.Events.onClick record.clickMessage ]
+        , children =
+            [ panelToHtml (GridCell { row = 0, column = 0 })
+                StretchStretch
+                record.child
+            ]
+        , isButtonElement = True
+        }
+
+
+linkToDomData : LinkAttributes message -> DomData message
+linkToDomData (LinkAttributes record) =
+    DomData
+        { node = Html.Styled.a
+        , style = Css.batch []
+        , attributes = [ Html.Styled.Attributes.href (Url.toString record.url) ]
+        , children =
+            [ panelToHtml (GridCell { row = 0, column = 0 })
+                StretchStretch
+                record.child
+            ]
+        , isButtonElement = False
+        }
+
+
+depthToDomData : List ( ( Alignment, Alignment ), Panel message ) -> DomData message
+depthToDomData children =
+    DomData
+        { node = Html.Styled.div
+        , style =
+            Css.batch
+                [ Css.property "display" "grid"
+                , Css.property "grid-template-rows" "1fr"
+                , Css.property "grid-template-columns" "1fr"
+                ]
+        , attributes = []
+        , children =
+            List.map
+                (\( alignment, panel ) ->
+                    panelToHtml
+                        (GridCell { row = 0, column = 0 })
+                        (Alignment alignment)
+                        panel
                 )
-            ]
-            :: commonAttributes
-        )
-        (List.indexedMap
-            (\index panel ->
-                panelToHtml
-                    (GridCell { row = 0, column = index })
-                    StretchRow
-                    panel
-            )
-            children
-        )
+                children
+        , isButtonElement = False
+        }
 
 
-columnToHtml : Size -> List (Html.Styled.Attribute message) -> List (Panel message) -> Html.Styled.Html message
-columnToHtml height commonAttributes children =
-    Html.Styled.div
-        (Html.Styled.Attributes.css
-            [ Css.property "display" "grid"
-            , Css.property "grid-template-rows"
-                (sizeListToGridTemplate height
-                    (List.map panelGetHeight children)
+rowToDomData : Size -> List (Panel message) -> DomData message
+rowToDomData width children =
+    DomData
+        { node = Html.Styled.div
+        , style =
+            Css.batch
+                [ Css.property "display" "grid"
+                , Css.property "grid-template-columns"
+                    (sizeListToGridTemplate width
+                        (List.map panelGetWidth children)
+                    )
+                ]
+        , attributes = []
+        , children =
+            List.indexedMap
+                (\index panel ->
+                    panelToHtml
+                        (GridCell { row = 0, column = index })
+                        StretchRow
+                        panel
                 )
-            ]
-            :: commonAttributes
-        )
-        (List.indexedMap
-            (\index panel ->
-                panelToHtml
-                    (GridCell { row = index, column = 0 })
-                    StretchColumn
-                    panel
-            )
-            children
-        )
+                children
+        , isButtonElement = False
+        }
+
+
+columnToDomData : Size -> List (Panel message) -> DomData message
+columnToDomData height children =
+    DomData
+        { node = Html.Styled.div
+        , style =
+            Css.batch
+                [ Css.property "display" "grid"
+                , Css.property "grid-template-rows"
+                    (sizeListToGridTemplate height
+                        (List.map panelGetHeight children)
+                    )
+                ]
+        , attributes = []
+        , children =
+            List.indexedMap
+                (\index panel ->
+                    panelToHtml
+                        (GridCell { row = index, column = 0 })
+                        StretchColumn
+                        panel
+                )
+                children
+        , isButtonElement = False
+        }
 
 
 panelGetWidth : Panel message -> Size
@@ -859,70 +919,81 @@ panelGetHeight (Panel record) =
     record.height
 
 
-pointerPanelToHtml : List (Html.Styled.Attribute message) -> PointerPanelAttributes message -> Html.Styled.Html message
-pointerPanelToHtml commonAttributes (PointerPanelAttributes record) =
-    Html.Styled.div
-        (List.concat
-            [ commonAttributes
-            , case record.enterMessage of
-                Just msg ->
-                    [ Html.Styled.Events.on "pointerenter" (Json.Decode.map msg pointerEventDecoder) ]
+pointerPanelToDomData : PointerPanelAttributes message -> DomData message
+pointerPanelToDomData (PointerPanelAttributes record) =
+    DomData
+        { node = Html.Styled.div
+        , style = Css.batch []
+        , attributes =
+            List.concat
+                [ case record.enterMessage of
+                    Just msg ->
+                        [ Html.Styled.Events.on "pointerenter" (Json.Decode.map msg pointerEventDecoder) ]
 
-                Nothing ->
-                    []
-            , case record.leaveMessage of
-                Just msg ->
-                    [ Html.Styled.Events.on "pointerleave" (Json.Decode.map msg pointerEventDecoder) ]
+                    Nothing ->
+                        []
+                , case record.leaveMessage of
+                    Just msg ->
+                        [ Html.Styled.Events.on "pointerleave" (Json.Decode.map msg pointerEventDecoder) ]
 
-                Nothing ->
-                    []
-            , case record.moveMessage of
-                Just msg ->
-                    [ Html.Styled.Events.on "pointermove" (Json.Decode.map msg pointerEventDecoder) ]
+                    Nothing ->
+                        []
+                , case record.moveMessage of
+                    Just msg ->
+                        [ Html.Styled.Events.on "pointermove" (Json.Decode.map msg pointerEventDecoder) ]
 
-                Nothing ->
-                    []
-            , case record.downMessage of
-                Just msg ->
-                    [ Html.Styled.Events.on "pointerdown" (Json.Decode.map msg pointerEventDecoder) ]
+                    Nothing ->
+                        []
+                , case record.downMessage of
+                    Just msg ->
+                        [ Html.Styled.Events.on "pointerdown" (Json.Decode.map msg pointerEventDecoder) ]
 
-                Nothing ->
-                    []
+                    Nothing ->
+                        []
+                ]
+        , children =
+            [ panelToHtml
+                (GridCell { row = 0, column = 0 })
+                StretchStretch
+                record.child
             ]
-        )
-        [ panelToHtml
-            (GridCell { row = 0, column = 0 })
-            StretchStretch
-            record.child
-        ]
+        , isButtonElement = False
+        }
 
 
-scrollBoxToHtml : List (Html.Styled.Attribute message) -> Panel message -> Html.Styled.Html message
-scrollBoxToHtml commonAttributes child =
-    Html.Styled.div
-        commonAttributes
-        [ panelToHtml (GridCell { row = 0, column = 0 }) StretchStretch child ]
+scrollBoxToDomData : Panel message -> DomData message
+scrollBoxToDomData child =
+    DomData
+        { node = Html.Styled.div
+        , style = Css.batch []
+        , attributes = []
+        , children = [ panelToHtml (GridCell { row = 0, column = 0 }) StretchStretch child ]
+        , isButtonElement = False
+        }
 
 
-textInputToHtml : List (Html.Styled.Attribute message) -> TextInputAttributes message -> Html.Styled.Html message
-textInputToHtml commonAttributes (TextInputAttributes attributes) =
-    (if attributes.multiLine then
-        Html.Styled.textarea
+textInputToDomData : TextInputAttributes message -> DomData message
+textInputToDomData (TextInputAttributes attributes) =
+    DomData
+        { node =
+            if attributes.multiLine then
+                Html.Styled.textarea
 
-     else
-        Html.Styled.input
-    )
-        ([ Html.Styled.Attributes.css
-            [ Css.fontSize (Css.px (toFloat attributes.fontSize))
-            , Css.color (Css.rgb 0 0 0)
-            , Css.resize Css.none
+            else
+                Html.Styled.input
+        , style =
+            Css.batch
+                [ Css.fontSize (Css.px (toFloat attributes.fontSize))
+                , Css.color (Css.rgb 0 0 0)
+                , Css.resize Css.none
+                ]
+        , attributes =
+            [ Html.Styled.Attributes.name attributes.name
+            , Html.Styled.Events.onInput attributes.inputMessage
             ]
-         , Html.Styled.Attributes.name attributes.name
-         , Html.Styled.Events.onInput attributes.inputMessage
-         ]
-            ++ commonAttributes
-        )
-        []
+        , children = []
+        , isButtonElement = False
+        }
 
 
 styleComputedToCssStyle : Size -> Size -> Bool -> StyleComputed -> Css.Style

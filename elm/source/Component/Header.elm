@@ -85,10 +85,10 @@ userItem subModel userSnapshotAndId =
                         (Ui.fix 48)
                         [ Ui.borderRadius (Ui.BorderRadiusPercent 50) ]
                         (Ui.BitmapImageAttributes
-                            { url = blobUrl
+                            { blobUrl = blobUrl
                             , fitStyle = Ui.Contain
                             , alternativeText = userSnapshotAndId.snapshot.name ++ "のユーザーアイコン"
-                            , rendering = Ui.ImageRenderingPixelated
+                            , rendering = Ui.ImageRenderingAuto
                             }
                         )
 

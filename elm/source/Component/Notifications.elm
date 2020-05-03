@@ -176,10 +176,10 @@ cardItem index (CardStyle record) =
                     (Ui.fix 48)
                     [ Ui.padding 4 ]
                     (Ui.BitmapImageAttributes
-                        { url = icon.url
+                        { blobUrl = icon.url
                         , fitStyle = Ui.Contain
                         , alternativeText = icon.alternativeText
-                        , rendering = Ui.ImageRenderingPixelated
+                        , rendering = Ui.ImageRenderingAuto
                         }
                     )
 

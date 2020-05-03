@@ -88,10 +88,10 @@ normalView subModel userSnapshotAndId =
                             (Ui.fix 32)
                             []
                             (Ui.BitmapImageAttributes
-                                { url = blobUrl
+                                { blobUrl = blobUrl
                                 , fitStyle = Ui.Contain
                                 , alternativeText = userSnapshotAndId.snapshot.name ++ "のユーザー画像"
-                                , rendering = Ui.ImageRenderingPixelated
+                                , rendering = Ui.ImageRenderingAuto
                                 }
                             )
 
