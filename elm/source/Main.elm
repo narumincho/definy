@@ -4,8 +4,8 @@ import Browser
 import Browser.Dom
 import Browser.Navigation
 import CommonUi
-import Component.Header
 import Component.Notifications
+import Component.SideBar
 import Css
 import Data
 import Data.Key
@@ -859,39 +859,25 @@ view (Model rec) =
 
 mainView : Model -> Ui.Panel Msg
 mainView (Model record) =
-    Ui.column
+    Ui.row
         Ui.stretch
         Ui.stretch
         []
         (case Message.getLogInState record.subModel of
-            Data.LogInState.GuestUser ->
-                [ Component.Header.view record.subModel
-                , logInPanelLogInButton
-                    (Message.getLanguage record.subModel)
-                    (Message.getWindowSize record.subModel)
-                , mainContentView (Model record)
-                ]
-
             Data.LogInState.RequestLogInUrl _ ->
-                [ Component.Header.view record.subModel
-                , Ui.depth
+                [ Ui.depth
                     Ui.stretch
                     Ui.stretch
                     []
                     [ ( ( Ui.Center, Ui.Center )
-                      , CommonUi.normalText 16 "ログイン画面をリクエスト中……"
+                      , CommonUi.normalText 24 "ログインを準備中……"
                       )
                     ]
                 ]
 
-            Data.LogInState.VerifyingAccessToken _ ->
-                [ Component.Header.view record.subModel
-                , CommonUi.normalText 16 "認証中……"
-                , mainContentView (Model record)
-                ]
-
-            Data.LogInState.Ok _ ->
-                [ Component.Header.view record.subModel
+            _ ->
+                [ Component.SideBar.view record.subModel
+                    |> Ui.map RequestLogInUrl
                 , mainContentView (Model record)
                 ]
         )
@@ -935,113 +921,6 @@ mainContentView (Model record) =
                     pageModel
                     |> Ui.map (PageMessageSuggestion >> PageMsg)
         )
-
-
-logInPanelLogInButton : Data.Language -> Message.WindowSize -> Ui.Panel Msg
-logInPanelLogInButton language { width } =
-    if width < 512 then
-        Ui.column
-            (Ui.fix (48 * 2 + 32))
-            Ui.auto
-            [ Ui.gap 16 ]
-            [ googleLogInButton True language
-            , gitHubLogInButton True language
-            ]
-
-    else
-        Ui.row
-            Ui.auto
-            (Ui.fix 64)
-            [ Ui.gap 16
-            , Ui.padding 8
-            ]
-            [ googleLogInButton False language
-            , gitHubLogInButton False language
-            ]
-
-
-googleLogInButton : Bool -> Data.Language -> Ui.Panel Msg
-googleLogInButton stretch language =
-    Ui.row
-        (if stretch then
-            Ui.stretch
-
-         else
-            Ui.fix 320
-        )
-        (Ui.fix 48)
-        [ Ui.borderRadius (Ui.BorderRadiusPx 8)
-        , Ui.backgroundColor (Css.rgb 66 133 244)
-        , Ui.gap 8
-        ]
-        [ CommonUi.googleIcon (Css.rgb 255 255 255)
-        , Ui.text
-            Ui.stretch
-            Ui.auto
-            []
-            (Ui.TextAttributes
-                { textAlignment = Ui.TextAlignStart
-                , text =
-                    case language of
-                        Data.LanguageEnglish ->
-                            "Sign in with Google"
-
-                        Data.LanguageJapanese ->
-                            "Googleでログイン"
-
-                        Data.LanguageEsperanto ->
-                            "Ensalutu kun Google"
-                , typeface = CommonUi.normalTypeface
-                , lineHeight = 1
-                , size = 20
-                , letterSpacing = 0
-                , color = Css.rgb 255 255 255
-                }
-            )
-        ]
-        |> Ui.button Ui.auto Ui.auto [] (RequestLogInUrl Data.OpenIdConnectProviderGoogle)
-
-
-gitHubLogInButton : Bool -> Data.Language -> Ui.Panel Msg
-gitHubLogInButton stretch language =
-    Ui.row
-        (if stretch then
-            Ui.stretch
-
-         else
-            Ui.fix 320
-        )
-        (Ui.fix 48)
-        [ Ui.borderRadius (Ui.BorderRadiusPx 8)
-        , Ui.backgroundColor (Css.rgb 32 32 32)
-        , Ui.gap 8
-        ]
-        [ CommonUi.gitHubIcon (Css.rgb 255 255 255)
-        , Ui.text
-            Ui.stretch
-            Ui.auto
-            []
-            (Ui.TextAttributes
-                { textAlignment = Ui.TextAlignStart
-                , text =
-                    case language of
-                        Data.LanguageEnglish ->
-                            "Sign in with GitHub"
-
-                        Data.LanguageJapanese ->
-                            "GitHubでログイン"
-
-                        Data.LanguageEsperanto ->
-                            "Ensalutu kun GitHub"
-                , typeface = CommonUi.normalTypeface
-                , size = 20
-                , lineHeight = 1
-                , letterSpacing = 0
-                , color = Css.rgb 255 255 255
-                }
-            )
-        ]
-        |> Ui.button Ui.auto Ui.auto [] (RequestLogInUrl Data.OpenIdConnectProviderGitHub)
 
 
 gutterTypeToCursorStyle : GutterType -> Ui.PointerImage
