@@ -1,6 +1,7 @@
 module Page.Suggestion exposing (Message, Model, getSuggestionId, init, update, updateByCommonMessage, view)
 
 import CommonUi
+import Css
 import Data
 import Message
 import Ui
@@ -20,7 +21,7 @@ type LoadedModel
 
 
 type Message
-    = Message
+    = InputNewPartName String
 
 
 init : Data.SuggestionId -> ( Model, Message.Command )
@@ -102,9 +103,70 @@ view subModel model =
 
 mainView : Message.SubModel -> LoadedModel -> Ui.Panel Message
 mainView subModel (LoadedModel record) =
-    CommonUi.table
-        [ ( "提案名", CommonUi.normalText 16 record.snapshot.name )
-        , ( "変更理由", CommonUi.normalText 16 record.snapshot.reason )
-        , ( "作成者", CommonUi.userView subModel record.snapshot.createUserId )
-        , ( "取得日時", CommonUi.timeView subModel record.snapshot.getTime )
+    Ui.column
+        Ui.stretch
+        Ui.auto
+        []
+        [ CommonUi.table
+            [ ( "提案名", CommonUi.normalText 16 record.snapshot.name )
+            , ( "変更理由", CommonUi.normalText 16 record.snapshot.reason )
+            , ( "作成者", CommonUi.userView subModel record.snapshot.createUserId )
+            , ( "取得日時", CommonUi.timeView subModel record.snapshot.getTime )
+            ]
+        , addPartView
         ]
+
+
+addPartView : Ui.Panel Message
+addPartView =
+    Ui.column
+        Ui.stretch
+        Ui.auto
+        []
+        [ Ui.row
+            Ui.stretch
+            Ui.auto
+            []
+            [ Ui.textInput
+                (Ui.fix 256)
+                (Ui.fix 32)
+                [ borderStyle ]
+                (Ui.TextInputAttributes
+                    { inputMessage = InputNewPartName
+                    , name = "new-part"
+                    , multiLine = False
+                    , fontSize = 16
+                    }
+                )
+            , CommonUi.normalText 24 ":"
+            , Ui.empty
+                (Ui.fix 256)
+                (Ui.fix 32)
+                [ borderStyle ]
+            ]
+        , Ui.row
+            Ui.stretch
+            Ui.auto
+            []
+            [ CommonUi.normalText 24 "="
+            , Ui.empty
+                (Ui.fix 512)
+                (Ui.fix 32)
+                [ borderStyle ]
+            ]
+        ]
+
+
+borderStyle : Ui.Style
+borderStyle =
+    Ui.border
+        (Ui.BorderStyle
+            { color = Css.rgb 27 227 2
+            , width =
+                { top = 1
+                , right = 1
+                , left = 1
+                , bottom = 1
+                }
+            }
+        )
