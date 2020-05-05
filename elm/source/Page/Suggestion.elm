@@ -87,7 +87,7 @@ view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel model =
     Ui.column
         Ui.stretch
-        Ui.auto
+        Ui.stretch
         []
         [ case model of
             Loading (Data.SuggestionId suggestionIdAsString) ->
@@ -105,15 +105,26 @@ mainView : Message.SubModel -> LoadedModel -> Ui.Panel Message
 mainView subModel (LoadedModel record) =
     Ui.column
         Ui.stretch
-        Ui.auto
+        Ui.stretch
         []
-        [ CommonUi.table
-            [ ( "提案名", CommonUi.normalText 16 record.snapshot.name )
-            , ( "変更理由", CommonUi.normalText 16 record.snapshot.reason )
-            , ( "作成者", CommonUi.userView subModel record.snapshot.createUserId )
-            , ( "取得日時", CommonUi.timeView subModel record.snapshot.getTime )
-            ]
-        , addPartView
+        [ Ui.scroll
+            Ui.stretch
+            Ui.stretch
+            []
+            (Ui.column
+                Ui.stretch
+                Ui.auto
+                []
+                [ CommonUi.table
+                    [ ( "提案名", CommonUi.normalText 16 record.snapshot.name )
+                    , ( "変更理由", CommonUi.normalText 16 record.snapshot.reason )
+                    , ( "作成者", CommonUi.userView subModel record.snapshot.createUserId )
+                    , ( "取得日時", CommonUi.timeView subModel record.snapshot.getTime )
+                    ]
+                , addPartView
+                ]
+            )
+        , inputPanel
         ]
 
 
@@ -127,17 +138,10 @@ addPartView =
             Ui.stretch
             Ui.auto
             []
-            [ Ui.textInput
+            [ Ui.empty
                 (Ui.fix 256)
                 (Ui.fix 32)
                 [ borderStyle ]
-                (Ui.TextInputAttributes
-                    { inputMessage = InputNewPartName
-                    , name = "new-part"
-                    , multiLine = False
-                    , fontSize = 16
-                    }
-                )
             , CommonUi.normalText 24 ":"
             , Ui.empty
                 (Ui.fix 256)
@@ -170,3 +174,14 @@ borderStyle =
                 }
             }
         )
+
+
+inputPanel : Ui.Panel message
+inputPanel =
+    Ui.column
+        Ui.stretch
+        (Ui.fix 300)
+        []
+        [ CommonUi.normalText 16 "入力パネル"
+        , CommonUi.normalText 16 "WASDで移動…したい"
+        ]
