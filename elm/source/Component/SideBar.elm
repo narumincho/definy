@@ -27,12 +27,10 @@ view subModel =
 
             Data.LogInState.Ok record ->
                 userItem subModel record.userSnapshotAndId
-        , homeLink subModel
-        , userLink subModel
-        , partLink subModel
+        , partListLink subModel
         , typePartLink subModel
         , Ui.empty Ui.stretch Ui.stretch []
-        , aboutLink subModel
+        , resourceLink subModel
         ]
 
 
@@ -186,24 +184,36 @@ userItem subModel userSnapshotAndId =
         )
 
 
-homeLink : Message.SubModel -> Ui.Panel message
-homeLink subModel =
-    CommonUi.sameLanguageLink
+resourceLink : Message.SubModel -> Ui.Panel message
+resourceLink subModel =
+    Ui.column
         Ui.stretch
         Ui.auto
         []
-        subModel
-        Data.LocationHome
-        (sideBarText "Home")
+        [ Ui.row
+            Ui.stretch
+            Ui.auto
+            []
+            [ partListLink subModel
+            , typePartLink subModel
+            ]
+        , Ui.row
+            Ui.stretch
+            Ui.auto
+            []
+            [ userListLink subModel
+            , aboutLink subModel
+            ]
+        ]
 
 
-userLink : Message.SubModel -> Ui.Panel message
-userLink subModel =
+userListLink : Message.SubModel -> Ui.Panel message
+userListLink subModel =
     sideBarText "User"
 
 
-partLink : Message.SubModel -> Ui.Panel message
-partLink subModel =
+partListLink : Message.SubModel -> Ui.Panel message
+partListLink subModel =
     sideBarText "Part"
 
 
