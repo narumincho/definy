@@ -47,6 +47,9 @@ locationFromPath path =
             else
                 Data.LocationHome
 
+        [ "", "user" ] ->
+            Data.LocationUserList
+
         [ "", "project", id ] ->
             if isIdString id then
                 Data.LocationProject (Data.ProjectId id)
@@ -67,6 +70,15 @@ locationFromPath path =
 
             else
                 Data.LocationHome
+
+        [ "", "part" ] ->
+            Data.LocationPartList
+
+        [ "", "type-part" ] ->
+            Data.LocationTypePartList
+
+        [ "", "about" ] ->
+            Data.LocationAbout
 
         _ ->
             Data.LocationHome
@@ -135,6 +147,9 @@ locationToPathStringList location =
         Data.LocationUser (Data.UserId userId) ->
             [ "user", userId ]
 
+        Data.LocationUserList ->
+            [ "user" ]
+
         Data.LocationProject (Data.ProjectId projectId) ->
             [ "project", projectId ]
 
@@ -143,6 +158,15 @@ locationToPathStringList location =
 
         Data.LocationSuggestion (Data.SuggestionId suggestionId) ->
             [ "suggestion", suggestionId ]
+
+        Data.LocationPartList ->
+            [ "part" ]
+
+        Data.LocationTypePartList ->
+            [ "type-part" ]
+
+        Data.LocationAbout ->
+            [ "about" ]
 
 
 languageToIdString : Data.Language -> String

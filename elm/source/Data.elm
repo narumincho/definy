@@ -44,9 +44,13 @@ type Location
     | LocationCreateProject
     | LocationCreateIdea ProjectId
     | LocationUser UserId
+    | LocationUserList
     | LocationProject ProjectId
     | LocationIdea IdeaId
     | LocationSuggestion SuggestionId
+    | LocationPartList
+    | LocationTypePartList
+    | LocationAbout
 
 
 {-| 英語,日本語,エスペラント語などの言語
@@ -629,6 +633,9 @@ locationToJsonValue location =
         LocationUser parameter ->
             Je.object [ ( "_", Je.string "User" ), ( "userId", userIdToJsonValue parameter ) ]
 
+        LocationUserList ->
+            Je.object [ ( "_", Je.string "UserList" ) ]
+
         LocationProject parameter ->
             Je.object [ ( "_", Je.string "Project" ), ( "projectId", projectIdToJsonValue parameter ) ]
 
@@ -637,6 +644,15 @@ locationToJsonValue location =
 
         LocationSuggestion parameter ->
             Je.object [ ( "_", Je.string "Suggestion" ), ( "suggestionId", suggestionIdToJsonValue parameter ) ]
+
+        LocationPartList ->
+            Je.object [ ( "_", Je.string "PartList" ) ]
+
+        LocationTypePartList ->
+            Je.object [ ( "_", Je.string "TypePartList" ) ]
+
+        LocationAbout ->
+            Je.object [ ( "_", Je.string "About" ) ]
 
 
 {-| LanguageのJSONへのエンコーダ
@@ -1613,6 +1629,9 @@ locationJsonDecoder =
                     "User" ->
                         Jd.field "userId" userIdJsonDecoder |> Jd.map LocationUser
 
+                    "UserList" ->
+                        Jd.succeed LocationUserList
+
                     "Project" ->
                         Jd.field "projectId" projectIdJsonDecoder |> Jd.map LocationProject
 
@@ -1621,6 +1640,15 @@ locationJsonDecoder =
 
                     "Suggestion" ->
                         Jd.field "suggestionId" suggestionIdJsonDecoder |> Jd.map LocationSuggestion
+
+                    "PartList" ->
+                        Jd.succeed LocationPartList
+
+                    "TypePartList" ->
+                        Jd.succeed LocationTypePartList
+
+                    "About" ->
+                        Jd.succeed LocationAbout
 
                     _ ->
                         Jd.fail ("Locationで不明なタグを受けたとった tag=" ++ tag)

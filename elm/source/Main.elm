@@ -334,10 +334,6 @@ init flag url navigationKey =
 pageInit : Data.Location -> ( PageModel, Message.Command )
 pageInit location =
     case location of
-        Data.LocationHome ->
-            Page.Home.init
-                |> Tuple.mapFirst Home
-
         Data.LocationCreateProject ->
             Page.CreateProject.init
                 |> Tuple.mapFirst CreateProject
@@ -361,6 +357,10 @@ pageInit location =
         Data.LocationSuggestion suggestionId ->
             Page.Suggestion.init suggestionId
                 |> Tuple.mapFirst Suggestion
+
+        _ ->
+            Page.Home.init
+                |> Tuple.mapFirst Home
 
 
 

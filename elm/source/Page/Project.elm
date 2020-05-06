@@ -224,7 +224,7 @@ ideaListView subModel projectId ideaSnapshotAndIdListMaybe =
                             ideaSnapshotAndIdList
 
                     Nothing ->
-                        CommonUi.normalText 16 "アイデア一覧を読込中……"
+                        [ CommonUi.normalText 16 "アイデア一覧を読込中……" ]
                )
         )
 
