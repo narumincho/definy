@@ -5,7 +5,6 @@ import Browser
 import Browser.Dom
 import Browser.Navigation
 import CommonUi
-import Component.SideBar
 import Css
 import Data
 import Data.Key
@@ -866,8 +865,7 @@ mainView (Model record) =
                 ]
 
             _ ->
-                [ Component.SideBar.view record.subModel
-                    |> Ui.map RequestLogInUrl
+                [ CommonUi.sidebarView record.subModel |> Ui.map RequestLogInUrl
                 , mainContentView (Model record)
                 ]
         )
