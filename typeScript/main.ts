@@ -29,8 +29,6 @@ const getAccessToken = async (
   }
 };
 
-const imageBlobUrlMap: Map<string, string> = new Map();
-
 const callApi = <responseType>(
   apiName: string,
   binary: ReadonlyArray<number>,
@@ -158,19 +156,10 @@ const init = async (): Promise<void> => {
   });
 
   app.ports.getImageBlobUrl.subscribe((imageToken) => {
-    const blobUrl = imageBlobUrlMap.get(imageToken);
-    if (blobUrl !== undefined) {
-      app.ports.getImageBlobResponse.send({
-        blobUrl: blobUrl,
-        imageToken: imageToken,
-      });
-      return;
-    }
     db.getFile(database, imageToken).then((binaryInIndexDB) => {
       if (binaryInIndexDB !== undefined) {
         const blob = new Blob([binaryInIndexDB], { type: "image/png" });
         const blobUrl = URL.createObjectURL(blob);
-        imageBlobUrlMap.set(imageToken, blobUrl);
         app.ports.getImageBlobResponse.send({
           blobUrl: blobUrl,
           imageToken: imageToken,
@@ -185,7 +174,6 @@ const init = async (): Promise<void> => {
         const blob = new Blob([pngBinary], { type: "image/png" });
         const blobUrl = URL.createObjectURL(blob);
         db.setFile(database, imageToken, pngBinary);
-        imageBlobUrlMap.set(imageToken, blobUrl);
         app.ports.getImageBlobResponse.send({
           blobUrl: blobUrl,
           imageToken: imageToken,
