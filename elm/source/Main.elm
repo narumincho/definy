@@ -1,10 +1,10 @@
 port module Main exposing (main)
 
+import Array
 import Browser
 import Browser.Dom
 import Browser.Navigation
 import CommonUi
-import Component.Notifications
 import Component.SideBar
 import Css
 import Data
@@ -181,7 +181,6 @@ type Msg
     | ChangeNetworkConnection Bool -- 接続状況が変わった
     | UpdateTime Time.Posix -- 時間が過ぎた
     | PageMsg PageMessage -- ページ固有のメッセージ
-    | NotificationMessage Component.Notifications.Message
     | RequestLogInUrl Data.OpenIdConnectProvider
     | ResponseUserDataFromAccessToken (Maybe Data.UserSnapshotAndId)
     | ResponseImageBlob { blobUrl : String, imageToken : Data.ImageToken }
@@ -191,8 +190,9 @@ type Msg
     | ResponseTimeZone Data.TimeZoneAndName.TimeZoneAndName
     | CreateProjectResponse (Maybe Data.ProjectSnapshotAndId)
     | CreateIdeaResponse (Maybe Data.IdeaSnapshotAndId)
-    | NoOperation
+    | NotificationDeleteAt Int
     | CommonMessage Message.CommonMessage
+    | NoOperation
 
 
 type PageMessage
@@ -214,9 +214,18 @@ type Model
         , messageQueue : List Msg
         , subModel : Message.SubModel
         , networkConnection : Bool
-        , notificationModel : Component.Notifications.Model
+        , eventList : List Event
         , navigationKey : Browser.Navigation.Key
         }
+
+
+type Event
+    = LogInSuccess Data.UserSnapshotAndId
+    | LogInFailure
+    | OnLine
+    | OffLine
+    | CreatedProject Data.ProjectSnapshotAndId
+    | CreateProjectFailed
 
 
 type SubMode
@@ -269,22 +278,6 @@ init flag url navigationKey =
         urlData =
             Data.UrlData.urlDataFromUrl url
 
-        ( notificationsInitModel, notificationsInitCommand ) =
-            Component.Notifications.init
-
-        ( notificationsModel, notificationsCommand ) =
-            if flag.networkConnection then
-                ( notificationsInitModel
-                , Message.None
-                )
-
-            else
-                Component.Notifications.update
-                    (Component.Notifications.AddEvent
-                        Component.Notifications.OffLine
-                    )
-                    notificationsInitModel
-
         ( pageInitModel, pageCommand ) =
             pageInit urlData.location
 
@@ -310,7 +303,12 @@ init flag url navigationKey =
                 , windowSize = flag.windowSize
                 }
         , networkConnection = flag.networkConnection
-        , notificationModel = notificationsModel
+        , eventList =
+            if flag.networkConnection then
+                []
+
+            else
+                [ OffLine ]
         , navigationKey = navigationKey
         }
     , Cmd.batch
@@ -320,8 +318,6 @@ init flag url navigationKey =
 
             Nothing ->
                 Cmd.none
-        , commandToMainCommand logInState notificationsInitCommand
-        , commandToMainCommand logInState notificationsCommand
         , commandToMainCommand logInState pageCommand
         , Browser.Navigation.replaceUrl navigationKey (Url.toString (Data.UrlData.urlDataToUrl urlData))
         , Task.perform
@@ -410,36 +406,20 @@ update msg (Model rec) =
             , commandToMainCommand (Message.getLogInState rec.subModel) command
             )
 
-        NotificationMessage notificationMessage ->
-            let
-                ( newNotificationModel, command ) =
-                    Component.Notifications.update
-                        notificationMessage
-                        rec.notificationModel
-            in
-            ( Model
-                { rec | notificationModel = newNotificationModel }
-            , commandToMainCommand (Message.getLogInState rec.subModel) command
-            )
-
         ChangeNetworkConnection connection ->
-            let
-                ( newNotificationModel, command ) =
-                    notificationAddEvent
-                        (if connection then
-                            Component.Notifications.OnLine
-
-                         else
-                            Component.Notifications.OffLine
-                        )
-                        (Model rec)
-            in
             ( Model
                 { rec
-                    | notificationModel = newNotificationModel
+                    | eventList =
+                        rec.eventList
+                            ++ [ if connection then
+                                    OnLine
+
+                                 else
+                                    OffLine
+                               ]
                     , networkConnection = False
                 }
-            , commandToMainCommand (Message.getLogInState rec.subModel) command
+            , Cmd.none
             )
 
         RequestLogInUrl openIdConnectProvider ->
@@ -538,36 +518,35 @@ update msg (Model rec) =
             , Cmd.none
             )
 
-        NoOperation ->
-            ( Model rec
-            , Cmd.none
-            )
-
         CreateProjectResponse projectAndIdMaybe ->
             let
                 ( newPageModel, pageCommand ) =
                     pageInit Data.LocationHome
-
-                ( newNotificationModel, notificationCommand ) =
-                    notificationAddEvent
-                        (case projectAndIdMaybe of
-                            Just projectAndId ->
-                                Component.Notifications.CreatedProject projectAndId
-
-                            Nothing ->
-                                Component.Notifications.CreateProjectFailed
-                        )
-                        (Model rec)
             in
             ( Model
                 { rec
                     | page = newPageModel
-                    , notificationModel = newNotificationModel
+                    , eventList =
+                        rec.eventList
+                            ++ [ case projectAndIdMaybe of
+                                    Just projectAndId ->
+                                        CreatedProject projectAndId
+
+                                    Nothing ->
+                                        CreateProjectFailed
+                               ]
                 }
             , commandToMainCommand
                 (Message.getLogInState rec.subModel)
                 (Message.Batch
-                    [ pageCommand, notificationCommand ]
+                    [ pageCommand
+                    , case projectAndIdMaybe of
+                        Just projectAndId ->
+                            Message.GetBlobUrl projectAndId.snapshot.imageHash
+
+                        Nothing ->
+                            Message.None
+                    ]
                 )
             )
 
@@ -592,8 +571,30 @@ update msg (Model rec) =
                 Message.UpdateTime
                 (Model { rec | subModel = Message.setNowTime timePosix rec.subModel })
 
+        NotificationDeleteAt index ->
+            let
+                eventListAsArray =
+                    rec.eventList |> Array.fromList
+            in
+            ( Model
+                { rec
+                    | eventList =
+                        Array.toList
+                            (Array.append
+                                (Array.slice 0 (max 0 index) eventListAsArray)
+                                (Array.slice (index + 1) (Array.length eventListAsArray) eventListAsArray)
+                            )
+                }
+            , Cmd.none
+            )
+
         CommonMessage commonMessage ->
             commonMessageUpdate commonMessage (Model rec)
+
+        NoOperation ->
+            ( Model rec
+            , Cmd.none
+            )
 
 
 mapPageModel : ( pageModel, Message.Command ) -> (pageModel -> PageModel) -> Model -> ( Model, Cmd Msg )
@@ -634,16 +635,6 @@ updatePage pageMessage (Model record) =
             ( record.page
             , Message.None
             )
-
-
-notificationAddEvent :
-    Component.Notifications.Event
-    -> Model
-    -> ( Component.Notifications.Model, Message.Command )
-notificationAddEvent event (Model record) =
-    record.notificationModel
-        |> Component.Notifications.update
-            (Component.Notifications.AddEvent event)
 
 
 pageModelToLocation : PageModel -> Data.Location
@@ -847,8 +838,7 @@ view (Model rec) =
               , mainView (Model rec)
               )
             , ( ( Ui.End, Ui.End )
-              , Component.Notifications.view rec.subModel rec.notificationModel
-                    |> Ui.map NotificationMessage
+              , notificationView rec.subModel rec.eventList
               )
             ]
             |> Ui.toHtml
@@ -923,6 +913,125 @@ mainContentView (Model record) =
         )
 
 
+notificationView :
+    Message.SubModel
+    -> List Event
+    -> Ui.Panel Msg
+notificationView subModel eventList =
+    Ui.column
+        (Ui.fix 512)
+        Ui.auto
+        [ Ui.gap 8
+        , Ui.padding 16
+        ]
+        (List.indexedMap
+            (\index event ->
+                cardItem index (eventToCardStyle subModel event)
+            )
+            eventList
+        )
+
+
+eventToCardStyle : Message.SubModel -> Event -> CardStyle
+eventToCardStyle subModel event =
+    case event of
+        LogInSuccess userAndUserId ->
+            CardStyle
+                { icon =
+                    Message.getImageBlobUrl userAndUserId.snapshot.imageHash subModel
+                        |> Maybe.map
+                            (\blobUrl ->
+                                Icon
+                                    { alternativeText =
+                                        userAndUserId.snapshot.name ++ "のプロフィール画像"
+                                    , url = blobUrl
+                                    }
+                            )
+                , text = "\"" ++ userAndUserId.snapshot.name ++ "\"としてログインしました"
+                }
+
+        LogInFailure ->
+            CardStyle
+                { icon = Nothing
+                , text = "ログイン失敗"
+                }
+
+        OnLine ->
+            CardStyle
+                { icon = Nothing
+                , text = "オンラインになりました"
+                }
+
+        OffLine ->
+            CardStyle
+                { icon = Nothing
+                , text = "オフラインになりました"
+                }
+
+        CreatedProject projectAndId ->
+            CardStyle
+                { icon =
+                    Message.getImageBlobUrl projectAndId.snapshot.imageHash subModel
+                        |> Maybe.map
+                            (\blobUrl ->
+                                Icon
+                                    { alternativeText = projectAndId.snapshot.name ++ "のアイコン"
+                                    , url = blobUrl
+                                    }
+                            )
+                , text = projectAndId.snapshot.name ++ "を作成しました"
+                }
+
+        CreateProjectFailed ->
+            CardStyle
+                { icon = Nothing
+                , text = "プロジェクトの作成に失敗しました"
+                }
+
+
+type Icon
+    = Icon
+        { alternativeText : String
+        , url : String
+        }
+
+
+type CardStyle
+    = CardStyle
+        { icon : Maybe Icon
+        , text : String
+        }
+
+
+cardItem : Int -> CardStyle -> Ui.Panel Msg
+cardItem index (CardStyle record) =
+    Ui.row
+        Ui.stretch
+        (Ui.fix 48)
+        [ Ui.backgroundColor (Css.rgb 0 100 0) ]
+        [ case record.icon of
+            Just (Icon icon) ->
+                Ui.bitmapImage
+                    (Ui.fix 48)
+                    (Ui.fix 48)
+                    [ Ui.padding 4 ]
+                    (Ui.BitmapImageAttributes
+                        { blobUrl = icon.url
+                        , fitStyle = Ui.Contain
+                        , alternativeText = icon.alternativeText
+                        , rendering = Ui.ImageRenderingAuto
+                        }
+                    )
+
+            Nothing ->
+                Ui.empty (Ui.fix 32) (Ui.fix 32) []
+        , CommonUi.stretchText
+            16
+            record.text
+        , Ui.button (Ui.fix 32) (Ui.fix 32) [] (NotificationDeleteAt index) CommonUi.closeIcon
+        ]
+
+
 gutterTypeToCursorStyle : GutterType -> Ui.PointerImage
 gutterTypeToCursorStyle gutterType =
     case gutterType of
@@ -937,12 +1046,6 @@ responseUserDataFromAccessToken : Maybe Data.UserSnapshotAndId -> Model -> ( Mod
 responseUserDataFromAccessToken userSnapshotAndIdMaybe (Model rec) =
     case ( userSnapshotAndIdMaybe, Message.getLogInState rec.subModel ) of
         ( Just userSnapshotAndId, Data.LogInState.VerifyingAccessToken accessToken ) ->
-            let
-                ( newNotificationModel, command ) =
-                    rec.notificationModel
-                        |> Component.Notifications.update
-                            (Component.Notifications.AddEvent (Component.Notifications.LogInSuccess userSnapshotAndId))
-            in
             ( Model
                 { rec
                     | subModel =
@@ -953,30 +1056,22 @@ responseUserDataFromAccessToken userSnapshotAndIdMaybe (Model rec) =
                                 }
                             )
                             rec.subModel
-                    , notificationModel = newNotificationModel
+                    , eventList = rec.eventList ++ [ LogInSuccess userSnapshotAndId ]
                 }
             , Cmd.batch
                 [ consoleLog "ユーザー情報の取得に成功!"
-                , commandToMainCommand (Message.getLogInState rec.subModel) command
+                , commandToMainCommand (Message.getLogInState rec.subModel)
+                    (Message.GetBlobUrl userSnapshotAndId.snapshot.imageHash)
                 ]
             )
 
         ( Nothing, Data.LogInState.VerifyingAccessToken _ ) ->
-            let
-                ( newNotificationModel, command ) =
-                    rec.notificationModel
-                        |> Component.Notifications.update
-                            (Component.Notifications.AddEvent Component.Notifications.LogInFailure)
-            in
             ( Model
                 { rec
                     | subModel = Message.setLogInState Data.LogInState.GuestUser rec.subModel
-                    , notificationModel = newNotificationModel
+                    , eventList = rec.eventList ++ [ LogInFailure ]
                 }
-            , Cmd.batch
-                [ consoleLog "アクセストークンが無効だった"
-                , commandToMainCommand (Message.getLogInState rec.subModel) command
-                ]
+            , Cmd.none
             )
 
         ( _, _ ) ->
