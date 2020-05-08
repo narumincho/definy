@@ -190,6 +190,7 @@ type Msg
     | CreateProjectResponse (Maybe Data.ProjectSnapshotAndId)
     | CreateIdeaResponse (Maybe Data.IdeaSnapshotAndId)
     | NotificationDeleteAt Int
+    | KeyPressed Data.Key.Key
     | CommonMessage Message.CommonMessage
     | NoOperation
 
@@ -586,6 +587,26 @@ update msg (Model rec) =
                 }
             , Cmd.none
             )
+
+        KeyPressed key ->
+            case
+                keyToCommonCommand
+                    (case rec.page of
+                        Suggestion model ->
+                            Page.Suggestion.getBrowserUiState model
+
+                        _ ->
+                            Message.NotFocus
+                    )
+                    key
+            of
+                Just commonCommand ->
+                    commonMessageUpdate (Message.CommonCommand commonCommand) (Model rec)
+
+                Nothing ->
+                    ( Model rec
+                    , Cmd.none
+                    )
 
         CommonMessage commonMessage ->
             commonMessageUpdate commonMessage (Model rec)
@@ -1195,12 +1216,7 @@ subscriptions model =
             (\jsonValue ->
                 case Data.Key.fromKeyEventObject jsonValue of
                     Just key ->
-                        case keyToCommonCommand key of
-                            Just commonCommand ->
-                                CommonMessage (Message.CommonCommand commonCommand)
-
-                            Nothing ->
-                                NoOperation
+                        KeyPressed key
 
                     Nothing ->
                         NoOperation
@@ -1363,31 +1379,34 @@ subscriptions model =
         )
 
 
-keyToCommonCommand : Data.Key.Key -> Maybe Message.CommonCommand
-keyToCommonCommand key =
-    case key.key of
-        Data.Key.KeyW ->
+keyToCommonCommand : Message.BrowserUiState -> Data.Key.Key -> Maybe Message.CommonCommand
+keyToCommonCommand browserUiState key =
+    case ( browserUiState, key.key ) of
+        ( Message.NotFocus, Data.Key.KeyW ) ->
             Just Message.SelectUp
 
-        Data.Key.KeyS ->
+        ( Message.NotFocus, Data.Key.KeyS ) ->
             Just Message.SelectDown
 
-        Data.Key.KeyA ->
+        ( Message.NotFocus, Data.Key.KeyA ) ->
             Just Message.SelectLeft
 
-        Data.Key.KeyD ->
+        ( Message.NotFocus, Data.Key.KeyD ) ->
             Just Message.SelectRight
 
-        Data.Key.KeyE ->
+        ( Message.NotFocus, Data.Key.KeyE ) ->
             Just Message.SelectFirstChild
 
-        Data.Key.Enter ->
+        ( _, Data.Key.Space ) ->
             Just Message.SelectFirstChild
 
-        Data.Key.KeyQ ->
+        ( Message.NotFocus, Data.Key.KeyQ ) ->
             Just Message.SelectParent
 
-        Data.Key.Escape ->
+        ( _, Data.Key.Enter ) ->
+            Just Message.SelectParent
+
+        ( _, Data.Key.Escape ) ->
             Just Message.SelectParent
 
         _ ->

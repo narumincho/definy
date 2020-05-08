@@ -1,4 +1,4 @@
-module Message exposing (Command(..), CommonCommand(..), CommonMessage(..), SubModel, WindowSize, addImageBlobUrl, addUserSnapshot, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getNowTime, getTimeZoneAndNameMaybe, getUserSnapshot, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setNowTime, setTimeZoneAndName, setWindowSize, urlDataSameLanguageClientMode)
+module Message exposing (BrowserUiState(..), Command(..), CommonCommand(..), CommonMessage(..), SubModel, WindowSize, addImageBlobUrl, addUserSnapshot, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getNowTime, getTimeZoneAndNameMaybe, getUserSnapshot, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setNowTime, setTimeZoneAndName, setWindowSize, urlDataSameLanguageClientMode)
 
 import Data
 import Data.LogInState
@@ -200,3 +200,11 @@ type Command
     | GetIdeaListByProjectId Data.ProjectId
     | FocusElement String
     | Batch (List Command)
+
+
+{-| ブラウザのUiにフォーカスを当てているかどうか
+-}
+type BrowserUiState
+    = FocusInput
+    | FocusTextArea
+    | NotFocus

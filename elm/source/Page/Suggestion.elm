@@ -1,4 +1,4 @@
-module Page.Suggestion exposing (Message, Model, getSuggestionId, init, update, updateByCommonMessage, view)
+module Page.Suggestion exposing (Message, Model, getBrowserUiState, getSuggestionId, init, update, updateByCommonMessage, view)
 
 import CommonUi
 import Css
@@ -50,6 +50,21 @@ getSuggestionId model =
 
         NotFound suggestionId ->
             suggestionId
+
+
+getBrowserUiState : Model -> Message.BrowserUiState
+getBrowserUiState model =
+    case model of
+        Loaded (LoadedModel { select }) ->
+            case select of
+                NewTypePartName ->
+                    Message.FocusInput
+
+                TypePart ->
+                    Message.NotFocus
+
+        _ ->
+            Message.NotFocus
 
 
 updateByCommonMessage : Message.CommonMessage -> Model -> ( Model, Message.Command )
