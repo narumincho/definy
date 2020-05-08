@@ -3,10 +3,10 @@ import { data } from "definy-common";
 export namespace Elm {
   namespace Main {
     function init(args: {
-      flags: Flags;
-      node: HTMLElement;
+      readonly flags: Flags;
+      readonly node: HTMLElement;
     }): {
-      ports: Ports;
+      readonly ports: Ports;
     };
   }
 }
@@ -53,22 +53,22 @@ type Ports = {
   readonly keyPressed: CmdForElmSub<KeyboardEvent>;
   readonly keyPrevented: CmdForElmSub<null>;
   readonly windowResize: CmdForElmSub<{
-    width: number;
-    height: number;
+    readonly width: number;
+    readonly height: number;
   }>;
   readonly changeNetworkConnection: CmdForElmSub<boolean>;
   readonly subPointerUp: CmdForElmSub<null>;
   readonly getImageBlobResponse: CmdForElmSub<{
-    blobUrl: string;
-    imageToken: string;
+    readonly blobUrl: string;
+    readonly imageToken: string;
   }>;
   readonly toValidProjectNameResponse: CmdForElmSub<{
-    input: string;
-    result: string | null;
+    readonly input: string;
+    readonly result: string | null;
   }>;
   readonly toValidIdeaNameResponse: CmdForElmSub<{
-    input: string;
-    result: string | null;
+    readonly input: string;
+    readonly result: string | null;
   }>;
   readonly createProjectResponse: CmdForElmSub<
     data.Maybe<data.ProjectSnapshotAndId>
@@ -82,17 +82,17 @@ type Ports = {
     data.Maybe<data.SuggestionSnapshotAndId>
   >;
   readonly responseIdeaSnapshotAndIdListByProjectId: CmdForElmSub<{
-    projectId: data.ProjectId;
-    ideaSnapshotAndIdList: ReadonlyArray<data.IdeaSnapshotAndId>;
+    readonly projectId: data.ProjectId;
+    readonly ideaSnapshotAndIdList: ReadonlyArray<data.IdeaSnapshotAndId>;
   }>;
   readonly responseIdea: CmdForElmSub<data.IdeaResponse>;
   readonly responseSuggestion: CmdForElmSub<data.SuggestionResponse>;
 };
 
 type SubForElmCmd<T> = {
-  subscribe: (arg: (value: T) => void) => void;
+  readonly subscribe: (arg: (value: T) => void) => void;
 };
 
 type CmdForElmSub<T> = {
-  send: (value: T) => void;
+  readonly send: (value: T) => void;
 };

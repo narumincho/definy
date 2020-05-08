@@ -178,6 +178,7 @@ urlDataSameLanguageClientMode location subModel =
 -}
 type Command
     = None
+    | RequestLogInUrl Data.OpenIdConnectProvider
     | GetBlobUrl Data.ImageToken
     | CreateProject String
     | CreateIdea { projectId : Data.ProjectId, ideaName : String }

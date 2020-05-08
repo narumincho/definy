@@ -2,6 +2,7 @@ module Page.User exposing (Message(..), Model, getUserId, init, update, updateBy
 
 import CommonUi
 import Data
+import Data.LogInState
 import Message
 import Ui
 
@@ -11,7 +12,7 @@ type Model
 
 
 type Message
-    = NoOperation
+    = RequestLogInUrl Data.OpenIdConnectProvider
 
 
 init : Data.UserId -> ( Model, Message.Command )
@@ -40,31 +41,49 @@ updateByCommonMessage message model =
 update : Message -> Model -> ( Model, Message.Command )
 update message model =
     case message of
-        NoOperation ->
+        RequestLogInUrl provider ->
             ( model
-            , Message.None
+            , Message.RequestLogInUrl provider
             )
 
 
 view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel (Model userId) =
-    case Message.getUserSnapshot userId subModel of
-        Just (Just userSnapshot) ->
-            normalView
-                subModel
-                { snapshot = userSnapshot
-                , id = userId
-                }
+    Ui.row
+        Ui.stretch
+        Ui.stretch
+        []
+        [ CommonUi.sidebarView subModel
+            (case Message.getLogInState subModel of
+                Data.LogInState.Ok user ->
+                    if user.userSnapshotAndId.id == userId then
+                        CommonUi.LogInUser
 
-        Just Nothing ->
-            notFoundView userId
+                    else
+                        CommonUi.User
 
-        Nothing ->
-            let
-                (Data.UserId userIdAsString) =
-                    userId
-            in
-            CommonUi.normalText 24 (userIdAsString ++ "のユーザー詳細ページ")
+                _ ->
+                    CommonUi.User
+            )
+            |> Ui.map RequestLogInUrl
+        , case Message.getUserSnapshot userId subModel of
+            Just (Just userSnapshot) ->
+                normalView
+                    subModel
+                    { snapshot = userSnapshot
+                    , id = userId
+                    }
+
+            Just Nothing ->
+                notFoundView userId
+
+            Nothing ->
+                let
+                    (Data.UserId userIdAsString) =
+                        userId
+                in
+                CommonUi.normalText 24 (userIdAsString ++ "のユーザー詳細ページ")
+        ]
 
 
 normalView : Message.SubModel -> Data.UserSnapshotAndId -> Ui.Panel Message

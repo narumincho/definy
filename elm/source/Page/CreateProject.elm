@@ -21,6 +21,7 @@ type Message
         , result : Maybe String
         }
     | CreateProject
+    | RequestLogInUrl Data.OpenIdConnectProvider
 
 
 init : ( Model, Message.Command )
@@ -33,6 +34,11 @@ init =
 update : Message -> Model -> ( Model, Message.Command )
 update message model =
     case ( message, model ) of
+        ( RequestLogInUrl provider, _ ) ->
+            ( model
+            , Message.RequestLogInUrl provider
+            )
+
         ( InputProjectName string, NoInput ) ->
             ( RequestToValidProjectName string
             , Message.ToValidProjectName string
@@ -70,12 +76,19 @@ update message model =
 
 view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel model =
-    case Message.getLogInState subModel of
-        Data.LogInState.Ok _ ->
-            mainView (Message.getLanguage subModel) model
+    Ui.row
+        Ui.stretch
+        Ui.stretch
+        []
+        [ CommonUi.sidebarView subModel CommonUi.None
+            |> Ui.map RequestLogInUrl
+        , case Message.getLogInState subModel of
+            Data.LogInState.Ok _ ->
+                mainView (Message.getLanguage subModel) model
 
-        _ ->
-            noLogInCannotCreateProjectText (Message.getLanguage subModel)
+            _ ->
+                noLogInCannotCreateProjectText (Message.getLanguage subModel)
+        ]
 
 
 noLogInCannotCreateProjectText : Data.Language -> Ui.Panel message

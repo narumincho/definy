@@ -21,7 +21,7 @@ type alias LoadedModel =
 
 
 type Message
-    = NoOperation
+    = RequestLogInUrl Data.OpenIdConnectProvider
 
 
 init : Data.ProjectId -> ( Model, Message.Command )
@@ -93,27 +93,49 @@ updateByCommonMessage message model =
 update : Message -> Model -> ( Model, Message.Command )
 update message model =
     case message of
-        NoOperation ->
+        RequestLogInUrl provider ->
             ( model
-            , Message.None
+            , Message.RequestLogInUrl provider
             )
 
 
 view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel model =
-    Ui.column
+    Ui.row
         Ui.stretch
-        Ui.auto
+        Ui.stretch
         []
-        [ case model of
-            Loading projectId ->
-                loadingView projectId
+        [ CommonUi.sidebarView subModel
+            (case model of
+                Loaded loadedModel ->
+                    CommonUi.Project
+                        { id = loadedModel.id
+                        , snapshot = loadedModel.snapshot
+                        }
 
-            NotFound projectId ->
-                notFoundView projectId
+                _ ->
+                    CommonUi.None
+            )
+            |> Ui.map RequestLogInUrl
+        , Ui.scroll
+            Ui.stretch
+            Ui.stretch
+            []
+            (Ui.column
+                Ui.stretch
+                Ui.auto
+                []
+                [ case model of
+                    Loading projectId ->
+                        loadingView projectId
 
-            Loaded loadedModel ->
-                normalView subModel loadedModel
+                    NotFound projectId ->
+                        notFoundView projectId
+
+                    Loaded loadedModel ->
+                        normalView subModel loadedModel
+                ]
+            )
         ]
 
 

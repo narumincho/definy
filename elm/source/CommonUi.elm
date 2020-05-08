@@ -1,5 +1,6 @@
 module CommonUi exposing
     ( GutterMsg(..)
+    , SidebarSelection(..)
     , activeColor
     , button
     , closeIcon
@@ -703,8 +704,20 @@ button message text =
         )
 
 
-sidebarView : Message.SubModel -> Ui.Panel Data.OpenIdConnectProvider
-sidebarView subModel =
+type SidebarSelection
+    = None
+    | LogInUser
+    | Project Data.ProjectSnapshotAndId
+    | ProjectIdea Data.ProjectSnapshotAndId
+    | ProjectSuggestion Data.ProjectSnapshotAndId Data.IdeaId
+    | Part
+    | TypePart
+    | User
+    | About
+
+
+sidebarView : Message.SubModel -> SidebarSelection -> Ui.Panel Data.OpenIdConnectProvider
+sidebarView subModel selection =
     Ui.column
         (Ui.fix 260)
         Ui.stretch
@@ -721,11 +734,10 @@ sidebarView subModel =
                 normalText 16 "VerifyingAccessToken"
 
             Data.LogInState.Ok record ->
-                userItem subModel record.userSnapshotAndId
-        , partListLink subModel
-        , typePartLink subModel
+                userItem subModel record.userSnapshotAndId (selection == LogInUser)
+        , sideBarProjectView subModel selection
         , Ui.empty Ui.stretch Ui.stretch []
-        , resourceLink subModel
+        , resourceLink subModel selection
         ]
 
 
@@ -839,12 +851,17 @@ gitHubLogInButton language =
         |> Ui.button Ui.auto Ui.auto [] Data.OpenIdConnectProviderGitHub
 
 
-userItem : Message.SubModel -> Data.UserSnapshotAndId -> Ui.Panel msg
-userItem subModel userSnapshotAndId =
+userItem : Message.SubModel -> Data.UserSnapshotAndId -> Bool -> Ui.Panel msg
+userItem subModel userSnapshotAndId isSelect =
     sameLanguageLink
+        Ui.stretch
         Ui.auto
-        Ui.auto
-        []
+        (if isSelect then
+            [ sideBarSelectStyle ]
+
+         else
+            []
+        )
         subModel
         (Data.LocationUser userSnapshotAndId.id)
         (Ui.row
@@ -872,15 +889,127 @@ userItem subModel userSnapshotAndId =
                         (Ui.fix 48)
                         (Ui.fix 48)
                         []
-            , normalText
+            , stretchText
                 16
                 userSnapshotAndId.snapshot.name
             ]
         )
 
 
-resourceLink : Message.SubModel -> Ui.Panel message
-resourceLink subModel =
+sideBarProjectView : Message.SubModel -> SidebarSelection -> Ui.Panel message
+sideBarProjectView subModel selection =
+    case selection of
+        Project snapshotAndId ->
+            Ui.column
+                Ui.stretch
+                Ui.auto
+                []
+                [ sideBarProjectViewProject subModel True snapshotAndId ]
+
+        ProjectIdea snapshotAndId ->
+            Ui.column
+                Ui.stretch
+                Ui.auto
+                []
+                [ sideBarProjectViewProject subModel False snapshotAndId
+                , Ui.row
+                    Ui.stretch
+                    Ui.auto
+                    []
+                    [ Ui.empty (Ui.fix 16) Ui.auto []
+                    , sideBarProjectViewIdea subModel Nothing
+                    ]
+                ]
+
+        ProjectSuggestion snapshotAndId ideaId ->
+            Ui.column
+                Ui.stretch
+                Ui.auto
+                []
+                [ sideBarProjectViewProject subModel True snapshotAndId
+                , Ui.row
+                    Ui.stretch
+                    Ui.auto
+                    []
+                    [ Ui.empty (Ui.fix 16) Ui.auto []
+                    , sideBarProjectViewIdea subModel (Just ideaId)
+                    ]
+                , Ui.row
+                    Ui.stretch
+                    Ui.auto
+                    []
+                    [ Ui.empty (Ui.fix 16) Ui.auto []
+                    , sideBarText
+                        (case Message.getLanguage subModel of
+                            Data.LanguageEnglish ->
+                                "Suggestion"
+
+                            Data.LanguageJapanese ->
+                                "提案"
+
+                            Data.LanguageEsperanto ->
+                                "Sugesto"
+                        )
+                        True
+                    ]
+                ]
+
+        _ ->
+            Ui.column
+                Ui.stretch
+                Ui.auto
+                []
+                []
+
+
+sideBarProjectViewProject : Message.SubModel -> Bool -> Data.ProjectSnapshotAndId -> Ui.Panel message
+sideBarProjectViewProject subModel isSelect snapshotAndId =
+    sameLanguageLink
+        Ui.stretch
+        Ui.stretch
+        []
+        subModel
+        (Data.LocationProject snapshotAndId.id)
+        (sideBarText
+            snapshotAndId.snapshot.name
+            isSelect
+        )
+
+
+sideBarProjectViewIdea : Message.SubModel -> Maybe Data.IdeaId -> Ui.Panel message
+sideBarProjectViewIdea subModel ideaIdMaybe =
+    case ideaIdMaybe of
+        Just ideaId ->
+            sameLanguageLink
+                Ui.stretch
+                Ui.stretch
+                []
+                subModel
+                (Data.LocationIdea ideaId)
+                (sideBarIdeaText subModel False)
+
+        Nothing ->
+            sideBarIdeaText subModel True
+
+
+sideBarIdeaText : Message.SubModel -> Bool -> Ui.Panel message
+sideBarIdeaText subModel isSelect =
+    sideBarText
+        (case Message.getLanguage subModel of
+            Data.LanguageEnglish ->
+                "Idea"
+
+            Data.LanguageJapanese ->
+                "アイデア"
+
+            Data.LanguageEsperanto ->
+                "ideo"
+        )
+        isSelect
+
+
+resourceLink : Message.SubModel -> SidebarSelection -> Ui.Panel message
+resourceLink subModel selection =
     Ui.column
         Ui.stretch
         Ui.auto
@@ -889,52 +1018,104 @@ resourceLink subModel =
             Ui.stretch
             Ui.auto
             []
-            [ partListLink subModel
-            , typePartLink subModel
+            [ partListLink subModel (selection == Part)
+            , typePartLink subModel (selection == TypePart)
             ]
         , Ui.row
             Ui.stretch
             Ui.auto
             []
-            [ userListLink subModel
-            , aboutLink subModel
+            [ userListLink subModel (selection == User)
+            , aboutLink subModel (selection == About)
             ]
         ]
 
 
-userListLink : Message.SubModel -> Ui.Panel message
+userListLink : Message.SubModel -> Bool -> Ui.Panel message
 userListLink subModel =
-    sideBarText "User"
+    sideBarText
+        (case Message.getLanguage subModel of
+            Data.LanguageJapanese ->
+                "ユーザー"
+
+            Data.LanguageEnglish ->
+                "User"
+
+            Data.LanguageEsperanto ->
+                "Uzanto"
+        )
 
 
-partListLink : Message.SubModel -> Ui.Panel message
+partListLink : Message.SubModel -> Bool -> Ui.Panel message
 partListLink subModel =
-    sideBarText "Part"
+    sideBarText
+        (case Message.getLanguage subModel of
+            Data.LanguageJapanese ->
+                "パーツ"
+
+            Data.LanguageEnglish ->
+                "Part"
+
+            Data.LanguageEsperanto ->
+                "Parto"
+        )
 
 
-typePartLink : Message.SubModel -> Ui.Panel message
+typePartLink : Message.SubModel -> Bool -> Ui.Panel message
 typePartLink subModel =
-    sideBarText "TypePart"
+    sideBarText
+        (case Message.getLanguage subModel of
+            Data.LanguageJapanese ->
+                "型パーツ"
+
+            Data.LanguageEnglish ->
+                "TypePart"
+
+            Data.LanguageEsperanto ->
+                "Tajpu parto"
+        )
 
 
-aboutLink : Message.SubModel -> Ui.Panel message
+aboutLink : Message.SubModel -> Bool -> Ui.Panel message
 aboutLink subModel =
-    sideBarText "About"
+    sideBarText
+        (case Message.getLanguage subModel of
+            Data.LanguageJapanese ->
+                "Definyについて"
+
+            Data.LanguageEnglish ->
+                "About Definy"
+
+            Data.LanguageEsperanto ->
+                "Pri Definy"
+        )
 
 
-sideBarText : String -> Ui.Panel message
-sideBarText text =
+sideBarText : String -> Bool -> Ui.Panel message
+sideBarText text isSelect =
     Ui.text
         Ui.stretch
         Ui.auto
-        [ Ui.padding 8 ]
+        ([ Ui.padding 8 ]
+            ++ (if isSelect then
+                    [ sideBarSelectStyle ]
+
+                else
+                    []
+               )
+        )
         (Ui.TextAttributes
             { text = text
             , typeface = codeFontTypeface
-            , size = 20
+            , size = 18
             , letterSpacing = 0
             , lineHeight = 1
             , color = Css.rgb 180 180 180
             , textAlignment = Ui.TextAlignStart
             }
         )
+
+
+sideBarSelectStyle : Ui.Style
+sideBarSelectStyle =
+    Ui.backgroundColor (Css.rgb 60 60 60)

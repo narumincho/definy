@@ -11,7 +11,6 @@ import Array
 import CommonUi
 import Css
 import Data
-import Data.Key
 import Data.LogInState
 import Message
 import Ui
@@ -35,7 +34,7 @@ type Project
 
 
 type Message
-    = NoOperation
+    = RequestLogInUrl Data.OpenIdConnectProvider
 
 
 projectGetId : Project -> Data.ProjectId
@@ -197,9 +196,9 @@ projectListGetIndexByProjectId projectId projectList =
 update : Message -> Model -> ( Model, Message.Command )
 update msg model =
     case msg of
-        NoOperation ->
+        RequestLogInUrl provider ->
             ( model
-            , Message.None
+            , Message.RequestLogInUrl provider
             )
 
 
@@ -230,16 +229,23 @@ view :
     -> Model
     -> Ui.Panel Message
 view subModel model =
-    Ui.column
+    Ui.row
         Ui.stretch
-        Ui.auto
-        [ Ui.gap 16 ]
-        [ case model of
-            LoadingAllProject ->
-                CommonUi.normalText 16 "プロジェクトの一覧を読込中"
+        Ui.stretch
+        []
+        [ CommonUi.sidebarView subModel CommonUi.None
+            |> Ui.map RequestLogInUrl
+        , Ui.column
+            Ui.stretch
+            Ui.auto
+            [ Ui.gap 16 ]
+            [ case model of
+                LoadingAllProject ->
+                    CommonUi.normalText 16 "プロジェクトの一覧を読込中"
 
-            LoadedAllProject loadedModel ->
-                projectListView subModel loadedModel
+                LoadedAllProject loadedModel ->
+                    projectListView subModel loadedModel
+            ]
         ]
 
 

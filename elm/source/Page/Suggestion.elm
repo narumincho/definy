@@ -17,11 +17,13 @@ type LoadedModel
     = LoadedModel
         { id : Data.SuggestionId
         , snapshot : Data.SuggestionSnapshot
+        , project : Maybe Data.ProjectSnapshot
         }
 
 
 type Message
     = InputNewPartName String
+    | RequestLogInUrl Data.OpenIdConnectProvider
 
 
 init : Data.SuggestionId -> ( Model, Message.Command )
@@ -55,9 +57,13 @@ updateByCommonMessage commonMessage model =
                             (LoadedModel
                                 { id = suggestionResponse.id
                                 , snapshot = suggestionSnapshot
+                                , project = Nothing
                                 }
                             )
-                        , Message.GetUser suggestionSnapshot.createUserId
+                        , Message.Batch
+                            [ Message.GetUser suggestionSnapshot.createUserId
+                            , Message.GetProject suggestionSnapshot.projectId
+                            ]
                         )
 
                     Nothing ->
@@ -70,6 +76,34 @@ updateByCommonMessage commonMessage model =
                 , Message.None
                 )
 
+        Message.ResponseProject projectSnapshot ->
+            case model of
+                Loaded (LoadedModel loadedModel) ->
+                    if loadedModel.snapshot.projectId == projectSnapshot.id then
+                        case projectSnapshot.snapshotMaybe of
+                            Just snapshot ->
+                                ( Loaded
+                                    (LoadedModel
+                                        { loadedModel | project = Just snapshot }
+                                    )
+                                , Message.GetBlobUrl snapshot.imageHash
+                                )
+
+                            Nothing ->
+                                ( model
+                                , Message.None
+                                )
+
+                    else
+                        ( model
+                        , Message.None
+                        )
+
+                _ ->
+                    ( model
+                    , Message.None
+                    )
+
         _ ->
             ( model
             , Message.None
@@ -78,26 +112,56 @@ updateByCommonMessage commonMessage model =
 
 update : Message -> Model -> ( Model, Message.Command )
 update message model =
-    ( model
-    , Message.None
-    )
+    case message of
+        RequestLogInUrl provider ->
+            ( model
+            , Message.RequestLogInUrl provider
+            )
+
+        _ ->
+            ( model
+            , Message.None
+            )
 
 
 view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel model =
-    Ui.column
+    Ui.row
         Ui.stretch
         Ui.stretch
         []
-        [ case model of
-            Loading (Data.SuggestionId suggestionIdAsString) ->
-                CommonUi.normalText 16 ("Suggestionを読込中. id=" ++ suggestionIdAsString)
+        [ CommonUi.sidebarView subModel
+            (case model of
+                Loaded (LoadedModel loadedModel) ->
+                    case loadedModel.project of
+                        Just projectSnapshot ->
+                            CommonUi.ProjectSuggestion
+                                { snapshot = projectSnapshot
+                                , id = loadedModel.snapshot.projectId
+                                }
+                                loadedModel.snapshot.ideaId
 
-            Loaded loadedModel ->
-                mainView subModel loadedModel
+                        Nothing ->
+                            CommonUi.None
 
-            NotFound (Data.SuggestionId suggestionIdAsString) ->
-                CommonUi.normalText 16 ("Suggestionが見つからなかった id=" ++ suggestionIdAsString)
+                _ ->
+                    CommonUi.None
+            )
+            |> Ui.map RequestLogInUrl
+        , Ui.column
+            Ui.stretch
+            Ui.stretch
+            []
+            [ case model of
+                Loading (Data.SuggestionId suggestionIdAsString) ->
+                    CommonUi.normalText 16 ("Suggestionを読込中. id=" ++ suggestionIdAsString)
+
+                Loaded loadedModel ->
+                    mainView subModel loadedModel
+
+                NotFound (Data.SuggestionId suggestionIdAsString) ->
+                    CommonUi.normalText 16 ("Suggestionが見つからなかった id=" ++ suggestionIdAsString)
+            ]
         ]
 
 

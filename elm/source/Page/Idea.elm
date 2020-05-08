@@ -20,6 +20,7 @@ type alias LoadedModel =
     , snapshot : Data.IdeaSnapshot
     , comment : Comment
     , fresh : Bool
+    , projectSnapshot : Maybe Data.ProjectSnapshot
     }
 
 
@@ -32,6 +33,7 @@ type Message
     = InputComment String
     | Comment
     | Suggestion
+    | RequestLogInUrl Data.OpenIdConnectProvider
 
 
 init : Data.IdeaId -> ( Model, Message.Command )
@@ -70,11 +72,13 @@ updateByCommonMessage subModel message model =
                                 , snapshot = snapshot
                                 , comment = Inputting ""
                                 , fresh = True
+                                , projectSnapshot = Nothing
                                 }
                             , Message.Batch
                                 (Message.GetUser snapshot.createUser
                                     :: List.map Message.GetUser
                                         (List.map .createUserId snapshot.itemList)
+                                    ++ [ Message.GetProject snapshot.projectId ]
                                 )
                             )
 
@@ -84,6 +88,7 @@ updateByCommonMessage subModel message model =
                                 , snapshot = snapshot
                                 , comment = Inputting ""
                                 , fresh = False
+                                , projectSnapshot = Nothing
                                 }
                             , Message.GetIdeaNoCache idea.id
                             )
@@ -113,6 +118,29 @@ updateByCommonMessage subModel message model =
                 Nothing ->
                     ( Loading ideaId
                     , Message.GetIdea ideaId
+                    )
+
+        Message.ResponseProject projectResponse ->
+            case model of
+                Loaded loadedModel ->
+                    if loadedModel.snapshot.projectId == projectResponse.id then
+                        ( Loaded { loadedModel | projectSnapshot = projectResponse.snapshotMaybe }
+                        , case projectResponse.snapshotMaybe of
+                            Just projectSnapshot ->
+                                Message.GetBlobUrl projectSnapshot.imageHash
+
+                            Nothing ->
+                                Message.None
+                        )
+
+                    else
+                        ( Loaded loadedModel
+                        , Message.None
+                        )
+
+                _ ->
+                    ( model
+                    , Message.None
                     )
 
         Message.UpdateTime ->
@@ -147,6 +175,11 @@ isFresh subModel ideaSnapshot =
 update : Message -> Model -> ( Model, Message.Command )
 update message model =
     case ( message, model ) of
+        ( RequestLogInUrl provider, _ ) ->
+            ( model
+            , Message.RequestLogInUrl provider
+            )
+
         ( InputComment comment, Loaded loadedModel ) ->
             ( Loaded
                 { loadedModel | comment = Inputting comment }
@@ -182,22 +215,42 @@ update message model =
 
 view : Message.SubModel -> Model -> Ui.Panel Message
 view subModel model =
-    Ui.column
+    Ui.row
         Ui.stretch
-        Ui.auto
+        Ui.stretch
         []
-        [ case model of
-            Loading ideaId ->
-                loadingView ideaId
+        [ CommonUi.sidebarView subModel
+            (case model of
+                Loaded loadedModel ->
+                    case loadedModel.projectSnapshot of
+                        Just projectSnapshot ->
+                            CommonUi.ProjectIdea
+                                { id = loadedModel.snapshot.projectId, snapshot = projectSnapshot }
 
-            NotFound ideaId ->
-                notFoundView ideaId
+                        _ ->
+                            CommonUi.None
 
-            Loaded ideaSnapshotAndId ->
-                mainView subModel ideaSnapshotAndId
+                _ ->
+                    CommonUi.None
+            )
+            |> Ui.map RequestLogInUrl
+        , Ui.column
+            Ui.stretch
+            Ui.auto
+            []
+            [ case model of
+                Loading ideaId ->
+                    loadingView ideaId
 
-            CreatingSuggestion _ ->
-                CommonUi.normalText 16 "提案を作成中"
+                NotFound ideaId ->
+                    notFoundView ideaId
+
+                Loaded ideaSnapshotAndId ->
+                    mainView subModel ideaSnapshotAndId
+
+                CreatingSuggestion _ ->
+                    CommonUi.normalText 16 "提案を作成中"
+            ]
         ]
 
 

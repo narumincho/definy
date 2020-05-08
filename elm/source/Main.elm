@@ -848,27 +848,19 @@ view (Model rec) =
 
 mainView : Model -> Ui.Panel Msg
 mainView (Model record) =
-    Ui.row
-        Ui.stretch
-        Ui.stretch
-        []
-        (case Message.getLogInState record.subModel of
-            Data.LogInState.RequestLogInUrl _ ->
-                [ Ui.depth
-                    Ui.stretch
-                    Ui.stretch
-                    []
-                    [ ( ( Ui.Center, Ui.Center )
-                      , CommonUi.normalText 24 "ログインを準備中……"
-                      )
-                    ]
+    case Message.getLogInState record.subModel of
+        Data.LogInState.RequestLogInUrl _ ->
+            Ui.depth
+                Ui.stretch
+                Ui.stretch
+                []
+                [ ( ( Ui.Center, Ui.Center )
+                  , CommonUi.normalText 24 "ログインを準備中……"
+                  )
                 ]
 
-            _ ->
-                [ CommonUi.sidebarView record.subModel |> Ui.map RequestLogInUrl
-                , mainContentView (Model record)
-                ]
-        )
+        _ ->
+            mainContentView (Model record)
 
 
 mainContentView : Model -> Ui.Panel Msg
@@ -1081,6 +1073,10 @@ responseUserDataFromAccessToken userSnapshotAndIdMaybe (Model rec) =
 commandToMainCommand : Data.LogInState.LogInState -> Message.Command -> Cmd Msg
 commandToMainCommand logInState command =
     case command of
+        Message.RequestLogInUrl provider ->
+            Task.succeed (RequestLogInUrl provider)
+                |> Task.perform identity
+
         Message.None ->
             Cmd.none
 
