@@ -1378,5 +1378,17 @@ keyToCommonCommand key =
         Data.Key.KeyD ->
             Just Message.SelectRight
 
+        Data.Key.KeyE ->
+            Just Message.SelectFirstChild
+
+        Data.Key.Enter ->
+            Just Message.SelectFirstChild
+
+        Data.Key.KeyQ ->
+            Just Message.SelectParent
+
+        Data.Key.Escape ->
+            Just Message.SelectParent
+
         _ ->
             Nothing

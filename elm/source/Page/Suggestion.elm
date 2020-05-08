@@ -18,11 +18,17 @@ type LoadedModel
         { id : Data.SuggestionId
         , snapshot : Data.SuggestionSnapshot
         , project : Maybe Data.ProjectSnapshot
+        , select : Select
         }
 
 
+type Select
+    = TypePart
+    | NewTypePartName
+
+
 type Message
-    = InputNewPartName String
+    = InputNewTypePartName String
     | RequestLogInUrl Data.OpenIdConnectProvider
 
 
@@ -58,6 +64,7 @@ updateByCommonMessage commonMessage model =
                                 { id = suggestionResponse.id
                                 , snapshot = suggestionSnapshot
                                 , project = Nothing
+                                , select = TypePart
                                 }
                             )
                         , Message.Batch
@@ -98,6 +105,30 @@ updateByCommonMessage commonMessage model =
                         ( model
                         , Message.None
                         )
+
+                _ ->
+                    ( model
+                    , Message.None
+                    )
+
+        Message.CommonCommand Message.SelectFirstChild ->
+            case model of
+                Loaded (LoadedModel loadedModelRecord) ->
+                    ( Loaded (LoadedModel { loadedModelRecord | select = NewTypePartName })
+                    , Message.FocusElement inputId
+                    )
+
+                _ ->
+                    ( model
+                    , Message.None
+                    )
+
+        Message.CommonCommand Message.SelectParent ->
+            case model of
+                Loaded (LoadedModel loadedModelRecord) ->
+                    ( Loaded (LoadedModel { loadedModelRecord | select = TypePart })
+                    , Message.None
+                    )
 
                 _ ->
                     ( model
@@ -188,7 +219,7 @@ mainView subModel (LoadedModel record) =
                 , addPartView
                 ]
             )
-        , inputPanel
+        , inputPanel record.select
         ]
 
 
@@ -240,12 +271,50 @@ borderStyle =
         )
 
 
-inputPanel : Ui.Panel message
-inputPanel =
+inputPanelHeight : Int
+inputPanelHeight =
+    300
+
+
+inputPanel : Select -> Ui.Panel Message
+inputPanel select =
+    case select of
+        TypePart ->
+            Ui.column
+                Ui.stretch
+                (Ui.fix inputPanelHeight)
+                []
+                [ CommonUi.normalText 16 "Eで新しい型パーツの名前入力"
+                ]
+
+        NewTypePartName ->
+            Ui.row
+                Ui.stretch
+                (Ui.fix inputPanelHeight)
+                []
+                [ candidatesView ]
+
+
+candidatesView : Ui.Panel Message
+candidatesView =
     Ui.column
+        (Ui.fix 400)
         Ui.stretch
-        (Ui.fix 300)
         []
-        [ CommonUi.normalText 16 "入力パネル"
-        , CommonUi.normalText 16 "WASDで移動…したい"
+        [ Ui.textInput
+            Ui.stretch
+            Ui.auto
+            [ Ui.id inputId ]
+            (Ui.TextInputAttributes
+                { inputMessage = InputNewTypePartName
+                , name = "new-type"
+                , multiLine = False
+                , fontSize = 24
+                }
+            )
         ]
+
+
+inputId : String
+inputId =
+    "input"
