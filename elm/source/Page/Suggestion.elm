@@ -19,12 +19,15 @@ type LoadedModel
         , snapshot : Data.SuggestionSnapshot
         , project : Maybe Data.ProjectSnapshot
         , select : Select
+        , typeNameList : List String
         , newTypeName : String
         }
 
 
 type Select
-    = TypePart
+    = TypePart Int
+    | TypePartName Int
+    | NewTypePart
     | NewTypePartName
 
 
@@ -58,11 +61,17 @@ getBrowserUiState model =
     case model of
         Loaded (LoadedModel { select }) ->
             case select of
-                NewTypePartName ->
+                TypePart _ ->
+                    Message.NotFocus
+
+                TypePartName _ ->
                     Message.FocusInput
 
-                TypePart ->
+                NewTypePart ->
                     Message.NotFocus
+
+                NewTypePartName ->
+                    Message.FocusInput
 
         _ ->
             Message.NotFocus
@@ -70,8 +79,8 @@ getBrowserUiState model =
 
 updateByCommonMessage : Message.CommonMessage -> Model -> ( Model, Message.Command )
 updateByCommonMessage commonMessage model =
-    case commonMessage of
-        Message.ResponseSuggestion suggestionResponse ->
+    case ( commonMessage, model ) of
+        ( Message.ResponseSuggestion suggestionResponse, _ ) ->
             if suggestionResponse.id == getSuggestionId model then
                 case suggestionResponse.snapshotMaybe of
                     Just suggestionSnapshot ->
@@ -80,7 +89,8 @@ updateByCommonMessage commonMessage model =
                                 { id = suggestionResponse.id
                                 , snapshot = suggestionSnapshot
                                 , project = Nothing
-                                , select = TypePart
+                                , select = NewTypePart
+                                , typeNameList = []
                                 , newTypeName = ""
                                 }
                             )
@@ -100,7 +110,7 @@ updateByCommonMessage commonMessage model =
                 , Message.None
                 )
 
-        Message.ResponseProject projectSnapshot ->
+        ( Message.ResponseProject projectSnapshot, _ ) ->
             case model of
                 Loaded (LoadedModel loadedModel) ->
                     if loadedModel.snapshot.projectId == projectSnapshot.id then
@@ -128,34 +138,132 @@ updateByCommonMessage commonMessage model =
                     , Message.None
                     )
 
-        Message.CommonCommand Message.SelectFirstChild ->
-            case model of
-                Loaded (LoadedModel loadedModelRecord) ->
-                    ( Loaded (LoadedModel { loadedModelRecord | select = NewTypePartName })
-                    , Message.FocusElement inputId
-                    )
+        ( Message.CommonCommand Message.SelectUp, Loaded (LoadedModel record) ) ->
+            ( Loaded
+                (LoadedModel
+                    { record | select = selectUp record.typeNameList record.select }
+                )
+            , Message.FocusElement inputId
+            )
 
-                _ ->
-                    ( model
-                    , Message.None
-                    )
+        ( Message.CommonCommand Message.SelectDown, Loaded (LoadedModel record) ) ->
+            ( Loaded
+                (LoadedModel
+                    { record | select = selectDown record.typeNameList record.select }
+                )
+            , Message.FocusElement inputId
+            )
 
-        Message.CommonCommand Message.SelectParent ->
-            case model of
-                Loaded (LoadedModel loadedModelRecord) ->
-                    ( Loaded (LoadedModel { loadedModelRecord | select = TypePart })
-                    , Message.None
-                    )
+        ( Message.CommonCommand Message.SelectFirstChild, Loaded (LoadedModel record) ) ->
+            ( Loaded
+                (LoadedModel
+                    { record
+                        | select = selectFirstChild record.select
+                    }
+                )
+            , Message.FocusElement inputId
+            )
 
-                _ ->
-                    ( model
-                    , Message.None
-                    )
+        ( Message.CommonCommand Message.SelectParent, Loaded (LoadedModel record) ) ->
+            let
+                newSelect =
+                    selectParent record.select
+
+                isCreateTypePart =
+                    record.newTypeName /= "" && record.select /= newSelect
+            in
+            ( Loaded
+                (LoadedModel
+                    { record
+                        | select =
+                            newSelect
+                        , typeNameList =
+                            if isCreateTypePart then
+                                record.typeNameList ++ [ record.newTypeName ]
+
+                            else
+                                record.typeNameList
+                        , newTypeName =
+                            if isCreateTypePart then
+                                ""
+
+                            else
+                                record.newTypeName
+                    }
+                )
+            , Message.None
+            )
 
         _ ->
             ( model
             , Message.None
             )
+
+
+selectUp : List String -> Select -> Select
+selectUp typeNameList select =
+    case select of
+        TypePart int ->
+            TypePart (max 0 (int - 1))
+
+        NewTypePart ->
+            if List.length typeNameList == 0 then
+                NewTypePart
+
+            else
+                TypePart (List.length typeNameList - 1)
+
+        _ ->
+            selectParent select
+
+
+selectDown : List String -> Select -> Select
+selectDown typeNameList select =
+    case select of
+        TypePart int ->
+            if List.length typeNameList - 1 <= int then
+                NewTypePart
+
+            else
+                TypePart (int + 1)
+
+        NewTypePart ->
+            NewTypePart
+
+        _ ->
+            selectParent select
+
+
+selectFirstChild : Select -> Select
+selectFirstChild select =
+    case select of
+        TypePart int ->
+            TypePartName int
+
+        TypePartName int ->
+            TypePartName int
+
+        NewTypePart ->
+            NewTypePartName
+
+        NewTypePartName ->
+            NewTypePartName
+
+
+selectParent : Select -> Select
+selectParent select =
+    case select of
+        TypePart int ->
+            TypePart int
+
+        TypePartName int ->
+            TypePart int
+
+        NewTypePart ->
+            NewTypePart
+
+        NewTypePartName ->
+            NewTypePart
 
 
 update : Message -> Model -> ( Model, Message.Command )
@@ -240,11 +348,65 @@ mainView subModel (LoadedModel record) =
                     , ( "作成者", CommonUi.userView subModel record.snapshot.createUserId )
                     , ( "取得日時", CommonUi.timeView subModel record.snapshot.getTime )
                     ]
-                , addTypePartView record.newTypeName
+                , typePartAreaView record.typeNameList record.newTypeName record.select
                 , addPartView
                 ]
             )
         , inputPanel record.select
+        ]
+
+
+typePartAreaView : List String -> String -> Select -> Ui.Panel Message
+typePartAreaView typeNameList newTypeName select =
+    Ui.column
+        Ui.stretch
+        Ui.auto
+        []
+        [ typePartListView typeNameList select
+        , addTypePartView newTypeName
+        ]
+
+
+typePartListView : List String -> Select -> Ui.Panel Message
+typePartListView typeNameList select =
+    Ui.column
+        Ui.stretch
+        Ui.auto
+        []
+        (List.indexedMap (typePartView select) typeNameList)
+
+
+typePartView : Select -> Int -> String -> Ui.Panel message
+typePartView select index typeName =
+    Ui.column
+        Ui.stretch
+        (Ui.fix 40)
+        (case select of
+            TypePart int ->
+                if int == index then
+                    [ borderStyle ]
+
+                else
+                    []
+
+            _ ->
+                []
+        )
+        [ Ui.column
+            (Ui.fix 300)
+            (Ui.fix 40)
+            (case select of
+                TypePartName int ->
+                    if int == index then
+                        [ borderStyle ]
+
+                    else
+                        []
+
+                _ ->
+                    []
+            )
+            [ CommonUi.normalText 16 typeName ]
         ]
 
 
@@ -324,7 +486,21 @@ inputPanelHeight =
 inputPanel : Select -> Ui.Panel Message
 inputPanel select =
     case select of
-        TypePart ->
+        TypePart int ->
+            Ui.column
+                Ui.stretch
+                (Ui.fix inputPanelHeight)
+                []
+                [ CommonUi.normalText 16 ("Eで" ++ String.fromInt int ++ "番目の型パーツの名前を変更") ]
+
+        TypePartName int ->
+            Ui.column
+                Ui.stretch
+                (Ui.fix inputPanelHeight)
+                []
+                [ candidatesView ]
+
+        NewTypePart ->
             Ui.column
                 Ui.stretch
                 (Ui.fix inputPanelHeight)
@@ -357,6 +533,7 @@ candidatesView =
                 , fontSize = 24
                 }
             )
+        , CommonUi.normalText 16 "候補をここに表示する"
         ]
 
 
