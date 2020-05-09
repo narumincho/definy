@@ -25,8 +25,8 @@ module Ui exposing
     , depth
     , empty
     , fix
+    , focusAble
     , gap
-    , id
     , link
     , map
     , offset
@@ -119,6 +119,7 @@ type ButtonAttributes message
 type LinkAttributes message
     = LinkAttributes
         { url : Url.Url
+        , id : Maybe String
         , child : Panel message
         }
 
@@ -137,6 +138,7 @@ type TextInputAttributes message
     = TextInputAttributes
         { inputMessage : String -> message
         , name : String
+        , id : String
         , multiLine : Bool
         , fontSize : Int
         }
@@ -229,7 +231,7 @@ type StyleComputed
         , borderRadius : BorderRadius
         , backGroundColor : Maybe Css.Color
         , gap : Int
-        , id : Maybe String
+        , focusAble : Maybe String
         }
 
 
@@ -242,7 +244,7 @@ type Style
     | BorderRadius BorderRadius
     | BackGroundColor Css.Color
     | Gap Int
-    | Id String
+    | FocusAble String
 
 
 type BorderRadius
@@ -330,11 +332,11 @@ gap =
     Gap
 
 
-{-| 要素のID
+{-| フォーカスできる要素にして, 指定したIDにする
 -}
-id : String -> Style
-id =
-    Id
+focusAble : String -> Style
+focusAble =
+    FocusAble
 
 
 {-| テキストボックス
@@ -403,19 +405,13 @@ button width height style clickMessage child =
         }
 
 
-link : Size -> Size -> List Style -> Url.Url -> Panel message -> Panel message
-link width height style url panel =
+link : Size -> Size -> List Style -> LinkAttributes message -> Panel message
+link width height style linkAttributes =
     Panel
         { style = computeStyle style
         , width = width
         , height = height
-        , content =
-            Link
-                (LinkAttributes
-                    { url = url
-                    , child = panel
-                    }
-                )
+        , content = Link linkAttributes
         }
 
 
@@ -513,8 +509,8 @@ computeStyle list =
                     Gap px ->
                         { rest | gap = px }
 
-                    Id idString ->
-                        { rest | id = Just idString }
+                    FocusAble idString ->
+                        { rest | focusAble = Just idString }
                 )
 
         [] ->
@@ -532,7 +528,7 @@ defaultStyleComputed =
         , borderRadius = BorderRadiusPx 0
         , backGroundColor = Nothing
         , gap = 0
-        , id = Nothing
+        , focusAble = Nothing
         }
 
 
@@ -579,6 +575,7 @@ mapContent func content =
             Link
                 (LinkAttributes
                     { url = record.url
+                    , id = record.id
                     , child = map func record.child
                     }
                 )
@@ -610,6 +607,7 @@ mapContent func content =
             TextInput
                 (TextInputAttributes
                     { inputMessage = \inputtedText -> func (record.inputMessage inputtedText)
+                    , id = record.id
                     , name = record.name
                     , multiLine = record.multiLine
                     , fontSize = record.fontSize
@@ -670,9 +668,11 @@ domDataToHtml gridCell alignmentOrStretch (DomData domData) (Panel record) =
                     ]
                     :: (case record.style of
                             StyleComputed styleRecord ->
-                                case styleRecord.id of
+                                case styleRecord.focusAble of
                                     Just idString ->
-                                        [ Html.Styled.Attributes.id idString ]
+                                        [ Html.Styled.Attributes.id idString
+                                        , Html.Styled.Attributes.tabindex 0
+                                        ]
 
                                     Nothing ->
                                         []
@@ -823,7 +823,15 @@ linkToDomData (LinkAttributes record) =
     DomData
         { node = Html.Styled.a
         , style = Css.batch []
-        , attributes = [ Html.Styled.Attributes.href (Url.toString record.url) ]
+        , attributes =
+            [ Html.Styled.Attributes.href (Url.toString record.url) ]
+                ++ (case record.id of
+                        Just idAsString ->
+                            [ Html.Styled.Attributes.id idAsString ]
+
+                        Nothing ->
+                            []
+                   )
         , children =
             [ panelToHtml (GridCell { row = 0, column = 0 })
                 StretchStretch
@@ -989,6 +997,7 @@ textInputToDomData (TextInputAttributes attributes) =
                 ]
         , attributes =
             [ Html.Styled.Attributes.name attributes.name
+            , Html.Styled.Attributes.id attributes.id
             , Html.Styled.Events.onInput attributes.inputMessage
             ]
         , children = []

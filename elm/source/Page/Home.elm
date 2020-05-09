@@ -363,6 +363,7 @@ createProjectButtonLogInOk subModel =
         ]
         subModel
         Data.LocationCreateProject
+        Nothing
         (Ui.depth
             (Ui.stretchWithMaxSize 320)
             Ui.stretch
@@ -431,11 +432,12 @@ projectItem subModel project =
     CommonUi.sameLanguageLink
         (Ui.stretchWithMaxSize 320)
         Ui.stretch
-        [ Ui.id (projectElementId (projectGetId project)) ]
+        []
         subModel
         (Data.LocationProject
             (projectGetId project)
         )
+        (Just (projectElementId (projectGetId project)))
         (Ui.depth
             (Ui.stretchWithMaxSize 320)
             Ui.stretch

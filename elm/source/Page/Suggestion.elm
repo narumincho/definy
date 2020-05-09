@@ -139,65 +139,51 @@ updateByCommonMessage commonMessage model =
                     )
 
         ( Message.CommonCommand Message.SelectUp, Loaded (LoadedModel record) ) ->
-            ( Loaded
-                (LoadedModel
-                    { record | select = selectUp record.typeNameList record.select }
-                )
-            , Message.FocusElement inputId
-            )
+            changeSelect (selectUp record.typeNameList record.select) (LoadedModel record)
 
         ( Message.CommonCommand Message.SelectDown, Loaded (LoadedModel record) ) ->
-            ( Loaded
-                (LoadedModel
-                    { record | select = selectDown record.typeNameList record.select }
-                )
-            , Message.FocusElement inputId
-            )
+            changeSelect (selectDown record.typeNameList record.select) (LoadedModel record)
 
         ( Message.CommonCommand Message.SelectFirstChild, Loaded (LoadedModel record) ) ->
-            ( Loaded
-                (LoadedModel
-                    { record
-                        | select = selectFirstChild record.select
-                    }
-                )
-            , Message.FocusElement inputId
-            )
+            changeSelect (selectFirstChild record.select) (LoadedModel record)
 
         ( Message.CommonCommand Message.SelectParent, Loaded (LoadedModel record) ) ->
-            let
-                newSelect =
-                    selectParent record.select
-
-                isCreateTypePart =
-                    record.newTypeName /= "" && record.select /= newSelect
-            in
-            ( Loaded
-                (LoadedModel
-                    { record
-                        | select =
-                            newSelect
-                        , typeNameList =
-                            if isCreateTypePart then
-                                record.typeNameList ++ [ record.newTypeName ]
-
-                            else
-                                record.typeNameList
-                        , newTypeName =
-                            if isCreateTypePart then
-                                ""
-
-                            else
-                                record.newTypeName
-                    }
-                )
-            , Message.None
-            )
+            changeSelect (selectParent record.select) (LoadedModel record)
 
         _ ->
             ( model
             , Message.None
             )
+
+
+changeSelect : Select -> LoadedModel -> ( Model, Message.Command )
+changeSelect newSelect (LoadedModel record) =
+    let
+        isCreateTypePart =
+            (record.newTypeName /= "")
+                && (record.select == NewTypePartName)
+                && (newSelect /= NewTypePartName)
+    in
+    ( Loaded
+        (LoadedModel
+            { record
+                | select = newSelect
+                , typeNameList =
+                    if isCreateTypePart then
+                        record.typeNameList ++ [ record.newTypeName ]
+
+                    else
+                        record.typeNameList
+                , newTypeName =
+                    if isCreateTypePart then
+                        ""
+
+                    else
+                        record.newTypeName
+            }
+        )
+    , Message.FocusElement (selectToFocusId newSelect)
+    )
 
 
 selectUp : List String -> Select -> Select
@@ -363,7 +349,7 @@ typePartAreaView typeNameList newTypeName select =
         Ui.auto
         []
         [ typePartListView typeNameList select
-        , addTypePartView newTypeName
+        , addTypePartView newTypeName select
         ]
 
 
@@ -381,20 +367,22 @@ typePartView select index typeName =
     Ui.column
         Ui.stretch
         (Ui.fix 40)
-        (case select of
-            TypePart int ->
-                if int == index then
-                    [ borderStyle ]
+        (Ui.focusAble (selectToFocusId (TypePart index))
+            :: (case select of
+                    TypePart int ->
+                        if int == index then
+                            [ borderStyle ]
 
-                else
-                    []
+                        else
+                            []
 
-            _ ->
-                []
+                    _ ->
+                        []
+               )
         )
         [ Ui.column
             (Ui.fix 300)
-            (Ui.fix 40)
+            (Ui.fix 20)
             (case select of
                 TypePartName int ->
                     if int == index then
@@ -410,24 +398,32 @@ typePartView select index typeName =
         ]
 
 
-addTypePartView : String -> Ui.Panel message
-addTypePartView newTypeName =
+addTypePartView : String -> Select -> Ui.Panel message
+addTypePartView newTypeName select =
     Ui.column
         Ui.stretch
-        (Ui.fix 20)
-        [ Ui.border
-            (Ui.BorderStyle
-                { color = Css.rgb 212 119 57
-                , width =
-                    { top = 1
-                    , right = 1
-                    , left = 1
-                    , bottom = 1
-                    }
-                }
+        (Ui.fix 40)
+        (Ui.focusAble (selectToFocusId NewTypePart)
+            :: (case select of
+                    NewTypePart ->
+                        [ borderStyle ]
+
+                    _ ->
+                        []
+               )
+        )
+        [ Ui.column
+            (Ui.fix 300)
+            (Ui.fix 20)
+            (case select of
+                NewTypePartName ->
+                    [ borderStyle ]
+
+                _ ->
+                    []
             )
+            [ CommonUi.normalText 16 newTypeName ]
         ]
-        [ CommonUi.normalText 16 newTypeName ]
 
 
 addPartView : Ui.Panel Message
@@ -525,10 +521,11 @@ candidatesView =
         [ Ui.textInput
             Ui.stretch
             Ui.auto
-            [ Ui.id inputId ]
+            []
             (Ui.TextInputAttributes
                 { inputMessage = InputNewTypePartName
-                , name = "new-type"
+                , name = "new-type-name"
+                , id = inputId
                 , multiLine = False
                 , fontSize = 24
                 }
@@ -540,3 +537,19 @@ candidatesView =
 inputId : String
 inputId =
     "input"
+
+
+selectToFocusId : Select -> String
+selectToFocusId select =
+    case select of
+        TypePart int ->
+            "type-part-" ++ String.fromInt int
+
+        TypePartName int ->
+            inputId
+
+        NewTypePart ->
+            "new-type-part"
+
+        NewTypePartName ->
+            inputId

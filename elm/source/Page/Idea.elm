@@ -329,6 +329,7 @@ itemBodyView subModel itemBody =
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
+                Nothing
                 (CommonUi.normalText 16 "提案を作成した")
 
         Data.ItemBodySuggestionToApprovalPending suggestionId ->
@@ -338,6 +339,7 @@ itemBodyView subModel itemBody =
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
+                Nothing
                 (CommonUi.normalText 16 "提案を承認待ちにした")
 
         Data.ItemBodySuggestionCancelToApprovalPending suggestionId ->
@@ -347,6 +349,7 @@ itemBodyView subModel itemBody =
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
+                Nothing
                 (CommonUi.normalText 16 "承認待ちをキャンセルした")
 
         Data.ItemBodySuggestionApprove suggestionId ->
@@ -356,6 +359,7 @@ itemBodyView subModel itemBody =
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
+                Nothing
                 (CommonUi.normalText 16 "提案を承認した")
 
         Data.ItemBodySuggestionReject suggestionId ->
@@ -365,6 +369,7 @@ itemBodyView subModel itemBody =
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
+                Nothing
                 (CommonUi.normalText 16 "提案を拒否した")
 
         Data.ItemBodySuggestionCancelRejection suggestionId ->
@@ -374,6 +379,7 @@ itemBodyView subModel itemBody =
                 []
                 subModel
                 (Data.LocationSuggestion suggestionId)
+                Nothing
                 (CommonUi.normalText 16 "提案の拒否をキャンセルした")
 
 
@@ -392,6 +398,7 @@ commentInputView subModel =
                     (Ui.TextInputAttributes
                         { inputMessage = InputComment
                         , name = "comment"
+                        , id = "comment"
                         , multiLine = True
                         , fontSize = 16
                         }

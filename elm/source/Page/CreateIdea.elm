@@ -125,6 +125,7 @@ mainView subModel (Model record) =
             (Ui.TextInputAttributes
                 { inputMessage = InputIdeaName
                 , name = "idea-name"
+                , id = "idea-name"
                 , multiLine = False
                 , fontSize = 24
                 }

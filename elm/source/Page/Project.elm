@@ -237,6 +237,7 @@ ideaListView subModel projectId ideaSnapshotAndIdListMaybe =
             ]
             subModel
             (Data.LocationCreateIdea projectId)
+            Nothing
             (CommonUi.normalText 16 "アイデアを作成する")
          ]
             ++ (case ideaSnapshotAndIdListMaybe of
@@ -259,6 +260,7 @@ ideaItemView subModel ideaSnapshotAndId =
         []
         subModel
         (Data.LocationIdea ideaSnapshotAndId.id)
+        Nothing
         (Ui.column
             Ui.stretch
             Ui.auto

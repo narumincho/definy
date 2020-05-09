@@ -212,6 +212,7 @@ projectInputBox =
         (Ui.TextInputAttributes
             { inputMessage = InputProjectName
             , name = "project-name"
+            , id = "project-name"
             , multiLine = False
             , fontSize = 24
             }

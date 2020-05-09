@@ -237,14 +237,27 @@ subText text =
 
 {-| 同じ言語のページへのリンク
 -}
-sameLanguageLink : Ui.Size -> Ui.Size -> List Ui.Style -> Message.SubModel -> Data.Location -> Ui.Panel message -> Ui.Panel message
-sameLanguageLink width height styleList subModel location =
+sameLanguageLink :
+    Ui.Size
+    -> Ui.Size
+    -> List Ui.Style
+    -> Message.SubModel
+    -> Data.Location
+    -> Maybe String
+    -> Ui.Panel message
+    -> Ui.Panel message
+sameLanguageLink width height styleList subModel location idMaybe child =
     Ui.link
         width
         height
         styleList
-        (Data.UrlData.urlDataToUrl
-            (Message.urlDataSameLanguageClientMode location subModel)
+        (Ui.LinkAttributes
+            { url =
+                Data.UrlData.urlDataToUrl
+                    (Message.urlDataSameLanguageClientMode location subModel)
+            , id = idMaybe
+            , child = child
+            }
         )
 
 
@@ -593,6 +606,7 @@ userView subModel userId =
                 [ Ui.backgroundColor (Css.rgb 20 20 20), Ui.padding 8 ]
                 subModel
                 (Data.LocationUser userId)
+                Nothing
                 (Ui.row
                     Ui.stretch
                     Ui.auto
@@ -645,6 +659,7 @@ miniUserView subModel userId =
                 [ Ui.backgroundColor (Css.rgb 20 20 20), Ui.padding 8 ]
                 subModel
                 (Data.LocationUser userId)
+                Nothing
                 (Ui.row
                     Ui.auto
                     Ui.auto
@@ -749,6 +764,7 @@ logo subModel =
         []
         subModel
         Data.LocationHome
+        Nothing
         (Ui.text
             Ui.auto
             Ui.auto
@@ -864,6 +880,7 @@ userItem subModel userSnapshotAndId isSelect =
         )
         subModel
         (Data.LocationUser userSnapshotAndId.id)
+        Nothing
         (Ui.row
             Ui.auto
             Ui.auto
@@ -970,6 +987,7 @@ sideBarProjectViewProject subModel isSelect snapshotAndId =
         []
         subModel
         (Data.LocationProject snapshotAndId.id)
+        Nothing
         (sideBarText
             snapshotAndId.snapshot.name
             isSelect
@@ -986,6 +1004,7 @@ sideBarProjectViewIdea subModel ideaIdMaybe =
                 []
                 subModel
                 (Data.LocationIdea ideaId)
+                Nothing
                 (sideBarIdeaText subModel False)
 
         Nothing ->
