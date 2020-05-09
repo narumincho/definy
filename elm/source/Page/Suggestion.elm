@@ -19,6 +19,7 @@ type LoadedModel
         , snapshot : Data.SuggestionSnapshot
         , project : Maybe Data.ProjectSnapshot
         , select : Select
+        , newTypeName : String
         }
 
 
@@ -80,6 +81,7 @@ updateByCommonMessage commonMessage model =
                                 , snapshot = suggestionSnapshot
                                 , project = Nothing
                                 , select = TypePart
+                                , newTypeName = ""
                                 }
                             )
                         , Message.Batch
@@ -164,10 +166,17 @@ update message model =
             , Message.RequestLogInUrl provider
             )
 
-        _ ->
-            ( model
-            , Message.None
-            )
+        InputNewTypePartName newTypeName ->
+            case model of
+                Loaded (LoadedModel record) ->
+                    ( Loaded (LoadedModel { record | newTypeName = newTypeName })
+                    , Message.None
+                    )
+
+                _ ->
+                    ( model
+                    , Message.None
+                    )
 
 
 view : Message.SubModel -> Model -> Ui.Panel Message
@@ -231,11 +240,32 @@ mainView subModel (LoadedModel record) =
                     , ( "作成者", CommonUi.userView subModel record.snapshot.createUserId )
                     , ( "取得日時", CommonUi.timeView subModel record.snapshot.getTime )
                     ]
+                , addTypePartView record.newTypeName
                 , addPartView
                 ]
             )
         , inputPanel record.select
         ]
+
+
+addTypePartView : String -> Ui.Panel message
+addTypePartView newTypeName =
+    Ui.column
+        Ui.stretch
+        (Ui.fix 20)
+        [ Ui.border
+            (Ui.BorderStyle
+                { color = Css.rgb 212 119 57
+                , width =
+                    { top = 1
+                    , right = 1
+                    , left = 1
+                    , bottom = 1
+                    }
+                }
+            )
+        ]
+        [ CommonUi.normalText 16 newTypeName ]
 
 
 addPartView : Ui.Panel Message

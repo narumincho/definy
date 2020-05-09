@@ -651,6 +651,10 @@ updatePage pageMessage (Model record) =
             Page.Idea.update message model
                 |> Tuple.mapFirst Idea
 
+        ( Suggestion model, PageMessageSuggestion message ) ->
+            Page.Suggestion.update message model
+                |> Tuple.mapFirst Suggestion
+
         ( _, _ ) ->
             ( record.page
             , Message.None
