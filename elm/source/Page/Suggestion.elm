@@ -25,7 +25,8 @@ type LoadedModel
 
 
 type Select
-    = TypePart Int
+    = TypePartArea
+    | TypePart Int
     | TypePartName Int
     | NewTypePart
     | NewTypePartName
@@ -61,6 +62,9 @@ getBrowserUiState model =
     case model of
         Loaded (LoadedModel { select }) ->
             case select of
+                TypePartArea ->
+                    Message.NotFocus
+
                 TypePart _ ->
                     Message.NotFocus
 
@@ -145,7 +149,7 @@ updateByCommonMessage commonMessage model =
             changeSelect (selectDown record.typeNameList record.select) (LoadedModel record)
 
         ( Message.CommonCommand Message.SelectFirstChild, Loaded (LoadedModel record) ) ->
-            changeSelect (selectFirstChild record.select) (LoadedModel record)
+            changeSelect (selectFirstChild record.typeNameList record.select) (LoadedModel record)
 
         ( Message.CommonCommand Message.SelectParent, Loaded (LoadedModel record) ) ->
             changeSelect (selectParent record.select) (LoadedModel record)
@@ -190,11 +194,15 @@ selectUp : List String -> Select -> Select
 selectUp typeNameList select =
     case select of
         TypePart int ->
-            TypePart (max 0 (int - 1))
+            if int == 0 then
+                TypePartArea
+
+            else
+                TypePart (int - 1)
 
         NewTypePart ->
             if List.length typeNameList == 0 then
-                NewTypePart
+                TypePartArea
 
             else
                 TypePart (List.length typeNameList - 1)
@@ -214,15 +222,22 @@ selectDown typeNameList select =
                 TypePart (int + 1)
 
         NewTypePart ->
-            NewTypePart
+            TypePartArea
 
         _ ->
             selectParent select
 
 
-selectFirstChild : Select -> Select
-selectFirstChild select =
+selectFirstChild : List String -> Select -> Select
+selectFirstChild typeNameList select =
     case select of
+        TypePartArea ->
+            if List.length typeNameList == 0 then
+                NewTypePartName
+
+            else
+                TypePart 0
+
         TypePart int ->
             TypePartName int
 
@@ -239,14 +254,17 @@ selectFirstChild select =
 selectParent : Select -> Select
 selectParent select =
     case select of
+        TypePartArea ->
+            TypePartArea
+
         TypePart int ->
-            TypePart int
+            TypePartArea
 
         TypePartName int ->
             TypePart int
 
         NewTypePart ->
-            NewTypePart
+            TypePartArea
 
         NewTypePartName ->
             NewTypePart
@@ -334,21 +352,41 @@ mainView subModel (LoadedModel record) =
                     , ( "作成者", CommonUi.userView subModel record.snapshot.createUserId )
                     , ( "取得日時", CommonUi.timeView subModel record.snapshot.getTime )
                     ]
-                , typePartAreaView record.typeNameList record.newTypeName record.select
-                , addPartView
+                , typePartAreaView subModel record.typeNameList record.newTypeName record.select
+                , partAreaView subModel
                 ]
             )
         , inputPanel record.select
         ]
 
 
-typePartAreaView : List String -> String -> Select -> Ui.Panel Message
-typePartAreaView typeNameList newTypeName select =
+typePartAreaView : Message.SubModel -> List String -> String -> Select -> Ui.Panel Message
+typePartAreaView subModel typeNameList newTypeName select =
     Ui.column
         Ui.stretch
         Ui.auto
-        []
-        [ typePartListView typeNameList select
+        ([ Ui.focusAble (selectToFocusId TypePartArea)
+         , Ui.padding 8
+         ]
+            ++ (if select == TypePartArea then
+                    [ selectBorderStyle ]
+
+                else
+                    []
+               )
+        )
+        [ CommonUi.stretchText 24
+            (case Message.getLanguage subModel of
+                Data.LanguageEnglish ->
+                    "TypePart"
+
+                Data.LanguageJapanese ->
+                    "型パーツ"
+
+                Data.LanguageEsperanto ->
+                    "Tajpu Parto"
+            )
+        , typePartListView typeNameList select
         , addTypePartView newTypeName select
         ]
 
@@ -371,7 +409,7 @@ typePartView select index typeName =
             :: (case select of
                     TypePart int ->
                         if int == index then
-                            [ borderStyle ]
+                            [ selectBorderStyle ]
 
                         else
                             []
@@ -386,7 +424,7 @@ typePartView select index typeName =
             (case select of
                 TypePartName int ->
                     if int == index then
-                        [ borderStyle ]
+                        [ selectBorderStyle ]
 
                     else
                         []
@@ -406,7 +444,7 @@ addTypePartView newTypeName select =
         (Ui.focusAble (selectToFocusId NewTypePart)
             :: (case select of
                     NewTypePart ->
-                        [ borderStyle ]
+                        [ selectBorderStyle ]
 
                     _ ->
                         []
@@ -417,12 +455,33 @@ addTypePartView newTypeName select =
             (Ui.fix 20)
             (case select of
                 NewTypePartName ->
-                    [ borderStyle ]
+                    [ selectBorderStyle ]
 
                 _ ->
                     []
             )
             [ CommonUi.normalText 16 newTypeName ]
+        ]
+
+
+partAreaView : Message.SubModel -> Ui.Panel Message
+partAreaView subModel =
+    Ui.column
+        Ui.stretch
+        Ui.auto
+        [ Ui.padding 8 ]
+        [ CommonUi.stretchText 24
+            (case Message.getLanguage subModel of
+                Data.LanguageEnglish ->
+                    "Part"
+
+                Data.LanguageJapanese ->
+                    "パーツ"
+
+                Data.LanguageEsperanto ->
+                    "Parto"
+            )
+        , addPartView
         ]
 
 
@@ -439,12 +498,12 @@ addPartView =
             [ Ui.empty
                 (Ui.fix 256)
                 (Ui.fix 32)
-                [ borderStyle ]
+                [ partBorderStyle ]
             , CommonUi.normalText 24 ":"
             , Ui.empty
                 (Ui.fix 256)
                 (Ui.fix 32)
-                [ borderStyle ]
+                [ partBorderStyle ]
             ]
         , Ui.row
             Ui.stretch
@@ -454,13 +513,28 @@ addPartView =
             , Ui.empty
                 (Ui.fix 512)
                 (Ui.fix 32)
-                [ borderStyle ]
+                [ partBorderStyle ]
             ]
         ]
 
 
-borderStyle : Ui.Style
-borderStyle =
+partBorderStyle : Ui.Style
+partBorderStyle =
+    Ui.border
+        (Ui.BorderStyle
+            { color = Css.rgb 137 136 129
+            , width =
+                { top = 1
+                , right = 1
+                , left = 1
+                , bottom = 1
+                }
+            }
+        )
+
+
+selectBorderStyle : Ui.Style
+selectBorderStyle =
     Ui.border
         (Ui.BorderStyle
             { color = Css.rgb 27 227 2
@@ -481,35 +555,38 @@ inputPanelHeight =
 
 inputPanel : Select -> Ui.Panel Message
 inputPanel select =
-    case select of
-        TypePart int ->
-            Ui.column
-                Ui.stretch
-                (Ui.fix inputPanelHeight)
-                []
+    Ui.column
+        Ui.stretch
+        (Ui.fix inputPanelHeight)
+        [ Ui.border
+            (Ui.BorderStyle
+                { color = Css.rgb 200 200 200
+                , width =
+                    { top = 1
+                    , right = 0
+                    , left = 0
+                    , bottom = 0
+                    }
+                }
+            )
+        ]
+        (case select of
+            TypePartArea ->
+                [ CommonUi.normalText 16 "型パーツ全体を選択している" ]
+
+            TypePart int ->
                 [ CommonUi.normalText 16 ("Eで" ++ String.fromInt int ++ "番目の型パーツの名前を変更") ]
 
-        TypePartName int ->
-            Ui.column
-                Ui.stretch
-                (Ui.fix inputPanelHeight)
-                []
+            TypePartName int ->
                 [ candidatesView ]
 
-        NewTypePart ->
-            Ui.column
-                Ui.stretch
-                (Ui.fix inputPanelHeight)
-                []
+            NewTypePart ->
                 [ CommonUi.normalText 16 "Eで新しい型パーツの名前入力"
                 ]
 
-        NewTypePartName ->
-            Ui.row
-                Ui.stretch
-                (Ui.fix inputPanelHeight)
-                []
+            NewTypePartName ->
                 [ candidatesView ]
+        )
 
 
 candidatesView : Ui.Panel Message
@@ -542,6 +619,9 @@ inputId =
 selectToFocusId : Select -> String
 selectToFocusId select =
     case select of
+        TypePartArea ->
+            "type-part-area"
+
         TypePart int ->
             "type-part-" ++ String.fromInt int
 
