@@ -1,5 +1,6 @@
 module Page.Suggestion exposing (Message, Model, getBrowserUiState, getSuggestionId, init, update, updateByCommonMessage, view)
 
+import Array
 import CommonUi
 import Css
 import Data
@@ -150,10 +151,8 @@ updateByCommonMessage commonMessage model =
         ( Message.CommonCommand Message.SelectParent, Loaded (LoadedModel record) ) ->
             changeSelect (selectParent record.select) (LoadedModel record)
 
-        ( Message.CommonCommand Message.NewElement, Loaded (LoadedModel record) ) ->
-            ( Loaded (LoadedModel { record | typeNameList = record.typeNameList ++ [ "" ] })
-            , Message.None
-            )
+        ( Message.CommonCommand Message.NewElement, Loaded loadedModel ) ->
+            newElement loadedModel |> Tuple.mapFirst Loaded
 
         _ ->
             ( model
@@ -264,6 +263,54 @@ selectParent select =
 
         PartArea ->
             PartArea
+
+
+newElement : LoadedModel -> ( LoadedModel, Message.Command )
+newElement (LoadedModel record) =
+    case record.select of
+        TypePartArea ->
+            let
+                select =
+                    TypePartName (List.length record.typeNameList)
+            in
+            ( LoadedModel
+                { record
+                    | select = select
+                    , typeNameList = record.typeNameList ++ [ "" ]
+                }
+            , Message.FocusElement (selectToFocusId select)
+            )
+
+        TypePart index ->
+            let
+                select =
+                    TypePartName (index + 1)
+
+                typeNameArray =
+                    Array.fromList record.typeNameList
+            in
+            ( LoadedModel
+                { record
+                    | select = select
+                    , typeNameList =
+                        List.concat
+                            [ Array.toList (Array.slice 0 (index + 1) typeNameArray)
+                            , [ "new" ++ String.fromInt index ]
+                            , Array.toList
+                                (Array.slice
+                                    (index + 1)
+                                    (Array.length typeNameArray)
+                                    typeNameArray
+                                )
+                            ]
+                }
+            , Message.FocusElement (selectToFocusId select)
+            )
+
+        _ ->
+            ( LoadedModel record
+            , Message.None
+            )
 
 
 update : Message -> Model -> ( Model, Message.Command )
