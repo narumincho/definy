@@ -150,6 +150,11 @@ updateByCommonMessage commonMessage model =
         ( Message.CommonCommand Message.SelectParent, Loaded (LoadedModel record) ) ->
             changeSelect (selectParent record.select) (LoadedModel record)
 
+        ( Message.CommonCommand Message.NewElement, Loaded (LoadedModel record) ) ->
+            ( Loaded (LoadedModel { record | typeNameList = record.typeNameList ++ [ "" ] })
+            , Message.None
+            )
+
         _ ->
             ( model
             , Message.None
