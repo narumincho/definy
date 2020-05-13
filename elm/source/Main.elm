@@ -1389,13 +1389,25 @@ keyToCommonCommand browserUiState key =
         ( Message.NotFocus, Data.Key.KeyW ) ->
             Just Message.SelectUp
 
+        ( Message.NotFocus, Data.Key.ArrowUp ) ->
+            Just Message.SelectUp
+
         ( Message.NotFocus, Data.Key.KeyS ) ->
+            Just Message.SelectDown
+
+        ( Message.NotFocus, Data.Key.ArrowDown ) ->
             Just Message.SelectDown
 
         ( Message.NotFocus, Data.Key.KeyA ) ->
             Just Message.SelectLeft
 
+        ( Message.NotFocus, Data.Key.ArrowLeft ) ->
+            Just Message.SelectLeft
+
         ( Message.NotFocus, Data.Key.KeyD ) ->
+            Just Message.SelectRight
+
+        ( Message.NotFocus, Data.Key.ArrowRight ) ->
             Just Message.SelectRight
 
         ( Message.NotFocus, Data.Key.KeyE ) ->
@@ -1412,6 +1424,9 @@ keyToCommonCommand browserUiState key =
 
         ( _, Data.Key.Escape ) ->
             Just Message.SelectParent
+
+        ( Message.NotFocus, Data.Key.KeyN ) ->
+            Just Message.NewElement
 
         _ ->
             Nothing

@@ -31,6 +31,7 @@ type CommonCommand
     | SelectLastChild
     | SelectParent
     | SelectRoot
+    | NewElement
 
 
 {-| 各ページに渡すべきModel

@@ -1,5 +1,6 @@
 module Page.Suggestion exposing (Message, Model, getBrowserUiState, getSuggestionId, init, update, updateByCommonMessage, view)
 
+import Array
 import CommonUi
 import Css
 import Data
@@ -20,7 +21,7 @@ type LoadedModel
         , project : Maybe Data.ProjectSnapshot
         , select : Select
         , typeNameList : List String
-        , newTypeName : String
+        , inputText : String
         }
 
 
@@ -28,8 +29,6 @@ type Select
     = TypePartArea
     | TypePart Int
     | TypePartName Int
-    | NewTypePart
-    | NewTypePartName
     | PartArea
 
 
@@ -72,12 +71,6 @@ getBrowserUiState model =
                 TypePartName _ ->
                     Message.FocusInput
 
-                NewTypePart ->
-                    Message.NotFocus
-
-                NewTypePartName ->
-                    Message.FocusInput
-
                 PartArea ->
                     Message.NotFocus
 
@@ -97,9 +90,9 @@ updateByCommonMessage commonMessage model =
                                 { id = suggestionResponse.id
                                 , snapshot = suggestionSnapshot
                                 , project = Nothing
-                                , select = NewTypePart
+                                , select = TypePartArea
                                 , typeNameList = []
-                                , newTypeName = ""
+                                , inputText = ""
                                 }
                             )
                         , Message.Batch
@@ -158,6 +151,9 @@ updateByCommonMessage commonMessage model =
         ( Message.CommonCommand Message.SelectParent, Loaded (LoadedModel record) ) ->
             changeSelect (selectParent record.select) (LoadedModel record)
 
+        ( Message.CommonCommand Message.NewElement, Loaded loadedModel ) ->
+            newElement loadedModel |> Tuple.mapFirst Loaded
+
         _ ->
             ( model
             , Message.None
@@ -167,27 +163,26 @@ updateByCommonMessage commonMessage model =
 changeSelect : Select -> LoadedModel -> ( Model, Message.Command )
 changeSelect newSelect (LoadedModel record) =
     let
-        isCreateTypePart =
-            (record.newTypeName /= "")
-                && (record.select == NewTypePartName)
-                && (newSelect /= NewTypePartName)
+        {- TODO 型の変更を検知 -}
+        isChangeTypePartName =
+            False
     in
     ( Loaded
         (LoadedModel
             { record
                 | select = newSelect
                 , typeNameList =
-                    if isCreateTypePart then
-                        record.typeNameList ++ [ record.newTypeName ]
+                    if isChangeTypePartName then
+                        record.typeNameList ++ [ record.inputText ]
 
                     else
                         record.typeNameList
-                , newTypeName =
-                    if isCreateTypePart then
+                , inputText =
+                    if isChangeTypePartName then
                         ""
 
                     else
-                        record.newTypeName
+                        record.inputText
             }
         )
     , Message.FocusElement (selectToFocusId newSelect)
@@ -207,13 +202,6 @@ selectUp typeNameList select =
             else
                 TypePart (int - 1)
 
-        NewTypePart ->
-            if List.length typeNameList == 0 then
-                TypePartArea
-
-            else
-                TypePart (List.length typeNameList - 1)
-
         PartArea ->
             TypePartArea
 
@@ -229,13 +217,10 @@ selectDown typeNameList select =
 
         TypePart int ->
             if List.length typeNameList - 1 <= int then
-                NewTypePart
+                selectParent select
 
             else
                 TypePart (int + 1)
-
-        NewTypePart ->
-            TypePartArea
 
         PartArea ->
             TypePartArea
@@ -249,7 +234,7 @@ selectFirstChild typeNameList select =
     case select of
         TypePartArea ->
             if List.length typeNameList == 0 then
-                NewTypePartName
+                TypePartArea
 
             else
                 TypePart 0
@@ -259,12 +244,6 @@ selectFirstChild typeNameList select =
 
         TypePartName int ->
             TypePartName int
-
-        NewTypePart ->
-            NewTypePartName
-
-        NewTypePartName ->
-            NewTypePartName
 
         PartArea ->
             PartArea
@@ -282,14 +261,56 @@ selectParent select =
         TypePartName int ->
             TypePart int
 
-        NewTypePart ->
-            TypePartArea
-
-        NewTypePartName ->
-            NewTypePart
-
         PartArea ->
             PartArea
+
+
+newElement : LoadedModel -> ( LoadedModel, Message.Command )
+newElement (LoadedModel record) =
+    case record.select of
+        TypePartArea ->
+            let
+                select =
+                    TypePartName (List.length record.typeNameList)
+            in
+            ( LoadedModel
+                { record
+                    | select = select
+                    , typeNameList = record.typeNameList ++ [ "" ]
+                }
+            , Message.FocusElement (selectToFocusId select)
+            )
+
+        TypePart index ->
+            let
+                select =
+                    TypePartName (index + 1)
+
+                typeNameArray =
+                    Array.fromList record.typeNameList
+            in
+            ( LoadedModel
+                { record
+                    | select = select
+                    , typeNameList =
+                        List.concat
+                            [ Array.toList (Array.slice 0 (index + 1) typeNameArray)
+                            , [ "new" ++ String.fromInt index ]
+                            , Array.toList
+                                (Array.slice
+                                    (index + 1)
+                                    (Array.length typeNameArray)
+                                    typeNameArray
+                                )
+                            ]
+                }
+            , Message.FocusElement (selectToFocusId select)
+            )
+
+        _ ->
+            ( LoadedModel record
+            , Message.None
+            )
 
 
 update : Message -> Model -> ( Model, Message.Command )
@@ -303,7 +324,7 @@ update message model =
         InputFromInputPanel newTypeName ->
             case model of
                 Loaded (LoadedModel record) ->
-                    ( Loaded (LoadedModel { record | newTypeName = newTypeName })
+                    ( Loaded (LoadedModel { record | inputText = newTypeName })
                     , Message.None
                     )
 
@@ -374,7 +395,7 @@ mainView subModel (LoadedModel record) =
                     , ( "作成者", CommonUi.userView subModel record.snapshot.createUserId )
                     , ( "取得日時", CommonUi.timeView subModel record.snapshot.getTime )
                     ]
-                , typePartAreaView subModel record.typeNameList record.newTypeName record.select
+                , typePartAreaView subModel record.typeNameList record.inputText record.select
                 , partAreaView subModel record.select
                 ]
             )
@@ -403,7 +424,6 @@ typePartAreaView subModel typeNameList newTypeName select =
                     "Tajpu Parto"
             )
         , typePartListView typeNameList select
-        , addTypePartView newTypeName select
         ]
 
 
@@ -446,22 +466,6 @@ typePartView select index typeName =
                 )
             ]
             [ CommonUi.stretchText 16 typeName ]
-        ]
-
-
-addTypePartView : String -> Select -> Ui.Panel message
-addTypePartView newTypeName select =
-    Ui.column
-        Ui.stretch
-        (Ui.fix 40)
-        [ Ui.focusAble (selectToFocusId NewTypePart)
-        , elementBorderStyle (select == NewTypePart)
-        ]
-        [ Ui.column
-            (Ui.fix 300)
-            (Ui.fix 20)
-            [ elementBorderStyle (select == NewTypePartName) ]
-            [ CommonUi.normalText 16 newTypeName ]
         ]
 
 
@@ -596,13 +600,6 @@ inputPanel select =
             TypePartName int ->
                 [ candidatesView ]
 
-            NewTypePart ->
-                [ CommonUi.stretchText 16 "Eで新しい型パーツの名前入力"
-                ]
-
-            NewTypePartName ->
-                [ candidatesView ]
-
             PartArea ->
                 [ CommonUi.stretchText 16 "パーツ全体を選択している" ]
         )
@@ -645,12 +642,6 @@ selectToFocusId select =
             "type-part-" ++ String.fromInt int
 
         TypePartName int ->
-            inputId
-
-        NewTypePart ->
-            "new-type-part"
-
-        NewTypePartName ->
             inputId
 
         PartArea ->
