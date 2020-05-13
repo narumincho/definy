@@ -306,8 +306,6 @@ localTimeView zone posix =
         , timeNumberView (String.padLeft 2 '0' (String.fromInt (Time.toHour zone posix)))
         , timeSignView ":"
         , timeNumberView (String.padLeft 2 '0' (String.fromInt (Time.toMinute zone posix)))
-        , timeSignView ":"
-        , timeNumberView (String.padLeft 2 '0' (String.fromInt (Time.toSecond zone posix)))
         ]
 
 

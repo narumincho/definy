@@ -154,7 +154,7 @@ normalView subModel loadedModel =
     Ui.column
         (Ui.stretchWithMaxSize 800)
         Ui.auto
-        [ Ui.gap 8 ]
+        [ Ui.gap 8, Ui.padding 8 ]
         [ CommonUi.subText projectIdAsString
         , projectNameView subModel loadedModel.snapshot.iconHash loadedModel.snapshot.name
         , imageView subModel loadedModel.snapshot.imageHash loadedModel.snapshot.name
@@ -321,7 +321,7 @@ getTimeView subModel time =
     Ui.row
         Ui.stretch
         Ui.auto
-        []
+        [ Ui.gap 8 ]
         [ CommonUi.normalText 16 "取得日時:"
         , CommonUi.timeView subModel time
         ]

@@ -6,6 +6,7 @@ import Css
 import Data
 import Message
 import Ui
+import Utility
 
 
 type Model
@@ -163,26 +164,32 @@ updateByCommonMessage commonMessage model =
 changeSelect : Select -> LoadedModel -> ( Model, Message.Command )
 changeSelect newSelect (LoadedModel record) =
     let
-        {- TODO 型の変更を検知 -}
-        isChangeTypePartName =
-            False
+        updateTypeNameIndex =
+            case record.select of
+                TypePartName int ->
+                    Just int
+
+                _ ->
+                    Nothing
     in
     ( Loaded
         (LoadedModel
             { record
                 | select = newSelect
                 , typeNameList =
-                    if isChangeTypePartName then
-                        record.typeNameList ++ [ record.inputText ]
+                    case updateTypeNameIndex of
+                        Just index ->
+                            Utility.setAt index record.inputText record.typeNameList
 
-                    else
-                        record.typeNameList
+                        Nothing ->
+                            record.typeNameList
                 , inputText =
-                    if isChangeTypePartName then
-                        ""
+                    case updateTypeNameIndex of
+                        Just _ ->
+                            ""
 
-                    else
-                        record.inputText
+                        Nothing ->
+                            record.inputText
             }
         )
     , Message.FocusElement (selectToFocusId newSelect)
@@ -295,7 +302,7 @@ newElement (LoadedModel record) =
                     , typeNameList =
                         List.concat
                             [ Array.toList (Array.slice 0 (index + 1) typeNameArray)
-                            , [ "new" ++ String.fromInt index ]
+                            , [ "" ]
                             , Array.toList
                                 (Array.slice
                                     (index + 1)

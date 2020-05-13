@@ -230,7 +230,6 @@ const init = async (): Promise<void> => {
       if (response._ === "Just") {
         db.setSuggestion(database, response.value.id, response.value.snapshot);
       }
-      console.log(response);
       app.ports.responseAddSuggestion.send(response);
     });
   });
@@ -251,7 +250,6 @@ const init = async (): Promise<void> => {
     callApi("getAllProjectId", [], data.decodeList(data.decodeId)).then(
       (idList) => {
         const projectIdList = idList as ReadonlyArray<common.data.ProjectId>;
-        console.log("すべてのプロジェクトのID", projectIdList);
         app.ports.responseAllProjectId.send(projectIdList);
       }
     );
