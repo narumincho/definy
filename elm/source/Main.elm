@@ -78,6 +78,9 @@ port toValidProjectName : String -> Cmd msg
 port toValidIdeaName : String -> Cmd msg
 
 
+port toValidTypePartName : String -> Cmd msg
+
+
 port getUser : Json.Decode.Value -> Cmd msg
 
 
@@ -137,6 +140,9 @@ port toValidProjectNameResponse : ({ input : String, result : Maybe String } -> 
 
 
 port toValidIdeaNameResponse : ({ input : String, result : Maybe String } -> msg) -> Sub msg
+
+
+port toValidTypePartNameResponse : ({ input : String, result : Maybe String } -> msg) -> Sub msg
 
 
 port createProjectResponse : (Json.Decode.Value -> msg) -> Sub msg
@@ -590,7 +596,7 @@ update msg (Model rec) =
 
         KeyPressed key ->
             case
-                keyToCommonCommand
+                keyToCommonMessage
                     (case rec.page of
                         Suggestion model ->
                             Page.Suggestion.getBrowserUiState model
@@ -601,7 +607,7 @@ update msg (Model rec) =
                     key
             of
                 Just commonCommand ->
-                    commonMessageUpdate (Message.CommonCommand commonCommand) (Model rec)
+                    commonMessageUpdate commonCommand (Model rec)
 
                 Nothing ->
                     ( Model rec
@@ -734,10 +740,17 @@ commonMessageUpdate commonMessage (Model record) =
                 Suggestion
                 (Model record)
 
-        _ ->
-            ( Model record
-            , Cmd.none
-            )
+        CreateProject pageModel ->
+            mapPageModel
+                (Page.CreateProject.updateByCommonMessage commonMessage pageModel)
+                CreateProject
+                (Model record)
+
+        CreateIdea pageModel ->
+            mapPageModel
+                (Page.CreateIdea.updateByCommonMessage commonMessage pageModel)
+                CreateIdea
+                (Model record)
 
 
 
@@ -1169,6 +1182,9 @@ commandToMainCommand logInState command =
         Message.ToValidIdeaName string ->
             toValidIdeaName string
 
+        Message.ToValidTypePartName name ->
+            toValidTypePartName name
+
         Message.GetUser userId ->
             getUser (Data.userIdToJsonValue userId)
 
@@ -1251,17 +1267,18 @@ subscriptions model =
             )
          , toValidProjectNameResponse
             (\response ->
-                PageMsg
-                    (PageMessageCreateProject
-                        (Page.CreateProject.ToValidProjectNameResponse response)
-                    )
+                CommonMessage
+                    (Message.ToValidProjectNameResponse response)
             )
          , toValidIdeaNameResponse
             (\response ->
-                PageMsg
-                    (PageMessageCreateIdea
-                        (Page.CreateIdea.ToValidIdeaNameResponse response)
-                    )
+                CommonMessage
+                    (Message.ToValidIdeaNameResponse response)
+            )
+         , toValidTypePartNameResponse
+            (\response ->
+                CommonMessage
+                    (Message.ToValidTypePartNameResponse response)
             )
          , createProjectResponse
             (\jsonValue ->
@@ -1370,7 +1387,11 @@ subscriptions model =
                     Ok ideaList ->
                         CommonMessage (Message.ResponseIdeaListByProjectId ideaList)
 
-                    _ ->
+                    Err error ->
+                        let
+                            _ =
+                                Debug.log "error" (Json.Decode.errorToString error)
+                        in
                         NoOperation
             )
          ]
@@ -1383,8 +1404,8 @@ subscriptions model =
         )
 
 
-keyToCommonCommand : Message.BrowserUiState -> Data.Key.Key -> Maybe Message.CommonCommand
-keyToCommonCommand browserUiState key =
+keyToCommonMessage : Message.BrowserUiState -> Data.Key.Key -> Maybe Message.CommonMessage
+keyToCommonMessage browserUiState key =
     case ( browserUiState, key.key ) of
         ( Message.NotFocus, Data.Key.KeyW ) ->
             Just Message.SelectUp

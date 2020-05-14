@@ -1,4 +1,4 @@
-module Page.CreateProject exposing (Message(..), Model, init, update, view)
+module Page.CreateProject exposing (Message, Model, init, update, updateByCommonMessage, view)
 
 import CommonUi
 import Data
@@ -16,10 +16,6 @@ type Model
 
 type Message
     = InputProjectName String
-    | ToValidProjectNameResponse
-        { input : String
-        , result : Maybe String
-        }
     | CreateProject
     | RequestLogInUrl Data.OpenIdConnectProvider
 
@@ -29,6 +25,24 @@ init =
     ( NoInput
     , Message.None
     )
+
+
+updateByCommonMessage : Message.CommonMessage -> Model -> ( Model, Message.Command )
+updateByCommonMessage message model =
+    case ( message, model ) of
+        ( Message.ToValidProjectNameResponse response, RequestToValidProjectName request ) ->
+            ( if request == response.input then
+                DisplayedValidProjectName response.result
+
+              else
+                model
+            , Message.None
+            )
+
+        ( _, _ ) ->
+            ( model
+            , Message.None
+            )
 
 
 update : Message -> Model -> ( Model, Message.Command )
@@ -52,15 +66,6 @@ update message model =
         ( InputProjectName string, DisplayedValidProjectName _ ) ->
             ( RequestToValidProjectName string
             , Message.ToValidProjectName string
-            )
-
-        ( ToValidProjectNameResponse response, RequestToValidProjectName request ) ->
-            ( if request == response.input then
-                DisplayedValidProjectName response.result
-
-              else
-                model
-            , Message.None
             )
 
         ( CreateProject, DisplayedValidProjectName (Just validProjectName) ) ->

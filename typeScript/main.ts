@@ -246,6 +246,14 @@ const init = async (): Promise<void> => {
       result: common.stringToValidIdeaName(ideaName),
     });
   });
+  app.ports.toValidTypePartName.subscribe((name) => {
+    const result = common.stringToTypePartName(name);
+    app.ports.toValidTypePartNameResponse.send({
+      input: name,
+      result: result === undefined ? null : result,
+    });
+  });
+
   app.ports.getAllProjectIdList.subscribe(() => {
     callApi("getAllProjectId", [], data.decodeList(data.decodeId)).then(
       (idList) => {
@@ -337,6 +345,7 @@ const init = async (): Promise<void> => {
       for (const ideaSnapshotAndId of ideaSnapshotAndIdList) {
         db.setIdea(database, ideaSnapshotAndId.id, ideaSnapshotAndId.snapshot);
       }
+      console.log(ideaSnapshotAndIdList);
       app.ports.responseIdeaSnapshotAndIdListByProjectId.send({
         projectId: projectId,
         ideaSnapshotAndIdList: ideaSnapshotAndIdList,

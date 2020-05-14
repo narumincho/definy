@@ -1,4 +1,4 @@
-module Page.CreateIdea exposing (Message(..), Model, getProjectId, init, update, view)
+module Page.CreateIdea exposing (Message, Model, getProjectId, init, update, updateByCommonMessage, view)
 
 import CommonUi
 import Data
@@ -23,10 +23,6 @@ type IdeaNameInput
 
 type Message
     = InputIdeaName String
-    | ToValidIdeaNameResponse
-        { input : String
-        , result : Maybe String
-        }
     | CreateIdea
 
 
@@ -45,6 +41,24 @@ getProjectId (Model record) =
     record.projectId
 
 
+updateByCommonMessage : Message.CommonMessage -> Model -> ( Model, Message.Command )
+updateByCommonMessage message (Model record) =
+    case ( message, record.ideaNameInput ) of
+        ( Message.ToValidIdeaNameResponse response, RequestToValidIdeaName request ) ->
+            ( if request == response.input then
+                Model { record | ideaNameInput = DisplayedValidIdeaName response.result }
+
+              else
+                Model record
+            , Message.None
+            )
+
+        ( _, _ ) ->
+            ( Model record
+            , Message.None
+            )
+
+
 update : Message -> Model -> ( Model, Message.Command )
 update message (Model record) =
     case ( message, record.ideaNameInput ) of
@@ -61,15 +75,6 @@ update message (Model record) =
         ( InputIdeaName string, DisplayedValidIdeaName _ ) ->
             ( Model { record | ideaNameInput = RequestToValidIdeaName string }
             , Message.ToValidIdeaName string
-            )
-
-        ( ToValidIdeaNameResponse response, RequestToValidIdeaName request ) ->
-            ( if request == response.input then
-                Model { record | ideaNameInput = DisplayedValidIdeaName response.result }
-
-              else
-                Model record
-            , Message.None
             )
 
         ( CreateIdea, DisplayedValidIdeaName (Just validIdeaName) ) ->

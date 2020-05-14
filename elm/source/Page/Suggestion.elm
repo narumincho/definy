@@ -140,19 +140,19 @@ updateByCommonMessage commonMessage model =
                     , Message.None
                     )
 
-        ( Message.CommonCommand Message.SelectUp, Loaded (LoadedModel record) ) ->
+        ( Message.SelectUp, Loaded (LoadedModel record) ) ->
             changeSelect (selectUp record.typeNameList record.select) (LoadedModel record)
 
-        ( Message.CommonCommand Message.SelectDown, Loaded (LoadedModel record) ) ->
+        ( Message.SelectDown, Loaded (LoadedModel record) ) ->
             changeSelect (selectDown record.typeNameList record.select) (LoadedModel record)
 
-        ( Message.CommonCommand Message.SelectFirstChild, Loaded (LoadedModel record) ) ->
+        ( Message.SelectFirstChild, Loaded (LoadedModel record) ) ->
             changeSelect (selectFirstChild record.typeNameList record.select) (LoadedModel record)
 
-        ( Message.CommonCommand Message.SelectParent, Loaded (LoadedModel record) ) ->
+        ( Message.SelectParent, Loaded (LoadedModel record) ) ->
             changeSelect (selectParent record.select) (LoadedModel record)
 
-        ( Message.CommonCommand Message.NewElement, Loaded loadedModel ) ->
+        ( Message.NewElement, Loaded loadedModel ) ->
             newElement loadedModel |> Tuple.mapFirst Loaded
 
         _ ->

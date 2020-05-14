@@ -1,4 +1,4 @@
-module Message exposing (BrowserUiState(..), Command(..), CommonCommand(..), CommonMessage(..), SubModel, WindowSize, addImageBlobUrl, addUserSnapshot, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getNowTime, getTimeZoneAndNameMaybe, getUserSnapshot, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setNowTime, setTimeZoneAndName, setWindowSize, urlDataSameLanguageClientMode)
+module Message exposing (BrowserUiState(..), Command(..), CommonMessage(..), SubModel, WindowSize, addImageBlobUrl, addUserSnapshot, from, getClientMode, getImageBlobUrl, getLanguage, getLogInState, getNowTime, getTimeZoneAndNameMaybe, getUserSnapshot, getWindowSize, setClientMode, setLanguageAndClientMode, setLogInState, setNowTime, setTimeZoneAndName, setWindowSize, urlDataSameLanguageClientMode)
 
 import Data
 import Data.LogInState
@@ -17,13 +17,10 @@ type CommonMessage
     | ResponseAllProjectIdList (List Data.ProjectId)
     | ResponseIdeaListByProjectId Data.IdeaListByProjectIdResponse
     | UpdateTime
-    | CommonCommand CommonCommand
-
-
-{-| 各ページに送る共通の動作
--}
-type CommonCommand
-    = SelectUp
+    | ToValidProjectNameResponse { input : String, result : Maybe String }
+    | ToValidIdeaNameResponse { input : String, result : Maybe String }
+    | ToValidTypePartNameResponse { input : String, result : Maybe String }
+    | SelectUp
     | SelectDown
     | SelectLeft
     | SelectRight
@@ -189,6 +186,7 @@ type Command
     | PushUrl Data.UrlData
     | ToValidProjectName String
     | ToValidIdeaName String
+    | ToValidTypePartName String
     | GetAllProjectId
     | GetProject Data.ProjectId
     | GetProjectNoCache Data.ProjectId

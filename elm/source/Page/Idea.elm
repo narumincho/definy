@@ -1,4 +1,4 @@
-module Page.Idea exposing (Message(..), Model, getIdeaId, init, update, updateByCommonMessage, view)
+module Page.Idea exposing (Message, Model, getIdeaId, init, update, updateByCommonMessage, view)
 
 import CommonUi
 import Data

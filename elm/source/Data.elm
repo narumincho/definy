@@ -82,7 +82,7 @@ type alias UserResponse =
 {-| プロジェクト
 -}
 type alias ProjectSnapshot =
-    { name : String, iconHash : ImageToken, imageHash : ImageToken, createTime : Time, createUser : UserId, updateTime : Time, getTime : Time, partIdList : List PartId, typePartIdList : List TypePartId }
+    { name : String, iconHash : ImageToken, imageHash : ImageToken, createTime : Time, createUserId : UserId, updateTime : Time, getTime : Time, partIdList : List PartId, typePartIdList : List TypePartId }
 
 
 {-| プロジェクトを作成したときに返ってくるデータ
@@ -100,7 +100,7 @@ type alias ProjectResponse =
 {-| アイデア
 -}
 type alias IdeaSnapshot =
-    { name : String, createUser : UserId, createTime : Time, projectId : ProjectId, itemList : List IdeaItem, updateTime : Time, getTime : Time }
+    { name : String, createUserId : UserId, createTime : Time, projectId : ProjectId, itemList : List IdeaItem, updateTime : Time, getTime : Time }
 
 
 {-| アイデアとそのID. アイデア作成時に返ってくる
@@ -715,7 +715,7 @@ projectSnapshotToJsonValue projectSnapshot =
         , ( "iconHash", imageTokenToJsonValue projectSnapshot.iconHash )
         , ( "imageHash", imageTokenToJsonValue projectSnapshot.imageHash )
         , ( "createTime", timeToJsonValue projectSnapshot.createTime )
-        , ( "createUser", userIdToJsonValue projectSnapshot.createUser )
+        , ( "createUserId", userIdToJsonValue projectSnapshot.createUserId )
         , ( "updateTime", timeToJsonValue projectSnapshot.updateTime )
         , ( "getTime", timeToJsonValue projectSnapshot.getTime )
         , ( "partIdList", Je.list partIdToJsonValue projectSnapshot.partIdList )
@@ -749,7 +749,7 @@ ideaSnapshotToJsonValue : IdeaSnapshot -> Je.Value
 ideaSnapshotToJsonValue ideaSnapshot =
     Je.object
         [ ( "name", Je.string ideaSnapshot.name )
-        , ( "createUser", userIdToJsonValue ideaSnapshot.createUser )
+        , ( "createUserId", userIdToJsonValue ideaSnapshot.createUserId )
         , ( "createTime", timeToJsonValue ideaSnapshot.createTime )
         , ( "projectId", projectIdToJsonValue ideaSnapshot.projectId )
         , ( "itemList", Je.list ideaItemToJsonValue ideaSnapshot.itemList )
@@ -1736,12 +1736,12 @@ userResponseJsonDecoder =
 projectSnapshotJsonDecoder : Jd.Decoder ProjectSnapshot
 projectSnapshotJsonDecoder =
     Jd.succeed
-        (\name iconHash imageHash createTime createUser updateTime getTime partIdList typePartIdList ->
+        (\name iconHash imageHash createTime createUserId updateTime getTime partIdList typePartIdList ->
             { name = name
             , iconHash = iconHash
             , imageHash = imageHash
             , createTime = createTime
-            , createUser = createUser
+            , createUserId = createUserId
             , updateTime = updateTime
             , getTime = getTime
             , partIdList = partIdList
@@ -1752,7 +1752,7 @@ projectSnapshotJsonDecoder =
         |> Jdp.required "iconHash" imageTokenJsonDecoder
         |> Jdp.required "imageHash" imageTokenJsonDecoder
         |> Jdp.required "createTime" timeJsonDecoder
-        |> Jdp.required "createUser" userIdJsonDecoder
+        |> Jdp.required "createUserId" userIdJsonDecoder
         |> Jdp.required "updateTime" timeJsonDecoder
         |> Jdp.required "getTime" timeJsonDecoder
         |> Jdp.required "partIdList" (Jd.list partIdJsonDecoder)
@@ -1792,9 +1792,9 @@ projectResponseJsonDecoder =
 ideaSnapshotJsonDecoder : Jd.Decoder IdeaSnapshot
 ideaSnapshotJsonDecoder =
     Jd.succeed
-        (\name createUser createTime projectId itemList updateTime getTime ->
+        (\name createUserId createTime projectId itemList updateTime getTime ->
             { name = name
-            , createUser = createUser
+            , createUserId = createUserId
             , createTime = createTime
             , projectId = projectId
             , itemList = itemList
@@ -1803,7 +1803,7 @@ ideaSnapshotJsonDecoder =
             }
         )
         |> Jdp.required "name" Jd.string
-        |> Jdp.required "createUser" userIdJsonDecoder
+        |> Jdp.required "createUserId" userIdJsonDecoder
         |> Jdp.required "createTime" timeJsonDecoder
         |> Jdp.required "projectId" projectIdJsonDecoder
         |> Jdp.required "itemList" (Jd.list ideaItemJsonDecoder)

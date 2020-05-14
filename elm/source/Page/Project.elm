@@ -1,4 +1,4 @@
-module Page.Project exposing (Message(..), Model, getProjectId, init, update, updateByCommonMessage, view)
+module Page.Project exposing (Message, Model, getProjectId, init, update, updateByCommonMessage, view)
 
 import CommonUi
 import Css
@@ -73,10 +73,14 @@ updateByCommonMessage message model =
                 ( model, Message.None )
 
         ( Message.ResponseIdeaListByProjectId response, Loaded snapshotAndId ) ->
+            let
+                _ =
+                    Debug.log "response" response
+            in
             if getProjectId model == response.projectId then
                 ( Loaded
                     { snapshotAndId | ideaList = Just response.ideaSnapshotAndIdList }
-                , Message.None
+                , Message.ConsoleLog "OK"
                 )
 
             else

@@ -34,6 +34,7 @@ type Ports = {
 
   readonly toValidProjectName: SubForElmCmd<string>;
   readonly toValidIdeaName: SubForElmCmd<string>;
+  readonly toValidTypePartName: SubForElmCmd<string>;
 
   readonly getUser: SubForElmCmd<data.UserId>;
   readonly getUserNoCache: SubForElmCmd<data.UserId>;
@@ -70,6 +71,10 @@ type Ports = {
     readonly input: string;
     readonly result: string | null;
   }>;
+  readonly toValidTypePartNameResponse: CmdForElmSub<{
+    readonly input: string;
+    readonly result: string | null;
+  }>;
   readonly createProjectResponse: CmdForElmSub<
     data.Maybe<data.ProjectSnapshotAndId>
   >;
@@ -81,10 +86,9 @@ type Ports = {
   readonly responseAddSuggestion: CmdForElmSub<
     data.Maybe<data.SuggestionSnapshotAndId>
   >;
-  readonly responseIdeaSnapshotAndIdListByProjectId: CmdForElmSub<{
-    readonly projectId: data.ProjectId;
-    readonly ideaSnapshotAndIdList: ReadonlyArray<data.IdeaSnapshotAndId>;
-  }>;
+  readonly responseIdeaSnapshotAndIdListByProjectId: CmdForElmSub<
+    data.IdeaListByProjectIdResponse
+  >;
   readonly responseIdea: CmdForElmSub<data.IdeaResponse>;
   readonly responseSuggestion: CmdForElmSub<data.SuggestionResponse>;
 };

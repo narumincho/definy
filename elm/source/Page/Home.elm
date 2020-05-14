@@ -1,5 +1,5 @@
 module Page.Home exposing
-    ( Message(..)
+    ( Message
     , Model
     , init
     , update
@@ -54,8 +54,8 @@ init =
 
 updateByCommonMessage : Message.CommonMessage -> Model -> ( Model, Message.Command )
 updateByCommonMessage message model =
-    case message of
-        Message.ResponseProject projectResponse ->
+    case ( message, model ) of
+        ( Message.ResponseProject projectResponse, _ ) ->
             case model of
                 LoadingAllProject ->
                     ( model
@@ -75,7 +75,7 @@ updateByCommonMessage message model =
                             Message.None
                     )
 
-        Message.ResponseAllProjectIdList projectIdList ->
+        ( Message.ResponseAllProjectIdList projectIdList, _ ) ->
             ( LoadedAllProject
                 (LoadedModel
                     { projectList = projectIdList |> List.map OnlyId
@@ -85,26 +85,7 @@ updateByCommonMessage message model =
             , Message.Batch (List.map Message.GetProject projectIdList)
             )
 
-        Message.CommonCommand commonCommand ->
-            updateByCommonCommand
-                commonCommand
-                model
-
-        _ ->
-            ( model
-            , Message.None
-            )
-
-
-updateByCommonCommand : Message.CommonCommand -> Model -> ( Model, Message.Command )
-updateByCommonCommand command model =
-    case model of
-        LoadingAllProject ->
-            ( model
-            , Message.None
-            )
-
-        LoadedAllProject (LoadedModel record) ->
+        ( _, LoadedAllProject (LoadedModel record) ) ->
             let
                 nowIndex =
                     record.selectProjectId
@@ -119,10 +100,10 @@ updateByCommonCommand command model =
                 newSelectProjectId : Maybe Data.ProjectId
                 newSelectProjectId =
                     Array.get
-                        (selectIndexByCommonCommand
+                        (selectIndexByCommonMessage
                             (List.length record.projectList)
                             nowIndex
-                            command
+                            message
                         )
                         (Array.fromList record.projectList)
                         |> Maybe.map projectGetId
@@ -136,9 +117,14 @@ updateByCommonCommand command model =
                 |> Maybe.withDefault Message.None
             )
 
+        ( _, _ ) ->
+            ( model
+            , Message.None
+            )
 
-selectIndexByCommonCommand : Int -> Int -> Message.CommonCommand -> Int
-selectIndexByCommonCommand length nowIndex commonCommand =
+
+selectIndexByCommonMessage : Int -> Int -> Message.CommonMessage -> Int
+selectIndexByCommonMessage length nowIndex commonCommand =
     let
         lastIndex =
             length - 1

@@ -1,4 +1,4 @@
-module Page.User exposing (Message(..), Model, getUserId, init, update, updateByCommonMessage, view)
+module Page.User exposing (Message, Model, getUserId, init, update, updateByCommonMessage, view)
 
 import CommonUi
 import Data
