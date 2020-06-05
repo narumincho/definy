@@ -1,5 +1,6 @@
 import * as React from "react";
 import { CssValue, styled } from "react-free-style";
+import type * as cssType from "csstype";
 
 export const button = (
   cssValue: CssValue,
@@ -56,7 +57,9 @@ export const column = (
     backgroundColor: BackgroundColor;
     key: string;
   },
-  children: ReadonlyArray<React.ReactNode>
+  children: ReadonlyArray<
+    [cssType.GridTemplateColumnsProperty<string | 0>, React.ReactNode]
+  >
 ): React.FunctionComponentElement<
   React.ClassAttributes<HTMLDivElement> & React.HTMLAttributes<HTMLDivElement>
 > =>
@@ -66,9 +69,10 @@ export const column = (
       display: "grid",
       gridAutoFlow: "row",
       backgroundColor: backgroundColorToColor(attributes.backgroundColor),
+      gridTemplateRows: children.map((child) => child[0]).join(" "),
     }),
     { key: attributes.key },
-    children
+    children.map((child) => child[1])
   );
 
 export const row = (
@@ -79,15 +83,23 @@ export const row = (
     justifyContent?: "start" | "center" | "end";
     key: string;
   },
-  children: ReadonlyArray<React.ReactNode>
+  children: ReadonlyArray<
+    [cssType.GridTemplateColumnsProperty<string | 0>, React.ReactNode]
+  >
 ): React.FunctionComponentElement<
   React.ClassAttributes<HTMLDivElement> & React.HTMLAttributes<HTMLDivElement>
-> =>
-  React.createElement(
-    styled("div", { ...attributes, display: "grid", gridAutoFlow: "column" }),
+> => {
+  return React.createElement(
+    styled("div", {
+      ...attributes,
+      display: "grid",
+      gridAutoFlow: "column",
+      gridTemplateColumns: children.map((child) => child[0]).join(" "),
+    }),
     { key: attributes.key },
-    children
+    children.map((child) => child[1])
   );
+};
 
 type BackgroundColor = "Black" | "Dark";
 
@@ -107,18 +119,21 @@ export const link = (
     location: Location;
     onJump: (location: Location) => void;
     key: string;
+    justifySelf?: "start" | "end";
   },
   child: React.ReactNode
-): React.DetailedReactHTMLElement<
-  {
-    onClick: (event: React.MouseEvent<HTMLElement, MouseEvent>) => void;
-    href: string;
-    key: string;
-  },
-  HTMLElement
+): React.FunctionComponentElement<
+  React.ClassAttributes<HTMLAnchorElement> &
+    React.AnchorHTMLAttributes<HTMLAnchorElement> & { css?: CssValue }
 > => {
   return React.createElement(
-    "a",
+    styled("a", {
+      justifySelf:
+        attributes.justifySelf === undefined
+          ? "center"
+          : attributes.justifySelf,
+      textDecoration: "none",
+    }),
     {
       onClick: (event) => {
         if (

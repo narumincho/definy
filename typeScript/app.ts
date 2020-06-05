@@ -22,12 +22,14 @@ const useWindowDimensions = () => {
   return windowDimensions;
 };
 
+const sidePanelWidth = 260;
+
 export const App: React.FC<{ location: ui.Location }> = (prop) => {
   const { width, height } = useWindowDimensions();
   const [nowLocation, onJump] = React.useState<ui.Location>(prop.location);
 
   React.useEffect(() => {
-    history.pushState({}, "それな!?", ui.locationToUrl(nowLocation));
+    history.pushState(undefined, "それな!?", ui.locationToUrl(nowLocation));
   }, [nowLocation]);
 
   return ui.row(
@@ -37,8 +39,8 @@ export const App: React.FC<{ location: ui.Location }> = (prop) => {
       key: "root",
     },
     [
-      sidePanel(height, onJump),
-      ui.text({ key: "nowLocation", color: "#ddd" }, nowLocation),
+      [sidePanelWidth.toString() + "px", sidePanel(height, onJump)],
+      ["1fr", ui.text({ key: "nowLocation", color: "#ddd" }, nowLocation)],
     ]
   );
 };
@@ -46,88 +48,110 @@ export const App: React.FC<{ location: ui.Location }> = (prop) => {
 const sidePanel = (height: number, onJump: (location: ui.Location) => void) =>
   ui.column(
     {
-      width: 260,
+      width: sidePanelWidth,
       height: height,
       alignContent: "start",
       backgroundColor: "Dark",
       key: "sidePanel",
     },
     [
-      ui.link(
-        {
-          location: "Home",
-          key: "logo",
-          onJump,
-        },
-        ui.text(
+      [
+        "auto",
+        ui.link(
           {
+            location: "Home",
             key: "logo",
-            fontSize: 32,
-            color: "#b9d09b",
+            onJump,
           },
-          "Definy"
-        )
-      ),
-      ui.text(
-        {
-          key: "user",
-          justifySelf: "start",
-          fontSize: 24,
-          color: "#ddd",
-        },
-        "User"
-      ),
-      ui.text(
-        {
-          key: "project",
-          justifySelf: "start",
-          fontSize: 24,
-          color: "#ddd",
-        },
-        "Project"
-      ),
-      ui.link(
-        {
-          location: "Idea",
-          key: "link",
-          onJump,
-        },
+          ui.text(
+            {
+              key: "logo",
+              fontSize: 32,
+              color: "#b9d09b",
+            },
+            "Definy"
+          )
+        ),
+      ],
+      [
+        "auto",
         ui.text(
           {
-            key: "idea",
+            key: "user",
             justifySelf: "start",
             fontSize: 24,
             color: "#ddd",
           },
-          "Idea"
-        )
-      ),
-      ui.text(
-        {
-          key: "suggestion",
-          justifySelf: "start",
-          fontSize: 24,
-          color: "#ddd",
-        },
-        "Suggestion"
-      ),
-      ui.text(
-        {
-          key: "module",
-          justifySelf: "start",
-          fontSize: 24,
-          color: "#ddd",
-        },
-        "module"
-      ),
-      ui.text(
-        {
-          key: "about",
-          justifySelf: "start",
-          fontSize: 24,
-          color: "#ddd",
-        },
-        "about"
-      ),
+          "User"
+        ),
+      ],
+      [
+        "auto",
+        ui.text(
+          {
+            key: "project",
+            justifySelf: "start",
+            fontSize: 24,
+            color: "#ddd",
+          },
+          "Project"
+        ),
+      ],
+      [
+        "auto",
+        ui.link(
+          {
+            location: "Idea",
+            key: "link",
+            onJump,
+            justifySelf: "start",
+          },
+          ui.text(
+            {
+              key: "idea",
+              justifySelf: "start",
+              fontSize: 24,
+              color: "#ddd",
+            },
+            "Idea"
+          )
+        ),
+      ],
+      [
+        "auto",
+        ui.text(
+          {
+            key: "suggestion",
+            justifySelf: "start",
+            fontSize: 24,
+            color: "#ddd",
+          },
+          "Suggestion"
+        ),
+      ],
+      [
+        "auto",
+        ui.text(
+          {
+            key: "module",
+            justifySelf: "start",
+            fontSize: 24,
+            color: "#ddd",
+          },
+          "module"
+        ),
+      ],
+      [
+        "auto",
+        ui.text(
+          {
+            key: "about",
+            justifySelf: "start",
+            fontSize: 24,
+            color: "#ddd",
+          },
+          "about"
+        ),
+      ],
     ]
   );
