@@ -1,16 +1,8 @@
 import * as React from "react";
 import { CssValue, styled } from "react-free-style";
 import type * as cssType from "csstype";
-
-export const button = (
-  cssValue: CssValue,
-  attributes: React.ButtonHTMLAttributes<HTMLButtonElement>,
-  children: ReadonlyArray<React.ReactNode> | string
-): React.FunctionComponentElement<
-  React.ButtonHTMLAttributes<HTMLButtonElement>
-> => {
-  return React.createElement(styled("button", cssValue), attributes, children);
-};
+import * as common from "definy-common";
+import { Maybe, UrlData } from "definy-common/source/data";
 
 export const text = (
   attributes: {
@@ -70,6 +62,7 @@ export const column = (
       gridAutoFlow: "row",
       backgroundColor: backgroundColorToColor(attributes.backgroundColor),
       gridTemplateRows: children.map((child) => child[0]).join(" "),
+      overflow: "hidden",
     }),
     { key: attributes.key },
     children.map((child) => child[1])
@@ -95,6 +88,7 @@ export const row = (
       display: "grid",
       gridAutoFlow: "column",
       gridTemplateColumns: children.map((child) => child[0]).join(" "),
+      overflow: "hidden",
     }),
     { key: attributes.key },
     children.map((child) => child[1])
@@ -112,12 +106,10 @@ const backgroundColorToColor = (backgroundColor: BackgroundColor): string => {
   }
 };
 
-export type Location = "Home" | "Idea";
-
 export const link = (
   attributes: {
-    location: Location;
-    onJump: (location: Location) => void;
+    urlData: UrlData;
+    onJump: (urlData: UrlData) => void;
     key: string;
     justifySelf?: "start" | "end";
   },
@@ -133,6 +125,7 @@ export const link = (
           ? "center"
           : attributes.justifySelf,
       textDecoration: "none",
+      overflow: "hidden",
     }),
     {
       onClick: (event) => {
@@ -143,28 +136,14 @@ export const link = (
           event.button === 0
         ) {
           event.preventDefault();
-          attributes.onJump(attributes.location);
+          attributes.onJump(attributes.urlData);
         }
       },
       key: attributes.key,
-      href: locationToUrl(attributes.location),
+      href: common
+        .urlDataAndAccessTokenToUrl(attributes.urlData, Maybe.Nothing())
+        .toString(),
     },
     child
   );
-};
-
-export const locationToUrl = (location: Location): string => {
-  switch (location) {
-    case "Home":
-      return "http://localhost:2520/";
-    case "Idea":
-      return "http://localhost:2520/idea";
-  }
-};
-
-export const locationFromPath = (path: string): Location => {
-  if (path === "/") {
-    return "Home";
-  }
-  return "Idea";
 };

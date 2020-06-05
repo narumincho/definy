@@ -1,5 +1,7 @@
 import * as React from "react";
 import * as ui from "./ui";
+import { Maybe, UrlData, Location, IdeaId } from "definy-common/source/data";
+import * as common from "definy-common";
 
 const getWindowDimensions = () => ({
   width: window.innerWidth,
@@ -24,13 +26,17 @@ const useWindowDimensions = () => {
 
 const sidePanelWidth = 260;
 
-export const App: React.FC<{ location: ui.Location }> = (prop) => {
+export const App: React.FC<{ urlData: UrlData }> = (prop) => {
   const { width, height } = useWindowDimensions();
-  const [nowLocation, onJump] = React.useState<ui.Location>(prop.location);
+  const [nowUrlData, onJump] = React.useState<UrlData>(prop.urlData);
 
   React.useEffect(() => {
-    history.pushState(undefined, "それな!?", ui.locationToUrl(nowLocation));
-  }, [nowLocation]);
+    history.pushState(
+      undefined,
+      "それな!?",
+      common.urlDataAndAccessTokenToUrl(nowUrlData, Maybe.Nothing()).toString()
+    );
+  }, [nowUrlData]);
 
   return ui.row(
     {
@@ -39,13 +45,23 @@ export const App: React.FC<{ location: ui.Location }> = (prop) => {
       key: "root",
     },
     [
-      [sidePanelWidth.toString() + "px", sidePanel(height, onJump)],
-      ["1fr", ui.text({ key: "nowLocation", color: "#ddd" }, nowLocation)],
+      [sidePanelWidth.toString() + "px", sidePanel(height, nowUrlData, onJump)],
+      [
+        "1fr",
+        ui.text(
+          { key: "nowLocation", color: "#ddd" },
+          JSON.stringify(nowUrlData)
+        ),
+      ],
     ]
   );
 };
 
-const sidePanel = (height: number, onJump: (location: ui.Location) => void) =>
+const sidePanel = (
+  height: number,
+  urlData: UrlData,
+  onJump: (urlData: UrlData) => void
+) =>
   ui.column(
     {
       width: sidePanelWidth,
@@ -59,7 +75,7 @@ const sidePanel = (height: number, onJump: (location: ui.Location) => void) =>
         "auto",
         ui.link(
           {
-            location: "Home",
+            urlData: { ...urlData, location: Location.Home },
             key: "logo",
             onJump,
           },
@@ -101,7 +117,12 @@ const sidePanel = (height: number, onJump: (location: ui.Location) => void) =>
         "auto",
         ui.link(
           {
-            location: "Idea",
+            urlData: {
+              ...urlData,
+              location: Location.Idea(
+                "be9a40a32e2ddb7c8b09aa458fe206a1" as IdeaId
+              ),
+            },
             key: "link",
             onJump,
             justifySelf: "start",
