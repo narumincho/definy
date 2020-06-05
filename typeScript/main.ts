@@ -13,10 +13,14 @@ document.documentElement.replaceChild(
 document.body.appendChild(appElement);
 
 ReactDOM.render(
-  <React.StrictMode>
-    <Context.Provider value={new StyleSheetRenderer()}>
-      <App />
-    </Context.Provider>
-  </React.StrictMode>,
+  React.createElement(
+    React.StrictMode,
+    {},
+    React.createElement(
+      Context.Provider,
+      { value: new StyleSheetRenderer() },
+      React.createElement(App)
+    )
+  ),
   appElement
 );
