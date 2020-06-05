@@ -8,8 +8,7 @@
     "url": "https://github.com/narumincho/Definy"
   },
   "scripts": {
-    "debugInLocal": "node debugInLocal.js",
-    "copyDataElm": "node copyDataElm.js"
+    "debugInLocal": "node debugInLocal.js"
   },
   "license": "Apache-2.0",
   "devDependencies": {
@@ -30,6 +29,7 @@
   "dependencies": {
     "definy-common": "^0.1.60",
     "react": "^16.13.1",
-    "react-dom": "^16.13.1"
+    "react-dom": "^16.13.1",
+    "react-free-style": "^11.0.0"
   }
 }

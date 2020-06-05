@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { App } from "./app";
+import { Context, StyleSheetRenderer } from "react-free-style";
 
 const appElement = document.createElement("div");
 
@@ -13,7 +14,9 @@ document.body.appendChild(appElement);
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <Context.Provider value={new StyleSheetRenderer()}>
+      <App />
+    </Context.Provider>
   </React.StrictMode>,
   appElement
 );
