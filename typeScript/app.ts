@@ -22,25 +22,51 @@ const useWindowDimensions = () => {
   return windowDimensions;
 };
 
-export const App: React.FC<Record<string | number | symbol, never>> = () => {
+export const App: React.FC<{ location: ui.Location }> = (prop) => {
   const { width, height } = useWindowDimensions();
-  return ui.column(
+  const [nowLocation, onJump] = React.useState<ui.Location>(prop.location);
+
+  React.useEffect(() => {
+    history.pushState({}, "それな!?", ui.locationToUrl(nowLocation));
+  }, [nowLocation]);
+
+  return ui.row(
+    {
+      width: width,
+      height: height,
+      key: "root",
+    },
+    [
+      sidePanel(height, onJump),
+      ui.text({ key: "nowLocation", color: "#ddd" }, nowLocation),
+    ]
+  );
+};
+
+const sidePanel = (height: number, onJump: (location: ui.Location) => void) =>
+  ui.column(
     {
       width: 260,
       height: height,
-      justifyContent: "stretch",
       alignContent: "start",
       backgroundColor: "Dark",
+      key: "sidePanel",
     },
     [
-      ui.text(
+      ui.link(
         {
+          location: "Home",
           key: "logo",
-          justifySelf: "center",
-          fontSize: 32,
-          color: "#b9d09b",
+          onJump,
         },
-        "Definy"
+        ui.text(
+          {
+            key: "logo",
+            fontSize: 32,
+            color: "#b9d09b",
+          },
+          "Definy"
+        )
       ),
       ui.text(
         {
@@ -60,14 +86,21 @@ export const App: React.FC<Record<string | number | symbol, never>> = () => {
         },
         "Project"
       ),
-      ui.text(
+      ui.link(
         {
-          key: "idea",
-          justifySelf: "start",
-          fontSize: 24,
-          color: "#ddd",
+          location: "Idea",
+          key: "link",
+          onJump,
         },
-        "Idea"
+        ui.text(
+          {
+            key: "idea",
+            justifySelf: "start",
+            fontSize: 24,
+            color: "#ddd",
+          },
+          "Idea"
+        )
       ),
       ui.text(
         {
@@ -98,4 +131,3 @@ export const App: React.FC<Record<string | number | symbol, never>> = () => {
       ),
     ]
   );
-};

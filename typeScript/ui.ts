@@ -16,7 +16,7 @@ export const text = (
     key: string;
     width?: number;
     height?: number;
-    justifySelf: "start" | "center" | "end";
+    justifySelf?: "start" | "end";
     fontSize?: number;
     color: string;
     backgroundColor?: BackgroundColor;
@@ -29,7 +29,10 @@ export const text = (
     styled("div", {
       width: attributes.width,
       height: attributes.height,
-      justifySelf: attributes.justifySelf,
+      justifySelf:
+        attributes.justifySelf === undefined
+          ? "center"
+          : attributes.justifySelf,
       fontSize: attributes.fontSize,
       color: attributes.color,
       backgroundColor:
@@ -45,12 +48,13 @@ export const text = (
   );
 
 export const column = (
-  style: {
+  attributes: {
     width: number;
     height: number;
-    alignContent: "start" | "center" | "end" | "stretch";
-    justifyContent: "start" | "center" | "end" | "stretch";
+    alignContent?: "start" | "center" | "end";
+    justifyContent?: "start" | "center" | "end";
     backgroundColor: BackgroundColor;
+    key: string;
   },
   children: ReadonlyArray<React.ReactNode>
 ): React.FunctionComponentElement<
@@ -58,29 +62,30 @@ export const column = (
 > =>
   React.createElement(
     styled("div", {
-      ...style,
+      ...attributes,
       display: "grid",
       gridAutoFlow: "row",
-      backgroundColor: backgroundColorToColor(style.backgroundColor),
+      backgroundColor: backgroundColorToColor(attributes.backgroundColor),
     }),
-    {},
+    { key: attributes.key },
     children
   );
 
 export const row = (
-  style: {
+  attributes: {
     width: number;
     height: number;
-    alignContent: "start" | "center" | "end" | "stretch";
-    justifyContent: "start" | "center" | "end" | "stretch";
+    alignContent?: "start" | "center" | "end";
+    justifyContent?: "start" | "center" | "end";
+    key: string;
   },
   children: ReadonlyArray<React.ReactNode>
 ): React.FunctionComponentElement<
   React.ClassAttributes<HTMLDivElement> & React.HTMLAttributes<HTMLDivElement>
 > =>
   React.createElement(
-    styled("div", { ...style, display: "grid", gridAutoFlow: "column" }),
-    {},
+    styled("div", { ...attributes, display: "grid", gridAutoFlow: "column" }),
+    { key: attributes.key },
     children
   );
 
@@ -93,4 +98,58 @@ const backgroundColorToColor = (backgroundColor: BackgroundColor): string => {
     case "Dark":
       return "#2f2f2f";
   }
+};
+
+export type Location = "Home" | "Idea";
+
+export const link = (
+  attributes: {
+    location: Location;
+    onJump: (location: Location) => void;
+    key: string;
+  },
+  child: React.ReactNode
+): React.DetailedReactHTMLElement<
+  {
+    onClick: (event: React.MouseEvent<HTMLElement, MouseEvent>) => void;
+    href: string;
+    key: string;
+  },
+  HTMLElement
+> => {
+  return React.createElement(
+    "a",
+    {
+      onClick: (event) => {
+        if (
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.shiftKey &&
+          event.button === 0
+        ) {
+          event.preventDefault();
+          attributes.onJump(attributes.location);
+        }
+      },
+      key: attributes.key,
+      href: locationToUrl(attributes.location),
+    },
+    child
+  );
+};
+
+export const locationToUrl = (location: Location): string => {
+  switch (location) {
+    case "Home":
+      return "http://localhost:2520/";
+    case "Idea":
+      return "http://localhost:2520/idea";
+  }
+};
+
+export const locationFromPath = (path: string): Location => {
+  if (path === "/") {
+    return "Home";
+  }
+  return "Idea";
 };
