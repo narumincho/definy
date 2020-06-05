@@ -4,6 +4,7 @@
     "strict": true,
     "lib": ["ES2020", "DOM", "WebWorker"],
     "moduleResolution": "Node",
-    "newLine": "LF"
+    "newLine": "LF",
+    "jsx": "react",
   }
 }
