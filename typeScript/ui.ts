@@ -46,7 +46,7 @@ export const column = (
     height: number;
     alignContent?: "start" | "center" | "end";
     justifyContent?: "start" | "center" | "end";
-    backgroundColor: BackgroundColor;
+    backgroundColor?: BackgroundColor;
     key: string;
   },
   children: ReadonlyArray<
