@@ -1,15 +1,6 @@
 import * as React from "react";
 import * as ui from "./ui";
-import {
-  Maybe,
-  UrlData,
-  ProjectId,
-  ProjectSnapshot,
-  List,
-  Codec,
-  ProjectResponse,
-  ProjectSnapshotAndId,
-} from "definy-common/source/data";
+import { data } from "definy-common";
 import * as common from "definy-common";
 import { sidePanel } from "./sidePanel";
 import { home } from "./home";
@@ -39,7 +30,7 @@ const useWindowDimensions = () => {
 const callApi = <responseType>(
   apiName: string,
   binary: ReadonlyArray<number>,
-  codec: Codec<responseType>
+  codec: data.Codec<responseType>
 ): Promise<responseType> =>
   fetch("https://us-central1-definy-lang.cloudfunctions.net/api/" + apiName, {
     method: "POST",
@@ -50,12 +41,15 @@ const callApi = <responseType>(
     .then((response) => codec.decode(0, new Uint8Array(response)).result);
 
 type Action =
-  | { _: "ResponseAllProjectList"; list: ReadonlyArray<ProjectSnapshotAndId> }
-  | { _: "ResponseProject"; response: ProjectResponse };
+  | {
+      _: "ResponseAllProjectList";
+      list: ReadonlyArray<data.ProjectSnapshotAndId>;
+    }
+  | { _: "ResponseProject"; response: data.ProjectResponse };
 
-export const App: React.FC<{ urlData: UrlData }> = (prop) => {
+export const App: React.FC<{ urlData: data.UrlData }> = (prop) => {
   const { width, height } = useWindowDimensions();
-  const [nowUrlData, onJump] = React.useState<UrlData>(prop.urlData);
+  const [nowUrlData, onJump] = React.useState<data.UrlData>(prop.urlData);
   const [projectMap, dispatchProject] = React.useReducer(
     (state: ProjectData, action: Action): ProjectData => {
       switch (action._) {
@@ -85,18 +79,22 @@ export const App: React.FC<{ urlData: UrlData }> = (prop) => {
     history.pushState(
       undefined,
       "",
-      common.urlDataAndAccessTokenToUrl(nowUrlData, Maybe.Nothing()).toString()
+      common
+        .urlDataAndAccessTokenToUrl(nowUrlData, data.Maybe.Nothing())
+        .toString()
     );
   }, [nowUrlData]);
   React.useEffect(() => {
-    callApi("getAllProject", [], List.codec(ProjectSnapshotAndId.codec)).then(
-      (projectList) => {
-        dispatchProject({
-          _: "ResponseAllProjectList",
-          list: projectList,
-        });
-      }
-    );
+    callApi(
+      "getAllProject",
+      [],
+      data.List.codec(data.ProjectSnapshotAndId.codec)
+    ).then((projectList) => {
+      dispatchProject({
+        _: "ResponseAllProjectList",
+        list: projectList,
+      });
+    });
   }, []);
 
   return ui.toReactElement(

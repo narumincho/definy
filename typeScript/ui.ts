@@ -194,9 +194,10 @@ type GridCell = {
 };
 
 const gridCellToStyle = (gridCell: GridCell): Css => ({
-  gridRow: gridCell.row.toString() + " / " + (gridCell.row + 1).toString(),
+  gridRow:
+    (gridCell.row + 1).toString() + " / " + (gridCell.row + 2).toString(),
   gridColumn:
-    gridCell.column.toString() + " / " + (gridCell.column + 1).toString(),
+    (gridCell.column + 1).toString() + " / " + (gridCell.column + 2).toString(),
 });
 
 const widthAndHeightToStyle = (width: Size, height: Size): Css => ({
@@ -233,7 +234,7 @@ const isStretch = (size: Size) => {
   }
 };
 
-const alignmentOrStretchToCssStyle = (
+const alignmentOrStretchToCss = (
   width: Size,
   height: Size,
   alignmentOrStretch: AlignmentOrStretch
@@ -266,6 +267,22 @@ const alignmentOrStretchToCssStyle = (
   }
 };
 
+const isIncludeScrollInPanel = (panel: Panel): boolean => {
+  switch (panel._) {
+    case "Text":
+      return false;
+    case "Depth":
+      return panel.children.some(([_, panel]) => isIncludeScrollInPanel(panel));
+    case "Row":
+    case "Column":
+      return panel.children.some(isIncludeScrollInPanel);
+    case "Scroll":
+    case "Link":
+    case "Button":
+      return isIncludeScrollInPanel(panel.child);
+  }
+};
+
 export const toReactElement = (panel: Panel): React.ReactElement =>
   panelToReactElement({ row: 0, column: 0 }, { _: "StretchStretch" }, panel);
 
@@ -279,12 +296,13 @@ export const panelToReactElement = (
 ): React.ReactElement => {
   const commonStyle: Css = {
     ...gridCellToStyle(gridCell),
-    ...alignmentOrStretchToCssStyle(
+    ...alignmentOrStretchToCss(
       panel.attributes.width,
       panel.attributes.height,
       alignmentOrStretch
     ),
     ...widthAndHeightToStyle(panel.attributes.width, panel.attributes.height),
+    ...(isIncludeScrollInPanel(panel) ? { overflow: "auto" } : {}),
   };
   switch (panel._) {
     case "Text":
@@ -314,8 +332,9 @@ const textToReactElement = (
   text: string
 ): React.FunctionComponentElement<
   React.ClassAttributes<HTMLDivElement> & React.HTMLAttributes<HTMLDivElement>
-> =>
-  React.createElement(
+> => {
+  console.log("commonStyle", commonStyle);
+  return React.createElement(
     styled("div", {
       ...commonStyle,
       justifySelf: attributes.justifySelf,
@@ -334,6 +353,7 @@ const textToReactElement = (
     { key: attributes.key },
     text
   );
+};
 
 const depthToReactElement = (
   commonStyle: Css,
@@ -378,12 +398,13 @@ const columnToReactElement = (
         attributes.height,
         children.map((child) => child.attributes.height)
       ),
+      gridTemplateColumns: "1fr",
       overflow: "hidden",
     }),
     { key: attributes.key },
     children.map((child, index) =>
       panelToReactElement(
-        { row: 0, column: index },
+        { row: index, column: 0 },
         { _: "StretchColumn" },
         child
       )
@@ -407,6 +428,7 @@ const rowToReactElement = (
           ? undefined
           : backgroundColorToColor(attributes.backgroundColor),
       display: "grid",
+      gridTemplateRows: "1fr",
       gridTemplateColumns: sizeListToGridTemplate(
         attributes.width,
         children.map((child) => child.attributes.width)
@@ -415,7 +437,7 @@ const rowToReactElement = (
     }),
     { key: attributes.key },
     children.map((child, index) =>
-      panelToReactElement({ row: index, column: 0 }, { _: "StretchRow" }, child)
+      panelToReactElement({ row: 0, column: index }, { _: "StretchRow" }, child)
     )
   );
 };
@@ -426,7 +448,7 @@ const scrollToReactElement = (
   child: Panel
 ): React.ReactElement =>
   React.createElement(
-    styled("div", commonStyle),
+    styled("div", { ...commonStyle, overflow: "scroll" }),
     { key: attributes.key },
     panelToReactElement({ row: 0, column: 0 }, { _: "StretchStretch" }, child)
   );
