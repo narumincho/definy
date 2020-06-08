@@ -12,6 +12,8 @@ document.documentElement.replaceChild(
   document.body
 );
 document.body.appendChild(appElement);
+appElement.style.height = "100%";
+appElement.style.overflow = "auto";
 
 ReactDOM.render(
   React.createElement(

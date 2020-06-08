@@ -4,6 +4,7 @@ import { data } from "definy-common";
 import * as common from "definy-common";
 import { sidePanel } from "./sidePanel";
 import { home } from "./home";
+import { about } from "./about";
 import { ProjectData } from "./resource";
 
 const getWindowDimensions = () => ({
@@ -50,7 +51,7 @@ type Action =
 export const App: React.FC<{ urlData: data.UrlData }> = (prop) => {
   const { width, height } = useWindowDimensions();
   const [nowUrlData, onJump] = React.useState<data.UrlData>(prop.urlData);
-  const [projectMap, dispatchProject] = React.useReducer(
+  const [projectData, dispatchProject] = React.useReducer(
     (state: ProjectData, action: Action): ProjectData => {
       switch (action._) {
         case "ResponseAllProjectList":
@@ -104,7 +105,21 @@ export const App: React.FC<{ urlData: data.UrlData }> = (prop) => {
         width: { _: "Stretch" },
         height: { _: "Stretch" },
       },
-      [sidePanel(nowUrlData, onJump), home(projectMap)]
+      [sidePanel(nowUrlData, onJump), mainPanel(nowUrlData, projectData)]
     )
   );
+};
+
+const mainPanel = (
+  urlData: data.UrlData,
+  projectData: ProjectData
+): ui.Panel => {
+  switch (urlData.location._) {
+    case "Home":
+      return home(projectData);
+    case "About":
+      return about();
+    default:
+      return home(projectData);
+  }
 };

@@ -12,6 +12,11 @@ export type Panel =
     }
   | { _: "Row"; attributes: RowAttributes; children: ReadonlyArray<Panel> }
   | {
+      _: "WrappedRow";
+      attributes: WrappedAttributes;
+      children: ReadonlyArray<Panel>;
+    }
+  | {
       _: "Column";
       attributes: ColumnAttributes;
       children: ReadonlyArray<Panel>;
@@ -27,6 +32,7 @@ type TextAttributes = {
   /** テキストの揃え方. 指定なしで左揃え */
   alignment?: "end" | "center";
   justifySelf?: "start" | "center" | "end";
+  alignSelf?: "start" | "center" | "end";
   fontSize?: number;
   color?: TextColor;
   backgroundColor?: BackgroundColor;
@@ -40,6 +46,7 @@ type DepthAttributes = {
   width: Size;
   height: Size;
   padding?: number;
+  backgroundColor?: BackgroundColor;
 };
 
 type RowAttributes = {
@@ -53,6 +60,20 @@ type RowAttributes = {
   gap?: number;
   backgroundColor?: BackgroundColor;
   padding?: number;
+};
+
+type WrappedAttributes = {
+  key: string;
+  width: Size;
+  height: Size;
+  oneLineCount: number;
+  alignContent?: "start" | "center" | "end";
+  justifyContent?: "start" | "center" | "end";
+  alignSelf?: "start" | "center" | "end";
+  justifySelf?: "start" | "center" | "end";
+  backgroundColor?: BackgroundColor;
+  padding?: number;
+  gap?: number;
 };
 
 type ColumnAttributes = {
@@ -93,6 +114,7 @@ type ButtonAttributes = {
   width: Size;
   height: Size;
   onClick: () => void;
+  backgroundColor?: BackgroundColor;
   padding?: number;
 };
 
@@ -155,20 +177,31 @@ export const text = (attributes: TextAttributes, text: string): Panel => ({
 });
 
 /**
- * columnやrowのように大きさをしていしてつくっていく感じ. だた子要素にgrid-row: 1 / 2などをしっかり指定しないとだめだなぁ
+ * パネルを重ねる. あとのほうが手前に表示される
  */
 export const depth = (
   attributes: DepthAttributes,
   children: ReadonlyArray<[[Alignment, Alignment], Panel]>
 ): Panel => ({ _: "Depth", attributes, children });
 
+/**
+ * パネルを横に並べる
+ */
 export const row = (
   attributes: RowAttributes,
   children: ReadonlyArray<Panel>
 ): Panel => ({ _: "Row", attributes, children });
 
 /**
- * 要素を縦に並べる
+ * 要素を横に並べる. oneLineCountよりパネルの数が多い場合折り返す. それぞれの幅は均等になる
+ */
+export const wrappedRow = (
+  attributes: WrappedAttributes,
+  children: ReadonlyArray<Panel>
+): Panel => ({ _: "WrappedRow", attributes, children });
+
+/**
+ * パネルを縦に並べる
  */
 export const column = (
   attributes: ColumnAttributes,
@@ -176,7 +209,7 @@ export const column = (
 ): Panel => ({ _: "Column", attributes, children });
 
 /**
- * 要素を横に並べる
+ * 中身のパネルがスクロールするようにする
  */
 export const scroll = (attributes: ScrollAttributes, child: Panel): Panel => ({
   _: "Scroll",
@@ -281,6 +314,7 @@ const isIncludeScrollInPanel = (panel: Panel): boolean => {
     case "Depth":
       return panel.children.some(([_, panel]) => isIncludeScrollInPanel(panel));
     case "Row":
+    case "WrappedRow":
     case "Column":
       return panel.children.some(isIncludeScrollInPanel);
     case "Scroll":
@@ -311,6 +345,10 @@ export const panelToReactElement = (
     ...widthAndHeightToStyle(panel.attributes.width, panel.attributes.height),
     ...(isIncludeScrollInPanel(panel) ? { overflow: "auto" } : {}),
     padding: panel.attributes.padding,
+    backgroundColor:
+      panel.attributes.backgroundColor === undefined
+        ? undefined
+        : backgroundColorToColor(panel.attributes.backgroundColor),
   };
   switch (panel._) {
     case "Text":
@@ -319,6 +357,12 @@ export const panelToReactElement = (
       return depthToReactElement(commonStyle, panel.attributes, panel.children);
     case "Row":
       return rowToReactElement(commonStyle, panel.attributes, panel.children);
+    case "WrappedRow":
+      return wrappedRowToReactElement(
+        commonStyle,
+        panel.attributes,
+        panel.children
+      );
     case "Column":
       return columnToReactElement(
         commonStyle,
@@ -408,6 +452,7 @@ const columnToReactElement = (
       ),
       gridTemplateColumns: "1fr",
       overflow: "hidden",
+      gap: attributes.gap,
     }),
     { key: attributes.key },
     children.map((child, index) =>
@@ -425,8 +470,8 @@ const rowToReactElement = (
   children: ReadonlyArray<Panel>
 ): React.FunctionComponentElement<
   React.ClassAttributes<HTMLDivElement> & React.HTMLAttributes<HTMLDivElement>
-> => {
-  return React.createElement(
+> =>
+  React.createElement(
     styled("div", {
       ...commonStyle,
       alignContent: attributes.alignContent,
@@ -442,13 +487,49 @@ const rowToReactElement = (
         children.map((child) => child.attributes.width)
       ),
       overflow: "hidden",
+      gap: attributes.gap,
     }),
     { key: attributes.key },
     children.map((child, index) =>
       panelToReactElement({ row: 0, column: index }, { _: "StretchRow" }, child)
     )
   );
-};
+
+const wrappedRowToReactElement = (
+  commonStyle: Css,
+  attributes: WrappedAttributes,
+  children: ReadonlyArray<Panel>
+): React.FunctionComponentElement<
+  React.ClassAttributes<HTMLDivElement> & React.HTMLAttributes<HTMLDivElement>
+> =>
+  React.createElement(
+    styled("div", {
+      ...commonStyle,
+      alignContent: attributes.alignContent,
+      justifyContent: attributes.justifyContent,
+      backgroundColor:
+        attributes.backgroundColor === undefined
+          ? undefined
+          : backgroundColorToColor(attributes.backgroundColor),
+      display: "grid",
+      gridTemplateColumns: new Array(attributes.oneLineCount)
+        .fill("1fr")
+        .join(" "),
+      overflow: "hidden",
+      gap: attributes.gap,
+    }),
+    { key: attributes.key },
+    children.map((child, index) =>
+      panelToReactElement(
+        {
+          row: Math.floor(index / attributes.oneLineCount),
+          column: index % attributes.oneLineCount,
+        },
+        { _: "StretchRow" },
+        child
+      )
+    )
+  );
 
 const scrollToReactElement = (
   commonStyle: Css,

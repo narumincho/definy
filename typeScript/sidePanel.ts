@@ -107,16 +107,29 @@ export const sidePanel = (
         },
         "module"
       ),
-      ui.text(
+      ui.link(
         {
+          urlData: {
+            ...urlData,
+            location: data.Location.About,
+          },
           key: "about",
+          onJump,
           justifySelf: "start",
-          fontSize: 24,
           width: { _: "Stretch" },
           height: { _: "Auto" },
           padding: 8,
         },
-        "about"
+        ui.text(
+          {
+            key: "about",
+            justifySelf: "start",
+            fontSize: 24,
+            width: { _: "Stretch" },
+            height: { _: "Auto" },
+          },
+          "about"
+        )
       ),
     ]
   );
