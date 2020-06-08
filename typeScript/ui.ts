@@ -3,7 +3,7 @@ import { styled, Css, CssValue } from "react-free-style";
 import * as common from "definy-common";
 import { Maybe, UrlData } from "definy-common/source/data";
 
-type Panel =
+export type Panel =
   | { _: "Text"; attributes: TextAttributes; text: string }
   | {
       _: "Depth";
