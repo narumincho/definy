@@ -23,6 +23,7 @@ export const sidePanel = (
           onJump,
           width: { _: "Stretch" },
           height: { _: "Auto" },
+          padding: 8,
         },
         ui.text(
           {
@@ -31,6 +32,7 @@ export const sidePanel = (
             color: { _: "Custom", code: "#b9d09b" },
             width: { _: "Stretch" },
             height: { _: "Auto" },
+            justifySelf: "center",
           },
           "Definy"
         )
@@ -42,6 +44,7 @@ export const sidePanel = (
           fontSize: 24,
           width: { _: "Stretch" },
           height: { _: "Auto" },
+          padding: 8,
         },
         "User"
       ),
@@ -52,6 +55,7 @@ export const sidePanel = (
           fontSize: 24,
           width: { _: "Stretch" },
           height: { _: "Auto" },
+          padding: 8,
         },
         "Project"
       ),
@@ -68,6 +72,7 @@ export const sidePanel = (
           justifySelf: "start",
           width: { _: "Stretch" },
           height: { _: "Auto" },
+          padding: 8,
         },
         ui.text(
           {
@@ -87,6 +92,7 @@ export const sidePanel = (
           fontSize: 24,
           width: { _: "Stretch" },
           height: { _: "Auto" },
+          padding: 8,
         },
         "Suggestion"
       ),
@@ -97,6 +103,7 @@ export const sidePanel = (
           fontSize: 24,
           width: { _: "Stretch" },
           height: { _: "Auto" },
+          padding: 8,
         },
         "module"
       ),
@@ -107,6 +114,7 @@ export const sidePanel = (
           fontSize: 24,
           width: { _: "Stretch" },
           height: { _: "Auto" },
+          padding: 8,
         },
         "about"
       ),

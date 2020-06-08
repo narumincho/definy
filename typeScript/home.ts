@@ -9,7 +9,12 @@ export const home = (projectMap: ProjectData): ui.Panel =>
       { width: { _: "Stretch" }, height: { _: "Stretch" }, key: "main" },
       [...projectMap].map(([id, project]) =>
         ui.text(
-          { key: id, width: { _: "Stretch" }, height: { _: "Auto" } },
+          {
+            key: id,
+            width: { _: "Stretch" },
+            height: { _: "Auto" },
+            padding: 16,
+          },
           JSON.stringify(project)
         )
       )

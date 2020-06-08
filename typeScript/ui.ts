@@ -30,6 +30,7 @@ type TextAttributes = {
   fontSize?: number;
   color?: TextColor;
   backgroundColor?: BackgroundColor;
+  padding?: number;
 };
 
 type TextColor = { _: "Custom"; code: string };
@@ -38,6 +39,7 @@ type DepthAttributes = {
   key: string;
   width: Size;
   height: Size;
+  padding?: number;
 };
 
 type RowAttributes = {
@@ -50,6 +52,7 @@ type RowAttributes = {
   justifySelf?: "start" | "center" | "end";
   gap?: number;
   backgroundColor?: BackgroundColor;
+  padding?: number;
 };
 
 type ColumnAttributes = {
@@ -62,6 +65,7 @@ type ColumnAttributes = {
   justifySelf?: "start" | "center" | "end";
   gap?: number;
   backgroundColor?: BackgroundColor;
+  padding?: number;
 };
 
 type ScrollAttributes = {
@@ -69,6 +73,7 @@ type ScrollAttributes = {
   width: Size;
   height: Size;
   backgroundColor?: BackgroundColor;
+  padding?: number;
 };
 
 type LinkAttributes = {
@@ -80,6 +85,7 @@ type LinkAttributes = {
   backgroundColor?: BackgroundColor;
   urlData: UrlData;
   onJump: (urlData: UrlData) => void;
+  padding?: number;
 };
 
 type ButtonAttributes = {
@@ -87,6 +93,7 @@ type ButtonAttributes = {
   width: Size;
   height: Size;
   onClick: () => void;
+  padding?: number;
 };
 
 type Size =
@@ -303,6 +310,7 @@ export const panelToReactElement = (
     ),
     ...widthAndHeightToStyle(panel.attributes.width, panel.attributes.height),
     ...(isIncludeScrollInPanel(panel) ? { overflow: "auto" } : {}),
+    padding: panel.attributes.padding,
   };
   switch (panel._) {
     case "Text":
