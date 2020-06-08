@@ -50,11 +50,6 @@ const callApi = <responseType>(
     .then((response) => response.arrayBuffer())
     .then((response) => codec.decode(0, new Uint8Array(response)).result);
 
-type Resource<T> =
-  | { _: "Loading" }
-  | { _: "Loaded"; snapshot: T }
-  | { _: "NotFound" };
-
 type Action =
   | { _: "ResponseAllProjectList"; list: ReadonlyArray<ProjectSnapshotAndId> }
   | { _: "ResponseProject"; response: ProjectResponse };
@@ -108,25 +103,26 @@ export const App: React.FC<{ urlData: UrlData }> = (prop) => {
     );
   }, []);
 
-  return ui.row(
-    {
-      width: width,
-      height: height,
-      key: "root",
-    },
-    [
-      [sidePanelWidth.toString() + "px", sidePanel(height, nowUrlData, onJump)],
+  return ui.toReactElement(
+    ui.row(
+      {
+        key: "root",
+        width: { _: "Stretch" },
+        height: { _: "Stretch" },
+      },
       [
-        "1fr",
+        sidePanel(height, nowUrlData, onJump),
         ui.column(
-          { width: width - sidePanelWidth, height: height, key: "main" },
-          [...projectMap].map(([id, project]) => [
-            "auto",
-            ui.text({ key: id, color: "#ddd" }, JSON.stringify(project)),
-          ])
+          { width: { _: "Stretch" }, height: { _: "Stretch" }, key: "main" },
+          [...projectMap].map(([id, project]) =>
+            ui.text(
+              { key: id, width: { _: "Stretch" }, height: { _: "Auto" } },
+              JSON.stringify(project)
+            )
+          )
         ),
-      ],
-    ]
+      ]
+    )
   );
 };
 
@@ -137,115 +133,106 @@ const sidePanel = (
 ) =>
   ui.column(
     {
-      width: sidePanelWidth,
-      height: height,
+      width: { _: "Fix", size: sidePanelWidth },
+      height: { _: "Stretch" },
       alignContent: "start",
       backgroundColor: "Dark",
       key: "sidePanel",
     },
     [
-      [
-        "auto",
-        ui.link(
+      ui.link(
+        {
+          urlData: { ...urlData, location: Location.Home },
+          key: "logo",
+          onJump,
+          width: { _: "Stretch" },
+          height: { _: "Auto" },
+        },
+        ui.text(
           {
-            urlData: { ...urlData, location: Location.Home },
             key: "logo",
-            onJump,
+            fontSize: 32,
+            color: { _: "Custom", code: "#b9d09b" },
+            width: { _: "Stretch" },
+            height: { _: "Auto" },
           },
-          ui.text(
-            {
-              key: "logo",
-              fontSize: 32,
-              color: "#b9d09b",
-            },
-            "Definy"
-          )
-        ),
-      ],
-      [
-        "auto",
+          "Definy"
+        )
+      ),
+      ui.text(
+        {
+          key: "user",
+          justifySelf: "start",
+          fontSize: 24,
+          width: { _: "Stretch" },
+          height: { _: "Auto" },
+        },
+        "User"
+      ),
+      ui.text(
+        {
+          key: "project",
+          justifySelf: "start",
+          fontSize: 24,
+          width: { _: "Stretch" },
+          height: { _: "Auto" },
+        },
+        "Project"
+      ),
+      ui.link(
+        {
+          urlData: {
+            ...urlData,
+            location: Location.Idea(
+              "be9a40a32e2ddb7c8b09aa458fe206a1" as IdeaId
+            ),
+          },
+          key: "link",
+          onJump,
+          justifySelf: "start",
+          width: { _: "Stretch" },
+          height: { _: "Auto" },
+        },
         ui.text(
           {
-            key: "user",
+            key: "idea",
             justifySelf: "start",
             fontSize: 24,
-            color: "#ddd",
+            width: { _: "Stretch" },
+            height: { _: "Auto" },
           },
-          "User"
-        ),
-      ],
-      [
-        "auto",
-        ui.text(
-          {
-            key: "project",
-            justifySelf: "start",
-            fontSize: 24,
-            color: "#ddd",
-          },
-          "Project"
-        ),
-      ],
-      [
-        "auto",
-        ui.link(
-          {
-            urlData: {
-              ...urlData,
-              location: Location.Idea(
-                "be9a40a32e2ddb7c8b09aa458fe206a1" as IdeaId
-              ),
-            },
-            key: "link",
-            onJump,
-            justifySelf: "start",
-          },
-          ui.text(
-            {
-              key: "idea",
-              justifySelf: "start",
-              fontSize: 24,
-              color: "#ddd",
-            },
-            "Idea"
-          )
-        ),
-      ],
-      [
-        "auto",
-        ui.text(
-          {
-            key: "suggestion",
-            justifySelf: "start",
-            fontSize: 24,
-            color: "#ddd",
-          },
-          "Suggestion"
-        ),
-      ],
-      [
-        "auto",
-        ui.text(
-          {
-            key: "module",
-            justifySelf: "start",
-            fontSize: 24,
-            color: "#ddd",
-          },
-          "module"
-        ),
-      ],
-      [
-        "auto",
-        ui.text(
-          {
-            key: "about",
-            justifySelf: "start",
-            fontSize: 24,
-            color: "#ddd",
-          },
-          "about"
-        ),
-      ],
+          "Idea"
+        )
+      ),
+      ui.text(
+        {
+          key: "suggestion",
+          justifySelf: "start",
+          fontSize: 24,
+          width: { _: "Stretch" },
+          height: { _: "Auto" },
+        },
+        "Suggestion"
+      ),
+      ui.text(
+        {
+          key: "module",
+          justifySelf: "start",
+          fontSize: 24,
+          width: { _: "Stretch" },
+          height: { _: "Auto" },
+        },
+        "module"
+      ),
+      ui.text(
+        {
+          key: "about",
+          justifySelf: "start",
+          fontSize: 24,
+          width: { _: "Stretch" },
+          height: { _: "Auto" },
+        },
+        "about"
+      ),
     ]
   );

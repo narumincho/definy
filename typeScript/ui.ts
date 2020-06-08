@@ -1,33 +1,326 @@
 import * as React from "react";
-import { CssValue, styled } from "react-free-style";
-import type * as cssType from "csstype";
+import { styled, Css, CssValue } from "react-free-style";
 import * as common from "definy-common";
 import { Maybe, UrlData } from "definy-common/source/data";
 
-export const text = (
-  attributes: {
-    key: string;
-    width?: number;
-    height?: number;
-    justifySelf?: "start" | "end";
-    fontSize?: number;
-    color: string;
-    backgroundColor?: BackgroundColor;
-  },
+type Panel =
+  | { _: "Text"; attributes: TextAttributes; text: string }
+  | {
+      _: "Depth";
+      attributes: DepthAttributes;
+      children: ReadonlyArray<[[Alignment, Alignment], Panel]>;
+    }
+  | { _: "Row"; attributes: RowAttributes; children: ReadonlyArray<Panel> }
+  | {
+      _: "Column";
+      attributes: ColumnAttributes;
+      children: ReadonlyArray<Panel>;
+    }
+  | { _: "Scroll"; attributes: ScrollAttributes; child: Panel }
+  | { _: "Link"; attributes: LinkAttributes; child: Panel }
+  | { _: "Button"; attributes: ButtonAttributes; child: Panel };
+
+type TextAttributes = {
+  key: string;
+  width: Size;
+  height: Size;
+  /** テキストの揃え方. 指定なしで左揃え */
+  alignment?: "end" | "center";
+  justifySelf?: "start" | "center" | "end";
+  fontSize?: number;
+  color?: TextColor;
+  backgroundColor?: BackgroundColor;
+};
+
+type TextColor = { _: "Custom"; code: string };
+
+type DepthAttributes = {
+  key: string;
+  width: Size;
+  height: Size;
+};
+
+type RowAttributes = {
+  key: string;
+  width: Size;
+  height: Size;
+  alignContent?: "start" | "center" | "end";
+  justifyContent?: "start" | "center" | "end";
+  alignSelf?: "start" | "center" | "end";
+  justifySelf?: "start" | "center" | "end";
+  gap?: number;
+  backgroundColor?: BackgroundColor;
+};
+
+type ColumnAttributes = {
+  key: string;
+  width: Size;
+  height: Size;
+  alignContent?: "start" | "center" | "end";
+  justifyContent?: "start" | "center" | "end";
+  alignSelf?: "start" | "center" | "end";
+  justifySelf?: "start" | "center" | "end";
+  gap?: number;
+  backgroundColor?: BackgroundColor;
+};
+
+type ScrollAttributes = {
+  key: string;
+  width: Size;
+  height: Size;
+  backgroundColor?: BackgroundColor;
+};
+
+type LinkAttributes = {
+  key: string;
+  width: Size;
+  height: Size;
+  alignSelf?: "start" | "center" | "end";
+  justifySelf?: "start" | "center" | "end";
+  backgroundColor?: BackgroundColor;
+  urlData: UrlData;
+  onJump: (urlData: UrlData) => void;
+};
+
+type ButtonAttributes = {
+  key: string;
+  width: Size;
+  height: Size;
+  onClick: () => void;
+};
+
+type Size =
+  | { _: "Fix"; size: number }
+  | { _: "Stretch" }
+  | { _: "StretchWithMax"; max: number }
+  | { _: "Auto" };
+
+const sizeListToGridTemplate = (
+  size: Size,
+  childSizeList: ReadonlyArray<Size>
+): string =>
+  childSizeList
+    .map((child) => sizeListToGridTemplateItem(child))
+    .concat(
+      childSizeList.some(isStretch)
+        ? []
+        : ((): ReadonlyArray<string> => {
+            switch (size._) {
+              case "Auto":
+                return [];
+              default:
+                return ["1fr"];
+            }
+          })()
+    )
+    .join(" ");
+
+const sizeListToGridTemplateItem = (size: Size): string => {
+  switch (size._) {
+    case "Fix":
+      return size.size.toString() + "px";
+    case "Stretch":
+      return "1fr";
+    case "StretchWithMax":
+      return "min(1fr, " + size.max.toString() + "px )";
+    case "Auto":
+      return "auto";
+  }
+};
+
+type Alignment = "Start" | "Center" | "End";
+
+const alignmentToCssValue = (alignment: Alignment): string => {
+  switch (alignment) {
+    case "Start":
+      return "start";
+    case "Center":
+      return "center";
+    case "End":
+      return "end";
+  }
+};
+
+export const text = (attributes: TextAttributes, text: string): Panel => ({
+  _: "Text",
+  attributes,
+  text,
+});
+
+/**
+ * columnやrowのように大きさをしていしてつくっていく感じ. だた子要素にgrid-row: 1 / 2などをしっかり指定しないとだめだなぁ
+ */
+export const depth = (
+  attributes: DepthAttributes,
+  children: ReadonlyArray<[[Alignment, Alignment], Panel]>
+): Panel => ({ _: "Depth", attributes, children });
+
+export const row = (
+  attributes: RowAttributes,
+  children: ReadonlyArray<Panel>
+): Panel => ({ _: "Row", attributes, children });
+
+/**
+ * 要素を縦に並べる
+ */
+export const column = (
+  attributes: ColumnAttributes,
+  children: ReadonlyArray<Panel>
+): Panel => ({ _: "Column", attributes, children });
+
+/**
+ * 要素を横に並べる
+ */
+export const scroll = (attributes: ScrollAttributes, child: Panel): Panel => ({
+  _: "Scroll",
+  attributes,
+  child,
+});
+
+/**
+ * アプリ内リンク
+ */
+export const link = (attributes: LinkAttributes, child: Panel): Panel => ({
+  _: "Link",
+  attributes,
+  child,
+});
+
+type GridCell = {
+  /** 横方向 */
+  row: number;
+  /** 縦方向 */
+  column: number;
+};
+
+const gridCellToStyle = (gridCell: GridCell): Css => ({
+  gridRow: gridCell.row.toString() + " / " + (gridCell.row + 1).toString(),
+  gridColumn:
+    gridCell.column.toString() + " / " + (gridCell.column + 1).toString(),
+});
+
+const widthAndHeightToStyle = (width: Size, height: Size): Css => ({
+  width: sizeToCssWidthOrHeight(width),
+  maxWidth: width._ === "StretchWithMax" ? width.max : undefined,
+  height: sizeToCssWidthOrHeight(height),
+  maxHeight: height._ === "StretchWithMax" ? height.max : undefined,
+});
+
+const sizeToCssWidthOrHeight = (size: Size): string => {
+  switch (size._) {
+    case "Fix":
+      return size.size.toString() + "px";
+    case "Stretch":
+    case "StretchWithMax":
+      return "100%";
+    case "Auto":
+      return "auto";
+  }
+};
+
+type AlignmentOrStretch =
+  | { _: "Alignment"; alignment: [Alignment, Alignment] }
+  | { _: "StretchRow" }
+  | { _: "StretchColumn" }
+  | { _: "StretchStretch" };
+
+const isStretch = (size: Size) => {
+  switch (size._) {
+    case "Stretch":
+      return true;
+    default:
+      return false;
+  }
+};
+
+const alignmentOrStretchToCssStyle = (
+  width: Size,
+  height: Size,
+  alignmentOrStretch: AlignmentOrStretch
+): Css => {
+  switch (alignmentOrStretch._) {
+    case "Alignment":
+      return {
+        justifySelf: isStretch(width)
+          ? "stretch"
+          : alignmentToCssValue(alignmentOrStretch.alignment[0]),
+        alignSelf: isStretch(height)
+          ? "stretch"
+          : alignmentToCssValue(alignmentOrStretch.alignment[1]),
+      };
+    case "StretchRow":
+      return {
+        justifySelf: "stretch",
+        alignSelf: "center",
+      };
+    case "StretchColumn":
+      return {
+        justifySelf: "center",
+        alignSelf: "stretch",
+      };
+    case "StretchStretch":
+      return {
+        justifySelf: "stretch",
+        alignSelf: "stretch",
+      };
+  }
+};
+
+export const toReactElement = (panel: Panel): React.ReactElement =>
+  panelToReactElement({ row: 0, column: 0 }, { _: "StretchStretch" }, panel);
+
+/**
+ * パネルをReactElementに変換する
+ */
+export const panelToReactElement = (
+  gridCell: GridCell,
+  alignmentOrStretch: AlignmentOrStretch,
+  panel: Panel
+): React.ReactElement => {
+  const commonStyle: Css = {
+    ...gridCellToStyle(gridCell),
+    ...alignmentOrStretchToCssStyle(
+      panel.attributes.width,
+      panel.attributes.height,
+      alignmentOrStretch
+    ),
+    ...widthAndHeightToStyle(panel.attributes.width, panel.attributes.height),
+  };
+  switch (panel._) {
+    case "Text":
+      return textToReactElement(commonStyle, panel.attributes, panel.text);
+    case "Depth":
+      return depthToReactElement(commonStyle, panel.attributes, panel.children);
+    case "Row":
+      return rowToReactElement(commonStyle, panel.attributes, panel.children);
+    case "Column":
+      return columnToReactElement(
+        commonStyle,
+        panel.attributes,
+        panel.children
+      );
+    case "Scroll":
+      return scrollToReactElement(commonStyle, panel.attributes, panel.child);
+    case "Link":
+      return linkToReactElement(commonStyle, panel.attributes, panel.child);
+    case "Button":
+      return buttonToReactElement(commonStyle, panel.attributes, panel.child);
+  }
+};
+
+const textToReactElement = (
+  commonStyle: Css,
+  attributes: TextAttributes,
   text: string
 ): React.FunctionComponentElement<
   React.ClassAttributes<HTMLDivElement> & React.HTMLAttributes<HTMLDivElement>
 > =>
   React.createElement(
     styled("div", {
-      width: attributes.width,
-      height: attributes.height,
-      justifySelf:
-        attributes.justifySelf === undefined
-          ? "center"
-          : attributes.justifySelf,
+      ...commonStyle,
+      justifySelf: attributes.justifySelf,
       fontSize: attributes.fontSize,
-      color: attributes.color,
+      color: attributes.color === undefined ? "#ddd" : attributes.color.code,
       backgroundColor:
         attributes.backgroundColor === undefined
           ? undefined
@@ -35,95 +328,121 @@ export const text = (
       overflow: "hidden",
       overflowWrap: "break-word",
       fontFamily: "Hack",
+      textAlign:
+        attributes.alignment === undefined ? "start" : attributes.alignment,
     }),
     { key: attributes.key },
     text
   );
 
-export const column = (
-  attributes: {
-    width: number;
-    height: number;
-    alignContent?: "start" | "center" | "end";
-    justifyContent?: "start" | "center" | "end";
-    backgroundColor?: BackgroundColor;
-    key: string;
-  },
-  children: ReadonlyArray<
-    [cssType.GridTemplateColumnsProperty<string | 0>, React.ReactNode]
-  >
+const depthToReactElement = (
+  commonStyle: Css,
+  attributes: DepthAttributes,
+  children: ReadonlyArray<[[Alignment, Alignment], Panel]>
+) =>
+  React.createElement(
+    styled("div", {
+      ...commonStyle,
+      display: "grid",
+      gridTemplateColumns: "1fr",
+      gridTemplateRows: "1fr",
+    }),
+    { key: attributes.key },
+    children.map(([alignment, child]) =>
+      panelToReactElement(
+        { row: 0, column: 0 },
+        { _: "Alignment", alignment },
+        child
+      )
+    )
+  );
+
+const columnToReactElement = (
+  commonStyle: Css,
+  attributes: ColumnAttributes,
+  children: ReadonlyArray<Panel>
 ): React.FunctionComponentElement<
   React.ClassAttributes<HTMLDivElement> & React.HTMLAttributes<HTMLDivElement>
 > =>
   React.createElement(
     styled("div", {
-      ...attributes,
+      ...commonStyle,
+      alignContent: attributes.alignContent,
+      justifyContent: attributes.justifyContent,
+      backgroundColor:
+        attributes.backgroundColor === undefined
+          ? undefined
+          : backgroundColorToColor(attributes.backgroundColor),
       display: "grid",
-      gridAutoFlow: "row",
-      backgroundColor: backgroundColorToColor(attributes.backgroundColor),
-      gridTemplateRows: children.map((child) => child[0]).join(" "),
+      gridTemplateRows: sizeListToGridTemplate(
+        attributes.height,
+        children.map((child) => child.attributes.height)
+      ),
       overflow: "hidden",
     }),
     { key: attributes.key },
-    children.map((child) => child[1])
+    children.map((child, index) =>
+      panelToReactElement(
+        { row: 0, column: index },
+        { _: "StretchColumn" },
+        child
+      )
+    )
   );
 
-export const row = (
-  attributes: {
-    width: number;
-    height: number;
-    alignContent?: "start" | "center" | "end";
-    justifyContent?: "start" | "center" | "end";
-    key: string;
-  },
-  children: ReadonlyArray<
-    [cssType.GridTemplateColumnsProperty<string | 0>, React.ReactNode]
-  >
+const rowToReactElement = (
+  commonStyle: Css,
+  attributes: RowAttributes,
+  children: ReadonlyArray<Panel>
 ): React.FunctionComponentElement<
   React.ClassAttributes<HTMLDivElement> & React.HTMLAttributes<HTMLDivElement>
 > => {
   return React.createElement(
     styled("div", {
-      ...attributes,
+      ...commonStyle,
+      alignContent: attributes.alignContent,
+      justifyContent: attributes.justifyContent,
+      backgroundColor:
+        attributes.backgroundColor === undefined
+          ? undefined
+          : backgroundColorToColor(attributes.backgroundColor),
       display: "grid",
-      gridAutoFlow: "column",
-      gridTemplateColumns: children.map((child) => child[0]).join(" "),
+      gridTemplateColumns: sizeListToGridTemplate(
+        attributes.width,
+        children.map((child) => child.attributes.width)
+      ),
       overflow: "hidden",
     }),
     { key: attributes.key },
-    children.map((child) => child[1])
+    children.map((child, index) =>
+      panelToReactElement({ row: index, column: 0 }, { _: "StretchRow" }, child)
+    )
   );
 };
 
-type BackgroundColor = "Black" | "Dark";
+const scrollToReactElement = (
+  commonStyle: Css,
+  attributes: ScrollAttributes,
+  child: Panel
+): React.ReactElement =>
+  React.createElement(
+    styled("div", commonStyle),
+    { key: attributes.key },
+    panelToReactElement({ row: 0, column: 0 }, { _: "StretchStretch" }, child)
+  );
 
-const backgroundColorToColor = (backgroundColor: BackgroundColor): string => {
-  switch (backgroundColor) {
-    case "Black":
-      return "#000";
-    case "Dark":
-      return "#2f2f2f";
-  }
-};
-
-export const link = (
-  attributes: {
-    urlData: UrlData;
-    onJump: (urlData: UrlData) => void;
-    key: string;
-    justifySelf?: "start" | "end";
-  },
-  child: React.ReactNode
+export const linkToReactElement = (
+  commonStyle: Css,
+  attributes: LinkAttributes,
+  child: Panel
 ): React.FunctionComponentElement<
   React.ClassAttributes<HTMLAnchorElement> &
     React.AnchorHTMLAttributes<HTMLAnchorElement> & { css?: CssValue }
 > => {
   return React.createElement(
     styled("a", {
-      justifySelf:
-        attributes.justifySelf === undefined
-          ? "center"
-          : attributes.justifySelf,
+      ...commonStyle,
+      justifySelf: attributes.justifySelf,
       textDecoration: "none",
       overflow: "hidden",
     }),
@@ -144,6 +463,34 @@ export const link = (
         .urlDataAndAccessTokenToUrl(attributes.urlData, Maybe.Nothing())
         .toString(),
     },
-    child
+    panelToReactElement({ row: 0, column: 0 }, { _: "StretchStretch" }, child)
   );
+};
+
+const buttonToReactElement = (
+  commonStyle: Css,
+  attributes: ButtonAttributes,
+  child: Panel
+): React.ReactElement => {
+  return React.createElement(
+    styled("button", {
+      ...commonStyle,
+      cursor: "pointer",
+    }),
+    {
+      onClick: attributes.onClick,
+    },
+    panelToReactElement({ row: 0, column: 0 }, { _: "StretchStretch" }, child)
+  );
+};
+
+type BackgroundColor = "Black" | "Dark";
+
+const backgroundColorToColor = (backgroundColor: BackgroundColor): string => {
+  switch (backgroundColor) {
+    case "Black":
+      return "#000";
+    case "Dark":
+      return "#2f2f2f";
+  }
 };
