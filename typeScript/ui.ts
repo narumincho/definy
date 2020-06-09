@@ -21,7 +21,7 @@ export type Panel =
       attributes: ColumnAttributes;
       children: ReadonlyArray<Panel>;
     }
-  | { _: "Scroll"; attributes: ScrollAttributes; child: Panel }
+  | { _: "ScrollY"; attributes: ScrollAttributes; child: Panel }
   | { _: "Link"; attributes: LinkAttributes; child: Panel }
   | { _: "Button"; attributes: ButtonAttributes; child: Panel };
 
@@ -209,10 +209,10 @@ export const column = (
 ): Panel => ({ _: "Column", attributes, children });
 
 /**
- * 中身のパネルがスクロールするようにする
+ * 中身のパネルが縦方向にスクロールするようにする
  */
 export const scroll = (attributes: ScrollAttributes, child: Panel): Panel => ({
-  _: "Scroll",
+  _: "ScrollY",
   attributes,
   child,
 });
@@ -317,7 +317,7 @@ const isIncludeScrollInPanel = (panel: Panel): boolean => {
     case "WrappedRow":
     case "Column":
       return panel.children.some(isIncludeScrollInPanel);
-    case "Scroll":
+    case "ScrollY":
     case "Link":
     case "Button":
       return isIncludeScrollInPanel(panel.child);
@@ -369,7 +369,7 @@ export const panelToReactElement = (
         panel.attributes,
         panel.children
       );
-    case "Scroll":
+    case "ScrollY":
       return scrollToReactElement(commonStyle, panel.attributes, panel.child);
     case "Link":
       return linkToReactElement(commonStyle, panel.attributes, panel.child);
@@ -396,7 +396,6 @@ const textToReactElement = (
         attributes.backgroundColor === undefined
           ? undefined
           : backgroundColorToColor(attributes.backgroundColor),
-      overflow: "hidden",
       overflowWrap: "break-word",
       fontFamily: "Hack",
       textAlign:
@@ -451,7 +450,6 @@ const columnToReactElement = (
         children.map((child) => child.attributes.height)
       ),
       gridTemplateColumns: "1fr",
-      overflow: "hidden",
       gap: attributes.gap,
     }),
     { key: attributes.key },
@@ -486,7 +484,6 @@ const rowToReactElement = (
         attributes.width,
         children.map((child) => child.attributes.width)
       ),
-      overflow: "hidden",
       gap: attributes.gap,
     }),
     { key: attributes.key },
@@ -515,7 +512,6 @@ const wrappedRowToReactElement = (
       gridTemplateColumns: new Array(attributes.oneLineCount)
         .fill("1fr")
         .join(" "),
-      overflow: "hidden",
       gap: attributes.gap,
     }),
     { key: attributes.key },
@@ -537,7 +533,7 @@ const scrollToReactElement = (
   child: Panel
 ): React.ReactElement =>
   React.createElement(
-    styled("div", { ...commonStyle, overflow: "scroll" }),
+    styled("div", { ...commonStyle, overflowY: "scroll" }),
     { key: attributes.key },
     panelToReactElement({ row: 0, column: 0 }, { _: "StretchStretch" }, child)
   );
@@ -555,7 +551,6 @@ export const linkToReactElement = (
       ...commonStyle,
       justifySelf: attributes.justifySelf,
       textDecoration: "none",
-      overflow: "hidden",
     }),
     {
       onClick: (event) => {
