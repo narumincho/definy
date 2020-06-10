@@ -343,7 +343,8 @@ export const panelToReactElement = (
       alignmentOrStretch
     ),
     ...widthAndHeightToStyle(panel.attributes.width, panel.attributes.height),
-    ...(isIncludeScrollInPanel(panel) ? { overflow: "auto" } : {}),
+    overflowX: "hidden",
+    overflowY: isIncludeScrollInPanel(panel) ? "auto" : "hidden",
     padding: panel.attributes.padding,
     backgroundColor:
       panel.attributes.backgroundColor === undefined
@@ -385,7 +386,6 @@ const textToReactElement = (
 ): React.FunctionComponentElement<
   React.ClassAttributes<HTMLDivElement> & React.HTMLAttributes<HTMLDivElement>
 > => {
-  console.log("commonStyle", commonStyle);
   return React.createElement(
     styled("div", {
       ...commonStyle,
