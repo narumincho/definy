@@ -1,11 +1,15 @@
+/** @jsx jsx */
+
 import * as React from "react";
 import * as ui from "./ui";
 import { data } from "definy-common";
 import * as common from "definy-common";
-import { sidePanel } from "./sidePanel";
+import { SidePanel } from "./sidePanel";
 import { home } from "./home";
 import { about } from "./about";
 import { ProjectData } from "./resource";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { jsx } from "react-free-style";
 
 const getWindowDimensions = () => ({
   width: window.innerWidth,
@@ -28,7 +32,7 @@ const useWindowDimensions = () => {
   return windowDimensions;
 };
 
-const callApi = <responseType>(
+const callApi = <responseType extends unknown>(
   apiName: string,
   binary: ReadonlyArray<number>,
   codec: data.Codec<responseType>
@@ -98,15 +102,10 @@ export const App: React.FC<{ urlData: data.UrlData }> = (prop) => {
     });
   }, []);
 
-  return ui.toReactElement(
-    ui.row(
-      {
-        key: "root",
-        width: { _: "Stretch" },
-        height: { _: "Stretch" },
-      },
-      [sidePanel(nowUrlData, onJump), mainPanel(nowUrlData, projectData)]
-    )
+  return (
+    <div css={{ height: "100%" }}>
+      <SidePanel urlData={nowUrlData} onJump={onJump} />
+    </div>
   );
 };
 

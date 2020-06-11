@@ -6,7 +6,7 @@
     "plugin:prettier/recommended",
     "prettier/@typescript-eslint"
   ],
-  "plugins": ["@typescript-eslint"],
+  "plugins": ["@typescript-eslint", "react-hooks"],
   "env": { "node": true, "es6": true },
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -37,6 +37,8 @@
     "@typescript-eslint/no-unused-expressions": ["error"],
     "@typescript-eslint/prefer-for-of": ["error"],
     "@typescript-eslint/require-array-sort-compare": ["error"],
-    "@typescript-eslint/no-use-before-define": ["error", { "variables": false }]
+    "@typescript-eslint/no-use-before-define": ["error", { "variables": false }],
+    "react-hooks/rules-of-hooks": ["error"],
+    "react-hooks/exhaustive-deps": ["error"]
   }
 }

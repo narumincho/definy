@@ -1,7 +1,11 @@
+/** @jsx jsx */
+
 import * as React from "react";
 import { styled, Css, CssValue } from "react-free-style";
 import * as common from "definy-common";
 import { Maybe, UrlData } from "definy-common/source/data";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { jsx } from "react-free-style";
 
 export type Panel =
   | { _: "Text"; attributes: TextAttributes; text: string }
@@ -595,8 +599,42 @@ type BackgroundColor = "Black" | "Dark";
 const backgroundColorToColor = (backgroundColor: BackgroundColor): string => {
   switch (backgroundColor) {
     case "Black":
-      return "#000";
+      return backgroundColorBlack;
     case "Dark":
-      return "#2f2f2f";
+      return backgroundColorDark;
   }
 };
+
+export const backgroundColorDark = "#2f2f2f";
+
+export const backgroundColorBlack = "#000";
+
+export const Link = (prop: {
+  urlData: UrlData;
+  onJump: (urlData: UrlData) => void;
+  children: React.ReactElement;
+}): JSX.Element => (
+  <a
+    href={common
+      .urlDataAndAccessTokenToUrl(prop.urlData, Maybe.Nothing())
+      .toString()}
+    onClick={(event) => {
+      if (
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.shiftKey &&
+        event.button === 0
+      ) {
+        event.preventDefault();
+        prop.onJump(prop.urlData);
+      }
+    }}
+    css={{
+      textDecoration: "none",
+      color: "#ddd",
+      "&:hover": { color: "#fff" },
+    }}
+  >
+    {prop.children}
+  </a>
+);

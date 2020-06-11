@@ -16,18 +16,15 @@ appElement.style.height = "100%";
 appElement.style.overflow = "auto";
 
 ReactDOM.render(
-  React.createElement(
-    React.StrictMode,
-    {},
-    React.createElement(
-      Context.Provider,
-      { value: new StyleSheetRenderer() },
-      React.createElement(App, {
-        urlData: common.urlDataAndAccessTokenFromUrl(
-          new URL(window.location.href)
-        ).urlData,
-      })
-    )
-  ),
+  <React.StrictMode>
+    <Context.Provider value={new StyleSheetRenderer()}>
+      <App
+        urlData={
+          common.urlDataAndAccessTokenFromUrl(new URL(window.location.href))
+            .urlData
+        }
+      />
+    </Context.Provider>
+  </React.StrictMode>,
   appElement
 );
