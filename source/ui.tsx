@@ -1,11 +1,9 @@
 /** @jsx jsx */
 
 import * as React from "react";
-import { styled, Css, CssValue } from "react-free-style";
 import * as common from "definy-common";
+import { Css, CssValue, jsx, styled } from "react-free-style";
 import { Maybe, UrlData } from "definy-common/source/data";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx } from "react-free-style";
 
 export type Panel =
   | { _: "Text"; attributes: TextAttributes; text: string }
@@ -174,7 +172,7 @@ const alignmentToCssValue = (alignment: Alignment): string => {
   }
 };
 
-export const text = (attributes: TextAttributes, text: string): Panel => ({
+export const textBox = (attributes: TextAttributes, text: string): Panel => ({
   _: "Text",
   attributes,
   text,
@@ -316,7 +314,7 @@ const isIncludeScrollInPanel = (panel: Panel): boolean => {
     case "Text":
       return false;
     case "Depth":
-      return panel.children.some(([_, panel]) => isIncludeScrollInPanel(panel));
+      return panel.children.some(([_, child]) => isIncludeScrollInPanel(child));
     case "Row":
     case "WrappedRow":
     case "Column":
@@ -615,6 +613,11 @@ export const Link = (prop: {
   children: React.ReactElement;
 }): JSX.Element => (
   <a
+    css={{
+      textDecoration: "none",
+      color: "#ddd",
+      "&:hover": { color: "#fff" },
+    }}
     href={common
       .urlDataAndAccessTokenToUrl(prop.urlData, Maybe.Nothing())
       .toString()}
@@ -628,11 +631,6 @@ export const Link = (prop: {
         event.preventDefault();
         prop.onJump(prop.urlData);
       }
-    }}
-    css={{
-      textDecoration: "none",
-      color: "#ddd",
-      "&:hover": { color: "#fff" },
     }}
   >
     {prop.children}

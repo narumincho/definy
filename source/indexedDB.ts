@@ -1,4 +1,4 @@
-import { data, util } from "definy-common";
+import { data as commonData, util } from "definy-common";
 
 const accessTokenObjectStoreName = "accessToken";
 const accessTokenKeyName = "lastLogInUser";
@@ -46,31 +46,32 @@ export const accessDatabase = (): Promise<IDBDatabase | null> =>
 
     dbRequest.onerror = (): void => {
       console.log("Databaseに接続できなかった");
-      reject();
+      reject(new Error("Databaseに接続できなかった"));
     };
   });
+
 /**
- * indexDBからアクセストークンを取得する
+ * IndexDBからアクセストークンを取得する
  */
 export const getAccessToken = (
   database: IDBDatabase | null
-): Promise<undefined | data.AccessToken> =>
-  get<typeof accessTokenKeyName, data.AccessToken>(
+): Promise<undefined | commonData.AccessToken> =>
+  get<typeof accessTokenKeyName, commonData.AccessToken>(
     database,
     accessTokenObjectStoreName,
     accessTokenKeyName
   );
 
 /**
- * indexDBにアクセストークンを書き込む
+ * IndexDBにアクセストークンを書き込む
  * @param database nullだった場合サポートされていないとみなされ常に何も取得できない
  * @param accessToken アクセストークン
  */
 export const setAccessToken = (
   database: IDBDatabase | null,
-  accessToken: data.AccessToken
+  accessToken: commonData.AccessToken
 ): Promise<void> =>
-  setLow<typeof accessTokenKeyName, data.AccessToken>(
+  setLow<typeof accessTokenKeyName, commonData.AccessToken>(
     database,
     accessTokenObjectStoreName,
     accessTokenKeyName,
@@ -82,9 +83,13 @@ export const setAccessToken = (
  */
 export const getUser = (
   database: IDBDatabase | null,
-  userId: data.UserId
-): Promise<undefined | data.UserSnapshot> =>
-  get<data.UserId, data.UserSnapshot>(database, userObjectStoreName, userId);
+  userId: commonData.UserId
+): Promise<undefined | commonData.UserSnapshot> =>
+  get<commonData.UserId, commonData.UserSnapshot>(
+    database,
+    userObjectStoreName,
+    userId
+  );
 
 /**
  * 指定したユーザーIDのスナップショットがなかった場合, 指定したユーザースナップショットをindexedDBに書く
@@ -93,10 +98,10 @@ export const getUser = (
  */
 export const setUser = (
   database: IDBDatabase | null,
-  userId: data.UserId,
-  userSnapshot: data.UserSnapshot
+  userId: commonData.UserId,
+  userSnapshot: commonData.UserSnapshot
 ): Promise<void> =>
-  set<data.UserId, data.UserSnapshot>(
+  set<commonData.UserId, commonData.UserSnapshot>(
     database,
     userObjectStoreName,
     userId,
@@ -108,9 +113,9 @@ export const setUser = (
  */
 export const getProject = (
   database: IDBDatabase | null,
-  projectId: data.ProjectId
-): Promise<undefined | data.ProjectSnapshot> =>
-  get<data.ProjectId, data.ProjectSnapshot>(
+  projectId: commonData.ProjectId
+): Promise<undefined | commonData.ProjectSnapshot> =>
+  get<commonData.ProjectId, commonData.ProjectSnapshot>(
     database,
     projectObjectStoreName,
     projectId
@@ -125,10 +130,10 @@ export const getProject = (
  */
 export const setProject = (
   database: IDBDatabase | null,
-  projectId: data.ProjectId,
-  projectSnapshot: data.ProjectSnapshot
+  projectId: commonData.ProjectId,
+  projectSnapshot: commonData.ProjectSnapshot
 ): Promise<void> =>
-  set<data.ProjectId, data.ProjectSnapshot>(
+  set<commonData.ProjectId, commonData.ProjectSnapshot>(
     database,
     projectObjectStoreName,
     projectId,
@@ -140,19 +145,23 @@ export const setProject = (
  */
 export const getImage = (
   database: IDBDatabase | null,
-  imageToken: data.ImageToken
+  imageToken: commonData.ImageToken
 ): Promise<undefined | Uint8Array> =>
-  get<data.ImageToken, Uint8Array>(database, fileObjectStoreName, imageToken);
+  get<commonData.ImageToken, Uint8Array>(
+    database,
+    fileObjectStoreName,
+    imageToken
+  );
 
 /**
  * ファイルのバイナリを書き込む
  */
 export const setImage = (
   database: IDBDatabase | null,
-  imageToken: data.ImageToken,
+  imageToken: commonData.ImageToken,
   image: Uint8Array
 ): Promise<void> =>
-  setLow<data.ImageToken, Uint8Array>(
+  setLow<commonData.ImageToken, Uint8Array>(
     database,
     fileObjectStoreName,
     imageToken,
@@ -161,9 +170,13 @@ export const setImage = (
 
 export const getIdea = (
   database: IDBDatabase | null,
-  ideaId: data.IdeaId
-): Promise<undefined | data.IdeaSnapshot> =>
-  get<data.IdeaId, data.IdeaSnapshot>(database, ideaObjectStoreName, ideaId);
+  ideaId: commonData.IdeaId
+): Promise<undefined | commonData.IdeaSnapshot> =>
+  get<commonData.IdeaId, commonData.IdeaSnapshot>(
+    database,
+    ideaObjectStoreName,
+    ideaId
+  );
 
 /**
  * アイデアのスナップショットをindexedDBに書く
@@ -174,10 +187,10 @@ export const getIdea = (
  */
 export const setIdea = (
   database: IDBDatabase | null,
-  id: data.IdeaId,
-  snapshot: data.IdeaSnapshot
+  id: commonData.IdeaId,
+  snapshot: commonData.IdeaSnapshot
 ): Promise<void> =>
-  set<data.IdeaId, data.IdeaSnapshot>(
+  set<commonData.IdeaId, commonData.IdeaSnapshot>(
     database,
     ideaObjectStoreName,
     id,
@@ -186,9 +199,9 @@ export const setIdea = (
 
 export const getSuggestion = (
   database: IDBDatabase | null,
-  id: data.SuggestionId
-): Promise<data.SuggestionSnapshot | undefined> =>
-  get<data.SuggestionId, data.SuggestionSnapshot>(
+  id: commonData.SuggestionId
+): Promise<commonData.SuggestionSnapshot | undefined> =>
+  get<commonData.SuggestionId, commonData.SuggestionSnapshot>(
     database,
     suggestionObjectStoreName,
     id
@@ -196,10 +209,10 @@ export const getSuggestion = (
 
 export const setSuggestion = (
   database: IDBDatabase | null,
-  id: data.SuggestionId,
-  snapshot: data.SuggestionSnapshot
+  id: commonData.SuggestionId,
+  snapshot: commonData.SuggestionSnapshot
 ): Promise<void> =>
-  set<data.SuggestionId, data.SuggestionSnapshot>(
+  set<commonData.SuggestionId, commonData.SuggestionSnapshot>(
     database,
     suggestionObjectStoreName,
     id,
@@ -208,16 +221,20 @@ export const setSuggestion = (
 
 export const getPart = (
   database: IDBDatabase | null,
-  id: data.PartId
-): Promise<data.PartSnapshot | undefined> =>
-  get<data.PartId, data.PartSnapshot>(database, partObjectStoreName, id);
+  id: commonData.PartId
+): Promise<commonData.PartSnapshot | undefined> =>
+  get<commonData.PartId, commonData.PartSnapshot>(
+    database,
+    partObjectStoreName,
+    id
+  );
 
 export const setPart = (
   database: IDBDatabase | null,
-  id: data.PartId,
-  snapshot: data.PartSnapshot
+  id: commonData.PartId,
+  snapshot: commonData.PartSnapshot
 ): Promise<void> =>
-  set<data.PartId, data.PartSnapshot>(
+  set<commonData.PartId, commonData.PartSnapshot>(
     database,
     partObjectStoreName,
     id,
@@ -226,9 +243,9 @@ export const setPart = (
 
 export const getTypePart = (
   database: IDBDatabase | null,
-  id: data.TypePartId
-): Promise<data.TypePartSnapshot | undefined> =>
-  get<data.TypePartId, data.TypePartSnapshot>(
+  id: commonData.TypePartId
+): Promise<commonData.TypePartSnapshot | undefined> =>
+  get<commonData.TypePartId, commonData.TypePartSnapshot>(
     database,
     typePartObjectStoreName,
     id
@@ -236,10 +253,10 @@ export const getTypePart = (
 
 export const setTypePart = (
   database: IDBDatabase | null,
-  id: data.TypePartId,
-  snapshot: data.TypePartSnapshot
+  id: commonData.TypePartId,
+  snapshot: commonData.TypePartSnapshot
 ): Promise<void> =>
-  set<data.TypePartId, data.TypePartSnapshot>(
+  set<commonData.TypePartId, commonData.TypePartSnapshot>(
     database,
     typePartObjectStoreName,
     id,
@@ -263,7 +280,7 @@ const get = <id extends string, data>(
     };
 
     transaction.onerror = (): void => {
-      reject("read " + objectStoreName + " failed");
+      reject(new Error(`read ${objectStoreName} failed`));
     };
 
     const getRequest: IDBRequest<data | undefined> = transaction
@@ -278,7 +295,7 @@ const get = <id extends string, data>(
  * 指定したデータのgetTimeが 前にあったデータのgetTimeより新しかった場合, 指定したデータをindexedDBに書く
  * そうでなければ何もしない
  */
-const set = <id extends string, data extends { getTime: data.Time }>(
+const set = <id extends string, data extends { getTime: commonData.Time }>(
   database: IDBDatabase | null,
   objectStoreName: string,
   id: id,
@@ -308,7 +325,7 @@ const set = <id extends string, data extends { getTime: data.Time }>(
     };
 
     transaction.onerror = (): void => {
-      reject("set before get getTime " + objectStoreName + " failed");
+      reject(new Error(`set before get getTime ${objectStoreName} failed`));
     };
 
     const getRequest: IDBRequest<undefined | data> = transaction
@@ -335,7 +352,9 @@ const setLow = <id extends string, data>(
     };
 
     transaction.onerror = (): void => {
-      reject("write " + objectStoreName + " error: write transaction failed");
+      reject(
+        new Error(`write ${objectStoreName} error: write transaction failed`)
+      );
     };
 
     transaction.objectStore(objectStoreName).put(data, id);

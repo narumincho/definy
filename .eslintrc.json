@@ -20,6 +20,21 @@
   "rules": {
     "no-constant-condition": ["error", { "checkLoops": false }],
     "no-else-return": ["error", { "allowElseIf": false }],
+    "one-var": ["error", "never"],
+    "sort-keys": ["off"],
+    "no-magic-numbers": ["off"],
+    "max-lines-per-function": ["off"],
+    "no-undefined": ["off"],
+    "default-case": ["off"],
+    "no-ternary": ["off"],
+    "id-length": ["off"],
+    "consistent-return": ["off"],
+    "new-cap": ["off"],
+    "no-use-before-define": ["off"],
+    "max-lines": ["off"],
+    "no-console": ["off"],
+    "max-params": ["off"],
+    "prefer-template": ["off"],
     "@typescript-eslint/restrict-plus-operands": [
       "error",
       { "checkCompoundAssignments": true }
@@ -32,13 +47,20 @@
     "@typescript-eslint/no-unused-expressions": ["error"],
     "@typescript-eslint/prefer-for-of": ["error"],
     "@typescript-eslint/require-array-sort-compare": ["error"],
-    "@typescript-eslint/no-use-before-define": ["error", { "variables": false }],
+    "@typescript-eslint/no-use-before-define": [
+      "error",
+      { "variables": false }
+    ],
     "react-hooks/rules-of-hooks": ["error"],
     "react/jsx-indent": ["off"],
     "react/function-component-definition": ["off"],
     "react/jsx-indent-props": ["off"],
     "react/jsx-filename-extension": ["error", { "extensions": [".tsx"] }],
     "react/jsx-no-literals": ["off"],
-    "react/jsx-one-expression-per-line": ["off"]
+    "react/jsx-one-expression-per-line": ["off"],
+    "react/jsx-handler-names": ["off"],
+    "react/jsx-max-props-per-line": ["off"],
+    "react/no-multi-comp": ["off"],
+    "react/jsx-no-bind": ["off"]
   }
 }

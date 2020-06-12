@@ -1,12 +1,12 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { App } from "./App";
-import { Context, StyleSheetRenderer } from "react-free-style";
 import * as common from "definy-common";
+import { Context, StyleSheetRenderer } from "react-free-style";
+import { App } from "./App";
 
 const appElement = document.createElement("div");
 
-// bodyの子要素を削除
+// Bodyの子要素を削除
 document.documentElement.replaceChild(
   document.body.cloneNode(false),
   document.body

@@ -1,12 +1,11 @@
 /** @jsx jsx */
 
 import * as React from "react";
-import { data } from "definy-common";
-import * as common from "definy-common";
-import { SidePanel } from "./SidePanel";
-import { Home } from "./Home";
+import { data, urlDataAndAccessTokenToUrl } from "definy-common";
 import { About } from "./About";
+import { Home } from "./Home";
 import { ProjectData } from "./resource";
+import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
 
 const getWindowDimensions = () => ({
@@ -35,7 +34,7 @@ const callApi = <responseType extends unknown>(
   binary: ReadonlyArray<number>,
   codec: data.Codec<responseType>
 ): Promise<responseType> =>
-  fetch("https://us-central1-definy-lang.cloudfunctions.net/api/" + apiName, {
+  fetch(`https://us-central1-definy-lang.cloudfunctions.net/api/${apiName}`, {
     method: "POST",
     body: new Uint8Array(binary),
     headers: [["content-type", "application/octet-stream"]],
@@ -82,9 +81,7 @@ export const App: React.FC<{ urlData: data.UrlData }> = (prop) => {
     history.pushState(
       undefined,
       "",
-      common
-        .urlDataAndAccessTokenToUrl(nowUrlData, data.Maybe.Nothing())
-        .toString()
+      urlDataAndAccessTokenToUrl(nowUrlData, data.Maybe.Nothing()).toString()
     );
   }, [nowUrlData]);
   React.useEffect(() => {
@@ -104,12 +101,11 @@ export const App: React.FC<{ urlData: data.UrlData }> = (prop) => {
     <div
       css={{ height: "100%", display: "grid", gridTemplateColumns: "auto 1fr" }}
     >
-      <SidePanel urlData={nowUrlData} onJump={onJump} />
-      <MainPanel urlData={nowUrlData} projectData={projectData} />
+      <SidePanel onJump={onJump} urlData={nowUrlData} />
+      <MainPanel projectData={projectData} urlData={nowUrlData} />
     </div>
   );
 };
-App.displayName = "App";
 
 const MainPanel: React.FC<{
   urlData: data.UrlData;
