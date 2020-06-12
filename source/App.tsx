@@ -1,12 +1,24 @@
 /** @jsx jsx */
 
 import * as React from "react";
-import { data, urlDataAndAccessTokenToUrl } from "definy-common";
+import {
+  Codec,
+  Language,
+  List,
+  Maybe,
+  OpenIdConnectProvider,
+  ProjectResponse,
+  ProjectSnapshotAndId,
+  UrlData,
+} from "definy-common/source/data";
 import { About } from "./About";
 import { Home } from "./Home";
+import { LoadingBox } from "./ui";
+import { LogInState } from "./model";
 import { ProjectData } from "./resource";
 import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
+import { urlDataAndAccessTokenToUrl } from "definy-common";
 
 const getWindowDimensions = () => ({
   width: window.innerWidth,
@@ -32,7 +44,7 @@ const useWindowDimensions = () => {
 const callApi = <responseType extends unknown>(
   apiName: string,
   binary: ReadonlyArray<number>,
-  codec: data.Codec<responseType>
+  codec: Codec<responseType>
 ): Promise<responseType> =>
   fetch(`https://us-central1-definy-lang.cloudfunctions.net/api/${apiName}`, {
     method: "POST",
@@ -45,13 +57,16 @@ const callApi = <responseType extends unknown>(
 type Action =
   | {
       _: "ResponseAllProjectList";
-      list: ReadonlyArray<data.ProjectSnapshotAndId>;
+      list: ReadonlyArray<ProjectSnapshotAndId>;
     }
-  | { _: "ResponseProject"; response: data.ProjectResponse };
+  | { _: "ResponseProject"; response: ProjectResponse };
 
-export const App: React.FC<{ urlData: data.UrlData }> = (prop) => {
+export const App: React.FC<{ urlData: UrlData }> = (prop) => {
   const { width, height } = useWindowDimensions();
-  const [nowUrlData, onJump] = React.useState<data.UrlData>(prop.urlData);
+  const [nowUrlData, onJump] = React.useState<UrlData>(prop.urlData);
+  const [logInState, dispatchLogInState] = React.useState<LogInState>({
+    _: "Guest",
+  });
   const [projectData, dispatchProject] = React.useReducer(
     (state: ProjectData, action: Action): ProjectData => {
       switch (action._) {
@@ -81,34 +96,77 @@ export const App: React.FC<{ urlData: data.UrlData }> = (prop) => {
     history.pushState(
       undefined,
       "",
-      urlDataAndAccessTokenToUrl(nowUrlData, data.Maybe.Nothing()).toString()
+      urlDataAndAccessTokenToUrl(nowUrlData, Maybe.Nothing()).toString()
     );
   }, [nowUrlData]);
   React.useEffect(() => {
-    callApi(
-      "getAllProject",
-      [],
-      data.List.codec(data.ProjectSnapshotAndId.codec)
-    ).then((projectList) => {
-      dispatchProject({
-        _: "ResponseAllProjectList",
-        list: projectList,
-      });
-    });
+    callApi("getAllProject", [], List.codec(ProjectSnapshotAndId.codec)).then(
+      (projectList) => {
+        dispatchProject({
+          _: "ResponseAllProjectList",
+          list: projectList,
+        });
+      }
+    );
   }, []);
 
-  return (
+  return logInState._ === "RequestingLogInUrl" ? (
+    <RequestingLogInUrl
+      language={nowUrlData.language}
+      provider={logInState.provider}
+    />
+  ) : (
     <div
       css={{ height: "100%", display: "grid", gridTemplateColumns: "auto 1fr" }}
     >
-      <SidePanel onJump={onJump} urlData={nowUrlData} />
+      <SidePanel
+        model={{
+          clientMode: nowUrlData.clientMode,
+          language: nowUrlData.language,
+          logInState,
+        }}
+        onJump={onJump}
+        onRequestLogIn={(provider) => {
+          dispatchLogInState({ _: "RequestingLogInUrl", provider });
+        }}
+      />
       <MainPanel projectData={projectData} urlData={nowUrlData} />
     </div>
   );
 };
 
+const RequestingLogInUrl: React.FC<{
+  provider: OpenIdConnectProvider;
+  language: Language;
+}> = (prop) => (
+  <div
+    css={{
+      height: "100%",
+      display: "grid",
+      alignItems: "center",
+      justifyItems: "center",
+    }}
+  >
+    <LoadingBox>{logInMessage(prop.provider, prop.language)}</LoadingBox>
+  </div>
+);
+
+const logInMessage = (
+  provider: OpenIdConnectProvider,
+  language: Language
+): string => {
+  switch (language) {
+    case "English":
+      return `Preparing to log in to ${provider}`;
+    case "Esperanto":
+      return `Preparante ensaluti al Google${provider}`;
+    case "Japanese":
+      return `${provider}へのログインを準備中……`;
+  }
+};
+
 const MainPanel: React.FC<{
-  urlData: data.UrlData;
+  urlData: UrlData;
   projectData: ProjectData;
 }> = (prop) => {
   switch (prop.urlData.location._) {

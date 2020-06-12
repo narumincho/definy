@@ -33,9 +33,14 @@
             color: white;
         }
 
-        div[data-elm-hot="true"] {
-            display: grid;
-            overflow: auto;
+        @keyframes loading {
+            0% {
+                transform: rotate(0);
+            }
+
+            100% {
+                transform: rotate(1turn);
+            }
         }
 
         * {
