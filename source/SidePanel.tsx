@@ -11,7 +11,6 @@ const sidePanelWidth = 260;
 
 export const SidePanel: React.FC<{
   model: Model;
-  onJump: (urlData: data.UrlData) => void;
   onRequestLogIn: (provider: data.OpenIdConnectProvider) => void;
 }> = (prop) => (
   <div
@@ -21,14 +20,14 @@ export const SidePanel: React.FC<{
       height: "100%",
     }}
   >
-    <Logo model={prop.model} onJump={prop.onJump} />
+    <Logo model={prop.model} onJump={prop.model.onJump} />
     <LogInButton
       language={prop.model.language}
       requestLogIn={prop.onRequestLogIn}
     />
     <ui.Link
       areaTheme="Gray"
-      onJump={prop.onJump}
+      onJump={prop.model.onJump}
       urlData={{ ...prop.model, location: data.Location.About }}
     >
       <div>About</div>

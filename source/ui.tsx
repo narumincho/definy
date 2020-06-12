@@ -5,7 +5,7 @@ import * as common from "definy-common";
 import { Css, jsx } from "react-free-style";
 import { Maybe, UrlData } from "definy-common/source/data";
 
-export type AreaTheme = "Gray" | "Black";
+export type AreaTheme = "Gray" | "Black" | "Active";
 
 export type AreaThemeValue = {
   readonly backgroundColor: string;
@@ -29,6 +29,13 @@ export const areaThemeToValue = (areaTheme: AreaTheme): AreaThemeValue => {
         hoveredBackgroundColor: "#111",
         color: "#ddd",
         hoveredColor: "#dfdfdf",
+      };
+    case "Active":
+      return {
+        backgroundColor: "#f0932b",
+        hoveredBackgroundColor: "#f69d3a",
+        color: "#000",
+        hoveredColor: "#000",
       };
   }
 };

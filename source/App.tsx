@@ -5,20 +5,23 @@ import {
   Codec,
   Language,
   List,
+  Location,
   Maybe,
   OpenIdConnectProvider,
   ProjectResponse,
   ProjectSnapshotAndId,
   UrlData,
 } from "definy-common/source/data";
+import { LogInState, Model, ProjectData } from "./model";
+import {
+  urlDataAndAccessTokenFromUrl,
+  urlDataAndAccessTokenToUrl,
+} from "definy-common";
 import { About } from "./About";
 import { Home } from "./Home";
 import { LoadingBox } from "./ui";
-import { LogInState } from "./model";
-import { ProjectData } from "./resource";
 import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
-import { urlDataAndAccessTokenToUrl } from "definy-common";
 
 const getWindowDimensions = () => ({
   width: window.innerWidth,
@@ -100,6 +103,11 @@ export const App: React.FC<{ urlData: UrlData }> = (prop) => {
     );
   }, [nowUrlData]);
   React.useEffect(() => {
+    addEventListener("popstate", () => {
+      onJump(
+        urlDataAndAccessTokenFromUrl(new URL(window.location.href)).urlData
+      );
+    });
     callApi("getAllProject", [], List.codec(ProjectSnapshotAndId.codec)).then(
       (projectList) => {
         dispatchProject({
@@ -124,13 +132,23 @@ export const App: React.FC<{ urlData: UrlData }> = (prop) => {
           clientMode: nowUrlData.clientMode,
           language: nowUrlData.language,
           logInState,
+          projectData,
+          onJump,
         }}
-        onJump={onJump}
         onRequestLogIn={(provider) => {
           dispatchLogInState({ _: "RequestingLogInUrl", provider });
         }}
       />
-      <MainPanel projectData={projectData} urlData={nowUrlData} />
+      <MainPanel
+        location={nowUrlData.location}
+        model={{
+          clientMode: nowUrlData.clientMode,
+          language: nowUrlData.language,
+          logInState,
+          projectData,
+          onJump,
+        }}
+      />
     </div>
   );
 };
@@ -166,12 +184,12 @@ const logInMessage = (
 };
 
 const MainPanel: React.FC<{
-  urlData: UrlData;
-  projectData: ProjectData;
+  model: Model;
+  location: Location;
 }> = (prop) => {
-  switch (prop.urlData.location._) {
+  switch (prop.location._) {
     case "Home":
-      return <Home projectData={prop.projectData} />;
+      return <Home model={prop.model} />;
     case "About":
       return <About />;
     default:
