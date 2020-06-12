@@ -9,7 +9,9 @@ import {
 
 export type LogInState =
   | { _: "Guest" }
-  | { _: "RequestingLogInUrl"; provider: OpenIdConnectProvider };
+  | { _: "PreparingLogInUrlRequest"; provider: OpenIdConnectProvider }
+  | { _: "RequestingLogInUrl"; provider: OpenIdConnectProvider }
+  | { _: "JumpingToLogInPage"; logInUrl: URL };
 
 export type Resource<T> =
   | { _: "Loading" }

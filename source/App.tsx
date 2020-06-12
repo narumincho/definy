@@ -10,6 +10,8 @@ import {
   OpenIdConnectProvider,
   ProjectResponse,
   ProjectSnapshotAndId,
+  RequestLogInUrlRequestData,
+  String,
   UrlData,
 } from "definy-common/source/data";
 import { LogInState, Model, ProjectData } from "./model";
@@ -64,12 +66,33 @@ type Action =
     }
   | { _: "ResponseProject"; response: ProjectResponse };
 
-export const App: React.FC<{ urlData: UrlData }> = (prop) => {
+export const App: React.FC<{ initUrlData: UrlData }> = (prop) => {
   const { width, height } = useWindowDimensions();
-  const [nowUrlData, onJump] = React.useState<UrlData>(prop.urlData);
-  const [logInState, dispatchLogInState] = React.useState<LogInState>({
-    _: "Guest",
-  });
+  const [urlData, onJump] = React.useState<UrlData>(prop.initUrlData);
+  const [logInState, dispatchLogInState] = React.useReducer(
+    (
+      state: LogInState,
+      action:
+        | { _: "RequestLogInUrl"; provider: OpenIdConnectProvider }
+        | { _: "RequestedLogInUrl" }
+        | { _: "RespondLogInUrl"; url: URL }
+    ): LogInState => {
+      switch (action._) {
+        case "RequestLogInUrl":
+          return { _: "PreparingLogInUrlRequest", provider: action.provider };
+        case "RequestedLogInUrl":
+          if (state._ === "PreparingLogInUrlRequest") {
+            return { _: "RequestingLogInUrl", provider: state.provider };
+          }
+          return state;
+        case "RespondLogInUrl":
+          return { _: "JumpingToLogInPage", logInUrl: action.url };
+      }
+    },
+    {
+      _: "Guest",
+    }
+  );
   const [projectData, dispatchProject] = React.useReducer(
     (state: ProjectData, action: Action): ProjectData => {
       switch (action._) {
@@ -99,9 +122,9 @@ export const App: React.FC<{ urlData: UrlData }> = (prop) => {
     history.pushState(
       undefined,
       "",
-      urlDataAndAccessTokenToUrl(nowUrlData, Maybe.Nothing()).toString()
+      urlDataAndAccessTokenToUrl(urlData, Maybe.Nothing()).toString()
     );
-  }, [nowUrlData]);
+  }, [urlData]);
   React.useEffect(() => {
     addEventListener("popstate", () => {
       onJump(
@@ -117,45 +140,83 @@ export const App: React.FC<{ urlData: UrlData }> = (prop) => {
       }
     );
   }, []);
+  React.useEffect(() => {
+    switch (logInState._) {
+      case "Guest":
+        return;
+      case "PreparingLogInUrlRequest":
+        callApi(
+          "requestLogInUrl",
+          RequestLogInUrlRequestData.codec.encode({
+            openIdConnectProvider: logInState.provider,
+            urlData,
+          }),
+          String.codec
+        ).then((logInUrl) => {
+          dispatchLogInState({
+            _: "RespondLogInUrl",
+            url: new URL(logInUrl),
+          });
+        });
+        dispatchLogInState({ _: "RequestedLogInUrl" });
+        return;
+      case "JumpingToLogInPage":
+        window.location.href = logInState.logInUrl.toString();
+    }
+  }, [logInState]);
 
-  return logInState._ === "RequestingLogInUrl" ? (
-    <RequestingLogInUrl
-      language={nowUrlData.language}
-      provider={logInState.provider}
-    />
-  ) : (
-    <div
-      css={{ height: "100%", display: "grid", gridTemplateColumns: "auto 1fr" }}
-    >
-      <SidePanel
-        model={{
-          clientMode: nowUrlData.clientMode,
-          language: nowUrlData.language,
-          logInState,
-          projectData,
-          onJump,
-        }}
-        onRequestLogIn={(provider) => {
-          dispatchLogInState({ _: "RequestingLogInUrl", provider });
-        }}
-      />
-      <MainPanel
-        location={nowUrlData.location}
-        model={{
-          clientMode: nowUrlData.clientMode,
-          language: nowUrlData.language,
-          logInState,
-          projectData,
-          onJump,
-        }}
-      />
-    </div>
-  );
+  switch (logInState._) {
+    case "PreparingLogInUrlRequest":
+    case "RequestingLogInUrl":
+      return (
+        <RequestingLogInUrl
+          message={logInMessage(logInState.provider, urlData.language)}
+        />
+      );
+    case "JumpingToLogInPage":
+      return (
+        <RequestingLogInUrl
+          message={jumpMessage(logInState.logInUrl, urlData.language)}
+        />
+      );
+    case "Guest":
+      return (
+        <div
+          css={{
+            height: "100%",
+            display: "grid",
+            gridTemplateColumns: "auto 1fr",
+          }}
+        >
+          <SidePanel
+            model={{
+              clientMode: urlData.clientMode,
+              language: urlData.language,
+              logInState,
+              projectData,
+              onJump,
+            }}
+            onRequestLogIn={(provider) => {
+              dispatchLogInState({ _: "RequestLogInUrl", provider });
+            }}
+          />
+          <MainPanel
+            location={urlData.location}
+            model={{
+              clientMode: urlData.clientMode,
+              language: urlData.language,
+              logInState,
+              projectData,
+              onJump,
+            }}
+          />
+        </div>
+      );
+  }
 };
 
 const RequestingLogInUrl: React.FC<{
-  provider: OpenIdConnectProvider;
-  language: Language;
+  message: string;
 }> = (prop) => (
   <div
     css={{
@@ -165,7 +226,7 @@ const RequestingLogInUrl: React.FC<{
       justifyItems: "center",
     }}
   >
-    <LoadingBox>{logInMessage(prop.provider, prop.language)}</LoadingBox>
+    <LoadingBox>{prop.message}</LoadingBox>
   </div>
 );
 
@@ -180,6 +241,17 @@ const logInMessage = (
       return `Preparante ensaluti al Google${provider}`;
     case "Japanese":
       return `${provider}へのログインを準備中……`;
+  }
+};
+
+const jumpMessage = (url: URL, language: Language) => {
+  switch (language) {
+    case "English":
+      return `Navigating to ${url}`;
+    case "Esperanto":
+      return `navigante al ${url}`;
+    case "Japanese":
+      return `${url}へ移動中……`;
   }
 };
 

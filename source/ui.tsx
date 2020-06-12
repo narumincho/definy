@@ -18,8 +18,8 @@ export const areaThemeToValue = (areaTheme: AreaTheme): AreaThemeValue => {
   switch (areaTheme) {
     case "Gray":
       return {
-        backgroundColor: "#2f2f2f",
-        hoveredBackgroundColor: "#3f3f3f",
+        backgroundColor: "#242424",
+        hoveredBackgroundColor: "#2f2f2f",
         color: "#ddd",
         hoveredColor: "#dfdfdf",
       };
@@ -100,7 +100,7 @@ export const Button: React.FC<{
 );
 
 export const LoadingBox: React.FC<Record<never, never>> = (prop) => (
-  <div css={{ display: "grid" }}>
+  <div css={{ display: "grid", overflow: "hidden" }}>
     {prop.children}
     <LoadingIcon css={{ justifySelf: "center" }} />
   </div>

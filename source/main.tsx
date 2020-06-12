@@ -19,7 +19,7 @@ ReactDOM.render(
   <React.StrictMode>
     <Context.Provider value={new StyleSheetRenderer()}>
       <App
-        urlData={
+        initUrlData={
           common.urlDataAndAccessTokenFromUrl(new URL(window.location.href))
             .urlData
         }
