@@ -1,30 +1,25 @@
 {
   "extends": [
-    "eslint:recommended",
+    "eslint:all",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:prettier/recommended",
-    "prettier/@typescript-eslint"
+    "prettier/@typescript-eslint",
+    "plugin:react/all"
   ],
-  "plugins": ["@typescript-eslint", "react-hooks"],
-  "env": { "node": true, "es6": true },
+  "plugins": ["@typescript-eslint", "react", "react-hooks"],
+  "env": { "browser": true, "node": true, "es6": true },
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
     "sourceType": "module",
-    "project": "./typeScript/tsconfig.json"
+    "project": "./source/tsconfig.json"
   },
   "rules": {
-    "no-template-curly-in-string": ["error"],
-    "eqeqeq": ["error", "always"],
-    "no-caller": ["error"],
     "no-constant-condition": ["error", { "checkLoops": false }],
     "no-else-return": ["error", { "allowElseIf": false }],
-    "no-eval": ["error"],
-    "no-extend-native": ["error"],
-    "no-implicit-coercion": ["error"],
-    "prefer-arrow-callback": ["error"],
-    "camelcase": ["error"],
-    "curly": ["error", "all"],
     "@typescript-eslint/restrict-plus-operands": [
       "error",
       { "checkCompoundAssignments": true }
@@ -39,6 +34,11 @@
     "@typescript-eslint/require-array-sort-compare": ["error"],
     "@typescript-eslint/no-use-before-define": ["error", { "variables": false }],
     "react-hooks/rules-of-hooks": ["error"],
-    "react-hooks/exhaustive-deps": ["error"]
+    "react/jsx-indent": ["off"],
+    "react/function-component-definition": ["off"],
+    "react/jsx-indent-props": ["off"],
+    "react/jsx-filename-extension": ["error", { "extensions": [".tsx"] }],
+    "react/jsx-no-literals": ["off"],
+    "react/jsx-one-expression-per-line": ["off"]
   }
 }

@@ -1,14 +1,12 @@
 /** @jsx jsx */
 
 import * as React from "react";
-import * as ui from "./ui";
 import { data } from "definy-common";
 import * as common from "definy-common";
-import { SidePanel } from "./sidePanel";
-import { home } from "./home";
-import { about } from "./about";
+import { SidePanel } from "./SidePanel";
+import { Home } from "./Home";
+import { About } from "./About";
 import { ProjectData } from "./resource";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from "react-free-style";
 
 const getWindowDimensions = () => ({
@@ -103,22 +101,26 @@ export const App: React.FC<{ urlData: data.UrlData }> = (prop) => {
   }, []);
 
   return (
-    <div css={{ height: "100%" }}>
+    <div
+      css={{ height: "100%", display: "grid", gridTemplateColumns: "auto 1fr" }}
+    >
       <SidePanel urlData={nowUrlData} onJump={onJump} />
+      <MainPanel urlData={nowUrlData} projectData={projectData} />
     </div>
   );
 };
+App.displayName = "App";
 
-const mainPanel = (
-  urlData: data.UrlData,
-  projectData: ProjectData
-): ui.Panel => {
-  switch (urlData.location._) {
+const MainPanel: React.FC<{
+  urlData: data.UrlData;
+  projectData: ProjectData;
+}> = (prop) => {
+  switch (prop.urlData.location._) {
     case "Home":
-      return home(projectData);
+      return <Home projectData={prop.projectData} />;
     case "About":
-      return about();
+      return <About />;
     default:
-      return home(projectData);
+      return <div>他のページは準備中</div>;
   }
 };

@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { App } from "./app";
+import { App } from "./App";
 import { Context, StyleSheetRenderer } from "react-free-style";
 import * as common from "definy-common";
 

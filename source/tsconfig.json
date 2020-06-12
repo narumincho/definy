@@ -6,5 +6,6 @@
     "moduleResolution": "Node",
     "newLine": "LF",
     "jsx": "react",
+    "forceConsistentCasingInFileNames": true
   }
 }

@@ -3,7 +3,6 @@
 import * as ui from "./ui";
 import { data } from "definy-common";
 import * as React from "react";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from "react-free-style";
 
 const sidePanelWidth = 260;
@@ -34,3 +33,5 @@ export const SidePanel: React.FC<{
     </ui.Link>
   </div>
 );
+
+SidePanel.displayName = "SidePanel";
