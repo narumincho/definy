@@ -1,56 +1,44 @@
-# Definy
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-![Definyのスクリーンショット](https://repository-images.githubusercontent.com/168463361/72534f00-ec72-11e9-94f3-370ab473bc28)
+## Available Scripts
 
-Definy is Web App for Web App.
+In the project directory, you can run:
 
-[Latest Version](https://definy.app/?hl=en)
+### `npm start`
 
-[Old Version](https://definy-old.web.app/)
+Runs the app in the development mode.<br />
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-ゲームとツールを手軽に作れて公開できるプログラミング言語とエディタ、ゲームエンジン、SNS。[Elm](https://elm-lang.org/)でできている Web アプリ。**まだ、ぜんぜんできていない**
+The page will reload if you make edits.<br />
+You will also see any lint errors in the console.
 
-[ここ](https://definy.app/?hl=ja)で動作を確認できる
+### `npm test`
 
-[古いバージョン](https://definy-old.web.app/)では WebAssembly を使って数値の足し算、引き算、掛け算ができる
+Launches the test runner in the interactive watch mode.<br />
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-- [narumincho/definy-functions](https://github.com/narumincho/definy-functions)  
-Cloud Functions for Firestoreでの処理
+### `npm run build`
 
-- [narumincho/definy-common](https://github.com/narumincho/definy-common)  
-共通の型と処理
+Builds the app for production to the `build` folder.<br />
+It correctly bundles React in production mode and optimizes the build for the best performance.
 
-## 特徴
+The build is minified and the filenames include the hashes.<br />
+Your app is ready to be deployed!
 
--   インストールの必要なし。web ブラウザで動く
--   web ブラウザで動くので多くの端末で動く
--   エディタが付く
--   言語仕様がシンプル
--   全てが不変データ、動作が予想しやすい
--   実行時エラーがかなり少ない
--   コード整形・圧縮ツールが不要
--   Git より良いもの。意味の通ったバージョン管理システムがつく
--   文法エラー、参照不明のエラーがない
--   一部できていなくても式の評価結果を見れる
--   式の評価過程を手軽に見れる
--   関数の実行結果や例をリアルタイムでグラフや表で表示してくれる
--   独自のリテラルを作れる
--   代数的データ構造で型を定義するのでありえない状態を防げる
--   画像や音声、3D モデルをプリミティブに扱える
--   配列は参照…とかを気にしなくて良い
--   キーコンフィグ機能が自動でつく
--   マクロ、TAS 機能、RTA タイマーが使える
--   評価関数を用意したらゲームの AI(強化学習を使って)が作れる
--   Chrome で、Google 翻訳が使える。海外のゲームを日本語でできる
--   海外の配信者のゲームの日本語版で見れる
--   配信者のゲームの状態を受け取って、そこからゲームを再開できる
--   全てのゲームとツールのコードはプチコン 3 号のようにオープン。画面からのトレースで生成元が分かる
+See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-## フォルダとファイルの説明
+### `npm run eject`
 
-- /.github: Firebase Hostingへのデプロイの処理が書かれている
-- /elm: Elmで書かれた主なコード
-- /static: 静的なファイルが置かれている
-- /typeScript: TypeScriptで書かれたブラウザのAPIを呼ぶようなコード
-- /firebase.json: サーバーでファイルをどのように扱うかの設定が書かれている
-- /index.html: Parcelで使うエントリーのファイル(リリース時には使わない)
+**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+
+If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+
+You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+
+## Learn More
+
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+
+To learn React, check out the [React documentation](https://reactjs.org/).

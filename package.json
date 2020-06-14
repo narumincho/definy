@@ -1,37 +1,36 @@
 {
   "name": "definy",
-  "version": "0.0.0",
-  "description": "definy is web app for web app",
-  "author": "narumincho",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/narumincho/Definy"
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@types/jest": "26.0.0",
+    "@types/node": "14.0.3",
+    "@types/react": "16.9.36",
+    "@types/react-dom": "16.9.8",
+    "react": "16.13.1",
+    "react-dom": "16.13.1",
+    "react-scripts": "3.4.1",
+    "typescript": "3.9.5"
   },
   "scripts": {
-    "debugInLocal": "node debugInLocal.js"
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "storybook": "start-storybook -p 9009 -s public"
   },
-  "license": "Apache-2.0",
-  "devDependencies": {
-    "@types/react": "^16.9.35",
-    "@types/react-dom": "^16.9.8",
-    "@typescript-eslint/eslint-plugin": "^3.1.0",
-    "@typescript-eslint/parser": "^3.1.0",
-    "eslint": "^7.1.0",
-    "eslint-config-prettier": "^6.11.0",
-    "eslint-plugin-prettier": "^3.1.3",
-    "eslint-plugin-react": "^7.20.0",
-    "eslint-plugin-react-hooks": "^4.0.4",
-    "parcel": "^1.12.4",
-    "prettier": "^2.0.5",
-    "typescript": "^3.9.3"
+  "eslintConfig": {
+    "extends": "react-app"
   },
   "browserslist": [
-    "last 1 Chrome versions"
+    "last 1 chrome version",
+    "last 1 firefox version",
+    "last 1 safari version"
   ],
-  "dependencies": {
-    "definy-common": "^0.2.0",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
-    "react-free-style": "^11.0.0"
+  "devDependencies": {
+    "@storybook/addon-actions": "5.3.19",
+    "@storybook/addons": "5.3.19",
+    "@storybook/preset-create-react-app": "3.0.1",
+    "@storybook/react": "5.3.19",
+    "prettier": "2.0.5"
   }
 }
