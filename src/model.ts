@@ -18,12 +18,10 @@ export type Resource<T> =
   | { _: "Loaded"; snapshot: T }
   | { _: "NotFound" };
 
-export type ProjectData = ReadonlyMap<ProjectId, Resource<ProjectSnapshot>>;
-
 export type Model = {
   logInState: LogInState;
   language: Language;
   clientMode: ClientMode;
-  projectData: ProjectData;
+  projectData: ReadonlyMap<ProjectId, Resource<ProjectSnapshot>>;
   onJump: (urlData: UrlData) => void;
 };
