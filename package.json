@@ -1,36 +1,212 @@
 {
   "name": "definy",
   "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@types/jest": "26.0.0",
-    "@types/node": "14.0.3",
-    "@types/react": "16.9.36",
-    "@types/react-dom": "16.9.8",
-    "react": "16.13.1",
-    "react-dom": "16.13.1",
-    "react-scripts": "3.4.1",
-    "typescript": "3.9.5"
+  "description": "definy is web app for web app",
+  "author": "narumincho",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/narumincho/Definy"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
     "storybook": "start-storybook -p 9009 -s public"
-  },
-  "eslintConfig": {
-    "extends": "react-app"
   },
   "browserslist": [
     "last 1 chrome version",
     "last 1 firefox version",
     "last 1 safari version"
   ],
+  "dependencies": {
+    "@types/jest": "26.0.0",
+    "@types/node": "14.0.3",
+    "@types/react": "16.9.36",
+    "@types/react-dom": "16.9.8",
+    "definy-common": "^0.2.0",
+    "react": "16.13.1",
+    "react-dom": "16.13.1",
+    "react-free-style": "^11.0.1",
+    "react-scripts": "3.4.1",
+    "typescript": "3.9.5"
+  },
   "devDependencies": {
     "@storybook/addon-actions": "5.3.19",
     "@storybook/addons": "5.3.19",
     "@storybook/preset-create-react-app": "3.0.1",
     "@storybook/react": "5.3.19",
+    "@typescript-eslint/eslint-plugin": "^3.2.0",
+    "@typescript-eslint/parser": "^3.2.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-prettier": "^3.1.3",
+    "eslint-plugin-react": "^7.20.0",
+    "eslint-plugin-react-hooks": "^4.0.4",
     "prettier": "2.0.5"
+  },
+  "eslintConfig": {
+    "extends": [
+      "eslint:all",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:prettier/recommended",
+      "prettier/@typescript-eslint",
+      "plugin:react/all"
+    ],
+    "plugins": [
+      "@typescript-eslint",
+      "react",
+      "react-app",
+      "react-hooks"
+    ],
+    "env": {
+      "browser": true,
+      "node": true,
+      "es6": true
+    },
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "ecmaFeatures": {
+        "jsx": true
+      },
+      "sourceType": "module",
+      "project": "./tsconfig.json"
+    },
+    "rules": {
+      "no-constant-condition": [
+        "error",
+        {
+          "checkLoops": false
+        }
+      ],
+      "no-else-return": [
+        "error",
+        {
+          "allowElseIf": false
+        }
+      ],
+      "one-var": [
+        "error",
+        "never"
+      ],
+      "sort-keys": [
+        "off"
+      ],
+      "no-magic-numbers": [
+        "off"
+      ],
+      "max-lines-per-function": [
+        "off"
+      ],
+      "no-undefined": [
+        "off"
+      ],
+      "default-case": [
+        "off"
+      ],
+      "no-ternary": [
+        "off"
+      ],
+      "id-length": [
+        "off"
+      ],
+      "consistent-return": [
+        "off"
+      ],
+      "new-cap": [
+        "off"
+      ],
+      "no-use-before-define": [
+        "off"
+      ],
+      "max-lines": [
+        "off"
+      ],
+      "no-console": [
+        "off"
+      ],
+      "max-params": [
+        "off"
+      ],
+      "prefer-template": [
+        "off"
+      ],
+      "@typescript-eslint/restrict-plus-operands": [
+        "error",
+        {
+          "checkCompoundAssignments": true
+        }
+      ],
+      "@typescript-eslint/array-type": [
+        "error",
+        {
+          "default": "generic"
+        }
+      ],
+      "@typescript-eslint/consistent-type-definitions": [
+        "error",
+        "type"
+      ],
+      "@typescript-eslint/no-dynamic-delete": [
+        "error"
+      ],
+      "@typescript-eslint/no-require-imports": [
+        "error"
+      ],
+      "@typescript-eslint/no-unnecessary-qualifier": [
+        "error"
+      ],
+      "@typescript-eslint/no-unused-expressions": [
+        "error"
+      ],
+      "@typescript-eslint/prefer-for-of": [
+        "error"
+      ],
+      "@typescript-eslint/require-array-sort-compare": [
+        "error"
+      ],
+      "@typescript-eslint/no-use-before-define": [
+        "error",
+        {
+          "variables": false
+        }
+      ],
+      "react-hooks/rules-of-hooks": [
+        "error"
+      ],
+      "react/jsx-indent": [
+        "off"
+      ],
+      "react/function-component-definition": [
+        "off"
+      ],
+      "react/jsx-indent-props": [
+        "off"
+      ],
+      "react/jsx-filename-extension": [
+        "error",
+        {
+          "extensions": [
+            ".tsx"
+          ]
+        }
+      ],
+      "react/jsx-no-literals": [
+        "off"
+      ],
+      "react/jsx-one-expression-per-line": [
+        "off"
+      ],
+      "react/jsx-handler-names": [
+        "off"
+      ],
+      "react/jsx-max-props-per-line": [
+        "off"
+      ],
+      "react/no-multi-comp": [
+        "off"
+      ],
+      "react/jsx-no-bind": [
+        "off"
+      ]
+    }
   }
 }
