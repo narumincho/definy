@@ -14,10 +14,12 @@ import {
   String,
   UrlData,
 } from "definy-common/source/data";
-import { LogInState, Model, ProjectData } from "./model";
+import { LogInState, Model } from "./model";
+import { Resource } from "./data";
 import {
   urlDataAndAccessTokenFromUrl,
   urlDataAndAccessTokenToUrl,
+  data,
 } from "definy-common";
 import { About } from "./About";
 import { Home } from "./Home";
@@ -59,7 +61,7 @@ const callApi = <responseType extends unknown>(
     .then((response) => response.arrayBuffer())
     .then((response) => codec.decode(0, new Uint8Array(response)).result);
 
-type Action =
+type ProjectDataAction =
   | {
       _: "ResponseAllProjectList";
       list: ReadonlyArray<ProjectSnapshotAndId>;
@@ -94,13 +96,16 @@ export const App: React.FC<{ initUrlData: UrlData }> = (prop) => {
     }
   );
   const [projectData, dispatchProject] = React.useReducer(
-    (state: ProjectData, action: Action): ProjectData => {
+    (
+      state: ReadonlyMap<data.ProjectId, Resource<data.ProjectSnapshot>>,
+      action: ProjectDataAction
+    ): ReadonlyMap<data.ProjectId, Resource<data.ProjectSnapshot>> => {
       switch (action._) {
         case "ResponseAllProjectList":
           return new Map(
             action.list.map((project) => [
               project.id,
-              { _: "Loaded", snapshot: project.snapshot },
+              Resource.Loaded(project.snapshot),
             ])
           );
         case "ResponseProject": {
@@ -108,8 +113,8 @@ export const App: React.FC<{ initUrlData: UrlData }> = (prop) => {
           newMap.set(
             action.response.id,
             action.response.snapshotMaybe._ === "Just"
-              ? { _: "Loaded", snapshot: action.response.snapshotMaybe.value }
-              : { _: "NotFound" }
+              ? Resource.Loaded(action.response.snapshotMaybe.value)
+              : Resource.NotFound()
           );
           return newMap;
         }
@@ -117,20 +122,27 @@ export const App: React.FC<{ initUrlData: UrlData }> = (prop) => {
     },
     new Map()
   );
+  const [
+    isRequestingAllProject,
+    dispatchIsRequestingAllProject,
+  ] = React.useState(false);
 
   React.useEffect(() => {
-    history.pushState(
+    window.history.pushState(
       undefined,
       "",
       urlDataAndAccessTokenToUrl(urlData, Maybe.Nothing()).toString()
     );
-  }, [urlData]);
-  React.useEffect(() => {
-    addEventListener("popstate", () => {
+    window.addEventListener("popstate", () => {
       onJump(
         urlDataAndAccessTokenFromUrl(new URL(window.location.href)).urlData
       );
     });
+  }, [urlData]);
+  React.useEffect(() => {
+    if (isRequestingAllProject) {
+      return;
+    }
     callApi("getAllProject", [], List.codec(ProjectSnapshotAndId.codec)).then(
       (projectList) => {
         dispatchProject({
@@ -139,6 +151,7 @@ export const App: React.FC<{ initUrlData: UrlData }> = (prop) => {
         });
       }
     );
+    dispatchIsRequestingAllProject(true);
   }, []);
   React.useEffect(() => {
     switch (logInState._) {
@@ -195,6 +208,7 @@ export const App: React.FC<{ initUrlData: UrlData }> = (prop) => {
               logInState,
               projectData,
               onJump,
+              allProjectDataRequestState: "Requesting",
             }}
             onRequestLogIn={(provider) => {
               dispatchLogInState({ _: "RequestLogInUrl", provider });
@@ -208,6 +222,7 @@ export const App: React.FC<{ initUrlData: UrlData }> = (prop) => {
               logInState,
               projectData,
               onJump,
+              allProjectDataRequestState: "Requesting",
             }}
           />
         </div>

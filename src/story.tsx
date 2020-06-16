@@ -23,6 +23,7 @@ export const SidePanelComp = () => (
         logInState: { _: "Guest" },
         onJump: () => {},
         projectData: new Map(),
+        allProjectDataRequestState: "Respond",
       }}
     />
   </Context.Provider>
@@ -38,6 +39,7 @@ export const HomeComp = () => (
         logInState: { _: "Guest" },
         onJump: () => {},
         projectData: new Map(),
+        allProjectDataRequestState: "Respond",
       }}
     />
   </Context.Provider>
@@ -114,6 +116,7 @@ export const HomeWithProject = () => (
           sampleProject[1],
           sampleProject[2],
         ]),
+        allProjectDataRequestState: "Respond",
       }}
     />
   </Context.Provider>

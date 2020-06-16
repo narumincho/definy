@@ -14,40 +14,47 @@ import { jsx } from "react-free-style";
 export const Home: React.FC<{ model: Model }> = (prop) => {
   return (
     <div css={{ display: "grid", overflow: "hidden" }}>
-      <div
-        css={{
-          gridColumn: "1 / 2",
-          gridRow: "1 / 2",
-          overflow: "hidden",
-          overflowWrap: "break-word",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          justifyContent: "center",
-        }}
-      >
-        {prop.model.projectData.size === 0
-          ? "プロジェクトが1つもありません"
-          : [...prop.model.projectData].map(([id, project]) => {
-              switch (project._) {
-                case "Loaded":
-                  return (
-                    <ProjectItem id={id} project={project.snapshot} key={id} />
-                  );
-                case "Loading":
-                  return <div key={id}>id={id}</div>;
-                case "NotFound":
-                  return (
-                    <div key={id}>id={id}のプロジェクトが見つからなかった</div>
-                  );
-              }
-            })}
-      </div>
+      {prop.model.allProjectDataRequestState === "Requesting" ? (
+        <div>プロジェクトの一覧を取得中</div>
+      ) : (
+        <LoadedView model={prop.model} />
+      )}
       {prop.model.logInState._ === "Guest" ? undefined : (
         <CreateProjectButton model={prop.model} />
       )}
     </div>
   );
 };
+
+const LoadedView: React.FC<{ model: Model }> = (prop) => (
+  <div
+    css={{
+      gridColumn: "1 / 2",
+      gridRow: "1 / 2",
+      overflow: "hidden",
+      overflowWrap: "break-word",
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr 1fr",
+      alignSelf: "start",
+      justifySelf: "center",
+    }}
+  >
+    {prop.model.projectData.size === 0
+      ? "プロジェクトが1つもありません"
+      : [...prop.model.projectData].map(([id, project]) => {
+          switch (project._) {
+            case "Loaded":
+              return <ProjectItem id={id} project={project.data} key={id} />;
+            case "Loading":
+              return <div key={id}>id={id}</div>;
+            case "NotFound":
+              return (
+                <div key={id}>id={id}のプロジェクトが見つからなかった</div>
+              );
+          }
+        })}
+  </div>
+);
 
 const ProjectItem: React.FC<{ id: ProjectId; project: ProjectSnapshot }> = (
   prop
@@ -57,7 +64,7 @@ const ProjectItem: React.FC<{ id: ProjectId; project: ProjectSnapshot }> = (
       padding: 8,
       display: "grid",
       gridTemplateRows: "128px auto",
-      maxWidth: 256,
+      width: 256,
     }}
   >
     <div css={{ border: "solid 1px white" }}>画像</div>
