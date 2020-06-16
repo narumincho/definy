@@ -26,6 +26,7 @@ import { Home } from "./Home";
 import { LoadingBox } from "./ui";
 import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
+import { Debug } from "./story";
 
 const getWindowDimensions = () => ({
   width: window.innerWidth,
@@ -279,6 +280,8 @@ const MainPanel: React.FC<{
       return <Home model={prop.model} />;
     case "About":
       return <About />;
+    case "UserList":
+      return <Debug />;
     default:
       return <div>他のページは準備中</div>;
   }
