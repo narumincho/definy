@@ -15,7 +15,9 @@ export const Home: React.FC<{ model: Model }> = (prop) => {
   return (
     <div css={{ display: "grid", overflow: "hidden" }}>
       {prop.model.allProjectDataRequestState === "Requesting" ? (
-        <div>プロジェクトの一覧を取得中</div>
+        <div css={{ display: "grid", overflowY: "scroll" }}>
+          <LoadingDummyView />
+        </div>
       ) : (
         <LoadedView model={prop.model} />
       )}
@@ -26,6 +28,41 @@ export const Home: React.FC<{ model: Model }> = (prop) => {
   );
 };
 
+const LoadingDummyView: React.FC<Record<never, never>> = () => {
+  const grayTheme = ui.areaThemeToValue("Gray");
+  return (
+    <div
+      css={{
+        gridColumn: "1 / 2",
+        gridRow: "1 / 2",
+        overflow: "hidden",
+        overflowWrap: "break-word",
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr 1fr",
+        alignSelf: "start",
+        justifySelf: "center",
+        gap: 8,
+      }}
+    >
+      {new Array(30).fill(0).map((_, index) => (
+        <div
+          css={{
+            padding: 8,
+            display: "grid",
+            gridTemplateRows: "128px auto",
+            width: 256,
+            backgroundColor: grayTheme.backgroundColor,
+            color: grayTheme.color,
+          }}
+          key={index.toString()}
+        >
+          <div css={{ backgroundColor: "#555" }} />
+          <div>●●●● ●●● ●●●●</div>
+        </div>
+      ))}
+    </div>
+  );
+};
 const LoadedView: React.FC<{ model: Model }> = (prop) => (
   <div
     css={{
@@ -37,6 +74,7 @@ const LoadedView: React.FC<{ model: Model }> = (prop) => (
       gridTemplateColumns: "1fr 1fr 1fr",
       alignSelf: "start",
       justifySelf: "center",
+      gap: 8,
     }}
   >
     {prop.model.projectData.size === 0
@@ -44,7 +82,14 @@ const LoadedView: React.FC<{ model: Model }> = (prop) => (
       : [...prop.model.projectData].map(([id, project]) => {
           switch (project._) {
             case "Loaded":
-              return <ProjectItem id={id} key={id} project={project.data} />;
+              return (
+                <ProjectItem
+                  id={id}
+                  key={id}
+                  model={prop.model}
+                  project={project.data}
+                />
+              );
             case "Loading":
               return <div key={id}>id={id}</div>;
             case "NotFound":
@@ -56,16 +101,21 @@ const LoadedView: React.FC<{ model: Model }> = (prop) => (
   </div>
 );
 
-const ProjectItem: React.FC<{ id: ProjectId; project: ProjectSnapshot }> = (
-  prop
-) => (
-  <div
+const ProjectItem: React.FC<{
+  model: Model;
+  id: ProjectId;
+  project: ProjectSnapshot;
+}> = (prop) => (
+  <ui.Link
+    areaTheme="Gray"
     css={{
       padding: 8,
       display: "grid",
       gridTemplateRows: "128px auto",
       width: 256,
     }}
+    onJump={() => {}}
+    urlData={{ ...prop.model, location: Location.Project(prop.id) }}
   >
     <div css={{ border: "solid 1px white" }}>画像</div>
     <div
@@ -79,7 +129,7 @@ const ProjectItem: React.FC<{ id: ProjectId; project: ProjectSnapshot }> = (
       <div css={{ width: 32, height: 32, backgroundColor: "orange" }}>icon</div>
       {prop.project.name}
     </div>
-  </div>
+  </ui.Link>
 );
 
 const CreateProjectButton: React.FC<{ model: Model }> = (prop) => (

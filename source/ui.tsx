@@ -138,3 +138,18 @@ export const GitHubIcon: React.FC<{ color: string }> = (prop) => (
     />
   </svg>
 );
+
+export const ActiveDiv: React.FC<{ css?: Css }> = (prop) => {
+  const activeTheme = areaThemeToValue("Active");
+  return (
+    <div
+      css={{
+        ...prop.css,
+        backgroundColor: activeTheme.backgroundColor,
+        color: activeTheme.color,
+      }}
+    >
+      {prop.children}
+    </div>
+  );
+};

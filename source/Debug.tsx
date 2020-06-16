@@ -115,17 +115,15 @@ export const Debug: React.FC<Record<never, never>> = () => {
         {allTab.map((tabName) => {
           if (tabName === tab) {
             return (
-              <div
+              <ui.ActiveDiv
                 css={{
                   fontSize: 16,
                   padding: 8,
-                  backgroundColor: "orange",
-                  color: "#000",
                 }}
                 key={tabName}
               >
                 {tabName}
-              </div>
+              </ui.ActiveDiv>
             );
           }
           return (
