@@ -1,0 +1,52 @@
+<!doctype html>
+<!-- for debug -->
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Definy</title>
+    <link rel="icon" href="./static/icon.png">
+    <meta name="description" content="ブラウザで動作する革新的なプログラミング言語">
+    <style>
+        /*
+            Hack typeface https://github.com/source-foundry/Hack
+            License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
+        */
+
+        @font-face {
+            font-family: "Hack";
+            font-weight: 400;
+            font-style: normal;
+            src: url("./static/hack-regular-subset.woff2") format("woff2");
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            height: 100%;
+            margin: 0;
+            background-color: black;
+            display: grid;
+            color: white;
+        }
+
+        div[data-elm-hot="true"] {
+            display: grid;
+            overflow: auto;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+    </style>
+    <script defer src="./src/index.tsx"></script>
+</head>
+
+<body>
+    読み込み中……
+</body>
+
+</html>

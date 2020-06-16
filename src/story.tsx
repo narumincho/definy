@@ -1,11 +1,11 @@
 import * as React from "react";
 import * as ui from "./ui";
-import { SidePanel } from "./SidePanel";
-import { Home } from "./Home";
-import { About } from "./About";
-import { data } from "definy-common";
 import { Context, StyleSheetRenderer } from "react-free-style";
+import { About } from "./About";
+import { Home } from "./Home";
 import { Resource } from "./data";
+import { SidePanel } from "./SidePanel";
+import { data } from "definy-common";
 
 type Tab = "SidePanel" | "Home" | "HomeWithProject";
 
@@ -18,6 +18,7 @@ export const Debug: React.FC<Record<never, never>> = () => {
           onClick={() => {
             dispatchTab("SidePanel");
           }}
+          type="button"
         >
           SidePanel
         </button>
@@ -25,6 +26,7 @@ export const Debug: React.FC<Record<never, never>> = () => {
           onClick={() => {
             dispatchTab("Home");
           }}
+          type="button"
         >
           Home
         </button>
@@ -32,6 +34,7 @@ export const Debug: React.FC<Record<never, never>> = () => {
           onClick={() => {
             dispatchTab("HomeWithProject");
           }}
+          type="button"
         >
           HomeWithProject
         </button>
@@ -61,7 +64,6 @@ export const SidePanelComp = () => (
   <Context.Provider value={new StyleSheetRenderer()}>
     <style>{ui.commonStyle}</style>
     <SidePanel
-      onRequestLogIn={() => {}}
       model={{
         clientMode: "DebugMode",
         language: "English",
@@ -70,6 +72,7 @@ export const SidePanelComp = () => (
         projectData: new Map(),
         allProjectDataRequestState: "Respond",
       }}
+      onRequestLogIn={() => {}}
     />
   </Context.Provider>
 );
