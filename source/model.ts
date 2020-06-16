@@ -26,5 +26,6 @@ export type Model = {
   clientMode: ClientMode;
   projectData: ReadonlyMap<ProjectId, Resource<ProjectSnapshot>>;
   onJump: (urlData: UrlData) => void;
-  allProjectDataRequestState: RequestState;
+  allProjectRequestState: RequestState;
+  requestAllProject: () => void;
 };

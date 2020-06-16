@@ -14,7 +14,7 @@ import {
   String,
   UrlData,
 } from "definy-common/source/data";
-import { LogInState, Model } from "./model";
+import { LogInState, Model, RequestState } from "./model";
 import {
   data,
   urlDataAndAccessTokenFromUrl,
@@ -124,9 +124,9 @@ export const App: React.FC<{ initUrlData: UrlData }> = (prop) => {
     new Map()
   );
   const [
-    isRequestingAllProject,
-    dispatchIsRequestingAllProject,
-  ] = React.useState(false);
+    allProjectRequestState,
+    dispatchAllProjectRequestState,
+  ] = React.useState<RequestState>("NotRequest");
 
   React.useEffect(() => {
     window.history.pushState(
@@ -141,19 +141,24 @@ export const App: React.FC<{ initUrlData: UrlData }> = (prop) => {
     });
   }, [urlData]);
   React.useEffect(() => {
-    if (isRequestingAllProject) {
-      return;
-    }
-    callApi("getAllProject", [], List.codec(ProjectSnapshotAndId.codec)).then(
-      (projectList) => {
-        dispatchProject({
-          _: "ResponseAllProjectList",
-          list: projectList,
+    switch (allProjectRequestState) {
+      case "NotRequest":
+        return;
+      case "WaitRequest":
+        dispatchAllProjectRequestState("Requesting");
+        callApi(
+          "getAllProject",
+          [],
+          List.codec(ProjectSnapshotAndId.codec)
+        ).then((projectList) => {
+          dispatchProject({
+            _: "ResponseAllProjectList",
+            list: projectList,
+          });
+          dispatchAllProjectRequestState("Respond");
         });
-      }
-    );
-    dispatchIsRequestingAllProject(true);
-  }, []);
+    }
+  }, [allProjectRequestState]);
   React.useEffect(() => {
     switch (logInState._) {
       case "Guest":
@@ -179,6 +184,18 @@ export const App: React.FC<{ initUrlData: UrlData }> = (prop) => {
     }
   }, [logInState]);
 
+  const model: Model = {
+    clientMode: urlData.clientMode,
+    language: urlData.language,
+    logInState,
+    projectData,
+    onJump,
+    allProjectRequestState,
+    requestAllProject: () => {
+      dispatchAllProjectRequestState("WaitRequest");
+    },
+  };
+
   switch (logInState._) {
     case "PreparingLogInUrlRequest":
     case "RequestingLogInUrl":
@@ -203,29 +220,12 @@ export const App: React.FC<{ initUrlData: UrlData }> = (prop) => {
           }}
         >
           <SidePanel
-            model={{
-              clientMode: urlData.clientMode,
-              language: urlData.language,
-              logInState,
-              projectData,
-              onJump,
-              allProjectDataRequestState: "Requesting",
-            }}
+            model={model}
             onRequestLogIn={(provider) => {
               dispatchLogInState({ _: "RequestLogInUrl", provider });
             }}
           />
-          <MainPanel
-            location={urlData.location}
-            model={{
-              clientMode: urlData.clientMode,
-              language: urlData.language,
-              logInState,
-              projectData,
-              onJump,
-              allProjectDataRequestState: "Requesting",
-            }}
-          />
+          <MainPanel location={urlData.location} model={model} />
         </div>
       );
   }

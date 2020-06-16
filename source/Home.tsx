@@ -12,15 +12,22 @@ import { Model } from "./model";
 import { jsx } from "react-free-style";
 
 export const Home: React.FC<{ model: Model }> = (prop) => {
+  React.useEffect(() => {
+    switch (prop.model.allProjectRequestState) {
+      case "NotRequest":
+        prop.model.requestAllProject();
+    }
+  });
+
   return (
     <div css={{ display: "grid", overflow: "hidden" }}>
-      {prop.model.allProjectDataRequestState === "Requesting" ? (
-        <div css={{ display: "grid", overflowY: "scroll" }}>
+      <div css={{ display: "grid", overflowY: "scroll" }}>
+        {prop.model.allProjectRequestState === "Respond" ? (
+          <LoadedView model={prop.model} />
+        ) : (
           <LoadingDummyView />
-        </div>
-      ) : (
-        <LoadedView model={prop.model} />
-      )}
+        )}
+      </div>
       {prop.model.logInState._ === "Guest" ? undefined : (
         <CreateProjectButton model={prop.model} />
       )}
