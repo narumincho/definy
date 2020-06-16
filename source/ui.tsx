@@ -138,32 +138,3 @@ export const GitHubIcon: React.FC<{ color: string }> = (prop) => (
     />
   </svg>
 );
-
-export const commonStyle: string = `
-/*
-Hack typeface https://github.com/source-foundry/Hack
-License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
-*/
-
-@font-face {
-font-family: "Hack";
-font-weight: 400;
-font-style: normal;
-src: url("./static/hack-regular-subset.woff2") format("woff2");
-}
-
-html {
-height: 100%;
-}
-
-body {
-height: 100%;
-margin: 0;
-background-color: black;
-display: grid;
-color: white;
-}
-
-* {
-box-sizing: border-box;
-}`;

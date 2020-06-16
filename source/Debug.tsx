@@ -1,97 +1,13 @@
+/** @jsx jsx */
+
 import * as React from "react";
 import * as ui from "./ui";
-import { Context, StyleSheetRenderer } from "react-free-style";
 import { About } from "./About";
 import { Home } from "./Home";
 import { Resource } from "./data";
 import { SidePanel } from "./SidePanel";
 import { data } from "definy-common";
-
-type Tab = "SidePanel" | "Home" | "HomeWithProject";
-
-export const Debug: React.FC<Record<never, never>> = () => {
-  const [tab, dispatchTab] = React.useState<Tab>("SidePanel");
-  return (
-    <div>
-      <div>
-        <button
-          onClick={() => {
-            dispatchTab("SidePanel");
-          }}
-          type="button"
-        >
-          SidePanel
-        </button>
-        <button
-          onClick={() => {
-            dispatchTab("Home");
-          }}
-          type="button"
-        >
-          Home
-        </button>
-        <button
-          onClick={() => {
-            dispatchTab("HomeWithProject");
-          }}
-          type="button"
-        >
-          HomeWithProject
-        </button>
-      </div>
-      <DebugMain tab={tab} />
-    </div>
-  );
-};
-
-const DebugMain: React.FC<{ tab: Tab }> = (prop) => {
-  switch (prop.tab) {
-    case "SidePanel":
-      return <SidePanelComp />;
-    case "Home":
-      return <HomeComp />;
-    case "HomeWithProject":
-      return <HomeWithProject />;
-  }
-};
-
-export default {
-  title: "App",
-  component: { SidePanel, Home },
-};
-
-export const SidePanelComp = () => (
-  <Context.Provider value={new StyleSheetRenderer()}>
-    <style>{ui.commonStyle}</style>
-    <SidePanel
-      model={{
-        clientMode: "DebugMode",
-        language: "English",
-        logInState: { _: "Guest" },
-        onJump: () => {},
-        projectData: new Map(),
-        allProjectDataRequestState: "Respond",
-      }}
-      onRequestLogIn={() => {}}
-    />
-  </Context.Provider>
-);
-
-export const HomeComp = () => (
-  <Context.Provider value={new StyleSheetRenderer()}>
-    <style>{ui.commonStyle}</style>
-    <Home
-      model={{
-        clientMode: "DebugMode",
-        language: "English",
-        logInState: { _: "Guest" },
-        onJump: () => {},
-        projectData: new Map(),
-        allProjectDataRequestState: "Respond",
-      }}
-    />
-  </Context.Provider>
-);
+import { jsx } from "react-free-style";
 
 const sampleProject: ReadonlyArray<[
   data.ProjectId,
@@ -141,9 +57,33 @@ const sampleProject: ReadonlyArray<[
   ],
 ];
 
-export const HomeWithProject = () => (
-  <Context.Provider value={new StyleSheetRenderer()}>
-    <style>{ui.commonStyle}</style>
+const sampleComponentList = {
+  sidePanel: (
+    <SidePanel
+      model={{
+        clientMode: "DebugMode",
+        language: "English",
+        logInState: { _: "Guest" },
+        onJump: () => {},
+        projectData: new Map(),
+        allProjectDataRequestState: "Respond",
+      }}
+      onRequestLogIn={() => {}}
+    />
+  ),
+  home: (
+    <Home
+      model={{
+        clientMode: "DebugMode",
+        language: "English",
+        logInState: { _: "Guest" },
+        onJump: () => {},
+        projectData: new Map(),
+        allProjectDataRequestState: "Respond",
+      }}
+    />
+  ),
+  homeWithProject: (
     <Home
       model={{
         clientMode: "DebugMode",
@@ -158,12 +98,61 @@ export const HomeWithProject = () => (
         allProjectDataRequestState: "Respond",
       }}
     />
-  </Context.Provider>
-);
+  ),
+  about: <About />,
+};
 
-export const AboutComp = () => (
-  <Context.Provider value={new StyleSheetRenderer()}>
-    <style>{ui.commonStyle}</style>
-    <About />
-  </Context.Provider>
-);
+const allTab = Object.keys(sampleComponentList) as ReadonlyArray<
+  keyof typeof sampleComponentList
+>;
+type Tab = keyof typeof sampleComponentList;
+
+export const Debug: React.FC<Record<never, never>> = () => {
+  const [tab, dispatchTab] = React.useState<Tab>("sidePanel");
+  return (
+    <div css={{ display: "grid", gridTemplateColumns: "auto 1fr" }}>
+      <div css={{ display: "grid", alignSelf: "start" }}>
+        {allTab.map((tabName) => {
+          if (tabName === tab) {
+            return (
+              <div
+                css={{
+                  fontSize: 16,
+                  padding: 8,
+                  backgroundColor: "orange",
+                  color: "#000",
+                }}
+                key={tabName}
+              >
+                {tabName}
+              </div>
+            );
+          }
+          return (
+            <ui.Button
+              css={{
+                backgroundColor: "#000",
+                color: "#ddd",
+                border: "none",
+                padding: 8,
+                fontSize: 16,
+              }}
+              key={tabName}
+              onClick={() => {
+                dispatchTab(tabName);
+              }}
+            >
+              {tabName}
+            </ui.Button>
+          );
+        })}
+      </div>
+      {sampleComponentList[tab]}
+    </div>
+  );
+};
+
+export default {
+  title: "App",
+  component: { SidePanel, Home },
+};
