@@ -3,6 +3,7 @@ import * as ReactDOM from "react-dom";
 import * as common from "definy-common";
 import { Context, StyleSheetRenderer } from "react-free-style";
 import { App } from "./App";
+import * as ui from "./ui";
 
 const appElement = document.createElement("div");
 
@@ -14,6 +15,13 @@ document.documentElement.replaceChild(
 document.body.appendChild(appElement);
 appElement.style.height = "100%";
 appElement.style.overflow = "auto";
+const headStyleElement = document.createElement("style");
+headStyleElement.innerText = ui.commonStyle;
+document.head.append(headStyleElement);
+
+console.log(
+  common.urlDataAndAccessTokenFromUrl(new URL(window.location.href)).urlData
+);
 
 ReactDOM.render(
   <React.StrictMode>
