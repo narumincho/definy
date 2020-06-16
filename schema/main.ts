@@ -1,13 +1,13 @@
+import * as codeGen from "js-ts-code-generator";
 import * as nType from "@narumincho/type";
+import * as prettier from "prettier";
 import {
-  Maybe,
   CustomTypeDefinition,
   CustomTypeDefinitionBody,
+  Maybe,
   Type,
 } from "@narumincho/type/distribution/data";
-import * as codeGen from "js-ts-code-generator";
 import { promises as fileSystem } from "fs";
-import * as prettier from "prettier";
 
 export const customTypeList: ReadonlyArray<CustomTypeDefinition> = [
   {

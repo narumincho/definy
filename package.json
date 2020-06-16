@@ -66,7 +66,10 @@
         "jsx": true
       },
       "sourceType": "module",
-      "project": "./tsconfig.json"
+      "project": [
+        "./source/tsconfig.json",
+        "./schema/tsconfig.json"
+      ]
     },
     "rules": {
       "no-constant-condition": [
@@ -125,6 +128,9 @@
         "off"
       ],
       "prefer-template": [
+        "off"
+      ],
+      "spaced-comment": [
         "off"
       ],
       "@typescript-eslint/restrict-plus-operands": [
