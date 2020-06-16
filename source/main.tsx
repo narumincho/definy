@@ -1,9 +1,9 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import * as common from "definy-common";
+import * as ui from "./ui";
 import { Context, StyleSheetRenderer } from "react-free-style";
 import { App } from "./App";
-import * as ui from "./ui";
 
 const appElement = document.createElement("div");
 

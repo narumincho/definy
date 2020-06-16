@@ -5,8 +5,8 @@ import * as ui from "./ui";
 import {
   Language,
   Location,
-  ProjectSnapshot,
   ProjectId,
+  ProjectSnapshot,
 } from "definy-common/source/data";
 import { Model } from "./model";
 import { jsx } from "react-free-style";
@@ -44,7 +44,7 @@ const LoadedView: React.FC<{ model: Model }> = (prop) => (
       : [...prop.model.projectData].map(([id, project]) => {
           switch (project._) {
             case "Loaded":
-              return <ProjectItem id={id} project={project.data} key={id} />;
+              return <ProjectItem id={id} key={id} project={project.data} />;
             case "Loading":
               return <div key={id}>id={id}</div>;
             case "NotFound":

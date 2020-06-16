@@ -133,6 +133,15 @@
       "spaced-comment": [
         "off"
       ],
+      "no-bitwise": [
+        "off"
+      ],
+      "capitalized-comments": [
+        "off"
+      ],
+      "array-callback-return": [
+        "off"
+      ],
       "@typescript-eslint/restrict-plus-operands": [
         "error",
         {

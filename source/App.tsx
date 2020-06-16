@@ -15,18 +15,18 @@ import {
   UrlData,
 } from "definy-common/source/data";
 import { LogInState, Model } from "./model";
-import { Resource } from "./data";
 import {
+  data,
   urlDataAndAccessTokenFromUrl,
   urlDataAndAccessTokenToUrl,
-  data,
 } from "definy-common";
 import { About } from "./About";
+import { Debug } from "./Debug";
 import { Home } from "./Home";
 import { LoadingBox } from "./ui";
+import { Resource } from "./data";
 import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
-import { Debug } from "./story";
 
 const getWindowDimensions = () => ({
   width: window.innerWidth,
