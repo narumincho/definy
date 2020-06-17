@@ -17,7 +17,7 @@
     "last 1 safari version"
   ],
   "dependencies": {
-    "definy-common": "^0.2.0",
+    "definy-common": "^0.2.3",
     "react": "16.13.1",
     "react-dom": "16.13.1",
     "react-free-style": "^11.0.1"

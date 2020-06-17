@@ -1,7 +1,8 @@
 /** @jsx jsx */
 
 import * as React from "react";
-import { LogInState, Model, RequestState } from "./model";
+import { LogInState, Model } from "./model";
+import { RequestState, Resource, Response, ResponseData } from "./data";
 import {
   data,
   urlDataAndAccessTokenFromUrl,
@@ -11,7 +12,6 @@ import { About } from "./About";
 import { Debug } from "./Debug";
 import { Home } from "./Home";
 import { LoadingBox } from "./ui";
-import { Resource } from "./data";
 import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
 
@@ -31,11 +31,14 @@ const callApi = <responseType extends unknown>(
 type ProjectDataAction =
   | {
       _: "ResponseAllProjectList";
-      list: ReadonlyArray<data.ProjectSnapshotAndId>;
+      list: ReadonlyArray<data.IdAndData<data.ProjectId, data.Project>>;
     }
-  | { _: "ResponseProject"; response: data.ProjectResponse };
+  | { _: "ResponseProject"; response: Response<data.ProjectId, data.Project> };
 
-type UserDataAction = { _: "RespondUserData"; response: data.UserResponse };
+type UserDataAction = {
+  _: "RespondUserData";
+  response: Response<data.UserId, data.User>;
+};
 
 export const App: React.FC<{
   accessToken: data.Maybe<data.AccessToken>;
@@ -49,23 +52,23 @@ export const App: React.FC<{
   );
   const [projectData, dispatchProject] = React.useReducer(
     (
-      state: ReadonlyMap<data.ProjectId, Resource<data.ProjectSnapshot>>,
+      state: ReadonlyMap<data.ProjectId, Resource<data.Project>>,
       action: ProjectDataAction
-    ): ReadonlyMap<data.ProjectId, Resource<data.ProjectSnapshot>> => {
+    ): ReadonlyMap<data.ProjectId, Resource<data.Project>> => {
       switch (action._) {
         case "ResponseAllProjectList":
           return new Map(
             action.list.map((project) => [
               project.id,
-              Resource.Loaded(project.snapshot),
+              Resource.Loaded(project.data),
             ])
           );
         case "ResponseProject": {
           const newMap = new Map(state);
           newMap.set(
             action.response.id,
-            action.response.snapshotMaybe._ === "Just"
-              ? Resource.Loaded(action.response.snapshotMaybe.value)
+            action.response.data._ === "Found"
+              ? Resource.Loaded(action.response.data.data)
               : Resource.NotFound()
           );
           return newMap;
@@ -81,16 +84,16 @@ export const App: React.FC<{
 
   const [userData, dispatchUserData] = React.useReducer(
     (
-      state: ReadonlyMap<data.UserId, Resource<data.UserSnapshot>>,
+      state: ReadonlyMap<data.UserId, Resource<data.User>>,
       action: UserDataAction
-    ): ReadonlyMap<data.UserId, Resource<data.UserSnapshot>> => {
+    ): ReadonlyMap<data.UserId, Resource<data.User>> => {
       switch (action._) {
         case "RespondUserData": {
           const newSet = new Map(state);
           newSet.set(
             action.response.id,
-            action.response.snapshotMaybe._ === "Just"
-              ? Resource.Loaded(action.response.snapshotMaybe.value)
+            action.response.data._ === "Found"
+              ? Resource.Loaded(action.response.data.data)
               : Resource.NotFound()
           );
           return newSet;
@@ -127,7 +130,9 @@ export const App: React.FC<{
         callApi(
           "getAllProject",
           [],
-          data.List.codec(data.ProjectSnapshotAndId.codec)
+          data.List.codec(
+            data.IdAndData.codec(data.ProjectId.codec, data.Project.codec)
+          )
         ).then((projectList) => {
           dispatchProject({
             _: "ResponseAllProjectList",
@@ -234,7 +239,7 @@ const MainPanel: React.FC<{
       return <Home model={prop.model} />;
     case "About":
       return <About />;
-    case "UserList":
+    case "Debug":
       return <Debug />;
     default:
       return <div>他のページは準備中</div>;
@@ -280,7 +285,7 @@ const logInEffect = (
       callApi(
         "getUserByAccessToken",
         data.AccessToken.codec.encode(logInState.accessToken),
-        data.UserSnapshotAndId.codec
+        data.IdAndData.codec(data.UserId.codec, data.User.codec)
       ).then((userSnapshotAndId) => {
         dispatchLogInState({
           _: "LoggedIn",
@@ -291,7 +296,7 @@ const logInEffect = (
           _: "RespondUserData",
           response: {
             id: userSnapshotAndId.id,
-            snapshotMaybe: data.Maybe.Just(userSnapshotAndId.snapshot),
+            data: ResponseData.Found(userSnapshotAndId.data),
           },
         });
       });

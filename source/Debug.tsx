@@ -9,10 +9,7 @@ import { SidePanel } from "./SidePanel";
 import { data } from "definy-common";
 import { jsx } from "react-free-style";
 
-const sampleProject: ReadonlyArray<[
-  data.ProjectId,
-  Resource<data.ProjectSnapshot>
-]> = [
+const sampleProject: ReadonlyArray<[data.ProjectId, Resource<data.Project>]> = [
   [
     "6b9495528e9a12186b9c210448bdc90b" as data.ProjectId,
     Resource.Loaded({

@@ -5,8 +5,8 @@ import * as ui from "./ui";
 import {
   Language,
   Location,
+  Project,
   ProjectId,
-  ProjectSnapshot,
 } from "definy-common/source/data";
 import { Model } from "./model";
 import { jsx } from "react-free-style";
@@ -111,7 +111,7 @@ const LoadedView: React.FC<{ model: Model }> = (prop) => (
 const ProjectItem: React.FC<{
   model: Model;
   id: ProjectId;
-  project: ProjectSnapshot;
+  project: Project;
 }> = (prop) => (
   <ui.Link
     areaTheme="Gray"

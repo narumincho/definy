@@ -36,9 +36,9 @@ export const SidePanel: React.FC<{
     <ui.Link
       areaTheme="Gray"
       onJump={prop.model.onJump}
-      urlData={{ ...prop.model, location: data.Location.UserList }}
+      urlData={{ ...prop.model, location: data.Location.Debug }}
     >
-      <div>Debug (UserList)</div>
+      <div>Debug</div>
     </ui.Link>
   </div>
 );
