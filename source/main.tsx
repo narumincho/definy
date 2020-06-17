@@ -15,22 +15,17 @@ document.documentElement.replaceChild(
 document.body.appendChild(appElement);
 appElement.style.height = "100%";
 appElement.style.overflow = "auto";
-const headStyleElement = document.createElement("style");
-headStyleElement.innerText = ui.commonStyle;
-document.head.append(headStyleElement);
 
-console.log(
-  common.urlDataAndAccessTokenFromUrl(new URL(window.location.href)).urlData
+const urlDataAndAccessToken = common.urlDataAndAccessTokenFromUrl(
+  new URL(window.location.href)
 );
 
 ReactDOM.render(
   <React.StrictMode>
     <Context.Provider value={new StyleSheetRenderer()}>
       <App
-        initUrlData={
-          common.urlDataAndAccessTokenFromUrl(new URL(window.location.href))
-            .urlData
-        }
+        accessToken={urlDataAndAccessToken.accessToken}
+        initUrlData={urlDataAndAccessToken.urlData}
       />
     </Context.Provider>
   </React.StrictMode>,

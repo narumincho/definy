@@ -142,6 +142,9 @@
       "array-callback-return": [
         "off"
       ],
+      "max-statements": [
+        "off"
+      ],
       "@typescript-eslint/restrict-plus-operands": [
         "error",
         {

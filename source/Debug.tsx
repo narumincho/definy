@@ -66,6 +66,7 @@ const sampleComponentList = {
         logInState: { _: "Guest" },
         onJump: () => {},
         projectData: new Map(),
+        userData: new Map(),
         allProjectRequestState: "Respond",
         requestAllProject: () => {},
       }}
@@ -80,6 +81,7 @@ const sampleComponentList = {
         logInState: { _: "Guest" },
         onJump: () => {},
         projectData: new Map(),
+        userData: new Map(),
         allProjectRequestState: "Respond",
         requestAllProject: () => {},
       }}
@@ -97,6 +99,7 @@ const sampleComponentList = {
           sampleProject[1],
           sampleProject[2],
         ]),
+        userData: new Map(),
         allProjectRequestState: "Respond",
         requestAllProject: () => {},
       }}

@@ -1,18 +1,14 @@
-import {
-  ClientMode,
-  Language,
-  OpenIdConnectProvider,
-  ProjectId,
-  ProjectSnapshot,
-  UrlData,
-} from "definy-common/source/data";
 import { Resource } from "./data";
+import { data } from "definy-common";
 
 export type LogInState =
   | { _: "Guest" }
-  | { _: "PreparingLogInUrlRequest"; provider: OpenIdConnectProvider }
-  | { _: "RequestingLogInUrl"; provider: OpenIdConnectProvider }
-  | { _: "JumpingToLogInPage"; logInUrl: URL };
+  | { _: "WaitRequestingLogInUrl"; provider: data.OpenIdConnectProvider }
+  | { _: "RequestingLogInUrl"; provider: data.OpenIdConnectProvider }
+  | { _: "JumpingToLogInPage"; logInUrl: URL }
+  | { _: "WaitVerifyingAccessToken"; accessToken: data.AccessToken }
+  | { _: "VerifyingAccessToken"; accessToken: data.AccessToken }
+  | { _: "LoggedIn"; accessToken: data.AccessToken; userId: data.UserId };
 
 export type RequestState =
   | "NotRequest"
@@ -22,10 +18,11 @@ export type RequestState =
 
 export type Model = {
   logInState: LogInState;
-  language: Language;
-  clientMode: ClientMode;
-  projectData: ReadonlyMap<ProjectId, Resource<ProjectSnapshot>>;
-  onJump: (urlData: UrlData) => void;
+  language: data.Language;
+  clientMode: data.ClientMode;
+  projectData: ReadonlyMap<data.ProjectId, Resource<data.ProjectSnapshot>>;
+  userData: ReadonlyMap<data.UserId, Resource<data.UserSnapshot>>;
+  onJump: (urlData: data.UrlData) => void;
   allProjectRequestState: RequestState;
   requestAllProject: () => void;
 };

@@ -121,7 +121,7 @@ const ProjectItem: React.FC<{
       gridTemplateRows: "128px auto",
       width: 256,
     }}
-    onJump={() => {}}
+    onJump={prop.model.onJump}
     urlData={{ ...prop.model, location: Location.Project(prop.id) }}
   >
     <div css={{ border: "solid 1px white" }}>画像</div>

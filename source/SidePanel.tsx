@@ -21,8 +21,9 @@ export const SidePanel: React.FC<{
     }}
   >
     <Logo model={prop.model} onJump={prop.model.onJump} />
-    <LogInButton
-      language={prop.model.language}
+    {prop.model.logInState._}
+    <UserViewOrLogInButton
+      model={prop.model}
       requestLogIn={prop.onRequestLogIn}
     />
     <ui.Link
@@ -64,6 +65,34 @@ const Logo: React.FC<{
     </div>
   </ui.Link>
 );
+
+const UserViewOrLogInButton: React.FC<{
+  model: Model;
+  requestLogIn: (provider: data.OpenIdConnectProvider) => void;
+}> = (prop) => {
+  switch (prop.model.logInState._) {
+    case "Guest":
+      return (
+        <LogInButton
+          language={prop.model.language}
+          requestLogIn={prop.requestLogIn}
+        />
+      );
+    case "WaitVerifyingAccessToken":
+    case "VerifyingAccessToken":
+      return <div>アクセストークンを検証中……</div>;
+    case "LoggedIn":
+      return (
+        <div>
+          ログイン済み
+          {JSON.stringify(
+            prop.model.userData.get(prop.model.logInState.userId)
+          )}
+        </div>
+      );
+  }
+  return <div>ログインの準備中……</div>;
+};
 
 const LogInButton: React.FC<{
   requestLogIn: (provider: data.OpenIdConnectProvider) => void;
