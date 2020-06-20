@@ -21,7 +21,6 @@ export const SidePanel: React.FC<{
     }}
   >
     <Logo model={prop.model} onJump={prop.model.onJump} />
-    {prop.model.logInState._}
     <UserViewOrLogInButton
       model={prop.model}
       requestLogIn={prop.onRequestLogIn}

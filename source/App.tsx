@@ -79,6 +79,7 @@ export const App: React.FC<{
   );
 
   React.useEffect(() => {
+    console.log({ allProjectIdListMaybe });
     if (allProjectIdListMaybe._ === "Nothing") {
       return;
     }
@@ -145,7 +146,7 @@ export const App: React.FC<{
     allProjectIdListMaybe,
     requestAllProject: () => {
       if (allProjectIdListMaybe._ === "Nothing") {
-        dispatchAllProjectIdList(data.Maybe.Just(Resource.Loading()));
+        dispatchAllProjectIdList(data.Maybe.Just(Resource.WaitLoading()));
       }
     },
   };

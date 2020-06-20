@@ -107,8 +107,25 @@ const LoadedView: React.FC<{
           ))}
         </div>
       );
+    case "Unknown":
+      return <div>プロジェクトの一覧を取得できなかった</div>;
+    case "WaitLoading":
+      return <div>indexedDBから読み込み準備中……</div>;
+    case "Loading":
+      return <div>indexedDBから読み込み中……</div>;
+    case "WaitRequesting":
+      return <div>サーバーに問い合わせ待ち……</div>;
+    case "Requesting":
+      return <div>サーバーに問い合わせ中……</div>;
+    case "WaitUpdating":
+      return <div>更新準備中……</div>;
+    case "Updating":
+      return <div>更新中……</div>;
+    case "WaitRetrying":
+      return <div>再試行準備中……</div>;
+    case "Retrying":
+      return <div>再試行中……</div>;
   }
-  return <div>読み込み中など</div>;
 };
 
 const ProjectItem: React.FC<{
