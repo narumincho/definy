@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { LogInState, Model } from "./model";
-import { RequestState, Resource } from "./data";
 import {
   data,
   urlDataAndAccessTokenFromUrl,
@@ -12,6 +11,7 @@ import { About } from "./About";
 import { Debug } from "./Debug";
 import { Home } from "./Home";
 import { LoadingBox } from "./ui";
+import { Resource } from "./data";
 import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
 
@@ -39,15 +39,14 @@ export const App: React.FC<{
       : { _: "Guest" }
   );
   const [projectData, dispatchProject] = React.useState<
-    ReadonlyMap<data.ProjectId, Resource<data.Project>>
+    ReadonlyMap<data.ProjectId, Resource<data.Maybe<data.Project>>>
   >(new Map());
-  const [
-    allProjectRequestState,
-    dispatchAllProjectRequestState,
-  ] = React.useState<RequestState>("NotRequest");
+  const [allProjectIdListMaybe, dispatchAllProjectIdList] = React.useState<
+    data.Maybe<Resource<ReadonlyArray<data.ProjectId>>>
+  >(data.Maybe.Nothing);
 
   const [userData, dispatchUserData] = React.useState<
-    ReadonlyMap<data.UserId, Resource<data.User>>
+    ReadonlyMap<data.UserId, Resource<data.Maybe<data.User>>>
   >(new Map());
 
   React.useEffect(() => {
@@ -80,30 +79,61 @@ export const App: React.FC<{
   );
 
   React.useEffect(() => {
-    switch (allProjectRequestState) {
-      case "NotRequest":
+    if (allProjectIdListMaybe._ === "Nothing") {
+      return;
+    }
+    const allProjectIdList = allProjectIdListMaybe.value;
+    switch (allProjectIdList._) {
+      case "Loaded":
+      case "Unknown":
         return;
-      case "WaitRequest":
-        dispatchAllProjectRequestState("Requesting");
+      case "WaitLoading":
+        dispatchAllProjectIdList(data.Maybe.Just(Resource.Loading()));
+        /*
+         * indexedDBにアクセスして取得
+         * 代わりに失敗したということでWaitRequestingにする
+         */
+        dispatchAllProjectIdList(data.Maybe.Just(Resource.WaitRequesting()));
+        return;
+      case "Loading":
+        return;
+      case "WaitRequesting":
+        dispatchAllProjectIdList(data.Maybe.Just(Resource.Requesting()));
         callApi(
           "getAllProject",
           [],
           data.List.codec(
             data.IdAndData.codec(data.ProjectId.codec, data.Project.codec)
           )
-        ).then((projectList) => {
+        ).then((idAndProjectList) => {
           dispatchProject(
             new Map(
-              projectList.map((project) => [
+              idAndProjectList.map((project) => [
                 project.id,
-                Resource.Found(project.data),
+                Resource.Loaded(data.Maybe.Just(project.data)),
               ])
             )
           );
-          dispatchAllProjectRequestState("Respond");
+          dispatchAllProjectIdList(
+            data.Maybe.Just(
+              Resource.Loaded(idAndProjectList.map((project) => project.id))
+            )
+          );
         });
+        return;
+
+      case "Requesting":
+        return;
+      case "WaitUpdating":
+        console.log("サーバーに問い合わせてプロジェクトの一覧を更新する予定");
+        return;
+
+      case "Updating":
+        return;
+      case "WaitRetrying":
+        console.log("サーバーに問い合わせてプロジェクトの一覧を再取得する予定");
     }
-  }, [allProjectRequestState]);
+  }, [allProjectIdListMaybe]);
 
   const model: Model = {
     clientMode: urlData.clientMode,
@@ -112,9 +142,11 @@ export const App: React.FC<{
     projectData,
     userData,
     onJump,
-    allProjectRequestState,
+    allProjectIdListMaybe,
     requestAllProject: () => {
-      dispatchAllProjectRequestState("WaitRequest");
+      if (allProjectIdListMaybe._ === "Nothing") {
+        dispatchAllProjectIdList(data.Maybe.Just(Resource.Loading()));
+      }
     },
   };
 
@@ -213,7 +245,9 @@ const logInEffect = (
   urlData: data.UrlData,
   dispatchLogInState: React.Dispatch<React.SetStateAction<LogInState>>,
   dispatchUserData: React.Dispatch<
-    React.SetStateAction<ReadonlyMap<data.UserId, Resource<data.User>>>
+    React.SetStateAction<
+      ReadonlyMap<data.UserId, Resource<data.Maybe<data.User>>>
+    >
   >
 ): React.EffectCallback => () => {
   switch (logInState._) {
@@ -257,10 +291,15 @@ const logInEffect = (
           userId: userSnapshotAndId.id,
         });
         dispatchUserData(
-          (userData): ReadonlyMap<data.UserId, Resource<data.User>> =>
+          (
+            userData
+          ): ReadonlyMap<data.UserId, Resource<data.Maybe<data.User>>> =>
             new Map([
               ...userData,
-              [userSnapshotAndId.id, Resource.Found(userSnapshotAndId.data)],
+              [
+                userSnapshotAndId.id,
+                Resource.Loaded(data.Maybe.Just(userSnapshotAndId.data)),
+              ],
             ])
         );
       });

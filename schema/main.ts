@@ -14,46 +14,14 @@ import { promises as fileSystem } from "fs";
 export const customTypeList: ReadonlyArray<CustomTypeDefinition> = [
   ...commonSchemaDefinition.customTypeList,
   {
-    name: "RequestState",
-    description: "リクエストの状態",
-    typeParameterList: [],
-    body: CustomTypeDefinitionBody.Sum([
-      {
-        name: "NotRequest",
-        description: "まだ,リクエストしていない",
-        parameter: Maybe.Nothing(),
-      },
-      {
-        name: "WaitRequest",
-        description: "リクエストをする (まだしていない)",
-        parameter: Maybe.Nothing(),
-      },
-      {
-        name: "Requesting",
-        description: "リクエストをしている途中",
-        parameter: Maybe.Nothing(),
-      },
-      {
-        name: "Respond",
-        description: "リクエストをすでにした",
-        parameter: Maybe.Nothing(),
-      },
-    ]),
-  },
-  {
     name: "Resource",
     description: "ProjectやUserなどのリソースの保存状態を表す",
     typeParameterList: ["data"],
     body: CustomTypeDefinitionBody.Sum([
       {
-        name: "Found",
-        description: "データがある",
+        name: "Loaded",
+        description: "データを取得済み",
         parameter: Maybe.Just(Type.Parameter("data")),
-      },
-      {
-        name: "NotFound",
-        description: "データが存在しない",
-        parameter: Maybe.Nothing(),
       },
       {
         name: "Unknown",

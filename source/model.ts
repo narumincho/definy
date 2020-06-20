@@ -1,4 +1,4 @@
-import { RequestState, Resource } from "./data";
+import { Resource } from "./data";
 import { data } from "definy-common";
 
 export type LogInState =
@@ -14,9 +14,9 @@ export type Model = {
   logInState: LogInState;
   language: data.Language;
   clientMode: data.ClientMode;
-  projectData: ReadonlyMap<data.ProjectId, Resource<data.Project>>;
-  userData: ReadonlyMap<data.UserId, Resource<data.User>>;
+  projectData: ReadonlyMap<data.ProjectId, Resource<data.Maybe<data.Project>>>;
+  userData: ReadonlyMap<data.UserId, Resource<data.Maybe<data.User>>>;
   onJump: (urlData: data.UrlData) => void;
-  allProjectRequestState: RequestState;
+  allProjectIdListMaybe: data.Maybe<Resource<ReadonlyArray<data.ProjectId>>>;
   requestAllProject: () => void;
 };

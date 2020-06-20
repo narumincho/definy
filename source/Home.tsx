@@ -5,6 +5,7 @@ import * as ui from "./ui";
 import {
   Language,
   Location,
+  Maybe,
   Project,
   ProjectId,
 } from "definy-common/source/data";
@@ -14,17 +15,19 @@ import { jsx } from "react-free-style";
 
 export const Home: React.FC<{ model: Model }> = (prop) => {
   React.useEffect(() => {
-    switch (prop.model.allProjectRequestState) {
-      case "NotRequest":
-        prop.model.requestAllProject();
+    if (prop.model.allProjectIdListMaybe._ === "Nothing") {
+      prop.model.requestAllProject();
     }
   });
 
   return (
     <div css={{ display: "grid", overflow: "hidden" }}>
       <div css={{ display: "grid", overflowY: "scroll" }}>
-        {prop.model.allProjectRequestState === "Respond" ? (
-          <LoadedView model={prop.model} />
+        {prop.model.allProjectIdListMaybe._ === "Just" ? (
+          <LoadedView
+            allProjectIdListResource={prop.model.allProjectIdListMaybe.value}
+            model={prop.model}
+          />
         ) : (
           <LoadingDummyView />
         )}
@@ -71,49 +74,58 @@ const LoadingDummyView: React.FC<Record<never, never>> = () => {
     </div>
   );
 };
-const LoadedView: React.FC<{ model: Model }> = (prop) => (
-  <div
-    css={{
-      gridColumn: "1 / 2",
-      gridRow: "1 / 2",
-      overflow: "hidden",
-      overflowWrap: "break-word",
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr 1fr",
-      alignSelf: "start",
-      justifySelf: "center",
-      gap: 8,
-    }}
-  >
-    {prop.model.projectData.size === 0
-      ? "プロジェクトが1つもありません"
-      : [...prop.model.projectData].map(([id, resource]) => (
-          <ProjectItem
-            id={id}
-            key={id}
-            model={prop.model}
-            resource={resource}
-          />
-        ))}
-  </div>
-);
+const LoadedView: React.FC<{
+  model: Model;
+  allProjectIdListResource: Resource<ReadonlyArray<ProjectId>>;
+}> = (prop) => {
+  switch (prop.allProjectIdListResource._) {
+    case "Loaded":
+      if (prop.allProjectIdListResource.data.length === 0) {
+        return <div>プロジェクトが1つもありません</div>;
+      }
+      return (
+        <div
+          css={{
+            gridColumn: "1 / 2",
+            gridRow: "1 / 2",
+            overflow: "hidden",
+            overflowWrap: "break-word",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            alignSelf: "start",
+            justifySelf: "center",
+            gap: 8,
+          }}
+        >
+          {[...prop.model.projectData].map(([id, resource]) => (
+            <ProjectItem
+              id={id}
+              key={id}
+              model={prop.model}
+              resource={resource}
+            />
+          ))}
+        </div>
+      );
+  }
+  return <div>読み込み中など</div>;
+};
 
 const ProjectItem: React.FC<{
   model: Model;
   id: ProjectId;
-  resource: Resource<Project>;
+  resource: Resource<Maybe<Project>>;
 }> = (prop) => {
   switch (prop.resource._) {
-    case "Found":
+    case "Loaded":
       return (
-        <ProjectFoundItem
+        <ProjectLoadedItem
           id={prop.id}
           model={prop.model}
-          project={prop.resource.data}
+          projectMaybe={prop.resource.data}
         />
       );
-    case "NotFound":
-      return <div>id={prop.id}のプロジェクトは存在しないようだ</div>;
+
     case "Unknown":
       return (
         <div>
@@ -132,10 +144,10 @@ const ProjectItem: React.FC<{
       return (
         <div>
           <div>更新準備中……</div>
-          <ProjectFoundItem
+          <ProjectLoadedItem
             id={prop.id}
             model={prop.model}
-            project={prop.resource.data}
+            projectMaybe={prop.resource.data}
           />
         </div>
       );
@@ -143,10 +155,10 @@ const ProjectItem: React.FC<{
       return (
         <div>
           <div>更新中……</div>
-          <ProjectFoundItem
+          <ProjectLoadedItem
             id={prop.id}
             model={prop.model}
-            project={prop.resource.data}
+            projectMaybe={prop.resource.data}
           />
         </div>
       );
@@ -157,36 +169,44 @@ const ProjectItem: React.FC<{
   }
 };
 
-const ProjectFoundItem: React.FC<{
+const ProjectLoadedItem: React.FC<{
   model: Model;
   id: ProjectId;
-  project: Project;
-}> = (prop) => (
-  <ui.Link
-    areaTheme="Gray"
-    css={{
-      padding: 8,
-      display: "grid",
-      gridTemplateRows: "128px auto",
-      width: 256,
-    }}
-    onJump={prop.model.onJump}
-    urlData={{ ...prop.model, location: Location.Project(prop.id) }}
-  >
-    <div css={{ border: "solid 1px white" }}>画像</div>
-    <div
+  projectMaybe: Maybe<Project>;
+}> = (prop) => {
+  if (prop.projectMaybe._ === "Nothing") {
+    return <div>id={prop.id}のプロジェクトは存在しないようだ</div>;
+  }
+
+  return (
+    <ui.Link
+      areaTheme="Gray"
       css={{
+        padding: 8,
         display: "grid",
-        gridTemplateColumns: "32px 1fr",
-        gap: 8,
-        alignItems: "center",
+        gridTemplateRows: "128px auto",
+        width: 256,
       }}
+      onJump={prop.model.onJump}
+      urlData={{ ...prop.model, location: Location.Project(prop.id) }}
     >
-      <div css={{ width: 32, height: 32, backgroundColor: "orange" }}>icon</div>
-      {prop.project.name}
-    </div>
-  </ui.Link>
-);
+      <div css={{ border: "solid 1px white" }}>画像</div>
+      <div
+        css={{
+          display: "grid",
+          gridTemplateColumns: "32px 1fr",
+          gap: 8,
+          alignItems: "center",
+        }}
+      >
+        <div css={{ width: 32, height: 32, backgroundColor: "orange" }}>
+          icon
+        </div>
+        {prop.projectMaybe.value.name}
+      </div>
+    </ui.Link>
+  );
+};
 
 const CreateProjectButton: React.FC<{ model: Model }> = (prop) => (
   <div
