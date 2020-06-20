@@ -1,5 +1,6 @@
 import * as codeGen from "js-ts-code-generator";
 import * as commonSchemaDefinition from "definy-common/schema/definition";
+import * as commonType from "definy-common/schema/customType";
 import * as nType from "@narumincho/type";
 import * as prettier from "prettier";
 import {
@@ -9,8 +10,6 @@ import {
   Type,
 } from "@narumincho/type/distribution/data";
 import { promises as fileSystem } from "fs";
-
-const responseDataName = "ResponseData";
 
 export const customTypeList: ReadonlyArray<CustomTypeDefinition> = [
   ...commonSchemaDefinition.customTypeList,
@@ -42,71 +41,63 @@ export const customTypeList: ReadonlyArray<CustomTypeDefinition> = [
     ]),
   },
   {
-    name: "Response",
-    description: "データのレスポンス",
-    typeParameterList: ["id", "data"],
-    body: CustomTypeDefinitionBody.Product([
-      {
-        name: "id",
-        description: "ID",
-        type: Type.Parameter("id"),
-      },
-      {
-        name: "data",
-        description: "データ",
-        type: Type.Custom({
-          name: responseDataName,
-          parameterList: [Type.Parameter("data")],
-        }),
-      },
-    ]),
-  },
-  {
-    name: responseDataName,
-    description: "レスポンスのデータ",
-    typeParameterList: ["data"],
-    body: CustomTypeDefinitionBody.Sum([
-      {
-        name: "Found",
-        description: "見つかった",
-        parameter: Maybe.Just(Type.Parameter("data")),
-      },
-      {
-        name: "NotFound",
-        description: "見つからなかった",
-        parameter: Maybe.Nothing(),
-      },
-      {
-        name: "Error",
-        description: "取得に失敗した",
-        parameter: Maybe.Nothing(),
-      },
-    ]),
-  },
-  {
     name: "Resource",
     description: "ProjectやUserなどのリソースの保存状態を表す",
     typeParameterList: ["data"],
     body: CustomTypeDefinitionBody.Sum([
       {
-        name: "Loading",
-        description:
-          "サーバーにリクエストしている最中や, indexedDBから読み込んでいるとき",
-        parameter: Maybe.Nothing(),
-      },
-      {
-        name: "Loaded",
-        description: "データを取得済み",
+        name: "Found",
+        description: "データがある",
         parameter: Maybe.Just(Type.Parameter("data")),
       },
       {
         name: "NotFound",
-        description: "データが見つからなかった",
+        description: "データが存在しない",
         parameter: Maybe.Nothing(),
       },
       {
-        name: "Error",
-        description: "取得に失敗した.",
+        name: "Unknown",
+        description: "データが存在しているか確認できない",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "WaitLoading",
+        description: "indexedDBにアクセス待ち",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Loading",
+        description: "indexedDBにアクセス中",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "WaitRequesting",
+        description: "サーバに問い合わせ待ち",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Requesting",
+        description: "サーバに問い合わせ中",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "WaitUpdating",
+        description: "更新待ち",
+        parameter: Maybe.Just(Type.Parameter("data")),
+      },
+      {
+        name: "Updating",
+        description: "サーバーに問い合わせてリソースを更新中",
+        parameter: Maybe.Just(Type.Parameter("data")),
+      },
+      {
+        name: "WaitRetrying",
+        description: "Unknownだったリソースをサーバーに問い合わせ待ち",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Retrying",
+        description: "Unknownだったリソースをサーバーに問い合わせ中",
         parameter: Maybe.Nothing(),
       },
     ]),

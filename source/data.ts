@@ -993,35 +993,20 @@ export type RequestState =
   | "Respond";
 
 /**
- * データのレスポンス
- */
-export type Response<id, data> = {
-  /**
-   * ID
-   */
-  readonly id: id;
-  /**
-   * データ
-   */
-  readonly data: ResponseData<data>;
-};
-
-/**
- * レスポンスのデータ
- */
-export type ResponseData<data> =
-  | { readonly _: "Found"; readonly data: data }
-  | { readonly _: "NotFound" }
-  | { readonly _: "Error" };
-
-/**
  * ProjectやUserなどのリソースの保存状態を表す
  */
 export type Resource<data> =
-  | { readonly _: "Loading" }
-  | { readonly _: "Loaded"; readonly data: data }
+  | { readonly _: "Found"; readonly data: data }
   | { readonly _: "NotFound" }
-  | { readonly _: "Error" };
+  | { readonly _: "Unknown" }
+  | { readonly _: "WaitLoading" }
+  | { readonly _: "Loading" }
+  | { readonly _: "WaitRequesting" }
+  | { readonly _: "Requesting" }
+  | { readonly _: "WaitUpdating"; readonly data: data }
+  | { readonly _: "Updating"; readonly data: data }
+  | { readonly _: "WaitRetrying" }
+  | { readonly _: "Retrying" };
 
 export type ProjectId = string & { readonly _projectId: never };
 
@@ -5267,68 +5252,74 @@ export const RequestState: {
 };
 
 /**
- * データのレスポンス
+ * ProjectやUserなどのリソースの保存状態を表す
  */
-export const Response: {
-  readonly codec: <id, data>(
-    a: Codec<id>,
-    b: Codec<data>
-  ) => Codec<Response<id, data>>;
+export const Resource: {
+  /**
+   * データがある
+   */
+  readonly Found: <data>(a: data) => Resource<data>;
+  /**
+   * データが存在しない
+   */
+  readonly NotFound: <data>() => Resource<data>;
+  /**
+   * データが存在しているか確認できない
+   */
+  readonly Unknown: <data>() => Resource<data>;
+  /**
+   * indexedDBにアクセス待ち
+   */
+  readonly WaitLoading: <data>() => Resource<data>;
+  /**
+   * indexedDBにアクセス中
+   */
+  readonly Loading: <data>() => Resource<data>;
+  /**
+   * サーバに問い合わせ待ち
+   */
+  readonly WaitRequesting: <data>() => Resource<data>;
+  /**
+   * サーバに問い合わせ中
+   */
+  readonly Requesting: <data>() => Resource<data>;
+  /**
+   * 更新待ち
+   */
+  readonly WaitUpdating: <data>(a: data) => Resource<data>;
+  /**
+   * サーバーに問い合わせてリソースを更新中
+   */
+  readonly Updating: <data>(a: data) => Resource<data>;
+  /**
+   * Unknownだったリソースをサーバーに問い合わせ待ち
+   */
+  readonly WaitRetrying: <data>() => Resource<data>;
+  /**
+   * Unknownだったリソースをサーバーに問い合わせ中
+   */
+  readonly Retrying: <data>() => Resource<data>;
+  readonly codec: <data>(a: Codec<data>) => Codec<Resource<data>>;
 } = {
-  codec: <id, data>(
-    idCodec: Codec<id>,
-    dataCodec: Codec<data>
-  ): Codec<Response<id, data>> => ({
-    encode: (value: Response<id, data>): ReadonlyArray<number> =>
-      idCodec
-        .encode(value.id)
-        .concat(ResponseData.codec(dataCodec).encode(value.data)),
-    decode: (
-      index: number,
-      binary: Uint8Array
-    ): { readonly result: Response<id, data>; readonly nextIndex: number } => {
-      const idAndNextIndex: {
-        readonly result: id;
-        readonly nextIndex: number;
-      } = idCodec.decode(index, binary);
-      const dataAndNextIndex: {
-        readonly result: ResponseData<data>;
-        readonly nextIndex: number;
-      } = ResponseData.codec(dataCodec).decode(
-        idAndNextIndex.nextIndex,
-        binary
-      );
-      return {
-        result: { id: idAndNextIndex.result, data: dataAndNextIndex.result },
-        nextIndex: dataAndNextIndex.nextIndex,
-      };
-    },
+  Found: <data>(data: data): Resource<data> => ({ _: "Found", data }),
+  NotFound: <data>(): Resource<data> => ({ _: "NotFound" }),
+  Unknown: <data>(): Resource<data> => ({ _: "Unknown" }),
+  WaitLoading: <data>(): Resource<data> => ({ _: "WaitLoading" }),
+  Loading: <data>(): Resource<data> => ({ _: "Loading" }),
+  WaitRequesting: <data>(): Resource<data> => ({ _: "WaitRequesting" }),
+  Requesting: <data>(): Resource<data> => ({ _: "Requesting" }),
+  WaitUpdating: <data>(data: data): Resource<data> => ({
+    _: "WaitUpdating",
+    data,
   }),
-};
-
-/**
- * レスポンスのデータ
- */
-export const ResponseData: {
-  /**
-   * 見つかった
-   */
-  readonly Found: <data>(a: data) => ResponseData<data>;
-  /**
-   * 見つからなかった
-   */
-  readonly NotFound: <data>() => ResponseData<data>;
-  /**
-   * 取得に失敗した
-   */
-  readonly Error: <data>() => ResponseData<data>;
-  readonly codec: <data>(a: Codec<data>) => Codec<ResponseData<data>>;
-} = {
-  Found: <data>(data: data): ResponseData<data> => ({ _: "Found", data }),
-  NotFound: <data>(): ResponseData<data> => ({ _: "NotFound" }),
-  Error: <data>(): ResponseData<data> => ({ _: "Error" }),
-  codec: <data>(dataCodec: Codec<data>): Codec<ResponseData<data>> => ({
-    encode: (value: ResponseData<data>): ReadonlyArray<number> => {
+  Updating: <data>(data: data): Resource<data> => ({
+    _: "Updating",
+    data,
+  }),
+  WaitRetrying: <data>(): Resource<data> => ({ _: "WaitRetrying" }),
+  Retrying: <data>(): Resource<data> => ({ _: "Retrying" }),
+  codec: <data>(dataCodec: Codec<data>): Codec<Resource<data>> => ({
+    encode: (value: Resource<data>): ReadonlyArray<number> => {
       switch (value._) {
         case "Found": {
           return [0].concat(dataCodec.encode(value.data));
@@ -5336,86 +5327,32 @@ export const ResponseData: {
         case "NotFound": {
           return [1];
         }
-        case "Error": {
+        case "Unknown": {
           return [2];
         }
-      }
-    },
-    decode: (
-      index: number,
-      binary: Uint8Array
-    ): { readonly result: ResponseData<data>; readonly nextIndex: number } => {
-      const patternIndex: {
-        readonly result: number;
-        readonly nextIndex: number;
-      } = Int32.codec.decode(index, binary);
-      if (patternIndex.result === 0) {
-        const result: {
-          readonly result: data;
-          readonly nextIndex: number;
-        } = dataCodec.decode(patternIndex.nextIndex, binary);
-        return {
-          result: ResponseData.Found(result.result),
-          nextIndex: result.nextIndex,
-        };
-      }
-      if (patternIndex.result === 1) {
-        return {
-          result: ResponseData.NotFound(),
-          nextIndex: patternIndex.nextIndex,
-        };
-      }
-      if (patternIndex.result === 2) {
-        return {
-          result: ResponseData.Error(),
-          nextIndex: patternIndex.nextIndex,
-        };
-      }
-      throw new Error("存在しないパターンを指定された 型を更新してください");
-    },
-  }),
-};
-
-/**
- * ProjectやUserなどのリソースの保存状態を表す
- */
-export const Resource: {
-  /**
-   * サーバーにリクエストしている最中や, indexedDBから読み込んでいるとき
-   */
-  readonly Loading: <data>() => Resource<data>;
-  /**
-   * データを取得済み
-   */
-  readonly Loaded: <data>(a: data) => Resource<data>;
-  /**
-   * データが見つからなかった
-   */
-  readonly NotFound: <data>() => Resource<data>;
-  /**
-   * 取得に失敗した.
-   */
-  readonly Error: <data>() => Resource<data>;
-  readonly codec: <data>(a: Codec<data>) => Codec<Resource<data>>;
-} = {
-  Loading: <data>(): Resource<data> => ({ _: "Loading" }),
-  Loaded: <data>(data: data): Resource<data> => ({ _: "Loaded", data }),
-  NotFound: <data>(): Resource<data> => ({ _: "NotFound" }),
-  Error: <data>(): Resource<data> => ({ _: "Error" }),
-  codec: <data>(dataCodec: Codec<data>): Codec<Resource<data>> => ({
-    encode: (value: Resource<data>): ReadonlyArray<number> => {
-      switch (value._) {
-        case "Loading": {
-          return [0];
-        }
-        case "Loaded": {
-          return [1].concat(dataCodec.encode(value.data));
-        }
-        case "NotFound": {
-          return [2];
-        }
-        case "Error": {
+        case "WaitLoading": {
           return [3];
+        }
+        case "Loading": {
+          return [4];
+        }
+        case "WaitRequesting": {
+          return [5];
+        }
+        case "Requesting": {
+          return [6];
+        }
+        case "WaitUpdating": {
+          return [7].concat(dataCodec.encode(value.data));
+        }
+        case "Updating": {
+          return [8].concat(dataCodec.encode(value.data));
+        }
+        case "WaitRetrying": {
+          return [9];
+        }
+        case "Retrying": {
+          return [10];
         }
       }
     },
@@ -5428,29 +5365,82 @@ export const Resource: {
         readonly nextIndex: number;
       } = Int32.codec.decode(index, binary);
       if (patternIndex.result === 0) {
-        return {
-          result: Resource.Loading(),
-          nextIndex: patternIndex.nextIndex,
-        };
-      }
-      if (patternIndex.result === 1) {
         const result: {
           readonly result: data;
           readonly nextIndex: number;
         } = dataCodec.decode(patternIndex.nextIndex, binary);
         return {
-          result: Resource.Loaded(result.result),
+          result: Resource.Found(result.result),
           nextIndex: result.nextIndex,
         };
       }
-      if (patternIndex.result === 2) {
+      if (patternIndex.result === 1) {
         return {
           result: Resource.NotFound(),
           nextIndex: patternIndex.nextIndex,
         };
       }
+      if (patternIndex.result === 2) {
+        return {
+          result: Resource.Unknown(),
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
       if (patternIndex.result === 3) {
-        return { result: Resource.Error(), nextIndex: patternIndex.nextIndex };
+        return {
+          result: Resource.WaitLoading(),
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 4) {
+        return {
+          result: Resource.Loading(),
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 5) {
+        return {
+          result: Resource.WaitRequesting(),
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 6) {
+        return {
+          result: Resource.Requesting(),
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 7) {
+        const result: {
+          readonly result: data;
+          readonly nextIndex: number;
+        } = dataCodec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Resource.WaitUpdating(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 8) {
+        const result: {
+          readonly result: data;
+          readonly nextIndex: number;
+        } = dataCodec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Resource.Updating(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 9) {
+        return {
+          result: Resource.WaitRetrying(),
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 10) {
+        return {
+          result: Resource.Retrying(),
+          nextIndex: patternIndex.nextIndex,
+        };
       }
       throw new Error("存在しないパターンを指定された 型を更新してください");
     },

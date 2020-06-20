@@ -12,7 +12,7 @@ import { jsx } from "react-free-style";
 const sampleProject: ReadonlyArray<[data.ProjectId, Resource<data.Project>]> = [
   [
     "6b9495528e9a12186b9c210448bdc90b" as data.ProjectId,
-    Resource.Loaded({
+    Resource.Found({
       name: "プロジェクトA",
       createTime: { day: 0, millisecond: 0 },
       createUserId: "6b9495528e9a12186b9c210448bdc90b" as data.UserId,
@@ -26,7 +26,7 @@ const sampleProject: ReadonlyArray<[data.ProjectId, Resource<data.Project>]> = [
   ],
   [
     "dc2c318f1cab573562497ea1e4b96c0e" as data.ProjectId,
-    Resource.Loaded({
+    Resource.Found({
       name: "プロジェクトB",
       createTime: { day: 0, millisecond: 0 },
       createUserId: "6b9495528e9a12186b9c210448bdc90b" as data.UserId,
@@ -40,7 +40,7 @@ const sampleProject: ReadonlyArray<[data.ProjectId, Resource<data.Project>]> = [
   ],
   [
     "4e7e1c9629b3eff2e908a151d501b8c6" as data.ProjectId,
-    Resource.Loaded({
+    Resource.Found({
       name: "プロジェクトC",
       createTime: { day: 0, millisecond: 0 },
       createUserId: "6b9495528e9a12186b9c210448bdc90b" as data.UserId,

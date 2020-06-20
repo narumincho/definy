@@ -9,6 +9,7 @@ import {
   ProjectId,
 } from "definy-common/source/data";
 import { Model } from "./model";
+import { Resource } from "./data";
 import { jsx } from "react-free-style";
 
 export const Home: React.FC<{ model: Model }> = (prop) => {
@@ -86,29 +87,77 @@ const LoadedView: React.FC<{ model: Model }> = (prop) => (
   >
     {prop.model.projectData.size === 0
       ? "プロジェクトが1つもありません"
-      : [...prop.model.projectData].map(([id, project]) => {
-          switch (project._) {
-            case "Loaded":
-              return (
-                <ProjectItem
-                  id={id}
-                  key={id}
-                  model={prop.model}
-                  project={project.data}
-                />
-              );
-            case "Loading":
-              return <div key={id}>id={id}</div>;
-            case "NotFound":
-              return (
-                <div key={id}>id={id}のプロジェクトが見つからなかった</div>
-              );
-          }
-        })}
+      : [...prop.model.projectData].map(([id, resource]) => (
+          <ProjectItem
+            id={id}
+            key={id}
+            model={prop.model}
+            resource={resource}
+          />
+        ))}
   </div>
 );
 
 const ProjectItem: React.FC<{
+  model: Model;
+  id: ProjectId;
+  resource: Resource<Project>;
+}> = (prop) => {
+  switch (prop.resource._) {
+    case "Found":
+      return (
+        <ProjectFoundItem
+          id={prop.id}
+          model={prop.model}
+          project={prop.resource.data}
+        />
+      );
+    case "NotFound":
+      return <div>id={prop.id}のプロジェクトは存在しないようだ</div>;
+    case "Unknown":
+      return (
+        <div>
+          id={prop.id}のプロジェクトのデータに取得に失敗した. 存在するのかも不明
+        </div>
+      );
+    case "WaitLoading":
+      return <div>indexedDBから読み込み準備中……</div>;
+    case "Loading":
+      return <div>indexedDBから読み込み中……</div>;
+    case "WaitRequesting":
+      return <div>サーバーに問い合わせ待ち……</div>;
+    case "Requesting":
+      return <div>サーバーに問い合わせ中……</div>;
+    case "WaitUpdating":
+      return (
+        <div>
+          <div>更新準備中……</div>
+          <ProjectFoundItem
+            id={prop.id}
+            model={prop.model}
+            project={prop.resource.data}
+          />
+        </div>
+      );
+    case "Updating":
+      return (
+        <div>
+          <div>更新中……</div>
+          <ProjectFoundItem
+            id={prop.id}
+            model={prop.model}
+            project={prop.resource.data}
+          />
+        </div>
+      );
+    case "WaitRetrying":
+      return <div>再試行準備中……</div>;
+    case "Retrying":
+      return <div>再試行中……</div>;
+  }
+};
+
+const ProjectFoundItem: React.FC<{
   model: Model;
   id: ProjectId;
   project: Project;

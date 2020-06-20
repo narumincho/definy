@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { LogInState, Model } from "./model";
-import { RequestState, Resource, Response, ResponseData } from "./data";
+import { RequestState, Resource } from "./data";
 import {
   data,
   urlDataAndAccessTokenFromUrl,
@@ -28,18 +28,6 @@ const callApi = <responseType extends unknown>(
     .then((response) => response.arrayBuffer())
     .then((response) => codec.decode(0, new Uint8Array(response)).result);
 
-type ProjectDataAction =
-  | {
-      _: "ResponseAllProjectList";
-      list: ReadonlyArray<data.IdAndData<data.ProjectId, data.Project>>;
-    }
-  | { _: "ResponseProject"; response: Response<data.ProjectId, data.Project> };
-
-type UserDataAction = {
-  _: "RespondUserData";
-  response: Response<data.UserId, data.User>;
-};
-
 export const App: React.FC<{
   accessToken: data.Maybe<data.AccessToken>;
   initUrlData: data.UrlData;
@@ -50,58 +38,28 @@ export const App: React.FC<{
       ? { _: "WaitVerifyingAccessToken", accessToken: prop.accessToken.value }
       : { _: "Guest" }
   );
-  const [projectData, dispatchProject] = React.useReducer(
-    (
-      state: ReadonlyMap<data.ProjectId, Resource<data.Project>>,
-      action: ProjectDataAction
-    ): ReadonlyMap<data.ProjectId, Resource<data.Project>> => {
-      switch (action._) {
-        case "ResponseAllProjectList":
-          return new Map(
-            action.list.map((project) => [
-              project.id,
-              Resource.Loaded(project.data),
-            ])
-          );
-        case "ResponseProject": {
-          const newMap = new Map(state);
-          newMap.set(
-            action.response.id,
-            action.response.data._ === "Found"
-              ? Resource.Loaded(action.response.data.data)
-              : Resource.NotFound()
-          );
-          return newMap;
-        }
-      }
-    },
-    new Map()
-  );
+  const [projectData, dispatchProject] = React.useState<
+    ReadonlyMap<data.ProjectId, Resource<data.Project>>
+  >(new Map());
   const [
     allProjectRequestState,
     dispatchAllProjectRequestState,
   ] = React.useState<RequestState>("NotRequest");
 
-  const [userData, dispatchUserData] = React.useReducer(
-    (
-      state: ReadonlyMap<data.UserId, Resource<data.User>>,
-      action: UserDataAction
-    ): ReadonlyMap<data.UserId, Resource<data.User>> => {
-      switch (action._) {
-        case "RespondUserData": {
-          const newSet = new Map(state);
-          newSet.set(
-            action.response.id,
-            action.response.data._ === "Found"
-              ? Resource.Loaded(action.response.data.data)
-              : Resource.NotFound()
-          );
-          return newSet;
-        }
-      }
-    },
-    new Map()
-  );
+  const [userData, dispatchUserData] = React.useState<
+    ReadonlyMap<data.UserId, Resource<data.User>>
+  >(new Map());
+
+  React.useEffect(() => {
+    const update = () => {
+      new Date().getTime();
+      /*
+       * 現時刻を取得してリソースの中で期限が切れたものをリクエストしていく?
+       */
+      window.requestAnimationFrame(update);
+    };
+    update();
+  });
 
   React.useEffect(() => {
     window.history.pushState(
@@ -134,10 +92,14 @@ export const App: React.FC<{
             data.IdAndData.codec(data.ProjectId.codec, data.Project.codec)
           )
         ).then((projectList) => {
-          dispatchProject({
-            _: "ResponseAllProjectList",
-            list: projectList,
-          });
+          dispatchProject(
+            new Map(
+              projectList.map((project) => [
+                project.id,
+                Resource.Found(project.data),
+              ])
+            )
+          );
           dispatchAllProjectRequestState("Respond");
         });
     }
@@ -250,7 +212,9 @@ const logInEffect = (
   logInState: LogInState,
   urlData: data.UrlData,
   dispatchLogInState: React.Dispatch<React.SetStateAction<LogInState>>,
-  dispatchUserData: React.Dispatch<UserDataAction>
+  dispatchUserData: React.Dispatch<
+    React.SetStateAction<ReadonlyMap<data.UserId, Resource<data.User>>>
+  >
 ): React.EffectCallback => () => {
   switch (logInState._) {
     case "Guest":
@@ -292,13 +256,13 @@ const logInEffect = (
           accessToken: logInState.accessToken,
           userId: userSnapshotAndId.id,
         });
-        dispatchUserData({
-          _: "RespondUserData",
-          response: {
-            id: userSnapshotAndId.id,
-            data: ResponseData.Found(userSnapshotAndId.data),
-          },
-        });
+        dispatchUserData(
+          (userData): ReadonlyMap<data.UserId, Resource<data.User>> =>
+            new Map([
+              ...userData,
+              [userSnapshotAndId.id, Resource.Found(userSnapshotAndId.data)],
+            ])
+        );
       });
   }
 };
