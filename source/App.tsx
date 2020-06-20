@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { LogInState, Model } from "./model";
+import { Resource, TokenResource } from "./data";
 import {
   data,
   urlDataAndAccessTokenFromUrl,
@@ -11,7 +12,6 @@ import { About } from "./About";
 import { Debug } from "./Debug";
 import { Home } from "./Home";
 import { LoadingBox } from "./ui";
-import { Resource } from "./data";
 import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
 
@@ -49,6 +49,10 @@ export const App: React.FC<{
     ReadonlyMap<data.UserId, Resource<data.Maybe<data.User>>>
   >(new Map());
 
+  const [imageData, dispatchImageData] = React.useState<
+    ReadonlyMap<data.ImageToken, TokenResource<string>>
+  >(new Map());
+
   React.useEffect(() => {
     const update = () => {
       new Date().getTime();
@@ -60,6 +64,7 @@ export const App: React.FC<{
     update();
   });
 
+  // ルーティング
   React.useEffect(() => {
     window.history.pushState(
       undefined,
@@ -73,11 +78,13 @@ export const App: React.FC<{
     });
   }, [urlData]);
 
+  // ログイン
   React.useEffect(
     logInEffect(logInState, urlData, dispatchLogInState, dispatchUserData),
     [logInState]
   );
 
+  // プロジェクトの一覧
   React.useEffect(() => {
     console.log({ allProjectIdListMaybe });
     if (allProjectIdListMaybe._ === "Nothing") {
@@ -136,17 +143,86 @@ export const App: React.FC<{
     }
   }, [allProjectIdListMaybe]);
 
+  React.useEffect(() => {
+    for (const [imageToken, imageDataItem] of imageData) {
+      switch (imageDataItem._) {
+        case "Loaded":
+          return;
+        case "WaitLoading":
+          dispatchImageData((dict) => {
+            const newDict = new Map(dict);
+            newDict.set(imageToken, TokenResource.Loading());
+            return newDict;
+          });
+          // indexedDBから画像データを読み取る
+          dispatchImageData((dict) => {
+            const newDict = new Map(dict);
+            newDict.set(imageToken, TokenResource.WaitRequesting());
+            return newDict;
+          });
+          return;
+        case "Loading":
+          return;
+        case "WaitRequesting":
+          dispatchImageData((dict) => {
+            const newDict = new Map(dict);
+            newDict.set(imageToken, TokenResource.Requesting());
+            return newDict;
+          });
+          callApi(
+            "getImageFile",
+            data.ImageToken.codec.encode(imageToken),
+            data.Binary.codec
+          ).then((binary) => {
+            dispatchImageData((dict) => {
+              console.log("binary", binary);
+              const newDict = new Map(dict);
+              newDict.set(
+                imageToken,
+                TokenResource.Loaded(
+                  window.URL.createObjectURL(
+                    new Blob([binary], {
+                      type: "image/png",
+                    })
+                  )
+                )
+              );
+              return newDict;
+            });
+          });
+          return;
+        case "Requesting":
+          return;
+        case "WaitRetrying":
+          console.log("再度画像のリクエストをする予定");
+          return;
+        case "Retrying":
+          return;
+        case "Unknown":
+          return;
+      }
+    }
+  }, [imageData]);
+
   const model: Model = {
     clientMode: urlData.clientMode,
     language: urlData.language,
     logInState,
     projectData,
     userData,
+    imageData,
     onJump,
     allProjectIdListMaybe,
     requestAllProject: () => {
       if (allProjectIdListMaybe._ === "Nothing") {
         dispatchAllProjectIdList(data.Maybe.Just(Resource.WaitLoading()));
+      }
+    },
+    requestImage: (imageToken: data.ImageToken) => {
+      if (imageData.get(imageToken) === undefined) {
+        return dispatchImageData(
+          new Map([...imageData, [imageToken, TokenResource.WaitLoading()]])
+        );
       }
     },
   };

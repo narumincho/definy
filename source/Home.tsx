@@ -15,10 +15,25 @@ import { jsx } from "react-free-style";
 
 export const Home: React.FC<{ model: Model }> = (prop) => {
   React.useEffect(() => {
+    console.log("called Home effect");
     if (prop.model.allProjectIdListMaybe._ === "Nothing") {
       prop.model.requestAllProject();
+      return;
     }
-  });
+    if (prop.model.allProjectIdListMaybe.value._ === "Loaded") {
+      for (const id of prop.model.allProjectIdListMaybe.value.data) {
+        const pData = prop.model.projectData.get(id);
+        if (
+          pData !== undefined &&
+          pData._ === "Loaded" &&
+          pData.data._ === "Just"
+        ) {
+          prop.model.requestImage(pData.data.value.imageHash);
+          prop.model.requestImage(pData.data.value.iconHash);
+        }
+      }
+    }
+  }, [prop.model.projectData]);
 
   return (
     <div css={{ display: "grid", overflow: "hidden" }}>
@@ -194,6 +209,13 @@ const ProjectLoadedItem: React.FC<{
   if (prop.projectMaybe._ === "Nothing") {
     return <div>id={prop.id}のプロジェクトは存在しないようだ</div>;
   }
+  const imageSrc = (() => {
+    const iData = prop.model.imageData.get(prop.projectMaybe.value.imageHash);
+    if (iData !== undefined && iData._ === "Loaded") {
+      return iData.data;
+    }
+    return undefined;
+  })();
 
   return (
     <ui.Link
@@ -207,7 +229,7 @@ const ProjectLoadedItem: React.FC<{
       onJump={prop.model.onJump}
       urlData={{ ...prop.model, location: Location.Project(prop.id) }}
     >
-      <div css={{ border: "solid 1px white" }}>画像</div>
+      <img css={{ border: "solid 1px white" }} src={imageSrc} />
       <div
         css={{
           display: "grid",

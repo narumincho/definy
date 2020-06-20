@@ -25,7 +25,7 @@ export const customTypeList: ReadonlyArray<CustomTypeDefinition> = [
       },
       {
         name: "Unknown",
-        description: "データが存在しているか確認できない",
+        description: "データを取得できなかった (サーバーの障害, オフライン)",
         parameter: Maybe.Nothing(),
       },
       {
@@ -57,6 +57,54 @@ export const customTypeList: ReadonlyArray<CustomTypeDefinition> = [
         name: "Updating",
         description: "サーバーに問い合わせてリソースを更新中",
         parameter: Maybe.Just(Type.Parameter("data")),
+      },
+      {
+        name: "WaitRetrying",
+        description: "Unknownだったリソースをサーバーに問い合わせ待ち",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Retrying",
+        description: "Unknownだったリソースをサーバーに問い合わせ中",
+        parameter: Maybe.Nothing(),
+      },
+    ]),
+  },
+  {
+    name: "TokenResource",
+    description:
+      "キーであるTokenによってデータが必ず1つに決まるもの. 絶対に更新されない",
+    typeParameterList: ["data"],
+    body: CustomTypeDefinitionBody.Sum([
+      {
+        name: "Loaded",
+        description: "取得済み",
+        parameter: Maybe.Just(Type.Parameter("data")),
+      },
+      {
+        name: "Unknown",
+        description: "データを取得できなかった (サーバーの障害, オフライン)",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "WaitLoading",
+        description: "indexedDBにアクセス待ち",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Loading",
+        description: "indexedDBにアクセス中",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "WaitRequesting",
+        description: "サーバに問い合わせ待ち",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Requesting",
+        description: "サーバに問い合わせ中",
+        parameter: Maybe.Nothing(),
       },
       {
         name: "WaitRetrying",
