@@ -74,8 +74,10 @@ const sampleComponentList = {
         onJump: () => {},
         projectData: new Map(),
         userData: new Map(),
+        imageData: new Map(),
         allProjectIdListMaybe: data.Maybe.Nothing(),
         requestAllProject: () => {},
+        requestImage: () => {},
       }}
       onRequestLogIn={() => {}}
     />
@@ -89,8 +91,10 @@ const sampleComponentList = {
         onJump: () => {},
         projectData: new Map(),
         userData: new Map(),
+        imageData: new Map(),
         allProjectIdListMaybe: data.Maybe.Nothing(),
         requestAllProject: () => {},
+        requestImage: () => {},
       }}
     />
   ),
@@ -107,6 +111,7 @@ const sampleComponentList = {
           sampleProject[2],
         ]),
         userData: new Map(),
+        imageData: new Map(),
         allProjectIdListMaybe: data.Maybe.Just(
           Resource.Loaded([
             sampleProject[0][0],
@@ -115,6 +120,7 @@ const sampleComponentList = {
           ])
         ),
         requestAllProject: () => {},
+        requestImage: () => {},
       }}
     />
   ),

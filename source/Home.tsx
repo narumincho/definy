@@ -209,13 +209,15 @@ const ProjectLoadedItem: React.FC<{
   if (prop.projectMaybe._ === "Nothing") {
     return <div>id={prop.id}のプロジェクトは存在しないようだ</div>;
   }
-  const imageSrc = (() => {
+  const imageSrc: string | undefined = (() => {
     const iData = prop.model.imageData.get(prop.projectMaybe.value.imageHash);
+    console.log({ iData });
     if (iData !== undefined && iData._ === "Loaded") {
       return iData.data;
     }
     return undefined;
   })();
+  console.log({ imageSrc });
 
   return (
     <ui.Link
@@ -229,7 +231,10 @@ const ProjectLoadedItem: React.FC<{
       onJump={prop.model.onJump}
       urlData={{ ...prop.model, location: Location.Project(prop.id) }}
     >
-      <img css={{ border: "solid 1px white" }} src={imageSrc} />
+      <img
+        css={{ border: "solid 1px white", width: "100%", height: "100%" }}
+        src={imageSrc}
+      />
       <div
         css={{
           display: "grid",

@@ -149,12 +149,14 @@ export const App: React.FC<{
         case "Loaded":
           return;
         case "WaitLoading":
-          dispatchImageData((dict) => {
-            const newDict = new Map(dict);
-            newDict.set(imageToken, TokenResource.Loading());
-            return newDict;
-          });
-          // indexedDBから画像データを読み取る
+          /*
+           * dispatchImageData((dict) => {
+           *   const newDict = new Map(dict);
+           *   newDict.set(imageToken, TokenResource.Loading());
+           *   return newDict;
+           * });
+           * indexedDBから画像データを読み取る
+           */
           dispatchImageData((dict) => {
             const newDict = new Map(dict);
             newDict.set(imageToken, TokenResource.WaitRequesting());
@@ -175,7 +177,6 @@ export const App: React.FC<{
             data.Binary.codec
           ).then((binary) => {
             dispatchImageData((dict) => {
-              console.log("binary", binary);
               const newDict = new Map(dict);
               newDict.set(
                 imageToken,
@@ -220,9 +221,11 @@ export const App: React.FC<{
     },
     requestImage: (imageToken: data.ImageToken) => {
       if (imageData.get(imageToken) === undefined) {
-        return dispatchImageData(
-          new Map([...imageData, [imageToken, TokenResource.WaitLoading()]])
-        );
+        dispatchImageData((dict) => {
+          const newDict = new Map(dict);
+          newDict.set(imageToken, TokenResource.WaitLoading());
+          return newDict;
+        });
       }
     },
   };
