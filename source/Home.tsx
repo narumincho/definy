@@ -217,7 +217,6 @@ const ProjectLoadedItem: React.FC<{
     }
     return undefined;
   })();
-  console.log({ imageSrc });
 
   return (
     <ui.Link

@@ -144,33 +144,21 @@ export const App: React.FC<{
   }, [allProjectIdListMaybe]);
 
   React.useEffect(() => {
+    const newImageData = new Map(imageData);
+    let isChanged = false;
     for (const [imageToken, imageDataItem] of imageData) {
       switch (imageDataItem._) {
         case "Loaded":
-          return;
+          break;
         case "WaitLoading":
-          /*
-           * dispatchImageData((dict) => {
-           *   const newDict = new Map(dict);
-           *   newDict.set(imageToken, TokenResource.Loading());
-           *   return newDict;
-           * });
-           * indexedDBから画像データを読み取る
-           */
-          dispatchImageData((dict) => {
-            const newDict = new Map(dict);
-            newDict.set(imageToken, TokenResource.WaitRequesting());
-            return newDict;
-          });
-          return;
+          isChanged = true;
+          newImageData.set(imageToken, TokenResource.WaitRequesting());
+          break;
         case "Loading":
-          return;
+          break;
         case "WaitRequesting":
-          dispatchImageData((dict) => {
-            const newDict = new Map(dict);
-            newDict.set(imageToken, TokenResource.Requesting());
-            return newDict;
-          });
+          isChanged = true;
+          newImageData.set(imageToken, TokenResource.Requesting());
           callApi(
             "getImageFile",
             data.ImageToken.codec.encode(imageToken),
@@ -191,17 +179,21 @@ export const App: React.FC<{
               return newDict;
             });
           });
-          return;
+          break;
         case "Requesting":
-          return;
+          break;
         case "WaitRetrying":
+          isChanged = true;
           console.log("再度画像のリクエストをする予定");
-          return;
+          break;
         case "Retrying":
-          return;
+          break;
         case "Unknown":
-          return;
+          break;
       }
+    }
+    if (isChanged) {
+      dispatchImageData(newImageData);
     }
   }, [imageData]);
 
