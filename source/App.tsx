@@ -33,23 +33,23 @@ export const App: React.FC<{
   initUrlData: data.UrlData;
 }> = (prop) => {
   const [urlData, onJump] = React.useState<data.UrlData>(prop.initUrlData);
-  const [logInState, dispatchLogInState] = React.useState<LogInState>(
+  const [logInState, setLogInState] = React.useState<LogInState>(
     prop.accessToken._ === "Just"
       ? { _: "WaitVerifyingAccessToken", accessToken: prop.accessToken.value }
       : { _: "Guest" }
   );
-  const [projectData, dispatchProject] = React.useState<
+  const [projectData, setProjectData] = React.useState<
     ReadonlyMap<data.ProjectId, Resource<data.Maybe<data.Project>>>
   >(new Map());
-  const [allProjectIdListMaybe, dispatchAllProjectIdList] = React.useState<
+  const [allProjectIdListMaybe, setAllProjectIdList] = React.useState<
     data.Maybe<Resource<ReadonlyArray<data.ProjectId>>>
   >(data.Maybe.Nothing);
 
-  const [userData, dispatchUserData] = React.useState<
+  const [userData, setUserData] = React.useState<
     ReadonlyMap<data.UserId, Resource<data.Maybe<data.User>>>
   >(new Map());
 
-  const [imageData, dispatchImageData] = React.useState<
+  const [imageData, setImageData] = React.useState<
     ReadonlyMap<data.ImageToken, TokenResource<string>>
   >(new Map());
 
@@ -80,13 +80,12 @@ export const App: React.FC<{
 
   // ログイン
   React.useEffect(
-    logInEffect(logInState, urlData, dispatchLogInState, dispatchUserData),
+    logInEffect(logInState, urlData, setLogInState, setUserData),
     [logInState]
   );
 
   // プロジェクトの一覧
   React.useEffect(() => {
-    console.log({ allProjectIdListMaybe });
     if (allProjectIdListMaybe._ === "Nothing") {
       return;
     }
@@ -101,12 +100,12 @@ export const App: React.FC<{
          * indexedDBにアクセスして取得
          * 代わりに失敗したということでWaitRequestingにする
          */
-        dispatchAllProjectIdList(data.Maybe.Just(Resource.WaitRequesting()));
+        setAllProjectIdList(data.Maybe.Just(Resource.WaitRequesting()));
         return;
       case "Loading":
         return;
       case "WaitRequesting":
-        dispatchAllProjectIdList(data.Maybe.Just(Resource.Requesting()));
+        setAllProjectIdList(data.Maybe.Just(Resource.Requesting()));
         callApi(
           "getAllProject",
           [],
@@ -114,7 +113,7 @@ export const App: React.FC<{
             data.IdAndData.codec(data.ProjectId.codec, data.Project.codec)
           )
         ).then((idAndProjectList) => {
-          dispatchProject(
+          setProjectData(
             new Map(
               idAndProjectList.map((project) => [
                 project.id,
@@ -122,7 +121,7 @@ export const App: React.FC<{
               ])
             )
           );
-          dispatchAllProjectIdList(
+          setAllProjectIdList(
             data.Maybe.Just(
               Resource.Loaded(idAndProjectList.map((project) => project.id))
             )
@@ -142,6 +141,104 @@ export const App: React.FC<{
         console.log("サーバーに問い合わせてプロジェクトの一覧を再取得する予定");
     }
   }, [allProjectIdListMaybe]);
+
+  React.useEffect(() => {
+    const newProjectData = new Map(projectData);
+    let isChanged = false;
+    for (const [projectId, projectResource] of projectData) {
+      switch (projectResource._) {
+        case "Loaded":
+          break;
+        case "WaitLoading":
+          isChanged = true;
+          newProjectData.set(projectId, TokenResource.WaitRequesting());
+          break;
+        case "Loading":
+          break;
+        case "WaitRequesting":
+          isChanged = true;
+          newProjectData.set(projectId, TokenResource.Requesting());
+          callApi(
+            "getProject",
+            data.ProjectId.codec.encode(projectId),
+            data.Project.codec
+          ).then((project) => {
+            setProjectData((dict) => {
+              const newDict = new Map(dict);
+              newDict.set(
+                projectId,
+                TokenResource.Loaded(data.Maybe.Just(project))
+              );
+              return newDict;
+            });
+          });
+          break;
+        case "Requesting":
+          break;
+        case "WaitRetrying":
+          isChanged = true;
+          console.log("再度プロジェクトのリクエストをする予定");
+          break;
+        case "Retrying":
+        case "WaitUpdating":
+        case "Updating":
+        case "Unknown":
+          break;
+      }
+    }
+    if (isChanged) {
+      setProjectData(newProjectData);
+    }
+  }, [projectData]);
+
+  React.useEffect(() => {
+    const newUserData = new Map(userData);
+    let isChanged = false;
+    for (const [userId, userResource] of userData) {
+      switch (userResource._) {
+        case "Loaded":
+          break;
+        case "WaitLoading":
+          isChanged = true;
+          newUserData.set(userId, TokenResource.WaitRequesting());
+          break;
+        case "Loading":
+          break;
+        case "WaitRequesting":
+          isChanged = true;
+          newUserData.set(userId, TokenResource.Requesting());
+          callApi(
+            "getUser",
+            data.UserId.codec.encode(userId),
+            data.User.codec
+          ).then((project) => {
+            setUserData((dict) => {
+              const newDict = new Map(dict);
+              newDict.set(
+                userId,
+                TokenResource.Loaded(data.Maybe.Just(project))
+              );
+              return newDict;
+            });
+          });
+          break;
+        case "Requesting":
+          break;
+        case "WaitRetrying":
+          isChanged = true;
+          console.log("再度プロジェクトのリクエストをする予定");
+          break;
+        case "Retrying":
+        case "WaitUpdating":
+        case "Updating":
+        case "Unknown":
+          break;
+      }
+    }
+    if (isChanged) {
+      setUserData(newUserData);
+    }
+  }, [userData]);
 
   React.useEffect(() => {
     const newImageData = new Map(imageData);
@@ -164,7 +261,7 @@ export const App: React.FC<{
             data.ImageToken.codec.encode(imageToken),
             data.Binary.codec
           ).then((binary) => {
-            dispatchImageData((dict) => {
+            setImageData((dict) => {
               const newDict = new Map(dict);
               newDict.set(
                 imageToken,
@@ -193,7 +290,7 @@ export const App: React.FC<{
       }
     }
     if (isChanged) {
-      dispatchImageData(newImageData);
+      setImageData(newImageData);
     }
   }, [imageData]);
 
@@ -208,12 +305,30 @@ export const App: React.FC<{
     allProjectIdListMaybe,
     requestAllProject: () => {
       if (allProjectIdListMaybe._ === "Nothing") {
-        dispatchAllProjectIdList(data.Maybe.Just(Resource.WaitLoading()));
+        setAllProjectIdList(data.Maybe.Just(Resource.WaitLoading()));
+      }
+    },
+    requestProject: (projectId: data.ProjectId) => {
+      if (projectData.get(projectId) === undefined) {
+        setProjectData((dict) => {
+          const newDict = new Map(dict);
+          newDict.set(projectId, Resource.WaitLoading());
+          return newDict;
+        });
+      }
+    },
+    requestUser: (userId: data.UserId) => {
+      if (userData.get(userId) === undefined) {
+        setUserData((dict) => {
+          const newDict = new Map(dict);
+          newDict.set(userId, Resource.WaitLoading());
+          return newDict;
+        });
       }
     },
     requestImage: (imageToken: data.ImageToken) => {
       if (imageData.get(imageToken) === undefined) {
-        dispatchImageData((dict) => {
+        setImageData((dict) => {
           const newDict = new Map(dict);
           newDict.set(imageToken, TokenResource.WaitLoading());
           return newDict;
@@ -248,7 +363,7 @@ export const App: React.FC<{
       <SidePanel
         model={model}
         onRequestLogIn={(provider) => {
-          dispatchLogInState({ _: "WaitRequestingLogInUrl", provider });
+          setLogInState({ _: "WaitRequestingLogInUrl", provider });
         }}
       />
       <MainPanel location={urlData.location} model={model} />

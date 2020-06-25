@@ -20,5 +20,7 @@ export type Model = {
   onJump: (urlData: data.UrlData) => void;
   allProjectIdListMaybe: data.Maybe<Resource<ReadonlyArray<data.ProjectId>>>;
   requestAllProject: () => void;
+  requestProject: (projectId: data.ProjectId) => void;
+  requestUser: (userId: data.UserId) => void;
   requestImage: (imageToken: data.ImageToken) => void;
 };

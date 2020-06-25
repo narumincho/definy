@@ -245,6 +245,9 @@ export const Image: React.FC<{
   imageToken: data.ImageToken;
   css?: Css;
 }> = (prop) => {
+  React.useEffect(() => {
+    prop.model.requestImage(prop.imageToken);
+  });
   const blobUrlResource = prop.model.imageData.get(prop.imageToken);
   if (blobUrlResource === undefined) {
     return <div>...</div>;
@@ -322,6 +325,9 @@ export const Image: React.FC<{
 };
 
 export const User: React.FC<{ model: Model; userId: data.UserId }> = (prop) => {
+  React.useEffect(() => {
+    prop.model.requestUser(prop.userId);
+  });
   return resourceView(
     prop.model.userData.get(prop.userId),
     { width: 128, height: 32 },
@@ -343,6 +349,9 @@ export const Project: React.FC<{
   model: Model;
   projectId: data.ProjectId;
 }> = (prop) => {
+  React.useEffect(() => {
+    prop.model.requestProject(prop.projectId);
+  });
   return resourceView(
     prop.model.projectData.get(prop.projectId),
     { width: 256, height: 144 },
@@ -355,7 +364,7 @@ export const Project: React.FC<{
           areaTheme="Gray"
           css={{
             display: "grid",
-            gridTemplateRows: "128px auto",
+            gridTemplateRows: "128px 32px 32px",
             width: 256,
           }}
           onJump={prop.model.onJump}
@@ -369,6 +378,7 @@ export const Project: React.FC<{
             imageToken={projectMaybe.value.imageHash}
             model={prop.model}
           />
+          <User model={prop.model} userId={projectMaybe.value.createUserId} />
           <div
             css={{
               display: "grid",

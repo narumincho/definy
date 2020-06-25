@@ -77,6 +77,8 @@ const sampleComponentList = {
         imageData: new Map(),
         allProjectIdListMaybe: data.Maybe.Nothing(),
         requestAllProject: () => {},
+        requestProject: () => {},
+        requestUser: () => {},
         requestImage: () => {},
       }}
       onRequestLogIn={() => {}}
@@ -94,6 +96,8 @@ const sampleComponentList = {
         imageData: new Map(),
         allProjectIdListMaybe: data.Maybe.Nothing(),
         requestAllProject: () => {},
+        requestProject: () => {},
+        requestUser: () => {},
         requestImage: () => {},
       }}
     />
@@ -120,6 +124,8 @@ const sampleComponentList = {
           ])
         ),
         requestAllProject: () => {},
+        requestProject: () => {},
+        requestUser: () => {},
         requestImage: () => {},
       }}
     />
@@ -143,6 +149,8 @@ const sampleComponentList = {
           ]),
           allProjectIdListMaybe: data.Maybe.Nothing(),
           requestAllProject: () => {},
+          requestProject: () => {},
+          requestUser: () => {},
           requestImage: () => {},
         }}
       />
@@ -162,6 +170,8 @@ const sampleComponentList = {
           ]),
           allProjectIdListMaybe: data.Maybe.Nothing(),
           requestAllProject: () => {},
+          requestProject: () => {},
+          requestUser: () => {},
           requestImage: () => {},
         }}
       />
@@ -181,6 +191,8 @@ const sampleComponentList = {
           ]),
           allProjectIdListMaybe: data.Maybe.Nothing(),
           requestAllProject: () => {},
+          requestProject: () => {},
+          requestUser: () => {},
           requestImage: () => {},
         }}
       />
@@ -200,6 +212,8 @@ const sampleComponentList = {
           ]),
           allProjectIdListMaybe: data.Maybe.Nothing(),
           requestAllProject: () => {},
+          requestProject: () => {},
+          requestUser: () => {},
           requestImage: () => {},
         }}
       />

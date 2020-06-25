@@ -2,13 +2,7 @@
 
 import * as React from "react";
 import * as ui from "./ui";
-import {
-  Language,
-  Location,
-  Maybe,
-  Project,
-  ProjectId,
-} from "definy-common/source/data";
+import { Language, Location, ProjectId } from "definy-common/source/data";
 import { Model } from "./model";
 import { Resource } from "./data";
 import { jsx } from "react-free-style";
@@ -17,20 +11,6 @@ export const Home: React.FC<{ model: Model }> = (prop) => {
   React.useEffect(() => {
     if (prop.model.allProjectIdListMaybe._ === "Nothing") {
       prop.model.requestAllProject();
-      return;
-    }
-    if (prop.model.allProjectIdListMaybe.value._ === "Loaded") {
-      for (const id of prop.model.allProjectIdListMaybe.value.data) {
-        const pData = prop.model.projectData.get(id);
-        if (
-          pData !== undefined &&
-          pData._ === "Loaded" &&
-          pData.data._ === "Just"
-        ) {
-          prop.model.requestImage(pData.data.value.imageHash);
-          prop.model.requestImage(pData.data.value.iconHash);
-        }
-      }
     }
   }, [prop.model.projectData]);
 
