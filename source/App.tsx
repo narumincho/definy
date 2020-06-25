@@ -53,17 +53,6 @@ export const App: React.FC<{
     ReadonlyMap<data.ImageToken, TokenResource<string>>
   >(new Map());
 
-  React.useEffect(() => {
-    const update = () => {
-      new Date().getTime();
-      /*
-       * 現時刻を取得してリソースの中で期限が切れたものをリクエストしていく?
-       */
-      window.requestAnimationFrame(update);
-    };
-    update();
-  });
-
   // ルーティング
   React.useEffect(() => {
     window.history.pushState(

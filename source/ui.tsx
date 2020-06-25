@@ -330,7 +330,7 @@ export const User: React.FC<{ model: Model; userId: data.UserId }> = (prop) => {
   });
   return resourceView(
     prop.model.userData.get(prop.userId),
-    { width: 128, height: 32 },
+    { width: "100%", height: 32 },
     (userMaybe) => {
       if (userMaybe._ === "Just") {
         return (
@@ -364,7 +364,7 @@ export const Project: React.FC<{
           areaTheme="Gray"
           css={{
             display: "grid",
-            gridTemplateRows: "128px 32px 32px",
+            gridTemplateRows: "128px 32px 48px",
             width: 256,
           }}
           onJump={prop.model.onJump}
