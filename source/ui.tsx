@@ -167,13 +167,65 @@ export const Image: React.FC<{
   }
   switch (blobUrlResource._) {
     case "WaitLoading":
-      return <div css={prop.css}>読み込み準備中……</div>;
+      return (
+        <div
+          css={{
+            ...prop.css,
+            display: "grid",
+            justifyContent: "center",
+            alignContent: "center",
+          }}
+        >
+          <div css={{ width: 32, height: 32 }}>
+            <NewLoadingIcon isWait />
+          </div>
+        </div>
+      );
     case "Loading":
-      return <div css={prop.css}>読込中……</div>;
+      return (
+        <div
+          css={{
+            ...prop.css,
+            display: "grid",
+            justifyContent: "center",
+            alignContent: "center",
+          }}
+        >
+          <div css={{ width: 32, height: 32 }}>
+            <NewLoadingIcon isWait={false} />
+          </div>
+        </div>
+      );
     case "WaitRequesting":
-      return <div css={prop.css}>リクエスト準備中……</div>;
+      return (
+        <div
+          css={{
+            ...prop.css,
+            display: "grid",
+            justifyContent: "center",
+            alignContent: "center",
+          }}
+        >
+          <div css={{ width: 32, height: 32 }}>
+            <RequestingIcon isWait />
+          </div>
+        </div>
+      );
     case "Requesting":
-      return <div css={prop.css}>リクエスト中……</div>;
+      return (
+        <div
+          css={{
+            ...prop.css,
+            display: "grid",
+            justifyContent: "center",
+            alignContent: "center",
+          }}
+        >
+          <div css={{ width: 32, height: 32 }}>
+            <RequestingIcon isWait={false} />
+          </div>
+        </div>
+      );
     case "WaitRetrying":
       return <div css={prop.css}>再挑戦準備中</div>;
     case "Retrying":
@@ -241,3 +293,52 @@ export const User: React.FC<{ model: Model; userId: UserId }> = (prop) => {
       return <div>存在の確認に失敗</div>;
   }
 };
+
+const NewLoadingIcon: React.FC<{ isWait: boolean }> = (prop) => (
+  <svg viewBox="0 0 40 40">
+    <circle cx={20} cy={20} r={8} stroke="#eee">
+      <animate
+        attributeName="r"
+        dur={1}
+        repeatCount="indefinite"
+        values={prop.isWait ? "12" : "12;0"}
+      />
+      <animate
+        attributeName="stroke"
+        dur={1}
+        repeatCount="indefinite"
+        values="#eee;transparent"
+      />
+    </circle>
+  </svg>
+);
+
+const RequestingIcon: React.FC<{ isWait: boolean }> = (prop) => (
+  <svg viewBox="0 0 40 40">
+    {new Array(5).fill(0).map((_, index) => {
+      return (
+        <circle
+          cx={20}
+          cy={index * 10}
+          fill="transparent"
+          key={index.toString()}
+          r={3}
+          stroke="#eee"
+        >
+          <animate
+            attributeName="cy"
+            dur={0.2}
+            repeatCount="indefinite"
+            values={
+              prop.isWait
+                ? (index * 10 - 5).toString()
+                : (index * 10 - 5).toString() +
+                  ";" +
+                  (index * 10 + 5).toString()
+            }
+          />
+        </circle>
+      );
+    })}
+  </svg>
+);

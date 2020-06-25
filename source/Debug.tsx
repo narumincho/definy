@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import * as ui from "./ui";
+import { Resource, TokenResource } from "./data";
 import { About } from "./About";
 import { Home } from "./Home";
-import { Resource } from "./data";
 import { SidePanel } from "./SidePanel";
 import { data } from "definy-common";
 import { jsx } from "react-free-style";
@@ -125,6 +125,86 @@ const sampleComponentList = {
     />
   ),
   about: <About />,
+  requestingImage: (
+    <div>
+      WaitLoading
+      <ui.Image
+        css={{ width: 64, height: 64, border: "solid 1px red" }}
+        imageToken={"a" as data.ImageToken}
+        model={{
+          clientMode: "DebugMode",
+          language: "English",
+          logInState: { _: "Guest" },
+          onJump: () => {},
+          projectData: new Map(),
+          userData: new Map(),
+          imageData: new Map([
+            ["a" as data.ImageToken, TokenResource.WaitLoading()],
+          ]),
+          allProjectIdListMaybe: data.Maybe.Nothing(),
+          requestAllProject: () => {},
+          requestImage: () => {},
+        }}
+      />
+      Loading
+      <ui.Image
+        css={{ width: 64, height: 64, border: "solid 1px red" }}
+        imageToken={"a" as data.ImageToken}
+        model={{
+          clientMode: "DebugMode",
+          language: "English",
+          logInState: { _: "Guest" },
+          onJump: () => {},
+          projectData: new Map(),
+          userData: new Map(),
+          imageData: new Map([
+            ["a" as data.ImageToken, TokenResource.Loading()],
+          ]),
+          allProjectIdListMaybe: data.Maybe.Nothing(),
+          requestAllProject: () => {},
+          requestImage: () => {},
+        }}
+      />
+      WaitRequesting
+      <ui.Image
+        css={{ width: 64, height: 64, border: "solid 1px red" }}
+        imageToken={"a" as data.ImageToken}
+        model={{
+          clientMode: "DebugMode",
+          language: "English",
+          logInState: { _: "Guest" },
+          onJump: () => {},
+          projectData: new Map(),
+          userData: new Map(),
+          imageData: new Map([
+            ["a" as data.ImageToken, TokenResource.WaitRequesting()],
+          ]),
+          allProjectIdListMaybe: data.Maybe.Nothing(),
+          requestAllProject: () => {},
+          requestImage: () => {},
+        }}
+      />
+      Requesting
+      <ui.Image
+        css={{ width: 64, height: 64, border: "solid 1px red" }}
+        imageToken={"a" as data.ImageToken}
+        model={{
+          clientMode: "DebugMode",
+          language: "English",
+          logInState: { _: "Guest" },
+          onJump: () => {},
+          projectData: new Map(),
+          userData: new Map(),
+          imageData: new Map([
+            ["a" as data.ImageToken, TokenResource.Requesting()],
+          ]),
+          allProjectIdListMaybe: data.Maybe.Nothing(),
+          requestAllProject: () => {},
+          requestImage: () => {},
+        }}
+      />
+    </div>
+  ),
 };
 
 const allTab = Object.keys(sampleComponentList) as ReadonlyArray<
