@@ -25,8 +25,11 @@ export const SidePanel: React.FC<{
       model={prop.model}
       requestLogIn={prop.onRequestLogIn}
     />
+    <div css={{ padding: 8 }}>Idea</div>
+    <div css={{ padding: 8 }}>Part</div>
     <ui.Link
       areaTheme="Gray"
+      css={{ padding: 8 }}
       onJump={prop.model.onJump}
       urlData={{ ...prop.model, location: data.Location.About }}
     >
@@ -34,6 +37,7 @@ export const SidePanel: React.FC<{
     </ui.Link>
     <ui.Link
       areaTheme="Gray"
+      css={{ padding: 8 }}
       onJump={prop.model.onJump}
       urlData={{ ...prop.model, location: data.Location.Debug }}
     >

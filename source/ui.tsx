@@ -1,11 +1,10 @@
 /** @jsx jsx */
 
 import * as React from "react";
-import * as common from "definy-common";
 import { Css, jsx } from "react-free-style";
-import { ImageToken, Maybe, UrlData, UserId } from "definy-common/source/data";
+import { Resource, TokenResource } from "./data";
+import { data, urlDataAndAccessTokenToUrl } from "definy-common";
 import { Model } from "./model";
-import { TokenResource } from "./data";
 
 export type AreaTheme = "Gray" | "Black" | "Active";
 
@@ -43,8 +42,8 @@ export const areaThemeToValue = (areaTheme: AreaTheme): AreaThemeValue => {
 };
 
 export const Link: React.FC<{
-  urlData: UrlData;
-  onJump: (urlData: UrlData) => void;
+  urlData: data.UrlData;
+  onJump: (urlData: data.UrlData) => void;
   areaTheme: AreaTheme;
   css?: Css;
 }> = (prop): JSX.Element => {
@@ -62,9 +61,10 @@ export const Link: React.FC<{
         },
         ...prop.css,
       }}
-      href={common
-        .urlDataAndAccessTokenToUrl(prop.urlData, Maybe.Nothing())
-        .toString()}
+      href={urlDataAndAccessTokenToUrl(
+        prop.urlData,
+        data.Maybe.Nothing()
+      ).toString()}
       onClick={(event) => {
         if (
           !event.ctrlKey &&
@@ -156,9 +156,93 @@ export const ActiveDiv: React.FC<{ css?: Css }> = (prop) => {
   );
 };
 
+export const resourceView = <data extends unknown>(
+  resource: Resource<data> | undefined,
+  css: Css | undefined,
+  view: (data: data) => React.ReactElement
+): React.ReactElement => {
+  if (resource === undefined) {
+    return <div css={css}>...</div>;
+  }
+  switch (resource._) {
+    case "WaitLoading":
+      return (
+        <div
+          css={{
+            ...css,
+            display: "grid",
+            justifyContent: "center",
+            alignContent: "center",
+          }}
+        >
+          <div css={{ width: 32, height: 32 }}>
+            <NewLoadingIcon isWait />
+          </div>
+        </div>
+      );
+    case "Loading":
+      return (
+        <div
+          css={{
+            ...css,
+            display: "grid",
+            justifyContent: "center",
+            alignContent: "center",
+          }}
+        >
+          <div css={{ width: 32, height: 32 }}>
+            <NewLoadingIcon isWait={false} />
+          </div>
+        </div>
+      );
+    case "WaitRequesting":
+      return (
+        <div
+          css={{
+            ...css,
+            display: "grid",
+            justifyContent: "center",
+            alignContent: "center",
+          }}
+        >
+          <div css={{ width: 32, height: 32 }}>
+            <NewLoadingIcon isWait />
+          </div>
+        </div>
+      );
+    case "Requesting":
+      return (
+        <div
+          css={{
+            ...css,
+            display: "grid",
+            justifyContent: "center",
+            alignContent: "center",
+          }}
+        >
+          <div css={{ width: 32, height: 32 }}>
+            <NewLoadingIcon isWait={false} />
+          </div>
+        </div>
+      );
+    case "WaitRetrying":
+      return <div>WRetry</div>;
+    case "Retrying":
+      return <div>Retry</div>;
+    case "WaitUpdating":
+      return <div>WU</div>;
+    case "Updating":
+      return <div>U</div>;
+    case "Loaded":
+      return view(resource.data);
+    case "Unknown":
+      return <div>Unknown</div>;
+  }
+};
+
 export const Image: React.FC<{
   model: Model;
-  imageToken: ImageToken;
+  imageToken: data.ImageToken;
   css?: Css;
 }> = (prop) => {
   const blobUrlResource = prop.model.imageData.get(prop.imageToken);
@@ -237,61 +321,74 @@ export const Image: React.FC<{
   }
 };
 
-export const User: React.FC<{ model: Model; userId: UserId }> = (prop) => {
-  const user = prop.model.userData.get(prop.userId);
-  React.useEffect(() => {
-    if (user === undefined) {
-      return;
-    }
-    switch (user._) {
-      case "WaitLoading":
-      case "Loading":
-      case "WaitRequesting":
-      case "Requesting":
-      case "WaitRetrying":
-      case "Retrying":
-        return;
-      case "WaitUpdating":
-      case "Updating":
-      case "Loaded":
-        if (user.data._ === "Just") {
-          prop.model.requestImage(user.data.value.imageHash);
-        }
-    }
-  });
-  if (user === undefined) {
-    return <div>...</div>;
-  }
-  switch (user._) {
-    case "WaitLoading":
-      return <div>WL</div>;
-    case "Loading":
-      return <div>L</div>;
-    case "WaitRequesting":
-      return <div>WReq</div>;
-    case "Requesting":
-      return <div>Req</div>;
-    case "WaitRetrying":
-      return <div>WRetry</div>;
-    case "Retrying":
-      return <div>Retry</div>;
-    case "WaitUpdating":
-      return <div>WU</div>;
-    case "Updating":
-      return <div>U</div>;
-    case "Loaded":
-      if (user.data._ === "Just") {
+export const User: React.FC<{ model: Model; userId: data.UserId }> = (prop) => {
+  return resourceView(
+    prop.model.userData.get(prop.userId),
+    { width: 128, height: 32 },
+    (userMaybe) => {
+      if (userMaybe._ === "Just") {
         return (
           <div css={{ display: "grid", gridTemplateColumns: "32px 1fr" }}>
-            <Image imageToken={user.data.value.imageHash} model={prop.model} />
-            {user.data.value.name}
+            <Image imageToken={userMaybe.value.imageHash} model={prop.model} />
+            {userMaybe.value.name}
           </div>
         );
       }
       return <div>存在しないユーザー</div>;
-    case "Unknown":
-      return <div>存在の確認に失敗</div>;
-  }
+    }
+  );
+};
+
+export const Project: React.FC<{
+  model: Model;
+  projectId: data.ProjectId;
+}> = (prop) => {
+  return resourceView(
+    prop.model.projectData.get(prop.projectId),
+    { width: 256, height: 144 },
+    (projectMaybe) => {
+      if (projectMaybe._ === "Nothing") {
+        return <div>id={prop.projectId}のプロジェクトは存在しないようだ</div>;
+      }
+      return (
+        <Link
+          areaTheme="Gray"
+          css={{
+            display: "grid",
+            gridTemplateRows: "128px auto",
+            width: 256,
+          }}
+          onJump={prop.model.onJump}
+          urlData={{
+            ...prop.model,
+            location: data.Location.Project(prop.projectId),
+          }}
+        >
+          <Image
+            css={{ width: "100%", height: "100%" }}
+            imageToken={projectMaybe.value.imageHash}
+            model={prop.model}
+          />
+          <div
+            css={{
+              display: "grid",
+              gridTemplateColumns: "32px 1fr",
+              gap: 8,
+              alignItems: "center",
+              padding: 8,
+            }}
+          >
+            <Image
+              css={{ width: 32, height: 32 }}
+              imageToken={projectMaybe.value.iconHash}
+              model={prop.model}
+            />
+            {projectMaybe.value.name}
+          </div>
+        </Link>
+      );
+    }
+  );
 };
 
 const NewLoadingIcon: React.FC<{ isWait: boolean }> = (prop) => (

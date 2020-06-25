@@ -38,7 +38,7 @@ export const Home: React.FC<{ model: Model }> = (prop) => {
     <div css={{ display: "grid", overflow: "hidden" }}>
       <div css={{ display: "grid", overflowY: "scroll" }}>
         {prop.model.allProjectIdListMaybe._ === "Just" ? (
-          <LoadedView
+          <AllProjectList
             allProjectIdListResource={prop.model.allProjectIdListMaybe.value}
             model={prop.model}
           />
@@ -88,13 +88,16 @@ const LoadingDummyView: React.FC<Record<never, never>> = () => {
     </div>
   );
 };
-const LoadedView: React.FC<{
+
+const AllProjectList: React.FC<{
   model: Model;
   allProjectIdListResource: Resource<ReadonlyArray<ProjectId>>;
-}> = (prop) => {
-  switch (prop.allProjectIdListResource._) {
-    case "Loaded":
-      if (prop.allProjectIdListResource.data.length === 0) {
+}> = (prop) =>
+  ui.resourceView(
+    prop.allProjectIdListResource,
+    { width: "100%", height: "100%" },
+    (allProjectList) => {
+      if (allProjectList.length === 0) {
         return <div>プロジェクトが1つもありません</div>;
       }
       return (
@@ -111,139 +114,17 @@ const LoadedView: React.FC<{
             gap: 8,
           }}
         >
-          {[...prop.model.projectData].map(([id, resource]) => (
-            <ProjectItem
-              id={id}
-              key={id}
+          {allProjectList.map((projectId) => (
+            <ui.Project
+              key={projectId}
               model={prop.model}
-              resource={resource}
+              projectId={projectId}
             />
           ))}
         </div>
       );
-    case "Unknown":
-      return <div>プロジェクトの一覧を取得できなかった</div>;
-    case "WaitLoading":
-      return <div>indexedDBから読み込み準備中……</div>;
-    case "Loading":
-      return <div>indexedDBから読み込み中……</div>;
-    case "WaitRequesting":
-      return <div>サーバーに問い合わせ待ち……</div>;
-    case "Requesting":
-      return <div>サーバーに問い合わせ中……</div>;
-    case "WaitUpdating":
-      return <div>更新準備中……</div>;
-    case "Updating":
-      return <div>更新中……</div>;
-    case "WaitRetrying":
-      return <div>再試行準備中……</div>;
-    case "Retrying":
-      return <div>再試行中……</div>;
-  }
-};
-
-const ProjectItem: React.FC<{
-  model: Model;
-  id: ProjectId;
-  resource: Resource<Maybe<Project>>;
-}> = (prop) => {
-  switch (prop.resource._) {
-    case "Loaded":
-      return (
-        <ProjectLoadedItem
-          id={prop.id}
-          model={prop.model}
-          projectMaybe={prop.resource.data}
-        />
-      );
-
-    case "Unknown":
-      return (
-        <div>
-          id={prop.id}のプロジェクトのデータに取得に失敗した. 存在するのかも不明
-        </div>
-      );
-    case "WaitLoading":
-      return <div>indexedDBから読み込み準備中……</div>;
-    case "Loading":
-      return <div>indexedDBから読み込み中……</div>;
-    case "WaitRequesting":
-      return <div>サーバーに問い合わせ待ち……</div>;
-    case "Requesting":
-      return <div>サーバーに問い合わせ中……</div>;
-    case "WaitUpdating":
-      return (
-        <div>
-          <div>更新準備中……</div>
-          <ProjectLoadedItem
-            id={prop.id}
-            model={prop.model}
-            projectMaybe={prop.resource.data}
-          />
-        </div>
-      );
-    case "Updating":
-      return (
-        <div>
-          <div>更新中……</div>
-          <ProjectLoadedItem
-            id={prop.id}
-            model={prop.model}
-            projectMaybe={prop.resource.data}
-          />
-        </div>
-      );
-    case "WaitRetrying":
-      return <div>再試行準備中……</div>;
-    case "Retrying":
-      return <div>再試行中……</div>;
-  }
-};
-
-const ProjectLoadedItem: React.FC<{
-  model: Model;
-  id: ProjectId;
-  projectMaybe: Maybe<Project>;
-}> = (prop) => {
-  if (prop.projectMaybe._ === "Nothing") {
-    return <div>id={prop.id}のプロジェクトは存在しないようだ</div>;
-  }
-
-  return (
-    <ui.Link
-      areaTheme="Gray"
-      css={{
-        padding: 8,
-        display: "grid",
-        gridTemplateRows: "128px auto",
-        width: 256,
-      }}
-      onJump={prop.model.onJump}
-      urlData={{ ...prop.model, location: Location.Project(prop.id) }}
-    >
-      <ui.Image
-        css={{ border: "solid 1px white", width: "100%", height: "100%" }}
-        imageToken={prop.projectMaybe.value.imageHash}
-        model={prop.model}
-      />
-      <div
-        css={{
-          display: "grid",
-          gridTemplateColumns: "32px 1fr",
-          gap: 8,
-          alignItems: "center",
-        }}
-      >
-        <ui.Image
-          css={{ width: 32, height: 32, backgroundColor: "orange" }}
-          imageToken={prop.projectMaybe.value.iconHash}
-          model={prop.model}
-        />
-        {prop.projectMaybe.value.name}
-      </div>
-    </ui.Link>
+    }
   );
-};
 
 const CreateProjectButton: React.FC<{ model: Model }> = (prop) => (
   <div

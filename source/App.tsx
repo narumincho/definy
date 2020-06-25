@@ -96,7 +96,7 @@ export const App: React.FC<{
       case "Unknown":
         return;
       case "WaitLoading":
-        dispatchAllProjectIdList(data.Maybe.Just(Resource.Loading()));
+        // dispatchAllProjectIdList(data.Maybe.Just(Resource.Loading()));
         /*
          * indexedDBにアクセスして取得
          * 代わりに失敗したということでWaitRequestingにする
