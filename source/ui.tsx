@@ -3,7 +3,9 @@
 import * as React from "react";
 import * as common from "definy-common";
 import { Css, jsx } from "react-free-style";
-import { Maybe, UrlData } from "definy-common/source/data";
+import { ImageToken, Maybe, UrlData, UserId } from "definy-common/source/data";
+import { Model } from "./model";
+import { TokenResource } from "./data";
 
 export type AreaTheme = "Gray" | "Black" | "Active";
 
@@ -152,4 +154,90 @@ export const ActiveDiv: React.FC<{ css?: Css }> = (prop) => {
       {prop.children}
     </div>
   );
+};
+
+export const Image: React.FC<{
+  model: Model;
+  imageToken: ImageToken;
+  css?: Css;
+}> = (prop) => {
+  const blobUrlResource = prop.model.imageData.get(prop.imageToken);
+  if (blobUrlResource === undefined) {
+    return <div>...</div>;
+  }
+  switch (blobUrlResource._) {
+    case "WaitLoading":
+      return <div css={prop.css}>読み込み準備中……</div>;
+    case "Loading":
+      return <div css={prop.css}>読込中……</div>;
+    case "WaitRequesting":
+      return <div css={prop.css}>リクエスト準備中……</div>;
+    case "Requesting":
+      return <div css={prop.css}>リクエスト中……</div>;
+    case "WaitRetrying":
+      return <div css={prop.css}>再挑戦準備中</div>;
+    case "Retrying":
+      return <div css={prop.css}>再挑戦中</div>;
+    case "Unknown":
+      return <div css={prop.css}>取得に失敗</div>;
+    case "Loaded":
+      return <img css={prop.css} src={blobUrlResource.data} />;
+  }
+};
+
+export const User: React.FC<{ model: Model; userId: UserId }> = (prop) => {
+  const user = prop.model.userData.get(prop.userId);
+  React.useEffect(() => {
+    if (user === undefined) {
+      return;
+    }
+    switch (user._) {
+      case "WaitLoading":
+      case "Loading":
+      case "WaitRequesting":
+      case "Requesting":
+      case "WaitRetrying":
+      case "Retrying":
+        return;
+      case "WaitUpdating":
+      case "Updating":
+      case "Loaded":
+        if (user.data._ === "Just") {
+          prop.model.requestImage(user.data.value.imageHash);
+        }
+    }
+  });
+  if (user === undefined) {
+    return <div>...</div>;
+  }
+  switch (user._) {
+    case "WaitLoading":
+      return <div>WL</div>;
+    case "Loading":
+      return <div>L</div>;
+    case "WaitRequesting":
+      return <div>WReq</div>;
+    case "Requesting":
+      return <div>Req</div>;
+    case "WaitRetrying":
+      return <div>WRetry</div>;
+    case "Retrying":
+      return <div>Retry</div>;
+    case "WaitUpdating":
+      return <div>WU</div>;
+    case "Updating":
+      return <div>U</div>;
+    case "Loaded":
+      if (user.data._ === "Just") {
+        return (
+          <div css={{ display: "grid", gridTemplateColumns: "32px 1fr" }}>
+            <Image imageToken={user.data.value.imageHash} model={prop.model} />
+            {user.data.value.name}
+          </div>
+        );
+      }
+      return <div>存在しないユーザー</div>;
+    case "Unknown":
+      return <div>存在の確認に失敗</div>;
+  }
 };

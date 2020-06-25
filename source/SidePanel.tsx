@@ -80,15 +80,11 @@ const UserViewOrLogInButton: React.FC<{
     case "WaitVerifyingAccessToken":
     case "VerifyingAccessToken":
       return <div>アクセストークンを検証中……</div>;
-    case "LoggedIn":
+    case "LoggedIn": {
       return (
-        <div>
-          ログイン済み
-          {JSON.stringify(
-            prop.model.userData.get(prop.model.logInState.userId)
-          )}
-        </div>
+        <ui.User model={prop.model} userId={prop.model.logInState.userId} />
       );
+    }
   }
   return <div>ログインの準備中……</div>;
 };

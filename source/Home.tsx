@@ -15,7 +15,6 @@ import { jsx } from "react-free-style";
 
 export const Home: React.FC<{ model: Model }> = (prop) => {
   React.useEffect(() => {
-    console.log("called Home effect");
     if (prop.model.allProjectIdListMaybe._ === "Nothing") {
       prop.model.requestAllProject();
       return;
@@ -209,14 +208,6 @@ const ProjectLoadedItem: React.FC<{
   if (prop.projectMaybe._ === "Nothing") {
     return <div>id={prop.id}のプロジェクトは存在しないようだ</div>;
   }
-  const imageSrc: string | undefined = (() => {
-    const iData = prop.model.imageData.get(prop.projectMaybe.value.imageHash);
-    console.log({ iData });
-    if (iData !== undefined && iData._ === "Loaded") {
-      return iData.data;
-    }
-    return undefined;
-  })();
 
   return (
     <ui.Link
@@ -230,9 +221,10 @@ const ProjectLoadedItem: React.FC<{
       onJump={prop.model.onJump}
       urlData={{ ...prop.model, location: Location.Project(prop.id) }}
     >
-      <img
+      <ui.Image
         css={{ border: "solid 1px white", width: "100%", height: "100%" }}
-        src={imageSrc}
+        imageToken={prop.projectMaybe.value.imageHash}
+        model={prop.model}
       />
       <div
         css={{
@@ -242,9 +234,11 @@ const ProjectLoadedItem: React.FC<{
           alignItems: "center",
         }}
       >
-        <div css={{ width: 32, height: 32, backgroundColor: "orange" }}>
-          icon
-        </div>
+        <ui.Image
+          css={{ width: 32, height: 32, backgroundColor: "orange" }}
+          imageToken={prop.projectMaybe.value.iconHash}
+          model={prop.model}
+        />
         {prop.projectMaybe.value.name}
       </div>
     </ui.Link>
