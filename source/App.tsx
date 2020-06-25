@@ -18,15 +18,39 @@ import { jsx } from "react-free-style";
 const callApi = <responseType extends unknown>(
   apiName: string,
   binary: ReadonlyArray<number>,
-  codec: data.Codec<responseType>
+  codec: data.Codec<responseType>,
+  progressFn: (progress: number) => void
 ): Promise<responseType> =>
-  fetch(`https://us-central1-definy-lang.cloudfunctions.net/api/${apiName}`, {
-    method: "POST",
-    body: new Uint8Array(binary),
-    headers: [["content-type", "application/octet-stream"]],
-  })
-    .then((response) => response.arrayBuffer())
-    .then((response) => codec.decode(0, new Uint8Array(response)).result);
+  new Promise((resolve, reject) => {
+    fetch(`https://us-central1-definy-lang.cloudfunctions.net/api/${apiName}`, {
+      method: "POST",
+      body: new Uint8Array(binary),
+      headers: [["content-type", "application/octet-stream"]],
+    }).then((response) => {
+      const reader = response.body?.getReader();
+      let responseData = new Uint8Array();
+      const size = Number.parseInt(
+        response.headers.get("content-length") ?? "0",
+        10
+      );
+      let binaryOffset = 0;
+      if (reader === undefined) {
+        console.log("readerを読み取ることができなかった");
+        return;
+      }
+      const fn = (result: ReadableStreamReadResult<Uint8Array>): void => {
+        if (result.done) {
+          resolve(codec.decode(0, responseData).result);
+          return;
+        }
+        responseData = new Uint8Array([...responseData, ...result.value]);
+        binaryOffset += result.value.length;
+        progressFn(binaryOffset / size);
+        reader.read().then(fn);
+      };
+      reader.read().then(fn);
+    });
+  });
 
 export const App: React.FC<{
   accessToken: data.Maybe<data.AccessToken>;
@@ -86,7 +110,6 @@ export const App: React.FC<{
 
   // プロジェクトの一覧
   React.useEffect(() => {
-    console.log({ allProjectIdListMaybe });
     if (allProjectIdListMaybe._ === "Nothing") {
       return;
     }
@@ -112,7 +135,10 @@ export const App: React.FC<{
           [],
           data.List.codec(
             data.IdAndData.codec(data.ProjectId.codec, data.Project.codec)
-          )
+          ),
+          (progress) => {
+            console.log("allProject", progress);
+          }
         ).then((idAndProjectList) => {
           dispatchProject(
             new Map(
@@ -162,7 +188,10 @@ export const App: React.FC<{
           callApi(
             "getImageFile",
             data.ImageToken.codec.encode(imageToken),
-            data.Binary.codec
+            data.Binary.codec,
+            (progress) => {
+              console.log("image", imageToken, progress);
+            }
           ).then((binary) => {
             dispatchImageData((dict) => {
               const newDict = new Map(dict);
@@ -336,7 +365,10 @@ const logInEffect = (
           openIdConnectProvider: logInState.provider,
           urlData,
         }),
-        data.String.codec
+        data.String.codec,
+        (progress) => {
+          console.log("requestLogInUrl", progress);
+        }
       ).then((logInUrl) => {
         dispatchLogInState({
           _: "JumpingToLogInPage",
@@ -355,7 +387,10 @@ const logInEffect = (
       callApi(
         "getUserByAccessToken",
         data.AccessToken.codec.encode(logInState.accessToken),
-        data.IdAndData.codec(data.UserId.codec, data.User.codec)
+        data.IdAndData.codec(data.UserId.codec, data.User.codec),
+        (progress) => {
+          console.log("getUserByAccessToken", progress);
+        }
       ).then((userSnapshotAndId) => {
         dispatchLogInState({
           _: "LoggedIn",
