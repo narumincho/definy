@@ -1,12 +1,12 @@
 /** @jsx jsx */
 
 import * as React from "react";
+import * as data from "definy-core/source/data";
 import * as ui from "./ui";
 import { Resource, TokenResource } from "./data";
 import { About } from "./About";
 import { Home } from "./Home";
 import { SidePanel } from "./SidePanel";
-import { data } from "definy-common";
 import { jsx } from "react-free-style";
 
 const sampleProject: ReadonlyArray<[

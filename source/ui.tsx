@@ -2,9 +2,17 @@
 
 import * as React from "react";
 import { Css, jsx } from "react-free-style";
-import { Resource, TokenResource } from "./data";
-import { data, urlDataAndAccessTokenToUrl } from "definy-common";
+import {
+  ImageToken,
+  Location,
+  Maybe,
+  ProjectId,
+  UrlData,
+  UserId,
+} from "definy-core/source/data";
 import { Model } from "./model";
+import { Resource } from "./data";
+import { urlDataAndAccessTokenToUrl } from "definy-core";
 
 export type AreaTheme = "Gray" | "Black" | "Active";
 
@@ -42,8 +50,8 @@ export const areaThemeToValue = (areaTheme: AreaTheme): AreaThemeValue => {
 };
 
 export const Link: React.FC<{
-  urlData: data.UrlData;
-  onJump: (urlData: data.UrlData) => void;
+  urlData: UrlData;
+  onJump: (urlData: UrlData) => void;
   areaTheme: AreaTheme;
   css?: Css;
 }> = (prop): JSX.Element => {
@@ -63,7 +71,7 @@ export const Link: React.FC<{
       }}
       href={urlDataAndAccessTokenToUrl(
         prop.urlData,
-        data.Maybe.Nothing()
+        Maybe.Nothing()
       ).toString()}
       onClick={(event) => {
         if (
@@ -242,7 +250,7 @@ export const resourceView = <data extends unknown>(
 
 export const Image: React.FC<{
   model: Model;
-  imageToken: data.ImageToken;
+  imageToken: ImageToken;
   css?: Css;
 }> = (prop) => {
   React.useEffect(() => {
@@ -324,7 +332,7 @@ export const Image: React.FC<{
   }
 };
 
-export const User: React.FC<{ model: Model; userId: data.UserId }> = (prop) => {
+export const User: React.FC<{ model: Model; userId: UserId }> = (prop) => {
   React.useEffect(() => {
     prop.model.requestUser(prop.userId);
   });
@@ -335,8 +343,8 @@ export const User: React.FC<{ model: Model; userId: data.UserId }> = (prop) => {
       if (userMaybe._ === "Just") {
         return (
           <div css={{ display: "grid", gridTemplateColumns: "32px 1fr" }}>
-            <Image imageToken={userMaybe.value.imageHash} model={prop.model} />
-            {userMaybe.value.name}
+            {/* <Image imageToken={userMaybe.value.imageHash} model={prop.model} /> */}
+            {JSON.stringify(userMaybe)}
           </div>
         );
       }
@@ -347,7 +355,7 @@ export const User: React.FC<{ model: Model; userId: data.UserId }> = (prop) => {
 
 export const Project: React.FC<{
   model: Model;
-  projectId: data.ProjectId;
+  projectId: ProjectId;
 }> = (prop) => {
   React.useEffect(() => {
     prop.model.requestProject(prop.projectId);
@@ -370,7 +378,7 @@ export const Project: React.FC<{
           onJump={prop.model.onJump}
           urlData={{
             ...prop.model,
-            location: data.Location.Project(prop.projectId),
+            location: Location.Project(prop.projectId),
           }}
         >
           <Image

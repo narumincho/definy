@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as ui from "./ui";
-import { Language, Location, ProjectId } from "definy-common/source/data";
+import { Language, Location, ProjectId } from "definy-core/source/data";
 import { Model } from "./model";
 import { Resource } from "./data";
 import { jsx } from "react-free-style";

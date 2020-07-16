@@ -1,5 +1,5 @@
+import * as data from "definy-core/source/data";
 import { Resource, TokenResource } from "./data";
-import { data } from "definy-common";
 
 export type LogInState =
   | { _: "Guest" }

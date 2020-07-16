@@ -2,16 +2,20 @@
 
 import * as React from "react";
 import * as ui from "./ui";
-import { Language, OpenIdConnectProvider } from "definy-common/source/data";
+import {
+  Language,
+  Location,
+  OpenIdConnectProvider,
+  UrlData,
+} from "definy-core/source/data";
 import { Model } from "./model";
-import { data } from "definy-common";
 import { jsx } from "react-free-style";
 
 const sidePanelWidth = 260;
 
 export const SidePanel: React.FC<{
   model: Model;
-  onRequestLogIn: (provider: data.OpenIdConnectProvider) => void;
+  onRequestLogIn: (provider: OpenIdConnectProvider) => void;
 }> = (prop) => (
   <div
     css={{
@@ -31,7 +35,7 @@ export const SidePanel: React.FC<{
       areaTheme="Gray"
       css={{ padding: 8 }}
       onJump={prop.model.onJump}
-      urlData={{ ...prop.model, location: data.Location.About }}
+      urlData={{ ...prop.model, location: Location.About }}
     >
       <div>About</div>
     </ui.Link>
@@ -39,7 +43,7 @@ export const SidePanel: React.FC<{
       areaTheme="Gray"
       css={{ padding: 8 }}
       onJump={prop.model.onJump}
-      urlData={{ ...prop.model, location: data.Location.Debug }}
+      urlData={{ ...prop.model, location: Location.Debug }}
     >
       <div>Debug</div>
     </ui.Link>
@@ -47,14 +51,14 @@ export const SidePanel: React.FC<{
 );
 
 const Logo: React.FC<{
-  onJump: (urlData: data.UrlData) => void;
+  onJump: (urlData: UrlData) => void;
   model: Model;
 }> = (prop) => (
   <ui.Link
     areaTheme="Gray"
     css={{ padding: 8 }}
     onJump={prop.onJump}
-    urlData={{ ...prop.model, location: data.Location.Home }}
+    urlData={{ ...prop.model, location: Location.Home }}
   >
     <div
       css={{
@@ -71,7 +75,7 @@ const Logo: React.FC<{
 
 const UserViewOrLogInButton: React.FC<{
   model: Model;
-  requestLogIn: (provider: data.OpenIdConnectProvider) => void;
+  requestLogIn: (provider: OpenIdConnectProvider) => void;
 }> = (prop) => {
   switch (prop.model.logInState._) {
     case "Guest":
@@ -94,7 +98,7 @@ const UserViewOrLogInButton: React.FC<{
 };
 
 const LogInButton: React.FC<{
-  requestLogIn: (provider: data.OpenIdConnectProvider) => void;
+  requestLogIn: (provider: OpenIdConnectProvider) => void;
   language: Language;
 }> = (prop) => (
   <div css={{ display: "grid", gap: 8, padding: 8 }}>
@@ -104,7 +108,7 @@ const LogInButton: React.FC<{
 );
 
 const GoogleButton: React.FC<{
-  requestLogIn: (provider: data.OpenIdConnectProvider) => void;
+  requestLogIn: (provider: OpenIdConnectProvider) => void;
   language: Language;
 }> = (prop) => (
   <ui.Button
@@ -161,7 +165,7 @@ const GoogleIcon = () => (
 );
 
 const GitHubButton: React.FC<{
-  requestLogIn: (provider: data.OpenIdConnectProvider) => void;
+  requestLogIn: (provider: OpenIdConnectProvider) => void;
   language: Language;
 }> = (prop) => (
   <ui.Button

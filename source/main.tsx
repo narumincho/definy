@@ -1,7 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import * as common from "definy-common";
-import * as ui from "./ui";
+import * as common from "definy-core";
 import { Context, StyleSheetRenderer } from "react-free-style";
 import { App } from "./App";
 
