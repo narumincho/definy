@@ -342,9 +342,22 @@ export const User: React.FC<{ model: Model; userId: UserId }> = (prop) => {
     (userMaybe) => {
       if (userMaybe._ === "Just") {
         return (
-          <div css={{ display: "grid", gridTemplateColumns: "32px 1fr" }}>
-            {/* <Image imageToken={userMaybe.value.imageHash} model={prop.model} /> */}
-            {JSON.stringify(userMaybe)}
+          <div
+            css={{
+              display: "grid",
+              gridTemplateColumns: "32px 1fr",
+              height: 32,
+              alignItems: "center",
+              gap: 8,
+              padding: 8,
+            }}
+          >
+            <Image
+              css={{ width: 32, height: 32, borderRadius: "50%" }}
+              imageToken={userMaybe.value.imageHash}
+              model={prop.model}
+            />
+            {userMaybe.value.name}
           </div>
         );
       }
@@ -372,7 +385,7 @@ export const Project: React.FC<{
           areaTheme="Gray"
           css={{
             display: "grid",
-            gridTemplateRows: "128px 32px 48px",
+            gridTemplateRows: "128px 48px",
             width: 256,
           }}
           onJump={prop.model.onJump}
@@ -386,7 +399,6 @@ export const Project: React.FC<{
             imageToken={projectMaybe.value.imageHash}
             model={prop.model}
           />
-          <User model={prop.model} userId={projectMaybe.value.createUserId} />
           <div
             css={{
               display: "grid",

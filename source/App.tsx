@@ -206,15 +206,17 @@ export const App: React.FC<{
         case "WaitRequesting":
           isChanged = true;
           newUserData.set(userId, TokenResource.Requesting());
-          callApi("getUser", UserId.codec.encode(userId), User.codec).then(
-            (project) => {
-              setUserData((dict) => {
-                const newDict = new Map(dict);
-                newDict.set(userId, TokenResource.Loaded(Maybe.Just(project)));
-                return newDict;
-              });
-            }
-          );
+          callApi(
+            "getUser",
+            UserId.codec.encode(userId),
+            Maybe.codec(User.codec)
+          ).then((userMaybe) => {
+            setUserData((dict) => {
+              const newDict = new Map(dict);
+              newDict.set(userId, Resource.Loaded(userMaybe));
+              return newDict;
+            });
+          });
           break;
         case "Requesting":
           break;
@@ -462,23 +464,31 @@ const logInEffect = (
       callApi(
         "getUserByAccessToken",
         AccessToken.codec.encode(logInState.accessToken),
-        IdAndData.codec(UserId.codec, User.codec)
-      ).then((userSnapshotAndId) => {
-        dispatchLogInState({
-          _: "LoggedIn",
-          accessToken: logInState.accessToken,
-          userId: userSnapshotAndId.id,
-        });
-        dispatchUserData(
-          (userData): ReadonlyMap<UserId, Resource<Maybe<User>>> =>
-            new Map([
-              ...userData,
-              [
-                userSnapshotAndId.id,
-                Resource.Loaded(Maybe.Just(userSnapshotAndId.data)),
-              ],
-            ])
-        );
+        Maybe.codec(IdAndData.codec(UserId.codec, User.codec))
+      ).then((userSnapshotAndIdMaybe) => {
+        switch (userSnapshotAndIdMaybe._) {
+          case "Just":
+            dispatchLogInState({
+              _: "LoggedIn",
+              accessToken: logInState.accessToken,
+              userId: userSnapshotAndIdMaybe.value.id,
+            });
+            dispatchUserData(
+              (userData): ReadonlyMap<UserId, Resource<Maybe<User>>> =>
+                new Map([
+                  ...userData,
+                  [
+                    userSnapshotAndIdMaybe.value.id,
+                    Resource.Loaded(
+                      Maybe.Just(userSnapshotAndIdMaybe.value.data)
+                    ),
+                  ],
+                ])
+            );
+            return;
+          case "Nothing":
+            dispatchLogInState({ _: "Guest" });
+        }
       });
   }
 };
