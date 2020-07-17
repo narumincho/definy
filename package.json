@@ -30,7 +30,7 @@
     "eslint-plugin-prettier": "3.1.4",
     "eslint-plugin-react": "7.20.3",
     "eslint-plugin-react-hooks": "4.0.8",
-    "js-ts-code-generator": "0.2.14",
+    "js-ts-code-generator": "0.3.2",
     "prettier": "2.0.5",
     "parcel": "1.12.4",
     "typescript": "3.9.7",
