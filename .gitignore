@@ -2,5 +2,4 @@ node_modules
 .cache
 debugDistribution
 npm-debug.log*
-/schemaJs
 /build

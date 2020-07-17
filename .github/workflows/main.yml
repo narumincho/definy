@@ -1,0 +1,29 @@
+name: build and deploy hosting
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    name: build and deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@master
+      - name: Install npm dependencies (npm ci)
+        run: npm ci
+      - name: Parcel build (npx parcel)
+        run: npx parcel build ./typeScript/main.ts --out-dir ./distribution;
+      - name: Move Assets
+        run: mv ./static/* ./distribution
+      - name: Rename icon.png to icon
+        run: mv ./distribution/icon.png ./distribution/icon
+      - name: deploy firebase hosting
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only hosting
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          PROJECT_ID: definy-lang
