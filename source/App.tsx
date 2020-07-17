@@ -31,20 +31,6 @@ import { Home } from "./Home";
 import { LoadingBox } from "./ui";
 import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
-import { util } from "prettier";
-
-const callApi = <responseType extends unknown>(
-  apiName: string,
-  binary: ReadonlyArray<number>,
-  codec: Codec<responseType>
-): Promise<responseType> =>
-  fetch(`https://us-central1-definy-lang.cloudfunctions.net/api/${apiName}`, {
-    method: "POST",
-    body: new Uint8Array(binary),
-    headers: [["content-type", "application/octet-stream"]],
-  })
-    .then((response) => response.arrayBuffer())
-    .then((response) => codec.decode(0, new Uint8Array(response)).result);
 
 export const App: React.FC<{
   accessToken: Maybe<AccessToken>;
