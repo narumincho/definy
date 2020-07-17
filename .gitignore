@@ -1,6 +1,6 @@
-elm-stuff
 node_modules
-debugDistribution
 .cache
-.idea
-build
+debugDistribution
+npm-debug.log*
+/schemaJs
+/build
