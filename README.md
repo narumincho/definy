@@ -45,9 +45,8 @@ Definy is Web App for Web App.
 
 ## フォルダとファイルの説明
 
-- /.github: Firebase Hosting へのデプロイの処理が書かれている
-- /elm: Elm で書かれた主なコード
-- /static: 静的なファイルが置かれている
-- /typeScript: TypeScript で書かれたブラウザの API を呼ぶようなコード
+- /.github/workflows/main.yml: Firebase Hosting へのデプロイの処理が書かれている
+- /static: スタティックなファイルが置かれている
+- /source: TypeScript で書かれたクライアント用のコード
 - /firebase.json: サーバーでファイルをどのように扱うかの設定が書かれている
 - /index.html: Parcel で使うエントリーのファイル(リリース時には使わない)
