@@ -1,5 +1,4 @@
 import * as data from "definy-core/source/data";
-import { Resource, TokenResource } from "./data";
 
 export type LogInState =
   | { _: "Guest" }
@@ -14,11 +13,13 @@ export type Model = {
   logInState: LogInState;
   language: data.Language;
   clientMode: data.ClientMode;
-  projectData: ReadonlyMap<data.ProjectId, Resource<data.Maybe<data.Project>>>;
-  userData: ReadonlyMap<data.UserId, Resource<data.Maybe<data.User>>>;
-  imageData: ReadonlyMap<data.ImageToken, TokenResource<string>>;
+  projectData: ReadonlyMap<data.ProjectId, data.ResourceState<data.Project>>;
+  userData: ReadonlyMap<data.UserId, data.ResourceState<data.User>>;
+  imageData: ReadonlyMap<data.ImageToken, data.StaticResourceState<string>>;
   onJump: (urlData: data.UrlData) => void;
-  allProjectIdListMaybe: data.Maybe<Resource<ReadonlyArray<data.ProjectId>>>;
+  allProjectIdListMaybe: data.Maybe<
+    data.ResourceState<ReadonlyArray<data.ProjectId>>
+  >;
   requestAllProject: () => void;
   requestProject: (projectId: data.ProjectId) => void;
   requestUser: (userId: data.UserId) => void;

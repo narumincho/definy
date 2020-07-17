@@ -1,66 +1,73 @@
 /** @jsx jsx */
 
 import * as React from "react";
-import * as data from "definy-core/source/data";
 import * as ui from "./ui";
-import { Resource, TokenResource } from "./data";
+import {
+  ImageToken,
+  Maybe,
+  Project,
+  ProjectId,
+  ResourceState,
+  StaticResourceState,
+  UserId,
+} from "definy-core/source/data";
 import { About } from "./About";
 import { Home } from "./Home";
 import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
 
-const sampleProject: ReadonlyArray<[
-  data.ProjectId,
-  Resource<data.Maybe<data.Project>>
-]> = [
+const sampleProject: ReadonlyArray<[ProjectId, ResourceState<Project>]> = [
   [
-    "6b9495528e9a12186b9c210448bdc90b" as data.ProjectId,
+    "6b9495528e9a12186b9c210448bdc90b" as ProjectId,
 
-    Resource.Loaded(
-      data.Maybe.Just({
+    ResourceState.Loaded({
+      dataMaybe: Maybe.Just({
         name: "プロジェクトA",
         createTime: { day: 0, millisecond: 0 },
-        createUserId: "6b9495528e9a12186b9c210448bdc90b" as data.UserId,
+        createUserId: "6b9495528e9a12186b9c210448bdc90b" as UserId,
         getTime: { day: 0, millisecond: 0 },
-        iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as data.ImageToken,
-        imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as data.ImageToken,
+        iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
+        imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
         partIdList: [],
         typePartIdList: [],
         updateTime: { day: 0, millisecond: 0 },
-      })
-    ),
+      }),
+      getTime: { day: 0, millisecond: 0 },
+    }),
   ],
   [
-    "dc2c318f1cab573562497ea1e4b96c0e" as data.ProjectId,
-    Resource.Loaded(
-      data.Maybe.Just({
+    "dc2c318f1cab573562497ea1e4b96c0e" as ProjectId,
+    ResourceState.Loaded({
+      dataMaybe: Maybe.Just({
         name: "プロジェクトB",
         createTime: { day: 0, millisecond: 0 },
-        createUserId: "6b9495528e9a12186b9c210448bdc90b" as data.UserId,
+        createUserId: "6b9495528e9a12186b9c210448bdc90b" as UserId,
         getTime: { day: 0, millisecond: 0 },
-        iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as data.ImageToken,
-        imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as data.ImageToken,
+        iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
+        imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
         partIdList: [],
         typePartIdList: [],
         updateTime: { day: 0, millisecond: 0 },
-      })
-    ),
+      }),
+      getTime: { day: 0, millisecond: 0 },
+    }),
   ],
   [
-    "4e7e1c9629b3eff2e908a151d501b8c6" as data.ProjectId,
-    Resource.Loaded(
-      data.Maybe.Just({
+    "4e7e1c9629b3eff2e908a151d501b8c6" as ProjectId,
+    ResourceState.Loaded({
+      dataMaybe: Maybe.Just({
         name: "プロジェクトC",
         createTime: { day: 0, millisecond: 0 },
-        createUserId: "6b9495528e9a12186b9c210448bdc90b" as data.UserId,
+        createUserId: "6b9495528e9a12186b9c210448bdc90b" as UserId,
         getTime: { day: 0, millisecond: 0 },
-        iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as data.ImageToken,
-        imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as data.ImageToken,
+        iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
+        imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
         partIdList: [],
         typePartIdList: [],
         updateTime: { day: 0, millisecond: 0 },
-      })
-    ),
+      }),
+      getTime: { day: 0, millisecond: 0 },
+    }),
   ],
 ];
 
@@ -75,7 +82,7 @@ const sampleComponentList = {
         projectData: new Map(),
         userData: new Map(),
         imageData: new Map(),
-        allProjectIdListMaybe: data.Maybe.Nothing(),
+        allProjectIdListMaybe: Maybe.Nothing(),
         requestAllProject: () => {},
         requestProject: () => {},
         requestUser: () => {},
@@ -94,7 +101,7 @@ const sampleComponentList = {
         projectData: new Map(),
         userData: new Map(),
         imageData: new Map(),
-        allProjectIdListMaybe: data.Maybe.Nothing(),
+        allProjectIdListMaybe: Maybe.Nothing(),
         requestAllProject: () => {},
         requestProject: () => {},
         requestUser: () => {},
@@ -116,12 +123,15 @@ const sampleComponentList = {
         ]),
         userData: new Map(),
         imageData: new Map(),
-        allProjectIdListMaybe: data.Maybe.Just(
-          Resource.Loaded([
-            sampleProject[0][0],
-            sampleProject[1][0],
-            sampleProject[2][0],
-          ])
+        allProjectIdListMaybe: Maybe.Just(
+          ResourceState.Loaded({
+            dataMaybe: Maybe.Just([
+              sampleProject[0][0],
+              sampleProject[1][0],
+              sampleProject[2][0],
+            ]),
+            getTime: { day: 0, millisecond: 0 },
+          })
         ),
         requestAllProject: () => {},
         requestProject: () => {},
@@ -136,7 +146,7 @@ const sampleComponentList = {
       WaitLoading
       <ui.Image
         css={{ width: 64, height: 64, border: "solid 1px red" }}
-        imageToken={"a" as data.ImageToken}
+        imageToken={"a" as ImageToken}
         model={{
           clientMode: "DebugMode",
           language: "English",
@@ -145,9 +155,9 @@ const sampleComponentList = {
           projectData: new Map(),
           userData: new Map(),
           imageData: new Map([
-            ["a" as data.ImageToken, TokenResource.WaitLoading()],
+            ["a" as ImageToken, StaticResourceState.WaitLoading()],
           ]),
-          allProjectIdListMaybe: data.Maybe.Nothing(),
+          allProjectIdListMaybe: Maybe.Nothing(),
           requestAllProject: () => {},
           requestProject: () => {},
           requestUser: () => {},
@@ -157,7 +167,7 @@ const sampleComponentList = {
       Loading
       <ui.Image
         css={{ width: 64, height: 64, border: "solid 1px red" }}
-        imageToken={"a" as data.ImageToken}
+        imageToken={"a" as ImageToken}
         model={{
           clientMode: "DebugMode",
           language: "English",
@@ -166,9 +176,9 @@ const sampleComponentList = {
           projectData: new Map(),
           userData: new Map(),
           imageData: new Map([
-            ["a" as data.ImageToken, TokenResource.Loading()],
+            ["a" as ImageToken, StaticResourceState.Loading()],
           ]),
-          allProjectIdListMaybe: data.Maybe.Nothing(),
+          allProjectIdListMaybe: Maybe.Nothing(),
           requestAllProject: () => {},
           requestProject: () => {},
           requestUser: () => {},
@@ -178,7 +188,7 @@ const sampleComponentList = {
       WaitRequesting
       <ui.Image
         css={{ width: 64, height: 64, border: "solid 1px red" }}
-        imageToken={"a" as data.ImageToken}
+        imageToken={"a" as ImageToken}
         model={{
           clientMode: "DebugMode",
           language: "English",
@@ -187,9 +197,9 @@ const sampleComponentList = {
           projectData: new Map(),
           userData: new Map(),
           imageData: new Map([
-            ["a" as data.ImageToken, TokenResource.WaitRequesting()],
+            ["a" as ImageToken, StaticResourceState.WaitRequesting()],
           ]),
-          allProjectIdListMaybe: data.Maybe.Nothing(),
+          allProjectIdListMaybe: Maybe.Nothing(),
           requestAllProject: () => {},
           requestProject: () => {},
           requestUser: () => {},
@@ -199,7 +209,7 @@ const sampleComponentList = {
       Requesting
       <ui.Image
         css={{ width: 64, height: 64, border: "solid 1px red" }}
-        imageToken={"a" as data.ImageToken}
+        imageToken={"a" as ImageToken}
         model={{
           clientMode: "DebugMode",
           language: "English",
@@ -208,9 +218,9 @@ const sampleComponentList = {
           projectData: new Map(),
           userData: new Map(),
           imageData: new Map([
-            ["a" as data.ImageToken, TokenResource.Requesting()],
+            ["a" as ImageToken, StaticResourceState.Requesting()],
           ]),
-          allProjectIdListMaybe: data.Maybe.Nothing(),
+          allProjectIdListMaybe: Maybe.Nothing(),
           requestAllProject: () => {},
           requestProject: () => {},
           requestUser: () => {},

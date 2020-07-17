@@ -7,11 +7,11 @@ import {
   Location,
   Maybe,
   ProjectId,
+  ResourceState,
   UrlData,
   UserId,
 } from "definy-core/source/data";
 import { Model } from "./model";
-import { Resource } from "./data";
 import { urlDataAndAccessTokenToUrl } from "definy-core";
 
 export type AreaTheme = "Gray" | "Black" | "Active";
@@ -165,9 +165,9 @@ export const ActiveDiv: React.FC<{ css?: Css }> = (prop) => {
 };
 
 export const resourceView = <data extends unknown>(
-  resource: Resource<data> | undefined,
+  resource: ResourceState<data> | undefined,
   css: Css | undefined,
-  view: (data: data) => React.ReactElement
+  view: (data: Maybe<data>) => React.ReactElement
 ): React.ReactElement => {
   if (resource === undefined) {
     return <div css={css}>...</div>;
@@ -242,7 +242,7 @@ export const resourceView = <data extends unknown>(
     case "Updating":
       return <div>U</div>;
     case "Loaded":
-      return view(resource.data);
+      return view(resource.dataResource.dataMaybe);
     case "Unknown":
       return <div>Unknown</div>;
   }

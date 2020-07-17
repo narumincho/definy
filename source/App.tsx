@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as core from "definy-core";
+import * as coreUtil from "definy-core/source/util";
 import {
   AccessToken,
   Binary,
@@ -16,19 +17,21 @@ import {
   Project,
   ProjectId,
   RequestLogInUrlRequestData,
+  ResourceState,
+  StaticResourceState,
   String,
   UrlData,
   User,
   UserId,
 } from "definy-core/source/data";
 import { LogInState, Model } from "./model";
-import { Resource, TokenResource } from "./data";
 import { About } from "./About";
 import { Debug } from "./Debug";
 import { Home } from "./Home";
 import { LoadingBox } from "./ui";
 import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
+import { util } from "prettier";
 
 const callApi = <responseType extends unknown>(
   apiName: string,
@@ -54,18 +57,18 @@ export const App: React.FC<{
       : { _: "Guest" }
   );
   const [projectData, setProjectData] = React.useState<
-    ReadonlyMap<ProjectId, Resource<Maybe<Project>>>
+    ReadonlyMap<ProjectId, ResourceState<Project>>
   >(new Map());
   const [allProjectIdListMaybe, setAllProjectIdList] = React.useState<
-    Maybe<Resource<ReadonlyArray<ProjectId>>>
+    Maybe<ResourceState<ReadonlyArray<ProjectId>>>
   >(Maybe.Nothing);
 
   const [userData, setUserData] = React.useState<
-    ReadonlyMap<UserId, Resource<Maybe<User>>>
+    ReadonlyMap<UserId, ResourceState<User>>
   >(new Map());
 
   const [imageData, setImageData] = React.useState<
-    ReadonlyMap<ImageToken, TokenResource<string>>
+    ReadonlyMap<ImageToken, StaticResourceState<string>>
   >(new Map());
 
   // ルーティング
@@ -104,12 +107,12 @@ export const App: React.FC<{
          * indexedDBにアクセスして取得
          * 代わりに失敗したということでWaitRequestingにする
          */
-        setAllProjectIdList(Maybe.Just(Resource.WaitRequesting()));
+        setAllProjectIdList(Maybe.Just(ResourceState.WaitRequesting()));
         return;
       case "Loading":
         return;
       case "WaitRequesting":
-        setAllProjectIdList(Maybe.Just(Resource.Requesting()));
+        setAllProjectIdList(Maybe.Just(ResourceState.Requesting()));
         callApi(
           "getAllProject",
           [],
@@ -119,13 +122,21 @@ export const App: React.FC<{
             new Map(
               idAndProjectList.map((project) => [
                 project.id,
-                Resource.Loaded(Maybe.Just(project.data)),
+                ResourceState.Loaded({
+                  dataMaybe: Maybe.Just(project.data),
+                  getTime: project.data.getTime,
+                }),
               ])
             )
           );
           setAllProjectIdList(
             Maybe.Just(
-              Resource.Loaded(idAndProjectList.map((project) => project.id))
+              ResourceState.Loaded({
+                dataMaybe: Maybe.Just(
+                  idAndProjectList.map((project) => project.id)
+                ),
+                getTime: coreUtil.timeFromDate(new Date()),
+              })
             )
           );
         });
@@ -153,21 +164,27 @@ export const App: React.FC<{
           break;
         case "WaitLoading":
           isChanged = true;
-          newProjectData.set(projectId, TokenResource.WaitRequesting());
+          newProjectData.set(projectId, ResourceState.WaitRequesting());
           break;
         case "Loading":
           break;
         case "WaitRequesting":
           isChanged = true;
-          newProjectData.set(projectId, TokenResource.Requesting());
+          newProjectData.set(projectId, ResourceState.Requesting());
           callApi(
             "getProject",
             ProjectId.codec.encode(projectId),
-            Project.codec
+            Maybe.codec(Project.codec)
           ).then((project) => {
             setProjectData((dict) => {
               const newDict = new Map(dict);
-              newDict.set(projectId, TokenResource.Loaded(Maybe.Just(project)));
+              newDict.set(
+                projectId,
+                ResourceState.Loaded({
+                  dataMaybe: project,
+                  getTime: coreUtil.timeFromDate(new Date()),
+                })
+              );
               return newDict;
             });
           });
@@ -199,13 +216,13 @@ export const App: React.FC<{
           break;
         case "WaitLoading":
           isChanged = true;
-          newUserData.set(userId, TokenResource.WaitRequesting());
+          newUserData.set(userId, ResourceState.WaitRequesting());
           break;
         case "Loading":
           break;
         case "WaitRequesting":
           isChanged = true;
-          newUserData.set(userId, TokenResource.Requesting());
+          newUserData.set(userId, ResourceState.Requesting());
           callApi(
             "getUser",
             UserId.codec.encode(userId),
@@ -213,7 +230,13 @@ export const App: React.FC<{
           ).then((userMaybe) => {
             setUserData((dict) => {
               const newDict = new Map(dict);
-              newDict.set(userId, Resource.Loaded(userMaybe));
+              newDict.set(
+                userId,
+                ResourceState.Loaded({
+                  dataMaybe: userMaybe,
+                  getTime: coreUtil.timeFromDate(new Date()),
+                })
+              );
               return newDict;
             });
           });
@@ -245,13 +268,13 @@ export const App: React.FC<{
           break;
         case "WaitLoading":
           isChanged = true;
-          newImageData.set(imageToken, TokenResource.WaitRequesting());
+          newImageData.set(imageToken, StaticResourceState.WaitRequesting());
           break;
         case "Loading":
           break;
         case "WaitRequesting":
           isChanged = true;
-          newImageData.set(imageToken, TokenResource.Requesting());
+          newImageData.set(imageToken, StaticResourceState.Requesting());
           callApi(
             "getImageFile",
             ImageToken.codec.encode(imageToken),
@@ -261,7 +284,7 @@ export const App: React.FC<{
               const newDict = new Map(dict);
               newDict.set(
                 imageToken,
-                TokenResource.Loaded(
+                StaticResourceState.Loaded(
                   window.URL.createObjectURL(
                     new Blob([binary], {
                       type: "image/png",
@@ -301,14 +324,14 @@ export const App: React.FC<{
     allProjectIdListMaybe,
     requestAllProject: () => {
       if (allProjectIdListMaybe._ === "Nothing") {
-        setAllProjectIdList(Maybe.Just(Resource.WaitLoading()));
+        setAllProjectIdList(Maybe.Just(ResourceState.WaitLoading()));
       }
     },
     requestProject: (projectId: ProjectId) => {
       if (projectData.get(projectId) === undefined) {
         setProjectData((dict) => {
           const newDict = new Map(dict);
-          newDict.set(projectId, Resource.WaitLoading());
+          newDict.set(projectId, ResourceState.WaitLoading());
           return newDict;
         });
       }
@@ -317,7 +340,7 @@ export const App: React.FC<{
       if (userData.get(userId) === undefined) {
         setUserData((dict) => {
           const newDict = new Map(dict);
-          newDict.set(userId, Resource.WaitLoading());
+          newDict.set(userId, ResourceState.WaitLoading());
           return newDict;
         });
       }
@@ -326,7 +349,7 @@ export const App: React.FC<{
       if (imageData.get(imageToken) === undefined) {
         setImageData((dict) => {
           const newDict = new Map(dict);
-          newDict.set(imageToken, TokenResource.WaitLoading());
+          newDict.set(imageToken, StaticResourceState.WaitLoading());
           return newDict;
         });
       }
@@ -428,7 +451,7 @@ const logInEffect = (
   urlData: UrlData,
   dispatchLogInState: React.Dispatch<React.SetStateAction<LogInState>>,
   dispatchUserData: React.Dispatch<
-    React.SetStateAction<ReadonlyMap<UserId, Resource<Maybe<User>>>>
+    React.SetStateAction<ReadonlyMap<UserId, ResourceState<User>>>
   >
 ): React.EffectCallback => () => {
   switch (logInState._) {
@@ -474,14 +497,15 @@ const logInEffect = (
               userId: userSnapshotAndIdMaybe.value.id,
             });
             dispatchUserData(
-              (userData): ReadonlyMap<UserId, Resource<Maybe<User>>> =>
+              (userData): ReadonlyMap<UserId, ResourceState<User>> =>
                 new Map([
                   ...userData,
                   [
                     userSnapshotAndIdMaybe.value.id,
-                    Resource.Loaded(
-                      Maybe.Just(userSnapshotAndIdMaybe.value.data)
-                    ),
+                    ResourceState.Loaded({
+                      dataMaybe: Maybe.Just(userSnapshotAndIdMaybe.value.data),
+                      getTime: userSnapshotAndIdMaybe.value.data.getTime,
+                    }),
                   ],
                 ])
             );

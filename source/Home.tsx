@@ -2,9 +2,13 @@
 
 import * as React from "react";
 import * as ui from "./ui";
-import { Language, Location, ProjectId } from "definy-core/source/data";
+import {
+  Language,
+  Location,
+  ProjectId,
+  ResourceState,
+} from "definy-core/source/data";
 import { Model } from "./model";
-import { Resource } from "./data";
 import { jsx } from "react-free-style";
 
 export const Home: React.FC<{ model: Model }> = (prop) => {
@@ -16,7 +20,14 @@ export const Home: React.FC<{ model: Model }> = (prop) => {
 
   return (
     <div css={{ display: "grid", overflow: "hidden" }}>
-      <div css={{ display: "grid", overflowY: "scroll" }}>
+      <div
+        css={{
+          display: "grid",
+          overflowY: "scroll",
+          gridColumn: "1 / 2",
+          gridRow: "1 / 2",
+        }}
+      >
         {prop.model.allProjectIdListMaybe._ === "Just" ? (
           <AllProjectList
             allProjectIdListResource={prop.model.allProjectIdListMaybe.value}
@@ -71,12 +82,16 @@ const LoadingDummyView: React.FC<Record<never, never>> = () => {
 
 const AllProjectList: React.FC<{
   model: Model;
-  allProjectIdListResource: Resource<ReadonlyArray<ProjectId>>;
+  allProjectIdListResource: ResourceState<ReadonlyArray<ProjectId>>;
 }> = (prop) =>
   ui.resourceView(
     prop.allProjectIdListResource,
     { width: "100%", height: "100%" },
-    (allProjectList) => {
+    (allProjectListMaybe) => {
+      if (allProjectListMaybe._ === "Nothing") {
+        return <div>プロジェクトの一覧取得に失敗</div>;
+      }
+      const allProjectList = allProjectListMaybe.value;
       if (allProjectList.length === 0) {
         return <div>プロジェクトが1つもありません</div>;
       }
