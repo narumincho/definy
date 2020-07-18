@@ -1,25 +1,20 @@
 /** @jsx jsx */
 
 import * as React from "react";
+import * as api from "./api";
 import * as core from "definy-core";
 import * as coreUtil from "definy-core/source/util";
 import {
   AccessToken,
-  Binary,
-  Codec,
-  IdAndData,
   ImageToken,
   Language,
-  List,
   Location,
   Maybe,
   OpenIdConnectProvider,
   Project,
   ProjectId,
-  RequestLogInUrlRequestData,
   ResourceState,
   StaticResourceState,
-  String,
   UrlData,
   User,
   UserId,
@@ -31,20 +26,6 @@ import { Home } from "./Home";
 import { LoadingBox } from "./ui";
 import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
-import { util } from "prettier";
-
-const callApi = <responseType extends unknown>(
-  apiName: string,
-  binary: ReadonlyArray<number>,
-  codec: Codec<responseType>
-): Promise<responseType> =>
-  fetch(`https://us-central1-definy-lang.cloudfunctions.net/api/${apiName}`, {
-    method: "POST",
-    body: new Uint8Array(binary),
-    headers: [["content-type", "application/octet-stream"]],
-  })
-    .then((response) => response.arrayBuffer())
-    .then((response) => codec.decode(0, new Uint8Array(response)).result);
 
 export const App: React.FC<{
   accessToken: Maybe<AccessToken>;
@@ -113,19 +94,12 @@ export const App: React.FC<{
         return;
       case "WaitRequesting":
         setAllProjectIdList(Maybe.Just(ResourceState.Requesting()));
-        callApi(
-          "getAllProject",
-          [],
-          List.codec(IdAndData.codec(ProjectId.codec, Project.codec))
-        ).then((idAndProjectList) => {
+        api.getAllProject().then((idAndProjectResourceList) => {
           setProjectData(
             new Map(
-              idAndProjectList.map((project) => [
+              idAndProjectResourceList.map((project) => [
                 project.id,
-                ResourceState.Loaded({
-                  dataMaybe: Maybe.Just(project.data),
-                  getTime: project.data.getTime,
-                }),
+                ResourceState.Loaded(project.data),
               ])
             )
           );
@@ -133,7 +107,7 @@ export const App: React.FC<{
             Maybe.Just(
               ResourceState.Loaded({
                 dataMaybe: Maybe.Just(
-                  idAndProjectList.map((project) => project.id)
+                  idAndProjectResourceList.map((project) => project.id)
                 ),
                 getTime: coreUtil.timeFromDate(new Date()),
               })
@@ -171,20 +145,10 @@ export const App: React.FC<{
         case "WaitRequesting":
           isChanged = true;
           newProjectData.set(projectId, ResourceState.Requesting());
-          callApi(
-            "getProject",
-            ProjectId.codec.encode(projectId),
-            Maybe.codec(Project.codec)
-          ).then((project) => {
+          api.getProject(projectId).then((project) => {
             setProjectData((dict) => {
               const newDict = new Map(dict);
-              newDict.set(
-                projectId,
-                ResourceState.Loaded({
-                  dataMaybe: project,
-                  getTime: coreUtil.timeFromDate(new Date()),
-                })
-              );
+              newDict.set(projectId, ResourceState.Loaded(project));
               return newDict;
             });
           });
@@ -210,8 +174,8 @@ export const App: React.FC<{
   React.useEffect(() => {
     const newUserData = new Map(userData);
     let isChanged = false;
-    for (const [userId, userResource] of userData) {
-      switch (userResource._) {
+    for (const [userId, userResourceState] of userData) {
+      switch (userResourceState._) {
         case "Loaded":
           break;
         case "WaitLoading":
@@ -223,20 +187,10 @@ export const App: React.FC<{
         case "WaitRequesting":
           isChanged = true;
           newUserData.set(userId, ResourceState.Requesting());
-          callApi(
-            "getUser",
-            UserId.codec.encode(userId),
-            Maybe.codec(User.codec)
-          ).then((userMaybe) => {
+          api.getUser(userId).then((userResource) => {
             setUserData((dict) => {
               const newDict = new Map(dict);
-              newDict.set(
-                userId,
-                ResourceState.Loaded({
-                  dataMaybe: userMaybe,
-                  getTime: coreUtil.timeFromDate(new Date()),
-                })
-              );
+              newDict.set(userId, ResourceState.Loaded(userResource));
               return newDict;
             });
           });
@@ -275,18 +229,17 @@ export const App: React.FC<{
         case "WaitRequesting":
           isChanged = true;
           newImageData.set(imageToken, StaticResourceState.Requesting());
-          callApi(
-            "getImageFile",
-            ImageToken.codec.encode(imageToken),
-            Binary.codec
-          ).then((binary) => {
+          api.getImageFile(imageToken).then((binaryMaybe) => {
+            if (binaryMaybe._ === "Nothing") {
+              throw new Error("存在しない画像をリクエストしてしまった");
+            }
             setImageData((dict) => {
               const newDict = new Map(dict);
               newDict.set(
                 imageToken,
                 StaticResourceState.Loaded(
                   window.URL.createObjectURL(
-                    new Blob([binary], {
+                    new Blob([binaryMaybe.value], {
                       type: "image/png",
                     })
                   )
@@ -462,19 +415,17 @@ const logInEffect = (
         _: "RequestingLogInUrl",
         provider: logInState.provider,
       });
-      callApi(
-        "requestLogInUrl",
-        RequestLogInUrlRequestData.codec.encode({
+      api
+        .requestLogInUrl({
           openIdConnectProvider: logInState.provider,
           urlData,
-        }),
-        String.codec
-      ).then((logInUrl) => {
-        dispatchLogInState({
-          _: "JumpingToLogInPage",
-          logInUrl: new URL(logInUrl),
+        })
+        .then((logInUrl) => {
+          dispatchLogInState({
+            _: "JumpingToLogInPage",
+            logInUrl: new URL(logInUrl),
+          });
         });
-      });
       return;
     case "JumpingToLogInPage":
       window.location.href = logInState.logInUrl.toString();
@@ -484,35 +435,30 @@ const logInEffect = (
         _: "VerifyingAccessToken",
         accessToken: logInState.accessToken,
       });
-      callApi(
-        "getUserByAccessToken",
-        AccessToken.codec.encode(logInState.accessToken),
-        Maybe.codec(IdAndData.codec(UserId.codec, User.codec))
-      ).then((userSnapshotAndIdMaybe) => {
-        switch (userSnapshotAndIdMaybe._) {
-          case "Just":
-            dispatchLogInState({
-              _: "LoggedIn",
-              accessToken: logInState.accessToken,
-              userId: userSnapshotAndIdMaybe.value.id,
-            });
-            dispatchUserData(
-              (userData): ReadonlyMap<UserId, ResourceState<User>> =>
-                new Map([
-                  ...userData,
-                  [
-                    userSnapshotAndIdMaybe.value.id,
-                    ResourceState.Loaded({
-                      dataMaybe: Maybe.Just(userSnapshotAndIdMaybe.value.data),
-                      getTime: userSnapshotAndIdMaybe.value.data.getTime,
-                    }),
-                  ],
-                ])
-            );
-            return;
-          case "Nothing":
-            dispatchLogInState({ _: "Guest" });
-        }
-      });
+      api
+        .getUserByAccessToken(logInState.accessToken)
+        .then((userResourceAndIdMaybe) => {
+          switch (userResourceAndIdMaybe._) {
+            case "Just":
+              dispatchLogInState({
+                _: "LoggedIn",
+                accessToken: logInState.accessToken,
+                userId: userResourceAndIdMaybe.value.id,
+              });
+              dispatchUserData(
+                (userData): ReadonlyMap<UserId, ResourceState<User>> =>
+                  new Map([
+                    ...userData,
+                    [
+                      userResourceAndIdMaybe.value.id,
+                      ResourceState.Loaded(userResourceAndIdMaybe.value.data),
+                    ],
+                  ])
+              );
+              return;
+            case "Nothing":
+              dispatchLogInState({ _: "Guest" });
+          }
+        });
   }
 };
