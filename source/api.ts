@@ -1,4 +1,5 @@
 import {
+  AccessToken,
   AddCommentParameter,
   AddSuggestionParameter,
   Binary,
@@ -47,6 +48,15 @@ export const requestLogInUrl = (
     String.codec
   );
 
+export const getUserByAccessToken = (
+  accessToken: AccessToken
+): Promise<Maybe<IdAndData<UserId, Resource<User>>>> =>
+  callApi(
+    "getUserByAccessToken",
+    AccessToken.codec.encode(accessToken),
+    Maybe.codec(IdAndData.codec(UserId.codec, Resource.codec(User.codec)))
+  );
+
 export const getUser = (userId: UserId): Promise<Resource<User>> =>
   callApi("getUser", UserId.codec.encode(userId), Resource.codec(User.codec));
 
@@ -61,11 +71,11 @@ export const getImageFile = (
 
 export const createProject = (
   createProjectParameter: CreateProjectParameter
-): Promise<Resource<IdAndData<ProjectId, Project>>> =>
+): Promise<Maybe<IdAndData<ProjectId, Resource<Project>>>> =>
   callApi(
     "createProject",
     CreateProjectParameter.codec.encode(createProjectParameter),
-    Resource.codec(IdAndData.codec(ProjectId.codec, Project.codec))
+    Maybe.codec(IdAndData.codec(ProjectId.codec, Resource.codec(Project.codec)))
   );
 
 export const getAllProject = (): Promise<
