@@ -13,7 +13,7 @@ export type Model = {
   logInState: LogInState;
   language: data.Language;
   clientMode: data.ClientMode;
-  projectData: ReadonlyMap<data.ProjectId, data.ResourceState<data.Project>>;
+  projectMap: ReadonlyMap<data.ProjectId, data.ResourceState<data.Project>>;
   userData: ReadonlyMap<data.UserId, data.ResourceState<data.User>>;
   imageData: ReadonlyMap<data.ImageToken, data.StaticResourceState<string>>;
   onJump: (urlData: data.UrlData) => void;

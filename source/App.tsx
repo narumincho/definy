@@ -11,8 +11,6 @@ import {
   Location,
   Maybe,
   OpenIdConnectProvider,
-  Project,
-  ProjectId,
   ResourceState,
   StaticResourceState,
   UrlData,
@@ -37,12 +35,11 @@ export const App: React.FC<{
       ? { _: "WaitVerifyingAccessToken", accessToken: prop.accessToken.value }
       : { _: "Guest" }
   );
-  const [projectData, setProjectData] = React.useState<
-    ReadonlyMap<ProjectId, ResourceState<Project>>
-  >(new Map());
   const {
     allProjectIdListMaybe,
-    requestLoadAllProjectIdList,
+    projectMap,
+    requestAllProject,
+    requestProject,
   } = resourceAllProjectIdList.useProjectAllIdList();
 
   const [userData, setUserData] = React.useState<
@@ -72,48 +69,6 @@ export const App: React.FC<{
     logInEffect(logInState, urlData, setLogInState, setUserData),
     [logInState]
   );
-
-  React.useEffect(() => {
-    const newProjectData = new Map(projectData);
-    let isChanged = false;
-    for (const [projectId, projectResource] of projectData) {
-      switch (projectResource._) {
-        case "Loaded":
-          break;
-        case "WaitLoading":
-          isChanged = true;
-          newProjectData.set(projectId, ResourceState.WaitRequesting());
-          break;
-        case "Loading":
-          break;
-        case "WaitRequesting":
-          isChanged = true;
-          newProjectData.set(projectId, ResourceState.Requesting());
-          api.getProject(projectId).then((project) => {
-            setProjectData((dict) => {
-              const newDict = new Map(dict);
-              newDict.set(projectId, ResourceState.Loaded(project));
-              return newDict;
-            });
-          });
-          break;
-        case "Requesting":
-          break;
-        case "WaitRetrying":
-          isChanged = true;
-          console.log("再度プロジェクトのリクエストをする予定");
-          break;
-        case "Retrying":
-        case "WaitUpdating":
-        case "Updating":
-        case "Unknown":
-          break;
-      }
-    }
-    if (isChanged) {
-      setProjectData(newProjectData);
-    }
-  }, [projectData]);
 
   React.useEffect(() => {
     const newUserData = new Map(userData);
@@ -214,26 +169,13 @@ export const App: React.FC<{
     clientMode: urlData.clientMode,
     language: urlData.language,
     logInState,
-    projectData,
+    projectMap,
     userData,
     imageData,
     onJump,
     allProjectIdListMaybe,
-    requestAllProject: () => {
-      console.log("すべてのプロジェクトを要求された", allProjectIdListMaybe);
-      if (allProjectIdListMaybe._ === "Nothing") {
-        requestLoadAllProjectIdList();
-      }
-    },
-    requestProject: (projectId: ProjectId) => {
-      if (projectData.get(projectId) === undefined) {
-        setProjectData((dict) => {
-          const newDict = new Map(dict);
-          newDict.set(projectId, ResourceState.WaitLoading());
-          return newDict;
-        });
-      }
-    },
+    requestAllProject,
+    requestProject,
     requestUser: (userId: UserId) => {
       if (userData.get(userId) === undefined) {
         setUserData((dict) => {

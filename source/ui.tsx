@@ -374,7 +374,7 @@ export const Project: React.FC<{
     prop.model.requestProject(prop.projectId);
   });
   return resourceView(
-    prop.model.projectData.get(prop.projectId),
+    prop.model.projectMap.get(prop.projectId),
     { width: 256, height: 144 },
     (projectMaybe) => {
       if (projectMaybe._ === "Nothing") {

@@ -79,7 +79,7 @@ const sampleComponentList = {
         language: "English",
         logInState: { _: "Guest" },
         onJump: () => {},
-        projectData: new Map(),
+        projectMap: new Map(),
         userData: new Map(),
         imageData: new Map(),
         allProjectIdListMaybe: Maybe.Nothing(),
@@ -98,7 +98,7 @@ const sampleComponentList = {
         language: "English",
         logInState: { _: "Guest" },
         onJump: () => {},
-        projectData: new Map(),
+        projectMap: new Map(),
         userData: new Map(),
         imageData: new Map(),
         allProjectIdListMaybe: Maybe.Nothing(),
@@ -116,7 +116,7 @@ const sampleComponentList = {
         language: "English",
         logInState: { _: "Guest" },
         onJump: () => {},
-        projectData: new Map([
+        projectMap: new Map([
           sampleProject[0],
           sampleProject[1],
           sampleProject[2],
@@ -152,7 +152,7 @@ const sampleComponentList = {
           language: "English",
           logInState: { _: "Guest" },
           onJump: () => {},
-          projectData: new Map(),
+          projectMap: new Map(),
           userData: new Map(),
           imageData: new Map([
             ["a" as ImageToken, StaticResourceState.WaitLoading()],
@@ -173,7 +173,7 @@ const sampleComponentList = {
           language: "English",
           logInState: { _: "Guest" },
           onJump: () => {},
-          projectData: new Map(),
+          projectMap: new Map(),
           userData: new Map(),
           imageData: new Map([
             ["a" as ImageToken, StaticResourceState.Loading()],
@@ -194,7 +194,7 @@ const sampleComponentList = {
           language: "English",
           logInState: { _: "Guest" },
           onJump: () => {},
-          projectData: new Map(),
+          projectMap: new Map(),
           userData: new Map(),
           imageData: new Map([
             ["a" as ImageToken, StaticResourceState.WaitRequesting()],
@@ -215,7 +215,7 @@ const sampleComponentList = {
           language: "English",
           logInState: { _: "Guest" },
           onJump: () => {},
-          projectData: new Map(),
+          projectMap: new Map(),
           userData: new Map(),
           imageData: new Map([
             ["a" as ImageToken, StaticResourceState.Requesting()],
