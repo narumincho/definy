@@ -1,24 +1,33 @@
 import * as React from "react";
-import * as api from "../api";
+import * as api from "./api";
 import * as coreUtil from "definy-core/source/util";
 import {
   Maybe,
   Project,
   ProjectId,
+  Resource,
   ResourceState,
+  User,
+  UserId,
 } from "definy-core/source/data";
 
 export const useProjectAllIdList = (): {
   allProjectIdListMaybe: Maybe<ResourceState<ReadonlyArray<ProjectId>>>;
   projectMap: ReadonlyMap<ProjectId, ResourceState<Project>>;
-  requestProject: (projectId: ProjectId) => void;
+  userMap: ReadonlyMap<UserId, ResourceState<User>>;
   requestAllProject: () => void;
+  requestProject: (projectId: ProjectId) => void;
+  requestUser: (userId: UserId) => void;
+  setUser: (userId: UserId, userResource: Resource<User>) => void;
 } => {
   const [allProjectIdListMaybe, dispatchAllProjectIdList] = React.useState<
     Maybe<ResourceState<ReadonlyArray<ProjectId>>>
   >(Maybe.Nothing());
   const [projectMap, setProjectMap] = React.useState<
     ReadonlyMap<ProjectId, ResourceState<Project>>
+  >(new Map());
+  const [userMap, setUserMap] = React.useState<
+    ReadonlyMap<UserId, ResourceState<User>>
   >(new Map());
 
   const requestRef = React.useRef<number | undefined>();
@@ -146,6 +155,48 @@ export const useProjectAllIdList = (): {
     }
   }, [projectMap]);
 
+  React.useEffect(() => {
+    const newUserData = new Map(userMap);
+    let isChanged = false;
+    for (const [userId, userResourceState] of userMap) {
+      switch (userResourceState._) {
+        case "Loaded":
+          break;
+        case "WaitLoading":
+          isChanged = true;
+          newUserData.set(userId, ResourceState.WaitRequesting());
+          break;
+        case "Loading":
+          break;
+        case "WaitRequesting":
+          isChanged = true;
+          newUserData.set(userId, ResourceState.Requesting());
+          api.getUser(userId).then((userResource) => {
+            setUserMap((dict) => {
+              const newDict = new Map(dict);
+              newDict.set(userId, ResourceState.Loaded(userResource));
+              return newDict;
+            });
+          });
+          break;
+        case "Requesting":
+          break;
+        case "WaitRetrying":
+          isChanged = true;
+          console.log("再度ユーザーのリクエストをする予定");
+          break;
+        case "Retrying":
+        case "WaitUpdating":
+        case "Updating":
+        case "Unknown":
+          break;
+      }
+    }
+    if (isChanged) {
+      setUserMap(newUserData);
+    }
+  }, [userMap]);
+
   const updateCheck = () => {
     requestRef.current = window.requestAnimationFrame(updateCheck);
     loopCount.current += 1;
@@ -196,6 +247,7 @@ export const useProjectAllIdList = (): {
   return {
     allProjectIdListMaybe,
     projectMap,
+    userMap,
     requestAllProject: () => {
       dispatchAllProjectIdList((beforeAllProjectIdListMaybe) => {
         if (beforeAllProjectIdListMaybe._ === "Nothing") {
@@ -205,13 +257,30 @@ export const useProjectAllIdList = (): {
       });
     },
     requestProject: (projectId: ProjectId) => {
-      setProjectMap((beforeMap) => {
-        if (!beforeMap.has(projectId)) {
-          const newDict = new Map(beforeMap);
-          newDict.set(projectId, ResourceState.WaitLoading());
-          return newDict;
+      setProjectMap((beforeProjectMap) => {
+        if (!beforeProjectMap.has(projectId)) {
+          const newProjectMap = new Map(beforeProjectMap);
+          newProjectMap.set(projectId, ResourceState.WaitLoading());
+          return newProjectMap;
         }
-        return beforeMap;
+        return beforeProjectMap;
+      });
+    },
+    requestUser: (userId: UserId) => {
+      setUserMap((beforeUserMap) => {
+        if (!beforeUserMap.has(userId)) {
+          const newUserMap = new Map(beforeUserMap);
+          newUserMap.set(userId, ResourceState.WaitLoading());
+          return newUserMap;
+        }
+        return beforeUserMap;
+      });
+    },
+    setUser: (userId: UserId, userResource: Resource<User>) => {
+      setUserMap((beforeUserMap) => {
+        const newUserMap = new Map(beforeUserMap);
+        newUserMap.set(userId, ResourceState.Loaded(userResource));
+        return newUserMap;
       });
     },
   };

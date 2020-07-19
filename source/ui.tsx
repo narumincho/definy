@@ -337,7 +337,7 @@ export const User: React.FC<{ model: Model; userId: UserId }> = (prop) => {
     prop.model.requestUser(prop.userId);
   });
   return resourceView(
-    prop.model.userData.get(prop.userId),
+    prop.model.userMap.get(prop.userId),
     { width: "100%", height: 32 },
     (userMaybe) => {
       if (userMaybe._ === "Just") {

@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as api from "./api";
 import * as core from "definy-core";
-import * as resourceAllProjectIdList from "./resource/allProjectIdList";
+import * as resourceAllProjectIdList from "./resource";
 import {
   AccessToken,
   ImageToken,
@@ -11,7 +11,7 @@ import {
   Location,
   Maybe,
   OpenIdConnectProvider,
-  ResourceState,
+  Resource,
   StaticResourceState,
   UrlData,
   User,
@@ -38,13 +38,12 @@ export const App: React.FC<{
   const {
     allProjectIdListMaybe,
     projectMap,
+    userMap,
     requestAllProject,
     requestProject,
+    requestUser,
+    setUser,
   } = resourceAllProjectIdList.useProjectAllIdList();
-
-  const [userData, setUserData] = React.useState<
-    ReadonlyMap<UserId, ResourceState<User>>
-  >(new Map());
 
   const [imageData, setImageData] = React.useState<
     ReadonlyMap<ImageToken, StaticResourceState<string>>
@@ -65,52 +64,9 @@ export const App: React.FC<{
   }, [urlData]);
 
   // ログイン
-  React.useEffect(
-    logInEffect(logInState, urlData, setLogInState, setUserData),
-    [logInState]
-  );
-
-  React.useEffect(() => {
-    const newUserData = new Map(userData);
-    let isChanged = false;
-    for (const [userId, userResourceState] of userData) {
-      switch (userResourceState._) {
-        case "Loaded":
-          break;
-        case "WaitLoading":
-          isChanged = true;
-          newUserData.set(userId, ResourceState.WaitRequesting());
-          break;
-        case "Loading":
-          break;
-        case "WaitRequesting":
-          isChanged = true;
-          newUserData.set(userId, ResourceState.Requesting());
-          api.getUser(userId).then((userResource) => {
-            setUserData((dict) => {
-              const newDict = new Map(dict);
-              newDict.set(userId, ResourceState.Loaded(userResource));
-              return newDict;
-            });
-          });
-          break;
-        case "Requesting":
-          break;
-        case "WaitRetrying":
-          isChanged = true;
-          console.log("再度プロジェクトのリクエストをする予定");
-          break;
-        case "Retrying":
-        case "WaitUpdating":
-        case "Updating":
-        case "Unknown":
-          break;
-      }
-    }
-    if (isChanged) {
-      setUserData(newUserData);
-    }
-  }, [userData]);
+  React.useEffect(logInEffect(logInState, urlData, setLogInState, setUser), [
+    logInState,
+  ]);
 
   React.useEffect(() => {
     const newImageData = new Map(imageData);
@@ -170,21 +126,13 @@ export const App: React.FC<{
     language: urlData.language,
     logInState,
     projectMap,
-    userData,
+    userMap,
     imageData,
     onJump,
     allProjectIdListMaybe,
     requestAllProject,
     requestProject,
-    requestUser: (userId: UserId) => {
-      if (userData.get(userId) === undefined) {
-        setUserData((dict) => {
-          const newDict = new Map(dict);
-          newDict.set(userId, ResourceState.WaitLoading());
-          return newDict;
-        });
-      }
-    },
+    requestUser,
     requestImage: (imageToken: ImageToken) => {
       if (imageData.get(imageToken) === undefined) {
         setImageData((dict) => {
@@ -290,9 +238,7 @@ const logInEffect = (
   logInState: LogInState,
   urlData: UrlData,
   dispatchLogInState: React.Dispatch<React.SetStateAction<LogInState>>,
-  dispatchUserData: React.Dispatch<
-    React.SetStateAction<ReadonlyMap<UserId, ResourceState<User>>>
-  >
+  setUser: (userId: UserId, userResource: Resource<User>) => void
 ): React.EffectCallback => () => {
   switch (logInState._) {
     case "Guest":
@@ -332,15 +278,9 @@ const logInEffect = (
                 accessToken: logInState.accessToken,
                 userId: userResourceAndIdMaybe.value.id,
               });
-              dispatchUserData(
-                (userData): ReadonlyMap<UserId, ResourceState<User>> =>
-                  new Map([
-                    ...userData,
-                    [
-                      userResourceAndIdMaybe.value.id,
-                      ResourceState.Loaded(userResourceAndIdMaybe.value.data),
-                    ],
-                  ])
+              setUser(
+                userResourceAndIdMaybe.value.id,
+                userResourceAndIdMaybe.value.data
               );
               return;
             case "Nothing":
