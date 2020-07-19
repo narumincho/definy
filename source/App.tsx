@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as api from "./api";
 import * as core from "definy-core";
-import * as coreUtil from "definy-core/source/util";
+import * as resourceAllProjectIdList from "./resource/allProjectIdList";
 import {
   AccessToken,
   ImageToken,
@@ -40,9 +40,10 @@ export const App: React.FC<{
   const [projectData, setProjectData] = React.useState<
     ReadonlyMap<ProjectId, ResourceState<Project>>
   >(new Map());
-  const [allProjectIdListMaybe, setAllProjectIdList] = React.useState<
-    Maybe<ResourceState<ReadonlyArray<ProjectId>>>
-  >(Maybe.Nothing);
+  const {
+    allProjectIdListMaybe,
+    requestLoadAllProjectIdList,
+  } = resourceAllProjectIdList.useProjectAllIdList();
 
   const [userData, setUserData] = React.useState<
     ReadonlyMap<UserId, ResourceState<User>>
@@ -71,63 +72,6 @@ export const App: React.FC<{
     logInEffect(logInState, urlData, setLogInState, setUserData),
     [logInState]
   );
-
-  // プロジェクトの一覧
-  React.useEffect(() => {
-    if (allProjectIdListMaybe._ === "Nothing") {
-      return;
-    }
-    const allProjectIdList = allProjectIdListMaybe.value;
-    switch (allProjectIdList._) {
-      case "Loaded":
-      case "Unknown":
-        return;
-      case "WaitLoading":
-        // dispatchAllProjectIdList(data.Maybe.Just(Resource.Loading()));
-        /*
-         * indexedDBにアクセスして取得
-         * 代わりに失敗したということでWaitRequestingにする
-         */
-        setAllProjectIdList(Maybe.Just(ResourceState.WaitRequesting()));
-        return;
-      case "Loading":
-        return;
-      case "WaitRequesting":
-        setAllProjectIdList(Maybe.Just(ResourceState.Requesting()));
-        api.getAllProject().then((idAndProjectResourceList) => {
-          setProjectData(
-            new Map(
-              idAndProjectResourceList.map((project) => [
-                project.id,
-                ResourceState.Loaded(project.data),
-              ])
-            )
-          );
-          setAllProjectIdList(
-            Maybe.Just(
-              ResourceState.Loaded({
-                dataMaybe: Maybe.Just(
-                  idAndProjectResourceList.map((project) => project.id)
-                ),
-                getTime: coreUtil.timeFromDate(new Date()),
-              })
-            )
-          );
-        });
-        return;
-
-      case "Requesting":
-        return;
-      case "WaitUpdating":
-        console.log("サーバーに問い合わせてプロジェクトの一覧を更新する予定");
-        return;
-
-      case "Updating":
-        return;
-      case "WaitRetrying":
-        console.log("サーバーに問い合わせてプロジェクトの一覧を再取得する予定");
-    }
-  }, [allProjectIdListMaybe]);
 
   React.useEffect(() => {
     const newProjectData = new Map(projectData);
@@ -276,8 +220,9 @@ export const App: React.FC<{
     onJump,
     allProjectIdListMaybe,
     requestAllProject: () => {
+      console.log("すべてのプロジェクトを要求された", allProjectIdListMaybe);
       if (allProjectIdListMaybe._ === "Nothing") {
-        setAllProjectIdList(Maybe.Just(ResourceState.WaitLoading()));
+        requestLoadAllProjectIdList();
       }
     },
     requestProject: (projectId: ProjectId) => {
