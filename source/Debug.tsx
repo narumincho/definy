@@ -79,9 +79,9 @@ const sampleComponentList = {
         language: "English",
         logInState: { _: "Guest" },
         onJump: () => {},
-        projectData: new Map(),
-        userData: new Map(),
-        imageData: new Map(),
+        projectMap: new Map(),
+        userMap: new Map(),
+        imageMap: new Map(),
         allProjectIdListMaybe: Maybe.Nothing(),
         requestAllProject: () => {},
         requestProject: () => {},
@@ -98,9 +98,9 @@ const sampleComponentList = {
         language: "English",
         logInState: { _: "Guest" },
         onJump: () => {},
-        projectData: new Map(),
-        userData: new Map(),
-        imageData: new Map(),
+        projectMap: new Map(),
+        userMap: new Map(),
+        imageMap: new Map(),
         allProjectIdListMaybe: Maybe.Nothing(),
         requestAllProject: () => {},
         requestProject: () => {},
@@ -116,13 +116,13 @@ const sampleComponentList = {
         language: "English",
         logInState: { _: "Guest" },
         onJump: () => {},
-        projectData: new Map([
+        projectMap: new Map([
           sampleProject[0],
           sampleProject[1],
           sampleProject[2],
         ]),
-        userData: new Map(),
-        imageData: new Map(),
+        userMap: new Map(),
+        imageMap: new Map(),
         allProjectIdListMaybe: Maybe.Just(
           ResourceState.Loaded({
             dataMaybe: Maybe.Just([
@@ -152,9 +152,9 @@ const sampleComponentList = {
           language: "English",
           logInState: { _: "Guest" },
           onJump: () => {},
-          projectData: new Map(),
-          userData: new Map(),
-          imageData: new Map([
+          projectMap: new Map(),
+          userMap: new Map(),
+          imageMap: new Map([
             ["a" as ImageToken, StaticResourceState.WaitLoading()],
           ]),
           allProjectIdListMaybe: Maybe.Nothing(),
@@ -173,9 +173,9 @@ const sampleComponentList = {
           language: "English",
           logInState: { _: "Guest" },
           onJump: () => {},
-          projectData: new Map(),
-          userData: new Map(),
-          imageData: new Map([
+          projectMap: new Map(),
+          userMap: new Map(),
+          imageMap: new Map([
             ["a" as ImageToken, StaticResourceState.Loading()],
           ]),
           allProjectIdListMaybe: Maybe.Nothing(),
@@ -194,9 +194,9 @@ const sampleComponentList = {
           language: "English",
           logInState: { _: "Guest" },
           onJump: () => {},
-          projectData: new Map(),
-          userData: new Map(),
-          imageData: new Map([
+          projectMap: new Map(),
+          userMap: new Map(),
+          imageMap: new Map([
             ["a" as ImageToken, StaticResourceState.WaitRequesting()],
           ]),
           allProjectIdListMaybe: Maybe.Nothing(),
@@ -215,9 +215,9 @@ const sampleComponentList = {
           language: "English",
           logInState: { _: "Guest" },
           onJump: () => {},
-          projectData: new Map(),
-          userData: new Map(),
-          imageData: new Map([
+          projectMap: new Map(),
+          userMap: new Map(),
+          imageMap: new Map([
             ["a" as ImageToken, StaticResourceState.Requesting()],
           ]),
           allProjectIdListMaybe: Maybe.Nothing(),

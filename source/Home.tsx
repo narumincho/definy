@@ -16,7 +16,7 @@ export const Home: React.FC<{ model: Model }> = (prop) => {
     if (prop.model.allProjectIdListMaybe._ === "Nothing") {
       prop.model.requestAllProject();
     }
-  }, [prop.model.projectData]);
+  }, [prop.model.projectMap]);
 
   return (
     <div css={{ display: "grid", overflow: "hidden" }}>

@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as api from "./api";
 import * as core from "definy-core";
-import * as coreUtil from "definy-core/source/util";
+import * as resourceAllProjectIdList from "./resource";
 import {
   AccessToken,
   ImageToken,
@@ -11,9 +11,7 @@ import {
   Location,
   Maybe,
   OpenIdConnectProvider,
-  Project,
-  ProjectId,
-  ResourceState,
+  Resource,
   StaticResourceState,
   UrlData,
   User,
@@ -37,20 +35,17 @@ export const App: React.FC<{
       ? { _: "WaitVerifyingAccessToken", accessToken: prop.accessToken.value }
       : { _: "Guest" }
   );
-  const [projectData, setProjectData] = React.useState<
-    ReadonlyMap<ProjectId, ResourceState<Project>>
-  >(new Map());
-  const [allProjectIdListMaybe, setAllProjectIdList] = React.useState<
-    Maybe<ResourceState<ReadonlyArray<ProjectId>>>
-  >(Maybe.Nothing);
-
-  const [userData, setUserData] = React.useState<
-    ReadonlyMap<UserId, ResourceState<User>>
-  >(new Map());
-
-  const [imageData, setImageData] = React.useState<
-    ReadonlyMap<ImageToken, StaticResourceState<string>>
-  >(new Map());
+  const {
+    allProjectIdListMaybe,
+    projectMap,
+    userMap,
+    imageMap,
+    requestAllProject,
+    requestProject,
+    requestUser,
+    setUser,
+    requestImage,
+  } = resourceAllProjectIdList.useProjectAllIdList();
 
   // ルーティング
   React.useEffect(() => {
@@ -67,246 +62,23 @@ export const App: React.FC<{
   }, [urlData]);
 
   // ログイン
-  React.useEffect(
-    logInEffect(logInState, urlData, setLogInState, setUserData),
-    [logInState]
-  );
-
-  // プロジェクトの一覧
-  React.useEffect(() => {
-    if (allProjectIdListMaybe._ === "Nothing") {
-      return;
-    }
-    const allProjectIdList = allProjectIdListMaybe.value;
-    switch (allProjectIdList._) {
-      case "Loaded":
-      case "Unknown":
-        return;
-      case "WaitLoading":
-        // dispatchAllProjectIdList(data.Maybe.Just(Resource.Loading()));
-        /*
-         * indexedDBにアクセスして取得
-         * 代わりに失敗したということでWaitRequestingにする
-         */
-        setAllProjectIdList(Maybe.Just(ResourceState.WaitRequesting()));
-        return;
-      case "Loading":
-        return;
-      case "WaitRequesting":
-        setAllProjectIdList(Maybe.Just(ResourceState.Requesting()));
-        api.getAllProject().then((idAndProjectResourceList) => {
-          setProjectData(
-            new Map(
-              idAndProjectResourceList.map((project) => [
-                project.id,
-                ResourceState.Loaded(project.data),
-              ])
-            )
-          );
-          setAllProjectIdList(
-            Maybe.Just(
-              ResourceState.Loaded({
-                dataMaybe: Maybe.Just(
-                  idAndProjectResourceList.map((project) => project.id)
-                ),
-                getTime: coreUtil.timeFromDate(new Date()),
-              })
-            )
-          );
-        });
-        return;
-
-      case "Requesting":
-        return;
-      case "WaitUpdating":
-        console.log("サーバーに問い合わせてプロジェクトの一覧を更新する予定");
-        return;
-
-      case "Updating":
-        return;
-      case "WaitRetrying":
-        console.log("サーバーに問い合わせてプロジェクトの一覧を再取得する予定");
-    }
-  }, [allProjectIdListMaybe]);
-
-  React.useEffect(() => {
-    const newProjectData = new Map(projectData);
-    let isChanged = false;
-    for (const [projectId, projectResource] of projectData) {
-      switch (projectResource._) {
-        case "Loaded":
-          break;
-        case "WaitLoading":
-          isChanged = true;
-          newProjectData.set(projectId, ResourceState.WaitRequesting());
-          break;
-        case "Loading":
-          break;
-        case "WaitRequesting":
-          isChanged = true;
-          newProjectData.set(projectId, ResourceState.Requesting());
-          api.getProject(projectId).then((project) => {
-            setProjectData((dict) => {
-              const newDict = new Map(dict);
-              newDict.set(projectId, ResourceState.Loaded(project));
-              return newDict;
-            });
-          });
-          break;
-        case "Requesting":
-          break;
-        case "WaitRetrying":
-          isChanged = true;
-          console.log("再度プロジェクトのリクエストをする予定");
-          break;
-        case "Retrying":
-        case "WaitUpdating":
-        case "Updating":
-        case "Unknown":
-          break;
-      }
-    }
-    if (isChanged) {
-      setProjectData(newProjectData);
-    }
-  }, [projectData]);
-
-  React.useEffect(() => {
-    const newUserData = new Map(userData);
-    let isChanged = false;
-    for (const [userId, userResourceState] of userData) {
-      switch (userResourceState._) {
-        case "Loaded":
-          break;
-        case "WaitLoading":
-          isChanged = true;
-          newUserData.set(userId, ResourceState.WaitRequesting());
-          break;
-        case "Loading":
-          break;
-        case "WaitRequesting":
-          isChanged = true;
-          newUserData.set(userId, ResourceState.Requesting());
-          api.getUser(userId).then((userResource) => {
-            setUserData((dict) => {
-              const newDict = new Map(dict);
-              newDict.set(userId, ResourceState.Loaded(userResource));
-              return newDict;
-            });
-          });
-          break;
-        case "Requesting":
-          break;
-        case "WaitRetrying":
-          isChanged = true;
-          console.log("再度プロジェクトのリクエストをする予定");
-          break;
-        case "Retrying":
-        case "WaitUpdating":
-        case "Updating":
-        case "Unknown":
-          break;
-      }
-    }
-    if (isChanged) {
-      setUserData(newUserData);
-    }
-  }, [userData]);
-
-  React.useEffect(() => {
-    const newImageData = new Map(imageData);
-    let isChanged = false;
-    for (const [imageToken, imageDataItem] of imageData) {
-      switch (imageDataItem._) {
-        case "Loaded":
-          break;
-        case "WaitLoading":
-          isChanged = true;
-          newImageData.set(imageToken, StaticResourceState.WaitRequesting());
-          break;
-        case "Loading":
-          break;
-        case "WaitRequesting":
-          isChanged = true;
-          newImageData.set(imageToken, StaticResourceState.Requesting());
-          api.getImageFile(imageToken).then((binaryMaybe) => {
-            if (binaryMaybe._ === "Nothing") {
-              throw new Error("存在しない画像をリクエストしてしまった");
-            }
-            setImageData((dict) => {
-              const newDict = new Map(dict);
-              newDict.set(
-                imageToken,
-                StaticResourceState.Loaded(
-                  window.URL.createObjectURL(
-                    new Blob([binaryMaybe.value], {
-                      type: "image/png",
-                    })
-                  )
-                )
-              );
-              return newDict;
-            });
-          });
-          break;
-        case "Requesting":
-          break;
-        case "WaitRetrying":
-          isChanged = true;
-          console.log("再度画像のリクエストをする予定");
-          break;
-        case "Retrying":
-          break;
-        case "Unknown":
-          break;
-      }
-    }
-    if (isChanged) {
-      setImageData(newImageData);
-    }
-  }, [imageData]);
+  React.useEffect(logInEffect(logInState, urlData, setLogInState, setUser), [
+    logInState,
+  ]);
 
   const model: Model = {
     clientMode: urlData.clientMode,
     language: urlData.language,
     logInState,
-    projectData,
-    userData,
-    imageData,
+    projectMap,
+    userMap,
+    imageMap,
     onJump,
     allProjectIdListMaybe,
-    requestAllProject: () => {
-      if (allProjectIdListMaybe._ === "Nothing") {
-        setAllProjectIdList(Maybe.Just(ResourceState.WaitLoading()));
-      }
-    },
-    requestProject: (projectId: ProjectId) => {
-      if (projectData.get(projectId) === undefined) {
-        setProjectData((dict) => {
-          const newDict = new Map(dict);
-          newDict.set(projectId, ResourceState.WaitLoading());
-          return newDict;
-        });
-      }
-    },
-    requestUser: (userId: UserId) => {
-      if (userData.get(userId) === undefined) {
-        setUserData((dict) => {
-          const newDict = new Map(dict);
-          newDict.set(userId, ResourceState.WaitLoading());
-          return newDict;
-        });
-      }
-    },
-    requestImage: (imageToken: ImageToken) => {
-      if (imageData.get(imageToken) === undefined) {
-        setImageData((dict) => {
-          const newDict = new Map(dict);
-          newDict.set(imageToken, StaticResourceState.WaitLoading());
-          return newDict;
-        });
-      }
-    },
+    requestAllProject,
+    requestProject,
+    requestUser,
+    requestImage,
   };
 
   switch (logInState._) {
@@ -403,9 +175,7 @@ const logInEffect = (
   logInState: LogInState,
   urlData: UrlData,
   dispatchLogInState: React.Dispatch<React.SetStateAction<LogInState>>,
-  dispatchUserData: React.Dispatch<
-    React.SetStateAction<ReadonlyMap<UserId, ResourceState<User>>>
-  >
+  setUser: (userId: UserId, userResource: Resource<User>) => void
 ): React.EffectCallback => () => {
   switch (logInState._) {
     case "Guest":
@@ -445,15 +215,9 @@ const logInEffect = (
                 accessToken: logInState.accessToken,
                 userId: userResourceAndIdMaybe.value.id,
               });
-              dispatchUserData(
-                (userData): ReadonlyMap<UserId, ResourceState<User>> =>
-                  new Map([
-                    ...userData,
-                    [
-                      userResourceAndIdMaybe.value.id,
-                      ResourceState.Loaded(userResourceAndIdMaybe.value.data),
-                    ],
-                  ])
+              setUser(
+                userResourceAndIdMaybe.value.id,
+                userResourceAndIdMaybe.value.data
               );
               return;
             case "Nothing":

@@ -256,7 +256,7 @@ export const Image: React.FC<{
   React.useEffect(() => {
     prop.model.requestImage(prop.imageToken);
   });
-  const blobUrlResource = prop.model.imageData.get(prop.imageToken);
+  const blobUrlResource = prop.model.imageMap.get(prop.imageToken);
   if (blobUrlResource === undefined) {
     return <div>...</div>;
   }
@@ -337,7 +337,7 @@ export const User: React.FC<{ model: Model; userId: UserId }> = (prop) => {
     prop.model.requestUser(prop.userId);
   });
   return resourceView(
-    prop.model.userData.get(prop.userId),
+    prop.model.userMap.get(prop.userId),
     { width: "100%", height: 32 },
     (userMaybe) => {
       if (userMaybe._ === "Just") {
@@ -374,7 +374,7 @@ export const Project: React.FC<{
     prop.model.requestProject(prop.projectId);
   });
   return resourceView(
-    prop.model.projectData.get(prop.projectId),
+    prop.model.projectMap.get(prop.projectId),
     { width: 256, height: 144 },
     (projectMaybe) => {
       if (projectMaybe._ === "Nothing") {

@@ -13,9 +13,9 @@ export type Model = {
   logInState: LogInState;
   language: data.Language;
   clientMode: data.ClientMode;
-  projectData: ReadonlyMap<data.ProjectId, data.ResourceState<data.Project>>;
-  userData: ReadonlyMap<data.UserId, data.ResourceState<data.User>>;
-  imageData: ReadonlyMap<data.ImageToken, data.StaticResourceState<string>>;
+  projectMap: ReadonlyMap<data.ProjectId, data.ResourceState<data.Project>>;
+  userMap: ReadonlyMap<data.UserId, data.ResourceState<data.User>>;
+  imageMap: ReadonlyMap<data.ImageToken, data.StaticResourceState<string>>;
   onJump: (urlData: data.UrlData) => void;
   allProjectIdListMaybe: data.Maybe<
     data.ResourceState<ReadonlyArray<data.ProjectId>>
