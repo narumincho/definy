@@ -256,7 +256,7 @@ export const Image: React.FC<{
   React.useEffect(() => {
     prop.model.requestImage(prop.imageToken);
   });
-  const blobUrlResource = prop.model.imageData.get(prop.imageToken);
+  const blobUrlResource = prop.model.imageMap.get(prop.imageToken);
   if (blobUrlResource === undefined) {
     return <div>...</div>;
   }

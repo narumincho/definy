@@ -2,11 +2,13 @@ import * as React from "react";
 import * as api from "./api";
 import * as coreUtil from "definy-core/source/util";
 import {
+  ImageToken,
   Maybe,
   Project,
   ProjectId,
   Resource,
   ResourceState,
+  StaticResourceState,
   User,
   UserId,
 } from "definy-core/source/data";
@@ -15,10 +17,12 @@ export const useProjectAllIdList = (): {
   allProjectIdListMaybe: Maybe<ResourceState<ReadonlyArray<ProjectId>>>;
   projectMap: ReadonlyMap<ProjectId, ResourceState<Project>>;
   userMap: ReadonlyMap<UserId, ResourceState<User>>;
+  imageMap: ReadonlyMap<ImageToken, StaticResourceState<string>>;
   requestAllProject: () => void;
   requestProject: (projectId: ProjectId) => void;
   requestUser: (userId: UserId) => void;
   setUser: (userId: UserId, userResource: Resource<User>) => void;
+  requestImage: (imageToken: ImageToken) => void;
 } => {
   const [allProjectIdListMaybe, dispatchAllProjectIdList] = React.useState<
     Maybe<ResourceState<ReadonlyArray<ProjectId>>>
@@ -28,6 +32,9 @@ export const useProjectAllIdList = (): {
   >(new Map());
   const [userMap, setUserMap] = React.useState<
     ReadonlyMap<UserId, ResourceState<User>>
+  >(new Map());
+  const [imageMap, setImageMap] = React.useState<
+    ReadonlyMap<ImageToken, StaticResourceState<string>>
   >(new Map());
 
   const requestRef = React.useRef<number | undefined>();
@@ -197,6 +204,59 @@ export const useProjectAllIdList = (): {
     }
   }, [userMap]);
 
+  React.useEffect(() => {
+    const newImageData = new Map(imageMap);
+    let isChanged = false;
+    for (const [imageToken, imageDataItem] of imageMap) {
+      switch (imageDataItem._) {
+        case "Loaded":
+          break;
+        case "WaitLoading":
+          isChanged = true;
+          newImageData.set(imageToken, StaticResourceState.WaitRequesting());
+          break;
+        case "Loading":
+          break;
+        case "WaitRequesting":
+          isChanged = true;
+          newImageData.set(imageToken, StaticResourceState.Requesting());
+          api.getImageFile(imageToken).then((binaryMaybe) => {
+            if (binaryMaybe._ === "Nothing") {
+              throw new Error("存在しない画像をリクエストしてしまった");
+            }
+            setImageMap((dict) => {
+              const newDict = new Map(dict);
+              newDict.set(
+                imageToken,
+                StaticResourceState.Loaded(
+                  window.URL.createObjectURL(
+                    new Blob([binaryMaybe.value], {
+                      type: "image/png",
+                    })
+                  )
+                )
+              );
+              return newDict;
+            });
+          });
+          break;
+        case "Requesting":
+          break;
+        case "WaitRetrying":
+          isChanged = true;
+          console.log("再度画像のリクエストをする予定");
+          break;
+        case "Retrying":
+          break;
+        case "Unknown":
+          break;
+      }
+    }
+    if (isChanged) {
+      setImageMap(newImageData);
+    }
+  }, [imageMap]);
+
   const updateCheck = () => {
     requestRef.current = window.requestAnimationFrame(updateCheck);
     loopCount.current += 1;
@@ -248,6 +308,7 @@ export const useProjectAllIdList = (): {
     allProjectIdListMaybe,
     projectMap,
     userMap,
+    imageMap,
     requestAllProject: () => {
       dispatchAllProjectIdList((beforeAllProjectIdListMaybe) => {
         if (beforeAllProjectIdListMaybe._ === "Nothing") {
@@ -281,6 +342,16 @@ export const useProjectAllIdList = (): {
         const newUserMap = new Map(beforeUserMap);
         newUserMap.set(userId, ResourceState.Loaded(userResource));
         return newUserMap;
+      });
+    },
+    requestImage: (imageToken: ImageToken) => {
+      setImageMap((beforeImageMap) => {
+        if (!imageMap.has(imageToken)) {
+          const newDict = new Map(beforeImageMap);
+          newDict.set(imageToken, StaticResourceState.WaitLoading());
+          return newDict;
+        }
+        return beforeImageMap;
       });
     },
   };

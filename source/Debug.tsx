@@ -81,7 +81,7 @@ const sampleComponentList = {
         onJump: () => {},
         projectMap: new Map(),
         userMap: new Map(),
-        imageData: new Map(),
+        imageMap: new Map(),
         allProjectIdListMaybe: Maybe.Nothing(),
         requestAllProject: () => {},
         requestProject: () => {},
@@ -100,7 +100,7 @@ const sampleComponentList = {
         onJump: () => {},
         projectMap: new Map(),
         userMap: new Map(),
-        imageData: new Map(),
+        imageMap: new Map(),
         allProjectIdListMaybe: Maybe.Nothing(),
         requestAllProject: () => {},
         requestProject: () => {},
@@ -122,7 +122,7 @@ const sampleComponentList = {
           sampleProject[2],
         ]),
         userMap: new Map(),
-        imageData: new Map(),
+        imageMap: new Map(),
         allProjectIdListMaybe: Maybe.Just(
           ResourceState.Loaded({
             dataMaybe: Maybe.Just([
@@ -154,7 +154,7 @@ const sampleComponentList = {
           onJump: () => {},
           projectMap: new Map(),
           userMap: new Map(),
-          imageData: new Map([
+          imageMap: new Map([
             ["a" as ImageToken, StaticResourceState.WaitLoading()],
           ]),
           allProjectIdListMaybe: Maybe.Nothing(),
@@ -175,7 +175,7 @@ const sampleComponentList = {
           onJump: () => {},
           projectMap: new Map(),
           userMap: new Map(),
-          imageData: new Map([
+          imageMap: new Map([
             ["a" as ImageToken, StaticResourceState.Loading()],
           ]),
           allProjectIdListMaybe: Maybe.Nothing(),
@@ -196,7 +196,7 @@ const sampleComponentList = {
           onJump: () => {},
           projectMap: new Map(),
           userMap: new Map(),
-          imageData: new Map([
+          imageMap: new Map([
             ["a" as ImageToken, StaticResourceState.WaitRequesting()],
           ]),
           allProjectIdListMaybe: Maybe.Nothing(),
@@ -217,7 +217,7 @@ const sampleComponentList = {
           onJump: () => {},
           projectMap: new Map(),
           userMap: new Map(),
-          imageData: new Map([
+          imageMap: new Map([
             ["a" as ImageToken, StaticResourceState.Requesting()],
           ]),
           allProjectIdListMaybe: Maybe.Nothing(),

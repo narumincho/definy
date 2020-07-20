@@ -39,15 +39,13 @@ export const App: React.FC<{
     allProjectIdListMaybe,
     projectMap,
     userMap,
+    imageMap,
     requestAllProject,
     requestProject,
     requestUser,
     setUser,
+    requestImage,
   } = resourceAllProjectIdList.useProjectAllIdList();
-
-  const [imageData, setImageData] = React.useState<
-    ReadonlyMap<ImageToken, StaticResourceState<string>>
-  >(new Map());
 
   // ルーティング
   React.useEffect(() => {
@@ -68,80 +66,19 @@ export const App: React.FC<{
     logInState,
   ]);
 
-  React.useEffect(() => {
-    const newImageData = new Map(imageData);
-    let isChanged = false;
-    for (const [imageToken, imageDataItem] of imageData) {
-      switch (imageDataItem._) {
-        case "Loaded":
-          break;
-        case "WaitLoading":
-          isChanged = true;
-          newImageData.set(imageToken, StaticResourceState.WaitRequesting());
-          break;
-        case "Loading":
-          break;
-        case "WaitRequesting":
-          isChanged = true;
-          newImageData.set(imageToken, StaticResourceState.Requesting());
-          api.getImageFile(imageToken).then((binaryMaybe) => {
-            if (binaryMaybe._ === "Nothing") {
-              throw new Error("存在しない画像をリクエストしてしまった");
-            }
-            setImageData((dict) => {
-              const newDict = new Map(dict);
-              newDict.set(
-                imageToken,
-                StaticResourceState.Loaded(
-                  window.URL.createObjectURL(
-                    new Blob([binaryMaybe.value], {
-                      type: "image/png",
-                    })
-                  )
-                )
-              );
-              return newDict;
-            });
-          });
-          break;
-        case "Requesting":
-          break;
-        case "WaitRetrying":
-          isChanged = true;
-          console.log("再度画像のリクエストをする予定");
-          break;
-        case "Retrying":
-          break;
-        case "Unknown":
-          break;
-      }
-    }
-    if (isChanged) {
-      setImageData(newImageData);
-    }
-  }, [imageData]);
-
   const model: Model = {
     clientMode: urlData.clientMode,
     language: urlData.language,
     logInState,
     projectMap,
     userMap,
-    imageData,
+    imageMap,
     onJump,
     allProjectIdListMaybe,
     requestAllProject,
     requestProject,
     requestUser,
-    requestImage: (imageToken: ImageToken) => {
-      if (imageData.get(imageToken) === undefined) {
-        setImageData((dict) => {
-          const newDict = new Map(dict);
-          newDict.set(imageToken, StaticResourceState.WaitLoading());
-          return newDict;
-        });
-      }
-    },
+    requestImage,
   };
 
   switch (logInState._) {
