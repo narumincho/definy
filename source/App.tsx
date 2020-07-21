@@ -6,19 +6,18 @@ import * as core from "definy-core";
 import * as resourceAllProjectIdList from "./resource";
 import {
   AccessToken,
-  ImageToken,
   Language,
   Location,
   Maybe,
   OpenIdConnectProvider,
   Resource,
-  StaticResourceState,
   UrlData,
   User,
   UserId,
 } from "definy-core/source/data";
 import { LogInState, Model } from "./model";
 import { About } from "./About";
+import { CreateProject } from "./CreateProject";
 import { Debug } from "./Debug";
 import { Home } from "./Home";
 import { LoadingBox } from "./ui";
@@ -162,6 +161,8 @@ const MainPanel: React.FC<{
   switch (prop.location._) {
     case "Home":
       return <Home model={prop.model} />;
+    case "CreateProject":
+      return <CreateProject model={prop.model} />;
     case "About":
       return <About />;
     case "Debug":
