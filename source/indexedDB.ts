@@ -1,5 +1,5 @@
 import * as util from "definy-core/source/util";
-import { AccessToken, Resource, Time } from "definy-core/source/data";
+import { AccessToken, Resource } from "definy-core/source/data";
 
 const accessTokenObjectStoreName = "accessToken";
 const accessTokenKeyName = "lastLogInUser";
