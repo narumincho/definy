@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as api from "./api";
 import * as core from "definy-core";
+import * as indexedDB from "./indexedDB";
 import * as resourceAllProjectIdList from "./resource";
 import {
   AccessToken,
@@ -211,6 +212,7 @@ const logInEffect = (
         .then((userResourceAndIdMaybe) => {
           switch (userResourceAndIdMaybe._) {
             case "Just":
+              indexedDB.setAccessToken(logInState.accessToken);
               dispatchLogInState({
                 _: "LoggedIn",
                 accessToken: logInState.accessToken,
