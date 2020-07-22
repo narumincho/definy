@@ -25,6 +25,7 @@ import { LoadingBox } from "./ui";
 import { Model } from "./model";
 import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
+import styled from "styled-components";
 
 export const App: React.FC<{
   accessToken: Maybe<AccessToken>;
@@ -101,13 +102,7 @@ export const App: React.FC<{
       );
   }
   return (
-    <div
-      css={{
-        height: "100%",
-        display: "grid",
-        gridTemplateColumns: "auto 1fr",
-      }}
-    >
+    <NormalStyledDiv>
       <SidePanel
         model={model}
         onRequestLogIn={(provider) => {
@@ -115,23 +110,29 @@ export const App: React.FC<{
         }}
       />
       <MainPanel location={urlData.location} model={model} />
-    </div>
+    </NormalStyledDiv>
   );
 };
+
+const NormalStyledDiv = styled.div({
+  height: "100%",
+  display: "grid",
+  gridTemplateColumns: "auto 1fr",
+});
+
+const LogInViewStyledDiv = styled.div({
+  height: "100%",
+  display: "grid",
+  alignItems: "center",
+  justifyItems: "center",
+});
 
 const RequestingLogInUrl: React.FC<{
   message: string;
 }> = (prop) => (
-  <div
-    css={{
-      height: "100%",
-      display: "grid",
-      alignItems: "center",
-      justifyItems: "center",
-    }}
-  >
+  <LogInViewStyledDiv>
     <LoadingBox>{prop.message}</LoadingBox>
-  </div>
+  </LogInViewStyledDiv>
 );
 
 const logInMessage = (
