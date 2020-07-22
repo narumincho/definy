@@ -1,5 +1,3 @@
-/** @jsx jsx */
-
 import * as React from "react";
 import * as ui from "./ui";
 import {
@@ -9,28 +7,28 @@ import {
   UrlData,
 } from "definy-core/source/data";
 import { Model } from "./model";
-import { jsx } from "react-free-style";
+import styled from "styled-components";
 
 const sidePanelWidth = 260;
+
+const SidePanelDiv = styled.div({
+  width: sidePanelWidth,
+  backgroundColor: ui.areaThemeToValue("Gray").backgroundColor,
+  height: "100%",
+});
 
 export const SidePanel: React.FC<{
   model: Model;
   onRequestLogIn: (provider: OpenIdConnectProvider) => void;
 }> = (prop) => (
-  <div
-    css={{
-      width: sidePanelWidth,
-      backgroundColor: ui.areaThemeToValue("Gray").backgroundColor,
-      height: "100%",
-    }}
-  >
+  <SidePanelDiv>
     <Logo model={prop.model} onJump={prop.model.onJump} />
     <UserViewOrLogInButton
       model={prop.model}
       requestLogIn={prop.onRequestLogIn}
     />
-    <div css={{ padding: 8 }}>Idea</div>
-    <div css={{ padding: 8 }}>Part</div>
+    <div>Idea</div>
+    <div>Part</div>
     <ui.Link
       areaTheme="Gray"
       css={{ padding: 8 }}
@@ -47,7 +45,7 @@ export const SidePanel: React.FC<{
     >
       <div>Debug</div>
     </ui.Link>
-  </div>
+  </SidePanelDiv>
 );
 
 const Logo: React.FC<{
@@ -105,14 +103,16 @@ const UserViewOrLogInButton: React.FC<{
   return <div>ログインの準備中……</div>;
 };
 
+const LogInButtonDiv = styled.div({ display: "grid", gap: 8, padding: 8 });
+
 const LogInButton: React.FC<{
   requestLogIn: (provider: OpenIdConnectProvider) => void;
   language: Language;
 }> = (prop) => (
-  <div css={{ display: "grid", gap: 8, padding: 8 }}>
+  <LogInButtonDiv>
     <GoogleButton language={prop.language} requestLogIn={prop.requestLogIn} />
     <GitHubButton language={prop.language} requestLogIn={prop.requestLogIn} />
-  </div>
+  </LogInButtonDiv>
 );
 
 const GoogleButton: React.FC<{
@@ -134,22 +134,28 @@ const GoogleButton: React.FC<{
       prop.requestLogIn("Google");
     }}
   >
-    <div
-      css={{
-        width: 48,
-        height: 48,
-        padding: 8,
-        backgroundColor: "#fff",
-        borderRadius: 8,
-      }}
-    >
+    <GoogleIconContainer>
       <GoogleIcon />
-    </div>
-    <div css={{ alignSelf: "center", fontSize: 18, color: "#fff" }}>
+    </GoogleIconContainer>
+    <GoogleLogInMessageDiv>
       {logInMessage("Google", prop.language)}
-    </div>
+    </GoogleLogInMessageDiv>
   </ui.Button>
 );
+
+const GoogleIconContainer = styled.div({
+  width: 48,
+  height: 48,
+  padding: 8,
+  backgroundColor: "#fff",
+  borderRadius: 8,
+});
+
+const GoogleLogInMessageDiv = styled.div({
+  alignSelf: "center",
+  fontSize: 18,
+  color: "#fff",
+});
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 20 20">
@@ -191,22 +197,28 @@ const GitHubButton: React.FC<{
       prop.requestLogIn("GitHub");
     }}
   >
-    <div
-      css={{
-        width: 48,
-        height: 48,
-        padding: 8,
-        backgroundColor: "#fff",
-        borderRadius: 8,
-      }}
-    >
+    <GitHubIconContainer>
       <ui.GitHubIcon color="#000" />
-    </div>
-    <div css={{ alignSelf: "center", fontSize: 18, color: "#ddd" }}>
+    </GitHubIconContainer>
+    <GitHubLogInMessageDiv>
       {logInMessage("GitHub", prop.language)}
-    </div>
+    </GitHubLogInMessageDiv>
   </ui.Button>
 );
+
+const GitHubIconContainer = styled.div({
+  width: 48,
+  height: 48,
+  padding: 8,
+  backgroundColor: "#fff",
+  borderRadius: 8,
+});
+
+const GitHubLogInMessageDiv = styled.div({
+  alignSelf: "center",
+  fontSize: 18,
+  color: "#ddd",
+});
 
 const logInMessage = (
   provider: OpenIdConnectProvider,
