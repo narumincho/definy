@@ -1,5 +1,3 @@
-/** @jsx jsx */
-
 import * as React from "react";
 import * as ui from "./ui";
 import {
@@ -15,7 +13,7 @@ import {
 import { About } from "./About";
 import { Home } from "./Home";
 import { SidePanel } from "./SidePanel";
-import { jsx } from "react-free-style";
+import styled from "styled-components";
 
 const sampleProject: ReadonlyArray<[ProjectId, ResourceState<Project>]> = [
   [
@@ -71,6 +69,12 @@ const sampleProject: ReadonlyArray<[ProjectId, ResourceState<Project>]> = [
     }),
   ],
 ];
+
+const ImageFixSizeAndWithBorder = styled(ui.Image)({
+  width: 64,
+  height: 64,
+  border: "solid 1px red",
+});
 
 const sampleComponentList = {
   sidePanel: (
@@ -145,8 +149,7 @@ const sampleComponentList = {
   requestingImage: (
     <div>
       WaitLoading
-      <ui.Image
-        css={{ width: 64, height: 64, border: "solid 1px red" }}
+      <ImageFixSizeAndWithBorder
         imageToken={"a" as ImageToken}
         model={{
           clientMode: "DebugMode",
@@ -166,8 +169,7 @@ const sampleComponentList = {
         }}
       />
       Loading
-      <ui.Image
-        css={{ width: 64, height: 64, border: "solid 1px red" }}
+      <ImageFixSizeAndWithBorder
         imageToken={"a" as ImageToken}
         model={{
           clientMode: "DebugMode",
@@ -187,8 +189,7 @@ const sampleComponentList = {
         }}
       />
       WaitRequesting
-      <ui.Image
-        css={{ width: 64, height: 64, border: "solid 1px red" }}
+      <ImageFixSizeAndWithBorder
         imageToken={"a" as ImageToken}
         model={{
           clientMode: "DebugMode",
@@ -208,8 +209,7 @@ const sampleComponentList = {
         }}
       />
       Requesting
-      <ui.Image
-        css={{ width: 64, height: 64, border: "solid 1px red" }}
+      <ImageFixSizeAndWithBorder
         imageToken={"a" as ImageToken}
         model={{
           clientMode: "DebugMode",
@@ -237,11 +237,18 @@ const allTab = Object.keys(sampleComponentList) as ReadonlyArray<
 >;
 type Tab = keyof typeof sampleComponentList;
 
+const DebugDiv = styled.div({
+  display: "grid",
+  gridTemplateColumns: "auto 1fr",
+});
+
+const TabListContainer = styled.div({ display: "grid", alignSelf: "start" });
+
 export const Debug: React.FC<Record<never, never>> = () => {
   const [tab, dispatchTab] = React.useState<Tab>("sidePanel");
   return (
-    <div css={{ display: "grid", gridTemplateColumns: "auto 1fr" }}>
-      <div css={{ display: "grid", alignSelf: "start" }}>
+    <DebugDiv>
+      <TabListContainer>
         {allTab.map((tabName) => {
           if (tabName === tab) {
             return (
@@ -274,9 +281,9 @@ export const Debug: React.FC<Record<never, never>> = () => {
             </ui.Button>
           );
         })}
-      </div>
+      </TabListContainer>
       {sampleComponentList[tab]}
-    </div>
+    </DebugDiv>
   );
 };
 
