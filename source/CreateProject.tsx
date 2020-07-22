@@ -1,37 +1,28 @@
-/** @jsx jsx */
-
 import * as React from "react";
 import * as ui from "./ui";
 import { Model } from "./model";
-import { jsx } from "react-free-style";
+import styled from "styled-components";
+
+const CreateProjectDiv = styled.div({
+  padding: 16,
+  display: "grid",
+  alignContent: "center",
+  justifyContent: "center",
+});
 
 export const CreateProject: React.FC<{ model: Model }> = (prop) => {
   const [projectName, setProjectName] = React.useState("");
   if (prop.model.logInState._ !== "LoggedIn") {
     return (
-      <div
-        css={{
-          padding: 16,
-          display: "grid",
-          alignContent: "center",
-          justifyContent: "center",
-        }}
-      >
+      <CreateProjectDiv>
         <div>プロジェクトの作成にはログインする必要があります</div>
         <div>左のログインボタンを押してログインしてください</div>
-      </div>
+      </CreateProjectDiv>
     );
   }
 
   return (
-    <div
-      css={{
-        padding: 16,
-        display: "grid",
-        alignContent: "center",
-        justifyContent: "center",
-      }}
-    >
+    <CreateProjectDiv>
       <div>
         ここはプロジェクト作成ページ.
         プロジェクト名と画像を指定してプロジェクトを作ることができます
@@ -53,6 +44,6 @@ export const CreateProject: React.FC<{ model: Model }> = (prop) => {
       >
         プロジェクトを作成 (作成中)
       </ui.Button>
-    </div>
+    </CreateProjectDiv>
   );
 };
