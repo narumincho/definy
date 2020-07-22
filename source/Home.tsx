@@ -1,5 +1,3 @@
-/** @jsx jsx */
-
 import * as React from "react";
 import * as ui from "./ui";
 import {
@@ -9,7 +7,9 @@ import {
   ResourceState,
 } from "definy-core/source/data";
 import { Model } from "./model";
-import { jsx } from "react-free-style";
+import styled from "styled-components";
+
+const HomeContainerDiv = styled.div({ display: "grid", overflow: "hidden" });
 
 export const Home: React.FC<{ model: Model }> = (prop) => {
   React.useEffect(() => {
@@ -19,66 +19,30 @@ export const Home: React.FC<{ model: Model }> = (prop) => {
   }, [prop.model.projectMap]);
 
   return (
-    <div css={{ display: "grid", overflow: "hidden" }}>
-      <div
-        css={{
-          display: "grid",
-          overflowY: "scroll",
-          gridColumn: "1 / 2",
-          gridRow: "1 / 2",
-        }}
-      >
+    <HomeContainerDiv>
+      <AllProjectListContainerDiv>
         {prop.model.allProjectIdListMaybe._ === "Just" ? (
           <AllProjectList
             allProjectIdListResource={prop.model.allProjectIdListMaybe.value}
             model={prop.model}
           />
         ) : (
-          <LoadingDummyView />
+          <div>...</div>
         )}
-      </div>
+      </AllProjectListContainerDiv>
       {prop.model.logInState._ === "Guest" ? undefined : (
         <CreateProjectButton model={prop.model} />
       )}
-    </div>
+    </HomeContainerDiv>
   );
 };
 
-const LoadingDummyView: React.FC<Record<never, never>> = () => {
-  const grayTheme = ui.areaThemeToValue("Gray");
-  return (
-    <div
-      css={{
-        gridColumn: "1 / 2",
-        gridRow: "1 / 2",
-        overflow: "hidden",
-        overflowWrap: "break-word",
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr 1fr",
-        alignSelf: "start",
-        justifySelf: "center",
-        gap: 8,
-      }}
-    >
-      {new Array(30).fill(0).map((_, index) => (
-        <div
-          css={{
-            padding: 8,
-            display: "grid",
-            gridTemplateRows: "128px auto",
-            width: 256,
-            backgroundColor: grayTheme.backgroundColor,
-            color: grayTheme.color,
-          }}
-          key={index.toString()}
-        >
-          <div css={{ backgroundColor: "#555" }} />
-          <div>●●●● ●●● ●●●●</div>
-        </div>
-      ))}
-    </div>
-  );
-};
+const AllProjectListContainerDiv = styled.div({
+  display: "grid",
+  overflowY: "scroll",
+  gridColumn: "1 / 2",
+  gridRow: "1 / 2",
+});
 
 const AllProjectList: React.FC<{
   model: Model;
@@ -96,19 +60,7 @@ const AllProjectList: React.FC<{
         return <div>プロジェクトが1つもありません</div>;
       }
       return (
-        <div
-          css={{
-            gridColumn: "1 / 2",
-            gridRow: "1 / 2",
-            overflow: "hidden",
-            overflowWrap: "break-word",
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            alignSelf: "start",
-            justifySelf: "center",
-            gap: 8,
-          }}
-        >
+        <ProjectListContainerDiv>
           {allProjectList.map((projectId) => (
             <ui.Project
               key={projectId}
@@ -116,21 +68,33 @@ const AllProjectList: React.FC<{
               projectId={projectId}
             />
           ))}
-        </div>
+        </ProjectListContainerDiv>
       );
     }
   );
 
+const ProjectListContainerDiv = styled.div({
+  gridColumn: "1 / 2",
+  gridRow: "1 / 2",
+  overflow: "hidden",
+  overflowWrap: "break-word",
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr 1fr",
+  alignSelf: "start",
+  justifySelf: "center",
+  gap: 8,
+});
+
+const CreateProjectDiv = styled.div({
+  gridColumn: "1 / 2",
+  gridRow: "1 / 2",
+  alignSelf: "end",
+  justifySelf: "end",
+  padding: 16,
+});
+
 const CreateProjectButton: React.FC<{ model: Model }> = (prop) => (
-  <div
-    css={{
-      gridColumn: "1 / 2",
-      gridRow: "1 / 2",
-      alignSelf: "end",
-      justifySelf: "end",
-      padding: 16,
-    }}
-  >
+  <CreateProjectDiv>
     <ui.Link
       areaTheme="Active"
       css={{
@@ -141,7 +105,7 @@ const CreateProjectButton: React.FC<{ model: Model }> = (prop) => (
     >
       {createProjectMessage(prop.model.language)}
     </ui.Link>
-  </div>
+  </CreateProjectDiv>
 );
 
 const createProjectMessage = (language: Language): string => {
