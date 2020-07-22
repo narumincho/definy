@@ -98,6 +98,13 @@ const StyledButton = styled.button({
   border: "none",
   padding: 0,
   textAlign: "left",
+  fontSize: 16,
+  backgroundColor: areaThemeToValue("Gray").backgroundColor,
+  color: areaThemeToValue("Gray").color,
+  "&:hover": {
+    color: areaThemeToValue("Gray").hoveredColor,
+    backgroundColor: areaThemeToValue("Gray").hoveredBackgroundColor,
+  },
 });
 
 export const Button: React.FC<{
@@ -250,6 +257,7 @@ const imageStyleToCSSObject = (imageStyle: ImageStyle): CSSObject => ({
   height: imageStyle.height,
   padding: imageStyle.padding,
   borderRadius: imageStyle.round ? "50%" : undefined,
+  display: "grid",
 });
 
 export const Image: React.FC<{
@@ -264,7 +272,7 @@ export const Image: React.FC<{
   const blobUrlResource = prop.model.imageMap.get(prop.imageToken);
   if (blobUrlResource === undefined) {
     return (
-      <ImageStyledDiv imageStyle={prop.imageStyle}>
+      <ImageStyledDiv className={prop.className} imageStyle={prop.imageStyle}>
         <CenterDiv>...</CenterDiv>
       </ImageStyledDiv>
     );
@@ -272,7 +280,7 @@ export const Image: React.FC<{
   switch (blobUrlResource._) {
     case "WaitLoading":
       return (
-        <ImageStyledDiv imageStyle={prop.imageStyle}>
+        <ImageStyledDiv className={prop.className} imageStyle={prop.imageStyle}>
           <CenterDiv>
             <NewLoadingIcon isWait />
           </CenterDiv>
@@ -280,7 +288,7 @@ export const Image: React.FC<{
       );
     case "Loading":
       return (
-        <ImageStyledDiv imageStyle={prop.imageStyle}>
+        <ImageStyledDiv className={prop.className} imageStyle={prop.imageStyle}>
           <CenterDiv>
             <NewLoadingIcon isWait={false} />
           </CenterDiv>
@@ -288,7 +296,7 @@ export const Image: React.FC<{
       );
     case "WaitRequesting":
       return (
-        <ImageStyledDiv imageStyle={prop.imageStyle}>
+        <ImageStyledDiv className={prop.className} imageStyle={prop.imageStyle}>
           <CenterDiv>
             <RequestingIcon isWait />
           </CenterDiv>
@@ -296,7 +304,7 @@ export const Image: React.FC<{
       );
     case "Requesting":
       return (
-        <ImageStyledDiv imageStyle={prop.imageStyle}>
+        <ImageStyledDiv className={prop.className} imageStyle={prop.imageStyle}>
           <CenterDiv>
             <RequestingIcon isWait={false} />
           </CenterDiv>
@@ -304,25 +312,26 @@ export const Image: React.FC<{
       );
     case "WaitRetrying":
       return (
-        <ImageStyledDiv imageStyle={prop.imageStyle}>
+        <ImageStyledDiv className={prop.className} imageStyle={prop.imageStyle}>
           <CenterDiv>再挑戦準備中</CenterDiv>
         </ImageStyledDiv>
       );
     case "Retrying":
       return (
-        <ImageStyledDiv imageStyle={prop.imageStyle}>
+        <ImageStyledDiv className={prop.className} imageStyle={prop.imageStyle}>
           <CenterDiv>再挑戦中</CenterDiv>
         </ImageStyledDiv>
       );
     case "Unknown":
       return (
-        <ImageStyledDiv imageStyle={prop.imageStyle}>
+        <ImageStyledDiv className={prop.className} imageStyle={prop.imageStyle}>
           <CenterDiv>取得に失敗</CenterDiv>
         </ImageStyledDiv>
       );
     case "Loaded":
       return (
         <ImageStyledImg
+          className={prop.className}
           imageStyle={prop.imageStyle}
           src={blobUrlResource.data}
         />
