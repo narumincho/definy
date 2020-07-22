@@ -295,14 +295,16 @@ export const useProjectAllIdList = (): {
     );
   };
 
-  React.useEffect(() => {
-    requestRef.current = window.requestAnimationFrame(updateCheck);
-    return () => {
-      if (typeof requestRef.current === "number") {
-        window.cancelAnimationFrame(requestRef.current);
-      }
-    };
-  }, []);
+  /*
+   * React.useEffect(() => {
+   *   requestRef.current = window.requestAnimationFrame(updateCheck);
+   *   return () => {
+   *     if (typeof requestRef.current === "number") {
+   *       window.cancelAnimationFrame(requestRef.current);
+   *     }
+   *   };
+   * }, []);
+   */
 
   return {
     allProjectIdListMaybe,
