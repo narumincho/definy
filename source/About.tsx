@@ -1,8 +1,5 @@
-/** @jsx jsx */
-
 import * as React from "react";
 import * as ui from "./ui";
-import { jsx } from "react-free-style";
 import styled from "styled-components";
 
 const AboutDiv = styled.div({ padding: 16 });

@@ -67,7 +67,7 @@ export const Link: React.FC<{
   onJump: (urlData: UrlData) => void;
   areaTheme: AreaTheme;
   className?: string;
-}> = (prop): JSX.Element => {
+}> = (prop) => {
   return (
     <LinkA
       areaTheme={prop.areaTheme}
