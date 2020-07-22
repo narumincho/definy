@@ -1,7 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import * as common from "definy-core";
-import { Context, StyleSheetRenderer } from "react-free-style";
 import { App } from "./App";
 
 const appElement = document.createElement("div");
@@ -21,12 +20,10 @@ const urlDataAndAccessToken = common.urlDataAndAccessTokenFromUrl(
 
 ReactDOM.render(
   <React.StrictMode>
-    <Context.Provider value={new StyleSheetRenderer()}>
-      <App
-        accessToken={urlDataAndAccessToken.accessToken}
-        initUrlData={urlDataAndAccessToken.urlData}
-      />
-    </Context.Provider>
+    <App
+      accessToken={urlDataAndAccessToken.accessToken}
+      initUrlData={urlDataAndAccessToken.urlData}
+    />
   </React.StrictMode>,
   appElement
 );
