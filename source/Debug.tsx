@@ -18,7 +18,6 @@ import styled from "styled-components";
 const sampleProject: ReadonlyArray<[ProjectId, ResourceState<Project>]> = [
   [
     "6b9495528e9a12186b9c210448bdc90b" as ProjectId,
-
     ResourceState.Loaded({
       dataMaybe: Maybe.Just({
         name: "プロジェクトA",
@@ -232,9 +231,4 @@ export const Debug: React.FC<Record<never, never>> = () => {
       {sampleComponentList[tab]}
     </DebugDiv>
   );
-};
-
-export default {
-  title: "App",
-  component: { SidePanel, Home },
 };
