@@ -103,8 +103,14 @@ const StyledButton = styled.button({
 export const Button: React.FC<{
   onClick: () => void;
   className?: string;
+  disabled?: boolean;
 }> = (prop) => (
-  <StyledButton className={prop.className} onClick={prop.onClick} type="button">
+  <StyledButton
+    className={prop.className}
+    disabled={prop.disabled}
+    onClick={prop.onClick}
+    type="button"
+  >
     {prop.children}
   </StyledButton>
 );
