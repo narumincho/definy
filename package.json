@@ -19,10 +19,16 @@
     "definy-core": "0.1.5",
     "react": "16.13.1",
     "react-dom": "16.13.1",
-    "react-free-style": "11.0.1"
+    "react-free-style": "11.0.1",
+    "styled-components": "^5.1.1"
   },
   "devDependencies": {
+    "@types/jest": "26.0.5",
+    "@types/node": "14.0.24",
     "@types/prettier": "2.0.2",
+    "@types/react": "16.9.43",
+    "@types/react-dom": "16.9.8",
+    "@types/styled-components": "^5.1.1",
     "@typescript-eslint/eslint-plugin": "3.7.0",
     "@typescript-eslint/parser": "3.7.0",
     "eslint": "7.5.0",
@@ -30,13 +36,9 @@
     "eslint-plugin-prettier": "3.1.4",
     "eslint-plugin-react": "7.20.3",
     "eslint-plugin-react-hooks": "4.0.8",
-    "prettier": "2.0.5",
     "parcel": "1.12.4",
-    "typescript": "3.9.7",
-    "@types/jest": "26.0.5",
-    "@types/node": "14.0.24",
-    "@types/react": "16.9.43",
-    "@types/react-dom": "16.9.8"
+    "prettier": "2.0.5",
+    "typescript": "3.9.7"
   },
   "eslintConfig": {
     "extends": [
