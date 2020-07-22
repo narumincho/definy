@@ -335,10 +335,10 @@ const StyledUserResourceState = styled(CommonResourceStateView)({
   height: 32,
 });
 
-const UserDiv = styled.div({
+const UserLink = styled(Link)({
   display: "grid",
   gridTemplateColumns: "32px 1fr",
-  height: 32,
+  height: 48,
   alignItems: "center",
   gap: 8,
   padding: 8,
@@ -357,14 +357,18 @@ export const User: React.FC<{
     userResource.dataResource.dataMaybe._ === "Just"
   ) {
     return (
-      <UserDiv>
+      <UserLink
+        areaTheme="Gray"
+        onJump={prop.model.onJump}
+        urlData={{ ...prop.model, location: Location.User(prop.userId) }}
+      >
         <UserImage
           imageStyle={{ width: 32, height: 32, padding: 0, round: true }}
           imageToken={userResource.dataResource.dataMaybe.value.imageHash}
           model={prop.model}
         />
         {userResource.dataResource.dataMaybe.value.name}
-      </UserDiv>
+      </UserLink>
     );
   }
   return <StyledUserResourceState resourceState={userResource} />;
@@ -409,8 +413,8 @@ export const Project: React.FC<{
       >
         <Image
           imageStyle={{
-            width: 250,
-            height: 100,
+            width: 256,
+            height: 128,
             padding: 0,
             round: false,
           }}
