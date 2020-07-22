@@ -47,32 +47,32 @@ const AllProjectListContainerDiv = styled.div({
 const AllProjectList: React.FC<{
   model: Model;
   allProjectIdListResource: ResourceState<ReadonlyArray<ProjectId>>;
-}> = (prop) =>
-  ui.resourceView(
-    prop.allProjectIdListResource,
-    { width: "100%", height: "100%" },
-    (allProjectListMaybe) => {
-      if (allProjectListMaybe._ === "Nothing") {
-        return <div>プロジェクトの一覧取得に失敗</div>;
-      }
-      const allProjectList = allProjectListMaybe.value;
-      if (allProjectList.length === 0) {
-        return <div>プロジェクトが1つもありません</div>;
-      }
-      return (
-        <ProjectListContainerDiv>
-          {allProjectList.map((projectId) => (
-            <ui.Project
-              key={projectId}
-              model={prop.model}
-              projectId={projectId}
-            />
-          ))}
-        </ProjectListContainerDiv>
-      );
+}> = (prop) => {
+  if (
+    prop.allProjectIdListResource._ === "Loaded" &&
+    prop.allProjectIdListResource.dataResource.dataMaybe._ === "Just"
+  ) {
+    const allProjectList =
+      prop.allProjectIdListResource.dataResource.dataMaybe.value;
+    if (allProjectList.length === 0) {
+      return <div>プロジェクトが1つもありません</div>;
     }
+    return (
+      <ProjectListContainerDiv>
+        {allProjectList.map((projectId) => (
+          <ui.Project
+            key={projectId}
+            model={prop.model}
+            projectId={projectId}
+          />
+        ))}
+      </ProjectListContainerDiv>
+    );
+  }
+  return (
+    <ui.CommonResourceStateView resourceState={prop.allProjectIdListResource} />
   );
-
+};
 const ProjectListContainerDiv = styled.div({
   gridColumn: "1 / 2",
   gridRow: "1 / 2",
@@ -93,18 +93,17 @@ const CreateProjectDiv = styled.div({
   padding: 16,
 });
 
+const CreateProjectLink = styled(ui.Link)({ padding: 8 });
+
 const CreateProjectButton: React.FC<{ model: Model }> = (prop) => (
   <CreateProjectDiv>
-    <ui.Link
+    <CreateProjectLink
       areaTheme="Active"
-      css={{
-        padding: 8,
-      }}
       onJump={prop.model.onJump}
       urlData={{ ...prop.model, location: Location.CreateProject }}
     >
       {createProjectMessage(prop.model.language)}
-    </ui.Link>
+    </CreateProjectLink>
   </CreateProjectDiv>
 );
 

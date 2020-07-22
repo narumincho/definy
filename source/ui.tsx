@@ -1,7 +1,5 @@
-/** @jsx jsx */
-
+/* eslint-disable react/forbid-component-props */
 import * as React from "react";
-import { Css, jsx } from "react-free-style";
 import {
   ImageToken,
   Location,
@@ -11,6 +9,7 @@ import {
   UrlData,
   UserId,
 } from "definy-core/source/data";
+import styled, { CSSObject, keyframes } from "styled-components";
 import { Model } from "./model";
 import { urlDataAndAccessTokenToUrl } from "definy-core";
 
@@ -49,26 +48,30 @@ export const areaThemeToValue = (areaTheme: AreaTheme): AreaThemeValue => {
   }
 };
 
+const LinkA = styled.a((prop: { areaTheme: AreaTheme }) => {
+  const theme = areaThemeToValue(prop.areaTheme);
+  return {
+    display: "block",
+    textDecoration: "none",
+    color: theme.color,
+    backgroundColor: theme.backgroundColor,
+    "&:hover": {
+      color: theme.hoveredColor,
+      backgroundColor: theme.hoveredBackgroundColor,
+    },
+  };
+});
+
 export const Link: React.FC<{
   urlData: UrlData;
   onJump: (urlData: UrlData) => void;
   areaTheme: AreaTheme;
-  css?: Css;
+  className?: string;
 }> = (prop): JSX.Element => {
-  const theme = areaThemeToValue(prop.areaTheme);
   return (
-    <a
-      css={{
-        display: "block",
-        textDecoration: "none",
-        color: theme.color,
-        backgroundColor: theme.backgroundColor,
-        "&:hover": {
-          color: theme.hoveredColor,
-          backgroundColor: theme.hoveredBackgroundColor,
-        },
-        ...prop.css,
-      }}
+    <LinkA
+      areaTheme={prop.areaTheme}
+      className={prop.className}
       href={urlDataAndAccessTokenToUrl(
         prop.urlData,
         Maybe.Nothing()
@@ -86,58 +89,63 @@ export const Link: React.FC<{
       }}
     >
       {prop.children}
-    </a>
+    </LinkA>
   );
 };
 
+const StyledButton = styled.button({
+  cursor: "pointer",
+  border: "none",
+  padding: 0,
+  textAlign: "left",
+});
+
 export const Button: React.FC<{
-  css?: Css;
   onClick: () => void;
+  className?: string;
 }> = (prop) => (
-  <button
-    css={{
-      cursor: "pointer",
-      border: "none",
-      padding: 0,
-      textAlign: "left",
-      ...prop.css,
-    }}
-    onClick={prop.onClick}
-    type="button"
-  >
+  <StyledButton className={prop.className} onClick={prop.onClick} type="button">
     {prop.children}
-  </button>
+  </StyledButton>
 );
+
+const LoadingBoxDiv = styled.div({
+  display: "grid",
+  overflow: "hidden",
+  justifyItems: "center",
+});
 
 export const LoadingBox: React.FC<Record<never, never>> = (prop) => (
-  <div css={{ display: "grid", overflow: "hidden" }}>
+  <LoadingBoxDiv>
     {prop.children}
-    <LoadingIcon css={{ justifySelf: "center" }} />
-  </div>
+    <LoadingDefinyIcon />
+  </LoadingBoxDiv>
 );
 
-export const LoadingIcon: React.FC<{ css?: Css }> = (prop) => (
-  <div
-    css={{
-      ...prop.css,
-      width: 96,
-      height: 96,
-      display: "grid",
-      justifyItems: "center",
-      alignItems: "center",
-      borderRadius: "50%",
-      animationName: "loading",
-      animationIterationCount: "infinite",
-      animationDuration: "1s",
-      animationTimingFunction: "linear",
-      fontSize: 24,
-      padding: 8,
-      color: areaThemeToValue("Gray").color,
-      backgroundColor: areaThemeToValue("Gray").backgroundColor,
-    }}
-  >
-    Definy
-  </div>
+const rotationAnimationKeyframes = keyframes`
+0% {
+  transform: rotate(0)
+}
+100% {
+  transform: rotate(1turn)
+}`;
+
+const LoadingDefinyIconDiv = styled.div`
+  width: 96px;
+  height: 96px;
+  display: grid;
+  justify-items: center;
+  align-items: center;
+  border-radius: 50%;
+  animation: 1s ${rotationAnimationKeyframes} infinite linear;
+  fontsize: 24px;
+  padding: 8px;
+  color: ${areaThemeToValue("Gray").color};
+  background-color: ${areaThemeToValue("Gray").backgroundColor};
+`;
+
+export const LoadingDefinyIcon: React.FC<Record<never, never>> = () => (
+  <LoadingDefinyIconDiv>Definy</LoadingDefinyIconDiv>
 );
 
 export const GitHubIcon: React.FC<{ color: string }> = (prop) => (
@@ -149,222 +157,228 @@ export const GitHubIcon: React.FC<{ color: string }> = (prop) => (
   </svg>
 );
 
-export const ActiveDiv: React.FC<{ css?: Css }> = (prop) => {
+export const ActiveDiv = (() => {
   const activeTheme = areaThemeToValue("Active");
-  return (
-    <div
-      css={{
-        ...prop.css,
-        backgroundColor: activeTheme.backgroundColor,
-        color: activeTheme.color,
-      }}
-    >
-      {prop.children}
-    </div>
-  );
-};
+  return styled.div({
+    backgroundColor: activeTheme.backgroundColor,
+    color: activeTheme.color,
+  });
+})();
 
-export const resourceView = <data extends unknown>(
-  resource: ResourceState<data> | undefined,
-  css: Css | undefined,
-  view: (data: Maybe<data>) => React.ReactElement
-): React.ReactElement => {
-  if (resource === undefined) {
-    return <div css={css}>...</div>;
+const CenterDiv = styled.div({
+  display: "grid",
+  justifyContent: "center",
+  alignContent: "center",
+});
+
+export const CommonResourceStateView = <data extends unknown>(prop: {
+  resourceState: ResourceState<data> | undefined;
+}): React.ReactElement<any, any> | null => {
+  if (prop.resourceState === undefined) {
+    return <div>...</div>;
   }
-  switch (resource._) {
+  switch (prop.resourceState._) {
     case "WaitLoading":
       return (
-        <div
-          css={{
-            ...css,
-            display: "grid",
-            justifyContent: "center",
-            alignContent: "center",
-          }}
-        >
-          <div css={{ width: 32, height: 32 }}>
-            <NewLoadingIcon isWait />
-          </div>
-        </div>
+        <CenterDiv>
+          <NewLoadingIcon isWait />
+        </CenterDiv>
       );
     case "Loading":
       return (
-        <div
-          css={{
-            ...css,
-            display: "grid",
-            justifyContent: "center",
-            alignContent: "center",
-          }}
-        >
-          <div css={{ width: 32, height: 32 }}>
-            <NewLoadingIcon isWait={false} />
-          </div>
-        </div>
+        <CenterDiv>
+          <NewLoadingIcon isWait={false} />
+        </CenterDiv>
       );
     case "WaitRequesting":
       return (
-        <div
-          css={{
-            ...css,
-            display: "grid",
-            justifyContent: "center",
-            alignContent: "center",
-          }}
-        >
-          <div css={{ width: 32, height: 32 }}>
-            <NewLoadingIcon isWait />
-          </div>
-        </div>
+        <CenterDiv>
+          <NewLoadingIcon isWait />
+        </CenterDiv>
       );
     case "Requesting":
       return (
-        <div
-          css={{
-            ...css,
-            display: "grid",
-            justifyContent: "center",
-            alignContent: "center",
-          }}
-        >
-          <div css={{ width: 32, height: 32 }}>
-            <NewLoadingIcon isWait={false} />
-          </div>
-        </div>
+        <CenterDiv>
+          <NewLoadingIcon isWait={false} />
+        </CenterDiv>
       );
     case "WaitRetrying":
-      return <div>WRetry</div>;
+      return <CenterDiv>WRetry</CenterDiv>;
     case "Retrying":
-      return <div>Retry</div>;
+      return <CenterDiv>Retry</CenterDiv>;
     case "WaitUpdating":
-      return <div>WU</div>;
+      return <CenterDiv>WU</CenterDiv>;
     case "Updating":
-      return <div>U</div>;
+      return <CenterDiv>Updating</CenterDiv>;
     case "Loaded":
-      return view(resource.dataResource.dataMaybe);
+      if (prop.resourceState.dataResource.dataMaybe._ === "Just") {
+        return (
+          <div>
+            {JSON.stringify(prop.resourceState.dataResource.dataMaybe.value)}
+          </div>
+        );
+      }
+      return <CenterDiv>?</CenterDiv>;
     case "Unknown":
-      return <div>Unknown</div>;
+      return <CenterDiv>Unknown</CenterDiv>;
   }
 };
+
+type ImageStyle = {
+  width: number;
+  height: number;
+  padding: number;
+  round: boolean;
+};
+
+const ImageStyledDiv = styled.div((prop: { imageStyle: ImageStyle }) =>
+  imageStyleToCSSObject(prop.imageStyle)
+);
+
+const ImageStyledImg = styled.img((prop: { imageStyle: ImageStyle }) =>
+  imageStyleToCSSObject(prop.imageStyle)
+);
+
+const imageStyleToCSSObject = (imageStyle: ImageStyle): CSSObject => ({
+  width: imageStyle.width,
+  height: imageStyle.height,
+  padding: imageStyle.padding,
+  borderRadius: imageStyle.round ? "50%" : undefined,
+});
 
 export const Image: React.FC<{
   model: Model;
   imageToken: ImageToken;
-  css?: Css;
+  imageStyle: ImageStyle;
+  className?: string;
 }> = (prop) => {
   React.useEffect(() => {
     prop.model.requestImage(prop.imageToken);
   });
   const blobUrlResource = prop.model.imageMap.get(prop.imageToken);
   if (blobUrlResource === undefined) {
-    return <div>...</div>;
+    return (
+      <ImageStyledDiv imageStyle={prop.imageStyle}>
+        <CenterDiv>...</CenterDiv>
+      </ImageStyledDiv>
+    );
   }
   switch (blobUrlResource._) {
     case "WaitLoading":
       return (
-        <div
-          css={{
-            ...prop.css,
-            display: "grid",
-            justifyContent: "center",
-            alignContent: "center",
-          }}
-        >
-          <div css={{ width: 32, height: 32 }}>
+        <ImageStyledDiv imageStyle={prop.imageStyle}>
+          <CenterDiv>
             <NewLoadingIcon isWait />
-          </div>
-        </div>
+          </CenterDiv>
+        </ImageStyledDiv>
       );
     case "Loading":
       return (
-        <div
-          css={{
-            ...prop.css,
-            display: "grid",
-            justifyContent: "center",
-            alignContent: "center",
-          }}
-        >
-          <div css={{ width: 32, height: 32 }}>
+        <ImageStyledDiv imageStyle={prop.imageStyle}>
+          <CenterDiv>
             <NewLoadingIcon isWait={false} />
-          </div>
-        </div>
+          </CenterDiv>
+        </ImageStyledDiv>
       );
     case "WaitRequesting":
       return (
-        <div
-          css={{
-            ...prop.css,
-            display: "grid",
-            justifyContent: "center",
-            alignContent: "center",
-          }}
-        >
-          <div css={{ width: 32, height: 32 }}>
+        <ImageStyledDiv imageStyle={prop.imageStyle}>
+          <CenterDiv>
             <RequestingIcon isWait />
-          </div>
-        </div>
+          </CenterDiv>
+        </ImageStyledDiv>
       );
     case "Requesting":
       return (
-        <div
-          css={{
-            ...prop.css,
-            display: "grid",
-            justifyContent: "center",
-            alignContent: "center",
-          }}
-        >
-          <div css={{ width: 32, height: 32 }}>
+        <ImageStyledDiv imageStyle={prop.imageStyle}>
+          <CenterDiv>
             <RequestingIcon isWait={false} />
-          </div>
-        </div>
+          </CenterDiv>
+        </ImageStyledDiv>
       );
     case "WaitRetrying":
-      return <div css={prop.css}>再挑戦準備中</div>;
+      return (
+        <ImageStyledDiv imageStyle={prop.imageStyle}>
+          <CenterDiv>再挑戦準備中</CenterDiv>
+        </ImageStyledDiv>
+      );
     case "Retrying":
-      return <div css={prop.css}>再挑戦中</div>;
+      return (
+        <ImageStyledDiv imageStyle={prop.imageStyle}>
+          <CenterDiv>再挑戦中</CenterDiv>
+        </ImageStyledDiv>
+      );
     case "Unknown":
-      return <div css={prop.css}>取得に失敗</div>;
+      return (
+        <ImageStyledDiv imageStyle={prop.imageStyle}>
+          <CenterDiv>取得に失敗</CenterDiv>
+        </ImageStyledDiv>
+      );
     case "Loaded":
-      return <img css={prop.css} src={blobUrlResource.data} />;
+      return (
+        <ImageStyledImg
+          imageStyle={prop.imageStyle}
+          src={blobUrlResource.data}
+        />
+      );
   }
 };
 
-export const User: React.FC<{ model: Model; userId: UserId }> = (prop) => {
+const StyledUserResourceState = styled(CommonResourceStateView)({
+  width: "100%",
+  height: 32,
+});
+
+const UserDiv = styled.div({
+  display: "grid",
+  gridTemplateColumns: "32px 1fr",
+  height: 32,
+  alignItems: "center",
+  gap: 8,
+  padding: 8,
+});
+
+export const User: React.FC<{
+  model: Model;
+  userId: UserId;
+}> = (prop) => {
   React.useEffect(() => {
     prop.model.requestUser(prop.userId);
   });
-  return resourceView(
-    prop.model.userMap.get(prop.userId),
-    { width: "100%", height: 32 },
-    (userMaybe) => {
-      if (userMaybe._ === "Just") {
-        return (
-          <div
-            css={{
-              display: "grid",
-              gridTemplateColumns: "32px 1fr",
-              height: 32,
-              alignItems: "center",
-              gap: 8,
-              padding: 8,
-            }}
-          >
-            <Image
-              css={{ width: 32, height: 32, borderRadius: "50%" }}
-              imageToken={userMaybe.value.imageHash}
-              model={prop.model}
-            />
-            {userMaybe.value.name}
-          </div>
-        );
-      }
-      return <div>存在しないユーザー</div>;
-    }
-  );
+  const userResource = prop.model.userMap.get(prop.userId);
+  if (
+    userResource?._ === "Loaded" &&
+    userResource.dataResource.dataMaybe._ === "Just"
+  ) {
+    return (
+      <UserDiv>
+        <UserImage
+          imageStyle={{ width: 32, height: 32, padding: 0, round: true }}
+          imageToken={userResource.dataResource.dataMaybe.value.imageHash}
+          model={prop.model}
+        />
+        {userResource.dataResource.dataMaybe.value.name}
+      </UserDiv>
+    );
+  }
+  return <StyledUserResourceState resourceState={userResource} />;
 };
+
+const UserImage = styled(Image)({ width: 32, height: 32, borderRadius: "50%" });
+
+const ProjectLink = styled(Link)({
+  display: "grid",
+  gridTemplateRows: "128px 48px",
+  width: 256,
+});
+
+const ProjectIconAndName = styled.div({
+  display: "grid",
+  gridTemplateColumns: "32px 1fr",
+  gap: 8,
+  alignItems: "center",
+  padding: 8,
+});
 
 export const Project: React.FC<{
   model: Model;
@@ -373,56 +387,53 @@ export const Project: React.FC<{
   React.useEffect(() => {
     prop.model.requestProject(prop.projectId);
   });
-  return resourceView(
-    prop.model.projectMap.get(prop.projectId),
-    { width: 256, height: 144 },
-    (projectMaybe) => {
-      if (projectMaybe._ === "Nothing") {
-        return <div>id={prop.projectId}のプロジェクトは存在しないようだ</div>;
-      }
-      return (
-        <Link
-          areaTheme="Gray"
-          css={{
-            display: "grid",
-            gridTemplateRows: "128px 48px",
-            width: 256,
+  const projectResource = prop.model.projectMap.get(prop.projectId);
+  if (
+    projectResource?._ === "Loaded" &&
+    projectResource.dataResource.dataMaybe._ === "Just"
+  ) {
+    return (
+      <ProjectLink
+        areaTheme="Gray"
+        onJump={prop.model.onJump}
+        urlData={{
+          ...prop.model,
+          location: Location.Project(prop.projectId),
+        }}
+      >
+        <Image
+          imageStyle={{
+            width: 250,
+            height: 100,
+            padding: 0,
+            round: false,
           }}
-          onJump={prop.model.onJump}
-          urlData={{
-            ...prop.model,
-            location: Location.Project(prop.projectId),
-          }}
-        >
+          imageToken={projectResource.dataResource.dataMaybe.value.imageHash}
+          model={prop.model}
+        />
+        <ProjectIconAndName>
           <Image
-            css={{ width: "100%", height: "100%" }}
-            imageToken={projectMaybe.value.imageHash}
+            imageStyle={{
+              width: 32,
+              height: 32,
+              padding: 0,
+              round: false,
+            }}
+            imageToken={projectResource.dataResource.dataMaybe.value.iconHash}
             model={prop.model}
           />
-          <div
-            css={{
-              display: "grid",
-              gridTemplateColumns: "32px 1fr",
-              gap: 8,
-              alignItems: "center",
-              padding: 8,
-            }}
-          >
-            <Image
-              css={{ width: 32, height: 32 }}
-              imageToken={projectMaybe.value.iconHash}
-              model={prop.model}
-            />
-            {projectMaybe.value.name}
-          </div>
-        </Link>
-      );
-    }
-  );
+          {projectResource.dataResource.dataMaybe.value.name}
+        </ProjectIconAndName>
+      </ProjectLink>
+    );
+  }
+  return <StyledUserResourceState resourceState={projectResource} />;
 };
 
+const NormalSizeSvg = styled.svg({ width: 32, height: 32 });
+
 const NewLoadingIcon: React.FC<{ isWait: boolean }> = (prop) => (
-  <svg viewBox="0 0 40 40">
+  <NormalSizeSvg viewBox="0 0 40 40">
     <circle cx={20} cy={20} r={8} stroke="#eee">
       <animate
         attributeName="r"
@@ -437,11 +448,11 @@ const NewLoadingIcon: React.FC<{ isWait: boolean }> = (prop) => (
         values="#eee;transparent"
       />
     </circle>
-  </svg>
+  </NormalSizeSvg>
 );
 
 const RequestingIcon: React.FC<{ isWait: boolean }> = (prop) => (
-  <svg viewBox="0 0 40 40">
+  <NormalSizeSvg viewBox="0 0 40 40">
     {new Array(5).fill(0).map((_, index) => {
       return (
         <circle
@@ -467,5 +478,5 @@ const RequestingIcon: React.FC<{ isWait: boolean }> = (prop) => (
         </circle>
       );
     })}
-  </svg>
+  </NormalSizeSvg>
 );

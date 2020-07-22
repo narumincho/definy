@@ -71,10 +71,33 @@ const sampleProject: ReadonlyArray<[ProjectId, ResourceState<Project>]> = [
 ];
 
 const ImageFixSizeAndWithBorder = styled(ui.Image)({
-  width: 64,
-  height: 64,
   border: "solid 1px red",
 });
+
+const IconImage: React.FC<{
+  imageStaticResource: StaticResourceState<string>;
+}> = (prop) => {
+  return (
+    <ImageFixSizeAndWithBorder
+      imageStyle={{ width: 64, height: 64, padding: 0, round: false }}
+      imageToken={"a" as ImageToken}
+      model={{
+        clientMode: "DebugMode",
+        language: "English",
+        logInState: LogInState.Guest,
+        onJump: () => {},
+        projectMap: new Map(),
+        userMap: new Map(),
+        imageMap: new Map([["a" as ImageToken, prop.imageStaticResource]]),
+        allProjectIdListMaybe: Maybe.Nothing(),
+        requestAllProject: () => {},
+        requestProject: () => {},
+        requestUser: () => {},
+        requestImage: () => {},
+      }}
+    />
+  );
+};
 
 const sampleComponentList = {
   sidePanel: (
@@ -149,85 +172,13 @@ const sampleComponentList = {
   requestingImage: (
     <div>
       WaitLoading
-      <ImageFixSizeAndWithBorder
-        imageToken={"a" as ImageToken}
-        model={{
-          clientMode: "DebugMode",
-          language: "English",
-          logInState: LogInState.Guest,
-          onJump: () => {},
-          projectMap: new Map(),
-          userMap: new Map(),
-          imageMap: new Map([
-            ["a" as ImageToken, StaticResourceState.WaitLoading()],
-          ]),
-          allProjectIdListMaybe: Maybe.Nothing(),
-          requestAllProject: () => {},
-          requestProject: () => {},
-          requestUser: () => {},
-          requestImage: () => {},
-        }}
-      />
+      <IconImage imageStaticResource={StaticResourceState.WaitLoading()} />
       Loading
-      <ImageFixSizeAndWithBorder
-        imageToken={"a" as ImageToken}
-        model={{
-          clientMode: "DebugMode",
-          language: "English",
-          logInState: LogInState.Guest,
-          onJump: () => {},
-          projectMap: new Map(),
-          userMap: new Map(),
-          imageMap: new Map([
-            ["a" as ImageToken, StaticResourceState.Loading()],
-          ]),
-          allProjectIdListMaybe: Maybe.Nothing(),
-          requestAllProject: () => {},
-          requestProject: () => {},
-          requestUser: () => {},
-          requestImage: () => {},
-        }}
-      />
+      <IconImage imageStaticResource={StaticResourceState.Loading()} />
       WaitRequesting
-      <ImageFixSizeAndWithBorder
-        imageToken={"a" as ImageToken}
-        model={{
-          clientMode: "DebugMode",
-          language: "English",
-          logInState: LogInState.Guest,
-          onJump: () => {},
-          projectMap: new Map(),
-          userMap: new Map(),
-          imageMap: new Map([
-            ["a" as ImageToken, StaticResourceState.WaitRequesting()],
-          ]),
-          allProjectIdListMaybe: Maybe.Nothing(),
-          requestAllProject: () => {},
-          requestProject: () => {},
-          requestUser: () => {},
-          requestImage: () => {},
-        }}
-      />
+      <IconImage imageStaticResource={StaticResourceState.WaitRequesting()} />
       Requesting
-      <ImageFixSizeAndWithBorder
-        imageToken={"a" as ImageToken}
-        model={{
-          clientMode: "DebugMode",
-          language: "English",
-          logInState: LogInState.Guest,
-          onJump: () => {},
-          projectMap: new Map(),
-          userMap: new Map(),
-          imageMap: new Map([
-            ["a" as ImageToken, StaticResourceState.Requesting()],
-          ]),
-          allProjectIdListMaybe: Maybe.Nothing(),
-          requestAllProject: () => {},
-          requestProject: () => {},
-          requestUser: () => {},
-          requestImage: () => {},
-        }}
-      />
+      <IconImage imageStaticResource={StaticResourceState.Requesting()} />
     </div>
   ),
 };
@@ -244,6 +195,19 @@ const DebugDiv = styled.div({
 
 const TabListContainer = styled.div({ display: "grid", alignSelf: "start" });
 
+const SelectedTab = styled(ui.ActiveDiv)({
+  fontSize: 16,
+  padding: 8,
+});
+
+const TabButton = styled(ui.Button)({
+  backgroundColor: "#000",
+  color: "#ddd",
+  border: "none",
+  padding: 8,
+  fontSize: 16,
+});
+
 export const Debug: React.FC<Record<never, never>> = () => {
   const [tab, dispatchTab] = React.useState<Tab>("sidePanel");
   return (
@@ -251,34 +215,17 @@ export const Debug: React.FC<Record<never, never>> = () => {
       <TabListContainer>
         {allTab.map((tabName) => {
           if (tabName === tab) {
-            return (
-              <ui.ActiveDiv
-                css={{
-                  fontSize: 16,
-                  padding: 8,
-                }}
-                key={tabName}
-              >
-                {tabName}
-              </ui.ActiveDiv>
-            );
+            return <SelectedTab key={tabName}>{tabName}</SelectedTab>;
           }
           return (
-            <ui.Button
-              css={{
-                backgroundColor: "#000",
-                color: "#ddd",
-                border: "none",
-                padding: 8,
-                fontSize: 16,
-              }}
+            <TabButton
               key={tabName}
               onClick={() => {
                 dispatchTab(tabName);
               }}
             >
               {tabName}
-            </ui.Button>
+            </TabButton>
           );
         })}
       </TabListContainer>

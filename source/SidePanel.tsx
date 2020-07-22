@@ -17,6 +17,8 @@ const SidePanelDiv = styled.div({
   height: "100%",
 });
 
+const SidePanelLink = styled(ui.Link)({ padding: 8 });
+
 export const SidePanel: React.FC<{
   model: Model;
   onRequestLogIn: (provider: OpenIdConnectProvider) => void;
@@ -29,22 +31,20 @@ export const SidePanel: React.FC<{
     />
     <div>Idea</div>
     <div>Part</div>
-    <ui.Link
+    <SidePanelLink
       areaTheme="Gray"
-      css={{ padding: 8 }}
       onJump={prop.model.onJump}
       urlData={{ ...prop.model, location: Location.About }}
     >
       <div>About</div>
-    </ui.Link>
-    <ui.Link
+    </SidePanelLink>
+    <SidePanelLink
       areaTheme="Gray"
-      css={{ padding: 8 }}
       onJump={prop.model.onJump}
       urlData={{ ...prop.model, location: Location.Debug }}
     >
       <div>Debug</div>
-    </ui.Link>
+    </SidePanelLink>
   </SidePanelDiv>
 );
 
@@ -52,24 +52,21 @@ const Logo: React.FC<{
   onJump: (urlData: UrlData) => void;
   model: Model;
 }> = (prop) => (
-  <ui.Link
+  <SidePanelLink
     areaTheme="Gray"
-    css={{ padding: 8 }}
     onJump={prop.onJump}
     urlData={{ ...prop.model, location: Location.Home }}
   >
-    <div
-      css={{
-        color: "#b9d09b",
-        fontSize: 32,
-        lineHeight: 1,
-        fontFamily: "Hack",
-      }}
-    >
-      Definy
-    </div>
-  </ui.Link>
+    <LogoDiv>Definy</LogoDiv>
+  </SidePanelLink>
 );
+
+const LogoDiv = styled.div({
+  color: "#b9d09b",
+  fontSize: 32,
+  lineHeight: 1,
+  fontFamily: "Hack",
+});
 
 const UserViewOrLogInButton: React.FC<{
   model: Model;
@@ -115,21 +112,22 @@ const LogInButton: React.FC<{
   </LogInButtonDiv>
 );
 
+const StyledGoogleButton = styled(ui.Button)({
+  display: "grid",
+  gridTemplateColumns: "48px 1fr",
+  backgroundColor: "#4285f4",
+  borderRadius: 8,
+  gap: 8,
+  "&:hover": {
+    backgroundColor: "#5190f8",
+  },
+});
+
 const GoogleButton: React.FC<{
   requestLogIn: (provider: OpenIdConnectProvider) => void;
   language: Language;
 }> = (prop) => (
-  <ui.Button
-    css={{
-      display: "grid",
-      gridTemplateColumns: "48px 1fr",
-      backgroundColor: "#4285f4",
-      borderRadius: 8,
-      gap: 8,
-      "&:hover": {
-        backgroundColor: "#5190f8",
-      },
-    }}
+  <StyledGoogleButton
     onClick={() => {
       prop.requestLogIn("Google");
     }}
@@ -140,7 +138,7 @@ const GoogleButton: React.FC<{
     <GoogleLogInMessageDiv>
       {logInMessage("Google", prop.language)}
     </GoogleLogInMessageDiv>
-  </ui.Button>
+  </StyledGoogleButton>
 );
 
 const GoogleIconContainer = styled.div({
@@ -178,21 +176,22 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const StyledGitHubButton = styled(ui.Button)({
+  display: "grid",
+  gridTemplateColumns: "48px 1fr",
+  backgroundColor: "#202020",
+  borderRadius: 8,
+  gap: 8,
+  "&:hover": {
+    backgroundColor: "#252525",
+  },
+});
+
 const GitHubButton: React.FC<{
   requestLogIn: (provider: OpenIdConnectProvider) => void;
   language: Language;
 }> = (prop) => (
-  <ui.Button
-    css={{
-      display: "grid",
-      gridTemplateColumns: "48px 1fr",
-      backgroundColor: "#202020",
-      borderRadius: 8,
-      gap: 8,
-      "&:hover": {
-        backgroundColor: "#252525",
-      },
-    }}
+  <StyledGitHubButton
     onClick={() => {
       prop.requestLogIn("GitHub");
     }}
@@ -203,7 +202,7 @@ const GitHubButton: React.FC<{
     <GitHubLogInMessageDiv>
       {logInMessage("GitHub", prop.language)}
     </GitHubLogInMessageDiv>
-  </ui.Button>
+  </StyledGitHubButton>
 );
 
 const GitHubIconContainer = styled.div({

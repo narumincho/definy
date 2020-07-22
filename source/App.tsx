@@ -1,5 +1,3 @@
-/** @jsx jsx */
-
 import * as React from "react";
 import * as api from "./api";
 import * as core from "definy-core";
@@ -24,7 +22,6 @@ import { Home } from "./Home";
 import { LoadingBox } from "./ui";
 import { Model } from "./model";
 import { SidePanel } from "./SidePanel";
-import { jsx } from "react-free-style";
 import styled from "styled-components";
 
 export const App: React.FC<{
