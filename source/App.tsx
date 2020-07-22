@@ -15,12 +15,12 @@ import {
   User,
   UserId,
 } from "definy-core/source/data";
+import { CreateProjectState, Model } from "./model";
 import { About } from "./About";
 import { CreateProject } from "./CreateProject";
 import { Debug } from "./Debug";
 import { Home } from "./Home";
 import { LoadingBox } from "./ui";
-import { Model } from "./model";
 import { SidePanel } from "./SidePanel";
 import styled from "styled-components";
 
@@ -34,6 +34,10 @@ export const App: React.FC<{
       ? LogInState.WaitVerifyingAccessToken(prop.accessToken.value)
       : LogInState.WaitLoadingAccessTokenFromIndexedDB
   );
+  const [createProjectState, setCreateProjectState] = React.useState<
+    CreateProjectState
+  >({ _: "None" });
+
   const {
     allProjectIdListMaybe,
     projectMap,
@@ -65,6 +69,30 @@ export const App: React.FC<{
     logInState,
   ]);
 
+  React.useEffect(() => {
+    switch (createProjectState._) {
+      case "None":
+        return;
+      case "WaitCreating":
+        if (logInState._ === "LoggedIn")
+          api
+            .createProject({
+              accessToken: logInState.accessTokenAndUserId.accessToken,
+              projectName: createProjectState.projectName,
+            })
+            .then((projectMaybe) => {
+              if (projectMaybe._ === "Just") {
+                setCreateProjectState({
+                  _: "Created",
+                  projectId: projectMaybe.value.id,
+                });
+              } else {
+                console.log("プロジェクト作成に失敗");
+              }
+            });
+    }
+  }, [createProjectState]);
+
   const model: Model = {
     clientMode: urlData.clientMode,
     language: urlData.language,
@@ -72,12 +100,16 @@ export const App: React.FC<{
     projectMap,
     userMap,
     imageMap,
+    createProjectState,
     onJump,
     allProjectIdListMaybe,
     requestAllProject,
     requestProject,
     requestUser,
     requestImage,
+    createProject: (projectName) => {
+      setCreateProjectState({ _: "WaitCreating", projectName });
+    },
   };
 
   switch (logInState._) {
@@ -101,6 +133,7 @@ export const App: React.FC<{
   return (
     <NormalStyledDiv>
       <SidePanel
+        key="side"
         model={model}
         onRequestLogIn={(provider) => {
           setLogInState(LogInState.WaitRequestingLogInUrl(provider));

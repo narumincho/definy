@@ -89,10 +89,12 @@ const IconImage: React.FC<{
         userMap: new Map(),
         imageMap: new Map([["a" as ImageToken, prop.imageStaticResource]]),
         allProjectIdListMaybe: Maybe.Nothing(),
+        createProjectState: { _: "None" },
         requestAllProject: () => {},
         requestProject: () => {},
         requestUser: () => {},
         requestImage: () => {},
+        createProject: () => {},
       }}
     />
   );
@@ -109,11 +111,13 @@ const sampleComponentList = {
         projectMap: new Map(),
         userMap: new Map(),
         imageMap: new Map(),
+        createProjectState: { _: "None" },
         allProjectIdListMaybe: Maybe.Nothing(),
         requestAllProject: () => {},
         requestProject: () => {},
         requestUser: () => {},
         requestImage: () => {},
+        createProject: () => {},
       }}
       onRequestLogIn={() => {}}
     />
@@ -128,11 +132,14 @@ const sampleComponentList = {
         projectMap: new Map(),
         userMap: new Map(),
         imageMap: new Map(),
+        createProjectState: { _: "None" },
+
         allProjectIdListMaybe: Maybe.Nothing(),
         requestAllProject: () => {},
         requestProject: () => {},
         requestUser: () => {},
         requestImage: () => {},
+        createProject: () => {},
       }}
     />
   ),
@@ -150,6 +157,7 @@ const sampleComponentList = {
         ]),
         userMap: new Map(),
         imageMap: new Map(),
+        createProjectState: { _: "None" },
         allProjectIdListMaybe: Maybe.Just(
           ResourceState.Loaded({
             dataMaybe: Maybe.Just([
@@ -164,6 +172,7 @@ const sampleComponentList = {
         requestProject: () => {},
         requestUser: () => {},
         requestImage: () => {},
+        createProject: () => {},
       }}
     />
   ),
