@@ -78,6 +78,10 @@ const UserViewOrLogInButton: React.FC<{
   requestLogIn: (provider: OpenIdConnectProvider) => void;
 }> = (prop) => {
   switch (prop.model.logInState._) {
+    case "WaitLoadingAccessTokenFromIndexedDB":
+      return <div>アクセストークンをindexedDBから読み取り中</div>;
+    case "LoadingAccessTokenFromIndexedDB":
+      return <div>アクセストークンをindexedDBから読み取り中……</div>;
     case "Guest":
       return (
         <LogInButton
@@ -86,11 +90,15 @@ const UserViewOrLogInButton: React.FC<{
         />
       );
     case "WaitVerifyingAccessToken":
+      return <div>アクセストークンを検証中</div>;
     case "VerifyingAccessToken":
       return <div>アクセストークンを検証中……</div>;
     case "LoggedIn": {
       return (
-        <ui.User model={prop.model} userId={prop.model.logInState.userId} />
+        <ui.User
+          model={prop.model}
+          userId={prop.model.logInState.accessTokenAndUserId.userId}
+        />
       );
     }
   }

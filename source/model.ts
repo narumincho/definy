@@ -1,16 +1,7 @@
 import * as data from "definy-core/source/data";
 
-export type LogInState =
-  | { _: "Guest" }
-  | { _: "WaitRequestingLogInUrl"; provider: data.OpenIdConnectProvider }
-  | { _: "RequestingLogInUrl"; provider: data.OpenIdConnectProvider }
-  | { _: "JumpingToLogInPage"; logInUrl: URL }
-  | { _: "WaitVerifyingAccessToken"; accessToken: data.AccessToken }
-  | { _: "VerifyingAccessToken"; accessToken: data.AccessToken }
-  | { _: "LoggedIn"; accessToken: data.AccessToken; userId: data.UserId };
-
 export type Model = {
-  logInState: LogInState;
+  logInState: data.LogInState;
   language: data.Language;
   clientMode: data.ClientMode;
   projectMap: ReadonlyMap<data.ProjectId, data.ResourceState<data.Project>>;

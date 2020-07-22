@@ -9,6 +9,7 @@ import {
   AccessToken,
   Language,
   Location,
+  LogInState,
   Maybe,
   OpenIdConnectProvider,
   Resource,
@@ -16,12 +17,12 @@ import {
   User,
   UserId,
 } from "definy-core/source/data";
-import { LogInState, Model } from "./model";
 import { About } from "./About";
 import { CreateProject } from "./CreateProject";
 import { Debug } from "./Debug";
 import { Home } from "./Home";
 import { LoadingBox } from "./ui";
+import { Model } from "./model";
 import { SidePanel } from "./SidePanel";
 import { jsx } from "react-free-style";
 
@@ -32,8 +33,8 @@ export const App: React.FC<{
   const [urlData, onJump] = React.useState<UrlData>(prop.initUrlData);
   const [logInState, setLogInState] = React.useState<LogInState>(
     prop.accessToken._ === "Just"
-      ? { _: "WaitVerifyingAccessToken", accessToken: prop.accessToken.value }
-      : { _: "Guest" }
+      ? LogInState.WaitVerifyingAccessToken(prop.accessToken.value)
+      : LogInState.WaitLoadingAccessTokenFromIndexedDB
   );
   const {
     allProjectIdListMaybe,
@@ -86,13 +87,16 @@ export const App: React.FC<{
     case "RequestingLogInUrl":
       return (
         <RequestingLogInUrl
-          message={logInMessage(logInState.provider, urlData.language)}
+          message={logInMessage(
+            logInState.openIdConnectProvider,
+            urlData.language
+          )}
         />
       );
     case "JumpingToLogInPage":
       return (
         <RequestingLogInUrl
-          message={jumpMessage(logInState.logInUrl, urlData.language)}
+          message={jumpMessage(new URL(logInState.string), urlData.language)}
         />
       );
   }
@@ -107,7 +111,7 @@ export const App: React.FC<{
       <SidePanel
         model={model}
         onRequestLogIn={(provider) => {
-          setLogInState({ _: "WaitRequestingLogInUrl", provider });
+          setLogInState(LogInState.WaitRequestingLogInUrl(provider));
         }}
       />
       <MainPanel location={urlData.location} model={model} />
@@ -180,27 +184,33 @@ const logInEffect = (
   setUser: (userId: UserId, userResource: Resource<User>) => void
 ): React.EffectCallback => () => {
   switch (logInState._) {
+    case "WaitLoadingAccessTokenFromIndexedDB":
+      dispatchLogInState(LogInState.LoadingAccessTokenFromIndexedDB);
+      indexedDB.getAccessToken().then((accessToken) => {
+        if (accessToken === undefined) {
+          dispatchLogInState(LogInState.Guest);
+        } else {
+          dispatchLogInState(LogInState.WaitVerifyingAccessToken(accessToken));
+        }
+      });
+      return;
     case "Guest":
       return;
     case "WaitRequestingLogInUrl":
-      dispatchLogInState({
-        _: "RequestingLogInUrl",
-        provider: logInState.provider,
-      });
+      dispatchLogInState(
+        LogInState.RequestingLogInUrl(logInState.openIdConnectProvider)
+      );
       api
         .requestLogInUrl({
-          openIdConnectProvider: logInState.provider,
+          openIdConnectProvider: logInState.openIdConnectProvider,
           urlData,
         })
         .then((logInUrl) => {
-          dispatchLogInState({
-            _: "JumpingToLogInPage",
-            logInUrl: new URL(logInUrl),
-          });
+          dispatchLogInState(LogInState.JumpingToLogInPage(logInUrl));
         });
       return;
     case "JumpingToLogInPage":
-      window.location.href = logInState.logInUrl.toString();
+      window.location.href = logInState.string;
       return;
     case "WaitVerifyingAccessToken":
       dispatchLogInState({
@@ -213,18 +223,19 @@ const logInEffect = (
           switch (userResourceAndIdMaybe._) {
             case "Just":
               indexedDB.setAccessToken(logInState.accessToken);
-              dispatchLogInState({
-                _: "LoggedIn",
-                accessToken: logInState.accessToken,
-                userId: userResourceAndIdMaybe.value.id,
-              });
+              dispatchLogInState(
+                LogInState.LoggedIn({
+                  accessToken: logInState.accessToken,
+                  userId: userResourceAndIdMaybe.value.id,
+                })
+              );
               setUser(
                 userResourceAndIdMaybe.value.id,
                 userResourceAndIdMaybe.value.data
               );
               return;
             case "Nothing":
-              dispatchLogInState({ _: "Guest" });
+              dispatchLogInState(LogInState.Guest);
           }
         });
   }

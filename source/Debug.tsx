@@ -4,6 +4,7 @@ import * as React from "react";
 import * as ui from "./ui";
 import {
   ImageToken,
+  LogInState,
   Maybe,
   Project,
   ProjectId,
@@ -77,7 +78,7 @@ const sampleComponentList = {
       model={{
         clientMode: "DebugMode",
         language: "English",
-        logInState: { _: "Guest" },
+        logInState: LogInState.Guest,
         onJump: () => {},
         projectMap: new Map(),
         userMap: new Map(),
@@ -96,7 +97,7 @@ const sampleComponentList = {
       model={{
         clientMode: "DebugMode",
         language: "English",
-        logInState: { _: "Guest" },
+        logInState: LogInState.Guest,
         onJump: () => {},
         projectMap: new Map(),
         userMap: new Map(),
@@ -114,7 +115,7 @@ const sampleComponentList = {
       model={{
         clientMode: "DebugMode",
         language: "English",
-        logInState: { _: "Guest" },
+        logInState: LogInState.Guest,
         onJump: () => {},
         projectMap: new Map([
           sampleProject[0],
@@ -150,7 +151,7 @@ const sampleComponentList = {
         model={{
           clientMode: "DebugMode",
           language: "English",
-          logInState: { _: "Guest" },
+          logInState: LogInState.Guest,
           onJump: () => {},
           projectMap: new Map(),
           userMap: new Map(),
@@ -171,7 +172,7 @@ const sampleComponentList = {
         model={{
           clientMode: "DebugMode",
           language: "English",
-          logInState: { _: "Guest" },
+          logInState: LogInState.Guest,
           onJump: () => {},
           projectMap: new Map(),
           userMap: new Map(),
@@ -192,7 +193,7 @@ const sampleComponentList = {
         model={{
           clientMode: "DebugMode",
           language: "English",
-          logInState: { _: "Guest" },
+          logInState: LogInState.Guest,
           onJump: () => {},
           projectMap: new Map(),
           userMap: new Map(),
@@ -213,7 +214,7 @@ const sampleComponentList = {
         model={{
           clientMode: "DebugMode",
           language: "English",
-          logInState: { _: "Guest" },
+          logInState: LogInState.Guest,
           onJump: () => {},
           projectMap: new Map(),
           userMap: new Map(),
