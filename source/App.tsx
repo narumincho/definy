@@ -21,7 +21,9 @@ import { CreateProject } from "./CreateProject";
 import { Debug } from "./Debug";
 import { Home } from "./Home";
 import { LoadingBox } from "./ui";
+import { Project } from "./Project";
 import { SidePanel } from "./SidePanel";
+import { User as UserPage } from "./User";
 import styled from "styled-components";
 
 export const App: React.FC<{
@@ -199,6 +201,10 @@ const MainPanel: React.FC<{
       return <Home model={prop.model} />;
     case "CreateProject":
       return <CreateProject model={prop.model} />;
+    case "Project":
+      return <Project model={prop.model} projectId={prop.location.projectId} />;
+    case "User":
+      return <UserPage model={prop.model} userId={prop.location.userId} />;
     case "About":
       return <About />;
     case "Debug":
