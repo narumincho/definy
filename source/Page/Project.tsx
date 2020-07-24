@@ -1,5 +1,5 @@
-import * as ui from "./ui";
-import { Model } from "./model";
+import * as ui from "../ui";
+import { Model } from "../model";
 import { ProjectId } from "definy-core/source/data";
 import React from "react";
 import styled from "styled-components";

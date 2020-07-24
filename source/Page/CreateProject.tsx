@@ -1,8 +1,8 @@
 import * as React from "react";
 import * as core from "definy-core";
-import * as ui from "./ui";
+import * as ui from "../ui";
 import { Location } from "definy-core/source/data";
-import { Model } from "./model";
+import { Model } from "../model";
 import styled from "styled-components";
 
 const CreateProjectDiv = styled.div({

@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as ui from "./ui";
+import * as ui from "../ui";
 import styled from "styled-components";
 
 const AboutDiv = styled.div({ padding: 16 });

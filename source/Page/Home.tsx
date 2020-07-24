@@ -1,12 +1,12 @@
 import * as React from "react";
-import * as ui from "./ui";
+import * as ui from "../ui";
 import {
   Language,
   Location,
   ProjectId,
   ResourceState,
 } from "definy-core/source/data";
-import { Model } from "./model";
+import { Model } from "../model";
 import styled from "styled-components";
 
 const HomeContainerDiv = styled.div({ display: "grid", overflow: "hidden" });

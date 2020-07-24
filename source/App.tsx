@@ -16,14 +16,14 @@ import {
   UserId,
 } from "definy-core/source/data";
 import { CreateProjectState, Model } from "./model";
-import { About } from "./About";
-import { CreateProject } from "./CreateProject";
-import { Debug } from "./Debug";
-import { Home } from "./Home";
+import { About as AboutPage } from "./Page/About";
+import { CreateProject as CreateProjectPage } from "./Page/CreateProject";
+import { Debug } from "./Page/Debug";
+import { Home as HomePage } from "./Page/Home";
 import { LoadingBox } from "./ui";
-import { Project } from "./Project";
+import { Project as ProjectPage } from "./Page/Project";
 import { SidePanel } from "./SidePanel";
-import { User as UserPage } from "./User";
+import { User as UserPage } from "./Page/User";
 import styled from "styled-components";
 
 export const App: React.FC<{
@@ -198,15 +198,17 @@ const MainPanel: React.FC<{
 }> = (prop) => {
   switch (prop.location._) {
     case "Home":
-      return <Home model={prop.model} />;
+      return <HomePage model={prop.model} />;
     case "CreateProject":
-      return <CreateProject model={prop.model} />;
+      return <CreateProjectPage model={prop.model} />;
     case "Project":
-      return <Project model={prop.model} projectId={prop.location.projectId} />;
+      return (
+        <ProjectPage model={prop.model} projectId={prop.location.projectId} />
+      );
     case "User":
       return <UserPage model={prop.model} userId={prop.location.userId} />;
     case "About":
-      return <About />;
+      return <AboutPage />;
     case "Debug":
       return <Debug />;
     default:

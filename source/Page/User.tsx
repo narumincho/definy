@@ -1,5 +1,5 @@
-import * as ui from "./ui";
-import { Model } from "./model";
+import * as ui from "../ui";
+import { Model } from "../model";
 import React from "react";
 import { UserId } from "definy-core/source/data";
 

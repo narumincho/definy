@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as ui from "./ui";
+import * as ui from "../ui";
 import {
   ImageToken,
   LogInState,
@@ -12,7 +12,7 @@ import {
 } from "definy-core/source/data";
 import { About } from "./About";
 import { Home } from "./Home";
-import { SidePanel } from "./SidePanel";
+import { SidePanel } from "../SidePanel";
 import styled from "styled-components";
 
 const sampleProject: ReadonlyArray<[ProjectId, ResourceState<Project>]> = [
