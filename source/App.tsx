@@ -43,6 +43,8 @@ export const App: React.FC<{
     CreateProjectState
   >({ _: "None" });
 
+  const [isLogOutRequest, setIsLogOutRequest] = React.useState<boolean>(false);
+
   const {
     allProjectIdListMaybe,
     projectMap,
@@ -98,6 +100,15 @@ export const App: React.FC<{
     }
   }, [createProjectState]);
 
+  React.useEffect(() => {
+    if (isLogOutRequest) {
+      setIsLogOutRequest(false);
+      indexedDB.deleteAccessToken().then(() => {
+        setLogInState(LogInState.Guest);
+      });
+    }
+  }, [isLogOutRequest]);
+
   const model: Model = {
     clientMode: urlData.clientMode,
     language: urlData.language,
@@ -114,6 +125,9 @@ export const App: React.FC<{
     requestImage,
     createProject: (projectName) => {
       setCreateProjectState({ _: "WaitCreating", projectName });
+    },
+    requestLogOut: () => {
+      setIsLogOutRequest(true);
     },
   };
 

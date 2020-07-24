@@ -105,6 +105,35 @@ const set = <id extends string, data>(
     });
   });
 
+const deleteValue = <id extends string>(
+  objectStoreName: string,
+  id: id
+): Promise<void> =>
+  new Promise((resolve, reject) => {
+    getDatabase().then((database) => {
+      if (database === null) {
+        resolve();
+        return;
+      }
+
+      const transaction = database.transaction([objectStoreName], "readwrite");
+
+      transaction.oncomplete = (): void => {
+        resolve();
+      };
+
+      transaction.onerror = (): void => {
+        reject(
+          new Error(
+            "write " + objectStoreName + " error: write transaction failed"
+          )
+        );
+      };
+
+      transaction.objectStore(objectStoreName).delete(id);
+    });
+  });
+
 /**
  * リソースデータをindexedDBに書く
  *
@@ -164,7 +193,6 @@ export const getAccessToken = (): Promise<undefined | AccessToken> =>
 
 /**
  * indexDBにアクセストークンを書き込む
- * @param database nullだった場合サポートされていないとみなされ常に何も取得できない
  * @param accessToken アクセストークン
  */
 export const setAccessToken = (accessToken: AccessToken): Promise<void> =>
@@ -172,4 +200,13 @@ export const setAccessToken = (accessToken: AccessToken): Promise<void> =>
     accessTokenObjectStoreName,
     accessTokenKeyName,
     accessToken
+  );
+
+/**
+ * indexedDBからアクセストークンを削除する
+ */
+export const deleteAccessToken = (): Promise<void> =>
+  deleteValue<typeof accessTokenKeyName>(
+    accessTokenObjectStoreName,
+    accessTokenKeyName
   );

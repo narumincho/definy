@@ -17,6 +17,7 @@ export type Model = {
   imageMap: ReadonlyMap<data.ImageToken, data.StaticResourceState<string>>;
   createProjectState: CreateProjectState;
   onJump: (urlData: data.UrlData) => void;
+  requestLogOut: () => void;
   allProjectIdListMaybe: data.Maybe<
     data.ResourceState<ReadonlyArray<data.ProjectId>>
   >;

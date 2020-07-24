@@ -17,7 +17,17 @@ const SidePanelDiv = styled.div({
   height: 48,
 });
 
-const SidePanelLink = styled(ui.Link)({ padding: 8 });
+const LogoLink = styled(ui.Link)({
+  justifySelf: "start",
+  padding: 8,
+  color: "#b9d09b",
+  fontSize: 32,
+  lineHeight: 1,
+  fontFamily: "Hack",
+  "&:hover": {
+    color: "#b9d09b",
+  },
+});
 
 export const SidePanel: React.FC<{
   model: Model;
@@ -36,21 +46,14 @@ const Logo: React.FC<{
   onJump: (urlData: UrlData) => void;
   model: Model;
 }> = (prop) => (
-  <SidePanelLink
+  <LogoLink
     areaTheme="Gray"
     onJump={prop.onJump}
     urlData={{ ...prop.model, location: Location.Home }}
   >
-    <LogoDiv>Definy</LogoDiv>
-  </SidePanelLink>
+    Definy
+  </LogoLink>
 );
-
-const LogoDiv = styled.div({
-  color: "#b9d09b",
-  fontSize: 32,
-  lineHeight: 1,
-  fontFamily: "Hack",
-});
 
 const UserViewOrLogInButton: React.FC<{
   model: Model;
@@ -58,9 +61,13 @@ const UserViewOrLogInButton: React.FC<{
 }> = (prop) => {
   switch (prop.model.logInState._) {
     case "WaitLoadingAccessTokenFromIndexedDB":
-      return <div>アクセストークンをindexedDBから読み取り中</div>;
+      return (
+        <UserViewDiv>アクセストークンをindexedDBから読み取り中</UserViewDiv>
+      );
     case "LoadingAccessTokenFromIndexedDB":
-      return <div>アクセストークンをindexedDBから読み取り中……</div>;
+      return (
+        <UserViewDiv>アクセストークンをindexedDBから読み取り中……</UserViewDiv>
+      );
     case "Guest":
       return (
         <LogInButton
@@ -69,20 +76,56 @@ const UserViewOrLogInButton: React.FC<{
         />
       );
     case "WaitVerifyingAccessToken":
-      return <div>アクセストークンを検証中</div>;
+      return <UserViewDiv>アクセストークンを検証中</UserViewDiv>;
     case "VerifyingAccessToken":
-      return <div>アクセストークンを検証中……</div>;
+      return <UserViewDiv>アクセストークンを検証中……</UserViewDiv>;
     case "LoggedIn": {
+      const userResourceState = prop.model.userMap.get(
+        prop.model.logInState.accessTokenAndUserId.userId
+      );
+      if (
+        userResourceState === undefined ||
+        userResourceState._ !== "Loaded" ||
+        userResourceState.dataResource.dataMaybe._ === "Nothing"
+      ) {
+        return <UserViewDiv>...</UserViewDiv>;
+      }
+      const user = userResourceState.dataResource.dataMaybe.value;
       return (
-        <ui.User
-          model={prop.model}
-          userId={prop.model.logInState.accessTokenAndUserId.userId}
-        />
+        <SettingLink
+          areaTheme="Gray"
+          onJump={prop.model.onJump}
+          urlData={{ ...prop.model, location: Location.Setting }}
+        >
+          <ui.Image
+            imageStyle={{
+              width: 32,
+              height: 32,
+              padding: 0,
+              round: true,
+            }}
+            imageToken={user.imageHash}
+            model={prop.model}
+          />
+          {user.name}
+        </SettingLink>
       );
     }
   }
-  return <div>ログインの準備中……</div>;
+  return <UserViewDiv>ログインの準備中……</UserViewDiv>;
 };
+
+const UserViewDiv = styled.div({
+  justifySelf: "end",
+});
+
+const SettingLink = styled(ui.Link)({
+  justifySelf: "end",
+  display: "grid",
+  gridTemplateColumns: "32px auto",
+  alignItems: "center",
+  padding: 8,
+});
 
 const LogInButtonDiv = styled.div({
   display: "grid",
