@@ -9,12 +9,12 @@ import {
 import { Model } from "./model";
 import styled from "styled-components";
 
-const sidePanelWidth = 260;
-
 const SidePanelDiv = styled.div({
-  width: sidePanelWidth,
+  display: "grid",
+  gridAutoFlow: "column",
+  width: "100%",
   backgroundColor: ui.areaThemeToValue("Gray").backgroundColor,
-  height: "100%",
+  height: 48,
 });
 
 const SidePanelLink = styled(ui.Link)({ padding: 8 });
@@ -29,22 +29,6 @@ export const SidePanel: React.FC<{
       model={prop.model}
       requestLogIn={prop.onRequestLogIn}
     />
-    <div>Idea</div>
-    <div>Part</div>
-    <SidePanelLink
-      areaTheme="Gray"
-      onJump={prop.model.onJump}
-      urlData={{ ...prop.model, location: Location.About }}
-    >
-      <div>About</div>
-    </SidePanelLink>
-    <SidePanelLink
-      areaTheme="Gray"
-      onJump={prop.model.onJump}
-      urlData={{ ...prop.model, location: Location.Debug }}
-    >
-      <div>Debug</div>
-    </SidePanelLink>
   </SidePanelDiv>
 );
 
@@ -100,7 +84,13 @@ const UserViewOrLogInButton: React.FC<{
   return <div>ログインの準備中……</div>;
 };
 
-const LogInButtonDiv = styled.div({ display: "grid", gap: 8, padding: 8 });
+const LogInButtonDiv = styled.div({
+  display: "grid",
+  gap: 8,
+  padding: 8,
+  gridAutoFlow: "column",
+  justifySelf: "end",
+});
 
 const LogInButton: React.FC<{
   requestLogIn: (provider: OpenIdConnectProvider) => void;
@@ -114,7 +104,7 @@ const LogInButton: React.FC<{
 
 const StyledGoogleButton = styled(ui.Button)({
   display: "grid",
-  gridTemplateColumns: "48px 1fr",
+  gridTemplateColumns: "32px 160px",
   backgroundColor: "#4285f4",
   borderRadius: 8,
   gap: 8,
@@ -142,9 +132,9 @@ const GoogleButton: React.FC<{
 );
 
 const GoogleIconContainer = styled.div({
-  width: 48,
-  height: 48,
-  padding: 8,
+  width: 32,
+  height: 32,
+  padding: 4,
   backgroundColor: "#fff",
   borderRadius: 8,
 });
@@ -178,7 +168,7 @@ const GoogleIcon = () => (
 
 const StyledGitHubButton = styled(ui.Button)({
   display: "grid",
-  gridTemplateColumns: "48px 1fr",
+  gridTemplateColumns: "32px 160px",
   backgroundColor: "#202020",
   borderRadius: 8,
   gap: 8,
@@ -206,9 +196,9 @@ const GitHubButton: React.FC<{
 );
 
 const GitHubIconContainer = styled.div({
-  width: 48,
-  height: 48,
-  padding: 8,
+  width: 32,
+  height: 32,
+  padding: 4,
   backgroundColor: "#fff",
   borderRadius: 8,
 });

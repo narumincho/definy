@@ -9,7 +9,10 @@ import {
 import { Model } from "../model";
 import styled from "styled-components";
 
-const HomeContainerDiv = styled.div({ display: "grid", overflow: "hidden" });
+const HomeContainerDiv = styled.div({
+  display: "grid",
+  overflow: "hidden",
+});
 
 export const Home: React.FC<{ model: Model }> = (prop) => {
   React.useEffect(() => {
@@ -20,16 +23,7 @@ export const Home: React.FC<{ model: Model }> = (prop) => {
 
   return (
     <HomeContainerDiv>
-      <AllProjectListContainerDiv>
-        {prop.model.allProjectIdListMaybe._ === "Just" ? (
-          <AllProjectList
-            allProjectIdListResource={prop.model.allProjectIdListMaybe.value}
-            model={prop.model}
-          />
-        ) : (
-          <div>...</div>
-        )}
-      </AllProjectListContainerDiv>
+      <HomeMain model={prop.model} />
       {prop.model.logInState._ === "Guest" ? undefined : (
         <CreateProjectButton model={prop.model} />
       )}
@@ -37,11 +31,62 @@ export const Home: React.FC<{ model: Model }> = (prop) => {
   );
 };
 
-const AllProjectListContainerDiv = styled.div({
+const HomeMain: React.FC<{ model: Model }> = (prop) => {
+  return (
+    <MainContainerDiv>
+      <HomeLinkContainerDiv>
+        <HomeLinkDiv
+          areaTheme="Gray"
+          onJump={prop.model.onJump}
+          urlData={{ ...prop.model, location: Location.About }}
+        >
+          Definyについて
+        </HomeLinkDiv>
+        <HomeLinkDiv
+          areaTheme="Gray"
+          onJump={prop.model.onJump}
+          urlData={{ ...prop.model, location: Location.Debug }}
+        >
+          デバッグページ
+        </HomeLinkDiv>
+      </HomeLinkContainerDiv>
+      {prop.model.allProjectIdListMaybe._ === "Just" ? (
+        <AllProjectList
+          allProjectIdListResource={prop.model.allProjectIdListMaybe.value}
+          model={prop.model}
+        />
+      ) : (
+        <div>...</div>
+      )}
+    </MainContainerDiv>
+  );
+};
+
+const HomeLinkContainerDiv = styled.div({
+  display: "grid",
+  gridAutoFlow: "column",
+  justifyContent: "end",
+  alignItems: "center",
+  height: 32,
+  gap: 8,
+});
+
+const HomeLinkDiv = styled(ui.Link)({
+  width: 128,
+  height: 32,
+  display: "grid",
+  alignItems: "center",
+  justifyContent: "center",
+});
+
+const MainContainerDiv = styled.div({
   display: "grid",
   overflowY: "scroll",
   gridColumn: "1 / 2",
   gridRow: "1 / 2",
+  gridTemplateRows: "32px 1fr",
+  gap: 8,
+  padding: 16,
 });
 
 const AllProjectList: React.FC<{
@@ -74,8 +119,6 @@ const AllProjectList: React.FC<{
   );
 };
 const ProjectListContainerDiv = styled.div({
-  gridColumn: "1 / 2",
-  gridRow: "1 / 2",
   overflow: "hidden",
   overflowWrap: "break-word",
   display: "grid",
