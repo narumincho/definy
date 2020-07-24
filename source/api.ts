@@ -1,9 +1,10 @@
 import {
   AccessToken,
   AddCommentParameter,
-  AddSuggestionParameter,
   Binary,
   Codec,
+  Commit,
+  CommitId,
   CreateIdeaParameter,
   CreateProjectParameter,
   IdAndData,
@@ -17,8 +18,6 @@ import {
   RequestLogInUrlRequestData,
   Resource,
   String,
-  Suggestion,
-  SuggestionId,
   User,
   UserId,
 } from "definy-core/source/data";
@@ -124,22 +123,9 @@ export const addComment = (
     Maybe.codec(Resource.codec(Idea.codec))
   );
 
-export const getSuggestion = (
-  suggestionId: SuggestionId
-): Promise<Resource<Suggestion>> =>
+export const getCommit = (commitId: CommitId): Promise<Resource<Commit>> =>
   callApi(
     "getSuggestion",
-    SuggestionId.codec.encode(suggestionId),
-    Resource.codec(Suggestion.codec)
-  );
-
-export const addSuggestion = (
-  addSuggestionParameter: AddSuggestionParameter
-): Promise<Maybe<IdAndData<SuggestionId, Resource<Suggestion>>>> =>
-  callApi(
-    "addSuggestion",
-    AddSuggestionParameter.codec.encode(addSuggestionParameter),
-    Maybe.codec(
-      IdAndData.codec(SuggestionId.codec, Resource.codec(Suggestion.codec))
-    )
+    CommitId.codec.encode(commitId),
+    Resource.codec(Commit.codec)
   );
