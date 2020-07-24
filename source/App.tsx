@@ -17,11 +17,14 @@ import {
 } from "definy-core/source/data";
 import { CreateProjectState, Model } from "./model";
 import { About as AboutPage } from "./Page/About";
+import { Commit as CommitPage } from "./Page/Commit";
 import { CreateProject as CreateProjectPage } from "./Page/CreateProject";
 import { Debug } from "./Page/Debug";
 import { Home as HomePage } from "./Page/Home";
+import { Idea as IdeaPage } from "./Page/Idea";
 import { LoadingBox } from "./ui";
 import { Project as ProjectPage } from "./Page/Project";
+import { Setting as SettingPage } from "./Page/Setting";
 import { SidePanel } from "./SidePanel";
 import { User as UserPage } from "./Page/User";
 import styled from "styled-components";
@@ -207,6 +210,14 @@ const MainPanel: React.FC<{
       );
     case "User":
       return <UserPage model={prop.model} userId={prop.location.userId} />;
+    case "Idea":
+      return <IdeaPage ideaId={prop.location.ideaId} model={prop.model} />;
+    case "Commit":
+      return (
+        <CommitPage commitId={prop.location.commitId} model={prop.model} />
+      );
+    case "Setting":
+      return <SettingPage model={prop.model} />;
     case "About":
       return <AboutPage />;
     case "Debug":
