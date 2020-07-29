@@ -499,3 +499,26 @@ const RequestingIcon: React.FC<{ isWait: boolean }> = (prop) => (
     })}
   </NormalSizeSvg>
 );
+
+const StyledInput = styled.input({
+  padding: 8,
+  fontSize: 16,
+  border: "2px solid #222",
+  backgroundColor: "#000",
+  color: "#ddd",
+  "&:focus": { border: "2px solid #f0932b", outline: "none" },
+  borderRadius: 8,
+});
+
+export const OneLineTextInput: React.FC<{
+  name: string;
+  value: string;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+}> = (prop) => (
+  <StyledInput
+    name={prop.name}
+    onChange={prop.onChange}
+    type="text"
+    value={prop.value}
+  />
+);

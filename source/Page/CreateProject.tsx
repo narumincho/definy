@@ -10,6 +10,7 @@ const CreateProjectDiv = styled.div({
   display: "grid",
   alignContent: "center",
   justifyContent: "center",
+  backgroundColor: "#222",
 });
 
 export const CreateProject: React.FC<{ model: Model }> = (prop) => {
@@ -53,9 +54,10 @@ export const CreateProject: React.FC<{ model: Model }> = (prop) => {
           ? "プロジェクト名に使えません"
           : validProjectName}
       </div>
-      <ProjectNameInput
-        projectName={projectName}
-        setProjectName={setProjectName}
+      <ui.OneLineTextInput
+        name="projectName"
+        onChange={(event) => setProjectName(event.target.value)}
+        value={projectName}
       />
       <CreateProjectButton
         disabled={validProjectName === null}
@@ -74,26 +76,3 @@ export const CreateProject: React.FC<{ model: Model }> = (prop) => {
 const CreateProjectButton = styled(ui.Button)({
   padding: 8,
 });
-
-const StyledProjectNameInput = styled.input({
-  padding: 8,
-  fontSize: 16,
-  ":hocus": { border: "2px solid red" },
-});
-
-const ProjectNameInput: React.FC<{
-  projectName: string;
-  setProjectName: (projectName: string) => void;
-}> = (prop) => {
-  return (
-    <StyledProjectNameInput
-      id="projectName"
-      key="projectName"
-      onChange={(event) => {
-        prop.setProjectName(event.target.value);
-      }}
-      type="text"
-      value={prop.projectName}
-    />
-  );
-};
