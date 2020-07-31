@@ -220,15 +220,26 @@ const MainPanel: React.FC<{
       return <CreateProjectPage model={prop.model} />;
     case "Project":
       return (
-        <ProjectPage model={prop.model} projectId={prop.location.projectId} />
+        <ProjectPage
+          model={prop.model}
+          page={{ _: "Project", projectId: prop.location.projectId }}
+        />
       );
     case "User":
       return <UserPage model={prop.model} userId={prop.location.userId} />;
     case "Idea":
-      return <IdeaPage ideaId={prop.location.ideaId} model={prop.model} />;
+      return (
+        <ProjectPage
+          model={prop.model}
+          page={{ _: "Idea", ideaId: prop.location.ideaId }}
+        />
+      );
     case "Commit":
       return (
-        <CommitPage commitId={prop.location.commitId} model={prop.model} />
+        <ProjectPage
+          model={prop.model}
+          page={{ _: "Commit", commitId: prop.location.commitId }}
+        />
       );
     case "Setting":
       return <SettingPage model={prop.model} />;
