@@ -166,7 +166,7 @@ export const App: React.FC<{
 const NormalStyledDiv = styled.div({
   height: "100%",
   display: "grid",
-  gridTemplateRows: "auto 1fr",
+  gridTemplateRows: "48px 1fr",
 });
 
 const LogInViewStyledDiv = styled.div({

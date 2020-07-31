@@ -12,6 +12,7 @@ import styled from "styled-components";
 const HomeContainerDiv = styled.div({
   display: "grid",
   overflow: "hidden",
+  backgroundColor: "#222",
 });
 
 export const Home: React.FC<{ model: Model }> = (prop) => {
