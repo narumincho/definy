@@ -17,7 +17,7 @@ Definy is Web App for Web App.
 - [narumincho/definy-functions](https://github.com/narumincho/definy-functions)  
   Cloud Functions for Firestore での処理
 
-- [narumincho/definy-common](https://github.com/narumincho/definy-common)  
+- [narumincho/definy-core](https://github.com/narumincho/definy-core)  
   共通の型と処理
 
 ## 特徴
