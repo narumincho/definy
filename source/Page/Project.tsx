@@ -53,7 +53,7 @@ export const Project: React.FC<{ model: Model; page: Page }> = (prop) => {
    */
   return (
     <ProjectDiv>
-      <IdeaAndCommitTree model={prop.model} />
+      <IdeaAndCommitTree model={prop.model} page={prop.page} />
       <ProjectContent model={prop.model} page={prop.page} />
     </ProjectDiv>
   );
@@ -77,6 +77,7 @@ const TreeSvg = styled.svg({
 
 const IdeaAndCommitTree: React.FC<{
   model: Model;
+  page: Page;
 }> = (prop) => {
   return (
     <IdeaAndCommitTreeDiv>
@@ -85,16 +86,32 @@ const IdeaAndCommitTree: React.FC<{
         <circle cx={5} cy={20} fill="white" r={5} stroke="#00ff00" />
         <line stroke="#00ff00" x1={10} x2={15} y1={20} y2={20} />
       </TreeSvg>
-      <ui.Link
-        areaTheme="Gray"
-        onJump={prop.model.onJump}
-        urlData={{
-          ...prop.model,
-          location: Location.Idea("sample idea id" as IdeaId),
-        }}
-      >
-        プロジェクトの目標
-      </ui.Link>
+      <div>
+        <ui.Link
+          areaTheme="Gray"
+          onJump={prop.model.onJump}
+          urlData={{
+            ...prop.model,
+            location: Location.Project(
+              prop.page._ === "Project"
+                ? prop.page.projectId
+                : ("loading" as ProjectId)
+            ),
+          }}
+        >
+          プロジェクトの目標
+        </ui.Link>
+        <ui.Link
+          areaTheme="Gray"
+          onJump={prop.model.onJump}
+          urlData={{
+            ...prop.model,
+            location: Location.Idea("childIdea" as IdeaId),
+          }}
+        >
+          子アイデア
+        </ui.Link>
+      </div>
     </IdeaAndCommitTreeDiv>
   );
 };
