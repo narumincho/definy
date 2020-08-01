@@ -1,8 +1,8 @@
 import * as ui from "../ui";
-import { CommitId, IdeaId, Location, ProjectId } from "definy-core/source/data";
-import { Commit as CommitComponent } from "../Component/Commit";
+import { IdeaId, Location, ProjectId } from "definy-core/source/data";
 import { Idea as IdeaComponent } from "../Component/Idea";
 import { Model } from "../model";
+import { ProjectIdea } from "../Component/ProjectIdea";
 import React from "react";
 import styled from "styled-components";
 
@@ -33,10 +33,6 @@ export type Page =
   | {
       _: "Idea";
       ideaId: IdeaId;
-    }
-  | {
-      _: "Commit";
-      commitId: CommitId;
     };
 
 export const Project: React.FC<{ model: Model; page: Page }> = (prop) => {
@@ -114,10 +110,9 @@ const ProjectContent: React.FC<{
   switch (prop.page._) {
     case "Idea":
       return <IdeaComponent model={prop.model} />;
-    case "Commit":
-      return <CommitComponent model={prop.model} />;
+    case "Project":
+      return <ProjectIdea model={prop.model} />;
   }
-  return <div>プロジェクトの画面</div>;
   /*
    * return (
    *   <ProjectContentDiv>

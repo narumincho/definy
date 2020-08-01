@@ -21,7 +21,6 @@ import { Commit as CommitPage } from "./Page/Commit";
 import { CreateProject as CreateProjectPage } from "./Page/CreateProject";
 import { Debug } from "./Page/Debug";
 import { Home as HomePage } from "./Page/Home";
-import { Idea as IdeaPage } from "./Page/Idea";
 import { LoadingBox } from "./ui";
 import { Project as ProjectPage } from "./Page/Project";
 import { Setting as SettingPage } from "./Page/Setting";
@@ -236,10 +235,7 @@ const MainPanel: React.FC<{
       );
     case "Commit":
       return (
-        <ProjectPage
-          model={prop.model}
-          page={{ _: "Commit", commitId: prop.location.commitId }}
-        />
+        <CommitPage commitId={prop.location.commitId} model={prop.model} />
       );
     case "Setting":
       return <SettingPage model={prop.model} />;
