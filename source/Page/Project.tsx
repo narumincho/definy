@@ -128,7 +128,7 @@ const ProjectContent: React.FC<{
     case "Idea":
       return <IdeaComponent model={prop.model} />;
     case "Project":
-      return <ProjectIdea model={prop.model} />;
+      return <ProjectIdea model={prop.model} projectId={prop.page.projectId} />;
   }
   /*
    * return (

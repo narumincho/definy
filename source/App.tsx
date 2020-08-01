@@ -10,12 +10,13 @@ import {
   LogInState,
   Maybe,
   OpenIdConnectProvider,
+  ProjectId,
   Resource,
   UrlData,
   User,
   UserId,
 } from "definy-core/source/data";
-import { CreateProjectState, Model } from "./model";
+import { CreateIdeaState, CreateProjectState, Model } from "./model";
 import { About as AboutPage } from "./Page/About";
 import { Commit as CommitPage } from "./Page/Commit";
 import { CreateProject as CreateProjectPage } from "./Page/CreateProject";
@@ -41,6 +42,10 @@ export const App: React.FC<{
   const [createProjectState, setCreateProjectState] = React.useState<
     CreateProjectState
   >({ _: "None" });
+
+  const [createIdeaState, setCreateIdeaState] = React.useState<CreateIdeaState>(
+    { _: "None" }
+  );
 
   const [isLogOutRequest, setIsLogOutRequest] = React.useState<boolean>(false);
 
@@ -80,7 +85,7 @@ export const App: React.FC<{
       case "None":
         return;
       case "WaitCreating":
-        if (logInState._ === "LoggedIn")
+        if (logInState._ === "LoggedIn") {
           api
             .createProject({
               accessToken: logInState.accessTokenAndUserId.accessToken,
@@ -96,8 +101,35 @@ export const App: React.FC<{
                 console.log("プロジェクト作成に失敗");
               }
             });
+        }
     }
   }, [createProjectState]);
+
+  React.useEffect(() => {
+    switch (createIdeaState._) {
+      case "None":
+        return;
+      case "WaitCreating":
+        if (logInState._ === "LoggedIn") {
+          api
+            .createIdea({
+              accessToken: logInState.accessTokenAndUserId.accessToken,
+              ideaName: createIdeaState.ideaName,
+              projectId: createIdeaState.projectId,
+            })
+            .then((ideaMaybe) => {
+              if (ideaMaybe._ === "Just") {
+                setCreateIdeaState({
+                  _: "Created",
+                  ideaId: ideaMaybe.value.id,
+                });
+              } else {
+                console.log("アイデアの作成に失敗");
+              }
+            });
+        }
+    }
+  }, [createIdeaState]);
 
   React.useEffect(() => {
     if (isLogOutRequest) {
@@ -127,6 +159,9 @@ export const App: React.FC<{
     },
     requestLogOut: () => {
       setIsLogOutRequest(true);
+    },
+    createIdea: (ideaName: string, projectId: ProjectId) => {
+      setCreateIdeaState({ _: "WaitCreating", ideaName, projectId });
     },
   };
 

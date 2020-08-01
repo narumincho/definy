@@ -32,6 +32,7 @@ const defaultModel: Model = {
   requestUser: () => {},
   requestImage: () => {},
   createProject: () => {},
+  createIdea: () => {},
 };
 
 const sampleProject: ReadonlyArray<[ProjectId, ResourceState<Project>]> = [
