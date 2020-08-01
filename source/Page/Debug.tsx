@@ -12,8 +12,27 @@ import {
 } from "definy-core/source/data";
 import { About } from "./About";
 import { Home } from "./Home";
+import { Model } from "../model";
 import { SidePanel } from "../SidePanel";
 import styled from "styled-components";
+
+const defaultModel: Model = {
+  clientMode: "DebugMode",
+  language: "English",
+  logInState: LogInState.Guest,
+  onJump: () => {},
+  projectMap: new Map(),
+  userMap: new Map(),
+  imageMap: new Map(),
+  allProjectIdListMaybe: Maybe.Nothing(),
+  createProjectState: { _: "None" },
+  requestLogOut: () => {},
+  requestAllProject: () => {},
+  requestProject: () => {},
+  requestUser: () => {},
+  requestImage: () => {},
+  createProject: () => {},
+};
 
 const sampleProject: ReadonlyArray<[ProjectId, ResourceState<Project>]> = [
   [
@@ -81,82 +100,25 @@ const IconImage: React.FC<{
       imageStyle={{ width: 64, height: 64, padding: 0, round: false }}
       imageToken={"a" as ImageToken}
       model={{
-        clientMode: "DebugMode",
-        language: "English",
-        logInState: LogInState.Guest,
-        onJump: () => {},
-        projectMap: new Map(),
-        userMap: new Map(),
+        ...defaultModel,
         imageMap: new Map([["a" as ImageToken, prop.imageStaticResource]]),
-        allProjectIdListMaybe: Maybe.Nothing(),
-        createProjectState: { _: "None" },
-        requestAllProject: () => {},
-        requestProject: () => {},
-        requestUser: () => {},
-        requestImage: () => {},
-        createProject: () => {},
       }}
     />
   );
 };
 
 const sampleComponentList = {
-  sidePanel: (
-    <SidePanel
-      model={{
-        clientMode: "DebugMode",
-        language: "English",
-        logInState: LogInState.Guest,
-        onJump: () => {},
-        projectMap: new Map(),
-        userMap: new Map(),
-        imageMap: new Map(),
-        createProjectState: { _: "None" },
-        allProjectIdListMaybe: Maybe.Nothing(),
-        requestAllProject: () => {},
-        requestProject: () => {},
-        requestUser: () => {},
-        requestImage: () => {},
-        createProject: () => {},
-      }}
-      onRequestLogIn={() => {}}
-    />
-  ),
-  home: (
-    <Home
-      model={{
-        clientMode: "DebugMode",
-        language: "English",
-        logInState: LogInState.Guest,
-        onJump: () => {},
-        projectMap: new Map(),
-        userMap: new Map(),
-        imageMap: new Map(),
-        createProjectState: { _: "None" },
-
-        allProjectIdListMaybe: Maybe.Nothing(),
-        requestAllProject: () => {},
-        requestProject: () => {},
-        requestUser: () => {},
-        requestImage: () => {},
-        createProject: () => {},
-      }}
-    />
-  ),
+  sidePanel: <SidePanel model={defaultModel} onRequestLogIn={() => {}} />,
+  home: <Home model={defaultModel} />,
   homeWithProject: (
     <Home
       model={{
-        clientMode: "DebugMode",
-        language: "English",
-        logInState: LogInState.Guest,
-        onJump: () => {},
+        ...defaultModel,
         projectMap: new Map([
           sampleProject[0],
           sampleProject[1],
           sampleProject[2],
         ]),
-        userMap: new Map(),
-        imageMap: new Map(),
         createProjectState: { _: "None" },
         allProjectIdListMaybe: Maybe.Just(
           ResourceState.Loaded({
@@ -168,11 +130,6 @@ const sampleComponentList = {
             getTime: { day: 0, millisecond: 0 },
           })
         ),
-        requestAllProject: () => {},
-        requestProject: () => {},
-        requestUser: () => {},
-        requestImage: () => {},
-        createProject: () => {},
       }}
     />
   ),

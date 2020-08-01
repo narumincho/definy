@@ -21,7 +21,6 @@ import { Commit as CommitPage } from "./Page/Commit";
 import { CreateProject as CreateProjectPage } from "./Page/CreateProject";
 import { Debug } from "./Page/Debug";
 import { Home as HomePage } from "./Page/Home";
-import { Idea as IdeaPage } from "./Page/Idea";
 import { LoadingBox } from "./ui";
 import { Project as ProjectPage } from "./Page/Project";
 import { Setting as SettingPage } from "./Page/Setting";
@@ -166,7 +165,7 @@ export const App: React.FC<{
 const NormalStyledDiv = styled.div({
   height: "100%",
   display: "grid",
-  gridTemplateRows: "auto 1fr",
+  gridTemplateRows: "48px 1fr",
 });
 
 const LogInViewStyledDiv = styled.div({
@@ -220,12 +219,20 @@ const MainPanel: React.FC<{
       return <CreateProjectPage model={prop.model} />;
     case "Project":
       return (
-        <ProjectPage model={prop.model} projectId={prop.location.projectId} />
+        <ProjectPage
+          model={prop.model}
+          page={{ _: "Project", projectId: prop.location.projectId }}
+        />
       );
     case "User":
       return <UserPage model={prop.model} userId={prop.location.userId} />;
     case "Idea":
-      return <IdeaPage ideaId={prop.location.ideaId} model={prop.model} />;
+      return (
+        <ProjectPage
+          model={prop.model}
+          page={{ _: "Idea", ideaId: prop.location.ideaId }}
+        />
+      );
     case "Commit":
       return (
         <CommitPage commitId={prop.location.commitId} model={prop.model} />

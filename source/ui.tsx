@@ -26,8 +26,8 @@ export const areaThemeToValue = (areaTheme: AreaTheme): AreaThemeValue => {
   switch (areaTheme) {
     case "Gray":
       return {
-        backgroundColor: "#242424",
-        hoveredBackgroundColor: "#2f2f2f",
+        backgroundColor: "#333",
+        hoveredBackgroundColor: "#444",
         color: "#ddd",
         hoveredColor: "#dfdfdf",
       };

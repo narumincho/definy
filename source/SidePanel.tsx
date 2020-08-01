@@ -13,7 +13,7 @@ const SidePanelDiv = styled.div({
   display: "grid",
   gridAutoFlow: "column",
   width: "100%",
-  backgroundColor: ui.areaThemeToValue("Gray").backgroundColor,
+  backgroundColor: "#333",
   height: 48,
 });
 
