@@ -42,6 +42,7 @@ export const Project: React.FC<{ model: Model; page: Page }> = (prop) => {
     switch (prop.page._) {
       case "Project":
         prop.model.requestProject(prop.page.projectId);
+        prop.model.requestProjectIdea(prop.page.projectId);
     }
   }, []);
   /*
@@ -68,11 +69,6 @@ const IdeaAndCommitTreeDiv = styled.div({
   height: "100%",
   width: 320,
   display: "grid",
-  gridTemplateColumns: "20px 1fr",
-});
-
-const TreeSvg = styled.svg({
-  width: 20,
 });
 
 const IdeaAndCommitTree: React.FC<{
@@ -81,37 +77,37 @@ const IdeaAndCommitTree: React.FC<{
 }> = (prop) => {
   return (
     <IdeaAndCommitTreeDiv>
-      <TreeSvg viewBox="0 0 20 2000">
-        <line stroke="#00ff00" x1={5} x2={2} y1={0} y2={2000} />
-        <circle cx={5} cy={20} fill="white" r={5} stroke="#00ff00" />
-        <line stroke="#00ff00" x1={10} x2={15} y1={20} y2={20} />
-      </TreeSvg>
       <div>
-        <ui.Link
-          areaTheme="Gray"
-          onJump={prop.model.onJump}
-          urlData={{
-            ...prop.model,
-            location: Location.Project(
-              prop.page._ === "Project"
-                ? prop.page.projectId
-                : ("loading" as ProjectId)
-            ),
-          }}
-        >
-          プロジェクトの目標
-        </ui.Link>
-        <ui.Link
-          areaTheme="Gray"
-          onJump={prop.model.onJump}
-          urlData={{
-            ...prop.model,
-            location: Location.Idea("childIdea" as IdeaId),
-          }}
-        >
-          子アイデア
-        </ui.Link>
+        {JSON.stringify(
+          prop.page._ === "Project"
+            ? prop.model.projectIdeaIdMap.get(prop.page.projectId)
+            : "アイデアのプロジェクトのID求めないとな"
+        )}
       </div>
+      <ui.Link
+        areaTheme="Gray"
+        onJump={prop.model.onJump}
+        urlData={{
+          ...prop.model,
+          location: Location.Project(
+            prop.page._ === "Project"
+              ? prop.page.projectId
+              : ("loading" as ProjectId)
+          ),
+        }}
+      >
+        プロジェクトの目標
+      </ui.Link>
+      <ui.Link
+        areaTheme="Gray"
+        onJump={prop.model.onJump}
+        urlData={{
+          ...prop.model,
+          location: Location.Idea("childIdea" as IdeaId),
+        }}
+      >
+        子アイデア
+      </ui.Link>
     </IdeaAndCommitTreeDiv>
   );
 };
@@ -128,7 +124,7 @@ const ProjectContent: React.FC<{
     case "Idea":
       return <IdeaComponent model={prop.model} />;
     case "Project":
-      return <ProjectIdea model={prop.model} />;
+      return <ProjectIdea model={prop.model} projectId={prop.page.projectId} />;
   }
   /*
    * return (

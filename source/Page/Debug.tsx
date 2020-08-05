@@ -24,6 +24,8 @@ const defaultModel: Model = {
   projectMap: new Map(),
   userMap: new Map(),
   imageMap: new Map(),
+  ideaMap: new Map(),
+  projectIdeaIdMap: new Map(),
   allProjectIdListMaybe: Maybe.Nothing(),
   createProjectState: { _: "None" },
   requestLogOut: () => {},
@@ -32,6 +34,8 @@ const defaultModel: Model = {
   requestUser: () => {},
   requestImage: () => {},
   createProject: () => {},
+  createIdea: () => {},
+  requestProjectIdea: () => {},
 };
 
 const sampleProject: ReadonlyArray<[ProjectId, ResourceState<Project>]> = [

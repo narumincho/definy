@@ -2,6 +2,9 @@ import * as React from "react";
 import * as api from "./api";
 import * as coreUtil from "definy-core/source/util";
 import {
+  IdAndData,
+  Idea,
+  IdeaId,
   ImageToken,
   Maybe,
   Project,
@@ -18,11 +21,16 @@ export const useProjectAllIdList = (): {
   projectMap: ReadonlyMap<ProjectId, ResourceState<Project>>;
   userMap: ReadonlyMap<UserId, ResourceState<User>>;
   imageMap: ReadonlyMap<ImageToken, StaticResourceState<string>>;
+  ideaMap: ReadonlyMap<IdeaId, ResourceState<Idea>>;
   requestAllProject: () => void;
   requestProject: (projectId: ProjectId) => void;
   requestUser: (userId: UserId) => void;
   setUser: (userId: UserId, userResource: Resource<User>) => void;
   requestImage: (imageToken: ImageToken) => void;
+  setIdeaResourceList: (
+    ideaResourceList: ReadonlyArray<IdAndData<IdeaId, Resource<Idea>>>
+  ) => void;
+  requestIdea: (ideaId: IdeaId) => void;
 } => {
   const [allProjectIdListMaybe, dispatchAllProjectIdList] = React.useState<
     Maybe<ResourceState<ReadonlyArray<ProjectId>>>
@@ -35,6 +43,10 @@ export const useProjectAllIdList = (): {
   >(new Map());
   const [imageMap, setImageMap] = React.useState<
     ReadonlyMap<ImageToken, StaticResourceState<string>>
+  >(new Map());
+
+  const [ideaMap, setIdeaMap] = React.useState<
+    ReadonlyMap<IdeaId, ResourceState<Idea>>
   >(new Map());
 
   const requestRef = React.useRef<number | undefined>();
@@ -257,6 +269,48 @@ export const useProjectAllIdList = (): {
     }
   }, [imageMap]);
 
+  React.useEffect(() => {
+    const newIdeaData = new Map(ideaMap);
+    let isChanged = false;
+    for (const [ideaId, userResourceState] of ideaMap) {
+      switch (userResourceState._) {
+        case "Loaded":
+          break;
+        case "WaitLoading":
+          isChanged = true;
+          newIdeaData.set(ideaId, ResourceState.WaitRequesting());
+          break;
+        case "Loading":
+          break;
+        case "WaitRequesting":
+          isChanged = true;
+          newIdeaData.set(ideaId, ResourceState.Requesting());
+          api.getIdea(ideaId).then((userResource) => {
+            setIdeaMap((dict) => {
+              const newDict = new Map(dict);
+              newDict.set(ideaId, ResourceState.Loaded(userResource));
+              return newDict;
+            });
+          });
+          break;
+        case "Requesting":
+          break;
+        case "WaitRetrying":
+          isChanged = true;
+          console.log("再度アイデアのリクエストをする予定");
+          break;
+        case "Retrying":
+        case "WaitUpdating":
+        case "Updating":
+        case "Unknown":
+          break;
+      }
+    }
+    if (isChanged) {
+      setIdeaMap(newIdeaData);
+    }
+  }, [userMap]);
+
   const updateCheck = () => {
     requestRef.current = window.requestAnimationFrame(updateCheck);
     loopCount.current += 1;
@@ -311,6 +365,7 @@ export const useProjectAllIdList = (): {
     projectMap,
     userMap,
     imageMap,
+    ideaMap,
     requestAllProject: () => {
       dispatchAllProjectIdList((beforeAllProjectIdListMaybe) => {
         if (beforeAllProjectIdListMaybe._ === "Nothing") {
@@ -355,6 +410,24 @@ export const useProjectAllIdList = (): {
         }
         return beforeImageMap;
       });
+    },
+    setIdeaResourceList: (
+      ideaResourceList: ReadonlyArray<IdAndData<IdeaId, Resource<Idea>>>
+    ) => {
+      setIdeaMap((beforeIdeaMap) => {
+        const newIdeaMap = new Map(beforeIdeaMap);
+        for (const { id, data } of ideaResourceList) {
+          newIdeaMap.set(id, ResourceState.Loaded(data));
+        }
+        return newIdeaMap;
+      });
+    },
+    requestIdea: (ideaId: IdeaId) => {
+      if (!ideaMap.has(ideaId)) {
+        const newIdeaMap = new Map(ideaMap);
+        newIdeaMap.set(ideaId, ResourceState.WaitLoading());
+        return newIdeaMap;
+      }
     },
   };
 };

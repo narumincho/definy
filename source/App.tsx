@@ -5,17 +5,19 @@ import * as indexedDB from "./indexedDB";
 import * as resourceAllProjectIdList from "./resource";
 import {
   AccessToken,
+  IdeaId,
   Language,
   Location,
   LogInState,
   Maybe,
   OpenIdConnectProvider,
+  ProjectId,
   Resource,
   UrlData,
   User,
   UserId,
 } from "definy-core/source/data";
-import { CreateProjectState, Model } from "./model";
+import { CreateIdeaState, CreateProjectState, Model } from "./model";
 import { About as AboutPage } from "./Page/About";
 import { Commit as CommitPage } from "./Page/Commit";
 import { CreateProject as CreateProjectPage } from "./Page/CreateProject";
@@ -42,19 +44,16 @@ export const App: React.FC<{
     CreateProjectState
   >({ _: "None" });
 
-  const [isLogOutRequest, setIsLogOutRequest] = React.useState<boolean>(false);
+  const [createIdeaState, setCreateIdeaState] = React.useState<CreateIdeaState>(
+    { _: "None" }
+  );
 
-  const {
-    allProjectIdListMaybe,
-    projectMap,
-    userMap,
-    imageMap,
-    requestAllProject,
-    requestProject,
-    requestUser,
-    setUser,
-    requestImage,
-  } = resourceAllProjectIdList.useProjectAllIdList();
+  const [isLogOutRequest, setIsLogOutRequest] = React.useState<boolean>(false);
+  const [projectIdeaIdMap, setProjectIdeaIdMap] = React.useState<
+    ReadonlyMap<ProjectId, ReadonlyArray<IdeaId>>
+  >(new Map());
+
+  const resourceModel = resourceAllProjectIdList.useProjectAllIdList();
 
   // ルーティング
   React.useEffect(() => {
@@ -71,16 +70,17 @@ export const App: React.FC<{
   }, [urlData]);
 
   // ログイン
-  React.useEffect(logInEffect(logInState, urlData, setLogInState, setUser), [
-    logInState,
-  ]);
+  React.useEffect(
+    logInEffect(logInState, urlData, setLogInState, resourceModel.setUser),
+    [logInState]
+  );
 
   React.useEffect(() => {
     switch (createProjectState._) {
       case "None":
         return;
       case "WaitCreating":
-        if (logInState._ === "LoggedIn")
+        if (logInState._ === "LoggedIn") {
           api
             .createProject({
               accessToken: logInState.accessTokenAndUserId.accessToken,
@@ -96,8 +96,35 @@ export const App: React.FC<{
                 console.log("プロジェクト作成に失敗");
               }
             });
+        }
     }
   }, [createProjectState]);
+
+  React.useEffect(() => {
+    switch (createIdeaState._) {
+      case "None":
+        return;
+      case "WaitCreating":
+        if (logInState._ === "LoggedIn") {
+          api
+            .createIdea({
+              accessToken: logInState.accessTokenAndUserId.accessToken,
+              ideaName: createIdeaState.ideaName,
+              projectId: createIdeaState.projectId,
+            })
+            .then((ideaMaybe) => {
+              if (ideaMaybe._ === "Just") {
+                setCreateIdeaState({
+                  _: "Created",
+                  ideaId: ideaMaybe.value.id,
+                });
+              } else {
+                console.log("アイデアの作成に失敗");
+              }
+            });
+        }
+    }
+  }, [createIdeaState]);
 
   React.useEffect(() => {
     if (isLogOutRequest) {
@@ -112,21 +139,39 @@ export const App: React.FC<{
     clientMode: urlData.clientMode,
     language: urlData.language,
     logInState,
-    projectMap,
-    userMap,
-    imageMap,
+    projectMap: resourceModel.projectMap,
+    userMap: resourceModel.userMap,
+    imageMap: resourceModel.imageMap,
+    ideaMap: resourceModel.ideaMap,
+    projectIdeaIdMap,
     createProjectState,
     onJump,
-    allProjectIdListMaybe,
-    requestAllProject,
-    requestProject,
-    requestUser,
-    requestImage,
+    allProjectIdListMaybe: resourceModel.allProjectIdListMaybe,
+    requestAllProject: resourceModel.requestAllProject,
+    requestProject: resourceModel.requestProject,
+    requestUser: resourceModel.requestUser,
+    requestImage: resourceModel.requestImage,
     createProject: (projectName) => {
       setCreateProjectState({ _: "WaitCreating", projectName });
     },
     requestLogOut: () => {
       setIsLogOutRequest(true);
+    },
+    createIdea: (ideaName: string, projectId: ProjectId) => {
+      setCreateIdeaState({ _: "WaitCreating", ideaName, projectId });
+    },
+    requestProjectIdea: (projectId: ProjectId) => {
+      api.getIdeaAndIdListByProjectId(projectId).then((ideaResourceList) => {
+        resourceModel.setIdeaResourceList(ideaResourceList);
+        setProjectIdeaIdMap((beforeProjectIdMap) => {
+          const newProjectIdMap = new Map(beforeProjectIdMap);
+          newProjectIdMap.set(
+            projectId,
+            ideaResourceList.map((idAndData) => idAndData.id)
+          );
+          return newProjectIdMap;
+        });
+      });
     },
   };
 
