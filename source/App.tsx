@@ -5,6 +5,7 @@ import * as indexedDB from "./indexedDB";
 import * as resourceAllProjectIdList from "./resource";
 import {
   AccessToken,
+  IdeaId,
   Language,
   Location,
   LogInState,
@@ -48,18 +49,11 @@ export const App: React.FC<{
   );
 
   const [isLogOutRequest, setIsLogOutRequest] = React.useState<boolean>(false);
+  const [projectIdeaIdMap, setProjectIdeaIdMap] = React.useState<
+    ReadonlyMap<ProjectId, ReadonlyArray<IdeaId>>
+  >(new Map());
 
-  const {
-    allProjectIdListMaybe,
-    projectMap,
-    userMap,
-    imageMap,
-    requestAllProject,
-    requestProject,
-    requestUser,
-    setUser,
-    requestImage,
-  } = resourceAllProjectIdList.useProjectAllIdList();
+  const resourceModel = resourceAllProjectIdList.useProjectAllIdList();
 
   // ルーティング
   React.useEffect(() => {
@@ -76,9 +70,10 @@ export const App: React.FC<{
   }, [urlData]);
 
   // ログイン
-  React.useEffect(logInEffect(logInState, urlData, setLogInState, setUser), [
-    logInState,
-  ]);
+  React.useEffect(
+    logInEffect(logInState, urlData, setLogInState, resourceModel.setUser),
+    [logInState]
+  );
 
   React.useEffect(() => {
     switch (createProjectState._) {
@@ -144,16 +139,18 @@ export const App: React.FC<{
     clientMode: urlData.clientMode,
     language: urlData.language,
     logInState,
-    projectMap,
-    userMap,
-    imageMap,
+    projectMap: resourceModel.projectMap,
+    userMap: resourceModel.userMap,
+    imageMap: resourceModel.imageMap,
+    ideaMap: resourceModel.ideaMap,
+    projectIdeaIdMap,
     createProjectState,
     onJump,
-    allProjectIdListMaybe,
-    requestAllProject,
-    requestProject,
-    requestUser,
-    requestImage,
+    allProjectIdListMaybe: resourceModel.allProjectIdListMaybe,
+    requestAllProject: resourceModel.requestAllProject,
+    requestProject: resourceModel.requestProject,
+    requestUser: resourceModel.requestUser,
+    requestImage: resourceModel.requestImage,
     createProject: (projectName) => {
       setCreateProjectState({ _: "WaitCreating", projectName });
     },
@@ -162,6 +159,19 @@ export const App: React.FC<{
     },
     createIdea: (ideaName: string, projectId: ProjectId) => {
       setCreateIdeaState({ _: "WaitCreating", ideaName, projectId });
+    },
+    requestProjectIdea: (projectId: ProjectId) => {
+      api.getIdeaAndIdListByProjectId(projectId).then((ideaResourceList) => {
+        resourceModel.setIdeaResourceList(ideaResourceList);
+        setProjectIdeaIdMap((beforeProjectIdMap) => {
+          const newProjectIdMap = new Map(beforeProjectIdMap);
+          newProjectIdMap.set(
+            projectId,
+            ideaResourceList.map((idAndData) => idAndData.id)
+          );
+          return newProjectIdMap;
+        });
+      });
     },
   };
 

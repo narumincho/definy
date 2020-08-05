@@ -21,6 +21,8 @@ export type Model = {
   projectMap: ReadonlyMap<data.ProjectId, data.ResourceState<data.Project>>;
   userMap: ReadonlyMap<data.UserId, data.ResourceState<data.User>>;
   imageMap: ReadonlyMap<data.ImageToken, data.StaticResourceState<string>>;
+  ideaMap: ReadonlyMap<data.IdeaId, data.ResourceState<data.Idea>>;
+  projectIdeaIdMap: ReadonlyMap<data.ProjectId, ReadonlyArray<data.IdeaId>>;
   createProjectState: CreateProjectState;
   onJump: (urlData: data.UrlData) => void;
   requestLogOut: () => void;
@@ -33,4 +35,5 @@ export type Model = {
   requestImage: (imageToken: data.ImageToken) => void;
   createProject: (projectName: string) => void;
   createIdea: (ideaName: string, projectId: data.ProjectId) => void;
+  requestProjectIdea: (projectId: data.ProjectId) => void;
 };
