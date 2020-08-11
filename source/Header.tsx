@@ -9,7 +9,7 @@ import {
 import { Model } from "./model";
 import styled from "styled-components";
 
-const SidePanelDiv = styled.div({
+const HeaderDiv = styled.div({
   display: "grid",
   gridAutoFlow: "column",
   width: "100%",
@@ -29,17 +29,17 @@ const LogoLink = styled(ui.Link)({
   },
 });
 
-export const SidePanel: React.FC<{
+export const Header: React.FC<{
   model: Model;
   onRequestLogIn: (provider: OpenIdConnectProvider) => void;
 }> = (prop) => (
-  <SidePanelDiv>
+  <HeaderDiv>
     <Logo model={prop.model} onJump={prop.model.onJump} />
     <UserViewOrLogInButton
       model={prop.model}
       requestLogIn={prop.onRequestLogIn}
     />
-  </SidePanelDiv>
+  </HeaderDiv>
 );
 
 const Logo: React.FC<{

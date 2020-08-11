@@ -12,9 +12,9 @@ import {
   UserId,
 } from "definy-core/source/data";
 import { About } from "./About";
+import { Header } from "../Header";
 import { Home } from "./Home";
 import { Model } from "../model";
-import { SidePanel } from "../SidePanel";
 import styled from "styled-components";
 
 const defaultModel: Model = {
@@ -107,7 +107,7 @@ const IconImage: React.FC<{
 };
 
 const sampleComponentList = {
-  sidePanel: <SidePanel model={defaultModel} onRequestLogIn={() => {}} />,
+  header: <Header model={defaultModel} onRequestLogIn={() => {}} />,
   home: <Home model={defaultModel} />,
   homeWithProject: (
     <Home
@@ -173,7 +173,7 @@ const TabButton = styled(ui.Button)({
 });
 
 export const Debug: React.FC<Record<never, never>> = () => {
-  const [tab, dispatchTab] = React.useState<Tab>("sidePanel");
+  const [tab, dispatchTab] = React.useState<Tab>("header");
   return (
     <DebugDiv>
       <TabListContainer>
