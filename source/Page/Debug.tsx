@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as ui from "../ui";
 import {
+  CommitId,
   ImageToken,
   LogInState,
   Maybe,
@@ -42,16 +43,14 @@ const sampleProject: ReadonlyArray<[ProjectId, ResourceState<Project>]> = [
   [
     "6b9495528e9a12186b9c210448bdc90b" as ProjectId,
     ResourceState.Loaded({
-      dataMaybe: Maybe.Just({
+      dataMaybe: Maybe.Just<Project>({
         name: "プロジェクトA",
         createTime: { day: 0, millisecond: 0 },
         createUserId: "6b9495528e9a12186b9c210448bdc90b" as UserId,
-        getTime: { day: 0, millisecond: 0 },
         iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
         imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
-        partIdList: [],
-        typePartIdList: [],
         updateTime: { day: 0, millisecond: 0 },
+        commitId: "4b21c121436718dda1ec3a6c356dfcde" as CommitId,
       }),
       getTime: { day: 0, millisecond: 0 },
     }),
@@ -59,16 +58,14 @@ const sampleProject: ReadonlyArray<[ProjectId, ResourceState<Project>]> = [
   [
     "dc2c318f1cab573562497ea1e4b96c0e" as ProjectId,
     ResourceState.Loaded({
-      dataMaybe: Maybe.Just({
+      dataMaybe: Maybe.Just<Project>({
         name: "プロジェクトB",
         createTime: { day: 0, millisecond: 0 },
         createUserId: "6b9495528e9a12186b9c210448bdc90b" as UserId,
-        getTime: { day: 0, millisecond: 0 },
         iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
         imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
-        partIdList: [],
-        typePartIdList: [],
         updateTime: { day: 0, millisecond: 0 },
+        commitId: "ace57e8c338740d74206299be8ad081a" as CommitId,
       }),
       getTime: { day: 0, millisecond: 0 },
     }),
@@ -76,16 +73,14 @@ const sampleProject: ReadonlyArray<[ProjectId, ResourceState<Project>]> = [
   [
     "4e7e1c9629b3eff2e908a151d501b8c6" as ProjectId,
     ResourceState.Loaded({
-      dataMaybe: Maybe.Just({
+      dataMaybe: Maybe.Just<Project>({
         name: "プロジェクトC",
         createTime: { day: 0, millisecond: 0 },
         createUserId: "6b9495528e9a12186b9c210448bdc90b" as UserId,
-        getTime: { day: 0, millisecond: 0 },
         iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
         imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
-        partIdList: [],
-        typePartIdList: [],
         updateTime: { day: 0, millisecond: 0 },
+        commitId: "5698010f59c9ca980de3f1c53ab16f8b" as CommitId,
       }),
       getTime: { day: 0, millisecond: 0 },
     }),
