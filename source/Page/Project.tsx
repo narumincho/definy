@@ -2,6 +2,7 @@ import * as ui from "../ui";
 import { IdeaId, Location, ProjectId } from "definy-core/source/data";
 import { Idea as IdeaComponent } from "../Component/Idea";
 import { Model } from "../model";
+import { Project as ProjectComponent } from "../Component/Project";
 import React from "react";
 import styled from "styled-components";
 
@@ -13,16 +14,6 @@ const ProjectDiv = styled.div({
   alignContent: "start",
   height: "100%",
   overflow: "auto",
-});
-
-const ProjectNameAndIcon = styled.h1({
-  padding: 8,
-  display: "grid",
-  alignItems: "center",
-  gridTemplateColumns: "48px 1fr",
-  gap: 8,
-  width: "100%",
-  margin: 0,
 });
 
 export type Page =
@@ -45,23 +36,12 @@ export const Project: React.FC<{ model: Model; page: Page }> = (prop) => {
         prop.model.requestProjectIdea(prop.page.projectId);
     }
   }, []);
-  /*
-   * if (
-   *   projectResourceState?._ === "Loaded" &&
-   *   projectResourceState?.dataResource.dataMaybe._ === "Just"
-   * ) {
-   * const project = projectResourceState.dataResource.dataMaybe.value;
-   */
   return (
     <ProjectDiv>
       <IdeaAndCommitTree model={prop.model} page={prop.page} />
       <ProjectContent model={prop.model} page={prop.page} />
     </ProjectDiv>
   );
-  /*
-   * }
-   * return <ui.CommonResourceStateView resourceState={projectResourceState} />;
-   */
 };
 
 const IdeaAndCommitTreeDiv = styled.div({
@@ -70,6 +50,7 @@ const IdeaAndCommitTreeDiv = styled.div({
   width: 320,
   display: "grid",
   alignItems: "start",
+  alignContent: "start",
 });
 
 const IdeaAndCommitTree: React.FC<{
@@ -87,6 +68,7 @@ const IdeaAndCommitTree: React.FC<{
     }
     return (
       <IdeaAndCommitTreeDiv>
+        <div>プロジェクトのページ</div>
         {ideaIdList.map((ideaId) => (
           <ui.Link
             areaTheme="Gray"
@@ -109,10 +91,6 @@ const IdeaAndCommitTree: React.FC<{
   );
 };
 
-const ProjectContentDiv = styled.div({
-  padding: 16,
-});
-
 const ProjectContent: React.FC<{
   model: Model;
   page: Page;
@@ -121,39 +99,8 @@ const ProjectContent: React.FC<{
     case "Idea":
       return <IdeaComponent model={prop.model} />;
     case "Project":
-      return <div>プロジェクトのルートアイデアを表示しなきゃな</div>;
+      return (
+        <ProjectComponent model={prop.model} projectId={prop.page.projectId} />
+      );
   }
-  /*
-   * return (
-   *   <ProjectContentDiv>
-   *     <ProjectNameAndIcon>
-   *       <ui.Image
-   *         imageStyle={{
-   *           width: 48,
-   *           height: 48,
-   *           padding: 0,
-   *           round: false,
-   *         }}
-   *         imageToken={prop.project.iconHash}
-   *         model={prop.model}
-   *       />
-   *       <div>{prop.project.name}</div>
-   *     </ProjectNameAndIcon>
-   *     <ui.Image
-   *       imageStyle={{
-   *         width: 512,
-   *         height: 633 / 2,
-   *         padding: 0,
-   *         round: false,
-   *       }}
-   *       imageToken={prop.project.imageHash}
-   *       model={prop.model}
-   *     />
-   *     <div>
-   *       作成者
-   *       <ui.User model={prop.model} userId={prop.project.createUserId} />
-   *     </div>
-   *   </ProjectContentDiv>
-   * );
-   */
 };
