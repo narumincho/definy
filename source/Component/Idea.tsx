@@ -18,6 +18,7 @@ export const Idea: React.FC<{ model: Model }> = () => {
         </ui.Button>
         <ui.Button onClick={() => {}}>子アイデアを作成する</ui.Button>
       </CommandIdv>
+      <div>マージ済みのコミット</div>
     </div>
   );
 };
