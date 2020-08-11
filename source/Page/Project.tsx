@@ -53,12 +53,18 @@ const IdeaAndCommitTreeDiv = styled.div({
   alignContent: "start",
 });
 
+const TreeLink = styled(ui.Link)({
+  padding: 8,
+  overflowX: "hidden",
+});
+
 const IdeaAndCommitTree: React.FC<{
   model: Model;
   page: Page;
 }> = (prop) => {
-  if (prop.page._ === "Project") {
-    const ideaIdList = prop.model.projectIdeaIdMap.get(prop.page.projectId);
+  const projectId = getProjectId(prop.model, prop.page);
+  if (projectId !== undefined) {
+    const ideaIdList = prop.model.projectIdeaIdMap.get(projectId);
     if (ideaIdList === undefined) {
       return (
         <IdeaAndCommitTreeDiv>
@@ -68,9 +74,18 @@ const IdeaAndCommitTree: React.FC<{
     }
     return (
       <IdeaAndCommitTreeDiv>
-        <div>プロジェクトのページ</div>
+        <TreeLink
+          areaTheme="Gray"
+          onJump={prop.model.onJump}
+          urlData={{
+            ...prop.model,
+            location: Location.Project(projectId),
+          }}
+        >
+          プロジェクトページ
+        </TreeLink>
         {ideaIdList.map((ideaId) => (
-          <ui.Link
+          <TreeLink
             areaTheme="Gray"
             key={ideaId}
             onJump={prop.model.onJump}
@@ -80,7 +95,7 @@ const IdeaAndCommitTree: React.FC<{
             }}
           >
             {ideaId}
-          </ui.Link>
+          </TreeLink>
         ))}
       </IdeaAndCommitTreeDiv>
     );
@@ -89,6 +104,24 @@ const IdeaAndCommitTree: React.FC<{
   return (
     <IdeaAndCommitTreeDiv>プロジェクトIDがわからない</IdeaAndCommitTreeDiv>
   );
+};
+
+const getProjectId = (model: Model, page: Page): ProjectId | undefined => {
+  switch (page._) {
+    case "Project":
+      return page.projectId;
+    case "Idea": {
+      const idea = model.ideaMap.get(page.ideaId);
+      if (
+        idea !== undefined &&
+        idea._ === "Loaded" &&
+        idea.dataResource.dataMaybe._ === "Just"
+      ) {
+        return idea.dataResource.dataMaybe.value.projectId;
+      }
+      return undefined;
+    }
+  }
 };
 
 const ProjectContent: React.FC<{
