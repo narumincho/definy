@@ -22,11 +22,11 @@ import { About as AboutPage } from "./Page/About";
 import { Commit as CommitPage } from "./Page/Commit";
 import { CreateProject as CreateProjectPage } from "./Page/CreateProject";
 import { Debug } from "./Page/Debug";
+import { Header } from "./Header";
 import { Home as HomePage } from "./Page/Home";
 import { LoadingBox } from "./ui";
 import { Project as ProjectPage } from "./Page/Project";
 import { Setting as SettingPage } from "./Page/Setting";
-import { SidePanel } from "./SidePanel";
 import { User as UserPage } from "./Page/User";
 import styled from "styled-components";
 
@@ -195,7 +195,7 @@ export const App: React.FC<{
   }
   return (
     <NormalStyledDiv>
-      <SidePanel
+      <Header
         key="side"
         model={model}
         onRequestLogIn={(provider) => {
