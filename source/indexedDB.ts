@@ -1,7 +1,8 @@
+import * as d from "definy-core/source/data";
 import * as util from "definy-core/source/util";
-import { AccessToken, Resource } from "definy-core/source/data";
 
 const accessTokenObjectStoreName = "accessToken";
+const imageObjectStoreName = "image";
 const accessTokenKeyName = "lastLogInUser";
 
 /**
@@ -9,7 +10,7 @@ const accessTokenKeyName = "lastLogInUser";
  */
 const checkIndexDBSupport = (): boolean => "indexedDB" in window;
 
-const databaseCache: IDBDatabase | null = null;
+let databaseCache: IDBDatabase | null = null;
 
 /**
  * データベースにアクセスする.
@@ -29,8 +30,9 @@ export const getDatabase = (): Promise<IDBDatabase | null> =>
 
     dbRequest.onupgradeneeded = (): void => {
       console.log("Databaseのversionが上がった");
-      const db = dbRequest.result;
-      db.createObjectStore(accessTokenObjectStoreName, {});
+      databaseCache = dbRequest.result;
+      databaseCache.createObjectStore(accessTokenObjectStoreName, {});
+      databaseCache.createObjectStore(imageObjectStoreName, {});
     };
 
     dbRequest.onsuccess = (): void => {
@@ -144,7 +146,7 @@ const deleteValue = <id extends string>(
 const setResource = <id extends string, data>(
   objectStoreName: string,
   id: id,
-  resource: Resource<data>
+  resource: d.Resource<data>
 ): Promise<void> =>
   new Promise((resolve, reject) => {
     getDatabase().then((database) => {
@@ -177,7 +179,7 @@ const setResource = <id extends string, data>(
       };
 
       const getRequest: IDBRequest<
-        undefined | Resource<data>
+        undefined | d.Resource<data>
       > = transaction.objectStore(objectStoreName).get(id);
     });
   });
@@ -185,8 +187,8 @@ const setResource = <id extends string, data>(
 /**
  * indexDBからアクセストークンを取得する
  */
-export const getAccessToken = (): Promise<undefined | AccessToken> =>
-  get<typeof accessTokenKeyName, AccessToken>(
+export const getAccessToken = (): Promise<undefined | d.AccessToken> =>
+  get<typeof accessTokenKeyName, d.AccessToken>(
     accessTokenObjectStoreName,
     accessTokenKeyName
   );
@@ -195,8 +197,8 @@ export const getAccessToken = (): Promise<undefined | AccessToken> =>
  * indexDBにアクセストークンを書き込む
  * @param accessToken アクセストークン
  */
-export const setAccessToken = (accessToken: AccessToken): Promise<void> =>
-  set<typeof accessTokenKeyName, AccessToken>(
+export const setAccessToken = (accessToken: d.AccessToken): Promise<void> =>
+  set<typeof accessTokenKeyName, d.AccessToken>(
     accessTokenObjectStoreName,
     accessTokenKeyName,
     accessToken
@@ -210,3 +212,27 @@ export const deleteAccessToken = (): Promise<void> =>
     accessTokenObjectStoreName,
     accessTokenKeyName
   );
+
+/**
+ * indexedDBに画像データのキャッシュを書き込む
+ * @param imageToken 画像のハッシュ値
+ * @param imagePngBinary PNGの画像バイナリのデータ
+ */
+export const setImage = (
+  imageToken: d.ImageToken,
+  imagePngBinary: Uint8Array
+): Promise<void> =>
+  set<d.ImageToken, Uint8Array>(
+    imageObjectStoreName,
+    imageToken,
+    imagePngBinary
+  );
+
+/**
+ * indexedDBから画像データを読み込む
+ * @param imageToken 画像のハッシュ値
+ */
+export const getImage = (
+  imageToken: d.ImageToken
+): Promise<Uint8Array | undefined> =>
+  get<d.ImageToken, Uint8Array>(imageObjectStoreName, imageToken);

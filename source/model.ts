@@ -634,7 +634,19 @@ const imageMapEffect = (
         break;
       case "WaitLoading":
         isChanged = true;
-        newImageData.set(imageToken, d.StaticResourceState.WaitRequesting());
+        newImageData.set(imageToken, d.StaticResourceState.Loading());
+        indexedDB.getImage(imageToken).then((binary): void => {
+          setImageMap((dict) => {
+            const newDict = new Map(dict);
+            newDict.set(
+              imageToken,
+              binary === undefined
+                ? d.StaticResourceState.WaitRequesting()
+                : d.StaticResourceState.Loaded(createImageBlobUrl(binary))
+            );
+            return newDict;
+          });
+        });
         break;
       case "Loading":
         break;
@@ -645,16 +657,13 @@ const imageMapEffect = (
           if (binaryMaybe._ === "Nothing") {
             throw new Error("存在しない画像をリクエストしてしまった");
           }
+          indexedDB.setImage(imageToken, binaryMaybe.value);
           setImageMap((dict) => {
             const newDict = new Map(dict);
             newDict.set(
               imageToken,
               d.StaticResourceState.Loaded(
-                window.URL.createObjectURL(
-                  new Blob([binaryMaybe.value], {
-                    type: "image/png",
-                  })
-                )
+                createImageBlobUrl(binaryMaybe.value)
               )
             );
             return newDict;
@@ -677,6 +686,13 @@ const imageMapEffect = (
     setImageMap(newImageData);
   }
 };
+
+const createImageBlobUrl = (binary: Uint8Array) =>
+  window.URL.createObjectURL(
+    new Blob([binary], {
+      type: "image/png",
+    })
+  );
 
 const ideaMapEffect = (
   ideaMap: ReadonlyMap<d.IdeaId, d.ResourceState<d.Idea>>,
