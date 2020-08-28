@@ -31,14 +31,10 @@ const LogoLink = styled(ui.Link)({
 
 export const Header: React.FC<{
   model: Model;
-  onRequestLogIn: (provider: OpenIdConnectProvider) => void;
 }> = (prop) => (
   <HeaderDiv>
     <Logo model={prop.model} onJump={prop.model.onJump} />
-    <UserViewOrLogInButton
-      model={prop.model}
-      requestLogIn={prop.onRequestLogIn}
-    />
+    <UserViewOrLogInButton model={prop.model} />
   </HeaderDiv>
 );
 
@@ -57,7 +53,6 @@ const Logo: React.FC<{
 
 const UserViewOrLogInButton: React.FC<{
   model: Model;
-  requestLogIn: (provider: OpenIdConnectProvider) => void;
 }> = (prop) => {
   switch (prop.model.logInState._) {
     case "WaitLoadingAccessTokenFromIndexedDB":
@@ -72,7 +67,7 @@ const UserViewOrLogInButton: React.FC<{
       return (
         <LogInButton
           language={prop.model.language}
-          requestLogIn={prop.requestLogIn}
+          requestLogIn={prop.model.requestLogIn}
         />
       );
     case "WaitVerifyingAccessToken":

@@ -1,23 +1,6 @@
 import * as React from "react";
-import * as api from "./api";
-import * as core from "definy-core";
-import * as indexedDB from "./indexedDB";
-import * as resourceAllProjectIdList from "./resource";
-import {
-  AccessToken,
-  IdeaId,
-  Language,
-  Location,
-  LogInState,
-  Maybe,
-  OpenIdConnectProvider,
-  ProjectId,
-  Resource,
-  UrlData,
-  User,
-  UserId,
-} from "definy-core/source/data";
-import { CreateIdeaState, CreateProjectState, Model } from "./model";
+import * as d from "definy-core/source/data";
+import { Init, Model, useModel } from "./model";
 import { About as AboutPage } from "./Page/About";
 import { Commit as CommitPage } from "./Page/Commit";
 import { CreateProject as CreateProjectPage } from "./Page/CreateProject";
@@ -30,180 +13,34 @@ import { Setting as SettingPage } from "./Page/Setting";
 import { User as UserPage } from "./Page/User";
 import styled from "styled-components";
 
-export const App: React.FC<{
-  accessToken: Maybe<AccessToken>;
-  initUrlData: UrlData;
-}> = (prop) => {
-  const [urlData, onJump] = React.useState<UrlData>(prop.initUrlData);
-  const [logInState, setLogInState] = React.useState<LogInState>(
-    prop.accessToken._ === "Just"
-      ? LogInState.WaitVerifyingAccessToken(prop.accessToken.value)
-      : LogInState.WaitLoadingAccessTokenFromIndexedDB
-  );
-  const [createProjectState, setCreateProjectState] = React.useState<
-    CreateProjectState
-  >({ _: "None" });
+export const App: React.FC<Init> = (prop) => {
+  const model = useModel(prop);
 
-  const [createIdeaState, setCreateIdeaState] = React.useState<CreateIdeaState>(
-    { _: "None" }
-  );
-
-  const [isLogOutRequest, setIsLogOutRequest] = React.useState<boolean>(false);
-  const [projectIdeaIdMap, setProjectIdeaIdMap] = React.useState<
-    ReadonlyMap<ProjectId, ReadonlyArray<IdeaId>>
-  >(new Map());
-
-  const resourceModel = resourceAllProjectIdList.useProjectAllIdList();
-
-  // ルーティング
-  React.useEffect(() => {
-    window.history.pushState(
-      undefined,
-      "",
-      core.urlDataAndAccessTokenToUrl(urlData, Maybe.Nothing()).toString()
-    );
-    window.addEventListener("popstate", () => {
-      onJump(
-        core.urlDataAndAccessTokenFromUrl(new URL(window.location.href)).urlData
-      );
-    });
-  }, [urlData]);
-
-  // ログイン
-  React.useEffect(
-    logInEffect(logInState, urlData, setLogInState, resourceModel.setUser),
-    [logInState]
-  );
-
-  React.useEffect(() => {
-    switch (createProjectState._) {
-      case "None":
-        return;
-      case "WaitCreating":
-        if (logInState._ === "LoggedIn") {
-          api
-            .createProject({
-              accessToken: logInState.accessTokenAndUserId.accessToken,
-              projectName: createProjectState.projectName,
-            })
-            .then((projectMaybe) => {
-              if (projectMaybe._ === "Just") {
-                setCreateProjectState({
-                  _: "Created",
-                  projectId: projectMaybe.value.id,
-                });
-              } else {
-                console.log("プロジェクト作成に失敗");
-              }
-            });
-        }
-    }
-  }, [createProjectState]);
-
-  React.useEffect(() => {
-    switch (createIdeaState._) {
-      case "None":
-        return;
-      case "WaitCreating":
-        if (logInState._ === "LoggedIn") {
-          api
-            .createIdea({
-              accessToken: logInState.accessTokenAndUserId.accessToken,
-              ideaName: createIdeaState.ideaName,
-              parentId: createIdeaState.parentId,
-            })
-            .then((ideaMaybe) => {
-              if (ideaMaybe._ === "Just") {
-                setCreateIdeaState({
-                  _: "Created",
-                  ideaId: ideaMaybe.value.id,
-                });
-              } else {
-                console.log("アイデアの作成に失敗");
-              }
-            });
-        }
-    }
-  }, [createIdeaState]);
-
-  React.useEffect(() => {
-    if (isLogOutRequest) {
-      setIsLogOutRequest(false);
-      indexedDB.deleteAccessToken().then(() => {
-        setLogInState(LogInState.Guest);
-      });
-    }
-  }, [isLogOutRequest]);
-
-  const model: Model = {
-    clientMode: urlData.clientMode,
-    language: urlData.language,
-    logInState,
-    projectMap: resourceModel.projectMap,
-    userMap: resourceModel.userMap,
-    imageMap: resourceModel.imageMap,
-    ideaMap: resourceModel.ideaMap,
-    projectIdeaIdMap,
-    createProjectState,
-    onJump,
-    allProjectIdListMaybe: resourceModel.allProjectIdListMaybe,
-    requestAllProject: resourceModel.requestAllProject,
-    requestProject: resourceModel.requestProject,
-    requestUser: resourceModel.requestUser,
-    requestImage: resourceModel.requestImage,
-    requestIdea: () => {},
-    createProject: (projectName) => {
-      setCreateProjectState({ _: "WaitCreating", projectName });
-    },
-    requestLogOut: () => {
-      setIsLogOutRequest(true);
-    },
-    createIdea: (ideaName: string, parentId: IdeaId) => {
-      setCreateIdeaState({ _: "WaitCreating", ideaName, parentId });
-    },
-    requestProjectIdea: (projectId: ProjectId) => {
-      api.getIdeaAndIdListByProjectId(projectId).then((ideaResourceList) => {
-        resourceModel.setIdeaResourceList(ideaResourceList);
-        setProjectIdeaIdMap((beforeProjectIdMap) => {
-          const newProjectIdMap = new Map(beforeProjectIdMap);
-          newProjectIdMap.set(
-            projectId,
-            ideaResourceList.map((idAndData) => idAndData.id)
-          );
-          return newProjectIdMap;
-        });
-      });
-    },
-  };
-
-  switch (logInState._) {
+  switch (model.logInState._) {
     case "WaitRequestingLogInUrl":
     case "RequestingLogInUrl":
       return (
         <RequestingLogInUrl
           message={logInMessage(
-            logInState.openIdConnectProvider,
-            urlData.language
+            model.logInState.openIdConnectProvider,
+            model.language
           )}
         />
       );
     case "JumpingToLogInPage":
       return (
         <RequestingLogInUrl
-          message={jumpMessage(new URL(logInState.string), urlData.language)}
+          message={jumpMessage(
+            new URL(model.logInState.string),
+            model.language
+          )}
         />
       );
   }
   return (
     <NormalStyledDiv>
-      <Header
-        key="side"
-        model={model}
-        onRequestLogIn={(provider) => {
-          setLogInState(LogInState.WaitRequestingLogInUrl(provider));
-        }}
-      />
-      <MainPanel location={urlData.location} model={model} />
+      <Header key="side" model={model} />
+      <MainPanel location={model.location} model={model} />
     </NormalStyledDiv>
   );
 };
@@ -230,8 +67,8 @@ const RequestingLogInUrl: React.FC<{
 );
 
 const logInMessage = (
-  provider: OpenIdConnectProvider,
-  language: Language
+  provider: d.OpenIdConnectProvider,
+  language: d.Language
 ): string => {
   switch (language) {
     case "English":
@@ -243,7 +80,7 @@ const logInMessage = (
   }
 };
 
-const jumpMessage = (url: URL, language: Language): string => {
+const jumpMessage = (url: URL, language: d.Language): string => {
   switch (language) {
     case "English":
       return `Navigating to ${url}`;
@@ -256,7 +93,7 @@ const jumpMessage = (url: URL, language: Language): string => {
 
 const MainPanel: React.FC<{
   model: Model;
-  location: Location;
+  location: d.Location;
 }> = (prop) => {
   switch (prop.location._) {
     case "Home":
@@ -291,69 +128,5 @@ const MainPanel: React.FC<{
       return <Debug />;
     default:
       return <div>他のページは準備中</div>;
-  }
-};
-
-const logInEffect = (
-  logInState: LogInState,
-  urlData: UrlData,
-  dispatchLogInState: React.Dispatch<React.SetStateAction<LogInState>>,
-  setUser: (userId: UserId, userResource: Resource<User>) => void
-): React.EffectCallback => () => {
-  switch (logInState._) {
-    case "WaitLoadingAccessTokenFromIndexedDB":
-      dispatchLogInState(LogInState.LoadingAccessTokenFromIndexedDB);
-      indexedDB.getAccessToken().then((accessToken) => {
-        if (accessToken === undefined) {
-          dispatchLogInState(LogInState.Guest);
-        } else {
-          dispatchLogInState(LogInState.WaitVerifyingAccessToken(accessToken));
-        }
-      });
-      return;
-    case "Guest":
-      return;
-    case "WaitRequestingLogInUrl":
-      dispatchLogInState(
-        LogInState.RequestingLogInUrl(logInState.openIdConnectProvider)
-      );
-      api
-        .requestLogInUrl({
-          openIdConnectProvider: logInState.openIdConnectProvider,
-          urlData,
-        })
-        .then((logInUrl) => {
-          dispatchLogInState(LogInState.JumpingToLogInPage(logInUrl));
-        });
-      return;
-    case "JumpingToLogInPage":
-      window.location.href = logInState.string;
-      return;
-    case "WaitVerifyingAccessToken":
-      dispatchLogInState({
-        _: "VerifyingAccessToken",
-        accessToken: logInState.accessToken,
-      });
-      api
-        .getUserByAccessToken(logInState.accessToken)
-        .then((userResourceAndIdMaybe) => {
-          switch (userResourceAndIdMaybe._) {
-            case "Just":
-              indexedDB.setAccessToken(logInState.accessToken);
-              dispatchLogInState(
-                LogInState.LoggedIn({
-                  accessToken: logInState.accessToken,
-                  userId: userResourceAndIdMaybe.value.id,
-                })
-              );
-              setUser(
-                userResourceAndIdMaybe.value.id,
-                userResourceAndIdMaybe.value.data
-              );
-              return;
-            case "Nothing":
-              dispatchLogInState(LogInState.Guest);
-          }
-        });
   }
 };
