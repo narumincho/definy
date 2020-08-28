@@ -301,7 +301,7 @@ export const useModel = (prop: Init): Model => {
         });
       });
     },
-    requestLogIn: (provider) => {
+    requestLogIn: (provider: d.OpenIdConnectProvider) => {
       setLogInState(d.LogInState.WaitRequestingLogInUrl(provider));
     },
   };

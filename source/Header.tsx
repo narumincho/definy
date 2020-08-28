@@ -67,7 +67,7 @@ const UserViewOrLogInButton: React.FC<{
       return (
         <LogInButton
           language={prop.model.language}
-          requestLogIn={prop.model.requestLogIn}
+          requestLogIn={(e) => prop.model.requestLogIn(e)}
         />
       );
     case "WaitVerifyingAccessToken":
