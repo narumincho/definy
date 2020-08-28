@@ -106,7 +106,7 @@ const IconImage: React.FC<{
 };
 
 const sampleComponentList = {
-  header: <Header model={defaultModel} onRequestLogIn={() => {}} />,
+  header: <Header model={defaultModel} />,
   home: <Home model={defaultModel} />,
   homeWithProject: (
     <Home
