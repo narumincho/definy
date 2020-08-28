@@ -110,7 +110,7 @@ export const App: React.FC<{
             .createIdea({
               accessToken: logInState.accessTokenAndUserId.accessToken,
               ideaName: createIdeaState.ideaName,
-              projectId: createIdeaState.projectId,
+              parentId: createIdeaState.parentId,
             })
             .then((ideaMaybe) => {
               if (ideaMaybe._ === "Just") {
@@ -151,14 +151,15 @@ export const App: React.FC<{
     requestProject: resourceModel.requestProject,
     requestUser: resourceModel.requestUser,
     requestImage: resourceModel.requestImage,
+    requestIdea: () => {},
     createProject: (projectName) => {
       setCreateProjectState({ _: "WaitCreating", projectName });
     },
     requestLogOut: () => {
       setIsLogOutRequest(true);
     },
-    createIdea: (ideaName: string, projectId: ProjectId) => {
-      setCreateIdeaState({ _: "WaitCreating", ideaName, projectId });
+    createIdea: (ideaName: string, parentId: IdeaId) => {
+      setCreateIdeaState({ _: "WaitCreating", ideaName, parentId });
     },
     requestProjectIdea: (projectId: ProjectId) => {
       api.getIdeaAndIdListByProjectId(projectId).then((ideaResourceList) => {

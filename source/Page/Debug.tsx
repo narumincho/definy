@@ -1,16 +1,6 @@
 import * as React from "react";
+import * as d from "definy-core/source/data";
 import * as ui from "../ui";
-import {
-  CommitId,
-  ImageToken,
-  LogInState,
-  Maybe,
-  Project,
-  ProjectId,
-  ResourceState,
-  StaticResourceState,
-  UserId,
-} from "definy-core/source/data";
 import { About } from "./About";
 import { Header } from "../Header";
 import { Home } from "./Home";
@@ -20,14 +10,14 @@ import styled from "styled-components";
 const defaultModel: Model = {
   clientMode: "DebugMode",
   language: "English",
-  logInState: LogInState.Guest,
+  logInState: d.LogInState.Guest,
   onJump: () => {},
   projectMap: new Map(),
   userMap: new Map(),
   imageMap: new Map(),
   ideaMap: new Map(),
   projectIdeaIdMap: new Map(),
-  allProjectIdListMaybe: Maybe.Nothing(),
+  allProjectIdListMaybe: d.Maybe.Nothing(),
   createProjectState: { _: "None" },
   requestLogOut: () => {},
   requestAllProject: () => {},
@@ -36,51 +26,58 @@ const defaultModel: Model = {
   requestImage: () => {},
   createProject: () => {},
   createIdea: () => {},
+  requestIdea: () => {},
   requestProjectIdea: () => {},
 };
 
-const sampleProject: ReadonlyArray<[ProjectId, ResourceState<Project>]> = [
+const sampleProject: ReadonlyArray<[
+  d.ProjectId,
+  d.ResourceState<d.Project>
+]> = [
   [
-    "6b9495528e9a12186b9c210448bdc90b" as ProjectId,
-    ResourceState.Loaded({
-      dataMaybe: Maybe.Just<Project>({
+    "6b9495528e9a12186b9c210448bdc90b" as d.ProjectId,
+    d.ResourceState.Loaded({
+      dataMaybe: d.Maybe.Just<d.Project>({
         name: "プロジェクトA",
         createTime: { day: 0, millisecond: 0 },
-        createUserId: "6b9495528e9a12186b9c210448bdc90b" as UserId,
-        iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
-        imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
+        createUserId: "6b9495528e9a12186b9c210448bdc90b" as d.UserId,
+        iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as d.ImageToken,
+        imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as d.ImageToken,
         updateTime: { day: 0, millisecond: 0 },
-        commitId: "4b21c121436718dda1ec3a6c356dfcde" as CommitId,
+        commitId: "4b21c121436718dda1ec3a6c356dfcde" as d.CommitId,
+        rootIdeaId: "2c631445a030dc42a895fd8077eeb685" as d.IdeaId,
       }),
       getTime: { day: 0, millisecond: 0 },
     }),
   ],
   [
-    "dc2c318f1cab573562497ea1e4b96c0e" as ProjectId,
-    ResourceState.Loaded({
-      dataMaybe: Maybe.Just<Project>({
+    "dc2c318f1cab573562497ea1e4b96c0e" as d.ProjectId,
+    d.ResourceState.Loaded({
+      dataMaybe: d.Maybe.Just<d.Project>({
         name: "プロジェクトB",
         createTime: { day: 0, millisecond: 0 },
-        createUserId: "6b9495528e9a12186b9c210448bdc90b" as UserId,
-        iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
-        imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
+        createUserId: "6b9495528e9a12186b9c210448bdc90b" as d.UserId,
+        iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as d.ImageToken,
+        imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as d.ImageToken,
         updateTime: { day: 0, millisecond: 0 },
-        commitId: "ace57e8c338740d74206299be8ad081a" as CommitId,
+        commitId: "ace57e8c338740d74206299be8ad081a" as d.CommitId,
+        rootIdeaId: "2c631445a030dc42a895fd8077eeb685" as d.IdeaId,
       }),
       getTime: { day: 0, millisecond: 0 },
     }),
   ],
   [
-    "4e7e1c9629b3eff2e908a151d501b8c6" as ProjectId,
-    ResourceState.Loaded({
-      dataMaybe: Maybe.Just<Project>({
+    "4e7e1c9629b3eff2e908a151d501b8c6" as d.ProjectId,
+    d.ResourceState.Loaded({
+      dataMaybe: d.Maybe.Just<d.Project>({
         name: "プロジェクトC",
         createTime: { day: 0, millisecond: 0 },
-        createUserId: "6b9495528e9a12186b9c210448bdc90b" as UserId,
-        iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
-        imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as ImageToken,
+        createUserId: "6b9495528e9a12186b9c210448bdc90b" as d.UserId,
+        iconHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as d.ImageToken,
+        imageHash: "a3acd80b2cc41ae8977ad486a8bdad7039a6e6a5d4ac19ecb66aab3231addce4" as d.ImageToken,
         updateTime: { day: 0, millisecond: 0 },
-        commitId: "5698010f59c9ca980de3f1c53ab16f8b" as CommitId,
+        commitId: "5698010f59c9ca980de3f1c53ab16f8b" as d.CommitId,
+        rootIdeaId: "2c631445a030dc42a895fd8077eeb685" as d.IdeaId,
       }),
       getTime: { day: 0, millisecond: 0 },
     }),
@@ -92,15 +89,15 @@ const ImageFixSizeAndWithBorder = styled(ui.Image)({
 });
 
 const IconImage: React.FC<{
-  imageStaticResource: StaticResourceState<string>;
+  imageStaticResource: d.StaticResourceState<string>;
 }> = (prop) => {
   return (
     <ImageFixSizeAndWithBorder
       imageStyle={{ width: 64, height: 64, padding: 0, round: false }}
-      imageToken={"a" as ImageToken}
+      imageToken={"a" as d.ImageToken}
       model={{
         ...defaultModel,
-        imageMap: new Map([["a" as ImageToken, prop.imageStaticResource]]),
+        imageMap: new Map([["a" as d.ImageToken, prop.imageStaticResource]]),
       }}
     />
   );
@@ -119,9 +116,9 @@ const sampleComponentList = {
           sampleProject[2],
         ]),
         createProjectState: { _: "None" },
-        allProjectIdListMaybe: Maybe.Just(
-          ResourceState.Loaded({
-            dataMaybe: Maybe.Just([
+        allProjectIdListMaybe: d.Maybe.Just(
+          d.ResourceState.Loaded({
+            dataMaybe: d.Maybe.Just([
               sampleProject[0][0],
               sampleProject[1][0],
               sampleProject[2][0],
@@ -136,13 +133,13 @@ const sampleComponentList = {
   requestingImage: (
     <div>
       WaitLoading
-      <IconImage imageStaticResource={StaticResourceState.WaitLoading()} />
+      <IconImage imageStaticResource={d.StaticResourceState.WaitLoading()} />
       Loading
-      <IconImage imageStaticResource={StaticResourceState.Loading()} />
+      <IconImage imageStaticResource={d.StaticResourceState.Loading()} />
       WaitRequesting
-      <IconImage imageStaticResource={StaticResourceState.WaitRequesting()} />
+      <IconImage imageStaticResource={d.StaticResourceState.WaitRequesting()} />
       Requesting
-      <IconImage imageStaticResource={StaticResourceState.Requesting()} />
+      <IconImage imageStaticResource={d.StaticResourceState.Requesting()} />
     </div>
   ),
 };

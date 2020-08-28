@@ -10,8 +10,8 @@ export type CreateProjectState =
 
 export type CreateIdeaState =
   | { _: "None" }
-  | { _: "WaitCreating"; ideaName: string; projectId: data.ProjectId }
-  | { _: "Creating"; ideaName: string; projectId: data.ProjectId }
+  | { _: "WaitCreating"; ideaName: string; parentId: data.IdeaId }
+  | { _: "Creating"; ideaName: string; parentId: data.ProjectId }
   | { _: "Created"; ideaId: data.IdeaId };
 
 export type Model = {
@@ -33,7 +33,8 @@ export type Model = {
   requestProject: (projectId: data.ProjectId) => void;
   requestUser: (userId: data.UserId) => void;
   requestImage: (imageToken: data.ImageToken) => void;
+  requestIdea: (ideaId: data.IdeaId) => void;
   createProject: (projectName: string) => void;
-  createIdea: (ideaName: string, projectId: data.ProjectId) => void;
+  createIdea: (ideaName: string, parentId: data.IdeaId) => void;
   requestProjectIdea: (projectId: data.ProjectId) => void;
 };

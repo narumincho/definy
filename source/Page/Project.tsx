@@ -34,6 +34,9 @@ export const Project: React.FC<{ model: Model; page: Page }> = (prop) => {
       case "Project":
         prop.model.requestProject(prop.page.projectId);
         prop.model.requestProjectIdea(prop.page.projectId);
+        return;
+      case "Idea":
+        prop.model.requestIdea(prop.page.ideaId);
     }
   }, []);
   return (
@@ -130,7 +133,7 @@ const ProjectContent: React.FC<{
 }> = (prop) => {
   switch (prop.page._) {
     case "Idea":
-      return <IdeaComponent model={prop.model} />;
+      return <IdeaComponent ideaId={prop.page.ideaId} model={prop.model} />;
     case "Project":
       return (
         <ProjectComponent model={prop.model} projectId={prop.page.projectId} />
