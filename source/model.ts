@@ -51,8 +51,11 @@ export type Init = {
   accessToken: d.Maybe<d.AccessToken>;
 };
 
+/**
+ * Definy のクライアントの見た目以外の処理をする.
+ */
 export const useModel = (prop: Init): Model => {
-  const [allProjectIdListMaybe, dispatchAllProjectIdList] = React.useState<
+  const [allProjectIdListMaybe, setAllProjectIdList] = React.useState<
     d.Maybe<d.ResourceState<ReadonlyArray<d.ProjectId>>>
   >(d.Maybe.Nothing());
   const [projectMap, setProjectMap] = React.useState<
@@ -127,61 +130,19 @@ export const useModel = (prop: Init): Model => {
     });
   }, [urlData]);
 
-  // ログイン
   React.useEffect(logInEffect(logInState, urlData, setLogInState, setUser), [
     logInState,
   ]);
 
-  React.useEffect(() => {
-    switch (createProjectState._) {
-      case "None":
-        return;
-      case "WaitCreating":
-        if (logInState._ === "LoggedIn") {
-          api
-            .createProject({
-              accessToken: logInState.accessTokenAndUserId.accessToken,
-              projectName: createProjectState.projectName,
-            })
-            .then((projectMaybe) => {
-              if (projectMaybe._ === "Just") {
-                setCreateProjectState({
-                  _: "Created",
-                  projectId: projectMaybe.value.id,
-                });
-              } else {
-                console.log("プロジェクト作成に失敗");
-              }
-            });
-        }
-    }
-  }, [createProjectState]);
+  React.useEffect(
+    createProjectEffect(createProjectState, logInState, setCreateProjectState),
+    [createProjectState]
+  );
 
-  React.useEffect(() => {
-    switch (createIdeaState._) {
-      case "None":
-        return;
-      case "WaitCreating":
-        if (logInState._ === "LoggedIn") {
-          api
-            .createIdea({
-              accessToken: logInState.accessTokenAndUserId.accessToken,
-              ideaName: createIdeaState.ideaName,
-              parentId: createIdeaState.parentId,
-            })
-            .then((ideaMaybe) => {
-              if (ideaMaybe._ === "Just") {
-                setCreateIdeaState({
-                  _: "Created",
-                  ideaId: ideaMaybe.value.id,
-                });
-              } else {
-                console.log("アイデアの作成に失敗");
-              }
-            });
-        }
-    }
-  }, [createIdeaState]);
+  React.useEffect(
+    createIdeaEffect(createIdeaState, logInState, setCreateIdeaState),
+    [createIdeaState]
+  );
 
   React.useEffect(() => {
     if (isLogOutRequest) {
@@ -192,270 +153,22 @@ export const useModel = (prop: Init): Model => {
     }
   }, [isLogOutRequest]);
 
-  // プロジェクトの一覧
-  React.useEffect(() => {
-    console.log("ResourceStateに応じて処理をする", allProjectIdListMaybe);
-    if (allProjectIdListMaybe._ === "Nothing") {
-      return;
-    }
-    const allProjectIdList = allProjectIdListMaybe.value;
-    switch (allProjectIdList._) {
-      case "Loaded":
-      case "Unknown":
-        return;
-      case "WaitLoading":
-        // dispatchAllProjectIdList(data.Maybe.Just(Resource.Loading()));
-        /*
-         * indexedDBにアクセスして取得
-         * 代わりに失敗したということでWaitRequestingにする
-         */
-        dispatchAllProjectIdList(
-          d.Maybe.Just(d.ResourceState.WaitRequesting())
-        );
-        return;
-      case "Loading":
-        return;
-      case "WaitRequesting":
-        dispatchAllProjectIdList(d.Maybe.Just(d.ResourceState.Requesting()));
-        api.getAllProject().then((idAndProjectResourceList) => {
-          setProjectMap(
-            new Map(
-              idAndProjectResourceList.map((project) => [
-                project.id,
-                d.ResourceState.Loaded(project.data),
-              ])
-            )
-          );
+  React.useEffect(
+    allProjectIdEffect(
+      allProjectIdListMaybe,
+      setAllProjectIdList,
+      setProjectMap
+    ),
+    [allProjectIdListMaybe]
+  );
 
-          dispatchAllProjectIdList(
-            d.Maybe.Just(
-              d.ResourceState.Loaded({
-                dataMaybe: d.Maybe.Just(
-                  idAndProjectResourceList.map((project) => project.id)
-                ),
-                getTime: coreUtil.timeFromDate(new Date()),
-              })
-            )
-          );
-        });
-        return;
+  React.useEffect(projectMapEffect(projectMap, setProjectMap), [projectMap]);
 
-      case "Requesting":
-        return;
-      case "WaitUpdating":
-        dispatchAllProjectIdList(
-          d.Maybe.Just(d.ResourceState.Updating(allProjectIdList.dataResource))
-        );
-        api.getAllProject().then((idAndProjectResourceList) => {
-          setProjectMap(
-            new Map(
-              idAndProjectResourceList.map((project) => [
-                project.id,
-                d.ResourceState.Loaded(project.data),
-              ])
-            )
-          );
-          dispatchAllProjectIdList(
-            d.Maybe.Just(
-              d.ResourceState.Loaded({
-                dataMaybe: d.Maybe.Just(
-                  idAndProjectResourceList.map((project) => project.id)
-                ),
-                getTime: coreUtil.timeFromDate(new Date()),
-              })
-            )
-          );
-        });
-        return;
-      case "Updating":
-        return;
-      case "WaitRetrying":
-        console.log("サーバーに問い合わせてプロジェクトの一覧を再取得する予定");
-    }
-  }, [allProjectIdListMaybe]);
+  React.useEffect(userMapEffect(userMap, setUserMap), [userMap]);
 
-  // プロジェクト
-  React.useEffect(() => {
-    const newProjectData = new Map(projectMap);
-    let isChanged = false;
-    for (const [projectId, projectResource] of projectMap) {
-      switch (projectResource._) {
-        case "Loaded":
-          break;
-        case "WaitLoading":
-          isChanged = true;
-          newProjectData.set(projectId, d.ResourceState.WaitRequesting());
-          break;
-        case "Loading":
-          break;
-        case "WaitRequesting":
-          isChanged = true;
-          newProjectData.set(projectId, d.ResourceState.Requesting());
-          api.getProject(projectId).then((project) => {
-            setProjectMap((dict) => {
-              const newDict = new Map(dict);
-              newDict.set(projectId, ResourceState.Loaded(project));
-              return newDict;
-            });
-          });
-          break;
-        case "Requesting":
-          break;
-        case "WaitRetrying":
-          isChanged = true;
-          console.log("再度プロジェクトのリクエストをする予定");
-          break;
-        case "Retrying":
-        case "WaitUpdating":
-        case "Updating":
-        case "Unknown":
-          break;
-      }
-    }
-    if (isChanged) {
-      setProjectMap(newProjectData);
-    }
-  }, [projectMap]);
+  React.useEffect(imageMapEffect(imageMap, setImageMap), [imageMap]);
 
-  // ユーザー
-  React.useEffect(() => {
-    const newUserData = new Map(userMap);
-    let isChanged = false;
-    for (const [userId, userResourceState] of userMap) {
-      switch (userResourceState._) {
-        case "Loaded":
-          break;
-        case "WaitLoading":
-          isChanged = true;
-          newUserData.set(userId, d.ResourceState.WaitRequesting());
-          break;
-        case "Loading":
-          break;
-        case "WaitRequesting":
-          isChanged = true;
-          newUserData.set(userId, d.ResourceState.Requesting());
-          api.getUser(userId).then((userResource) => {
-            setUserMap((dict) => {
-              const newDict = new Map(dict);
-              newDict.set(userId, ResourceState.Loaded(userResource));
-              return newDict;
-            });
-          });
-          break;
-        case "Requesting":
-          break;
-        case "WaitRetrying":
-          isChanged = true;
-          console.log("再度ユーザーのリクエストをする予定");
-          break;
-        case "Retrying":
-        case "WaitUpdating":
-        case "Updating":
-        case "Unknown":
-          break;
-      }
-    }
-    if (isChanged) {
-      setUserMap(newUserData);
-    }
-  }, [userMap]);
-
-  // 画像
-  React.useEffect(() => {
-    const newImageData = new Map(imageMap);
-    let isChanged = false;
-    for (const [imageToken, imageDataItem] of imageMap) {
-      switch (imageDataItem._) {
-        case "Loaded":
-          break;
-        case "WaitLoading":
-          isChanged = true;
-          newImageData.set(imageToken, d.StaticResourceState.WaitRequesting());
-          break;
-        case "Loading":
-          break;
-        case "WaitRequesting":
-          isChanged = true;
-          newImageData.set(imageToken, d.StaticResourceState.Requesting());
-          api.getImageFile(imageToken).then((binaryMaybe) => {
-            if (binaryMaybe._ === "Nothing") {
-              throw new Error("存在しない画像をリクエストしてしまった");
-            }
-            setImageMap((dict) => {
-              const newDict = new Map(dict);
-              newDict.set(
-                imageToken,
-                StaticResourceState.Loaded(
-                  window.URL.createObjectURL(
-                    new Blob([binaryMaybe.value], {
-                      type: "image/png",
-                    })
-                  )
-                )
-              );
-              return newDict;
-            });
-          });
-          break;
-        case "Requesting":
-          break;
-        case "WaitRetrying":
-          isChanged = true;
-          console.log("再度画像のリクエストをする予定");
-          break;
-        case "Retrying":
-          break;
-        case "Unknown":
-          break;
-      }
-    }
-    if (isChanged) {
-      setImageMap(newImageData);
-    }
-  }, [imageMap]);
-
-  // アイデア
-  React.useEffect(() => {
-    const newIdeaData = new Map(ideaMap);
-    let isChanged = false;
-    for (const [ideaId, userResourceState] of ideaMap) {
-      switch (userResourceState._) {
-        case "Loaded":
-          break;
-        case "WaitLoading":
-          isChanged = true;
-          newIdeaData.set(ideaId, d.ResourceState.WaitRequesting());
-          break;
-        case "Loading":
-          break;
-        case "WaitRequesting":
-          isChanged = true;
-          newIdeaData.set(ideaId, d.ResourceState.Requesting());
-          api.getIdea(ideaId).then((userResource) => {
-            setIdeaMap((dict) => {
-              const newDict = new Map(dict);
-              newDict.set(ideaId, ResourceState.Loaded(userResource));
-              return newDict;
-            });
-          });
-          break;
-        case "Requesting":
-          break;
-        case "WaitRetrying":
-          isChanged = true;
-          console.log("再度アイデアのリクエストをする予定");
-          break;
-        case "Retrying":
-        case "WaitUpdating":
-        case "Updating":
-        case "Unknown":
-          break;
-      }
-    }
-    if (isChanged) {
-      setIdeaMap(newIdeaData);
-    }
-  }, [userMap]);
+  React.useEffect(ideaMapEffect(ideaMap, setIdeaMap), [ideaMap]);
 
   // 更新
   const updateCheck = () => {
@@ -466,7 +179,7 @@ export const useModel = (prop: Init): Model => {
     }
     loopCount.current = 0;
 
-    dispatchAllProjectIdList(
+    setAllProjectIdList(
       (
         beforeAllProjectIdListMaybe: d.Maybe<
           d.ResourceState<ReadonlyArray<d.ProjectId>>
@@ -522,7 +235,7 @@ export const useModel = (prop: Init): Model => {
     projectIdeaIdMap,
     onJump,
     requestAllProject: () => {
-      dispatchAllProjectIdList((beforeAllProjectIdListMaybe) => {
+      setAllProjectIdList((beforeAllProjectIdListMaybe) => {
         if (beforeAllProjectIdListMaybe._ === "Nothing") {
           return d.Maybe.Just(d.ResourceState.WaitLoading());
         }
@@ -657,5 +370,357 @@ const logInEffect = (
               dispatchLogInState(d.LogInState.Guest);
           }
         });
+  }
+};
+
+const createProjectEffect = (
+  createProjectState: CreateProjectState,
+  logInState: d.LogInState,
+  setCreateProjectState: React.Dispatch<
+    React.SetStateAction<CreateProjectState>
+  >
+): React.EffectCallback => () => {
+  switch (createProjectState._) {
+    case "None":
+      return;
+    case "WaitCreating":
+      if (logInState._ === "LoggedIn") {
+        api
+          .createProject({
+            accessToken: logInState.accessTokenAndUserId.accessToken,
+            projectName: createProjectState.projectName,
+          })
+          .then((projectMaybe) => {
+            if (projectMaybe._ === "Just") {
+              setCreateProjectState({
+                _: "Created",
+                projectId: projectMaybe.value.id,
+              });
+            } else {
+              console.log("プロジェクト作成に失敗");
+            }
+          });
+      }
+  }
+};
+
+const createIdeaEffect = (
+  createIdeaState: CreateIdeaState,
+  logInState: d.LogInState,
+  setCreateIdeaState: React.Dispatch<React.SetStateAction<CreateIdeaState>>
+): React.EffectCallback => () => {
+  switch (createIdeaState._) {
+    case "None":
+      return;
+    case "WaitCreating":
+      if (logInState._ === "LoggedIn") {
+        api
+          .createIdea({
+            accessToken: logInState.accessTokenAndUserId.accessToken,
+            ideaName: createIdeaState.ideaName,
+            parentId: createIdeaState.parentId,
+          })
+          .then((ideaMaybe) => {
+            if (ideaMaybe._ === "Just") {
+              setCreateIdeaState({
+                _: "Created",
+                ideaId: ideaMaybe.value.id,
+              });
+            } else {
+              console.log("アイデアの作成に失敗");
+            }
+          });
+      }
+  }
+};
+
+const allProjectIdEffect = (
+  allProjectIdListMaybe: d.Maybe<d.ResourceState<ReadonlyArray<d.ProjectId>>>,
+  setAllProjectIdList: React.Dispatch<
+    React.SetStateAction<d.Maybe<d.ResourceState<ReadonlyArray<d.ProjectId>>>>
+  >,
+  setProjectMap: React.Dispatch<
+    React.SetStateAction<ReadonlyMap<d.ProjectId, d.ResourceState<d.Project>>>
+  >
+): React.EffectCallback => () => {
+  console.log("ResourceStateに応じて処理をする", allProjectIdListMaybe);
+  if (allProjectIdListMaybe._ === "Nothing") {
+    return;
+  }
+  const allProjectIdList = allProjectIdListMaybe.value;
+  switch (allProjectIdList._) {
+    case "Loaded":
+    case "Unknown":
+      return;
+    case "WaitLoading":
+      // dispatchAllProjectIdList(data.Maybe.Just(Resource.Loading()));
+      /*
+       * indexedDBにアクセスして取得
+       * 代わりに失敗したということでWaitRequestingにする
+       */
+      setAllProjectIdList(d.Maybe.Just(d.ResourceState.WaitRequesting()));
+      return;
+    case "Loading":
+      return;
+    case "WaitRequesting":
+      setAllProjectIdList(d.Maybe.Just(d.ResourceState.Requesting()));
+      api.getAllProject().then((idAndProjectResourceList) => {
+        setProjectMap(
+          new Map(
+            idAndProjectResourceList.map((project) => [
+              project.id,
+              d.ResourceState.Loaded(project.data),
+            ])
+          )
+        );
+
+        setAllProjectIdList(
+          d.Maybe.Just(
+            d.ResourceState.Loaded({
+              dataMaybe: d.Maybe.Just(
+                idAndProjectResourceList.map((project) => project.id)
+              ),
+              getTime: coreUtil.timeFromDate(new Date()),
+            })
+          )
+        );
+      });
+      return;
+
+    case "Requesting":
+      return;
+    case "WaitUpdating":
+      setAllProjectIdList(
+        d.Maybe.Just(d.ResourceState.Updating(allProjectIdList.dataResource))
+      );
+      api.getAllProject().then((idAndProjectResourceList) => {
+        setProjectMap(
+          new Map(
+            idAndProjectResourceList.map((project) => [
+              project.id,
+              d.ResourceState.Loaded(project.data),
+            ])
+          )
+        );
+        setAllProjectIdList(
+          d.Maybe.Just(
+            d.ResourceState.Loaded({
+              dataMaybe: d.Maybe.Just(
+                idAndProjectResourceList.map((project) => project.id)
+              ),
+              getTime: coreUtil.timeFromDate(new Date()),
+            })
+          )
+        );
+      });
+      return;
+    case "Updating":
+      return;
+    case "WaitRetrying":
+      console.log("サーバーに問い合わせてプロジェクトの一覧を再取得する予定");
+  }
+};
+
+/**
+ * プロジェクトのデータ
+ */
+const projectMapEffect = (
+  projectMap: ReadonlyMap<d.ProjectId, d.ResourceState<d.Project>>,
+  setProjectMap: React.Dispatch<
+    React.SetStateAction<ReadonlyMap<d.ProjectId, d.ResourceState<d.Project>>>
+  >
+): React.EffectCallback => () => {
+  const newProjectData = new Map(projectMap);
+  let isChanged = false;
+  for (const [projectId, projectResource] of projectMap) {
+    switch (projectResource._) {
+      case "Loaded":
+        break;
+      case "WaitLoading":
+        isChanged = true;
+        newProjectData.set(projectId, d.ResourceState.WaitRequesting());
+        break;
+      case "Loading":
+        break;
+      case "WaitRequesting":
+        isChanged = true;
+        newProjectData.set(projectId, d.ResourceState.Requesting());
+        api.getProject(projectId).then((project) => {
+          setProjectMap((dict) => {
+            const newDict = new Map(dict);
+            newDict.set(projectId, d.ResourceState.Loaded(project));
+            return newDict;
+          });
+        });
+        break;
+      case "Requesting":
+        break;
+      case "WaitRetrying":
+        isChanged = true;
+        console.log("再度プロジェクトのリクエストをする予定");
+        break;
+      case "Retrying":
+      case "WaitUpdating":
+      case "Updating":
+      case "Unknown":
+        break;
+    }
+  }
+  if (isChanged) {
+    setProjectMap(newProjectData);
+  }
+};
+
+const userMapEffect = (
+  userMap: ReadonlyMap<d.UserId, d.ResourceState<d.User>>,
+  setUserMap: React.Dispatch<
+    React.SetStateAction<ReadonlyMap<d.UserId, d.ResourceState<d.User>>>
+  >
+): React.EffectCallback => () => {
+  const newUserData = new Map(userMap);
+  let isChanged = false;
+  for (const [userId, userResourceState] of userMap) {
+    switch (userResourceState._) {
+      case "Loaded":
+        break;
+      case "WaitLoading":
+        isChanged = true;
+        newUserData.set(userId, d.ResourceState.WaitRequesting());
+        break;
+      case "Loading":
+        break;
+      case "WaitRequesting":
+        isChanged = true;
+        newUserData.set(userId, d.ResourceState.Requesting());
+        api.getUser(userId).then((userResource) => {
+          setUserMap((dict) => {
+            const newDict = new Map(dict);
+            newDict.set(userId, d.ResourceState.Loaded(userResource));
+            return newDict;
+          });
+        });
+        break;
+      case "Requesting":
+        break;
+      case "WaitRetrying":
+        isChanged = true;
+        console.log("再度ユーザーのリクエストをする予定");
+        break;
+      case "Retrying":
+      case "WaitUpdating":
+      case "Updating":
+      case "Unknown":
+        break;
+    }
+  }
+  if (isChanged) {
+    setUserMap(newUserData);
+  }
+};
+
+const imageMapEffect = (
+  imageMap: ReadonlyMap<d.ImageToken, d.StaticResourceState<string>>,
+  setImageMap: React.Dispatch<
+    React.SetStateAction<
+      ReadonlyMap<d.ImageToken, d.StaticResourceState<string>>
+    >
+  >
+): React.EffectCallback => () => {
+  const newImageData = new Map(imageMap);
+  let isChanged = false;
+  for (const [imageToken, imageDataItem] of imageMap) {
+    switch (imageDataItem._) {
+      case "Loaded":
+        break;
+      case "WaitLoading":
+        isChanged = true;
+        newImageData.set(imageToken, d.StaticResourceState.WaitRequesting());
+        break;
+      case "Loading":
+        break;
+      case "WaitRequesting":
+        isChanged = true;
+        newImageData.set(imageToken, d.StaticResourceState.Requesting());
+        api.getImageFile(imageToken).then((binaryMaybe) => {
+          if (binaryMaybe._ === "Nothing") {
+            throw new Error("存在しない画像をリクエストしてしまった");
+          }
+          setImageMap((dict) => {
+            const newDict = new Map(dict);
+            newDict.set(
+              imageToken,
+              d.StaticResourceState.Loaded(
+                window.URL.createObjectURL(
+                  new Blob([binaryMaybe.value], {
+                    type: "image/png",
+                  })
+                )
+              )
+            );
+            return newDict;
+          });
+        });
+        break;
+      case "Requesting":
+        break;
+      case "WaitRetrying":
+        isChanged = true;
+        console.log("再度画像のリクエストをする予定");
+        break;
+      case "Retrying":
+        break;
+      case "Unknown":
+        break;
+    }
+  }
+  if (isChanged) {
+    setImageMap(newImageData);
+  }
+};
+
+const ideaMapEffect = (
+  ideaMap: ReadonlyMap<d.IdeaId, d.ResourceState<d.Idea>>,
+  setIdeaMap: React.Dispatch<
+    React.SetStateAction<ReadonlyMap<d.IdeaId, d.ResourceState<d.Idea>>>
+  >
+): React.EffectCallback => () => {
+  const newIdeaData = new Map(ideaMap);
+  let isChanged = false;
+  for (const [ideaId, userResourceState] of ideaMap) {
+    switch (userResourceState._) {
+      case "Loaded":
+        break;
+      case "WaitLoading":
+        isChanged = true;
+        newIdeaData.set(ideaId, d.ResourceState.WaitRequesting());
+        break;
+      case "Loading":
+        break;
+      case "WaitRequesting":
+        isChanged = true;
+        newIdeaData.set(ideaId, d.ResourceState.Requesting());
+        api.getIdea(ideaId).then((userResource) => {
+          setIdeaMap((dict) => {
+            const newDict = new Map(dict);
+            newDict.set(ideaId, d.ResourceState.Loaded(userResource));
+            return newDict;
+          });
+        });
+        break;
+      case "Requesting":
+        break;
+      case "WaitRetrying":
+        isChanged = true;
+        console.log("再度アイデアのリクエストをする予定");
+        break;
+      case "Retrying":
+      case "WaitUpdating":
+      case "Updating":
+      case "Unknown":
+        break;
+    }
+  }
+  if (isChanged) {
+    setIdeaMap(newIdeaData);
   }
 };
