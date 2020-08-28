@@ -10,6 +10,7 @@ import styled from "styled-components";
 const defaultModel: Model = {
   clientMode: "DebugMode",
   language: "English",
+  location: d.Location.Home,
   logInState: d.LogInState.Guest,
   onJump: () => {},
   projectMap: new Map(),
@@ -28,6 +29,7 @@ const defaultModel: Model = {
   createIdea: () => {},
   requestIdea: () => {},
   requestProjectIdea: () => {},
+  requestLogIn: () => {},
 };
 
 const sampleProject: ReadonlyArray<[
