@@ -1,5 +1,5 @@
+import * as d from "definy-core/source/data";
 import * as ui from "../ui";
-import { IdeaId, Location, ProjectId } from "definy-core/source/data";
 import { Idea as IdeaComponent } from "../Component/Idea";
 import { Model } from "../model";
 import { Project as ProjectComponent } from "../Component/Project";
@@ -19,11 +19,11 @@ const ProjectDiv = styled.div({
 export type Page =
   | {
       _: "Project";
-      projectId: ProjectId;
+      projectId: d.ProjectId;
     }
   | {
       _: "Idea";
-      ideaId: IdeaId;
+      ideaId: d.IdeaId;
     };
 
 export const Project: React.FC<{ model: Model; page: Page }> = (prop) => {
@@ -51,9 +51,6 @@ const IdeaAndCommitTreeDiv = styled.div({
   overflowY: "scroll",
   height: "100%",
   width: 320,
-  display: "grid",
-  alignItems: "start",
-  alignContent: "start",
 });
 
 const TreeLink = styled(ui.Link)({
@@ -65,9 +62,9 @@ const IdeaAndCommitTree: React.FC<{
   model: Model;
   page: Page;
 }> = (prop) => {
-  const projectId = getProjectId(prop.model, prop.page);
-  if (projectId !== undefined) {
-    const ideaIdList = prop.model.projectIdeaIdMap.get(projectId);
+  const projectIdAndData = getProjectIdAndData(prop.model, prop.page);
+  if (projectIdAndData !== undefined) {
+    const ideaIdList = prop.model.projectIdeaIdMap.get(projectIdAndData.id);
     if (ideaIdList === undefined) {
       return (
         <IdeaAndCommitTreeDiv>
@@ -82,7 +79,7 @@ const IdeaAndCommitTree: React.FC<{
           onJump={prop.model.onJump}
           urlData={{
             ...prop.model,
-            location: Location.Project(projectId),
+            location: d.Location.Project(projectIdAndData.id),
           }}
         >
           プロジェクトページ
@@ -94,7 +91,7 @@ const IdeaAndCommitTree: React.FC<{
             onJump={prop.model.onJump}
             urlData={{
               ...prop.model,
-              location: Location.Idea(ideaId),
+              location: d.Location.Idea(ideaId),
             }}
           >
             {ideaId}
@@ -104,12 +101,32 @@ const IdeaAndCommitTree: React.FC<{
     );
   }
 
-  return (
-    <IdeaAndCommitTreeDiv>プロジェクトIDがわからない</IdeaAndCommitTreeDiv>
-  );
+  return <IdeaAndCommitTreeDiv>プロジェクトの情報が不明</IdeaAndCommitTreeDiv>;
 };
 
-const getProjectId = (model: Model, page: Page): ProjectId | undefined => {
+const getProjectIdAndData = (
+  model: Model,
+  page: Page
+): d.IdAndData<d.ProjectId, d.Project> | undefined => {
+  const projectId = getProjectId(model, page);
+  if (projectId === undefined) {
+    return undefined;
+  }
+  const projectResourceState = model.projectMap.get(projectId);
+  if (
+    projectResourceState === undefined ||
+    projectResourceState._ !== "Loaded" ||
+    projectResourceState.dataResource.dataMaybe._ === "Nothing"
+  ) {
+    return undefined;
+  }
+  return {
+    id: projectId,
+    data: projectResourceState.dataResource.dataMaybe.value,
+  };
+};
+
+const getProjectId = (model: Model, page: Page): d.ProjectId | undefined => {
   switch (page._) {
     case "Project":
       return page.projectId;

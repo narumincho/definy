@@ -60,12 +60,13 @@ export const CreateProject: React.FC<{ model: Model }> = (prop) => {
         value={projectName}
       />
       <CreateProjectButton
-        disabled={validProjectName === null}
-        onClick={() => {
-          if (validProjectName !== null) {
-            prop.model.createProject(validProjectName);
-          }
-        }}
+        onClick={
+          validProjectName === null
+            ? undefined
+            : () => {
+                prop.model.createProject(validProjectName);
+              }
+        }
       >
         プロジェクトを作成
       </CreateProjectButton>

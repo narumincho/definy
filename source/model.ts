@@ -264,7 +264,7 @@ export const useModel = (prop: Init): Model => {
     },
     requestImage: (imageToken: d.ImageToken) => {
       setImageMap((beforeImageMap) => {
-        if (!imageMap.has(imageToken)) {
+        if (!beforeImageMap.has(imageToken)) {
           const newDict = new Map(beforeImageMap);
           newDict.set(imageToken, d.StaticResourceState.WaitLoading());
           return newDict;
@@ -273,11 +273,14 @@ export const useModel = (prop: Init): Model => {
       });
     },
     requestIdea: (ideaId: d.IdeaId) => {
-      if (!ideaMap.has(ideaId)) {
-        const newIdeaMap = new Map(ideaMap);
-        newIdeaMap.set(ideaId, d.ResourceState.WaitLoading());
-        return newIdeaMap;
-      }
+      setIdeaMap((beforeIdeaMap) => {
+        if (!beforeIdeaMap.has(ideaId)) {
+          const newIdeaMap = new Map(beforeIdeaMap);
+          newIdeaMap.set(ideaId, d.ResourceState.WaitLoading());
+          return newIdeaMap;
+        }
+        return beforeIdeaMap;
+      });
     },
     createProject: (projectName) => {
       setCreateProjectState({ _: "WaitCreating", projectName });
@@ -301,7 +304,7 @@ export const useModel = (prop: Init): Model => {
         });
       });
     },
-    requestLogIn: (provider) => {
+    requestLogIn: (provider: d.OpenIdConnectProvider) => {
       setLogInState(d.LogInState.WaitRequestingLogInUrl(provider));
     },
   };

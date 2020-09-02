@@ -93,28 +93,32 @@ export const Link: React.FC<{
   );
 };
 
-const StyledButton = styled.button({
-  cursor: "pointer",
-  border: "none",
-  padding: 0,
-  textAlign: "left",
-  fontSize: 16,
-  backgroundColor: areaThemeToValue("Gray").backgroundColor,
-  color: areaThemeToValue("Gray").color,
-  "&:hover": {
-    color: areaThemeToValue("Gray").hoveredColor,
-    backgroundColor: areaThemeToValue("Gray").hoveredBackgroundColor,
-  },
-});
+const StyledButton = styled.button`
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font-size: 16px;
+  background-color: ${areaThemeToValue("Gray").backgroundColor};
+  color: ${areaThemeToValue("Gray").color};
+  &:hover {
+    color: ${areaThemeToValue("Gray").hoveredColor};
+    background-color: ${areaThemeToValue("Gray").hoveredBackgroundColor};
+  }
+  &:disabled {
+    background-color: #000;
+    color: #444;
+    cursor: not-allowed;
+  }
+`;
 
 export const Button: React.FC<{
-  onClick: () => void;
+  onClick: undefined | (() => void);
   className?: string;
-  disabled?: boolean;
 }> = (prop) => (
   <StyledButton
     className={prop.className}
-    disabled={prop.disabled}
+    disabled={prop.onClick === undefined}
     onClick={prop.onClick}
     type="button"
   >
