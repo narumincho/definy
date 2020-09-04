@@ -37,7 +37,9 @@
     "eslint-plugin-react-hooks": "4.1.0",
     "parcel": "1.12.4",
     "prettier": "2.1.1",
-    "typescript": "4.0.2"
+    "typescript": "4.0.2",
+    "husky": "4.2.5",
+    "lint-staged": "10.3.0"
   },
   "eslintConfig": {
     "extends": [
@@ -224,5 +226,20 @@
         "off"
       ]
     }
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "git add"
+    ],
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ]
   }
 }
