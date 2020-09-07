@@ -18,6 +18,10 @@
         "function": "sitemap"
       },
       {
+        "source": "api",
+        "function": "api"
+      },
+      {
         "source": "**",
         "function": "html"
       }

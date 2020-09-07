@@ -27,7 +27,7 @@ const callApi = <responseType extends unknown>(
   binary: ReadonlyArray<number>,
   codec: Codec<responseType>
 ): Promise<responseType> =>
-  fetch(`https://us-central1-definy-lang.cloudfunctions.net/api/${apiName}`, {
+  fetch(`https://definy.app/api/api/${apiName}`, {
     method: "POST",
     body: new Uint8Array(binary),
     headers: [["content-type", "application/octet-stream"]],
