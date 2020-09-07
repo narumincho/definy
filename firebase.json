@@ -22,6 +22,10 @@
         "function": "api"
       },
       {
+        "source": "logInCallback/**",
+        "function": "logInCallback"
+      },
+      {
         "source": "**",
         "function": "html"
       }
