@@ -4,9 +4,12 @@ import { Model } from "../model";
 import React from "react";
 import styled from "styled-components";
 
-const ProjectContentDiv = styled.div({
-  padding: 16,
-});
+const ProjectContentDiv = styled.div`
+  padding: 16px;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+`;
 
 const ProjectNameAndIcon = styled.h1({
   padding: 8,
@@ -70,6 +73,15 @@ export const ProjectDetailView: React.FC<{
         作成者
         <ui.User model={prop.model} userId={prop.project.createUserId} />
       </div>
+      <TypePartListEditor />
     </ProjectContentDiv>
+  );
+};
+
+const TypePartListEditor: React.FC<Record<never, never>> = () => {
+  return (
+    <div>
+      <ui.Button onClick={() => {}}>型パーツ追加</ui.Button>
+    </div>
   );
 };

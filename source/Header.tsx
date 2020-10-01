@@ -146,6 +146,7 @@ const StyledGoogleButton = styled(ui.Button)({
   backgroundColor: "#4285f4",
   borderRadius: 8,
   gap: 8,
+  padding: 0,
   "&:hover": {
     backgroundColor: "#5190f8",
   },
@@ -210,6 +211,7 @@ const StyledGitHubButton = styled(ui.Button)({
   backgroundColor: "#202020",
   borderRadius: 8,
   gap: 8,
+  padding: 0,
   "&:hover": {
     backgroundColor: "#252525",
   },

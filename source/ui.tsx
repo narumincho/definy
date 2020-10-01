@@ -96,7 +96,7 @@ export const Link: React.FC<{
 const StyledButton = styled.button`
   cursor: pointer;
   border: none;
-  padding: 0;
+  padding: 8px;
   text-align: left;
   font-size: 16px;
   background-color: ${areaThemeToValue("Gray").backgroundColor};
