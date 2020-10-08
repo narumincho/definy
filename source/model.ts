@@ -81,8 +81,8 @@ export const useModel = (prop: Init): Model => {
 
   const [urlData, onJump] = React.useState<d.UrlData>(prop.initUrlData);
   const [logInState, setLogInState] = React.useState<d.LogInState>(
-    prop.AccountToken._ === "Just"
-      ? d.LogInState.WaitVerifyingAccountToken(prop.AccountToken.value)
+    prop.accountToken._ === "Just"
+      ? d.LogInState.WaitVerifyingAccountToken(prop.accountToken.value)
       : d.LogInState.WaitLoadingAccountTokenFromIndexedDB
   );
   const [createProjectState, setCreateProjectState] = React.useState<
@@ -426,24 +426,27 @@ const createProjectEffect = (
   switch (createProjectState._) {
     case "None":
       return;
-    case "WaitCreating":
-      if (logInState._ === "LoggedIn") {
-        api
-          .createProject({
-            userToken: logInState.accountTokenAndUserId.accountToken,
-            projectName: createProjectState.projectName,
-          })
-          .then((projectMaybe) => {
-            if (projectMaybe._ === "Just") {
-              setCreateProjectState({
-                _: "Created",
-                projectId: projectMaybe.value.id,
-              });
-            } else {
-              console.log("プロジェクト作成に失敗");
-            }
-          });
+    case "WaitCreating": {
+      const accountToken = getAccountTokenFromLogInState(logInState);
+      if (accountToken === undefined) {
+        return;
       }
+      api
+        .createProject({
+          userToken: accountToken,
+          projectName: createProjectState.projectName,
+        })
+        .then((projectMaybe) => {
+          if (projectMaybe._ === "Just") {
+            setCreateProjectState({
+              _: "Created",
+              projectId: projectMaybe.value.id,
+            });
+          } else {
+            console.log("プロジェクト作成に失敗");
+          }
+        });
+    }
   }
 };
 
@@ -455,25 +458,28 @@ const createIdeaEffect = (
   switch (createIdeaState._) {
     case "None":
       return;
-    case "WaitCreating":
-      if (logInState._ === "LoggedIn") {
-        api
-          .createIdea({
-            userToken: logInState.accountTokenAndUserId.accountToken,
-            ideaName: createIdeaState.ideaName,
-            parentId: createIdeaState.parentId,
-          })
-          .then((ideaMaybe) => {
-            if (ideaMaybe._ === "Just") {
-              setCreateIdeaState({
-                _: "Created",
-                ideaId: ideaMaybe.value.id,
-              });
-            } else {
-              console.log("アイデアの作成に失敗");
-            }
-          });
+    case "WaitCreating": {
+      const accountToken = getAccountTokenFromLogInState(logInState);
+      if (accountToken === undefined) {
+        return;
       }
+      api
+        .createIdea({
+          userToken: accountToken,
+          ideaName: createIdeaState.ideaName,
+          parentId: createIdeaState.parentId,
+        })
+        .then((ideaMaybe) => {
+          if (ideaMaybe._ === "Just") {
+            setCreateIdeaState({
+              _: "Created",
+              ideaId: ideaMaybe.value.id,
+            });
+          } else {
+            console.log("アイデアの作成に失敗");
+          }
+        });
+    }
   }
 };
 
