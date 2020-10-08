@@ -351,7 +351,7 @@ const logInEffect = (
     case "WaitVerifyingAccountToken":
       dispatchLogInState({
         _: "VerifyingAccountToken",
-        AccountToken: logInState.accountToken,
+        accountToken: logInState.accountToken,
       });
       api
         .getUserByAccountToken(logInState.accountToken)
@@ -391,7 +391,7 @@ const createProjectEffect = (
       if (logInState._ === "LoggedIn") {
         api
           .createProject({
-            accountToken: logInState.accountTokenAndUserId.AccountToken,
+            userToken: logInState.accountTokenAndUserId.accountToken,
             projectName: createProjectState.projectName,
           })
           .then((projectMaybe) => {
@@ -420,7 +420,7 @@ const createIdeaEffect = (
       if (logInState._ === "LoggedIn") {
         api
           .createIdea({
-            accountToken: logInState.accountTokenAndUserId.AccountToken,
+            userToken: logInState.accountTokenAndUserId.accountToken,
             ideaName: createIdeaState.ideaName,
             parentId: createIdeaState.parentId,
           })
