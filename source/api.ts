@@ -1,5 +1,6 @@
 import {
   AccountToken,
+  AccountTokenAndProjectId,
   AddCommentParameter,
   Binary,
   Codec,
@@ -18,6 +19,8 @@ import {
   RequestLogInUrlRequestData,
   Resource,
   String,
+  TypePart,
+  TypePartHash,
   User,
   UserId,
 } from "definy-core/source/data";
@@ -128,4 +131,26 @@ export const getCommit = (commitId: CommitId): Promise<Resource<Commit>> =>
     "getSuggestion",
     CommitId.codec.encode(commitId),
     Resource.codec(Commit.codec)
+  );
+
+export const getTypePartByProjectId = (
+  projectId: ProjectId
+): Promise<Resource<ReadonlyArray<IdAndData<TypePartHash, TypePart>>>> =>
+  callApi(
+    "getTypePartByProjectId",
+    ProjectId.codec.encode(projectId),
+    Resource.codec(
+      List.codec(IdAndData.codec(TypePartHash.codec, TypePart.codec))
+    )
+  );
+
+export const addTypePart = (
+  accountTokenAndProjectId: AccountTokenAndProjectId
+): Promise<Resource<ReadonlyArray<IdAndData<TypePartHash, TypePart>>>> =>
+  callApi(
+    "addTypePart",
+    AccountTokenAndProjectId.codec.encode(accountTokenAndProjectId),
+    Resource.codec(
+      List.codec(IdAndData.codec(TypePartHash.codec, TypePart.codec))
+    )
   );

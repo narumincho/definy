@@ -1,5 +1,5 @@
+import * as d from "definy-core/source/data";
 import * as ui from "../ui";
-import { Project as ProjectData, ProjectId } from "definy-core/source/data";
 import { Model } from "../model";
 import React from "react";
 import styled from "styled-components";
@@ -23,7 +23,7 @@ const ProjectNameAndIcon = styled.h1({
 
 export const Project: React.FC<{
   model: Model;
-  projectId: ProjectId;
+  projectId: d.ProjectId;
 }> = (prop) => {
   const projectResourceState = prop.model.projectMap.get(prop.projectId);
   if (
@@ -34,6 +34,7 @@ export const Project: React.FC<{
       <ProjectDetailView
         model={prop.model}
         project={projectResourceState.dataResource.dataMaybe.value}
+        projectId={prop.projectId}
       />
     );
   }
@@ -42,7 +43,8 @@ export const Project: React.FC<{
 
 export const ProjectDetailView: React.FC<{
   model: Model;
-  project: ProjectData;
+  project: d.Project;
+  projectId: d.ProjectId;
 }> = (prop) => {
   return (
     <ProjectContentDiv>
@@ -73,15 +75,24 @@ export const ProjectDetailView: React.FC<{
         作成者
         <ui.User model={prop.model} userId={prop.project.createUserId} />
       </div>
-      <TypePartListEditor />
+      <TypePartListEditor model={prop.model} projectId={prop.projectId} />
     </ProjectContentDiv>
   );
 };
 
-const TypePartListEditor: React.FC<Record<never, never>> = () => {
+const TypePartListEditor: React.FC<{
+  model: Model;
+  projectId: d.ProjectId;
+}> = (prop) => {
   return (
     <div>
-      <ui.Button onClick={() => {}}>型パーツ追加</ui.Button>
+      <ui.Button
+        onClick={() => {
+          prop.model.addTypePart(prop.projectId);
+        }}
+      >
+        型パーツ追加
+      </ui.Button>
     </div>
   );
 };

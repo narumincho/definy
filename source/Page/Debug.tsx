@@ -19,6 +19,7 @@ const defaultModel: Model = {
   ideaMap: new Map(),
   projectIdeaIdMap: new Map(),
   allProjectIdListMaybe: d.Maybe.Nothing(),
+  addTypePartState: { _: "None" },
   createProjectState: { _: "None" },
   requestLogOut: () => {},
   requestAllProject: () => {},
@@ -30,6 +31,7 @@ const defaultModel: Model = {
   requestIdea: () => {},
   requestProjectIdea: () => {},
   requestLogIn: () => {},
+  addTypePart: () => {},
 };
 
 const sampleProject: ReadonlyArray<[

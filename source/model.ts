@@ -19,6 +19,11 @@ export type CreateIdeaState =
   | { _: "Creating"; ideaName: string; parentId: d.ProjectId }
   | { _: "Created"; ideaId: d.IdeaId };
 
+export type AddTypePartState =
+  | { _: "None" }
+  | { _: "WaitCreating"; projectId: d.ProjectId }
+  | { _: "Creating"; projectId: d.ProjectId };
+
 export type Model = {
   readonly logInState: d.LogInState;
   readonly language: d.Language;
@@ -30,6 +35,7 @@ export type Model = {
   readonly ideaMap: ReadonlyMap<d.IdeaId, d.ResourceState<d.Idea>>;
   readonly projectIdeaIdMap: ReadonlyMap<d.ProjectId, ReadonlyArray<d.IdeaId>>;
   readonly createProjectState: CreateProjectState;
+  readonly addTypePartState: AddTypePartState;
   readonly onJump: (urlData: d.UrlData) => void;
   readonly requestLogOut: () => void;
   readonly allProjectIdListMaybe: d.Maybe<
@@ -44,11 +50,12 @@ export type Model = {
   readonly createIdea: (ideaName: string, parentId: d.IdeaId) => void;
   readonly requestProjectIdea: (projectId: d.ProjectId) => void;
   readonly requestLogIn: (provider: d.OpenIdConnectProvider) => void;
+  readonly addTypePart: (projectId: d.ProjectId) => void;
 };
 
 export type Init = {
   initUrlData: d.UrlData;
-  AccountToken: d.Maybe<d.AccountToken>;
+  accountToken: d.Maybe<d.AccountToken>;
 };
 
 /**
@@ -93,6 +100,10 @@ export const useModel = (prop: Init): Model => {
 
   const requestRef = React.useRef<number | undefined>();
   const loopCount = React.useRef<number>(0);
+
+  const [addTypePartState, setAddTypePartState] = React.useState<
+    AddTypePartState
+  >({ _: "None" });
 
   const setUser = (
     userId: d.UserId,
@@ -171,6 +182,27 @@ export const useModel = (prop: Init): Model => {
 
   React.useEffect(ideaMapEffect(ideaMap, setIdeaMap), [ideaMap]);
 
+  React.useEffect(() => {
+    switch (addTypePartState._) {
+      case "WaitCreating": {
+        const accountToken = getAccountTokenFromLogInState(logInState);
+        if (accountToken === undefined) {
+          return;
+        }
+        setAddTypePartState({
+          _: "Creating",
+          projectId: addTypePartState.projectId,
+        });
+        api
+          .addTypePart({
+            accountToken,
+            projectId: addTypePartState.projectId,
+          })
+          .then(() => {});
+      }
+    }
+  }, [addTypePartState]);
+
   // 更新
   const updateCheck = () => {
     requestRef.current = window.requestAnimationFrame(updateCheck);
@@ -234,6 +266,7 @@ export const useModel = (prop: Init): Model => {
     ideaMap,
     createProjectState,
     projectIdeaIdMap,
+    addTypePartState,
     onJump,
     requestAllProject: () => {
       setAllProjectIdList((beforeAllProjectIdListMaybe) => {
@@ -308,6 +341,12 @@ export const useModel = (prop: Init): Model => {
     requestLogIn: (provider: d.OpenIdConnectProvider) => {
       setLogInState(d.LogInState.WaitRequestingLogInUrl(provider));
     },
+    addTypePart: (projectId: d.ProjectId) => {
+      if (addTypePartState._ === "Creating") {
+        return;
+      }
+      setAddTypePartState({ _: "WaitCreating", projectId });
+    },
   };
 };
 
@@ -320,12 +359,12 @@ const logInEffect = (
   switch (logInState._) {
     case "WaitLoadingAccountTokenFromIndexedDB":
       dispatchLogInState(d.LogInState.LoadingAccountTokenFromIndexedDB);
-      indexedDB.getAccountToken().then((AccountToken) => {
-        if (AccountToken === undefined) {
+      indexedDB.getAccountToken().then((accountToken) => {
+        if (accountToken === undefined) {
           dispatchLogInState(d.LogInState.Guest);
         } else {
           dispatchLogInState(
-            d.LogInState.WaitVerifyingAccountToken(AccountToken)
+            d.LogInState.WaitVerifyingAccountToken(accountToken)
           );
         }
       });
@@ -742,5 +781,14 @@ const ideaMapEffect = (
   }
   if (isChanged) {
     setIdeaMap(newIdeaData);
+  }
+};
+
+const getAccountTokenFromLogInState = (
+  logInState: d.LogInState
+): d.AccountToken | undefined => {
+  switch (logInState._) {
+    case "LoggedIn":
+      return logInState.accountTokenAndUserId.accountToken;
   }
 };

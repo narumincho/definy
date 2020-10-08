@@ -21,7 +21,7 @@ const urlDataAndAccountToken = common.urlDataAndAccountTokenFromUrl(
 ReactDOM.render(
   <React.StrictMode>
     <App
-      AccountToken={urlDataAndAccountToken.AccountToken}
+      accountToken={urlDataAndAccountToken.accountToken}
       initUrlData={urlDataAndAccountToken.urlData}
     />
   </React.StrictMode>,
