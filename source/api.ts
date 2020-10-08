@@ -80,11 +80,11 @@ export const createProject = (
     Maybe.codec(IdAndData.codec(ProjectId.codec, Resource.codec(Project.codec)))
   );
 
-export const getAllProject = (): Promise<
+export const getTop50Project = (): Promise<
   ReadonlyArray<IdAndData<ProjectId, Resource<Project>>>
 > =>
   callApi(
-    "getAllProject",
+    "getTop50Project",
     [],
     List.codec(IdAndData.codec(ProjectId.codec, Resource.codec(Project.codec)))
   );

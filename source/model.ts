@@ -78,6 +78,12 @@ export const useModel = (prop: Init): Model => {
   const [ideaMap, setIdeaMap] = React.useState<
     ReadonlyMap<d.IdeaId, d.ResourceState<d.Idea>>
   >(new Map());
+  const [typePartMap, setTypePartMap] = React.useState<
+    ReadonlyMap<
+      d.TypePartHash,
+      d.ResourceState<d.IdAndData<d.TypePartId, d.TypePart>>
+    >
+  >(new Map());
 
   const [urlData, onJump] = React.useState<d.UrlData>(prop.initUrlData);
   const [logInState, setLogInState] = React.useState<d.LogInState>(
@@ -433,7 +439,7 @@ const createProjectEffect = (
       }
       api
         .createProject({
-          userToken: accountToken,
+          accountToken,
           projectName: createProjectState.projectName,
         })
         .then((projectMaybe) => {
@@ -465,7 +471,7 @@ const createIdeaEffect = (
       }
       api
         .createIdea({
-          userToken: accountToken,
+          accountToken,
           ideaName: createIdeaState.ideaName,
           parentId: createIdeaState.parentId,
         })
@@ -513,7 +519,7 @@ const allProjectIdEffect = (
       return;
     case "WaitRequesting":
       setAllProjectIdList(d.Maybe.Just(d.ResourceState.Requesting()));
-      api.getAllProject().then((idAndProjectResourceList) => {
+      api.getTop50Project().then((idAndProjectResourceList) => {
         setProjectMap(
           new Map(
             idAndProjectResourceList.map((project) => [
@@ -542,7 +548,7 @@ const allProjectIdEffect = (
       setAllProjectIdList(
         d.Maybe.Just(d.ResourceState.Updating(allProjectIdList.dataResource))
       );
-      api.getAllProject().then((idAndProjectResourceList) => {
+      api.getTop50Project().then((idAndProjectResourceList) => {
         setProjectMap(
           new Map(
             idAndProjectResourceList.map((project) => [
