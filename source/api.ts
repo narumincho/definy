@@ -1,5 +1,5 @@
 import {
-  AccessToken,
+  AccountToken,
   AddCommentParameter,
   Binary,
   Codec,
@@ -47,12 +47,12 @@ export const requestLogInUrl = (
     String.codec
   );
 
-export const getUserByAccessToken = (
-  accessToken: AccessToken
+export const getUserByAccountToken = (
+  accountToken: AccountToken
 ): Promise<Maybe<IdAndData<UserId, Resource<User>>>> =>
   callApi(
-    "getUserByAccessToken",
-    AccessToken.codec.encode(accessToken),
+    "getUserByAccountToken",
+    AccountToken.codec.encode(accountToken),
     Maybe.codec(IdAndData.codec(UserId.codec, Resource.codec(User.codec)))
   );
 

@@ -55,11 +55,11 @@ const UserViewOrLogInButton: React.FC<{
   model: Model;
 }> = (prop) => {
   switch (prop.model.logInState._) {
-    case "WaitLoadingAccessTokenFromIndexedDB":
+    case "WaitLoadingAccountTokenFromIndexedDB":
       return (
         <UserViewDiv>アクセストークンをindexedDBから読み取り中</UserViewDiv>
       );
-    case "LoadingAccessTokenFromIndexedDB":
+    case "LoadingAccountTokenFromIndexedDB":
       return (
         <UserViewDiv>アクセストークンをindexedDBから読み取り中……</UserViewDiv>
       );
@@ -70,13 +70,13 @@ const UserViewOrLogInButton: React.FC<{
           requestLogIn={(e) => prop.model.requestLogIn(e)}
         />
       );
-    case "WaitVerifyingAccessToken":
+    case "WaitVerifyingAccountToken":
       return <UserViewDiv>アクセストークンを検証中</UserViewDiv>;
-    case "VerifyingAccessToken":
+    case "VerifyingAccountToken":
       return <UserViewDiv>アクセストークンを検証中……</UserViewDiv>;
     case "LoggedIn": {
       const userResourceState = prop.model.userMap.get(
-        prop.model.logInState.accessTokenAndUserId.userId
+        prop.model.logInState.AccountTokenAndUserId.userId
       );
       if (
         userResourceState === undefined ||

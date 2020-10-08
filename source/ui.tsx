@@ -11,7 +11,7 @@ import {
 } from "definy-core/source/data";
 import styled, { CSSObject, keyframes } from "styled-components";
 import { Model } from "./model";
-import { urlDataAndAccessTokenToUrl } from "definy-core";
+import { urlDataAndAccountTokenToUrl } from "definy-core";
 
 export type AreaTheme = "Gray" | "Black" | "Active";
 
@@ -72,7 +72,7 @@ export const Link: React.FC<{
     <LinkA
       areaTheme={prop.areaTheme}
       className={prop.className}
-      href={urlDataAndAccessTokenToUrl(
+      href={urlDataAndAccountTokenToUrl(
         prop.urlData,
         Maybe.Nothing()
       ).toString()}

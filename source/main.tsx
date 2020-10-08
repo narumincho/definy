@@ -14,15 +14,15 @@ document.body.appendChild(appElement);
 appElement.style.height = "100%";
 appElement.style.overflow = "auto";
 
-const urlDataAndAccessToken = common.urlDataAndAccessTokenFromUrl(
+const urlDataAndAccountToken = common.urlDataAndAccountTokenFromUrl(
   new URL(window.location.href)
 );
 
 ReactDOM.render(
   <React.StrictMode>
     <App
-      accessToken={urlDataAndAccessToken.accessToken}
-      initUrlData={urlDataAndAccessToken.urlData}
+      AccountToken={urlDataAndAccountToken.AccountToken}
+      initUrlData={urlDataAndAccountToken.urlData}
     />
   </React.StrictMode>,
   appElement

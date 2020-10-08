@@ -1,9 +1,9 @@
 import * as d from "definy-core/source/data";
 import * as util from "definy-core/source/util";
 
-const accessTokenObjectStoreName = "accessToken";
+const AccountTokenObjectStoreName = "AccountToken";
 const imageObjectStoreName = "image";
-const accessTokenKeyName = "lastLogInUser";
+const AccountTokenKeyName = "lastLogInUser";
 
 /**
  * ブラウザでindexDBがサポートされているかどうか調べる
@@ -31,7 +31,7 @@ export const getDatabase = (): Promise<IDBDatabase | null> =>
     dbRequest.onupgradeneeded = (): void => {
       console.log("Databaseのversionが上がった");
       databaseCache = dbRequest.result;
-      databaseCache.createObjectStore(accessTokenObjectStoreName, {});
+      databaseCache.createObjectStore(AccountTokenObjectStoreName, {});
       databaseCache.createObjectStore(imageObjectStoreName, {});
     };
 
@@ -187,30 +187,30 @@ const setResource = <id extends string, data>(
 /**
  * indexDBからアクセストークンを取得する
  */
-export const getAccessToken = (): Promise<undefined | d.AccessToken> =>
-  get<typeof accessTokenKeyName, d.AccessToken>(
-    accessTokenObjectStoreName,
-    accessTokenKeyName
+export const getAccountToken = (): Promise<undefined | d.AccountToken> =>
+  get<typeof AccountTokenKeyName, d.AccountToken>(
+    AccountTokenObjectStoreName,
+    AccountTokenKeyName
   );
 
 /**
  * indexDBにアクセストークンを書き込む
- * @param accessToken アクセストークン
+ * @param AccountToken アクセストークン
  */
-export const setAccessToken = (accessToken: d.AccessToken): Promise<void> =>
-  set<typeof accessTokenKeyName, d.AccessToken>(
-    accessTokenObjectStoreName,
-    accessTokenKeyName,
-    accessToken
+export const setAccountToken = (AccountToken: d.AccountToken): Promise<void> =>
+  set<typeof AccountTokenKeyName, d.AccountToken>(
+    AccountTokenObjectStoreName,
+    AccountTokenKeyName,
+    AccountToken
   );
 
 /**
  * indexedDBからアクセストークンを削除する
  */
-export const deleteAccessToken = (): Promise<void> =>
-  deleteValue<typeof accessTokenKeyName>(
-    accessTokenObjectStoreName,
-    accessTokenKeyName
+export const deleteAccountToken = (): Promise<void> =>
+  deleteValue<typeof AccountTokenKeyName>(
+    AccountTokenObjectStoreName,
+    AccountTokenKeyName
   );
 
 /**

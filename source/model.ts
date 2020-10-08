@@ -48,7 +48,7 @@ export type Model = {
 
 export type Init = {
   initUrlData: d.UrlData;
-  accessToken: d.Maybe<d.AccessToken>;
+  AccountToken: d.Maybe<d.AccountToken>;
 };
 
 /**
@@ -74,9 +74,9 @@ export const useModel = (prop: Init): Model => {
 
   const [urlData, onJump] = React.useState<d.UrlData>(prop.initUrlData);
   const [logInState, setLogInState] = React.useState<d.LogInState>(
-    prop.accessToken._ === "Just"
-      ? d.LogInState.WaitVerifyingAccessToken(prop.accessToken.value)
-      : d.LogInState.WaitLoadingAccessTokenFromIndexedDB
+    prop.AccountToken._ === "Just"
+      ? d.LogInState.WaitVerifyingAccountToken(prop.AccountToken.value)
+      : d.LogInState.WaitLoadingAccountTokenFromIndexedDB
   );
   const [createProjectState, setCreateProjectState] = React.useState<
     CreateProjectState
@@ -121,11 +121,12 @@ export const useModel = (prop: Init): Model => {
     window.history.pushState(
       undefined,
       "",
-      core.urlDataAndAccessTokenToUrl(urlData, d.Maybe.Nothing()).toString()
+      core.urlDataAndAccountTokenToUrl(urlData, d.Maybe.Nothing()).toString()
     );
     window.addEventListener("popstate", () => {
       onJump(
-        core.urlDataAndAccessTokenFromUrl(new URL(window.location.href)).urlData
+        core.urlDataAndAccountTokenFromUrl(new URL(window.location.href))
+          .urlData
       );
     });
   }, [urlData]);
@@ -147,7 +148,7 @@ export const useModel = (prop: Init): Model => {
   React.useEffect(() => {
     if (isLogOutRequest) {
       setIsLogOutRequest(false);
-      indexedDB.deleteAccessToken().then(() => {
+      indexedDB.deleteAccountToken().then(() => {
         setLogInState(d.LogInState.Guest);
       });
     }
@@ -317,14 +318,14 @@ const logInEffect = (
   setUser: (userId: d.UserId, userResource: d.Resource<d.User>) => void
 ): React.EffectCallback => () => {
   switch (logInState._) {
-    case "WaitLoadingAccessTokenFromIndexedDB":
-      dispatchLogInState(d.LogInState.LoadingAccessTokenFromIndexedDB);
-      indexedDB.getAccessToken().then((accessToken) => {
-        if (accessToken === undefined) {
+    case "WaitLoadingAccountTokenFromIndexedDB":
+      dispatchLogInState(d.LogInState.LoadingAccountTokenFromIndexedDB);
+      indexedDB.getAccountToken().then((AccountToken) => {
+        if (AccountToken === undefined) {
           dispatchLogInState(d.LogInState.Guest);
         } else {
           dispatchLogInState(
-            d.LogInState.WaitVerifyingAccessToken(accessToken)
+            d.LogInState.WaitVerifyingAccountToken(AccountToken)
           );
         }
       });
@@ -347,20 +348,20 @@ const logInEffect = (
     case "JumpingToLogInPage":
       window.location.href = logInState.string;
       return;
-    case "WaitVerifyingAccessToken":
+    case "WaitVerifyingAccountToken":
       dispatchLogInState({
-        _: "VerifyingAccessToken",
-        accessToken: logInState.accessToken,
+        _: "VerifyingAccountToken",
+        AccountToken: logInState.accountToken,
       });
       api
-        .getUserByAccessToken(logInState.accessToken)
+        .getUserByAccountToken(logInState.accountToken)
         .then((userResourceAndIdMaybe) => {
           switch (userResourceAndIdMaybe._) {
             case "Just":
-              indexedDB.setAccessToken(logInState.accessToken);
+              indexedDB.setAccountToken(logInState.accountToken);
               dispatchLogInState(
                 d.LogInState.LoggedIn({
-                  accessToken: logInState.accessToken,
+                  accountToken: logInState.accountToken,
                   userId: userResourceAndIdMaybe.value.id,
                 })
               );
@@ -390,7 +391,7 @@ const createProjectEffect = (
       if (logInState._ === "LoggedIn") {
         api
           .createProject({
-            accessToken: logInState.accessTokenAndUserId.accessToken,
+            accountToken: logInState.accountTokenAndUserId.AccountToken,
             projectName: createProjectState.projectName,
           })
           .then((projectMaybe) => {
@@ -419,7 +420,7 @@ const createIdeaEffect = (
       if (logInState._ === "LoggedIn") {
         api
           .createIdea({
-            accessToken: logInState.accessTokenAndUserId.accessToken,
+            accountToken: logInState.accountTokenAndUserId.AccountToken,
             ideaName: createIdeaState.ideaName,
             parentId: createIdeaState.parentId,
           })
