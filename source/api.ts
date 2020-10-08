@@ -1,34 +1,9 @@
-import {
-  AccountToken,
-  AccountTokenAndProjectId,
-  AddCommentParameter,
-  Binary,
-  Codec,
-  Commit,
-  CommitId,
-  CreateIdeaParameter,
-  CreateProjectParameter,
-  IdAndData,
-  Idea,
-  IdeaId,
-  ImageToken,
-  List,
-  Maybe,
-  Project,
-  ProjectId,
-  RequestLogInUrlRequestData,
-  Resource,
-  String,
-  TypePart,
-  TypePartHash,
-  User,
-  UserId,
-} from "definy-core/source/data";
+import * as d from "definy-core/source/data";
 
 const callApi = <responseType extends unknown>(
   apiName: string,
   binary: ReadonlyArray<number>,
-  codec: Codec<responseType>
+  codec: d.Codec<responseType>
 ): Promise<responseType> =>
   fetch(`https://definy.app/api/${apiName}`, {
     method: "POST",
@@ -39,118 +14,144 @@ const callApi = <responseType extends unknown>(
     .then((response) => codec.decode(0, new Uint8Array(response)).result);
 
 export const checkConnection = (): Promise<string> =>
-  callApi("checkConnection", [], String.codec);
+  callApi("checkConnection", [], d.String.codec);
 
 export const requestLogInUrl = (
-  requestLogInUrlRequestData: RequestLogInUrlRequestData
+  requestLogInUrlRequestData: d.RequestLogInUrlRequestData
 ): Promise<string> =>
   callApi(
     "requestLogInUrl",
-    RequestLogInUrlRequestData.codec.encode(requestLogInUrlRequestData),
-    String.codec
+    d.RequestLogInUrlRequestData.codec.encode(requestLogInUrlRequestData),
+    d.String.codec
   );
 
 export const getUserByAccountToken = (
-  accountToken: AccountToken
-): Promise<Maybe<IdAndData<UserId, Resource<User>>>> =>
+  accountToken: d.AccountToken
+): Promise<d.Maybe<d.IdAndData<d.UserId, d.Resource<d.User>>>> =>
   callApi(
     "getUserByAccountToken",
-    AccountToken.codec.encode(accountToken),
-    Maybe.codec(IdAndData.codec(UserId.codec, Resource.codec(User.codec)))
+    d.AccountToken.codec.encode(accountToken),
+    d.Maybe.codec(
+      d.IdAndData.codec(d.UserId.codec, d.Resource.codec(d.User.codec))
+    )
   );
 
-export const getUser = (userId: UserId): Promise<Resource<User>> =>
-  callApi("getUser", UserId.codec.encode(userId), Resource.codec(User.codec));
+export const getUser = (userId: d.UserId): Promise<d.Resource<d.User>> =>
+  callApi(
+    "getUser",
+    d.UserId.codec.encode(userId),
+    d.Resource.codec(d.User.codec)
+  );
 
 export const getImageFile = (
-  imageToken: ImageToken
-): Promise<Maybe<Uint8Array>> =>
+  imageToken: d.ImageToken
+): Promise<d.Maybe<Uint8Array>> =>
   callApi(
     "getImageFile",
-    ImageToken.codec.encode(imageToken),
-    Maybe.codec(Binary.codec)
+    d.ImageToken.codec.encode(imageToken),
+    d.Maybe.codec(d.Binary.codec)
   );
 
 export const createProject = (
-  createProjectParameter: CreateProjectParameter
-): Promise<Maybe<IdAndData<ProjectId, Resource<Project>>>> =>
+  createProjectParameter: d.CreateProjectParameter
+): Promise<d.Maybe<d.IdAndData<d.ProjectId, d.Resource<d.Project>>>> =>
   callApi(
     "createProject",
-    CreateProjectParameter.codec.encode(createProjectParameter),
-    Maybe.codec(IdAndData.codec(ProjectId.codec, Resource.codec(Project.codec)))
+    d.CreateProjectParameter.codec.encode(createProjectParameter),
+    d.Maybe.codec(
+      d.IdAndData.codec(d.ProjectId.codec, d.Resource.codec(d.Project.codec))
+    )
   );
 
 export const getTop50Project = (): Promise<
-  ReadonlyArray<IdAndData<ProjectId, Resource<Project>>>
+  ReadonlyArray<d.IdAndData<d.ProjectId, d.Resource<d.Project>>>
 > =>
   callApi(
     "getTop50Project",
     [],
-    List.codec(IdAndData.codec(ProjectId.codec, Resource.codec(Project.codec)))
+    d.List.codec(
+      d.IdAndData.codec(d.ProjectId.codec, d.Resource.codec(d.Project.codec))
+    )
   );
 
-export const getProject = (projectId: ProjectId): Promise<Resource<Project>> =>
+export const getProject = (
+  projectId: d.ProjectId
+): Promise<d.Resource<d.Project>> =>
   callApi(
     "getProject",
-    ProjectId.codec.encode(projectId),
-    Resource.codec(Project.codec)
+    d.ProjectId.codec.encode(projectId),
+    d.Resource.codec(d.Project.codec)
   );
 
-export const getIdea = (ideaId: IdeaId): Promise<Resource<Idea>> =>
-  callApi("getIdea", IdeaId.codec.encode(ideaId), Resource.codec(Idea.codec));
+export const getIdea = (ideaId: d.IdeaId): Promise<d.Resource<d.Idea>> =>
+  callApi(
+    "getIdea",
+    d.IdeaId.codec.encode(ideaId),
+    d.Resource.codec(d.Idea.codec)
+  );
 
 export const getIdeaAndIdListByProjectId = (
-  projectId: ProjectId
-): Promise<ReadonlyArray<IdAndData<IdeaId, Resource<Idea>>>> =>
+  projectId: d.ProjectId
+): Promise<ReadonlyArray<d.IdAndData<d.IdeaId, d.Resource<d.Idea>>>> =>
   callApi(
     "getIdeaAndIdListByProjectId",
-    ProjectId.codec.encode(projectId),
-    List.codec(IdAndData.codec(IdeaId.codec, Resource.codec(Idea.codec)))
+    d.ProjectId.codec.encode(projectId),
+    d.List.codec(
+      d.IdAndData.codec(d.IdeaId.codec, d.Resource.codec(d.Idea.codec))
+    )
   );
 
 export const createIdea = (
-  createIdeaParameter: CreateIdeaParameter
-): Promise<Maybe<IdAndData<IdeaId, Resource<Idea>>>> =>
+  createIdeaParameter: d.CreateIdeaParameter
+): Promise<d.Maybe<d.IdAndData<d.IdeaId, d.Resource<d.Idea>>>> =>
   callApi(
     "createIdea",
-    CreateIdeaParameter.codec.encode(createIdeaParameter),
-    Maybe.codec(IdAndData.codec(IdeaId.codec, Resource.codec(Idea.codec)))
+    d.CreateIdeaParameter.codec.encode(createIdeaParameter),
+    d.Maybe.codec(
+      d.IdAndData.codec(d.IdeaId.codec, d.Resource.codec(d.Idea.codec))
+    )
   );
 
 export const addComment = (
-  addCommentParameter: AddCommentParameter
-): Promise<Maybe<Resource<Idea>>> =>
+  addCommentParameter: d.AddCommentParameter
+): Promise<d.Maybe<d.Resource<d.Idea>>> =>
   callApi(
     "addComment",
-    AddCommentParameter.codec.encode(addCommentParameter),
-    Maybe.codec(Resource.codec(Idea.codec))
+    d.AddCommentParameter.codec.encode(addCommentParameter),
+    d.Maybe.codec(d.Resource.codec(d.Idea.codec))
   );
 
-export const getCommit = (commitId: CommitId): Promise<Resource<Commit>> =>
+export const getCommit = (
+  commitId: d.CommitId
+): Promise<d.Resource<d.Commit>> =>
   callApi(
     "getSuggestion",
-    CommitId.codec.encode(commitId),
-    Resource.codec(Commit.codec)
+    d.CommitId.codec.encode(commitId),
+    d.Resource.codec(d.Commit.codec)
   );
 
 export const getTypePartByProjectId = (
-  projectId: ProjectId
-): Promise<Resource<ReadonlyArray<IdAndData<TypePartHash, TypePart>>>> =>
+  projectId: d.ProjectId
+): Promise<
+  d.Resource<ReadonlyArray<d.IdAndData<d.TypePartHash, d.TypePart>>>
+> =>
   callApi(
     "getTypePartByProjectId",
-    ProjectId.codec.encode(projectId),
-    Resource.codec(
-      List.codec(IdAndData.codec(TypePartHash.codec, TypePart.codec))
+    d.ProjectId.codec.encode(projectId),
+    d.Resource.codec(
+      d.List.codec(d.IdAndData.codec(d.TypePartHash.codec, d.TypePart.codec))
     )
   );
 
 export const addTypePart = (
-  accountTokenAndProjectId: AccountTokenAndProjectId
-): Promise<Resource<ReadonlyArray<IdAndData<TypePartHash, TypePart>>>> =>
+  accountTokenAndProjectId: d.AccountTokenAndProjectId
+): Promise<
+  d.Resource<ReadonlyArray<d.IdAndData<d.TypePartHash, d.TypePart>>>
+> =>
   callApi(
     "addTypePart",
-    AccountTokenAndProjectId.codec.encode(accountTokenAndProjectId),
-    Resource.codec(
-      List.codec(IdAndData.codec(TypePartHash.codec, TypePart.codec))
+    d.AccountTokenAndProjectId.codec.encode(accountTokenAndProjectId),
+    d.Resource.codec(
+      d.List.codec(d.IdAndData.codec(d.TypePartHash.codec, d.TypePart.codec))
     )
   );
