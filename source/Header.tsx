@@ -76,7 +76,7 @@ const UserViewOrLogInButton: React.FC<{
       return <UserViewDiv>アクセストークンを検証中……</UserViewDiv>;
     case "LoggedIn": {
       const userResourceState = prop.model.userMap.get(
-        prop.model.logInState.AccountTokenAndUserId.userId
+        prop.model.logInState.accountTokenAndUserId.userId
       );
       if (
         userResourceState === undefined ||
