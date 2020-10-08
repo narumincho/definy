@@ -233,6 +233,7 @@
   },
   "lint-staged": {
     "*.ts": [
+      "tsc --noEmit",
       "eslint --fix"
     ],
     "*.js": [
