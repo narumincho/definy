@@ -20,11 +20,8 @@ const unitCodec: d.Codec<undefined> = {
   decode: (offset: number) => ({ result: undefined, nextIndex: offset }),
 };
 
-export const checkConnection = callApi(
-  "checkConnection",
-  unitCodec,
-  d.String.codec
-)(undefined);
+export const checkConnection = (): Promise<string> =>
+  callApi("checkConnection", unitCodec, d.String.codec)(undefined);
 
 export const requestLogInUrl = callApi(
   "requestLogInUrl",
@@ -60,13 +57,16 @@ export const createProject = callApi(
   )
 );
 
-export const getTop50Project = callApi(
-  "getTop50Project",
-  unitCodec,
-  d.List.codec(
-    d.IdAndData.codec(d.ProjectId.codec, d.Resource.codec(d.Project.codec))
-  )
-)(undefined);
+export const getTop50Project = (): Promise<
+  d.List<d.IdAndData<d.ProjectId, d.Resource<d.Project>>>
+> =>
+  callApi(
+    "getTop50Project",
+    unitCodec,
+    d.List.codec(
+      d.IdAndData.codec(d.ProjectId.codec, d.Resource.codec(d.Project.codec))
+    )
+  )(undefined);
 
 export const getProject = callApi(
   "getProject",
