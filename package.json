@@ -17,7 +17,7 @@
   ],
   "dependencies": {
     "definy-core": "0.2.6",
-    "react": "16.13.1",
+    "react": "16.14.0",
     "react-dom": "16.13.1",
     "styled-components": "5.2.0"
   },
