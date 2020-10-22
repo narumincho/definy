@@ -8,7 +8,8 @@
     "url": "https://github.com/narumincho/Definy"
   },
   "scripts": {
-    "debugInLocal": "node debugInLocal.js"
+    "debugInLocal": "node debugInLocal.js",
+    "typeCheck": "tsc --project source/tsconfig.json --noEmit --watch"
   },
   "browserslist": [
     "last 1 chrome version",
