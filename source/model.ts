@@ -24,6 +24,11 @@ export type AddTypePartState =
   | { _: "WaitCreating"; projectId: d.ProjectId }
   | { _: "Creating"; projectId: d.ProjectId };
 
+export type RequestTypePartListInProjectState =
+  | { _: "None" }
+  | { _: "WaitRequesting"; projectId: d.ProjectId }
+  | { _: "Requesting"; projectId: d.ProjectId };
+
 export type Model = {
   readonly logInState: d.LogInState;
   readonly language: d.Language;
@@ -34,8 +39,10 @@ export type Model = {
   readonly imageMap: ReadonlyMap<d.ImageToken, d.StaticResourceState<string>>;
   readonly ideaMap: ReadonlyMap<d.IdeaId, d.ResourceState<d.Idea>>;
   readonly projectIdeaIdMap: ReadonlyMap<d.ProjectId, ReadonlyArray<d.IdeaId>>;
+  readonly typePartMap: ReadonlyMap<d.TypePartId, d.ResourceState<d.TypePart>>;
   readonly createProjectState: CreateProjectState;
   readonly addTypePartState: AddTypePartState;
+  readonly requestTypePartListInProjectState: RequestTypePartListInProjectState;
   readonly onJump: (urlData: d.UrlData) => void;
   readonly requestLogOut: () => void;
   readonly allProjectIdListMaybe: d.Maybe<
@@ -51,6 +58,7 @@ export type Model = {
   readonly requestProjectIdea: (projectId: d.ProjectId) => void;
   readonly requestLogIn: (provider: d.OpenIdConnectProvider) => void;
   readonly addTypePart: (projectId: d.ProjectId) => void;
+  readonly requestTypePartListInProject: (projectId: d.ProjectId) => void;
 };
 
 export type Init = {
@@ -79,10 +87,7 @@ export const useModel = (prop: Init): Model => {
     ReadonlyMap<d.IdeaId, d.ResourceState<d.Idea>>
   >(new Map());
   const [typePartMap, setTypePartMap] = React.useState<
-    ReadonlyMap<
-      d.TypePartHash,
-      d.ResourceState<d.IdAndData<d.TypePartId, d.TypePart>>
-    >
+    ReadonlyMap<d.TypePartId, d.ResourceState<d.TypePart>>
   >(new Map());
 
   const [urlData, onJump] = React.useState<d.UrlData>(prop.initUrlData);
@@ -110,6 +115,10 @@ export const useModel = (prop: Init): Model => {
   const [addTypePartState, setAddTypePartState] = React.useState<
     AddTypePartState
   >({ _: "None" });
+  const [
+    requestTypePartListInProjectState,
+    setRequestTypePartListInProjectState,
+  ] = React.useState<RequestTypePartListInProjectState>({ _: "None" });
 
   const setUser = (
     userId: d.UserId,
@@ -204,10 +213,61 @@ export const useModel = (prop: Init): Model => {
             accountToken,
             projectId: addTypePartState.projectId,
           })
-          .then(() => {});
+          .then((addTypePartResponse) => {
+            setAddTypePartState({ _: "None" });
+            if (addTypePartResponse.dataMaybe._ === "Nothing") {
+              return;
+            }
+            setTypePartMap(
+              new Map(
+                addTypePartResponse.dataMaybe.value.map((typePart): [
+                  d.TypePartId,
+                  d.ResourceState<d.TypePart>
+                ] => [
+                  typePart.id,
+                  d.ResourceState.Loaded({
+                    dataMaybe: d.Maybe.Just(typePart.data),
+                    getTime: addTypePartResponse.getTime,
+                  }),
+                ])
+              )
+            );
+          });
       }
     }
   }, [addTypePartState]);
+
+  React.useEffect(() => {
+    switch (requestTypePartListInProjectState._) {
+      case "WaitRequesting":
+        setRequestTypePartListInProjectState({
+          _: "Requesting",
+          projectId: requestTypePartListInProjectState.projectId,
+        });
+        api
+          .getTypePartByProjectId(requestTypePartListInProjectState.projectId)
+          .then((typePartListInProjectResponse) => {
+            setRequestTypePartListInProjectState({ _: "None" });
+            if (typePartListInProjectResponse.dataMaybe._ === "Nothing") {
+              return;
+            }
+            setTypePartMap(
+              new Map(
+                typePartListInProjectResponse.dataMaybe.value.map((typePart): [
+                  d.TypePartId,
+                  d.ResourceState<d.TypePart>
+                ] => [
+                  typePart.id,
+                  d.ResourceState.Loaded({
+                    dataMaybe: d.Maybe.Just(typePart.data),
+                    getTime: typePartListInProjectResponse.getTime,
+                  }),
+                ])
+              )
+            );
+          });
+    }
+  }, [requestTypePartListInProjectState]);
 
   // 更新
   const updateCheck = () => {
@@ -270,9 +330,11 @@ export const useModel = (prop: Init): Model => {
     userMap,
     imageMap,
     ideaMap,
+    typePartMap,
     createProjectState,
     projectIdeaIdMap,
     addTypePartState,
+    requestTypePartListInProjectState,
     onJump,
     requestAllProject: () => {
       setAllProjectIdList((beforeAllProjectIdListMaybe) => {
@@ -352,6 +414,12 @@ export const useModel = (prop: Init): Model => {
         return;
       }
       setAddTypePartState({ _: "WaitCreating", projectId });
+    },
+    requestTypePartListInProject: (projectId: d.ProjectId) => {
+      if (requestTypePartListInProjectState._ === "Requesting") {
+        return;
+      }
+      setRequestTypePartListInProjectState({ _: "WaitRequesting", projectId });
     },
   };
 };

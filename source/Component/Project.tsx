@@ -25,20 +25,21 @@ export const Project: React.FC<{
   model: Model;
   projectId: d.ProjectId;
 }> = (prop) => {
+  React.useEffect(() => {
+    prop.model.requestTypePartListInProject(prop.projectId);
+  }, []);
+
   const projectResourceState = prop.model.projectMap.get(prop.projectId);
-  if (
-    projectResourceState?._ === "Loaded" &&
-    projectResourceState.dataResource.dataMaybe._ === "Just"
-  ) {
-    return (
+  return ui.CommonResourceStateView({
+    dataView: (project) => (
       <ProjectDetailView
         model={prop.model}
-        project={projectResourceState.dataResource.dataMaybe.value}
+        project={project}
         projectId={prop.projectId}
       />
-    );
-  }
-  return <ui.CommonResourceStateView resourceState={projectResourceState} />;
+    ),
+    resourceState: projectResourceState,
+  });
 };
 
 export const ProjectDetailView: React.FC<{
@@ -86,6 +87,21 @@ const TypePartListEditor: React.FC<{
 }> = (prop) => {
   return (
     <div>
+      {[...prop.model.typePartMap]
+        .filter(
+          ([_, typePart]) =>
+            typePart._ === "Loaded" &&
+            typePart.dataResource.dataMaybe._ === "Just" &&
+            typePart.dataResource.dataMaybe.value.projectId === prop.projectId
+        )
+        .map(([typePartId, typePartResourceState]) =>
+          ui.CommonResourceStateView({
+            dataView: (typePart) => {
+              return <div key={typePartId}>{typePart.name}</div>;
+            },
+            resourceState: typePartResourceState,
+          })
+        )}
       <ui.Button
         onClick={() => {
           prop.model.addTypePart(prop.projectId);

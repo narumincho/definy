@@ -112,7 +112,7 @@ export const getTypePartByProjectId = callApi(
   "getTypePartByProjectId",
   d.ProjectId.codec,
   d.Resource.codec(
-    d.List.codec(d.IdAndData.codec(d.TypePartHash.codec, d.TypePart.codec))
+    d.List.codec(d.IdAndData.codec(d.TypePartId.codec, d.TypePart.codec))
   )
 );
 
@@ -120,6 +120,6 @@ export const addTypePart = callApi(
   "addTypePart",
   d.AccountTokenAndProjectId.codec,
   d.Resource.codec(
-    d.List.codec(d.IdAndData.codec(d.TypePartHash.codec, d.TypePart.codec))
+    d.List.codec(d.IdAndData.codec(d.TypePartId.codec, d.TypePart.codec))
   )
 );

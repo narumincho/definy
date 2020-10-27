@@ -1,14 +1,6 @@
 /* eslint-disable react/forbid-component-props */
 import * as React from "react";
-import {
-  ImageToken,
-  Location,
-  Maybe,
-  ProjectId,
-  ResourceState,
-  UrlData,
-  UserId,
-} from "definy-core/source/data";
+import * as d from "definy-core/source/data";
 import styled, { CSSObject, keyframes } from "styled-components";
 import { Model } from "./model";
 import { urlDataAndAccountTokenToUrl } from "definy-core";
@@ -63,8 +55,8 @@ const LinkA = styled.a((prop: { areaTheme: AreaTheme }) => {
 });
 
 export const Link: React.FC<{
-  urlData: UrlData;
-  onJump: (urlData: UrlData) => void;
+  urlData: d.UrlData;
+  onJump: (urlData: d.UrlData) => void;
   areaTheme: AreaTheme;
   className?: string;
 }> = (prop) => {
@@ -74,7 +66,7 @@ export const Link: React.FC<{
       className={prop.className}
       href={urlDataAndAccountTokenToUrl(
         prop.urlData,
-        Maybe.Nothing()
+        d.Maybe.Nothing()
       ).toString()}
       onClick={(event) => {
         if (
@@ -155,7 +147,7 @@ const LoadingDefinyIconDiv = styled.div`
   align-items: center;
   border-radius: 50%;
   animation: 1s ${rotationAnimationKeyframes} infinite linear;
-  fontsize: 24px;
+  font-size: 24px;
   padding: 8px;
   color: ${areaThemeToValue("Gray").color};
   background-color: ${areaThemeToValue("Gray").backgroundColor};
@@ -189,55 +181,52 @@ const CenterDiv = styled.div({
 });
 
 export const CommonResourceStateView = <data extends unknown>(prop: {
-  resourceState: ResourceState<data> | undefined;
-}): React.ReactElement<any, any> | null => {
+  resourceState: d.ResourceState<data> | undefined;
+  dataView: (data_: data) => React.ReactElement;
+}): React.ReactElement => {
   if (prop.resourceState === undefined) {
     return <div>...</div>;
   }
   switch (prop.resourceState._) {
     case "WaitLoading":
       return (
-        <CenterDiv>
+        <CenterDiv className="resourceView">
           <NewLoadingIcon isWait />
         </CenterDiv>
       );
     case "Loading":
       return (
-        <CenterDiv>
+        <CenterDiv className="resourceView">
           <NewLoadingIcon isWait={false} />
         </CenterDiv>
       );
     case "WaitRequesting":
       return (
-        <CenterDiv>
+        <CenterDiv className="resourceView">
           <NewLoadingIcon isWait />
         </CenterDiv>
       );
     case "Requesting":
       return (
-        <CenterDiv>
+        <CenterDiv className="resourceView">
           <NewLoadingIcon isWait={false} />
         </CenterDiv>
       );
     case "WaitRetrying":
-      return <CenterDiv>WRetry</CenterDiv>;
+      return <CenterDiv className="resourceView">WRetry</CenterDiv>;
     case "Retrying":
-      return <CenterDiv>Retry</CenterDiv>;
+      return <CenterDiv className="resourceView">Retry</CenterDiv>;
     case "WaitUpdating":
-      return <CenterDiv>WU</CenterDiv>;
+      return <CenterDiv className="resourceView">WU</CenterDiv>;
     case "Updating":
-      return <CenterDiv>Updating</CenterDiv>;
+      return <CenterDiv className="resourceView">Updating</CenterDiv>;
     case "Loaded":
       if (prop.resourceState.dataResource.dataMaybe._ === "Just") {
-        return (
-          <div>
-            {JSON.stringify(prop.resourceState.dataResource.dataMaybe.value)}
-          </div>
-        );
+        return prop.dataView(prop.resourceState.dataResource.dataMaybe.value);
       }
-      return <CenterDiv>?</CenterDiv>;
+      return <CenterDiv className="resourceView">?</CenterDiv>;
     case "Unknown":
-      return <CenterDiv>Unknown</CenterDiv>;
+      return <CenterDiv className="resourceView">Unknown</CenterDiv>;
   }
 };
 
@@ -266,7 +255,7 @@ const imageStyleToCSSObject = (imageStyle: ImageStyle): CSSObject => ({
 
 export const Image: React.FC<{
   model: Model;
-  imageToken: ImageToken;
+  imageToken: d.ImageToken;
   imageStyle: ImageStyle;
   className?: string;
 }> = (prop) => {
@@ -343,11 +332,6 @@ export const Image: React.FC<{
   }
 };
 
-const StyledUserResourceState = styled(CommonResourceStateView)({
-  width: "100%",
-  height: 32,
-});
-
 const UserLink = styled(Link)({
   display: "grid",
   gridTemplateColumns: "32px 1fr",
@@ -359,32 +343,32 @@ const UserLink = styled(Link)({
 
 export const User: React.FC<{
   model: Model;
-  userId: UserId;
+  userId: d.UserId;
 }> = (prop) => {
   React.useEffect(() => {
     prop.model.requestUser(prop.userId);
   });
   const userResource = prop.model.userMap.get(prop.userId);
-  if (
-    userResource?._ === "Loaded" &&
-    userResource.dataResource.dataMaybe._ === "Just"
-  ) {
-    return (
-      <UserLink
-        areaTheme="Gray"
-        onJump={prop.model.onJump}
-        urlData={{ ...prop.model, location: Location.User(prop.userId) }}
-      >
-        <UserImage
-          imageStyle={{ width: 32, height: 32, padding: 0, round: true }}
-          imageToken={userResource.dataResource.dataMaybe.value.imageHash}
-          model={prop.model}
-        />
-        {userResource.dataResource.dataMaybe.value.name}
-      </UserLink>
-    );
-  }
-  return <StyledUserResourceState resourceState={userResource} />;
+
+  return CommonResourceStateView({
+    dataView: (data: d.User): React.ReactElement => {
+      return (
+        <UserLink
+          areaTheme="Gray"
+          onJump={prop.model.onJump}
+          urlData={{ ...prop.model, location: d.Location.User(prop.userId) }}
+        >
+          <UserImage
+            imageStyle={{ width: 32, height: 32, padding: 0, round: true }}
+            imageToken={data.imageHash}
+            model={prop.model}
+          />
+          {data.name}
+        </UserLink>
+      );
+    },
+    resourceState: userResource,
+  });
 };
 
 const UserImage = styled(Image)({ width: 32, height: 32, borderRadius: "50%" });
@@ -405,52 +389,51 @@ const ProjectIconAndName = styled.div({
 
 export const Project: React.FC<{
   model: Model;
-  projectId: ProjectId;
+  projectId: d.ProjectId;
 }> = (prop) => {
   React.useEffect(() => {
     prop.model.requestProject(prop.projectId);
   });
   const projectResource = prop.model.projectMap.get(prop.projectId);
-  if (
-    projectResource?._ === "Loaded" &&
-    projectResource.dataResource.dataMaybe._ === "Just"
-  ) {
-    return (
-      <ProjectLink
-        areaTheme="Gray"
-        onJump={prop.model.onJump}
-        urlData={{
-          ...prop.model,
-          location: Location.Project(prop.projectId),
-        }}
-      >
-        <Image
-          imageStyle={{
-            width: 256,
-            height: 128,
-            padding: 0,
-            round: false,
+  return CommonResourceStateView({
+    dataView: (data: d.Project) => {
+      return (
+        <ProjectLink
+          areaTheme="Gray"
+          onJump={prop.model.onJump}
+          urlData={{
+            ...prop.model,
+            location: d.Location.Project(prop.projectId),
           }}
-          imageToken={projectResource.dataResource.dataMaybe.value.imageHash}
-          model={prop.model}
-        />
-        <ProjectIconAndName>
+        >
           <Image
             imageStyle={{
-              width: 32,
-              height: 32,
+              width: 256,
+              height: 128,
               padding: 0,
               round: false,
             }}
-            imageToken={projectResource.dataResource.dataMaybe.value.iconHash}
+            imageToken={data.imageHash}
             model={prop.model}
           />
-          {projectResource.dataResource.dataMaybe.value.name}
-        </ProjectIconAndName>
-      </ProjectLink>
-    );
-  }
-  return <StyledUserResourceState resourceState={projectResource} />;
+          <ProjectIconAndName>
+            <Image
+              imageStyle={{
+                width: 32,
+                height: 32,
+                padding: 0,
+                round: false,
+              }}
+              imageToken={data.iconHash}
+              model={prop.model}
+            />
+            {data.name}
+          </ProjectIconAndName>
+        </ProjectLink>
+      );
+    },
+    resourceState: projectResource,
+  });
 };
 
 const NormalSizeSvg = styled.svg({ width: 32, height: 32 });
