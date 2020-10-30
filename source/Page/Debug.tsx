@@ -18,6 +18,7 @@ const defaultModel: Model = {
   imageMap: new Map(),
   ideaMap: new Map(),
   projectIdeaIdMap: new Map(),
+  typePartMap: new Map(),
   allProjectIdListMaybe: d.Maybe.Nothing(),
   addTypePartState: { _: "None" },
   createProjectState: { _: "None" },
@@ -32,6 +33,8 @@ const defaultModel: Model = {
   requestProjectIdea: () => {},
   requestLogIn: () => {},
   addTypePart: () => {},
+  requestTypePartListInProject: () => {},
+  requestTypePartListInProjectState: { _: "None" },
 };
 
 const sampleProject: ReadonlyArray<[
