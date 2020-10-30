@@ -1,73 +1,65 @@
-import * as React from "react";
 import * as d from "definy-core/source/data";
 import * as ui from "../ui";
+import { VNode, h } from "maquette";
 import { Model } from "../model";
-import styled from "styled-components";
 
-const IdeaDiv = styled.div`
-  display: grid;
-  gap: 8px;
-  width: 100%;
-  align-content: start;
-  overflow-y: scroll;
-`;
+export const ideaComponent = (): ((prop: {
+  model: Model;
+  ideaId: d.IdeaId;
+}) => VNode) => {
+  let newIdeaName = "";
+  const setNewIdeaName = (value: string) => {
+    newIdeaName = value;
+  };
 
-const IdeaSection = styled.div`
-  padding: 8px;
-`;
+  return (prop): VNode => {
+    const idea = getIdea(prop.model, prop.ideaId);
 
-const SectionTitle = styled.div`
-  font-size: 1.5rem;
-`;
-
-export const Idea: React.FC<{ model: Model; ideaId: d.IdeaId }> = (prop) => {
-  const [newIdeaName, setNewIdeaName] = React.useState<string>("");
-  const idea = getIdea(prop.model, prop.ideaId);
-
-  return (
-    <IdeaDiv>
-      <h2>{idea === undefined ? "???" : idea.name}</h2>
-      <IdeaSection>
-        <SectionTitle>マージ済みのコミット</SectionTitle>
-        <div>マージ済みのコミットの内容</div>
-      </IdeaSection>
-      <IdeaSection>
-        <SectionTitle>子アイデア</SectionTitle>
-        <div>子アイデアの一覧</div>
-        {prop.model.logInState._ === "LoggedIn" ? (
-          <div>
-            <ui.OneLineTextInput
-              name="newIdeaName"
-              onChange={(e) => setNewIdeaName(e.target.value)}
-              value={newIdeaName}
-            />
-            <ui.Button
-              onClick={
-                idea === undefined
-                  ? undefined
-                  : () => {
-                      prop.model.createIdea(newIdeaName, prop.ideaId);
-                    }
-              }
-            >
-              + 子アイデアを作成する
-            </ui.Button>
-          </div>
-        ) : undefined}
-      </IdeaSection>
-      <IdeaSection>
-        <SectionTitle>コミット</SectionTitle>
-        <div>コミットの一覧</div>
-        {prop.model.logInState._ === "LoggedIn" ? (
-          <ui.Button onClick={() => {}}>+ コミットを作成する</ui.Button>
-        ) : undefined}
-      </IdeaSection>
-      <IdeaSection>
-        <SectionTitle>コメント</SectionTitle>
-        <div>コメントの内容</div>
-      </IdeaSection>
-    </IdeaDiv>
-  );
+    return h("div", { class: "idea__root" }, [
+      h("h2", {}, [idea === undefined ? "???" : idea.name]),
+      h("div", { class: "idea__section" }, [
+        h("div", { class: "idea__section-title" }, ["マージ済みのコミット"]),
+        h("div", {}, ["マージ済みのコミットの内容"]),
+      ]),
+      h("div", { class: "idea__section" }, [
+        h("div", { class: "idea__section-title" }, ["子アイデア"]),
+        h("div", {}, ["子アイデアの一覧"]),
+        ...(prop.model.logInState._ === "LoggedIn"
+          ? [
+              h("div", {}, [
+                ui.oneLineTextInput({
+                  name: "newIdeaName",
+                  onChange: setNewIdeaName,
+                  value: newIdeaName,
+                }),
+                ui.button(
+                  {
+                    onClick:
+                      idea === undefined
+                        ? undefined
+                        : () => {
+                            prop.model.createIdea(newIdeaName, prop.ideaId);
+                          },
+                  },
+                  ["+ 子アイデアを作成する"]
+                ),
+              ]),
+            ]
+          : []),
+      ]),
+      h("div", { class: "idea__section" }, [
+        h("div", { class: "idea__section-title" }, ["コミット"]),
+        h("div", {}, ["コミットの一覧"]),
+        ...(prop.model.logInState._ === "LoggedIn"
+          ? [ui.button({ onClick: () => {} }, ["+ コミットを作成する"])]
+          : []),
+      ]),
+      h("div", { class: "idea__section" }, [
+        h("div", { class: "idea__section-title" }, ["コメント"]),
+        h("div", {}, ["コメントの内容"]),
+      ]),
+    ]);
+  };
 };
 
 const getIdea = (model: Model, ideaId: d.IdeaId): d.Idea | undefined => {
@@ -84,3 +76,5 @@ const getIdea = (model: Model, ideaId: d.IdeaId): d.Idea | undefined => {
   }
   return undefined;
 };
+
+export const idea = ideaComponent();

@@ -1,20 +1,8 @@
 import * as d from "definy-core/source/data";
-import * as ui from "../ui";
-import { Idea as IdeaComponent } from "../Component/Idea";
+import { VNode, h } from "maquette";
 import { Model } from "../model";
-import { Project as ProjectComponent } from "../Component/Project";
-import React from "react";
-import styled from "styled-components";
-
-const ProjectDiv = styled.div({
-  display: "grid",
-  gridTemplateColumns: "320px 1fr",
-  gridTemplateRows: "100%",
-  justifyItems: "center",
-  alignContent: "start",
-  height: "100%",
-  overflow: "auto",
-});
+import { commit } from "../Component/Project";
+import { idea } from "../Component/Idea";
 
 export type Page =
   | {
@@ -26,82 +14,57 @@ export type Page =
       ideaId: d.IdeaId;
     };
 
-export const Project: React.FC<{ model: Model; page: Page }> = (prop) => {
-  // const projectResourceState = prop.model.projectMap.get(prop.projectId);
+export const Project = (prop: { model: Model; page: Page }): VNode =>
+  h("div", { class: "project__root" }, [
+    ideaAndCommitTree(prop),
+    projectContent({ model: prop.model, page: prop.page }),
+  ]);
 
-  React.useEffect(() => {
-    switch (prop.page._) {
-      case "Project":
-        prop.model.requestProject(prop.page.projectId);
-        prop.model.requestProjectIdea(prop.page.projectId);
-        return;
-      case "Idea":
-        prop.model.requestIdea(prop.page.ideaId);
-    }
-  }, []);
-  return (
-    <ProjectDiv>
-      <IdeaAndCommitTree model={prop.model} page={prop.page} />
-      <ProjectContent model={prop.model} page={prop.page} />
-    </ProjectDiv>
-  );
-};
-
-const IdeaAndCommitTreeDiv = styled.div({
-  overflowY: "scroll",
-  height: "100%",
-  width: 320,
-});
-
-const TreeLink = styled(ui.Link)({
-  padding: 8,
-  overflowX: "hidden",
-});
-
-const IdeaAndCommitTree: React.FC<{
-  model: Model;
-  page: Page;
-}> = (prop) => {
+const ideaAndCommitTree = (prop: { model: Model; page: Page }): VNode => {
   const projectIdAndData = getProjectIdAndData(prop.model, prop.page);
   if (projectIdAndData !== undefined) {
     const ideaIdList = prop.model.projectIdeaIdMap.get(projectIdAndData.id);
     if (ideaIdList === undefined) {
-      return (
-        <IdeaAndCommitTreeDiv>
-          プロジェクトのアイデアを取得していない?
-        </IdeaAndCommitTreeDiv>
-      );
+      return h("div", { class: "project__idea-and-commit-tree" }, [
+        "プロジェクトのアイデアを取得していない?",
+      ]);
     }
-    return (
-      <IdeaAndCommitTreeDiv>
-        <TreeLink
-          areaTheme="Gray"
-          onJump={prop.model.onJump}
-          urlData={{
+    return h("div", { class: "project__idea-and-commit-tree" }, [
+      h(
+        "div",
+        {
+          class: "project__tree-link",
+          areaTheme: "Gray",
+          onJump: prop.model.onJump,
+          urlData: {
             ...prop.model,
             location: d.Location.Project(projectIdAndData.id),
-          }}
-        >
-          プロジェクトページ
-        </TreeLink>
-        {ideaIdList.map((ideaId) => (
-          <TreeLink
-            areaTheme="Gray"
-            key={ideaId}
-            onJump={prop.model.onJump}
-            urlData={{
+          },
+        },
+        ["プロジェクトページ"]
+      ),
+      ...ideaIdList.map((ideaId) =>
+        h(
+          "div",
+          {
+            class: "project__tree-link",
+            areaTheme: "Gray",
+            key: ideaId,
+            onJump: prop.model.onJump,
+            urlData: {
               ...prop.model,
               location: d.Location.Idea(ideaId),
-            }}
-          >
-            {ideaId}
-          </TreeLink>
-        ))}
-      </IdeaAndCommitTreeDiv>
-    );
+            },
+          },
+          [ideaId]
+        )
+      ),
+    ]);
   }
 
-  return <IdeaAndCommitTreeDiv>プロジェクトの情報が不明</IdeaAndCommitTreeDiv>;
+  return h("div", { class: "project__idea-and-commit-tree" }, [
+    "プロジェクトの情報が不明",
+  ]);
 };
 
 const getProjectIdAndData = (
@@ -131,29 +94,24 @@ const getProjectId = (model: Model, page: Page): d.ProjectId | undefined => {
     case "Project":
       return page.projectId;
     case "Idea": {
-      const idea = model.ideaMap.get(page.ideaId);
+      const ideaData = model.ideaMap.get(page.ideaId);
       if (
-        idea !== undefined &&
-        idea._ === "Loaded" &&
-        idea.dataResource.dataMaybe._ === "Just"
+        ideaData !== undefined &&
+        ideaData._ === "Loaded" &&
+        ideaData.dataResource.dataMaybe._ === "Just"
       ) {
-        return idea.dataResource.dataMaybe.value.projectId;
+        return ideaData.dataResource.dataMaybe.value.projectId;
       }
       return undefined;
     }
   }
 };
 
-const ProjectContent: React.FC<{
-  model: Model;
-  page: Page;
-}> = (prop) => {
+const projectContent = (prop: { model: Model; page: Page }): VNode => {
   switch (prop.page._) {
     case "Idea":
-      return <IdeaComponent ideaId={prop.page.ideaId} model={prop.model} />;
+      return idea({ model: prop.model, ideaId: prop.page.ideaId });
     case "Project":
-      return (
-        <ProjectComponent model={prop.model} projectId={prop.page.projectId} />
-      );
+      return commit({ model: prop.model, projectId: prop.page.projectId });
   }
 };

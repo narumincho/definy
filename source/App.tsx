@@ -1,70 +1,38 @@
-import * as React from "react";
 import * as d from "definy-core/source/data";
+import * as ui from "./ui";
 import { Init, Model, useModel } from "./model";
-import { About as AboutPage } from "./Page/About";
-import { Commit as CommitPage } from "./Page/Commit";
-import { CreateProject as CreateProjectPage } from "./Page/CreateProject";
+import { VNode, h } from "maquette";
+import { About } from "./Page/About";
+import { Commit } from "./Page/Commit";
 import { Debug } from "./Page/Debug";
-import { Header } from "./Header";
-import { Home as HomePage } from "./Page/Home";
-import { LoadingBox } from "./ui";
-import { Project as ProjectPage } from "./Page/Project";
-import { Setting as SettingPage } from "./Page/Setting";
-import { User as UserPage } from "./Page/User";
-import styled from "styled-components";
+import { Home } from "./Page/Home";
+import { Project } from "./Page/Project";
+import { Setting } from "./Page/Setting";
+import { User } from "./Page/User";
+import { createProject } from "./Page/CreateProject";
+import { header } from "./Header";
 
-export const App: React.FC<Init> = (prop) => {
+export const app = (prop: Init): VNode => {
   const model = useModel(prop);
-
   switch (model.logInState._) {
     case "WaitRequestingLogInUrl":
     case "RequestingLogInUrl":
-      return (
-        <RequestingLogInUrl
-          message={logInMessage(
-            model.logInState.openIdConnectProvider,
-            model.language
-          )}
-        />
-      );
+      return h("div", {}, [
+        logInMessage(model.logInState.openIdConnectProvider, model.language),
+      ]);
     case "JumpingToLogInPage":
-      return (
-        <RequestingLogInUrl
-          message={jumpMessage(
-            new URL(model.logInState.string),
-            model.language
-          )}
-        />
+      return requestingLogInUrl(
+        jumpMessage(new URL(model.logInState.string), model.language)
       );
   }
-  return (
-    <NormalStyledDiv>
-      <Header key="side" model={model} />
-      <MainPanel location={model.location} model={model} />
-    </NormalStyledDiv>
-  );
+  return h("div", { class: "app__main-root" }, [
+    header(model),
+    MainPanel({ location: model.location, model }),
+  ]);
 };
 
-const NormalStyledDiv = styled.div({
-  height: "100%",
-  display: "grid",
-  gridTemplateRows: "48px 1fr",
-});
-
-const LogInViewStyledDiv = styled.div({
-  height: "100%",
-  display: "grid",
-  alignItems: "center",
-  justifyItems: "center",
-});
-
-const RequestingLogInUrl: React.FC<{
-  message: string;
-}> = (prop) => (
-  <LogInViewStyledDiv>
-    <LoadingBox>{prop.message}</LoadingBox>
-  </LogInViewStyledDiv>
-);
+const requestingLogInUrl = (message: string): VNode =>
+  h("div", { class: "app__requesting-log-in-url" }, [ui.LoadingBox([message])]);
 
 const logInMessage = (
   provider: d.OpenIdConnectProvider,
@@ -91,42 +59,33 @@ const jumpMessage = (url: URL, language: d.Language): string => {
   }
 };
 
-const MainPanel: React.FC<{
-  model: Model;
-  location: d.Location;
-}> = (prop) => {
+const MainPanel = (prop: { model: Model; location: d.Location }): VNode => {
   switch (prop.location._) {
     case "Home":
-      return <HomePage model={prop.model} />;
+      return Home({ model: prop.model });
     case "CreateProject":
-      return <CreateProjectPage model={prop.model} />;
+      return createProject({ model: prop.model });
     case "Project":
-      return (
-        <ProjectPage
-          model={prop.model}
-          page={{ _: "Project", projectId: prop.location.projectId }}
-        />
-      );
+      return Project({
+        model: prop.model,
+        page: { _: "Project", projectId: prop.location.projectId },
+      });
     case "User":
-      return <UserPage model={prop.model} userId={prop.location.userId} />;
+      return User({ model: prop.model, userId: prop.location.userId });
     case "Idea":
-      return (
-        <ProjectPage
-          model={prop.model}
-          page={{ _: "Idea", ideaId: prop.location.ideaId }}
-        />
-      );
+      return Project({
+        model: prop.model,
+        page: { _: "Idea", ideaId: prop.location.ideaId },
+      });
     case "Commit":
-      return (
-        <CommitPage commitId={prop.location.commitId} model={prop.model} />
-      );
+      return Commit({ commitId: prop.location.commitId, model: prop.model });
     case "Setting":
-      return <SettingPage model={prop.model} />;
+      return Setting({ model: prop.model });
     case "About":
-      return <AboutPage />;
+      return About;
     case "Debug":
-      return <Debug />;
+      return Debug()();
     default:
-      return <div>他のページは準備中</div>;
+      return h("div", {}, ["他のページは準備中"]);
   }
 };

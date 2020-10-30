@@ -1,7 +1,6 @@
-import * as React from "react";
-import * as ReactDOM from "react-dom";
+import * as app from "./App";
 import * as common from "definy-core";
-import { App } from "./App";
+import * as maquette from "maquette";
 
 const appElement = document.createElement("div");
 
@@ -18,12 +17,11 @@ const urlDataAndAccountToken = common.urlDataAndAccountTokenFromUrl(
   new URL(window.location.href)
 );
 
-ReactDOM.render(
-  <React.StrictMode>
-    <App
-      accountToken={urlDataAndAccountToken.accountToken}
-      initUrlData={urlDataAndAccountToken.urlData}
-    />
-  </React.StrictMode>,
-  appElement
-);
+const projector = maquette.createProjector();
+
+projector.append(appElement, () => {
+  return app.app({
+    accountToken: urlDataAndAccountToken.accountToken,
+    initUrlData: urlDataAndAccountToken.urlData,
+  });
+});

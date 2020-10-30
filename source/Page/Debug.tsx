@@ -1,11 +1,11 @@
 import * as React from "react";
 import * as d from "definy-core/source/data";
 import * as ui from "../ui";
+import { VNode, h } from "maquette";
 import { About } from "./About";
-import { Header } from "../Header";
 import { Home } from "./Home";
 import { Model } from "../model";
-import styled from "styled-components";
+import { header } from "../Header";
 
 const defaultModel: Model = {
   clientMode: "DebugMode",
@@ -88,64 +88,51 @@ const sampleProject: ReadonlyArray<[
   ],
 ];
 
-const ImageFixSizeAndWithBorder = styled(ui.Image)({
-  border: "solid 1px red",
-});
-
-const IconImage: React.FC<{
-  imageStaticResource: d.StaticResourceState<string>;
-}> = (prop) => {
-  return (
-    <ImageFixSizeAndWithBorder
-      imageStyle={{ width: 64, height: 64, padding: 0, round: false }}
-      imageToken={"a" as d.ImageToken}
-      model={{
-        ...defaultModel,
-        imageMap: new Map([["a" as d.ImageToken, prop.imageStaticResource]]),
-      }}
-    />
-  );
-};
+const iconImage = (imageStaticResource: d.StaticResourceState<string>): VNode =>
+  ui.Image({
+    className: "debug__image-with-border",
+    imageToken: "a" as d.ImageToken,
+    model: {
+      ...defaultModel,
+      imageMap: new Map([["a" as d.ImageToken, imageStaticResource]]),
+    },
+  });
 
 const sampleComponentList = {
-  header: <Header model={defaultModel} />,
-  home: <Home model={defaultModel} />,
-  homeWithProject: (
-    <Home
-      model={{
-        ...defaultModel,
-        projectMap: new Map([
-          sampleProject[0],
-          sampleProject[1],
-          sampleProject[2],
-        ]),
-        createProjectState: { _: "None" },
-        allProjectIdListMaybe: d.Maybe.Just(
-          d.ResourceState.Loaded({
-            dataMaybe: d.Maybe.Just([
-              sampleProject[0][0],
-              sampleProject[1][0],
-              sampleProject[2][0],
-            ]),
-            getTime: { day: 0, millisecond: 0 },
-          })
-        ),
-      }}
-    />
-  ),
-  about: <About />,
-  requestingImage: (
-    <div>
-      WaitLoading
-      <IconImage imageStaticResource={d.StaticResourceState.WaitLoading()} />
-      Loading
-      <IconImage imageStaticResource={d.StaticResourceState.Loading()} />
-      WaitRequesting
-      <IconImage imageStaticResource={d.StaticResourceState.WaitRequesting()} />
-      Requesting
-      <IconImage imageStaticResource={d.StaticResourceState.Requesting()} />
-    </div>
-  ),
+  header: header(defaultModel),
+  home: Home({ model: defaultModel }),
+  homeWithProject: Home({
+    model: {
+      ...defaultModel,
+      projectMap: new Map([
+        sampleProject[0],
+        sampleProject[1],
+        sampleProject[2],
+      ]),
+      createProjectState: { _: "None" },
+      allProjectIdListMaybe: d.Maybe.Just(
+        d.ResourceState.Loaded({
+          dataMaybe: d.Maybe.Just([
+            sampleProject[0][0],
+            sampleProject[1][0],
+            sampleProject[2][0],
+          ]),
+          getTime: { day: 0, millisecond: 0 },
+        })
+      ),
+    },
+  }),
+  about: About,
+  requestingImage: h("div", {}, [
+    "WaitLoading",
+    iconImage(d.StaticResourceState.WaitLoading()),
+    "Loading",
+    iconImage(d.StaticResourceState.Loading()),
+    "WaitRequesting",
+    iconImage(d.StaticResourceState.WaitRequesting()),
+    "Requesting",
+    iconImage(d.StaticResourceState.Requesting()),
+  ]),
 };
 
 const allTab = Object.keys(sampleComponentList) as ReadonlyArray<
@@ -153,48 +140,33 @@ const allTab = Object.keys(sampleComponentList) as ReadonlyArray<
 >;
 type Tab = keyof typeof sampleComponentList;
 
-const DebugDiv = styled.div({
-  display: "grid",
-  gridTemplateColumns: "auto 1fr",
-});
+export const Debug = (): (() => VNode) => {
+  let tab: Tab = "header";
 
-const TabListContainer = styled.div({ display: "grid", alignSelf: "start" });
+  const setTab = (newTab: Tab) => {
+    tab = newTab;
+  };
 
-const SelectedTab = styled(ui.ActiveDiv)({
-  fontSize: 16,
-  padding: 8,
-});
-
-const TabButton = styled(ui.Button)({
-  backgroundColor: "#000",
-  color: "#ddd",
-  border: "none",
-  padding: 8,
-  fontSize: 16,
-});
-
-export const Debug: React.FC<Record<never, never>> = () => {
-  const [tab, dispatchTab] = React.useState<Tab>("header");
-  return (
-    <DebugDiv>
-      <TabListContainer>
-        {allTab.map((tabName) => {
+  return () =>
+    h("div", { class: "debug__root" }, [
+      h(
+        "div",
+        { class: "debug__tab-list" },
+        allTab.map((tabName) => {
           if (tabName === tab) {
-            return <SelectedTab key={tabName}>{tabName}</SelectedTab>;
+            return h("div", { class: "debug__tab--selected" }, [tabName]);
           }
-          return (
-            <TabButton
-              key={tabName}
-              onClick={() => {
-                dispatchTab(tabName);
-              }}
-            >
-              {tabName}
-            </TabButton>
+          return ui.button(
+            {
+              key: tabName,
+              onClick: () => {
+                setTab(tabName);
+              },
+            },
+            [tabName]
           );
-        })}
-      </TabListContainer>
-      {sampleComponentList[tab]}
-    </DebugDiv>
-  );
+        })
+      ),
+      sampleComponentList[tab],
+    ]);
 };

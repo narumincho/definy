@@ -1,13 +1,10 @@
+import * as d from "definy-core/source/data";
 import * as ui from "../ui";
+import { VNode, h } from "maquette";
 import { Model } from "../model";
-import React from "react";
-import { UserId } from "definy-core/source/data";
 
-export const User: React.FC<{ model: Model; userId: UserId }> = (prop) => {
-  return (
-    <div>
-      <div>ここなユーザーの詳細ページです</div>
-      <ui.User model={prop.model} userId={prop.userId} />
-    </div>
-  );
-};
+export const User = (prop: { model: Model; userId: d.UserId }): VNode =>
+  h("div", {}, [
+    h("div", {}, ["ここなユーザーの詳細ページです"]),
+    ui.User(prop),
+  ]);

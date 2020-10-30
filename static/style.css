@@ -1,4 +1,485 @@
-.resourceView {
+:root {
+  --gray-background-color: #333;
+  --gary-background-color--hover: #444;
+  --gary-text-color: #ddd;
+  --gray-text-color--hover: #dfdfdf;
+  --black-background-color: #000;
+  --black-background-color--hover: #111;
+  --black-text-color: #ddd;
+  --black-text-color--hover: #dfdfdf;
+  --active-background-color: #f0932b;
+  --active-background-color--hover: #f69d3a;
+  --active-text-color: #000;
+  --active-text-color--hover: #000;
+}
+
+.ui__link {
+  display: block;
+  text-decoration: none;
+}
+
+.ui__link--gray {
+  background-color: var(--gray-background-color);
+  color: var(--gary-text-color);
+}
+
+.ui__link--gray:hover {
+  background-color: var(--gary-background-color--hover);
+  color: var(--gray-text-color--hover);
+}
+
+.ui__link--black {
+  background-color: var(--black-background-color);
+  color: var(--black-text-color);
+}
+
+.ui__link--black:hover {
+  background-color: var(--black-background-color--hover);
+  color: var(--black-text-color--hover);
+}
+
+.ui__link--active {
+  background-color: var(--active-background-color);
+  color: var(--active-text-color);
+}
+
+.ui__link--active:hover {
+  background-color: var(--active-background-color--hover);
+  color: var(--active-text-color--hover);
+}
+
+.ui__button {
+  cursor: pointer;
+  border: none;
+  padding: 8px;
+  text-align: left;
+  font-size: 16px;
+  background-color: var(--gray-background-color);
+  color: var(--gary-text-color);
+}
+
+.ui__button:hover {
+  background-color: var(--gary-background-color--hover);
+  color: var(--gary-text-color--hover);
+}
+
+.ui__button:disabled {
+  background-color: #000;
+  color: #444;
+  cursor: not-allowed;
+}
+
+.ui__loading-box {
+  display: grid;
+  overflow: hidden;
+  justify-items: center;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(1turn);
+  }
+}
+
+.ui__loading-logo {
+  width: 96px;
+  height: 96px;
+  display: grid;
+  justify-items: center;
+  align-items: center;
+  border-radius: 50%;
+  animation: 1s rotation infinite linear;
+  font-size: 24px;
+  padding: 8px;
+  background-color: var(--gray-background-color);
+  color: var(--gary-text-color);
+}
+
+.ui__resource {
+  display: grid;
+  justify-content: center;
+  align-content: center;
   width: 100%;
   height: 32px;
+}
+
+.ui__image {
+  display: grid;
+  justify-content: center;
+  align-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.ui__user {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  height: 48px;
+  align-items: "center";
+  gap: 8px;
+  padding: 8px;
+}
+
+.ui__user-image {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.ui__project {
+  display: grid;
+  grid-template-rows: 128px 48px;
+  width: 256px;
+}
+
+.ui__project-image {
+  width: 256px;
+  height: 128px;
+  padding: 0;
+}
+
+.ui__project-icon-and-name {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+}
+
+.ui__project-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.ui__icon {
+  width: 32px;
+  height: 32px;
+}
+
+.ui__one-line-text-input {
+  padding: 8;
+  font-size: 16;
+  border: 2px solid #222;
+  background-color: #000;
+  color: #ddd;
+  border-radius: 8px;
+}
+
+.ui__one-line-text-input:focus {
+  border: 2px solid #f0932b;
+  outline: none;
+}
+
+.app__requesting-log-in-url {
+  height: 100%;
+  display: grid;
+  align-items: center;
+  justify-items: center;
+}
+
+.app__main-root {
+  height: 100%;
+  display: grid;
+  grid-template-rows: 48px 1fr;
+}
+
+.header__root {
+  display: grid;
+  grid-auto-flow: column;
+  width: "100%";
+  background-color: #333;
+  height: 48px;
+}
+
+.header__logo {
+  justify-self: start;
+  padding: 8px;
+  color: #b9d09b;
+  font-size: 32px;
+  line-height: 1;
+  font-family: "Hack";
+}
+
+.header__logo:hover {
+  color: #c9e4a6;
+}
+
+.header__login {
+  justify-self: end;
+}
+
+.header__login-button-list {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  grid-auto-flow: column;
+  justify-self: end;
+}
+
+.header__google-button {
+  display: grid;
+  grid-template-columns: 32px 160px;
+  background-color: #4285f4;
+  border-radius: 8px;
+  gap: 8px;
+  padding: 0;
+}
+
+.header__google-button:hover {
+  background-color: #5190f8;
+}
+
+.header__google-icon {
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.header__google-text {
+  align-self: center;
+  font-size: 18px;
+  color: #fff;
+}
+
+.header__github-button {
+  display: grid;
+  grid-template-columns: 32px 160px;
+  background-color: #202020;
+  border-radius: 8px;
+  gap: 8;
+  padding: 0;
+}
+
+.header__github-button:hover {
+  background-color: #252525;
+}
+
+.header__github-icon {
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.header__github-button {
+  align-self: center;
+  font-size: 18px;
+  color: #ddd;
+}
+
+.header__github-text {
+  align-self: center;
+  font-size: 18px;
+  color: #ddd;
+}
+
+.header__setting-link {
+  justify-self: end;
+  display: grid;
+  grid-template-columns: 32px auto;
+  align-items: center;
+  padding: 8px;
+}
+
+.header__user-icon {
+  border-radius: 50%;
+}
+
+.debug__root {
+  display: grid;
+  grid-template-columns: auto 1fr;
+}
+
+.debug__tab-list {
+  display: grid;
+  align-self: start;
+}
+
+.debug__tab {
+  background-color: #000;
+  color: #ddd;
+  border: none;
+  padding: 8px;
+  font-size: 16px;
+}
+
+.debug__tab--selected {
+  background-color: var(--active-background-color);
+  color: var(--active-text-color);
+  font-size: 16px;
+  padding: 8px;
+}
+
+.debug__image-with-border {
+  border: solid 1px red;
+  width: 64px;
+  height: 64px;
+}
+
+.about__root {
+  padding: 16px;
+}
+
+.about__github-link {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  padding: 16px;
+  color: var(--gary-text-color);
+  background-color: var(--gray-background-color);
+  border-radius: 8px;
+  text-decoration: none;
+  align-items: center;
+}
+
+.about__github-link:hover {
+  color: var(--gray-text-color--hover);
+  background-color: var(--gary-background-color--hover);
+}
+
+.about__github-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.idea__root {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  align-content: start;
+  overflow-y: scroll;
+}
+
+.idea__section {
+  padding: 8px;
+}
+
+.idea__section-title {
+  font-size: 1.5rem;
+}
+
+.commit__root {
+  padding: 16px;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
+.commit__project-name-and-icon {
+  padding: 8px;
+  display: grid;
+  align-items: center;
+  grid-template-columns: 48px 1fr;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+}
+
+.commit__project-icon {
+  width: 48px;
+  height: 48px;
+}
+
+.commit__project-image {
+  width: 512px;
+  height: 316.5px;
+}
+
+.commit-editor__root {
+  display: grid;
+  grid-template-rows: 1fr 200px;
+}
+
+.create-project__root {
+  display: grid;
+  padding: 16px;
+  align-content: center;
+  justify-content: center;
+  background-color: #222;
+}
+
+.create-project__button {
+  padding: 8px;
+}
+
+.home__root {
+  display: grid;
+  overflow: hidden;
+  background-color: #222;
+}
+
+.home__create-project {
+  grid-column: "1 / 2";
+  grid-row: "1 / 2";
+  align-self: end;
+  justify-self: end;
+  padding: 16px;
+}
+
+.home__create-project-link {
+  padding: 8px;
+}
+
+.home__main {
+  display: grid;
+  overflow-y: "scroll";
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+  grid-template-rows: 32px 1fr;
+  gap: 8px;
+  padding: 16px;
+}
+
+.home__link-list {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: end;
+  align-items: center;
+  height: 32px;
+  gap: 8px;
+}
+
+.home__link {
+  width: 128px;
+  height: 32px;
+  display: grid;
+  align-items: center;
+  justify-content: center;
+}
+
+.home__project-list {
+  overflow: hidden;
+  overflow-wrap: break-word;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-self: start;
+  justify-self: center;
+  gap: 8px;
+}
+
+.project__root {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  grid-template-rows: 100%;
+  justify-items: center;
+  align-content: start;
+  height: 100%;
+  overflow: auto;
+}
+
+.project__idea-and-commit-tree {
+  overflow-y: scroll;
+  height: 100%;
+  width: 320px;
+}
+
+.project__tree-link {
+  padding: 8px;
+  overflow-x: hidden;
 }

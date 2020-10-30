@@ -1,79 +1,62 @@
-import * as React from "react";
 import * as core from "definy-core";
 import * as ui from "../ui";
-import { Location } from "definy-core/source/data";
+import { VNode, h } from "maquette";
 import { Model } from "../model";
-import styled from "styled-components";
 
-const CreateProjectDiv = styled.div({
-  padding: 16,
-  display: "grid",
-  alignContent: "center",
-  justifyContent: "center",
-  backgroundColor: "#222",
-});
+const createProjectComponent = (): ((prop: { model: Model }) => VNode) => {
+  let projectName = "";
 
-export const CreateProject: React.FC<{ model: Model }> = (prop) => {
-  const [projectName, setProjectName] = React.useState<string>("");
+  const setProjectName = (value: string) => {
+    projectName = value;
+  };
 
-  React.useEffect(() => {
-    if (prop.model.createProjectState._ === "Created") {
-      prop.model.onJump({
-        ...prop.model,
-        location: Location.Project(prop.model.createProjectState.projectId),
-      });
+  return (prop) => {
+    if (prop.model.logInState._ !== "LoggedIn") {
+      return h("div", { class: "create-project__root" }, [
+        h("div", {}, ["プロジェクトの作成にはログインする必要があります"]),
+        h("div", {}, ["左のログインボタンを押してログインしてください"]),
+      ]);
     }
-  });
 
-  if (prop.model.logInState._ !== "LoggedIn") {
-    return (
-      <CreateProjectDiv>
-        <div>プロジェクトの作成にはログインする必要があります</div>
-        <div>左のログインボタンを押してログインしてください</div>
-      </CreateProjectDiv>
-    );
-  }
+    switch (prop.model.createProjectState._) {
+      case "WaitCreating":
+      case "Creating":
+        return h("div", {}, [
+          prop.model.createProjectState.projectName + "を作成中",
+        ]);
+    }
 
-  switch (prop.model.createProjectState._) {
-    case "WaitCreating":
-    case "Creating":
-      return <div>{prop.model.createProjectState.projectName}を作成中</div>;
-  }
+    const validProjectName = core.stringToValidProjectName(projectName);
 
-  const validProjectName = core.stringToValidProjectName(projectName);
-
-  return (
-    <CreateProjectDiv>
-      <div>
-        ここはプロジェクト作成ページ.
-        プロジェクト名と画像を指定してプロジェクトを作ることができます
-      </div>
-      <label>プロジェクト名{}</label>
-      <div>
-        {validProjectName === null
+    return h("div", { class: "create-project__root" }, [
+      h("div", {}, [
+        "ここはプロジェクト作成ページ.プロジェクト名と画像を指定してプロジェクトを作ることができます",
+      ]),
+      h("label", {}, ["プロジェクト名"]),
+      h("div", {}, [
+        validProjectName === null
           ? "プロジェクト名に使えません"
-          : validProjectName}
-      </div>
-      <ui.OneLineTextInput
-        name="projectName"
-        onChange={(event) => setProjectName(event.target.value)}
-        value={projectName}
-      />
-      <CreateProjectButton
-        onClick={
-          validProjectName === null
-            ? undefined
-            : () => {
-                prop.model.createProject(validProjectName);
-              }
-        }
-      >
-        プロジェクトを作成
-      </CreateProjectButton>
-    </CreateProjectDiv>
-  );
+          : validProjectName,
+      ]),
+      ui.oneLineTextInput({
+        name: "projectName",
+        onChange: setProjectName,
+        value: projectName,
+      }),
+      ui.button(
+        {
+          class: "create-project__button",
+          onClick:
+            validProjectName === null
+              ? undefined
+              : () => {
+                  prop.model.createProject(validProjectName);
+                },
+        },
+        ["プロジェクトを作成"]
+      ),
+    ]);
+  };
 };
 
-const CreateProjectButton = styled(ui.Button)({
-  padding: 8,
-});
+export const createProject = createProjectComponent();
