@@ -1,40 +1,26 @@
-import * as React from "react";
 import * as d from "definy-core/source/data";
 import * as ui from "../ui";
-import { VNode, h } from "maquette";
+import { Projector, VNode, h } from "maquette";
 import { About } from "./About";
 import { Home } from "./Home";
 import { Model } from "../model";
 import { header } from "../Header";
 
 const defaultModel: Model = {
-  clientMode: "DebugMode",
+  accountToken: undefined,
+  homeProjectState: { _: "None" },
+  projector: (null as unknown) as Projector,
+  jumpSameLanguageLink: () => {},
+  requestAllTop50Project: async () => {},
+  sameLanguageLink: () => new URL(""),
+  logInState: d.LogInState.Guest,
+  imageMap: new Map(),
   language: "English",
   location: d.Location.Home,
-  logInState: d.LogInState.Guest,
-  onJump: () => {},
+  clientMode: d.ClientMode.DebugMode,
   projectMap: new Map(),
-  userMap: new Map(),
-  imageMap: new Map(),
-  ideaMap: new Map(),
-  projectIdeaIdMap: new Map(),
   typePartMap: new Map(),
-  allProjectIdListMaybe: d.Maybe.Nothing(),
-  addTypePartState: { _: "None" },
-  createProjectState: { _: "None" },
-  requestLogOut: () => {},
-  requestAllProject: () => {},
-  requestProject: () => {},
-  requestUser: () => {},
-  requestImage: () => {},
-  createProject: () => {},
-  createIdea: () => {},
-  requestIdea: () => {},
-  requestProjectIdea: () => {},
-  requestLogIn: () => {},
-  addTypePart: () => {},
-  requestTypePartListInProject: () => {},
-  requestTypePartListInProjectState: { _: "None" },
+  userMap: new Map(),
 };
 
 const sampleProject: ReadonlyArray<[

@@ -1,19 +1,18 @@
 import * as d from "definy-core/source/data";
 import * as ui from "./ui";
-import { Init, Model, useModel } from "./model";
 import { VNode, h } from "maquette";
 import { About } from "./Page/About";
 import { Commit } from "./Page/Commit";
 import { Debug } from "./Page/Debug";
 import { Home } from "./Page/Home";
+import { Model } from "./model";
 import { Project } from "./Page/Project";
 import { Setting } from "./Page/Setting";
 import { User } from "./Page/User";
 import { createProject } from "./Page/CreateProject";
 import { header } from "./Header";
 
-export const app = (prop: Init): VNode => {
-  const model = useModel(prop);
+export const app = (model: Model): VNode => {
   switch (model.logInState._) {
     case "WaitRequestingLogInUrl":
     case "RequestingLogInUrl":
@@ -27,7 +26,7 @@ export const app = (prop: Init): VNode => {
   }
   return h("div", { class: "app__main-root" }, [
     header(model),
-    MainPanel({ location: model.location, model }),
+    MainPanel(model),
   ]);
 };
 
@@ -59,28 +58,28 @@ const jumpMessage = (url: URL, language: d.Language): string => {
   }
 };
 
-const MainPanel = (prop: { model: Model; location: d.Location }): VNode => {
-  switch (prop.location._) {
+const MainPanel = (model: Model): VNode => {
+  switch (model.location._) {
     case "Home":
-      return Home({ model: prop.model });
+      return Home({ model });
     case "CreateProject":
-      return createProject({ model: prop.model });
+      return createProject({ model });
     case "Project":
       return Project({
-        model: prop.model,
-        page: { _: "Project", projectId: prop.location.projectId },
+        model,
+        page: { _: "Project", projectId: model.location.projectId },
       });
     case "User":
-      return User({ model: prop.model, userId: prop.location.userId });
+      return User({ model, userId: model.location.userId });
     case "Idea":
       return Project({
-        model: prop.model,
-        page: { _: "Idea", ideaId: prop.location.ideaId },
+        model,
+        page: { _: "Idea", ideaId: model.location.ideaId },
       });
     case "Commit":
-      return Commit({ commitId: prop.location.commitId, model: prop.model });
+      return Commit({ model, commitId: model.location.commitId });
     case "Setting":
-      return Setting({ model: prop.model });
+      return Setting({ model });
     case "About":
       return About;
     case "Debug":

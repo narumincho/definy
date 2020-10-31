@@ -1,14 +1,13 @@
 import * as d from "definy-core/source/data";
 import { VNode, VNodeChildren, h } from "maquette";
 import { Model } from "./model";
-import { urlDataAndAccountTokenToUrl } from "definy-core";
 
 export type AreaTheme = "Gray" | "Black" | "Active";
 
 export const link = (
   prop: {
-    urlData: d.UrlData;
-    onJump: (urlData: d.UrlData) => void;
+    model: Model;
+    location: d.Location;
     areaTheme: AreaTheme;
     class: string;
     key?: string;
@@ -18,10 +17,7 @@ export const link = (
   h(
     "a",
     {
-      href: urlDataAndAccountTokenToUrl(
-        prop.urlData,
-        d.Maybe.Nothing()
-      ).toString(),
+      href: prop.model.sameLanguageLink(prop.location).toString(),
       onclick: (event) => {
         if (
           !event.ctrlKey &&
@@ -30,7 +26,7 @@ export const link = (
           event.button === 0
         ) {
           event.preventDefault();
-          prop.onJump(prop.urlData);
+          prop.model.jumpSameLanguageLink(prop.location);
         }
       },
       classes: {
@@ -221,9 +217,9 @@ export const User = (prop: { model: Model; userId: d.UserId }): VNode => {
     dataView: (data: d.User): VNode =>
       link(
         {
+          model: prop.model,
           areaTheme: "Gray",
-          onJump: prop.model.onJump,
-          urlData: { ...prop.model, location: d.Location.User(prop.userId) },
+          location: d.Location.User(prop.userId),
           class: "ui__user",
         },
         [Image({ imageToken: data.imageHash, model: prop.model }), data.name]
@@ -244,11 +240,8 @@ export const project = (prop: {
         {
           class: "ui__project",
           areaTheme: "Gray",
-          onJump: prop.model.onJump,
-          urlData: {
-            ...prop.model,
-            location: d.Location.Project(prop.projectId),
-          },
+          model: prop.model,
+          location: d.Location.Project(prop.projectId),
           key: prop.key,
         },
         [

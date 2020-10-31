@@ -1,9 +1,12 @@
-import * as React from "react";
 import * as api from "./api";
 import * as core from "definy-core";
-import * as coreUtil from "definy-core/source/util";
 import * as d from "definy-core/source/data";
-import * as indexedDB from "./indexedDB";
+import * as maquette from "maquette";
+
+export type HomeProjectState =
+  | { _: "None" }
+  | { _: "Loading" }
+  | { _: "Loaded"; projectIdList: ReadonlyArray<d.ProjectId> };
 
 export type CreateProjectState =
   | {
@@ -29,846 +32,140 @@ export type RequestTypePartListInProjectState =
   | { _: "WaitRequesting"; projectId: d.ProjectId }
   | { _: "Requesting"; projectId: d.ProjectId };
 
-export type Model = {
-  readonly logInState: d.LogInState;
-  readonly language: d.Language;
-  readonly clientMode: d.ClientMode;
-  readonly location: d.Location;
-  readonly projectMap: ReadonlyMap<d.ProjectId, d.ResourceState<d.Project>>;
-  readonly userMap: ReadonlyMap<d.UserId, d.ResourceState<d.User>>;
-  readonly imageMap: ReadonlyMap<d.ImageToken, d.StaticResourceState<string>>;
-  readonly ideaMap: ReadonlyMap<d.IdeaId, d.ResourceState<d.Idea>>;
-  readonly projectIdeaIdMap: ReadonlyMap<d.ProjectId, ReadonlyArray<d.IdeaId>>;
-  readonly typePartMap: ReadonlyMap<d.TypePartId, d.ResourceState<d.TypePart>>;
-  readonly createProjectState: CreateProjectState;
-  readonly addTypePartState: AddTypePartState;
-  readonly requestTypePartListInProjectState: RequestTypePartListInProjectState;
-  readonly onJump: (urlData: d.UrlData) => void;
-  readonly requestLogOut: () => void;
-  readonly allProjectIdListMaybe: d.Maybe<
-    d.ResourceState<ReadonlyArray<d.ProjectId>>
-  >;
-  readonly requestAllProject: () => void;
-  readonly requestProject: (projectId: d.ProjectId) => void;
-  readonly requestUser: (userId: d.UserId) => void;
-  readonly requestImage: (imageToken: d.ImageToken) => void;
-  readonly requestIdea: (ideaId: d.IdeaId) => void;
-  readonly createProject: (projectName: string) => void;
-  readonly createIdea: (ideaName: string, parentId: d.IdeaId) => void;
-  readonly requestProjectIdea: (projectId: d.ProjectId) => void;
-  readonly requestLogIn: (provider: d.OpenIdConnectProvider) => void;
-  readonly addTypePart: (projectId: d.ProjectId) => void;
-  readonly requestTypePartListInProject: (projectId: d.ProjectId) => void;
-};
-
 export type Init = {
   initUrlData: d.UrlData;
   accountToken: d.Maybe<d.AccountToken>;
 };
 
 /**
- * Definy のクライアントの見た目以外の処理をする.
+ * Definyのアプリの状態管理, ブラウザとのやりとり, サーバーとの通信をする
  */
-export const useModel = (prop: Init): Model => {
-  const [allProjectIdListMaybe, setAllProjectIdList] = React.useState<
-    d.Maybe<d.ResourceState<ReadonlyArray<d.ProjectId>>>
-  >(d.Maybe.Nothing());
-  const [projectMap, setProjectMap] = React.useState<
-    ReadonlyMap<d.ProjectId, d.ResourceState<d.Project>>
-  >(new Map());
-  const [userMap, setUserMap] = React.useState<
-    ReadonlyMap<d.UserId, d.ResourceState<d.User>>
-  >(new Map());
-  const [imageMap, setImageMap] = React.useState<
-    ReadonlyMap<d.ImageToken, d.StaticResourceState<string>>
-  >(new Map());
+export class Model {
+  /** ホームに表示される. Top50のプロジェクトのID */
+  homeProjectState: HomeProjectState = { _: "None" };
 
-  const [ideaMap, setIdeaMap] = React.useState<
-    ReadonlyMap<d.IdeaId, d.ResourceState<d.Idea>>
-  >(new Map());
-  const [typePartMap, setTypePartMap] = React.useState<
-    ReadonlyMap<d.TypePartId, d.ResourceState<d.TypePart>>
-  >(new Map());
+  /** プロジェクトの辞書 */
+  projectMap: Map<d.ProjectId, d.ResourceState<d.Project>> = new Map();
 
-  const [urlData, onJump] = React.useState<d.UrlData>(prop.initUrlData);
-  const [logInState, setLogInState] = React.useState<d.LogInState>(
-    prop.accountToken._ === "Just"
-      ? d.LogInState.WaitVerifyingAccountToken(prop.accountToken.value)
-      : d.LogInState.WaitLoadingAccountTokenFromIndexedDB
-  );
-  const [createProjectState, setCreateProjectState] = React.useState<
-    CreateProjectState
-  >({ _: "None" });
+  /** ユーザーの辞書 */
+  userMap: Map<d.UserId, d.ResourceState<d.User>> = new Map();
 
-  const [createIdeaState, setCreateIdeaState] = React.useState<CreateIdeaState>(
-    { _: "None" }
-  );
+  /** 画像のBlobURLの辞書 */
+  imageMap: Map<d.ImageToken, d.StaticResourceState<string>> = new Map();
 
-  const [isLogOutRequest, setIsLogOutRequest] = React.useState<boolean>(false);
-  const [projectIdeaIdMap, setProjectIdeaIdMap] = React.useState<
-    ReadonlyMap<d.ProjectId, ReadonlyArray<d.IdeaId>>
-  >(new Map());
+  /** 型パーツの辞書 */
+  typePartMap: Map<d.TypePartId, d.ResourceState<d.TypePart>> = new Map();
 
-  const requestRef = React.useRef<number | undefined>();
-  const loopCount = React.useRef<number>(0);
+  /** ページの場所 */
+  location: d.Location;
 
-  const [addTypePartState, setAddTypePartState] = React.useState<
-    AddTypePartState
-  >({ _: "None" });
-  const [
-    requestTypePartListInProjectState,
-    setRequestTypePartListInProjectState,
-  ] = React.useState<RequestTypePartListInProjectState>({ _: "None" });
+  /** ページの言語 */
+  language: d.Language;
 
-  const setUser = (
-    userId: d.UserId,
-    userResource: d.Resource<d.User>
-  ): void => {
-    setUserMap((beforeUserMap) => {
-      const newUserMap = new Map(beforeUserMap);
-      newUserMap.set(userId, d.ResourceState.Loaded(userResource));
-      return newUserMap;
+  /** クライアントモード. デバッグ時のlocalhostか, リリース時か */
+  clientMode: d.ClientMode;
+
+  /** ログイン状態 */
+  logInState: d.LogInState;
+
+  /**
+   * 場所から, 同じクライアントモード, 同じ言語のURLを得る
+   * (Modelの状態を変更しない)
+   */
+  sameLanguageLink(location: d.Location): URL {
+    return core.urlDataAndAccountTokenToUrl(
+      { language: this.language, location, clientMode: this.clientMode },
+      d.Maybe.Nothing()
+    );
+  }
+
+  /**
+   * アカウントトークンを得る
+   */
+  get accountToken(): d.AccountToken | undefined {
+    switch (this.logInState._) {
+      case "LoggedIn":
+        return this.logInState.accountTokenAndUserId.accountToken;
+    }
+  }
+
+  /**
+   * 初期化
+   * @param param パラメーター
+   * @param projector Maquette の Projector. データが変わったときに, レンダリングをさせるために必要
+   */
+  constructor(
+    param: { initUrlData: d.UrlData; accountToken: d.Maybe<d.AccountToken> },
+    public projector: maquette.Projector
+  ) {
+    this.projector = projector;
+
+    // ブラウザのURLを正規化
+    window.history.replaceState(
+      undefined,
+      "",
+      core
+        .urlDataAndAccountTokenToUrl(param.initUrlData, d.Maybe.Nothing())
+        .toString()
+    );
+    this.language = param.initUrlData.language;
+    this.location = param.initUrlData.location;
+    this.clientMode = param.initUrlData.clientMode;
+
+    // ブラウザで戻るボタンを押したときのイベントを登録
+    window.addEventListener("popstate", () => {
+      const newUrlData: d.UrlData = core.urlDataAndAccountTokenFromUrl(
+        new URL(window.location.href)
+      ).urlData;
+      this.language = param.initUrlData.language;
+      this.location = param.initUrlData.location;
+      this.clientMode = param.initUrlData.clientMode;
     });
-  };
-  const setIdeaResourceList = (
-    ideaResourceList: ReadonlyArray<d.IdAndData<d.IdeaId, d.Resource<d.Idea>>>
-  ): void => {
-    setIdeaMap((beforeIdeaMap) => {
-      const newIdeaMap = new Map(beforeIdeaMap);
-      for (const { id, data } of ideaResourceList) {
-        newIdeaMap.set(id, d.ResourceState.Loaded(data));
-      }
-      return newIdeaMap;
-    });
-  };
 
-  // ルーティング
-  React.useEffect(() => {
+    this.logInState =
+      param.accountToken._ === "Just"
+        ? d.LogInState.WaitVerifyingAccountToken(param.accountToken.value)
+        : d.LogInState.WaitLoadingAccountTokenFromIndexedDB;
+  }
+
+  /**
+   * ホームのプロジェクト一覧取得
+   */
+  async requestAllTop50Project(): Promise<void> {
+    this.homeProjectState = { _: "Loading" };
+    this.projector.scheduleRender();
+    const response = await api.getTop50Project();
+    this.homeProjectState = {
+      _: "Loaded",
+      projectIdList: response.map((idAndData) => idAndData.id),
+    };
+    for (const projectIdAndData of response) {
+      this.projectMap.set(
+        projectIdAndData.id,
+        d.ResourceState.Loaded(projectIdAndData.data)
+      );
+    }
+    this.projector.scheduleRender();
+  }
+
+  /**
+   * ブラウザのデフォルトの推移をしないで同じ言語のページに変更する
+   */
+  jumpSameLanguageLink(location: d.Location): void {
+    this.location = location;
     window.history.pushState(
       undefined,
       "",
-      core.urlDataAndAccountTokenToUrl(urlData, d.Maybe.Nothing()).toString()
+      core
+        .urlDataAndAccountTokenToUrl(
+          {
+            language: this.language,
+            location: this.location,
+            clientMode: this.clientMode,
+          },
+          d.Maybe.Nothing()
+        )
+        .toString()
     );
-    window.addEventListener("popstate", () => {
-      onJump(
-        core.urlDataAndAccountTokenFromUrl(new URL(window.location.href))
-          .urlData
-      );
-    });
-  }, [urlData]);
-
-  React.useEffect(logInEffect(logInState, urlData, setLogInState, setUser), [
-    logInState,
-  ]);
-
-  React.useEffect(
-    createProjectEffect(createProjectState, logInState, setCreateProjectState),
-    [createProjectState]
-  );
-
-  React.useEffect(
-    createIdeaEffect(createIdeaState, logInState, setCreateIdeaState),
-    [createIdeaState]
-  );
-
-  React.useEffect(() => {
-    if (isLogOutRequest) {
-      setIsLogOutRequest(false);
-      indexedDB.deleteAccountToken().then(() => {
-        setLogInState(d.LogInState.Guest);
-      });
-    }
-  }, [isLogOutRequest]);
-
-  React.useEffect(
-    allProjectIdEffect(
-      allProjectIdListMaybe,
-      setAllProjectIdList,
-      setProjectMap
-    ),
-    [allProjectIdListMaybe]
-  );
-
-  React.useEffect(projectMapEffect(projectMap, setProjectMap), [projectMap]);
-
-  React.useEffect(userMapEffect(userMap, setUserMap), [userMap]);
-
-  React.useEffect(imageMapEffect(imageMap, setImageMap), [imageMap]);
-
-  React.useEffect(ideaMapEffect(ideaMap, setIdeaMap), [ideaMap]);
-
-  React.useEffect(() => {
-    switch (addTypePartState._) {
-      case "WaitCreating": {
-        const accountToken = getAccountTokenFromLogInState(logInState);
-        if (accountToken === undefined) {
-          return;
-        }
-        setAddTypePartState({
-          _: "Creating",
-          projectId: addTypePartState.projectId,
-        });
-        api
-          .addTypePart({
-            accountToken,
-            projectId: addTypePartState.projectId,
-          })
-          .then((addTypePartResponse) => {
-            setAddTypePartState({ _: "None" });
-            if (addTypePartResponse.dataMaybe._ === "Nothing") {
-              return;
-            }
-            setTypePartMap(
-              new Map(
-                addTypePartResponse.dataMaybe.value.map((typePart): [
-                  d.TypePartId,
-                  d.ResourceState<d.TypePart>
-                ] => [
-                  typePart.id,
-                  d.ResourceState.Loaded({
-                    dataMaybe: d.Maybe.Just(typePart.data),
-                    getTime: addTypePartResponse.getTime,
-                  }),
-                ])
-              )
-            );
-          });
-      }
-    }
-  }, [addTypePartState]);
-
-  React.useEffect(() => {
-    switch (requestTypePartListInProjectState._) {
-      case "WaitRequesting":
-        setRequestTypePartListInProjectState({
-          _: "Requesting",
-          projectId: requestTypePartListInProjectState.projectId,
-        });
-        api
-          .getTypePartByProjectId(requestTypePartListInProjectState.projectId)
-          .then((typePartListInProjectResponse) => {
-            setRequestTypePartListInProjectState({ _: "None" });
-            if (typePartListInProjectResponse.dataMaybe._ === "Nothing") {
-              return;
-            }
-            setTypePartMap(
-              new Map(
-                typePartListInProjectResponse.dataMaybe.value.map((typePart): [
-                  d.TypePartId,
-                  d.ResourceState<d.TypePart>
-                ] => [
-                  typePart.id,
-                  d.ResourceState.Loaded({
-                    dataMaybe: d.Maybe.Just(typePart.data),
-                    getTime: typePartListInProjectResponse.getTime,
-                  }),
-                ])
-              )
-            );
-          });
-    }
-  }, [requestTypePartListInProjectState]);
-
-  // 更新
-  const updateCheck = () => {
-    requestRef.current = window.requestAnimationFrame(updateCheck);
-    loopCount.current += 1;
-    if (loopCount.current < 60) {
-      return;
-    }
-    loopCount.current = 0;
-
-    setAllProjectIdList(
-      (
-        beforeAllProjectIdListMaybe: d.Maybe<
-          d.ResourceState<ReadonlyArray<d.ProjectId>>
-        >
-      ): d.Maybe<d.ResourceState<ReadonlyArray<d.ProjectId>>> => {
-        if (beforeAllProjectIdListMaybe._ === "Nothing") {
-          return beforeAllProjectIdListMaybe;
-        }
-        const allProjectIdList = beforeAllProjectIdListMaybe.value;
-        switch (allProjectIdList._) {
-          case "Loaded":
-            if (
-              coreUtil
-                .timeToDate(allProjectIdList.dataResource.getTime)
-                .getTime() +
-                1000 * 10 <
-              new Date().getTime()
-            ) {
-              console.log("更新するぞ");
-              return d.Maybe.Just(
-                d.ResourceState.WaitUpdating(allProjectIdList.dataResource)
-              );
-            }
-        }
-        return beforeAllProjectIdListMaybe;
-      }
-    );
-  };
-
-  // 更新機能を有効にしたいときはコメントを外す
-  /*
-   * React.useEffect(() => {
-   *   requestRef.current = window.requestAnimationFrame(updateCheck);
-   *   return () => {
-   *     if (typeof requestRef.current === "number") {
-   *       window.cancelAnimationFrame(requestRef.current);
-   *     }
-   *   };
-   * }, []);
-   */
-
-  return {
-    clientMode: urlData.clientMode,
-    language: urlData.language,
-    location: urlData.location,
-    logInState,
-    allProjectIdListMaybe,
-    projectMap,
-    userMap,
-    imageMap,
-    ideaMap,
-    typePartMap,
-    createProjectState,
-    projectIdeaIdMap,
-    addTypePartState,
-    requestTypePartListInProjectState,
-    onJump,
-    requestAllProject: () => {
-      setAllProjectIdList((beforeAllProjectIdListMaybe) => {
-        if (beforeAllProjectIdListMaybe._ === "Nothing") {
-          return d.Maybe.Just(d.ResourceState.WaitLoading());
-        }
-        return beforeAllProjectIdListMaybe;
-      });
-    },
-    requestProject: (projectId: d.ProjectId) => {
-      setProjectMap((beforeProjectMap) => {
-        if (!beforeProjectMap.has(projectId)) {
-          const newProjectMap = new Map(beforeProjectMap);
-          newProjectMap.set(projectId, d.ResourceState.WaitLoading());
-          return newProjectMap;
-        }
-        return beforeProjectMap;
-      });
-    },
-    requestUser: (userId: d.UserId) => {
-      setUserMap((beforeUserMap) => {
-        if (!beforeUserMap.has(userId)) {
-          const newUserMap = new Map(beforeUserMap);
-          newUserMap.set(userId, d.ResourceState.WaitLoading());
-          return newUserMap;
-        }
-        return beforeUserMap;
-      });
-    },
-    requestImage: (imageToken: d.ImageToken) => {
-      setImageMap((beforeImageMap) => {
-        if (!beforeImageMap.has(imageToken)) {
-          const newDict = new Map(beforeImageMap);
-          newDict.set(imageToken, d.StaticResourceState.WaitLoading());
-          return newDict;
-        }
-        return beforeImageMap;
-      });
-    },
-    requestIdea: (ideaId: d.IdeaId) => {
-      setIdeaMap((beforeIdeaMap) => {
-        if (!beforeIdeaMap.has(ideaId)) {
-          const newIdeaMap = new Map(beforeIdeaMap);
-          newIdeaMap.set(ideaId, d.ResourceState.WaitLoading());
-          return newIdeaMap;
-        }
-        return beforeIdeaMap;
-      });
-    },
-    createProject: (projectName) => {
-      setCreateProjectState({ _: "WaitCreating", projectName });
-    },
-    requestLogOut: () => {
-      setIsLogOutRequest(true);
-    },
-    createIdea: (ideaName: string, parentId: d.IdeaId) => {
-      setCreateIdeaState({ _: "WaitCreating", ideaName, parentId });
-    },
-    requestProjectIdea: (projectId: d.ProjectId) => {
-      api.getIdeaAndIdListByProjectId(projectId).then((ideaResourceList) => {
-        setIdeaResourceList(ideaResourceList);
-        setProjectIdeaIdMap((beforeProjectIdMap) => {
-          const newProjectIdMap = new Map(beforeProjectIdMap);
-          newProjectIdMap.set(
-            projectId,
-            ideaResourceList.map((idAndData) => idAndData.id)
-          );
-          return newProjectIdMap;
-        });
-      });
-    },
-    requestLogIn: (provider: d.OpenIdConnectProvider) => {
-      setLogInState(d.LogInState.WaitRequestingLogInUrl(provider));
-    },
-    addTypePart: (projectId: d.ProjectId) => {
-      if (addTypePartState._ === "Creating") {
-        return;
-      }
-      setAddTypePartState({ _: "WaitCreating", projectId });
-    },
-    requestTypePartListInProject: (projectId: d.ProjectId) => {
-      if (requestTypePartListInProjectState._ === "Requesting") {
-        return;
-      }
-      setRequestTypePartListInProjectState({ _: "WaitRequesting", projectId });
-    },
-  };
-};
-
-const logInEffect = (
-  logInState: d.LogInState,
-  urlData: d.UrlData,
-  dispatchLogInState: React.Dispatch<React.SetStateAction<d.LogInState>>,
-  setUser: (userId: d.UserId, userResource: d.Resource<d.User>) => void
-): React.EffectCallback => () => {
-  switch (logInState._) {
-    case "WaitLoadingAccountTokenFromIndexedDB":
-      dispatchLogInState(d.LogInState.LoadingAccountTokenFromIndexedDB);
-      indexedDB.getAccountToken().then((accountToken) => {
-        if (accountToken === undefined) {
-          dispatchLogInState(d.LogInState.Guest);
-        } else {
-          dispatchLogInState(
-            d.LogInState.WaitVerifyingAccountToken(accountToken)
-          );
-        }
-      });
-      return;
-    case "Guest":
-      return;
-    case "WaitRequestingLogInUrl":
-      dispatchLogInState(
-        d.LogInState.RequestingLogInUrl(logInState.openIdConnectProvider)
-      );
-      api
-        .requestLogInUrl({
-          openIdConnectProvider: logInState.openIdConnectProvider,
-          urlData,
-        })
-        .then((logInUrl) => {
-          dispatchLogInState(d.LogInState.JumpingToLogInPage(logInUrl));
-        });
-      return;
-    case "JumpingToLogInPage":
-      window.location.href = logInState.string;
-      return;
-    case "WaitVerifyingAccountToken":
-      dispatchLogInState({
-        _: "VerifyingAccountToken",
-        accountToken: logInState.accountToken,
-      });
-      api
-        .getUserByAccountToken(logInState.accountToken)
-        .then((userResourceAndIdMaybe) => {
-          switch (userResourceAndIdMaybe._) {
-            case "Just":
-              indexedDB.setAccountToken(logInState.accountToken);
-              dispatchLogInState(
-                d.LogInState.LoggedIn({
-                  accountToken: logInState.accountToken,
-                  userId: userResourceAndIdMaybe.value.id,
-                })
-              );
-              setUser(
-                userResourceAndIdMaybe.value.id,
-                userResourceAndIdMaybe.value.data
-              );
-              return;
-            case "Nothing":
-              dispatchLogInState(d.LogInState.Guest);
-          }
-        });
   }
-};
-
-const createProjectEffect = (
-  createProjectState: CreateProjectState,
-  logInState: d.LogInState,
-  setCreateProjectState: React.Dispatch<
-    React.SetStateAction<CreateProjectState>
-  >
-): React.EffectCallback => () => {
-  switch (createProjectState._) {
-    case "None":
-      return;
-    case "WaitCreating": {
-      const accountToken = getAccountTokenFromLogInState(logInState);
-      if (accountToken === undefined) {
-        return;
-      }
-      api
-        .createProject({
-          accountToken,
-          projectName: createProjectState.projectName,
-        })
-        .then((projectMaybe) => {
-          if (projectMaybe._ === "Just") {
-            setCreateProjectState({
-              _: "Created",
-              projectId: projectMaybe.value.id,
-            });
-          } else {
-            console.log("プロジェクト作成に失敗");
-          }
-        });
-    }
-  }
-};
-
-const createIdeaEffect = (
-  createIdeaState: CreateIdeaState,
-  logInState: d.LogInState,
-  setCreateIdeaState: React.Dispatch<React.SetStateAction<CreateIdeaState>>
-): React.EffectCallback => () => {
-  switch (createIdeaState._) {
-    case "None":
-      return;
-    case "WaitCreating": {
-      const accountToken = getAccountTokenFromLogInState(logInState);
-      if (accountToken === undefined) {
-        return;
-      }
-      api
-        .createIdea({
-          accountToken,
-          ideaName: createIdeaState.ideaName,
-          parentId: createIdeaState.parentId,
-        })
-        .then((ideaMaybe) => {
-          if (ideaMaybe._ === "Just") {
-            setCreateIdeaState({
-              _: "Created",
-              ideaId: ideaMaybe.value.id,
-            });
-          } else {
-            console.log("アイデアの作成に失敗");
-          }
-        });
-    }
-  }
-};
-
-const allProjectIdEffect = (
-  allProjectIdListMaybe: d.Maybe<d.ResourceState<ReadonlyArray<d.ProjectId>>>,
-  setAllProjectIdList: React.Dispatch<
-    React.SetStateAction<d.Maybe<d.ResourceState<ReadonlyArray<d.ProjectId>>>>
-  >,
-  setProjectMap: React.Dispatch<
-    React.SetStateAction<ReadonlyMap<d.ProjectId, d.ResourceState<d.Project>>>
-  >
-): React.EffectCallback => () => {
-  console.log("ResourceStateに応じて処理をする", allProjectIdListMaybe);
-  if (allProjectIdListMaybe._ === "Nothing") {
-    return;
-  }
-  const allProjectIdList = allProjectIdListMaybe.value;
-  switch (allProjectIdList._) {
-    case "Loaded":
-    case "Unknown":
-      return;
-    case "WaitLoading":
-      // dispatchAllProjectIdList(data.Maybe.Just(Resource.Loading()));
-      /*
-       * indexedDBにアクセスして取得
-       * 代わりに失敗したということでWaitRequestingにする
-       */
-      setAllProjectIdList(d.Maybe.Just(d.ResourceState.WaitRequesting()));
-      return;
-    case "Loading":
-      return;
-    case "WaitRequesting":
-      setAllProjectIdList(d.Maybe.Just(d.ResourceState.Requesting()));
-      api.getTop50Project().then((idAndProjectResourceList) => {
-        setProjectMap(
-          new Map(
-            idAndProjectResourceList.map((project) => [
-              project.id,
-              d.ResourceState.Loaded(project.data),
-            ])
-          )
-        );
-
-        setAllProjectIdList(
-          d.Maybe.Just(
-            d.ResourceState.Loaded({
-              dataMaybe: d.Maybe.Just(
-                idAndProjectResourceList.map((project) => project.id)
-              ),
-              getTime: coreUtil.timeFromDate(new Date()),
-            })
-          )
-        );
-      });
-      return;
-
-    case "Requesting":
-      return;
-    case "WaitUpdating":
-      setAllProjectIdList(
-        d.Maybe.Just(d.ResourceState.Updating(allProjectIdList.dataResource))
-      );
-      api.getTop50Project().then((idAndProjectResourceList) => {
-        setProjectMap(
-          new Map(
-            idAndProjectResourceList.map((project) => [
-              project.id,
-              d.ResourceState.Loaded(project.data),
-            ])
-          )
-        );
-        setAllProjectIdList(
-          d.Maybe.Just(
-            d.ResourceState.Loaded({
-              dataMaybe: d.Maybe.Just(
-                idAndProjectResourceList.map((project) => project.id)
-              ),
-              getTime: coreUtil.timeFromDate(new Date()),
-            })
-          )
-        );
-      });
-      return;
-    case "Updating":
-      return;
-    case "WaitRetrying":
-      console.log("サーバーに問い合わせてプロジェクトの一覧を再取得する予定");
-  }
-};
-
-/**
- * プロジェクトのデータ
- */
-const projectMapEffect = (
-  projectMap: ReadonlyMap<d.ProjectId, d.ResourceState<d.Project>>,
-  setProjectMap: React.Dispatch<
-    React.SetStateAction<ReadonlyMap<d.ProjectId, d.ResourceState<d.Project>>>
-  >
-): React.EffectCallback => () => {
-  const newProjectData = new Map(projectMap);
-  let isChanged = false;
-  for (const [projectId, projectResource] of projectMap) {
-    switch (projectResource._) {
-      case "Loaded":
-        break;
-      case "WaitLoading":
-        isChanged = true;
-        newProjectData.set(projectId, d.ResourceState.WaitRequesting());
-        break;
-      case "Loading":
-        break;
-      case "WaitRequesting":
-        isChanged = true;
-        newProjectData.set(projectId, d.ResourceState.Requesting());
-        api.getProject(projectId).then((project) => {
-          setProjectMap((dict) => {
-            const newDict = new Map(dict);
-            newDict.set(projectId, d.ResourceState.Loaded(project));
-            return newDict;
-          });
-        });
-        break;
-      case "Requesting":
-        break;
-      case "WaitRetrying":
-        isChanged = true;
-        console.log("再度プロジェクトのリクエストをする予定");
-        break;
-      case "Retrying":
-      case "WaitUpdating":
-      case "Updating":
-      case "Unknown":
-        break;
-    }
-  }
-  if (isChanged) {
-    setProjectMap(newProjectData);
-  }
-};
-
-const userMapEffect = (
-  userMap: ReadonlyMap<d.UserId, d.ResourceState<d.User>>,
-  setUserMap: React.Dispatch<
-    React.SetStateAction<ReadonlyMap<d.UserId, d.ResourceState<d.User>>>
-  >
-): React.EffectCallback => () => {
-  const newUserData = new Map(userMap);
-  let isChanged = false;
-  for (const [userId, userResourceState] of userMap) {
-    switch (userResourceState._) {
-      case "Loaded":
-        break;
-      case "WaitLoading":
-        isChanged = true;
-        newUserData.set(userId, d.ResourceState.WaitRequesting());
-        break;
-      case "Loading":
-        break;
-      case "WaitRequesting":
-        isChanged = true;
-        newUserData.set(userId, d.ResourceState.Requesting());
-        api.getUser(userId).then((userResource) => {
-          setUserMap((dict) => {
-            const newDict = new Map(dict);
-            newDict.set(userId, d.ResourceState.Loaded(userResource));
-            return newDict;
-          });
-        });
-        break;
-      case "Requesting":
-        break;
-      case "WaitRetrying":
-        isChanged = true;
-        console.log("再度ユーザーのリクエストをする予定");
-        break;
-      case "Retrying":
-      case "WaitUpdating":
-      case "Updating":
-      case "Unknown":
-        break;
-    }
-  }
-  if (isChanged) {
-    setUserMap(newUserData);
-  }
-};
-
-const imageMapEffect = (
-  imageMap: ReadonlyMap<d.ImageToken, d.StaticResourceState<string>>,
-  setImageMap: React.Dispatch<
-    React.SetStateAction<
-      ReadonlyMap<d.ImageToken, d.StaticResourceState<string>>
-    >
-  >
-): React.EffectCallback => () => {
-  const newImageData = new Map(imageMap);
-  let isChanged = false;
-  for (const [imageToken, imageDataItem] of imageMap) {
-    switch (imageDataItem._) {
-      case "Loaded":
-        break;
-      case "WaitLoading":
-        isChanged = true;
-        newImageData.set(imageToken, d.StaticResourceState.Loading());
-        indexedDB.getImage(imageToken).then((binary): void => {
-          setImageMap((dict) => {
-            const newDict = new Map(dict);
-            newDict.set(
-              imageToken,
-              binary === undefined
-                ? d.StaticResourceState.WaitRequesting()
-                : d.StaticResourceState.Loaded(createImageBlobUrl(binary))
-            );
-            return newDict;
-          });
-        });
-        break;
-      case "Loading":
-        break;
-      case "WaitRequesting":
-        isChanged = true;
-        newImageData.set(imageToken, d.StaticResourceState.Requesting());
-        api.getImageFile(imageToken).then((binaryMaybe) => {
-          if (binaryMaybe._ === "Nothing") {
-            throw new Error("存在しない画像をリクエストしてしまった");
-          }
-          indexedDB.setImage(imageToken, binaryMaybe.value);
-          setImageMap((dict) => {
-            const newDict = new Map(dict);
-            newDict.set(
-              imageToken,
-              d.StaticResourceState.Loaded(
-                createImageBlobUrl(binaryMaybe.value)
-              )
-            );
-            return newDict;
-          });
-        });
-        break;
-      case "Requesting":
-        break;
-      case "WaitRetrying":
-        isChanged = true;
-        console.log("再度画像のリクエストをする予定");
-        break;
-      case "Retrying":
-        break;
-      case "Unknown":
-        break;
-    }
-  }
-  if (isChanged) {
-    setImageMap(newImageData);
-  }
-};
-
-const createImageBlobUrl = (binary: Uint8Array) =>
-  window.URL.createObjectURL(
-    new Blob([binary], {
-      type: "image/png",
-    })
-  );
-
-const ideaMapEffect = (
-  ideaMap: ReadonlyMap<d.IdeaId, d.ResourceState<d.Idea>>,
-  setIdeaMap: React.Dispatch<
-    React.SetStateAction<ReadonlyMap<d.IdeaId, d.ResourceState<d.Idea>>>
-  >
-): React.EffectCallback => () => {
-  const newIdeaData = new Map(ideaMap);
-  let isChanged = false;
-  for (const [ideaId, userResourceState] of ideaMap) {
-    switch (userResourceState._) {
-      case "Loaded":
-        break;
-      case "WaitLoading":
-        isChanged = true;
-        newIdeaData.set(ideaId, d.ResourceState.WaitRequesting());
-        break;
-      case "Loading":
-        break;
-      case "WaitRequesting":
-        isChanged = true;
-        newIdeaData.set(ideaId, d.ResourceState.Requesting());
-        api.getIdea(ideaId).then((userResource) => {
-          setIdeaMap((dict) => {
-            const newDict = new Map(dict);
-            newDict.set(ideaId, d.ResourceState.Loaded(userResource));
-            return newDict;
-          });
-        });
-        break;
-      case "Requesting":
-        break;
-      case "WaitRetrying":
-        isChanged = true;
-        console.log("再度アイデアのリクエストをする予定");
-        break;
-      case "Retrying":
-      case "WaitUpdating":
-      case "Updating":
-      case "Unknown":
-        break;
-    }
-  }
-  if (isChanged) {
-    setIdeaMap(newIdeaData);
-  }
-};
-
-const getAccountTokenFromLogInState = (
-  logInState: d.LogInState
-): d.AccountToken | undefined => {
-  switch (logInState._) {
-    case "LoggedIn":
-      return logInState.accountTokenAndUserId.accountToken;
-  }
-};
+}
