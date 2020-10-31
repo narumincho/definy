@@ -117,9 +117,9 @@ export class Model {
       const newUrlData: d.UrlData = core.urlDataAndAccountTokenFromUrl(
         new URL(window.location.href)
       ).urlData;
-      this.language = param.initUrlData.language;
-      this.location = param.initUrlData.location;
-      this.clientMode = param.initUrlData.clientMode;
+      this.language = newUrlData.language;
+      this.location = newUrlData.location;
+      this.clientMode = newUrlData.clientMode;
     });
 
     this.logInState =
