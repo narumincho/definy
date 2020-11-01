@@ -69,42 +69,47 @@ export const LoadingBox = (children: VNodeChildren): VNode =>
 export const commonResourceStateView = <data extends unknown>(prop: {
   resourceState: d.ResourceState<data> | undefined;
   dataView: (data_: data) => VNode;
+  key: string;
 }): VNode => {
   if (prop.resourceState === undefined) {
     return h("div", {}, []);
   }
   switch (prop.resourceState._) {
     case "WaitLoading":
-      return h("div", { class: "ui__resource" }, [
+      return h("div", { class: "ui__resource", key: prop.key }, [
         NewLoadingIcon({ isWait: true }),
       ]);
     case "Loading":
-      return h("div", { class: "ui__resource" }, [
+      return h("div", { class: "ui__resource", key: prop.key }, [
         NewLoadingIcon({ isWait: false }),
       ]);
     case "WaitRequesting":
-      return h("div", { class: "ui__resource" }, [
+      return h("div", { class: "ui__resource", key: prop.key }, [
         NewLoadingIcon({ isWait: true }),
       ]);
     case "Requesting":
-      return h("div", { class: "ui__resource" }, [
+      return h("div", { class: "ui__resource", key: prop.key }, [
         NewLoadingIcon({ isWait: false }),
       ]);
     case "WaitRetrying":
-      return h("div", { class: "ui__resource" }, ["WaitRetrying"]);
+      return h("div", { class: "ui__resource", key: prop.key }, [
+        "WaitRetrying",
+      ]);
     case "Retrying":
-      return h("div", { class: "ui__resource" }, ["Retry"]);
+      return h("div", { class: "ui__resource", key: prop.key }, ["Retry"]);
     case "WaitUpdating":
-      return h("div", { class: "ui__resource" }, ["WaitUpdating"]);
+      return h("div", { class: "ui__resource", key: prop.key }, [
+        "WaitUpdating",
+      ]);
     case "Updating":
-      return h("div", { class: "ui__resource" }, ["Updating"]);
+      return h("div", { class: "ui__resource", key: prop.key }, ["Updating"]);
     case "Loaded":
       if (prop.resourceState.dataResource.dataMaybe._ === "Just") {
         return prop.dataView(prop.resourceState.dataResource.dataMaybe.value);
       }
-      return h("div", { class: "ui__resource" }, ["?"]);
+      return h("div", { class: "ui__resource", key: prop.key }, ["?"]);
     case "Unknown":
-      return h("div", { class: "ui__resource" }, ["Unknown"]);
+      return h("div", { class: "ui__resource", key: prop.key }, ["Unknown"]);
   }
 };
 
@@ -112,10 +117,11 @@ const classNameOrUndefinedToSpaceClassNameOrEmpty = (
   className: string | undefined
 ): string => (className === undefined ? "" : " " + className);
 
-export const Image = (prop: {
+export const image = (prop: {
   modelInterface: ModelInterface;
   imageToken: d.ImageToken;
-  className?: string;
+  class?: string;
+  key: string;
 }): VNode => {
   const blobUrlResource = prop.modelInterface.imageMap.get(prop.imageToken);
   if (blobUrlResource === undefined) {
@@ -123,8 +129,8 @@ export const Image = (prop: {
       "div",
       {
         class:
-          "ui__image" +
-          classNameOrUndefinedToSpaceClassNameOrEmpty(prop.className),
+          "ui__image" + classNameOrUndefinedToSpaceClassNameOrEmpty(prop.class),
+        key: prop.key,
       },
       ["..."]
     );
@@ -136,7 +142,8 @@ export const Image = (prop: {
         {
           class:
             "ui__image" +
-            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.className),
+            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.class),
+          key: prop.key,
         },
         [NewLoadingIcon({ isWait: true })]
       );
@@ -146,7 +153,8 @@ export const Image = (prop: {
         {
           class:
             "ui__image" +
-            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.className),
+            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.class),
+          key: prop.key,
         },
         [NewLoadingIcon({ isWait: false })]
       );
@@ -156,7 +164,8 @@ export const Image = (prop: {
         {
           class:
             "ui__image" +
-            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.className),
+            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.class),
+          key: prop.key,
         },
         [RequestingIcon({ isWait: true })]
       );
@@ -166,7 +175,8 @@ export const Image = (prop: {
         {
           class:
             "ui__image" +
-            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.className),
+            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.class),
+          key: prop.key,
         },
         [RequestingIcon({ isWait: false })]
       );
@@ -176,7 +186,8 @@ export const Image = (prop: {
         {
           class:
             "ui__image" +
-            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.className),
+            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.class),
+          key: prop.key,
         },
         ["再挑戦準備中"]
       );
@@ -186,7 +197,8 @@ export const Image = (prop: {
         {
           class:
             "ui__image" +
-            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.className),
+            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.class),
+          key: prop.key,
         },
         ["再挑戦中"]
       );
@@ -196,21 +208,22 @@ export const Image = (prop: {
         {
           class:
             "ui__image" +
-            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.className),
+            classNameOrUndefinedToSpaceClassNameOrEmpty(prop.class),
+          key: prop.key,
         },
         ["取得に失敗"]
       );
     case "Loaded":
-      return h("div", {
+      return h("img", {
         class:
-          "ui__image" +
-          classNameOrUndefinedToSpaceClassNameOrEmpty(prop.className),
+          "ui__image" + classNameOrUndefinedToSpaceClassNameOrEmpty(prop.class),
         src: blobUrlResource.data,
+        key: prop.key,
       });
   }
 };
 
-export const User = (prop: {
+export const user = (prop: {
   modelInterface: ModelInterface;
   userId: d.UserId;
 }): VNode => {
@@ -226,14 +239,17 @@ export const User = (prop: {
           class: "ui__user",
         },
         [
-          Image({
+          image({
             imageToken: data.imageHash,
             modelInterface: prop.modelInterface,
+            key: "user-image",
+            class: "ui__user-image",
           }),
           data.name,
         ]
       ),
     resourceState: userResource,
+    key: "user-" + prop.userId,
   });
 };
 
@@ -254,16 +270,18 @@ export const project = (prop: {
           key: prop.key,
         },
         [
-          Image({
+          image({
             modelInterface: prop.modelInterface,
             imageToken: data.imageHash,
-            className: "ui__project-image",
+            class: "ui__project-image",
+            key: "project-image",
           }),
           h("div", { class: "ui__project-icon-and-name" }, [
-            Image({
-              className: "ui__project-icon",
+            image({
+              class: "ui__project-icon",
               imageToken: data.iconHash,
               modelInterface: prop.modelInterface,
+              key: "project-icon",
             }),
             data.name,
           ]),
@@ -271,6 +289,7 @@ export const project = (prop: {
       );
     },
     resourceState: projectResource,
+    key: "project-" + prop.projectId,
   });
 };
 
@@ -334,11 +353,11 @@ export const oneLineTextInput = (prop: {
     value: prop.value,
   });
 
-export const gitHubIcon = (color: string): VNode =>
-  h("svg", { viewBox: "0 0 20 20" }, [
+export const gitHubIcon = (prop: { color: string; class: string }): VNode =>
+  h("svg", { viewBox: "0 0 20 20", key: "github-icon", class: prop.class }, [
     h("path", {
       d:
         "M10 0C4.476 0 0 4.477 0 10c0 4.418 2.865 8.166 6.84 9.49.5.09.68-.218.68-.483 0-.237-.007-.866-.012-1.7-2.782.603-3.37-1.34-3.37-1.34-.454-1.157-1.11-1.464-1.11-1.464-.907-.62.07-.608.07-.608 1.003.07 1.53 1.03 1.53 1.03.893 1.53 2.342 1.087 2.912.83.09-.645.35-1.085.634-1.335-2.22-.253-4.555-1.11-4.555-4.943 0-1.09.39-1.984 1.03-2.683-.105-.253-.448-1.27.096-2.647 0 0 .84-.268 2.75 1.026C8.294 4.95 9.15 4.84 10 4.836c.85.004 1.705.115 2.504.337 1.91-1.294 2.747-1.026 2.747-1.026.548 1.377.204 2.394.1 2.647.64.7 1.03 1.592 1.03 2.683 0 3.842-2.34 4.687-4.566 4.935.36.308.678.92.678 1.852 0 1.336-.01 2.415-.01 2.743 0 .267.18.578.687.48C17.14 18.163 20 14.417 20 10c0-5.522-4.478-10-10-10",
-      fill: color,
+      fill: prop.color,
     }),
   ]);

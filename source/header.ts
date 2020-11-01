@@ -4,7 +4,7 @@ import { VNode, h } from "maquette";
 import { ModelInterface } from "./modelInterface";
 
 export const view = (modelInterface: ModelInterface): VNode =>
-  h("div", { class: "header__root" }, [
+  h("div", { class: "header__root", key: "header" }, [
     logo(modelInterface),
     UserViewOrLogInButton(modelInterface),
   ]);
@@ -61,10 +61,11 @@ const UserViewOrLogInButton = (modelInterface: ModelInterface): VNode => {
           location: d.Location.Setting,
         },
         [
-          ui.Image({
-            className: "header__setting-link",
+          ui.image({
+            class: "header__setting-link",
             imageToken: user.imageHash,
             modelInterface,
+            key: "logo",
           }),
           user.name,
         ]
@@ -139,7 +140,7 @@ const gitHubButton = (prop: {
       },
     },
     [
-      h("div", { class: "header__github-icon" }, [ui.gitHubIcon("#000")]),
+      ui.gitHubIcon({ color: "#000", class: "header__github-icon" }),
       h("div", { class: "header__github-text" }, [
         logInMessage("GitHub", prop.language),
       ]),

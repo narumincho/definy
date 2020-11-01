@@ -10,7 +10,7 @@ export class Model {
 }
 
 export const view = (model: Model): VNode =>
-  h("div", {}, [
-    h("div", {}, ["ここなユーザーの詳細ページです"]),
-    ui.User(model),
+  h("div", { key: "user" }, [
+    h("div", { class: "description" }, ["ここなユーザーの詳細ページです"]),
+    ui.user(model),
   ]);

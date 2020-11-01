@@ -12,13 +12,13 @@ export class Model {
 
 export const view = (model: Model): VNode => {
   if (model.modelInterface.logInState._ !== "LoggedIn") {
-    return h("div", {}, ["ログインしていません"]);
+    return h("div", { key: "setting" }, ["ログインしていません"]);
   }
   const loggedUserId =
     model.modelInterface.logInState.accountTokenAndUserId.userId;
-  return h("div", {}, [
+  return h("div", { key: "setting" }, [
     h("div", {}, ["設定画面"]),
-    ui.User({ modelInterface: model.modelInterface, userId: loggedUserId }),
+    ui.user({ modelInterface: model.modelInterface, userId: loggedUserId }),
     ui.button(
       {
         onClick: model.modelInterface.logOut,

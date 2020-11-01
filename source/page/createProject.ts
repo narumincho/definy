@@ -36,7 +36,7 @@ export class Model {
 
 export const view = (model: Model): VNode => {
   if (model.modelInterface.logInState._ !== "LoggedIn") {
-    return h("div", { class: "create-project__root" }, [
+    return h("div", { class: "create-project__root", key: "create-project" }, [
       h("div", {}, ["プロジェクトの作成にはログインする必要があります"]),
       h("div", {}, ["左のログインボタンを押してログインしてください"]),
     ]);

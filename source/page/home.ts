@@ -14,7 +14,7 @@ export class Model {
 }
 
 export const view = (model: Model): VNode => {
-  return h("div", { class: "home__root" }, [
+  return h("div", { class: "home__root", key: "home" }, [
     homeMain(model),
     ...(model.modelInterface.logInState._ === "Guest"
       ? []
@@ -23,8 +23,8 @@ export const view = (model: Model): VNode => {
 };
 
 const homeMain = (model: Model): VNode => {
-  return h("div", { class: "home__main" }, [
-    h("div", { class: "home__link-list" }, [
+  return h("div", { class: "home__main", key: "home-main" }, [
+    h("div", { class: "home__link-list", key: "home__link-list" }, [
       ui.link(
         {
           class: "home__link",
@@ -85,11 +85,12 @@ const AllProjectList = (
           return d.ResourceState.Unknown();
       }
     })(),
+    key: "top50project-list",
   });
 };
 
 const createProjectButton = (modelInterface: ModelInterface): VNode =>
-  h("div", { class: "home__create-project" }, [
+  h("div", { class: "home__create-project", key: "create-project" }, [
     ui.link(
       {
         class: "home__create-project-link",

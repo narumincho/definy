@@ -85,9 +85,13 @@ const sampleProject: ReadonlyArray<[
   ],
 ];
 
-const iconImage = (imageStaticResource: d.StaticResourceState<string>): VNode =>
-  ui.Image({
-    className: "debug__image-with-border",
+const iconImage = (
+  imageStaticResource: d.StaticResourceState<string>,
+  key: string
+): VNode =>
+  ui.image({
+    class: "debug__image-with-border",
+    key,
     imageToken: "a" as d.ImageToken,
     modelInterface: {
       ...defaultModelInterface,
@@ -119,36 +123,43 @@ homeModelInterface.top50ProjectIdState = {
   ],
 };
 
-const sampleComponentList = {
-  header: header.view(defaultModelInterface),
-  home: home.view(new home.Model(defaultModelInterface)),
-  homeWithProject: home.view(new home.Model(homeModelInterface)),
-  about: about.view,
-  requestingImage: h("div", {}, [
-    "WaitLoading",
-    iconImage(d.StaticResourceState.WaitLoading()),
-    "Loading",
-    iconImage(d.StaticResourceState.Loading()),
-    "WaitRequesting",
-    iconImage(d.StaticResourceState.WaitRequesting()),
-    "Requesting",
-    iconImage(d.StaticResourceState.Requesting()),
-  ]),
+const sampleComponentList: { [key in Tab]: () => VNode } = {
+  header: () => header.view(defaultModelInterface),
+  home: () => home.view(new home.Model(defaultModelInterface)),
+  homeWithProject: () => home.view(new home.Model(homeModelInterface)),
+  about: () => about.view(),
+  requestingImage: () =>
+    h("div", { key: "requestingImage" }, [
+      "WaitLoading",
+      iconImage(d.StaticResourceState.WaitLoading(), "WaitLoading"),
+      "Loading",
+      iconImage(d.StaticResourceState.Loading(), "Loading"),
+      "WaitRequesting",
+      iconImage(d.StaticResourceState.WaitRequesting(), "WaitRequesting"),
+      "Requesting",
+      iconImage(d.StaticResourceState.Requesting(), "Requesting"),
+    ]),
 };
 
-const allTab = Object.keys(sampleComponentList) as ReadonlyArray<
-  keyof typeof sampleComponentList
->;
-type Tab = keyof typeof sampleComponentList;
+const allTab = [
+  "header",
+  "home",
+  "homeWithProject",
+  "about",
+  "requestingImage",
+] as const;
+type Tab = typeof allTab[number];
 
 export const view = (model: Model): VNode =>
-  h("div", { class: "debug__root" }, [
+  h("div", { class: "debug__root", key: "debug" }, [
     h(
       "div",
-      { class: "debug__tab-list" },
+      { class: "debug__tab-list", key: "tab-list" },
       allTab.map((tabName) => {
         if (tabName === model.tab) {
-          return h("div", { class: "debug__tab--selected" }, [tabName]);
+          return h("div", { class: "debug__tab--selected", key: tabName }, [
+            tabName,
+          ]);
         }
         return ui.button(
           {
@@ -161,5 +172,5 @@ export const view = (model: Model): VNode =>
         );
       })
     ),
-    sampleComponentList[model.tab],
+    sampleComponentList[model.tab](),
   ]);

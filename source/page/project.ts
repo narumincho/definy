@@ -32,7 +32,7 @@ export type Page =
     };
 
 export const view = (model: Model): VNode =>
-  h("div", { class: "project__root" }, [mainView(model)]);
+  h("div", { class: "project__root", key: "project" }, [mainView(model)]);
 
 export const mainView = (model: Model): VNode => {
   const projectResourceState = model.modelInterface.projectMap.get(
@@ -45,6 +45,7 @@ export const mainView = (model: Model): VNode => {
         project,
       }),
     resourceState: projectResourceState,
+    key: "project-detail",
   });
 };
 
@@ -52,23 +53,25 @@ export const detailView = (prop: {
   model: Model;
   project: d.Project;
 }): VNode => {
-  return h("div", { class: "commit__root" }, [
+  return h("div", { class: "commit__root", key: "project-detail" }, [
     h("h1", { class: "commit__project-name-and-icon" }, [
-      ui.Image({
-        className: "commit__project-icon",
+      ui.image({
+        class: "commit__project-icon",
         imageToken: prop.project.iconHash,
         modelInterface: prop.model.modelInterface,
+        key: "project-image",
       }),
       h("div", {}, [prop.project.name]),
     ]),
-    ui.Image({
-      className: "commit__project-image",
+    ui.image({
+      class: "commit__project-image",
       imageToken: prop.project.imageHash,
       modelInterface: prop.model.modelInterface,
+      key: "project-icon",
     }),
     h("div", {}, [
       "作成者",
-      ui.User({
+      ui.user({
         modelInterface: prop.model.modelInterface,
         userId: prop.project.createUserId,
       }),
@@ -78,7 +81,7 @@ export const detailView = (prop: {
 };
 
 const typePartListEditor = (model: Model): VNode => {
-  return h("div", {}, [
+  return h("div", { key: "typePartListEditor" }, [
     ...[...model.modelInterface.typePartMap]
       .filter(
         ([_, typePart]) =>
@@ -92,11 +95,13 @@ const typePartListEditor = (model: Model): VNode => {
             return h("div", { key: typePartId }, [typePart.name]);
           },
           resourceState: typePartResourceState,
+          key: "typePartMap-" + typePartId,
         })
       ),
     ui.button(
       {
         onClick: model.addTypePart,
+        key: "typePartAddButton",
       },
       ["型パーツ追加"]
     ),

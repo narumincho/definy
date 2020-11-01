@@ -197,6 +197,7 @@ export class ModelInterface {
               )
             )
       );
+      this.projector.scheduleRender();
     });
     this.projector.scheduleRender();
   }

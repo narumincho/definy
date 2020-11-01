@@ -42,7 +42,7 @@ export class Model {
         language: initUrlData.language,
       },
       projector,
-      this.jump,
+      (urlData) => this.jump(urlData),
       false
     );
 
@@ -172,7 +172,7 @@ export const view = (model: Model): VNode => {
   }
   return h("div", { class: "app__main-root" }, [
     header.view(model.modelInterface),
-    MainPanel(model),
+    mainPanel(model),
   ]);
 };
 
@@ -204,10 +204,10 @@ const jumpMessage = (url: URL, language: d.Language): string => {
   }
 };
 
-const MainPanel = (model: Model): VNode => {
+const mainPanel = (model: Model): VNode => {
   switch (model.locationModel._) {
     case "About":
-      return about.view;
+      return about.view();
     case "Debug":
       return debug.view(model.locationModel.model);
     case "Project":
