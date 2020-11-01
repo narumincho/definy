@@ -9,7 +9,6 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "isolatedModules": true,
-    "jsx": "react",
     "skipLibCheck": true
   }
 }

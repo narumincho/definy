@@ -1,7 +1,7 @@
-import * as about from "./About";
+import * as about from "./about";
 import * as d from "definy-core/source/data";
-import * as header from "../Header";
-import * as home from "./Home";
+import * as header from "../header";
+import * as home from "./home";
 import * as ui from "../ui";
 import { Projector, VNode, h } from "maquette";
 import { ModelInterface } from "../modelInterface";

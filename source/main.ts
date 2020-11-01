@@ -1,4 +1,4 @@
-import * as app from "./App";
+import * as app from "./app";
 import * as common from "definy-core";
 import * as maquette from "maquette";
 
