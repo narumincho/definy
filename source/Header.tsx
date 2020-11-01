@@ -1,31 +1,27 @@
 import * as d from "definy-core/source/data";
 import * as ui from "./ui";
 import { VNode, h } from "maquette";
-import { Model } from "./model";
+import { ModelInterface } from "./modelInterface";
 
-export const header = (model: Model): VNode =>
+export const view = (modelInterface: ModelInterface): VNode =>
   h("div", { class: "header__root" }, [
-    logo(model),
-    UserViewOrLogInButton(model),
+    logo(modelInterface),
+    UserViewOrLogInButton(modelInterface),
   ]);
 
-const logo = (model: Model): VNode =>
+const logo = (modelInterface: ModelInterface): VNode =>
   ui.link(
     {
-      urlData: {
-        clientMode: model.clientMode,
-        language: model.language,
-        location: d.Location.Home,
-      },
+      modelInterface,
+      location: d.Location.Home,
       areaTheme: "Gray",
-      onJump: model.onJump,
       class: "header__logo",
     },
     ["Definy"]
   );
 
-const UserViewOrLogInButton = (model: Model): VNode => {
-  switch (model.logInState._) {
+const UserViewOrLogInButton = (modelInterface: ModelInterface): VNode => {
+  switch (modelInterface.logInState._) {
     case "WaitLoadingAccountTokenFromIndexedDB":
       return h("div", { class: "header__login" }, [
         "アクセストークンをindexedDBから読み取り中",
@@ -36,8 +32,8 @@ const UserViewOrLogInButton = (model: Model): VNode => {
       ]);
     case "Guest":
       return LogInButton({
-        language: model.language,
-        requestLogIn: (e) => model.requestLogIn(e),
+        language: modelInterface.language,
+        requestLogIn: modelInterface.logIn,
       });
     case "WaitVerifyingAccountToken":
       return h("div", { class: "header__login" }, ["アクセストークンを検証中"]);
@@ -46,8 +42,8 @@ const UserViewOrLogInButton = (model: Model): VNode => {
         "アクセストークンを検証中……",
       ]);
     case "LoggedIn": {
-      const userResourceState = model.userMap.get(
-        model.logInState.accountTokenAndUserId.userId
+      const userResourceState = modelInterface.userMap.get(
+        modelInterface.logInState.accountTokenAndUserId.userId
       );
       if (
         userResourceState === undefined ||
@@ -61,14 +57,14 @@ const UserViewOrLogInButton = (model: Model): VNode => {
         {
           class: "header__setting-link",
           areaTheme: "Gray",
-          onJump: model.onJump,
-          urlData: { ...model, location: d.Location.Setting },
+          modelInterface,
+          location: d.Location.Setting,
         },
         [
           ui.Image({
             className: "header__setting-link",
             imageToken: user.imageHash,
-            model,
+            modelInterface,
           }),
           user.name,
         ]

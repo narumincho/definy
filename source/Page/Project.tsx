@@ -1,8 +1,25 @@
 import * as d from "definy-core/source/data";
+import * as ui from "../ui";
 import { VNode, h } from "maquette";
-import { Model } from "../model";
-import { commit } from "../Component/Project";
-import { idea } from "../Component/Idea";
+import { ModelInterface } from "../modelInterface";
+
+export class Model {
+  modelInterface: ModelInterface;
+
+  projectId: d.ProjectId;
+
+  constructor(modelInterface: ModelInterface, projectId: d.ProjectId) {
+    this.modelInterface = modelInterface;
+    this.projectId = projectId;
+
+    this.modelInterface.requestProject(this.projectId);
+    this.modelInterface.requestTypePartInProject(this.projectId);
+  }
+
+  addTypePart(): void {
+    this.modelInterface.addTypePart(this.projectId);
+  }
+}
 
 export type Page =
   | {
@@ -14,104 +31,74 @@ export type Page =
       ideaId: d.IdeaId;
     };
 
-export const Project = (prop: { model: Model; page: Page }): VNode =>
-  h("div", { class: "project__root" }, [
-    ideaAndCommitTree(prop),
-    projectContent({ model: prop.model, page: prop.page }),
-  ]);
+export const view = (model: Model): VNode =>
+  h("div", { class: "project__root" }, [mainView(model)]);
 
-const ideaAndCommitTree = (prop: { model: Model; page: Page }): VNode => {
-  const projectIdAndData = getProjectIdAndData(prop.model, prop.page);
-  if (projectIdAndData !== undefined) {
-    const ideaIdList = prop.model.projectIdeaIdMap.get(projectIdAndData.id);
-    if (ideaIdList === undefined) {
-      return h("div", { class: "project__idea-and-commit-tree" }, [
-        "プロジェクトのアイデアを取得していない?",
-      ]);
-    }
-    return h("div", { class: "project__idea-and-commit-tree" }, [
-      h(
-        "div",
-        {
-          class: "project__tree-link",
-          areaTheme: "Gray",
-          onJump: prop.model.onJump,
-          urlData: {
-            ...prop.model,
-            location: d.Location.Project(projectIdAndData.id),
-          },
-        },
-        ["プロジェクトページ"]
-      ),
-      ...ideaIdList.map((ideaId) =>
-        h(
-          "div",
-          {
-            class: "project__tree-link",
-            areaTheme: "Gray",
-            key: ideaId,
-            onJump: prop.model.onJump,
-            urlData: {
-              ...prop.model,
-              location: d.Location.Idea(ideaId),
-            },
-          },
-          [ideaId]
-        )
-      ),
-    ]);
-  }
+export const mainView = (model: Model): VNode => {
+  const projectResourceState = model.modelInterface.projectMap.get(
+    model.projectId
+  );
+  return ui.commonResourceStateView({
+    dataView: (project) =>
+      detailView({
+        model,
+        project,
+      }),
+    resourceState: projectResourceState,
+  });
+};
 
-  return h("div", { class: "project__idea-and-commit-tree" }, [
-    "プロジェクトの情報が不明",
+export const detailView = (prop: {
+  model: Model;
+  project: d.Project;
+}): VNode => {
+  return h("div", { class: "commit__root" }, [
+    h("h1", { class: "commit__project-name-and-icon" }, [
+      ui.Image({
+        className: "commit__project-icon",
+        imageToken: prop.project.iconHash,
+        modelInterface: prop.model.modelInterface,
+      }),
+      h("div", {}, [prop.project.name]),
+    ]),
+    ui.Image({
+      className: "commit__project-image",
+      imageToken: prop.project.imageHash,
+      modelInterface: prop.model.modelInterface,
+    }),
+    h("div", {}, [
+      "作成者",
+      ui.User({
+        modelInterface: prop.model.modelInterface,
+        userId: prop.project.createUserId,
+      }),
+    ]),
+    typePartListEditor(prop.model),
   ]);
 };
 
-const getProjectIdAndData = (
-  model: Model,
-  page: Page
-): d.IdAndData<d.ProjectId, d.Project> | undefined => {
-  const projectId = getProjectId(model, page);
-  if (projectId === undefined) {
-    return undefined;
-  }
-  const projectResourceState = model.projectMap.get(projectId);
-  if (
-    projectResourceState === undefined ||
-    projectResourceState._ !== "Loaded" ||
-    projectResourceState.dataResource.dataMaybe._ === "Nothing"
-  ) {
-    return undefined;
-  }
-  return {
-    id: projectId,
-    data: projectResourceState.dataResource.dataMaybe.value,
-  };
-};
-
-const getProjectId = (model: Model, page: Page): d.ProjectId | undefined => {
-  switch (page._) {
-    case "Project":
-      return page.projectId;
-    case "Idea": {
-      const ideaData = model.ideaMap.get(page.ideaId);
-      if (
-        ideaData !== undefined &&
-        ideaData._ === "Loaded" &&
-        ideaData.dataResource.dataMaybe._ === "Just"
-      ) {
-        return ideaData.dataResource.dataMaybe.value.projectId;
-      }
-      return undefined;
-    }
-  }
-};
-
-const projectContent = (prop: { model: Model; page: Page }): VNode => {
-  switch (prop.page._) {
-    case "Idea":
-      return idea({ model: prop.model, ideaId: prop.page.ideaId });
-    case "Project":
-      return commit({ model: prop.model, projectId: prop.page.projectId });
-  }
+const typePartListEditor = (model: Model): VNode => {
+  return h("div", {}, [
+    ...[...model.modelInterface.typePartMap]
+      .filter(
+        ([_, typePart]) =>
+          typePart._ === "Loaded" &&
+          typePart.dataResource.dataMaybe._ === "Just" &&
+          typePart.dataResource.dataMaybe.value.projectId === model.projectId
+      )
+      .map(([typePartId, typePartResourceState]) =>
+        ui.commonResourceStateView({
+          dataView: (typePart) => {
+            return h("div", { key: typePartId }, [typePart.name]);
+          },
+          resourceState: typePartResourceState,
+        })
+      ),
+    ui.button(
+      {
+        onClick: model.addTypePart,
+      },
+      ["型パーツ追加"]
+    ),
+  ]);
 };

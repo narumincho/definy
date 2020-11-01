@@ -465,7 +465,7 @@
 
 .project__root {
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 1fr;
   grid-template-rows: 100%;
   justify-items: center;
   align-content: start;

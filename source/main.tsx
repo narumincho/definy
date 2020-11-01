@@ -1,8 +1,6 @@
+import * as app from "./App";
 import * as common from "definy-core";
 import * as maquette from "maquette";
-import * as app from "./App";
-import * as d from "definy-core/source/data";
-import * as ui from "./ui";
 
 const appElement = document.createElement("div");
 
@@ -21,9 +19,12 @@ const urlDataAndAccountToken = common.urlDataAndAccountTokenFromUrl(
 
 const projector = maquette.createProjector();
 
-projector.append(appElement, () =>
-  app.app({
+const model = new app.Model(
+  {
     accountToken: urlDataAndAccountToken.accountToken,
     initUrlData: urlDataAndAccountToken.urlData,
-  })(projector)
+  },
+  projector
 );
+
+projector.append(appElement, () => app.view(model));

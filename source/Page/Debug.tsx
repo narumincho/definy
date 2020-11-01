@@ -1,27 +1,35 @@
+import * as about from "./About";
 import * as d from "definy-core/source/data";
+import * as header from "../Header";
+import * as home from "./Home";
 import * as ui from "../ui";
 import { Projector, VNode, h } from "maquette";
-import { About } from "./About";
-import { Home } from "./Home";
-import { Model } from "../model";
-import { header } from "../Header";
+import { ModelInterface } from "../modelInterface";
 
-const defaultModel: Model = {
-  accountToken: undefined,
-  homeProjectState: { _: "None" },
-  projector: (null as unknown) as Projector,
-  jumpSameLanguageLink: () => {},
-  requestAllTop50Project: async () => {},
-  sameLanguageLink: () => new URL(""),
-  logInState: d.LogInState.Guest,
-  imageMap: new Map(),
-  language: "English",
-  location: d.Location.Home,
-  clientMode: d.ClientMode.DebugMode,
-  projectMap: new Map(),
-  typePartMap: new Map(),
-  userMap: new Map(),
-};
+export class Model {
+  modelInterface: ModelInterface;
+
+  tab: Tab = "header";
+
+  constructor(modelInterface: ModelInterface) {
+    this.modelInterface = modelInterface;
+  }
+
+  changeTab(newTab: Tab): void {
+    this.tab = newTab;
+  }
+}
+
+const defaultModelInterface: ModelInterface = new ModelInterface(
+  {
+    accountToken: d.Maybe.Nothing(),
+    clientMode: d.ClientMode.DebugMode,
+    language: "English",
+  },
+  (null as unknown) as Projector,
+  () => {},
+  true
+);
 
 const sampleProject: ReadonlyArray<[
   d.ProjectId,
@@ -81,37 +89,41 @@ const iconImage = (imageStaticResource: d.StaticResourceState<string>): VNode =>
   ui.Image({
     className: "debug__image-with-border",
     imageToken: "a" as d.ImageToken,
-    model: {
-      ...defaultModel,
+    modelInterface: {
+      ...defaultModelInterface,
       imageMap: new Map([["a" as d.ImageToken, imageStaticResource]]),
-    },
+    } as ModelInterface,
   });
 
+const homeModelInterface = new ModelInterface(
+  {
+    accountToken: d.Maybe.Nothing(),
+    clientMode: d.ClientMode.DebugMode,
+    language: "English",
+  },
+  (null as unknown) as Projector,
+  () => {},
+  true
+);
+homeModelInterface.projectMap = new Map([
+  sampleProject[0],
+  sampleProject[1],
+  sampleProject[2],
+]);
+homeModelInterface.top50ProjectIdState = {
+  _: "Loaded",
+  projectIdList: [
+    sampleProject[0][0],
+    sampleProject[1][0],
+    sampleProject[2][0],
+  ],
+};
+
 const sampleComponentList = {
-  header: header(defaultModel),
-  home: Home({ model: defaultModel }),
-  homeWithProject: Home({
-    model: {
-      ...defaultModel,
-      projectMap: new Map([
-        sampleProject[0],
-        sampleProject[1],
-        sampleProject[2],
-      ]),
-      createProjectState: { _: "None" },
-      allProjectIdListMaybe: d.Maybe.Just(
-        d.ResourceState.Loaded({
-          dataMaybe: d.Maybe.Just([
-            sampleProject[0][0],
-            sampleProject[1][0],
-            sampleProject[2][0],
-          ]),
-          getTime: { day: 0, millisecond: 0 },
-        })
-      ),
-    },
-  }),
-  about: About,
+  header: header.view(defaultModelInterface),
+  home: home.view(new home.Model(defaultModelInterface)),
+  homeWithProject: home.view(new home.Model(homeModelInterface)),
+  about: about.view,
   requestingImage: h("div", {}, [
     "WaitLoading",
     iconImage(d.StaticResourceState.WaitLoading()),
@@ -129,33 +141,25 @@ const allTab = Object.keys(sampleComponentList) as ReadonlyArray<
 >;
 type Tab = keyof typeof sampleComponentList;
 
-export const Debug = (): (() => VNode) => {
-  let tab: Tab = "header";
-
-  const setTab = (newTab: Tab) => {
-    tab = newTab;
-  };
-
-  return () =>
-    h("div", { class: "debug__root" }, [
-      h(
-        "div",
-        { class: "debug__tab-list" },
-        allTab.map((tabName) => {
-          if (tabName === tab) {
-            return h("div", { class: "debug__tab--selected" }, [tabName]);
-          }
-          return ui.button(
-            {
-              key: tabName,
-              onClick: () => {
-                setTab(tabName);
-              },
+export const view = (model: Model): VNode =>
+  h("div", { class: "debug__root" }, [
+    h(
+      "div",
+      { class: "debug__tab-list" },
+      allTab.map((tabName) => {
+        if (tabName === model.tab) {
+          return h("div", { class: "debug__tab--selected" }, [tabName]);
+        }
+        return ui.button(
+          {
+            key: tabName,
+            onClick: () => {
+              model.changeTab(tabName);
             },
-            [tabName]
-          );
-        })
-      ),
-      sampleComponentList[tab],
-    ]);
-};
+          },
+          [tabName]
+        );
+      })
+    ),
+    sampleComponentList[model.tab],
+  ]);

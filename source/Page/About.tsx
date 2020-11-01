@@ -10,7 +10,7 @@ const GitHubLink: VNode = h(
   ]
 );
 
-export const About: VNode = h("div", { class: "about__root" }, [
+export const view: VNode = h("div", { class: "about__root" }, [
   h("div", {}, ["DefinyはWebアプリのためのWebアプリです"]),
   GitHubLink,
 ]);

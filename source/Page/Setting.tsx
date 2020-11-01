@@ -1,20 +1,27 @@
 import * as ui from "../ui";
 import { VNode, h } from "maquette";
-import { Model } from "../model";
+import { ModelInterface } from "../modelInterface";
 
-export const Setting = (prop: { model: Model }): VNode => {
-  if (prop.model.logInState._ !== "LoggedIn") {
+export class Model {
+  modelInterface: ModelInterface;
+
+  constructor(modelInterface: ModelInterface) {
+    this.modelInterface = modelInterface;
+  }
+}
+
+export const view = (model: Model): VNode => {
+  if (model.modelInterface.logInState._ !== "LoggedIn") {
     return h("div", {}, ["ログインしていません"]);
   }
-  const loggedUserId = prop.model.logInState.accountTokenAndUserId.userId;
+  const loggedUserId =
+    model.modelInterface.logInState.accountTokenAndUserId.userId;
   return h("div", {}, [
     h("div", {}, ["設定画面"]),
-    ui.User({ model: prop.model, userId: loggedUserId }),
+    ui.User({ modelInterface: model.modelInterface, userId: loggedUserId }),
     ui.button(
       {
-        onClick: () => {
-          prop.model.requestLogOut();
-        },
+        onClick: model.modelInterface.logOut,
       },
       ["ログアウトする"]
     ),

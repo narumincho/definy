@@ -1,26 +1,36 @@
 import * as d from "definy-core/source/data";
 import * as ui from "../ui";
+import { HomeProjectState, ModelInterface } from "../modelInterface";
 import { VNode, h } from "maquette";
-import { Model } from "../model";
 
-export const Home = (prop: { model: Model }): VNode => {
+export class Model {
+  modelInterface: ModelInterface;
+
+  /** 初期化 */
+  constructor(modelInterface: ModelInterface) {
+    this.modelInterface = modelInterface;
+    this.modelInterface.requestAllTop50Project();
+  }
+}
+
+export const view = (model: Model): VNode => {
   return h("div", { class: "home__root" }, [
-    homeMain(prop),
-    ...(prop.model.logInState._ === "Guest"
+    homeMain(model),
+    ...(model.modelInterface.logInState._ === "Guest"
       ? []
-      : [createProjectButton({ model: prop.model })]),
+      : [createProjectButton(model.modelInterface)]),
   ]);
 };
 
-const homeMain = (prop: { model: Model }): VNode => {
+const homeMain = (model: Model): VNode => {
   return h("div", { class: "home__main" }, [
     h("div", { class: "home__link-list" }, [
       ui.link(
         {
           class: "home__link",
           areaTheme: "Gray",
-          onJump: prop.model.onJump,
-          urlData: { ...prop.model, location: d.Location.About },
+          modelInterface: model.modelInterface,
+          location: d.Location.About,
         },
         ["Definyについて"]
       ),
@@ -28,27 +38,25 @@ const homeMain = (prop: { model: Model }): VNode => {
         {
           class: "home__link",
           areaTheme: "Gray",
-          onJump: prop.model.onJump,
-          urlData: { ...prop.model, location: d.Location.Debug },
+          modelInterface: model.modelInterface,
+          location: d.Location.Debug,
         },
         ["デバッグページ"]
       ),
     ]),
-    prop.model.allProjectIdListMaybe._ === "Just"
-      ? AllProjectList({
-          allProjectIdListResource: prop.model.allProjectIdListMaybe.value,
-          model: prop.model,
-        })
-      : h("div", {}, ["..."]),
+    AllProjectList(
+      model.modelInterface,
+      model.modelInterface.top50ProjectIdState
+    ),
   ]);
 };
 
-const AllProjectList = (prop: {
-  model: Model;
-  allProjectIdListResource: d.ResourceState<ReadonlyArray<d.ProjectId>>;
-}): VNode =>
-  ui.commonResourceStateView({
-    dataView: (allProjectIdList: ReadonlyArray<d.ProjectId>): VNode => {
+const AllProjectList = (
+  modelInterface: ModelInterface,
+  homeProjectState: HomeProjectState
+): VNode => {
+  return ui.commonResourceStateView<ReadonlyArray<d.ProjectId>>({
+    dataView: (allProjectIdList): VNode => {
       if (allProjectIdList.length === 0) {
         return h("div", {}, ["プロジェクトが1つもありません"]);
       }
@@ -58,26 +66,38 @@ const AllProjectList = (prop: {
         allProjectIdList.map((projectId) =>
           ui.project({
             key: projectId,
-            model: prop.model,
+            modelInterface,
             projectId,
           })
         )
       );
     },
-
-    resourceState: prop.allProjectIdListResource,
+    resourceState: ((): d.ResourceState<ReadonlyArray<d.ProjectId>> => {
+      switch (homeProjectState._) {
+        case "Loaded":
+          return d.ResourceState.Loaded({
+            dataMaybe: d.Maybe.Just(homeProjectState.projectIdList),
+            getTime: { day: 0, millisecond: 0 },
+          });
+        case "Loading":
+          return d.ResourceState.Loading();
+        case "None":
+          return d.ResourceState.Unknown();
+      }
+    })(),
   });
+};
 
-const createProjectButton = (prop: { model: Model }): VNode =>
+const createProjectButton = (modelInterface: ModelInterface): VNode =>
   h("div", { class: "home__create-project" }, [
     ui.link(
       {
         class: "home__create-project-link",
         areaTheme: "Active",
-        onJump: prop.model.onJump,
-        urlData: { ...prop.model, location: d.Location.CreateProject },
+        modelInterface,
+        location: d.Location.CreateProject,
       },
-      [createProjectMessage(prop.model.language)]
+      [createProjectMessage(modelInterface.language)]
     ),
   ]);
 

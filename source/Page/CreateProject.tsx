@@ -1,62 +1,74 @@
 import * as core from "definy-core";
+import * as d from "definy-core/source/data";
 import * as ui from "../ui";
 import { VNode, h } from "maquette";
-import { Model } from "../model";
+import { ModelInterface } from "../modelInterface";
 
-const createProjectComponent = (): ((prop: { model: Model }) => VNode) => {
-  let projectName = "";
+export class Model {
+  projectName = "";
 
-  const setProjectName = (value: string) => {
-    projectName = value;
-  };
+  isCreating = false;
 
-  return (prop) => {
-    if (prop.model.logInState._ !== "LoggedIn") {
-      return h("div", { class: "create-project__root" }, [
-        h("div", {}, ["プロジェクトの作成にはログインする必要があります"]),
-        h("div", {}, ["左のログインボタンを押してログインしてください"]),
-      ]);
+  modelInterface: ModelInterface;
+
+  constructor(modelInterface: ModelInterface) {
+    this.modelInterface = modelInterface;
+  }
+
+  async createProject(): Promise<void> {
+    const validProjectName = core.stringToValidProjectName(this.projectName);
+    if (validProjectName === null) {
+      return;
     }
-
-    switch (prop.model.createProjectState._) {
-      case "WaitCreating":
-      case "Creating":
-        return h("div", {}, [
-          prop.model.createProjectState.projectName + "を作成中",
-        ]);
+    const newProjectId = await this.modelInterface.createProject(
+      validProjectName
+    );
+    if (newProjectId === undefined) {
+      return;
     }
+    this.modelInterface.jumpSameLanguageLink(d.Location.Project(newProjectId));
+  }
 
-    const validProjectName = core.stringToValidProjectName(projectName);
+  setProjectName(newProjectName: string): void {
+    this.projectName = newProjectName;
+  }
+}
 
+export const view = (model: Model): VNode => {
+  if (model.modelInterface.logInState._ !== "LoggedIn") {
     return h("div", { class: "create-project__root" }, [
-      h("div", {}, [
-        "ここはプロジェクト作成ページ.プロジェクト名と画像を指定してプロジェクトを作ることができます",
-      ]),
-      h("label", {}, ["プロジェクト名"]),
-      h("div", {}, [
-        validProjectName === null
-          ? "プロジェクト名に使えません"
-          : validProjectName,
-      ]),
-      ui.oneLineTextInput({
-        name: "projectName",
-        onChange: setProjectName,
-        value: projectName,
-      }),
-      ui.button(
-        {
-          class: "create-project__button",
-          onClick:
-            validProjectName === null
-              ? undefined
-              : () => {
-                  prop.model.createProject(validProjectName);
-                },
-        },
-        ["プロジェクトを作成"]
-      ),
+      h("div", {}, ["プロジェクトの作成にはログインする必要があります"]),
+      h("div", {}, ["左のログインボタンを押してログインしてください"]),
     ]);
-  };
-};
+  }
 
-export const createProject = createProjectComponent();
+  if (model.isCreating) {
+    return h("div", {}, [model.projectName + "を作成中"]);
+  }
+
+  const validProjectName = core.stringToValidProjectName(model.projectName);
+
+  return h("div", { class: "create-project__root" }, [
+    h("div", {}, [
+      "ここはプロジェクト作成ページ.プロジェクト名と画像を指定してプロジェクトを作ることができます",
+    ]),
+    h("label", {}, ["プロジェクト名"]),
+    h("div", {}, [
+      validProjectName === null
+        ? "プロジェクト名に使えません"
+        : validProjectName,
+    ]),
+    ui.oneLineTextInput({
+      name: "projectName",
+      onChange: model.setProjectName,
+      value: model.projectName,
+    }),
+    ui.button(
+      {
+        class: "create-project__button",
+        onClick: validProjectName === null ? undefined : model.createProject,
+      },
+      ["プロジェクトを作成"]
+    ),
+  ]);
+};

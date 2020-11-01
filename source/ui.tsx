@@ -1,12 +1,12 @@
 import * as d from "definy-core/source/data";
 import { VNode, VNodeChildren, h } from "maquette";
-import { Model } from "./model";
+import { ModelInterface } from "./modelInterface";
 
 export type AreaTheme = "Gray" | "Black" | "Active";
 
 export const link = (
   prop: {
-    model: Model;
+    modelInterface: ModelInterface;
     location: d.Location;
     areaTheme: AreaTheme;
     class: string;
@@ -17,7 +17,7 @@ export const link = (
   h(
     "a",
     {
-      href: prop.model.sameLanguageLink(prop.location).toString(),
+      href: prop.modelInterface.sameLanguageLink(prop.location).toString(),
       onclick: (event) => {
         if (
           !event.ctrlKey &&
@@ -26,7 +26,7 @@ export const link = (
           event.button === 0
         ) {
           event.preventDefault();
-          prop.model.jumpSameLanguageLink(prop.location);
+          prop.modelInterface.jumpSameLanguageLink(prop.location);
         }
       },
       classes: {
@@ -113,11 +113,11 @@ const classNameOrUndefinedToSpaceClassNameOrEmpty = (
 ): string => (className === undefined ? "" : " " + className);
 
 export const Image = (prop: {
-  model: Model;
+  modelInterface: ModelInterface;
   imageToken: d.ImageToken;
   className?: string;
 }): VNode => {
-  const blobUrlResource = prop.model.imageMap.get(prop.imageToken);
+  const blobUrlResource = prop.modelInterface.imageMap.get(prop.imageToken);
   if (blobUrlResource === undefined) {
     return h(
       "div",
@@ -210,43 +210,52 @@ export const Image = (prop: {
   }
 };
 
-export const User = (prop: { model: Model; userId: d.UserId }): VNode => {
-  const userResource = prop.model.userMap.get(prop.userId);
+export const User = (prop: {
+  modelInterface: ModelInterface;
+  userId: d.UserId;
+}): VNode => {
+  const userResource = prop.modelInterface.userMap.get(prop.userId);
 
   return commonResourceStateView({
     dataView: (data: d.User): VNode =>
       link(
         {
-          model: prop.model,
+          modelInterface: prop.modelInterface,
           areaTheme: "Gray",
           location: d.Location.User(prop.userId),
           class: "ui__user",
         },
-        [Image({ imageToken: data.imageHash, model: prop.model }), data.name]
+        [
+          Image({
+            imageToken: data.imageHash,
+            modelInterface: prop.modelInterface,
+          }),
+          data.name,
+        ]
       ),
     resourceState: userResource,
   });
 };
 
 export const project = (prop: {
-  model: Model;
+  modelInterface: ModelInterface;
   projectId: d.ProjectId;
   key?: string;
 }): VNode => {
-  const projectResource = prop.model.projectMap.get(prop.projectId);
+  const projectResource = prop.modelInterface.projectMap.get(prop.projectId);
   return commonResourceStateView({
     dataView: (data: d.Project) => {
       return link(
         {
           class: "ui__project",
           areaTheme: "Gray",
-          model: prop.model,
+          modelInterface: prop.modelInterface,
           location: d.Location.Project(prop.projectId),
           key: prop.key,
         },
         [
           Image({
-            model: prop.model,
+            modelInterface: prop.modelInterface,
             imageToken: data.imageHash,
             className: "ui__project-image",
           }),
@@ -254,7 +263,7 @@ export const project = (prop: {
             Image({
               className: "ui__project-icon",
               imageToken: data.iconHash,
-              model: prop.model,
+              modelInterface: prop.modelInterface,
             }),
             data.name,
           ]),
