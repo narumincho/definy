@@ -1,18 +1,20 @@
 import * as d from "definy-core/source/data";
 import * as ui from "./ui";
-import { VNode, h } from "maquette";
+import { FunctionComponent, VNode, h } from "preact";
 import { ModelInterface } from "./modelInterface";
+import { Link } from "./component/link";
 
 export const view = (modelInterface: ModelInterface): VNode =>
   h("div", { class: "header__root", key: "header" }, [
-    logo(modelInterface),
+    h(Logo, { modelInterface, key: "logo" }),
     UserViewOrLogInButton(modelInterface),
   ]);
 
-const logo = (modelInterface: ModelInterface): VNode =>
-  ui.link(
+const Logo: FunctionComponent<{ modelInterface: ModelInterface }> = (props) =>
+  h(
+    Link,
     {
-      modelInterface,
+      props,
       location: d.Location.Home,
       areaTheme: "Gray",
       class: "header__logo",

@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { VNode, VNodeChildren, h } from "maquette";
+import { h, default as preact } from "preact";
 import { ModelInterface } from "./modelInterface";
 
 export type AreaTheme = "Gray" | "Black" | "Active";
