@@ -124,7 +124,7 @@ homeModelInterface.top50ProjectIdState = {
 };
 
 const sampleComponentList: { [key in Tab]: () => VNode } = {
-  header: () => header.view(defaultModelInterface),
+  header: () => header.Header(defaultModelInterface),
   home: () => home.view(new home.Model(defaultModelInterface)),
   homeWithProject: () => home.view(new home.Model(homeModelInterface)),
   about: () => about.view(),

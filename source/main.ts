@@ -1,6 +1,6 @@
-import * as app from "./app";
 import * as common from "definy-core";
-import * as maquette from "maquette";
+import { AppWithState, Props } from "./AppWithState";
+import { h, render } from "preact";
 
 const appElement = document.createElement("div");
 
@@ -17,14 +17,9 @@ const urlDataAndAccountToken = common.urlDataAndAccountTokenFromUrl(
   new URL(window.location.href)
 );
 
-const projector = maquette.createProjector();
+const appProps: Props = {
+  accountToken: urlDataAndAccountToken.accountToken,
+  initUrlData: urlDataAndAccountToken.urlData,
+};
 
-const model = new app.Model(
-  {
-    accountToken: urlDataAndAccountToken.accountToken,
-    initUrlData: urlDataAndAccountToken.urlData,
-  },
-  projector
-);
-
-projector.append(appElement, () => app.view(model));
+render(h(AppWithState, appProps), appElement);

@@ -1,16 +1,16 @@
 import * as d from "definy-core/source/data";
-import { h, default as preact } from "preact";
-import { AreaTheme } from "../ui";
-import { ModelInterface } from "../modelInterface";
+import { Component, VNode, h } from "preact";
+import { ModelInterface } from "./modelInterface";
+import { Theme } from "./ui";
 
 export type Props = {
-  modelInterface: ModelInterface;
-  location: d.Location;
-  areaTheme: AreaTheme;
+  readonly modelInterface: ModelInterface;
+  readonly location: d.Location;
+  readonly areaTheme: Theme;
 };
 
-class Link extends preact.Component<Props, never> {
-  onClick(event: MouseEvent) {
+export class Link extends Component<Props, never> {
+  onClick(event: MouseEvent): void {
     if (
       !event.ctrlKey &&
       !event.metaKey &&
@@ -22,7 +22,7 @@ class Link extends preact.Component<Props, never> {
     }
   }
 
-  render() {
+  render(): VNode<Props> {
     return h(
       "a",
       {

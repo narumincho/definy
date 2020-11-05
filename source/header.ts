@@ -1,13 +1,15 @@
 import * as d from "definy-core/source/data";
 import * as ui from "./ui";
 import { FunctionComponent, VNode, h } from "preact";
+import { Link } from "./Link";
 import { ModelInterface } from "./modelInterface";
-import { Link } from "./component/link";
 
-export const view = (modelInterface: ModelInterface): VNode =>
+export const Header: FunctionComponent<{ modelInterface: ModelInterface }> = (
+  props
+): VNode =>
   h("div", { class: "header__root", key: "header" }, [
-    h(Logo, { modelInterface, key: "logo" }),
-    UserViewOrLogInButton(modelInterface),
+    h(Logo, { modelInterface: props.modelInterface, key: "logo" }),
+    h(UserViewOrLogInButton, { modelInterface: props.modelInterface }),
   ]);
 
 const Logo: FunctionComponent<{ modelInterface: ModelInterface }> = (props) =>
@@ -22,8 +24,10 @@ const Logo: FunctionComponent<{ modelInterface: ModelInterface }> = (props) =>
     ["Definy"]
   );
 
-const UserViewOrLogInButton = (modelInterface: ModelInterface): VNode => {
-  switch (modelInterface.logInState._) {
+const UserViewOrLogInButton: FunctionComponent<{
+  modelInterface: ModelInterface;
+}> = (props): VNode => {
+  switch (props.modelInterface.logInState._) {
     case "WaitLoadingAccountTokenFromIndexedDB":
       return h("div", { class: "header__login" }, [
         "アクセストークンをindexedDBから読み取り中",
@@ -34,8 +38,8 @@ const UserViewOrLogInButton = (modelInterface: ModelInterface): VNode => {
       ]);
     case "Guest":
       return LogInButton({
-        language: modelInterface.language,
-        requestLogIn: modelInterface.logIn,
+        language: props.modelInterface.language,
+        requestLogIn: props.modelInterface.logIn,
       });
     case "WaitVerifyingAccountToken":
       return h("div", { class: "header__login" }, ["アクセストークンを検証中"]);
@@ -44,8 +48,8 @@ const UserViewOrLogInButton = (modelInterface: ModelInterface): VNode => {
         "アクセストークンを検証中……",
       ]);
     case "LoggedIn": {
-      const userResourceState = modelInterface.userMap.get(
-        modelInterface.logInState.accountTokenAndUserId.userId
+      const userResourceState = props.modelInterface.userMap.get(
+        props.modelInterface.logInState.accountTokenAndUserId.userId
       );
       if (
         userResourceState === undefined ||
@@ -55,18 +59,19 @@ const UserViewOrLogInButton = (modelInterface: ModelInterface): VNode => {
         return h("div", { class: "header__login" }, ["..."]);
       }
       const user = userResourceState.dataResource.dataMaybe.value;
-      return ui.link(
+      return h(
+        Link,
         {
           class: "header__setting-link",
           areaTheme: "Gray",
-          modelInterface,
+          modelInterface: props.modelInterface,
           location: d.Location.Setting,
         },
         [
           ui.image({
             class: "header__setting-link",
             imageToken: user.imageHash,
-            modelInterface,
+            modelInterface: props.modelInterface,
             key: "logo",
           }),
           user.name,

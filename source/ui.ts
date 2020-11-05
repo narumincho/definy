@@ -2,13 +2,13 @@ import * as d from "definy-core/source/data";
 import { h, default as preact } from "preact";
 import { ModelInterface } from "./modelInterface";
 
-export type AreaTheme = "Gray" | "Black" | "Active";
+export type Theme = "Gray" | "Black" | "Active";
 
 export const link = (
   prop: {
     modelInterface: ModelInterface;
     location: d.Location;
-    areaTheme: AreaTheme;
+    areaTheme: Theme;
     class: string;
     key?: string;
   },

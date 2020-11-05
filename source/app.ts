@@ -9,7 +9,7 @@ import * as project from "./page/project";
 import * as setting from "./page/setting";
 import * as ui from "./ui";
 import * as user from "./page/user";
-import { Projector, VNode, h } from "maquette";
+import { Projector, VNode, h } from "preact";
 import { ModelInterface } from "./modelInterface";
 
 type LocationModel =
@@ -171,7 +171,7 @@ export const view = (model: Model): VNode => {
       );
   }
   return h("div", { class: "app__main-root" }, [
-    header.view(model.modelInterface),
+    header.Header(model.modelInterface),
     mainPanel(model),
   ]);
 };
