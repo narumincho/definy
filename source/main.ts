@@ -1,6 +1,6 @@
-import * as common from "definy-core";
-import { AppWithState, Props } from "./AppWithState";
-import { h, render } from "preact";
+import * as reactDom from "react-dom";
+import { StrictMode, createElement as h } from "react";
+import { AppWithState } from "./AppWithState";
 
 const appElement = document.createElement("div");
 
@@ -13,13 +13,4 @@ document.body.appendChild(appElement);
 appElement.style.height = "100%";
 appElement.style.overflow = "auto";
 
-const urlDataAndAccountToken = common.urlDataAndAccountTokenFromUrl(
-  new URL(window.location.href)
-);
-
-const appProps: Props = {
-  accountToken: urlDataAndAccountToken.accountToken,
-  initUrlData: urlDataAndAccountToken.urlData,
-};
-
-render(h(AppWithState, appProps), appElement);
+reactDom.render(h(StrictMode, {}, h(AppWithState)), appElement);

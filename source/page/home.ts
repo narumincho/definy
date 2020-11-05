@@ -1,6 +1,6 @@
 import * as d from "definy-core/source/data";
 import * as ui from "../ui";
-import { HomeProjectState, ModelInterface } from "../modelInterface";
+import { HomeProjectState, ModelInterface } from "../model";
 import { VNode, h } from "maquette";
 
 export class Model {
