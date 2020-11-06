@@ -9,7 +9,7 @@ import {
   Model,
 } from "./model";
 import { Component, ReactNode, createElement as h } from "react";
-import { App } from "./app";
+import { App } from "./App";
 
 export type State = {
   /** ホームに表示される. Top50のプロジェクトのID */
@@ -44,14 +44,30 @@ export type State = {
 
   /** ログイン状態 */
   logInState: d.LogInState;
+
+  /** 場所 */
+  location: d.Location;
 };
 
 export class AppWithState extends Component<never, State> {
+  // 初期化処理
   constructor(props: never) {
     super(props);
 
     const urlDataAndAccountToken = core.urlDataAndAccountTokenFromUrl(
       new URL(window.location.href)
+    );
+
+    // ブラウザのURLを正規化
+    window.history.replaceState(
+      undefined,
+      "",
+      core
+        .urlDataAndAccountTokenToUrl(
+          urlDataAndAccountToken.urlData,
+          d.Maybe.Nothing()
+        )
+        .toString()
     );
 
     this.state = {
@@ -71,7 +87,20 @@ export class AppWithState extends Component<never, State> {
               urlDataAndAccountToken.accountToken.value
             )
           : d.LogInState.WaitLoadingAccountTokenFromIndexedDB,
+      location: urlDataAndAccountToken.urlData.location,
     };
+
+    // ブラウザで戻るボタンを押したときのイベントを登録
+    window.addEventListener("popstate", () => {
+      const newUrlData: d.UrlData = core.urlDataAndAccountTokenFromUrl(
+        new URL(window.location.href)
+      ).urlData;
+      this.setState({
+        language: newUrlData.language,
+        clientMode: newUrlData.clientMode,
+        location: newUrlData.location,
+      });
+    });
   }
 
   /**
@@ -282,6 +311,10 @@ export class AppWithState extends Component<never, State> {
     indexedDB.deleteAccountToken();
   }
 
+  jump(location: d.Location, language: d.Language): void {
+    this.setState({ location, language });
+  }
+
   render(): ReactNode {
     const model: Model = {
       top50ProjectIdState: this.state.top50ProjectIdState,
@@ -294,14 +327,17 @@ export class AppWithState extends Component<never, State> {
       language: this.state.language,
       clientMode: this.state.clientMode,
       logInState: this.state.logInState,
-      requestAllTop50Project: this.requestAllTop50Project,
-      requestUser: this.requestUser,
-      requestProject: this.requestProject,
-      requestImage: this.requestImage,
-      requestTypePartInProject: this.requestTypePartInProject,
-      addTypePart: this.addTypePart,
-      logIn: this.logIn,
-      logOut: this.logOut,
+      location: this.state.location,
+      requestAllTop50Project: () => this.requestAllTop50Project(),
+      requestUser: (userId) => this.requestUser(userId),
+      requestProject: (projectId) => this.requestProject(projectId),
+      requestImage: (imageToken) => this.requestImage(imageToken),
+      requestTypePartInProject: (projectId) =>
+        this.requestTypePartInProject(projectId),
+      addTypePart: (projectId) => this.addTypePart(projectId),
+      logIn: (provider) => this.logIn(provider),
+      logOut: () => this.logOut(),
+      jump: this.jump,
     };
     return h(App, {
       model,

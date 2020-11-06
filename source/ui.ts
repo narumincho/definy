@@ -1,6 +1,6 @@
 import * as d from "definy-core/source/data";
 import { h, default as preact } from "preact";
-import { ModelInterface } from "./modelInterface";
+import { ModelInterface } from "./model";
 
 export type Theme = "Gray" | "Black" | "Active";
 

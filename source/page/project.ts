@@ -1,7 +1,7 @@
 import * as d from "definy-core/source/data";
 import * as ui from "../ui";
 import { VNode, h } from "maquette";
-import { ModelInterface } from "../modelInterface";
+import { ModelInterface } from "../model";
 
 export class Model {
   modelInterface: ModelInterface;

@@ -4,7 +4,7 @@ import * as header from "../header";
 import * as home from "./home";
 import * as ui from "../ui";
 import { Projector, VNode, h } from "maquette";
-import { ModelInterface } from "../modelInterface";
+import { ModelInterface } from "../model";
 
 export class Model {
   modelInterface: ModelInterface;

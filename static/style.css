@@ -106,14 +106,6 @@
   height: 32px;
 }
 
-.ui__image {
-  display: grid;
-  justify-content: center;
-  align-content: center;
-  width: 16px;
-  height: 16px;
-}
-
 .ui__user {
   display: grid;
   grid-template-columns: 32px 1fr;
@@ -127,36 +119,6 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-}
-
-.ui__project {
-  display: grid;
-  grid-template-rows: 128px 48px;
-  width: 256px;
-}
-
-.ui__project-image {
-  width: 256px;
-  height: 128px;
-  padding: 0;
-}
-
-.ui__project-icon-and-name {
-  display: grid;
-  grid-template-columns: 32px 1fr;
-  gap: 8px;
-  align-items: center;
-  padding: 8px;
-}
-
-.ui__project-icon {
-  width: 32px;
-  height: 32px;
-}
-
-.ui__icon {
-  width: 32px;
-  height: 32px;
 }
 
 .ui__one-line-text-input {
@@ -406,51 +368,6 @@
 
 .create-project__button {
   padding: 8px;
-}
-
-.home__root {
-  display: grid;
-  overflow: hidden;
-  background-color: #222;
-}
-
-.home__create-project {
-  grid-column: "1 / 2";
-  grid-row: "1 / 2";
-  align-self: end;
-  justify-self: end;
-  padding: 16px;
-}
-
-.home__create-project-link {
-  padding: 8px;
-}
-
-.home__main {
-  display: grid;
-  overflow-y: "scroll";
-  grid-column: 1 / 2;
-  grid-row: 1 / 2;
-  grid-template-rows: 32px 1fr;
-  gap: 8px;
-  padding: 16px;
-}
-
-.home__link-list {
-  display: grid;
-  grid-auto-flow: column;
-  justify-content: end;
-  align-items: center;
-  height: 32px;
-  gap: 8px;
-}
-
-.home__link {
-  width: 128px;
-  height: 32px;
-  display: grid;
-  align-items: center;
-  justify-content: center;
 }
 
 .home__project-list {
