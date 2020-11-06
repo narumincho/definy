@@ -9,7 +9,7 @@ import {
   Model,
 } from "./model";
 import { Component, ReactNode, createElement as h } from "react";
-import { App } from "./App";
+import { App } from "./app";
 
 export type State = {
   /** ホームに表示される. Top50のプロジェクトのID */

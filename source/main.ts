@@ -1,6 +1,6 @@
 import * as reactDom from "react-dom";
 import { StrictMode, createElement as h } from "react";
-import { AppWithState } from "./AppWithState";
+import { AppWithState } from "./appWithState";
 
 const appElement = document.createElement("div");
 

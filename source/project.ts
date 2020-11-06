@@ -1,7 +1,7 @@
 import * as d from "definy-core/source/data";
 import { Component, ReactNode, createElement as h } from "react";
 import { Image } from "./image";
-import { Link } from "./Link";
+import { Link } from "./link";
 import { Model } from "./model";
 import styled from "styled-components";
 

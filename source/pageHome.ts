@@ -5,7 +5,7 @@ import {
   ReactNode,
   createElement as h,
 } from "react";
-import { Link } from "./Link";
+import { Link } from "./link";
 import { Model } from "./model";
 import { Project } from "./project";
 import styled from "styled-components";

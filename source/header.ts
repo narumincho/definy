@@ -1,7 +1,7 @@
 import * as d from "definy-core/source/data";
 import * as ui from "./ui";
 import { FunctionComponent, VNode, h } from "preact";
-import { Link } from "./Link";
+import { Link } from "./link";
 import { ModelInterface } from "./model";
 
 export const Header: FunctionComponent<{ modelInterface: ModelInterface }> = (
