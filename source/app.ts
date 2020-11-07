@@ -11,6 +11,10 @@ export class App extends PureComponent<Props> {
     switch (this.props.model.location._) {
       case "Home":
         return h(PageHome, { model: this.props.model });
+      case "Project":
+        return "プロジェット画面";
+      case "Debug":
+        return "デバッグ画面";
     }
   }
 }

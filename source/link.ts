@@ -9,7 +9,7 @@ export type Props = {
   readonly model: Model;
   readonly location: d.Location;
   readonly language?: d.Language;
-  readonly areaTheme: Theme;
+  readonly theme: Theme;
   readonly className?: string;
 };
 
@@ -46,30 +46,21 @@ export class Link extends Component<Props, never> {
             d.Maybe.Nothing()
           )
           .toString(),
-        onClick: this.onClick,
+        onClick: (e: react.MouseEvent<HTMLAnchorElement, MouseEvent>) =>
+          this.onClick(e),
         className: this.props.className,
+        theme: this.props.theme,
       },
       this.props.children
     );
   }
 }
 
-const themeToColor = (props: Props): string => {
-  switch (props.areaTheme) {
-    case "Gray":
-      return "#ddd";
-    case "Black":
-      return "#ddd";
-    case "Active":
-      return "#000";
-  }
-};
-
-const Link_ = styled.a`
-  display: block;
-  text-decoration: none;
-  color: ${themeToColor};
-`;
+const Link_ = styled.a((props) => ({
+  ...themeToStyle(props.theme),
+  display: "block",
+  textDecoration: "none",
+}));
 
 const themeToStyle = (
   theme: Theme

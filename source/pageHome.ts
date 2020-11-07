@@ -65,7 +65,7 @@ const HomeLinkList: FunctionComponent<{ model: Model }> = (props) =>
     h(
       HomeLink,
       {
-        areaTheme: "Gray",
+        theme: "Gray",
         model: props.model,
         location: d.Location.About,
         key: "about",
@@ -75,7 +75,7 @@ const HomeLinkList: FunctionComponent<{ model: Model }> = (props) =>
     h(
       HomeLink,
       {
-        areaTheme: "Gray",
+        theme: "Gray",
         model: props.model,
         location: d.Location.Debug,
         key: "debug",
@@ -146,7 +146,7 @@ const CreateProjectButton: FunctionComponent<{ model: Model }> = (props) =>
     h(
       CreateProjectLink,
       {
-        areaTheme: "Active",
+        theme: "Active",
         model: props.model,
         location: d.Location.CreateProject,
       },
