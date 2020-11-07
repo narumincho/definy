@@ -9,7 +9,7 @@ const gitHubLink: VNode = h(
     key: "aboutGithubLink",
   },
   [
-    ui.gitHubIcon({ color: "#ddd", class: "about__github-icon" }),
+    ui.GitHubIcon({ color: "#ddd", class: "about__github-icon" }),
     h("div", { key: "link-name" }, ["GitHub: narumincho/Definy"]),
   ]
 );

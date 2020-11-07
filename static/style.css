@@ -142,115 +142,12 @@
   justify-items: center;
 }
 
-.app__main-root {
-  height: 100%;
-  display: grid;
-  grid-template-rows: 48px 1fr;
-}
-
-.header__root {
-  display: grid;
-  grid-auto-flow: column;
-  width: "100%";
-  background-color: #333;
-  height: 48px;
-}
-
-.header__logo {
-  justify-self: start;
-  padding: 8px;
-  color: #b9d09b;
-  font-size: 32px;
-  line-height: 1;
-  font-family: "Hack";
-}
-
-.header__logo:hover {
-  color: #c9e4a6;
-}
-
-.header__login {
-  justify-self: end;
-}
-
 .header__login-button-list {
   display: grid;
   gap: 8px;
   padding: 8px;
   grid-auto-flow: column;
   justify-self: end;
-}
-
-.header__google-button {
-  display: grid;
-  grid-template-columns: 32px 160px;
-  background-color: #4285f4;
-  border-radius: 8px;
-  gap: 8px;
-  padding: 0;
-}
-
-.header__google-button:hover {
-  background-color: #5190f8;
-}
-
-.header__google-icon {
-  width: 32px;
-  height: 32px;
-  padding: 4px;
-  background-color: #fff;
-  border-radius: 8px;
-}
-
-.header__google-text {
-  align-self: center;
-  font-size: 18px;
-  color: #fff;
-}
-
-.header__github-button {
-  display: grid;
-  grid-template-columns: 32px 160px;
-  background-color: #202020;
-  border-radius: 8px;
-  gap: 8;
-  padding: 0;
-}
-
-.header__github-button:hover {
-  background-color: #252525;
-}
-
-.header__github-icon {
-  width: 32px;
-  height: 32px;
-  padding: 4px;
-  background-color: #fff;
-  border-radius: 8px;
-}
-
-.header__github-button {
-  align-self: center;
-  font-size: 18px;
-  color: #ddd;
-}
-
-.header__github-text {
-  align-self: center;
-  font-size: 18px;
-  color: #ddd;
-}
-
-.header__setting-link {
-  justify-self: end;
-  display: grid;
-  grid-template-columns: 32px auto;
-  align-items: center;
-  padding: 8px;
-}
-
-.header__user-icon {
-  border-radius: 50%;
 }
 
 .debug__root {

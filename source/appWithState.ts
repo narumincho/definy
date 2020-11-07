@@ -337,7 +337,8 @@ export class AppWithState extends Component<never, State> {
       addTypePart: (projectId) => this.addTypePart(projectId),
       logIn: (provider) => this.logIn(provider),
       logOut: () => this.logOut(),
-      jump: this.jump,
+      jump: (location: d.Location, language: d.Language) =>
+        this.jump(location, language),
     };
     return h(App, {
       model,
