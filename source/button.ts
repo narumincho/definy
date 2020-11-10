@@ -5,10 +5,14 @@ export const Button: FunctionComponent<{
   onClick: undefined | (() => void);
   className?: string;
 }> = (props) =>
-  h(StyledButton, {
-    onClick: props.onClick,
-    className: props.className,
-  });
+  h(
+    StyledButton,
+    {
+      onClick: props.onClick,
+      className: props.className,
+    },
+    props.children
+  );
 
 const StyledButton = styled.button({
   cursor: "pointer",
