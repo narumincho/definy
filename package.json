@@ -20,22 +20,20 @@
     "definy-core": "0.2.6",
     "react": "17.0.1",
     "react-dom": "17.0.1",
-    "styled-components": "5.2.0"
+    "styled-components": "5.2.1"
   },
   "devDependencies": {
     "@types/jest": "26.0.15",
     "@types/node": "14.14.5",
     "@types/prettier": "2.1.5",
-    "@types/react": "16.9.53",
-    "@types/react-dom": "16.9.8",
+    "@types/react": "16.9.55",
+    "@types/react-dom": "16.9.9",
     "@types/styled-components": "5.1.4",
     "@typescript-eslint/eslint-plugin": "4.6.0",
     "@typescript-eslint/parser": "4.6.0",
     "eslint": "7.12.1",
     "eslint-config-prettier": "6.14.0",
     "eslint-plugin-prettier": "3.1.4",
-    "eslint-plugin-react": "7.21.5",
-    "eslint-plugin-react-hooks": "4.2.0",
     "parcel": "1.12.4",
     "prettier": "2.1.2",
     "typescript": "4.0.5"
@@ -45,13 +43,10 @@
       "eslint:all",
       "plugin:@typescript-eslint/recommended",
       "plugin:prettier/recommended",
-      "prettier/@typescript-eslint",
-      "plugin:react/all"
+      "prettier/@typescript-eslint"
     ],
     "plugins": [
-      "@typescript-eslint",
-      "react",
-      "react-hooks"
+      "@typescript-eslint"
     ],
     "env": {
       "browser": true,
@@ -60,9 +55,6 @@
     },
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-      "ecmaFeatures": {
-        "jsx": true
-      },
       "sourceType": "module",
       "project": [
         "./source/tsconfig.json"
@@ -142,6 +134,12 @@
       "max-statements": [
         "off"
       ],
+      "camelcase": [
+        "off"
+      ],
+      "no-underscore-dangle": [
+        "off"
+      ],
       "@typescript-eslint/restrict-plus-operands": [
         "error",
         {
@@ -183,47 +181,6 @@
         }
       ],
       "@typescript-eslint/no-empty-function": [
-        "off"
-      ],
-      "react-hooks/rules-of-hooks": [
-        "error"
-      ],
-      "react/jsx-indent": [
-        "off"
-      ],
-      "react/function-component-definition": [
-        "off"
-      ],
-      "react/jsx-indent-props": [
-        "off"
-      ],
-      "react/jsx-filename-extension": [
-        "error",
-        {
-          "extensions": [
-            ".tsx"
-          ]
-        }
-      ],
-      "react/jsx-no-literals": [
-        "off"
-      ],
-      "react/jsx-one-expression-per-line": [
-        "off"
-      ],
-      "react/jsx-handler-names": [
-        "off"
-      ],
-      "react/jsx-max-props-per-line": [
-        "off"
-      ],
-      "react/no-multi-comp": [
-        "off"
-      ],
-      "react/jsx-no-bind": [
-        "off"
-      ],
-      "react/display-name": [
         "off"
       ]
     }
