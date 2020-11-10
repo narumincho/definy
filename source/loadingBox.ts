@@ -1,8 +1,15 @@
 import { FunctionComponent, createElement as h } from "react";
 import styled, { keyframes } from "styled-components";
 
-export const LoadingBox: FunctionComponent<Record<never, never>> = (props) =>
-  h(StyledLoadingBox, {}, [props.children, h(LoadingLogo, {}, "Definy")]);
+export type Props = {
+  readonly message: string;
+};
+
+export const LoadingBox: FunctionComponent<Props> = (props) =>
+  h(StyledLoadingBox, {}, [
+    props.message,
+    h(LoadingLogo, { key: "definy" }, "Definy"),
+  ]);
 
 const StyledLoadingBox = styled.div({
   display: "grid",

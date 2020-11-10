@@ -39,7 +39,8 @@ export const App: FunctionComponent<Props> = (props) => {
 
 const RequestingLogInUrl: React.FC<{
   message: string;
-}> = (prop) => h(LogInViewStyledDiv, h(LoadingBox, {}, prop.message));
+}> = (prop) =>
+  h(LogInViewStyledDiv, {}, h(LoadingBox, { message: prop.message }));
 
 const LogInViewStyledDiv = styled.div({
   height: "100%",

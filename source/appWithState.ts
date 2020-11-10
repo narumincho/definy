@@ -49,14 +49,15 @@ export type State = {
   location: d.Location;
 };
 
-export class AppWithState extends Component<never, State> {
+export class AppWithState extends Component<Record<never, never>, State> {
   // 初期化処理
-  constructor(props: never) {
+  constructor(props: Record<never, never>) {
     super(props);
 
     const urlDataAndAccountToken = core.urlDataAndAccountTokenFromUrl(
       new URL(window.location.href)
     );
+    console.log(urlDataAndAccountToken, window.location.href);
 
     // ブラウザのURLを正規化
     window.history.replaceState(
@@ -83,10 +84,10 @@ export class AppWithState extends Component<never, State> {
       clientMode: urlDataAndAccountToken.urlData.clientMode,
       logInState:
         urlDataAndAccountToken.accountToken._ === "Just"
-          ? d.LogInState.WaitVerifyingAccountToken(
+          ? d.LogInState.VerifyingAccountToken(
               urlDataAndAccountToken.accountToken.value
             )
-          : d.LogInState.WaitLoadingAccountTokenFromIndexedDB,
+          : d.LogInState.LoadingAccountTokenFromIndexedDB,
       location: urlDataAndAccountToken.urlData.location,
     };
 
@@ -100,6 +101,50 @@ export class AppWithState extends Component<never, State> {
         clientMode: newUrlData.clientMode,
         location: newUrlData.location,
       });
+    });
+  }
+
+  componentDidMount(): void {
+    console.log("logInState", this.state.logInState);
+    switch (this.state.logInState._) {
+      case "LoadingAccountTokenFromIndexedDB": {
+        indexedDB.getAccountToken().then((accountToken) => {
+          if (accountToken === undefined) {
+            this.setState({ logInState: d.LogInState.Guest });
+          } else {
+            this.setState({
+              logInState: d.LogInState.WaitVerifyingAccountToken(accountToken),
+            });
+            this.verifyAccountToken(accountToken);
+          }
+        });
+        return;
+      }
+      case "VerifyingAccountToken": {
+        this.verifyAccountToken(this.state.logInState.accountToken);
+      }
+    }
+  }
+
+  verifyAccountToken(accountToken: d.AccountToken): void {
+    api.getUserByAccountToken(accountToken).then((userResourceAndIdMaybe) => {
+      switch (userResourceAndIdMaybe._) {
+        case "Just":
+          indexedDB.setAccountToken(accountToken);
+          this.setState((state) => ({
+            logInState: d.LogInState.LoggedIn({
+              accountToken,
+              userId: userResourceAndIdMaybe.value.id,
+            }),
+            userMap: new Map(state.userMap).set(
+              userResourceAndIdMaybe.value.id,
+              d.ResourceState.Loaded(userResourceAndIdMaybe.value.data)
+            ),
+          }));
+          return;
+        case "Nothing":
+          this.setState({ logInState: d.LogInState.Guest });
+      }
     });
   }
 
@@ -304,6 +349,21 @@ export class AppWithState extends Component<never, State> {
     this.setState({
       logInState: d.LogInState.WaitRequestingLogInUrl(provider),
     });
+    api
+      .requestLogInUrl({
+        openIdConnectProvider: provider,
+        urlData: {
+          clientMode: this.state.clientMode,
+          language: this.state.language,
+          location: this.state.location,
+        },
+      })
+      .then((logInUrl) => {
+        this.setState({
+          logInState: d.LogInState.JumpingToLogInPage(logInUrl),
+        });
+        window.location.href = logInUrl;
+      });
   }
 
   logOut(): void {
@@ -345,3 +405,33 @@ export class AppWithState extends Component<never, State> {
     });
   }
 }
+
+const verifyingAccountToken = (
+  accountToken: d.AccountToken,
+  setState: <K extends keyof State>(
+    state:
+      | ((prevState: Readonly<State>) => Pick<State, K> | State | null)
+      | (Pick<State, K> | State | null),
+    callback?: () => void
+  ) => void
+) => {
+  api.getUserByAccountToken(accountToken).then((userResourceAndIdMaybe) => {
+    switch (userResourceAndIdMaybe._) {
+      case "Just":
+        indexedDB.setAccountToken(accountToken);
+        setState((state) => ({
+          logInState: d.LogInState.LoggedIn({
+            accountToken,
+            userId: userResourceAndIdMaybe.value.id,
+          }),
+          userMap: new Map(state.userMap).set(
+            userResourceAndIdMaybe.value.id,
+            d.ResourceState.Loaded(userResourceAndIdMaybe.value.data)
+          ),
+        }));
+        return;
+      case "Nothing":
+        setState({ logInState: d.LogInState.Guest });
+    }
+  });
+};
