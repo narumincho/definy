@@ -59,18 +59,6 @@ export class AppWithState extends Component<Record<never, never>, State> {
     );
     console.log(urlDataAndAccountToken, window.location.href);
 
-    // ブラウザのURLを正規化
-    window.history.replaceState(
-      undefined,
-      "",
-      core
-        .urlDataAndAccountTokenToUrl(
-          urlDataAndAccountToken.urlData,
-          d.Maybe.Nothing()
-        )
-        .toString()
-    );
-
     this.state = {
       top50ProjectIdState: { _: "None" },
       projectMap: new Map(),
@@ -105,6 +93,21 @@ export class AppWithState extends Component<Record<never, never>, State> {
   }
 
   componentDidMount(): void {
+    // ブラウザのURLを正規化 アクセストークンを隠す
+    window.history.replaceState(
+      undefined,
+      "",
+      core
+        .urlDataAndAccountTokenToUrl(
+          {
+            clientMode: this.state.clientMode,
+            location: this.state.location,
+            language: this.state.language,
+          },
+          d.Maybe.Nothing()
+        )
+        .toString()
+    );
     console.log("logInState", this.state.logInState);
     switch (this.state.logInState._) {
       case "LoadingAccountTokenFromIndexedDB": {
@@ -373,6 +376,20 @@ export class AppWithState extends Component<Record<never, never>, State> {
 
   jump(location: d.Location, language: d.Language): void {
     this.setState({ location, language });
+    window.history.pushState(
+      undefined,
+      "",
+      core
+        .urlDataAndAccountTokenToUrl(
+          {
+            clientMode: this.state.clientMode,
+            location,
+            language,
+          },
+          d.Maybe.Nothing()
+        )
+        .toString()
+    );
   }
 
   render(): ReactElement {
