@@ -2,7 +2,7 @@ import * as d from "definy-core/source/data";
 import {
   Component,
   FunctionComponent,
-  ReactNode,
+  ReactElement,
   createElement as h,
 } from "react";
 import { Link } from "./link";
@@ -22,7 +22,7 @@ export class PageHome extends Component<Props> {
     this.props.model.requestAllTop50Project();
   }
 
-  render(): ReactNode {
+  render(): ReactElement {
     return h(
       PageHome_,
       { className: this.props.className },

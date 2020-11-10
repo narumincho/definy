@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { Component, ReactNode, createElement as h } from "react";
+import { Component, ReactElement, createElement as h } from "react";
 import { Icon } from "./icon";
 import { Image } from "./image";
 import { Link } from "./link";
@@ -17,7 +17,7 @@ export class User extends Component<Props, never> {
     props.model.requestUser(props.userId);
   }
 
-  render(): ReactNode {
+  render(): ReactElement {
     const userState = this.props.model.userMap.get(this.props.userId);
     if (userState === undefined) {
       return h(LoadingDiv, {}, "...");
@@ -31,6 +31,9 @@ export class User extends Component<Props, never> {
         return h(LoadingDiv, {}, h(Icon, { iconType: "Requesting" }));
       case "Unknown":
       case "Retrying":
+      case "Updating":
+      case "WaitUpdating":
+      case "WaitRetrying":
         return h(LoadingDiv, {}, "?");
       case "Loaded": {
         if (userState.dataResource.dataMaybe._ === "Nothing") {

@@ -1,6 +1,6 @@
 import * as core from "definy-core";
 import * as d from "definy-core/source/data";
-import react, { Component, ReactNode, createElement as h } from "react";
+import react, { Component, ReactElement, createElement as h } from "react";
 import { Model } from "./model";
 import { Theme } from "./theme";
 import styled from "styled-components";
@@ -32,7 +32,7 @@ export class Link extends Component<Props, never> {
     this.props.model.jump(this.props.location, this.props.model.language);
   }
 
-  render(): ReactNode {
+  render(): ReactElement {
     return h(
       Link_,
       {

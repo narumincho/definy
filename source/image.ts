@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { Component, ReactNode, createElement as h } from "react";
+import { Component, ReactElement, createElement as h } from "react";
 import { Icon } from "./icon";
 import { Model } from "./model";
 import styled from "styled-components";
@@ -17,7 +17,7 @@ export class Image extends Component<Props, never> {
     props.model.requestImage(props.imageToken);
   }
 
-  render(): ReactNode {
+  render(): ReactElement {
     const blobUrlResource = this.props.model.imageMap.get(
       this.props.imageToken
     );

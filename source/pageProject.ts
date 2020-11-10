@@ -2,7 +2,7 @@ import * as d from "definy-core/source/data";
 import {
   Component,
   FunctionComponent,
-  ReactNode,
+  ReactElement,
   createElement as h,
 } from "react";
 import { Icon } from "./icon";
@@ -24,7 +24,7 @@ export class PageProject extends Component<Props> {
     props.model.requestTypePartInProject(props.projectId);
   }
 
-  render(): ReactNode {
+  render(): ReactElement {
     const projectState = this.props.model.projectMap.get(this.props.projectId);
     if (projectState === undefined) {
       return h(StyledPageProject, {}, "...");

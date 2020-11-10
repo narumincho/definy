@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { Component, ReactNode, createElement as h } from "react";
+import { Component, ReactElement, createElement as h } from "react";
 import { Image } from "./image";
 import { Link } from "./link";
 import { Model } from "./model";
@@ -17,7 +17,7 @@ export class Project extends Component<Props, never> {
     props.model.requestProject(props.projectId);
   }
 
-  render(): ReactNode {
+  render(): ReactElement {
     const projectResource = this.props.model.projectMap.get(
       this.props.projectId
     );
@@ -45,6 +45,8 @@ export class Project extends Component<Props, never> {
         return h(Project_, { className: this.props.className }, "WaitUpdating");
       case "Updating":
         return h(Project_, { className: this.props.className }, "Updating");
+      case "Unknown":
+        return h(Project_, { className: this.props.className }, "Unknown");
       case "Loaded": {
         const { dataMaybe } = projectResource.dataResource;
         if (dataMaybe._ === "Nothing") {

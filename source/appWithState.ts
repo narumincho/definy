@@ -8,7 +8,7 @@ import {
   HomeProjectState,
   Model,
 } from "./model";
-import { Component, ReactNode, createElement as h } from "react";
+import { Component, ReactElement, createElement as h } from "react";
 import { App } from "./app";
 
 export type State = {
@@ -315,7 +315,7 @@ export class AppWithState extends Component<never, State> {
     this.setState({ location, language });
   }
 
-  render(): ReactNode {
+  render(): ReactElement {
     const model: Model = {
       top50ProjectIdState: this.state.top50ProjectIdState,
       projectMap: this.state.projectMap,
