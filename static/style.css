@@ -106,15 +106,6 @@
   height: 32px;
 }
 
-.ui__user {
-  display: grid;
-  grid-template-columns: 32px 1fr;
-  height: 48px;
-  align-items: "center";
-  gap: 8px;
-  padding: 8px;
-}
-
 .ui__user-image {
   width: 32px;
   height: 32px;
@@ -223,13 +214,6 @@
   font-size: 1.5rem;
 }
 
-.commit__root {
-  padding: 16px;
-  display: grid;
-  gap: 4px;
-  align-content: start;
-}
-
 .commit__project-name-and-icon {
   padding: 8px;
   display: grid;
@@ -238,16 +222,6 @@
   gap: 8px;
   width: 100%;
   margin: 0;
-}
-
-.commit__project-icon {
-  width: 48px;
-  height: 48px;
-}
-
-.commit__project-image {
-  width: 512px;
-  height: 316.5px;
 }
 
 .commit-editor__root {
@@ -275,25 +249,4 @@
   align-self: start;
   justify-self: center;
   gap: 8px;
-}
-
-.project__root {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: 100%;
-  justify-items: center;
-  align-content: start;
-  height: 100%;
-  overflow: auto;
-}
-
-.project__idea-and-commit-tree {
-  overflow-y: scroll;
-  height: 100%;
-  width: 320px;
-}
-
-.project__tree-link {
-  padding: 8px;
-  overflow-x: hidden;
 }

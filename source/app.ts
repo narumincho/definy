@@ -4,6 +4,7 @@ import { Header } from "./header";
 import { LoadingBox } from "./ui";
 import { Model } from "./model";
 import { PageHome } from "./pageHome";
+import { PageProject } from "./pageProject";
 import styled from "styled-components";
 
 export type Props = {
@@ -76,7 +77,10 @@ const Main: FunctionComponent<Props> = (props) => {
     case "Home":
       return h(PageHome, { model: props.model });
     case "Project":
-      return h("div", {}, "プロジェット画面");
+      return h(PageProject, {
+        model: props.model,
+        projectId: props.model.location.projectId,
+      });
     case "Debug":
       return h("div", {}, "デバッグ画面");
   }
