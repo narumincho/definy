@@ -1,8 +1,9 @@
 import * as d from "definy-core/source/data";
 import { FunctionComponent, createElement as h } from "react";
 import { Header } from "./header";
-import { LoadingBox } from "./ui";
+import { LoadingBox } from "./loadingBox";
 import { Model } from "./model";
+import { PageAbout } from "./pageAbout";
 import { PageHome } from "./pageHome";
 import { PageProject } from "./pageProject";
 import styled from "styled-components";
@@ -83,6 +84,8 @@ const Main: FunctionComponent<Props> = (props) => {
       });
     case "Debug":
       return h("div", {}, "デバッグ画面");
+    case "About":
+      return h(PageAbout, {});
   }
   return h("div", {}, "他のページは準備中……");
 };

@@ -1,4 +1,4 @@
-import * as about from "./about";
+import * as about from "../pageAbout";
 import * as d from "definy-core/source/data";
 import * as header from "../header";
 import * as home from "./home";

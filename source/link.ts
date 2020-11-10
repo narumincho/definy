@@ -2,7 +2,7 @@ import * as core from "definy-core";
 import * as d from "definy-core/source/data";
 import react, { Component, ReactNode, createElement as h } from "react";
 import { Model } from "./model";
-import { Theme } from "./ui";
+import { Theme } from "./theme";
 import styled from "styled-components";
 
 export type Props = {
