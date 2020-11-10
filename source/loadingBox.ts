@@ -19,16 +19,16 @@ const rotateAnimation = keyframes`
   }
 `;
 
-const LoadingLogo = styled.div({
-  width: 96,
-  height: 96,
-  display: "grid",
-  justifyItems: "center",
-  alignItems: "center",
-  borderRadius: "50%",
-  animation: `1s ${rotateAnimation} infinite linear`,
-  fontSize: 24,
-  padding: 8,
-  backgroundColor: "#333",
-  color: "#ddd",
-});
+const LoadingLogo = styled.div`
+  width: 96px;
+  height: 96px;
+  display: grid;
+  justify-items: center;
+  align-items: center;
+  border-radius: 50%;
+  animation: 1s ${rotateAnimation} infinite linear;
+  font-size: 24px;
+  padding: 8;
+  background-color: #333;
+  color: #ddd;
+`;
