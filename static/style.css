@@ -112,20 +112,6 @@
   border-radius: 50%;
 }
 
-.ui__one-line-text-input {
-  padding: 8;
-  font-size: 16;
-  border: 2px solid #222;
-  background-color: #000;
-  color: #ddd;
-  border-radius: 8px;
-}
-
-.ui__one-line-text-input:focus {
-  border: 2px solid #f0932b;
-  outline: none;
-}
-
 .app__requesting-log-in-url {
   height: 100%;
   display: grid;
