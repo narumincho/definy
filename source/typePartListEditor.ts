@@ -7,6 +7,8 @@ import {
 } from "react";
 import { Button } from "./button";
 import { Model } from "./model";
+import { OneLineTextInput } from "./oneLineTextInput";
+import styled from "styled-components";
 
 export type Props = {
   readonly model: Model;
@@ -37,8 +39,9 @@ export class TypePartListEditor extends Component<Props> {
           switch (typePartResourceState._) {
             case "Loaded": {
               if (typePartResourceState.dataResource.dataMaybe._ === "Just") {
-                return h(TypePart, {
+                return h(TypePartEditor, {
                   key: typePartId,
+                  typePartId,
                   typePart: typePartResourceState.dataResource.dataMaybe.value,
                 });
               }
@@ -58,5 +61,45 @@ export class TypePartListEditor extends Component<Props> {
   }
 }
 
-const TypePart: FunctionComponent<{ typePart: d.TypePart }> = (props) =>
-  h("div", {}, props.typePart.name);
+const TypePartEditor: FunctionComponent<{
+  typePartId: d.TypePartId;
+  typePart: d.TypePart;
+}> = (props) =>
+  h(StyledTypePartEditor, {}, [
+    h(
+      "label",
+      {
+        key: "name",
+      },
+      [
+        "name",
+        h(OneLineTextInput, {
+          name: "typePartName-" + props.typePartId,
+          value: props.typePart.name,
+          onChange: () => {},
+          key: "input",
+        }),
+      ]
+    ),
+    h(
+      "label",
+      {
+        key: "description",
+      },
+      [
+        "description",
+        h(OneLineTextInput, {
+          name: "typePartDescription-" + props.typePartId,
+          value: props.typePart.description,
+          onChange: () => {},
+          key: "input",
+        }),
+      ]
+    ),
+  ]);
+
+const StyledTypePartEditor = styled.div({
+  display: "grid",
+  gap: 8,
+  padding: 16,
+});
