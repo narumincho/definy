@@ -26,7 +26,7 @@ export class MultiLineTextInput extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.ref = createRef();
-    this.state = { value: "" };
+    this.state = { value: props.initValue };
   }
 
   onChange(event: ChangeEvent<HTMLTextAreaElement>): void {
