@@ -9,6 +9,7 @@ import { Button } from "./button";
 import { Model } from "./model";
 import { OneLineTextInput } from "./oneLineTextInput";
 import styled from "styled-components";
+import { MultiLineTextInput } from "./multiLineTextInput";
 
 export type Props = {
   readonly model: Model;
@@ -88,9 +89,9 @@ const TypePartEditor: FunctionComponent<{
       },
       [
         "description",
-        h(OneLineTextInput, {
+        h(MultiLineTextInput, {
           name: "typePartDescription-" + props.typePartId,
-          value: props.typePart.description,
+          initValue: props.typePart.description,
           onChange: () => {},
           key: "input",
         }),
