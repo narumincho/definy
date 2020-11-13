@@ -7,9 +7,9 @@ import {
 } from "react";
 import { Button } from "./button";
 import { Model } from "./model";
+import { MultiLineTextInput } from "./multiLineTextInput";
 import { OneLineTextInput } from "./oneLineTextInput";
 import styled from "styled-components";
-import { MultiLineTextInput } from "./multiLineTextInput";
 
 export type Props = {
   readonly model: Model;
@@ -27,7 +27,7 @@ export class TypePartListEditor extends Component<Props> {
   }
 
   render(): ReactElement {
-    return h("div", {}, [
+    return h(StyledTypePartListEditor, {}, [
       ...[...this.props.model.typePartMap]
         .filter(
           ([_, typePart]) =>
@@ -62,13 +62,18 @@ export class TypePartListEditor extends Component<Props> {
   }
 }
 
+const StyledTypePartListEditor = styled.div({
+  display: "grid",
+  gap: 8,
+});
+
 const TypePartEditor: FunctionComponent<{
   typePartId: d.TypePartId;
   typePart: d.TypePart;
 }> = (props) =>
   h(StyledTypePartEditor, {}, [
     h(
-      "label",
+      EditorLabel,
       {
         key: "name",
       },
@@ -83,7 +88,7 @@ const TypePartEditor: FunctionComponent<{
       ]
     ),
     h(
-      "label",
+      EditorLabel,
       {
         key: "description",
       },
@@ -101,6 +106,12 @@ const TypePartEditor: FunctionComponent<{
 
 const StyledTypePartEditor = styled.div({
   display: "grid",
-  gap: 8,
+  gap: 4,
   padding: 16,
+  backgroundColor: "#111",
+});
+
+const EditorLabel = styled.label({
+  display: "grid",
+  gridTemplateColumns: "128px 1fr",
 });
