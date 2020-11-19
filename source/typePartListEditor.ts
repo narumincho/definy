@@ -44,6 +44,7 @@ export class TypePartListEditor extends Component<Props> {
                 switch (typePartResourceState._) {
                   case "Loaded": {
                     return h(TypePartEditor, {
+                      model: this.props.model,
                       key: typePartId,
                       typePartId,
                       typePart: typePartResourceState.dataWithTime.data,
@@ -55,10 +56,10 @@ export class TypePartListEditor extends Component<Props> {
             h(
               Button,
               {
-                onClick: this.addTypePart,
+                onClick: () => this.addTypePart(),
                 key: "typePartAddButton",
               },
-              ["型パーツ追加"]
+              "型パーツ追加"
             ),
           ]
     );
@@ -71,6 +72,7 @@ const StyledTypePartListEditor = styled.div({
 });
 
 const TypePartEditor: FunctionComponent<{
+  model: Model;
   typePartId: d.TypePartId;
   typePart: d.TypePart;
 }> = (props) =>
@@ -101,6 +103,12 @@ const TypePartEditor: FunctionComponent<{
           name: "typePartDescription-" + props.typePartId,
           initValue: props.typePart.description,
           onChange: () => {},
+          onBlur: (newDescription) => {
+            props.model.setTypePartDescription(
+              props.typePartId,
+              newDescription
+            );
+          },
           key: "input",
         }),
       ]

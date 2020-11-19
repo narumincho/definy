@@ -14,6 +14,7 @@ type Props = {
     value: string,
     event: ChangeEvent<HTMLTextAreaElement>
   ) => void;
+  readonly onBlur: (value: string) => void;
 };
 
 type State = {
@@ -32,6 +33,10 @@ export class MultiLineTextInput extends Component<Props, State> {
   onChange(event: ChangeEvent<HTMLTextAreaElement>): void {
     this.props.onChange(event.target.value, event);
     this.setState({ value: event.target.value });
+  }
+
+  onBlur(): void {
+    this.props.onBlur(this.state.value);
   }
 
   componentDidUpdate(): void {
@@ -56,6 +61,7 @@ export class MultiLineTextInput extends Component<Props, State> {
       name: this.props.name,
       onChange: (event: ChangeEvent<HTMLTextAreaElement>): void =>
         this.onChange(event),
+      onBlur: () => this.onBlur(),
       value: this.state.value,
       ref: this.ref,
     });
