@@ -282,7 +282,7 @@ export class AppWithState extends Component<Record<never, never>, State> {
         if (response.value.data._ === "Nothing") {
           return {
             typePartMap: state.typePartMap,
-            addTypePartState: { _: "None" },
+            getTypePartInProjectState: { _: "None" },
           };
         }
         const newTypePartMap = new Map(state.typePartMap);
@@ -297,7 +297,7 @@ export class AppWithState extends Component<Record<never, never>, State> {
         }
         return {
           typePartMap: newTypePartMap,
-          addTypePartState: { _: "None" },
+          getTypePartInProjectState: { _: "None" },
         };
       });
     });

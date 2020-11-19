@@ -6,6 +6,7 @@ import {
   createElement as h,
 } from "react";
 import { Button } from "./button";
+import { Icon } from "./icon";
 import { Model } from "./model";
 import { MultiLineTextInput } from "./multiLineTextInput";
 import { OneLineTextInput } from "./oneLineTextInput";
@@ -27,34 +28,40 @@ export class TypePartListEditor extends Component<Props> {
   }
 
   render(): ReactElement {
-    return h(StyledTypePartListEditor, {}, [
-      ...[...this.props.model.typePartMap]
-        .filter(
-          ([_, typePart]) =>
-            typePart._ === "Loaded" &&
-            typePart.dataWithTime.data.projectId === this.props.projectId
-        )
-        .map(([typePartId, typePartResourceState]) => {
-          switch (typePartResourceState._) {
-            case "Loaded": {
-              return h(TypePartEditor, {
-                key: typePartId,
-                typePartId,
-                typePart: typePartResourceState.dataWithTime.data,
-              });
-            }
-          }
-          return h("div", { key: typePartId }, "...");
-        }),
-      h(
-        Button,
-        {
-          onClick: this.addTypePart,
-          key: "typePartAddButton",
-        },
-        ["型パーツ追加"]
-      ),
-    ]);
+    return h(
+      StyledTypePartListEditor,
+      {},
+      this.props.model.getTypePartInProjectState._ === "Requesting"
+        ? h(Icon, { iconType: "Requesting" })
+        : [
+            ...[...this.props.model.typePartMap]
+              .filter(
+                ([_, typePart]) =>
+                  typePart._ === "Loaded" &&
+                  typePart.dataWithTime.data.projectId === this.props.projectId
+              )
+              .map(([typePartId, typePartResourceState]) => {
+                switch (typePartResourceState._) {
+                  case "Loaded": {
+                    return h(TypePartEditor, {
+                      key: typePartId,
+                      typePartId,
+                      typePart: typePartResourceState.dataWithTime.data,
+                    });
+                  }
+                }
+                return h("div", { key: typePartId }, "...");
+              }),
+            h(
+              Button,
+              {
+                onClick: this.addTypePart,
+                key: "typePartAddButton",
+              },
+              ["型パーツ追加"]
+            ),
+          ]
+    );
   }
 }
 
