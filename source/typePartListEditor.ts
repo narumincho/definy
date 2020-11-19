@@ -4,12 +4,14 @@ import {
   FunctionComponent,
   ReactElement,
   createElement as h,
+  useState,
 } from "react";
 import { Button } from "./button";
 import { Icon } from "./icon";
 import { Model } from "./model";
 import { MultiLineTextInput } from "./multiLineTextInput";
 import { OneLineTextInput } from "./oneLineTextInput";
+import { TypePartBodyEditor } from "./typePartBodyEditor";
 import styled from "styled-components";
 
 export type Props = {
@@ -75,8 +77,11 @@ const TypePartEditor: FunctionComponent<{
   model: Model;
   typePartId: d.TypePartId;
   typePart: d.TypePart;
-}> = (props) =>
-  h(StyledTypePartEditor, {}, [
+}> = (props) => {
+  const [typePartBody, setTypePartBody] = useState<d.TypePartBody>(
+    props.typePart.body
+  );
+  return h(StyledTypePartEditor, {}, [
     h(
       EditorLabel,
       {
@@ -113,7 +118,23 @@ const TypePartEditor: FunctionComponent<{
         }),
       ]
     ),
+    h(
+      EditorLabel,
+      {
+        key: "typePartBody",
+      },
+      [
+        "body",
+        h(TypePartBodyEditor, {
+          name: "typePartBody-" + props.typePartId,
+          key: "editor",
+          typePartBody,
+          onChange: setTypePartBody,
+        }),
+      ]
+    ),
   ]);
+};
 
 const StyledTypePartEditor = styled.div({
   display: "grid",
