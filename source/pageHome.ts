@@ -5,6 +5,7 @@ import {
   ReactElement,
   createElement as h,
 } from "react";
+import { Icon } from "./icon";
 import { Link } from "./link";
 import { Model } from "./model";
 import { Project } from "./project";
@@ -108,7 +109,7 @@ const AllProjectList: FunctionComponent<{
     case "None":
       return h("div", {}, "読み込み前");
     case "Loading":
-      return h("div", {}, "読み込み中");
+      return h("div", {}, h(Icon, { iconType: "Requesting" }));
     case "Loaded": {
       const { projectIdList } = props.model.top50ProjectIdState;
       if (projectIdList.length === 0) {
