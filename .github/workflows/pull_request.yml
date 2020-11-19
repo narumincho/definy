@@ -1,0 +1,24 @@
+name: type check and build test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  type-check-and-build-test:
+    name: type check and build test
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v2
+      - name: setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "10.x"
+      - name: Install npm dependencies (npm ci)
+        run: npm ci
+      - name: type check
+        run: tsc --project source/tsconfig.json --noEmit
+      - name: Parcel build (npx parcel)
+        run: npx parcel build ./source/main.ts --out-dir ./distribution;
