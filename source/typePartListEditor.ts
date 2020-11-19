@@ -23,7 +23,7 @@ export class TypePartListEditor extends Component<Props> {
   }
 
   addTypePart(): void {
-    console.log("addTypePart!");
+    this.props.model.addTypePart(this.props.projectId);
   }
 
   render(): ReactElement {
@@ -32,20 +32,16 @@ export class TypePartListEditor extends Component<Props> {
         .filter(
           ([_, typePart]) =>
             typePart._ === "Loaded" &&
-            typePart.dataResource.dataMaybe._ === "Just" &&
-            typePart.dataResource.dataMaybe.value.projectId ===
-              this.props.projectId
+            typePart.dataWithTime.data.projectId === this.props.projectId
         )
         .map(([typePartId, typePartResourceState]) => {
           switch (typePartResourceState._) {
             case "Loaded": {
-              if (typePartResourceState.dataResource.dataMaybe._ === "Just") {
-                return h(TypePartEditor, {
-                  key: typePartId,
-                  typePartId,
-                  typePart: typePartResourceState.dataResource.dataMaybe.value,
-                });
-              }
+              return h(TypePartEditor, {
+                key: typePartId,
+                typePartId,
+                typePart: typePartResourceState.dataWithTime.data,
+              });
             }
           }
           return h("div", { key: typePartId }, "...");

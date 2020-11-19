@@ -14,7 +14,6 @@ export type Props = {
 
 export const App: FunctionComponent<Props> = (props) => {
   switch (props.model.logInState._) {
-    case "WaitRequestingLogInUrl":
     case "RequestingLogInUrl":
       return h(RequestingLogInUrl, {
         message: logInMessage(

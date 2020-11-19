@@ -48,10 +48,6 @@ const UserViewOrLogInButton: FunctionComponent<{
   model: Model;
 }> = (props) => {
   switch (props.model.logInState._) {
-    case "WaitLoadingAccountTokenFromIndexedDB":
-      return h(StyledUserViewOrLogInButton, {}, [
-        "アクセストークンをindexedDBから読み取り中",
-      ]);
     case "LoadingAccountTokenFromIndexedDB":
       return h(StyledUserViewOrLogInButton, {}, [
         "アクセストークンをindexedDBから読み取り中……",
@@ -61,22 +57,16 @@ const UserViewOrLogInButton: FunctionComponent<{
         language: props.model.language,
         requestLogIn: props.model.logIn,
       });
-    case "WaitVerifyingAccountToken":
-      return h(StyledUserViewOrLogInButton, {}, "アクセストークンを検証中");
     case "VerifyingAccountToken":
       return h(StyledUserViewOrLogInButton, {}, "アクセストークンを検証中……");
     case "LoggedIn": {
       const userResourceState = props.model.userMap.get(
         props.model.logInState.accountTokenAndUserId.userId
       );
-      if (
-        userResourceState === undefined ||
-        userResourceState._ !== "Loaded" ||
-        userResourceState.dataResource.dataMaybe._ === "Nothing"
-      ) {
+      if (userResourceState === undefined || userResourceState._ !== "Loaded") {
         return h(StyledUserViewOrLogInButton, {}, "...");
       }
-      const user = userResourceState.dataResource.dataMaybe.value;
+      const user = userResourceState.dataWithTime.data;
       return h(
         SettingLink,
         {

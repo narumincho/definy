@@ -23,23 +23,18 @@ export class User extends Component<Props, never> {
       return h(LoadingDiv, {}, "...");
     }
     switch (userState._) {
-      case "WaitLoading":
-      case "Loading":
-        return h(LoadingDiv, {}, h(Icon, { iconType: "Loading" }));
-      case "WaitRequesting":
       case "Requesting":
         return h(LoadingDiv, {}, h(Icon, { iconType: "Requesting" }));
       case "Unknown":
-      case "Retrying":
-      case "Updating":
-      case "WaitUpdating":
-      case "WaitRetrying":
-        return h(LoadingDiv, {}, "?");
+        return h(LoadingDiv, {}, "ユーザーの取得に失敗しました");
+      case "Deleted":
+        return h(
+          LoadingDiv,
+          {},
+          "現在, userIdが " + this.props.userId + " のユーザーは存在しません"
+        );
       case "Loaded": {
-        if (userState.dataResource.dataMaybe._ === "Nothing") {
-          return h(LoadingDiv, {}, "???");
-        }
-        const data = userState.dataResource.dataMaybe.value;
+        const { data } = userState.dataWithTime;
         return h(
           StyledUser,
           {

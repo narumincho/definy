@@ -1,5 +1,5 @@
-import * as api from "./api";
 import * as core from "definy-core";
+import * as coreUtil from "definy-core/source/util";
 import * as d from "definy-core/source/data";
 import * as indexedDB from "./indexedDB";
 import {
@@ -10,6 +10,7 @@ import {
 } from "./model";
 import { Component, ReactElement, createElement as h } from "react";
 import { App } from "./app";
+import { api } from "./api";
 
 export type State = {
   /** ホームに表示される. Top50のプロジェクトのID */
@@ -108,7 +109,6 @@ export class AppWithState extends Component<Record<never, never>, State> {
         )
         .toString()
     );
-    console.log("logInState", this.state.logInState);
     switch (this.state.logInState._) {
       case "LoadingAccountTokenFromIndexedDB": {
         indexedDB.getAccountToken().then((accountToken) => {
@@ -116,7 +116,7 @@ export class AppWithState extends Component<Record<never, never>, State> {
             this.setState({ logInState: d.LogInState.Guest });
           } else {
             this.setState({
-              logInState: d.LogInState.WaitVerifyingAccountToken(accountToken),
+              logInState: d.LogInState.VerifyingAccountToken(accountToken),
             });
             this.verifyAccountToken(accountToken);
           }
@@ -130,21 +130,29 @@ export class AppWithState extends Component<Record<never, never>, State> {
   }
 
   verifyAccountToken(accountToken: d.AccountToken): void {
-    api.getUserByAccountToken(accountToken).then((userResourceAndIdMaybe) => {
-      switch (userResourceAndIdMaybe._) {
-        case "Just":
+    api.getUserByAccountToken(accountToken).then((response) => {
+      if (response._ === "Nothing") {
+        return;
+      }
+      const userMaybe = response.value;
+      switch (userMaybe._) {
+        case "Just": {
           indexedDB.setAccountToken(accountToken);
           this.setState((state) => ({
             logInState: d.LogInState.LoggedIn({
               accountToken,
-              userId: userResourceAndIdMaybe.value.id,
+              userId: userMaybe.value.id,
             }),
             userMap: new Map(state.userMap).set(
-              userResourceAndIdMaybe.value.id,
-              d.ResourceState.Loaded(userResourceAndIdMaybe.value.data)
+              userMaybe.value.id,
+              d.ResourceState.Loaded({
+                getTime: coreUtil.timeFromDate(new Date()),
+                data: userMaybe.value.data,
+              })
             ),
           }));
           return;
+        }
         case "Nothing":
           this.setState({ logInState: d.LogInState.Guest });
       }
@@ -163,17 +171,24 @@ export class AppWithState extends Component<Record<never, never>, State> {
 
   requestAllTop50Project(): void {
     this.setState({ top50ProjectIdState: { _: "Loading" } });
-    api.getTop50Project().then((response) => {
+    api.getTop50Project(undefined).then((response) => {
+      if (response._ === "Nothing") {
+        return;
+      }
+      const projectListData = response.value;
       this.setState((state) => {
         const newTop50ProjectIdState: HomeProjectState = {
           _: "Loaded",
-          projectIdList: response.map((idAndData) => idAndData.id),
+          projectIdList: projectListData.data.map((idAndData) => idAndData.id),
         };
         const newProjectMap = new Map(state.projectMap);
-        for (const projectIdAndData of response) {
+        for (const projectIdAndData of projectListData.data) {
           newProjectMap.set(
             projectIdAndData.id,
-            d.ResourceState.Loaded(projectIdAndData.data)
+            d.ResourceState.Loaded({
+              getTime: response.value.getTime,
+              data: projectIdAndData.data,
+            })
           );
         }
         return {
@@ -189,14 +204,14 @@ export class AppWithState extends Component<Record<never, never>, State> {
       return;
     }
     this.setState((state) => ({
-      userMap: new Map(state.userMap).set(userId, d.ResourceState.Loading()),
+      userMap: new Map(state.userMap).set(userId, d.ResourceState.Requesting()),
     }));
-    api.getUser(userId).then((userResource) => {
+    api.getUser(userId).then((response) => {
       this.setState((state) => ({
-        userMap: new Map([
-          ...state.userMap,
-          [userId, d.ResourceState.Loaded(userResource)],
-        ]),
+        userMap: new Map(state.userMap).set(
+          userId,
+          getResourceResponseToResourceState(response)
+        ),
       }));
     });
   }
@@ -206,17 +221,17 @@ export class AppWithState extends Component<Record<never, never>, State> {
       return;
     }
     this.setState((state) => ({
-      projectMap: new Map([
-        ...state.projectMap,
-        [projectId, d.ResourceState.Loading()],
-      ]),
+      projectMap: new Map(state.projectMap).set(
+        projectId,
+        d.ResourceState.Requesting()
+      ),
     }));
     api.getProject(projectId).then((response) => {
       this.setState((state) => ({
-        projectMap: new Map([
-          ...state.projectMap,
-          [projectId, d.ResourceState.Loaded(response)],
-        ]),
+        projectMap: new Map(state.projectMap).set(
+          projectId,
+          getResourceResponseToResourceState(response)
+        ),
       }));
     });
   }
@@ -231,17 +246,17 @@ export class AppWithState extends Component<Record<never, never>, State> {
         [imageToken, d.StaticResourceState.Loading()],
       ]),
     }));
-    api.getImageFile(imageToken).then((binary): void => {
+    api.getImageFile(imageToken).then((response): void => {
       this.setState((state) => ({
         imageMap: new Map([
           ...state.imageMap,
           [
             imageToken,
-            binary._ === "Nothing"
+            response._ === "Nothing"
               ? d.StaticResourceState.Unknown<string>()
               : d.StaticResourceState.Loaded<string>(
                   window.URL.createObjectURL(
-                    new Blob([binary.value], {
+                    new Blob([response.value], {
                       type: "image/png",
                     })
                   )
@@ -260,20 +275,23 @@ export class AppWithState extends Component<Record<never, never>, State> {
       getTypePartInProjectState: { _: "Requesting", projectId },
     });
     api.getTypePartByProjectId(projectId).then((response) => {
+      if (response._ === "Nothing") {
+        return;
+      }
       this.setState((state) => {
-        if (response.dataMaybe._ === "Nothing") {
+        if (response.value.data._ === "Nothing") {
           return {
             typePartMap: state.typePartMap,
             addTypePartState: { _: "None" },
           };
         }
         const newTypePartMap = new Map(state.typePartMap);
-        for (const typePartIdAndData of response.dataMaybe.value) {
+        for (const typePartIdAndData of response.value.data.value) {
           newTypePartMap.set(
             typePartIdAndData.id,
             d.ResourceState.Loaded({
-              dataMaybe: d.Maybe.Just(typePartIdAndData.data),
-              getTime: response.getTime,
+              data: typePartIdAndData.data,
+              getTime: response.value.getTime,
             })
           );
         }
@@ -294,16 +312,24 @@ export class AppWithState extends Component<Record<never, never>, State> {
       accountToken: this.accountToken,
       projectName,
     });
-    switch (response._) {
+    if (response._ === "Nothing") {
+      this.setState({ isCreatingProject: false });
+      return;
+    }
+    const projectMaybe = response.value;
+    switch (projectMaybe._) {
       case "Just": {
         this.setState((state) => ({
           projectMap: new Map(state.projectMap).set(
-            response.value.id,
-            d.ResourceState.Loaded(response.value.data)
+            projectMaybe.value.id,
+            d.ResourceState.Loaded({
+              getTime: coreUtil.timeFromDate(new Date()),
+              data: projectMaybe.value.data,
+            })
           ),
           isCreatingProject: false,
         }));
-        return response.value.id;
+        return projectMaybe.value.id;
       }
       case "Nothing":
         this.setState({ isCreatingProject: false });
@@ -325,17 +351,21 @@ export class AppWithState extends Component<Record<never, never>, State> {
       })
       .then((response) => {
         this.setState({ addTypePartState: { _: "None" } });
-        switch (response.dataMaybe._) {
+        if (response._ === "Nothing") {
+          return;
+        }
+        const typePartListMaybe = response.value.data;
+        switch (typePartListMaybe._) {
           case "Just": {
-            const data = response.dataMaybe.value;
+            const data = typePartListMaybe.value;
             this.setState((state) => {
               const newTypePartMap = new Map(state.typePartMap);
               for (const typePartIdAndData of data) {
                 newTypePartMap.set(
                   typePartIdAndData.id,
                   d.ResourceState.Loaded({
-                    dataMaybe: d.Maybe.Just(typePartIdAndData.data),
-                    getTime: response.getTime,
+                    data: typePartIdAndData.data,
+                    getTime: response.value.getTime,
                   })
                 );
               }
@@ -350,7 +380,7 @@ export class AppWithState extends Component<Record<never, never>, State> {
 
   logIn(provider: d.OpenIdConnectProvider): void {
     this.setState({
-      logInState: d.LogInState.WaitRequestingLogInUrl(provider),
+      logInState: d.LogInState.RequestingLogInUrl(provider),
     });
     api
       .requestLogInUrl({
@@ -361,11 +391,14 @@ export class AppWithState extends Component<Record<never, never>, State> {
           location: this.state.location,
         },
       })
-      .then((logInUrl) => {
+      .then((response) => {
+        if (response._ === "Nothing") {
+          return;
+        }
         this.setState({
-          logInState: d.LogInState.JumpingToLogInPage(logInUrl),
+          logInState: d.LogInState.JumpingToLogInPage(response.value),
         });
-        window.location.href = logInUrl;
+        window.location.href = response.value;
       });
   }
 
@@ -423,32 +456,17 @@ export class AppWithState extends Component<Record<never, never>, State> {
   }
 }
 
-const verifyingAccountToken = (
-  accountToken: d.AccountToken,
-  setState: <K extends keyof State>(
-    state:
-      | ((prevState: Readonly<State>) => Pick<State, K> | State | null)
-      | (Pick<State, K> | State | null),
-    callback?: () => void
-  ) => void
-) => {
-  api.getUserByAccountToken(accountToken).then((userResourceAndIdMaybe) => {
-    switch (userResourceAndIdMaybe._) {
-      case "Just":
-        indexedDB.setAccountToken(accountToken);
-        setState((state) => ({
-          logInState: d.LogInState.LoggedIn({
-            accountToken,
-            userId: userResourceAndIdMaybe.value.id,
-          }),
-          userMap: new Map(state.userMap).set(
-            userResourceAndIdMaybe.value.id,
-            d.ResourceState.Loaded(userResourceAndIdMaybe.value.data)
-          ),
-        }));
-        return;
-      case "Nothing":
-        setState({ logInState: d.LogInState.Guest });
-    }
-  });
+const getResourceResponseToResourceState = <resource extends unknown>(
+  response: d.Maybe<d.WithTime<d.Maybe<resource>>>
+): d.ResourceState<resource> => {
+  if (response._ === "Nothing") {
+    return d.ResourceState.Unknown(coreUtil.timeFromDate(new Date()));
+  }
+  if (response.value.data._ === "Just") {
+    return d.ResourceState.Loaded({
+      getTime: response.value.getTime,
+      data: response.value.data.value,
+    });
+  }
+  return d.ResourceState.Deleted(response.value.getTime);
 };

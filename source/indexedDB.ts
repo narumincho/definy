@@ -146,7 +146,7 @@ const deleteValue = <id extends string>(
 const setResource = <id extends string, data>(
   objectStoreName: string,
   id: id,
-  resource: d.Resource<data>
+  resource: d.WithTime<data>
 ): Promise<void> =>
   new Promise((resolve, reject) => {
     getDatabase().then((database) => {
@@ -179,7 +179,7 @@ const setResource = <id extends string, data>(
       };
 
       const getRequest: IDBRequest<
-        undefined | d.Resource<data>
+        undefined | d.WithTime<data>
       > = transaction.objectStore(objectStoreName).get(id);
     });
   });

@@ -30,30 +30,29 @@ export class PageProject extends Component<Props> {
       return h(StyledPageProject, {}, "...");
     }
     switch (projectState._) {
-      case "WaitLoading":
-      case "Loading":
-        return h(StyledPageProject, {}, h(Icon, { iconType: "Loading" }));
-      case "WaitRequesting":
       case "Requesting":
         return h(StyledPageProject, {}, h(Icon, { iconType: "Requesting" }));
       case "Unknown":
-      case "Updating":
         return h(StyledPageProject, {}, "?");
+      case "Deleted":
+        return h(
+          StyledPageProject,
+          {},
+          "現在, projectId が " +
+            this.props.projectId +
+            " のプロジェクトは存在しません"
+        );
       case "Loaded":
-        if (projectState.dataResource.dataMaybe._ === "Nothing") {
-          return h(StyledPageProject, {}, "??");
-        }
         return h(
           StyledPageProject,
           {},
           h(ProjectMain, {
             model: this.props.model,
-            project: projectState.dataResource.dataMaybe.value,
+            project: projectState.dataWithTime.data,
             projectId: this.props.projectId,
           })
         );
     }
-    return h(StyledPageProject, {}, "www");
   }
 }
 

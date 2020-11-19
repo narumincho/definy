@@ -25,33 +25,13 @@ export class Project extends Component<Props, never> {
       return h("div", {}, "...");
     }
     switch (projectResource._) {
-      case "WaitLoading":
-        return h(Project_, { className: this.props.className }, "WaitLoading");
-      case "Loading":
-        return h(Project_, { className: this.props.className }, "Loading");
-      case "WaitRequesting":
-        return h(
-          Project_,
-          { className: this.props.className },
-          "wait requesting"
-        );
       case "Requesting":
         return h(Project_, { className: this.props.className }, "Requesting");
-      case "WaitRetrying":
-        return h(Project_, { className: this.props.className }, "WaitRetrying");
-      case "Retrying":
-        return h(Project_, { className: this.props.className }, "Retrying");
-      case "WaitUpdating":
-        return h(Project_, { className: this.props.className }, "WaitUpdating");
-      case "Updating":
-        return h(Project_, { className: this.props.className }, "Updating");
       case "Unknown":
         return h(Project_, { className: this.props.className }, "Unknown");
+      case "Deleted":
+        return h(Project_, { className: this.props.className }, "Deleted");
       case "Loaded": {
-        const { dataMaybe } = projectResource.dataResource;
-        if (dataMaybe._ === "Nothing") {
-          return h("div", { className: this.props.className }, "Nothing");
-        }
         return h(
           ProjectLink,
           {
@@ -62,18 +42,19 @@ export class Project extends Component<Props, never> {
           },
           h(ProjectImage, {
             model: this.props.model,
-            imageToken: dataMaybe.value.imageHash,
-            alternativeText: dataMaybe.value.name + "の画像",
+            imageToken: projectResource.dataWithTime.data.imageHash,
+            alternativeText: projectResource.dataWithTime.data.name + "の画像",
             key: "project-image",
           }),
           h(ProjectIconAndName, { key: "icon-and-name" }, [
             h(ProjectIcon, {
               model: this.props.model,
-              imageToken: dataMaybe.value.iconHash,
+              imageToken: projectResource.dataWithTime.data.iconHash,
               key: "project-icon",
-              alternativeText: dataMaybe.value.name + "のアイコン",
+              alternativeText:
+                projectResource.dataWithTime.data.name + "のアイコン",
             }),
-            dataMaybe.value.name,
+            projectResource.dataWithTime.data.name,
           ])
         );
       }

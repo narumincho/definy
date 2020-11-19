@@ -25,28 +25,20 @@ export class Image extends Component<Props, never> {
       return h(ImageDiv, { className: this.props.className }, ["..."]);
     }
     switch (blobUrlResource._) {
-      case "WaitLoading":
       case "Loading":
         return h(
           ImageDiv,
           { className: this.props.className },
           h(Icon, { iconType: "Loading" })
         );
-      case "WaitRequesting":
       case "Requesting":
         return h(
           ImageDiv,
           { className: this.props.className },
           h(Icon, { iconType: "Requesting" })
         );
-      case "WaitRetrying":
-        return h(ImageDiv, { className: this.props.className }, [
-          "再挑戦準備中",
-        ]);
-      case "Retrying":
-        return h(ImageDiv, { className: this.props.className }, ["再挑戦中"]);
       case "Unknown":
-        return h(ImageDiv, { className: this.props.className }, ["取得に失敗"]);
+        return h(ImageDiv, { className: this.props.className }, "取得に失敗");
       case "Loaded":
         return h(Image_, {
           src: blobUrlResource.data,
