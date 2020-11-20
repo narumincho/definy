@@ -1,4 +1,5 @@
 import styled, { StyledComponent } from "styled-components";
+import { ReactElement } from "react";
 
 type SimpleStyle = {
   /** 方向 x → 横方向, y → 縦方向 */
@@ -35,3 +36,9 @@ export const styledDiv = (
     backgroundColor: "#111",
     color: "#ddd",
   });
+
+export type Editor<T> = (props: {
+  value: T;
+  onChange: (newValue: T) => void;
+  name: string;
+}) => ReactElement;

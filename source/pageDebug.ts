@@ -3,9 +3,12 @@ import {
   FunctionComponent,
   ReactElement,
   createElement as h,
+  useState,
 } from "react";
 import { Button } from "./button";
 import { Icon } from "./icon";
+import { OneLineTextInput } from "./oneLineTextInput";
+import { ProductEditor } from "./productEditor";
 import styled from "styled-components";
 
 const tabList = ["Icon", "Product"] as const;
@@ -77,5 +80,22 @@ const IconComponent: FunctionComponent<Record<never, never>> = () =>
     h(Icon, { key: "loading-icon", iconType: "Loading" }),
   ]);
 
-const ProductComponent: FunctionComponent<Record<never, never>> = () =>
-  h("div", {}, "ProductComponentをここで作成する");
+const ProductComponent: FunctionComponent<Record<never, never>> = () => {
+  const [state, setState] = useState({ name: "それな", description: "説明文" });
+  return h(
+    "div",
+    {},
+    h(NameAndDescriptionComponent, {
+      value: state,
+      onChange: (newValue: { name: string; description: string }) =>
+        setState(newValue),
+      name: "product",
+      key: "product",
+    })
+  );
+};
+
+const NameAndDescriptionComponent = ProductEditor({
+  name: OneLineTextInput,
+  description: OneLineTextInput,
+});

@@ -1,15 +1,12 @@
-import { ChangeEvent, FunctionComponent, createElement as h } from "react";
+import { ChangeEvent, createElement as h } from "react";
+import { Editor } from "./ui";
 import styled from "styled-components";
 
-export const OneLineTextInput: FunctionComponent<{
-  name: string;
-  value: string;
-  onChange: (value: string, event: ChangeEvent<HTMLInputElement>) => void;
-}> = (props) =>
+export const OneLineTextInput: Editor<string> = (props) =>
   h(StyledOneLineTextInput, {
     name: props.name,
     onChange: (mouseEvent: ChangeEvent<HTMLInputElement>) =>
-      props.onChange((mouseEvent.target as HTMLInputElement).value, mouseEvent),
+      props.onChange(mouseEvent.target.value),
     value: props.value,
   });
 
