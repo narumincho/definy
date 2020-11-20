@@ -185,7 +185,9 @@ const PatternListEditor: FunctionComponent<{
   h(
     StyledPatternListEditor,
     {},
-    props.patternList.map((_, index) => h(PatternEditor, { key: index })),
+    props.patternList.map((pattern, index) =>
+      h(PatternEditor, { key: index, pattern })
+    ),
     h(
       Button,
       {
@@ -204,7 +206,8 @@ const PatternListEditor: FunctionComponent<{
     )
   );
 
-const PatternEditor: FunctionComponent<{}> = () => h("div", {}, "パターン");
+const PatternEditor: FunctionComponent<{ pattern: d.Pattern }> = (props) =>
+  h("div", {}, "パターン name =" + props.pattern.name);
 
 const StyledPatternListEditor = styled.div({
   display: "grid",
