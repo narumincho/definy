@@ -118,3 +118,5 @@ const StyledInput = styled.input({
   width: 0,
   height: 0,
 });
+
+const a: number = "それな";
