@@ -7,57 +7,67 @@ import {
 import { Editor, styledDiv } from "./ui";
 import styled from "styled-components";
 
-export const SumEditor = <T extends Record<string, unknown>>(
+export const createWithParameterSumEditor = <
+  T extends { [k in string]: unknown }
+>(
   parameterComponentObject: {
-    [key in keyof T]?: Editor<T[key]>;
+    [key in keyof T]: Editor<T[key]> | undefined;
   },
   defaultValueObject: {
-    [key in keyof T]: keyof T | { _: keyof T };
+    [key in keyof T]: { _: keyof T };
   }
-): Editor<keyof T | { _: keyof T }> => (props): ReactElement => {
-  return h("div", {}, [
-    h(SumTagRadio, {
-      key: "tag",
-      name: props.name,
-      tagNameList: Object.keys(defaultValueObject),
-      onChange: (newTagName: string) => {
-        const defaultValue = defaultValueObject[newTagName];
-        if (defaultValue === undefined) {
-          throw new Error("デフォルト値が不明! tagName=" + newTagName);
-        }
-        props.onChange(defaultValue);
-      },
-      value:
-        typeof props.value === "string"
-          ? props.value
-          : (props.value as { _: string })._,
-    }),
-    h(SumParameterEditor, {
-      key: "paramter",
-      value:
-        typeof props.value === "string"
-          ? props.value
-          : (props.value as { _: string })._,
-    }),
-  ]);
+): Editor<{ _: keyof T }> => {
+  const TagEditor = createNoParameterTagEditor(
+    Object.keys(defaultValueObject)
+  ) as Editor<keyof T>;
+  return (props): ReactElement => {
+    return h("div", {}, [
+      h(TagEditor, {
+        key: "tag",
+        name: props.name,
+        onChange: (newTagName: keyof T) => {
+          const defaultValue = defaultValueObject[newTagName];
+          if (defaultValue === undefined) {
+            throw new Error(
+              "デフォルト値が不明! tagName=" + newTagName.toString()
+            );
+          }
+          props.onChange(defaultValue);
+        },
+        value:
+          typeof props.value === "string"
+            ? props.value
+            : (props.value as { _: string })._,
+      }),
+      h(SumParameterEditor, {
+        key: "paramter",
+        value:
+          typeof props.value === "string"
+            ? props.value
+            : (props.value as { _: string })._,
+      }),
+    ]);
+  };
 };
 
-const SumTagRadio: FunctionComponent<{
-  tagNameList: ReadonlyArray<string>;
-  value: string;
-  name: string;
-  onChange: (newValue: string) => void;
-}> = (props) => {
+export const createNoParameterTagEditor = <tag extends string>(
+  tagNameList: ReadonlyArray<tag>
+): Editor<tag> => (props) => {
   return h(
     StyledTagSumRadio,
     {},
-    props.tagNameList.map((tagName, index) =>
+    tagNameList.map((tagName, index) =>
       inputAndLabel(
         props.name + "-" + tagName,
         tagName,
         index,
         props.value === tagName,
-        props.onChange
+        (newValue: string) => {
+          if (!tagNameList.includes(newValue as tag)) {
+            throw new Error("not include newValue =" + newValue);
+          }
+          props.onChange(newValue as tag);
+        }
       )
     )
   );

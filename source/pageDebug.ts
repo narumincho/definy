@@ -1,3 +1,4 @@
+import * as d from "definy-core/source/data";
 import {
   Component,
   FunctionComponent,
@@ -5,11 +6,14 @@ import {
   createElement as h,
   useState,
 } from "react";
+import {
+  createNoParameterTagEditor,
+  createWithParameterSumEditor,
+} from "./sumEditor";
 import { Button } from "./button";
 import { Icon } from "./icon";
 import { OneLineTextInput } from "./oneLineTextInput";
 import { ProductEditor } from "./productEditor";
-import { SumEditor } from "./sumEditor";
 import styled from "styled-components";
 
 const tabList = ["Icon", "Product", "Sum"] as const;
@@ -116,23 +120,17 @@ const NameAndDescriptionComponent = ProductEditor<SampleType>({
   }),
 });
 
-type SampleSumType = "A" | "B" | "C";
-
 const SumComponent: FunctionComponent<Record<never, never>> = () => {
-  const [state, setState] = useState<SampleSumType>("A");
+  const [state, setState] = useState<d.ClientMode>("DebugMode");
 
   return h(SampleSumComponent, {
     value: state,
-    onChange: (newValue: unknown) => setState(newValue as SampleSumType),
+    onChange: (newValue: d.ClientMode) => setState(newValue),
     name: "sampleSum",
   });
 };
 
-const SampleSumComponent = SumEditor<{ [k in SampleSumType]: undefined }>(
-  {},
-  {
-    A: "A",
-    B: "B",
-    C: "C",
-  }
-);
+const SampleSumComponent = createNoParameterTagEditor<d.ClientMode>([
+  "Release",
+  "DebugMode",
+]);
