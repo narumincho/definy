@@ -1,7 +1,9 @@
 import styled, { StyledComponent } from "styled-components";
 import { ReactElement } from "react";
 
-type SimpleStyle = {
+export type GridTemplate = { _: "Fix"; value: number } | { _: "OneFr" };
+
+export type SimpleStyle = {
   /** 方向 x → 横方向, y → 縦方向 */
   direction: "x" | "y";
   /** 幅 */
@@ -12,6 +14,12 @@ type SimpleStyle = {
   gap?: number;
   /** 余白 */
   padding: number;
+  /** 丸角 デフォルト 0 */
+  borderRadius?: number;
+  /** ボーダー */
+  border?: { width: number; color: string };
+  /** 横方向を均等に区切る. 横の個数 */
+  ySameCellCount?: number;
 };
 
 /** CSSの指定をできるだけしなくて済むように */
@@ -35,6 +43,20 @@ export const styledDiv = (
     padding: simpleStyle.padding,
     backgroundColor: "#111",
     color: "#ddd",
+    borderRadius: simpleStyle.borderRadius,
+    border:
+      simpleStyle.border === undefined
+        ? "none"
+        : "solid " +
+          simpleStyle.border.width.toString() +
+          "px " +
+          simpleStyle.border.color,
+    gridTemplateColumns:
+      simpleStyle.ySameCellCount === undefined
+        ? undefined
+        : Array.from({ length: simpleStyle.ySameCellCount }, () => "1fr").join(
+            " "
+          ),
   });
 
 export type Editor<T> = (props: {

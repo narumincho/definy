@@ -9,9 +9,10 @@ import { Button } from "./button";
 import { Icon } from "./icon";
 import { OneLineTextInput } from "./oneLineTextInput";
 import { ProductEditor } from "./productEditor";
+import { SumEditor } from "./sumEditor";
 import styled from "styled-components";
 
-const tabList = ["Icon", "Product"] as const;
+const tabList = ["Icon", "Product", "Sum"] as const;
 
 type Tab = typeof tabList[number];
 
@@ -69,6 +70,8 @@ const Content: FunctionComponent<{ tab: Tab }> = (props) => {
       return h(IconComponent, {});
     case "Product":
       return h(ProductComponent, {});
+    case "Sum":
+      return h(SumComponent, {});
   }
 };
 
@@ -112,3 +115,24 @@ const NameAndDescriptionComponent = ProductEditor<SampleType>({
     b: OneLineTextInput,
   }),
 });
+
+type SampleSumType = "A" | "B" | "C";
+
+const SumComponent: FunctionComponent<Record<never, never>> = () => {
+  const [state, setState] = useState<SampleSumType>("A");
+
+  return h(SampleSumComponent, {
+    value: state,
+    onChange: (newValue: unknown) => setState(newValue as SampleSumType),
+    name: "sampleSum",
+  });
+};
+
+const SampleSumComponent = SumEditor<{ [k in SampleSumType]: undefined }>(
+  {},
+  {
+    A: "A",
+    B: "B",
+    C: "C",
+  }
+);
