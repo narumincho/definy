@@ -1,5 +1,6 @@
 import * as d from "definy-core/source/data";
 import { ChangeEvent, FunctionComponent, createElement as h } from "react";
+import { Button } from "./button";
 import styled from "styled-components";
 
 /**
@@ -11,15 +12,52 @@ export const TypePartBodyEditor: FunctionComponent<{
   onChange: (typePartBody: d.TypePartBody) => void;
 }> = (props) =>
   h(StyledTypePartBodyEditor, {}, [
+    h(TypePartBodyPatternEditor, {
+      key: "pattern",
+      pattern: props.typePartBody._,
+      name: props.name + "-pattern",
+      onChange: (pattern) => {
+        switch (pattern) {
+          case "Sum":
+            props.onChange(d.TypePartBody.Sum([]));
+            return;
+          case "Product":
+            props.onChange(d.TypePartBody.Product([]));
+            return;
+          case "Kernel":
+            props.onChange(d.TypePartBody.Kernel(d.TypePartBodyKernel.String));
+        }
+      },
+    }),
+    h(TypePartBodyParameterEditor, {
+      key: "parameter",
+      name: props.name + "-param",
+      typePartBody: props.typePartBody,
+      onChange: props.onChange,
+    }),
+  ]);
+
+const StyledTypePartBodyEditor = styled.div({
+  display: "grid",
+});
+
+type TypePartBodyPattern = "Sum" | "Product" | "Kernel";
+
+const TypePartBodyPatternEditor: FunctionComponent<{
+  pattern: TypePartBodyPattern;
+  name: string;
+  onChange: (pattern: TypePartBodyPattern) => void;
+}> = (props) =>
+  h(StyledTypePartBodyPatternEditor, {}, [
     h(StyledInput, {
       key: "sum-input",
       type: "radio",
       value: "sum",
       name: props.name,
       id: props.name + "-sum",
-      checked: props.typePartBody._ === "Sum",
+      checked: props.pattern === "Sum",
       onChange: (event: ChangeEvent<HTMLInputElement>) => {
-        props.onChange(valueToTypePartBody(event.target.value));
+        props.onChange(valueToTypePartBodyPattern(event.target.value));
       },
     }),
     h(
@@ -27,7 +65,7 @@ export const TypePartBodyEditor: FunctionComponent<{
       {
         key: "sum-label",
         htmlFor: props.name + "-sum",
-        isChecked: props.typePartBody._ === "Sum",
+        isChecked: props.pattern === "Sum",
         index: 0,
       },
       "Sum"
@@ -38,9 +76,9 @@ export const TypePartBodyEditor: FunctionComponent<{
       value: "product",
       name: props.name,
       id: props.name + "-product",
-      checked: props.typePartBody._ === "Product",
+      checked: props.pattern === "Product",
       onChange: (event: ChangeEvent<HTMLInputElement>) => {
-        props.onChange(valueToTypePartBody(event.target.value));
+        props.onChange(valueToTypePartBodyPattern(event.target.value));
       },
     }),
     h(
@@ -48,7 +86,7 @@ export const TypePartBodyEditor: FunctionComponent<{
       {
         key: "product-label",
         htmlFor: props.name + "-product",
-        isChecked: props.typePartBody._ === "Product",
+        isChecked: props.pattern === "Product",
         index: 1,
       },
       "Product"
@@ -59,9 +97,9 @@ export const TypePartBodyEditor: FunctionComponent<{
       value: "kernel",
       name: props.name,
       id: props.name + "-kernel",
-      checked: props.typePartBody._ === "Kernel",
+      checked: props.pattern === "Kernel",
       onChange: (event: ChangeEvent<HTMLInputElement>) => {
-        props.onChange(valueToTypePartBody(event.target.value));
+        props.onChange(valueToTypePartBodyPattern(event.target.value));
       },
     }),
     h(
@@ -69,21 +107,21 @@ export const TypePartBodyEditor: FunctionComponent<{
       {
         key: "kernel-label",
         htmlFor: props.name + "-kernel",
-        isChecked: props.typePartBody._ === "Kernel",
+        isChecked: props.pattern === "Kernel",
         index: 2,
       },
       "Kernel"
     ),
   ]);
 
-const valueToTypePartBody = (value: string): d.TypePartBody => {
+const valueToTypePartBodyPattern = (value: string): TypePartBodyPattern => {
   switch (value) {
     case "sum":
-      return d.TypePartBody.Sum([]);
+      return "Sum";
     case "product":
-      return d.TypePartBody.Product([]);
+      return "Product";
     case "kernel":
-      return d.TypePartBody.Kernel(d.TypePartBodyKernel.String);
+      return "Kernel";
   }
   throw new Error(
     "ui error. invalid type part body radio value. value = " +
@@ -91,8 +129,7 @@ const valueToTypePartBody = (value: string): d.TypePartBody => {
   );
 };
 
-const StyledTypePartBodyEditor = styled.div({
-  padding: 8,
+const StyledTypePartBodyPatternEditor = styled.div({
   borderRadius: 8,
   border: "solid 1px #333",
   display: "grid",
@@ -118,3 +155,73 @@ const StyledInput = styled.input({
   width: 0,
   height: 0,
 });
+
+const TypePartBodyParameterEditor: FunctionComponent<{
+  name: string;
+  typePartBody: d.TypePartBody;
+  onChange: (typePartBody: d.TypePartBody) => void;
+}> = (props) => {
+  switch (props.typePartBody._) {
+    case "Sum":
+      return h(PatternListEditor, {
+        patternList: props.typePartBody.patternList,
+        onChange: (patternList) => {
+          props.onChange(d.TypePartBody.Sum(patternList));
+        },
+      });
+    case "Product":
+      return h(MemberListEditor, { memberList: props.typePartBody.memberList });
+    case "Kernel":
+      return h(TypePartBodyKernelEditor, {
+        typePartBodyKernel: props.typePartBody.typePartBodyKernel,
+      });
+  }
+};
+
+const PatternListEditor: FunctionComponent<{
+  patternList: ReadonlyArray<d.Pattern>;
+  onChange: (patternList: ReadonlyArray<d.Pattern>) => void;
+}> = (props) =>
+  h(
+    StyledPatternListEditor,
+    {},
+    props.patternList.map((pattern, index) =>
+      h(PatternEditor, { key: index, pattern })
+    ),
+    h(
+      Button,
+      {
+        key: "add",
+        onClick: () => {
+          props.onChange(
+            props.patternList.concat({
+              name: "SampleTagName",
+              description: "SampleTagDescription",
+              parameter: d.Maybe.Nothing<d.Type>(),
+            })
+          );
+        },
+      },
+      "+"
+    )
+  );
+
+const PatternEditor: FunctionComponent<{ pattern: d.Pattern }> = (props) =>
+  h("div", {}, "パターン name =" + props.pattern.name);
+
+const StyledPatternListEditor = styled.div({
+  display: "grid",
+});
+
+const MemberListEditor: FunctionComponent<{
+  memberList: ReadonlyArray<d.Member>;
+}> = (props) => h("div", {}, "メンバーリストエディタ");
+
+const TypePartBodyKernelEditor: FunctionComponent<{
+  typePartBodyKernel: d.TypePartBodyKernel;
+}> = (props) =>
+  h(
+    "div",
+    {},
+    "TypePartBodyKernel エディタ value =" + props.typePartBodyKernel
+  );

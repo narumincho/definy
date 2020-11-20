@@ -58,7 +58,6 @@ export class AppWithState extends Component<Record<never, never>, State> {
     const urlDataAndAccountToken = core.urlDataAndAccountTokenFromUrl(
       new URL(window.location.href)
     );
-    console.log(urlDataAndAccountToken, window.location.href);
 
     this.state = {
       top50ProjectIdState: { _: "None" },
