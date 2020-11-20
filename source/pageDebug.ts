@@ -81,21 +81,34 @@ const IconComponent: FunctionComponent<Record<never, never>> = () =>
   ]);
 
 const ProductComponent: FunctionComponent<Record<never, never>> = () => {
-  const [state, setState] = useState({ name: "それな", description: "説明文" });
+  const [state, setState] = useState<SampleType>({
+    name: "それな",
+    option: { a: "A!", b: "B!" },
+  });
   return h(
     "div",
     {},
     h(NameAndDescriptionComponent, {
       value: state,
-      onChange: (newValue: { name: string; description: string }) =>
-        setState(newValue),
+      onChange: (newValue: SampleType) => setState(newValue),
       name: "product",
       key: "product",
     })
   );
 };
 
-const NameAndDescriptionComponent = ProductEditor({
+type SampleType = {
+  name: string;
+  option: {
+    a: string;
+    b: string;
+  };
+};
+
+const NameAndDescriptionComponent = ProductEditor<SampleType>({
   name: OneLineTextInput,
-  description: OneLineTextInput,
+  option: ProductEditor({
+    a: OneLineTextInput,
+    b: OneLineTextInput,
+  }),
 });
