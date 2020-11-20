@@ -4,6 +4,7 @@ import { Header } from "./header";
 import { LoadingBox } from "./loadingBox";
 import { Model } from "./model";
 import { PageAbout } from "./pageAbout";
+import { PageDebug } from "./pageDebug";
 import { PageHome } from "./pageHome";
 import { PageProject } from "./pageProject";
 import styled from "styled-components";
@@ -83,7 +84,7 @@ const Main: FunctionComponent<Props> = (props) => {
         projectId: props.model.location.projectId,
       });
     case "Debug":
-      return h("div", {}, "デバッグ画面");
+      return h(PageDebug, {});
     case "About":
       return h(PageAbout, {});
   }
