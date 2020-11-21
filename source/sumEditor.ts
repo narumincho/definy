@@ -113,7 +113,7 @@ const StyledTagSumRadio = styledDiv({
   border: { width: 1, color: "#333" },
   padding: 0,
   direction: "x",
-  ySameCellCount: 3,
+  xGridTemplate: [{ _: "OneFr" }, { _: "OneFr" }, { _: "OneFr" }],
 });
 
 const StyledLabel = styled.label(

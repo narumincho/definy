@@ -1,17 +1,18 @@
+import { Editor, styledDiv } from "./ui";
 import { Button } from "./button";
-import { Editor } from "./ui";
 import { createElement as h } from "react";
+import styled from "styled-components";
 
 export const createListEditor = <T>(
   itemEditorComponent: Editor<T>,
   itemInitValue: T
 ): Editor<ReadonlyArray<T>> => (props) => {
   return h(
-    "div",
+    StyledListEditor,
     {},
     props.value.map((item, index) => {
       return h(
-        "div",
+        Item,
         { key: index.toString() },
         h(itemEditorComponent, {
           value: item,
@@ -26,7 +27,7 @@ export const createListEditor = <T>(
           key: "editor",
         }),
         h(
-          Button,
+          DeleteButton,
           {
             onClick: () => {
               props.onChange([
@@ -51,3 +52,18 @@ export const createListEditor = <T>(
     )
   );
 };
+
+const StyledListEditor = styledDiv({
+  padding: 8,
+  direction: "y",
+});
+
+const Item = styledDiv({
+  padding: 4,
+  direction: "x",
+  xGridTemplate: [{ _: "OneFr" }, { _: "Fix", value: 32 }],
+});
+
+const DeleteButton = styled(Button)({
+  width: 32,
+});
