@@ -30,6 +30,10 @@ export class TypePartListEditor extends Component<Props> {
     this.props.model.addTypePart(this.props.projectId);
   }
 
+  save(): void {
+    console.log("保存するAPIを呼ぶ");
+  }
+
   render(): ReactElement {
     return h(
       StyledTypePartListEditor,
@@ -63,6 +67,14 @@ export class TypePartListEditor extends Component<Props> {
                 key: "typePartAddButton",
               },
               "型パーツ追加"
+            ),
+            h(
+              Button,
+              {
+                onClick: () => this.save(),
+                key: "save",
+              },
+              "保存"
             ),
           ]
     );
