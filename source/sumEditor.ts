@@ -146,8 +146,13 @@ const StyledLabel = styled.label(
       cursor: "pointer",
       display: "block",
       gridColumn:
-        (props.index + 1).toString() + " / " + (props.index + 2).toString(),
-      gridRow: "1 / 2",
+        ((props.index % 3) + 1).toString() +
+        " / " +
+        ((props.index % 3) + 2).toString(),
+      gridRow:
+        (Math.floor(props.index / 3) + 1).toString() +
+        " / " +
+        (Math.floor(props.index / 3) + 2).toString(),
       textAlign: "center",
     } as const)
 );
