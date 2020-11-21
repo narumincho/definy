@@ -14,9 +14,10 @@ import { Button } from "./button";
 import { Icon } from "./icon";
 import { OneLineTextInput } from "./oneLineTextInput";
 import { ProductEditor } from "./productEditor";
+import { createListEditor } from "./listEditor";
 import styled from "styled-components";
 
-const tabList = ["Icon", "Product", "Sum"] as const;
+const tabList = ["Icon", "Product", "Sum", "List"] as const;
 
 type Tab = typeof tabList[number];
 
@@ -76,6 +77,8 @@ const Content: FunctionComponent<{ tab: Tab }> = (props) => {
       return h(ProductComponent, {});
     case "Sum":
       return h(SumComponent, {});
+    case "List":
+      return h(ListComponent, {});
   }
 };
 
@@ -134,3 +137,21 @@ const SampleSumComponent = createNoParameterTagEditor<d.ClientMode>([
   "Release",
   "DebugMode",
 ]);
+
+const SampleListComponent = createListEditor<ReadonlyArray<string>>(
+  createListEditor<string>(OneLineTextInput, "初期値"),
+  []
+);
+
+const ListComponent: FunctionComponent<Record<never, never>> = () => {
+  const [state, setState] = useState<ReadonlyArray<ReadonlyArray<string>>>([
+    ["それな"],
+    ["あれな", "これな"],
+  ]);
+  return h(SampleListComponent, {
+    value: state,
+    onChange: (newValue: ReadonlyArray<ReadonlyArray<string>>) =>
+      setState(newValue),
+    name: "sampleList",
+  });
+};
