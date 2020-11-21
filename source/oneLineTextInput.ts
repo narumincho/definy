@@ -2,13 +2,20 @@ import { ChangeEvent, createElement as h } from "react";
 import { Editor } from "./ui";
 import styled from "styled-components";
 
-export const OneLineTextInput: Editor<string> = (props) =>
-  h(StyledOneLineTextInput, {
+export const OneLineTextInput: Editor<string> = (props) => {
+  if (typeof props.value !== "string") {
+    throw new Error(
+      "OneLineTextInput need string value. value =" +
+        JSON.stringify(props.value)
+    );
+  }
+  return h(StyledOneLineTextInput, {
     name: props.name,
     onChange: (mouseEvent: ChangeEvent<HTMLInputElement>) =>
       props.onChange(mouseEvent.target.value),
     value: props.value,
   });
+};
 
 const StyledOneLineTextInput = styled.input({
   padding: 8,

@@ -1,31 +1,38 @@
-import {
-  ChangeEvent,
-  FunctionComponent,
-  ReactElement,
-  createElement as h,
-} from "react";
-import { Editor, styledDiv } from "./ui";
+import { ChangeEvent, ReactElement, createElement as h } from "react";
+import { Editor, editorToReactElement, styledDiv } from "./ui";
 import styled from "styled-components";
 
 export const createWithParameterSumEditor = <
-  T extends { [k in string]: unknown }
+  Tag extends string,
+  T extends { _: Tag } & Record<string, unknown>,
+  Value extends { [k in Tag]: unknown }
 >(
   parameterComponentObject: {
-    [key in keyof T]: Editor<T[key]> | undefined;
+    [key in Tag]: Editor<unknown> | undefined;
   },
   defaultValueObject: {
-    [key in keyof T]: { _: keyof T };
+    [key in Tag]: T;
   }
-): Editor<{ _: keyof T }> => {
-  const TagEditor = createNoParameterTagEditor(
-    Object.keys(defaultValueObject)
-  ) as Editor<keyof T>;
+): Editor<T> => {
+  const TagEditor = createNoParameterTagEditor<Tag>(
+    Object.keys(defaultValueObject) as Array<Tag>
+  );
   return (props): ReactElement => {
+    const parameterComponent = parameterComponentObject[props.value._] as
+      | Editor<Value[Tag]>
+      | undefined;
+
+    const parameterNameAndValue = getParameterFieldNameAndValue<Value[Tag]>(
+      props.value as {
+        _: string;
+      } & Record<string, Value[Tag]>
+    );
+
     return h("div", {}, [
       h(TagEditor, {
         key: "tag",
         name: props.name,
-        onChange: (newTagName: keyof T) => {
+        onChange: (newTagName: Tag) => {
           const defaultValue = defaultValueObject[newTagName];
           if (defaultValue === undefined) {
             throw new Error(
@@ -34,20 +41,34 @@ export const createWithParameterSumEditor = <
           }
           props.onChange(defaultValue);
         },
-        value:
-          typeof props.value === "string"
-            ? props.value
-            : (props.value as { _: string })._,
+        value: props.value._,
       }),
-      h(SumParameterEditor, {
-        key: "paramter",
-        value:
-          typeof props.value === "string"
-            ? props.value
-            : (props.value as { _: string })._,
-      }),
+      parameterComponent === undefined || parameterNameAndValue === undefined
+        ? undefined
+        : editorToReactElement<Value[Tag]>(parameterComponent, {
+            key: "paramter",
+            value: parameterNameAndValue.value,
+            name: "name",
+            onChange: (newValue: Value[Tag]): void => {
+              props.onChange(({
+                _: props.value._,
+                [parameterNameAndValue.name]: newValue,
+              } as unknown) as T);
+            },
+          }),
     ]);
   };
+};
+
+const getParameterFieldNameAndValue = <valueType>(
+  sumValue: { _: string } & Record<string, valueType>
+): { name: string; value: valueType } | undefined => {
+  const keys = Object.entries(sumValue);
+  for (const [key, value] of keys) {
+    if (key !== "_") {
+      return { name: key, value };
+    }
+  }
 };
 
 export const createNoParameterTagEditor = <tag extends string>(
@@ -130,7 +151,3 @@ const StyledLabel = styled.label(
       textAlign: "center",
     } as const)
 );
-
-const SumParameterEditor: FunctionComponent<{ value: string }> = (props) => {
-  return h("div", {}, props.value + "のエディタ");
-};

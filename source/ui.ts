@@ -1,5 +1,5 @@
 import styled, { StyledComponent } from "styled-components";
-import { ReactElement } from "react";
+import { ReactElement, createElement as h } from "react";
 
 export type GridTemplateValue = { _: "Fix"; value: number } | { _: "OneFr" };
 
@@ -71,3 +71,13 @@ export type Editor<T> = (props: {
   onChange: (newValue: T) => void;
   name: string;
 }) => ReactElement;
+
+export const editorToReactElement = <T>(
+  editor: Editor<T>,
+  props: {
+    value: T;
+    onChange: (newValue: T) => void;
+    name: string;
+    key?: string;
+  }
+): ReactElement => h(editor, props);

@@ -1,7 +1,7 @@
 import { Editor, styledDiv } from "./ui";
 import { ReactElement, createElement as h } from "react";
 
-export const ProductEditor = <T extends Record<string, unknown>>(
+export const createProductEditor = <T extends Record<string, unknown>>(
   memberComponentObject: {
     [key in keyof T]: Editor<T[key]>;
   }
