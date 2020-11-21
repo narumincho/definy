@@ -13,6 +13,7 @@ import { MultiLineTextInput } from "./multiLineTextInput";
 import { OneLineTextInput } from "./oneLineTextInput";
 import { TypePartBodyEditor } from "./typePartBodyEditor";
 import styled from "styled-components";
+import { styledDiv } from "./ui";
 
 export type Props = {
   readonly model: Model;
@@ -136,11 +137,10 @@ const TypePartEditor: FunctionComponent<{
   ]);
 };
 
-const StyledTypePartEditor = styled.div({
-  display: "grid",
-  gap: 4,
+const StyledTypePartEditor = styledDiv({
+  direction: "y",
   padding: 16,
-  backgroundColor: "#111",
+  gap: 4,
 });
 
 const EditorLabel = styled.label({
