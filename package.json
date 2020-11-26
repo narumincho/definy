@@ -17,7 +17,7 @@
     "last 1 safari version"
   ],
   "dependencies": {
-    "definy-core": "0.2.9",
+    "definy-core": "0.2.12",
     "react": "17.0.1",
     "react-dom": "17.0.1",
     "styled-components": "5.2.1"
