@@ -157,5 +157,8 @@ const StyledLabel = styled.label(
         " / " +
         (Math.floor(props.index / 3) + 2).toString(),
       textAlign: "center",
+      "&:active": {
+        backgroundColor: "#303030",
+      },
     } as const)
 );

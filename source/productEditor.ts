@@ -12,20 +12,18 @@ export const createProductEditor = <T extends Record<string, unknown>>(
     return h(
       StyledProductEditor,
       {},
-      Object.entries(memberComponentObject).map(([key, component]) =>
-        h(StyledLabel, { key }, [
+      Object.entries(memberComponentObject).map(([key, component]) => [
+        h(StyledLabel, { key }, key),
+        memberComponent(
+          props.name + "-" + key,
           key,
-          memberComponent(
-            props.name + "-" + key,
-            key,
-            props.value[key],
-            component,
-            (newValue) => {
-              props.onChange({ ...props.value, [key]: newValue });
-            }
-          ),
-        ])
-      )
+          props.value[key],
+          component,
+          (newValue) => {
+            props.onChange({ ...props.value, [key]: newValue });
+          }
+        ),
+      ])
     );
   };
   editor.displayName = displayName;
