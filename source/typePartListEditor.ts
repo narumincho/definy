@@ -6,10 +6,6 @@ import {
   createElement as h,
   useState,
 } from "react";
-import {
-  createNoParameterTagEditor,
-  createWithParameterSumEditor,
-} from "./sumEditor";
 import { Button } from "./button";
 import { Editor } from "./ui";
 import { Icon } from "./icon";
@@ -19,7 +15,10 @@ import { ProjectIdEditor } from "./projectIdEditor";
 import { TypePartBodyEditor } from "./typePartBodyEditor";
 import { TypePartIdEditor } from "./typePartIdEditor";
 import { createListEditor } from "./listEditor";
+import { createMaybeEditor } from "./maybeEditor";
+import { createNoParameterTagEditor } from "./sumEditor";
 import { createProductEditor } from "./productEditor";
+
 import styled from "styled-components";
 
 export type Props = {
@@ -98,22 +97,9 @@ const AttributeEditor: Editor<d.TypeAttribute> = createNoParameterTagEditor<d.Ty
 
 const AttributeMaybeEditor: Editor<
   d.Maybe<d.TypeAttribute>
-> = createWithParameterSumEditor<
-  {
-    Just: d.TypeAttribute;
-    Nothing: undefined;
-  },
-  "Just" | "Nothing",
-  d.Maybe<d.TypeAttribute>
->(
-  {
-    Just: AttributeEditor,
-    Nothing: undefined,
-  },
-  {
-    Just: d.Maybe.Just(d.TypeAttribute.AsBoolean),
-    Nothing: d.Maybe.Nothing(),
-  }
+> = createMaybeEditor<d.TypeAttribute>(
+  AttributeEditor,
+  d.TypeAttribute.AsBoolean
 );
 
 const TypeParameterListEditor: Editor<

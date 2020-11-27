@@ -8,9 +8,7 @@ export const createWithParameterSumEditor = <
   T extends { _: Tag } & Record<string, unknown>
 >(
   parameterComponentObject: {
-    [key in keyof ParamType]: ParamType[key] extends undefined
-      ? undefined
-      : Editor<ParamType[key]>;
+    [key in keyof ParamType]: Editor<ParamType[key]>;
   },
   defaultValueObject: {
     [key in keyof ParamType]: T;
@@ -20,9 +18,9 @@ export const createWithParameterSumEditor = <
     Object.keys(defaultValueObject) as Array<Tag>
   );
   return (props): ReactElement => {
-    const parameterComponent = parameterComponentObject[props.value._] as
-      | Editor<unknown>
-      | undefined;
+    const parameterComponent = parameterComponentObject[
+      props.value._
+    ] as Editor<unknown>;
 
     const parameterNameAndValue = getParameterFieldNameAndValue<unknown>(
       props.value as {
@@ -45,7 +43,7 @@ export const createWithParameterSumEditor = <
         },
         value: props.value._,
       }),
-      parameterComponent === undefined || parameterNameAndValue === undefined
+      parameterNameAndValue === undefined
         ? undefined
         : editorToReactElement<unknown>(parameterComponent, {
             key: "paramter",

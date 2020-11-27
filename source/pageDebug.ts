@@ -5,7 +5,6 @@ import {
   createElement as h,
   useState,
 } from "react";
-import { Editor, editorToReactElement } from "./ui";
 import {
   createNoParameterTagEditor,
   createWithParameterSumEditor,
@@ -13,8 +12,10 @@ import {
 import { Button } from "./button";
 import { Icon } from "./icon";
 import { OneLineTextInput } from "./oneLineTextInput";
+import { UndefinedEditor } from "./undefinedEditor";
 import { createListEditor } from "./listEditor";
 import { createProductEditor } from "./productEditor";
+import { editorToReactElement } from "./ui";
 import styled from "styled-components";
 
 const tabList = ["Icon", "Product", "Sum", "List"] as const;
@@ -165,7 +166,7 @@ const SampleSumComponent = createWithParameterSumEditor<
       textB: OneLineTextInput,
     }),
     Nested: createNoParameterTagEditor(["A", "B"]),
-    None: undefined,
+    None: UndefinedEditor,
   },
   {
     WithOneText: { _: "WithOneText", value: "デフォルト値" },
