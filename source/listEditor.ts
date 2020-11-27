@@ -1,12 +1,23 @@
 import { Editor, styledDiv } from "./ui";
+import { FunctionComponent, createElement as h } from "react";
 import { Button } from "./button";
-import { createElement as h } from "react";
 import styled from "styled-components";
 
 export const createListEditor = <T>(
-  itemEditorComponent: Editor<T>,
-  itemInitValue: T
+  param:
+    | { isLazy: true; editor: () => Editor<T>; initValue: T }
+    | { isLazy: false; editor: Editor<T>; initValue: T }
 ): Editor<ReadonlyArray<T>> => (props) => {
+  if (props.value.length === 0) {
+    return h(
+      StyledListEditor,
+      {},
+      h(AddButton, {
+        onClick: () => props.onChange([param.initValue]),
+      })
+    );
+  }
+  const itemEditorComponent = param.isLazy ? param.editor() : param.editor;
   return h(
     StyledListEditor,
     {},
@@ -40,16 +51,9 @@ export const createListEditor = <T>(
         )
       );
     }),
-    h(
-      Button,
-      {
-        onClick: () => {
-          props.onChange([...props.value, itemInitValue]);
-        },
-        key: "add",
-      },
-      "+"
-    )
+    h(AddButton, {
+      onClick: () => props.onChange([...props.value, param.initValue]),
+    })
   );
 };
 
@@ -63,6 +67,16 @@ const Item = styledDiv({
   direction: "x",
   xGridTemplate: [{ _: "OneFr" }, { _: "Fix", value: 32 }],
 });
+
+const AddButton: FunctionComponent<{ onClick: () => void }> = (props) =>
+  h(
+    Button,
+    {
+      onClick: props.onClick,
+      key: "add",
+    },
+    "+"
+  );
 
 const DeleteButton = styled(Button)({
   width: 32,

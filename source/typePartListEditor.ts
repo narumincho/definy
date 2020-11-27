@@ -104,16 +104,17 @@ const AttributeMaybeEditor: Editor<
 
 const TypeParameterListEditor: Editor<
   ReadonlyArray<d.TypeParameter>
-> = createListEditor<d.TypeParameter>(
-  createProductEditor<d.TypeParameter>({
+> = createListEditor<d.TypeParameter>({
+  isLazy: false,
+  editor: createProductEditor<d.TypeParameter>({
     name: OneLineTextInput,
     typePartId: TypePartIdEditor,
   }),
-  {
+  initValue: {
     name: "initTypeParameterValue",
     typePartId: "15585b6605524aea7b86e0803ad95163" as d.TypePartId,
-  }
-);
+  },
+});
 
 const TypePartEditor: Editor<d.TypePart> = createProductEditor<d.TypePart>({
   name: OneLineTextInput,

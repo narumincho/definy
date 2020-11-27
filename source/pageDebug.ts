@@ -182,10 +182,15 @@ const SampleSumComponent = createWithParameterSumEditor<
   }
 );
 
-const SampleListComponent = createListEditor<ReadonlyArray<string>>(
-  createListEditor<string>(OneLineTextInput, "初期値"),
-  []
-);
+const SampleListComponent = createListEditor<ReadonlyArray<string>>({
+  isLazy: false,
+  editor: createListEditor<string>({
+    isLazy: false,
+    editor: OneLineTextInput,
+    initValue: "初期値",
+  }),
+  initValue: [],
+});
 
 const ListComponent: FunctionComponent<Record<never, never>> = () => {
   const [state, setState] = useState<ReadonlyArray<ReadonlyArray<string>>>([

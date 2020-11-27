@@ -9,7 +9,6 @@ export const createProductEditor = <T extends Record<string, unknown>>(
   return h(
     StyledProductEditor,
     {},
-    "ProductEditor!",
     Object.entries(memberComponentObject).map(([key, component]) =>
       h("label", { key }, [
         key,
