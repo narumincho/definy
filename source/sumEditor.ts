@@ -1,5 +1,5 @@
 import { ChangeEvent, ReactElement, createElement as h } from "react";
-import { Editor, editorToReactElement, styledDiv } from "./ui";
+import { Editor, EditorProps, editorToReactElement, styledDiv } from "./ui";
 import styled from "styled-components";
 
 export const createWithParameterSumEditor = <
@@ -12,12 +12,13 @@ export const createWithParameterSumEditor = <
   },
   defaultValueObject: {
     [key in keyof ParamType]: T;
-  }
+  },
+  name: string
 ): Editor<T> => {
   const TagEditor = createNoParameterTagEditor<Tag>(
     Object.keys(defaultValueObject) as Array<Tag>
   );
-  return (props): ReactElement => {
+  const editor = (props: EditorProps<T>): ReactElement => {
     const parameterComponent = parameterComponentObject[
       props.value._
     ] as Editor<unknown>;
@@ -58,6 +59,8 @@ export const createWithParameterSumEditor = <
           }),
     ]);
   };
+  editor.displayName = name;
+  return editor;
 };
 
 const getParameterFieldNameAndValue = <valueType>(

@@ -106,31 +106,41 @@ const TypeParameterListEditor: Editor<
   ReadonlyArray<d.TypeParameter>
 > = createListEditor<d.TypeParameter>({
   isLazy: false,
-  editor: createProductEditor<d.TypeParameter>({
-    name: OneLineTextInput,
-    typePartId: TypePartIdEditor,
-  }),
+  editor: createProductEditor<d.TypeParameter>(
+    {
+      name: OneLineTextInput,
+      typePartId: TypePartIdEditor,
+    },
+    "TypeParameter"
+  ),
   initValue: {
     name: "initTypeParameterValue",
     typePartId: "15585b6605524aea7b86e0803ad95163" as d.TypePartId,
   },
+  displayName: "TypeParameterListEditor",
 });
 
-const TypePartEditor: Editor<d.TypePart> = createProductEditor<d.TypePart>({
-  name: OneLineTextInput,
-  description: OneLineTextInput,
-  attribute: AttributeMaybeEditor,
-  projectId: ProjectIdEditor,
-  typeParameterList: TypeParameterListEditor,
-  body: TypePartBodyEditor,
-});
+const TypePartEditor: Editor<d.TypePart> = createProductEditor<d.TypePart>(
+  {
+    name: OneLineTextInput,
+    description: OneLineTextInput,
+    attribute: AttributeMaybeEditor,
+    projectId: ProjectIdEditor,
+    typeParameterList: TypeParameterListEditor,
+    body: TypePartBodyEditor,
+  },
+  "TypePartEditor"
+);
 
 const TypePartIdAndDataEditor = createProductEditor<
   d.IdAndData<d.TypePartId, d.TypePart>
->({
-  id: TypePartIdEditor,
-  data: TypePartEditor,
-});
+>(
+  {
+    id: TypePartIdEditor,
+    data: TypePartEditor,
+  },
+  "TypeIdAndDataEditor"
+);
 
 const TypePartIdAndDataEditorWithState: FunctionComponent<{
   initTypePartId: d.TypePartId;

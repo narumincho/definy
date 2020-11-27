@@ -11,47 +11,58 @@ import { createMaybeEditor } from "./maybeEditor";
 import { createProductEditor } from "./productEditor";
 
 const typeEditorLoop = (): Editor<d.Type> =>
-  createProductEditor<d.Type>({
-    typePartId: TypePartIdEditor,
-    parameter: createListEditor<d.Type>({
-      isLazy: true,
-      editor: () => typeEditorLoop(),
-      initValue: {
-        typePartId: "b6fcba1c61ff2ce63ee79ee3b8b70c07" as d.TypePartId,
-        parameter: [],
-      },
-    }),
-  });
+  createProductEditor<d.Type>(
+    {
+      typePartId: TypePartIdEditor,
+      parameter: createListEditor<d.Type>({
+        isLazy: true,
+        editor: () => typeEditorLoop(),
+        initValue: {
+          typePartId: "b6fcba1c61ff2ce63ee79ee3b8b70c07" as d.TypePartId,
+          parameter: [],
+        },
+        displayName: "TypeListEditor",
+      }),
+    },
+    "TypeEditor"
+  );
 
 const TypeEditor: Editor<d.Type> = typeEditorLoop();
 
 const SumEditor: Editor<ReadonlyArray<d.Pattern>> = createListEditor<d.Pattern>(
   {
     isLazy: false,
-    editor: createProductEditor<d.Pattern>({
-      name: OneLineTextInput,
-      description: OneLineTextInput,
-      parameter: createMaybeEditor<d.Type>(TypeEditor, {
-        typePartId: "af9d19ab30a1c934f9d0cf09cad04589" as d.TypePartId,
-        parameter: [],
-      }),
-    }),
+    editor: createProductEditor<d.Pattern>(
+      {
+        name: OneLineTextInput,
+        description: OneLineTextInput,
+        parameter: createMaybeEditor<d.Type>(TypeEditor, {
+          typePartId: "af9d19ab30a1c934f9d0cf09cad04589" as d.TypePartId,
+          parameter: [],
+        }),
+      },
+      "PatternEditor"
+    ),
     initValue: {
       name: "InitPatternName",
       description: "initPatternDescription",
       parameter: d.Maybe.Nothing(),
     },
+    displayName: "PatternListEditor",
   }
 );
 const ProductEditor: Editor<
   ReadonlyArray<d.Member>
 > = createListEditor<d.Member>({
   isLazy: false,
-  editor: createProductEditor<d.Member>({
-    name: OneLineTextInput,
-    description: OneLineTextInput,
-    type: TypeEditor,
-  }),
+  editor: createProductEditor<d.Member>(
+    {
+      name: OneLineTextInput,
+      description: OneLineTextInput,
+      type: TypeEditor,
+    },
+    "MemberEditor"
+  ),
   initValue: {
     name: "initMemberName",
     description: "initMemberDescription",
@@ -60,6 +71,7 @@ const ProductEditor: Editor<
       parameter: [],
     },
   },
+  displayName: "MemberListEditor",
 });
 const KernelEditor: Editor<d.TypePartBodyKernel> = createNoParameterTagEditor<d.TypePartBodyKernel>(
   ["Function", "Int32", "String", "Binary", "Id", "Token", "List"]
@@ -86,5 +98,6 @@ export const TypePartBodyEditor: Editor<d.TypePartBody> = createWithParameterSum
     Sum: d.TypePartBody.Sum([]),
     Product: d.TypePartBody.Product([]),
     Kernel: d.TypePartBody.Kernel(d.TypePartBodyKernel.String),
-  }
+  },
+  "TypePartBodyEditor"
 );

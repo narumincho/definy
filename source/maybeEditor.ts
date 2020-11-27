@@ -22,5 +22,6 @@ export const createMaybeEditor = <value>(
     {
       Just: d.Maybe.Just(justInitValue),
       Nothing: d.Maybe.Nothing(),
-    }
+    },
+    "Maybe"
   );

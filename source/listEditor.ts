@@ -1,60 +1,68 @@
-import { Editor, styledDiv } from "./ui";
+import { Editor, EditorProps, styledDiv } from "./ui";
 import { FunctionComponent, createElement as h } from "react";
 import { Button } from "./button";
 import styled from "styled-components";
 
 export const createListEditor = <T>(
-  param:
-    | { isLazy: true; editor: () => Editor<T>; initValue: T }
-    | { isLazy: false; editor: Editor<T>; initValue: T }
-): Editor<ReadonlyArray<T>> => (props) => {
-  if (props.value.length === 0) {
+  param: (
+    | { isLazy: true; editor: () => Editor<T> }
+    | { isLazy: false; editor: Editor<T> }
+  ) & {
+    initValue: T;
+    displayName: string;
+  }
+): Editor<ReadonlyArray<T>> => {
+  const editor = (props: EditorProps<ReadonlyArray<T>>) => {
+    if (props.value.length === 0) {
+      return h(
+        StyledListEditor,
+        {},
+        h(AddButton, {
+          onClick: () => props.onChange([param.initValue]),
+        })
+      );
+    }
+    const itemEditorComponent = param.isLazy ? param.editor() : param.editor;
     return h(
       StyledListEditor,
       {},
-      h(AddButton, {
-        onClick: () => props.onChange([param.initValue]),
-      })
-    );
-  }
-  const itemEditorComponent = param.isLazy ? param.editor() : param.editor;
-  return h(
-    StyledListEditor,
-    {},
-    props.value.map((item, index) => {
-      return h(
-        Item,
-        { key: index.toString() },
-        h(itemEditorComponent, {
-          value: item,
-          onChange: (newItem) => {
-            props.onChange([
-              ...props.value.slice(0, index),
-              newItem,
-              ...props.value.slice(index + 1),
-            ]);
-          },
-          name: props.name + "-" + index.toString(),
-          key: "editor",
-        }),
-        h(
-          DeleteButton,
-          {
-            onClick: () => {
+      props.value.map((item, index) => {
+        return h(
+          Item,
+          { key: index.toString() },
+          h(itemEditorComponent, {
+            value: item,
+            onChange: (newItem) => {
               props.onChange([
                 ...props.value.slice(0, index),
+                newItem,
                 ...props.value.slice(index + 1),
               ]);
             },
-          },
-          "x"
-        )
-      );
-    }),
-    h(AddButton, {
-      onClick: () => props.onChange([...props.value, param.initValue]),
-    })
-  );
+            name: props.name + "-" + index.toString(),
+            key: "editor",
+          }),
+          h(
+            DeleteButton,
+            {
+              onClick: () => {
+                props.onChange([
+                  ...props.value.slice(0, index),
+                  ...props.value.slice(index + 1),
+                ]);
+              },
+            },
+            "x"
+          )
+        );
+      }),
+      h(AddButton, {
+        onClick: () => props.onChange([...props.value, param.initValue]),
+      })
+    );
+  };
+  editor.displayName = param.displayName;
+  return editor;
 };
 
 const StyledListEditor = styledDiv({

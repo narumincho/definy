@@ -116,13 +116,19 @@ type SampleType = {
   };
 };
 
-const NameAndDescriptionComponent = createProductEditor<SampleType>({
-  name: OneLineTextInput,
-  option: createProductEditor({
-    a: OneLineTextInput,
-    b: OneLineTextInput,
-  }),
-});
+const NameAndDescriptionComponent = createProductEditor<SampleType>(
+  {
+    name: OneLineTextInput,
+    option: createProductEditor(
+      {
+        a: OneLineTextInput,
+        b: OneLineTextInput,
+      },
+      "ABText"
+    ),
+  },
+  "NameAndOption"
+);
 
 type SampleSumType =
   | { _: "WithOneText"; value: string }
@@ -161,10 +167,13 @@ const SampleSumComponent = createWithParameterSumEditor<
 >(
   {
     WithOneText: OneLineTextInput,
-    Product: createProductEditor({
-      textA: OneLineTextInput,
-      textB: OneLineTextInput,
-    }),
+    Product: createProductEditor(
+      {
+        textA: OneLineTextInput,
+        textB: OneLineTextInput,
+      },
+      "TextAB"
+    ),
     Nested: createNoParameterTagEditor(["A", "B"]),
     None: UndefinedEditor,
   },
@@ -179,7 +188,8 @@ const SampleSumComponent = createWithParameterSumEditor<
     },
     Nested: { _: "Nested", aOrB: "A" },
     None: { _: "None" },
-  }
+  },
+  "SampleSumComponent"
 );
 
 const SampleListComponent = createListEditor<ReadonlyArray<string>>({
@@ -188,8 +198,10 @@ const SampleListComponent = createListEditor<ReadonlyArray<string>>({
     isLazy: false,
     editor: OneLineTextInput,
     initValue: "初期値",
+    displayName: "SampleList",
   }),
   initValue: [],
+  displayName: "SampleListList",
 });
 
 const ListComponent: FunctionComponent<Record<never, never>> = () => {
