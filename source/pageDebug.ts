@@ -146,28 +146,25 @@ const SumComponent: FunctionComponent<Record<never, never>> = () => {
 };
 
 const SampleSumComponent = createWithParameterSumEditor<
-  "WithOneText" | "Product" | "Nested" | "None",
-  SampleSumType,
   {
-    WithOneText: { _: "WithOneText"; value: string };
+    WithOneText: string;
     Product: {
-      _: "Product";
-      productValue: {
-        textA: string;
-        textB: string;
-      };
+      textA: string;
+      textB: string;
     };
-    Nested: { _: "Nested"; aOrB: "A" | "B" };
-    None: { _: "None" };
-  }
+    Nested: "A" | "B";
+    None: undefined;
+  },
+  "WithOneText" | "Product" | "Nested" | "None",
+  SampleSumType
 >(
   {
-    WithOneText: OneLineTextInput as Editor<unknown>,
+    WithOneText: OneLineTextInput,
     Product: createProductEditor({
       textA: OneLineTextInput,
       textB: OneLineTextInput,
-    }) as Editor<unknown>,
-    Nested: createNoParameterTagEditor(["A", "B"]) as Editor<unknown>,
+    }),
+    Nested: createNoParameterTagEditor(["A", "B"]),
     None: undefined,
   },
   {

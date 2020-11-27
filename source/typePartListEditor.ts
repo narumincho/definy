@@ -6,14 +6,21 @@ import {
   createElement as h,
   useState,
 } from "react";
+import {
+  createNoParameterTagEditor,
+  createWithParameterSumEditor,
+} from "./sumEditor";
 import { Button } from "./button";
+import { Editor } from "./ui";
 import { Icon } from "./icon";
 import { Model } from "./model";
-import { MultiLineTextInput } from "./multiLineTextInput";
 import { OneLineTextInput } from "./oneLineTextInput";
+import { ProjectIdEditor } from "./projectIdEditor";
 import { TypePartBodyEditor } from "./typePartBodyEditor";
+import { TypePartIdEditor } from "./typePartIdEditor";
+import { createListEditor } from "./listEditor";
+import { createProductEditor } from "./productEditor";
 import styled from "styled-components";
-import { styledDiv } from "./ui";
 
 export type Props = {
   readonly model: Model;
@@ -50,11 +57,10 @@ export class TypePartListEditor extends Component<Props> {
               .map(([typePartId, typePartResourceState]) => {
                 switch (typePartResourceState._) {
                   case "Loaded": {
-                    return h(TypePartEditor, {
-                      model: this.props.model,
+                    return h(TypePartIdAndDataEditorWithState, {
                       key: typePartId,
-                      typePartId,
-                      typePart: typePartResourceState.dataWithTime.data,
+                      initTypePartId: typePartId,
+                      initTypePart: typePartResourceState.dataWithTime.data,
                     });
                   }
                 }
@@ -86,76 +92,70 @@ const StyledTypePartListEditor = styled.div({
   gap: 8,
 });
 
-const TypePartEditor: FunctionComponent<{
-  model: Model;
-  typePartId: d.TypePartId;
-  typePart: d.TypePart;
+const AttributeEditor: Editor<d.TypeAttribute> = createNoParameterTagEditor<d.TypeAttribute>(
+  [d.TypeAttribute.AsBoolean, d.TypeAttribute.AsUndefined]
+);
+
+const AttributeMaybeEditor: Editor<
+  d.Maybe<d.TypeAttribute>
+> = createWithParameterSumEditor<
+  {
+    Just: d.TypeAttribute;
+    Nothing: undefined;
+  },
+  "Just" | "Nothing",
+  d.Maybe<d.TypeAttribute>
+>(
+  {
+    Just: AttributeEditor,
+    Nothing: undefined,
+  },
+  {
+    Just: d.Maybe.Just(d.TypeAttribute.AsBoolean),
+    Nothing: d.Maybe.Nothing(),
+  }
+);
+
+const TypeParameterListEditor: Editor<
+  ReadonlyArray<d.TypeParameter>
+> = createListEditor<d.TypeParameter>(
+  createProductEditor<d.TypeParameter>({
+    name: OneLineTextInput,
+    typePartId: TypePartIdEditor,
+  }),
+  {
+    name: "initTypeParameterValue",
+    typePartId: "15585b6605524aea7b86e0803ad95163" as d.TypePartId,
+  }
+);
+
+const TypePartEditor: Editor<d.TypePart> = createProductEditor<d.TypePart>({
+  name: OneLineTextInput,
+  description: OneLineTextInput,
+  attribute: AttributeMaybeEditor,
+  projectId: ProjectIdEditor,
+  typeParameterList: TypeParameterListEditor,
+  body: TypePartBodyEditor,
+});
+
+const TypePartIdAndDataEditor = createProductEditor<
+  d.IdAndData<d.TypePartId, d.TypePart>
+>({
+  id: TypePartIdEditor,
+  data: TypePartEditor,
+});
+
+const TypePartIdAndDataEditorWithState: FunctionComponent<{
+  initTypePartId: d.TypePartId;
+  initTypePart: d.TypePart;
 }> = (props) => {
-  const [typePartBody, setTypePartBody] = useState<d.TypePartBody>(
-    props.typePart.body
-  );
-  return h(StyledTypePartEditor, {}, [
-    h(
-      EditorLabel,
-      {
-        key: "name",
-      },
-      [
-        "name",
-        h(OneLineTextInput, {
-          name: "typePartName-" + props.typePartId,
-          value: props.typePart.name,
-          onChange: () => {},
-          key: "input",
-        }),
-      ]
-    ),
-    h(
-      EditorLabel,
-      {
-        key: "description",
-      },
-      [
-        "description",
-        h(MultiLineTextInput, {
-          name: "typePartDescription-" + props.typePartId,
-          initValue: props.typePart.description,
-          onChange: () => {},
-          onBlur: (newDescription) => {
-            props.model.setTypePartDescription(
-              props.typePartId,
-              newDescription
-            );
-          },
-          key: "input",
-        }),
-      ]
-    ),
-    h(
-      EditorLabel,
-      {
-        key: "typePartBody",
-      },
-      [
-        "body",
-        h(TypePartBodyEditor, {
-          name: "typePartBody-" + props.typePartId,
-          key: "editor",
-          typePartBody,
-          onChange: setTypePartBody,
-        }),
-      ]
-    ),
-  ]);
+  const [state, setState] = useState<d.IdAndData<d.TypePartId, d.TypePart>>({
+    id: props.initTypePartId,
+    data: props.initTypePart,
+  });
+  return h(TypePartIdAndDataEditor, {
+    value: state,
+    onChange: setState,
+    name: "typePart",
+  });
 };
-
-const StyledTypePartEditor = styledDiv({
-  direction: "y",
-  padding: 16,
-  gap: 4,
-});
-
-const EditorLabel = styled.label({
-  display: "grid",
-  gridTemplateColumns: "128px 1fr",
-});
