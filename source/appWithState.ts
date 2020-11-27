@@ -356,57 +356,15 @@ export class AppWithState extends Component<Record<never, never>, State> {
         const typePartListMaybe = response.value.data;
         switch (typePartListMaybe._) {
           case "Just": {
-            const data = typePartListMaybe.value;
             this.setState((state) => {
               const newTypePartMap = new Map(state.typePartMap);
-              for (const typePartIdAndData of data) {
-                newTypePartMap.set(
-                  typePartIdAndData.id,
-                  d.ResourceState.Loaded({
-                    data: typePartIdAndData.data,
-                    getTime: response.value.getTime,
-                  })
-                );
-              }
-              return {
-                typePartMap: newTypePartMap,
-              };
-            });
-          }
-        }
-      });
-  }
-
-  setTypePartDescription(typePartId: d.TypePartId, description: string): void {
-    if (this.accountToken === undefined) {
-      return;
-    }
-    api
-      .setTypePartDescription({
-        accountToken: this.accountToken,
-        typePartId,
-        description,
-      })
-      .then((response) => {
-        this.setState({ addTypePartState: { _: "None" } });
-        if (response._ === "Nothing") {
-          return;
-        }
-        const typePartListMaybe = response.value.data;
-        switch (typePartListMaybe._) {
-          case "Just": {
-            const data = typePartListMaybe.value;
-            this.setState((state) => {
-              const newTypePartMap = new Map(state.typePartMap);
-              for (const typePartIdAndData of data) {
-                newTypePartMap.set(
-                  typePartIdAndData.id,
-                  d.ResourceState.Loaded({
-                    data: typePartIdAndData.data,
-                    getTime: response.value.getTime,
-                  })
-                );
-              }
+              newTypePartMap.set(
+                typePartListMaybe.value.id,
+                d.ResourceState.Loaded({
+                  data: typePartListMaybe.value.data,
+                  getTime: response.value.getTime,
+                })
+              );
               return {
                 typePartMap: newTypePartMap,
               };
@@ -483,8 +441,6 @@ export class AppWithState extends Component<Record<never, never>, State> {
       requestTypePartInProject: (projectId) =>
         this.requestTypePartInProject(projectId),
       addTypePart: (projectId) => this.addTypePart(projectId),
-      setTypePartDescription: (typePartId, description) =>
-        this.setTypePartDescription(typePartId, description),
       logIn: (provider) => this.logIn(provider),
       logOut: () => this.logOut(),
       jump: (location: d.Location, language: d.Language) =>

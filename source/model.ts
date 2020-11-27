@@ -71,12 +71,6 @@ export type Model = {
   /** 型パーツの追加 */
   addTypePart: (projectId: d.ProjectId) => void;
 
-  /** 型パーツの説明文編集 */
-  setTypePartDescription: (
-    typePartId: d.TypePartId,
-    description: string
-  ) => void;
-
   /** ログインする. ログインのURLを発行してログインページに移行する */
   logIn: (provider: d.OpenIdConnectProvider) => void;
 
