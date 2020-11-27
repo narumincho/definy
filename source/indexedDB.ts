@@ -55,7 +55,7 @@ const get = <id extends string, data>(
   new Promise((resolve, reject) => {
     getDatabase().then((database) => {
       if (database === null) {
-        resolve();
+        resolve(undefined);
         return;
       }
       const transaction = database.transaction([objectStoreName], "readwrite");
