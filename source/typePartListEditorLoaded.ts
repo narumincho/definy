@@ -56,15 +56,20 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
       StyledTypePartListEditor,
       {},
       [...this.state.typePartList].map(([id, data]) =>
-        h(TypePartIdAndDataEditor, {
-          key: id,
-          name: "typePart-" + id,
-          value: { id, data },
-          onChange: (newTypePart: d.IdAndData<d.TypePartId, d.TypePart>) => {
-            this.setAt(id, newTypePart.data);
-          },
-          model: this.props.model,
-        })
+        h(
+          "div",
+          { key: id },
+          h("div", { key: "id" }, id),
+          h(TypePartEditor, {
+            key: "data",
+            name: "typePart-" + id,
+            value: data,
+            onChange: (newTypePart: d.TypePart) => {
+              this.setAt(id, newTypePart);
+            },
+            model: this.props.model,
+          })
+        )
       ),
       h(
         Button,
@@ -130,14 +135,4 @@ const TypePartEditor: Editor<d.TypePart> = createProductEditor<d.TypePart>(
     body: TypePartBodyEditor,
   },
   "TypePartEditor"
-);
-
-const TypePartIdAndDataEditor = createProductEditor<
-  d.IdAndData<d.TypePartId, d.TypePart>
->(
-  {
-    id: TypePartIdEditor,
-    data: TypePartEditor,
-  },
-  "TypeIdAndDataEditor"
 );

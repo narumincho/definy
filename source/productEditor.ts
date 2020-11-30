@@ -13,12 +13,12 @@ export const createProductEditor = <T extends Record<string, unknown>>(
       StyledProductEditor,
       {},
       Object.entries(memberComponentObject).map(([key, component]) => [
-        h(StyledLabel, { key }, key),
+        h(StyledLabel, { key: key + "-label" }, key),
         editorToReactElement(component, {
           name: props.name + "-" + key,
-          key,
+          key: key + "-input",
           value: props.value[key],
-          onChange: (newValue) => {
+          onChange: (newValue: unknown): void => {
             props.onChange({ ...props.value, [key]: newValue });
           },
           model: props.model,
