@@ -1,4 +1,4 @@
-import { Editor, EditorProps, styledDiv } from "./ui";
+import { Editor, EditorProps, editorToReactElement, styledDiv } from "./ui";
 import { FunctionComponent, createElement as h } from "react";
 import { Button } from "./button";
 import styled from "styled-components";
@@ -30,7 +30,7 @@ export const createListEditor = <T>(
         return h(
           Item,
           { key: index.toString() },
-          h(itemEditorComponent, {
+          editorToReactElement(itemEditorComponent, {
             value: item,
             onChange: (newItem) => {
               props.onChange([
@@ -41,6 +41,7 @@ export const createListEditor = <T>(
             },
             name: props.name + "-" + index.toString(),
             key: "editor",
+            model: props.model,
           }),
           h(
             DeleteButton,

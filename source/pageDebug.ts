@@ -11,6 +11,7 @@ import {
 } from "./sumEditor";
 import { Button } from "./button";
 import { Icon } from "./icon";
+import { Model } from "./model";
 import { OneLineTextInput } from "./oneLineTextInput";
 import { UndefinedEditor } from "./undefinedEditor";
 import { createListEditor } from "./listEditor";
@@ -27,6 +28,8 @@ type Props = Record<never, never>;
 type State = {
   tab: Tab;
 };
+
+const dummyModel: Model = {} as Model;
 
 export class PageDebug extends Component<Props, State> {
   constructor(props: Props) {
@@ -99,11 +102,12 @@ const ProductComponent: FunctionComponent<Record<never, never>> = () => {
   return h(
     "div",
     {},
-    h(NameAndDescriptionComponent, {
+    editorToReactElement(NameAndDescriptionComponent, {
       value: state,
       onChange: (newValue: SampleType) => setState(newValue),
       name: "product",
       key: "product",
+      model: dummyModel,
     })
   );
 };
@@ -149,6 +153,7 @@ const SumComponent: FunctionComponent<Record<never, never>> = () => {
     value: state,
     onChange: (newValue: SampleSumType) => setState(newValue),
     name: "sampleSum",
+    model: dummyModel,
   });
 };
 
@@ -209,10 +214,11 @@ const ListComponent: FunctionComponent<Record<never, never>> = () => {
     ["それな"],
     ["あれな", "これな"],
   ]);
-  return h(SampleListComponent, {
+  return editorToReactElement(SampleListComponent, {
     value: state,
     onChange: (newValue: ReadonlyArray<ReadonlyArray<string>>) =>
       setState(newValue),
     name: "sampleList",
+    model: dummyModel,
   });
 };

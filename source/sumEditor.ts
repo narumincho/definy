@@ -30,7 +30,7 @@ export const createWithParameterSumEditor = <
     );
 
     return h("div", {}, [
-      h(TagEditor, {
+      editorToReactElement<Tag>(TagEditor, {
         key: "tag",
         name: props.name,
         onChange: (newTagName: Tag) => {
@@ -43,6 +43,7 @@ export const createWithParameterSumEditor = <
           props.onChange(defaultValue);
         },
         value: props.value._,
+        model: props.model,
       }),
       parameterNameAndValue === undefined
         ? undefined
@@ -56,6 +57,7 @@ export const createWithParameterSumEditor = <
                 [parameterNameAndValue.name]: newValue,
               } as unknown) as T);
             },
+            model: props.model,
           }),
     ]);
   };

@@ -63,6 +63,7 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
           onChange: (newTypePart: d.IdAndData<d.TypePartId, d.TypePart>) => {
             this.setAt(id, newTypePart.data);
           },
+          model: this.props.model,
         })
       ),
       h(
