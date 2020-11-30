@@ -1,149 +1,63 @@
 import * as d from "definy-core/source/data";
-import {
-  Component,
-  FunctionComponent,
-  ReactElement,
-  createElement as h,
-  useState,
-} from "react";
-import { Button } from "./button";
+import { Component, ReactElement, createElement as h } from "react";
+
 import { Icon } from "./icon";
 import { Model } from "./model";
-import { MultiLineTextInput } from "./multiLineTextInput";
-import { OneLineTextInput } from "./oneLineTextInput";
-import { TypePartBodyEditor } from "./typePartBodyEditor";
-import styled from "styled-components";
-import { styledDiv } from "./ui";
+import { TypePartListEditorLoaded } from "./typePartListEditorLoaded";
 
 export type Props = {
   readonly model: Model;
   readonly projectId: d.ProjectId;
 };
 
-export class TypePartListEditor extends Component<Props> {
+export class TypePartListEditor extends Component<Props, never> {
   constructor(props: Props) {
     super(props);
     props.model.requestTypePartInProject(props.projectId);
   }
 
-  addTypePart(): void {
-    this.props.model.addTypePart(this.props.projectId);
+  getLoadedTypePartList(): ReadonlyMap<d.TypePartId, d.TypePart> | undefined {
+    if (this.props.model.getTypePartInProjectState._ === "Requesting") {
+      return undefined;
+    }
+    const result: Map<d.TypePartId, d.TypePart> = new Map();
+    for (const [id, typePartState] of this.props.model.typePartMap) {
+      const typePart = getTypePartInResourceState(
+        typePartState,
+        this.props.projectId
+      );
+      if (typePart !== undefined) {
+        result.set(id, typePart);
+      }
+    }
+    return result;
   }
 
   render(): ReactElement {
+    const loadedTypePArtList = this.getLoadedTypePartList();
     return h(
-      StyledTypePartListEditor,
+      "div",
       {},
-      this.props.model.getTypePartInProjectState._ === "Requesting"
+      loadedTypePArtList === undefined
         ? h(Icon, { iconType: "Requesting" })
-        : [
-            ...[...this.props.model.typePartMap]
-              .filter(
-                ([_, typePart]) =>
-                  typePart._ === "Loaded" &&
-                  typePart.dataWithTime.data.projectId === this.props.projectId
-              )
-              .map(([typePartId, typePartResourceState]) => {
-                switch (typePartResourceState._) {
-                  case "Loaded": {
-                    return h(TypePartEditor, {
-                      model: this.props.model,
-                      key: typePartId,
-                      typePartId,
-                      typePart: typePartResourceState.dataWithTime.data,
-                    });
-                  }
-                }
-                return h("div", { key: typePartId }, "...");
-              }),
-            h(
-              Button,
-              {
-                onClick: () => this.addTypePart(),
-                key: "typePartAddButton",
-              },
-              "型パーツ追加"
-            ),
-          ]
+        : h(TypePartListEditorLoaded, {
+            projectId: this.props.projectId,
+            initTypePartList: loadedTypePArtList,
+            model: this.props.model,
+          })
     );
   }
 }
 
-const StyledTypePartListEditor = styled.div({
-  display: "grid",
-  gap: 8,
-});
-
-const TypePartEditor: FunctionComponent<{
-  model: Model;
-  typePartId: d.TypePartId;
-  typePart: d.TypePart;
-}> = (props) => {
-  const [typePartBody, setTypePartBody] = useState<d.TypePartBody>(
-    props.typePart.body
-  );
-  return h(StyledTypePartEditor, {}, [
-    h(
-      EditorLabel,
-      {
-        key: "name",
-      },
-      [
-        "name",
-        h(OneLineTextInput, {
-          name: "typePartName-" + props.typePartId,
-          value: props.typePart.name,
-          onChange: () => {},
-          key: "input",
-        }),
-      ]
-    ),
-    h(
-      EditorLabel,
-      {
-        key: "description",
-      },
-      [
-        "description",
-        h(MultiLineTextInput, {
-          name: "typePartDescription-" + props.typePartId,
-          initValue: props.typePart.description,
-          onChange: () => {},
-          onBlur: (newDescription) => {
-            props.model.setTypePartDescription(
-              props.typePartId,
-              newDescription
-            );
-          },
-          key: "input",
-        }),
-      ]
-    ),
-    h(
-      EditorLabel,
-      {
-        key: "typePartBody",
-      },
-      [
-        "body",
-        h(TypePartBodyEditor, {
-          name: "typePartBody-" + props.typePartId,
-          key: "editor",
-          typePartBody,
-          onChange: setTypePartBody,
-        }),
-      ]
-    ),
-  ]);
+const getTypePartInResourceState = (
+  typePartResourceState: d.ResourceState<d.TypePart>,
+  projectId: d.ProjectId
+): d.TypePart | undefined => {
+  if (typePartResourceState._ !== "Loaded") {
+    return;
+  }
+  if (typePartResourceState.dataWithTime.data.projectId !== projectId) {
+    return;
+  }
+  return typePartResourceState.dataWithTime.data;
 };
-
-const StyledTypePartEditor = styledDiv({
-  direction: "y",
-  padding: 16,
-  gap: 4,
-});
-
-const EditorLabel = styled.label({
-  display: "grid",
-  gridTemplateColumns: "128px 1fr",
-});

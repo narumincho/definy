@@ -5,7 +5,6 @@ import {
   createElement as h,
   useState,
 } from "react";
-import { Editor, editorToReactElement } from "./ui";
 import {
   createNoParameterTagEditor,
   createWithParameterSumEditor,
@@ -13,8 +12,10 @@ import {
 import { Button } from "./button";
 import { Icon } from "./icon";
 import { OneLineTextInput } from "./oneLineTextInput";
+import { UndefinedEditor } from "./undefinedEditor";
 import { createListEditor } from "./listEditor";
 import { createProductEditor } from "./productEditor";
+import { editorToReactElement } from "./ui";
 import styled from "styled-components";
 
 const tabList = ["Icon", "Product", "Sum", "List"] as const;
@@ -115,13 +116,19 @@ type SampleType = {
   };
 };
 
-const NameAndDescriptionComponent = createProductEditor<SampleType>({
-  name: OneLineTextInput,
-  option: createProductEditor({
-    a: OneLineTextInput,
-    b: OneLineTextInput,
-  }),
-});
+const NameAndDescriptionComponent = createProductEditor<SampleType>(
+  {
+    name: OneLineTextInput,
+    option: createProductEditor(
+      {
+        a: OneLineTextInput,
+        b: OneLineTextInput,
+      },
+      "ABText"
+    ),
+  },
+  "NameAndOption"
+);
 
 type SampleSumType =
   | { _: "WithOneText"; value: string }
@@ -146,29 +153,29 @@ const SumComponent: FunctionComponent<Record<never, never>> = () => {
 };
 
 const SampleSumComponent = createWithParameterSumEditor<
-  "WithOneText" | "Product" | "Nested" | "None",
-  SampleSumType,
   {
-    WithOneText: { _: "WithOneText"; value: string };
+    WithOneText: string;
     Product: {
-      _: "Product";
-      productValue: {
-        textA: string;
-        textB: string;
-      };
+      textA: string;
+      textB: string;
     };
-    Nested: { _: "Nested"; aOrB: "A" | "B" };
-    None: { _: "None" };
-  }
+    Nested: "A" | "B";
+    None: undefined;
+  },
+  "WithOneText" | "Product" | "Nested" | "None",
+  SampleSumType
 >(
   {
-    WithOneText: OneLineTextInput as Editor<unknown>,
-    Product: createProductEditor({
-      textA: OneLineTextInput,
-      textB: OneLineTextInput,
-    }) as Editor<unknown>,
-    Nested: createNoParameterTagEditor(["A", "B"]) as Editor<unknown>,
-    None: undefined,
+    WithOneText: OneLineTextInput,
+    Product: createProductEditor(
+      {
+        textA: OneLineTextInput,
+        textB: OneLineTextInput,
+      },
+      "TextAB"
+    ),
+    Nested: createNoParameterTagEditor(["A", "B"]),
+    None: UndefinedEditor,
   },
   {
     WithOneText: { _: "WithOneText", value: "デフォルト値" },
@@ -181,13 +188,21 @@ const SampleSumComponent = createWithParameterSumEditor<
     },
     Nested: { _: "Nested", aOrB: "A" },
     None: { _: "None" },
-  }
+  },
+  "SampleSumComponent"
 );
 
-const SampleListComponent = createListEditor<ReadonlyArray<string>>(
-  createListEditor<string>(OneLineTextInput, "初期値"),
-  []
-);
+const SampleListComponent = createListEditor<ReadonlyArray<string>>({
+  isLazy: false,
+  editor: createListEditor<string>({
+    isLazy: false,
+    editor: OneLineTextInput,
+    initValue: "初期値",
+    displayName: "SampleList",
+  }),
+  initValue: [],
+  displayName: "SampleListList",
+});
 
 const ListComponent: FunctionComponent<Record<never, never>> = () => {
   const [state, setState] = useState<ReadonlyArray<ReadonlyArray<string>>>([

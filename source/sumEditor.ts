@@ -1,31 +1,32 @@
 import { ChangeEvent, ReactElement, createElement as h } from "react";
-import { Editor, editorToReactElement, styledDiv } from "./ui";
+import { Editor, EditorProps, editorToReactElement, styledDiv } from "./ui";
 import styled from "styled-components";
 
 export const createWithParameterSumEditor = <
-  Tag extends string,
-  T extends { _: Tag } & Record<string, unknown>,
-  Value extends { [k in Tag]: unknown }
+  ParamType extends { [key in string]: unknown },
+  Tag extends string & keyof ParamType,
+  T extends { _: Tag } & Record<string, unknown>
 >(
   parameterComponentObject: {
-    [key in Tag]: Editor<unknown> | undefined;
+    [key in keyof ParamType]: Editor<ParamType[key]>;
   },
   defaultValueObject: {
-    [key in Tag]: T;
-  }
+    [key in keyof ParamType]: T;
+  },
+  name: string
 ): Editor<T> => {
   const TagEditor = createNoParameterTagEditor<Tag>(
     Object.keys(defaultValueObject) as Array<Tag>
   );
-  return (props): ReactElement => {
-    const parameterComponent = parameterComponentObject[props.value._] as
-      | Editor<Value[Tag]>
-      | undefined;
+  const editor = (props: EditorProps<T>): ReactElement => {
+    const parameterComponent = parameterComponentObject[
+      props.value._
+    ] as Editor<unknown>;
 
-    const parameterNameAndValue = getParameterFieldNameAndValue<Value[Tag]>(
+    const parameterNameAndValue = getParameterFieldNameAndValue<unknown>(
       props.value as {
         _: string;
-      } & Record<string, Value[Tag]>
+      } & Record<string, unknown>
     );
 
     return h("div", {}, [
@@ -43,13 +44,13 @@ export const createWithParameterSumEditor = <
         },
         value: props.value._,
       }),
-      parameterComponent === undefined || parameterNameAndValue === undefined
+      parameterNameAndValue === undefined
         ? undefined
-        : editorToReactElement<Value[Tag]>(parameterComponent, {
+        : editorToReactElement<unknown>(parameterComponent, {
             key: "paramter",
             value: parameterNameAndValue.value,
             name: "name",
-            onChange: (newValue: Value[Tag]): void => {
+            onChange: (newValue: unknown): void => {
               props.onChange(({
                 _: props.value._,
                 [parameterNameAndValue.name]: newValue,
@@ -58,6 +59,8 @@ export const createWithParameterSumEditor = <
           }),
     ]);
   };
+  editor.displayName = name;
+  return editor;
 };
 
 const getParameterFieldNameAndValue = <valueType>(
@@ -154,5 +157,8 @@ const StyledLabel = styled.label(
         " / " +
         (Math.floor(props.index / 3) + 2).toString(),
       textAlign: "center",
+      "&:active": {
+        backgroundColor: "#303030",
+      },
     } as const)
 );
