@@ -1,4 +1,4 @@
-import { Editor, EditorProps, styledDiv } from "./ui";
+import { Editor, EditorProps, editorToReactElement, styledDiv } from "./ui";
 import { ReactElement, createElement as h } from "react";
 import styled from "styled-components";
 
@@ -13,16 +13,16 @@ export const createProductEditor = <T extends Record<string, unknown>>(
       StyledProductEditor,
       {},
       Object.entries(memberComponentObject).map(([key, component]) => [
-        h(StyledLabel, { key }, key),
-        memberComponent(
-          props.name + "-" + key,
-          key,
-          props.value[key],
-          component,
-          (newValue) => {
+        h(StyledLabel, { key: key + "-label" }, key),
+        editorToReactElement(component, {
+          name: props.name + "-" + key,
+          key: key + "-input",
+          value: props.value[key],
+          onChange: (newValue: unknown): void => {
             props.onChange({ ...props.value, [key]: newValue });
-          }
-        ),
+          },
+          model: props.model,
+        }),
       ])
     );
   };
@@ -39,17 +39,3 @@ const StyledLabel = styled.label`
   display: grid;
   padding: 8px;
 `;
-
-const memberComponent = <T extends unknown>(
-  name: string,
-  key: string,
-  member: T,
-  component: Editor<T>,
-  onChange: (newMemberValue: T) => void
-) =>
-  h(component, {
-    value: member,
-    onChange,
-    key: key + "-input",
-    name,
-  });
