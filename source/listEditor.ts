@@ -40,7 +40,7 @@ export const createListEditor = <T>(
               ]);
             },
             name: props.name + "-" + index.toString(),
-            key: "editor",
+            key: index.toString() + "-editor",
             model: props.model,
           }),
           h(
@@ -52,6 +52,7 @@ export const createListEditor = <T>(
                   ...props.value.slice(index + 1),
                 ]);
               },
+              key: index.toString() + "-delete-button",
             },
             "x"
           )
@@ -59,6 +60,7 @@ export const createListEditor = <T>(
       }),
       h(AddButton, {
         onClick: () => props.onChange([...props.value, param.initValue]),
+        key: "add-button",
       })
     );
   };
