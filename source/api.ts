@@ -16,25 +16,30 @@ export const api = Object.fromEntries(
       requestData: GetCodecType<ApiCodecType[keyof ApiCodecType]["request"]>
     ): Promise<
       d.Maybe<GetCodecType<ApiCodecType[keyof ApiCodecType]["response"]>>
-    > =>
-      fetch(`https://definy.app/api/${apiName}`, {
+    > => {
+      console.log(apiName, "request", requestData);
+      return fetch(`https://definy.app/api/${apiName}`, {
         method: "POST",
         body: new Uint8Array(codec.request.encode(requestData as never)),
         headers: [["content-type", "application/octet-stream"]],
       })
         .then((response) => response.arrayBuffer())
-        .then((response) =>
-          d.Maybe.Just(
-            codec.response.decode(0, new Uint8Array(response)).result
-          )
-        )
+        .then((binaryResponse) => {
+          const response = codec.response.decode(
+            0,
+            new Uint8Array(binaryResponse)
+          ).result;
+          console.log(apiName, "response", response);
+          return d.Maybe.Just(response);
+        })
         .catch((reason) => {
           console.error(
             "definy api の " + apiName + " を呼ぶときにエラーが発生した",
             reason
           );
           return d.Maybe.Nothing();
-        }),
+        });
+    },
   ])
 ) as {
   [apiName in keyof ApiCodecType]: (

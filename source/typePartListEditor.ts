@@ -1,158 +1,63 @@
 import * as d from "definy-core/source/data";
-import {
-  Component,
-  FunctionComponent,
-  ReactElement,
-  createElement as h,
-  useState,
-} from "react";
-import { Button } from "./button";
-import { Editor } from "./ui";
+import { Component, ReactElement, createElement as h } from "react";
+
 import { Icon } from "./icon";
 import { Model } from "./model";
-import { OneLineTextInput } from "./oneLineTextInput";
-import { ProjectIdEditor } from "./projectIdEditor";
-import { TypePartBodyEditor } from "./typePartBodyEditor";
-import { TypePartIdEditor } from "./typePartIdEditor";
-import { createListEditor } from "./listEditor";
-import { createMaybeEditor } from "./maybeEditor";
-import { createNoParameterTagEditor } from "./sumEditor";
-import { createProductEditor } from "./productEditor";
-
-import styled from "styled-components";
+import { TypePartListEditorLoaded } from "./typePartListEditorLoaded";
 
 export type Props = {
   readonly model: Model;
   readonly projectId: d.ProjectId;
 };
 
-export class TypePartListEditor extends Component<Props> {
+export class TypePartListEditor extends Component<Props, never> {
   constructor(props: Props) {
     super(props);
     props.model.requestTypePartInProject(props.projectId);
   }
 
-  addTypePart(): void {
-    this.props.model.addTypePart(this.props.projectId);
-  }
-
-  save(): void {
-    console.log("保存するAPIを呼ぶ");
+  getLoadedTypePartList(): ReadonlyMap<d.TypePartId, d.TypePart> | undefined {
+    if (this.props.model.getTypePartInProjectState._ === "Requesting") {
+      return undefined;
+    }
+    const result: Map<d.TypePartId, d.TypePart> = new Map();
+    for (const [id, typePartState] of this.props.model.typePartMap) {
+      const typePart = getTypePartInResourceState(
+        typePartState,
+        this.props.projectId
+      );
+      if (typePart !== undefined) {
+        result.set(id, typePart);
+      }
+    }
+    return result;
   }
 
   render(): ReactElement {
+    const loadedTypePArtList = this.getLoadedTypePartList();
     return h(
-      StyledTypePartListEditor,
+      "div",
       {},
-      this.props.model.getTypePartInProjectState._ === "Requesting"
+      loadedTypePArtList === undefined
         ? h(Icon, { iconType: "Requesting" })
-        : [
-            ...[...this.props.model.typePartMap]
-              .filter(
-                ([_, typePart]) =>
-                  typePart._ === "Loaded" &&
-                  typePart.dataWithTime.data.projectId === this.props.projectId
-              )
-              .map(([typePartId, typePartResourceState]) => {
-                switch (typePartResourceState._) {
-                  case "Loaded": {
-                    return h(TypePartIdAndDataEditorWithState, {
-                      key: typePartId,
-                      initTypePartId: typePartId,
-                      initTypePart: typePartResourceState.dataWithTime.data,
-                    });
-                  }
-                }
-                return h("div", { key: typePartId }, "...");
-              }),
-            h(
-              Button,
-              {
-                onClick: () => this.addTypePart(),
-                key: "typePartAddButton",
-              },
-              "型パーツ追加"
-            ),
-            h(
-              Button,
-              {
-                onClick: () => this.save(),
-                key: "save",
-              },
-              "保存"
-            ),
-          ]
+        : h(TypePartListEditorLoaded, {
+            projectId: this.props.projectId,
+            initTypePartList: loadedTypePArtList,
+            model: this.props.model,
+          })
     );
   }
 }
 
-const StyledTypePartListEditor = styled.div({
-  display: "grid",
-  gap: 8,
-});
-
-const AttributeEditor: Editor<d.TypeAttribute> = createNoParameterTagEditor<d.TypeAttribute>(
-  [d.TypeAttribute.AsBoolean, d.TypeAttribute.AsUndefined]
-);
-
-const AttributeMaybeEditor: Editor<
-  d.Maybe<d.TypeAttribute>
-> = createMaybeEditor<d.TypeAttribute>(
-  AttributeEditor,
-  d.TypeAttribute.AsBoolean
-);
-
-const TypeParameterListEditor: Editor<
-  ReadonlyArray<d.TypeParameter>
-> = createListEditor<d.TypeParameter>({
-  isLazy: false,
-  editor: createProductEditor<d.TypeParameter>(
-    {
-      name: OneLineTextInput,
-      typePartId: TypePartIdEditor,
-    },
-    "TypeParameter"
-  ),
-  initValue: {
-    name: "initTypeParameterValue",
-    typePartId: "15585b6605524aea7b86e0803ad95163" as d.TypePartId,
-  },
-  displayName: "TypeParameterListEditor",
-});
-
-const TypePartEditor: Editor<d.TypePart> = createProductEditor<d.TypePart>(
-  {
-    name: OneLineTextInput,
-    description: OneLineTextInput,
-    attribute: AttributeMaybeEditor,
-    projectId: ProjectIdEditor,
-    typeParameterList: TypeParameterListEditor,
-    body: TypePartBodyEditor,
-  },
-  "TypePartEditor"
-);
-
-const TypePartIdAndDataEditor = createProductEditor<
-  d.IdAndData<d.TypePartId, d.TypePart>
->(
-  {
-    id: TypePartIdEditor,
-    data: TypePartEditor,
-  },
-  "TypeIdAndDataEditor"
-);
-
-const TypePartIdAndDataEditorWithState: FunctionComponent<{
-  initTypePartId: d.TypePartId;
-  initTypePart: d.TypePart;
-}> = (props) => {
-  const [state, setState] = useState<d.IdAndData<d.TypePartId, d.TypePart>>({
-    id: props.initTypePartId,
-    data: props.initTypePart,
-  });
-  return h(TypePartIdAndDataEditor, {
-    value: state,
-    onChange: setState,
-    name: "typePart",
-  });
+const getTypePartInResourceState = (
+  typePartResourceState: d.ResourceState<d.TypePart>,
+  projectId: d.ProjectId
+): d.TypePart | undefined => {
+  if (typePartResourceState._ !== "Loaded") {
+    return;
+  }
+  if (typePartResourceState.dataWithTime.data.projectId !== projectId) {
+    return;
+  }
+  return typePartResourceState.dataWithTime.data;
 };

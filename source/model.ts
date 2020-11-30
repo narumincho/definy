@@ -71,6 +71,12 @@ export type Model = {
   /** 型パーツの追加 */
   addTypePart: (projectId: d.ProjectId) => void;
 
+  /** 型パーツの保存 */
+  setTypePartList: (
+    projectId: d.ProjectId,
+    typePartList: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>
+  ) => void;
+
   /** ログインする. ログインのURLを発行してログインページに移行する */
   logIn: (provider: d.OpenIdConnectProvider) => void;
 

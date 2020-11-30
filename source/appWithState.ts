@@ -374,6 +374,48 @@ export class AppWithState extends Component<Record<never, never>, State> {
       });
   }
 
+  setTypePartList(
+    projectId: d.ProjectId,
+    typePartList: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>
+  ): void {
+    if (
+      this.accountToken === undefined ||
+      this.state.addTypePartState._ === "Creating"
+    ) {
+      return;
+    }
+    api
+      .setTypePartList({
+        accountToken: this.accountToken,
+        projectId,
+        typePartList,
+      })
+      .then((newTypePartList) => {
+        if (newTypePartList._ === "Nothing") {
+          return;
+        }
+        const idAndDataList = newTypePartList.value.data;
+        if (idAndDataList._ === "Nothing") {
+          return;
+        }
+        this.setState({
+          typePartMap: new Map([
+            ...this.state.typePartMap,
+            ...idAndDataList.value.map(
+              ({ id, data }) =>
+                [
+                  id,
+                  d.ResourceState.Loaded({
+                    getTime: newTypePartList.value.getTime,
+                    data,
+                  }),
+                ] as const
+            ),
+          ]),
+        });
+      });
+  }
+
   logIn(provider: d.OpenIdConnectProvider): void {
     this.setState({
       logInState: d.LogInState.RequestingLogInUrl(provider),
@@ -441,6 +483,8 @@ export class AppWithState extends Component<Record<never, never>, State> {
       requestTypePartInProject: (projectId) =>
         this.requestTypePartInProject(projectId),
       addTypePart: (projectId) => this.addTypePart(projectId),
+      setTypePartList: (projectId, typePartList) =>
+        this.setTypePartList(projectId, typePartList),
       logIn: (provider) => this.logIn(provider),
       logOut: () => this.logOut(),
       jump: (location: d.Location, language: d.Language) =>
