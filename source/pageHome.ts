@@ -1,19 +1,13 @@
 import * as d from "definy-core/source/data";
-import {
-  Component,
-  FunctionComponent,
-  ReactElement,
-  createElement as h,
-} from "react";
+import { Component, FunctionComponent, ReactElement } from "react";
+import { css, jsx as h } from "@emotion/react";
 import { Icon } from "./icon";
 import { Link } from "./link";
 import { Model } from "./model";
 import { Project } from "./project";
-import styled from "styled-components";
 
 export type Props = {
   readonly model: Model;
-  readonly className?: string;
 };
 
 export class PageHome extends Component<Props> {
@@ -25,8 +19,14 @@ export class PageHome extends Component<Props> {
 
   render(): ReactElement {
     return h(
-      PageHome_,
-      { className: this.props.className },
+      "div",
+      {
+        css: css({
+          display: "grid",
+          overflow: "hidden",
+          backgroundColor: "#222",
+        }),
+      },
       h(HomeMain, { model: this.props.model, key: "main" }),
       this.props.model.logInState._ === "LoggedIn"
         ? h(CreateProjectButton, {
@@ -38,63 +38,67 @@ export class PageHome extends Component<Props> {
   }
 }
 
-const PageHome_ = styled.div({
-  display: "grid",
-  overflow: "hidden",
-  backgroundColor: "#222",
-});
-
 const HomeMain: FunctionComponent<{ model: Model }> = (props) => {
-  return h(HomeMain_, {}, [
-    h(HomeLinkList, { key: "link-list", model: props.model }),
-    h(AllProjectList, { key: "all-project-list", model: props.model }),
-  ]);
+  return h(
+    "div",
+    {
+      css: css({
+        display: "grid",
+        overflowY: "scroll",
+        gridColumn: "1 / 2",
+        gridRow: "1 / 2",
+        gridTemplateRows: "32px 1fr",
+        gap: 8,
+        padding: 16,
+      }),
+    },
+    [
+      h(HomeLinkList, { key: "link-list", model: props.model }),
+      h(AllProjectList, { key: "all-project-list", model: props.model }),
+    ]
+  );
 };
 
-const HomeMain_ = styled.div({
-  display: "grid",
-  overflowY: "scroll",
-  gridColumn: "1 / 2",
-  gridRow: "1 / 2",
-  gridTemplateRows: "32px 1fr",
-  gap: 8,
-  padding: 16,
-});
-
 const HomeLinkList: FunctionComponent<{ model: Model }> = (props) =>
-  h(HomeLinkList_, {}, [
-    h(
-      HomeLink,
-      {
-        theme: "Gray",
-        model: props.model,
-        location: d.Location.About,
-        key: "about",
-      },
-      ["Definyについて"]
-    ),
-    h(
-      HomeLink,
-      {
-        theme: "Gray",
-        model: props.model,
-        location: d.Location.Debug,
-        key: "debug",
-      },
-      ["デバッグページ"]
-    ),
-  ]);
+  h(
+    "div",
+    {
+      css: css({
+        display: "grid",
+        gridAutoFlow: "column",
+        justifyContent: "end",
+        alignItems: "center",
+        height: 32,
+        gap: 8,
+      }),
+    },
+    [
+      h(
+        Link,
+        {
+          theme: "Gray",
+          model: props.model,
+          location: d.Location.About,
+          css: homeLinkStyle,
+          key: "about",
+        },
+        ["Definyについて"]
+      ),
+      h(
+        Link,
+        {
+          theme: "Gray",
+          model: props.model,
+          location: d.Location.Debug,
+          css: homeLinkStyle,
+          key: "debug",
+        },
+        ["デバッグページ"]
+      ),
+    ]
+  );
 
-export const HomeLinkList_ = styled.div({
-  display: "grid",
-  gridAutoFlow: "column",
-  justifyContent: "end",
-  alignItems: "center",
-  height: 32,
-  gap: 8,
-});
-
-const HomeLink = styled(Link)({
+const homeLinkStyle = css({
   width: 128,
   height: 32,
   display: "grid",
@@ -116,8 +120,18 @@ const AllProjectList: FunctionComponent<{
         return h("div", {}, ["プロジェクトが1つもありません"]);
       }
       return h(
-        ProjectList,
-        {},
+        "div",
+        {
+          css: css({
+            overflow: "hidden",
+            overflowWrap: "break-word",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            alignSelf: "start",
+            justifySelf: "center",
+            gap: 8,
+          }),
+        },
         projectIdList.map((projectId) =>
           h(Project, {
             model: props.model,
@@ -130,42 +144,31 @@ const AllProjectList: FunctionComponent<{
   }
 };
 
-const ProjectList = styled.div({
-  overflow: "hidden",
-  overflowWrap: "break-word",
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr 1fr",
-  alignSelf: "start",
-  justifySelf: "center",
-  gap: 8,
-});
-
 const CreateProjectButton: FunctionComponent<{ model: Model }> = (props) =>
   h(
-    CreateProjectButton_,
-    {},
+    "div",
+    {
+      css: css({
+        gridColumn: "1 / 2",
+        gridRow: "1 / 2",
+        alignSelf: "end",
+        justifySelf: "end",
+        padding: 16,
+      }),
+    },
     h(
-      CreateProjectLink,
+      Link,
       {
         theme: "Active",
         model: props.model,
         location: d.Location.CreateProject,
+        css: css({
+          padding: 8,
+        }),
       },
       [createProjectMessage(props.model.language)]
     )
   );
-
-const CreateProjectButton_ = styled.div({
-  gridColumn: "1 / 2",
-  gridRow: "1 / 2",
-  alignSelf: "end",
-  justifySelf: "end",
-  padding: 16,
-});
-
-const CreateProjectLink = styled(Link)({
-  padding: 8,
-});
 
 const createProjectMessage = (language: d.Language): string => {
   switch (language) {

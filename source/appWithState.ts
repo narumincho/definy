@@ -8,9 +8,10 @@ import {
   HomeProjectState,
   Model,
 } from "./model";
-import { Component, ReactElement, createElement as h } from "react";
+import { Component, ReactElement } from "react";
 import { App } from "./app";
 import { api } from "./api";
+import { jsx } from "@emotion/react";
 
 export type State = {
   /** ホームに表示される. Top50のプロジェクトのID */
@@ -490,7 +491,7 @@ export class AppWithState extends Component<Record<never, never>, State> {
       jump: (location: d.Location, language: d.Language) =>
         this.jump(location, language),
     };
-    return h(App, {
+    return jsx(App, {
       model,
     });
   }

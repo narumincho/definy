@@ -1,6 +1,7 @@
 import * as reactDom from "react-dom";
-import { StrictMode, createElement as h } from "react";
 import { AppWithState } from "./appWithState";
+import { StrictMode } from "react";
+import { jsx } from "@emotion/react";
 
 const appElement = document.createElement("div");
 
@@ -13,4 +14,4 @@ document.body.appendChild(appElement);
 appElement.style.height = "100%";
 appElement.style.overflow = "auto";
 
-reactDom.render(h(StrictMode, {}, h(AppWithState)), appElement);
+reactDom.render(jsx(StrictMode, {}, jsx(AppWithState)), appElement);

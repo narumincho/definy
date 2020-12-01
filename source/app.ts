@@ -1,5 +1,6 @@
 import * as d from "definy-core/source/data";
-import { FunctionComponent, createElement as h } from "react";
+import { css, jsx } from "@emotion/react";
+import { FunctionComponent } from "react";
 import { Header } from "./header";
 import { LoadingBox } from "./loadingBox";
 import { Model } from "./model";
@@ -7,7 +8,6 @@ import { PageAbout } from "./pageAbout";
 import { PageDebug } from "./pageDebug";
 import { PageHome } from "./pageHome";
 import { PageProject } from "./pageProject";
-import styled from "styled-components";
 
 export type Props = {
   model: Model;
@@ -16,14 +16,14 @@ export type Props = {
 export const App: FunctionComponent<Props> = (props) => {
   switch (props.model.logInState._) {
     case "RequestingLogInUrl":
-      return h(RequestingLogInUrl, {
+      return jsx(RequestingLogInUrl, {
         message: logInMessage(
           props.model.logInState.openIdConnectProvider,
           props.model.language
         ),
       });
     case "JumpingToLogInPage":
-      return h(RequestingLogInUrl, {
+      return jsx(RequestingLogInUrl, {
         message: jumpMessage(
           new URL(props.model.logInState.string),
           props.model.language
@@ -31,23 +31,37 @@ export const App: FunctionComponent<Props> = (props) => {
       });
   }
 
-  return h(StyledApp, {}, [
-    h(Header, { key: "header", model: props.model }),
-    h(Main, { key: "main", model: props.model }),
-  ]);
+  return jsx(
+    "div",
+    {
+      css: css({
+        height: "100%",
+        display: "grid",
+        gridTemplateRows: "48px 1fr",
+      }),
+    },
+    [
+      jsx(Header, { key: "header", model: props.model }),
+      jsx(Main, { key: "main", model: props.model }),
+    ]
+  );
 };
 
 const RequestingLogInUrl: React.FC<{
   message: string;
 }> = (prop) =>
-  h(LogInViewStyledDiv, {}, h(LoadingBox, { message: prop.message }));
-
-const LogInViewStyledDiv = styled.div({
-  height: "100%",
-  display: "grid",
-  alignItems: "center",
-  justifyItems: "center",
-});
+  jsx(
+    "div",
+    {
+      css: css({
+        height: "100%",
+        display: "grid",
+        alignItems: "center",
+        justifyItems: "center",
+      }),
+    },
+    jsx(LoadingBox, { message: prop.message })
+  );
 
 const logInMessage = (
   provider: d.OpenIdConnectProvider,
@@ -77,22 +91,16 @@ const jumpMessage = (url: URL, language: d.Language): string => {
 const Main: FunctionComponent<Props> = (props) => {
   switch (props.model.location._) {
     case "Home":
-      return h(PageHome, { model: props.model });
+      return jsx(PageHome, { model: props.model });
     case "Project":
-      return h(PageProject, {
+      return jsx(PageProject, {
         model: props.model,
         projectId: props.model.location.projectId,
       });
     case "Debug":
-      return h(PageDebug, {});
+      return jsx(PageDebug, {});
     case "About":
-      return h(PageAbout, {});
+      return jsx(PageAbout, {});
   }
-  return h("div", {}, "他のページは準備中……");
+  return jsx("div", {}, "他のページは準備中……");
 };
-
-const StyledApp = styled.div({
-  height: "100%",
-  display: "grid",
-  gridTemplateRows: "48px 1fr",
-});

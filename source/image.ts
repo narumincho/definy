@@ -1,14 +1,14 @@
 import * as d from "definy-core/source/data";
-import { Component, ReactElement, createElement as h } from "react";
+import { Component, ReactElement } from "react";
+import { SerializedStyles, css, jsx as h } from "@emotion/react";
 import { Icon } from "./icon";
 import { Model } from "./model";
-import styled from "styled-components";
 
 export type Props = {
   readonly model: Model;
   readonly imageToken: d.ImageToken;
   readonly alternativeText: string;
-  readonly className?: string;
+  readonly css?: SerializedStyles;
 };
 
 export class Image extends Component<Props, never> {
@@ -22,42 +22,34 @@ export class Image extends Component<Props, never> {
       this.props.imageToken
     );
     if (blobUrlResource === undefined) {
-      return h(ImageDiv, { className: this.props.className }, ["..."]);
+      return h("div", { css: css(imageCss, this.props.css) }, ["..."]);
     }
     switch (blobUrlResource._) {
       case "Loading":
         return h(
-          ImageDiv,
-          { className: this.props.className },
+          "div",
+          { css: css(imageCss, this.props.css) },
           h(Icon, { iconType: "Loading" })
         );
       case "Requesting":
         return h(
-          ImageDiv,
-          { className: this.props.className },
+          "div",
+          { css: css(imageCss, this.props.css) },
           h(Icon, { iconType: "Requesting" })
         );
       case "Unknown":
-        return h(ImageDiv, { className: this.props.className }, "取得に失敗");
+        return h("div", { css: css(imageCss, this.props.css) }, "取得に失敗");
       case "Loaded":
-        return h(Image_, {
+        return h("img", {
           src: blobUrlResource.data,
           alt: this.props.alternativeText,
-          className: this.props.className,
+          css: css(imageCss, this.props.css),
         });
     }
   }
 }
 
-const ImageDiv = styled.div({
-  display: "grid",
-  justifyContent: "center",
-  alignContent: "center",
-  width: 16,
-  height: 16,
-});
-
-const Image_ = styled.img({
+const imageCss = css({
   display: "grid",
   justifyContent: "center",
   alignContent: "center",

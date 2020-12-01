@@ -1,11 +1,5 @@
-import {
-  ChangeEvent,
-  Component,
-  ReactElement,
-  createRef,
-  createElement as h,
-} from "react";
-import styled from "styled-components";
+import { ChangeEvent, Component, ReactElement, createRef } from "react";
+import { css, jsx as h } from "@emotion/react";
 
 type Props = {
   readonly name: string;
@@ -57,29 +51,28 @@ export class MultiLineTextInput extends Component<Props, State> {
   }
 
   render(): ReactElement {
-    return h(StyledMultiLineTextInput, {
+    return h("textarea", {
       name: this.props.name,
       onChange: (event: ChangeEvent<HTMLTextAreaElement>): void =>
         this.onChange(event),
       onBlur: () => this.onBlur(),
       value: this.state.value,
       ref: this.ref,
+      css: css({
+        padding: 8,
+        fontSize: 16,
+        border: "2px solid #222",
+        backgroundColor: "#000",
+        color: "#ddd",
+        borderRadius: 8,
+        resize: "none",
+        lineHeight: 1.5,
+
+        "&:focus": {
+          border: "2px solid #f0932b",
+          outline: "none",
+        },
+      }),
     });
   }
 }
-
-const StyledMultiLineTextInput = styled.textarea`
-  padding: 8px;
-  font-size: 16px;
-  border: 2px solid #222;
-  background-color: #000;
-  color: #ddd;
-  border-radius: 8px;
-  resize: none;
-  line-height: 1.5;
-
-  &:focus {
-    border: 2px solid #f0932b;
-    outline: none;
-  }
-`;

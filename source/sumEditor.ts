@@ -1,6 +1,11 @@
-import { ChangeEvent, ReactElement, createElement as h } from "react";
-import { Editor, EditorProps, editorToReactElement, styledDiv } from "./ui";
-import styled from "styled-components";
+import { ChangeEvent, ReactElement } from "react";
+import {
+  Editor,
+  EditorProps,
+  editorToReactElement,
+  simpleStyleToCss,
+} from "./ui";
+import { css, jsx as h } from "@emotion/react";
 
 export const createWithParameterSumEditor = <
   ParamType extends { [key in string]: unknown },
@@ -80,8 +85,16 @@ export const createNoParameterTagEditor = <tag extends string>(
   tagNameList: ReadonlyArray<tag>
 ): Editor<tag> => (props) => {
   return h(
-    StyledTagSumRadio,
-    {},
+    "div",
+    {
+      css: simpleStyleToCss({
+        borderRadius: 8,
+        border: { width: 1, color: "#333" },
+        padding: 0,
+        direction: "x",
+        xGridTemplate: [{ _: "OneFr" }, { _: "OneFr" }, { _: "OneFr" }],
+      }),
+    },
     tagNameList.map((tagName, index) =>
       inputAndLabel(
         props.name + "-" + tagName,
@@ -105,8 +118,8 @@ const inputAndLabel = (
   index: number,
   isChecked: boolean,
   onChange: (value: string) => void
-) => [
-  h(StyledInput, {
+): ReadonlyArray<ReactElement> => [
+  h("input", {
     key: tagName + "-input",
     type: "radio",
     value: tagName,
@@ -116,51 +129,34 @@ const inputAndLabel = (
     onChange: (event: ChangeEvent<HTMLInputElement>) => {
       onChange(event.target.value);
     },
+    css: css({
+      width: 0,
+      height: 0,
+    }),
   }),
   h(
-    StyledLabel,
+    "label",
     {
       key: tagName + "-label",
       htmlFor: name,
-      isChecked,
-      index,
+      css: css({
+        backgroundColor: isChecked ? "#aaa" : "#000",
+        color: isChecked ? "#000" : "#ddd",
+        padding: 4,
+        cursor: "pointer",
+        display: "block",
+        gridColumn:
+          ((index % 3) + 1).toString() + " / " + ((index % 3) + 2).toString(),
+        gridRow:
+          (Math.floor(index / 3) + 1).toString() +
+          " / " +
+          (Math.floor(index / 3) + 2).toString(),
+        textAlign: "center",
+        "&:active": {
+          backgroundColor: "#303030",
+        },
+      }),
     },
     tagName
   ),
 ];
-
-const StyledInput = styled.input({
-  width: 0,
-  height: 0,
-});
-
-const StyledTagSumRadio = styledDiv({
-  borderRadius: 8,
-  border: { width: 1, color: "#333" },
-  padding: 0,
-  direction: "x",
-  xGridTemplate: [{ _: "OneFr" }, { _: "OneFr" }, { _: "OneFr" }],
-});
-
-const StyledLabel = styled.label(
-  (props: { isChecked: boolean; index: number }) =>
-    ({
-      backgroundColor: props.isChecked ? "#aaa" : "#000",
-      color: props.isChecked ? "#000" : "#ddd",
-      padding: 4,
-      cursor: "pointer",
-      display: "block",
-      gridColumn:
-        ((props.index % 3) + 1).toString() +
-        " / " +
-        ((props.index % 3) + 2).toString(),
-      gridRow:
-        (Math.floor(props.index / 3) + 1).toString() +
-        " / " +
-        (Math.floor(props.index / 3) + 2).toString(),
-      textAlign: "center",
-      "&:active": {
-        backgroundColor: "#303030",
-      },
-    } as const)
-);

@@ -1,16 +1,16 @@
 import * as core from "definy-core";
 import * as d from "definy-core/source/data";
-import react, { Component, ReactElement, createElement as h } from "react";
+import { SerializedStyles, css, jsx as h } from "@emotion/react";
+import react, { Component, ReactElement } from "react";
 import { Model } from "./model";
 import { Theme } from "./theme";
-import styled from "styled-components";
 
 export type Props = {
   readonly model: Model;
   readonly location: d.Location;
   readonly language?: d.Language;
   readonly theme: Theme;
-  readonly className?: string;
+  readonly css?: SerializedStyles;
 };
 
 export class Link extends Component<Props, never> {
@@ -34,7 +34,7 @@ export class Link extends Component<Props, never> {
 
   render(): ReactElement {
     return h(
-      Link_,
+      "a",
       {
         href: core
           .urlDataAndAccountTokenToUrl(
@@ -48,19 +48,20 @@ export class Link extends Component<Props, never> {
           .toString(),
         onClick: (e: react.MouseEvent<HTMLAnchorElement, MouseEvent>) =>
           this.onClick(e),
-        className: this.props.className,
+        css: css(
+          {
+            display: "block",
+            textDecoration: "none",
+          },
+          themeToStyle(this.props.theme),
+          this.props.css
+        ),
         theme: this.props.theme,
       },
       this.props.children
     );
   }
 }
-
-const Link_ = styled.a((props) => ({
-  ...themeToStyle(props.theme),
-  display: "block",
-  textDecoration: "none",
-}));
 
 const themeToStyle = (
   theme: Theme

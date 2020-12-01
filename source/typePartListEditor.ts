@@ -1,9 +1,9 @@
 import * as d from "definy-core/source/data";
-import { Component, ReactElement, createElement as h } from "react";
-
+import { Component, ReactElement } from "react";
 import { Icon } from "./icon";
 import { Model } from "./model";
 import { TypePartListEditorLoaded } from "./typePartListEditorLoaded";
+import { jsx as h } from "@emotion/react";
 
 export type Props = {
   readonly model: Model;

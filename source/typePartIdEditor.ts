@@ -1,8 +1,9 @@
 import * as d from "definy-core/source/data";
-import { Editor, editorToReactElement, styledDiv } from "./ui";
-import { createElement as h, useState } from "react";
+import { Editor, editorToReactElement, simpleStyleToCss } from "./ui";
 import { Button } from "./button";
 import { OneLineTextInput } from "./oneLineTextInput";
+import { jsx as h } from "@emotion/react";
+import { useState } from "react";
 
 export const TypePartIdEditor: Editor<d.TypePartId> = (props) => {
   const [text, setText] = useState<string>("");
@@ -24,8 +25,14 @@ export const TypePartIdEditor: Editor<d.TypePartId> = (props) => {
       key: "input",
     }),
     h(
-      SuggestionList,
-      { key: "suggestionList" },
+      "div",
+      {
+        key: "suggestionList",
+        css: simpleStyleToCss({
+          direction: "y",
+          padding: 8,
+        }),
+      },
       suggestionList.length === 0
         ? "none"
         : suggestionList.map((suggestion) =>
@@ -43,11 +50,6 @@ export const TypePartIdEditor: Editor<d.TypePartId> = (props) => {
     )
   );
 };
-
-const SuggestionList = styledDiv({
-  direction: "y",
-  padding: 8,
-});
 
 const typePartListSuggestion = (
   text: string,
