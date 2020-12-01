@@ -44,7 +44,7 @@ const Logo: FunctionComponent<{ model: Model }> = (props) =>
         },
       }),
     },
-    ["Definy"]
+    "Definy"
   );
 
 const UserViewOrLogInButton: FunctionComponent<{

@@ -3,7 +3,7 @@ import * as d from "definy-core/source/data";
 import { SerializedStyles, css, jsx as h } from "@emotion/react";
 import react, { Component, ReactElement } from "react";
 import { Model } from "./model";
-import { Theme } from "./theme";
+import { Theme } from "./ui";
 
 export type Props = {
   readonly model: Model;

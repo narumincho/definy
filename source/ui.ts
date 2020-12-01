@@ -79,3 +79,5 @@ export const editorToReactElement = <T>(
     model: Model;
   }
 ): ReactElement => h(editor, props);
+
+export type Theme = "Gray" | "Black" | "Active";
