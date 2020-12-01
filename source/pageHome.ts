@@ -74,38 +74,42 @@ const HomeLinkList: FunctionComponent<{ model: Model }> = (props) =>
       }),
     },
     [
-      h(
-        Link,
-        {
-          theme: "Gray",
-          model: props.model,
-          location: d.Location.About,
-          css: homeLinkStyle,
-          key: "about",
-        },
-        ["Definyについて"]
-      ),
-      h(
-        Link,
-        {
-          theme: "Gray",
-          model: props.model,
-          location: d.Location.Debug,
-          css: homeLinkStyle,
-          key: "debug",
-        },
-        ["デバッグページ"]
-      ),
+      h(HomeLink, {
+        model: props.model,
+        location: d.Location.About,
+        key: "about",
+        text: "Definyについて",
+      }),
+      h(HomeLink, {
+        model: props.model,
+        location: d.Location.Debug,
+        key: "debug",
+        text: "デバッグページ",
+      }),
     ]
   );
 
-const homeLinkStyle = css({
-  width: 128,
-  height: 32,
-  display: "grid",
-  alignItems: "center",
-  justifyContent: "center",
-});
+const HomeLink: FunctionComponent<{
+  model: Model;
+  location: d.Location;
+  text: string;
+}> = (props) =>
+  h(
+    Link,
+    {
+      theme: "Gray",
+      model: props.model,
+      location: props.location,
+      css: css({
+        width: 128,
+        height: 32,
+        display: "grid",
+        alignItems: "center",
+        justifyContent: "center",
+      }),
+    },
+    props.text
+  );
 
 const AllProjectList: FunctionComponent<{
   model: Model;
@@ -161,7 +165,7 @@ const CreateProjectButton: FunctionComponent<{ model: Model }> = (props) =>
           padding: 8,
         }),
       },
-      [createProjectMessage(props.model.language)]
+      createProjectMessage(props.model.language)
     )
   );
 

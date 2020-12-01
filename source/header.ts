@@ -1,11 +1,12 @@
 import * as d from "definy-core/source/data";
+import { FunctionComponent, ReactChild } from "react";
 import { css, jsx as h } from "@emotion/react";
 import { Button } from "./button";
-import { FunctionComponent } from "react";
 import { GitHubIcon } from "./gitHubIcon";
 import { Image } from "./image";
 import { Link } from "./link";
 import { Model } from "./model";
+import { div } from "./ui";
 
 export const Header: FunctionComponent<{ model: Model }> = (props) =>
   h(
@@ -58,60 +59,66 @@ const UserViewOrLogInButton: FunctionComponent<{
         alignSelf: "center",
       }),
     },
-    (() => {
-      switch (props.model.logInState._) {
-        case "LoadingAccountTokenFromIndexedDB":
-          return "アクセストークンをindexedDBから読み取り中……";
-
-        case "Guest":
-          return h(LogInButtonList, {
-            language: props.model.language,
-            requestLogIn: props.model.logIn,
-          });
-        case "VerifyingAccountToken":
-          return "アクセストークンを検証中……";
-
-        case "LoggedIn": {
-          const userResourceState = props.model.userMap.get(
-            props.model.logInState.accountTokenAndUserId.userId
-          );
-          if (
-            userResourceState === undefined ||
-            userResourceState._ !== "Loaded"
-          ) {
-            return "...";
-          }
-          const user = userResourceState.dataWithTime.data;
-          return h(
-            Link,
-            {
-              theme: "Gray",
-              model: props.model,
-              location: d.Location.Setting,
-              css: css({
-                justifySelf: "end",
-                display: "grid",
-                gridTemplateColumns: "32px auto",
-                alignItems: "center",
-                padding: 8,
-              }),
-            },
-            h(Image, {
-              imageToken: user.imageHash,
-              model: props.model,
-              alternativeText: "設定",
-              width: 32,
-              height: 32,
-              isCircle: true,
-            }),
-            user.name
-          );
-        }
-      }
-      return "ログインの準備中……";
-    })()
+    userViewOrLogInButtonContent(props.model)
   );
 };
+
+const userViewOrLogInButtonContent = (model: Model): ReactChild => {
+  switch (model.logInState._) {
+    case "LoadingAccountTokenFromIndexedDB":
+      return "アクセストークンをindexedDBから読み取り中……";
+
+    case "Guest":
+      return h(LogInButtonList, {
+        language: model.language,
+        requestLogIn: model.logIn,
+      });
+    case "VerifyingAccountToken":
+      return "アクセストークンを検証中……";
+
+    case "LoggedIn": {
+      const userResourceState = model.userMap.get(
+        model.logInState.accountTokenAndUserId.userId
+      );
+      if (userResourceState === undefined || userResourceState._ !== "Loaded") {
+        return "...";
+      }
+      return h(SettingLink, {
+        model,
+        user: userResourceState.dataWithTime.data,
+      });
+    }
+  }
+  return "ログインの準備中……";
+};
+
+const SettingLink: FunctionComponent<{ model: Model; user: d.User }> = (
+  props
+) =>
+  h(
+    Link,
+    {
+      theme: "Gray",
+      model: props.model,
+      location: d.Location.Setting,
+      css: css({
+        justifySelf: "end",
+        display: "grid",
+        gridTemplateColumns: "32px auto",
+        alignItems: "center",
+        padding: 8,
+      }),
+    },
+    h(Image, {
+      imageToken: props.user.imageHash,
+      model: props.model,
+      alternativeText: "設定",
+      width: 32,
+      height: 32,
+      isCircle: true,
+    }),
+    props.user.name
+  );
 
 const LogInButtonList: FunctionComponent<{
   requestLogIn: (provider: d.OpenIdConnectProvider) => void;
@@ -137,12 +144,12 @@ const LogInButtonList: FunctionComponent<{
 const GoogleLogInButton: FunctionComponent<{
   requestLogIn: (provider: d.OpenIdConnectProvider) => void;
   language: d.Language;
-}> = (prop) =>
+}> = (props) =>
   h(
     Button,
     {
       onClick: () => {
-        prop.requestLogIn("Google");
+        props.requestLogIn("Google");
       },
       css: css({
         display: "grid",
@@ -158,18 +165,10 @@ const GoogleLogInButton: FunctionComponent<{
     },
     [
       h(GoogleIcon, { key: "icon" }),
-      h(
-        "div",
-        {
-          key: "text",
-          css: css({
-            alignSelf: "center",
-            fontSize: 18,
-            color: "#fff",
-          }),
-        },
-        logInMessage("Google", prop.language)
-      ),
+      h(GoogleText, {
+        key: "text",
+        language: props.language,
+      }),
     ]
   );
 
@@ -214,15 +213,25 @@ const GoogleIcon: FunctionComponent<Record<never, never>> = () =>
     ]
   );
 
+const GoogleText: FunctionComponent<{ language: d.Language }> = (props) =>
+  div(
+    css({
+      alignSelf: "center",
+      fontSize: 18,
+      color: "#fff",
+    }),
+    logInMessage("Google", props.language)
+  );
+
 const GitHubLogInButton: FunctionComponent<{
   requestLogIn: (provider: d.OpenIdConnectProvider) => void;
   language: d.Language;
-}> = (prop) =>
+}> = (props) =>
   h(
     Button,
     {
       onClick: () => {
-        prop.requestLogIn("GitHub");
+        props.requestLogIn("GitHub");
       },
       css: css({
         display: "grid",
@@ -236,31 +245,30 @@ const GitHubLogInButton: FunctionComponent<{
         },
       }),
     },
-    [
-      h(GitHubIcon, {
-        color: "#000",
-        key: "icon",
-        css: css({
-          width: 32,
-          height: 32,
-          padding: 4,
-          backgroundColor: "#fff",
-          borderRadius: 8,
-        }),
+    h(GitHubIcon, {
+      color: "#000",
+      key: "icon",
+      css: css({
+        width: 32,
+        height: 32,
+        padding: 4,
+        backgroundColor: "#fff",
+        borderRadius: 8,
       }),
-      h(
-        "div",
-        {
-          key: "text",
-          css: css({
-            alignSelf: "center",
-            fontSize: 18,
-            color: "#ddd",
-          }),
-        },
-        logInMessage("GitHub", prop.language)
-      ),
-    ]
+    }),
+    h(GitHubText, { key: "text", language: props.language })
+  );
+
+const GitHubText: FunctionComponent<{
+  language: d.Language;
+}> = (props) =>
+  div(
+    css({
+      alignSelf: "center",
+      fontSize: 18,
+      color: "#ddd",
+    }),
+    logInMessage("GitHub", props.language)
   );
 
 const logInMessage = (
