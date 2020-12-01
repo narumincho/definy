@@ -11,6 +11,7 @@ export type Props = {
   readonly language?: d.Language;
   readonly theme: Theme;
   readonly css?: SerializedStyles;
+  readonly className?: string;
 };
 
 export class Link extends Component<Props, never> {
@@ -57,6 +58,7 @@ export class Link extends Component<Props, never> {
           this.props.css
         ),
         theme: this.props.theme,
+        className: this.props.className,
       },
       this.props.children
     );
