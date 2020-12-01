@@ -2,6 +2,7 @@ import { ChangeEvent, ReactElement } from "react";
 import {
   Editor,
   EditorProps,
+  div,
   editorToReactElement,
   simpleStyleToCss,
 } from "./ui";
@@ -34,7 +35,7 @@ export const createWithParameterSumEditor = <
       } & Record<string, unknown>
     );
 
-    return h("div", {}, [
+    return div(css(), [
       editorToReactElement<Tag>(TagEditor, {
         key: "tag",
         name: props.name,

@@ -5,6 +5,7 @@ import { Icon } from "./icon";
 import { Link } from "./link";
 import { Model } from "./model";
 import { Project } from "./project";
+import { div } from "./ui";
 
 export type Props = {
   readonly model: Model;
@@ -111,27 +112,24 @@ const AllProjectList: FunctionComponent<{
 }> = (props) => {
   switch (props.model.top50ProjectIdState._) {
     case "None":
-      return h("div", {}, "読み込み前");
+      return div(css(), "読み込み前");
     case "Loading":
-      return h("div", {}, h(Icon, { iconType: "Requesting" }));
+      return div(css(), h(Icon, { iconType: "Requesting" }));
     case "Loaded": {
       const { projectIdList } = props.model.top50ProjectIdState;
       if (projectIdList.length === 0) {
-        return h("div", {}, ["プロジェクトが1つもありません"]);
+        return div(css(), "プロジェクトが1つもありません");
       }
-      return h(
-        "div",
-        {
-          css: css({
-            overflow: "hidden",
-            overflowWrap: "break-word",
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            alignSelf: "start",
-            justifySelf: "center",
-            gap: 8,
-          }),
-        },
+      return div(
+        css({
+          overflow: "hidden",
+          overflowWrap: "break-word",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          alignSelf: "start",
+          justifySelf: "center",
+          gap: 8,
+        }),
         projectIdList.map((projectId) =>
           h(Project, {
             model: props.model,
@@ -145,17 +143,14 @@ const AllProjectList: FunctionComponent<{
 };
 
 const CreateProjectButton: FunctionComponent<{ model: Model }> = (props) =>
-  h(
-    "div",
-    {
-      css: css({
-        gridColumn: "1 / 2",
-        gridRow: "1 / 2",
-        alignSelf: "end",
-        justifySelf: "end",
-        padding: 16,
-      }),
-    },
+  div(
+    css({
+      gridColumn: "1 / 2",
+      gridRow: "1 / 2",
+      alignSelf: "end",
+      justifySelf: "end",
+      padding: 16,
+    }),
     h(
       Link,
       {

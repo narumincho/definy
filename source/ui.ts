@@ -1,4 +1,4 @@
-import { SerializedStyles, css, jsx as h } from "@emotion/react";
+import { SerializedStyles, css, jsx } from "@emotion/react";
 import { Model } from "./model";
 import { ReactElement } from "react";
 
@@ -78,6 +78,13 @@ export const editorToReactElement = <T>(
     key?: string;
     model: Model;
   }
-): ReactElement => h(editor, props);
+): ReactElement => jsx(editor, props);
 
 export type Theme = "Gray" | "Black" | "Active";
+
+/** div 要素. レイアウトを構成するのによく使われる */
+export const div = (
+  serializedStyles: SerializedStyles,
+  ...children: ReadonlyArray<React.ReactNode>
+): ReactElement<{ css: SerializedStyles }> =>
+  jsx("div", { css: serializedStyles }, children);

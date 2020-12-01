@@ -16,7 +16,7 @@ export const TypePartIdEditor: Editor<d.TypePartId> = (props) => {
     "div",
     {},
     h("div", { key: "id" }, props.value),
-    h("div", { id: "typeName" }, typeName),
+    h("div", { kry: "typeName" }, typeName),
     editorToReactElement(OneLineTextInput, {
       name: "type-name",
       model: props.model,

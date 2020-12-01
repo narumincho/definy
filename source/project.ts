@@ -4,6 +4,7 @@ import { css, jsx as h } from "@emotion/react";
 import { Image } from "./image";
 import { Link } from "./link";
 import { Model } from "./model";
+import { div } from "./ui";
 
 type Props = {
   readonly model: Model;
@@ -21,15 +22,15 @@ export class Project extends Component<Props, never> {
       this.props.projectId
     );
     if (projectResource === undefined) {
-      return h("div", {}, "...");
+      return div(containerStyle, "...");
     }
     switch (projectResource._) {
       case "Requesting":
-        return h("div", { css: containerStyle }, "Requesting");
+        return div(containerStyle, "Requesting");
       case "Unknown":
-        return h("div", { css: containerStyle }, "Unknown");
+        return div(containerStyle, "Unknown");
       case "Deleted":
-        return h("div", { css: containerStyle }, "Deleted");
+        return div(containerStyle, "Deleted");
       case "Loaded": {
         return h(
           Link,
@@ -55,14 +56,17 @@ export class Project extends Component<Props, never> {
   }
 }
 
+const imageHeight = 633 / 4;
+const textHeight = 48;
+
 const containerStyle = css({
   width: 256,
+  height: imageHeight + textHeight,
 });
 
 const linkStyle = css({
   display: "grid",
-  gridTemplateRows: "128px 48px",
-  width: 256,
+  gridTemplateRows: `${imageHeight}px ${textHeight}px`,
 });
 
 const ProjectImage: FunctionComponent<{
@@ -74,7 +78,7 @@ const ProjectImage: FunctionComponent<{
     imageToken: props.project.imageHash,
     alternativeText: props.project.name + "の画像",
     width: 1024 / 4,
-    height: 633 / 4,
+    height: imageHeight,
     isCircle: false,
   });
 

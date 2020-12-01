@@ -8,6 +8,7 @@ import { PageAbout } from "./pageAbout";
 import { PageDebug } from "./pageDebug";
 import { PageHome } from "./pageHome";
 import { PageProject } from "./pageProject";
+import { div } from "./ui";
 
 export type Props = {
   model: Model;
@@ -102,5 +103,5 @@ const Main: FunctionComponent<Props> = (props) => {
     case "About":
       return jsx(PageAbout, {});
   }
-  return jsx("div", {}, "他のページは準備中……");
+  return div(css(), "他のページは準備中……");
 };
