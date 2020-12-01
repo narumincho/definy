@@ -100,9 +100,9 @@ const UserViewOrLogInButton: FunctionComponent<{
               imageToken: user.imageHash,
               model: props.model,
               alternativeText: "設定",
-              css: css({
-                borderRadius: "50%",
-              }),
+              width: 32,
+              height: 32,
+              isCircle: true,
             }),
             user.name
           );

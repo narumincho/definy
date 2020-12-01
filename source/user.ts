@@ -60,11 +60,9 @@ export class User extends Component<Props, never> {
               model: this.props.model,
               key: "image",
               alternativeText: data.name + "のアイコン",
-              css: css({
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-              }),
+              width: 32,
+              height: 32,
+              isCircle: true,
             }),
             data.name,
           ]

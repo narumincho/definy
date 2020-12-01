@@ -8,7 +8,9 @@ export type Props = {
   readonly model: Model;
   readonly imageToken: d.ImageToken;
   readonly alternativeText: string;
-  readonly css?: SerializedStyles;
+  readonly isCircle: boolean;
+  readonly width: number;
+  readonly height: number;
 };
 
 export class Image extends Component<Props, never> {
@@ -22,37 +24,39 @@ export class Image extends Component<Props, never> {
       this.props.imageToken
     );
     if (blobUrlResource === undefined) {
-      return h("div", { css: css(imageCss, this.props.css) }, ["..."]);
+      return h("div", { css: imageCss(this.props) }, ["..."]);
     }
     switch (blobUrlResource._) {
       case "Loading":
         return h(
           "div",
-          { css: css(imageCss, this.props.css) },
+          { css: imageCss(this.props) },
           h(Icon, { iconType: "Loading" })
         );
       case "Requesting":
         return h(
           "div",
-          { css: css(imageCss, this.props.css) },
+          { css: imageCss(this.props) },
           h(Icon, { iconType: "Requesting" })
         );
       case "Unknown":
-        return h("div", { css: css(imageCss, this.props.css) }, "取得に失敗");
+        return h("div", { css: imageCss(this.props) }, "取得に失敗");
       case "Loaded":
         return h("img", {
           src: blobUrlResource.data,
           alt: this.props.alternativeText,
-          css: css(imageCss, this.props.css),
+          css: imageCss(this.props),
         });
     }
   }
 }
 
-const imageCss = css({
-  display: "grid",
-  justifyContent: "center",
-  alignContent: "center",
-  width: 16,
-  height: 16,
-});
+const imageCss = (props: Props): SerializedStyles =>
+  css({
+    display: "grid",
+    justifyContent: "center",
+    alignContent: "center",
+    width: props.width,
+    height: props.height,
+    borderRadius: props.isCircle ? "50%" : undefined,
+  });

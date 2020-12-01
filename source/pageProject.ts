@@ -89,10 +89,9 @@ const ProjectMain: FunctionComponent<{
         model: props.model,
         key: "project-icon",
         alternativeText: "image",
-        css: css({
-          width: 512,
-          height: 316.5,
-        }),
+        width: 1024 / 2,
+        height: 633 / 2,
+        isCircle: false,
       }),
       h("div", { key: "creator" }, [
         "作成者",
@@ -135,10 +134,9 @@ const ProjectIconAndName: FunctionComponent<{
         model: props.model,
         key: "icon",
         alternativeText: props.project.name + "のアイコン",
-        css: css({
-          width: 48,
-          height: 48,
-        }),
+        width: 48,
+        height: 48,
+        isCircle: false,
       }),
       h("div", { key: "name" }, [props.project.name]),
     ]

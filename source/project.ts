@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { Component, ReactElement } from "react";
+import { Component, FunctionComponent, ReactElement } from "react";
 import { css, jsx as h } from "@emotion/react";
 import { Image } from "./image";
 import { Link } from "./link";
@@ -39,44 +39,16 @@ export class Project extends Component<Props, never> {
             location: d.Location.Project(this.props.projectId),
             css: css(containerStyle, linkStyle),
           },
-          h(Image, {
+          h(ProjectImage, {
             model: this.props.model,
-            imageToken: projectResource.dataWithTime.data.imageHash,
-            alternativeText: projectResource.dataWithTime.data.name + "の画像",
+            project: projectResource.dataWithTime.data,
             key: "project-image",
-            css: css({
-              width: 256,
-              height: 128,
-              padding: 0,
-            }),
           }),
-          h(
-            "div",
-            {
-              key: "icon-and-name",
-              css: css({
-                display: "grid",
-                gridTemplateColumns: "32px 1fr",
-                gap: 8,
-                alignItems: "center",
-                padding: 8,
-              }),
-            },
-            [
-              h(Image, {
-                model: this.props.model,
-                imageToken: projectResource.dataWithTime.data.iconHash,
-                key: "project-icon",
-                alternativeText:
-                  projectResource.dataWithTime.data.name + "のアイコン",
-                css: css({
-                  width: 32,
-                  height: 32,
-                }),
-              }),
-              projectResource.dataWithTime.data.name,
-            ]
-          )
+          h(IconAndName, {
+            key: "icon-and-name",
+            model: this.props.model,
+            project: projectResource.dataWithTime.data,
+          })
         );
       }
     }
@@ -92,3 +64,45 @@ const linkStyle = css({
   gridTemplateRows: "128px 48px",
   width: 256,
 });
+
+const ProjectImage: FunctionComponent<{
+  model: Model;
+  project: d.Project;
+}> = (props) =>
+  h(Image, {
+    model: props.model,
+    imageToken: props.project.imageHash,
+    alternativeText: props.project.name + "の画像",
+    width: 1024 / 4,
+    height: 633 / 4,
+    isCircle: false,
+  });
+
+const IconAndName: FunctionComponent<{
+  model: Model;
+  project: d.Project;
+}> = (props) =>
+  h(
+    "div",
+    {
+      css: css({
+        display: "grid",
+        gridTemplateColumns: "32px 1fr",
+        gap: 8,
+        alignItems: "center",
+        padding: 8,
+      }),
+    },
+    [
+      h(Image, {
+        model: props.model,
+        imageToken: props.project.iconHash,
+        alternativeText: props.project.name + "のアイコン",
+        width: 32,
+        height: 32,
+        isCircle: false,
+        key: "icon",
+      }),
+      props.project.name,
+    ]
+  );
