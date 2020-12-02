@@ -155,18 +155,24 @@ const CreateProjectButton: FunctionComponent<{ model: Model }> = (props) =>
       justifySelf: "end",
       padding: 16,
     }),
-    h(
-      Link,
-      {
-        theme: "Active",
-        model: props.model,
-        location: d.Location.CreateProject,
-        css: css({
-          padding: 8,
-        }),
-      },
-      createProjectMessage(props.model.language)
-    )
+    h(CreateProjectLink, {
+      model: props.model,
+      key: "link",
+    })
+  );
+
+const CreateProjectLink: FunctionComponent<{ model: Model }> = (props) =>
+  h(
+    Link,
+    {
+      theme: "Active",
+      model: props.model,
+      location: d.Location.CreateProject,
+      css: css({
+        padding: 8,
+      }),
+    },
+    createProjectMessage(props.model.language)
   );
 
 const createProjectMessage = (language: d.Language): string => {

@@ -25,17 +25,13 @@ export class Image extends Component<Props, never> {
       this.props.imageToken
     );
     if (blobUrlResource === undefined) {
-      return div(imageCss(this.props), ["..."]);
+      return div(imageCss(this.props), "...");
     }
     switch (blobUrlResource._) {
       case "Loading":
         return div(imageCss(this.props), h(Icon, { iconType: "Loading" }));
       case "Requesting":
-        return h(
-          "div",
-          { css: imageCss(this.props) },
-          h(Icon, { iconType: "Requesting" })
-        );
+        return div(imageCss(this.props), h(Icon, { iconType: "Requesting" }));
       case "Unknown":
         return div(imageCss(this.props), "取得に失敗");
       case "Loaded":

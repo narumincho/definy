@@ -42,35 +42,45 @@ export class PageDebug extends Component<Props, State> {
         }),
       },
       [
-        h(
-          "div",
-          {
-            key: "tab",
-            css: css({
-              display: "grid",
-              alignContent: "start",
-            }),
+        h(Tab, {
+          key: "tab",
+          tab: this.state.tab,
+          setTab: (newTab: Tab) => {
+            this.setState({ tab: newTab });
           },
-          tabList.map((tab) =>
-            this.state.tab === tab
-              ? h("div", { key: tab }, tab)
-              : h(
-                  Button,
-                  {
-                    key: tab,
-                    onClick: () => {
-                      this.setState({ tab });
-                    },
-                  },
-                  tab
-                )
-          )
-        ),
+        }),
         h("div", { key: "content" }, h(Content, { tab: this.state.tab })),
       ]
     );
   }
 }
+
+const Tab: FunctionComponent<{ tab: Tab; setTab: (newTab: Tab) => void }> = (
+  props
+) =>
+  h(
+    "div",
+    {
+      css: css({
+        display: "grid",
+        alignContent: "start",
+      }),
+    },
+    tabList.map((tab) =>
+      props.tab === tab
+        ? h("div", { key: tab }, tab)
+        : h(
+            Button,
+            {
+              key: tab,
+              onClick: () => {
+                props.setTab(tab);
+              },
+            },
+            tab
+          )
+    )
+  );
 
 const Content: FunctionComponent<{ tab: Tab }> = (props) => {
   switch (props.tab) {

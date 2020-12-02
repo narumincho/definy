@@ -32,15 +32,12 @@ export const App: FunctionComponent<Props> = (props) => {
       });
   }
 
-  return jsx(
-    "div",
-    {
-      css: css({
-        height: "100%",
-        display: "grid",
-        gridTemplateRows: "48px 1fr",
-      }),
-    },
+  return div(
+    css({
+      height: "100%",
+      display: "grid",
+      gridTemplateRows: "48px 1fr",
+    }),
     [
       jsx(Header, { key: "header", model: props.model }),
       jsx(Main, { key: "main", model: props.model }),
