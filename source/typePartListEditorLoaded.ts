@@ -1,5 +1,6 @@
 import * as d from "definy-core/source/data";
-import { Component, ReactElement, createElement as h } from "react";
+import { Component, ReactElement } from "react";
+import { css, jsx } from "@emotion/react";
 import { Button } from "./button";
 import { Editor } from "./ui";
 import { Model } from "./model";
@@ -11,7 +12,6 @@ import { createListEditor } from "./listEditor";
 import { createMaybeEditor } from "./maybeEditor";
 import { createNoParameterTagEditor } from "./sumEditor";
 import { createProductEditor } from "./productEditor";
-import styled from "styled-components";
 
 export type Props = {
   readonly initTypePartList: ReadonlyMap<d.TypePartId, d.TypePart>;
@@ -52,15 +52,20 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
   }
 
   render(): ReactElement {
-    return h(
-      StyledTypePartListEditor,
-      {},
+    return jsx(
+      "div",
+      {
+        css: css({
+          display: "grid",
+          gap: 8,
+        }),
+      },
       [...this.state.typePartList].map(([id, data]) =>
-        h(
+        jsx(
           "div",
           { key: id },
-          h("div", { key: "id" }, id),
-          h(TypePartEditor, {
+          jsx("div", { key: "id" }, id),
+          jsx(TypePartEditor, {
             key: "data",
             name: "typePart-" + id,
             value: data,
@@ -71,7 +76,7 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
           })
         )
       ),
-      h(
+      jsx(
         Button,
         {
           onClick: () => this.addTypePart(),
@@ -79,7 +84,7 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
         },
         "型パーツ追加"
       ),
-      h(
+      jsx(
         Button,
         {
           onClick: () => this.save(),
@@ -90,11 +95,6 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
     );
   }
 }
-
-const StyledTypePartListEditor = styled.div({
-  display: "grid",
-  gap: 8,
-});
 
 const AttributeEditor: Editor<d.TypeAttribute> = createNoParameterTagEditor<d.TypeAttribute>(
   [d.TypeAttribute.AsBoolean, d.TypeAttribute.AsUndefined]

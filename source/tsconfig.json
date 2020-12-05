@@ -9,6 +9,7 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "isolatedModules": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noErrorTruncation": true
   }
 }

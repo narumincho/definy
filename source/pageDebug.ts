@@ -1,14 +1,9 @@
-import {
-  Component,
-  FunctionComponent,
-  ReactElement,
-  createElement as h,
-  useState,
-} from "react";
+import { Component, FunctionComponent, ReactElement, useState } from "react";
 import {
   createNoParameterTagEditor,
   createWithParameterSumEditor,
 } from "./sumEditor";
+import { css, jsx as h } from "@emotion/react";
 import { Button } from "./button";
 import { Icon } from "./icon";
 import { Model } from "./model";
@@ -17,7 +12,6 @@ import { UndefinedEditor } from "./undefinedEditor";
 import { createListEditor } from "./listEditor";
 import { createProductEditor } from "./productEditor";
 import { editorToReactElement } from "./ui";
-import styled from "styled-components";
 
 const tabList = ["Icon", "Product", "Sum", "List"] as const;
 
@@ -38,40 +32,55 @@ export class PageDebug extends Component<Props, State> {
   }
 
   render(): ReactElement {
-    return h(StyledPageDebug, {}, [
-      h(
-        TabList,
-        { key: "tab" },
-        tabList.map((tab) =>
-          this.state.tab === tab
-            ? h("div", { key: tab }, tab)
-            : h(
-                Button,
-                {
-                  key: tab,
-                  onClick: () => {
-                    this.setState({ tab });
-                  },
-                },
-                tab
-              )
-        )
-      ),
-      h("div", { key: "content" }, h(Content, { tab: this.state.tab })),
-    ]);
+    return h(
+      "div",
+      {
+        css: css({
+          display: "grid",
+          gridTemplateColumns: "200px 1fr",
+          width: "100%",
+        }),
+      },
+      [
+        h(Tab, {
+          key: "tab",
+          tab: this.state.tab,
+          setTab: (newTab: Tab) => {
+            this.setState({ tab: newTab });
+          },
+        }),
+        h("div", { key: "content" }, h(Content, { tab: this.state.tab })),
+      ]
+    );
   }
 }
 
-const TabList = styled.div({
-  display: "grid",
-  alignContent: "start",
-});
-
-const StyledPageDebug = styled.div({
-  display: "grid",
-  gridTemplateColumns: "200px 1fr",
-  width: "100%",
-});
+const Tab: FunctionComponent<{ tab: Tab; setTab: (newTab: Tab) => void }> = (
+  props
+) =>
+  h(
+    "div",
+    {
+      css: css({
+        display: "grid",
+        alignContent: "start",
+      }),
+    },
+    tabList.map((tab) =>
+      props.tab === tab
+        ? h("div", { key: tab }, tab)
+        : h(
+            Button,
+            {
+              key: tab,
+              onClick: () => {
+                props.setTab(tab);
+              },
+            },
+            tab
+          )
+    )
+  );
 
 const Content: FunctionComponent<{ tab: Tab }> = (props) => {
   switch (props.tab) {

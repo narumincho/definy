@@ -1,6 +1,11 @@
-import { Editor, EditorProps, editorToReactElement, styledDiv } from "./ui";
-import { ReactElement, createElement as h } from "react";
-import styled from "styled-components";
+import {
+  Editor,
+  EditorProps,
+  editorToReactElement,
+  simpleStyleToCss,
+} from "./ui";
+import { css, jsx as h } from "@emotion/react";
+import { ReactElement } from "react";
 
 export const createProductEditor = <T extends Record<string, unknown>>(
   memberComponentObject: {
@@ -10,10 +15,19 @@ export const createProductEditor = <T extends Record<string, unknown>>(
 ): Editor<T> => {
   const editor = (props: EditorProps<T>): ReactElement => {
     return h(
-      StyledProductEditor,
-      {},
+      "div",
+      {
+        css: simpleStyleToCss({
+          direction: "y",
+          padding: 0,
+        }),
+      },
       Object.entries(memberComponentObject).map(([key, component]) => [
-        h(StyledLabel, { key: key + "-label" }, key),
+        h(
+          "label",
+          { key: key + "-label", css: css({ display: "grid", padding: 8 }) },
+          key
+        ),
         editorToReactElement(component, {
           name: props.name + "-" + key,
           key: key + "-input",
@@ -29,13 +43,3 @@ export const createProductEditor = <T extends Record<string, unknown>>(
   editor.displayName = displayName;
   return editor;
 };
-
-const StyledProductEditor = styledDiv({
-  direction: "y",
-  padding: 0,
-});
-
-const StyledLabel = styled.label`
-  display: grid;
-  padding: 8px;
-`;

@@ -1,7 +1,12 @@
-import { Editor, EditorProps, editorToReactElement, styledDiv } from "./ui";
-import { FunctionComponent, createElement as h } from "react";
+import {
+  Editor,
+  EditorProps,
+  editorToReactElement,
+  simpleStyleToCss,
+} from "./ui";
+import { css, jsx as h } from "@emotion/react";
 import { Button } from "./button";
-import styled from "styled-components";
+import { FunctionComponent } from "react";
 
 export const createListEditor = <T>(
   param: (
@@ -15,8 +20,8 @@ export const createListEditor = <T>(
   const editor = (props: EditorProps<ReadonlyArray<T>>) => {
     if (props.value.length === 0) {
       return h(
-        StyledListEditor,
-        {},
+        "div",
+        { css: listEditorStyle },
         h(AddButton, {
           onClick: () => props.onChange([param.initValue]),
         })
@@ -24,12 +29,12 @@ export const createListEditor = <T>(
     }
     const itemEditorComponent = param.isLazy ? param.editor() : param.editor;
     return h(
-      StyledListEditor,
-      {},
+      "div",
+      { css: listEditorStyle },
       props.value.map((item, index) => {
         return h(
-          Item,
-          { key: index.toString() },
+          "div",
+          { key: index.toString(), css: itemStyle },
           editorToReactElement(itemEditorComponent, {
             value: item,
             onChange: (newItem) => {
@@ -44,8 +49,11 @@ export const createListEditor = <T>(
             model: props.model,
           }),
           h(
-            DeleteButton,
+            Button,
             {
+              css: css({
+                width: 32,
+              }),
               onClick: () => {
                 props.onChange([
                   ...props.value.slice(0, index),
@@ -68,12 +76,12 @@ export const createListEditor = <T>(
   return editor;
 };
 
-const StyledListEditor = styledDiv({
+const listEditorStyle = simpleStyleToCss({
   padding: 8,
   direction: "y",
 });
 
-const Item = styledDiv({
+const itemStyle = simpleStyleToCss({
   padding: 4,
   direction: "x",
   xGridTemplate: [{ _: "OneFr" }, { _: "Fix", value: 32 }],
@@ -88,7 +96,3 @@ const AddButton: FunctionComponent<{ onClick: () => void }> = (props) =>
     },
     "+"
   );
-
-const DeleteButton = styled(Button)({
-  width: 32,
-});

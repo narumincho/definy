@@ -1,14 +1,13 @@
 import * as d from "definy-core/source/data";
-import { Component, ReactElement, createElement as h } from "react";
+import { Component, FunctionComponent, ReactElement } from "react";
+import { css, jsx as h } from "@emotion/react";
 import { Image } from "./image";
 import { Link } from "./link";
 import { Model } from "./model";
-import styled from "styled-components";
 
 type Props = {
   readonly model: Model;
   readonly projectId: d.ProjectId;
-  readonly className?: string;
 };
 
 export class Project extends Component<Props, never> {
@@ -22,71 +21,91 @@ export class Project extends Component<Props, never> {
       this.props.projectId
     );
     if (projectResource === undefined) {
-      return h("div", {}, "...");
+      return h("div", { css: containerStyle }, "...");
     }
     switch (projectResource._) {
       case "Requesting":
-        return h(Project_, { className: this.props.className }, "Requesting");
+        return h("div", { css: containerStyle }, "Requesting");
       case "Unknown":
-        return h(Project_, { className: this.props.className }, "Unknown");
+        return h("div", { css: containerStyle }, "Unknown");
       case "Deleted":
-        return h(Project_, { className: this.props.className }, "Deleted");
+        return h("div", { css: containerStyle }, "Deleted");
       case "Loaded": {
         return h(
-          ProjectLink,
+          Link,
           {
             theme: "Gray",
             model: this.props.model,
             location: d.Location.Project(this.props.projectId),
-            className: this.props.className,
+            css: css(containerStyle, linkStyle),
           },
           h(ProjectImage, {
             model: this.props.model,
-            imageToken: projectResource.dataWithTime.data.imageHash,
-            alternativeText: projectResource.dataWithTime.data.name + "の画像",
+            project: projectResource.dataWithTime.data,
             key: "project-image",
           }),
-          h(ProjectIconAndName, { key: "icon-and-name" }, [
-            h(ProjectIcon, {
-              model: this.props.model,
-              imageToken: projectResource.dataWithTime.data.iconHash,
-              key: "project-icon",
-              alternativeText:
-                projectResource.dataWithTime.data.name + "のアイコン",
-            }),
-            projectResource.dataWithTime.data.name,
-          ])
+          h(IconAndName, {
+            key: "icon-and-name",
+            model: this.props.model,
+            project: projectResource.dataWithTime.data,
+          })
         );
       }
     }
   }
 }
 
-const Project_ = styled.div({
+const imageHeight = 633 / 4;
+const textHeight = 48;
+
+const containerStyle = css({
   width: 256,
+  height: imageHeight + textHeight,
 });
 
-const ProjectLink = styled(Link)({
+const linkStyle = css({
   display: "grid",
-  gridTemplateRows: "128px 48px",
-  width: 256,
+  gridTemplateRows: `${imageHeight}px ${textHeight}px`,
 });
 
-const ProjectIconAndName = styled.div({
-  display: "grid",
-  gridTemplateColumns: "32px 1fr",
-  gap: 8,
-  alignItems: "center",
-  padding: 8,
-});
+const ProjectImage: FunctionComponent<{
+  model: Model;
+  project: d.Project;
+}> = (props) =>
+  h(Image, {
+    model: props.model,
+    imageToken: props.project.imageHash,
+    alternativeText: props.project.name + "の画像",
+    width: 1024 / 4,
+    height: imageHeight,
+    isCircle: false,
+  });
 
-const ProjectImage = styled(Image)({
-  width: 256,
-  height: 128,
-  padding: 0,
-});
-
-const ProjectIcon = styled(Image)({
-  width: 32,
-  height: 32,
-});
+const IconAndName: FunctionComponent<{
+  model: Model;
+  project: d.Project;
+}> = (props) =>
+  h(
+    "div",
+    {
+      css: css({
+        display: "grid",
+        gridTemplateColumns: "32px 1fr",
+        gap: 8,
+        alignItems: "center",
+        padding: 8,
+      }),
+    },
+    [
+      h(Image, {
+        model: props.model,
+        imageToken: props.project.iconHash,
+        alternativeText: props.project.name + "のアイコン",
+        width: 32,
+        height: 32,
+        isCircle: false,
+        key: "icon",
+      }),
+      props.project.name,
+    ]
+  );

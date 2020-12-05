@@ -8,7 +8,7 @@ import {
   HomeProjectState,
   Model,
 } from "./model";
-import { Component, ReactElement, createElement as h } from "react";
+import { Component, ReactElement, createElement } from "react";
 import { App } from "./app";
 import { api } from "./api";
 
@@ -490,7 +490,7 @@ export class AppWithState extends Component<Record<never, never>, State> {
       jump: (location: d.Location, language: d.Language) =>
         this.jump(location, language),
     };
-    return h(App, {
+    return createElement(App, {
       model,
     });
   }

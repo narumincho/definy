@@ -1,16 +1,11 @@
 import * as d from "definy-core/source/data";
-import {
-  Component,
-  FunctionComponent,
-  ReactElement,
-  createElement as h,
-} from "react";
+import { Component, FunctionComponent, ReactChild, ReactElement } from "react";
+import { css, jsx as h } from "@emotion/react";
 import { Icon } from "./icon";
 import { Image } from "./image";
 import { Model } from "./model";
 import { TypePartListEditor } from "./typePartListEditor";
 import { User } from "./user";
-import styled from "styled-components";
 
 type Props = {
   readonly projectId: d.ProjectId;
@@ -25,107 +20,124 @@ export class PageProject extends Component<Props> {
   }
 
   render(): ReactElement {
-    const projectState = this.props.model.projectMap.get(this.props.projectId);
-    if (projectState === undefined) {
-      return h(StyledPageProject, {}, "...");
-    }
-    switch (projectState._) {
-      case "Requesting":
-        return h(StyledPageProject, {}, h(Icon, { iconType: "Requesting" }));
-      case "Unknown":
-        return h(StyledPageProject, {}, "?");
-      case "Deleted":
-        return h(
-          StyledPageProject,
-          {},
-          "現在, projectId が " +
-            this.props.projectId +
-            " のプロジェクトは存在しません"
-        );
-      case "Loaded":
-        return h(
-          StyledPageProject,
-          {},
-          h(ProjectMain, {
-            model: this.props.model,
-            project: projectState.dataWithTime.data,
-            projectId: this.props.projectId,
-          })
-        );
-    }
+    return h(
+      "div",
+      {
+        css: css({
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          gridTemplateRows: "100%",
+          justifyItems: "center",
+          alignContent: "start",
+          height: "100%",
+          overflow: "auto",
+        }),
+      },
+      pageContent(this.props)
+    );
   }
 }
 
-const StyledPageProject = styled.div({
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gridTemplateRows: "100%",
-  justifyItems: "center",
-  alignContent: "start",
-  height: "100%",
-  overflow: "auto",
-});
+const pageContent = (props: Props): ReactChild => {
+  const projectState = props.model.projectMap.get(props.projectId);
+  if (projectState === undefined) {
+    return "...";
+  }
+  switch (projectState._) {
+    case "Requesting":
+      return h(Icon, { iconType: "Requesting" });
+    case "Unknown":
+      return "?";
+    case "Deleted":
+      return (
+        "現在, projectId が " +
+        props.projectId +
+        " のプロジェクトは存在しません"
+      );
+    case "Loaded":
+      return h(ProjectMain, {
+        model: props.model,
+        project: projectState.dataWithTime.data,
+        projectId: props.projectId,
+      });
+  }
+};
 
 const ProjectMain: FunctionComponent<{
   model: Model;
   project: d.Project;
   projectId: d.ProjectId;
 }> = (props) => {
-  return h(StyledProjectMain, {}, [
-    h(ProjectIconAndName, { key: "iconAndName" }, [
-      h(ProjectIcon, {
+  return h(
+    "div",
+    {
+      css: css({
+        padding: 16,
+        display: "grid",
+        gap: 4,
+        alignContent: "start",
+      }),
+    },
+    [
+      h(ProjectIconAndName, {
+        key: "iconAndName",
+        project: props.project,
+        model: props.model,
+      }),
+      h(Image, {
+        imageToken: props.project.imageHash,
+        model: props.model,
+        key: "project-icon",
+        alternativeText: "image",
+        width: 1024 / 2,
+        height: 633 / 2,
+        isCircle: false,
+      }),
+      h("div", { key: "creator" }, [
+        "作成者",
+        h(User, {
+          model: props.model,
+          userId: props.project.createUserId,
+          key: "creator-link",
+        }),
+      ]),
+      h(TypePartListEditor, {
+        model: props.model,
+        projectId: props.projectId,
+        key: "typePartListEditor",
+      }),
+    ]
+  );
+};
+
+const ProjectIconAndName: FunctionComponent<{
+  project: d.Project;
+  model: Model;
+}> = (props) =>
+  h(
+    "div",
+    {
+      key: "iconAndName",
+      css: css({
+        padding: 8,
+        display: "grid",
+        alignItems: "center",
+        gridTemplateColumns: "48px 1fr",
+        gap: 8,
+        width: "100%",
+        margin: 0,
+      }),
+    },
+    [
+      h(Image, {
         imageToken: props.project.iconHash,
         model: props.model,
         key: "icon",
         alternativeText: props.project.name + "のアイコン",
+        width: 48,
+        height: 48,
+        isCircle: false,
       }),
       h("div", { key: "name" }, [props.project.name]),
-    ]),
-    h(ProjectImage, {
-      imageToken: props.project.imageHash,
-      model: props.model,
-      key: "project-icon",
-      alternativeText: "image",
-    }),
-    h("div", { key: "creator" }, [
-      "作成者",
-      h(User, {
-        model: props.model,
-        userId: props.project.createUserId,
-        key: "creator-link",
-      }),
-    ]),
-    h(TypePartListEditor, {
-      model: props.model,
-      projectId: props.projectId,
-      key: "typePartListEditor",
-    }),
-  ]);
-};
-
-const StyledProjectMain = styled.div({
-  padding: 16,
-  display: "grid",
-  gap: 4,
-  alignContent: "start",
-});
-
-const ProjectIconAndName = styled.h1({
-  padding: 8,
-  display: "grid",
-  alignItems: "center",
-  gridTemplateColumns: "48px 1fr",
-  gap: 8,
-  width: "100%",
-  margin: 0,
-});
-
-const ProjectIcon = styled(Image)({
-  width: 48,
-  height: 48,
-});
-
-const ProjectImage = styled(Image)({
-  width: 512,
-  height: 316.5,
-});
+    ]
+  );

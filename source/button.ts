@@ -1,29 +1,30 @@
-import { FunctionComponent, createElement as h } from "react";
-import styled from "styled-components";
+import { SerializedStyles, css, jsx } from "@emotion/react";
+import { FunctionComponent } from "react";
 
 export const Button: FunctionComponent<{
   onClick: undefined | (() => void);
-  className?: string;
+  css?: SerializedStyles;
 }> = (props) =>
-  h(
-    StyledButton,
+  jsx(
+    "button",
     {
       onClick: props.onClick,
-      className: props.className,
+      css: css(
+        {
+          cursor: "pointer",
+          border: "none",
+          padding: 8,
+          textAlign: "left",
+          fontSize: 16,
+          backgroundColor: "#333",
+          color: "#ddd",
+          "&:hover": {
+            backgroundColor: "#444",
+            color: "#dfdfdf",
+          },
+        },
+        props.css
+      ),
     },
     props.children
   );
-
-const StyledButton = styled.button({
-  cursor: "pointer",
-  border: "none",
-  padding: 8,
-  textAlign: "left",
-  fontSize: 16,
-  backgroundColor: "#333",
-  color: "#ddd",
-  "&:hover": {
-    backgroundColor: "#444",
-    color: "#dfdfdf",
-  },
-});

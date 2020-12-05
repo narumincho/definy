@@ -1,6 +1,6 @@
-import { ReactElement, createElement as h } from "react";
-import styled, { StyledComponent } from "styled-components";
+import { SerializedStyles, css, jsx } from "@emotion/react";
 import { Model } from "./model";
+import { ReactElement } from "react";
 
 export type GridTemplateValue = { _: "Fix"; value: number } | { _: "OneFr" };
 
@@ -24,15 +24,8 @@ export type SimpleStyle = {
 };
 
 /** CSSの指定をできるだけしなくて済むように */
-export const styledDiv = (
-  simpleStyle: SimpleStyle
-): StyledComponent<
-  "div",
-  Record<string, unknown>,
-  Record<never, never>,
-  never
-> =>
-  styled.div({
+export const simpleStyleToCss = (simpleStyle: SimpleStyle): SerializedStyles =>
+  css({
     display: "grid",
     boxSizing: "border-box",
     wordBreak: "break-all",
@@ -85,4 +78,6 @@ export const editorToReactElement = <T>(
     key?: string;
     model: Model;
   }
-): ReactElement => h(editor, props);
+): ReactElement => jsx(editor, props);
+
+export type Theme = "Gray" | "Black" | "Active";
