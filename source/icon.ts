@@ -52,7 +52,7 @@ const iconContent = (
       return [
         h(
           "circle",
-          { cx: "20", cy: "20", r: "8", stroke: "#eee" },
+          { cx: "20", cy: "20", r: "8", stroke: "#eee", key: "loading" },
           h("animate", {
             attributeName: "r",
             dur: "1",

@@ -3,7 +3,6 @@ import { Component, ReactElement } from "react";
 import { SerializedStyles, css, jsx as h } from "@emotion/react";
 import { Icon } from "./icon";
 import { Model } from "./model";
-import { div } from "./ui";
 
 export type Props = {
   readonly model: Model;
@@ -25,15 +24,23 @@ export class Image extends Component<Props, never> {
       this.props.imageToken
     );
     if (blobUrlResource === undefined) {
-      return div(imageCss(this.props), "...");
+      return h("div", { css: imageCss(this.props) }, "...");
     }
     switch (blobUrlResource._) {
       case "Loading":
-        return div(imageCss(this.props), h(Icon, { iconType: "Loading" }));
+        return h(
+          "div",
+          { css: imageCss(this.props) },
+          h(Icon, { iconType: "Loading" })
+        );
       case "Requesting":
-        return div(imageCss(this.props), h(Icon, { iconType: "Requesting" }));
+        return h(
+          "div",
+          { css: imageCss(this.props) },
+          h(Icon, { iconType: "Requesting" })
+        );
       case "Unknown":
-        return div(imageCss(this.props), "取得に失敗");
+        return h("div", { css: imageCss(this.props) }, "取得に失敗");
       case "Loaded":
         return h("img", {
           src: blobUrlResource.data,

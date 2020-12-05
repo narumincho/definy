@@ -6,7 +6,6 @@ import { GitHubIcon } from "./gitHubIcon";
 import { Image } from "./image";
 import { Link } from "./link";
 import { Model } from "./model";
-import { div } from "./ui";
 
 export const Header: FunctionComponent<{ model: Model }> = (props) =>
   h(
@@ -214,12 +213,15 @@ const GoogleIcon: FunctionComponent<Record<never, never>> = () =>
   );
 
 const GoogleText: FunctionComponent<{ language: d.Language }> = (props) =>
-  div(
-    css({
-      alignSelf: "center",
-      fontSize: 18,
-      color: "#fff",
-    }),
+  h(
+    "div",
+    {
+      css: css({
+        alignSelf: "center",
+        fontSize: 18,
+        color: "#fff",
+      }),
+    },
     logInMessage("Google", props.language)
   );
 
@@ -248,13 +250,11 @@ const GitHubLogInButton: FunctionComponent<{
     h(GitHubIcon, {
       color: "#000",
       key: "icon",
-      css: css({
-        width: 32,
-        height: 32,
-        padding: 4,
-        backgroundColor: "#fff",
-        borderRadius: 8,
-      }),
+      width: 32,
+      height: 32,
+      padding: 4,
+      backgroundColor: "#fff",
+      borderRadius: 8,
     }),
     h(GitHubText, { key: "text", language: props.language })
   );
@@ -262,12 +262,15 @@ const GitHubLogInButton: FunctionComponent<{
 const GitHubText: FunctionComponent<{
   language: d.Language;
 }> = (props) =>
-  div(
-    css({
-      alignSelf: "center",
-      fontSize: 18,
-      color: "#ddd",
-    }),
+  h(
+    "div",
+    {
+      css: css({
+        alignSelf: "center",
+        fontSize: 18,
+        color: "#ddd",
+      }),
+    },
     logInMessage("GitHub", props.language)
   );
 

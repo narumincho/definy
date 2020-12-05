@@ -81,10 +81,3 @@ export const editorToReactElement = <T>(
 ): ReactElement => jsx(editor, props);
 
 export type Theme = "Gray" | "Black" | "Active";
-
-/** div 要素. レイアウトを構成するのによく使われる */
-export const div = (
-  serializedStyles: SerializedStyles,
-  ...children: ReadonlyArray<React.ReactNode>
-): ReactElement<{ css: SerializedStyles }> =>
-  jsx("div", { css: serializedStyles }, children);

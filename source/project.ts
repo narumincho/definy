@@ -4,7 +4,6 @@ import { css, jsx as h } from "@emotion/react";
 import { Image } from "./image";
 import { Link } from "./link";
 import { Model } from "./model";
-import { div } from "./ui";
 
 type Props = {
   readonly model: Model;
@@ -22,15 +21,15 @@ export class Project extends Component<Props, never> {
       this.props.projectId
     );
     if (projectResource === undefined) {
-      return div(containerStyle, "...");
+      return h("div", { css: containerStyle }, "...");
     }
     switch (projectResource._) {
       case "Requesting":
-        return div(containerStyle, "Requesting");
+        return h("div", { css: containerStyle }, "Requesting");
       case "Unknown":
-        return div(containerStyle, "Unknown");
+        return h("div", { css: containerStyle }, "Unknown");
       case "Deleted":
-        return div(containerStyle, "Deleted");
+        return h("div", { css: containerStyle }, "Deleted");
       case "Loaded": {
         return h(
           Link,

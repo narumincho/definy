@@ -5,7 +5,6 @@ import { Icon } from "./icon";
 import { Image } from "./image";
 import { Link } from "./link";
 import { Model } from "./model";
-import { div } from "./ui";
 
 type Props = {
   readonly model: Model;
@@ -21,7 +20,7 @@ export class User extends Component<Props, never> {
   render(): ReactElement {
     const userState = this.props.model.userMap.get(this.props.userId);
     if (userState === undefined) {
-      return div(loadingStyle, "...");
+      return h("div", { css: loadingStyle }, "...");
     }
     switch (userState._) {
       case "Requesting":
@@ -31,7 +30,7 @@ export class User extends Component<Props, never> {
           h(Icon, { iconType: "Requesting" })
         );
       case "Unknown":
-        return div(loadingStyle, "ユーザーの取得に失敗しました");
+        return h("div", { css: loadingStyle }, "ユーザーの取得に失敗しました");
       case "Deleted":
         return h(
           "div",

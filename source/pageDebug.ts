@@ -4,7 +4,6 @@ import {
   createWithParameterSumEditor,
 } from "./sumEditor";
 import { css, jsx as h } from "@emotion/react";
-import { div, editorToReactElement } from "./ui";
 import { Button } from "./button";
 import { Icon } from "./icon";
 import { Model } from "./model";
@@ -12,6 +11,7 @@ import { OneLineTextInput } from "./oneLineTextInput";
 import { UndefinedEditor } from "./undefinedEditor";
 import { createListEditor } from "./listEditor";
 import { createProductEditor } from "./productEditor";
+import { editorToReactElement } from "./ui";
 
 const tabList = ["Icon", "Product", "Sum", "List"] as const;
 
@@ -96,7 +96,7 @@ const Content: FunctionComponent<{ tab: Tab }> = (props) => {
 };
 
 const IconComponent: FunctionComponent<Record<never, never>> = () =>
-  div(css(), [
+  h("div", {}, [
     h("div", { key: "requesting-label" }, "Requesting"),
     h(Icon, { key: "requesting-icon", iconType: "Requesting" }),
     h("div", { key: "loading-label" }, "loading"),

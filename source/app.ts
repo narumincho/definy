@@ -8,7 +8,6 @@ import { PageAbout } from "./pageAbout";
 import { PageDebug } from "./pageDebug";
 import { PageHome } from "./pageHome";
 import { PageProject } from "./pageProject";
-import { div } from "./ui";
 
 export type Props = {
   model: Model;
@@ -32,12 +31,15 @@ export const App: FunctionComponent<Props> = (props) => {
       });
   }
 
-  return div(
-    css({
-      height: "100%",
-      display: "grid",
-      gridTemplateRows: "48px 1fr",
-    }),
+  return jsx(
+    "div",
+    {
+      css: css({
+        height: "100%",
+        display: "grid",
+        gridTemplateRows: "48px 1fr",
+      }),
+    },
     [
       jsx(Header, { key: "header", model: props.model }),
       jsx(Main, { key: "main", model: props.model }),
@@ -100,5 +102,5 @@ const Main: FunctionComponent<Props> = (props) => {
     case "About":
       return jsx(PageAbout, {});
   }
-  return div(css(), "他のページは準備中……");
+  return jsx("div", {}, "他のページは準備中……");
 };

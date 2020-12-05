@@ -41,10 +41,8 @@ const GitHubRepositoryLink: FunctionComponent<Record<never, never>> = () =>
       h(GitHubIcon, {
         color: "#ddd",
         key: "icon",
-        css: css({
-          width: 16,
-          height: 16,
-        }),
+        width: 16,
+        height: 16,
       }),
       h("div", { key: "text" }, ["GitHub: narumincho/Definy"]),
     ]
