@@ -91,7 +91,16 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
           key: "save",
         },
         "保存"
-      )
+      ),
+      jsx(
+        Button,
+        {
+          onClick: () => this.props.model.generateCode(this.state.typePartList),
+          key: "generateButton",
+        },
+        "TypeScriptのコードを生成する"
+      ),
+      jsx("div", { key: "outputCode" }, this.props.model.outputCode)
     );
   }
 }
