@@ -77,7 +77,7 @@ export const createListEditor = <T>(
 };
 
 const listEditorStyle = simpleStyleToCss({
-  padding: 8,
+  padding: 0,
   direction: "y",
 });
 
