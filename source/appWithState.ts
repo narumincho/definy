@@ -48,6 +48,9 @@ export type State = {
 
   /** 場所 */
   location: d.Location;
+
+  /** 出力されたコード */
+  outputCode: string | undefined;
 };
 
 export class AppWithState extends Component<Record<never, never>, State> {
@@ -77,6 +80,7 @@ export class AppWithState extends Component<Record<never, never>, State> {
             )
           : d.LogInState.LoadingAccountTokenFromIndexedDB,
       location: urlDataAndAccountToken.urlData.location,
+      outputCode: undefined,
     };
 
     // ブラウザで戻るボタンを押したときのイベントを登録
@@ -463,6 +467,19 @@ export class AppWithState extends Component<Record<never, never>, State> {
     );
   }
 
+  generateCode(definyCode: ReadonlyMap<d.TypePartId, d.TypePart>): void {
+    this.setState({ outputCode: "生成中..." });
+    try {
+      this.setState({
+        outputCode: core.generateTypeScriptCodeAsString(definyCode),
+      });
+    } catch (error) {
+      this.setState({
+        outputCode: "エラー! " + (error as string),
+      });
+    }
+  }
+
   render(): ReactElement {
     const model: Model = {
       top50ProjectIdState: this.state.top50ProjectIdState,
@@ -476,6 +493,7 @@ export class AppWithState extends Component<Record<never, never>, State> {
       clientMode: this.state.clientMode,
       logInState: this.state.logInState,
       location: this.state.location,
+      outputCode: this.state.outputCode,
       requestAllTop50Project: () => this.requestAllTop50Project(),
       requestUser: (userId) => this.requestUser(userId),
       requestProject: (projectId) => this.requestProject(projectId),
@@ -489,6 +507,7 @@ export class AppWithState extends Component<Record<never, never>, State> {
       logOut: () => this.logOut(),
       jump: (location: d.Location, language: d.Language) =>
         this.jump(location, language),
+      generateCode: (code) => this.generateCode(code),
     };
     return createElement(App, {
       model,

@@ -53,6 +53,9 @@ export type Model = {
   /** 場所 */
   location: d.Location;
 
+  /** 出力されコード */
+  outputCode: string | undefined;
+
   /** ホームのプロジェクト一覧取得 */
   requestAllTop50Project: () => void;
 
@@ -85,4 +88,7 @@ export type Model = {
 
   /** ジャンプする */
   jump: (location: d.Location, language: d.Language) => void;
+
+  /** コードを生成する */
+  generateCode: (typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>) => void;
 };

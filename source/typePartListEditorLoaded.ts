@@ -1,4 +1,5 @@
 import * as d from "definy-core/source/data";
+import * as definyCoreSchema from "definy-core/schema/typePartMap";
 import { Component, ReactElement } from "react";
 import { css, jsx } from "@emotion/react";
 import { Button } from "./button";
@@ -51,6 +52,12 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
     );
   }
 
+  setDefinyCodeCode(): void {
+    this.setState({
+      typePartList: definyCoreSchema.typePartMap,
+    });
+  }
+
   render(): ReactElement {
     return jsx(
       "div",
@@ -91,7 +98,32 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
           key: "save",
         },
         "保存"
-      )
+      ),
+      jsx(
+        Button,
+        {
+          onClick: () => this.props.model.generateCode(this.state.typePartList),
+          key: "generateButton",
+        },
+        "TypeScriptのコードを生成する"
+      ),
+      jsx(
+        Button,
+        {
+          onClick: () => this.setDefinyCodeCode(),
+          key: "setDefinyCoreSchema",
+        },
+        "definy-coreのスキーマを設定する"
+      ),
+      jsx("textarea", {
+        key: "outputCode",
+        value:
+          this.props.model.outputCode === undefined
+            ? "コード生成中か,まだ生成していない"
+            : this.props.model.outputCode,
+        rows: 10,
+        readOnly: true,
+      })
     );
   }
 }
