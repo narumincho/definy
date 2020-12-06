@@ -2,13 +2,13 @@ import * as core from "definy-core";
 import * as coreUtil from "definy-core/source/util";
 import * as d from "definy-core/source/data";
 import * as indexedDB from "./indexedDB";
+import { Component, ReactElement, createElement } from "react";
 import {
-  AddTypePartState,
   GetTypePartInProjectState,
   HomeProjectState,
   Model,
+  TypePartEditSate,
 } from "./model";
-import { Component, ReactElement, createElement } from "react";
 import { App } from "./app";
 import { api } from "./api";
 
@@ -31,8 +31,8 @@ export type State = {
   /** プロジェクト作成中かどうか */
   isCreatingProject: boolean;
 
-  /** 型パーツの作成 */
-  addTypePartState: AddTypePartState;
+  /** 型パーツ編集状態 */
+  typePartEditState: TypePartEditSate;
 
   /** プロジェクトに属する型パーツの取得状態 */
   getTypePartInProjectState: GetTypePartInProjectState;
@@ -69,7 +69,7 @@ export class AppWithState extends Component<Record<never, never>, State> {
       imageMap: new Map(),
       typePartMap: new Map(),
       isCreatingProject: false,
-      addTypePartState: { _: "None" },
+      typePartEditState: "None",
       getTypePartInProjectState: { _: "None" },
       language: urlDataAndAccountToken.urlData.language,
       clientMode: urlDataAndAccountToken.urlData.clientMode,
@@ -339,67 +339,32 @@ export class AppWithState extends Component<Record<never, never>, State> {
     }
   }
 
-  addTypePart(projectId: d.ProjectId): void {
-    if (
-      this.accountToken === undefined ||
-      this.state.addTypePartState._ === "Creating"
-    ) {
-      return;
-    }
-    this.setState({ addTypePartState: { _: "Creating", projectId } });
-    api
-      .addTypePart({
-        accountToken: this.accountToken,
-        projectId,
-      })
-      .then((response) => {
-        this.setState({ addTypePartState: { _: "None" } });
-        if (response._ === "Nothing") {
-          return;
-        }
-        const typePartListMaybe = response.value.data;
-        switch (typePartListMaybe._) {
-          case "Just": {
-            this.setState((state) => {
-              const newTypePartMap = new Map(state.typePartMap);
-              newTypePartMap.set(
-                typePartListMaybe.value.id,
-                d.ResourceState.Loaded({
-                  data: typePartListMaybe.value.data,
-                  getTime: response.value.getTime,
-                })
-              );
-              return {
-                typePartMap: newTypePartMap,
-              };
-            });
-          }
-        }
-      });
-  }
-
-  setTypePartList(
+  saveAndAddTypePart(
     projectId: d.ProjectId,
     typePartList: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>
   ): void {
     if (
       this.accountToken === undefined ||
-      this.state.addTypePartState._ === "Creating"
+      this.state.typePartEditState !== "None"
     ) {
       return;
     }
+    const { accountToken } = this;
+    this.setState({ typePartEditState: "Saving" });
     api
       .setTypePartList({
-        accountToken: this.accountToken,
+        accountToken,
         projectId,
         typePartList,
       })
       .then((newTypePartList) => {
         if (newTypePartList._ === "Nothing") {
+          this.setState({ typePartEditState: "Error" });
           return;
         }
         const idAndDataList = newTypePartList.value.data;
         if (idAndDataList._ === "Nothing") {
+          this.setState({ typePartEditState: "Error" });
           return;
         }
         this.setState({
@@ -416,7 +381,88 @@ export class AppWithState extends Component<Record<never, never>, State> {
                 ] as const
             ),
           ]),
+          typePartEditState: "Adding",
         });
+        return api.addTypePart({
+          accountToken,
+          projectId,
+        });
+      })
+      .then((response) => {
+        if (response === undefined) {
+          this.setState({ typePartEditState: "Error" });
+          return;
+        }
+        this.setState({ typePartEditState: "None" });
+        if (response._ === "Nothing") {
+          this.setState({ typePartEditState: "Error" });
+          return;
+        }
+        const typePartListMaybe = response.value.data;
+        switch (typePartListMaybe._) {
+          case "Just": {
+            this.setState((state) => {
+              const newTypePartMap = new Map(state.typePartMap);
+              newTypePartMap.set(
+                typePartListMaybe.value.id,
+                d.ResourceState.Loaded({
+                  data: typePartListMaybe.value.data,
+                  getTime: response.value.getTime,
+                })
+              );
+              return {
+                typePartMap: newTypePartMap,
+                typePartEditState: "None",
+              };
+            });
+          }
+        }
+      });
+  }
+
+  setTypePartList(
+    projectId: d.ProjectId,
+    typePartList: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>
+  ): void {
+    if (
+      this.accountToken === undefined ||
+      this.state.typePartEditState !== "None"
+    ) {
+      return;
+    }
+    this.setState({ typePartEditState: "Saving" });
+    api
+      .setTypePartList({
+        accountToken: this.accountToken,
+        projectId,
+        typePartList,
+      })
+      .then((newTypePartList) => {
+        if (newTypePartList._ === "Nothing") {
+          this.setState({ typePartEditState: "Error" });
+          return;
+        }
+        const idAndDataList = newTypePartList.value.data;
+        if (idAndDataList._ === "Nothing") {
+          this.setState({ typePartEditState: "Error" });
+          return;
+        }
+        this.setState((oldState) => ({
+          typePartMap: new Map([
+            ...oldState.typePartMap,
+            ...idAndDataList.value.map(
+              ({ id, data }) =>
+                [
+                  id,
+                  d.ResourceState.Loaded({
+                    getTime: newTypePartList.value.getTime,
+                    data,
+                  }),
+                ] as const
+            ),
+          ]),
+          typePartEditState: "None",
+        }));
       });
   }
 
@@ -487,7 +533,7 @@ export class AppWithState extends Component<Record<never, never>, State> {
       userMap: this.state.userMap,
       imageMap: this.state.imageMap,
       typePartMap: this.state.typePartMap,
-      addTypePartState: this.state.addTypePartState,
+      typePartEditState: this.state.typePartEditState,
       getTypePartInProjectState: this.state.getTypePartInProjectState,
       language: this.state.language,
       clientMode: this.state.clientMode,
@@ -500,7 +546,8 @@ export class AppWithState extends Component<Record<never, never>, State> {
       requestImage: (imageToken) => this.requestImage(imageToken),
       requestTypePartInProject: (projectId) =>
         this.requestTypePartInProject(projectId),
-      addTypePart: (projectId) => this.addTypePart(projectId),
+      addTypePart: (projectId, typePartList) =>
+        this.saveAndAddTypePart(projectId, typePartList),
       setTypePartList: (projectId, typePartList) =>
         this.setTypePartList(projectId, typePartList),
       logIn: (provider) => this.logIn(provider),

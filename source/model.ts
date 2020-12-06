@@ -5,9 +5,7 @@ export type HomeProjectState =
   | { _: "Loading" }
   | { _: "Loaded"; projectIdList: ReadonlyArray<d.ProjectId> };
 
-export type AddTypePartState =
-  | { _: "None" }
-  | { _: "Creating"; projectId: d.ProjectId };
+export type TypePartEditSate = "None" | "Adding" | "Saving" | "Error";
 
 export type GetTypePartInProjectState =
   | { _: "None" }
@@ -35,8 +33,8 @@ export type Model = {
   /** 型パーツの辞書 */
   typePartMap: ReadonlyMap<d.TypePartId, d.ResourceState<d.TypePart>>;
 
-  /** 型パーツの作成 */
-  addTypePartState: AddTypePartState;
+  /** 型パーツの編集状態 */
+  typePartEditState: TypePartEditSate;
 
   /** プロジェクトに属する型パーツの取得状態 */
   getTypePartInProjectState: GetTypePartInProjectState;
@@ -72,7 +70,10 @@ export type Model = {
   requestTypePartInProject: (projectId: d.ProjectId) => void;
 
   /** 型パーツの追加 */
-  addTypePart: (projectId: d.ProjectId) => void;
+  addTypePart: (
+    projectId: d.ProjectId,
+    typePartList: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>
+  ) => void;
 
   /** 型パーツの保存 */
   setTypePartList: (

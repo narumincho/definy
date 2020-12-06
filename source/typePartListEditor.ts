@@ -34,15 +34,15 @@ export class TypePartListEditor extends Component<Props, never> {
   }
 
   render(): ReactElement {
-    const loadedTypePArtList = this.getLoadedTypePartList();
+    const loadedTypePartList = this.getLoadedTypePartList();
     return h(
       "div",
       {},
-      loadedTypePArtList === undefined
+      loadedTypePartList === undefined
         ? h(Icon, { iconType: "Requesting" })
         : h(TypePartListEditorLoaded, {
             projectId: this.props.projectId,
-            initTypePartList: loadedTypePArtList,
+            initTypePartList: loadedTypePartList,
             model: this.props.model,
           })
     );
