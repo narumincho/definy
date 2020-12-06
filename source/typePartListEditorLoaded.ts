@@ -1,5 +1,4 @@
 import * as d from "definy-core/source/data";
-import * as definyCoreSchema from "definy-core/schema/typePartMap";
 import { Component, ReactElement } from "react";
 import { css, jsx } from "@emotion/react";
 import { Button } from "./button";
@@ -33,7 +32,13 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
   }
 
   addTypePart(): void {
-    this.props.model.addTypePart(this.props.projectId);
+    this.props.model.addTypePart(
+      this.props.projectId,
+      [...this.state.typePartList].map(([id, data]) => ({
+        id,
+        data,
+      }))
+    );
   }
 
   setAt(typePartId: d.TypePartId, typePart: d.TypePart): void {
@@ -52,13 +57,22 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
     );
   }
 
-  setDefinyCodeCode(): void {
+  reload(): void {
     this.setState({
-      typePartList: definyCoreSchema.typePartMap,
+      typePartList: this.props.initTypePartList,
     });
   }
 
   render(): ReactElement {
+    if (this.props.model.typePartEditState === "Error") {
+      return jsx("div", {}, "エラーが発生したようだ consoleを確認してな");
+    }
+    if (this.props.model.typePartEditState === "Saving") {
+      return jsx("div", {}, "保存中...");
+    }
+    if (this.props.model.typePartEditState === "Adding") {
+      return jsx("div", {}, "型パーツを追加中...");
+    }
     return jsx(
       "div",
       {
@@ -89,7 +103,7 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
           onClick: () => this.addTypePart(),
           key: "typePartAddButton",
         },
-        "型パーツ追加"
+        "保存して, 型パーツを追加する"
       ),
       jsx(
         Button,
@@ -110,10 +124,10 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
       jsx(
         Button,
         {
-          onClick: () => this.setDefinyCodeCode(),
+          onClick: () => this.reload(),
           key: "setDefinyCoreSchema",
         },
-        "definy-coreのスキーマを設定する"
+        "読み込み直す"
       ),
       jsx("textarea", {
         key: "outputCode",
