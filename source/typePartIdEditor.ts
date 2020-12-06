@@ -8,9 +8,10 @@ import { useState } from "react";
 export const TypePartIdEditor: Editor<d.TypePartId> = (props) => {
   const [text, setText] = useState<string>("");
   const suggestionList = typePartListSuggestion(text, props.model.typePartMap);
-  const typeName = getTypePartNameAndDescriptionFromResourceState(
-    props.model.typePartMap.get(props.value)
-  ).name;
+  const typeName = getTypePartNameFromTypePartMap(
+    props.model.typePartMap,
+    props.value
+  );
 
   return h(
     "div",
@@ -44,7 +45,7 @@ export const TypePartIdEditor: Editor<d.TypePartId> = (props) => {
                 },
                 key: suggestion.id,
               },
-              suggestion.typeName
+              suggestion.name
             )
           )
     )
@@ -54,40 +55,76 @@ export const TypePartIdEditor: Editor<d.TypePartId> = (props) => {
 const typePartListSuggestion = (
   text: string,
   typePartMap: ReadonlyMap<d.TypePartId, d.ResourceState<d.TypePart>>
-): ReadonlyArray<{ id: d.TypePartId; typeName: string }> => {
+): ReadonlyArray<{ id: d.TypePartId; name: string }> => {
   const trimmedText = text.trim().toLowerCase();
+  const suggestionList = collectTypePartIdAndDescriptionName(typePartMap);
   if (trimmedText === "") {
-    return [...typePartMap].map(([id, data]) => ({
-      id,
-      typeName: getTypePartNameAndDescriptionFromResourceState(data).name,
-    }));
+    return suggestionList;
   }
-  return [...typePartMap].flatMap(([id, typePartResource]) => {
-    const typePart = getTypePartNameAndDescriptionFromResourceState(
-      typePartResource
-    );
-    if (
-      id.includes(trimmedText) ||
-      typePart.name.toLowerCase().includes(trimmedText) ||
-      typePart.description.toLowerCase().includes(trimmedText)
-    ) {
-      return [{ id, typeName: typePart.name }];
-    }
-    return [];
-  });
+  return suggestionList.filter(
+    (suggestion) =>
+      suggestion.id.includes(trimmedText) ||
+      suggestion.name.includes(trimmedText) ||
+      suggestion.description.includes(trimmedText)
+  );
 };
 
-const getTypePartNameAndDescriptionFromResourceState = (
-  typePartResourceState: d.ResourceState<d.TypePart> | undefined
-): { name: string; description: string } => {
-  if (
-    typePartResourceState === undefined ||
-    typePartResourceState._ !== "Loaded"
-  ) {
-    return { name: "???", description: "" };
+const collectTypePartIdAndDescriptionName = (
+  typePartMap: ReadonlyMap<d.TypePartId, d.ResourceState<d.TypePart>>
+): ReadonlyArray<{ id: d.TypePartId; name: string; description: string }> =>
+  [...typePartMap].flatMap(([id, typePartState]) => {
+    if (typePartState._ !== "Loaded") {
+      return [{ id, name: "???", description: "???" }];
+    }
+    const typePart = typePartState.dataWithTime.data;
+    return [
+      ...typePartState.dataWithTime.data.typeParameterList.map(
+        (typeParameter) => ({
+          id: typeParameter.typePartId,
+          name: typePart.name + "-" + typeParameter.name,
+          description:
+            typePart.name + "で定義された型パラメータ " + typeParameter.name,
+        })
+      ),
+      {
+        id,
+        name: typePart.name,
+        description: typePart.description,
+      },
+    ];
+  });
+
+const getTypePartNameFromTypePartMap = (
+  typePartMap: ReadonlyMap<d.TypePartId, d.ResourceState<d.TypePart>>,
+  typePartId: d.TypePartId
+): string => {
+  const typePart = typePartMap.get(typePartId);
+  if (typePart === undefined || typePart._ !== "Loaded") {
+    for (const [id, typePartState] of typePartMap) {
+      if (typePartState._ === "Loaded") {
+        const typePartName = getTypePartNameTypeParameterList(
+          typePartState.dataWithTime.data.name,
+          typePartState.dataWithTime.data.typeParameterList,
+          typePartId
+        );
+        if (typePartName !== undefined) {
+          return typePartName;
+        }
+      }
+    }
+    return "????";
   }
-  return {
-    name: typePartResourceState.dataWithTime.data.name,
-    description: typePartResourceState.dataWithTime.data.description,
-  };
+  return typePart.dataWithTime.data.name;
+};
+
+const getTypePartNameTypeParameterList = (
+  typePartName: string,
+  typeParameterList: ReadonlyArray<d.TypeParameter>,
+  typePartId: d.TypePartId
+): string | undefined => {
+  for (const typeParameter of typeParameterList) {
+    if (typeParameter.typePartId === typePartId) {
+      return typePartName + "-" + typeParameter.name;
+    }
+  }
 };
