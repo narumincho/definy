@@ -6,8 +6,8 @@ import { Editor } from "./ui";
 import { Model } from "./model";
 import { OneLineTextInput } from "./oneLineTextInput";
 import { ProjectIdEditor } from "./projectIdEditor";
+import { TypeParameterEditor } from "./typeParameterEditor";
 import { TypePartBodyEditor } from "./typePartBodyEditor";
-import { TypePartIdEditor } from "./typePartIdEditor";
 import { createListEditor } from "./listEditor";
 import { createMaybeEditor } from "./maybeEditor";
 import { createNoParameterTagEditor } from "./sumEditor";
@@ -157,13 +157,7 @@ const TypeParameterListEditor: Editor<
   ReadonlyArray<d.TypeParameter>
 > = createListEditor<d.TypeParameter>({
   isLazy: false,
-  editor: createProductEditor<d.TypeParameter>(
-    {
-      name: OneLineTextInput,
-      typePartId: TypePartIdEditor,
-    },
-    "TypeParameter"
-  ),
+  editor: TypeParameterEditor,
   initValue: {
     name: "initTypeParameterValue",
     typePartId: "15585b6605524aea7b86e0803ad95163" as d.TypePartId,
