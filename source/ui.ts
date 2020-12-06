@@ -81,3 +81,15 @@ export const editorToReactElement = <T>(
 ): ReactElement => jsx(editor, props);
 
 export type Theme = "Gray" | "Black" | "Active";
+
+export const mapEditor = <inside, outside>(
+  editor: Editor<inside>,
+  insideToOutside: (inside_: inside) => outside,
+  outsideToInside: (outside_: outside) => inside
+): Editor<outside> => (props) =>
+  editorToReactElement(editor, {
+    model: props.model,
+    name: props.name,
+    onChange: (newInput: inside): outside => insideToOutside(newInput),
+    value: outsideToInside(props.value),
+  });

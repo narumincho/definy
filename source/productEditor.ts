@@ -1,11 +1,6 @@
-import {
-  Editor,
-  EditorProps,
-  editorToReactElement,
-  simpleStyleToCss,
-} from "./ui";
-import { css, jsx as h } from "@emotion/react";
-import { ReactElement } from "react";
+import { Editor, EditorProps, simpleStyleToCss } from "./ui";
+import { FunctionComponent, ReactElement } from "react";
+import { jsx as h } from "@emotion/react";
 
 export const createProductEditor = <T extends Record<string, unknown>>(
   memberComponentObject: {
@@ -20,26 +15,42 @@ export const createProductEditor = <T extends Record<string, unknown>>(
         css: simpleStyleToCss({
           direction: "y",
           padding: 0,
+          border: { width: 1, color: "#ddd" },
         }),
       },
-      Object.entries(memberComponentObject).map(([key, component]) => [
-        h(
-          "label",
-          { key: key + "-label", css: css({ display: "grid", padding: 8 }) },
-          key
-        ),
-        editorToReactElement(component, {
-          name: props.name + "-" + key,
-          key: key + "-input",
-          value: props.value[key],
-          onChange: (newValue: unknown): void => {
-            props.onChange({ ...props.value, [key]: newValue });
-          },
-          model: props.model,
-        }),
-      ])
+      Object.entries(memberComponentObject).map(
+        <memberT>([memberName, memberEditor]: [string, Editor<memberT>]) =>
+          h(
+            NameContainer,
+            { name: memberName, key: memberName },
+            h(memberEditor, {
+              name: props.name + "-" + memberName,
+              model: props.model,
+              value: props.value[memberName] as memberT,
+              onChange: (newMemberValue: memberT) => {
+                props.onChange({
+                  ...props.value,
+                  [memberName]: newMemberValue,
+                });
+              },
+            })
+          )
+      )
     );
   };
   editor.displayName = displayName;
   return editor;
 };
+
+const NameContainer: FunctionComponent<{ name: string }> = (props) =>
+  h(
+    "div",
+    {
+      css: simpleStyleToCss({
+        padding: 16,
+        direction: "y",
+      }),
+    },
+    h("div", { key: "name" }, props.name),
+    props.children
+  );
