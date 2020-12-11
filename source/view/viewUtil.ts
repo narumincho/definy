@@ -34,6 +34,29 @@ export const externalLink = <Message>(
     id?: string;
     url: URL;
     style?: CSSObject;
+    isConfirm: boolean;
+  },
+  children: ReadonlyMap<string, Element<Message>> | string
+): Element<Message> => ({
+  tagName: "a",
+  attributeAndChildren: {
+    attributes: new Map<string, string>([
+      ...(option.id === undefined ? [] : ([["id", option.id]] as const)),
+      ["href", option.url.toString()],
+      ["class", css(option.style)],
+    ]),
+    events: new Map<string, Message>(),
+    children: childrenFromStringOrElementMap(children),
+  },
+  isSvg: false,
+});
+
+export const localLink = <Message>(
+  option: {
+    id?: string;
+    url: URL;
+    style?: CSSObject;
+    jumpMessage: Message;
   },
   children: ReadonlyMap<string, Element<Message>> | string
 ): Element<Message> => ({

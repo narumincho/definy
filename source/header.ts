@@ -1,28 +1,33 @@
 import * as d from "definy-core/source/data";
 import { FunctionComponent, ReactChild } from "react";
+import { c, div } from "./view/viewUtil";
 import { css, jsx as h } from "@emotion/react";
 import { Button } from "./button";
 import { GitHubIcon } from "./gitHubIcon";
 import { Image } from "./image";
 import { Link } from "./link";
 import { Model } from "./model";
+import { State } from "./state";
 
-export const Header: FunctionComponent<{ model: Model }> = (props) =>
-  h(
-    "div",
+export interface Message {
+  tag: "requestLogIn";
+}
+
+export const Header = (state: State): Element<Message> =>
+  div(
     {
-      css: css({
+      style: {
         display: "grid",
         gridAutoFlow: "column",
         width: "100%",
         backgroundColor: "#333",
         height: 48,
-      }),
+      },
     },
-    [
-      h(Logo, { model: props.model, key: "logo" }),
-      h(UserViewOrLogInButton, { model: props.model, key: "user" }),
-    ]
+    c([
+      ["logo", Logo({ model: props.model })],
+      ["settingOrLogInButton", userViewOrLogInButton({ model: props.model })],
+    ])
   );
 
 const Logo: FunctionComponent<{ model: Model }> = (props) =>
@@ -47,11 +52,8 @@ const Logo: FunctionComponent<{ model: Model }> = (props) =>
     "Definy"
   );
 
-const UserViewOrLogInButton: FunctionComponent<{
-  model: Model;
-}> = (props) => {
-  return h(
-    "div",
+const userViewOrLogInButton = <Message>(props): Element<Message> => {
+  return div(
     {
       css: css({
         justifySelf: "end",
