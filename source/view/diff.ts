@@ -9,16 +9,6 @@ import {
 } from "./view";
 import { mapFilter, mapKeyToSet, setSubtract } from "../util";
 
-export type ElementDiff<Message> =
-  | {
-      readonly kind: "replace";
-      readonly newElement: Element<Message>;
-    }
-  | {
-      readonly kind: "update";
-      readonly attributeAndChildren: AttributesAndChildrenDiff<Message>;
-    };
-
 export interface ViewDiff<Message> {
   readonly attributeAndChildren: AttributesAndChildrenDiff<Message>;
   readonly newTitle: string | undefined;
@@ -42,8 +32,15 @@ export interface EventsDiff<Message> {
   readonly deleteNameSet: ReadonlySet<string>;
 }
 
-export type ChildDiff<Message> =
-  | ElementDiff<Message>
+export type ElementDiff<Message> =
+  | {
+      readonly kind: "replace";
+      readonly newElement: Element<Message>;
+    }
+  | {
+      readonly kind: "update";
+      readonly attributeAndChildren: AttributesAndChildrenDiff<Message>;
+    }
   | {
       readonly kind: "delete";
     }
@@ -67,7 +64,7 @@ export type ChildrenDiff<Message> =
     }
   | {
       readonly kind: "childDiffList";
-      readonly children: ReadonlyArray<ChildDiff<Message>>;
+      readonly children: ReadonlyArray<ElementDiff<Message>>;
     };
 
 export const createViewDiff = <Message>(
@@ -192,7 +189,7 @@ export const createChildrenDiff = <Message>(
 export const createElementListChildrenDiff = <Message>(
   oldChildren: ReadonlyMap<string, Element<Message>>,
   newChildren: ReadonlyMap<string, Element<Message>>
-): ReadonlyArray<ChildDiff<Message>> => {
+): ReadonlyArray<ElementDiff<Message>> => {
   const oldTagList = [...oldChildren.keys()];
 
   const removedTags: ReadonlyMap<string | undefined, string> = new Map(
@@ -204,7 +201,7 @@ export const createElementListChildrenDiff = <Message>(
   let lastUpdateIndex = 0;
   let updateInSameOrder = true;
 
-  const updates: Array<ChildDiff<Message>> = [];
+  const updates: Array<ElementDiff<Message>> = [];
 
   /*
    * 削除する必要のある子のすべてのキーと直前のキーを保存する.
@@ -252,7 +249,7 @@ const createChildDiff = <Message>(
   newChildElement: Element<Message>,
   oldChildElement: { element: Element<Message>; index: number } | undefined,
   oldChildrenSize: number,
-  updates: Array<ChildDiff<Message>>,
+  updates: Array<ElementDiff<Message>>,
   initLastUpdateIndex: number,
   initUpdateInSameOrder: boolean,
   deleteTagsForTag: (tag: string) => void

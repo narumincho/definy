@@ -12,7 +12,7 @@ import {
 import {
   AttributesAndChildrenDiff,
   AttributesDiff,
-  ChildDiff,
+  ElementDiff,
   EventsDiff,
   ViewDiff,
 } from "./diff";
@@ -222,7 +222,7 @@ const setOrDeleteEventHandler = (
 const applyChild = <Message>(
   htmlElement: HTMLElement,
   index: number,
-  childDiff: ChildDiff<Message>,
+  childDiff: ElementDiff<Message>,
   patchState: PatchState<Message>
 ): number => {
   switch (childDiff.kind) {

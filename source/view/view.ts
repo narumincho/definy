@@ -43,9 +43,9 @@ export type Children<Message> =
 
 /** 色を表現する rgbは 0...1 の範囲でなければならない */
 export interface Color {
-  r: number;
-  g: number;
-  b: number;
+  readonly r: number;
+  readonly g: number;
+  readonly b: number;
 }
 
 export const elementMap = <Input, Output>(
