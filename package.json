@@ -17,8 +17,10 @@
     "last 1 safari version"
   ],
   "dependencies": {
+    "@emotion/css": "^11.0.0",
     "@emotion/react": "11.1.2",
     "definy-core": "0.2.12",
+    "immutable": "^4.0.0-rc.12",
     "react": "17.0.1",
     "react-dom": "17.0.1"
   },
@@ -153,7 +155,7 @@
       ],
       "@typescript-eslint/consistent-type-definitions": [
         "error",
-        "type"
+        "interface"
       ],
       "@typescript-eslint/no-dynamic-delete": [
         "error"
