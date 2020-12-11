@@ -16,7 +16,6 @@ import {
   EventsDiff,
   ViewDiff,
 } from "./diff";
-import { Map as ImmutableMap, OrderedMap } from "immutable";
 
 interface PatchState<Message> {
   messageHandler: (message: Message) => void;
@@ -46,13 +45,15 @@ export const domToView = (): d.Result<View<never>, d.GetViewError> => {
 
 export const htmlElementToAttributesAndChildren = (
   htmlElement: HTMLElement
-): AttributesAndChildren<never> => ({
-  attributes: ImmutableMap(
-    namedNodeMapToIterator(htmlElement.attributes)
-  ).delete("data-key"),
-  events: ImmutableMap(),
-  children: htmlElementChildNodesToChildren(htmlElement.childNodes),
-});
+): AttributesAndChildren<never> => {
+  const attributeMap = new Map(namedNodeMapToIterator(htmlElement.attributes));
+  attributeMap.delete("data-key");
+  return {
+    attributes: attributeMap,
+    events: new Map<string, never>(),
+    children: htmlElementChildNodesToChildren(htmlElement.childNodes),
+  };
+};
 
 export const htmlElementToElement = (
   htmlElement: HTMLElement
@@ -83,7 +84,7 @@ const htmlElementChildNodesToChildren = (
       }
     }
   }
-  return childrenElementList(OrderedMap(childElementList));
+  return childrenElementList(new Map(childElementList));
 };
 
 const namedNodeMapToIterator = (

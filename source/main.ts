@@ -13,7 +13,7 @@ const appView: View<never> = view(
   {
     title: "Definy!",
     language: d.Language.Japanese,
-    themeColor: { r: 0, g: 0, b: 0 },
+    themeColor: undefined,
   },
   "やあ"
 );

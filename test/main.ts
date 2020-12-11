@@ -211,7 +211,7 @@ describe("test", () => {
       },
       OrderedMap({ target: div<never>({ id: "target" }, "new") })
     );
-    const pathState = createPatchState(document, () => {});
+    const pathState = createPatchState(() => {});
     const diff = createViewDiff(oldView, newView);
     console.log(diff);
     patchView(diff, pathState);

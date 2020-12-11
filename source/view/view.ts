@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { Map, OrderedMap } from "immutable";
+import { mapMapValue } from "../util";
 
 export interface View<Message> {
   readonly title: string;
@@ -14,8 +14,8 @@ export interface Element<Message> {
 }
 
 export interface AttributesAndChildren<Message> {
-  readonly attributes: Map<string, string>;
-  readonly events: Map<string, Message>;
+  readonly attributes: ReadonlyMap<string, string>;
+  readonly events: ReadonlyMap<string, Message>;
   readonly children: Children<Message>;
 }
 
@@ -23,7 +23,7 @@ export const childrenElementListTag = Symbol("Children - ElementList");
 export const childrenTextTag = Symbol("Children - Text");
 
 export const childrenElementList = <Message>(
-  value: OrderedMap<string, Element<Message>>
+  value: ReadonlyMap<string, Element<Message>>
 ): Children<Message> => ({ tag: childrenElementListTag, value });
 
 export const childrenText = <Message>(value: string): Children<Message> => ({
@@ -34,7 +34,7 @@ export const childrenText = <Message>(value: string): Children<Message> => ({
 export type Children<Message> =
   | {
       readonly tag: typeof childrenElementListTag;
-      readonly value: OrderedMap<string, Element<Message>>;
+      readonly value: ReadonlyMap<string, Element<Message>>;
     }
   | {
       readonly tag: typeof childrenTextTag;
@@ -55,7 +55,7 @@ export const elementMap = <Input, Output>(
   tagName: element.tagName,
   attributeAndChildren: {
     attributes: element.attributeAndChildren.attributes,
-    events: element.attributeAndChildren.events.map(func),
+    events: mapMapValue(element.attributeAndChildren.events, func),
     children: childrenMap(element.attributeAndChildren.children, func),
   },
 });
@@ -68,7 +68,9 @@ const childrenMap = <Input, Output>(
     case childrenElementListTag:
       return {
         tag: childrenElementListTag,
-        value: children.value.map((element) => elementMap(element, func)),
+        value: mapMapValue(children.value, (element) =>
+          elementMap(element, func)
+        ),
       };
     case childrenTextTag:
       return children;

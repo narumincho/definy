@@ -7,7 +7,7 @@ import {
   View,
   childrenTextTag,
 } from "./view";
-import { Map, Set } from "immutable";
+import { mapFilter, mapKeyToSet, setSubtract } from "../util";
 
 export type ElementDiff<Message> =
   | {
@@ -33,13 +33,13 @@ export interface AttributesAndChildrenDiff<Message> {
 }
 
 export interface AttributesDiff {
-  readonly setNameValueMap: Map<string, string>;
-  readonly deleteNameSet: Set<string>;
+  readonly setNameValueMap: ReadonlyMap<string, string>;
+  readonly deleteNameSet: ReadonlySet<string>;
 }
 
 export interface EventsDiff<Message> {
-  readonly setNameValueMap: Map<string, Message>;
-  readonly deleteNameSet: Set<string>;
+  readonly setNameValueMap: ReadonlyMap<string, Message>;
+  readonly deleteNameSet: ReadonlySet<string>;
 }
 
 export type ChildDiff<Message> =
@@ -139,21 +139,26 @@ const createAttributesAndChildrenDiff = <Message>(
 });
 
 export const createAttributesDiff = (
-  oldAttribute: Map<string, string>,
-  newAttribute: Map<string, string>
+  oldAttribute: ReadonlyMap<string, string>,
+  newAttribute: ReadonlyMap<string, string>
 ): AttributesDiff => ({
-  deleteNameSet: Set(oldAttribute.keySeq()).subtract(newAttribute.keySeq()),
-  setNameValueMap: newAttribute.filter(
+  deleteNameSet: setSubtract(
+    mapKeyToSet(oldAttribute),
+    mapKeyToSet(newAttribute)
+  ),
+  setNameValueMap: mapFilter(
+    newAttribute,
     (newValue, newName) => newValue !== oldAttribute.get(newName)
   ),
 });
 
 const createEventsDiff = <Message>(
-  oldEvents: Map<string, Message>,
-  newEvents: Map<string, Message>
+  oldEvents: ReadonlyMap<string, Message>,
+  newEvents: ReadonlyMap<string, Message>
 ): EventsDiff<Message> => ({
-  deleteNameSet: Set(oldEvents.keySeq()).subtract(newEvents.keySeq()),
-  setNameValueMap: newEvents.filter(
+  deleteNameSet: setSubtract(mapKeyToSet(oldEvents), mapKeyToSet(newEvents)),
+  setNameValueMap: mapFilter(
+    newEvents,
     (newMessage, newName) => newMessage !== oldEvents.get(newName)
   ),
 });
@@ -185,14 +190,14 @@ export const createChildrenDiff = <Message>(
 };
 
 export const createElementListChildrenDiff = <Message>(
-  oldChildren: Map<string, Element<Message>>,
-  newChildren: Map<string, Element<Message>>
+  oldChildren: ReadonlyMap<string, Element<Message>>,
+  newChildren: ReadonlyMap<string, Element<Message>>
 ): ReadonlyArray<ChildDiff<Message>> => {
-  const oldTags = oldChildren.keySeq();
+  const oldTagList = [...oldChildren.keys()];
 
-  const removedTags: ReadonlyMap<string | undefined, string> = Map(
-    oldTags.flatMap<[string | undefined, string]>((tag, index) =>
-      newChildren.has(tag) ? [] : [[oldTags.get(index - 1), tag]]
+  const removedTags: ReadonlyMap<string | undefined, string> = new Map(
+    oldTagList.flatMap<[string | undefined, string]>((tag, index) =>
+      newChildren.has(tag) ? [] : [[oldTagList[index - 1], tag]]
     )
   );
 
@@ -223,7 +228,7 @@ export const createElementListChildrenDiff = <Message>(
       newChildElement,
       oldChild === undefined
         ? undefined
-        : { element: oldChild, index: oldTags.indexOf(newChildKey) },
+        : { element: oldChild, index: oldTagList.indexOf(newChildKey) },
       oldChildren.size,
       updates,
       lastUpdateIndex,
