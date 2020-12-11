@@ -1,3 +1,4 @@
+import * as d from "definy-core/source/data";
 import {
   AttributesAndChildren,
   Children,
@@ -7,7 +8,6 @@ import {
   childrenTextTag,
 } from "./view";
 import { Map, Set } from "immutable";
-import { Language } from "definy-core/source/data";
 
 export type ElementDiff<Message> =
   | {
@@ -22,8 +22,8 @@ export type ElementDiff<Message> =
 export interface ViewDiff<Message> {
   readonly attributeAndChildren: AttributesAndChildrenDiff<Message>;
   readonly newTitle: string | undefined;
-  readonly newThemeColor: Color | undefined;
-  readonly newLanguage: Language | undefined;
+  readonly newThemeColor: d.Maybe<Color | undefined>;
+  readonly newLanguage: d.Language | undefined;
 }
 
 export interface AttributesAndChildrenDiff<Message> {
@@ -85,17 +85,23 @@ export const createViewDiff = <Message>(
 });
 
 const createColorDiff = (
-  oldColor: Color,
-  newColor: Color
-): Color | undefined => {
+  oldColor: Color | undefined,
+  newColor: Color | undefined
+): d.Maybe<Color | undefined> => {
+  if (oldColor === newColor) {
+    return d.Maybe.Nothing();
+  }
+  if (oldColor === undefined || newColor === undefined) {
+    return d.Maybe.Just(newColor);
+  }
   if (
     oldColor.r === newColor.r &&
     oldColor.g === newColor.g &&
     oldColor.b === newColor.b
   ) {
-    return undefined;
+    return d.Maybe.Nothing();
   }
-  return newColor;
+  return d.Maybe.Just(newColor);
 };
 
 export const createElementDiff = <Message>(

@@ -1,19 +1,23 @@
-import * as reactDom from "react-dom";
-import { StrictMode, createElement } from "react";
-import { AppWithState } from "./appWithState";
+import * as d from "definy-core/source/data";
+import { createPatchState, domToView, patchView } from "./view/patch";
+import { View } from "./view/view";
+import { createViewDiff } from "./view/diff";
+import { view } from "./view/viewUtil";
 
-const appElement = document.createElement("div");
-
-// Bodyの子要素を削除
-document.documentElement.replaceChild(
-  document.body.cloneNode(false),
-  document.body
+const initView = domToView();
+if (initView._ === "Error") {
+  console.error("DOMの初期状態を解釈できなかった", initView.error);
+  throw new Error("DOMの初期状態を解釈できなかった");
+}
+const appView: View<never> = view(
+  {
+    title: "Definy!",
+    language: d.Language.Japanese,
+    themeColor: { r: 0, g: 0, b: 0 },
+  },
+  "やあ"
 );
-document.body.appendChild(appElement);
-appElement.style.height = "100%";
-appElement.style.overflow = "auto";
-
-reactDom.render(
-  createElement(StrictMode, {}, createElement(AppWithState)),
-  appElement
-);
+const diff = createViewDiff(initView.ok, appView);
+console.log("view diff", initView, appView, diff);
+const patchState = createPatchState(() => {});
+patchView(diff, patchState);

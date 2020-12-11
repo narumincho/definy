@@ -32,7 +32,7 @@ export const div = <Message>(
 export const view = <Message>(
   option: {
     readonly title: string;
-    readonly themeColor: Color;
+    readonly themeColor?: Color;
     readonly language: d.Language;
   },
   children: OrderedMap<string, Element<Message>> | string

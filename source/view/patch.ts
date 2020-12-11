@@ -19,7 +19,6 @@ import {
 import { Map as ImmutableMap, OrderedMap } from "immutable";
 
 interface PatchState<Message> {
-  themeColorMetaElement: HTMLMetaElement;
   messageHandler: (message: Message) => void;
 }
 
@@ -35,13 +34,11 @@ export const domToView = (): d.Result<View<never>, d.GetViewError> => {
     );
   }
   const themeColorMetaElement = getThemeColorMetaElement();
-  if (themeColorMetaElement === undefined) {
-    return d.Result.Error(d.GetViewError.ThemeColorMetaNotFound);
-  }
 
   return d.Result.Ok({
     language,
-    themeColor: { r: 0, g: 0, b: 0 },
+    themeColor:
+      themeColorMetaElement === undefined ? undefined : { r: 0, g: 0, b: 0 },
     title: document.title,
     attributeAndChildren: htmlElementToAttributesAndChildren(document.body),
   });
@@ -80,7 +77,7 @@ const htmlElementChildNodesToChildren = (
       return childrenText(child.nodeValue);
     }
     if (child instanceof HTMLElement) {
-      const key = child.dataset.key;
+      const { key } = child.dataset;
       if (key !== undefined) {
         childElementList.push([key, htmlElementToElement(child)]);
       }
@@ -274,23 +271,22 @@ const themeColorName = "theme-color";
  * applyViewをする前に事前に実行する必要あり
  */
 export const createPatchState = <Message>(
-  document: Document,
   messageHandler: (message: Message) => void
 ): PatchState<Message> => {
-  const themeColorMetaElementOrNull = getThemeColorMetaElement();
-  if (themeColorMetaElementOrNull !== undefined) {
-    return {
-      themeColorMetaElement: themeColorMetaElementOrNull,
-      messageHandler,
-    };
+  return {
+    messageHandler,
+  };
+};
+
+const getOrCreateThemeColorMetaElement = (): HTMLMetaElement => {
+  const themeColorMetaElementOrUndefined = getThemeColorMetaElement();
+  if (themeColorMetaElementOrUndefined !== undefined) {
+    return themeColorMetaElementOrUndefined;
   }
   const newMetaElement = document.createElement("meta");
   document.head.appendChild(newMetaElement);
   newMetaElement.name = themeColorName;
-  return {
-    themeColorMetaElement: newMetaElement,
-    messageHandler,
-  };
+  return newMetaElement;
 };
 
 const getThemeColorMetaElement = (): HTMLMetaElement | undefined => {
@@ -317,10 +313,15 @@ export const patchView = <Message>(
   if (viewDiff.newTitle !== undefined) {
     document.title = viewDiff.newTitle;
   }
-  if (viewDiff.newThemeColor !== undefined) {
-    patchState.themeColorMetaElement.content = colorToHexString(
-      viewDiff.newThemeColor
-    );
+  if (viewDiff.newThemeColor._ === "Just") {
+    const themeColorMetaElement = getOrCreateThemeColorMetaElement();
+    if (viewDiff.newThemeColor.value === undefined) {
+      themeColorMetaElement.remove();
+    } else {
+      themeColorMetaElement.content = colorToHexString(
+        viewDiff.newThemeColor.value
+      );
+    }
   }
   if (viewDiff.newLanguage !== undefined) {
     document.documentElement.lang = languageToIETFLanguageTag(

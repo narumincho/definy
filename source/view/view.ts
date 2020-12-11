@@ -3,7 +3,7 @@ import { Map, OrderedMap } from "immutable";
 
 export interface View<Message> {
   readonly title: string;
-  readonly themeColor: Color;
+  readonly themeColor: Color | undefined;
   readonly language: d.Language;
   readonly attributeAndChildren: AttributesAndChildren<Message>;
 }
