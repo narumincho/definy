@@ -1,5 +1,4 @@
 import * as d from "definy-core/source/data";
-import { mapMapValue } from "../util";
 
 export interface View<Message> {
   readonly title: string;
@@ -47,32 +46,3 @@ export interface Color {
   readonly g: number;
   readonly b: number;
 }
-
-export const elementMap = <Input, Output>(
-  element: Element<Input>,
-  func: (input: Input) => Output
-): Element<Output> => ({
-  tagName: element.tagName,
-  attributeAndChildren: {
-    attributes: element.attributeAndChildren.attributes,
-    events: mapMapValue(element.attributeAndChildren.events, func),
-    children: childrenMap(element.attributeAndChildren.children, func),
-  },
-});
-
-const childrenMap = <Input, Output>(
-  children: Children<Input>,
-  func: (input: Input) => Output
-): Children<Output> => {
-  switch (children.tag) {
-    case childrenElementListTag:
-      return {
-        tag: childrenElementListTag,
-        value: mapMapValue(children.value, (element) =>
-          elementMap(element, func)
-        ),
-      };
-    case childrenTextTag:
-      return children;
-  }
-};

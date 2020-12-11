@@ -12,7 +12,7 @@ import {
 import { App } from "./app";
 import { api } from "./api";
 
-export type State = {
+export interface State {
   /** ホームに表示される. Top50のプロジェクトのID */
   top50ProjectIdState: HomeProjectState;
 
@@ -51,7 +51,7 @@ export type State = {
 
   /** 出力されたコード */
   outputCode: string | undefined;
-};
+}
 
 export class AppWithState extends Component<Record<never, never>, State> {
   // 初期化処理

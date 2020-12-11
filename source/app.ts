@@ -1,66 +1,128 @@
+import * as core from "definy-core";
 import * as d from "definy-core/source/data";
-import { css, jsx } from "@emotion/react";
-import { FunctionComponent } from "react";
-import { Header } from "./header";
-import { LoadingBox } from "./loadingBox";
+import { Element, View } from "./view/view";
+import { Message, State } from "./state";
+import { c, div, view } from "./view/viewUtil";
+import { CSSObject } from "@emotion/react";
 import { Model } from "./model";
-import { PageAbout } from "./pageAbout";
-import { PageDebug } from "./pageDebug";
-import { PageHome } from "./pageHome";
-import { PageProject } from "./pageProject";
+import { keyframes } from "@emotion/css";
 
-export type Props = {
-  model: Model;
+export const initState = (
+  messageHandler: (message: Message) => void
+): State => {
+  const urlDataAndAccountToken = core.urlDataAndAccountTokenFromUrl(
+    new URL(window.location.href)
+  );
+
+  // ブラウザで戻るボタンを押したときのイベントを登録
+  window.addEventListener("popstate", () => {
+    const newUrlData: d.UrlData = core.urlDataAndAccountTokenFromUrl(
+      new URL(window.location.href)
+    ).urlData;
+    messageHandler({
+      tag: "setUrlData",
+      language: newUrlData.language,
+      clientMode: newUrlData.clientMode,
+      location: newUrlData.location,
+    });
+  });
+
+  return {
+    logInState:
+      urlDataAndAccountToken.accountToken._ === "Just"
+        ? d.LogInState.VerifyingAccountToken(
+            urlDataAndAccountToken.accountToken.value
+          )
+        : d.LogInState.LoadingAccountTokenFromIndexedDB,
+    language: urlDataAndAccountToken.urlData.language,
+    clientMode: urlDataAndAccountToken.urlData.clientMode,
+  };
 };
 
-export const App: FunctionComponent<Props> = (props) => {
-  switch (props.model.logInState._) {
-    case "RequestingLogInUrl":
-      return jsx(RequestingLogInUrl, {
-        message: logInMessage(
-          props.model.logInState.openIdConnectProvider,
-          props.model.language
-        ),
-      });
-    case "JumpingToLogInPage":
-      return jsx(RequestingLogInUrl, {
-        message: jumpMessage(
-          new URL(props.model.logInState.string),
-          props.model.language
-        ),
-      });
+export const updateState = (message: Message, oldState: State): State => {
+  switch (message.tag) {
+    case "setUrlData":
+      return {
+        ...oldState,
+        language: message.language,
+        clientMode: message.clientMode,
+      };
   }
+};
 
-  return jsx(
-    "div",
+export const stateToView = (state: State): View<Message> => {
+  const titleAndAttributeChildren = stateToTitleAndAttributeChildren(state);
+  return view(
     {
-      css: css({
+      title: titleAndAttributeChildren.title + " | Definy",
+      language: state.language,
+      themeColor: undefined,
+      style: {
         height: "100%",
         display: "grid",
-        gridTemplateRows: "48px 1fr",
-      }),
+        ...titleAndAttributeChildren.style,
+      },
     },
-    [
-      jsx(Header, { key: "header", model: props.model }),
-      jsx(Main, { key: "main", model: props.model }),
-    ]
+    titleAndAttributeChildren.children
   );
 };
 
-const RequestingLogInUrl: React.FC<{
-  message: string;
-}> = (prop) =>
-  jsx(
-    "div",
+const stateToTitleAndAttributeChildren = (
+  state: State
+): {
+  title: string;
+  style: CSSObject;
+  children: string | ReadonlyMap<string, Element<Message>>;
+} => {
+  switch (state.logInState._) {
+    case "RequestingLogInUrl": {
+      const message = logInMessage(
+        state.logInState.openIdConnectProvider,
+        state.language
+      );
+      return {
+        title: message,
+        style: {},
+        children: c([["", prepareLogIn(message)]]),
+      };
+    }
+    case "JumpingToLogInPage": {
+      const message = jumpMessage(
+        new URL(state.logInState.string),
+        state.language
+      );
+      return {
+        title: message,
+        style: {},
+        children: c([["", prepareLogIn(message)]]),
+      };
+    }
+  }
+  return {
+    title: "問題ないぜ",
+    style: { gridTemplateRows: "48px 1fr" },
+    children: c([
+      ["header", div({}, "ヘッダー")],
+      ["main", main(state)],
+    ]),
+  };
+};
+
+export interface Props {
+  model: Model;
+}
+
+const prepareLogIn = (message: string): Element<never> =>
+  div(
     {
-      css: css({
+      style: {
         height: "100%",
         display: "grid",
         alignItems: "center",
         justifyItems: "center",
-      }),
+      },
     },
-    jsx(LoadingBox, { message: prop.message })
+    c([["", loadingBox(message)]])
   );
 
 const logInMessage = (
@@ -88,19 +150,60 @@ const jumpMessage = (url: URL, language: d.Language): string => {
   }
 };
 
-const Main: FunctionComponent<Props> = (props) => {
-  switch (props.model.location._) {
+const main = (state: State): Element<never> => {
+  switch (state.location._) {
     case "Home":
-      return jsx(PageHome, { model: props.model });
+      return div({}, "ホーム画面");
     case "Project":
-      return jsx(PageProject, {
-        model: props.model,
-        projectId: props.model.location.projectId,
-      });
+      return div({}, "プロジェクト画面");
     case "Debug":
-      return jsx(PageDebug, {});
+      return div({}, "デバッグ画面");
     case "About":
-      return jsx(PageAbout, {});
+      return div({}, "About");
   }
-  return jsx("div", {}, "他のページは準備中……");
+  return div({}, "他のページは準備中……");
 };
+
+export const loadingBox = (message: string): Element<never> =>
+  div(
+    {
+      style: {
+        display: "grid",
+        overflow: "hidden",
+        justifyItems: "center",
+      },
+    },
+    c([
+      ["message", div({}, message)],
+      [
+        "logo",
+        div(
+          {
+            style: {
+              width: 96,
+              height: 96,
+              display: "grid",
+              justifyItems: "center",
+              alignItems: "center",
+              borderRadius: "50%",
+              animation: `1s ${rotateAnimation} infinite linear`,
+              fontSize: 24,
+              padding: 8,
+              backgroundColor: "#333",
+              color: "#ddd",
+            },
+          },
+          "Definy"
+        ),
+      ],
+    ])
+  );
+
+const rotateAnimation = keyframes`
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(1turn);
+  }
+`;

@@ -1,23 +1,27 @@
-import * as d from "definy-core/source/data";
+import { Message, State } from "./state";
 import { createPatchState, domToView, patchView } from "./view/patch";
-import { View } from "./view/view";
+import { initState, stateToView, updateState } from "./app";
 import { createViewDiff } from "./view/diff";
-import { view } from "./view/viewUtil";
 
 const initView = domToView();
 if (initView._ === "Error") {
   console.error("DOMの初期状態を解釈できなかった", initView.error);
   throw new Error("DOMの初期状態を解釈できなかった");
 }
-const appView: View<never> = view(
-  {
-    title: "Definy!",
-    language: d.Language.Japanese,
-    themeColor: undefined,
-  },
-  "やあ"
-);
-const diff = createViewDiff(initView.ok, appView);
-console.log("view diff", initView, appView, diff);
-const patchState = createPatchState(() => {});
-patchView(diff, patchState);
+
+const messageHandler = (message: Message): void => {
+  state = updateState(message, state);
+  render(state);
+};
+
+const render = (state: State) => {
+  const newView = stateToView(state);
+  const diff = createViewDiff(oldView, newView);
+  console.log("view diff", oldView, newView, diff);
+  patchView(diff, patchState);
+};
+
+let state: State = initState(messageHandler);
+const oldView = initView.ok;
+const patchState = createPatchState(messageHandler);
+render(state);
