@@ -10,6 +10,7 @@ export interface View<Message> {
 export interface Element<Message> {
   readonly tagName: string;
   readonly attributeAndChildren: AttributesAndChildren<Message>;
+  readonly isSvg: boolean;
 }
 
 export interface AttributesAndChildren<Message> {

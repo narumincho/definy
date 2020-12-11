@@ -1,5 +1,6 @@
 import * as core from "definy-core";
 import * as d from "definy-core/source/data";
+import * as pageAbout from "./pageAbout";
 import { Element, View } from "./view/view";
 import { Message, State } from "./state";
 import { c, div, view } from "./view/viewUtil";
@@ -36,6 +37,7 @@ export const initState = (
         : d.LogInState.LoadingAccountTokenFromIndexedDB,
     language: urlDataAndAccountToken.urlData.language,
     clientMode: urlDataAndAccountToken.urlData.clientMode,
+    pageModel: { tag: "About" },
   };
 };
 
@@ -151,17 +153,10 @@ const jumpMessage = (url: URL, language: d.Language): string => {
 };
 
 const main = (state: State): Element<never> => {
-  switch (state.location._) {
-    case "Home":
-      return div({}, "ホーム画面");
-    case "Project":
-      return div({}, "プロジェクト画面");
-    case "Debug":
-      return div({}, "デバッグ画面");
+  switch (state.pageModel.tag) {
     case "About":
-      return div({}, "About");
+      return pageAbout.view(state);
   }
-  return div({}, "他のページは準備中……");
 };
 
 export const loadingBox = (message: string): Element<never> =>

@@ -5,6 +5,7 @@ export interface State {
   logInState: d.LogInState;
   language: d.Language;
   clientMode: d.ClientMode;
+  pageModel: PageModel;
 }
 
 export interface Message {
@@ -12,4 +13,8 @@ export interface Message {
   language: d.Language;
   clientMode: d.ClientMode;
   location: d.Location;
+}
+
+export interface PageModel {
+  tag: "About";
 }

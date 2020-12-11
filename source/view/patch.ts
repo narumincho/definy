@@ -21,6 +21,8 @@ interface PatchState<Message> {
   messageHandler: (message: Message) => void;
 }
 
+const svgNameSpace = "http://www.w3.org/2000/svg";
+
 /**
  * 実際の DOM の状況を View に変換する.
  * イベントなどは, 変換できない
@@ -44,22 +46,25 @@ export const domToView = (): d.Result<View<never>, d.GetViewError> => {
 };
 
 export const htmlElementToAttributesAndChildren = (
-  htmlElement: HTMLElement
+  htmlOrSvgElement: HTMLElement | SVGElement
 ): AttributesAndChildren<never> => {
-  const attributeMap = new Map(namedNodeMapToIterator(htmlElement.attributes));
+  const attributeMap = new Map(
+    namedNodeMapToIterator(htmlOrSvgElement.attributes)
+  );
   attributeMap.delete("data-key");
   return {
     attributes: attributeMap,
     events: new Map<string, never>(),
-    children: htmlElementChildNodesToChildren(htmlElement.childNodes),
+    children: htmlElementChildNodesToChildren(htmlOrSvgElement.childNodes),
   };
 };
 
 export const htmlElementToElement = (
-  htmlElement: HTMLElement
+  htmlOrSvgtElement: HTMLElement | SVGElement
 ): Element<never> => ({
-  tagName: htmlElement.tagName.toLowerCase(),
-  attributeAndChildren: htmlElementToAttributesAndChildren(htmlElement),
+  tagName: htmlOrSvgtElement.tagName.toLowerCase(),
+  attributeAndChildren: htmlElementToAttributesAndChildren(htmlOrSvgtElement),
+  isSvg: htmlOrSvgtElement.namespaceURI === svgNameSpace,
 });
 
 const htmlElementChildNodesToChildren = (
@@ -111,12 +116,14 @@ const namedNodeMapToIterator = (
   };
 };
 
-const elementToHtmlElement = <Message>(
+const elementToHtmlOrSvgElement = <Message>(
   element: Element<Message>,
   key: string,
   patchState: PatchState<Message>
-): HTMLElement => {
-  const htmlElement = document.createElement(element.tagName);
+): HTMLElement | SVGElement => {
+  const htmlElement: HTMLElement | SVGElement = element.isSvg
+    ? document.createElementNS(svgNameSpace, element.tagName)
+    : document.createElement(element.tagName);
   htmlElement.dataset.key = key;
 
   setAttributes(htmlElement, element.attributeAndChildren.attributes);
@@ -127,71 +134,76 @@ const elementToHtmlElement = <Message>(
     return htmlElement;
   }
   for (const [childKey, child] of element.attributeAndChildren.children.value) {
-    htmlElement.appendChild(elementToHtmlElement(child, childKey, patchState));
+    htmlElement.appendChild(
+      elementToHtmlOrSvgElement(child, childKey, patchState)
+    );
   }
   return htmlElement;
 };
 
 const applyAttributesAndChildren = <Message>(
-  element: HTMLElement,
+  htmlOrSvgElement: HTMLElement | SVGElement,
   attributeAndChildrenDiff: AttributesAndChildrenDiff<Message>,
   patchState: PatchState<Message>
 ): void => {
-  applyAttributes(element, attributeAndChildrenDiff.attributes);
-  applyEvents(element, attributeAndChildrenDiff.events, patchState);
+  applyAttributes(htmlOrSvgElement, attributeAndChildrenDiff.attributes);
+  applyEvents(htmlOrSvgElement, attributeAndChildrenDiff.events, patchState);
   switch (attributeAndChildrenDiff.children.kind) {
     case "skip":
       return;
     case "setText":
-      element.textContent = attributeAndChildrenDiff.children.text;
+      htmlOrSvgElement.textContent = attributeAndChildrenDiff.children.text;
       return;
     case "resetAndInsert":
-      element.textContent = "";
+      htmlOrSvgElement.textContent = "";
       for (const [childKey, child] of attributeAndChildrenDiff.children.value) {
-        element.appendChild(elementToHtmlElement(child, childKey, patchState));
+        htmlOrSvgElement.appendChild(
+          elementToHtmlOrSvgElement(child, childKey, patchState)
+        );
       }
       return;
     case "childDiffList":
       attributeAndChildrenDiff.children.children.reduce<number>(
-        (index, childDiff) => applyChild(element, index, childDiff, patchState),
+        (index, childDiff) =>
+          applyChild(htmlOrSvgElement, index, childDiff, patchState),
         0
       );
   }
 };
 
 const applyAttributes = (
-  htmlElement: HTMLElement,
+  htmlOrSvgElement: HTMLElement | SVGElement,
   attributesDiff: AttributesDiff
 ): void => {
   for (const attributeName of attributesDiff.deleteNameSet) {
-    htmlElement.removeAttribute(attributeName);
+    htmlOrSvgElement.removeAttribute(attributeName);
   }
 
-  setAttributes(htmlElement, attributesDiff.setNameValueMap);
+  setAttributes(htmlOrSvgElement, attributesDiff.setNameValueMap);
 };
 
 const setAttributes = (
-  htmlElement: HTMLElement,
+  htmlOrSvgElement: HTMLElement | SVGElement,
   setNameValueMap: ReadonlyMap<string, string>
 ) => {
   for (const [attributeName, attributeValue] of setNameValueMap) {
-    htmlElement.setAttribute(attributeName, attributeValue);
+    htmlOrSvgElement.setAttribute(attributeName, attributeValue);
   }
 };
 
 const applyEvents = <Message>(
-  htmlElement: HTMLElement,
+  htmlOrSvgElement: HTMLElement | SVGElement,
   eventsDiff: EventsDiff<Message>,
   patchState: PatchState<Message>
 ): void => {
   for (const eventName of eventsDiff.deleteNameSet) {
-    setOrDeleteEventHandler(htmlElement, eventName, null);
+    setOrDeleteEventHandler(htmlOrSvgElement, eventName, null);
   }
-  setEvents(htmlElement, eventsDiff.setNameValueMap, patchState);
+  setEvents(htmlOrSvgElement, eventsDiff.setNameValueMap, patchState);
 };
 
 const setEvents = <Message>(
-  htmlElement: HTMLElement,
+  htmlOrSvgElement: HTMLElement | SVGElement,
   setNameValueMap: ReadonlyMap<string, Message>,
   patchState: PatchState<Message>
 ) => {
@@ -199,18 +211,19 @@ const setEvents = <Message>(
     const handler = () => {
       patchState.messageHandler(message);
     };
-    setOrDeleteEventHandler(htmlElement, eventName, handler);
+    setOrDeleteEventHandler(htmlOrSvgElement, eventName, handler);
   }
 };
 
 const setOrDeleteEventHandler = (
-  htmlElement: HTMLElement,
+  htmlOrSvgElement: HTMLElement | SVGElement,
   eventName: string,
   eventHandlerOrNull: ((event: Event) => void) | null
 ): void => {
-  ((htmlElement as unknown) as Record<string, ((event: Event) => void) | null>)[
-    "on" + eventName
-  ] = eventHandlerOrNull;
+  ((htmlOrSvgElement as unknown) as Record<
+    string,
+    ((event: Event) => void) | null
+  >)["on" + eventName] = eventHandlerOrNull;
 };
 
 /**
@@ -220,7 +233,7 @@ const setOrDeleteEventHandler = (
  * @returns 次のインデックス
  */
 const applyChild = <Message>(
-  htmlElement: HTMLElement,
+  htmlOrSvgElement: HTMLElement | SVGElement,
   index: number,
   childDiff: ElementDiff<Message>,
   patchState: PatchState<Message>
@@ -228,36 +241,44 @@ const applyChild = <Message>(
   switch (childDiff.kind) {
     case "insert": {
       if (index === 0) {
-        const afterNode = htmlElement.firstChild;
+        const afterNode = htmlOrSvgElement.firstChild;
         if (afterNode === null) {
-          htmlElement.appendChild(
-            elementToHtmlElement(childDiff.element, childDiff.key, patchState)
+          htmlOrSvgElement.appendChild(
+            elementToHtmlOrSvgElement(
+              childDiff.element,
+              childDiff.key,
+              patchState
+            )
           );
           return index + 1;
         }
         afterNode.before(
-          elementToHtmlElement(childDiff.element, childDiff.key, patchState)
+          elementToHtmlOrSvgElement(
+            childDiff.element,
+            childDiff.key,
+            patchState
+          )
         );
         return index + 1;
       }
-      htmlElement.childNodes[index - 1].after(
-        elementToHtmlElement(childDiff.element, childDiff.key, patchState)
+      htmlOrSvgElement.childNodes[index - 1].after(
+        elementToHtmlOrSvgElement(childDiff.element, childDiff.key, patchState)
       );
       return index + 1;
     }
     case "delete": {
-      htmlElement.childNodes[index].remove();
+      htmlOrSvgElement.childNodes[index].remove();
       return index;
     }
     case "replace": {
-      htmlElement.childNodes[index].replaceWith(
-        elementToHtmlElement(childDiff.newElement, "???", patchState)
+      htmlOrSvgElement.childNodes[index].replaceWith(
+        elementToHtmlOrSvgElement(childDiff.newElement, "???", patchState)
       );
       return index + 1;
     }
     case "update": {
       applyAttributesAndChildren(
-        htmlElement.childNodes[index] as HTMLElement,
+        htmlOrSvgElement.childNodes[index] as HTMLElement,
         childDiff.attributeAndChildren,
         patchState
       );
