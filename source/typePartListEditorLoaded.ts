@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { Component, ReactElement } from "react";
+import { Component, FunctionComponent, ReactElement } from "react";
 import { css, jsx } from "@emotion/react";
 import { Button } from "./button";
 import { Editor } from "./ui";
@@ -129,18 +129,30 @@ export class TypePartListEditorLoaded extends Component<Props, State> {
         },
         "読み込み直す"
       ),
-      jsx("textarea", {
+      jsx(OutputCodeTextArea, {
         key: "outputCode",
-        value:
-          this.props.model.outputCode === undefined
-            ? "コード生成中か,まだ生成していない"
-            : this.props.model.outputCode,
-        rows: 10,
-        readOnly: true,
+        outputCode: this.props.model.outputCode,
       })
     );
   }
 }
+
+const OutputCodeTextArea: FunctionComponent<{
+  outputCode: string | undefined;
+}> = (props) => {
+  return jsx("textarea", {
+    value:
+      props.outputCode === undefined
+        ? "コード生成中か,まだ生成していない"
+        : props.outputCode,
+    rows: 20,
+    readOnly: true,
+    css: css({
+      backgroundColor: "#000",
+      color: "#ddd",
+    }),
+  });
+};
 
 const AttributeEditor: Editor<d.TypeAttribute> = createNoParameterTagEditor<d.TypeAttribute>(
   [d.TypeAttribute.AsBoolean, d.TypeAttribute.AsUndefined]
