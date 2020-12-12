@@ -27,6 +27,14 @@ export const view = (state: State): Element<never> =>
         "link-typed-admin-firestore",
         gitHubRepositoryLink("narumincho", "typed-admin-firestore"),
       ],
+      [
+        "link-js-ts-code-generator",
+        gitHubRepositoryLink("narumincho", "js-ts-code-generator"),
+      ],
+      [
+        "link-elm-code-generator",
+        gitHubRepositoryLink("narumincho", "elm-code-generator"),
+      ],
     ])
   );
 
