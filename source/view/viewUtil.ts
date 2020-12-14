@@ -10,6 +10,7 @@ import {
   childrenText,
   childrenTextTag,
 } from "./view";
+import { localEventName } from "./patch";
 import { mapMapValue } from "../util";
 
 export const div = <Message>(
@@ -67,7 +68,7 @@ export const localLink = <Message>(
       ["href", option.url.toString()],
       ["class", css(option.style)],
     ]),
-    events: new Map<string, Message>(),
+    events: new Map<string, Message>([[localEventName, option.jumpMessage]]),
     children: childrenFromStringOrElementMap(children),
   },
   isSvg: false,

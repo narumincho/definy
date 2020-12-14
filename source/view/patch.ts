@@ -208,18 +208,46 @@ const setEvents = <Message>(
   patchState: PatchState<Message>
 ) => {
   for (const [eventName, message] of setNameValueMap) {
-    const handler = () => {
-      patchState.messageHandler(message);
-    };
+    const handler = (eventName === localEventName
+      ? (mouseEvent: MouseEvent) => {
+          /*
+           * リンクを
+           * Ctrlなどを押しながらクリックか,
+           * マウスの中ボタンでクリックした場合などは, ブラウザで新しいタブが開くので, ブラウザでページ推移をしない.
+           */
+          if (
+            mouseEvent.ctrlKey ||
+            mouseEvent.metaKey ||
+            mouseEvent.shiftKey ||
+            mouseEvent.button !== 0
+          ) {
+            return;
+          }
+          mouseEvent.preventDefault();
+          patchState.messageHandler(message);
+        }
+      : () => {
+          patchState.messageHandler(message);
+        }) as (event: Event) => void;
+
     setOrDeleteEventHandler(htmlOrSvgElement, eventName, handler);
   }
 };
+
+/**
+ * 新しいタブで開いた場合, メッセージを発生させない特殊なイベント
+ */
+export const localEventName = "!localClick";
 
 const setOrDeleteEventHandler = (
   htmlOrSvgElement: HTMLElement | SVGElement,
   eventName: string,
   eventHandlerOrNull: ((event: Event) => void) | null
 ): void => {
+  if (eventName === localEventName) {
+    htmlOrSvgElement.onclick = eventHandlerOrNull;
+    return;
+  }
   ((htmlOrSvgElement as unknown) as Record<
     string,
     ((event: Event) => void) | null
