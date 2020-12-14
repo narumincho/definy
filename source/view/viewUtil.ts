@@ -74,6 +74,26 @@ export const localLink = <Message>(
   isSvg: false,
 });
 
+export const button = <Message>(
+  option: {
+    id?: string;
+    style?: CSSObject;
+    click: Message;
+  },
+  children: ReadonlyMap<string, Element<Message>> | string
+): Element<Message> => ({
+  tagName: "button",
+  attributeAndChildren: {
+    attributes: new Map<string, string>([
+      ...(option.id === undefined ? [] : ([["id", option.id]] as const)),
+      ["class", css(option.style)],
+    ]),
+    events: new Map<string, Message>([["click", option.click]]),
+    children: childrenFromStringOrElementMap(children),
+  },
+  isSvg: false,
+});
+
 export const svg = <Message>(
   option: {
     id?: string;
