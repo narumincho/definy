@@ -1,17 +1,20 @@
 import * as d from "definy-core/source/data";
+import { CSSObject, SerializedStyles, css, jsx as h } from "@emotion/react";
 import { Component, ReactElement } from "react";
-import { SerializedStyles, css, jsx as h } from "@emotion/react";
+import { AppInterface } from "./appInterface";
+import { Element } from "./view/view";
 import { Icon } from "./icon";
 import { Model } from "./model";
+import { div } from "./view/viewUtil";
 
-export type Props = {
+export interface Props {
   readonly model: Model;
   readonly imageToken: d.ImageToken;
   readonly alternativeText: string;
   readonly isCircle: boolean;
   readonly width: number;
   readonly height: number;
-};
+}
 
 export class Image extends Component<Props, never> {
   constructor(props: Props) {
@@ -60,3 +63,48 @@ const imageCss = (props: Props): SerializedStyles =>
     height: props.height,
     borderRadius: props.isCircle ? "50%" : undefined,
   });
+
+export interface Option {
+  readonly appInterface: AppInterface;
+  readonly imageToken: d.ImageToken;
+  readonly alternativeText: string;
+  readonly isCircle: boolean;
+  readonly width: number;
+  readonly height: number;
+}
+
+export const image = (option: Option): Element<never> => {
+  const blobUrlResource = option.appInterface.imageMap.get(option.imageToken);
+  if (blobUrlResource === undefined) {
+    return div({ style: imageStyle(option) }, "...");
+  }
+  switch (blobUrlResource._) {
+    case "Loading":
+      return div(
+        { style: imageStyle(option) },
+        h(Icon, { iconType: "Loading" })
+      );
+    case "Requesting":
+      return div(
+        { style: imageStyle(option) },
+        h(Icon, { iconType: "Requesting" })
+      );
+    case "Unknown":
+      return div({ style: imageStyle(option) }, "取得に失敗");
+    case "Loaded":
+      return h("img", {
+        src: blobUrlResource.data,
+        alt: option.alternativeText,
+        css: imageStyle(option),
+      });
+  }
+};
+
+const imageStyle = (props: Option): CSSObject => ({
+  display: "grid",
+  justifyContent: "center",
+  alignContent: "center",
+  width: props.width,
+  height: props.height,
+  borderRadius: props.isCircle ? "50%" : undefined,
+});

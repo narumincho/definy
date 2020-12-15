@@ -1,19 +1,15 @@
 import * as d from "definy-core/source/data";
-import { FunctionComponent, ReactChild } from "react";
-import { c, div } from "./view/viewUtil";
-import { css, jsx as h } from "@emotion/react";
-import { Button } from "./button";
-import { GitHubIcon } from "./gitHubIcon";
+import { AppInterface, Message } from "./appInterface";
+import { c, div, elementMap, path, svg } from "./view/viewUtil";
+import { CSSObject } from "@emotion/css";
+import { Element } from "./view/view";
 import { Image } from "./image";
-import { Link } from "./link";
 import { Model } from "./model";
-import { State } from "./state";
+import { button } from "./button";
+import { gitHubIcon } from "./ui";
+import { link } from "./link";
 
-export interface Message {
-  tag: "requestLogIn";
-}
-
-export const Header = (state: State): Element<Message> =>
+export const Header = (appInterface: AppInterface): Element<Message> =>
   div(
     {
       style: {
@@ -25,19 +21,18 @@ export const Header = (state: State): Element<Message> =>
       },
     },
     c([
-      ["logo", Logo({ model: props.model })],
-      ["settingOrLogInButton", userViewOrLogInButton({ model: props.model })],
+      ["logo", logo(appInterface)],
+      ["settingOrLogInButton", userViewOrLogInButton(appInterface)],
     ])
   );
 
-const Logo: FunctionComponent<{ model: Model }> = (props) =>
-  h(
-    Link,
+const logo = (appInterface: AppInterface): Element<Message> =>
+  link(
     {
-      model: props.model,
+      appInterface,
       location: d.Location.Home,
       theme: "Gray",
-      css: css({
+      style: {
         justifySelf: "start",
         padding: 8,
         color: "#b9d09b",
@@ -47,233 +42,251 @@ const Logo: FunctionComponent<{ model: Model }> = (props) =>
         "&:hover": {
           color: "#c9e4a6",
         },
-      }),
+      },
     },
     "Definy"
   );
 
-const userViewOrLogInButton = <Message>(props): Element<Message> => {
-  return div(
-    {
-      css: css({
-        justifySelf: "end",
-        alignSelf: "center",
-      }),
-    },
-    userViewOrLogInButtonContent(props.model)
-  );
-};
-
-const userViewOrLogInButtonContent = (model: Model): ReactChild => {
-  switch (model.logInState._) {
+const userViewOrLogInButton = (
+  appInterface: AppInterface
+): Element<Message> => {
+  switch (appInterface.logInState._) {
     case "LoadingAccountTokenFromIndexedDB":
-      return "アクセストークンをindexedDBから読み取り中……";
+      return div(
+        {
+          style: userViewOrLogInButtonStyle,
+        },
+        "アクセストークンをindexedDBから読み取り中……"
+      );
 
     case "Guest":
-      return h(LogInButtonList, {
-        language: model.language,
-        requestLogIn: model.logIn,
-      });
+      return logInButtonList(appInterface.language);
     case "VerifyingAccountToken":
-      return "アクセストークンを検証中……";
+      return div(
+        {
+          style: userViewOrLogInButtonStyle,
+        },
+        "アクセストークンを検証中……"
+      );
 
     case "LoggedIn": {
-      const userResourceState = model.userMap.get(
-        model.logInState.accountTokenAndUserId.userId
+      const userResourceState = appInterface.userMap.get(
+        appInterface.logInState.accountTokenAndUserId.userId
       );
       if (userResourceState === undefined || userResourceState._ !== "Loaded") {
-        return "...";
+        return div(
+          {
+            style: userViewOrLogInButtonStyle,
+          },
+          "..."
+        );
       }
-      return h(SettingLink, {
-        model,
+      return SettingLink({
+        model: appInterface,
         user: userResourceState.dataWithTime.data,
       });
     }
   }
-  return "ログインの準備中……";
+  return div(
+    {
+      style: userViewOrLogInButtonStyle,
+    },
+    "ログインの準備中……"
+  );
 };
 
-const SettingLink: FunctionComponent<{ model: Model; user: d.User }> = (
-  props
-) =>
-  h(
-    Link,
+const userViewOrLogInButtonStyle: CSSObject = {
+  justifySelf: "end",
+  alignSelf: "center",
+};
+
+const SettingLink = (props: {
+  appInterface: AppInterface;
+  user: d.User;
+}): Element<Message> =>
+  link(
     {
       theme: "Gray",
-      model: props.model,
+      appInterface: props.appInterface,
       location: d.Location.Setting,
-      css: css({
+      css: {
         justifySelf: "end",
         display: "grid",
         gridTemplateColumns: "32px auto",
         alignItems: "center",
         padding: 8,
-      }),
+      },
     },
-    h(Image, {
-      imageToken: props.user.imageHash,
-      model: props.model,
-      alternativeText: "設定",
-      width: 32,
-      height: 32,
-      isCircle: true,
-    }),
-    props.user.name
+    c(
+      [
+        "icon",
+        h(Image, {
+          imageToken: props.user.imageHash,
+          model: props.model,
+          alternativeText: "設定",
+          width: 32,
+          height: 32,
+          isCircle: true,
+        }),
+      ],
+      ["name", div({}, props.user.name)]
+    )
   );
 
-const LogInButtonList: FunctionComponent<{
-  requestLogIn: (provider: d.OpenIdConnectProvider) => void;
-  language: d.Language;
-}> = (prop) =>
-  h(
-    "div",
+const logInButtonList = (language: d.Language): Element<Message> =>
+  div(
     {
-      css: css({
+      style: {
         display: "grid",
         gap: 8,
         padding: 8,
         gridAutoFlow: "column",
         justifySelf: "end",
-      }),
+      },
     },
-    [
-      h(GoogleLogInButton, { ...prop, key: "google" }),
-      h(GitHubLogInButton, { ...prop, key: "github" }),
-    ]
+    c([
+      [
+        "google",
+        elementMap(
+          googleLogInButton(language),
+          (): Message => ({
+            tag: messageRequestLogIn,
+            openIdConnectProvider: "Google",
+          })
+        ),
+      ],
+      [
+        "github",
+        elementMap(
+          gitHubLogInButton(language),
+          (): Message => ({
+            tag: messageRequestLogIn,
+            openIdConnectProvider: "GitHub",
+          })
+        ),
+      ],
+    ])
   );
 
-const GoogleLogInButton: FunctionComponent<{
-  requestLogIn: (provider: d.OpenIdConnectProvider) => void;
-  language: d.Language;
-}> = (props) =>
-  h(
-    Button,
+const googleLogInButton = (language: d.Language): Element<undefined> =>
+  button(
     {
-      onClick: () => {
-        props.requestLogIn("Google");
-      },
-      css: css({
+      style: {
         display: "grid",
         gridTemplateColumns: "32px 160px",
         backgroundColor: "#4285f4",
         borderRadius: 8,
         gap: 8,
         padding: 0,
-        "$:hover": {
-          backgroundColor: "#5190f8",
-        },
-      }),
+      },
+      hoverStyle: {
+        backgroundColor: "#5190f8",
+      },
     },
-    [
-      h(GoogleIcon, { key: "icon" }),
-      h(GoogleText, {
-        key: "text",
-        language: props.language,
-      }),
-    ]
+    c([
+      ["icon", googleIcon],
+      [
+        "text",
+        div(
+          {
+            style: {
+              alignSelf: "center",
+              fontSize: 18,
+              color: "#fff",
+            },
+          },
+          logInMessage("Google", language)
+        ),
+      ],
+    ])
   );
 
-const GoogleIcon: FunctionComponent<Record<never, never>> = () =>
-  h(
-    "svg",
-    {
-      viewBox: "0 0 20 20",
-      css: css({
-        width: 32,
-        height: 32,
-        padding: 4,
-        backgroundColor: "#fff",
-        borderRadius: 8,
-      }),
+const googleIcon: Element<never> = svg(
+  {
+    viewBox: { x: 0, y: 0, width: 20, height: 20 },
+    style: {
+      width: 32,
+      height: 32,
+      padding: 4,
+      backgroundColor: "#fff",
+      borderRadius: 8,
     },
+  },
+  c([
     [
-      h("path", {
+      "blue",
+      path({
         d:
           "M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z",
         fill: "rgb(66, 133, 244)",
-        key: "blue",
       }),
-      h("path", {
+    ],
+    [
+      "green",
+      path({
         d:
           "M13.46 15.13c-.83.59-1.96 1-3.46 1-2.64 0-4.88-1.74-5.68-4.15H1.07v2.52C2.72 17.75 6.09 20 10 20c2.7 0 4.96-.89 6.62-2.42l-3.16-2.45z",
         fill: "rgb(52, 168, 83)",
-        key: "green",
       }),
-      h("path", {
+    ],
+    [
+      "yellow",
+      path({
         d:
           "M3.99 10c0-.69.12-1.35.32-1.97V5.51H1.07A9.973 9.973 0 0 0 0 10c0 1.61.39 3.14 1.07 4.49l3.24-2.52c-.2-.62-.32-1.28-.32-1.97z",
         fill: "rgb(251, 188, 5)",
-        key: "yellow",
       }),
-      h("path", {
+    ],
+    [
+      "red",
+      path({
         d:
           "M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z",
         fill: "rgb(234, 67, 53)",
-        key: "red",
       }),
-    ]
-  );
+    ],
+  ])
+);
 
-const GoogleText: FunctionComponent<{ language: d.Language }> = (props) =>
-  h(
-    "div",
+const gitHubLogInButton = (language: d.Language): Element<undefined> =>
+  button(
     {
-      css: css({
-        alignSelf: "center",
-        fontSize: 18,
-        color: "#fff",
-      }),
-    },
-    logInMessage("Google", props.language)
-  );
-
-const GitHubLogInButton: FunctionComponent<{
-  requestLogIn: (provider: d.OpenIdConnectProvider) => void;
-  language: d.Language;
-}> = (props) =>
-  h(
-    Button,
-    {
-      onClick: () => {
-        props.requestLogIn("GitHub");
-      },
-      css: css({
+      style: {
         display: "grid",
         gridTemplateColumns: "32px 160px",
         backgroundColor: "#202020",
         borderRadius: 8,
         gap: 8,
         padding: 0,
-        "$:hover": {
-          backgroundColor: "#252525",
-        },
-      }),
+      },
+      hoverStyle: { backgroundColor: "#252525" },
     },
-    h(GitHubIcon, {
-      color: "#000",
-      key: "icon",
-      width: 32,
-      height: 32,
-      padding: 4,
-      backgroundColor: "#fff",
-      borderRadius: 8,
-    }),
-    h(GitHubText, { key: "text", language: props.language })
-  );
-
-const GitHubText: FunctionComponent<{
-  language: d.Language;
-}> = (props) =>
-  h(
-    "div",
-    {
-      css: css({
-        alignSelf: "center",
-        fontSize: 18,
-        color: "#ddd",
-      }),
-    },
-    logInMessage("GitHub", props.language)
+    c([
+      [
+        "icon",
+        gitHubIcon({
+          color: "#000",
+          width: 32,
+          height: 32,
+          padding: 4,
+          backgroundColor: "#fff",
+          borderRadius: 8,
+        }),
+      ],
+      [
+        "text",
+        div(
+          {
+            style: {
+              alignSelf: "center",
+              fontSize: 18,
+              color: "#ddd",
+            },
+          },
+          logInMessage("GitHub", language)
+        ),
+      ],
+    ])
   );
 
 const logInMessage = (

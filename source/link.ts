@@ -1,8 +1,8 @@
 import * as core from "definy-core";
 import * as d from "definy-core/source/data";
+import { AppInterface, Message, messageJumpTag } from "./appInterface";
 import { CSSObject, SerializedStyles, css, jsx as h } from "@emotion/react";
 import react, { Component, ReactElement } from "react";
-import { AppInterface } from "./appInterface";
 import { Element } from "./view/view";
 import { Model } from "./model";
 import { Theme } from "./ui";
@@ -118,14 +118,14 @@ export const link = (
     readonly style?: CSSObject;
   },
   children: ReadonlyMap<string, Element<never>> | string
-): Element<d.UrlData> => {
+): Element<Message> => {
   const urlData: d.UrlData = {
     clientMode: option.interface.clientMode,
     language: option.language ?? option.interface.language,
     location: option.location,
   };
 
-  return localLink<d.UrlData>(
+  return localLink<Message>(
     {
       url: core.urlDataAndAccountTokenToUrl(urlData, d.Maybe.Nothing()),
       style: {
@@ -134,7 +134,11 @@ export const link = (
         ...themeToStyle(option.theme),
         ...option.style,
       },
-      jumpMessage: urlData,
+      jumpMessage: {
+        tag: messageJumpTag,
+        location: urlData.location,
+        language: urlData.language,
+      },
     },
     children
   );
