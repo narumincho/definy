@@ -58,3 +58,8 @@ export const setFilterMap = <Input, Output>(
   }
   return result;
 };
+
+export const log = <T>(data: T, ...hint: ReadonlyArray<unknown>): T => {
+  console.log(data, hint);
+  return data;
+};

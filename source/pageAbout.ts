@@ -1,10 +1,10 @@
 import * as d from "definy-core/source/data";
 import { c, div, externalLink } from "./view/viewUtil";
+import { AppInterface } from "./appInterface";
 import { Element } from "./view/view";
-import { State } from "./state";
 import { gitHubIcon } from "./ui";
 
-export const view = (state: State): Element<never> =>
+export const view = (appInterface: AppInterface): Element<never> =>
   div(
     {
       style: {
@@ -15,7 +15,7 @@ export const view = (state: State): Element<never> =>
       },
     },
     c([
-      ["about", div({}, aboutMessage(state.language))],
+      ["about", div({}, aboutMessage(appInterface.language))],
       ["link-client", gitHubRepositoryLink("narumincho", "Definy")],
       [
         "link-functions",
@@ -81,6 +81,6 @@ const gitHubRepositoryLink = (
           height: 32,
         }),
       ],
-      ["text", div({}, "GitHub: " + repoName)],
+      ["text", div({}, "GitHub: " + repoUser + "/" + repoName)],
     ])
   );

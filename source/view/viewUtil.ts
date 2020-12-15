@@ -11,7 +11,7 @@ import {
   childrenTextTag,
 } from "./view";
 import { localEventName } from "./patch";
-import { mapMapValue } from "../util";
+import { log, mapMapValue } from "../util";
 
 export const div = <Message>(
   option: { id?: string; click?: Message; style?: CSSObject },
@@ -35,7 +35,6 @@ export const externalLink = <Message>(
     id?: string;
     url: URL;
     style?: CSSObject;
-    isConfirm: boolean;
   },
   children: ReadonlyMap<string, Element<Message>> | string
 ): Element<Message> => ({
@@ -94,6 +93,27 @@ export const button = <Message>(
   isSvg: false,
 });
 
+export const img = <Message>(option: {
+  id?: string;
+  style?: CSSObject;
+  alt: string;
+  /** 画像のURL. なぜ URL 型にしないかと言うと, BlobURLがURL型に入らないから */
+  src: string;
+}): Element<Message> => ({
+  tagName: "img",
+  attributeAndChildren: {
+    attributes: new Map<string, string>([
+      ...(option.id === undefined ? [] : ([["id", option.id]] as const)),
+      ["class", css(option.style)],
+      ["alt", option.alt],
+      ["src", option.src],
+    ]),
+    events: new Map<string, Message>(),
+    children: childrenText(""),
+  },
+  isSvg: false,
+});
+
 export const svg = <Message>(
   option: {
     id?: string;
@@ -131,6 +151,68 @@ export const path = <Message>(option: {
       ["fill", option.fill],
     ]),
     events: new Map<string, Message>(),
+    children: childrenText(""),
+  },
+  isSvg: true,
+});
+
+/** SVGの要素のアニメーションを指定する. 繰り返す回数は無限回と指定している */
+interface SvgAnimation {
+  attributeName: "cy" | "r" | "stroke";
+  /** 時間 */
+  dur: number;
+  /** 開始時の値 */
+  from: number | string;
+  /** 終了時の値 */
+  to: number | string;
+}
+
+export const circle = <Message>(option: {
+  id?: string;
+  cx: number;
+  cy: number;
+  fill: string;
+  r: number;
+  stroke: string;
+  animations?: ReadonlyArray<SvgAnimation>;
+}): Element<Message> => ({
+  tagName: "circle",
+  attributeAndChildren: {
+    attributes: new Map([
+      ...(option.id === undefined ? [] : ([["id", option.id]] as const)),
+      ["cx", option.cx.toString()],
+      ["cy", option.cy.toString()],
+      ["fill", option.fill],
+      ["r", option.r.toString()],
+      ["stroke", option.stroke],
+    ]),
+    events: new Map<string, never>(),
+    children:
+      option.animations === undefined
+        ? childrenText<never>("")
+        : childrenElementList(
+            c(
+              option.animations.map((animation) => [
+                animation.attributeName,
+                animate(animation),
+              ])
+            )
+          ),
+  },
+  isSvg: true,
+});
+
+const animate = (svgAnimation: SvgAnimation): Element<never> => ({
+  tagName: "animate",
+  attributeAndChildren: {
+    attributes: new Map([
+      ["attributeName", svgAnimation.attributeName],
+      ["dur", svgAnimation.dur.toString()],
+      ["repeatCount", "indefinite"],
+      ["from", svgAnimation.from.toString()],
+      ["to", svgAnimation.to.toString()],
+    ]),
+    events: new Map<string, never>(),
     children: childrenText(""),
   },
   isSvg: true,

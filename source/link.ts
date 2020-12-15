@@ -111,7 +111,7 @@ const themeToStyle = (
 
 export const link = (
   option: {
-    readonly interface: AppInterface;
+    readonly appInterface: AppInterface;
     readonly location: d.Location;
     readonly language?: d.Language;
     readonly theme: Theme;
@@ -120,8 +120,8 @@ export const link = (
   children: ReadonlyMap<string, Element<never>> | string
 ): Element<Message> => {
   const urlData: d.UrlData = {
-    clientMode: option.interface.clientMode,
-    language: option.language ?? option.interface.language,
+    clientMode: option.appInterface.clientMode,
+    language: option.language ?? option.appInterface.language,
     location: option.location,
   };
 

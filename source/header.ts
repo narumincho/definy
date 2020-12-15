@@ -1,12 +1,11 @@
 import * as d from "definy-core/source/data";
-import { AppInterface, Message } from "./appInterface";
+import { AppInterface, Message, messageRequestLogIn } from "./appInterface";
 import { c, div, elementMap, path, svg } from "./view/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "./view/view";
-import { Image } from "./image";
-import { Model } from "./model";
 import { button } from "./button";
 import { gitHubIcon } from "./ui";
+import { image } from "./image";
 import { link } from "./link";
 
 export const Header = (appInterface: AppInterface): Element<Message> =>
@@ -82,7 +81,7 @@ const userViewOrLogInButton = (
         );
       }
       return SettingLink({
-        model: appInterface,
+        appInterface,
         user: userResourceState.dataWithTime.data,
       });
     }
@@ -109,7 +108,7 @@ const SettingLink = (props: {
       theme: "Gray",
       appInterface: props.appInterface,
       location: d.Location.Setting,
-      css: {
+      style: {
         justifySelf: "end",
         display: "grid",
         gridTemplateColumns: "32px auto",
@@ -117,20 +116,20 @@ const SettingLink = (props: {
         padding: 8,
       },
     },
-    c(
+    c([
       [
         "icon",
-        h(Image, {
+        image({
           imageToken: props.user.imageHash,
-          model: props.model,
+          appInterface: props.appInterface,
           alternativeText: "設定",
           width: 32,
           height: 32,
           isCircle: true,
         }),
       ],
-      ["name", div({}, props.user.name)]
-    )
+      ["name", div({}, props.user.name)],
+    ])
   );
 
 const logInButtonList = (language: d.Language): Element<Message> =>
@@ -151,7 +150,7 @@ const logInButtonList = (language: d.Language): Element<Message> =>
           googleLogInButton(language),
           (): Message => ({
             tag: messageRequestLogIn,
-            openIdConnectProvider: "Google",
+            provider: "Google",
           })
         ),
       ],
@@ -161,7 +160,7 @@ const logInButtonList = (language: d.Language): Element<Message> =>
           gitHubLogInButton(language),
           (): Message => ({
             tag: messageRequestLogIn,
-            openIdConnectProvider: "GitHub",
+            provider: "GitHub",
           })
         ),
       ],

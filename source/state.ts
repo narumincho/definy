@@ -1,7 +1,7 @@
 import { AppInterface } from "./appInterface";
 
 export interface State {
-  interface: AppInterface;
+  appInterface: AppInterface;
   pageModel: PageModel;
 }
 

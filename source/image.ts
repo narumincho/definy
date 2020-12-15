@@ -1,11 +1,11 @@
 import * as d from "definy-core/source/data";
 import { CSSObject, SerializedStyles, css, jsx as h } from "@emotion/react";
 import { Component, ReactElement } from "react";
+import { Icon, icon } from "./icon";
+import { c, div, img } from "./view/viewUtil";
 import { AppInterface } from "./appInterface";
 import { Element } from "./view/view";
-import { Icon } from "./icon";
 import { Model } from "./model";
-import { div } from "./view/viewUtil";
 
 export interface Props {
   readonly model: Model;
@@ -80,22 +80,19 @@ export const image = (option: Option): Element<never> => {
   }
   switch (blobUrlResource._) {
     case "Loading":
-      return div(
-        { style: imageStyle(option) },
-        h(Icon, { iconType: "Loading" })
-      );
+      return div({ style: imageStyle(option) }, c([["icon", icon("Loading")]]));
     case "Requesting":
       return div(
         { style: imageStyle(option) },
-        h(Icon, { iconType: "Requesting" })
+        c([["icon", icon("Requesting")]])
       );
     case "Unknown":
       return div({ style: imageStyle(option) }, "取得に失敗");
     case "Loaded":
-      return h("img", {
+      return img({
         src: blobUrlResource.data,
         alt: option.alternativeText,
-        css: imageStyle(option),
+        style: imageStyle(option),
       });
   }
 };

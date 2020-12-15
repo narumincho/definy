@@ -133,6 +133,7 @@ const elementToHtmlOrSvgElement = <Message>(
     htmlElement.textContent = element.attributeAndChildren.children.value;
     return htmlElement;
   }
+  console.log(element.tagName, element);
   for (const [childKey, child] of element.attributeAndChildren.children.value) {
     htmlElement.appendChild(
       elementToHtmlOrSvgElement(child, childKey, patchState)

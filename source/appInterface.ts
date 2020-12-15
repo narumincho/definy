@@ -50,7 +50,7 @@ export class AppInterface {
   outputCode: string | undefined;
 
   // 初期化処理
-  constructor() {
+  constructor(private messageHandler: (message: Message) => void) {
     const urlDataAndAccountToken = core.urlDataAndAccountTokenFromUrl(
       new URL(window.location.href)
     );
@@ -80,9 +80,11 @@ export class AppInterface {
       const newUrlData: d.UrlData = core.urlDataAndAccountTokenFromUrl(
         new URL(window.location.href)
       ).urlData;
-      this.language = newUrlData.language;
-      this.clientMode = newUrlData.clientMode;
-      this.location = newUrlData.location;
+      messageHandler({
+        tag: messageJumpTag,
+        language: newUrlData.language,
+        location: newUrlData.location,
+      });
     });
 
     // ブラウザのURLを正規化 アクセストークンを隠す
@@ -438,6 +440,9 @@ export class AppInterface {
     switch (message.tag) {
       case messageJumpTag:
         this.jump(message.location, message.language);
+        return;
+      case messageRequestLogIn:
+        this.logIn(message.provider);
     }
   }
 }
@@ -457,10 +462,16 @@ const getResourceResponseToResourceState = <resource extends unknown>(
   return d.ResourceState.Deleted(response.value.getTime);
 };
 
-export interface Message {
-  tag: typeof messageJumpTag;
-  location: d.Location;
-  language: d.Language;
-}
+export type Message =
+  | {
+      tag: typeof messageJumpTag;
+      location: d.Location;
+      language: d.Language;
+    }
+  | {
+      tag: typeof messageRequestLogIn;
+      provider: d.OpenIdConnectProvider;
+    };
 
 export const messageJumpTag = Symbol("Message-Jump");
+export const messageRequestLogIn = Symbol("Message-RequestLogIn");

@@ -1,55 +1,26 @@
-import * as core from "definy-core";
 import * as d from "definy-core/source/data";
 import * as pageAbout from "./pageAbout";
+import { AppInterface, Message } from "./appInterface";
 import { Element, View } from "./view/view";
-import { Message, State } from "./state";
+import { State, pageModelAboutTag } from "./state";
 import { c, div, view } from "./view/viewUtil";
 import { CSSObject } from "@emotion/react";
+import { Header } from "./header";
 import { Model } from "./model";
 import { keyframes } from "@emotion/css";
 
 export const initState = (
   messageHandler: (message: Message) => void
 ): State => {
-  const urlDataAndAccountToken = core.urlDataAndAccountTokenFromUrl(
-    new URL(window.location.href)
-  );
-
-  // ブラウザで戻るボタンを押したときのイベントを登録
-  window.addEventListener("popstate", () => {
-    const newUrlData: d.UrlData = core.urlDataAndAccountTokenFromUrl(
-      new URL(window.location.href)
-    ).urlData;
-    messageHandler({
-      tag: "setUrlData",
-      language: newUrlData.language,
-      clientMode: newUrlData.clientMode,
-      location: newUrlData.location,
-    });
-  });
-
   return {
-    logInState:
-      urlDataAndAccountToken.accountToken._ === "Just"
-        ? d.LogInState.VerifyingAccountToken(
-            urlDataAndAccountToken.accountToken.value
-          )
-        : d.LogInState.LoadingAccountTokenFromIndexedDB,
-    language: urlDataAndAccountToken.urlData.language,
-    clientMode: urlDataAndAccountToken.urlData.clientMode,
-    pageModel: { tag: "About" },
+    appInterface: new AppInterface(messageHandler),
+    pageModel: { tag: pageModelAboutTag },
   };
 };
 
 export const updateState = (message: Message, oldState: State): State => {
-  switch (message.tag) {
-    case "setUrlData":
-      return {
-        ...oldState,
-        language: message.language,
-        clientMode: message.clientMode,
-      };
-  }
+  oldState.appInterface.update(message);
+  return oldState;
 };
 
 export const stateToView = (state: State): View<Message> => {
@@ -57,7 +28,7 @@ export const stateToView = (state: State): View<Message> => {
   return view(
     {
       title: titleAndAttributeChildren.title + " | Definy",
-      language: state.language,
+      language: state.appInterface.language,
       themeColor: undefined,
       style: {
         height: "100%",
@@ -76,11 +47,11 @@ const stateToTitleAndAttributeChildren = (
   style: CSSObject;
   children: string | ReadonlyMap<string, Element<Message>>;
 } => {
-  switch (state.logInState._) {
+  switch (state.appInterface.logInState._) {
     case "RequestingLogInUrl": {
       const message = logInMessage(
-        state.logInState.openIdConnectProvider,
-        state.language
+        state.appInterface.logInState.openIdConnectProvider,
+        state.appInterface.language
       );
       return {
         title: message,
@@ -90,8 +61,8 @@ const stateToTitleAndAttributeChildren = (
     }
     case "JumpingToLogInPage": {
       const message = jumpMessage(
-        new URL(state.logInState.string),
-        state.language
+        new URL(state.appInterface.logInState.string),
+        state.appInterface.language
       );
       return {
         title: message,
@@ -104,7 +75,7 @@ const stateToTitleAndAttributeChildren = (
     title: "問題ないぜ",
     style: { gridTemplateRows: "48px 1fr" },
     children: c([
-      ["header", div({}, "ヘッダー")],
+      ["header", Header(state.appInterface)],
       ["main", main(state)],
     ]),
   };
@@ -154,8 +125,8 @@ const jumpMessage = (url: URL, language: d.Language): string => {
 
 const main = (state: State): Element<never> => {
   switch (state.pageModel.tag) {
-    case "About":
-      return pageAbout.view(state);
+    case pageModelAboutTag:
+      return pageAbout.view(state.appInterface);
   }
 };
 
