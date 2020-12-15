@@ -22,11 +22,11 @@ export const mapFilter = <Key, Value>(
   return result;
 };
 
-export const mapFromObject = <Value>(
-  object: Record<string, Value>
-): ReadonlyMap<string, Value> => {
-  return new Map(Object.entries(object));
-};
+export const mapSet = <Key, Value>(
+  map: ReadonlyMap<Key, Value>,
+  key: Key,
+  value: Value
+): ReadonlyMap<Key, Value> => new Map(map).set(key, value);
 
 export const mapKeyToSet = <Key, Value>(
   map: ReadonlyMap<Key, Value>
