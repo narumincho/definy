@@ -1,18 +1,21 @@
 import * as core from "definy-core";
 import * as d from "definy-core/source/data";
-import { SerializedStyles, css, jsx as h } from "@emotion/react";
+import { CSSObject, SerializedStyles, css, jsx as h } from "@emotion/react";
 import react, { Component, ReactElement } from "react";
+import { AppInterface } from "./appInterface";
+import { Element } from "./view/view";
 import { Model } from "./model";
 import { Theme } from "./ui";
+import { localLink } from "./view/viewUtil";
 
-export type Props = {
+export interface Props {
   readonly model: Model;
   readonly location: d.Location;
   readonly language?: d.Language;
   readonly theme: Theme;
   readonly css?: SerializedStyles;
   readonly className?: string;
-};
+}
 
 export class Link extends Component<Props, never> {
   onClick(event: react.MouseEvent<HTMLAnchorElement, MouseEvent>): void {
@@ -104,4 +107,35 @@ const themeToStyle = (
         },
       };
   }
+};
+
+export const link = (
+  option: {
+    readonly interface: AppInterface;
+    readonly location: d.Location;
+    readonly language?: d.Language;
+    readonly theme: Theme;
+    readonly style?: CSSObject;
+  },
+  children: ReadonlyMap<string, Element<never>> | string
+): Element<d.UrlData> => {
+  const urlData: d.UrlData = {
+    clientMode: option.interface.clientMode,
+    language: option.language ?? option.interface.language,
+    location: option.location,
+  };
+
+  return localLink<d.UrlData>(
+    {
+      url: core.urlDataAndAccountTokenToUrl(urlData, d.Maybe.Nothing()),
+      style: {
+        display: "block",
+        textDecoration: "none",
+        ...themeToStyle(option.theme),
+        ...option.style,
+      },
+      jumpMessage: urlData,
+    },
+    children
+  );
 };
