@@ -17,7 +17,7 @@ export type RequestTypePartListInProjectState =
   | { _: "Requesting"; projectId: d.ProjectId };
 
 /** Definy自体のAPIのようなもの. アプリの状態を読み取れ, 操作を要求できる */
-export type Model = {
+export interface Model {
   /** ホームに表示される. Top50のプロジェクトのID */
   top50ProjectIdState: HomeProjectState;
 
@@ -92,4 +92,4 @@ export type Model = {
 
   /** コードを生成する */
   generateCode: (typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>) => void;
-};
+}

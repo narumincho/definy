@@ -1,7 +1,6 @@
+import { State, initState, stateToView, updateState } from "./app";
 import { createPatchState, domToView, patchView } from "./view/patch";
-import { initState, stateToView, updateState } from "./app";
 import { Message } from "./appInterface";
-import { State } from "./state";
 import { createViewDiff } from "./view/diff";
 
 const initView = domToView();

@@ -1,6 +1,7 @@
 import * as core from "definy-core";
 import * as d from "definy-core/source/data";
 import * as pageAbout from "./pageAbout";
+import * as pageUser from "./pageUser";
 import {
   AppInterface,
   Message,
@@ -8,12 +9,27 @@ import {
   messageRequestLogIn,
 } from "./appInterface";
 import { Element, View } from "./view/view";
-import { State, pageModelAboutTag } from "./state";
 import { c, div, view } from "./view/viewUtil";
 import { CSSObject } from "@emotion/react";
 import { Header } from "./header";
-import { Model } from "./model";
 import { keyframes } from "@emotion/css";
+
+export interface State {
+  appInterface: AppInterface;
+  pageModel: PageModel;
+}
+
+export type PageModel =
+  | {
+      readonly tag: typeof pageModelAboutTag;
+    }
+  | {
+      readonly tag: typeof pageModelUserTag;
+      readonly userId: d.UserId;
+    };
+
+export const pageModelAboutTag = Symbol("PageModel-About");
+export const pageModelUserTag = Symbol("PageModel-User");
 
 export const initState = (
   messageHandler: (message: Message) => void
@@ -29,9 +45,24 @@ export const initState = (
       location: newUrlData.location,
     });
   });
+
+  const urlDataAndAccountToken = core.urlDataAndAccountTokenFromUrl(
+    new URL(window.location.href)
+  );
+  // ブラウザのURLを正規化 アクセストークンを隠す
+  window.history.replaceState(
+    undefined,
+    "",
+    core
+      .urlDataAndAccountTokenToUrl(
+        urlDataAndAccountToken.urlData,
+        d.Maybe.Nothing()
+      )
+      .toString()
+  );
   return {
-    appInterface: new AppInterface(),
-    pageModel: { tag: pageModelAboutTag },
+    appInterface: new AppInterface(urlDataAndAccountToken),
+    pageModel: locationToInitPageModel(urlDataAndAccountToken.urlData.location),
   };
 };
 
@@ -39,10 +70,35 @@ export const updateState = (message: Message, oldState: State): State => {
   switch (message.tag) {
     case messageJumpTag:
       oldState.appInterface.jump(message.location, message.language);
-      return oldState;
+      return {
+        pageModel: locationToInitPageModel(message.location),
+        appInterface: oldState.appInterface,
+      };
     case messageRequestLogIn:
-      oldState.appInterface.logIn(message.provider);
+      oldState.appInterface.logIn(
+        message.provider,
+        pageModelToLocation(oldState.pageModel)
+      );
       return oldState;
+  }
+};
+
+const locationToInitPageModel = (location: d.Location): PageModel => {
+  switch (location._) {
+    case "About":
+      return { tag: pageModelAboutTag };
+    case "User":
+      return { tag: pageModelUserTag, userId: location.userId };
+  }
+  return { tag: pageModelAboutTag };
+};
+
+const pageModelToLocation = (pageModel: PageModel): d.Location => {
+  switch (pageModel.tag) {
+    case pageModelAboutTag:
+      return d.Location.About;
+    case pageModelUserTag:
+      return d.Location.User(pageModel.userId);
   }
 };
 
@@ -104,10 +160,6 @@ const stateToTitleAndAttributeChildren = (
   };
 };
 
-export interface Props {
-  model: Model;
-}
-
 const prepareLogIn = (message: string): Element<never> =>
   div(
     {
@@ -146,10 +198,12 @@ const jumpMessage = (url: URL, language: d.Language): string => {
   }
 };
 
-const main = (state: State): Element<never> => {
+const main = (state: State): Element<Message> => {
   switch (state.pageModel.tag) {
     case pageModelAboutTag:
       return pageAbout.view(state.appInterface);
+    case pageModelUserTag:
+      return pageUser.view(state.appInterface, state.pageModel.userId);
   }
 };
 

@@ -43,18 +43,14 @@ export class AppInterface {
   /** ログイン状態 */
   logInState: d.LogInState;
 
-  /** 場所 */
-  location: d.Location;
-
   /** 出力されたコード */
   outputCode: string | undefined;
 
   // 初期化処理
-  constructor() {
-    const urlDataAndAccountToken = core.urlDataAndAccountTokenFromUrl(
-      new URL(window.location.href)
-    );
-
+  constructor(urlDataAndAccountToken: {
+    urlData: d.UrlData;
+    accountToken: d.Maybe<d.AccountToken>;
+  }) {
     this.top50ProjectIdState = { _: "None" };
 
     this.projectMap = new Map();
@@ -72,24 +68,8 @@ export class AppInterface {
             urlDataAndAccountToken.accountToken.value
           )
         : d.LogInState.LoadingAccountTokenFromIndexedDB;
-    this.location = urlDataAndAccountToken.urlData.location;
     this.outputCode = undefined;
 
-    // ブラウザのURLを正規化 アクセストークンを隠す
-    window.history.replaceState(
-      undefined,
-      "",
-      core
-        .urlDataAndAccountTokenToUrl(
-          {
-            clientMode: this.clientMode,
-            location: this.location,
-            language: this.language,
-          },
-          d.Maybe.Nothing()
-        )
-        .toString()
-    );
     switch (this.logInState._) {
       case "LoadingAccountTokenFromIndexedDB": {
         indexedDB.getAccountToken().then((accountToken) => {
@@ -369,7 +349,7 @@ export class AppInterface {
       });
   }
 
-  logIn(provider: d.OpenIdConnectProvider): void {
+  logIn(provider: d.OpenIdConnectProvider, location: d.Location): void {
     this.logInState = d.LogInState.RequestingLogInUrl(provider);
 
     api
@@ -378,7 +358,7 @@ export class AppInterface {
         urlData: {
           clientMode: this.clientMode,
           language: this.language,
-          location: this.location,
+          location,
         },
       })
       .then((response) => {
@@ -396,7 +376,6 @@ export class AppInterface {
   }
 
   jump(location: d.Location, language: d.Language): void {
-    this.location = location;
     this.language = language;
     window.history.pushState(
       undefined,
