@@ -11,7 +11,7 @@ import {
   childrenTextTag,
 } from "./view";
 import { localEventName } from "./patch";
-import { log, mapMapValue } from "../util";
+import { mapMapValue } from "../util";
 
 export const div = <Message>(
   option: { id?: string; click?: Message; style?: CSSObject },
