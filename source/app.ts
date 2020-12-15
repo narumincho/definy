@@ -1,6 +1,12 @@
+import * as core from "definy-core";
 import * as d from "definy-core/source/data";
 import * as pageAbout from "./pageAbout";
-import { AppInterface, Message } from "./appInterface";
+import {
+  AppInterface,
+  Message,
+  messageJumpTag,
+  messageRequestLogIn,
+} from "./appInterface";
 import { Element, View } from "./view/view";
 import { State, pageModelAboutTag } from "./state";
 import { c, div, view } from "./view/viewUtil";
@@ -12,15 +18,32 @@ import { keyframes } from "@emotion/css";
 export const initState = (
   messageHandler: (message: Message) => void
 ): State => {
+  // ブラウザで戻るボタンを押したときのイベントを登録
+  window.addEventListener("popstate", () => {
+    const newUrlData: d.UrlData = core.urlDataAndAccountTokenFromUrl(
+      new URL(window.location.href)
+    ).urlData;
+    messageHandler({
+      tag: messageJumpTag,
+      language: newUrlData.language,
+      location: newUrlData.location,
+    });
+  });
   return {
-    appInterface: new AppInterface(messageHandler),
+    appInterface: new AppInterface(),
     pageModel: { tag: pageModelAboutTag },
   };
 };
 
 export const updateState = (message: Message, oldState: State): State => {
-  oldState.appInterface.update(message);
-  return oldState;
+  switch (message.tag) {
+    case messageJumpTag:
+      oldState.appInterface.jump(message.location, message.language);
+      return oldState;
+    case messageRequestLogIn:
+      oldState.appInterface.logIn(message.provider);
+      return oldState;
+  }
 };
 
 export const stateToView = (state: State): View<Message> => {

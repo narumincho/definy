@@ -50,7 +50,7 @@ export class AppInterface {
   outputCode: string | undefined;
 
   // 初期化処理
-  constructor(private messageHandler: (message: Message) => void) {
+  constructor() {
     const urlDataAndAccountToken = core.urlDataAndAccountTokenFromUrl(
       new URL(window.location.href)
     );
@@ -74,18 +74,6 @@ export class AppInterface {
         : d.LogInState.LoadingAccountTokenFromIndexedDB;
     this.location = urlDataAndAccountToken.urlData.location;
     this.outputCode = undefined;
-
-    // ブラウザで戻るボタンを押したときのイベントを登録
-    window.addEventListener("popstate", () => {
-      const newUrlData: d.UrlData = core.urlDataAndAccountTokenFromUrl(
-        new URL(window.location.href)
-      ).urlData;
-      messageHandler({
-        tag: messageJumpTag,
-        language: newUrlData.language,
-        location: newUrlData.location,
-      });
-    });
 
     // ブラウザのURLを正規化 アクセストークンを隠す
     window.history.replaceState(
@@ -433,16 +421,6 @@ export class AppInterface {
       this.outputCode = core.generateTypeScriptCodeAsString(definyCode);
     } catch (error) {
       this.outputCode = "エラー! " + (error as string);
-    }
-  }
-
-  update(message: Message): void {
-    switch (message.tag) {
-      case messageJumpTag:
-        this.jump(message.location, message.language);
-        return;
-      case messageRequestLogIn:
-        this.logIn(message.provider);
     }
   }
 }
