@@ -67,6 +67,11 @@ export type Message =
       readonly language: d.Language;
     }
   | {
+      readonly tag: typeof messageChangeLocationAndLanguage;
+      readonly location: d.Location;
+      readonly language: d.Language;
+    }
+  | {
       readonly tag: typeof messageRequestLogInTag;
       readonly provider: d.OpenIdConnectProvider;
     }
@@ -160,6 +165,9 @@ export type Message =
     };
 
 export const messageJumpTag = Symbol("Message-Jump");
+export const messageChangeLocationAndLanguage = Symbol(
+  "Message-ChangeLocationAndLanguage"
+);
 export const messageRequestLogInTag = Symbol("Message-RequestLogIn");
 export const messageRespondLogInUrlTag = Symbol("Message-RespondLogInUrlTag");
 export const messageLogOut = Symbol("Message-LogOut");

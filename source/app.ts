@@ -13,6 +13,7 @@ import {
   Message,
   TitleAndElement,
   getAccountToken,
+  messageChangeLocationAndLanguage,
   messageCreateProject,
   messageGenerateCode,
   messageGetImage,
@@ -82,7 +83,7 @@ export const initState = (
       new URL(window.location.href)
     ).urlData;
     messageHandler({
-      tag: messageJumpTag,
+      tag: messageChangeLocationAndLanguage,
       language: newUrlData.language,
       location: newUrlData.location,
     });
@@ -156,6 +157,14 @@ export const updateState = (
   switch (message.tag) {
     case messageJumpTag:
       return jump(messageHandler, message.location, message.language, oldState);
+
+    case messageChangeLocationAndLanguage:
+      return changeLocationAndLanguage(
+        messageHandler,
+        message.location,
+        message.language,
+        oldState
+      );
 
     case messageRequestLogInTag:
       return logIn(messageHandler, message.provider, oldState);
@@ -772,6 +781,36 @@ const jump = (
   state: State
 ): State => {
   window.history.pushState(
+    undefined,
+    "",
+    core
+      .urlDataAndAccountTokenToUrl(
+        {
+          clientMode: state.appInterface.clientMode,
+          location,
+          language,
+        },
+        d.Maybe.Nothing()
+      )
+      .toString()
+  );
+  return {
+    appInterface: {
+      ...state.appInterface,
+      language,
+    },
+    pageModel: locationToInitPageModel(messageHandler, location),
+  };
+};
+
+const changeLocationAndLanguage = (
+  messageHandler: (message: Message) => void,
+  location: d.Location,
+  language: d.Language,
+  state: State
+): State => {
+  // 不要だと思われるが一応 正規化する
+  window.history.replaceState(
     undefined,
     "",
     core
