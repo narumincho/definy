@@ -2,6 +2,7 @@ import * as d from "definy-core/source/data";
 import {
   AppInterface,
   Message,
+  TitleAndElement,
   messageSelectDebugPageTab,
 } from "./appInterface";
 import { FunctionComponent, useState } from "react";
@@ -42,29 +43,32 @@ const dummyAppInterface: AppInterface = {
   selectedDebugTab: "Icon",
 };
 
-export const view = (appInterface: AppInterface): Element<Message> => {
-  return div(
-    {
-      style: {
-        display: "grid",
-        gridTemplateColumns: "200px 1fr",
-        width: "100%",
+export const view = (appInterface: AppInterface): TitleAndElement => {
+  return {
+    title: "デバッグ",
+    element: div(
+      {
+        style: {
+          display: "grid",
+          gridTemplateColumns: "200px 1fr",
+          width: "100%",
+        },
       },
-    },
-    c([
-      [
-        "tab",
-        elementMap<Tab, Message>(
-          tabView(appInterface.selectedDebugTab),
-          (tab) => ({
-            tag: messageSelectDebugPageTab,
-            tab,
-          })
-        ),
-      ],
-      ["content", content(appInterface)],
-    ])
-  );
+      c([
+        [
+          "tab",
+          elementMap<Tab, Message>(
+            tabView(appInterface.selectedDebugTab),
+            (tab) => ({
+              tag: messageSelectDebugPageTab,
+              tab,
+            })
+          ),
+        ],
+        ["content", content(appInterface)],
+      ])
+    ),
+  };
 };
 
 const tabView = (selected: Tab): Element<Tab> =>

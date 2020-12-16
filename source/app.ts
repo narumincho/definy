@@ -10,6 +10,7 @@ import * as pageUser from "./pageUser";
 import {
   AppInterface,
   Message,
+  TitleAndElement,
   getAccountToken,
   messageCreateProject,
   messageGenerateCode,
@@ -826,7 +827,10 @@ export const stateToView = (state: State): View<Message> => {
   const titleAndAttributeChildren = stateToTitleAndAttributeChildren(state);
   return view(
     {
-      title: titleAndAttributeChildren.title + " | Definy",
+      title:
+        (titleAndAttributeChildren.title === ""
+          ? ""
+          : titleAndAttributeChildren.title + " | ") + "Definy",
       language: state.appInterface.language,
       themeColor: undefined,
       style: {
@@ -870,12 +874,13 @@ const stateToTitleAndAttributeChildren = (
       };
     }
   }
+  const mainTitleAndElement = main(state);
   return {
-    title: "問題ないぜ",
+    title: mainTitleAndElement.title,
     style: { gridTemplateRows: "48px 1fr" },
     children: c([
       ["header", Header(state.appInterface)],
-      ["main", main(state)],
+      ["main", mainTitleAndElement.element],
     ]),
   };
 };
@@ -918,7 +923,7 @@ const jumpMessage = (url: URL, language: d.Language): string => {
   }
 };
 
-const main = (state: State): Element<Message> => {
+const main = (state: State): TitleAndElement => {
   switch (state.pageModel.tag) {
     case pageModelHome:
       return pageHome.view(state.appInterface);

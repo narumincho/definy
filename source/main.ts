@@ -1,6 +1,7 @@
 import * as app from "./app";
 import { createPatchState, domToView, patchView } from "./view/patch";
 import { Message } from "./appInterface";
+import { View } from "./view/view";
 import { createViewDiff } from "./view/diff";
 
 const initView = domToView();
@@ -17,6 +18,7 @@ const render = () => {
   const newView = app.stateToView(state);
   const diff = createViewDiff(oldView, newView);
   console.log("view diff", oldView, newView, diff);
+  oldView = newView;
   patchView(diff, patchState);
 };
 
@@ -37,7 +39,7 @@ const loop = () => {
 };
 
 const messageList: Array<Message> = [];
-const oldView = initView.ok;
+let oldView: View<Message> = initView.ok;
 let state: app.State = app.initState(pushMessageList);
 const patchState = createPatchState(pushMessageList);
 if (messageList.length === 0) {

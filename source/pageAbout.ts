@@ -1,11 +1,12 @@
 import * as d from "definy-core/source/data";
+import { AppInterface, TitleAndElement } from "./appInterface";
 import { c, div, externalLink } from "./view/viewUtil";
-import { AppInterface } from "./appInterface";
 import { Element } from "./view/view";
 import { gitHubIcon } from "./ui";
 
-export const view = (appInterface: AppInterface): Element<never> =>
-  div(
+export const view = (appInterface: AppInterface): TitleAndElement => ({
+  title: "Definyについて",
+  element: div(
     {
       style: {
         display: "grid",
@@ -36,7 +37,8 @@ export const view = (appInterface: AppInterface): Element<never> =>
         gitHubRepositoryLink("narumincho", "elm-code-generator"),
       ],
     ])
-  );
+  ),
+});
 
 const aboutMessage = (language: d.Language): string => {
   switch (language) {

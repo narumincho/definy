@@ -5,6 +5,7 @@ import {
   HomeProjectState,
   TypePartEditSate,
 } from "./model";
+import { Element } from "./view/view";
 
 export interface AppInterface {
   /** ホームに表示される. Top50のプロジェクトのID */
@@ -194,3 +195,8 @@ export const messageRespondSetTypePartList = Symbol(
   "Message-RespondSetTypePartList"
 );
 export const messageSelectDebugPageTab = Symbol("Message-SelectDebugPageTab");
+
+export interface TitleAndElement {
+  readonly title: string;
+  readonly element: Element<Message>;
+}

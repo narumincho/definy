@@ -1,5 +1,10 @@
 import * as d from "definy-core/source/data";
-import { AppInterface, Message, messageGetTop50Project } from "./appInterface";
+import {
+  AppInterface,
+  Message,
+  TitleAndElement,
+  messageGetTop50Project,
+} from "./appInterface";
 import { c, div } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { Model } from "./model";
@@ -13,24 +18,27 @@ export const init = (messageHandler: (message: Message) => void): void => {
   });
 };
 
-export const view = (appInterface: AppInterface): Element<Message> => {
-  return div(
-    {
-      style: {
-        display: "grid",
-        overflow: "hidden",
-        backgroundColor: "#222",
+export const view = (appInterface: AppInterface): TitleAndElement => {
+  return {
+    title: "",
+    element: div(
+      {
+        style: {
+          display: "grid",
+          overflow: "hidden",
+          backgroundColor: "#222",
+        },
       },
-    },
-    c([
-      ["main", homeMain(appInterface)],
-      ...(appInterface.logInState._ === "LoggedIn"
-        ? ([
-            ["createProjectButton", CreateProjectButton(appInterface)],
-          ] as const)
-        : []),
-    ])
-  );
+      c([
+        ["main", homeMain(appInterface)],
+        ...(appInterface.logInState._ === "LoggedIn"
+          ? ([
+              ["createProjectButton", CreateProjectButton(appInterface)],
+            ] as const)
+          : []),
+      ])
+    ),
+  };
 };
 
 export interface Props {
