@@ -176,10 +176,15 @@ export const updateState = (
       return logOut(oldState);
 
     case messageGetUserTag:
-      return requestUser(message.userId, messageHandler, oldState);
+      return getUser(message.userId, messageHandler, oldState);
 
     case messageRespondUserTag:
-      return respondUser(message.userId, message.response, oldState);
+      return respondUser(
+        messageHandler,
+        message.userId,
+        message.response,
+        oldState
+      );
 
     case messageRespondAccountTokenFromIndexedDB:
       if (message.accountToken === undefined) {
@@ -207,23 +212,18 @@ export const updateState = (
       return requestTop50Project(messageHandler, oldState);
 
     case messageRespondAllTop50Project:
-      return respondTop50Project(message.response, oldState);
+      return respondTop50Project(message.response, messageHandler, oldState);
 
     case messageGetProject:
       return requestProject(message.projectId, messageHandler, oldState);
 
     case messageRespondProject:
-      return {
-        appInterface: {
-          ...oldState.appInterface,
-          projectMap: mapSet(
-            oldState.appInterface.projectMap,
-            message.projectId,
-            getResourceResponseToResourceState(message.response)
-          ),
-        },
-        pageModel: oldState.pageModel,
-      };
+      return respondProject(
+        message.projectId,
+        message.response,
+        messageHandler,
+        oldState
+      );
 
     case messageGetImage:
       return requestImage(message.imageToken, messageHandler, oldState);
@@ -385,21 +385,30 @@ const respondTop50Project = (
   response: d.Maybe<
     d.WithTime<ReadonlyArray<d.IdAndData<d.ProjectId, d.Project>>>
   >,
+  messageHandler: (message: Message) => void,
   state: State
 ): State => {
   if (response._ === "Nothing") {
     return state;
   }
   const projectListData = response.value;
+  const imageRequestedState = getImageList(
+    projectListData.data.flatMap((projectIdAndData) => [
+      projectIdAndData.data.imageHash,
+      projectIdAndData.data.iconHash,
+    ]),
+    messageHandler,
+    state
+  );
   return {
     appInterface: {
-      ...state.appInterface,
+      ...imageRequestedState.appInterface,
       top50ProjectIdState: {
         _: "Loaded",
         projectIdList: projectListData.data.map((idAndData) => idAndData.id),
       },
       projectMap: new Map([
-        ...state.appInterface.projectMap,
+        ...imageRequestedState.appInterface.projectMap,
         ...projectListData.data.map(
           (projectIdAndData) =>
             [
@@ -412,11 +421,11 @@ const respondTop50Project = (
         ),
       ]),
     },
-    pageModel: state.pageModel,
+    pageModel: imageRequestedState.pageModel,
   };
 };
 
-const requestUser = (
+const getUser = (
   userId: d.UserId,
   messageHandler: (message: Message) => void,
   state: State
@@ -441,20 +450,25 @@ const requestUser = (
 };
 
 const respondUser = (
+  messageHandler: (message: Message) => void,
   userId: d.UserId,
   response: d.Maybe<d.WithTime<d.Maybe<d.User>>>,
   state: State
 ): State => {
+  const imageRequestedState =
+    response._ === "Just" && response.value.data._ === "Just"
+      ? requestImage(response.value.data.value.imageHash, messageHandler, state)
+      : state;
   return {
     appInterface: {
-      ...state.appInterface,
+      ...imageRequestedState.appInterface,
       userMap: mapSet(
-        state.appInterface.userMap,
+        imageRequestedState.appInterface.userMap,
         userId,
         getResourceResponseToResourceState(response)
       ),
     },
-    pageModel: state.pageModel,
+    pageModel: imageRequestedState.pageModel,
   };
 };
 
@@ -477,6 +491,58 @@ const requestProject = (
         projectId,
         d.ResourceState.Requesting()
       ),
+    },
+    pageModel: state.pageModel,
+  };
+};
+
+const respondProject = (
+  projectId: d.ProjectId,
+  response: d.Maybe<d.WithTime<d.Maybe<d.Project>>>,
+  messageHandler: (message: Message) => void,
+  state: State
+) => {
+  const imageRequestedState =
+    response._ === "Just" && response.value.data._ === "Just"
+      ? requestImage(
+          response.value.data.value.iconHash,
+          messageHandler,
+          requestImage(
+            response.value.data.value.imageHash,
+            messageHandler,
+            state
+          )
+        )
+      : state;
+  return {
+    appInterface: {
+      ...imageRequestedState.appInterface,
+      projectMap: mapSet(
+        imageRequestedState.appInterface.projectMap,
+        projectId,
+        getResourceResponseToResourceState(response)
+      ),
+    },
+    pageModel: imageRequestedState.pageModel,
+  };
+};
+
+const getImageList = (
+  imageTokenList: ReadonlyArray<d.ImageToken>,
+  messageHandler: (message: Message) => void,
+  state: State
+): State => {
+  const imageMap = new Map(state.appInterface.imageMap);
+  for (const imageToken of imageTokenList) {
+    api.getImageFile(imageToken).then((response) => {
+      messageHandler({ tag: messageRespondImage, imageToken, response });
+    });
+    imageMap.set(imageToken, d.StaticResourceState.Loading());
+  }
+  return {
+    appInterface: {
+      ...state.appInterface,
+      imageMap,
     },
     pageModel: state.pageModel,
   };
