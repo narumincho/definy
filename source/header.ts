@@ -114,6 +114,7 @@ const SettingLink = (props: {
         gridTemplateColumns: "32px auto",
         alignItems: "center",
         padding: 8,
+        gap: 8,
       },
     },
     c([
@@ -190,8 +191,9 @@ const googleLogInButton = (language: d.Language): Element<undefined> =>
           {
             style: {
               alignSelf: "center",
-              fontSize: 18,
+              fontSize: 16,
               color: "#fff",
+              lineHeight: 1,
             },
           },
           logInMessage("Google", language)
@@ -278,7 +280,8 @@ const gitHubLogInButton = (language: d.Language): Element<undefined> =>
           {
             style: {
               alignSelf: "center",
-              fontSize: 18,
+              fontSize: 16,
+              lineHeight: 1,
               color: "#ddd",
             },
           },
