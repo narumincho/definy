@@ -116,6 +116,7 @@ export const link = (
     readonly language?: d.Language;
     readonly theme: Theme;
     readonly style?: CSSObject;
+    readonly hoverStyle?: CSSObject;
   },
   children: ReadonlyMap<string, Element<never>> | string
 ): Element<Message> => {
@@ -133,6 +134,10 @@ export const link = (
         textDecoration: "none",
         ...themeToStyle(option.theme),
         ...option.style,
+        "&:hover": {
+          ...themeToStyle(option.theme)["&:hover"],
+          ...option.hoverStyle,
+        },
       },
       jumpMessage: {
         tag: messageJumpTag,

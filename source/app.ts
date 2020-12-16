@@ -3,6 +3,7 @@ import * as coreUtil from "definy-core/source/util";
 import * as d from "definy-core/source/data";
 import * as indexedDB from "./indexedDB";
 import * as pageAbout from "./pageAbout";
+import * as pageCreateProject from "./pageCreateProject";
 import * as pageHome from "./pageHome";
 import * as pageUser from "./pageUser";
 import {
@@ -46,6 +47,7 @@ export interface State {
 
 export type PageModel =
   | { readonly tag: typeof pageModelHome }
+  | { readonly tag: typeof pageModelCreateProject }
   | {
       readonly tag: typeof pageModelAboutTag;
     }
@@ -55,6 +57,7 @@ export type PageModel =
     };
 
 export const pageModelHome = Symbol("PageModel-Home");
+export const pageModelCreateProject = Symbol("PageModel-CrateProject");
 export const pageModelAboutTag = Symbol("PageModel-About");
 export const pageModelUserTag = Symbol("PageModel-User");
 
@@ -246,6 +249,8 @@ const locationToInitPageModel = (
     case "Home":
       pageHome.init(messageHandler);
       return { tag: pageModelHome };
+    case "CreateProject":
+      return { tag: pageModelCreateProject };
     case "About":
       return { tag: pageModelAboutTag };
     case "User":
@@ -259,6 +264,8 @@ const pageModelToLocation = (pageModel: PageModel): d.Location => {
   switch (pageModel.tag) {
     case pageModelHome:
       return d.Location.Home;
+    case pageModelCreateProject:
+      return d.Location.CreateProject;
     case pageModelAboutTag:
       return d.Location.About;
     case pageModelUserTag:
@@ -895,6 +902,8 @@ const main = (state: State): Element<Message> => {
   switch (state.pageModel.tag) {
     case pageModelHome:
       return pageHome.view(state.appInterface);
+    case pageModelCreateProject:
+      return pageCreateProject.view();
     case pageModelAboutTag:
       return pageAbout.view(state.appInterface);
     case pageModelUserTag:

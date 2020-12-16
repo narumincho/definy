@@ -38,9 +38,9 @@ const logo = (appInterface: AppInterface): Element<Message> =>
         fontSize: 32,
         lineHeight: 1,
         fontFamily: "Hack",
-        "&:hover": {
-          color: "#c9e4a6",
-        },
+      },
+      hoverStyle: {
+        color: "#c9e4a6",
       },
     },
     "Definy"
