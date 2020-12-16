@@ -1,14 +1,27 @@
 import * as d from "definy-core/source/data";
+import { AppInterface, Message, messageGetTop50Project } from "./appInterface";
 import { Component, FunctionComponent, ReactElement } from "react";
 import { css, jsx as h } from "@emotion/react";
+import { Element } from "./view/view";
 import { Icon } from "./icon";
 import { Link } from "./link";
 import { Model } from "./model";
 import { Project } from "./project";
+import { div } from "./view/viewUtil";
 
-export type Props = {
-  readonly model: Model;
+export const init = (messageHandler: (message: Message) => void): void => {
+  messageHandler({
+    tag: messageGetTop50Project,
+  });
 };
+
+export const view = (appInterface: AppInterface): Element<Message> => {
+  return div({}, "ホーム画面");
+};
+
+export interface Props {
+  readonly model: Model;
+}
 
 export class PageHome extends Component<Props> {
   /** 初期化 */
