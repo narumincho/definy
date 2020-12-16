@@ -1,4 +1,5 @@
 import * as d from "definy-core/source/data";
+import * as pageDebug from "./pageDebug";
 import {
   GetTypePartInProjectState,
   HomeProjectState,
@@ -41,6 +42,9 @@ export interface AppInterface {
 
   /** 出力されたコード */
   readonly outputCode: string | undefined;
+
+  /** デバッグページのタブ */
+  readonly selectedDebugTab: pageDebug.Tab;
 }
 
 /**
@@ -57,97 +61,101 @@ export const getAccountToken = (
 
 export type Message =
   | {
-      tag: typeof messageJumpTag;
-      location: d.Location;
-      language: d.Language;
+      readonly tag: typeof messageJumpTag;
+      readonly location: d.Location;
+      readonly language: d.Language;
     }
   | {
-      tag: typeof messageRequestLogInTag;
-      provider: d.OpenIdConnectProvider;
+      readonly tag: typeof messageRequestLogInTag;
+      readonly provider: d.OpenIdConnectProvider;
     }
   | {
-      tag: typeof messageRespondLogInUrlTag;
-      logInUrlMaybe: d.Maybe<string>;
+      readonly tag: typeof messageRespondLogInUrlTag;
+      readonly logInUrlMaybe: d.Maybe<string>;
     }
   | {
-      tag: typeof messageLogOut;
+      readonly tag: typeof messageLogOut;
     }
   | {
-      tag: typeof messageGetUserTag;
-      userId: d.UserId;
+      readonly tag: typeof messageGetUserTag;
+      readonly userId: d.UserId;
     }
   | {
-      tag: typeof messageRespondUserTag;
-      userId: d.UserId;
-      response: d.Maybe<d.WithTime<d.Maybe<d.User>>>;
+      readonly tag: typeof messageRespondUserTag;
+      readonly userId: d.UserId;
+      readonly response: d.Maybe<d.WithTime<d.Maybe<d.User>>>;
     }
   | {
-      tag: typeof messageRespondAccountTokenFromIndexedDB;
-      accountToken: d.AccountToken | undefined;
+      readonly tag: typeof messageRespondAccountTokenFromIndexedDB;
+      readonly accountToken: d.AccountToken | undefined;
     }
   | {
-      tag: typeof messageRespondUserByAccountToken;
-      response: d.Maybe<d.Maybe<d.IdAndData<d.UserId, d.User>>>;
+      readonly tag: typeof messageRespondUserByAccountToken;
+      readonly response: d.Maybe<d.Maybe<d.IdAndData<d.UserId, d.User>>>;
     }
   | {
-      tag: typeof messageGetTop50Project;
+      readonly tag: typeof messageGetTop50Project;
     }
   | {
-      tag: typeof messageRespondAllTop50Project;
-      response: d.Maybe<
+      readonly tag: typeof messageRespondAllTop50Project;
+      readonly response: d.Maybe<
         d.WithTime<ReadonlyArray<d.IdAndData<d.ProjectId, d.Project>>>
       >;
     }
   | {
-      tag: typeof messageGetProject;
-      projectId: d.ProjectId;
+      readonly tag: typeof messageGetProject;
+      readonly projectId: d.ProjectId;
     }
   | {
-      tag: typeof messageRespondProject;
-      projectId: d.ProjectId;
-      response: d.Maybe<d.WithTime<d.Maybe<d.Project>>>;
+      readonly tag: typeof messageRespondProject;
+      readonly projectId: d.ProjectId;
+      readonly response: d.Maybe<d.WithTime<d.Maybe<d.Project>>>;
     }
   | {
-      tag: typeof messageGetImage;
-      imageToken: d.ImageToken;
+      readonly tag: typeof messageGetImage;
+      readonly imageToken: d.ImageToken;
     }
   | {
-      tag: typeof messageRespondImage;
-      imageToken: d.ImageToken;
-      response: d.Maybe<Uint8Array>;
+      readonly tag: typeof messageRespondImage;
+      readonly imageToken: d.ImageToken;
+      readonly response: d.Maybe<Uint8Array>;
     }
   | {
-      tag: typeof messageGenerateCode;
-      definyCode: ReadonlyMap<d.TypePartId, d.TypePart>;
+      readonly tag: typeof messageGenerateCode;
+      readonly definyCode: ReadonlyMap<d.TypePartId, d.TypePart>;
     }
   | {
-      tag: typeof messageGetTypePartInProject;
-      projectId: d.ProjectId;
+      readonly tag: typeof messageGetTypePartInProject;
+      readonly projectId: d.ProjectId;
     }
   | {
-      tag: typeof messageRespondTypePartInProject;
-      response: d.Maybe<
+      readonly tag: typeof messageRespondTypePartInProject;
+      readonly response: d.Maybe<
         d.WithTime<d.Maybe<d.List<d.IdAndData<d.TypePartId, d.TypePart>>>>
       >;
     }
   | {
-      tag: typeof messageCreateProject;
-      projectName: string;
+      readonly tag: typeof messageCreateProject;
+      readonly projectName: string;
     }
   | {
-      tag: typeof messageRespondCreatingProject;
-      response: d.Maybe<d.Maybe<d.IdAndData<d.ProjectId, d.Project>>>;
+      readonly tag: typeof messageRespondCreatingProject;
+      readonly response: d.Maybe<d.Maybe<d.IdAndData<d.ProjectId, d.Project>>>;
     }
   | {
-      tag: typeof messageSetTypePartList;
-      projectId: d.ProjectId;
-      code: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>;
+      readonly tag: typeof messageSetTypePartList;
+      readonly projectId: d.ProjectId;
+      readonly code: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>;
     }
   | {
-      tag: typeof messageRespondSetTypePartList;
-      response: d.Maybe<
+      readonly tag: typeof messageRespondSetTypePartList;
+      readonly response: d.Maybe<
         d.WithTime<d.Maybe<d.List<d.IdAndData<d.TypePartId, d.TypePart>>>>
       >;
+    }
+  | {
+      readonly tag: typeof messageSelectDebugPageTab;
+      readonly tab: pageDebug.Tab;
     };
 
 export const messageJumpTag = Symbol("Message-Jump");
@@ -185,3 +193,4 @@ export const messageSetTypePartList = Symbol("Message-SetTypePartList");
 export const messageRespondSetTypePartList = Symbol(
   "Message-RespondSetTypePartList"
 );
+export const messageSelectDebugPageTab = Symbol("Message-SelectDebugPageTab");

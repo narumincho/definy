@@ -32,7 +32,7 @@ export const Button: FunctionComponent<{
   );
 
 export const button = (
-  option: { style: CSSObject; hoverStyle: CSSObject },
+  option: { style?: CSSObject; hoverStyle?: CSSObject },
   children: string | ReadonlyMap<string, Element<never>>
 ): Element<undefined> =>
   viewUtil.button(

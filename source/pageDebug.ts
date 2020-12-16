@@ -1,97 +1,100 @@
-import { Component, FunctionComponent, ReactElement, useState } from "react";
+import * as d from "definy-core/source/data";
+import {
+  AppInterface,
+  Message,
+  messageSelectDebugPageTab,
+} from "./appInterface";
+import { FunctionComponent, useState } from "react";
+import { c, div, elementMap } from "./view/viewUtil";
 import {
   createNoParameterTagEditor,
   createWithParameterSumEditor,
 } from "./sumEditor";
-import { css, jsx as h } from "@emotion/react";
-import { Button } from "./button";
+import { Element } from "./view/view";
 import { Icon } from "./icon";
 import { Model } from "./model";
 import { OneLineTextInput } from "./oneLineTextInput";
 import { UndefinedEditor } from "./undefinedEditor";
+import { button } from "./button";
 import { createListEditor } from "./listEditor";
 import { createProductEditor } from "./productEditor";
 import { editorToReactElement } from "./ui";
+import { jsx as h } from "@emotion/react";
 
 const tabList = ["Icon", "Product", "Sum", "List"] as const;
 
-type Tab = typeof tabList[number];
-
-type Props = Record<never, never>;
-
-type State = {
-  tab: Tab;
-};
+export type Tab = typeof tabList[number];
 
 const dummyModel: Model = {} as Model;
+const dummyAppInterface: AppInterface = {
+  top50ProjectIdState: { _: "None" },
+  projectMap: new Map(),
+  userMap: new Map(),
+  imageMap: new Map(),
+  typePartMap: new Map(),
+  isCreatingProject: false,
+  typePartEditState: "None",
+  getTypePartInProjectState: { _: "None" },
+  language: d.Language.English,
+  clientMode: "DebugMode",
+  logInState: d.LogInState.Guest,
+  outputCode: undefined,
+  selectedDebugTab: "Icon",
+};
 
-export class PageDebug extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { tab: "Icon" };
-  }
-
-  render(): ReactElement {
-    return h(
-      "div",
-      {
-        css: css({
-          display: "grid",
-          gridTemplateColumns: "200px 1fr",
-          width: "100%",
-        }),
-      },
-      [
-        h(Tab, {
-          key: "tab",
-          tab: this.state.tab,
-          setTab: (newTab: Tab) => {
-            this.setState({ tab: newTab });
-          },
-        }),
-        h("div", { key: "content" }, h(Content, { tab: this.state.tab })),
-      ]
-    );
-  }
-}
-
-const Tab: FunctionComponent<{ tab: Tab; setTab: (newTab: Tab) => void }> = (
-  props
-) =>
-  h(
-    "div",
+export const view = (appInterface: AppInterface): Element<Message> => {
+  return div(
     {
-      css: css({
+      style: {
+        display: "grid",
+        gridTemplateColumns: "200px 1fr",
+        width: "100%",
+      },
+    },
+    c([
+      [
+        "tab",
+        elementMap<Tab, Message>(
+          tabView(appInterface.selectedDebugTab),
+          (tab) => ({
+            tag: messageSelectDebugPageTab,
+            tab,
+          })
+        ),
+      ],
+      ["content", content(appInterface)],
+    ])
+  );
+};
+
+const tabView = (selected: Tab): Element<Tab> =>
+  div(
+    {
+      style: {
         display: "grid",
         alignContent: "start",
-      }),
+      },
     },
-    tabList.map((tab) =>
-      props.tab === tab
-        ? h("div", { key: tab }, tab)
-        : h(
-            Button,
-            {
-              key: tab,
-              onClick: () => {
-                props.setTab(tab);
-              },
-            },
-            tab
-          )
+    c(
+      tabList.map((tab): readonly [string, Element<Tab>] => [
+        tab,
+        selected === tab
+          ? div({}, tab)
+          : elementMap<undefined, Tab>(button({}, tab), () => tab),
+      ])
     )
   );
 
-const Content: FunctionComponent<{ tab: Tab }> = (props) => {
-  switch (props.tab) {
+const content = (appInterface: AppInterface): Element<never> => {
+  switch (appInterface.selectedDebugTab) {
     case "Icon":
-      return h(IconComponent, {});
+      return div({}, "Icon");
     case "Product":
-      return h(ProductComponent, {});
+      return div({}, "Product");
     case "Sum":
-      return h(SumComponent, {});
+      return div({}, "Sum");
     case "List":
-      return h(ListComponent, {});
+      return div({}, "List");
   }
 };
 
@@ -121,13 +124,13 @@ const ProductComponent: FunctionComponent<Record<never, never>> = () => {
   );
 };
 
-type SampleType = {
+interface SampleType {
   name: string;
   option: {
     a: string;
     b: string;
   };
-};
+}
 
 const NameAndDescriptionComponent = createProductEditor<SampleType>(
   {
