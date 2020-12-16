@@ -6,6 +6,7 @@ import * as pageAbout from "./pageAbout";
 import * as pageCreateProject from "./pageCreateProject";
 import * as pageDebug from "./pageDebug";
 import * as pageHome from "./pageHome";
+import * as pageSetting from "./pageSetting";
 import * as pageUser from "./pageUser";
 import {
   AppInterface,
@@ -60,6 +61,9 @@ export type PageModel =
     }
   | {
       readonly tag: typeof pageModelDebug;
+    }
+  | {
+      readonly tag: typeof pageModelSetting;
     };
 
 export const pageModelHome = Symbol("PageModel-Home");
@@ -67,6 +71,7 @@ export const pageModelCreateProject = Symbol("PageModel-CrateProject");
 export const pageModelAboutTag = Symbol("PageModel-About");
 export const pageModelUserTag = Symbol("PageModel-User");
 export const pageModelDebug = Symbol("PageModel-Debug");
+export const pageModelSetting = Symbol("PageModel-Setting");
 
 export const initState = (
   messageHandler: (message: Message) => void
@@ -275,6 +280,8 @@ const locationToInitPageModel = (
       return { tag: pageModelUserTag, userId: location.userId };
     case "Debug":
       return { tag: pageModelDebug };
+    case "Setting":
+      return { tag: pageModelSetting };
   }
   return { tag: pageModelAboutTag };
 };
@@ -291,6 +298,8 @@ const pageModelToLocation = (pageModel: PageModel): d.Location => {
       return d.Location.User(pageModel.userId);
     case pageModelDebug:
       return d.Location.Debug;
+    case pageModelSetting:
+      return d.Location.Setting;
   }
 };
 
@@ -935,6 +944,8 @@ const main = (state: State): TitleAndElement => {
       return pageUser.view(state.appInterface, state.pageModel.userId);
     case pageModelDebug:
       return pageDebug.view(state.appInterface);
+    case pageModelSetting:
+      return pageSetting.view(state.appInterface);
   }
 };
 

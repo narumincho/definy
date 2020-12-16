@@ -1,15 +1,18 @@
 import * as d from "definy-core/source/data";
+import { AppInterface, Message } from "./appInterface";
+import { CSSObject, css, jsx as h } from "@emotion/react";
 import { Component, ReactElement } from "react";
-import { css, jsx as h } from "@emotion/react";
-import { Icon } from "./icon";
-import { Image } from "./image";
-import { Link } from "./link";
+import { Icon, icon } from "./icon";
+import { Image, image } from "./image";
+import { Link, link } from "./link";
+import { c, div } from "./view/viewUtil";
+import { Element } from "./view/view";
 import { Model } from "./model";
 
-type Props = {
+interface Props {
   readonly model: Model;
   readonly userId: d.UserId;
-};
+}
 
 export class User extends Component<Props, never> {
   constructor(props: Props) {
@@ -79,3 +82,64 @@ const loadingStyle = css({
   gap: 8,
   padding: 8,
 });
+
+export const userCard = (
+  appInterface: AppInterface,
+  userId: d.UserId
+): Element<Message> => {
+  const userState = appInterface.userMap.get(userId);
+  if (userState === undefined) {
+    return div({ style: loadingCss }, "...");
+  }
+  switch (userState._) {
+    case "Requesting":
+      return div({ style: loadingCss }, c([["icon", icon("Requesting")]]));
+    case "Unknown":
+      return div({ style: loadingCss }, "ユーザーの取得に失敗しました");
+    case "Deleted":
+      return div(
+        { style: loadingCss },
+        "現在, userIdが " + userId + " のユーザーは存在しません"
+      );
+    case "Loaded": {
+      const { data } = userState.dataWithTime;
+      return link(
+        {
+          appInterface,
+          theme: "Gray",
+          location: d.Location.User(userId),
+          style: {
+            display: "grid",
+            gridTemplateColumns: "32px 1fr",
+            height: 48,
+            alignItems: "center",
+            gap: 8,
+            padding: 8,
+          },
+        },
+        c([
+          [
+            "icon",
+            image({
+              appInterface,
+              imageToken: data.imageHash,
+              alternativeText: data.name + "のアイコン",
+              width: 32,
+              height: 32,
+              isCircle: true,
+            }),
+          ],
+          ["name", div({}, data.name)],
+        ])
+      );
+    }
+  }
+};
+
+const loadingCss: CSSObject = {
+  display: "grid",
+  height: 48,
+  alignItems: "center",
+  gap: 8,
+  padding: 8,
+};
