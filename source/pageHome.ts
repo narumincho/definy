@@ -1,13 +1,11 @@
 import * as d from "definy-core/source/data";
 import { AppInterface, Message, messageGetTop50Project } from "./appInterface";
-import { Component, FunctionComponent, ReactElement } from "react";
-import { css, jsx as h } from "@emotion/react";
+import { c, div } from "./view/viewUtil";
 import { Element } from "./view/view";
-import { Icon } from "./icon";
-import { Link } from "./link";
 import { Model } from "./model";
-import { Project } from "./project";
-import { div } from "./view/viewUtil";
+import { icon } from "./icon";
+import { link } from "./link";
+import { projectCard } from "./project";
 
 export const init = (messageHandler: (message: Message) => void): void => {
   messageHandler({
@@ -16,46 +14,33 @@ export const init = (messageHandler: (message: Message) => void): void => {
 };
 
 export const view = (appInterface: AppInterface): Element<Message> => {
-  return div({}, "ホーム画面");
+  return div(
+    {
+      style: {
+        display: "grid",
+        overflow: "hidden",
+        backgroundColor: "#222",
+      },
+    },
+    c([
+      ["main", homeMain(appInterface)],
+      ...(appInterface.logInState._ === "LoggedIn"
+        ? ([
+            ["createProjectButton", CreateProjectButton(appInterface)],
+          ] as const)
+        : []),
+    ])
+  );
 };
 
 export interface Props {
   readonly model: Model;
 }
 
-export class PageHome extends Component<Props> {
-  /** 初期化 */
-  constructor(props: Props) {
-    super(props);
-    this.props.model.requestAllTop50Project();
-  }
-
-  render(): ReactElement {
-    return h(
-      "div",
-      {
-        css: css({
-          display: "grid",
-          overflow: "hidden",
-          backgroundColor: "#222",
-        }),
-      },
-      h(HomeMain, { model: this.props.model, key: "main" }),
-      this.props.model.logInState._ === "LoggedIn"
-        ? h(CreateProjectButton, {
-            model: this.props.model,
-            key: "create-project-button",
-          })
-        : undefined
-    );
-  }
-}
-
-const HomeMain: FunctionComponent<{ model: Model }> = (props) => {
-  return h(
-    "div",
+const homeMain = (appInterface: AppInterface): Element<Message> => {
+  return div(
     {
-      css: css({
+      style: {
         display: "grid",
         overflowY: "scroll",
         gridColumn: "1 / 2",
@@ -63,95 +48,79 @@ const HomeMain: FunctionComponent<{ model: Model }> = (props) => {
         gridTemplateRows: "32px 1fr",
         gap: 8,
         padding: 16,
-      }),
+      },
     },
-    [
-      h(HomeLinkList, { key: "link-list", model: props.model }),
-      h(AllProjectList, { key: "all-project-list", model: props.model }),
-    ]
+    c([
+      ["linkList", homeLinkList(appInterface)],
+      ["projectList", AllProjectList(appInterface)],
+    ])
   );
 };
 
-const HomeLinkList: FunctionComponent<{ model: Model }> = (props) =>
-  h(
-    "div",
+const homeLinkList = (appInterface: AppInterface): Element<Message> =>
+  div(
     {
-      css: css({
+      style: {
         display: "grid",
         gridAutoFlow: "column",
         justifyContent: "end",
         alignItems: "center",
         height: 32,
         gap: 8,
-      }),
+      },
     },
-    [
-      h(HomeLink, {
-        model: props.model,
-        location: d.Location.About,
-        key: "about",
-        text: "Definyについて",
-      }),
-      h(HomeLink, {
-        model: props.model,
-        location: d.Location.Debug,
-        key: "debug",
-        text: "デバッグページ",
-      }),
-    ]
+    c([
+      ["about", homeLink(appInterface, d.Location.About, "Definyについて")],
+      ["debug", homeLink(appInterface, d.Location.Debug, "デバッグページ")],
+    ])
   );
 
-const HomeLink: FunctionComponent<{
-  model: Model;
-  location: d.Location;
-  text: string;
-}> = (props) =>
-  h(
-    Link,
+const homeLink = (
+  appInterface: AppInterface,
+  location: d.Location,
+  text: string
+): Element<Message> =>
+  link(
     {
       theme: "Gray",
-      model: props.model,
-      location: props.location,
-      css: css({
+      appInterface,
+      location,
+      style: {
         width: 128,
         height: 32,
         display: "grid",
         alignItems: "center",
         justifyContent: "center",
-      }),
+      },
     },
-    props.text
+    text
   );
 
-const AllProjectList: FunctionComponent<{
-  model: Model;
-}> = (props) => {
-  switch (props.model.top50ProjectIdState._) {
+const AllProjectList = (appInterface: AppInterface): Element<Message> => {
+  switch (appInterface.top50ProjectIdState._) {
     case "None":
-      return h("div", {}, "読み込み前");
+      return div({}, "読み込み前");
     case "Loading":
-      return h("div", {}, h(Icon, { iconType: "Requesting" }));
+      return div({}, c([["requestingIcon", icon("Requesting")]]));
     case "Loaded": {
-      return h(AllProjectListLoaded, {
-        projectIdList: props.model.top50ProjectIdState.projectIdList,
-        model: props.model,
-        key: "loaded",
-      });
+      return AllProjectListLoaded(
+        appInterface,
+        appInterface.top50ProjectIdState.projectIdList
+      );
     }
   }
 };
 
-const AllProjectListLoaded: FunctionComponent<{
-  projectIdList: ReadonlyArray<d.ProjectId>;
-  model: Model;
-}> = (props) => {
-  if (props.projectIdList.length === 0) {
-    return h("div", {}, "プロジェクトが1つもありません");
+const AllProjectListLoaded = (
+  appInterface: AppInterface,
+  projectIdList: ReadonlyArray<d.ProjectId>
+): Element<Message> => {
+  if (projectIdList.length === 0) {
+    return div({}, "プロジェクトが1つもありません");
   }
-  return h(
-    "div",
+  return div(
     {
-      css: css({
+      style: {
         overflow: "hidden",
         overflowWrap: "break-word",
         display: "grid",
@@ -159,48 +128,44 @@ const AllProjectListLoaded: FunctionComponent<{
         alignSelf: "start",
         justifySelf: "center",
         gap: 8,
-      }),
+      },
     },
-    props.projectIdList.map((projectId) =>
-      h(Project, {
-        model: props.model,
-        key: projectId,
-        projectId,
-      })
+    c(
+      projectIdList.map(
+        (projectId) =>
+          [projectId, projectCard(appInterface, projectId)] as const
+      )
     )
   );
 };
 
-const CreateProjectButton: FunctionComponent<{ model: Model }> = (props) =>
-  h(
-    "div",
+const CreateProjectButton = (appInterface: AppInterface): Element<Message> =>
+  div(
     {
-      css: css({
+      style: {
         gridColumn: "1 / 2",
         gridRow: "1 / 2",
         alignSelf: "end",
         justifySelf: "end",
         padding: 16,
-      }),
+      },
     },
-    h(CreateProjectLink, {
-      model: props.model,
-      key: "link",
-    })
-  );
-
-const CreateProjectLink: FunctionComponent<{ model: Model }> = (props) =>
-  h(
-    Link,
-    {
-      theme: "Active",
-      model: props.model,
-      location: d.Location.CreateProject,
-      css: css({
-        padding: 8,
-      }),
-    },
-    createProjectMessage(props.model.language)
+    c([
+      [
+        "link",
+        link(
+          {
+            theme: "Active",
+            appInterface,
+            location: d.Location.CreateProject,
+            style: {
+              padding: 8,
+            },
+          },
+          createProjectMessage(appInterface.language)
+        ),
+      ],
+    ])
   );
 
 const createProjectMessage = (language: d.Language): string => {
