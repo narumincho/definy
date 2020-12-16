@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { AppInterface, Message, messageRequestLogIn } from "./appInterface";
+import { AppInterface, Message, messageRequestLogInTag } from "./appInterface";
 import { c, div, elementMap, path, svg } from "./view/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "./view/view";
@@ -149,7 +149,7 @@ const logInButtonList = (language: d.Language): Element<Message> =>
         elementMap(
           googleLogInButton(language),
           (): Message => ({
-            tag: messageRequestLogIn,
+            tag: messageRequestLogInTag,
             provider: "Google",
           })
         ),
@@ -159,7 +159,7 @@ const logInButtonList = (language: d.Language): Element<Message> =>
         elementMap(
           gitHubLogInButton(language),
           (): Message => ({
-            tag: messageRequestLogIn,
+            tag: messageRequestLogInTag,
             provider: "GitHub",
           })
         ),

@@ -10,7 +10,7 @@ if (initView._ === "Error") {
 }
 
 const messageHandler = (message: Message): void => {
-  state = updateState(message, state);
+  state = updateState(messageHandler, message, state);
   render(state);
 };
 
