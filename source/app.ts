@@ -38,10 +38,10 @@ import {
   messageSetTypePartList,
 } from "./appInterface";
 import { Element, View } from "./view/view";
+import { api, getImageWithCache } from "./api";
 import { c, div, view } from "./view/viewUtil";
 import { CSSObject } from "@emotion/react";
 import { Header } from "./header";
-import { api } from "./api";
 import { keyframes } from "@emotion/css";
 import { mapSet } from "./util";
 
@@ -206,7 +206,11 @@ export const updateState = (
       };
 
     case messageRespondUserByAccountToken:
-      return respondUserByAccountToken(message.response, oldState);
+      return respondUserByAccountToken(
+        message.response,
+        messageHandler,
+        oldState
+      );
 
     case messageGetTop50Project:
       return requestTop50Project(messageHandler, oldState);
@@ -226,7 +230,7 @@ export const updateState = (
       );
 
     case messageGetImage:
-      return requestImage(message.imageToken, messageHandler, oldState);
+      return getImage(message.imageToken, messageHandler, oldState);
 
     case messageRespondImage:
       return respondImage(message.imageToken, message.response, oldState);
@@ -323,6 +327,7 @@ const verifyAccountToken = (
 
 const respondUserByAccountToken = (
   response: d.Maybe<d.Maybe<d.IdAndData<d.UserId, d.User>>>,
+  messageHandler: (message: Message) => void,
   state: State
 ): State => {
   if (response._ === "Nothing") {
@@ -331,19 +336,25 @@ const respondUserByAccountToken = (
   if (state.appInterface.logInState._ !== "VerifyingAccountToken") {
     return state;
   }
+  const { accountToken } = state.appInterface.logInState;
   const userMaybe = response.value;
   switch (userMaybe._) {
     case "Just": {
       indexedDB.setAccountToken(state.appInterface.logInState.accountToken);
+      const requestedImageState = getImage(
+        userMaybe.value.data.imageHash,
+        messageHandler,
+        state
+      );
       return {
         appInterface: {
-          ...state.appInterface,
+          ...requestedImageState.appInterface,
           logInState: d.LogInState.LoggedIn({
-            accountToken: state.appInterface.logInState.accountToken,
+            accountToken,
             userId: userMaybe.value.id,
           }),
           userMap: mapSet(
-            state.appInterface.userMap,
+            requestedImageState.appInterface.userMap,
             userMaybe.value.id,
             d.ResourceState.Loaded({
               getTime: coreUtil.timeFromDate(new Date()),
@@ -351,7 +362,7 @@ const respondUserByAccountToken = (
             })
           ),
         },
-        pageModel: state.pageModel,
+        pageModel: requestedImageState.pageModel,
       };
     }
     case "Nothing":
@@ -457,7 +468,7 @@ const respondUser = (
 ): State => {
   const imageRequestedState =
     response._ === "Just" && response.value.data._ === "Just"
-      ? requestImage(response.value.data.value.imageHash, messageHandler, state)
+      ? getImage(response.value.data.value.imageHash, messageHandler, state)
       : state;
   return {
     appInterface: {
@@ -504,14 +515,13 @@ const respondProject = (
 ) => {
   const imageRequestedState =
     response._ === "Just" && response.value.data._ === "Just"
-      ? requestImage(
-          response.value.data.value.iconHash,
-          messageHandler,
-          requestImage(
+      ? getImageList(
+          [
+            response.value.data.value.iconHash,
             response.value.data.value.imageHash,
-            messageHandler,
-            state
-          )
+          ],
+          messageHandler,
+          state
         )
       : state;
   return {
@@ -534,7 +544,7 @@ const getImageList = (
 ): State => {
   const imageMap = new Map(state.appInterface.imageMap);
   for (const imageToken of imageTokenList) {
-    api.getImageFile(imageToken).then((response) => {
+    getImageWithCache(imageToken).then((response) => {
       messageHandler({ tag: messageRespondImage, imageToken, response });
     });
     imageMap.set(imageToken, d.StaticResourceState.Loading());
@@ -548,7 +558,7 @@ const getImageList = (
   };
 };
 
-const requestImage = (
+const getImage = (
   imageToken: d.ImageToken,
   messageHandler: (message: Message) => void,
   state: State
@@ -556,7 +566,7 @@ const requestImage = (
   if (state.appInterface.imageMap.has(imageToken)) {
     return state;
   }
-  api.getImageFile(imageToken).then((response) => {
+  getImageWithCache(imageToken).then((response) => {
     messageHandler({ tag: messageRespondImage, imageToken, response });
   });
   return {
