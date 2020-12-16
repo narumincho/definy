@@ -7,6 +7,8 @@ import * as pageUser from "./pageUser";
 import {
   AppInterface,
   Message,
+  getAccountToken,
+  messageCreateProject,
   messageGenerateCode,
   messageGetImage,
   messageGetProject,
@@ -18,12 +20,15 @@ import {
   messageRequestLogInTag,
   messageRespondAccountTokenFromIndexedDB,
   messageRespondAllTop50Project,
+  messageRespondCreatingProject,
   messageRespondImage,
   messageRespondLogInUrlTag,
   messageRespondProject,
+  messageRespondSetTypePartList,
   messageRespondTypePartInProject,
   messageRespondUserByAccountToken,
   messageRespondUserTag,
+  messageSetTypePartList,
 } from "./appInterface";
 import { Element, View } from "./view/view";
 import { c, div, view } from "./view/viewUtil";
@@ -120,6 +125,7 @@ export const initState = (
   };
 };
 
+// eslint-disable-next-line complexity
 export const updateState = (
   messageHandler: (message: Message) => void,
   message: Message,
@@ -206,6 +212,23 @@ export const updateState = (
 
     case messageRespondTypePartInProject:
       return respondTypePartInProject(message.response, oldState);
+
+    case messageCreateProject:
+      return createProject(message.projectName, messageHandler, oldState);
+
+    case messageRespondCreatingProject:
+      return respondCreatingProject(message.response, oldState);
+
+    case messageSetTypePartList:
+      return setTypePartList(
+        message.projectId,
+        message.code,
+        messageHandler,
+        oldState
+      );
+
+    case messageRespondSetTypePartList:
+      return respondSetTypePartList(message.response, oldState);
   }
 };
 
@@ -505,133 +528,129 @@ const respondTypePartInProject = (
   };
 };
 
-const createProject = async (
-  projectName: string
-): Promise<d.ProjectId | undefined> => {
-  if (this.accountToken === undefined || this.isCreatingProject) {
-    return;
+const createProject = (
+  projectName: string,
+  messageHandler: (message: Message) => void,
+  state: State
+): State => {
+  const accountToken = getAccountToken(state.appInterface);
+  if (accountToken === undefined || state.appInterface.isCreatingProject) {
+    return state;
   }
-  this.isCreatingProject = true;
-  const response = await api.createProject({
-    accountToken: this.accountToken,
-    projectName,
-  });
-  this.isCreatingProject = false;
-  if (response._ === "Nothing") {
-    return;
-  }
-  const projectMaybe = response.value;
-  switch (projectMaybe._) {
-    case "Just": {
-      this.projectMap.set(
-        projectMaybe.value.id,
-        d.ResourceState.Loaded({
-          getTime: coreUtil.timeFromDate(new Date()),
-          data: projectMaybe.value.data,
-        })
-      );
-
-      return projectMaybe.value.id;
-    }
-  }
+  api
+    .createProject({
+      accountToken,
+      projectName,
+    })
+    .then((response) => {
+      messageHandler({ tag: messageRespondCreatingProject, response });
+    });
+  return {
+    appInterface: {
+      ...state.appInterface,
+      isCreatingProject: true,
+    },
+    pageModel: state.pageModel,
+  };
 };
 
-const saveAndAddTypePart = (
-  projectId: d.ProjectId,
-  typePartList: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>
-): void => {
-  if (this.accountToken === undefined || this.typePartEditState !== "None") {
-    return;
+const respondCreatingProject = (
+  response: d.Maybe<d.Maybe<d.IdAndData<d.ProjectId, d.Project>>>,
+  state: State
+): State => {
+  if (response._ === "Nothing" || response.value._ === "Nothing") {
+    return {
+      appInterface: {
+        ...state.appInterface,
+        isCreatingProject: false,
+      },
+      pageModel: state.pageModel,
+    };
   }
-  const { accountToken } = this;
-  this.typePartEditState = "Saving";
+  return {
+    appInterface: {
+      ...state.appInterface,
+      isCreatingProject: false,
+      projectMap: mapSet(
+        state.appInterface.projectMap,
+        response.value.value.id,
+        d.ResourceState.Loaded({
+          getTime: coreUtil.timeFromDate(new Date()),
+          data: response.value.value.data,
+        })
+      ),
+    },
+    pageModel: state.pageModel,
+  };
+};
+
+const setTypePartList = (
+  projectId: d.ProjectId,
+  typePartList: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>,
+  messageHandler: (message: Message) => void,
+  state: State
+): State => {
+  const accountToken = getAccountToken(state.appInterface);
+  if (
+    accountToken === undefined ||
+    state.appInterface.typePartEditState !== "None"
+  ) {
+    return state;
+  }
+
   api
     .setTypePartList({
       accountToken,
       projectId,
       typePartList,
     })
-    .then((newTypePartList) => {
-      if (newTypePartList._ === "Nothing") {
-        this.typePartEditState = "Error";
-        return;
-      }
-      const idAndDataList = newTypePartList.value.data;
-      if (idAndDataList._ === "Nothing") {
-        this.typePartEditState = "Error";
-        return;
-      }
-      for (const { id, data } of idAndDataList.value) {
-        this.typePartMap.set(
-          id,
-          d.ResourceState.Loaded({
-            getTime: newTypePartList.value.getTime,
-            data,
-          })
-        );
-      }
-      this.typePartEditState = "Adding";
-      return api.addTypePart({
-        accountToken,
-        projectId,
-      });
-    })
     .then((response) => {
-      if (response === undefined || response._ === "Nothing") {
-        this.typePartEditState = "Error";
-        return;
-      }
-      const typePartListMaybe = response.value.data;
-      switch (typePartListMaybe._) {
-        case "Just": {
-          this.typePartMap.set(
-            typePartListMaybe.value.id,
-            d.ResourceState.Loaded({
-              data: typePartListMaybe.value.data,
-              getTime: response.value.getTime,
-            })
-          );
-          this.typePartEditState = "None";
-        }
-      }
+      messageHandler({ tag: messageRespondSetTypePartList, response });
     });
+  return {
+    appInterface: {
+      ...state.appInterface,
+      typePartEditState: "Saving",
+    },
+    pageModel: state.pageModel,
+  };
 };
 
-const setTypePartList = (
-  projectId: d.ProjectId,
-  typePartList: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>
-): void => {
-  if (this.accountToken === undefined || this.typePartEditState !== "None") {
-    return;
+const respondSetTypePartList = (
+  response: d.Maybe<
+    d.WithTime<d.Maybe<d.List<d.IdAndData<d.TypePartId, d.TypePart>>>>
+  >,
+  state: State
+): State => {
+  if (response._ === "Nothing" || response.value.data._ === "Nothing") {
+    return {
+      appInterface: {
+        ...state.appInterface,
+        typePartEditState: "Error",
+      },
+      pageModel: state.pageModel,
+    };
   }
-  this.typePartEditState = "Saving";
-  api
-    .setTypePartList({
-      accountToken: this.accountToken,
-      projectId,
-      typePartList,
-    })
-    .then((newTypePartList) => {
-      if (newTypePartList._ === "Nothing") {
-        this.typePartEditState = "Error";
-        return;
-      }
-      const idAndDataList = newTypePartList.value.data;
-      if (idAndDataList._ === "Nothing") {
-        this.typePartEditState = "Error";
-        return;
-      }
-      this.typePartEditState = "None";
-      for (const { id, data } of idAndDataList.value) {
-        this.typePartMap.set(
-          id,
-          d.ResourceState.Loaded({
-            getTime: newTypePartList.value.getTime,
-            data,
-          })
-        );
-      }
-    });
+  return {
+    appInterface: {
+      ...state.appInterface,
+      typePartEditState: "None",
+      typePartMap: new Map([
+        ...state.appInterface.typePartMap,
+        ...response.value.data.value.map(
+          (idAndData) =>
+            [
+              idAndData.id,
+              d.ResourceState.Loaded({
+                getTime: response.value.getTime,
+                data: idAndData.data,
+              }),
+            ] as const
+        ),
+      ]),
+    },
+    pageModel: state.pageModel,
+  };
 };
 
 const logIn = (

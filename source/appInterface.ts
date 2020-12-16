@@ -1,4 +1,3 @@
-import * as coreUtil from "definy-core/source/util";
 import * as d from "definy-core/source/data";
 import {
   GetTypePartInProjectState,
@@ -130,6 +129,25 @@ export type Message =
       response: d.Maybe<
         d.WithTime<d.Maybe<d.List<d.IdAndData<d.TypePartId, d.TypePart>>>>
       >;
+    }
+  | {
+      tag: typeof messageCreateProject;
+      projectName: string;
+    }
+  | {
+      tag: typeof messageRespondCreatingProject;
+      response: d.Maybe<d.Maybe<d.IdAndData<d.ProjectId, d.Project>>>;
+    }
+  | {
+      tag: typeof messageSetTypePartList;
+      projectId: d.ProjectId;
+      code: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>;
+    }
+  | {
+      tag: typeof messageRespondSetTypePartList;
+      response: d.Maybe<
+        d.WithTime<d.Maybe<d.List<d.IdAndData<d.TypePartId, d.TypePart>>>>
+      >;
     };
 
 export const messageJumpTag = Symbol("Message-Jump");
@@ -158,4 +176,12 @@ export const messageGetTypePartInProject = Symbol(
 );
 export const messageRespondTypePartInProject = Symbol(
   "Message-RespondTypePartInProject"
+);
+export const messageCreateProject = Symbol("Message-CreateProject");
+export const messageRespondCreatingProject = Symbol(
+  "Message-RespondCreatingProject"
+);
+export const messageSetTypePartList = Symbol("Message-SetTypePartList");
+export const messageRespondSetTypePartList = Symbol(
+  "Message-RespondSetTypePartList"
 );
