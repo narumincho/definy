@@ -1,4 +1,4 @@
-import { State, initState, stateToView, updateState } from "./app";
+import * as app from "./app";
 import { createPatchState, domToView, patchView } from "./view/patch";
 import { Message } from "./appInterface";
 import { createViewDiff } from "./view/diff";
@@ -9,19 +9,38 @@ if (initView._ === "Error") {
   throw new Error("DOMの初期状態を解釈できなかった");
 }
 
-const messageHandler = (message: Message): void => {
-  state = updateState(messageHandler, message, state);
-  render(state);
+const pushMessageList = (message: Message): void => {
+  messageList.push(message);
 };
 
-const render = (state: State) => {
-  const newView = stateToView(state);
+const render = () => {
+  const newView = app.stateToView(state);
   const diff = createViewDiff(oldView, newView);
   console.log("view diff", oldView, newView, diff);
   patchView(diff, patchState);
 };
 
-let state: State = initState(messageHandler);
+const loop = () => {
+  requestAnimationFrame(loop);
+  if (messageList.length === 0) {
+    return;
+  }
+  console.log("handle message!", messageList);
+  while (true) {
+    const message = messageList.shift();
+    if (message === undefined) {
+      break;
+    }
+    state = app.updateState(pushMessageList, message, state);
+  }
+  render();
+};
+
+const messageList: Array<Message> = [];
 const oldView = initView.ok;
-const patchState = createPatchState(messageHandler);
-render(state);
+let state: app.State = app.initState(pushMessageList);
+const patchState = createPatchState(pushMessageList);
+if (messageList.length === 0) {
+  render();
+}
+loop();

@@ -121,7 +121,10 @@ export const initState = (
 
   return {
     appInterface,
-    pageModel: locationToInitPageModel(urlDataAndAccountToken.urlData.location),
+    pageModel: locationToInitPageModel(
+      messageHandler,
+      urlDataAndAccountToken.urlData.location
+    ),
   };
 };
 
@@ -133,7 +136,7 @@ export const updateState = (
 ): State => {
   switch (message.tag) {
     case messageJumpTag:
-      return jump(message.location, message.language, oldState);
+      return jump(messageHandler, message.location, message.language, oldState);
 
     case messageRequestLogInTag:
       return logIn(messageHandler, message.provider, oldState);
@@ -232,11 +235,15 @@ export const updateState = (
   }
 };
 
-const locationToInitPageModel = (location: d.Location): PageModel => {
+const locationToInitPageModel = (
+  messageHandler: (message: Message) => void,
+  location: d.Location
+): PageModel => {
   switch (location._) {
     case "About":
       return { tag: pageModelAboutTag };
     case "User":
+      pageUser.init(messageHandler, location.userId);
       return { tag: pageModelUserTag, userId: location.userId };
   }
   return { tag: pageModelAboutTag };
@@ -714,6 +721,7 @@ const logOut = (state: State): State => {
 };
 
 const jump = (
+  messageHandler: (message: Message) => void,
   location: d.Location,
   language: d.Language,
   state: State
@@ -737,7 +745,7 @@ const jump = (
       ...state.appInterface,
       language,
     },
-    pageModel: locationToInitPageModel(location),
+    pageModel: locationToInitPageModel(messageHandler, location),
   };
 };
 
