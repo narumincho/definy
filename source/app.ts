@@ -71,6 +71,7 @@ export type PageModel =
   | {
       readonly tag: typeof pageModelProject;
       readonly projectId: d.ProjectId;
+      readonly state: pageProject.State;
     };
 
 export const pageModelHome = Symbol("PageModel-Home");
@@ -305,7 +306,11 @@ const locationToInitPageModel = (
     case "Setting":
       return { tag: pageModelSetting };
     case "Project":
-      return { tag: pageModelProject, projectId: location.projectId };
+      return {
+        tag: pageModelProject,
+        projectId: location.projectId,
+        state: pageProject.init(messageHandler, location.projectId),
+      };
   }
   return { tag: pageModelAboutTag };
 };
@@ -1075,7 +1080,11 @@ const main = (state: State): TitleAndElement => {
     case pageModelSetting:
       return pageSetting.view(state.appInterface);
     case pageModelProject:
-      return pageProject.view(state.appInterface, state.pageModel.projectId);
+      return pageProject.view(
+        state.appInterface,
+        state.pageModel.projectId,
+        state.pageModel.state
+      );
   }
 };
 
