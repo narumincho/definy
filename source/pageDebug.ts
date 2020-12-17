@@ -26,6 +26,8 @@ const tabList = ["Icon", "Product", "Sum", "List"] as const;
 
 export type Tab = typeof tabList[number];
 
+export const init: Tab = "Icon";
+
 const dummyModel: Model = {} as Model;
 const dummyAppInterface: AppInterface = {
   top50ProjectIdState: { _: "None" },
@@ -40,10 +42,12 @@ const dummyAppInterface: AppInterface = {
   clientMode: "DebugMode",
   logInState: d.LogInState.Guest,
   outputCode: undefined,
-  selectedDebugTab: "Icon",
 };
 
-export const view = (appInterface: AppInterface): TitleAndElement => {
+export const view = (
+  appInterface: AppInterface,
+  selectedTab: Tab
+): TitleAndElement => {
   return {
     title: "デバッグ",
     element: div(
@@ -57,15 +61,12 @@ export const view = (appInterface: AppInterface): TitleAndElement => {
       c([
         [
           "tab",
-          elementMap<Tab, Message>(
-            tabView(appInterface.selectedDebugTab),
-            (tab) => ({
-              tag: messageSelectDebugPageTab,
-              tab,
-            })
-          ),
+          elementMap<Tab, Message>(tabView(selectedTab), (tab) => ({
+            tag: messageSelectDebugPageTab,
+            tab,
+          })),
         ],
-        ["content", content(appInterface)],
+        ["content", content(appInterface, selectedTab)],
       ])
     ),
   };
@@ -89,8 +90,11 @@ const tabView = (selected: Tab): Element<Tab> =>
     )
   );
 
-const content = (appInterface: AppInterface): Element<never> => {
-  switch (appInterface.selectedDebugTab) {
+const content = (
+  appInterface: AppInterface,
+  selectedTab: Tab
+): Element<never> => {
+  switch (selectedTab) {
     case "Icon":
       return div({}, "Icon");
     case "Product":

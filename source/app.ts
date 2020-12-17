@@ -6,6 +6,7 @@ import * as pageAbout from "./pageAbout";
 import * as pageCreateProject from "./pageCreateProject";
 import * as pageDebug from "./pageDebug";
 import * as pageHome from "./pageHome";
+import * as pageProject from "./pageProject";
 import * as pageSetting from "./pageSetting";
 import * as pageUser from "./pageUser";
 import {
@@ -62,9 +63,14 @@ export type PageModel =
     }
   | {
       readonly tag: typeof pageModelDebug;
+      readonly tab: pageDebug.Tab;
     }
   | {
       readonly tag: typeof pageModelSetting;
+    }
+  | {
+      readonly tag: typeof pageModelProject;
+      readonly projectId: d.ProjectId;
     };
 
 export const pageModelHome = Symbol("PageModel-Home");
@@ -73,6 +79,7 @@ export const pageModelAboutTag = Symbol("PageModel-About");
 export const pageModelUserTag = Symbol("PageModel-User");
 export const pageModelDebug = Symbol("PageModel-Debug");
 export const pageModelSetting = Symbol("PageModel-Setting");
+export const pageModelProject = Symbol("PageModel-Project");
 
 export const initState = (
   messageHandler: (message: Message) => void
@@ -121,7 +128,6 @@ export const initState = (
           )
         : d.LogInState.LoadingAccountTokenFromIndexedDB,
     outputCode: undefined,
-    selectedDebugTab: "Icon",
   };
 
   switch (appInterface.logInState._) {
@@ -266,12 +272,15 @@ export const updateState = (
       return respondSetTypePartList(message.response, oldState);
 
     case messageSelectDebugPageTab:
+      if (oldState.pageModel.tag !== pageModelDebug) {
+        return oldState;
+      }
       return {
-        appInterface: {
-          ...oldState.appInterface,
-          selectedDebugTab: message.tab,
+        appInterface: oldState.appInterface,
+        pageModel: {
+          ...oldState.pageModel,
+          tab: message.tab,
         },
-        pageModel: oldState.pageModel,
       };
   }
 };
@@ -292,9 +301,11 @@ const locationToInitPageModel = (
       pageUser.init(messageHandler, location.userId);
       return { tag: pageModelUserTag, userId: location.userId };
     case "Debug":
-      return { tag: pageModelDebug };
+      return { tag: pageModelDebug, tab: pageDebug.init };
     case "Setting":
       return { tag: pageModelSetting };
+    case "Project":
+      return { tag: pageModelProject, projectId: location.projectId };
   }
   return { tag: pageModelAboutTag };
 };
@@ -313,6 +324,8 @@ const pageModelToLocation = (pageModel: PageModel): d.Location => {
       return d.Location.Debug;
     case pageModelSetting:
       return d.Location.Setting;
+    case pageModelProject:
+      return d.Location.Project(pageModel.projectId);
   }
 };
 
@@ -1058,9 +1071,11 @@ const main = (state: State): TitleAndElement => {
     case pageModelUserTag:
       return pageUser.view(state.appInterface, state.pageModel.userId);
     case pageModelDebug:
-      return pageDebug.view(state.appInterface);
+      return pageDebug.view(state.appInterface, state.pageModel.tab);
     case pageModelSetting:
       return pageSetting.view(state.appInterface);
+    case pageModelProject:
+      return pageProject.view(state.appInterface, state.pageModel.projectId);
   }
 };
 

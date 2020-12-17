@@ -1,16 +1,29 @@
 import * as d from "definy-core/source/data";
+import { AppInterface, TitleAndElement } from "./appInterface";
 import { Component, FunctionComponent, ReactChild, ReactElement } from "react";
 import { css, jsx as h } from "@emotion/react";
+import { Element } from "./view/view";
 import { Icon } from "./icon";
 import { Image } from "./image";
 import { Model } from "./model";
 import { TypePartListEditor } from "./typePartListEditor";
 import { User } from "./user";
+import { div } from "./view/viewUtil";
 
-type Props = {
+export const view = (
+  appInterface: AppInterface,
+  projectId: d.ProjectId
+): TitleAndElement => {
+  return {
+    title: "プロジェクト詳細ページと型パーツエディタ",
+    element: div({}, "プロジェクト詳細ページ!"),
+  };
+};
+
+interface Props {
   readonly projectId: d.ProjectId;
   readonly model: Model;
-};
+}
 
 export class PageProject extends Component<Props> {
   constructor(props: Props) {

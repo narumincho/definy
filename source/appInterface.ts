@@ -43,9 +43,6 @@ export interface AppInterface {
 
   /** 出力されたコード */
   readonly outputCode: string | undefined;
-
-  /** デバッグページのタブ */
-  readonly selectedDebugTab: pageDebug.Tab;
 }
 
 /**
