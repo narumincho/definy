@@ -21,6 +21,15 @@ export type State =
       readonly typePartId: d.TypePartId;
     };
 
+export type PageMessage =
+  | {
+      readonly tag: typeof selectProjectDetail;
+    }
+  | {
+      readonly tag: typeof selectTypePart;
+      readonly typePartId: d.TypePartId;
+    };
+
 const selectProjectDetail = Symbol("PageModelState-SelectProjectDetail");
 const selectTypePart = Symbol("PageModelState-SelectTypePart");
 
@@ -35,6 +44,23 @@ export const init = (
   return {
     tag: selectProjectDetail,
   };
+};
+
+export const updateSateByLocalMessage = (
+  state: State,
+  pageMessage: PageMessage
+): State => {
+  switch (pageMessage.tag) {
+    case selectProjectDetail:
+      return {
+        tag: selectProjectDetail,
+      };
+    case selectTypePart:
+      return {
+        tag: selectTypePart,
+        typePartId: pageMessage.typePartId,
+      };
+  }
 };
 
 export const view = (
@@ -120,6 +146,11 @@ export const view = (
       };
   }
 };
+
+const treeView = (
+  appInterface: AppInterface,
+  state: State
+): Element<Message> => {};
 
 const containerStyle: CSSObject = {
   display: "grid",
