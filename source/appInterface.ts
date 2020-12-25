@@ -6,6 +6,7 @@ import {
   TypePartEditSate,
 } from "./model";
 import { Element } from "./view/view";
+import { elementMap } from "./view/viewUtil";
 
 export interface AppInterface {
   /** ホームに表示される. Top50のプロジェクトのID */
@@ -201,7 +202,46 @@ export const messageRespondSetTypePartList = Symbol(
 );
 export const messageSelectDebugPageTab = Symbol("Message-SelectDebugPageTab");
 
-export interface TitleAndElement {
+export type InterfaceMessage<PageMessage> =
+  | {
+      tag: typeof interfaceMessageAppMessageTag;
+      message: Message;
+    }
+  | {
+      tag: typeof interfaceMessagePageMessageTag;
+      message: PageMessage;
+    };
+
+export const interfaceMessageAppMessageTag = Symbol(
+  "InterfaceMessage-AppMessage"
+);
+export const interfaceMessagePageMessageTag = Symbol(
+  "InterfaceMessage-PageMessage"
+);
+
+export const interfaceMessageAppMessage = <PageMessage>(
+  message: Message
+): InterfaceMessage<PageMessage> => ({
+  tag: interfaceMessageAppMessageTag,
+  message,
+});
+
+export const interfaceMessagePageMessage = <PageMessage>(
+  pageMessage: PageMessage
+): InterfaceMessage<PageMessage> => ({
+  tag: interfaceMessagePageMessageTag,
+  message: pageMessage,
+});
+
+export interface TitleAndElement<M = Message> {
   readonly title: string;
-  readonly element: Element<Message>;
+  readonly element: Element<M>;
 }
+
+export const titleAndElementMap = <Input, Output>(
+  titleAndElement: TitleAndElement<Input>,
+  func: (input: Input) => Output
+): TitleAndElement<Output> => ({
+  title: titleAndElement.title,
+  element: elementMap(titleAndElement.element, func),
+});

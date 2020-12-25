@@ -1,13 +1,9 @@
+import * as a from "./appInterface";
 import * as d from "definy-core/source/data";
-import {
-  AppInterface,
-  Message,
-  TitleAndElement,
-  messageGetProject,
-} from "./appInterface";
-import { c, div } from "./view/viewUtil";
+import { c, div, elementMap } from "./view/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "./view/view";
+import { button } from "./button";
 import { icon } from "./icon";
 import { image } from "./image";
 import { userCard } from "./user";
@@ -34,11 +30,11 @@ const selectProjectDetail = Symbol("PageModelState-SelectProjectDetail");
 const selectTypePart = Symbol("PageModelState-SelectTypePart");
 
 export const init = (
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   projectId: d.ProjectId
 ): State => {
   messageHandler({
-    tag: messageGetProject,
+    tag: a.messageGetProject,
     projectId,
   });
   return {
@@ -64,10 +60,10 @@ export const updateSateByLocalMessage = (
 };
 
 export const view = (
-  appInterface: AppInterface,
+  appInterface: a.AppInterface,
   projectId: d.ProjectId,
   state: State
-): TitleAndElement => {
+): a.TitleAndElement<a.InterfaceMessage<PageMessage>> => {
   const projectState = appInterface.projectMap.get(projectId);
   if (projectState === undefined) {
     return {
@@ -109,18 +105,7 @@ export const view = (
             },
           },
           c([
-            [
-              "tree",
-              div(
-                {
-                  style: {
-                    backgroundColor: "#555",
-                    justifySelf: "stretch",
-                  },
-                },
-                "tree"
-              ),
-            ],
+            ["tree", treeView(appInterface, state)],
             [
               "main",
               projectDetailView(
@@ -148,9 +133,38 @@ export const view = (
 };
 
 const treeView = (
-  appInterface: AppInterface,
+  appInterface: a.AppInterface,
   state: State
-): Element<Message> => {};
+): Element<a.InterfaceMessage<PageMessage>> => {
+  return div(
+    {
+      style: {
+        backgroundColor: "#555",
+        justifySelf: "stretch",
+      },
+    },
+    c<a.InterfaceMessage<PageMessage>>([
+      [
+        "toDetail",
+        elementMap(button({}, "toDetail"), () =>
+          a.interfaceMessagePageMessage({
+            tag: selectProjectDetail,
+          })
+        ),
+      ],
+      [
+        "typePartId",
+        elementMap(button({}, "toTypePart"), () =>
+          a.interfaceMessagePageMessage({
+            tag: selectTypePart,
+            typePartId: "" as d.TypePartId,
+          })
+        ),
+      ],
+      ["state", div({}, JSON.stringify(state))],
+    ])
+  );
+};
 
 const containerStyle: CSSObject = {
   display: "grid",
@@ -163,11 +177,11 @@ const containerStyle: CSSObject = {
 };
 
 const projectDetailView = (
-  appInterface: AppInterface,
+  appInterface: a.AppInterface,
   projectId: d.ProjectId,
   project: d.Project
-): Element<Message> => {
-  return div(
+): Element<a.InterfaceMessage<PageMessage>> => {
+  return div<a.InterfaceMessage<PageMessage>>(
     {
       style: {
         padding: 16,
@@ -176,7 +190,7 @@ const projectDetailView = (
         alignContent: "start",
       },
     },
-    c([
+    c<a.InterfaceMessage<PageMessage>>([
       [
         "iconAndName",
         div(
@@ -220,11 +234,17 @@ const projectDetailView = (
       ],
       [
         "creator",
-        div(
+        div<a.InterfaceMessage<PageMessage>>(
           {},
-          c([
+          c<a.InterfaceMessage<PageMessage>>([
             ["label", div({}, "作成者")],
-            ["card", userCard(appInterface, project.createUserId)],
+            [
+              "card",
+              elementMap<a.Message, a.InterfaceMessage<PageMessage>>(
+                userCard(appInterface, project.createUserId),
+                a.interfaceMessageAppMessage
+              ),
+            ],
           ])
         ),
       ],

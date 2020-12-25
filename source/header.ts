@@ -8,7 +8,7 @@ import { gitHubIcon } from "./ui";
 import { image } from "./image";
 import { link } from "./link";
 
-export const Header = (appInterface: AppInterface): Element<Message> =>
+export const headerView = (appInterface: AppInterface): Element<Message> =>
   div(
     {
       style: {

@@ -1,6 +1,5 @@
 import * as app from "./app";
 import { createPatchState, domToView, patchView } from "./view/patch";
-import { Message } from "./appInterface";
 import { View } from "./view/view";
 import { createViewDiff } from "./view/diff";
 
@@ -10,7 +9,7 @@ if (initView._ === "Error") {
   throw new Error("DOMの初期状態を解釈できなかった");
 }
 
-const pushMessageList = (message: Message): void => {
+const pushMessageList = (message: app.Message): void => {
   messageList.push(message);
 };
 
@@ -33,13 +32,13 @@ const loop = () => {
     if (message === undefined) {
       break;
     }
-    state = app.updateState(pushMessageList, message, state);
+    state = app.updateStateByMessage(pushMessageList, message, state);
   }
   render();
 };
 
-const messageList: Array<Message> = [];
-let oldView: View<Message> = initView.ok;
+const messageList: Array<app.Message> = [];
+let oldView: View<app.Message> = initView.ok;
 let state: app.State = app.initState(pushMessageList);
 const patchState = createPatchState(pushMessageList);
 if (messageList.length === 0) {

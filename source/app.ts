@@ -1,3 +1,4 @@
+import * as a from "./appInterface";
 import * as core from "definy-core";
 import * as coreUtil from "definy-core/source/util";
 import * as d from "definy-core/source/data";
@@ -9,47 +10,36 @@ import * as pageHome from "./pageHome";
 import * as pageProject from "./pageProject";
 import * as pageSetting from "./pageSetting";
 import * as pageUser from "./pageUser";
-import {
-  AppInterface,
-  Message,
-  TitleAndElement,
-  getAccountToken,
-  messageChangeLocationAndLanguage,
-  messageCreateProject,
-  messageGenerateCode,
-  messageGetImage,
-  messageGetProject,
-  messageGetTop50Project,
-  messageGetTypePartInProject,
-  messageGetUserTag,
-  messageJumpTag,
-  messageLogOut,
-  messageRequestLogInTag,
-  messageRespondAccountTokenFromIndexedDB,
-  messageRespondAllTop50Project,
-  messageRespondCreatingProject,
-  messageRespondImage,
-  messageRespondLogInUrlTag,
-  messageRespondProject,
-  messageRespondSetTypePartList,
-  messageRespondTypePartInProject,
-  messageRespondUserByAccountToken,
-  messageRespondUserTag,
-  messageSelectDebugPageTab,
-  messageSetTypePartList,
-} from "./appInterface";
 import { Element, View } from "./view/view";
 import { api, getImageWithCache } from "./api";
-import { c, div, view } from "./view/viewUtil";
+import { c, div, elementMap, view } from "./view/viewUtil";
 import { CSSObject } from "@emotion/react";
-import { Header } from "./header";
+import { headerView } from "./header";
 import { keyframes } from "@emotion/css";
 import { mapSet } from "./util";
 
 export interface State {
-  appInterface: AppInterface;
-  pageModel: PageModel;
+  readonly appInterface: a.AppInterface;
+  readonly pageModel: PageModel;
 }
+
+export type Message =
+  | {
+      readonly tag: typeof appInterfaceMessage;
+      readonly message: a.Message;
+    }
+  | {
+      readonly tag: typeof projectPageMessage;
+      readonly message: pageProject.PageMessage;
+    };
+
+const appInterfaceMessage = Symbol("AppInterfaceMessage");
+const projectPageMessage = Symbol("ProjectPageMessage");
+
+const appMessageToMessage = (appMessage: a.Message): Message => ({
+  tag: appInterfaceMessage,
+  message: appMessage,
+});
 
 export type PageModel =
   | { readonly tag: typeof pageModelHome }
@@ -85,13 +75,17 @@ export const pageModelProject = Symbol("PageModel-Project");
 export const initState = (
   messageHandler: (message: Message) => void
 ): State => {
+  const appMessageHandler = (appMessage: a.Message): void => {
+    messageHandler(appMessageToMessage(appMessage));
+  };
+
   // ブラウザで戻るボタンを押したときのイベントを登録
   window.addEventListener("popstate", () => {
     const newUrlData: d.UrlData = core.urlDataAndAccountTokenFromUrl(
       new URL(window.location.href)
     ).urlData;
-    messageHandler({
-      tag: messageChangeLocationAndLanguage,
+    appMessageHandler({
+      tag: a.messageChangeLocationAndLanguage,
       language: newUrlData.language,
       location: newUrlData.location,
     });
@@ -111,7 +105,7 @@ export const initState = (
       )
       .toString()
   );
-  const appInterface: AppInterface = {
+  const appInterface: a.AppInterface = {
     top50ProjectIdState: { _: "None" },
     projectMap: new Map(),
     userMap: new Map(),
@@ -134,38 +128,72 @@ export const initState = (
   switch (appInterface.logInState._) {
     case "LoadingAccountTokenFromIndexedDB": {
       indexedDB.getAccountToken().then((accountToken) => {
-        messageHandler({
-          tag: messageRespondAccountTokenFromIndexedDB,
+        appMessageHandler({
+          tag: a.messageRespondAccountTokenFromIndexedDB,
           accountToken,
         });
       });
       break;
     }
     case "VerifyingAccountToken": {
-      verifyAccountToken(messageHandler, appInterface.logInState.accountToken);
+      verifyAccountToken(
+        appMessageHandler,
+        appInterface.logInState.accountToken
+      );
     }
   }
 
   return {
     appInterface,
     pageModel: locationToInitPageModel(
-      messageHandler,
+      appMessageHandler,
       urlDataAndAccountToken.urlData.location
     ),
   };
 };
 
-// eslint-disable-next-line complexity
-export const updateState = (
+export const updateStateByMessage = (
   messageHandler: (message: Message) => void,
   message: Message,
   oldState: State
 ): State => {
   switch (message.tag) {
-    case messageJumpTag:
+    case appInterfaceMessage:
+      return updateStateByAppMessage(
+        (appMessage: a.Message): void =>
+          messageHandler(appMessageToMessage(appMessage)),
+        message.message,
+        oldState
+      );
+    case projectPageMessage:
+      if (oldState.pageModel.tag === pageModelProject) {
+        return {
+          appInterface: oldState.appInterface,
+          pageModel: {
+            tag: pageModelProject,
+            projectId: oldState.pageModel.projectId,
+            state: pageProject.updateSateByLocalMessage(
+              oldState.pageModel.state,
+              message.message
+            ),
+          },
+        };
+      }
+      return oldState;
+  }
+};
+
+// eslint-disable-next-line complexity
+const updateStateByAppMessage = (
+  messageHandler: (message: a.Message) => void,
+  message: a.Message,
+  oldState: State
+): State => {
+  switch (message.tag) {
+    case a.messageJumpTag:
       return jump(messageHandler, message.location, message.language, oldState);
 
-    case messageChangeLocationAndLanguage:
+    case a.messageChangeLocationAndLanguage:
       return changeLocationAndLanguage(
         messageHandler,
         message.location,
@@ -173,19 +201,19 @@ export const updateState = (
         oldState
       );
 
-    case messageRequestLogInTag:
+    case a.messageRequestLogInTag:
       return logIn(messageHandler, message.provider, oldState);
 
-    case messageRespondLogInUrlTag:
+    case a.messageRespondLogInUrlTag:
       return respondLogInUrl(message.logInUrlMaybe, oldState);
 
-    case messageLogOut:
+    case a.messageLogOut:
       return logOut(oldState);
 
-    case messageGetUserTag:
+    case a.messageGetUserTag:
       return getUser(message.userId, messageHandler, oldState);
 
-    case messageRespondUserTag:
+    case a.messageRespondUserTag:
       return respondUser(
         messageHandler,
         message.userId,
@@ -193,7 +221,7 @@ export const updateState = (
         oldState
       );
 
-    case messageRespondAccountTokenFromIndexedDB:
+    case a.messageRespondAccountTokenFromIndexedDB:
       if (message.accountToken === undefined) {
         return {
           appInterface: {
@@ -212,23 +240,23 @@ export const updateState = (
         pageModel: oldState.pageModel,
       };
 
-    case messageRespondUserByAccountToken:
+    case a.messageRespondUserByAccountToken:
       return respondUserByAccountToken(
         message.response,
         messageHandler,
         oldState
       );
 
-    case messageGetTop50Project:
+    case a.messageGetTop50Project:
       return requestTop50Project(messageHandler, oldState);
 
-    case messageRespondAllTop50Project:
+    case a.messageRespondAllTop50Project:
       return respondTop50Project(message.response, messageHandler, oldState);
 
-    case messageGetProject:
+    case a.messageGetProject:
       return requestProject(message.projectId, messageHandler, oldState);
 
-    case messageRespondProject:
+    case a.messageRespondProject:
       return respondProject(
         message.projectId,
         message.response,
@@ -236,32 +264,32 @@ export const updateState = (
         oldState
       );
 
-    case messageGetImage:
+    case a.messageGetImage:
       return getImage(message.imageToken, messageHandler, oldState);
 
-    case messageRespondImage:
+    case a.messageRespondImage:
       return respondImage(message.imageToken, message.response, oldState);
 
-    case messageGenerateCode:
+    case a.messageGenerateCode:
       return generateCode(message.definyCode, oldState);
 
-    case messageGetTypePartInProject:
+    case a.messageGetTypePartInProject:
       return requestTypePartInProject(
         message.projectId,
         messageHandler,
         oldState
       );
 
-    case messageRespondTypePartInProject:
+    case a.messageRespondTypePartInProject:
       return respondTypePartInProject(message.response, oldState);
 
-    case messageCreateProject:
+    case a.messageCreateProject:
       return createProject(message.projectName, messageHandler, oldState);
 
-    case messageRespondCreatingProject:
+    case a.messageRespondCreatingProject:
       return respondCreatingProject(message.response, oldState);
 
-    case messageSetTypePartList:
+    case a.messageSetTypePartList:
       return setTypePartList(
         message.projectId,
         message.code,
@@ -269,10 +297,10 @@ export const updateState = (
         oldState
       );
 
-    case messageRespondSetTypePartList:
+    case a.messageRespondSetTypePartList:
       return respondSetTypePartList(message.response, oldState);
 
-    case messageSelectDebugPageTab:
+    case a.messageSelectDebugPageTab:
       if (oldState.pageModel.tag !== pageModelDebug) {
         return oldState;
       }
@@ -287,7 +315,7 @@ export const updateState = (
 };
 
 const locationToInitPageModel = (
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   location: d.Location
 ): PageModel => {
   switch (location._) {
@@ -335,17 +363,17 @@ const pageModelToLocation = (pageModel: PageModel): d.Location => {
 };
 
 const verifyAccountToken = (
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   accountToken: d.AccountToken
 ): void => {
   api.getUserByAccountToken(accountToken).then((response) => {
-    messageHandler({ tag: messageRespondUserByAccountToken, response });
+    messageHandler({ tag: a.messageRespondUserByAccountToken, response });
   });
 };
 
 const respondUserByAccountToken = (
   response: d.Maybe<d.Maybe<d.IdAndData<d.UserId, d.User>>>,
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   state: State
 ): State => {
   if (response._ === "Nothing") {
@@ -395,11 +423,11 @@ const respondUserByAccountToken = (
 };
 
 const requestTop50Project = (
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   state: State
 ): State => {
   api.getTop50Project(undefined).then((response) => {
-    messageHandler({ tag: messageRespondAllTop50Project, response });
+    messageHandler({ tag: a.messageRespondAllTop50Project, response });
   });
   return {
     appInterface: {
@@ -414,7 +442,7 @@ const respondTop50Project = (
   response: d.Maybe<
     d.WithTime<ReadonlyArray<d.IdAndData<d.ProjectId, d.Project>>>
   >,
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   state: State
 ): State => {
   if (response._ === "Nothing") {
@@ -456,14 +484,14 @@ const respondTop50Project = (
 
 const getUser = (
   userId: d.UserId,
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   state: State
 ): State => {
   if (state.appInterface.userMap.has(userId)) {
     return state;
   }
   api.getUser(userId).then((response) => {
-    messageHandler({ tag: messageRespondUserTag, userId, response });
+    messageHandler({ tag: a.messageRespondUserTag, userId, response });
   });
   return {
     appInterface: {
@@ -479,7 +507,7 @@ const getUser = (
 };
 
 const respondUser = (
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   userId: d.UserId,
   response: d.Maybe<d.WithTime<d.Maybe<d.User>>>,
   state: State
@@ -503,14 +531,14 @@ const respondUser = (
 
 const requestProject = (
   projectId: d.ProjectId,
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   state: State
 ): State => {
   if (state.appInterface.projectMap.has(projectId)) {
     return state;
   }
   api.getProject(projectId).then((response) => {
-    messageHandler({ tag: messageRespondProject, projectId, response });
+    messageHandler({ tag: a.messageRespondProject, projectId, response });
   });
   return {
     appInterface: {
@@ -528,7 +556,7 @@ const requestProject = (
 const respondProject = (
   projectId: d.ProjectId,
   response: d.Maybe<d.WithTime<d.Maybe<d.Project>>>,
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   state: State
 ) => {
   const imageRequestedState =
@@ -557,13 +585,13 @@ const respondProject = (
 
 const getImageList = (
   imageTokenList: ReadonlyArray<d.ImageToken>,
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   state: State
 ): State => {
   const imageMap = new Map(state.appInterface.imageMap);
   for (const imageToken of imageTokenList) {
     getImageWithCache(imageToken).then((response) => {
-      messageHandler({ tag: messageRespondImage, imageToken, response });
+      messageHandler({ tag: a.messageRespondImage, imageToken, response });
     });
     imageMap.set(imageToken, d.StaticResourceState.Loading());
   }
@@ -578,14 +606,14 @@ const getImageList = (
 
 const getImage = (
   imageToken: d.ImageToken,
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   state: State
 ): State => {
   if (state.appInterface.imageMap.has(imageToken)) {
     return state;
   }
   getImageWithCache(imageToken).then((response) => {
-    messageHandler({ tag: messageRespondImage, imageToken, response });
+    messageHandler({ tag: a.messageRespondImage, imageToken, response });
   });
   return {
     appInterface: {
@@ -628,14 +656,14 @@ const respondImage = (
 
 const requestTypePartInProject = (
   projectId: d.ProjectId,
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   state: State
 ): State => {
   if (state.appInterface.getTypePartInProjectState._ === "Requesting") {
     return state;
   }
   api.getTypePartByProjectId(projectId).then((response) => {
-    messageHandler({ tag: messageRespondTypePartInProject, response });
+    messageHandler({ tag: a.messageRespondTypePartInProject, response });
   });
   return {
     appInterface: {
@@ -685,10 +713,10 @@ const respondTypePartInProject = (
 
 const createProject = (
   projectName: string,
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   state: State
 ): State => {
-  const accountToken = getAccountToken(state.appInterface);
+  const accountToken = a.getAccountToken(state.appInterface);
   if (accountToken === undefined || state.appInterface.isCreatingProject) {
     return state;
   }
@@ -698,7 +726,7 @@ const createProject = (
       projectName,
     })
     .then((response) => {
-      messageHandler({ tag: messageRespondCreatingProject, response });
+      messageHandler({ tag: a.messageRespondCreatingProject, response });
     });
   return {
     appInterface: {
@@ -742,10 +770,10 @@ const respondCreatingProject = (
 const setTypePartList = (
   projectId: d.ProjectId,
   typePartList: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>,
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   state: State
 ): State => {
-  const accountToken = getAccountToken(state.appInterface);
+  const accountToken = a.getAccountToken(state.appInterface);
   if (
     accountToken === undefined ||
     state.appInterface.typePartEditState !== "None"
@@ -760,7 +788,7 @@ const setTypePartList = (
       typePartList,
     })
     .then((response) => {
-      messageHandler({ tag: messageRespondSetTypePartList, response });
+      messageHandler({ tag: a.messageRespondSetTypePartList, response });
     });
   return {
     appInterface: {
@@ -809,7 +837,7 @@ const respondSetTypePartList = (
 };
 
 const logIn = (
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   provider: d.OpenIdConnectProvider,
   state: State
 ): State => {
@@ -824,7 +852,7 @@ const logIn = (
     })
     .then((response) =>
       messageHandler({
-        tag: messageRespondLogInUrlTag,
+        tag: a.messageRespondLogInUrlTag,
         logInUrlMaybe: response,
       })
     );
@@ -869,7 +897,7 @@ const logOut = (state: State): State => {
 };
 
 const jump = (
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   location: d.Location,
   language: d.Language,
   state: State
@@ -898,7 +926,7 @@ const jump = (
 };
 
 const changeLocationAndLanguage = (
-  messageHandler: (message: Message) => void,
+  messageHandler: (message: a.Message) => void,
   location: d.Location,
   language: d.Language,
   state: State
@@ -1020,8 +1048,11 @@ const stateToTitleAndAttributeChildren = (
   return {
     title: mainTitleAndElement.title,
     style: { gridTemplateRows: "48px 1fr" },
-    children: c([
-      ["header", Header(state.appInterface)],
+    children: c<Message>([
+      [
+        "header",
+        elementMap(headerView(state.appInterface), appMessageToMessage),
+      ],
       ["main", mainTitleAndElement.element],
     ]),
   };
@@ -1065,25 +1096,56 @@ const jumpMessage = (url: URL, language: d.Language): string => {
   }
 };
 
-const main = (state: State): TitleAndElement => {
+const main = (state: State): a.TitleAndElement<Message> => {
   switch (state.pageModel.tag) {
     case pageModelHome:
-      return pageHome.view(state.appInterface);
+      return a.titleAndElementMap(
+        pageHome.view(state.appInterface),
+        appMessageToMessage
+      );
     case pageModelCreateProject:
-      return pageCreateProject.view();
+      return a.titleAndElementMap(
+        pageCreateProject.view(),
+        appMessageToMessage
+      );
     case pageModelAboutTag:
-      return pageAbout.view(state.appInterface);
+      return a.titleAndElementMap(
+        pageAbout.view(state.appInterface),
+        appMessageToMessage
+      );
     case pageModelUserTag:
-      return pageUser.view(state.appInterface, state.pageModel.userId);
+      return a.titleAndElementMap(
+        pageUser.view(state.appInterface, state.pageModel.userId),
+        appMessageToMessage
+      );
     case pageModelDebug:
-      return pageDebug.view(state.appInterface, state.pageModel.tab);
+      return a.titleAndElementMap(
+        pageDebug.view(state.appInterface, state.pageModel.tab),
+        appMessageToMessage
+      );
     case pageModelSetting:
-      return pageSetting.view(state.appInterface);
+      return a.titleAndElementMap(
+        pageSetting.view(state.appInterface),
+        appMessageToMessage
+      );
     case pageModelProject:
-      return pageProject.view(
-        state.appInterface,
-        state.pageModel.projectId,
-        state.pageModel.state
+      return a.titleAndElementMap(
+        pageProject.view(
+          state.appInterface,
+          state.pageModel.projectId,
+          state.pageModel.state
+        ),
+        (interfaceMessage) => {
+          switch (interfaceMessage.tag) {
+            case a.interfaceMessageAppMessageTag:
+              return appMessageToMessage(interfaceMessage.message);
+            case a.interfaceMessagePageMessageTag:
+              return {
+                tag: projectPageMessage,
+                message: interfaceMessage.message,
+              };
+          }
+        }
       );
   }
 };
