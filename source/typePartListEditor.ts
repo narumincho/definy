@@ -1,63 +1,30 @@
+import * as a from "./appInterface";
 import * as d from "definy-core/source/data";
-import { Component, ReactElement } from "react";
-import { Icon } from "./icon";
-import { Model } from "./model";
-import { TypePartListEditorLoaded } from "./typePartListEditorLoaded";
-import { jsx as h } from "@emotion/react";
+import { Element } from "./view/view";
+import { div } from "./view/viewUtil";
 
-export type Props = {
-  readonly model: Model;
-  readonly projectId: d.ProjectId;
-};
-
-export class TypePartListEditor extends Component<Props, never> {
-  constructor(props: Props) {
-    super(props);
-    props.model.requestTypePartInProject(props.projectId);
-  }
-
-  getLoadedTypePartList(): ReadonlyMap<d.TypePartId, d.TypePart> | undefined {
-    if (this.props.model.getTypePartInProjectState._ === "Requesting") {
-      return undefined;
-    }
-    const result: Map<d.TypePartId, d.TypePart> = new Map();
-    for (const [id, typePartState] of this.props.model.typePartMap) {
-      const typePart = getTypePartInResourceState(
-        typePartState,
-        this.props.projectId
-      );
-      if (typePart !== undefined) {
-        result.set(id, typePart);
-      }
-    }
-    return result;
-  }
-
-  render(): ReactElement {
-    const loadedTypePartList = this.getLoadedTypePartList();
-    return h(
-      "div",
-      {},
-      loadedTypePartList === undefined
-        ? h(Icon, { iconType: "Requesting" })
-        : h(TypePartListEditorLoaded, {
-            projectId: this.props.projectId,
-            initTypePartList: loadedTypePartList,
-            model: this.props.model,
-          })
-    );
-  }
+export interface Message {
+  readonly tag: typeof changeName;
 }
 
-const getTypePartInResourceState = (
-  typePartResourceState: d.ResourceState<d.TypePart>,
-  projectId: d.ProjectId
-): d.TypePart | undefined => {
-  if (typePartResourceState._ !== "Loaded") {
-    return;
+export const changeName = Symbol("TypePartEditorMessage-ChangeName");
+
+export const typePartEditor = (
+  appInterface: a.AppInterface,
+  typePartId: d.TypePartId
+): Element<never> => {
+  const typePartResource = appInterface.typePartMap.get(typePartId);
+  if (typePartResource === undefined) {
+    return div({}, "???");
   }
-  if (typePartResourceState.dataWithTime.data.projectId !== projectId) {
-    return;
+  switch (typePartResource._) {
+    case "Deleted":
+      return div({}, "削除された型パーツ");
+    case "Requesting":
+      return div({}, "取得中");
+    case "Unknown":
+      return div({}, "取得に失敗した型パーツ");
+    case "Loaded":
+      return div({}, JSON.stringify(typePartResource.dataWithTime.data));
   }
-  return typePartResourceState.dataWithTime.data;
 };

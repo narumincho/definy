@@ -6,6 +6,8 @@ import { Element } from "./view/view";
 import { button } from "./button";
 import { icon } from "./icon";
 import { image } from "./image";
+import { mapMapValue } from "./util";
+import { typePartEditor } from "./typePartListEditor";
 import { userCard } from "./user";
 
 export type State =
@@ -35,6 +37,10 @@ export const init = (
 ): State => {
   messageHandler({
     tag: a.messageGetProject,
+    projectId,
+  });
+  messageHandler({
+    tag: a.messageGetTypePartInProject,
     projectId,
   });
   return {
@@ -108,8 +114,9 @@ export const view = (
             ["tree", treeView(appInterface, state)],
             [
               "main",
-              projectDetailView(
+              mainView(
                 appInterface,
+                state,
                 projectId,
                 projectState.dataWithTime.data
               ),
@@ -141,27 +148,39 @@ const treeView = (
       style: {
         backgroundColor: "#555",
         justifySelf: "stretch",
+        display: "grid",
+        overflowY: "scroll",
       },
     },
     c<a.InterfaceMessage<PageMessage>>([
       [
         "toDetail",
-        elementMap(button({}, "toDetail"), () =>
+        elementMap(button({}, "プロジェクト詳細"), () =>
           a.interfaceMessagePageMessage({
             tag: selectProjectDetail,
           })
         ),
       ],
-      [
-        "typePartId",
-        elementMap(button({}, "toTypePart"), () =>
-          a.interfaceMessagePageMessage({
-            tag: selectTypePart,
-            typePartId: "" as d.TypePartId,
-          })
-        ),
-      ],
-      ["state", div({}, JSON.stringify(state))],
+      ...mapMapValue(
+        appInterface.typePartMap,
+        (
+          typePartResourceState,
+          typePartId
+        ): Element<a.InterfaceMessage<PageMessage>> =>
+          elementMap(
+            button(
+              {},
+              typePartResourceState._ === "Loaded"
+                ? typePartResourceState.dataWithTime.data.name
+                : "???"
+            ),
+            () =>
+              a.interfaceMessagePageMessage({
+                tag: selectTypePart,
+                typePartId,
+              })
+          )
+      ),
     ])
   );
 };
@@ -174,6 +193,20 @@ const containerStyle: CSSObject = {
   alignContent: "start",
   height: "100%",
   overflow: "auto",
+};
+
+const mainView = (
+  appInterface: a.AppInterface,
+  state: State,
+  projectId: d.ProjectId,
+  project: d.Project
+): Element<a.InterfaceMessage<PageMessage>> => {
+  switch (state.tag) {
+    case selectProjectDetail:
+      return projectDetailView(appInterface, projectId, project);
+    case selectTypePart:
+      return typePartEditor(appInterface, state.typePartId);
+  }
 };
 
 const projectDetailView = (

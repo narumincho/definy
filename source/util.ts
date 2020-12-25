@@ -1,10 +1,10 @@
 export const mapMapValue = <Key, Input, Output>(
   input: ReadonlyMap<Key, Input>,
-  func: (value: Input) => Output
+  func: (value: Input, key: Key) => Output
 ): ReadonlyMap<Key, Output> => {
   const result: Map<Key, Output> = new Map();
   for (const [key, value] of input) {
-    result.set(key, func(value));
+    result.set(key, func(value, key));
   }
   return result;
 };
