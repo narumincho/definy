@@ -1,10 +1,5 @@
-import {
-  Editor,
-  EditorProps,
-  editorToReactElement,
-  simpleStyleToCss,
-} from "./ui";
-import { css, jsx as h } from "@emotion/react";
+import { CSSObject, css, jsx as h } from "@emotion/react";
+import { Editor, EditorProps, editorToReactElement } from "./ui";
 import { Button } from "./button";
 import { FunctionComponent } from "react";
 
@@ -21,7 +16,7 @@ export const createListEditor = <T>(
     if (props.value.length === 0) {
       return h(
         "div",
-        { css: listEditorStyle },
+        { css: { display: "grid", padding: 0 } },
         h(AddButton, {
           onClick: () => props.onChange([param.initValue]),
         })
@@ -30,7 +25,7 @@ export const createListEditor = <T>(
     const itemEditorComponent = param.isLazy ? param.editor() : param.editor;
     return h(
       "div",
-      { css: listEditorStyle },
+      { css: { display: "grid", padding: 0 } },
       props.value.map((item, index) => {
         return h(
           "div",
@@ -76,16 +71,11 @@ export const createListEditor = <T>(
   return editor;
 };
 
-const listEditorStyle = simpleStyleToCss({
-  padding: 0,
-  direction: "y",
-});
-
-const itemStyle = simpleStyleToCss({
+const itemStyle: CSSObject = {
+  display: "grid",
   padding: 4,
-  direction: "x",
-  xGridTemplate: [{ _: "OneFr" }, { _: "Fix", value: 32 }],
-});
+  gridTemplateColumns: "1fr 32px",
+};
 
 const AddButton: FunctionComponent<{ onClick: () => void }> = (props) =>
   h(

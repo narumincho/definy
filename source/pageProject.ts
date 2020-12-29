@@ -7,7 +7,7 @@ import { button } from "./button";
 import { icon } from "./icon";
 import { image } from "./image";
 import { mapMapValue } from "./util";
-import { typePartEditor } from "./typePartListEditor";
+import { typePartEditor } from "./typePartEditor";
 import { userCard } from "./user";
 
 export type State =

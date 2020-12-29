@@ -1,11 +1,8 @@
-import { ChangeEvent, ReactElement } from "react";
-import {
-  Editor,
-  EditorProps,
-  editorToReactElement,
-  simpleStyleToCss,
-} from "./ui";
-import { css, jsx as h } from "@emotion/react";
+import { Editor, EditorProps, box, editorToReactElement } from "./ui";
+import { c, inputRadio, label } from "./view/viewUtil";
+import { Element } from "./view/view";
+import { ReactElement } from "react";
+import { jsx as h } from "@emotion/react";
 
 export const createWithParameterSumEditor = <
   ParamType extends { [key in string]: unknown },
@@ -20,9 +17,7 @@ export const createWithParameterSumEditor = <
   },
   name: string
 ): Editor<T> => {
-  const TagEditor = createNoParameterTagEditor<Tag>(
-    Object.keys(defaultValueObject) as Array<Tag>
-  );
+  const TagEditor = "div";
   const editor = (props: EditorProps<T>): ReactElement => {
     const parameterComponent = parameterComponentObject[
       props.value._
@@ -35,7 +30,7 @@ export const createWithParameterSumEditor = <
     );
 
     return h("div", {}, [
-      editorToReactElement<Tag>(TagEditor, {
+      h(TagEditor, {
         key: "tag",
         name: props.name + "-tag",
         onChange: (newTagName: Tag) => {
@@ -81,82 +76,69 @@ const getParameterFieldNameAndValue = <valueType>(
   }
 };
 
-export const createNoParameterTagEditor = <tag extends string>(
-  tagNameList: ReadonlyArray<tag>
-): Editor<tag> => (props) => {
-  return h(
-    "div",
+const tagEditor = (
+  tagList: ReadonlyArray<string>,
+  selectedTag: string,
+  groupName: string
+) =>
+  box(
     {
-      css: simpleStyleToCss({
-        borderRadius: 8,
-        border: { width: 1, color: "#333" },
-        padding: 0,
-        direction: "x",
-        xGridTemplate: [{ _: "OneFr" }, { _: "OneFr" }, { _: "OneFr" }],
-      }),
+      borderRadius: 8,
+      border: { width: 1, color: "#333" },
+      padding: 0,
+      direction: "x",
+      xGridTemplate: [{ _: "OneFr" }, { _: "OneFr" }, { _: "OneFr" }],
     },
-    tagNameList.map((tagName, index) =>
-      inputAndLabel(
-        props.name + "-" + tagName,
-        tagName,
-        index,
-        props.value === tagName,
-        (newValue: string) => {
-          if (!tagNameList.includes(newValue as tag)) {
-            throw new Error("not include newValue =" + newValue);
-          }
-          props.onChange(newValue as tag);
-        }
+    c(
+      tagList.flatMap((tagName, index) =>
+        inputAndLabel(groupName, tagName, index, selectedTag === tagName)
       )
     )
   );
-};
 
 const inputAndLabel = (
   name: string,
   tagName: string,
   index: number,
-  isChecked: boolean,
-  onChange: (value: string) => void
-): ReadonlyArray<ReactElement> => [
-  h("input", {
-    key: tagName + "-input",
-    type: "radio",
-    value: tagName,
-    name,
-    id: name,
-    checked: isChecked,
-    onChange: (event: ChangeEvent<HTMLInputElement>) => {
-      onChange(event.target.value);
-    },
-    css: css({
-      width: 0,
-      height: 0,
+  isChecked: boolean
+): ReadonlyArray<readonly [string, Element<string>]> => [
+  [
+    tagName + "-input",
+    inputRadio({
+      id: name + "-" + tagName,
+      groupName: name,
+      checked: isChecked,
+      select: tagName,
+      style: {
+        width: 0,
+        height: 0,
+      },
     }),
-  }),
-  h(
-    "label",
-    {
-      key: tagName + "-label",
-      htmlFor: name,
-      css: css({
-        backgroundColor: isChecked ? "#aaa" : "#000",
-        color: isChecked ? "#000" : "#ddd",
-        padding: 4,
-        cursor: "pointer",
-        display: "block",
-        gridColumn:
-          ((index % 3) + 1).toString() + " / " + ((index % 3) + 2).toString(),
-        gridRow:
-          (Math.floor(index / 3) + 1).toString() +
-          " / " +
-          (Math.floor(index / 3) + 2).toString(),
-        textAlign: "center",
-        "&:active": {
-          backgroundColor: "#303030",
+  ],
+  [
+    tagName + "-label",
+    label(
+      {
+        targetElementId: name + "-" + tagName,
+        style: {
+          backgroundColor: isChecked ? "#aaa" : "#000",
+          color: isChecked ? "#000" : "#ddd",
+          padding: 4,
+          cursor: "pointer",
+          display: "block",
+          gridColumn:
+            ((index % 3) + 1).toString() + " / " + ((index % 3) + 2).toString(),
+          gridRow:
+            (Math.floor(index / 3) + 1).toString() +
+            " / " +
+            (Math.floor(index / 3) + 2).toString(),
+          textAlign: "center",
+          "&:active": {
+            backgroundColor: "#303030",
+          },
         },
-      }),
-    },
-    tagName
-  ),
+      },
+      tagName
+    ),
+  ],
 ];

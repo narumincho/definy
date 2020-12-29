@@ -1,56 +1,27 @@
-import { Editor, EditorProps, simpleStyleToCss } from "./ui";
-import { FunctionComponent, ReactElement } from "react";
-import { jsx as h } from "@emotion/react";
+import { c, div } from "./view/viewUtil";
+import { Element } from "./view/view";
+import { box } from "./ui";
+import { mapMapValue } from "./util";
 
-export const createProductEditor = <T extends Record<string, unknown>>(
-  memberComponentObject: {
-    [key in keyof T]: Editor<T[key]>;
-  },
-  displayName: string
-): Editor<T> => {
-  const editor = (props: EditorProps<T>): ReactElement => {
-    return h(
-      "div",
-      {
-        css: simpleStyleToCss({
-          direction: "y",
-          padding: 0,
-          border: { width: 1, color: "#ddd" },
-        }),
-      },
-      Object.entries(memberComponentObject).map(
-        <memberT>([memberName, memberEditor]: [string, Editor<memberT>]) =>
-          h(
-            NameContainer,
-            { name: memberName, key: memberName },
-            h(memberEditor, {
-              name: props.name + "-" + memberName,
-              model: props.model,
-              value: props.value[memberName] as memberT,
-              onChange: (newMemberValue: memberT) => {
-                props.onChange({
-                  ...props.value,
-                  [memberName]: newMemberValue,
-                });
-              },
-            })
-          )
-      )
-    );
-  };
-  editor.displayName = displayName;
-  return editor;
-};
-
-const NameContainer: FunctionComponent<{ name: string }> = (props) =>
-  h(
-    "div",
+export const createProductEditor = (
+  elementMap: ReadonlyMap<string, Element<never>>
+): Element<never> =>
+  box(
     {
-      css: simpleStyleToCss({
-        padding: 16,
-        direction: "y",
-      }),
+      direction: "y",
+      padding: 0,
+      border: { width: 1, color: "#ddd" },
     },
-    h("div", { key: "name" }, props.name),
-    props.children
+    mapMapValue(elementMap, (element, name) =>
+      box(
+        {
+          padding: 16,
+          direction: "y",
+        },
+        c([
+          ["name", div({}, name)],
+          ["value", element],
+        ])
+      )
+    )
   );

@@ -1,8 +1,9 @@
-import { SerializedStyles, css, jsx } from "@emotion/react";
-import { c, path, svg } from "./view/viewUtil";
+import { c, div, path, svg } from "./view/viewUtil";
+import { AppInterface } from "./appInterface";
 import { Element } from "./view/view";
 import { Model } from "./model";
 import { ReactElement } from "react";
+import { jsx } from "@emotion/react";
 
 export type GridTemplateValue = { _: "Fix"; value: number } | { _: "OneFr" };
 
@@ -26,32 +27,40 @@ export interface SimpleStyle {
 }
 
 /** CSSの指定をできるだけしなくて済むように */
-export const simpleStyleToCss = (simpleStyle: SimpleStyle): SerializedStyles =>
-  css({
-    display: "grid",
-    boxSizing: "border-box",
-    wordBreak: "break-all",
-    breakWord: "break-word",
-    gridAutoFlow: simpleStyle.direction === "x" ? "column" : "row",
-    width: simpleStyle.width,
-    height: simpleStyle.height,
-    gap: simpleStyle.gap,
-    padding: simpleStyle.padding,
-    backgroundColor: "#111",
-    color: "#ddd",
-    borderRadius: simpleStyle.borderRadius,
-    border:
-      simpleStyle.border === undefined
-        ? "none"
-        : "solid " +
-          simpleStyle.border.width.toString() +
-          "px " +
-          simpleStyle.border.color,
-    gridTemplateColumns:
-      simpleStyle.xGridTemplate === undefined
-        ? undefined
-        : simpleStyle.xGridTemplate.map(gridTemplateToCssString).join(" "),
-  });
+export const box = <Message>(
+  simpleStyle: SimpleStyle,
+  children: ReadonlyMap<string, Element<Message>>
+): Element<Message> =>
+  div(
+    {
+      style: {
+        display: "grid",
+        boxSizing: "border-box",
+        wordBreak: "break-all",
+        breakWord: "break-word",
+        gridAutoFlow: simpleStyle.direction === "x" ? "column" : "row",
+        width: simpleStyle.width,
+        height: simpleStyle.height,
+        gap: simpleStyle.gap,
+        padding: simpleStyle.padding,
+        backgroundColor: "#111",
+        color: "#ddd",
+        borderRadius: simpleStyle.borderRadius,
+        border:
+          simpleStyle.border === undefined
+            ? "none"
+            : "solid " +
+              simpleStyle.border.width.toString() +
+              "px " +
+              simpleStyle.border.color,
+        gridTemplateColumns:
+          simpleStyle.xGridTemplate === undefined
+            ? undefined
+            : simpleStyle.xGridTemplate.map(gridTemplateToCssString).join(" "),
+      },
+    },
+    children
+  );
 
 const gridTemplateToCssString = (value: GridTemplateValue): string => {
   switch (value._) {
@@ -80,21 +89,9 @@ export const editorToReactElement = <T>(
     key?: string;
     model: Model;
   }
-): ReactElement => jsx(editor, props);
+): ReactElement => jsx("div", {}, "");
 
 export type Theme = "Gray" | "Black" | "Active";
-
-export const mapEditor = <inside, outside>(
-  editor: Editor<inside>,
-  insideToOutside: (inside_: inside) => outside,
-  outsideToInside: (outside_: outside) => inside
-): Editor<outside> => (props) =>
-  editorToReactElement(editor, {
-    model: props.model,
-    name: props.name,
-    onChange: (newInput: inside): outside => insideToOutside(newInput),
-    value: outsideToInside(props.value),
-  });
 
 /**
  * GitHubのアイコン

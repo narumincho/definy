@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { Editor, editorToReactElement, simpleStyleToCss } from "./ui";
+import { Editor, editorToReactElement } from "./ui";
 import { Button } from "./button";
 import { OneLineTextInput } from "./oneLineTextInput";
 import { jsx as h } from "@emotion/react";
@@ -29,10 +29,10 @@ export const TypePartIdEditor: Editor<d.TypePartId> = (props) => {
       "div",
       {
         key: "suggestionList",
-        css: simpleStyleToCss({
-          direction: "y",
+        css: {
+          display: "grid",
           padding: 8,
-        }),
+        },
       },
       suggestionList.length === 0
         ? "none"

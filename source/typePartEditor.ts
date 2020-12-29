@@ -1,6 +1,7 @@
 import * as a from "./appInterface";
 import * as d from "definy-core/source/data";
 import { Element } from "./view/view";
+import { createProductEditor } from "./productEditor";
 import { div } from "./view/viewUtil";
 
 export interface Message {
@@ -25,6 +26,16 @@ export const typePartEditor = (
     case "Unknown":
       return div({}, "取得に失敗した型パーツ");
     case "Loaded":
-      return div({}, JSON.stringify(typePartResource.dataWithTime.data));
+      return typePartEditorLoaded(typePartResource.dataWithTime.data);
   }
+};
+
+const typePartEditorLoaded = (typePart: d.TypePart) => {
+  return createProductEditor(
+    new Map([
+      ["name", div({}, typePart.name)],
+      ["description", div({}, typePart.description)],
+      ["bodyType", div({}, typePart.body._)],
+    ])
+  );
 };

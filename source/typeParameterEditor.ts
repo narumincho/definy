@@ -2,8 +2,6 @@ import * as d from "definy-core/source/data";
 
 import { Button } from "./button";
 import { Editor } from "./ui";
-import { OneLineTextInput } from "./oneLineTextInput";
-import { createProductEditor } from "./productEditor";
 import { jsx as h } from "@emotion/react";
 
 const TypeParameterTypeIdEditor: Editor<d.TypePartId> = (props) => {
@@ -27,11 +25,3 @@ const TypeParameterTypeIdEditor: Editor<d.TypePartId> = (props) => {
     h("div", {}, props.value)
   );
 };
-
-export const TypeParameterEditor: Editor<d.TypeParameter> = createProductEditor<d.TypeParameter>(
-  {
-    name: OneLineTextInput,
-    typePartId: TypeParameterTypeIdEditor,
-  },
-  "TypeParameter"
-);
