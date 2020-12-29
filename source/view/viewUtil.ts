@@ -114,6 +114,45 @@ export const img = <Message>(option: {
   isSvg: false,
 });
 
+export const inputRadio = <Message>(option: {
+  id?: string;
+  style?: CSSObject;
+  select: Message;
+  checked: boolean;
+  /** 選択肢の選択を1にする動作のため. どの選択肢に属しているかを指定する */
+  groupName: string;
+}): Element<Message> => ({
+  tagName: "input",
+  attributeAndChildren: {
+    attributes: new Map<string, string>([
+      ...(option.id === undefined ? [] : ([["id", option.id]] as const)),
+      ["class", css(option.style)],
+      ...(option.checked ? ([["checked", "checked"]] as const) : []),
+      ["name", option.groupName],
+    ]),
+    events: new Map<string, Message>([["change", option.select]]),
+    children: childrenText(""),
+  },
+  isSvg: false,
+});
+
+export const label = (
+  option: { id?: string; style?: CSSObject; targetElementId: string },
+  children: ReadonlyMap<string, Element<never>> | string
+): Element<never> => ({
+  tagName: "label",
+  attributeAndChildren: {
+    attributes: new Map<string, string>([
+      ...(option.id === undefined ? [] : ([["id", option.id]] as const)),
+      ["class", css(option.style)],
+      ["htmlFor", option.targetElementId],
+    ]),
+    events: new Map<string, never>(),
+    children: childrenFromStringOrElementMap(children),
+  },
+  isSvg: false,
+});
+
 export const svg = <Message>(
   option: {
     id?: string;
