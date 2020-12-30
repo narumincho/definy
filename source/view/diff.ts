@@ -4,8 +4,12 @@ import {
   Children,
   Color,
   Element,
+  Events,
+  Path,
   View,
   childrenTextTag,
+  pathAppendKey,
+  rootPath,
 } from "./view";
 import { mapFilter, mapKeyToSet, setSubtract } from "../util";
 
@@ -14,11 +18,11 @@ export interface ViewDiff<Message> {
   readonly newTitle: string | undefined;
   readonly newThemeColor: d.Maybe<Color | undefined>;
   readonly newLanguage: d.Language | undefined;
+  readonly newMessageDataMap: ReadonlyMap<Path, Events<Message>>;
 }
 
 export interface AttributesAndChildrenDiff<Message> {
   readonly attributes: AttributesDiff;
-  readonly events: EventsDiff<Message>;
   readonly children: ChildrenDiff<Message>;
 }
 
@@ -27,19 +31,16 @@ export interface AttributesDiff {
   readonly deleteNameSet: ReadonlySet<string>;
 }
 
-export interface EventsDiff<Message> {
-  readonly setNameValueMap: ReadonlyMap<string, Message>;
-  readonly deleteNameSet: ReadonlySet<string>;
-}
-
 export type ElementDiff<Message> =
   | {
       readonly kind: "replace";
       readonly newElement: Element<Message>;
+      readonly key: string;
     }
   | {
       readonly kind: "update";
       readonly attributeAndChildren: AttributesAndChildrenDiff<Message>;
+      readonly key: string;
     }
   | {
       readonly kind: "delete";
@@ -70,16 +71,19 @@ export type ChildrenDiff<Message> =
 export const createViewDiff = <Message>(
   oldView: View<Message>,
   newView: View<Message>
-): ViewDiff<Message> => ({
-  attributeAndChildren: createAttributesAndChildrenDiff(
-    oldView.attributeAndChildren,
-    newView.attributeAndChildren
-  ),
-  newTitle: oldView.title === newView.title ? undefined : newView.title,
-  newThemeColor: createColorDiff(oldView.themeColor, newView.themeColor),
-  newLanguage:
-    oldView.language === newView.language ? undefined : newView.language,
-});
+): ViewDiff<Message> => {
+  return {
+    attributeAndChildren: createAttributesAndChildrenDiff(
+      oldView.attributeAndChildren,
+      newView.attributeAndChildren
+    ),
+    newTitle: oldView.title === newView.title ? undefined : newView.title,
+    newThemeColor: createColorDiff(oldView.themeColor, newView.themeColor),
+    newLanguage:
+      oldView.language === newView.language ? undefined : newView.language,
+    newMessageDataMap: createMessageDataMap(newView.attributeAndChildren),
+  };
+};
 
 const createColorDiff = (
   oldColor: Color | undefined,
@@ -103,10 +107,11 @@ const createColorDiff = (
 
 export const createElementDiff = <Message>(
   oldElement: Element<Message>,
-  newElement: Element<Message>
+  newElement: Element<Message>,
+  newKey: string
 ): ElementDiff<Message> => {
   if (oldElement.tagName !== newElement.tagName) {
-    return { kind: "replace", newElement };
+    return { kind: "replace", newElement, key: newKey };
   }
   return {
     kind: "update",
@@ -114,6 +119,7 @@ export const createElementDiff = <Message>(
       oldElement.attributeAndChildren,
       newElement.attributeAndChildren
     ),
+    key: newKey,
   };
 };
 
@@ -124,10 +130,6 @@ const createAttributesAndChildrenDiff = <Message>(
   attributes: createAttributesDiff(
     oldAttributesAndChildren.attributes,
     newAttributesAndChildren.attributes
-  ),
-  events: createEventsDiff(
-    oldAttributesAndChildren.events,
-    newAttributesAndChildren.events
   ),
   children: createChildrenDiff(
     oldAttributesAndChildren.children,
@@ -146,17 +148,6 @@ export const createAttributesDiff = (
   setNameValueMap: mapFilter(
     newAttribute,
     (newValue, newName) => newValue !== oldAttribute.get(newName)
-  ),
-});
-
-const createEventsDiff = <Message>(
-  oldEvents: ReadonlyMap<string, Message>,
-  newEvents: ReadonlyMap<string, Message>
-): EventsDiff<Message> => ({
-  deleteNameSet: setSubtract(mapKeyToSet(oldEvents), mapKeyToSet(newEvents)),
-  setNameValueMap: mapFilter(
-    newEvents,
-    (newMessage, newName) => newMessage !== oldEvents.get(newName)
   ),
 });
 
@@ -290,7 +281,9 @@ const createChildDiff = <Message>(
       };
     }
 
-    updates.push(createElementDiff(oldChildElement.element, newChildElement));
+    updates.push(
+      createElementDiff(oldChildElement.element, newChildElement, newChildKey)
+    );
     deleteTagsForTag(newChildKey);
     return {
       updateInSameOrder: true,
@@ -308,6 +301,7 @@ const createChildDiff = <Message>(
     updates.push({
       kind: "replace",
       newElement: newChildElement,
+      key: newChildKey,
     });
     deleteTagsForTag(newChildKey);
   }
@@ -316,4 +310,35 @@ const createChildDiff = <Message>(
     updateInSameOrder: false,
     lastUpdateIndex: initLastUpdateIndex,
   };
+};
+
+const createMessageDataMap = <Message>(
+  attributeAndChildren: AttributesAndChildren<Message>
+): ReadonlyMap<Path, Events<Message>> => {
+  const messageDataMap: Map<Path, Events<Message>> = new Map();
+  createMessageDataMapLoop(messageDataMap, rootPath, attributeAndChildren);
+  return messageDataMap;
+};
+
+/**
+ * @param messageDataMap イベントからどう解釈するかのデータ. 上書きする
+ * @param path 要素のパス. key をつなげたもの
+ * @param attributeAndChildren 属性と子要素
+ */
+const createMessageDataMapLoop = <Message>(
+  messageDataMap: Map<Path, Events<Message>>,
+  path: Path,
+  attributeAndChildren: AttributesAndChildren<Message>
+): void => {
+  messageDataMap.set(path, attributeAndChildren.events);
+  if (attributeAndChildren.children.tag === childrenTextTag) {
+    return;
+  }
+  for (const [key, child] of attributeAndChildren.children.value) {
+    createMessageDataMapLoop(
+      messageDataMap,
+      pathAppendKey(path, key),
+      child.attributeAndChildren
+    );
+  }
 };

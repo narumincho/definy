@@ -15,9 +15,36 @@ export interface Element<Message> {
 
 export interface AttributesAndChildren<Message> {
   readonly attributes: ReadonlyMap<string, string>;
-  readonly events: ReadonlyMap<string, Message>;
+  readonly events: Events<Message>;
   readonly children: Children<Message>;
 }
+
+/**
+ * 各要素のイベントのハンドルをどうするかのデータ
+ *
+ * Message を undefined にするとイベントが設定されてないと解釈される場合があるので注意!
+ */
+export interface Events<Message> {
+  onClick: ClickMessageData<Message> | undefined;
+  onChange: ChangeMessageData<Message> | undefined;
+  onInput: InputMessageData<Message> | undefined;
+}
+
+export type Path = string & { readonly _path: undefined };
+
+export const rootPath = "" as Path;
+
+export const pathAppendKey = (path: Path, key: string): Path =>
+  (path + "/" + key) as Path;
+
+export interface ClickMessageData<Message> {
+  ignoreNewTab: boolean;
+  message: Message;
+}
+
+export type ChangeMessageData<Message> = Message;
+
+export type InputMessageData<Message> = (value: string) => Message;
 
 export const childrenElementListTag = Symbol("Children - ElementList");
 export const childrenTextTag = Symbol("Children - Text");

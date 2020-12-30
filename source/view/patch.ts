@@ -4,21 +4,29 @@ import {
   Children,
   Color,
   Element,
+  Events,
+  Path,
   View,
   childrenElementList,
   childrenText,
   childrenTextTag,
+  pathAppendKey,
+  rootPath,
 } from "./view";
 import {
   AttributesAndChildrenDiff,
   AttributesDiff,
   ElementDiff,
-  EventsDiff,
   ViewDiff,
 } from "./diff";
 
 interface PatchState<Message> {
-  messageHandler: (message: Message) => void;
+  readonly clickEventHandler: (path: string, mouseEvent: MouseEvent) => void;
+  readonly changeEventHandler: (path: string, event: Event) => void;
+  readonly inputEventHandler: (path: string, event: InputEvent) => void;
+  readonly setMessageDataMap: (
+    newMap: ReadonlyMap<Path, Events<Message>>
+  ) => void;
 }
 
 const svgNameSpace = "http://www.w3.org/2000/svg";
@@ -54,7 +62,11 @@ export const htmlElementToAttributesAndChildren = (
   attributeMap.delete("data-key");
   return {
     attributes: attributeMap,
-    events: new Map<string, never>(),
+    events: {
+      onChange: undefined,
+      onClick: undefined,
+      onInput: undefined,
+    },
     children: htmlElementChildNodesToChildren(htmlOrSvgElement.childNodes),
   };
 };
@@ -118,16 +130,16 @@ const namedNodeMapToIterator = (
 
 const elementToHtmlOrSvgElement = <Message>(
   element: Element<Message>,
-  key: string,
+  path: Path,
   patchState: PatchState<Message>
 ): HTMLElement | SVGElement => {
   const htmlElement: HTMLElement | SVGElement = element.isSvg
     ? document.createElementNS(svgNameSpace, element.tagName)
     : document.createElement(element.tagName);
-  htmlElement.dataset.key = key;
+  htmlElement.dataset.path = path;
 
   setAttributes(htmlElement, element.attributeAndChildren.attributes);
-  setEvents(htmlElement, element.attributeAndChildren.events, patchState);
+  setEvents(htmlElement, path, patchState);
 
   if (element.attributeAndChildren.children.tag === childrenTextTag) {
     htmlElement.textContent = element.attributeAndChildren.children.value;
@@ -135,7 +147,11 @@ const elementToHtmlOrSvgElement = <Message>(
   }
   for (const [childKey, child] of element.attributeAndChildren.children.value) {
     htmlElement.appendChild(
-      elementToHtmlOrSvgElement(child, childKey, patchState)
+      elementToHtmlOrSvgElement(
+        child,
+        pathAppendKey(path, childKey),
+        patchState
+      )
     );
   }
   return htmlElement;
@@ -144,10 +160,10 @@ const elementToHtmlOrSvgElement = <Message>(
 const applyAttributesAndChildren = <Message>(
   htmlOrSvgElement: HTMLElement | SVGElement,
   attributeAndChildrenDiff: AttributesAndChildrenDiff<Message>,
-  patchState: PatchState<Message>
+  patchState: PatchState<Message>,
+  path: Path
 ): void => {
   applyAttributes(htmlOrSvgElement, attributeAndChildrenDiff.attributes);
-  applyEvents(htmlOrSvgElement, attributeAndChildrenDiff.events, patchState);
   switch (attributeAndChildrenDiff.children.kind) {
     case "skip":
       return;
@@ -158,14 +174,18 @@ const applyAttributesAndChildren = <Message>(
       htmlOrSvgElement.textContent = "";
       for (const [childKey, child] of attributeAndChildrenDiff.children.value) {
         htmlOrSvgElement.appendChild(
-          elementToHtmlOrSvgElement(child, childKey, patchState)
+          elementToHtmlOrSvgElement(
+            child,
+            pathAppendKey(path, childKey),
+            patchState
+          )
         );
       }
       return;
     case "childDiffList":
       attributeAndChildrenDiff.children.children.reduce<number>(
         (index, childDiff) =>
-          applyChild(htmlOrSvgElement, index, childDiff, patchState),
+          applyChild(htmlOrSvgElement, index, childDiff, path, patchState),
         0
       );
   }
@@ -191,67 +211,20 @@ const setAttributes = (
   }
 };
 
-const applyEvents = <Message>(
-  htmlOrSvgElement: HTMLElement | SVGElement,
-  eventsDiff: EventsDiff<Message>,
-  patchState: PatchState<Message>
-): void => {
-  for (const eventName of eventsDiff.deleteNameSet) {
-    setOrDeleteEventHandler(htmlOrSvgElement, eventName, null);
-  }
-  setEvents(htmlOrSvgElement, eventsDiff.setNameValueMap, patchState);
-};
-
 const setEvents = <Message>(
   htmlOrSvgElement: HTMLElement | SVGElement,
-  setNameValueMap: ReadonlyMap<string, Message>,
+  path: Path,
   patchState: PatchState<Message>
 ) => {
-  for (const [eventName, message] of setNameValueMap) {
-    const handler = (eventName === localEventName
-      ? (mouseEvent: MouseEvent) => {
-          /*
-           * リンクを
-           * Ctrlなどを押しながらクリックか,
-           * マウスの中ボタンでクリックした場合などは, ブラウザで新しいタブが開くので, ブラウザでページ推移をしない.
-           */
-          if (
-            mouseEvent.ctrlKey ||
-            mouseEvent.metaKey ||
-            mouseEvent.shiftKey ||
-            mouseEvent.button !== 0
-          ) {
-            return;
-          }
-          mouseEvent.preventDefault();
-          patchState.messageHandler(message);
-        }
-      : () => {
-          patchState.messageHandler(message);
-        }) as (event: Event) => void;
-
-    setOrDeleteEventHandler(htmlOrSvgElement, eventName, handler);
-  }
-};
-
-/**
- * 新しいタブで開いた場合, メッセージを発生させない特殊なイベント
- */
-export const localEventName = "!localClick";
-
-const setOrDeleteEventHandler = (
-  htmlOrSvgElement: HTMLElement | SVGElement,
-  eventName: string,
-  eventHandlerOrNull: ((event: Event) => void) | null
-): void => {
-  if (eventName === localEventName) {
-    htmlOrSvgElement.onclick = eventHandlerOrNull;
-    return;
-  }
-  ((htmlOrSvgElement as unknown) as Record<
-    string,
-    ((event: Event) => void) | null
-  >)["on" + eventName] = eventHandlerOrNull;
+  htmlOrSvgElement.addEventListener("click", (mouseEvent) =>
+    patchState.clickEventHandler(path, mouseEvent as MouseEvent)
+  );
+  htmlOrSvgElement.addEventListener("change", (event) => {
+    patchState.changeEventHandler(path, event);
+  });
+  htmlOrSvgElement.addEventListener("input", (inputEvent) => {
+    patchState.inputEventHandler(path, inputEvent as InputEvent);
+  });
 };
 
 /**
@@ -264,6 +237,7 @@ const applyChild = <Message>(
   htmlOrSvgElement: HTMLElement | SVGElement,
   index: number,
   childDiff: ElementDiff<Message>,
+  path: Path,
   patchState: PatchState<Message>
 ): number => {
   switch (childDiff.kind) {
@@ -274,7 +248,7 @@ const applyChild = <Message>(
           htmlOrSvgElement.appendChild(
             elementToHtmlOrSvgElement(
               childDiff.element,
-              childDiff.key,
+              pathAppendKey(path, childDiff.key),
               patchState
             )
           );
@@ -283,14 +257,18 @@ const applyChild = <Message>(
         afterNode.before(
           elementToHtmlOrSvgElement(
             childDiff.element,
-            childDiff.key,
+            pathAppendKey(path, childDiff.key),
             patchState
           )
         );
         return index + 1;
       }
       htmlOrSvgElement.childNodes[index - 1].after(
-        elementToHtmlOrSvgElement(childDiff.element, childDiff.key, patchState)
+        elementToHtmlOrSvgElement(
+          childDiff.element,
+          pathAppendKey(path, childDiff.key),
+          patchState
+        )
       );
       return index + 1;
     }
@@ -300,7 +278,11 @@ const applyChild = <Message>(
     }
     case "replace": {
       htmlOrSvgElement.childNodes[index].replaceWith(
-        elementToHtmlOrSvgElement(childDiff.newElement, "???", patchState)
+        elementToHtmlOrSvgElement(
+          childDiff.newElement,
+          pathAppendKey(path, childDiff.key),
+          patchState
+        )
       );
       return index + 1;
     }
@@ -308,7 +290,8 @@ const applyChild = <Message>(
       applyAttributesAndChildren(
         htmlOrSvgElement.childNodes[index] as HTMLElement,
         childDiff.attributeAndChildren,
-        patchState
+        patchState,
+        pathAppendKey(path, childDiff.key)
       );
       return index + 1;
     }
@@ -323,8 +306,52 @@ const themeColorName = "theme-color";
 export const createPatchState = <Message>(
   messageHandler: (message: Message) => void
 ): PatchState<Message> => {
+  let messageDataMap: ReadonlyMap<string, Events<Message>> = new Map();
   return {
-    messageHandler,
+    clickEventHandler: (path: string, mouseEvent: MouseEvent): void => {
+      const messageData = messageDataMap.get(path)?.onClick;
+      if (messageData === undefined) {
+        return;
+      }
+      if (messageData.ignoreNewTab) {
+        /*
+         * リンクを
+         * Ctrlなどを押しながらクリックか,
+         * マウスの中ボタンでクリックした場合などは, ブラウザで新しいタブが開くので, ブラウザでページ推移をしない.
+         */
+        if (
+          mouseEvent.ctrlKey ||
+          mouseEvent.metaKey ||
+          mouseEvent.shiftKey ||
+          mouseEvent.button !== 0
+        ) {
+          return;
+        }
+        mouseEvent.preventDefault();
+      }
+      messageHandler(messageData.message);
+    },
+    changeEventHandler: (path: string, event: Event): void => {
+      const messageData = messageDataMap.get(path)?.onChange;
+      if (messageData === undefined) {
+        return;
+      }
+      messageHandler(messageData);
+    },
+    inputEventHandler: (path: string, inputEvent: InputEvent): void => {
+      const messageData = messageDataMap.get(path)?.onInput;
+      if (messageData === undefined) {
+        return;
+      }
+      messageHandler(
+        messageData(
+          (inputEvent.target as HTMLInputElement | HTMLTextAreaElement).value
+        )
+      );
+    },
+    setMessageDataMap: (newMap: ReadonlyMap<string, Events<Message>>): void => {
+      messageDataMap = newMap;
+    },
   };
 };
 
@@ -360,6 +387,7 @@ export const patchView = <Message>(
   viewDiff: ViewDiff<Message>,
   patchState: PatchState<Message>
 ): void => {
+  patchState.setMessageDataMap(viewDiff.newMessageDataMap);
   if (viewDiff.newTitle !== undefined) {
     document.title = viewDiff.newTitle;
   }
@@ -381,7 +409,8 @@ export const patchView = <Message>(
   applyAttributesAndChildren(
     document.body,
     viewDiff.attributeAndChildren,
-    patchState
+    patchState,
+    rootPath
   );
 };
 

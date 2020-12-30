@@ -4,13 +4,13 @@ import {
   Children,
   Color,
   Element,
+  InputMessageData,
   View,
   childrenElementList,
   childrenElementListTag,
   childrenText,
   childrenTextTag,
 } from "./view";
-import { localEventName } from "./patch";
 import { mapMapValue } from "../util";
 
 export const div = <Message>(
@@ -22,9 +22,14 @@ export const div = <Message>(
     attributes: new Map<string, string>(
       option.id === undefined ? [] : [["id", option.id]]
     ).set("class", css(option.style)),
-    events: new Map(
-      option.click === undefined ? [] : [["click", option.click]]
-    ),
+    events: {
+      onClick:
+        option.click === undefined
+          ? undefined
+          : { message: option.click, ignoreNewTab: false },
+      onChange: undefined,
+      onInput: undefined,
+    },
     children: childrenFromStringOrElementMap(children),
   },
   isSvg: false,
@@ -45,7 +50,11 @@ export const externalLink = <Message>(
       ["href", option.url.toString()],
       ["class", css(option.style)],
     ]),
-    events: new Map<string, Message>(),
+    events: {
+      onClick: undefined,
+      onChange: undefined,
+      onInput: undefined,
+    },
     children: childrenFromStringOrElementMap(children),
   },
   isSvg: false,
@@ -67,7 +76,11 @@ export const localLink = <Message>(
       ["href", option.url.toString()],
       ["class", css(option.style)],
     ]),
-    events: new Map<string, Message>([[localEventName, option.jumpMessage]]),
+    events: {
+      onClick: { message: option.jumpMessage, ignoreNewTab: true },
+      onChange: undefined,
+      onInput: undefined,
+    },
     children: childrenFromStringOrElementMap(children),
   },
   isSvg: false,
@@ -87,7 +100,11 @@ export const button = <Message>(
       ...(option.id === undefined ? [] : ([["id", option.id]] as const)),
       ["class", css(option.style)],
     ]),
-    events: new Map<string, Message>([["click", option.click]]),
+    events: {
+      onClick: { message: option.click, ignoreNewTab: true },
+      onChange: undefined,
+      onInput: undefined,
+    },
     children: childrenFromStringOrElementMap(children),
   },
   isSvg: false,
@@ -108,7 +125,11 @@ export const img = <Message>(option: {
       ["alt", option.alt],
       ["src", option.src],
     ]),
-    events: new Map<string, Message>(),
+    events: {
+      onClick: undefined,
+      onChange: undefined,
+      onInput: undefined,
+    },
     children: childrenText(""),
   },
   isSvg: false,
@@ -130,7 +151,11 @@ export const inputRadio = <Message>(option: {
       ...(option.checked ? ([["checked", "checked"]] as const) : []),
       ["name", option.groupName],
     ]),
-    events: new Map<string, Message>([["change", option.select]]),
+    events: {
+      onClick: undefined,
+      onChange: option.select,
+      onInput: undefined,
+    },
     children: childrenText(""),
   },
   isSvg: false,
@@ -147,7 +172,11 @@ export const label = (
       ["class", css(option.style)],
       ["htmlFor", option.targetElementId],
     ]),
-    events: new Map<string, never>(),
+    events: {
+      onClick: undefined,
+      onChange: undefined,
+      onInput: undefined,
+    },
     children: childrenFromStringOrElementMap(children),
   },
   isSvg: false,
@@ -171,7 +200,11 @@ export const svg = <Message>(
       ],
       ["class", css(option.style)],
     ]),
-    events: new Map<string, Message>(),
+    events: {
+      onClick: undefined,
+      onChange: undefined,
+      onInput: undefined,
+    },
     children: childrenFromStringOrElementMap(children),
   },
   isSvg: true,
@@ -189,7 +222,11 @@ export const path = <Message>(option: {
       ["d", option.d],
       ["fill", option.fill],
     ]),
-    events: new Map<string, Message>(),
+    events: {
+      onClick: undefined,
+      onChange: undefined,
+      onInput: undefined,
+    },
     children: childrenText(""),
   },
   isSvg: true,
@@ -225,7 +262,11 @@ export const circle = <Message>(option: {
       ["r", option.r.toString()],
       ["stroke", option.stroke],
     ]),
-    events: new Map<string, never>(),
+    events: {
+      onClick: undefined,
+      onChange: undefined,
+      onInput: undefined,
+    },
     children:
       option.animations === undefined
         ? childrenText<never>("")
@@ -251,7 +292,11 @@ const animate = (svgAnimation: SvgAnimation): Element<never> => ({
       ["from", svgAnimation.from.toString()],
       ["to", svgAnimation.to.toString()],
     ]),
-    events: new Map<string, never>(),
+    events: {
+      onClick: undefined,
+      onChange: undefined,
+      onInput: undefined,
+    },
     children: childrenText(""),
   },
   isSvg: true,
@@ -271,7 +316,11 @@ export const view = <Message>(
   language: option.language,
   attributeAndChildren: {
     attributes: new Map([["class", css(option.style)]]),
-    events: new Map(),
+    events: {
+      onClick: undefined,
+      onChange: undefined,
+      onInput: undefined,
+    },
     children: childrenFromStringOrElementMap(children),
   },
 });
@@ -297,11 +346,40 @@ export const elementMap = <Input, Output>(
   tagName: element.tagName,
   attributeAndChildren: {
     attributes: element.attributeAndChildren.attributes,
-    events: mapMapValue(element.attributeAndChildren.events, func),
+    events: {
+      onClick:
+        element.attributeAndChildren.events.onClick === undefined
+          ? undefined
+          : {
+              ignoreNewTab:
+                element.attributeAndChildren.events.onClick.ignoreNewTab,
+              message: func(
+                element.attributeAndChildren.events.onClick.message
+              ),
+            },
+      onChange:
+        element.attributeAndChildren.events.onChange === undefined
+          ? undefined
+          : func(element.attributeAndChildren.events.onChange),
+      onInput: mapInputMessageData(
+        element.attributeAndChildren.events.onInput,
+        func
+      ),
+    },
     children: childrenMap(element.attributeAndChildren.children, func),
   },
   isSvg: element.isSvg,
 });
+
+const mapInputMessageData = <InnerMessage, OuterMessage>(
+  funcOrUndefined: InputMessageData<InnerMessage> | undefined,
+  mapFunc: (old: InnerMessage) => OuterMessage
+): InputMessageData<OuterMessage> | undefined => {
+  if (funcOrUndefined === undefined) {
+    return undefined;
+  }
+  return (input: string) => mapFunc(funcOrUndefined(input));
+};
 
 const childrenMap = <Input, Output>(
   children: Children<Input>,
