@@ -28,6 +28,20 @@ export const mapSet = <Key, Value>(
   value: Value
 ): ReadonlyMap<Key, Value> => new Map(map).set(key, value);
 
+export const mapMapAt = <Key, Value>(
+  map: ReadonlyMap<Key, Value>,
+  key: Key,
+  valueFunc: (value: Value) => Value
+): ReadonlyMap<Key, Value> => {
+  const oldValue = map.get(key);
+  if (oldValue === undefined) {
+    return map;
+  }
+  const newMap = new Map(map);
+  newMap.set(key, valueFunc(oldValue));
+  return newMap;
+};
+
 export const mapKeyToSet = <Key, Value>(
   map: ReadonlyMap<Key, Value>
 ): ReadonlySet<Key> => new Set(map.keys());
