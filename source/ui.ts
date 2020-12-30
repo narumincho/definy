@@ -1,5 +1,4 @@
 import { c, div, path, svg } from "./view/viewUtil";
-import { AppInterface } from "./appInterface";
 import { Element } from "./view/view";
 import { Model } from "./model";
 import { ReactElement } from "react";
@@ -10,7 +9,7 @@ export type GridTemplateValue = { _: "Fix"; value: number } | { _: "OneFr" };
 export interface SimpleStyle {
   /** 方向 x → 横方向, y → 縦方向 */
   direction: "x" | "y";
-  /** 幅 */
+  /** 幅. undefined で 100% */
   width?: number;
   /** 高さ */
   height?: number;
@@ -39,7 +38,7 @@ export const box = <Message>(
         wordBreak: "break-all",
         breakWord: "break-word",
         gridAutoFlow: simpleStyle.direction === "x" ? "column" : "row",
-        width: simpleStyle.width,
+        width: simpleStyle.width === undefined ? "100%" : simpleStyle.width,
         height: simpleStyle.height,
         gap: simpleStyle.gap,
         padding: simpleStyle.padding,
@@ -57,6 +56,7 @@ export const box = <Message>(
           simpleStyle.xGridTemplate === undefined
             ? undefined
             : simpleStyle.xGridTemplate.map(gridTemplateToCssString).join(" "),
+        alignContent: "start",
       },
     },
     children
@@ -70,6 +70,9 @@ const gridTemplateToCssString = (value: GridTemplateValue): string => {
       return "1fr";
   }
 };
+
+export const text = <Message>(string: string): Element<Message> =>
+  div({}, string);
 
 export interface EditorProps<T> {
   readonly value: T;
