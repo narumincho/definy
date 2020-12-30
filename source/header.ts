@@ -145,30 +145,12 @@ const logInButtonList = (language: d.Language): Element<Message> =>
       },
     },
     c([
-      [
-        "google",
-        elementMap(
-          googleLogInButton(language),
-          (): Message => ({
-            tag: messageRequestLogInTag,
-            provider: "Google",
-          })
-        ),
-      ],
-      [
-        "github",
-        elementMap(
-          gitHubLogInButton(language),
-          (): Message => ({
-            tag: messageRequestLogInTag,
-            provider: "GitHub",
-          })
-        ),
-      ],
+      ["google", googleLogInButton(language)],
+      ["github", gitHubLogInButton(language)],
     ])
   );
 
-const googleLogInButton = (language: d.Language): Element<undefined> =>
+const googleLogInButton = (language: d.Language): Element<Message> =>
   button(
     {
       style: {
@@ -181,6 +163,10 @@ const googleLogInButton = (language: d.Language): Element<undefined> =>
       },
       hoverStyle: {
         backgroundColor: "#5190f8",
+      },
+      click: {
+        tag: messageRequestLogInTag,
+        provider: "Google",
       },
     },
     c([
@@ -249,7 +235,7 @@ const googleIcon: Element<never> = svg(
   ])
 );
 
-const gitHubLogInButton = (language: d.Language): Element<undefined> =>
+const gitHubLogInButton = (language: d.Language): Element<Message> =>
   button(
     {
       style: {
@@ -261,6 +247,10 @@ const gitHubLogInButton = (language: d.Language): Element<undefined> =>
         padding: 0,
       },
       hoverStyle: { backgroundColor: "#252525" },
+      click: {
+        tag: messageRequestLogInTag,
+        provider: "GitHub",
+      },
     },
     c([
       [

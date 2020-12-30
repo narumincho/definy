@@ -31,10 +31,10 @@ export const Button: FunctionComponent<{
     props.children
   );
 
-export const button = (
-  option: { style?: CSSObject; hoverStyle?: CSSObject },
-  children: string | ReadonlyMap<string, Element<never>>
-): Element<undefined> =>
+export const button = <Message>(
+  option: { style?: CSSObject; hoverStyle?: CSSObject; click: Message },
+  children: string | ReadonlyMap<string, Element<Message>>
+): Element<Message> =>
   viewUtil.button(
     {
       style: {
@@ -52,7 +52,7 @@ export const button = (
           ...option.hoverStyle,
         },
       },
-      click: undefined,
+      click: option.click,
     },
     children
   );

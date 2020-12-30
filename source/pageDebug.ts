@@ -70,9 +70,7 @@ const tabView = (selected: Tab): Element<Tab> =>
     c(
       tabList.map((tab): readonly [string, Element<Tab>] => [
         tab,
-        selected === tab
-          ? div({}, tab)
-          : elementMap<undefined, Tab>(button({}, tab), () => tab),
+        selected === tab ? div({}, tab) : button({ click: tab }, tab),
       ])
     )
   );

@@ -41,9 +41,14 @@ const mainView = (appInterface: AppInterface): Element<Message> => {
     c([
       [
         "logOutButton",
-        elementMap<undefined, Message>(button({}, "ログアウト"), () => ({
-          tag: messageLogOut,
-        })),
+        button(
+          {
+            click: {
+              tag: messageLogOut,
+            },
+          },
+          "ログアウト"
+        ),
       ],
       ["loggedInAccountText", div({}, "ログインしているアカウント")],
       [

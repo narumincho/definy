@@ -155,10 +155,13 @@ const treeView = (
     c<a.InterfaceMessage<PageMessage>>([
       [
         "toDetail",
-        elementMap(button({}, "プロジェクト詳細"), () =>
-          a.interfaceMessagePageMessage({
-            tag: selectProjectDetail,
-          })
+        button(
+          {
+            click: a.interfaceMessagePageMessage({
+              tag: selectProjectDetail,
+            }),
+          },
+          "プロジェクト詳細"
         ),
       ],
       ...mapMapValue(
@@ -167,18 +170,16 @@ const treeView = (
           typePartResourceState,
           typePartId
         ): Element<a.InterfaceMessage<PageMessage>> =>
-          elementMap(
-            button(
-              {},
-              typePartResourceState._ === "Loaded"
-                ? typePartResourceState.dataWithTime.data.name
-                : "???"
-            ),
-            () =>
-              a.interfaceMessagePageMessage({
+          button(
+            {
+              click: a.interfaceMessagePageMessage({
                 tag: selectTypePart,
                 typePartId,
-              })
+              }),
+            },
+            typePartResourceState._ === "Loaded"
+              ? typePartResourceState.dataWithTime.data.name
+              : "???"
           )
       ),
     ])
