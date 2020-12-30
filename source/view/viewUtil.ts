@@ -161,6 +161,29 @@ export const inputRadio = <Message>(option: {
   isSvg: false,
 });
 
+export const inputOneLineText = <Message>(option: {
+  id?: string;
+  style?: CSSObject;
+  input: (text: string) => Message;
+  value: string;
+}): Element<Message> => ({
+  tagName: "input",
+  attributeAndChildren: {
+    attributes: new Map([
+      ...(option.id === undefined ? [] : ([["id", option.id]] as const)),
+      ["class", css(option.style)],
+      ["value", option.value],
+    ]),
+    events: {
+      onClick: undefined,
+      onChange: undefined,
+      onInput: option.input,
+    },
+    children: childrenText(""),
+  },
+  isSvg: false,
+});
+
 export const label = (
   option: { id?: string; style?: CSSObject; targetElementId: string },
   children: ReadonlyMap<string, Element<never>> | string
