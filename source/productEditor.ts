@@ -1,11 +1,11 @@
-import { c, div } from "./view/viewUtil";
+import { box, text } from "./ui";
 import { Element } from "./view/view";
-import { box } from "./ui";
+import { c } from "./view/viewUtil";
 import { mapMapValue } from "./util";
 
-export const createProductEditor = (
-  elementMap: ReadonlyMap<string, Element<never>>
-): Element<never> =>
+export const productEditor = <Message>(
+  elementMap: ReadonlyMap<string, Element<Message>>
+): Element<Message> =>
   box(
     {
       direction: "y",
@@ -19,7 +19,7 @@ export const createProductEditor = (
           direction: "y",
         },
         c([
-          ["name", div({}, name)],
+          ["name", text(name)],
           ["value", element],
         ])
       )

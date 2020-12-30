@@ -160,6 +160,11 @@ export type Message =
   | {
       readonly tag: typeof messageSelectDebugPageTab;
       readonly tab: pageDebug.Tab;
+    }
+  | {
+      readonly tag: typeof messageSetTypePartName;
+      readonly typePartId: d.TypePartId;
+      readonly newName: string;
     };
 
 export const messageJumpTag = Symbol("Message-Jump");
@@ -201,6 +206,7 @@ export const messageRespondSetTypePartList = Symbol(
   "Message-RespondSetTypePartList"
 );
 export const messageSelectDebugPageTab = Symbol("Message-SelectDebugPageTab");
+export const messageSetTypePartName = Symbol("Message-SetTypePartName");
 
 export type InterfaceMessage<PageMessage> =
   | {

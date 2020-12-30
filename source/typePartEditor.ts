@@ -1,19 +1,26 @@
 import * as a from "./appInterface";
 import * as d from "definy-core/source/data";
+import { c, div } from "./view/viewUtil";
 import { Element } from "./view/view";
-import { createProductEditor } from "./productEditor";
-import { div } from "./view/viewUtil";
+import { oneLineTextEditor } from "./oneLineTextInput";
+import { productEditor } from "./productEditor";
 
 export interface Message {
-  readonly tag: typeof changeName;
+  readonly tag: typeof changeNameTag;
+  readonly newName: string;
 }
 
-export const changeName = Symbol("TypePartEditorMessage-ChangeName");
+export const changeNameTag = Symbol("TypePartEditorMessage-ChangeName");
 
-export const typePartEditor = (
+const changeName = (newText: string): Message => ({
+  tag: changeNameTag,
+  newName: newText,
+});
+
+export const view = (
   appInterface: a.AppInterface,
   typePartId: d.TypePartId
-): Element<never> => {
+): Element<Message> => {
   const typePartResource = appInterface.typePartMap.get(typePartId);
   if (typePartResource === undefined) {
     return div({}, "???");
@@ -30,10 +37,19 @@ export const typePartEditor = (
   }
 };
 
-const typePartEditorLoaded = (typePart: d.TypePart) => {
-  return createProductEditor(
+const typePartEditorLoaded = (typePart: d.TypePart): Element<Message> => {
+  return productEditor(
     new Map([
-      ["name", div({}, typePart.name)],
+      [
+        "name",
+        div(
+          {},
+          c([
+            ["a", oneLineTextEditor(typePart.name, changeName)],
+            ["b", oneLineTextEditor(typePart.name, changeName)],
+          ])
+        ),
+      ],
       ["description", div({}, typePart.description)],
       ["bodyType", div({}, typePart.body._)],
     ])

@@ -13,10 +13,10 @@ import * as pageUser from "./pageUser";
 import { Element, View } from "./view/view";
 import { api, getImageWithCache } from "./api";
 import { c, div, elementMap, view } from "./view/viewUtil";
+import { mapMapAt, mapSet } from "./util";
 import { CSSObject } from "@emotion/react";
 import { headerView } from "./header";
 import { keyframes } from "@emotion/css";
-import { mapSet } from "./util";
 
 export interface State {
   readonly appInterface: a.AppInterface;
@@ -157,11 +157,12 @@ export const updateStateByMessage = (
   message: Message,
   oldState: State
 ): State => {
+  const appInterfaceMessageHandler = (appMessage: a.Message): void =>
+    messageHandler(appMessageToMessage(appMessage));
   switch (message.tag) {
     case appInterfaceMessage:
       return updateStateByAppMessage(
-        (appMessage: a.Message): void =>
-          messageHandler(appMessageToMessage(appMessage)),
+        appInterfaceMessageHandler,
         message.message,
         oldState
       );
@@ -174,7 +175,8 @@ export const updateStateByMessage = (
             projectId: oldState.pageModel.projectId,
             state: pageProject.updateSateByLocalMessage(
               oldState.pageModel.state,
-              message.message
+              message.message,
+              appInterfaceMessageHandler
             ),
           },
         };
@@ -310,6 +312,27 @@ const updateStateByAppMessage = (
           ...oldState.pageModel,
           tab: message.tab,
         },
+      };
+
+    case a.messageSetTypePartName:
+      return {
+        appInterface: {
+          ...oldState.appInterface,
+          typePartMap: mapMapAt(
+            oldState.appInterface.typePartMap,
+            message.typePartId,
+            (old: d.ResourceState<d.TypePart>): d.ResourceState<d.TypePart> => {
+              if (old._ !== "Loaded") {
+                return old;
+              }
+              return d.ResourceState.Loaded({
+                data: { ...old.dataWithTime.data, name: message.newName },
+                getTime: old.dataWithTime.getTime,
+              });
+            }
+          ),
+        },
+        pageModel: oldState.pageModel,
       };
   }
 };

@@ -1,5 +1,6 @@
 import * as a from "./appInterface";
 import * as d from "definy-core/source/data";
+import * as typePartEditor from "./typePartEditor";
 import { c, div, elementMap } from "./view/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "./view/view";
@@ -7,7 +8,6 @@ import { button } from "./button";
 import { icon } from "./icon";
 import { image } from "./image";
 import { mapMapValue } from "./util";
-import { typePartEditor } from "./typePartEditor";
 import { userCard } from "./user";
 
 export type State =
@@ -26,10 +26,17 @@ export type PageMessage =
   | {
       readonly tag: typeof selectTypePart;
       readonly typePartId: d.TypePartId;
+    }
+  | {
+      readonly tag: typeof pageMessageSetTypePartName;
+      readonly typePartId: d.TypePartId;
+      readonly newName: string;
     };
 
 const selectProjectDetail = Symbol("PageModelState-SelectProjectDetail");
 const selectTypePart = Symbol("PageModelState-SelectTypePart");
+
+const pageMessageSetTypePartName = Symbol("PageProjectMessage-SetTypePartName");
 
 export const init = (
   messageHandler: (message: a.Message) => void,
@@ -50,7 +57,8 @@ export const init = (
 
 export const updateSateByLocalMessage = (
   state: State,
-  pageMessage: PageMessage
+  pageMessage: PageMessage,
+  messageHandler: (message: a.Message) => void
 ): State => {
   switch (pageMessage.tag) {
     case selectProjectDetail:
@@ -62,6 +70,13 @@ export const updateSateByLocalMessage = (
         tag: selectTypePart,
         typePartId: pageMessage.typePartId,
       };
+    case pageMessageSetTypePartName:
+      messageHandler({
+        tag: a.messageSetTypePartName,
+        typePartId: pageMessage.typePartId,
+        newName: pageMessage.newName,
+      });
+      return state;
   }
 };
 
@@ -206,7 +221,31 @@ const mainView = (
     case selectProjectDetail:
       return projectDetailView(appInterface, projectId, project);
     case selectTypePart:
-      return typePartEditor(appInterface, state.typePartId);
+      return elementMap<
+        typePartEditor.Message,
+        a.InterfaceMessage<PageMessage>
+      >(
+        typePartEditor.view(appInterface, state.typePartId),
+        (typePartEditorMessage) =>
+          typePartEditorMessageToPageMessage(
+            typePartEditorMessage,
+            state.typePartId
+          )
+      );
+  }
+};
+
+const typePartEditorMessageToPageMessage = (
+  typePartEditorMessage: typePartEditor.Message,
+  typePartId: d.TypePartId
+): a.InterfaceMessage<PageMessage> => {
+  switch (typePartEditorMessage.tag) {
+    case typePartEditor.changeNameTag:
+      return a.interfaceMessagePageMessage({
+        tag: pageMessageSetTypePartName,
+        typePartId,
+        newName: typePartEditorMessage.newName,
+      });
   }
 };
 
