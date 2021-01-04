@@ -738,17 +738,3 @@ const languageToIETFLanguageTag = (language: d.Language): string => {
       return "eo";
   }
 };
-
-const ietfLanguageTagToLanguage = (
-  ietfLanguageTag: string
-): d.Language | undefined => {
-  switch (ietfLanguageTag) {
-    case "ja":
-      return d.Language.Japanese;
-    case "en":
-      return d.Language.English;
-    case "eo":
-      return d.Language.Esperanto;
-  }
-  return undefined;
-};
