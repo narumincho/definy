@@ -1,91 +1,38 @@
 import * as d from "definy-core/source/data";
 import {
-  AttributesAndChildren,
   Children,
+  ChildrenDiff,
   Color,
   Element,
+  ElementDiff,
+  ElementUpdateDiff,
   Events,
   Path,
   View,
+  ViewDiff,
+  childrenElementListTag,
   childrenTextTag,
   pathAppendKey,
   rootPath,
 } from "./view";
-import { mapFilter, mapKeyToSet, setSubtract } from "../util";
-
-export interface ViewDiff<Message> {
-  readonly attributeAndChildren: AttributesAndChildrenDiff<Message>;
-  readonly newTitle: string | undefined;
-  readonly newThemeColor: d.Maybe<Color | undefined>;
-  readonly newLanguage: d.Language | undefined;
-  readonly newMessageDataMap: ReadonlyMap<Path, Events<Message>>;
-}
-
-export interface AttributesAndChildrenDiff<Message> {
-  readonly attributes: AttributesDiff;
-  readonly children: ChildrenDiff<Message>;
-}
-
-export interface AttributesDiff {
-  readonly setNameValueMap: ReadonlyMap<string, string>;
-  readonly deleteNameSet: ReadonlySet<string>;
-}
-
-export type ElementDiff<Message> =
-  | {
-      readonly kind: "replace";
-      readonly newElement: Element<Message>;
-      readonly key: string;
-    }
-  | {
-      readonly kind: "update";
-      readonly attributeAndChildren: AttributesAndChildrenDiff<Message>;
-      readonly key: string;
-    }
-  | {
-      readonly kind: "delete";
-    }
-  | {
-      readonly kind: "insert";
-      readonly element: Element<Message>;
-      readonly key: string;
-    };
-
-export type ChildrenDiff<Message> =
-  | {
-      readonly kind: "skip";
-    }
-  | {
-      readonly kind: "setText";
-      readonly text: string;
-    }
-  | {
-      readonly kind: "resetAndInsert";
-      readonly value: ReadonlyMap<string, Element<Message>>;
-    }
-  | {
-      readonly kind: "childDiffList";
-      readonly children: ReadonlyArray<ElementDiff<Message>>;
-    };
 
 export const createViewDiff = <Message>(
   oldView: View<Message>,
   newView: View<Message>
 ): ViewDiff<Message> => {
   return {
-    attributeAndChildren: createAttributesAndChildrenDiff(
-      oldView.attributeAndChildren,
-      newView.attributeAndChildren
-    ),
-    newTitle: oldView.title === newView.title ? undefined : newView.title,
-    newThemeColor: createColorDiff(oldView.themeColor, newView.themeColor),
+    newTitle: createStringDiff(oldView.title, newView.title),
+    newThemeColor: colorDiff(oldView.themeColor, newView.themeColor),
     newLanguage:
       oldView.language === newView.language ? undefined : newView.language,
-    newMessageDataMap: createMessageDataMap(newView.attributeAndChildren),
+    newMessageDataMap: createMessageDataMap(newView.children),
+    childrenDiff: createChildrenDiff(oldView.children, newView.children),
+    newBodyClass:
+      oldView.bodyClass === newView.bodyClass ? undefined : newView.bodyClass,
   };
 };
 
-const createColorDiff = (
+const colorDiff = (
   oldColor: Color | undefined,
   newColor: Color | undefined
 ): d.Maybe<Color | undefined> => {
@@ -105,51 +52,201 @@ const createColorDiff = (
   return d.Maybe.Just(newColor);
 };
 
+const update = <Message>(
+  elementUpdateDiff: ElementUpdateDiff<Message>,
+  key: string
+): ElementDiff<Message> => ({
+  kind: "update",
+  elementUpdateDiff,
+  key,
+});
+
+// eslint-disable-next-line complexity
 export const createElementDiff = <Message>(
   oldElement: Element<Message>,
   newElement: Element<Message>,
   newKey: string
 ): ElementDiff<Message> => {
-  if (oldElement.tagName !== newElement.tagName) {
-    return { kind: "replace", newElement, key: newKey };
+  if (oldElement.tag === "div" && newElement.tag === "div") {
+    return update(
+      {
+        tag: "div",
+        id: createStringDiff(oldElement.id, newElement.id),
+        class: createStringDiff(oldElement.class, newElement.class),
+        children: createChildrenDiff(oldElement.children, newElement.children),
+      },
+      newKey
+    );
   }
-  return {
-    kind: "update",
-    attributeAndChildren: createAttributesAndChildrenDiff(
-      oldElement.attributeAndChildren,
-      newElement.attributeAndChildren
-    ),
-    key: newKey,
-  };
+  if (oldElement.tag === "externalLink" && newElement.tag === "externalLink") {
+    return update(
+      {
+        tag: "externalLink",
+        id: createStringDiff(oldElement.id, newElement.id),
+        class: createStringDiff(oldElement.class, newElement.class),
+
+        url: createStringDiff(oldElement.url, newElement.url),
+        children: createChildrenDiff(oldElement.children, newElement.children),
+      },
+      newKey
+    );
+  }
+  if (oldElement.tag === "localLink" && newElement.tag === "localLink") {
+    return update(
+      {
+        tag: "localLink",
+        id: createStringDiff(oldElement.id, newElement.id),
+        class: createStringDiff(oldElement.class, newElement.class),
+
+        url: createStringDiff(oldElement.url, newElement.url),
+        children: createChildrenDiff(oldElement.children, newElement.children),
+      },
+      newKey
+    );
+  }
+  if (oldElement.tag === "button" && newElement.tag === "button") {
+    return update(
+      {
+        tag: "button",
+        id: createStringDiff(oldElement.id, newElement.id),
+        class: createStringDiff(oldElement.class, newElement.class),
+        children: createChildrenDiff(oldElement.children, newElement.children),
+      },
+      newKey
+    );
+  }
+  if (oldElement.tag === "img" && newElement.tag === "img") {
+    return update(
+      {
+        tag: "img",
+        id: createStringDiff(oldElement.id, newElement.id),
+        class: createStringDiff(oldElement.class, newElement.class),
+        alt: createStringDiff(oldElement.alt, newElement.alt),
+        src: createStringDiff(oldElement.src, newElement.src),
+      },
+      newKey
+    );
+  }
+  if (oldElement.tag === "inputRadio" && newElement.tag === "inputRadio") {
+    return update(
+      {
+        tag: "inputRadio",
+        id: createStringDiff(oldElement.id, newElement.id),
+        class: createStringDiff(oldElement.class, newElement.class),
+        checked: booleanDiff(oldElement.checked, newElement.checked),
+        name: createStringDiff(oldElement.name, newElement.name),
+      },
+      newKey
+    );
+  }
+  if (oldElement.tag === "inputText" && newElement.tag === "inputText") {
+    return update(
+      {
+        tag: "inputText",
+        id: createStringDiff(oldElement.id, newElement.id),
+        class: createStringDiff(oldElement.class, newElement.class),
+        value: createStringDiff(oldElement.value, newElement.value),
+      },
+      newKey
+    );
+  }
+  if (oldElement.tag === "label" && newElement.tag === "label") {
+    return update(
+      {
+        tag: "label",
+        id: createStringDiff(oldElement.id, newElement.id),
+        class: createStringDiff(oldElement.class, newElement.class),
+        for: createStringDiff(oldElement.for, newElement.for),
+        children: createChildrenDiff(oldElement.children, newElement.children),
+      },
+      newKey
+    );
+  }
+  if (oldElement.tag === "svg" && newElement.tag === "svg") {
+    return update(
+      {
+        tag: "svg",
+        id: createStringDiff(oldElement.id, newElement.id),
+        class: createStringDiff(oldElement.class, newElement.class),
+        viewBoxX: createNumberDiff(oldElement.viewBoxX, newElement.viewBoxX),
+        viewBoxY: createNumberDiff(oldElement.viewBoxY, newElement.viewBoxY),
+        viewBoxWidth: createNumberDiff(
+          oldElement.viewBoxWidth,
+          newElement.viewBoxWidth
+        ),
+        viewBoxHeight: createNumberDiff(
+          oldElement.viewBoxHeight,
+          newElement.viewBoxHeight
+        ),
+        children: createChildrenDiff(oldElement.children, newElement.children),
+      },
+      newKey
+    );
+  }
+  if (oldElement.tag === "path" && newElement.tag === "path") {
+    return update(
+      {
+        tag: "path",
+        id: createStringDiff(oldElement.id, newElement.id),
+        class: createStringDiff(oldElement.class, newElement.class),
+        d: createStringDiff(oldElement.d, newElement.d),
+        fill: createStringDiff(oldElement.fill, newElement.fill),
+      },
+      newKey
+    );
+  }
+  if (oldElement.tag === "circle" && newElement.tag === "circle") {
+    return update(
+      {
+        tag: "circle",
+        id: createStringDiff(oldElement.id, newElement.id),
+        class: createStringDiff(oldElement.class, newElement.class),
+        fill: createStringDiff(oldElement.fill, newElement.fill),
+        stroke: createStringDiff(oldElement.stroke, newElement.stroke),
+        cx: createNumberDiff(oldElement.cx, newElement.cx),
+        cy: createNumberDiff(oldElement.cy, newElement.cy),
+        r: createNumberDiff(oldElement.r, newElement.r),
+        children: createChildrenDiff(oldElement.children, newElement.children),
+      },
+      newKey
+    );
+  }
+  if (oldElement.tag === "animate" && newElement.tag === "animate") {
+    return update(
+      {
+        tag: "animate",
+        attributeName: createStringDiff(
+          oldElement.attributeName,
+          newElement.attributeName
+        ),
+        dur: createNumberDiff(newElement.dur, oldElement.dur),
+        repeatCount: createStringDiff(
+          oldElement.repeatCount,
+          newElement.repeatCount
+        ),
+        from: createStringDiff(oldElement.from, newElement.from),
+        to: createStringDiff(oldElement.to, newElement.to),
+      },
+      newKey
+    );
+  }
+  return { kind: "replace", newElement, key: newKey };
 };
 
-const createAttributesAndChildrenDiff = <Message>(
-  oldAttributesAndChildren: AttributesAndChildren<Message>,
-  newAttributesAndChildren: AttributesAndChildren<Message>
-): AttributesAndChildrenDiff<Message> => ({
-  attributes: createAttributesDiff(
-    oldAttributesAndChildren.attributes,
-    newAttributesAndChildren.attributes
-  ),
-  children: createChildrenDiff(
-    oldAttributesAndChildren.children,
-    newAttributesAndChildren.children
-  ),
-});
+const createStringDiff = (
+  oldString: string,
+  newString: string
+): string | undefined => (oldString === newString ? undefined : newString);
 
-export const createAttributesDiff = (
-  oldAttribute: ReadonlyMap<string, string>,
-  newAttribute: ReadonlyMap<string, string>
-): AttributesDiff => ({
-  deleteNameSet: setSubtract(
-    mapKeyToSet(oldAttribute),
-    mapKeyToSet(newAttribute)
-  ),
-  setNameValueMap: mapFilter(
-    newAttribute,
-    (newValue, newName) => newValue !== oldAttribute.get(newName)
-  ),
-});
+const booleanDiff = (
+  oldBoolean: boolean,
+  newBoolean: boolean
+): boolean | undefined => (oldBoolean === newBoolean ? undefined : newBoolean);
+
+const createNumberDiff = (
+  oldNumber: number,
+  newNumber: number
+): number | undefined => (oldNumber === newNumber ? undefined : newNumber);
 
 export const createChildrenDiff = <Message>(
   oldChildren: Children<Message>,
@@ -170,7 +267,7 @@ export const createChildrenDiff = <Message>(
   }
   return {
     kind: "childDiffList",
-    children: createElementListChildrenDiff(
+    children: createElementListChildrenDiff<Message>(
       oldChildren.value,
       newChildren.value
     ),
@@ -313,10 +410,10 @@ const createChildDiff = <Message>(
 };
 
 const createMessageDataMap = <Message>(
-  attributeAndChildren: AttributesAndChildren<Message>
+  children: Children<Message>
 ): ReadonlyMap<Path, Events<Message>> => {
   const messageDataMap: Map<Path, Events<Message>> = new Map();
-  createMessageDataMapLoop(messageDataMap, rootPath, attributeAndChildren);
+  createMessageDataMapChildren(messageDataMap, rootPath, children);
   return messageDataMap;
 };
 
@@ -328,17 +425,57 @@ const createMessageDataMap = <Message>(
 const createMessageDataMapLoop = <Message>(
   messageDataMap: Map<Path, Events<Message>>,
   path: Path,
-  attributeAndChildren: AttributesAndChildren<Message>
+  element: Element<Message>
 ): void => {
-  messageDataMap.set(path, attributeAndChildren.events);
-  if (attributeAndChildren.children.tag === childrenTextTag) {
-    return;
+  switch (element.tag) {
+    case "button":
+      messageDataMap.set(path, {
+        onClick: { message: element.click, ignoreNewTab: false },
+        onChange: undefined,
+        onInput: undefined,
+      });
+      createMessageDataMapChildren(messageDataMap, path, element.children);
+      return;
+    case "localLink":
+      messageDataMap.set(path, {
+        onClick: { message: element.jumpMessage, ignoreNewTab: true },
+        onChange: undefined,
+        onInput: undefined,
+      });
+      createMessageDataMapChildren(messageDataMap, path, element.children);
+      return;
+    case "inputRadio":
+      messageDataMap.set(path, {
+        onClick: undefined,
+        onChange: element.select,
+        onInput: undefined,
+      });
+      return;
+    case "inputText":
+      messageDataMap.set(path, {
+        onClick: undefined,
+        onChange: undefined,
+        onInput: element.input,
+      });
+      return;
+    case "div":
+    case "externalLink":
+    case "label":
+      createMessageDataMapChildren(messageDataMap, path, element.children);
+      return;
+    case "svg":
+      createMessageDataMapChildren(messageDataMap, path, element.children);
   }
-  for (const [key, child] of attributeAndChildren.children.value) {
-    createMessageDataMapLoop(
-      messageDataMap,
-      pathAppendKey(path, key),
-      child.attributeAndChildren
-    );
+};
+
+const createMessageDataMapChildren = <Message>(
+  messageDataMap: Map<Path, Events<Message>>,
+  path: Path,
+  children: Children<Message>
+) => {
+  if (children.tag === childrenElementListTag) {
+    for (const [key, child] of children.value) {
+      createMessageDataMapLoop(messageDataMap, pathAppendKey(path, key), child);
+    }
   }
 };
