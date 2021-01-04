@@ -156,6 +156,7 @@ const applyChildren = <Message>(
   }
 };
 
+// eslint-disable-next-line complexity
 const pathElement = <Message>(
   htmlOrSvgElement: HTMLElement | SVGElement,
   diff: v.ElementUpdateDiff<Message>,
@@ -163,13 +164,78 @@ const pathElement = <Message>(
   path: v.Path
 ): void => {
   switch (diff.tag) {
-    case "div": {
+    case "div":
       if (!(htmlOrSvgElement instanceof HTMLDivElement)) {
         console.error(htmlOrSvgElement, diff, path);
-        throw new Error("expect div");
+        throw new Error("expect HTMLDivElement");
       }
       patchDiv(htmlOrSvgElement, diff, patchState, path);
-    }
+      return;
+
+    case "externalLink":
+    case "localLink":
+      if (!(htmlOrSvgElement instanceof HTMLAnchorElement)) {
+        console.error(htmlOrSvgElement, diff, path);
+        throw new Error("expect HTMLAnchorElement");
+      }
+      patchAnchor(htmlOrSvgElement, diff, patchState, path);
+      return;
+
+    case "button":
+      if (!(htmlOrSvgElement instanceof HTMLButtonElement)) {
+        console.error(htmlOrSvgElement, diff, path);
+        throw new Error("expect HTMLButtonElement");
+      }
+      patchButton(htmlOrSvgElement, diff, patchState, path);
+      return;
+    case "img":
+      if (!(htmlOrSvgElement instanceof HTMLImageElement)) {
+        console.error(htmlOrSvgElement, diff, path);
+        throw new Error("expect HTMLImageElement");
+      }
+      patchImg(htmlOrSvgElement, diff, patchState, path);
+      return;
+    case "inputRadio":
+      if (!(htmlOrSvgElement instanceof HTMLInputElement)) {
+        console.error(htmlOrSvgElement, diff, path);
+        throw new Error("expect HTMLInputElement");
+      }
+      return;
+    case "inputText":
+      if (!(htmlOrSvgElement instanceof HTMLInputElement)) {
+        console.error(htmlOrSvgElement, diff, path);
+        throw new Error("expect HTMLInputElement");
+      }
+      return;
+    case "label":
+      if (!(htmlOrSvgElement instanceof HTMLLabelElement)) {
+        console.error(htmlOrSvgElement, diff, path);
+        throw new Error("expect HTMLLabelElement");
+      }
+      return;
+    case "svg":
+      if (!(htmlOrSvgElement instanceof SVGSVGElement)) {
+        console.error(htmlOrSvgElement, diff, path);
+        throw new Error("expect SVGSVGElement");
+      }
+      return;
+    case "path":
+      if (!(htmlOrSvgElement instanceof SVGPathElement)) {
+        console.error(htmlOrSvgElement, diff, path);
+        throw new Error("expect SVGPathElement");
+      }
+      return;
+    case "circle":
+      if (!(htmlOrSvgElement instanceof SVGCircleElement)) {
+        console.error(htmlOrSvgElement, diff, path);
+        throw new Error("expect SVGCircleElement");
+      }
+      return;
+    case "animate":
+      if (!(htmlOrSvgElement instanceof SVGAnimateElement)) {
+        console.error(htmlOrSvgElement, diff, path);
+        throw new Error("expect SVGAnimateElement");
+      }
   }
 };
 
@@ -187,6 +253,46 @@ const patchDiv = <Message>(
   }
   patchChildren(realElement, diff.children, patchState, path);
 };
+
+const patchAnchor = <Message>(
+  realElement: HTMLAnchorElement,
+  diff: v.ExternalLinkDiff<Message> | v.LocalLinkDiff<Message>,
+  patchState: PatchState<Message>,
+  path: v.Path
+) => {
+  if (diff.id !== undefined) {
+    realElement.id = diff.id;
+  }
+  if (diff.class !== undefined) {
+    realElement.className = diff.class;
+  }
+  if (diff.url !== undefined) {
+    realElement.href = diff.url;
+  }
+  patchChildren(realElement, diff.children, patchState, path);
+};
+
+const patchButton = <Message>(
+  realElement: HTMLButtonElement,
+  diff: v.ButtonDiff<Message>,
+  patchState: PatchState<Message>,
+  path: v.Path
+) => {
+  if (diff.id !== undefined) {
+    realElement.id = diff.id;
+  }
+  if (diff.class !== undefined) {
+    realElement.className = diff.class;
+  }
+  patchChildren(realElement, diff.children, patchState, path);
+};
+
+const patchImg = <Message>(
+  realElement: HTMLImageElement,
+  diff: v.ImgDiff<Message>,
+  patchState: PatchState<Message>,
+  path: v.Path
+) => {};
 
 const patchChildren = <Message>(
   htmlOrSvgElement: HTMLElement | SVGElement,
