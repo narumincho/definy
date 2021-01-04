@@ -8,6 +8,10 @@ export interface View<Message> {
   readonly children: Children<Message>;
 }
 
+/**
+ * View の 差分データ.
+ * イベント関係は差分を使って処理をしないので Message は含まれないが, 要素を追加するときに Message を使う形になってしまっている
+ */
 export interface ViewDiff<Message> {
   readonly newTitle: string | undefined;
   readonly newThemeColor: d.Maybe<Color | undefined>;
