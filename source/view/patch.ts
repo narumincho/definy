@@ -193,49 +193,56 @@ const pathElement = <Message>(
         console.error(htmlOrSvgElement, diff, path);
         throw new Error("expect HTMLImageElement");
       }
-      patchImg(htmlOrSvgElement, diff, patchState, path);
+      patchImg(htmlOrSvgElement, diff);
       return;
     case "inputRadio":
       if (!(htmlOrSvgElement instanceof HTMLInputElement)) {
         console.error(htmlOrSvgElement, diff, path);
         throw new Error("expect HTMLInputElement");
       }
+      patchInputRadio(htmlOrSvgElement, diff);
       return;
     case "inputText":
       if (!(htmlOrSvgElement instanceof HTMLInputElement)) {
         console.error(htmlOrSvgElement, diff, path);
         throw new Error("expect HTMLInputElement");
       }
+      patchInputText(htmlOrSvgElement, diff);
       return;
     case "label":
       if (!(htmlOrSvgElement instanceof HTMLLabelElement)) {
         console.error(htmlOrSvgElement, diff, path);
         throw new Error("expect HTMLLabelElement");
       }
+      patchLabel(htmlOrSvgElement, diff, patchState, path);
       return;
     case "svg":
       if (!(htmlOrSvgElement instanceof SVGSVGElement)) {
         console.error(htmlOrSvgElement, diff, path);
         throw new Error("expect SVGSVGElement");
       }
+      patchSvg(htmlOrSvgElement, diff, patchState, path);
       return;
     case "path":
       if (!(htmlOrSvgElement instanceof SVGPathElement)) {
         console.error(htmlOrSvgElement, diff, path);
         throw new Error("expect SVGPathElement");
       }
+      patchSvgPath(htmlOrSvgElement, diff);
       return;
     case "circle":
       if (!(htmlOrSvgElement instanceof SVGCircleElement)) {
         console.error(htmlOrSvgElement, diff, path);
         throw new Error("expect SVGCircleElement");
       }
+      patchSvgCircle(htmlOrSvgElement, diff, patchState, path);
       return;
     case "animate":
       if (!(htmlOrSvgElement instanceof SVGAnimateElement)) {
         console.error(htmlOrSvgElement, diff, path);
         throw new Error("expect SVGAnimateElement");
       }
+      patchSvgAnimate(htmlOrSvgElement, diff);
   }
 };
 
@@ -287,12 +294,158 @@ const patchButton = <Message>(
   patchChildren(realElement, diff.children, patchState, path);
 };
 
-const patchImg = <Message>(
-  realElement: HTMLImageElement,
-  diff: v.ImgDiff<Message>,
+const patchImg = (realElement: HTMLImageElement, diff: v.ImgDiff) => {
+  if (diff.id !== undefined) {
+    realElement.id = diff.id;
+  }
+  if (diff.class !== undefined) {
+    realElement.className = diff.class;
+  }
+  if (diff.alt !== undefined) {
+    realElement.alt = diff.alt;
+  }
+  if (diff.src !== undefined) {
+    realElement.src = diff.src;
+  }
+};
+
+const patchInputRadio = (
+  realElement: HTMLInputElement,
+  diff: v.InputRadioDiff
+) => {
+  if (diff.id !== undefined) {
+    realElement.id = diff.id;
+  }
+  if (diff.class !== undefined) {
+    realElement.className = diff.class;
+  }
+  if (diff.checked !== undefined) {
+    realElement.checked = diff.checked;
+  }
+  if (diff.name !== undefined) {
+    realElement.name = diff.name;
+  }
+};
+
+const patchInputText = (
+  realElement: HTMLInputElement,
+  diff: v.InputTextDiff
+): void => {
+  if (diff.id !== undefined) {
+    realElement.id = diff.id;
+  }
+  if (diff.class !== undefined) {
+    realElement.className = diff.class;
+  }
+  if (diff.value !== undefined) {
+    realElement.value = diff.value;
+  }
+};
+
+const patchLabel = <Message>(
+  realElement: HTMLLabelElement,
+  diff: v.LabelDiff<Message>,
   patchState: PatchState<Message>,
   path: v.Path
-) => {};
+): void => {
+  if (diff.id !== undefined) {
+    realElement.id = diff.id;
+  }
+  if (diff.class !== undefined) {
+    realElement.className = diff.class;
+  }
+  if (diff.for !== undefined) {
+    realElement.htmlFor = diff.for;
+  }
+  patchChildren(realElement, diff.children, patchState, path);
+};
+
+const patchSvg = <Message>(
+  realElement: SVGSVGElement,
+  diff: v.SvgDiff<Message>,
+  patchState: PatchState<Message>,
+  path: v.Path
+): void => {
+  if (diff.id !== undefined) {
+    realElement.id = diff.id;
+  }
+  if (diff.class !== undefined) {
+    realElement.classList.value = diff.class;
+  }
+  if (diff.viewBoxX !== undefined) {
+    realElement.viewBox.baseVal.x = diff.viewBoxX;
+  }
+  if (diff.viewBoxY !== undefined) {
+    realElement.viewBox.baseVal.y = diff.viewBoxY;
+  }
+  if (diff.viewBoxWidth !== undefined) {
+    realElement.viewBox.baseVal.width = diff.viewBoxWidth;
+  }
+  if (diff.viewBoxHeight !== undefined) {
+    realElement.viewBox.baseVal.height = diff.viewBoxHeight;
+  }
+  patchChildren(realElement, diff.children, patchState, path);
+};
+
+const patchSvgPath = (realElement: SVGPathElement, diff: v.SvgPathDiff) => {
+  if (diff.id !== undefined) {
+    realElement.id = diff.id;
+  }
+  if (diff.class !== undefined) {
+    realElement.classList.value = diff.class;
+  }
+  if (diff.d !== undefined) {
+    realElement.setAttribute("d", diff.d);
+  }
+  if (diff.fill !== undefined) {
+    realElement.setAttribute("fill", diff.fill);
+  }
+};
+
+const patchSvgCircle = <Message>(
+  realElement: SVGCircleElement,
+  diff: v.SvgCircleDiff,
+  patchState: PatchState<Message>,
+  path: v.Path
+) => {
+  if (diff.id !== undefined) {
+    realElement.id = diff.id;
+  }
+  if (diff.class !== undefined) {
+    realElement.classList.value = diff.class;
+  }
+  if (diff.fill !== undefined) {
+    realElement.setAttribute("fill", diff.fill);
+  }
+  if (diff.stroke !== undefined) {
+    realElement.setAttribute("stroke", diff.stroke);
+  }
+  if (diff.cx !== undefined) {
+    realElement.cx.baseVal.value = diff.cx;
+  }
+  patchChildren(realElement, diff.children, patchState, path);
+};
+
+const patchSvgAnimate = (
+  realElement: SVGAnimateElement,
+  diff: v.AnimateDiff
+): void => {
+  if (diff.attributeName !== undefined) {
+    realElement.setAttribute("attributeName", diff.attributeName);
+  }
+  if (diff.dur !== undefined) {
+    realElement.setAttribute("dur", diff.dur.toString());
+  }
+  if (diff.repeatCount !== undefined) {
+    realElement.setAttribute("repeatCount", diff.repeatCount);
+  }
+  if (diff.from !== undefined) {
+    realElement.setAttribute("from", diff.from);
+  }
+  if (diff.to !== undefined) {
+    realElement.setAttribute("to", diff.to);
+  }
+};
 
 const patchChildren = <Message>(
   htmlOrSvgElement: HTMLElement | SVGElement,
