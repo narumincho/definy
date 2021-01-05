@@ -1,8 +1,5 @@
 import { c, div, path, svg } from "./view/viewUtil";
 import { Element } from "./view/view";
-import { Model } from "./model";
-import { ReactElement } from "react";
-import { jsx } from "@emotion/react";
 
 export type GridTemplateValue = { _: "Fix"; value: number } | { _: "OneFr" };
 
@@ -73,26 +70,6 @@ const gridTemplateToCssString = (value: GridTemplateValue): string => {
 
 export const text = <Message>(string: string): Element<Message> =>
   div({}, string);
-
-export interface EditorProps<T> {
-  readonly value: T;
-  readonly onChange: (newValue: T) => void;
-  readonly name: string;
-  readonly model: Model;
-}
-
-export type Editor<T> = (props: EditorProps<T>) => ReactElement;
-
-export const editorToReactElement = <T>(
-  editor: Editor<T>,
-  props: {
-    value: T;
-    onChange: (newValue: T) => void;
-    name: string;
-    key?: string;
-    model: Model;
-  }
-): ReactElement => jsx("div", {}, "");
 
 export type Theme = "Gray" | "Black" | "Active";
 

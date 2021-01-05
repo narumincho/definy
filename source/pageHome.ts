@@ -7,7 +7,6 @@ import {
 } from "./appInterface";
 import { c, div } from "./view/viewUtil";
 import { Element } from "./view/view";
-import { Model } from "./model";
 import { icon } from "./icon";
 import { link } from "./link";
 import { projectCard } from "./project";
@@ -40,10 +39,6 @@ export const view = (appInterface: AppInterface): TitleAndElement => {
     ),
   };
 };
-
-export interface Props {
-  readonly model: Model;
-}
 
 const homeMain = (appInterface: AppInterface): Element<Message> => {
   return div(
@@ -116,6 +111,7 @@ const AllProjectList = (appInterface: AppInterface): Element<Message> => {
         appInterface.top50ProjectIdState.projectIdList
       );
     }
+    case "respondCreatingProject"
   }
 };
 

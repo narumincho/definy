@@ -1,72 +1,10 @@
 import * as core from "definy-core";
 import * as d from "definy-core/source/data";
 import { AppInterface, Message, messageJumpTag } from "./appInterface";
-import { CSSObject, SerializedStyles, css, jsx as h } from "@emotion/react";
-import react, { Component, ReactElement } from "react";
+import { CSSObject } from "@emotion/css";
 import { Element } from "./view/view";
-import { Model } from "./model";
 import { Theme } from "./ui";
 import { localLink } from "./view/viewUtil";
-
-export interface Props {
-  readonly model: Model;
-  readonly location: d.Location;
-  readonly language?: d.Language;
-  readonly theme: Theme;
-  readonly css?: SerializedStyles;
-  readonly className?: string;
-}
-
-export class Link extends Component<Props, never> {
-  onClick(event: react.MouseEvent<HTMLAnchorElement, MouseEvent>): void {
-    /*
-     * リンクを
-     * Ctrlなどを押しながらクリックか,
-     * マウスの中ボタンでクリックした場合などは, ブラウザで新しいタブが開くので, ページ推移をDefinyでしない.
-     */
-    if (
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey ||
-      event.button !== 0
-    ) {
-      return;
-    }
-    event.preventDefault();
-    this.props.model.jump(this.props.location, this.props.model.language);
-  }
-
-  render(): ReactElement {
-    return h(
-      "a",
-      {
-        href: core
-          .urlDataAndAccountTokenToUrl(
-            {
-              clientMode: this.props.model.clientMode,
-              language: this.props.language ?? this.props.model.language,
-              location: this.props.location,
-            },
-            d.Maybe.Nothing()
-          )
-          .toString(),
-        onClick: (e: react.MouseEvent<HTMLAnchorElement, MouseEvent>) =>
-          this.onClick(e),
-        css: css(
-          {
-            display: "block",
-            textDecoration: "none",
-          },
-          themeToStyle(this.props.theme),
-          this.props.css
-        ),
-        theme: this.props.theme,
-        className: this.props.className,
-      },
-      this.props.children
-    );
-  }
-}
 
 const themeToStyle = (
   theme: Theme

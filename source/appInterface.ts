@@ -1,12 +1,23 @@
 import * as d from "definy-core/source/data";
 import * as pageDebug from "./pageDebug";
-import {
-  GetTypePartInProjectState,
-  HomeProjectState,
-  TypePartEditSate,
-} from "./model";
 import { Element } from "./view/view";
 import { elementMap } from "./view/viewUtil";
+
+export type HomeProjectState =
+  | { _: "None" }
+  | { _: "Loading" }
+  | { _: "Loaded"; projectIdList: ReadonlyArray<d.ProjectId> };
+
+export type TypePartEditSate = "None" | "Adding" | "Saving" | "Error";
+
+export type GetTypePartInProjectState =
+  | { _: "None" }
+  | { _: "Requesting"; projectId: d.ProjectId };
+
+export type RequestTypePartListInProjectState =
+  | { _: "None" }
+  | { _: "WaitRequesting"; projectId: d.ProjectId }
+  | { _: "Requesting"; projectId: d.ProjectId };
 
 export interface AppInterface {
   /** ホームに表示される. Top50のプロジェクトのID */

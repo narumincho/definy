@@ -1,86 +1,62 @@
-import { Editor, EditorProps, box, editorToReactElement } from "./ui";
-import { c, inputRadio, label } from "./view/viewUtil";
+import { c, elementMap, inputRadio, label } from "./view/viewUtil";
 import { Element } from "./view/view";
-import { ReactElement } from "react";
-import { jsx as h } from "@emotion/react";
+import { box } from "./ui";
 
-export const createWithParameterSumEditor = <
-  ParamType extends { [key in string]: unknown },
-  Tag extends string & keyof ParamType,
-  T extends { _: Tag } & Record<string, unknown>
->(
-  parameterComponentObject: {
-    [key in keyof ParamType]: Editor<ParamType[key]>;
+interface SumEditorMessage<
+  tagAndMessage extends Record<string, unknown>,
+  tag extends keyof tagAndMessage & string
+> {
+  tag: tag;
+  content: tagAndMessage[tag] | undefined;
+}
+
+export const sumEditor = <tagAndMessage extends Record<string, unknown>>(
+  tagAndElement: {
+    [tag in keyof tagAndMessage & string]: Element<tagAndMessage[tag]>;
   },
-  defaultValueObject: {
-    [key in keyof ParamType]: T;
-  },
+  selectedTag: keyof tagAndMessage & string,
   name: string
-): Editor<T> => {
-  const TagEditor = "div";
-  const editor = (props: EditorProps<T>): ReactElement => {
-    const parameterComponent = parameterComponentObject[
-      props.value._
-    ] as Editor<unknown>;
-
-    const parameterNameAndValue = getParameterFieldNameAndValue<unknown>(
-      props.value as {
-        _: string;
-      } & Record<string, unknown>
-    );
-
-    return h("div", {}, [
-      h(TagEditor, {
-        key: "tag",
-        name: props.name + "-tag",
-        onChange: (newTagName: Tag) => {
-          const defaultValue = defaultValueObject[newTagName];
-          if (defaultValue === undefined) {
-            throw new Error(
-              "デフォルト値が不明! tagName=" + newTagName.toString()
-            );
-          }
-          props.onChange(defaultValue);
-        },
-        value: props.value._,
-        model: props.model,
-      }),
-      parameterNameAndValue === undefined
-        ? undefined
-        : editorToReactElement<unknown>(parameterComponent, {
-            key: "paramter",
-            value: parameterNameAndValue.value,
-            name: props.name + "-value",
-            onChange: (newValue: unknown): void => {
-              props.onChange(({
-                _: props.value._,
-                [parameterNameAndValue.name]: newValue,
-              } as unknown) as T);
-            },
-            model: props.model,
-          }),
-    ]);
-  };
-  editor.displayName = name;
-  return editor;
+): Element<SumEditorMessage<tagAndMessage, keyof tagAndMessage & string>> => {
+  return box(
+    { direction: "y", padding: 0 },
+    c([
+      [
+        "tag",
+        elementMap(
+          tagEditor<keyof tagAndMessage & string>(
+            Object.keys(tagAndElement) as Array<keyof tagAndMessage & string>,
+            selectedTag as keyof tagAndMessage & string,
+            name
+          ),
+          <newTag extends keyof tagAndMessage & string>(
+            newTag: newTag
+          ): SumEditorMessage<tagAndMessage, newTag> => ({
+            tag: newTag,
+            content: undefined,
+          })
+        ),
+      ],
+      [
+        "content",
+        elementMap(
+          tagAndElement[selectedTag],
+          (
+            newContent
+          ): SumEditorMessage<tagAndMessage, keyof tagAndMessage & string> => ({
+            tag: selectedTag,
+            content: newContent,
+          })
+        ),
+      ],
+    ])
+  );
 };
 
-const getParameterFieldNameAndValue = <valueType>(
-  sumValue: { _: string } & Record<string, valueType>
-): { name: string; value: valueType } | undefined => {
-  const keys = Object.entries(sumValue);
-  for (const [key, value] of keys) {
-    if (key !== "_") {
-      return { name: key, value };
-    }
-  }
-};
-
-const tagEditor = (
-  tagList: ReadonlyArray<string>,
+export const tagEditor = <tag extends string>(
+  tagList: ReadonlyArray<tag>,
   selectedTag: string,
   groupName: string
-) =>
+): Element<tag> =>
   box(
     {
       borderRadius: 8,
@@ -96,12 +72,12 @@ const tagEditor = (
     )
   );
 
-const inputAndLabel = (
+const inputAndLabel = <tag extends string>(
   name: string,
-  tagName: string,
+  tagName: tag,
   index: number,
   isChecked: boolean
-): ReadonlyArray<readonly [string, Element<string>]> => [
+): ReadonlyArray<readonly [string, Element<tag>]> => [
   [
     tagName + "-input",
     inputRadio({
