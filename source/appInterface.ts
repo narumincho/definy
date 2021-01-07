@@ -176,6 +176,11 @@ export type Message =
       readonly tag: typeof messageSetTypePartName;
       readonly typePartId: d.TypePartId;
       readonly newName: string;
+    }
+  | {
+      readonly tag: typeof messageSetTypePartDescription;
+      readonly typePartId: d.TypePartId;
+      readonly newDescription: string;
     };
 
 export const messageJumpTag = Symbol("Message-Jump");
@@ -218,6 +223,9 @@ export const messageRespondSetTypePartList = Symbol(
 );
 export const messageSelectDebugPageTab = Symbol("Message-SelectDebugPageTab");
 export const messageSetTypePartName = Symbol("Message-SetTypePartName");
+export const messageSetTypePartDescription = Symbol(
+  "Message-SetTypePartDescription"
+);
 
 export type InterfaceMessage<PageMessage> =
   | {

@@ -5,16 +5,23 @@ import { Element } from "./view/view";
 import { oneLineTextEditor } from "./oneLineTextInput";
 import { productEditor } from "./productEditor";
 
-export interface Message {
-  readonly tag: typeof changeNameTag;
-  readonly newName: string;
-}
+export type Message =
+  | {
+      readonly tag: "ChangeName";
+      readonly newName: string;
+    }
+  | {
+      readonly tag: "ChangeDescription";
+      readonly newDescription: string;
+    };
 
-export const changeNameTag = Symbol("TypePartEditorMessage-ChangeName");
-
-const changeName = (newText: string): Message => ({
-  tag: changeNameTag,
-  newName: newText,
+const changeName = (newName: string): Message => ({
+  tag: "ChangeName",
+  newName,
+});
+const changeDescription = (newDescription: string): Message => ({
+  tag: "ChangeDescription",
+  newDescription,
 });
 
 export const view = (
@@ -40,17 +47,11 @@ export const view = (
 const typePartEditorLoaded = (typePart: d.TypePart): Element<Message> => {
   return productEditor(
     new Map([
+      ["name", oneLineTextEditor(typePart.name, changeName)],
       [
-        "name",
-        div(
-          {},
-          c([
-            ["a", oneLineTextEditor(typePart.name, changeName)],
-            ["b", oneLineTextEditor(typePart.name, changeName)],
-          ])
-        ),
+        "description",
+        oneLineTextEditor(typePart.description, changeDescription),
       ],
-      ["description", div({}, typePart.description)],
       ["bodyType", div({}, typePart.body._)],
     ])
   );

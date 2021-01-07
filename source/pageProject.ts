@@ -12,31 +12,31 @@ import { userCard } from "./user";
 
 export type State =
   | {
-      readonly tag: typeof selectProjectDetail;
+      readonly tag: "SelectProjectDetail";
     }
   | {
-      readonly tag: typeof selectTypePart;
+      readonly tag: "SelectTypePart";
       readonly typePartId: d.TypePartId;
     };
 
 export type PageMessage =
   | {
-      readonly tag: typeof selectProjectDetail;
+      readonly tag: "SelectProjectDetail";
     }
   | {
-      readonly tag: typeof selectTypePart;
+      readonly tag: "SelectTypePart";
       readonly typePartId: d.TypePartId;
     }
   | {
-      readonly tag: typeof pageMessageSetTypePartName;
+      readonly tag: "SetTypePartName";
       readonly typePartId: d.TypePartId;
       readonly newName: string;
+    }
+  | {
+      readonly tag: "SetTypePartDescription";
+      readonly typePartId: d.TypePartId;
+      readonly newDescription: string;
     };
-
-const selectProjectDetail = Symbol("PageModelState-SelectProjectDetail");
-const selectTypePart = Symbol("PageModelState-SelectTypePart");
-
-const pageMessageSetTypePartName = Symbol("PageProjectMessage-SetTypePartName");
 
 export const init = (
   messageHandler: (message: a.Message) => void,
@@ -51,7 +51,7 @@ export const init = (
     projectId,
   });
   return {
-    tag: selectProjectDetail,
+    tag: "SelectProjectDetail",
   };
 };
 
@@ -61,20 +61,27 @@ export const updateSateByLocalMessage = (
   messageHandler: (message: a.Message) => void
 ): State => {
   switch (pageMessage.tag) {
-    case selectProjectDetail:
+    case "SelectProjectDetail":
       return {
-        tag: selectProjectDetail,
+        tag: "SelectProjectDetail",
       };
-    case selectTypePart:
+    case "SelectTypePart":
       return {
-        tag: selectTypePart,
+        tag: "SelectTypePart",
         typePartId: pageMessage.typePartId,
       };
-    case pageMessageSetTypePartName:
+    case "SetTypePartName":
       messageHandler({
         tag: a.messageSetTypePartName,
         typePartId: pageMessage.typePartId,
         newName: pageMessage.newName,
+      });
+      return state;
+    case "SetTypePartDescription":
+      messageHandler({
+        tag: a.messageSetTypePartDescription,
+        typePartId: pageMessage.typePartId,
+        newDescription: pageMessage.newDescription,
       });
       return state;
   }
@@ -173,7 +180,7 @@ const treeView = (
         button(
           {
             click: a.interfaceMessagePageMessage({
-              tag: selectProjectDetail,
+              tag: "SelectProjectDetail",
             }),
           },
           "プロジェクト詳細"
@@ -188,7 +195,7 @@ const treeView = (
           button(
             {
               click: a.interfaceMessagePageMessage({
-                tag: selectTypePart,
+                tag: "SelectTypePart",
                 typePartId,
               }),
             },
@@ -218,9 +225,9 @@ const mainView = (
   project: d.Project
 ): Element<a.InterfaceMessage<PageMessage>> => {
   switch (state.tag) {
-    case selectProjectDetail:
+    case "SelectProjectDetail":
       return projectDetailView(appInterface, projectId, project);
-    case selectTypePart:
+    case "SelectTypePart":
       return elementMap<
         typePartEditor.Message,
         a.InterfaceMessage<PageMessage>
@@ -240,11 +247,17 @@ const typePartEditorMessageToPageMessage = (
   typePartId: d.TypePartId
 ): a.InterfaceMessage<PageMessage> => {
   switch (typePartEditorMessage.tag) {
-    case typePartEditor.changeNameTag:
+    case "ChangeName":
       return a.interfaceMessagePageMessage({
-        tag: pageMessageSetTypePartName,
+        tag: "SetTypePartName",
         typePartId,
         newName: typePartEditorMessage.newName,
+      });
+    case "ChangeDescription":
+      return a.interfaceMessagePageMessage({
+        tag: "SetTypePartDescription",
+        typePartId,
+        newDescription: typePartEditorMessage.newDescription,
       });
   }
 };

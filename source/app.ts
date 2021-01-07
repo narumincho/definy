@@ -333,6 +333,29 @@ const updateStateByAppMessage = (
         },
         pageModel: oldState.pageModel,
       };
+    case a.messageSetTypePartDescription:
+      return {
+        appInterface: {
+          ...oldState.appInterface,
+          typePartMap: mapMapAt(
+            oldState.appInterface.typePartMap,
+            message.typePartId,
+            (old: d.ResourceState<d.TypePart>): d.ResourceState<d.TypePart> => {
+              if (old._ !== "Loaded") {
+                return old;
+              }
+              return d.ResourceState.Loaded({
+                data: {
+                  ...old.dataWithTime.data,
+                  description: message.newDescription,
+                },
+                getTime: old.dataWithTime.getTime,
+              });
+            }
+          ),
+        },
+        pageModel: oldState.pageModel,
+      };
   }
 };
 

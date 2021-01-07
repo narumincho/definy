@@ -55,7 +55,7 @@ const homeMain = (appInterface: AppInterface): Element<Message> => {
     },
     c([
       ["linkList", homeLinkList(appInterface)],
-      ["projectList", AllProjectList(appInterface)],
+      ["projectList", allProjectList(appInterface)],
     ])
   );
 };
@@ -99,7 +99,7 @@ const homeLink = (
     text
   );
 
-const AllProjectList = (appInterface: AppInterface): Element<Message> => {
+const allProjectList = (appInterface: AppInterface): Element<Message> => {
   switch (appInterface.top50ProjectIdState._) {
     case "None":
       return div({}, "読み込み前");
@@ -111,7 +111,6 @@ const AllProjectList = (appInterface: AppInterface): Element<Message> => {
         appInterface.top50ProjectIdState.projectIdList
       );
     }
-    case "respondCreatingProject"
   }
 };
 
