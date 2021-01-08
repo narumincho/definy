@@ -1,5 +1,7 @@
 import * as a from "./appInterface";
 import * as d from "definy-core/source/data";
+import * as listEditor from "./listEditor";
+import * as patternListEditor from "./patternListEditor";
 import { c, div, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { oneLineTextEditor } from "./oneLineTextInput";
@@ -24,7 +26,8 @@ export type Message =
       readonly newKernel: d.TypePartBodyKernel;
     }
   | {
-      readonly tag: "NoOp";
+      readonly tag: "PatternList";
+      readonly patternListMessage: listEditor.Message<patternListEditor.Message>;
     };
 
 const changeName = (newName: string): Message => ({
@@ -35,6 +38,57 @@ const changeDescription = (newDescription: string): Message => ({
   tag: "ChangeDescription",
   newDescription,
 });
+
+export const update = (typePart: d.TypePart, message: Message): d.TypePart => {
+  switch (message.tag) {
+    case "ChangeName":
+      return {
+        ...typePart,
+        name: message.newName,
+      };
+    case "ChangeDescription":
+      return {
+        ...typePart,
+        description: message.newDescription,
+      };
+    case "ChangeBodyTag":
+      return {
+        ...typePart,
+        body: typePartBodyTagToInitTypePartBody(message.newTag),
+      };
+    case "ChangeBodyKernel":
+      return {
+        ...typePart,
+        body: d.TypePartBody.Kernel(message.newKernel),
+      };
+    case "PatternList":
+      if (typePart.body._ !== "Sum") {
+        return typePart;
+      }
+      return {
+        ...typePart,
+        body: d.TypePartBody.Sum(
+          patternListEditor.listUpdate(
+            typePart.body.patternList,
+            message.patternListMessage
+          )
+        ),
+      };
+  }
+};
+
+const typePartBodyTagToInitTypePartBody = (
+  typePartBodyTag: a.TypePartBodyTag
+): d.TypePartBody => {
+  switch (typePartBodyTag) {
+    case "Product":
+      return d.TypePartBody.Product([]);
+    case "Sum":
+      return d.TypePartBody.Sum([]);
+    case "Kernel":
+      return d.TypePartBody.Kernel(d.TypePartBodyKernel.String);
+  }
+};
 
 export const view = (
   appInterface: a.AppInterface,
@@ -65,7 +119,7 @@ const typePartEditorLoaded = (typePart: d.TypePart): Element<Message> => {
         oneLineTextEditor(typePart.description, changeDescription),
       ],
       [
-        "bodyTag",
+        "body",
         div(
           {},
           c([
@@ -90,7 +144,13 @@ const bodyTagEditor = (typePartBody: d.TypePartBody): Element<Message> => {
 const bodyContentEditor = (typePartBody: d.TypePartBody): Element<Message> => {
   switch (typePartBody._) {
     case "Sum":
-      return div({}, "Sum");
+      return elementMap(
+        patternListEditor.listView(typePartBody.patternList),
+        (patternListMessage): Message => ({
+          tag: "PatternList",
+          patternListMessage,
+        })
+      );
     case "Product":
       return div({}, "Product");
     case "Kernel":
@@ -114,3 +174,5 @@ export const KernelEditorList = [
   "Token",
   "List",
 ] as const;
+
+const filedListEditor = () => {};

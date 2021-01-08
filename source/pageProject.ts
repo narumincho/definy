@@ -222,36 +222,11 @@ const typePartEditorMessageToPageMessage = (
   typePartEditorMessage: typePartEditor.Message,
   typePartId: d.TypePartId
 ): a.InterfaceMessage<PageMessage> => {
-  switch (typePartEditorMessage.tag) {
-    case "ChangeName":
-      return a.interfaceMessageAppMessage({
-        tag: a.messageSetTypePartName,
-        typePartId,
-        newName: typePartEditorMessage.newName,
-      });
-    case "ChangeDescription":
-      return a.interfaceMessageAppMessage({
-        tag: a.messageSetTypePartDescription,
-        typePartId,
-        newDescription: typePartEditorMessage.newDescription,
-      });
-    case "ChangeBodyTag":
-      return a.interfaceMessageAppMessage({
-        tag: a.messageSetTypePartBodyTag,
-        typePartId,
-        newBodyTag: typePartEditorMessage.newTag,
-      });
-    case "ChangeBodyKernel":
-      return a.interfaceMessageAppMessage({
-        tag: a.messageSetTypePartBodyKernel,
-        typePartId,
-        typePartBodyKernel: typePartEditorMessage.newKernel,
-      });
-    case "NoOp":
-      return a.interfaceMessageAppMessage({
-        tag: a.messageNoOp,
-      });
-  }
+  return a.interfaceMessageAppMessage({
+    tag: a.messageTypePartMessage,
+    typePartId,
+    typePartMessage: typePartEditorMessage,
+  });
 };
 
 const projectDetailView = (

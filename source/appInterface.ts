@@ -1,6 +1,7 @@
 import * as d from "definy-core/source/data";
 import * as pageDebug from "./pageDebug";
 import { Element } from "./view/view";
+import type { Message as TypePartEditorMessage } from "./typePartEditor";
 import { elementMap } from "./view/viewUtil";
 
 export type HomeProjectState =
@@ -174,24 +175,9 @@ export type Message =
       readonly tab: pageDebug.Tab;
     }
   | {
-      readonly tag: typeof messageSetTypePartName;
+      readonly tag: typeof messageTypePartMessage;
       readonly typePartId: d.TypePartId;
-      readonly newName: string;
-    }
-  | {
-      readonly tag: typeof messageSetTypePartDescription;
-      readonly typePartId: d.TypePartId;
-      readonly newDescription: string;
-    }
-  | {
-      readonly tag: typeof messageSetTypePartBodyTag;
-      readonly typePartId: d.TypePartId;
-      readonly newBodyTag: TypePartBodyTag;
-    }
-  | {
-      readonly tag: typeof messageSetTypePartBodyKernel;
-      readonly typePartId: d.TypePartId;
-      readonly typePartBodyKernel: d.TypePartBodyKernel;
+      readonly typePartMessage: TypePartEditorMessage;
     };
 
 export const messageNoOp = Symbol("Message-NoOp");
@@ -234,14 +220,7 @@ export const messageRespondSetTypePartList = Symbol(
   "Message-RespondSetTypePartList"
 );
 export const messageSelectDebugPageTab = Symbol("Message-SelectDebugPageTab");
-export const messageSetTypePartName = Symbol("Message-SetTypePartName");
-export const messageSetTypePartDescription = Symbol(
-  "Message-SetTypePartDescription"
-);
-export const messageSetTypePartBodyTag = Symbol("Message-SetTypePartBodyTag");
-export const messageSetTypePartBodyKernel = Symbol(
-  "Message-TypePartBodyKernel"
-);
+export const messageTypePartMessage = Symbol("Message-TypePartMessage");
 
 export type InterfaceMessage<PageMessage> =
   | {

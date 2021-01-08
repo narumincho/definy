@@ -10,6 +10,7 @@ import * as pageHome from "./pageHome";
 import * as pageProject from "./pageProject";
 import * as pageSetting from "./pageSetting";
 import * as pageUser from "./pageUser";
+import * as typePartEditor from "./typePartEditor";
 import { CSSObject, keyframes } from "@emotion/css";
 import { Element, View } from "./view/view";
 import { api, getImageWithCache } from "./api";
@@ -315,7 +316,7 @@ const updateStateByAppMessage = (
         },
       };
 
-    case a.messageSetTypePartName:
+    case a.messageTypePartMessage:
       return {
         appInterface: {
           ...oldState.appInterface,
@@ -327,7 +328,10 @@ const updateStateByAppMessage = (
                 return old;
               }
               return d.ResourceState.Loaded({
-                data: { ...old.dataWithTime.data, name: message.newName },
+                data: typePartEditor.update(
+                  old.dataWithTime.data,
+                  message.typePartMessage
+                ),
                 getTime: old.dataWithTime.getTime,
               });
             }
@@ -335,89 +339,6 @@ const updateStateByAppMessage = (
         },
         pageModel: oldState.pageModel,
       };
-    case a.messageSetTypePartDescription:
-      return {
-        appInterface: {
-          ...oldState.appInterface,
-          typePartMap: mapMapAt(
-            oldState.appInterface.typePartMap,
-            message.typePartId,
-            (old: d.ResourceState<d.TypePart>): d.ResourceState<d.TypePart> => {
-              if (old._ !== "Loaded") {
-                return old;
-              }
-              return d.ResourceState.Loaded({
-                data: {
-                  ...old.dataWithTime.data,
-                  description: message.newDescription,
-                },
-                getTime: old.dataWithTime.getTime,
-              });
-            }
-          ),
-        },
-        pageModel: oldState.pageModel,
-      };
-
-    case a.messageSetTypePartBodyTag:
-      return {
-        appInterface: {
-          ...oldState.appInterface,
-          typePartMap: mapMapAt(
-            oldState.appInterface.typePartMap,
-            message.typePartId,
-            (old: d.ResourceState<d.TypePart>): d.ResourceState<d.TypePart> => {
-              if (old._ !== "Loaded") {
-                return old;
-              }
-              return d.ResourceState.Loaded({
-                data: {
-                  ...old.dataWithTime.data,
-                  body: typePartBodyTagToInitTypePartBody(message.newBodyTag),
-                },
-                getTime: old.dataWithTime.getTime,
-              });
-            }
-          ),
-        },
-        pageModel: oldState.pageModel,
-      };
-    case a.messageSetTypePartBodyKernel:
-      return {
-        appInterface: {
-          ...oldState.appInterface,
-          typePartMap: mapMapAt(
-            oldState.appInterface.typePartMap,
-            message.typePartId,
-            (old: d.ResourceState<d.TypePart>): d.ResourceState<d.TypePart> => {
-              if (old._ !== "Loaded") {
-                return old;
-              }
-              return d.ResourceState.Loaded({
-                data: {
-                  ...old.dataWithTime.data,
-                  body: d.TypePartBody.Kernel(message.typePartBodyKernel),
-                },
-                getTime: old.dataWithTime.getTime,
-              });
-            }
-          ),
-        },
-        pageModel: oldState.pageModel,
-      };
-  }
-};
-
-const typePartBodyTagToInitTypePartBody = (
-  typePartBodyTag: a.TypePartBodyTag
-): d.TypePartBody => {
-  switch (typePartBodyTag) {
-    case "Product":
-      return d.TypePartBody.Product([]);
-    case "Sum":
-      return d.TypePartBody.Sum([]);
-    case "Kernel":
-      return d.TypePartBody.Kernel(d.TypePartBodyKernel.String);
   }
 };
 
