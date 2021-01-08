@@ -57,9 +57,8 @@ export const update = <Item, ItemMessage>(
 };
 
 export const view = <Item, ItemMessage>(
-  list: ReadonlyArray<Item>,
   editor: (item: Item) => Element<ItemMessage>
-): Element<Message<ItemMessage>> => {
+) => (list: ReadonlyArray<Item>): Element<Message<ItemMessage>> => {
   return box<Message<ItemMessage>>(
     {
       padding: 0,

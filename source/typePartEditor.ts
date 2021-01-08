@@ -1,6 +1,7 @@
 import * as a from "./appInterface";
 import * as d from "definy-core/source/data";
 import * as listEditor from "./listEditor";
+import * as memberListEditor from "./memberListEditor";
 import * as patternListEditor from "./patternListEditor";
 import { c, div, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
@@ -28,6 +29,10 @@ export type Message =
   | {
       readonly tag: "PatternList";
       readonly patternListMessage: listEditor.Message<patternListEditor.Message>;
+    }
+  | {
+      readonly tag: "MemberList";
+      readonly memberListMessage: listEditor.Message<memberListEditor.Message>;
     };
 
 const changeName = (newName: string): Message => ({
@@ -71,6 +76,19 @@ export const update = (typePart: d.TypePart, message: Message): d.TypePart => {
           patternListEditor.listUpdate(
             typePart.body.patternList,
             message.patternListMessage
+          )
+        ),
+      };
+    case "MemberList":
+      if (typePart.body._ !== "Product") {
+        return typePart;
+      }
+      return {
+        ...typePart,
+        body: d.TypePartBody.Product(
+          memberListEditor.listUpdate(
+            typePart.body.memberList,
+            message.memberListMessage
           )
         ),
       };
@@ -152,7 +170,13 @@ const bodyContentEditor = (typePartBody: d.TypePartBody): Element<Message> => {
         })
       );
     case "Product":
-      return div({}, "Product");
+      return elementMap(
+        memberListEditor.listView(typePartBody.memberList),
+        (memberListMessage): Message => ({
+          tag: "MemberList",
+          memberListMessage,
+        })
+      );
     case "Kernel":
       return elementMap(
         tagEditor(
