@@ -20,7 +20,7 @@ const elementToHtmlOrSvgElement = <Message>(
   switch (element.tag) {
     case "div": {
       const div = document.createElement("div");
-      div.id = element.id;
+      setId(div, element.id);
       div.className = element.class;
       applyChildren(div, element.children, path, patchState);
       setEvents(div, path, patchState);
@@ -28,7 +28,7 @@ const elementToHtmlOrSvgElement = <Message>(
     }
     case "externalLink": {
       const externalLink = document.createElement("a");
-      externalLink.id = element.id;
+      setId(externalLink, element.id);
       externalLink.className = element.class;
       externalLink.href = element.url;
       applyChildren(externalLink, element.children, path, patchState);
@@ -37,7 +37,7 @@ const elementToHtmlOrSvgElement = <Message>(
     }
     case "localLink": {
       const localLink = document.createElement("a");
-      localLink.id = element.id;
+      setId(localLink, element.id);
       localLink.className = element.class;
       localLink.href = element.url;
       applyChildren(localLink, element.children, path, patchState);
@@ -46,7 +46,7 @@ const elementToHtmlOrSvgElement = <Message>(
     }
     case "button": {
       const button = document.createElement("button");
-      button.id = element.id;
+      setId(button, element.id);
       button.className = element.class;
       applyChildren(button, element.children, path, patchState);
       setEvents(button, path, patchState);
@@ -54,7 +54,7 @@ const elementToHtmlOrSvgElement = <Message>(
     }
     case "img": {
       const img = document.createElement("img");
-      img.id = element.id;
+      setId(img, element.id);
       img.className = element.class;
       img.alt = element.alt;
       img.src = element.src;
@@ -63,7 +63,7 @@ const elementToHtmlOrSvgElement = <Message>(
     }
     case "inputRadio": {
       const inputRadio = document.createElement("input");
-      inputRadio.id = element.id;
+      setId(inputRadio, element.id);
       inputRadio.className = element.class;
       inputRadio.type = "radio";
       inputRadio.name = element.name;
@@ -73,7 +73,7 @@ const elementToHtmlOrSvgElement = <Message>(
     }
     case "inputText": {
       const inputText = document.createElement("input");
-      inputText.id = element.id;
+      setId(inputText, element.id);
       inputText.className = element.class;
       inputText.type = "text";
       inputText.value = element.value;
@@ -82,7 +82,7 @@ const elementToHtmlOrSvgElement = <Message>(
     }
     case "label": {
       const label = document.createElement("label");
-      label.id = element.id;
+      setId(label, element.id);
       label.className = element.class;
       label.htmlFor = element.for;
       applyChildren(label, element.children, path, patchState);
@@ -91,7 +91,7 @@ const elementToHtmlOrSvgElement = <Message>(
     }
     case "svg": {
       const svg = document.createElementNS(svgNameSpace, "svg");
-      svg.id = element.id;
+      setId(svg, element.id);
       svg.classList.value = element.class;
       svg.viewBox.baseVal.x = element.viewBoxX;
       svg.viewBox.baseVal.y = element.viewBoxY;
@@ -103,7 +103,7 @@ const elementToHtmlOrSvgElement = <Message>(
     }
     case "path": {
       const pathElement = document.createElementNS(svgNameSpace, "path");
-      pathElement.id = element.id;
+      setId(pathElement, element.id);
       pathElement.classList.value = element.class;
       pathElement.setAttribute("d", element.d);
       pathElement.setAttribute("fill", element.fill);
@@ -112,7 +112,7 @@ const elementToHtmlOrSvgElement = <Message>(
     }
     case "circle": {
       const circle = document.createElementNS(svgNameSpace, "circle");
-      circle.id = element.id;
+      setId(circle, element.id);
       circle.classList.value = element.class;
       circle.setAttribute("fill", element.fill);
       circle.setAttribute("stroke", element.stroke);
@@ -253,7 +253,7 @@ const patchDiv = <Message>(
   path: v.Path
 ) => {
   if (diff.id !== undefined) {
-    realElement.id = diff.id;
+    setId(realElement, diff.id);
   }
   if (diff.class !== undefined) {
     realElement.className = diff.class;
@@ -268,7 +268,7 @@ const patchAnchor = <Message>(
   path: v.Path
 ) => {
   if (diff.id !== undefined) {
-    realElement.id = diff.id;
+    setId(realElement, diff.id);
   }
   if (diff.class !== undefined) {
     realElement.className = diff.class;
@@ -286,7 +286,7 @@ const patchButton = <Message>(
   path: v.Path
 ) => {
   if (diff.id !== undefined) {
-    realElement.id = diff.id;
+    setId(realElement, diff.id);
   }
   if (diff.class !== undefined) {
     realElement.className = diff.class;
@@ -296,7 +296,7 @@ const patchButton = <Message>(
 
 const patchImg = (realElement: HTMLImageElement, diff: v.ImgDiff) => {
   if (diff.id !== undefined) {
-    realElement.id = diff.id;
+    setId(realElement, diff.id);
   }
   if (diff.class !== undefined) {
     realElement.className = diff.class;
@@ -314,7 +314,7 @@ const patchInputRadio = (
   diff: v.InputRadioDiff
 ) => {
   if (diff.id !== undefined) {
-    realElement.id = diff.id;
+    setId(realElement, diff.id);
   }
   if (diff.class !== undefined) {
     realElement.className = diff.class;
@@ -332,7 +332,7 @@ const patchInputText = (
   diff: v.InputTextDiff
 ): void => {
   if (diff.id !== undefined) {
-    realElement.id = diff.id;
+    setId(realElement, diff.id);
   }
   if (diff.class !== undefined) {
     realElement.className = diff.class;
@@ -349,7 +349,7 @@ const patchLabel = <Message>(
   path: v.Path
 ): void => {
   if (diff.id !== undefined) {
-    realElement.id = diff.id;
+    setId(realElement, diff.id);
   }
   if (diff.class !== undefined) {
     realElement.className = diff.class;
@@ -367,7 +367,7 @@ const patchSvg = <Message>(
   path: v.Path
 ): void => {
   if (diff.id !== undefined) {
-    realElement.id = diff.id;
+    setId(realElement, diff.id);
   }
   if (diff.class !== undefined) {
     realElement.classList.value = diff.class;
@@ -389,7 +389,7 @@ const patchSvg = <Message>(
 
 const patchSvgPath = (realElement: SVGPathElement, diff: v.SvgPathDiff) => {
   if (diff.id !== undefined) {
-    realElement.id = diff.id;
+    setId(realElement, diff.id);
   }
   if (diff.class !== undefined) {
     realElement.classList.value = diff.class;
@@ -409,7 +409,7 @@ const patchSvgCircle = <Message>(
   path: v.Path
 ) => {
   if (diff.id !== undefined) {
-    realElement.id = diff.id;
+    setId(realElement, diff.id);
   }
   if (diff.class !== undefined) {
     realElement.classList.value = diff.class;
@@ -478,6 +478,14 @@ const patchChildren = <Message>(
         0
       );
   }
+};
+
+const setId = (htmlOrSvgElement: HTMLElement | SVGElement, newId: string) => {
+  if (newId === "") {
+    htmlOrSvgElement.removeAttribute("id");
+    return;
+  }
+  htmlOrSvgElement.id = newId;
 };
 
 const setEvents = <Message>(
