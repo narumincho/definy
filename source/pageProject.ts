@@ -204,16 +204,26 @@ const mainView = (
     case "SelectProjectDetail":
       return projectDetailView(appInterface, projectId, project);
     case "SelectTypePart":
-      return elementMap<
-        typePartEditor.Message,
-        a.InterfaceMessage<PageMessage>
-      >(
-        typePartEditor.view(appInterface, state.typePartId),
-        (typePartEditorMessage) =>
-          typePartEditorMessageToPageMessage(
-            typePartEditorMessage,
-            state.typePartId
-          )
+      return div(
+        {
+          style: {
+            overflowY: "scroll",
+            width: "100%",
+          },
+        },
+        c([
+          [
+            "e",
+            elementMap<typePartEditor.Message, a.InterfaceMessage<PageMessage>>(
+              typePartEditor.view(appInterface, state.typePartId),
+              (typePartEditorMessage) =>
+                typePartEditorMessageToPageMessage(
+                  typePartEditorMessage,
+                  state.typePartId
+                )
+            ),
+          ],
+        ])
       );
   }
 };
