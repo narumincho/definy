@@ -1,4 +1,4 @@
-import * as a from "./appInterface";
+import * as a from "./messageAndState";
 import * as d from "definy-core/source/data";
 import * as listEditor from "./listEditor";
 import * as memberListEditor from "./memberListEditor";
@@ -109,7 +109,7 @@ const typePartBodyTagToInitTypePartBody = (
 };
 
 export const view = (
-  appInterface: a.AppInterface,
+  appInterface: a.State,
   typePartId: d.TypePartId
 ): Element<Message> => {
   const typePartResource = appInterface.typePartMap.get(typePartId);

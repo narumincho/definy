@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { AppInterface, Message } from "./appInterface";
+import { Message, State } from "./messageAndState";
 import { c, div } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { image } from "./image";
@@ -9,7 +9,7 @@ const imageHeight = 633 / 4;
 const textHeight = 48;
 
 export const projectCard = (
-  appInterface: AppInterface,
+  appInterface: State,
   projectId: d.ProjectId
 ): Element<Message> => {
   const projectResource = appInterface.projectMap.get(projectId);
@@ -33,7 +33,7 @@ export const projectCard = (
 };
 
 const projectLoaded = (
-  appInterface: AppInterface,
+  appInterface: State,
   projectId: d.ProjectId,
   project: d.Project
 ) => {

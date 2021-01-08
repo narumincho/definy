@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { AppInterface, Message } from "./appInterface";
+import { Message, State } from "./messageAndState";
 import { c, div } from "./view/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "./view/view";
@@ -8,7 +8,7 @@ import { image } from "./image";
 import { link } from "./link";
 
 export const userCard = (
-  appInterface: AppInterface,
+  appInterface: State,
   userId: d.UserId
 ): Element<Message> => {
   const userState = appInterface.userMap.get(userId);

@@ -3,7 +3,6 @@ import * as pageDebug from "./pageDebug";
 import type * as pageProject from "./pageProject";
 import { Element } from "./view/view";
 import type { Message as TypePartEditorMessage } from "./typePartEditor";
-import { elementMap } from "./view/viewUtil";
 
 export type HomeProjectState =
   | { _: "None" }
@@ -21,7 +20,7 @@ export type RequestTypePartListInProjectState =
   | { _: "WaitRequesting"; projectId: d.ProjectId }
   | { _: "Requesting"; projectId: d.ProjectId };
 
-export interface AppInterface {
+export interface State {
   /** ホームに表示される. Top50のプロジェクトのID */
   readonly top50ProjectIdState: HomeProjectState;
 
@@ -88,12 +87,10 @@ export type PageModel =
 /**
  * アカウントトークンを得る
  */
-export const getAccountToken = (
-  appInterface: AppInterface
-): d.AccountToken | undefined => {
-  switch (appInterface.logInState._) {
+export const getAccountToken = (state: State): d.AccountToken | undefined => {
+  switch (state.logInState._) {
     case "LoggedIn":
-      return appInterface.logInState.accountTokenAndUserId.accountToken;
+      return state.logInState.accountTokenAndUserId.accountToken;
   }
 };
 

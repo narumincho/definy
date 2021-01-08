@@ -1,12 +1,12 @@
 import * as d from "definy-core/source/data";
 import { c, div, img } from "./view/viewUtil";
-import { AppInterface } from "./appInterface";
+import { State } from "./messageAndState";
 import { CSSObject } from "@emotion/css";
 import { Element } from "./view/view";
 import { icon } from "./icon";
 
 export interface Option {
-  readonly appInterface: AppInterface;
+  readonly appInterface: State;
   readonly imageToken: d.ImageToken;
   readonly alternativeText: string;
   readonly isCircle: boolean;

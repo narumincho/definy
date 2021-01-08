@@ -1,5 +1,5 @@
 import * as app from "./app";
-import * as messageAndState from "./appInterface";
+import * as messageAndState from "./messageAndState";
 import { createPatchState, patchView, renderView } from "./view/patch";
 import { View } from "./view/view";
 import { createViewDiff } from "./view/diff";
@@ -29,7 +29,7 @@ const loop = () => {
 };
 
 const messageList: Array<messageAndState.Message> = [];
-let state: messageAndState.AppInterface = app.initState(pushMessageList);
+let state: messageAndState.State = app.initState(pushMessageList);
 let oldView: View<messageAndState.Message> = app.stateToView(state);
 const patchState = createPatchState(pushMessageList);
 renderView(oldView, patchState);

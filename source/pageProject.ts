@@ -1,4 +1,4 @@
-import * as a from "./appInterface";
+import * as a from "./messageAndState";
 import * as d from "definy-core/source/data";
 import * as typePartEditor from "./typePartEditor";
 import { c, div, elementMap } from "./view/viewUtil";
@@ -64,7 +64,7 @@ export const updateSateByLocalMessage = (
 };
 
 export const view = (
-  appInterface: a.AppInterface,
+  appInterface: a.State,
   projectId: d.ProjectId,
   state: State
 ): a.TitleAndElement<a.Message> => {
@@ -137,10 +137,7 @@ export const view = (
   }
 };
 
-const treeView = (
-  appInterface: a.AppInterface,
-  state: State
-): Element<a.Message> => {
+const treeView = (appInterface: a.State, state: State): Element<a.Message> => {
   return div(
     {
       style: {
@@ -196,7 +193,7 @@ const containerStyle: CSSObject = {
 };
 
 const mainView = (
-  appInterface: a.AppInterface,
+  appInterface: a.State,
   state: State,
   projectId: d.ProjectId,
   project: d.Project
@@ -230,7 +227,7 @@ const mainView = (
 };
 
 const projectDetailView = (
-  appInterface: a.AppInterface,
+  appInterface: a.State,
   projectId: d.ProjectId,
   project: d.Project
 ): Element<a.Message> => {

@@ -1,15 +1,15 @@
 import {
-  AppInterface,
   Message,
+  State,
   TitleAndElement,
   messageLogOut,
-} from "./appInterface";
+} from "./messageAndState";
 import { c, div, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { button } from "./button";
 import { userCard } from "./user";
 
-export const view = (appInterface: AppInterface): TitleAndElement => {
+export const view = (appInterface: State): TitleAndElement => {
   return {
     title: "設定画面",
     element: div(
@@ -32,7 +32,7 @@ export const view = (appInterface: AppInterface): TitleAndElement => {
   };
 };
 
-const mainView = (appInterface: AppInterface): Element<Message> => {
+const mainView = (appInterface: State): Element<Message> => {
   if (appInterface.logInState._ !== "LoggedIn") {
     return div({}, "ログインしていないと特に設定する設定がありません...");
   }

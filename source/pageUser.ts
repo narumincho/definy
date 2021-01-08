@@ -1,10 +1,10 @@
 import * as d from "definy-core/source/data";
 import {
-  AppInterface,
   Message,
+  State,
   TitleAndElement,
   messageGetUserTag,
-} from "./appInterface";
+} from "./messageAndState";
 import { c, div } from "./view/viewUtil";
 import { image } from "./image";
 
@@ -19,7 +19,7 @@ export const init = (
 };
 
 export const view = (
-  appInterface: AppInterface,
+  appInterface: State,
   userId: d.UserId
 ): TitleAndElement => {
   const user = appInterface.userMap.get(userId);

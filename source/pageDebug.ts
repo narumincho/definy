@@ -1,10 +1,10 @@
 import * as d from "definy-core/source/data";
 import {
-  AppInterface,
   Message,
+  State,
   TitleAndElement,
   messageSelectDebugPageTab,
-} from "./appInterface";
+} from "./messageAndState";
 import { c, div, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { button } from "./button";
@@ -16,7 +16,7 @@ export type Tab = typeof tabList[number];
 
 export const init: Tab = "Icon";
 
-const dummyAppInterface: AppInterface = {
+const dummyAppInterface: State = {
   top50ProjectIdState: { _: "None" },
   projectMap: new Map(),
   userMap: new Map(),
@@ -36,7 +36,7 @@ const dummyAppInterface: AppInterface = {
 };
 
 export const view = (
-  appInterface: AppInterface,
+  appInterface: State,
   selectedTab: Tab
 ): TitleAndElement => {
   return {
@@ -79,10 +79,7 @@ const tabView = (selected: Tab): Element<Tab> =>
     )
   );
 
-const content = (
-  appInterface: AppInterface,
-  selectedTab: Tab
-): Element<never> => {
+const content = (appInterface: State, selectedTab: Tab): Element<never> => {
   switch (selectedTab) {
     case "Icon":
       return iconView;

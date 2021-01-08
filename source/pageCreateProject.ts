@@ -1,4 +1,4 @@
-import { TitleAndElement } from "./appInterface";
+import { TitleAndElement } from "./messageAndState";
 import { div } from "./view/viewUtil";
 
 export const view = (): TitleAndElement => {

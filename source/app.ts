@@ -1,4 +1,4 @@
-import * as a from "./appInterface";
+import * as a from "./messageAndState";
 import * as core from "definy-core";
 import * as coreUtil from "definy-core/source/util";
 import * as d from "definy-core/source/data";
@@ -20,7 +20,7 @@ import { headerView } from "./header";
 
 export const initState = (
   messageHandler: (message: a.Message) => void
-): a.AppInterface => {
+): a.State => {
   // ブラウザで戻るボタンを押したときのイベントを登録
   window.addEventListener("popstate", () => {
     const newUrlData: d.UrlData = core.urlDataAndAccountTokenFromUrl(
@@ -47,7 +47,7 @@ export const initState = (
       )
       .toString()
   );
-  const appInterface: a.AppInterface = {
+  const appInterface: a.State = {
     top50ProjectIdState: { _: "None" },
     projectMap: new Map(),
     userMap: new Map(),
@@ -93,8 +93,8 @@ export const initState = (
 export const updateStateByMessage = (
   messageHandler: (message: a.Message) => void,
   message: a.Message,
-  oldState: a.AppInterface
-): a.AppInterface => {
+  oldState: a.State
+): a.State => {
   switch (message.tag) {
     case a.messageNoOp:
       return oldState;
@@ -313,8 +313,8 @@ const verifyAccountToken = (
 const respondUserByAccountToken = (
   response: d.Maybe<d.Maybe<d.IdAndData<d.UserId, d.User>>>,
   messageHandler: (message: a.Message) => void,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   if (response._ === "Nothing") {
     return state;
   }
@@ -357,8 +357,8 @@ const respondUserByAccountToken = (
 
 const requestTop50Project = (
   messageHandler: (message: a.Message) => void,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   api.getTop50Project(undefined).then((response) => {
     messageHandler({ tag: a.messageRespondAllTop50Project, response });
   });
@@ -373,8 +373,8 @@ const respondTop50Project = (
     d.WithTime<ReadonlyArray<d.IdAndData<d.ProjectId, d.Project>>>
   >,
   messageHandler: (message: a.Message) => void,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   if (response._ === "Nothing") {
     return state;
   }
@@ -412,8 +412,8 @@ const respondTop50Project = (
 const getUser = (
   userId: d.UserId,
   messageHandler: (message: a.Message) => void,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   if (state.userMap.has(userId)) {
     return state;
   }
@@ -430,8 +430,8 @@ const respondUser = (
   messageHandler: (message: a.Message) => void,
   userId: d.UserId,
   response: d.Maybe<d.WithTime<d.Maybe<d.User>>>,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   const imageRequestedState =
     response._ === "Just" && response.value.data._ === "Just"
       ? getImage(response.value.data.value.imageHash, messageHandler, state)
@@ -449,8 +449,8 @@ const respondUser = (
 const requestProject = (
   projectId: d.ProjectId,
   messageHandler: (message: a.Message) => void,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   if (state.projectMap.has(projectId)) {
     return state;
   }
@@ -471,7 +471,7 @@ const respondProject = (
   projectId: d.ProjectId,
   response: d.Maybe<d.WithTime<d.Maybe<d.Project>>>,
   messageHandler: (message: a.Message) => void,
-  state: a.AppInterface
+  state: a.State
 ) => {
   const imageRequestedState =
     response._ === "Just" && response.value.data._ === "Just"
@@ -497,8 +497,8 @@ const respondProject = (
 const getImageList = (
   imageTokenList: ReadonlyArray<d.ImageToken>,
   messageHandler: (message: a.Message) => void,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   const imageMap = new Map(state.imageMap);
   for (const imageToken of imageTokenList) {
     getImageWithCache(imageToken).then((response) => {
@@ -515,8 +515,8 @@ const getImageList = (
 const getImage = (
   imageToken: d.ImageToken,
   messageHandler: (message: a.Message) => void,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   if (state.imageMap.has(imageToken)) {
     return state;
   }
@@ -536,8 +536,8 @@ const getImage = (
 const respondImage = (
   imageToken: d.ImageToken,
   response: d.Maybe<Uint8Array>,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   return {
     ...state,
     imageMap: mapSet(
@@ -559,8 +559,8 @@ const respondImage = (
 const requestTypePartInProject = (
   projectId: d.ProjectId,
   messageHandler: (message: a.Message) => void,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   if (state.getTypePartInProjectState._ === "Requesting") {
     return state;
   }
@@ -577,8 +577,8 @@ const respondTypePartInProject = (
   response: d.Maybe<
     d.WithTime<d.Maybe<d.List<d.IdAndData<d.TypePartId, d.TypePart>>>>
   >,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   if (response._ === "Nothing" || response.value.data._ === "Nothing") {
     return {
       ...state,
@@ -607,8 +607,8 @@ const respondTypePartInProject = (
 const createProject = (
   projectName: string,
   messageHandler: (message: a.Message) => void,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   const accountToken = a.getAccountToken(state);
   if (accountToken === undefined || state.isCreatingProject) {
     return state;
@@ -629,8 +629,8 @@ const createProject = (
 
 const respondCreatingProject = (
   response: d.Maybe<d.Maybe<d.IdAndData<d.ProjectId, d.Project>>>,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   if (response._ === "Nothing" || response.value._ === "Nothing") {
     return {
       ...state,
@@ -655,8 +655,8 @@ const setTypePartList = (
   projectId: d.ProjectId,
   typePartList: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>,
   messageHandler: (message: a.Message) => void,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   const accountToken = a.getAccountToken(state);
   if (accountToken === undefined || state.typePartEditState !== "None") {
     return state;
@@ -681,8 +681,8 @@ const respondSetTypePartList = (
   response: d.Maybe<
     d.WithTime<d.Maybe<d.List<d.IdAndData<d.TypePartId, d.TypePart>>>>
   >,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   if (response._ === "Nothing" || response.value.data._ === "Nothing") {
     return {
       ...state,
@@ -711,8 +711,8 @@ const respondSetTypePartList = (
 const logIn = (
   messageHandler: (message: a.Message) => void,
   provider: d.OpenIdConnectProvider,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   api
     .requestLogInUrl({
       openIdConnectProvider: provider,
@@ -736,8 +736,8 @@ const logIn = (
 
 const respondLogInUrl = (
   logInUrlMaybe: d.Maybe<string>,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   if (logInUrlMaybe._ === "Nothing") {
     return state;
   }
@@ -751,7 +751,7 @@ const respondLogInUrl = (
   };
 };
 
-const logOut = (state: a.AppInterface): a.AppInterface => {
+const logOut = (state: a.State): a.State => {
   indexedDB.deleteAccountToken();
   return {
     ...state,
@@ -763,8 +763,8 @@ const jump = (
   messageHandler: (message: a.Message) => void,
   location: d.Location,
   language: d.Language,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   window.history.pushState(
     undefined,
     "",
@@ -790,8 +790,8 @@ const changeLocationAndLanguage = (
   messageHandler: (message: a.Message) => void,
   location: d.Location,
   language: d.Language,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   // 不要だと思われるが一応 正規化する
   window.history.replaceState(
     undefined,
@@ -816,8 +816,8 @@ const changeLocationAndLanguage = (
 
 const generateCode = (
   definyCode: ReadonlyMap<d.TypePartId, d.TypePart>,
-  state: a.AppInterface
-): a.AppInterface => {
+  state: a.State
+): a.State => {
   return {
     ...state,
     outputCode: generateCodeWithOutErrorHandling(definyCode),
@@ -849,7 +849,7 @@ const getResourceResponseToResourceState = <resource extends unknown>(
   return d.ResourceState.Deleted(response.value.getTime);
 };
 
-export const stateToView = (state: a.AppInterface): View<a.Message> => {
+export const stateToView = (state: a.State): View<a.Message> => {
   const titleAndAttributeChildren = stateToTitleAndAttributeChildren(state);
   return view(
     {
@@ -870,7 +870,7 @@ export const stateToView = (state: a.AppInterface): View<a.Message> => {
 };
 
 const stateToTitleAndAttributeChildren = (
-  state: a.AppInterface
+  state: a.State
 ): {
   title: string;
   style: CSSObject;
@@ -949,7 +949,7 @@ const jumpMessage = (url: URL, language: d.Language): string => {
   }
 };
 
-const main = (state: a.AppInterface): a.TitleAndElement<a.Message> => {
+const main = (state: a.State): a.TitleAndElement<a.Message> => {
   switch (state.pageModel.tag) {
     case "Home":
       return pageHome.view(state);

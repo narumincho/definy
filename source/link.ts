@@ -1,6 +1,6 @@
 import * as core from "definy-core";
 import * as d from "definy-core/source/data";
-import { AppInterface, Message, messageJumpTag } from "./appInterface";
+import { Message, State, messageJumpTag } from "./messageAndState";
 import { CSSObject } from "@emotion/css";
 import { Element } from "./view/view";
 import { Theme } from "./ui";
@@ -49,7 +49,7 @@ const themeToStyle = (
 
 export const link = (
   option: {
-    readonly appInterface: AppInterface;
+    readonly appInterface: State;
     readonly location: d.Location;
     readonly language?: d.Language;
     readonly theme: Theme;

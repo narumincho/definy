@@ -1,10 +1,10 @@
 import * as d from "definy-core/source/data";
 import {
-  AppInterface,
   Message,
+  State,
   TitleAndElement,
   messageGetTop50Project,
-} from "./appInterface";
+} from "./messageAndState";
 import { c, div } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { icon } from "./icon";
@@ -17,7 +17,7 @@ export const init = (messageHandler: (message: Message) => void): void => {
   });
 };
 
-export const view = (appInterface: AppInterface): TitleAndElement => {
+export const view = (appInterface: State): TitleAndElement => {
   return {
     title: "",
     element: div(
@@ -40,7 +40,7 @@ export const view = (appInterface: AppInterface): TitleAndElement => {
   };
 };
 
-const homeMain = (appInterface: AppInterface): Element<Message> => {
+const homeMain = (appInterface: State): Element<Message> => {
   return div(
     {
       style: {
@@ -60,7 +60,7 @@ const homeMain = (appInterface: AppInterface): Element<Message> => {
   );
 };
 
-const homeLinkList = (appInterface: AppInterface): Element<Message> =>
+const homeLinkList = (appInterface: State): Element<Message> =>
   div(
     {
       style: {
@@ -79,7 +79,7 @@ const homeLinkList = (appInterface: AppInterface): Element<Message> =>
   );
 
 const homeLink = (
-  appInterface: AppInterface,
+  appInterface: State,
   location: d.Location,
   text: string
 ): Element<Message> =>
@@ -99,7 +99,7 @@ const homeLink = (
     text
   );
 
-const allProjectList = (appInterface: AppInterface): Element<Message> => {
+const allProjectList = (appInterface: State): Element<Message> => {
   switch (appInterface.top50ProjectIdState._) {
     case "None":
       return div({}, "読み込み前");
@@ -115,7 +115,7 @@ const allProjectList = (appInterface: AppInterface): Element<Message> => {
 };
 
 const AllProjectListLoaded = (
-  appInterface: AppInterface,
+  appInterface: State,
   projectIdList: ReadonlyArray<d.ProjectId>
 ): Element<Message> => {
   if (projectIdList.length === 0) {
@@ -142,7 +142,7 @@ const AllProjectListLoaded = (
   );
 };
 
-const CreateProjectButton = (appInterface: AppInterface): Element<Message> =>
+const CreateProjectButton = (appInterface: State): Element<Message> =>
   div(
     {
       style: {

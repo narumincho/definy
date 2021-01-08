@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { AppInterface, Message, messageRequestLogInTag } from "./appInterface";
+import { Message, State, messageRequestLogInTag } from "./messageAndState";
 import { c, div, elementMap, path, svg } from "./view/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "./view/view";
@@ -8,7 +8,7 @@ import { gitHubIcon } from "./ui";
 import { image } from "./image";
 import { link } from "./link";
 
-export const headerView = (appInterface: AppInterface): Element<Message> =>
+export const headerView = (appInterface: State): Element<Message> =>
   div(
     {
       style: {
@@ -25,7 +25,7 @@ export const headerView = (appInterface: AppInterface): Element<Message> =>
     ])
   );
 
-const logo = (appInterface: AppInterface): Element<Message> =>
+const logo = (appInterface: State): Element<Message> =>
   link(
     {
       appInterface,
@@ -46,9 +46,7 @@ const logo = (appInterface: AppInterface): Element<Message> =>
     "Definy"
   );
 
-const userViewOrLogInButton = (
-  appInterface: AppInterface
-): Element<Message> => {
+const userViewOrLogInButton = (appInterface: State): Element<Message> => {
   switch (appInterface.logInState._) {
     case "LoadingAccountTokenFromIndexedDB":
       return div(
@@ -100,7 +98,7 @@ const userViewOrLogInButtonStyle: CSSObject = {
 };
 
 const SettingLink = (props: {
-  appInterface: AppInterface;
+  appInterface: State;
   user: d.User;
 }): Element<Message> =>
   link(
