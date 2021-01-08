@@ -26,16 +26,6 @@ export type PageMessage =
   | {
       readonly tag: "SelectTypePart";
       readonly typePartId: d.TypePartId;
-    }
-  | {
-      readonly tag: "SetTypePartName";
-      readonly typePartId: d.TypePartId;
-      readonly newName: string;
-    }
-  | {
-      readonly tag: "SetTypePartDescription";
-      readonly typePartId: d.TypePartId;
-      readonly newDescription: string;
     };
 
 export const init = (
@@ -70,20 +60,6 @@ export const updateSateByLocalMessage = (
         tag: "SelectTypePart",
         typePartId: pageMessage.typePartId,
       };
-    case "SetTypePartName":
-      messageHandler({
-        tag: a.messageSetTypePartName,
-        typePartId: pageMessage.typePartId,
-        newName: pageMessage.newName,
-      });
-      return state;
-    case "SetTypePartDescription":
-      messageHandler({
-        tag: a.messageSetTypePartDescription,
-        typePartId: pageMessage.typePartId,
-        newDescription: pageMessage.newDescription,
-      });
-      return state;
   }
 };
 
@@ -248,14 +224,14 @@ const typePartEditorMessageToPageMessage = (
 ): a.InterfaceMessage<PageMessage> => {
   switch (typePartEditorMessage.tag) {
     case "ChangeName":
-      return a.interfaceMessagePageMessage({
-        tag: "SetTypePartName",
+      return a.interfaceMessageAppMessage({
+        tag: a.messageSetTypePartName,
         typePartId,
         newName: typePartEditorMessage.newName,
       });
     case "ChangeDescription":
-      return a.interfaceMessagePageMessage({
-        tag: "SetTypePartDescription",
+      return a.interfaceMessageAppMessage({
+        tag: a.messageSetTypePartDescription,
         typePartId,
         newDescription: typePartEditorMessage.newDescription,
       });
@@ -264,6 +240,12 @@ const typePartEditorMessageToPageMessage = (
         tag: a.messageSetTypePartBodyTag,
         typePartId,
         newBodyTag: typePartEditorMessage.newTag,
+      });
+    case "ChangeBodyKernel":
+      return a.interfaceMessageAppMessage({
+        tag: a.messageSetTypePartBodyKernel,
+        typePartId,
+        typePartBodyKernel: typePartEditorMessage.newKernel,
       });
     case "NoOp":
       return a.interfaceMessageAppMessage({

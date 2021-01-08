@@ -187,6 +187,11 @@ export type Message =
       readonly tag: typeof messageSetTypePartBodyTag;
       readonly typePartId: d.TypePartId;
       readonly newBodyTag: TypePartBodyTag;
+    }
+  | {
+      readonly tag: typeof messageSetTypePartBodyKernel;
+      readonly typePartId: d.TypePartId;
+      readonly typePartBodyKernel: d.TypePartBodyKernel;
     };
 
 export const messageNoOp = Symbol("Message-NoOp");
@@ -234,6 +239,9 @@ export const messageSetTypePartDescription = Symbol(
   "Message-SetTypePartDescription"
 );
 export const messageSetTypePartBodyTag = Symbol("Message-SetTypePartBodyTag");
+export const messageSetTypePartBodyKernel = Symbol(
+  "Message-TypePartBodyKernel"
+);
 
 export type InterfaceMessage<PageMessage> =
   | {

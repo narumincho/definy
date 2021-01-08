@@ -4,7 +4,7 @@ import { c, div, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { oneLineTextEditor } from "./oneLineTextInput";
 import { productEditor } from "./productEditor";
-import { sumEditor } from "./sumEditor";
+import { tagEditor } from "./tagEditor";
 
 export type Message =
   | {
@@ -18,6 +18,10 @@ export type Message =
   | {
       readonly tag: "ChangeBodyTag";
       readonly newTag: a.TypePartBodyTag;
+    }
+  | {
+      readonly tag: "ChangeBodyKernel";
+      readonly newKernel: d.TypePartBodyKernel;
     }
   | {
       readonly tag: "NoOp";
@@ -60,38 +64,45 @@ const typePartEditorLoaded = (typePart: d.TypePart): Element<Message> => {
         "description",
         oneLineTextEditor(typePart.description, changeDescription),
       ],
-      ["bodyType", bodyEditor(typePart.body)],
+      [
+        "bodyTag",
+        div(
+          {},
+          c([
+            ["tag", bodyTagEditor(typePart.body)],
+            ["content", bodyContentEditor(typePart.body)],
+          ])
+        ),
+      ],
     ])
   );
 };
 
-const bodyEditor = (typePartBody: d.TypePartBody): Element<Message> => {
+const bodyTagEditor = (typePartBody: d.TypePartBody): Element<Message> => {
   return elementMap(
-    sumEditor(
-      {
-        Sum: div({}, "Sum"),
-        Product: div({}, "Product"),
-        Kernel: div({}, "Kernel"),
-      },
-      typePartBody._,
-      "typePartBody"
-    ),
-    (sumEditorMessage): Message => {
-      if (sumEditorMessage.content !== undefined) {
-        return { tag: "NoOp" };
-      }
-      if (sumEditorMessage.tag === "Product") {
-        return { tag: "ChangeBodyTag", newTag: "Product" };
-      }
-      if (sumEditorMessage.tag === "Sum") {
-        return { tag: "ChangeBodyTag", newTag: "Sum" };
-      }
-      if (sumEditorMessage.tag === "Kernel") {
-        return { tag: "ChangeBodyTag", newTag: "Kernel" };
-      }
-      return { tag: "NoOp" };
+    tagEditor(["Sum", "Product", "Kernel"], typePartBody._, "typePartBody"),
+    (tagEditorMessage): Message => {
+      return { tag: "ChangeBodyTag", newTag: tagEditorMessage };
     }
   );
+};
+
+const bodyContentEditor = (typePartBody: d.TypePartBody): Element<Message> => {
+  switch (typePartBody._) {
+    case "Sum":
+      return div({}, "Sum");
+    case "Product":
+      return div({}, "Product");
+    case "Kernel":
+      return elementMap(
+        tagEditor(
+          KernelEditorList,
+          typePartBody.typePartBodyKernel,
+          "typePartBodyKernel"
+        ),
+        (newKernel): Message => ({ tag: "ChangeBodyKernel", newKernel })
+      );
+  }
 };
 
 export const KernelEditorList = [

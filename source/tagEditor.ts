@@ -1,56 +1,6 @@
-import { c, elementMap, inputRadio, label } from "./view/viewUtil";
+import { c, inputRadio, label } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { box } from "./ui";
-
-interface SumEditorMessage<
-  tagAndMessage extends Record<string, unknown>,
-  tag extends keyof tagAndMessage & string
-> {
-  tag: tag;
-  content: tagAndMessage[tag] | undefined;
-}
-
-export const sumEditor = <tagAndMessage extends Record<string, unknown>>(
-  tagAndElement: {
-    [tag in keyof tagAndMessage & string]: Element<tagAndMessage[tag]>;
-  },
-  selectedTag: keyof tagAndMessage & string,
-  name: string
-): Element<SumEditorMessage<tagAndMessage, keyof tagAndMessage & string>> => {
-  return box(
-    { direction: "y", padding: 0 },
-    c([
-      [
-        "tag",
-        elementMap(
-          tagEditor<keyof tagAndMessage & string>(
-            Object.keys(tagAndElement) as Array<keyof tagAndMessage & string>,
-            selectedTag as keyof tagAndMessage & string,
-            name
-          ),
-          <newTag extends keyof tagAndMessage & string>(
-            newTag: newTag
-          ): SumEditorMessage<tagAndMessage, newTag> => ({
-            tag: newTag,
-            content: undefined,
-          })
-        ),
-      ],
-      [
-        "content",
-        elementMap(
-          tagAndElement[selectedTag],
-          (
-            newContent
-          ): SumEditorMessage<tagAndMessage, keyof tagAndMessage & string> => ({
-            tag: selectedTag,
-            content: newContent,
-          })
-        ),
-      ],
-    ])
-  );
-};
 
 export const tagEditor = <tag extends string>(
   tagList: ReadonlyArray<tag>,
