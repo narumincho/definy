@@ -1,13 +1,12 @@
 import * as d from "definy-core/source/data";
 import * as definyType from "./definyType";
 import * as listEditor from "./listEditor";
+import * as maybeEditor from "./maybeEditor";
 import * as typeEditor from "./typeEditor";
-import { c, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
-import { box } from "./ui";
+import { elementMap } from "./view/viewUtil";
 import { oneLineTextEditor } from "./oneLineTextInput";
 import { productEditor } from "./productEditor";
-import { tagEditor } from "./tagEditor";
 
 export type Message =
   | {
@@ -19,14 +18,20 @@ export type Message =
       newDescription: string;
     }
   | {
-      tag: "SetContentType";
-      newContentType: d.Maybe<d.Type>;
+      tag: "UpdateContent";
+      newContentType: maybeEditor.Message<d.Type>;
     };
 
 const setName = (name: string): Message => ({ tag: "SetName", newName: name });
 const SetDescription = (name: string): Message => ({
   tag: "SetDescription",
   newDescription: name,
+});
+const updateContent = (
+  newContentType: maybeEditor.Message<d.Type>
+): Message => ({
+  tag: "UpdateContent",
+  newContentType,
 });
 
 export const update = (pattern: d.Pattern, message: Message): d.Pattern => {
@@ -41,10 +46,15 @@ export const update = (pattern: d.Pattern, message: Message): d.Pattern => {
         ...pattern,
         description: message.newDescription,
       };
-    case "SetContentType":
+    case "UpdateContent":
       return {
         ...pattern,
-        parameter: message.newContentType,
+        parameter: maybeEditor.update(
+          pattern.parameter,
+          message.newContentType,
+          definyType.int32,
+          (newType) => newType
+        ),
       };
   }
 };
@@ -59,51 +69,10 @@ export const view = (pattern: d.Pattern): Element<Message> => {
   );
 };
 
-type MaybeTag = "Just" | "Nothing";
-
 const parameterEditor = (parameter: d.Maybe<d.Type>): Element<Message> => {
-  return box(
-    {
-      padding: 0,
-      direction: "y",
-    },
-    c([
-      ["tag", parameterTagEditor(parameter._)],
-      ...(parameter._ === "Just"
-        ? ([
-            [
-              "content",
-              elementMap(
-                typeEditor.view(parameter.value),
-                (ty): Message => ({
-                  tag: "SetContentType",
-                  newContentType: d.Maybe.Just(ty),
-                })
-              ),
-            ],
-          ] as const)
-        : []),
-    ])
-  );
-};
-
-const parameterTagEditor = (maybeTag: MaybeTag): Element<Message> => {
   return elementMap(
-    tagEditor<MaybeTag>(["Just", "Nothing"], maybeTag, "patternParameter"),
-    (tag: MaybeTag): Message => {
-      switch (tag) {
-        case "Just":
-          return {
-            tag: "SetContentType",
-            newContentType: d.Maybe.Just(definyType.int32),
-          };
-        case "Nothing":
-          return {
-            tag: "SetContentType",
-            newContentType: d.Maybe.Nothing(),
-          };
-      }
-    }
+    maybeEditor.view(parameter, typeEditor.view),
+    updateContent
   );
 };
 

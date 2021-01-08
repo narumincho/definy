@@ -1,6 +1,7 @@
 import * as a from "./messageAndState";
 import * as d from "definy-core/source/data";
 import * as listEditor from "./listEditor";
+import * as maybeEditor from "./maybeEditor";
 import * as memberListEditor from "./memberListEditor";
 import * as patternListEditor from "./patternListEditor";
 import { c, div, elementMap } from "./view/viewUtil";
@@ -17,6 +18,10 @@ export type Message =
   | {
       readonly tag: "ChangeDescription";
       readonly newDescription: string;
+    }
+  | {
+      readonly tag: "UpdateAttribute";
+      readonly message: maybeEditor.Message<d.TypeAttribute>;
     }
   | {
       readonly tag: "ChangeBodyTag";
@@ -43,6 +48,12 @@ const changeDescription = (newDescription: string): Message => ({
   tag: "ChangeDescription",
   newDescription,
 });
+const updateAttribute = (
+  message: maybeEditor.Message<d.TypeAttribute>
+): Message => ({
+  tag: "UpdateAttribute",
+  message,
+});
 
 export const update = (typePart: d.TypePart, message: Message): d.TypePart => {
   switch (message.tag) {
@@ -55,6 +66,16 @@ export const update = (typePart: d.TypePart, message: Message): d.TypePart => {
       return {
         ...typePart,
         description: message.newDescription,
+      };
+    case "UpdateAttribute":
+      return {
+        ...typePart,
+        attribute: maybeEditor.update(
+          typePart.attribute,
+          message.message,
+          d.TypeAttribute.AsBoolean,
+          (_, attribute) => attribute
+        ),
       };
     case "ChangeBodyTag":
       return {
@@ -137,6 +158,13 @@ const typePartEditorLoaded = (typePart: d.TypePart): Element<Message> => {
         oneLineTextEditor(typePart.description, changeDescription),
       ],
       [
+        "attribute",
+        elementMap(
+          maybeEditor.view(typePart.attribute, attributeEditor),
+          updateAttribute
+        ),
+      ],
+      [
         "body",
         div(
           {},
@@ -147,6 +175,16 @@ const typePartEditorLoaded = (typePart: d.TypePart): Element<Message> => {
         ),
       ],
     ])
+  );
+};
+
+const attributeEditor = (
+  attribute: d.TypeAttribute
+): Element<d.TypeAttribute> => {
+  return tagEditor<d.TypeAttribute>(
+    ["AsBoolean", "AsUndefined"],
+    attribute,
+    "typePartAttribute"
   );
 };
 
@@ -198,5 +236,3 @@ export const KernelEditorList = [
   "Token",
   "List",
 ] as const;
-
-const filedListEditor = () => {};
