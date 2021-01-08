@@ -88,6 +88,12 @@ const inputAndLabel = <tag extends string>(
       style: {
         width: 0,
         height: 0,
+        gridColumn:
+          ((index % 3) + 1).toString() + " / " + ((index % 3) + 2).toString(),
+        gridRow:
+          (Math.floor(index / 3) + 1).toString() +
+          " / " +
+          (Math.floor(index / 3) + 2).toString(),
       },
     }),
   ],

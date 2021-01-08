@@ -70,6 +70,7 @@ export const getAccountToken = (
 };
 
 export type Message =
+  | { readonly tag: typeof messageNoOp }
   | {
       readonly tag: typeof messageJumpTag;
       readonly location: d.Location;
@@ -181,8 +182,14 @@ export type Message =
       readonly tag: typeof messageSetTypePartDescription;
       readonly typePartId: d.TypePartId;
       readonly newDescription: string;
+    }
+  | {
+      readonly tag: typeof messageSetTypePartBodyTag;
+      readonly typePartId: d.TypePartId;
+      readonly newBodyTag: TypePartBodyTag;
     };
 
+export const messageNoOp = Symbol("Message-NoOp");
 export const messageJumpTag = Symbol("Message-Jump");
 export const messageChangeLocationAndLanguage = Symbol(
   "Message-ChangeLocationAndLanguage"
@@ -226,6 +233,7 @@ export const messageSetTypePartName = Symbol("Message-SetTypePartName");
 export const messageSetTypePartDescription = Symbol(
   "Message-SetTypePartDescription"
 );
+export const messageSetTypePartBodyTag = Symbol("Message-SetTypePartBodyTag");
 
 export type InterfaceMessage<PageMessage> =
   | {
@@ -270,3 +278,5 @@ export const titleAndElementMap = <Input, Output>(
   title: titleAndElement.title,
   element: elementMap(titleAndElement.element, func),
 });
+
+export type TypePartBodyTag = "Product" | "Sum" | "Kernel";

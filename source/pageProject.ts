@@ -259,6 +259,16 @@ const typePartEditorMessageToPageMessage = (
         typePartId,
         newDescription: typePartEditorMessage.newDescription,
       });
+    case "ChangeBodyTag":
+      return a.interfaceMessageAppMessage({
+        tag: a.messageSetTypePartBodyTag,
+        typePartId,
+        newBodyTag: typePartEditorMessage.newTag,
+      });
+    case "NoOp":
+      return a.interfaceMessageAppMessage({
+        tag: a.messageNoOp,
+      });
   }
 };
 

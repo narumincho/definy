@@ -191,6 +191,8 @@ const updateStateByAppMessage = (
   oldState: State
 ): State => {
   switch (message.tag) {
+    case a.messageNoOp:
+      return oldState;
     case a.messageJumpTag:
       return jump(messageHandler, message.location, message.language, oldState);
 
@@ -356,6 +358,43 @@ const updateStateByAppMessage = (
         },
         pageModel: oldState.pageModel,
       };
+
+    case a.messageSetTypePartBodyTag:
+      return {
+        appInterface: {
+          ...oldState.appInterface,
+          typePartMap: mapMapAt(
+            oldState.appInterface.typePartMap,
+            message.typePartId,
+            (old: d.ResourceState<d.TypePart>): d.ResourceState<d.TypePart> => {
+              if (old._ !== "Loaded") {
+                return old;
+              }
+              return d.ResourceState.Loaded({
+                data: {
+                  ...old.dataWithTime.data,
+                  body: typePartBodyTagToInitTypePartBody(message.newBodyTag),
+                },
+                getTime: old.dataWithTime.getTime,
+              });
+            }
+          ),
+        },
+        pageModel: oldState.pageModel,
+      };
+  }
+};
+
+const typePartBodyTagToInitTypePartBody = (
+  typePartBodyTag: a.TypePartBodyTag
+): d.TypePartBody => {
+  switch (typePartBodyTag) {
+    case "Product":
+      return d.TypePartBody.Product([]);
+    case "Sum":
+      return d.TypePartBody.Sum([]);
+    case "Kernel":
+      return d.TypePartBody.Kernel(d.TypePartBodyKernel.String);
   }
 };
 
