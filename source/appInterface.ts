@@ -1,5 +1,6 @@
 import * as d from "definy-core/source/data";
 import * as pageDebug from "./pageDebug";
+import type * as pageProject from "./pageProject";
 import { Element } from "./view/view";
 import type { Message as TypePartEditorMessage } from "./typePartEditor";
 import { elementMap } from "./view/viewUtil";
@@ -56,7 +57,33 @@ export interface AppInterface {
 
   /** 出力されたコード */
   readonly outputCode: string | undefined;
+
+  /**どこのページを開いているかとそのページの状態 */
+  readonly pageModel: PageModel;
 }
+
+export type PageModel =
+  | { readonly tag: "Home" }
+  | { readonly tag: "CreateProject" }
+  | {
+      readonly tag: "About";
+    }
+  | {
+      readonly tag: "User";
+      readonly userId: d.UserId;
+    }
+  | {
+      readonly tag: "Debug";
+      readonly tab: pageDebug.Tab;
+    }
+  | {
+      readonly tag: "Setting";
+    }
+  | {
+      readonly tag: "Project";
+      readonly projectId: d.ProjectId;
+      readonly state: pageProject.State;
+    };
 
 /**
  * アカウントトークンを得る
@@ -178,6 +205,10 @@ export type Message =
       readonly tag: typeof messageTypePartMessage;
       readonly typePartId: d.TypePartId;
       readonly typePartMessage: TypePartEditorMessage;
+    }
+  | {
+      readonly tag: "PageProject";
+      readonly message: pageProject.PageMessage;
     };
 
 export const messageNoOp = Symbol("Message-NoOp");
@@ -222,48 +253,9 @@ export const messageRespondSetTypePartList = Symbol(
 export const messageSelectDebugPageTab = Symbol("Message-SelectDebugPageTab");
 export const messageTypePartMessage = Symbol("Message-TypePartMessage");
 
-export type InterfaceMessage<PageMessage> =
-  | {
-      tag: typeof interfaceMessageAppMessageTag;
-      message: Message;
-    }
-  | {
-      tag: typeof interfaceMessagePageMessageTag;
-      message: PageMessage;
-    };
-
-export const interfaceMessageAppMessageTag = Symbol(
-  "InterfaceMessage-AppMessage"
-);
-export const interfaceMessagePageMessageTag = Symbol(
-  "InterfaceMessage-PageMessage"
-);
-
-export const interfaceMessageAppMessage = <PageMessage>(
-  message: Message
-): InterfaceMessage<PageMessage> => ({
-  tag: interfaceMessageAppMessageTag,
-  message,
-});
-
-export const interfaceMessagePageMessage = <PageMessage>(
-  pageMessage: PageMessage
-): InterfaceMessage<PageMessage> => ({
-  tag: interfaceMessagePageMessageTag,
-  message: pageMessage,
-});
-
 export interface TitleAndElement<M = Message> {
   readonly title: string;
   readonly element: Element<M>;
 }
-
-export const titleAndElementMap = <Input, Output>(
-  titleAndElement: TitleAndElement<Input>,
-  func: (input: Input) => Output
-): TitleAndElement<Output> => ({
-  title: titleAndElement.title,
-  element: elementMap(titleAndElement.element, func),
-});
 
 export type TypePartBodyTag = "Product" | "Sum" | "Kernel";

@@ -67,7 +67,7 @@ export const view = (
   appInterface: a.AppInterface,
   projectId: d.ProjectId,
   state: State
-): a.TitleAndElement<a.InterfaceMessage<PageMessage>> => {
+): a.TitleAndElement<a.Message> => {
   const projectState = appInterface.projectMap.get(projectId);
   if (projectState === undefined) {
     return {
@@ -140,7 +140,7 @@ export const view = (
 const treeView = (
   appInterface: a.AppInterface,
   state: State
-): Element<a.InterfaceMessage<PageMessage>> => {
+): Element<a.Message> => {
   return div(
     {
       style: {
@@ -150,30 +150,31 @@ const treeView = (
         overflowY: "scroll",
       },
     },
-    c<a.InterfaceMessage<PageMessage>>([
+    c<a.Message>([
       [
         "toDetail",
         button(
           {
-            click: a.interfaceMessagePageMessage({
-              tag: "SelectProjectDetail",
-            }),
+            click: {
+              tag: "PageProject",
+              message: { tag: "SelectProjectDetail" },
+            },
           },
           "プロジェクト詳細"
         ),
       ],
       ...mapMapValue(
         appInterface.typePartMap,
-        (
-          typePartResourceState,
-          typePartId
-        ): Element<a.InterfaceMessage<PageMessage>> =>
+        (typePartResourceState, typePartId): Element<a.Message> =>
           button(
             {
-              click: a.interfaceMessagePageMessage({
-                tag: "SelectTypePart",
-                typePartId,
-              }),
+              click: {
+                tag: "PageProject",
+                message: {
+                  tag: "SelectTypePart",
+                  typePartId,
+                },
+              },
             },
             typePartResourceState._ === "Loaded"
               ? typePartResourceState.dataWithTime.data.name
@@ -199,12 +200,12 @@ const mainView = (
   state: State,
   projectId: d.ProjectId,
   project: d.Project
-): Element<a.InterfaceMessage<PageMessage>> => {
+): Element<a.Message> => {
   switch (state.tag) {
     case "SelectProjectDetail":
       return projectDetailView(appInterface, projectId, project);
     case "SelectTypePart":
-      return div(
+      return div<a.Message>(
         {
           style: {
             overflowY: "scroll",
@@ -214,13 +215,13 @@ const mainView = (
         c([
           [
             "e",
-            elementMap<typePartEditor.Message, a.InterfaceMessage<PageMessage>>(
+            elementMap<typePartEditor.Message, a.Message>(
               typePartEditor.view(appInterface, state.typePartId),
-              (typePartEditorMessage) =>
-                typePartEditorMessageToPageMessage(
-                  typePartEditorMessage,
-                  state.typePartId
-                )
+              (typePartEditorMessage) => ({
+                tag: a.messageTypePartMessage,
+                typePartId: state.typePartId,
+                typePartMessage: typePartEditorMessage,
+              })
             ),
           ],
         ])
@@ -228,23 +229,12 @@ const mainView = (
   }
 };
 
-const typePartEditorMessageToPageMessage = (
-  typePartEditorMessage: typePartEditor.Message,
-  typePartId: d.TypePartId
-): a.InterfaceMessage<PageMessage> => {
-  return a.interfaceMessageAppMessage({
-    tag: a.messageTypePartMessage,
-    typePartId,
-    typePartMessage: typePartEditorMessage,
-  });
-};
-
 const projectDetailView = (
   appInterface: a.AppInterface,
   projectId: d.ProjectId,
   project: d.Project
-): Element<a.InterfaceMessage<PageMessage>> => {
-  return div<a.InterfaceMessage<PageMessage>>(
+): Element<a.Message> => {
+  return div<a.Message>(
     {
       style: {
         padding: 16,
@@ -253,7 +243,7 @@ const projectDetailView = (
         alignContent: "start",
       },
     },
-    c<a.InterfaceMessage<PageMessage>>([
+    c<a.Message>([
       [
         "iconAndName",
         div(
@@ -297,17 +287,11 @@ const projectDetailView = (
       ],
       [
         "creator",
-        div<a.InterfaceMessage<PageMessage>>(
+        div<a.Message>(
           {},
-          c<a.InterfaceMessage<PageMessage>>([
+          c<a.Message>([
             ["label", div({}, "作成者")],
-            [
-              "card",
-              elementMap<a.Message, a.InterfaceMessage<PageMessage>>(
-                userCard(appInterface, project.createUserId),
-                a.interfaceMessageAppMessage
-              ),
-            ],
+            ["card", userCard(appInterface, project.createUserId)],
           ])
         ),
       ],

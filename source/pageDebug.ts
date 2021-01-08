@@ -29,6 +29,10 @@ const dummyAppInterface: AppInterface = {
   clientMode: "DebugMode",
   logInState: d.LogInState.Guest,
   outputCode: undefined,
+  pageModel: {
+    tag: "Debug",
+    tab: init,
+  },
 };
 
 export const view = (
