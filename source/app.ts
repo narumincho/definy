@@ -3,6 +3,7 @@ import * as core from "definy-core";
 import * as coreUtil from "definy-core/source/util";
 import * as d from "definy-core/source/data";
 import * as indexedDB from "./indexedDB";
+import * as jsTsCodeGenerator from "js-ts-code-generator";
 import * as pageAbout from "./pageAbout";
 import * as pageCreateProject from "./pageCreateProject";
 import * as pageDebug from "./pageDebug";
@@ -14,7 +15,7 @@ import * as typePartEditor from "./typePartEditor";
 import { CSSObject, keyframes } from "@emotion/css";
 import { Element, View } from "./view/view";
 import { api, getImageWithCache } from "./api";
-import { c, div, elementMap, view } from "./view/viewUtil";
+import { c, div, view } from "./view/viewUtil";
 import { mapMapAt, mapSet } from "./util";
 import { headerView } from "./header";
 
@@ -64,7 +65,7 @@ export const initState = (
             urlDataAndAccountToken.accountToken.value
           )
         : d.LogInState.LoadingAccountTokenFromIndexedDB,
-    outputCode: undefined,
+    outputCode: { tag: "notGenerated" },
     pageModel: locationToInitPageModel(
       messageHandler,
       urlDataAndAccountToken.urlData.location
@@ -173,7 +174,7 @@ export const updateStateByMessage = (
       return respondImage(message.imageToken, message.response, oldState);
 
     case a.messageGenerateCode:
-      return generateCode(message.definyCode, oldState);
+      return generateCode(oldState);
 
     case a.messageGetTypePartInProject:
       return requestTypePartInProject(
@@ -814,10 +815,13 @@ const changeLocationAndLanguage = (
   };
 };
 
-const generateCode = (
-  definyCode: ReadonlyMap<d.TypePartId, d.TypePart>,
-  state: a.State
-): a.State => {
+const generateCode = (state: a.State): a.State => {
+  const definyCode: Map<d.TypePartId, d.TypePart> = new Map();
+  for (const [typePartId, resource] of state.typePartMap) {
+    if (resource._ === "Loaded") {
+      definyCode.set(typePartId, resource.dataWithTime.data);
+    }
+  }
   return {
     ...state,
     outputCode: generateCodeWithOutErrorHandling(definyCode),
@@ -826,11 +830,27 @@ const generateCode = (
 
 const generateCodeWithOutErrorHandling = (
   definyCode: ReadonlyMap<d.TypePartId, d.TypePart>
-): string => {
+): a.OutputCode => {
   try {
-    return core.generateTypeScriptCodeAsString(definyCode);
+    const jsTsCode = core.generateTypeScriptCode(definyCode);
+
+    return {
+      tag: "generated",
+      typeScript: jsTsCodeGenerator.generateCodeAsString(
+        jsTsCode,
+        "TypeScript"
+      ),
+      javaScript: jsTsCodeGenerator.generateCodeAsString(
+        jsTsCode,
+        "JavaScript"
+      ),
+      elm: core.generateElmCodeAsString(definyCode),
+    };
   } catch (error) {
-    return "エラー! " + (error as string);
+    return {
+      tag: "error",
+      errorMessage: "エラー! " + (error as string),
+    };
   }
 };
 

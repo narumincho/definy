@@ -1,6 +1,7 @@
 import * as a from "./messageAndState";
 import * as d from "definy-core/source/data";
 import * as typePartEditor from "./typePartEditor";
+import { box, text } from "./ui";
 import { c, div, elementMap } from "./view/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "./view/view";
@@ -8,9 +9,17 @@ import { button } from "./button";
 import { icon } from "./icon";
 import { image } from "./image";
 import { mapMapValue } from "./util";
+import { tagEditor } from "./tagEditor";
 import { userCard } from "./user";
 
-export type State =
+export interface PageState {
+  readonly selection: Selection;
+  readonly codeTab: CodeTab;
+}
+
+type CodeTab = "javaScript" | "typeScript" | "elm";
+
+type Selection =
   | {
       readonly tag: "SelectProjectDetail";
     }
@@ -26,12 +35,21 @@ export type PageMessage =
   | {
       readonly tag: "SelectTypePart";
       readonly typePartId: d.TypePartId;
-    };
+    }
+  | { readonly tag: "SelectCodeTab"; newCodeTab: CodeTab };
+
+const selectCodeTabMessage = (newCodeTab: CodeTab): a.Message => ({
+  tag: "PageProject",
+  message: {
+    tag: "SelectCodeTab",
+    newCodeTab,
+  },
+});
 
 export const init = (
   messageHandler: (message: a.Message) => void,
   projectId: d.ProjectId
-): State => {
+): PageState => {
   messageHandler({
     tag: a.messageGetProject,
     projectId,
@@ -41,24 +59,36 @@ export const init = (
     projectId,
   });
   return {
-    tag: "SelectProjectDetail",
+    selection: { tag: "SelectProjectDetail" },
+    codeTab: "typeScript",
   };
 };
 
 export const updateSateByLocalMessage = (
-  state: State,
+  state: PageState,
   pageMessage: PageMessage,
   messageHandler: (message: a.Message) => void
-): State => {
+): PageState => {
   switch (pageMessage.tag) {
     case "SelectProjectDetail":
       return {
-        tag: "SelectProjectDetail",
+        ...state,
+        selection: {
+          tag: "SelectProjectDetail",
+        },
       };
     case "SelectTypePart":
       return {
-        tag: "SelectTypePart",
-        typePartId: pageMessage.typePartId,
+        ...state,
+        selection: {
+          tag: "SelectTypePart",
+          typePartId: pageMessage.typePartId,
+        },
+      };
+    case "SelectCodeTab":
+      return {
+        ...state,
+        codeTab: pageMessage.newCodeTab,
       };
   }
 };
@@ -66,7 +96,7 @@ export const updateSateByLocalMessage = (
 export const view = (
   appInterface: a.State,
   projectId: d.ProjectId,
-  state: State
+  state: PageState
 ): a.TitleAndElement<a.Message> => {
   const projectState = appInterface.projectMap.get(projectId);
   if (projectState === undefined) {
@@ -137,7 +167,10 @@ export const view = (
   }
 };
 
-const treeView = (appInterface: a.State, state: State): Element<a.Message> => {
+const treeView = (
+  appInterface: a.State,
+  state: PageState
+): Element<a.Message> => {
   return div(
     {
       style: {
@@ -193,15 +226,16 @@ const containerStyle: CSSObject = {
 };
 
 const mainView = (
-  appInterface: a.State,
-  state: State,
+  state: a.State,
+  pageState: PageState,
   projectId: d.ProjectId,
   project: d.Project
 ): Element<a.Message> => {
-  switch (state.tag) {
+  switch (pageState.selection.tag) {
     case "SelectProjectDetail":
-      return projectDetailView(appInterface, projectId, project);
-    case "SelectTypePart":
+      return projectDetailView(state, pageState, projectId, project);
+    case "SelectTypePart": {
+      const { typePartId } = pageState.selection;
       return div<a.Message>(
         {
           style: {
@@ -213,21 +247,23 @@ const mainView = (
           [
             "e",
             elementMap<typePartEditor.Message, a.Message>(
-              typePartEditor.view(appInterface, state.typePartId),
+              typePartEditor.view(state, typePartId),
               (typePartEditorMessage) => ({
                 tag: a.messageTypePartMessage,
-                typePartId: state.typePartId,
+                typePartId,
                 typePartMessage: typePartEditorMessage,
               })
             ),
           ],
         ])
       );
+    }
   }
 };
 
 const projectDetailView = (
-  appInterface: a.State,
+  state: a.State,
+  pageState: PageState,
   projectId: d.ProjectId,
   project: d.Project
 ): Element<a.Message> => {
@@ -260,7 +296,7 @@ const projectDetailView = (
               "icon",
               image({
                 imageToken: project.iconHash,
-                appInterface,
+                appInterface: state,
                 alternativeText: project.name + "のアイコン",
                 width: 48,
                 height: 48,
@@ -275,7 +311,7 @@ const projectDetailView = (
         "image",
         image({
           imageToken: project.imageHash,
-          appInterface,
+          appInterface: state,
           alternativeText: "image",
           width: 1024 / 2,
           height: 633 / 2,
@@ -288,10 +324,50 @@ const projectDetailView = (
           {},
           c<a.Message>([
             ["label", div({}, "作成者")],
-            ["card", userCard(appInterface, project.createUserId)],
+            ["card", userCard(state, project.createUserId)],
           ])
         ),
       ],
+      [
+        "generateCodeButton",
+        button<a.Message>(
+          { click: { tag: a.messageGenerateCode } },
+          "コード生成"
+        ),
+      ],
+      ["codeOutput", codeOutput(state, pageState.codeTab)],
     ])
   );
+};
+
+const codeOutput = (state: a.State, codeTab: CodeTab): Element<a.Message> => {
+  switch (state.outputCode.tag) {
+    case "notGenerated":
+      return text("まだコードを生成していない");
+    case "generated":
+      return box(
+        {
+          padding: 0,
+          direction: "y",
+        },
+        c([
+          [
+            "tag",
+            elementMap(
+              tagEditor<CodeTab>(
+                ["typeScript", "javaScript", "elm"],
+                codeTab,
+                "codeTab"
+              ),
+              selectCodeTabMessage
+            ),
+          ],
+          ["content", text(state.outputCode[codeTab])],
+        ])
+      );
+    case "error":
+      return text(
+        "コード生成のときにエラーが発生した" + state.outputCode.errorMessage
+      );
+  }
 };

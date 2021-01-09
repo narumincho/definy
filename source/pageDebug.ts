@@ -28,7 +28,7 @@ const dummyAppInterface: State = {
   language: d.Language.English,
   clientMode: "DebugMode",
   logInState: d.LogInState.Guest,
-  outputCode: undefined,
+  outputCode: { tag: "notGenerated" },
   pageModel: {
     tag: "Debug",
     tab: init,

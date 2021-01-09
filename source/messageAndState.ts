@@ -55,12 +55,26 @@ export interface State {
   readonly logInState: d.LogInState;
 
   /** 出力されたコード */
-  readonly outputCode: string | undefined;
+  readonly outputCode: OutputCode;
 
   /**どこのページを開いているかとそのページの状態 */
   readonly pageModel: PageModel;
 }
 
+export type OutputCode =
+  | {
+      readonly tag: "notGenerated";
+    }
+  | {
+      readonly tag: "generated";
+      readonly typeScript: string;
+      readonly javaScript: string;
+      readonly elm: string;
+    }
+  | {
+      readonly tag: "error";
+      readonly errorMessage: string;
+    };
 export type PageModel =
   | { readonly tag: "Home" }
   | { readonly tag: "CreateProject" }
@@ -81,7 +95,7 @@ export type PageModel =
   | {
       readonly tag: "Project";
       readonly projectId: d.ProjectId;
-      readonly state: pageProject.State;
+      readonly state: pageProject.PageState;
     };
 
 /**
@@ -163,7 +177,6 @@ export type Message =
     }
   | {
       readonly tag: typeof messageGenerateCode;
-      readonly definyCode: ReadonlyMap<d.TypePartId, d.TypePart>;
     }
   | {
       readonly tag: typeof messageGetTypePartInProject;
