@@ -331,6 +331,7 @@ const projectDetailView = (
           ])
         ),
       ],
+      ["saveButton", saveButton(state, projectId, project)],
       [
         "generateCodeButton",
         button<a.Message>(
@@ -341,6 +342,37 @@ const projectDetailView = (
       ["codeOutput", codeOutput(state, pageState.codeTab)],
     ])
   );
+};
+
+const saveButton = (
+  state: a.State,
+  projectId: d.ProjectId,
+  project: d.Project
+): Element<a.Message> => {
+  switch (state.typePartEditState) {
+    case "None":
+      if (a.getAccountToken(state) === undefined) {
+        return text("ログインしていないため保存できない");
+      }
+      if (state.logInState._ !== "LoggedIn") {
+        return text("ログイン処理中. 作成者かどうか判別がつかない");
+      }
+      if (
+        state.logInState.accountTokenAndUserId.userId !== project.createUserId
+      ) {
+        return text("このプロジェクトの作成者でないため保存できない");
+      }
+      return button<a.Message>(
+        { click: { tag: a.messageSetTypePartList, projectId } },
+        "このプロジェクトの型パーツをすべて保存する"
+      );
+    case "Adding":
+      return text("型パーツ追加中は保存できない");
+    case "Error":
+      return text("型パーツ保存追加周りでエラーが発生した");
+    case "Saving":
+      return text("型パーツを保存中");
+  }
 };
 
 const codeOutput = (state: a.State, codeTab: CodeTab): Element<a.Message> => {

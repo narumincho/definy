@@ -199,7 +199,6 @@ export type Message =
   | {
       readonly tag: typeof messageSetTypePartList;
       readonly projectId: d.ProjectId;
-      readonly code: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>;
     }
   | {
       readonly tag: typeof messageRespondSetTypePartList;

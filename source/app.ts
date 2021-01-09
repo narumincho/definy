@@ -193,12 +193,7 @@ export const updateStateByMessage = (
       return respondCreatingProject(message.response, oldState);
 
     case a.messageSetTypePartList:
-      return setTypePartList(
-        message.projectId,
-        message.code,
-        messageHandler,
-        oldState
-      );
+      return setTypePartList(message.projectId, messageHandler, oldState);
 
     case a.messageRespondSetTypePartList:
       return respondSetTypePartList(message.response, oldState);
@@ -654,7 +649,6 @@ const respondCreatingProject = (
 
 const setTypePartList = (
   projectId: d.ProjectId,
-  typePartList: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>>,
   messageHandler: (message: a.Message) => void,
   state: a.State
 ): a.State => {
@@ -662,6 +656,23 @@ const setTypePartList = (
   if (accountToken === undefined || state.typePartEditState !== "None") {
     return state;
   }
+  const typePartList: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>> = [
+    ...state.typePartMap,
+  ].flatMap(
+    ([typePartId, resource]): ReadonlyArray<
+      d.IdAndData<d.TypePartId, d.TypePart>
+    > => {
+      if (resource._ === "Loaded") {
+        return [
+          {
+            id: typePartId,
+            data: resource.dataWithTime.data,
+          },
+        ];
+      }
+      return [];
+    }
+  );
 
   api
     .setTypePartList({
