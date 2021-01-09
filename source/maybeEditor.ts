@@ -51,6 +51,7 @@ export const update = <Item, ItemMessage>(
 };
 
 export const view = <Item, ItemMessage>(
+  name: string,
   maybe: d.Maybe<Item>,
   element: (item: Item) => Element<ItemMessage>
 ): Element<Message<ItemMessage>> => {
@@ -63,7 +64,7 @@ export const view = <Item, ItemMessage>(
       [
         "tag",
         elementMap<MaybeTag, Message<ItemMessage>>(
-          tagEditor<MaybeTag>(["Just", "Nothing"], maybe._, "patternParameter"),
+          tagEditor<MaybeTag>(["Just", "Nothing"], maybe._, name + "-tag"),
           messageTag
         ),
       ],

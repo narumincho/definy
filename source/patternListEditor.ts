@@ -61,19 +61,22 @@ export const update = (pattern: d.Pattern, message: Message): d.Pattern => {
   }
 };
 
-export const view = (pattern: d.Pattern): Element<Message> => {
+export const view = (name: string, pattern: d.Pattern): Element<Message> => {
   return productEditor(
     new Map([
       ["name", oneLineTextEditor(pattern.name, setName)],
       ["description", oneLineTextEditor(pattern.description, SetDescription)],
-      ["parameter", parameterEditor(pattern.parameter)],
+      ["parameter", parameterEditor(name + "-parameter", pattern.parameter)],
     ])
   );
 };
 
-const parameterEditor = (parameter: d.Maybe<d.Type>): Element<Message> => {
+const parameterEditor = (
+  name: string,
+  parameter: d.Maybe<d.Type>
+): Element<Message> => {
   return elementMap(
-    maybeEditor.view(parameter, typeEditor.view),
+    maybeEditor.view(name, parameter, typeEditor.view),
     updateContent
   );
 };
@@ -94,9 +97,8 @@ export const listUpdate = (
     message
   );
 
-export const listView: (
+export const listView = (
+  name: string,
   patternList: ReadonlyArray<d.Pattern>
-) => Element<listEditor.Message<Message>> = listEditor.view(
-  view,
-  patternListMaxCount
-);
+): Element<listEditor.Message<Message>> =>
+  listEditor.view(name, view, patternListMaxCount, patternList);

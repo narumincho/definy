@@ -45,7 +45,10 @@ const setName = (newName: string): Message => ({
   newName,
 });
 
-export const view = (typeParameter: d.TypeParameter): Element<Message> => {
+export const view = (
+  name: string,
+  typeParameter: d.TypeParameter
+): Element<Message> => {
   return box(
     { padding: 0, direction: "y" },
     c([
@@ -73,7 +76,11 @@ export const view = (typeParameter: d.TypeParameter): Element<Message> => {
   );
 };
 
-export const listView = listEditor.view(view, typeParameterListMaxCount);
+export const listView = (
+  name: string,
+  list: ReadonlyArray<d.TypeParameter>
+): Element<listEditor.Message<Message>> =>
+  listEditor.view(name, view, typeParameterListMaxCount, list);
 
 export const listUpdate = (
   list: ReadonlyArray<d.TypeParameter>,

@@ -21,7 +21,7 @@ export type Message =
       newType: d.Type;
     };
 
-const memberistMaxCount = 256;
+const memberListMaxCount = 256;
 
 const setName = (newName: string): Message => ({
   tag: "SetName",
@@ -64,12 +64,12 @@ export const listUpdate = (
       description: "initMemberDescription",
       type: definyType.int32,
     },
-    memberistMaxCount,
+    memberListMaxCount,
     list,
     message
   );
 
-export const view = (member: d.Member): Element<Message> => {
+export const view = (name: string, member: d.Member): Element<Message> => {
   return productEditor(
     new Map([
       ["name", oneLineTextEditor(member.name, setName)],
@@ -88,9 +88,8 @@ export const view = (member: d.Member): Element<Message> => {
   );
 };
 
-export const listView: (
+export const listView = (
+  name: string,
   list: ReadonlyArray<d.Member>
-) => Element<listEditor.Message<Message>> = listEditor.view(
-  view,
-  memberistMaxCount
-);
+): Element<listEditor.Message<Message>> =>
+  listEditor.view(name, view, memberListMaxCount, list);

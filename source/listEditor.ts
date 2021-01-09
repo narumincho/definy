@@ -57,9 +57,11 @@ export const update = <Item, ItemMessage>(
 };
 
 export const view = <Item, ItemMessage>(
-  editor: (item: Item) => Element<ItemMessage>,
-  maxCount: number
-) => (list: ReadonlyArray<Item>): Element<Message<ItemMessage>> => {
+  name: string,
+  editor: (itemName: string, item: Item) => Element<ItemMessage>,
+  maxCount: number,
+  list: ReadonlyArray<Item>
+): Element<Message<ItemMessage>> => {
   return box<Message<ItemMessage>>(
     {
       padding: 0,
@@ -80,8 +82,9 @@ export const view = <Item, ItemMessage>(
           c([
             [
               "item",
-              elementMap(editor(item), (message) =>
-                messageItem(message, index)
+              elementMap(
+                editor(name + "-" + index.toString(), item),
+                (message) => messageItem(message, index)
               ),
             ],
             ["delete", deleteButton(index)],

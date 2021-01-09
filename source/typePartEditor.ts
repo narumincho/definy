@@ -179,14 +179,21 @@ const typePartEditorLoaded = (typePart: d.TypePart): Element<Message> => {
       [
         "attribute",
         elementMap(
-          maybeEditor.view(typePart.attribute, attributeEditor),
+          maybeEditor.view(
+            "typePartAttribute",
+            typePart.attribute,
+            attributeEditor
+          ),
           updateAttribute
         ),
       ],
       [
         "parameter",
         elementMap<listEditor.Message<typeParameterEditor.Message>, Message>(
-          typeParameterEditor.listView(typePart.typeParameterList),
+          typeParameterEditor.listView(
+            "typePartParameter",
+            typePart.typeParameterList
+          ),
           updateParameter
         ),
       ],
@@ -227,7 +234,7 @@ const bodyContentEditor = (typePartBody: d.TypePartBody): Element<Message> => {
   switch (typePartBody._) {
     case "Sum":
       return elementMap(
-        patternListEditor.listView(typePartBody.patternList),
+        patternListEditor.listView("patternList", typePartBody.patternList),
         (patternListMessage): Message => ({
           tag: "PatternList",
           patternListMessage,
@@ -235,7 +242,7 @@ const bodyContentEditor = (typePartBody: d.TypePartBody): Element<Message> => {
       );
     case "Product":
       return elementMap(
-        memberListEditor.listView(typePartBody.memberList),
+        memberListEditor.listView("memberList", typePartBody.memberList),
         (memberListMessage): Message => ({
           tag: "MemberList",
           memberListMessage,
