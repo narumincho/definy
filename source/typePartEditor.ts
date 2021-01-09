@@ -4,6 +4,7 @@ import * as listEditor from "./listEditor";
 import * as maybeEditor from "./maybeEditor";
 import * as memberListEditor from "./memberListEditor";
 import * as patternListEditor from "./patternListEditor";
+import * as typeParameterEditor from "./typeParameterEditor";
 import { c, div, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { oneLineTextEditor } from "./oneLineTextInput";
@@ -22,6 +23,10 @@ export type Message =
   | {
       readonly tag: "UpdateAttribute";
       readonly message: maybeEditor.Message<d.TypeAttribute>;
+    }
+  | {
+      readonly tag: "UpdateParameter";
+      readonly message: listEditor.Message<typeParameterEditor.Message>;
     }
   | {
       readonly tag: "ChangeBodyTag";
@@ -54,6 +59,12 @@ const updateAttribute = (
   tag: "UpdateAttribute",
   message,
 });
+const updateParameter = (
+  message: listEditor.Message<typeParameterEditor.Message>
+): Message => ({
+  tag: "UpdateParameter",
+  message,
+});
 
 export const update = (typePart: d.TypePart, message: Message): d.TypePart => {
   switch (message.tag) {
@@ -75,6 +86,14 @@ export const update = (typePart: d.TypePart, message: Message): d.TypePart => {
           message.message,
           d.TypeAttribute.AsBoolean,
           (_, attribute) => attribute
+        ),
+      };
+    case "UpdateParameter":
+      return {
+        ...typePart,
+        typeParameterList: typeParameterEditor.listUpdate(
+          typePart.typeParameterList,
+          message.message
         ),
       };
     case "ChangeBodyTag":
@@ -150,7 +169,7 @@ export const view = (
 };
 
 const typePartEditorLoaded = (typePart: d.TypePart): Element<Message> => {
-  return productEditor(
+  return productEditor<Message>(
     new Map([
       ["name", oneLineTextEditor(typePart.name, changeName)],
       [
@@ -165,8 +184,15 @@ const typePartEditorLoaded = (typePart: d.TypePart): Element<Message> => {
         ),
       ],
       [
+        "parameter",
+        elementMap<listEditor.Message<typeParameterEditor.Message>, Message>(
+          typeParameterEditor.listView(typePart.typeParameterList),
+          updateParameter
+        ),
+      ],
+      [
         "body",
-        div(
+        div<Message>(
           {},
           c([
             ["tag", bodyTagEditor(typePart.body)],

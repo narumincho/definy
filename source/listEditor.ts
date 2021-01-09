@@ -1,6 +1,6 @@
+import { box, text } from "./ui";
 import { c, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
-import { box } from "./ui";
 import { button } from "./button";
 
 export type Message<ItemMessage> =
@@ -29,14 +29,14 @@ const messageItem = <ItemMessage>(
 /** リストの中身を Message によって変更する. API が 全置換えするような仕様ならこれを使う */
 export const update = <Item, ItemMessage>(
   itemUpdate: (item: Item, itemMessage: ItemMessage) => Item,
-  itemInit: Item
-) => (
+  itemInit: Item,
+  maxCount: number,
   list: ReadonlyArray<Item>,
   message: Message<ItemMessage>
 ): ReadonlyArray<Item> => {
   switch (message.tag) {
     case "Add":
-      return [...list, itemInit];
+      return [...list, itemInit].slice(0, maxCount);
     case "Delete":
       return [
         ...list.slice(0, message.index),
@@ -57,7 +57,8 @@ export const update = <Item, ItemMessage>(
 };
 
 export const view = <Item, ItemMessage>(
-  editor: (item: Item) => Element<ItemMessage>
+  editor: (item: Item) => Element<ItemMessage>,
+  maxCount: number
 ) => (list: ReadonlyArray<Item>): Element<Message<ItemMessage>> => {
   return box<Message<ItemMessage>>(
     {
@@ -87,7 +88,12 @@ export const view = <Item, ItemMessage>(
           ])
         ),
       ]),
-      ["addButton", addButton],
+      [
+        "addButton",
+        list.length >= maxCount
+          ? text("最大個数 " + maxCount.toString() + " です")
+          : addButton,
+      ],
     ])
   );
 };

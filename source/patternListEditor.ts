@@ -34,6 +34,8 @@ const updateContent = (
   newContentType,
 });
 
+const patternListMaxCount = 256;
+
 export const update = (pattern: d.Pattern, message: Message): d.Pattern => {
   switch (message.tag) {
     case "SetName":
@@ -76,12 +78,25 @@ const parameterEditor = (parameter: d.Maybe<d.Type>): Element<Message> => {
   );
 };
 
-export const listUpdate = listEditor.update<d.Pattern, Message>(update, {
-  name: "initParameterName",
-  description: "initParameterDescription",
-  parameter: d.Maybe.Nothing<d.Type>(),
-});
+export const listUpdate = (
+  list: ReadonlyArray<d.Pattern>,
+  message: listEditor.Message<Message>
+): ReadonlyArray<d.Pattern> =>
+  listEditor.update<d.Pattern, Message>(
+    update,
+    {
+      name: "initParameterName",
+      description: "initParameterDescription",
+      parameter: d.Maybe.Nothing<d.Type>(),
+    },
+    patternListMaxCount,
+    list,
+    message
+  );
 
 export const listView: (
   patternList: ReadonlyArray<d.Pattern>
-) => Element<listEditor.Message<Message>> = listEditor.view(view);
+) => Element<listEditor.Message<Message>> = listEditor.view(
+  view,
+  patternListMaxCount
+);
