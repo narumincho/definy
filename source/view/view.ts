@@ -29,11 +29,12 @@ export type Element<Message> =
   | Img
   | InputRadio<Message>
   | InputText<Message>
+  | TextArea<Message>
   | Label<Message>
   | Svg<Message>
   | SvgPath
   | SvgCircle
-  | Animate;
+  | SvgAnimate;
 
 export type ElementDiff<Message> =
   | {
@@ -63,11 +64,12 @@ export type ElementUpdateDiff<Message> =
   | ImgDiff
   | InputRadioDiff
   | InputTextDiff
+  | TextAreaDiff
   | LabelDiff<Message>
   | SvgDiff<Message>
   | SvgPathDiff
   | SvgCircleDiff
-  | AnimateDiff;
+  | SvgAnimateDiff;
 
 export interface Div<Message> {
   readonly tag: "div";
@@ -169,7 +171,7 @@ export interface InputText<Message> {
   readonly tag: "inputText";
   readonly id: string;
   readonly class: string;
-  readonly input: (text: string) => Message;
+  readonly inputOrReadonly: ((text: string) => Message) | null;
   readonly value: string;
 }
 
@@ -177,6 +179,23 @@ export interface InputTextDiff {
   readonly tag: "inputText";
   readonly id: string | undefined;
   readonly class: string | undefined;
+  readonly readonly: boolean | undefined;
+  readonly value: string | undefined;
+}
+
+export interface TextArea<Message> {
+  readonly tag: "textArea";
+  readonly id: string;
+  readonly class: string;
+  readonly inputOrReadonly: ((text: string) => Message) | null;
+  readonly value: string;
+}
+
+export interface TextAreaDiff {
+  readonly tag: "textArea";
+  readonly id: string | undefined;
+  readonly class: string | undefined;
+  readonly readonly: boolean | undefined;
   readonly value: string | undefined;
 }
 
@@ -258,7 +277,7 @@ export interface SvgCircleDiff {
   readonly children: ChildrenDiff<never>;
 }
 
-export interface Animate {
+export interface SvgAnimate {
   readonly tag: "animate";
   readonly attributeName: string;
   readonly dur: number;
@@ -267,7 +286,7 @@ export interface Animate {
   readonly to: string;
 }
 
-export interface AnimateDiff {
+export interface SvgAnimateDiff {
   readonly tag: "animate";
   readonly attributeName: string | undefined;
   readonly dur: number | undefined;

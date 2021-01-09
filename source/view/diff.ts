@@ -145,6 +145,25 @@ export const createElementDiff = <Message>(
         tag: "inputText",
         id: createStringDiff(oldElement.id, newElement.id),
         class: createStringDiff(oldElement.class, newElement.class),
+        readonly: createReadonlyDiff(
+          oldElement.inputOrReadonly,
+          newElement.inputOrReadonly
+        ),
+        value: createStringDiff(oldElement.value, newElement.value),
+      },
+      newKey
+    );
+  }
+  if (oldElement.tag === "textArea" && newElement.tag === "textArea") {
+    return update(
+      {
+        tag: "textArea",
+        id: createStringDiff(oldElement.id, newElement.id),
+        class: createStringDiff(oldElement.class, newElement.class),
+        readonly: createReadonlyDiff(
+          oldElement.inputOrReadonly,
+          newElement.inputOrReadonly
+        ),
         value: createStringDiff(oldElement.value, newElement.value),
       },
       newKey
@@ -247,6 +266,19 @@ const createNumberDiff = (
   oldNumber: number,
   newNumber: number
 ): number | undefined => (oldNumber === newNumber ? undefined : newNumber);
+
+const createReadonlyDiff = <Message>(
+  oldInputOrReadonly: ((newText: string) => Message) | null,
+  newInputOrReadonly: ((newText: string) => Message) | null
+): boolean | undefined => {
+  if (oldInputOrReadonly === null && newInputOrReadonly !== null) {
+    return false;
+  }
+  if (oldInputOrReadonly !== null && newInputOrReadonly === null) {
+    return true;
+  }
+  return undefined;
+};
 
 export const createChildrenDiff = <Message>(
   oldChildren: Children<Message>,
@@ -452,10 +484,14 @@ const createMessageDataMapLoop = <Message>(
       });
       return;
     case "inputText":
+    case "textArea":
+      if (element.inputOrReadonly === null) {
+        return;
+      }
       messageDataMap.set(path, {
         onClick: undefined,
         onChange: undefined,
-        onInput: element.input,
+        onInput: element.inputOrReadonly,
       });
       return;
     case "div":

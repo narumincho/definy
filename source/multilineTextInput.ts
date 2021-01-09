@@ -1,11 +1,11 @@
 import { Element } from "./view/view";
-import { inputOneLineText } from "./view/viewUtil";
+import { inputMultiLineText } from "./view/viewUtil";
 
-export const oneLineTextEditor = <Message>(
+export const multiLineTextEditor = <Message>(
   value: string,
   inputOrReadonly: ((text: string) => Message) | null
 ): Element<Message> =>
-  inputOneLineText({
+  inputMultiLineText({
     value,
     inputOrReadonly,
     style: {
@@ -15,7 +15,10 @@ export const oneLineTextEditor = <Message>(
       backgroundColor: "#000",
       color: "#ddd",
       borderRadius: 8,
-      width: "100%",
+      resize: "none",
+      lineHeight: 1.5,
+      height: 320,
+
       "&:focus": {
         border: "2px solid #f0932b",
         outline: "none",

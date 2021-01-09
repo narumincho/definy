@@ -102,14 +102,27 @@ export const inputRadio = <Message>(option: {
 export const inputOneLineText = <Message>(option: {
   id?: string;
   style?: CSSObject;
-  input: (text: string) => Message;
+  inputOrReadonly: ((text: string) => Message) | null;
   value: string;
 }): Element<Message> => ({
   tag: "inputText",
   id: idOrUndefined(option.id),
   class: css(option.style),
   value: option.value,
-  input: option.input,
+  inputOrReadonly: option.inputOrReadonly,
+});
+
+export const inputMultiLineText = <Message>(option: {
+  id?: string;
+  style?: CSSObject;
+  inputOrReadonly: ((text: string) => Message) | null;
+  value: string;
+}): Element<Message> => ({
+  tag: "textArea",
+  id: idOrUndefined(option.id),
+  class: css(option.style),
+  value: option.value,
+  inputOrReadonly: option.inputOrReadonly,
 });
 
 export const label = (
@@ -292,7 +305,15 @@ export const elementMap = <Input, Output>(
         id: element.id,
         class: element.class,
         value: element.value,
-        input: (input: string) => func(element.input(input)),
+        inputOrReadonly: inputOrReadonlyMap(element.inputOrReadonly, func),
+      };
+    case "textArea":
+      return {
+        tag: "textArea",
+        id: element.id,
+        class: element.class,
+        value: element.value,
+        inputOrReadonly: inputOrReadonlyMap(element.inputOrReadonly, func),
       };
     case "label":
       return {
@@ -320,6 +341,16 @@ export const elementMap = <Input, Output>(
     case "animate":
       return element;
   }
+};
+
+const inputOrReadonlyMap = <Input, Output>(
+  inputOrReadonly: ((newText: string) => Input) | null,
+  func: (input: Input) => Output
+) => {
+  if (inputOrReadonly === null) {
+    return null;
+  }
+  return (newText: string): Output => func(inputOrReadonly(newText));
 };
 
 const childrenMap = <Input, Output>(

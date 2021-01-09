@@ -9,6 +9,7 @@ import { button } from "./button";
 import { icon } from "./icon";
 import { image } from "./image";
 import { mapMapValue } from "./util";
+import { multiLineTextEditor } from "./multilineTextInput";
 import { tagEditor } from "./tagEditor";
 import { userCard } from "./user";
 
@@ -135,7 +136,7 @@ export const view = (
             style: {
               ...containerStyle,
               display: "grid",
-              gridTemplateColumns: "300px 1fr 400px",
+              gridTemplateColumns: "250px 1fr 400px",
             },
           },
           c([
@@ -274,6 +275,8 @@ const projectDetailView = (
         display: "grid",
         gap: 4,
         alignContent: "start",
+        overflowY: "scroll",
+        width: "100%",
       },
     },
     c<a.Message>([
@@ -332,7 +335,7 @@ const projectDetailView = (
         "generateCodeButton",
         button<a.Message>(
           { click: { tag: a.messageGenerateCode } },
-          "コード生成"
+          "コードを生成する"
         ),
       ],
       ["codeOutput", codeOutput(state, pageState.codeTab)],
@@ -362,7 +365,7 @@ const codeOutput = (state: a.State, codeTab: CodeTab): Element<a.Message> => {
               selectCodeTabMessage
             ),
           ],
-          ["content", text(state.outputCode[codeTab])],
+          ["content", multiLineTextEditor(state.outputCode[codeTab], null)],
         ])
       );
     case "error":

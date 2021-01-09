@@ -77,8 +77,18 @@ const elementToHtmlOrSvgElement = <Message>(
       inputText.className = element.class;
       inputText.type = "text";
       inputText.value = element.value;
+      inputText.readOnly = element.inputOrReadonly === null;
       setEvents(inputText, path, patchState);
       return inputText;
+    }
+    case "textArea": {
+      const textArea = document.createElement("textarea");
+      setId(textArea, element.id);
+      textArea.className = element.class;
+      textArea.value = element.value;
+      textArea.readOnly = element.inputOrReadonly === null;
+      setEvents(textArea, path, patchState);
+      return textArea;
     }
     case "label": {
       const label = document.createElement("label");
@@ -209,6 +219,13 @@ const pathElement = <Message>(
       }
       patchInputText(htmlOrSvgElement, diff);
       return;
+    case "textArea":
+      if (!(htmlOrSvgElement instanceof HTMLTextAreaElement)) {
+        console.error(htmlOrSvgElement, diff, path);
+        throw new Error("expect HTMLTextAreaElement");
+      }
+      patchTextArea(htmlOrSvgElement, diff);
+      return;
     case "label":
       if (!(htmlOrSvgElement instanceof HTMLLabelElement)) {
         console.error(htmlOrSvgElement, diff, path);
@@ -337,6 +354,27 @@ const patchInputText = (
   if (diff.class !== undefined) {
     realElement.className = diff.class;
   }
+  if (diff.readonly !== undefined) {
+    realElement.readOnly = diff.readonly;
+  }
+  if (diff.value !== undefined) {
+    realElement.value = diff.value;
+  }
+};
+
+const patchTextArea = (
+  realElement: HTMLTextAreaElement,
+  diff: v.TextAreaDiff
+): void => {
+  if (diff.id !== undefined) {
+    setId(realElement, diff.id);
+  }
+  if (diff.class !== undefined) {
+    realElement.className = diff.class;
+  }
+  if (diff.readonly !== undefined) {
+    realElement.readOnly = diff.readonly;
+  }
   if (diff.value !== undefined) {
     realElement.value = diff.value;
   }
@@ -428,7 +466,7 @@ const patchSvgCircle = <Message>(
 
 const patchSvgAnimate = (
   realElement: SVGAnimateElement,
-  diff: v.AnimateDiff
+  diff: v.SvgAnimateDiff
 ): void => {
   if (diff.attributeName !== undefined) {
     realElement.setAttribute("attributeName", diff.attributeName);
