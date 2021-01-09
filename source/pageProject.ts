@@ -10,12 +10,14 @@ import { icon } from "./icon";
 import { image } from "./image";
 import { mapMapValue } from "./util";
 import { multiLineTextEditor } from "./multilineTextInput";
+import { oneLineTextEditor } from "./oneLineTextInput";
 import { tagEditor } from "./tagEditor";
 import { userCard } from "./user";
 
 export interface PageState {
   readonly selection: Selection;
   readonly codeTab: CodeTab;
+  readonly searchText: string;
 }
 
 type CodeTab = "javaScript" | "typeScript" | "elm";
@@ -37,13 +39,24 @@ export type PageMessage =
       readonly tag: "SelectTypePart";
       readonly typePartId: d.TypePartId;
     }
-  | { readonly tag: "SelectCodeTab"; newCodeTab: CodeTab };
+  | { readonly tag: "SelectCodeTab"; newCodeTab: CodeTab }
+  | {
+      readonly tag: "SetSearchText";
+      readonly newSearchText: string;
+    };
 
 const selectCodeTabMessage = (newCodeTab: CodeTab): a.Message => ({
   tag: "PageProject",
   message: {
     tag: "SelectCodeTab",
     newCodeTab,
+  },
+});
+const setSearchText = (newSearchText: string): a.Message => ({
+  tag: "PageProject",
+  message: {
+    tag: "SetSearchText",
+    newSearchText,
   },
 });
 
@@ -62,6 +75,7 @@ export const init = (
   return {
     selection: { tag: "SelectProjectDetail" },
     codeTab: "typeScript",
+    searchText: "",
   };
 };
 
@@ -90,6 +104,11 @@ export const updateSateByLocalMessage = (
       return {
         ...state,
         codeTab: pageMessage.newCodeTab,
+      };
+    case "SetSearchText":
+      return {
+        ...state,
+        searchText: pageMessage.newSearchText,
       };
   }
 };
@@ -140,7 +159,7 @@ export const view = (
             },
           },
           c([
-            ["tree", treeView(appInterface, state)],
+            ["tree", treeView(appInterface, projectId, state)],
             [
               "main",
               mainView(
@@ -169,14 +188,16 @@ export const view = (
 };
 
 const treeView = (
-  appInterface: a.State,
-  state: PageState
+  state: a.State,
+  projectId: d.ProjectId,
+  pageState: PageState
 ): Element<a.Message> => {
   return div(
     {
       style: {
         backgroundColor: "#555",
         justifySelf: "stretch",
+        alignContent: "start",
         display: "grid",
         overflowY: "scroll",
       },
@@ -194,26 +215,48 @@ const treeView = (
           "プロジェクト詳細"
         ),
       ],
-      ...mapMapValue(
-        appInterface.typePartMap,
-        (typePartResourceState, typePartId): Element<a.Message> =>
-          button(
-            {
-              click: {
-                tag: "PageProject",
-                message: {
-                  tag: "SelectTypePart",
-                  typePartId,
-                },
-              },
-            },
-            typePartResourceState._ === "Loaded"
-              ? typePartResourceState.dataWithTime.data.name
-              : "???"
-          )
-      ),
+      ["search", oneLineTextEditor(pageState.searchText, setSearchText)],
+      ...typePartNameListView(state, projectId, pageState.searchText),
     ])
   );
+};
+
+const typePartNameListView = (
+  state: a.State,
+  projectId: d.ProjectId,
+  searchText: string
+): ReadonlyMap<string, Element<a.Message>> => {
+  if (state.getTypePartInProjectState._ === "Requesting") {
+    return new Map([["listNote", text<a.Message>("取得中")]]);
+  }
+  return mapMapValue(state.typePartMap, (resource, typePartId):
+    | Element<a.Message>
+    | undefined => {
+    if (resource._ !== "Loaded") {
+      return undefined;
+    }
+    if (resource.dataWithTime.data.projectId !== projectId) {
+      return undefined;
+    }
+    if (
+      resource.dataWithTime.data.name
+        .toLocaleLowerCase()
+        .includes(searchText.toLocaleLowerCase())
+    ) {
+      return button(
+        {
+          click: {
+            tag: "PageProject",
+            message: {
+              tag: "SelectTypePart",
+              typePartId,
+            },
+          },
+        },
+        resource.dataWithTime.data.name
+      );
+    }
+  });
 };
 
 const containerStyle: CSSObject = {
