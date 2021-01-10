@@ -195,7 +195,7 @@ export const updateStateByMessage = (
     case a.messageSetTypePartList:
       return setTypePartList(message.projectId, messageHandler, oldState);
 
-    case a.messageRespondSetTypePartList:
+    case a.messageRespondTypePartList:
       return respondSetTypePartList(message.response, oldState);
 
     case a.messageSelectDebugPageTab:
@@ -230,6 +230,8 @@ export const updateStateByMessage = (
           }
         ),
       };
+    case "AddTypePart":
+      return addTypePart(oldState, message.projectId, messageHandler);
     case "PageProject":
       if (oldState.pageModel.tag === "Project") {
         return {
@@ -681,7 +683,7 @@ const setTypePartList = (
       typePartList,
     })
     .then((response) => {
-      messageHandler({ tag: a.messageRespondSetTypePartList, response });
+      messageHandler({ tag: a.messageRespondTypePartList, response });
     });
   return {
     ...state,
@@ -717,6 +719,48 @@ const respondSetTypePartList = (
           ] as const
       ),
     ]),
+  };
+};
+
+const addTypePart = (
+  state: a.State,
+  projectId: d.ProjectId,
+  messageHandler: (message: a.Message) => void
+): a.State => {
+  const accountToken = a.getAccountToken(state);
+  if (accountToken === undefined || state.typePartEditState !== "None") {
+    return state;
+  }
+  const typePartList: ReadonlyArray<d.IdAndData<d.TypePartId, d.TypePart>> = [
+    ...state.typePartMap,
+  ].flatMap(
+    ([typePartId, resource]): ReadonlyArray<
+      d.IdAndData<d.TypePartId, d.TypePart>
+    > => {
+      if (resource._ === "Loaded") {
+        return [
+          {
+            id: typePartId,
+            data: resource.dataWithTime.data,
+          },
+        ];
+      }
+      return [];
+    }
+  );
+
+  api
+    .setTypePartListAndAddTypePart({
+      accountToken,
+      projectId,
+      typePartList,
+    })
+    .then((response) => {
+      messageHandler({ tag: a.messageRespondTypePartList, response });
+    });
+  return {
+    ...state,
+    typePartEditState: "Saving",
   };
 };
 

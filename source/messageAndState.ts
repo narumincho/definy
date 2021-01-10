@@ -201,7 +201,7 @@ export type Message =
       readonly projectId: d.ProjectId;
     }
   | {
-      readonly tag: typeof messageRespondSetTypePartList;
+      readonly tag: typeof messageRespondTypePartList;
       readonly response: d.Maybe<
         d.WithTime<d.Maybe<d.List<d.IdAndData<d.TypePartId, d.TypePart>>>>
       >;
@@ -214,6 +214,10 @@ export type Message =
       readonly tag: typeof messageTypePartMessage;
       readonly typePartId: d.TypePartId;
       readonly typePartMessage: TypePartEditorMessage;
+    }
+  | {
+      readonly tag: "AddTypePart";
+      readonly projectId: d.ProjectId;
     }
   | {
       readonly tag: "PageProject";
@@ -256,7 +260,7 @@ export const messageRespondCreatingProject = Symbol(
   "Message-RespondCreatingProject"
 );
 export const messageSetTypePartList = Symbol("Message-SetTypePartList");
-export const messageRespondSetTypePartList = Symbol(
+export const messageRespondTypePartList = Symbol(
   "Message-RespondSetTypePartList"
 );
 export const messageSelectDebugPageTab = Symbol("Message-SelectDebugPageTab");
