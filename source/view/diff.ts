@@ -495,6 +495,15 @@ const createMessageDataMapLoop = <Message>(
       });
       return;
     case "div":
+      if (element.click !== null) {
+        messageDataMap.set(path, {
+          onClick: { message: element.click, ignoreNewTab: false },
+          onChange: undefined,
+          onInput: undefined,
+        });
+      }
+      createMessageDataMapChildren(messageDataMap, path, element.children);
+      return;
     case "externalLink":
     case "label":
       createMessageDataMapChildren(messageDataMap, path, element.children);

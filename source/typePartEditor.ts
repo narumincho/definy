@@ -5,7 +5,9 @@ import * as maybeEditor from "./maybeEditor";
 import * as memberListEditor from "./memberListEditor";
 import * as patternListEditor from "./patternListEditor";
 import * as typeParameterEditor from "./typeParameterEditor";
+import { box, text } from "./ui";
 import { c, div, elementMap } from "./view/viewUtil";
+import { CSSObject } from "@emotion/css";
 import { Element } from "./view/view";
 import { oneLineTextEditor } from "./oneLineTextInput";
 import { productEditor } from "./productEditor";
@@ -43,6 +45,18 @@ export type Message =
   | {
       readonly tag: "MemberList";
       readonly memberListMessage: listEditor.Message<memberListEditor.Message>;
+    }
+  | {
+      readonly tag: "Select";
+      readonly selection: Selection;
+    };
+
+export type Selection =
+  | {
+      tag: "name";
+    }
+  | {
+      tag: "description";
     };
 
 const changeName = (newName: string): Message => ({
@@ -133,6 +147,19 @@ export const update = (typePart: d.TypePart, message: Message): d.TypePart => {
         ),
       };
   }
+  return typePart;
+};
+
+export const updateSelection = (
+  typePart: d.TypePart | undefined,
+  selection: Selection | undefined,
+  message: Message
+): Selection | undefined => {
+  switch (message.tag) {
+    case "Select":
+      return message.selection;
+  }
+  return selection;
 };
 
 const typePartBodyTagToInitTypePartBody = (
@@ -150,7 +177,8 @@ const typePartBodyTagToInitTypePartBody = (
 
 export const view = (
   appInterface: a.State,
-  typePartId: d.TypePartId
+  typePartId: d.TypePartId,
+  selection: Selection | undefined
 ): Element<Message> => {
   const typePartResource = appInterface.typePartMap.get(typePartId);
   if (typePartResource === undefined) {
@@ -164,17 +192,48 @@ export const view = (
     case "Unknown":
       return div({}, "取得に失敗した型パーツ");
     case "Loaded":
-      return typePartEditorLoaded(typePartResource.dataWithTime.data);
+      return typePartEditorLoaded(
+        typePartResource.dataWithTime.data,
+        selection
+      );
   }
 };
 
-const typePartEditorLoaded = (typePart: d.TypePart): Element<Message> => {
+const typePartEditorLoaded = (
+  typePart: d.TypePart,
+  selection: Selection | undefined
+): Element<Message> => {
   return productEditor<Message>(
     new Map([
-      ["name", oneLineTextEditor(typePart.name, changeName)],
+      [
+        "name",
+        div<Message>(
+          {
+            click: {
+              tag: "Select",
+              selection: {
+                tag: "name",
+              },
+            },
+            style: selectedStyle(selection?.tag === "name"),
+          },
+          typePart.name
+        ),
+      ],
       [
         "description",
-        oneLineTextEditor(typePart.description, changeDescription),
+        div<Message>(
+          {
+            click: {
+              tag: "Select",
+              selection: {
+                tag: "description",
+              },
+            },
+            style: selectedStyle(selection?.tag === "description"),
+          },
+          typePart.description
+        ),
       ],
       [
         "attribute",
@@ -209,6 +268,17 @@ const typePartEditorLoaded = (typePart: d.TypePart): Element<Message> => {
       ],
     ])
   );
+};
+
+const selectedStyle = (isSelect: boolean): CSSObject => {
+  if (isSelect) {
+    return {
+      border: "solid 2px red",
+    };
+  }
+  return {
+    border: "solid 2px #000",
+  };
 };
 
 const attributeEditor = (
@@ -269,3 +339,56 @@ export const KernelEditorList = [
   "Token",
   "List",
 ] as const;
+
+export const detailView = (
+  state: a.State,
+  typePartId: d.TypePartId,
+  selection: Selection | undefined
+): Element<never> => {
+  const typePartResource = state.typePartMap.get(typePartId);
+  if (typePartResource === undefined) {
+    return div({}, "???");
+  }
+  switch (typePartResource._) {
+    case "Deleted":
+      return div({}, "削除された型パーツ");
+    case "Requesting":
+      return div({}, "取得中");
+    case "Unknown":
+      return div({}, "取得に失敗した型パーツ");
+    case "Loaded":
+      return loadedDetailView(
+        state,
+        selection,
+        typePartResource.dataWithTime.data
+      );
+  }
+};
+
+const loadedDetailView = (
+  state: a.State,
+  selection: Selection | undefined,
+  typePart: d.TypePart
+): Element<never> => {
+  if (selection === undefined) {
+    return text("型パーツ自身を選択している");
+  }
+  switch (selection.tag) {
+    case "name":
+      return box(
+        { padding: 8, direction: "y" },
+        c([
+          ["label", text("typePart-name")],
+          ["editor", oneLineTextEditor(typePart.name, null)],
+        ])
+      );
+    case "description":
+      return box(
+        { padding: 8, direction: "y" },
+        c([
+          ["label", text("typePart-description")],
+          ["editor", oneLineTextEditor(typePart.description, null)],
+        ])
+      );
+  }
+};

@@ -75,6 +75,7 @@ export interface Div<Message> {
   readonly tag: "div";
   readonly id: string;
   readonly class: string;
+  readonly click: Message | null;
   readonly children: Children<Message>;
 }
 

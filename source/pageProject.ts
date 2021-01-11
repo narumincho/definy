@@ -29,6 +29,7 @@ type Selection =
   | {
       readonly tag: "SelectTypePart";
       readonly typePartId: d.TypePartId;
+      readonly childSelection: typePartEditor.Selection | undefined;
     };
 
 export type PageMessage =
@@ -43,6 +44,11 @@ export type PageMessage =
   | {
       readonly tag: "SetSearchText";
       readonly newSearchText: string;
+    }
+  | {
+      readonly tag: "TypePartMessage";
+      readonly typePartId: d.TypePartId;
+      readonly message: typePartEditor.Message;
     };
 
 const selectCodeTabMessage = (newCodeTab: CodeTab): a.Message => ({
@@ -98,6 +104,7 @@ export const updateSateByLocalMessage = (
         selection: {
           tag: "SelectTypePart",
           typePartId: pageMessage.typePartId,
+          childSelection: undefined,
         },
       };
     case "SelectCodeTab":
@@ -110,15 +117,40 @@ export const updateSateByLocalMessage = (
         ...state,
         searchText: pageMessage.newSearchText,
       };
+    case "TypePartMessage": {
+      if (state.selection.tag !== "SelectTypePart") {
+        return state;
+      }
+      messageHandler({
+        tag: a.messageTypePartMessage,
+        typePartId: pageMessage.typePartId,
+        typePartMessage: pageMessage.message,
+      });
+      if (state.selection.typePartId !== pageMessage.typePartId) {
+        return state;
+      }
+      return {
+        ...state,
+        selection: {
+          tag: "SelectTypePart",
+          typePartId: state.selection.typePartId,
+          childSelection: typePartEditor.updateSelection(
+            undefined,
+            state.selection.childSelection,
+            pageMessage.message
+          ),
+        },
+      };
+    }
   }
 };
 
 export const view = (
-  appInterface: a.State,
+  state: a.State,
   projectId: d.ProjectId,
-  state: PageState
+  pageState: PageState
 ): a.TitleAndElement<a.Message> => {
-  const projectState = appInterface.projectMap.get(projectId);
+  const projectState = state.projectMap.get(projectId);
   if (projectState === undefined) {
     return {
       title: "プロジェクト詳細ページの準備",
@@ -159,28 +191,17 @@ export const view = (
             },
           },
           c([
-            ["tree", treeView(appInterface, projectId, state)],
+            ["tree", treeView(state, projectId, pageState)],
             [
               "main",
               mainView(
-                appInterface,
                 state,
+                pageState,
                 projectId,
                 projectState.dataWithTime.data
               ),
             ],
-            [
-              "detail",
-              div(
-                {
-                  style: {
-                    backgroundColor: "#555",
-                    justifySelf: "stretch",
-                  },
-                },
-                "detail"
-              ),
-            ],
+            ["detail", detailView(state, pageState)],
           ])
         ),
       };
@@ -327,11 +348,18 @@ const mainView = (
           [
             "e",
             elementMap<typePartEditor.Message, a.Message>(
-              typePartEditor.view(state, typePartId),
-              (typePartEditorMessage) => ({
-                tag: a.messageTypePartMessage,
+              typePartEditor.view(
+                state,
                 typePartId,
-                typePartMessage: typePartEditorMessage,
+                pageState.selection.childSelection
+              ),
+              (typePartEditorMessage) => ({
+                tag: "PageProject",
+                message: {
+                  tag: "TypePartMessage",
+                  typePartId,
+                  message: typePartEditorMessage,
+                },
               })
             ),
           ],
@@ -483,5 +511,35 @@ const codeOutput = (state: a.State, codeTab: CodeTab): Element<a.Message> => {
       return text(
         "コード生成のときにエラーが発生した" + state.outputCode.errorMessage
       );
+  }
+};
+
+export const detailView = (
+  state: a.State,
+  pageState: PageState
+): Element<a.Message> => {
+  return box(
+    { padding: 8, direction: "y" },
+    c([
+      ["title", text("DetailView")],
+      ["note", detailViewMain(state, pageState.selection)],
+    ])
+  );
+};
+
+const detailViewMain = (
+  state: a.State,
+  selection: Selection
+): Element<never> => {
+  switch (selection.tag) {
+    case "SelectProjectDetail":
+      return text("プロジェクトの詳細");
+    case "SelectTypePart": {
+      return typePartEditor.detailView(
+        state,
+        selection.typePartId,
+        selection.childSelection
+      );
+    }
   }
 };

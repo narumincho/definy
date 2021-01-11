@@ -19,6 +19,7 @@ export const div = <Message>(
   tag: "div",
   id: idOrUndefined(option.id),
   class: css(option.style),
+  click: option.click === undefined ? null : option.click,
   children: childrenFromStringOrElementMap(children),
 });
 
@@ -261,6 +262,7 @@ export const elementMap = <Input, Output>(
         tag: "div",
         id: element.id,
         class: element.class,
+        click: element.click === null ? null : func(element.click),
         children: childrenMap(element.children, func),
       };
     case "externalLink":
