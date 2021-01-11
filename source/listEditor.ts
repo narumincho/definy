@@ -12,6 +12,9 @@ export type Message<ItemMessage> =
       index: number;
     }
   | {
+      tag: "DeleteAll";
+    }
+  | {
       tag: "Item";
       index: number;
       itemMessage: ItemMessage;
@@ -42,6 +45,8 @@ export const update = <Item, ItemMessage>(
         ...list.slice(0, message.index),
         ...list.slice(message.index + 1),
       ];
+    case "DeleteAll":
+      return [];
     case "Item": {
       const oldItem = list[message.index];
       if (oldItem === undefined) {
@@ -117,3 +122,58 @@ const addButton: Element<Message<never>> = button<Message<never>>(
   },
   "+"
 );
+
+export const detailView = <Item, ItemMessage>(
+  name: string,
+  editor: (itemName: string, item: Item) => Element<ItemMessage>,
+  maxCount: number,
+  list: ReadonlyArray<Item>
+): Element<Message<ItemMessage>> => {
+  return box<Message<ItemMessage>>(
+    {
+      padding: 0,
+      direction: "y",
+    },
+    c([
+      ["count", text("個数" + list.length.toString())],
+      ...list.map((item, index): readonly [
+        string,
+        Element<Message<ItemMessage>>
+      ] => [
+        index.toString(),
+        box(
+          {
+            padding: 4,
+            direction: "x",
+            xGridTemplate: [{ _: "OneFr" }, { _: "Fix", value: 32 }],
+          },
+          c([
+            [
+              "item",
+              elementMap(
+                editor(name + "-" + index.toString(), item),
+                (message) => messageItem(message, index)
+              ),
+            ],
+            ["delete", deleteButton(index)],
+          ])
+        ),
+      ]),
+      [
+        "addButton",
+        list.length >= maxCount
+          ? text("最大個数 " + maxCount.toString() + " です")
+          : addButton,
+      ],
+      [
+        "deleteAll",
+        button<Message<ItemMessage>>(
+          {
+            click: { tag: "DeleteAll" },
+          },
+          "すべて削除"
+        ),
+      ],
+    ])
+  );
+};

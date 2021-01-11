@@ -96,3 +96,9 @@ export const listUpdate = (
     list,
     message
   );
+
+export const detailListView = (
+  name: string,
+  list: ReadonlyArray<d.TypeParameter>
+): Element<listEditor.Message<Message>> =>
+  listEditor.detailView(name, view, typeParameterListMaxCount, list);

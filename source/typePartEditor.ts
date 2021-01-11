@@ -57,6 +57,15 @@ export type Selection =
     }
   | {
       tag: "description";
+    }
+  | {
+      tag: "attribute";
+    }
+  | {
+      tag: "parameter";
+    }
+  | {
+      tag: "body";
     };
 
 const changeName = (newName: string): Message => ({
@@ -241,15 +250,14 @@ const typePartEditorLoaded = (
     },
     {
       name: "attribute",
-      element: elementMap(
-        maybeEditor.view(
-          "typePartAttribute",
-          typePart.attribute,
-          attributeEditor
-        ),
-        updateAttribute
-      ),
-      isSelected: false,
+      element: attributeMaybeEditor(typePart.attribute),
+      isSelected: selection?.tag === "attribute",
+      selectMessage: {
+        tag: "Select",
+        selection: {
+          tag: "attribute",
+        },
+      },
     },
     {
       name: "parameter",
@@ -263,7 +271,13 @@ const typePartEditorLoaded = (
         ),
         updateParameter
       ),
-      isSelected: false,
+      isSelected: selection?.tag === "parameter",
+      selectMessage: {
+        tag: "Select",
+        selection: {
+          tag: "parameter",
+        },
+      },
     },
     {
       name: "body",
@@ -274,10 +288,24 @@ const typePartEditorLoaded = (
           ["content", bodyContentEditor(typePart.body)],
         ])
       ),
-      isSelected: false,
+      isSelected: selection?.tag === "body",
+      selectMessage: {
+        tag: "Select",
+        selection: {
+          tag: "body",
+        },
+      },
     },
   ]);
 };
+
+const attributeMaybeEditor = (
+  attributeMaybe: d.Maybe<d.TypeAttribute>
+): Element<Message> =>
+  elementMap(
+    maybeEditor.view("typePartAttribute", attributeMaybe, attributeEditor),
+    updateAttribute
+  );
 
 const attributeEditor = (
   attribute: d.TypeAttribute
@@ -378,7 +406,12 @@ const loadedDetailView = (
       return box(
         { padding: 8, direction: "y" },
         c([
-          ["label", text("typePart-name")],
+          [
+            "label",
+            text(
+              "型パーツの名前. ユーザーが認識するために用意している. コンピュータは TypePartId で識別する"
+            ),
+          ],
           [
             "editor",
             oneLineTextEditor(
@@ -393,7 +426,7 @@ const loadedDetailView = (
       return box(
         { padding: 8, direction: "y" },
         c([
-          ["label", text("typePart-description")],
+          ["label", text("型パーツの説明文")],
           [
             "editor",
             multiLineTextEditor(
@@ -402,6 +435,47 @@ const loadedDetailView = (
               changeDescription
             ),
           ],
+        ])
+      );
+    case "attribute":
+      return box(
+        { padding: 8, direction: "y" },
+        c([
+          [
+            "label",
+            text(
+              "型パーツの属性.  BoolをTypeScriptのbooleanとして扱ってほしいなど, 代数的データ型として表現できるが, 出力する言語でもとから用意されている標準のものを使ってほしいときに指定する"
+            ),
+          ],
+          ["editor", attributeMaybeEditor(typePart.attribute)],
+        ])
+      );
+    case "parameter":
+      return box(
+        { padding: 8, direction: "y" },
+        c([
+          ["label", text("型パラメーター")],
+          [
+            "editor",
+            elementMap(
+              typeParameterEditor.detailListView(
+                "type-paramter",
+                typePart.typeParameterList
+              ),
+              updateParameter
+            ),
+          ],
+        ])
+      );
+    case "body":
+      return box(
+        { padding: 8, direction: "y" },
+        c([
+          [
+            "label",
+            text("型パーツの本体. 型パーツをどういう構造で表現するか記述する"),
+          ],
+          ["editor", text("body!")],
         ])
       );
   }
