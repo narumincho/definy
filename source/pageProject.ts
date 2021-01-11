@@ -66,6 +66,22 @@ const setSearchText = (newSearchText: string): a.Message => ({
   },
 });
 
+/**
+ * TypePartEditor の Message を ProjectPage の Message に変換する
+ * 直接 a.MessageのTypePartMessage を呼ぶと選択位置の変更が反映されないので注意
+ */
+const typePartEditorMessageToMessage = (
+  typePartEditorMessage: typePartEditor.Message,
+  typePartId: d.TypePartId
+): a.Message => ({
+  tag: "PageProject",
+  message: {
+    tag: "TypePartMessage",
+    typePartId,
+    message: typePartEditorMessage,
+  },
+});
+
 export const init = (
   messageHandler: (message: a.Message) => void,
   projectId: d.ProjectId
@@ -353,14 +369,11 @@ const mainView = (
                 typePartId,
                 pageState.selection.childSelection
               ),
-              (typePartEditorMessage) => ({
-                tag: "PageProject",
-                message: {
-                  tag: "TypePartMessage",
-                  typePartId,
-                  message: typePartEditorMessage,
-                },
-              })
+              (typePartEditorMessage) =>
+                typePartEditorMessageToMessage(
+                  typePartEditorMessage,
+                  typePartId
+                )
             ),
           ],
         ])
@@ -530,15 +543,22 @@ export const detailView = (
 const detailViewMain = (
   state: a.State,
   selection: Selection
-): Element<never> => {
+): Element<a.Message> => {
   switch (selection.tag) {
     case "SelectProjectDetail":
       return text("プロジェクトの詳細");
     case "SelectTypePart": {
-      return typePartEditor.detailView(
-        state,
-        selection.typePartId,
-        selection.childSelection
+      return elementMap(
+        typePartEditor.detailView(
+          state,
+          selection.typePartId,
+          selection.childSelection
+        ),
+        (typePartEditorMessage) =>
+          typePartEditorMessageToMessage(
+            typePartEditorMessage,
+            selection.typePartId
+          )
       );
     }
   }

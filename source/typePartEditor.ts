@@ -344,7 +344,7 @@ export const detailView = (
   state: a.State,
   typePartId: d.TypePartId,
   selection: Selection | undefined
-): Element<never> => {
+): Element<Message> => {
   const typePartResource = state.typePartMap.get(typePartId);
   if (typePartResource === undefined) {
     return div({}, "???");
@@ -369,7 +369,7 @@ const loadedDetailView = (
   state: a.State,
   selection: Selection | undefined,
   typePart: d.TypePart
-): Element<never> => {
+): Element<Message> => {
   if (selection === undefined) {
     return text("型パーツ自身を選択している");
   }
@@ -379,7 +379,7 @@ const loadedDetailView = (
         { padding: 8, direction: "y" },
         c([
           ["label", text("typePart-name")],
-          ["editor", oneLineTextEditor(typePart.name, null)],
+          ["editor", oneLineTextEditor(typePart.name, changeName)],
         ])
       );
     case "description":
@@ -387,7 +387,10 @@ const loadedDetailView = (
         { padding: 8, direction: "y" },
         c([
           ["label", text("typePart-description")],
-          ["editor", oneLineTextEditor(typePart.description, null)],
+          [
+            "editor",
+            oneLineTextEditor(typePart.description, changeDescription),
+          ],
         ])
       );
   }
