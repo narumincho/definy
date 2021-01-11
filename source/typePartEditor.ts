@@ -215,6 +215,8 @@ export const view = (
       return div({}, "取得に失敗した型パーツ");
     case "Loaded":
       return typePartEditorLoaded(
+        state,
+        typePartId,
         typePartResource.dataWithTime.data,
         selection
       );
@@ -222,6 +224,8 @@ export const view = (
 };
 
 const typePartEditorLoaded = (
+  state: a.State,
+  typePartId: d.TypePartId,
   typePart: d.TypePart,
   selection: Selection | undefined
 ): Element<Message> => {
@@ -285,7 +289,7 @@ const typePartEditorLoaded = (
         {},
         c([
           ["tag", bodyTagEditor(typePart.body)],
-          ["content", bodyContentEditor(typePart.body)],
+          ["content", bodyContentEditor(state, typePartId, typePart.body)],
         ])
       ),
       isSelected: selection?.tag === "body",
@@ -326,11 +330,20 @@ const bodyTagEditor = (typePartBody: d.TypePartBody): Element<Message> => {
   );
 };
 
-const bodyContentEditor = (typePartBody: d.TypePartBody): Element<Message> => {
+const bodyContentEditor = (
+  state: a.State,
+  typePartId: d.TypePartId,
+  typePartBody: d.TypePartBody
+): Element<Message> => {
   switch (typePartBody._) {
     case "Sum":
       return elementMap(
-        patternListEditor.listView("patternList", typePartBody.patternList),
+        patternListEditor.listView(
+          state,
+          typePartId,
+          "patternList",
+          typePartBody.patternList
+        ),
         (patternListMessage): Message => ({
           tag: "PatternList",
           patternListMessage,
@@ -338,7 +351,12 @@ const bodyContentEditor = (typePartBody: d.TypePartBody): Element<Message> => {
       );
     case "Product":
       return elementMap(
-        memberListEditor.listView("memberList", typePartBody.memberList),
+        memberListEditor.listView(
+          state,
+          typePartId,
+          "memberList",
+          typePartBody.memberList
+        ),
         (memberListMessage): Message => ({
           tag: "MemberList",
           memberListMessage,

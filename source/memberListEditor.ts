@@ -3,6 +3,7 @@ import * as definyType from "./definyType";
 import * as listEditor from "./listEditor";
 import * as typeEditor from "./typeEditor";
 import { Element } from "./view/view";
+import { State } from "./messageAndState";
 import { elementMap } from "./view/viewUtil";
 import { oneLineTextEditor } from "./oneLineTextInput";
 import { productEditor } from "./productEditor";
@@ -69,7 +70,12 @@ export const listUpdate = (
     message
   );
 
-export const view = (name: string, member: d.Member): Element<Message> => {
+export const view = (
+  state: State,
+  typePartId: d.TypePartId,
+  name: string,
+  member: d.Member
+): Element<Message> => {
   return productEditor([
     {
       name: "name",
@@ -84,7 +90,7 @@ export const view = (name: string, member: d.Member): Element<Message> => {
     {
       name: "type",
       element: elementMap(
-        typeEditor.view(member.type),
+        typeEditor.view(state, typePartId, member.type),
         (newType: d.Type): Message => ({
           tag: "SetType",
           newType,
@@ -96,7 +102,14 @@ export const view = (name: string, member: d.Member): Element<Message> => {
 };
 
 export const listView = (
+  state: State,
+  typePartId: d.TypePartId,
   name: string,
   list: ReadonlyArray<d.Member>
 ): Element<listEditor.Message<Message>> =>
-  listEditor.view(name, view, memberListMaxCount, list);
+  listEditor.view(
+    name,
+    (itemName, item) => view(state, typePartId, itemName, item),
+    memberListMaxCount,
+    list
+  );

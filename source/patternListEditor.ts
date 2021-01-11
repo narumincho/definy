@@ -4,6 +4,7 @@ import * as listEditor from "./listEditor";
 import * as maybeEditor from "./maybeEditor";
 import * as typeEditor from "./typeEditor";
 import { Element } from "./view/view";
+import { State } from "./messageAndState";
 import { elementMap } from "./view/viewUtil";
 import { oneLineTextEditor } from "./oneLineTextInput";
 import { productEditor } from "./productEditor";
@@ -61,7 +62,12 @@ export const update = (pattern: d.Pattern, message: Message): d.Pattern => {
   }
 };
 
-export const view = (name: string, pattern: d.Pattern): Element<Message> => {
+export const view = (
+  state: State,
+  typePartId: d.TypePartId,
+  name: string,
+  pattern: d.Pattern
+): Element<Message> => {
   return productEditor([
     {
       name: "name",
@@ -75,18 +81,27 @@ export const view = (name: string, pattern: d.Pattern): Element<Message> => {
     },
     {
       name: "parameter",
-      element: parameterEditor(name + "-parameter", pattern.parameter),
+      element: parameterEditor(
+        state,
+        typePartId,
+        name + "-parameter",
+        pattern.parameter
+      ),
       isSelected: false,
     },
   ]);
 };
 
 const parameterEditor = (
+  state: State,
+  typePartId: d.TypePartId,
   name: string,
   parameter: d.Maybe<d.Type>
 ): Element<Message> => {
   return elementMap(
-    maybeEditor.view(name, parameter, typeEditor.view),
+    maybeEditor.view(name, parameter, (v) =>
+      typeEditor.view(state, typePartId, v)
+    ),
     updateContent
   );
 };
@@ -108,7 +123,14 @@ export const listUpdate = (
   );
 
 export const listView = (
+  state: State,
+  typePartId: d.TypePartId,
   name: string,
   patternList: ReadonlyArray<d.Pattern>
 ): Element<listEditor.Message<Message>> =>
-  listEditor.view(name, view, patternListMaxCount, patternList);
+  listEditor.view(
+    name,
+    (itemName, item) => view(state, typePartId, itemName, item),
+    patternListMaxCount,
+    patternList
+  );
