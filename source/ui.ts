@@ -3,7 +3,7 @@ import { Element } from "./view/view";
 
 export type GridTemplateValue = { _: "Fix"; value: number } | { _: "OneFr" };
 
-export interface SimpleStyle {
+export interface BoxOption<Message> {
   /** 方向 x → 横方向, y → 縦方向 */
   direction: "x" | "y";
   /** 幅. undefined で 100% */
@@ -20,11 +20,15 @@ export interface SimpleStyle {
   border?: { width: number; color: string };
   /** 横方向の区切り方 */
   xGridTemplate?: ReadonlyArray<GridTemplateValue>;
+  /** 縦方向にスクロールするか */
+  isScrollY?: boolean;
+  /** クリックのイベント */
+  click?: Message;
 }
 
 /** CSSの指定をできるだけしなくて済むように */
 export const box = <Message>(
-  simpleStyle: SimpleStyle,
+  option: BoxOption<Message>,
   children: ReadonlyMap<string, Element<Message>>
 ): Element<Message> =>
   div(
@@ -34,27 +38,29 @@ export const box = <Message>(
         boxSizing: "border-box",
         wordBreak: "break-all",
         breakWord: "break-word",
-        gridAutoFlow: simpleStyle.direction === "x" ? "column" : "row",
-        width: simpleStyle.width === undefined ? "100%" : simpleStyle.width,
-        height: simpleStyle.height,
-        gap: simpleStyle.gap,
-        padding: simpleStyle.padding,
+        gridAutoFlow: option.direction === "x" ? "column" : "row",
+        width: option.width === undefined ? "100%" : option.width,
+        height: option.height,
+        gap: option.gap,
+        padding: option.padding,
         backgroundColor: "#111",
         color: "#ddd",
-        borderRadius: simpleStyle.borderRadius,
+        borderRadius: option.borderRadius,
         border:
-          simpleStyle.border === undefined
+          option.border === undefined
             ? "none"
             : "solid " +
-              simpleStyle.border.width.toString() +
+              option.border.width.toString() +
               "px " +
-              simpleStyle.border.color,
+              option.border.color,
         gridTemplateColumns:
-          simpleStyle.xGridTemplate === undefined
+          option.xGridTemplate === undefined
             ? undefined
-            : simpleStyle.xGridTemplate.map(gridTemplateToCssString).join(" "),
+            : option.xGridTemplate.map(gridTemplateToCssString).join(" "),
         alignContent: "start",
+        overflowY: option.isScrollY === true ? "scroll" : "visible",
       },
+      click: option.click,
     },
     children
   );

@@ -62,13 +62,23 @@ export const update = (pattern: d.Pattern, message: Message): d.Pattern => {
 };
 
 export const view = (name: string, pattern: d.Pattern): Element<Message> => {
-  return productEditor(
-    new Map([
-      ["name", oneLineTextEditor(pattern.name, setName)],
-      ["description", oneLineTextEditor(pattern.description, SetDescription)],
-      ["parameter", parameterEditor(name + "-parameter", pattern.parameter)],
-    ])
-  );
+  return productEditor([
+    {
+      name: "name",
+      element: oneLineTextEditor(pattern.name, setName),
+      isSelected: false,
+    },
+    {
+      name: "description",
+      element: oneLineTextEditor(pattern.description, SetDescription),
+      isSelected: false,
+    },
+    {
+      name: "parameter",
+      element: parameterEditor(name + "-parameter", pattern.parameter),
+      isSelected: false,
+    },
+  ]);
 };
 
 const parameterEditor = (

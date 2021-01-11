@@ -339,7 +339,7 @@ const containerStyle: CSSObject = {
   justifyItems: "center",
   alignContent: "start",
   height: "100%",
-  overflow: "auto",
+  overflow: "hidden",
 };
 
 const mainView = (
@@ -358,6 +358,7 @@ const mainView = (
           style: {
             overflowY: "scroll",
             width: "100%",
+            padding: 4,
           },
         },
         c([
@@ -532,7 +533,7 @@ export const detailView = (
   pageState: PageState
 ): Element<a.Message> => {
   return box(
-    { padding: 8, direction: "y" },
+    { padding: 8, direction: "y", isScrollY: true },
     c([
       ["title", text("DetailView")],
       ["note", detailViewMain(state, pageState.selection)],

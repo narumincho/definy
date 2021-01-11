@@ -70,22 +70,29 @@ export const listUpdate = (
   );
 
 export const view = (name: string, member: d.Member): Element<Message> => {
-  return productEditor(
-    new Map([
-      ["name", oneLineTextEditor(member.name, setName)],
-      ["description", oneLineTextEditor(member.description, setDescription)],
-      [
-        "type",
-        elementMap(
-          typeEditor.view(member.type),
-          (newType: d.Type): Message => ({
-            tag: "SetType",
-            newType,
-          })
-        ),
-      ],
-    ])
-  );
+  return productEditor([
+    {
+      name: "name",
+      element: oneLineTextEditor(member.name, setName),
+      isSelected: false,
+    },
+    {
+      name: "description",
+      element: oneLineTextEditor(member.description, setDescription),
+      isSelected: false,
+    },
+    {
+      name: "type",
+      element: elementMap(
+        typeEditor.view(member.type),
+        (newType: d.Type): Message => ({
+          tag: "SetType",
+          newType,
+        })
+      ),
+      isSelected: false,
+    },
+  ]);
 };
 
 export const listView = (

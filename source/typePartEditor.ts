@@ -7,8 +7,8 @@ import * as patternListEditor from "./patternListEditor";
 import * as typeParameterEditor from "./typeParameterEditor";
 import { box, text } from "./ui";
 import { c, div, elementMap } from "./view/viewUtil";
-import { CSSObject } from "@emotion/css";
 import { Element } from "./view/view";
+import { multiLineTextEditor } from "./multilineTextInput";
 import { oneLineTextEditor } from "./oneLineTextInput";
 import { productEditor } from "./productEditor";
 import { tagEditor } from "./tagEditor";
@@ -176,11 +176,11 @@ const typePartBodyTagToInitTypePartBody = (
 };
 
 export const view = (
-  appInterface: a.State,
+  state: a.State,
   typePartId: d.TypePartId,
   selection: Selection | undefined
 ): Element<Message> => {
-  const typePartResource = appInterface.typePartMap.get(typePartId);
+  const typePartResource = state.typePartMap.get(typePartId);
   if (typePartResource === undefined) {
     return div({}, "???");
   }
@@ -203,82 +203,67 @@ const typePartEditorLoaded = (
   typePart: d.TypePart,
   selection: Selection | undefined
 ): Element<Message> => {
-  return productEditor<Message>(
-    new Map([
-      [
-        "name",
-        div<Message>(
-          {
-            click: {
-              tag: "Select",
-              selection: {
-                tag: "name",
-              },
-            },
-            style: selectedStyle(selection?.tag === "name"),
-          },
-          typePart.name
+  return productEditor<Message>([
+    {
+      name: "name",
+      element: text(typePart.name),
+      isSelected: selection?.tag === "name",
+      selectMessage: {
+        tag: "Select",
+        selection: {
+          tag: "name",
+        },
+      },
+    },
+    {
+      name: "description",
+      element: text(typePart.description),
+      isSelected: selection?.tag === "description",
+      selectMessage: {
+        tag: "Select",
+        selection: {
+          tag: "description",
+        },
+      },
+    },
+    {
+      name: "attribute",
+      element: elementMap(
+        maybeEditor.view(
+          "typePartAttribute",
+          typePart.attribute,
+          attributeEditor
         ),
-      ],
-      [
-        "description",
-        div<Message>(
-          {
-            click: {
-              tag: "Select",
-              selection: {
-                tag: "description",
-              },
-            },
-            style: selectedStyle(selection?.tag === "description"),
-          },
-          typePart.description
+        updateAttribute
+      ),
+      isSelected: false,
+    },
+    {
+      name: "parameter",
+      element: elementMap<
+        listEditor.Message<typeParameterEditor.Message>,
+        Message
+      >(
+        typeParameterEditor.listView(
+          "typePartParameter",
+          typePart.typeParameterList
         ),
-      ],
-      [
-        "attribute",
-        elementMap(
-          maybeEditor.view(
-            "typePartAttribute",
-            typePart.attribute,
-            attributeEditor
-          ),
-          updateAttribute
-        ),
-      ],
-      [
-        "parameter",
-        elementMap<listEditor.Message<typeParameterEditor.Message>, Message>(
-          typeParameterEditor.listView(
-            "typePartParameter",
-            typePart.typeParameterList
-          ),
-          updateParameter
-        ),
-      ],
-      [
-        "body",
-        div<Message>(
-          {},
-          c([
-            ["tag", bodyTagEditor(typePart.body)],
-            ["content", bodyContentEditor(typePart.body)],
-          ])
-        ),
-      ],
-    ])
-  );
-};
-
-const selectedStyle = (isSelect: boolean): CSSObject => {
-  if (isSelect) {
-    return {
-      border: "solid 2px red",
-    };
-  }
-  return {
-    border: "solid 2px #000",
-  };
+        updateParameter
+      ),
+      isSelected: false,
+    },
+    {
+      name: "body",
+      element: div<Message>(
+        {},
+        c([
+          ["tag", bodyTagEditor(typePart.body)],
+          ["content", bodyContentEditor(typePart.body)],
+        ])
+      ),
+      isSelected: false,
+    },
+  ]);
 };
 
 const attributeEditor = (
@@ -360,6 +345,7 @@ export const detailView = (
       return loadedDetailView(
         state,
         selection,
+        typePartId,
         typePartResource.dataWithTime.data
       );
   }
@@ -368,10 +354,11 @@ export const detailView = (
 const loadedDetailView = (
   state: a.State,
   selection: Selection | undefined,
+  typePartId: d.TypePartId,
   typePart: d.TypePart
 ): Element<Message> => {
   if (selection === undefined) {
-    return text("型パーツ自身を選択している");
+    return view(state, typePartId, selection);
   }
   switch (selection.tag) {
     case "name":
@@ -389,7 +376,7 @@ const loadedDetailView = (
           ["label", text("typePart-description")],
           [
             "editor",
-            oneLineTextEditor(typePart.description, changeDescription),
+            multiLineTextEditor(typePart.description, changeDescription),
           ],
         ])
       );
