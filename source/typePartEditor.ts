@@ -157,9 +157,22 @@ export const updateSelection = (
 ): Selection | undefined => {
   switch (message.tag) {
     case "Select":
+      focusInput(message.selection);
       return message.selection;
   }
   return selection;
+};
+
+const focusInput = (selection: Selection): void => {
+  requestAnimationFrame(() => {
+    switch (selection.tag) {
+      case "name":
+        document.getElementById(nameInputEditorId)?.focus();
+        return;
+      case "description":
+        document.getElementById(descriptionInputEditorId)?.focus();
+    }
+  });
 };
 
 const typePartBodyTagToInitTypePartBody = (
@@ -366,7 +379,14 @@ const loadedDetailView = (
         { padding: 8, direction: "y" },
         c([
           ["label", text("typePart-name")],
-          ["editor", oneLineTextEditor(typePart.name, changeName)],
+          [
+            "editor",
+            oneLineTextEditor(
+              { id: nameInputEditorId },
+              typePart.name,
+              changeName
+            ),
+          ],
         ])
       );
     case "description":
@@ -376,9 +396,16 @@ const loadedDetailView = (
           ["label", text("typePart-description")],
           [
             "editor",
-            multiLineTextEditor(typePart.description, changeDescription),
+            multiLineTextEditor(
+              { id: descriptionInputEditorId },
+              typePart.description,
+              changeDescription
+            ),
           ],
         ])
       );
   }
 };
+
+const nameInputEditorId = "typePart-name";
+const descriptionInputEditorId = "typePart-description-";

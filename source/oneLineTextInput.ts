@@ -2,6 +2,7 @@ import { Element } from "./view/view";
 import { inputOneLineText } from "./view/viewUtil";
 
 export const oneLineTextEditor = <Message>(
+  option: { id?: string },
   value: string,
   inputOrReadonly: ((text: string) => Message) | null
 ): Element<Message> =>
@@ -21,4 +22,5 @@ export const oneLineTextEditor = <Message>(
         outline: "none",
       },
     },
+    id: option.id,
   });

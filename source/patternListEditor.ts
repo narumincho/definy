@@ -65,12 +65,12 @@ export const view = (name: string, pattern: d.Pattern): Element<Message> => {
   return productEditor([
     {
       name: "name",
-      element: oneLineTextEditor(pattern.name, setName),
+      element: oneLineTextEditor({}, pattern.name, setName),
       isSelected: false,
     },
     {
       name: "description",
-      element: oneLineTextEditor(pattern.description, SetDescription),
+      element: oneLineTextEditor({}, pattern.description, SetDescription),
       isSelected: false,
     },
     {

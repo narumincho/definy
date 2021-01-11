@@ -73,12 +73,12 @@ export const view = (name: string, member: d.Member): Element<Message> => {
   return productEditor([
     {
       name: "name",
-      element: oneLineTextEditor(member.name, setName),
+      element: oneLineTextEditor({}, member.name, setName),
       isSelected: false,
     },
     {
       name: "description",
-      element: oneLineTextEditor(member.description, setDescription),
+      element: oneLineTextEditor({}, member.description, setDescription),
       isSelected: false,
     },
     {

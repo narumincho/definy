@@ -252,7 +252,7 @@ const treeView = (
           "プロジェクト詳細"
         ),
       ],
-      ["search", oneLineTextEditor(pageState.searchText, setSearchText)],
+      ["search", oneLineTextEditor({}, pageState.searchText, setSearchText)],
       ...typePartNameListView(state, projectId, pageState.searchText),
       ["add", addTypePartButton(state, projectId)],
     ])
@@ -518,7 +518,7 @@ const codeOutput = (state: a.State, codeTab: CodeTab): Element<a.Message> => {
               selectCodeTabMessage
             ),
           ],
-          ["content", multiLineTextEditor(state.outputCode[codeTab], null)],
+          ["content", multiLineTextEditor({}, state.outputCode[codeTab], null)],
         ])
       );
     case "error":

@@ -71,7 +71,7 @@ export const view = (
           ])
         ),
       ],
-      ["name", oneLineTextEditor(typeParameter.name, setName)],
+      ["name", oneLineTextEditor({}, typeParameter.name, setName)],
     ])
   );
 };
