@@ -1,9 +1,14 @@
 import * as d from "definy-core/source/data";
+import * as definyType from "./definyType";
 import { box, text } from "./ui";
 import { Element } from "./view/view";
 import { State } from "./messageAndState";
 import { button } from "./button";
 import { c } from "./view/viewUtil";
+import { productEditor } from "./productEditor";
+
+/** TODO */
+export type Selection = never;
 
 export const update = (oldType: d.Type, newType: d.Type): d.Type => {
   return newType;
@@ -13,7 +18,7 @@ export const view = (
   state: State,
   scopeTypePartId: d.TypePartId,
   type: d.Type
-): Element<d.Type> => {
+): Element<Selection> => {
   return box(
     { padding: 2, direction: "x", gap: 4 },
     c([
@@ -21,7 +26,10 @@ export const view = (
         "typePartId",
         text(getTypePartByState(state, type.typePartId, scopeTypePartId).name),
       ],
-      ...type.parameter.map((parameter): readonly [string, Element<d.Type>] => {
+      ...type.parameter.map((parameter): readonly [
+        string,
+        Element<Selection>
+      ] => {
         return [parameter.typePartId, view(state, scopeTypePartId, parameter)];
       }),
     ])
@@ -32,10 +40,20 @@ const getTypePartByState = (
   state: State,
   typePartId: d.TypePartId,
   scopeTypePartId: d.TypePartId
-): { name: string; description: string } => {
+): {
+  name: string;
+  description: string;
+  typeParameterNameList: ReadonlyArray<string>;
+} => {
   const resource = state.typePartMap.get(typePartId);
   if (resource !== undefined && resource._ === "Loaded") {
-    return resource.dataWithTime.data;
+    return {
+      name: resource.dataWithTime.data.name,
+      description: resource.dataWithTime.data.description,
+      typeParameterNameList: resource.dataWithTime.data.typeParameterList.map(
+        (parameter) => parameter.name
+      ),
+    };
   }
   const scopeTypePart = state.typePartMap.get(scopeTypePartId);
   if (scopeTypePart !== undefined && scopeTypePart._ === "Loaded") {
@@ -48,70 +66,116 @@ const getTypePartByState = (
       return {
         name: targetedTypeParameter.name,
         description: scopeTypePart.dataWithTime.data.name + " の型パラメータ",
+        typeParameterNameList: [],
       };
     }
   }
   return {
     name: "???",
     description: "???",
+    typeParameterNameList: [],
   };
 };
 
-export const detailView = (
+export const editor = (
   state: State,
   scopeTypePartId: d.TypePartId,
   type: d.Type
 ): Element<d.Type> => {
-  return box(
-    { padding: 8, direction: "y" },
-    c([
-      ["selected", view(state, scopeTypePartId, type)],
-      [
-        "typeParameterList",
-        box(
-          {
-            padding: 8,
-            direction: "y",
-          },
-          c([
-            ["title", text("typeParameter")],
-            ...getTypePartLintInScope(
-              state,
-              scopeTypePartId
-            ).map((data): readonly [string, Element<d.Type>] => [
-              data.id,
-              button<d.Type>(
-                { click: { typePartId: data.id, parameter: [] } },
-                c([["view", typeView(data)]])
-              ),
-            ]),
-          ])
-        ),
-      ],
-      [
-        "typeList",
-        box(
-          {
-            direction: "y",
-            padding: 8,
-          },
-          c([
-            ["title", text("typeList")],
-            ...getTypePartList(state).map((data): readonly [
-              string,
-              Element<d.Type>
-            ] => [
-              data.id,
-              button<d.Type>(
-                { click: { typePartId: data.id, parameter: [] } },
-                c([["view", typeView(data)]])
-              ),
-            ]),
-          ])
-        ),
-      ],
-    ])
-  );
+  const typeData = getTypePartByState(state, type.typePartId, scopeTypePartId);
+  return productEditor([
+    {
+      name: "選ばれている型",
+      element: box(
+        {
+          direction: "y",
+          padding: 0,
+        },
+        c([["main", text(typeData.name)]])
+      ),
+      isSelected: false,
+    },
+    {
+      name: "paramter",
+      element: productEditor(
+        typeData.typeParameterNameList.map((typeParameterName, index) => ({
+          name: typeParameterName,
+          element:
+            type.parameter[index] === undefined
+              ? typeMenu(state, scopeTypePartId)
+              : editor(state, scopeTypePartId, type.parameter[index]),
+          isSelected: false,
+        }))
+      ),
+      isSelected: false,
+    },
+    {
+      name: "選択肢",
+      element: typeMenu(state, scopeTypePartId),
+      isSelected: false,
+    },
+  ]);
+};
+
+const typeMenu = (
+  state: State,
+  scopeTypePartId: d.TypePartId
+): Element<d.Type> => {
+  return productEditor([
+    {
+      name: "型パラメータから",
+      element: box(
+        {
+          padding: 8,
+          direction: "y",
+        },
+        c([
+          ["title", text("typeParameter")],
+          ...getTypePartLintInScope(
+            state,
+            scopeTypePartId
+          ).map((data): readonly [string, Element<d.Type>] => [
+            data.id,
+            button<d.Type>(
+              { click: { typePartId: data.id, parameter: [] } },
+              c([["view", typeView(data)]])
+            ),
+          ]),
+        ])
+      ),
+      isSelected: false,
+    },
+    {
+      name: "同じプロジェクトから",
+      element: box(
+        {
+          direction: "y",
+          padding: 8,
+        },
+        c([
+          ["title", text("typeList")],
+          ...getTypePartList(state).map((data): readonly [
+            string,
+            Element<d.Type>
+          ] => [
+            data.id,
+            button<d.Type>(
+              {
+                click: {
+                  typePartId: data.id,
+                  parameter: new Array<d.Type>(data.typeParameterCount).fill(
+                    definyType.int32
+                  ),
+                },
+              },
+              c([["view", typeView(data)]])
+            ),
+          ]),
+        ])
+      ),
+      isSelected: false,
+    },
+  ]);
 };
 
 const typeView = (typeData: {
@@ -124,11 +188,17 @@ const typeView = (typeData: {
 
 const getTypePartList = (
   state: State
-): ReadonlyArray<{ id: d.TypePartId; name: string; description: string }> => {
+): ReadonlyArray<{
+  id: d.TypePartId;
+  name: string;
+  description: string;
+  typeParameterCount: number;
+}> => {
   const result: Array<{
     id: d.TypePartId;
     name: string;
     description: string;
+    typeParameterCount: number;
   }> = [];
   for (const [typePartId, resource] of state.typePartMap) {
     if (resource._ === "Loaded") {
@@ -136,6 +206,7 @@ const getTypePartList = (
         id: typePartId,
         name: resource.dataWithTime.data.name,
         description: resource.dataWithTime.data.description,
+        typeParameterCount: resource.dataWithTime.data.typeParameterList.length,
       });
     }
   }

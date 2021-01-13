@@ -1,5 +1,6 @@
 import * as d from "definy-core/source/data";
 import * as listEditor from "./listEditor";
+import * as productEditor from "./productEditor";
 import { box, text } from "./ui";
 import { Element } from "./view/view";
 import { button } from "./button";
@@ -17,7 +18,60 @@ export type Message =
 
 const typeParameterListMaxCount = 8;
 
-export const update = (
+export type ListSelection = listEditor.Selection<ItemSelection> | undefined;
+
+export type ItemSelection =
+  | {
+      tag: "Self";
+    }
+  | {
+      tag: "name";
+    }
+  | {
+      tag: "typePartId";
+    };
+
+export const itemView = (
+  typeParameter: d.TypeParameter,
+  selection: ItemSelection | undefined
+): Element<ItemSelection> => {
+  return box(
+    {
+      padding: 0,
+      direction: "y",
+      border: {
+        color: selection?.tag === "Self" ? "red" : "#000",
+        width: 2,
+      },
+    },
+    c([
+      [
+        "item",
+        productEditor.productEditor([
+          {
+            name: "name",
+            element: text(typeParameter.name),
+            isSelected: selection?.tag === "name",
+            selectMessage: { tag: "name" },
+          },
+          {
+            name: "typePartId",
+            element: text(typeParameter.typePartId),
+            isSelected: selection?.tag === "typePartId",
+            selectMessage: { tag: "typePartId" },
+          },
+        ]),
+      ],
+    ])
+  );
+};
+
+export const listView = (
+  list: ReadonlyArray<d.TypeParameter>,
+  selection: ListSelection
+): Element<ListSelection> => listEditor.view(itemView, list, selection);
+
+export const itemUpdate = (
   typeParameter: d.TypeParameter,
   message: Message
 ): d.TypeParameter => {
@@ -35,6 +89,21 @@ export const update = (
   }
 };
 
+export const listUpdate = (
+  list: ReadonlyArray<d.TypeParameter>,
+  message: listEditor.Message<Message>
+): ReadonlyArray<d.TypeParameter> =>
+  listEditor.update(
+    itemUpdate,
+    {
+      typePartId: randomTypePartId(),
+      name: "typeParameterInitName",
+    },
+    typeParameterListMaxCount,
+    list,
+    message
+  );
+
 const randomTypePartId = () =>
   [...crypto.getRandomValues(new Uint8Array(16))]
     .map((e) => e.toString(16).padStart(2, "0"))
@@ -45,7 +114,7 @@ const setName = (newName: string): Message => ({
   newName,
 });
 
-export const view = (
+export const itemEditor = (
   name: string,
   typeParameter: d.TypeParameter
 ): Element<Message> => {
@@ -76,29 +145,15 @@ export const view = (
   );
 };
 
-export const listView = (
+export const editor = (
   name: string,
-  list: ReadonlyArray<d.TypeParameter>
-): Element<listEditor.Message<Message>> =>
-  listEditor.view(name, view, typeParameterListMaxCount, list);
-
-export const listUpdate = (
   list: ReadonlyArray<d.TypeParameter>,
-  message: listEditor.Message<Message>
-): ReadonlyArray<d.TypeParameter> =>
-  listEditor.update(
-    update,
-    {
-      typePartId: randomTypePartId(),
-      name: "typeParameterInitName",
-    },
+  selection: ListSelection | undefined
+): Element<listEditor.Message<Message>> =>
+  listEditor.editor(
+    name,
+    itemEditor,
     typeParameterListMaxCount,
     list,
-    message
+    selection
   );
-
-export const detailListView = (
-  name: string,
-  list: ReadonlyArray<d.TypeParameter>
-): Element<listEditor.Message<Message>> =>
-  listEditor.detailView(name, view, typeParameterListMaxCount, list);

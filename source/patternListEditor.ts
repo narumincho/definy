@@ -8,6 +8,7 @@ import { State } from "./messageAndState";
 import { elementMap } from "./view/viewUtil";
 import { oneLineTextEditor } from "./oneLineTextInput";
 import { productEditor } from "./productEditor";
+import { text } from "./ui";
 
 export type Message =
   | {
@@ -21,11 +22,9 @@ export type Message =
   | {
       tag: "UpdateContent";
       newContentType: maybeEditor.Message<d.Type>;
-    }
-  | {
-      tag: "Select";
-      selection: Selection;
     };
+
+export type ListMessage = listEditor.Message<Message>;
 
 const setName = (name: string): Message => ({ tag: "SetName", newName: name });
 const SetDescription = (name: string): Message => ({
@@ -39,13 +38,22 @@ const updateContent = (
   newContentType,
 });
 
-type Selection =
+type ItemSelection =
+  | {
+      tag: "self";
+    }
   | {
       tag: "name";
     }
   | {
       tag: "description";
+    }
+  | {
+      tag: "typeParameter";
+      typeParameterSelection: maybeEditor.Selection<typeEditor.Selection>;
     };
+
+type ListSelection = listEditor.Selection<ItemSelection>;
 
 const patternListMaxCount = 256;
 
@@ -72,51 +80,71 @@ export const update = (pattern: d.Pattern, message: Message): d.Pattern => {
         ),
       };
   }
-  return pattern;
 };
 
-export const view = (
+export const itemView = (
   state: State,
   typePartId: d.TypePartId,
-  name: string,
   pattern: d.Pattern,
-  selection: Selection | undefined
-): Element<Message> => {
-  return productEditor([
+  selection: ItemSelection | undefined
+): Element<ItemSelection> => {
+  return productEditor<ItemSelection>([
     {
       name: "name",
-      element: oneLineTextEditor({}, pattern.name, setName),
-      isSelected: false,
-      selectMessage: { tag: "Select", selection: { tag: "name" } },
+      element: text(pattern.name),
+      isSelected: selection?.tag === "name",
+      selectMessage: { tag: "name" },
     },
     {
       name: "description",
-      element: oneLineTextEditor({}, pattern.description, SetDescription),
-      isSelected: false,
-      selectMessage: { tag: "Select", selection: { tag: "description" } },
+      element: text(pattern.description),
+      isSelected: selection?.tag === "description",
+      selectMessage: { tag: "description" },
     },
     {
       name: "parameter",
-      element: parameterEditor(
+      element: parameterView(
         state,
         typePartId,
-        name + "-parameter",
-        pattern.parameter
+        pattern.parameter,
+        selection?.tag === "typeParameter"
+          ? selection.typeParameterSelection
+          : undefined
       ),
       isSelected: false,
     },
   ]);
 };
 
+const parameterView = (
+  state: State,
+  typePartId: d.TypePartId,
+  parameter: d.Maybe<d.Type>,
+  selection: maybeEditor.Selection<typeEditor.Selection> | undefined
+): Element<ItemSelection> => {
+  return elementMap(
+    maybeEditor.view(
+      parameter,
+      (item) => typeEditor.view(state, typePartId, item),
+      selection
+    ),
+    (e): ItemSelection => ({
+      tag: "typeParameter",
+      typeParameterSelection: e,
+    })
+  );
+};
+
 const parameterEditor = (
   state: State,
   typePartId: d.TypePartId,
   name: string,
-  parameter: d.Maybe<d.Type>
+  parameter: d.Maybe<d.Type>,
+  selection: maybeEditor.Selection<typeEditor.Selection> | undefined
 ): Element<Message> => {
-  return elementMap(
-    maybeEditor.view(name, parameter, (v) =>
-      typeEditor.view(state, typePartId, v)
+  return elementMap<maybeEditor.Message<d.Type>, Message>(
+    maybeEditor.editor(name, parameter, selection, (parameterTypeName, v) =>
+      typeEditor.editor(state, typePartId, v)
     ),
     updateContent
   );
@@ -143,46 +171,63 @@ export const listView = (
   typePartId: d.TypePartId,
   name: string,
   patternList: ReadonlyArray<d.Pattern>,
-  selection: { index: number; selection: Selection } | undefined
-): Element<listEditor.Message<Message>> =>
-  listEditor.view(
-    name,
-    (itemName, item, index) =>
-      view(
-        state,
-        typePartId,
-        itemName,
-        item,
-        index === selection?.index ? selection.selection : undefined
-      ),
-    patternListMaxCount,
-    patternList
+  selection: ListSelection | undefined
+): Element<ListSelection> =>
+  listEditor.view<d.Pattern, ItemSelection>(
+    (item, itemSelection) => itemView(state, typePartId, item, itemSelection),
+    patternList,
+    selection
   );
-
-export const updateSelection = (
-  pattern: d.Pattern | undefined,
-  selection: Selection | undefined,
-  message: Message
-): Selection | undefined => {
-  switch (message.tag) {
-    case "Select":
-      focusInput(message.selection);
-      return message.selection;
-  }
-  return selection;
-};
-
-const focusInput = (selection: Selection): void => {
-  requestAnimationFrame(() => {
-    switch (selection.tag) {
-      case "name":
-        document.getElementById(nameInputEditorId)?.focus();
-        return;
-      case "description":
-        document.getElementById(descriptionInputEditorId)?.focus();
-    }
-  });
-};
 
 export const nameInputEditorId = "name-input";
 export const descriptionInputEditorId = "description-input";
+
+export const itemEditor = (
+  state: State,
+  typePartId: d.TypePartId,
+  pattern: d.Pattern,
+  name: string,
+  selection: ItemSelection | undefined
+): Element<Message> => {
+  return productEditor([
+    {
+      name: "name",
+      element: oneLineTextEditor({}, pattern.name, setName),
+      isSelected: false,
+    },
+    {
+      name: "description",
+      element: oneLineTextEditor({}, pattern.description, SetDescription),
+      isSelected: false,
+    },
+    {
+      name: "parameter",
+      element: parameterEditor(
+        state,
+        typePartId,
+        name,
+        pattern.parameter,
+        selection?.tag === "typeParameter"
+          ? selection.typeParameterSelection
+          : undefined
+      ),
+      isSelected: false,
+    },
+  ]);
+};
+
+export const editor = (
+  state: State,
+  typePartId: d.TypePartId,
+  list: ReadonlyArray<d.Pattern>,
+  name: string,
+  selection: listEditor.Selection<ItemSelection> | undefined
+): Element<ListMessage> =>
+  listEditor.editor(
+    name,
+    (itemName, pattern, itemSelection) =>
+      itemEditor(state, typePartId, pattern, itemName, itemSelection),
+    patternListMaxCount,
+    list,
+    selection
+  );

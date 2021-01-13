@@ -550,7 +550,7 @@ const detailViewMain = (
       return text("プロジェクトの詳細");
     case "SelectTypePart": {
       return elementMap(
-        typePartEditor.detailView(
+        typePartEditor.editor(
           state,
           selection.typePartId,
           selection.childSelection

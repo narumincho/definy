@@ -3,7 +3,17 @@ import { c, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { button } from "./button";
 
-export type Message<ItemMessage> =
+export type Selection<ItemSelection> =
+  | {
+      tag: "Self";
+    }
+  | {
+      tag: "Item";
+      index: number;
+      itemSelection: ItemSelection;
+    };
+
+export type Message<ItemState> =
   | {
       tag: "Add";
     }
@@ -17,7 +27,7 @@ export type Message<ItemMessage> =
   | {
       tag: "Item";
       index: number;
-      itemMessage: ItemMessage;
+      itemMessage: ItemState;
     };
 
 const messageItem = <ItemMessage>(
@@ -28,6 +38,64 @@ const messageItem = <ItemMessage>(
   index,
   itemMessage,
 });
+
+export const view = <Item, ItemSelection>(
+  itemView: (
+    item: Item,
+    itemSelection: ItemSelection | undefined
+  ) => Element<ItemSelection>,
+  list: ReadonlyArray<Item>,
+  selection: Selection<ItemSelection> | undefined
+): Element<Selection<ItemSelection>> => {
+  return box<Selection<ItemSelection>>(
+    {
+      padding: 0,
+      direction: "y",
+      border: {
+        width: 2,
+        color: selection?.tag === "Self" ? "red" : "#000",
+      },
+    },
+    c([
+      ...list.map((item, index): readonly [
+        string,
+        Element<Selection<ItemSelection>>
+      ] => [
+        index.toString(),
+        elementMap(
+          itemView(
+            item,
+            selection?.tag === "Item" && selection.index === index
+              ? selection.itemSelection
+              : undefined
+          ),
+          (itemSelection): Selection<ItemSelection> => ({
+            tag: "Item",
+            index,
+            itemSelection,
+          })
+        ),
+      ]),
+    ])
+  );
+};
+
+const deleteButton = <ItemMessage>(
+  index: number
+): Element<Message<ItemMessage>> =>
+  button<Message<ItemMessage>>(
+    {
+      click: { tag: "Delete", index },
+    },
+    "x"
+  );
+
+const addButton: Element<Message<never>> = button<Message<never>>(
+  {
+    click: { tag: "Add" },
+  },
+  "+"
+);
 
 /** リストの中身を Message によって変更する. API が 全置換えするような仕様ならこれを使う */
 export const update = <Item, ItemMessage>(
@@ -61,119 +129,76 @@ export const update = <Item, ItemMessage>(
   }
 };
 
-export const view = <Item, ItemMessage>(
+export const editor = <Item, ItemMessage, ItemSelection>(
   name: string,
-  editor: (itemName: string, item: Item, index: number) => Element<ItemMessage>,
+  itemEditor: (
+    itemName: string,
+    item: Item,
+    itemSelection: ItemSelection | undefined
+  ) => Element<ItemMessage>,
   maxCount: number,
-  list: ReadonlyArray<Item>
+  list: ReadonlyArray<Item>,
+  selection: Selection<ItemSelection> | undefined
 ): Element<Message<ItemMessage>> => {
-  return box<Message<ItemMessage>>(
-    {
-      padding: 0,
-      direction: "y",
-    },
-    c([
-      ...list.map((item, index): readonly [
-        string,
-        Element<Message<ItemMessage>>
-      ] => [
-        index.toString(),
-        box(
-          {
-            padding: 4,
-            direction: "x",
-            xGridTemplate: [{ _: "OneFr" }, { _: "Fix", value: 32 }],
-          },
-          c([
-            [
-              "item",
-              elementMap(
-                editor(name + "-" + index.toString(), item, index),
-                (message) => messageItem(message, index)
-              ),
-            ],
-            ["delete", deleteButton(index)],
-          ])
-        ),
-      ]),
-      [
-        "addButton",
-        list.length >= maxCount
-          ? text("最大個数 " + maxCount.toString() + " です")
-          : addButton,
-      ],
-    ])
-  );
-};
-
-const deleteButton = <ItemMessage>(
-  index: number
-): Element<Message<ItemMessage>> =>
-  button<Message<ItemMessage>>(
-    {
-      click: { tag: "Delete", index },
-    },
-    "x"
-  );
-
-const addButton: Element<Message<never>> = button<Message<never>>(
-  {
-    click: { tag: "Add" },
-  },
-  "+"
-);
-
-export const detailView = <Item, ItemMessage>(
-  name: string,
-  editor: (itemName: string, item: Item) => Element<ItemMessage>,
-  maxCount: number,
-  list: ReadonlyArray<Item>
-): Element<Message<ItemMessage>> => {
-  return box<Message<ItemMessage>>(
-    {
-      padding: 0,
-      direction: "y",
-    },
-    c([
-      ["count", text("個数" + list.length.toString())],
-      ...list.map((item, index): readonly [
-        string,
-        Element<Message<ItemMessage>>
-      ] => [
-        index.toString(),
-        box(
-          {
-            padding: 4,
-            direction: "x",
-            xGridTemplate: [{ _: "OneFr" }, { _: "Fix", value: 32 }],
-          },
-          c([
-            [
-              "item",
-              elementMap(
-                editor(name + "-" + index.toString(), item),
-                (message) => messageItem(message, index)
-              ),
-            ],
-            ["delete", deleteButton(index)],
-          ])
-        ),
-      ]),
-      [
-        "addButton",
-        list.length >= maxCount
-          ? text("最大個数 " + maxCount.toString() + " です")
-          : addButton,
-      ],
-      [
-        "deleteAll",
-        button<Message<ItemMessage>>(
-          {
-            click: { tag: "DeleteAll" },
-          },
-          "すべて削除"
-        ),
-      ],
-    ])
+  if (selection === undefined || selection.tag === "Self") {
+    return box<Message<ItemMessage>>(
+      {
+        padding: 0,
+        direction: "y",
+      },
+      c([
+        ["count", text("個数" + list.length.toString())],
+        ...list.map((item, index): readonly [
+          string,
+          Element<Message<ItemMessage>>
+        ] => [
+          index.toString(),
+          box(
+            {
+              padding: 4,
+              direction: "x",
+              xGridTemplate: [{ _: "OneFr" }, { _: "Fix", value: 32 }],
+            },
+            c([
+              [
+                "item",
+                elementMap(
+                  itemEditor(name + "-" + index.toString(), item, undefined),
+                  (message) => messageItem(message, index)
+                ),
+              ],
+              ["delete", deleteButton(index)],
+            ])
+          ),
+        ]),
+        [
+          "addButton",
+          list.length >= maxCount
+            ? text("最大個数 " + maxCount.toString() + " です")
+            : addButton,
+        ],
+        [
+          "deleteAll",
+          button<Message<ItemMessage>>(
+            {
+              click: { tag: "DeleteAll" },
+            },
+            "すべて削除"
+          ),
+        ],
+      ])
+    );
+  }
+  const item = list[selection.index];
+  if (item === undefined) {
+    return text("編集する値がない in list editor");
+  }
+  return elementMap(
+    itemEditor(
+      name + "-" + selection.index.toString(),
+      item,
+      selection.itemSelection
+    ),
+    (message) => messageItem(message, selection.index)
   );
 };

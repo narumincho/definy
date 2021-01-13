@@ -44,7 +44,7 @@ export type Message =
     }
   | {
       readonly tag: "MemberList";
-      readonly memberListMessage: listEditor.Message<memberListEditor.Message>;
+      readonly memberListMessage: listEditor.Message<memberListEditor.ItemMessage>;
     }
   | {
       readonly tag: "Select";
@@ -60,9 +60,11 @@ export type Selection =
     }
   | {
       tag: "attribute";
+      content: maybeEditor.Selection<null>;
     }
   | {
       tag: "parameter";
+      content: typeParameterEditor.ListSelection;
     }
   | {
       tag: "body";
@@ -87,6 +89,15 @@ const updateParameter = (
 ): Message => ({
   tag: "UpdateParameter",
   message,
+});
+const selectParameter = (
+  content: typeParameterEditor.ListSelection
+): Message => ({
+  tag: "Select",
+  selection: {
+    tag: "parameter",
+    content,
+  },
 });
 
 export const update = (typePart: d.TypePart, message: Message): d.TypePart => {
@@ -214,7 +225,7 @@ export const view = (
     case "Unknown":
       return div({}, "取得に失敗した型パーツ");
     case "Loaded":
-      return typePartEditorLoaded(
+      return typePartViewLoaded(
         state,
         typePartId,
         typePartResource.dataWithTime.data,
@@ -223,7 +234,7 @@ export const view = (
   }
 };
 
-const typePartEditorLoaded = (
+const typePartViewLoaded = (
   state: a.State,
   typePartId: d.TypePartId,
   typePart: d.TypePart,
@@ -254,32 +265,43 @@ const typePartEditorLoaded = (
     },
     {
       name: "attribute",
-      element: attributeMaybeEditor(typePart.attribute),
+      element: elementMap(
+        attributeMaybeView(
+          typePart.attribute,
+          selection?.tag === "attribute" ? selection.content : undefined
+        ),
+        (content) => ({
+          tag: "Select",
+          selection: {
+            tag: "attribute",
+            content,
+          },
+        })
+      ),
       isSelected: selection?.tag === "attribute",
       selectMessage: {
         tag: "Select",
         selection: {
           tag: "attribute",
+          content: { tag: "self" },
         },
       },
     },
     {
       name: "parameter",
-      element: elementMap<
-        listEditor.Message<typeParameterEditor.Message>,
-        Message
-      >(
+      element: elementMap<typeParameterEditor.ListSelection, Message>(
         typeParameterEditor.listView(
-          "typePartParameter",
-          typePart.typeParameterList
+          typePart.typeParameterList,
+          selection?.tag === "parameter" ? selection.content : undefined
         ),
-        updateParameter
+        selectParameter
       ),
       isSelected: selection?.tag === "parameter",
       selectMessage: {
         tag: "Select",
         selection: {
           tag: "parameter",
+          content: { tag: "Self" },
         },
       },
     },
@@ -297,15 +319,32 @@ const typePartEditorLoaded = (
   ]);
 };
 
+const attributeMaybeView = (
+  attributeMaybe: d.Maybe<d.TypeAttribute>,
+  selection: maybeEditor.Selection<null> | undefined
+): Element<maybeEditor.Selection<null>> =>
+  maybeEditor.view(
+    attributeMaybe,
+    (attribute): Element<null> => text(attribute),
+    selection
+  );
+
 const attributeMaybeEditor = (
-  attributeMaybe: d.Maybe<d.TypeAttribute>
+  attributeMaybe: d.Maybe<d.TypeAttribute>,
+  selection: maybeEditor.Selection<null> | undefined
 ): Element<Message> =>
-  elementMap(
-    maybeEditor.view("typePartAttribute", attributeMaybe, attributeEditor),
+  elementMap<maybeEditor.Message<d.TypeAttribute>, Message>(
+    maybeEditor.editor(
+      "typePartAttribute",
+      attributeMaybe,
+      selection,
+      attributeEditor
+    ),
     updateAttribute
   );
 
 const attributeEditor = (
+  name: string,
   attribute: d.TypeAttribute
 ): Element<d.TypeAttribute> => {
   return tagEditor<d.TypeAttribute>(
@@ -323,7 +362,7 @@ const bodyEditor = (
   return div<Message>(
     {},
     c([
-      ["tag", bodyTagEditor(typePartBody)],
+      ["tag", text(typePartBody._)],
       ["content", bodyContentEditor(state, typePartId, typePartBody)],
     ])
   );
@@ -346,11 +385,11 @@ const bodyContentEditor = (
   switch (typePartBody._) {
     case "Sum":
       return elementMap(
-        patternListEditor.listView(
+        patternListEditor.editor(
           state,
           typePartId,
-          "patternList",
           typePartBody.patternList,
+          "patternList",
           undefined
         ),
         (patternListMessage): Message => ({
@@ -360,11 +399,12 @@ const bodyContentEditor = (
       );
     case "Product":
       return elementMap(
-        memberListEditor.listView(
+        memberListEditor.editor(
+          "memberList",
           state,
           typePartId,
-          "memberList",
-          typePartBody.memberList
+          typePartBody.memberList,
+          undefined
         ),
         (memberListMessage): Message => ({
           tag: "MemberList",
@@ -383,6 +423,20 @@ const bodyContentEditor = (
   }
 };
 
+const bodyDetailEditor = (
+  state: a.State,
+  typePartId: d.TypePartId,
+  typePartBody: d.TypePartBody
+) => {
+  return div<Message>(
+    {},
+    c([
+      ["tag", bodyTagEditor(typePartBody)],
+      ["content", bodyContentEditor(state, typePartId, typePartBody)],
+    ])
+  );
+};
+
 export const KernelEditorList = [
   "Function",
   "Int32",
@@ -393,7 +447,7 @@ export const KernelEditorList = [
   "List",
 ] as const;
 
-export const detailView = (
+export const editor = (
   state: a.State,
   typePartId: d.TypePartId,
   selection: Selection | undefined
@@ -410,7 +464,7 @@ export const detailView = (
     case "Unknown":
       return div({}, "取得に失敗した型パーツ");
     case "Loaded":
-      return loadedDetailView(
+      return loadedEditor(
         state,
         selection,
         typePartId,
@@ -419,7 +473,7 @@ export const detailView = (
   }
 };
 
-const loadedDetailView = (
+const loadedEditor = (
   state: a.State,
   selection: Selection | undefined,
   typePartId: d.TypePartId,
@@ -430,7 +484,7 @@ const loadedDetailView = (
       { padding: 8, direction: "y" },
       c([
         ["label", text("型パーツ. データの構造を定義する")],
-        ["editor", detailTypePartView(state, typePartId)],
+        ["editor", typePartEditor(state, typePartId, undefined)],
       ])
     );
   }
@@ -480,7 +534,10 @@ const loadedDetailView = (
               "型パーツの属性.  BoolをTypeScriptのbooleanとして扱ってほしいなど, 代数的データ型として表現できるが, 出力する言語でもとから用意されている標準のものを使ってほしいときに指定する"
             ),
           ],
-          ["editor", attributeMaybeEditor(typePart.attribute)],
+          [
+            "editor",
+            attributeMaybeEditor(typePart.attribute, selection.content),
+          ],
         ])
       );
     case "parameter":
@@ -491,9 +548,10 @@ const loadedDetailView = (
           [
             "editor",
             elementMap(
-              typeParameterEditor.detailListView(
+              typeParameterEditor.editor(
                 "type-paramter",
-                typePart.typeParameterList
+                typePart.typeParameterList,
+                selection.content
               ),
               updateParameter
             ),
@@ -508,7 +566,7 @@ const loadedDetailView = (
             "label",
             text("型パーツの本体. 型パーツをどういう構造で表現するか記述する"),
           ],
-          ["editor", bodyEditor(state, typePartId, typePart.body)],
+          ["editor", bodyDetailEditor(state, typePartId, typePart.body)],
         ])
       );
   }
@@ -517,9 +575,10 @@ const loadedDetailView = (
 const nameInputEditorId = "typePart-name";
 const descriptionInputEditorId = "typePart-description-";
 
-const detailTypePartView = (
+const typePartEditor = (
   state: a.State,
-  typePartId: d.TypePartId
+  typePartId: d.TypePartId,
+  selection: Selection | undefined
 ): Element<Message> => {
   const typePartResource = state.typePartMap.get(typePartId);
   if (typePartResource === undefined) {
@@ -533,18 +592,20 @@ const detailTypePartView = (
     case "Unknown":
       return div({}, "取得に失敗した型パーツ");
     case "Loaded":
-      return detailTypePartEditorLoaded(
+      return typePartEditorLoaded(
         state,
         typePartId,
-        typePartResource.dataWithTime.data
+        typePartResource.dataWithTime.data,
+        selection
       );
   }
 };
 
-const detailTypePartEditorLoaded = (
+const typePartEditorLoaded = (
   state: a.State,
   typePartId: d.TypePartId,
-  typePart: d.TypePart
+  typePart: d.TypePart,
+  selection: Selection | undefined
 ): Element<Message> => {
   return productEditor<Message>([
     {
@@ -567,7 +628,10 @@ const detailTypePartEditorLoaded = (
     },
     {
       name: "attribute",
-      element: attributeMaybeEditor(typePart.attribute),
+      element: attributeMaybeEditor(
+        typePart.attribute,
+        selection?.tag === "attribute" ? selection.content : undefined
+      ),
       isSelected: false,
     },
     {
@@ -576,9 +640,10 @@ const detailTypePartEditorLoaded = (
         listEditor.Message<typeParameterEditor.Message>,
         Message
       >(
-        typeParameterEditor.detailListView(
+        typeParameterEditor.editor(
           "typePartParameter",
-          typePart.typeParameterList
+          typePart.typeParameterList,
+          selection?.tag === "parameter" ? selection.content : undefined
         ),
         updateParameter
       ),
@@ -586,7 +651,7 @@ const detailTypePartEditorLoaded = (
     },
     {
       name: "body",
-      element: bodyEditor(state, typePartId, typePart.body),
+      element: bodyDetailEditor(state, typePartId, typePart.body),
       isSelected: false,
     },
   ]);
