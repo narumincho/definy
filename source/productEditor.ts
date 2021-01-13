@@ -15,14 +15,14 @@ export const productEditor = <Message>(
   box(
     {
       direction: "y",
-      padding: 0,
+      padding: 8,
     },
     new Map(
       itemList.map((item): readonly [string, Element<Message>] => [
         item.name,
         box(
           {
-            padding: 16,
+            padding: 4,
             direction: "y",
             border: {
               width: 2,

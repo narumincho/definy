@@ -52,6 +52,8 @@ export type Selection =
       typeSelection: typeEditor.Selection;
     };
 
+export type ListSelection = listEditor.Selection<Selection>;
+
 export const update = (member: d.Member, message: ItemMessage): d.Member => {
   switch (message.tag) {
     case "SetName":

@@ -53,7 +53,7 @@ type ItemSelection =
       typeParameterSelection: maybeEditor.Selection<typeEditor.Selection>;
     };
 
-type ListSelection = listEditor.Selection<ItemSelection>;
+export type ListSelection = listEditor.Selection<ItemSelection>;
 
 const patternListMaxCount = 256;
 
@@ -169,7 +169,6 @@ export const listUpdate = (
 export const listView = (
   state: State,
   typePartId: d.TypePartId,
-  name: string,
   patternList: ReadonlyArray<d.Pattern>,
   selection: ListSelection | undefined
 ): Element<ListSelection> =>
