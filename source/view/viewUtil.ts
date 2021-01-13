@@ -2,6 +2,7 @@ import * as d from "definy-core/source/data";
 import { CSSObject, css } from "@emotion/css";
 import {
   Children,
+  ClickMessageData,
   Color,
   Element,
   View,
@@ -13,13 +14,24 @@ import {
 import { mapMapValue } from "../util";
 
 export const div = <Message>(
-  option: { id?: string; click?: Message; style?: CSSObject },
+  option: {
+    id?: string;
+    click?: { stopPropagation: boolean; message: Message };
+    style?: CSSObject;
+  },
   children: ReadonlyMap<string, Element<Message>> | string
 ): Element<Message> => ({
   tag: "div",
   id: idOrUndefined(option.id),
   class: css(option.style),
-  click: option.click === undefined ? null : option.click,
+  click:
+    option.click === undefined
+      ? null
+      : {
+          stopPropagation: option.click.stopPropagation,
+          message: option.click.message,
+          ignoreNewTab: false,
+        },
   children: childrenFromStringOrElementMap(children),
 });
 
@@ -262,7 +274,7 @@ export const elementMap = <Input, Output>(
         tag: "div",
         id: element.id,
         class: element.class,
-        click: element.click === null ? null : func(element.click),
+        click: mapClickMessageData(element.click, func),
         children: childrenMap(element.children, func),
       };
     case "externalLink":
@@ -370,4 +382,18 @@ const childrenMap = <Input, Output>(
     case childrenTextTag:
       return children;
   }
+};
+
+const mapClickMessageData = <Input, Output>(
+  clickMessageData: ClickMessageData<Input> | null,
+  func: (input: Input) => Output
+): ClickMessageData<Output> | null => {
+  if (clickMessageData === null) {
+    return null;
+  }
+  return {
+    ignoreNewTab: clickMessageData.ignoreNewTab,
+    stopPropagation: clickMessageData.stopPropagation,
+    message: func(clickMessageData.message),
+  };
 };

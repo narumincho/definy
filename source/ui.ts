@@ -23,7 +23,7 @@ export interface BoxOption<Message> {
   /** 縦方向にスクロールするか */
   isScrollY?: boolean;
   /** クリックのイベント */
-  click?: Message;
+  click?: { stopPropagation: boolean; message: Message };
 }
 
 /** CSSの指定をできるだけしなくて済むように */

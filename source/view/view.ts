@@ -75,7 +75,7 @@ export interface Div<Message> {
   readonly tag: "div";
   readonly id: string;
   readonly class: string;
-  readonly click: Message | null;
+  readonly click: ClickMessageData<Message> | null;
   readonly children: Children<Message>;
 }
 
@@ -316,6 +316,7 @@ export const pathAppendKey = (path: Path, key: string): Path =>
 
 export interface ClickMessageData<Message> {
   ignoreNewTab: boolean;
+  stopPropagation: boolean;
   message: Message;
 }
 

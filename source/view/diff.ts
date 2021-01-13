@@ -462,7 +462,11 @@ const createMessageDataMapLoop = <Message>(
   switch (element.tag) {
     case "button":
       messageDataMap.set(path, {
-        onClick: { message: element.click, ignoreNewTab: false },
+        onClick: {
+          message: element.click,
+          ignoreNewTab: false,
+          stopPropagation: false,
+        },
         onChange: undefined,
         onInput: undefined,
       });
@@ -470,7 +474,11 @@ const createMessageDataMapLoop = <Message>(
       return;
     case "localLink":
       messageDataMap.set(path, {
-        onClick: { message: element.jumpMessage, ignoreNewTab: true },
+        onClick: {
+          message: element.jumpMessage,
+          ignoreNewTab: true,
+          stopPropagation: false,
+        },
         onChange: undefined,
         onInput: undefined,
       });
@@ -497,7 +505,7 @@ const createMessageDataMapLoop = <Message>(
     case "div":
       if (element.click !== null) {
         messageDataMap.set(path, {
-          onClick: { message: element.click, ignoreNewTab: false },
+          onClick: element.click,
           onChange: undefined,
           onInput: undefined,
         });

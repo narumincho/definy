@@ -29,7 +29,13 @@ export const productEditor = <Message>(
               color: item.isSelected ? "red" : "#000",
             },
             borderRadius: 8,
-            click: item.selectMessage,
+            click:
+              item.isSelected || item.selectMessage === undefined
+                ? undefined
+                : {
+                    message: item.selectMessage,
+                    stopPropagation: true,
+                  },
           },
           c([
             ["name", text(item.name)],

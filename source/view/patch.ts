@@ -644,6 +644,9 @@ export const createPatchState = <Message>(
         }
         mouseEvent.preventDefault();
       }
+      if (messageData.stopPropagation) {
+        mouseEvent.stopPropagation();
+      }
       messageHandler(messageData.message);
     },
     changeEventHandler: (path: string, event: Event): void => {
