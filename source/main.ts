@@ -13,7 +13,7 @@ const loop = () => {
   if (messageList.length === 0) {
     return;
   }
-  console.log("handle message!", messageList);
+  console.log("handle message!", [...messageList]);
   while (true) {
     const message = messageList.shift();
     if (message === undefined) {
