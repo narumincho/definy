@@ -2,7 +2,12 @@ import * as d from "definy-core/source/data";
 import { box, text } from "./ui";
 import { Element } from "./view/view";
 import { State } from "./messageAndState";
+import { button } from "./button";
 import { c } from "./view/viewUtil";
+
+export const update = (oldType: d.Type, newType: d.Type): d.Type => {
+  return newType;
+};
 
 export const view = (
   state: State,
@@ -60,6 +65,7 @@ export const detailView = (
   return box(
     { padding: 8, direction: "y" },
     c([
+      ["selected", view(state, scopeTypePartId, type)],
       [
         "typeParameterList",
         box(
@@ -72,9 +78,12 @@ export const detailView = (
             ...getTypePartLintInScope(
               state,
               scopeTypePartId
-            ).map((data): readonly [string, Element<never>] => [
+            ).map((data): readonly [string, Element<d.Type>] => [
               data.id,
-              typeView(data),
+              button<d.Type>(
+                { click: { typePartId: data.id, parameter: [] } },
+                c([["view", typeView(data)]])
+              ),
             ]),
           ])
         ),
@@ -87,11 +96,17 @@ export const detailView = (
             padding: 8,
           },
           c([
-            ["title", text("typeParameter")],
+            ["title", text("typeList")],
             ...getTypePartList(state).map((data): readonly [
               string,
-              Element<never>
-            ] => [data.id, typeView(data)]),
+              Element<d.Type>
+            ] => [
+              data.id,
+              button<d.Type>(
+                { click: { typePartId: data.id, parameter: [] } },
+                c([["view", typeView(data)]])
+              ),
+            ]),
           ])
         ),
       ],

@@ -63,7 +63,7 @@ export const update = <Item, ItemMessage>(
 
 export const view = <Item, ItemMessage>(
   name: string,
-  editor: (itemName: string, item: Item) => Element<ItemMessage>,
+  editor: (itemName: string, item: Item, index: number) => Element<ItemMessage>,
   maxCount: number,
   list: ReadonlyArray<Item>
 ): Element<Message<ItemMessage>> => {
@@ -88,7 +88,7 @@ export const view = <Item, ItemMessage>(
             [
               "item",
               elementMap(
-                editor(name + "-" + index.toString(), item),
+                editor(name + "-" + index.toString(), item, index),
                 (message) => messageItem(message, index)
               ),
             ],

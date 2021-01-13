@@ -21,6 +21,10 @@ export type Message =
   | {
       tag: "UpdateContent";
       newContentType: maybeEditor.Message<d.Type>;
+    }
+  | {
+      tag: "Select";
+      selection: Selection;
     };
 
 const setName = (name: string): Message => ({ tag: "SetName", newName: name });
@@ -34,6 +38,14 @@ const updateContent = (
   tag: "UpdateContent",
   newContentType,
 });
+
+type Selection =
+  | {
+      tag: "name";
+    }
+  | {
+      tag: "description";
+    };
 
 const patternListMaxCount = 256;
 
@@ -56,28 +68,32 @@ export const update = (pattern: d.Pattern, message: Message): d.Pattern => {
           pattern.parameter,
           message.newContentType,
           definyType.int32,
-          (newType) => newType
+          typeEditor.update
         ),
       };
   }
+  return pattern;
 };
 
 export const view = (
   state: State,
   typePartId: d.TypePartId,
   name: string,
-  pattern: d.Pattern
+  pattern: d.Pattern,
+  selection: Selection | undefined
 ): Element<Message> => {
   return productEditor([
     {
       name: "name",
       element: oneLineTextEditor({}, pattern.name, setName),
       isSelected: false,
+      selectMessage: { tag: "Select", selection: { tag: "name" } },
     },
     {
       name: "description",
       element: oneLineTextEditor({}, pattern.description, SetDescription),
       isSelected: false,
+      selectMessage: { tag: "Select", selection: { tag: "description" } },
     },
     {
       name: "parameter",
@@ -126,11 +142,47 @@ export const listView = (
   state: State,
   typePartId: d.TypePartId,
   name: string,
-  patternList: ReadonlyArray<d.Pattern>
+  patternList: ReadonlyArray<d.Pattern>,
+  selection: { index: number; selection: Selection } | undefined
 ): Element<listEditor.Message<Message>> =>
   listEditor.view(
     name,
-    (itemName, item) => view(state, typePartId, itemName, item),
+    (itemName, item, index) =>
+      view(
+        state,
+        typePartId,
+        itemName,
+        item,
+        index === selection?.index ? selection.selection : undefined
+      ),
     patternListMaxCount,
     patternList
   );
+
+export const updateSelection = (
+  pattern: d.Pattern | undefined,
+  selection: Selection | undefined,
+  message: Message
+): Selection | undefined => {
+  switch (message.tag) {
+    case "Select":
+      focusInput(message.selection);
+      return message.selection;
+  }
+  return selection;
+};
+
+const focusInput = (selection: Selection): void => {
+  requestAnimationFrame(() => {
+    switch (selection.tag) {
+      case "name":
+        document.getElementById(nameInputEditorId)?.focus();
+        return;
+      case "description":
+        document.getElementById(descriptionInputEditorId)?.focus();
+    }
+  });
+};
+
+export const nameInputEditorId = "name-input";
+export const descriptionInputEditorId = "description-input";

@@ -285,13 +285,7 @@ const typePartEditorLoaded = (
     },
     {
       name: "body",
-      element: div<Message>(
-        {},
-        c([
-          ["tag", bodyTagEditor(typePart.body)],
-          ["content", bodyContentEditor(state, typePartId, typePart.body)],
-        ])
-      ),
+      element: bodyEditor(state, typePartId, typePart.body),
       isSelected: selection?.tag === "body",
       selectMessage: {
         tag: "Select",
@@ -321,6 +315,20 @@ const attributeEditor = (
   );
 };
 
+const bodyEditor = (
+  state: a.State,
+  typePartId: d.TypePartId,
+  typePartBody: d.TypePartBody
+) => {
+  return div<Message>(
+    {},
+    c([
+      ["tag", bodyTagEditor(typePartBody)],
+      ["content", bodyContentEditor(state, typePartId, typePartBody)],
+    ])
+  );
+};
+
 const bodyTagEditor = (typePartBody: d.TypePartBody): Element<Message> => {
   return elementMap(
     tagEditor(["Sum", "Product", "Kernel"], typePartBody._, "typePartBody"),
@@ -342,7 +350,8 @@ const bodyContentEditor = (
           state,
           typePartId,
           "patternList",
-          typePartBody.patternList
+          typePartBody.patternList,
+          undefined
         ),
         (patternListMessage): Message => ({
           tag: "PatternList",
@@ -417,7 +426,13 @@ const loadedDetailView = (
   typePart: d.TypePart
 ): Element<Message> => {
   if (selection === undefined) {
-    return view(state, typePartId, selection);
+    return box(
+      { padding: 8, direction: "y" },
+      c([
+        ["label", text("型パーツ. データの構造を定義する")],
+        ["editor", detailTypePartView(state, typePartId)],
+      ])
+    );
   }
   switch (selection.tag) {
     case "name":
@@ -493,7 +508,7 @@ const loadedDetailView = (
             "label",
             text("型パーツの本体. 型パーツをどういう構造で表現するか記述する"),
           ],
-          ["editor", text("body!")],
+          ["editor", bodyEditor(state, typePartId, typePart.body)],
         ])
       );
   }
@@ -501,3 +516,78 @@ const loadedDetailView = (
 
 const nameInputEditorId = "typePart-name";
 const descriptionInputEditorId = "typePart-description-";
+
+const detailTypePartView = (
+  state: a.State,
+  typePartId: d.TypePartId
+): Element<Message> => {
+  const typePartResource = state.typePartMap.get(typePartId);
+  if (typePartResource === undefined) {
+    return div({}, "???");
+  }
+  switch (typePartResource._) {
+    case "Deleted":
+      return div({}, "削除された型パーツ");
+    case "Requesting":
+      return div({}, "取得中");
+    case "Unknown":
+      return div({}, "取得に失敗した型パーツ");
+    case "Loaded":
+      return detailTypePartEditorLoaded(
+        state,
+        typePartId,
+        typePartResource.dataWithTime.data
+      );
+  }
+};
+
+const detailTypePartEditorLoaded = (
+  state: a.State,
+  typePartId: d.TypePartId,
+  typePart: d.TypePart
+): Element<Message> => {
+  return productEditor<Message>([
+    {
+      name: "name",
+      element: oneLineTextEditor(
+        { id: nameInputEditorId },
+        typePart.name,
+        changeName
+      ),
+      isSelected: false,
+    },
+    {
+      name: "description",
+      element: oneLineTextEditor(
+        { id: descriptionInputEditorId },
+        typePart.description,
+        changeDescription
+      ),
+      isSelected: false,
+    },
+    {
+      name: "attribute",
+      element: attributeMaybeEditor(typePart.attribute),
+      isSelected: false,
+    },
+    {
+      name: "parameter",
+      element: elementMap<
+        listEditor.Message<typeParameterEditor.Message>,
+        Message
+      >(
+        typeParameterEditor.detailListView(
+          "typePartParameter",
+          typePart.typeParameterList
+        ),
+        updateParameter
+      ),
+      isSelected: false,
+    },
+    {
+      name: "body",
+      element: bodyEditor(state, typePartId, typePart.body),
+      isSelected: false,
+    },
+  ]);
+};
