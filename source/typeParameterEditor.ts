@@ -1,7 +1,7 @@
 import * as d from "definy-core/source/data";
 import * as listEditor from "./listEditor";
 import * as productEditor from "./productEditor";
-import { box, text } from "./ui";
+import { SelectBoxSelection, box, selectText, text } from "./ui";
 import { Element } from "./view/view";
 import { button } from "./button";
 import { c } from "./view/viewUtil";
@@ -35,35 +35,44 @@ export const itemView = (
   typeParameter: d.TypeParameter,
   selection: ItemSelection | undefined
 ): Element<ItemSelection> => {
-  return box(
+  return productEditor.productEditor<ItemSelection>(
     {
-      padding: 0,
-      direction: "y",
-      border: {
-        color: selection?.tag === "Self" ? "red" : "#000",
-        width: 2,
+      selectBoxOption: {
+        selectMessage: { tag: "Self" },
+        selection: selectionToSelectBoxSelection(selection),
       },
     },
-    c([
-      [
-        "item",
-        productEditor.productEditor([
-          {
-            name: "name",
-            element: text(typeParameter.name),
-            isSelected: selection?.tag === "name",
-            selectMessage: { tag: "name" },
-          },
-          {
-            name: "typePartId",
-            element: text(typeParameter.typePartId),
-            isSelected: selection?.tag === "typePartId",
-            selectMessage: { tag: "typePartId" },
-          },
-        ]),
-      ],
-    ])
+    [
+      {
+        name: "name",
+        element: selectText(
+          selection?.tag === "name",
+          { tag: "name" },
+          typeParameter.name
+        ),
+      },
+      {
+        name: "typePartId",
+        element: selectText(
+          selection?.tag === "typePartId",
+          { tag: "typePartId" },
+          typeParameter.typePartId
+        ),
+      },
+    ]
   );
+};
+
+const selectionToSelectBoxSelection = (
+  selection: ItemSelection | undefined
+): SelectBoxSelection => {
+  if (selection === undefined) {
+    return "notSelected";
+  }
+  if (selection.tag === "Self") {
+    return "selected";
+  }
+  return "innerSelected";
 };
 
 export const listView = (

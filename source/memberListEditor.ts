@@ -2,7 +2,7 @@ import * as d from "definy-core/source/data";
 import * as definyType from "./definyType";
 import * as listEditor from "./listEditor";
 import * as typeEditor from "./typeEditor";
-import { box, text } from "./ui";
+import { SelectBoxSelection, box, selectText } from "./ui";
 import { c, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { State } from "./messageAndState";
@@ -37,7 +37,7 @@ const setDescription = (newDescription: string): ItemMessage => ({
   newDescription,
 });
 
-export type Selection =
+export type ItemSelection =
   | {
       tag: "self";
     }
@@ -52,7 +52,7 @@ export type Selection =
       typeSelection: typeEditor.Selection;
     };
 
-export type ListSelection = listEditor.Selection<Selection>;
+export type ListSelection = listEditor.Selection<ItemSelection>;
 
 export const update = (member: d.Member, message: ItemMessage): d.Member => {
   switch (message.tag) {
@@ -94,8 +94,8 @@ export const itemView = (
   state: State,
   typePartId: d.TypePartId,
   member: d.Member,
-  selection: Selection | undefined
-): Element<Selection> => {
+  selection: ItemSelection | undefined
+): Element<ItemSelection> => {
   return box(
     {
       padding: 0,
@@ -108,43 +108,66 @@ export const itemView = (
     c([
       [
         "main",
-        productEditor([
+        productEditor(
           {
-            name: "name",
-            element: text(member.name),
-            isSelected: selection?.tag === "name",
-            selectMessage: { tag: "name" },
+            selectBoxOption: {
+              selectMessage: { tag: "self" },
+              selection: selectionToSelectBoxSelection(selection),
+            },
           },
-          {
-            name: "description",
-            element: text(member.description),
-            isSelected: selection?.tag === "description",
-            selectMessage: { tag: "description" },
-          },
-          {
-            name: "type",
-            element: elementMap(
-              typeEditor.view(state, typePartId, member.type),
-              (typeSelection: typeEditor.Selection): Selection => ({
-                tag: "type",
-                typeSelection,
-              })
-            ),
-            isSelected: false,
-          },
-        ]),
+          [
+            {
+              name: "name",
+              element: selectText(
+                selection?.tag === "name",
+                { tag: "name" },
+                member.name
+              ),
+            },
+            {
+              name: "description",
+              element: selectText(
+                selection?.tag === "description",
+                { tag: "description" },
+                member.description
+              ),
+            },
+            {
+              name: "type",
+              element: elementMap(
+                typeEditor.view(state, typePartId, member.type),
+                (typeSelection: typeEditor.Selection): ItemSelection => ({
+                  tag: "type",
+                  typeSelection,
+                })
+              ),
+            },
+          ]
+        ),
       ],
     ])
   );
+};
+
+const selectionToSelectBoxSelection = (
+  selection: ItemSelection | undefined
+): SelectBoxSelection => {
+  if (selection === undefined) {
+    return "notSelected";
+  }
+  if (selection.tag === "self") {
+    return "selected";
+  }
+  return "innerSelected";
 };
 
 export const listView = (
   state: State,
   typePartId: d.TypePartId,
   list: ReadonlyArray<d.Member>,
-  selection: listEditor.Selection<Selection> | undefined
-): Element<listEditor.Selection<Selection>> =>
-  listEditor.view<d.Member, Selection>(
+  selection: listEditor.Selection<ItemSelection> | undefined
+): Element<listEditor.Selection<ItemSelection>> =>
+  listEditor.view<d.Member, ItemSelection>(
     (item, itemSelection) => itemView(state, typePartId, item, itemSelection),
     list,
     selection
@@ -155,19 +178,17 @@ export const itemEditor = (
   typePartId: d.TypePartId,
   name: string,
   member: d.Member,
-  selection: Selection | undefined
+  selection: ItemSelection | undefined
 ): Element<ItemMessage> => {
   if (selection === undefined || selection.tag === "self") {
-    return productEditor([
+    return productEditor({}, [
       {
         name: "name",
         element: oneLineTextEditor({}, member.name, setName),
-        isSelected: false,
       },
       {
         name: "description",
         element: oneLineTextEditor({}, member.description, setDescription),
-        isSelected: false,
       },
       {
         name: "type",
@@ -178,7 +199,6 @@ export const itemEditor = (
             newType,
           })
         ),
-        isSelected: false,
       },
     ]);
   }
@@ -202,7 +222,7 @@ export const editor = (
   state: State,
   typePartId: d.TypePartId,
   list: ReadonlyArray<d.Member>,
-  selection: listEditor.Selection<Selection> | undefined
+  selection: listEditor.Selection<ItemSelection> | undefined
 ): Element<ListMessage> => {
   return listEditor.editor(
     name,

@@ -1,47 +1,53 @@
-import { box, text } from "./ui";
+import { SelectBoxSelection, box, selectBox, text } from "./ui";
 import { Element } from "./view/view";
 import { c } from "./view/viewUtil";
 
 export interface ProductItem<Message> {
   readonly name: string;
   readonly element: Element<Message>;
-  readonly isSelected: boolean;
-  readonly selectMessage?: Message;
 }
 
 export const productEditor = <Message>(
+  option: {
+    selectBoxOption?: {
+      selection: SelectBoxSelection;
+      selectMessage: Message;
+    };
+  },
   itemList: ReadonlyArray<ProductItem<Message>>
-): Element<Message> =>
-  box(
+): Element<Message> => {
+  const children = new Map(
+    itemList.map((item): readonly [string, Element<Message>] => [
+      item.name,
+      box(
+        {
+          padding: 4,
+          direction: "y",
+          borderRadius: 8,
+        },
+        c([
+          ["name", text(item.name)],
+          ["value", item.element],
+        ])
+      ),
+    ])
+  );
+  if (option.selectBoxOption === undefined) {
+    return box(
+      {
+        direction: "y",
+        padding: 8,
+      },
+      children
+    );
+  }
+  return selectBox(
     {
       direction: "y",
       padding: 8,
+      selectMessage: option.selectBoxOption.selectMessage,
+      selection: option.selectBoxOption.selection,
     },
-    new Map(
-      itemList.map((item): readonly [string, Element<Message>] => [
-        item.name,
-        box(
-          {
-            padding: 4,
-            direction: "y",
-            border: {
-              width: 2,
-              color: item.isSelected ? "red" : "#000",
-            },
-            borderRadius: 8,
-            click:
-              item.isSelected || item.selectMessage === undefined
-                ? undefined
-                : {
-                    message: item.selectMessage,
-                    stopPropagation: true,
-                  },
-          },
-          c([
-            ["name", text(item.name)],
-            ["value", item.element],
-          ])
-        ),
-      ])
-    )
+    children
   );
+};

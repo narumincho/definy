@@ -83,7 +83,7 @@ export const editor = (
   type: d.Type
 ): Element<d.Type> => {
   const typeData = getTypePartByState(state, type.typePartId, scopeTypePartId);
-  return productEditor([
+  return productEditor({}, [
     {
       name: "選ばれている型",
       element: box(
@@ -93,11 +93,11 @@ export const editor = (
         },
         c([["main", text(typeData.name)]])
       ),
-      isSelected: false,
     },
     {
       name: "paramter",
       element: productEditor(
+        {},
         typeData.typeParameterNameList.map((typeParameterName, index) => ({
           name: typeParameterName,
           element:
@@ -107,12 +107,10 @@ export const editor = (
           isSelected: false,
         }))
       ),
-      isSelected: false,
     },
     {
       name: "選択肢",
       element: typeMenu(state, scopeTypePartId),
-      isSelected: false,
     },
   ]);
 };
@@ -121,7 +119,7 @@ const typeMenu = (
   state: State,
   scopeTypePartId: d.TypePartId
 ): Element<d.Type> => {
-  return productEditor([
+  return productEditor({}, [
     {
       name: "型パラメータから",
       element: box(
@@ -129,21 +127,19 @@ const typeMenu = (
           padding: 8,
           direction: "y",
         },
-        c([
-          ["title", text("typeParameter")],
-          ...getTypePartLintInScope(
-            state,
-            scopeTypePartId
-          ).map((data): readonly [string, Element<d.Type>] => [
+        c(
+          getTypePartLintInScope(state, scopeTypePartId).map((data): readonly [
+            string,
+            Element<d.Type>
+          ] => [
             data.id,
             button<d.Type>(
               { click: { typePartId: data.id, parameter: [] } },
               c([["view", typeView(data)]])
             ),
-          ]),
-        ])
+          ])
+        )
       ),
-      isSelected: false,
     },
     {
       name: "同じプロジェクトから",
@@ -173,7 +169,6 @@ const typeMenu = (
           ]),
         ])
       ),
-      isSelected: false,
     },
   ]);
 };

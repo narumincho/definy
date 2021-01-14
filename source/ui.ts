@@ -79,6 +79,52 @@ export const text = <Message>(string: string): Element<Message> =>
 
 export type Theme = "Gray" | "Black" | "Active";
 
+export type SelectBoxSelection = "selected" | "innerSelected" | "notSelected";
+
+export const selectBox = <Message>(
+  option: {
+    direction: "x" | "y";
+    padding: number;
+    selection: SelectBoxSelection;
+    selectMessage: Message;
+  },
+  children: ReadonlyMap<string, Element<Message>>
+): Element<Message> => {
+  return box(
+    {
+      padding: 0,
+      direction: option.direction,
+      click:
+        option.selection === "notSelected"
+          ? {
+              message: option.selectMessage,
+              stopPropagation: true,
+            }
+          : undefined,
+      border: {
+        width: 2,
+        color: option.selection === "selected" ? "red" : "#000",
+      },
+    },
+    children
+  );
+};
+
+export const selectText = <Message>(
+  isSelected: boolean,
+  selectMessage: Message,
+  string: string
+): Element<Message> => {
+  return selectBox(
+    {
+      direction: "x",
+      padding: 0,
+      selectMessage,
+      selection: isSelected ? "selected" : "notSelected",
+    },
+    c([["text", text(string)]])
+  );
+};
 /**
  * GitHubのアイコン
  */

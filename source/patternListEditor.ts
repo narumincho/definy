@@ -3,12 +3,12 @@ import * as definyType from "./definyType";
 import * as listEditor from "./listEditor";
 import * as maybeEditor from "./maybeEditor";
 import * as typeEditor from "./typeEditor";
+import { SelectBoxSelection, selectBox, text } from "./ui";
+import { c, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { State } from "./messageAndState";
-import { elementMap } from "./view/viewUtil";
 import { oneLineTextEditor } from "./oneLineTextInput";
 import { productEditor } from "./productEditor";
-import { text } from "./ui";
 
 export type Message =
   | {
@@ -88,32 +88,64 @@ export const itemView = (
   pattern: d.Pattern,
   selection: ItemSelection | undefined
 ): Element<ItemSelection> => {
-  return productEditor<ItemSelection>([
+  return productEditor<ItemSelection>(
     {
-      name: "name",
-      element: text(pattern.name),
-      isSelected: selection?.tag === "name",
-      selectMessage: { tag: "name" },
+      selectBoxOption: {
+        selectMessage: { tag: "self" },
+        selection: selectionToSelectBoxSelection(selection),
+      },
     },
-    {
-      name: "description",
-      element: text(pattern.description),
-      isSelected: selection?.tag === "description",
-      selectMessage: { tag: "description" },
-    },
-    {
-      name: "parameter",
-      element: parameterView(
-        state,
-        typePartId,
-        pattern.parameter,
-        selection?.tag === "typeParameter"
-          ? selection.typeParameterSelection
-          : undefined
-      ),
-      isSelected: false,
-    },
-  ]);
+    [
+      {
+        name: "name",
+        element: selectBox(
+          {
+            direction: "x",
+            padding: 0,
+            selectMessage: { tag: "name" },
+            selection: selection?.tag === "name" ? "selected" : "notSelected",
+          },
+          c([["text", text(pattern.name)]])
+        ),
+      },
+      {
+        name: "description",
+        element: selectBox(
+          {
+            direction: "x",
+            padding: 0,
+            selectMessage: { tag: "description" },
+            selection:
+              selection?.tag === "description" ? "selected" : "notSelected",
+          },
+          c([["text", text(pattern.description)]])
+        ),
+      },
+      {
+        name: "parameter",
+        element: parameterView(
+          state,
+          typePartId,
+          pattern.parameter,
+          selection?.tag === "typeParameter"
+            ? selection.typeParameterSelection
+            : undefined
+        ),
+      },
+    ]
+  );
+};
+
+const selectionToSelectBoxSelection = (
+  selection: ItemSelection | undefined
+): SelectBoxSelection => {
+  if (selection === undefined) {
+    return "notSelected";
+  }
+  if (selection.tag === "self") {
+    return "selected";
+  }
+  return "innerSelected";
 };
 
 const parameterView = (
@@ -188,16 +220,14 @@ export const itemEditor = (
   name: string,
   selection: ItemSelection | undefined
 ): Element<Message> => {
-  return productEditor([
+  return productEditor({}, [
     {
       name: "name",
       element: oneLineTextEditor({}, pattern.name, setName),
-      isSelected: false,
     },
     {
       name: "description",
       element: oneLineTextEditor({}, pattern.description, SetDescription),
-      isSelected: false,
     },
     {
       name: "parameter",
@@ -210,7 +240,6 @@ export const itemEditor = (
           ? selection.typeParameterSelection
           : undefined
       ),
-      isSelected: false,
     },
   ]);
 };

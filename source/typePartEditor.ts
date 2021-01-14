@@ -5,7 +5,8 @@ import * as maybeEditor from "./maybeEditor";
 import * as memberListEditor from "./memberListEditor";
 import * as patternListEditor from "./patternListEditor";
 import * as typeParameterEditor from "./typeParameterEditor";
-import { box, text } from "./ui";
+import * as typePartBodyEditor from "./typePartBodyEditor";
+import { box, selectBox, selectText, text } from "./ui";
 import { c, div, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { multiLineTextEditor } from "./multilineTextInput";
@@ -31,20 +32,8 @@ export type Message =
       readonly message: listEditor.Message<typeParameterEditor.Message>;
     }
   | {
-      readonly tag: "ChangeBodyTag";
-      readonly newTag: a.TypePartBodyTag;
-    }
-  | {
-      readonly tag: "ChangeBodyKernel";
-      readonly newKernel: d.TypePartBodyKernel;
-    }
-  | {
-      readonly tag: "PatternList";
-      readonly patternListMessage: listEditor.Message<patternListEditor.Message>;
-    }
-  | {
-      readonly tag: "MemberList";
-      readonly memberListMessage: listEditor.Message<memberListEditor.ItemMessage>;
+      readonly tag: "ChangeBody";
+      readonly bodyMessage: typePartBodyEditor.Message;
     }
   | {
       readonly tag: "Select";
@@ -68,21 +57,7 @@ export type Selection =
     }
   | {
       tag: "body";
-      content: BodySelection;
-    };
-
-type BodySelection =
-  | { tag: "self" }
-  | {
-      tag: "sum";
-      content: patternListEditor.ListSelection;
-    }
-  | {
-      tag: "product";
-      content: memberListEditor.ListSelection;
-    }
-  | {
-      tag: "kernel";
+      content: typePartBodyEditor.Selection;
     };
 
 const changeName = (newName: string): Message => ({
@@ -145,41 +120,10 @@ export const update = (typePart: d.TypePart, message: Message): d.TypePart => {
           message.message
         ),
       };
-    case "ChangeBodyTag":
+    case "ChangeBody":
       return {
         ...typePart,
-        body: typePartBodyTagToInitTypePartBody(message.newTag),
-      };
-    case "ChangeBodyKernel":
-      return {
-        ...typePart,
-        body: d.TypePartBody.Kernel(message.newKernel),
-      };
-    case "PatternList":
-      if (typePart.body._ !== "Sum") {
-        return typePart;
-      }
-      return {
-        ...typePart,
-        body: d.TypePartBody.Sum(
-          patternListEditor.listUpdate(
-            typePart.body.patternList,
-            message.patternListMessage
-          )
-        ),
-      };
-    case "MemberList":
-      if (typePart.body._ !== "Product") {
-        return typePart;
-      }
-      return {
-        ...typePart,
-        body: d.TypePartBody.Product(
-          memberListEditor.listUpdate(
-            typePart.body.memberList,
-            message.memberListMessage
-          )
-        ),
+        body: typePartBodyEditor.update(typePart.body, message.bodyMessage),
       };
   }
   return typePart;
@@ -210,19 +154,6 @@ const focusInput = (selection: Selection): void => {
   });
 };
 
-const typePartBodyTagToInitTypePartBody = (
-  typePartBodyTag: a.TypePartBodyTag
-): d.TypePartBody => {
-  switch (typePartBodyTag) {
-    case "Product":
-      return d.TypePartBody.Product([]);
-    case "Sum":
-      return d.TypePartBody.Sum([]);
-    case "Kernel":
-      return d.TypePartBody.Kernel(d.TypePartBodyKernel.String);
-  }
-};
-
 export const view = (
   state: a.State,
   typePartId: d.TypePartId,
@@ -232,6 +163,7 @@ export const view = (
   if (typePartResource === undefined) {
     return div({}, "???");
   }
+  const selectionText = JSON.stringify(selection);
   switch (typePartResource._) {
     case "Deleted":
       return div({}, "削除された型パーツ");
@@ -240,11 +172,30 @@ export const view = (
     case "Unknown":
       return div({}, "取得に失敗した型パーツ");
     case "Loaded":
-      return typePartViewLoaded(
-        state,
-        typePartId,
-        typePartResource.dataWithTime.data,
-        selection
+      return box(
+        {
+          padding: 0,
+          direction: "y",
+        },
+        c([
+          [
+            "selection",
+            text(
+              typeof selectionText === "string"
+                ? selectionText
+                : "肩パーツ全体を選択している?"
+            ),
+          ],
+          [
+            "view",
+            typePartViewLoaded(
+              state,
+              typePartId,
+              typePartResource.dataWithTime.data,
+              selection
+            ),
+          ],
+        ])
       );
   }
 };
@@ -255,28 +206,32 @@ const typePartViewLoaded = (
   typePart: d.TypePart,
   selection: Selection | undefined
 ): Element<Message> => {
-  return productEditor<Message>([
+  return productEditor<Message>({}, [
     {
       name: "name",
-      element: text(typePart.name),
-      isSelected: selection?.tag === "name",
-      selectMessage: {
-        tag: "Select",
-        selection: {
-          tag: "name",
+      element: selectText(
+        selection?.tag === "name",
+        {
+          tag: "Select",
+          selection: {
+            tag: "name",
+          },
         },
-      },
+        typePart.name
+      ),
     },
     {
       name: "description",
-      element: text(typePart.description),
-      isSelected: selection?.tag === "description",
-      selectMessage: {
-        tag: "Select",
-        selection: {
-          tag: "description",
+      element: selectText(
+        selection?.tag === "description",
+        {
+          tag: "Select",
+          selection: {
+            tag: "description",
+          },
         },
-      },
+        typePart.description
+      ),
     },
     {
       name: "attribute",
@@ -293,14 +248,6 @@ const typePartViewLoaded = (
           },
         })
       ),
-      isSelected: selection?.tag === "attribute",
-      selectMessage: {
-        tag: "Select",
-        selection: {
-          tag: "attribute",
-          content: { tag: "self" },
-        },
-      },
     },
     {
       name: "parameter",
@@ -311,19 +258,16 @@ const typePartViewLoaded = (
         ),
         selectParameter
       ),
-      isSelected: selection?.tag === "parameter",
-      selectMessage: {
-        tag: "Select",
-        selection: {
-          tag: "parameter",
-          content: { tag: "Self" },
-        },
-      },
     },
     {
       name: "body",
       element: elementMap(
-        bodyView(state, typePartId, typePart.body),
+        typePartBodyEditor.view(
+          state,
+          typePartId,
+          typePart.body,
+          selection?.tag === "body" ? selection.content : undefined
+        ),
         (bodySelection) => ({
           tag: "Select",
           selection: {
@@ -332,14 +276,6 @@ const typePartViewLoaded = (
           },
         })
       ),
-      isSelected: selection?.tag === "body",
-      selectMessage: {
-        tag: "Select",
-        selection: {
-          tag: "body",
-          content: { tag: "self" },
-        },
-      },
     },
   ]);
 };
@@ -378,147 +314,6 @@ const attributeEditor = (
     "typePartAttribute"
   );
 };
-
-const bodyView = (
-  state: a.State,
-  typePartId: d.TypePartId,
-  typePartBody: d.TypePartBody
-): Element<BodySelection> => {
-  return div<BodySelection>(
-    {},
-    c([
-      ["tag", text(typePartBody._)],
-      ["content", bodyContentView(state, typePartId, typePartBody)],
-    ])
-  );
-};
-
-const bodyTagEditor = (typePartBody: d.TypePartBody): Element<Message> => {
-  return elementMap(
-    tagEditor(["Sum", "Product", "Kernel"], typePartBody._, "typePartBody"),
-    (tagEditorMessage): Message => {
-      return { tag: "ChangeBodyTag", newTag: tagEditorMessage };
-    }
-  );
-};
-
-const bodyContentView = (
-  state: a.State,
-  typePartId: d.TypePartId,
-  typePartBody: d.TypePartBody
-): Element<BodySelection> => {
-  switch (typePartBody._) {
-    case "Sum":
-      return elementMap(
-        patternListEditor.listView(
-          state,
-          typePartId,
-          typePartBody.patternList,
-          undefined
-        ),
-        (content): BodySelection => ({
-          tag: "sum",
-          content,
-        })
-      );
-    case "Product":
-      return elementMap(
-        memberListEditor.listView(
-          state,
-          typePartId,
-          typePartBody.memberList,
-          undefined
-        ),
-        (content): BodySelection => ({
-          tag: "product",
-          content,
-        })
-      );
-    case "Kernel":
-      return box<BodySelection>(
-        {
-          padding: 0,
-          direction: "y",
-          click: {
-            message: { tag: "kernel" },
-            stopPropagation: true,
-          },
-        },
-        c([["text", text(typePartBody.typePartBodyKernel)]])
-      );
-  }
-};
-
-const bodyContentEditor = (
-  state: a.State,
-  typePartId: d.TypePartId,
-  typePartBody: d.TypePartBody
-): Element<Message> => {
-  switch (typePartBody._) {
-    case "Sum":
-      return elementMap(
-        patternListEditor.editor(
-          state,
-          typePartId,
-          typePartBody.patternList,
-          "patternList",
-          undefined
-        ),
-        (patternListMessage): Message => ({
-          tag: "PatternList",
-          patternListMessage,
-        })
-      );
-    case "Product":
-      return elementMap(
-        memberListEditor.editor(
-          "memberList",
-          state,
-          typePartId,
-          typePartBody.memberList,
-          undefined
-        ),
-        (memberListMessage): Message => ({
-          tag: "MemberList",
-          memberListMessage,
-        })
-      );
-    case "Kernel":
-      return elementMap(
-        tagEditor(
-          KernelEditorList,
-          typePartBody.typePartBodyKernel,
-          "typePartBodyKernel"
-        ),
-        (newKernel): Message => ({ tag: "ChangeBodyKernel", newKernel })
-      );
-  }
-};
-
-const bodyDetailEditor = (
-  state: a.State,
-  typePartId: d.TypePartId,
-  typePartBody: d.TypePartBody,
-  selection: BodySelection | undefined
-) => {
-  return div<Message>(
-    {},
-    c([
-      ["tag", bodyTagEditor(typePartBody)],
-      ["content", bodyContentEditor(state, typePartId, typePartBody)],
-    ])
-  );
-};
-
-export const KernelEditorList = [
-  "Function",
-  "Int32",
-  "String",
-  "Binary",
-  "Id",
-  "Token",
-  "List",
-] as const;
 
 export const editor = (
   state: a.State,
@@ -641,11 +436,14 @@ const loadedEditor = (
           ],
           [
             "editor",
-            bodyDetailEditor(
-              state,
-              typePartId,
-              typePart.body,
-              selection.content
+            elementMap(
+              typePartBodyEditor.editor(
+                state,
+                typePartId,
+                typePart.body,
+                selection.content
+              ),
+              (bodyMessage): Message => ({ tag: "ChangeBody", bodyMessage })
             ),
           ],
         ])
@@ -661,7 +459,7 @@ const typePartEditor = (
   typePartId: d.TypePartId,
   typePart: d.TypePart
 ): Element<Message> => {
-  return productEditor<Message>([
+  return productEditor<Message>({}, [
     {
       name: "name",
       element: oneLineTextEditor(
@@ -669,7 +467,6 @@ const typePartEditor = (
         typePart.name,
         changeName
       ),
-      isSelected: false,
     },
     {
       name: "description",
@@ -678,12 +475,10 @@ const typePartEditor = (
         typePart.description,
         changeDescription
       ),
-      isSelected: false,
     },
     {
       name: "attribute",
       element: attributeMaybeEditor(typePart.attribute, undefined),
-      isSelected: false,
     },
     {
       name: "parameter",
@@ -698,12 +493,13 @@ const typePartEditor = (
         ),
         updateParameter
       ),
-      isSelected: false,
     },
     {
       name: "body",
-      element: bodyDetailEditor(state, typePartId, typePart.body, undefined),
-      isSelected: false,
+      element: elementMap(
+        typePartBodyEditor.editor(state, typePartId, typePart.body, undefined),
+        (bodyMessage): Message => ({ tag: "ChangeBody", bodyMessage })
+      ),
     },
   ]);
 };
