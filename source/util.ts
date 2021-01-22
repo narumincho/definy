@@ -80,3 +80,13 @@ export const log = <T>(data: T, ...hint: ReadonlyArray<unknown>): T => {
   console.log(data, hint);
   return data;
 };
+
+export const listReplaceAt = <Item>(
+  list: ReadonlyArray<Item>,
+  index: number,
+  newItem: Item
+): ReadonlyArray<Item> => [
+  ...list.slice(0, index),
+  newItem,
+  ...list.slice(index + 1),
+];

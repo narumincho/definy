@@ -1,10 +1,11 @@
 import * as d from "definy-core/source/data";
 import * as definyType from "./definyType";
+import * as util from "./util";
 import { box, text } from "./ui";
+import { c, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { State } from "./messageAndState";
 import { button } from "./button";
-import { c } from "./view/viewUtil";
 import { productEditor } from "./productEditor";
 
 /** TODO */
@@ -43,16 +44,14 @@ const getTypePartByState = (
 ): {
   name: string;
   description: string;
-  typeParameterNameList: ReadonlyArray<string>;
+  typeParameterList: ReadonlyArray<d.TypeParameter>;
 } => {
   const resource = state.typePartMap.get(typePartId);
   if (resource !== undefined && resource._ === "Loaded") {
     return {
       name: resource.dataWithTime.data.name,
       description: resource.dataWithTime.data.description,
-      typeParameterNameList: resource.dataWithTime.data.typeParameterList.map(
-        (parameter) => parameter.name
-      ),
+      typeParameterList: resource.dataWithTime.data.typeParameterList,
     };
   }
   const scopeTypePart = state.typePartMap.get(scopeTypePartId);
@@ -66,14 +65,14 @@ const getTypePartByState = (
       return {
         name: targetedTypeParameter.name,
         description: scopeTypePart.dataWithTime.data.name + " の型パラメータ",
-        typeParameterNameList: [],
+        typeParameterList: [],
       };
     }
   }
   return {
     name: "???",
     description: "???",
-    typeParameterNameList: [],
+    typeParameterList: [],
   };
 };
 
@@ -94,20 +93,36 @@ export const editor = (
         c([["main", text(typeData.name)]])
       ),
     },
-    {
-      name: "paramter",
-      element: productEditor(
-        {},
-        typeData.typeParameterNameList.map((typeParameterName, index) => ({
-          name: typeParameterName,
-          element:
-            type.parameter[index] === undefined
-              ? typeMenu(state, scopeTypePartId)
-              : editor(state, scopeTypePartId, type.parameter[index]),
-          isSelected: false,
-        }))
-      ),
-    },
+    ...(typeData.typeParameterList.length === 0
+      ? []
+      : [
+          {
+            name: "paramter",
+            element: productEditor(
+              {},
+              typeData.typeParameterList.map((typeParameterName, index) => ({
+                name: typeParameterName.name,
+                element: elementMap(
+                  type.parameter[index] === undefined
+                    ? typeMenu(state, scopeTypePartId)
+                    : editor(state, scopeTypePartId, type.parameter[index]),
+                  (parameterType): d.Type => ({
+                    typePartId: type.typePartId,
+                    parameter: util.listReplaceAt<d.Type>(
+                      type.parameter,
+                      index,
+                      {
+                        typePartId: parameterType.typePartId,
+                        parameter: [],
+                      }
+                    ),
+                  })
+                ),
+                isSelected: false,
+              }))
+            ),
+          },
+        ]),
     {
       name: "選択肢",
       element: typeMenu(state, scopeTypePartId),
