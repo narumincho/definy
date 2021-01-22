@@ -1,7 +1,7 @@
 import * as d from "definy-core/source/data";
 import * as definyType from "./definyType";
 import * as util from "./util";
-import { box, text } from "./ui";
+import { SelectBoxSelection, box, selectBox, text } from "./ui";
 import { c, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { State } from "./messageAndState";
@@ -9,7 +9,15 @@ import { button } from "./button";
 import { productEditor } from "./productEditor";
 
 /** TODO */
-export type Selection = never;
+export type Selection =
+  | {
+      tag: "self";
+    }
+  | {
+      tag: "parameter";
+      index: number;
+      selection: Selection;
+    };
 
 export const update = (oldType: d.Type, newType: d.Type): d.Type => {
   return newType;
@@ -18,23 +26,58 @@ export const update = (oldType: d.Type, newType: d.Type): d.Type => {
 export const view = (
   state: State,
   scopeTypePartId: d.TypePartId,
-  type: d.Type
+  type: d.Type,
+  selection: Selection | undefined
 ): Element<Selection> => {
-  return box(
-    { padding: 2, direction: "x", gap: 4 },
+  return selectBox(
+    {
+      padding: 2,
+      direction: "x",
+      selectMessage: { tag: "self" },
+      selection: selectionToSelectBoxSelection(selection),
+    },
     c([
       [
         "typePartId",
         text(getTypePartByState(state, type.typePartId, scopeTypePartId).name),
       ],
-      ...type.parameter.map((parameter): readonly [
+      ...type.parameter.map((parameter, index): readonly [
         string,
         Element<Selection>
       ] => {
-        return [parameter.typePartId, view(state, scopeTypePartId, parameter)];
+        return [
+          parameter.typePartId,
+          elementMap(
+            view(
+              state,
+              scopeTypePartId,
+              parameter,
+              selection?.tag === "parameter" && selection.index === index
+                ? selection.selection
+                : undefined
+            ),
+            (parameterSelection): Selection => ({
+              tag: "parameter",
+              index,
+              selection: parameterSelection,
+            })
+          ),
+        ];
       }),
     ])
   );
+};
+
+const selectionToSelectBoxSelection = (
+  selection: Selection | undefined
+): SelectBoxSelection => {
+  if (selection === undefined) {
+    return "notSelected";
+  }
+  if (selection.tag === "self") {
+    return "selected";
+  }
+  return "innerSelected";
 };
 
 const getTypePartByState = (
@@ -79,6 +122,27 @@ const getTypePartByState = (
 export const editor = (
   state: State,
   scopeTypePartId: d.TypePartId,
+  type: d.Type,
+  selection: Selection | undefined
+): Element<d.Type> => {
+  if (selection === undefined || selection.tag === "self") {
+    return editorSelectedSelf(state, scopeTypePartId, type);
+  }
+  const selectedTypeParameter = type.parameter[selection.index];
+  if (selectedTypeParameter === undefined) {
+    return text("編集する型パラメータがない in type editor");
+  }
+  return editor(
+    state,
+    scopeTypePartId,
+    selectedTypeParameter,
+    selection.selection
+  );
+};
+
+const editorSelectedSelf = (
+  state: State,
+  scopeTypePartId: d.TypePartId,
   type: d.Type
 ): Element<d.Type> => {
   const typeData = getTypePartByState(state, type.typePartId, scopeTypePartId);
@@ -105,7 +169,12 @@ export const editor = (
                 element: elementMap(
                   type.parameter[index] === undefined
                     ? typeMenu(state, scopeTypePartId)
-                    : editor(state, scopeTypePartId, type.parameter[index]),
+                    : editor(
+                        state,
+                        scopeTypePartId,
+                        type.parameter[index],
+                        undefined
+                      ),
                   (parameterType): d.Type => ({
                     typePartId: type.typePartId,
                     parameter: util.listReplaceAt<d.Type>(

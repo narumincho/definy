@@ -135,7 +135,14 @@ export const itemView = (
             {
               name: "type",
               element: elementMap(
-                typeEditor.view(state, typePartId, member.type),
+                typeEditor.view(
+                  state,
+                  typePartId,
+                  member.type,
+                  selection?.tag === "type"
+                    ? selection.typeSelection
+                    : undefined
+                ),
                 (typeSelection: typeEditor.Selection): ItemSelection => ({
                   tag: "type",
                   typeSelection,
@@ -193,7 +200,7 @@ export const itemEditor = (
       {
         name: "type",
         element: elementMap(
-          typeEditor.view(state, typePartId, member.type),
+          typeEditor.editor(state, typePartId, member.type, undefined),
           (newType: d.Type): ItemMessage => ({
             tag: "SetType",
             newType,
@@ -209,7 +216,7 @@ export const itemEditor = (
     return oneLineTextEditor({}, member.description, setDescription);
   }
   return elementMap(
-    typeEditor.editor(state, typePartId, member.type),
+    typeEditor.editor(state, typePartId, member.type, selection.typeSelection),
     (newType: d.Type): ItemMessage => ({
       tag: "SetType",
       newType,

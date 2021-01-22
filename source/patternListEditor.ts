@@ -157,7 +157,8 @@ const parameterView = (
   return elementMap(
     maybeEditor.view(
       parameter,
-      (item) => typeEditor.view(state, typePartId, item),
+      (item, typeSelection) =>
+        typeEditor.view(state, typePartId, item, typeSelection),
       selection
     ),
     (e): ItemSelection => ({
@@ -175,8 +176,12 @@ const parameterEditor = (
   selection: maybeEditor.Selection<typeEditor.Selection> | undefined
 ): Element<Message> => {
   return elementMap<maybeEditor.Message<d.Type>, Message>(
-    maybeEditor.editor(name, parameter, selection, (parameterTypeName, v) =>
-      typeEditor.editor(state, typePartId, v)
+    maybeEditor.editor(
+      name,
+      parameter,
+      selection,
+      (parameterTypeName, v, typeSelection) =>
+        typeEditor.editor(state, typePartId, v, typeSelection)
     ),
     updateContent
   );
@@ -189,7 +194,7 @@ export const listUpdate = (
   listEditor.update<d.Pattern, Message>(
     update,
     {
-      name: "initParameterName",
+      name: "InitPatternName",
       description: "initParameterDescription",
       parameter: d.Maybe.Nothing<d.Type>(),
     },
@@ -220,28 +225,41 @@ export const itemEditor = (
   name: string,
   selection: ItemSelection | undefined
 ): Element<Message> => {
-  return productEditor({}, [
-    {
-      name: "name",
-      element: oneLineTextEditor({}, pattern.name, setName),
-    },
-    {
-      name: "description",
-      element: oneLineTextEditor({}, pattern.description, SetDescription),
-    },
-    {
-      name: "parameter",
-      element: parameterEditor(
-        state,
-        typePartId,
-        name,
-        pattern.parameter,
-        selection?.tag === "typeParameter"
-          ? selection.typeParameterSelection
-          : undefined
-      ),
-    },
-  ]);
+  if (selection === undefined || selection.tag === "self") {
+    return productEditor({}, [
+      {
+        name: "name",
+        element: oneLineTextEditor({}, pattern.name, setName),
+      },
+      {
+        name: "description",
+        element: oneLineTextEditor({}, pattern.description, SetDescription),
+      },
+      {
+        name: "parameter",
+        element: parameterEditor(
+          state,
+          typePartId,
+          name,
+          pattern.parameter,
+          undefined
+        ),
+      },
+    ]);
+  }
+  if (selection.tag === "name") {
+    return oneLineTextEditor({}, pattern.name, setName);
+  }
+  if (selection.tag === "description") {
+    return oneLineTextEditor({}, pattern.description, SetDescription);
+  }
+  return parameterEditor(
+    state,
+    typePartId,
+    name,
+    pattern.parameter,
+    selection.typeParameterSelection
+  );
 };
 
 export const editor = (

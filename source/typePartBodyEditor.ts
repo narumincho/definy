@@ -3,7 +3,7 @@ import * as d from "definy-core/source/data";
 import * as listEditor from "./listEditor";
 import * as memberListEditor from "./memberListEditor";
 import * as patternListEditor from "./patternListEditor";
-import { SelectBoxSelection, box, selectBox, selectText, text } from "./ui";
+import { SelectBoxSelection, selectBox, selectText, text } from "./ui";
 import { c, div, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { tagEditor } from "./tagEditor";
@@ -237,7 +237,7 @@ export const editor = (
         typePartId,
         typePartBody.patternList,
         "patternList",
-        undefined
+        selection.content
       ),
       (patternListMessage): Message => ({
         tag: "ChangePatternList",
@@ -252,7 +252,7 @@ export const editor = (
         state,
         typePartId,
         typePartBody.memberList,
-        undefined
+        selection.content
       ),
       (memberListMessage): Message => ({
         tag: "ChangeMemberList",

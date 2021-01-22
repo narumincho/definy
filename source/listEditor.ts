@@ -1,4 +1,4 @@
-import { box, text } from "./ui";
+import { SelectBoxSelection, box, selectBox, text } from "./ui";
 import { c, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { button } from "./button";
@@ -47,14 +47,12 @@ export const view = <Item, ItemSelection>(
   list: ReadonlyArray<Item>,
   selection: Selection<ItemSelection> | undefined
 ): Element<Selection<ItemSelection>> => {
-  return box<Selection<ItemSelection>>(
+  return selectBox<Selection<ItemSelection>>(
     {
       padding: 0,
       direction: "y",
-      border: {
-        width: 2,
-        color: selection?.tag === "Self" ? "red" : "#000",
-      },
+      selection: selectionToSelectBoxSelection(selection),
+      selectMessage: { tag: "Self" },
     },
     c([
       ...list.map((item, index): readonly [
@@ -78,6 +76,18 @@ export const view = <Item, ItemSelection>(
       ]),
     ])
   );
+};
+
+const selectionToSelectBoxSelection = <ItemSelection>(
+  selection: Selection<ItemSelection> | undefined
+): SelectBoxSelection => {
+  if (selection === undefined) {
+    return "notSelected";
+  }
+  if (selection.tag === "Self") {
+    return "selected";
+  }
+  return "innerSelected";
 };
 
 const deleteButton = <ItemMessage>(
@@ -147,7 +157,7 @@ export const editor = <Item, ItemMessage, ItemSelection>(
         direction: "y",
       },
       c([
-        ["count", text("個数" + list.length.toString())],
+        ["count", text("debug: " + JSON.stringify(selection))],
         ...list.map((item, index): readonly [
           string,
           Element<Message<ItemMessage>>

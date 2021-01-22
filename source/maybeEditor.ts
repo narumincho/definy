@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { box, text } from "./ui";
+import { SelectBoxSelection, box, selectBox, text } from "./ui";
 import { c, elementMap } from "./view/viewUtil";
 import { Element } from "./view/view";
 import { tagEditor } from "./tagEditor";
@@ -68,20 +68,18 @@ export const update = <Item, ItemMessage>(
 
 export const view = <Item, ItemSelection>(
   maybe: d.Maybe<Item>,
-  element: (item: Item) => Element<ItemSelection>,
+  element: (
+    item: Item,
+    itemSelection: ItemSelection | undefined
+  ) => Element<ItemSelection>,
   selection: Selection<ItemSelection> | undefined
 ): Element<Selection<ItemSelection>> => {
-  return box<Selection<ItemSelection>>(
+  return selectBox<Selection<ItemSelection>>(
     {
       padding: 0,
       direction: "y",
-      click:
-        selection?.tag === "self"
-          ? undefined
-          : {
-              message: { tag: "self" },
-              stopPropagation: true,
-            },
+      selection: selectionToSelectBoxSelection(selection),
+      selectMessage: { tag: "self" },
     },
     c<Selection<ItemSelection>>([
       ["tag", text(maybe._)],
@@ -90,7 +88,12 @@ export const view = <Item, ItemSelection>(
             [
               "content",
               elementMap<ItemSelection, Selection<ItemSelection>>(
-                element(maybe.value),
+                element(
+                  maybe.value,
+                  selection?.tag === "content"
+                    ? selection.contentSelection
+                    : undefined
+                ),
                 selectionContent
               ),
             ],
@@ -98,6 +101,18 @@ export const view = <Item, ItemSelection>(
         : []),
     ])
   );
+};
+
+const selectionToSelectBoxSelection = <ContentSelection>(
+  selection: Selection<ContentSelection> | undefined
+): SelectBoxSelection => {
+  if (selection === undefined) {
+    return "notSelected";
+  }
+  if (selection.tag === "self") {
+    return "selected";
+  }
+  return "innerSelected";
 };
 
 export const editor = <Item, ItemMessage, ItemSelection>(
