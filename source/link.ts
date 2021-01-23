@@ -1,69 +1,10 @@
 import * as core from "definy-core";
 import * as d from "definy-core/source/data";
-import { SerializedStyles, css, jsx as h } from "@emotion/react";
-import react, { Component, ReactElement } from "react";
-import { Model } from "./model";
+import { Message, State, messageJumpTag } from "./messageAndState";
+import { CSSObject } from "@emotion/css";
+import { Element } from "./view/view";
 import { Theme } from "./ui";
-
-export type Props = {
-  readonly model: Model;
-  readonly location: d.Location;
-  readonly language?: d.Language;
-  readonly theme: Theme;
-  readonly css?: SerializedStyles;
-  readonly className?: string;
-};
-
-export class Link extends Component<Props, never> {
-  onClick(event: react.MouseEvent<HTMLAnchorElement, MouseEvent>): void {
-    /*
-     * リンクを
-     * Ctrlなどを押しながらクリックか,
-     * マウスの中ボタンでクリックした場合などは, ブラウザで新しいタブが開くので, ページ推移をDefinyでしない.
-     */
-    if (
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey ||
-      event.button !== 0
-    ) {
-      return;
-    }
-    event.preventDefault();
-    this.props.model.jump(this.props.location, this.props.model.language);
-  }
-
-  render(): ReactElement {
-    return h(
-      "a",
-      {
-        href: core
-          .urlDataAndAccountTokenToUrl(
-            {
-              clientMode: this.props.model.clientMode,
-              language: this.props.language ?? this.props.model.language,
-              location: this.props.location,
-            },
-            d.Maybe.Nothing()
-          )
-          .toString(),
-        onClick: (e: react.MouseEvent<HTMLAnchorElement, MouseEvent>) =>
-          this.onClick(e),
-        css: css(
-          {
-            display: "block",
-            textDecoration: "none",
-          },
-          themeToStyle(this.props.theme),
-          this.props.css
-        ),
-        theme: this.props.theme,
-        className: this.props.className,
-      },
-      this.props.children
-    );
-  }
-}
+import { localLink } from "./view/viewUtil";
 
 const themeToStyle = (
   theme: Theme
@@ -104,4 +45,44 @@ const themeToStyle = (
         },
       };
   }
+};
+
+export const link = (
+  option: {
+    readonly appInterface: State;
+    readonly location: d.Location;
+    readonly language?: d.Language;
+    readonly theme: Theme;
+    readonly style?: CSSObject;
+    readonly hoverStyle?: CSSObject;
+  },
+  children: ReadonlyMap<string, Element<never>> | string
+): Element<Message> => {
+  const urlData: d.UrlData = {
+    clientMode: option.appInterface.clientMode,
+    language: option.language ?? option.appInterface.language,
+    location: option.location,
+  };
+
+  return localLink<Message>(
+    {
+      url: core.urlDataAndAccountTokenToUrl(urlData, d.Maybe.Nothing()),
+      style: {
+        display: "block",
+        textDecoration: "none",
+        ...themeToStyle(option.theme),
+        ...option.style,
+        "&:hover": {
+          ...themeToStyle(option.theme)["&:hover"],
+          ...option.hoverStyle,
+        },
+      },
+      jumpMessage: {
+        tag: messageJumpTag,
+        location: urlData.location,
+        language: urlData.language,
+      },
+    },
+    children
+  );
 };

@@ -1,30 +1,29 @@
-import { SerializedStyles, css, jsx } from "@emotion/react";
-import { FunctionComponent } from "react";
+import * as viewUtil from "./view/viewUtil";
+import { CSSObject } from "@emotion/css";
+import { Element } from "./view/view";
 
-export const Button: FunctionComponent<{
-  onClick: undefined | (() => void);
-  css?: SerializedStyles;
-}> = (props) =>
-  jsx(
-    "button",
+export const button = <Message>(
+  option: { style?: CSSObject; hoverStyle?: CSSObject; click: Message },
+  children: string | ReadonlyMap<string, Element<Message>>
+): Element<Message> =>
+  viewUtil.button(
     {
-      onClick: props.onClick,
-      css: css(
-        {
-          cursor: "pointer",
-          border: "none",
-          padding: 8,
-          textAlign: "left",
-          fontSize: 16,
-          backgroundColor: "#333",
-          color: "#ddd",
-          "&:hover": {
-            backgroundColor: "#444",
-            color: "#dfdfdf",
-          },
+      style: {
+        cursor: "pointer",
+        border: "none",
+        padding: 8,
+        textAlign: "left",
+        fontSize: 16,
+        backgroundColor: "#333",
+        color: "#ddd",
+        ...option.style,
+        "&:hover": {
+          backgroundColor: "#444",
+          color: "#dfdfdf",
+          ...option.hoverStyle,
         },
-        props.css
-      ),
+      },
+      click: option.click,
     },
-    props.children
+    children
   );

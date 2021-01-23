@@ -46,3 +46,20 @@ export const api = Object.fromEntries(
     requestData: GetCodecType<ApiCodecType[apiName]["request"]>
   ) => Promise<d.Maybe<GetCodecType<ApiCodecType[apiName]["response"]>>>;
 };
+
+export const getImageWithCache = (
+  imageToken: d.ImageToken
+): Promise<d.Maybe<Uint8Array>> =>
+  fetch(
+    "https://us-central1-definy-lang.cloudfunctions.net/getFile/" + imageToken,
+    { cache: "force-cache" }
+  )
+    .then((response) => response.arrayBuffer())
+    .then((response) => d.Maybe.Just(new Uint8Array(response)))
+    .catch((reason) => {
+      console.error(
+        "imageToken = " + imageToken + " 画像の取得時にエラーが発生した",
+        reason
+      );
+      return d.Maybe.Nothing();
+    });

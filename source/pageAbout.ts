@@ -1,27 +1,64 @@
-import { css, jsx as h } from "@emotion/react";
-import { FunctionComponent } from "react";
-import { GitHubIcon } from "./gitHubIcon";
+import * as d from "definy-core/source/data";
+import { State, TitleAndElement } from "./messageAndState";
+import { c, div, externalLink } from "./view/viewUtil";
+import { Element } from "./view/view";
+import { gitHubIcon } from "./ui";
 
-export const PageAbout: FunctionComponent<Record<never, never>> = () =>
-  h(
-    "div",
+export const view = (appInterface: State): TitleAndElement => ({
+  title: "Definyについて",
+  element: div(
     {
-      css: css({
+      style: {
+        display: "grid",
+        alignContent: "start",
         padding: 16,
-      }),
+        gap: 8,
+      },
     },
-    [
-      h("div", { key: "about" }, "DefinyはWebアプリのためのWebアプリです"),
-      h(GitHubRepositoryLink, { key: "link" }),
-    ]
-  );
+    c([
+      ["about", div({}, aboutMessage(appInterface.language))],
+      ["link-client", gitHubRepositoryLink("narumincho", "Definy")],
+      [
+        "link-functions",
+        gitHubRepositoryLink("narumincho", "definy-functions"),
+      ],
+      ["link-core", gitHubRepositoryLink("narumincho", "definy-core")],
+      ["link-html", gitHubRepositoryLink("narumincho", "html")],
+      [
+        "link-typed-admin-firestore",
+        gitHubRepositoryLink("narumincho", "typed-admin-firestore"),
+      ],
+      [
+        "link-js-ts-code-generator",
+        gitHubRepositoryLink("narumincho", "js-ts-code-generator"),
+      ],
+      [
+        "link-elm-code-generator",
+        gitHubRepositoryLink("narumincho", "elm-code-generator"),
+      ],
+    ])
+  ),
+});
 
-const GitHubRepositoryLink: FunctionComponent<Record<never, never>> = () =>
-  h(
-    "a",
+const aboutMessage = (language: d.Language): string => {
+  switch (language) {
+    case "English":
+      return "Definy is Web App for Web App";
+    case "Japanese":
+      return "DefinyはWebアプリのためのWebアプリです";
+    case "Esperanto":
+      return "Definy estas TTT-programo por TTT-programo";
+  }
+};
+
+const gitHubRepositoryLink = (
+  repoUser: string,
+  repoName: string
+): Element<never> =>
+  externalLink(
     {
-      href: "https://github.com/narumincho/Definy",
-      css: css({
+      url: new URL("https://github.com/" + repoUser + "/" + repoName),
+      style: {
         display: "grid",
         gridTemplateColumns: "auto 1fr",
         gap: 8,
@@ -35,15 +72,17 @@ const GitHubRepositoryLink: FunctionComponent<Record<never, never>> = () =>
           color: "#dfdfdf",
           backgroundColor: "#444",
         },
-      }),
+      },
     },
-    [
-      h(GitHubIcon, {
-        color: "#ddd",
-        key: "icon",
-        width: 16,
-        height: 16,
-      }),
-      h("div", { key: "text" }, ["GitHub: narumincho/Definy"]),
-    ]
+    c([
+      [
+        "icon",
+        gitHubIcon({
+          color: "#ddd",
+          width: 32,
+          height: 32,
+        }),
+      ],
+      ["text", div({}, "GitHub: " + repoUser + "/" + repoName)],
+    ])
   );

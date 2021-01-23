@@ -1,19 +1,36 @@
-import * as reactDom from "react-dom";
-import { StrictMode, createElement } from "react";
-import { AppWithState } from "./appWithState";
+import * as app from "./app";
+import * as messageAndState from "./messageAndState";
+import { createPatchState, patchView, renderView } from "./view/patch";
+import { View } from "./view/view";
+import { createViewDiff } from "./view/diff";
 
-const appElement = document.createElement("div");
+const pushMessageList = (message: messageAndState.Message): void => {
+  messageList.push(message);
+};
 
-// Bodyの子要素を削除
-document.documentElement.replaceChild(
-  document.body.cloneNode(false),
-  document.body
-);
-document.body.appendChild(appElement);
-appElement.style.height = "100%";
-appElement.style.overflow = "auto";
+const loop = () => {
+  requestAnimationFrame(loop);
+  if (messageList.length === 0) {
+    return;
+  }
+  console.log("handle message!", [...messageList]);
+  while (true) {
+    const message = messageList.shift();
+    if (message === undefined) {
+      break;
+    }
+    state = app.updateStateByMessage(pushMessageList, message, state);
+  }
+  const newView = app.stateToView(state);
+  const diff = createViewDiff(oldView, newView);
+  console.log("view diff", oldView, newView, diff);
+  oldView = newView;
+  patchView(diff, patchState);
+};
 
-reactDom.render(
-  createElement(StrictMode, {}, createElement(AppWithState)),
-  appElement
-);
+const messageList: Array<messageAndState.Message> = [];
+let state: messageAndState.State = app.initState(pushMessageList);
+let oldView: View<messageAndState.Message> = app.stateToView(state);
+const patchState = createPatchState(pushMessageList);
+renderView(oldView, patchState);
+loop();

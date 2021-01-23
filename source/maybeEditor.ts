@@ -1,27 +1,164 @@
 import * as d from "definy-core/source/data";
-import { Editor } from "./ui";
-import { UndefinedEditor } from "./undefinedEditor";
-import { createWithParameterSumEditor } from "./sumEditor";
+import { SelectBoxSelection, box, selectBox, text } from "./ui";
+import { c, elementMap } from "./view/viewUtil";
+import { Element } from "./view/view";
+import { tagEditor } from "./tagEditor";
 
-export const createMaybeEditor = <value>(
-  valueEditor: Editor<value>,
-  justInitValue: value
-): Editor<d.Maybe<value>> =>
-  createWithParameterSumEditor<
+export type MaybeTag = "Just" | "Nothing";
+
+export type Message<ItemMessage> =
+  | {
+      tag: "Tag";
+      newMaybeTag: MaybeTag;
+    }
+  | {
+      tag: "Item";
+      message: ItemMessage;
+    };
+
+export type Selection<ContentSelection> =
+  | {
+      tag: "self";
+    }
+  | {
+      tag: "content";
+      contentSelection: ContentSelection;
+    };
+
+const messageTag = <ItemMessage>(
+  newMaybeTag: MaybeTag
+): Message<ItemMessage> => ({
+  tag: "Tag",
+  newMaybeTag,
+});
+
+const messageItem = <ItemMessage>(
+  message: ItemMessage
+): Message<ItemMessage> => ({
+  tag: "Item",
+  message,
+});
+
+const selectionContent = <ContentSelection>(
+  contentSelection: ContentSelection
+): Selection<ContentSelection> => ({
+  tag: "content",
+  contentSelection,
+});
+
+export const update = <Item, ItemMessage>(
+  maybe: d.Maybe<Item>,
+  message: Message<ItemMessage>,
+  initItem: Item,
+  itemUpdate: (item: Item, itemMessage: ItemMessage) => Item
+): d.Maybe<Item> => {
+  switch (message.tag) {
+    case "Tag":
+      if (message.newMaybeTag === "Just") {
+        return d.Maybe.Just(initItem);
+      }
+      return d.Maybe.Nothing();
+    case "Item":
+      if (maybe._ === "Nothing") {
+        return maybe;
+      }
+      return d.Maybe.Just(itemUpdate(maybe.value, message.message));
+  }
+};
+
+export const view = <Item, ItemSelection>(
+  maybe: d.Maybe<Item>,
+  element: (
+    item: Item,
+    itemSelection: ItemSelection | undefined
+  ) => Element<ItemSelection>,
+  selection: Selection<ItemSelection> | undefined
+): Element<Selection<ItemSelection>> => {
+  return selectBox<Selection<ItemSelection>>(
     {
-      Just: value;
-      Nothing: undefined;
+      padding: 0,
+      direction: "y",
+      selection: selectionToSelectBoxSelection(selection),
+      selectMessage: { tag: "self" },
     },
-    "Just" | "Nothing",
-    d.Maybe<value>
-  >(
-    {
-      Just: valueEditor,
-      Nothing: UndefinedEditor,
-    },
-    {
-      Just: d.Maybe.Just(justInitValue),
-      Nothing: d.Maybe.Nothing(),
-    },
-    "Maybe"
+    c<Selection<ItemSelection>>([
+      ["tag", text(maybe._)],
+      ...(maybe._ === "Just"
+        ? ([
+            [
+              "content",
+              elementMap<ItemSelection, Selection<ItemSelection>>(
+                element(
+                  maybe.value,
+                  selection?.tag === "content"
+                    ? selection.contentSelection
+                    : undefined
+                ),
+                selectionContent
+              ),
+            ],
+          ] as const)
+        : []),
+    ])
   );
+};
+
+const selectionToSelectBoxSelection = <ContentSelection>(
+  selection: Selection<ContentSelection> | undefined
+): SelectBoxSelection => {
+  if (selection === undefined) {
+    return "notSelected";
+  }
+  if (selection.tag === "self") {
+    return "selected";
+  }
+  return "innerSelected";
+};
+
+export const editor = <Item, ItemMessage, ItemSelection>(
+  name: string,
+  maybe: d.Maybe<Item>,
+  selection: Selection<ItemSelection> | undefined,
+  element: (
+    itemName: string,
+    item: Item,
+    itemSelection: ItemSelection | undefined
+  ) => Element<ItemMessage>
+): Element<Message<ItemMessage>> => {
+  if (selection === undefined || selection.tag === "self") {
+    return box<Message<ItemMessage>>(
+      {
+        padding: 0,
+        direction: "y",
+      },
+      c<Message<ItemMessage>>([
+        [
+          "tag",
+          elementMap<MaybeTag, Message<ItemMessage>>(
+            tagEditor<MaybeTag>(["Just", "Nothing"], maybe._, name + "-tag"),
+            messageTag
+          ),
+        ],
+        ...(maybe._ === "Just"
+          ? ([
+              [
+                "content",
+                elementMap<ItemMessage, Message<ItemMessage>>(
+                  element(name + "-content", maybe.value, undefined),
+                  messageItem
+                ),
+              ],
+            ] as const)
+          : []),
+      ])
+    );
+  }
+
+  if (maybe._ === "Nothing") {
+    return text("編集する値がなかった! in maybe editor");
+  }
+  return elementMap<ItemMessage, Message<ItemMessage>>(
+    element(name + "-content", maybe.value, selection.contentSelection),
+    messageItem
+  );
+};

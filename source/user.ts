@@ -1,81 +1,69 @@
 import * as d from "definy-core/source/data";
-import { Component, ReactElement } from "react";
-import { css, jsx as h } from "@emotion/react";
-import { Icon } from "./icon";
-import { Image } from "./image";
-import { Link } from "./link";
-import { Model } from "./model";
+import { Message, State } from "./messageAndState";
+import { c, div } from "./view/viewUtil";
+import { CSSObject } from "@emotion/css";
+import { Element } from "./view/view";
+import { icon } from "./icon";
+import { image } from "./image";
+import { link } from "./link";
 
-type Props = {
-  readonly model: Model;
-  readonly userId: d.UserId;
-};
-
-export class User extends Component<Props, never> {
-  constructor(props: Props) {
-    super(props);
-    props.model.requestUser(props.userId);
+export const userCard = (
+  appInterface: State,
+  userId: d.UserId
+): Element<Message> => {
+  const userState = appInterface.userMap.get(userId);
+  if (userState === undefined) {
+    return div({ style: loadingCss }, "...");
   }
-
-  render(): ReactElement {
-    const userState = this.props.model.userMap.get(this.props.userId);
-    if (userState === undefined) {
-      return h("div", { css: loadingStyle }, "...");
-    }
-    switch (userState._) {
-      case "Requesting":
-        return h(
-          "div",
-          { css: loadingStyle },
-          h(Icon, { iconType: "Requesting" })
-        );
-      case "Unknown":
-        return h("div", { css: loadingStyle }, "ユーザーの取得に失敗しました");
-      case "Deleted":
-        return h(
-          "div",
-          { css: loadingStyle },
-          "現在, userIdが " + this.props.userId + " のユーザーは存在しません"
-        );
-      case "Loaded": {
-        const { data } = userState.dataWithTime;
-        return h(
-          Link,
-          {
-            model: this.props.model,
-            theme: "Gray",
-            location: d.Location.User(this.props.userId),
-            css: css({
-              display: "grid",
-              gridTemplateColumns: "32px 1fr",
-              height: 48,
-              alignItems: "center",
-              gap: 8,
-              padding: 8,
-            }),
+  switch (userState._) {
+    case "Requesting":
+      return div({ style: loadingCss }, c([["icon", icon("Requesting")]]));
+    case "Unknown":
+      return div({ style: loadingCss }, "ユーザーの取得に失敗しました");
+    case "Deleted":
+      return div(
+        { style: loadingCss },
+        "現在, userIdが " + userId + " のユーザーは存在しません"
+      );
+    case "Loaded": {
+      const { data } = userState.dataWithTime;
+      return link(
+        {
+          appInterface,
+          theme: "Gray",
+          location: d.Location.User(userId),
+          style: {
+            display: "grid",
+            gridTemplateColumns: "32px 1fr",
+            height: 48,
+            alignItems: "center",
+            gap: 8,
+            padding: 8,
           },
+        },
+        c([
           [
-            h(Image, {
+            "icon",
+            image({
+              appInterface,
               imageToken: data.imageHash,
-              model: this.props.model,
-              key: "image",
               alternativeText: data.name + "のアイコン",
               width: 32,
               height: 32,
               isCircle: true,
             }),
-            data.name,
-          ]
-        );
-      }
+          ],
+          ["name", div({}, data.name)],
+        ])
+      );
     }
   }
-}
+};
 
-const loadingStyle = css({
+const loadingCss: CSSObject = {
   display: "grid",
   height: 48,
   alignItems: "center",
   gap: 8,
   padding: 8,
-});
+};
