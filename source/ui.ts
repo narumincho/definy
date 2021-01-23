@@ -77,6 +77,9 @@ const gridTemplateToCssString = (value: GridTemplateValue): string => {
 export const text = <Message>(string: string): Element<Message> =>
   div({}, string);
 
+export const grayText = <Message>(string: string): Element<Message> =>
+  div({ style: { color: "#aaa", fontSize: 12 } }, string);
+
 export type Theme = "Gray" | "Black" | "Active";
 
 export type SelectBoxSelection = "selected" | "innerSelected" | "notSelected";
@@ -84,7 +87,9 @@ export type SelectBoxSelection = "selected" | "innerSelected" | "notSelected";
 export const selectBox = <Message>(
   option: {
     direction: "x" | "y";
+    /** @deprecated */
     padding: number;
+    height?: number;
     selection: SelectBoxSelection;
     selectMessage: Message;
   },
@@ -92,7 +97,8 @@ export const selectBox = <Message>(
 ): Element<Message> => {
   return box(
     {
-      padding: 0,
+      padding: 16,
+      borderRadius: 16,
       direction: option.direction,
       click:
         option.selection === "selected"
@@ -103,8 +109,10 @@ export const selectBox = <Message>(
             },
       border: {
         width: 2,
-        color: option.selection === "selected" ? "red" : "#000",
+        color: option.selection === "selected" ? "red" : "#444",
       },
+      height: option.height,
+      gap: 8,
     },
     children
   );

@@ -346,105 +346,44 @@ const loadedEditor = (
   typePart: d.TypePart
 ): Element<Message> => {
   if (selection === undefined) {
-    return box(
-      { padding: 8, direction: "y" },
-      c([
-        ["label", text("型パーツ. データの構造を定義する")],
-        ["editor", typePartEditor(state, typePartId, typePart)],
-      ])
-    );
+    return typePartEditor(state, typePartId, typePart);
   }
+
   switch (selection.tag) {
     case "name":
-      return box(
-        { padding: 8, direction: "y" },
-        c([
-          [
-            "label",
-            text(
-              "型パーツの名前. ユーザーが認識するために用意している. コンピュータは TypePartId で識別する"
-            ),
-          ],
-          [
-            "editor",
-            oneLineTextEditor(
-              { id: nameInputEditorId },
-              typePart.name,
-              changeName
-            ),
-          ],
-        ])
+      return oneLineTextEditor(
+        { id: nameInputEditorId },
+        typePart.name,
+        changeName
       );
     case "description":
-      return box(
-        { padding: 8, direction: "y" },
-        c([
-          ["label", text("型パーツの説明文")],
-          [
-            "editor",
-            multiLineTextEditor(
-              { id: descriptionInputEditorId },
-              typePart.description,
-              changeDescription
-            ),
-          ],
-        ])
+      return multiLineTextEditor(
+        { id: descriptionInputEditorId },
+        typePart.description,
+        changeDescription
       );
     case "attribute":
-      return box(
-        { padding: 8, direction: "y" },
-        c([
-          [
-            "label",
-            text(
-              "型パーツの属性.  BoolをTypeScriptのbooleanとして扱ってほしいなど, 代数的データ型として表現できるが, 出力する言語でもとから用意されている標準のものを使ってほしいときに指定する"
-            ),
-          ],
-          [
-            "editor",
-            attributeMaybeEditor(typePart.attribute, selection.content),
-          ],
-        ])
-      );
+      return attributeMaybeEditor(typePart.attribute, selection.content);
+
     case "parameter":
-      return box(
-        { padding: 8, direction: "y" },
-        c([
-          ["label", text("型パラメーター")],
-          [
-            "editor",
-            elementMap(
-              typeParameterEditor.editor(
-                "type-paramter",
-                typePart.typeParameterList,
-                selection.content
-              ),
-              updateParameter
-            ),
-          ],
-        ])
+      return elementMap(
+        typeParameterEditor.editor(
+          "type-paramter",
+          typePart.typeParameterList,
+          selection.content
+        ),
+        updateParameter
       );
+
     case "body":
-      return box(
-        { padding: 8, direction: "y" },
-        c([
-          [
-            "label",
-            text("型パーツの本体. 型パーツをどういう構造で表現するか記述する"),
-          ],
-          [
-            "editor",
-            elementMap(
-              typePartBodyEditor.editor(
-                state,
-                typePartId,
-                typePart.body,
-                selection.content
-              ),
-              (bodyMessage): Message => ({ tag: "ChangeBody", bodyMessage })
-            ),
-          ],
-        ])
+      return elementMap(
+        typePartBodyEditor.editor(
+          state,
+          typePartId,
+          typePart.body,
+          selection.content
+        ),
+        (bodyMessage): Message => ({ tag: "ChangeBody", bodyMessage })
       );
   }
 };

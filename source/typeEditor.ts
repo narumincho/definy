@@ -237,9 +237,8 @@ const typeMenu = (
           direction: "y",
           padding: 8,
         },
-        c([
-          ["title", text("typeList")],
-          ...getTypePartList(state).map((data): readonly [
+        c(
+          getTypePartList(state).map((data): readonly [
             string,
             Element<d.Type>
           ] => [
@@ -255,8 +254,8 @@ const typeMenu = (
               },
               c([["view", typeView(data)]])
             ),
-          ]),
-        ])
+          ])
+        )
       ),
     },
   ]);

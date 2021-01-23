@@ -1,4 +1,4 @@
-import { SelectBoxSelection, box, selectBox, text } from "./ui";
+import { SelectBoxSelection, box, grayText, selectBox } from "./ui";
 import { Element } from "./view/view";
 import { c } from "./view/viewUtil";
 
@@ -26,7 +26,7 @@ export const productEditor = <Message>(
           borderRadius: 8,
         },
         c([
-          ["name", text(item.name)],
+          ["name", grayText(item.name)],
           ["value", item.element],
         ])
       ),

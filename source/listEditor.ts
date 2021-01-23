@@ -47,6 +47,19 @@ export const view = <Item, ItemSelection>(
   list: ReadonlyArray<Item>,
   selection: Selection<ItemSelection> | undefined
 ): Element<Selection<ItemSelection>> => {
+  if (list.length === 0) {
+    return selectBox<Selection<ItemSelection>>(
+      {
+        padding: 0,
+        direction: "y",
+        selection: selectionToSelectBoxSelection(selection),
+        selectMessage: { tag: "Self" },
+        height: 16,
+      },
+      c([])
+    );
+  }
+
   return selectBox<Selection<ItemSelection>>(
     {
       padding: 0,
