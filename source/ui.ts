@@ -95,12 +95,12 @@ export const selectBox = <Message>(
       padding: 0,
       direction: option.direction,
       click:
-        option.selection === "notSelected"
-          ? {
+        option.selection === "selected"
+          ? undefined
+          : {
               message: option.selectMessage,
               stopPropagation: true,
-            }
-          : undefined,
+            },
       border: {
         width: 2,
         color: option.selection === "selected" ? "red" : "#000",

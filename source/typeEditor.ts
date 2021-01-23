@@ -132,11 +132,16 @@ export const editor = (
   if (selectedTypeParameter === undefined) {
     return text("編集する型パラメータがない in type editor");
   }
-  return editor(
-    state,
-    scopeTypePartId,
-    selectedTypeParameter,
-    selection.selection
+  return elementMap(
+    editor(state, scopeTypePartId, selectedTypeParameter, selection.selection),
+    (newParameter): d.Type => ({
+      typePartId: type.typePartId,
+      parameter: util.listReplaceAt(
+        type.parameter,
+        selection.index,
+        newParameter
+      ),
+    })
   );
 };
 
