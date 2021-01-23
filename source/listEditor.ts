@@ -157,7 +157,6 @@ export const editor = <Item, ItemMessage, ItemSelection>(
         direction: "y",
       },
       c([
-        ["count", text("debug: " + JSON.stringify(selection))],
         ...list.map((item, index): readonly [
           string,
           Element<Message<ItemMessage>>
