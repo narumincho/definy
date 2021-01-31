@@ -13,9 +13,13 @@ import * as pageSetting from "./pageSetting";
 import * as pageUser from "./pageUser";
 import * as typePartEditor from "./typePartEditor";
 import { CSSObject, keyframes } from "@emotion/css";
-import { Element, View } from "./view/view";
+import {
+  Element,
+  View,
+  childrenElementList,
+} from "@narumincho/html/source/view";
 import { api, getImageWithCache } from "./api";
-import { c, div, view } from "./view/viewUtil";
+import { c, div, styleToBodyClass } from "@narumincho/html/source/viewUtil";
 import { mapMapAt, mapSet } from "./util";
 import { headerView } from "./header";
 
@@ -926,22 +930,28 @@ const getResourceResponseToResourceState = <resource extends unknown>(
 
 export const stateToView = (state: a.State): View<a.Message> => {
   const titleAndAttributeChildren = stateToTitleAndAttributeChildren(state);
-  return view(
-    {
-      title:
-        (titleAndAttributeChildren.title === ""
-          ? ""
-          : titleAndAttributeChildren.title + " | ") + "Definy",
-      language: state.language,
-      themeColor: undefined,
-      style: {
-        height: "100%",
-        display: "grid",
-        ...titleAndAttributeChildren.style,
-      },
-    },
-    titleAndAttributeChildren.children
-  );
+  return {
+    pageName:
+      (titleAndAttributeChildren.title === ""
+        ? ""
+        : titleAndAttributeChildren.title + " | ") + "Definy",
+    description: "Definy の 説明",
+    twitterCard: "SummaryCardWithLargeImage",
+    coverImageUrl: new URL("https://narumincho.com/assets/icon.png"),
+    scriptUrlList: [],
+    styleUrlList: [],
+    iconPath: "wip.png",
+    url: new URL("https://definy.app"),
+    appName: "Definy",
+    language: state.language,
+    themeColor: undefined,
+    bodyClass: styleToBodyClass({
+      height: "100%",
+      display: "grid",
+      ...titleAndAttributeChildren.style,
+    }),
+    children: childrenElementList(titleAndAttributeChildren.children),
+  };
 };
 
 const stateToTitleAndAttributeChildren = (
@@ -949,7 +959,7 @@ const stateToTitleAndAttributeChildren = (
 ): {
   title: string;
   style: CSSObject;
-  children: string | ReadonlyMap<string, Element<a.Message>>;
+  children: ReadonlyMap<string, Element<a.Message>>;
 } => {
   switch (state.logInState._) {
     case "RequestingLogInUrl": {

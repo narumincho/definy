@@ -2,9 +2,9 @@ import * as d from "definy-core/source/data";
 import * as listEditor from "./listEditor";
 import * as productEditor from "./productEditor";
 import { SelectBoxSelection, box, selectText, text } from "./ui";
-import { Element } from "./view/view";
+import { Element } from "@narumincho/html/source/view";
 import { button } from "./button";
-import { c } from "./view/viewUtil";
+import { c } from "@narumincho/html/source/viewUtil";
 import { oneLineTextEditor } from "./oneLineTextInput";
 
 export type Message =

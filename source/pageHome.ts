@@ -5,8 +5,8 @@ import {
   TitleAndElement,
   messageGetTop50Project,
 } from "./messageAndState";
-import { c, div } from "./view/viewUtil";
-import { Element } from "./view/view";
+import { c, div } from "@narumincho/html/source/viewUtil";
+import { Element } from "@narumincho/html/source/view";
 import { icon } from "./icon";
 import { link } from "./link";
 import { projectCard } from "./project";

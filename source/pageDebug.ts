@@ -5,8 +5,8 @@ import {
   TitleAndElement,
   messageSelectDebugPageTab,
 } from "./messageAndState";
-import { c, div, elementMap } from "./view/viewUtil";
-import { Element } from "./view/view";
+import { c, div, elementMap } from "@narumincho/html/source/viewUtil";
+import { Element } from "@narumincho/html/source/view";
 import { button } from "./button";
 import { icon } from "./icon";
 

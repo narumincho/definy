@@ -1,5 +1,5 @@
 import { TitleAndElement } from "./messageAndState";
-import { div } from "./view/viewUtil";
+import { div } from "@narumincho/html/source/viewUtil";
 
 export const view = (): TitleAndElement => {
   return {

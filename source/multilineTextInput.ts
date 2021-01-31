@@ -1,5 +1,5 @@
-import { Element } from "./view/view";
-import { inputMultiLineText } from "./view/viewUtil";
+import { Element } from "@narumincho/html/source/view";
+import { inputMultiLineText } from "@narumincho/html/source/viewUtil";
 
 export const multiLineTextEditor = <Message>(
   option: { id?: string },

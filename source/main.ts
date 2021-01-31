@@ -1,8 +1,12 @@
 import * as app from "./app";
 import * as messageAndState from "./messageAndState";
-import { createPatchState, patchView, renderView } from "./view/patch";
-import { View } from "./view/view";
-import { createViewDiff } from "./view/diff";
+import {
+  createPatchState,
+  patchView,
+  renderView,
+} from "@narumincho/html/source/patch";
+import { View } from "@narumincho/html/source/view";
+import { createViewDiff } from "@narumincho/html/source/diff";
 
 const pushMessageList = (message: messageAndState.Message): void => {
   messageList.push(message);

@@ -3,9 +3,12 @@ import {
   Element,
   childrenElementList,
   childrenText,
-} from "./source/view/view";
-import { createChildrenDiff, createElementDiff } from "./source/view/diff";
-import { div } from "./source/view/viewUtil";
+} from "@narumincho/html/source/view";
+import {
+  createChildrenDiff,
+  createElementDiff,
+} from "@narumincho/html/source/diff";
+import { div } from "@narumincho/html/source/viewUtil";
 
 describe("test", () => {
   it("same text return skip", () => {
