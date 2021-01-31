@@ -1,7 +1,7 @@
 import * as d from "definy-core/source/data";
-import { c, div, image as img } from "@narumincho/html/source/viewUtil";
+import { c, div, image as img } from "@narumincho/html/viewUtil";
 import { CSSObject } from "@emotion/css";
-import { Element } from "@narumincho/html/source/view";
+import { Element } from "@narumincho/html/view";
 import { State } from "./messageAndState";
 import { icon } from "./icon";
 

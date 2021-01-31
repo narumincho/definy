@@ -13,14 +13,9 @@ import * as pageSetting from "./pageSetting";
 import * as pageUser from "./pageUser";
 import * as typePartEditor from "./typePartEditor";
 import { CSSObject, keyframes } from "@emotion/css";
-import {
-  Element,
-  View,
-  childrenElementList,
-} from "@narumincho/html/source/view";
 import { api, getImageWithCache } from "./api";
-import { c, div, styleToBodyClass } from "@narumincho/html/source/viewUtil";
 import { mapMapAt, mapSet } from "./util";
+import { view, viewUtil } from "@narumincho/html";
 import { headerView } from "./header";
 
 export const initState = (
@@ -928,7 +923,7 @@ const getResourceResponseToResourceState = <resource extends unknown>(
   return d.ResourceState.Deleted(response.value.getTime);
 };
 
-export const stateToView = (state: a.State): View<a.Message> => {
+export const stateToView = (state: a.State): view.View<a.Message> => {
   const titleAndAttributeChildren = stateToTitleAndAttributeChildren(state);
   return {
     pageName:
@@ -945,12 +940,12 @@ export const stateToView = (state: a.State): View<a.Message> => {
     appName: "Definy",
     language: state.language,
     themeColor: undefined,
-    bodyClass: styleToBodyClass({
+    bodyClass: viewUtil.styleToBodyClass({
       height: "100%",
       display: "grid",
       ...titleAndAttributeChildren.style,
     }),
-    children: childrenElementList(titleAndAttributeChildren.children),
+    children: view.childrenElementList(titleAndAttributeChildren.children),
   };
 };
 
@@ -959,7 +954,7 @@ const stateToTitleAndAttributeChildren = (
 ): {
   title: string;
   style: CSSObject;
-  children: ReadonlyMap<string, Element<a.Message>>;
+  children: ReadonlyMap<string, view.Element<a.Message>>;
 } => {
   switch (state.logInState._) {
     case "RequestingLogInUrl": {
@@ -970,7 +965,7 @@ const stateToTitleAndAttributeChildren = (
       return {
         title: message,
         style: {},
-        children: c([["", prepareLogIn(message)]]),
+        children: viewUtil.c([["", prepareLogIn(message)]]),
       };
     }
     case "JumpingToLogInPage": {
@@ -981,7 +976,7 @@ const stateToTitleAndAttributeChildren = (
       return {
         title: message,
         style: {},
-        children: c([["", prepareLogIn(message)]]),
+        children: viewUtil.c([["", prepareLogIn(message)]]),
       };
     }
   }
@@ -989,15 +984,15 @@ const stateToTitleAndAttributeChildren = (
   return {
     title: mainTitleAndElement.title,
     style: { gridTemplateRows: "48px 1fr" },
-    children: c<a.Message>([
+    children: viewUtil.c<a.Message>([
       ["header", headerView(state)],
       ["main", mainTitleAndElement.element],
     ]),
   };
 };
 
-const prepareLogIn = (message: string): Element<never> =>
-  div(
+const prepareLogIn = (message: string): view.Element<never> =>
+  viewUtil.div(
     {
       style: {
         height: "100%",
@@ -1006,7 +1001,7 @@ const prepareLogIn = (message: string): Element<never> =>
         justifyItems: "center",
       },
     },
-    c([["", loadingBox(message)]])
+    viewUtil.c([["", loadingBox(message)]])
   );
 
 const logInMessage = (
@@ -1057,8 +1052,8 @@ const main = (state: a.State): a.TitleAndElement<a.Message> => {
   }
 };
 
-export const loadingBox = (message: string): Element<never> =>
-  div(
+export const loadingBox = (message: string): view.Element<never> =>
+  viewUtil.div(
     {
       style: {
         display: "grid",
@@ -1066,11 +1061,11 @@ export const loadingBox = (message: string): Element<never> =>
         justifyItems: "center",
       },
     },
-    c([
-      ["message", div({}, message)],
+    viewUtil.c([
+      ["message", viewUtil.div({}, message)],
       [
         "logo",
-        div(
+        viewUtil.div(
           {
             style: {
               width: 96,

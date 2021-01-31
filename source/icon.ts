@@ -1,5 +1,5 @@
-import { c, circle, svg } from "@narumincho/html/source/viewUtil";
-import { Element } from "@narumincho/html/source/view";
+import { c, circle, svg } from "@narumincho/html/viewUtil";
+import { Element } from "@narumincho/html/view";
 
 type IconType = "Requesting" | "Loading";
 

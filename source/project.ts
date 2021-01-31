@@ -1,7 +1,7 @@
 import * as d from "definy-core/source/data";
 import { Message, State } from "./messageAndState";
-import { c, div } from "@narumincho/html/source/viewUtil";
-import { Element } from "@narumincho/html/source/view";
+import { c, div } from "@narumincho/html/viewUtil";
+import { Element } from "@narumincho/html/view";
 import { image } from "./image";
 import { link } from "./link";
 

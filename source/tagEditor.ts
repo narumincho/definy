@@ -1,5 +1,5 @@
-import { c, inputRadio, label } from "@narumincho/html/source/viewUtil";
-import { Element } from "@narumincho/html/source/view";
+import { c, inputRadio, label } from "@narumincho/html/viewUtil";
+import { Element } from "@narumincho/html/view";
 import { box } from "./ui";
 
 export const tagEditor = <tag extends string>(

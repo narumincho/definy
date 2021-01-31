@@ -1,6 +1,6 @@
-import * as viewUtil from "@narumincho/html/source/viewUtil";
+import * as viewUtil from "@narumincho/html/viewUtil";
 import { CSSObject } from "@emotion/css";
-import { Element } from "@narumincho/html/source/view";
+import { Element } from "@narumincho/html/view";
 
 export const button = <Message>(
   option: { style?: CSSObject; hoverStyle?: CSSObject; click: Message },

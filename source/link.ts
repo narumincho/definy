@@ -2,9 +2,9 @@ import * as core from "definy-core";
 import * as d from "definy-core/source/data";
 import { Message, State, messageJumpTag } from "./messageAndState";
 import { CSSObject } from "@emotion/css";
-import { Element } from "@narumincho/html/source/view";
+import { Element } from "@narumincho/html/view";
 import { Theme } from "./ui";
-import { localLink } from "@narumincho/html/source/viewUtil";
+import { localLink } from "@narumincho/html/viewUtil";
 
 const themeToStyle = (
   theme: Theme

@@ -1,5 +1,5 @@
-import { c, div, path, svg } from "@narumincho/html/source/viewUtil";
-import { Element } from "@narumincho/html/source/view";
+import { c, div, path, svg } from "@narumincho/html/viewUtil";
+import { Element } from "@narumincho/html/view";
 
 export type GridTemplateValue = { _: "Fix"; value: number } | { _: "OneFr" };
 

@@ -1,5 +1,5 @@
-import { Element } from "@narumincho/html/source/view";
-import { inputOneLineText } from "@narumincho/html/source/viewUtil";
+import { Element } from "@narumincho/html/view";
+import { inputOneLineText } from "@narumincho/html/viewUtil";
 
 export const oneLineTextEditor = <Message>(
   option: { id?: string },

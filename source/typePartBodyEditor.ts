@@ -4,8 +4,8 @@ import * as listEditor from "./listEditor";
 import * as memberListEditor from "./memberListEditor";
 import * as patternListEditor from "./patternListEditor";
 import { SelectBoxSelection, selectBox, selectText, text } from "./ui";
-import { c, div, elementMap } from "@narumincho/html/source/viewUtil";
-import { Element } from "@narumincho/html/source/view";
+import { c, div, elementMap } from "@narumincho/html/viewUtil";
+import { Element } from "@narumincho/html/view";
 import { tagEditor } from "./tagEditor";
 
 export type Message =

@@ -5,7 +5,7 @@ import {
   TitleAndElement,
   messageGetUserTag,
 } from "./messageAndState";
-import { c, div } from "@narumincho/html/source/viewUtil";
+import { c, div } from "@narumincho/html/viewUtil";
 import { image } from "./image";
 
 export const init = (

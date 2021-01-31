@@ -1,7 +1,7 @@
 import * as d from "definy-core/source/data";
 import { SelectBoxSelection, box, selectBox, text } from "./ui";
-import { c, elementMap } from "@narumincho/html/source/viewUtil";
-import { Element } from "@narumincho/html/source/view";
+import { c, elementMap } from "@narumincho/html/viewUtil";
+import { Element } from "@narumincho/html/view";
 import { tagEditor } from "./tagEditor";
 
 export type MaybeTag = "Just" | "Nothing";
