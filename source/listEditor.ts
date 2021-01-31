@@ -1,6 +1,6 @@
 import { SelectBoxSelection, box, selectBox, text } from "./ui";
-import { c, elementMap } from "./view/viewUtil";
-import { Element } from "./view/view";
+import { c, elementMap } from "@narumincho/html/viewUtil";
+import { Element } from "@narumincho/html/view";
 import { button } from "./button";
 
 export type Selection<ItemSelection> =

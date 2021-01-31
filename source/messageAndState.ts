@@ -1,7 +1,7 @@
 import * as d from "definy-core/source/data";
 import * as pageDebug from "./pageDebug";
 import type * as pageProject from "./pageProject";
-import { Element } from "./view/view";
+import { Element } from "@narumincho/html/view";
 import type { Message as TypePartEditorMessage } from "./typePartEditor";
 
 export type HomeProjectState =

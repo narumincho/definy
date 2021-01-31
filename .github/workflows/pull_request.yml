@@ -19,6 +19,6 @@ jobs:
       - name: Install npm dependencies (npm ci)
         run: npm ci
       - name: type check
-        run: tsc --project source/tsconfig.json --noEmit
+        run: tsc --project tsconfig.json --noEmit
       - name: Parcel build (npx parcel)
         run: npx parcel build ./source/main.ts --out-dir ./distribution;

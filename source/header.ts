@@ -1,8 +1,8 @@
 import * as d from "definy-core/source/data";
 import { Message, State, messageRequestLogInTag } from "./messageAndState";
-import { c, div, elementMap, path, svg } from "./view/viewUtil";
+import { c, div, path, svg } from "@narumincho/html/viewUtil";
 import { CSSObject } from "@emotion/css";
-import { Element } from "./view/view";
+import { Element } from "@narumincho/html/view";
 import { button } from "./button";
 import { gitHubIcon } from "./ui";
 import { image } from "./image";

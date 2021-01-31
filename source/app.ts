@@ -13,10 +13,9 @@ import * as pageSetting from "./pageSetting";
 import * as pageUser from "./pageUser";
 import * as typePartEditor from "./typePartEditor";
 import { CSSObject, keyframes } from "@emotion/css";
-import { Element, View } from "./view/view";
 import { api, getImageWithCache } from "./api";
-import { c, div, view } from "./view/viewUtil";
 import { mapMapAt, mapSet } from "./util";
+import { view, viewUtil } from "@narumincho/html";
 import { headerView } from "./header";
 
 export const initState = (
@@ -924,24 +923,30 @@ const getResourceResponseToResourceState = <resource extends unknown>(
   return d.ResourceState.Deleted(response.value.getTime);
 };
 
-export const stateToView = (state: a.State): View<a.Message> => {
+export const stateToView = (state: a.State): view.View<a.Message> => {
   const titleAndAttributeChildren = stateToTitleAndAttributeChildren(state);
-  return view(
-    {
-      title:
-        (titleAndAttributeChildren.title === ""
-          ? ""
-          : titleAndAttributeChildren.title + " | ") + "Definy",
-      language: state.language,
-      themeColor: undefined,
-      style: {
-        height: "100%",
-        display: "grid",
-        ...titleAndAttributeChildren.style,
-      },
-    },
-    titleAndAttributeChildren.children
-  );
+  return {
+    pageName:
+      (titleAndAttributeChildren.title === ""
+        ? ""
+        : titleAndAttributeChildren.title + " | ") + "Definy",
+    description: "Definy の 説明",
+    twitterCard: "SummaryCardWithLargeImage",
+    coverImageUrl: new URL("https://narumincho.com/assets/icon.png"),
+    scriptUrlList: [],
+    styleUrlList: [],
+    iconPath: "wip.png",
+    url: new URL("https://definy.app"),
+    appName: "Definy",
+    language: state.language,
+    themeColor: undefined,
+    bodyClass: viewUtil.styleToBodyClass({
+      height: "100%",
+      display: "grid",
+      ...titleAndAttributeChildren.style,
+    }),
+    children: view.childrenElementList(titleAndAttributeChildren.children),
+  };
 };
 
 const stateToTitleAndAttributeChildren = (
@@ -949,7 +954,7 @@ const stateToTitleAndAttributeChildren = (
 ): {
   title: string;
   style: CSSObject;
-  children: string | ReadonlyMap<string, Element<a.Message>>;
+  children: ReadonlyMap<string, view.Element<a.Message>>;
 } => {
   switch (state.logInState._) {
     case "RequestingLogInUrl": {
@@ -960,7 +965,7 @@ const stateToTitleAndAttributeChildren = (
       return {
         title: message,
         style: {},
-        children: c([["", prepareLogIn(message)]]),
+        children: viewUtil.c([["", prepareLogIn(message)]]),
       };
     }
     case "JumpingToLogInPage": {
@@ -971,7 +976,7 @@ const stateToTitleAndAttributeChildren = (
       return {
         title: message,
         style: {},
-        children: c([["", prepareLogIn(message)]]),
+        children: viewUtil.c([["", prepareLogIn(message)]]),
       };
     }
   }
@@ -979,15 +984,15 @@ const stateToTitleAndAttributeChildren = (
   return {
     title: mainTitleAndElement.title,
     style: { gridTemplateRows: "48px 1fr" },
-    children: c<a.Message>([
+    children: viewUtil.c<a.Message>([
       ["header", headerView(state)],
       ["main", mainTitleAndElement.element],
     ]),
   };
 };
 
-const prepareLogIn = (message: string): Element<never> =>
-  div(
+const prepareLogIn = (message: string): view.Element<never> =>
+  viewUtil.div(
     {
       style: {
         height: "100%",
@@ -996,7 +1001,7 @@ const prepareLogIn = (message: string): Element<never> =>
         justifyItems: "center",
       },
     },
-    c([["", loadingBox(message)]])
+    viewUtil.c([["", loadingBox(message)]])
   );
 
 const logInMessage = (
@@ -1047,8 +1052,8 @@ const main = (state: a.State): a.TitleAndElement<a.Message> => {
   }
 };
 
-export const loadingBox = (message: string): Element<never> =>
-  div(
+export const loadingBox = (message: string): view.Element<never> =>
+  viewUtil.div(
     {
       style: {
         display: "grid",
@@ -1056,11 +1061,11 @@ export const loadingBox = (message: string): Element<never> =>
         justifyItems: "center",
       },
     },
-    c([
-      ["message", div({}, message)],
+    viewUtil.c([
+      ["message", viewUtil.div({}, message)],
       [
         "logo",
-        div(
+        viewUtil.div(
           {
             style: {
               width: 96,

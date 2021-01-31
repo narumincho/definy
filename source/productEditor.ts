@@ -1,6 +1,6 @@
 import { SelectBoxSelection, box, grayText, selectBox } from "./ui";
-import { Element } from "./view/view";
-import { c } from "./view/viewUtil";
+import { Element } from "@narumincho/html/view";
+import { c } from "@narumincho/html/viewUtil";
 
 export interface ProductItem<Message> {
   readonly name: string;

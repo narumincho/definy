@@ -4,8 +4,8 @@ import {
   TitleAndElement,
   messageLogOut,
 } from "./messageAndState";
-import { c, div, elementMap } from "./view/viewUtil";
-import { Element } from "./view/view";
+import { c, div } from "@narumincho/html/viewUtil";
+import { Element } from "@narumincho/html/view";
 import { button } from "./button";
 import { userCard } from "./user";
 
