@@ -19,7 +19,7 @@
   ],
   "dependencies": {
     "@narumincho/html": "0.2.1",
-    "definy-core": "0.2.14",
+    "definy-core": "0.2.15",
     "js-ts-code-generator": "0.3.4"
   },
   "devDependencies": {
