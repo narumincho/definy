@@ -377,6 +377,15 @@ const mainView = (
                 )
             ),
           ],
+          [
+            "saveButton",
+            state.typePartEditState === "None"
+              ? button<a.Message>(
+                  { click: { tag: "SaveTypePart", typePartId } },
+                  "保存"
+                )
+              : text("処理中"),
+          ],
         ])
       );
     }
