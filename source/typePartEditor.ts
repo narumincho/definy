@@ -4,8 +4,8 @@ import * as listEditor from "./listEditor";
 import * as maybeEditor from "./maybeEditor";
 import * as typeParameterEditor from "./typeParameterEditor";
 import * as typePartBodyEditor from "./typePartBodyEditor";
-import { box, selectText, text } from "./ui";
-import { c, div, elementMap } from "@narumincho/html/viewUtil";
+import { div, elementMap } from "@narumincho/html/viewUtil";
+import { selectText, text } from "./ui";
 import { Element } from "@narumincho/html/view";
 import { multiLineTextEditor } from "./multilineTextInput";
 import { oneLineTextEditor } from "./oneLineTextInput";
@@ -161,7 +161,6 @@ export const view = (
   if (typePartResource === undefined) {
     return div({}, "???");
   }
-  const selectionText = JSON.stringify(selection);
   switch (typePartResource._) {
     case "Deleted":
       return div({}, "削除された型パーツ");
@@ -170,30 +169,11 @@ export const view = (
     case "Unknown":
       return div({}, "取得に失敗した型パーツ");
     case "Loaded":
-      return box(
-        {
-          padding: 0,
-          direction: "y",
-        },
-        c([
-          [
-            "selection",
-            text(
-              typeof selectionText === "string"
-                ? selectionText
-                : "肩パーツ全体を選択している?"
-            ),
-          ],
-          [
-            "view",
-            typePartViewLoaded(
-              state,
-              typePartId,
-              typePartResource.dataWithTime.data,
-              selection
-            ),
-          ],
-        ])
+      return typePartViewLoaded(
+        state,
+        typePartId,
+        typePartResource.dataWithTime.data,
+        selection
       );
   }
 };

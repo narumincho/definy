@@ -18,17 +18,17 @@
     "last 1 safari version"
   ],
   "dependencies": {
-    "@narumincho/html": "0.2.1",
-    "definy-core": "0.2.15",
+    "@narumincho/html": "0.2.2",
+    "definy-core": "0.2.16",
     "js-ts-code-generator": "0.3.4"
   },
   "devDependencies": {
     "@types/jest": "26.0.20",
-    "@types/node": "14.14.22",
+    "@types/node": "14.14.23",
     "@types/prettier": "2.1.6",
-    "@typescript-eslint/eslint-plugin": "4.14.1",
-    "@typescript-eslint/parser": "4.14.1",
-    "eslint": "7.18.0",
+    "@typescript-eslint/eslint-plugin": "4.14.2",
+    "@typescript-eslint/parser": "4.14.2",
+    "eslint": "7.19.0",
     "eslint-config-prettier": "7.2.0",
     "eslint-plugin-prettier": "3.3.1",
     "jest": "^26.6.3",

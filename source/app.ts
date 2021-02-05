@@ -247,6 +247,22 @@ export const updateStateByMessage = (
         };
       }
       return oldState;
+
+    case "SaveTypePart":
+      return saveTypePart(oldState, message.typePartId, messageHandler);
+
+    case "RespondSavingTypePart":
+      return responseSavingTypePart(
+        oldState,
+        message.typePartId,
+        message.response
+      );
+
+    case "AddTypePartNoSave":
+      return addTypePartNoSave(oldState, message.projectId, messageHandler);
+
+    case "RespondAddTypePart":
+      return respondAddTypePart(oldState, message.response);
   }
 };
 
@@ -687,6 +703,123 @@ const setTypePartList = (
   return {
     ...state,
     typePartEditState: "Saving",
+  };
+};
+
+const saveTypePart = (
+  oldState: a.State,
+  typePartId: d.TypePartId,
+  messageHandler: (message: a.Message) => void
+): a.State => {
+  if (oldState.typePartEditState !== "None") {
+    return oldState;
+  }
+  const accountToken = a.getAccountToken(oldState);
+  if (accountToken === undefined) {
+    return oldState;
+  }
+  const resource = oldState.typePartMap.get(typePartId);
+  if (resource === undefined) {
+    return oldState;
+  }
+  if (resource._ !== "Loaded") {
+    return oldState;
+  }
+  api
+    .setTypePart({
+      accountToken,
+      typePart: resource.dataWithTime.data,
+      typePartId,
+    })
+    .then((response) => {
+      messageHandler({ tag: "RespondSavingTypePart", typePartId, response });
+    });
+  return {
+    ...oldState,
+    typePartEditState: "Saving",
+  };
+};
+
+const responseSavingTypePart = (
+  oldState: a.State,
+  typePartId: d.TypePartId,
+  response: d.Maybe<d.WithTime<d.Maybe<d.TypePart>>>
+): a.State => {
+  if (response._ === "Nothing") {
+    // 1つの型パーツ保存に失敗した
+    return oldState;
+  }
+  const typePartMaybe = response.value.data;
+  if (typePartMaybe._ === "Nothing") {
+    return oldState;
+  }
+
+  return {
+    ...oldState,
+    typePartMap: new Map([
+      ...oldState.typePartMap,
+      [
+        typePartId,
+        d.ResourceState.Loaded({
+          data: typePartMaybe.value,
+          getTime: response.value.getTime,
+        }),
+      ],
+    ]),
+    typePartEditState: "None",
+  };
+};
+
+const addTypePartNoSave = (
+  oldState: a.State,
+  projectId: d.ProjectId,
+  messageHandler: (message: a.Message) => void
+): a.State => {
+  if (oldState.typePartEditState !== "None") {
+    return oldState;
+  }
+  const accountToken = a.getAccountToken(oldState);
+  if (accountToken === undefined) {
+    return oldState;
+  }
+  api
+    .addTypePart({
+      accountToken,
+      projectId,
+    })
+    .then((response) => {
+      messageHandler({ tag: "RespondAddTypePart", response });
+    });
+  return {
+    ...oldState,
+    typePartEditState: "Adding",
+  };
+};
+
+const respondAddTypePart = (
+  oldState: a.State,
+  response: d.Maybe<d.WithTime<d.Maybe<d.IdAndData<d.TypePartId, d.TypePart>>>>
+): a.State => {
+  if (response._ === "Nothing") {
+    return oldState;
+  }
+  const idAndDataMaybe = response.value.data;
+  if (idAndDataMaybe._ === "Nothing") {
+    return oldState;
+  }
+  return {
+    ...oldState,
+    typePartMap: new Map([
+      ...oldState.typePartMap,
+      [
+        idAndDataMaybe.value.id,
+        d.ResourceState.Loaded({
+          getTime: response.value.getTime,
+          data: idAndDataMaybe.value.data,
+        }),
+      ],
+    ]),
+    typePartEditState: "None",
   };
 };
 
