@@ -18,7 +18,7 @@
     "last 1 safari version"
   ],
   "dependencies": {
-    "@narumincho/html": "0.2.1",
+    "@narumincho/html": "0.2.2",
     "definy-core": "0.2.16",
     "js-ts-code-generator": "0.3.4"
   },
