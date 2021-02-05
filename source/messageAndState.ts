@@ -231,6 +231,16 @@ export type Message =
       readonly tag: "RespondSavingTypePart";
       readonly typePartId: d.TypePartId;
       readonly response: d.Maybe<d.WithTime<d.Maybe<d.TypePart>>>;
+    }
+  | {
+      readonly tag: "AddTypePartNoSave";
+      readonly projectId: d.ProjectId;
+    }
+  | {
+      readonly tag: "RespondAddTypePart";
+      readonly response: d.Maybe<
+        d.WithTime<d.Maybe<d.IdAndData<d.TypePartId, d.TypePart>>>
+      >;
     };
 
 export const messageNoOp = Symbol("Message-NoOp");

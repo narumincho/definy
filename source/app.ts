@@ -257,6 +257,12 @@ export const updateStateByMessage = (
         message.typePartId,
         message.response
       );
+
+    case "AddTypePartNoSave":
+      return addTypePartNoSave(oldState, message.projectId, messageHandler);
+
+    case "RespondAddTypePart":
+      return respondAddTypePart(oldState, message.response);
   }
 };
 
@@ -757,6 +763,59 @@ const responseSavingTypePart = (
         d.ResourceState.Loaded({
           data: typePartMaybe.value,
           getTime: response.value.getTime,
+        }),
+      ],
+    ]),
+    typePartEditState: "None",
+  };
+};
+
+const addTypePartNoSave = (
+  oldState: a.State,
+  projectId: d.ProjectId,
+  messageHandler: (message: a.Message) => void
+): a.State => {
+  if (oldState.typePartEditState !== "None") {
+    return oldState;
+  }
+  const accountToken = a.getAccountToken(oldState);
+  if (accountToken === undefined) {
+    return oldState;
+  }
+  api
+    .addTypePart({
+      accountToken,
+      projectId,
+    })
+    .then((response) => {
+      messageHandler({ tag: "RespondAddTypePart", response });
+    });
+  return {
+    ...oldState,
+    typePartEditState: "Adding",
+  };
+};
+
+const respondAddTypePart = (
+  oldState: a.State,
+  response: d.Maybe<d.WithTime<d.Maybe<d.IdAndData<d.TypePartId, d.TypePart>>>>
+): a.State => {
+  if (response._ === "Nothing") {
+    return oldState;
+  }
+  const idAndDataMaybe = response.value.data;
+  if (idAndDataMaybe._ === "Nothing") {
+    return oldState;
+  }
+  return {
+    ...oldState,
+    typePartMap: new Map([
+      ...oldState.typePartMap,
+      [
+        idAndDataMaybe.value.id,
+        d.ResourceState.Loaded({
+          getTime: response.value.getTime,
+          data: idAndDataMaybe.value.data,
         }),
       ],
     ]),
