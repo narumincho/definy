@@ -155,8 +155,9 @@ const focusInput = (selection: Selection): void => {
 export const view = (
   state: a.State,
   typePartId: d.TypePartId,
-  selection: Selection | undefined
-): Element<Message> => {
+  selection: Selection | undefined,
+  messageToAppMessageFunc: (message: Message) => a.Message
+): Element<a.Message> => {
   const typePartResource = state.typePartMap.get(typePartId);
   if (typePartResource === undefined) {
     return div({}, "???");
@@ -173,7 +174,8 @@ export const view = (
         state,
         typePartId,
         typePartResource.dataWithTime.data,
-        selection
+        selection,
+        messageToAppMessageFunc
       );
   }
 };
@@ -182,80 +184,84 @@ const typePartViewLoaded = (
   state: a.State,
   typePartId: d.TypePartId,
   typePart: d.TypePart,
-  selection: Selection | undefined
-): Element<Message> => {
-  return productEditor<Message>({}, [
-    {
-      name: "name",
-      element: selectText(
-        selection?.tag === "name",
-        {
-          tag: "Select",
-          selection: {
-            tag: "name",
+  selection: Selection | undefined,
+  messageToAppMessageFunc: (message: Message) => a.Message
+): Element<a.Message> => {
+  return elementMap(
+    productEditor<Message>({}, [
+      {
+        name: "name",
+        element: selectText(
+          selection?.tag === "name",
+          {
+            tag: "Select",
+            selection: {
+              tag: "name",
+            },
           },
-        },
-        typePart.name
-      ),
-    },
-    {
-      name: "description",
-      element: selectText(
-        selection?.tag === "description",
-        {
-          tag: "Select",
-          selection: {
-            tag: "description",
-          },
-        },
-        typePart.description
-      ),
-    },
-    {
-      name: "attribute",
-      element: elementMap(
-        attributeMaybeView(
-          typePart.attribute,
-          selection?.tag === "attribute" ? selection.content : undefined
+          typePart.name
         ),
-        (content) => ({
-          tag: "Select",
-          selection: {
-            tag: "attribute",
-            content,
+      },
+      {
+        name: "description",
+        element: selectText(
+          selection?.tag === "description",
+          {
+            tag: "Select",
+            selection: {
+              tag: "description",
+            },
           },
-        })
-      ),
-    },
-    {
-      name: "parameter",
-      element: elementMap<typeParameterEditor.ListSelection, Message>(
-        typeParameterEditor.listView(
-          typePart.typeParameterList,
-          selection?.tag === "parameter" ? selection.content : undefined
+          typePart.description
         ),
-        selectParameter
-      ),
-    },
-    {
-      name: "body",
-      element: elementMap(
-        typePartBodyEditor.view(
-          state,
-          typePartId,
-          typePart.body,
-          selection?.tag === "body" ? selection.content : undefined
+      },
+      {
+        name: "attribute",
+        element: elementMap(
+          attributeMaybeView(
+            typePart.attribute,
+            selection?.tag === "attribute" ? selection.content : undefined
+          ),
+          (content) => ({
+            tag: "Select",
+            selection: {
+              tag: "attribute",
+              content,
+            },
+          })
         ),
-        (bodySelection) => ({
-          tag: "Select",
-          selection: {
-            tag: "body",
-            content: bodySelection,
-          },
-        })
-      ),
-    },
-  ]);
+      },
+      {
+        name: "parameter",
+        element: elementMap<typeParameterEditor.ListSelection, Message>(
+          typeParameterEditor.listView(
+            typePart.typeParameterList,
+            selection?.tag === "parameter" ? selection.content : undefined
+          ),
+          selectParameter
+        ),
+      },
+      {
+        name: "body",
+        element: elementMap(
+          typePartBodyEditor.view(
+            state,
+            typePartId,
+            typePart.body,
+            selection?.tag === "body" ? selection.content : undefined
+          ),
+          (bodySelection) => ({
+            tag: "Select",
+            selection: {
+              tag: "body",
+              content: bodySelection,
+            },
+          })
+        ),
+      },
+    ]),
+    messageToAppMessageFunc
+  );
 };
 
 const attributeMaybeView = (

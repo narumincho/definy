@@ -400,12 +400,10 @@ const mainView = (
         c([
           [
             "e",
-            elementMap<typePartEditor.Message, a.Message>(
-              typePartEditor.view(
-                state,
-                typePartId,
-                pageState.selection.childSelection
-              ),
+            typePartEditor.view(
+              state,
+              typePartId,
+              pageState.selection.childSelection,
               (typePartEditorMessage) =>
                 typePartEditorMessageToMessage(
                   typePartEditorMessage,
