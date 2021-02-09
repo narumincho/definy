@@ -59,6 +59,9 @@ export interface State {
 
   /**どこのページを開いているかとそのページの状態 */
   readonly pageModel: PageModel;
+
+  /** 型を検索するためのキーワード */
+  readonly typeSearchText: string;
 }
 
 export type OutputCode =
