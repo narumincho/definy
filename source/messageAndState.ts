@@ -244,6 +244,10 @@ export type Message =
       readonly response: d.Maybe<
         d.WithTime<d.Maybe<d.IdAndData<d.TypePartId, d.TypePart>>>
       >;
+    }
+  | {
+      readonly tag: "SetTypeSearchText";
+      readonly text: string;
     };
 
 export const messageNoOp = Symbol("Message-NoOp");

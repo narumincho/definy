@@ -264,6 +264,12 @@ export const updateStateByMessage = (
 
     case "RespondAddTypePart":
       return respondAddTypePart(oldState, message.response);
+
+    case "SetTypeSearchText":
+      return {
+        ...oldState,
+        typeSearchText: message.text,
+      };
   }
 };
 
