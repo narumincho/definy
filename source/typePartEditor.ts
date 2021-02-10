@@ -371,13 +371,11 @@ const loadedEditor = (
       );
 
     case "body":
-      return elementMap(
-        typePartBodyEditor.editor(
-          state,
-          typePartId,
-          typePart.body,
-          selection.content
-        ),
+      return typePartBodyEditor.editor(
+        state,
+        typePartId,
+        typePart.body,
+        selection.content,
         (bodyMessage): a.Message =>
           messageToAppMessageFunc({ tag: "ChangeBody", bodyMessage })
       );
@@ -435,8 +433,11 @@ const typePartEditor = (
     },
     {
       name: "body",
-      element: elementMap(
-        typePartBodyEditor.editor(state, typePartId, typePart.body, undefined),
+      element: typePartBodyEditor.editor(
+        state,
+        typePartId,
+        typePart.body,
+        undefined,
         (bodyMessage): a.Message =>
           messageToAppMessageFunc({ tag: "ChangeBody", bodyMessage })
       ),

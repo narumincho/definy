@@ -117,12 +117,14 @@ const selectionToSelectBoxSelection = (
   return "innerSelected";
 };
 
-const bodyTagEditor = (typePartBody: d.TypePartBody): Element<Message> => {
+const bodyTagEditor = (
+  typePartBody: d.TypePartBody,
+  messageToAppMessageFunc: (message: Message) => a.Message
+): Element<a.Message> => {
   return elementMap(
     tagEditor(["Sum", "Product", "Kernel"], typePartBody._, "typePartBody"),
-    (tagEditorMessage): Message => {
-      return { tag: "ChangeTag", newTag: tagEditorMessage };
-    }
+    (tagEditorMessage): a.Message =>
+      messageToAppMessageFunc({ tag: "ChangeTag", newTag: tagEditorMessage })
   );
 };
 
@@ -172,8 +174,9 @@ const bodyContentView = (
 const bodyContentEditor = (
   state: a.State,
   typePartId: d.TypePartId,
-  typePartBody: d.TypePartBody
-): Element<Message> => {
+  typePartBody: d.TypePartBody,
+  messageToAppMessageFunc: (message: Message) => a.Message
+): Element<a.Message> => {
   switch (typePartBody._) {
     case "Sum":
       return elementMap(
@@ -184,10 +187,11 @@ const bodyContentEditor = (
           "patternList",
           undefined
         ),
-        (patternListMessage): Message => ({
-          tag: "ChangePatternList",
-          patternListMessage,
-        })
+        (patternListMessage): a.Message =>
+          messageToAppMessageFunc({
+            tag: "ChangePatternList",
+            patternListMessage,
+          })
       );
     case "Product":
       return elementMap(
@@ -198,10 +202,11 @@ const bodyContentEditor = (
           typePartBody.memberList,
           undefined
         ),
-        (memberListMessage): Message => ({
-          tag: "ChangeMemberList",
-          memberListMessage,
-        })
+        (memberListMessage): a.Message =>
+          messageToAppMessageFunc({
+            tag: "ChangeMemberList",
+            memberListMessage,
+          })
       );
     case "Kernel":
       return elementMap(
@@ -210,7 +215,8 @@ const bodyContentEditor = (
           typePartBody.typePartBodyKernel,
           "typePartBodyKernel"
         ),
-        (newKernel): Message => ({ tag: "ChangeKernel", newKernel })
+        (newKernel): a.Message =>
+          messageToAppMessageFunc({ tag: "ChangeKernel", newKernel })
       );
   }
 };
@@ -219,14 +225,23 @@ export const editor = (
   state: a.State,
   typePartId: d.TypePartId,
   typePartBody: d.TypePartBody,
-  selection: Selection | undefined
-): Element<Message> => {
+  selection: Selection | undefined,
+  messageToAppMessageFunc: (message: Message) => a.Message
+): Element<a.Message> => {
   if (selection === undefined || selection.tag === "self") {
-    return div<Message>(
+    return div<a.Message>(
       {},
       c([
-        ["tag", bodyTagEditor(typePartBody)],
-        ["content", bodyContentEditor(state, typePartId, typePartBody)],
+        ["tag", bodyTagEditor(typePartBody, messageToAppMessageFunc)],
+        [
+          "content",
+          bodyContentEditor(
+            state,
+            typePartId,
+            typePartBody,
+            messageToAppMessageFunc
+          ),
+        ],
       ])
     );
   }
@@ -239,10 +254,11 @@ export const editor = (
         "patternList",
         selection.content
       ),
-      (patternListMessage): Message => ({
-        tag: "ChangePatternList",
-        patternListMessage,
-      })
+      (patternListMessage): a.Message =>
+        messageToAppMessageFunc({
+          tag: "ChangePatternList",
+          patternListMessage,
+        })
     );
   }
   if (selection.tag === "product" && typePartBody._ === "Product") {
@@ -254,10 +270,11 @@ export const editor = (
         typePartBody.memberList,
         selection.content
       ),
-      (memberListMessage): Message => ({
-        tag: "ChangeMemberList",
-        memberListMessage,
-      })
+      (memberListMessage): a.Message =>
+        messageToAppMessageFunc({
+          tag: "ChangeMemberList",
+          memberListMessage,
+        })
     );
   }
   if (selection.tag === "kernel" && typePartBody._ === "Kernel") {
@@ -267,7 +284,8 @@ export const editor = (
         typePartBody.typePartBodyKernel,
         "typePartBodyKernel"
       ),
-      (newKernel): Message => ({ tag: "ChangeKernel", newKernel })
+      (newKernel): a.Message =>
+        messageToAppMessageFunc({ tag: "ChangeKernel", newKernel })
     );
   }
   return text("編集する値がない in TypePartBodyEditor");
