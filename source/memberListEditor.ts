@@ -1,3 +1,4 @@
+import * as a from "./messageAndState";
 import * as d from "definy-core/source/data";
 import * as definyType from "./definyType";
 import * as listEditor from "./listEditor";
@@ -5,7 +6,6 @@ import * as typeEditor from "./typeEditor";
 import { SelectBoxSelection, box, selectText } from "./ui";
 import { c, elementMap } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
-import { State } from "./messageAndState";
 import { oneLineTextEditor } from "./oneLineTextInput";
 import { productEditor } from "./productEditor";
 
@@ -91,7 +91,7 @@ export const listUpdate = (
   );
 
 export const itemView = (
-  state: State,
+  state: a.State,
   typePartId: d.TypePartId,
   member: d.Member,
   selection: ItemSelection | undefined
@@ -169,7 +169,7 @@ const selectionToSelectBoxSelection = (
 };
 
 export const listView = (
-  state: State,
+  state: a.State,
   typePartId: d.TypePartId,
   list: ReadonlyArray<d.Member>,
   selection: listEditor.Selection<ItemSelection> | undefined
@@ -181,62 +181,75 @@ export const listView = (
   );
 
 export const itemEditor = (
-  state: State,
+  state: a.State,
   typePartId: d.TypePartId,
   name: string,
   member: d.Member,
-  selection: ItemSelection | undefined
-): Element<ItemMessage> => {
+  selection: ItemSelection | undefined,
+  messageToAppMessage: (message: ItemMessage) => a.Message
+): Element<a.Message> => {
   if (selection === undefined || selection.tag === "self") {
     return productEditor({}, [
       {
         name: "name",
-        element: oneLineTextEditor({}, member.name, setName),
+        element: oneLineTextEditor({}, member.name, (newName) =>
+          messageToAppMessage(setName(newName))
+        ),
       },
       {
         name: "description",
-        element: oneLineTextEditor({}, member.description, setDescription),
+        element: oneLineTextEditor({}, member.description, (newDescription) =>
+          messageToAppMessage(setDescription(newDescription))
+        ),
       },
       {
         name: "type",
         element: elementMap(
           typeEditor.editor(state, typePartId, member.type, undefined),
-          (newType: d.Type): ItemMessage => ({
-            tag: "SetType",
-            newType,
-          })
+          (newType: d.Type): a.Message =>
+            messageToAppMessage({
+              tag: "SetType",
+              newType,
+            })
         ),
       },
     ]);
   }
   if (selection.tag === "name") {
-    return oneLineTextEditor({}, member.name, setName);
+    return oneLineTextEditor({}, member.name, (newName) =>
+      messageToAppMessage(setName(newName))
+    );
   }
   if (selection.tag === "description") {
-    return oneLineTextEditor({}, member.description, setDescription);
+    return oneLineTextEditor({}, member.description, (newDescription) =>
+      messageToAppMessage(setDescription(newDescription))
+    );
   }
   return elementMap(
     typeEditor.editor(state, typePartId, member.type, selection.typeSelection),
-    (newType: d.Type): ItemMessage => ({
-      tag: "SetType",
-      newType,
-    })
+    (newType: d.Type): a.Message =>
+      messageToAppMessage({
+        tag: "SetType",
+        newType,
+      })
   );
 };
 
 export const editor = (
   name: string,
-  state: State,
+  state: a.State,
   typePartId: d.TypePartId,
   list: ReadonlyArray<d.Member>,
-  selection: listEditor.Selection<ItemSelection> | undefined
-): Element<ListMessage> => {
+  selection: listEditor.Selection<ItemSelection> | undefined,
+  messageToAppMessage: (message: ListMessage) => a.Message
+): Element<a.Message> => {
   return listEditor.editor(
     name,
-    (itemName, item, itemSelection) =>
-      itemEditor(state, typePartId, itemName, item, itemSelection),
+    (itemName, item, itemSelection, messageFunc) =>
+      itemEditor(state, typePartId, itemName, item, itemSelection, messageFunc),
     memberListMaxCount,
     list,
-    selection
+    selection,
+    messageToAppMessage
   );
 };

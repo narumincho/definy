@@ -1,3 +1,4 @@
+import * as a from "./messageAndState";
 import { SelectBoxSelection, box, selectBox, text } from "./ui";
 import { c, elementMap } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
@@ -104,21 +105,25 @@ const selectionToSelectBoxSelection = <ItemSelection>(
 };
 
 const deleteButton = <ItemMessage>(
-  index: number
-): Element<Message<ItemMessage>> =>
-  button<Message<ItemMessage>>(
+  index: number,
+  listMessageToAppMessage: (listMessage: Message<ItemMessage>) => a.Message
+): Element<a.Message> =>
+  button<a.Message>(
     {
-      click: { tag: "Delete", index },
+      click: listMessageToAppMessage({ tag: "Delete", index }),
     },
     "x"
   );
 
-const addButton: Element<Message<never>> = button<Message<never>>(
-  {
-    click: { tag: "Add" },
-  },
-  "+"
-);
+const addButton = <ItemMessage>(
+  listMessageToAppMessage: (listMessage: Message<ItemMessage>) => a.Message
+) =>
+  button<a.Message>(
+    {
+      click: listMessageToAppMessage({ tag: "Add" }),
+    },
+    "+"
+  );
 
 /** リストの中身を Message によって変更する. API が 全置換えするような仕様ならこれを使う */
 export const update = <Item, ItemMessage>(
@@ -157,53 +162,35 @@ export const editor = <Item, ItemMessage, ItemSelection>(
   itemEditor: (
     itemName: string,
     item: Item,
-    itemSelection: ItemSelection | undefined
-  ) => Element<ItemMessage>,
+    itemSelection: ItemSelection | undefined,
+    itemMessageToAppMessage: (itemMessage: ItemMessage) => a.Message
+  ) => Element<a.Message>,
   maxCount: number,
   list: ReadonlyArray<Item>,
-  selection: Selection<ItemSelection> | undefined
-): Element<Message<ItemMessage>> => {
+  selection: Selection<ItemSelection> | undefined,
+  listMessageToAppMessage: (listMessage: Message<ItemMessage>) => a.Message
+): Element<a.Message> => {
   if (selection === undefined || selection.tag === "Self") {
-    return box<Message<ItemMessage>>(
+    return box<a.Message>(
       {
         padding: 0,
         direction: "y",
       },
       c([
-        ...list.map((item, index): readonly [
-          string,
-          Element<Message<ItemMessage>>
-        ] => [
-          index.toString(),
-          box(
-            {
-              padding: 4,
-              direction: "x",
-              xGridTemplate: [{ _: "OneFr" }, { _: "Fix", value: 32 }],
-            },
-            c([
-              [
-                "item",
-                elementMap(
-                  itemEditor(name + "-" + index.toString(), item, undefined),
-                  (message) => messageItem(message, index)
-                ),
-              ],
-              ["delete", deleteButton(index)],
-            ])
-          ),
-        ]),
+        ...list.map(
+          itemEditorWithDeleteButton(name, itemEditor, listMessageToAppMessage)
+        ),
         [
           "addButton",
           list.length >= maxCount
-            ? text("最大個数 " + maxCount.toString() + " です")
-            : addButton,
+            ? text<a.Message>("最大個数 " + maxCount.toString() + " です")
+            : addButton(listMessageToAppMessage),
         ],
         [
           "deleteAll",
-          button<Message<ItemMessage>>(
+          button<a.Message>(
             {
-              click: { tag: "DeleteAll" },
+              click: listMessageToAppMessage({ tag: "DeleteAll" }),
             },
             "すべて削除"
           ),
@@ -215,12 +202,39 @@ export const editor = <Item, ItemMessage, ItemSelection>(
   if (item === undefined) {
     return text("編集する値がない in list editor");
   }
-  return elementMap(
-    itemEditor(
-      name + "-" + selection.index.toString(),
-      item,
-      selection.itemSelection
-    ),
-    (message) => messageItem(message, selection.index)
+  return itemEditor(
+    name + "-" + selection.index.toString(),
+    item,
+    selection.itemSelection,
+    (message) => listMessageToAppMessage(messageItem(message, selection.index))
   );
 };
+
+const itemEditorWithDeleteButton = <Item, ItemMessage, ItemSelection>(
+  name: string,
+  itemEditor: (
+    itemName: string,
+    item: Item,
+    itemSelection: ItemSelection | undefined,
+    itemMessageToAppMessage: (itemMessage: ItemMessage) => a.Message
+  ) => Element<a.Message>,
+  listMessageToAppMessage: (listMessage: Message<ItemMessage>) => a.Message
+) => (item: Item, index: number): readonly [string, Element<a.Message>] => [
+  index.toString(),
+  box(
+    {
+      padding: 4,
+      direction: "x",
+      xGridTemplate: [{ _: "OneFr" }, { _: "Fix", value: 32 }],
+    },
+    c([
+      [
+        "item",
+        itemEditor(name + "-" + index.toString(), item, undefined, (message) =>
+          listMessageToAppMessage(messageItem(message, index))
+        ),
+      ],
+      ["delete", deleteButton(index, listMessageToAppMessage)],
+    ])
+  ),
+];

@@ -361,12 +361,10 @@ const loadedEditor = (
       );
 
     case "parameter":
-      return elementMap(
-        typeParameterEditor.editor(
-          "type-paramter",
-          typePart.typeParameterList,
-          selection.content
-        ),
+      return typeParameterEditor.editor(
+        "type-paramter",
+        typePart.typeParameterList,
+        selection.content,
         (parameter) => messageToAppMessageFunc(updateParameter(parameter))
       );
 
@@ -419,15 +417,10 @@ const typePartEditor = (
     },
     {
       name: "parameter",
-      element: elementMap<
-        listEditor.Message<typeParameterEditor.Message>,
-        a.Message
-      >(
-        typeParameterEditor.editor(
-          "typePartParameter",
-          typePart.typeParameterList,
-          undefined
-        ),
+      element: typeParameterEditor.editor(
+        "typePartParameter",
+        typePart.typeParameterList,
+        undefined,
         (parameter) => messageToAppMessageFunc(updateParameter(parameter))
       ),
     },

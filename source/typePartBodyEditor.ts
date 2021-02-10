@@ -179,14 +179,12 @@ const bodyContentEditor = (
 ): Element<a.Message> => {
   switch (typePartBody._) {
     case "Sum":
-      return elementMap(
-        patternListEditor.editor(
-          state,
-          typePartId,
-          typePartBody.patternList,
-          "patternList",
-          undefined
-        ),
+      return patternListEditor.editor(
+        state,
+        typePartId,
+        typePartBody.patternList,
+        "patternList",
+        undefined,
         (patternListMessage): a.Message =>
           messageToAppMessageFunc({
             tag: "ChangePatternList",
@@ -194,14 +192,12 @@ const bodyContentEditor = (
           })
       );
     case "Product":
-      return elementMap(
-        memberListEditor.editor(
-          "memberList",
-          state,
-          typePartId,
-          typePartBody.memberList,
-          undefined
-        ),
+      return memberListEditor.editor(
+        "memberList",
+        state,
+        typePartId,
+        typePartBody.memberList,
+        undefined,
         (memberListMessage): a.Message =>
           messageToAppMessageFunc({
             tag: "ChangeMemberList",
@@ -246,14 +242,12 @@ export const editor = (
     );
   }
   if (selection.tag === "sum" && typePartBody._ === "Sum") {
-    return elementMap(
-      patternListEditor.editor(
-        state,
-        typePartId,
-        typePartBody.patternList,
-        "patternList",
-        selection.content
-      ),
+    return patternListEditor.editor(
+      state,
+      typePartId,
+      typePartBody.patternList,
+      "patternList",
+      selection.content,
       (patternListMessage): a.Message =>
         messageToAppMessageFunc({
           tag: "ChangePatternList",
@@ -262,14 +256,12 @@ export const editor = (
     );
   }
   if (selection.tag === "product" && typePartBody._ === "Product") {
-    return elementMap(
-      memberListEditor.editor(
-        "memberList",
-        state,
-        typePartId,
-        typePartBody.memberList,
-        selection.content
-      ),
+    return memberListEditor.editor(
+      "memberList",
+      state,
+      typePartId,
+      typePartBody.memberList,
+      selection.content,
       (memberListMessage): a.Message =>
         messageToAppMessageFunc({
           tag: "ChangeMemberList",

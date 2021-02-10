@@ -1,3 +1,4 @@
+import * as a from "./messageAndState";
 import * as d from "definy-core/source/data";
 import * as listEditor from "./listEditor";
 import * as productEditor from "./productEditor";
@@ -125,8 +126,9 @@ const setName = (newName: string): Message => ({
 
 export const itemEditor = (
   name: string,
-  typeParameter: d.TypeParameter
-): Element<Message> => {
+  typeParameter: d.TypeParameter,
+  messageToAppMessage: (message: Message) => a.Message
+): Element<a.Message> => {
   return box(
     { padding: 0, direction: "y" },
     c([
@@ -141,15 +143,20 @@ export const itemEditor = (
             ["view", text(typeParameter.typePartId)],
             [
               "random",
-              button<Message>(
-                { click: { tag: "SetRandomId" } },
+              button<a.Message>(
+                { click: messageToAppMessage({ tag: "SetRandomId" }) },
                 "ランダムなIDを生成"
               ),
             ],
           ])
         ),
       ],
-      ["name", oneLineTextEditor({}, typeParameter.name, setName)],
+      [
+        "name",
+        oneLineTextEditor({}, typeParameter.name, (newName) =>
+          messageToAppMessage(setName(newName))
+        ),
+      ],
     ])
   );
 };
@@ -157,12 +164,15 @@ export const itemEditor = (
 export const editor = (
   name: string,
   list: ReadonlyArray<d.TypeParameter>,
-  selection: ListSelection | undefined
-): Element<listEditor.Message<Message>> =>
+  selection: ListSelection | undefined,
+  messageToAppMessage: (message: listEditor.Message<Message>) => a.Message
+): Element<a.Message> =>
   listEditor.editor(
     name,
-    itemEditor,
+    (itemName, typeParamter, _, messageFunc) =>
+      itemEditor(itemName, typeParamter, messageFunc),
     typeParameterListMaxCount,
     list,
-    selection
+    selection,
+    messageToAppMessage
   );
