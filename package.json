@@ -19,8 +19,8 @@
   ],
   "dependencies": {
     "@narumincho/html": "0.2.2",
-    "definy-core": "0.2.16",
-    "js-ts-code-generator": "0.3.4"
+    "definy-core": "0.2.17",
+    "js-ts-code-generator": "0.4.0"
   },
   "devDependencies": {
     "@types/jest": "26.0.20",
