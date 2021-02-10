@@ -1,3 +1,4 @@
+import * as a from "./messageAndState";
 import * as d from "definy-core/source/data";
 import { SelectBoxSelection, box, selectBox, text } from "./ui";
 import { c, elementMap } from "@narumincho/html/viewUtil";
@@ -25,7 +26,7 @@ export type Selection<ContentSelection> =
       contentSelection: ContentSelection;
     };
 
-const messageTag = <ItemMessage>(
+const messageTagFunc = <ItemMessage>(
   newMaybeTag: MaybeTag
 ): Message<ItemMessage> => ({
   tag: "Tag",
@@ -122,43 +123,42 @@ export const editor = <Item, ItemMessage, ItemSelection>(
   element: (
     itemName: string,
     item: Item,
-    itemSelection: ItemSelection | undefined
-  ) => Element<ItemMessage>
-): Element<Message<ItemMessage>> => {
+    itemSelection: ItemSelection | undefined,
+    toMessageFuncInElement: (itemMessage: ItemMessage) => a.Message
+  ) => Element<a.Message>,
+  toMessageFunc: (t: Message<ItemMessage>) => a.Message
+): Element<a.Message> => {
   if (selection === undefined || selection.tag === "self") {
-    return box<Message<ItemMessage>>(
-      {
-        padding: 0,
-        direction: "y",
-      },
-      c<Message<ItemMessage>>([
-        [
-          "tag",
-          elementMap<MaybeTag, Message<ItemMessage>>(
-            tagEditor<MaybeTag>(["Just", "Nothing"], maybe._, name + "-tag"),
-            messageTag
-          ),
-        ],
-        ...(maybe._ === "Just"
-          ? ([
-              [
-                "content",
-                elementMap<ItemMessage, Message<ItemMessage>>(
-                  element(name + "-content", maybe.value, undefined),
-                  messageItem
-                ),
-              ],
-            ] as const)
-          : []),
-      ])
+    const tagEditorElement: Element<a.Message> = elementMap<
+      MaybeTag,
+      a.Message
+    >(tagEditor<MaybeTag>(["Just", "Nothing"], maybe._, name + "-tag"), (tag) =>
+      toMessageFunc(messageTagFunc(tag))
     );
+    if (maybe._ === "Just") {
+      return box<a.Message>(
+        {
+          padding: 0,
+          direction: "y",
+        },
+        c([
+          ["tag", tagEditorElement],
+          [
+            "content",
+            element(name + "-content", maybe.value, undefined, (itemMessage) =>
+              toMessageFunc(messageItem(itemMessage))
+            ),
+          ],
+        ])
+      );
+    }
+    return tagEditorElement;
   }
 
   if (maybe._ === "Nothing") {
     return text("編集する値がなかった! in maybe editor");
   }
-  return elementMap<ItemMessage, Message<ItemMessage>>(
-    element(name + "-content", maybe.value, selection.contentSelection),
-    messageItem
+  return element(name + "-content", maybe.value, undefined, (itemMessage) =>
+    toMessageFunc(messageItem(itemMessage))
   );
 };

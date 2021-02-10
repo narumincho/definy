@@ -204,8 +204,11 @@ export const itemEditor = (
       },
       {
         name: "type",
-        element: elementMap(
-          typeEditor.editor(state, typePartId, member.type, undefined),
+        element: typeEditor.editor(
+          state,
+          typePartId,
+          member.type,
+          undefined,
           (newType: d.Type): a.Message =>
             messageToAppMessage({
               tag: "SetType",
@@ -225,8 +228,11 @@ export const itemEditor = (
       messageToAppMessage(setDescription(newDescription))
     );
   }
-  return elementMap(
-    typeEditor.editor(state, typePartId, member.type, selection.typeSelection),
+  return typeEditor.editor(
+    state,
+    typePartId,
+    member.type,
+    selection.typeSelection,
     (newType: d.Type): a.Message =>
       messageToAppMessage({
         tag: "SetType",

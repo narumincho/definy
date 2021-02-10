@@ -279,24 +279,27 @@ const attributeMaybeEditor = (
   selection: maybeEditor.Selection<null> | undefined,
   messageToAppMessageFunc: (message: Message) => a.Message
 ): Element<a.Message> =>
-  elementMap<maybeEditor.Message<d.TypeAttribute>, a.Message>(
-    maybeEditor.editor(
-      "typePartAttribute",
-      attributeMaybe,
-      selection,
-      attributeEditor
-    ),
+  maybeEditor.editor<d.TypeAttribute, d.TypeAttribute, null>(
+    "typePartAttribute",
+    attributeMaybe,
+    selection,
+    (name, attribute, _, messageFunc) =>
+      attributeEditor(name, attribute, messageFunc),
     (newAttribute) => messageToAppMessageFunc(updateAttribute(newAttribute))
   );
 
 const attributeEditor = (
   name: string,
-  attribute: d.TypeAttribute
-): Element<d.TypeAttribute> => {
-  return tagEditor<d.TypeAttribute>(
-    ["AsBoolean", "AsUndefined"],
-    attribute,
-    "typePartAttribute"
+  attribute: d.TypeAttribute,
+  messageToAppMessageFunc: (newAttribute: d.TypeAttribute) => a.Message
+): Element<a.Message> => {
+  return elementMap(
+    tagEditor<d.TypeAttribute>(
+      ["AsBoolean", "AsUndefined"],
+      attribute,
+      "typePartAttribute"
+    ),
+    messageToAppMessageFunc
   );
 };
 

@@ -173,17 +173,16 @@ const parameterEditor = (
   typePartId: d.TypePartId,
   name: string,
   parameter: d.Maybe<d.Type>,
-  selection: maybeEditor.Selection<typeEditor.Selection> | undefined
-): Element<Message> => {
-  return elementMap<maybeEditor.Message<d.Type>, Message>(
-    maybeEditor.editor(
-      name,
-      parameter,
-      selection,
-      (parameterTypeName, v, typeSelection) =>
-        typeEditor.editor(state, typePartId, v, typeSelection)
-    ),
-    updateContent
+  selection: maybeEditor.Selection<typeEditor.Selection> | undefined,
+  patternSelect: (t: Message) => a.Message
+): Element<a.Message> => {
+  return maybeEditor.editor<d.Type, d.Type, typeEditor.Selection>(
+    name,
+    parameter,
+    selection,
+    (parameterTypeName, v, typeSelection, func) =>
+      typeEditor.editor(state, typePartId, v, typeSelection, func),
+    (maybeMessage) => patternSelect(updateContent(maybeMessage))
   );
 };
 
@@ -242,14 +241,12 @@ export const itemEditor = (
       },
       {
         name: "parameter",
-        element: elementMap(
-          parameterEditor(
-            state,
-            typePartId,
-            name,
-            pattern.parameter,
-            undefined
-          ),
+        element: parameterEditor(
+          state,
+          typePartId,
+          name,
+          pattern.parameter,
+          undefined,
           messageToAppMessage
         ),
       },
@@ -265,14 +262,12 @@ export const itemEditor = (
       messageToAppMessage(SetDescription(newDescription))
     );
   }
-  return elementMap(
-    parameterEditor(
-      state,
-      typePartId,
-      name,
-      pattern.parameter,
-      selection.typeParameterSelection
-    ),
+  return parameterEditor(
+    state,
+    typePartId,
+    name,
+    pattern.parameter,
+    selection.typeParameterSelection,
     messageToAppMessage
   );
 };
