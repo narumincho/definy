@@ -2,12 +2,12 @@ import * as a from "./messageAndState";
 import * as d from "definy-core/source/data";
 import * as definyType from "./definyType";
 import * as util from "./util";
+import { ProductItem, productEditor } from "./productEditor";
 import { SelectBoxSelection, box, selectBox, text } from "./ui";
 import { c, elementMap } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
 import { button } from "./button";
 import { oneLineTextEditor } from "./oneLineTextInput";
-import { productEditor } from "./productEditor";
 
 /** TODO */
 export type Selection =
@@ -236,57 +236,67 @@ const typeMenu = (
   scopeTypePartId: d.TypePartId,
   typeSelect: (t: d.Type) => a.Message
 ): Element<a.Message> => {
-  return productEditor({}, [
-    {
-      name: "型パラメータから",
-      element: box(
-        {
-          padding: 8,
-          direction: "y",
-        },
-        c(
-          getTypePartLintInScope(state, scopeTypePartId).map((data): readonly [
-            string,
-            Element<a.Message>
-          ] => [
-            data.id,
-            button<a.Message>(
-              { click: typeSelect({ typePartId: data.id, parameter: [] }) },
-              c([["view", typeView(data)]])
-            ),
-          ])
-        )
-      ),
-    },
-    {
-      name: "同じプロジェクトから",
-      element: box(
-        {
-          direction: "y",
-          padding: 8,
-        },
-        c(
-          getTypePartList(state).map((data): readonly [
-            string,
-            Element<a.Message>
-          ] => [
-            data.id,
-            button<a.Message>(
-              {
-                click: typeSelect({
-                  typePartId: data.id,
-                  parameter: new Array<d.Type>(data.typeParameterCount).fill(
-                    definyType.int32
-                  ),
-                }),
-              },
-              c([["view", typeView(data)]])
-            ),
-          ])
-        )
-      ),
-    },
-  ]);
+  const typePartList = getTypePartList(state);
+  const typePartListInScope = getTypePartLintInScope(state, scopeTypePartId);
+  const typePartListProductItem: ProductItem<a.Message> = {
+    name: "同じプロジェクトから",
+    element: box(
+      {
+        direction: "y",
+        padding: 8,
+      },
+      c([
+        ...typePartList.list.map((data): readonly [
+          string,
+          Element<a.Message>
+        ] => [
+          data.id,
+          button<a.Message>(
+            {
+              click: typeSelect({
+                typePartId: data.id,
+                parameter: new Array<d.Type>(data.typeParameterCount).fill(
+                  definyType.int32
+                ),
+              }),
+            },
+            c([["view", typeView(data)]])
+          ),
+        ]),
+        ...(typePartList.more
+          ? ([
+              ["more", text<a.Message>("さらにある. 検索で絞り込んで!")],
+            ] as const)
+          : []),
+      ])
+    ),
+  };
+
+  const typeParameterProductItem: ProductItem<a.Message> = {
+    name: "型パラメータから",
+    element: box(
+      {
+        padding: 8,
+        direction: "y",
+      },
+      c(
+        typePartListInScope.map((data): readonly [
+          string,
+          Element<a.Message>
+        ] => [
+          data.id,
+          button<a.Message>(
+            { click: typeSelect({ typePartId: data.id, parameter: [] }) },
+            c([["view", typeView(data)]])
+          ),
+        ])
+      )
+    ),
+  };
+  if (typePartListInScope.length === 0) {
+    return productEditor({}, [typePartListProductItem]);
+  }
+  return productEditor({}, [typeParameterProductItem, typePartListProductItem]);
 };
 
 const typeView = (typeData: {
@@ -297,30 +307,40 @@ const typeView = (typeData: {
   return text(typeData.name);
 };
 
+const typeMenuMaxCount = 12;
+
 const getTypePartList = (
   state: a.State
-): ReadonlyArray<{
-  id: d.TypePartId;
-  name: string;
-  description: string;
-  typeParameterCount: number;
-}> => {
+): {
+  list: ReadonlyArray<{
+    id: d.TypePartId;
+    name: string;
+    description: string;
+    typeParameterCount: number;
+  }>;
+  /** さらにあるかどうか */
+  more: boolean;
+} => {
   const result: Array<{
     id: d.TypePartId;
     name: string;
     description: string;
     typeParameterCount: number;
   }> = [];
+  const normalizedSearchText = state.typeSearchText.trim().toLowerCase();
   for (const [typePartId, resource] of state.typePartMap) {
     if (resource._ === "Loaded") {
       if (
         resource.dataWithTime.data.name
           .toLowerCase()
-          .includes(state.typeSearchText.toLowerCase()) ||
+          .includes(normalizedSearchText) ||
         resource.dataWithTime.data.description
           .toLowerCase()
-          .includes(state.typeSearchText.toLowerCase())
+          .includes(normalizedSearchText)
       ) {
+        if (typeMenuMaxCount <= result.length) {
+          return { list: result, more: true };
+        }
         result.push({
           id: typePartId,
           name: resource.dataWithTime.data.name,
@@ -331,7 +351,7 @@ const getTypePartList = (
       }
     }
   }
-  return result;
+  return { list: result, more: false };
 };
 
 const getTypePartLintInScope = (
