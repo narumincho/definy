@@ -1,3 +1,4 @@
+import * as a from "./messageAndState";
 import * as d from "definy-core/source/data";
 import * as definyType from "./definyType";
 import * as listEditor from "./listEditor";
@@ -6,7 +7,6 @@ import * as typeEditor from "./typeEditor";
 import { SelectBoxSelection, selectBox, text } from "./ui";
 import { c, elementMap } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
-import { State } from "./messageAndState";
 import { oneLineTextEditor } from "./oneLineTextInput";
 import { productEditor } from "./productEditor";
 
@@ -83,7 +83,7 @@ export const update = (pattern: d.Pattern, message: Message): d.Pattern => {
 };
 
 export const itemView = (
-  state: State,
+  state: a.State,
   typePartId: d.TypePartId,
   pattern: d.Pattern,
   selection: ItemSelection | undefined
@@ -149,7 +149,7 @@ const selectionToSelectBoxSelection = (
 };
 
 const parameterView = (
-  state: State,
+  state: a.State,
   typePartId: d.TypePartId,
   parameter: d.Maybe<d.Type>,
   selection: maybeEditor.Selection<typeEditor.Selection> | undefined
@@ -169,21 +169,20 @@ const parameterView = (
 };
 
 const parameterEditor = (
-  state: State,
+  state: a.State,
   typePartId: d.TypePartId,
   name: string,
   parameter: d.Maybe<d.Type>,
-  selection: maybeEditor.Selection<typeEditor.Selection> | undefined
-): Element<Message> => {
-  return elementMap<maybeEditor.Message<d.Type>, Message>(
-    maybeEditor.editor(
-      name,
-      parameter,
-      selection,
-      (parameterTypeName, v, typeSelection) =>
-        typeEditor.editor(state, typePartId, v, typeSelection)
-    ),
-    updateContent
+  selection: maybeEditor.Selection<typeEditor.Selection> | undefined,
+  patternSelect: (t: Message) => a.Message
+): Element<a.Message> => {
+  return maybeEditor.editor<d.Type, d.Type, typeEditor.Selection>(
+    name,
+    parameter,
+    selection,
+    (parameterTypeName, v, typeSelection, func) =>
+      typeEditor.editor(state, typePartId, v, typeSelection, func),
+    (maybeMessage) => patternSelect(updateContent(maybeMessage))
   );
 };
 
@@ -204,7 +203,7 @@ export const listUpdate = (
   );
 
 export const listView = (
-  state: State,
+  state: a.State,
   typePartId: d.TypePartId,
   patternList: ReadonlyArray<d.Pattern>,
   selection: ListSelection | undefined
@@ -219,21 +218,26 @@ export const nameInputEditorId = "name-input";
 export const descriptionInputEditorId = "description-input";
 
 export const itemEditor = (
-  state: State,
+  state: a.State,
   typePartId: d.TypePartId,
   pattern: d.Pattern,
   name: string,
-  selection: ItemSelection | undefined
-): Element<Message> => {
+  selection: ItemSelection | undefined,
+  messageToAppMessage: (message: Message) => a.Message
+): Element<a.Message> => {
   if (selection === undefined || selection.tag === "self") {
     return productEditor({}, [
       {
         name: "name",
-        element: oneLineTextEditor({}, pattern.name, setName),
+        element: oneLineTextEditor({}, pattern.name, (newName) =>
+          messageToAppMessage(setName(newName))
+        ),
       },
       {
         name: "description",
-        element: oneLineTextEditor({}, pattern.description, SetDescription),
+        element: oneLineTextEditor({}, pattern.description, (newDescription) =>
+          messageToAppMessage(SetDescription(newDescription))
+        ),
       },
       {
         name: "parameter",
@@ -242,38 +246,53 @@ export const itemEditor = (
           typePartId,
           name,
           pattern.parameter,
-          undefined
+          undefined,
+          messageToAppMessage
         ),
       },
     ]);
   }
   if (selection.tag === "name") {
-    return oneLineTextEditor({}, pattern.name, setName);
+    return oneLineTextEditor({}, pattern.name, (newName) =>
+      messageToAppMessage(setName(newName))
+    );
   }
   if (selection.tag === "description") {
-    return oneLineTextEditor({}, pattern.description, SetDescription);
+    return oneLineTextEditor({}, pattern.description, (newDescription) =>
+      messageToAppMessage(SetDescription(newDescription))
+    );
   }
   return parameterEditor(
     state,
     typePartId,
     name,
     pattern.parameter,
-    selection.typeParameterSelection
+    selection.typeParameterSelection,
+    messageToAppMessage
   );
 };
 
 export const editor = (
-  state: State,
+  state: a.State,
   typePartId: d.TypePartId,
   list: ReadonlyArray<d.Pattern>,
   name: string,
-  selection: listEditor.Selection<ItemSelection> | undefined
-): Element<ListMessage> =>
+  selection: listEditor.Selection<ItemSelection> | undefined,
+  messageToAppMessage: (message: ListMessage) => a.Message
+): Element<a.Message> =>
   listEditor.editor(
     name,
-    (itemName, pattern, itemSelection) =>
-      itemEditor(state, typePartId, pattern, itemName, itemSelection),
+    (itemName, pattern, itemSelection, messageFunc) =>
+      itemEditor(
+        state,
+        typePartId,
+        pattern,
+        itemName,
+        itemSelection,
+        messageFunc
+      ),
     patternListMaxCount,
     list,
-    selection
+    selection,
+    messageToAppMessage
   );

@@ -16,7 +16,7 @@ export type Tab = typeof tabList[number];
 
 export const init: Tab = "Icon";
 
-const dummyAppInterface: State = {
+const dummyState: State = {
   top50ProjectIdState: { _: "None" },
   projectMap: new Map(),
   userMap: new Map(),
@@ -33,6 +33,7 @@ const dummyAppInterface: State = {
     tag: "Debug",
     tab: init,
   },
+  typeSearchText: "",
 };
 
 export const view = (

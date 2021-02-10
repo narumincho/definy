@@ -47,7 +47,7 @@ export const initState = (
       )
       .toString()
   );
-  const appInterface: a.State = {
+  const state: a.State = {
     top50ProjectIdState: { _: "None" },
     projectMap: new Map(),
     userMap: new Map(),
@@ -69,9 +69,10 @@ export const initState = (
       messageHandler,
       urlDataAndAccountToken.urlData.location
     ),
+    typeSearchText: "",
   };
 
-  switch (appInterface.logInState._) {
+  switch (state.logInState._) {
     case "LoadingAccountTokenFromIndexedDB": {
       indexedDB.getAccountToken().then((accountToken) => {
         messageHandler({
@@ -82,11 +83,11 @@ export const initState = (
       break;
     }
     case "VerifyingAccountToken": {
-      verifyAccountToken(messageHandler, appInterface.logInState.accountToken);
+      verifyAccountToken(messageHandler, state.logInState.accountToken);
     }
   }
 
-  return appInterface;
+  return state;
 };
 
 // eslint-disable-next-line complexity
@@ -263,6 +264,12 @@ export const updateStateByMessage = (
 
     case "RespondAddTypePart":
       return respondAddTypePart(oldState, message.response);
+
+    case "SetTypeSearchText":
+      return {
+        ...oldState,
+        typeSearchText: message.text,
+      };
   }
 };
 
