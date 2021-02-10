@@ -187,81 +187,81 @@ const typePartViewLoaded = (
   selection: Selection | undefined,
   messageToAppMessageFunc: (message: Message) => a.Message
 ): Element<a.Message> => {
-  return elementMap(
-    productEditor<Message>({}, [
-      {
-        name: "name",
-        element: selectText(
-          selection?.tag === "name",
-          {
-            tag: "Select",
-            selection: {
-              tag: "name",
-            },
+  return productEditor<a.Message>({}, [
+    {
+      name: "name",
+      element: selectText<a.Message>(
+        selection?.tag === "name",
+        messageToAppMessageFunc({
+          tag: "Select",
+          selection: {
+            tag: "name",
           },
-          typePart.name
-        ),
-      },
-      {
-        name: "description",
-        element: selectText(
-          selection?.tag === "description",
-          {
-            tag: "Select",
-            selection: {
-              tag: "description",
-            },
+        }),
+        typePart.name
+      ),
+    },
+    {
+      name: "description",
+      element: selectText(
+        selection?.tag === "description",
+        messageToAppMessageFunc({
+          tag: "Select",
+          selection: {
+            tag: "description",
           },
-          typePart.description
+        }),
+        typePart.description
+      ),
+    },
+    {
+      name: "attribute",
+      element: elementMap(
+        attributeMaybeView(
+          typePart.attribute,
+          selection?.tag === "attribute" ? selection.content : undefined
         ),
-      },
-      {
-        name: "attribute",
-        element: elementMap(
-          attributeMaybeView(
-            typePart.attribute,
-            selection?.tag === "attribute" ? selection.content : undefined
-          ),
-          (content) => ({
+        (content): a.Message =>
+          messageToAppMessageFunc({
             tag: "Select",
             selection: {
               tag: "attribute",
               content,
             },
           })
+      ),
+    },
+    {
+      name: "parameter",
+      element: elementMap<typeParameterEditor.ListSelection, a.Message>(
+        typeParameterEditor.listView(
+          typePart.typeParameterList,
+          selection?.tag === "parameter" ? selection.content : undefined
         ),
-      },
-      {
-        name: "parameter",
-        element: elementMap<typeParameterEditor.ListSelection, Message>(
-          typeParameterEditor.listView(
-            typePart.typeParameterList,
-            selection?.tag === "parameter" ? selection.content : undefined
-          ),
-          selectParameter
+        (listSelection): a.Message =>
+          messageToAppMessageFunc(selectParameter(listSelection))
+      ),
+    },
+    {
+      name: "body",
+      element: elementMap(
+        typePartBodyEditor.view(
+          state,
+          typePartId,
+          typePart.body,
+          selection?.tag === "body" ? selection.content : undefined
         ),
-      },
-      {
-        name: "body",
-        element: elementMap(
-          typePartBodyEditor.view(
-            state,
-            typePartId,
-            typePart.body,
-            selection?.tag === "body" ? selection.content : undefined
-          ),
-          (bodySelection) => ({
+        (bodySelection) =>
+          messageToAppMessageFunc({
             tag: "Select",
             selection: {
               tag: "body",
               content: bodySelection,
             },
           })
-        ),
-      },
-    ]),
-    messageToAppMessageFunc
-  );
+      ),
+    },
+  ]);
 };
 
 const attributeMaybeView = (
@@ -276,16 +276,17 @@ const attributeMaybeView = (
 
 const attributeMaybeEditor = (
   attributeMaybe: d.Maybe<d.TypeAttribute>,
-  selection: maybeEditor.Selection<null> | undefined
-): Element<Message> =>
-  elementMap<maybeEditor.Message<d.TypeAttribute>, Message>(
+  selection: maybeEditor.Selection<null> | undefined,
+  messageToAppMessageFunc: (message: Message) => a.Message
+): Element<a.Message> =>
+  elementMap<maybeEditor.Message<d.TypeAttribute>, a.Message>(
     maybeEditor.editor(
       "typePartAttribute",
       attributeMaybe,
       selection,
       attributeEditor
     ),
-    updateAttribute
+    (newAttribute) => messageToAppMessageFunc(updateAttribute(newAttribute))
   );
 
 const attributeEditor = (
@@ -302,8 +303,9 @@ const attributeEditor = (
 export const editor = (
   state: a.State,
   typePartId: d.TypePartId,
-  selection: Selection | undefined
-): Element<Message> => {
+  selection: Selection | undefined,
+  messageToAppMessageFunc: (message: Message) => a.Message
+): Element<a.Message> => {
   const typePartResource = state.typePartMap.get(typePartId);
   if (typePartResource === undefined) {
     return div({}, "???");
@@ -320,7 +322,8 @@ export const editor = (
         state,
         selection,
         typePartId,
-        typePartResource.dataWithTime.data
+        typePartResource.dataWithTime.data,
+        messageToAppMessageFunc
       );
   }
 };
@@ -329,10 +332,11 @@ const loadedEditor = (
   state: a.State,
   selection: Selection | undefined,
   typePartId: d.TypePartId,
-  typePart: d.TypePart
-): Element<Message> => {
+  typePart: d.TypePart,
+  messageToAppMessageFunc: (message: Message) => a.Message
+): Element<a.Message> => {
   if (selection === undefined) {
-    return typePartEditor(state, typePartId, typePart);
+    return typePartEditor(state, typePartId, typePart, messageToAppMessageFunc);
   }
 
   switch (selection.tag) {
@@ -340,16 +344,21 @@ const loadedEditor = (
       return oneLineTextEditor(
         { id: nameInputEditorId },
         typePart.name,
-        changeName
+        (newName) => messageToAppMessageFunc(changeName(newName))
       );
     case "description":
       return multiLineTextEditor(
         { id: descriptionInputEditorId },
         typePart.description,
-        changeDescription
+        (newDescription) =>
+          messageToAppMessageFunc(changeDescription(newDescription))
       );
     case "attribute":
-      return attributeMaybeEditor(typePart.attribute, selection.content);
+      return attributeMaybeEditor(
+        typePart.attribute,
+        selection.content,
+        messageToAppMessageFunc
+      );
 
     case "parameter":
       return elementMap(
@@ -358,7 +367,7 @@ const loadedEditor = (
           typePart.typeParameterList,
           selection.content
         ),
-        updateParameter
+        (parameter) => messageToAppMessageFunc(updateParameter(parameter))
       );
 
     case "body":
@@ -369,7 +378,8 @@ const loadedEditor = (
           typePart.body,
           selection.content
         ),
-        (bodyMessage): Message => ({ tag: "ChangeBody", bodyMessage })
+        (bodyMessage): a.Message =>
+          messageToAppMessageFunc({ tag: "ChangeBody", bodyMessage })
       );
   }
 };
@@ -380,15 +390,16 @@ const descriptionInputEditorId = "typePart-description-";
 const typePartEditor = (
   state: a.State,
   typePartId: d.TypePartId,
-  typePart: d.TypePart
-): Element<Message> => {
-  return productEditor<Message>({}, [
+  typePart: d.TypePart,
+  messageToAppMessageFunc: (message: Message) => a.Message
+): Element<a.Message> => {
+  return productEditor<a.Message>({}, [
     {
       name: "name",
       element: oneLineTextEditor(
         { id: nameInputEditorId },
         typePart.name,
-        changeName
+        (newName) => messageToAppMessageFunc(changeName(newName))
       ),
     },
     {
@@ -396,32 +407,38 @@ const typePartEditor = (
       element: oneLineTextEditor(
         { id: descriptionInputEditorId },
         typePart.description,
-        changeDescription
+        (newDescription) =>
+          messageToAppMessageFunc(changeDescription(newDescription))
       ),
     },
     {
       name: "attribute",
-      element: attributeMaybeEditor(typePart.attribute, undefined),
+      element: attributeMaybeEditor(
+        typePart.attribute,
+        undefined,
+        messageToAppMessageFunc
+      ),
     },
     {
       name: "parameter",
       element: elementMap<
         listEditor.Message<typeParameterEditor.Message>,
-        Message
+        a.Message
       >(
         typeParameterEditor.editor(
           "typePartParameter",
           typePart.typeParameterList,
           undefined
         ),
-        updateParameter
+        (parameter) => messageToAppMessageFunc(updateParameter(parameter))
       ),
     },
     {
       name: "body",
       element: elementMap(
         typePartBodyEditor.editor(state, typePartId, typePart.body, undefined),
-        (bodyMessage): Message => ({ tag: "ChangeBody", bodyMessage })
+        (bodyMessage): a.Message =>
+          messageToAppMessageFunc({ tag: "ChangeBody", bodyMessage })
       ),
     },
   ]);

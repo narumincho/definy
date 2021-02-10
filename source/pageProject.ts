@@ -592,12 +592,10 @@ const detailViewMain = (
     case "SelectProjectDetail":
       return text("プロジェクトの詳細");
     case "SelectTypePart": {
-      return elementMap(
-        typePartEditor.editor(
-          state,
-          selection.typePartId,
-          selection.childSelection
-        ),
+      return typePartEditor.editor(
+        state,
+        selection.typePartId,
+        selection.childSelection,
         (typePartEditorMessage) =>
           typePartEditorMessageToMessage(
             typePartEditorMessage,
