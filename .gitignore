@@ -1,5 +1,2 @@
 node_modules
-.cache
-debugDistribution
-npm-debug.log*
-/build
+*.log

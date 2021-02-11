@@ -5,7 +5,7 @@ import { promises as fileSystem } from "fs";
 const devServer = fastify({ logger: true });
 
 const scriptFileName = "script.js";
-const scriptPath = "/script.js";
+const scriptPath = `/${scriptFileName}`;
 const fontPath = "/font";
 const iconPath = "/icon";
 
@@ -47,7 +47,7 @@ const build = async (isMapFile: boolean) => {
       write: false,
     })
     .catch((e) => {
-      devServer.log.error(e);
+      console.error(e);
       throw e;
     });
   for (const out of result.outputFiles) {
