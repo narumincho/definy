@@ -13,17 +13,13 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v2
       - name: setup Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: "14.x"
+          node-version: "14"
       - name: Install npm dependencies (npm ci)
         run: npm ci
-      - name: Parcel build (npx parcel)
-        run: npx parcel build ./source/main.ts --out-dir ./distribution;
-      - name: Move Assets
-        run: mv ./static/* ./distribution
-      - name: Rename icon.png to icon
-        run: mv ./distribution/icon.png ./distribution/icon
+      - name: Run build script
+        run: npx ts-node ./build.js
       - name: deploy firebase hosting
         uses: w9jds/firebase-action@master
         with:

@@ -13,12 +13,10 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v2
       - name: setup Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: "14.x"
+          node-version: "14"
       - name: Install npm dependencies (npm ci)
         run: npm ci
       - name: type check
         run: tsc --project tsconfig.json --noEmit
-      - name: Parcel build (npx parcel)
-        run: npx parcel build ./source/main.ts --out-dir ./distribution;
