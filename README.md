@@ -49,3 +49,9 @@ Definy is Web App for Web App.
 - `/firebase.json`: サーバーでファイルをどのように扱うかの設定が書かれている
 - `/index.html`: Parcel で使うエントリーのファイル(リリース時には使わない)
 - `/test.ts`: テストのコードが含まれている
+
+## 各ファイルの依存関係
+
+<div style="background-color: #eee">
+  <img src="arkit.svg">
+</div>
