@@ -3,10 +3,10 @@ import { Message, State, messageRequestLogInTag } from "./messageAndState";
 import { c, div, path, svg } from "@narumincho/html/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "@narumincho/html/view";
-import { button } from "./button";
+import { button } from "./ui/button";
 import { gitHubIcon } from "./ui";
-import { image } from "./image";
-import { link } from "./link";
+import { image } from "./ui/image";
+import { link } from "./ui/link";
 
 export const headerView = (appInterface: State): Element<Message> =>
   div(

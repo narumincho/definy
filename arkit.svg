@@ -1,132 +1,306 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="1680px" preserveAspectRatio="none" style="width:1593px;height:1680px;" version="1.1" viewBox="0 0 1593 1680" width="1593px" zoomAndPan="magnify"><defs/><g><ellipse cx="233.9178" cy="832.9342" fill="#F8F8F8" rx="15.4178" ry="12.9342" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="17" x="225.4178" y="836.6764">api</text><ellipse cx="66.8492" cy="902.242" fill="#F8F8F8" rx="17.8492" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="21" x="56.3492" y="905.9842">app</text><ellipse cx="67.1274" cy="21.242" fill="#F8F8F8" rx="25.6274" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="32" x="51.1274" y="24.9842">build</text><ellipse cx="1448.663" cy="1092.242" fill="#F8F8F8" rx="29.163" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="37" x="1430.163" y="1095.9842">button</text><ellipse cx="66.7601" cy="68.052" fill="#F8F8F8" rx="60.7601" ry="14.552" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="90" x="21.7601" y="71.7942">debugInLocal</text><ellipse cx="1448.6335" cy="1014.242" fill="#F8F8F8" rx="46.1335" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="61" x="1418.1335" y="1017.9842">definyType</text><ellipse cx="391.0772" cy="1503.242" fill="#F8F8F8" rx="30.5772" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="39" x="371.5772" y="1506.9842">header</text><ellipse cx="1147.6777" cy="1178.242" fill="#F8F8F8" rx="20.6777" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="25" x="1135.1777" y="1181.9842">icon</text><!--MD5=[4ad2a0ba6e0ee5bdbfd2d2a481351b6a]
-entity _image--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="55" x="948" y="1207"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="35" x="958" y="1229.0059">image</text><ellipse cx="234.1335" cy="878.242" fill="#F8F8F8" rx="46.1335" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="61" x="203.6335" y="881.9842">indexedDB</text><ellipse cx="975.435" cy="1364.242" fill="#F8F8F8" rx="16.435" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="19" x="965.935" y="1367.9842">link</text><!--MD5=[6f04623893a7150249383afbfbf9cf57]
-entity _listEditor--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="70" x="1264.5" y="781"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="50" x="1274.5" y="803.0059">listEditor</text><ellipse cx="67.1274" cy="773.242" fill="#F8F8F8" rx="25.6274" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="32" x="51.1274" y="776.9842">main</text><!--MD5=[875170623d49c65b16938e4d7ab4732d]
-entity _maybeEditor--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="91" x="1254" y="338"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="71" x="1264" y="360.0059">maybeEditor</text><!--MD5=[b7028fde86462b7e78665eaeae694503]
-entity _memberListEditor--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="120" x="1087.5" y="914"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="100" x="1097.5" y="936.0059">memberListEditor</text><!--MD5=[306b50398c4121842a71cce768150ece]
-entity _messageAndState--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="124" x="481" y="931"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="104" x="491" y="953.0059">messageAndState</text><ellipse cx="975.5478" cy="641.0096" fill="#F8F8F8" rx="65.5478" ry="15.5096" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="102" x="924.5478" y="644.7518">multilineTextInput</text><ellipse cx="1448.3309" cy="615.7662" fill="#F8F8F8" rx="64.3309" ry="15.2662" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="99" x="1398.8309" y="619.5084">oneLineTextInput</text><ellipse cx="391.1335" cy="671.242" fill="#F8F8F8" rx="46.1335" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="61" x="360.6335" y="674.9842">pageAbout</text><ellipse cx="234.189" cy="925.8378" fill="#F8F8F8" rx="67.189" ry="15.8378" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="106" x="181.189" y="929.58">pageCreateProject</text><!--MD5=[ed3f285947d04c3be5b35cd3b36a0071]
-entity _pageDebug--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="85" x="646" y="1055"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="65" x="656" y="1077.0059">pageDebug</text><ellipse cx="233.8406" cy="1274.242" fill="#F8F8F8" rx="46.8406" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="62" x="202.8406" y="1277.9842">pageHome</text><!--MD5=[3eacc59e40abbf52d3e8fbad9968be22]
-entity _pageProject--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="89" x="644" y="614"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="69" x="654" y="636.0059">pageProject</text><ellipse cx="391.0833" cy="1050.242" fill="#F8F8F8" rx="51.0833" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="68" x="357.0833" y="1053.9842">pageSetting</text><ellipse cx="391.1838" cy="1095.242" fill="#F8F8F8" rx="41.1838" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="54" x="364.1838" y="1098.9842">pageUser</text><!--MD5=[2f0e47127066af46ecf5057feb8f179a]
-entity _patternListEditor--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="113" x="1091" y="768"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="93" x="1101" y="790.0059">patternListEditor</text><!--MD5=[cef25397b568b9b8441c2b560a2d44ff]
-entity _productEditor--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="97" x="1400" y="843"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="77" x="1410" y="865.0059">productEditor</text><ellipse cx="390.9914" cy="1274.242" fill="#F8F8F8" rx="31.9914" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="41" x="370.4914" y="1277.9842">project</text><ellipse cx="1448.5624" cy="309.242" fill="#F8F8F8" rx="39.0624" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="51" x="1423.0624" y="312.9842">tagEditor</text><ellipse cx="233.8848" cy="21.242" fill="#F8F8F8" rx="21.3848" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="26" x="220.8848" y="24.9842">test</text><!--MD5=[fd49125967d6ed7141f19027d5d08d9a]
-entity _typeEditor--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="77" x="1261" y="951"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="57" x="1271" y="973.0059">typeEditor</text><!--MD5=[bd71560695ef251c6b31ae544a0708e4]
-entity _typeParameterEditor--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="135" x="1080" y="586"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="115" x="1090" y="608.0059">typeParameterEditor</text><!--MD5=[c5c8a5b34dca0e054edc37125132c377]
-entity _typePartBodyEditor--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="128" x="911.5" y="722"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="108" x="921.5" y="744.0059">typePartBodyEditor</text><!--MD5=[c9b57cd041d7b09760792b22152310f3]
-entity _typePartEditor--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="99" x="772" y="494"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="79" x="782" y="516.0059">typePartEditor</text><!--MD5=[4ac7cd2a583f6d0a1f67ab9cded6900a]
-entity _ui--><rect fill="#F8F8F8" height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="30" x="1552" y="599"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="10" x="1562" y="621.0059">ui</text><ellipse cx="821.6777" cy="1185.242" fill="#F8F8F8" rx="20.6777" ry="13.242" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="25" x="809.1777" y="1188.9842">user</text><ellipse cx="1448.4178" cy="110.9342" fill="#F8F8F8" rx="15.4178" ry="12.9342" style="stroke: #383838; stroke-width: 0.5;"/><text fill="#000000" font-family="Tahoma, sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="17" x="1439.9178" y="114.6764">util</text><!--MD5=[a7d26c2f8cc5a6a8ad879278349a2334]
-link app to api--><path d="M82.2302,894.841 C101.2866,885.381 136.263,868.46 167,856 C182.685,849.641 200.872,843.384 214.177,839.005 " fill="none" id="app-&gt;api" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="219.2,837.364,209.4028,836.3569,214.4472,838.9168,211.8873,843.9613,219.2,837.364" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[17f2abe43264f0b55f5b4db473b0a3f6]
-link app to header--><path d="M68.8313,915.177 C72.5936,967.07 91.2938,1161.134 167,1297 C220.698,1393.369 252.515,1407.792 340,1475 C347.722,1480.9322 356.848,1486.4212 365.176,1490.9387 " fill="none" id="app-&gt;header" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="369.706,1493.3452,363.6344,1485.5905,365.2904,1490.9995,359.8813,1492.6555,369.706,1493.3452" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[a6114f1c01846dc6a403af085b6f2773]
-link app to indexedDB--><path d="M84.7291,899.567 C108.702,896.08 153.702,889.534 187.864,884.565 " fill="none" id="app-&gt;indexedDB" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="192.822,883.844,183.3399,881.1815,187.8741,884.5639,184.4917,889.0981,192.822,883.844" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[0535f155208fc91b0fd0e7faed81a8d1]
-link app to _messageAndState--><path d="M80.6856,910.885 C98.8201,922.987 133.659,944.058 167,952 C272.611,977.156 399.742,967.844 475.55,958.293 " fill="none" id="app-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="480.919,957.605,471.4834,954.782,475.9596,958.2408,472.5007,962.717,480.919,957.605" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[05be89d496780f0980f93afcaab81134]
-link app to pageAbout--><path d="M74.7699,890.188 C89.0693,866.113 124.549,810.793 167,777 C225.569,730.376 308.005,698.035 354.489,682.187 " fill="none" id="app-&gt;pageAbout" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="359.425,680.52,349.6185,679.6076,354.6875,682.1187,352.1764,687.1877,359.425,680.52" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[d0d7725996d0ffaf0e4df0e5686041fc]
-link app to pageCreateProject--><path d="M84.7291,904.433 C105.0268,907.386 140.397,912.531 171.501,917.055 " fill="none" id="app-&gt;pageCreateProject" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="176.454,917.775,168.1237,912.5209,171.5061,917.0551,166.9719,920.4375,176.454,917.775" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[809b15f7f68193b18051a4ebaac6387a]
-link app to _pageDebug--><path d="M70.7515,914.954 C78.7923,949.389 105.6668,1043.591 167,1088 C311.564,1192.672 542.699,1126.391 640.915,1090.574 " fill="none" id="app-&gt;_pageDebug" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="645.774,1088.787,635.9465,1088.139,641.0812,1090.5127,638.7076,1095.6474,645.774,1088.787" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[07dc2cf31202556d59728e566090e890]
-link app to pageHome--><path d="M69.8536,914.967 C76.6368,959.213 103.1278,1107.186 167,1210 C178.933,1229.208 197.873,1246.758 212.409,1258.602 " fill="none" id="app-&gt;pageHome" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="216.383,1261.788,211.8622,1253.038,212.4816,1258.6609,206.8587,1259.2803,216.383,1261.788" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[d3e5e7572ef82feae8b2eb9e61277ade]
-link app to _pageProject--><path d="M76.8194,890.877 C92.7257,871.59 128.192,831.995 167,811 C221.041,781.764 242.39,795.441 301,777 C426.284,737.581 570.078,679.859 641.808,650.183 " fill="none" id="app-&gt;_pageProject" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="646.847,648.096,637.0013,647.8468,642.228,650.0105,640.0644,655.2372,646.847,648.096" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[6d588c52993dd4f54a5ea5016dc71277]
-link app to pageSetting--><path d="M77.6368,912.531 C94.2333,930.059 130.007,965.236 167,985 C223.625,1015.252 296.063,1033.015 342.748,1042.123 " fill="none" id="app-&gt;pageSetting" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="347.746,1043.085,339.6634,1037.4573,342.836,1042.1407,338.1525,1045.3133,347.746,1043.085" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[2697fae06ede55a1d7023b819c7e03f3]
-link app to pageUser--><path d="M73.6834,914.454 C86.4175,940.923 119.86,1002.966 167,1035 C221.55,1072.07 298.077,1086.274 345.811,1091.691 " fill="none" id="app-&gt;pageUser" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="350.911,1092.249,342.3985,1087.2954,345.9406,1091.7061,341.5299,1095.2481,350.911,1092.249" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[84a8d14f873a871d365abcbd2ac6caa4]
-link app to _typePartEditor--><path d="M75.1919,890.108 C86.8259,870.697 110.26,830.867 128,796 C255.717,544.98 108.356,219 390,219 C390,219 390,219 544,219 C692.632,219 785.276,420.94 812.263,488.95 " fill="none" id="app-&gt;_typePartEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="814.092,493.61,814.5239,483.7706,812.2636,488.9563,807.078,486.696,814.092,493.61" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[6b285bb985ff875ae5ff61ca844f8fd0]
-link app to util--><path d="M76.503,890.65 C89.9774,872 115.942,833.216 128,796 C234.638,466.88 44.0369,63 390,63 C390,63 390,63 689.5,63 C981.18,63 1054.83,65.35 1345,95 C1374.24,97.99 1407.84,103.67 1428.37,107.39 " fill="none" id="app-&gt;util" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1433.3,108.3,1425.165,102.7483,1428.3813,107.4018,1423.7279,110.6182,1433.3,108.3" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[fdbf8b3ac170b614ac43129c3bf683da]
-link header to button--><path d="M418.758,1508.4676 C470.452,1518.5385 587.755,1539 687.5,1539 C687.5,1539 687.5,1539 1148.5,1539 C1358.17,1539 1430.07,1195.024 1444.57,1110.56 " fill="none" id="header-&gt;button" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1445.44,1105.378,1440.0009,1113.5888,1444.6097,1110.3086,1447.8899,1114.9173,1445.44,1105.378" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[af8684229b25cba4d54909ab2e4ff3a4]
-link header to _image--><path d="M412.051,1493.3962 C498.292,1452.089 838.04,1289.36 943.264,1238.961 " fill="none" id="header-&gt;_image" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="947.799,1236.789,937.9541,1237.069,943.2895,1238.9488,941.4097,1244.2841,947.799,1236.789" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[2e9998923eccf81f34239a67e08eba77]
-link header to link--><path d="M420.046,1498.4264 C478.586,1488.675 617.896,1464.397 733,1436 C816.337,1415.44 913.779,1384.106 954.761,1370.587 " fill="none" id="header-&gt;link" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="959.933,1368.876,950.1322,1367.9043,955.1859,1370.446,952.6442,1375.4997,959.933,1368.876" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[ecb48ee76b0e1aa94b4c65ca2697557a]
-link header to _messageAndState--><path d="M395.487,1490.0981 C415.022,1417.818 510.9,1063.072 535.985,970.257 " fill="none" id="header-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="537.33,965.278,531.1209,972.9231,536.0258,970.1049,538.8439,975.0098,537.33,965.278" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[c601d6b5f316bfcd6b1a997b86b20ca5]
-link header to _ui--><path d="M412.485,1512.3007 C430.288,1520.08 456.926,1530.9991 481,1538 C570.765,1564.1049 594.016,1578 687.5,1578 C687.5,1578 687.5,1578 1300.5,1578 C1469.75,1578 1457.05,1421.73 1513,1262 C1554.66,1143.058 1563.99,737.698 1565.68,638.193 " fill="none" id="header-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1565.76,633.149,1561.6114,642.0815,1565.6772,638.1483,1569.6103,642.214,1565.76,633.149" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[3df3103629b3a6498c46a60aa02e2407]
-link _image to icon--><path d="M1003.062,1216.812 C1036.08,1207.879 1091.89,1192.776 1123.28,1184.284 " fill="none" id="_image-&gt;icon" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1128.47,1182.879,1118.7353,1181.3839,1123.6456,1184.1925,1120.8369,1189.1029,1128.47,1182.879" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[8c01ddccd7c83a6f19a4a3cb2641990d]
-link _image to _messageAndState--><path d="M949.523,1206.791 C929.137,1193.369 899.196,1175.044 871,1163 C774.604,1121.825 728.679,1160.783 644,1099 C597.759,1065.262 566.715,1003.148 552.637,970.076 " fill="none" id="_image-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="550.684,965.415,550.474,975.2616,552.6168,970.0263,557.8521,972.1691,550.684,965.415" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[5979d93e76a382a52ee2607d080d9585]
-link link to _messageAndState--><path d="M959.813,1359.369 C909.145,1342.705 739.543,1281.091 644,1175 C587.922,1112.731 559.318,1013.97 548.821,970.171 " fill="none" id="link-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="547.631,965.108,545.7969,974.7846,548.7753,969.9753,553.5846,972.9537,547.631,965.108" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[851f2517a8e3d27ebf536cde1849fe7a]
-link link to _ui--><path d="M992.396,1363.303 C1066.63,1359.1 1381.15,1330.63 1513,1147 C1543.1,1105.085 1560.95,733.965 1565.07,638.376 " fill="none" id="link-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1565.29,633.254,1560.9083,642.0745,1565.0759,638.2494,1568.901,642.417,1565.29,633.254" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[070220ef18ba6673a0e5ceadb1d9f9c5]
-link _listEditor to button--><path d="M1305.89,815.046 C1322.24,866.471 1370.91,1017.729 1384,1037 C1395.36,1053.73 1413.04,1068.471 1426.87,1078.471 " fill="none" id="_listEditor-&gt;button" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1431.02,1081.419,1426.0045,1072.9429,1426.9456,1078.5209,1421.3675,1079.462,1431.02,1081.419" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[6d921f4a5b070999215a5c62b3925b66]
-link _listEditor to _messageAndState--><path d="M1264.4,803.903 C1249.28,806.473 1231.27,809.469 1215,812 C961.668,851.422 887.456,813.623 644,894 C619.301,902.154 593.522,916.23 574.325,927.966 " fill="none" id="_listEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="569.591,930.895,579.3494,929.5634,573.8435,928.2652,575.1417,922.7593,569.591,930.895" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[cc5a36454aee4bc1b19f50015da408a9]
-link _listEditor to _ui--><path d="M1334.56,802.79 C1380.45,807.254 1462.23,807.931 1513,766 C1551.81,733.947 1562.22,671.509 1565,638.194 " fill="none" id="_listEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1565.39,633.106,1560.725,641.78,1565.0143,638.0919,1568.7024,642.3811,1565.39,633.106" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[a7ba3c821d48259f80a967b14cc45774]
-link <b>main</b> to app--><path d="M67,786.129 C67,818.646 67,851.163 67,883.68 " fill="none" id="&lt;b&gt;main&lt;/b&gt;-&gt;app" style="stroke: #000000; stroke-width: 1.0;"/><polygon fill="#000000" points="67,888.898,71,879.898,67,883.898,63,879.898,67,888.898" style="stroke: #000000; stroke-width: 1.0;"/><!--MD5=[e8ec5168bc12609e70286a0a7327d5dc]
-link <b>main</b> to _messageAndState--><path d="M92.5148,774.148 C135.766,776.793 227.953,785.219 301,811 C383.929,840.268 471.255,897.552 514.451,927.947 " fill="none" id="&lt;b&gt;main&lt;/b&gt;-&gt;_messageAndState" style="stroke: #000000; stroke-width: 1.0;"/><polygon fill="#000000" points="518.744,930.981,513.7031,922.5199,514.6609,928.0951,509.0857,929.0529,518.744,930.981" style="stroke: #000000; stroke-width: 1.0;"/><!--MD5=[85b72a8bc879712da41faffa7ae13dff]
-link _maybeEditor to _messageAndState--><path d="M1258.02,337.89 C1244.58,333.04 1229.38,328.43 1215,326 C1018.96,292.93 938.443,279.27 772,388 C578.535,514.38 549.201,837.509 544.78,925.554 " fill="none" id="_maybeEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="544.533,930.771,548.9529,921.9696,544.7687,925.7766,540.9617,921.5924,544.533,930.771" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[f65a6f024051192c5839eb246825a8c2]
-link _maybeEditor to tagEditor--><path d="M1345,341.07 C1367.38,334.07 1394.02,325.73 1414.54,319.32 " fill="none" id="_maybeEditor-&gt;tagEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1419.35,317.81,1409.5647,316.6932,1414.5801,319.3095,1411.9639,324.325,1419.35,317.81" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[d581951d7727cd94f35d17bdc98515cd]
-link _maybeEditor to _ui--><path d="M1345.2,357.9 C1393.28,363.44 1468.78,379.49 1513,426 C1557.71,473.03 1565.27,554.54 1566.18,593.714 " fill="none" id="_maybeEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1566.27,598.728,1570.1177,589.6619,1566.1857,593.7287,1562.1189,589.7967,1566.27,598.728" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[3cffc05160b0c1bcc340883423434330]
-link _memberListEditor to definyType--><path d="M1160.42,948.047 C1177.85,971.302 1212.74,1011.913 1254,1028 C1306.41,1048.431 1372.78,1036.248 1412.6,1025.307 " fill="none" id="_memberListEditor-&gt;definyType" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1417.8,1023.844,1408.0561,1022.4099,1412.9839,1025.1877,1410.2061,1030.1156,1417.8,1023.844" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[d4f853bd45f2fb7a5df74018215ceee1]
-link _memberListEditor to _listEditor--><path d="M1165,913.793 C1185.21,893.053 1220.85,857.555 1254,830 C1258.8,826.008 1264.07,821.96 1269.24,818.147 " fill="none" id="_memberListEditor-&gt;_listEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1273.55,815.005,1263.9199,817.0693,1269.5081,817.9482,1268.6291,823.5364,1273.55,815.005" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[2b3e4f85dd6109815a4a957f2b3147c8]
-link _memberListEditor to _messageAndState--><path d="M1087.48,932.665 C974.56,935.851 728.653,942.79 610.28,946.13 " fill="none" id="_memberListEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="605.087,946.276,614.1965,950.0199,610.085,946.1346,613.9703,942.0231,605.087,946.276" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[6e1ae56c7075ace6df51caa8a98375a2]
-link _memberListEditor to oneLineTextInput--><path d="M1198.79,913.921 C1242.13,897.061 1304.02,867.6 1345,825 C1399.43,768.417 1430.28,677.347 1441.99,636.722 " fill="none" id="_memberListEditor-&gt;oneLineTextInput" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1443.45,631.563,1437.1418,639.1265,1442.083,636.3725,1444.837,641.3137,1443.45,631.563" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[70a2e24dd9e2afc57fd642a39111cc36]
-link _memberListEditor to _productEditor--><path d="M1207.55,923.537 C1246.87,917.896 1299.48,909.054 1345,897 C1363.39,892.13 1383.14,885.378 1400.36,878.974 " fill="none" id="_memberListEditor-&gt;_productEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1405.14,877.178,1395.3084,876.5958,1400.4589,878.935,1398.1196,884.0855,1405.14,877.178" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[4f614849b776d49a0a34aa080dcca46f]
-link _memberListEditor to _typeEditor--><path d="M1207.78,945.623 C1223.82,949.58 1240.87,953.784 1255.8,957.467 " fill="none" id="_memberListEditor-&gt;_typeEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1260.78,958.695,1253.0029,952.6521,1255.9261,957.4951,1251.0831,960.4183,1260.78,958.695" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[d94916bd8c86c4e9a19d0c48890aa2c5]
-link _memberListEditor to _ui--><path d="M1162.26,948.356 C1213.73,1011.303 1397.84,1218.577 1513,1115 C1548.96,1082.655 1562.42,730.915 1565.35,638.261 " fill="none" id="_memberListEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1565.51,633.037,1561.2318,641.9081,1565.3544,638.0346,1569.2279,642.1571,1565.51,633.037" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[5a0f66e1719f48c2faee64651ab4fada]
-link _messageAndState to _pageDebug--><path d="M558.817,965.11 C581.98,987.866 627.24,1027.411 657.43,1051.63 " fill="none" id="_messageAndState-&gt;_pageDebug" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="661.401,1054.796,656.8587,1046.0572,657.4919,1051.6785,651.8706,1052.3117,661.401,1054.796" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[c69c7fdc14bb386602471f7e75d89ece]
-link _pageDebug to _messageAndState--><path d="M673.217,1054.943 C650.369,1032.113 605.081,992.458 574.659,968.215 " fill="none" id="_pageDebug-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="570.655,965.046,575.2308,973.7674,574.576,968.1485,580.1948,967.4937,570.655,965.046" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[0d087476328d4b82c4828dff91960822]
-link _messageAndState to _pageProject--><path d="M555.374,930.558 C568.462,905.02 590.066,856.815 605,814 C626.556,752.203 606.921,725.932 644,672 C649.557,663.917 657.838,657.096 665.687,651.241 " fill="none" id="_messageAndState-&gt;_pageProject" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="669.984,648.086,660.3625,650.1899,665.9542,651.0459,665.0982,656.6376,669.984,648.086" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[8897d6c57d38aa5615c18fe73c9f9597]
-link _pageProject to _messageAndState--><path d="M647.838,648.078 C646.457,649.657 645.169,651.3 644,653 C606.921,706.932 626.556,733.203 605,795 C588.529,842.219 563.947,895.994 551.622,925.893 " fill="none" id="_pageProject-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="549.61,930.836,556.7093,924.0096,551.496,926.2053,549.3002,920.992,549.61,930.836" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[2b375de89e166a1f1c54450499b7ee27]
-link _messageAndState to _typePartEditor--><path d="M544.666,930.693 C547.54,877.189 562.814,713.872 644,614 C678.616,571.42 737.779,545.58 777.975,529.93 " fill="none" id="_messageAndState-&gt;_typePartEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="782.78,528.07,772.9433,527.5813,778.1158,529.8715,775.8257,535.044,782.78,528.07" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[e4a10199332a1eac8bc6962b7d989240]
-link _typePartEditor to _messageAndState--><path d="M771.673,517.23 C731.799,529.26 676.848,554.59 644,595 C561.205,696.852 546.96,864.688 544.509,925.475 " fill="none" id="_typePartEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="544.318,930.682,548.6471,921.8356,544.5023,925.6854,540.6525,921.5407,544.318,930.682" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[d9aa576b7941604080065981150cdf50]
-link pageAbout to _messageAndState--><path d="M418.531,681.598 C426.907,685.976 435.629,691.752 442,699 C502.71,768.066 529.251,878.664 538.222,925.684 " fill="none" id="pageAbout-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="539.182,930.831,541.4662,921.2507,538.2663,925.9156,533.6015,922.7157,539.182,930.831" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[6d07a042e220865370e0f590f78c4abe]
-link pageAbout to _ui--><path d="M398.171,657.814 C428.847,593.672 571.48,311.42 772,165 C806.347,139.92 1087.67,36 1146.5,36 C1146.5,36 1146.5,36 1300.5,36 C1397.84,36 1449.31,15.39 1513,89 C1546.51,127.73 1561.84,498.18 1565.25,593.647 " fill="none" id="pageAbout-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1565.43,598.763,1569.1088,589.627,1565.253,593.7661,1561.1139,589.9103,1565.43,598.763" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[a93f894b0d2c07e7441a9158464198dd]
-link pageCreateProject to _messageAndState--><path d="M298.611,930.558 C350.418,934.271 423.319,939.495 475.811,943.257 " fill="none" id="pageCreateProject-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="480.826,943.616,472.1347,938.9833,475.8388,943.2589,471.5633,946.9629,480.826,943.616" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[0690592532b13da141c481ee39cd249a]
-link _pageDebug to button--><path d="M731.022,1074.95 C767.857,1077.737 823.095,1082.329 871,1088 C1041.9,1108.232 1082.37,1132.299 1254,1145 C1294.33,1147.985 1305.7,1154.559 1345,1145 C1375.95,1137.473 1407.99,1118.855 1427.83,1105.824 " fill="none" id="_pageDebug-&gt;button" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1432.11,1102.971,1422.402,1104.6305,1427.9484,1105.7425,1426.8364,1111.289,1432.11,1102.971" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[571a9d84fd88b272bfe3b5e25f1db067]
-link _pageDebug to icon--><path d="M731.267,1081.688 C825.085,1103.449 1050.02,1155.623 1123.12,1172.578 " fill="none" id="_pageDebug-&gt;icon" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1128.12,1173.737,1120.255,1167.809,1123.249,1172.6085,1118.4494,1175.6025,1128.12,1173.737" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[b18ccbf41af489f564c8cf1c5bb1a487]
-link pageHome to icon--><path d="M245.776,1286.853 C282.483,1329.102 407.823,1461 542,1461 C542,1461 542,1461 822.5,1461 C925.029,1461 963.577,1454.215 1041,1387 C1102.39,1333.703 1132.25,1236.102 1142.38,1195.965 " fill="none" id="pageHome-&gt;icon" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1143.62,1190.916,1137.5803,1198.6956,1142.4221,1195.7704,1145.3473,1200.6122,1143.62,1190.916" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[302bcb785a720a47010a4409920fdc53]
-link pageHome to link--><path d="M235.714,1287.274 C238.858,1330.797 255.41,1469.607 340,1526 C553.785,1668.5231 884.603,1433.152 959.207,1376.026 " fill="none" id="pageHome-&gt;link" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="963.358,1372.829,953.7875,1375.1539,959.3974,1375.8809,958.6705,1381.4908,963.358,1372.829" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[1394b595913a49b782321e386ce99ea1]
-link pageHome to _messageAndState--><path d="M236.989,1260.784 C243.75,1220.316 269.479,1096.688 340,1028 C351.18,1017.11 432.334,986.864 488.311,966.84 " fill="none" id="pageHome-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="493.308,965.056,483.487,964.3157,488.5992,966.7375,486.1774,971.8497,493.308,965.056" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[676fc934b0fca55f76366826ac8c6960]
-link pageHome to project--><path d="M281.085,1274 C304.218,1274 331.844,1274 353.485,1274 " fill="none" id="pageHome-&gt;project" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="358.569,1274,349.569,1270,353.569,1274,349.569,1278,358.569,1274" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[8572b4ef1d44dedb1aa39b05d33035ec]
-link _pageProject to button--><path d="M711.883,648.006 C746.46,674.418 814.751,727.14 871,774 C966.085,853.213 977.037,889.337 1080,958 C1151.61,1005.751 1173.19,1013.39 1254,1043 C1309.74,1063.424 1377.53,1078.455 1416.28,1086.166 " fill="none" id="_pageProject-&gt;button" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1421.32,1087.16,1413.2525,1081.5106,1416.4125,1086.2025,1411.7206,1089.3625,1421.32,1087.16" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[9c9fa566eaa8bacc93265f63a0040c61]
-link _pageProject to icon--><path d="M703.932,648.274 C772.944,730.877 1068.63,1084.8 1133.77,1162.767 " fill="none" id="_pageProject-&gt;icon" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1137.05,1166.684,1134.339,1157.2156,1133.8401,1162.8504,1128.2053,1162.3515,1137.05,1166.684" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[45d2edef8bd219dcefa2716ea5c3aa99]
-link _pageProject to _image--><path d="M697.722,648.108 C738.469,732.891 918.61,1107.71 964.059,1202.276 " fill="none" id="_pageProject-&gt;_image" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="966.245,1206.823,965.9525,1196.9785,964.0795,1202.3163,958.7417,1200.4433,966.245,1206.823" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[90503ff898bf44ec7c1efc554b119afb]
-link _pageProject to multilineTextInput--><path d="M733.096,632.53 C778.942,634.138 851.74,636.693 905.417,638.576 " fill="none" id="_pageProject-&gt;multilineTextInput" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="910.55,638.756,901.6961,634.4422,905.5531,638.5803,901.415,642.4373,910.55,638.756" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[55eec09fa5dda4a4a074989c908968a7]
-link _pageProject to oneLineTextInput--><path d="M729.242,613.837 C783.561,591.977 884.529,557 974.5,557 C974.5,557 974.5,557 1148.5,557 C1240.95,557 1346.49,584.485 1404.18,601.936 " fill="none" id="_pageProject-&gt;oneLineTextInput" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1409.27,603.488,1401.8264,597.0387,1404.487,602.0308,1399.4949,604.6915,1409.27,603.488" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[e2f54c533ad0ce6292e112e751f21a30]
-link _pageProject to tagEditor--><path d="M695.554,613.878 C715.837,559.38 787.124,389.39 910,319 C1077.31,223.15 1324.63,275.49 1413.86,299.26 " fill="none" id="_pageProject-&gt;tagEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1418.75,300.58,1411.0994,294.3778,1413.9219,299.2801,1409.0196,302.1027,1418.75,300.58" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[2b2a92786d76a0e2ddd18ce2186272d0]
-link _pageProject to _typePartEditor--><path d="M703.348,613.989 C718.946,595.391 745.581,565.27 772,543 C776.978,538.8 782.529,534.69 788.048,530.88 " fill="none" id="_pageProject-&gt;_typePartEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="792.252,528.03,782.5567,529.7625,788.1114,530.8328,787.0411,536.3874,792.252,528.03" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[47a2e07ca938e0ef5eabc7c1bb839643]
-link _pageProject to _ui--><path d="M691.825,613.832 C698.215,571.78 719.207,461.71 772,388 C930.846,166.23 1076.71,118.63 1345,168 C1423.58,182.46 1463.26,169.47 1513,232 C1557.92,288.46 1564.77,519.72 1565.81,593.363 " fill="none" id="_pageProject-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1565.88,598.791,1569.7614,589.7392,1565.8143,593.7914,1561.7621,589.8443,1565.88,598.791" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[98667b8b672b7abcc3e25f1f96908201]
-link _pageProject to user--><path d="M693.564,648.188 C713.003,730.395 796.369,1082.95 816.237,1166.973 " fill="none" id="_pageProject-&gt;user" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="817.453,1172.113,819.273,1162.4338,816.3016,1167.2474,811.488,1164.276,817.453,1172.113" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[e063cdca412b9db5745e190c12738eba]
-link _pageProject to util--><path d="M690.742,613.93 C696.22,542.81 720.276,270.7 772,205 C855.376,99.09 1324.74,107.21 1427.58,110.31 " fill="none" id="_pageProject-&gt;util" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1432.75,110.47,1423.8801,106.1893,1427.7525,110.3129,1423.6288,114.1853,1432.75,110.47" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[fa552e2d0d24a53b188be720c249bb17]
-link pageSetting to button--><path d="M436.714,1044.098 C494.511,1036.992 598.326,1026 687.5,1026 C687.5,1026 687.5,1026 822.5,1026 C1015.46,1026 1062.04,1054.396 1254,1074 C1310.53,1079.774 1376.44,1085.742 1414.91,1089.149 " fill="none" id="pageSetting-&gt;button" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1419.93,1089.593,1411.3197,1084.8115,1414.9497,1089.1501,1410.6111,1092.7801,1419.93,1089.593" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[00a2dffdb956df9357266b1bb0f84167]
-link pageSetting to _messageAndState--><path d="M414.259,1038.322 C423.048,1033.509 433.143,1027.724 442,1022 C468.079,1005.145 496.406,983.881 516.231,968.478 " fill="none" id="pageSetting-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="520.329,965.283,510.7715,967.6609,516.3854,968.3568,515.6895,973.9706,520.329,965.283" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[1d2d14dd166464fe99f730212e4aa226]
-link pageSetting to user--><path d="M417.008,1061.287 C425.02,1064.961 433.91,1069.098 442,1073 C532.589,1116.689 546.861,1148.94 644,1175 C696.618,1189.116 761.124,1188.464 795.735,1186.737 " fill="none" id="pageSetting-&gt;user" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="801.026,1186.453,791.8241,1182.9422,796.0332,1186.7216,792.2538,1190.9306,801.026,1186.453" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[42e858aa0d563b949fc0e76641fac495]
-link pageUser to _image--><path d="M403.576,1107.659 C419.36,1124.041 449.315,1152.124 481,1166 C642.993,1236.943 861.999,1231.459 942.832,1226.458 " fill="none" id="pageUser-&gt;_image" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="947.954,1226.13,938.7165,1222.7142,942.9642,1226.45,939.2284,1230.6978,947.954,1226.13" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[b74d7db08037fd47b937ec4b255e620b]
-link pageUser to _messageAndState--><path d="M419.788,1085.582 C427.407,1082.275 435.383,1078.086 442,1073 C480.119,1043.703 512.384,996.921 529.3,969.663 " fill="none" id="pageUser-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="532.08,965.136,523.9629,970.7138,529.4644,969.3973,530.7809,974.8988,532.08,965.136" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[7c3e1b467e53078c3a9c1f84d1d0e8c9]
-link _patternListEditor to definyType--><path d="M1158.73,802.207 C1172.27,825.259 1196.59,867.604 1215,905 C1234.25,944.111 1218.77,969.321 1254,995 C1297.51,1026.717 1361.93,1026.285 1404.3,1021.454 " fill="none" id="_patternListEditor-&gt;definyType" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1409.36,1020.845,1399.9451,1017.9538,1404.3961,1021.445,1400.905,1025.896,1409.36,1020.845" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[4ad245674ee8e358bf8fa0aefbf0d942]
-link _patternListEditor to _listEditor--><path d="M1204.35,789.841 C1222.62,791.424 1242.51,793.148 1259.29,794.601 " fill="none" id="_patternListEditor-&gt;_listEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1264.39,795.043,1255.7796,790.2617,1259.4096,794.6002,1255.0711,798.2303,1264.39,795.043" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[068bc0680b90281bd0811de00c6a7688]
-link _patternListEditor to _maybeEditor--><path d="M1156.72,767.588 C1169.97,739.172 1196.42,680.886 1215,630 C1248.76,537.52 1280.08,424.23 1292.67,377.15 " fill="none" id="_patternListEditor-&gt;_maybeEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1293.97,372.27,1287.7678,379.9206,1292.6701,377.0981,1295.4927,382.0004,1293.97,372.27" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[bae9cc86db7eeb8fe18f0215b21002db]
-link _patternListEditor to _messageAndState--><path d="M1090.98,800.021 C979.619,830.148 729.471,897.823 609.979,930.15 " fill="none" id="_patternListEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="605.087,931.474,614.8193,932.9845,609.9134,930.1681,612.7299,925.2622,605.087,931.474" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[8bab526dbb4320523ff7f22460478462]
-link _patternListEditor to oneLineTextInput--><path d="M1178.82,767.865 C1236.29,735.38 1360.45,665.202 1417.6,632.899 " fill="none" id="_patternListEditor-&gt;oneLineTextInput" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1422.26,630.267,1412.4562,631.2079,1417.9058,632.7249,1416.3888,638.1745,1422.26,630.267" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[fe0e6cc50c3e346ebd77a8a8502b7f9a]
-link _patternListEditor to _productEditor--><path d="M1188.5,802.152 C1207.98,809.99 1231.92,818.872 1254,825 C1300.75,837.973 1355.23,847.329 1394.45,853.085 " fill="none" id="_patternListEditor-&gt;_productEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1399.64,853.839,1391.3038,848.5943,1394.6913,853.1247,1390.1609,856.5122,1399.64,853.839" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[04916cb46ac10f177e2603b6f96a5730]
-link _patternListEditor to _typeEditor--><path d="M1162.61,802.216 C1190.15,835.818 1251,910.045 1281.03,946.686 " fill="none" id="_patternListEditor-&gt;_typeEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1284.54,950.963,1281.9352,941.4649,1281.3732,947.0937,1275.7443,946.5317,1284.54,950.963" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[48e8e4453cd3d7213761e7a4e97db253]
-link _patternListEditor to _ui--><path d="M1204.34,770.139 C1244.11,758.96 1298.52,742.446 1345,724 C1422.11,693.398 1509.46,647.044 1547.1,626.47 " fill="none" id="_patternListEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1551.87,623.859,1542.0547,624.6719,1547.4841,626.2599,1545.8961,631.6893,1551.87,623.859" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[0880841a4d842d8207a53b8b201aee0e]
-link _productEditor to _ui--><path d="M1477.61,842.784 C1490.1,833.829 1503.98,821.853 1513,808 C1548.33,753.72 1560.33,676.097 1564.23,638.339 " fill="none" id="_productEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1564.75,633.065,1559.8889,641.6306,1564.261,638.041,1567.8506,642.4131,1564.75,633.065" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[055decf2f01fa488b73572a636890e54]
-link project to _image--><path d="M422.914,1272.878 C499.21,1269.891 702.505,1260.598 871,1241 C895.178,1238.188 922.326,1233.677 942.749,1230.009 " fill="none" id="project-&gt;_image" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="947.791,1229.096,938.2221,1226.7646,942.8711,1229.9874,939.6483,1234.6365,947.791,1229.096" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[a6688d3ad6d8cb0eefc4dc535241582b]
-link project to link--><path d="M421.285,1278.525 C523.991,1294.393 866.331,1347.287 953.939,1360.823 " fill="none" id="project-&gt;link" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="959.103,1361.621,950.8187,1356.2947,954.1615,1360.8581,949.5981,1364.201,959.103,1361.621" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[54461c8a653771d7a924e7a79b171641]
-link project to _messageAndState--><path d="M397.88,1261.22 C420.633,1211.771 503.058,1032.634 531.928,969.89 " fill="none" id="project-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="534.073,965.228,526.6776,971.7324,531.9832,969.7703,533.9453,975.076,534.073,965.228" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[6fa2c67fab5749fe8a7e388d7b1fe296]
-link tagEditor to _ui--><path d="M1468.32,320.37 C1482.8,330.13 1502.12,345.53 1513,364 C1557.56,439.67 1564.94,547.58 1565.96,593.708 " fill="none" id="tagEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1566.06,598.76,1569.8969,589.6893,1565.9698,593.7608,1561.8982,589.8337,1566.06,598.76" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[b658dc511548f84985a20f08d9ed99c2]
-link _typeEditor to button--><path d="M1320.94,985.242 C1349.96,1009.725 1402.62,1054.146 1429.97,1077.21 " fill="none" id="_typeEditor-&gt;button" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1433.81,1080.453,1429.5166,1071.5892,1429.9906,1077.2262,1424.3537,1077.7002,1433.81,1080.453" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[0bd546802276e8c7725681314e28ea44]
-link _typeEditor to definyType--><path d="M1338.36,979.846 C1360.98,986.924 1389.54,995.862 1411.77,1002.818 " fill="none" id="_typeEditor-&gt;definyType" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1416.7,1004.361,1409.3139,997.846,1411.9301,1002.8615,1406.9147,1005.4778,1416.7,1004.361" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[146b0f2401ebe9d8020b4a752e4fcae2]
-link _typeEditor to _messageAndState--><path d="M1260.87,971.663 C1200.81,977.185 1079.54,987 976.5,987 C820.5,987 820.5,987 820.5,987 C748.03,987 665.914,973.702 610.128,962.636 " fill="none" id="_typeEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="605.15,961.64,613.1914,967.3265,610.053,962.62,614.7594,959.4816,605.15,961.64" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[1dc0626221fa7ed225baf3df6c627688]
-link _typeEditor to oneLineTextInput--><path d="M1307.79,950.544 C1332.46,891.461 1412.76,699.181 1439.07,636.186 " fill="none" id="_typeEditor-&gt;oneLineTextInput" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1441.01,631.53,1433.8523,638.2951,1439.0843,636.1443,1441.2351,641.3763,1441.01,631.53" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[3a22051a06bab127224e38047104c6d8]
-link _typeEditor to _productEditor--><path d="M1324.56,950.792 C1331.2,946.021 1338.39,940.826 1345,936 C1370.56,917.339 1399.5,895.841 1420.1,880.483 " fill="none" id="_typeEditor-&gt;_productEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1424.37,877.302,1414.7677,879.4921,1420.3669,880.2979,1419.5612,885.8971,1424.37,877.302" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[5bbb0359faf77cb6a2e5f6f3123bf380]
-link _typeEditor to _ui--><path d="M1338.32,964.567 C1386.48,958.084 1468.75,939.549 1513,887 C1544.86,849.167 1559.79,696.258 1564.39,638.363 " fill="none" id="_typeEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1564.8,633.064,1560.1152,641.7273,1564.4129,638.049,1568.0912,642.3467,1564.8,633.064" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[3178f6385e4164f66b0ebf0871c6e94e]
-link _typeEditor to util--><path d="M1307.3,950.717 C1317.42,924.157 1336.2,871.496 1345,825 C1389.58,589.442 1334.19,521.51 1384,287 C1396.88,226.38 1425.83,158.36 1439.75,127.64 " fill="none" id="_typeEditor-&gt;util" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1441.84,123.04,1434.4666,129.5694,1439.7656,127.5894,1441.7456,132.8884,1441.84,123.04" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[b95f9d33b6b8453a0a95e7aff8f8b2d4]
-link _typeParameterEditor to button--><path d="M1193.32,620.148 C1201.05,624.299 1208.64,629.237 1215,635 C1239.69,657.362 1232.01,673.98 1254,699 C1288.23,737.947 1319.22,727.015 1345,772 C1404.2,875.286 1326.76,932.616 1384,1037 C1393.66,1054.616 1411.31,1069.199 1425.55,1078.912 " fill="none" id="_typeParameterEditor-&gt;button" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1429.85,1081.768,1424.5738,1073.4517,1425.6876,1078.9978,1420.1414,1080.1116,1429.85,1081.768" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[75fcf2d83afa32b27b2e10cb415edd8e]
-link _typeParameterEditor to _listEditor--><path d="M1195.4,620.179 C1202.57,624.254 1209.43,629.158 1215,635 C1245.65,667.141 1233.48,687.616 1254,727 C1262.94,744.154 1274.6,762.643 1283.74,776.452 " fill="none" id="_typeParameterEditor-&gt;_listEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1286.74,780.947,1285.0736,771.2401,1283.9655,776.7874,1278.4182,775.6793,1286.74,780.947" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[c422738355b174c86d6dae7ba141a2c7]
-link _typeParameterEditor to _messageAndState--><path d="M1120.83,620.252 C1099.93,633.819 1069.35,652.603 1041,666 C869.885,746.851 793.89,704.457 644,820 C605.152,849.946 572.93,898.289 556.263,926.205 " fill="none" id="_typeParameterEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="553.529,930.838,561.5499,925.1226,556.0716,926.5327,554.6615,921.0545,553.529,930.838" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[7f566225e4bb65e2dfe045a26343df00]
-link _typeParameterEditor to oneLineTextInput--><path d="M1215.23,605.901 C1264.23,608.032 1330.56,610.916 1379.8,613.056 " fill="none" id="_typeParameterEditor-&gt;oneLineTextInput" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1384.81,613.274,1375.9897,608.8919,1379.8146,613.0597,1375.6468,616.8845,1384.81,613.274" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[3dc6bbc1641410ab6b512f79cdbdfc40]
-link _typeParameterEditor to _productEditor--><path d="M1202.43,620.133 C1244.81,635.627 1303.43,661.752 1345,699 C1390.16,739.468 1423.13,804.35 1438.27,838.063 " fill="none" id="_typeParameterEditor-&gt;_productEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1440.37,842.805,1440.3783,832.9561,1438.3432,838.2342,1433.0651,836.1991,1440.37,842.805" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[916afb1155286c5e697728f368589563]
-link _typeParameterEditor to _ui--><path d="M1215.16,597.489 C1228.04,596.553 1241.44,595.669 1254,595 C1368.96,588.876 1400.66,565.83 1513,591 C1524.94,593.676 1537.37,599.358 1547.18,604.63 " fill="none" id="_typeParameterEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1551.78,607.17,1545.8519,599.305,1547.4082,604.7436,1541.9697,606.2999,1551.78,607.17" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[ed4210fa97a9870ae3faf74dbbaa5975]
-link _typePartBodyEditor to _listEditor--><path d="M1039.55,738.278 C1088.23,739.151 1156.88,743.52 1215,759 C1231.81,763.478 1249.41,771.19 1264.09,778.579 " fill="none" id="_typePartBodyEditor-&gt;_listEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1268.55,780.858,1262.3504,773.2052,1264.096,778.586,1258.7152,780.3316,1268.55,780.858" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[ec539f267c4caea10059d9dd03073572]
-link _typePartBodyEditor to _memberListEditor--><path d="M1015.35,756.157 C1024.33,761.151 1033.46,767.141 1041,774 C1085.22,814.229 1119.9,876.636 1136.25,909.336 " fill="none" id="_typePartBodyEditor-&gt;_memberListEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1138.52,913.938,1138.1055,904.0979,1136.2988,909.4584,1130.9382,907.6517,1138.52,913.938" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[dd0bad09dd415bab1fe203aae925dac2]
-link _typePartBodyEditor to _messageAndState--><path d="M911.206,753.281 C842.123,770.666 729.908,804.271 644,856 C611.791,875.395 580.928,906.298 562.219,926.863 " fill="none" id="_typePartBodyEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="558.642,930.832,567.6384,926.8239,561.9892,927.1177,561.6955,921.4684,558.642,930.832" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[85d3623a4bf59ba6f549777a6b58f030]
-link _typePartBodyEditor to _patternListEditor--><path d="M1039.8,756.129 C1054.9,760.214 1070.97,764.564 1085.94,768.614 " fill="none" id="_typePartBodyEditor-&gt;_patternListEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1090.98,769.976,1083.3469,763.7521,1086.1556,768.6625,1081.2453,771.4711,1090.98,769.976" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[2d131283449df4a4a30e559d8ea2ea0d]
-link _typePartBodyEditor to tagEditor--><path d="M995.977,721.997 C1010.49,708.282 1029.68,687.752 1041,666 C1075.19,600.31 1043.89,568.65 1080,504 C1133.49,408.24 1155.03,376.28 1254,329 C1302.12,306.01 1364.5,303.77 1405.24,305.43 " fill="none" id="_typePartBodyEditor-&gt;tagEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1410.59,305.68,1401.7821,301.2732,1405.5952,305.4517,1401.4167,309.2648,1410.59,305.68" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[1c70470b70d18836e153e79363bbc914]
-link _typePartBodyEditor to _ui--><path d="M994.345,721.963 C1008.34,707.912 1027.62,686.953 1041,666 C1064.24,629.602 1044.08,600.983 1080,577 C1240.06,470.12 1332.34,504.65 1513,571 C1526.29,575.88 1538.52,585.729 1547.88,594.972 " fill="none" id="_typePartBodyEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1551.71,598.88,1548.2675,589.6524,1548.2104,595.3089,1542.5538,595.2518,1551.71,598.88" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[b5f7f346d9127265179cc8ce20b4e547]
-link _typePartEditor to _listEditor--><path d="M842.529,528.23 C859.541,542.16 885.097,561.44 910,574 C964.591,601.534 986.08,589.128 1041,616 C1125.16,657.177 1143.65,674.278 1215,735 C1234.15,751.3 1233.75,761.087 1254,776 C1255.9,777.396 1257.89,778.744 1259.95,780.039 " fill="none" id="_typePartEditor-&gt;_listEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1264.24,782.621,1258.6015,774.5459,1259.9592,780.0374,1254.4677,781.3951,1264.24,782.621" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[e2e0ba4542ab82ef5f1fde3ae363dabf]
-link _typePartEditor to _maybeEditor--><path d="M829.005,493.71 C840.541,465.76 867.452,411.32 910,387 C1017.95,325.3 1171.04,335.68 1248.89,346.46 " fill="none" id="_typePartEditor-&gt;_maybeEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1253.91,347.17,1245.5577,341.9509,1248.9591,346.4709,1244.4391,349.8723,1253.91,347.17" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[474bfc75f1507c14b699bbce860deb4f]
-link _typePartEditor to multilineTextInput--><path d="M834.416,528.29 C849.85,549.69 878.532,586.201 910,610 C917.776,615.881 926.845,621.069 935.684,625.436 " fill="none" id="_typePartEditor-&gt;multilineTextInput" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="940.561,627.778,934.1774,620.278,936.0532,625.6148,930.7163,627.4905,940.561,627.778" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[74724122260328f4daedbb9fcfe1d216]
-link _typePartEditor to oneLineTextInput--><path d="M833.677,493.97 C848.35,473.36 876.246,439.7 910,426 C1035.61,375.03 1084.36,389.82 1215,426 C1315.3,453.78 1400.56,553.78 1433.24,596.469 " fill="none" id="_typePartEditor-&gt;oneLineTextInput" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1436.42,600.659,1434.1685,591.0709,1433.3986,596.6752,1427.7944,595.9052,1436.42,600.659" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[4d4fff3d19e113ce58a13870b7c8f8c5]
-link _typePartEditor to _productEditor--><path d="M871.344,508.86 C975.164,507.18 1218.6,519 1345,656 C1396.19,711.48 1427.94,797.316 1440.85,837.636 " fill="none" id="_typePartEditor-&gt;_productEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1442.47,842.785,1443.5788,832.9988,1440.9666,838.0164,1435.949,835.4042,1442.47,842.785" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[0acd6d01e3894e30f550e67fde06b0d8]
-link _typePartEditor to tagEditor--><path d="M826.494,493.91 C835.266,460.52 859.581,386.84 910,352 C990.033,296.7 1247.76,300.16 1345,303 C1364.71,303.58 1386.52,304.77 1404.94,305.95 " fill="none" id="_typePartEditor-&gt;tagEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1410.04,306.28,1401.3225,301.6968,1405.0508,305.9512,1400.7964,309.6795,1410.04,306.28" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[056e025e0d92d3c416eaa030631f1ee8]
-link _typePartEditor to _typeParameterEditor--><path d="M871.006,524.77 C926.982,540.67 1019.29,566.88 1081.46,584.531 " fill="none" id="_typePartEditor-&gt;_typeParameterEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1086.63,585.999,1079.0717,579.6846,1081.8216,584.628,1076.8782,587.378,1086.63,585.999" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[dca4b404e1fa6d127aa86cba44804584]
-link _typePartEditor to _typePartBodyEditor--><path d="M830.838,528.45 C845.243,557.92 876.481,618.929 910,666 C923.271,684.637 940.528,703.962 953.852,718.044 " fill="none" id="_typePartEditor-&gt;_typePartBodyEditor" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="957.499,721.871,954.1855,712.5963,954.0495,718.2515,948.3943,718.1155,957.499,721.871" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[fffa5902e1e1d6b0bcd36d6d80ddf0c7]
-link _typePartEditor to _ui--><path d="M824.877,493.85 C831.14,455.67 851.819,363.53 910,319 C1123.13,155.9 1308.69,112.97 1513,287 C1559.59,326.68 1565.37,525.45 1565.97,593.28 " fill="none" id="_typePartEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1566.01,598.683,1569.943,589.6535,1565.9729,593.6831,1561.9433,589.713,1566.01,598.683" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[67e5aea3ee67d213361e180c26cb09a4]
-link user to icon--><path d="M842.28,1184.573 C898.561,1183.357 1059.52,1179.879 1121.63,1178.537 " fill="none" id="user-&gt;icon" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="1126.98,1178.422,1117.8909,1174.6288,1121.9813,1178.5363,1118.0738,1182.6267,1126.98,1178.422" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[fe2ca169df0dd2de4b42d7ceb1d23d09]
-link user to _image--><path d="M840.835,1189.704 C866.064,1196.178 911.859,1207.928 942.727,1215.848 " fill="none" id="user-&gt;_image" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="947.927,1217.182,940.2038,1211.0703,943.0839,1215.9391,938.2152,1218.8192,947.927,1217.182" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[33ad057ad294c6083cfad198b205944d]
-link user to link--><path d="M832.008,1196.197 C858.364,1227.235 932.356,1314.37 961.993,1349.272 " fill="none" id="user-&gt;link" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="965.382,1353.262,962.6067,1343.8123,962.1461,1349.4503,956.508,1348.9897,965.382,1353.262" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[1f35c173339fe728bb9eb07f54606a28]
-link user to _messageAndState--><path d="M801.039,1183.915 C765.941,1181.016 691.302,1170.435 644,1132 C590.531,1088.554 561.428,1008.612 549.915,970.007 " fill="none" id="user-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;"/><polygon fill="#000000" points="548.47,965.064,547.1554,974.8247,549.8726,969.8632,554.8341,972.5805,548.47,965.064" style="stroke: #000000; stroke-width: 0.5;"/><!--MD5=[feacd3022e6c166f2324077228a023ee]
-link <b>build</b> to <b>debugInLocal</b>--><!--MD5=[9d4ee8cbc533bac22d6b9217615d61ad]
-link <b>build</b> to <b>test</b>--><script type="text/plantuml"><![CDATA[MD5=[2b05d45ea35eac658a2aad895673d3e0]
+<?xml version="1.0" encoding="utf-8"?>
+<svg contentscripttype="application/ecmascript" contentstyletype="text/css" height="1481px" preserveAspectRatio="none" style="width:1592px;height:1481px;" version="1.1" viewBox="0 0 1592 1481" width="1592px" zoomAndPan="magnify" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1592" height="1481" style="fill: rgb(255, 230, 210);"/>
+  <g style="">
+    <ellipse cx="376.8345" cy="159.242" rx="26.3345" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="33" style="white-space: pre;" x="360.3345" y="162.9842" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">about</text>
+    <ellipse cx="222.9178" cy="605.9342" rx="15.4178" ry="12.9342" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="17" style="white-space: pre;" x="214.4178" y="609.6764" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">api</text>
+    <ellipse cx="66.8492" cy="672.242" rx="17.8492" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="21" style="white-space: pre;" x="56.3492" y="675.9842" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">app</text>
+    <ellipse cx="67.1274" cy="21.242" rx="25.6274" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="32" style="white-space: pre;" x="51.1274" y="24.9842" font-weight="bold" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">build</text>
+    <ellipse cx="1447.663" cy="1274.242" rx="29.163" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="37" style="white-space: pre;" x="1429.163" y="1277.9842" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">button</text>
+    <ellipse cx="222.8534" cy="736.0707" rx="55.8534" ry="13.5707" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="77" style="white-space: pre;" x="184.3534" y="739.8129" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">createProject</text>
+    <ellipse cx="66.7601" cy="68.052" rx="60.7601" ry="14.552" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="90" style="white-space: pre;" x="21.7601" y="71.7942" font-weight="bold" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">debugInLocal</text>
+    <ellipse cx="1447.6335" cy="817.242" rx="46.1335" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="61" style="white-space: pre;" x="1417.1335" y="820.9842" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">definyType</text>
+    <ellipse cx="377.0772" cy="1235.242" rx="30.5772" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="39" style="white-space: pre;" x="357.5772" y="1238.9842" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">header</text>
+    <ellipse cx="222.8345" cy="651.242" rx="26.3345" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="33" style="white-space: pre;" x="206.3345" y="654.9842" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">home</text>
+    <ellipse cx="1146.6777" cy="1178.242" rx="20.6777" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="25" style="white-space: pre;" x="1134.1777" y="1181.9842" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">icon</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="55" x="947" y="1133" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="35" style="white-space: pre;" x="957" y="1155.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">image</text>
+    <ellipse cx="223.1335" cy="782.242" rx="46.1335" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="61" style="white-space: pre;" x="192.6335" y="785.9842" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">indexedDB</text>
+    <ellipse cx="974.435" cy="256.242" rx="16.435" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="19" style="white-space: pre;" x="964.935" y="259.9842" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">link</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="70" x="1263.5" y="1055" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="50" style="white-space: pre;" x="1273.5" y="1077.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">listEditor</text>
+    <ellipse cx="67.1274" cy="384.242" rx="25.6274" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="32" style="white-space: pre;" x="51.1274" y="387.9842" font-weight="bold" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">main</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="91" x="1253" y="403" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="71" style="white-space: pre;" x="1263" y="425.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">maybeEditor</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="120" x="1086.5" y="701" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="100" style="white-space: pre;" x="1096.5" y="723.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">memberListEditor</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="124" x="475" y="697" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="104" style="white-space: pre;" x="485" y="719.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">messageAndState</text>
+    <ellipse cx="974.5478" cy="460.0096" rx="65.5478" ry="15.5096" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="102" style="white-space: pre;" x="923.5478" y="463.7518" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">multilineTextInput</text>
+    <ellipse cx="1447.3309" cy="722.7662" rx="64.3309" ry="15.2662" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="99" style="white-space: pre;" x="1397.8309" y="726.5084" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">oneLineTextInput</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="88" x="641" y="1264" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="68" style="white-space: pre;" x="651" y="1286.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">page/debug</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="94" x="638" y="555" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="74" style="white-space: pre;" x="648" y="577.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">page/project</text>
+    <ellipse cx="377.0122" cy="824.242" rx="44.0122" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="58" style="white-space: pre;" x="348.0122" y="827.9842" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">page/user</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="113" x="1090" y="759" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="93" style="white-space: pre;" x="1100" y="781.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">patternListEditor</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="97" x="1399" y="911" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="77" style="white-space: pre;" x="1409" y="933.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">productEditor</text>
+    <ellipse cx="377.0772" cy="1190.242" rx="30.5772" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="39" style="white-space: pre;" x="357.5772" y="1193.9842" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">setting</text>
+    <ellipse cx="377.2159" cy="651.2432" rx="59.2159" ry="14.2432" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="86" style="white-space: pre;" x="334.2159" y="654.9854" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">source/project</text>
+    <ellipse cx="1447.5624" cy="420.242" rx="39.0624" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="51" style="white-space: pre;" x="1422.0624" y="423.9842" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">tagEditor</text>
+    <ellipse cx="222.8848" cy="21.242" rx="21.3848" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="26" style="white-space: pre;" x="209.8848" y="24.9842" font-weight="bold" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">test</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="77" x="1260" y="846" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="57" style="white-space: pre;" x="1270" y="868.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">typeEditor</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="135" x="1079" y="1073" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="115" style="white-space: pre;" x="1089" y="1095.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">typeParameterEditor</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="128" x="910.5" y="651" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="108" style="white-space: pre;" x="920.5" y="673.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">typePartBodyEditor</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="99" x="771" y="605" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="79" style="white-space: pre;" x="781" y="627.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">typePartEditor</text>
+    <rect height="34.4844" rx="3" ry="3" style="stroke: #000000; stroke-width: 0.5;" width="30" x="1551" y="605" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="10" style="white-space: pre;" x="1561" y="627.0059" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">ui</text>
+    <ellipse cx="820.2843" cy="998.242" rx="31.2843" ry="13.242" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="40" style="white-space: pre;" x="800.2843" y="1001.9842" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">ui/user</text>
+    <ellipse cx="1447.4178" cy="180.9342" rx="15.4178" ry="12.9342" style="stroke: #383838; stroke-width: 0.5;" fill="#F8F8F8"/>
+    <text lengthAdjust="spacingAndGlyphs" textLength="17" style="white-space: pre;" x="1438.9178" y="184.6764" font-size="12" font-family="Tahoma, sans-serif" fill="#000000">util</text>
+    <path d="M385.014,171.66 C396.967,193.69 421.405,240.77 436,283 C488.592,435.18 522.101,627.097 532.519,691.66 " id="about-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="533.343,696.799,535.8681,687.2793,532.5516,691.862,527.9689,688.5456,533.343,696.799" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M399.633,152.12 C449.318,136.96 575.652,102 684,102 C684,102 684,102 1299.5,102 C1397.28,102 1448.16,84.93 1512,159 C1541.1,192.77 1559.38,511.532 1563.9,599.571 " id="about-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1564.16,604.793,1567.6977,595.6015,1563.906,599.7995,1559.708,596.0078,1564.16,604.793" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M70.9977,659.054 C79.876,620.65 106.741,503.994 128,407 C145.897,325.34 110.556,284.66 167,223 C213.63,172.06 299.582,161.2 345.385,159.18 " id="app-&gt;about" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="350.497,158.99,341.3506,155.3372,345.5007,159.1813,341.6566,163.3314,350.497,158.99" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M82.7329,665.526 C102.0493,657.055 137.006,641.785 167,629 C179.385,623.721 193.384,617.869 204.159,613.388 " id="app-&gt;api" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="208.866,611.433,199.0202,611.189,204.248,613.3499,202.0872,618.5778,208.866,611.433" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M83.0466,678.253 C107.501,688.416 156.429,708.75 189.202,722.37 " id="app-&gt;createProject" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="193.916,724.329,187.1399,717.1817,189.2988,722.4104,184.0701,724.5693,193.916,724.329" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M68.7509,685.165 C72.2123,737.002 89.9381,930.752 167,1065 C213.782,1146.499 238.832,1162.373 318,1213 C326.576,1218.484 336.726,1222.918 346.119,1226.329 " id="app-&gt;header" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="350.949,1228.02,343.7749,1221.2722,346.2295,1226.3688,341.133,1228.8233,350.949,1228.02" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M84.7739,669.713 C110.525,666.201 160.168,659.432 192.156,655.07 " id="app-&gt;home" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="197.132,654.391,187.674,651.6439,192.1779,655.0667,188.7551,659.5706,197.132,654.391" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M77.7911,682.612 C94.6149,700.355 130.714,736.325 167,759 C173.561,763.1 180.98,766.766 188.196,769.903 " id="app-&gt;indexedDB" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="193.146,771.989,186.4056,764.808,188.5384,770.0474,183.299,772.1802,193.146,771.989" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M84.9329,673.52 C146.393,679.035 359.844,698.191 469.637,708.044 " id="app-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="474.786,708.506,466.1798,703.7172,469.806,708.0589,465.4643,711.6851,474.786,708.506" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M68.9148,685.293 C74.1497,757.944 102.375,1106.702 167,1189 C279.124,1331.786 529.647,1308.1 635.406,1290.533 " id="app-&gt;_page_debug" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="640.637,1289.649,631.0964,1287.2041,635.7069,1290.4819,632.429,1295.0923,640.637,1289.649" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M76.2407,660.659 C91.5026,640.724 126.343,600 167,584 C327.048,521.015 537.077,545.577 632.656,561.929 " id="app-&gt;_page_project" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="637.676,562.799,629.4901,557.3226,632.7493,561.9462,628.1256,565.2054,637.676,562.799" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M73.1064,684.68 C84.9254,712.163 117.029,776.997 167,805 C218.109,833.641 287.473,833.798 331.994,829.954 " id="app-&gt;page/user" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="337.028,829.493,327.7009,826.33,332.0488,829.9488,328.4301,834.2967,337.028,829.493" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M75.062,683.974 C102.8698,731.356 206.817,910.677 279,1065 C298.686,1107.089 286.271,1128.055 318,1162 C325.743,1170.284 336.452,1176.398 346.563,1180.762 " id="app-&gt;setting" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="351.463,1182.766,344.6468,1175.6569,346.835,1180.8734,341.6186,1183.0617,351.463,1182.766" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M74.2777,659.95 C87.6694,635.583 121.563,580.6 167,555 C226.204,521.644 250.257,536.35 318,531 C501.549,516.504 562.065,475.13 732,546 C760.487,557.88 786.252,582.811 802.329,600.887 " id="app-&gt;_typePartEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="805.807,604.862,802.8903,595.4549,802.5143,601.0993,796.8699,600.7233,805.807,604.862" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M71.1726,659.091 C80.5321,620.787 108.587,504.38 128,407 C147.928,307.04 108.287,264.32 167,181 C228.445,93.8 269.329,63 376,63 C376,63 376,63 821.5,63 C946.007,63 1336.14,154.56 1427.31,176.38 " id="app-&gt;util" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1432.4,177.6,1424.572,171.6232,1427.5361,176.4413,1422.718,179.4054,1432.4,177.6" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M276.927,732.268 C330.087,728.519 412.153,722.733 469.638,718.679 " id="createProject-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="474.775,718.317,465.5162,714.9593,469.7874,718.6684,466.0783,722.9396,474.775,718.317" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M383.22,1247.792 C395.02,1274.882 426.549,1337.856 475,1366 C555.894,1412.9894 590.449,1391 684,1391 C684,1391 684,1391 1147.5,1391 C1235.54,1391 1263.94,1402.6206 1344,1366 C1382.12,1348.562 1416.1,1311.863 1433.73,1290.46 " id="header-&gt;button" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1437.04,1286.394,1428.2541,1290.8447,1433.8818,1290.2703,1434.4562,1295.8979,1437.04,1286.394" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M406.965,1232.096 C483.124,1224.274 695.164,1201.292 870,1171 C894.149,1166.816 921.298,1161.276 941.729,1156.936 " id="header-&gt;_image" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="946.773,1155.861,937.1366,1153.8261,941.883,1156.9039,938.8052,1161.6502,946.773,1155.861" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M406.163,1230.958 C417.209,1227.89 428.914,1222.493 436,1213 C505.977,1119.248 440.526,799.793 475,688 C517.659,549.664 547.39,518.9 638,406 C688.207,343.44 698.422,318.15 771,284 C832.215,255.19 914.546,253.76 952.603,254.91 " id="header-&gt;link" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="957.889,255.09,949.035,250.7764,952.8921,254.9144,948.7541,258.7714,957.889,255.09" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M405.902,1230.427 C416.769,1227.273 428.411,1221.955 436,1213 C498.876,1138.807 527.562,823.219 534.364,736.262 " id="header-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="534.763,731.106,530.0805,739.7706,534.3772,736.0911,538.0567,740.3878,534.763,731.106" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M382.002,1247.84 C392.273,1278.705 422.511,1357.631 475,1400 C551.117,1461.4407 586.18,1469 684,1469 C684,1469 684,1469 1299.5,1469 C1421.01,1469 1455.42,1404.5294 1512,1297 C1542.98,1238.113 1560.62,755.336 1564.28,644.584 " id="header-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1564.46,639.297,1560.1666,648.1608,1564.2958,644.2943,1568.1623,648.4235,1564.46,639.297" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M237.178,662.551 C249.637,674.145 268.012,693.097 279,713 C308.978,767.301 295.186,789.321 318,847 C374.66,990.245 351.895,1063.402 475,1156 C550.58,1212.851 589.425,1196 684,1196 C684,1196 684,1196 821.5,1196 C933.428,1196 1066.77,1185.159 1120.88,1180.303 " id="home-&gt;icon" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1126.17,1179.825,1116.851,1176.6382,1121.1897,1180.268,1117.5598,1184.6067,1126.17,1179.825" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M247.483,645.709 C258.11,642.357 270.225,637.082 279,629 C422.565,496.766 323.605,359.19 475,236 C611.616,124.83 700.371,156.59 870,204 C902.632,213.12 937.144,232.76 956.926,245.12 " id="home-&gt;link" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="961.391,247.95,955.9331,239.7517,957.1686,245.272,951.6483,246.5075,961.391,247.95" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M244.027,642.993 C282.531,628.844 369.007,603.155 436,628 C470.619,640.839 501.302,671.625 519.271,692.654 " id="home-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="522.693,696.722,519.9616,687.2595,519.4748,692.8953,513.839,692.4085,522.693,696.722" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M249.785,651 C267.036,651 290.534,651 312.581,651 " id="home-&gt;source/project" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="317.851,651,308.851,647,312.851,651,308.851,655,317.851,651" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1002.062,1154.375 C1034.72,1159.755 1089.7,1168.809 1121.26,1174.008 " id="_image-&gt;icon" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1126.49,1174.87,1118.2462,1169.4812,1121.5544,1174.0698,1116.9658,1177.3781,1126.49,1174.87" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M946.929,1142.408 C935.08,1138.651 921.095,1133.697 909,1128 C890.588,1119.328 888.205,1113.099 870,1104 C769.72,1053.883 713.51,1087.863 638,1005 C565.122,925.025 544.966,789.441 539.727,736.305 " id="_image-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="539.238,731.127,536.1018,740.4632,539.7081,736.1049,544.0664,739.7111,539.238,731.127" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M958.056,257.34 C921.685,261.22 829.323,275.34 771,322 C640.259,426.6 566.515,625.913 544.824,692.057 " id="link-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="543.235,696.951,549.8191,689.6264,544.7792,692.1954,542.2102,687.1556,543.235,696.951" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M987.141,264.59 C1024.8,292.24 1147.01,380.99 1253,447 C1361.52,514.587 1497.26,586.637 1546.27,612.268 " id="link-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1550.74,614.602,1544.6141,606.8901,1546.308,612.2874,1540.9107,613.9813,1550.74,614.602" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1312.03,1089.222 C1339.92,1127.545 1406.81,1219.462 1434.34,1257.296 " id="_listEditor-&gt;button" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1437.5,1261.635,1435.4374,1252.0046,1434.5574,1257.5926,1428.9694,1256.7126,1437.5,1261.635" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1263.34,1055.9 C1139.31,997.435 712.955,796.467 578.77,733.218 " id="_listEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="574.121,731.026,580.5571,738.481,578.6439,733.1575,583.9674,731.2443,574.121,731.026" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1333.74,1078.128 C1380.99,1084.418 1465.59,1087.503 1512,1040 C1567.41,983.28 1566.98,722.848 1565.55,644.415 " id="_listEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1565.45,639.087,1561.6282,648.1641,1565.5486,644.086,1569.6266,648.0064,1565.45,639.087" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M67,397.15 C67,482.656 67,568.164 67,653.671 " id="&lt;b&gt;main&lt;/b&gt;-&gt;app" style="stroke: #000000; stroke-width: 1.0;" fill="none"/>
+    <polygon points="67,658.781,71,649.781,67,653.781,63,649.781,67,658.781" style="stroke: #000000; stroke-width: 1.0;" fill="#000000"/>
+    <path d="M85.9554,392.73 C141.269,420.08 312.771,508.216 436,608 C468.207,634.079 500.14,670.183 518.964,692.806 " id="&lt;b&gt;main&lt;/b&gt;-&gt;_messageAndState" style="stroke: #000000; stroke-width: 1.0;" fill="none"/>
+    <polygon points="522.323,696.867,519.6686,687.3826,519.136,693.0143,513.5043,692.4818,522.323,696.867" style="stroke: #000000; stroke-width: 1.0;" fill="#000000"/>
+    <path d="M1281.83,402.95 C1244.55,363.79 1145.73,268.19 1040,234 C924.297,196.58 874.99,220.96 771,284 C702.405,325.58 681.368,338.52 638,406 C576.582,501.564 549.819,638.152 541.268,691.469 " id="_maybeEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="540.45,696.662,545.8004,688.3932,541.2272,691.7228,537.8977,687.1496,540.45,696.662" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1344,420 C1362.7,420 1384.37,420 1402.96,420 " id="_maybeEditor-&gt;tagEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1408.11,420,1399.11,416,1403.11,420,1399.11,424,1408.11,420" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1344.14,432.74 C1402.68,449.78 1499.46,479.212 1512,491 C1543.3,520.421 1556.58,570.882 1561.85,599.836 " id="_maybeEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1562.74,604.983,1565.1442,595.4321,1561.8861,600.0565,1557.2617,596.7984,1562.74,604.983" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1198.9,735.019 C1259.72,755.156 1359.32,788.134 1411.74,805.49 " id="_memberListEditor-&gt;definyType" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1416.66,807.12,1409.373,800.4943,1411.9133,805.5487,1406.8589,808.0891,1416.66,807.12" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1196.67,735.175 C1203.22,739.196 1209.29,744.084 1214,750 C1263.07,811.681 1233.04,846.75 1253,923 C1264.89,968.428 1281.17,1020.909 1290.38,1049.888 " id="_memberListEditor-&gt;_listEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1291.9,1054.675,1292.9737,1044.8848,1290.3795,1049.9118,1285.3525,1047.3176,1291.9,1054.675" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1086.3,717.61 C972.406,716.86 723.506,715.221 604.262,714.436 " id="_memberListEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="599.031,714.402,608.0045,718.4611,604.0309,714.4349,608.0571,710.4612,599.031,714.402" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1206.57,718.988 C1255.77,719.811 1325.9,720.983 1377.63,721.848 " id="_memberListEditor-&gt;oneLineTextInput" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1382.9,721.936,1373.9699,717.7823,1377.9007,721.8503,1373.8327,725.7811,1382.9,721.936" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1196.08,735.185 C1202.79,739.216 1209.07,744.106 1214,750 C1255.46,799.527 1205.59,846.137 1253,890 C1273.11,908.6 1343.67,918.794 1393.76,923.823 " id="_memberListEditor-&gt;_productEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1398.85,924.324,1390.2812,919.4685,1393.8737,923.8382,1389.504,927.4307,1398.85,924.324" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1190.86,735.074 C1198.99,739.297 1207.09,744.281 1214,750 C1230.68,763.805 1264.37,812.793 1283.47,841.537 " id="_memberListEditor-&gt;_typeEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1286.4,845.967,1284.7674,836.2544,1283.64,841.7978,1278.0967,840.6704,1286.4,845.967" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1206.87,704.347 C1302.59,682.338 1486.29,640.098 1545.85,626.403 " id="_memberListEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1550.9,625.242,1541.2296,623.3758,1546.0289,626.3702,1543.0346,631.1695,1550.9,625.242" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M541.83,731.232 C561.634,813.782 652.467,1166.747 677.561,1258.983 " id="_messageAndState-&gt;_page_debug" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="678.913,1263.931,680.3979,1254.1947,677.5944,1259.108,672.6811,1256.3045,678.913,1263.931" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M680.278,1263.961 C660.731,1181.76 569.872,828.648 544.561,736.131 " id="_page_debug-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="543.196,731.166,541.7226,740.904,544.5203,735.9874,549.4369,738.7852,543.196,731.166" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M557.27,696.693 C576.444,675.497 607.353,639.901 638,613 C646.294,605.72 656.27,598.609 664.808,592.163 " id="_messageAndState-&gt;_page_project" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="668.871,589.054,659.293,591.3477,664.9005,592.0929,664.1553,597.7005,668.871,589.054" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M643.93,589.047 C641.89,590.672 639.901,592.331 638,594 C602.978,624.741 567.614,666.837 549.811,692.488 " id="_page_project-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="546.901,696.769,555.2688,691.5747,549.712,692.634,548.6527,687.0772,546.901,696.769" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M579.632,696.95 C597.149,687.835 618.062,677.267 638,670 C679.561,654.852 728.727,644.737 765.398,637.225 " id="_messageAndState-&gt;_typePartEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="770.716,636.135,761.0959,634.0246,765.8179,637.1395,762.7031,641.8615,770.716,636.135" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M770.716,620.517 C733.582,624.754 681.605,635.107 638,651 C608.823,661.634 577.558,679.339 557.903,693.683 " id="_typePartEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="553.649,696.876,563.2481,694.6722,557.6478,693.8744,558.4456,688.2741,553.649,696.876" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M729.182,1288.828 C785.284,1298.302 886.366,1313 973.5,1313 C973.5,1313 973.5,1313 1147.5,1313 C1246.39,1313 1362.15,1291.764 1416.03,1280.632 " id="_page_debug-&gt;button" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1421.05,1279.588,1411.4257,1277.497,1416.154,1280.6024,1413.0486,1285.3307,1421.05,1279.588" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M729.247,1274.147 C766.612,1268.067 822.005,1258.672 870,1249 C945.991,1233.687 965.087,1229.929 1040,1210 C1068.94,1202.301 1101.91,1192.06 1123.18,1185.26 " id="_page_debug-&gt;icon" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1128.06,1183.694,1118.2681,1182.6364,1123.2993,1185.2223,1120.7134,1190.2536,1128.06,1183.694" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M695.82,589.165 C724.832,639.162 814.089,787.905 909,895 C960.579,953.201 996.134,946.785 1040,1011 C1068.32,1052.45 1042.26,1082.792 1079,1117 C1124.71,1159.559 1168.09,1113.657 1214,1156 C1249.98,1189.188 1213.83,1229.646 1253,1259 C1300.71,1294.751 1374.9,1288.249 1416.18,1280.822 " id="_page_project-&gt;button" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1421.29,1279.868,1411.7038,1277.6086,1416.3769,1280.7963,1413.1892,1285.4695,1421.29,1279.868" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M689.331,589.267 C697.862,630.604 723.262,737.5 771,814 C861.178,958.51 934.735,953.08 1040,1087 C1060.35,1112.89 1053.97,1128.597 1079,1150 C1091.38,1160.587 1108.34,1167.643 1122.03,1172.023 " id="_page_project-&gt;icon" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1126.92,1173.518,1119.4946,1167.0478,1122.1412,1172.0474,1117.1416,1174.6939,1126.92,1173.518" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M687.135,589.002 C692.342,662.419 716.079,951.654 771,1021 C800.894,1058.746 833.717,1033.346 870,1065 C894.815,1086.649 883.241,1107.483 909,1128 C918.47,1135.543 930.675,1140.571 941.915,1143.889 " id="_page_project-&gt;_image" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="946.998,1145.296,939.3918,1139.0393,942.1793,1143.9617,937.2569,1146.7492,946.998,1145.296" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M729.665,554.99 C785.474,533.249 881.237,495.942 934.634,475.141 " id="_page_project-&gt;multilineTextInput" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="939.351,473.303,929.5129,472.8418,934.6919,475.1175,932.4162,480.2964,939.351,473.303" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M705.434,554.856 C722.148,540.568 747.248,520.173 771,505 C875.107,438.49 922.284,397.53 1040,435 C1213.44,490.214 1376.43,649.278 1428.94,704.135 " id="_page_project-&gt;oneLineTextInput" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1432.53,707.902,1429.2111,698.6292,1429.0784,704.2845,1423.4231,704.1518,1432.53,707.902" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M694.888,554.824 C708.263,530.582 735.792,486.456 771,461 C823.624,422.95 845.621,427.14 909,413 C1098.34,370.76 1157.83,322.45 1344,377 C1363.76,382.79 1364.23,393.55 1383,402 C1391.37,405.77 1400.73,408.95 1409.63,411.53 " id="_page_project-&gt;tagEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1414.52,412.9,1406.9429,406.6081,1409.7076,411.5434,1404.7723,414.308,1414.52,412.9" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M731.57,589.067 C743.573,593.563 756.595,598.44 768.848,603.029 " id="_page_project-&gt;_typePartEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="773.682,604.84,766.6572,597.9369,768.9998,603.0859,763.8507,605.4285,773.682,604.84" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M693.998,554.928 C710.472,520.402 748.523,444.03 771,426 C899.935,322.56 1386.22,253.75 1512,361 C1548.21,391.88 1560.46,541.869 1563.86,599.439 " id="_page_project-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1564.17,604.714,1567.6474,595.4995,1563.8833,599.7222,1559.6606,595.9581,1564.17,604.714" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M689.514,589.311 C699.601,637.869 730.538,779.187 771,892 C782.512,924.097 799.88,959.861 810.409,980.562 " id="_page_project-&gt;ui/user" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="812.802,985.24,812.2643,975.4058,810.5249,980.7886,805.1421,979.0492,812.802,985.24" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M695.629,554.926 C705.55,536.911 721.067,507.512 732,481 C753.379,429.16 730.454,399.74 771,361 C796.187,336.93 1319.66,211.22 1427.27,185.57 " id="_page_project-&gt;util" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1432.36,184.36,1422.678,182.5546,1427.4961,185.5187,1424.532,190.3368,1432.36,184.36" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M378.258,837.03 C379.897,881.152 391.668,1025.907 475,1093 C615.868,1206.416 856.118,1173.362 941.904,1156.816 " id="page/user-&gt;_image" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="946.845,1155.848,937.2438,1153.6531,941.9383,1156.8093,938.782,1161.5038,946.845,1155.848" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M395.21,812.019 C422.077,793.314 474.293,756.961 507.031,734.168 " id="page/user-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="511.319,731.183,501.6475,733.0437,507.2159,734.0403,506.2192,739.6087,511.319,731.183" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1203.04,784.658 C1219.15,787.105 1236.76,789.72 1253,792 C1303.08,799.032 1360.56,806.365 1399.77,811.256 " id="_patternListEditor-&gt;definyType" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1404.94,811.9,1396.4997,806.8244,1399.9779,811.2856,1395.5167,814.7638,1404.94,811.9" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1168.78,793.018 C1183.75,806.171 1203.01,825.684 1214,847 C1254.1,924.782 1205.53,966.484 1253,1040 C1255.71,1044.197 1259.18,1048.018 1262.98,1051.441 " id="_patternListEditor-&gt;_listEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1266.88,1054.731,1262.5866,1045.8672,1263.0606,1051.5042,1257.4237,1051.9782,1266.88,1054.731" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1197.5,758.849 C1203.7,755.058 1209.44,750.488 1214,745 C1290.44,652.957 1297.97,499.427 1297.96,442.3 " id="_patternListEditor-&gt;_maybeEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1297.94,437.08,1293.9915,446.1027,1297.9686,442.0799,1301.9914,446.057,1297.94,437.08" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1089.82,770.318 C977.632,758.868 724.827,733.067 604.317,720.768 " id="_patternListEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="599.031,720.229,607.5775,725.1236,604.0051,720.7375,608.3912,717.1651,599.031,720.229" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1203.04,766.155 C1256.21,756.73 1336.05,742.578 1389.65,733.076 " id="_patternListEditor-&gt;oneLineTextInput" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1394.76,732.172,1385.2007,729.8015,1389.8365,733.0433,1386.5947,737.6791,1394.76,732.172" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1195.12,793.031 C1202.12,797.108 1208.73,802.052 1214,808 C1249.77,848.41 1209.54,890.993 1253,923 C1293.04,952.492 1351.45,949.558 1393.61,941.832 " id="_patternListEditor-&gt;_productEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1398.67,940.868,1389.0836,938.6096,1393.757,941.7969,1390.5698,946.4703,1398.67,940.868" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1185.23,793.076 C1194.75,797.677 1204.86,802.821 1214,808 C1232.91,818.716 1253.3,832.108 1269.2,842.995 " id="_patternListEditor-&gt;_typeEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1273.56,845.995,1268.4057,837.6026,1269.4384,843.1644,1263.8766,844.1971,1273.56,845.995" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1175.33,793.059 C1188.68,802.488 1203.92,815.273 1214,830 C1245.92,876.624 1207.84,917.037 1253,951 C1345,1020.202 1424.43,1029.735 1512,955 C1559.3,914.63 1564.6,711.898 1565.03,644.113 " id="_patternListEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1565.05,639.095,1561.0063,648.0755,1565.0257,644.0949,1569.0062,648.1143,1565.05,639.095" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1476.68,910.831 C1489.34,901.711 1503.35,889.403 1512,875 C1557.5,799.247 1564.36,690.344 1565.1,644.107 " id="_productEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1565.17,639.046,1561.0623,647.9974,1565.11,644.0456,1569.0617,648.0933,1565.17,639.046" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M400.886,1198.268 C411.682,1202.372 424.654,1207.6 436,1213 C550.093,1267.298 557.646,1352 684,1352 C684,1352 684,1352 1147.5,1352 C1252.22,1352 1371.09,1306.649 1421.64,1285.108 " id="setting-&gt;button" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1426.31,1283.1,1416.462,1282.9731,1421.7152,1285.0717,1419.6166,1290.3249,1426.31,1283.1" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M382.391,1176.772 C404.191,1111.097 500.849,819.897 528.555,736.429 " id="setting-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="530.279,731.237,523.6487,738.5198,528.7047,735.9827,531.2419,741.0387,530.279,731.237" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M398.997,1180.869 C471.834,1149.193 713.525,1044.086 793.53,1009.294 " id="setting-&gt;ui/user" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="798.116,1007.3,788.2675,1007.2212,793.5308,1009.294,791.4579,1014.5574,798.116,1007.3" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M382.589,664.953 C402.562,723.472 487.733,951.326 638,1065 C731.453,1135.695 877.221,1148.008 941.365,1149.863 " id="source/project-&gt;_image" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="946.578,1149.995,937.6839,1145.7648,941.5797,1149.8664,937.4781,1153.7622,946.578,1149.995" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M379.794,636.798 C387.813,575.515 422.316,334.49 475,283 C610.891,150.18 879.638,225.05 954.02,249.29 " id="source/project-&gt;link" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="959.035,250.95,951.7426,244.3303,954.287,249.3826,949.2347,251.9271,959.035,250.95" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M408.09,662.998 C430.764,672.039 462.3,684.613 488.385,695.014 " id="source/project-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="493.188,696.93,486.309,689.8816,488.5435,695.0785,483.3466,697.3129,493.188,696.93" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1478.01,428.13 C1490.02,432.77 1503.14,439.77 1512,450 C1549.94,493.771 1560.72,564.344 1563.79,599.949 " id="tagEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1564.19,604.941,1567.4601,595.6509,1563.7916,599.9569,1559.4855,596.2884,1564.19,604.941" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1305.63,880.137 C1329.46,946.767 1415.83,1188.243 1440.11,1256.133 " id="_typeEditor-&gt;button" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1441.88,1261.08,1442.6094,1251.2582,1440.1932,1256.3731,1435.0783,1253.957,1441.88,1261.08" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1337.36,851.154 C1359.98,844.076 1388.54,835.138 1410.77,828.182 " id="_typeEditor-&gt;definyType" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1415.7,826.639,1405.9147,825.5222,1410.9301,828.1385,1408.3139,833.154,1415.7,826.639" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1259.88,856.114 C1159,837.572 874.101,784.695 638,736 C627.054,733.742 615.453,731.267 604.179,728.816 " id="_typeEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="599.026,727.693,606.9684,733.5169,603.9114,728.7572,608.6712,725.7003,599.026,727.693" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1317.53,845.833 C1345.26,819.419 1398.19,769.01 1426.86,741.7 " id="_typeEditor-&gt;oneLineTextInput" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1430.58,738.165,1421.3019,741.4689,1426.9569,741.6108,1426.8151,747.2659,1430.58,738.165" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1337.36,879.739 C1357.52,888.657 1382.41,899.663 1403.33,908.912 " id="_typeEditor-&gt;_productEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1408.01,910.978,1401.4052,903.6721,1403.4395,908.9505,1398.1611,910.9849,1408.01,910.978" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1337.22,870.728 C1384.12,877.979 1463.88,882.211 1512,840 C1541.38,814.227 1557.27,694.89 1562.76,644.524 " id="_typeEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1563.32,639.301,1558.3836,647.8234,1562.7871,644.2725,1566.3381,648.676,1563.32,639.301" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1301.88,845.975 C1310.58,784.899 1342.22,571.249 1383,398 C1400.66,322.98 1428.58,235.39 1440.64,198.64 " id="_typeEditor-&gt;util" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1442.3,193.59,1435.6789,200.8812,1440.7317,198.3377,1443.2752,203.3905,1442.3,193.59" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1193.98,1107.064 C1201.28,1111.168 1208.29,1116.112 1214,1122 C1243.77,1152.72 1221.31,1181.264 1253,1210 C1298.59,1251.339 1371.55,1266.048 1413.65,1271.23 " id="_typeParameterEditor-&gt;button" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1418.62,1271.816,1410.1505,1266.7893,1413.6544,1271.2303,1409.2134,1274.7342,1418.62,1271.816" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1214.17,1082 C1229.22,1080.193 1244.74,1078.332 1258.23,1076.712 " id="_typeParameterEditor-&gt;_listEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1263.5,1076.08,1254.0851,1073.1888,1258.5361,1076.68,1255.045,1081.131,1263.5,1076.08" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1090.59,1072.988 C1041.75,1057.009 968.995,1031.098 909,1001 C890.597,991.768 889.114,983.652 870,976 C772.491,936.962 720.634,995.835 638,931 C574.181,880.928 549.511,780.734 541.419,736.208 " id="_typeParameterEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="540.513,731.061,538.1345,740.6183,541.3801,735.9852,546.0132,739.2309,540.513,731.061" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1189.51,1107.123 C1233.55,1121.984 1302.08,1135.884 1344,1099 C1395.13,1054.008 1354.91,857.045 1383,795 C1392.49,774.044 1410.2,754.755 1424.52,741.428 " id="_typeParameterEditor-&gt;oneLineTextInput" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1428.45,737.831,1419.107,740.9469,1424.7581,741.2029,1424.502,746.8539,1428.45,737.831" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1180.72,1107.001 C1201.02,1116.419 1227.83,1127.174 1253,1132 C1292.72,1139.616 1309.58,1153.229 1344,1132 C1409.81,1091.416 1434.84,994.232 1443.03,950.27 " id="_typeParameterEditor-&gt;_productEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1443.95,945.18,1438.4171,953.3278,1443.0631,950.1007,1446.2902,954.7468,1443.95,945.18" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1185.19,1107.155 C1194.71,1111.754 1204.83,1116.878 1214,1122 C1231.98,1132.038 1233.24,1141.211 1253,1147 C1366.59,1180.281 1438.91,1178.097 1512,1085 C1566.63,1015.414 1566.6,726.819 1565.43,644.194 " id="_typeParameterEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1565.35,639.054,1561.4893,648.1146,1565.4271,644.0534,1569.4884,647.9912,1565.35,639.054" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M985.881,685.392 C1002.836,712.784 1038.65,766.601 1079,803 C1131.3,850.178 1172.29,829.246 1214,886 C1255.81,942.893 1213.27,981.635 1253,1040 C1255.89,1044.248 1259.54,1048.127 1263.51,1051.605 " id="_typePartBodyEditor-&gt;_listEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1267.56,1054.947,1263.1502,1046.1405,1263.6984,1051.7708,1258.0682,1052.319,1267.56,1054.947" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1033.53,685.067 C1049.31,689.708 1066.47,694.755 1082.51,699.472 " id="_typePartBodyEditor-&gt;_memberListEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1087.44,700.925,1079.9385,694.5432,1082.6441,699.5111,1077.6762,702.2167,1087.44,700.925" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M910.34,673.19 C842.835,678.931 732.72,688.858 638,700 C627.054,701.288 615.453,702.787 604.179,704.317 " id="_typePartBodyEditor-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="599.025,705.021,608.4838,707.7654,603.9789,704.3439,607.4004,699.8391,599.025,705.021" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M996.03,685.242 C1016.31,701.788 1048.61,726.87 1079,745 C1085.88,749.107 1093.4,753.069 1100.83,756.708 " id="_typePartBodyEditor-&gt;_patternListEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1105.43,758.931,1099.0608,751.4188,1100.9263,756.7592,1095.5859,758.6247,1105.43,758.931" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M993.64,650.981 C1006.6,638.785 1024.43,621.943 1040,607 C1057.46,590.241 1058.21,581.38 1079,569 C1132.99,536.854 1155.34,549.516 1214,527 C1290.89,497.488 1378.32,454.62 1420.72,433.21 " id="_typePartBodyEditor-&gt;tagEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1425.42,430.83,1415.5831,431.3149,1420.9565,433.0832,1419.1881,438.4565,1425.42,430.83" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M1038.66,662.698 C1118.75,656.018 1261.09,644.29 1383,635 C1442.36,630.476 1512.66,625.588 1545.84,623.309 " id="_typePartBodyEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1550.84,622.966,1541.5869,619.5925,1545.8518,623.3088,1542.1354,627.5737,1550.84,622.966" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M828.231,639.228 C840.451,668.649 868.794,729.067 909,767 C956.864,812.158 989.525,793.78 1040,836 C1061.62,854.082 1058.2,866.988 1079,886 C1131.69,934.153 1160.4,925.864 1214,973 C1241.07,996.803 1266.98,1029.617 1282.57,1050.822 " id="_typePartEditor-&gt;_listEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1285.55,1054.902,1283.4645,1045.2765,1282.5978,1050.8666,1277.0078,1049.9999,1285.55,1054.902" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M870.414,613.324 C916.094,603.938 985.256,586.38 1040,558 C1059.66,547.809 1060.28,538.827 1079,527 C1135.67,491.192 1206.06,458.66 1251.37,439.1 " id="_typePartEditor-&gt;_maybeEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1256.23,437.01,1246.382,436.8787,1251.6343,438.9796,1249.5334,444.2319,1256.23,437.01" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M832.661,604.773 C855.089,570.229 903.927,495.404 909,491 C916.124,484.815 924.697,479.571 933.233,475.255 " id="_typePartEditor-&gt;multilineTextInput" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="937.961,472.953,928.1181,473.2958,933.4654,475.1415,931.6197,480.4888,937.961,472.953" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M870.271,624.986 C914.667,628.055 981.944,633.583 1040,642 C1169.09,660.717 1319.18,693.54 1395.81,711.108 " id="_typePartEditor-&gt;oneLineTextInput" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1400.75,712.242,1392.8846,706.3145,1395.8789,711.1138,1391.0796,714.1082,1400.75,712.242" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M840.927,639.002 C858.411,654.111 884.973,676.591 909,695 C965.475,738.27 982.231,745.474 1040,787 C1117.95,843.036 1139.95,853.902 1214,915 C1232.2,930.012 1231.03,942.41 1253,951 C1299.63,969.23 1357.01,958.698 1397.13,946.565 " id="_typePartEditor-&gt;_productEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1401.93,945.079,1392.1512,943.9064,1397.1517,946.5512,1394.5068,951.5517,1401.93,945.079" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M845.158,604.787 C862.296,592.843 886.34,577.139 909,566 C964.511,538.711 988.173,552.766 1040,519 C1061.07,505.272 1058.68,492.818 1079,478 C1148.38,427.4 1169.29,413.15 1253,394 C1309.45,381.09 1376.72,396.99 1415.24,408.99 " id="_typePartEditor-&gt;tagEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1420.25,410.58,1412.8816,404.0449,1415.4842,409.0675,1410.4617,411.6701,1420.25,410.58" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M826.307,639.178 C836.69,673.883 863.978,753.51 909,806 C954.826,859.427 992.8,842.783 1040,895 C1088.79,948.972 1123.04,1029.547 1137.63,1068.019 " id="_typePartEditor-&gt;_typeParameterEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1139.48,1072.94,1140.0678,1063.1087,1137.7256,1068.2579,1132.5764,1065.9157,1139.48,1072.94" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M870.012,636.681 C883.398,640.732 898.1,645.182 912.113,649.422 " id="_typePartEditor-&gt;_typePartBodyEditor" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="917.241,650.974,909.7858,644.5382,912.4554,649.5255,907.4681,652.1951,917.241,650.974" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M833.146,604.955 C848.303,583.996 876.698,548.667 909,528 C960.618,494.974 991.289,522.179 1040,485 C1064.99,465.93 1053.61,444.53 1079,426 C1143.89,378.63 1173.41,387.99 1253,377 C1367.4,361.2 1426.05,320.86 1512,398 C1542.05,424.97 1557.68,548.914 1562.93,599.949 " id="_typePartEditor-&gt;_ui" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1563.44,604.942,1566.514,595.5851,1562.9368,599.9674,1558.5546,596.3902,1563.44,604.942" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M842.571,1007.718 C851.588,1012.471 861.886,1018.738 870,1026 C891.793,1045.503 885.432,1061.684 909,1079 C958.611,1115.45 984.822,1096.701 1040,1124 C1058.67,1133.238 1060.65,1140.136 1079,1150 C1093.45,1157.766 1110.51,1164.912 1123.73,1170.041 " id="ui/user-&gt;icon" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="1128.42,1171.836,1121.4608,1164.8668,1123.7546,1170.0378,1118.5836,1172.3315,1128.42,1171.836" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M843.918,1007.116 C852.964,1011.692 862.915,1017.988 870,1026 C899.42,1059.269 878.546,1085.675 909,1118 C918,1127.553 930.468,1134.653 942.045,1139.705 " id="ui/user-&gt;_image" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="946.94,1141.746,940.1722,1134.5908,942.325,1139.822,937.0938,1141.9748,946.94,1141.746" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M823.216,984.686 C832.863,910.243 880.916,544.978 909,435 C924.593,373.94 952.77,304.47 966.113,273.04 " id="ui/user-&gt;link" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="968.122,268.33,960.917,275.0448,966.164,272.9307,968.2781,278.1776,968.122,268.33" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <path d="M790.231,1001.788 C751.152,1005.17 681.783,1005.098 638,970 C563.285,910.107 544.258,786.792 539.524,736.301 " id="ui/user-&gt;_messageAndState" style="stroke: #000000; stroke-width: 0.5;" fill="none"/>
+    <polygon points="539.061,731.078,535.871,740.3959,539.5023,736.0585,543.8398,739.6898,539.061,731.078" style="stroke: #000000; stroke-width: 0.5;" fill="#000000"/>
+    <script type="text/plantuml">MD5=[7c7e3412d2d60c64ccc6defbb2df815b]
 @startuml
 
 scale max 1920 width
@@ -157,160 +331,162 @@ skinparam component {
 }
 
 
+(about)
 (api)
 (app)
-(<b>build</b>)
+(&lt;b&gt;build&lt;/b&gt;)
 (button)
-(<b>debugInLocal</b>)
+(createProject)
+(&lt;b&gt;debugInLocal&lt;/b&gt;)
 (definyType)
 (header)
+(home)
 (icon)
 rectangle "image" as _image
 (indexedDB)
 (link)
 rectangle "listEditor" as _listEditor
-(<b>main</b>)
+(&lt;b&gt;main&lt;/b&gt;)
 rectangle "maybeEditor" as _maybeEditor
 rectangle "memberListEditor" as _memberListEditor
 rectangle "messageAndState" as _messageAndState
 (multilineTextInput)
 (oneLineTextInput)
-(pageAbout)
-(pageCreateProject)
-rectangle "pageDebug" as _pageDebug
-(pageHome)
-rectangle "pageProject" as _pageProject
-(pageSetting)
-(pageUser)
+rectangle "page/debug" as _page_debug
+rectangle "page/project" as _page_project
+(page/user)
 rectangle "patternListEditor" as _patternListEditor
 rectangle "productEditor" as _productEditor
-(project)
+(setting)
+(source/project)
 (tagEditor)
-(<b>test</b>)
+(&lt;b&gt;test&lt;/b&gt;)
 rectangle "typeEditor" as _typeEditor
 rectangle "typeParameterEditor" as _typeParameterEditor
 rectangle "typePartBodyEditor" as _typePartBodyEditor
 rectangle "typePartEditor" as _typePartEditor
 rectangle "ui" as _ui
-(user)
+(ui/user)
 (util)
 
 
-(app) --> (api)
-(app) --> (header)
-(app) --> (indexedDB)
-(app) --> _messageAndState
-(app) --> (pageAbout)
-(app) --> (pageCreateProject)
-(app) --> _pageDebug
-(app) --> (pageHome)
-(app) --> _pageProject
-(app) --> (pageSetting)
-(app) --> (pageUser)
-(app) --> _typePartEditor
-(app) --> (util)
-(header) --> (button)
-(header) --> _image
-(header) --> (link)
-(header) --> _messageAndState
-(header) --> _ui
-_image --> (icon)
-_image --> _messageAndState
-(link) --> _messageAndState
-(link) --> _ui
-_listEditor --> (button)
-_listEditor --> _messageAndState
-_listEditor --> _ui
-(<b>main</b>) -[thickness=1]> (app)
-(<b>main</b>) -[thickness=1]> _messageAndState
-_maybeEditor --> _messageAndState
-_maybeEditor --> (tagEditor)
-_maybeEditor --> _ui
-_memberListEditor --> (definyType)
-_memberListEditor --> _listEditor
-_memberListEditor --> _messageAndState
-_memberListEditor --> (oneLineTextInput)
-_memberListEditor --> _productEditor
-_memberListEditor --> _typeEditor
-_memberListEditor --> _ui
-_messageAndState --> _pageDebug
-_messageAndState --> _pageProject
-_messageAndState --> _typePartEditor
-(pageAbout) --> _messageAndState
-(pageAbout) --> _ui
-(pageCreateProject) --> _messageAndState
-_pageDebug --> (button)
-_pageDebug --> (icon)
-_pageDebug --> _messageAndState
-(pageHome) --> (icon)
-(pageHome) --> (link)
-(pageHome) --> _messageAndState
-(pageHome) --> (project)
-_pageProject --> (button)
-_pageProject --> (icon)
-_pageProject --> _image
-_pageProject --> _messageAndState
-_pageProject --> (multilineTextInput)
-_pageProject --> (oneLineTextInput)
-_pageProject --> (tagEditor)
-_pageProject --> _typePartEditor
-_pageProject --> _ui
-_pageProject --> (user)
-_pageProject --> (util)
-(pageSetting) --> (button)
-(pageSetting) --> _messageAndState
-(pageSetting) --> (user)
-(pageUser) --> _image
-(pageUser) --> _messageAndState
-_patternListEditor --> (definyType)
-_patternListEditor --> _listEditor
-_patternListEditor --> _maybeEditor
-_patternListEditor --> _messageAndState
-_patternListEditor --> (oneLineTextInput)
-_patternListEditor --> _productEditor
-_patternListEditor --> _typeEditor
-_patternListEditor --> _ui
-_productEditor --> _ui
-(project) --> _image
-(project) --> (link)
-(project) --> _messageAndState
-(tagEditor) --> _ui
-_typeEditor --> (button)
-_typeEditor --> (definyType)
-_typeEditor --> _messageAndState
-_typeEditor --> (oneLineTextInput)
-_typeEditor --> _productEditor
-_typeEditor --> _ui
-_typeEditor --> (util)
-_typeParameterEditor --> (button)
-_typeParameterEditor --> _listEditor
-_typeParameterEditor --> _messageAndState
-_typeParameterEditor --> (oneLineTextInput)
-_typeParameterEditor --> _productEditor
-_typeParameterEditor --> _ui
-_typePartBodyEditor --> _listEditor
-_typePartBodyEditor --> _memberListEditor
-_typePartBodyEditor --> _messageAndState
-_typePartBodyEditor --> _patternListEditor
-_typePartBodyEditor --> (tagEditor)
-_typePartBodyEditor --> _ui
-_typePartEditor --> _listEditor
-_typePartEditor --> _maybeEditor
-_typePartEditor --> _messageAndState
-_typePartEditor --> (multilineTextInput)
-_typePartEditor --> (oneLineTextInput)
-_typePartEditor --> _productEditor
-_typePartEditor --> (tagEditor)
-_typePartEditor --> _typeParameterEditor
-_typePartEditor --> _typePartBodyEditor
-_typePartEditor --> _ui
-(user) --> (icon)
-(user) --> _image
-(user) --> (link)
-(user) --> _messageAndState
+(about) --&gt; _messageAndState
+(about) --&gt; _ui
+(app) --&gt; (about)
+(app) --&gt; (api)
+(app) --&gt; (createProject)
+(app) --&gt; (header)
+(app) --&gt; (home)
+(app) --&gt; (indexedDB)
+(app) --&gt; _messageAndState
+(app) --&gt; _page_debug
+(app) --&gt; _page_project
+(app) --&gt; (page/user)
+(app) --&gt; (setting)
+(app) --&gt; _typePartEditor
+(app) --&gt; (util)
+(createProject) --&gt; _messageAndState
+(header) --&gt; (button)
+(header) --&gt; _image
+(header) --&gt; (link)
+(header) --&gt; _messageAndState
+(header) --&gt; _ui
+(home) --&gt; (icon)
+(home) --&gt; (link)
+(home) --&gt; _messageAndState
+(home) --&gt; (source/project)
+_image --&gt; (icon)
+_image --&gt; _messageAndState
+(link) --&gt; _messageAndState
+(link) --&gt; _ui
+_listEditor --&gt; (button)
+_listEditor --&gt; _messageAndState
+_listEditor --&gt; _ui
+(&lt;b&gt;main&lt;/b&gt;) -[thickness=1]&gt; (app)
+(&lt;b&gt;main&lt;/b&gt;) -[thickness=1]&gt; _messageAndState
+_maybeEditor --&gt; _messageAndState
+_maybeEditor --&gt; (tagEditor)
+_maybeEditor --&gt; _ui
+_memberListEditor --&gt; (definyType)
+_memberListEditor --&gt; _listEditor
+_memberListEditor --&gt; _messageAndState
+_memberListEditor --&gt; (oneLineTextInput)
+_memberListEditor --&gt; _productEditor
+_memberListEditor --&gt; _typeEditor
+_memberListEditor --&gt; _ui
+_messageAndState --&gt; _page_debug
+_messageAndState --&gt; _page_project
+_messageAndState --&gt; _typePartEditor
+_page_debug --&gt; (button)
+_page_debug --&gt; (icon)
+_page_debug --&gt; _messageAndState
+_page_project --&gt; (button)
+_page_project --&gt; (icon)
+_page_project --&gt; _image
+_page_project --&gt; _messageAndState
+_page_project --&gt; (multilineTextInput)
+_page_project --&gt; (oneLineTextInput)
+_page_project --&gt; (tagEditor)
+_page_project --&gt; _typePartEditor
+_page_project --&gt; _ui
+_page_project --&gt; (ui/user)
+_page_project --&gt; (util)
+(page/user) --&gt; _image
+(page/user) --&gt; _messageAndState
+_patternListEditor --&gt; (definyType)
+_patternListEditor --&gt; _listEditor
+_patternListEditor --&gt; _maybeEditor
+_patternListEditor --&gt; _messageAndState
+_patternListEditor --&gt; (oneLineTextInput)
+_patternListEditor --&gt; _productEditor
+_patternListEditor --&gt; _typeEditor
+_patternListEditor --&gt; _ui
+_productEditor --&gt; _ui
+(setting) --&gt; (button)
+(setting) --&gt; _messageAndState
+(setting) --&gt; (ui/user)
+(source/project) --&gt; _image
+(source/project) --&gt; (link)
+(source/project) --&gt; _messageAndState
+(tagEditor) --&gt; _ui
+_typeEditor --&gt; (button)
+_typeEditor --&gt; (definyType)
+_typeEditor --&gt; _messageAndState
+_typeEditor --&gt; (oneLineTextInput)
+_typeEditor --&gt; _productEditor
+_typeEditor --&gt; _ui
+_typeEditor --&gt; (util)
+_typeParameterEditor --&gt; (button)
+_typeParameterEditor --&gt; _listEditor
+_typeParameterEditor --&gt; _messageAndState
+_typeParameterEditor --&gt; (oneLineTextInput)
+_typeParameterEditor --&gt; _productEditor
+_typeParameterEditor --&gt; _ui
+_typePartBodyEditor --&gt; _listEditor
+_typePartBodyEditor --&gt; _memberListEditor
+_typePartBodyEditor --&gt; _messageAndState
+_typePartBodyEditor --&gt; _patternListEditor
+_typePartBodyEditor --&gt; (tagEditor)
+_typePartBodyEditor --&gt; _ui
+_typePartEditor --&gt; _listEditor
+_typePartEditor --&gt; _maybeEditor
+_typePartEditor --&gt; _messageAndState
+_typePartEditor --&gt; (multilineTextInput)
+_typePartEditor --&gt; (oneLineTextInput)
+_typePartEditor --&gt; _productEditor
+_typePartEditor --&gt; (tagEditor)
+_typePartEditor --&gt; _typeParameterEditor
+_typePartEditor --&gt; _typePartBodyEditor
+_typePartEditor --&gt; _ui
+(ui/user) --&gt; (icon)
+(ui/user) --&gt; _image
+(ui/user) --&gt; (link)
+(ui/user) --&gt; _messageAndState
 
 @enduml
 
 
 ' View and edit on https://arkit.pro
-]]></script></g></svg>
+</script>
+  </g>
+</svg>

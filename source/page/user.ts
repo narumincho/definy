@@ -4,9 +4,9 @@ import {
   State,
   TitleAndElement,
   messageGetUserTag,
-} from "./messageAndState";
+} from "../messageAndState";
 import { c, div } from "@narumincho/html/viewUtil";
-import { image } from "./image";
+import { image } from "../ui/image";
 
 export const init = (
   messageHandler: (message: Message) => void,

@@ -7,8 +7,8 @@ import * as typePartBodyEditor from "./typePartBodyEditor";
 import { div, elementMap } from "@narumincho/html/viewUtil";
 import { selectText, text } from "./ui";
 import { Element } from "@narumincho/html/view";
-import { multiLineTextEditor } from "./multilineTextInput";
-import { oneLineTextEditor } from "./oneLineTextInput";
+import { multiLineTextEditor } from "./ui/multilineTextInput";
+import { oneLineTextEditor } from "./ui/oneLineTextInput";
 import { productEditor } from "./productEditor";
 import { tagEditor } from "./tagEditor";
 

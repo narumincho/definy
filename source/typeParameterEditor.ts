@@ -4,9 +4,9 @@ import * as listEditor from "./listEditor";
 import * as productEditor from "./productEditor";
 import { SelectBoxSelection, box, selectText, text } from "./ui";
 import { Element } from "@narumincho/html/view";
-import { button } from "./button";
+import { button } from "./ui/button";
 import { c } from "@narumincho/html/viewUtil";
-import { oneLineTextEditor } from "./oneLineTextInput";
+import { oneLineTextEditor } from "./ui/oneLineTextInput";
 
 export type Message =
   | {
