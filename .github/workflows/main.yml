@@ -19,7 +19,7 @@ jobs:
       - name: Install npm dependencies (npm ci)
         run: npm ci
       - name: Run build script
-        run: npx ts-node ./build.js
+        run: npx ts-node ./build.ts
       - name: deploy firebase hosting
         uses: w9jds/firebase-action@master
         with:
