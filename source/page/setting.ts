@@ -3,11 +3,11 @@ import {
   State,
   TitleAndElement,
   messageLogOut,
-} from "./messageAndState";
+} from "../messageAndState";
 import { c, div } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
-import { button } from "./button";
-import { userCard } from "./user";
+import { button } from "../ui/button";
+import { userCard } from "../ui/user";
 
 export const view = (appInterface: State): TitleAndElement => {
   return {

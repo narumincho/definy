@@ -4,12 +4,12 @@ import {
   State,
   TitleAndElement,
   messageGetTop50Project,
-} from "./messageAndState";
+} from "../messageAndState";
 import { c, div } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
-import { icon } from "./icon";
-import { link } from "./link";
-import { projectCard } from "./project";
+import { icon } from "../ui/icon";
+import { link } from "../ui/link";
+import { projectCard } from "../ui/project";
 
 export const init = (messageHandler: (message: Message) => void): void => {
   messageHandler({

@@ -6,8 +6,8 @@ import { ProductItem, productEditor } from "./productEditor";
 import { SelectBoxSelection, box, selectBox, text } from "./ui";
 import { c, elementMap } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
-import { button } from "./button";
-import { oneLineTextEditor } from "./oneLineTextInput";
+import { button } from "./ui/button";
+import { oneLineTextEditor } from "./ui/oneLineTextInput";
 
 /** TODO */
 export type Selection =

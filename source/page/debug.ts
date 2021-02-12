@@ -4,11 +4,11 @@ import {
   State,
   TitleAndElement,
   messageSelectDebugPageTab,
-} from "./messageAndState";
+} from "../messageAndState";
 import { c, div, elementMap } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
-import { button } from "./button";
-import { icon } from "./icon";
+import { button } from "../ui/button";
+import { icon } from "../ui/icon";
 
 const tabList = ["Icon", "Product", "Sum", "List"] as const;
 

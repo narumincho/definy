@@ -1,5 +1,5 @@
 import * as d from "definy-core/source/data";
-import { Message, State } from "./messageAndState";
+import { Message, State } from "../messageAndState";
 import { c, div } from "@narumincho/html/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "@narumincho/html/view";

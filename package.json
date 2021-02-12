@@ -10,33 +10,30 @@
   "scripts": {
     "debugInLocal": "ts-node debugInLocal.ts",
     "typeCheck": "tsc --project tsconfig.json --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "generate-graph": "npx depcruise --output-type dot --collapse 3 source | dot -T svg > graph.svg"
   },
-  "browserslist": [
-    "last 1 chrome version",
-    "last 1 firefox version",
-    "last 1 safari version"
-  ],
   "dependencies": {
     "@narumincho/html": "0.2.2",
     "definy-core": "0.2.17",
     "js-ts-code-generator": "0.4.0"
   },
   "devDependencies": {
-    "@types/node": "14.14.25",
+    "@types/node": "14.14.26",
     "@types/prettier": "2.2.0",
     "@typescript-eslint/eslint-plugin": "4.15.0",
     "@typescript-eslint/parser": "4.15.0",
-    "esbuild": "^0.8.43",
+    "dependency-cruiser": "^9.23.0",
+    "esbuild": "0.8.44",
     "eslint": "7.19.0",
     "eslint-config-prettier": "7.2.0",
     "eslint-plugin-prettier": "3.3.1",
-    "fastify": "^3.11.0",
+    "fastify": "3.11.0",
     "jest": "26.6.3",
     "prettier": "2.2.1",
     "ts-jest": "26.5.1",
     "ts-node": "^9.1.1",
-    "typescript": "4.1.4"
+    "typescript": "4.1.5"
   },
   "jest": {
     "preset": "ts-jest"

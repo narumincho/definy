@@ -1,8 +1,8 @@
 import * as d from "definy-core/source/data";
-import { State, TitleAndElement } from "./messageAndState";
+import { State, TitleAndElement } from "../messageAndState";
 import { c, div, externalLink } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
-import { gitHubIcon } from "./ui";
+import { gitHubIcon } from "../ui";
 
 export const view = (appInterface: State): TitleAndElement => ({
   title: "Definyについて",

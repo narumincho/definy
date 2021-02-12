@@ -6,7 +6,7 @@ import * as typeEditor from "./typeEditor";
 import { SelectBoxSelection, box, selectText } from "./ui";
 import { c, elementMap } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
-import { oneLineTextEditor } from "./oneLineTextInput";
+import { oneLineTextEditor } from "./ui/oneLineTextInput";
 import { productEditor } from "./productEditor";
 
 export type ItemMessage =

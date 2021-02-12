@@ -1,18 +1,18 @@
-import * as a from "./messageAndState";
+import * as a from "../messageAndState";
 import * as d from "definy-core/source/data";
-import * as typePartEditor from "./typePartEditor";
-import { box, text } from "./ui";
+import * as typePartEditor from "../typePartEditor";
+import { box, text } from "../ui";
 import { c, div, elementMap } from "@narumincho/html/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "@narumincho/html/view";
-import { button } from "./button";
-import { icon } from "./icon";
-import { image } from "./image";
-import { mapMapValue } from "./util";
-import { multiLineTextEditor } from "./multilineTextInput";
-import { oneLineTextEditor } from "./oneLineTextInput";
-import { tagEditor } from "./tagEditor";
-import { userCard } from "./user";
+import { button } from "../ui/button";
+import { icon } from "../ui/icon";
+import { image } from "../ui/image";
+import { mapMapValue } from "../util";
+import { multiLineTextEditor } from "../ui/multilineTextInput";
+import { oneLineTextEditor } from "../ui/oneLineTextInput";
+import { tagEditor } from "../tagEditor";
+import { userCard } from "../ui/user";
 
 export interface PageState {
   readonly selection: Selection;
