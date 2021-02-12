@@ -52,6 +52,4 @@ Definy is Web App for Web App.
 
 ## 各ファイルの依存関係
 
-<div style="background-color: #eee">
-  <img src="arkit.svg">
-</div>
+![各ファイルの依存関係のグラフ図](graph.svg)

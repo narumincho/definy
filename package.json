@@ -10,7 +10,8 @@
   "scripts": {
     "debugInLocal": "ts-node debugInLocal.ts",
     "typeCheck": "tsc --project tsconfig.json --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "generate-graph": "npx depcruise --output-type dot --collapse 3 source | dot -T svg > graph.svg"
   },
   "dependencies": {
     "@narumincho/html": "0.2.2",
@@ -22,6 +23,7 @@
     "@types/prettier": "2.2.0",
     "@typescript-eslint/eslint-plugin": "4.15.0",
     "@typescript-eslint/parser": "4.15.0",
+    "dependency-cruiser": "^9.23.0",
     "esbuild": "0.8.44",
     "eslint": "7.19.0",
     "eslint-config-prettier": "7.2.0",
