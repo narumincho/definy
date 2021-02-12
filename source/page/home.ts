@@ -9,7 +9,7 @@ import { c, div } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
 import { icon } from "../ui/icon";
 import { link } from "../ui/link";
-import { projectCard } from "../project";
+import { projectCard } from "../ui/project";
 
 export const init = (messageHandler: (message: Message) => void): void => {
   messageHandler({

@@ -1,9 +1,9 @@
 import * as d from "definy-core/source/data";
-import { Message, State } from "./messageAndState";
+import { Message, State } from "../messageAndState";
 import { c, div } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
-import { image } from "./ui/image";
-import { link } from "./ui/link";
+import { image } from "./image";
+import { link } from "./link";
 
 const imageHeight = 633 / 4;
 const textHeight = 48;
