@@ -1,9 +1,6 @@
 name: build and deploy hosting
 
-on:
-  push:
-    branches:
-      - main
+on: workflow_dispatch
 
 jobs:
   build-and-deploy:
