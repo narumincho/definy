@@ -19,6 +19,6 @@ jobs:
       - name: Install npm dependencies (npm ci)
         run: npm ci
       - name: type check
-        run: tsc --project tsconfig.json --noEmit
+        run: npm run typeCheck
       - name: Run build script
         run: npx ts-node ./build.ts

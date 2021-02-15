@@ -4,20 +4,17 @@ import { c, div, path, svg } from "@narumincho/html/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "@narumincho/html/view";
 import { button } from "./ui/button";
-import { gitHubIcon } from "./ui";
+import { box, gitHubIcon } from "./ui";
 import { image } from "./ui/image";
 import { link } from "./ui/link";
 
 export const headerView = (appInterface: State): Element<Message> =>
-  div(
+  box(
     {
-      style: {
-        display: "grid",
-        gridAutoFlow: "column",
-        width: "100%",
-        backgroundColor: "#333",
-        height: 48,
-      },
+      height: 48,
+      backgroundColor: { r: 0.2, g: 0.2, b: 0.2 },
+      direction: "x",
+      padding: 0,
     },
     c([
       ["logo", logo(appInterface)],
