@@ -1,4 +1,4 @@
-name: Deploy to Firebase Hosting
+name: Deploy to Cloud Functions for Firebase
 
 on: workflow_dispatch
 
@@ -17,10 +17,10 @@ jobs:
         run: npm ci
       - name: Run build script
         run: npm run production-build
-      - name: deploy firebase hosting
+      - name: deploy functions to firebase
         uses: w9jds/firebase-action@master
         with:
-          args: deploy --only hosting
+          args: deploy --only functions
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           PROJECT_ID: definy-lang
