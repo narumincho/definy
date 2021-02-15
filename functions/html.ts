@@ -1,4 +1,4 @@
-import * as core from "definy-core";
+import * as commonUrl from "../common/url";
 import * as d from "definy-core/source/data";
 import * as lib from "./lib";
 import * as nHtml from "@narumincho/html";
@@ -21,7 +21,9 @@ export const html = async (
       iconPath: "/icon",
       coverImageUrl: coverImageUrlAndDescription.imageUrl,
       description: coverImageUrlAndDescription.description,
-      scriptUrlList: [new URL((core.releaseOrigin as string) + "/main.js")],
+      scriptUrlList: [
+        new URL((commonUrl.releaseOrigin as string) + "/main.js"),
+      ],
       styleUrlList: [],
       twitterCard: "SummaryCard",
       language: urlData.language,
@@ -62,7 +64,7 @@ body {
   };
 };
 
-const defaultImageUrl = new URL((core.releaseOrigin as string) + "/icon");
+const defaultImageUrl = new URL((commonUrl.releaseOrigin as string) + "/icon");
 const getFileUrl = (imageToken: d.ImageToken): URL =>
   new URL(
     "https://us-central1-definy-lang.cloudfunctions.net/getFile/" +

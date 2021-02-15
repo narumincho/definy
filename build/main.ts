@@ -27,6 +27,10 @@ export const build = async (clientMode: d.ClientMode): Promise<void> => {
         "@narumincho/html": "0.2.3",
         "firebase-admin": "9.4.2",
         "firebase-functions": "3.13.1",
+        axios: "0.21.1",
+        "definy-core": "0.2.18",
+        jimp: "0.16.1",
+        jsonwebtoken: "8.5.1",
       },
     })
   );

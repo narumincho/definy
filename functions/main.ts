@@ -1,14 +1,12 @@
-import * as apiCodec from "definy-core/source/api";
-import * as common from "definy-core";
+import * as apiCodec from "../common/apiCodec";
 import * as d from "definy-core/source/data";
 import * as functions from "firebase-functions";
 import * as genHtml from "./html";
 import * as lib from "./lib";
 import * as nHtml from "@narumincho/html";
-import { commonDummy } from "../common/main";
+import * as commonUrl from "../common/url";
 
 console.log("versions", JSON.stringify(process.versions));
-console.log("commonDummy", commonDummy);
 /*
  * =====================================================================
  *                  html ブラウザが最初にリクエストするところ
@@ -25,8 +23,8 @@ export const html = functions.https.onRequest(async (request, response) => {
   const requestUrl = new URL(
     "https://" + request.hostname + request.originalUrl
   );
-  const urlData = common.urlDataAndAccountTokenFromUrl(requestUrl).urlData;
-  const normalizedUrl = common.urlDataAndAccountTokenToUrl(
+  const urlData = commonUrl.urlDataAndAccountTokenFromUrl(requestUrl).urlData;
+  const normalizedUrl = commonUrl.urlDataAndAccountTokenToUrl(
     urlData,
     d.Maybe.Nothing()
   );
@@ -129,12 +127,12 @@ const supportCrossOriginResourceSharing = (
 
 const allowOrigin = (httpHeaderOrigin: unknown): string => {
   if (
-    httpHeaderOrigin === common.debugOrigin ||
-    httpHeaderOrigin === common.releaseOrigin
+    httpHeaderOrigin === commonUrl.debugOrigin ||
+    httpHeaderOrigin === commonUrl.releaseOrigin
   ) {
     return httpHeaderOrigin;
   }
-  return common.releaseOrigin;
+  return commonUrl.releaseOrigin;
 };
 
 /*
@@ -154,12 +152,12 @@ export const logInCallback = functions.https.onRequest((request, response) => {
     console.log("codeかstateが送られて来なかった。ユーザーがキャンセルした?");
     response.redirect(
       301,
-      common
+      commonUrl
         .urlDataAndAccountTokenToUrl(
           {
             clientMode: "Release",
             location: d.Location.Home,
-            language: common.defaultLanguage,
+            language: commonUrl.defaultLanguage,
           },
           d.Maybe.Nothing()
         )
@@ -173,7 +171,7 @@ export const logInCallback = functions.https.onRequest((request, response) => {
       lib.logInCallback(openIdConnectProvider, code, state).then((result) => {
         response.redirect(
           301,
-          common
+          commonUrl
             .urlDataAndAccountTokenToUrl(
               result.urlData,
               d.Maybe.Just(result.accessToken)
