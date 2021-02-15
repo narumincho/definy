@@ -1,4 +1,4 @@
-import * as apiCodec from "definy-core/source/api";
+import * as apiCodec from "../common/apiCodec";
 import * as d from "definy-core/source/data";
 
 type ApiCodecType = typeof apiCodec;

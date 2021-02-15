@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import * as apiCodec from "definy-core/source/api";
+import * as apiCodec from "../common/apiCodec";
 import * as common from "definy-core";
 import * as crypto from "crypto";
 import * as d from "definy-core/source/data";
