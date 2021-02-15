@@ -11,7 +11,7 @@
     "debugInLocal": "ts-node debugInLocal.ts",
     "typeCheck": "tsc --project tsconfig.json --noEmit",
     "test": "jest",
-    "generate-graph": "npx depcruise --output-type dot --collapse 3 source | dot -T svg > graph.svg"
+    "generate-graph": "npx depcruise --output-type dot --collapse 3 source/main.ts | dot -T svg > graph.svg"
   },
   "dependencies": {
     "@narumincho/html": "0.2.2",
