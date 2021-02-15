@@ -1,7 +1,9 @@
 import * as data from "definy-core/source/data";
 
+export const debugHostingPortNumber = 2520;
+
 export const releaseOrigin = "https://definy.app";
-export const debugOrigin = "http://localhost:2520";
+export const debugOrigin = `http://localhost:${debugHostingPortNumber}`;
 
 export const clientModeToOriginUrl = (clientMode: data.ClientMode): URL => {
   switch (clientMode) {

@@ -2,7 +2,7 @@ import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
 import * as d from "definy-core/source/data";
 import * as ts from "typescript";
-import { debugHostingPortNumber } from "../common/main";
+import { debugHostingPortNumber } from "../common/url";
 
 const clientSourceEntryPath = "./client/main.ts";
 const functionsSourceEntryPath = "./functions/main.ts";

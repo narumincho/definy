@@ -9,6 +9,7 @@
   },
   "scripts": {
     "typeCheck": "tsc --project tsconfig.json --noEmit",
+    "test": "ts-node ./test.ts",
     "generate-graph": "npx depcruise --output-type dot --collapse 3 client/main.ts | dot -T svg > graph.svg",
     "production-build": "ts-node ./build/start-production.ts",
     "develop-build": "ts-node ./build/start-develop.ts",
