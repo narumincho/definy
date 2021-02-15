@@ -20,20 +20,13 @@ console.log("versions", JSON.stringify(process.versions));
  */
 
 export const html = functions.https.onRequest(async (request, response) => {
-  const requestUrl = new URL(
-    "https://" + request.hostname + request.originalUrl
-  );
+  const requestUrl = new URL("https://" + request.hostname + request.url);
   const urlData = commonUrl.urlDataAndAccountTokenFromUrl(requestUrl).urlData;
   const normalizedUrl = commonUrl.urlDataAndAccountTokenToUrl(
     urlData,
     d.Maybe.Nothing()
   );
   console.log("requestUrl", requestUrl.toString());
-  console.log("normalizedUrl", normalizedUrl.toString());
-  if (requestUrl.toString() !== normalizedUrl.toString()) {
-    response.redirect(301, normalizedUrl.toString());
-    return;
-  }
   const htmlAndIsNotFound = await genHtml.html(urlData, normalizedUrl);
 
   response.status(htmlAndIsNotFound.isNotFound ? 404 : 200);

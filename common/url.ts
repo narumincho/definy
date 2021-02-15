@@ -89,7 +89,7 @@ export const urlDataAndAccountTokenFromUrl = (
 };
 
 const clientModeFromUrl = (origin: string): data.ClientMode =>
-  origin === debugOrigin ? "DebugMode" : "Release";
+  origin === releaseOrigin ? "Release" : "DebugMode";
 
 const locationFromUrl = (pathName: string): data.Location => {
   if (pathName === "/create-project") {
