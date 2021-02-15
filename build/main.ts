@@ -4,7 +4,7 @@ import * as d from "definy-core/source/data";
 import * as ts from "typescript";
 import { debugHostingPortNumber } from "../common/main";
 
-const clientSourceEntryPath = "./source/main.ts";
+const clientSourceEntryPath = "./client/main.ts";
 const functionsSourceEntryPath = "./functions/main.ts";
 const distributionPath = "./distribution";
 const functionsDistributionPath = `${distributionPath}/functions`;
@@ -45,7 +45,7 @@ export const build = async (clientMode: d.ClientMode): Promise<void> => {
     });
 
   await esbuild.build({
-    entryPoints: ["source/main.ts"],
+    entryPoints: [clientSourceEntryPath],
     bundle: true,
     outdir: hostingDistributionPath,
     define: {
