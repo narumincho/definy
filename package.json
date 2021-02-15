@@ -14,7 +14,7 @@
     "generate-graph": "npx depcruise --output-type dot --collapse 3 source/main.ts | dot -T svg > graph.svg"
   },
   "dependencies": {
-    "@narumincho/html": "0.2.2",
+    "@narumincho/html": "0.2.3",
     "definy-core": "0.2.17",
     "js-ts-code-generator": "0.4.0"
   },

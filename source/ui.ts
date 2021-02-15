@@ -1,5 +1,6 @@
 import { c, div, path, svg } from "@narumincho/html/viewUtil";
-import { Element } from "@narumincho/html/view";
+import { Color, Element } from "@narumincho/html/view";
+import { colorToHexString } from "@narumincho/html/util";
 
 export type GridTemplateValue = { _: "Fix"; value: number } | { _: "OneFr" };
 
@@ -22,6 +23,8 @@ export interface BoxOption<Message> {
   xGridTemplate?: ReadonlyArray<GridTemplateValue>;
   /** 縦方向にスクロールするか */
   isScrollY?: boolean;
+  /** 背景色 */
+  backgroundColor?: Color;
   /** クリックのイベント */
   click?: { stopPropagation: boolean; message: Message };
 }
@@ -36,14 +39,16 @@ export const box = <Message>(
       style: {
         display: "grid",
         boxSizing: "border-box",
-        wordBreak: "break-all",
-        breakWord: "break-word",
+        wordBreak: "break-word",
         gridAutoFlow: option.direction === "x" ? "column" : "row",
         width: option.width === undefined ? "100%" : option.width,
         height: option.height,
         gap: option.gap,
         padding: option.padding,
-        backgroundColor: "#111",
+        backgroundColor:
+          option.backgroundColor === undefined
+            ? "#111"
+            : colorToHexString(option.backgroundColor),
         color: "#ddd",
         borderRadius: option.borderRadius,
         border:
