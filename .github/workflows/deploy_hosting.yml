@@ -1,4 +1,4 @@
-name: build and deploy hosting
+name: Deploy to Firebase Hosting
 
 on: workflow_dispatch
 
@@ -16,7 +16,7 @@ jobs:
       - name: Install npm dependencies (npm ci)
         run: npm ci
       - name: Run build script
-        run: npx ts-node ./build.ts
+        run: npm run production-build
       - name: deploy firebase hosting
         uses: w9jds/firebase-action@master
         with:

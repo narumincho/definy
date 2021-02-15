@@ -1,13 +1,10 @@
-name: type check and build test
+name: Deploy to Cloud Functions for Firebase
 
-on:
-  pull_request:
-    branches:
-      - main
+on: workflow_dispatch
 
 jobs:
-  type-check-and-build-test:
-    name: type check and build test
+  build-and-deploy:
+    name: build and deploy
     runs-on: ubuntu-latest
     steps:
       - name: checkout repository
@@ -18,7 +15,12 @@ jobs:
           node-version: "14"
       - name: Install npm dependencies (npm ci)
         run: npm ci
-      - name: type check
-        run: npm run typeCheck
       - name: Run build script
         run: npm run production-build
+      - name: deploy functions to firebase
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only functions
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          PROJECT_ID: definy-lang

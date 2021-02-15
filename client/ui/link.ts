@@ -1,4 +1,4 @@
-import * as core from "definy-core";
+import * as commonUrl from "../../common/url";
 import * as d from "definy-core/source/data";
 import { Message, State, messageJumpTag } from "../messageAndState";
 import { CSSObject } from "@emotion/css";
@@ -66,7 +66,7 @@ export const link = (
 
   return localLink<Message>(
     {
-      url: core.urlDataAndAccountTokenToUrl(urlData, d.Maybe.Nothing()),
+      url: commonUrl.urlDataAndAccountTokenToUrl(urlData, d.Maybe.Nothing()),
       style: {
         display: "block",
         textDecoration: "none",

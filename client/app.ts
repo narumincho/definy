@@ -1,5 +1,6 @@
 import * as a from "./messageAndState";
-import * as core from "definy-core";
+import * as commonUrl from "../common/url";
+import * as core from "definy-core/source/main";
 import * as coreUtil from "definy-core/source/util";
 import * as d from "definy-core/source/data";
 import * as indexedDB from "./indexedDB";
@@ -23,7 +24,7 @@ export const initState = (
 ): a.State => {
   // ブラウザで戻るボタンを押したときのイベントを登録
   window.addEventListener("popstate", () => {
-    const newUrlData: d.UrlData = core.urlDataAndAccountTokenFromUrl(
+    const newUrlData: d.UrlData = commonUrl.urlDataAndAccountTokenFromUrl(
       new URL(window.location.href)
     ).urlData;
     messageHandler({
@@ -33,14 +34,14 @@ export const initState = (
     });
   });
 
-  const urlDataAndAccountToken = core.urlDataAndAccountTokenFromUrl(
+  const urlDataAndAccountToken = commonUrl.urlDataAndAccountTokenFromUrl(
     new URL(window.location.href)
   );
   // ブラウザのURLを正規化 アクセストークンを隠す
   window.history.replaceState(
     undefined,
     "",
-    core
+    commonUrl
       .urlDataAndAccountTokenToUrl(
         urlDataAndAccountToken.urlData,
         d.Maybe.Nothing()
@@ -963,7 +964,7 @@ const jump = (
   window.history.pushState(
     undefined,
     "",
-    core
+    commonUrl
       .urlDataAndAccountTokenToUrl(
         {
           clientMode: state.clientMode,
@@ -991,7 +992,7 @@ const changeLocationAndLanguage = (
   window.history.replaceState(
     undefined,
     "",
-    core
+    commonUrl
       .urlDataAndAccountTokenToUrl(
         {
           clientMode: state.clientMode,
