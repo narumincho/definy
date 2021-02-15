@@ -21,4 +21,4 @@ jobs:
       - name: type check
         run: npm run typeCheck
       - name: Run build script
-        run: npx ts-node ./build.ts
+        run: npm run production-build

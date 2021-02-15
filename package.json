@@ -10,7 +10,8 @@
   "scripts": {
     "debugInLocal": "ts-node debugInLocal.ts",
     "typeCheck": "tsc --project tsconfig.json --noEmit",
-    "generate-graph": "npx depcruise --output-type dot --collapse 3 source/main.ts | dot -T svg > graph.svg"
+    "generate-graph": "npx depcruise --output-type dot --collapse 3 source/main.ts | dot -T svg > graph.svg",
+    "production-build": "ts-node ./build/start-production.ts"
   },
   "dependencies": {
     "@narumincho/html": "0.2.3",
@@ -18,16 +19,18 @@
     "js-ts-code-generator": "0.4.0"
   },
   "devDependencies": {
+    "@types/fs-extra": "9.0.7",
     "@types/node": "14.14.28",
     "@types/prettier": "2.2.1",
     "@typescript-eslint/eslint-plugin": "4.15.0",
     "@typescript-eslint/parser": "4.15.0",
-    "dependency-cruiser": "^9.23.0",
+    "dependency-cruiser": "9.23.0",
     "esbuild": "0.8.46",
     "eslint": "7.20.0",
     "eslint-config-prettier": "7.2.0",
     "eslint-plugin-prettier": "3.3.1",
     "fastify": "3.12.0",
+    "fs-extra": "9.1.0",
     "prettier": "2.2.1",
     "ts-node": "^9.1.1",
     "typescript": "4.1.5"
