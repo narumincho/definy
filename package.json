@@ -8,31 +8,36 @@
     "url": "https://github.com/narumincho/Definy"
   },
   "scripts": {
-    "debugInLocal": "ts-node debugInLocal.ts",
     "typeCheck": "tsc --project tsconfig.json --noEmit",
     "generate-graph": "npx depcruise --output-type dot --collapse 3 source/main.ts | dot -T svg > graph.svg",
-    "production-build": "ts-node ./build/start-production.ts"
-  },
-  "dependencies": {
-    "@narumincho/html": "0.2.3",
-    "definy-core": "0.2.17",
-    "js-ts-code-generator": "0.4.0"
+    "production-build": "ts-node ./build/start-production.ts",
+    "develop-build": "ts-node ./build/start-develop.ts",
+    "start-emulator": "firebase emulators:start --project definy-lang"
   },
   "devDependencies": {
+    "@narumincho/html": "0.2.3",
     "@types/fs-extra": "9.0.7",
-    "@types/node": "14.14.28",
+    "@types/jsonwebtoken": "^8.5.0",
+    "@types/node": "^14.14.28",
     "@types/prettier": "2.2.1",
     "@typescript-eslint/eslint-plugin": "4.15.0",
     "@typescript-eslint/parser": "4.15.0",
+    "axios": "^0.21.1",
+    "definy-core": "0.2.17",
     "dependency-cruiser": "9.23.0",
     "esbuild": "0.8.46",
     "eslint": "7.20.0",
     "eslint-config-prettier": "7.2.0",
     "eslint-plugin-prettier": "3.3.1",
-    "fastify": "3.12.0",
+    "firebase-admin": "^9.5.0",
+    "firebase-functions": "^3.13.1",
     "fs-extra": "9.1.0",
+    "jimp": "^0.16.1",
+    "js-ts-code-generator": "0.4.0",
+    "jsonwebtoken": "^8.5.1",
     "prettier": "2.2.1",
     "ts-node": "^9.1.1",
+    "typed-admin-firestore": "^1.2.0",
     "typescript": "4.1.5"
   },
   "eslintConfig": {
