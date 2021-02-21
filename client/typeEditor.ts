@@ -307,51 +307,60 @@ const typeView = (typeData: {
   return text(typeData.name);
 };
 
+type TypeMenuItem = {
+  readonly id: d.TypePartId;
+  readonly name: string;
+  readonly description: string;
+  readonly typeParameterCount: number;
+};
+
 const typeMenuMaxCount = 12;
 
 const getTypePartList = (
   state: a.State
 ): {
-  list: ReadonlyArray<{
-    id: d.TypePartId;
-    name: string;
-    description: string;
-    typeParameterCount: number;
-  }>;
+  list: ReadonlyArray<TypeMenuItem>;
   /** さらにあるかどうか */
   more: boolean;
 } => {
-  const result: Array<{
-    id: d.TypePartId;
-    name: string;
-    description: string;
-    typeParameterCount: number;
-  }> = [];
-  const normalizedSearchText = state.typeSearchText.trim().toLowerCase();
-  for (const [typePartId, resource] of state.typePartMap) {
+  const list = sortByMatch(
+    state.typeSearchText.trim().toLowerCase(),
+    state.typePartMap
+  );
+  return {
+    list: list.slice(0, typeMenuMaxCount),
+    more: typeMenuMaxCount <= list.length,
+  };
+};
+
+const sortByMatch = (
+  normalizedSearchText: string,
+  typePartMap: ReadonlyMap<d.TypePartId, d.ResourceState<d.TypePart>>
+): ReadonlyArray<TypeMenuItem> => {
+  const list: Array<{ item: TypeMenuItem; point: number }> = [];
+  for (const [typePartId, resource] of typePartMap) {
     if (resource._ === "Loaded") {
       if (
         resource.dataWithTime.data.name
           .toLowerCase()
-          .includes(normalizedSearchText) ||
-        resource.dataWithTime.data.description
-          .toLowerCase()
           .includes(normalizedSearchText)
       ) {
-        if (typeMenuMaxCount <= result.length) {
-          return { list: result, more: true };
-        }
-        result.push({
-          id: typePartId,
-          name: resource.dataWithTime.data.name,
-          description: resource.dataWithTime.data.description,
-          typeParameterCount:
-            resource.dataWithTime.data.typeParameterList.length,
+        list.push({
+          item: {
+            id: typePartId,
+            name: resource.dataWithTime.data.name,
+            description: resource.dataWithTime.data.description,
+            typeParameterCount:
+              resource.dataWithTime.data.typeParameterList.length,
+          },
+          point: Math.abs(
+            resource.dataWithTime.data.name.length - normalizedSearchText.length
+          ),
         });
       }
     }
   }
-  return { list: result, more: false };
+  return list.sort((a, b) => a.point - b.point).map((e) => e.item);
 };
 
 const getTypePartLintInScope = (
