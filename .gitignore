@@ -2,3 +2,4 @@ node_modules
 *.log
 distribution
 firebase.json
+out.ts

@@ -2,6 +2,7 @@ import * as commonUrl from "../common/url";
 import * as d from "definy-core/source/data";
 import * as lib from "./lib";
 import * as nHtml from "@narumincho/html";
+import * as out from "../out";
 
 /**
  * OGP の 情報が含まれている HTML を返す
@@ -21,9 +22,7 @@ export const html = async (
       iconPath: "/icon",
       coverImageUrl: coverImageUrlAndDescription.imageUrl,
       description: coverImageUrlAndDescription.description,
-      scriptUrlList: [
-        new URL((commonUrl.releaseOrigin as string) + "/main.js"),
-      ],
+      scriptUrlList: [out.scriptUrl],
       styleUrlList: [],
       twitterCard: "SummaryCard",
       language: urlData.language,
