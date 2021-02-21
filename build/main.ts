@@ -3,6 +3,11 @@ import * as fileSystem from "fs-extra";
 import * as d from "definy-core/source/data";
 import * as ts from "typescript";
 import { debugHostingPortNumber } from "../common/url";
+import { generateCodeAsString } from "js-ts-code-generator";
+import * as jsTsData from "js-ts-code-generator/data";
+import * as jsTsIdentifer from "js-ts-code-generator/identifer";
+import * as jsTsUtil from "js-ts-code-generator/util";
+import * as common from "../common/url";
 
 const clientSourceEntryPath = "./client/main.ts";
 const functionsSourceEntryPath = "./functions/main.ts";
@@ -33,6 +38,33 @@ export const build = async (clientMode: d.ClientMode): Promise<void> => {
         jsonwebtoken: "8.5.1",
       },
     })
+  );
+  await fileSystem.outputFile(
+    "out.ts",
+    generateCodeAsString(
+      {
+        exportDefinitionList: [
+          jsTsData.ExportDefinition.Variable({
+            name: jsTsIdentifer.fromString("scriptUrl"),
+            document:
+              "メインのスクリプトのURL (ビルド時にこの変数の値が変更される)",
+            expr: jsTsData.Expr.New({
+              expr: jsTsData.Expr.GlobalObjects(
+                jsTsIdentifer.fromString("URL")
+              ),
+              parameterList: [
+                jsTsData.Expr.StringLiteral(
+                  `${common.clientModeToOriginUrl(clientMode)}main.js`
+                ),
+              ],
+            }),
+            type: jsTsData.Type.ScopeInGlobal(jsTsIdentifer.fromString("URL")),
+          }),
+        ],
+        statementList: [],
+      },
+      jsTsData.CodeType.TypeScript
+    )
   );
 
   await generateFirebaseJson(clientMode);
