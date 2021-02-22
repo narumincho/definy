@@ -19,26 +19,7 @@ const hostingDistributionPath = `${distributionPath}/hosting`;
  * Firebase へ デプロイするためにビルドする
  */
 export const build = async (clientMode: d.ClientMode): Promise<void> => {
-  await fileSystem.outputFile(
-    `${functionsDistributionPath}/package.json`,
-    JSON.stringify({
-      name: "definy-functions",
-      version: "1.0.0",
-      description: "definy in Cloud Functions for Firebase",
-      main: "functions/main.js",
-      author: "narumincho",
-      engines: { node: "14" },
-      dependencies: {
-        "@narumincho/html": "0.2.3",
-        "firebase-admin": "9.4.2",
-        "firebase-functions": "3.13.1",
-        axios: "0.21.1",
-        "definy-core": "0.2.18",
-        jimp: "0.16.1",
-        jsonwebtoken: "8.5.1",
-      },
-    })
-  );
+  await outputPackageJsonForFunctions();
   await fileSystem.outputFile(
     "out.ts",
     generateCodeAsString(
@@ -176,4 +157,41 @@ const buildFunctionsTypeScript = (): void => {
       outDir: functionsDistributionPath,
     },
   }).emit();
+};
+
+const outputPackageJsonForFunctions = async (): Promise<void> => {
+  const packageJson: {
+    devDependencies: Record<string, string>;
+  } = await fileSystem.readJSON("package.json");
+  const packageNameUseInFunctions = [
+    "@narumincho/html",
+    "firebase-admin",
+    "firebase-functions",
+    "axios",
+    "definy-core",
+    "jimp",
+    "jsonwebtoken",
+  ];
+
+  await fileSystem.outputFile(
+    `${functionsDistributionPath}/package.json`,
+    JSON.stringify({
+      name: "definy-functions",
+      version: "1.0.0",
+      description: "definy in Cloud Functions for Firebase",
+      main: "functions/main.js",
+      author: "narumincho",
+      engines: { node: "14" },
+      dependencies: Object.fromEntries(
+        Object.entries(packageJson.devDependencies).flatMap(
+          ([packageName, packageVersion]): ReadonlyArray<
+            readonly [string, string]
+          > =>
+            packageNameUseInFunctions.includes(packageName)
+              ? [[packageName, packageVersion]]
+              : []
+        )
+      ),
+    })
+  );
 };
