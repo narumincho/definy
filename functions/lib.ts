@@ -79,8 +79,6 @@ type ProjectData = {
   readonly createTime: admin.firestore.Timestamp;
   readonly updateTime: admin.firestore.Timestamp;
   readonly createUserId: d.UserId;
-  readonly commitId: d.CommitId;
-  readonly rootIdeaId: d.IdeaId;
 };
 
 type TypePartData = {
@@ -475,8 +473,6 @@ const projectDataToProjectSnapshot = (document: ProjectData): d.Project => ({
   createTime: firestoreTimestampToTime(document.createTime),
   createUserId: document.createUserId,
   updateTime: firestoreTimestampToTime(document.updateTime),
-  commitId: document.commitId,
-  rootIdeaId: document.rootIdeaId,
 });
 
 const typePartFromDBType = (
@@ -625,8 +621,6 @@ export const apiFunc: {
         const imageHashPromise = savePngFile(iconAndImage.image);
         const createTime = admin.firestore.Timestamp.now();
         const createTimeAsTime = firestoreTimestampToTime(createTime);
-        const rootIdeaId = createRandomId() as d.IdeaId;
-        const emptyCommitId = createRandomId() as d.CommitId;
         const project: ProjectData = {
           name: projectNameWithDefault,
           iconHash: await iconHashPromise,
@@ -634,8 +628,6 @@ export const apiFunc: {
           createUserId: userData.id,
           createTime,
           updateTime: createTime,
-          commitId: emptyCommitId,
-          rootIdeaId,
         };
 
         await database.collection("project").doc(projectId).create(project);
@@ -648,8 +640,6 @@ export const apiFunc: {
             createUserId: project.createUserId,
             createTime: createTimeAsTime,
             updateTime: createTimeAsTime,
-            commitId: emptyCommitId,
-            rootIdeaId,
           },
         });
       }

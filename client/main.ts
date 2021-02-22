@@ -1,6 +1,6 @@
 import * as app from "./app";
 import * as messageAndState from "./messageAndState";
-import { diff, path } from "@narumincho/html";
+import { diff, patch, RenderState } from "@narumincho/html";
 import { View } from "@narumincho/html/view";
 
 const pushMessageList = (message: messageAndState.Message): void => {
@@ -24,12 +24,12 @@ const loop = () => {
   const diffData = diff.createViewDiff(oldView, newView);
   console.log("view diff", oldView, newView, diffData);
   oldView = newView;
-  path.patchView(diffData, patchState);
+  patch.patchView(diffData, patchState);
 };
 
 const messageList: Array<messageAndState.Message> = [];
 let state: messageAndState.State = app.initState(pushMessageList);
 let oldView: View<messageAndState.Message> = app.stateToView(state);
-const patchState = path.createPatchState(pushMessageList);
-path.renderView(oldView, patchState);
+const patchState = new RenderState(pushMessageList);
+patch.renderView(oldView, patchState);
 loop();

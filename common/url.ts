@@ -44,10 +44,6 @@ const locationToPath = (location: data.Location): string => {
       return "/user/" + (location.userId as string);
     case "Project":
       return "/project/" + (location.projectId as string);
-    case "Idea":
-      return "/idea/" + (location.ideaId as string);
-    case "Commit":
-      return "/commit/" + (location.commitId as string);
     case "Setting":
       return "/setting/";
     case "About":
@@ -111,14 +107,6 @@ const locationFromUrl = (pathName: string): data.Location => {
   const userResult = pathName.match(/^\/user\/(?<id>[0-9a-f]{32})$/u);
   if (userResult !== null && userResult.groups !== undefined) {
     return data.Location.User(userResult.groups.id as data.UserId);
-  }
-  const ideaResult = pathName.match(/^\/idea\/(?<id>[0-9a-f]{32})$/u);
-  if (ideaResult !== null && ideaResult.groups !== undefined) {
-    return data.Location.Idea(ideaResult.groups.id as data.IdeaId);
-  }
-  const commitResult = pathName.match(/^\/commit\/(?<id>[0-9a-f]{32})$/u);
-  if (commitResult !== null && commitResult.groups !== undefined) {
-    return data.Location.Commit(commitResult.groups.id as data.CommitId);
   }
   return data.Location.Home;
 };
