@@ -16,7 +16,7 @@
     "start-emulator": "firebase emulators:start --project definy-lang"
   },
   "devDependencies": {
-    "@narumincho/html": "0.2.5",
+    "@narumincho/html": "0.2.6",
     "@types/fs-extra": "9.0.7",
     "@types/jsonwebtoken": "8.5.0",
     "@types/node": "14.14.31",
@@ -26,9 +26,9 @@
     "axios": "0.21.1",
     "definy-core": "0.2.19",
     "dependency-cruiser": "9.23.2",
-    "esbuild": "0.8.51",
+    "esbuild": "0.8.52",
     "eslint": "7.20.0",
-    "eslint-config-prettier": "8.0.0",
+    "eslint-config-prettier": "8.1.0",
     "eslint-plugin-prettier": "3.3.1",
     "firebase-admin": "9.5.0",
     "firebase-functions": "3.13.2",
