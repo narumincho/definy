@@ -81,6 +81,7 @@ const callApiFunction = (
   apiName: string,
   binary: Uint8Array
 ): Promise<ReadonlyArray<number> | undefined> => {
+  // apiCodec[apiName] でも良い気がするが prototype 汚染が怖いのでループして一致するものを探す
   for (const [selectedApiName, selectedApiCodec] of Object.entries(apiCodec)) {
     if (apiName === selectedApiName) {
       return callApiFromCodecAndFunction(

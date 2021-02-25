@@ -540,12 +540,10 @@ const addTypePart = async (
 
 type ApiCodecType = typeof apiCodec;
 
-type GetCodecType<codec> = codec extends d.Codec<infer t> ? t : never;
-
 export const apiFunc: {
   [apiName in keyof ApiCodecType]: (
-    request: GetCodecType<ApiCodecType[apiName]["request"]>
-  ) => Promise<GetCodecType<ApiCodecType[apiName]["response"]>>;
+    request: apiCodec.GetCodecType<ApiCodecType[apiName]["request"]>
+  ) => Promise<apiCodec.GetCodecType<ApiCodecType[apiName]["response"]>>;
 } = {
   requestLogInUrl: async (requestLogInUrlRequestData) => {
     const state = createRandomId();
