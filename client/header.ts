@@ -1,4 +1,4 @@
-import * as d from "definy-core/source/data";
+import * as d from "../data";
 import { Message, State, messageRequestLogInTag } from "./messageAndState";
 import { c, div, path, svg } from "@narumincho/html/viewUtil";
 import { CSSObject } from "@emotion/css";
@@ -96,7 +96,7 @@ const userViewOrLogInButtonStyle: CSSObject = {
 
 const SettingLink = (props: {
   appInterface: State;
-  user: d.User;
+  user: d.Account;
 }): Element<Message> =>
   link(
     {

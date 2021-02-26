@@ -1,5 +1,5 @@
 import * as commonUrl from "../common/url";
-import * as d from "definy-core/source/data";
+import * as d from "../data";
 import * as lib from "./lib";
 import * as nHtml from "@narumincho/html";
 import * as out from "../out";
@@ -64,7 +64,7 @@ body {
 };
 
 const defaultImageUrl = new URL((commonUrl.releaseOrigin as string) + "/icon");
-const getFileUrl = (imageToken: d.ImageToken): URL =>
+const getFileUrl = (imageToken: d.ImageHash): URL =>
   new URL(
     "https://us-central1-definy-lang.cloudfunctions.net/getFile/" +
       (imageToken as string)
@@ -92,8 +92,8 @@ const getCoverImageUrlAndDescription = async (
         isNotFound: true,
       };
     }
-    case "User": {
-      const user = await lib.apiFunc.getUser(location.userId);
+    case "Account": {
+      const user = await lib.apiFunc.getUser(location.accountId);
       if (user.data._ === "Just") {
         return {
           imageUrl: getFileUrl(user.data.value.imageHash),

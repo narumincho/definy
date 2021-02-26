@@ -2,14 +2,14 @@ import * as admin from "firebase-admin";
 import * as apiCodec from "../common/apiCodec";
 import * as common from "definy-core";
 import * as crypto from "crypto";
-import * as d from "definy-core/source/data";
+import * as d from "../data";
 import * as functions from "firebase-functions";
 import * as image from "./image";
 import * as jimp from "jimp";
 import * as jsonWebToken from "jsonwebtoken";
 import * as stream from "stream";
 import type * as typedFirestore from "typed-admin-firestore";
-import * as util from "definy-core/source/util";
+import * as util from "definy-core/util";
 import axios, { AxiosResponse } from "axios";
 import { URL } from "url";
 
@@ -25,7 +25,7 @@ const database = (app.firestore() as unknown) as typedFirestore.Firestore<{
     subCollections: Record<never, never>;
   };
   user: {
-    key: d.UserId;
+    key: d.AccountId;
     value: UserData;
     subCollections: Record<never, never>;
   };
@@ -56,7 +56,7 @@ type UserData = {
   /** アクセストークンを発行した日時 */
   readonly accessTokenIssueTime: admin.firestore.Timestamp;
   readonly createTime: admin.firestore.Timestamp;
-  readonly imageHash: d.ImageToken;
+  readonly imageHash: d.ImageHash;
   readonly introduction: string;
   /** ユーザー名 */
   readonly name: string;
@@ -74,11 +74,11 @@ type OpenIdConnectProviderAndId = {
 
 type ProjectData = {
   readonly name: string;
-  readonly iconHash: d.ImageToken;
-  readonly imageHash: d.ImageToken;
+  readonly iconHash: d.ImageHash;
+  readonly imageHash: d.ImageHash;
   readonly createTime: admin.firestore.Timestamp;
   readonly updateTime: admin.firestore.Timestamp;
-  readonly createUserId: d.UserId;
+  readonly createUserId: d.AccountId;
 };
 
 type TypePartData = {
@@ -363,7 +363,7 @@ const createUser = async (
   const accessTokenData = issueAccessToken();
   await database
     .collection("user")
-    .doc(createRandomId() as d.UserId)
+    .doc(createRandomId() as d.AccountId)
     .create({
       name: providerUserData.name,
       createTime,
@@ -379,7 +379,7 @@ const createUser = async (
   return accessTokenData.accessToken;
 };
 
-const getAndSaveUserImage = async (imageUrl: URL): Promise<d.ImageToken> => {
+const getAndSaveUserImage = async (imageUrl: URL): Promise<d.ImageHash> => {
   const response: AxiosResponse<Buffer> = await axios.get(imageUrl.toString(), {
     responseType: "arraybuffer",
   });
@@ -393,7 +393,7 @@ const getAndSaveUserImage = async (imageUrl: URL): Promise<d.ImageToken> => {
 /**
  * Firebase Cloud Storage にPNGファイルを保存する
  */
-const savePngFile = (binary: Uint8Array): Promise<d.ImageToken> =>
+const savePngFile = (binary: Uint8Array): Promise<d.ImageHash> =>
   saveFile(binary, "image/png");
 
 /**
@@ -402,7 +402,7 @@ const savePngFile = (binary: Uint8Array): Promise<d.ImageToken> =>
 const saveFile = async (
   binary: Uint8Array,
   mimeType: string
-): Promise<d.ImageToken> => {
+): Promise<d.ImageHash> => {
   const hash = createImageTokenFromUint8ArrayAndMimeType(binary, mimeType);
   const file = storageDefaultBucket.file(hash);
   await file.save(Buffer.from(binary), { contentType: mimeType });
@@ -412,12 +412,12 @@ const saveFile = async (
 export const createImageTokenFromUint8ArrayAndMimeType = (
   binary: Uint8Array,
   mimeType: string
-): d.ImageToken =>
+): d.ImageHash =>
   crypto
     .createHash("sha256")
     .update(binary)
     .update(mimeType, "utf8")
-    .digest("hex") as d.ImageToken;
+    .digest("hex") as d.ImageHash;
 
 /**
  * OpenIdConnectのclientSecretはfirebaseの環境変数に設定されている
@@ -463,7 +463,7 @@ const hashAccessToken = (accountToken: d.AccountToken): AccessTokenHash =>
     .update(new Uint8Array(d.AccountToken.codec.encode(accountToken)))
     .digest("hex") as AccessTokenHash;
 
-export const getReadableStream = (imageToken: d.ImageToken): stream.Readable =>
+export const getReadableStream = (imageToken: d.ImageHash): stream.Readable =>
   storageDefaultBucket.file(imageToken).createReadStream();
 
 const projectDataToProjectSnapshot = (document: ProjectData): d.Project => ({
@@ -471,7 +471,7 @@ const projectDataToProjectSnapshot = (document: ProjectData): d.Project => ({
   iconHash: document.iconHash,
   imageHash: document.imageHash,
   createTime: firestoreTimestampToTime(document.createTime),
-  createUserId: document.createUserId,
+  createAccountId: document.createUserId,
   updateTime: firestoreTimestampToTime(document.updateTime),
 });
 
@@ -571,7 +571,7 @@ export const apiFunc: {
     const userData = queryDocumentSnapshot.data();
 
     return d.Maybe.Just({
-      id: queryDocumentSnapshot.id as d.UserId,
+      id: queryDocumentSnapshot.id as d.AccountId,
       data: {
         name: userData.name,
         imageHash: userData.imageHash,
@@ -635,7 +635,7 @@ export const apiFunc: {
             name: project.name,
             iconHash: project.iconHash,
             imageHash: project.imageHash,
-            createUserId: project.createUserId,
+            createAccountId: project.createUserId,
             createTime: createTimeAsTime,
             updateTime: createTimeAsTime,
           },
@@ -714,7 +714,7 @@ export const apiFunc: {
     if (project.data._ === "Nothing") {
       throw new Error("invalid project id");
     }
-    if (project.data.value.createUserId !== user.value.id) {
+    if (project.data.value.createAccountId !== user.value.id) {
       throw new Error("user can not edit this d.Project");
     }
     return {
@@ -740,7 +740,7 @@ export const apiFunc: {
       };
     }
     // 型パーツを編集するアカウントとプロジェクトを作ったアカウントが違う
-    if (account.value.id !== projectData.data.value.createUserId) {
+    if (account.value.id !== projectData.data.value.createAccountId) {
       return {
         getTime: projectData.getTime,
         data: d.Maybe.Nothing(),
@@ -793,7 +793,7 @@ export const apiFunc: {
       };
     }
     // 型パーツを編集するアカウントとプロジェクトを作ったアカウントが違う
-    if (account.value.id !== projectData.data.value.createUserId) {
+    if (account.value.id !== projectData.data.value.createAccountId) {
       return {
         getTime: projectData.getTime,
         data: d.Maybe.Nothing(),
@@ -862,7 +862,7 @@ export const apiFunc: {
     }
 
     // 型パーツを編集するアカウントとプロジェクトを作ったアカウントが違う
-    if (account.value.id !== projectData.data.value.createUserId) {
+    if (account.value.id !== projectData.data.value.createAccountId) {
       return {
         getTime: projectData.getTime,
         data: d.Maybe.Nothing(),

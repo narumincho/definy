@@ -1,8 +1,8 @@
 import * as a from "./messageAndState";
 import * as commonUrl from "../common/url";
-import * as core from "definy-core/source/main";
-import * as coreUtil from "definy-core/source/util";
-import * as d from "definy-core/source/data";
+import * as core from "definy-core/main";
+import * as coreUtil from "definy-core/util";
+import * as d from "../data";
 import * as indexedDB from "./indexedDB";
 import * as jsTsCodeGenerator from "js-ts-code-generator";
 import * as pageAbout from "./page/about";
@@ -286,9 +286,9 @@ const locationToInitPageModel = (
       return { tag: "CreateProject" };
     case "About":
       return { tag: "About" };
-    case "User":
-      pageUser.init(messageHandler, location.userId);
-      return { tag: "User", userId: location.userId };
+    case "Account":
+      pageUser.init(messageHandler, location.accountId);
+      return { tag: "User", userId: location.accountId };
     case "Debug":
       return { tag: "Debug", tab: pageDebug.init };
     case "Setting":
@@ -312,7 +312,7 @@ const pageModelToLocation = (pageModel: a.PageModel): d.Location => {
     case "About":
       return d.Location.About;
     case "User":
-      return d.Location.User(pageModel.userId);
+      return d.Location.Account(pageModel.userId);
     case "Debug":
       return d.Location.Debug;
     case "Setting":
@@ -332,7 +332,7 @@ const verifyAccountToken = (
 };
 
 const respondUserByAccountToken = (
-  response: d.Maybe<d.Maybe<d.IdAndData<d.UserId, d.User>>>,
+  response: d.Maybe<d.Maybe<d.IdAndData<d.AccountId, d.Account>>>,
   messageHandler: (message: a.Message) => void,
   state: a.State
 ): a.State => {
@@ -431,7 +431,7 @@ const respondTop50Project = (
 };
 
 const getUser = (
-  userId: d.UserId,
+  userId: d.AccountId,
   messageHandler: (message: a.Message) => void,
   state: a.State
 ): a.State => {
@@ -449,8 +449,8 @@ const getUser = (
 
 const respondUser = (
   messageHandler: (message: a.Message) => void,
-  userId: d.UserId,
-  response: d.Maybe<d.WithTime<d.Maybe<d.User>>>,
+  userId: d.AccountId,
+  response: d.Maybe<d.WithTime<d.Maybe<d.Account>>>,
   state: a.State
 ): a.State => {
   const imageRequestedState =
@@ -516,7 +516,7 @@ const respondProject = (
 };
 
 const getImageList = (
-  imageTokenList: ReadonlyArray<d.ImageToken>,
+  imageTokenList: ReadonlyArray<d.ImageHash>,
   messageHandler: (message: a.Message) => void,
   state: a.State
 ): a.State => {
@@ -534,7 +534,7 @@ const getImageList = (
 };
 
 const getImage = (
-  imageToken: d.ImageToken,
+  imageToken: d.ImageHash,
   messageHandler: (message: a.Message) => void,
   state: a.State
 ): a.State => {
@@ -555,7 +555,7 @@ const getImage = (
 };
 
 const respondImage = (
-  imageToken: d.ImageToken,
+  imageToken: d.ImageHash,
   response: d.Maybe<Uint8Array>,
   state: a.State
 ): a.State => {

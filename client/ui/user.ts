@@ -1,4 +1,4 @@
-import * as d from "definy-core/source/data";
+import * as d from "../../data";
 import { Message, State } from "../messageAndState";
 import { c, div } from "@narumincho/html/viewUtil";
 import { CSSObject } from "@emotion/css";
@@ -9,7 +9,7 @@ import { link } from "./link";
 
 export const userCard = (
   appInterface: State,
-  userId: d.UserId
+  userId: d.AccountId
 ): Element<Message> => {
   const userState = appInterface.userMap.get(userId);
   if (userState === undefined) {
@@ -31,7 +31,7 @@ export const userCard = (
         {
           appInterface,
           theme: "Gray",
-          location: d.Location.User(userId),
+          location: d.Location.Account(userId),
           style: {
             display: "grid",
             gridTemplateColumns: "32px 1fr",

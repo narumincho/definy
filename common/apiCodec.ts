@@ -1,4 +1,4 @@
-import * as d from "definy-core/source/data";
+import * as d from "../data";
 
 export type GetCodecType<codec> = codec extends d.Codec<infer t> ? t : never;
 
@@ -17,19 +17,21 @@ export const requestLogInUrl: ApiCodec<
 
 export const getUserByAccountToken: ApiCodec<
   d.AccountToken,
-  d.Maybe<d.IdAndData<d.UserId, d.User>>
+  d.Maybe<d.IdAndData<d.AccountId, d.Account>>
 > = {
   request: d.AccountToken.codec,
-  response: d.Maybe.codec(d.IdAndData.codec(d.UserId.codec, d.User.codec)),
+  response: d.Maybe.codec(
+    d.IdAndData.codec(d.AccountId.codec, d.Account.codec)
+  ),
 };
 
-export const getUser: ApiCodec<d.UserId, d.WithTime<d.Maybe<d.User>>> = {
-  request: d.UserId.codec,
-  response: d.WithTime.codec(d.Maybe.codec(d.User.codec)),
+export const getUser: ApiCodec<d.AccountId, d.WithTime<d.Maybe<d.Account>>> = {
+  request: d.AccountId.codec,
+  response: d.WithTime.codec(d.Maybe.codec(d.Account.codec)),
 };
 
-export const getImageFile: ApiCodec<d.ImageToken, d.Binary> = {
-  request: d.ImageToken.codec,
+export const getImageFile: ApiCodec<d.ImageHash, d.Binary> = {
+  request: d.ImageHash.codec,
   response: d.Binary.codec,
 };
 

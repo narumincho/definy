@@ -1,5 +1,5 @@
 import * as a from "../messageAndState";
-import * as d from "definy-core/source/data";
+import * as d from "../../data";
 import * as typePartEditor from "../typePartEditor";
 import { box, text } from "../ui";
 import { c, div, elementMap } from "@narumincho/html/viewUtil";
@@ -320,7 +320,7 @@ const addTypePartButton = (
       }
       if (
         state.logInState.accountTokenAndUserId.userId !==
-        projectResource.dataWithTime.data.createUserId
+        projectResource.dataWithTime.data.createAccountId
       ) {
         return text("このプロジェクトの作成者でないため追加できない");
       }
@@ -355,7 +355,7 @@ const addTypePartNoSaveButton = (
       }
       if (
         state.logInState.accountTokenAndUserId.userId !==
-        projectResource.dataWithTime.data.createUserId
+        projectResource.dataWithTime.data.createAccountId
       ) {
         return text("このプロジェクトの作成者でないため追加できない");
       }
@@ -491,7 +491,7 @@ const projectDetailView = (
           {},
           c<a.Message>([
             ["label", div({}, "作成者")],
-            ["card", userCard(state, project.createUserId)],
+            ["card", userCard(state, project.createAccountId)],
           ])
         ),
       ],
@@ -522,7 +522,8 @@ const saveButton = (
         return text("ログイン処理中. 作成者かどうか判別がつかない");
       }
       if (
-        state.logInState.accountTokenAndUserId.userId !== project.createUserId
+        state.logInState.accountTokenAndUserId.userId !==
+        project.createAccountId
       ) {
         return text("このプロジェクトの作成者でないため保存できない");
       }

@@ -1,4 +1,4 @@
-import * as d from "definy-core/source/data";
+import * as d from "../data";
 import * as pageDebug from "./page/debug";
 import type * as pageProject from "./page/project";
 import { Element } from "@narumincho/html/view";
@@ -28,10 +28,10 @@ export interface State {
   readonly projectMap: ReadonlyMap<d.ProjectId, d.ResourceState<d.Project>>;
 
   /** ユーザーの辞書 */
-  readonly userMap: ReadonlyMap<d.UserId, d.ResourceState<d.User>>;
+  readonly userMap: ReadonlyMap<d.AccountId, d.ResourceState<d.Account>>;
 
   /** 画像のBlobURLの辞書 */
-  readonly imageMap: ReadonlyMap<d.ImageToken, d.StaticResourceState<string>>;
+  readonly imageMap: ReadonlyMap<d.ImageHash, d.StaticResourceState<string>>;
 
   /** 型パーツの辞書 */
   readonly typePartMap: ReadonlyMap<d.TypePartId, d.ResourceState<d.TypePart>>;
@@ -86,7 +86,7 @@ export type PageModel =
     }
   | {
       readonly tag: "User";
-      readonly userId: d.UserId;
+      readonly userId: d.AccountId;
     }
   | {
       readonly tag: "Debug";
@@ -136,12 +136,12 @@ export type Message =
     }
   | {
       readonly tag: typeof messageGetUserTag;
-      readonly userId: d.UserId;
+      readonly userId: d.AccountId;
     }
   | {
       readonly tag: typeof messageRespondUserTag;
-      readonly userId: d.UserId;
-      readonly response: d.Maybe<d.WithTime<d.Maybe<d.User>>>;
+      readonly userId: d.AccountId;
+      readonly response: d.Maybe<d.WithTime<d.Maybe<d.Account>>>;
     }
   | {
       readonly tag: typeof messageRespondAccountTokenFromIndexedDB;
@@ -149,7 +149,7 @@ export type Message =
     }
   | {
       readonly tag: typeof messageRespondUserByAccountToken;
-      readonly response: d.Maybe<d.Maybe<d.IdAndData<d.UserId, d.User>>>;
+      readonly response: d.Maybe<d.Maybe<d.IdAndData<d.AccountId, d.Account>>>;
     }
   | {
       readonly tag: typeof messageGetTop50Project;
@@ -171,11 +171,11 @@ export type Message =
     }
   | {
       readonly tag: typeof messageGetImage;
-      readonly imageToken: d.ImageToken;
+      readonly imageToken: d.ImageHash;
     }
   | {
       readonly tag: typeof messageRespondImage;
-      readonly imageToken: d.ImageToken;
+      readonly imageToken: d.ImageHash;
       readonly response: d.Maybe<Uint8Array>;
     }
   | {

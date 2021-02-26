@@ -1,5 +1,5 @@
-import * as d from "definy-core/source/data";
-import * as util from "definy-core/source/util";
+import * as d from "../data";
+import * as util from "definy-core/util";
 
 const AccountTokenObjectStoreName = "AccountToken";
 const imageObjectStoreName = "image";
@@ -219,10 +219,10 @@ export const deleteAccountToken = (): Promise<void> =>
  * @param imagePngBinary PNGの画像バイナリのデータ
  */
 export const setImage = (
-  imageToken: d.ImageToken,
+  imageToken: d.ImageHash,
   imagePngBinary: Uint8Array
 ): Promise<void> =>
-  set<d.ImageToken, Uint8Array>(
+  set<d.ImageHash, Uint8Array>(
     imageObjectStoreName,
     imageToken,
     imagePngBinary
@@ -233,6 +233,6 @@ export const setImage = (
  * @param imageToken 画像のハッシュ値
  */
 export const getImage = (
-  imageToken: d.ImageToken
+  imageToken: d.ImageHash
 ): Promise<Uint8Array | undefined> =>
-  get<d.ImageToken, Uint8Array>(imageObjectStoreName, imageToken);
+  get<d.ImageHash, Uint8Array>(imageObjectStoreName, imageToken);

@@ -1,4 +1,4 @@
-import * as d from "definy-core/source/data";
+import * as d from "../../data";
 import { c, div, image as img } from "@narumincho/html/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "@narumincho/html/view";
@@ -7,7 +7,7 @@ import { icon } from "./icon";
 
 export interface Option {
   readonly appInterface: State;
-  readonly imageToken: d.ImageToken;
+  readonly imageToken: d.ImageHash;
   readonly alternativeText: string;
   readonly isCircle: boolean;
   readonly width: number;

@@ -1,5 +1,5 @@
 import * as a from "./messageAndState";
-import * as d from "definy-core/source/data";
+import * as d from "../data";
 import * as definyType from "./definyType";
 import * as listEditor from "./listEditor";
 import * as maybeEditor from "./maybeEditor";
