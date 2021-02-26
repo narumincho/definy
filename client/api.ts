@@ -1,5 +1,5 @@
 import * as apiCodec from "../common/apiCodec";
-import * as d from "definy-core/source/data";
+import * as d from "../data";
 
 type ApiCodecType = typeof apiCodec;
 
@@ -52,7 +52,7 @@ export const api = Object.fromEntries(
 };
 
 export const getImageWithCache = (
-  imageToken: d.ImageToken
+  imageToken: d.ImageHash
 ): Promise<d.Maybe<Uint8Array>> =>
   fetch(
     "https://us-central1-definy-lang.cloudfunctions.net/getFile/" + imageToken,

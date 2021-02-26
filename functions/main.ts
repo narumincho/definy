@@ -1,5 +1,5 @@
 import * as apiCodec from "../common/apiCodec";
-import * as d from "definy-core/source/data";
+import * as d from "../data";
 import * as functions from "firebase-functions";
 import * as genHtml from "./html";
 import * as lib from "./lib";
@@ -185,6 +185,6 @@ export const getFile = functions.https.onRequest((request, response) => {
     return;
   }
   lib
-    .getReadableStream(request.path.split("/")[1] as d.ImageToken)
+    .getReadableStream(request.path.split("/")[1] as d.ImageHash)
     .pipe(response);
 });

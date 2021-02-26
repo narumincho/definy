@@ -1,4 +1,4 @@
-import * as d from "definy-core/source/data";
+import * as d from "../../data";
 import { State, TitleAndElement } from "../messageAndState";
 import { c, div, externalLink } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";

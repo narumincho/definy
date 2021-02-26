@@ -1,4 +1,4 @@
-import * as d from "definy-core/source/data";
+import * as d from "../../data";
 import {
   Message,
   State,
@@ -10,7 +10,7 @@ import { image } from "../ui/image";
 
 export const init = (
   messageHandler: (message: Message) => void,
-  userId: d.UserId
+  userId: d.AccountId
 ): void => {
   messageHandler({
     tag: messageGetUserTag,
@@ -20,7 +20,7 @@ export const init = (
 
 export const view = (
   appInterface: State,
-  userId: d.UserId
+  userId: d.AccountId
 ): TitleAndElement => {
   const user = appInterface.userMap.get(userId);
   if (user === undefined) {

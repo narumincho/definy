@@ -1,4 +1,4 @@
-import * as d from "definy-core/source/data";
+import * as d from "../../data";
 import {
   Message,
   State,
@@ -26,7 +26,7 @@ const dummyState: State = {
   typePartEditState: "None",
   getTypePartInProjectState: { _: "None" },
   language: d.Language.English,
-  clientMode: "DebugMode",
+  clientMode: d.ClientMode.Develop,
   logInState: d.LogInState.Guest,
   outputCode: { tag: "notGenerated" },
   pageModel: {

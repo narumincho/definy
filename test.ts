@@ -1,5 +1,5 @@
 import * as commonUrl from "./common/url";
-import * as data from "definy-core/source/data";
+import * as data from "./data";
 import { strict as strictAssert } from "assert";
 
 commonUrl.urlDataAndAccountTokenFromUrl(new URL("https://definy.app/")).urlData,
@@ -30,8 +30,8 @@ strictAssert.deepEqual(
     commonUrl.urlDataAndAccountTokenFromUrl(url).urlData,
     {
       clientMode: "DebugMode",
-      location: data.Location.User(
-        "580d8d6a54cf43e4452a0bba6694a4ed" as data.UserId
+      location: data.Location.Account(
+        "580d8d6a54cf43e4452a0bba6694a4ed" as data.AccountId
       ),
       language: "Esperanto",
     },
@@ -52,9 +52,9 @@ strictAssert.deepEqual(
 }
 {
   const languageAndLocation: data.UrlData = {
-    clientMode: "DebugMode",
-    location: data.Location.User(
-      "580d8d6a54cf43e4452a0bba6694a4ed" as data.UserId
+    clientMode: data.ClientMode.Develop,
+    location: data.Location.Account(
+      "580d8d6a54cf43e4452a0bba6694a4ed" as data.AccountId
     ),
     language: "Esperanto",
   };

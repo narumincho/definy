@@ -1,4 +1,4 @@
 import { build } from "./main";
-import * as d from "definy-core/source/data";
+import * as d from "../data";
 
 build(d.ClientMode.Release);

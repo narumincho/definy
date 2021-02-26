@@ -1,4 +1,4 @@
-import * as data from "definy-core/source/data";
+import * as data from "../data";
 
 export const debugHostingPortNumber = 2520;
 
@@ -7,7 +7,7 @@ export const debugOrigin = `http://localhost:${debugHostingPortNumber}`;
 
 export const clientModeToOriginUrl = (clientMode: data.ClientMode): URL => {
   switch (clientMode) {
-    case "DebugMode": {
+    case "Develop": {
       return new URL(debugOrigin);
     }
     case "Release":
@@ -40,8 +40,8 @@ const locationToPath = (location: data.Location): string => {
       return "/";
     case "CreateProject":
       return "/create-project";
-    case "User":
-      return "/user/" + (location.userId as string);
+    case "Account":
+      return "/user/" + (location.accountId as string);
     case "Project":
       return "/project/" + (location.projectId as string);
     case "Setting":
@@ -50,6 +50,8 @@ const locationToPath = (location: data.Location): string => {
       return "/about";
     case "Debug":
       return "/debug";
+    case "TypePart":
+      return "/type-part/" + location.typePartId;
   }
 };
 
@@ -85,7 +87,7 @@ export const urlDataAndAccountTokenFromUrl = (
 };
 
 const clientModeFromUrl = (origin: string): data.ClientMode =>
-  origin === releaseOrigin ? "Release" : "DebugMode";
+  origin === releaseOrigin ? data.ClientMode.Release : data.ClientMode.Develop;
 
 const locationFromUrl = (pathName: string): data.Location => {
   if (pathName === "/create-project") {
@@ -106,7 +108,11 @@ const locationFromUrl = (pathName: string): data.Location => {
   }
   const userResult = pathName.match(/^\/user\/(?<id>[0-9a-f]{32})$/u);
   if (userResult !== null && userResult.groups !== undefined) {
-    return data.Location.User(userResult.groups.id as data.UserId);
+    return data.Location.Account(userResult.groups.id as data.AccountId);
+  }
+  const typePartResult = pathName.match(/^\/type-part\/(?<id>[0-9a-f]{32})$/u);
+  if (userResult !== null && userResult.groups !== undefined) {
+    return data.Location.TypePart(userResult.groups.id as data.TypePartId);
   }
   return data.Location.Home;
 };

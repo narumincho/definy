@@ -1,5 +1,5 @@
 import * as commonUrl from "../../common/url";
-import * as d from "definy-core/source/data";
+import * as d from "../../data";
 import { Message, State, messageJumpTag } from "../messageAndState";
 import { CSSObject } from "@emotion/css";
 import { Element } from "@narumincho/html/view";
