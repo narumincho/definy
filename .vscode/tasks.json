@@ -1,0 +1,24 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "develop-build",
+      "problemMatcher": [],
+      "label": "ローカル内で動かすためのビルドをする",
+      "runOptions": {
+        "instanceLimit": 1
+      }
+    },
+    {
+      "type": "npm",
+      "script": "start-emulator",
+      "problemMatcher": [],
+      "label": "Firebase の エミュレーターを起動する",
+      "detail": "事前に develp-build で 開発用ビルドをしてね",
+      "runOptions": {
+        "instanceLimit": 1
+      }
+    }
+  ]
+}
