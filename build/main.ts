@@ -2,7 +2,6 @@ import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
 import * as d from "../data";
 import * as ts from "typescript";
-import { debugHostingPortNumber } from "../common/url";
 import { generateCodeAsString } from "js-ts-code-generator";
 import * as jsTsData from "js-ts-code-generator/data";
 import * as jsTsIdentifer from "js-ts-code-generator/identifer";
@@ -103,7 +102,7 @@ const generateFirebaseJson = (mode: d.Mode): Promise<void> => {
                 port: 8080,
               },
               hosting: {
-                port: debugHostingPortNumber,
+                port: 2520,
               },
               ui: {
                 enabled: true,
