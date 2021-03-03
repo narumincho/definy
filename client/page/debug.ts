@@ -20,7 +20,6 @@ const dummyState: State = {
   top50ProjectIdState: { _: "None" },
   projectMap: new Map(),
   userMap: new Map(),
-  imageMap: new Map(),
   typePartMap: new Map(),
   isCreatingProject: false,
   typePartEditState: "None",

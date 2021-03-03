@@ -30,9 +30,6 @@ export interface State {
   /** ユーザーの辞書 */
   readonly userMap: ReadonlyMap<d.AccountId, d.ResourceState<d.Account>>;
 
-  /** 画像のBlobURLの辞書 */
-  readonly imageMap: ReadonlyMap<d.ImageHash, d.StaticResourceState<string>>;
-
   /** 型パーツの辞書 */
   readonly typePartMap: ReadonlyMap<d.TypePartId, d.ResourceState<d.TypePart>>;
 
@@ -167,15 +164,6 @@ export type Message =
       readonly response: d.Maybe<d.WithTime<d.Maybe<d.Project>>>;
     }
   | {
-      readonly tag: typeof messageGetImage;
-      readonly imageToken: d.ImageHash;
-    }
-  | {
-      readonly tag: typeof messageRespondImage;
-      readonly imageToken: d.ImageHash;
-      readonly response: d.Maybe<Uint8Array>;
-    }
-  | {
       readonly tag: typeof messageGenerateCode;
     }
   | {
@@ -269,8 +257,6 @@ export const messageRespondAllTop50Project = Symbol(
 );
 export const messageGetProject = Symbol("Message-GetProject");
 export const messageRespondProject = Symbol("Message-RespondProject");
-export const messageGetImage = Symbol("Message-GetImage");
-export const messageRespondImage = Symbol("Message-RespondImage");
 export const messageGenerateCode = Symbol("Message-GenerateCode");
 export const messageGetTypePartInProject = Symbol(
   "Message-GetTypePartInProject"

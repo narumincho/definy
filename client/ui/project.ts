@@ -48,7 +48,7 @@ const projectLoaded = (
       [
         "image",
         image({
-          appInterface,
+          state: appInterface,
           imageToken: project.imageHash,
           alternativeText: project.name + "の画像",
           width: 1024 / 4,
@@ -72,7 +72,7 @@ const projectLoaded = (
             [
               "icon",
               image({
-                appInterface,
+                state: appInterface,
                 imageToken: project.iconHash,
                 alternativeText: project.name + "のアイコン",
                 width: 32,

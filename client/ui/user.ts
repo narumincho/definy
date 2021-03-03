@@ -45,7 +45,7 @@ export const userCard = (
           [
             "icon",
             image({
-              appInterface,
+              state: appInterface,
               imageToken: data.imageHash,
               alternativeText: data.name + "のアイコン",
               width: 32,
