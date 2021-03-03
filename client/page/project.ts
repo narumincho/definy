@@ -463,7 +463,7 @@ const projectDetailView = (
               "icon",
               image({
                 imageToken: project.iconHash,
-                appInterface: state,
+                state: state,
                 alternativeText: project.name + "のアイコン",
                 width: 48,
                 height: 48,
@@ -478,7 +478,7 @@ const projectDetailView = (
         "image",
         image({
           imageToken: project.imageHash,
-          appInterface: state,
+          state: state,
           alternativeText: "image",
           width: 1024 / 2,
           height: 633 / 2,

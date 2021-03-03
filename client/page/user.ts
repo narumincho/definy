@@ -62,7 +62,7 @@ export const view = (
                   user.dataWithTime.data.name + "のアカウント画像",
                 width: 32,
                 height: 32,
-                appInterface,
+                state: appInterface,
                 imageToken: user.dataWithTime.data.imageHash,
                 isCircle: true,
               }),

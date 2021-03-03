@@ -52,7 +52,6 @@ export const initState = (
     top50ProjectIdState: { _: "None" },
     projectMap: new Map(),
     userMap: new Map(),
-    imageMap: new Map(),
     typePartMap: new Map(),
     isCreatingProject: false,
     typePartEditState: "None",
@@ -166,12 +165,6 @@ export const updateStateByMessage = (
         messageHandler,
         oldState
       );
-
-    case a.messageGetImage:
-      return getImage(message.imageToken, messageHandler, oldState);
-
-    case a.messageRespondImage:
-      return respondImage(message.imageToken, message.response, oldState);
 
     case a.messageGenerateCode:
       return generateCode(oldState);
@@ -346,19 +339,14 @@ const respondUserByAccountToken = (
   switch (userMaybe._) {
     case "Just": {
       indexedDB.setAccountToken(state.logInState.accountToken);
-      const requestedImageState = getImage(
-        userMaybe.value.data.imageHash,
-        messageHandler,
-        state
-      );
       return {
-        ...requestedImageState,
+        ...state,
         logInState: d.LogInState.LoggedIn({
           accountToken,
           userId: userMaybe.value.id,
         }),
         userMap: mapSet(
-          requestedImageState.userMap,
+          state.userMap,
           userMaybe.value.id,
           d.ResourceState.Loaded({
             getTime: coreUtil.timeFromDate(new Date()),
@@ -399,22 +387,14 @@ const respondTop50Project = (
     return state;
   }
   const projectListData = response.value;
-  const imageRequestedState = getImageList(
-    projectListData.data.flatMap((projectIdAndData) => [
-      projectIdAndData.data.imageHash,
-      projectIdAndData.data.iconHash,
-    ]),
-    messageHandler,
-    state
-  );
   return {
-    ...imageRequestedState,
+    ...state,
     top50ProjectIdState: {
       _: "Loaded",
       projectIdList: projectListData.data.map((idAndData) => idAndData.id),
     },
     projectMap: new Map([
-      ...imageRequestedState.projectMap,
+      ...state.projectMap,
       ...projectListData.data.map(
         (projectIdAndData) =>
           [
@@ -452,14 +432,10 @@ const respondUser = (
   response: d.Maybe<d.WithTime<d.Maybe<d.Account>>>,
   state: a.State
 ): a.State => {
-  const imageRequestedState =
-    response._ === "Just" && response.value.data._ === "Just"
-      ? getImage(response.value.data.value.imageHash, messageHandler, state)
-      : state;
   return {
-    ...imageRequestedState,
+    ...state,
     userMap: mapSet(
-      imageRequestedState.userMap,
+      state.userMap,
       userId,
       getResourceResponseToResourceState(response)
     ),
@@ -493,85 +469,12 @@ const respondProject = (
   messageHandler: (message: a.Message) => void,
   state: a.State
 ) => {
-  const imageRequestedState =
-    response._ === "Just" && response.value.data._ === "Just"
-      ? getImageList(
-          [
-            response.value.data.value.iconHash,
-            response.value.data.value.imageHash,
-          ],
-          messageHandler,
-          state
-        )
-      : state;
   return {
-    ...imageRequestedState,
+    ...state,
     projectMap: mapSet(
-      imageRequestedState.projectMap,
+      state.projectMap,
       projectId,
       getResourceResponseToResourceState(response)
-    ),
-  };
-};
-
-const getImageList = (
-  imageTokenList: ReadonlyArray<d.ImageHash>,
-  messageHandler: (message: a.Message) => void,
-  state: a.State
-): a.State => {
-  const imageMap = new Map(state.imageMap);
-  for (const imageToken of imageTokenList) {
-    getImageWithCache(imageToken).then((response) => {
-      messageHandler({ tag: a.messageRespondImage, imageToken, response });
-    });
-    imageMap.set(imageToken, d.StaticResourceState.Loading());
-  }
-  return {
-    ...state,
-    imageMap,
-  };
-};
-
-const getImage = (
-  imageToken: d.ImageHash,
-  messageHandler: (message: a.Message) => void,
-  state: a.State
-): a.State => {
-  if (state.imageMap.has(imageToken)) {
-    return state;
-  }
-  getImageWithCache(imageToken).then((response) => {
-    messageHandler({ tag: a.messageRespondImage, imageToken, response });
-  });
-  return {
-    ...state,
-    imageMap: mapSet(
-      state.imageMap,
-      imageToken,
-      d.StaticResourceState.Loading()
-    ),
-  };
-};
-
-const respondImage = (
-  imageToken: d.ImageHash,
-  response: d.Maybe<Uint8Array>,
-  state: a.State
-): a.State => {
-  return {
-    ...state,
-    imageMap: mapSet(
-      state.imageMap,
-      imageToken,
-      response._ === "Nothing"
-        ? d.StaticResourceState.Unknown<string>()
-        : d.StaticResourceState.Loaded<string>(
-            window.URL.createObjectURL(
-              new Blob([response.value], {
-                type: "image/png",
-              })
-            )
-          )
     ),
   };
 };

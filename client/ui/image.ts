@@ -3,10 +3,10 @@ import { c, div, image as img } from "@narumincho/html/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "@narumincho/html/view";
 import { State } from "../messageAndState";
-import { icon } from "./icon";
+import * as commonUrl from "../../common/url";
 
 export interface Option {
-  readonly appInterface: State;
+  readonly state: State;
   readonly imageToken: d.ImageHash;
   readonly alternativeText: string;
   readonly isCircle: boolean;
@@ -15,27 +15,11 @@ export interface Option {
 }
 
 export const image = (option: Option): Element<never> => {
-  const blobUrlResource = option.appInterface.imageMap.get(option.imageToken);
-  if (blobUrlResource === undefined) {
-    return div({ style: imageStyle(option) }, "...");
-  }
-  switch (blobUrlResource._) {
-    case "Loading":
-      return div({ style: imageStyle(option) }, c([["icon", icon("Loading")]]));
-    case "Requesting":
-      return div(
-        { style: imageStyle(option) },
-        c([["icon", icon("Requesting")]])
-      );
-    case "Unknown":
-      return div({ style: imageStyle(option) }, "取得に失敗");
-    case "Loaded":
-      return img({
-        src: blobUrlResource.data,
-        alt: option.alternativeText,
-        style: imageStyle(option),
-      });
-  }
+  return img({
+    src: commonUrl.pngFileUrl(option.imageToken).toString(),
+    alt: option.alternativeText,
+    style: imageStyle(option),
+  });
 };
 
 const imageStyle = (props: Option): CSSObject => ({

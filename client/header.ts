@@ -117,7 +117,7 @@ const SettingLink = (props: {
         "icon",
         image({
           imageToken: props.user.imageHash,
-          appInterface: props.appInterface,
+          state: props.appInterface,
           alternativeText: "設定",
           width: 32,
           height: 32,
