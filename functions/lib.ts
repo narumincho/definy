@@ -467,12 +467,11 @@ const hashAccessToken = (accountToken: d.AccountToken): AccessTokenHash =>
 /**
  * Cloud Storage for Firebase からPNGファイルを読み込む
  */
-export const readPngFile = (fileName: string): stream.Readable => {
+export const readPngFile = (hash: string): stream.Readable => {
   if (nowMode === "Release") {
-    const file = storageDefaultBucket.file(fileName);
-    return file.createReadStream();
+    return storageDefaultBucket.file(hash).createReadStream();
   }
-  return fileSystem.createReadStream(`${fakeCloudStoragePath}/${fileName}.png`);
+  return fileSystem.createReadStream(`${fakeCloudStoragePath}/${hash}.png`);
 };
 
 const projectDataToProjectSnapshot = (document: ProjectData): d.Project => ({
