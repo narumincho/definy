@@ -6,7 +6,6 @@ import { debugHostingPortNumber } from "../common/url";
 import { generateCodeAsString } from "js-ts-code-generator";
 import * as jsTsData from "js-ts-code-generator/data";
 import * as jsTsIdentifer from "js-ts-code-generator/identifer";
-import * as common from "../common/url";
 
 const clientSourceEntryPath = "./client/main.ts";
 const functionsSourceEntryPath = "./functions/main.ts";
@@ -17,37 +16,10 @@ const hostingDistributionPath = `${distributionPath}/hosting`;
 /**
  * Firebase へ デプロイするためにビルドする
  */
-export const build = async (clientMode: d.ClientMode): Promise<void> => {
+export const build = async (mode: d.Mode): Promise<void> => {
   await outputPackageJsonForFunctions();
-  await fileSystem.outputFile(
-    "out.ts",
-    generateCodeAsString(
-      {
-        exportDefinitionList: [
-          jsTsData.ExportDefinition.Variable({
-            name: jsTsIdentifer.fromString("scriptUrl"),
-            document:
-              "メインのスクリプトのURL (ビルド時にこの変数の値が変更される)",
-            expr: jsTsData.Expr.New({
-              expr: jsTsData.Expr.GlobalObjects(
-                jsTsIdentifer.fromString("URL")
-              ),
-              parameterList: [
-                jsTsData.Expr.StringLiteral(
-                  `${common.clientModeToOriginUrl(clientMode)}main.js`
-                ),
-              ],
-            }),
-            type: jsTsData.Type.ScopeInGlobal(jsTsIdentifer.fromString("URL")),
-          }),
-        ],
-        statementList: [],
-      },
-      jsTsData.CodeType.TypeScript
-    )
-  );
-
-  await generateFirebaseJson(clientMode);
+  await outputNowMode(mode);
+  await generateFirebaseJson(mode);
 
   /** staticなファイルのコピー */
   await fileSystem.copy("./static", hostingDistributionPath);
@@ -75,7 +47,7 @@ export const build = async (clientMode: d.ClientMode): Promise<void> => {
   buildFunctionsTypeScript();
 };
 
-const generateFirebaseJson = (clientMode: d.ClientMode): Promise<void> => {
+const generateFirebaseJson = (mode: d.Mode): Promise<void> => {
   return fileSystem.outputFile(
     `firebase.json`,
     JSON.stringify({
@@ -97,16 +69,20 @@ const generateFirebaseJson = (clientMode: d.ClientMode): Promise<void> => {
         ],
         rewrites: [
           {
-            source: "sitemap",
+            source: "/sitemap",
             function: "sitemap",
           },
           {
-            source: "api/**",
+            source: "/api/**",
             function: "api",
           },
           {
-            source: "logInCallback/**",
+            source: "/logInCallback/**",
             function: "logInCallback",
+          },
+          {
+            source: "/pngFile/**",
+            function: "pngFile",
           },
           {
             source: "**",
@@ -117,7 +93,7 @@ const generateFirebaseJson = (clientMode: d.ClientMode): Promise<void> => {
         trailingSlash: false,
       },
       emulators:
-        clientMode === d.ClientMode.Release
+        mode === d.Mode.Release
           ? undefined
           : {
               functions: {
@@ -170,6 +146,7 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
     "definy-core",
     "jimp",
     "jsonwebtoken",
+    "fs-extra",
   ];
 
   await fileSystem.outputFile(
@@ -192,5 +169,34 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
         )
       ),
     })
+  );
+};
+
+const outputNowMode = async (mode: d.Mode): Promise<void> => {
+  await fileSystem.outputFile(
+    "./out.ts",
+    generateCodeAsString(
+      {
+        exportDefinitionList: [
+          jsTsData.ExportDefinition.Variable({
+            name: jsTsIdentifer.fromString("nowMode"),
+            document: "実行モード (ビルド時にコード生成される)",
+            expr: jsTsData.Expr.Get({
+              expr: jsTsData.Expr.ImportedVariable({
+                moduleName: "./data",
+                name: jsTsIdentifer.fromString("Mode"),
+              }),
+              propertyExpr: jsTsData.Expr.StringLiteral(mode),
+            }),
+            type: jsTsData.Type.ImportedType({
+              moduleName: "./data",
+              name: jsTsIdentifer.fromString("Mode"),
+            }),
+          }),
+        ],
+        statementList: [],
+      },
+      jsTsData.CodeType.TypeScript
+    )
   );
 };

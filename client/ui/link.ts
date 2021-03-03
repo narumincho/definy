@@ -59,7 +59,6 @@ export const link = (
   children: ReadonlyMap<string, Element<never>> | string
 ): Element<Message> => {
   const urlData: d.UrlData = {
-    clientMode: option.appInterface.clientMode,
     language: option.language ?? option.appInterface.language,
     location: option.location,
   };

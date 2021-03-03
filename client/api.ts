@@ -1,5 +1,6 @@
 import * as apiCodec from "../common/apiCodec";
 import * as d from "../data";
+import * as commonUrl from "../common/url";
 
 type ApiCodecType = typeof apiCodec;
 
@@ -20,7 +21,7 @@ export const api = Object.fromEntries(
       >
     > => {
       console.log(apiName, "request", requestData);
-      return fetch(`https://definy.app/api/${apiName}`, {
+      return fetch(commonUrl.apiUrl(apiName).toString(), {
         method: "POST",
         body: new Uint8Array(codec.request.encode(requestData as never)),
         headers: [["content-type", "application/octet-stream"]],
@@ -52,17 +53,14 @@ export const api = Object.fromEntries(
 };
 
 export const getImageWithCache = (
-  imageToken: d.ImageHash
+  imageHash: d.ImageHash
 ): Promise<d.Maybe<Uint8Array>> =>
-  fetch(
-    "https://us-central1-definy-lang.cloudfunctions.net/getFile/" + imageToken,
-    { cache: "force-cache" }
-  )
+  fetch(commonUrl.pngFileUrl(imageHash).toString(), { cache: "force-cache" })
     .then((response) => response.arrayBuffer())
     .then((response) => d.Maybe.Just(new Uint8Array(response)))
     .catch((reason) => {
       console.error(
-        "imageToken = " + imageToken + " 画像の取得時にエラーが発生した",
+        "imageToken = " + imageHash + " 画像の取得時にエラーが発生した",
         reason
       );
       return d.Maybe.Nothing();

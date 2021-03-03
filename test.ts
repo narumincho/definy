@@ -52,7 +52,6 @@ strictAssert.deepEqual(
 }
 {
   const languageAndLocation: data.UrlData = {
-    clientMode: data.ClientMode.Develop,
     location: data.Location.Account(
       "580d8d6a54cf43e4452a0bba6694a4ed" as data.AccountId
     ),

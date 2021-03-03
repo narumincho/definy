@@ -22,7 +22,7 @@ export const html = async (
       iconPath: "/icon",
       coverImageUrl: coverImageUrlAndDescription.imageUrl,
       description: coverImageUrlAndDescription.description,
-      scriptUrlList: [out.scriptUrl],
+      scriptPath: "/main.js",
       styleUrlList: [],
       twitterCard: "SummaryCard",
       language: urlData.language,
@@ -63,13 +63,6 @@ body {
   };
 };
 
-const defaultImageUrl = new URL((commonUrl.releaseOrigin as string) + "/icon");
-const getFileUrl = (imageToken: d.ImageHash): URL =>
-  new URL(
-    "https://us-central1-definy-lang.cloudfunctions.net/getFile/" +
-      (imageToken as string)
-  );
-
 const getCoverImageUrlAndDescription = async (
   location: d.Location,
   language: d.Language
@@ -79,7 +72,7 @@ const getCoverImageUrlAndDescription = async (
       const projectResource = await lib.apiFunc.getProject(location.projectId);
       if (projectResource.data._ === "Just") {
         return {
-          imageUrl: getFileUrl(projectResource.data.value.imageHash),
+          imageUrl: commonUrl.pngFileUrl(projectResource.data.value.imageHash),
           description:
             projectResource.data.value.name +
             " | Definy で作られたプロジェクト",
@@ -87,7 +80,7 @@ const getCoverImageUrlAndDescription = async (
         };
       }
       return {
-        imageUrl: defaultImageUrl,
+        imageUrl: commonUrl.iconUrl,
         description: "不明なプロジェクト | Definy",
         isNotFound: true,
       };
@@ -96,20 +89,20 @@ const getCoverImageUrlAndDescription = async (
       const user = await lib.apiFunc.getUser(location.accountId);
       if (user.data._ === "Just") {
         return {
-          imageUrl: getFileUrl(user.data.value.imageHash),
+          imageUrl: commonUrl.pngFileUrl(user.data.value.imageHash),
           description: user.data.value.name + " | Definy のアカウント",
           isNotFound: false,
         };
       }
       return {
-        imageUrl: defaultImageUrl,
+        imageUrl: commonUrl.iconUrl,
         description: "不明なアカウント | Definy",
         isNotFound: true,
       };
     }
   }
   return {
-    imageUrl: defaultImageUrl,
+    imageUrl: commonUrl.iconUrl,
     description: ((): string => {
       switch (language) {
         case "Japanese":
