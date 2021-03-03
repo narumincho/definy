@@ -146,7 +146,7 @@ export const logInCallback = functions.https.onRequest((request, response) => {
 
 export const pngFile = functions.https.onRequest(
   async (request, response): Promise<void> => {
-    const fileHash = request.path.split("/")[1];
+    const fileHash = request.path.split("/")[2];
     if (fileHash === undefined) {
       response.status(400).send("getFile API need file hash");
       return;
