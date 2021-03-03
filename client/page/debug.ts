@@ -26,7 +26,6 @@ const dummyState: State = {
   typePartEditState: "None",
   getTypePartInProjectState: { _: "None" },
   language: d.Language.English,
-  clientMode: d.ClientMode.Develop,
   logInState: d.LogInState.Guest,
   outputCode: { tag: "notGenerated" },
   pageModel: {

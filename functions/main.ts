@@ -46,9 +46,6 @@ export const html = functions.https.onRequest(async (request, response) => {
 export const api = functions
   .runWith({ memory: "512MB" })
   .https.onRequest(async (request, response) => {
-    if (supportCrossOriginResourceSharing(request, response)) {
-      return;
-    }
     const path = request.path.split("/")[2];
     console.log("call api function!", request.connection.remoteAddress, path);
     const result = await callApiFunction(path, request.body as Buffer);
@@ -97,38 +94,6 @@ const callApiFunction = (
   return Promise.resolve(undefined);
 };
 
-/**
- * CrossOriginResourceSharing の 処理をする.
- * @returns true → メインの処理をしなくていい, false → メインの処理をする必要がある
- */
-const supportCrossOriginResourceSharing = (
-  request: functions.https.Request,
-  response: functions.Response
-): boolean => {
-  response.setHeader("vary", "Origin");
-  response.setHeader(
-    "access-control-allow-origin",
-    allowOrigin(request.headers.origin)
-  );
-  if (request.method === "OPTIONS") {
-    response.setHeader("access-control-allow-methods", "POST, GET, OPTIONS");
-    response.setHeader("access-control-allow-headers", "content-type");
-    response.status(200).send("");
-    return true;
-  }
-  return false;
-};
-
-const allowOrigin = (httpHeaderOrigin: unknown): string => {
-  if (
-    httpHeaderOrigin === commonUrl.debugOrigin ||
-    httpHeaderOrigin === commonUrl.releaseOrigin
-  ) {
-    return httpHeaderOrigin;
-  }
-  return commonUrl.releaseOrigin;
-};
-
 /*
  * =====================================================================
  *               logInCallback ソーシャルログインのコールバック先
@@ -149,7 +114,6 @@ export const logInCallback = functions.https.onRequest((request, response) => {
       commonUrl
         .urlDataAndAccountTokenToUrl(
           {
-            clientMode: "Release",
             location: d.Location.Home,
             language: commonUrl.defaultLanguage,
           },
@@ -180,11 +144,15 @@ export const logInCallback = functions.https.onRequest((request, response) => {
   }
 });
 
-export const getFile = functions.https.onRequest((request, response) => {
-  if (supportCrossOriginResourceSharing(request, response)) {
-    return;
+export const pngFile = functions.https.onRequest(
+  async (request, response): Promise<void> => {
+    const fileHash = request.path.split("/")[1];
+    if (fileHash === undefined) {
+      response.status(400).send("getFile API need file hash");
+      return;
+    }
+    const readableStream = lib.readPngFile(fileHash);
+    response.contentType("image/png");
+    readableStream.pipe(response);
   }
-  lib
-    .getReadableStream(request.path.split("/")[1] as d.ImageHash)
-    .pipe(response);
-});
+);

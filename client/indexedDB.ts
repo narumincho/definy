@@ -10,6 +10,9 @@ const AccountTokenKeyName = "lastLogInUser";
  */
 const checkIndexDBSupport = (): boolean => "indexedDB" in window;
 
+/**
+ * 1度 indexedDBにアクセスしたら, データベースへの参照を維持しておくための変数
+ */
 let databaseCache: IDBDatabase | null = null;
 
 /**
@@ -58,7 +61,7 @@ const get = <id extends string, data>(
         resolve(undefined);
         return;
       }
-      const transaction = database.transaction([objectStoreName], "readwrite");
+      const transaction = database.transaction([objectStoreName], "readonly");
 
       transaction.oncomplete = (): void => {
         resolve(getRequest.result);
@@ -127,7 +130,7 @@ const deleteValue = <id extends string>(
       transaction.onerror = (): void => {
         reject(
           new Error(
-            "write " + objectStoreName + " error: write transaction failed"
+            "delete " + objectStoreName + " error: delete transaction failed"
           )
         );
       };

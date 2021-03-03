@@ -58,7 +58,6 @@ export const initState = (
     typePartEditState: "None",
     getTypePartInProjectState: { _: "None" },
     language: urlDataAndAccountToken.urlData.language,
-    clientMode: urlDataAndAccountToken.urlData.clientMode,
     logInState:
       urlDataAndAccountToken.accountToken._ === "Just"
         ? d.LogInState.VerifyingAccountToken(
@@ -913,7 +912,6 @@ const logIn = (
     .requestLogInUrl({
       openIdConnectProvider: provider,
       urlData: {
-        clientMode: state.clientMode,
         language: state.language,
         location: pageModelToLocation(state.pageModel),
       },
@@ -967,7 +965,6 @@ const jump = (
     commonUrl
       .urlDataAndAccountTokenToUrl(
         {
-          clientMode: state.clientMode,
           location,
           language,
         },
@@ -995,7 +992,6 @@ const changeLocationAndLanguage = (
     commonUrl
       .urlDataAndAccountTokenToUrl(
         {
-          clientMode: state.clientMode,
           location,
           language,
         },
@@ -1077,7 +1073,7 @@ export const stateToView = (state: a.State): view.View<a.Message> => {
     scriptUrlList: [],
     styleUrlList: [],
     iconPath: "wip.png",
-    url: new URL("https://definy.app"),
+    url: new URL(commonUrl.origin),
     appName: "Definy",
     language: state.language,
     themeColor: undefined,

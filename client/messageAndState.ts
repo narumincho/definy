@@ -48,9 +48,6 @@ export interface State {
   /** ページの言語 */
   readonly language: d.Language;
 
-  /** クライアントモード. デバッグ時のlocalhostか, リリース時か */
-  readonly clientMode: d.ClientMode;
-
   /** ログイン状態 */
   readonly logInState: d.LogInState;
 

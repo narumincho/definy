@@ -1,28 +1,17 @@
-import * as data from "../data";
+import * as d from "../data";
+import { nowMode } from "../out";
 
-export const debugHostingPortNumber = 2520;
-
-export const releaseOrigin = "https://definy.app";
-export const debugOrigin = `http://localhost:${debugHostingPortNumber}`;
-
-export const clientModeToOriginUrl = (clientMode: data.ClientMode): URL => {
-  switch (clientMode) {
-    case "Develop": {
-      return new URL(debugOrigin);
-    }
-    case "Release":
-      return new URL(releaseOrigin);
-  }
-};
+export const origin =
+  nowMode === d.Mode.Develop ? `http://localhost:2520` : "https://definy.app";
 
 const languageQueryKey = "hl";
-export const defaultLanguage: data.Language = "English";
+export const defaultLanguage: d.Language = "English";
 
 export const urlDataAndAccountTokenToUrl = (
-  urlData: data.UrlData,
-  accountToken: data.Maybe<data.AccountToken>
+  urlData: d.UrlData,
+  accountToken: d.Maybe<d.AccountToken>
 ): URL => {
-  const url = clientModeToOriginUrl(urlData.clientMode);
+  const url = new URL(origin);
   url.pathname = locationToPath(urlData.location);
   url.searchParams.append(
     languageQueryKey,
@@ -34,7 +23,7 @@ export const urlDataAndAccountTokenToUrl = (
   return url;
 };
 
-const locationToPath = (location: data.Location): string => {
+const locationToPath = (location: d.Location): string => {
   switch (location._) {
     case "Home":
       return "/";
@@ -55,7 +44,7 @@ const locationToPath = (location: data.Location): string => {
   }
 };
 
-const languageToIdString = (language: data.Language): string => {
+const languageToIdString = (language: d.Language): string => {
   switch (language) {
     case "English":
       return "en";
@@ -72,13 +61,12 @@ const languageToIdString = (language: data.Language): string => {
  */
 export const urlDataAndAccountTokenFromUrl = (
   url: URL
-): { urlData: data.UrlData; accountToken: data.Maybe<data.AccountToken> } => {
+): { urlData: d.UrlData; accountToken: d.Maybe<d.AccountToken> } => {
   const languageId = url.searchParams.get(languageQueryKey);
-  const language: data.Language =
+  const language: d.Language =
     languageId === null ? defaultLanguage : languageFromIdString(languageId);
   return {
     urlData: {
-      clientMode: clientModeFromUrl(url.origin),
       location: locationFromUrl(url.pathname),
       language,
     },
@@ -86,38 +74,35 @@ export const urlDataAndAccountTokenFromUrl = (
   };
 };
 
-const clientModeFromUrl = (origin: string): data.ClientMode =>
-  origin === releaseOrigin ? data.ClientMode.Release : data.ClientMode.Develop;
-
-const locationFromUrl = (pathName: string): data.Location => {
+const locationFromUrl = (pathName: string): d.Location => {
   if (pathName === "/create-project") {
-    return data.Location.CreateProject;
+    return d.Location.CreateProject;
   }
   if (pathName === "/about") {
-    return data.Location.About;
+    return d.Location.About;
   }
   if (pathName === "/debug") {
-    return data.Location.Debug;
+    return d.Location.Debug;
   }
   if (pathName === "/setting") {
-    return data.Location.Setting;
+    return d.Location.Setting;
   }
   const projectResult = pathName.match(/^\/project\/(?<id>[0-9a-f]{32})$/u);
   if (projectResult !== null && projectResult.groups !== undefined) {
-    return data.Location.Project(projectResult.groups.id as data.ProjectId);
+    return d.Location.Project(projectResult.groups.id as d.ProjectId);
   }
   const userResult = pathName.match(/^\/user\/(?<id>[0-9a-f]{32})$/u);
   if (userResult !== null && userResult.groups !== undefined) {
-    return data.Location.Account(userResult.groups.id as data.AccountId);
+    return d.Location.Account(userResult.groups.id as d.AccountId);
   }
   const typePartResult = pathName.match(/^\/type-part\/(?<id>[0-9a-f]{32})$/u);
   if (userResult !== null && userResult.groups !== undefined) {
-    return data.Location.TypePart(userResult.groups.id as data.TypePartId);
+    return d.Location.TypePart(userResult.groups.id as d.TypePartId);
   }
-  return data.Location.Home;
+  return d.Location.Home;
 };
 
-const languageFromIdString = (languageAsString: string): data.Language => {
+const languageFromIdString = (languageAsString: string): d.Language => {
   switch (languageAsString) {
     case "ja":
       return "Japanese";
@@ -129,10 +114,22 @@ const languageFromIdString = (languageAsString: string): data.Language => {
   return defaultLanguage;
 };
 
-const accountTokenFromUrl = (hash: string): data.Maybe<data.AccountToken> => {
+const accountTokenFromUrl = (hash: string): d.Maybe<d.AccountToken> => {
   const matchResult = hash.match(/account-token=(?<token>[0-9a-f]{64})/u);
   if (matchResult === null || matchResult.groups === undefined) {
-    return data.Maybe.Nothing();
+    return d.Maybe.Nothing();
   }
-  return data.Maybe.Just(matchResult.groups.token as data.AccountToken);
+  return d.Maybe.Just(matchResult.groups.token as d.AccountToken);
 };
+
+export const iconUrl: URL = new URL(`${origin}/icon`);
+
+export const pngFileUrl = (fileHash: d.ImageHash): URL =>
+  new URL(`${origin}/pngFile/${fileHash}`);
+
+export const apiUrl = (apiName: string): URL =>
+  new URL(`${origin}/api/${apiName}`);
+
+export const logInRedirectUri = (
+  openIdConnectProvider: d.OpenIdConnectProvider
+): string => `${origin}/logInCallback/${openIdConnectProvider}`;

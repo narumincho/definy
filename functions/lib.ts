@@ -11,7 +11,9 @@ import * as stream from "stream";
 import type * as typedFirestore from "typed-admin-firestore";
 import * as util from "definy-core/util";
 import axios, { AxiosResponse } from "axios";
-import { URL } from "url";
+import { nowMode } from "../out";
+import * as fileSystem from "fs-extra";
+import * as commonUrl from "../common/url";
 
 const app = admin.initializeApp();
 
@@ -109,7 +111,7 @@ const logInUrlFromOpenIdConnectProviderAndState = (
         new Map([
           ["response_type", "code"],
           ["client_id", getOpenIdConnectClientId("Google")],
-          ["redirect_uri", logInRedirectUri("Google")],
+          ["redirect_uri", commonUrl.logInRedirectUri("Google")],
           ["scope", "profile openid"],
           ["state", state],
         ])
@@ -120,7 +122,7 @@ const logInUrlFromOpenIdConnectProviderAndState = (
         new Map([
           ["response_type", "code"],
           ["client_id", getOpenIdConnectClientId("GitHub")],
-          ["redirect_uri", logInRedirectUri("GitHub")],
+          ["redirect_uri", commonUrl.logInRedirectUri("GitHub")],
           ["scope", "read:user"],
           ["state", state],
         ])
@@ -150,11 +152,6 @@ const createUrl = (
 const createRandomId = (): string => {
   return crypto.randomBytes(16).toString("hex");
 };
-
-const logInRedirectUri = (
-  openIdConnectProvider: d.OpenIdConnectProvider
-): string =>
-  "https://definy.app/logInCallback/" + (openIdConnectProvider as string);
 
 /**
  * OpenIdConnectで外部ログインからの受け取ったデータを元に,ログインする前のURLとアクセストークンを返す
@@ -242,7 +239,7 @@ const getGoogleUserDataFromCode = async (
     new URLSearchParams([
       ["grant_type", "authorization_code"],
       ["code", code],
-      ["redirect_uri", logInRedirectUri("Google")],
+      ["redirect_uri", commonUrl.logInRedirectUri("Google")],
       ["client_id", getOpenIdConnectClientId("Google")],
       ["client_secret", getOpenIdConnectClientSecret("Google")],
     ]),
@@ -291,7 +288,7 @@ const getGitHubUserDataFromCode = async (
       new URLSearchParams([
         ["grant_type", "authorization_code"],
         ["code", code],
-        ["redirect_uri", logInRedirectUri("GitHub")],
+        ["redirect_uri", commonUrl.logInRedirectUri("GitHub")],
         ["client_id", getOpenIdConnectClientId("GitHub")],
         ["client_secret", getOpenIdConnectClientSecret("GitHub")],
       ]),
@@ -386,26 +383,30 @@ const getAndSaveUserImage = async (imageUrl: URL): Promise<d.ImageHash> => {
   return savePngFile(
     await (await jimp.create(response.data))
       .resize(64, 64)
-      .getBufferAsync("image/ong")
+      .getBufferAsync("image/png")
   );
 };
 
-/**
- * Firebase Cloud Storage にPNGファイルを保存する
- */
-const savePngFile = (binary: Uint8Array): Promise<d.ImageHash> =>
-  saveFile(binary, "image/png");
+const fakeCloudStoragePath = "./fakeCloudStorage";
 
 /**
- * Firebase Cloud Storage にファイルを保存する
+ * Cloud Storage for Firebase に PNGファイルを保存する
  */
-const saveFile = async (
-  binary: Uint8Array,
-  mimeType: string
-): Promise<d.ImageHash> => {
-  const hash = createImageTokenFromUint8ArrayAndMimeType(binary, mimeType);
-  const file = storageDefaultBucket.file(hash);
-  await file.save(Buffer.from(binary), { contentType: mimeType });
+const savePngFile = async (binary: Uint8Array): Promise<d.ImageHash> => {
+  const pngMimeType = "image/png";
+  const hash = createImageTokenFromUint8ArrayAndMimeType(binary, pngMimeType);
+  switch (nowMode) {
+    case "Develop":
+      await fileSystem.outputFile(
+        `${fakeCloudStoragePath}/${hash}.png`,
+        Buffer.from(binary)
+      );
+    case "Release": {
+      const file = storageDefaultBucket.file(hash);
+      await file.save(Buffer.from(binary), { contentType: pngMimeType });
+    }
+  }
+
   return hash;
 };
 
@@ -463,8 +464,15 @@ const hashAccessToken = (accountToken: d.AccountToken): AccessTokenHash =>
     .update(new Uint8Array(d.AccountToken.codec.encode(accountToken)))
     .digest("hex") as AccessTokenHash;
 
-export const getReadableStream = (imageToken: d.ImageHash): stream.Readable =>
-  storageDefaultBucket.file(imageToken).createReadStream();
+/**
+ * Cloud Storage for Firebase からPNGファイルを読み込む
+ */
+export const readPngFile = (hash: string): stream.Readable => {
+  if (nowMode === "Release") {
+    return storageDefaultBucket.file(hash).createReadStream();
+  }
+  return fileSystem.createReadStream(`${fakeCloudStoragePath}/${hash}.png`);
+};
 
 const projectDataToProjectSnapshot = (document: ProjectData): d.Project => ({
   name: document.name,
