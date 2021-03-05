@@ -2,6 +2,7 @@ import {
   Message as AppMessage,
   State as AppState,
   TitleAndElement,
+  messageCreateProject,
 } from "../messageAndState";
 import { c, div } from "@narumincho/html/viewUtil";
 import { button } from "../ui/button";
@@ -44,7 +45,11 @@ export const initState: State = {
   isCreating: false,
 };
 
-export const update = (message: Message, state: State): State => {
+export const update = (
+  message: Message,
+  state: State,
+  messageHandler: (appMessage: AppMessage) => void
+): State => {
   switch (message.tag) {
     case "SetProjectName":
       if (state.isCreating) {
@@ -59,6 +64,10 @@ export const update = (message: Message, state: State): State => {
       if (normalizedProjectName === null) {
         return state;
       }
+      messageHandler({
+        tag: messageCreateProject,
+        projectName: normalizedProjectName,
+      });
       return {
         projectName: normalizedProjectName,
         isCreating: true,

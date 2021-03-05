@@ -83,21 +83,24 @@ const typePartEditorMessageToMessage = (
 });
 
 export const init = (
-  messageHandler: (message: a.Message) => void,
   projectId: d.ProjectId
-): PageState => {
-  messageHandler({
-    tag: a.messageGetProject,
-    projectId,
-  });
-  messageHandler({
-    tag: a.messageGetTypePartInProject,
-    projectId,
-  });
+): { messageList: ReadonlyArray<a.Message>; pageState: PageState } => {
   return {
-    selection: { tag: "SelectProjectDetail" },
-    codeTab: "typeScript",
-    searchText: "",
+    messageList: [
+      {
+        tag: a.messageGetProject,
+        projectId,
+      },
+      {
+        tag: a.messageGetTypePartInProject,
+        projectId,
+      },
+    ],
+    pageState: {
+      selection: { tag: "SelectProjectDetail" },
+      codeTab: "typeScript",
+      searchText: "",
+    },
   };
 };
 

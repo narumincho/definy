@@ -183,7 +183,7 @@ export const updateStateByMessage = (
       return createProject(message.projectName, messageHandler, oldState);
 
     case a.messageRespondCreatingProject:
-      return respondCreatingProject(message.response, oldState);
+      return respondCreatingProject(message.response, oldState, messageHandler);
 
     case a.messageSetTypePartList:
       return setTypePartList(message.projectId, messageHandler, oldState);
@@ -272,7 +272,8 @@ export const updateStateByMessage = (
             tag: "CreateProject",
             state: pageCreateProject.update(
               message.message,
-              oldState.pageModel.state
+              oldState.pageModel.state,
+              messageHandler
             ),
           },
         };
@@ -287,27 +288,39 @@ const locationToInitPageModel = (
 ): a.PageModel => {
   switch (location._) {
     case "Home":
-      pageHome.init(messageHandler);
+      callMessageList(pageHome.init(), messageHandler);
       return { tag: "Home" };
     case "CreateProject":
       return { tag: "CreateProject", state: pageCreateProject.initState };
     case "About":
       return { tag: "About" };
     case "Account":
-      pageUser.init(messageHandler, location.accountId);
+      callMessageList(pageUser.init(location.accountId), messageHandler);
       return { tag: "User", userId: location.accountId };
     case "Debug":
       return { tag: "Debug", tab: pageDebug.init };
     case "Setting":
       return { tag: "Setting" };
-    case "Project":
+    case "Project": {
+      const messageListAndPageModel = pageProject.init(location.projectId);
+      callMessageList(messageListAndPageModel.messageList, messageHandler);
       return {
         tag: "Project",
         projectId: location.projectId,
-        state: pageProject.init(messageHandler, location.projectId),
+        state: messageListAndPageModel.pageState,
       };
+    }
   }
   return { tag: "About" };
+};
+
+const callMessageList = (
+  messageList: ReadonlyArray<a.Message>,
+  messageHandler: (message: a.Message) => void
+): void => {
+  for (const message of messageList) {
+    messageHandler(message);
+  }
 };
 
 const pageModelToLocation = (pageModel: a.PageModel): d.Location => {
@@ -567,7 +580,8 @@ const createProject = (
 
 const respondCreatingProject = (
   response: d.Maybe<d.Maybe<d.IdAndData<d.ProjectId, d.Project>>>,
-  state: a.State
+  state: a.State,
+  messageHandler: (message: a.Message) => void
 ): a.State => {
   if (response._ === "Nothing" || response.value._ === "Nothing") {
     return {
@@ -575,6 +589,7 @@ const respondCreatingProject = (
       isCreatingProject: false,
     };
   }
+
   return {
     ...state,
     isCreatingProject: false,
@@ -585,6 +600,10 @@ const respondCreatingProject = (
         getTime: coreUtil.timeFromDate(new Date()),
         data: response.value.value.data,
       })
+    ),
+    pageModel: locationToInitPageModel(
+      messageHandler,
+      d.Location.Project(response.value.value.id)
     ),
   };
 };
