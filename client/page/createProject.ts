@@ -7,6 +7,7 @@ import { c, div } from "@narumincho/html/viewUtil";
 import { button } from "../ui/button";
 import { view as nView } from "@narumincho/html";
 import { oneLineTextEditor } from "../ui/oneLineTextInput";
+import { stringToValidProjectName } from "definy-core/main";
 import { text } from "../ui";
 
 export type State = {
@@ -53,11 +54,16 @@ export const update = (message: Message, state: State): State => {
         projectName: message.projectName,
         isCreating: false,
       };
-    case "CreateProject":
+    case "CreateProject": {
+      const normalizedProjectName = stringToValidProjectName(state.projectName);
+      if (normalizedProjectName === null) {
+        return state;
+      }
       return {
-        projectName: state.projectName,
+        projectName: normalizedProjectName,
         isCreating: true,
       };
+    }
   }
 };
 
@@ -78,15 +84,21 @@ export const viewMain = (
   appState: AppState,
   state: State
 ): nView.Element<AppMessage> => {
+  const normalizedProjectName = stringToValidProjectName(state.projectName);
   return div(
     {},
     c([
       ["title", text("プロジェクトの作成")],
       ["input", oneLineTextEditor({}, state.projectName, setProjectName)],
-      [
-        "button",
-        button({ click: createProject }, `${state.projectName}を作成する`),
-      ],
+      normalizedProjectName === null
+        ? ["projectNameError", text("不正なプロジェクト名です")]
+        : [
+            "button",
+            button(
+              { click: createProject },
+              `${normalizedProjectName}を作成する`
+            ),
+          ],
     ])
   );
 };
