@@ -14,9 +14,9 @@ import * as pageSetting from "./page/setting";
 import * as pageUser from "./page/user";
 import * as typePartEditor from "./typePartEditor";
 import { CSSObject, keyframes } from "@emotion/css";
-import { api, getImageWithCache } from "./api";
 import { mapMapAt, mapSet } from "./util";
 import { view, viewUtil } from "@narumincho/html";
+import { api } from "./api";
 import { headerView } from "./header";
 
 export const initState = (
@@ -263,6 +263,21 @@ export const updateStateByMessage = (
         ...oldState,
         typeSearchText: message.text,
       };
+
+    case "CreateProjectPageMessage":
+      if (oldState.pageModel.tag === "CreateProject") {
+        return {
+          ...oldState,
+          pageModel: {
+            tag: "CreateProject",
+            state: pageCreateProject.update(
+              message.message,
+              oldState.pageModel.state
+            ),
+          },
+        };
+      }
+      return oldState;
   }
 };
 
@@ -275,7 +290,7 @@ const locationToInitPageModel = (
       pageHome.init(messageHandler);
       return { tag: "Home" };
     case "CreateProject":
-      return { tag: "CreateProject" };
+      return { tag: "CreateProject", state: pageCreateProject.initState };
     case "About":
       return { tag: "About" };
     case "Account":
@@ -1074,7 +1089,7 @@ const main = (state: a.State): a.TitleAndElement<a.Message> => {
     case "Home":
       return pageHome.view(state);
     case "CreateProject":
-      return pageCreateProject.view();
+      return pageCreateProject.view(state, state.pageModel.state);
     case "About":
       return pageAbout.view(state);
     case "User":

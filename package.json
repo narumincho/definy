@@ -142,6 +142,9 @@
       "no-underscore-dangle": [
         "off"
       ],
+      "prefer-destructuring": [
+        "off"
+      ],
       "@typescript-eslint/restrict-plus-operands": [
         "error",
         {
@@ -156,7 +159,7 @@
       ],
       "@typescript-eslint/consistent-type-definitions": [
         "error",
-        "interface"
+        "type"
       ],
       "@typescript-eslint/no-dynamic-delete": [
         "error"

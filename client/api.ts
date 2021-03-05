@@ -1,6 +1,6 @@
 import * as apiCodec from "../common/apiCodec";
-import * as d from "../data";
 import * as commonUrl from "../common/url";
+import * as d from "../data";
 
 type ApiCodecType = typeof apiCodec;
 

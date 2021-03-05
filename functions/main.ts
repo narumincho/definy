@@ -1,10 +1,10 @@
 import * as apiCodec from "../common/apiCodec";
+import * as commonUrl from "../common/url";
 import * as d from "../data";
 import * as functions from "firebase-functions";
 import * as genHtml from "./html";
 import * as lib from "./lib";
 import * as nHtml from "@narumincho/html";
-import * as commonUrl from "../common/url";
 
 console.log("versions", JSON.stringify(process.versions));
 /*
@@ -145,7 +145,7 @@ export const logInCallback = functions.https.onRequest((request, response) => {
 });
 
 export const pngFile = functions.https.onRequest(
-  async (request, response): Promise<void> => {
+  (request, response): Promise<void> => {
     const fileHash = request.path.split("/")[2];
     if (fileHash === undefined) {
       response.status(400).send("getFile API need file hash");

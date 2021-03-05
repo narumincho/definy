@@ -14,11 +14,11 @@ import { oneLineTextEditor } from "../ui/oneLineTextInput";
 import { tagEditor } from "../tagEditor";
 import { userCard } from "../ui/user";
 
-export interface PageState {
+export type PageState = {
   readonly selection: Selection;
   readonly codeTab: CodeTab;
   readonly searchText: string;
-}
+};
 
 type CodeTab = "javaScript" | "typeScript" | "elm";
 
@@ -463,7 +463,7 @@ const projectDetailView = (
               "icon",
               image({
                 imageToken: project.iconHash,
-                state: state,
+                state,
                 alternativeText: project.name + "のアイコン",
                 width: 48,
                 height: 48,
@@ -478,7 +478,7 @@ const projectDetailView = (
         "image",
         image({
           imageToken: project.imageHash,
-          state: state,
+          state,
           alternativeText: "image",
           width: 1024 / 2,
           height: 633 / 2,
