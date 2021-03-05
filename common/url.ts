@@ -96,8 +96,8 @@ const locationFromUrl = (pathName: string): d.Location => {
     return d.Location.Account(userResult.groups.id as d.AccountId);
   }
   const typePartResult = pathName.match(/^\/type-part\/(?<id>[0-9a-f]{32})$/u);
-  if (userResult !== null && userResult.groups !== undefined) {
-    return d.Location.TypePart(userResult.groups.id as d.TypePartId);
+  if (typePartResult !== null && typePartResult.groups !== undefined) {
+    return d.Location.TypePart(typePartResult.groups.id as d.TypePartId);
   }
   return d.Location.Home;
 };
