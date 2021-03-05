@@ -1,4 +1,5 @@
 import * as d from "../data";
+import type * as pageCreateProject from "./page/createProject";
 import * as pageDebug from "./page/debug";
 import type * as pageProject from "./page/project";
 import { Element } from "@narumincho/html/view";
@@ -20,7 +21,7 @@ export type RequestTypePartListInProjectState =
   | { _: "WaitRequesting"; projectId: d.ProjectId }
   | { _: "Requesting"; projectId: d.ProjectId };
 
-export interface State {
+export type State = {
   /** ホームに表示される. Top50のプロジェクトのID */
   readonly top50ProjectIdState: HomeProjectState;
 
@@ -56,7 +57,7 @@ export interface State {
 
   /** 型を検索するためのキーワード */
   readonly typeSearchText: string;
-}
+};
 
 export type OutputCode =
   | {
@@ -74,7 +75,7 @@ export type OutputCode =
     };
 export type PageModel =
   | { readonly tag: "Home" }
-  | { readonly tag: "CreateProject" }
+  | { readonly tag: "CreateProject"; state: pageCreateProject.State }
   | {
       readonly tag: "About";
     }
@@ -233,6 +234,10 @@ export type Message =
   | {
       readonly tag: "SetTypeSearchText";
       readonly text: string;
+    }
+  | {
+      readonly tag: "CreateProjectPageMessage";
+      readonly message: pageCreateProject.Message;
     };
 
 export const messageNoOp = Symbol("Message-NoOp");
@@ -275,9 +280,9 @@ export const messageRespondTypePartList = Symbol(
 export const messageSelectDebugPageTab = Symbol("Message-SelectDebugPageTab");
 export const messageTypePartMessage = Symbol("Message-TypePartMessage");
 
-export interface TitleAndElement<M = Message> {
+export type TitleAndElement<M = Message> = {
   readonly title: string;
   readonly element: Element<M>;
-}
+};
 
 export type TypePartBodyTag = "Product" | "Sum" | "Kernel";

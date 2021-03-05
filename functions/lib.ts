@@ -1,8 +1,10 @@
 import * as admin from "firebase-admin";
 import * as apiCodec from "../common/apiCodec";
 import * as common from "definy-core";
+import * as commonUrl from "../common/url";
 import * as crypto from "crypto";
 import * as d from "../data";
+import * as fileSystem from "fs-extra";
 import * as functions from "firebase-functions";
 import * as image from "./image";
 import * as jimp from "jimp";
@@ -12,8 +14,6 @@ import type * as typedFirestore from "typed-admin-firestore";
 import * as util from "definy-core/util";
 import axios, { AxiosResponse } from "axios";
 import { nowMode } from "../out";
-import * as fileSystem from "fs-extra";
-import * as commonUrl from "../common/url";
 
 const app = admin.initializeApp();
 
@@ -401,13 +401,13 @@ const savePngFile = async (binary: Uint8Array): Promise<d.ImageHash> => {
         `${fakeCloudStoragePath}/${hash}.png`,
         Buffer.from(binary)
       );
+      return hash;
     case "Release": {
       const file = storageDefaultBucket.file(hash);
       await file.save(Buffer.from(binary), { contentType: pngMimeType });
+      return hash;
     }
   }
-
-  return hash;
 };
 
 export const createImageTokenFromUint8ArrayAndMimeType = (

@@ -11,10 +11,12 @@ import { icon } from "../ui/icon";
 import { link } from "../ui/link";
 import { projectCard } from "../ui/project";
 
-export const init = (messageHandler: (message: Message) => void): void => {
-  messageHandler({
-    tag: messageGetTop50Project,
-  });
+export const init = (): ReadonlyArray<Message> => {
+  return [
+    {
+      tag: messageGetTop50Project,
+    },
+  ];
 };
 
 export const view = (appInterface: State): TitleAndElement => {

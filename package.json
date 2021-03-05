@@ -17,17 +17,17 @@
   },
   "devDependencies": {
     "@narumincho/html": "0.2.6",
-    "@types/fs-extra": "9.0.7",
+    "@types/fs-extra": "9.0.8",
     "@types/jsonwebtoken": "8.5.0",
     "@types/node": "14.14.31",
-    "@types/prettier": "2.2.1",
-    "@typescript-eslint/eslint-plugin": "4.15.2",
-    "@typescript-eslint/parser": "4.15.2",
+    "@types/prettier": "2.2.2",
+    "@typescript-eslint/eslint-plugin": "4.16.1",
+    "@typescript-eslint/parser": "4.16.1",
     "axios": "0.21.1",
     "definy-core": "0.3.0",
     "dependency-cruiser": "9.23.2",
-    "esbuild": "0.8.52",
-    "eslint": "7.20.0",
+    "esbuild": "0.8.55",
+    "eslint": "7.21.0",
     "eslint-config-prettier": "8.1.0",
     "eslint-plugin-prettier": "3.3.1",
     "firebase-admin": "9.5.0",
@@ -39,7 +39,7 @@
     "prettier": "2.2.1",
     "ts-node": "9.1.1",
     "typed-admin-firestore": "1.2.0",
-    "typescript": "4.2.2"
+    "typescript": "4.2.3"
   },
   "eslintConfig": {
     "extends": [
@@ -142,6 +142,9 @@
       "no-underscore-dangle": [
         "off"
       ],
+      "prefer-destructuring": [
+        "off"
+      ],
       "@typescript-eslint/restrict-plus-operands": [
         "error",
         {
@@ -156,7 +159,7 @@
       ],
       "@typescript-eslint/consistent-type-definitions": [
         "error",
-        "interface"
+        "type"
       ],
       "@typescript-eslint/no-dynamic-delete": [
         "error"

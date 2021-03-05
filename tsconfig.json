@@ -8,7 +8,6 @@
     "module": "CommonJS",
     "moduleResolution": "Node",
     "isolatedModules": true,
-    "skipLibCheck": true,
-    "noErrorTruncation": true
+    "skipLibCheck": true
   }
 }

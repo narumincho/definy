@@ -8,14 +8,13 @@ import {
 import { c, div } from "@narumincho/html/viewUtil";
 import { image } from "../ui/image";
 
-export const init = (
-  messageHandler: (message: Message) => void,
-  userId: d.AccountId
-): void => {
-  messageHandler({
-    tag: messageGetUserTag,
-    userId,
-  });
+export const init = (userId: d.AccountId): ReadonlyArray<Message> => {
+  return [
+    {
+      tag: messageGetUserTag,
+      userId,
+    },
+  ];
 };
 
 export const view = (
