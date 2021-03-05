@@ -144,15 +144,13 @@ export const logInCallback = functions.https.onRequest((request, response) => {
   }
 });
 
-export const pngFile = functions.https.onRequest(
-  (request, response): Promise<void> => {
-    const fileHash = request.path.split("/")[2];
-    if (fileHash === undefined) {
-      response.status(400).send("getFile API need file hash");
-      return;
-    }
-    const readableStream = lib.readPngFile(fileHash);
-    response.contentType("image/png");
-    readableStream.pipe(response);
+export const pngFile = functions.https.onRequest((request, response): void => {
+  const fileHash = request.path.split("/")[2];
+  if (fileHash === undefined) {
+    response.status(400).send("getFile API need file hash");
+    return;
   }
-);
+  const readableStream = lib.readPngFile(fileHash);
+  response.contentType("image/png");
+  readableStream.pipe(response);
+});

@@ -2,20 +2,21 @@ import * as commonUrl from "./common/url";
 import * as data from "./data";
 import { strict as strictAssert } from "assert";
 
-commonUrl.urlDataAndAccountTokenFromUrl(new URL("https://definy.app/")).urlData,
+strictAssert.deepEqual(
+  commonUrl.urlDataAndAccountTokenFromUrl(new URL("https://definy.app/"))
+    .urlData,
   {
-    clientMode: "Release",
     location: data.Location.Home,
     language: "English",
   },
-  "https://definy.app/ is Home in English";
+  "https://definy.app/ is Home in English"
+);
 
 strictAssert.deepEqual(
   commonUrl.urlDataAndAccountTokenFromUrl(
     new URL("https://definy.app/project/580d8d6a54cf43e4452a0bba6694a4ed?hl=ja")
   ).urlData,
   {
-    clientMode: "Release",
     location: data.Location.Project(
       "580d8d6a54cf43e4452a0bba6694a4ed" as data.ProjectId
     ),
@@ -29,7 +30,6 @@ strictAssert.deepEqual(
   strictAssert.deepEqual(
     commonUrl.urlDataAndAccountTokenFromUrl(url).urlData,
     {
-      clientMode: "DebugMode",
       location: data.Location.Account(
         "580d8d6a54cf43e4452a0bba6694a4ed" as data.AccountId
       ),
