@@ -291,4 +291,5 @@ export const KernelEditorList = [
   "Id",
   "Token",
   "List",
+  "Dict",
 ] as const;

@@ -423,6 +423,12 @@ export type Parameter = {
 };
 
 /**
+ * 辞書型. TypeScriptでは ReadonlyMap として扱う
+ * @typePartId 5516d41d180b98b7f5a8950d4f43dfd6
+ */
+export type Dict<key extends unknown, value extends unknown> = string;
+
+/**
  * 取得日時と任意のデータ
  * @typePartId 55d4de38cfb884b9008abd7f7f63325e
  */
@@ -564,7 +570,8 @@ export type TypePartBodyKernel =
   | "Binary"
   | "Id"
   | "Token"
-  | "List";
+  | "List"
+  | "Dict";
 
 /**
  * 文字列. JavaScriptのstringで扱う. バイナリ形式はUTF-8. 不正な文字が入っている可能性がある
@@ -3840,6 +3847,41 @@ export const Parameter: {
 };
 
 /**
+ * 辞書型. TypeScriptでは ReadonlyMap として扱う
+ * @typePartId 5516d41d180b98b7f5a8950d4f43dfd6
+ */
+export const Dict: {
+  readonly codec: <key extends unknown, value extends unknown>(
+    a: Codec<key>,
+    b: Codec<value>
+  ) => Codec<Dict<key, value>>;
+} = {
+  codec: <key extends unknown, value extends unknown>(
+    keyCodec: Codec<key>,
+    valueCodec: Codec<value>
+  ): Codec<Dict<key, value>> => ({
+    encode: (value: Dict<key, value>): ReadonlyArray<number> => {
+      const result: ReadonlyArray<number> = [
+        ...new TextEncoder().encode(value),
+      ];
+      return Int32.codec.encode(result.length).concat(result);
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Dict<key, value>; readonly nextIndex: number } => {
+      const length: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      const nextIndex: number = length.nextIndex + length.result;
+      const textBinary: Uint8Array = binary.slice(length.nextIndex, nextIndex);
+      return { result: new TextDecoder().decode(textBinary), nextIndex };
+    },
+  }),
+};
+
+/**
  * 取得日時と任意のデータ
  * @typePartId 55d4de38cfb884b9008abd7f7f63325e
  */
@@ -4228,6 +4270,10 @@ export const TypePartBodyKernel: {
    * 配列型. TypeScriptではReadonlyArrayとして扱う
    */
   readonly List: TypePartBodyKernel;
+  /**
+   * 辞書型. TypeScriptでは ReadonlyMapとして扱う
+   */
+  readonly Dict: TypePartBodyKernel;
   readonly codec: Codec<TypePartBodyKernel>;
 } = {
   Function: "Function",
@@ -4237,6 +4283,7 @@ export const TypePartBodyKernel: {
   Id: "Id",
   Token: "Token",
   List: "List",
+  Dict: "Dict",
   codec: {
     encode: (value: TypePartBodyKernel): ReadonlyArray<number> => {
       switch (value) {
@@ -4260,6 +4307,9 @@ export const TypePartBodyKernel: {
         }
         case "List": {
           return [6];
+        }
+        case "Dict": {
+          return [7];
         }
       }
     },
@@ -4310,6 +4360,12 @@ export const TypePartBodyKernel: {
       if (patternIndex.result === 6) {
         return {
           result: TypePartBodyKernel.List,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 7) {
+        return {
+          result: TypePartBodyKernel.Dict,
           nextIndex: patternIndex.nextIndex,
         };
       }
