@@ -1,8 +1,8 @@
 import * as app from "./app";
 import * as messageAndState from "./messageAndState";
 import { diff, patch } from "@narumincho/html";
-import { useRenderState } from "@narumincho/html/renderState";
 import { View } from "@narumincho/html/view";
+import { useRenderState } from "@narumincho/html/renderState";
 
 const pushMessageList = (message: messageAndState.Message): void => {
   messageList.push(message);
