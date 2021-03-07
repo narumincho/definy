@@ -24,7 +24,7 @@
     "@typescript-eslint/eslint-plugin": "4.16.1",
     "@typescript-eslint/parser": "4.16.1",
     "axios": "0.21.1",
-    "definy-core": "0.3.2",
+    "definy-core": "0.3.3",
     "dependency-cruiser": "9.23.2",
     "esbuild": "0.8.56",
     "eslint": "7.21.0",
