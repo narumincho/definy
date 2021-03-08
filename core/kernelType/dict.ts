@@ -132,7 +132,7 @@ export const decodeDefinitionStatementList = (
           name: valueResultName,
           type: c.decodeReturnType(valueTypeVar),
           expr: util.callDecode(
-            ts.Expr.Variable(c.codecParameterName(keyTypeParameterName)),
+            ts.Expr.Variable(c.codecParameterName(valueTypeParameterName)),
             c.getNextIndex(keyResultVar),
             parameterBinary
           ),
