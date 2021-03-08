@@ -1,7 +1,7 @@
 import * as a from "./messageAndState";
 import * as commonUrl from "../common/url";
-import * as core from "definy-core/main";
-import * as coreUtil from "definy-core/util";
+import * as core from "../core/main";
+import * as coreUtil from "../core/util";
 import * as d from "../data";
 import * as indexedDB from "./indexedDB";
 import * as jsTsCodeGenerator from "js-ts-code-generator";

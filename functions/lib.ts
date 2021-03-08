@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import * as apiCodec from "../common/apiCodec";
-import * as common from "definy-core";
 import * as commonUrl from "../common/url";
+import * as core from "../core/main";
 import * as crypto from "crypto";
 import * as d from "../data";
 import * as fileSystem from "fs-extra";
@@ -11,7 +11,7 @@ import * as jimp from "jimp";
 import * as jsonWebToken from "jsonwebtoken";
 import * as stream from "stream";
 import type * as typedFirestore from "typed-admin-firestore";
-import * as util from "definy-core/util";
+import * as util from "../core/util";
 import axios, { AxiosResponse } from "axios";
 import { nowMode } from "../out";
 
@@ -616,7 +616,7 @@ export const apiFunc: {
     switch (userDataMaybe._) {
       case "Just": {
         const userData = userDataMaybe.value;
-        const normalizedProjectName = common.stringToValidProjectName(
+        const normalizedProjectName = core.stringToValidProjectName(
           parameter.projectName
         );
         const projectNameWithDefault =
