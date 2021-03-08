@@ -1,6 +1,6 @@
 import * as binary from "./kernelType/binary";
 import * as codec from "./kernelType/codec";
-import * as data from "./data";
+import * as data from "../data";
 import * as dict from "./kernelType/dict";
 import * as hexString from "./kernelType/hexString";
 import * as identifer from "js-ts-code-generator/identifer";

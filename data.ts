@@ -426,7 +426,10 @@ export type Parameter = {
  * 辞書型. TypeScriptでは ReadonlyMap として扱う
  * @typePartId 5516d41d180b98b7f5a8950d4f43dfd6
  */
-export type Dict<key extends unknown, value extends unknown> = string;
+export type Dict<key extends unknown, value extends unknown> = ReadonlyMap<
+  key,
+  value
+>;
 
 /**
  * 取得日時と任意のデータ
@@ -1670,12 +1673,20 @@ export type TsMember =
  * @typePartId 0bc2e5ab2fd2caeb6e6c331573ae735f
  */
 export const ElmVariant: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ElmVariant>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ElmVariant) => ElmVariant;
 } = {
+  typePartId: "0bc2e5ab2fd2caeb6e6c331573ae735f" as TypePartId,
   helper: (elmVariant: ElmVariant): ElmVariant => elmVariant,
   codec: {
     encode: (value: ElmVariant): ReadonlyArray<number> =>
@@ -1711,6 +1722,14 @@ export const ElmVariant: {
  */
 export const ExportDefinition: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<ExportDefinition>;
+  /**
    * TypeAlias
    */
   readonly TypeAlias: (a: TypeAlias) => ExportDefinition;
@@ -1722,7 +1741,6 @@ export const ExportDefinition: {
    * Variable
    */
   readonly Variable: (a: Variable) => ExportDefinition;
-  readonly codec: Codec<ExportDefinition>;
 } = {
   TypeAlias: (typeAlias: TypeAlias): ExportDefinition => ({
     _: "TypeAlias",
@@ -1736,6 +1754,7 @@ export const ExportDefinition: {
     _: "Variable",
     variable,
   }),
+  typePartId: "0c8b854b812290a054877ca5de6c4daf" as TypePartId,
   codec: {
     encode: (value: ExportDefinition): ReadonlyArray<number> => {
       switch (value._) {
@@ -1798,12 +1817,20 @@ export const ExportDefinition: {
  * @typePartId 0cb0a34b3953e57b30f4a5c8f9d305da
  */
 export const UnaryOperatorExpr: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<UnaryOperatorExpr>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: UnaryOperatorExpr) => UnaryOperatorExpr;
 } = {
+  typePartId: "0cb0a34b3953e57b30f4a5c8f9d305da" as TypePartId,
   helper: (unaryOperatorExpr: UnaryOperatorExpr): UnaryOperatorExpr =>
     unaryOperatorExpr,
   codec: {
@@ -1838,7 +1865,17 @@ export const UnaryOperatorExpr: {
  * プロジェクトの識別子
  * @typePartId 0cd913118a2ad1469d656146a08c5f76
  */
-export const ProjectId: { readonly codec: Codec<ProjectId> } = {
+export const ProjectId: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<ProjectId>;
+} = {
+  typePartId: "0cd913118a2ad1469d656146a08c5f76" as TypePartId,
   codec: {
     encode: (value: ProjectId): ReadonlyArray<number> => encodeId(value),
     decode: (
@@ -1860,6 +1897,14 @@ export const ProjectId: { readonly codec: Codec<ProjectId> } = {
  */
 export const Language: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<Language>;
+  /**
    * 日本語
    */
   readonly Japanese: Language;
@@ -1871,11 +1916,11 @@ export const Language: {
    * エスペラント語
    */
   readonly Esperanto: Language;
-  readonly codec: Codec<Language>;
 } = {
   Japanese: "Japanese",
   English: "English",
   Esperanto: "Esperanto",
+  typePartId: "0d9510723f4d34605e41f3a47a8b0ea7" as TypePartId,
   codec: {
     encode: (value: Language): ReadonlyArray<number> => {
       switch (value) {
@@ -1921,15 +1966,23 @@ export const Language: {
  */
 export const ElmTypeName: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<ElmTypeName>;
+  /**
    * **直接 ElmTypeName.ElmTypeName("Int") と指定してはいけない!! Elmの識別子として使える文字としてチェックできないため**
    */
   readonly ElmTypeName: (a: String) => ElmTypeName;
-  readonly codec: Codec<ElmTypeName>;
 } = {
   ElmTypeName: (string_: String): ElmTypeName => ({
     _: "ElmTypeName",
     string: string_,
   }),
+  typePartId: "13e52324ba81c7ffe655455ad739ea73" as TypePartId,
   codec: {
     encode: (value: ElmTypeName): ReadonlyArray<number> => {
       switch (value._) {
@@ -1965,7 +2018,17 @@ export const ElmTypeName: {
  * -2 147 483 648 ～ 2 147 483 647. 32bit 符号付き整数. JavaScriptのnumberとして扱える. numberの32bit符号あり整数をSigned Leb128のバイナリに変換する
  * @typePartId 16c2d8602e3e5e2d38b9215bd0c44d8d
  */
-export const Int32: { readonly codec: Codec<Int32> } = {
+export const Int32: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<Int32>;
+} = {
+  typePartId: "16c2d8602e3e5e2d38b9215bd0c44d8d" as TypePartId,
   codec: {
     encode: (value: Int32): ReadonlyArray<number> => {
       let rest: number = value | 0;
@@ -2016,6 +2079,14 @@ export const Int32: { readonly codec: Codec<Int32> } = {
  */
 export const ElmType: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<ElmType>;
+  /**
    * インポートした型
    */
   readonly ImportedType: (a: ElmImportedType) => ElmType;
@@ -2051,7 +2122,6 @@ export const ElmType: {
    * モジュール内にある型
    */
   readonly LocalType: (a: ElmLocalType) => ElmType;
-  readonly codec: Codec<ElmType>;
 } = {
   ImportedType: (elmImportedType: ElmImportedType): ElmType => ({
     _: "ImportedType",
@@ -2077,6 +2147,7 @@ export const ElmType: {
     _: "LocalType",
     elmLocalType,
   }),
+  typePartId: "173f661790b059baf212043f816ba1a9" as TypePartId,
   codec: {
     encode: (value: ElmType): ReadonlyArray<number> => {
       switch (value._) {
@@ -2216,6 +2287,14 @@ export const ElmType: {
  */
 export const TsType: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<TsType>;
+  /**
    * プリミティブの型のnumber
    */
   readonly Number: TsType;
@@ -2279,7 +2358,6 @@ export const TsType: {
    * 文字列リテラル型
    */
   readonly StringLiteral: (a: String) => TsType;
-  readonly codec: Codec<TsType>;
 } = {
   Number: { _: "Number" },
   String: { _: "String" },
@@ -2320,6 +2398,7 @@ export const TsType: {
     _: "StringLiteral",
     string: string_,
   }),
+  typePartId: "1835ebdc909b0fa93d11ae0ed93d0606" as TypePartId,
   codec: {
     encode: (value: TsType): ReadonlyArray<number> => {
       switch (value._) {
@@ -2515,6 +2594,16 @@ export const TsType: {
  */
 export const ResourceState: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: <data extends unknown>(
+    a: Codec<data>
+  ) => Codec<ResourceState<data>>;
+  /**
    * 読み込み済み
    */
   readonly Loaded: <data extends unknown>(
@@ -2532,9 +2621,6 @@ export const ResourceState: {
    * サーバに問い合わせ中
    */
   readonly Requesting: <data extends unknown>() => ResourceState<data>;
-  readonly codec: <data extends unknown>(
-    a: Codec<data>
-  ) => Codec<ResourceState<data>>;
 } = {
   Loaded: <data extends unknown>(
     dataWithTime: WithTime<data>
@@ -2550,6 +2636,7 @@ export const ResourceState: {
   Requesting: <data extends unknown>(): ResourceState<data> => ({
     _: "Requesting",
   }),
+  typePartId: "18cbd2fa4bd72a0eacf3f0f44aeb6feb" as TypePartId,
   codec: <data extends unknown>(
     dataCodec: Codec<data>
   ): Codec<ResourceState<data>> => ({
@@ -2626,12 +2713,20 @@ export const ResourceState: {
  */
 export const Unit: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<Unit>;
+  /**
    * Unit型にある.唯一の値
    */
   readonly UnitValue: Unit;
-  readonly codec: Codec<Unit>;
 } = {
   UnitValue: undefined,
+  typePartId: "217263d8cdca613c2d1ba77e19d4cbb0" as TypePartId,
   codec: {
     encode: (value: Unit): ReadonlyArray<number> => [],
     decode: (
@@ -2650,6 +2745,14 @@ export const Unit: {
  */
 export const TypeAttribute: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<TypeAttribute>;
+  /**
    * JavaScript, TypeScript で boolean として扱うように指示する. 定義が2つのパターンで両方パラメーターなし false, trueの順である必要がある
    */
   readonly AsBoolean: TypeAttribute;
@@ -2657,10 +2760,10 @@ export const TypeAttribute: {
    * cription:             "JavaScript, TypeScript で undefined として扱うように指示する. 定義が1つのパターンでパラメーターなしである必要がある
    */
   readonly AsUndefined: TypeAttribute;
-  readonly codec: Codec<TypeAttribute>;
 } = {
   AsBoolean: "AsBoolean",
   AsUndefined: "AsUndefined",
+  typePartId: "22d8f2d392c573a7aa54c39fa4c98ad0" as TypePartId,
   codec: {
     encode: (value: TypeAttribute): ReadonlyArray<number> => {
       switch (value) {
@@ -2701,12 +2804,20 @@ export const TypeAttribute: {
  * @typePartId 2392b884a9c2238a65ecd272bd23a9cd
  */
 export const ElmField: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ElmField>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ElmField) => ElmField;
 } = {
+  typePartId: "2392b884a9c2238a65ecd272bd23a9cd" as TypePartId,
   helper: (elmField: ElmField): ElmField => elmField,
   codec: {
     encode: (value: ElmField): ReadonlyArray<number> =>
@@ -2741,12 +2852,20 @@ export const ElmField: {
  * @typePartId 23fa0e8b66c9d093d4c18579ffefaaa3
  */
 export const TsTypeWithTypeParameter: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<TsTypeWithTypeParameter>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: TsTypeWithTypeParameter) => TsTypeWithTypeParameter;
 } = {
+  typePartId: "23fa0e8b66c9d093d4c18579ffefaaa3" as TypePartId,
   helper: (
     tsTypeWithTypeParameter: TsTypeWithTypeParameter
   ): TsTypeWithTypeParameter => tsTypeWithTypeParameter,
@@ -2787,6 +2906,14 @@ export const TsTypeWithTypeParameter: {
  */
 export const EvaluateExprError: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<EvaluateExprError>;
+  /**
    * 式を評価するには,このパーツの定義が必要だと言っている
    */
   readonly NeedPartDefinition: (a: PartId) => EvaluateExprError;
@@ -2802,7 +2929,6 @@ export const EvaluateExprError: {
    * まだサポートしていないものが含まれている
    */
   readonly NotSupported: EvaluateExprError;
-  readonly codec: Codec<EvaluateExprError>;
 } = {
   NeedPartDefinition: (partId: PartId): EvaluateExprError => ({
     _: "NeedPartDefinition",
@@ -2814,6 +2940,7 @@ export const EvaluateExprError: {
     string: string_,
   }),
   NotSupported: { _: "NotSupported" },
+  typePartId: "25d0af5522da614f7617016ca7868edd" as TypePartId,
   codec: {
     encode: (value: EvaluateExprError): ReadonlyArray<number> => {
       switch (value._) {
@@ -2882,15 +3009,23 @@ export const EvaluateExprError: {
  */
 export const TsIdentifer: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<TsIdentifer>;
+  /**
    * **直接 Identifer.Identifer("name") と指定してはいけない!! TypeScriptの識別子として使える文字としてチェックできないため**
    */
   readonly Identifer: (a: String) => TsIdentifer;
-  readonly codec: Codec<TsIdentifer>;
 } = {
   Identifer: (string_: String): TsIdentifer => ({
     _: "Identifer",
     string: string_,
   }),
+  typePartId: "2a75ad7c7ccc58ba56f6c8545c8150d1" as TypePartId,
   codec: {
     encode: (value: TsIdentifer): ReadonlyArray<number> => {
       switch (value._) {
@@ -2927,12 +3062,20 @@ export const TsIdentifer: {
  * @typePartId 2b42264a878355f0257141fa013fed5c
  */
 export const ElmLocalType: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ElmLocalType>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ElmLocalType) => ElmLocalType;
 } = {
+  typePartId: "2b42264a878355f0257141fa013fed5c" as TypePartId,
   helper: (elmLocalType: ElmLocalType): ElmLocalType => elmLocalType,
   codec: {
     encode: (value: ElmLocalType): ReadonlyArray<number> =>
@@ -2970,12 +3113,20 @@ export const ElmLocalType: {
  * @typePartId 2f9784d2c41d0974487a1ca2b0a51ec5
  */
 export const FunctionCall: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<FunctionCall>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: FunctionCall) => FunctionCall;
 } = {
+  typePartId: "2f9784d2c41d0974487a1ca2b0a51ec5" as TypePartId,
   helper: (functionCall: FunctionCall): FunctionCall => functionCall,
   codec: {
     encode: (value: FunctionCall): ReadonlyArray<number> =>
@@ -3011,6 +3162,16 @@ export const FunctionCall: {
  */
 export const Maybe: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: <value extends unknown>(
+    a: Codec<value>
+  ) => Codec<Maybe<value>>;
+  /**
    * 値があるということ
    */
   readonly Just: <value extends unknown>(a: value) => Maybe<value>;
@@ -3018,15 +3179,13 @@ export const Maybe: {
    * 値がないということ
    */
   readonly Nothing: <value extends unknown>() => Maybe<value>;
-  readonly codec: <value extends unknown>(
-    a: Codec<value>
-  ) => Codec<Maybe<value>>;
 } = {
   Just: <value extends unknown>(value: value): Maybe<value> => ({
     _: "Just",
     value,
   }),
   Nothing: <value extends unknown>(): Maybe<value> => ({ _: "Nothing" }),
+  typePartId: "304f21ae8208a21d08731aa6d183742d" as TypePartId,
   codec: <value extends unknown>(
     valueCodec: Codec<value>
   ): Codec<Maybe<value>> => ({
@@ -3071,12 +3230,20 @@ export const Maybe: {
  * @typePartId 35f7e442c0838f9982e6b49da398d97f
  */
 export const ArrayItem: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ArrayItem>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ArrayItem) => ArrayItem;
 } = {
+  typePartId: "35f7e442c0838f9982e6b49da398d97f" as TypePartId,
   helper: (arrayItem: ArrayItem): ArrayItem => arrayItem,
   codec: {
     encode: (value: ArrayItem): ReadonlyArray<number> =>
@@ -3108,7 +3275,17 @@ export const ArrayItem: {
  * バイナリ. JavaScriptのUint8Arrayで扱える. 最初にLED128でバイト数, その次にバイナリそのまま
  * @typePartId 3e2f740c88923b0393a1ef93d92f157b
  */
-export const Binary: { readonly codec: Codec<Binary> } = {
+export const Binary: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<Binary>;
+} = {
+  typePartId: "3e2f740c88923b0393a1ef93d92f157b" as TypePartId,
   codec: {
     encode: (value: Binary): ReadonlyArray<number> =>
       Int32.codec.encode(value.length).concat([...value]),
@@ -3131,12 +3308,20 @@ export const Binary: { readonly codec: Codec<Binary> } = {
  * @typePartId 42e5ab4936af4abf8673472ce96fd794
  */
 export const ElmTuple3: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ElmTuple3>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ElmTuple3) => ElmTuple3;
 } = {
+  typePartId: "42e5ab4936af4abf8673472ce96fd794" as TypePartId,
   helper: (elmTuple3: ElmTuple3): ElmTuple3 => elmTuple3,
   codec: {
     encode: (value: ElmTuple3): ReadonlyArray<number> =>
@@ -3177,12 +3362,20 @@ export const ElmTuple3: {
  * @typePartId 43aa21ed2225cacc4489c30113e87787
  */
 export const ElmImportedType: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ElmImportedType>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ElmImportedType) => ElmImportedType;
 } = {
+  typePartId: "43aa21ed2225cacc4489c30113e87787" as TypePartId,
   helper: (elmImportedType: ElmImportedType): ElmImportedType =>
     elmImportedType,
   codec: {
@@ -3227,6 +3420,14 @@ export const ElmImportedType: {
  * @typePartId 4953938f040aefdaa5f2601e2a78d43b
  */
 export const BinaryOperator: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<BinaryOperator>;
   /**
    * べき乗 `a ** b`
    */
@@ -3299,7 +3500,6 @@ export const BinaryOperator: {
    * 論理OR `a || b`
    */
   readonly LogicalOr: BinaryOperator;
-  readonly codec: Codec<BinaryOperator>;
 } = {
   Exponentiation: "Exponentiation",
   Multiplication: "Multiplication",
@@ -3319,6 +3519,7 @@ export const BinaryOperator: {
   BitwiseOr: "BitwiseOr",
   LogicalAnd: "LogicalAnd",
   LogicalOr: "LogicalOr",
+  typePartId: "4953938f040aefdaa5f2601e2a78d43b" as TypePartId,
   codec: {
     encode: (value: BinaryOperator): ReadonlyArray<number> => {
       switch (value) {
@@ -3504,12 +3705,20 @@ export const BinaryOperator: {
  * @typePartId 49f05a756bd75da670fa5b64ed8bf1ae
  */
 export const TypeAssertion: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<TypeAssertion>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: TypeAssertion) => TypeAssertion;
 } = {
+  typePartId: "49f05a756bd75da670fa5b64ed8bf1ae" as TypePartId,
   helper: (typeAssertion: TypeAssertion): TypeAssertion => typeAssertion,
   codec: {
     encode: (value: TypeAssertion): ReadonlyArray<number> =>
@@ -3543,6 +3752,14 @@ export const TypeAssertion: {
  */
 export const UnaryOperator: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<UnaryOperator>;
+  /**
    * 単項マイナス演算子 `-a`
    */
   readonly Minus: UnaryOperator;
@@ -3554,11 +3771,11 @@ export const UnaryOperator: {
    * 論理否定 `!a`
    */
   readonly LogicalNot: UnaryOperator;
-  readonly codec: Codec<UnaryOperator>;
 } = {
   Minus: "Minus",
   BitwiseNot: "BitwiseNot",
   LogicalNot: "LogicalNot",
+  typePartId: "4b4c3f8f34d1c05bb9d7d1b930bc9c9a" as TypePartId,
   codec: {
     encode: (value: UnaryOperator): ReadonlyArray<number> => {
       switch (value) {
@@ -3610,6 +3827,14 @@ export const UnaryOperator: {
  */
 export const TypePartBody: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<TypePartBody>;
+  /**
    * 直積型
    */
   readonly Product: (a: List<Member>) => TypePartBody;
@@ -3621,7 +3846,6 @@ export const TypePartBody: {
    * Definyだけでは表現できないデータ型
    */
   readonly Kernel: (a: TypePartBodyKernel) => TypePartBody;
-  readonly codec: Codec<TypePartBody>;
 } = {
   Product: (memberList: List<Member>): TypePartBody => ({
     _: "Product",
@@ -3635,6 +3859,7 @@ export const TypePartBody: {
     _: "Kernel",
     typePartBodyKernel,
   }),
+  typePartId: "4c60c73d6b8f236d34281fbb9119a598" as TypePartId,
   codec: {
     encode: (value: TypePartBody): ReadonlyArray<number> => {
       switch (value._) {
@@ -3702,6 +3927,14 @@ export const TypePartBody: {
  */
 export const ElmCustomTypeExportLevel: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<ElmCustomTypeExportLevel>;
+  /**
    * 公開しない
    */
   readonly NoExport: ElmCustomTypeExportLevel;
@@ -3713,11 +3946,11 @@ export const ElmCustomTypeExportLevel: {
    * 型とバリアントを公開する. 外部のモジュールで値の構成とパターンマッチングができる
    */
   readonly ExportTypeAndVariant: ElmCustomTypeExportLevel;
-  readonly codec: Codec<ElmCustomTypeExportLevel>;
 } = {
   NoExport: "NoExport",
   ExportTypeOnly: "ExportTypeOnly",
   ExportTypeAndVariant: "ExportTypeAndVariant",
+  typePartId: "4e1cab8c9074c1a058d6ef3ffcf29ab0" as TypePartId,
   codec: {
     encode: (value: ElmCustomTypeExportLevel): ReadonlyArray<number> => {
       switch (value) {
@@ -3771,12 +4004,20 @@ export const ElmCustomTypeExportLevel: {
  * @typePartId 4e6857a774597ae66e5c316642a8ae8b
  */
 export const QAccount: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<QAccount>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: QAccount) => QAccount;
 } = {
+  typePartId: "4e6857a774597ae66e5c316642a8ae8b" as TypePartId,
   helper: (qAccount: QAccount): QAccount => qAccount,
   codec: {
     encode: (value: QAccount): ReadonlyArray<number> =>
@@ -3811,12 +4052,20 @@ export const QAccount: {
  * @typePartId 5433bade7738da21e7663ff043f588d5
  */
 export const Parameter: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<Parameter>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: Parameter) => Parameter;
 } = {
+  typePartId: "5433bade7738da21e7663ff043f588d5" as TypePartId,
   helper: (parameter: Parameter): Parameter => parameter,
   codec: {
     encode: (value: Parameter): ReadonlyArray<number> =>
@@ -3851,32 +4100,59 @@ export const Parameter: {
  * @typePartId 5516d41d180b98b7f5a8950d4f43dfd6
  */
 export const Dict: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: <key extends unknown, value extends unknown>(
     a: Codec<key>,
     b: Codec<value>
   ) => Codec<Dict<key, value>>;
 } = {
+  typePartId: "5516d41d180b98b7f5a8950d4f43dfd6" as TypePartId,
   codec: <key extends unknown, value extends unknown>(
     keyCodec: Codec<key>,
     valueCodec: Codec<value>
   ): Codec<Dict<key, value>> => ({
     encode: (value: Dict<key, value>): ReadonlyArray<number> => {
-      const result: ReadonlyArray<number> = [
-        ...new TextEncoder().encode(value),
-      ];
-      return Int32.codec.encode(result.length).concat(result);
+      let result: Array<number> = Int32.codec.encode(
+        value.size
+      ) as Array<number>;
+      for (const element of value) {
+        result = [
+          ...result,
+          ...keyCodec.encode(element[0]),
+          ...valueCodec.encode(element[1]),
+        ];
+      }
+      return result;
     },
     decode: (
       index: number,
       binary: Uint8Array
     ): { readonly result: Dict<key, value>; readonly nextIndex: number } => {
-      const length: {
+      const lengthResult: {
         readonly result: number;
         readonly nextIndex: number;
       } = Int32.codec.decode(index, binary);
-      const nextIndex: number = length.nextIndex + length.result;
-      const textBinary: Uint8Array = binary.slice(length.nextIndex, nextIndex);
-      return { result: new TextDecoder().decode(textBinary), nextIndex };
+      let nextIndex: number = lengthResult.nextIndex;
+      const result: Map<key, value> = new Map([]);
+      for (let i = 0; i < lengthResult.result; i += 1) {
+        const keyResult: {
+          readonly result: key;
+          readonly nextIndex: number;
+        } = keyCodec.decode(nextIndex, binary);
+        const valueResult: {
+          readonly result: value;
+          readonly nextIndex: number;
+        } = valueCodec.decode(keyResult.nextIndex, binary);
+        result.set(keyResult.result, valueResult.result);
+        nextIndex = valueResult.nextIndex;
+      }
+      return { result, nextIndex };
     },
   }),
 };
@@ -3886,6 +4162,13 @@ export const Dict: {
  * @typePartId 55d4de38cfb884b9008abd7f7f63325e
  */
 export const WithTime: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: <data extends unknown>(
     a: Codec<data>
   ) => Codec<WithTime<data>>;
@@ -3894,6 +4177,7 @@ export const WithTime: {
    */
   readonly helper: <data extends unknown>(a: WithTime<data>) => WithTime<data>;
 } = {
+  typePartId: "55d4de38cfb884b9008abd7f7f63325e" as TypePartId,
   helper: <data extends unknown>(withTime: WithTime<data>): WithTime<data> =>
     withTime,
   codec: <data extends unknown>(
@@ -3929,12 +4213,20 @@ export const WithTime: {
  * @typePartId 57f429fd5c67eb2542447a2eaeb34497
  */
 export const ElmTypeAlias: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ElmTypeAlias>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ElmTypeAlias) => ElmTypeAlias;
 } = {
+  typePartId: "57f429fd5c67eb2542447a2eaeb34497" as TypePartId,
   helper: (elmTypeAlias: ElmTypeAlias): ElmTypeAlias => elmTypeAlias,
   codec: {
     encode: (value: ElmTypeAlias): ReadonlyArray<number> =>
@@ -3989,7 +4281,17 @@ export const ElmTypeAlias: {
  * パーツの識別子
  * @typePartId 5880cd7c0b6f0205c739a06181898d03
  */
-export const PartId: { readonly codec: Codec<PartId> } = {
+export const PartId: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<PartId>;
+} = {
+  typePartId: "5880cd7c0b6f0205c739a06181898d03" as TypePartId,
   codec: {
     encode: (value: PartId): ReadonlyArray<number> => encodeId(value),
     decode: (
@@ -4008,12 +4310,20 @@ export const PartId: { readonly codec: Codec<PartId> } = {
  * @typePartId 5d291325e9d7bc27ff35e907f59bde54
  */
 export const AccountTokenAndUserId: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<AccountTokenAndUserId>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: AccountTokenAndUserId) => AccountTokenAndUserId;
 } = {
+  typePartId: "5d291325e9d7bc27ff35e907f59bde54" as TypePartId,
   helper: (
     accountTokenAndUserId: AccountTokenAndUserId
   ): AccountTokenAndUserId => accountTokenAndUserId,
@@ -4054,7 +4364,17 @@ export const AccountTokenAndUserId: {
  * 実行時に使わないことは確定しているが, コード内の形式としてタグにUUIDを使うべきかは考慮中. index で充分かと思ったが別に型の情報も必要になることが多い
  * @typePartId 5ec292c48424e5e9ee8cc2d672830ecd
  */
-export const TagId: { readonly codec: Codec<TagId> } = {
+export const TagId: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<TagId>;
+} = {
+  typePartId: "5ec292c48424e5e9ee8cc2d672830ecd" as TypePartId,
   codec: {
     encode: (value: TagId): ReadonlyArray<number> => encodeId(value),
     decode: (
@@ -4073,12 +4393,20 @@ export const TagId: { readonly codec: Codec<TagId> } = {
  * @typePartId 5ec9dae951d8d2b250c81185a259adca
  */
 export const ElmFunctionType: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ElmFunctionType>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ElmFunctionType) => ElmFunctionType;
 } = {
+  typePartId: "5ec9dae951d8d2b250c81185a259adca" as TypePartId,
   helper: (elmFunctionType: ElmFunctionType): ElmFunctionType =>
     elmFunctionType,
   codec: {
@@ -4114,12 +4442,20 @@ export const ElmFunctionType: {
  * @typePartId 6126431def47ecba239b3add7f472b19
  */
 export const TsPattern: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<TsPattern>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: TsPattern) => TsPattern;
 } = {
+  typePartId: "6126431def47ecba239b3add7f472b19" as TypePartId,
   helper: (tsPattern: TsPattern): TsPattern => tsPattern,
   codec: {
     encode: (value: TsPattern): ReadonlyArray<number> =>
@@ -4157,12 +4493,20 @@ export const TsPattern: {
  * @typePartId 627dc8fa15214481812af12268d97b6b
  */
 export const TypeParameter: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<TypeParameter>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: TypeParameter) => TypeParameter;
 } = {
+  typePartId: "627dc8fa15214481812af12268d97b6b" as TypePartId,
   helper: (typeParameter: TypeParameter): TypeParameter => typeParameter,
   codec: {
     encode: (value: TypeParameter): ReadonlyArray<number> =>
@@ -4197,12 +4541,20 @@ export const TypeParameter: {
  * @typePartId 62923d32a2730114e665cef13f93ff13
  */
 export const ElmCode: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ElmCode>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ElmCode) => ElmCode;
 } = {
+  typePartId: "62923d32a2730114e665cef13f93ff13" as TypePartId,
   helper: (elmCode: ElmCode): ElmCode => elmCode,
   codec: {
     encode: (value: ElmCode): ReadonlyArray<number> =>
@@ -4243,6 +4595,14 @@ export const ElmCode: {
  */
 export const TypePartBodyKernel: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<TypePartBodyKernel>;
+  /**
    * 関数
    */
   readonly Function: TypePartBodyKernel;
@@ -4274,7 +4634,6 @@ export const TypePartBodyKernel: {
    * 辞書型. TypeScriptでは ReadonlyMapとして扱う
    */
   readonly Dict: TypePartBodyKernel;
-  readonly codec: Codec<TypePartBodyKernel>;
 } = {
   Function: "Function",
   Int32: "Int32",
@@ -4284,6 +4643,7 @@ export const TypePartBodyKernel: {
   Token: "Token",
   List: "List",
   Dict: "Dict",
+  typePartId: "657b5a5519b095480a21fdadd0f6fbd1" as TypePartId,
   codec: {
     encode: (value: TypePartBodyKernel): ReadonlyArray<number> => {
       switch (value) {
@@ -4378,7 +4738,17 @@ export const TypePartBodyKernel: {
  * 文字列. JavaScriptのstringで扱う. バイナリ形式はUTF-8. 不正な文字が入っている可能性がある
  * @typePartId 666361c9ae68ab64f273c47f3feb8c73
  */
-export const String: { readonly codec: Codec<String> } = {
+export const String: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<String>;
+} = {
+  typePartId: "666361c9ae68ab64f273c47f3feb8c73" as TypePartId,
   codec: {
     encode: (value: String): ReadonlyArray<number> => {
       const result: ReadonlyArray<number> = [
@@ -4406,12 +4776,20 @@ export const String: { readonly codec: Codec<String> } = {
  * @typePartId 67d4e3bc4f13e1132b6c5e81d5b74395
  */
 export const Account: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<Account>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: Account) => Account;
 } = {
+  typePartId: "67d4e3bc4f13e1132b6c5e81d5b74395" as TypePartId,
   helper: (account: Account): Account => account,
   codec: {
     encode: (value: Account): ReadonlyArray<number> =>
@@ -4459,6 +4837,16 @@ export const Account: {
  */
 export const StaticResourceState: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: <data extends unknown>(
+    a: Codec<data>
+  ) => Codec<StaticResourceState<data>>;
+  /**
    * 取得済み
    */
   readonly Loaded: <data extends unknown>(a: data) => StaticResourceState<data>;
@@ -4474,9 +4862,6 @@ export const StaticResourceState: {
    * サーバに問い合わせ中
    */
   readonly Requesting: <data extends unknown>() => StaticResourceState<data>;
-  readonly codec: <data extends unknown>(
-    a: Codec<data>
-  ) => Codec<StaticResourceState<data>>;
 } = {
   Loaded: <data extends unknown>(data: data): StaticResourceState<data> => ({
     _: "Loaded",
@@ -4491,6 +4876,7 @@ export const StaticResourceState: {
   Requesting: <data extends unknown>(): StaticResourceState<data> => ({
     _: "Requesting",
   }),
+  typePartId: "68d925f7b35bab8f265cd9e5eb7ea3da" as TypePartId,
   codec: <data extends unknown>(
     dataCodec: Codec<data>
   ): Codec<StaticResourceState<data>> => ({
@@ -4559,12 +4945,20 @@ export const StaticResourceState: {
  * @typePartId 6a5a7886b0f117a50d9d7b11ffe87c9f
  */
 export const SetStatement: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<SetStatement>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: SetStatement) => SetStatement;
 } = {
+  typePartId: "6a5a7886b0f117a50d9d7b11ffe87c9f" as TypePartId,
   helper: (setStatement: SetStatement): SetStatement => setStatement,
   codec: {
     encode: (value: SetStatement): ReadonlyArray<number> =>
@@ -4608,12 +5002,20 @@ export const SetStatement: {
  * @typePartId 6b05e33009ade6b4decd452e8fd4bff1
  */
 export const ParameterWithDocument: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ParameterWithDocument>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ParameterWithDocument) => ParameterWithDocument;
 } = {
+  typePartId: "6b05e33009ade6b4decd452e8fd4bff1" as TypePartId,
   helper: (
     parameterWithDocument: ParameterWithDocument
   ): ParameterWithDocument => parameterWithDocument,
@@ -4658,7 +5060,17 @@ export const ParameterWithDocument: {
  * 型パーツの識別子
  * @typePartId 6e3cff317f8bfbbd1391c0afb9ad6b72
  */
-export const TypePartId: { readonly codec: Codec<TypePartId> } = {
+export const TypePartId: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<TypePartId>;
+} = {
+  typePartId: "6e3cff317f8bfbbd1391c0afb9ad6b72" as TypePartId,
   codec: {
     encode: (value: TypePartId): ReadonlyArray<number> => encodeId(value),
     decode: (
@@ -4678,6 +5090,17 @@ export const TypePartId: { readonly codec: Codec<TypePartId> } = {
  */
 export const Result: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: <ok extends unknown, error extends unknown>(
+    a: Codec<ok>,
+    b: Codec<error>
+  ) => Codec<Result<ok, error>>;
+  /**
    * 成功
    */
   readonly Ok: <ok extends unknown, error extends unknown>(
@@ -4689,10 +5112,6 @@ export const Result: {
   readonly Error: <ok extends unknown, error extends unknown>(
     a: error
   ) => Result<ok, error>;
-  readonly codec: <ok extends unknown, error extends unknown>(
-    a: Codec<ok>,
-    b: Codec<error>
-  ) => Codec<Result<ok, error>>;
 } = {
   Ok: <ok extends unknown, error extends unknown>(
     ok: ok
@@ -4700,6 +5119,7 @@ export const Result: {
   Error: <ok extends unknown, error extends unknown>(
     error: error
   ): Result<ok, error> => ({ _: "Error", error }),
+  typePartId: "6f937e46fce1cf70d29c54780f132c18" as TypePartId,
   codec: <ok extends unknown, error extends unknown>(
     okCodec: Codec<ok>,
     errorCodec: Codec<error>
@@ -4752,12 +5172,20 @@ export const Result: {
  * @typePartId 7210f04a85c5f0f58f7aa20826d67f05
  */
 export const UrlData: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<UrlData>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: UrlData) => UrlData;
 } = {
+  typePartId: "7210f04a85c5f0f58f7aa20826d67f05" as TypePartId,
   helper: (urlData: UrlData): UrlData => urlData,
   codec: {
     encode: (value: UrlData): ReadonlyArray<number> =>
@@ -4792,12 +5220,20 @@ export const UrlData: {
  * @typePartId 725f84ef82e6c3b5b5f6fd5208977dd8
  */
 export const SwitchStatement: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<SwitchStatement>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: SwitchStatement) => SwitchStatement;
 } = {
+  typePartId: "725f84ef82e6c3b5b5f6fd5208977dd8" as TypePartId,
   helper: (switchStatement: SwitchStatement): SwitchStatement =>
     switchStatement,
   codec: {
@@ -4836,6 +5272,13 @@ export const SwitchStatement: {
  * @typePartId 7277cf2483388ee2f5ad7a7fc8585d98
  */
 export const VariableDefinitionStatement: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<VariableDefinitionStatement>;
   /**
    * 型を合わせる上で便利なヘルパー関数
@@ -4844,6 +5287,7 @@ export const VariableDefinitionStatement: {
     a: VariableDefinitionStatement
   ) => VariableDefinitionStatement;
 } = {
+  typePartId: "7277cf2483388ee2f5ad7a7fc8585d98" as TypePartId,
   helper: (
     variableDefinitionStatement: VariableDefinitionStatement
   ): VariableDefinitionStatement => variableDefinitionStatement,
@@ -4895,12 +5339,20 @@ export const VariableDefinitionStatement: {
  * @typePartId 7b987551cc112a64f5c9a8cb1647f4bd
  */
 export const CreateProjectParameter: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<CreateProjectParameter>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: CreateProjectParameter) => CreateProjectParameter;
 } = {
+  typePartId: "7b987551cc112a64f5c9a8cb1647f4bd" as TypePartId,
   helper: (
     createProjectParameter: CreateProjectParameter
   ): CreateProjectParameter => createProjectParameter,
@@ -4940,6 +5392,14 @@ export const CreateProjectParameter: {
  * @typePartId 7c957d411f448a03764f16d43e6e5008
  */
 export const Statement: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<Statement>;
   /**
    * 式を評価する
    */
@@ -4996,7 +5456,6 @@ export const Statement: {
    * switch文
    */
   readonly Switch: (a: SwitchStatement) => Statement;
-  readonly codec: Codec<Statement>;
 } = {
   EvaluateExpr: (tsExpr: TsExpr): Statement => ({ _: "EvaluateExpr", tsExpr }),
   Set: (setStatement: SetStatement): Statement => ({ _: "Set", setStatement }),
@@ -5025,6 +5484,7 @@ export const Statement: {
     _: "Switch",
     switchStatement,
   }),
+  typePartId: "7c957d411f448a03764f16d43e6e5008" as TypePartId,
   codec: {
     encode: (value: Statement): ReadonlyArray<number> => {
       switch (value._) {
@@ -5233,12 +5693,20 @@ export const Statement: {
  * @typePartId 7d91f0f70643799692aa144ee51a62b1
  */
 export const Time: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<Time>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: Time) => Time;
 } = {
+  typePartId: "7d91f0f70643799692aa144ee51a62b1" as TypePartId,
   helper: (time: Time): Time => time,
   codec: {
     encode: (value: Time): ReadonlyArray<number> =>
@@ -5273,12 +5741,20 @@ export const Time: {
  * @typePartId 7e4613f18e8e3bcfdfc00356654414d5
  */
 export const AccountTokenAndProjectId: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<AccountTokenAndProjectId>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: AccountTokenAndProjectId) => AccountTokenAndProjectId;
 } = {
+  typePartId: "7e4613f18e8e3bcfdfc00356654414d5" as TypePartId,
   helper: (
     accountTokenAndProjectId: AccountTokenAndProjectId
   ): AccountTokenAndProjectId => accountTokenAndProjectId,
@@ -5318,12 +5794,20 @@ export const AccountTokenAndProjectId: {
  * @typePartId 8150e2833dc1f2a77715aa1bb7b2baad
  */
 export const ImportedVariable: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ImportedVariable>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ImportedVariable) => ImportedVariable;
 } = {
+  typePartId: "8150e2833dc1f2a77715aa1bb7b2baad" as TypePartId,
   helper: (importedVariable: ImportedVariable): ImportedVariable =>
     importedVariable,
   codec: {
@@ -5362,6 +5846,14 @@ export const ImportedVariable: {
  */
 export const OpenIdConnectProvider: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<OpenIdConnectProvider>;
+  /**
    * Google ( https://developers.google.com/identity/sign-in/web/ )
    */
   readonly Google: OpenIdConnectProvider;
@@ -5369,10 +5861,10 @@ export const OpenIdConnectProvider: {
    * GitHub ( https://developer.github.com/v3/guides/basics-of-authentication/ )
    */
   readonly GitHub: OpenIdConnectProvider;
-  readonly codec: Codec<OpenIdConnectProvider>;
 } = {
   Google: "Google",
   GitHub: "GitHub",
+  typePartId: "84597034eb252267ce1a599ab7a0b543" as TypePartId,
   codec: {
     encode: (value: OpenIdConnectProvider): ReadonlyArray<number> => {
       switch (value) {
@@ -5417,12 +5909,20 @@ export const OpenIdConnectProvider: {
  * @typePartId 87fc411d10f6986dd33e5dbaff6d06ae
  */
 export const TypePart: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<TypePart>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: TypePart) => TypePart;
 } = {
+  typePartId: "87fc411d10f6986dd33e5dbaff6d06ae" as TypePartId,
   helper: (typePart: TypePart): TypePart => typePart,
   codec: {
     encode: (value: TypePart): ReadonlyArray<number> =>
@@ -5490,6 +5990,14 @@ export const TypePart: {
  * @typePartId 8b0bdbeae05df3badac2ee69bf22011f
  */
 export const TsExpr: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<TsExpr>;
   /**
    * 数値リテラル `123`
    */
@@ -5562,7 +6070,6 @@ export const TsExpr: {
    * 型アサーション `a as string`
    */
   readonly TypeAssertion: (a: TypeAssertion) => TsExpr;
-  readonly codec: Codec<TsExpr>;
 } = {
   NumberLiteral: (int32: Int32): TsExpr => ({ _: "NumberLiteral", int32 }),
   StringLiteral: (string_: String): TsExpr => ({
@@ -5611,6 +6118,7 @@ export const TsExpr: {
     _: "TypeAssertion",
     typeAssertion,
   }),
+  typePartId: "8b0bdbeae05df3badac2ee69bf22011f" as TypePartId,
   codec: {
     encode: (value: TsExpr): ReadonlyArray<number> => {
       switch (value._) {
@@ -5875,12 +6383,20 @@ export const TsExpr: {
  * @typePartId 8b479d8726bb494ac76d529fbf03908c
  */
 export const ElmTuple2: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ElmTuple2>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ElmTuple2) => ElmTuple2;
 } = {
+  typePartId: "8b479d8726bb494ac76d529fbf03908c" as TypePartId,
   helper: (elmTuple2: ElmTuple2): ElmTuple2 => elmTuple2,
   codec: {
     encode: (value: ElmTuple2): ReadonlyArray<number> =>
@@ -5915,12 +6431,20 @@ export const ElmTuple2: {
  * @typePartId 8bc81fa2a15bdbd8c2414d22f3e1b462
  */
 export const Project: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<Project>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: Project) => Project;
 } = {
+  typePartId: "8bc81fa2a15bdbd8c2414d22f3e1b462" as TypePartId,
   helper: (project: Project): Project => project,
   codec: {
     encode: (value: Project): ReadonlyArray<number> =>
@@ -5979,12 +6503,20 @@ export const Project: {
  * @typePartId 8be8db4404f302dd36c8a2c6c6e37e7c
  */
 export const ForOfStatement: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ForOfStatement>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ForOfStatement) => ForOfStatement;
 } = {
+  typePartId: "8be8db4404f302dd36c8a2c6c6e37e7c" as TypePartId,
   helper: (forOfStatement: ForOfStatement): ForOfStatement => forOfStatement,
   codec: {
     encode: (value: ForOfStatement): ReadonlyArray<number> =>
@@ -6031,12 +6563,20 @@ export const ForOfStatement: {
  * @typePartId 92ea504049ca5b7e2227a95195fe74eb
  */
 export const JsTsCode: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<JsTsCode>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: JsTsCode) => JsTsCode;
 } = {
+  typePartId: "92ea504049ca5b7e2227a95195fe74eb" as TypePartId,
   helper: (jsTsCode: JsTsCode): JsTsCode => jsTsCode,
   codec: {
     encode: (value: JsTsCode): ReadonlyArray<number> =>
@@ -6074,12 +6614,20 @@ export const JsTsCode: {
  * @typePartId 9481ceae2c3e2765243f5c7ce7eb76c7
  */
 export const Member: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<Member>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: Member) => Member;
 } = {
+  typePartId: "9481ceae2c3e2765243f5c7ce7eb76c7" as TypePartId,
   helper: (member: Member): Member => member,
   codec: {
     encode: (value: Member): ReadonlyArray<number> =>
@@ -6120,6 +6668,14 @@ export const Member: {
  * @typePartId 94e53139b3a82087777ea3e001b2adb4
  */
 export const ElmExpr: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<ElmExpr>;
   /**
    * 文字列リテラル
    */
@@ -6200,7 +6756,6 @@ export const ElmExpr: {
    * 3つの要素のタプル. (1, "い", 3)
    */
   readonly Tuple3: ElmExpr;
-  readonly codec: Codec<ElmExpr>;
 } = {
   StringLiteral: (string_: String): ElmExpr => ({
     _: "StringLiteral",
@@ -6225,6 +6780,7 @@ export const ElmExpr: {
   Unit: { _: "Unit" },
   Tuple2: { _: "Tuple2" },
   Tuple3: { _: "Tuple3" },
+  typePartId: "94e53139b3a82087777ea3e001b2adb4" as TypePartId,
   codec: {
     encode: (value: ElmExpr): ReadonlyArray<number> => {
       switch (value._) {
@@ -6411,12 +6967,20 @@ export const ElmExpr: {
  * @typePartId 98904215e50e04fa2197a7a96df8f646
  */
 export const FunctionType: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<FunctionType>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: FunctionType) => FunctionType;
 } = {
+  typePartId: "98904215e50e04fa2197a7a96df8f646" as TypePartId,
   helper: (functionType: FunctionType): FunctionType => functionType,
   codec: {
     encode: (value: FunctionType): ReadonlyArray<number> =>
@@ -6460,12 +7024,20 @@ export const FunctionType: {
  * @typePartId a0cee28e982f5fbcae6b2c7bd1e27e2a
  */
 export const ElmCustomType: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ElmCustomType>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ElmCustomType) => ElmCustomType;
 } = {
+  typePartId: "a0cee28e982f5fbcae6b2c7bd1e27e2a" as TypePartId,
   helper: (elmCustomType: ElmCustomType): ElmCustomType => elmCustomType,
   codec: {
     encode: (value: ElmCustomType): ReadonlyArray<number> =>
@@ -6527,12 +7099,20 @@ export const ElmCustomType: {
  * @typePartId a1f71188b7c3ab2a21954471f3ac67f1
  */
 export const CallExpr: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<CallExpr>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: CallExpr) => CallExpr;
 } = {
+  typePartId: "a1f71188b7c3ab2a21954471f3ac67f1" as TypePartId,
   helper: (callExpr: CallExpr): CallExpr => callExpr,
   codec: {
     encode: (value: CallExpr): ReadonlyArray<number> =>
@@ -6566,12 +7146,20 @@ export const CallExpr: {
  * @typePartId a2580a29c047f54d635c4456696bbef3
  */
 export const Variable: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<Variable>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: Variable) => Variable;
 } = {
+  typePartId: "a2580a29c047f54d635c4456696bbef3" as TypePartId,
   helper: (variable: Variable): Variable => variable,
   codec: {
     encode: (value: Variable): ReadonlyArray<number> =>
@@ -6618,6 +7206,13 @@ export const Variable: {
  * @typePartId a541cb9bb64930be40dc83bf8870f36b
  */
 export const IdAndData: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: <id extends unknown, data extends unknown>(
     a: Codec<id>,
     b: Codec<data>
@@ -6629,6 +7224,7 @@ export const IdAndData: {
     a: IdAndData<id, data>
   ) => IdAndData<id, data>;
 } = {
+  typePartId: "a541cb9bb64930be40dc83bf8870f36b" as TypePartId,
   helper: <id extends unknown, data extends unknown>(
     idAndData: IdAndData<id, data>
   ): IdAndData<id, data> => idAndData,
@@ -6663,12 +7259,20 @@ export const IdAndData: {
  * @typePartId a8c830bd6b3473f2fac7a62ede58ecf0
  */
 export const KernelCall: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<KernelCall>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: KernelCall) => KernelCall;
 } = {
+  typePartId: "a8c830bd6b3473f2fac7a62ede58ecf0" as TypePartId,
   helper: (kernelCall: KernelCall): KernelCall => kernelCall,
   codec: {
     encode: (value: KernelCall): ReadonlyArray<number> =>
@@ -6703,12 +7307,20 @@ export const KernelCall: {
  * @typePartId a9ce526a22f09800aa3773a1614cce89
  */
 export const GetExpr: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<GetExpr>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: GetExpr) => GetExpr;
 } = {
+  typePartId: "a9ce526a22f09800aa3773a1614cce89" as TypePartId,
   helper: (getExpr: GetExpr): GetExpr => getExpr,
   codec: {
     encode: (value: GetExpr): ReadonlyArray<number> =>
@@ -6743,12 +7355,20 @@ export const GetExpr: {
  * @typePartId b3b36f39469d23321ed01b92f048ccc0
  */
 export const Type: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<Type>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: Type) => Type;
 } = {
+  typePartId: "b3b36f39469d23321ed01b92f048ccc0" as TypePartId,
   helper: (type_: Type): Type => type_,
   codec: {
     encode: (value: Type): ReadonlyArray<number> =>
@@ -6786,12 +7406,20 @@ export const Type: {
  * @typePartId b44289bc65640d4ad0ad79a5a627ef78
  */
 export const ImportedType: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ImportedType>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ImportedType) => ImportedType;
 } = {
+  typePartId: "b44289bc65640d4ad0ad79a5a627ef78" as TypePartId,
   helper: (importedType: ImportedType): ImportedType => importedType,
   codec: {
     encode: (value: ImportedType): ReadonlyArray<number> =>
@@ -6825,7 +7453,17 @@ export const ImportedType: {
  * アカウントトークンのハッシュ値. データベースに保存する用
  * @typePartId b553ab17ca45f4975d9fe17fe1a63ac4
  */
-export const AccountTokenHash: { readonly codec: Codec<AccountTokenHash> } = {
+export const AccountTokenHash: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<AccountTokenHash>;
+} = {
+  typePartId: "b553ab17ca45f4975d9fe17fe1a63ac4" as TypePartId,
   codec: {
     encode: (value: AccountTokenHash): ReadonlyArray<number> =>
       encodeToken(value),
@@ -6846,6 +7484,14 @@ export const AccountTokenHash: { readonly codec: Codec<AccountTokenHash> } = {
  */
 export const KernelExpr: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<KernelExpr>;
+  /**
    * 32bit整数を足す関数
    */
   readonly Int32Add: KernelExpr;
@@ -6857,11 +7503,11 @@ export const KernelExpr: {
    * 32bit整数をかける関数
    */
   readonly Int32Mul: KernelExpr;
-  readonly codec: Codec<KernelExpr>;
 } = {
   Int32Add: "Int32Add",
   Int32Sub: "Int32Sub",
   Int32Mul: "Int32Mul",
+  typePartId: "b6eef263a982482747a8ad0bc9f05e21" as TypePartId,
   codec: {
     encode: (value: KernelExpr): ReadonlyArray<number> => {
       switch (value) {
@@ -6912,12 +7558,20 @@ export const KernelExpr: {
  * @typePartId b8bf6c22e275c06c7dc42300c332b47d
  */
 export const SetTypePartListParameter: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<SetTypePartListParameter>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: SetTypePartListParameter) => SetTypePartListParameter;
 } = {
+  typePartId: "b8bf6c22e275c06c7dc42300c332b47d" as TypePartId,
   helper: (
     setTypePartListParameter: SetTypePartListParameter
   ): SetTypePartListParameter => setTypePartListParameter,
@@ -6971,6 +7625,14 @@ export const SetTypePartListParameter: {
  */
 export const Location: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<Location>;
+  /**
    * 最初のページ
    */
   readonly Home: Location;
@@ -7002,7 +7664,6 @@ export const Location: {
    * 型パーツ編集ページ
    */
   readonly TypePart: (a: TypePartId) => Location;
-  readonly codec: Codec<Location>;
 } = {
   Home: { _: "Home" },
   CreateProject: { _: "CreateProject" },
@@ -7015,6 +7676,7 @@ export const Location: {
     _: "TypePart",
     typePartId,
   }),
+  typePartId: "bbcb8e43df8afff9fe24b001c66fb065" as TypePartId,
   codec: {
     encode: (value: Location): ReadonlyArray<number> => {
       switch (value._) {
@@ -7110,12 +7772,20 @@ export const Location: {
  * @typePartId bf69f7e46f5e4949fe801c234fc3ad15
  */
 export const TypeAlias: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<TypeAlias>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: TypeAlias) => TypeAlias;
 } = {
+  typePartId: "bf69f7e46f5e4949fe801c234fc3ad15" as TypePartId,
   helper: (typeAlias: TypeAlias): TypeAlias => typeAlias,
   codec: {
     encode: (value: TypeAlias): ReadonlyArray<number> =>
@@ -7164,7 +7834,17 @@ export const TypeAlias: {
  * アカウントを識別するためのID
  * @typePartId c1a17b07e8e664ca80217833ff2ad3f1
  */
-export const AccountId: { readonly codec: Codec<AccountId> } = {
+export const AccountId: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<AccountId>;
+} = {
+  typePartId: "c1a17b07e8e664ca80217833ff2ad3f1" as TypePartId,
   codec: {
     encode: (value: AccountId): ReadonlyArray<number> => encodeId(value),
     decode: (
@@ -7183,12 +7863,20 @@ export const AccountId: { readonly codec: Codec<AccountId> } = {
  * @typePartId c2428cbcd62b33ce2c904a200b876863
  */
 export const KeyValue: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<KeyValue>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: KeyValue) => KeyValue;
 } = {
+  typePartId: "c2428cbcd62b33ce2c904a200b876863" as TypePartId,
   helper: (keyValue: KeyValue): KeyValue => keyValue,
   codec: {
     encode: (value: KeyValue): ReadonlyArray<number> =>
@@ -7221,10 +7909,18 @@ export const KeyValue: {
  * @typePartId c3fc2a6cea61086db59e11dc2bef0eee
  */
 export const List: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: <element extends unknown>(
     a: Codec<element>
   ) => Codec<List<element>>;
 } = {
+  typePartId: "c3fc2a6cea61086db59e11dc2bef0eee" as TypePartId,
   codec: <element extends unknown>(
     elementCodec: Codec<element>
   ): Codec<List<element>> => ({
@@ -7266,6 +7962,14 @@ export const List: {
  */
 export const LogInState: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<LogInState>;
+  /**
    * アカウントトークンをindexedDBから読み取っている状態
    */
   readonly LoadingAccountTokenFromIndexedDB: LogInState;
@@ -7289,7 +7993,6 @@ export const LogInState: {
    * ログインしている状態
    */
   readonly LoggedIn: (a: AccountTokenAndUserId) => LogInState;
-  readonly codec: Codec<LogInState>;
 } = {
   LoadingAccountTokenFromIndexedDB: { _: "LoadingAccountTokenFromIndexedDB" },
   Guest: { _: "Guest" },
@@ -7308,6 +8011,7 @@ export const LogInState: {
     _: "LoggedIn",
     accountTokenAndUserId,
   }),
+  typePartId: "c4b574e3ca8bad17022054d5e77fd3d0" as TypePartId,
   codec: {
     encode: (value: LogInState): ReadonlyArray<number> => {
       switch (value._) {
@@ -7402,12 +8106,20 @@ export const LogInState: {
  * @typePartId c53be8bcaf56ff90080cf7a75f1e4815
  */
 export const ForStatement: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ForStatement>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ForStatement) => ForStatement;
 } = {
+  typePartId: "c53be8bcaf56ff90080cf7a75f1e4815" as TypePartId,
   helper: (forStatement: ForStatement): ForStatement => forStatement,
   codec: {
     encode: (value: ForStatement): ReadonlyArray<number> =>
@@ -7454,12 +8166,20 @@ export const ForStatement: {
  * @typePartId c68bac5afb1a1d35af096bf317d09339
  */
 export const TsMemberType: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<TsMemberType>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: TsMemberType) => TsMemberType;
 } = {
+  typePartId: "c68bac5afb1a1d35af096bf317d09339" as TypePartId,
   helper: (tsMemberType: TsMemberType): TsMemberType => tsMemberType,
   codec: {
     encode: (value: TsMemberType): ReadonlyArray<number> =>
@@ -7506,12 +8226,20 @@ export const TsMemberType: {
  * @typePartId c7a771f770f0f92690faeb59eaff6268
  */
 export const ConditionalOperatorExpr: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ConditionalOperatorExpr>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ConditionalOperatorExpr) => ConditionalOperatorExpr;
 } = {
+  typePartId: "c7a771f770f0f92690faeb59eaff6268" as TypePartId,
   helper: (
     conditionalOperatorExpr: ConditionalOperatorExpr
   ): ConditionalOperatorExpr => conditionalOperatorExpr,
@@ -7557,12 +8285,20 @@ export const ConditionalOperatorExpr: {
  * @typePartId cd325760f992e47a8438ae78ca9b1529
  */
 export const IfStatement: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<IfStatement>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: IfStatement) => IfStatement;
 } = {
+  typePartId: "cd325760f992e47a8438ae78ca9b1529" as TypePartId,
   helper: (ifStatement: IfStatement): IfStatement => ifStatement,
   codec: {
     encode: (value: IfStatement): ReadonlyArray<number> =>
@@ -7601,15 +8337,23 @@ export const IfStatement: {
  */
 export const ElmFieldName: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<ElmFieldName>;
+  /**
    * **直接 FieldName.FieldName("name") と指定してはいけない!! Elmの識別子として使える文字としてチェックできないため**
    */
   readonly FieldName: (a: String) => ElmFieldName;
-  readonly codec: Codec<ElmFieldName>;
 } = {
   FieldName: (string_: String): ElmFieldName => ({
     _: "FieldName",
     string: string_,
   }),
+  typePartId: "d256109676f834b74931495891b61d1b" as TypePartId,
   codec: {
     encode: (value: ElmFieldName): ReadonlyArray<number> => {
       switch (value._) {
@@ -7647,15 +8391,23 @@ export const ElmFieldName: {
  */
 export const ElmVariantName: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<ElmVariantName>;
+  /**
    * **直接 VariantName.VariantName("Loading") と指定してはいけない!! Elmの識別子として使える文字としてチェックできないため**
    */
   readonly VariantName: (a: String) => ElmVariantName;
-  readonly codec: Codec<ElmVariantName>;
 } = {
   VariantName: (string_: String): ElmVariantName => ({
     _: "VariantName",
     string: string_,
   }),
+  typePartId: "d77f1f967b892c739a1555f74d2ff9fd" as TypePartId,
   codec: {
     encode: (value: ElmVariantName): ReadonlyArray<number> => {
       switch (value._) {
@@ -7692,12 +8444,20 @@ export const ElmVariantName: {
  * @typePartId d82150857d0f2e78c1df0f418ba9b01a
  */
 export const IntersectionType: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<IntersectionType>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: IntersectionType) => IntersectionType;
 } = {
+  typePartId: "d82150857d0f2e78c1df0f418ba9b01a" as TypePartId,
   helper: (intersectionType: IntersectionType): IntersectionType =>
     intersectionType,
   codec: {
@@ -7731,12 +8491,20 @@ export const IntersectionType: {
  * @typePartId d8bccc70252cee9ce70784bf5dfa493b
  */
 export const Part: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<Part>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: Part) => Part;
 } = {
+  typePartId: "d8bccc70252cee9ce70784bf5dfa493b" as TypePartId,
   helper: (part: Part): Part => part,
   codec: {
     encode: (value: Part): ReadonlyArray<number> =>
@@ -7790,6 +8558,14 @@ export const Part: {
  */
 export const EvaluatedExpr: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<EvaluatedExpr>;
+  /**
    * Definyだけでは表現できない式
    */
   readonly Kernel: (a: KernelExpr) => EvaluatedExpr;
@@ -7805,7 +8581,6 @@ export const EvaluatedExpr: {
    * 内部関数呼び出し
    */
   readonly KernelCall: (a: KernelCall) => EvaluatedExpr;
-  readonly codec: Codec<EvaluatedExpr>;
 } = {
   Kernel: (kernelExpr: KernelExpr): EvaluatedExpr => ({
     _: "Kernel",
@@ -7820,6 +8595,7 @@ export const EvaluatedExpr: {
     _: "KernelCall",
     kernelCall,
   }),
+  typePartId: "daa9bf22c3f2e52ff92edcdd896d6a6d" as TypePartId,
   codec: {
     encode: (value: EvaluatedExpr): ReadonlyArray<number> => {
       switch (value._) {
@@ -7895,12 +8671,20 @@ export const EvaluatedExpr: {
  * @typePartId dac038758a5c45f762de388bb5193fb8
  */
 export const SetTypePartParameter: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<SetTypePartParameter>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: SetTypePartParameter) => SetTypePartParameter;
 } = {
+  typePartId: "dac038758a5c45f762de388bb5193fb8" as TypePartId,
   helper: (setTypePartParameter: SetTypePartParameter): SetTypePartParameter =>
     setTypePartParameter,
   codec: {
@@ -7946,6 +8730,14 @@ export const SetTypePartParameter: {
  */
 export const Bool: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<Bool>;
+  /**
    * 偽
    */
   readonly False: Bool;
@@ -7953,10 +8745,10 @@ export const Bool: {
    * 真
    */
   readonly True: Bool;
-  readonly codec: Codec<Bool>;
 } = {
   False: false,
   True: true,
+  typePartId: "db57caf129f60db969b5b5224a72b937" as TypePartId,
   codec: {
     encode: (value: Bool): ReadonlyArray<number> => [value ? 1 : 0],
     decode: (
@@ -7983,12 +8775,20 @@ export const Bool: {
  * @typePartId db8b9f83d99ef58fd206acca4e56d098
  */
 export const ElmDefinition: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<ElmDefinition>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: ElmDefinition) => ElmDefinition;
 } = {
+  typePartId: "db8b9f83d99ef58fd206acca4e56d098" as TypePartId,
   helper: (elmDefinition: ElmDefinition): ElmDefinition => elmDefinition,
   codec: {
     encode: (value: ElmDefinition): ReadonlyArray<number> =>
@@ -8035,12 +8835,20 @@ export const ElmDefinition: {
  * @typePartId dd3366ce7254327c85732d2932ff219b
  */
 export const Function: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<Function>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: Function) => Function;
 } = {
+  typePartId: "dd3366ce7254327c85732d2932ff219b" as TypePartId,
   helper: (function_: Function): Function => function_,
   codec: {
     encode: (value: Function): ReadonlyArray<number> =>
@@ -8109,7 +8917,17 @@ export const Function: {
  * アカウントトークン. アカウントトークンを持っていればアクセストークンをDefinyのサーバーにリクエストした際に得られるIDのアカウントを保有していると証明できる. サーバーにハッシュ化したものを保存している. これが盗まれた場合,不正に得た人はアカウントを乗っ取ることができる. 有効期限はなし, 最後に発行したアカウントトークン以外は無効になる
  * @typePartId deb01f82879754c03aa4d244e136e59d
  */
-export const AccountToken: { readonly codec: Codec<AccountToken> } = {
+export const AccountToken: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<AccountToken>;
+} = {
+  typePartId: "deb01f82879754c03aa4d244e136e59d" as TypePartId,
   codec: {
     encode: (value: AccountToken): ReadonlyArray<number> => encodeToken(value),
     decode: (
@@ -8128,6 +8946,13 @@ export const AccountToken: { readonly codec: Codec<AccountToken> } = {
  * @typePartId df5c5388248252a92864ceb219628b8e
  */
 export const FunctionDefinitionStatement: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<FunctionDefinitionStatement>;
   /**
    * 型を合わせる上で便利なヘルパー関数
@@ -8136,6 +8961,7 @@ export const FunctionDefinitionStatement: {
     a: FunctionDefinitionStatement
   ) => FunctionDefinitionStatement;
 } = {
+  typePartId: "df5c5388248252a92864ceb219628b8e" as TypePartId,
   helper: (
     functionDefinitionStatement: FunctionDefinitionStatement
   ): FunctionDefinitionStatement => functionDefinitionStatement,
@@ -8204,12 +9030,20 @@ export const FunctionDefinitionStatement: {
  * @typePartId e4ef8a0713aceb0eaa7606cd516ad847
  */
 export const Pattern: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<Pattern>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: Pattern) => Pattern;
 } = {
+  typePartId: "e4ef8a0713aceb0eaa7606cd516ad847" as TypePartId,
   helper: (pattern: Pattern): Pattern => pattern,
   codec: {
     encode: (value: Pattern): ReadonlyArray<number> =>
@@ -8252,7 +9086,17 @@ export const Pattern: {
  * 画像から求められるトークン.キャッシュのキーとして使われる.1つのトークンに対して永久に1つの画像データしか表さない. キャッシュを更新する必要はない
  * @typePartId e71e15a15b0883940a75e58367151d1a
  */
-export const ImageHash: { readonly codec: Codec<ImageHash> } = {
+export const ImageHash: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<ImageHash>;
+} = {
+  typePartId: "e71e15a15b0883940a75e58367151d1a" as TypePartId,
   codec: {
     encode: (value: ImageHash): ReadonlyArray<number> => encodeToken(value),
     decode: (
@@ -8271,6 +9115,14 @@ export const ImageHash: { readonly codec: Codec<ImageHash> } = {
  * @typePartId ed9a046b5f121f6e54ac7f3834cbc644
  */
 export const Expr: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<Expr>;
   /**
    * Definyだけでは表現できない式
    */
@@ -8291,7 +9143,6 @@ export const Expr: {
    * 関数呼び出し
    */
   readonly FunctionCall: (a: FunctionCall) => Expr;
-  readonly codec: Codec<Expr>;
 } = {
   Kernel: (kernelExpr: KernelExpr): Expr => ({ _: "Kernel", kernelExpr }),
   Int32Literal: (int32: Int32): Expr => ({ _: "Int32Literal", int32 }),
@@ -8304,6 +9155,7 @@ export const Expr: {
     _: "FunctionCall",
     functionCall,
   }),
+  typePartId: "ed9a046b5f121f6e54ac7f3834cbc644" as TypePartId,
   codec: {
     encode: (value: Expr): ReadonlyArray<number> => {
       switch (value._) {
@@ -8392,12 +9244,20 @@ export const Expr: {
  * @typePartId edd59bd2ab4852c149f6ce5917767908
  */
 export const TagReference: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<TagReference>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: TagReference) => TagReference;
 } = {
+  typePartId: "edd59bd2ab4852c149f6ce5917767908" as TypePartId,
   helper: (tagReference: TagReference): TagReference => tagReference,
   codec: {
     encode: (value: TagReference): ReadonlyArray<number> =>
@@ -8433,6 +9293,14 @@ export const TagReference: {
  */
 export const Mode: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<Mode>;
+  /**
    * ローカルで開発するときのモード. オリジンは http://localshot:2520
    */
   readonly Develop: Mode;
@@ -8440,10 +9308,10 @@ export const Mode: {
    * リリースモード. オリジンは https://definy.app
    */
   readonly Release: Mode;
-  readonly codec: Codec<Mode>;
 } = {
   Develop: "Develop",
   Release: "Release",
+  typePartId: "ee0590e764618611ffa8e1a0a2e22f79" as TypePartId,
   codec: {
     encode: (value: Mode): ReadonlyArray<number> => {
       switch (value) {
@@ -8479,12 +9347,20 @@ export const Mode: {
  * @typePartId eec2dab74fbcd3237bfa1c773f9b9d21
  */
 export const BinaryOperatorExpr: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<BinaryOperatorExpr>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: BinaryOperatorExpr) => BinaryOperatorExpr;
 } = {
+  typePartId: "eec2dab74fbcd3237bfa1c773f9b9d21" as TypePartId,
   helper: (binaryOperatorExpr: BinaryOperatorExpr): BinaryOperatorExpr =>
     binaryOperatorExpr,
   codec: {
@@ -8527,6 +9403,14 @@ export const BinaryOperatorExpr: {
  */
 export const CodeType: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<CodeType>;
+  /**
    * JavaScript
    */
   readonly JavaScript: CodeType;
@@ -8534,10 +9418,10 @@ export const CodeType: {
    * TypeScript
    */
   readonly TypeScript: CodeType;
-  readonly codec: Codec<CodeType>;
 } = {
   JavaScript: "JavaScript",
   TypeScript: "TypeScript",
+  typePartId: "eedf73c97f9dd61159572322f6d7e0a5" as TypePartId,
   codec: {
     encode: (value: CodeType): ReadonlyArray<number> => {
       switch (value) {
@@ -8579,12 +9463,20 @@ export const CodeType: {
  * @typePartId eeeef818144e5a42460c4efdaa221460
  */
 export const LambdaExpr: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<LambdaExpr>;
   /**
    * 型を合わせる上で便利なヘルパー関数
    */
   readonly helper: (a: LambdaExpr) => LambdaExpr;
 } = {
+  typePartId: "eeeef818144e5a42460c4efdaa221460" as TypePartId,
   helper: (lambdaExpr: LambdaExpr): LambdaExpr => lambdaExpr,
   codec: {
     encode: (value: LambdaExpr): ReadonlyArray<number> =>
@@ -8637,6 +9529,13 @@ export const LambdaExpr: {
  * @typePartId f03ea5331c1a3adcde80a04054d35e07
  */
 export const RequestLogInUrlRequestData: {
+  /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
   readonly codec: Codec<RequestLogInUrlRequestData>;
   /**
    * 型を合わせる上で便利なヘルパー関数
@@ -8645,6 +9544,7 @@ export const RequestLogInUrlRequestData: {
     a: RequestLogInUrlRequestData
   ) => RequestLogInUrlRequestData;
 } = {
+  typePartId: "f03ea5331c1a3adcde80a04054d35e07" as TypePartId,
   helper: (
     requestLogInUrlRequestData: RequestLogInUrlRequestData
   ): RequestLogInUrlRequestData => requestLogInUrlRequestData,
@@ -8688,6 +9588,14 @@ export const RequestLogInUrlRequestData: {
  */
 export const ElmTypeDeclaration: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<ElmTypeDeclaration>;
+  /**
    * 型エイリアス. レコード型に名前を付ける
    */
   readonly TypeAlias: (a: ElmTypeAlias) => ElmTypeDeclaration;
@@ -8695,7 +9603,6 @@ export const ElmTypeDeclaration: {
    * カスタム型. 代数的データ型
    */
   readonly CustomType: (a: ElmCustomType) => ElmTypeDeclaration;
-  readonly codec: Codec<ElmTypeDeclaration>;
 } = {
   TypeAlias: (elmTypeAlias: ElmTypeAlias): ElmTypeDeclaration => ({
     _: "TypeAlias",
@@ -8705,6 +9612,7 @@ export const ElmTypeDeclaration: {
     _: "CustomType",
     elmCustomType,
   }),
+  typePartId: "f4bed793b657b39db5a579c9e158eba5" as TypePartId,
   codec: {
     encode: (value: ElmTypeDeclaration): ReadonlyArray<number> => {
       switch (value._) {
@@ -8755,6 +9663,14 @@ export const ElmTypeDeclaration: {
  */
 export const TsMember: {
   /**
+   * definy.app内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<TsMember>;
+  /**
    * ...a のようにする
    */
   readonly Spread: (a: TsExpr) => TsMember;
@@ -8762,10 +9678,10 @@ export const TsMember: {
    * a: b のようにする
    */
   readonly KeyValue: (a: KeyValue) => TsMember;
-  readonly codec: Codec<TsMember>;
 } = {
   Spread: (tsExpr: TsExpr): TsMember => ({ _: "Spread", tsExpr }),
   KeyValue: (keyValue: KeyValue): TsMember => ({ _: "KeyValue", keyValue }),
+  typePartId: "fddd2a65994fae205dd636f3a6b9f1ea" as TypePartId,
   codec: {
     encode: (value: TsMember): ReadonlyArray<number> => {
       switch (value._) {
