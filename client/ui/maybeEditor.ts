@@ -1,6 +1,6 @@
-import * as a from "./messageAndState";
-import * as d from "../data";
-import { SelectBoxSelection, box, selectBox, text } from "./ui";
+import * as a from "../messageAndState";
+import * as d from "../../data";
+import { SelectBoxSelection, box, selectBox, text } from "../ui";
 import { c, elementMap } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
 import { tagEditor } from "./tagEditor";

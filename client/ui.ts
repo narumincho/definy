@@ -1,10 +1,10 @@
-import { c, div, path, svg } from "@narumincho/html/viewUtil";
 import { Color, Element } from "@narumincho/html/view";
+import { c, div, path, svg } from "@narumincho/html/viewUtil";
 import { colorToHexString } from "@narumincho/html/util";
 
 export type GridTemplateValue = { _: "Fix"; value: number } | { _: "OneFr" };
 
-export interface BoxOption<Message> {
+export type BoxOption<Message> = {
   /** 方向 x → 横方向, y → 縦方向 */
   direction: "x" | "y";
   /** 幅. undefined で 100% */
@@ -27,7 +27,7 @@ export interface BoxOption<Message> {
   backgroundColor?: Color;
   /** クリックのイベント */
   click?: { stopPropagation: boolean; message: Message };
-}
+};
 
 /** CSSの指定をできるだけしなくて済むように */
 export const box = <Message>(

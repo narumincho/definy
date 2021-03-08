@@ -1,13 +1,13 @@
-import * as a from "./messageAndState";
-import * as d from "../data";
-import * as definyType from "./definyType";
-import * as util from "./util";
+import * as a from "../messageAndState";
+import * as d from "../../data";
+import * as definyType from "../definyType";
+import * as util from "../util";
 import { ProductItem, productEditor } from "./productEditor";
-import { SelectBoxSelection, box, selectBox, text } from "./ui";
+import { SelectBoxSelection, box, selectBox, text } from "../ui";
 import { c, elementMap } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
-import { button } from "./ui/button";
-import { oneLineTextEditor } from "./ui/oneLineTextInput";
+import { button } from "./button";
+import { oneLineTextEditor } from "./oneLineTextInput";
 
 /** TODO */
 export type Selection =
@@ -360,7 +360,9 @@ const sortByMatch = (
       }
     }
   }
-  return list.sort((a, b) => a.point - b.point).map((e) => e.item);
+  return list
+    .sort((itemA, itemB) => itemA.point - itemB.point)
+    .map((e) => e.item);
 };
 
 const getTypePartLintInScope = (

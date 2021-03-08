@@ -1,12 +1,12 @@
-import * as a from "./messageAndState";
-import * as d from "../data";
+import * as a from "../messageAndState";
+import * as d from "../../data";
 import * as listEditor from "./listEditor";
 import * as productEditor from "./productEditor";
-import { SelectBoxSelection, box, selectText, text } from "./ui";
+import { SelectBoxSelection, box, selectText, text } from "../ui";
 import { Element } from "@narumincho/html/view";
-import { button } from "./ui/button";
+import { button } from "./button";
 import { c } from "@narumincho/html/viewUtil";
-import { oneLineTextEditor } from "./ui/oneLineTextInput";
+import { oneLineTextEditor } from "./oneLineTextInput";
 
 export type Message =
   | {

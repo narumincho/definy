@@ -8,12 +8,12 @@ import * as jsTsCodeGenerator from "js-ts-code-generator";
 import * as page from "./page";
 import * as pageCreateProject from "./page/createProject";
 import * as pageProject from "./page/project";
-import * as typePartEditor from "./typePartEditor";
+import * as typePartEditor from "./ui/typePartEditor";
 import { CSSObject, keyframes } from "@emotion/css";
 import { mapMapAt, mapSet } from "./util";
 import { view, viewUtil } from "@narumincho/html";
 import { api } from "./api";
-import { headerView } from "./header";
+import { headerView } from "./ui/header";
 
 export const initState = (
   messageHandler: (message: a.Message) => void

@@ -1,8 +1,8 @@
-import * as a from "./messageAndState";
-import { SelectBoxSelection, box, selectBox, text } from "./ui";
+import * as a from "../messageAndState";
+import { SelectBoxSelection, box, selectBox, text } from "../ui";
 import { c, elementMap } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
-import { button } from "./ui/button";
+import { button } from "./button";
 
 export type Selection<ItemSelection> =
   | {

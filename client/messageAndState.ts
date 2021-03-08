@@ -4,7 +4,7 @@ import * as pageDebug from "./page/debug";
 import type * as pageProject from "./page/project";
 import { Element } from "@narumincho/html/view";
 import type { PageState } from "./page";
-import type { Message as TypePartEditorMessage } from "./typePartEditor";
+import type { Message as TypePartEditorMessage } from "./ui/typePartEditor";
 
 export type HomeProjectState =
   | { _: "None" }

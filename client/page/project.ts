@@ -1,6 +1,6 @@
 import * as a from "../messageAndState";
 import * as d from "../../data";
-import * as typePartEditor from "../typePartEditor";
+import * as typePartEditor from "../ui/typePartEditor";
 import { box, text } from "../ui";
 import { c, div, elementMap } from "@narumincho/html/viewUtil";
 import { CSSObject } from "@emotion/css";
@@ -11,7 +11,7 @@ import { image } from "../ui/image";
 import { mapMapValue } from "../util";
 import { multiLineTextEditor } from "../ui/multilineTextInput";
 import { oneLineTextEditor } from "../ui/oneLineTextInput";
-import { tagEditor } from "../tagEditor";
+import { tagEditor } from "../ui/tagEditor";
 import { userCard } from "../ui/user";
 
 export type PageState = {

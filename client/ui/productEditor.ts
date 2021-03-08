@@ -1,11 +1,11 @@
-import { SelectBoxSelection, box, grayText, selectBox } from "./ui";
+import { SelectBoxSelection, box, grayText, selectBox } from "../ui";
 import { Element } from "@narumincho/html/view";
 import { c } from "@narumincho/html/viewUtil";
 
-export interface ProductItem<Message> {
+export type ProductItem<Message> = {
   readonly name: string;
   readonly element: Element<Message>;
-}
+};
 
 export const productEditor = <Message>(
   option: {
