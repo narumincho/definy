@@ -257,7 +257,6 @@ const treeView = (
       ],
       ["search", oneLineTextEditor({}, pageState.searchText, setSearchText)],
       ...typePartNameListView(state, projectId, pageState.searchText),
-      ["add", addTypePartButton(state, projectId)],
       ["addNoSave", addTypePartNoSaveButton(state, projectId)],
     ])
   );
@@ -301,41 +300,6 @@ const typePartNameListView = (
   });
 };
 
-const addTypePartButton = (
-  state: a.State,
-  projectId: d.ProjectId
-): Element<a.Message> => {
-  const projectResource = state.projectMap.get(projectId);
-  if (projectResource === undefined || projectResource._ !== "Loaded") {
-    return text("...");
-  }
-  switch (state.typePartEditState) {
-    case "Adding":
-      return text("追加中");
-    case "Error":
-      return text("エラーが発生");
-    case "None":
-      if (a.getAccountToken(state) === undefined) {
-        return text("ログインしていないため追加できない");
-      }
-      if (state.logInState._ !== "LoggedIn") {
-        return text("ログイン処理中. 作成者かどうか判別がつかない");
-      }
-      if (
-        state.logInState.accountTokenAndUserId.userId !==
-        projectResource.dataWithTime.data.createAccountId
-      ) {
-        return text("このプロジェクトの作成者でないため追加できない");
-      }
-      return button<a.Message>(
-        { click: { tag: "AddTypePart", projectId } },
-        "+ 保存して追加する"
-      );
-    case "Saving":
-      return text("保存中……");
-  }
-};
-
 const addTypePartNoSaveButton = (
   state: a.State,
   projectId: d.ProjectId
@@ -364,7 +328,7 @@ const addTypePartNoSaveButton = (
       }
       return button<a.Message>(
         { click: { tag: "AddTypePartNoSave", projectId } },
-        "+ 追加する (保存なし)"
+        "+ 型パーツを追加する"
       );
     case "Saving":
       return text("保存中……");
