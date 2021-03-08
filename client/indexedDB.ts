@@ -1,5 +1,5 @@
 import * as d from "../data";
-import * as util from "definy-core/util";
+import * as util from "../core/util";
 
 const AccountTokenObjectStoreName = "AccountToken";
 const imageObjectStoreName = "image";

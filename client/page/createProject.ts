@@ -8,7 +8,7 @@ import { c, div } from "@narumincho/html/viewUtil";
 import { button } from "../ui/button";
 import { view as nView } from "@narumincho/html";
 import { oneLineTextEditor } from "../ui/oneLineTextInput";
-import { stringToValidProjectName } from "definy-core/main";
+import { stringToValidProjectName } from "../../core/main";
 import { text } from "../ui";
 
 export type State = {
