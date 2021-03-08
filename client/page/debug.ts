@@ -27,7 +27,7 @@ const dummyState: State = {
   language: d.Language.English,
   logInState: d.LogInState.Guest,
   outputCode: { tag: "notGenerated" },
-  pageModel: {
+  pageState: {
     tag: "Debug",
     tab: init,
   },

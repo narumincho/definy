@@ -3,7 +3,8 @@ import type * as pageCreateProject from "./page/createProject";
 import * as pageDebug from "./page/debug";
 import type * as pageProject from "./page/project";
 import { Element } from "@narumincho/html/view";
-import type { Message as TypePartEditorMessage } from "./typePartEditor";
+import type { PageState } from "./page";
+import type { Message as TypePartEditorMessage } from "./ui/typePartEditor";
 
 export type HomeProjectState =
   | { _: "None" }
@@ -53,7 +54,7 @@ export type State = {
   readonly outputCode: OutputCode;
 
   /**どこのページを開いているかとそのページの状態 */
-  readonly pageModel: PageModel;
+  readonly pageState: PageState;
 
   /** 型を検索するためのキーワード */
   readonly typeSearchText: string;
@@ -72,28 +73,6 @@ export type OutputCode =
   | {
       readonly tag: "error";
       readonly errorMessage: string;
-    };
-export type PageModel =
-  | { readonly tag: "Home" }
-  | { readonly tag: "CreateProject"; state: pageCreateProject.State }
-  | {
-      readonly tag: "About";
-    }
-  | {
-      readonly tag: "User";
-      readonly userId: d.AccountId;
-    }
-  | {
-      readonly tag: "Debug";
-      readonly tab: pageDebug.Tab;
-    }
-  | {
-      readonly tag: "Setting";
-    }
-  | {
-      readonly tag: "Project";
-      readonly projectId: d.ProjectId;
-      readonly state: pageProject.PageState;
     };
 
 /**

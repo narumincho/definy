@@ -1,12 +1,12 @@
-import * as d from "../data";
-import { Message, State, messageRequestLogInTag } from "./messageAndState";
+import * as d from "../../data";
+import { Message, State, messageRequestLogInTag } from "../messageAndState";
+import { box, gitHubIcon } from "../ui";
 import { c, div, path, svg } from "@narumincho/html/viewUtil";
 import { CSSObject } from "@emotion/css";
 import { Element } from "@narumincho/html/view";
-import { button } from "./ui/button";
-import { box, gitHubIcon } from "./ui";
-import { image } from "./ui/image";
-import { link } from "./ui/link";
+import { button } from "./button";
+import { image } from "./image";
+import { link } from "./link";
 
 export const headerView = (appInterface: State): Element<Message> =>
   box(

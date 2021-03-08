@@ -18,10 +18,6 @@ export const view = (appInterface: State): TitleAndElement => ({
     c([
       ["about", div({}, aboutMessage(appInterface.language))],
       ["link-client", gitHubRepositoryLink("narumincho", "Definy")],
-      [
-        "link-functions",
-        gitHubRepositoryLink("narumincho", "definy-functions"),
-      ],
       ["link-core", gitHubRepositoryLink("narumincho", "definy-core")],
       ["link-html", gitHubRepositoryLink("narumincho", "html")],
       [

@@ -5,19 +5,15 @@ import * as coreUtil from "definy-core/util";
 import * as d from "../data";
 import * as indexedDB from "./indexedDB";
 import * as jsTsCodeGenerator from "js-ts-code-generator";
-import * as pageAbout from "./page/about";
+import * as page from "./page";
 import * as pageCreateProject from "./page/createProject";
-import * as pageDebug from "./page/debug";
-import * as pageHome from "./page/home";
 import * as pageProject from "./page/project";
-import * as pageSetting from "./page/setting";
-import * as pageUser from "./page/user";
-import * as typePartEditor from "./typePartEditor";
+import * as typePartEditor from "./ui/typePartEditor";
 import { CSSObject, keyframes } from "@emotion/css";
 import { mapMapAt, mapSet } from "./util";
 import { view, viewUtil } from "@narumincho/html";
 import { api } from "./api";
-import { headerView } from "./header";
+import { headerView } from "./ui/header";
 
 export const initState = (
   messageHandler: (message: a.Message) => void
@@ -64,7 +60,7 @@ export const initState = (
           )
         : d.LogInState.LoadingAccountTokenFromIndexedDB,
     outputCode: { tag: "notGenerated" },
-    pageModel: locationToInitPageModel(
+    pageState: page.locationToInitPageState(
       messageHandler,
       urlDataAndAccountToken.urlData.location
     ),
@@ -192,13 +188,13 @@ export const updateStateByMessage = (
       return respondSetTypePartList(message.response, oldState);
 
     case a.messageSelectDebugPageTab:
-      if (oldState.pageModel.tag !== "Debug") {
+      if (oldState.pageState.tag !== "Debug") {
         return oldState;
       }
       return {
         ...oldState,
-        pageModel: {
-          ...oldState.pageModel,
+        pageState: {
+          ...oldState.pageState,
           tab: message.tab,
         },
       };
@@ -226,14 +222,14 @@ export const updateStateByMessage = (
     case "AddTypePart":
       return addTypePart(oldState, message.projectId, messageHandler);
     case "PageProject":
-      if (oldState.pageModel.tag === "Project") {
+      if (oldState.pageState.tag === "Project") {
         return {
           ...oldState,
-          pageModel: {
+          pageState: {
             tag: "Project",
-            projectId: oldState.pageModel.projectId,
+            projectId: oldState.pageState.projectId,
             state: pageProject.updateSateByLocalMessage(
-              oldState.pageModel.state,
+              oldState.pageState.state,
               message.message,
               messageHandler
             ),
@@ -265,80 +261,20 @@ export const updateStateByMessage = (
       };
 
     case "CreateProjectPageMessage":
-      if (oldState.pageModel.tag === "CreateProject") {
+      if (oldState.pageState.tag === "CreateProject") {
         return {
           ...oldState,
-          pageModel: {
+          pageState: {
             tag: "CreateProject",
             state: pageCreateProject.update(
               message.message,
-              oldState.pageModel.state,
+              oldState.pageState.state,
               messageHandler
             ),
           },
         };
       }
       return oldState;
-  }
-};
-
-const locationToInitPageModel = (
-  messageHandler: (message: a.Message) => void,
-  location: d.Location
-): a.PageModel => {
-  switch (location._) {
-    case "Home":
-      callMessageList(pageHome.init(), messageHandler);
-      return { tag: "Home" };
-    case "CreateProject":
-      return { tag: "CreateProject", state: pageCreateProject.initState };
-    case "About":
-      return { tag: "About" };
-    case "Account":
-      callMessageList(pageUser.init(location.accountId), messageHandler);
-      return { tag: "User", userId: location.accountId };
-    case "Debug":
-      return { tag: "Debug", tab: pageDebug.init };
-    case "Setting":
-      return { tag: "Setting" };
-    case "Project": {
-      const messageListAndPageModel = pageProject.init(location.projectId);
-      callMessageList(messageListAndPageModel.messageList, messageHandler);
-      return {
-        tag: "Project",
-        projectId: location.projectId,
-        state: messageListAndPageModel.pageState,
-      };
-    }
-  }
-  return { tag: "About" };
-};
-
-const callMessageList = (
-  messageList: ReadonlyArray<a.Message>,
-  messageHandler: (message: a.Message) => void
-): void => {
-  for (const message of messageList) {
-    messageHandler(message);
-  }
-};
-
-const pageModelToLocation = (pageModel: a.PageModel): d.Location => {
-  switch (pageModel.tag) {
-    case "Home":
-      return d.Location.Home;
-    case "CreateProject":
-      return d.Location.CreateProject;
-    case "About":
-      return d.Location.About;
-    case "User":
-      return d.Location.Account(pageModel.userId);
-    case "Debug":
-      return d.Location.Debug;
-    case "Setting":
-      return d.Location.Setting;
-    case "Project":
-      return d.Location.Project(pageModel.projectId);
   }
 };
 
@@ -601,7 +537,7 @@ const respondCreatingProject = (
         data: response.value.value.data,
       })
     ),
-    pageModel: locationToInitPageModel(
+    pageState: page.locationToInitPageState(
       messageHandler,
       d.Location.Project(response.value.value.id)
     ),
@@ -850,7 +786,7 @@ const logIn = (
       openIdConnectProvider: provider,
       urlData: {
         language: state.language,
-        location: pageModelToLocation(state.pageModel),
+        location: page.pageStateToLocation(state.pageState),
       },
     })
     .then((response) =>
@@ -912,7 +848,7 @@ const jump = (
   return {
     ...state,
     language,
-    pageModel: locationToInitPageModel(messageHandler, location),
+    pageState: page.locationToInitPageState(messageHandler, location),
   };
 };
 
@@ -939,7 +875,7 @@ const changeLocationAndLanguage = (
   return {
     ...state,
     language,
-    pageModel: locationToInitPageModel(messageHandler, location),
+    pageState: page.locationToInitPageState(messageHandler, location),
   };
 };
 
@@ -1054,7 +990,7 @@ const stateToTitleAndAttributeChildren = (
       };
     }
   }
-  const mainTitleAndElement = main(state);
+  const mainTitleAndElement = page.titleAndElement(state);
   return {
     title: mainTitleAndElement.title,
     style: { gridTemplateRows: "48px 1fr" },
@@ -1100,29 +1036,6 @@ const jumpMessage = (url: URL, language: d.Language): string => {
       return `navigante al ${url}`;
     case "Japanese":
       return `${url}へ移動中……`;
-  }
-};
-
-const main = (state: a.State): a.TitleAndElement<a.Message> => {
-  switch (state.pageModel.tag) {
-    case "Home":
-      return pageHome.view(state);
-    case "CreateProject":
-      return pageCreateProject.view(state, state.pageModel.state);
-    case "About":
-      return pageAbout.view(state);
-    case "User":
-      return pageUser.view(state, state.pageModel.userId);
-    case "Debug":
-      return pageDebug.view(state, state.pageModel.tab);
-    case "Setting":
-      return pageSetting.view(state);
-    case "Project":
-      return pageProject.view(
-        state,
-        state.pageModel.projectId,
-        state.pageModel.state
-      );
   }
 };
 

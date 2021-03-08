@@ -1,12 +1,12 @@
-import * as a from "./messageAndState";
-import * as d from "../data";
-import * as definyType from "./definyType";
+import * as a from "../messageAndState";
+import * as d from "../../data";
+import * as definyType from "../definyType";
 import * as listEditor from "./listEditor";
 import * as typeEditor from "./typeEditor";
-import { SelectBoxSelection, box, selectText } from "./ui";
+import { SelectBoxSelection, box, selectText } from "../ui";
 import { c, elementMap } from "@narumincho/html/viewUtil";
 import { Element } from "@narumincho/html/view";
-import { oneLineTextEditor } from "./ui/oneLineTextInput";
+import { oneLineTextEditor } from "./oneLineTextInput";
 import { productEditor } from "./productEditor";
 
 export type ItemMessage =
