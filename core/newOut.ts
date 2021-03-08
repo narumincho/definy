@@ -1,4 +1,4 @@
-import * as d from "./data";
+import * as d from "../data";
 
 /* eslint-disable @typescript-eslint/no-namespace */
 namespace core {

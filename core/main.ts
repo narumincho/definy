@@ -1,4 +1,4 @@
-import * as data from "./data";
+import * as data from "../data";
 import * as elm from "elm-code-generator/source/data";
 import * as elmCodeGenerator from "elm-code-generator";
 import * as elmUtil from "elm-code-generator/source/util";
