@@ -22,3 +22,6 @@ jobs:
         run: npm run production-build
       - name: type check
         run: npm run typeCheck
+      - name: js-ts-code-generator test
+        run: npm run test
+        working-directory: ./gen/jsTs

@@ -1,0 +1,29 @@
+name: npm publish
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  npm-publish:
+    name: npm publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v2
+      - name: setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "14"
+      - name: Install npm dependencies (npm ci)
+        run: npm ci
+      - name: Transpile TypeScript (npx tsc)
+        run: npx run build
+        working-directory: ./gen/jsTs
+      - name: npm publish
+        id: publish
+        uses: JS-DevTools/npm-publish@v1
+        package: ./gen/jsTs/package.json
+        with:
+          token: ${{ secrets.NPM_AUTH_TOKEN }}
