@@ -10,6 +10,5 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "rootDir": "."
-  },
-  "exclude": ["./gen/jsTs/test.ts"]
+  }
 }
