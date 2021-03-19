@@ -1,10 +1,10 @@
+import * as d from "../data";
 import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
-import * as d from "../data";
+import * as jsTsData from "../gen/jsTs/data";
+import * as jsTsIdentifer from "../gen/jsTs/identifer";
 import * as ts from "typescript";
-import { generateCodeAsString } from "js-ts-code-generator";
-import * as jsTsData from "js-ts-code-generator/data";
-import * as jsTsIdentifer from "js-ts-code-generator/identifer";
+import { generateCodeAsString } from "../gen/jsTs/main";
 
 const clientSourceEntryPath = "./client/main.ts";
 const functionsSourceEntryPath = "./functions/main.ts";

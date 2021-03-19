@@ -1,7 +1,7 @@
 import * as data from "../data";
-import * as identifer from "js-ts-code-generator/identifer";
-import * as ts from "js-ts-code-generator/data";
-import * as tsUtil from "js-ts-code-generator/util";
+import * as identifer from "../gen/jsTs/identifer";
+import * as ts from "../gen/jsTs/data";
+import * as tsUtil from "../gen/jsTs/util";
 
 export const maybeMap = <Input, Output>(
   maybe: data.Maybe<Input>,
