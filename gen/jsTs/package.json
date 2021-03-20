@@ -4,7 +4,6 @@
   "description": "TypeScript And JavaScript Code Generator",
   "main": "main.js",
   "scripts": {
-    "test": "jest",
     "build": "tsc"
   },
   "repository": {
@@ -17,9 +16,6 @@
     "url": "https://github.com/narumincho/js-ts-code-generator/issues"
   },
   "homepage": "https://github.com/narumincho/js-ts-code-generator#readme",
-  "jest": {
-    "preset": "ts-jest"
-  },
   "files": [
     "**/*.d.ts",
     "**/*.js"
