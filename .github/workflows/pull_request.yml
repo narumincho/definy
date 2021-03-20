@@ -18,9 +18,9 @@ jobs:
           node-version: "14"
       - name: Install npm dependencies (npm ci)
         run: npm ci
+      - name: Run build script
+        run: npm run production-build
       - name: type check
         run: npm run typeCheck
       - name: test
         run: npm run test
-      - name: Run build script
-        run: npm run production-build
