@@ -1,8 +1,11 @@
 import * as collect from "./collect";
+import * as d from "../../data";
 import * as identifer from "./identifer";
 import * as toString from "./toString";
 import * as util from "./util";
 import { CodeType, Identifer, JsTsCode } from "./data";
+
+export { d };
 
 export const generateCodeAsString = (
   code: JsTsCode,

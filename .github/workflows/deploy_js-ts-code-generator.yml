@@ -19,11 +19,10 @@ jobs:
       - name: Install npm dependencies (npm ci)
         run: npm ci
       - name: Transpile TypeScript (npx tsc)
-        run: npx run build
-        working-directory: ./gen/jsTs
+        run: npm run build-js-ts-code-generator
+
       - name: npm publish
-        id: publish
+        working-directory: ./distribution
         uses: JS-DevTools/npm-publish@v1
         with:
           token: ${{ secrets.NPM_AUTH_TOKEN }}
-          package: ./gen/jsTs/package.json
