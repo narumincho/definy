@@ -123,7 +123,9 @@ const documentToString = (document: string): string => {
     : "\n/**\n" +
         documentTrimmed
           .split("\n")
-          .map((line) => (line === "" ? " *" : " * " + line))
+          .map((line) =>
+            line === "" ? " *" : " * " + line.replace(/\*\//gu, "* /")
+          )
           .join("\n") +
         "\n */\n";
 };
