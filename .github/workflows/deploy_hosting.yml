@@ -5,7 +5,7 @@ on: workflow_dispatch
 jobs:
   build-and-deploy:
     name: build and deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: checkout repository
         uses: actions/checkout@v2

@@ -4,7 +4,7 @@ import * as core from "../core/main";
 import * as coreUtil from "../core/util";
 import * as d from "../data";
 import * as indexedDB from "./indexedDB";
-import * as jsTsCodeGenerator from "js-ts-code-generator";
+import * as jsTsCodeGenerator from "../gen/jsTs/main";
 import * as page from "./page";
 import * as pageCreateProject from "./page/createProject";
 import * as pageProject from "./page/project";

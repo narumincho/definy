@@ -1,6 +1,6 @@
-import * as identifer from "js-ts-code-generator/identifer";
-import * as ts from "js-ts-code-generator/data";
-import * as tsUtil from "js-ts-code-generator/util";
+import * as identifer from "../../gen/jsTs/identifer";
+import * as ts from "../../gen/jsTs/data";
+import * as tsUtil from "../../gen/jsTs/util";
 import * as util from "../util";
 
 export const codecTypeWithTypeParameter = (

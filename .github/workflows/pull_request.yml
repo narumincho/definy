@@ -8,7 +8,7 @@ on:
 jobs:
   type-check-and-build-test:
     name: type check and build test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: checkout repository
         uses: actions/checkout@v2
@@ -22,3 +22,5 @@ jobs:
         run: npm run production-build
       - name: type check
         run: npm run typeCheck
+      - name: test
+        run: npm run test

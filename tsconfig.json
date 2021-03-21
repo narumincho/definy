@@ -8,6 +8,8 @@
     "module": "CommonJS",
     "moduleResolution": "Node",
     "isolatedModules": true,
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+    "rootDir": "."
+  },
+  "exclude": ["./test/env.ts"]
 }
