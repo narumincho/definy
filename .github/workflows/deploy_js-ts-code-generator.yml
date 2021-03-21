@@ -20,8 +20,8 @@ jobs:
         run: npm ci
       - name: Transpile TypeScript (npx tsc)
         run: npm run build-js-ts-code-generator
-      - run: cd ./distribution
       - name: npm publish
         uses: JS-DevTools/npm-publish@v1
         with:
           token: ${{ secrets.NPM_AUTH_TOKEN }}
+          package: ./distribution/package.json
