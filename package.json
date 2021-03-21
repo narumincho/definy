@@ -13,7 +13,8 @@
     "generate-graph": "npx depcruise -X node_modules --output-type dot client/main.ts functions/main.ts core/main.ts | dot -T svg > graph.svg",
     "production-build": "ts-node ./build/start-production.ts",
     "develop-build": "ts-node ./build/start-develop.ts",
-    "start-emulator": "firebase emulators:start --project definy-lang"
+    "start-emulator": "firebase emulators:start --project definy-lang",
+    "build-js-ts-code-generator": "ts-node ./build/js-ts-code-generator.ts"
   },
   "devDependencies": {
     "@narumincho/html": "0.2.6",
