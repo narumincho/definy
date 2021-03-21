@@ -10,5 +10,6 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "rootDir": "."
-  }
+  },
+  "exclude": ["./test/env.ts"]
 }
