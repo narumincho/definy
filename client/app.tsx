@@ -1,3 +1,4 @@
+import * as React from "react";
 import * as a from "./messageAndState";
 import * as commonUrl from "../common/url";
 import * as core from "../core/main";
@@ -14,6 +15,10 @@ import { mapMapAt, mapSet } from "./util";
 import { view, viewUtil } from "@narumincho/html";
 import { api } from "./api";
 import { headerView } from "./ui/header";
+
+export const DefinyApp: React.VFC<Record<never, never>> = () => {
+  return <div>やあ</div>;
+};
 
 export const initState = (
   messageHandler: (message: a.Message) => void

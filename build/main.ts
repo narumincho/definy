@@ -5,7 +5,7 @@ import * as packageJsonGen from "../gen/packageJson/main";
 import * as ts from "typescript";
 import { generateCodeAsString, identifer } from "../gen/jsTs/main";
 
-const clientSourceEntryPath = "./client/main.ts";
+const clientSourceEntryPath = "./client/main.tsx";
 const functionsSourceEntryPath = "./functions/main.ts";
 const distributionPath = "./distribution";
 const functionsDistributionPath = `${distributionPath}/functions`;

@@ -9,7 +9,8 @@
     "moduleResolution": "Node",
     "isolatedModules": true,
     "skipLibCheck": true,
-    "rootDir": "."
+    "rootDir": ".",
+    "jsx": "react"
   },
   "exclude": ["./test/env.ts"]
 }
