@@ -1,6 +1,9 @@
 import { Color, Element } from "@narumincho/html/view";
 import { c, div, path, svg } from "@narumincho/html/viewUtil";
+import { button } from "./ui/button";
 import { colorToHexString } from "@narumincho/html/util";
+
+export { button };
 
 export type GridTemplateValue = { _: "Fix"; value: number } | { _: "OneFr" };
 
@@ -32,7 +35,9 @@ export type BoxOption<Message> = {
 /** CSSの指定をできるだけしなくて済むように */
 export const box = <Message>(
   option: BoxOption<Message>,
-  children: ReadonlyMap<string, Element<Message>>
+  children:
+    | ReadonlyMap<string, Element<Message>>
+    | ReadonlyArray<readonly [string, Element<Message>]>
 ): Element<Message> =>
   div(
     {
@@ -67,7 +72,7 @@ export const box = <Message>(
       },
       click: option.click,
     },
-    children
+    children instanceof Array ? new Map(children) : children
   );
 
 const gridTemplateToCssString = (value: GridTemplateValue): string => {

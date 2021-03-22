@@ -8,6 +8,7 @@ import { Element } from "@narumincho/html/view";
 import { button } from "../ui/button";
 import { icon } from "../ui/icon";
 import { image } from "../ui/image";
+import { link } from "../ui/link";
 import { mapMapValue } from "../util";
 import { multiLineTextEditor } from "../ui/multilineTextInput";
 import { oneLineTextEditor } from "../ui/oneLineTextInput";
@@ -284,15 +285,11 @@ const typePartNameListView = (
         .toLocaleLowerCase()
         .includes(searchText.toLocaleLowerCase())
     ) {
-      return button(
+      return link(
         {
-          click: {
-            tag: "PageProject",
-            message: {
-              tag: "SelectTypePart",
-              typePartId,
-            },
-          },
+          appInterface: state,
+          location: d.Location.TypePart(typePartId),
+          theme: "Gray",
         },
         resource.dataWithTime.data.name
       );
@@ -355,7 +352,7 @@ const mainView = (
     case "SelectProjectDetail":
       return projectDetailView(state, pageState, projectId, project);
     case "SelectTypePart": {
-      const { typePartId } = pageState.selection;
+      const typePartId = pageState.selection.typePartId;
       return div<a.Message>(
         {
           style: {

@@ -5,6 +5,7 @@ import * as pageDebug from "./page/debug";
 import * as pageHome from "./page/home";
 import * as pageProject from "./page/project";
 import * as pageSetting from "./page/setting";
+import * as pageTypePart from "./page/editTypePart";
 import * as pageUser from "./page/user";
 import type { Message, State, TitleAndElement } from "./messageAndState";
 
@@ -32,6 +33,11 @@ export type PageState =
       readonly tag: "Project";
       readonly projectId: d.ProjectId;
       readonly state: pageProject.PageState;
+    }
+  | {
+      readonly tag: "TypePart";
+      readonly typePartId: d.TypePartId;
+      readonly state: pageTypePart.State;
     };
 
 /**
@@ -55,6 +61,12 @@ export const titleAndElement = (state: State): TitleAndElement<Message> => {
       return pageProject.view(
         state,
         state.pageState.projectId,
+        state.pageState.state
+      );
+    case "TypePart":
+      return pageTypePart.view(
+        state,
+        state.pageState.typePartId,
         state.pageState.state
       );
   }
@@ -88,8 +100,16 @@ export const locationToInitPageState = (
         state: messageListAndPageModel.pageState,
       };
     }
+    case "TypePart": {
+      const messageListAndState = pageTypePart.init;
+      callMessageList(messageListAndState.messageList, messageHandler);
+      return {
+        tag: "TypePart",
+        typePartId: location.typePartId,
+        state: messageListAndState.state,
+      };
+    }
   }
-  return { tag: "About" };
 };
 
 const callMessageList = (
@@ -117,5 +137,7 @@ export const pageStateToLocation = (pageModel: PageState): d.Location => {
       return d.Location.Setting;
     case "Project":
       return d.Location.Project(pageModel.projectId);
+    case "TypePart":
+      return d.Location.TypePart(pageModel.typePartId);
   }
 };

@@ -10,7 +10,7 @@ import { Element } from "@narumincho/html/view";
 import { button } from "../ui/button";
 import { icon } from "../ui/icon";
 
-const tabList = ["Icon", "Product", "Sum", "List"] as const;
+const tabList = ["Icon", "EditTypePart"] as const;
 
 export type Tab = typeof tabList[number];
 
@@ -82,12 +82,8 @@ const content = (appInterface: State, selectedTab: Tab): Element<never> => {
   switch (selectedTab) {
     case "Icon":
       return iconView;
-    case "Product":
+    case "EditTypePart":
       return div({}, "Product");
-    case "Sum":
-      return div({}, "Sum");
-    case "List":
-      return div({}, "List");
   }
 };
 
