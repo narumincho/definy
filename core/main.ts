@@ -4,7 +4,6 @@ import * as elmCodeGenerator from "elm-code-generator";
 import * as elmUtil from "elm-code-generator/source/util";
 import * as hexString from "./kernelType/hexString";
 import * as jsTsCodeGenerator from "../gen/jsTs/main";
-import * as ts from "../gen/jsTs/data";
 import * as typeAlias from "./typeAlias";
 import * as util from "./util";
 import * as variable from "./variable";
@@ -355,20 +354,20 @@ export const generateJavaScriptCodeAsString = (
 
 export const generateTypeScriptCode = (
   typePartMap: ReadonlyMap<data.TypePartId, data.TypePart>
-): ts.JsTsCode => {
+): data.JsTsCode => {
   const allTypePartIdTypePartNameMap = checkTypePartListValidation(typePartMap);
   return {
     exportDefinitionList: [
-      ts.ExportDefinition.Function(hexString.encodeIdFunction),
-      ts.ExportDefinition.Function(hexString.idDecodeFunction),
-      ts.ExportDefinition.Function(hexString.tokenEncodeFunction),
-      ts.ExportDefinition.Function(hexString.decodeTokenFunction),
+      data.ExportDefinition.Function(hexString.encodeIdFunction),
+      data.ExportDefinition.Function(hexString.idDecodeFunction),
+      data.ExportDefinition.Function(hexString.tokenEncodeFunction),
+      data.ExportDefinition.Function(hexString.decodeTokenFunction),
       ...typeAlias
         .typePartMapToTypeAlias(typePartMap, allTypePartIdTypePartNameMap)
-        .map(ts.ExportDefinition.TypeAlias),
+        .map(data.ExportDefinition.TypeAlias),
       ...variable
         .typePartMapToVariable(typePartMap, allTypePartIdTypePartNameMap)
-        .map(ts.ExportDefinition.Variable),
+        .map(data.ExportDefinition.Variable),
     ],
     statementList: [],
   };

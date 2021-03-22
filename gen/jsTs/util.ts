@@ -1,5 +1,5 @@
 import * as identifer from "./identifer";
-import { Expr, Statement, Type } from "./data";
+import { Statement, TsExpr, TsType } from "../../data";
 
 /**
  * 使われている名前, モジュールのパス
@@ -15,10 +15,10 @@ export type UsedNameAndModulePathSet = {
  * @param expr 式
  * @param propertyName プロパティ名
  */
-export const get = (expr: Expr, propertyName: string): Expr =>
-  Expr.Get({
+export const get = (expr: TsExpr, propertyName: string): TsExpr =>
+  TsExpr.Get({
     expr,
-    propertyExpr: Expr.StringLiteral(propertyName),
+    propertyExpr: TsExpr.StringLiteral(propertyName),
   });
 
 /**
@@ -28,17 +28,17 @@ export const get = (expr: Expr, propertyName: string): Expr =>
  * @param parameterList
  */
 export const callMethod = (
-  expr: Expr,
+  expr: TsExpr,
   methodName: string,
-  parameterList: ReadonlyArray<Expr>
-): Expr => Expr.Call({ expr: get(expr, methodName), parameterList });
+  parameterList: ReadonlyArray<TsExpr>
+): TsExpr => TsExpr.Call({ expr: get(expr, methodName), parameterList });
 
 /**
  * 単項マイナス演算子 `-a`
  * @param expr 式
  */
-export const minus = (expr: Expr): Expr =>
-  Expr.UnaryOperator({
+export const minus = (expr: TsExpr): TsExpr =>
+  TsExpr.UnaryOperator({
     operator: "Minus",
     expr,
   });
@@ -47,8 +47,8 @@ export const minus = (expr: Expr): Expr =>
  * ビット否定 `~a`
  * @param expr 式
  */
-export const bitwiseNot = (expr: Expr): Expr =>
-  Expr.UnaryOperator({
+export const bitwiseNot = (expr: TsExpr): TsExpr =>
+  TsExpr.UnaryOperator({
     operator: "BitwiseNot",
     expr,
   });
@@ -58,8 +58,8 @@ export const bitwiseNot = (expr: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const logicalNot = (expr: Expr): Expr =>
-  Expr.UnaryOperator({
+export const logicalNot = (expr: TsExpr): TsExpr =>
+  TsExpr.UnaryOperator({
     operator: "LogicalNot",
     expr,
   });
@@ -69,8 +69,8 @@ export const logicalNot = (expr: Expr): Expr =>
  * @param left
  * @param right
  */
-export const exponentiation = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const exponentiation = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "Multiplication",
     left,
     right,
@@ -81,8 +81,8 @@ export const exponentiation = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const multiplication = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const multiplication = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "Multiplication",
     left,
     right,
@@ -93,8 +93,8 @@ export const multiplication = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const division = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const division = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "Division",
     left,
     right,
@@ -105,8 +105,8 @@ export const division = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const modulo = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const modulo = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "Remainder",
     left,
     right,
@@ -117,8 +117,8 @@ export const modulo = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const addition = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const addition = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "Addition",
     left,
     right,
@@ -129,8 +129,8 @@ export const addition = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const subtraction = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const subtraction = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "Subtraction",
     left,
     right,
@@ -141,8 +141,8 @@ export const subtraction = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const leftShift = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const leftShift = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "LeftShift",
     left,
     right,
@@ -153,8 +153,8 @@ export const leftShift = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const signedRightShift = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const signedRightShift = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "SignedRightShift",
     left,
     right,
@@ -165,8 +165,8 @@ export const signedRightShift = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const unsignedRightShift = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const unsignedRightShift = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "UnsignedRightShift",
     left,
     right,
@@ -177,8 +177,8 @@ export const unsignedRightShift = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const lessThan = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const lessThan = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "LessThan",
     left,
     right,
@@ -189,8 +189,8 @@ export const lessThan = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const lessThanOrEqual = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const lessThanOrEqual = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "LessThanOrEqual",
     left,
     right,
@@ -200,8 +200,8 @@ export const lessThanOrEqual = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const equal = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const equal = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "Equal",
     left,
     right,
@@ -212,8 +212,8 @@ export const equal = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const notEqual = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const notEqual = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "NotEqual",
     left,
     right,
@@ -224,15 +224,15 @@ export const notEqual = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const bitwiseAnd = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const bitwiseAnd = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "BitwiseAnd",
     left,
     right,
   });
 
-export const bitwiseXOr = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const bitwiseXOr = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "BitwiseXOr",
     left,
     right,
@@ -243,8 +243,8 @@ export const bitwiseXOr = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const bitwiseOr = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const bitwiseOr = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "BitwiseOr",
     left,
     right,
@@ -255,8 +255,8 @@ export const bitwiseOr = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const logicalAnd = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const logicalAnd = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "LogicalAnd",
     left,
     right,
@@ -267,8 +267,8 @@ export const logicalAnd = (left: Expr, right: Expr): Expr =>
  * @param left 左辺
  * @param right 右辺
  */
-export const logicalOr = (left: Expr, right: Expr): Expr =>
-  Expr.BinaryOperator({
+export const logicalOr = (left: TsExpr, right: TsExpr): TsExpr =>
+  TsExpr.BinaryOperator({
     operator: "LogicalOr",
     left,
     right,
@@ -282,10 +282,10 @@ export const logicalOr = (left: Expr, right: Expr): Expr =>
  */
 export const callNumberMethod = (
   methodName: string,
-  parameterList: ReadonlyArray<Expr>
-): Expr =>
+  parameterList: ReadonlyArray<TsExpr>
+): TsExpr =>
   callMethod(
-    Expr.GlobalObjects(identifer.fromString("Number")),
+    TsExpr.GlobalObjects(identifer.fromString("Number")),
     methodName,
     parameterList
   );
@@ -298,10 +298,10 @@ export const callNumberMethod = (
  */
 export const callMathMethod = (
   methodName: string,
-  parameterList: ReadonlyArray<Expr>
-): Expr =>
+  parameterList: ReadonlyArray<TsExpr>
+): TsExpr =>
   callMethod(
-    Expr.GlobalObjects(identifer.fromString("Math")),
+    TsExpr.GlobalObjects(identifer.fromString("Math")),
     methodName,
     parameterList
   );
@@ -311,8 +311,8 @@ export const callMathMethod = (
  * new Date()
  * ```
  */
-export const newDate: Expr = Expr.New({
-  expr: Expr.GlobalObjects(identifer.fromString("Date")),
+export const newDate: TsExpr = TsExpr.New({
+  expr: TsExpr.GlobalObjects(identifer.fromString("Date")),
   parameterList: [],
 });
 
@@ -321,9 +321,9 @@ export const newDate: Expr = Expr.New({
  * new Uint8Array(lengthOrIterable)
  * ```
  */
-export const newUint8Array = (lengthOrIterable: Expr): Expr =>
-  Expr.New({
-    expr: Expr.GlobalObjects(identifer.fromString("Uint8Array")),
+export const newUint8Array = (lengthOrIterable: TsExpr): TsExpr =>
+  TsExpr.New({
+    expr: TsExpr.GlobalObjects(identifer.fromString("Uint8Array")),
     parameterList: [lengthOrIterable],
   });
 
@@ -332,9 +332,9 @@ export const newUint8Array = (lengthOrIterable: Expr): Expr =>
  * new Map(initKeyValueList)
  * ```
  */
-export const newMap = (initKeyValueList: Expr): Expr =>
-  Expr.New({
-    expr: Expr.GlobalObjects(identifer.fromString("Map")),
+export const newMap = (initKeyValueList: TsExpr): TsExpr =>
+  TsExpr.New({
+    expr: TsExpr.GlobalObjects(identifer.fromString("Map")),
     parameterList: [initKeyValueList],
   });
 
@@ -343,9 +343,9 @@ export const newMap = (initKeyValueList: Expr): Expr =>
  * new Set(initValueList)
  * ```
  */
-export const newSet = (initValueList: Expr): Expr =>
-  Expr.New({
-    expr: Expr.GlobalObjects(identifer.fromString("Set")),
+export const newSet = (initValueList: TsExpr): TsExpr =>
+  TsExpr.New({
+    expr: TsExpr.GlobalObjects(identifer.fromString("Set")),
     parameterList: [initValueList],
   });
 
@@ -354,9 +354,9 @@ export const newSet = (initValueList: Expr): Expr =>
  * console.log(expr)
  * ```
  */
-export const consoleLog = (expr: Expr): Statement =>
+export const consoleLog = (expr: TsExpr): Statement =>
   Statement.EvaluateExpr(
-    callMethod(Expr.GlobalObjects(identifer.fromString("console")), "log", [
+    callMethod(TsExpr.GlobalObjects(identifer.fromString("console")), "log", [
       expr,
     ])
   );
@@ -364,74 +364,76 @@ export const consoleLog = (expr: Expr): Statement =>
 /**
  * `Array<elementType>`
  */
-export const arrayType = (elementType: Type): Type =>
-  Type.WithTypeParameter({
-    type: Type.ScopeInGlobal(identifer.fromString("Array")),
+export const arrayType = (elementType: TsType): TsType =>
+  TsType.WithTypeParameter({
+    type: TsType.ScopeInGlobal(identifer.fromString("Array")),
     typeParameterList: [elementType],
   });
 
 /**
  * `ReadonlyArray<elementType>`
  */
-export const readonlyArrayType = (elementType: Type): Type =>
-  Type.WithTypeParameter({
-    type: Type.ScopeInGlobal(identifer.fromString("ReadonlyArray")),
+export const readonlyArrayType = (elementType: TsType): TsType =>
+  TsType.WithTypeParameter({
+    type: TsType.ScopeInGlobal(identifer.fromString("ReadonlyArray")),
     typeParameterList: [elementType],
   });
 
 /**
  * `Uint8Array`
  */
-export const uint8ArrayType: Type = Type.ScopeInGlobal(
+export const uint8ArrayType: TsType = TsType.ScopeInGlobal(
   identifer.fromString("Uint8Array")
 );
 
 /**
  * `Promise<returnType>`
  */
-export const promiseType = (returnType: Type): Type =>
-  Type.WithTypeParameter({
-    type: Type.ScopeInGlobal(identifer.fromString("Promise")),
+export const promiseType = (returnType: TsType): TsType =>
+  TsType.WithTypeParameter({
+    type: TsType.ScopeInGlobal(identifer.fromString("Promise")),
     typeParameterList: [returnType],
   });
 
 /**
  * `Date`
  */
-export const dateType: Type = Type.ScopeInGlobal(identifer.fromString("Date"));
+export const dateType: TsType = TsType.ScopeInGlobal(
+  identifer.fromString("Date")
+);
 
 /**
  * `Map<keyType, valueType>`
  */
-export const mapType = (keyType: Type, valueType: Type): Type =>
-  Type.WithTypeParameter({
-    type: Type.ScopeInGlobal(identifer.fromString("Map")),
+export const mapType = (keyType: TsType, valueType: TsType): TsType =>
+  TsType.WithTypeParameter({
+    type: TsType.ScopeInGlobal(identifer.fromString("Map")),
     typeParameterList: [keyType, valueType],
   });
 
 /**
  * `ReadonlyMap<keyType, valueType>`
  */
-export const readonlyMapType = (keyType: Type, valueType: Type): Type =>
-  Type.WithTypeParameter({
-    type: Type.ScopeInGlobal(identifer.fromString("ReadonlyMap")),
+export const readonlyMapType = (keyType: TsType, valueType: TsType): TsType =>
+  TsType.WithTypeParameter({
+    type: TsType.ScopeInGlobal(identifer.fromString("ReadonlyMap")),
     typeParameterList: [keyType, valueType],
   });
 
 /**
  * `Set<elementType>`
  */
-export const setType = (elementType: Type): Type =>
-  Type.WithTypeParameter({
-    type: Type.ScopeInGlobal(identifer.fromString("Set")),
+export const setType = (elementType: TsType): TsType =>
+  TsType.WithTypeParameter({
+    type: TsType.ScopeInGlobal(identifer.fromString("Set")),
     typeParameterList: [elementType],
   });
 
 /**
  * `ReadonlySet<elementType>`
  */
-export const readonlySetType = (elementType: Type): Type =>
-  Type.WithTypeParameter({
-    type: Type.ScopeInGlobal(identifer.fromString("ReadonlySet")),
+export const readonlySetType = (elementType: TsType): TsType =>
+  TsType.WithTypeParameter({
+    type: TsType.ScopeInGlobal(identifer.fromString("ReadonlySet")),
     typeParameterList: [elementType],
   });

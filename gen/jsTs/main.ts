@@ -3,13 +3,12 @@ import * as d from "../../data";
 import * as identifer from "./identifer";
 import * as toString from "./toString";
 import * as util from "./util";
-import { CodeType, Identifer, JsTsCode } from "./data";
 
-export { d };
+export { d, identifer, util };
 
 export const generateCodeAsString = (
-  code: JsTsCode,
-  codeType: CodeType
+  code: d.JsTsCode,
+  codeType: d.CodeType
 ): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
   const usedNameAndModulePath: util.UsedNameAndModulePathSet = collect.collectInCode(
@@ -29,9 +28,9 @@ export const generateCodeAsString = (
  */
 const createImportedModuleName = (
   usedNameAndModulePath: util.UsedNameAndModulePathSet
-): ReadonlyMap<string, Identifer> => {
+): ReadonlyMap<string, d.TsIdentifer> => {
   let identiferIndex = identifer.initialIdentiferIndex;
-  const importedModuleNameMap = new Map<string, Identifer>();
+  const importedModuleNameMap = new Map<string, d.TsIdentifer>();
   for (const modulePath of usedNameAndModulePath.modulePathSet) {
     const identiferAndNextIdentiferIndex = identifer.createIdentifer(
       identiferIndex,

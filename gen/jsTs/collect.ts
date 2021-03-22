@@ -1,15 +1,15 @@
 import {
   CallExpr,
   ExportDefinition,
-  Expr,
   Function as Function_,
-  Identifer,
   JsTsCode,
   Statement,
-  Type,
+  TsExpr,
+  TsIdentifer,
+  TsType,
   TypeAlias,
   Variable,
-} from "./data";
+} from "../../data";
 import { UsedNameAndModulePathSet } from "./util";
 
 /**
@@ -198,7 +198,7 @@ const collectInVariableDefinition = (
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
 const collectInExpr = (
-  expr: Expr,
+  expr: TsExpr,
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
   rootScopeIdentiferSet: RootScopeIdentiferSet
@@ -272,11 +272,11 @@ const collectInExpr = (
       );
 
     case "ObjectLiteral":
-      return collectList(expr.memberList, (member) => {
+      return collectList(expr.tsMemberList, (member) => {
         switch (member._) {
           case "Spread":
             return collectInExpr(
-              member.expr,
+              member.tsExpr,
               localVariableNameSetList,
               typeParameterSetList,
               rootScopeIdentiferSet
@@ -338,7 +338,7 @@ const collectInExpr = (
       checkVariableIsDefinedOrThrow(
         localVariableNameSetList,
         rootScopeIdentiferSet.rootScopeVariableName,
-        expr.identifer
+        expr.tsIdentifer
       );
       return {
         modulePathSet: new Set(),
@@ -348,7 +348,7 @@ const collectInExpr = (
     case "GlobalObjects":
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set([expr.identifer.string]),
+        usedNameSet: new Set([expr.tsIdentifer.string]),
       };
 
     case "ImportedVariable":
@@ -474,7 +474,7 @@ const collectInStatement = (
   switch (statement._) {
     case "EvaluateExpr":
       return collectInExpr(
-        statement.expr,
+        statement.tsExpr,
         localVariableNameSetList,
         typeParameterSetList,
         rootScopeIdentiferSet
@@ -515,7 +515,7 @@ const collectInStatement = (
 
     case "ThrowError":
       return collectInExpr(
-        statement.expr,
+        statement.tsExpr,
         localVariableNameSetList,
         typeParameterSetList,
         rootScopeIdentiferSet
@@ -523,7 +523,7 @@ const collectInStatement = (
 
     case "Return":
       return collectInExpr(
-        statement.expr,
+        statement.tsExpr,
         localVariableNameSetList,
         typeParameterSetList,
         rootScopeIdentiferSet
@@ -663,7 +663,7 @@ const collectInStatement = (
 const checkVariableIsDefinedOrThrow = (
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
   rootScopeNameSet: ReadonlySet<string>,
-  variableName: Identifer
+  variableName: TsIdentifer
 ): void => {
   const reversedLocalVariableNameSetList = [
     ...localVariableNameSetList,
@@ -697,7 +697,7 @@ const checkVariableIsDefinedOrThrow = (
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
 const collectInType = (
-  type_: Type,
+  type_: TsType,
   rootScopeTypeNameSet: ReadonlySet<string>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>
 ): UsedNameAndModulePathSet => {
@@ -715,7 +715,7 @@ const collectInType = (
       };
 
     case "Object":
-      return collectList([...type_.memberTypeList], (member) =>
+      return collectList([...type_.tsMemberTypeList], (member) =>
         collectInType(member.type, rootScopeTypeNameSet, typeParameterSetList)
       );
 
@@ -745,19 +745,19 @@ const collectInType = (
     case "WithTypeParameter":
       return concatCollectData(
         collectInType(
-          type_.typeWithTypeParameter.type,
+          type_.tsTypeWithTypeParameter.type,
           rootScopeTypeNameSet,
           typeParameterSetList
         ),
         collectList(
-          type_.typeWithTypeParameter.typeParameterList,
+          type_.tsTypeWithTypeParameter.typeParameterList,
           (parameter) =>
             collectInType(parameter, rootScopeTypeNameSet, typeParameterSetList)
         )
       );
 
     case "Union":
-      return collectList(type_.typeList, (oneType) =>
+      return collectList(type_.tsTypeList, (oneType) =>
         collectInType(oneType, rootScopeTypeNameSet, typeParameterSetList)
       );
 
@@ -785,17 +785,17 @@ const collectInType = (
       checkTypeIsDefinedOrThrow(
         rootScopeTypeNameSet,
         typeParameterSetList,
-        type_.identifer
+        type_.tsIdentifer
       );
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set([type_.identifer.string]),
+        usedNameSet: new Set([type_.tsIdentifer.string]),
       };
 
     case "ScopeInGlobal":
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set([type_.identifer.string]),
+        usedNameSet: new Set([type_.tsIdentifer.string]),
       };
 
     case "StringLiteral":
@@ -809,7 +809,7 @@ const collectInType = (
 const checkTypeIsDefinedOrThrow = (
   rootScopeTypeNameSet: ReadonlySet<string>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
-  typeName: Identifer
+  typeName: TsIdentifer
 ): void => {
   const reversedTypeParameterSetList = [...typeParameterSetList].reverse();
   for (const typeParameter of reversedTypeParameterSetList) {
@@ -876,7 +876,7 @@ const collectList = <Element>(
  */
 const checkDuplicateIdentifer = (
   name: string,
-  identiferList: ReadonlyArray<Identifer>
+  identiferList: ReadonlyArray<TsIdentifer>
 ): ReadonlySet<string> => {
   const set: Set<string> = new Set();
   for (const identifer of identiferList) {

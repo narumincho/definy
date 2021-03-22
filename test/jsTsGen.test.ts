@@ -1,30 +1,18 @@
-import * as identifer from "../gen/jsTs/identifer";
-import * as util from "../gen/jsTs/util";
-import {
-  BinaryOperator,
-  ExportDefinition,
-  Expr,
-  JsTsCode,
-  Maybe,
-  Member,
-  Statement,
-  Type,
-} from "../gen/jsTs/data";
-import { generateCodeAsString } from "../gen/jsTs/main";
+import { d, generateCodeAsString, identifer, util } from "../gen/jsTs/main";
 
 describe("test", () => {
-  const expressRequest = Type.ImportedType({
+  const expressRequest = d.TsType.ImportedType({
     moduleName: "express",
     name: identifer.fromString("Request"),
   });
-  const expressResponse = Type.ImportedType({
+  const expressResponse = d.TsType.ImportedType({
     moduleName: "express",
     name: identifer.fromString("Response"),
   });
 
-  const sampleCode: JsTsCode = {
+  const sampleCode: d.JsTsCode = {
     exportDefinitionList: [
-      ExportDefinition.Function({
+      d.ExportDefinition.Function({
         name: identifer.fromString("middleware"),
         typeParameterList: [],
         parameterList: [
@@ -40,7 +28,7 @@ describe("test", () => {
           },
         ],
         document: "ミドルウェア",
-        returnType: Type.Void,
+        returnType: d.TsType.Void,
         statementList: [],
       }),
     ],
@@ -61,12 +49,12 @@ describe("test", () => {
     const codeAsString = generateCodeAsString(
       {
         exportDefinitionList: [
-          ExportDefinition.Function({
+          d.ExportDefinition.Function({
             name: identifer.fromString("new"),
             document: "newという名前の関数",
             typeParameterList: [],
             parameterList: [],
-            returnType: Type.Void,
+            returnType: d.TsType.Void,
             statementList: [],
           }),
         ],
@@ -82,12 +70,12 @@ describe("test", () => {
     const codeAsString = generateCodeAsString(
       {
         exportDefinitionList: [
-          ExportDefinition.Function({
+          d.ExportDefinition.Function({
             name: identifer.fromString("0name"),
             document: "0から始まる識別子",
             typeParameterList: [],
             parameterList: [],
-            returnType: Type.Void,
+            returnType: d.TsType.Void,
             statementList: [],
           }),
         ],
@@ -118,13 +106,13 @@ describe("test", () => {
     }).not.toThrow();
   });
   it("escape string literal", () => {
-    const nodeJsCode: JsTsCode = {
+    const nodeJsCode: d.JsTsCode = {
       exportDefinitionList: [
-        ExportDefinition.Variable({
+        d.ExportDefinition.Variable({
           name: identifer.fromString("stringValue"),
           document: "文字列リテラルでエスケープしているか調べる",
-          type: Type.String,
-          expr: Expr.StringLiteral(`
+          type: d.TsType.String,
+          expr: d.TsExpr.StringLiteral(`
 
           改行
           "ダブルクオーテーション"
@@ -140,9 +128,9 @@ describe("test", () => {
   });
 
   it("include function parameter name", () => {
-    const nodeJsCode: JsTsCode = {
+    const nodeJsCode: d.JsTsCode = {
       exportDefinitionList: [
-        ExportDefinition.Function({
+        d.ExportDefinition.Function({
           name: identifer.fromString("middleware"),
           document: "ミドルウェア",
           typeParameterList: [],
@@ -150,7 +138,7 @@ describe("test", () => {
             {
               name: identifer.fromString("request"),
               document: "リクエスト",
-              type: Type.ImportedType({
+              type: d.TsType.ImportedType({
                 moduleName: "express",
                 name: identifer.fromString("Request"),
               }),
@@ -158,48 +146,48 @@ describe("test", () => {
             {
               name: identifer.fromString("response"),
               document: "レスポンス",
-              type: Type.ImportedType({
+              type: d.TsType.ImportedType({
                 moduleName: "express",
                 name: identifer.fromString("Response"),
               }),
             },
           ],
-          returnType: Type.Void,
+          returnType: d.TsType.Void,
           statementList: [
-            Statement.VariableDefinition({
+            d.Statement.VariableDefinition({
               name: identifer.fromString("accept"),
-              type: Type.Union([Type.String, Type.Undefined]),
+              type: d.TsType.Union([d.TsType.String, d.TsType.Undefined]),
               isConst: true,
               expr: util.get(
                 util.get(
-                  Expr.Variable(identifer.fromString("request")),
+                  d.TsExpr.Variable(identifer.fromString("request")),
                   "headers"
                 ),
                 "accept"
               ),
             }),
-            Statement.If({
-              condition: Expr.BinaryOperator({
-                left: Expr.BinaryOperator({
-                  left: Expr.Variable(identifer.fromString("accept")),
+            d.Statement.If({
+              condition: d.TsExpr.BinaryOperator({
+                left: d.TsExpr.BinaryOperator({
+                  left: d.TsExpr.Variable(identifer.fromString("accept")),
                   operator: "NotEqual",
-                  right: Expr.UndefinedLiteral,
+                  right: d.TsExpr.UndefinedLiteral,
                 }),
                 operator: "LogicalAnd",
                 right: util.callMethod(
-                  Expr.Variable(identifer.fromString("accept")),
+                  d.TsExpr.Variable(identifer.fromString("accept")),
                   "includes",
-                  [Expr.StringLiteral("text/html")]
+                  [d.TsExpr.StringLiteral("text/html")]
                 ),
               }),
               thenStatementList: [
-                Statement.EvaluateExpr(
+                d.Statement.EvaluateExpr(
                   util.callMethod(
-                    Expr.Variable(identifer.fromString("response")),
+                    d.TsExpr.Variable(identifer.fromString("response")),
                     "setHeader",
                     [
-                      Expr.StringLiteral("content-type"),
-                      Expr.StringLiteral("text/html"),
+                      d.TsExpr.StringLiteral("content-type"),
+                      d.TsExpr.StringLiteral("text/html"),
                     ]
                   )
                 ),
@@ -218,7 +206,7 @@ describe("test", () => {
     const code = generateCodeAsString(
       {
         exportDefinitionList: [
-          ExportDefinition.Function({
+          d.ExportDefinition.Function({
             name: identifer.fromString("getZeroIndexElement"),
             document: "Uint8Arrayの0番目の要素を取得する",
             typeParameterList: [],
@@ -229,12 +217,12 @@ describe("test", () => {
                 type: util.uint8ArrayType,
               },
             ],
-            returnType: Type.Number,
+            returnType: d.TsType.Number,
             statementList: [
-              Statement.Return(
-                Expr.Get({
-                  expr: Expr.Variable(identifer.fromString("array")),
-                  propertyExpr: Expr.NumberLiteral(0),
+              d.Statement.Return(
+                d.TsExpr.Get({
+                  expr: d.TsExpr.Variable(identifer.fromString("array")),
+                  propertyExpr: d.TsExpr.NumberLiteral(0),
                 })
               ),
             ],
@@ -251,13 +239,13 @@ describe("test", () => {
     {
       exportDefinitionList: [],
       statementList: [
-        Statement.VariableDefinition({
+        d.Statement.VariableDefinition({
           name: identifer.fromString("sorena"),
           isConst: false,
-          type: Type.String,
-          expr: Expr.StringLiteral("それな"),
+          type: d.TsType.String,
+          expr: d.TsExpr.StringLiteral("それな"),
         }),
-        util.consoleLog(Expr.Variable(identifer.fromString("sorena"))),
+        util.consoleLog(d.TsExpr.Variable(identifer.fromString("sorena"))),
       ],
     },
     "JavaScript"
@@ -274,12 +262,12 @@ describe("test", () => {
     const code = generateCodeAsString(
       {
         exportDefinitionList: [
-          ExportDefinition.Function({
+          d.ExportDefinition.Function({
             name: identifer.fromString("sample"),
             document: "",
             typeParameterList: [],
             parameterList: [],
-            returnType: util.promiseType(Type.String),
+            returnType: util.promiseType(d.TsType.String),
             statementList: [],
           }),
         ],
@@ -295,12 +283,15 @@ describe("test", () => {
       {
         exportDefinitionList: [],
         statementList: [
-          Statement.EvaluateExpr(
-            Expr.ObjectLiteral([
-              Member.KeyValue({ key: "abc", value: Expr.NumberLiteral(3) }),
-              Member.KeyValue({
+          d.Statement.EvaluateExpr(
+            d.TsExpr.ObjectLiteral([
+              d.TsMember.KeyValue({
+                key: "abc",
+                value: d.TsExpr.NumberLiteral(3),
+              }),
+              d.TsMember.KeyValue({
                 key: "a b c",
-                value: Expr.StringLiteral("separated"),
+                value: d.TsExpr.StringLiteral("separated"),
               }),
             ])
           ),
@@ -316,27 +307,36 @@ describe("test", () => {
       {
         exportDefinitionList: [],
         statementList: [
-          Statement.EvaluateExpr(
+          d.Statement.EvaluateExpr(
             util.equal(
               util.equal(
                 util.addition(
                   util.multiplication(
-                    Expr.NumberLiteral(3),
-                    Expr.NumberLiteral(9)
+                    d.TsExpr.NumberLiteral(3),
+                    d.TsExpr.NumberLiteral(9)
                   ),
                   util.multiplication(
-                    Expr.NumberLiteral(7),
-                    Expr.NumberLiteral(6)
+                    d.TsExpr.NumberLiteral(7),
+                    d.TsExpr.NumberLiteral(6)
                   )
                 ),
                 util.addition(
-                  util.addition(Expr.NumberLiteral(2), Expr.NumberLiteral(3)),
-                  util.addition(Expr.NumberLiteral(5), Expr.NumberLiteral(8))
+                  util.addition(
+                    d.TsExpr.NumberLiteral(2),
+                    d.TsExpr.NumberLiteral(3)
+                  ),
+                  util.addition(
+                    d.TsExpr.NumberLiteral(5),
+                    d.TsExpr.NumberLiteral(8)
+                  )
                 )
               ),
               util.multiplication(
-                Expr.NumberLiteral(5),
-                util.addition(Expr.NumberLiteral(7), Expr.NumberLiteral(8))
+                d.TsExpr.NumberLiteral(5),
+                util.addition(
+                  d.TsExpr.NumberLiteral(7),
+                  d.TsExpr.NumberLiteral(8)
+                )
               )
             )
           ),
@@ -351,25 +351,35 @@ describe("test", () => {
     const code = generateCodeAsString(
       {
         exportDefinitionList: [
-          ExportDefinition.Function({
+          d.ExportDefinition.Function({
             name: identifer.fromString("returnObject"),
             document: "",
             typeParameterList: [],
             parameterList: [],
-            returnType: Type.Object([
-              { name: "name", required: true, type: Type.String, document: "" },
-              { name: "age", required: true, type: Type.Number, document: "" },
+            returnType: d.TsType.Object([
+              {
+                name: "name",
+                required: true,
+                type: d.TsType.String,
+                document: "",
+              },
+              {
+                name: "age",
+                required: true,
+                type: d.TsType.Number,
+                document: "",
+              },
             ]),
             statementList: [
-              Statement.Return(
-                Expr.ObjectLiteral([
-                  Member.KeyValue({
+              d.Statement.Return(
+                d.TsExpr.ObjectLiteral([
+                  d.TsMember.KeyValue({
                     key: "name",
-                    value: Expr.StringLiteral("mac"),
+                    value: d.TsExpr.StringLiteral("mac"),
                   }),
-                  Member.KeyValue({
+                  d.TsMember.KeyValue({
                     key: "age",
-                    value: Expr.NumberLiteral(10),
+                    value: d.TsExpr.NumberLiteral(10),
                   }),
                 ])
               ),
@@ -389,21 +399,21 @@ describe("test", () => {
       {
         exportDefinitionList: [],
         statementList: [
-          Statement.VariableDefinition({
+          d.Statement.VariableDefinition({
             name: v,
-            type: Type.Number,
-            expr: Expr.NumberLiteral(10),
+            type: d.TsType.Number,
+            expr: d.TsExpr.NumberLiteral(10),
             isConst: false,
           }),
-          Statement.Set({
-            target: Expr.Variable(v),
-            operatorMaybe: Maybe.Nothing(),
-            expr: Expr.NumberLiteral(30),
+          d.Statement.Set({
+            target: d.TsExpr.Variable(v),
+            operatorMaybe: d.Maybe.Nothing(),
+            expr: d.TsExpr.NumberLiteral(30),
           }),
-          Statement.Set({
-            target: Expr.Variable(v),
-            operatorMaybe: Maybe.Just<BinaryOperator>("Addition"),
-            expr: Expr.NumberLiteral(1),
+          d.Statement.Set({
+            target: d.TsExpr.Variable(v),
+            operatorMaybe: d.Maybe.Just<d.BinaryOperator>("Addition"),
+            expr: d.TsExpr.NumberLiteral(1),
           }),
         ],
       },
@@ -413,25 +423,25 @@ describe("test", () => {
     expect(code).toMatch(/let v: number = 10;[\n ]*v = 30;[\n ]*v \+= 1;/u);
   });
   it("for of", () => {
-    const code: JsTsCode = {
+    const code: d.JsTsCode = {
       exportDefinitionList: [],
       statementList: [
-        Statement.ForOf({
+        d.Statement.ForOf({
           elementVariableName: identifer.fromString("element"),
-          iterableExpr: Expr.ArrayLiteral([
-            { expr: Expr.NumberLiteral(1), spread: false },
-            { expr: Expr.NumberLiteral(2), spread: false },
+          iterableExpr: d.TsExpr.ArrayLiteral([
+            { expr: d.TsExpr.NumberLiteral(1), spread: false },
+            { expr: d.TsExpr.NumberLiteral(2), spread: false },
             {
-              expr: Expr.ArrayLiteral([
-                { expr: Expr.NumberLiteral(3), spread: false },
-                { expr: Expr.NumberLiteral(4), spread: false },
-                { expr: Expr.NumberLiteral(5), spread: false },
+              expr: d.TsExpr.ArrayLiteral([
+                { expr: d.TsExpr.NumberLiteral(3), spread: false },
+                { expr: d.TsExpr.NumberLiteral(4), spread: false },
+                { expr: d.TsExpr.NumberLiteral(5), spread: false },
               ]),
               spread: true,
             },
           ]),
           statementList: [
-            util.consoleLog(Expr.Variable(identifer.fromString("element"))),
+            util.consoleLog(d.TsExpr.Variable(identifer.fromString("element"))),
           ],
         }),
       ],
@@ -441,47 +451,47 @@ describe("test", () => {
     expect(codeAsString).toMatch(/for .* of \[1, 2, \.\.\.\[3, 4, 5\] *\]/u);
   });
   it("switch", () => {
-    const code: JsTsCode = {
+    const code: d.JsTsCode = {
       exportDefinitionList: [
-        ExportDefinition.TypeAlias({
+        d.ExportDefinition.TypeAlias({
           name: identifer.fromString("Result"),
           document: "Result型",
           typeParameterList: [
             identifer.fromString("error"),
             identifer.fromString("ok"),
           ],
-          type: Type.Union([
-            Type.Object([
+          type: d.TsType.Union([
+            d.TsType.Object([
               {
                 name: "_",
                 required: true,
-                type: Type.StringLiteral("Ok"),
+                type: d.TsType.StringLiteral("Ok"),
                 document: "",
               },
               {
                 name: "ok",
                 required: true,
-                type: Type.ScopeInFile(identifer.fromString("ok")),
+                type: d.TsType.ScopeInFile(identifer.fromString("ok")),
                 document: "",
               },
             ]),
-            Type.Object([
+            d.TsType.Object([
               {
                 name: "_",
                 required: true,
-                type: Type.StringLiteral("Error"),
+                type: d.TsType.StringLiteral("Error"),
                 document: "Error",
               },
               {
                 name: "error",
                 required: true,
-                type: Type.ScopeInFile(identifer.fromString("error")),
+                type: d.TsType.ScopeInFile(identifer.fromString("error")),
                 document: "",
               },
             ]),
           ]),
         }),
-        ExportDefinition.Function({
+        d.ExportDefinition.Function({
           name: identifer.fromString("switchSample"),
           document: "switch文のテスト",
           typeParameterList: [
@@ -492,27 +502,30 @@ describe("test", () => {
             {
               name: identifer.fromString("value"),
               document: "",
-              type: Type.WithTypeParameter({
-                type: Type.ScopeInGlobal(identifer.fromString("Result")),
+              type: d.TsType.WithTypeParameter({
+                type: d.TsType.ScopeInGlobal(identifer.fromString("Result")),
                 typeParameterList: [
-                  Type.ScopeInFile(identifer.fromString("ok")),
-                  Type.ScopeInFile(identifer.fromString("error")),
+                  d.TsType.ScopeInFile(identifer.fromString("ok")),
+                  d.TsType.ScopeInFile(identifer.fromString("error")),
                 ],
               }),
             },
           ],
-          returnType: Type.String,
+          returnType: d.TsType.String,
           statementList: [
-            Statement.Switch({
-              expr: util.get(Expr.Variable(identifer.fromString("value")), "_"),
+            d.Statement.Switch({
+              expr: util.get(
+                d.TsExpr.Variable(identifer.fromString("value")),
+                "_"
+              ),
               patternList: [
                 {
                   caseString: "Ok",
                   statementList: [
-                    Statement.Return(
+                    d.Statement.Return(
                       util.callMethod(
                         util.get(
-                          Expr.Variable(identifer.fromString("value")),
+                          d.TsExpr.Variable(identifer.fromString("value")),
                           "ok"
                         ),
                         "toString",
@@ -524,10 +537,10 @@ describe("test", () => {
                 {
                   caseString: "Error",
                   statementList: [
-                    Statement.Return(
+                    d.Statement.Return(
                       util.callMethod(
                         util.get(
-                          Expr.Variable(identifer.fromString("value")),
+                          d.TsExpr.Variable(identifer.fromString("value")),
                           "error"
                         ),
                         "toString",
@@ -548,12 +561,12 @@ describe("test", () => {
     expect(codeAsString).toMatch(/switch \(.+\) \{\n +case .+:/u);
   });
   it("Type Assertion", () => {
-    const code: JsTsCode = {
+    const code: d.JsTsCode = {
       exportDefinitionList: [],
       statementList: [
-        Statement.EvaluateExpr(
-          Expr.TypeAssertion({
-            expr: Expr.ObjectLiteral([]),
+        d.Statement.EvaluateExpr(
+          d.TsExpr.TypeAssertion({
+            expr: d.TsExpr.ObjectLiteral([]),
             type: util.dateType,
           })
         ),
@@ -564,13 +577,13 @@ describe("test", () => {
     expect(codeAsString).toMatch(/as Date/u);
   });
   it("Type Intersection", () => {
-    const code: JsTsCode = JsTsCode.helper({
+    const code: d.JsTsCode = d.JsTsCode.helper({
       exportDefinitionList: [
-        ExportDefinition.TypeAlias({
+        d.ExportDefinition.TypeAlias({
           name: identifer.fromString("SampleIntersectionType"),
           document: "",
           typeParameterList: [],
-          type: Type.Intersection({
+          type: d.TsType.Intersection({
             left: util.dateType,
             right: util.uint8ArrayType,
           }),
@@ -584,25 +597,34 @@ describe("test", () => {
   });
 
   it("object literal spread syntax", () => {
-    const code: JsTsCode = {
+    const code: d.JsTsCode = {
       exportDefinitionList: [],
       statementList: [
-        Statement.VariableDefinition({
+        d.Statement.VariableDefinition({
           name: identifer.fromString("value"),
           isConst: true,
-          type: Type.Object([
-            { name: "a", required: true, type: Type.String, document: "" },
-            { name: "b", required: true, type: Type.Number, document: "" },
+          type: d.TsType.Object([
+            { name: "a", required: true, type: d.TsType.String, document: "" },
+            { name: "b", required: true, type: d.TsType.Number, document: "" },
           ]),
-          expr: Expr.ObjectLiteral([
-            Member.KeyValue({ key: "a", value: Expr.StringLiteral("aValue") }),
-            Member.KeyValue({ key: "b", value: Expr.NumberLiteral(123) }),
+          expr: d.TsExpr.ObjectLiteral([
+            d.TsMember.KeyValue({
+              key: "a",
+              value: d.TsExpr.StringLiteral("aValue"),
+            }),
+            d.TsMember.KeyValue({
+              key: "b",
+              value: d.TsExpr.NumberLiteral(123),
+            }),
           ]),
         }),
         util.consoleLog(
-          Expr.ObjectLiteral([
-            Member.Spread(Expr.Variable(identifer.fromString("value"))),
-            Member.KeyValue({ key: "b", value: Expr.NumberLiteral(987) }),
+          d.TsExpr.ObjectLiteral([
+            d.TsMember.Spread(d.TsExpr.Variable(identifer.fromString("value"))),
+            d.TsMember.KeyValue({
+              key: "b",
+              value: d.TsExpr.NumberLiteral(987),
+            }),
           ])
         ),
       ],
@@ -613,23 +635,23 @@ describe("test", () => {
   });
 
   it("type property document", () => {
-    const code: JsTsCode = {
+    const code: d.JsTsCode = {
       exportDefinitionList: [
-        ExportDefinition.TypeAlias({
+        d.ExportDefinition.TypeAlias({
           name: identifer.fromString("Time"),
           document: "初期のDefinyで使う時間の内部表現",
           typeParameterList: [],
-          type: Type.Object([
+          type: d.TsType.Object([
             {
               name: "day",
               required: true,
-              type: Type.Number,
+              type: d.TsType.Number,
               document: "1970-01-01からの経過日数. マイナスになることもある",
             },
             {
               name: "millisecond",
               required: true,
-              type: Type.Number,
+              type: d.TsType.Number,
               document: "日にちの中のミリ秒. 0 to 86399999 (=1000*60*60*24-1)",
             },
           ]),
@@ -645,58 +667,58 @@ describe("test", () => {
 
 it("output lambda type parameter", () => {
   const typeParameterIdentifer = identifer.fromString("t");
-  const code: JsTsCode = {
+  const code: d.JsTsCode = {
     exportDefinitionList: [],
     statementList: [
-      Statement.VariableDefinition({
+      d.Statement.VariableDefinition({
         name: identifer.fromString("sampleFunction"),
         isConst: true,
-        type: Type.Function({
+        type: d.TsType.Function({
           typeParameterList: [typeParameterIdentifer],
-          parameterList: [Type.ScopeInFile(typeParameterIdentifer)],
-          return: Type.Object([
+          parameterList: [d.TsType.ScopeInFile(typeParameterIdentifer)],
+          return: d.TsType.Object([
             {
               name: "value",
               required: true,
               document: "",
-              type: Type.ScopeInFile(typeParameterIdentifer),
+              type: d.TsType.ScopeInFile(typeParameterIdentifer),
             },
             {
               name: "s",
               required: true,
               document: "",
-              type: Type.WithTypeParameter({
-                type: Type.ImportedType({
+              type: d.TsType.WithTypeParameter({
+                type: d.TsType.ImportedType({
                   moduleName: "sampleModule",
                   name: identifer.fromString("Type"),
                 }),
-                typeParameterList: [Type.Number],
+                typeParameterList: [d.TsType.Number],
               }),
             },
           ]),
         }),
-        expr: Expr.Lambda({
+        expr: d.TsExpr.Lambda({
           parameterList: [
             {
               name: identifer.fromString("input"),
-              type: Type.ScopeInFile(typeParameterIdentifer),
+              type: d.TsType.ScopeInFile(typeParameterIdentifer),
             },
           ],
           typeParameterList: [typeParameterIdentifer],
-          returnType: Type.Object([
+          returnType: d.TsType.Object([
             {
               name: "value",
               required: true,
               document: "",
-              type: Type.ScopeInFile(typeParameterIdentifer),
+              type: d.TsType.ScopeInFile(typeParameterIdentifer),
             },
           ]),
           statementList: [
-            Statement.Return(
-              Expr.ObjectLiteral([
-                Member.KeyValue({
+            d.Statement.Return(
+              d.TsExpr.ObjectLiteral([
+                d.TsMember.KeyValue({
                   key: "value",
-                  value: Expr.Variable(identifer.fromString("input")),
+                  value: d.TsExpr.Variable(identifer.fromString("input")),
                 }),
               ])
             ),
@@ -713,24 +735,29 @@ it("output lambda type parameter", () => {
 });
 
 it("output optional type member", () => {
-  const code: JsTsCode = {
+  const code: d.JsTsCode = {
     exportDefinitionList: [
-      ExportDefinition.Variable({
+      d.ExportDefinition.Variable({
         name: identifer.fromString("value"),
         document: "年齢があってもなくてもいいやつ",
-        type: Type.Object([
-          { name: "name", required: true, document: "名前", type: Type.String },
+        type: d.TsType.Object([
+          {
+            name: "name",
+            required: true,
+            document: "名前",
+            type: d.TsType.String,
+          },
           {
             name: "age",
             required: false,
             document: "年齢",
-            type: Type.Number,
+            type: d.TsType.Number,
           },
         ]),
-        expr: Expr.ObjectLiteral([
-          Member.KeyValue({
+        expr: d.TsExpr.ObjectLiteral([
+          d.TsMember.KeyValue({
             key: "name",
-            value: Expr.StringLiteral("narumincho"),
+            value: d.TsExpr.StringLiteral("narumincho"),
           }),
         ]),
       }),
@@ -743,9 +770,9 @@ it("output optional type member", () => {
 });
 
 it("read me code", () => {
-  const serverCode: JsTsCode = {
+  const serverCode: d.JsTsCode = {
     exportDefinitionList: [
-      ExportDefinition.Function({
+      d.ExportDefinition.Function({
         name: identifer.fromString("middleware"),
         document: "ミドルウェア",
         typeParameterList: [],
@@ -753,7 +780,7 @@ it("read me code", () => {
           {
             name: identifer.fromString("request"),
             document: "リクエスト",
-            type: Type.ImportedType({
+            type: d.TsType.ImportedType({
               moduleName: "express",
               name: identifer.fromString("Request"),
             }),
@@ -761,46 +788,46 @@ it("read me code", () => {
           {
             name: identifer.fromString("response"),
             document: "レスポンス",
-            type: Type.ImportedType({
+            type: d.TsType.ImportedType({
               moduleName: "express",
               name: identifer.fromString("Response"),
             }),
           },
         ],
-        returnType: Type.Void,
+        returnType: d.TsType.Void,
         statementList: [
-          Statement.VariableDefinition({
+          d.Statement.VariableDefinition({
             isConst: true,
             name: identifer.fromString("accept"),
-            type: Type.Union([Type.String, Type.Undefined]),
+            type: d.TsType.Union([d.TsType.String, d.TsType.Undefined]),
             expr: util.get(
               util.get(
-                Expr.Variable(identifer.fromString("request")),
+                d.TsExpr.Variable(identifer.fromString("request")),
                 "headers"
               ),
               "accept"
             ),
           }),
-          Statement.If({
+          d.Statement.If({
             condition: util.logicalAnd(
               util.notEqual(
-                Expr.Variable(identifer.fromString("accept")),
-                Expr.UndefinedLiteral
+                d.TsExpr.Variable(identifer.fromString("accept")),
+                d.TsExpr.UndefinedLiteral
               ),
               util.callMethod(
-                Expr.Variable(identifer.fromString("accept")),
+                d.TsExpr.Variable(identifer.fromString("accept")),
                 "includes",
-                [Expr.StringLiteral("text/html")]
+                [d.TsExpr.StringLiteral("text/html")]
               )
             ),
             thenStatementList: [
-              Statement.EvaluateExpr(
+              d.Statement.EvaluateExpr(
                 util.callMethod(
-                  Expr.Variable(identifer.fromString("response")),
+                  d.TsExpr.Variable(identifer.fromString("response")),
                   "setHeader",
                   [
-                    Expr.StringLiteral("content-type"),
-                    Expr.StringLiteral("text/html"),
+                    d.TsExpr.StringLiteral("content-type"),
+                    d.TsExpr.StringLiteral("text/html"),
                   ]
                 )
               ),

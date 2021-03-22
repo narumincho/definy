@@ -1,39 +1,39 @@
 import * as c from "./codec";
+import * as d from "../../data";
 import * as identifer from "../../gen/jsTs/identifer";
 import * as int32 from "./int32";
-import * as ts from "../../gen/jsTs/data";
 import * as tsUtil from "../../gen/jsTs/util";
 
 export const encodeDefinitionStatementList = (
-  valueVar: ts.Expr
-): ReadonlyArray<ts.Statement> => [
-  ts.Statement.Return(
+  valueVar: d.TsExpr
+): ReadonlyArray<d.Statement> => [
+  d.Statement.Return(
     tsUtil.callMethod(int32.encode(tsUtil.get(valueVar, "length")), "concat", [
-      ts.Expr.ArrayLiteral([{ expr: valueVar, spread: true }]),
+      d.TsExpr.ArrayLiteral([{ expr: valueVar, spread: true }]),
     ])
   ),
 ];
 
 export const decodeDefinitionStatementList = (
-  parameterIndex: ts.Expr,
-  parameterBinary: ts.Expr
-): ReadonlyArray<ts.Statement> => {
+  parameterIndex: d.TsExpr,
+  parameterBinary: d.TsExpr
+): ReadonlyArray<d.Statement> => {
   const lengthName = identifer.fromString("length");
-  const lengthVar = ts.Expr.Variable(lengthName);
+  const lengthVar = d.TsExpr.Variable(lengthName);
   const nextIndexName = identifer.fromString("nextIndex");
-  const nextIndexVar = ts.Expr.Variable(nextIndexName);
+  const nextIndexVar = d.TsExpr.Variable(nextIndexName);
 
   return [
-    ts.Statement.VariableDefinition({
+    d.Statement.VariableDefinition({
       isConst: true,
       name: lengthName,
-      type: c.decodeReturnType(ts.Type.Number),
+      type: c.decodeReturnType(d.TsType.Number),
       expr: int32.decode(parameterIndex, parameterBinary),
     }),
-    ts.Statement.VariableDefinition({
+    d.Statement.VariableDefinition({
       isConst: true,
       name: nextIndexName,
-      type: ts.Type.Number,
+      type: d.TsType.Number,
       expr: tsUtil.addition(c.getNextIndex(lengthVar), c.getResult(lengthVar)),
     }),
     c.returnStatement(

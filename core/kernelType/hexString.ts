@@ -1,17 +1,17 @@
 import * as codec from "./codec";
 import * as identifer from "../../gen/jsTs/identifer";
-import * as ts from "../../gen/jsTs/data";
+import * as ts from "../../data";
 import * as tsUtil from "../../gen/jsTs/util";
 
 const encodeDefinition = (
   byteSize: number,
-  functionName: ts.Identifer,
+  functionName: ts.TsIdentifer,
   document: string
 ): ts.Function => {
   const valueName = identifer.fromString("value");
-  const valueVar = ts.Expr.Variable(valueName);
+  const valueVar = ts.TsExpr.Variable(valueName);
   const iName = identifer.fromString("i");
-  const iVar = ts.Expr.Variable(iName);
+  const iVar = ts.TsExpr.Variable(iName);
 
   return {
     name: functionName,
@@ -22,45 +22,45 @@ const encodeDefinition = (
       {
         name: valueName,
         document: "",
-        type: ts.Type.String,
+        type: ts.TsType.String,
       },
     ],
     statementList: [
       ts.Statement.Return(
         tsUtil.callMethod(
-          ts.Expr.GlobalObjects(identifer.fromString("Array")),
+          ts.TsExpr.GlobalObjects(identifer.fromString("Array")),
           "from",
           [
-            ts.Expr.ObjectLiteral([
-              ts.Member.KeyValue({
+            ts.TsExpr.ObjectLiteral([
+              ts.TsMember.KeyValue({
                 key: "length",
-                value: ts.Expr.NumberLiteral(byteSize),
+                value: ts.TsExpr.NumberLiteral(byteSize),
               }),
             ]),
-            ts.Expr.Lambda({
+            ts.TsExpr.Lambda({
               typeParameterList: [],
               parameterList: [
                 {
                   name: identifer.fromString("_"),
-                  type: ts.Type.Undefined,
+                  type: ts.TsType.Undefined,
                 },
                 {
                   name: iName,
-                  type: ts.Type.Number,
+                  type: ts.TsType.Number,
                 },
               ],
-              returnType: ts.Type.Number,
+              returnType: ts.TsType.Number,
               statementList: [
                 ts.Statement.Return(
                   tsUtil.callNumberMethod("parseInt", [
                     tsUtil.callMethod(valueVar, "slice", [
-                      tsUtil.multiplication(iVar, ts.Expr.NumberLiteral(2)),
+                      tsUtil.multiplication(iVar, ts.TsExpr.NumberLiteral(2)),
                       tsUtil.addition(
-                        tsUtil.multiplication(iVar, ts.Expr.NumberLiteral(2)),
-                        ts.Expr.NumberLiteral(2)
+                        tsUtil.multiplication(iVar, ts.TsExpr.NumberLiteral(2)),
+                        ts.TsExpr.NumberLiteral(2)
                       ),
                     ]),
-                    ts.Expr.NumberLiteral(16),
+                    ts.TsExpr.NumberLiteral(16),
                   ])
                 ),
               ],
@@ -74,28 +74,28 @@ const encodeDefinition = (
 
 const decodeDefinition = (
   byteSize: number,
-  functionName: ts.Identifer,
+  functionName: ts.TsIdentifer,
   document: string
 ): ts.Function => {
-  const parameterIndex = ts.Expr.Variable(codec.indexIdentifer);
-  const parameterBinary = ts.Expr.Variable(codec.binaryIdentifer);
+  const parameterIndex = ts.TsExpr.Variable(codec.indexIdentifer);
+  const parameterBinary = ts.TsExpr.Variable(codec.binaryIdentifer);
   return {
     name: functionName,
     document,
     typeParameterList: [],
-    returnType: codec.decodeReturnType(ts.Type.String),
+    returnType: codec.decodeReturnType(ts.TsType.String),
     parameterList: codec.decodeParameterList,
     statementList: [
       codec.returnStatement(
         tsUtil.callMethod(
           tsUtil.callMethod(
-            ts.Expr.ArrayLiteral([
+            ts.TsExpr.ArrayLiteral([
               {
                 expr: tsUtil.callMethod(parameterBinary, "slice", [
                   parameterIndex,
                   tsUtil.addition(
                     parameterIndex,
-                    ts.Expr.NumberLiteral(byteSize)
+                    ts.TsExpr.NumberLiteral(byteSize)
                   ),
                 ]),
                 spread: true,
@@ -103,25 +103,25 @@ const decodeDefinition = (
             ]),
             "map",
             [
-              ts.Expr.Lambda({
+              ts.TsExpr.Lambda({
                 typeParameterList: [],
                 parameterList: [
                   {
                     name: identifer.fromString("n"),
-                    type: ts.Type.Number,
+                    type: ts.TsType.Number,
                   },
                 ],
-                returnType: ts.Type.String,
+                returnType: ts.TsType.String,
                 statementList: [
                   ts.Statement.Return(
                     tsUtil.callMethod(
                       tsUtil.callMethod(
-                        ts.Expr.Variable(identifer.fromString("n")),
+                        ts.TsExpr.Variable(identifer.fromString("n")),
                         "toString",
-                        [ts.Expr.NumberLiteral(16)]
+                        [ts.TsExpr.NumberLiteral(16)]
                       ),
                       "padStart",
-                      [ts.Expr.NumberLiteral(2), ts.Expr.StringLiteral("0")]
+                      [ts.TsExpr.NumberLiteral(2), ts.TsExpr.StringLiteral("0")]
                     )
                   ),
                 ],
@@ -129,10 +129,10 @@ const decodeDefinition = (
             ]
           ),
           "join",
-          [ts.Expr.StringLiteral("")]
+          [ts.TsExpr.StringLiteral("")]
         ),
 
-        tsUtil.addition(parameterIndex, ts.Expr.NumberLiteral(byteSize))
+        tsUtil.addition(parameterIndex, ts.TsExpr.NumberLiteral(byteSize))
       ),
     ],
   };
@@ -142,7 +142,7 @@ const idByteSize = 16;
 const tokenByteSize = 32;
 
 const encodeIdIdentifer = identifer.fromString("encodeId");
-const encodeIdVariable = ts.Expr.Variable(encodeIdIdentifer);
+const encodeIdVariable = ts.TsExpr.Variable(encodeIdIdentifer);
 export const encodeIdFunction: ts.Function = encodeDefinition(
   idByteSize,
   encodeIdIdentifer,
@@ -150,7 +150,7 @@ export const encodeIdFunction: ts.Function = encodeDefinition(
 );
 
 const encodeTokenIdentifer = identifer.fromString("encodeToken");
-const encodeTokenVariable = ts.Expr.Variable(encodeTokenIdentifer);
+const encodeTokenVariable = ts.TsExpr.Variable(encodeTokenIdentifer);
 export const tokenEncodeFunction: ts.Function = encodeDefinition(
   tokenByteSize,
   encodeTokenIdentifer,
@@ -158,7 +158,7 @@ export const tokenEncodeFunction: ts.Function = encodeDefinition(
 );
 
 const decodeIdIdentifer = identifer.fromString("decodeId");
-const decodeIdVariable = ts.Expr.Variable(decodeIdIdentifer);
+const decodeIdVariable = ts.TsExpr.Variable(decodeIdIdentifer);
 export const idDecodeFunction: ts.Function = decodeDefinition(
   idByteSize,
   decodeIdIdentifer,
@@ -166,7 +166,7 @@ export const idDecodeFunction: ts.Function = decodeDefinition(
 );
 
 const decodeTokenIdentifer = identifer.fromString("decodeToken");
-const decodeTokenVariable = ts.Expr.Variable(decodeTokenIdentifer);
+const decodeTokenVariable = ts.TsExpr.Variable(decodeTokenIdentifer);
 export const decodeTokenFunction: ts.Function = decodeDefinition(
   tokenByteSize,
   decodeTokenIdentifer,
@@ -174,10 +174,10 @@ export const decodeTokenFunction: ts.Function = decodeDefinition(
 );
 
 export const idEncodeDefinitionStatementList = (
-  valueVar: ts.Expr
+  valueVar: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => [
   ts.Statement.Return(
-    ts.Expr.Call({
+    ts.TsExpr.Call({
       expr: encodeIdVariable,
       parameterList: [valueVar],
     })
@@ -186,14 +186,14 @@ export const idEncodeDefinitionStatementList = (
 
 export const idDecodeDefinitionStatementList = (
   typePartName: string,
-  parameterIndex: ts.Expr,
-  parameterBinary: ts.Expr
+  parameterIndex: ts.TsExpr,
+  parameterBinary: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
-  const targetType = ts.Type.ScopeInFile(identifer.fromString(typePartName));
+  const targetType = ts.TsType.ScopeInFile(identifer.fromString(typePartName));
   return [
     ts.Statement.Return(
-      ts.Expr.TypeAssertion({
-        expr: ts.Expr.Call({
+      ts.TsExpr.TypeAssertion({
+        expr: ts.TsExpr.Call({
           expr: decodeIdVariable,
           parameterList: [parameterIndex, parameterBinary],
         }),
@@ -204,10 +204,10 @@ export const idDecodeDefinitionStatementList = (
 };
 
 export const tokenEncodeDefinitionStatementList = (
-  valueVar: ts.Expr
+  valueVar: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => [
   ts.Statement.Return(
-    ts.Expr.Call({
+    ts.TsExpr.Call({
       expr: encodeTokenVariable,
       parameterList: [valueVar],
     })
@@ -216,14 +216,14 @@ export const tokenEncodeDefinitionStatementList = (
 
 export const tokenDecodeDefinitionStatementList = (
   typePartName: string,
-  parameterIndex: ts.Expr,
-  parameterBinary: ts.Expr
+  parameterIndex: ts.TsExpr,
+  parameterBinary: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
-  const targetType = ts.Type.ScopeInFile(identifer.fromString(typePartName));
+  const targetType = ts.TsType.ScopeInFile(identifer.fromString(typePartName));
   return [
     ts.Statement.Return(
-      ts.Expr.TypeAssertion({
-        expr: ts.Expr.Call({
+      ts.TsExpr.TypeAssertion({
+        expr: ts.TsExpr.Call({
           expr: decodeTokenVariable,
           parameterList: [parameterIndex, parameterBinary],
         }),

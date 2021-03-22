@@ -1,14 +1,13 @@
 import * as codec from "./kernelType/codec";
-import * as data from "../data";
+import * as d from "../data";
 import * as identifer from "../gen/jsTs/identifer";
-import * as ts from "../gen/jsTs/data";
 import * as tsUtil from "../gen/jsTs/util";
 import * as util from "./util";
 
 export const typePartMapToTypeAlias = (
-  typePartMap: ReadonlyMap<data.TypePartId, data.TypePart>,
-  allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ReadonlyArray<ts.TypeAlias> => {
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
+  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
+): ReadonlyArray<d.TypeAlias> => {
   return [
     codec.codecTypeAlias(),
     ...[...typePartMap].map(([typePartId, typePart]) =>
@@ -18,10 +17,10 @@ export const typePartMapToTypeAlias = (
 };
 
 export const typePartToTypeAlias = (
-  typePartId: data.TypePartId,
-  typePart: data.TypePart,
-  allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.TypeAlias => ({
+  typePartId: d.TypePartId,
+  typePart: d.TypePart,
+  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
+): d.TypeAlias => ({
   name: identifer.fromString(typePart.name),
   document: typePart.description + "\n@typePartId " + (typePartId as string),
   typeParameterList: typePart.typeParameterList.map((typeParameter) =>
@@ -31,28 +30,28 @@ export const typePartToTypeAlias = (
 });
 
 const typePartToTsType = (
-  typePart: data.TypePart,
-  allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Type => {
+  typePart: d.TypePart,
+  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
+): d.TsType => {
   if (typePart.attribute._ === "Just") {
     return typePartWIthAttributeToTsType(typePart, typePart.attribute.value);
   }
   switch (typePart.body._) {
     case "Sum":
       if (util.isTagTypeAllNoParameter(typePart.body.patternList)) {
-        return ts.Type.Union(
+        return d.TsType.Union(
           typePart.body.patternList.map((pattern) =>
-            ts.Type.StringLiteral(pattern.name)
+            d.TsType.StringLiteral(pattern.name)
           )
         );
       }
-      return ts.Type.Union(
+      return d.TsType.Union(
         typePart.body.patternList.map((pattern) =>
           patternListToObjectType(pattern, allTypePartIdTypePartNameMap)
         )
       );
     case "Product":
-      return ts.Type.Object(
+      return d.TsType.Object(
         typePart.body.memberList.map((member) => ({
           name: member.name,
           required: true,
@@ -73,9 +72,9 @@ const typePartToTsType = (
  * @param typeAttribute
  */
 const typePartWIthAttributeToTsType = (
-  typePart: data.TypePart,
-  typeAttribute: data.TypeAttribute
-): ts.Type => {
+  typePart: d.TypePart,
+  typeAttribute: d.TypeAttribute
+): d.TsType => {
   switch (typeAttribute) {
     case "AsBoolean":
       if (
@@ -85,7 +84,7 @@ const typePartWIthAttributeToTsType = (
           (pattern) => pattern.parameter._ === "Nothing"
         )
       ) {
-        return ts.Type.Boolean;
+        return d.TsType.Boolean;
       }
       throw new Error(
         "attribute == Just(AsBoolean) type part need sum, have 2 patterns, All pattern parameters are empty"
@@ -98,7 +97,7 @@ const typePartWIthAttributeToTsType = (
           (pattern) => pattern.parameter._ === "Nothing"
         )
       ) {
-        return ts.Type.Undefined;
+        return d.TsType.Undefined;
       }
       throw new Error(
         "attribute == Just(AsUndefined) type part need sum and have 1 patterns, All pattern parameters are empty"
@@ -107,19 +106,19 @@ const typePartWIthAttributeToTsType = (
 };
 
 const patternListToObjectType = (
-  patternList: data.Pattern,
-  allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Type => {
-  const tagField: ts.MemberType = {
+  patternList: d.Pattern,
+  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
+): d.TsType => {
+  const tagField: d.TsMemberType = {
     name: "_",
     required: true,
     document: "",
-    type: ts.Type.StringLiteral(patternList.name),
+    type: d.TsType.StringLiteral(patternList.name),
   };
 
   switch (patternList.parameter._) {
     case "Just":
-      return ts.Type.Object([
+      return d.TsType.Object([
         tagField,
         {
           name: util.typeToMemberOrParameterName(
@@ -135,43 +134,43 @@ const patternListToObjectType = (
         },
       ]);
     case "Nothing":
-      return ts.Type.Object([tagField]);
+      return d.TsType.Object([tagField]);
   }
 };
 
 const typePartBodyKernelToTsType = (
-  typePart: data.TypePart,
-  kernel: data.TypePartBodyKernel
-): ts.Type => {
+  typePart: d.TypePart,
+  kernel: d.TypePartBodyKernel
+): d.TsType => {
   switch (kernel) {
     case "Function": {
       const [inputType, outputType] = typePart.typeParameterList;
       if (inputType === undefined || outputType === undefined) {
         throw new Error("kernel function type need 2 type parameter");
       }
-      return ts.Type.Function({
+      return d.TsType.Function({
         parameterList: [
-          ts.Type.ScopeInFile(identifer.fromString(inputType.name)),
+          d.TsType.ScopeInFile(identifer.fromString(inputType.name)),
         ],
-        return: ts.Type.ScopeInFile(identifer.fromString(outputType.name)),
+        return: d.TsType.ScopeInFile(identifer.fromString(outputType.name)),
         typeParameterList: [],
       });
     }
     case "Int32":
-      return ts.Type.Number;
+      return d.TsType.Number;
     case "String":
-      return ts.Type.String;
+      return d.TsType.String;
     case "Binary":
       return tsUtil.uint8ArrayType;
     case "Id":
     case "Token":
-      return ts.Type.Intersection({
-        left: ts.Type.String,
-        right: ts.Type.Object([
+      return d.TsType.Intersection({
+        left: d.TsType.String,
+        right: d.TsType.Object([
           {
             name: "_" + util.firstLowerCase(typePart.name),
             required: true,
-            type: ts.Type.Never,
+            type: d.TsType.Never,
             document: "",
           },
         ]),
@@ -182,7 +181,7 @@ const typePartBodyKernelToTsType = (
         throw new Error("List need one type parameter");
       }
       return tsUtil.readonlyArrayType(
-        ts.Type.ScopeInFile(identifer.fromString(elementType.name))
+        d.TsType.ScopeInFile(identifer.fromString(elementType.name))
       );
     }
     case "Dict": {
@@ -191,8 +190,8 @@ const typePartBodyKernelToTsType = (
         throw new Error("Dict need two type parameter");
       }
       return tsUtil.readonlyMapType(
-        ts.Type.ScopeInFile(identifer.fromString(id.name)),
-        ts.Type.ScopeInFile(identifer.fromString(value.name))
+        d.TsType.ScopeInFile(identifer.fromString(id.name)),
+        d.TsType.ScopeInFile(identifer.fromString(value.name))
       );
     }
   }

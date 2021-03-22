@@ -1,10 +1,8 @@
 import * as d from "../data";
 import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
-import * as jsTsData from "../gen/jsTs/data";
-import * as jsTsIdentifer from "../gen/jsTs/identifer";
 import * as ts from "typescript";
-import { generateCodeAsString } from "../gen/jsTs/main";
+import { generateCodeAsString, identifer } from "../gen/jsTs/main";
 
 const clientSourceEntryPath = "./client/main.ts";
 const functionsSourceEntryPath = "./functions/main.ts";
@@ -177,25 +175,25 @@ const outputNowMode = async (mode: d.Mode): Promise<void> => {
     generateCodeAsString(
       {
         exportDefinitionList: [
-          jsTsData.ExportDefinition.Variable({
-            name: jsTsIdentifer.fromString("nowMode"),
+          d.ExportDefinition.Variable({
+            name: identifer.fromString("nowMode"),
             document: "実行モード (ビルド時にコード生成される)",
-            expr: jsTsData.Expr.Get({
-              expr: jsTsData.Expr.ImportedVariable({
+            expr: d.TsExpr.Get({
+              expr: d.TsExpr.ImportedVariable({
                 moduleName: "./data",
-                name: jsTsIdentifer.fromString("Mode"),
+                name: identifer.fromString("Mode"),
               }),
-              propertyExpr: jsTsData.Expr.StringLiteral(mode),
+              propertyExpr: d.TsExpr.StringLiteral(mode),
             }),
-            type: jsTsData.Type.ImportedType({
+            type: d.TsType.ImportedType({
               moduleName: "./data",
-              name: jsTsIdentifer.fromString("Mode"),
+              name: identifer.fromString("Mode"),
             }),
           }),
         ],
         statementList: [],
       },
-      jsTsData.CodeType.TypeScript
+      d.CodeType.TypeScript
     )
   );
 };
