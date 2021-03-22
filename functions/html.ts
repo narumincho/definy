@@ -2,7 +2,6 @@ import * as commonUrl from "../common/url";
 import * as d from "../data";
 import * as lib from "./lib";
 import * as nHtml from "@narumincho/html";
-import * as out from "../out";
 
 /**
  * OGP の 情報が含まれている HTML を返す
@@ -27,7 +26,7 @@ export const html = async (
       twitterCard: "SummaryCard",
       language: urlData.language,
       manifestPath: ["manifest.json"],
-      url: new URL(normalizedUrl.toString()),
+      url: normalizedUrl,
       style: `/*
     Hack typeface https://github.com/source-foundry/Hack
     License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
