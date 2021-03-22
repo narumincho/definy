@@ -3,12 +3,11 @@ import * as codec from "./kernelType/codec";
 import * as data from "../data";
 import * as dict from "./kernelType/dict";
 import * as hexString from "./kernelType/hexString";
-import * as identifer from "../gen/jsTs/identifer";
 import * as int32 from "./kernelType/int32";
 import * as kernelString from "./kernelType/string";
 import * as list from "./kernelType/list";
-import * as tsUtil from "../gen/jsTs/util";
 import * as util from "./util";
+import { identifer, util as tsUtil } from "../gen/jsTs/main";
 
 export const typePartMapToVariable = (
   typePartMap: ReadonlyMap<data.TypePartId, data.TypePart>,

@@ -1,8 +1,7 @@
 import * as c from "./codec";
-import * as identifer from "../../gen/jsTs/identifer";
 import * as ts from "../../data";
-import * as tsUtil from "../../gen/jsTs/util";
 import * as util from "../util";
+import { identifer, util as tsUtil } from "../../gen/jsTs/main";
 
 const codec: ts.TsExpr = tsUtil.get(
   ts.TsExpr.Variable(identifer.fromString("Int32")),

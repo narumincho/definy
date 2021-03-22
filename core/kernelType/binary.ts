@@ -1,8 +1,7 @@
 import * as c from "./codec";
 import * as d from "../../data";
-import * as identifer from "../../gen/jsTs/identifer";
 import * as int32 from "./int32";
-import * as tsUtil from "../../gen/jsTs/util";
+import { identifer, util as tsUtil } from "../../gen/jsTs/main";
 
 export const encodeDefinitionStatementList = (
   valueVar: d.TsExpr

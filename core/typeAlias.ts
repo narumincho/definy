@@ -1,8 +1,7 @@
 import * as codec from "./kernelType/codec";
 import * as d from "../data";
-import * as identifer from "../gen/jsTs/identifer";
-import * as tsUtil from "../gen/jsTs/util";
 import * as util from "./util";
+import { identifer, util as tsUtil } from "../gen/jsTs/main";
 
 export const typePartMapToTypeAlias = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,

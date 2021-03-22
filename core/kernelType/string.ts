@@ -1,9 +1,8 @@
 import * as c from "./codec";
-import * as identifer from "../../gen/jsTs/identifer";
 import * as int32 from "./int32";
 import * as ts from "../../data";
-import * as tsUtil from "../../gen/jsTs/util";
 import * as util from "../util";
+import { identifer, util as tsUtil } from "../../gen/jsTs/main";
 
 const name = identifer.fromString("String");
 

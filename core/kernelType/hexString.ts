@@ -1,7 +1,6 @@
 import * as codec from "./codec";
-import * as identifer from "../../gen/jsTs/identifer";
 import * as ts from "../../data";
-import * as tsUtil from "../../gen/jsTs/util";
+import { identifer, util as tsUtil } from "../../gen/jsTs/main";
 
 const encodeDefinition = (
   byteSize: number,
