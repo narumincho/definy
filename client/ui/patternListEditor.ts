@@ -1,6 +1,5 @@
 import * as a from "../messageAndState";
 import * as d from "../../data";
-import * as definyType from "../definyType";
 import * as listEditor from "./listEditor";
 import * as maybeEditor from "./maybeEditor";
 import * as typeEditor from "./typeEditor";
@@ -75,7 +74,7 @@ export const update = (pattern: d.Pattern, message: Message): d.Pattern => {
         parameter: maybeEditor.update(
           pattern.parameter,
           message.newContentType,
-          definyType.int32,
+          { typePartId: d.Int32.typePartId, parameter: [] },
           typeEditor.update
         ),
       };
