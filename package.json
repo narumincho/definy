@@ -14,10 +14,17 @@
     "production-build": "ts-node ./build/start-production.ts",
     "develop-build": "ts-node ./build/start-develop.ts",
     "start-emulator": "firebase emulators:start --project definy-lang",
-    "build-js-ts-code-generator": "ts-node ./build/js-ts-code-generator.ts"
+    "build-js-ts-code-generator": "ts-node ./build/js-ts-code-generator.ts",
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
   },
   "devDependencies": {
+    "@babel/core": "7.13.10",
     "@narumincho/html": "0.2.6",
+    "@storybook/addon-actions": "6.1.21",
+    "@storybook/addon-essentials": "6.1.21",
+    "@storybook/addon-links": "6.1.21",
+    "@storybook/react": "6.1.21",
     "@types/fs-extra": "9.0.8",
     "@types/jest": "26.0.21",
     "@types/jsonwebtoken": "8.5.1",
@@ -28,6 +35,7 @@
     "@typescript-eslint/eslint-plugin": "4.18.0",
     "@typescript-eslint/parser": "4.18.0",
     "axios": "0.21.1",
+    "babel-loader": "8.2.2",
     "dependency-cruiser": "9.23.3",
     "elm-code-generator": "0.0.2",
     "esbuild": "0.9.6",
