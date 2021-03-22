@@ -1,6 +1,5 @@
 import * as a from "../messageAndState";
 import * as d from "../../data";
-import * as definyType from "../definyType";
 import * as listEditor from "./listEditor";
 import * as typeEditor from "./typeEditor";
 import { SelectBoxSelection, box, selectText } from "../ui";
@@ -83,7 +82,7 @@ export const listUpdate = (
     {
       name: "initMemberName",
       description: "initMemberDescription",
-      type: definyType.int32,
+      type: { parameter: [], typePartId: d.Int32.typePartId },
     },
     memberListMaxCount,
     list,

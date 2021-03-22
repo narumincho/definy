@@ -3,18 +3,16 @@ import * as codec from "./kernelType/codec";
 import * as data from "../data";
 import * as dict from "./kernelType/dict";
 import * as hexString from "./kernelType/hexString";
-import * as identifer from "../gen/jsTs/identifer";
 import * as int32 from "./kernelType/int32";
 import * as kernelString from "./kernelType/string";
 import * as list from "./kernelType/list";
-import * as ts from "../gen/jsTs/data";
-import * as tsUtil from "../gen/jsTs/util";
 import * as util from "./util";
+import { identifer, util as tsUtil } from "../gen/jsTs/main";
 
 export const typePartMapToVariable = (
   typePartMap: ReadonlyMap<data.TypePartId, data.TypePart>,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ReadonlyArray<ts.Variable> => {
+): ReadonlyArray<data.Variable> => {
   return [...typePartMap].map(([typePartId, typePart]) =>
     typePartToVariable(typePartId, typePart, allTypePartIdTypePartNameMap)
   );
@@ -24,7 +22,7 @@ const typePartToVariable = (
   typePartId: data.TypePartId,
   typePart: data.TypePart,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Variable => {
+): data.Variable => {
   return {
     name: identifer.fromString(typePart.name),
     document: typePart.description + "\n@typePartId " + (typePartId as string),
@@ -40,37 +38,37 @@ const typePartToVariable = (
 const typePartToVariableType = (
   typePart: data.TypePart,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Type => {
-  const codecTsMemberType: ts.MemberType = {
+): data.TsType => {
+  const codecTsMemberType: data.TsMemberType = {
     name: util.codecPropertyName,
     required: true,
     type: typePartToCodecType(typePart),
     document: "独自のバイナリ形式の変換処理ができるコーデック",
   };
-  const typePartIdMemberType: ts.MemberType = {
+  const typePartIdMemberType: data.TsMemberType = {
     name: util.typePartIdPropertyName,
     required: true,
-    type: ts.Type.ScopeInFile(identifer.fromString("TypePartId")),
+    type: data.TsType.ScopeInFile(identifer.fromString("TypePartId")),
     document: "definy.app内 の 型パーツの Id",
   };
 
   switch (typePart.body._) {
     case "Product": {
       /** ジェネリック付きの型 */
-      const type = ts.Type.WithTypeParameter({
-        type: ts.Type.ScopeInFile(identifer.fromString(typePart.name)),
+      const type = data.TsType.WithTypeParameter({
+        type: data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
         typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-          ts.Type.ScopeInFile(identifer.fromString(typeParameter.name))
+          data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
         ),
       });
-      return ts.Type.Object([
+      return data.TsType.Object([
         typePartIdMemberType,
         codecTsMemberType,
         {
           name: util.helperName,
           document: "型を合わせる上で便利なヘルパー関数",
           required: true,
-          type: ts.Type.Function({
+          type: data.TsType.Function({
             typeParameterList: typePart.typeParameterList.map((typeParameter) =>
               identifer.fromString(typeParameter.name)
             ),
@@ -81,13 +79,13 @@ const typePartToVariableType = (
       ]);
     }
     case "Kernel":
-      return ts.Type.Object([typePartIdMemberType, codecTsMemberType]);
+      return data.TsType.Object([typePartIdMemberType, codecTsMemberType]);
     case "Sum":
-      return ts.Type.Object([
+      return data.TsType.Object([
         typePartIdMemberType,
         codecTsMemberType,
         ...typePart.body.patternList.map(
-          (pattern): ts.MemberType => ({
+          (pattern): data.TsMemberType => ({
             name: pattern.name,
             required: true,
             type: patternToTagType(
@@ -104,7 +102,7 @@ const typePartToVariableType = (
 };
 
 const patternToTagType = (
-  typeName: ts.Identifer,
+  typeName: data.TsIdentifer,
   typeParameterList: ReadonlyArray<data.TypeParameter>,
   pattern: data.Pattern,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
@@ -112,16 +110,17 @@ const patternToTagType = (
   const typeParameterIdentiferList = typeParameterList.map((typeParameter) =>
     identifer.fromString(typeParameter.name)
   );
-  const returnType = ts.Type.WithTypeParameter({
-    type: ts.Type.ScopeInFile(typeName),
+  const returnType = data.TsType.WithTypeParameter({
+    type: data.TsType.ScopeInFile(typeName),
     typeParameterList: typeParameterIdentiferList.map(
-      (typeParameterIdentifer) => ts.Type.ScopeInFile(typeParameterIdentifer)
+      (typeParameterIdentifer) =>
+        data.TsType.ScopeInFile(typeParameterIdentifer)
     ),
   });
 
   switch (pattern.parameter._) {
     case "Just":
-      return ts.Type.Function({
+      return data.TsType.Function({
         typeParameterList: typeParameterIdentiferList,
         parameterList: [
           util.typeToTsType(
@@ -136,7 +135,7 @@ const patternToTagType = (
       if (typeParameterList.length === 0) {
         return returnType;
       }
-      return ts.Type.Function({
+      return data.TsType.Function({
         typeParameterList: typeParameterIdentiferList,
         parameterList: [],
         return: returnType,
@@ -148,13 +147,13 @@ const typePartToVariableExpr = (
   typePartId: data.TypePartId,
   typePart: data.TypePart,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Expr => {
-  const typePartIdMember = ts.Member.KeyValue({
+): data.TsExpr => {
+  const typePartIdMember = data.TsMember.KeyValue({
     key: util.typePartIdPropertyName,
-    value: ts.Expr.TypeAssertion(
-      ts.TypeAssertion.helper({
-        expr: ts.Expr.StringLiteral(typePartId),
-        type: ts.Type.ScopeInFile(identifer.fromString("TypePartId")),
+    value: data.TsExpr.TypeAssertion(
+      data.TypeAssertion.helper({
+        expr: data.TsExpr.StringLiteral(typePartId),
+        type: data.TsType.ScopeInFile(identifer.fromString("TypePartId")),
       })
     ),
   });
@@ -164,17 +163,17 @@ const typePartToVariableExpr = (
         util.firstLowerCase(typePart.name)
       );
       /** ジェネリック付きの型 */
-      const type = ts.Type.WithTypeParameter({
-        type: ts.Type.ScopeInFile(identifer.fromString(typePart.name)),
+      const type = data.TsType.WithTypeParameter({
+        type: data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
         typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-          ts.Type.ScopeInFile(identifer.fromString(typeParameter.name))
+          data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
         ),
       });
-      return ts.Expr.ObjectLiteral([
+      return data.TsExpr.ObjectLiteral([
         typePartIdMember,
-        ts.Member.KeyValue({
+        data.TsMember.KeyValue({
           key: util.helperName,
-          value: ts.Expr.Lambda({
+          value: data.TsExpr.Lambda({
             parameterList: [
               {
                 name: parameterIdentifer,
@@ -186,20 +185,20 @@ const typePartToVariableExpr = (
             ),
             returnType: type,
             statementList: [
-              ts.Statement.Return(ts.Expr.Variable(parameterIdentifer)),
+              data.Statement.Return(data.TsExpr.Variable(parameterIdentifer)),
             ],
           }),
         }),
-        ts.Member.KeyValue({
+        data.TsMember.KeyValue({
           key: util.codecPropertyName,
           value: codecExprDefinition(typePart, allTypePartIdTypePartNameMap),
         }),
       ]);
     }
     case "Kernel":
-      return ts.Expr.ObjectLiteral([
+      return data.TsExpr.ObjectLiteral([
         typePartIdMember,
-        ts.Member.KeyValue({
+        data.TsMember.KeyValue({
           key: util.codecPropertyName,
           value: codecExprDefinition(typePart, allTypePartIdTypePartNameMap),
         }),
@@ -207,9 +206,9 @@ const typePartToVariableExpr = (
 
     case "Sum": {
       const { patternList } = typePart.body;
-      return ts.Expr.ObjectLiteral([
+      return data.TsExpr.ObjectLiteral([
         ...patternList.map((pattern, index) =>
-          ts.Member.KeyValue({
+          data.TsMember.KeyValue({
             key: pattern.name,
             value: patternToTagExpr(
               typePart,
@@ -221,7 +220,7 @@ const typePartToVariableExpr = (
           })
         ),
         typePartIdMember,
-        ts.Member.KeyValue({
+        data.TsMember.KeyValue({
           key: util.codecPropertyName,
           value: codecExprDefinition(typePart, allTypePartIdTypePartNameMap),
         }),
@@ -236,17 +235,17 @@ const patternToTagExpr = (
   pattern: data.Pattern,
   patternIndex: number,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-) => {
+): data.TsExpr => {
   if (util.isTagTypeAllNoParameter(patternList)) {
     if (typePart.attribute._ === "Just") {
       switch (typePart.attribute.value) {
         case "AsBoolean":
-          return ts.Expr.BooleanLiteral(patternIndex !== 0);
+          return data.TsExpr.BooleanLiteral(patternIndex !== 0);
         case "AsUndefined":
-          return ts.Expr.UndefinedLiteral;
+          return data.TsExpr.UndefinedLiteral;
       }
     }
-    return ts.Expr.StringLiteral(pattern.name);
+    return data.TsExpr.StringLiteral(pattern.name);
   }
   return patternWithParameterToTagExpr(
     typePart,
@@ -259,15 +258,15 @@ const patternWithParameterToTagExpr = (
   typePart: data.TypePart,
   pattern: data.Pattern,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Expr => {
-  const tagMember: ts.Member = ts.Member.KeyValue({
+): data.TsExpr => {
+  const tagMember: data.TsMember = data.TsMember.KeyValue({
     key: "_",
-    value: ts.Expr.StringLiteral(pattern.name),
+    value: data.TsExpr.StringLiteral(pattern.name),
   });
-  const returnType = ts.Type.WithTypeParameter({
-    type: ts.Type.ScopeInFile(identifer.fromString(typePart.name)),
+  const returnType = data.TsType.WithTypeParameter({
+    type: data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
     typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-      ts.Type.ScopeInFile(identifer.fromString(typeParameter.name))
+      data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
     ),
   });
 
@@ -279,7 +278,7 @@ const patternWithParameterToTagExpr = (
           allTypePartIdTypePartNameMap
         )
       );
-      return ts.Expr.Lambda({
+      return data.TsExpr.Lambda({
         typeParameterList: typePart.typeParameterList.map((typeParameter) =>
           identifer.fromString(typeParameter.name)
         ),
@@ -294,15 +293,15 @@ const patternWithParameterToTagExpr = (
         ],
         returnType,
         statementList: [
-          ts.Statement.Return(
-            ts.Expr.ObjectLiteral([
+          data.Statement.Return(
+            data.TsExpr.ObjectLiteral([
               tagMember,
-              ts.Member.KeyValue({
+              data.TsMember.KeyValue({
                 key: util.typeToMemberOrParameterName(
                   pattern.parameter.value,
                   allTypePartIdTypePartNameMap
                 ),
-                value: ts.Expr.Variable(parameterIdentifer),
+                value: data.TsExpr.Variable(parameterIdentifer),
               }),
             ])
           ),
@@ -312,55 +311,55 @@ const patternWithParameterToTagExpr = (
 
     case "Nothing":
       if (typePart.typeParameterList.length === 0) {
-        return ts.Expr.ObjectLiteral([tagMember]);
+        return data.TsExpr.ObjectLiteral([tagMember]);
       }
-      return ts.Expr.Lambda({
+      return data.TsExpr.Lambda({
         typeParameterList: typePart.typeParameterList.map((typeParameter) =>
           identifer.fromString(typeParameter.name)
         ),
         parameterList: [],
         returnType,
         statementList: [
-          ts.Statement.Return(ts.Expr.ObjectLiteral([tagMember])),
+          data.Statement.Return(data.TsExpr.ObjectLiteral([tagMember])),
         ],
       });
   }
 };
 
 /** カスタム型の式のcodecプロパティの型 */
-const typePartToCodecType = (typePart: data.TypePart): ts.Type =>
+const typePartToCodecType = (typePart: data.TypePart): data.TsType =>
   codec.codecTypeWithTypeParameter(
-    ts.Type.ScopeInFile(identifer.fromString(typePart.name)),
+    data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
     typePart.typeParameterList.map((typeParameter) => typeParameter.name)
   );
 
 const codecExprDefinition = (
   typePart: data.TypePart,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Expr => {
+): data.TsExpr => {
   if (typePart.typeParameterList.length === 0) {
     return codecDefinitionBodyExpr(typePart, allTypePartIdTypePartNameMap);
   }
-  return ts.Expr.Lambda({
+  return data.TsExpr.Lambda({
     typeParameterList: typePart.typeParameterList.map((typeParameter) =>
       identifer.fromString(typeParameter.name)
     ),
     parameterList: typePart.typeParameterList.map((typeParameter) => ({
       name: codec.codecParameterName(typeParameter.name),
       type: codec.codecType(
-        ts.Type.ScopeInFile(identifer.fromString(typeParameter.name))
+        data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
       ),
     })),
     returnType: codec.codecType(
-      ts.Type.WithTypeParameter({
-        type: ts.Type.ScopeInFile(identifer.fromString(typePart.name)),
+      data.TsType.WithTypeParameter({
+        type: data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
         typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-          ts.Type.ScopeInFile(identifer.fromString(typeParameter.name))
+          data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
         ),
       })
     ),
     statementList: [
-      ts.Statement.Return(
+      data.Statement.Return(
         codecDefinitionBodyExpr(typePart, allTypePartIdTypePartNameMap)
       ),
     ],
@@ -370,13 +369,13 @@ const codecExprDefinition = (
 const codecDefinitionBodyExpr = (
   typePart: data.TypePart,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Expr => {
-  return ts.Expr.ObjectLiteral([
-    ts.Member.KeyValue({
+): data.TsExpr => {
+  return data.TsExpr.ObjectLiteral([
+    data.TsMember.KeyValue({
       key: util.encodePropertyName,
       value: encodeExprDefinition(typePart, allTypePartIdTypePartNameMap),
     }),
-    ts.Member.KeyValue({
+    data.TsMember.KeyValue({
       key: util.decodePropertyName,
       value: decodeExprDefinition(typePart, allTypePartIdTypePartNameMap),
     }),
@@ -389,15 +388,15 @@ const codecDefinitionBodyExpr = (
 const encodeExprDefinition = (
   typePart: data.TypePart,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Expr =>
+): data.TsExpr =>
   codec.encodeLambda(
-    ts.Type.WithTypeParameter({
-      type: ts.Type.ScopeInFile(identifer.fromString(typePart.name)),
+    data.TsType.WithTypeParameter({
+      type: data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
       typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-        ts.Type.ScopeInFile(identifer.fromString(typeParameter.name))
+        data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
       ),
     }),
-    (valueVar): ReadonlyArray<ts.Statement> => {
+    (valueVar): ReadonlyArray<data.Statement> => {
       switch (typePart.body._) {
         case "Product":
           return productEncodeDefinitionStatementList(
@@ -428,19 +427,19 @@ const encodeExprDefinition = (
   );
 
 const encodeStatementListWithAttribute = (
-  valueVar: ts.Expr,
+  valueVar: data.TsExpr,
   typeAttribute: data.TypeAttribute
-): ReadonlyArray<ts.Statement> => {
+): ReadonlyArray<data.Statement> => {
   switch (typeAttribute) {
     case "AsBoolean":
       return [
-        ts.Statement.Return(
-          ts.Expr.ArrayLiteral([
+        data.Statement.Return(
+          data.TsExpr.ArrayLiteral([
             {
-              expr: ts.Expr.ConditionalOperator({
+              expr: data.TsExpr.ConditionalOperator({
                 condition: valueVar,
-                thenExpr: ts.Expr.NumberLiteral(1),
-                elseExpr: ts.Expr.NumberLiteral(0),
+                thenExpr: data.TsExpr.NumberLiteral(1),
+                elseExpr: data.TsExpr.NumberLiteral(0),
               }),
               spread: false,
             },
@@ -448,20 +447,20 @@ const encodeStatementListWithAttribute = (
         ),
       ];
     case "AsUndefined":
-      return [ts.Statement.Return(ts.Expr.ArrayLiteral([]))];
+      return [data.Statement.Return(data.TsExpr.ArrayLiteral([]))];
   }
 };
 
 const productEncodeDefinitionStatementList = (
   memberList: ReadonlyArray<data.Member>,
-  parameter: ts.Expr,
+  parameter: data.TsExpr,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ReadonlyArray<ts.Statement> => {
+): ReadonlyArray<data.Statement> => {
   const [firstMember] = memberList;
   if (firstMember === undefined) {
-    return [ts.Statement.Return(ts.Expr.ArrayLiteral([]))];
+    return [data.Statement.Return(data.TsExpr.ArrayLiteral([]))];
   }
-  let e = ts.Expr.Call({
+  let e = data.TsExpr.Call({
     expr: tsUtil.get(
       codecExprUse(firstMember.type, allTypePartIdTypePartNameMap),
       util.encodePropertyName
@@ -470,7 +469,7 @@ const productEncodeDefinitionStatementList = (
   });
   for (const member of memberList.slice(1)) {
     e = tsUtil.callMethod(e, "concat", [
-      ts.Expr.Call({
+      data.TsExpr.Call({
         expr: tsUtil.get(
           codecExprUse(member.type, allTypePartIdTypePartNameMap),
           util.encodePropertyName
@@ -479,15 +478,15 @@ const productEncodeDefinitionStatementList = (
       }),
     ]);
   }
-  return [ts.Statement.Return(e)];
+  return [data.Statement.Return(e)];
 };
 
 const sumEncodeDefinitionStatementList = (
   patternList: ReadonlyArray<data.Pattern>,
-  parameter: ts.Expr,
+  parameter: data.TsExpr,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ReadonlyArray<ts.Statement> => [
-  ts.Statement.Switch({
+): ReadonlyArray<data.Statement> => [
+  data.Statement.Switch({
     expr: util.isTagTypeAllNoParameter(patternList)
       ? parameter
       : tsUtil.get(parameter, "_"),
@@ -505,15 +504,15 @@ const sumEncodeDefinitionStatementList = (
 const patternToSwitchPattern = (
   patternList: data.Pattern,
   index: number,
-  parameter: ts.Expr,
+  parameter: data.TsExpr,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Pattern => {
-  const returnExpr = ((): ts.Expr => {
+): data.TsPattern => {
+  const returnExpr = ((): data.TsExpr => {
     switch (patternList.parameter._) {
       case "Just":
         return tsUtil.callMethod(
-          ts.Expr.ArrayLiteral([
-            { expr: ts.Expr.NumberLiteral(index), spread: false },
+          data.TsExpr.ArrayLiteral([
+            { expr: data.TsExpr.NumberLiteral(index), spread: false },
           ]),
           "concat",
           [
@@ -532,22 +531,22 @@ const patternToSwitchPattern = (
         );
 
       case "Nothing":
-        return ts.Expr.ArrayLiteral([
-          { expr: ts.Expr.NumberLiteral(index), spread: false },
+        return data.TsExpr.ArrayLiteral([
+          { expr: data.TsExpr.NumberLiteral(index), spread: false },
         ]);
     }
   })();
   return {
     caseString: patternList.name,
-    statementList: [ts.Statement.Return(returnExpr)],
+    statementList: [data.Statement.Return(returnExpr)],
   };
 };
 
 const kernelEncodeDefinitionStatementList = (
   typePartBodyKernel: data.TypePartBodyKernel,
-  valueVar: ts.Expr,
+  valueVar: data.TsExpr,
   typePart: data.TypePart
-): ReadonlyArray<ts.Statement> => {
+): ReadonlyArray<data.Statement> => {
   switch (typePartBodyKernel) {
     case "Function":
       throw new Error("cannot encode function");
@@ -584,15 +583,15 @@ const kernelEncodeDefinitionStatementList = (
 const decodeExprDefinition = (
   typePart: data.TypePart,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Expr => {
+): data.TsExpr => {
   return codec.decodeLambda(
-    ts.Type.WithTypeParameter({
-      type: ts.Type.ScopeInFile(identifer.fromString(typePart.name)),
+    data.TsType.WithTypeParameter({
+      type: data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
       typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-        ts.Type.ScopeInFile(identifer.fromString(typeParameter.name))
+        data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
       ),
     }),
-    (parameterIndex, parameterBinary): ReadonlyArray<ts.Statement> => {
+    (parameterIndex, parameterBinary): ReadonlyArray<data.Statement> => {
       switch (typePart.body._) {
         case "Product":
           return productDecodeDefinitionStatementList(
@@ -644,27 +643,30 @@ const decodeExprDefinition = (
 
 const productDecodeDefinitionStatementList = (
   memberList: ReadonlyArray<data.Member>,
-  parameterIndex: ts.Expr,
-  parameterBinary: ts.Expr,
+  parameterIndex: data.TsExpr,
+  parameterBinary: data.TsExpr,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ReadonlyArray<ts.Statement> => {
-  const resultAndNextIndexNameIdentifer = (member: data.Member): ts.Identifer =>
-    identifer.fromString(member.name + "AndNextIndex");
+): ReadonlyArray<data.Statement> => {
+  const resultAndNextIndexNameIdentifer = (
+    member: data.Member
+  ): data.TsIdentifer => identifer.fromString(member.name + "AndNextIndex");
 
   const memberDecoderCode = memberList.reduce<{
-    nextIndexExpr: ts.Expr;
-    statementList: ReadonlyArray<ts.Statement>;
+    nextIndexExpr: data.TsExpr;
+    statementList: ReadonlyArray<data.Statement>;
   }>(
     (statementAndNextIndexExpr, memberNameAndType) => {
       const resultAndNextIndexName = resultAndNextIndexNameIdentifer(
         memberNameAndType
       );
-      const resultAndNextIndexVar = ts.Expr.Variable(resultAndNextIndexName);
+      const resultAndNextIndexVar = data.TsExpr.Variable(
+        resultAndNextIndexName
+      );
 
       return {
         nextIndexExpr: codec.getNextIndex(resultAndNextIndexVar),
         statementList: statementAndNextIndexExpr.statementList.concat(
-          ts.Statement.VariableDefinition({
+          data.Statement.VariableDefinition({
             isConst: true,
             name: resultAndNextIndexName,
             type: codec.decodeReturnType(
@@ -687,13 +689,13 @@ const productDecodeDefinitionStatementList = (
   );
   return memberDecoderCode.statementList.concat(
     codec.returnStatement(
-      ts.Expr.ObjectLiteral(
+      data.TsExpr.ObjectLiteral(
         memberList.map(
-          (memberNameAndType): ts.Member =>
-            ts.Member.KeyValue({
+          (memberNameAndType): data.TsMember =>
+            data.TsMember.KeyValue({
               key: memberNameAndType.name,
               value: codec.getResult(
-                ts.Expr.Variable(
+                data.TsExpr.Variable(
                   resultAndNextIndexNameIdentifer(memberNameAndType)
                 )
               ),
@@ -708,21 +710,21 @@ const productDecodeDefinitionStatementList = (
 const sumDecodeDefinitionStatementList = (
   patternList: ReadonlyArray<data.Pattern>,
   typePartName: string,
-  parameterIndex: ts.Expr,
-  parameterBinary: ts.Expr,
+  parameterIndex: data.TsExpr,
+  parameterBinary: data.TsExpr,
   noTypeParameter: boolean,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ReadonlyArray<ts.Statement> => {
+): ReadonlyArray<data.Statement> => {
   const patternIndexAndNextIndexName = identifer.fromString("patternIndex");
-  const patternIndexAndNextIndexVar = ts.Expr.Variable(
+  const patternIndexAndNextIndexVar = data.TsExpr.Variable(
     patternIndexAndNextIndexName
   );
 
   return [
-    ts.Statement.VariableDefinition({
+    data.Statement.VariableDefinition({
       isConst: true,
       name: patternIndexAndNextIndexName,
-      type: codec.decodeReturnType(ts.Type.Number),
+      type: codec.decodeReturnType(data.TsType.Number),
       expr: int32.decode(parameterIndex, parameterBinary),
     }),
     ...patternList.map((pattern, index) =>
@@ -736,8 +738,8 @@ const sumDecodeDefinitionStatementList = (
         allTypePartIdTypePartNameMap
       )
     ),
-    ts.Statement.ThrowError(
-      ts.Expr.StringLiteral(
+    data.Statement.ThrowError(
+      data.TsExpr.StringLiteral(
         "存在しないパターンを指定された 型を更新してください"
       )
     ),
@@ -748,20 +750,20 @@ const tagPatternCode = (
   typePartName: string,
   pattern: data.Pattern,
   index: number,
-  patternIndexAndNextIndexVar: ts.Expr,
-  parameterBinary: ts.Expr,
+  patternIndexAndNextIndexVar: data.TsExpr,
+  parameterBinary: data.TsExpr,
   noTypeParameter: boolean,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Statement => {
+): data.Statement => {
   switch (pattern.parameter._) {
     case "Just":
-      return ts.Statement.If({
+      return data.Statement.If({
         condition: tsUtil.equal(
           codec.getResult(patternIndexAndNextIndexVar),
-          ts.Expr.NumberLiteral(index)
+          data.TsExpr.NumberLiteral(index)
         ),
         thenStatementList: [
-          ts.Statement.VariableDefinition({
+          data.Statement.VariableDefinition({
             isConst: true,
             name: identifer.fromString("result"),
             type: codec.decodeReturnType(
@@ -784,19 +786,21 @@ const tagPatternCode = (
               pattern.name,
               data.Maybe.Just(
                 codec.getResult(
-                  ts.Expr.Variable(identifer.fromString("result"))
+                  data.TsExpr.Variable(identifer.fromString("result"))
                 )
               )
             ),
-            codec.getNextIndex(ts.Expr.Variable(identifer.fromString("result")))
+            codec.getNextIndex(
+              data.TsExpr.Variable(identifer.fromString("result"))
+            )
           ),
         ],
       });
     case "Nothing":
-      return ts.Statement.If({
+      return data.Statement.If({
         condition: tsUtil.equal(
           codec.getResult(patternIndexAndNextIndexVar),
-          ts.Expr.NumberLiteral(index)
+          data.TsExpr.NumberLiteral(index)
         ),
         thenStatementList: [
           codec.returnStatement(
@@ -816,9 +820,9 @@ const tagPatternCode = (
 const kernelDecodeDefinitionStatementList = (
   typePartBodyKernel: data.TypePartBodyKernel,
   typePart: data.TypePart,
-  parameterIndex: ts.Expr,
-  parameterBinary: ts.Expr
-): ReadonlyArray<ts.Statement> => {
+  parameterIndex: data.TsExpr,
+  parameterBinary: data.TsExpr
+): ReadonlyArray<data.Statement> => {
   switch (typePartBodyKernel) {
     case "Function":
       throw new Error("cannot decode function");
@@ -879,29 +883,32 @@ const patternUse = (
   typePartName: string,
   noTypeParameter: boolean,
   tagName: string,
-  parameter: data.Maybe<ts.Expr>
-): ts.Expr => {
+  parameter: data.Maybe<data.TsExpr>
+): data.TsExpr => {
   const tagExpr = tsUtil.get(
-    ts.Expr.Variable(identifer.fromString(typePartName)),
+    data.TsExpr.Variable(identifer.fromString(typePartName)),
     tagName
   );
   switch (parameter._) {
     case "Just":
-      return ts.Expr.Call({ expr: tagExpr, parameterList: [parameter.value] });
+      return data.TsExpr.Call({
+        expr: tagExpr,
+        parameterList: [parameter.value],
+      });
     case "Nothing":
       if (noTypeParameter) {
         return tagExpr;
       }
-      return ts.Expr.Call({ expr: tagExpr, parameterList: [] });
+      return data.TsExpr.Call({ expr: tagExpr, parameterList: [] });
   }
 };
 
 const encodeExprUse = (
   type_: data.Type,
-  target: ts.Expr,
+  target: data.TsExpr,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Expr =>
-  ts.Expr.Call({
+): data.TsExpr =>
+  data.TsExpr.Call({
     expr: tsUtil.get(
       codecExprUse(type_, allTypePartIdTypePartNameMap),
       util.encodePropertyName
@@ -911,11 +918,11 @@ const encodeExprUse = (
 
 const decodeExprUse = (
   type_: data.Type,
-  indexExpr: ts.Expr,
-  binaryExpr: ts.Expr,
+  indexExpr: data.TsExpr,
+  binaryExpr: data.TsExpr,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
 ) =>
-  ts.Expr.Call({
+  data.TsExpr.Call({
     expr: tsUtil.get(
       codecExprUse(type_, allTypePartIdTypePartNameMap),
       util.decodePropertyName
@@ -926,7 +933,7 @@ const decodeExprUse = (
 const codecExprUse = (
   type: data.Type,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Expr => {
+): data.TsExpr => {
   const typePartName = allTypePartIdTypePartNameMap.get(type.typePartId);
   if (typePartName === undefined) {
     throw new Error(
@@ -937,7 +944,7 @@ const codecExprUse = (
   if (type.parameter.length === 0) {
     return typePartNameToCodecExpr(typePartName);
   }
-  return ts.Expr.Call({
+  return data.TsExpr.Call({
     expr: typePartNameToCodecExpr(typePartName),
     parameterList: type.parameter.map((parameter) =>
       codecExprUse(parameter, allTypePartIdTypePartNameMap)
@@ -945,13 +952,13 @@ const codecExprUse = (
   });
 };
 
-const typePartNameToCodecExpr = (typePartName: string): ts.Expr => {
+const typePartNameToCodecExpr = (typePartName: string): data.TsExpr => {
   // TODO 型パラメーターかどうかの判定を名前でしてしまっている
   if (util.isFirstLowerCaseName(typePartName)) {
-    return ts.Expr.Variable(codec.codecParameterName(typePartName));
+    return data.TsExpr.Variable(codec.codecParameterName(typePartName));
   }
   return tsUtil.get(
-    ts.Expr.Variable(identifer.fromString(typePartName)),
+    data.TsExpr.Variable(identifer.fromString(typePartName)),
     util.codecPropertyName
   );
 };

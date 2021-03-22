@@ -1,6 +1,5 @@
 import * as a from "../messageAndState";
 import * as d from "../../data";
-import * as definyType from "../definyType";
 import * as util from "../util";
 import { ProductItem, productEditor } from "./productEditor";
 import { SelectBoxSelection, box, selectBox, text } from "../ui";
@@ -255,9 +254,10 @@ const typeMenu = (
             {
               click: typeSelect({
                 typePartId: data.id,
-                parameter: new Array<d.Type>(data.typeParameterCount).fill(
-                  definyType.int32
-                ),
+                parameter: new Array<d.Type>(data.typeParameterCount).fill({
+                  parameter: [],
+                  typePartId: d.Int32.typePartId,
+                }),
               }),
             },
             c([["view", typeView(data)]])

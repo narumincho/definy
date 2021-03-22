@@ -1,24 +1,19 @@
-import * as data from "../data";
-import * as identifer from "../gen/jsTs/identifer";
-import * as ts from "../gen/jsTs/data";
-import * as tsUtil from "../gen/jsTs/util";
+import * as d from "../data";
+import { identifer, util as tsUtil } from "../gen/jsTs/main";
 
 export const maybeMap = <Input, Output>(
-  maybe: data.Maybe<Input>,
+  maybe: d.Maybe<Input>,
   func: (input: Input) => Output
-): data.Maybe<Output> => {
+): d.Maybe<Output> => {
   switch (maybe._) {
     case "Just":
-      return data.Maybe.Just(func(maybe.value));
+      return d.Maybe.Just(func(maybe.value));
     case "Nothing":
-      return data.Maybe.Nothing();
+      return d.Maybe.Nothing();
   }
 };
 
-export const maybeWithDefault = <T>(
-  maybe: data.Maybe<T>,
-  defaultValue: T
-): T => {
+export const maybeWithDefault = <T>(maybe: d.Maybe<T>, defaultValue: T): T => {
   switch (maybe._) {
     case "Just":
       return maybe.value;
@@ -28,7 +23,7 @@ export const maybeWithDefault = <T>(
 };
 
 export const maybeUnwrap = <T, U>(
-  maybe: data.Maybe<T>,
+  maybe: d.Maybe<T>,
   func: (t: T) => U,
   defaultValue: U
 ): U => {
@@ -41,56 +36,56 @@ export const maybeUnwrap = <T, U>(
 };
 
 export const maybeAndThen = <T, U>(
-  maybe: data.Maybe<T>,
-  func: (t: T) => data.Maybe<U>
-): data.Maybe<U> => {
+  maybe: d.Maybe<T>,
+  func: (t: T) => d.Maybe<U>
+): d.Maybe<U> => {
   switch (maybe._) {
     case "Just":
       return func(maybe.value);
     case "Nothing":
-      return data.Maybe.Nothing();
+      return d.Maybe.Nothing();
   }
 };
 
 export const resultMap = <InputOk, InputError, OutputOk, OutputError>(
-  result: data.Result<InputOk, InputError>,
+  result: d.Result<InputOk, InputError>,
   okFunc: (input: InputOk) => OutputOk,
   errorFunc: (input: InputError) => OutputError
-): data.Result<OutputOk, OutputError> => {
+): d.Result<OutputOk, OutputError> => {
   switch (result._) {
     case "Ok":
-      return data.Result.Ok(okFunc(result.ok));
+      return d.Result.Ok(okFunc(result.ok));
     case "Error":
-      return data.Result.Error(errorFunc(result.error));
+      return d.Result.Error(errorFunc(result.error));
   }
 };
 
 export const resultMapOk = <InputOk, OutputOk, Error>(
-  result: data.Result<InputOk, Error>,
+  result: d.Result<InputOk, Error>,
   func: (input: InputOk) => OutputOk
-): data.Result<OutputOk, Error> => {
+): d.Result<OutputOk, Error> => {
   switch (result._) {
     case "Ok":
-      return data.Result.Ok(func(result.ok));
+      return d.Result.Ok(func(result.ok));
     case "Error":
       return result;
   }
 };
 
 export const resultMapError = <Ok, InputError, OutputError>(
-  result: data.Result<Ok, InputError>,
+  result: d.Result<Ok, InputError>,
   func: (input: InputError) => OutputError
-): data.Result<Ok, OutputError> => {
+): d.Result<Ok, OutputError> => {
   switch (result._) {
     case "Ok":
       return result;
     case "Error":
-      return data.Result.Error(func(result.error));
+      return d.Result.Error(func(result.error));
   }
 };
 
 export const resultWithDefault = <Ok, Error>(
-  result: data.Result<Ok, Error>,
+  result: d.Result<Ok, Error>,
   defaultValue: Ok
 ): Ok => {
   switch (result._) {
@@ -102,34 +97,34 @@ export const resultWithDefault = <Ok, Error>(
 };
 
 export const resultToMaybe = <Ok, Error>(
-  result: data.Result<Ok, Error>
-): data.Maybe<Ok> => {
+  result: d.Result<Ok, Error>
+): d.Maybe<Ok> => {
   switch (result._) {
     case "Ok":
-      return data.Maybe.Just(result.ok);
+      return d.Maybe.Just(result.ok);
     case "Error":
-      return data.Maybe.Nothing();
+      return d.Maybe.Nothing();
   }
 };
 
 export const resultFromMaybe = <Ok, Error>(
-  maybe: data.Maybe<Ok>,
+  maybe: d.Maybe<Ok>,
   error: Error
-): data.Result<Ok, Error> => {
+): d.Result<Ok, Error> => {
   switch (maybe._) {
     case "Just":
-      return data.Result.Ok(maybe.value);
+      return d.Result.Ok(maybe.value);
     case "Nothing":
-      return data.Result.Error(error);
+      return d.Result.Error(error);
   }
 };
 
 const millisecondInDay = 1000 * 60 * 60 * 24;
 
-export const timeToDate = (dateTime: data.Time): Date =>
+export const timeToDate = (dateTime: d.Time): Date =>
   new Date(dateTime.day * millisecondInDay + dateTime.millisecond);
 
-export const timeFromDate = (date: Date): data.Time => {
+export const timeFromDate = (date: Date): d.Time => {
   const millisecond = date.getTime();
   return {
     day: Math.floor(millisecond / millisecondInDay),
@@ -138,9 +133,9 @@ export const timeFromDate = (date: Date): data.Time => {
 };
 
 export const typeToTsType = (
-  type: data.Type,
-  allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
-): ts.Type => {
+  type: d.Type,
+  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
+): d.TsType => {
   const typePartName = allTypePartIdTypePartNameMap.get(type.typePartId);
   if (typePartName === undefined) {
     throw new Error(
@@ -148,8 +143,8 @@ export const typeToTsType = (
         (type.typePartId as string)
     );
   }
-  return ts.Type.WithTypeParameter({
-    type: ts.Type.ScopeInFile(identifer.fromString(typePartName)),
+  return d.TsType.WithTypeParameter({
+    type: d.TsType.ScopeInFile(identifer.fromString(typePartName)),
     typeParameterList: type.parameter.map((parameter) =>
       typeToTsType(parameter, allTypePartIdTypePartNameMap)
     ),
@@ -157,8 +152,8 @@ export const typeToTsType = (
 };
 
 export const typeToMemberOrParameterName = (
-  type: data.Type,
-  allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
+  type: d.Type,
+  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
 ): string => {
   return firstLowerCase(toTypeName(type, allTypePartIdTypePartNameMap));
 };
@@ -177,7 +172,7 @@ export const typePartIdPropertyName = "typePartId";
  * codec.encode(value)
  * ```
  */
-export const callEncode = (codecExpr: ts.Expr, value: ts.Expr): ts.Expr =>
+export const callEncode = (codecExpr: d.TsExpr, value: d.TsExpr): d.TsExpr =>
   tsUtil.callMethod(codecExpr, encodePropertyName, [value]);
 
 /**
@@ -187,14 +182,15 @@ export const callEncode = (codecExpr: ts.Expr, value: ts.Expr): ts.Expr =>
  * ```
  */
 export const callDecode = (
-  codecExpr: ts.Expr,
-  index: ts.Expr,
-  binary: ts.Expr
-): ts.Expr => tsUtil.callMethod(codecExpr, decodePropertyName, [index, binary]);
+  codecExpr: d.TsExpr,
+  index: d.TsExpr,
+  binary: d.TsExpr
+): d.TsExpr =>
+  tsUtil.callMethod(codecExpr, decodePropertyName, [index, binary]);
 
 export const toTypeName = (
-  type: data.Type,
-  allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
+  type: d.Type,
+  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
 ): string => {
   const typePartName = allTypePartIdTypePartNameMap.get(type.typePartId);
   if (typePartName === undefined) {
@@ -211,7 +207,7 @@ export const toTypeName = (
 };
 
 export const isTagTypeAllNoParameter = (
-  patternList: ReadonlyArray<data.Pattern>
+  patternList: ReadonlyArray<d.Pattern>
 ): boolean =>
   patternList.every(
     (tagNameAndParameter) => tagNameAndParameter.parameter._ === "Nothing"
@@ -263,7 +259,7 @@ export const isFirstLowerCaseName = (text: string): boolean => {
   return true;
 };
 
-export const definyCodeProjectId = "1e4531eba1d93cd9f9f31a8bc49551a2" as data.ProjectId;
+export const definyCodeProjectId = "1e4531eba1d93cd9f9f31a8bc49551a2" as d.ProjectId;
 
 /** エディタ上で型の名前を作る. 先頭は小文字だがエディタ上は大文字 */
 export const stringToTypePartName = (text: string): string | undefined => {
@@ -293,7 +289,7 @@ export const isValidTypePartName = (text: string): boolean => {
 };
 
 /** 型パーツIDから型パラメーターをしていしない型を指定する */
-export const noParameterType = (typePartId: data.TypePartId): data.Type => ({
+export const noParameterType = (typePartId: d.TypePartId): d.Type => ({
   typePartId,
   parameter: [],
 });

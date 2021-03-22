@@ -1,72 +1,71 @@
 import * as c from "./codec";
-import * as identifer from "../../gen/jsTs/identifer";
-import * as ts from "../../gen/jsTs/data";
-import * as tsUtil from "../../gen/jsTs/util";
+import * as ts from "../../data";
 import * as util from "../util";
+import { identifer, util as tsUtil } from "../../gen/jsTs/main";
 
-const codec: ts.Expr = tsUtil.get(
-  ts.Expr.Variable(identifer.fromString("Int32")),
+const codec: ts.TsExpr = tsUtil.get(
+  ts.TsExpr.Variable(identifer.fromString("Int32")),
   util.codecPropertyName
 );
 
-export const encode = (target: ts.Expr): ts.Expr =>
+export const encode = (target: ts.TsExpr): ts.TsExpr =>
   util.callEncode(codec, target);
 
-export const decode = (index: ts.Expr, binary: ts.Expr): ts.Expr =>
+export const decode = (index: ts.TsExpr, binary: ts.TsExpr): ts.TsExpr =>
   util.callDecode(codec, index, binary);
 
 /**
  * numberの32bit符号あり整数をSigned Leb128のバイナリに変換するコード
  */
 export const encodeDefinitionStatementList = (
-  valueVar: ts.Expr
+  valueVar: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
   const resultName = identifer.fromString("result");
-  const resultVar = ts.Expr.Variable(resultName);
+  const resultVar = ts.TsExpr.Variable(resultName);
   const byteName = identifer.fromString("byte");
-  const byteVar = ts.Expr.Variable(byteName);
+  const byteVar = ts.TsExpr.Variable(byteName);
   const restName = identifer.fromString("rest");
-  const restVar = ts.Expr.Variable(restName);
+  const restVar = ts.TsExpr.Variable(restName);
 
   return [
     ts.Statement.VariableDefinition({
       isConst: false,
       name: restName,
-      type: ts.Type.Number,
-      expr: tsUtil.bitwiseOr(valueVar, ts.Expr.NumberLiteral(0)),
+      type: ts.TsType.Number,
+      expr: tsUtil.bitwiseOr(valueVar, ts.TsExpr.NumberLiteral(0)),
     }),
     ts.Statement.VariableDefinition({
       isConst: true,
       name: resultName,
-      type: tsUtil.arrayType(ts.Type.Number),
-      expr: ts.Expr.ArrayLiteral([]),
+      type: tsUtil.arrayType(ts.TsType.Number),
+      expr: ts.TsExpr.ArrayLiteral([]),
     }),
     ts.Statement.WhileTrue([
       ts.Statement.VariableDefinition({
         isConst: true,
         name: byteName,
-        type: ts.Type.Number,
-        expr: tsUtil.bitwiseAnd(restVar, ts.Expr.NumberLiteral(0x7f)),
+        type: ts.TsType.Number,
+        expr: tsUtil.bitwiseAnd(restVar, ts.TsExpr.NumberLiteral(0x7f)),
       }),
       ts.Statement.Set({
         target: restVar,
         operatorMaybe: ts.Maybe.Just<ts.BinaryOperator>("SignedRightShift"),
-        expr: ts.Expr.NumberLiteral(7),
+        expr: ts.TsExpr.NumberLiteral(7),
       }),
       ts.Statement.If({
         condition: tsUtil.logicalOr(
           tsUtil.logicalAnd(
-            tsUtil.equal(restVar, ts.Expr.NumberLiteral(0)),
+            tsUtil.equal(restVar, ts.TsExpr.NumberLiteral(0)),
             tsUtil.equal(
-              tsUtil.bitwiseAnd(byteVar, ts.Expr.NumberLiteral(0x40)),
-              ts.Expr.NumberLiteral(0)
+              tsUtil.bitwiseAnd(byteVar, ts.TsExpr.NumberLiteral(0x40)),
+              ts.TsExpr.NumberLiteral(0)
             )
           ),
           tsUtil.logicalAnd(
-            tsUtil.equal(restVar, ts.Expr.NumberLiteral(-1)),
+            tsUtil.equal(restVar, ts.TsExpr.NumberLiteral(-1)),
             tsUtil.notEqual(
-              tsUtil.bitwiseAnd(byteVar, ts.Expr.NumberLiteral(0x40)),
-              ts.Expr.NumberLiteral(0)
+              tsUtil.bitwiseAnd(byteVar, ts.TsExpr.NumberLiteral(0x40)),
+              ts.TsExpr.NumberLiteral(0)
             )
           )
         ),
@@ -79,7 +78,7 @@ export const encodeDefinitionStatementList = (
       }),
       ts.Statement.EvaluateExpr(
         tsUtil.callMethod(resultVar, "push", [
-          tsUtil.bitwiseOr(byteVar, ts.Expr.NumberLiteral(0x80)),
+          tsUtil.bitwiseOr(byteVar, ts.TsExpr.NumberLiteral(0x80)),
         ])
       ),
     ]),
@@ -87,45 +86,45 @@ export const encodeDefinitionStatementList = (
 };
 
 export const decodeDefinitionStatementList = (
-  parameterIndex: ts.Expr,
-  parameterBinary: ts.Expr
+  parameterIndex: ts.TsExpr,
+  parameterBinary: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
   const resultName = identifer.fromString("result");
-  const resultVar = ts.Expr.Variable(resultName);
+  const resultVar = ts.TsExpr.Variable(resultName);
   const offsetName = identifer.fromString("offset");
-  const offsetVar = ts.Expr.Variable(offsetName);
+  const offsetVar = ts.TsExpr.Variable(offsetName);
   const byteName = identifer.fromString("byte");
-  const byteVar = ts.Expr.Variable(byteName);
+  const byteVar = ts.TsExpr.Variable(byteName);
 
   return [
     ts.Statement.VariableDefinition({
       isConst: false,
       name: resultName,
-      type: ts.Type.Number,
-      expr: ts.Expr.NumberLiteral(0),
+      type: ts.TsType.Number,
+      expr: ts.TsExpr.NumberLiteral(0),
     }),
     ts.Statement.VariableDefinition({
       isConst: false,
       name: offsetName,
-      type: ts.Type.Number,
-      expr: ts.Expr.NumberLiteral(0),
+      type: ts.TsType.Number,
+      expr: ts.TsExpr.NumberLiteral(0),
     }),
     ts.Statement.WhileTrue([
       ts.Statement.VariableDefinition({
         isConst: true,
         name: byteName,
-        type: ts.Type.Union([ts.Type.Number, ts.Type.Undefined]),
-        expr: ts.Expr.Get({
+        type: ts.TsType.Union([ts.TsType.Number, ts.TsType.Undefined]),
+        expr: ts.TsExpr.Get({
           expr: parameterBinary,
           propertyExpr: tsUtil.addition(parameterIndex, offsetVar),
         }),
       }),
       // もし byteVar が undefined だったら throw する
       ts.Statement.If({
-        condition: tsUtil.equal(byteVar, ts.Expr.UndefinedLiteral),
+        condition: tsUtil.equal(byteVar, ts.TsExpr.UndefinedLiteral),
         thenStatementList: [
           ts.Statement.ThrowError(
-            ts.Expr.StringLiteral("invalid byte in decode int32")
+            ts.TsExpr.StringLiteral("invalid byte in decode int32")
           ),
         ],
       }),
@@ -133,30 +132,30 @@ export const decodeDefinitionStatementList = (
         target: resultVar,
         operatorMaybe: ts.Maybe.Just<ts.BinaryOperator>("BitwiseOr"),
         expr: tsUtil.leftShift(
-          tsUtil.bitwiseAnd(byteVar, ts.Expr.NumberLiteral(0x7f)),
-          tsUtil.multiplication(offsetVar, ts.Expr.NumberLiteral(7))
+          tsUtil.bitwiseAnd(byteVar, ts.TsExpr.NumberLiteral(0x7f)),
+          tsUtil.multiplication(offsetVar, ts.TsExpr.NumberLiteral(7))
         ),
       }),
       ts.Statement.Set({
         target: offsetVar,
         operatorMaybe: ts.Maybe.Just<ts.BinaryOperator>("Addition"),
-        expr: ts.Expr.NumberLiteral(1),
+        expr: ts.TsExpr.NumberLiteral(1),
       }),
       ts.Statement.If({
         condition: tsUtil.equal(
-          tsUtil.bitwiseAnd(ts.Expr.NumberLiteral(0x80), byteVar),
-          ts.Expr.NumberLiteral(0)
+          tsUtil.bitwiseAnd(ts.TsExpr.NumberLiteral(0x80), byteVar),
+          ts.TsExpr.NumberLiteral(0)
         ),
         thenStatementList: [
           ts.Statement.If({
             condition: tsUtil.logicalAnd(
               tsUtil.lessThan(
-                tsUtil.multiplication(offsetVar, ts.Expr.NumberLiteral(7)),
-                ts.Expr.NumberLiteral(32)
+                tsUtil.multiplication(offsetVar, ts.TsExpr.NumberLiteral(7)),
+                ts.TsExpr.NumberLiteral(32)
               ),
               tsUtil.notEqual(
-                tsUtil.bitwiseAnd(byteVar, ts.Expr.NumberLiteral(0x40)),
-                ts.Expr.NumberLiteral(0)
+                tsUtil.bitwiseAnd(byteVar, ts.TsExpr.NumberLiteral(0x40)),
+                ts.TsExpr.NumberLiteral(0)
               )
             ),
             thenStatementList: [
@@ -164,8 +163,8 @@ export const decodeDefinitionStatementList = (
                 tsUtil.bitwiseOr(
                   resultVar,
                   tsUtil.leftShift(
-                    tsUtil.bitwiseNot(ts.Expr.NumberLiteral(0)),
-                    tsUtil.multiplication(offsetVar, ts.Expr.NumberLiteral(7))
+                    tsUtil.bitwiseNot(ts.TsExpr.NumberLiteral(0)),
+                    tsUtil.multiplication(offsetVar, ts.TsExpr.NumberLiteral(7))
                   )
                 ),
                 tsUtil.addition(parameterIndex, offsetVar)

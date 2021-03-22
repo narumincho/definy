@@ -1,4 +1,4 @@
-import { Identifer } from "./data";
+import { TsIdentifer } from "../../data";
 
 /**
  * 識別子を文字列から無理矢理でも生成する.
@@ -6,10 +6,10 @@ import { Identifer } from "./data";
  * 識別子に使えない文字が含まれていた場合, 末尾に_がつくか, $マークでエンコードされる
  * @param text
  */
-export const fromString = (word: string): Identifer => {
+export const fromString = (word: string): TsIdentifer => {
   const [firstChar] = word;
   if (firstChar === undefined) {
-    return Identifer.Identifer("$00");
+    return TsIdentifer.Identifer("$00");
   }
   let result = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(
     firstChar
@@ -25,9 +25,9 @@ export const fromString = (word: string): Identifer => {
       : escapeChar(char);
   }
   if (reservedByLanguageWordSet.has(word)) {
-    return Identifer.Identifer(result + "_");
+    return TsIdentifer.Identifer(result + "_");
   }
-  return Identifer.Identifer(result);
+  return TsIdentifer.Identifer(result);
 };
 
 const escapeChar = (char: string): string =>
@@ -123,13 +123,13 @@ export const initialIdentiferIndex = 0 as IdentiferIndex;
 export const createIdentifer = (
   identiferIndex: IdentiferIndex,
   reserved: ReadonlySet<string>
-): { identifer: Identifer; nextIdentiferIndex: IdentiferIndex } => {
+): { identifer: TsIdentifer; nextIdentiferIndex: IdentiferIndex } => {
   let index: number = identiferIndex;
   while (true) {
     const result = createIdentiferByIndex(index);
     if (!reserved.has(result) && !reservedByLanguageWordSet.has(result)) {
       return {
-        identifer: Identifer.Identifer(result),
+        identifer: TsIdentifer.Identifer(result),
         nextIdentiferIndex: (index + 1) as IdentiferIndex,
       };
     }

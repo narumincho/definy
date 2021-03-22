@@ -1,34 +1,35 @@
 import * as c from "./codec";
-import * as identifer from "../../gen/jsTs/identifer";
 import * as int32 from "./int32";
-import * as ts from "../../gen/jsTs/data";
-import * as tsUtil from "../../gen/jsTs/util";
+import * as ts from "../../data";
 import * as util from "../util";
+import { identifer, util as tsUtil } from "../../gen/jsTs/main";
 
 export const name = identifer.fromString("Dict");
 
-export const type = (key: ts.Type, value: ts.Type): ts.Type =>
+export const type = (key: ts.TsType, value: ts.TsType): ts.TsType =>
   tsUtil.readonlyMapType(key, value);
 
 export const encodeDefinitionStatementList = (
   keyTypeParameterName: string,
   valueTypeParameterName: string,
-  valueVar: ts.Expr
+  valueVar: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
   const resultName = identifer.fromString("result");
   const elementName = identifer.fromString("element");
-  const keyCodec = ts.Expr.Variable(c.codecParameterName(keyTypeParameterName));
-  const valueCodec = ts.Expr.Variable(
+  const keyCodec = ts.TsExpr.Variable(
+    c.codecParameterName(keyTypeParameterName)
+  );
+  const valueCodec = ts.TsExpr.Variable(
     c.codecParameterName(valueTypeParameterName)
   );
   return [
     ts.Statement.VariableDefinition({
       isConst: false,
       name: resultName,
-      type: tsUtil.arrayType(ts.Type.Number),
-      expr: ts.Expr.TypeAssertion({
+      type: tsUtil.arrayType(ts.TsType.Number),
+      expr: ts.TsExpr.TypeAssertion({
         expr: int32.encode(tsUtil.get(valueVar, "size")),
-        type: tsUtil.arrayType(ts.Type.Number),
+        type: tsUtil.arrayType(ts.TsType.Number),
       }),
     }),
     ts.Statement.ForOf({
@@ -36,19 +37,19 @@ export const encodeDefinitionStatementList = (
       iterableExpr: valueVar,
       statementList: [
         ts.Statement.Set({
-          target: ts.Expr.Variable(resultName),
+          target: ts.TsExpr.Variable(resultName),
           operatorMaybe: ts.Maybe.Nothing(),
-          expr: ts.Expr.ArrayLiteral([
+          expr: ts.TsExpr.ArrayLiteral([
             {
-              expr: ts.Expr.Variable(resultName),
+              expr: ts.TsExpr.Variable(resultName),
               spread: true,
             },
             {
               expr: util.callEncode(
                 keyCodec,
-                ts.Expr.Get({
-                  expr: ts.Expr.Variable(elementName),
-                  propertyExpr: ts.Expr.NumberLiteral(0),
+                ts.TsExpr.Get({
+                  expr: ts.TsExpr.Variable(elementName),
+                  propertyExpr: ts.TsExpr.NumberLiteral(0),
                 })
               ),
               spread: true,
@@ -56,9 +57,9 @@ export const encodeDefinitionStatementList = (
             {
               expr: util.callEncode(
                 valueCodec,
-                ts.Expr.Get({
-                  expr: ts.Expr.Variable(elementName),
-                  propertyExpr: ts.Expr.NumberLiteral(1),
+                ts.TsExpr.Get({
+                  expr: ts.TsExpr.Variable(elementName),
+                  propertyExpr: ts.TsExpr.NumberLiteral(1),
                 })
               ),
               spread: true,
@@ -67,51 +68,51 @@ export const encodeDefinitionStatementList = (
         }),
       ],
     }),
-    ts.Statement.Return(ts.Expr.Variable(resultName)),
+    ts.Statement.Return(ts.TsExpr.Variable(resultName)),
   ];
 };
 
 export const decodeDefinitionStatementList = (
   keyTypeParameterName: string,
   valueTypeParameterName: string,
-  parameterIndex: ts.Expr,
-  parameterBinary: ts.Expr
+  parameterIndex: ts.TsExpr,
+  parameterBinary: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
-  const keyTypeVar = ts.Type.ScopeInFile(
+  const keyTypeVar = ts.TsType.ScopeInFile(
     identifer.fromString(keyTypeParameterName)
   );
-  const valueTypeVar = ts.Type.ScopeInFile(
+  const valueTypeVar = ts.TsType.ScopeInFile(
     identifer.fromString(valueTypeParameterName)
   );
   const resultName = identifer.fromString("result");
-  const resultVar = ts.Expr.Variable(resultName);
+  const resultVar = ts.TsExpr.Variable(resultName);
   const lengthResultName = identifer.fromString("lengthResult");
-  const lengthResultVar = ts.Expr.Variable(lengthResultName);
+  const lengthResultVar = ts.TsExpr.Variable(lengthResultName);
   const keyResultName = identifer.fromString("keyResult");
-  const keyResultVar = ts.Expr.Variable(keyResultName);
+  const keyResultVar = ts.TsExpr.Variable(keyResultName);
   const valueResultName = identifer.fromString("valueResult");
-  const valueResultVar = ts.Expr.Variable(valueResultName);
+  const valueResultVar = ts.TsExpr.Variable(valueResultName);
   const nextIndexName = identifer.fromString("nextIndex");
-  const nextIndexVar = ts.Expr.Variable(nextIndexName);
+  const nextIndexVar = ts.TsExpr.Variable(nextIndexName);
 
   return [
     ts.Statement.VariableDefinition({
       isConst: true,
       name: lengthResultName,
-      type: c.decodeReturnType(ts.Type.Number),
+      type: c.decodeReturnType(ts.TsType.Number),
       expr: int32.decode(parameterIndex, parameterBinary),
     }),
     ts.Statement.VariableDefinition({
       isConst: false,
       name: nextIndexName,
-      type: ts.Type.Number,
+      type: ts.TsType.Number,
       expr: c.getNextIndex(lengthResultVar),
     }),
     ts.Statement.VariableDefinition({
       isConst: true,
       name: resultName,
       type: tsUtil.mapType(keyTypeVar, valueTypeVar),
-      expr: tsUtil.newMap(ts.Expr.ArrayLiteral([])),
+      expr: tsUtil.newMap(ts.TsExpr.ArrayLiteral([])),
     }),
     ts.Statement.For({
       counterVariableName: identifer.fromString("i"),
@@ -122,7 +123,7 @@ export const decodeDefinitionStatementList = (
           name: keyResultName,
           type: c.decodeReturnType(keyTypeVar),
           expr: util.callDecode(
-            ts.Expr.Variable(c.codecParameterName(keyTypeParameterName)),
+            ts.TsExpr.Variable(c.codecParameterName(keyTypeParameterName)),
             nextIndexVar,
             parameterBinary
           ),
@@ -132,7 +133,7 @@ export const decodeDefinitionStatementList = (
           name: valueResultName,
           type: c.decodeReturnType(valueTypeVar),
           expr: util.callDecode(
-            ts.Expr.Variable(c.codecParameterName(valueTypeParameterName)),
+            ts.TsExpr.Variable(c.codecParameterName(valueTypeParameterName)),
             c.getNextIndex(keyResultVar),
             parameterBinary
           ),
