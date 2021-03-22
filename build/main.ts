@@ -1,6 +1,7 @@
 import * as d from "../data";
 import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
+import * as packageJsonGen from "../gen/packageJson/main";
 import * as ts from "typescript";
 import { generateCodeAsString, identifer } from "../gen/jsTs/main";
 
@@ -132,9 +133,9 @@ const buildFunctionsTypeScript = (): void => {
 };
 
 const outputPackageJsonForFunctions = async (): Promise<void> => {
-  const packageJson: {
-    devDependencies: Record<string, string>;
-  } = await fileSystem.readJSON("package.json");
+  const devDependencies = packageJsonGen.fromJson(
+    await fileSystem.readJSON("package.json")
+  ).devDependencies;
   const packageNameUseInFunctions = [
     "@narumincho/html",
     "firebase-admin",
@@ -145,27 +146,34 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
     "jsonwebtoken",
     "fs-extra",
   ];
+  const jsonResult = packageJsonGen.toJson({
+    name: "definy-functions",
+    version: "1.0.0",
+    description: "definy in Cloud Functions for Firebase",
+    entryPoint: "functions/main.js",
+    author: "narumincho",
+    nodeVersion: "14",
+    dependencies: new Map(
+      [...devDependencies].flatMap(
+        ([packageName, packageVersion]): ReadonlyArray<
+          readonly [string, string]
+        > =>
+          packageNameUseInFunctions.includes(packageName)
+            ? [[packageName, packageVersion]]
+            : []
+      )
+    ),
+    gitHubAccountName: "narumincho",
+    gitHubRepositoryName: "Definy",
+    homepage: "https://github.com/narumincho/Definy",
+  });
+  if (jsonResult._ === "Error") {
+    throw new Error(jsonResult.error);
+  }
 
-  await fileSystem.outputFile(
+  await fileSystem.outputJSON(
     `${functionsDistributionPath}/package.json`,
-    JSON.stringify({
-      name: "definy-functions",
-      version: "1.0.0",
-      description: "definy in Cloud Functions for Firebase",
-      main: "functions/main.js",
-      author: "narumincho",
-      engines: { node: "14" },
-      dependencies: Object.fromEntries(
-        Object.entries(packageJson.devDependencies).flatMap(
-          ([packageName, packageVersion]): ReadonlyArray<
-            readonly [string, string]
-          > =>
-            packageNameUseInFunctions.includes(packageName)
-              ? [[packageName, packageVersion]]
-              : []
-        )
-      ),
-    })
+    jsonResult.ok
   );
 };
 

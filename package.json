@@ -10,7 +10,7 @@
   "scripts": {
     "typeCheck": "tsc --project tsconfig.json --noEmit",
     "test": "jest --env=./test/env.ts",
-    "generate-graph": "npx depcruise -X node_modules --output-type dot client/main.ts functions/main.ts core/main.ts | dot -T svg > graph.svg",
+    "generate-graph": "npx depcruise -X node_modules --output-type dot client/main.ts functions/main.ts core/main.ts build/main.ts | dot -T svg > graph.svg",
     "production-build": "ts-node ./build/start-production.ts",
     "develop-build": "ts-node ./build/start-develop.ts",
     "start-emulator": "firebase emulators:start --project definy-lang",
@@ -28,7 +28,7 @@
     "axios": "0.21.1",
     "dependency-cruiser": "9.23.3",
     "elm-code-generator": "0.0.2",
-    "esbuild": "0.9.5",
+    "esbuild": "0.9.6",
     "eslint": "7.22.0",
     "eslint-config-prettier": "8.1.0",
     "eslint-plugin-prettier": "3.3.1",
