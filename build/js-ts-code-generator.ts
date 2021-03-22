@@ -33,7 +33,7 @@ const packageJsonResult = packageJsonGen.toString({
   name: "js-ts-code-generator",
   nodeVersion: "14",
   typeFilePath: "./gen/jsTs/main.d.ts",
-  version: "0.4.1",
+  version: "0.4.2",
 });
 
 if (packageJsonResult._ === "Error") {
