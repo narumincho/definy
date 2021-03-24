@@ -2,9 +2,12 @@ import * as React from "react";
 import * as d from "../../data";
 import { CSSObject, css } from "@emotion/css";
 
-export const Link: React.FC<{ location: d.Location; style: CSSObject }> = (
-  props
-) => {
+export const Link: React.FC<{
+  location: d.Location;
+  language?: d.Language;
+  style: CSSObject;
+  jumpHandler?: (location: d.Location, language: d.Language) => void;
+}> = (props) => {
   return (
     <a
       className={css(
