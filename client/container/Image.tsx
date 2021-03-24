@@ -19,3 +19,18 @@ export const Image: React.VFC<{
     ></div>
   );
 };
+
+export const ImageSkeleton: React.VFC<{
+  width: number;
+  height: number;
+}> = (props) => {
+  return (
+    <div
+      className={css({
+        width: props.width,
+        height: props.height,
+        backgroundColor: "#444",
+      })}
+    ></div>
+  );
+};

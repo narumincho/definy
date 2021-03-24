@@ -1,7 +1,8 @@
 import * as React from "react";
 import * as d from "../../data";
-import { ProjectCard } from "./ProjectCard";
+import { ProjectCard, ProjectCardSkeleton } from "./ProjectCard";
 import { css } from "@emotion/css";
+import { Link } from "./Link";
 
 export type TopProjectsLoadingState =
   | { _: "none" }
@@ -54,7 +55,9 @@ const HomeLinkList: React.VFC<Record<string, never>> = () => {
         gap: 8,
       })}
     >
-      <a>Definyについて</a>
+      <Link location={d.Location.About} style={{ padding: 4 }}>
+        Definyについて
+      </Link>
     </div>
   );
 };
@@ -67,13 +70,50 @@ const TopProjectList: React.VFC<{
     case "none":
       return <div>読み込み準備中</div>;
     case "loading":
-      return <div>読込中</div>;
+      return (
+        <div
+          className={css({
+            overflow: "hidden",
+            overflowWrap: "break-word",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            alignSelf: "start",
+            justifySelf: "center",
+            gap: 8,
+          })}
+        >
+          {Array.from({ length: 10 }, (_, index) => (
+            <ProjectCardSkeleton key={index} />
+          ))}
+        </div>
+      );
     case "loaded":
       if (props.topProjectsLoadingState.projectIdList.length === 0) {
-        return <div>プロジェクトが1つも存在しない</div>;
+        return (
+          <div
+            className={css({
+              display: "grid",
+              alignItems: "center",
+              justifyItems: "center",
+              fontSize: 32,
+            })}
+          >
+            プロジェクトが1つも存在しない
+          </div>
+        );
       }
       return (
-        <div>
+        <div
+          className={css({
+            overflow: "hidden",
+            overflowWrap: "break-word",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            alignSelf: "start",
+            justifySelf: "center",
+            gap: 8,
+          })}
+        >
           {props.topProjectsLoadingState.projectIdList.map((projectId) => (
             <ProjectCard
               key={projectId}

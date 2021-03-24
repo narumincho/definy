@@ -1,11 +1,14 @@
 import * as React from "react";
 import * as d from "../../data";
-import { Image } from "../container/Image";
+import { Image, ImageSkeleton } from "../container/Image";
 import { Link } from "./Link";
 import { css } from "@emotion/css";
 
-const imageHeight = 633 / 4;
+const imageWidth = 256;
+const imageHeight = 158;
 const textHeight = 48;
+const cardWidth = imageWidth;
+const cardHeight = imageHeight + textHeight;
 
 export const ProjectCard: React.VFC<{
   projectId: d.ProjectId;
@@ -16,10 +19,18 @@ export const ProjectCard: React.VFC<{
     return <div>プロジェクト読込中?</div>;
   }
   return (
-    <Link style={loadedStyle} location={d.Location.Project(props.projectId)}>
+    <Link
+      style={{
+        width: cardWidth,
+        height: cardHeight,
+        display: "grid",
+        gridTemplateRows: `${imageHeight}px ${textHeight}px`,
+      }}
+      location={d.Location.Project(props.projectId)}
+    >
       <Image
         alt={`${project.name}の画像`}
-        width={1024 / 4}
+        width={imageWidth}
         height={imageHeight}
         imageHash={project.imageHash}
       />
@@ -44,9 +55,16 @@ export const ProjectCard: React.VFC<{
   );
 };
 
-const loadedStyle = {
-  width: 256,
-  height: imageHeight + textHeight,
-  display: "grid",
-  gridTemplateRows: `${imageHeight}px ${textHeight}px`,
+export const ProjectCardSkeleton: React.VFC = () => {
+  return (
+    <div
+      className={css({
+        background: "#333",
+        width: cardWidth,
+        height: cardHeight,
+      })}
+    >
+      <ImageSkeleton width={imageWidth} height={imageHeight} />
+    </div>
+  );
 };
