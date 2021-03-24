@@ -29,7 +29,7 @@ describe("url", () => {
   });
   it("account page", () => {
     const url = new URL(
-      "http://localhost:2520/user/580d8d6a54cf43e4452a0bba6694a4ed?hl=eo#account-token=f81919b78537257302b50f776b77a90b984cc3d75fa899f9f460ff972dcc8cb0"
+      "http://localhost:2520/account/580d8d6a54cf43e4452a0bba6694a4ed?hl=eo#account-token=f81919b78537257302b50f776b77a90b984cc3d75fa899f9f460ff972dcc8cb0"
     );
     expect<d.UrlData>(
       commonUrl.urlDataAndAccountTokenFromUrl(url).urlData
@@ -42,7 +42,7 @@ describe("url", () => {
   });
   it("account token", () => {
     const url = new URL(
-      "http://localhost:2520/user/580d8d6a54cf43e4452a0bba6694a4ed?hl=eo#account-token=f81919b78537257302b50f776b77a90b984cc3d75fa899f9f460ff972dcc8cb0"
+      "http://localhost:2520/account/580d8d6a54cf43e4452a0bba6694a4ed?hl=eo#account-token=f81919b78537257302b50f776b77a90b984cc3d75fa899f9f460ff972dcc8cb0"
     );
     expect<d.Maybe<d.AccountToken>>(
       commonUrl.urlDataAndAccountTokenFromUrl(url).accountToken

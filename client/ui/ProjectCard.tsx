@@ -13,6 +13,8 @@ const cardHeight = imageHeight + textHeight;
 export const ProjectCard: React.VFC<{
   projectId: d.ProjectId;
   projectDict: ReadonlyMap<d.ProjectId, d.Project>;
+  jumpHandler: (urlData: d.UrlData) => void;
+  language: d.Language;
 }> = (props) => {
   const project = props.projectDict.get(props.projectId);
   if (project === undefined) {
@@ -26,7 +28,11 @@ export const ProjectCard: React.VFC<{
         display: "grid",
         gridTemplateRows: `${imageHeight}px ${textHeight}px`,
       }}
-      location={d.Location.Project(props.projectId)}
+      urlData={{
+        location: d.Location.Project(props.projectId),
+        language: props.language,
+      }}
+      jumpHandler={props.jumpHandler}
     >
       <Image
         alt={`${project.name}の画像`}

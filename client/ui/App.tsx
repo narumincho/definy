@@ -12,6 +12,8 @@ export type TopProjectsLoadingState =
 export const App: React.VFC<{
   topProjectsLoadingState: TopProjectsLoadingState;
   projectDict: ReadonlyMap<d.ProjectId, d.Project>;
+  jumpHandler: (urlData: d.UrlData) => void;
+  urlData: d.UrlData;
 }> = (props) => {
   return (
     <div
@@ -33,17 +35,25 @@ export const App: React.VFC<{
           padding: 16,
         })}
       >
-        <HomeLinkList />
+        <HomeLinkList
+          jumpHandler={props.jumpHandler}
+          language={props.urlData.language}
+        />
         <TopProjectList
           topProjectsLoadingState={props.topProjectsLoadingState}
           projectDict={props.projectDict}
+          jumpHandler={props.jumpHandler}
+          language={props.urlData.language}
         />
       </div>
     </div>
   );
 };
 
-const HomeLinkList: React.VFC<Record<string, never>> = () => {
+const HomeLinkList: React.VFC<{
+  language: d.Language;
+  jumpHandler: (urlData: d.UrlData) => void;
+}> = (props) => {
   return (
     <div
       className={css({
@@ -55,7 +65,11 @@ const HomeLinkList: React.VFC<Record<string, never>> = () => {
         gap: 8,
       })}
     >
-      <Link location={d.Location.About} style={{ padding: 4 }}>
+      <Link
+        urlData={{ location: d.Location.About, language: props.language }}
+        style={{ padding: 4 }}
+        jumpHandler={props.jumpHandler}
+      >
         Definyについて
       </Link>
     </div>
@@ -65,6 +79,8 @@ const HomeLinkList: React.VFC<Record<string, never>> = () => {
 const TopProjectList: React.VFC<{
   topProjectsLoadingState: TopProjectsLoadingState;
   projectDict: ReadonlyMap<d.ProjectId, d.Project>;
+  jumpHandler: (urlData: d.UrlData) => void;
+  language: d.Language;
 }> = (props) => {
   switch (props.topProjectsLoadingState._) {
     case "none":
@@ -119,6 +135,8 @@ const TopProjectList: React.VFC<{
               key={projectId}
               projectId={projectId}
               projectDict={props.projectDict}
+              jumpHandler={props.jumpHandler}
+              language={props.language}
             />
           ))}
         </div>

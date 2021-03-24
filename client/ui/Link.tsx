@@ -3,10 +3,9 @@ import * as d from "../../data";
 import { CSSObject, css } from "@emotion/css";
 
 export const Link: React.FC<{
-  location: d.Location;
-  language?: d.Language;
+  urlData: d.UrlData;
   style: CSSObject;
-  jumpHandler?: (location: d.Location, language: d.Language) => void;
+  jumpHandler: (urlData: d.UrlData) => void;
 }> = (props) => {
   return (
     <a

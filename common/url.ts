@@ -82,20 +82,20 @@ const locationFromUrl = (pathName: string): d.Location => {
     case settingPath:
       return d.Location.Setting;
     case projectPath:
-      if (typeof pathName[2] === "string") {
-        return d.Location.Project(pathName[2] as d.ProjectId);
+      if (typeof pathList[2] === "string") {
+        return d.Location.Project(pathList[2] as d.ProjectId);
       }
       return d.Location.Home;
 
     case accountPath:
-      if (typeof pathName[2] === "string") {
-        return d.Location.Account(pathName[2] as d.AccountId);
+      if (typeof pathList[2] === "string") {
+        return d.Location.Account(pathList[2] as d.AccountId);
       }
       return d.Location.Home;
 
     case typePartPath:
-      if (typeof pathName[2] === "string") {
-        return d.Location.TypePart(pathName[2] as d.TypePartId);
+      if (typeof pathList[2] === "string") {
+        return d.Location.TypePart(pathList[2] as d.TypePartId);
       }
       return d.Location.Home;
   }

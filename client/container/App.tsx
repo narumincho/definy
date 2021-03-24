@@ -1,5 +1,9 @@
 import * as React from "react";
 import * as d from "../../data";
+import {
+  urlDataAndAccountTokenFromUrl,
+  urlDataAndAccountTokenToUrl,
+} from "../../common/url";
 import { App as UiApp } from "../ui/App";
 import { api } from "../api";
 
@@ -16,6 +20,18 @@ export const App: React.VFC<Record<string, never>> = () => {
   const [projectDict, setProjectDict] = React.useState<
     ReadonlyMap<d.ProjectId, d.Project>
   >(new Map());
+  const [urlData, setUrlData] = React.useState<d.UrlData>(
+    urlDataAndAccountTokenFromUrl(new URL(location.href)).urlData
+  );
+
+  const jumpHandler = (newUrlData: d.UrlData): void => {
+    window.history.pushState(
+      undefined,
+      "",
+      urlDataAndAccountTokenToUrl(newUrlData, d.Maybe.Nothing()).toString()
+    );
+    setUrlData(newUrlData);
+  };
 
   React.useEffect(() => {
     setTopProjectsLoadingState({ _: "loading" });
@@ -36,6 +52,8 @@ export const App: React.VFC<Record<string, never>> = () => {
     <UiApp
       topProjectsLoadingState={topProjectsLoadingState}
       projectDict={projectDict}
+      jumpHandler={jumpHandler}
+      urlData={urlData}
     />
   );
 };
