@@ -15,7 +15,7 @@
     "develop-build": "ts-node ./build/start-develop.ts",
     "start-emulator": "firebase emulators:start --project definy-lang",
     "build-js-ts-code-generator": "ts-node ./build/js-ts-code-generator.ts",
-    "storybook": "start-storybook -p 6006",
+    "storybook": "start-storybook -s ./stories/static -p 6006",
     "build-storybook": "build-storybook"
   },
   "devDependencies": {

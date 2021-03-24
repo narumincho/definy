@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as d from "../../data";
 import { css } from "@emotion/css";
+import { pngFilePath } from "../../common/url";
 
 export const Image: React.VFC<{
   imageHash: d.ImageHash;
@@ -9,14 +10,14 @@ export const Image: React.VFC<{
   height: number;
 }> = (props) => {
   return (
-    <div
+    <img
       className={css({
         width: props.width,
         height: props.height,
         backgroundColor: "#66a2a5",
-        border: "solid 4px #3e6365",
       })}
-    ></div>
+      src={pngFilePath(props.imageHash)}
+    />
   );
 };
 

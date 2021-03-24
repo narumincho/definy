@@ -124,8 +124,12 @@ const accountTokenFromUrl = (hash: string): d.Maybe<d.AccountToken> => {
 
 export const iconUrl: URL = new URL(`${origin}/icon`);
 
-export const pngFileUrl = (fileHash: d.ImageHash): URL =>
-  new URL(`${origin}/pngFile/${fileHash}`);
+export const pngFileUrl = (imageHash: d.ImageHash): URL =>
+  new URL(`${origin}${pngFilePath(imageHash)}`);
+
+export const pngFilePath = (imageHash: d.ImageHash): string => {
+  return `/pngFile/${imageHash}.png`;
+};
 
 export const apiUrl = (apiName: string): URL =>
   new URL(`${origin}/api/${apiName}`);

@@ -15,17 +15,29 @@ const meta: Meta = {
 export default meta;
 
 export const None: Story<never> = () => (
-  <App projectDict={new Map()} topProjectsLoadingState={{ _: "none" }} />
+  <App
+    projectDict={new Map()}
+    topProjectsLoadingState={{ _: "none" }}
+    jumpHandler={() => {}}
+    urlData={{ location: d.Location.Home, language: "English" }}
+  />
 );
 
 export const Loading: Story<never> = () => (
-  <App projectDict={new Map()} topProjectsLoadingState={{ _: "loading" }} />
+  <App
+    projectDict={new Map()}
+    topProjectsLoadingState={{ _: "loading" }}
+    jumpHandler={() => {}}
+    urlData={{ location: d.Location.Home, language: "English" }}
+  />
 );
 
 export const LoadedEmpty: Story<never> = () => (
   <App
     projectDict={new Map()}
     topProjectsLoadingState={{ _: "loaded", projectIdList: [] }}
+    jumpHandler={() => {}}
+    urlData={{ location: d.Location.Home, language: "English" }}
   />
 );
 
@@ -42,7 +54,7 @@ export const Loaded: Story<never> = () => (
             createAccountId: "createAccountId" as d.AccountId,
             createTime: { day: 0, millisecond: 0 },
             iconHash:
-              "3a08c6750c510132e89a7c16f31aabfc6370d443cdc9ed05ab3346dbf5456bdb",
+              "4fd10948344af0b16748efef0f2015700c87554be13036e13b99a56fc422ed02",
             imageHash:
               "3a08c6750c510132e89a7c16f31aabfc6370d443cdc9ed05ab3346dbf5456bdb",
             updateTime: { day: 0, millisecond: 0 },
@@ -51,6 +63,8 @@ export const Loaded: Story<never> = () => (
       ])
     }
     topProjectsLoadingState={{ _: "loaded", projectIdList: [sampleProjectId] }}
+    jumpHandler={() => {}}
+    urlData={{ location: d.Location.Home, language: "English" }}
   />
 );
 
@@ -67,7 +81,7 @@ export const Loaded2: Story<never> = () => (
             createAccountId: "createAccountId" as d.AccountId,
             createTime: { day: 0, millisecond: 0 },
             iconHash:
-              "3a08c6750c510132e89a7c16f31aabfc6370d443cdc9ed05ab3346dbf5456bdb",
+              "4fd10948344af0b16748efef0f2015700c87554be13036e13b99a56fc422ed02",
             imageHash:
               "3a08c6750c510132e89a7c16f31aabfc6370d443cdc9ed05ab3346dbf5456bdb",
             updateTime: { day: 0, millisecond: 0 },
@@ -80,9 +94,9 @@ export const Loaded2: Story<never> = () => (
             createAccountId: "createAccountId" as d.AccountId,
             createTime: { day: 0, millisecond: 0 },
             iconHash:
-              "3a08c6750c510132e89a7c16f31aabfc6370d443cdc9ed05ab3346dbf5456bdb",
+              "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73",
             imageHash:
-              "3a08c6750c510132e89a7c16f31aabfc6370d443cdc9ed05ab3346dbf5456bdb",
+              "3204f96f9e58c0d720c39599747e7568872a396b3442e1cfe7607d041901277c",
             updateTime: { day: 0, millisecond: 0 },
           },
         ],
@@ -92,5 +106,7 @@ export const Loaded2: Story<never> = () => (
       _: "loaded",
       projectIdList: [sampleProjectId, sampleProjectId2],
     }}
+    jumpHandler={() => {}}
+    urlData={{ location: d.Location.Home, language: "English" }}
   />
 );

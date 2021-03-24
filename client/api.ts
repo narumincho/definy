@@ -55,7 +55,7 @@ export const api = Object.fromEntries(
 export const getImageWithCache = (
   imageHash: d.ImageHash
 ): Promise<d.Maybe<Uint8Array>> =>
-  fetch(commonUrl.pngFileUrl(imageHash).toString(), {})
+  fetch(commonUrl.pngFileUrl(imageHash).toString(), { cache: "force-cache" })
     .then((response) => response.arrayBuffer())
     .then((response) => d.Maybe.Just(new Uint8Array(response)))
     .catch((reason) => {

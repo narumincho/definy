@@ -27,7 +27,7 @@ export const Default: Story<never> = () => (
             createAccountId: "createAccountId" as d.AccountId,
             createTime: { day: 0, millisecond: 0 },
             iconHash:
-              "3a08c6750c510132e89a7c16f31aabfc6370d443cdc9ed05ab3346dbf5456bdb",
+              "4fd10948344af0b16748efef0f2015700c87554be13036e13b99a56fc422ed02",
             imageHash:
               "3a08c6750c510132e89a7c16f31aabfc6370d443cdc9ed05ab3346dbf5456bdb",
             updateTime: { day: 0, millisecond: 0 },
@@ -36,5 +36,7 @@ export const Default: Story<never> = () => (
       ])
     }
     projectId={sampleProjectId}
+    jumpHandler={() => {}}
+    language="English"
   />
 );

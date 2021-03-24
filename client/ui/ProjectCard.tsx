@@ -53,7 +53,7 @@ export const ProjectCard: React.VFC<{
           alt={`${project.name}のアイコン`}
           width={32}
           height={32}
-          imageHash={project.imageHash}
+          imageHash={project.iconHash}
         />
         <div>{project.name}</div>
       </div>
