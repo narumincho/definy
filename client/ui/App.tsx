@@ -1,8 +1,8 @@
 import * as React from "react";
 import * as d from "../../data";
 import { ProjectCard, ProjectCardSkeleton } from "./ProjectCard";
-import { css } from "@emotion/css";
 import { Link } from "./Link";
+import { css } from "@emotion/css";
 
 export type TopProjectsLoadingState =
   | { _: "none" }
