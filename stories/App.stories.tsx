@@ -1,11 +1,16 @@
 import * as React from "react";
 import { Meta, Story } from "@storybook/react";
-import { DefinyApp } from "../client/App";
+import { App } from "../client/container/App";
+import { fullScreen } from "../.storybook/decorators";
 
 const meta: Meta = {
-  title: "DefinyApp",
-  component: DefinyApp,
+  title: "App",
+  component: App,
+  parameters: {
+    layout: "fullscreen",
+  },
+  decorators: [fullScreen],
 };
 export default meta;
 
-export const Default: Story<never> = () => <DefinyApp />;
+export const Default: Story<never> = () => <App />;
