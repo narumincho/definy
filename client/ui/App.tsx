@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
+import { ProjectCard } from "./ProjectCard";
 import { css } from "@emotion/css";
 
 export type TopProjectsLoadingState =
@@ -34,6 +35,7 @@ export const App: React.VFC<{
         <HomeLinkList />
         <TopProjectList
           topProjectsLoadingState={props.topProjectsLoadingState}
+          projectDict={props.projectDict}
         />
       </div>
     </div>
@@ -59,6 +61,7 @@ const HomeLinkList: React.VFC<Record<string, never>> = () => {
 
 const TopProjectList: React.VFC<{
   topProjectsLoadingState: TopProjectsLoadingState;
+  projectDict: ReadonlyMap<d.ProjectId, d.Project>;
 }> = (props) => {
   switch (props.topProjectsLoadingState._) {
     case "none":
@@ -66,10 +69,18 @@ const TopProjectList: React.VFC<{
     case "loading":
       return <div>読込中</div>;
     case "loaded":
+      if (props.topProjectsLoadingState.projectIdList.length === 0) {
+        return <div>プロジェクトが1つも存在しない</div>;
+      }
       return (
         <div>
-          読み込み完了
-          {JSON.stringify(props.topProjectsLoadingState.projectIdList)}
+          {props.topProjectsLoadingState.projectIdList.map((projectId) => (
+            <ProjectCard
+              key={projectId}
+              projectId={projectId}
+              projectDict={props.projectDict}
+            />
+          ))}
         </div>
       );
   }
