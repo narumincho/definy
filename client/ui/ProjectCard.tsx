@@ -32,7 +32,7 @@ export const ProjectCard: React.VFC<{
         location: d.Location.Project(props.projectId),
         language: props.language,
       }}
-      jumpHandler={props.jumpHandler}
+      onJump={props.jumpHandler}
     >
       <Image
         alt={`${project.name}の画像`}

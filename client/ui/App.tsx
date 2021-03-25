@@ -12,7 +12,7 @@ export type TopProjectsLoadingState =
 export const App: React.VFC<{
   topProjectsLoadingState: TopProjectsLoadingState;
   projectDict: ReadonlyMap<d.ProjectId, d.Project>;
-  jumpHandler: (urlData: d.UrlData) => void;
+  onJump: (urlData: d.UrlData) => void;
   urlData: d.UrlData;
 }> = (props) => {
   return (
@@ -36,13 +36,13 @@ export const App: React.VFC<{
         })}
       >
         <HomeLinkList
-          jumpHandler={props.jumpHandler}
+          jumpHandler={props.onJump}
           language={props.urlData.language}
         />
         <TopProjectList
           topProjectsLoadingState={props.topProjectsLoadingState}
           projectDict={props.projectDict}
-          jumpHandler={props.jumpHandler}
+          jumpHandler={props.onJump}
           language={props.urlData.language}
         />
       </div>
@@ -68,7 +68,7 @@ const HomeLinkList: React.VFC<{
       <Link
         urlData={{ location: d.Location.About, language: props.language }}
         style={{ padding: 4 }}
-        jumpHandler={props.jumpHandler}
+        onJump={props.jumpHandler}
       >
         Definyについて
       </Link>

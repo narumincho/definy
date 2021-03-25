@@ -19,7 +19,7 @@ export const None: Story<never> = () => (
   <App
     projectDict={new Map()}
     topProjectsLoadingState={{ _: "none" }}
-    jumpHandler={() => {}}
+    onJump={() => {}}
     urlData={{ location: d.Location.Home, language: "English" }}
   />
 );
@@ -28,7 +28,7 @@ export const Loading: Story<never> = () => (
   <App
     projectDict={new Map()}
     topProjectsLoadingState={{ _: "loading" }}
-    jumpHandler={() => {}}
+    onJump={() => {}}
     urlData={{ location: d.Location.Home, language: "English" }}
   />
 );
@@ -37,7 +37,7 @@ export const LoadedEmpty: Story<never> = () => (
   <App
     projectDict={new Map()}
     topProjectsLoadingState={{ _: "loaded", projectIdList: [] }}
-    jumpHandler={() => {}}
+    onJump={() => {}}
     urlData={{ location: d.Location.Home, language: "English" }}
   />
 );
@@ -46,7 +46,7 @@ export const Loaded: Story<never> = () => (
   <App
     projectDict={new Map<d.ProjectId, d.Project>([[project1Id, project1]])}
     topProjectsLoadingState={{ _: "loaded", projectIdList: [project1Id] }}
-    jumpHandler={() => {}}
+    onJump={() => {}}
     urlData={{ location: d.Location.Home, language: "English" }}
   />
 );
@@ -63,7 +63,7 @@ export const Loaded2: Story<never> = () => (
       _: "loaded",
       projectIdList: [project1Id, project2Id],
     }}
-    jumpHandler={() => {}}
+    onJump={() => {}}
     urlData={{ location: d.Location.Home, language: "English" }}
   />
 );

@@ -52,7 +52,7 @@ export const App: React.VFC<Record<string, never>> = () => {
     <UiApp
       topProjectsLoadingState={topProjectsLoadingState}
       projectDict={projectDict}
-      jumpHandler={jumpHandler}
+      onJump={jumpHandler}
       urlData={urlData}
     />
   );
