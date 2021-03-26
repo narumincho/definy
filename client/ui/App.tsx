@@ -14,6 +14,7 @@ export const App: React.VFC<{
   projectDict: ReadonlyMap<d.ProjectId, d.Project>;
   onJump: (urlData: d.UrlData) => void;
   urlData: d.UrlData;
+  loginState: d.LogInState;
 }> = (props) => {
   return (
     <div

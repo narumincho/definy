@@ -23,6 +23,12 @@ export const App: React.VFC<Record<string, never>> = () => {
   const [urlData, setUrlData] = React.useState<d.UrlData>(
     urlDataAndAccountTokenFromUrl(new URL(location.href)).urlData
   );
+  const [logInState, setLogInState] = React.useState<d.LogInState>({
+    _: "Guest",
+  });
+  const [accountDict, setAccountDict] = React.useState<
+    ReadonlyMap<d.AccountId, d.Account>
+  >(new Map());
 
   const jumpHandler = (newUrlData: d.UrlData): void => {
     window.history.pushState(
@@ -54,6 +60,7 @@ export const App: React.VFC<Record<string, never>> = () => {
       projectDict={projectDict}
       onJump={jumpHandler}
       urlData={urlData}
+      loginState={logInState}
     />
   );
 };
