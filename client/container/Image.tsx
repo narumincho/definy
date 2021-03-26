@@ -8,7 +8,7 @@ export const Image: React.VFC<{
   alt: string;
   width: number;
   height: number;
-  isCircle: boolean;
+  isCircle?: boolean;
 }> = (props) => {
   return (
     <img

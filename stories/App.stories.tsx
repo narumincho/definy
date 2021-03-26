@@ -128,6 +128,6 @@ export const JumpingToLogInPage: Story<ControlAndActionProps> = (props) => (
     location={d.Location.Home}
     language={props.language}
     accountDict={new Map()}
-    logInState={d.LogInState.JumpingToLogInPage("??")}
+    logInState={d.LogInState.JumpingToLogInPage}
   />
 );
