@@ -46,3 +46,35 @@ export const Default: Story<ControlAndActionProps> = (props) => (
 Default.args = {
   language: d.Language.Japanese,
 };
+
+const dummyAccountId = "dummyAccountId" as d.AccountId;
+
+export const LoggedIn: Story<ControlAndActionProps> = (props) => (
+  <HomePage
+    language={props.language}
+    accountDict={
+      new Map([
+        [
+          dummyAccountId,
+          {
+            name: "サンプルアカウント",
+            createTime: { day: 0, millisecond: 0 },
+            imageHash: "" as d.ImageHash,
+            introduction: "サンプルアカウントの自己紹介文",
+          },
+        ],
+      ])
+    }
+    logInState={d.LogInState.LoggedIn({
+      accountToken: "dummyAccountToken" as d.AccountToken,
+      userId: dummyAccountId,
+    })}
+    onJump={props.onJump}
+    onLogInButtonClick={props.onLogInButtonClick}
+    projectDict={new Map()}
+    topProjectsLoadingState={{ _: "none" }}
+  />
+);
+LoggedIn.args = {
+  language: d.Language.Japanese,
+};

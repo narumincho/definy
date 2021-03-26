@@ -5,18 +5,19 @@ import { urlDataAndAccountTokenToUrl } from "../../common/url";
 
 export const Link: React.FC<{
   urlData: d.UrlData;
-  style: CSSObject;
+  style?: CSSObject;
   onJump: (urlData: d.UrlData) => void;
+  isActive?: boolean;
 }> = (props) => {
   return (
     <a
       className={css(
         {
-          backgroundColor: "#333",
-          color: "#ddd",
+          backgroundColor: props.isActive ? "#f0932b" : "#333",
+          color: props.isActive ? "#000" : "#ddd",
           "&:hover": {
-            backgroundColor: "#444",
-            color: "#dfdfdf",
+            backgroundColor: props.isActive ? "#f69d3a" : "#444",
+            color: props.isActive ? "#000" : "#dfdfdf",
           },
           cursor: "pointer",
           textDecoration: "none",

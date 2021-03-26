@@ -89,6 +89,8 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
     enqueueSnackbar("ログアウトしました", { variant: "success" });
   };
 
+  const createProject = (projectName: string): void => {};
+
   React.useEffect(() => {
     setTopProjectsLoadingState({ _: "loading" });
     api.getTop50Project(undefined).then((response) => {
@@ -166,6 +168,7 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
       logInState={logInState}
       accountDict={accountDict}
       onLogOutButtonClick={logOut}
+      onCreateProject={createProject}
     />
   );
 };

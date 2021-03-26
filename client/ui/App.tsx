@@ -2,6 +2,7 @@ import * as React from "react";
 import * as d from "../../data";
 import { css, keyframes } from "@emotion/css";
 import { AboutPage } from "./AboutPage";
+import { CreateProjectPage } from "./CreateProjectPage";
 import { HomePage } from "./HomePage";
 import { SettingPage } from "./SettingPage";
 
@@ -20,6 +21,7 @@ export type Props = {
   onJump: (urlData: d.UrlData) => void;
   onLogInButtonClick: () => void;
   onLogOutButtonClick: () => void;
+  onCreateProject: (projectName: string) => void;
 };
 
 export const App: React.VFC<Props> = (props) => {
@@ -59,6 +61,8 @@ export const App: React.VFC<Props> = (props) => {
           onClickLogoutButton={props.onLogOutButtonClick}
         />
       );
+    case "CreateProject":
+      return <CreateProjectPage onCreateProject={props.onCreateProject} />;
   }
   return (
     <HomePage

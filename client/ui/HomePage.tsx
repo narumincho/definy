@@ -51,6 +51,14 @@ export const HomePage: React.VFC<Props> = (props) => {
           jumpHandler={props.onJump}
           language={props.language}
         />
+        {props.logInState._ === "LoggedIn" ? (
+          <CreateProjectButton
+            language={props.language}
+            onJump={props.onJump}
+          />
+        ) : (
+          <></>
+        )}
       </div>
     </div>
   );
@@ -63,6 +71,8 @@ const HomeLinkList: React.VFC<{
   return (
     <div
       className={css({
+        gridColumn: "1 / 2",
+        gridRow: "1 / 2",
         display: "grid",
         gridAutoFlow: "column",
         justifyContent: "end",
@@ -90,11 +100,22 @@ const TopProjectList: React.VFC<{
 }> = (props) => {
   switch (props.topProjectsLoadingState._) {
     case "none":
-      return <div>読み込み準備中</div>;
+      return (
+        <div
+          className={css({
+            gridColumn: "1 / 2",
+            gridRow: "2 / 3",
+          })}
+        >
+          読み込み準備中
+        </div>
+      );
     case "loading":
       return (
         <div
           className={css({
+            gridColumn: "1 / 2",
+            gridRow: "2 / 3",
             overflow: "hidden",
             overflowWrap: "break-word",
             display: "grid",
@@ -114,6 +135,8 @@ const TopProjectList: React.VFC<{
         return (
           <div
             className={css({
+              gridColumn: "1 / 2",
+              gridRow: "2 / 3",
               display: "grid",
               alignItems: "center",
               justifyItems: "center",
@@ -127,6 +150,8 @@ const TopProjectList: React.VFC<{
       return (
         <div
           className={css({
+            gridColumn: "1 / 2",
+            gridRow: "2 / 3",
             overflow: "hidden",
             overflowWrap: "break-word",
             display: "grid",
@@ -147,5 +172,43 @@ const TopProjectList: React.VFC<{
           ))}
         </div>
       );
+  }
+};
+
+const CreateProjectButton: React.VFC<{
+  language: d.Language;
+  onJump: (urlData: d.UrlData) => void;
+}> = (props) => (
+  <div
+    className={css({
+      gridColumn: "1 / 2",
+      gridRow: "1 / 3",
+      alignSelf: "end",
+      justifySelf: "end",
+      padding: 16,
+    })}
+  >
+    <Link
+      urlData={{
+        language: props.language,
+        location: d.Location.CreateProject,
+      }}
+      onJump={props.onJump}
+      style={{ padding: 8 }}
+      isActive
+    >
+      {createProjectMessage(props.language)}
+    </Link>
+  </div>
+);
+
+const createProjectMessage = (language: d.Language): string => {
+  switch (language) {
+    case "English":
+      return "Create a new project";
+    case "Esperanto":
+      return "Krei novan projekton";
+    case "Japanese":
+      return "+ プロジェクトを新規作成";
   }
 };
