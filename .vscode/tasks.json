@@ -19,6 +19,12 @@
       "runOptions": {
         "instanceLimit": 1
       }
+    },
+    {
+      "type": "npm",
+      "script": "storybook",
+      "problemMatcher": [],
+      "label": "storybook を起動する"
     }
   ]
 }
