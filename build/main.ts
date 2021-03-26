@@ -21,14 +21,7 @@ export const build = async (mode: d.Mode): Promise<void> => {
 
   /** staticなファイルのコピー */
   await fileSystem.copy("./static", hostingDistributionPath);
-  await fileSystem
-    .rename(
-      `${hostingDistributionPath}/icon.png`,
-      `${hostingDistributionPath}/icon`
-    )
-    .catch((e) => {
-      throw e;
-    });
+  console.log("static な ファイルのコピーに成功!");
 
   await esbuild.build({
     entryPoints: [clientSourceEntryPath],
@@ -41,8 +34,10 @@ export const build = async (mode: d.Mode): Promise<void> => {
     minify: true,
     target: ["chrome88", "firefox85", "safari14"],
   });
+  console.log("クライアント向けのスクリプト (main.js) のビルドに成功!");
 
   buildFunctionsTypeScript();
+  console.log("Cloud Functions for Firebase 向けのスクリプトのビルドに成功!");
 };
 
 const generateFirebaseJson = (mode: d.Mode): Promise<void> => {
@@ -54,17 +49,6 @@ const generateFirebaseJson = (mode: d.Mode): Promise<void> => {
       },
       hosting: {
         public: hostingDistributionPath,
-        headers: [
-          {
-            source: "icon",
-            headers: [
-              {
-                key: "content-type",
-                value: "image/png",
-              },
-            ],
-          },
-        ],
         rewrites: [
           {
             source: "/sitemap",

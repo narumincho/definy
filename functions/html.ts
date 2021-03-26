@@ -19,7 +19,7 @@ export const html = async (
     view: {
       appName: "Definy",
       pageName: "Definy",
-      iconPath: "/icon",
+      iconPath: commonUrl.iconPath,
       coverImageUrl: coverImageUrlAndDescription.imageUrl,
       description: coverImageUrlAndDescription.description,
       scriptPath: "/main.js",

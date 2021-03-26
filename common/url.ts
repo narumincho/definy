@@ -122,7 +122,8 @@ const accountTokenFromUrl = (hash: string): d.Maybe<d.AccountToken> => {
   return d.Maybe.Just(matchResult.groups.token as d.AccountToken);
 };
 
-export const iconUrl: URL = new URL(`${origin}/icon`);
+export const iconPath = "/icon.png";
+export const iconUrl: URL = new URL(`${origin}/${iconPath}`);
 
 export const pngFileUrl = (imageHash: d.ImageHash): URL =>
   new URL(`${origin}${pngFilePath(imageHash)}`);
