@@ -2,6 +2,13 @@ import * as React from "react";
 import * as d from "../../data";
 import * as indexedDB from "../indexedDB";
 import {
+  OptionsObject,
+  SnackbarKey,
+  SnackbarMessage,
+  SnackbarProvider,
+  useSnackbar,
+} from "notistack";
+import {
   urlDataAndAccountTokenFromUrl,
   urlDataAndAccountTokenToUrl,
 } from "../../common/url";
@@ -13,7 +20,15 @@ export type TopProjectsLoadingState =
   | { _: "loading" }
   | { _: "loaded"; projectIdList: ReadonlyArray<d.ProjectId> };
 
-export const App: React.VFC<Record<string, never>> = () => {
+export const App: React.VFC<Record<string, string>> = () => {
+  return (
+    <SnackbarProvider maxSnack={4}>
+      <AppInSnack />
+    </SnackbarProvider>
+  );
+};
+
+export const AppInSnack: React.VFC<Record<string, never>> = () => {
   const [
     topProjectsLoadingState,
     setTopProjectsLoadingState,
@@ -31,6 +46,11 @@ export const App: React.VFC<Record<string, never>> = () => {
   const [accountDict, setAccountDict] = React.useState<
     ReadonlyMap<d.AccountId, d.Account>
   >(new Map());
+  const { enqueueSnackbar } = useSnackbar();
+
+  const setAccount = (accountId: d.AccountId, account: d.Account): void => {
+    setAccountDict((beforeDict) => new Map(beforeDict).set(accountId, account));
+  };
 
   const jumpHandler = (newUrlData: d.UrlData): void => {
     window.history.pushState(
@@ -47,10 +67,12 @@ export const App: React.VFC<Record<string, never>> = () => {
       .requestLogInUrl({ urlData, openIdConnectProvider: "Google" })
       .then((response) => {
         if (response._ === "Nothing") {
-          console.log("取得失敗");
+          enqueueSnackbar("ログインURL取得に失敗しました", {
+            variant: "error",
+          });
           return;
         }
-        setLogInState({ _: "JumpingToLogInPage", string: response.value });
+        setLogInState(d.LogInState.JumpingToLogInPage);
         requestAnimationFrame(() => {
           window.location.href = response.value;
         });
@@ -61,7 +83,9 @@ export const App: React.VFC<Record<string, never>> = () => {
     setTopProjectsLoadingState({ _: "loading" });
     api.getTop50Project(undefined).then((response) => {
       if (response._ === "Nothing") {
-        console.log("ログインURLの取得失敗");
+        enqueueSnackbar("プロジェクト一覧取得に失敗しました", {
+          variant: "error",
+        });
         return;
       }
       setTopProjectsLoadingState({
@@ -99,7 +123,12 @@ export const App: React.VFC<Record<string, never>> = () => {
     setUrlData(urlDataAndAccountToken.urlData);
     if (urlDataAndAccountToken.accountToken._ === "Just") {
       const accountToken = urlDataAndAccountToken.accountToken.value;
-      verifyingAccountTokenAndGetAccount(setLogInState, accountToken);
+      verifyingAccountTokenAndGetAccount(
+        setLogInState,
+        accountToken,
+        setAccount,
+        enqueueSnackbar
+      );
       return;
     }
     indexedDB.getAccountToken().then((accountToken) => {
@@ -107,7 +136,12 @@ export const App: React.VFC<Record<string, never>> = () => {
         setLogInState(d.LogInState.Guest);
         return;
       }
-      verifyingAccountTokenAndGetAccount(setLogInState, accountToken);
+      verifyingAccountTokenAndGetAccount(
+        setLogInState,
+        accountToken,
+        setAccount,
+        enqueueSnackbar
+      );
     });
   }, []);
 
@@ -127,23 +161,34 @@ export const App: React.VFC<Record<string, never>> = () => {
 
 const verifyingAccountTokenAndGetAccount = (
   setLogInState: (logInState: d.LogInState) => void,
-  accountToken: d.AccountToken
+  accountToken: d.AccountToken,
+  setAccount: (accountId: d.AccountId, account: d.Account) => void,
+  enqueueSnackbar: (
+    message: SnackbarMessage,
+    options?: OptionsObject | undefined
+  ) => SnackbarKey
 ) => {
-  setLogInState({
-    _: "VerifyingAccountToken",
-    accountToken,
-  });
+  setLogInState(d.LogInState.VerifyingAccountToken(accountToken));
   api.getUserByAccountToken(accountToken).then((response) => {
     if (response._ === "Nothing" || response.value._ === "Nothing") {
-      console.log("ログインに失敗しました");
+      enqueueSnackbar("ログインに失敗しました", {
+        variant: "error",
+      });
       setLogInState(d.LogInState.Guest);
       return;
     }
+    enqueueSnackbar(
+      `「${response.value.value.data.name}」としてログインしました`,
+      {
+        variant: "success",
+      }
+    );
     setLogInState(
       d.LogInState.LoggedIn({
         accountToken,
         userId: response.value.value.id,
       })
     );
+    setAccount(response.value.value.id, response.value.value.data);
   });
 };

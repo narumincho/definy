@@ -8,6 +8,7 @@ export const Image: React.VFC<{
   alt: string;
   width: number;
   height: number;
+  isCircle: boolean;
 }> = (props) => {
   return (
     <img
@@ -15,6 +16,7 @@ export const Image: React.VFC<{
         width: props.width,
         height: props.height,
         backgroundColor: "#66a2a5",
+        borderRadius: props.isCircle ? "50%" : undefined,
       })}
       src={pngFilePath(props.imageHash)}
     />

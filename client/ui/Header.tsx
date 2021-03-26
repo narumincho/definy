@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as d from "../../data";
 import { CSSObject, css } from "@emotion/css";
+import { Image } from "../container/Image";
 import { Link } from "./Link";
 
 export type TitleItem = {
@@ -153,7 +154,13 @@ const SettingLink: React.VFC<{
     }}
     urlData={{ language: props.language, location: d.Location.Setting }}
   >
-    <div>アイコン</div>
+    <Image
+      width={32}
+      height={32}
+      alt="設定"
+      imageHash={props.account.imageHash}
+      isCircle
+    />
     <div>{props.account.name}</div>
   </Link>
 );

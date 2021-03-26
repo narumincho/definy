@@ -1226,7 +1226,7 @@
   * definy.app の ログイン状態
   * @typePartId c4b574e3ca8bad17022054d5e77fd3d0
   */
- export type LogInState = { readonly _: "LoadingAccountTokenFromIndexedDB" } | { readonly _: "Guest" } | { readonly _: "RequestingLogInUrl"; readonly openIdConnectProvider: OpenIdConnectProvider } | { readonly _: "JumpingToLogInPage"; readonly string: String } | { readonly _: "VerifyingAccountToken"; readonly accountToken: AccountToken } | { readonly _: "LoggedIn"; readonly accountTokenAndUserId: AccountTokenAndUserId };
+ export type LogInState = { readonly _: "LoadingAccountTokenFromIndexedDB" } | { readonly _: "Guest" } | { readonly _: "RequestingLogInUrl"; readonly openIdConnectProvider: OpenIdConnectProvider } | { readonly _: "JumpingToLogInPage" } | { readonly _: "VerifyingAccountToken"; readonly accountToken: AccountToken } | { readonly _: "LoggedIn"; readonly accountTokenAndUserId: AccountTokenAndUserId };
  
  
  /**
@@ -5377,7 +5377,7 @@
  /**
   * ログインURLを受け取り,ログイン画面へ移行中
   */
- readonly JumpingToLogInPage: (a: String) => LogInState; 
+ readonly JumpingToLogInPage: LogInState; 
  /**
   * アカウントトークンの検証とログインしているユーザーの情報を取得している状態
   */
@@ -5385,7 +5385,7 @@
  /**
   * ログインしている状態
   */
- readonly LoggedIn: (a: AccountTokenAndUserId) => LogInState } = { LoadingAccountTokenFromIndexedDB: { _: "LoadingAccountTokenFromIndexedDB" }, Guest: { _: "Guest" }, RequestingLogInUrl: (openIdConnectProvider: OpenIdConnectProvider): LogInState => ({ _: "RequestingLogInUrl", openIdConnectProvider }), JumpingToLogInPage: (string_: String): LogInState => ({ _: "JumpingToLogInPage", string: string_ }), VerifyingAccountToken: (accountToken: AccountToken): LogInState => ({ _: "VerifyingAccountToken", accountToken }), LoggedIn: (accountTokenAndUserId: AccountTokenAndUserId): LogInState => ({ _: "LoggedIn", accountTokenAndUserId }), typePartId: "c4b574e3ca8bad17022054d5e77fd3d0" as TypePartId, codec: { encode: (value: LogInState): ReadonlyArray<number> => {
+ readonly LoggedIn: (a: AccountTokenAndUserId) => LogInState } = { LoadingAccountTokenFromIndexedDB: { _: "LoadingAccountTokenFromIndexedDB" }, Guest: { _: "Guest" }, RequestingLogInUrl: (openIdConnectProvider: OpenIdConnectProvider): LogInState => ({ _: "RequestingLogInUrl", openIdConnectProvider }), JumpingToLogInPage: { _: "JumpingToLogInPage" }, VerifyingAccountToken: (accountToken: AccountToken): LogInState => ({ _: "VerifyingAccountToken", accountToken }), LoggedIn: (accountTokenAndUserId: AccountTokenAndUserId): LogInState => ({ _: "LoggedIn", accountTokenAndUserId }), typePartId: "c4b574e3ca8bad17022054d5e77fd3d0" as TypePartId, codec: { encode: (value: LogInState): ReadonlyArray<number> => {
    switch (value._) {
      case "LoadingAccountTokenFromIndexedDB": {
        return [0];
@@ -5397,7 +5397,7 @@
        return [2].concat(OpenIdConnectProvider.codec.encode(value.openIdConnectProvider));
      }
      case "JumpingToLogInPage": {
-       return [3].concat(String.codec.encode(value.string));
+       return [3];
      }
      case "VerifyingAccountToken": {
        return [4].concat(AccountToken.codec.encode(value.accountToken));
@@ -5419,8 +5419,7 @@
      return { result: LogInState.RequestingLogInUrl(result.result), nextIndex: result.nextIndex };
    }
    if (patternIndex.result === 3) {
-     const result: { readonly result: String; readonly nextIndex: number } = String.codec.decode(patternIndex.nextIndex, binary);
-     return { result: LogInState.JumpingToLogInPage(result.result), nextIndex: result.nextIndex };
+     return { result: LogInState.JumpingToLogInPage, nextIndex: patternIndex.nextIndex };
    }
    if (patternIndex.result === 4) {
      const result: { readonly result: AccountToken; readonly nextIndex: number } = AccountToken.codec.decode(patternIndex.nextIndex, binary);
