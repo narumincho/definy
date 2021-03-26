@@ -79,6 +79,16 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
       });
   };
 
+  const logOut = () => {
+    indexedDB.deleteAccountToken();
+    setLogInState(d.LogInState.Guest);
+    jumpHandler({
+      language: urlData.language,
+      location: d.Location.Home,
+    });
+    enqueueSnackbar("ログアウトしました", { variant: "success" });
+  };
+
   React.useEffect(() => {
     setTopProjectsLoadingState({ _: "loading" });
     api.getTop50Project(undefined).then((response) => {
@@ -155,6 +165,7 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
       language={urlData.language}
       logInState={logInState}
       accountDict={accountDict}
+      onLogOutButtonClick={logOut}
     />
   );
 };

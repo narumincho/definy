@@ -37,12 +37,13 @@ export const None: Story<ControlAndActionProps> = (props) => (
   <App
     projectDict={new Map()}
     topProjectsLoadingState={{ _: "none" }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
     location={d.Location.Home}
     language={props.language}
     accountDict={new Map()}
     logInState={{ _: "Guest" }}
+    onJump={props.onJump}
+    onLogInButtonClick={props.onLogInButtonClick}
+    onLogOutButtonClick={props.onLogInButtonClick}
   />
 );
 
@@ -50,12 +51,13 @@ export const Loading: Story<ControlAndActionProps> = (props) => (
   <App
     projectDict={new Map()}
     topProjectsLoadingState={{ _: "loading" }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
     location={d.Location.Home}
     language={props.language}
     accountDict={new Map()}
     logInState={{ _: "Guest" }}
+    onJump={props.onJump}
+    onLogInButtonClick={props.onLogInButtonClick}
+    onLogOutButtonClick={props.onLogInButtonClick}
   />
 );
 
@@ -63,12 +65,13 @@ export const LoadedEmpty: Story<ControlAndActionProps> = (props) => (
   <App
     projectDict={new Map()}
     topProjectsLoadingState={{ _: "loaded", projectIdList: [] }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
     location={d.Location.Home}
     language={props.language}
     accountDict={new Map()}
     logInState={{ _: "Guest" }}
+    onJump={props.onJump}
+    onLogInButtonClick={props.onLogInButtonClick}
+    onLogOutButtonClick={props.onLogInButtonClick}
   />
 );
 
@@ -76,12 +79,13 @@ export const Loaded: Story<ControlAndActionProps> = (props) => (
   <App
     projectDict={new Map<d.ProjectId, d.Project>([[project1Id, project1]])}
     topProjectsLoadingState={{ _: "loaded", projectIdList: [project1Id] }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
     location={d.Location.Home}
     language={props.language}
     accountDict={new Map()}
     logInState={{ _: "Guest" }}
+    onJump={props.onJump}
+    onLogInButtonClick={props.onLogInButtonClick}
+    onLogOutButtonClick={props.onLogInButtonClick}
   />
 );
 
@@ -97,12 +101,13 @@ export const Loaded2: Story<ControlAndActionProps> = (props) => (
       _: "loaded",
       projectIdList: [project1Id, project2Id],
     }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
     location={d.Location.Home}
     language={props.language}
     accountDict={new Map()}
     logInState={{ _: "Guest" }}
+    onJump={props.onJump}
+    onLogInButtonClick={props.onLogInButtonClick}
+    onLogOutButtonClick={props.onLogInButtonClick}
   />
 );
 
@@ -110,12 +115,13 @@ export const RequestingLogInUrl: Story<ControlAndActionProps> = (props) => (
   <App
     projectDict={new Map()}
     topProjectsLoadingState={{ _: "none" }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
     location={d.Location.Home}
     language={props.language}
     accountDict={new Map()}
     logInState={d.LogInState.RequestingLogInUrl("Google")}
+    onJump={props.onJump}
+    onLogInButtonClick={props.onLogInButtonClick}
+    onLogOutButtonClick={props.onLogInButtonClick}
   />
 );
 
@@ -123,11 +129,12 @@ export const JumpingToLogInPage: Story<ControlAndActionProps> = (props) => (
   <App
     projectDict={new Map()}
     topProjectsLoadingState={{ _: "none" }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
     location={d.Location.Home}
     language={props.language}
     accountDict={new Map()}
     logInState={d.LogInState.JumpingToLogInPage}
+    onJump={props.onJump}
+    onLogInButtonClick={props.onLogInButtonClick}
+    onLogOutButtonClick={props.onLogInButtonClick}
   />
 );

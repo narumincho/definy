@@ -3,6 +3,7 @@ import * as d from "../../data";
 import { css, keyframes } from "@emotion/css";
 import { AboutPage } from "./AboutPage";
 import { HomePage } from "./HomePage";
+import { SettingPage } from "./SettingPage";
 
 export type TopProjectsLoadingState =
   | { _: "none" }
@@ -18,6 +19,7 @@ export type Props = {
   accountDict: ReadonlyMap<d.AccountId, d.Account>;
   onJump: (urlData: d.UrlData) => void;
   onLogInButtonClick: () => void;
+  onLogOutButtonClick: () => void;
 };
 
 export const App: React.VFC<Props> = (props) => {
@@ -45,6 +47,16 @@ export const App: React.VFC<Props> = (props) => {
           logInState={props.logInState}
           onJump={props.onJump}
           onLogInButtonClick={props.onLogInButtonClick}
+        />
+      );
+    case "Setting":
+      return (
+        <SettingPage
+          accountDict={props.accountDict}
+          language={props.language}
+          logInState={props.logInState}
+          onJump={props.onJump}
+          onClickLogoutButton={props.onLogOutButtonClick}
         />
       );
   }
