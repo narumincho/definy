@@ -42,6 +42,7 @@ export const None: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     accountDict={new Map()}
     logInState={{ _: "Guest" }}
+    createProjectState={{ _: "none" }}
     onJump={props.onJump}
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}
@@ -57,6 +58,7 @@ export const Loading: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     accountDict={new Map()}
     logInState={{ _: "Guest" }}
+    createProjectState={{ _: "none" }}
     onJump={props.onJump}
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}
@@ -72,6 +74,7 @@ export const LoadedEmpty: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     accountDict={new Map()}
     logInState={{ _: "Guest" }}
+    createProjectState={{ _: "none" }}
     onJump={props.onJump}
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}
@@ -87,6 +90,7 @@ export const Loaded: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     accountDict={new Map()}
     logInState={{ _: "Guest" }}
+    createProjectState={{ _: "none" }}
     onJump={props.onJump}
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}
@@ -110,6 +114,7 @@ export const Loaded2: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     accountDict={new Map()}
     logInState={{ _: "Guest" }}
+    createProjectState={{ _: "none" }}
     onJump={props.onJump}
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}
@@ -125,6 +130,7 @@ export const RequestingLogInUrl: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     accountDict={new Map()}
     logInState={d.LogInState.RequestingLogInUrl("Google")}
+    createProjectState={{ _: "none" }}
     onJump={props.onJump}
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}
@@ -140,6 +146,7 @@ export const JumpingToLogInPage: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     accountDict={new Map()}
     logInState={d.LogInState.JumpingToLogInPage}
+    createProjectState={{ _: "none" }}
     onJump={props.onJump}
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}

@@ -1,14 +1,19 @@
 import * as React from "react";
 import { Button } from "./Button";
+import type { CreateProjectState } from "./App";
 import { css } from "@emotion/css";
 import { stringToValidProjectName } from "../../core/main";
 import { useOneLineTextEditor } from "./OneLineTextEditor";
 
 export type Props = {
   onCreateProject: (projectName: string) => void;
+  createProjectState: CreateProjectState;
 };
 
 export const CreateProjectPage: React.VFC<Props> = (props) => {
+  if (props.createProjectState._ === "creating") {
+    return <div>「{props.createProjectState.name}」を作成中</div>;
+  }
   const { text, element } = useOneLineTextEditor({
     id: "project-name",
     style: {

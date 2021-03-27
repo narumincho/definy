@@ -27,10 +27,7 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<
-  Props,
-  "language" | "onJump" | "onLogInButtonClick"
->;
+type ControlAndActionProps = Pick<Props, "language" | "onJump">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <HomePage
@@ -38,7 +35,6 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     accountDict={new Map()}
     logInState={{ _: "Guest" }}
     onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
     projectDict={new Map()}
     topProjectsLoadingState={{ _: "none" }}
   />
@@ -70,7 +66,6 @@ export const LoggedIn: Story<ControlAndActionProps> = (props) => (
       userId: dummyAccountId,
     })}
     onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
     projectDict={new Map()}
     topProjectsLoadingState={{ _: "none" }}
   />

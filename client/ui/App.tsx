@@ -3,6 +3,7 @@ import * as d from "../../data";
 import { css, keyframes } from "@emotion/css";
 import { AboutPage } from "./AboutPage";
 import { CreateProjectPage } from "./CreateProjectPage";
+import { Header } from "./Header";
 import { HomePage } from "./HomePage";
 import { SettingPage } from "./SettingPage";
 
@@ -11,6 +12,14 @@ export type TopProjectsLoadingState =
   | { _: "loading" }
   | { _: "loaded"; projectIdList: ReadonlyArray<d.ProjectId> };
 
+export type CreateProjectState =
+  | {
+      _: "creating";
+      name: string;
+    }
+  | {
+      _: "none";
+    };
 export type Props = {
   topProjectsLoadingState: TopProjectsLoadingState;
   projectDict: ReadonlyMap<d.ProjectId, d.Project>;
@@ -22,6 +31,7 @@ export type Props = {
   onLogInButtonClick: () => void;
   onLogOutButtonClick: () => void;
   onCreateProject: (projectName: string) => void;
+  createProjectState: CreateProjectState;
 };
 
 export const App: React.VFC<Props> = (props) => {
@@ -40,40 +50,26 @@ export const App: React.VFC<Props> = (props) => {
       return <PrepareLogIn message={jumpMessage(props.language)} />;
     }
   }
-  switch (props.location._) {
-    case "About":
-      return (
-        <AboutPage
-          accountDict={props.accountDict}
-          language={props.language}
-          logInState={props.logInState}
-          onJump={props.onJump}
-          onLogInButtonClick={props.onLogInButtonClick}
-        />
-      );
-    case "Setting":
-      return (
-        <SettingPage
-          accountDict={props.accountDict}
-          language={props.language}
-          logInState={props.logInState}
-          onJump={props.onJump}
-          onClickLogoutButton={props.onLogOutButtonClick}
-        />
-      );
-    case "CreateProject":
-      return <CreateProjectPage onCreateProject={props.onCreateProject} />;
-  }
   return (
-    <HomePage
-      topProjectsLoadingState={props.topProjectsLoadingState}
-      projectDict={props.projectDict}
-      accountDict={props.accountDict}
-      language={props.language}
-      logInState={props.logInState}
-      onJump={props.onJump}
-      onLogInButtonClick={props.onLogInButtonClick}
-    />
+    <div
+      className={css({
+        height: "100%",
+        display: "grid",
+        overflow: "hidden",
+        gridTemplateRows: "48px 1fr",
+        backgroundColor: "#222",
+      })}
+    >
+      <Header
+        logInState={props.logInState}
+        accountDict={props.accountDict}
+        language={props.language}
+        titleItemList={[]}
+        onJump={props.onJump}
+        onLogInButtonClick={props.onLogInButtonClick}
+      />
+      <AppMain {...props} />
+    </div>
   );
 };
 
@@ -153,3 +149,40 @@ const rotateAnimation = keyframes`
     transform: rotate(1turn);
   }
 `;
+
+/**
+ * Header を含まない部分
+ */
+const AppMain: React.VFC<Props> = (props) => {
+  switch (props.location._) {
+    case "About":
+      return <AboutPage language={props.language} />;
+    case "Setting":
+      return (
+        <SettingPage
+          accountDict={props.accountDict}
+          language={props.language}
+          logInState={props.logInState}
+          onJump={props.onJump}
+          onClickLogoutButton={props.onLogOutButtonClick}
+        />
+      );
+    case "CreateProject":
+      return (
+        <CreateProjectPage
+          createProjectState={props.createProjectState}
+          onCreateProject={props.onCreateProject}
+        />
+      );
+  }
+  return (
+    <HomePage
+      topProjectsLoadingState={props.topProjectsLoadingState}
+      projectDict={props.projectDict}
+      accountDict={props.accountDict}
+      language={props.language}
+      logInState={props.logInState}
+      onJump={props.onJump}
+    />
+  );
+};

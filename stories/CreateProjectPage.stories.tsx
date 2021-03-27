@@ -17,5 +17,8 @@ export default meta;
 type ControlAndActionProps = Pick<Props, "onCreateProject">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
-  <CreateProjectPage onCreateProject={props.onCreateProject} />
+  <CreateProjectPage
+    onCreateProject={props.onCreateProject}
+    createProjectState={{ _: "none" }}
+  />
 );

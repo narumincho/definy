@@ -14,19 +14,10 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<
-  Props,
-  "language" | "onJump" | "onLogInButtonClick"
->;
+type ControlAndActionProps = Pick<Props, "language">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
-  <AboutPage
-    language={props.language}
-    accountDict={new Map()}
-    logInState={{ _: "Guest" }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
-  />
+  <AboutPage language={props.language} />
 );
 Default.args = {
   language: d.Language.Japanese,

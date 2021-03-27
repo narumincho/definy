@@ -13,53 +13,32 @@ export type Props = {
   language: d.Language;
   logInState: d.LogInState;
   accountDict: ReadonlyMap<d.AccountId, d.Account>;
-  onLogInButtonClick: () => void;
 };
 
 export const HomePage: React.VFC<Props> = (props) => {
   return (
     <div
       className={css({
-        height: "100%",
         display: "grid",
-        overflow: "hidden",
-        gridTemplateRows: "48px 1fr",
-        backgroundColor: "#222",
+        overflowY: "scroll",
+        gridTemplateRows: "32px 1fr",
+        gap: 8,
+        padding: 16,
+        height: "100%",
       })}
     >
-      <Header
-        logInState={props.logInState}
-        accountDict={props.accountDict}
+      <HomeLinkList jumpHandler={props.onJump} language={props.language} />
+      <TopProjectList
+        topProjectsLoadingState={props.topProjectsLoadingState}
+        projectDict={props.projectDict}
+        jumpHandler={props.onJump}
         language={props.language}
-        titleItemList={[]}
-        onJump={props.onJump}
-        onLogInButtonClick={props.onLogInButtonClick}
       />
-      <div
-        className={css({
-          display: "grid",
-          overflowY: "scroll",
-          gridTemplateRows: "32px 1fr",
-          gap: 8,
-          padding: 16,
-        })}
-      >
-        <HomeLinkList jumpHandler={props.onJump} language={props.language} />
-        <TopProjectList
-          topProjectsLoadingState={props.topProjectsLoadingState}
-          projectDict={props.projectDict}
-          jumpHandler={props.onJump}
-          language={props.language}
-        />
-        {props.logInState._ === "LoggedIn" ? (
-          <CreateProjectButton
-            language={props.language}
-            onJump={props.onJump}
-          />
-        ) : (
-          <></>
-        )}
-      </div>
+      {props.logInState._ === "LoggedIn" ? (
+        <CreateProjectButton language={props.language} onJump={props.onJump} />
+      ) : (
+        <></>
+      )}
     </div>
   );
 };

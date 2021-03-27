@@ -2,6 +2,11 @@ import * as React from "react";
 import * as d from "../../data";
 import * as indexedDB from "../indexedDB";
 import {
+  CreateProjectState,
+  TopProjectsLoadingState,
+  App as UiApp,
+} from "../ui/App";
+import {
   OptionsObject,
   SnackbarKey,
   SnackbarMessage,
@@ -12,13 +17,7 @@ import {
   urlDataAndAccountTokenFromUrl,
   urlDataAndAccountTokenToUrl,
 } from "../../common/url";
-import { App as UiApp } from "../ui/App";
 import { api } from "../api";
-
-export type TopProjectsLoadingState =
-  | { _: "none" }
-  | { _: "loading" }
-  | { _: "loaded"; projectIdList: ReadonlyArray<d.ProjectId> };
 
 export const App: React.VFC<Record<string, string>> = () => {
   return (
@@ -46,13 +45,20 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
   const [accountDict, setAccountDict] = React.useState<
     ReadonlyMap<d.AccountId, d.Account>
   >(new Map());
+  const [
+    createProjectState,
+    setCreateProjectState,
+  ] = React.useState<CreateProjectState>({ _: "none" });
   const { enqueueSnackbar } = useSnackbar();
 
   const setAccount = (accountId: d.AccountId, account: d.Account): void => {
     setAccountDict((beforeDict) => new Map(beforeDict).set(accountId, account));
   };
 
-  const jumpHandler = (newUrlData: d.UrlData): void => {
+  /**
+   * ページを移動する
+   */
+  const jump = (newUrlData: d.UrlData): void => {
     window.history.pushState(
       undefined,
       "",
@@ -82,14 +88,64 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
   const logOut = () => {
     indexedDB.deleteAccountToken();
     setLogInState(d.LogInState.Guest);
-    jumpHandler({
+    jump({
       language: urlData.language,
       location: d.Location.Home,
     });
     enqueueSnackbar("ログアウトしました", { variant: "success" });
   };
 
-  const createProject = (projectName: string): void => {};
+  const getAccountToken = (): d.AccountToken | undefined => {
+    switch (logInState._) {
+      case "LoggedIn":
+        return logInState.accountTokenAndUserId.accountToken;
+      case "VerifyingAccountToken":
+        return logInState.accountToken;
+    }
+  };
+
+  const createProject = (projectName: string): void => {
+    const accountToken = getAccountToken();
+    if (accountToken === undefined) {
+      enqueueSnackbar(
+        "ログインしていない状態でプロジェクトを作ることはできない",
+        {
+          variant: "error",
+        }
+      );
+      return;
+    }
+    if (createProjectState._ === "creating") {
+      enqueueSnackbar(
+        "プロジェクト作成中にさらにプロジェクトを作成することはできない",
+        {
+          variant: "error",
+        }
+      );
+      return;
+    }
+    setCreateProjectState({ _: "creating", name: projectName });
+    api
+      .createProject({
+        accountToken,
+        projectName,
+      })
+      .then((response) => {
+        setCreateProjectState({ _: "none" });
+        if (response._ === "Nothing" || response.value._ === "Nothing") {
+          enqueueSnackbar("プロジェクト作成に失敗しました");
+          return;
+        }
+        enqueueSnackbar(
+          `プロジェクト「${response.value.value.data.name}」を作成しました`,
+          { variant: "success" }
+        );
+        jump({
+          language: urlData.language,
+          location: d.Location.Project(response.value.value.id),
+        });
+      });
+  };
 
   React.useEffect(() => {
     setTopProjectsLoadingState({ _: "loading" });
@@ -161,12 +217,13 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
     <UiApp
       topProjectsLoadingState={topProjectsLoadingState}
       projectDict={projectDict}
-      onJump={jumpHandler}
+      onJump={jump}
       onLogInButtonClick={onLogInButtonClick}
       location={urlData.location}
       language={urlData.language}
       logInState={logInState}
       accountDict={accountDict}
+      createProjectState={createProjectState}
       onLogOutButtonClick={logOut}
       onCreateProject={createProject}
     />

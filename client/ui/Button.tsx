@@ -1,10 +1,12 @@
 import * as React from "react";
 import { CSSObject, css } from "@emotion/css";
 
-export const Button: React.FC<{
+export type Props = {
   onClick?: () => void;
   style?: CSSObject;
-}> = (props) => (
+};
+
+export const Button: React.FC<Props> = (props) => (
   <button
     className={css(
       {
