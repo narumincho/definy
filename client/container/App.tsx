@@ -18,6 +18,7 @@ import {
   urlDataAndAccountTokenToUrl,
 } from "../../common/url";
 import { api } from "../api";
+import { useProjectDict } from "../hook/projectDict";
 
 export const App: React.VFC<Record<string, string>> = () => {
   return (
@@ -32,9 +33,6 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
     topProjectsLoadingState,
     setTopProjectsLoadingState,
   ] = React.useState<TopProjectsLoadingState>({ _: "none" });
-  const [projectDict, setProjectDict] = React.useState<
-    ReadonlyMap<d.ProjectId, d.Project>
-  >(new Map());
   const [urlData, setUrlData] = React.useState<d.UrlData>({
     language: "English",
     location: d.Location.Home,
@@ -50,6 +48,7 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
     setCreateProjectState,
   ] = React.useState<CreateProjectState>({ _: "none" });
   const { enqueueSnackbar } = useSnackbar();
+  const useProjectDictResult = useProjectDict(enqueueSnackbar);
 
   const setAccount = (accountId: d.AccountId, account: d.Account): void => {
     setAccountDict((beforeDict) => new Map(beforeDict).set(accountId, account));
@@ -160,6 +159,10 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
         _: "loaded",
         projectIdList: response.value.data.map((project) => project.id),
       });
+      useProjectDictResult.setProjectList(
+        response.value.data,
+        response.value.getTime
+      );
     });
     document.title =
       "Definy 手軽に堅牢なゲームとツールが作れて公開できる が目標のWebアプリ";
@@ -216,7 +219,7 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
   return (
     <UiApp
       topProjectsLoadingState={topProjectsLoadingState}
-      projectDict={projectDict}
+      useProjectDictResult={useProjectDictResult}
       onJump={jump}
       onLogInButtonClick={onLogInButtonClick}
       location={urlData.location}

@@ -2,6 +2,7 @@ import * as React from "react";
 import * as d from "../../data";
 import { Image, ImageSkeleton } from "../container/Image";
 import { Link } from "./Link";
+import { UseProjectDictResult } from "../hook/projectDict";
 import { css } from "@emotion/css";
 
 const imageWidth = 256;
@@ -12,11 +13,13 @@ const cardHeight = imageHeight + textHeight;
 
 export const ProjectCard: React.VFC<{
   projectId: d.ProjectId;
-  projectDict: ReadonlyMap<d.ProjectId, d.Project>;
+  useProjectDictResult: UseProjectDictResult;
   jumpHandler: (urlData: d.UrlData) => void;
   language: d.Language;
 }> = (props) => {
-  const project = props.projectDict.get(props.projectId);
+  const project = props.useProjectDictResult.getProjectByProjectId(
+    props.projectId
+  );
   if (project === undefined) {
     return <div>プロジェクト読込中?</div>;
   }

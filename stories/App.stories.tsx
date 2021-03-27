@@ -2,7 +2,13 @@ import * as React from "react";
 import * as d from "../data";
 import { App, Props } from "../client/ui/App";
 import { Meta, Story } from "@storybook/react";
-import { project1, project1Id, project2, project2Id } from "./mockData";
+import {
+  project1,
+  project1Id,
+  project2,
+  project2Id,
+  useProjectDictResult,
+} from "./mockData";
 import { ArgType } from "@storybook/addons";
 import { fullScreen } from "../.storybook/decorators";
 
@@ -36,7 +42,7 @@ export default meta;
 
 export const None: Story<ControlAndActionProps> = (props) => (
   <App
-    projectDict={new Map()}
+    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "none" }}
     location={d.Location.Home}
     language={props.language}
@@ -52,7 +58,7 @@ export const None: Story<ControlAndActionProps> = (props) => (
 
 export const Loading: Story<ControlAndActionProps> = (props) => (
   <App
-    projectDict={new Map()}
+    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "loading" }}
     location={d.Location.Home}
     language={props.language}
@@ -68,7 +74,7 @@ export const Loading: Story<ControlAndActionProps> = (props) => (
 
 export const LoadedEmpty: Story<ControlAndActionProps> = (props) => (
   <App
-    projectDict={new Map()}
+    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "loaded", projectIdList: [] }}
     location={d.Location.Home}
     language={props.language}
@@ -84,7 +90,7 @@ export const LoadedEmpty: Story<ControlAndActionProps> = (props) => (
 
 export const Loaded: Story<ControlAndActionProps> = (props) => (
   <App
-    projectDict={new Map<d.ProjectId, d.Project>([[project1Id, project1]])}
+    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "loaded", projectIdList: [project1Id] }}
     location={d.Location.Home}
     language={props.language}
@@ -100,12 +106,7 @@ export const Loaded: Story<ControlAndActionProps> = (props) => (
 
 export const Loaded2: Story<ControlAndActionProps> = (props) => (
   <App
-    projectDict={
-      new Map<d.ProjectId, d.Project>([
-        [project1Id, project1],
-        [project2Id, project2],
-      ])
-    }
+    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{
       _: "loaded",
       projectIdList: [project1Id, project2Id],
@@ -124,7 +125,7 @@ export const Loaded2: Story<ControlAndActionProps> = (props) => (
 
 export const RequestingLogInUrl: Story<ControlAndActionProps> = (props) => (
   <App
-    projectDict={new Map()}
+    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "none" }}
     location={d.Location.Home}
     language={props.language}
@@ -140,7 +141,7 @@ export const RequestingLogInUrl: Story<ControlAndActionProps> = (props) => (
 
 export const JumpingToLogInPage: Story<ControlAndActionProps> = (props) => (
   <App
-    projectDict={new Map()}
+    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "none" }}
     location={d.Location.Home}
     language={props.language}

@@ -4,11 +4,12 @@ import { ProjectCard, ProjectCardSkeleton } from "./ProjectCard";
 import { Header } from "./Header";
 import { Link } from "./Link";
 import type { TopProjectsLoadingState } from "./App";
+import { UseProjectDictResult } from "../hook/projectDict";
 import { css } from "@emotion/css";
 
 export type Props = {
   topProjectsLoadingState: TopProjectsLoadingState;
-  projectDict: ReadonlyMap<d.ProjectId, d.Project>;
+  useProjectDictResult: UseProjectDictResult;
   onJump: (urlData: d.UrlData) => void;
   language: d.Language;
   logInState: d.LogInState;
@@ -30,7 +31,7 @@ export const HomePage: React.VFC<Props> = (props) => {
       <HomeLinkList jumpHandler={props.onJump} language={props.language} />
       <TopProjectList
         topProjectsLoadingState={props.topProjectsLoadingState}
-        projectDict={props.projectDict}
+        useProjectDictResult={props.useProjectDictResult}
         jumpHandler={props.onJump}
         language={props.language}
       />
@@ -73,7 +74,7 @@ const HomeLinkList: React.VFC<{
 
 const TopProjectList: React.VFC<{
   topProjectsLoadingState: TopProjectsLoadingState;
-  projectDict: ReadonlyMap<d.ProjectId, d.Project>;
+  useProjectDictResult: UseProjectDictResult;
   jumpHandler: (urlData: d.UrlData) => void;
   language: d.Language;
 }> = (props) => {
@@ -144,7 +145,7 @@ const TopProjectList: React.VFC<{
             <ProjectCard
               key={projectId}
               projectId={projectId}
-              projectDict={props.projectDict}
+              useProjectDictResult={props.useProjectDictResult}
               jumpHandler={props.jumpHandler}
               language={props.language}
             />

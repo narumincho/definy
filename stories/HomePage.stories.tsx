@@ -4,12 +4,13 @@ import { HomePage, Props } from "../client/ui/HomePage";
 import { Meta, Story } from "@storybook/react";
 import { ArgType } from "@storybook/addons";
 import { fullScreen } from "../.storybook/decorators";
+import { useProjectDictResult } from "./mockData";
 
 const argTypes: Record<
-  keyof Pick<Props, "projectDict" | "logInState" | "accountDict">,
+  keyof Pick<Props, "useProjectDictResult" | "logInState" | "accountDict">,
   ArgType
 > = {
-  projectDict: {
+  useProjectDictResult: {
     control: null,
   },
   logInState: { control: null },
@@ -35,7 +36,7 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     accountDict={new Map()}
     logInState={{ _: "Guest" }}
     onJump={props.onJump}
-    projectDict={new Map()}
+    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "none" }}
   />
 );
@@ -66,7 +67,7 @@ export const LoggedIn: Story<ControlAndActionProps> = (props) => (
       userId: dummyAccountId,
     })}
     onJump={props.onJump}
-    projectDict={new Map()}
+    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "none" }}
   />
 );

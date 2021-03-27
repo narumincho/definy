@@ -6,6 +6,7 @@ import { CreateProjectPage } from "./CreateProjectPage";
 import { Header } from "./Header";
 import { HomePage } from "./HomePage";
 import { SettingPage } from "./SettingPage";
+import { UseProjectDictResult } from "../hook/projectDict";
 
 export type TopProjectsLoadingState =
   | { _: "none" }
@@ -22,7 +23,7 @@ export type CreateProjectState =
     };
 export type Props = {
   topProjectsLoadingState: TopProjectsLoadingState;
-  projectDict: ReadonlyMap<d.ProjectId, d.Project>;
+  useProjectDictResult: UseProjectDictResult;
   location: d.Location;
   language: d.Language;
   logInState: d.LogInState;
@@ -178,7 +179,7 @@ const AppMain: React.VFC<Props> = (props) => {
   return (
     <HomePage
       topProjectsLoadingState={props.topProjectsLoadingState}
-      projectDict={props.projectDict}
+      useProjectDictResult={props.useProjectDictResult}
       accountDict={props.accountDict}
       language={props.language}
       logInState={props.logInState}

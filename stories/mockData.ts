@@ -1,4 +1,6 @@
 import * as d from "../data";
+import { UseProjectDictResult } from "../client/hook/projectDict";
+import { action } from "@storybook/addon-actions";
 
 export const project1Id = "0fccb11463d3b69dde018cd70af65eba" as d.ProjectId;
 
@@ -20,4 +22,18 @@ export const project2: d.Project = {
   iconHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
   imageHash: "3204f96f9e58c0d720c39599747e7568872a396b3442e1cfe7607d041901277c" as d.ImageHash,
   updateTime: { day: 0, millisecond: 0 },
+};
+
+export const useProjectDictResult: UseProjectDictResult = {
+  getProjectByProjectId: (option) => {
+    action("getProjectByProjectId")(option);
+    return project1;
+  },
+  getProjectStateByProjectId: (option) => {
+    action("getProjectStateByProjectId")(option);
+    return undefined;
+  },
+  requestProjectById: action("requestProjectById"),
+  setProject: action("setProject"),
+  setProjectList: action("setProjectList"),
 };
