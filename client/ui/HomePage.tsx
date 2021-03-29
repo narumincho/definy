@@ -146,7 +146,7 @@ const TopProjectList: React.VFC<{
               key={projectId}
               projectId={projectId}
               useProjectDictResult={props.useProjectDictResult}
-              jumpHandler={props.jumpHandler}
+              onJump={props.jumpHandler}
               language={props.language}
             />
           ))}

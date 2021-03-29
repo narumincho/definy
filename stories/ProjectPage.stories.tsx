@@ -1,12 +1,13 @@
 import * as React from "react";
+import * as d from "../data";
 import { Meta, Story } from "@storybook/react";
-import { ProjectCard, Props } from "../client/ui/ProjectCard";
+import { ProjectPage, Props } from "../client/ui/ProjectPage";
 import { project1Id, useProjectDictResult } from "./mockData";
 import { fullScreen } from "../.storybook/decorators";
 
 const meta: Meta = {
-  title: "ProjectCard",
-  component: ProjectCard,
+  title: "ProjectPage",
+  component: ProjectPage,
   parameters: {
     layout: "fullscreen",
   },
@@ -17,10 +18,13 @@ export default meta;
 type ControlAndActionProps = Pick<Props, "language" | "onJump">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
-  <ProjectCard
+  <ProjectPage
+    language={props.language}
     useProjectDictResult={useProjectDictResult}
     projectId={project1Id}
-    language={props.language}
     onJump={props.onJump}
   />
 );
+Default.args = {
+  language: d.Language.Japanese,
+};

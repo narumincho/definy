@@ -5,6 +5,7 @@ import { AboutPage } from "./AboutPage";
 import { CreateProjectPage } from "./CreateProjectPage";
 import { Header } from "./Header";
 import { HomePage } from "./HomePage";
+import { ProjectPage } from "./ProjectPage";
 import { SettingPage } from "./SettingPage";
 import { UseProjectDictResult } from "../hook/projectDict";
 
@@ -173,6 +174,15 @@ const AppMain: React.VFC<Props> = (props) => {
         <CreateProjectPage
           createProjectState={props.createProjectState}
           onCreateProject={props.onCreateProject}
+        />
+      );
+    case "Project":
+      return (
+        <ProjectPage
+          language={props.language}
+          onJump={props.onJump}
+          projectId={props.location.projectId}
+          useProjectDictResult={props.useProjectDictResult}
         />
       );
   }

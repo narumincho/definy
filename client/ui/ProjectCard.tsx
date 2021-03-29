@@ -11,12 +11,14 @@ const textHeight = 48;
 const cardWidth = imageWidth;
 const cardHeight = imageHeight + textHeight;
 
-export const ProjectCard: React.VFC<{
-  projectId: d.ProjectId;
-  useProjectDictResult: UseProjectDictResult;
-  jumpHandler: (urlData: d.UrlData) => void;
-  language: d.Language;
-}> = (props) => {
+export type Props = {
+  readonly projectId: d.ProjectId;
+  readonly useProjectDictResult: UseProjectDictResult;
+  readonly onJump: (urlData: d.UrlData) => void;
+  readonly language: d.Language;
+};
+
+export const ProjectCard: React.VFC<Props> = (props) => {
   const project = props.useProjectDictResult.getProjectByProjectId(
     props.projectId
   );
@@ -35,7 +37,7 @@ export const ProjectCard: React.VFC<{
         location: d.Location.Project(props.projectId),
         language: props.language,
       }}
-      onJump={props.jumpHandler}
+      onJump={props.onJump}
     >
       <Image
         alt={`${project.name}の画像`}
