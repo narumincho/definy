@@ -20,6 +20,7 @@ export const SettingPage: React.VFC<Props> = (props) => {
         alignContent: "start",
         gap: 8,
         padding: 16,
+        height: "100%",
       })}
     >
       <div
