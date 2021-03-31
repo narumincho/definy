@@ -18,7 +18,7 @@ import {
   urlDataAndAccountTokenToUrl,
 } from "../../common/url";
 import { api } from "../api";
-import { useProjectDict } from "../hook/projectDict";
+import { useResourceState } from "../hook/resourceState";
 
 export const App: React.VFC<Record<string, string>> = () => {
   return (
@@ -40,19 +40,13 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
   const [logInState, setLogInState] = React.useState<d.LogInState>(
     d.LogInState.Guest
   );
-  const [accountDict, setAccountDict] = React.useState<
-    ReadonlyMap<d.AccountId, d.Account>
-  >(new Map());
   const [
     createProjectState,
     setCreateProjectState,
   ] = React.useState<CreateProjectState>({ _: "none" });
   const { enqueueSnackbar } = useSnackbar();
-  const useProjectDictResult = useProjectDict();
-
-  const setAccount = (accountId: d.AccountId, account: d.Account): void => {
-    setAccountDict((beforeDict) => new Map(beforeDict).set(accountId, account));
-  };
+  const projectDict = useResourceState<d.ProjectId, d.Project>();
+  const accountDict = useResourceState<d.AccountId, d.Account>();
 
   /**
    * ページを移動する
@@ -104,36 +98,30 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
   };
 
   const requestProjectById = (projectId: d.ProjectId): void => {
-    const projectState = useProjectDictResult.getProjectStateByProjectId(
-      projectId
-    );
+    const projectState = projectDict.get(projectId);
     /** 一度取得したプロジェクトはリロードするまで再取得しない */
     if (projectState !== undefined) {
       return;
     }
-    useProjectDictResult.setRequesting(projectId);
+    projectDict.setRequesting(projectId);
     api.getProject(projectId).then((response) => {
       if (response._ === "Nothing") {
         enqueueSnackbar("プロジェクトの取得に失敗しました", {
           variant: "error",
         });
-        useProjectDictResult.setUnknown(projectId);
+        projectDict.setUnknown(projectId);
         return;
       }
       if (response.value.data._ === "Nothing") {
         enqueueSnackbar("プロジェクトが存在しなかった", {
           variant: "error",
         });
-        useProjectDictResult.setDeleted(projectId, response.value.getTime);
+        projectDict.setDeleted(projectId, response.value.getTime);
         return;
       }
-      useProjectDictResult.setLoaded(
-        [
-          {
-            id: projectId,
-            data: response.value.data.value,
-          },
-        ],
+      projectDict.setLoaded(
+        projectId,
+        response.value.data.value,
         response.value.getTime
       );
     });
@@ -195,10 +183,7 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
         _: "loaded",
         projectIdList: response.value.data.map((project) => project.id),
       });
-      useProjectDictResult.setLoaded(
-        response.value.data,
-        response.value.getTime
-      );
+      projectDict.setLoadedList(response.value.data, response.value.getTime);
     });
     document.title =
       "Definy 手軽に堅牢なゲームとツールが作れて公開できる が目標のWebアプリ";
@@ -233,7 +218,7 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
       verifyingAccountTokenAndGetAccount(
         setLogInState,
         accountToken,
-        setAccount,
+        accountDict.setLoaded,
         enqueueSnackbar
       );
       return;
@@ -246,7 +231,7 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
       verifyingAccountTokenAndGetAccount(
         setLogInState,
         accountToken,
-        setAccount,
+        accountDict.setLoaded,
         enqueueSnackbar
       );
     });
@@ -255,13 +240,13 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
   return (
     <UiApp
       topProjectsLoadingState={topProjectsLoadingState}
-      useProjectDictResult={useProjectDictResult}
+      getAccount={accountDict.get}
+      getProject={projectDict.get}
       onJump={jump}
       onLogInButtonClick={onLogInButtonClick}
       location={urlData.location}
       language={urlData.language}
       logInState={logInState}
-      accountDict={accountDict}
       createProjectState={createProjectState}
       onLogOutButtonClick={logOut}
       onCreateProject={createProject}

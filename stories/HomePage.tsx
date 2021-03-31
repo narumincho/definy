@@ -2,19 +2,12 @@ import * as React from "react";
 import * as d from "../data";
 import { HomePage, Props } from "../client/ui/HomePage";
 import { Meta, Story } from "@storybook/react";
+import { getAccount, getProject } from "./mockData";
 import { ArgType } from "@storybook/addons";
 import { fullScreen } from "../.storybook/decorators";
-import { useProjectDictResult } from "./mockData";
 
-const argTypes: Record<
-  keyof Pick<Props, "useProjectDictResult" | "logInState" | "accountDict">,
-  ArgType
-> = {
-  useProjectDictResult: {
-    control: null,
-  },
+const argTypes: Record<keyof Pick<Props, "logInState">, ArgType> = {
   logInState: { control: null },
-  accountDict: { control: null },
 };
 
 const meta: Meta = {
@@ -36,10 +29,10 @@ type ControlAndActionProps = Pick<
 export const Default: Story<ControlAndActionProps> = (props) => (
   <HomePage
     language={props.language}
-    accountDict={new Map()}
+    getProject={getProject}
+    getAccount={getAccount}
     logInState={{ _: "Guest" }}
     onJump={props.onJump}
-    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "none" }}
     onRequestProjectById={props.onRequestProjectById}
   />
@@ -53,25 +46,13 @@ const dummyAccountId = "dummyAccountId" as d.AccountId;
 export const LoggedIn: Story<ControlAndActionProps> = (props) => (
   <HomePage
     language={props.language}
-    accountDict={
-      new Map([
-        [
-          dummyAccountId,
-          {
-            name: "サンプルアカウント",
-            createTime: { day: 0, millisecond: 0 },
-            imageHash: "" as d.ImageHash,
-            introduction: "サンプルアカウントの自己紹介文",
-          },
-        ],
-      ])
-    }
+    getProject={getProject}
+    getAccount={getAccount}
     logInState={d.LogInState.LoggedIn({
       accountToken: "dummyAccountToken" as d.AccountToken,
       userId: dummyAccountId,
     })}
     onJump={props.onJump}
-    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "none" }}
     onRequestProjectById={props.onRequestProjectById}
   />

@@ -13,7 +13,9 @@ export type Props = {
   language: d.Language;
   titleItemList: ReadonlyArray<TitleItem>;
   logInState: d.LogInState;
-  accountDict: ReadonlyMap<d.AccountId, d.Account>;
+  getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
   onJump: (urlData: d.UrlData) => void;
   onLogInButtonClick: () => void;
 };
@@ -70,7 +72,7 @@ export const Header: React.VFC<Props> = (props) => {
       <UserViewOrLogInButton
         logInState={props.logInState}
         language={props.language}
-        accountDict={props.accountDict}
+        getAccount={props.getAccount}
         onJump={props.onJump}
         onLogInButtonClick={props.onLogInButtonClick}
       />
@@ -81,7 +83,9 @@ export const Header: React.VFC<Props> = (props) => {
 const UserViewOrLogInButton: React.VFC<{
   logInState: d.LogInState;
   language: d.Language;
-  accountDict: ReadonlyMap<d.AccountId, d.Account>;
+  getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
   onJump: (urlData: d.UrlData) => void;
   onLogInButtonClick: () => void;
 }> = (props) => {
@@ -108,10 +112,13 @@ const UserViewOrLogInButton: React.VFC<{
       );
 
     case "LoggedIn": {
-      const userResourceState = props.accountDict.get(
+      const accountResourceState = props.getAccount(
         props.logInState.accountTokenAndUserId.userId
       );
-      if (userResourceState === undefined) {
+      if (
+        accountResourceState === undefined ||
+        accountResourceState._ !== "Loaded"
+      ) {
         return (
           <div className={css(userViewOrLogInButtonStyle)}>
             ログインしているアカウントを取得中……
@@ -122,7 +129,7 @@ const UserViewOrLogInButton: React.VFC<{
         <SettingLink
           language={props.language}
           onJump={props.onJump}
-          account={userResourceState}
+          account={accountResourceState.dataWithTime.data}
         />
       );
     }

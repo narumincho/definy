@@ -2,7 +2,7 @@ import * as React from "react";
 import * as d from "../data";
 import { Meta, Story } from "@storybook/react";
 import { ProjectPage, Props } from "../client/ui/ProjectPage";
-import { project1Id, useProjectDictResult } from "./mockData";
+import { getProject, project1Id } from "./mockData";
 import { fullScreen } from "../.storybook/decorators";
 
 const meta: Meta = {
@@ -23,7 +23,7 @@ type ControlAndActionProps = Pick<
 export const Default: Story<ControlAndActionProps> = (props) => (
   <ProjectPage
     language={props.language}
-    useProjectDictResult={useProjectDictResult}
+    getProject={getProject}
     projectId={project1Id}
     onJump={props.onJump}
     onRequestProjectById={props.onRequestProjectById}

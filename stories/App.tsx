@@ -2,13 +2,7 @@ import * as React from "react";
 import * as d from "../data";
 import { App, Props } from "../client/ui/App";
 import { Meta, Story } from "@storybook/react";
-import {
-  project1,
-  project1Id,
-  project2,
-  project2Id,
-  useProjectDictResult,
-} from "./mockData";
+import { getAccount, getProject, project1Id, project2Id } from "./mockData";
 import { ArgType } from "@storybook/addons";
 import { fullScreen } from "../.storybook/decorators";
 
@@ -46,11 +40,9 @@ export default meta;
 
 export const None: Story<ControlAndActionProps> = (props) => (
   <App
-    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "none" }}
     location={d.Location.Home}
     language={props.language}
-    accountDict={new Map()}
     logInState={{ _: "Guest" }}
     createProjectState={{ _: "none" }}
     onJump={props.onJump}
@@ -58,16 +50,16 @@ export const None: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    getAccount={getAccount}
+    getProject={getProject}
   />
 );
 
 export const Loading: Story<ControlAndActionProps> = (props) => (
   <App
-    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "loading" }}
     location={d.Location.Home}
     language={props.language}
-    accountDict={new Map()}
     logInState={{ _: "Guest" }}
     createProjectState={{ _: "none" }}
     onJump={props.onJump}
@@ -75,16 +67,16 @@ export const Loading: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    getAccount={getAccount}
+    getProject={getProject}
   />
 );
 
 export const LoadedEmpty: Story<ControlAndActionProps> = (props) => (
   <App
-    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "loaded", projectIdList: [] }}
     location={d.Location.Home}
     language={props.language}
-    accountDict={new Map()}
     logInState={{ _: "Guest" }}
     createProjectState={{ _: "none" }}
     onJump={props.onJump}
@@ -92,16 +84,16 @@ export const LoadedEmpty: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    getAccount={getAccount}
+    getProject={getProject}
   />
 );
 
 export const Loaded: Story<ControlAndActionProps> = (props) => (
   <App
-    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "loaded", projectIdList: [project1Id] }}
     location={d.Location.Home}
     language={props.language}
-    accountDict={new Map()}
     logInState={{ _: "Guest" }}
     createProjectState={{ _: "none" }}
     onJump={props.onJump}
@@ -109,19 +101,19 @@ export const Loaded: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    getAccount={getAccount}
+    getProject={getProject}
   />
 );
 
 export const Loaded2: Story<ControlAndActionProps> = (props) => (
   <App
-    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{
       _: "loaded",
       projectIdList: [project1Id, project2Id],
     }}
     location={d.Location.Home}
     language={props.language}
-    accountDict={new Map()}
     logInState={{ _: "Guest" }}
     createProjectState={{ _: "none" }}
     onJump={props.onJump}
@@ -129,16 +121,16 @@ export const Loaded2: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    getAccount={getAccount}
+    getProject={getProject}
   />
 );
 
 export const RequestingLogInUrl: Story<ControlAndActionProps> = (props) => (
   <App
-    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "none" }}
     location={d.Location.Home}
     language={props.language}
-    accountDict={new Map()}
     logInState={d.LogInState.RequestingLogInUrl("Google")}
     createProjectState={{ _: "none" }}
     onJump={props.onJump}
@@ -146,16 +138,16 @@ export const RequestingLogInUrl: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    getAccount={getAccount}
+    getProject={getProject}
   />
 );
 
 export const JumpingToLogInPage: Story<ControlAndActionProps> = (props) => (
   <App
-    useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "none" }}
     location={d.Location.Home}
     language={props.language}
-    accountDict={new Map()}
     logInState={d.LogInState.JumpingToLogInPage}
     createProjectState={{ _: "none" }}
     onJump={props.onJump}
@@ -163,5 +155,7 @@ export const JumpingToLogInPage: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    getAccount={getAccount}
+    getProject={getProject}
   />
 );

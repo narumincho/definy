@@ -7,7 +7,9 @@ export type Props = {
   onJump: (urlData: d.UrlData) => void;
   language: d.Language;
   logInState: d.LogInState;
-  accountDict: ReadonlyMap<d.AccountId, d.Account>;
+  getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
   onClickLogoutButton: () => void;
 };
 

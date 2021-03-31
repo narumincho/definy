@@ -3,6 +3,7 @@ import * as d from "../data";
 import { Meta, Story } from "@storybook/react";
 import { Props, SettingPage } from "../client/ui/SettingPage";
 import { fullScreen } from "../.storybook/decorators";
+import { getAccount } from "./mockData";
 
 const meta: Meta = {
   title: "SettingPage",
@@ -22,7 +23,7 @@ type ControlAndActionProps = Pick<
 export const Default: Story<ControlAndActionProps> = (props) => (
   <SettingPage
     language={props.language}
-    accountDict={new Map()}
+    getAccount={getAccount}
     logInState={{ _: "Guest" }}
     onJump={props.onJump}
     onClickLogoutButton={props.onClickLogoutButton}

@@ -2,7 +2,7 @@ import * as React from "react";
 import * as d from "../../data";
 import { Image, ImageSkeleton } from "../container/Image";
 import { Link } from "./Link";
-import { UseProjectDictResult } from "../hook/projectDict";
+import { UseResourceStateResult } from "../hook/resourceState";
 import { css } from "@emotion/css";
 
 const imageWidth = 256;
@@ -13,7 +13,9 @@ const cardHeight = imageHeight + textHeight;
 
 export type Props = {
   readonly projectId: d.ProjectId;
-  readonly useProjectDictResult: UseProjectDictResult;
+  readonly getProject: (
+    projectId: d.ProjectId
+  ) => d.ResourceState<d.Project> | undefined;
   readonly onJump: (urlData: d.UrlData) => void;
   readonly language: d.Language;
   readonly onRequestProjectById: (projectId: d.ProjectId) => void;
@@ -24,9 +26,7 @@ export const ProjectCard: React.VFC<Props> = (props) => {
     props.onRequestProjectById(props.projectId);
   }, []);
 
-  const projectState = props.useProjectDictResult.getProjectStateByProjectId(
-    props.projectId
-  );
+  const projectState = props.getProject(props.projectId);
   if (projectState === undefined) {
     return <div>プロジェクトリクエスト準備前</div>;
   }

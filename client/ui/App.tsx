@@ -7,7 +7,6 @@ import { Header } from "./Header";
 import { HomePage } from "./HomePage";
 import { ProjectPage } from "./ProjectPage";
 import { SettingPage } from "./SettingPage";
-import { UseProjectDictResult } from "../hook/projectDict";
 
 export type TopProjectsLoadingState =
   | { _: "none" }
@@ -24,11 +23,15 @@ export type CreateProjectState =
     };
 export type Props = {
   topProjectsLoadingState: TopProjectsLoadingState;
-  useProjectDictResult: UseProjectDictResult;
+  getProject: (
+    projectId: d.ProjectId
+  ) => d.ResourceState<d.Project> | undefined;
+  getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
   location: d.Location;
   language: d.Language;
   logInState: d.LogInState;
-  accountDict: ReadonlyMap<d.AccountId, d.Account>;
   createProjectState: CreateProjectState;
   onJump: (urlData: d.UrlData) => void;
   onLogInButtonClick: () => void;
@@ -65,7 +68,7 @@ export const App: React.VFC<Props> = (props) => {
     >
       <Header
         logInState={props.logInState}
-        accountDict={props.accountDict}
+        getAccount={props.getAccount}
         language={props.language}
         titleItemList={[]}
         onJump={props.onJump}
@@ -163,7 +166,7 @@ const AppMain: React.VFC<Props> = (props) => {
     case "Setting":
       return (
         <SettingPage
-          accountDict={props.accountDict}
+          getAccount={props.getAccount}
           language={props.language}
           logInState={props.logInState}
           onJump={props.onJump}
@@ -183,7 +186,7 @@ const AppMain: React.VFC<Props> = (props) => {
           language={props.language}
           onJump={props.onJump}
           projectId={props.location.projectId}
-          useProjectDictResult={props.useProjectDictResult}
+          getProject={props.getProject}
           onRequestProjectById={props.onRequestProjectById}
         />
       );
@@ -191,10 +194,10 @@ const AppMain: React.VFC<Props> = (props) => {
   return (
     <HomePage
       topProjectsLoadingState={props.topProjectsLoadingState}
-      useProjectDictResult={props.useProjectDictResult}
-      accountDict={props.accountDict}
+      getAccount={props.getAccount}
       language={props.language}
       logInState={props.logInState}
+      getProject={props.getProject}
       onJump={props.onJump}
       onRequestProjectById={props.onRequestProjectById}
     />

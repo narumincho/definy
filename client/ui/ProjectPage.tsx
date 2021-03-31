@@ -2,12 +2,13 @@ import * as React from "react";
 import * as d from "../../data";
 import { AccountCard } from "./AccountCard";
 import { Image } from "../container/Image";
-import { UseProjectDictResult } from "../hook/projectDict";
 import { css } from "@emotion/css";
 
 export type Props = {
   readonly projectId: d.ProjectId;
-  readonly useProjectDictResult: UseProjectDictResult;
+  getProject: (
+    projectId: d.ProjectId
+  ) => d.ResourceState<d.Project> | undefined;
   readonly onJump: (urlData: d.UrlData) => void;
   readonly language: d.Language;
   readonly onRequestProjectById: (projectId: d.ProjectId) => void;
@@ -18,9 +19,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
     props.onRequestProjectById(props.projectId);
   }, []);
 
-  const projectState = props.useProjectDictResult.getProjectStateByProjectId(
-    props.projectId
-  );
+  const projectState = props.getProject(props.projectId);
   if (projectState === undefined) {
     return <div>プロジェクトリクエスト準備前</div>;
   }

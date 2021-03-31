@@ -3,16 +3,19 @@ import * as d from "../../data";
 import { ProjectCard, ProjectCardSkeleton } from "./ProjectCard";
 import { Link } from "./Link";
 import type { TopProjectsLoadingState } from "./App";
-import { UseProjectDictResult } from "../hook/projectDict";
 import { css } from "@emotion/css";
 
 export type Props = {
   topProjectsLoadingState: TopProjectsLoadingState;
-  useProjectDictResult: UseProjectDictResult;
+  getProject: (
+    projectId: d.ProjectId
+  ) => d.ResourceState<d.Project> | undefined;
+  getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
   onJump: (urlData: d.UrlData) => void;
   language: d.Language;
   logInState: d.LogInState;
-  accountDict: ReadonlyMap<d.AccountId, d.Account>;
   onRequestProjectById: (projectId: d.ProjectId) => void;
 };
 
@@ -31,7 +34,7 @@ export const HomePage: React.VFC<Props> = (props) => {
       <HomeLinkList jumpHandler={props.onJump} language={props.language} />
       <TopProjectList
         topProjectsLoadingState={props.topProjectsLoadingState}
-        useProjectDictResult={props.useProjectDictResult}
+        getProject={props.getProject}
         jumpHandler={props.onJump}
         language={props.language}
         onRequestProjectById={props.onRequestProjectById}
@@ -75,7 +78,9 @@ const HomeLinkList: React.VFC<{
 
 const TopProjectList: React.VFC<{
   topProjectsLoadingState: TopProjectsLoadingState;
-  useProjectDictResult: UseProjectDictResult;
+  getProject: (
+    projectId: d.ProjectId
+  ) => d.ResourceState<d.Project> | undefined;
   jumpHandler: (urlData: d.UrlData) => void;
   language: d.Language;
   onRequestProjectById: (projectId: d.ProjectId) => void;
@@ -147,7 +152,7 @@ const TopProjectList: React.VFC<{
             <ProjectCard
               key={projectId}
               projectId={projectId}
-              useProjectDictResult={props.useProjectDictResult}
+              getProject={props.getProject}
               onJump={props.jumpHandler}
               language={props.language}
               onRequestProjectById={props.onRequestProjectById}
