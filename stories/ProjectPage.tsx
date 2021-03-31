@@ -15,7 +15,10 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<Props, "language" | "onJump">;
+type ControlAndActionProps = Pick<
+  Props,
+  "language" | "onJump" | "onRequestProjectById"
+>;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <ProjectPage
@@ -23,6 +26,7 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     useProjectDictResult={useProjectDictResult}
     projectId={project1Id}
     onJump={props.onJump}
+    onRequestProjectById={props.onRequestProjectById}
   />
 );
 Default.args = {

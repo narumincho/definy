@@ -1,33 +1,29 @@
 import * as React from "react";
 import * as d from "../../data";
-import { OptionsObject, SnackbarKey, SnackbarMessage } from "notistack";
-import { api } from "../api";
 import { timeFromDate } from "../../core/util";
 
 export type UseProjectDictResult = {
-  /** キャッシュからプロジェクト内容を取得する `no effect` */
-  getProjectByProjectId: (projectId: d.ProjectId) => d.Project | undefined;
   /** キャッシュからプロジェクトの取得状況と内容を取得する `no effect` */
   getProjectStateByProjectId: (
     projectId: d.ProjectId
   ) => d.ResourceState<d.Project> | undefined;
-  /** プロジェクトの内容を設定する */
-  setProject: (projectId: d.ProjectId, project: d.WithTime<d.Project>) => void;
-  /** 1度に複数のプロジェクトを設定する */
-  setProjectList: (
+  /** 指定したプロジェクトの取得状態をリクエスト中にする  */
+  setRequesting: (projectId: d.ProjectId) => void;
+  /** 指定したプロジェクトの取得状態を不明(オフラインで取得不可など)にする  */
+  setUnknown: (projectId: d.ProjectId) => void;
+  /**
+   * 指定したプロジェクトの取得状態を削除された, または存在しないにする
+   * @param getTime 存在がないことが確認された時刻
+   */
+  setDeleted: (projectId: d.ProjectId, getTime: d.Time) => void;
+  /** 指定したプロジェクトの取得状態を取得済みにしてキャッシュに保存する. useAPI 内や, storybookで使う */
+  setLoaded: (
     projectList: ReadonlyArray<d.IdAndData<d.ProjectId, d.Project>>,
     getTime: d.Time
   ) => void;
-  /** サーバーからプロジェクトを取得する */
-  requestProjectById: (projectId: d.ProjectId) => void;
 };
 
-export const useProjectDict = (
-  enqueueSnackbar: (
-    message: SnackbarMessage,
-    options?: OptionsObject | undefined
-  ) => SnackbarKey
-): UseProjectDictResult => {
+export const useProjectDict = (): UseProjectDictResult => {
   const [projectDict, setProjectDict] = React.useState<
     ReadonlyMap<d.ProjectId, d.ResourceState<d.Project>>
   >(new Map());
@@ -41,26 +37,23 @@ export const useProjectDict = (
     );
   };
 
-  const setProject = (
-    projectId: d.ProjectId,
-    projectWithTime: d.WithTime<d.Project>
-  ): void => {
-    setProjectState(projectId, d.ResourceState.Loaded(projectWithTime));
-  };
-
   return {
-    getProjectByProjectId: (projectId) => {
-      const resource = projectDict.get(projectId);
-      if (resource !== undefined && resource._ === "Loaded") {
-        return resource.dataWithTime.data;
-      }
-      return undefined;
-    },
     getProjectStateByProjectId: (projectId) => {
       return projectDict.get(projectId);
     },
-    setProject,
-    setProjectList: (projectList, getTime) => {
+    setRequesting: (projectId) => {
+      setProjectState(projectId, d.ResourceState.Requesting());
+    },
+    setUnknown: (projectId) => {
+      setProjectState(
+        projectId,
+        d.ResourceState.Unknown(timeFromDate(new Date()))
+      );
+    },
+    setDeleted: (projectId, getTime) => {
+      setProjectState(projectId, d.ResourceState.Deleted(getTime));
+    },
+    setLoaded: (projectList, getTime) => {
       setProjectDict((oldProjectDict) => {
         const dict = new Map(oldProjectDict);
         for (const projectIdAndData of projectList) {
@@ -70,38 +63,6 @@ export const useProjectDict = (
           );
         }
         return dict;
-      });
-    },
-    requestProjectById: (projectId) => {
-      setProjectState(projectId, d.ResourceState.Requesting());
-      api.getProject(projectId).then((response) => {
-        if (response._ === "Nothing") {
-          enqueueSnackbar("プロジェクトの取得に失敗しました", {
-            variant: "error",
-          });
-          setProjectState(
-            projectId,
-            d.ResourceState.Unknown(timeFromDate(new Date()))
-          );
-          return;
-        }
-        if (response.value.data._ === "Nothing") {
-          enqueueSnackbar("プロジェクトが存在しなかった", {
-            variant: "error",
-          });
-          setProjectState(
-            projectId,
-            d.ResourceState.Unknown(response.value.getTime)
-          );
-          return;
-        }
-        setProjectState(
-          projectId,
-          d.ResourceState.Loaded({
-            data: response.value.data.value,
-            getTime: response.value.getTime,
-          })
-        );
       });
     },
   };

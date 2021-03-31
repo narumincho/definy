@@ -29,11 +29,12 @@ export type Props = {
   language: d.Language;
   logInState: d.LogInState;
   accountDict: ReadonlyMap<d.AccountId, d.Account>;
+  createProjectState: CreateProjectState;
   onJump: (urlData: d.UrlData) => void;
   onLogInButtonClick: () => void;
   onLogOutButtonClick: () => void;
   onCreateProject: (projectName: string) => void;
-  createProjectState: CreateProjectState;
+  onRequestProjectById: (projectId: d.ProjectId) => void;
 };
 
 export const App: React.VFC<Props> = (props) => {
@@ -183,6 +184,7 @@ const AppMain: React.VFC<Props> = (props) => {
           onJump={props.onJump}
           projectId={props.location.projectId}
           useProjectDictResult={props.useProjectDictResult}
+          onRequestProjectById={props.onRequestProjectById}
         />
       );
   }
@@ -194,6 +196,7 @@ const AppMain: React.VFC<Props> = (props) => {
       language={props.language}
       logInState={props.logInState}
       onJump={props.onJump}
+      onRequestProjectById={props.onRequestProjectById}
     />
   );
 };

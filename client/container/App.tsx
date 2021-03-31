@@ -48,7 +48,7 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
     setCreateProjectState,
   ] = React.useState<CreateProjectState>({ _: "none" });
   const { enqueueSnackbar } = useSnackbar();
-  const useProjectDictResult = useProjectDict(enqueueSnackbar);
+  const useProjectDictResult = useProjectDict();
 
   const setAccount = (accountId: d.AccountId, account: d.Account): void => {
     setAccountDict((beforeDict) => new Map(beforeDict).set(accountId, account));
@@ -101,6 +101,42 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
       case "VerifyingAccountToken":
         return logInState.accountToken;
     }
+  };
+
+  const requestProjectById = (projectId: d.ProjectId): void => {
+    const projectState = useProjectDictResult.getProjectStateByProjectId(
+      projectId
+    );
+    /** 一度取得したプロジェクトはリロードするまで再取得しない */
+    if (projectState !== undefined) {
+      return;
+    }
+    useProjectDictResult.setRequesting(projectId);
+    api.getProject(projectId).then((response) => {
+      if (response._ === "Nothing") {
+        enqueueSnackbar("プロジェクトの取得に失敗しました", {
+          variant: "error",
+        });
+        useProjectDictResult.setUnknown(projectId);
+        return;
+      }
+      if (response.value.data._ === "Nothing") {
+        enqueueSnackbar("プロジェクトが存在しなかった", {
+          variant: "error",
+        });
+        useProjectDictResult.setDeleted(projectId, response.value.getTime);
+        return;
+      }
+      useProjectDictResult.setLoaded(
+        [
+          {
+            id: projectId,
+            data: response.value.data.value,
+          },
+        ],
+        response.value.getTime
+      );
+    });
   };
 
   const createProject = (projectName: string): void => {
@@ -159,7 +195,7 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
         _: "loaded",
         projectIdList: response.value.data.map((project) => project.id),
       });
-      useProjectDictResult.setProjectList(
+      useProjectDictResult.setLoaded(
         response.value.data,
         response.value.getTime
       );
@@ -229,6 +265,7 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
       createProjectState={createProjectState}
       onLogOutButtonClick={logOut}
       onCreateProject={createProject}
+      onRequestProjectById={requestProjectById}
     />
   );
 };

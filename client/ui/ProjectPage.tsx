@@ -10,19 +10,30 @@ export type Props = {
   readonly useProjectDictResult: UseProjectDictResult;
   readonly onJump: (urlData: d.UrlData) => void;
   readonly language: d.Language;
+  readonly onRequestProjectById: (projectId: d.ProjectId) => void;
 };
 
 export const ProjectPage: React.VFC<Props> = (props) => {
   React.useEffect(() => {
-    props.useProjectDictResult.requestProjectById(props.projectId);
+    props.onRequestProjectById(props.projectId);
   }, []);
 
-  const project = props.useProjectDictResult.getProjectByProjectId(
+  const projectState = props.useProjectDictResult.getProjectStateByProjectId(
     props.projectId
   );
-  if (project === undefined) {
-    return <div>プロジェクト読込中</div>;
+  if (projectState === undefined) {
+    return <div>プロジェクトリクエスト準備前</div>;
   }
+  if (projectState._ === "Deleted") {
+    return <div>存在しないプロジェクト</div>;
+  }
+  if (projectState._ === "Unknown") {
+    return <div>取得に失敗しました</div>;
+  }
+  if (projectState._ === "Requesting") {
+    return <div>取得中</div>;
+  }
+  const project = projectState.dataWithTime.data;
   return (
     <div
       className={css({

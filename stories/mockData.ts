@@ -27,15 +27,12 @@ export const project2: d.Project = {
 };
 
 export const useProjectDictResult: UseProjectDictResult = {
-  getProjectByProjectId: (option) => {
-    action("getProjectByProjectId")(option);
-    return project1;
-  },
   getProjectStateByProjectId: (option) => {
     action("getProjectStateByProjectId")(option);
     return undefined;
   },
-  requestProjectById: action("requestProjectById"),
-  setProject: action("setProject"),
-  setProjectList: action("setProjectList"),
+  setDeleted: action("project-setDeleted"),
+  setUnknown: action("project-setUnknown"),
+  setLoaded: action("project-setLoaded"),
+  setRequesting: action("project-setRequesting"),
 };

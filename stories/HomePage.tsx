@@ -28,7 +28,10 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<Props, "language" | "onJump">;
+type ControlAndActionProps = Pick<
+  Props,
+  "language" | "onJump" | "onRequestProjectById"
+>;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <HomePage
@@ -38,6 +41,7 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     onJump={props.onJump}
     useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "none" }}
+    onRequestProjectById={props.onRequestProjectById}
   />
 );
 Default.args = {
@@ -69,6 +73,7 @@ export const LoggedIn: Story<ControlAndActionProps> = (props) => (
     onJump={props.onJump}
     useProjectDictResult={useProjectDictResult}
     topProjectsLoadingState={{ _: "none" }}
+    onRequestProjectById={props.onRequestProjectById}
   />
 );
 LoggedIn.args = {

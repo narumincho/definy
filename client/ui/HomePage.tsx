@@ -1,7 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
 import { ProjectCard, ProjectCardSkeleton } from "./ProjectCard";
-import { Header } from "./Header";
 import { Link } from "./Link";
 import type { TopProjectsLoadingState } from "./App";
 import { UseProjectDictResult } from "../hook/projectDict";
@@ -14,6 +13,7 @@ export type Props = {
   language: d.Language;
   logInState: d.LogInState;
   accountDict: ReadonlyMap<d.AccountId, d.Account>;
+  onRequestProjectById: (projectId: d.ProjectId) => void;
 };
 
 export const HomePage: React.VFC<Props> = (props) => {
@@ -34,6 +34,7 @@ export const HomePage: React.VFC<Props> = (props) => {
         useProjectDictResult={props.useProjectDictResult}
         jumpHandler={props.onJump}
         language={props.language}
+        onRequestProjectById={props.onRequestProjectById}
       />
       {props.logInState._ === "LoggedIn" ? (
         <CreateProjectButton language={props.language} onJump={props.onJump} />
@@ -77,6 +78,7 @@ const TopProjectList: React.VFC<{
   useProjectDictResult: UseProjectDictResult;
   jumpHandler: (urlData: d.UrlData) => void;
   language: d.Language;
+  onRequestProjectById: (projectId: d.ProjectId) => void;
 }> = (props) => {
   switch (props.topProjectsLoadingState._) {
     case "none":
@@ -148,6 +150,7 @@ const TopProjectList: React.VFC<{
               useProjectDictResult={props.useProjectDictResult}
               onJump={props.jumpHandler}
               language={props.language}
+              onRequestProjectById={props.onRequestProjectById}
             />
           ))}
         </div>

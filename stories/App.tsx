@@ -14,7 +14,11 @@ import { fullScreen } from "../.storybook/decorators";
 
 type ControlAndActionProps = Pick<
   Props,
-  "onJump" | "onLogInButtonClick" | "language" | "onCreateProject"
+  | "onJump"
+  | "onLogInButtonClick"
+  | "language"
+  | "onCreateProject"
+  | "onRequestProjectById"
 >;
 
 const argTypes: Record<
@@ -53,6 +57,7 @@ export const None: Story<ControlAndActionProps> = (props) => (
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
+    onRequestProjectById={props.onRequestProjectById}
   />
 );
 
@@ -69,6 +74,7 @@ export const Loading: Story<ControlAndActionProps> = (props) => (
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
+    onRequestProjectById={props.onRequestProjectById}
   />
 );
 
@@ -85,6 +91,7 @@ export const LoadedEmpty: Story<ControlAndActionProps> = (props) => (
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
+    onRequestProjectById={props.onRequestProjectById}
   />
 );
 
@@ -101,6 +108,7 @@ export const Loaded: Story<ControlAndActionProps> = (props) => (
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
+    onRequestProjectById={props.onRequestProjectById}
   />
 );
 
@@ -120,6 +128,7 @@ export const Loaded2: Story<ControlAndActionProps> = (props) => (
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
+    onRequestProjectById={props.onRequestProjectById}
   />
 );
 
@@ -136,6 +145,7 @@ export const RequestingLogInUrl: Story<ControlAndActionProps> = (props) => (
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
+    onRequestProjectById={props.onRequestProjectById}
   />
 );
 
@@ -152,5 +162,6 @@ export const JumpingToLogInPage: Story<ControlAndActionProps> = (props) => (
     onLogInButtonClick={props.onLogInButtonClick}
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
+    onRequestProjectById={props.onRequestProjectById}
   />
 );
