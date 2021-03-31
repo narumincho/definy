@@ -6,9 +6,12 @@ import { css } from "@emotion/css";
 
 export type Props = {
   readonly projectId: d.ProjectId;
-  getProject: (
+  readonly getProject: (
     projectId: d.ProjectId
   ) => d.ResourceState<d.Project> | undefined;
+  readonly getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
   readonly onJump: (urlData: d.UrlData) => void;
   readonly language: d.Language;
   readonly onRequestProjectById: (projectId: d.ProjectId) => void;
@@ -79,6 +82,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           language={props.language}
           onJump={props.onJump}
           accountId={project.createAccountId}
+          getAccount={props.getAccount}
         />
       </div>
     </div>

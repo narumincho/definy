@@ -187,6 +187,7 @@ const AppMain: React.VFC<Props> = (props) => {
           onJump={props.onJump}
           projectId={props.location.projectId}
           getProject={props.getProject}
+          getAccount={props.getAccount}
           onRequestProjectById={props.onRequestProjectById}
         />
       );

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { AccountCard, Props } from "../client/ui/AccountCard";
 import { Meta, Story } from "@storybook/react";
-import { account1Id } from "./mockData";
+import { account1Id, getAccount } from "./mockData";
 import { fullScreen } from "../.storybook/decorators";
 
 const meta: Meta = {
@@ -21,5 +21,6 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     onJump={props.onJump}
     accountId={account1Id}
+    getAccount={getAccount}
   />
 );
