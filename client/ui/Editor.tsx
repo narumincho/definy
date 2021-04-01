@@ -22,7 +22,7 @@ export type Item = {
 };
 
 export type Props = {
-  readonly headItem: { typeAndValue: TypeAndValue };
+  readonly headItem: Item;
   readonly items: ReadonlyArray<Item>;
 };
 
@@ -50,61 +50,162 @@ export const Editor: React.VFC<Props> = (props) => {
       className={css({
         display: "grid",
         gridTemplateColumns: "1fr 300px",
+        height: "100%",
       })}
     >
-      <div>
+      <SelectionView
+        selection={selection}
+        onChangeSelection={setSelection}
+        headItem={props.headItem}
+        items={props.items}
+      />
+      <DetailView
+        selection={selection}
+        headItem={props.headItem}
+        items={props.items}
+      />
+    </div>
+  );
+};
+
+const SelectionView: React.VFC<{
+  readonly selection: Selection;
+  readonly onChangeSelection: (selection: Selection) => void;
+  readonly headItem: { typeAndValue: TypeAndValue };
+  readonly items: ReadonlyArray<Item>;
+}> = (props) => {
+  return (
+    <div>
+      <div
+        className={css({
+          display: "flex",
+          borderWidth: 2,
+          borderStyle: "solid",
+          borderColor: props.selection.tag === "head" ? "red" : "transparent",
+        })}
+        onClick={() => {
+          props.onChangeSelection({ tag: "head" });
+        }}
+      >
+        <ValueView typeAndValue={props.headItem.typeAndValue} isBig />
+      </div>
+      {props.items.map((item, index) => (
         <div
+          key={item.name}
           className={css({
-            display: "flex",
+            padding: 8,
             borderWidth: 2,
             borderStyle: "solid",
-            borderColor: selection.tag === "head" ? "red" : "transparent",
+            borderColor:
+              props.selection.tag === "content" &&
+              props.selection.index === index
+                ? "red"
+                : "transparent",
           })}
           onClick={() => {
-            setSelection({ tag: "head" });
+            props.onChangeSelection({ tag: "content", index });
           }}
         >
-          <ValueView typeAndValue={props.headItem.typeAndValue} isBig />
-        </div>
-        {props.items.map((item, index) => (
           <div
-            key={item.name}
             className={css({
-              padding: 8,
-              borderWidth: 2,
-              borderStyle: "solid",
-              borderColor:
-                selection.tag === "content" && selection.index === index
-                  ? "red"
-                  : "transparent",
+              display: "flex",
+              gap: 16,
+              alignItems: "center",
             })}
-            onClick={() => {
-              setSelection({ tag: "content", index });
-            }}
           >
             <div
               className={css({
-                display: "flex",
-                gap: 16,
-                alignItems: "center",
+                fontSize: 24,
               })}
             >
-              <div
-                className={css({
-                  fontSize: 24,
-                })}
-              >
-                {item.name}
-              </div>
-              <TypeView typeAndValue={item.typeAndValue} />
+              {item.name}
             </div>
-            <ValueView typeAndValue={item.typeAndValue} />
+            <TypeView typeAndValue={item.typeAndValue} />
           </div>
-        ))}
-      </div>
-      <div>DetailView</div>
+          <ValueView typeAndValue={item.typeAndValue} />
+        </div>
+      ))}
     </div>
   );
+};
+
+const DetailView: React.VFC<{
+  readonly selection: Selection;
+  readonly headItem: Item;
+  readonly items: ReadonlyArray<Item>;
+}> = (props) => {
+  switch (props.selection.tag) {
+    case "none":
+      return (
+        <div
+          className={css({
+            height: "100%",
+            overflowX: "hidden",
+            overflowY: "scroll",
+          })}
+        >
+          選択しているものはない
+        </div>
+      );
+    case "head":
+      return (
+        <div
+          className={css({
+            height: "100%",
+            overflowX: "hidden",
+            overflowY: "scroll",
+          })}
+        >
+          <div
+            className={css({
+              display: "flex",
+              gap: 16,
+              alignItems: "center",
+            })}
+          >
+            <div
+              className={css({
+                fontSize: 24,
+              })}
+            >
+              {props.headItem.name}
+            </div>
+            <TypeView typeAndValue={props.headItem.typeAndValue} />
+          </div>
+          <ValueView typeAndValue={props.headItem.typeAndValue} />
+        </div>
+      );
+    case "content": {
+      const item = props.items[props.selection.index];
+      return (
+        <div
+          className={css({
+            height: "100%",
+            overflowX: "hidden",
+            overflowY: "scroll",
+          })}
+        >
+          <div
+            className={css({
+              display: "flex",
+              gap: 16,
+              alignItems: "center",
+            })}
+          >
+            <div
+              className={css({
+                fontSize: 24,
+              })}
+            >
+              {item.name}
+            </div>
+            <TypeView typeAndValue={item.typeAndValue} />
+          </div>
+          <ValueView typeAndValue={item.typeAndValue} />
+        </div>
+      );
+    }
+  }
 };
 
 const TypeView: React.VFC<{ typeAndValue: TypeAndValue }> = (props) => {

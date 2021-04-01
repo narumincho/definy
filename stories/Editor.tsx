@@ -14,7 +14,10 @@ export default meta;
 
 export const Project: Story<never> = () => (
   <Editor
-    headItem={{ typeAndValue: { type: "text", value: "やあ" } }}
+    headItem={{
+      name: "プロジェクト名",
+      typeAndValue: { type: "text", value: "やあ" },
+    }}
     items={[
       {
         name: "作成者",
@@ -38,7 +41,10 @@ export const Project: Story<never> = () => (
 
 export const TypePart: Story<never> = () => (
   <Editor
-    headItem={{ typeAndValue: { type: "text", value: "Location" } }}
+    headItem={{
+      name: "名前",
+      typeAndValue: { type: "text", value: "Location" },
+    }}
     items={[
       {
         name: "description",
@@ -62,6 +68,13 @@ export const TypePart: Story<never> = () => (
           type: "select",
           valueList: ["Product", "Sum", "Kernel"],
           index: 1,
+        },
+      },
+      {
+        name: "使用しているところ",
+        typeAndValue: {
+          type: "text",
+          value: "使用しているところのリストを表示したい",
         },
       },
     ]}
