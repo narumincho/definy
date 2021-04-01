@@ -45,6 +45,42 @@ export const Editor: React.VFC<Props> = (props) => {
   const [selection, setSelection] = React.useState<Selection>({
     tag: "none",
   });
+  React.useEffect(() => {
+    const handleKeyEvent = (event: KeyboardEvent) => {
+      switch (event.code) {
+        case "ArrowUp": {
+          setSelection((oldSelection) => {
+            if (oldSelection.tag === "content") {
+              if (oldSelection.index <= 0) {
+                return { tag: "head" };
+              }
+              return { tag: "content", index: oldSelection.index - 1 };
+            }
+            return oldSelection;
+          });
+          return;
+        }
+        case "ArrowDown": {
+          setSelection((oldSelection) => {
+            if (oldSelection.tag === "head") {
+              return { tag: "content", index: 0 };
+            }
+            if (oldSelection.tag === "content") {
+              return {
+                tag: "content",
+                index: Math.min(oldSelection.index + 1, props.items.length - 1),
+              };
+            }
+            return oldSelection;
+          });
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKeyEvent);
+    return () => {
+      document.removeEventListener("keydown", handleKeyEvent);
+    };
+  }, []);
   return (
     <div
       className={css({
