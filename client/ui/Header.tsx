@@ -38,7 +38,6 @@ export const Header: React.VFC<Props> = (props) => {
           color: "#b9d09b",
           fontSize: 32,
           lineHeight: 1,
-          fontFamily: "Hack",
           alignItems: "center",
         }}
         urlData={{

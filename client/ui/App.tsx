@@ -139,7 +139,6 @@ const LoadingBox: React.VFC<{ message: string }> = (props) => (
         padding: 8,
         backgroundColor: "#333",
         color: "#ddd",
-        fontFamily: "Hack",
       })}
     >
       Definy
