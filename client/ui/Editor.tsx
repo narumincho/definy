@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
+import { AccountCard } from "./AccountCard";
 import { Image } from "../container/Image";
 import { css } from "@emotion/css";
 
@@ -16,11 +17,19 @@ export type TypeAndValue =
       type: "select";
       valueList: ReadonlyArray<string>;
       index: number;
+    }
+  | {
+      type: "image";
+      alternativeText: string;
+      value: d.ImageHash;
+    }
+  | {
+      type: "account";
+      value: d.AccountId;
     };
 
 export type Item = {
   name: string;
-  iconHash?: d.ImageHash;
   typeAndValue: TypeAndValue;
 };
 
@@ -32,6 +41,11 @@ export type HeadItem = {
 export type Props = {
   readonly headItem: HeadItem;
   readonly items: ReadonlyArray<Item>;
+  readonly getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
+  readonly language: d.Language;
+  readonly onJump: (urlData: d.UrlData) => void;
 };
 
 type Selection =
@@ -105,11 +119,17 @@ export const Editor: React.VFC<Props> = (props) => {
         onChangeSelection={setSelection}
         headItem={props.headItem}
         items={props.items}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
       />
       <DetailView
         selection={selection}
         headItem={props.headItem}
         items={props.items}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
       />
     </div>
   );
@@ -120,12 +140,18 @@ const SelectionView: React.VFC<{
   readonly onChangeSelection: (selection: Selection) => void;
   readonly headItem: HeadItem;
   readonly items: ReadonlyArray<Item>;
+  readonly getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
+  readonly language: d.Language;
+  readonly onJump: (urlData: d.UrlData) => void;
 }> = (props) => {
   return (
     <div
       className={css({
         display: "grid",
         gap: 4,
+        alignContent: "start",
       })}
     >
       <div
@@ -169,6 +195,9 @@ const SelectionView: React.VFC<{
           }}
           item={props.headItem.item}
           isHead
+          getAccount={props.getAccount}
+          language={props.language}
+          onJump={props.onJump}
         />
       </div>
       {props.items.map((item, index) => (
@@ -181,6 +210,9 @@ const SelectionView: React.VFC<{
             props.onChangeSelection({ tag: "content", index });
           }}
           item={item}
+          getAccount={props.getAccount}
+          language={props.language}
+          onJump={props.onJump}
         />
       ))}
     </div>
@@ -188,10 +220,15 @@ const SelectionView: React.VFC<{
 };
 
 const ItemView: React.VFC<{
-  isSelect: boolean;
-  onSelect: () => void;
-  item: Item;
-  isHead?: boolean;
+  readonly isSelect: boolean;
+  readonly onSelect: () => void;
+  readonly item: Item;
+  readonly isHead?: boolean;
+  readonly getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
+  readonly language: d.Language;
+  readonly onJump: (urlData: d.UrlData) => void;
 }> = (props) => {
   return (
     <div
@@ -227,7 +264,13 @@ const ItemView: React.VFC<{
           </div>
         )}
       </div>
-      <ValueView typeAndValue={props.item.typeAndValue} isBig={props.isHead} />
+      <ValueView
+        typeAndValue={props.item.typeAndValue}
+        isBig={props.isHead}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+      />
     </div>
   );
 };
@@ -236,6 +279,11 @@ const DetailView: React.VFC<{
   readonly selection: Selection;
   readonly headItem: HeadItem;
   readonly items: ReadonlyArray<Item>;
+  readonly getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
+  language: d.Language;
+  readonly onJump: (urlData: d.UrlData) => void;
 }> = (props) => {
   switch (props.selection.tag) {
     case "none":
@@ -275,7 +323,12 @@ const DetailView: React.VFC<{
             </div>
             <TypeView typeAndValue={props.headItem.item.typeAndValue} />
           </div>
-          <ValueView typeAndValue={props.headItem.item.typeAndValue} />
+          <ValueView
+            typeAndValue={props.headItem.item.typeAndValue}
+            getAccount={props.getAccount}
+            language={props.language}
+            onJump={props.onJump}
+          />
         </div>
       );
     case "icon":
@@ -316,7 +369,12 @@ const DetailView: React.VFC<{
             </div>
             <TypeView typeAndValue={item.typeAndValue} />
           </div>
-          <ValueView typeAndValue={item.typeAndValue} />
+          <ValueView
+            typeAndValue={item.typeAndValue}
+            getAccount={props.getAccount}
+            language={props.language}
+            onJump={props.onJump}
+          />
         </div>
       );
     }
@@ -356,12 +414,38 @@ const TypeView: React.VFC<{ typeAndValue: TypeAndValue }> = (props) => {
           {props.typeAndValue.valueList.join(",")})
         </div>
       );
+    case "image":
+      return (
+        <div
+          className={css({
+            color: "#ddd",
+          })}
+        >
+          image
+        </div>
+      );
+    case "account":
+      return (
+        <div
+          className={css({
+            color: "#ddd",
+          })}
+        >
+          account
+        </div>
+      );
   }
 };
 
-const ValueView: React.VFC<{ typeAndValue: TypeAndValue; isBig?: boolean }> = (
-  props
-) => {
+const ValueView: React.VFC<{
+  typeAndValue: TypeAndValue;
+  isBig?: boolean;
+  getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
+  language: d.Language;
+  onJump: (urlData: d.UrlData) => void;
+}> = (props) => {
   switch (props.typeAndValue.type) {
     case "number":
       return (
@@ -380,6 +464,31 @@ const ValueView: React.VFC<{ typeAndValue: TypeAndValue; isBig?: boolean }> = (
         <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
           {props.typeAndValue.valueList[props.typeAndValue.index]}
         </div>
+      );
+    case "image":
+      return (
+        <div
+          className={css({
+            display: "grid",
+            justifyContent: "center",
+          })}
+        >
+          <Image
+            imageHash={props.typeAndValue.value}
+            alt={props.typeAndValue.alternativeText}
+            width={512}
+            height={316.5}
+          />
+        </div>
+      );
+    case "account":
+      return (
+        <AccountCard
+          accountId={props.typeAndValue.value}
+          getAccount={props.getAccount}
+          language={props.language}
+          onJump={props.onJump}
+        />
       );
   }
 };

@@ -1,8 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
-import { AccountCard } from "./AccountCard";
-import { Image } from "../container/Image";
-import { css } from "@emotion/css";
+import { Editor } from "./Editor";
 
 export type Props = {
   readonly projectId: d.ProjectId;
@@ -37,54 +35,34 @@ export const ProjectPage: React.VFC<Props> = (props) => {
   }
   const project = projectState.dataWithTime.data;
   return (
-    <div
-      className={css({
-        display: "grid",
-        overflowY: "scroll",
-        alignContent: "start",
-        gap: 8,
-        padding: 16,
-        height: "100%",
-      })}
-    >
-      <div
-        className={css({
-          fontSize: 32,
-          display: "grid",
-          gridAutoFlow: "column",
-          alignItems: "center",
-          justifyContent: "start",
-          gap: 8,
-        })}
-      >
-        <Image
-          alt={`${project.name}のアイコン`}
-          width={32}
-          height={32}
-          imageHash={project.iconHash}
-        />
-        {project.name}
-      </div>
-      <div
-        className={css({
-          display: "grid",
-          justifyContent: "center",
-          gap: 8,
-        })}
-      >
-        <Image
-          alt={`${project.name}の画像`}
-          width={512}
-          height={316.5}
-          imageHash={project.imageHash}
-        />
-        <AccountCard
-          language={props.language}
-          onJump={props.onJump}
-          accountId={project.createAccountId}
-          getAccount={props.getAccount}
-        />
-      </div>
-    </div>
+    <Editor
+      headItem={{
+        item: {
+          name: "プロジェクト名",
+          typeAndValue: { type: "text", value: project.name },
+        },
+        iconHash: project.iconHash,
+      }}
+      items={[
+        {
+          name: "画像",
+          typeAndValue: {
+            type: "image",
+            alternativeText: project.name + "の画像",
+            value: project.imageHash,
+          },
+        },
+        {
+          name: "作成者",
+          typeAndValue: {
+            type: "account",
+            value: project.createAccountId,
+          },
+        },
+      ]}
+      onJump={props.onJump}
+      getAccount={props.getAccount}
+      language={props.language}
+    />
   );
 };
