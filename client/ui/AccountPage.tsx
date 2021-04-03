@@ -44,6 +44,13 @@ export const AccountPage: React.VFC<Props> = (props) => {
             value: account.introduction,
           },
         },
+        {
+          name: "作成日時",
+          typeAndValue: {
+            type: "time",
+            value: account.createTime,
+          },
+        },
       ]}
       language={props.language}
       onJump={props.onJump}

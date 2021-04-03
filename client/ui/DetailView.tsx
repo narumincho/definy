@@ -3,6 +3,7 @@ import * as d from "../../data";
 import type { HeadItem, Item, Selection, TypeAndValue } from "./Editor";
 import { AccountCard } from "./AccountCard";
 import { Image } from "../container/Image";
+import { TimeDetail } from "./TimeCard";
 import { css } from "@emotion/css";
 
 export type Props = {
@@ -166,6 +167,16 @@ const TypeView: React.VFC<{ typeAndValue: TypeAndValue }> = (props) => {
           account
         </div>
       );
+    case "time":
+      return (
+        <div
+          className={css({
+            color: "#ddd",
+          })}
+        >
+          time
+        </div>
+      );
   }
 };
 
@@ -222,5 +233,7 @@ const ValueView: React.VFC<{
           onJump={props.onJump}
         />
       );
+    case "time":
+      return <TimeDetail time={props.typeAndValue.value} />;
   }
 };

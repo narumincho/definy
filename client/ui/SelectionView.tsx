@@ -3,6 +3,7 @@ import * as d from "../../data";
 import type { HeadItem, Item, Selection, TypeAndValue } from "./Editor";
 import { Image } from "../container/Image";
 import { Link } from "./Link";
+import { TimeCard } from "./TimeCard";
 import { css } from "@emotion/css";
 
 export type Props = {
@@ -241,6 +242,8 @@ const ValueView: React.VFC<{
         </div>
       );
     }
+    case "time":
+      return <TimeCard time={props.typeAndValue.value} />;
   }
 };
 

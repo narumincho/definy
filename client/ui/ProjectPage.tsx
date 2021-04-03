@@ -59,6 +59,13 @@ export const ProjectPage: React.VFC<Props> = (props) => {
             value: project.createAccountId,
           },
         },
+        {
+          name: "作成日時",
+          typeAndValue: {
+            type: "time",
+            value: project.createTime,
+          },
+        },
       ]}
       onJump={props.onJump}
       getAccount={props.getAccount}

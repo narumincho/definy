@@ -26,6 +26,10 @@ export type TypeAndValue =
   | {
       type: "account";
       value: d.AccountId;
+    }
+  | {
+      type: "time";
+      value: d.Time;
     };
 
 export type Item = {
