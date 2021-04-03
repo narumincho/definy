@@ -3,6 +3,7 @@ import * as d from "../data";
 import { Editor, Props } from "../client/ui/Editor";
 import { Meta, Story } from "@storybook/react";
 import { ArgType } from "@storybook/addons";
+import { getAccount } from "./mockData";
 
 const argTypes: Record<string, ArgType> = {};
 
@@ -13,7 +14,9 @@ const meta: Meta = {
 };
 export default meta;
 
-export const Project: Story<never> = () => (
+type ControlAndActionProps = Pick<Props, "language" | "onJump">;
+
+export const Project: Story<ControlAndActionProps> = (props) => (
   <Editor
     headItem={{
       item: {
@@ -44,10 +47,13 @@ export const Project: Story<never> = () => (
         typeAndValue: { type: "text", value: "ffffffff" },
       },
     ]}
+    getAccount={getAccount}
+    language={props.language}
+    onJump={props.onJump}
   />
 );
 
-export const TypePart: Story<never> = () => (
+export const TypePart: Story<ControlAndActionProps> = (props) => (
   <Editor
     headItem={{
       item: {
@@ -88,5 +94,8 @@ export const TypePart: Story<never> = () => (
         },
       },
     ]}
+    getAccount={getAccount}
+    language={props.language}
+    onJump={props.onJump}
   />
 );
