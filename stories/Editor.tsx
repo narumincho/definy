@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as d from "../data";
 import { Editor, Props } from "../client/ui/Editor";
 import { Meta, Story } from "@storybook/react";
 import { ArgType } from "@storybook/addons";
@@ -15,8 +16,11 @@ export default meta;
 export const Project: Story<never> = () => (
   <Editor
     headItem={{
-      name: "プロジェクト名",
-      typeAndValue: { type: "text", value: "やあ" },
+      item: {
+        name: "プロジェクト名",
+        typeAndValue: { type: "text", value: "やあ" },
+      },
+      iconHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
     }}
     items={[
       {
@@ -35,6 +39,10 @@ export const Project: Story<never> = () => (
         name: "型パーツ",
         typeAndValue: { type: "text", value: "型パーツのリストを表示したい" },
       },
+      {
+        name: "プロジェクトID",
+        typeAndValue: { type: "text", value: "ffffffff" },
+      },
     ]}
   />
 );
@@ -42,8 +50,10 @@ export const Project: Story<never> = () => (
 export const TypePart: Story<never> = () => (
   <Editor
     headItem={{
-      name: "名前",
-      typeAndValue: { type: "text", value: "Location" },
+      item: {
+        name: "name",
+        typeAndValue: { type: "text", value: "Location" },
+      },
     }}
     items={[
       {

@@ -1,4 +1,6 @@
 import * as React from "react";
+import * as d from "../../data";
+import { Image } from "../container/Image";
 import { css } from "@emotion/css";
 
 export type TypeAndValue =
@@ -18,11 +20,17 @@ export type TypeAndValue =
 
 export type Item = {
   name: string;
+  iconHash?: d.ImageHash;
   typeAndValue: TypeAndValue;
 };
 
+export type HeadItem = {
+  item: Item;
+  iconHash?: d.ImageHash;
+};
+
 export type Props = {
-  readonly headItem: Item;
+  readonly headItem: HeadItem;
   readonly items: ReadonlyArray<Item>;
 };
 
@@ -107,67 +115,103 @@ export const Editor: React.VFC<Props> = (props) => {
 const SelectionView: React.VFC<{
   readonly selection: Selection;
   readonly onChangeSelection: (selection: Selection) => void;
-  readonly headItem: { typeAndValue: TypeAndValue };
+  readonly headItem: HeadItem;
   readonly items: ReadonlyArray<Item>;
 }> = (props) => {
   return (
-    <div>
+    <div
+      className={css({
+        display: "grid",
+        gap: 4,
+      })}
+    >
+      <div
+        className={css({
+          display: "grid",
+          gridAutoFlow: "column",
+          alignItems: "center",
+          gridTemplateColumns: "32px 1fr",
+        })}
+      >
+        {props.headItem.iconHash === undefined ? (
+          <></>
+        ) : (
+          <Image
+            width={32}
+            height={32}
+            alt="タイトルのアイコン"
+            imageHash={props.headItem.iconHash}
+          />
+        )}
+        <ItemView
+          isSelect={props.selection.tag === "head"}
+          onSelect={() => {
+            props.onChangeSelection({ tag: "head" });
+          }}
+          item={props.headItem.item}
+          isHead
+        />
+      </div>
+      {props.items.map((item, index) => (
+        <ItemView
+          key={item.name}
+          isSelect={
+            props.selection.tag === "content" && props.selection.index === index
+          }
+          onSelect={() => {
+            props.onChangeSelection({ tag: "content", index });
+          }}
+          item={item}
+        />
+      ))}
+    </div>
+  );
+};
+
+const ItemView: React.VFC<{
+  isSelect: boolean;
+  onSelect: () => void;
+  item: Item;
+  isHead?: boolean;
+}> = (props) => {
+  return (
+    <div
+      className={css({
+        padding: 4,
+        borderWidth: 2,
+        borderStyle: "solid",
+        borderColor: props.isSelect ? "red" : "#222",
+        borderRadius: 8,
+      })}
+      onClick={() => {
+        props.onSelect();
+      }}
+    >
       <div
         className={css({
           display: "flex",
-          borderWidth: 2,
-          borderStyle: "solid",
-          borderColor: props.selection.tag === "head" ? "red" : "transparent",
+          gap: 16,
+          alignItems: "center",
         })}
-        onClick={() => {
-          props.onChangeSelection({ tag: "head" });
-        }}
       >
-        <ValueView typeAndValue={props.headItem.typeAndValue} isBig />
-      </div>
-      {props.items.map((item, index) => (
         <div
-          key={item.name}
           className={css({
-            padding: 8,
-            borderWidth: 2,
-            borderStyle: "solid",
-            borderColor:
-              props.selection.tag === "content" &&
-              props.selection.index === index
-                ? "red"
-                : "transparent",
+            fontWeight: "bold",
+            fontSize: props.isHead ? 12 : 16,
+            color: "#ddd",
           })}
-          onClick={() => {
-            props.onChangeSelection({ tag: "content", index });
-          }}
         >
-          <div
-            className={css({
-              display: "flex",
-              gap: 16,
-              alignItems: "center",
-            })}
-          >
-            <div
-              className={css({
-                fontSize: 24,
-              })}
-            >
-              {item.name}
-            </div>
-            <TypeView typeAndValue={item.typeAndValue} />
-          </div>
-          <ValueView typeAndValue={item.typeAndValue} />
+          {props.item.name}
         </div>
-      ))}
+      </div>
+      <ValueView typeAndValue={props.item.typeAndValue} isBig={props.isHead} />
     </div>
   );
 };
 
 const DetailView: React.VFC<{
   readonly selection: Selection;
-  readonly headItem: Item;
+  readonly headItem: HeadItem;
   readonly items: ReadonlyArray<Item>;
 }> = (props) => {
   switch (props.selection.tag) {
@@ -204,11 +248,11 @@ const DetailView: React.VFC<{
                 fontSize: 24,
               })}
             >
-              {props.headItem.name}
+              {props.headItem.item.name}
             </div>
-            <TypeView typeAndValue={props.headItem.typeAndValue} />
+            <TypeView typeAndValue={props.headItem.item.typeAndValue} />
           </div>
-          <ValueView typeAndValue={props.headItem.typeAndValue} />
+          <ValueView typeAndValue={props.headItem.item.typeAndValue} />
         </div>
       );
     case "content": {
