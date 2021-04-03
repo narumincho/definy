@@ -39,6 +39,9 @@ type Selection =
       tag: "none";
     }
   | {
+      tag: "icon";
+    }
+  | {
       tag: "head";
     }
   | {
@@ -129,19 +132,35 @@ const SelectionView: React.VFC<{
         className={css({
           display: "grid",
           gridAutoFlow: "column",
-          alignItems: "center",
-          gridTemplateColumns: "32px 1fr",
+          gridTemplateColumns:
+            props.headItem.iconHash === undefined ? "1fr" : "auto 1fr",
         })}
       >
         {props.headItem.iconHash === undefined ? (
           <></>
         ) : (
-          <Image
-            width={32}
-            height={32}
-            alt="タイトルのアイコン"
-            imageHash={props.headItem.iconHash}
-          />
+          <div
+            className={css({
+              display: "grid",
+              placeContent: "center",
+              borderWidth: 2,
+              borderStyle: "solid",
+              borderColor: props.selection.tag === "icon" ? "red" : "#222",
+              borderRadius: 8,
+            })}
+            onClick={() => {
+              props.onChangeSelection({
+                tag: "icon",
+              });
+            }}
+          >
+            <Image
+              width={32}
+              height={32}
+              alt="タイトルのアイコン"
+              imageHash={props.headItem.iconHash}
+            />
+          </div>
         )}
         <ItemView
           isSelect={props.selection.tag === "head"}
@@ -194,15 +213,19 @@ const ItemView: React.VFC<{
           alignItems: "center",
         })}
       >
-        <div
-          className={css({
-            fontWeight: "bold",
-            fontSize: props.isHead ? 12 : 16,
-            color: "#ddd",
-          })}
-        >
-          {props.item.name}
-        </div>
+        {props.isHead ? (
+          <></>
+        ) : (
+          <div
+            className={css({
+              fontWeight: "bold",
+              fontSize: 16,
+              color: "#ddd",
+            })}
+          >
+            {props.item.name}
+          </div>
+        )}
       </div>
       <ValueView typeAndValue={props.item.typeAndValue} isBig={props.isHead} />
     </div>
@@ -253,6 +276,18 @@ const DetailView: React.VFC<{
             <TypeView typeAndValue={props.headItem.item.typeAndValue} />
           </div>
           <ValueView typeAndValue={props.headItem.item.typeAndValue} />
+        </div>
+      );
+    case "icon":
+      return (
+        <div
+          className={css({
+            height: "100%",
+            overflowX: "hidden",
+            overflowY: "scroll",
+          })}
+        >
+          アイコンを選択してる
         </div>
       );
     case "content": {
