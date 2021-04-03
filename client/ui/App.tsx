@@ -2,6 +2,7 @@ import * as React from "react";
 import * as d from "../../data";
 import { css, keyframes } from "@emotion/css";
 import { AboutPage } from "./AboutPage";
+import { AccountPage } from "./AccountPage";
 import { CreateProjectPage } from "./CreateProjectPage";
 import { Header } from "./Header";
 import { HomePage } from "./HomePage";
@@ -188,6 +189,15 @@ const AppMain: React.VFC<Props> = (props) => {
           getProject={props.getProject}
           getAccount={props.getAccount}
           onRequestProjectById={props.onRequestProjectById}
+        />
+      );
+    case "Account":
+      return (
+        <AccountPage
+          language={props.language}
+          onJump={props.onJump}
+          accountId={props.location.accountId}
+          getAccount={props.getAccount}
         />
       );
   }
