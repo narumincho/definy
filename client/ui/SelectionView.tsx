@@ -25,6 +25,10 @@ export const SelectionView: React.VFC<Props> = (props) => {
         display: "grid",
         gap: 4,
         alignContent: "start",
+        padding: 8,
+        height: "100%",
+        overflowX: "hidden",
+        overflowY: "scroll",
       })}
     >
       <div
