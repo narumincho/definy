@@ -23,22 +23,23 @@ export type CreateProjectState =
       _: "none";
     };
 export type Props = {
-  topProjectsLoadingState: TopProjectsLoadingState;
-  getProject: (
+  readonly topProjectsLoadingState: TopProjectsLoadingState;
+  readonly getProject: (
     projectId: d.ProjectId
   ) => d.ResourceState<d.Project> | undefined;
-  getAccount: (
+  readonly getAccount: (
     accountId: d.AccountId
   ) => d.ResourceState<d.Account> | undefined;
-  location: d.Location;
-  language: d.Language;
-  logInState: d.LogInState;
-  createProjectState: CreateProjectState;
-  onJump: (urlData: d.UrlData) => void;
-  onLogInButtonClick: () => void;
-  onLogOutButtonClick: () => void;
-  onCreateProject: (projectName: string) => void;
-  onRequestProjectById: (projectId: d.ProjectId) => void;
+  readonly location: d.Location;
+  readonly language: d.Language;
+  readonly logInState: d.LogInState;
+  readonly createProjectState: CreateProjectState;
+  readonly onJump: (urlData: d.UrlData) => void;
+  readonly onLogInButtonClick: () => void;
+  readonly onLogOutButtonClick: () => void;
+  readonly onCreateProject: (projectName: string) => void;
+  readonly onRequestProjectById: (projectId: d.ProjectId) => void;
+  readonly onRequestAccount: (accountId: d.AccountId) => void;
 };
 
 export const App: React.VFC<Props> = (props) => {
@@ -189,6 +190,7 @@ const AppMain: React.VFC<Props> = (props) => {
           getProject={props.getProject}
           getAccount={props.getAccount}
           onRequestProjectById={props.onRequestProjectById}
+          onRequestAccount={props.onRequestAccount}
         />
       );
     case "Account":
@@ -198,6 +200,7 @@ const AppMain: React.VFC<Props> = (props) => {
           onJump={props.onJump}
           accountId={props.location.accountId}
           getAccount={props.getAccount}
+          onRequestAccount={props.onRequestAccount}
         />
       );
   }

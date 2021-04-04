@@ -13,6 +13,7 @@ type ControlAndActionProps = Pick<
   | "language"
   | "onCreateProject"
   | "onRequestProjectById"
+  | "onRequestAccount"
 >;
 
 const argTypes: Record<
@@ -50,6 +51,7 @@ export const None: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    onRequestAccount={props.onRequestAccount}
     getAccount={getAccount}
     getProject={getProject}
   />
@@ -67,6 +69,7 @@ export const Loading: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    onRequestAccount={props.onRequestAccount}
     getAccount={getAccount}
     getProject={getProject}
   />
@@ -84,6 +87,7 @@ export const LoadedEmpty: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    onRequestAccount={props.onRequestAccount}
     getAccount={getAccount}
     getProject={getProject}
   />
@@ -101,6 +105,7 @@ export const Loaded: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    onRequestAccount={props.onRequestAccount}
     getAccount={getAccount}
     getProject={getProject}
   />
@@ -121,6 +126,7 @@ export const Loaded2: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    onRequestAccount={props.onRequestAccount}
     getAccount={getAccount}
     getProject={getProject}
   />
@@ -138,6 +144,7 @@ export const RequestingLogInUrl: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    onRequestAccount={props.onRequestAccount}
     getAccount={getAccount}
     getProject={getProject}
   />
@@ -155,6 +162,7 @@ export const JumpingToLogInPage: Story<ControlAndActionProps> = (props) => (
     onLogOutButtonClick={props.onLogInButtonClick}
     onCreateProject={props.onCreateProject}
     onRequestProjectById={props.onRequestProjectById}
+    onRequestAccount={props.onRequestAccount}
     getAccount={getAccount}
     getProject={getProject}
   />

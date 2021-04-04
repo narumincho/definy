@@ -50,6 +50,7 @@ export type Props = {
   ) => d.ResourceState<d.Account> | undefined;
   readonly language: d.Language;
   readonly onJump: (urlData: d.UrlData) => void;
+  readonly onRequestAccount: (accountId: d.AccountId) => void;
 };
 
 export type Selection =
@@ -134,6 +135,7 @@ export const Editor: React.VFC<Props> = (props) => {
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
+        onRequestAccount={props.onRequestAccount}
       />
     </div>
   );

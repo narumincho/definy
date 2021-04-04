@@ -565,7 +565,7 @@ export const apiFunc: {
       state
     ).toString();
   },
-  getUserByAccountToken: async (accountToken) => {
+  getAccountByAccountToken: async (accountToken) => {
     const accessTokenHash: AccessTokenHash = hashAccessToken(accountToken);
     const querySnapshot = await database
       .collection("user")
@@ -588,7 +588,7 @@ export const apiFunc: {
       },
     });
   },
-  getUser: async (userId) => {
+  getAccount: async (userId) => {
     const documentSnapshot = await database
       .collection("user")
       .doc(userId)
@@ -610,7 +610,7 @@ export const apiFunc: {
   createProject: async (
     parameter: d.CreateProjectParameter
   ): Promise<d.Maybe<d.IdAndData<d.ProjectId, d.Project>>> => {
-    const userDataMaybe = await apiFunc.getUserByAccountToken(
+    const userDataMaybe = await apiFunc.getAccountByAccountToken(
       parameter.accountToken
     );
     switch (userDataMaybe._) {
@@ -708,7 +708,7 @@ export const apiFunc: {
     };
   },
   addTypePart: async (accountTokenAndProjectId: d.AccountTokenAndProjectId) => {
-    const userPromise = apiFunc.getUserByAccountToken(
+    const userPromise = apiFunc.getAccountByAccountToken(
       accountTokenAndProjectId.accountToken
     );
     const projectPromise = apiFunc.getProject(
@@ -739,7 +739,9 @@ export const apiFunc: {
         data: d.Maybe.Nothing(),
       };
     }
-    const account = await apiFunc.getUserByAccountToken(request.accountToken);
+    const account = await apiFunc.getAccountByAccountToken(
+      request.accountToken
+    );
     // アカウントトークンが不正だった
     if (account._ === "Nothing") {
       return {
@@ -792,7 +794,9 @@ export const apiFunc: {
         data: d.Maybe.Nothing(),
       };
     }
-    const account = await apiFunc.getUserByAccountToken(request.accountToken);
+    const account = await apiFunc.getAccountByAccountToken(
+      request.accountToken
+    );
     // アカウントトークンが不正だった
     if (account._ === "Nothing") {
       return {
@@ -851,7 +855,9 @@ export const apiFunc: {
         data: d.Maybe.Nothing(),
       };
     }
-    const account = await apiFunc.getUserByAccountToken(request.accountToken);
+    const account = await apiFunc.getAccountByAccountToken(
+      request.accountToken
+    );
     // アカウントトークンが不正だった
     if (account._ === "Nothing") {
       return {

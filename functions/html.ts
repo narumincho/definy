@@ -59,7 +59,7 @@ const getCoverImageUrlAndDescription = async (
       };
     }
     case "Account": {
-      const user = await lib.apiFunc.getUser(location.accountId);
+      const user = await lib.apiFunc.getAccount(location.accountId);
       if (user.data._ === "Just") {
         return {
           imageUrl: commonUrl.pngFileUrl(user.data.value.imageHash),

@@ -14,7 +14,10 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<Props, "language" | "onJump">;
+type ControlAndActionProps = Pick<
+  Props,
+  "language" | "onJump" | "onRequestAccount"
+>;
 
 export const Project: Story<ControlAndActionProps> = (props) => (
   <Editor
@@ -50,6 +53,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
     getAccount={getAccount}
     language={props.language}
     onJump={props.onJump}
+    onRequestAccount={props.onRequestAccount}
   />
 );
 
@@ -97,5 +101,6 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
     getAccount={getAccount}
     language={props.language}
     onJump={props.onJump}
+    onRequestAccount={props.onRequestAccount}
   />
 );

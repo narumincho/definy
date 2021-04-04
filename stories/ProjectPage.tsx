@@ -17,7 +17,7 @@ export default meta;
 
 type ControlAndActionProps = Pick<
   Props,
-  "language" | "onJump" | "onRequestProjectById"
+  "language" | "onJump" | "onRequestProjectById" | "onRequestAccount"
 >;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
@@ -28,6 +28,7 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     projectId={project1Id}
     onJump={props.onJump}
     onRequestProjectById={props.onRequestProjectById}
+    onRequestAccount={props.onRequestAccount}
   />
 );
 Default.args = {

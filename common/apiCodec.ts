@@ -15,7 +15,7 @@ export const requestLogInUrl: ApiCodec<
   response: d.String.codec,
 };
 
-export const getUserByAccountToken: ApiCodec<
+export const getAccountByAccountToken: ApiCodec<
   d.AccountToken,
   d.Maybe<d.IdAndData<d.AccountId, d.Account>>
 > = {
@@ -25,7 +25,10 @@ export const getUserByAccountToken: ApiCodec<
   ),
 };
 
-export const getUser: ApiCodec<d.AccountId, d.WithTime<d.Maybe<d.Account>>> = {
+export const getAccount: ApiCodec<
+  d.AccountId,
+  d.WithTime<d.Maybe<d.Account>>
+> = {
   request: d.AccountId.codec,
   response: d.WithTime.codec(d.Maybe.codec(d.Account.codec)),
 };

@@ -15,6 +15,7 @@ export type Props = {
   ) => d.ResourceState<d.Account> | undefined;
   readonly language: d.Language;
   readonly onJump: (urlData: d.UrlData) => void;
+  readonly onRequestAccount: (accountId: d.AccountId) => void;
 };
 
 export const DetailView: React.VFC<Props> = (props) => {
@@ -61,6 +62,7 @@ export const DetailView: React.VFC<Props> = (props) => {
             getAccount={props.getAccount}
             language={props.language}
             onJump={props.onJump}
+            onRequestAccount={props.onRequestAccount}
           />
         </div>
       );
@@ -107,6 +109,7 @@ export const DetailView: React.VFC<Props> = (props) => {
             getAccount={props.getAccount}
             language={props.language}
             onJump={props.onJump}
+            onRequestAccount={props.onRequestAccount}
           />
         </div>
       );
@@ -188,6 +191,7 @@ const ValueView: React.VFC<{
   ) => d.ResourceState<d.Account> | undefined;
   language: d.Language;
   onJump: (urlData: d.UrlData) => void;
+  onRequestAccount: (accountId: d.AccountId) => void;
 }> = (props) => {
   switch (props.typeAndValue.type) {
     case "number":
@@ -231,6 +235,7 @@ const ValueView: React.VFC<{
           getAccount={props.getAccount}
           language={props.language}
           onJump={props.onJump}
+          onRequestAccount={props.onRequestAccount}
         />
       );
     case "time":

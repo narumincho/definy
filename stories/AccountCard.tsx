@@ -14,7 +14,10 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<Props, "language" | "onJump">;
+type ControlAndActionProps = Pick<
+  Props,
+  "language" | "onJump" | "onRequestAccount"
+>;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <AccountCard
@@ -22,5 +25,6 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     onJump={props.onJump}
     accountId={account1Id}
     getAccount={getAccount}
+    onRequestAccount={props.onRequestAccount}
   />
 );

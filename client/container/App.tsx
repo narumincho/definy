@@ -127,6 +127,36 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
     });
   };
 
+  const requestAccount = (accountId: d.AccountId): void => {
+    const accountState = accountDict.get(accountId);
+    /** 一度取得したアカウントはリロードするまで再取得しない */
+    if (accountState !== undefined) {
+      return;
+    }
+    accountDict.setRequesting(accountId);
+    api.getAccount(accountId).then((response) => {
+      if (response._ === "Nothing") {
+        enqueueSnackbar("プロジェクトの取得に失敗しました", {
+          variant: "error",
+        });
+        accountDict.setUnknown(accountId);
+        return;
+      }
+      if (response.value.data._ === "Nothing") {
+        enqueueSnackbar("プロジェクトが存在しなかった", {
+          variant: "error",
+        });
+        accountDict.setDeleted(accountId, response.value.getTime);
+        return;
+      }
+      accountDict.setLoaded(
+        accountId,
+        response.value.data.value,
+        response.value.getTime
+      );
+    });
+  };
+
   const createProject = (projectName: string): void => {
     const accountToken = getAccountToken();
     if (accountToken === undefined) {
@@ -251,6 +281,7 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
       onLogOutButtonClick={logOut}
       onCreateProject={createProject}
       onRequestProjectById={requestProjectById}
+      onRequestAccount={requestAccount}
     />
   );
 };
@@ -265,7 +296,7 @@ const verifyingAccountTokenAndGetAccount = (
   ) => SnackbarKey
 ) => {
   setLogInState(d.LogInState.VerifyingAccountToken(accountToken));
-  api.getUserByAccountToken(accountToken).then((response) => {
+  api.getAccountByAccountToken(accountToken).then((response) => {
     if (response._ === "Nothing" || response.value._ === "Nothing") {
       enqueueSnackbar("ログインに失敗しました", {
         variant: "error",

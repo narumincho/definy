@@ -13,6 +13,7 @@ export type Props = {
   readonly onJump: (urlData: d.UrlData) => void;
   readonly language: d.Language;
   readonly onRequestProjectById: (projectId: d.ProjectId) => void;
+  readonly onRequestAccount: (accountId: d.AccountId) => void;
 };
 
 export const ProjectPage: React.VFC<Props> = (props) => {
@@ -77,6 +78,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
       onJump={props.onJump}
       getAccount={props.getAccount}
       language={props.language}
+      onRequestAccount={props.onRequestAccount}
     />
   );
 };

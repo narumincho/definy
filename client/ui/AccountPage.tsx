@@ -9,9 +9,13 @@ export type Props = {
   ) => d.ResourceState<d.Account> | undefined;
   readonly language: d.Language;
   readonly onJump: (urlData: d.UrlData) => void;
+  readonly onRequestAccount: (accountId: d.AccountId) => void;
 };
 
 export const AccountPage: React.VFC<Props> = (props) => {
+  React.useEffect(() => {
+    props.onRequestAccount(props.accountId);
+  }, []);
   const accountResource = props.getAccount(props.accountId);
   if (accountResource === undefined) {
     return <div>アカウント読み込み準備前</div>;
@@ -61,6 +65,7 @@ export const AccountPage: React.VFC<Props> = (props) => {
       ]}
       language={props.language}
       onJump={props.onJump}
+      onRequestAccount={props.onRequestAccount}
     />
   );
 };
