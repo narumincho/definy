@@ -10,7 +10,7 @@ import { css } from "@emotion/css";
 export type Props = {
   readonly selection: Selection;
   readonly onChangeSelection: (selection: Selection) => void;
-  readonly headItem: HeadItem;
+  readonly headItem?: HeadItem;
   readonly items: ReadonlyArray<Item>;
   readonly getAccount: (
     accountId: d.AccountId
@@ -36,54 +36,58 @@ export const SelectionView: React.VFC<Props> = (props) => {
         overflowY: "scroll",
       })}
     >
-      <div
-        className={css({
-          display: "grid",
-          gridAutoFlow: "column",
-          gridTemplateColumns:
-            props.headItem.iconHash === undefined ? "1fr" : "auto 1fr",
-        })}
-      >
-        {props.headItem.iconHash === undefined ? (
-          <></>
-        ) : (
-          <div
-            className={css({
-              display: "grid",
-              placeContent: "center",
-              borderWidth: 2,
-              borderStyle: "solid",
-              borderColor: props.selection.tag === "icon" ? "red" : "#222",
-              borderRadius: 8,
-            })}
-            onClick={() => {
-              props.onChangeSelection({
-                tag: "icon",
-              });
+      {props.headItem === undefined ? (
+        <></>
+      ) : (
+        <div
+          className={css({
+            display: "grid",
+            gridAutoFlow: "column",
+            gridTemplateColumns:
+              props.headItem.iconHash === undefined ? "1fr" : "auto 1fr",
+          })}
+        >
+          {props.headItem.iconHash === undefined ? (
+            <></>
+          ) : (
+            <div
+              className={css({
+                display: "grid",
+                placeContent: "center",
+                borderWidth: 2,
+                borderStyle: "solid",
+                borderColor: props.selection.tag === "icon" ? "red" : "#222",
+                borderRadius: 8,
+              })}
+              onClick={() => {
+                props.onChangeSelection({
+                  tag: "icon",
+                });
+              }}
+            >
+              <Image
+                width={32}
+                height={32}
+                alt="タイトルのアイコン"
+                imageHash={props.headItem.iconHash}
+              />
+            </div>
+          )}
+          <ItemView
+            isSelect={props.selection.tag === "head"}
+            onSelect={() => {
+              props.onChangeSelection({ tag: "head" });
             }}
-          >
-            <Image
-              width={32}
-              height={32}
-              alt="タイトルのアイコン"
-              imageHash={props.headItem.iconHash}
-            />
-          </div>
-        )}
-        <ItemView
-          isSelect={props.selection.tag === "head"}
-          onSelect={() => {
-            props.onChangeSelection({ tag: "head" });
-          }}
-          item={props.headItem.item}
-          isHead
-          getAccount={props.getAccount}
-          language={props.language}
-          onJump={props.onJump}
-          getProject={props.getProject}
-          onRequestProject={props.onRequestProject}
-        />
-      </div>
+            item={props.headItem.item}
+            isHead
+            getAccount={props.getAccount}
+            language={props.language}
+            onJump={props.onJump}
+            getProject={props.getProject}
+            onRequestProject={props.onRequestProject}
+          />
+        </div>
+      )}
       {props.items.map((item, index) => (
         <ItemView
           key={item.name}

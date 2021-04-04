@@ -79,6 +79,8 @@ export const ProjectPage: React.VFC<Props> = (props) => {
       getAccount={props.getAccount}
       language={props.language}
       onRequestAccount={props.onRequestAccount}
+      getProject={props.getProject}
+      onRequestProject={props.onRequestProjectById}
     />
   );
 };

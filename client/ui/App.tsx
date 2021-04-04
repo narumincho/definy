@@ -200,7 +200,9 @@ const AppMain: React.VFC<Props> = (props) => {
           onJump={props.onJump}
           accountId={props.location.accountId}
           getAccount={props.getAccount}
+          getProject={props.getProject}
           onRequestAccount={props.onRequestAccount}
+          onRequestProject={props.onRequestProjectById}
         />
       );
   }

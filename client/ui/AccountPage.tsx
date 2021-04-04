@@ -7,9 +7,13 @@ export type Props = {
   readonly getAccount: (
     accountId: d.AccountId
   ) => d.ResourceState<d.Account> | undefined;
+  readonly getProject: (
+    projectId: d.ProjectId
+  ) => d.ResourceState<d.Project> | undefined;
   readonly language: d.Language;
   readonly onJump: (urlData: d.UrlData) => void;
   readonly onRequestAccount: (accountId: d.AccountId) => void;
+  readonly onRequestProject: (projectId: d.ProjectId) => void;
 };
 
 export const AccountPage: React.VFC<Props> = (props) => {
@@ -66,6 +70,8 @@ export const AccountPage: React.VFC<Props> = (props) => {
       language={props.language}
       onJump={props.onJump}
       onRequestAccount={props.onRequestAccount}
+      getProject={props.getProject}
+      onRequestProject={props.onRequestProject}
     />
   );
 };

@@ -111,12 +111,6 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
 
 export const Home: Story<ControlAndActionProps> = (props) => (
   <Editor
-    headItem={{
-      item: {
-        name: "ホーム",
-        typeAndValue: { type: "text", value: "https://definy.app" },
-      },
-    }}
     items={[
       {
         name: "検索",

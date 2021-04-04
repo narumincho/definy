@@ -8,7 +8,7 @@ import { css } from "@emotion/css";
 
 export type Props = {
   readonly selection: Selection;
-  readonly headItem: HeadItem;
+  readonly headItem?: HeadItem;
   readonly items: ReadonlyArray<Item>;
   readonly getAccount: (
     accountId: d.AccountId
@@ -33,6 +33,19 @@ export const DetailView: React.VFC<Props> = (props) => {
         </div>
       );
     case "head":
+      if (props.headItem === undefined) {
+        return (
+          <div
+            className={css({
+              height: "100%",
+              overflowX: "hidden",
+              overflowY: "scroll",
+            })}
+          >
+            headItemがないのに選択している
+          </div>
+        );
+      }
       return (
         <div
           className={css({

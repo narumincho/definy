@@ -47,7 +47,7 @@ export type HeadItem = {
 };
 
 export type Props = {
-  readonly headItem: HeadItem;
+  readonly headItem?: HeadItem;
   readonly items: ReadonlyArray<Item>;
   readonly getAccount: (
     accountId: d.AccountId
@@ -90,6 +90,9 @@ export const Editor: React.VFC<Props> = (props) => {
           setSelection((oldSelection) => {
             if (oldSelection.tag === "content") {
               if (oldSelection.index <= 0) {
+                if (props.headItem === undefined) {
+                  return { tag: "content", index: 0 };
+                }
                 return { tag: "head" };
               }
               return { tag: "content", index: oldSelection.index - 1 };
