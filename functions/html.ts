@@ -26,7 +26,6 @@ export const html = async (
       styleUrlList: [],
       twitterCard: "SummaryCard",
       language: urlData.language,
-      manifestPath: ["manifest.json"],
       url: normalizedUrl,
       style: globalStyle,
       bodyClass: "dummy",
