@@ -2,8 +2,8 @@ import * as React from "react";
 import * as d from "../data";
 import { Editor, Props } from "../client/ui/Editor";
 import { Meta, Story } from "@storybook/react";
+import { getAccount, getProject, project1Id, project2Id } from "./mockData";
 import { ArgType } from "@storybook/addons";
-import { getAccount } from "./mockData";
 
 const argTypes: Record<string, ArgType> = {};
 
@@ -16,7 +16,7 @@ export default meta;
 
 type ControlAndActionProps = Pick<
   Props,
-  "language" | "onJump" | "onRequestAccount"
+  "language" | "onJump" | "onRequestAccount" | "onRequestProject"
 >;
 
 export const Project: Story<ControlAndActionProps> = (props) => (
@@ -54,6 +54,8 @@ export const Project: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     onJump={props.onJump}
     onRequestAccount={props.onRequestAccount}
+    onRequestProject={props.onRequestProject}
+    getProject={getProject}
   />
 );
 
@@ -102,5 +104,34 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     onJump={props.onJump}
     onRequestAccount={props.onRequestAccount}
+    onRequestProject={props.onRequestProject}
+    getProject={getProject}
+  />
+);
+
+export const Home: Story<ControlAndActionProps> = (props) => (
+  <Editor
+    headItem={{
+      item: {
+        name: "ホーム",
+        typeAndValue: { type: "text", value: "https://definy.app" },
+      },
+    }}
+    items={[
+      {
+        name: "検索",
+        typeAndValue: { type: "text", value: "検索語句" },
+      },
+      {
+        name: "プロジェクト",
+        typeAndValue: { type: "listProject", value: [project1Id, project2Id] },
+      },
+    ]}
+    getAccount={getAccount}
+    language={props.language}
+    onJump={props.onJump}
+    onRequestAccount={props.onRequestAccount}
+    onRequestProject={props.onRequestProject}
+    getProject={getProject}
   />
 );

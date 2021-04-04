@@ -180,6 +180,16 @@ const TypeView: React.VFC<{ typeAndValue: TypeAndValue }> = (props) => {
           time
         </div>
       );
+    case "listProject":
+      return (
+        <div
+          className={css({
+            color: "#ddd",
+          })}
+        >
+          listProject
+        </div>
+      );
   }
 };
 
@@ -240,5 +250,7 @@ const ValueView: React.VFC<{
       );
     case "time":
       return <TimeDetail time={props.typeAndValue.value} />;
+    case "listProject":
+      return <div>listProject</div>;
   }
 };

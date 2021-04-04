@@ -30,6 +30,10 @@ export type TypeAndValue =
   | {
       type: "time";
       value: d.Time;
+    }
+  | {
+      type: "listProject";
+      value: ReadonlyArray<d.ProjectId>;
     };
 
 export type Item = {
@@ -51,6 +55,10 @@ export type Props = {
   readonly language: d.Language;
   readonly onJump: (urlData: d.UrlData) => void;
   readonly onRequestAccount: (accountId: d.AccountId) => void;
+  readonly getProject: (
+    projectId: d.ProjectId
+  ) => d.ResourceState<d.Project> | undefined;
+  readonly onRequestProject: (projectId: d.ProjectId) => void;
 };
 
 export type Selection =
@@ -127,6 +135,8 @@ export const Editor: React.VFC<Props> = (props) => {
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
+        onRequestProject={props.onRequestProject}
+        getProject={props.getProject}
       />
       <DetailView
         selection={selection}

@@ -3,6 +3,7 @@ import * as d from "../../data";
 import type { HeadItem, Item, Selection, TypeAndValue } from "./Editor";
 import { Image } from "../container/Image";
 import { Link } from "./Link";
+import { ProjectCard } from "./ProjectCard";
 import { TimeCard } from "./TimeCard";
 import { css } from "@emotion/css";
 
@@ -14,8 +15,12 @@ export type Props = {
   readonly getAccount: (
     accountId: d.AccountId
   ) => d.ResourceState<d.Account> | undefined;
+  readonly getProject: (
+    projectId: d.ProjectId
+  ) => d.ResourceState<d.Project> | undefined;
   readonly language: d.Language;
   readonly onJump: (urlData: d.UrlData) => void;
+  readonly onRequestProject: (projectId: d.ProjectId) => void;
 };
 
 export const SelectionView: React.VFC<Props> = (props) => {
@@ -75,6 +80,8 @@ export const SelectionView: React.VFC<Props> = (props) => {
           getAccount={props.getAccount}
           language={props.language}
           onJump={props.onJump}
+          getProject={props.getProject}
+          onRequestProject={props.onRequestProject}
         />
       </div>
       {props.items.map((item, index) => (
@@ -90,6 +97,8 @@ export const SelectionView: React.VFC<Props> = (props) => {
           getAccount={props.getAccount}
           language={props.language}
           onJump={props.onJump}
+          getProject={props.getProject}
+          onRequestProject={props.onRequestProject}
         />
       ))}
     </div>
@@ -106,6 +115,10 @@ const ItemView: React.VFC<{
   ) => d.ResourceState<d.Account> | undefined;
   readonly language: d.Language;
   readonly onJump: (urlData: d.UrlData) => void;
+  readonly getProject: (
+    projectId: d.ProjectId
+  ) => d.ResourceState<d.Project> | undefined;
+  readonly onRequestProject: (projectId: d.ProjectId) => void;
 }> = (props) => {
   return (
     <div
@@ -147,19 +160,25 @@ const ItemView: React.VFC<{
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
       />
     </div>
   );
 };
 
 const ValueView: React.VFC<{
-  typeAndValue: TypeAndValue;
-  isBig?: boolean;
-  getAccount: (
+  readonly typeAndValue: TypeAndValue;
+  readonly isBig?: boolean;
+  readonly getAccount: (
     accountId: d.AccountId
   ) => d.ResourceState<d.Account> | undefined;
-  language: d.Language;
-  onJump: (urlData: d.UrlData) => void;
+  readonly language: d.Language;
+  readonly onJump: (urlData: d.UrlData) => void;
+  readonly getProject: (
+    projectId: d.ProjectId
+  ) => d.ResourceState<d.Project> | undefined;
+  readonly onRequestProject: (projectId: d.ProjectId) => void;
 }> = (props) => {
   switch (props.typeAndValue.type) {
     case "number":
@@ -248,6 +267,29 @@ const ValueView: React.VFC<{
     }
     case "time":
       return <TimeCard time={props.typeAndValue.value} />;
+    case "listProject":
+      return (
+        <div
+          className={css({
+            display: "grid",
+            gridAutoFlow: "column",
+            alignItems: "center",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            padding: 8,
+          })}
+        >
+          {props.typeAndValue.value.map((id) => (
+            <ProjectCard
+              key={id}
+              getProject={props.getProject}
+              projectId={id}
+              language={props.language}
+              onJump={props.onJump}
+              onRequestProjectById={props.onRequestProject}
+            />
+          ))}
+        </div>
+      );
   }
 };
 
