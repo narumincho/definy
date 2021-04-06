@@ -1,54 +1,12 @@
 import * as React from "react";
 import * as d from "../../data";
+import { Product, Selection, selectionUp } from "../editor/selectionAndValue";
 import { DetailView } from "./DetailView";
 import { SelectionView } from "./SelectionView";
 import { css } from "@emotion/css";
 
-export type TypeAndValue =
-  | {
-      type: "text";
-      value: string;
-    }
-  | {
-      type: "number";
-      value: number;
-    }
-  | {
-      type: "select";
-      valueList: ReadonlyArray<string>;
-      index: number;
-    }
-  | {
-      type: "image";
-      alternativeText: string;
-      value: d.ImageHash;
-    }
-  | {
-      type: "account";
-      value: d.AccountId;
-    }
-  | {
-      type: "time";
-      value: d.Time;
-    }
-  | {
-      type: "listProject";
-      value: ReadonlyArray<d.ProjectId>;
-    };
-
-export type Item = {
-  name: string;
-  typeAndValue: TypeAndValue;
-};
-
-export type HeadItem = {
-  item: Item;
-  iconHash?: d.ImageHash;
-};
-
 export type Props = {
-  readonly headItem?: HeadItem;
-  readonly items: ReadonlyArray<Item>;
+  readonly product: Product;
   readonly getAccount: (
     accountId: d.AccountId
   ) => d.ResourceState<d.Account> | undefined;
@@ -61,21 +19,6 @@ export type Props = {
   readonly onRequestProject: (projectId: d.ProjectId) => void;
 };
 
-export type Selection =
-  | {
-      tag: "none";
-    }
-  | {
-      tag: "icon";
-    }
-  | {
-      tag: "head";
-    }
-  | {
-      tag: "content";
-      index: number;
-    };
-
 /**
  * 要素の操作対象を選ぶ, SelectionView, 選択した対象を操作する DetailView を内包する
  */
@@ -87,33 +30,15 @@ export const Editor: React.VFC<Props> = (props) => {
     const handleKeyEvent = (event: KeyboardEvent) => {
       switch (event.code) {
         case "ArrowUp": {
-          setSelection((oldSelection) => {
-            if (oldSelection.tag === "content") {
-              if (oldSelection.index <= 0) {
-                if (props.headItem === undefined) {
-                  return { tag: "content", index: 0 };
-                }
-                return { tag: "head" };
-              }
-              return { tag: "content", index: oldSelection.index - 1 };
-            }
-            return oldSelection;
-          });
+          setSelection((oldSelection) =>
+            selectionUp(oldSelection, props.product)
+          );
           return;
         }
         case "ArrowDown": {
-          setSelection((oldSelection) => {
-            if (oldSelection.tag === "head") {
-              return { tag: "content", index: 0 };
-            }
-            if (oldSelection.tag === "content") {
-              return {
-                tag: "content",
-                index: Math.min(oldSelection.index + 1, props.items.length - 1),
-              };
-            }
-            return oldSelection;
-          });
+          setSelection((oldSelection) =>
+            selectionUp(oldSelection, props.product)
+          );
         }
       }
     };
@@ -133,8 +58,7 @@ export const Editor: React.VFC<Props> = (props) => {
       <SelectionView
         selection={selection}
         onChangeSelection={setSelection}
-        headItem={props.headItem}
-        items={props.items}
+        product={props.product}
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
@@ -143,8 +67,7 @@ export const Editor: React.VFC<Props> = (props) => {
       />
       <DetailView
         selection={selection}
-        headItem={props.headItem}
-        items={props.items}
+        product={props.product}
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}

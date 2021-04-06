@@ -1,6 +1,11 @@
 import * as React from "react";
 import * as d from "../../data";
-import type { HeadItem, Item, Selection, TypeAndValue } from "./Editor";
+import {
+  Item,
+  Product,
+  Selection,
+  TypeAndValue,
+} from "../editor/selectionAndValue";
 import { Image } from "../container/Image";
 import { Link } from "./Link";
 import { ProjectCard } from "./ProjectCard";
@@ -10,8 +15,7 @@ import { css } from "@emotion/css";
 export type Props = {
   readonly selection: Selection;
   readonly onChangeSelection: (selection: Selection) => void;
-  readonly headItem?: HeadItem;
-  readonly items: ReadonlyArray<Item>;
+  readonly product: Product;
   readonly getAccount: (
     accountId: d.AccountId
   ) => d.ResourceState<d.Account> | undefined;
@@ -36,7 +40,7 @@ export const SelectionView: React.VFC<Props> = (props) => {
         overflowY: "scroll",
       })}
     >
-      {props.headItem === undefined ? (
+      {props.product.headItem === undefined ? (
         <></>
       ) : (
         <div
@@ -44,10 +48,12 @@ export const SelectionView: React.VFC<Props> = (props) => {
             display: "grid",
             gridAutoFlow: "column",
             gridTemplateColumns:
-              props.headItem.iconHash === undefined ? "1fr" : "auto 1fr",
+              props.product.headItem.iconHash === undefined
+                ? "1fr"
+                : "auto 1fr",
           })}
         >
-          {props.headItem.iconHash === undefined ? (
+          {props.product.headItem.iconHash === undefined ? (
             <></>
           ) : (
             <div
@@ -69,7 +75,7 @@ export const SelectionView: React.VFC<Props> = (props) => {
                 width={32}
                 height={32}
                 alt="タイトルのアイコン"
-                imageHash={props.headItem.iconHash}
+                imageHash={props.product.headItem.iconHash}
               />
             </div>
           )}
@@ -78,7 +84,7 @@ export const SelectionView: React.VFC<Props> = (props) => {
             onSelect={() => {
               props.onChangeSelection({ tag: "head" });
             }}
-            item={props.headItem.item}
+            item={props.product.headItem}
             isHead
             getAccount={props.getAccount}
             language={props.language}
@@ -88,7 +94,7 @@ export const SelectionView: React.VFC<Props> = (props) => {
           />
         </div>
       )}
-      {props.items.map((item, index) => (
+      {props.product.items.map((item, index) => (
         <ItemView
           key={item.name}
           isSelect={

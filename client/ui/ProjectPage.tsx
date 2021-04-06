@@ -37,44 +37,44 @@ export const ProjectPage: React.VFC<Props> = (props) => {
   const project = projectState.dataWithTime.data;
   return (
     <Editor
-      headItem={{
-        item: {
+      product={{
+        headItem: {
           name: "プロジェクト名",
           typeAndValue: { type: "text", value: project.name },
+          iconHash: project.iconHash,
         },
-        iconHash: project.iconHash,
+        items: [
+          {
+            name: "画像",
+            typeAndValue: {
+              type: "image",
+              alternativeText: project.name + "の画像",
+              value: project.imageHash,
+            },
+          },
+          {
+            name: "作成者",
+            typeAndValue: {
+              type: "account",
+              value: project.createAccountId,
+            },
+          },
+          {
+            name: "作成日時",
+            typeAndValue: {
+              type: "time",
+              value: project.createTime,
+            },
+          },
+          {
+            name: "プロジェクトID",
+            typeAndValue: {
+              type: "text",
+              value: props.projectId,
+            },
+          },
+        ],
       }}
-      items={[
-        {
-          name: "画像",
-          typeAndValue: {
-            type: "image",
-            alternativeText: project.name + "の画像",
-            value: project.imageHash,
-          },
-        },
-        {
-          name: "作成者",
-          typeAndValue: {
-            type: "account",
-            value: project.createAccountId,
-          },
-        },
-        {
-          name: "作成日時",
-          typeAndValue: {
-            type: "time",
-            value: project.createTime,
-          },
-        },
-        {
-          name: "プロジェクトID",
-          typeAndValue: {
-            type: "text",
-            value: props.projectId,
-          },
-        },
-      ]}
       onJump={props.onJump}
       getAccount={props.getAccount}
       language={props.language}

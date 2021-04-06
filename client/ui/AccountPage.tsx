@@ -36,37 +36,37 @@ export const AccountPage: React.VFC<Props> = (props) => {
   const account = accountResource.dataWithTime.data;
   return (
     <Editor
-      headItem={{
-        item: {
+      product={{
+        headItem: {
           typeAndValue: { type: "text", value: account.name },
           name: "アカウント名",
+          iconHash: account.imageHash,
         },
-        iconHash: account.imageHash,
+        items: [
+          {
+            name: "自己紹介文",
+            typeAndValue: {
+              type: "text",
+              value: account.introduction,
+            },
+          },
+          {
+            name: "作成日時",
+            typeAndValue: {
+              type: "time",
+              value: account.createTime,
+            },
+          },
+          {
+            name: "アカウントId",
+            typeAndValue: {
+              type: "text",
+              value: props.accountId,
+            },
+          },
+        ],
       }}
       getAccount={props.getAccount}
-      items={[
-        {
-          name: "自己紹介文",
-          typeAndValue: {
-            type: "text",
-            value: account.introduction,
-          },
-        },
-        {
-          name: "作成日時",
-          typeAndValue: {
-            type: "time",
-            value: account.createTime,
-          },
-        },
-        {
-          name: "アカウントId",
-          typeAndValue: {
-            type: "text",
-            value: props.accountId,
-          },
-        },
-      ]}
       language={props.language}
       onJump={props.onJump}
       onRequestAccount={props.onRequestAccount}

@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
-import type { HeadItem, Item, Selection, TypeAndValue } from "./Editor";
+import { Product, Selection, TypeAndValue } from "../editor/selectionAndValue";
 import { AccountCard } from "./AccountCard";
 import { Image } from "../container/Image";
 import { TimeDetail } from "./TimeCard";
@@ -8,8 +8,7 @@ import { css } from "@emotion/css";
 
 export type Props = {
   readonly selection: Selection;
-  readonly headItem?: HeadItem;
-  readonly items: ReadonlyArray<Item>;
+  readonly product: Product;
   readonly getAccount: (
     accountId: d.AccountId
   ) => d.ResourceState<d.Account> | undefined;
@@ -33,7 +32,7 @@ export const DetailView: React.VFC<Props> = (props) => {
         </div>
       );
     case "head":
-      if (props.headItem === undefined) {
+      if (props.product.headItem === undefined) {
         return (
           <div
             className={css({
@@ -66,12 +65,12 @@ export const DetailView: React.VFC<Props> = (props) => {
                 fontSize: 24,
               })}
             >
-              {props.headItem.item.name}
+              {props.product.headItem.name}
             </div>
-            <TypeView typeAndValue={props.headItem.item.typeAndValue} />
+            <TypeView typeAndValue={props.product.headItem.typeAndValue} />
           </div>
           <ValueView
-            typeAndValue={props.headItem.item.typeAndValue}
+            typeAndValue={props.product.headItem.typeAndValue}
             getAccount={props.getAccount}
             language={props.language}
             onJump={props.onJump}
@@ -92,7 +91,7 @@ export const DetailView: React.VFC<Props> = (props) => {
         </div>
       );
     case "content": {
-      const item = props.items[props.selection.index];
+      const item = props.product.items[props.selection.index];
       return (
         <div
           className={css({
