@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
-import { Product, Selection, TypeAndValue } from "../editor/selectionAndValue";
+import { Product, Selection, Type, Value } from "../editor/selectionAndValue";
 import { AccountCard } from "./AccountCard";
 import { Image } from "../container/Image";
 import { TimeDetail } from "./TimeCard";
@@ -67,10 +67,11 @@ export const DetailView: React.VFC<Props> = (props) => {
             >
               {props.product.headItem.name}
             </div>
-            <TypeView typeAndValue={props.product.headItem.typeAndValue} />
+            <TypeView type={props.product.headItem.type} />
           </div>
           <ValueView
-            typeAndValue={props.product.headItem.typeAndValue}
+            type={props.product.headItem.type}
+            value={props.product.headItem.value}
             getAccount={props.getAccount}
             language={props.language}
             onJump={props.onJump}
@@ -114,10 +115,11 @@ export const DetailView: React.VFC<Props> = (props) => {
             >
               {item.name}
             </div>
-            <TypeView typeAndValue={item.typeAndValue} />
+            <TypeView type={item.type} />
           </div>
           <ValueView
-            typeAndValue={item.typeAndValue}
+            type={item.type}
+            value={item.value}
             getAccount={props.getAccount}
             language={props.language}
             onJump={props.onJump}
@@ -129,8 +131,8 @@ export const DetailView: React.VFC<Props> = (props) => {
   }
 };
 
-const TypeView: React.VFC<{ typeAndValue: TypeAndValue }> = (props) => {
-  switch (props.typeAndValue.type) {
+const TypeView: React.VFC<{ type: Type }> = (props) => {
+  switch (props.type.tag) {
     case "number":
       return (
         <div
@@ -159,7 +161,7 @@ const TypeView: React.VFC<{ typeAndValue: TypeAndValue }> = (props) => {
           })}
         >
           option(
-          {props.typeAndValue.valueList.join(",")})
+          {props.type.valueList.join(",")})
         </div>
       );
     case "image":
@@ -182,6 +184,16 @@ const TypeView: React.VFC<{ typeAndValue: TypeAndValue }> = (props) => {
           account
         </div>
       );
+    case "project":
+      return (
+        <div
+          className={css({
+            color: "#ddd",
+          })}
+        >
+          project
+        </div>
+      );
     case "time":
       return (
         <div
@@ -192,21 +204,23 @@ const TypeView: React.VFC<{ typeAndValue: TypeAndValue }> = (props) => {
           time
         </div>
       );
-    case "listProject":
+    case "list":
       return (
         <div
           className={css({
             color: "#ddd",
           })}
         >
-          listProject
+          list(
+          <TypeView type={props.type.element} />)
         </div>
       );
   }
 };
 
 const ValueView: React.VFC<{
-  typeAndValue: TypeAndValue;
+  type: Type;
+  value: Value;
   isBig?: boolean;
   getAccount: (
     accountId: d.AccountId
@@ -215,54 +229,73 @@ const ValueView: React.VFC<{
   onJump: (urlData: d.UrlData) => void;
   onRequestAccount: (accountId: d.AccountId) => void;
 }> = (props) => {
-  switch (props.typeAndValue.type) {
-    case "number":
-      return (
-        <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
-          {props.typeAndValue.value}
-        </div>
-      );
-    case "text":
-      return (
-        <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
-          {props.typeAndValue.value}
-        </div>
-      );
-    case "select":
-      return (
-        <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
-          {props.typeAndValue.valueList[props.typeAndValue.index]}
-        </div>
-      );
-    case "image":
-      return (
-        <div
-          className={css({
-            display: "grid",
-            justifyContent: "center",
-          })}
-        >
-          <Image
-            imageHash={props.typeAndValue.value}
-            alt={props.typeAndValue.alternativeText}
-            width={512}
-            height={316.5}
-          />
-        </div>
-      );
-    case "account":
-      return (
-        <AccountCard
-          accountId={props.typeAndValue.value}
-          getAccount={props.getAccount}
-          language={props.language}
-          onJump={props.onJump}
-          onRequestAccount={props.onRequestAccount}
-        />
-      );
-    case "time":
-      return <TimeDetail time={props.typeAndValue.value} />;
-    case "listProject":
-      return <div>listProject</div>;
+  if (props.type.tag === "number" && props.value.type === "number") {
+    return (
+      <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
+        {props.value.value}
+      </div>
+    );
   }
+  if (props.type.tag === "text" && props.value.type === "text") {
+    return (
+      <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
+        {props.value.value}
+      </div>
+    );
+  }
+  if (props.type.tag === "select" && props.value.type === "select") {
+    return (
+      <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
+        {props.type.valueList[props.value.index]}
+      </div>
+    );
+  }
+  if (props.type.tag === "image" && props.value.type === "image") {
+    return (
+      <div
+        className={css({
+          display: "grid",
+          justifyContent: "center",
+        })}
+      >
+        <Image
+          imageHash={props.value.value}
+          alt={props.value.alternativeText}
+          width={512}
+          height={316.5}
+        />
+      </div>
+    );
+  }
+  if (props.type.tag === "account" && props.value.type === "account") {
+    return (
+      <AccountCard
+        accountId={props.value.value}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        onRequestAccount={props.onRequestAccount}
+      />
+    );
+  }
+  if (props.type.tag === "project" && props.value.type === "project") {
+    return <div>プロジェクト</div>;
+  }
+  if (props.type.tag === "time" && props.value.type === "time") {
+    return <TimeDetail time={props.value.value} />;
+  }
+  if (props.type.tag === "list" && props.value.type === "list") {
+    return (
+      <div>
+        list / 逆にする, すべて消す, 指定した長さにするなど
+        (Definyの関数をいい感じに使えれば)
+      </div>
+    );
+  }
+  return (
+    <div>
+      値と型が違う! 型{JSON.stringify(props.type)} 値
+      {JSON.stringify(props.value)}
+    </div>
+  );
 };

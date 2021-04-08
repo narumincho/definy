@@ -22,16 +22,18 @@ export type Product = {
 
 export type Item = {
   name: string;
-  typeAndValue: TypeAndValue;
+  type: Type;
+  value: Value;
 };
 
 export type HeadItem = {
   name: string;
-  typeAndValue: TypeAndValue;
+  type: Type;
+  value: Value;
   iconHash?: d.ImageHash;
 };
 
-export type TypeAndValue =
+export type Value =
   | {
       type: "text";
       value: string;
@@ -42,7 +44,6 @@ export type TypeAndValue =
     }
   | {
       type: "select";
-      valueList: ReadonlyArray<string>;
       index: number;
     }
   | {
@@ -59,8 +60,40 @@ export type TypeAndValue =
       value: d.Time;
     }
   | {
-      type: "listProject";
-      value: ReadonlyArray<d.ProjectId>;
+      type: "project";
+      value: d.ProjectId;
+    }
+  | {
+      type: "list";
+      value: ReadonlyArray<Value>;
+    };
+
+export type Type =
+  | {
+      tag: "text";
+    }
+  | {
+      tag: "number";
+    }
+  | {
+      tag: "select";
+      valueList: ReadonlyArray<string>;
+    }
+  | {
+      tag: "image";
+    }
+  | {
+      tag: "account";
+    }
+  | {
+      tag: "time";
+    }
+  | {
+      tag: "project";
+    }
+  | {
+      tag: "list";
+      element: Type;
     };
 
 export const selectionUp = (

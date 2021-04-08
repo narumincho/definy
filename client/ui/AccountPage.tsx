@@ -38,28 +38,38 @@ export const AccountPage: React.VFC<Props> = (props) => {
     <Editor
       product={{
         headItem: {
-          typeAndValue: { type: "text", value: account.name },
+          type: { tag: "text" },
+          value: { type: "text", value: account.name },
           name: "アカウント名",
           iconHash: account.imageHash,
         },
         items: [
           {
             name: "自己紹介文",
-            typeAndValue: {
+            type: {
+              tag: "text",
+            },
+            value: {
               type: "text",
               value: account.introduction,
             },
           },
           {
             name: "作成日時",
-            typeAndValue: {
+            type: {
+              tag: "time",
+            },
+            value: {
               type: "time",
               value: account.createTime,
             },
           },
           {
             name: "アカウントId",
-            typeAndValue: {
+            type: {
+              tag: "time",
+            },
+            value: {
               type: "text",
               value: props.accountId,
             },

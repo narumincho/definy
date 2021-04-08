@@ -1,10 +1,12 @@
+/* eslint-disable complexity */
 import * as React from "react";
 import * as d from "../../data";
 import {
   Item,
   Product,
   Selection,
-  TypeAndValue,
+  Type,
+  Value,
 } from "../editor/selectionAndValue";
 import { Image } from "../container/Image";
 import { Link } from "./Link";
@@ -171,7 +173,8 @@ const ItemView: React.VFC<{
         )}
       </div>
       <ValueView
-        typeAndValue={props.item.typeAndValue}
+        type={props.item.type}
+        value={props.item.value}
         isBig={props.isHead}
         getAccount={props.getAccount}
         language={props.language}
@@ -184,7 +187,8 @@ const ItemView: React.VFC<{
 };
 
 const ValueView: React.VFC<{
-  readonly typeAndValue: TypeAndValue;
+  readonly type: Type;
+  readonly value: Value;
   readonly isBig?: boolean;
   readonly getAccount: (
     accountId: d.AccountId
@@ -196,117 +200,142 @@ const ValueView: React.VFC<{
   ) => d.ResourceState<d.Project> | undefined;
   readonly onRequestProject: (projectId: d.ProjectId) => void;
 }> = (props) => {
-  switch (props.typeAndValue.type) {
-    case "number":
-      return (
-        <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
-          {props.typeAndValue.value}
-        </div>
-      );
-    case "text":
-      return (
-        <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
-          {props.typeAndValue.value}
-        </div>
-      );
-    case "select":
-      return (
-        <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
-          {props.typeAndValue.valueList[props.typeAndValue.index]}
-        </div>
-      );
-    case "image":
-      return (
-        <div
-          className={css({
-            display: "grid",
-            justifyContent: "center",
-          })}
-        >
-          <Image
-            imageHash={props.typeAndValue.value}
-            alt={props.typeAndValue.alternativeText}
-            width={512}
-            height={316.5}
-          />
-        </div>
-      );
-    case "account": {
-      const accountResource = props.getAccount(props.typeAndValue.value);
-      if (accountResource === undefined) {
-        return <div>アカウント読み込み準備前</div>;
-      }
-      if (accountResource._ === "Deleted") {
-        return <div>存在しないしないアカウント</div>;
-      }
-      if (accountResource._ === "Requesting") {
-        return <div>アカウント取得中</div>;
-      }
-      if (accountResource._ === "Unknown") {
-        return <div>アカウント取得に失敗</div>;
-      }
-      const account = accountResource.dataWithTime.data;
-      return (
-        <div
-          className={css({
-            display: "grid",
-            gridAutoFlow: "column",
-            alignItems: "center",
-            padding: 8,
-          })}
-        >
-          <Image
-            imageHash={account.imageHash}
-            width={32}
-            height={32}
-            alt={account.name + "の画像"}
-            isCircle
-          />
-          <div>{account.name}</div>
-          <Link
-            onJump={props.onJump}
-            urlData={{
-              language: props.language,
-              location: d.Location.Account(props.typeAndValue.value),
-            }}
-            style={{
-              display: "grid",
-              gridAutoFlow: "column",
-              alignItems: "center",
-              padding: 8,
-            }}
-          >
-            <NextIcon />
-          </Link>
-        </div>
-      );
-    }
-    case "time":
-      return <TimeCard time={props.typeAndValue.value} />;
-    case "listProject":
-      return (
-        <div
-          className={css({
-            display: "grid",
-            gridAutoFlow: "column",
-            alignItems: "center",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            padding: 8,
-          })}
-        >
-          {props.typeAndValue.value.map((id) => (
-            <ProjectCard
-              key={id}
-              getProject={props.getProject}
-              projectId={id}
-              language={props.language}
-              onJump={props.onJump}
-              onRequestProjectById={props.onRequestProject}
-            />
-          ))}
-        </div>
-      );
+  if (props.type.tag === "number" && props.value.type === "number") {
+    return (
+      <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
+        {props.value.value}
+      </div>
+    );
   }
+  if (props.type.tag === "text" && props.value.type === "text") {
+    return (
+      <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
+        {props.value.value}
+      </div>
+    );
+  }
+  if (props.type.tag === "select" && props.value.type === "select") {
+    return (
+      <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
+        {props.type.valueList[props.value.index]}
+      </div>
+    );
+  }
+  if (props.type.tag === "image" && props.value.type === "image") {
+    return (
+      <div
+        className={css({
+          display: "grid",
+          justifyContent: "center",
+        })}
+      >
+        <Image
+          imageHash={props.value.value}
+          alt={props.value.alternativeText}
+          width={512}
+          height={316.5}
+        />
+      </div>
+    );
+  }
+  if (props.type.tag === "account" && props.value.type === "account") {
+    const accountResource = props.getAccount(props.value.value);
+    if (accountResource === undefined) {
+      return <div>アカウント読み込み準備前</div>;
+    }
+    if (accountResource._ === "Deleted") {
+      return <div>存在しないしないアカウント</div>;
+    }
+    if (accountResource._ === "Requesting") {
+      return <div>アカウント取得中</div>;
+    }
+    if (accountResource._ === "Unknown") {
+      return <div>アカウント取得に失敗</div>;
+    }
+    const account = accountResource.dataWithTime.data;
+    return (
+      <div
+        className={css({
+          display: "grid",
+          gridAutoFlow: "column",
+          alignItems: "center",
+          padding: 8,
+        })}
+      >
+        <Image
+          imageHash={account.imageHash}
+          width={32}
+          height={32}
+          alt={account.name + "の画像"}
+          isCircle
+        />
+        <div>{account.name}</div>
+        <Link
+          onJump={props.onJump}
+          urlData={{
+            language: props.language,
+            location: d.Location.Account(props.value.value),
+          }}
+          style={{
+            display: "grid",
+            gridAutoFlow: "column",
+            alignItems: "center",
+            padding: 8,
+          }}
+        >
+          <NextIcon />
+        </Link>
+      </div>
+    );
+  }
+  if (props.type.tag === "time" && props.value.type === "time") {
+    return <TimeCard time={props.value.value} />;
+  }
+  if (props.type.tag === "project" && props.value.type === "project") {
+    return (
+      <ProjectCard
+        getProject={props.getProject}
+        projectId={props.value.value}
+        language={props.language}
+        onJump={props.onJump}
+        onRequestProjectById={props.onRequestProject}
+      />
+    );
+  }
+  if (props.type.tag === "list" && props.value.type === "list") {
+    const elementType = props.type.element;
+    return (
+      <div
+        className={css({
+          display: "grid",
+          gridAutoFlow: "column",
+          alignItems: "center",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          padding: 8,
+        })}
+      >
+        {props.value.value.map((v, index) => (
+          <ValueView
+            key={index}
+            onRequestProject={props.onRequestProject}
+            getAccount={props.getAccount}
+            getProject={props.getProject}
+            language={props.language}
+            onJump={props.onJump}
+            isBig={props.isBig}
+            value={v}
+            type={elementType}
+          />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div>
+      値と型が違う! 型{JSON.stringify(props.type)} 値
+      {JSON.stringify(props.value)}
+    </div>
+  );
 };
 
 const NextIcon: React.VFC<Record<string, string>> = () => (

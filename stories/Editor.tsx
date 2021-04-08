@@ -24,29 +24,35 @@ export const Project: Story<ControlAndActionProps> = (props) => (
     product={{
       headItem: {
         name: "プロジェクト名",
-        typeAndValue: { type: "text", value: "やあ" },
+        type: { tag: "text" },
+        value: { type: "text", value: "やあ" },
         iconHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
       },
       items: [
         {
           name: "作成者",
-          typeAndValue: { type: "text", value: "作成者の名前" },
+          type: { tag: "text" },
+          value: { type: "text", value: "作成者の名前" },
         },
         {
           name: "作成日時",
-          typeAndValue: { type: "text", value: "2021-04-01" },
+          type: { tag: "text" },
+          value: { type: "text", value: "2021-04-01" },
         },
         {
           name: "パーツ",
-          typeAndValue: { type: "text", value: "パーツのリストを表示したい" },
+          type: { tag: "text" },
+          value: { type: "text", value: "パーツのリストを表示したい" },
         },
         {
           name: "型パーツ",
-          typeAndValue: { type: "text", value: "型パーツのリストを表示したい" },
+          type: { tag: "text" },
+          value: { type: "text", value: "型パーツのリストを表示したい" },
         },
         {
           name: "プロジェクトID",
-          typeAndValue: { type: "text", value: "ffffffff" },
+          type: { tag: "text" },
+          value: { type: "text", value: "ffffffff" },
         },
       ],
     }}
@@ -64,12 +70,14 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
     product={{
       headItem: {
         name: "name",
-        typeAndValue: { type: "text", value: "Location" },
+        type: { tag: "text" },
+        value: { type: "text", value: "Location" },
       },
       items: [
         {
           name: "description",
-          typeAndValue: {
+          type: { tag: "text" },
+          value: {
             type: "text",
             value:
               "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
@@ -77,23 +85,24 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "attribute",
-          typeAndValue: {
+          type: { tag: "select", valueList: ["Just", "Nothing"] },
+          value: {
             type: "select",
-            valueList: ["Just", "Nothing"],
             index: 1,
           },
         },
         {
           name: "body",
-          typeAndValue: {
+          type: { tag: "select", valueList: ["Product", "Sum", "Kernel"] },
+          value: {
             type: "select",
-            valueList: ["Product", "Sum", "Kernel"],
             index: 1,
           },
         },
         {
           name: "使用しているところ",
-          typeAndValue: {
+          type: { tag: "text" },
+          value: {
             type: "text",
             value: "使用しているところのリストを表示したい",
           },
@@ -115,13 +124,58 @@ export const Home: Story<ControlAndActionProps> = (props) => (
       items: [
         {
           name: "検索",
-          typeAndValue: { type: "text", value: "検索語句" },
+          type: { tag: "text" },
+          value: { type: "text", value: "検索語句" },
         },
         {
           name: "プロジェクト",
-          typeAndValue: {
-            type: "listProject",
-            value: [project1Id, project2Id],
+          type: { tag: "list", element: { tag: "project" } },
+          value: {
+            type: "list",
+            value: [
+              { type: "project", value: project1Id },
+              { type: "project", value: project2Id },
+            ],
+          },
+        },
+      ],
+    }}
+    getAccount={getAccount}
+    language={props.language}
+    onJump={props.onJump}
+    onRequestAccount={props.onRequestAccount}
+    onRequestProject={props.onRequestProject}
+    getProject={getProject}
+  />
+);
+
+export const ListN: Story<ControlAndActionProps> = (props) => (
+  <Editor
+    product={{
+      items: [
+        {
+          name: "数値のリスト",
+          type: { tag: "list", element: { tag: "number" } },
+          value: {
+            type: "list",
+            value: [
+              { type: "number", value: 0 },
+              { type: "number", value: 1 },
+              { type: "number", value: 2 },
+              { type: "number", value: 3 },
+            ],
+          },
+        },
+        {
+          name: "文字のリスト",
+          type: { tag: "list", element: { tag: "text" } },
+          value: {
+            type: "list",
+            value: [
+              { type: "text", value: "React" },
+              { type: "text", value: "Vue" },
+              { type: "text", value: "Angular" },
+            ],
           },
         },
       ],

@@ -40,13 +40,15 @@ export const ProjectPage: React.VFC<Props> = (props) => {
       product={{
         headItem: {
           name: "プロジェクト名",
-          typeAndValue: { type: "text", value: project.name },
+          type: { tag: "text" },
+          value: { type: "text", value: project.name },
           iconHash: project.iconHash,
         },
         items: [
           {
             name: "画像",
-            typeAndValue: {
+            type: { tag: "image" },
+            value: {
               type: "image",
               alternativeText: project.name + "の画像",
               value: project.imageHash,
@@ -54,21 +56,24 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             name: "作成者",
-            typeAndValue: {
+            type: { tag: "account" },
+            value: {
               type: "account",
               value: project.createAccountId,
             },
           },
           {
             name: "作成日時",
-            typeAndValue: {
+            type: { tag: "time" },
+            value: {
               type: "time",
               value: project.createTime,
             },
           },
           {
             name: "プロジェクトID",
-            typeAndValue: {
+            type: { tag: "text" },
+            value: {
               type: "text",
               value: props.projectId,
             },
