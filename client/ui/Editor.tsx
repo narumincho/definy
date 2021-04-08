@@ -1,6 +1,11 @@
 import * as React from "react";
 import * as d from "../../data";
-import { Product, Selection, selectionUp } from "../editor/selectionAndValue";
+import {
+  Product,
+  Selection,
+  selectionDown,
+  selectionUp,
+} from "../editor/selectionAndValue";
 import { DetailView } from "./DetailView";
 import { SelectionView } from "./SelectionView";
 import { css } from "@emotion/css";
@@ -28,17 +33,24 @@ export const Editor: React.VFC<Props> = (props) => {
   });
   React.useEffect(() => {
     const handleKeyEvent = (event: KeyboardEvent) => {
+      console.log(event.code);
       switch (event.code) {
+        case "KeyW":
         case "ArrowUp": {
           setSelection((oldSelection) =>
             selectionUp(oldSelection, props.product)
           );
+          event.preventDefault();
+          event.stopPropagation();
           return;
         }
+        case "KeyS":
         case "ArrowDown": {
           setSelection((oldSelection) =>
-            selectionUp(oldSelection, props.product)
+            selectionDown(oldSelection, props.product)
           );
+          event.preventDefault();
+          event.stopPropagation();
         }
       }
     };

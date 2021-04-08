@@ -130,14 +130,20 @@ const ItemView: React.VFC<{
   ) => d.ResourceState<d.Project> | undefined;
   readonly onRequestProject: (projectId: d.ProjectId) => void;
 }> = (props) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (props.isSelect && ref.current !== null) {
+      ref.current.focus();
+    }
+  }, [props.isSelect]);
+
   return (
     <div
+      ref={ref}
+      tabIndex={-1}
       className={css({
         padding: 4,
-        borderWidth: 2,
-        borderStyle: "solid",
-        borderColor: props.isSelect ? "red" : "#222",
-        borderRadius: 8,
+        outline: props.isSelect ? "solid 2px red" : "none",
       })}
       onClick={() => {
         props.onSelect();
