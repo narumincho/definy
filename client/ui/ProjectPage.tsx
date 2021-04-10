@@ -37,46 +37,53 @@ export const ProjectPage: React.VFC<Props> = (props) => {
   const project = projectState.dataWithTime.data;
   return (
     <Editor
-      product={{
+      productType={{
         headItem: {
           name: "プロジェクト名",
           type: { tag: "text" },
-          value: { type: "text", value: project.name },
-          iconHash: project.iconHash,
+          hasIcon: true,
         },
         items: [
           {
             name: "画像",
             type: { tag: "image" },
-            value: {
-              type: "image",
-              alternativeText: project.name + "の画像",
-              value: project.imageHash,
-            },
           },
           {
             name: "作成者",
             type: { tag: "account" },
-            value: {
-              type: "account",
-              value: project.createAccountId,
-            },
           },
           {
             name: "作成日時",
             type: { tag: "time" },
-            value: {
-              type: "time",
-              value: project.createTime,
-            },
           },
           {
             name: "プロジェクトID",
             type: { tag: "text" },
-            value: {
-              type: "text",
-              value: props.projectId,
-            },
+          },
+        ],
+      }}
+      product={{
+        headItem: {
+          value: { type: "text", value: project.name },
+          iconHash: project.iconHash,
+        },
+        items: [
+          {
+            type: "image",
+            alternativeText: project.name + "の画像",
+            value: project.imageHash,
+          },
+          {
+            type: "account",
+            value: project.createAccountId,
+          },
+          {
+            type: "time",
+            value: project.createTime,
+          },
+          {
+            type: "text",
+            value: props.projectId,
           },
         ],
       }}

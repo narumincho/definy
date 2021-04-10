@@ -21,39 +21,42 @@ type ControlAndActionProps = Pick<
 
 export const Project: Story<ControlAndActionProps> = (props) => (
   <Editor
-    product={{
+    productType={{
       headItem: {
         name: "プロジェクト名",
+        hasIcon: true,
         type: { tag: "text" },
-        value: { type: "text", value: "やあ" },
-        iconHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
       },
       items: [
         {
           name: "作成者",
           type: { tag: "text" },
-          value: { type: "text", value: "作成者の名前" },
-        },
-        {
-          name: "作成日時",
-          type: { tag: "text" },
-          value: { type: "text", value: "2021-04-01" },
         },
         {
           name: "パーツ",
           type: { tag: "text" },
-          value: { type: "text", value: "パーツのリストを表示したい" },
         },
         {
           name: "型パーツ",
           type: { tag: "text" },
-          value: { type: "text", value: "型パーツのリストを表示したい" },
         },
         {
           name: "プロジェクトID",
           type: { tag: "text" },
-          value: { type: "text", value: "ffffffff" },
         },
+      ],
+    }}
+    product={{
+      headItem: {
+        value: { type: "text", value: "やあ" },
+        iconHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
+      },
+      items: [
+        { type: "text", value: "作成者の名前" },
+        { type: "text", value: "2021-04-01" },
+        { type: "text", value: "パーツのリストを表示したい" },
+        { type: "text", value: "型パーツのリストを表示したい" },
+        { type: "text", value: "ffffffff" },
       ],
     }}
     getAccount={getAccount}
@@ -67,45 +70,52 @@ export const Project: Story<ControlAndActionProps> = (props) => (
 
 export const TypePart: Story<ControlAndActionProps> = (props) => (
   <Editor
-    product={{
+    productType={{
       headItem: {
         name: "name",
         type: { tag: "text" },
-        value: { type: "text", value: "Location" },
+        hasIcon: false,
       },
       items: [
         {
           name: "description",
           type: { tag: "text" },
-          value: {
-            type: "text",
-            value:
-              "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
-          },
         },
         {
           name: "attribute",
           type: { tag: "select", valueList: ["Just", "Nothing"] },
-          value: {
-            type: "select",
-            index: 1,
-          },
         },
         {
           name: "body",
           type: { tag: "select", valueList: ["Product", "Sum", "Kernel"] },
-          value: {
-            type: "select",
-            index: 1,
-          },
         },
         {
           name: "使用しているところ",
           type: { tag: "text" },
-          value: {
-            type: "text",
-            value: "使用しているところのリストを表示したい",
-          },
+        },
+      ],
+    }}
+    product={{
+      headItem: {
+        value: { type: "text", value: "Location" },
+      },
+      items: [
+        {
+          type: "text",
+          value:
+            "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
+        },
+        {
+          type: "select",
+          index: 1,
+        },
+        {
+          type: "select",
+          index: 1,
+        },
+        {
+          type: "text",
+          value: "使用しているところのリストを表示したい",
         },
       ],
     }}
@@ -120,24 +130,28 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
 
 export const Home: Story<ControlAndActionProps> = (props) => (
   <Editor
-    product={{
+    productType={{
       items: [
         {
           name: "検索",
           type: { tag: "text" },
-          value: { type: "text", value: "検索語句" },
         },
         {
           name: "プロジェクト",
-          type: { tag: "list", element: { tag: "project" } },
+          type: { tag: "list", listType: { elementType: { tag: "project" } } },
+        },
+      ],
+    }}
+    product={{
+      items: [
+        { type: "text", value: "検索語句" },
+        {
+          type: "list",
           value: {
-            type: "list",
-            value: {
-              items: [
-                { type: "project", value: project1Id },
-                { type: "project", value: project2Id },
-              ],
-            },
+            items: [
+              { type: "project", value: project1Id },
+              { type: "project", value: project2Id },
+            ],
           },
         },
       ],
@@ -153,35 +167,39 @@ export const Home: Story<ControlAndActionProps> = (props) => (
 
 export const List: Story<ControlAndActionProps> = (props) => (
   <Editor
-    product={{
+    productType={{
       items: [
         {
           name: "数値のリスト",
-          type: { tag: "list", element: { tag: "number" } },
-          value: {
-            type: "list",
-            value: {
-              items: [
-                { type: "number", value: 0 },
-                { type: "number", value: 1 },
-                { type: "number", value: 2 },
-                { type: "number", value: 3 },
-              ],
-            },
-          },
+          type: { tag: "list", listType: { elementType: { tag: "number" } } },
         },
         {
           name: "文字のリスト",
-          type: { tag: "list", element: { tag: "text" } },
+          type: { tag: "list", listType: { elementType: { tag: "text" } } },
+        },
+      ],
+    }}
+    product={{
+      items: [
+        {
+          type: "list",
           value: {
-            type: "list",
-            value: {
-              items: [
-                { type: "text", value: "React" },
-                { type: "text", value: "Vue" },
-                { type: "text", value: "Angular" },
-              ],
-            },
+            items: [
+              { type: "number", value: 0 },
+              { type: "number", value: 1 },
+              { type: "number", value: 2 },
+              { type: "number", value: 3 },
+            ],
+          },
+        },
+        {
+          type: "list",
+          value: {
+            items: [
+              { type: "text", value: "React" },
+              { type: "text", value: "Vue" },
+              { type: "text", value: "Angular" },
+            ],
           },
         },
       ],

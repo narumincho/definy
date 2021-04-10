@@ -2,8 +2,8 @@
 import * as React from "react";
 import * as d from "../../data";
 import {
-  Item,
   ProductSelection,
+  ProductType,
   ProductValue,
   Type,
   Value,
@@ -18,6 +18,7 @@ export type Props = {
   readonly selection: ProductSelection;
   readonly onChangeSelection: (selection: ProductSelection) => void;
   readonly product: ProductValue;
+  readonly productType: ProductType;
   readonly getAccount: (
     accountId: d.AccountId
   ) => d.ResourceState<d.Account> | undefined;
@@ -42,7 +43,8 @@ export const SelectionView: React.VFC<Props> = (props) => {
         overflowY: "scroll",
       })}
     >
-      {props.product.headItem === undefined ? (
+      {props.product.headItem === undefined ||
+      props.productType.headItem === undefined ? (
         <></>
       ) : (
         <div
@@ -86,7 +88,9 @@ export const SelectionView: React.VFC<Props> = (props) => {
             onSelect={() => {
               props.onChangeSelection({ tag: "head", selection: undefined });
             }}
-            item={props.product.headItem}
+            name={props.productType.headItem.name}
+            type={props.productType.headItem.type}
+            value={props.product.headItem.value}
             isHead
             getAccount={props.getAccount}
             language={props.language}
@@ -96,27 +100,36 @@ export const SelectionView: React.VFC<Props> = (props) => {
           />
         </div>
       )}
-      {props.product.items.map((item, index) => (
-        <ItemView
-          key={item.name}
-          isSelect={
-            props.selection.tag === "content" && props.selection.index === index
-          }
-          onSelect={() => {
-            props.onChangeSelection({
-              tag: "content",
-              index,
-              selection: undefined,
-            });
-          }}
-          item={item}
-          getAccount={props.getAccount}
-          language={props.language}
-          onJump={props.onJump}
-          getProject={props.getProject}
-          onRequestProject={props.onRequestProject}
-        />
-      ))}
+      {props.productType.items.map((itemType, index) => {
+        const item = props.product.items[index];
+        if (item === undefined) {
+          return <div>指定したメンバーの値がない {JSON.stringify(item)}</div>;
+        }
+        return (
+          <ItemView
+            key={itemType.name}
+            isSelect={
+              props.selection.tag === "content" &&
+              props.selection.index === index
+            }
+            onSelect={() => {
+              props.onChangeSelection({
+                tag: "content",
+                index,
+                selection: undefined,
+              });
+            }}
+            name={itemType.name}
+            type={itemType.type}
+            value={item}
+            getAccount={props.getAccount}
+            language={props.language}
+            onJump={props.onJump}
+            getProject={props.getProject}
+            onRequestProject={props.onRequestProject}
+          />
+        );
+      })}
     </div>
   );
 };
@@ -124,7 +137,9 @@ export const SelectionView: React.VFC<Props> = (props) => {
 const ItemView: React.VFC<{
   readonly isSelect: boolean;
   readonly onSelect: () => void;
-  readonly item: Item;
+  readonly name: string;
+  readonly type: Type;
+  readonly value: Value;
   readonly isHead?: boolean;
   readonly getAccount: (
     accountId: d.AccountId
@@ -172,13 +187,13 @@ const ItemView: React.VFC<{
               color: "#ddd",
             })}
           >
-            {props.item.name}
+            {props.name}
           </div>
         )}
       </div>
       <ValueView
-        type={props.item.type}
-        value={props.item.value}
+        type={props.type}
+        value={props.value}
         isBig={props.isHead}
         getAccount={props.getAccount}
         language={props.language}
@@ -307,7 +322,7 @@ const ValueView: React.VFC<{
     );
   }
   if (props.type.tag === "list" && props.value.type === "list") {
-    const elementType = props.type.element;
+    const elementType = props.type.listType;
     return (
       <div
         className={css({
@@ -328,7 +343,7 @@ const ValueView: React.VFC<{
             onJump={props.onJump}
             isBig={props.isBig}
             value={v}
-            type={elementType}
+            type={elementType.elementType}
           />
         ))}
       </div>

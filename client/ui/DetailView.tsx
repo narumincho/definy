@@ -2,6 +2,7 @@ import * as React from "react";
 import * as d from "../../data";
 import {
   ProductSelection,
+  ProductType,
   ProductValue,
   Type,
   Value,
@@ -14,6 +15,7 @@ import { css } from "@emotion/css";
 export type Props = {
   readonly selection: ProductSelection | undefined;
   readonly product: ProductValue;
+  readonly productType: ProductType;
   readonly getAccount: (
     accountId: d.AccountId
   ) => d.ResourceState<d.Account> | undefined;
@@ -38,7 +40,10 @@ export const DetailView: React.VFC<Props> = (props) => {
   }
   switch (props.selection.tag) {
     case "head":
-      if (props.product.headItem === undefined) {
+      if (
+        props.product.headItem === undefined ||
+        props.productType.headItem === undefined
+      ) {
         return (
           <div
             className={css({
@@ -71,12 +76,12 @@ export const DetailView: React.VFC<Props> = (props) => {
                 fontSize: 24,
               })}
             >
-              {props.product.headItem.name}
+              {props.productType.headItem.name}
             </div>
-            <TypeView type={props.product.headItem.type} />
+            <TypeView type={props.productType.headItem.type} />
           </div>
           <ValueView
-            type={props.product.headItem.type}
+            type={props.productType.headItem.type}
             value={props.product.headItem.value}
             getAccount={props.getAccount}
             language={props.language}
@@ -99,6 +104,10 @@ export const DetailView: React.VFC<Props> = (props) => {
       );
     case "content": {
       const item = props.product.items[props.selection.index];
+      const itemType = props.productType.items[props.selection.index];
+      if (item === undefined || itemType === undefined) {
+        return <div>指定した要素が存在しない</div>;
+      }
       return (
         <div
           className={css({
@@ -119,13 +128,13 @@ export const DetailView: React.VFC<Props> = (props) => {
                 fontSize: 24,
               })}
             >
-              {item.name}
+              {itemType.name}
             </div>
-            <TypeView type={item.type} />
+            <TypeView type={itemType.type} />
           </div>
           <ValueView
-            type={item.type}
-            value={item.value}
+            type={itemType.type}
+            value={item}
             getAccount={props.getAccount}
             language={props.language}
             onJump={props.onJump}
@@ -218,7 +227,30 @@ const TypeView: React.VFC<{ type: Type }> = (props) => {
           })}
         >
           list(
-          <TypeView type={props.type.element} />)
+          <TypeView type={props.type.listType.elementType} />)
+        </div>
+      );
+    case "product":
+      return (
+        <div
+          className={css({
+            color: "#ddd",
+          })}
+        >
+          {props.type.productType.headItem === undefined ? (
+            <></>
+          ) : (
+            <div>
+              {props.type.productType.headItem.name}
+              <TypeView type={props.type.productType.headItem.type} />
+            </div>
+          )}
+          {props.type.productType.items.map((t) => (
+            <div>
+              {t.name}
+              <TypeView type={t.type} />
+            </div>
+          ))}
         </div>
       );
   }

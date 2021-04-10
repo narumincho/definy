@@ -36,12 +36,11 @@ export const AccountPage: React.VFC<Props> = (props) => {
   const account = accountResource.dataWithTime.data;
   return (
     <Editor
-      product={{
+      productType={{
         headItem: {
           type: { tag: "text" },
-          value: { type: "text", value: account.name },
           name: "アカウント名",
-          iconHash: account.imageHash,
+          hasIcon: true,
         },
         items: [
           {
@@ -49,19 +48,11 @@ export const AccountPage: React.VFC<Props> = (props) => {
             type: {
               tag: "text",
             },
-            value: {
-              type: "text",
-              value: account.introduction,
-            },
           },
           {
             name: "作成日時",
             type: {
               tag: "time",
-            },
-            value: {
-              type: "time",
-              value: account.createTime,
             },
           },
           {
@@ -69,10 +60,26 @@ export const AccountPage: React.VFC<Props> = (props) => {
             type: {
               tag: "time",
             },
-            value: {
-              type: "text",
-              value: props.accountId,
-            },
+          },
+        ],
+      }}
+      product={{
+        headItem: {
+          value: { type: "text", value: account.name },
+          iconHash: account.imageHash,
+        },
+        items: [
+          {
+            type: "text",
+            value: account.introduction,
+          },
+          {
+            type: "time",
+            value: account.createTime,
+          },
+          {
+            type: "text",
+            value: props.accountId,
           },
         ],
       }}

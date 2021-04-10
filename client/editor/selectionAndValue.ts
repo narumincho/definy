@@ -1,14 +1,14 @@
 import * as d from "../../data";
 import {
   HeadItem,
-  Item,
   ProductSelection,
+  ProductType,
   ProductValue,
   productUpdate,
 } from "./product";
-import { ListSelection, ListValue, listUpdate } from "./list";
+import { ListSelection, ListType, ListValue, listUpdate } from "./list";
 
-export type { ProductSelection, ProductValue, HeadItem, Item };
+export type { ProductSelection, ProductValue, HeadItem, ProductType };
 
 export type Selection =
   | {
@@ -99,18 +99,37 @@ export type Type =
     }
   | {
       tag: "list";
-      element: Type;
+      listType: ListType;
+    }
+  | {
+      tag: "product";
+      productType: ProductType;
     };
 
-export type EditorElementSelectionUpdate<ElementSelection, ElementValue> = {
+export type EditorElementSelectionUpdate<
+  ElementSelection,
+  ElementValue,
+  ElementType
+> = {
   up: (
-    elementSelection: ElementSelection,
-    value: ElementValue
+    selection: ElementSelection,
+    value: ElementValue,
+    type: ElementType
   ) => SelectionUpdateResult<ElementSelection>;
   down: (
-    elementSelection: ElementSelection,
-    value: ElementValue
+    selection: ElementSelection,
+    value: ElementValue,
+    type: ElementType
   ) => SelectionUpdateResult<ElementSelection>;
+  firstChild: (
+    selection: ElementSelection,
+    value: ElementValue,
+    type: ElementType
+  ) => SelectionUpdateResult<ElementSelection>;
+  firstChildValue: (
+    value: ElementValue,
+    type: ElementType
+  ) => ElementSelection | undefined;
 };
 
 export type SelectionUpdateResult<ElementSelection> =
@@ -141,9 +160,10 @@ const mapSelectionUpdateResult = <Input, Output>(
 
 export const selectionUp = (
   selection: ProductSelection,
-  product: ProductValue
+  product: ProductValue,
+  productType: ProductType
 ): ProductSelection => {
-  const result = productUpdate.up(selection, product);
+  const result = productUpdate.up(selection, product, productType);
   if (result.tag === "inlineMove") {
     return result.selection;
   }
@@ -152,9 +172,22 @@ export const selectionUp = (
 
 export const selectionDown = (
   selection: ProductSelection,
-  product: ProductValue
+  product: ProductValue,
+  productType: ProductType
 ): ProductSelection => {
-  const result = productUpdate.down(selection, product);
+  const result = productUpdate.down(selection, product, productType);
+  if (result.tag === "inlineMove") {
+    return result.selection;
+  }
+  return selection;
+};
+
+export const selectionFirstChild = (
+  selection: ProductSelection,
+  product: ProductValue,
+  productType: ProductType
+): ProductSelection => {
+  const result = productUpdate.firstChild(selection, product, productType);
   if (result.tag === "inlineMove") {
     return result.selection;
   }
@@ -163,17 +196,26 @@ export const selectionDown = (
 
 const up = (
   selection: Selection,
-  value: Value
+  value: Value,
+  type: Type
 ): SelectionUpdateResult<Selection> => {
-  if (selection.tag === "list" && value.type === "list") {
+  if (
+    selection.tag === "list" &&
+    value.type === "list" &&
+    type.tag === "list"
+  ) {
     return mapSelectionUpdateResult(
-      listUpdate.up(selection.value, value.value),
+      listUpdate.up(selection.value, value.value, type.listType),
       selectionList
     );
   }
-  if (selection.tag === "product" && value.type === "product") {
+  if (
+    selection.tag === "product" &&
+    value.type === "product" &&
+    type.tag === "product"
+  ) {
     return mapSelectionUpdateResult(
-      productUpdate.up(selection.value, value.value),
+      productUpdate.up(selection.value, value.value, type.productType),
       selectionProduct
     );
   }
@@ -184,17 +226,26 @@ const up = (
 
 const down = (
   selection: Selection,
-  value: Value
+  value: Value,
+  type: Type
 ): SelectionUpdateResult<Selection> => {
-  if (selection.tag === "list" && value.type === "list") {
+  if (
+    selection.tag === "list" &&
+    value.type === "list" &&
+    type.tag === "list"
+  ) {
     return mapSelectionUpdateResult(
-      listUpdate.down(selection.value, value.value),
+      listUpdate.down(selection.value, value.value, type.listType),
       selectionList
     );
   }
-  if (selection.tag === "product" && value.type === "product") {
+  if (
+    selection.tag === "product" &&
+    value.type === "product" &&
+    type.tag === "product"
+  ) {
     return mapSelectionUpdateResult(
-      productUpdate.down(selection.value, value.value),
+      productUpdate.down(selection.value, value.value, type.productType),
       selectionProduct
     );
   }
@@ -203,7 +254,72 @@ const down = (
   };
 };
 
-export const selectionUpdate: EditorElementSelectionUpdate<Selection, Value> = {
+const firstChild = (
+  selection: Selection,
+  value: Value,
+  type: Type
+): SelectionUpdateResult<Selection> => {
+  if (
+    selection.tag === "list" &&
+    value.type === "list" &&
+    type.tag === "list"
+  ) {
+    return mapSelectionUpdateResult(
+      listUpdate.firstChild(selection.value, value.value, type.listType),
+      selectionList
+    );
+  }
+  if (
+    selection.tag === "product" &&
+    value.type === "product" &&
+    type.tag === "product"
+  ) {
+    return mapSelectionUpdateResult(
+      productUpdate.firstChild(selection.value, value.value, type.productType),
+      selectionProduct
+    );
+  }
+  return {
+    tag: "outside",
+  };
+};
+
+const firstChildValue = (value: Value, type: Type): Selection | undefined => {
+  if (value.type === "product" && type.tag === "product") {
+    const productSelection = productUpdate.firstChildValue(
+      value.value,
+      type.productType
+    );
+    if (productSelection === undefined) {
+      return undefined;
+    }
+    return {
+      tag: "product",
+      value: productSelection,
+    };
+  }
+  if (value.type === "list" && type.tag === "list") {
+    const listSelection = listUpdate.firstChildValue(
+      value.value,
+      type.listType
+    );
+    if (listSelection === undefined) {
+      return undefined;
+    }
+    return {
+      tag: "list",
+      value: listSelection,
+    };
+  }
+};
+
+export const selectionUpdate: EditorElementSelectionUpdate<
+  Selection,
+  Value,
+  Type
+> = {
   up,
   down,
+  firstChild,
+  firstChildValue,
 };

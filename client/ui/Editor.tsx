@@ -2,8 +2,10 @@ import * as React from "react";
 import * as d from "../../data";
 import {
   ProductSelection,
+  ProductType,
   ProductValue,
   selectionDown,
+  selectionFirstChild,
   selectionUp,
 } from "../editor/selectionAndValue";
 import { DetailView } from "./DetailView";
@@ -12,6 +14,7 @@ import { css } from "@emotion/css";
 
 export type Props = {
   readonly product: ProductValue;
+  readonly productType: ProductType;
   readonly getAccount: (
     accountId: d.AccountId
   ) => d.ResourceState<d.Account> | undefined;
@@ -39,7 +42,7 @@ export const Editor: React.VFC<Props> = (props) => {
         case "KeyW":
         case "ArrowUp": {
           setSelection((oldSelection) =>
-            selectionUp(oldSelection, props.product)
+            selectionUp(oldSelection, props.product, props.productType)
           );
           event.preventDefault();
           event.stopPropagation();
@@ -48,7 +51,15 @@ export const Editor: React.VFC<Props> = (props) => {
         case "KeyS":
         case "ArrowDown": {
           setSelection((oldSelection) =>
-            selectionDown(oldSelection, props.product)
+            selectionDown(oldSelection, props.product, props.productType)
+          );
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        case "KeyE": {
+          setSelection((oldSelection) =>
+            selectionFirstChild(oldSelection, props.product, props.productType)
           );
           event.preventDefault();
           event.stopPropagation();
@@ -71,6 +82,7 @@ export const Editor: React.VFC<Props> = (props) => {
       <SelectionView
         selection={selection}
         onChangeSelection={setSelection}
+        productType={props.productType}
         product={props.product}
         getAccount={props.getAccount}
         language={props.language}
@@ -80,6 +92,7 @@ export const Editor: React.VFC<Props> = (props) => {
       />
       <DetailView
         selection={selection}
+        productType={props.productType}
         product={props.product}
         getAccount={props.getAccount}
         language={props.language}
