@@ -190,7 +190,7 @@ export const logInCallback = async (
       .where("openIdConnect", "==", openIdConnectProviderAndIdQuery)
       .get()
   ).docs;
-  if (documentList.length === 0) {
+  if (documentList[0] === undefined) {
     const accessToken = await createUser(
       providerUserData,
       openIdConnectProvider
@@ -572,7 +572,7 @@ export const apiFunc: {
       .where("accessTokenHash", "==", accessTokenHash)
       .get();
     const userDataDocs = querySnapshot.docs;
-    if (userDataDocs.length !== 1) {
+    if (userDataDocs[0] === undefined || userDataDocs.length !== 1) {
       return d.Maybe.Nothing();
     }
     const queryDocumentSnapshot = userDataDocs[0];

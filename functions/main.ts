@@ -47,7 +47,12 @@ export const api = functions
   .runWith({ memory: "512MB" })
   .https.onRequest(async (request, response) => {
     const path = request.path.split("/")[2];
-    console.log("call api function!", request.connection.remoteAddress, path);
+    if (path === undefined) {
+      response.status(400);
+      response.send("パスにAPI名が含まれていない request.path=" + request.path);
+      return;
+    }
+    console.log("call api function!", request.socket.remoteAddress, path);
     const result = await callApiFunction(path, request.body as Buffer);
     if (result === undefined) {
       response.status(400);
@@ -160,6 +165,10 @@ export const pngFile = functions.https.onRequest((request, response): void => {
     return;
   }
   const fileHash = matchResult.groups.hash;
+  if (fileHash === undefined) {
+    response.send(400);
+    return;
+  }
   const readableStream = lib.readPngFile(fileHash);
   response.contentType("image/png");
   response.header("cache-control", "max-age=31536000");

@@ -10,7 +10,8 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "rootDir": ".",
-    "jsx": "react"
+    "jsx": "react",
+    "noUncheckedIndexedAccess": true
   },
   "exclude": ["./test/env.ts", "distribution"]
 }
