@@ -1,14 +1,19 @@
 import * as React from "react";
 import * as d from "../../data";
-import { Product, Selection, Type, Value } from "../editor/selectionAndValue";
+import {
+  ProductSelection,
+  ProductValue,
+  Type,
+  Value,
+} from "../editor/selectionAndValue";
 import { AccountCard } from "./AccountCard";
 import { Image } from "../container/Image";
 import { TimeDetail } from "./TimeCard";
 import { css } from "@emotion/css";
 
 export type Props = {
-  readonly selection: Selection;
-  readonly product: Product;
+  readonly selection: ProductSelection | undefined;
+  readonly product: ProductValue;
   readonly getAccount: (
     accountId: d.AccountId
   ) => d.ResourceState<d.Account> | undefined;
@@ -18,19 +23,20 @@ export type Props = {
 };
 
 export const DetailView: React.VFC<Props> = (props) => {
+  if (props.selection === undefined) {
+    return (
+      <div
+        className={css({
+          height: "100%",
+          overflowX: "hidden",
+          overflowY: "scroll",
+        })}
+      >
+        選択しているものはない
+      </div>
+    );
+  }
   switch (props.selection.tag) {
-    case "none":
-      return (
-        <div
-          className={css({
-            height: "100%",
-            overflowX: "hidden",
-            overflowY: "scroll",
-          })}
-        >
-          選択しているものはない
-        </div>
-      );
     case "head":
       if (props.product.headItem === undefined) {
         return (

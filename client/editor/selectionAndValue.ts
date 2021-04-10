@@ -1,37 +1,33 @@
 import * as d from "../../data";
+import {
+  HeadItem,
+  Item,
+  ProductSelection,
+  ProductValue,
+  productUpdate,
+} from "./product";
+import { ListSelection, ListValue, listUpdate } from "./list";
+
+export type { ProductSelection, ProductValue, HeadItem, Item };
 
 export type Selection =
   | {
-      tag: "none";
+      tag: "product";
+      value: ProductSelection;
     }
   | {
-      tag: "icon";
-    }
-  | {
-      tag: "head";
-    }
-  | {
-      tag: "content";
-      index: number;
+      tag: "list";
+      value: ListSelection;
     };
 
-export type Product = {
-  headItem?: HeadItem;
-  items: ReadonlyArray<Item>;
-};
-
-export type Item = {
-  name: string;
-  type: Type;
-  value: Value;
-};
-
-export type HeadItem = {
-  name: string;
-  type: Type;
-  value: Value;
-  iconHash?: d.ImageHash;
-};
+const selectionProduct = (value: ProductSelection): Selection => ({
+  tag: "product",
+  value,
+});
+const selectionList = (value: ListSelection): Selection => ({
+  tag: "list",
+  value,
+});
 
 export type Value =
   | {
@@ -65,8 +61,18 @@ export type Value =
     }
   | {
       type: "list";
-      value: ReadonlyArray<Value>;
+      value: ListValue;
+    }
+  | {
+      type: "product";
+      value: ProductValue;
     };
+
+const listValue = (value: ListValue): Value => ({ type: "list", value });
+const productValue = (value: ProductValue): Value => ({
+  type: "product",
+  value,
+});
 
 export type Type =
   | {
@@ -96,34 +102,108 @@ export type Type =
       element: Type;
     };
 
-export const selectionUp = (
-  selection: Selection,
-  product: Product
-): Selection => {
-  if (selection.tag === "content") {
-    if (selection.index <= 0) {
-      if (product.headItem === undefined) {
-        return { tag: "content", index: 0 };
-      }
-      return { tag: "head" };
+export type EditorElementSelectionUpdate<ElementSelection, ElementValue> = {
+  up: (
+    elementSelection: ElementSelection,
+    value: ElementValue
+  ) => SelectionUpdateResult<ElementSelection>;
+  down: (
+    elementSelection: ElementSelection,
+    value: ElementValue
+  ) => SelectionUpdateResult<ElementSelection>;
+};
+
+export type SelectionUpdateResult<ElementSelection> =
+  | {
+      tag: "inlineMove";
+      selection: ElementSelection;
     }
-    return { tag: "content", index: selection.index - 1 };
+  | {
+      tag: "outside";
+    };
+
+const mapSelectionUpdateResult = <Input, Output>(
+  result: SelectionUpdateResult<Input>,
+  func: (input: Input) => Output
+): SelectionUpdateResult<Output> => {
+  switch (result.tag) {
+    case "inlineMove":
+      return {
+        tag: "inlineMove",
+        selection: func(result.selection),
+      };
+    case "outside":
+      return {
+        tag: "outside",
+      };
+  }
+};
+
+export const selectionUp = (
+  selection: ProductSelection,
+  product: ProductValue
+): ProductSelection => {
+  const result = productUpdate.up(selection, product);
+  if (result.tag === "inlineMove") {
+    return result.selection;
   }
   return selection;
 };
 
 export const selectionDown = (
-  selection: Selection,
-  product: Product
-): Selection => {
-  if (selection.tag === "head") {
-    return { tag: "content", index: 0 };
-  }
-  if (selection.tag === "content") {
-    return {
-      tag: "content",
-      index: Math.min(selection.index + 1, product.items.length - 1),
-    };
+  selection: ProductSelection,
+  product: ProductValue
+): ProductSelection => {
+  const result = productUpdate.down(selection, product);
+  if (result.tag === "inlineMove") {
+    return result.selection;
   }
   return selection;
+};
+
+const up = (
+  selection: Selection,
+  value: Value
+): SelectionUpdateResult<Selection> => {
+  if (selection.tag === "list" && value.type === "list") {
+    return mapSelectionUpdateResult(
+      listUpdate.up(selection.value, value.value),
+      selectionList
+    );
+  }
+  if (selection.tag === "product" && value.type === "product") {
+    return mapSelectionUpdateResult(
+      productUpdate.up(selection.value, value.value),
+      selectionProduct
+    );
+  }
+  return {
+    tag: "outside",
+  };
+};
+
+const down = (
+  selection: Selection,
+  value: Value
+): SelectionUpdateResult<Selection> => {
+  if (selection.tag === "list" && value.type === "list") {
+    return mapSelectionUpdateResult(
+      listUpdate.down(selection.value, value.value),
+      selectionList
+    );
+  }
+  if (selection.tag === "product" && value.type === "product") {
+    return mapSelectionUpdateResult(
+      productUpdate.down(selection.value, value.value),
+      selectionProduct
+    );
+  }
+  return {
+    tag: "outside",
+  };
+};
+
+export const selectionUpdate: EditorElementSelectionUpdate<Selection, Value> = {
+  up,
+  down,
 };

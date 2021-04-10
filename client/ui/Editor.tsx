@@ -1,8 +1,8 @@
 import * as React from "react";
 import * as d from "../../data";
 import {
-  Product,
-  Selection,
+  ProductSelection,
+  ProductValue,
   selectionDown,
   selectionUp,
 } from "../editor/selectionAndValue";
@@ -11,7 +11,7 @@ import { SelectionView } from "./SelectionView";
 import { css } from "@emotion/css";
 
 export type Props = {
-  readonly product: Product;
+  readonly product: ProductValue;
   readonly getAccount: (
     accountId: d.AccountId
   ) => d.ResourceState<d.Account> | undefined;
@@ -28,8 +28,9 @@ export type Props = {
  * 要素の操作対象を選ぶ, SelectionView, 選択した対象を操作する DetailView を内包する
  */
 export const Editor: React.VFC<Props> = (props) => {
-  const [selection, setSelection] = React.useState<Selection>({
-    tag: "none",
+  const [selection, setSelection] = React.useState<ProductSelection>({
+    tag: "head",
+    selection: undefined,
   });
   React.useEffect(() => {
     const handleKeyEvent = (event: KeyboardEvent) => {

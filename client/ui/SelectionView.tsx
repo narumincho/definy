@@ -3,8 +3,8 @@ import * as React from "react";
 import * as d from "../../data";
 import {
   Item,
-  Product,
-  Selection,
+  ProductSelection,
+  ProductValue,
   Type,
   Value,
 } from "../editor/selectionAndValue";
@@ -15,9 +15,9 @@ import { TimeCard } from "./TimeCard";
 import { css } from "@emotion/css";
 
 export type Props = {
-  readonly selection: Selection;
-  readonly onChangeSelection: (selection: Selection) => void;
-  readonly product: Product;
+  readonly selection: ProductSelection;
+  readonly onChangeSelection: (selection: ProductSelection) => void;
+  readonly product: ProductValue;
   readonly getAccount: (
     accountId: d.AccountId
   ) => d.ResourceState<d.Account> | undefined;
@@ -84,7 +84,7 @@ export const SelectionView: React.VFC<Props> = (props) => {
           <ItemView
             isSelect={props.selection.tag === "head"}
             onSelect={() => {
-              props.onChangeSelection({ tag: "head" });
+              props.onChangeSelection({ tag: "head", selection: undefined });
             }}
             item={props.product.headItem}
             isHead
@@ -103,7 +103,11 @@ export const SelectionView: React.VFC<Props> = (props) => {
             props.selection.tag === "content" && props.selection.index === index
           }
           onSelect={() => {
-            props.onChangeSelection({ tag: "content", index });
+            props.onChangeSelection({
+              tag: "content",
+              index,
+              selection: undefined,
+            });
           }}
           item={item}
           getAccount={props.getAccount}
@@ -314,7 +318,7 @@ const ValueView: React.VFC<{
           padding: 8,
         })}
       >
-        {props.value.value.map((v, index) => (
+        {props.value.value.items.map((v, index) => (
           <ValueView
             key={index}
             onRequestProject={props.onRequestProject}

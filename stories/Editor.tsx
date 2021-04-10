@@ -132,10 +132,12 @@ export const Home: Story<ControlAndActionProps> = (props) => (
           type: { tag: "list", element: { tag: "project" } },
           value: {
             type: "list",
-            value: [
-              { type: "project", value: project1Id },
-              { type: "project", value: project2Id },
-            ],
+            value: {
+              items: [
+                { type: "project", value: project1Id },
+                { type: "project", value: project2Id },
+              ],
+            },
           },
         },
       ],
@@ -149,7 +151,7 @@ export const Home: Story<ControlAndActionProps> = (props) => (
   />
 );
 
-export const ListN: Story<ControlAndActionProps> = (props) => (
+export const List: Story<ControlAndActionProps> = (props) => (
   <Editor
     product={{
       items: [
@@ -158,12 +160,14 @@ export const ListN: Story<ControlAndActionProps> = (props) => (
           type: { tag: "list", element: { tag: "number" } },
           value: {
             type: "list",
-            value: [
-              { type: "number", value: 0 },
-              { type: "number", value: 1 },
-              { type: "number", value: 2 },
-              { type: "number", value: 3 },
-            ],
+            value: {
+              items: [
+                { type: "number", value: 0 },
+                { type: "number", value: 1 },
+                { type: "number", value: 2 },
+                { type: "number", value: 3 },
+              ],
+            },
           },
         },
         {
@@ -171,11 +175,13 @@ export const ListN: Story<ControlAndActionProps> = (props) => (
           type: { tag: "list", element: { tag: "text" } },
           value: {
             type: "list",
-            value: [
-              { type: "text", value: "React" },
-              { type: "text", value: "Vue" },
-              { type: "text", value: "Angular" },
-            ],
+            value: {
+              items: [
+                { type: "text", value: "React" },
+                { type: "text", value: "Vue" },
+                { type: "text", value: "Angular" },
+              ],
+            },
           },
         },
       ],
