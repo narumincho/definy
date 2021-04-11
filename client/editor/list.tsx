@@ -121,20 +121,11 @@ const firstChildValue = (
   }
 };
 
-const selectionView: React.VFC<{
-  readonly value: ListValue;
-  readonly type: ListType;
-  readonly isBig?: boolean;
-  readonly getAccount: (
-    accountId: d.AccountId
-  ) => d.ResourceState<d.Account> | undefined;
-  readonly language: d.Language;
-  readonly onJump: (urlData: d.UrlData) => void;
-  readonly getProject: (
-    projectId: d.ProjectId
-  ) => d.ResourceState<d.Project> | undefined;
-  readonly onRequestProject: (projectId: d.ProjectId) => void;
-}> = (props) => {
+const selectionView: ElementOperation<
+  ListSelection,
+  ListValue,
+  ListType
+>["selectionView"] = (props) => {
   const elementType = props.type;
   return (
     <div
@@ -147,17 +138,51 @@ const selectionView: React.VFC<{
       })}
     >
       {props.value.items.map((v, index) => (
-        <commonElement.selectionView
+        <div
           key={index}
-          value={v}
-          type={elementType.elementType}
-          isBig={props.isBig}
-          getAccount={props.getAccount}
-          language={props.language}
-          onJump={props.onJump}
-          getProject={props.getProject}
-          onRequestProject={props.onRequestProject}
-        />
+          onClick={(event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            props.onChangeSelection({
+              index,
+              selection: undefined,
+            });
+          }}
+          className={css({
+            padding: 4,
+            borderWidth: 2,
+            borderStyle: "solid",
+            borderColor:
+              props.selection !== undefined &&
+              props.selection.index === index &&
+              props.selection.selection === undefined
+                ? "red"
+                : "#333",
+          })}
+        >
+          <commonElement.selectionView
+            key={index}
+            value={v}
+            type={elementType.elementType}
+            selection={
+              props.selection !== undefined && props.selection.index === index
+                ? props.selection.selection
+                : undefined
+            }
+            isBig={props.isBig}
+            getAccount={props.getAccount}
+            language={props.language}
+            onJump={props.onJump}
+            getProject={props.getProject}
+            onRequestProject={props.onRequestProject}
+            onChangeSelection={(selection) =>
+              props.onChangeSelection({
+                index,
+                selection,
+              })
+            }
+          />
+        </div>
       ))}
     </div>
   );

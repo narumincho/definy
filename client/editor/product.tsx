@@ -8,6 +8,8 @@ import {
   Value,
   commonElement,
 } from "./commonElement";
+import { Image } from "../container/Image";
+import { css } from "@emotion/css";
 
 export type ProductSelection =
   | {
@@ -297,11 +299,234 @@ const firstChildValue = (
   return undefined;
 };
 
-const selectionView: React.VFC<{
-  value: ProductValue;
-  type: ProductType;
-}> = () => {
-  return <div>Productの選択View!</div>;
+export const ProductSelectionView: ElementOperation<
+  ProductSelection,
+  ProductValue,
+  ProductType
+>["selectionView"] = (props) => {
+  return (
+    <div
+      className={css({
+        display: "grid",
+        gap: 4,
+        alignContent: "start",
+        padding: 8,
+        height: "100%",
+        overflowX: "hidden",
+        overflowY: "scroll",
+      })}
+    >
+      {props.value.headItem === undefined ||
+      props.type.headItem === undefined ? (
+        <></>
+      ) : (
+        <div
+          className={css({
+            display: "grid",
+            gridAutoFlow: "column",
+            gridTemplateColumns:
+              props.value.headItem.iconHash === undefined ? "1fr" : "auto 1fr",
+          })}
+        >
+          {props.value.headItem.iconHash === undefined ? (
+            <></>
+          ) : (
+            <div
+              className={css({
+                display: "grid",
+                placeContent: "center",
+                borderWidth: 2,
+                borderStyle: "solid",
+                borderColor:
+                  props.selection !== undefined &&
+                  props.selection.tag === "icon"
+                    ? "red"
+                    : "#333",
+                borderRadius: 8,
+              })}
+              onClick={() => {
+                props.onChangeSelection({
+                  tag: "icon",
+                });
+              }}
+            >
+              <Image
+                width={32}
+                height={32}
+                alt="タイトルのアイコン"
+                imageHash={props.value.headItem.iconHash}
+              />
+            </div>
+          )}
+          <ItemView
+            onSelect={(selection) => {
+              props.onChangeSelection({ tag: "head", selection });
+            }}
+            name={props.type.headItem.name}
+            type={props.type.headItem.type}
+            itemSelection={getHeadItemSelection(props.selection)}
+            value={props.value.headItem.value}
+            isHead
+            getAccount={props.getAccount}
+            language={props.language}
+            onJump={props.onJump}
+            getProject={props.getProject}
+            onRequestProject={props.onRequestProject}
+          />
+        </div>
+      )}
+      {props.type.items.map((itemType, index) => {
+        const item = props.value.items[index];
+        if (item === undefined) {
+          return <div>指定したメンバーの値がない {JSON.stringify(item)}</div>;
+        }
+        return (
+          <ItemView
+            key={itemType.name}
+            onSelect={(selection) => {
+              props.onChangeSelection({
+                tag: "content",
+                index,
+                selection,
+              });
+            }}
+            name={itemType.name}
+            type={itemType.type}
+            itemSelection={getContentItemSelection(props.selection, index)}
+            value={item}
+            getAccount={props.getAccount}
+            language={props.language}
+            onJump={props.onJump}
+            getProject={props.getProject}
+            onRequestProject={props.onRequestProject}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
+const getHeadItemSelection = (
+  productSelection: ProductSelection | undefined
+): ItemSelection => {
+  if (productSelection === undefined || productSelection.tag !== "head") {
+    return { tag: "none" };
+  }
+  if (productSelection.selection === undefined) {
+    return { tag: "selectSelf" };
+  }
+  return { tag: "selectInner", selection: productSelection.selection };
+};
+
+const getContentItemSelection = (
+  productSelection: ProductSelection | undefined,
+  index: number
+): ItemSelection => {
+  if (
+    productSelection === undefined ||
+    productSelection.tag !== "content" ||
+    productSelection.index !== index
+  ) {
+    return { tag: "none" };
+  }
+  if (productSelection.selection === undefined) {
+    return { tag: "selectSelf" };
+  }
+  return { tag: "selectInner", selection: productSelection.selection };
+};
+
+type ItemSelection =
+  | {
+      tag: "selectSelf";
+    }
+  | {
+      tag: "selectInner";
+      selection: Selection;
+    }
+  | {
+      tag: "none";
+    };
+
+const ItemView: React.VFC<{
+  readonly onSelect: (selection: Selection | undefined) => void;
+  readonly name: string;
+  readonly type: Type;
+  readonly value: Value;
+  readonly itemSelection: ItemSelection;
+  readonly isHead?: boolean;
+  readonly getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
+  readonly language: d.Language;
+  readonly onJump: (urlData: d.UrlData) => void;
+  readonly getProject: (
+    projectId: d.ProjectId
+  ) => d.ResourceState<d.Project> | undefined;
+  readonly onRequestProject: (projectId: d.ProjectId) => void;
+}> = (props) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (props.itemSelection.tag === "selectSelf" && ref.current !== null) {
+      ref.current.focus();
+    }
+  }, [props.itemSelection]);
+
+  return (
+    <div
+      ref={ref}
+      tabIndex={-1}
+      className={css({
+        padding: 4,
+        borderWidth: 2,
+        borderStyle: "solid",
+        borderColor: props.itemSelection.tag === "selectSelf" ? "red" : "#333",
+      })}
+      onClick={(event) => {
+        console.log("選択した!", props.name, props.value);
+        event.preventDefault();
+        event.stopPropagation();
+        props.onSelect(undefined);
+      }}
+    >
+      <div
+        className={css({
+          display: "flex",
+          gap: 16,
+          alignItems: "center",
+        })}
+      >
+        {props.isHead ? (
+          <></>
+        ) : (
+          <div
+            className={css({
+              fontWeight: "bold",
+              fontSize: 16,
+              color: "#ddd",
+            })}
+          >
+            {props.name}
+          </div>
+        )}
+      </div>
+      <commonElement.selectionView
+        type={props.type}
+        value={props.value}
+        isBig={props.isHead}
+        getAccount={props.getAccount}
+        selection={
+          props.itemSelection.tag === "selectInner"
+            ? props.itemSelection.selection
+            : undefined
+        }
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={props.onSelect}
+      />
+    </div>
+  );
 };
 
 export const productUpdate: ElementOperation<
@@ -313,5 +538,5 @@ export const productUpdate: ElementOperation<
   down,
   firstChild,
   firstChildValue,
-  selectionView,
+  selectionView: ProductSelectionView,
 };

@@ -212,3 +212,114 @@ export const List: Story<ControlAndActionProps> = (props) => (
     getProject={getProject}
   />
 );
+
+export const NestProduct: Story<ControlAndActionProps> = (props) => (
+  <Editor
+    productType={{
+      headItem: {
+        name: "name",
+        hasIcon: false,
+        type: { tag: "text" },
+      },
+      items: [
+        {
+          name: "直積 in 直積",
+          type: {
+            tag: "product",
+            productType: {
+              items: [
+                {
+                  name: "name",
+                  type: { tag: "text" },
+                },
+                {
+                  name: "age",
+                  type: { tag: "number" },
+                },
+              ],
+            },
+          },
+        },
+        {
+          name: "直積 in リスト",
+          type: {
+            tag: "list",
+            listType: {
+              elementType: {
+                tag: "product",
+                productType: {
+                  items: [
+                    {
+                      name: "name",
+                      type: { tag: "text" },
+                    },
+                    {
+                      name: "age",
+                      type: { tag: "number" },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      ],
+    }}
+    product={{
+      headItem: {
+        value: { type: "text", value: "直積の入れ子" },
+      },
+      items: [
+        {
+          type: "product",
+          value: {
+            items: [
+              { type: "text", value: "入れ子の名前" },
+              { type: "number", value: 22 },
+            ],
+          },
+        },
+        {
+          type: "list",
+          value: {
+            items: [
+              {
+                type: "product",
+                value: {
+                  items: [
+                    { type: "text", value: "入れ子の名前A" },
+                    { type: "number", value: 1 },
+                  ],
+                },
+              },
+              {
+                type: "product",
+                value: {
+                  items: [
+                    { type: "text", value: "入れ子の名前B" },
+                    { type: "number", value: 12 },
+                  ],
+                },
+              },
+              {
+                type: "product",
+                value: {
+                  items: [
+                    { type: "text", value: "入れ子の名前C" },
+                    { type: "number", value: 123 },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      ],
+    }}
+    getAccount={getAccount}
+    language={props.language}
+    onJump={props.onJump}
+    onRequestAccount={props.onRequestAccount}
+    onRequestProject={props.onRequestProject}
+    getProject={getProject}
+  />
+);

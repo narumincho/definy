@@ -111,26 +111,27 @@ export type Type =
     };
 
 export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
-  up: (
+  readonly up: (
     selection: ElementSelection,
     value: ElementValue,
     type: ElementType
   ) => SelectionUpdateResult<ElementSelection>;
-  down: (
+  readonly down: (
     selection: ElementSelection,
     value: ElementValue,
     type: ElementType
   ) => SelectionUpdateResult<ElementSelection>;
-  firstChild: (
+  readonly firstChild: (
     selection: ElementSelection,
     value: ElementValue,
     type: ElementType
   ) => SelectionUpdateResult<ElementSelection>;
-  firstChildValue: (
+  readonly firstChildValue: (
     value: ElementValue,
     type: ElementType
   ) => ElementSelection | undefined;
   selectionView: React.VFC<{
+    readonly selection: ElementSelection | undefined;
     readonly value: ElementValue;
     readonly type: ElementType;
     readonly isBig?: boolean;
@@ -143,6 +144,7 @@ export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
       projectId: d.ProjectId
     ) => d.ResourceState<d.Project> | undefined;
     readonly onRequestProject: (projectId: d.ProjectId) => void;
+    readonly onChangeSelection: (selection: ElementSelection) => void;
   }>;
 };
 
@@ -327,20 +329,11 @@ const firstChildValue = (value: Value, type: Type): Selection | undefined => {
   }
 };
 
-const selectionView: React.VFC<{
-  readonly type: Type;
-  readonly value: Value;
-  readonly isBig?: boolean;
-  readonly getAccount: (
-    accountId: d.AccountId
-  ) => d.ResourceState<d.Account> | undefined;
-  readonly language: d.Language;
-  readonly onJump: (urlData: d.UrlData) => void;
-  readonly getProject: (
-    projectId: d.ProjectId
-  ) => d.ResourceState<d.Project> | undefined;
-  readonly onRequestProject: (projectId: d.ProjectId) => void;
-}> = (props) => {
+const selectionView: ElementOperation<
+  Selection,
+  Value,
+  Type
+>["selectionView"] = (props) => {
   if (props.type.tag === "number" && props.value.type === "number") {
     return (
       <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
@@ -454,6 +447,14 @@ const selectionView: React.VFC<{
         onJump={props.onJump}
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
+        onChangeSelection={(listSelection) =>
+          props.onChangeSelection(selectionList(listSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "list"
+            ? props.selection.value
+            : undefined
+        }
       />
     );
   }
@@ -468,6 +469,14 @@ const selectionView: React.VFC<{
         onJump={props.onJump}
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
+        onChangeSelection={(productSelection) =>
+          props.onChangeSelection(selectionProduct(productSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "product"
+            ? props.selection.value
+            : undefined
+        }
       />
     );
   }

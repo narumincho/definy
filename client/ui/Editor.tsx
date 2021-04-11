@@ -1,13 +1,17 @@
 import * as React from "react";
 import * as d from "../../data";
-import { ProductSelection, ProductType, ProductValue } from "../editor/product";
+import {
+  ProductSelection,
+  ProductType,
+  ProductValue,
+  productUpdate,
+} from "../editor/product";
 import {
   selectionDown,
   selectionFirstChild,
   selectionUp,
 } from "../editor/commonElement";
 import { DetailView } from "./DetailView";
-import { SelectionView } from "./SelectionView";
 import { css } from "@emotion/css";
 
 export type Props = {
@@ -77,11 +81,11 @@ export const Editor: React.VFC<Props> = (props) => {
         height: "100%",
       })}
     >
-      <SelectionView
+      <productUpdate.selectionView
         selection={selection}
         onChangeSelection={setSelection}
-        productType={props.productType}
-        product={props.product}
+        type={props.productType}
+        value={props.product}
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
