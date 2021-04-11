@@ -81,17 +81,25 @@ export const Editor: React.VFC<Props> = (props) => {
         height: "100%",
       })}
     >
-      <productUpdate.selectionView
-        selection={selection}
-        onChangeSelection={setSelection}
-        type={props.productType}
-        value={props.product}
-        getAccount={props.getAccount}
-        language={props.language}
-        onJump={props.onJump}
-        onRequestProject={props.onRequestProject}
-        getProject={props.getProject}
-      />
+      <div
+        className={css({
+          height: "100%",
+          overflowY: "scroll",
+        })}
+      >
+        <productUpdate.selectionView
+          selection={selection}
+          onChangeSelection={setSelection}
+          type={props.productType}
+          value={props.product}
+          getAccount={props.getAccount}
+          language={props.language}
+          onJump={props.onJump}
+          onRequestProject={props.onRequestProject}
+          getProject={props.getProject}
+        />
+      </div>
+
       <DetailView
         selection={selection}
         productType={props.productType}

@@ -8,6 +8,7 @@ import {
   Value,
   commonElement,
 } from "./commonElement";
+import { Button } from "../ui/Button";
 import { css } from "@emotion/css";
 
 export type ListSelection = {
@@ -131,16 +132,13 @@ const selectionView: ElementOperation<
     <div
       className={css({
         display: "grid",
-        gridAutoFlow: "column",
-        alignItems: "center",
-        gridTemplateColumns: "1fr 1fr 1fr",
         padding: 8,
       })}
     >
       {props.value.items.map((v, index) => (
         <div
           key={index}
-          onClick={(event) => {
+          onFocus={(event) => {
             event.stopPropagation();
             event.preventDefault();
             props.onChangeSelection({
@@ -148,6 +146,7 @@ const selectionView: ElementOperation<
               selection: undefined,
             });
           }}
+          tabIndex={0}
           className={css({
             padding: 4,
             borderWidth: 2,
@@ -158,6 +157,9 @@ const selectionView: ElementOperation<
               props.selection.selection === undefined
                 ? "red"
                 : "#333",
+            borderRadius: 8,
+            display: "grid",
+            gridTemplateColumns: "1fr 32px",
           })}
         >
           <commonElement.selectionView
@@ -182,6 +184,7 @@ const selectionView: ElementOperation<
               })
             }
           />
+          <Button>x</Button>
         </div>
       ))}
     </div>

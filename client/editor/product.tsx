@@ -311,9 +311,6 @@ export const ProductSelectionView: ElementOperation<
         gap: 4,
         alignContent: "start",
         padding: 8,
-        height: "100%",
-        overflowX: "hidden",
-        overflowY: "scroll",
       })}
     >
       {props.value.headItem === undefined ||
@@ -474,19 +471,18 @@ const ItemView: React.VFC<{
   return (
     <div
       ref={ref}
-      tabIndex={-1}
       className={css({
         padding: 4,
         borderWidth: 2,
         borderStyle: "solid",
         borderColor: props.itemSelection.tag === "selectSelf" ? "red" : "#333",
       })}
-      onClick={(event) => {
-        console.log("選択した!", props.name, props.value);
+      onFocus={(event) => {
         event.preventDefault();
         event.stopPropagation();
         props.onSelect(undefined);
       }}
+      tabIndex={0}
     >
       <div
         className={css({
