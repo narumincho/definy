@@ -1,13 +1,11 @@
 import * as React from "react";
 import * as d from "../../data";
+import { ProductSelection, ProductType, ProductValue } from "../editor/product";
 import {
-  ProductSelection,
-  ProductType,
-  ProductValue,
   selectionDown,
   selectionFirstChild,
   selectionUp,
-} from "../editor/selectionAndValue";
+} from "../editor/commonElement";
 import { DetailView } from "./DetailView";
 import { SelectionView } from "./SelectionView";
 import { css } from "@emotion/css";

@@ -1,12 +1,7 @@
 import * as React from "react";
 import * as d from "../../data";
-import {
-  ProductSelection,
-  ProductType,
-  ProductValue,
-  Type,
-  Value,
-} from "../editor/selectionAndValue";
+import { ProductSelection, ProductType, ProductValue } from "../editor/product";
+import { Type, Value } from "../editor/commonElement";
 import { AccountCard } from "./AccountCard";
 import { Image } from "../container/Image";
 import { TimeDetail } from "./TimeCard";

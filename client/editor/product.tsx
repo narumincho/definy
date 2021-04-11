@@ -1,12 +1,13 @@
+import * as React from "react";
 import * as d from "../../data";
 import {
-  EditorElementSelectionUpdate,
+  ElementOperation,
   Selection,
   SelectionUpdateResult,
   Type,
   Value,
-  selectionUpdate,
-} from "./selectionAndValue";
+  commonElement,
+} from "./commonElement";
 
 export type ProductSelection =
   | {
@@ -58,7 +59,7 @@ const up = (
       ) {
         return { tag: "outside" };
       }
-      const result = selectionUpdate.up(
+      const result = commonElement.up(
         selection.selection,
         product.headItem.value,
         type.headItem.type
@@ -95,11 +96,7 @@ const up = (
           selection: { tag: "content", index: lastIndex, selection: undefined },
         };
       }
-      const result = selectionUpdate.up(
-        selection.selection,
-        item,
-        itemType.type
-      );
+      const result = commonElement.up(selection.selection, item, itemType.type);
       return {
         tag: "inlineMove",
         selection: {
@@ -151,7 +148,7 @@ const down = (
           tag: "outside",
         };
       }
-      const result = selectionUpdate.down(
+      const result = commonElement.down(
         selection.selection,
         product.headItem.value,
         type.headItem.type
@@ -187,7 +184,7 @@ const down = (
           },
         };
       }
-      const result = selectionUpdate.down(
+      const result = commonElement.down(
         selection.selection,
         item,
         itemType.type
@@ -232,14 +229,14 @@ const firstChild = (
           tag: "inlineMove",
           selection: {
             tag: "head",
-            selection: selectionUpdate.firstChildValue(
+            selection: commonElement.firstChildValue(
               product.headItem.value,
               type.headItem.type
             ),
           },
         };
       }
-      const result = selectionUpdate.firstChild(
+      const result = commonElement.firstChild(
         selection.selection,
         product.headItem.value,
         type.headItem.type
@@ -266,11 +263,11 @@ const firstChild = (
           selection: {
             tag: "content",
             index: selection.index,
-            selection: selectionUpdate.firstChildValue(item, itemType.type),
+            selection: commonElement.firstChildValue(item, itemType.type),
           },
         };
       }
-      const result = selectionUpdate.down(
+      const result = commonElement.down(
         selection.selection,
         item,
         itemType.type
@@ -300,7 +297,14 @@ const firstChildValue = (
   return undefined;
 };
 
-export const productUpdate: EditorElementSelectionUpdate<
+const selectionView: React.VFC<{
+  value: ProductValue;
+  type: ProductType;
+}> = () => {
+  return <div>Productの選択View!</div>;
+};
+
+export const productUpdate: ElementOperation<
   ProductSelection,
   ProductValue,
   ProductType
@@ -309,4 +313,5 @@ export const productUpdate: EditorElementSelectionUpdate<
   down,
   firstChild,
   firstChildValue,
+  selectionView,
 };

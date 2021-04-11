@@ -1,11 +1,14 @@
+import * as React from "react";
+import * as d from "../../data";
 import {
-  EditorElementSelectionUpdate,
+  ElementOperation,
   Selection,
   SelectionUpdateResult,
   Type,
   Value,
-  selectionUpdate,
-} from "./selectionAndValue";
+  commonElement,
+} from "./commonElement";
+import { css } from "@emotion/css";
 
 export type ListSelection = {
   readonly index: number;
@@ -36,11 +39,7 @@ const up = (
       selection: { index: nextIndex, selection: undefined },
     };
   }
-  const result = selectionUpdate.up(
-    selection.selection,
-    item,
-    type.elementType
-  );
+  const result = commonElement.up(selection.selection, item, type.elementType);
   return {
     tag: "inlineMove",
     selection: {
@@ -66,11 +65,7 @@ const down = (
       selection: { index: nextIndex, selection: undefined },
     };
   }
-  const result = selectionUpdate.up(
-    selection.selection,
-    item,
-    type.elementType
-  );
+  const result = commonElement.up(selection.selection, item, type.elementType);
   return {
     tag: "inlineMove",
     selection: {
@@ -96,11 +91,11 @@ const firstChild = (
       tag: "inlineMove",
       selection: {
         index: selection.index,
-        selection: selectionUpdate.firstChildValue(item, type.elementType),
+        selection: commonElement.firstChildValue(item, type.elementType),
       },
     };
   }
-  const result = selectionUpdate.down(
+  const result = commonElement.down(
     selection.selection,
     item,
     type.elementType
@@ -126,7 +121,49 @@ const firstChildValue = (
   }
 };
 
-export const listUpdate: EditorElementSelectionUpdate<
+const selectionView: React.VFC<{
+  readonly value: ListValue;
+  readonly type: ListType;
+  readonly isBig?: boolean;
+  readonly getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
+  readonly language: d.Language;
+  readonly onJump: (urlData: d.UrlData) => void;
+  readonly getProject: (
+    projectId: d.ProjectId
+  ) => d.ResourceState<d.Project> | undefined;
+  readonly onRequestProject: (projectId: d.ProjectId) => void;
+}> = (props) => {
+  const elementType = props.type;
+  return (
+    <div
+      className={css({
+        display: "grid",
+        gridAutoFlow: "column",
+        alignItems: "center",
+        gridTemplateColumns: "1fr 1fr 1fr",
+        padding: 8,
+      })}
+    >
+      {props.value.items.map((v, index) => (
+        <commonElement.selectionView
+          key={index}
+          value={v}
+          type={elementType.elementType}
+          isBig={props.isBig}
+          getAccount={props.getAccount}
+          language={props.language}
+          onJump={props.onJump}
+          getProject={props.getProject}
+          onRequestProject={props.onRequestProject}
+        />
+      ))}
+    </div>
+  );
+};
+
+export const listUpdate: ElementOperation<
   ListSelection,
   ListValue,
   ListType
@@ -135,4 +172,5 @@ export const listUpdate: EditorElementSelectionUpdate<
   down,
   firstChild,
   firstChildValue,
+  selectionView,
 };
