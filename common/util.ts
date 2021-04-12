@@ -16,3 +16,16 @@ export const listAddSeparator = <Element>(
       .flatMap((element): ReadonlyArray<Element> => [separator, element]),
   ];
 };
+
+/**
+ * `undefined` かもしれない値に関数を呼ぶ
+ */
+export const maybeMap = <Input, Output>(
+  value: Input | undefined,
+  func: (input: Input) => Output
+): Output | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  return func(value);
+};

@@ -3,7 +3,6 @@ import * as d from "../../data";
 import {
   ElementOperation,
   Selection,
-  SelectionUpdateResult,
   Type,
   Value,
   commonElement,
@@ -24,102 +23,78 @@ export type ListValue = {
   readonly items: ReadonlyArray<Value>;
 };
 
-const up = (
+const moveUp = (
   selection: ListSelection,
   value: ListValue,
   type: ListType
-): SelectionUpdateResult<ListSelection> => {
+): ListSelection | undefined => {
   const item = value.items[selection.index];
   if (selection.selection === undefined || item === undefined) {
     const nextIndex = Math.min(selection.index - 1, value.items.length - 1);
     if (nextIndex < 0) {
-      return { tag: "outside" };
+      return undefined;
     }
-    return {
-      tag: "inlineMove",
-      selection: { index: nextIndex, selection: undefined },
-    };
+    return { index: nextIndex, selection: undefined };
   }
-  const result = commonElement.up(selection.selection, item, type.elementType);
   return {
-    tag: "inlineMove",
-    selection: {
-      index: selection.index,
-      selection: result.tag === "inlineMove" ? result.selection : undefined,
-    },
+    index: selection.index,
+    selection: commonElement.moveUp(
+      selection.selection,
+      item,
+      type.elementType
+    ),
   };
 };
 
-const down = (
+const moveDown = (
   selection: ListSelection,
   value: ListValue,
   type: ListType
-): SelectionUpdateResult<ListSelection> => {
+): ListSelection | undefined => {
   const item = value.items[selection.index];
   if (selection.selection === undefined || item === undefined) {
     const nextIndex = selection.index + 1;
     if (value.items.length - 1 < nextIndex) {
-      return { tag: "outside" };
+      return undefined;
     }
-    return {
-      tag: "inlineMove",
-      selection: { index: nextIndex, selection: undefined },
-    };
+    return { index: nextIndex, selection: undefined };
   }
-  const result = commonElement.up(selection.selection, item, type.elementType);
   return {
-    tag: "inlineMove",
-    selection: {
-      index: selection.index,
-      selection: result.tag === "inlineMove" ? result.selection : undefined,
-    },
+    index: selection.index,
+    selection: commonElement.moveDown(
+      selection.selection,
+      item,
+      type.elementType
+    ),
   };
 };
 
-const firstChild = (
-  selection: ListSelection,
-  value: ListValue,
-  type: ListType
-): SelectionUpdateResult<ListSelection> => {
-  const item = value.items[selection.index];
-  if (item === undefined) {
-    return {
-      tag: "outside",
-    };
-  }
-  if (selection.selection === undefined) {
-    return {
-      tag: "inlineMove",
-      selection: {
-        index: selection.index,
-        selection: commonElement.firstChildValue(item, type.elementType),
-      },
-    };
-  }
-  const result = commonElement.down(
-    selection.selection,
-    item,
-    type.elementType
-  );
-  return {
-    tag: "inlineMove",
-    selection: {
-      index: selection.index,
-      selection: result.tag === "inlineMove" ? result.selection : undefined,
-    },
-  };
-};
-
-const firstChildValue = (
+const moveFirstChild = (
+  selection: ListSelection | undefined,
   value: ListValue,
   type: ListType
 ): ListSelection | undefined => {
-  if (value.items.length > 0) {
-    return {
-      index: 0,
-      selection: undefined,
-    };
+  if (selection === undefined) {
+    if (value.items.length > 0) {
+      return {
+        index: 0,
+        selection: undefined,
+      };
+    }
+    return undefined;
   }
+  const item = value.items[selection.index];
+  if (item === undefined) {
+    return undefined;
+  }
+  return {
+    index: selection.index,
+    selection: commonElement.moveFirstChild(
+      selection.selection,
+      item,
+      type.elementType
+    ),
+  };
 };
 
 const ListSelectionView: ElementOperation<
@@ -229,10 +204,9 @@ export const listUpdate: ElementOperation<
   ListValue,
   ListType
 > = {
-  up,
-  down,
-  firstChild,
-  firstChildValue,
+  moveUp,
+  moveDown,
+  moveFirstChild,
   selectionView: ListSelectionView,
   detailView: ListDetailView,
 };

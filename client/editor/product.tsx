@@ -3,7 +3,6 @@ import * as d from "../../data";
 import {
   ElementOperation,
   Selection,
-  SelectionUpdateResult,
   Type,
   Value,
   commonElement,
@@ -44,14 +43,14 @@ export type HeadItem = {
   iconHash?: d.ImageHash;
 };
 
-const up = (
+const moveUp = (
   selection: ProductSelection,
   product: ProductValue,
   type: ProductType
-): SelectionUpdateResult<ProductSelection> => {
+): ProductSelection | undefined => {
   switch (selection.tag) {
     case "icon":
-      return { tag: "outside" };
+      return undefined;
     case "head": {
       // head の要素がないか, head自体を選択していた場合は外へ
       if (
@@ -59,19 +58,15 @@ const up = (
         selection.selection === undefined ||
         type.headItem === undefined
       ) {
-        return { tag: "outside" };
+        return undefined;
       }
-      const result = commonElement.up(
-        selection.selection,
-        product.headItem.value,
-        type.headItem.type
-      );
       return {
-        tag: "inlineMove",
-        selection: {
-          tag: "head",
-          selection: result.tag === "inlineMove" ? result.selection : undefined,
-        },
+        tag: "head",
+        selection: commonElement.moveUp(
+          selection.selection,
+          product.headItem.value,
+          type.headItem.type
+        ),
       };
     }
     case "content": {
@@ -86,53 +81,39 @@ const up = (
         const lastIndex = Math.min(selection.index - 1, type.items.length - 1);
         if (lastIndex < 0) {
           if (type.headItem !== undefined) {
-            return {
-              tag: "inlineMove",
-              selection: { tag: "head", selection: undefined },
-            };
+            return { tag: "head", selection: undefined };
           }
-          return { tag: "outside" };
+          return undefined;
         }
-        return {
-          tag: "inlineMove",
-          selection: { tag: "content", index: lastIndex, selection: undefined },
-        };
+        return { tag: "content", index: lastIndex, selection: undefined };
       }
-      const result = commonElement.up(selection.selection, item, itemType.type);
       return {
-        tag: "inlineMove",
-        selection: {
-          tag: "content",
-          index: selection.index,
-          selection: result.tag === "inlineMove" ? result.selection : undefined,
-        },
+        tag: "content",
+        index: selection.index,
+        selection: commonElement.moveUp(
+          selection.selection,
+          item,
+          itemType.type
+        ),
       };
     }
   }
 };
 
-const down = (
+const moveDown = (
   selection: ProductSelection,
   product: ProductValue,
   type: ProductType
-): SelectionUpdateResult<ProductSelection> => {
+): ProductSelection | undefined => {
   switch (selection.tag) {
     case "icon": {
       if (type.headItem !== undefined) {
-        return {
-          tag: "inlineMove",
-          selection: { tag: "head", selection: undefined },
-        };
+        return { tag: "head", selection: undefined };
       }
       if (type.items.length >= 1) {
-        return {
-          tag: "inlineMove",
-          selection: { tag: "content", index: 0, selection: undefined },
-        };
+        return { tag: "content", index: 0, selection: undefined };
       }
-      return {
-        tag: "outside",
-      };
+      return undefined;
     }
     case "head": {
       if (
@@ -141,26 +122,17 @@ const down = (
         type.headItem === undefined
       ) {
         if (product.items.length >= 1) {
-          return {
-            tag: "inlineMove",
-            selection: { tag: "content", index: 0, selection: undefined },
-          };
+          return { tag: "content", index: 0, selection: undefined };
         }
-        return {
-          tag: "outside",
-        };
+        return undefined;
       }
-      const result = commonElement.down(
-        selection.selection,
-        product.headItem.value,
-        type.headItem.type
-      );
       return {
-        tag: "inlineMove",
-        selection: {
-          tag: "head",
-          selection: result.tag === "inlineMove" ? result.selection : undefined,
-        },
+        tag: "head",
+        selection: commonElement.moveDown(
+          selection.selection,
+          product.headItem.value,
+          type.headItem.type
+        ),
       };
     }
     case "content": {
@@ -173,114 +145,73 @@ const down = (
       ) {
         const nextIndex = selection.index + 1;
         if (type.items.length <= nextIndex) {
-          return {
-            tag: "outside",
-          };
+          return undefined;
         }
         return {
-          tag: "inlineMove",
-          selection: {
-            tag: "content",
-            index: nextIndex,
-            selection: undefined,
-          },
+          tag: "content",
+          index: nextIndex,
+          selection: undefined,
         };
       }
-      const result = commonElement.down(
-        selection.selection,
-        item,
-        itemType.type
-      );
       return {
-        tag: "inlineMove",
-        selection: {
-          tag: "content",
-          index: selection.index,
-          selection: result.tag === "inlineMove" ? result.selection : undefined,
-        },
+        tag: "content",
+        index: selection.index,
+        selection: commonElement.moveDown(
+          selection.selection,
+          item,
+          itemType.type
+        ),
       };
     }
   }
 };
 
-const firstChild = (
-  selection: ProductSelection,
-  product: ProductValue,
+const moveFirstChild: ElementOperation<
+  ProductSelection,
+  ProductValue,
+  ProductType
+>["moveFirstChild"] = (
+  selection: ProductSelection | undefined,
+  value: ProductValue,
   type: ProductType
-): SelectionUpdateResult<ProductSelection> => {
+): ProductSelection | undefined => {
+  if (selection === undefined) {
+    return firstChildValue(value, type);
+  }
   switch (selection.tag) {
     case "icon": {
       if (type.headItem === undefined || !type.headItem.hasIcon) {
-        return {
-          tag: "outside",
-        };
+        return undefined;
       }
-      return {
-        tag: "inlineMove",
-        selection: { tag: "icon" },
-      };
+      return { tag: "icon" };
     }
     case "head": {
-      if (product.headItem === undefined || type.headItem === undefined) {
-        return {
-          tag: "outside",
-        };
+      if (value.headItem === undefined || type.headItem === undefined) {
+        return undefined;
       }
-      if (selection.selection === undefined) {
-        return {
-          tag: "inlineMove",
-          selection: {
-            tag: "head",
-            selection: commonElement.firstChildValue(
-              product.headItem.value,
-              type.headItem.type
-            ),
-          },
-        };
-      }
-      const result = commonElement.firstChild(
-        selection.selection,
-        product.headItem.value,
-        type.headItem.type
-      );
       return {
-        tag: "inlineMove",
-        selection: {
-          tag: "head",
-          selection: result.tag === "inlineMove" ? result.selection : undefined,
-        },
+        tag: "head",
+        selection: commonElement.moveFirstChild(
+          selection.selection,
+          value.headItem.value,
+          type.headItem.type
+        ),
       };
     }
     case "content": {
-      const item = product.items[selection.index];
+      const item = value.items[selection.index];
       const itemType = type.items[selection.index];
       if (item === undefined || itemType === undefined) {
-        return {
-          tag: "outside",
-        };
+        return undefined;
       }
-      if (selection.selection === undefined) {
-        return {
-          tag: "inlineMove",
-          selection: {
-            tag: "content",
-            index: selection.index,
-            selection: commonElement.firstChildValue(item, itemType.type),
-          },
-        };
-      }
-      const result = commonElement.down(
-        selection.selection,
-        item,
-        itemType.type
-      );
       return {
-        tag: "inlineMove",
-        selection: {
-          tag: "content",
-          index: selection.index,
-          selection: result.tag === "inlineMove" ? result.selection : undefined,
-        },
+        tag: "content",
+        index: selection.index,
+        selection: commonElement.moveFirstChild(
+          selection.selection,
+          item,
+          itemType.type
+        ),
       };
     }
   }
@@ -616,10 +547,9 @@ export const productUpdate: ElementOperation<
   ProductValue,
   ProductType
 > = {
-  up,
-  down,
-  firstChild,
-  firstChildValue,
+  moveUp,
+  moveDown,
+  moveFirstChild,
   selectionView: ProductSelectionView,
   detailView: ProductDetailView,
 };

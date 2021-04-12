@@ -13,6 +13,7 @@ import { Link } from "../ui/Link";
 import { ProjectCard } from "../ui/ProjectCard";
 import React from "react";
 import { css } from "@emotion/css";
+import { maybeMap } from "../../common/util";
 
 export type Selection =
   | {
@@ -111,22 +112,41 @@ export type Type =
     };
 
 export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
-  readonly up: (
+  /**
+   * 上に移動するときにどのように移動するかどうかを決める
+   *
+   * @returns `undefined` の場合は, 選択が要素外に出る場合や, 選択が不正であることを表現する.
+   * その場合, 基本的に要素自体を選択することが多い
+   *
+   * デフォルトで `W` キーを押したときの動作
+   */
+  readonly moveUp: (
     selection: ElementSelection,
     value: ElementValue,
     type: ElementType
-  ) => SelectionUpdateResult<ElementSelection>;
-  readonly down: (
+  ) => ElementSelection | undefined;
+  /**
+   * 下に移動するときにどのように移動するかどうかを決める
+   *
+   * @returns `undefined` の場合は, 選択が要素外に出る場合や, 選択が不正であることを表現する.
+   * その場合, 基本的に要素自体を選択することが多い
+   *
+   * デフォルトで `S` キーを押したときの動作
+   */
+  readonly moveDown: (
     selection: ElementSelection,
     value: ElementValue,
     type: ElementType
-  ) => SelectionUpdateResult<ElementSelection>;
-  readonly firstChild: (
-    selection: ElementSelection,
-    value: ElementValue,
-    type: ElementType
-  ) => SelectionUpdateResult<ElementSelection>;
-  readonly firstChildValue: (
+  ) => ElementSelection | undefined;
+  /**
+   * 先頭の子要素に移動したときにどういう移動をするかどうかを決める
+   * @param selection 選択位置, `undefined`の場合は要素自体が選択されている場合
+   * @returns `undefined` の場合は, 選択が不正であることを表現する. 不正であるときは基本的に要素自体を選択することが多い
+   *
+   * デフォルトで `E` キーを押したときの動作
+   */
+  readonly moveFirstChild: (
+    selection: ElementSelection | undefined,
     value: ElementValue,
     type: ElementType
   ) => ElementSelection | undefined;
@@ -162,42 +182,12 @@ export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
   }>;
 };
 
-export type SelectionUpdateResult<ElementSelection> =
-  | {
-      tag: "inlineMove";
-      selection: ElementSelection;
-    }
-  | {
-      tag: "outside";
-    };
-
-const mapSelectionUpdateResult = <Input, Output>(
-  result: SelectionUpdateResult<Input>,
-  func: (input: Input) => Output
-): SelectionUpdateResult<Output> => {
-  switch (result.tag) {
-    case "inlineMove":
-      return {
-        tag: "inlineMove",
-        selection: func(result.selection),
-      };
-    case "outside":
-      return {
-        tag: "outside",
-      };
-  }
-};
-
 export const selectionUp = (
   selection: ProductSelection,
   product: ProductValue,
   productType: ProductType
 ): ProductSelection => {
-  const result = productUpdate.up(selection, product, productType);
-  if (result.tag === "inlineMove") {
-    return result.selection;
-  }
-  return selection;
+  return productUpdate.moveUp(selection, product, productType) ?? selection;
 };
 
 export const selectionDown = (
@@ -205,11 +195,7 @@ export const selectionDown = (
   product: ProductValue,
   productType: ProductType
 ): ProductSelection => {
-  const result = productUpdate.down(selection, product, productType);
-  if (result.tag === "inlineMove") {
-    return result.selection;
-  }
-  return selection;
+  return productUpdate.moveDown(selection, product, productType) ?? selection;
 };
 
 export const selectionFirstChild = (
@@ -217,25 +203,23 @@ export const selectionFirstChild = (
   product: ProductValue,
   productType: ProductType
 ): ProductSelection => {
-  const result = productUpdate.firstChild(selection, product, productType);
-  if (result.tag === "inlineMove") {
-    return result.selection;
-  }
-  return selection;
+  return (
+    productUpdate.moveFirstChild(selection, product, productType) ?? selection
+  );
 };
 
-const up = (
+const moveUp = (
   selection: Selection,
   value: Value,
   type: Type
-): SelectionUpdateResult<Selection> => {
+): Selection | undefined => {
   if (
     selection.tag === "list" &&
     value.type === "list" &&
     type.tag === "list"
   ) {
-    return mapSelectionUpdateResult(
-      listUpdate.up(selection.value, value.value, type.listType),
+    return maybeMap(
+      listUpdate.moveUp(selection.value, value.value, type.listType),
       selectionList
     );
   }
@@ -244,28 +228,25 @@ const up = (
     value.type === "product" &&
     type.tag === "product"
   ) {
-    return mapSelectionUpdateResult(
-      productUpdate.up(selection.value, value.value, type.productType),
+    return maybeMap(
+      productUpdate.moveUp(selection.value, value.value, type.productType),
       selectionProduct
     );
   }
-  return {
-    tag: "outside",
-  };
 };
 
-const down = (
+const moveDown = (
   selection: Selection,
   value: Value,
   type: Type
-): SelectionUpdateResult<Selection> => {
+): Selection | undefined => {
   if (
     selection.tag === "list" &&
     value.type === "list" &&
     type.tag === "list"
   ) {
-    return mapSelectionUpdateResult(
-      listUpdate.down(selection.value, value.value, type.listType),
+    return maybeMap(
+      listUpdate.moveDown(selection.value, value.value, type.listType),
       selectionList
     );
   }
@@ -274,28 +255,28 @@ const down = (
     value.type === "product" &&
     type.tag === "product"
   ) {
-    return mapSelectionUpdateResult(
-      productUpdate.down(selection.value, value.value, type.productType),
+    return maybeMap(
+      productUpdate.moveDown(selection.value, value.value, type.productType),
       selectionProduct
     );
   }
-  return {
-    tag: "outside",
-  };
 };
 
 const firstChild = (
-  selection: Selection,
+  selection: Selection | undefined,
   value: Value,
   type: Type
-): SelectionUpdateResult<Selection> => {
+): Selection | undefined => {
+  if (selection === undefined) {
+    return firstChildValue(value, type);
+  }
   if (
     selection.tag === "list" &&
     value.type === "list" &&
     type.tag === "list"
   ) {
-    return mapSelectionUpdateResult(
-      listUpdate.firstChild(selection.value, value.value, type.listType),
+    return maybeMap(
+      listUpdate.moveFirstChild(selection.value, value.value, type.listType),
       selectionList
     );
   }
@@ -304,19 +285,21 @@ const firstChild = (
     value.type === "product" &&
     type.tag === "product"
   ) {
-    return mapSelectionUpdateResult(
-      productUpdate.firstChild(selection.value, value.value, type.productType),
+    return maybeMap(
+      productUpdate.moveFirstChild(
+        selection.value,
+        value.value,
+        type.productType
+      ),
       selectionProduct
     );
   }
-  return {
-    tag: "outside",
-  };
 };
 
 const firstChildValue = (value: Value, type: Type): Selection | undefined => {
   if (value.type === "product" && type.tag === "product") {
-    const productSelection = productUpdate.firstChildValue(
+    const productSelection = productUpdate.moveFirstChild(
+      undefined,
       value.value,
       type.productType
     );
@@ -329,7 +312,8 @@ const firstChildValue = (value: Value, type: Type): Selection | undefined => {
     };
   }
   if (value.type === "list" && type.tag === "list") {
-    const listSelection = listUpdate.firstChildValue(
+    const listSelection = listUpdate.moveFirstChild(
+      undefined,
       value.value,
       type.listType
     );
@@ -636,10 +620,9 @@ const CommonElementDetailView: ElementOperation<
 };
 
 export const commonElement: ElementOperation<Selection, Value, Type> = {
-  up,
-  down,
-  firstChild,
-  firstChildValue,
+  moveUp,
+  moveDown,
+  moveFirstChild: firstChild,
   selectionView: CommonElementSelectionView,
   detailView: CommonElementDetailView,
 };
