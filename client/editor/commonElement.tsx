@@ -614,12 +614,7 @@ const CommonElementDetailView: ElementOperation<
       />
     );
   }
-  if (
-    props.type.tag === "product" &&
-    props.value.type === "product" &&
-    props.selection !== undefined &&
-    props.selection.tag === "product"
-  ) {
+  if (props.type.tag === "product" && props.value.type === "product") {
     return (
       <productUpdate.detailView
         type={props.type.productType}

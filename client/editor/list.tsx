@@ -196,10 +196,30 @@ const ListDetailView: ElementOperation<
   ListValue,
   ListType
 >["detailView"] = (props) => {
+  if (props.selection === undefined) {
+    return (
+      <div>
+        <div>要素数: {props.value.items.length}</div>
+      </div>
+    );
+  }
+  const item = props.value.items[props.selection.index];
+  if (item === undefined) {
+    return <div>存在しないインデックスを指定している</div>;
+  }
   return (
     <div>
-      子要素をすべて一覧すると左の選択Viewで選択しなくなってしまうので,
-      要素をすべて消すボタン, 要素数など表示しておく
+      <div>リストインデックス: {props.selection.index}</div>
+      <commonElement.detailView
+        type={props.type.elementType}
+        value={item}
+        selection={props.selection.selection}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+      />
     </div>
   );
 };
