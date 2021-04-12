@@ -525,6 +525,92 @@ const ItemView: React.VFC<{
   );
 };
 
+const ProductDetailView: ElementOperation<
+  ProductSelection,
+  ProductValue,
+  ProductType
+>["detailView"] = (props) => {
+  if (props.selection === undefined) {
+    return <div>product自体を選択している</div>;
+  }
+  switch (props.selection.tag) {
+    case "head":
+      if (
+        props.value.headItem === undefined ||
+        props.type.headItem === undefined
+      ) {
+        return <div>headItemがないのに選択している</div>;
+      }
+      return (
+        <div>
+          <div
+            className={css({
+              display: "flex",
+              gap: 16,
+              alignItems: "center",
+            })}
+          >
+            <div
+              className={css({
+                fontSize: 24,
+              })}
+            >
+              {props.type.headItem.name}
+            </div>
+          </div>
+          <commonElement.detailView
+            type={props.type.headItem.type}
+            value={props.value.headItem.value}
+            selection={props.selection.selection}
+            getAccount={props.getAccount}
+            language={props.language}
+            onJump={props.onJump}
+            getProject={props.getProject}
+            onRequestProject={props.onRequestProject}
+          />
+        </div>
+      );
+    case "icon":
+      return <div>アイコンを選択してる</div>;
+    case "content": {
+      const item = props.value.items[props.selection.index];
+      const itemType = props.type.items[props.selection.index];
+      if (item === undefined || itemType === undefined) {
+        return <div>指定した要素が存在しない</div>;
+      }
+      return (
+        <div>
+          <div
+            className={css({
+              display: "flex",
+              gap: 16,
+              alignItems: "center",
+            })}
+          >
+            <div
+              className={css({
+                fontSize: 24,
+              })}
+            >
+              {itemType.name}
+            </div>
+          </div>
+          <commonElement.detailView
+            type={itemType.type}
+            value={item}
+            selection={props.selection.selection}
+            getAccount={props.getAccount}
+            language={props.language}
+            onJump={props.onJump}
+            getProject={props.getProject}
+            onRequestProject={props.onRequestProject}
+          />
+        </div>
+      );
+    }
+  }
+};
+
 export const productUpdate: ElementOperation<
   ProductSelection,
   ProductValue,
@@ -535,4 +621,5 @@ export const productUpdate: ElementOperation<
   firstChild,
   firstChildValue,
   selectionView: ProductSelectionView,
+  detailView: ProductDetailView,
 };

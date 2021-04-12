@@ -4,6 +4,7 @@ import { Editor, Props } from "../client/ui/Editor";
 import { Meta, Story } from "@storybook/react";
 import { getAccount, getProject, project1Id, project2Id } from "./mockData";
 import { ArgType } from "@storybook/addons";
+import { fullScreen } from "../.storybook/decorators";
 
 const argTypes: Record<string, ArgType> = {};
 
@@ -11,6 +12,10 @@ const meta: Meta = {
   title: "Editor",
   component: Editor,
   argTypes,
+  parameters: {
+    layout: "fullscreen",
+  },
+  decorators: [fullScreen],
 };
 export default meta;
 

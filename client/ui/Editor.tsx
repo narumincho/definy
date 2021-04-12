@@ -11,7 +11,6 @@ import {
   selectionFirstChild,
   selectionUp,
 } from "../editor/commonElement";
-import { DetailView } from "./DetailView";
 import { css } from "@emotion/css";
 
 export type Props = {
@@ -99,16 +98,24 @@ export const Editor: React.VFC<Props> = (props) => {
           getProject={props.getProject}
         />
       </div>
-
-      <DetailView
-        selection={selection}
-        productType={props.productType}
-        product={props.product}
-        getAccount={props.getAccount}
-        language={props.language}
-        onJump={props.onJump}
-        onRequestAccount={props.onRequestAccount}
-      />
+      <div
+        className={css({
+          height: "100%",
+          overflowX: "hidden",
+          overflowY: "scroll",
+        })}
+      >
+        <productUpdate.detailView
+          selection={selection}
+          type={props.productType}
+          value={props.product}
+          getAccount={props.getAccount}
+          language={props.language}
+          onJump={props.onJump}
+          onRequestProject={props.onRequestProject}
+          getProject={props.getProject}
+        />
+      </div>{" "}
     </div>
   );
 };

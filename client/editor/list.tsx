@@ -122,7 +122,7 @@ const firstChildValue = (
   }
 };
 
-const selectionView: ElementOperation<
+const ListSelectionView: ElementOperation<
   ListSelection,
   ListValue,
   ListType
@@ -191,6 +191,19 @@ const selectionView: ElementOperation<
   );
 };
 
+const ListDetailView: ElementOperation<
+  ListSelection,
+  ListValue,
+  ListType
+>["detailView"] = (props) => {
+  return (
+    <div>
+      子要素をすべて一覧すると左の選択Viewで選択しなくなってしまうので,
+      要素をすべて消すボタン, 要素数など表示しておく
+    </div>
+  );
+};
+
 export const listUpdate: ElementOperation<
   ListSelection,
   ListValue,
@@ -200,5 +213,6 @@ export const listUpdate: ElementOperation<
   down,
   firstChild,
   firstChildValue,
-  selectionView,
+  selectionView: ListSelectionView,
+  detailView: ListDetailView,
 };
