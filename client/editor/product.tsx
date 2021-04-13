@@ -230,6 +230,55 @@ const firstChildValue = (
   return undefined;
 };
 
+const moveParent: ElementOperation<
+  ProductSelection,
+  ProductValue,
+  ProductType
+>["moveParent"] = (selection, value, type) => {
+  switch (selection.tag) {
+    case "icon": {
+      return undefined;
+    }
+    case "head": {
+      if (
+        selection.selection === undefined ||
+        value.headItem === undefined ||
+        type.headItem === undefined
+      ) {
+        return undefined;
+      }
+      return {
+        tag: "head",
+        selection: commonElement.moveParent(
+          selection.selection,
+          value.headItem.value,
+          type.headItem.type
+        ),
+      };
+    }
+    case "content": {
+      const item = value.items[selection.index];
+      const itemType = type.items[selection.index];
+      if (
+        selection.selection === undefined ||
+        item === undefined ||
+        itemType === undefined
+      ) {
+        return undefined;
+      }
+      return {
+        tag: "content",
+        index: selection.index,
+        selection: commonElement.moveParent(
+          selection.selection,
+          item,
+          itemType.type
+        ),
+      };
+    }
+  }
+};
+
 export const ProductSelectionView: ElementOperation<
   ProductSelection,
   ProductValue,
@@ -542,7 +591,7 @@ const ProductDetailView: ElementOperation<
   }
 };
 
-export const productUpdate: ElementOperation<
+export const productOperation: ElementOperation<
   ProductSelection,
   ProductValue,
   ProductType
@@ -550,6 +599,7 @@ export const productUpdate: ElementOperation<
   moveUp,
   moveDown,
   moveFirstChild,
+  moveParent,
   selectionView: ProductSelectionView,
   detailView: ProductDetailView,
 };

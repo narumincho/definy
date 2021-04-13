@@ -97,6 +97,25 @@ const moveFirstChild = (
   };
 };
 
+const moveParent: ElementOperation<
+  ListSelection,
+  ListValue,
+  ListType
+>["moveParent"] = (selection, value, type) => {
+  const item = value.items[selection.index];
+  if (selection.selection === undefined || item === undefined) {
+    return undefined;
+  }
+  return {
+    index: selection.index,
+    selection: commonElement.moveParent(
+      selection.selection,
+      item,
+      type.elementType
+    ),
+  };
+};
+
 const ListSelectionView: ElementOperation<
   ListSelection,
   ListValue,
@@ -199,7 +218,7 @@ const ListDetailView: ElementOperation<
   );
 };
 
-export const listUpdate: ElementOperation<
+export const listOperation: ElementOperation<
   ListSelection,
   ListValue,
   ListType
@@ -207,6 +226,7 @@ export const listUpdate: ElementOperation<
   moveUp,
   moveDown,
   moveFirstChild,
+  moveParent,
   selectionView: ListSelectionView,
   detailView: ListDetailView,
 };

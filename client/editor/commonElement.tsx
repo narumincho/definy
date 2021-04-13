@@ -1,11 +1,11 @@
 /* eslint-disable complexity */
 import * as d from "../../data";
-import { ListSelection, ListType, ListValue, listUpdate } from "./list";
+import { ListSelection, ListType, ListValue, listOperation } from "./list";
 import {
   ProductSelection,
   ProductType,
   ProductValue,
-  productUpdate,
+  productOperation,
 } from "./product";
 import { TimeCard, TimeDetail } from "../ui/TimeCard";
 import { Image } from "../container/Image";
@@ -138,6 +138,7 @@ export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
     value: ElementValue,
     type: ElementType
   ) => ElementSelection | undefined;
+
   /**
    * 先頭の子要素に移動したときにどういう移動をするかどうかを決める
    * @param selection 選択位置, `undefined`の場合は要素自体が選択されている場合
@@ -150,6 +151,25 @@ export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
     value: ElementValue,
     type: ElementType
   ) => ElementSelection | undefined;
+
+  /**
+   * 親にどのように移動するかを決める
+   *
+   * @param selection 選択位置
+   * @returns `undefined` の場合は, 選択が要素外に出る場合や, 選択が不正であることを表現する.
+   * その場合, 基本的に要素自体を選択することが多い
+   *
+   * デフォルトで `Q` キーを押したときの動作
+   */
+  readonly moveParent: (
+    selection: ElementSelection,
+    value: ElementValue,
+    type: ElementType
+  ) => ElementSelection | undefined;
+
+  /**
+   * 左側の選択の木構造のコンポーネント
+   */
   readonly selectionView: React.VFC<{
     readonly selection: ElementSelection | undefined;
     readonly value: ElementValue;
@@ -166,6 +186,10 @@ export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
     readonly onRequestProject: (projectId: d.ProjectId) => void;
     readonly onChangeSelection: (selection: ElementSelection) => void;
   }>;
+
+  /**
+   * 右側に表示される詳細コンポーネント
+   */
   readonly detailView: React.VFC<{
     readonly value: ElementValue;
     readonly type: ElementType;
@@ -187,7 +211,7 @@ export const selectionUp = (
   product: ProductValue,
   productType: ProductType
 ): ProductSelection => {
-  return productUpdate.moveUp(selection, product, productType) ?? selection;
+  return productOperation.moveUp(selection, product, productType) ?? selection;
 };
 
 export const selectionDown = (
@@ -195,7 +219,9 @@ export const selectionDown = (
   product: ProductValue,
   productType: ProductType
 ): ProductSelection => {
-  return productUpdate.moveDown(selection, product, productType) ?? selection;
+  return (
+    productOperation.moveDown(selection, product, productType) ?? selection
+  );
 };
 
 export const selectionFirstChild = (
@@ -204,7 +230,18 @@ export const selectionFirstChild = (
   productType: ProductType
 ): ProductSelection => {
   return (
-    productUpdate.moveFirstChild(selection, product, productType) ?? selection
+    productOperation.moveFirstChild(selection, product, productType) ??
+    selection
+  );
+};
+
+export const selectionParent = (
+  selection: ProductSelection,
+  product: ProductValue,
+  productType: ProductType
+): ProductSelection => {
+  return (
+    productOperation.moveParent(selection, product, productType) ?? selection
   );
 };
 
@@ -219,7 +256,7 @@ const moveUp = (
     type.tag === "list"
   ) {
     return maybeMap(
-      listUpdate.moveUp(selection.value, value.value, type.listType),
+      listOperation.moveUp(selection.value, value.value, type.listType),
       selectionList
     );
   }
@@ -229,7 +266,7 @@ const moveUp = (
     type.tag === "product"
   ) {
     return maybeMap(
-      productUpdate.moveUp(selection.value, value.value, type.productType),
+      productOperation.moveUp(selection.value, value.value, type.productType),
       selectionProduct
     );
   }
@@ -246,7 +283,7 @@ const moveDown = (
     type.tag === "list"
   ) {
     return maybeMap(
-      listUpdate.moveDown(selection.value, value.value, type.listType),
+      listOperation.moveDown(selection.value, value.value, type.listType),
       selectionList
     );
   }
@@ -256,38 +293,35 @@ const moveDown = (
     type.tag === "product"
   ) {
     return maybeMap(
-      productUpdate.moveDown(selection.value, value.value, type.productType),
+      productOperation.moveDown(selection.value, value.value, type.productType),
       selectionProduct
     );
   }
 };
 
-const firstChild = (
+const moveFirstChild = (
   selection: Selection | undefined,
   value: Value,
   type: Type
 ): Selection | undefined => {
-  if (selection === undefined) {
-    return firstChildValue(value, type);
-  }
-  if (
-    selection.tag === "list" &&
-    value.type === "list" &&
-    type.tag === "list"
-  ) {
+  if (value.type === "list" && type.tag === "list") {
     return maybeMap(
-      listUpdate.moveFirstChild(selection.value, value.value, type.listType),
+      listOperation.moveFirstChild(
+        selection !== undefined && selection.tag === "list"
+          ? selection.value
+          : undefined,
+        value.value,
+        type.listType
+      ),
       selectionList
     );
   }
-  if (
-    selection.tag === "product" &&
-    value.type === "product" &&
-    type.tag === "product"
-  ) {
+  if (value.type === "product" && type.tag === "product") {
     return maybeMap(
-      productUpdate.moveFirstChild(
-        selection.value,
+      productOperation.moveFirstChild(
+        selection !== undefined && selection.tag === "product"
+          ? selection.value
+          : undefined,
         value.value,
         type.productType
       ),
@@ -296,34 +330,34 @@ const firstChild = (
   }
 };
 
-const firstChildValue = (value: Value, type: Type): Selection | undefined => {
-  if (value.type === "product" && type.tag === "product") {
-    const productSelection = productUpdate.moveFirstChild(
-      undefined,
-      value.value,
-      type.productType
+const moveParent: ElementOperation<Selection, Value, Type>["moveParent"] = (
+  selection,
+  value,
+  type
+) => {
+  if (
+    selection.tag === "list" &&
+    value.type === "list" &&
+    type.tag === "list"
+  ) {
+    return maybeMap(
+      listOperation.moveParent(selection.value, value.value, type.listType),
+      selectionList
     );
-    if (productSelection === undefined) {
-      return undefined;
-    }
-    return {
-      tag: "product",
-      value: productSelection,
-    };
   }
-  if (value.type === "list" && type.tag === "list") {
-    const listSelection = listUpdate.moveFirstChild(
-      undefined,
-      value.value,
-      type.listType
+  if (
+    selection.tag === "product" &&
+    value.type === "product" &&
+    type.tag === "product"
+  ) {
+    return maybeMap(
+      productOperation.moveParent(
+        selection.value,
+        value.value,
+        type.productType
+      ),
+      selectionProduct
     );
-    if (listSelection === undefined) {
-      return undefined;
-    }
-    return {
-      tag: "list",
-      value: listSelection,
-    };
   }
 };
 
@@ -436,7 +470,7 @@ const CommonElementSelectionView: ElementOperation<
   }
   if (props.type.tag === "list" && props.value.type === "list") {
     return (
-      <listUpdate.selectionView
+      <listOperation.selectionView
         type={props.type.listType}
         value={props.value.value}
         isBig={props.isBig}
@@ -458,7 +492,7 @@ const CommonElementSelectionView: ElementOperation<
   }
   if (props.type.tag === "product" && props.value.type === "product") {
     return (
-      <productUpdate.selectionView
+      <productOperation.selectionView
         type={props.type.productType}
         value={props.value.value}
         isBig={props.isBig}
@@ -582,7 +616,7 @@ const CommonElementDetailView: ElementOperation<
   }
   if (props.type.tag === "list" && props.value.type === "list") {
     return (
-      <listUpdate.detailView
+      <listOperation.detailView
         type={props.type.listType}
         value={props.value.value}
         selection={
@@ -600,7 +634,7 @@ const CommonElementDetailView: ElementOperation<
   }
   if (props.type.tag === "product" && props.value.type === "product") {
     return (
-      <productUpdate.detailView
+      <productOperation.detailView
         type={props.type.productType}
         value={props.value.value}
         selection={
@@ -622,7 +656,8 @@ const CommonElementDetailView: ElementOperation<
 export const commonElement: ElementOperation<Selection, Value, Type> = {
   moveUp,
   moveDown,
-  moveFirstChild: firstChild,
+  moveFirstChild,
+  moveParent,
   selectionView: CommonElementSelectionView,
   detailView: CommonElementDetailView,
 };

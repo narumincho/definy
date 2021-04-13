@@ -4,11 +4,12 @@ import {
   ProductSelection,
   ProductType,
   ProductValue,
-  productUpdate,
+  productOperation,
 } from "../editor/product";
 import {
   selectionDown,
   selectionFirstChild,
+  selectionParent,
   selectionUp,
 } from "../editor/commonElement";
 import { css } from "@emotion/css";
@@ -64,6 +65,14 @@ export const Editor: React.VFC<Props> = (props) => {
           );
           event.preventDefault();
           event.stopPropagation();
+          return;
+        }
+        case "KeyQ": {
+          setSelection((oldSelection) =>
+            selectionParent(oldSelection, props.product, props.productType)
+          );
+          event.preventDefault();
+          event.stopPropagation();
         }
       }
     };
@@ -86,7 +95,7 @@ export const Editor: React.VFC<Props> = (props) => {
           overflowY: "scroll",
         })}
       >
-        <productUpdate.selectionView
+        <productOperation.selectionView
           selection={selection}
           onChangeSelection={setSelection}
           type={props.productType}
@@ -105,7 +114,7 @@ export const Editor: React.VFC<Props> = (props) => {
           overflowY: "scroll",
         })}
       >
-        <productUpdate.detailView
+        <productOperation.detailView
           selection={selection}
           type={props.productType}
           value={props.product}
