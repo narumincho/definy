@@ -176,7 +176,12 @@ export const List: Story<ControlAndActionProps> = (props) => (
       items: [
         {
           name: "数値のリスト",
-          type: { tag: "list", listType: { elementType: { tag: "number" } } },
+          type: {
+            tag: "list",
+            listType: {
+              elementType: { tag: "number", numberType: { canEdit: true } },
+            },
+          },
         },
         {
           name: "文字のリスト",
@@ -244,7 +249,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
                 },
                 {
                   name: "age",
-                  type: { tag: "number" },
+                  type: { tag: "number", numberType: { canEdit: true } },
                 },
               ],
             },
@@ -265,7 +270,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
                     },
                     {
                       name: "age",
-                      type: { tag: "number" },
+                      type: { tag: "number", numberType: { canEdit: true } },
                     },
                   ],
                 },
