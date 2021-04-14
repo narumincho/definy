@@ -30,24 +30,24 @@ export const Project: Story<ControlAndActionProps> = (props) => (
       headItem: {
         name: "プロジェクト名",
         hasIcon: true,
-        type: { tag: "text" },
+        type: { tag: "text", textType: { canEdit: false } },
       },
       items: [
         {
           name: "作成者",
-          type: { tag: "text" },
+          type: { tag: "text", textType: { canEdit: false } },
         },
         {
           name: "パーツ",
-          type: { tag: "text" },
+          type: { tag: "text", textType: { canEdit: false } },
         },
         {
           name: "型パーツ",
-          type: { tag: "text" },
+          type: { tag: "text", textType: { canEdit: false } },
         },
         {
           name: "プロジェクトID",
-          type: { tag: "text" },
+          type: { tag: "text", textType: { canEdit: false } },
         },
       ],
     }}
@@ -78,13 +78,13 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
     productType={{
       headItem: {
         name: "name",
-        type: { tag: "text" },
+        type: { tag: "text", textType: { canEdit: true } },
         hasIcon: false,
       },
       items: [
         {
           name: "description",
-          type: { tag: "text" },
+          type: { tag: "text", textType: { canEdit: true } },
         },
         {
           name: "attribute",
@@ -96,7 +96,7 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "使用しているところ",
-          type: { tag: "text" },
+          type: { tag: "text", textType: { canEdit: false } },
         },
       ],
     }}
@@ -139,7 +139,7 @@ export const Home: Story<ControlAndActionProps> = (props) => (
       items: [
         {
           name: "検索",
-          type: { tag: "text" },
+          type: { tag: "text", textType: { canEdit: true } },
         },
         {
           name: "プロジェクト",
@@ -180,7 +180,12 @@ export const List: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "文字のリスト",
-          type: { tag: "list", listType: { elementType: { tag: "text" } } },
+          type: {
+            tag: "list",
+            listType: {
+              elementType: { tag: "text", textType: { canEdit: true } },
+            },
+          },
         },
       ],
     }}
@@ -224,7 +229,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
       headItem: {
         name: "name",
         hasIcon: false,
-        type: { tag: "text" },
+        type: { tag: "text", textType: { canEdit: false } },
       },
       items: [
         {
@@ -235,7 +240,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
               items: [
                 {
                   name: "name",
-                  type: { tag: "text" },
+                  type: { tag: "text", textType: { canEdit: true } },
                 },
                 {
                   name: "age",
@@ -256,7 +261,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
                   items: [
                     {
                       name: "name",
-                      type: { tag: "text" },
+                      type: { tag: "text", textType: { canEdit: true } },
                     },
                     {
                       name: "age",

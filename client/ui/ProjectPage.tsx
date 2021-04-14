@@ -40,7 +40,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
       productType={{
         headItem: {
           name: "プロジェクト名",
-          type: { tag: "text" },
+          type: { tag: "text", textType: { canEdit: false } },
           hasIcon: true,
         },
         items: [
@@ -58,7 +58,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             name: "プロジェクトID",
-            type: { tag: "text" },
+            type: { tag: "text", textType: { canEdit: false } },
           },
         ],
       }}

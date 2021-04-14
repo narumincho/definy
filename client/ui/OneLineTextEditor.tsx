@@ -13,10 +13,11 @@ export type UseOneLineTextEditorResult = {
  * @param id 入力欄を区別するID
  */
 export const useOneLineTextEditor = (option: {
+  initText: string;
   id: string;
   style?: CSSObject;
 }): UseOneLineTextEditorResult => {
-  const [text, setText] = React.useState<string>("");
+  const [text, setText] = React.useState<string>(option.initText);
   const element = (): React.ReactElement => {
     return (
       <OneLineTextEditor
@@ -41,6 +42,7 @@ export const useOneLineTextEditor = (option: {
 export const OneLineTextEditor: React.VFC<{
   value: string;
   onChange: (value: string) => void;
+  onFocus?: () => void;
   id: string;
   style?: CSSObject;
 }> = (props) => (
@@ -67,6 +69,9 @@ export const OneLineTextEditor: React.VFC<{
       props.style
     )}
     id={props.id}
+    onKeyDown={(e) => {
+      e.stopPropagation();
+    }}
     onChange={(e) => {
       props.onChange(e.target.value);
     }}

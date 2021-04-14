@@ -16,6 +16,7 @@ export const CreateProjectPage: React.VFC<Props> = (props) => {
   }
   const { text, element } = useOneLineTextEditor({
     id: "project-name",
+    initText: "",
     style: {
       width: "100%",
     },

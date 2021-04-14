@@ -7,6 +7,7 @@ import {
   ProductValue,
   productOperation,
 } from "./product";
+import { TextSelection, TextType, TextValue, textOperation } from "./text";
 import { TimeCard, TimeDetail } from "../ui/TimeCard";
 import { Image } from "../container/Image";
 import { Link } from "../ui/Link";
@@ -23,6 +24,10 @@ export type Selection =
   | {
       tag: "list";
       value: ListSelection;
+    }
+  | {
+      tag: "text";
+      textSelection: TextSelection;
     };
 
 const selectionProduct = (value: ProductSelection): Selection => ({
@@ -37,7 +42,7 @@ const selectionList = (value: ListSelection): Selection => ({
 export type Value =
   | {
       type: "text";
-      value: string;
+      value: TextValue;
     }
   | {
       type: "number";
@@ -82,6 +87,7 @@ const productValue = (value: ProductValue): Value => ({
 export type Type =
   | {
       tag: "text";
+      textType: TextType;
     }
   | {
       tag: "number";
@@ -375,9 +381,24 @@ const CommonElementSelectionView: ElementOperation<
   }
   if (props.type.tag === "text" && props.value.type === "text") {
     return (
-      <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
-        {props.value.value}
-      </div>
+      <textOperation.selectionView
+        type={props.type.textType}
+        value={props.value.value}
+        isBig={props.isBig}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={(listSelection) =>
+          props.onChangeSelection(selectionList(listSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "text"
+            ? props.selection.textSelection
+            : undefined
+        }
+      />
     );
   }
   if (props.type.tag === "select" && props.value.type === "select") {
@@ -551,13 +572,20 @@ const CommonElementDetailView: ElementOperation<
   }
   if (props.type.tag === "text" && props.value.type === "text") {
     return (
-      <div
-        className={css({
-          color: "orange",
-        })}
-      >
-        [type: text] {props.value.value}
-      </div>
+      <textOperation.detailView
+        type={props.type.textType}
+        value={props.value.value}
+        selection={
+          props.selection !== undefined && props.selection.tag === "text"
+            ? props.selection.textSelection
+            : undefined
+        }
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+      />
     );
   }
   if (props.type.tag === "select" && props.value.type === "select") {
