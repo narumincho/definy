@@ -2,7 +2,13 @@ import * as React from "react";
 import * as d from "../data";
 import { Editor, Props } from "../client/ui/Editor";
 import { Meta, Story } from "@storybook/react";
-import { getAccount, getProject, project1Id, project2Id } from "./mockData";
+import {
+  getAccount,
+  getProject,
+  project1,
+  project1Id,
+  project2Id,
+} from "./mockData";
 import { ArgType } from "@storybook/addons";
 import { fullScreen } from "../.storybook/decorators";
 
@@ -34,8 +40,16 @@ export const Project: Story<ControlAndActionProps> = (props) => (
       },
       items: [
         {
+          name: "カバー画像",
+          type: { tag: "image", imageType: { canEdit: false } },
+        },
+        {
           name: "作成者",
           type: { tag: "text", textType: { canEdit: false } },
+        },
+        {
+          name: "作成日時",
+          type: { tag: "time", timeType: { canEdit: false } },
         },
         {
           name: "パーツ",
@@ -57,8 +71,15 @@ export const Project: Story<ControlAndActionProps> = (props) => (
         iconHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
       },
       items: [
+        {
+          type: "image",
+          value: {
+            alternativeText: "プロジェクトの画像",
+            value: project1.imageHash,
+          },
+        },
         { type: "text", value: "作成者の名前" },
-        { type: "text", value: "2021-04-01" },
+        { type: "time", value: { day: 20001, millisecond: 1234 } },
         { type: "text", value: "パーツのリストを表示したい" },
         { type: "text", value: "型パーツのリストを表示したい" },
         { type: "text", value: "ffffffff" },
@@ -88,15 +109,23 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "attribute",
-          type: { tag: "select", valueList: ["Just", "Nothing"] },
+          type: { tag: "sum", sumType: { valueList: ["Just", "Nothing"] } },
         },
         {
           name: "body",
-          type: { tag: "select", valueList: ["Product", "Sum", "Kernel"] },
+          type: {
+            tag: "sum",
+            sumType: { valueList: ["Product", "Sum", "Kernel"] },
+          },
         },
         {
           name: "使用しているところ",
-          type: { tag: "text", textType: { canEdit: false } },
+          type: {
+            tag: "list",
+            listType: {
+              elementType: { tag: "text", textType: { canEdit: false } },
+            },
+          },
         },
       ],
     }}
@@ -111,16 +140,22 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
             "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
         },
         {
-          type: "select",
-          index: 1,
+          type: "sum",
+          value: { index: 1 },
         },
         {
-          type: "select",
-          index: 1,
+          type: "sum",
+          value: { index: 1 },
         },
         {
-          type: "text",
-          value: "使用しているところのリストを表示したい",
+          type: "list",
+          value: {
+            items: [
+              { type: "text", value: "使用しているところA" },
+              { type: "text", value: "使用しているところB" },
+              { type: "text", value: "使用しているところC" },
+            ],
+          },
         },
       ],
     }}
@@ -143,7 +178,12 @@ export const Home: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "プロジェクト",
-          type: { tag: "list", listType: { elementType: { tag: "project" } } },
+          type: {
+            tag: "list",
+            listType: {
+              elementType: { tag: "project", projectType: { canEdit: false } },
+            },
+          },
         },
       ],
     }}
@@ -176,7 +216,12 @@ export const List: Story<ControlAndActionProps> = (props) => (
       items: [
         {
           name: "数値のリスト",
-          type: { tag: "list", listType: { elementType: { tag: "number" } } },
+          type: {
+            tag: "list",
+            listType: {
+              elementType: { tag: "number", numberType: { canEdit: true } },
+            },
+          },
         },
         {
           name: "文字のリスト",
@@ -244,7 +289,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
                 },
                 {
                   name: "age",
-                  type: { tag: "number" },
+                  type: { tag: "number", numberType: { canEdit: true } },
                 },
               ],
             },
@@ -265,7 +310,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
                     },
                     {
                       name: "age",
-                      type: { tag: "number" },
+                      type: { tag: "number", numberType: { canEdit: true } },
                     },
                   ],
                 },

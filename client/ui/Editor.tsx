@@ -123,6 +123,7 @@ export const Editor: React.VFC<Props> = (props) => {
           onJump={props.onJump}
           onRequestProject={props.onRequestProject}
           getProject={props.getProject}
+          onRequestAccount={props.onRequestAccount}
         />
       </div>{" "}
     </div>

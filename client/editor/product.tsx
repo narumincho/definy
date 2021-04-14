@@ -547,6 +547,7 @@ const ProductDetailView: ElementOperation<
             onJump={props.onJump}
             getProject={props.getProject}
             onRequestProject={props.onRequestProject}
+            onRequestAccount={props.onRequestAccount}
           />
         </div>
       );
@@ -584,6 +585,7 @@ const ProductDetailView: ElementOperation<
             onJump={props.onJump}
             getProject={props.getProject}
             onRequestProject={props.onRequestProject}
+            onRequestAccount={props.onRequestAccount}
           />
         </div>
       );

@@ -1,16 +1,34 @@
 /* eslint-disable complexity */
 import * as d from "../../data";
+import {
+  AccountSelection,
+  AccountType,
+  AccountValue,
+  accountOperation,
+} from "./account";
+import { ImageSelection, ImageType, ImageValue, imageOperation } from "./image";
 import { ListSelection, ListType, ListValue, listOperation } from "./list";
+import {
+  NumberSelection,
+  NumberType,
+  NumberValue,
+  numberOperation,
+} from "./number";
 import {
   ProductSelection,
   ProductType,
   ProductValue,
   productOperation,
 } from "./product";
+import {
+  ProjectSelection,
+  ProjectType,
+  ProjectValue,
+  projectOperation,
+} from "./project";
+import { SumSelection, SumType, SumValue, sumOperation } from "./sum";
 import { TextSelection, TextType, TextValue, textOperation } from "./text";
-import { TimeCard, TimeDetail } from "../ui/TimeCard";
-import { Image } from "../container/Image";
-import { Link } from "../ui/Link";
+import { TimeSelection, TimeType, TimeValue, timeOperation } from "./time";
 import { ProjectCard } from "../ui/ProjectCard";
 import React from "react";
 import { css } from "@emotion/css";
@@ -28,6 +46,30 @@ export type Selection =
   | {
       tag: "text";
       textSelection: TextSelection;
+    }
+  | {
+      tag: "number";
+      numberSelection: NumberSelection;
+    }
+  | {
+      tag: "sum";
+      sumSelection: SumSelection;
+    }
+  | {
+      tag: "image";
+      imageSelection: ImageSelection;
+    }
+  | {
+      tag: "account";
+      accountSelection: AccountSelection;
+    }
+  | {
+      tag: "time";
+      timeSelection: TimeSelection;
+    }
+  | {
+      tag: "project";
+      projectSelection: ProjectSelection;
     };
 
 const selectionProduct = (value: ProductSelection): Selection => ({
@@ -46,28 +88,19 @@ export type Value =
     }
   | {
       type: "number";
-      value: number;
+      value: NumberValue;
     }
   | {
-      type: "select";
-      index: number;
-    }
-  | {
-      type: "image";
-      alternativeText: string;
-      value: d.ImageHash;
+      type: "sum";
+      value: SumValue;
     }
   | {
       type: "account";
-      value: d.AccountId;
+      value: AccountValue;
     }
   | {
       type: "time";
-      value: d.Time;
-    }
-  | {
-      type: "project";
-      value: d.ProjectId;
+      value: TimeValue;
     }
   | {
       type: "list";
@@ -76,6 +109,14 @@ export type Value =
   | {
       type: "product";
       value: ProductValue;
+    }
+  | {
+      type: "image";
+      value: ImageValue;
+    }
+  | {
+      type: "project";
+      value: ProjectValue;
     };
 
 const listValue = (value: ListValue): Value => ({ type: "list", value });
@@ -91,22 +132,27 @@ export type Type =
     }
   | {
       tag: "number";
+      numberType: NumberType;
     }
   | {
-      tag: "select";
-      valueList: ReadonlyArray<string>;
+      tag: "sum";
+      sumType: SumType;
     }
   | {
       tag: "image";
+      imageType: ImageType;
     }
   | {
       tag: "account";
+      accountType: AccountType;
     }
   | {
       tag: "time";
+      timeType: TimeType;
     }
   | {
       tag: "project";
+      projectType: ProjectType;
     }
   | {
       tag: "list";
@@ -209,6 +255,7 @@ export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
       projectId: d.ProjectId
     ) => d.ResourceState<d.Project> | undefined;
     readonly onRequestProject: (projectId: d.ProjectId) => void;
+    readonly onRequestAccount: (accountId: d.AccountId) => void;
   }>;
 };
 
@@ -374,9 +421,24 @@ const CommonElementSelectionView: ElementOperation<
 >["selectionView"] = (props) => {
   if (props.type.tag === "number" && props.value.type === "number") {
     return (
-      <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
-        {props.value.value}
-      </div>
+      <numberOperation.selectionView
+        type={props.type.numberType}
+        value={props.value.value}
+        isBig={props.isBig}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={(listSelection) =>
+          props.onChangeSelection(selectionList(listSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "number"
+            ? props.selection.numberSelection
+            : undefined
+        }
+      />
     );
   }
   if (props.type.tag === "text" && props.value.type === "text") {
@@ -401,91 +463,113 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "select" && props.value.type === "select") {
+  if (props.type.tag === "sum" && props.value.type === "sum") {
     return (
-      <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
-        {props.type.valueList[props.value.index]}
-      </div>
+      <sumOperation.selectionView
+        type={props.type.sumType}
+        value={props.value.value}
+        isBig={props.isBig}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={(listSelection) =>
+          props.onChangeSelection(selectionList(listSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "sum"
+            ? props.selection.sumSelection
+            : undefined
+        }
+      />
     );
   }
   if (props.type.tag === "image" && props.value.type === "image") {
     return (
-      <div
-        className={css({
-          display: "grid",
-          justifyContent: "center",
-        })}
-      >
-        <Image
-          imageHash={props.value.value}
-          alt={props.value.alternativeText}
-          width={512}
-          height={316.5}
-        />
-      </div>
+      <imageOperation.selectionView
+        type={props.type.imageType}
+        value={props.value.value}
+        isBig={props.isBig}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={(listSelection) =>
+          props.onChangeSelection(selectionList(listSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "image"
+            ? props.selection.imageSelection
+            : undefined
+        }
+      />
     );
   }
   if (props.type.tag === "account" && props.value.type === "account") {
-    const accountResource = props.getAccount(props.value.value);
-    if (accountResource === undefined) {
-      return <div>アカウント読み込み準備前</div>;
-    }
-    if (accountResource._ === "Deleted") {
-      return <div>存在しないしないアカウント</div>;
-    }
-    if (accountResource._ === "Requesting") {
-      return <div>アカウント取得中</div>;
-    }
-    if (accountResource._ === "Unknown") {
-      return <div>アカウント取得に失敗</div>;
-    }
-    const account = accountResource.dataWithTime.data;
     return (
-      <div
-        className={css({
-          display: "grid",
-          gridAutoFlow: "column",
-          alignItems: "center",
-          padding: 8,
-        })}
-      >
-        <Image
-          imageHash={account.imageHash}
-          width={32}
-          height={32}
-          alt={account.name + "の画像"}
-          isCircle
-        />
-        <div>{account.name}</div>
-        <Link
-          onJump={props.onJump}
-          urlData={{
-            language: props.language,
-            location: d.Location.Account(props.value.value),
-          }}
-          style={{
-            display: "grid",
-            gridAutoFlow: "column",
-            alignItems: "center",
-            padding: 8,
-          }}
-        >
-          <NextIcon />
-        </Link>
-      </div>
+      <accountOperation.selectionView
+        type={props.type.accountType}
+        value={props.value.value}
+        isBig={props.isBig}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={(listSelection) =>
+          props.onChangeSelection(selectionList(listSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "account"
+            ? props.selection.accountSelection
+            : undefined
+        }
+      />
     );
   }
   if (props.type.tag === "time" && props.value.type === "time") {
-    return <TimeCard time={props.value.value} />;
+    return (
+      <timeOperation.selectionView
+        type={props.type.timeType}
+        value={props.value.value}
+        isBig={props.isBig}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={(listSelection) =>
+          props.onChangeSelection(selectionList(listSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "time"
+            ? props.selection.timeSelection
+            : undefined
+        }
+      />
+    );
   }
   if (props.type.tag === "project" && props.value.type === "project") {
     return (
-      <ProjectCard
-        getProject={props.getProject}
-        projectId={props.value.value}
+      <projectOperation.selectionView
+        type={props.type.projectType}
+        value={props.value.value}
+        isBig={props.isBig}
+        getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
-        onRequestProjectById={props.onRequestProject}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={(listSelection) =>
+          props.onChangeSelection(selectionList(listSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "project"
+            ? props.selection.projectSelection
+            : undefined
+        }
       />
     );
   }
@@ -541,19 +625,6 @@ const CommonElementSelectionView: ElementOperation<
   );
 };
 
-const NextIcon: React.VFC<Record<string, string>> = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    color="#000"
-  >
-    <path d="M0 0h24v24H0z" fill="none"></path>
-    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path>
-  </svg>
-);
-
 const CommonElementDetailView: ElementOperation<
   Selection,
   Value,
@@ -561,13 +632,21 @@ const CommonElementDetailView: ElementOperation<
 >["detailView"] = (props) => {
   if (props.type.tag === "number" && props.value.type === "number") {
     return (
-      <div
-        className={css({
-          color: "limegreen",
-        })}
-      >
-        [type: number] {props.value.value}
-      </div>
+      <numberOperation.detailView
+        type={props.type.numberType}
+        value={props.value.value}
+        selection={
+          props.selection !== undefined && props.selection.tag === "number"
+            ? props.selection.numberSelection
+            : undefined
+        }
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
+      />
     );
   }
   if (props.type.tag === "text" && props.value.type === "text") {
@@ -585,62 +664,104 @@ const CommonElementDetailView: ElementOperation<
         onJump={props.onJump}
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
       />
     );
   }
-  if (props.type.tag === "select" && props.value.type === "select") {
+  if (props.type.tag === "sum" && props.value.type === "sum") {
     return (
-      <div
-        className={css({
-          color: "#ddd",
-        })}
-      >
-        option(
-        {props.type.valueList.join(",")})
-      </div>
+      <sumOperation.detailView
+        type={props.type.sumType}
+        value={props.value.value}
+        selection={
+          props.selection !== undefined && props.selection.tag === "sum"
+            ? props.selection.sumSelection
+            : undefined
+        }
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
+      />
     );
   }
   if (props.type.tag === "image" && props.value.type === "image") {
     return (
-      <div
-        className={css({
-          display: "grid",
-          justifyContent: "center",
-        })}
-      >
-        <Image
-          imageHash={props.value.value}
-          alt={props.value.alternativeText}
-          width={512}
-          height={316.5}
-        />
-      </div>
+      <imageOperation.detailView
+        type={props.type.imageType}
+        value={props.value.value}
+        selection={
+          props.selection !== undefined && props.selection.tag === "image"
+            ? props.selection.imageSelection
+            : undefined
+        }
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
+      />
     );
   }
   if (props.type.tag === "account" && props.value.type === "account") {
     return (
-      <div
-        className={css({
-          color: "#ddd",
-        })}
-      >
-        account
-      </div>
+      <accountOperation.detailView
+        type={props.type.accountType}
+        value={props.value.value}
+        selection={
+          props.selection !== undefined && props.selection.tag === "account"
+            ? props.selection.accountSelection
+            : undefined
+        }
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
+      />
     );
   }
   if (props.type.tag === "project" && props.value.type === "project") {
     return (
-      <div
-        className={css({
-          color: "#ddd",
-        })}
-      >
-        project
-      </div>
+      <projectOperation.detailView
+        type={props.type.projectType}
+        value={props.value.value}
+        selection={
+          props.selection !== undefined && props.selection.tag === "project"
+            ? props.selection.projectSelection
+            : undefined
+        }
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
+      />
     );
   }
   if (props.type.tag === "time" && props.value.type === "time") {
-    return <TimeDetail time={props.value.value} />;
+    return (
+      <timeOperation.detailView
+        type={props.type.timeType}
+        value={props.value.value}
+        selection={
+          props.selection !== undefined && props.selection.tag === "time"
+            ? props.selection.timeSelection
+            : undefined
+        }
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
+      />
+    );
   }
   if (props.type.tag === "list" && props.value.type === "list") {
     return (
@@ -657,6 +778,7 @@ const CommonElementDetailView: ElementOperation<
         onJump={props.onJump}
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
       />
     );
   }
@@ -675,6 +797,7 @@ const CommonElementDetailView: ElementOperation<
         onJump={props.onJump}
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
       />
     );
   }
