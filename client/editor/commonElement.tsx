@@ -13,6 +13,7 @@ import {
   ProductValue,
   productOperation,
 } from "./product";
+import { SumSelection, SumType, SumValue, sumOperation } from "./sum";
 import { TextSelection, TextType, TextValue, textOperation } from "./text";
 import { TimeCard, TimeDetail } from "../ui/TimeCard";
 import { Image } from "../container/Image";
@@ -38,6 +39,10 @@ export type Selection =
   | {
       tag: "number";
       numberSelection: NumberSelection;
+    }
+  | {
+      tag: "sum";
+      sumSelection: SumSelection;
     };
 
 const selectionProduct = (value: ProductSelection): Selection => ({
@@ -59,8 +64,8 @@ export type Value =
       value: NumberValue;
     }
   | {
-      type: "select";
-      index: number;
+      type: "sum";
+      value: SumValue;
     }
   | {
       type: "image";
@@ -104,8 +109,8 @@ export type Type =
       numberType: NumberType;
     }
   | {
-      tag: "select";
-      valueList: ReadonlyArray<string>;
+      tag: "sum";
+      sumType: SumType;
     }
   | {
       tag: "image";
@@ -427,11 +432,26 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "select" && props.value.type === "select") {
+  if (props.type.tag === "sum" && props.value.type === "sum") {
     return (
-      <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
-        {props.type.valueList[props.value.index]}
-      </div>
+      <sumOperation.selectionView
+        type={props.type.sumType}
+        value={props.value.value}
+        isBig={props.isBig}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={(listSelection) =>
+          props.onChangeSelection(selectionList(listSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "sum"
+            ? props.selection.sumSelection
+            : undefined
+        }
+      />
     );
   }
   if (props.type.tag === "image" && props.value.type === "image") {
@@ -621,16 +641,22 @@ const CommonElementDetailView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "select" && props.value.type === "select") {
+  if (props.type.tag === "sum" && props.value.type === "sum") {
     return (
-      <div
-        className={css({
-          color: "#ddd",
-        })}
-      >
-        option(
-        {props.type.valueList.join(",")})
-      </div>
+      <sumOperation.detailView
+        type={props.type.sumType}
+        value={props.value.value}
+        selection={
+          props.selection !== undefined && props.selection.tag === "sum"
+            ? props.selection.sumSelection
+            : undefined
+        }
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+      />
     );
   }
   if (props.type.tag === "image" && props.value.type === "image") {

@@ -88,15 +88,23 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "attribute",
-          type: { tag: "select", valueList: ["Just", "Nothing"] },
+          type: { tag: "sum", sumType: { valueList: ["Just", "Nothing"] } },
         },
         {
           name: "body",
-          type: { tag: "select", valueList: ["Product", "Sum", "Kernel"] },
+          type: {
+            tag: "sum",
+            sumType: { valueList: ["Product", "Sum", "Kernel"] },
+          },
         },
         {
           name: "使用しているところ",
-          type: { tag: "text", textType: { canEdit: false } },
+          type: {
+            tag: "list",
+            listType: {
+              elementType: { tag: "text", textType: { canEdit: false } },
+            },
+          },
         },
       ],
     }}
@@ -111,16 +119,22 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
             "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
         },
         {
-          type: "select",
-          index: 1,
+          type: "sum",
+          value: { index: 1 },
         },
         {
-          type: "select",
-          index: 1,
+          type: "sum",
+          value: { index: 1 },
         },
         {
-          type: "text",
-          value: "使用しているところのリストを表示したい",
+          type: "list",
+          value: {
+            items: [
+              { type: "text", value: "使用しているところA" },
+              { type: "text", value: "使用しているところB" },
+              { type: "text", value: "使用しているところC" },
+            ],
+          },
         },
       ],
     }}
