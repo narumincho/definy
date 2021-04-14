@@ -48,6 +48,10 @@ export const Project: Story<ControlAndActionProps> = (props) => (
           type: { tag: "text", textType: { canEdit: false } },
         },
         {
+          name: "作成日時",
+          type: { tag: "time", timeType: { canEdit: false } },
+        },
+        {
           name: "パーツ",
           type: { tag: "text", textType: { canEdit: false } },
         },
@@ -75,7 +79,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
           },
         },
         { type: "text", value: "作成者の名前" },
-        { type: "text", value: "2021-04-01" },
+        { type: "time", value: { day: 20001, millisecond: 1234 } },
         { type: "text", value: "パーツのリストを表示したい" },
         { type: "text", value: "型パーツのリストを表示したい" },
         { type: "text", value: "ffffffff" },

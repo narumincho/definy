@@ -54,7 +54,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             name: "作成日時",
-            type: { tag: "time" },
+            type: { tag: "time", timeType: { canEdit: false } },
           },
           {
             name: "プロジェクトID",

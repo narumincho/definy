@@ -54,12 +54,14 @@ export const AccountPage: React.VFC<Props> = (props) => {
             name: "作成日時",
             type: {
               tag: "time",
+              timeType: { canEdit: false },
             },
           },
           {
             name: "アカウントId",
             type: {
-              tag: "time",
+              tag: "text",
+              textType: { canEdit: false },
             },
           },
         ],

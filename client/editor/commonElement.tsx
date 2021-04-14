@@ -22,9 +22,7 @@ import {
 } from "./product";
 import { SumSelection, SumType, SumValue, sumOperation } from "./sum";
 import { TextSelection, TextType, TextValue, textOperation } from "./text";
-import { TimeCard, TimeDetail } from "../ui/TimeCard";
-import { Image } from "../container/Image";
-import { Link } from "../ui/Link";
+import { TimeSelection, TimeType, TimeValue, timeOperation } from "./time";
 import { ProjectCard } from "../ui/ProjectCard";
 import React from "react";
 import { css } from "@emotion/css";
@@ -58,6 +56,10 @@ export type Selection =
   | {
       tag: "account";
       accountSelection: AccountSelection;
+    }
+  | {
+      tag: "time";
+      timeSelection: TimeSelection;
     };
 
 const selectionProduct = (value: ProductSelection): Selection => ({
@@ -88,7 +90,7 @@ export type Value =
     }
   | {
       type: "time";
-      value: d.Time;
+      value: TimeValue;
     }
   | {
       type: "project";
@@ -136,6 +138,7 @@ export type Type =
     }
   | {
       tag: "time";
+      timeType: TimeType;
     }
   | {
       tag: "project";
@@ -516,7 +519,26 @@ const CommonElementSelectionView: ElementOperation<
     );
   }
   if (props.type.tag === "time" && props.value.type === "time") {
-    return <TimeCard time={props.value.value} />;
+    return (
+      <timeOperation.selectionView
+        type={props.type.timeType}
+        value={props.value.value}
+        isBig={props.isBig}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={(listSelection) =>
+          props.onChangeSelection(selectionList(listSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "time"
+            ? props.selection.timeSelection
+            : undefined
+        }
+      />
+    );
   }
   if (props.type.tag === "project" && props.value.type === "project") {
     return (
@@ -668,8 +690,8 @@ const CommonElementDetailView: ElementOperation<
         type={props.type.accountType}
         value={props.value.value}
         selection={
-          props.selection !== undefined && props.selection.tag === "image"
-            ? props.selection.imageSelection
+          props.selection !== undefined && props.selection.tag === "account"
+            ? props.selection.accountSelection
             : undefined
         }
         getAccount={props.getAccount}
@@ -693,7 +715,23 @@ const CommonElementDetailView: ElementOperation<
     );
   }
   if (props.type.tag === "time" && props.value.type === "time") {
-    return <TimeDetail time={props.value.value} />;
+    return (
+      <timeOperation.detailView
+        type={props.type.timeType}
+        value={props.value.value}
+        selection={
+          props.selection !== undefined && props.selection.tag === "time"
+            ? props.selection.timeSelection
+            : undefined
+        }
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
+      />
+    );
   }
   if (props.type.tag === "list" && props.value.type === "list") {
     return (
