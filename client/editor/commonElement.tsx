@@ -1,5 +1,6 @@
 /* eslint-disable complexity */
 import * as d from "../../data";
+import { ImageSelection, ImageType, ImageValue, imageOperation } from "./image";
 import { ListSelection, ListType, ListValue, listOperation } from "./list";
 import {
   NumberSelection,
@@ -43,6 +44,10 @@ export type Selection =
   | {
       tag: "sum";
       sumSelection: SumSelection;
+    }
+  | {
+      tag: "image";
+      imageSelection: ImageSelection;
     };
 
 const selectionProduct = (value: ProductSelection): Selection => ({
@@ -68,11 +73,6 @@ export type Value =
       value: SumValue;
     }
   | {
-      type: "image";
-      alternativeText: string;
-      value: d.ImageHash;
-    }
-  | {
       type: "account";
       value: d.AccountId;
     }
@@ -91,6 +91,10 @@ export type Value =
   | {
       type: "product";
       value: ProductValue;
+    }
+  | {
+      type: "image";
+      value: ImageValue;
     };
 
 const listValue = (value: ListValue): Value => ({ type: "list", value });
@@ -114,6 +118,7 @@ export type Type =
     }
   | {
       tag: "image";
+      imageType: ImageType;
     }
   | {
       tag: "account";
@@ -456,19 +461,24 @@ const CommonElementSelectionView: ElementOperation<
   }
   if (props.type.tag === "image" && props.value.type === "image") {
     return (
-      <div
-        className={css({
-          display: "grid",
-          justifyContent: "center",
-        })}
-      >
-        <Image
-          imageHash={props.value.value}
-          alt={props.value.alternativeText}
-          width={512}
-          height={316.5}
-        />
-      </div>
+      <imageOperation.selectionView
+        type={props.type.imageType}
+        value={props.value.value}
+        isBig={props.isBig}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={(listSelection) =>
+          props.onChangeSelection(selectionList(listSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "image"
+            ? props.selection.imageSelection
+            : undefined
+        }
+      />
     );
   }
   if (props.type.tag === "account" && props.value.type === "account") {
@@ -661,19 +671,20 @@ const CommonElementDetailView: ElementOperation<
   }
   if (props.type.tag === "image" && props.value.type === "image") {
     return (
-      <div
-        className={css({
-          display: "grid",
-          justifyContent: "center",
-        })}
-      >
-        <Image
-          imageHash={props.value.value}
-          alt={props.value.alternativeText}
-          width={512}
-          height={316.5}
-        />
-      </div>
+      <imageOperation.detailView
+        type={props.type.imageType}
+        value={props.value.value}
+        selection={
+          props.selection !== undefined && props.selection.tag === "image"
+            ? props.selection.imageSelection
+            : undefined
+        }
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+      />
     );
   }
   if (props.type.tag === "account" && props.value.type === "account") {

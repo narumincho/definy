@@ -46,7 +46,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
         items: [
           {
             name: "画像",
-            type: { tag: "image" },
+            type: { tag: "image", imageType: { canEdit: false } },
           },
           {
             name: "作成者",
@@ -70,8 +70,10 @@ export const ProjectPage: React.VFC<Props> = (props) => {
         items: [
           {
             type: "image",
-            alternativeText: project.name + "の画像",
-            value: project.imageHash,
+            value: {
+              alternativeText: project.name + "の画像",
+              value: project.imageHash,
+            },
           },
           {
             type: "account",

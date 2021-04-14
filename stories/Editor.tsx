@@ -2,7 +2,13 @@ import * as React from "react";
 import * as d from "../data";
 import { Editor, Props } from "../client/ui/Editor";
 import { Meta, Story } from "@storybook/react";
-import { getAccount, getProject, project1Id, project2Id } from "./mockData";
+import {
+  getAccount,
+  getProject,
+  project1,
+  project1Id,
+  project2Id,
+} from "./mockData";
 import { ArgType } from "@storybook/addons";
 import { fullScreen } from "../.storybook/decorators";
 
@@ -34,6 +40,10 @@ export const Project: Story<ControlAndActionProps> = (props) => (
       },
       items: [
         {
+          name: "カバー画像",
+          type: { tag: "image", imageType: { canEdit: false } },
+        },
+        {
           name: "作成者",
           type: { tag: "text", textType: { canEdit: false } },
         },
@@ -57,6 +67,13 @@ export const Project: Story<ControlAndActionProps> = (props) => (
         iconHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
       },
       items: [
+        {
+          type: "image",
+          value: {
+            alternativeText: "プロジェクトの画像",
+            value: project1.imageHash,
+          },
+        },
         { type: "text", value: "作成者の名前" },
         { type: "text", value: "2021-04-01" },
         { type: "text", value: "パーツのリストを表示したい" },
