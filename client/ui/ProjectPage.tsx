@@ -50,7 +50,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             name: "作成者",
-            type: { tag: "account" },
+            type: { tag: "account", accountType: { canEdit: false } },
           },
           {
             name: "作成日時",
@@ -77,7 +77,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             type: "account",
-            value: project.createAccountId,
+            value: { accountId: project.createAccountId },
           },
           {
             type: "time",

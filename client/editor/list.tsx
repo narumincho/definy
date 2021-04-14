@@ -213,6 +213,7 @@ const ListDetailView: ElementOperation<
         onJump={props.onJump}
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
       />
     </div>
   );

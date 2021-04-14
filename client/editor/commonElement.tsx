@@ -1,5 +1,11 @@
 /* eslint-disable complexity */
 import * as d from "../../data";
+import {
+  AccountSelection,
+  AccountType,
+  AccountValue,
+  accountOperation,
+} from "./account";
 import { ImageSelection, ImageType, ImageValue, imageOperation } from "./image";
 import { ListSelection, ListType, ListValue, listOperation } from "./list";
 import {
@@ -48,6 +54,10 @@ export type Selection =
   | {
       tag: "image";
       imageSelection: ImageSelection;
+    }
+  | {
+      tag: "account";
+      accountSelection: AccountSelection;
     };
 
 const selectionProduct = (value: ProductSelection): Selection => ({
@@ -74,7 +84,7 @@ export type Value =
     }
   | {
       type: "account";
-      value: d.AccountId;
+      value: AccountValue;
     }
   | {
       type: "time";
@@ -122,6 +132,7 @@ export type Type =
     }
   | {
       tag: "account";
+      accountType: AccountType;
     }
   | {
       tag: "time";
@@ -230,6 +241,7 @@ export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
       projectId: d.ProjectId
     ) => d.ResourceState<d.Project> | undefined;
     readonly onRequestProject: (projectId: d.ProjectId) => void;
+    readonly onRequestAccount: (accountId: d.AccountId) => void;
   }>;
 };
 
@@ -482,53 +494,25 @@ const CommonElementSelectionView: ElementOperation<
     );
   }
   if (props.type.tag === "account" && props.value.type === "account") {
-    const accountResource = props.getAccount(props.value.value);
-    if (accountResource === undefined) {
-      return <div>アカウント読み込み準備前</div>;
-    }
-    if (accountResource._ === "Deleted") {
-      return <div>存在しないしないアカウント</div>;
-    }
-    if (accountResource._ === "Requesting") {
-      return <div>アカウント取得中</div>;
-    }
-    if (accountResource._ === "Unknown") {
-      return <div>アカウント取得に失敗</div>;
-    }
-    const account = accountResource.dataWithTime.data;
     return (
-      <div
-        className={css({
-          display: "grid",
-          gridAutoFlow: "column",
-          alignItems: "center",
-          padding: 8,
-        })}
-      >
-        <Image
-          imageHash={account.imageHash}
-          width={32}
-          height={32}
-          alt={account.name + "の画像"}
-          isCircle
-        />
-        <div>{account.name}</div>
-        <Link
-          onJump={props.onJump}
-          urlData={{
-            language: props.language,
-            location: d.Location.Account(props.value.value),
-          }}
-          style={{
-            display: "grid",
-            gridAutoFlow: "column",
-            alignItems: "center",
-            padding: 8,
-          }}
-        >
-          <NextIcon />
-        </Link>
-      </div>
+      <accountOperation.selectionView
+        type={props.type.accountType}
+        value={props.value.value}
+        isBig={props.isBig}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={(listSelection) =>
+          props.onChangeSelection(selectionList(listSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "account"
+            ? props.selection.accountSelection
+            : undefined
+        }
+      />
     );
   }
   if (props.type.tag === "time" && props.value.type === "time") {
@@ -597,19 +581,6 @@ const CommonElementSelectionView: ElementOperation<
   );
 };
 
-const NextIcon: React.VFC<Record<string, string>> = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    color="#000"
-  >
-    <path d="M0 0h24v24H0z" fill="none"></path>
-    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path>
-  </svg>
-);
-
 const CommonElementDetailView: ElementOperation<
   Selection,
   Value,
@@ -630,6 +601,7 @@ const CommonElementDetailView: ElementOperation<
         onJump={props.onJump}
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
       />
     );
   }
@@ -648,6 +620,7 @@ const CommonElementDetailView: ElementOperation<
         onJump={props.onJump}
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
       />
     );
   }
@@ -666,6 +639,7 @@ const CommonElementDetailView: ElementOperation<
         onJump={props.onJump}
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
       />
     );
   }
@@ -684,18 +658,27 @@ const CommonElementDetailView: ElementOperation<
         onJump={props.onJump}
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
       />
     );
   }
   if (props.type.tag === "account" && props.value.type === "account") {
     return (
-      <div
-        className={css({
-          color: "#ddd",
-        })}
-      >
-        account
-      </div>
+      <accountOperation.detailView
+        type={props.type.accountType}
+        value={props.value.value}
+        selection={
+          props.selection !== undefined && props.selection.tag === "image"
+            ? props.selection.imageSelection
+            : undefined
+        }
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
+      />
     );
   }
   if (props.type.tag === "project" && props.value.type === "project") {
@@ -727,6 +710,7 @@ const CommonElementDetailView: ElementOperation<
         onJump={props.onJump}
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
       />
     );
   }
@@ -745,6 +729,7 @@ const CommonElementDetailView: ElementOperation<
         onJump={props.onJump}
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
       />
     );
   }
