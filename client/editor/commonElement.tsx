@@ -20,6 +20,12 @@ import {
   ProductValue,
   productOperation,
 } from "./product";
+import {
+  ProjectSelection,
+  ProjectType,
+  ProjectValue,
+  projectOperation,
+} from "./project";
 import { SumSelection, SumType, SumValue, sumOperation } from "./sum";
 import { TextSelection, TextType, TextValue, textOperation } from "./text";
 import { TimeSelection, TimeType, TimeValue, timeOperation } from "./time";
@@ -60,6 +66,10 @@ export type Selection =
   | {
       tag: "time";
       timeSelection: TimeSelection;
+    }
+  | {
+      tag: "project";
+      projectSelection: ProjectSelection;
     };
 
 const selectionProduct = (value: ProductSelection): Selection => ({
@@ -93,10 +103,6 @@ export type Value =
       value: TimeValue;
     }
   | {
-      type: "project";
-      value: d.ProjectId;
-    }
-  | {
       type: "list";
       value: ListValue;
     }
@@ -107,6 +113,10 @@ export type Value =
   | {
       type: "image";
       value: ImageValue;
+    }
+  | {
+      type: "project";
+      value: ProjectValue;
     };
 
 const listValue = (value: ListValue): Value => ({ type: "list", value });
@@ -142,6 +152,7 @@ export type Type =
     }
   | {
       tag: "project";
+      projectType: ProjectType;
     }
   | {
       tag: "list";
@@ -542,12 +553,23 @@ const CommonElementSelectionView: ElementOperation<
   }
   if (props.type.tag === "project" && props.value.type === "project") {
     return (
-      <ProjectCard
-        getProject={props.getProject}
-        projectId={props.value.value}
+      <projectOperation.selectionView
+        type={props.type.projectType}
+        value={props.value.value}
+        isBig={props.isBig}
+        getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
-        onRequestProjectById={props.onRequestProject}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={(listSelection) =>
+          props.onChangeSelection(selectionList(listSelection))
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "project"
+            ? props.selection.projectSelection
+            : undefined
+        }
       />
     );
   }
@@ -705,13 +727,21 @@ const CommonElementDetailView: ElementOperation<
   }
   if (props.type.tag === "project" && props.value.type === "project") {
     return (
-      <div
-        className={css({
-          color: "#ddd",
-        })}
-      >
-        project
-      </div>
+      <projectOperation.detailView
+        type={props.type.projectType}
+        value={props.value.value}
+        selection={
+          props.selection !== undefined && props.selection.tag === "project"
+            ? props.selection.projectSelection
+            : undefined
+        }
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
+      />
     );
   }
   if (props.type.tag === "time" && props.value.type === "time") {

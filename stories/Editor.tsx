@@ -178,7 +178,12 @@ export const Home: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "プロジェクト",
-          type: { tag: "list", listType: { elementType: { tag: "project" } } },
+          type: {
+            tag: "list",
+            listType: {
+              elementType: { tag: "project", projectType: { canEdit: false } },
+            },
+          },
         },
       ],
     }}
