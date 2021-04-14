@@ -16,7 +16,8 @@ export type ListSelection = {
 };
 
 export type ListType = {
-  elementType: Type;
+  readonly elementType: Type;
+  readonly canEdit: boolean;
 };
 
 export type ListValue = {
@@ -178,9 +179,10 @@ const ListSelectionView: ElementOperation<
               })
             }
           />
-          <Button>x</Button>
+          {props.type.canEdit ? <Button>x</Button> : <></>}
         </div>
       ))}
+      {props.type.canEdit ? <Button>+</Button> : <></>}
     </div>
   );
 };

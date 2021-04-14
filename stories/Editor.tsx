@@ -124,6 +124,7 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
             tag: "list",
             listType: {
               elementType: { tag: "text", textType: { canEdit: false } },
+              canEdit: false,
             },
           },
         },
@@ -182,6 +183,7 @@ export const Home: Story<ControlAndActionProps> = (props) => (
             tag: "list",
             listType: {
               elementType: { tag: "project", projectType: { canEdit: false } },
+              canEdit: false,
             },
           },
         },
@@ -220,6 +222,7 @@ export const List: Story<ControlAndActionProps> = (props) => (
             tag: "list",
             listType: {
               elementType: { tag: "number", numberType: { canEdit: true } },
+              canEdit: true,
             },
           },
         },
@@ -229,6 +232,7 @@ export const List: Story<ControlAndActionProps> = (props) => (
             tag: "list",
             listType: {
               elementType: { tag: "text", textType: { canEdit: true } },
+              canEdit: true,
             },
           },
         },
@@ -315,6 +319,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
                   ],
                 },
               },
+              canEdit: true,
             },
           },
         },
