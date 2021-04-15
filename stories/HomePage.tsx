@@ -2,7 +2,7 @@ import * as React from "react";
 import * as d from "../data";
 import { HomePage, Props } from "../client/ui/HomePage";
 import { Meta, Story } from "@storybook/react";
-import { getAccount, getProject } from "./mockData";
+import { getAccount, getProject, project1Id, project2Id } from "./mockData";
 import { ArgType } from "@storybook/addons";
 import { fullScreen } from "../.storybook/decorators";
 
@@ -23,7 +23,7 @@ export default meta;
 
 type ControlAndActionProps = Pick<
   Props,
-  "language" | "onJump" | "onRequestProjectById"
+  "language" | "onJump" | "onRequestProjectById" | "onRequestAccount"
 >;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
@@ -35,6 +35,7 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     onJump={props.onJump}
     topProjectsLoadingState={{ _: "none" }}
     onRequestProjectById={props.onRequestProjectById}
+    onRequestAccount={props.onRequestAccount}
   />
 );
 Default.args = {
@@ -55,8 +56,31 @@ export const LoggedIn: Story<ControlAndActionProps> = (props) => (
     onJump={props.onJump}
     topProjectsLoadingState={{ _: "none" }}
     onRequestProjectById={props.onRequestProjectById}
+    onRequestAccount={props.onRequestAccount}
   />
 );
 LoggedIn.args = {
+  language: d.Language.Japanese,
+};
+
+export const Loaded: Story<ControlAndActionProps> = (props) => (
+  <HomePage
+    language={props.language}
+    getProject={getProject}
+    getAccount={getAccount}
+    logInState={d.LogInState.LoggedIn({
+      accountToken: "dummyAccountToken" as d.AccountToken,
+      userId: dummyAccountId,
+    })}
+    onJump={props.onJump}
+    topProjectsLoadingState={{
+      _: "loaded",
+      projectIdList: [project1Id, project2Id],
+    }}
+    onRequestProjectById={props.onRequestProjectById}
+    onRequestAccount={props.onRequestAccount}
+  />
+);
+Loaded.args = {
   language: d.Language.Japanese,
 };

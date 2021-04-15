@@ -1,7 +1,8 @@
 import * as React from "react";
 import * as d from "../../data";
-import { ProjectCard, ProjectCardSkeleton } from "./ProjectCard";
+import { Editor } from "./Editor";
 import { Link } from "./Link";
+import { ProjectCardSkeleton } from "./ProjectCard";
 import type { TopProjectsLoadingState } from "./App";
 import { css } from "@emotion/css";
 
@@ -17,6 +18,7 @@ export type Props = {
   language: d.Language;
   logInState: d.LogInState;
   onRequestProjectById: (projectId: d.ProjectId) => void;
+  onRequestAccount: (accountId: d.AccountId) => void;
 };
 
 export const HomePage: React.VFC<Props> = (props) => {
@@ -35,9 +37,11 @@ export const HomePage: React.VFC<Props> = (props) => {
       <TopProjectList
         topProjectsLoadingState={props.topProjectsLoadingState}
         getProject={props.getProject}
-        jumpHandler={props.onJump}
+        onJump={props.onJump}
         language={props.language}
-        onRequestProjectById={props.onRequestProjectById}
+        getAccount={props.getAccount}
+        onRequestProject={props.onRequestProjectById}
+        onRequestAccount={props.onRequestAccount}
       />
       {props.logInState._ === "LoggedIn" ? (
         <CreateProjectButton language={props.language} onJump={props.onJump} />
@@ -81,9 +85,13 @@ const TopProjectList: React.VFC<{
   getProject: (
     projectId: d.ProjectId
   ) => d.ResourceState<d.Project> | undefined;
-  jumpHandler: (urlData: d.UrlData) => void;
+  getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
+  onJump: (urlData: d.UrlData) => void;
   language: d.Language;
-  onRequestProjectById: (projectId: d.ProjectId) => void;
+  onRequestAccount: (accountId: d.AccountId) => void;
+  onRequestProject: (projectId: d.ProjectId) => void;
 }> = (props) => {
   switch (props.topProjectsLoadingState._) {
     case "none":
@@ -139,25 +147,47 @@ const TopProjectList: React.VFC<{
           className={css({
             gridColumn: "1 / 2",
             gridRow: "2 / 3",
-            overflow: "hidden",
-            overflowWrap: "break-word",
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            alignSelf: "start",
-            justifySelf: "center",
-            gap: 8,
+            height: "100%",
           })}
         >
-          {props.topProjectsLoadingState.projectIdList.map((projectId) => (
-            <ProjectCard
-              key={projectId}
-              projectId={projectId}
-              getProject={props.getProject}
-              onJump={props.jumpHandler}
-              language={props.language}
-              onRequestProjectById={props.onRequestProjectById}
-            />
-          ))}
+          <Editor
+            productType={{
+              items: [
+                {
+                  name: "おすすめのプロジェクト",
+                  type: {
+                    tag: "list",
+                    listType: {
+                      elementType: {
+                        tag: "project",
+                        projectType: { canEdit: false },
+                      },
+                      canEdit: false,
+                      isDirectionColumn: true,
+                    },
+                  },
+                },
+              ],
+            }}
+            product={{
+              items: [
+                {
+                  type: "list",
+                  value: {
+                    items: props.topProjectsLoadingState.projectIdList.map(
+                      (projectId) => ({ type: "project", value: projectId })
+                    ),
+                  },
+                },
+              ],
+            }}
+            getAccount={props.getAccount}
+            language={props.language}
+            onJump={props.onJump}
+            onRequestAccount={props.onRequestAccount}
+            onRequestProject={props.onRequestProject}
+            getProject={props.getProject}
+          />
         </div>
       );
   }
