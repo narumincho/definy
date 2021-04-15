@@ -184,6 +184,7 @@ export const Home: Story<ControlAndActionProps> = (props) => (
             listType: {
               elementType: { tag: "project", projectType: { canEdit: false } },
               canEdit: false,
+              isDirectionColumn: true,
             },
           },
         },

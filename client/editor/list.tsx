@@ -18,6 +18,7 @@ export type ListSelection = {
 export type ListType = {
   readonly elementType: Type;
   readonly canEdit: boolean;
+  readonly isDirectionColumn?: boolean;
 };
 
 export type ListValue = {
@@ -128,6 +129,10 @@ const ListSelectionView: ElementOperation<
       className={css({
         display: "grid",
         padding: 8,
+        gridAutoFlow: props.type.isDirectionColumn ? "column" : "row",
+        gridTemplateColumns: props.type.isDirectionColumn
+          ? "1fr 1fr 1fr"
+          : "1fr",
       })}
     >
       {props.value.items.map((v, index) => (
