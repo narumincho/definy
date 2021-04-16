@@ -29,9 +29,13 @@ import {
 import { SumSelection, SumType, SumValue, sumOperation } from "./sum";
 import { TextSelection, TextType, TextValue, textOperation } from "./text";
 import { TimeSelection, TimeType, TimeValue, timeOperation } from "./time";
-import { ProjectCard } from "../ui/ProjectCard";
+import {
+  TypePartIdSelection,
+  TypePartIdType,
+  TypePartIdValue,
+  typePartIdOperation,
+} from "./typePartId";
 import React from "react";
-import { css } from "@emotion/css";
 import { maybeMap } from "../../common/util";
 
 export type Selection =
@@ -70,6 +74,10 @@ export type Selection =
   | {
       tag: "project";
       projectSelection: ProjectSelection;
+    }
+  | {
+      tag: "typePartId";
+      typePartIdSelection: TypePartIdSelection;
     };
 
 const selectionProduct = (value: ProductSelection): Selection => ({
@@ -117,6 +125,10 @@ export type Value =
   | {
       type: "project";
       value: ProjectValue;
+    }
+  | {
+      type: "typePartId";
+      value: TypePartIdValue;
     };
 
 const listValue = (value: ListValue): Value => ({ type: "list", value });
@@ -161,6 +173,10 @@ export type Type =
   | {
       tag: "product";
       productType: ProductType;
+    }
+  | {
+      tag: "typePartId";
+      typePartId: TypePartIdType;
     };
 
 export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
@@ -617,6 +633,28 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
+  if (props.type.tag === "typePartId" && props.value.type === "typePartId") {
+    return (
+      <typePartIdOperation.selectionView
+        type={props.type.typePartId}
+        value={props.value.value}
+        isBig={props.isBig}
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={(typePartIdSelection) =>
+          props.onChangeSelection(typePartIdSelection)
+        }
+        selection={
+          props.selection !== undefined && props.selection.tag === "typePartId"
+            ? props.selection.typePartIdSelection
+            : undefined
+        }
+      />
+    );
+  }
   return (
     <div>
       値と型が違う! 型{JSON.stringify(props.type)} 値
@@ -790,6 +828,25 @@ const CommonElementDetailView: ElementOperation<
         selection={
           props.selection !== undefined && props.selection.tag === "product"
             ? props.selection.value
+            : undefined
+        }
+        getAccount={props.getAccount}
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onRequestAccount={props.onRequestAccount}
+      />
+    );
+  }
+  if (props.type.tag === "typePartId" && props.value.type === "typePartId") {
+    return (
+      <typePartIdOperation.detailView
+        type={props.type.typePartId}
+        value={props.value.value}
+        selection={
+          props.selection !== undefined && props.selection.tag === "typePartId"
+            ? props.selection.typePartIdSelection
             : undefined
         }
         getAccount={props.getAccount}

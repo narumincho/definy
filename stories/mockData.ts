@@ -24,6 +24,8 @@ export const project2: d.Project = {
   updateTime: { day: 0, millisecond: 0 },
 };
 
+export const typePart1Id = "500d9bc147fe8c1efaa5fb6c8222ce2e" as d.TypePartId;
+
 export const getProject = (
   projectId: d.ProjectId
 ): d.ResourceState<d.Project> => {
@@ -42,6 +44,28 @@ export const getAccount = (
       createTime: { day: 0, millisecond: 0 },
       imageHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
       introduction: "対戦よろしくおねがいします",
+    },
+    getTime: { day: 0, millisecond: 0 },
+  });
+};
+
+export const getTypePart = (
+  typePartId: d.TypePartId
+): d.ResourceState<d.TypePart> => {
+  return d.ResourceState.Loaded({
+    data: {
+      name: "サンプル型パーツ",
+      attribute: d.Maybe.Nothing(),
+      description: "サンプルの型パーツの説明文",
+      projectId: project1Id,
+      body: d.TypePartBody.Sum([
+        {
+          name: "Pattern1",
+          description: "パターン1",
+          parameter: d.Maybe.Nothing(),
+        },
+      ]),
+      typeParameterList: [],
     },
     getTime: { day: 0, millisecond: 0 },
   });

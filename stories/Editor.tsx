@@ -8,6 +8,7 @@ import {
   project1,
   project1Id,
   project2Id,
+  typePart1Id,
 } from "./mockData";
 import { ArgType } from "@storybook/addons";
 import { fullScreen } from "../.storybook/decorators";
@@ -57,7 +58,16 @@ export const Project: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "型パーツ",
-          type: { tag: "text", textType: { canEdit: false } },
+          type: {
+            tag: "list",
+            listType: {
+              elementType: {
+                tag: "typePartId",
+                typePartId: { canEdit: false },
+              },
+              canEdit: false,
+            },
+          },
         },
         {
           name: "プロジェクトID",
@@ -81,7 +91,16 @@ export const Project: Story<ControlAndActionProps> = (props) => (
         { type: "text", value: "作成者の名前" },
         { type: "time", value: { day: 20001, millisecond: 1234 } },
         { type: "text", value: "パーツのリストを表示したい" },
-        { type: "text", value: "型パーツのリストを表示したい" },
+        {
+          type: "list",
+          value: {
+            items: [
+              { type: "typePartId", value: typePart1Id },
+              { type: "typePartId", value: typePart1Id },
+              { type: "typePartId", value: typePart1Id },
+            ],
+          },
+        },
         { type: "text", value: "ffffffff" },
       ],
     }}
@@ -123,7 +142,10 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
           type: {
             tag: "list",
             listType: {
-              elementType: { tag: "text", textType: { canEdit: false } },
+              elementType: {
+                tag: "typePartId",
+                typePartId: { canEdit: false },
+              },
               canEdit: false,
             },
           },
@@ -152,9 +174,9 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
           type: "list",
           value: {
             items: [
-              { type: "text", value: "使用しているところA" },
-              { type: "text", value: "使用しているところB" },
-              { type: "text", value: "使用しているところC" },
+              { type: "typePartId", value: typePart1Id },
+              { type: "typePartId", value: typePart1Id },
+              { type: "typePartId", value: typePart1Id },
             ],
           },
         },
