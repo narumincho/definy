@@ -10,14 +10,34 @@ const functionsSourceEntryPath = "./functions/main.ts";
 const distributionPath = "./distribution";
 const functionsDistributionPath = `${distributionPath}/functions`;
 const hostingDistributionPath = `${distributionPath}/hosting`;
+const firestoreRulesFilePath = `${distributionPath}/firestore.rules`;
 
 /**
  * Firebase へ デプロイするためにビルドする
  */
 export const build = async (mode: d.Mode): Promise<void> => {
+  await fileSystem.remove(distributionPath);
+  console.log(`${distributionPath}をすべて削除完了!`);
+  if (mode === "Develop") {
+    await fileSystem.copy(
+      "../secret/definy.json",
+      `${functionsDistributionPath}/.runtimeconfig.json`
+    );
+    console.log(
+      `.runtimeconfig.json サーバーの秘密情報をローカルファイルからコピー完了`
+    );
+  }
+
   await outputPackageJsonForFunctions();
+  console.log(`package.json を出力完了!`);
   await outputNowMode(mode);
+  console.log(`out.ts を出力完了!`);
+  await generateFirestoreRules();
+  console.log(
+    `Firestore 向けセキュリティールール (${firestoreRulesFilePath}) を出力完了!`
+  );
   await generateFirebaseJson(mode);
+  console.log(`firebase.json を出力完了!`);
 
   /** staticなファイルのコピー */
   await fileSystem.copy("./static", hostingDistributionPath);
@@ -46,6 +66,9 @@ const generateFirebaseJson = (mode: d.Mode): Promise<void> => {
     JSON.stringify({
       functions: {
         source: functionsDistributionPath,
+      },
+      firestore: {
+        rules: firestoreRulesFilePath,
       },
       hosting: {
         public: hostingDistributionPath,
@@ -92,6 +115,21 @@ const generateFirebaseJson = (mode: d.Mode): Promise<void> => {
               },
             },
     })
+  );
+};
+
+const generateFirestoreRules = (): Promise<void> => {
+  return fileSystem.outputFile(
+    firestoreRulesFilePath,
+    `
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+`
   );
 };
 
