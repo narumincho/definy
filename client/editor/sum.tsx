@@ -18,7 +18,7 @@ const SumSelectionView: ElementOperation<
   return (
     <div
       className={css({
-        fontSize: props.isBig ? 32 : 16,
+        fontSize: 16,
         display: "grid",
         gridAutoFlow: "column",
       })}

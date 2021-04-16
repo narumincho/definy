@@ -171,7 +171,6 @@ const ListSelectionView: ElementOperation<
                 ? props.selection.selection
                 : undefined
             }
-            isBig={props.isBig}
             getAccount={props.getAccount}
             language={props.language}
             onJump={props.onJump}

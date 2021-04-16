@@ -16,11 +16,15 @@ const TextSelectionView: ElementOperation<
   TextValue,
   TextType
 >["selectionView"] = (props) => {
-  return (
-    <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
-      {props.value}
-    </div>
-  );
+  return <div className={css({ fontSize: 16 })}>{props.value}</div>;
+};
+
+export const HeadTextSelectionView: ElementOperation<
+  TextSelection,
+  TextValue,
+  TextType
+>["selectionView"] = (props) => {
+  return <div className={css({ fontSize: 32 })}>{props.value}</div>;
 };
 
 const TextDetailView: ElementOperation<

@@ -242,7 +242,6 @@ export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
     readonly selection: ElementSelection | undefined;
     readonly value: ElementValue;
     readonly type: ElementType;
-    readonly isBig?: boolean;
     readonly getAccount: (
       accountId: d.AccountId
     ) => d.ResourceState<d.Account> | undefined;
@@ -440,7 +439,6 @@ const CommonElementSelectionView: ElementOperation<
       <numberOperation.selectionView
         type={props.type.numberType}
         value={props.value.value}
-        isBig={props.isBig}
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
@@ -462,7 +460,6 @@ const CommonElementSelectionView: ElementOperation<
       <textOperation.selectionView
         type={props.type.textType}
         value={props.value.value}
-        isBig={props.isBig}
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
@@ -484,7 +481,6 @@ const CommonElementSelectionView: ElementOperation<
       <sumOperation.selectionView
         type={props.type.sumType}
         value={props.value.value}
-        isBig={props.isBig}
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
@@ -506,7 +502,6 @@ const CommonElementSelectionView: ElementOperation<
       <imageOperation.selectionView
         type={props.type.imageType}
         value={props.value.value}
-        isBig={props.isBig}
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
@@ -528,7 +523,6 @@ const CommonElementSelectionView: ElementOperation<
       <accountOperation.selectionView
         type={props.type.accountType}
         value={props.value.value}
-        isBig={props.isBig}
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
@@ -550,7 +544,6 @@ const CommonElementSelectionView: ElementOperation<
       <timeOperation.selectionView
         type={props.type.timeType}
         value={props.value.value}
-        isBig={props.isBig}
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
@@ -572,7 +565,6 @@ const CommonElementSelectionView: ElementOperation<
       <projectOperation.selectionView
         type={props.type.projectType}
         value={props.value.value}
-        isBig={props.isBig}
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
@@ -594,7 +586,6 @@ const CommonElementSelectionView: ElementOperation<
       <listOperation.selectionView
         type={props.type.listType}
         value={props.value.value}
-        isBig={props.isBig}
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
@@ -616,7 +607,6 @@ const CommonElementSelectionView: ElementOperation<
       <productOperation.selectionView
         type={props.type.productType}
         value={props.value.value}
-        isBig={props.isBig}
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
@@ -638,7 +628,6 @@ const CommonElementSelectionView: ElementOperation<
       <typePartIdOperation.selectionView
         type={props.type.typePartId}
         value={props.value.value}
-        isBig={props.isBig}
         getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}

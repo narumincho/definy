@@ -7,6 +7,13 @@ import {
   Value,
   commonElement,
 } from "./commonElement";
+import {
+  HeadTextSelectionView,
+  TextSelection,
+  TextType,
+  TextValue,
+  textOperation,
+} from "./text";
 import { Image } from "../container/Image";
 import { css } from "@emotion/css";
 
@@ -16,7 +23,7 @@ export type ProductSelection =
     }
   | {
       tag: "head";
-      selection: Selection | undefined;
+      selection: TextSelection | undefined;
     }
   | {
       tag: "content";
@@ -27,7 +34,7 @@ export type ProductSelection =
 export type ProductType = {
   headItem?: {
     name: string;
-    type: Type;
+    textType: TextType;
     hasIcon: boolean;
   };
   items: ReadonlyArray<{ name: string; type: Type }>;
@@ -39,7 +46,7 @@ export type ProductValue = {
 };
 
 export type HeadItem = {
-  value: Value;
+  value: TextValue;
   iconHash?: d.ImageHash;
 };
 
@@ -62,10 +69,10 @@ const moveUp = (
       }
       return {
         tag: "head",
-        selection: commonElement.moveUp(
-          selection.selection,
+        selection: textOperation.moveUp(
+          selection,
           product.headItem.value,
-          type.headItem.type
+          type.headItem.textType
         ),
       };
     }
@@ -128,10 +135,10 @@ const moveDown = (
       }
       return {
         tag: "head",
-        selection: commonElement.moveDown(
-          selection.selection,
+        selection: textOperation.moveDown(
+          selection,
           product.headItem.value,
-          type.headItem.type
+          type.headItem.textType
         ),
       };
     }
@@ -191,10 +198,10 @@ const moveFirstChild: ElementOperation<
       }
       return {
         tag: "head",
-        selection: commonElement.moveFirstChild(
+        selection: textOperation.moveFirstChild(
           selection.selection,
           value.headItem.value,
-          type.headItem.type
+          type.headItem.textType
         ),
       };
     }
@@ -249,10 +256,10 @@ const moveParent: ElementOperation<
       }
       return {
         tag: "head",
-        selection: commonElement.moveParent(
-          selection.selection,
+        selection: textOperation.moveParent(
+          selection,
           value.headItem.value,
-          type.headItem.type
+          type.headItem.textType
         ),
       };
     }
@@ -335,15 +342,14 @@ export const ProductSelectionView: ElementOperation<
               />
             </div>
           )}
-          <ItemView
+          <HeadItemView
             onSelect={(selection) => {
-              props.onChangeSelection({ tag: "head", selection });
+              props.onChangeSelection({ tag: "head", selection: undefined });
             }}
             name={props.type.headItem.name}
-            type={props.type.headItem.type}
-            itemSelection={getHeadItemSelection(props.selection)}
-            value={props.value.headItem.value}
-            isHead
+            textType={props.type.headItem.textType}
+            productSelection={props.selection}
+            textValue={props.value.headItem.value}
             getAccount={props.getAccount}
             language={props.language}
             onJump={props.onJump}
@@ -383,18 +389,6 @@ export const ProductSelectionView: ElementOperation<
   );
 };
 
-const getHeadItemSelection = (
-  productSelection: ProductSelection | undefined
-): ItemSelection => {
-  if (productSelection === undefined || productSelection.tag !== "head") {
-    return { tag: "none" };
-  }
-  if (productSelection.selection === undefined) {
-    return { tag: "selectSelf" };
-  }
-  return { tag: "selectInner", selection: productSelection.selection };
-};
-
 const getContentItemSelection = (
   productSelection: ProductSelection | undefined,
   index: number
@@ -423,6 +417,73 @@ type ItemSelection =
   | {
       tag: "none";
     };
+
+const HeadItemView: React.VFC<{
+  readonly onSelect: (selection: TextSelection | undefined) => void;
+  readonly name: string;
+  readonly textType: TextType;
+  readonly textValue: TextValue;
+  readonly productSelection: ProductSelection | undefined;
+  readonly getAccount: (
+    accountId: d.AccountId
+  ) => d.ResourceState<d.Account> | undefined;
+  readonly language: d.Language;
+  readonly onJump: (urlData: d.UrlData) => void;
+  readonly getProject: (
+    projectId: d.ProjectId
+  ) => d.ResourceState<d.Project> | undefined;
+  readonly onRequestProject: (projectId: d.ProjectId) => void;
+}> = (props) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (
+      props.productSelection !== undefined &&
+      props.productSelection.tag === "head" &&
+      ref.current !== null
+    ) {
+      ref.current.focus();
+    }
+  }, [props.productSelection]);
+
+  return (
+    <div
+      ref={ref}
+      className={css({
+        padding: 4,
+        borderWidth: 2,
+        borderStyle: "solid",
+        borderColor:
+          props.productSelection !== undefined &&
+          props.productSelection.tag === "head"
+            ? "red"
+            : "#333",
+      })}
+      onFocus={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        props.onSelect(undefined);
+      }}
+      tabIndex={0}
+    >
+      <HeadTextSelectionView
+        type={props.textType}
+        value={props.textValue}
+        getAccount={props.getAccount}
+        selection={
+          props.productSelection !== undefined &&
+          props.productSelection.tag === "head"
+            ? props.productSelection.selection
+            : undefined
+        }
+        language={props.language}
+        onJump={props.onJump}
+        getProject={props.getProject}
+        onRequestProject={props.onRequestProject}
+        onChangeSelection={props.onSelect}
+      />
+    </div>
+  );
+};
 
 const ItemView: React.VFC<{
   readonly onSelect: (selection: Selection | undefined) => void;
@@ -488,7 +549,6 @@ const ItemView: React.VFC<{
       <commonElement.selectionView
         type={props.type}
         value={props.value}
-        isBig={props.isHead}
         getAccount={props.getAccount}
         selection={
           props.itemSelection.tag === "selectInner"
@@ -538,8 +598,8 @@ const ProductDetailView: ElementOperation<
               {props.type.headItem.name}
             </div>
           </div>
-          <commonElement.detailView
-            type={props.type.headItem.type}
+          <textOperation.detailView
+            type={props.type.headItem.textType}
             value={props.value.headItem.value}
             selection={props.selection.selection}
             getAccount={props.getAccount}

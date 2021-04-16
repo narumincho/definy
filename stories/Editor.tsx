@@ -37,7 +37,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
       headItem: {
         name: "プロジェクト名",
         hasIcon: true,
-        type: { tag: "text", textType: { canEdit: false } },
+        textType: { canEdit: false },
       },
       items: [
         {
@@ -77,7 +77,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
     }}
     product={{
       headItem: {
-        value: { type: "text", value: "やあ" },
+        value: "やあ",
         iconHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
       },
       items: [
@@ -118,7 +118,7 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
     productType={{
       headItem: {
         name: "name",
-        type: { tag: "text", textType: { canEdit: true } },
+        textType: { canEdit: true },
         hasIcon: false,
       },
       items: [
@@ -154,7 +154,7 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
     }}
     product={{
       headItem: {
-        value: { type: "text", value: "Location" },
+        value: "Location",
       },
       items: [
         {
@@ -301,7 +301,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
       headItem: {
         name: "name",
         hasIcon: false,
-        type: { tag: "text", textType: { canEdit: false } },
+        textType: { canEdit: false },
       },
       items: [
         {
@@ -350,7 +350,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
     }}
     product={{
       headItem: {
-        value: { type: "text", value: "直積の入れ子" },
+        value: "直積の入れ子",
       },
       items: [
         {

@@ -38,7 +38,7 @@ export const AccountPage: React.VFC<Props> = (props) => {
     <Editor
       productType={{
         headItem: {
-          type: { tag: "text", textType: { canEdit: false } },
+          textType: { canEdit: false },
           name: "アカウント名",
           hasIcon: true,
         },
@@ -68,7 +68,7 @@ export const AccountPage: React.VFC<Props> = (props) => {
       }}
       product={{
         headItem: {
-          value: { type: "text", value: account.name },
+          value: account.name,
           iconHash: account.imageHash,
         },
         items: [

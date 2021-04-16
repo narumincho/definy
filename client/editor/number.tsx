@@ -13,11 +13,7 @@ const NumberSelectionView: ElementOperation<
   NumberValue,
   NumberType
 >["selectionView"] = (props) => {
-  return (
-    <div className={css({ fontSize: props.isBig ? 32 : 16 })}>
-      {props.value}
-    </div>
-  );
+  return <div className={css({ fontSize: 16 })}>{props.value}</div>;
 };
 
 const NumberDetailView: ElementOperation<
