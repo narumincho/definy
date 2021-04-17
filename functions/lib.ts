@@ -893,4 +893,30 @@ export const apiFunc: {
       data: d.Maybe.Just(request.typePart),
     };
   },
+  getTypePart: async (typePartId) => {
+    const typePartSnapshot = await database
+      .collection("typePart")
+      .doc(typePartId)
+      .get();
+    const typePartData = typePartSnapshot.data();
+
+    // 型パーツが存在していなかった
+    if (typePartData === undefined) {
+      return {
+        getTime: firestoreTimestampToTime(typePartSnapshot.readTime),
+        data: d.Maybe.Nothing(),
+      };
+    }
+    return {
+      getTime: firestoreTimestampToTime(typePartSnapshot.readTime),
+      data: d.Maybe.Just({
+        name: typePartData.name,
+        description: typePartData.description,
+        attribute: typePartData.attribute,
+        projectId: typePartData.projectId,
+        body: typePartData.typePartBody,
+        typeParameterList: typePartData.typeParameterList,
+      }),
+    };
+  },
 };

@@ -62,6 +62,17 @@ export type UseDefinyAppResult = {
    */
   readonly accountResource: Resource<d.AccountId, d.Account>;
   /**
+   * 型パーツをキャッシュから取得, サーバーへのリクエストができる
+   */
+  readonly typePartResource: Resource<d.TypePartId, d.TypePart>;
+  /**
+   * プロジェクトに属している型パーツのIDをキャッシュから取得, サーバーへのリクエストができる
+   */
+  readonly typePartIdListInProjectResource: Resource<
+    d.ProjectId,
+    ReadonlyArray<d.TypePartId>
+  >;
+  /**
    * 現在のページの場所
    *
    * *no-side-effect*
@@ -160,6 +171,11 @@ export const useDefinyApp = (option: {
     createTypePartState,
     setCreateTypePartState,
   ] = useState<CreateTypePartState>({ tag: "none" });
+  const typePartIdListInProjectDict = useResourceState<
+    d.ProjectId,
+    ReadonlyArray<d.TypePartId>
+  >();
+  const typePartDict = useResourceState<d.TypePartId, d.TypePart>();
 
   /**
    * ページを移動する
@@ -327,6 +343,9 @@ export const useDefinyApp = (option: {
   const projectResource: Resource<d.ProjectId, d.Project> = {
     getFromMemoryCache: projectDict.get,
     forciblyRequestToServer: (projectId: d.ProjectId): void => {
+      if (projectDict.get(projectId)?._ === "Requesting") {
+        return;
+      }
       projectDict.setRequesting(projectId);
       api.getProject(projectId).then((response) => {
         if (response._ === "Nothing") {
@@ -358,36 +377,16 @@ export const useDefinyApp = (option: {
       if (projectState !== undefined) {
         return;
       }
-      projectDict.setRequesting(projectId);
-      api.getProject(projectId).then((response) => {
-        if (response._ === "Nothing") {
-          option.notificationMessageHandler(
-            "プロジェクトの取得に失敗しました",
-            "error"
-          );
-          projectDict.setUnknown(projectId);
-          return;
-        }
-        if (response.value.data._ === "Nothing") {
-          option.notificationMessageHandler(
-            "プロジェクトが存在しなかった",
-            "error"
-          );
-          projectDict.setDeleted(projectId, response.value.getTime);
-          return;
-        }
-        projectDict.setLoaded(
-          projectId,
-          response.value.data.value,
-          response.value.getTime
-        );
-      });
+      projectResource.forciblyRequestToServer(projectId);
     },
   };
 
   const accountResource: Resource<d.AccountId, d.Account> = {
     getFromMemoryCache: accountDict.get,
     forciblyRequestToServer: (accountId: d.AccountId): void => {
+      if (accountDict.get(accountId)?._ === "Requesting") {
+        return;
+      }
       accountDict.setRequesting(accountId);
       api.getAccount(accountId).then((response) => {
         if (response._ === "Nothing") {
@@ -419,30 +418,7 @@ export const useDefinyApp = (option: {
       if (accountState !== undefined) {
         return;
       }
-      accountDict.setRequesting(accountId);
-      api.getAccount(accountId).then((response) => {
-        if (response._ === "Nothing") {
-          option.notificationMessageHandler(
-            "プロジェクトの取得に失敗しました",
-            "error"
-          );
-          accountDict.setUnknown(accountId);
-          return;
-        }
-        if (response.value.data._ === "Nothing") {
-          option.notificationMessageHandler(
-            "プロジェクトが存在しなかった",
-            "error"
-          );
-          accountDict.setDeleted(accountId, response.value.getTime);
-          return;
-        }
-        accountDict.setLoaded(
-          accountId,
-          response.value.data.value,
-          response.value.getTime
-        );
-      });
+      accountResource.forciblyRequestToServer(accountId);
     },
   };
 
@@ -488,6 +464,75 @@ export const useDefinyApp = (option: {
       });
   };
 
+  const typePartIdListInProjectResource: UseDefinyAppResult["typePartIdListInProjectResource"] = {
+    forciblyRequestToServer: (projectId) => {
+      if (typePartIdListInProjectDict.get(projectId)?._ === "Requesting") {
+        return;
+      }
+      typePartIdListInProjectDict.setRequesting(projectId);
+      api.getTypePartByProjectId(projectId).then((response) => {
+        if (response._ === "Nothing" || response.value.data._ === "Nothing") {
+          typePartIdListInProjectDict.setUnknown(projectId);
+          option.notificationMessageHandler(
+            "プロジェクトに属している型パーツ一覧の取得に失敗しました",
+            "error"
+          );
+          return;
+        }
+        typePartIdListInProjectDict.setLoaded(
+          projectId,
+          response.value.data.value.map((e) => e.id)
+        );
+        typePartDict.setLoadedList(
+          response.value.data.value,
+          response.value.getTime
+        );
+      });
+    },
+    getFromMemoryCache: typePartIdListInProjectDict.get,
+    requestToServerIfEmpty: (projectId) => {
+      const resource = typePartIdListInProjectDict.get(projectId);
+      if (resource !== undefined) {
+        return;
+      }
+      typePartIdListInProjectResource.forciblyRequestToServer(projectId);
+    },
+  };
+  const typePartResource: UseDefinyAppResult["typePartResource"] = {
+    forciblyRequestToServer: (typePartId) => {
+      if (typePartDict.get(typePartId)?._ === "Requesting") {
+        return;
+      }
+      typePartDict.setRequesting(typePartId);
+      api.getTypePart(typePartId).then((response) => {
+        if (response._ === "Nothing") {
+          typePartDict.setUnknown(typePartId);
+          option.notificationMessageHandler(
+            "型パーツの取得に失敗しました",
+            "error"
+          );
+          return;
+        }
+        if (response.value.data._ === "Nothing") {
+          typePartDict.setDeleted(typePartId, response.value.getTime);
+          option.notificationMessageHandler(
+            "型パーツは存在しなかった",
+            "error"
+          );
+          return;
+        }
+        typePartDict.setLoaded(typePartId, response.value.data.value);
+      });
+    },
+    getFromMemoryCache: typePartDict.get,
+    requestToServerIfEmpty: (typePartId) => {
+      if (typePartDict.get(typePartId) !== undefined) {
+        return;
+      }
+      typePartResource.forciblyRequestToServer(typePartId);
+    },
+  };
+
   return {
     accountResource,
     projectResource,
@@ -502,6 +547,8 @@ export const useDefinyApp = (option: {
     topProjectsLoadingState,
     requestTop50Project,
     addTypePart,
+    typePartIdListInProjectResource,
+    typePartResource,
   };
 };
 

@@ -25,6 +25,13 @@
       "script": "storybook",
       "problemMatcher": [],
       "label": "storybook を起動する"
+    },
+    {
+      "type": "npm",
+      "script": "typeCheck",
+      "problemMatcher": [],
+      "label": "型チェックをする",
+      "detail": "tsc --project tsconfig.json --noEmit"
     }
   ]
 }

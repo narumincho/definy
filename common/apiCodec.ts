@@ -119,3 +119,11 @@ export const setTypePartListAndAddTypePart: ApiCodec<
     )
   ),
 };
+
+export const getTypePart: ApiCodec<
+  d.TypePartId,
+  d.WithTime<d.Maybe<d.TypePart>>
+> = {
+  request: d.TypePartId.codec,
+  response: d.WithTime.codec(d.Maybe.codec(d.TypePart.codec)),
+};
