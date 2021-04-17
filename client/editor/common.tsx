@@ -200,7 +200,7 @@ export type Type =
     }
   | {
       tag: "typePartId";
-      typePartId: TypePartIdType;
+      typePartIdType: TypePartIdType;
     };
 
 export type CommonDataOperation =
@@ -570,7 +570,7 @@ const CommonElementSelectionView: ElementOperation<
   if (props.type.tag === "typePartId" && props.value.type === "typePartId") {
     return (
       <typePartIdOperation.selectionView
-        type={props.type.typePartId}
+        type={props.type.typePartIdType}
         value={props.value.value}
         accountResource={props.accountResource}
         language={props.language}
@@ -788,7 +788,7 @@ const CommonElementDetailView: ElementOperation<
   if (props.type.tag === "typePartId" && props.value.type === "typePartId") {
     return (
       <typePartIdOperation.detailView
-        type={props.type.typePartId}
+        type={props.type.typePartIdType}
         value={props.value.value}
         selection={
           props.selection !== undefined && props.selection.tag === "typePartId"

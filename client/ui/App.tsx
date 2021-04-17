@@ -8,6 +8,7 @@ import { Header } from "./Header";
 import { HomePage } from "./HomePage";
 import { ProjectPage } from "./ProjectPage";
 import { SettingPage } from "./SettingPage";
+import { TypePartPage } from "./TypePartPage";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type Props = {
@@ -165,6 +166,7 @@ const AppMain: React.VFC<Props> = (props) => {
           projectId={useDefinyAppResult.location.projectId}
           accountResource={useDefinyAppResult.accountResource}
           projectResource={useDefinyAppResult.projectResource}
+          addTypePart={useDefinyAppResult.addTypePart}
         />
       );
     case "Account":
@@ -177,6 +179,8 @@ const AppMain: React.VFC<Props> = (props) => {
           projectResource={useDefinyAppResult.projectResource}
         />
       );
+    case "TypePart":
+      return <TypePartPage />;
   }
   return (
     <HomePage

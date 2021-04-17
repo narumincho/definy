@@ -28,6 +28,10 @@ export type CreateProjectState =
       _: "none";
     };
 
+export type CreateTypePartState =
+  | { tag: "creating"; projectId: d.ProjectId }
+  | { tag: "none" };
+
 export type Resource<id extends string, resource> = {
   /**
    * メモリから, リリースのリクエスト状態とデータを取得する
@@ -119,6 +123,13 @@ export type UseDefinyAppResult = {
    * *side-effect*
    */
   readonly requestTop50Project: () => void;
+
+  /**
+   * 型パーツを追加する
+   *
+   * *side-effect*
+   */
+  readonly addTypePart: (projectId: d.ProjectId) => void;
 };
 
 /**
@@ -145,6 +156,10 @@ export const useDefinyApp = (): UseDefinyAppResult => {
   const { enqueueSnackbar } = useSnackbar();
   const projectDict = useResourceState<d.ProjectId, d.Project>();
   const accountDict = useResourceState<d.AccountId, d.Account>();
+  const [
+    createTypePartState,
+    setCreateTypePartState,
+  ] = useState<CreateTypePartState>({ tag: "none" });
 
   /**
    * ページを移動する
@@ -422,6 +437,43 @@ export const useDefinyApp = (): UseDefinyAppResult => {
     },
   };
 
+  const addTypePart = (projectId: d.ProjectId): void => {
+    const accountToken = getAccountToken();
+    if (accountToken === undefined) {
+      enqueueSnackbar("ログインしていない状態で型パーツを作ることはできない", {
+        variant: "error",
+      });
+      return;
+    }
+    if (createTypePartState.tag === "creating") {
+      enqueueSnackbar("型パーツ作成は同時にできない", {
+        variant: "error",
+      });
+      return;
+    }
+    setCreateTypePartState({ tag: "creating", projectId });
+    api
+      .addTypePart({
+        accountToken,
+        projectId,
+      })
+      .then((response) => {
+        setCreateProjectState({ _: "none" });
+        if (response._ === "Nothing" || response.value.data._ === "Nothing") {
+          enqueueSnackbar("型パーツ作成に失敗しました");
+          return;
+        }
+        enqueueSnackbar(
+          `型パーツ 「${response.value.data.value.data.name}」を作成しました`,
+          { variant: "success" }
+        );
+        jump({
+          language: urlData.language,
+          location: d.Location.TypePart(response.value.data.value.id),
+        });
+      });
+  };
+
   return {
     accountResource,
     projectResource,
@@ -435,6 +487,7 @@ export const useDefinyApp = (): UseDefinyAppResult => {
     logOut,
     topProjectsLoadingState,
     requestTop50Project,
+    addTypePart,
   };
 };
 

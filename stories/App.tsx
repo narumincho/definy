@@ -25,6 +25,8 @@ const useDefinyAppResult: UseDefinyAppResult = {
   logInState: d.LogInState.Guest,
   logOut: action("logOut"),
   topProjectsLoadingState: { _: "none" },
+  addTypePart: action("addTypePart"),
+  requestTop50Project: action("requestTop50Project"),
 };
 
 type ControlAndActionProps = Pick<UseDefinyAppResult, "language">;

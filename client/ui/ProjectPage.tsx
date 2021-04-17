@@ -5,7 +5,7 @@ import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type Props = Pick<
   UseDefinyAppResult,
-  "projectResource" | "accountResource" | "language"
+  "projectResource" | "accountResource" | "language" | "addTypePart"
 > & {
   readonly projectId: d.ProjectId;
   readonly onJump: UseDefinyAppResult["jump"];
@@ -57,6 +57,19 @@ export const ProjectPage: React.VFC<Props> = (props) => {
             name: "プロジェクトID",
             type: { tag: "text", textType: { canEdit: false } },
           },
+          {
+            name: "型パーツ",
+            type: {
+              tag: "list",
+              listType: {
+                canEdit: true,
+                elementType: {
+                  tag: "typePartId",
+                  typePartIdType: { canEdit: true },
+                },
+              },
+            },
+          },
         ],
       }}
       product={{
@@ -84,13 +97,29 @@ export const ProjectPage: React.VFC<Props> = (props) => {
             type: "text",
             value: props.projectId,
           },
+          {
+            type: "list",
+            value: { items: [] },
+          },
         ],
       }}
       onJump={props.onJump}
       projectResource={props.projectResource}
       accountResource={props.accountResource}
       language={props.language}
-      onRequestDataOperation={() => {}}
+      onRequestDataOperation={(operation) => {
+        if (
+          operation.tag === "content" &&
+          operation.index === 4 &&
+          operation.commonDataOperation.tag === "list"
+        ) {
+          const listDataOperation =
+            operation.commonDataOperation.listDataOperation;
+          if (listDataOperation.tag === "addLast") {
+            props.addTypePart(props.projectId);
+          }
+        }
+      }}
     />
   );
 };

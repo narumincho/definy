@@ -63,7 +63,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
             listType: {
               elementType: {
                 tag: "typePartId",
-                typePartId: { canEdit: false },
+                typePartIdType: { canEdit: false },
               },
               canEdit: false,
             },
@@ -144,7 +144,7 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
             listType: {
               elementType: {
                 tag: "typePartId",
-                typePartId: { canEdit: false },
+                typePartIdType: { canEdit: false },
               },
               canEdit: false,
             },
