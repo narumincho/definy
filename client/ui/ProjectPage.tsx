@@ -95,6 +95,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
       onRequestAccount={props.onRequestAccount}
       getProject={props.getProject}
       onRequestProject={props.onRequestProjectById}
+      onRequestDataOperation={() => {}}
     />
   );
 };

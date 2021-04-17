@@ -187,6 +187,7 @@ const TopProjectList: React.VFC<{
             onRequestAccount={props.onRequestAccount}
             onRequestProject={props.onRequestProject}
             getProject={props.getProject}
+            onRequestDataOperation={() => {}}
           />
         </div>
       );

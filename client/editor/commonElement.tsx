@@ -252,6 +252,7 @@ export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
     ) => d.ResourceState<d.Project> | undefined;
     readonly onRequestProject: (projectId: d.ProjectId) => void;
     readonly onChangeSelection: (selection: ElementSelection) => void;
+    readonly onRequestDataOperation: () => void;
   }>;
 
   /**
@@ -271,6 +272,7 @@ export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
     ) => d.ResourceState<d.Project> | undefined;
     readonly onRequestProject: (projectId: d.ProjectId) => void;
     readonly onRequestAccount: (accountId: d.AccountId) => void;
+    readonly onRequestDataOperation: () => void;
   }>;
 };
 
@@ -452,6 +454,7 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.numberSelection
             : undefined
         }
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -473,6 +476,7 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.textSelection
             : undefined
         }
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -494,6 +498,7 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.sumSelection
             : undefined
         }
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -515,6 +520,7 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.imageSelection
             : undefined
         }
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -536,6 +542,7 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.accountSelection
             : undefined
         }
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -557,6 +564,7 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.timeSelection
             : undefined
         }
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -578,6 +586,7 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.projectSelection
             : undefined
         }
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -599,6 +608,7 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.value
             : undefined
         }
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -620,6 +630,7 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.value
             : undefined
         }
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -641,6 +652,7 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.typePartIdSelection
             : undefined
         }
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -673,6 +685,7 @@ const CommonElementDetailView: ElementOperation<
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
         onRequestAccount={props.onRequestAccount}
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -692,6 +705,7 @@ const CommonElementDetailView: ElementOperation<
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
         onRequestAccount={props.onRequestAccount}
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -711,6 +725,7 @@ const CommonElementDetailView: ElementOperation<
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
         onRequestAccount={props.onRequestAccount}
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -730,6 +745,7 @@ const CommonElementDetailView: ElementOperation<
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
         onRequestAccount={props.onRequestAccount}
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -749,6 +765,7 @@ const CommonElementDetailView: ElementOperation<
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
         onRequestAccount={props.onRequestAccount}
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -768,6 +785,7 @@ const CommonElementDetailView: ElementOperation<
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
         onRequestAccount={props.onRequestAccount}
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -787,6 +805,7 @@ const CommonElementDetailView: ElementOperation<
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
         onRequestAccount={props.onRequestAccount}
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -806,6 +825,7 @@ const CommonElementDetailView: ElementOperation<
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
         onRequestAccount={props.onRequestAccount}
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -825,6 +845,7 @@ const CommonElementDetailView: ElementOperation<
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
         onRequestAccount={props.onRequestAccount}
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
@@ -844,6 +865,7 @@ const CommonElementDetailView: ElementOperation<
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
         onRequestAccount={props.onRequestAccount}
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }

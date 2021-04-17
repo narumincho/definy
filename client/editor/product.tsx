@@ -344,7 +344,7 @@ export const ProductSelectionView: ElementOperation<
           )}
           <HeadItemView
             onSelect={(selection) => {
-              props.onChangeSelection({ tag: "head", selection: undefined });
+              props.onChangeSelection({ tag: "head", selection });
             }}
             name={props.type.headItem.name}
             textType={props.type.headItem.textType}
@@ -355,6 +355,7 @@ export const ProductSelectionView: ElementOperation<
             onJump={props.onJump}
             getProject={props.getProject}
             onRequestProject={props.onRequestProject}
+            onRequestDataOperation={props.onRequestDataOperation}
           />
         </div>
       )}
@@ -382,6 +383,7 @@ export const ProductSelectionView: ElementOperation<
             onJump={props.onJump}
             getProject={props.getProject}
             onRequestProject={props.onRequestProject}
+            onRequestDataOperation={props.onRequestDataOperation}
           />
         );
       })}
@@ -433,6 +435,7 @@ const HeadItemView: React.VFC<{
     projectId: d.ProjectId
   ) => d.ResourceState<d.Project> | undefined;
   readonly onRequestProject: (projectId: d.ProjectId) => void;
+  readonly onRequestDataOperation: () => void;
 }> = (props) => {
   const ref = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
@@ -480,6 +483,7 @@ const HeadItemView: React.VFC<{
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
         onChangeSelection={props.onSelect}
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     </div>
   );
@@ -501,6 +505,7 @@ const ItemView: React.VFC<{
     projectId: d.ProjectId
   ) => d.ResourceState<d.Project> | undefined;
   readonly onRequestProject: (projectId: d.ProjectId) => void;
+  readonly onRequestDataOperation: () => void;
 }> = (props) => {
   const ref = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
@@ -560,6 +565,7 @@ const ItemView: React.VFC<{
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
         onChangeSelection={props.onSelect}
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     </div>
   );
@@ -608,6 +614,7 @@ const ProductDetailView: ElementOperation<
             getProject={props.getProject}
             onRequestProject={props.onRequestProject}
             onRequestAccount={props.onRequestAccount}
+            onRequestDataOperation={props.onRequestDataOperation}
           />
         </div>
       );
@@ -646,6 +653,7 @@ const ProductDetailView: ElementOperation<
             getProject={props.getProject}
             onRequestProject={props.onRequestProject}
             onRequestAccount={props.onRequestAccount}
+            onRequestDataOperation={props.onRequestDataOperation}
           />
         </div>
       );

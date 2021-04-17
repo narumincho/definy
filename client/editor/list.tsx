@@ -182,11 +182,20 @@ const ListSelectionView: ElementOperation<
                 selection,
               })
             }
+            onRequestDataOperation={props.onRequestDataOperation}
           />
-          {props.type.canEdit ? <Button>x</Button> : <></>}
+          {props.type.canEdit ? (
+            <Button onClick={props.onRequestDataOperation}>x</Button>
+          ) : (
+            <></>
+          )}
         </div>
       ))}
-      {props.type.canEdit ? <Button>+</Button> : <></>}
+      {props.type.canEdit ? (
+        <Button onClick={props.onRequestDataOperation}>+</Button>
+      ) : (
+        <></>
+      )}
     </div>
   );
 };
@@ -200,6 +209,13 @@ const ListDetailView: ElementOperation<
     return (
       <div>
         <div>要素数: {props.value.items.length}</div>
+        {props.type.canEdit ? (
+          <Button onClick={props.onRequestDataOperation}>
+            すべての要素を削除
+          </Button>
+        ) : (
+          <></>
+        )}
       </div>
     );
   }
@@ -210,6 +226,13 @@ const ListDetailView: ElementOperation<
   return (
     <div>
       <div>リストインデックス: {props.selection.index}</div>
+      {props.selection.selection === undefined && props.type.canEdit ? (
+        <Button onClick={props.onRequestDataOperation}>
+          リストの要素を削除
+        </Button>
+      ) : (
+        <></>
+      )}
       <commonElement.detailView
         type={props.type.elementType}
         value={item}
@@ -220,6 +243,7 @@ const ListDetailView: ElementOperation<
         getProject={props.getProject}
         onRequestProject={props.onRequestProject}
         onRequestAccount={props.onRequestAccount}
+        onRequestDataOperation={props.onRequestDataOperation}
       />
     </div>
   );

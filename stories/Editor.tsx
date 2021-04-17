@@ -28,7 +28,11 @@ export default meta;
 
 type ControlAndActionProps = Pick<
   Props,
-  "language" | "onJump" | "onRequestAccount" | "onRequestProject"
+  | "language"
+  | "onJump"
+  | "onRequestAccount"
+  | "onRequestProject"
+  | "onRequestDataOperation"
 >;
 
 export const Project: Story<ControlAndActionProps> = (props) => (
@@ -110,6 +114,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
     onRequestAccount={props.onRequestAccount}
     onRequestProject={props.onRequestProject}
     getProject={getProject}
+    onRequestDataOperation={props.onRequestDataOperation}
   />
 );
 
@@ -188,6 +193,7 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
     onRequestAccount={props.onRequestAccount}
     onRequestProject={props.onRequestProject}
     getProject={getProject}
+    onRequestDataOperation={props.onRequestDataOperation}
   />
 );
 
@@ -232,6 +238,7 @@ export const Home: Story<ControlAndActionProps> = (props) => (
     onRequestAccount={props.onRequestAccount}
     onRequestProject={props.onRequestProject}
     getProject={getProject}
+    onRequestDataOperation={props.onRequestDataOperation}
   />
 );
 
@@ -292,6 +299,7 @@ export const List: Story<ControlAndActionProps> = (props) => (
     onRequestAccount={props.onRequestAccount}
     onRequestProject={props.onRequestProject}
     getProject={getProject}
+    onRequestDataOperation={props.onRequestDataOperation}
   />
 );
 
@@ -404,5 +412,6 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
     onRequestAccount={props.onRequestAccount}
     onRequestProject={props.onRequestProject}
     getProject={getProject}
+    onRequestDataOperation={props.onRequestDataOperation}
   />
 );

@@ -27,6 +27,8 @@ export type Props = {
     projectId: d.ProjectId
   ) => d.ResourceState<d.Project> | undefined;
   readonly onRequestProject: (projectId: d.ProjectId) => void;
+  /** データを編集をしようとした */
+  readonly onRequestDataOperation: () => void;
 };
 
 /**
@@ -105,6 +107,7 @@ export const Editor: React.VFC<Props> = (props) => {
           onJump={props.onJump}
           onRequestProject={props.onRequestProject}
           getProject={props.getProject}
+          onRequestDataOperation={props.onRequestDataOperation}
         />
       </div>
       <div
@@ -124,8 +127,9 @@ export const Editor: React.VFC<Props> = (props) => {
           onRequestProject={props.onRequestProject}
           getProject={props.getProject}
           onRequestAccount={props.onRequestAccount}
+          onRequestDataOperation={props.onRequestDataOperation}
         />
-      </div>{" "}
+      </div>
     </div>
   );
 };

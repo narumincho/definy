@@ -92,6 +92,7 @@ export const AccountPage: React.VFC<Props> = (props) => {
       onRequestAccount={props.onRequestAccount}
       getProject={props.getProject}
       onRequestProject={props.onRequestProject}
+      onRequestDataOperation={() => {}}
     />
   );
 };
