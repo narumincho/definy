@@ -9,6 +9,7 @@ import {
   projectResource,
 } from "./mockData";
 import { ArgType } from "@storybook/addons";
+import { action } from "@storybook/addon-actions";
 import { fullScreen } from "../.storybook/decorators";
 
 const argTypes: Record<keyof Pick<Props, "logInState">, ArgType> = {
@@ -36,6 +37,7 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     logInState={{ _: "Guest" }}
     onJump={props.onJump}
     topProjectsLoadingState={{ _: "none" }}
+    requestTop50Project={action("requestTop50Project")}
   />
 );
 Default.args = {
@@ -55,6 +57,7 @@ export const LoggedIn: Story<ControlAndActionProps> = (props) => (
     })}
     onJump={props.onJump}
     topProjectsLoadingState={{ _: "none" }}
+    requestTop50Project={action("requestTop50Project")}
   />
 );
 LoggedIn.args = {
@@ -75,6 +78,7 @@ export const Loaded: Story<ControlAndActionProps> = (props) => (
       _: "loaded",
       projectIdList: [project1Id, project2Id],
     }}
+    requestTop50Project={action("requestTop50Project")}
   />
 );
 Loaded.args = {

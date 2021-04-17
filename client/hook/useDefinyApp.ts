@@ -112,6 +112,13 @@ export type UseDefinyAppResult = {
    * *side-effect*
    */
   readonly createProject: (projectName: string) => void;
+
+  /**
+   * おすすめのプロジェクトを取得する
+   *
+   * *side-effect*
+   */
+  readonly requestTop50Project: () => void;
 };
 
 /**
@@ -231,7 +238,7 @@ export const useDefinyApp = (): UseDefinyAppResult => {
       });
   };
 
-  useEffect(() => {
+  const requestTop50Project = (): void => {
     setTopProjectsLoadingState({ _: "loading" });
     api.getTop50Project(undefined).then((response) => {
       if (response._ === "Nothing") {
@@ -246,6 +253,9 @@ export const useDefinyApp = (): UseDefinyAppResult => {
       });
       projectDict.setLoadedList(response.value.data, response.value.getTime);
     });
+  };
+
+  useEffect(() => {
     document.title =
       "Definy 手軽に堅牢なゲームとツールが作れて公開できる が目標のWebアプリ";
 
@@ -424,6 +434,7 @@ export const useDefinyApp = (): UseDefinyAppResult => {
     logInState,
     logOut,
     topProjectsLoadingState,
+    requestTop50Project,
   };
 };
 

@@ -13,11 +13,16 @@ export type Props = Pick<
   | "accountResource"
   | "language"
   | "logInState"
+  | "requestTop50Project"
 > & {
   onJump: UseDefinyAppResult["jump"];
 };
 
 export const HomePage: React.VFC<Props> = (props) => {
+  React.useEffect(() => {
+    props.requestTop50Project();
+  }, []);
+
   return (
     <div
       className={css({

@@ -186,6 +186,7 @@ const AppMain: React.VFC<Props> = (props) => {
       logInState={useDefinyAppResult.logInState}
       projectResource={useDefinyAppResult.projectResource}
       onJump={useDefinyAppResult.jump}
+      requestTop50Project={useDefinyAppResult.requestTop50Project}
     />
   );
 };
