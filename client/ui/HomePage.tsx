@@ -3,22 +3,18 @@ import * as d from "../../data";
 import { Editor } from "./Editor";
 import { Link } from "./Link";
 import { ProjectCardSkeleton } from "./ProjectCard";
-import type { TopProjectsLoadingState } from "./App";
+import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
 
-export type Props = {
-  topProjectsLoadingState: TopProjectsLoadingState;
-  getProject: (
-    projectId: d.ProjectId
-  ) => d.ResourceState<d.Project> | undefined;
-  getAccount: (
-    accountId: d.AccountId
-  ) => d.ResourceState<d.Account> | undefined;
-  onJump: (urlData: d.UrlData) => void;
-  language: d.Language;
-  logInState: d.LogInState;
-  onRequestProjectById: (projectId: d.ProjectId) => void;
-  onRequestAccount: (accountId: d.AccountId) => void;
+export type Props = Pick<
+  UseDefinyAppResult,
+  | "topProjectsLoadingState"
+  | "projectResource"
+  | "accountResource"
+  | "language"
+  | "logInState"
+> & {
+  onJump: UseDefinyAppResult["jump"];
 };
 
 export const HomePage: React.VFC<Props> = (props) => {
@@ -36,12 +32,10 @@ export const HomePage: React.VFC<Props> = (props) => {
       <HomeLinkList jumpHandler={props.onJump} language={props.language} />
       <TopProjectList
         topProjectsLoadingState={props.topProjectsLoadingState}
-        getProject={props.getProject}
         onJump={props.onJump}
         language={props.language}
-        getAccount={props.getAccount}
-        onRequestProject={props.onRequestProjectById}
-        onRequestAccount={props.onRequestAccount}
+        projectResource={props.projectResource}
+        accountResource={props.accountResource}
       />
       {props.logInState._ === "LoggedIn" ? (
         <CreateProjectButton language={props.language} onJump={props.onJump} />
@@ -80,19 +74,17 @@ const HomeLinkList: React.VFC<{
   );
 };
 
-const TopProjectList: React.VFC<{
-  topProjectsLoadingState: TopProjectsLoadingState;
-  getProject: (
-    projectId: d.ProjectId
-  ) => d.ResourceState<d.Project> | undefined;
-  getAccount: (
-    accountId: d.AccountId
-  ) => d.ResourceState<d.Account> | undefined;
-  onJump: (urlData: d.UrlData) => void;
-  language: d.Language;
-  onRequestAccount: (accountId: d.AccountId) => void;
-  onRequestProject: (projectId: d.ProjectId) => void;
-}> = (props) => {
+const TopProjectList: React.VFC<
+  Pick<
+    UseDefinyAppResult,
+    | "topProjectsLoadingState"
+    | "projectResource"
+    | "accountResource"
+    | "language"
+  > & {
+    onJump: UseDefinyAppResult["jump"];
+  }
+> = (props) => {
   switch (props.topProjectsLoadingState._) {
     case "none":
       return (
@@ -181,12 +173,10 @@ const TopProjectList: React.VFC<{
                 },
               ],
             }}
-            getAccount={props.getAccount}
+            accountResource={props.accountResource}
+            projectResource={props.projectResource}
             language={props.language}
             onJump={props.onJump}
-            onRequestAccount={props.onRequestAccount}
-            onRequestProject={props.onRequestProject}
-            getProject={props.getProject}
             onRequestDataOperation={() => {}}
           />
         </div>

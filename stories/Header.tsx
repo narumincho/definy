@@ -3,8 +3,8 @@ import * as d from "../data";
 import { Header, Props } from "../client/ui/Header";
 import { Meta, Story } from "@storybook/react";
 import { ArgType } from "@storybook/addons";
+import { accountResource } from "./mockData";
 import { fullScreen } from "../.storybook/decorators";
-import { getAccount } from "./mockData";
 
 const argTypes: Record<
   keyof Pick<Props, "titleItemList" | "logInState">,
@@ -36,7 +36,7 @@ export const Default: Story<ControlAndActionProps> = (props) => (
   <Header
     language={props.language}
     titleItemList={[]}
-    getAccount={getAccount}
+    accountResource={accountResource}
     logInState={{ _: "Guest" }}
     onJump={props.onJump}
     onLogInButtonClick={props.onLogInButtonClick}
@@ -59,7 +59,7 @@ export const Title: Story<ControlAndActionProps> = (props) => (
         location: d.Location.TypePart("sample" as d.TypePartId),
       },
     ]}
-    getAccount={getAccount}
+    accountResource={accountResource}
     logInState={{ _: "Guest" }}
     onJump={props.onJump}
     onLogInButtonClick={props.onLogInButtonClick}

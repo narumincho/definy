@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as d from "../../data";
 import {
   ProductSelection,
   ProductType,
@@ -12,21 +11,16 @@ import {
   selectionParent,
   selectionUp,
 } from "../editor/commonElement";
+import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
 
-export type Props = {
+export type Props = Pick<
+  UseDefinyAppResult,
+  "accountResource" | "projectResource" | "language"
+> & {
   readonly product: ProductValue;
   readonly productType: ProductType;
-  readonly getAccount: (
-    accountId: d.AccountId
-  ) => d.ResourceState<d.Account> | undefined;
-  readonly language: d.Language;
-  readonly onJump: (urlData: d.UrlData) => void;
-  readonly onRequestAccount: (accountId: d.AccountId) => void;
-  readonly getProject: (
-    projectId: d.ProjectId
-  ) => d.ResourceState<d.Project> | undefined;
-  readonly onRequestProject: (projectId: d.ProjectId) => void;
+  readonly onJump: UseDefinyAppResult["jump"];
   /** データを編集をしようとした */
   readonly onRequestDataOperation: () => void;
 };
@@ -102,11 +96,10 @@ export const Editor: React.VFC<Props> = (props) => {
           onChangeSelection={setSelection}
           type={props.productType}
           value={props.product}
-          getAccount={props.getAccount}
+          accountResource={props.accountResource}
+          projectResource={props.projectResource}
           language={props.language}
           onJump={props.onJump}
-          onRequestProject={props.onRequestProject}
-          getProject={props.getProject}
           onRequestDataOperation={props.onRequestDataOperation}
         />
       </div>
@@ -121,12 +114,10 @@ export const Editor: React.VFC<Props> = (props) => {
           selection={selection}
           type={props.productType}
           value={props.product}
-          getAccount={props.getAccount}
           language={props.language}
+          accountResource={props.accountResource}
+          projectResource={props.projectResource}
           onJump={props.onJump}
-          onRequestProject={props.onRequestProject}
-          getProject={props.getProject}
-          onRequestAccount={props.onRequestAccount}
           onRequestDataOperation={props.onRequestDataOperation}
         />
       </div>

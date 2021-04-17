@@ -1,4 +1,6 @@
 import * as d from "../data";
+import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
+import { action } from "@storybook/addon-actions";
 
 export const account1Id = "afcc321463d3b693de0e8cd70af65eba" as d.AccountId;
 
@@ -26,27 +28,39 @@ export const project2: d.Project = {
 
 export const typePart1Id = "500d9bc147fe8c1efaa5fb6c8222ce2e" as d.TypePartId;
 
-export const getProject = (
-  projectId: d.ProjectId
-): d.ResourceState<d.Project> => {
-  return d.ResourceState.Loaded({
-    data: project1,
-    getTime: { day: 0, millisecond: 0 },
-  });
+export const projectResource: UseDefinyAppResult["projectResource"] = {
+  forciblyRequestToServer: action(
+    "強制的にプロジェクトをサーバーから取得しようとした"
+  ),
+  requestToServerIfEmpty: action(
+    "キャッシュになければ, プロジェクトをサーバーにリクエストしようとした"
+  ),
+  getFromMemoryCache: () => {
+    return d.ResourceState.Loaded({
+      data: project1,
+      getTime: { day: 0, millisecond: 0 },
+    });
+  },
 };
 
-export const getAccount = (
-  accountId: d.AccountId
-): d.ResourceState<d.Account> => {
-  return d.ResourceState.Loaded({
-    data: {
-      name: "サンプルアカウント",
-      createTime: { day: 0, millisecond: 0 },
-      imageHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
-      introduction: "対戦よろしくおねがいします",
-    },
-    getTime: { day: 0, millisecond: 0 },
-  });
+export const accountResource: UseDefinyAppResult["accountResource"] = {
+  forciblyRequestToServer: action(
+    "強制的にアカウントをサーバーから取得しようとした"
+  ),
+  requestToServerIfEmpty: action(
+    "キャッシュになければ, アカウントをサーバーにリクエストしようとした"
+  ),
+  getFromMemoryCache: () => {
+    return d.ResourceState.Loaded({
+      data: {
+        name: "サンプルアカウント",
+        createTime: { day: 0, millisecond: 0 },
+        imageHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
+        introduction: "対戦よろしくおねがいします",
+      },
+      getTime: { day: 0, millisecond: 0 },
+    });
+  },
 };
 
 export const getTypePart = (

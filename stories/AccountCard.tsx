@@ -1,7 +1,8 @@
 import * as React from "react";
+import * as d from "../data";
 import { AccountCard, Props } from "../client/ui/AccountCard";
 import { Meta, Story } from "@storybook/react";
-import { account1Id, getAccount } from "./mockData";
+import { account1Id, accountResource } from "./mockData";
 import { fullScreen } from "../.storybook/decorators";
 
 const meta: Meta = {
@@ -14,17 +15,16 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<
-  Props,
-  "language" | "onJump" | "onRequestAccount"
->;
+type ControlAndActionProps = Pick<Props, "language" | "onJump">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <AccountCard
     language={props.language}
     onJump={props.onJump}
     accountId={account1Id}
-    getAccount={getAccount}
-    onRequestAccount={props.onRequestAccount}
+    accountResource={accountResource}
   />
 );
+Default.args = {
+  language: d.Language.Japanese,
+};

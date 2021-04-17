@@ -15,6 +15,7 @@ import {
   textOperation,
 } from "./text";
 import { Image } from "../container/Image";
+import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
 
 export type ProductSelection =
@@ -350,11 +351,10 @@ export const ProductSelectionView: ElementOperation<
             textType={props.type.headItem.textType}
             productSelection={props.selection}
             textValue={props.value.headItem.value}
-            getAccount={props.getAccount}
+            accountResource={props.accountResource}
+            projectResource={props.projectResource}
             language={props.language}
             onJump={props.onJump}
-            getProject={props.getProject}
-            onRequestProject={props.onRequestProject}
             onRequestDataOperation={props.onRequestDataOperation}
           />
         </div>
@@ -378,11 +378,10 @@ export const ProductSelectionView: ElementOperation<
             type={itemType.type}
             itemSelection={getContentItemSelection(props.selection, index)}
             value={item}
-            getAccount={props.getAccount}
+            projectResource={props.projectResource}
+            accountResource={props.accountResource}
             language={props.language}
             onJump={props.onJump}
-            getProject={props.getProject}
-            onRequestProject={props.onRequestProject}
             onRequestDataOperation={props.onRequestDataOperation}
           />
         );
@@ -420,23 +419,20 @@ type ItemSelection =
       tag: "none";
     };
 
-const HeadItemView: React.VFC<{
-  readonly onSelect: (selection: TextSelection | undefined) => void;
-  readonly name: string;
-  readonly textType: TextType;
-  readonly textValue: TextValue;
-  readonly productSelection: ProductSelection | undefined;
-  readonly getAccount: (
-    accountId: d.AccountId
-  ) => d.ResourceState<d.Account> | undefined;
-  readonly language: d.Language;
-  readonly onJump: (urlData: d.UrlData) => void;
-  readonly getProject: (
-    projectId: d.ProjectId
-  ) => d.ResourceState<d.Project> | undefined;
-  readonly onRequestProject: (projectId: d.ProjectId) => void;
-  readonly onRequestDataOperation: () => void;
-}> = (props) => {
+const HeadItemView: React.VFC<
+  Pick<
+    UseDefinyAppResult,
+    "accountResource" | "projectResource" | "language"
+  > & {
+    readonly onSelect: (selection: TextSelection | undefined) => void;
+    readonly name: string;
+    readonly textType: TextType;
+    readonly textValue: TextValue;
+    readonly productSelection: ProductSelection | undefined;
+    readonly onJump: UseDefinyAppResult["jump"];
+    readonly onRequestDataOperation: () => void;
+  }
+> = (props) => {
   const ref = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     if (
@@ -471,7 +467,8 @@ const HeadItemView: React.VFC<{
       <HeadTextSelectionView
         type={props.textType}
         value={props.textValue}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
+        projectResource={props.projectResource}
         selection={
           props.productSelection !== undefined &&
           props.productSelection.tag === "head"
@@ -480,8 +477,6 @@ const HeadItemView: React.VFC<{
         }
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
         onChangeSelection={props.onSelect}
         onRequestDataOperation={props.onRequestDataOperation}
       />
@@ -489,24 +484,20 @@ const HeadItemView: React.VFC<{
   );
 };
 
-const ItemView: React.VFC<{
-  readonly onSelect: (selection: Selection | undefined) => void;
-  readonly name: string;
-  readonly type: Type;
-  readonly value: Value;
-  readonly itemSelection: ItemSelection;
-  readonly isHead?: boolean;
-  readonly getAccount: (
-    accountId: d.AccountId
-  ) => d.ResourceState<d.Account> | undefined;
-  readonly language: d.Language;
-  readonly onJump: (urlData: d.UrlData) => void;
-  readonly getProject: (
-    projectId: d.ProjectId
-  ) => d.ResourceState<d.Project> | undefined;
-  readonly onRequestProject: (projectId: d.ProjectId) => void;
-  readonly onRequestDataOperation: () => void;
-}> = (props) => {
+const ItemView: React.VFC<
+  Pick<
+    UseDefinyAppResult,
+    "accountResource" | "projectResource" | "language"
+  > & {
+    readonly onSelect: (selection: Selection | undefined) => void;
+    readonly name: string;
+    readonly type: Type;
+    readonly value: Value;
+    readonly itemSelection: ItemSelection;
+    readonly onJump: UseDefinyAppResult["jump"];
+    readonly onRequestDataOperation: () => void;
+  }
+> = (props) => {
   const ref = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     if (props.itemSelection.tag === "selectSelf" && ref.current !== null) {
@@ -537,24 +528,21 @@ const ItemView: React.VFC<{
           alignItems: "center",
         })}
       >
-        {props.isHead ? (
-          <></>
-        ) : (
-          <div
-            className={css({
-              fontWeight: "bold",
-              fontSize: 16,
-              color: "#ddd",
-            })}
-          >
-            {props.name}
-          </div>
-        )}
+        <div
+          className={css({
+            fontWeight: "bold",
+            fontSize: 16,
+            color: "#ddd",
+          })}
+        >
+          {props.name}
+        </div>
       </div>
       <commonElement.selectionView
         type={props.type}
         value={props.value}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
+        projectResource={props.projectResource}
         selection={
           props.itemSelection.tag === "selectInner"
             ? props.itemSelection.selection
@@ -562,8 +550,6 @@ const ItemView: React.VFC<{
         }
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
         onChangeSelection={props.onSelect}
         onRequestDataOperation={props.onRequestDataOperation}
       />
@@ -608,12 +594,10 @@ const ProductDetailView: ElementOperation<
             type={props.type.headItem.textType}
             value={props.value.headItem.value}
             selection={props.selection.selection}
-            getAccount={props.getAccount}
+            projectResource={props.projectResource}
+            accountResource={props.accountResource}
             language={props.language}
             onJump={props.onJump}
-            getProject={props.getProject}
-            onRequestProject={props.onRequestProject}
-            onRequestAccount={props.onRequestAccount}
             onRequestDataOperation={props.onRequestDataOperation}
           />
         </div>
@@ -647,12 +631,10 @@ const ProductDetailView: ElementOperation<
             type={itemType.type}
             value={item}
             selection={props.selection.selection}
-            getAccount={props.getAccount}
+            accountResource={props.accountResource}
+            projectResource={props.projectResource}
             language={props.language}
             onJump={props.onJump}
-            getProject={props.getProject}
-            onRequestProject={props.onRequestProject}
-            onRequestAccount={props.onRequestAccount}
             onRequestDataOperation={props.onRequestDataOperation}
           />
         </div>

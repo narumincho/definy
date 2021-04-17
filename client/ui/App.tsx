@@ -8,54 +8,29 @@ import { Header } from "./Header";
 import { HomePage } from "./HomePage";
 import { ProjectPage } from "./ProjectPage";
 import { SettingPage } from "./SettingPage";
+import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
-export type TopProjectsLoadingState =
-  | { _: "none" }
-  | { _: "loading" }
-  | { _: "loaded"; projectIdList: ReadonlyArray<d.ProjectId> };
-
-export type CreateProjectState =
-  | {
-      _: "creating";
-      name: string;
-    }
-  | {
-      _: "none";
-    };
 export type Props = {
-  readonly topProjectsLoadingState: TopProjectsLoadingState;
-  readonly getProject: (
-    projectId: d.ProjectId
-  ) => d.ResourceState<d.Project> | undefined;
-  readonly getAccount: (
-    accountId: d.AccountId
-  ) => d.ResourceState<d.Account> | undefined;
-  readonly location: d.Location;
-  readonly language: d.Language;
-  readonly logInState: d.LogInState;
-  readonly createProjectState: CreateProjectState;
-  readonly onJump: (urlData: d.UrlData) => void;
-  readonly onLogInButtonClick: () => void;
-  readonly onLogOutButtonClick: () => void;
-  readonly onCreateProject: (projectName: string) => void;
-  readonly onRequestProjectById: (projectId: d.ProjectId) => void;
-  readonly onRequestAccount: (accountId: d.AccountId) => void;
+  readonly useDefinyAppResult: UseDefinyAppResult;
 };
 
 export const App: React.VFC<Props> = (props) => {
-  switch (props.logInState._) {
+  const useDefinyAppResult = props.useDefinyAppResult;
+  switch (useDefinyAppResult.logInState._) {
     case "RequestingLogInUrl": {
       return (
         <PrepareLogIn
           message={logInMessage(
-            props.logInState.openIdConnectProvider,
-            props.language
+            useDefinyAppResult.logInState.openIdConnectProvider,
+            useDefinyAppResult.language
           )}
         />
       );
     }
     case "JumpingToLogInPage": {
-      return <PrepareLogIn message={jumpMessage(props.language)} />;
+      return (
+        <PrepareLogIn message={jumpMessage(useDefinyAppResult.language)} />
+      );
     }
   }
   return (
@@ -69,12 +44,12 @@ export const App: React.VFC<Props> = (props) => {
       })}
     >
       <Header
-        logInState={props.logInState}
-        getAccount={props.getAccount}
-        language={props.language}
+        logInState={useDefinyAppResult.logInState}
+        accountResource={useDefinyAppResult.accountResource}
+        language={useDefinyAppResult.language}
         titleItemList={[]}
-        onJump={props.onJump}
-        onLogInButtonClick={props.onLogInButtonClick}
+        onJump={useDefinyAppResult.jump}
+        onLogInButtonClick={useDefinyAppResult.logIn}
       />
       <AppMain {...props} />
     </div>
@@ -161,61 +136,56 @@ const rotateAnimation = keyframes`
  * Header を含まない部分
  */
 const AppMain: React.VFC<Props> = (props) => {
-  switch (props.location._) {
+  const useDefinyAppResult = props.useDefinyAppResult;
+  switch (useDefinyAppResult.location._) {
     case "About":
-      return <AboutPage language={props.language} />;
+      return <AboutPage language={useDefinyAppResult.language} />;
     case "Setting":
       return (
         <SettingPage
-          getAccount={props.getAccount}
-          language={props.language}
-          logInState={props.logInState}
-          onJump={props.onJump}
-          onClickLogoutButton={props.onLogOutButtonClick}
+          accountResource={useDefinyAppResult.accountResource}
+          language={useDefinyAppResult.language}
+          logInState={useDefinyAppResult.logInState}
+          onJump={useDefinyAppResult.jump}
+          onLogOut={useDefinyAppResult.logOut}
         />
       );
     case "CreateProject":
       return (
         <CreateProjectPage
-          createProjectState={props.createProjectState}
-          onCreateProject={props.onCreateProject}
+          createProjectState={useDefinyAppResult.createProjectState}
+          onCreateProject={useDefinyAppResult.createProject}
         />
       );
     case "Project":
       return (
         <ProjectPage
-          language={props.language}
-          onJump={props.onJump}
-          projectId={props.location.projectId}
-          getProject={props.getProject}
-          getAccount={props.getAccount}
-          onRequestProjectById={props.onRequestProjectById}
-          onRequestAccount={props.onRequestAccount}
+          language={useDefinyAppResult.language}
+          onJump={useDefinyAppResult.jump}
+          projectId={useDefinyAppResult.location.projectId}
+          accountResource={useDefinyAppResult.accountResource}
+          projectResource={useDefinyAppResult.projectResource}
         />
       );
     case "Account":
       return (
         <AccountPage
-          language={props.language}
-          onJump={props.onJump}
-          accountId={props.location.accountId}
-          getAccount={props.getAccount}
-          getProject={props.getProject}
-          onRequestAccount={props.onRequestAccount}
-          onRequestProject={props.onRequestProjectById}
+          language={useDefinyAppResult.language}
+          onJump={useDefinyAppResult.jump}
+          accountId={useDefinyAppResult.location.accountId}
+          accountResource={useDefinyAppResult.accountResource}
+          projectResource={useDefinyAppResult.projectResource}
         />
       );
   }
   return (
     <HomePage
-      topProjectsLoadingState={props.topProjectsLoadingState}
-      getAccount={props.getAccount}
-      language={props.language}
-      logInState={props.logInState}
-      getProject={props.getProject}
-      onJump={props.onJump}
-      onRequestProjectById={props.onRequestProjectById}
-      onRequestAccount={props.onRequestAccount}
+      topProjectsLoadingState={useDefinyAppResult.topProjectsLoadingState}
+      accountResource={useDefinyAppResult.accountResource}
+      language={useDefinyAppResult.language}
+      logInState={useDefinyAppResult.logInState}
+      projectResource={useDefinyAppResult.projectResource}
+      onJump={useDefinyAppResult.jump}
     />
   );
 };

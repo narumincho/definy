@@ -1,26 +1,24 @@
 import * as React from "react";
 import * as d from "../../data";
 import { Editor } from "./Editor";
+import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
-export type Props = {
+export type Props = Pick<
+  UseDefinyAppResult,
+  "accountResource" | "projectResource" | "language"
+> & {
   readonly accountId: d.AccountId;
-  readonly getAccount: (
-    accountId: d.AccountId
-  ) => d.ResourceState<d.Account> | undefined;
-  readonly getProject: (
-    projectId: d.ProjectId
-  ) => d.ResourceState<d.Project> | undefined;
-  readonly language: d.Language;
-  readonly onJump: (urlData: d.UrlData) => void;
-  readonly onRequestAccount: (accountId: d.AccountId) => void;
-  readonly onRequestProject: (projectId: d.ProjectId) => void;
+  readonly onJump: UseDefinyAppResult["jump"];
 };
 
 export const AccountPage: React.VFC<Props> = (props) => {
   React.useEffect(() => {
-    props.onRequestAccount(props.accountId);
+    props.accountResource.forciblyRequestToServer(props.accountId);
   }, []);
-  const accountResource = props.getAccount(props.accountId);
+
+  const accountResource = props.accountResource.getFromMemoryCache(
+    props.accountId
+  );
   if (accountResource === undefined) {
     return <div>アカウント読み込み準備前</div>;
   }
@@ -86,12 +84,10 @@ export const AccountPage: React.VFC<Props> = (props) => {
           },
         ],
       }}
-      getAccount={props.getAccount}
+      accountResource={props.accountResource}
+      projectResource={props.projectResource}
       language={props.language}
       onJump={props.onJump}
-      onRequestAccount={props.onRequestAccount}
-      getProject={props.getProject}
-      onRequestProject={props.onRequestProject}
       onRequestDataOperation={() => {}}
     />
   );

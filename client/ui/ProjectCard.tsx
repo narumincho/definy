@@ -2,7 +2,7 @@ import * as React from "react";
 import * as d from "../../data";
 import { Image, ImageSkeleton } from "../container/Image";
 import { Link } from "./Link";
-import { UseResourceStateResult } from "../hook/resourceState";
+import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
 
 const imageWidth = 256;
@@ -11,22 +11,19 @@ const textHeight = 48;
 const cardWidth = imageWidth;
 const cardHeight = imageHeight + textHeight;
 
-export type Props = {
+export type Props = Pick<UseDefinyAppResult, "projectResource" | "language"> & {
   readonly projectId: d.ProjectId;
-  readonly getProject: (
-    projectId: d.ProjectId
-  ) => d.ResourceState<d.Project> | undefined;
-  readonly onJump: (urlData: d.UrlData) => void;
-  readonly language: d.Language;
-  readonly onRequestProjectById: (projectId: d.ProjectId) => void;
+  readonly onJump: UseDefinyAppResult["jump"];
 };
 
 export const ProjectCard: React.VFC<Props> = (props) => {
   React.useEffect(() => {
-    props.onRequestProjectById(props.projectId);
+    props.projectResource.requestToServerIfEmpty(props.projectId);
   }, []);
 
-  const projectState = props.getProject(props.projectId);
+  const projectState = props.projectResource.getFromMemoryCache(
+    props.projectId
+  );
   if (projectState === undefined) {
     return <div>プロジェクトリクエスト準備前</div>;
   }

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Meta, Story } from "@storybook/react";
 import { ProjectCard, Props } from "../client/ui/ProjectCard";
-import { getProject, project1Id } from "./mockData";
+import { project1Id, projectResource } from "./mockData";
 import { fullScreen } from "../.storybook/decorators";
 
 const meta: Meta = {
@@ -14,17 +14,13 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<
-  Props,
-  "language" | "onJump" | "onRequestProjectById"
->;
+type ControlAndActionProps = Pick<Props, "language" | "onJump">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <ProjectCard
-    getProject={getProject}
+    projectResource={projectResource}
     projectId={project1Id}
     language={props.language}
     onJump={props.onJump}
-    onRequestProjectById={props.onRequestProjectById}
   />
 );

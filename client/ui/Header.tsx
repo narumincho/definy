@@ -3,21 +3,20 @@ import * as d from "../../data";
 import { CSSObject, css } from "@emotion/css";
 import { Image } from "../container/Image";
 import { Link } from "./Link";
+import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type TitleItem = {
   name: string;
   location: d.Location;
 };
 
-export type Props = {
-  language: d.Language;
+export type Props = Pick<
+  UseDefinyAppResult,
+  "accountResource" | "language" | "logInState"
+> & {
+  onJump: UseDefinyAppResult["jump"];
+  onLogInButtonClick: UseDefinyAppResult["logIn"];
   titleItemList: ReadonlyArray<TitleItem>;
-  logInState: d.LogInState;
-  getAccount: (
-    accountId: d.AccountId
-  ) => d.ResourceState<d.Account> | undefined;
-  onJump: (urlData: d.UrlData) => void;
-  onLogInButtonClick: () => void;
 };
 
 export const Header: React.VFC<Props> = (props) => {
@@ -71,7 +70,7 @@ export const Header: React.VFC<Props> = (props) => {
       <UserViewOrLogInButton
         logInState={props.logInState}
         language={props.language}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
         onJump={props.onJump}
         onLogInButtonClick={props.onLogInButtonClick}
       />
@@ -79,15 +78,12 @@ export const Header: React.VFC<Props> = (props) => {
   );
 };
 
-const UserViewOrLogInButton: React.VFC<{
-  logInState: d.LogInState;
-  language: d.Language;
-  getAccount: (
-    accountId: d.AccountId
-  ) => d.ResourceState<d.Account> | undefined;
-  onJump: (urlData: d.UrlData) => void;
-  onLogInButtonClick: () => void;
-}> = (props) => {
+const UserViewOrLogInButton: React.VFC<
+  Pick<UseDefinyAppResult, "logInState" | "language" | "accountResource"> & {
+    onJump: UseDefinyAppResult["jump"];
+    onLogInButtonClick: () => void;
+  }
+> = (props) => {
   switch (props.logInState._) {
     case "LoadingAccountTokenFromIndexedDB":
       return (
@@ -111,7 +107,7 @@ const UserViewOrLogInButton: React.VFC<{
       );
 
     case "LoggedIn": {
-      const accountResourceState = props.getAccount(
+      const accountResourceState = props.accountResource.getFromMemoryCache(
         props.logInState.accountTokenAndUserId.userId
       );
       if (

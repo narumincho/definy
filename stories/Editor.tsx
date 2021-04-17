@@ -3,11 +3,11 @@ import * as d from "../data";
 import { Editor, Props } from "../client/ui/Editor";
 import { Meta, Story } from "@storybook/react";
 import {
-  getAccount,
-  getProject,
+  accountResource,
   project1,
   project1Id,
   project2Id,
+  projectResource,
   typePart1Id,
 } from "./mockData";
 import { ArgType } from "@storybook/addons";
@@ -28,11 +28,7 @@ export default meta;
 
 type ControlAndActionProps = Pick<
   Props,
-  | "language"
-  | "onJump"
-  | "onRequestAccount"
-  | "onRequestProject"
-  | "onRequestDataOperation"
+  "language" | "onJump" | "onRequestDataOperation"
 >;
 
 export const Project: Story<ControlAndActionProps> = (props) => (
@@ -108,15 +104,14 @@ export const Project: Story<ControlAndActionProps> = (props) => (
         { type: "text", value: "ffffffff" },
       ],
     }}
-    getAccount={getAccount}
+    accountResource={accountResource}
+    projectResource={projectResource}
     language={props.language}
     onJump={props.onJump}
-    onRequestAccount={props.onRequestAccount}
-    onRequestProject={props.onRequestProject}
-    getProject={getProject}
     onRequestDataOperation={props.onRequestDataOperation}
   />
 );
+Project.args = { language: d.Language.Japanese };
 
 export const TypePart: Story<ControlAndActionProps> = (props) => (
   <Editor
@@ -187,15 +182,14 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
         },
       ],
     }}
-    getAccount={getAccount}
+    accountResource={accountResource}
+    projectResource={projectResource}
     language={props.language}
     onJump={props.onJump}
-    onRequestAccount={props.onRequestAccount}
-    onRequestProject={props.onRequestProject}
-    getProject={getProject}
     onRequestDataOperation={props.onRequestDataOperation}
   />
 );
+TypePart.args = { language: d.Language.Japanese };
 
 export const Home: Story<ControlAndActionProps> = (props) => (
   <Editor
@@ -232,15 +226,14 @@ export const Home: Story<ControlAndActionProps> = (props) => (
         },
       ],
     }}
-    getAccount={getAccount}
+    accountResource={accountResource}
+    projectResource={projectResource}
     language={props.language}
     onJump={props.onJump}
-    onRequestAccount={props.onRequestAccount}
-    onRequestProject={props.onRequestProject}
-    getProject={getProject}
     onRequestDataOperation={props.onRequestDataOperation}
   />
 );
+Home.args = { language: d.Language.Japanese };
 
 export const List: Story<ControlAndActionProps> = (props) => (
   <Editor
@@ -293,15 +286,14 @@ export const List: Story<ControlAndActionProps> = (props) => (
         },
       ],
     }}
-    getAccount={getAccount}
+    accountResource={accountResource}
+    projectResource={projectResource}
     language={props.language}
     onJump={props.onJump}
-    onRequestAccount={props.onRequestAccount}
-    onRequestProject={props.onRequestProject}
-    getProject={getProject}
     onRequestDataOperation={props.onRequestDataOperation}
   />
 );
+List.args = { language: d.Language.Japanese };
 
 export const NestProduct: Story<ControlAndActionProps> = (props) => (
   <Editor
@@ -406,12 +398,11 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
         },
       ],
     }}
-    getAccount={getAccount}
+    accountResource={accountResource}
+    projectResource={projectResource}
     language={props.language}
     onJump={props.onJump}
-    onRequestAccount={props.onRequestAccount}
-    onRequestProject={props.onRequestProject}
-    getProject={getProject}
     onRequestDataOperation={props.onRequestDataOperation}
   />
 );
+NestProduct.args = { language: d.Language.Japanese };

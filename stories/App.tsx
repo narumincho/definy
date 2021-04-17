@@ -2,25 +2,35 @@ import * as React from "react";
 import * as d from "../data";
 import { App, Props } from "../client/ui/App";
 import { Meta, Story } from "@storybook/react";
-import { getAccount, getProject, project1Id, project2Id } from "./mockData";
+import {
+  accountResource,
+  project1Id,
+  project2Id,
+  projectResource,
+} from "./mockData";
 import { ArgType } from "@storybook/addons";
+import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
+import { action } from "@storybook/addon-actions";
 import { fullScreen } from "../.storybook/decorators";
 
-type ControlAndActionProps = Pick<
-  Props,
-  | "onJump"
-  | "onLogInButtonClick"
-  | "language"
-  | "onCreateProject"
-  | "onRequestProjectById"
-  | "onRequestAccount"
->;
+const useDefinyAppResult: UseDefinyAppResult = {
+  accountResource,
+  projectResource,
+  createProject: action("createProject"),
+  createProjectState: { _: "none" },
+  jump: action("jump"),
+  language: d.Language.Japanese,
+  location: d.Location.Home,
+  logIn: action("logIn"),
+  logInState: d.LogInState.Guest,
+  logOut: action("logOut"),
+  topProjectsLoadingState: { _: "none" },
+};
 
-const argTypes: Record<
-  keyof Pick<Props, "topProjectsLoadingState" | "language">,
-  ArgType
-> = {
-  topProjectsLoadingState: {
+type ControlAndActionProps = Pick<UseDefinyAppResult, "language">;
+
+const argTypes: Record<keyof Props & "language", ArgType> = {
+  useDefinyAppResult: {
     control: null,
   },
   language: {
@@ -41,129 +51,69 @@ export default meta;
 
 export const None: Story<ControlAndActionProps> = (props) => (
   <App
-    topProjectsLoadingState={{ _: "none" }}
-    location={d.Location.Home}
-    language={props.language}
-    logInState={{ _: "Guest" }}
-    createProjectState={{ _: "none" }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
-    onLogOutButtonClick={props.onLogInButtonClick}
-    onCreateProject={props.onCreateProject}
-    onRequestProjectById={props.onRequestProjectById}
-    onRequestAccount={props.onRequestAccount}
-    getAccount={getAccount}
-    getProject={getProject}
+    useDefinyAppResult={{ ...useDefinyAppResult, language: props.language }}
   />
 );
 
 export const Loading: Story<ControlAndActionProps> = (props) => (
   <App
-    topProjectsLoadingState={{ _: "loading" }}
-    location={d.Location.Home}
-    language={props.language}
-    logInState={{ _: "Guest" }}
-    createProjectState={{ _: "none" }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
-    onLogOutButtonClick={props.onLogInButtonClick}
-    onCreateProject={props.onCreateProject}
-    onRequestProjectById={props.onRequestProjectById}
-    onRequestAccount={props.onRequestAccount}
-    getAccount={getAccount}
-    getProject={getProject}
+    useDefinyAppResult={{
+      ...useDefinyAppResult,
+      topProjectsLoadingState: { _: "loading" },
+      language: props.language,
+    }}
   />
 );
 
 export const LoadedEmpty: Story<ControlAndActionProps> = (props) => (
   <App
-    topProjectsLoadingState={{ _: "loaded", projectIdList: [] }}
-    location={d.Location.Home}
-    language={props.language}
-    logInState={{ _: "Guest" }}
-    createProjectState={{ _: "none" }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
-    onLogOutButtonClick={props.onLogInButtonClick}
-    onCreateProject={props.onCreateProject}
-    onRequestProjectById={props.onRequestProjectById}
-    onRequestAccount={props.onRequestAccount}
-    getAccount={getAccount}
-    getProject={getProject}
+    useDefinyAppResult={{
+      ...useDefinyAppResult,
+      topProjectsLoadingState: { _: "loaded", projectIdList: [] },
+      language: props.language,
+    }}
   />
 );
 
 export const Loaded: Story<ControlAndActionProps> = (props) => (
   <App
-    topProjectsLoadingState={{ _: "loaded", projectIdList: [project1Id] }}
-    location={d.Location.Home}
-    language={props.language}
-    logInState={{ _: "Guest" }}
-    createProjectState={{ _: "none" }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
-    onLogOutButtonClick={props.onLogInButtonClick}
-    onCreateProject={props.onCreateProject}
-    onRequestProjectById={props.onRequestProjectById}
-    onRequestAccount={props.onRequestAccount}
-    getAccount={getAccount}
-    getProject={getProject}
+    useDefinyAppResult={{
+      ...useDefinyAppResult,
+      topProjectsLoadingState: { _: "loaded", projectIdList: [project1Id] },
+      language: props.language,
+    }}
   />
 );
 
 export const Loaded2: Story<ControlAndActionProps> = (props) => (
   <App
-    topProjectsLoadingState={{
-      _: "loaded",
-      projectIdList: [project1Id, project2Id],
+    useDefinyAppResult={{
+      ...useDefinyAppResult,
+      topProjectsLoadingState: {
+        _: "loaded",
+        projectIdList: [project1Id, project2Id],
+      },
+      language: props.language,
     }}
-    location={d.Location.Home}
-    language={props.language}
-    logInState={{ _: "Guest" }}
-    createProjectState={{ _: "none" }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
-    onLogOutButtonClick={props.onLogInButtonClick}
-    onCreateProject={props.onCreateProject}
-    onRequestProjectById={props.onRequestProjectById}
-    onRequestAccount={props.onRequestAccount}
-    getAccount={getAccount}
-    getProject={getProject}
   />
 );
 
 export const RequestingLogInUrl: Story<ControlAndActionProps> = (props) => (
   <App
-    topProjectsLoadingState={{ _: "none" }}
-    location={d.Location.Home}
-    language={props.language}
-    logInState={d.LogInState.RequestingLogInUrl("Google")}
-    createProjectState={{ _: "none" }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
-    onLogOutButtonClick={props.onLogInButtonClick}
-    onCreateProject={props.onCreateProject}
-    onRequestProjectById={props.onRequestProjectById}
-    onRequestAccount={props.onRequestAccount}
-    getAccount={getAccount}
-    getProject={getProject}
+    useDefinyAppResult={{
+      ...useDefinyAppResult,
+      logInState: d.LogInState.RequestingLogInUrl("Google"),
+      language: props.language,
+    }}
   />
 );
 
 export const JumpingToLogInPage: Story<ControlAndActionProps> = (props) => (
   <App
-    topProjectsLoadingState={{ _: "none" }}
-    location={d.Location.Home}
-    language={props.language}
-    logInState={d.LogInState.JumpingToLogInPage}
-    createProjectState={{ _: "none" }}
-    onJump={props.onJump}
-    onLogInButtonClick={props.onLogInButtonClick}
-    onLogOutButtonClick={props.onLogInButtonClick}
-    onCreateProject={props.onCreateProject}
-    onRequestProjectById={props.onRequestProjectById}
-    onRequestAccount={props.onRequestAccount}
-    getAccount={getAccount}
-    getProject={getProject}
+    useDefinyAppResult={{
+      ...useDefinyAppResult,
+      logInState: d.LogInState.JumpingToLogInPage,
+      language: props.language,
+    }}
   />
 );

@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as d from "../../data";
 import {
   ElementOperation,
   Selection,
@@ -171,11 +170,10 @@ const ListSelectionView: ElementOperation<
                 ? props.selection.selection
                 : undefined
             }
-            getAccount={props.getAccount}
+            accountResource={props.accountResource}
+            projectResource={props.projectResource}
             language={props.language}
             onJump={props.onJump}
-            getProject={props.getProject}
-            onRequestProject={props.onRequestProject}
             onChangeSelection={(selection) =>
               props.onChangeSelection({
                 index,
@@ -237,12 +235,10 @@ const ListDetailView: ElementOperation<
         type={props.type.elementType}
         value={item}
         selection={props.selection.selection}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
+        projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
-        onRequestAccount={props.onRequestAccount}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     </div>

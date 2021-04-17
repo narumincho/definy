@@ -22,7 +22,13 @@ const AccountSelectionView: ElementOperation<
   AccountValue,
   AccountType
 >["selectionView"] = (props) => {
-  const accountResource = props.getAccount(props.value.accountId);
+  React.useEffect(() => {
+    props.accountResource.requestToServerIfEmpty(props.value.accountId);
+  }, [props.value.accountId]);
+
+  const accountResource = props.accountResource.getFromMemoryCache(
+    props.value.accountId
+  );
   if (accountResource === undefined) {
     return <div>アカウント読み込み準備前</div>;
   }
@@ -81,10 +87,9 @@ const AccountDetailView: ElementOperation<
     <div>
       <AccountCard
         accountId={props.value.accountId}
-        getAccount={props.getAccount}
         language={props.language}
         onJump={props.onJump}
-        onRequestAccount={props.onRequestAccount}
+        accountResource={props.accountResource}
       />
     </div>
   );

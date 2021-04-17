@@ -36,6 +36,7 @@ import {
   typePartIdOperation,
 } from "./typePartId";
 import React from "react";
+import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { maybeMap } from "../../common/util";
 
 export type Selection =
@@ -238,42 +239,35 @@ export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
   /**
    * 左側の選択の木構造のコンポーネント
    */
-  readonly selectionView: React.VFC<{
-    readonly selection: ElementSelection | undefined;
-    readonly value: ElementValue;
-    readonly type: ElementType;
-    readonly getAccount: (
-      accountId: d.AccountId
-    ) => d.ResourceState<d.Account> | undefined;
-    readonly language: d.Language;
-    readonly onJump: (urlData: d.UrlData) => void;
-    readonly getProject: (
-      projectId: d.ProjectId
-    ) => d.ResourceState<d.Project> | undefined;
-    readonly onRequestProject: (projectId: d.ProjectId) => void;
-    readonly onChangeSelection: (selection: ElementSelection) => void;
-    readonly onRequestDataOperation: () => void;
-  }>;
+  readonly selectionView: React.VFC<
+    Pick<
+      UseDefinyAppResult,
+      "accountResource" | "projectResource" | "language"
+    > & {
+      readonly selection: ElementSelection | undefined;
+      readonly value: ElementValue;
+      readonly type: ElementType;
+      readonly onJump: UseDefinyAppResult["jump"];
+      readonly onChangeSelection: (selection: ElementSelection) => void;
+      readonly onRequestDataOperation: () => void;
+    }
+  >;
 
   /**
    * 右側に表示される詳細コンポーネント
    */
-  readonly detailView: React.VFC<{
-    readonly value: ElementValue;
-    readonly type: ElementType;
-    readonly selection: ElementSelection | undefined;
-    readonly getAccount: (
-      accountId: d.AccountId
-    ) => d.ResourceState<d.Account> | undefined;
-    readonly language: d.Language;
-    readonly onJump: (urlData: d.UrlData) => void;
-    readonly getProject: (
-      projectId: d.ProjectId
-    ) => d.ResourceState<d.Project> | undefined;
-    readonly onRequestProject: (projectId: d.ProjectId) => void;
-    readonly onRequestAccount: (accountId: d.AccountId) => void;
-    readonly onRequestDataOperation: () => void;
-  }>;
+  readonly detailView: React.VFC<
+    Pick<
+      UseDefinyAppResult,
+      "accountResource" | "projectResource" | "language"
+    > & {
+      readonly value: ElementValue;
+      readonly type: ElementType;
+      readonly selection: ElementSelection | undefined;
+      readonly onJump: UseDefinyAppResult["jump"];
+      readonly onRequestDataOperation: () => void;
+    }
+  >;
 };
 
 export const selectionUp = (
@@ -441,11 +435,10 @@ const CommonElementSelectionView: ElementOperation<
       <numberOperation.selectionView
         type={props.type.numberType}
         value={props.value.value}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
+        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -463,11 +456,10 @@ const CommonElementSelectionView: ElementOperation<
       <textOperation.selectionView
         type={props.type.textType}
         value={props.value.value}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
+        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -485,11 +477,10 @@ const CommonElementSelectionView: ElementOperation<
       <sumOperation.selectionView
         type={props.type.sumType}
         value={props.value.value}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
+        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -507,11 +498,10 @@ const CommonElementSelectionView: ElementOperation<
       <imageOperation.selectionView
         type={props.type.imageType}
         value={props.value.value}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
+        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -529,11 +519,10 @@ const CommonElementSelectionView: ElementOperation<
       <accountOperation.selectionView
         type={props.type.accountType}
         value={props.value.value}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
+        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -551,11 +540,10 @@ const CommonElementSelectionView: ElementOperation<
       <timeOperation.selectionView
         type={props.type.timeType}
         value={props.value.value}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
+        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -573,11 +561,10 @@ const CommonElementSelectionView: ElementOperation<
       <projectOperation.selectionView
         type={props.type.projectType}
         value={props.value.value}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
+        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -595,11 +582,10 @@ const CommonElementSelectionView: ElementOperation<
       <listOperation.selectionView
         type={props.type.listType}
         value={props.value.value}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
+        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -617,11 +603,10 @@ const CommonElementSelectionView: ElementOperation<
       <productOperation.selectionView
         type={props.type.productType}
         value={props.value.value}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
+        projectResource={props.projectResource}
         onChangeSelection={(productSelection) =>
           props.onChangeSelection(selectionProduct(productSelection))
         }
@@ -639,11 +624,10 @@ const CommonElementSelectionView: ElementOperation<
       <typePartIdOperation.selectionView
         type={props.type.typePartId}
         value={props.value.value}
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
+        projectResource={props.projectResource}
         onChangeSelection={(typePartIdSelection) =>
           props.onChangeSelection(typePartIdSelection)
         }
@@ -679,12 +663,10 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.numberSelection
             : undefined
         }
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
+        projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
-        onRequestAccount={props.onRequestAccount}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );
@@ -699,12 +681,10 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.textSelection
             : undefined
         }
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
+        projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
-        onRequestAccount={props.onRequestAccount}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );
@@ -719,12 +699,10 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.sumSelection
             : undefined
         }
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
+        projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
-        onRequestAccount={props.onRequestAccount}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );
@@ -739,12 +717,10 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.imageSelection
             : undefined
         }
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
+        projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
-        onRequestAccount={props.onRequestAccount}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );
@@ -759,12 +735,10 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.accountSelection
             : undefined
         }
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
+        projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
-        onRequestAccount={props.onRequestAccount}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );
@@ -779,12 +753,10 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.projectSelection
             : undefined
         }
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
+        projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
-        onRequestAccount={props.onRequestAccount}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );
@@ -799,12 +771,10 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.timeSelection
             : undefined
         }
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
+        projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
-        onRequestAccount={props.onRequestAccount}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );
@@ -819,12 +789,10 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.value
             : undefined
         }
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
+        projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
-        onRequestAccount={props.onRequestAccount}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );
@@ -839,12 +807,10 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.value
             : undefined
         }
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
+        projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
-        onRequestAccount={props.onRequestAccount}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );
@@ -859,12 +825,10 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.typePartIdSelection
             : undefined
         }
-        getAccount={props.getAccount}
+        accountResource={props.accountResource}
+        projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        getProject={props.getProject}
-        onRequestProject={props.onRequestProject}
-        onRequestAccount={props.onRequestAccount}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );

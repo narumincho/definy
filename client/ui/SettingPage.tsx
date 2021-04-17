@@ -1,16 +1,14 @@
 import * as React from "react";
-import * as d from "../../data";
 import { Button } from "./Button";
+import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
 
-export type Props = {
-  onJump: (urlData: d.UrlData) => void;
-  language: d.Language;
-  logInState: d.LogInState;
-  getAccount: (
-    accountId: d.AccountId
-  ) => d.ResourceState<d.Account> | undefined;
-  onClickLogoutButton: () => void;
+export type Props = Pick<
+  UseDefinyAppResult,
+  "accountResource" | "language" | "logInState"
+> & {
+  onJump: UseDefinyAppResult["jump"];
+  onLogOut: UseDefinyAppResult["logOut"];
 };
 
 export const SettingPage: React.VFC<Props> = (props) => {
@@ -32,7 +30,7 @@ export const SettingPage: React.VFC<Props> = (props) => {
       >
         設定
       </div>
-      <Button onClick={props.onClickLogoutButton}>ログアウトする</Button>
+      <Button onClick={props.onLogOut}>ログアウトする</Button>
       <div>アカウントの情報</div>
     </div>
   );

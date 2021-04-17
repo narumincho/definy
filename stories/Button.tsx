@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as d from "../data";
 import { Button, Props } from "../client/ui/Button";
 import { Meta, Story } from "@storybook/react";
 import { ArgType } from "@storybook/addons";

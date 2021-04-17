@@ -2,8 +2,8 @@ import * as React from "react";
 import * as d from "../data";
 import { Meta, Story } from "@storybook/react";
 import { Props, SettingPage } from "../client/ui/SettingPage";
+import { accountResource } from "./mockData";
 import { fullScreen } from "../.storybook/decorators";
-import { getAccount } from "./mockData";
 
 const meta: Meta = {
   title: "SettingPage",
@@ -15,18 +15,15 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<
-  Props,
-  "language" | "onJump" | "onClickLogoutButton"
->;
+type ControlAndActionProps = Pick<Props, "language" | "onJump" | "onLogOut">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <SettingPage
     language={props.language}
-    getAccount={getAccount}
+    accountResource={accountResource}
     logInState={{ _: "Guest" }}
     onJump={props.onJump}
-    onClickLogoutButton={props.onClickLogoutButton}
+    onLogOut={props.onLogOut}
   />
 );
 Default.args = {

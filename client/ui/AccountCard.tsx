@@ -2,22 +2,20 @@ import * as React from "react";
 import * as d from "../../data";
 import { Image } from "../container/Image";
 import { Link } from "./Link";
+import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
-export type Props = {
+export type Props = Pick<UseDefinyAppResult, "language" | "accountResource"> & {
   readonly accountId: d.AccountId;
-  readonly language: d.Language;
-  readonly getAccount: (
-    accountId: d.AccountId
-  ) => d.ResourceState<d.Account> | undefined;
-  readonly onJump: (urlData: d.UrlData) => void;
-  readonly onRequestAccount: (accountId: d.AccountId) => void;
+  readonly onJump: UseDefinyAppResult["jump"];
 };
 
 export const AccountCard: React.VFC<Props> = (props) => {
   React.useEffect(() => {
-    props.onRequestAccount(props.accountId);
-  }, []);
-  const accountResource = props.getAccount(props.accountId);
+    props.accountResource.requestToServerIfEmpty(props.accountId);
+  }, [props.accountId]);
+  const accountResource = props.accountResource.getFromMemoryCache(
+    props.accountId
+  );
   if (accountResource === undefined) {
     return <div>アカウント読み込み準備前</div>;
   }

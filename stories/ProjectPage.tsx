@@ -2,7 +2,7 @@ import * as React from "react";
 import * as d from "../data";
 import { Meta, Story } from "@storybook/react";
 import { ProjectPage, Props } from "../client/ui/ProjectPage";
-import { getAccount, getProject, project1Id } from "./mockData";
+import { accountResource, project1Id, projectResource } from "./mockData";
 import { fullScreen } from "../.storybook/decorators";
 
 const meta: Meta = {
@@ -15,20 +15,15 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<
-  Props,
-  "language" | "onJump" | "onRequestProjectById" | "onRequestAccount"
->;
+type ControlAndActionProps = Pick<Props, "language" | "onJump">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <ProjectPage
     language={props.language}
-    getProject={getProject}
-    getAccount={getAccount}
+    projectResource={projectResource}
+    accountResource={accountResource}
     projectId={project1Id}
     onJump={props.onJump}
-    onRequestProjectById={props.onRequestProjectById}
-    onRequestAccount={props.onRequestAccount}
   />
 );
 Default.args = {

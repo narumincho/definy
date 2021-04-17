@@ -19,11 +19,10 @@ const ProjectSelectionView: ElementOperation<
 >["selectionView"] = (props) => {
   return (
     <ProjectCard
-      getProject={props.getProject}
+      projectResource={props.projectResource}
       projectId={props.value}
       language={props.language}
       onJump={props.onJump}
-      onRequestProjectById={props.onRequestProject}
     />
   );
 };
@@ -35,11 +34,10 @@ const ProjectDetailView: ElementOperation<
 >["detailView"] = (props) => {
   return (
     <ProjectCard
-      getProject={props.getProject}
+      projectResource={props.projectResource}
       projectId={props.value}
       language={props.language}
       onJump={props.onJump}
-      onRequestProjectById={props.onRequestProject}
     />
   );
 };

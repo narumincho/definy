@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Button } from "./Button";
-import type { CreateProjectState } from "./App";
+import type { CreateProjectState } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
 import { stringToValidProjectName } from "../../core/main";
 import { useOneLineTextEditor } from "./OneLineTextEditor";
