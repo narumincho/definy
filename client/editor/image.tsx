@@ -12,11 +12,13 @@ export type ImageValue = {
 export type ImageType = {
   readonly canEdit: boolean;
 };
+export type ImageDataOperation = never;
 
 const ImageSelectionView: ElementOperation<
   ImageSelection,
   ImageValue,
-  ImageType
+  ImageType,
+  ImageDataOperation
 >["selectionView"] = (props) => {
   return (
     <div
@@ -38,7 +40,8 @@ const ImageSelectionView: ElementOperation<
 const ImageDetailView: ElementOperation<
   ImageSelection,
   ImageValue,
-  ImageType
+  ImageType,
+  ImageDataOperation
 >["detailView"] = (props) => {
   return (
     <div
@@ -60,7 +63,8 @@ const ImageDetailView: ElementOperation<
 export const imageOperation: ElementOperation<
   ImageSelection,
   ImageValue,
-  ImageType
+  ImageType,
+  ImageDataOperation
 > = {
   moveUp: () => undefined,
   moveDown: () => undefined,

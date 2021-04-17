@@ -1,7 +1,7 @@
 import * as React from "react";
 import { ElementOperation } from "./commonElement";
+import { OneLineTextEditor } from "../ui/OneLineTextEditor";
 import { css } from "@emotion/css";
-import { useOneLineTextEditor } from "../ui/OneLineTextEditor";
 
 export type TextSelection = never;
 
@@ -11,10 +11,16 @@ export type TextType = {
   readonly canEdit: boolean;
 };
 
+export type TextDataOperation = {
+  tag: "edit";
+  newValue: string;
+};
+
 const TextSelectionView: ElementOperation<
   TextSelection,
   TextValue,
-  TextType
+  TextType,
+  TextDataOperation
 >["selectionView"] = (props) => {
   return <div className={css({ fontSize: 16 })}>{props.value}</div>;
 };
@@ -22,7 +28,8 @@ const TextSelectionView: ElementOperation<
 export const HeadTextSelectionView: ElementOperation<
   TextSelection,
   TextValue,
-  TextType
+  TextType,
+  TextDataOperation
 >["selectionView"] = (props) => {
   return <div className={css({ fontSize: 32 })}>{props.value}</div>;
 };
@@ -30,15 +37,19 @@ export const HeadTextSelectionView: ElementOperation<
 const TextDetailView: ElementOperation<
   TextSelection,
   TextValue,
-  TextType
+  TextType,
+  TextDataOperation
 >["detailView"] = (props) => {
-  const { element, text } = useOneLineTextEditor({
-    id: "text",
-    initText: props.value,
-    style: {},
-  });
   if (props.type.canEdit) {
-    return element();
+    return (
+      <OneLineTextEditor
+        id="text"
+        value={props.value}
+        onChange={(newValue) =>
+          props.onRequestDataOperation({ tag: "edit", newValue })
+        }
+      />
+    );
   }
   return (
     <div
@@ -54,7 +65,8 @@ const TextDetailView: ElementOperation<
 export const textOperation: ElementOperation<
   TextSelection,
   TextValue,
-  TextType
+  TextType,
+  TextDataOperation
 > = {
   moveUp: () => undefined,
   moveDown: () => undefined,

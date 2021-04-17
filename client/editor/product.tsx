@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as d from "../../data";
 import {
+  CommonDataOperation,
   ElementOperation,
   Selection,
   Type,
@@ -9,6 +10,7 @@ import {
 } from "./commonElement";
 import {
   HeadTextSelectionView,
+  TextDataOperation,
   TextSelection,
   TextType,
   TextValue,
@@ -50,6 +52,17 @@ export type HeadItem = {
   value: TextValue;
   iconHash?: d.ImageHash;
 };
+
+export type ProductDataOperation =
+  | {
+      tag: "head";
+      textDataOperation: TextDataOperation;
+    }
+  | {
+      tag: "content";
+      index: number;
+      commonDataOperation: CommonDataOperation;
+    };
 
 const moveUp = (
   selection: ProductSelection,
@@ -177,7 +190,8 @@ const moveDown = (
 const moveFirstChild: ElementOperation<
   ProductSelection,
   ProductValue,
-  ProductType
+  ProductType,
+  ProductDataOperation
 >["moveFirstChild"] = (
   selection: ProductSelection | undefined,
   value: ProductValue,
@@ -241,7 +255,8 @@ const firstChildValue = (
 const moveParent: ElementOperation<
   ProductSelection,
   ProductValue,
-  ProductType
+  ProductType,
+  ProductDataOperation
 >["moveParent"] = (selection, value, type) => {
   switch (selection.tag) {
     case "icon": {
@@ -290,7 +305,8 @@ const moveParent: ElementOperation<
 export const ProductSelectionView: ElementOperation<
   ProductSelection,
   ProductValue,
-  ProductType
+  ProductType,
+  ProductDataOperation
 >["selectionView"] = (props) => {
   return (
     <div
@@ -355,7 +371,9 @@ export const ProductSelectionView: ElementOperation<
             projectResource={props.projectResource}
             language={props.language}
             onJump={props.onJump}
-            onRequestDataOperation={props.onRequestDataOperation}
+            onRequestDataOperation={(textDataOperation) =>
+              props.onRequestDataOperation({ tag: "head", textDataOperation })
+            }
           />
         </div>
       )}
@@ -382,7 +400,13 @@ export const ProductSelectionView: ElementOperation<
             accountResource={props.accountResource}
             language={props.language}
             onJump={props.onJump}
-            onRequestDataOperation={props.onRequestDataOperation}
+            onRequestDataOperation={(commonDataOperation) =>
+              props.onRequestDataOperation({
+                tag: "content",
+                index,
+                commonDataOperation,
+              })
+            }
           />
         );
       })}
@@ -430,7 +454,7 @@ const HeadItemView: React.VFC<
     readonly textValue: TextValue;
     readonly productSelection: ProductSelection | undefined;
     readonly onJump: UseDefinyAppResult["jump"];
-    readonly onRequestDataOperation: () => void;
+    readonly onRequestDataOperation: (operation: TextDataOperation) => void;
   }
 > = (props) => {
   const ref = React.useRef<HTMLDivElement>(null);
@@ -495,7 +519,9 @@ const ItemView: React.VFC<
     readonly value: Value;
     readonly itemSelection: ItemSelection;
     readonly onJump: UseDefinyAppResult["jump"];
-    readonly onRequestDataOperation: () => void;
+    readonly onRequestDataOperation: (
+      commonDataOperation: CommonDataOperation
+    ) => void;
   }
 > = (props) => {
   const ref = React.useRef<HTMLDivElement>(null);
@@ -560,7 +586,8 @@ const ItemView: React.VFC<
 const ProductDetailView: ElementOperation<
   ProductSelection,
   ProductValue,
-  ProductType
+  ProductType,
+  ProductDataOperation
 >["detailView"] = (props) => {
   if (props.selection === undefined) {
     return <div>product自体を選択している</div>;
@@ -598,15 +625,18 @@ const ProductDetailView: ElementOperation<
             accountResource={props.accountResource}
             language={props.language}
             onJump={props.onJump}
-            onRequestDataOperation={props.onRequestDataOperation}
+            onRequestDataOperation={(textDataOperation) =>
+              props.onRequestDataOperation({ tag: "head", textDataOperation })
+            }
           />
         </div>
       );
     case "icon":
       return <div>アイコンを選択してる</div>;
     case "content": {
-      const item = props.value.items[props.selection.index];
-      const itemType = props.type.items[props.selection.index];
+      const index = props.selection.index;
+      const item = props.value.items[index];
+      const itemType = props.type.items[index];
       if (item === undefined || itemType === undefined) {
         return <div>指定した要素が存在しない</div>;
       }
@@ -635,7 +665,13 @@ const ProductDetailView: ElementOperation<
             projectResource={props.projectResource}
             language={props.language}
             onJump={props.onJump}
-            onRequestDataOperation={props.onRequestDataOperation}
+            onRequestDataOperation={(commonDataOperation) =>
+              props.onRequestDataOperation({
+                tag: "content",
+                index,
+                commonDataOperation,
+              })
+            }
           />
         </div>
       );
@@ -646,7 +682,8 @@ const ProductDetailView: ElementOperation<
 export const productOperation: ElementOperation<
   ProductSelection,
   ProductValue,
-  ProductType
+  ProductType,
+  ProductDataOperation
 > = {
   moveUp,
   moveDown,

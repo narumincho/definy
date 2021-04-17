@@ -14,10 +14,13 @@ export type TimeType = {
   readonly canEdit: boolean;
 };
 
+export type TimeDataOperation = never;
+
 const TimeSelectionView: ElementOperation<
   TimeSelection,
   TimeValue,
-  TimeType
+  TimeType,
+  TimeDataOperation
 >["selectionView"] = (props) => {
   return <TimeCard time={props.value} />;
 };
@@ -25,7 +28,8 @@ const TimeSelectionView: ElementOperation<
 const TimeDetailView: ElementOperation<
   TimeSelection,
   TimeValue,
-  TimeType
+  TimeType,
+  TimeDataOperation
 >["detailView"] = (props) => {
   return <TimeDetail time={props.value} />;
 };
@@ -33,7 +37,8 @@ const TimeDetailView: ElementOperation<
 export const timeOperation: ElementOperation<
   TimeSelection,
   TimeValue,
-  TimeType
+  TimeType,
+  TimeDataOperation
 > = {
   moveUp: () => undefined,
   moveDown: () => undefined,

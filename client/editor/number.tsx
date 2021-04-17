@@ -7,11 +7,19 @@ export type NumberValue = number;
 export type NumberType = {
   readonly canEdit: boolean;
 };
+export type NumberDataOperation =
+  | {
+      tag: "up";
+    }
+  | {
+      tag: "down";
+    };
 
 const NumberSelectionView: ElementOperation<
   NumberSelection,
   NumberValue,
-  NumberType
+  NumberType,
+  NumberDataOperation
 >["selectionView"] = (props) => {
   return <div className={css({ fontSize: 16 })}>{props.value}</div>;
 };
@@ -19,7 +27,8 @@ const NumberSelectionView: ElementOperation<
 const NumberDetailView: ElementOperation<
   NumberSelection,
   NumberValue,
-  NumberType
+  NumberType,
+  NumberDataOperation
 >["detailView"] = (props) => {
   return (
     <div
@@ -35,7 +44,8 @@ const NumberDetailView: ElementOperation<
 export const numberOperation: ElementOperation<
   NumberSelection,
   NumberValue,
-  NumberType
+  NumberType,
+  NumberDataOperation
 > = {
   moveUp: () => undefined,
   moveDown: () => undefined,

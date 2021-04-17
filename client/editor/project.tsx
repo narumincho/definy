@@ -12,10 +12,15 @@ export type ProjectType = {
   readonly canEdit: boolean;
 };
 
+export type ProjectDataOperation = {
+  tag: "jump";
+};
+
 const ProjectSelectionView: ElementOperation<
   ProjectSelection,
   ProjectValue,
-  ProjectType
+  ProjectType,
+  ProjectDataOperation
 >["selectionView"] = (props) => {
   return (
     <ProjectCard
@@ -30,7 +35,8 @@ const ProjectSelectionView: ElementOperation<
 const ProjectDetailView: ElementOperation<
   ProjectSelection,
   ProjectValue,
-  ProjectType
+  ProjectType,
+  ProjectDataOperation
 >["detailView"] = (props) => {
   return (
     <ProjectCard
@@ -45,7 +51,8 @@ const ProjectDetailView: ElementOperation<
 export const projectOperation: ElementOperation<
   ProjectSelection,
   ProjectValue,
-  ProjectType
+  ProjectType,
+  ProjectDataOperation
 > = {
   moveUp: () => undefined,
   moveDown: () => undefined,

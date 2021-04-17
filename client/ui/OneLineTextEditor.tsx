@@ -37,12 +37,11 @@ export const useOneLineTextEditor = (option: {
 /**
  * 1行のテキストエディタ
  *
- * 基本的に `useOneLineTextEditor` を使うと良い
+ * 文字の変更を検知しないなら, `useOneLineTextEditor` を使うと良い
  */
 export const OneLineTextEditor: React.VFC<{
   value: string;
   onChange: (value: string) => void;
-  onFocus?: () => void;
   id: string;
   style?: CSSObject;
 }> = (props) => (

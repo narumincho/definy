@@ -1,5 +1,6 @@
 import * as React from "react";
 import {
+  CommonDataOperation,
   ElementOperation,
   Selection,
   Type,
@@ -23,6 +24,23 @@ export type ListType = {
 export type ListValue = {
   readonly items: ReadonlyArray<Value>;
 };
+
+export type ListDataOperation =
+  | {
+      tag: "addLast";
+    }
+  | {
+      tag: "delete";
+      index: number;
+    }
+  | {
+      tag: "childOperation";
+      index: number;
+      commonDataOperation: CommonDataOperation;
+    }
+  | {
+      tag: "deleteAll";
+    };
 
 const moveUp = (
   selection: ListSelection,
@@ -101,7 +119,8 @@ const moveFirstChild = (
 const moveParent: ElementOperation<
   ListSelection,
   ListValue,
-  ListType
+  ListType,
+  ListDataOperation
 >["moveParent"] = (selection, value, type) => {
   const item = value.items[selection.index];
   if (selection.selection === undefined || item === undefined) {
@@ -120,7 +139,8 @@ const moveParent: ElementOperation<
 const ListSelectionView: ElementOperation<
   ListSelection,
   ListValue,
-  ListType
+  ListType,
+  ListDataOperation
 >["selectionView"] = (props) => {
   const elementType = props.type;
   return (
@@ -180,17 +200,33 @@ const ListSelectionView: ElementOperation<
                 selection,
               })
             }
-            onRequestDataOperation={props.onRequestDataOperation}
+            onRequestDataOperation={(commonDataOperation) =>
+              props.onRequestDataOperation({
+                tag: "childOperation",
+                index,
+                commonDataOperation,
+              })
+            }
           />
           {props.type.canEdit ? (
-            <Button onClick={props.onRequestDataOperation}>x</Button>
+            <Button
+              onClick={() =>
+                props.onRequestDataOperation({ tag: "delete", index })
+              }
+            >
+              x
+            </Button>
           ) : (
             <></>
           )}
         </div>
       ))}
       {props.type.canEdit ? (
-        <Button onClick={props.onRequestDataOperation}>+</Button>
+        <Button
+          onClick={() => props.onRequestDataOperation({ tag: "addLast" })}
+        >
+          +
+        </Button>
       ) : (
         <></>
       )}
@@ -201,14 +237,17 @@ const ListSelectionView: ElementOperation<
 const ListDetailView: ElementOperation<
   ListSelection,
   ListValue,
-  ListType
+  ListType,
+  ListDataOperation
 >["detailView"] = (props) => {
   if (props.selection === undefined) {
     return (
       <div>
         <div>要素数: {props.value.items.length}</div>
         {props.type.canEdit ? (
-          <Button onClick={props.onRequestDataOperation}>
+          <Button
+            onClick={() => props.onRequestDataOperation({ tag: "deleteAll" })}
+          >
             すべての要素を削除
           </Button>
         ) : (
@@ -217,15 +256,18 @@ const ListDetailView: ElementOperation<
       </div>
     );
   }
-  const item = props.value.items[props.selection.index];
+  const index = props.selection.index;
+  const item = props.value.items[index];
   if (item === undefined) {
     return <div>存在しないインデックスを指定している</div>;
   }
   return (
     <div>
-      <div>リストインデックス: {props.selection.index}</div>
+      <div>リストインデックス: {index}</div>
       {props.selection.selection === undefined && props.type.canEdit ? (
-        <Button onClick={props.onRequestDataOperation}>
+        <Button
+          onClick={() => props.onRequestDataOperation({ tag: "delete", index })}
+        >
           リストの要素を削除
         </Button>
       ) : (
@@ -239,7 +281,13 @@ const ListDetailView: ElementOperation<
         projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(commonDataOperation) =>
+          props.onRequestDataOperation({
+            tag: "childOperation",
+            index,
+            commonDataOperation,
+          })
+        }
       />
     </div>
   );
@@ -248,7 +296,8 @@ const ListDetailView: ElementOperation<
 export const listOperation: ElementOperation<
   ListSelection,
   ListValue,
-  ListType
+  ListType,
+  ListDataOperation
 > = {
   moveUp,
   moveDown,

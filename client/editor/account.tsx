@@ -17,10 +17,15 @@ export type AccountType = {
   readonly canEdit: boolean;
 };
 
+export type AccountDataOperation = {
+  tag: "jump";
+};
+
 const AccountSelectionView: ElementOperation<
   AccountSelection,
   AccountValue,
-  AccountType
+  AccountType,
+  AccountDataOperation
 >["selectionView"] = (props) => {
   React.useEffect(() => {
     props.accountResource.requestToServerIfEmpty(props.value.accountId);
@@ -81,7 +86,8 @@ const AccountSelectionView: ElementOperation<
 const AccountDetailView: ElementOperation<
   AccountSelection,
   AccountValue,
-  AccountType
+  AccountType,
+  AccountDataOperation
 >["detailView"] = (props) => {
   return (
     <div>
@@ -98,7 +104,8 @@ const AccountDetailView: ElementOperation<
 export const accountOperation: ElementOperation<
   AccountSelection,
   AccountValue,
-  AccountType
+  AccountType,
+  AccountDataOperation
 > = {
   moveUp: () => undefined,
   moveDown: () => undefined,

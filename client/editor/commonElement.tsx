@@ -1,35 +1,58 @@
 /* eslint-disable complexity */
 import * as d from "../../data";
 import {
+  AccountDataOperation,
   AccountSelection,
   AccountType,
   AccountValue,
   accountOperation,
 } from "./account";
 import { ImageSelection, ImageType, ImageValue, imageOperation } from "./image";
-import { ListSelection, ListType, ListValue, listOperation } from "./list";
 import {
+  ListDataOperation,
+  ListSelection,
+  ListType,
+  ListValue,
+  listOperation,
+} from "./list";
+import {
+  NumberDataOperation,
   NumberSelection,
   NumberType,
   NumberValue,
   numberOperation,
 } from "./number";
 import {
+  ProductDataOperation,
   ProductSelection,
   ProductType,
   ProductValue,
   productOperation,
 } from "./product";
 import {
+  ProjectDataOperation,
   ProjectSelection,
   ProjectType,
   ProjectValue,
   projectOperation,
 } from "./project";
-import { SumSelection, SumType, SumValue, sumOperation } from "./sum";
-import { TextSelection, TextType, TextValue, textOperation } from "./text";
+import {
+  SumDataOperation,
+  SumSelection,
+  SumType,
+  SumValue,
+  sumOperation,
+} from "./sum";
+import {
+  TextDataOperation,
+  TextSelection,
+  TextType,
+  TextValue,
+  textOperation,
+} from "./text";
 import { TimeSelection, TimeType, TimeValue, timeOperation } from "./time";
 import {
+  TypePartIdDataOperation,
   TypePartIdSelection,
   TypePartIdType,
   TypePartIdValue,
@@ -180,7 +203,46 @@ export type Type =
       typePartId: TypePartIdType;
     };
 
-export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
+export type CommonDataOperation =
+  | {
+      tag: "text";
+      textDataOperation: TextDataOperation;
+    }
+  | {
+      tag: "number";
+      numberDataOperation: NumberDataOperation;
+    }
+  | {
+      tag: "sum";
+      sumDataOperation: SumDataOperation;
+    }
+  | {
+      tag: "account";
+      accountDataOperation: AccountDataOperation;
+    }
+  | {
+      tag: "project";
+      projectDataOperation: ProjectDataOperation;
+    }
+  | {
+      tag: "list";
+      listDataOperation: ListDataOperation;
+    }
+  | {
+      tag: "product";
+      productDataOperation: ProductDataOperation;
+    }
+  | {
+      tag: "typePartId";
+      typePartIdDataOperation: TypePartIdDataOperation;
+    };
+
+export type ElementOperation<
+  ElementSelection,
+  ElementValue,
+  ElementType,
+  ElementDataOperation
+> = {
   /**
    * 上に移動するときにどのように移動するかどうかを決める
    *
@@ -249,7 +311,9 @@ export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
       readonly type: ElementType;
       readonly onJump: UseDefinyAppResult["jump"];
       readonly onChangeSelection: (selection: ElementSelection) => void;
-      readonly onRequestDataOperation: () => void;
+      readonly onRequestDataOperation: (
+        operation: ElementDataOperation
+      ) => void;
     }
   >;
 
@@ -265,7 +329,9 @@ export type ElementOperation<ElementSelection, ElementValue, ElementType> = {
       readonly type: ElementType;
       readonly selection: ElementSelection | undefined;
       readonly onJump: UseDefinyAppResult["jump"];
-      readonly onRequestDataOperation: () => void;
+      readonly onRequestDataOperation: (
+        operation: ElementDataOperation
+      ) => void;
     }
   >;
 };
@@ -394,11 +460,12 @@ const moveFirstChild = (
   }
 };
 
-const moveParent: ElementOperation<Selection, Value, Type>["moveParent"] = (
-  selection,
-  value,
-  type
-) => {
+const moveParent: ElementOperation<
+  Selection,
+  Value,
+  Type,
+  CommonDataOperation
+>["moveParent"] = (selection, value, type) => {
   if (
     selection.tag === "list" &&
     value.type === "list" &&
@@ -428,7 +495,8 @@ const moveParent: ElementOperation<Selection, Value, Type>["moveParent"] = (
 const CommonElementSelectionView: ElementOperation<
   Selection,
   Value,
-  Type
+  Type,
+  CommonDataOperation
 >["selectionView"] = (props) => {
   if (props.type.tag === "number" && props.value.type === "number") {
     return (
@@ -447,7 +515,9 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.numberSelection
             : undefined
         }
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(numberDataOperation) =>
+          props.onRequestDataOperation({ tag: "number", numberDataOperation })
+        }
       />
     );
   }
@@ -468,7 +538,9 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.textSelection
             : undefined
         }
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(textDataOperation) =>
+          props.onRequestDataOperation({ tag: "text", textDataOperation })
+        }
       />
     );
   }
@@ -531,7 +603,12 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.accountSelection
             : undefined
         }
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(accountDataOperation) => {
+          props.onRequestDataOperation({
+            tag: "account",
+            accountDataOperation,
+          });
+        }}
       />
     );
   }
@@ -573,7 +650,9 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.projectSelection
             : undefined
         }
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(projectDataOperation) =>
+          props.onRequestDataOperation({ tag: "project", projectDataOperation })
+        }
       />
     );
   }
@@ -594,7 +673,9 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.value
             : undefined
         }
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(listDataOperation) =>
+          props.onRequestDataOperation({ tag: "list", listDataOperation })
+        }
       />
     );
   }
@@ -615,7 +696,12 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.value
             : undefined
         }
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(productDataOperation) =>
+          props.onRequestDataOperation({
+            tag: "product",
+            productDataOperation,
+          })
+        }
       />
     );
   }
@@ -651,7 +737,8 @@ const CommonElementSelectionView: ElementOperation<
 const CommonElementDetailView: ElementOperation<
   Selection,
   Value,
-  Type
+  Type,
+  CommonDataOperation
 >["detailView"] = (props) => {
   if (props.type.tag === "number" && props.value.type === "number") {
     return (
@@ -667,7 +754,9 @@ const CommonElementDetailView: ElementOperation<
         projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(numberDataOperation) =>
+          props.onRequestDataOperation({ tag: "number", numberDataOperation })
+        }
       />
     );
   }
@@ -685,7 +774,12 @@ const CommonElementDetailView: ElementOperation<
         projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(textDataOperation) =>
+          props.onRequestDataOperation({
+            tag: "text",
+            textDataOperation,
+          })
+        }
       />
     );
   }
@@ -739,7 +833,9 @@ const CommonElementDetailView: ElementOperation<
         projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(accountDataOperation) =>
+          props.onRequestDataOperation({ tag: "account", accountDataOperation })
+        }
       />
     );
   }
@@ -757,7 +853,9 @@ const CommonElementDetailView: ElementOperation<
         projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(projectDataOperation) =>
+          props.onRequestDataOperation({ tag: "project", projectDataOperation })
+        }
       />
     );
   }
@@ -793,7 +891,12 @@ const CommonElementDetailView: ElementOperation<
         projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(listDataOperation) =>
+          props.onRequestDataOperation({
+            tag: "list",
+            listDataOperation,
+          })
+        }
       />
     );
   }
@@ -811,7 +914,12 @@ const CommonElementDetailView: ElementOperation<
         projectResource={props.projectResource}
         language={props.language}
         onJump={props.onJump}
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(productDataOperation) =>
+          props.onRequestDataOperation({
+            tag: "product",
+            productDataOperation,
+          })
+        }
       />
     );
   }
@@ -836,7 +944,12 @@ const CommonElementDetailView: ElementOperation<
   return <div>選択時しているものの構造が壊れている</div>;
 };
 
-export const commonElement: ElementOperation<Selection, Value, Type> = {
+export const commonElement: ElementOperation<
+  Selection,
+  Value,
+  Type,
+  CommonDataOperation
+> = {
   moveUp,
   moveDown,
   moveFirstChild,

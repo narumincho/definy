@@ -7,11 +7,13 @@ export type TypePartIdValue = d.TypePartId;
 export type TypePartIdType = {
   readonly canEdit: boolean;
 };
+export type TypePartIdDataOperation = never;
 
 const TypePartIdSelectionView: ElementOperation<
   TypePartIdSelection,
   TypePartIdValue,
-  TypePartIdType
+  TypePartIdType,
+  TypePartIdDataOperation
 >["selectionView"] = () => {
   return <div>型パーツ</div>;
 };
@@ -19,7 +21,8 @@ const TypePartIdSelectionView: ElementOperation<
 const TypePartIdDetailView: ElementOperation<
   TypePartIdSelection,
   TypePartIdValue,
-  TypePartIdType
+  TypePartIdType,
+  TypePartIdDataOperation
 >["detailView"] = () => {
   return <div>検索欄と, 候補の選択肢</div>;
 };
@@ -27,7 +30,8 @@ const TypePartIdDetailView: ElementOperation<
 export const typePartIdOperation: ElementOperation<
   TypePartIdSelection,
   TypePartIdValue,
-  TypePartIdType
+  TypePartIdType,
+  TypePartIdDataOperation
 > = {
   moveUp: () => undefined,
   moveDown: () => undefined,

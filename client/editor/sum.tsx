@@ -9,11 +9,13 @@ export type SumValue = {
 export type SumType = {
   valueList: ReadonlyArray<string>;
 };
+export type SumDataOperation = never;
 
 const SumSelectionView: ElementOperation<
   SumSelection,
   SumValue,
-  SumType
+  SumType,
+  SumDataOperation
 >["selectionView"] = (props) => {
   return (
     <div
@@ -43,7 +45,8 @@ const SumSelectionView: ElementOperation<
 const SumDetailView: ElementOperation<
   SumSelection,
   SumValue,
-  SumType
+  SumType,
+  SumDataOperation
 >["detailView"] = (props) => {
   return (
     <div
@@ -57,7 +60,12 @@ const SumDetailView: ElementOperation<
   );
 };
 
-export const sumOperation: ElementOperation<SumSelection, SumValue, SumType> = {
+export const sumOperation: ElementOperation<
+  SumSelection,
+  SumValue,
+  SumType,
+  SumDataOperation
+> = {
   moveUp: () => undefined,
   moveDown: () => undefined,
   moveFirstChild: () => undefined,
