@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ElementOperation } from "./commonElement";
+import type { ElementOperation } from "./ElementOperation";
 import { OneLineTextEditor } from "../ui/OneLineTextEditor";
 import { css } from "@emotion/css";
 

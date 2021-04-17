@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
-import { ElementOperation } from "./commonElement";
+import type { ElementOperation } from "./ElementOperation";
 import { Image } from "../container/Image";
 import { css } from "@emotion/css";
 

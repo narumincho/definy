@@ -1,26 +1,26 @@
 import * as React from "react";
 import * as d from "../../data";
-import { ElementOperation } from "./commonElement";
+import type { ElementOperation } from "./ElementOperation";
 import { ProjectCard } from "../ui/ProjectCard";
 
 /** プロジェクト内の要素を選択することはなさそう */
-export type ProjectSelection = never;
+export type ProjectIdSelection = never;
 
-export type ProjectValue = d.ProjectId;
+export type ProjectIdValue = d.ProjectId;
 
-export type ProjectType = {
+export type ProjectIdType = {
   readonly canEdit: boolean;
 };
 
-export type ProjectDataOperation = {
+export type ProjectIdDataOperation = {
   tag: "jump";
 };
 
-const ProjectSelectionView: ElementOperation<
-  ProjectSelection,
-  ProjectValue,
-  ProjectType,
-  ProjectDataOperation
+const ProjectIdSelectionView: ElementOperation<
+  ProjectIdSelection,
+  ProjectIdValue,
+  ProjectIdType,
+  ProjectIdDataOperation
 >["selectionView"] = (props) => {
   return (
     <ProjectCard
@@ -32,11 +32,11 @@ const ProjectSelectionView: ElementOperation<
   );
 };
 
-const ProjectDetailView: ElementOperation<
-  ProjectSelection,
-  ProjectValue,
-  ProjectType,
-  ProjectDataOperation
+const ProjectIdDetailView: ElementOperation<
+  ProjectIdSelection,
+  ProjectIdValue,
+  ProjectIdType,
+  ProjectIdDataOperation
 >["detailView"] = (props) => {
   return (
     <ProjectCard
@@ -48,16 +48,16 @@ const ProjectDetailView: ElementOperation<
   );
 };
 
-export const projectOperation: ElementOperation<
-  ProjectSelection,
-  ProjectValue,
-  ProjectType,
-  ProjectDataOperation
+export const projectIdOperation: ElementOperation<
+  ProjectIdSelection,
+  ProjectIdValue,
+  ProjectIdType,
+  ProjectIdDataOperation
 > = {
   moveUp: () => undefined,
   moveDown: () => undefined,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
-  selectionView: ProjectSelectionView,
-  detailView: ProjectDetailView,
+  selectionView: ProjectIdSelectionView,
+  detailView: ProjectIdDetailView,
 };

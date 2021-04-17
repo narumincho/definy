@@ -1,31 +1,31 @@
 import * as React from "react";
 import * as d from "../../data";
 import { AccountCard } from "../ui/AccountCard";
-import { ElementOperation } from "./commonElement";
+import type { ElementOperation } from "./ElementOperation";
 import { Image } from "../container/Image";
 import { Link } from "../ui/Link";
 import { NextIcon } from "../ui/NextIcon";
 import { css } from "@emotion/css";
 
-export type AccountSelection = never;
+export type AccountIdSelection = never;
 
-export type AccountValue = {
+export type AccountIdValue = {
   readonly accountId: d.AccountId;
 };
 
-export type AccountType = {
+export type AccountIdType = {
   readonly canEdit: boolean;
 };
 
-export type AccountDataOperation = {
+export type AccountIdDataOperation = {
   tag: "jump";
 };
 
-const AccountSelectionView: ElementOperation<
-  AccountSelection,
-  AccountValue,
-  AccountType,
-  AccountDataOperation
+const AccountIdSelectionView: ElementOperation<
+  AccountIdSelection,
+  AccountIdValue,
+  AccountIdType,
+  AccountIdDataOperation
 >["selectionView"] = (props) => {
   React.useEffect(() => {
     props.accountResource.requestToServerIfEmpty(props.value.accountId);
@@ -83,11 +83,11 @@ const AccountSelectionView: ElementOperation<
   );
 };
 
-const AccountDetailView: ElementOperation<
-  AccountSelection,
-  AccountValue,
-  AccountType,
-  AccountDataOperation
+const AccountIdDetailView: ElementOperation<
+  AccountIdSelection,
+  AccountIdValue,
+  AccountIdType,
+  AccountIdDataOperation
 >["detailView"] = (props) => {
   return (
     <div>
@@ -101,16 +101,16 @@ const AccountDetailView: ElementOperation<
   );
 };
 
-export const accountOperation: ElementOperation<
-  AccountSelection,
-  AccountValue,
-  AccountType,
-  AccountDataOperation
+export const accountIdOperation: ElementOperation<
+  AccountIdSelection,
+  AccountIdValue,
+  AccountIdType,
+  AccountIdDataOperation
 > = {
   moveUp: () => undefined,
   moveDown: () => undefined,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
-  selectionView: AccountSelectionView,
-  detailView: AccountDetailView,
+  selectionView: AccountIdSelectionView,
+  detailView: AccountIdDetailView,
 };

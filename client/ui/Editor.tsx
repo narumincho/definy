@@ -1,16 +1,11 @@
 import * as React from "react";
 import {
+  ProductDataOperation,
   ProductSelection,
   ProductType,
   ProductValue,
   productOperation,
 } from "../editor/product";
-import {
-  selectionDown,
-  selectionFirstChild,
-  selectionParent,
-  selectionUp,
-} from "../editor/commonElement";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
 
@@ -22,7 +17,9 @@ export type Props = Pick<
   readonly productType: ProductType;
   readonly onJump: UseDefinyAppResult["jump"];
   /** データを編集をしようとした */
-  readonly onRequestDataOperation: () => void;
+  readonly onRequestDataOperation: (
+    dataOperation: ProductDataOperation
+  ) => void;
 };
 
 /**
@@ -39,8 +36,13 @@ export const Editor: React.VFC<Props> = (props) => {
       switch (event.code) {
         case "KeyW":
         case "ArrowUp": {
-          setSelection((oldSelection) =>
-            selectionUp(oldSelection, props.product, props.productType)
+          setSelection(
+            (oldSelection) =>
+              productOperation.moveUp(
+                oldSelection,
+                props.product,
+                props.productType
+              ) ?? oldSelection
           );
           event.preventDefault();
           event.stopPropagation();
@@ -48,24 +50,39 @@ export const Editor: React.VFC<Props> = (props) => {
         }
         case "KeyS":
         case "ArrowDown": {
-          setSelection((oldSelection) =>
-            selectionDown(oldSelection, props.product, props.productType)
+          setSelection(
+            (oldSelection) =>
+              productOperation.moveDown(
+                oldSelection,
+                props.product,
+                props.productType
+              ) ?? oldSelection
           );
           event.preventDefault();
           event.stopPropagation();
           return;
         }
         case "KeyE": {
-          setSelection((oldSelection) =>
-            selectionFirstChild(oldSelection, props.product, props.productType)
+          setSelection(
+            (oldSelection) =>
+              productOperation.moveFirstChild(
+                oldSelection,
+                props.product,
+                props.productType
+              ) ?? oldSelection
           );
           event.preventDefault();
           event.stopPropagation();
           return;
         }
         case "KeyQ": {
-          setSelection((oldSelection) =>
-            selectionParent(oldSelection, props.product, props.productType)
+          setSelection(
+            (oldSelection) =>
+              productOperation.moveParent(
+                oldSelection,
+                props.product,
+                props.productType
+              ) ?? oldSelection
           );
           event.preventDefault();
           event.stopPropagation();

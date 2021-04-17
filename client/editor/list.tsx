@@ -1,13 +1,13 @@
 import * as React from "react";
 import {
   CommonDataOperation,
-  ElementOperation,
   Selection,
   Type,
   Value,
   commonElement,
-} from "./commonElement";
+} from "./common";
 import { Button } from "../ui/Button";
+import type { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
 
 export type ListSelection = {

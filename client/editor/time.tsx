@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as d from "../../data";
 import { TimeCard, TimeDetail } from "../ui/TimeCard";
-import { ElementOperation } from "./commonElement";
+import type { ElementOperation } from "./ElementOperation";
 
 /**
  * 年, 月, 日, 時, 分, 秒, ミリ秒選べると良いような気がしなくもない

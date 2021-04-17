@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ElementOperation } from "./commonElement";
+import type { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
 
 export type NumberSelection = never;

@@ -2,12 +2,12 @@ import * as React from "react";
 import * as d from "../../data";
 import {
   CommonDataOperation,
-  ElementOperation,
   Selection,
   Type,
   Value,
   commonElement,
-} from "./commonElement";
+} from "./common";
+import type { ElementOperation } from "./ElementOperation";
 import {
   HeadTextSelectionView,
   TextDataOperation,
