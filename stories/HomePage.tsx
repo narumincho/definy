@@ -7,6 +7,7 @@ import {
   project1Id,
   project2Id,
   projectResource,
+  typePartResource,
 } from "./mockData";
 import { ArgType } from "@storybook/addons";
 import { action } from "@storybook/addon-actions";
@@ -38,6 +39,7 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     onJump={props.onJump}
     topProjectsLoadingState={{ _: "none" }}
     requestTop50Project={action("requestTop50Project")}
+    typePartResource={typePartResource}
   />
 );
 Default.args = {
@@ -58,6 +60,7 @@ export const LoggedIn: Story<ControlAndActionProps> = (props) => (
     onJump={props.onJump}
     topProjectsLoadingState={{ _: "none" }}
     requestTop50Project={action("requestTop50Project")}
+    typePartResource={typePartResource}
   />
 );
 LoggedIn.args = {
@@ -79,6 +82,7 @@ export const Loaded: Story<ControlAndActionProps> = (props) => (
       projectIdList: [project1Id, project2Id],
     }}
     requestTop50Project={action("requestTop50Project")}
+    typePartResource={typePartResource}
   />
 );
 Loaded.args = {

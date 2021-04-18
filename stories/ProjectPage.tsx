@@ -2,7 +2,13 @@ import * as React from "react";
 import * as d from "../data";
 import { Meta, Story } from "@storybook/react";
 import { ProjectPage, Props } from "../client/ui/ProjectPage";
-import { accountResource, project1Id, projectResource } from "./mockData";
+import {
+  accountResource,
+  project1Id,
+  projectResource,
+  typePartIdListInProjectResource,
+  typePartResource,
+} from "./mockData";
 import { action } from "@storybook/addon-actions";
 import { fullScreen } from "../.storybook/decorators";
 
@@ -23,6 +29,8 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     projectResource={projectResource}
     accountResource={accountResource}
+    typePartResource={typePartResource}
+    typePartIdListInProjectResource={typePartIdListInProjectResource}
     projectId={project1Id}
     onJump={props.onJump}
     addTypePart={action("addTypePart")}

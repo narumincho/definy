@@ -167,6 +167,10 @@ const AppMain: React.VFC<Props> = (props) => {
           accountResource={useDefinyAppResult.accountResource}
           projectResource={useDefinyAppResult.projectResource}
           addTypePart={useDefinyAppResult.addTypePart}
+          typePartIdListInProjectResource={
+            useDefinyAppResult.typePartIdListInProjectResource
+          }
+          typePartResource={useDefinyAppResult.typePartResource}
         />
       );
     case "Account":
@@ -177,10 +181,16 @@ const AppMain: React.VFC<Props> = (props) => {
           accountId={useDefinyAppResult.location.accountId}
           accountResource={useDefinyAppResult.accountResource}
           projectResource={useDefinyAppResult.projectResource}
+          typePartResource={useDefinyAppResult.typePartResource}
         />
       );
     case "TypePart":
-      return <TypePartPage />;
+      return (
+        <TypePartPage
+          typePartResource={useDefinyAppResult.typePartResource}
+          typePartId={useDefinyAppResult.location.typePartId}
+        />
+      );
   }
   return (
     <HomePage
@@ -191,6 +201,7 @@ const AppMain: React.VFC<Props> = (props) => {
       projectResource={useDefinyAppResult.projectResource}
       onJump={useDefinyAppResult.jump}
       requestTop50Project={useDefinyAppResult.requestTop50Project}
+      typePartResource={useDefinyAppResult.typePartResource}
     />
   );
 };

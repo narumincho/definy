@@ -7,7 +7,6 @@ import {
   Value,
   commonElement,
 } from "./common";
-import type { ElementOperation } from "./ElementOperation";
 import {
   HeadTextSelectionView,
   TextDataOperation,
@@ -16,6 +15,7 @@ import {
   TextValue,
   textOperation,
 } from "./text";
+import type { ElementOperation } from "./ElementOperation";
 import { Image } from "../container/Image";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
@@ -369,6 +369,7 @@ export const ProductSelectionView: ElementOperation<
             textValue={props.value.headItem.value}
             accountResource={props.accountResource}
             projectResource={props.projectResource}
+            typePartResource={props.typePartResource}
             language={props.language}
             onJump={props.onJump}
             onRequestDataOperation={(textDataOperation) =>
@@ -398,6 +399,7 @@ export const ProductSelectionView: ElementOperation<
             value={item}
             projectResource={props.projectResource}
             accountResource={props.accountResource}
+            typePartResource={props.typePartResource}
             language={props.language}
             onJump={props.onJump}
             onRequestDataOperation={(commonDataOperation) =>
@@ -446,7 +448,7 @@ type ItemSelection =
 const HeadItemView: React.VFC<
   Pick<
     UseDefinyAppResult,
-    "accountResource" | "projectResource" | "language"
+    "accountResource" | "projectResource" | "language" | "typePartResource"
   > & {
     readonly onSelect: (selection: TextSelection | undefined) => void;
     readonly name: string;
@@ -493,6 +495,7 @@ const HeadItemView: React.VFC<
         value={props.textValue}
         accountResource={props.accountResource}
         projectResource={props.projectResource}
+        typePartResource={props.typePartResource}
         selection={
           props.productSelection !== undefined &&
           props.productSelection.tag === "head"
@@ -511,7 +514,7 @@ const HeadItemView: React.VFC<
 const ItemView: React.VFC<
   Pick<
     UseDefinyAppResult,
-    "accountResource" | "projectResource" | "language"
+    "accountResource" | "projectResource" | "language" | "typePartResource"
   > & {
     readonly onSelect: (selection: Selection | undefined) => void;
     readonly name: string;
@@ -569,6 +572,7 @@ const ItemView: React.VFC<
         value={props.value}
         accountResource={props.accountResource}
         projectResource={props.projectResource}
+        typePartResource={props.typePartResource}
         selection={
           props.itemSelection.tag === "selectInner"
             ? props.itemSelection.selection
@@ -623,6 +627,7 @@ const ProductDetailView: ElementOperation<
             selection={props.selection.selection}
             projectResource={props.projectResource}
             accountResource={props.accountResource}
+            typePartResource={props.typePartResource}
             language={props.language}
             onJump={props.onJump}
             onRequestDataOperation={(textDataOperation) =>
@@ -663,6 +668,7 @@ const ProductDetailView: ElementOperation<
             selection={props.selection.selection}
             accountResource={props.accountResource}
             projectResource={props.projectResource}
+            typePartResource={props.typePartResource}
             language={props.language}
             onJump={props.onJump}
             onRequestDataOperation={(commonDataOperation) =>

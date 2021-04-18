@@ -5,7 +5,12 @@ import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type Props = Pick<
   UseDefinyAppResult,
-  "projectResource" | "accountResource" | "language" | "addTypePart"
+  | "projectResource"
+  | "accountResource"
+  | "language"
+  | "addTypePart"
+  | "typePartIdListInProjectResource"
+  | "typePartResource"
 > & {
   readonly projectId: d.ProjectId;
   readonly onJump: UseDefinyAppResult["jump"];
@@ -14,9 +19,15 @@ export type Props = Pick<
 export const ProjectPage: React.VFC<Props> = (props) => {
   React.useEffect(() => {
     props.projectResource.forciblyRequestToServer(props.projectId);
+    props.typePartIdListInProjectResource.forciblyRequestToServer(
+      props.projectId
+    );
   }, []);
 
   const projectState = props.projectResource.getFromMemoryCache(
+    props.projectId
+  );
+  const typePartIdListInProject = props.typePartIdListInProjectResource.getFromMemoryCache(
     props.projectId
   );
   if (projectState === undefined) {
@@ -99,13 +110,24 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             type: "list",
-            value: { items: [] },
+            value: {
+              items:
+                typePartIdListInProject?._ === "Loaded"
+                  ? typePartIdListInProject.dataWithTime.data.map(
+                      (typePartId) => ({
+                        type: "typePartId",
+                        value: typePartId,
+                      })
+                    )
+                  : [],
+            },
           },
         ],
       }}
       onJump={props.onJump}
       projectResource={props.projectResource}
       accountResource={props.accountResource}
+      typePartResource={props.typePartResource}
       language={props.language}
       onRequestDataOperation={(operation) => {
         if (

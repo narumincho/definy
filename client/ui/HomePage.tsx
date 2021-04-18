@@ -14,6 +14,7 @@ export type Props = Pick<
   | "language"
   | "logInState"
   | "requestTop50Project"
+  | "typePartResource"
 > & {
   onJump: UseDefinyAppResult["jump"];
 };
@@ -41,6 +42,7 @@ export const HomePage: React.VFC<Props> = (props) => {
         language={props.language}
         projectResource={props.projectResource}
         accountResource={props.accountResource}
+        typePartResource={props.typePartResource}
       />
       {props.logInState._ === "LoggedIn" ? (
         <CreateProjectButton language={props.language} onJump={props.onJump} />
@@ -86,6 +88,7 @@ const TopProjectList: React.VFC<
     | "projectResource"
     | "accountResource"
     | "language"
+    | "typePartResource"
   > & {
     onJump: UseDefinyAppResult["jump"];
   }
@@ -180,6 +183,7 @@ const TopProjectList: React.VFC<
             }}
             accountResource={props.accountResource}
             projectResource={props.projectResource}
+            typePartResource={props.typePartResource}
             language={props.language}
             onJump={props.onJump}
             onRequestDataOperation={() => {}}

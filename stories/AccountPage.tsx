@@ -2,7 +2,12 @@ import * as React from "react";
 import * as d from "../data";
 import { AccountPage, Props } from "../client/ui/AccountPage";
 import { Meta, Story } from "@storybook/react";
-import { account1Id, accountResource, projectResource } from "./mockData";
+import {
+  account1Id,
+  accountResource,
+  projectResource,
+  typePartResource,
+} from "./mockData";
 import { fullScreen } from "../.storybook/decorators";
 
 const meta: Meta = {
@@ -24,6 +29,7 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     accountResource={accountResource}
     projectResource={projectResource}
+    typePartResource={typePartResource}
   />
 );
 Default.args = {
