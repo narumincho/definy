@@ -192,6 +192,7 @@ const ListSelectionView: ElementOperation<
             }
             accountResource={props.accountResource}
             projectResource={props.projectResource}
+            typePartResource={props.typePartResource}
             language={props.language}
             onJump={props.onJump}
             onChangeSelection={(selection) =>
@@ -279,6 +280,7 @@ const ListDetailView: ElementOperation<
         selection={props.selection.selection}
         accountResource={props.accountResource}
         projectResource={props.projectResource}
+        typePartResource={props.typePartResource}
         language={props.language}
         onJump={props.onJump}
         onRequestDataOperation={(commonDataOperation) =>

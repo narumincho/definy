@@ -11,7 +11,7 @@ import { css } from "@emotion/css";
 
 export type Props = Pick<
   UseDefinyAppResult,
-  "accountResource" | "projectResource" | "language"
+  "accountResource" | "projectResource" | "language" | "typePartResource"
 > & {
   readonly product: ProductValue;
   readonly productType: ProductType;
@@ -115,6 +115,7 @@ export const Editor: React.VFC<Props> = (props) => {
           value={props.product}
           accountResource={props.accountResource}
           projectResource={props.projectResource}
+          typePartResource={props.typePartResource}
           language={props.language}
           onJump={props.onJump}
           onRequestDataOperation={props.onRequestDataOperation}
@@ -134,6 +135,7 @@ export const Editor: React.VFC<Props> = (props) => {
           language={props.language}
           accountResource={props.accountResource}
           projectResource={props.projectResource}
+          typePartResource={props.typePartResource}
           onJump={props.onJump}
           onRequestDataOperation={props.onRequestDataOperation}
         />

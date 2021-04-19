@@ -1,12 +1,6 @@
 import * as d from "../../data";
 import * as indexedDB from "../indexedDB";
 import {
-  OptionsObject,
-  SnackbarKey,
-  SnackbarMessage,
-  useSnackbar,
-} from "notistack";
-import {
   urlDataAndAccountTokenFromUrl,
   urlDataAndAccountTokenToUrl,
 } from "../../common/url";
@@ -27,6 +21,10 @@ export type CreateProjectState =
   | {
       _: "none";
     };
+
+export type CreateTypePartState =
+  | { tag: "creating"; projectId: d.ProjectId }
+  | { tag: "none" };
 
 export type Resource<id extends string, resource> = {
   /**
@@ -63,6 +61,17 @@ export type UseDefinyAppResult = {
    * アカウントをキャッシュから取得, サーバーへのリクエストができる
    */
   readonly accountResource: Resource<d.AccountId, d.Account>;
+  /**
+   * 型パーツをキャッシュから取得, サーバーへのリクエストができる
+   */
+  readonly typePartResource: Resource<d.TypePartId, d.TypePart>;
+  /**
+   * プロジェクトに属している型パーツのIDをキャッシュから取得, サーバーへのリクエストができる
+   */
+  readonly typePartIdListInProjectResource: Resource<
+    d.ProjectId,
+    ReadonlyArray<d.TypePartId>
+  >;
   /**
    * 現在のページの場所
    *
@@ -119,14 +128,28 @@ export type UseDefinyAppResult = {
    * *side-effect*
    */
   readonly requestTop50Project: () => void;
+
+  /**
+   * 型パーツを追加する
+   *
+   * *side-effect*
+   */
+  readonly addTypePart: (projectId: d.ProjectId) => void;
 };
+
+export type NotificationMessageHandler = (
+  message: string,
+  variant: "error" | "success"
+) => void;
 
 /**
  * Definy の アプリの動作をする Hook.
  *
- * 想定する環境は ブラウザで, notistack の context を使用する. node.js 内ではたぶん動かない
+ * 想定する環境は ブラウザで, Reactを使用する. node.js 内ではたぶん動かない
  */
-export const useDefinyApp = (): UseDefinyAppResult => {
+export const useDefinyApp = (option: {
+  readonly notificationMessageHandler: NotificationMessageHandler;
+}): UseDefinyAppResult => {
   const [
     topProjectsLoadingState,
     setTopProjectsLoadingState,
@@ -142,9 +165,17 @@ export const useDefinyApp = (): UseDefinyAppResult => {
     createProjectState,
     setCreateProjectState,
   ] = useState<CreateProjectState>({ _: "none" });
-  const { enqueueSnackbar } = useSnackbar();
   const projectDict = useResourceState<d.ProjectId, d.Project>();
   const accountDict = useResourceState<d.AccountId, d.Account>();
+  const [
+    createTypePartState,
+    setCreateTypePartState,
+  ] = useState<CreateTypePartState>({ tag: "none" });
+  const typePartIdListInProjectDict = useResourceState<
+    d.ProjectId,
+    ReadonlyArray<d.TypePartId>
+  >();
+  const typePartDict = useResourceState<d.TypePartId, d.TypePart>();
 
   /**
    * ページを移動する
@@ -164,9 +195,10 @@ export const useDefinyApp = (): UseDefinyAppResult => {
       .requestLogInUrl({ urlData, openIdConnectProvider: "Google" })
       .then((response) => {
         if (response._ === "Nothing") {
-          enqueueSnackbar("ログインURL取得に失敗しました", {
-            variant: "error",
-          });
+          option.notificationMessageHandler(
+            "ログインURL取得に失敗しました",
+            "error"
+          );
           return;
         }
         setLogInState(d.LogInState.JumpingToLogInPage);
@@ -183,7 +215,7 @@ export const useDefinyApp = (): UseDefinyAppResult => {
       language: urlData.language,
       location: d.Location.Home,
     });
-    enqueueSnackbar("ログアウトしました", { variant: "success" });
+    option.notificationMessageHandler("ログアウトしました", "success");
   };
 
   const getAccountToken = (): d.AccountToken | undefined => {
@@ -198,20 +230,16 @@ export const useDefinyApp = (): UseDefinyAppResult => {
   const createProject = (projectName: string): void => {
     const accountToken = getAccountToken();
     if (accountToken === undefined) {
-      enqueueSnackbar(
+      option.notificationMessageHandler(
         "ログインしていない状態でプロジェクトを作ることはできない",
-        {
-          variant: "error",
-        }
+        "error"
       );
       return;
     }
     if (createProjectState._ === "creating") {
-      enqueueSnackbar(
+      option.notificationMessageHandler(
         "プロジェクト作成中にさらにプロジェクトを作成することはできない",
-        {
-          variant: "error",
-        }
+        "error"
       );
       return;
     }
@@ -224,12 +252,15 @@ export const useDefinyApp = (): UseDefinyAppResult => {
       .then((response) => {
         setCreateProjectState({ _: "none" });
         if (response._ === "Nothing" || response.value._ === "Nothing") {
-          enqueueSnackbar("プロジェクト作成に失敗しました");
+          option.notificationMessageHandler(
+            "プロジェクト作成に失敗しました",
+            "error"
+          );
           return;
         }
-        enqueueSnackbar(
+        option.notificationMessageHandler(
           `プロジェクト「${response.value.value.data.name}」を作成しました`,
-          { variant: "success" }
+          "success"
         );
         jump({
           language: urlData.language,
@@ -242,9 +273,10 @@ export const useDefinyApp = (): UseDefinyAppResult => {
     setTopProjectsLoadingState({ _: "loading" });
     api.getTop50Project(undefined).then((response) => {
       if (response._ === "Nothing") {
-        enqueueSnackbar("プロジェクト一覧取得に失敗しました", {
-          variant: "error",
-        });
+        option.notificationMessageHandler(
+          "プロジェクト一覧取得に失敗しました",
+          "error"
+        );
         return;
       }
       setTopProjectsLoadingState({
@@ -290,7 +322,7 @@ export const useDefinyApp = (): UseDefinyAppResult => {
         setLogInState,
         accountToken,
         accountDict.setLoaded,
-        enqueueSnackbar
+        option.notificationMessageHandler
       );
       return;
     }
@@ -303,7 +335,7 @@ export const useDefinyApp = (): UseDefinyAppResult => {
         setLogInState,
         accountToken,
         accountDict.setLoaded,
-        enqueueSnackbar
+        option.notificationMessageHandler
       );
     });
   }, []);
@@ -311,19 +343,24 @@ export const useDefinyApp = (): UseDefinyAppResult => {
   const projectResource: Resource<d.ProjectId, d.Project> = {
     getFromMemoryCache: projectDict.get,
     forciblyRequestToServer: (projectId: d.ProjectId): void => {
+      if (projectDict.get(projectId)?._ === "Requesting") {
+        return;
+      }
       projectDict.setRequesting(projectId);
       api.getProject(projectId).then((response) => {
         if (response._ === "Nothing") {
-          enqueueSnackbar("プロジェクトの取得に失敗しました", {
-            variant: "error",
-          });
+          option.notificationMessageHandler(
+            "プロジェクトの取得に失敗しました",
+            "error"
+          );
           projectDict.setUnknown(projectId);
           return;
         }
         if (response.value.data._ === "Nothing") {
-          enqueueSnackbar("プロジェクトが存在しなかった", {
-            variant: "error",
-          });
+          option.notificationMessageHandler(
+            "プロジェクトが存在しなかった",
+            "error"
+          );
           projectDict.setDeleted(projectId, response.value.getTime);
           return;
         }
@@ -340,47 +377,31 @@ export const useDefinyApp = (): UseDefinyAppResult => {
       if (projectState !== undefined) {
         return;
       }
-      projectDict.setRequesting(projectId);
-      api.getProject(projectId).then((response) => {
-        if (response._ === "Nothing") {
-          enqueueSnackbar("プロジェクトの取得に失敗しました", {
-            variant: "error",
-          });
-          projectDict.setUnknown(projectId);
-          return;
-        }
-        if (response.value.data._ === "Nothing") {
-          enqueueSnackbar("プロジェクトが存在しなかった", {
-            variant: "error",
-          });
-          projectDict.setDeleted(projectId, response.value.getTime);
-          return;
-        }
-        projectDict.setLoaded(
-          projectId,
-          response.value.data.value,
-          response.value.getTime
-        );
-      });
+      projectResource.forciblyRequestToServer(projectId);
     },
   };
 
   const accountResource: Resource<d.AccountId, d.Account> = {
     getFromMemoryCache: accountDict.get,
     forciblyRequestToServer: (accountId: d.AccountId): void => {
+      if (accountDict.get(accountId)?._ === "Requesting") {
+        return;
+      }
       accountDict.setRequesting(accountId);
       api.getAccount(accountId).then((response) => {
         if (response._ === "Nothing") {
-          enqueueSnackbar("プロジェクトの取得に失敗しました", {
-            variant: "error",
-          });
+          option.notificationMessageHandler(
+            "プロジェクトの取得に失敗しました",
+            "error"
+          );
           accountDict.setUnknown(accountId);
           return;
         }
         if (response.value.data._ === "Nothing") {
-          enqueueSnackbar("プロジェクトが存在しなかった", {
-            variant: "error",
-          });
+          option.notificationMessageHandler(
+            "プロジェクトが存在しなかった",
+            "error"
+          );
           accountDict.setDeleted(accountId, response.value.getTime);
           return;
         }
@@ -397,28 +418,118 @@ export const useDefinyApp = (): UseDefinyAppResult => {
       if (accountState !== undefined) {
         return;
       }
-      accountDict.setRequesting(accountId);
-      api.getAccount(accountId).then((response) => {
-        if (response._ === "Nothing") {
-          enqueueSnackbar("プロジェクトの取得に失敗しました", {
-            variant: "error",
-          });
-          accountDict.setUnknown(accountId);
+      accountResource.forciblyRequestToServer(accountId);
+    },
+  };
+
+  const addTypePart = (projectId: d.ProjectId): void => {
+    const accountToken = getAccountToken();
+    if (accountToken === undefined) {
+      option.notificationMessageHandler(
+        "ログインしていない状態で型パーツを作ることはできない",
+        "error"
+      );
+      return;
+    }
+    if (createTypePartState.tag === "creating") {
+      option.notificationMessageHandler(
+        "型パーツ作成は同時にできない",
+        "error"
+      );
+      return;
+    }
+    setCreateTypePartState({ tag: "creating", projectId });
+    api
+      .addTypePart({
+        accountToken,
+        projectId,
+      })
+      .then((response) => {
+        setCreateTypePartState({ tag: "none" });
+        if (response._ === "Nothing" || response.value.data._ === "Nothing") {
+          option.notificationMessageHandler(
+            "型パーツ作成に失敗しました",
+            "error"
+          );
           return;
         }
-        if (response.value.data._ === "Nothing") {
-          enqueueSnackbar("プロジェクトが存在しなかった", {
-            variant: "error",
-          });
-          accountDict.setDeleted(accountId, response.value.getTime);
+        option.notificationMessageHandler(
+          `型パーツ 「${response.value.data.value.data.name}」を作成しました`,
+          "success"
+        );
+        jump({
+          language: urlData.language,
+          location: d.Location.TypePart(response.value.data.value.id),
+        });
+      });
+  };
+
+  const typePartIdListInProjectResource: UseDefinyAppResult["typePartIdListInProjectResource"] = {
+    forciblyRequestToServer: (projectId) => {
+      if (typePartIdListInProjectDict.get(projectId)?._ === "Requesting") {
+        return;
+      }
+      typePartIdListInProjectDict.setRequesting(projectId);
+      api.getTypePartByProjectId(projectId).then((response) => {
+        if (response._ === "Nothing" || response.value.data._ === "Nothing") {
+          typePartIdListInProjectDict.setUnknown(projectId);
+          option.notificationMessageHandler(
+            "プロジェクトに属している型パーツ一覧の取得に失敗しました",
+            "error"
+          );
           return;
         }
-        accountDict.setLoaded(
-          accountId,
+        typePartIdListInProjectDict.setLoaded(
+          projectId,
+          response.value.data.value.map((e) => e.id)
+        );
+        typePartDict.setLoadedList(
           response.value.data.value,
           response.value.getTime
         );
       });
+    },
+    getFromMemoryCache: typePartIdListInProjectDict.get,
+    requestToServerIfEmpty: (projectId) => {
+      const resource = typePartIdListInProjectDict.get(projectId);
+      if (resource !== undefined) {
+        return;
+      }
+      typePartIdListInProjectResource.forciblyRequestToServer(projectId);
+    },
+  };
+  const typePartResource: UseDefinyAppResult["typePartResource"] = {
+    forciblyRequestToServer: (typePartId) => {
+      if (typePartDict.get(typePartId)?._ === "Requesting") {
+        return;
+      }
+      typePartDict.setRequesting(typePartId);
+      api.getTypePart(typePartId).then((response) => {
+        if (response._ === "Nothing") {
+          typePartDict.setUnknown(typePartId);
+          option.notificationMessageHandler(
+            "型パーツの取得に失敗しました",
+            "error"
+          );
+          return;
+        }
+        if (response.value.data._ === "Nothing") {
+          typePartDict.setDeleted(typePartId, response.value.getTime);
+          option.notificationMessageHandler(
+            "型パーツは存在しなかった",
+            "error"
+          );
+          return;
+        }
+        typePartDict.setLoaded(typePartId, response.value.data.value);
+      });
+    },
+    getFromMemoryCache: typePartDict.get,
+    requestToServerIfEmpty: (typePartId) => {
+      if (typePartDict.get(typePartId) !== undefined) {
+        return;
+      }
+      typePartResource.forciblyRequestToServer(typePartId);
     },
   };
 
@@ -435,6 +546,9 @@ export const useDefinyApp = (): UseDefinyAppResult => {
     logOut,
     topProjectsLoadingState,
     requestTop50Project,
+    addTypePart,
+    typePartIdListInProjectResource,
+    typePartResource,
   };
 };
 
@@ -442,25 +556,18 @@ const verifyingAccountTokenAndGetAccount = (
   setLogInState: (logInState: d.LogInState) => void,
   accountToken: d.AccountToken,
   setAccount: (accountId: d.AccountId, account: d.Account) => void,
-  enqueueSnackbar: (
-    message: SnackbarMessage,
-    options?: OptionsObject | undefined
-  ) => SnackbarKey
+  notificationMessageHandler: NotificationMessageHandler
 ) => {
   setLogInState(d.LogInState.VerifyingAccountToken(accountToken));
   api.getAccountByAccountToken(accountToken).then((response) => {
     if (response._ === "Nothing" || response.value._ === "Nothing") {
-      enqueueSnackbar("ログインに失敗しました", {
-        variant: "error",
-      });
+      notificationMessageHandler("ログインに失敗しました", "error");
       setLogInState(d.LogInState.Guest);
       return;
     }
-    enqueueSnackbar(
+    notificationMessageHandler(
       `「${response.value.value.data.name}」としてログインしました`,
-      {
-        variant: "success",
-      }
+      "success"
     );
     setLogInState(
       d.LogInState.LoggedIn({

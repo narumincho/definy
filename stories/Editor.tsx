@@ -9,6 +9,7 @@ import {
   project2Id,
   projectResource,
   typePart1Id,
+  typePartResource,
 } from "./mockData";
 import { ArgType } from "@storybook/addons";
 import { fullScreen } from "../.storybook/decorators";
@@ -63,7 +64,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
             listType: {
               elementType: {
                 tag: "typePartId",
-                typePartId: { canEdit: false },
+                typePartIdType: { canEdit: false },
               },
               canEdit: false,
             },
@@ -106,6 +107,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
     }}
     accountResource={accountResource}
     projectResource={projectResource}
+    typePartResource={typePartResource}
     language={props.language}
     onJump={props.onJump}
     onRequestDataOperation={props.onRequestDataOperation}
@@ -144,7 +146,7 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
             listType: {
               elementType: {
                 tag: "typePartId",
-                typePartId: { canEdit: false },
+                typePartIdType: { canEdit: false },
               },
               canEdit: false,
             },
@@ -184,6 +186,7 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
     }}
     accountResource={accountResource}
     projectResource={projectResource}
+    typePartResource={typePartResource}
     language={props.language}
     onJump={props.onJump}
     onRequestDataOperation={props.onRequestDataOperation}
@@ -228,6 +231,7 @@ export const Home: Story<ControlAndActionProps> = (props) => (
     }}
     accountResource={accountResource}
     projectResource={projectResource}
+    typePartResource={typePartResource}
     language={props.language}
     onJump={props.onJump}
     onRequestDataOperation={props.onRequestDataOperation}
@@ -288,6 +292,7 @@ export const List: Story<ControlAndActionProps> = (props) => (
     }}
     accountResource={accountResource}
     projectResource={projectResource}
+    typePartResource={typePartResource}
     language={props.language}
     onJump={props.onJump}
     onRequestDataOperation={props.onRequestDataOperation}
@@ -400,6 +405,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
     }}
     accountResource={accountResource}
     projectResource={projectResource}
+    typePartResource={typePartResource}
     language={props.language}
     onJump={props.onJump}
     onRequestDataOperation={props.onRequestDataOperation}

@@ -63,24 +63,44 @@ export const accountResource: UseDefinyAppResult["accountResource"] = {
   },
 };
 
-export const getTypePart = (
-  typePartId: d.TypePartId
-): d.ResourceState<d.TypePart> => {
-  return d.ResourceState.Loaded({
-    data: {
-      name: "サンプル型パーツ",
-      attribute: d.Maybe.Nothing(),
-      description: "サンプルの型パーツの説明文",
-      projectId: project1Id,
-      body: d.TypePartBody.Sum([
-        {
-          name: "Pattern1",
-          description: "パターン1",
-          parameter: d.Maybe.Nothing(),
-        },
-      ]),
-      typeParameterList: [],
-    },
-    getTime: { day: 0, millisecond: 0 },
-  });
+export const typePartIdListInProjectResource: UseDefinyAppResult["typePartIdListInProjectResource"] = {
+  forciblyRequestToServer: action(
+    "強制的にプロジェクトに属する型パーツ一覧を取得しようとした"
+  ),
+  requestToServerIfEmpty: action(
+    "キャッシュになければ, プロジェクトに属する質問を取得しようとした"
+  ),
+  getFromMemoryCache: ():
+    | d.ResourceState<ReadonlyArray<d.TypePartId>>
+    | undefined => {
+    return d.ResourceState.Loaded({
+      data: [typePart1Id],
+      getTime: { day: 0, millisecond: 0 },
+    });
+  },
+};
+export const typePartResource: UseDefinyAppResult["typePartResource"] = {
+  forciblyRequestToServer: action("強制的に 型パーツを取得しようとした"),
+  requestToServerIfEmpty: action(
+    "キャッシュになければ, 型パーツを取得しようとした"
+  ),
+  getFromMemoryCache: () => {
+    return d.ResourceState.Loaded({
+      data: {
+        name: "サンプル型パーツ",
+        attribute: d.Maybe.Nothing(),
+        description: "サンプルの型パーツの説明文",
+        projectId: project1Id,
+        body: d.TypePartBody.Sum([
+          {
+            name: "Pattern1",
+            description: "パターン1",
+            parameter: d.Maybe.Nothing(),
+          },
+        ]),
+        typeParameterList: [],
+      },
+      getTime: { day: 0, millisecond: 0 },
+    });
+  },
 };

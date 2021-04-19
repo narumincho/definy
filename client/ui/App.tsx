@@ -8,6 +8,7 @@ import { Header } from "./Header";
 import { HomePage } from "./HomePage";
 import { ProjectPage } from "./ProjectPage";
 import { SettingPage } from "./SettingPage";
+import { TypePartPage } from "./TypePartPage";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type Props = {
@@ -165,6 +166,11 @@ const AppMain: React.VFC<Props> = (props) => {
           projectId={useDefinyAppResult.location.projectId}
           accountResource={useDefinyAppResult.accountResource}
           projectResource={useDefinyAppResult.projectResource}
+          addTypePart={useDefinyAppResult.addTypePart}
+          typePartIdListInProjectResource={
+            useDefinyAppResult.typePartIdListInProjectResource
+          }
+          typePartResource={useDefinyAppResult.typePartResource}
         />
       );
     case "Account":
@@ -175,6 +181,18 @@ const AppMain: React.VFC<Props> = (props) => {
           accountId={useDefinyAppResult.location.accountId}
           accountResource={useDefinyAppResult.accountResource}
           projectResource={useDefinyAppResult.projectResource}
+          typePartResource={useDefinyAppResult.typePartResource}
+        />
+      );
+    case "TypePart":
+      return (
+        <TypePartPage
+          typePartResource={useDefinyAppResult.typePartResource}
+          typePartId={useDefinyAppResult.location.typePartId}
+          accountResource={useDefinyAppResult.accountResource}
+          projectResource={useDefinyAppResult.projectResource}
+          language={useDefinyAppResult.language}
+          onJump={useDefinyAppResult.jump}
         />
       );
   }
@@ -187,6 +205,7 @@ const AppMain: React.VFC<Props> = (props) => {
       projectResource={useDefinyAppResult.projectResource}
       onJump={useDefinyAppResult.jump}
       requestTop50Project={useDefinyAppResult.requestTop50Project}
+      typePartResource={useDefinyAppResult.typePartResource}
     />
   );
 };

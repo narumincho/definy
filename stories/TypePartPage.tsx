@@ -1,18 +1,18 @@
 import * as React from "react";
 import * as d from "../data";
-import { AccountPage, Props } from "../client/ui/AccountPage";
 import { Meta, Story } from "@storybook/react";
+import { Props, TypePartPage } from "../client/ui/TypePartPage";
 import {
-  account1Id,
   accountResource,
   projectResource,
+  typePart1Id,
   typePartResource,
 } from "./mockData";
 import { fullScreen } from "../.storybook/decorators";
 
 const meta: Meta = {
-  title: "AccountPage",
-  component: AccountPage,
+  title: "TypePartPage",
+  component: TypePartPage,
   parameters: {
     layout: "fullscreen",
   },
@@ -23,15 +23,13 @@ export default meta;
 type ControlAndActionProps = Pick<Props, "language" | "onJump">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
-  <AccountPage
-    accountId={account1Id}
-    onJump={props.onJump}
-    language={props.language}
-    accountResource={accountResource}
-    projectResource={projectResource}
+  <TypePartPage
+    typePartId={typePart1Id}
     typePartResource={typePartResource}
+    language={props.language}
+    projectResource={projectResource}
+    accountResource={accountResource}
+    onJump={props.onJump}
   />
 );
-Default.args = {
-  language: d.Language.Japanese,
-};
+Default.args = { language: d.Language.Japanese };

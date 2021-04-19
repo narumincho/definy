@@ -68,7 +68,7 @@ export type ElementOperation<Selection, Value, Type, DataOperation> = {
   readonly selectionView: React.VFC<
     Pick<
       UseDefinyAppResult,
-      "accountResource" | "projectResource" | "language"
+      "accountResource" | "projectResource" | "language" | "typePartResource"
     > & {
       readonly selection: Selection | undefined;
       readonly value: Value;
@@ -85,7 +85,7 @@ export type ElementOperation<Selection, Value, Type, DataOperation> = {
   readonly detailView: React.VFC<
     Pick<
       UseDefinyAppResult,
-      "accountResource" | "projectResource" | "language"
+      "accountResource" | "projectResource" | "language" | "typePartResource"
     > & {
       readonly value: Value;
       readonly type: Type;

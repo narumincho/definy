@@ -7,6 +7,8 @@ import {
   project1Id,
   project2Id,
   projectResource,
+  typePartIdListInProjectResource,
+  typePartResource,
 } from "./mockData";
 import { ArgType } from "@storybook/addons";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
@@ -16,6 +18,8 @@ import { fullScreen } from "../.storybook/decorators";
 const useDefinyAppResult: UseDefinyAppResult = {
   accountResource,
   projectResource,
+  typePartIdListInProjectResource,
+  typePartResource,
   createProject: action("createProject"),
   createProjectState: { _: "none" },
   jump: action("jump"),
@@ -25,6 +29,8 @@ const useDefinyAppResult: UseDefinyAppResult = {
   logInState: d.LogInState.Guest,
   logOut: action("logOut"),
   topProjectsLoadingState: { _: "none" },
+  addTypePart: action("addTypePart"),
+  requestTop50Project: action("requestTop50Project"),
 };
 
 type ControlAndActionProps = Pick<UseDefinyAppResult, "language">;

@@ -5,7 +5,7 @@ import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type Props = Pick<
   UseDefinyAppResult,
-  "accountResource" | "projectResource" | "language"
+  "accountResource" | "projectResource" | "language" | "typePartResource"
 > & {
   readonly accountId: d.AccountId;
   readonly onJump: UseDefinyAppResult["jump"];
@@ -86,6 +86,7 @@ export const AccountPage: React.VFC<Props> = (props) => {
       }}
       accountResource={props.accountResource}
       projectResource={props.projectResource}
+      typePartResource={props.typePartResource}
       language={props.language}
       onJump={props.onJump}
       onRequestDataOperation={() => {}}
