@@ -189,6 +189,10 @@ const AppMain: React.VFC<Props> = (props) => {
         <TypePartPage
           typePartResource={useDefinyAppResult.typePartResource}
           typePartId={useDefinyAppResult.location.typePartId}
+          accountResource={useDefinyAppResult.accountResource}
+          projectResource={useDefinyAppResult.projectResource}
+          language={useDefinyAppResult.language}
+          onJump={useDefinyAppResult.jump}
         />
       );
   }

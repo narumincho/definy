@@ -1,8 +1,13 @@
 import * as React from "react";
 import * as d from "../data";
 import { Meta, Story } from "@storybook/react";
-import { typePart1Id, typePartResource } from "./mockData";
-import { TypePartPage } from "../client/ui/TypePartPage";
+import { Props, TypePartPage } from "../client/ui/TypePartPage";
+import {
+  accountResource,
+  projectResource,
+  typePart1Id,
+  typePartResource,
+} from "./mockData";
 import { fullScreen } from "../.storybook/decorators";
 
 const meta: Meta = {
@@ -15,6 +20,16 @@ const meta: Meta = {
 };
 export default meta;
 
-export const Default: Story<never> = () => (
-  <TypePartPage typePartId={typePart1Id} typePartResource={typePartResource} />
+type ControlAndActionProps = Pick<Props, "language" | "onJump">;
+
+export const Default: Story<ControlAndActionProps> = (props) => (
+  <TypePartPage
+    typePartId={typePart1Id}
+    typePartResource={typePartResource}
+    language={props.language}
+    projectResource={projectResource}
+    accountResource={accountResource}
+    onJump={props.onJump}
+  />
 );
+Default.args = { language: d.Language.Japanese };
