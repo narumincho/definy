@@ -2,7 +2,7 @@ import * as React from "react";
 import * as d from "../../data";
 import { AccountCard } from "../ui/AccountCard";
 import type { ElementOperation } from "./ElementOperation";
-import { Image } from "../container/Image";
+import { Image } from "../ui/Image";
 import { Link } from "../ui/Link";
 import { NextIcon } from "../ui/NextIcon";
 import { css } from "@emotion/css";

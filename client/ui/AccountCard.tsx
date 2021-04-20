@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
-import { Image } from "../container/Image";
+import { Image } from "./Image";
 import { Link } from "./Link";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 

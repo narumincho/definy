@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as d from "../../data";
 import type { ElementOperation } from "./ElementOperation";
-import { Image } from "../container/Image";
+import { Image } from "../ui/Image";
 import { css } from "@emotion/css";
 
 export type ImageSelection = never;

@@ -16,7 +16,7 @@ import {
   textOperation,
 } from "./text";
 import type { ElementOperation } from "./ElementOperation";
-import { Image } from "../container/Image";
+import { Image } from "../ui/Image";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
 

@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
-import { Image, ImageSkeleton } from "../container/Image";
+import { Image, ImageSkeleton } from "./Image";
 import { Link } from "./Link";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
