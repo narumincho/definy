@@ -3,15 +3,10 @@ import * as d from "../data";
 import { AccountCard, Props } from "../client/ui/AccountCard";
 import { Meta, Story } from "@storybook/react";
 import { account1Id, accountResource } from "./mockData";
-import { fullScreen } from "./decorators";
 
 const meta: Meta = {
   title: "AccountCard",
   component: AccountCard,
-  parameters: {
-    layout: "fullscreen",
-  },
-  decorators: [fullScreen],
 };
 export default meta;
 

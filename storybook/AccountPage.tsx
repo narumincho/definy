@@ -8,15 +8,10 @@ import {
   projectResource,
   typePartResource,
 } from "./mockData";
-import { fullScreen } from "./decorators";
 
 const meta: Meta = {
   title: "AccountPage",
   component: AccountPage,
-  parameters: {
-    layout: "fullscreen",
-  },
-  decorators: [fullScreen],
 };
 export default meta;
 

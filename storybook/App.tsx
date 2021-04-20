@@ -13,7 +13,6 @@ import {
 import { ArgType } from "@storybook/addons";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
 import { action } from "@storybook/addon-actions";
-import { fullScreen } from "./decorators";
 
 const useDefinyAppResult: UseDefinyAppResult = {
   accountResource,
@@ -47,10 +46,6 @@ const argTypes: Record<keyof Props & "language", ArgType> = {
 const meta: Meta = {
   title: "App",
   component: App,
-  parameters: {
-    layout: "fullscreen",
-  },
-  decorators: [fullScreen],
   argTypes,
 };
 export default meta;

@@ -10,15 +10,10 @@ import {
   typePartResource,
 } from "./mockData";
 import { action } from "@storybook/addon-actions";
-import { fullScreen } from "./decorators";
 
 const meta: Meta = {
   title: "ProjectPage",
   component: ProjectPage,
-  parameters: {
-    layout: "fullscreen",
-  },
-  decorators: [fullScreen],
 };
 export default meta;
 

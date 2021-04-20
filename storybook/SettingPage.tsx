@@ -3,15 +3,10 @@ import * as d from "../data";
 import { Meta, Story } from "@storybook/react";
 import { Props, SettingPage } from "../client/ui/SettingPage";
 import { accountResource } from "./mockData";
-import { fullScreen } from "./decorators";
 
 const meta: Meta = {
   title: "SettingPage",
   component: SettingPage,
-  parameters: {
-    layout: "fullscreen",
-  },
-  decorators: [fullScreen],
 };
 export default meta;
 

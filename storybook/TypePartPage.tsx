@@ -8,15 +8,10 @@ import {
   typePart1Id,
   typePartResource,
 } from "./mockData";
-import { fullScreen } from "./decorators";
 
 const meta: Meta = {
   title: "TypePartPage",
   component: TypePartPage,
-  parameters: {
-    layout: "fullscreen",
-  },
-  decorators: [fullScreen],
 };
 export default meta;
 

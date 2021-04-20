@@ -11,7 +11,6 @@ import {
 } from "./mockData";
 import { ArgType } from "@storybook/addons";
 import { action } from "@storybook/addon-actions";
-import { fullScreen } from "./decorators";
 
 const argTypes: Record<keyof Pick<Props, "logInState">, ArgType> = {
   logInState: { control: null },
@@ -20,10 +19,6 @@ const argTypes: Record<keyof Pick<Props, "logInState">, ArgType> = {
 const meta: Meta = {
   title: "HomePage",
   component: HomePage,
-  parameters: {
-    layout: "fullscreen",
-  },
-  decorators: [fullScreen],
   argTypes,
 };
 export default meta;

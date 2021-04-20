@@ -4,7 +4,6 @@ import { Header, Props } from "../client/ui/Header";
 import { Meta, Story } from "@storybook/react";
 import { ArgType } from "@storybook/addons";
 import { accountResource } from "./mockData";
-import { fullScreen } from "./decorators";
 
 const argTypes: Record<
   keyof Pick<Props, "titleItemList" | "logInState">,
@@ -19,10 +18,6 @@ const argTypes: Record<
 const meta: Meta = {
   title: "Header",
   component: Header,
-  parameters: {
-    layout: "fullscreen",
-  },
-  decorators: [fullScreen],
   argTypes,
 };
 export default meta;
