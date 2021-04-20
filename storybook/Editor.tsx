@@ -12,7 +12,7 @@ import {
   typePartResource,
 } from "./mockData";
 import { ArgType } from "@storybook/addons";
-import { fullScreen } from "../.storybook/decorators";
+import { fullScreen } from "./decorators";
 
 const argTypes: Record<string, ArgType> = {};
 

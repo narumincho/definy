@@ -2,7 +2,7 @@ import * as React from "react";
 import { Meta, Story } from "@storybook/react";
 import { ProjectCard, Props } from "../client/ui/ProjectCard";
 import { project1Id, projectResource } from "./mockData";
-import { fullScreen } from "../.storybook/decorators";
+import { fullScreen } from "./decorators";
 
 const meta: Meta = {
   title: "ProjectCard",
@@ -12,6 +12,7 @@ const meta: Meta = {
   },
   decorators: [fullScreen],
 };
+
 export default meta;
 
 type ControlAndActionProps = Pick<Props, "language" | "onJump">;

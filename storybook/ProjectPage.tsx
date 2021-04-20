@@ -1,18 +1,20 @@
 import * as React from "react";
 import * as d from "../data";
-import { AccountPage, Props } from "../client/ui/AccountPage";
 import { Meta, Story } from "@storybook/react";
+import { ProjectPage, Props } from "../client/ui/ProjectPage";
 import {
-  account1Id,
   accountResource,
+  project1Id,
   projectResource,
+  typePartIdListInProjectResource,
   typePartResource,
 } from "./mockData";
-import { fullScreen } from "../.storybook/decorators";
+import { action } from "@storybook/addon-actions";
+import { fullScreen } from "./decorators";
 
 const meta: Meta = {
-  title: "AccountPage",
-  component: AccountPage,
+  title: "ProjectPage",
+  component: ProjectPage,
   parameters: {
     layout: "fullscreen",
   },
@@ -23,13 +25,15 @@ export default meta;
 type ControlAndActionProps = Pick<Props, "language" | "onJump">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
-  <AccountPage
-    accountId={account1Id}
-    onJump={props.onJump}
+  <ProjectPage
     language={props.language}
-    accountResource={accountResource}
     projectResource={projectResource}
+    accountResource={accountResource}
     typePartResource={typePartResource}
+    typePartIdListInProjectResource={typePartIdListInProjectResource}
+    projectId={project1Id}
+    onJump={props.onJump}
+    addTypePart={action("addTypePart")}
   />
 );
 Default.args = {

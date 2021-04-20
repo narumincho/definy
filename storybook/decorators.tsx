@@ -1,8 +1,10 @@
 import * as React from "react";
-import { injectGlobal } from "@emotion/css";
 import { globalStyle } from "../common/globalStyle";
+import { injectGlobal } from "@emotion/css";
 
-export const fullScreen = (Story: () => React.ReactElement<unknown>) => {
+export const fullScreen = (
+  Story: () => React.ReactElement<unknown>
+): React.ReactElement => {
   React.useEffect(() => {
     injectGlobal(globalStyle);
   }, []);

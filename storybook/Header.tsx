@@ -4,7 +4,7 @@ import { Header, Props } from "../client/ui/Header";
 import { Meta, Story } from "@storybook/react";
 import { ArgType } from "@storybook/addons";
 import { accountResource } from "./mockData";
-import { fullScreen } from "../.storybook/decorators";
+import { fullScreen } from "./decorators";
 
 const argTypes: Record<
   keyof Pick<Props, "titleItemList" | "logInState">,

@@ -1,13 +1,13 @@
 import * as React from "react";
 import * as d from "../data";
+import { AccountCard, Props } from "../client/ui/AccountCard";
 import { Meta, Story } from "@storybook/react";
-import { Props, SettingPage } from "../client/ui/SettingPage";
-import { accountResource } from "./mockData";
-import { fullScreen } from "../.storybook/decorators";
+import { account1Id, accountResource } from "./mockData";
+import { fullScreen } from "./decorators";
 
 const meta: Meta = {
-  title: "SettingPage",
-  component: SettingPage,
+  title: "AccountCard",
+  component: AccountCard,
   parameters: {
     layout: "fullscreen",
   },
@@ -15,15 +15,14 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<Props, "language" | "onJump" | "onLogOut">;
+type ControlAndActionProps = Pick<Props, "language" | "onJump">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
-  <SettingPage
+  <AccountCard
     language={props.language}
-    accountResource={accountResource}
-    logInState={{ _: "Guest" }}
     onJump={props.onJump}
-    onLogOut={props.onLogOut}
+    accountId={account1Id}
+    accountResource={accountResource}
   />
 );
 Default.args = {
