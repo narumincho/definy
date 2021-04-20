@@ -8,7 +8,7 @@ import {
   typePart1Id,
   typePartResource,
 } from "./mockData";
-import { fullScreen } from "../.storybook/decorators";
+import { fullScreen } from "./decorators";
 
 const meta: Meta = {
   title: "TypePartPage",

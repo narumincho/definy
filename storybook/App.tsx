@@ -13,7 +13,7 @@ import {
 import { ArgType } from "@storybook/addons";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
 import { action } from "@storybook/addon-actions";
-import { fullScreen } from "../.storybook/decorators";
+import { fullScreen } from "./decorators";
 
 const useDefinyAppResult: UseDefinyAppResult = {
   accountResource,

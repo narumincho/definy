@@ -2,7 +2,7 @@ import * as React from "react";
 import * as d from "../data";
 import { AboutPage, Props } from "../client/ui/AboutPage";
 import { Meta, Story } from "@storybook/react";
-import { fullScreen } from "../.storybook/decorators";
+import { fullScreen } from "./decorators";
 
 const meta: Meta = {
   title: "AboutPage",

@@ -1,13 +1,18 @@
 import * as React from "react";
 import * as d from "../data";
-import { AccountCard, Props } from "../client/ui/AccountCard";
+import { AccountPage, Props } from "../client/ui/AccountPage";
 import { Meta, Story } from "@storybook/react";
-import { account1Id, accountResource } from "./mockData";
-import { fullScreen } from "../.storybook/decorators";
+import {
+  account1Id,
+  accountResource,
+  projectResource,
+  typePartResource,
+} from "./mockData";
+import { fullScreen } from "./decorators";
 
 const meta: Meta = {
-  title: "AccountCard",
-  component: AccountCard,
+  title: "AccountPage",
+  component: AccountPage,
   parameters: {
     layout: "fullscreen",
   },
@@ -18,11 +23,13 @@ export default meta;
 type ControlAndActionProps = Pick<Props, "language" | "onJump">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
-  <AccountCard
-    language={props.language}
-    onJump={props.onJump}
+  <AccountPage
     accountId={account1Id}
+    onJump={props.onJump}
+    language={props.language}
     accountResource={accountResource}
+    projectResource={projectResource}
+    typePartResource={typePartResource}
   />
 );
 Default.args = {
