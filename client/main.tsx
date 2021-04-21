@@ -24,6 +24,7 @@ export const App: React.VFC<Record<string, string>> = () => {
 
 const entryElement = document.createElement("div");
 entryElement.style.height = "100%";
+entryElement.style.overflow = "hidden";
 document.body.textContent = "";
 document.body.appendChild(entryElement);
 ReactDom.render(

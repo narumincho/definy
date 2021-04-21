@@ -32,6 +32,7 @@ export const HomePage: React.VFC<Props> = (props) => {
         gridTemplateRows: "32px 1fr",
         gap: 8,
         padding: 16,
+        width: "100%",
         height: "100%",
       })}
     >

@@ -16,9 +16,6 @@ const meta: Meta = {
   title: "Button",
   component: Button,
   argTypes,
-  parameters: {
-    layout: "centered",
-  },
 };
 export default meta;
 

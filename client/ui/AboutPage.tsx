@@ -15,6 +15,7 @@ export const AboutPage: React.VFC<Props> = (props) => {
         alignContent: "start",
         gap: 8,
         padding: 16,
+        width: "100%",
         height: "100%",
       })}
     >

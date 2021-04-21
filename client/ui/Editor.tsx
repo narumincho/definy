@@ -86,7 +86,9 @@ export const Editor: React.VFC<Props> = (props) => {
       className={css({
         display: "grid",
         gridTemplateColumns: "1fr 300px",
+        width: "100%",
         height: "100%",
+        overflow: "hidden",
       })}
     >
       <div

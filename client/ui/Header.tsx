@@ -23,6 +23,7 @@ export const Header: React.VFC<Props> = (props) => {
   return (
     <div
       className={css({
+        width: "100%",
         height: 48,
         backgroundColor: "#333",
         display: "grid",
