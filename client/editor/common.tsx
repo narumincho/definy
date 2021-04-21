@@ -1,61 +1,47 @@
 /* eslint-disable complexity */
 import * as React from "react";
-import * as d from "../../data";
 import {
   AccountIdDataOperation,
   AccountIdSelection,
-  AccountIdType,
   AccountIdValue,
   accountIdOperation,
 } from "./accountId";
-import { ImageSelection, ImageType, ImageValue, imageOperation } from "./image";
+import { ImageSelection, ImageValue, imageOperation } from "./image";
 import {
   ListDataOperation,
   ListSelection,
-  ListType,
   ListValue,
   listOperation,
 } from "./list";
 import {
   NumberDataOperation,
   NumberSelection,
-  NumberType,
   NumberValue,
   numberOperation,
 } from "./number";
 import {
   ProductDataOperation,
   ProductSelection,
-  ProductType,
   ProductValue,
   productOperation,
 } from "./product";
 import {
   ProjectIdDataOperation,
   ProjectIdSelection,
-  ProjectIdType,
   ProjectIdValue,
   projectIdOperation,
 } from "./projectId";
-import {
-  SumDataOperation,
-  SumSelection,
-  SumType,
-  SumValue,
-  sumOperation,
-} from "./sum";
+import { SumDataOperation, SumSelection, SumValue, sumOperation } from "./sum";
 import {
   TextDataOperation,
   TextSelection,
-  TextType,
   TextValue,
   textOperation,
 } from "./text";
-import { TimeSelection, TimeType, TimeValue, timeOperation } from "./time";
+import { TimeSelection, TimeValue, timeOperation } from "./time";
 import {
   TypePartIdDataOperation,
   TypePartIdSelection,
-  TypePartIdType,
   TypePartIdValue,
   typePartIdOperation,
 } from "./typePartId";
@@ -155,53 +141,11 @@ export type Value =
       value: TypePartIdValue;
     };
 
-const listValue = (value: ListValue): Value => ({ type: "list", value });
-const productValue = (value: ProductValue): Value => ({
+export const listValue = (value: ListValue): Value => ({ type: "list", value });
+export const productValue = (value: ProductValue): Value => ({
   type: "product",
   value,
 });
-
-export type Type =
-  | {
-      tag: "text";
-      textType: TextType;
-    }
-  | {
-      tag: "number";
-      numberType: NumberType;
-    }
-  | {
-      tag: "sum";
-      sumType: SumType;
-    }
-  | {
-      tag: "image";
-      imageType: ImageType;
-    }
-  | {
-      tag: "account";
-      accountType: AccountIdType;
-    }
-  | {
-      tag: "time";
-      timeType: TimeType;
-    }
-  | {
-      tag: "project";
-      projectType: ProjectIdType;
-    }
-  | {
-      tag: "list";
-      listType: ListType;
-    }
-  | {
-      tag: "product";
-      productType: ProductType;
-    }
-  | {
-      tag: "typePartId";
-      typePartIdType: TypePartIdType;
-    };
 
 export type CommonDataOperation =
   | {
@@ -237,28 +181,16 @@ export type CommonDataOperation =
       typePartIdDataOperation: TypePartIdDataOperation;
     };
 
-const moveUp = (
-  selection: Selection,
-  value: Value,
-  type: Type
-): Selection | undefined => {
-  if (
-    selection.tag === "list" &&
-    value.type === "list" &&
-    type.tag === "list"
-  ) {
+const moveUp = (selection: Selection, value: Value): Selection | undefined => {
+  if (selection.tag === "list" && value.type === "list") {
     return maybeMap(
-      listOperation.moveUp(selection.value, value.value, type.listType),
+      listOperation.moveUp(selection.value, value.value),
       selectionList
     );
   }
-  if (
-    selection.tag === "product" &&
-    value.type === "product" &&
-    type.tag === "product"
-  ) {
+  if (selection.tag === "product" && value.type === "product") {
     return maybeMap(
-      productOperation.moveUp(selection.value, value.value, type.productType),
+      productOperation.moveUp(selection.value, value.value),
       selectionProduct
     );
   }
@@ -266,26 +198,17 @@ const moveUp = (
 
 const moveDown = (
   selection: Selection,
-  value: Value,
-  type: Type
+  value: Value
 ): Selection | undefined => {
-  if (
-    selection.tag === "list" &&
-    value.type === "list" &&
-    type.tag === "list"
-  ) {
+  if (selection.tag === "list" && value.type === "list") {
     return maybeMap(
-      listOperation.moveDown(selection.value, value.value, type.listType),
+      listOperation.moveDown(selection.value, value.value),
       selectionList
     );
   }
-  if (
-    selection.tag === "product" &&
-    value.type === "product" &&
-    type.tag === "product"
-  ) {
+  if (selection.tag === "product" && value.type === "product") {
     return maybeMap(
-      productOperation.moveDown(selection.value, value.value, type.productType),
+      productOperation.moveDown(selection.value, value.value),
       selectionProduct
     );
   }
@@ -293,29 +216,26 @@ const moveDown = (
 
 const moveFirstChild = (
   selection: Selection | undefined,
-  value: Value,
-  type: Type
+  value: Value
 ): Selection | undefined => {
-  if (value.type === "list" && type.tag === "list") {
+  if (value.type === "list") {
     return maybeMap(
       listOperation.moveFirstChild(
         selection !== undefined && selection.tag === "list"
           ? selection.value
           : undefined,
-        value.value,
-        type.listType
+        value.value
       ),
       selectionList
     );
   }
-  if (value.type === "product" && type.tag === "product") {
+  if (value.type === "product") {
     return maybeMap(
       productOperation.moveFirstChild(
         selection !== undefined && selection.tag === "product"
           ? selection.value
           : undefined,
-        value.value,
-        type.productType
+        value.value
       ),
       selectionProduct
     );
@@ -325,30 +245,17 @@ const moveFirstChild = (
 const moveParent: ElementOperation<
   Selection,
   Value,
-  Type,
   CommonDataOperation
->["moveParent"] = (selection, value, type) => {
-  if (
-    selection.tag === "list" &&
-    value.type === "list" &&
-    type.tag === "list"
-  ) {
+>["moveParent"] = (selection, value) => {
+  if (selection.tag === "list" && value.type === "list") {
     return maybeMap(
-      listOperation.moveParent(selection.value, value.value, type.listType),
+      listOperation.moveParent(selection.value, value.value),
       selectionList
     );
   }
-  if (
-    selection.tag === "product" &&
-    value.type === "product" &&
-    type.tag === "product"
-  ) {
+  if (selection.tag === "product" && value.type === "product") {
     return maybeMap(
-      productOperation.moveParent(
-        selection.value,
-        value.value,
-        type.productType
-      ),
+      productOperation.moveParent(selection.value, value.value),
       selectionProduct
     );
   }
@@ -357,13 +264,11 @@ const moveParent: ElementOperation<
 const CommonElementSelectionView: ElementOperation<
   Selection,
   Value,
-  Type,
   CommonDataOperation
 >["selectionView"] = (props) => {
-  if (props.type.tag === "number" && props.value.type === "number") {
+  if (props.value.type === "number") {
     return (
       <numberOperation.selectionView
-        type={props.type.numberType}
         value={props.value.value}
         accountResource={props.accountResource}
         typePartResource={props.typePartResource}
@@ -384,10 +289,9 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "text" && props.value.type === "text") {
+  if (props.value.type === "text") {
     return (
       <textOperation.selectionView
-        type={props.type.textType}
         value={props.value.value}
         accountResource={props.accountResource}
         typePartResource={props.typePartResource}
@@ -408,10 +312,9 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "sum" && props.value.type === "sum") {
+  if (props.value.type === "sum") {
     return (
       <sumOperation.selectionView
-        type={props.type.sumType}
         value={props.value.value}
         accountResource={props.accountResource}
         typePartResource={props.typePartResource}
@@ -430,10 +333,9 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "image" && props.value.type === "image") {
+  if (props.value.type === "image") {
     return (
       <imageOperation.selectionView
-        type={props.type.imageType}
         value={props.value.value}
         accountResource={props.accountResource}
         typePartResource={props.typePartResource}
@@ -452,10 +354,9 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "account" && props.value.type === "account") {
+  if (props.value.type === "account") {
     return (
       <accountIdOperation.selectionView
-        type={props.type.accountType}
         value={props.value.value}
         accountResource={props.accountResource}
         typePartResource={props.typePartResource}
@@ -479,10 +380,9 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "time" && props.value.type === "time") {
+  if (props.value.type === "time") {
     return (
       <timeOperation.selectionView
-        type={props.type.timeType}
         value={props.value.value}
         accountResource={props.accountResource}
         typePartResource={props.typePartResource}
@@ -501,10 +401,9 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "project" && props.value.type === "project") {
+  if (props.value.type === "project") {
     return (
       <projectIdOperation.selectionView
-        type={props.type.projectType}
         value={props.value.value}
         accountResource={props.accountResource}
         typePartResource={props.typePartResource}
@@ -525,10 +424,9 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "list" && props.value.type === "list") {
+  if (props.value.type === "list") {
     return (
       <listOperation.selectionView
-        type={props.type.listType}
         value={props.value.value}
         accountResource={props.accountResource}
         typePartResource={props.typePartResource}
@@ -549,10 +447,9 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "product" && props.value.type === "product") {
+  if (props.value.type === "product") {
     return (
       <productOperation.selectionView
-        type={props.type.productType}
         value={props.value.value}
         accountResource={props.accountResource}
         typePartResource={props.typePartResource}
@@ -576,10 +473,9 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "typePartId" && props.value.type === "typePartId") {
+  if (props.value.type === "typePartId") {
     return (
       <typePartIdOperation.selectionView
-        type={props.type.typePartIdType}
         value={props.value.value}
         accountResource={props.accountResource}
         typePartResource={props.typePartResource}
@@ -600,7 +496,7 @@ const CommonElementSelectionView: ElementOperation<
   }
   return (
     <div>
-      値と型が違う! 型{JSON.stringify(props.type)} 値
+      common で 値のパターンを記述忘れている
       {JSON.stringify(props.value)}
     </div>
   );
@@ -609,13 +505,11 @@ const CommonElementSelectionView: ElementOperation<
 const CommonElementDetailView: ElementOperation<
   Selection,
   Value,
-  Type,
   CommonDataOperation
 >["detailView"] = (props) => {
-  if (props.type.tag === "number" && props.value.type === "number") {
+  if (props.value.type === "number") {
     return (
       <numberOperation.detailView
-        type={props.type.numberType}
         value={props.value.value}
         selection={
           props.selection !== undefined && props.selection.tag === "number"
@@ -633,10 +527,9 @@ const CommonElementDetailView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "text" && props.value.type === "text") {
+  if (props.value.type === "text") {
     return (
       <textOperation.detailView
-        type={props.type.textType}
         value={props.value.value}
         selection={
           props.selection !== undefined && props.selection.tag === "text"
@@ -657,10 +550,9 @@ const CommonElementDetailView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "sum" && props.value.type === "sum") {
+  if (props.value.type === "sum") {
     return (
       <sumOperation.detailView
-        type={props.type.sumType}
         value={props.value.value}
         selection={
           props.selection !== undefined && props.selection.tag === "sum"
@@ -676,10 +568,9 @@ const CommonElementDetailView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "image" && props.value.type === "image") {
+  if (props.value.type === "image") {
     return (
       <imageOperation.detailView
-        type={props.type.imageType}
         value={props.value.value}
         selection={
           props.selection !== undefined && props.selection.tag === "image"
@@ -695,10 +586,9 @@ const CommonElementDetailView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "account" && props.value.type === "account") {
+  if (props.value.type === "account") {
     return (
       <accountIdOperation.detailView
-        type={props.type.accountType}
         value={props.value.value}
         selection={
           props.selection !== undefined && props.selection.tag === "account"
@@ -716,10 +606,9 @@ const CommonElementDetailView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "project" && props.value.type === "project") {
+  if (props.value.type === "project") {
     return (
       <projectIdOperation.detailView
-        type={props.type.projectType}
         value={props.value.value}
         selection={
           props.selection !== undefined && props.selection.tag === "project"
@@ -737,10 +626,9 @@ const CommonElementDetailView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "time" && props.value.type === "time") {
+  if (props.value.type === "time") {
     return (
       <timeOperation.detailView
-        type={props.type.timeType}
         value={props.value.value}
         selection={
           props.selection !== undefined && props.selection.tag === "time"
@@ -756,10 +644,9 @@ const CommonElementDetailView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "list" && props.value.type === "list") {
+  if (props.value.type === "list") {
     return (
       <listOperation.detailView
-        type={props.type.listType}
         value={props.value.value}
         selection={
           props.selection !== undefined && props.selection.tag === "list"
@@ -780,10 +667,9 @@ const CommonElementDetailView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "product" && props.value.type === "product") {
+  if (props.value.type === "product") {
     return (
       <productOperation.detailView
-        type={props.type.productType}
         value={props.value.value}
         selection={
           props.selection !== undefined && props.selection.tag === "product"
@@ -804,10 +690,9 @@ const CommonElementDetailView: ElementOperation<
       />
     );
   }
-  if (props.type.tag === "typePartId" && props.value.type === "typePartId") {
+  if (props.value.type === "typePartId") {
     return (
       <typePartIdOperation.detailView
-        type={props.type.typePartIdType}
         value={props.value.value}
         selection={
           props.selection !== undefined && props.selection.tag === "typePartId"
@@ -829,7 +714,6 @@ const CommonElementDetailView: ElementOperation<
 export const commonElement: ElementOperation<
   Selection,
   Value,
-  Type,
   CommonDataOperation
 > = {
   moveUp,

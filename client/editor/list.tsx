@@ -1,11 +1,5 @@
 import * as React from "react";
-import {
-  CommonDataOperation,
-  Selection,
-  Type,
-  Value,
-  commonElement,
-} from "./common";
+import { CommonDataOperation, Selection, Value, commonElement } from "./common";
 import { Button } from "../ui/Button";
 import type { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
@@ -15,14 +9,10 @@ export type ListSelection = {
   readonly selection: Selection | undefined;
 };
 
-export type ListType = {
-  readonly elementType: Type;
-  readonly canEdit: boolean;
-  readonly isDirectionColumn?: boolean;
-};
-
 export type ListValue = {
   readonly items: ReadonlyArray<Value>;
+  readonly canEdit: boolean;
+  readonly isDirectionColumn?: boolean;
 };
 
 export type ListDataOperation =
@@ -44,8 +34,7 @@ export type ListDataOperation =
 
 const moveUp = (
   selection: ListSelection,
-  value: ListValue,
-  type: ListType
+  value: ListValue
 ): ListSelection | undefined => {
   const item = value.items[selection.index];
   if (selection.selection === undefined || item === undefined) {
@@ -57,18 +46,13 @@ const moveUp = (
   }
   return {
     index: selection.index,
-    selection: commonElement.moveUp(
-      selection.selection,
-      item,
-      type.elementType
-    ),
+    selection: commonElement.moveUp(selection.selection, item),
   };
 };
 
 const moveDown = (
   selection: ListSelection,
-  value: ListValue,
-  type: ListType
+  value: ListValue
 ): ListSelection | undefined => {
   const item = value.items[selection.index];
   if (selection.selection === undefined || item === undefined) {
@@ -80,18 +64,13 @@ const moveDown = (
   }
   return {
     index: selection.index,
-    selection: commonElement.moveDown(
-      selection.selection,
-      item,
-      type.elementType
-    ),
+    selection: commonElement.moveDown(selection.selection, item),
   };
 };
 
 const moveFirstChild = (
   selection: ListSelection | undefined,
-  value: ListValue,
-  type: ListType
+  value: ListValue
 ): ListSelection | undefined => {
   if (selection === undefined) {
     if (value.items.length > 0) {
@@ -108,48 +87,37 @@ const moveFirstChild = (
   }
   return {
     index: selection.index,
-    selection: commonElement.moveFirstChild(
-      selection.selection,
-      item,
-      type.elementType
-    ),
+    selection: commonElement.moveFirstChild(selection.selection, item),
   };
 };
 
 const moveParent: ElementOperation<
   ListSelection,
   ListValue,
-  ListType,
   ListDataOperation
->["moveParent"] = (selection, value, type) => {
+>["moveParent"] = (selection, value) => {
   const item = value.items[selection.index];
   if (selection.selection === undefined || item === undefined) {
     return undefined;
   }
   return {
     index: selection.index,
-    selection: commonElement.moveParent(
-      selection.selection,
-      item,
-      type.elementType
-    ),
+    selection: commonElement.moveParent(selection.selection, item),
   };
 };
 
 const ListSelectionView: ElementOperation<
   ListSelection,
   ListValue,
-  ListType,
   ListDataOperation
 >["selectionView"] = (props) => {
-  const elementType = props.type;
   return (
     <div
       className={css({
         display: "grid",
         padding: 8,
-        gridAutoFlow: props.type.isDirectionColumn ? "column" : "row",
-        gridTemplateColumns: props.type.isDirectionColumn
+        gridAutoFlow: props.value.isDirectionColumn ? "column" : "row",
+        gridTemplateColumns: props.value.isDirectionColumn
           ? "1fr 1fr 1fr"
           : "1fr",
       })}
@@ -184,7 +152,6 @@ const ListSelectionView: ElementOperation<
           <commonElement.selectionView
             key={index}
             value={v}
-            type={elementType.elementType}
             selection={
               props.selection !== undefined && props.selection.index === index
                 ? props.selection.selection
@@ -209,7 +176,7 @@ const ListSelectionView: ElementOperation<
               })
             }
           />
-          {props.type.canEdit ? (
+          {props.value.canEdit ? (
             <Button
               onClick={() =>
                 props.onRequestDataOperation({ tag: "delete", index })
@@ -222,7 +189,7 @@ const ListSelectionView: ElementOperation<
           )}
         </div>
       ))}
-      {props.type.canEdit ? (
+      {props.value.canEdit ? (
         <Button
           onClick={() => props.onRequestDataOperation({ tag: "addLast" })}
         >
@@ -238,14 +205,13 @@ const ListSelectionView: ElementOperation<
 const ListDetailView: ElementOperation<
   ListSelection,
   ListValue,
-  ListType,
   ListDataOperation
 >["detailView"] = (props) => {
   if (props.selection === undefined) {
     return (
       <div>
         <div>要素数: {props.value.items.length}</div>
-        {props.type.canEdit ? (
+        {props.value.canEdit ? (
           <Button
             onClick={() => props.onRequestDataOperation({ tag: "deleteAll" })}
           >
@@ -265,7 +231,7 @@ const ListDetailView: ElementOperation<
   return (
     <div>
       <div>リストインデックス: {index}</div>
-      {props.selection.selection === undefined && props.type.canEdit ? (
+      {props.selection.selection === undefined && props.value.canEdit ? (
         <Button
           onClick={() => props.onRequestDataOperation({ tag: "delete", index })}
         >
@@ -275,7 +241,6 @@ const ListDetailView: ElementOperation<
         <></>
       )}
       <commonElement.detailView
-        type={props.type.elementType}
         value={item}
         selection={props.selection.selection}
         accountResource={props.accountResource}
@@ -298,7 +263,6 @@ const ListDetailView: ElementOperation<
 export const listOperation: ElementOperation<
   ListSelection,
   ListValue,
-  ListType,
   ListDataOperation
 > = {
   moveUp,

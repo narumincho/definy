@@ -6,7 +6,7 @@ import { UseDefinyAppResult } from "../hook/useDefinyApp";
  *
  * 移動時の動作や, 左のSelectionView, 右のDetailView に表示するコンポーネントを指定する必要がある
  */
-export type ElementOperation<Selection, Value, Type, DataOperation> = {
+export type ElementOperation<Selection, Value, DataOperation> = {
   /**
    * 上に移動するときにどのように移動するかどうかを決める
    *
@@ -17,8 +17,7 @@ export type ElementOperation<Selection, Value, Type, DataOperation> = {
    */
   readonly moveUp: (
     selection: Selection,
-    value: Value,
-    type: Type
+    value: Value
   ) => Selection | undefined;
   /**
    * 下に移動するときにどのように移動するかどうかを決める
@@ -30,8 +29,7 @@ export type ElementOperation<Selection, Value, Type, DataOperation> = {
    */
   readonly moveDown: (
     selection: Selection,
-    value: Value,
-    type: Type
+    value: Value
   ) => Selection | undefined;
 
   /**
@@ -43,8 +41,7 @@ export type ElementOperation<Selection, Value, Type, DataOperation> = {
    */
   readonly moveFirstChild: (
     selection: Selection | undefined,
-    value: Value,
-    type: Type
+    value: Value
   ) => Selection | undefined;
 
   /**
@@ -58,8 +55,7 @@ export type ElementOperation<Selection, Value, Type, DataOperation> = {
    */
   readonly moveParent: (
     selection: Selection,
-    value: Value,
-    type: Type
+    value: Value
   ) => Selection | undefined;
 
   /**
@@ -72,7 +68,6 @@ export type ElementOperation<Selection, Value, Type, DataOperation> = {
     > & {
       readonly selection: Selection | undefined;
       readonly value: Value;
-      readonly type: Type;
       readonly onJump: UseDefinyAppResult["jump"];
       readonly onChangeSelection: (selection: Selection) => void;
       readonly onRequestDataOperation: (operation: DataOperation) => void;
@@ -88,7 +83,6 @@ export type ElementOperation<Selection, Value, Type, DataOperation> = {
       "accountResource" | "projectResource" | "language" | "typePartResource"
     > & {
       readonly value: Value;
-      readonly type: Type;
       readonly selection: Selection | undefined;
       readonly onJump: UseDefinyAppResult["jump"];
       readonly onRequestDataOperation: (operation: DataOperation) => void;

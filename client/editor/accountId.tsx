@@ -11,9 +11,6 @@ export type AccountIdSelection = never;
 
 export type AccountIdValue = {
   readonly accountId: d.AccountId;
-};
-
-export type AccountIdType = {
   readonly canEdit: boolean;
 };
 
@@ -24,7 +21,6 @@ export type AccountIdDataOperation = {
 const AccountIdSelectionView: ElementOperation<
   AccountIdSelection,
   AccountIdValue,
-  AccountIdType,
   AccountIdDataOperation
 >["selectionView"] = (props) => {
   React.useEffect(() => {
@@ -86,7 +82,6 @@ const AccountIdSelectionView: ElementOperation<
 const AccountIdDetailView: ElementOperation<
   AccountIdSelection,
   AccountIdValue,
-  AccountIdType,
   AccountIdDataOperation
 >["detailView"] = (props) => {
   return (
@@ -104,7 +99,6 @@ const AccountIdDetailView: ElementOperation<
 export const accountIdOperation: ElementOperation<
   AccountIdSelection,
   AccountIdValue,
-  AccountIdType,
   AccountIdDataOperation
 > = {
   moveUp: () => undefined,

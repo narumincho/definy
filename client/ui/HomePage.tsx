@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
-import { Editor } from "./Editor";
+import { Editor, Value } from "./Editor";
 import { Link } from "./Link";
 import { ProjectCardSkeleton } from "./ProjectCard";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
@@ -151,32 +151,22 @@ const TopProjectList: React.VFC<
           })}
         >
           <Editor
-            productType={{
-              items: [
-                {
-                  name: "おすすめのプロジェクト",
-                  type: {
-                    tag: "list",
-                    listType: {
-                      elementType: {
-                        tag: "project",
-                        projectType: { canEdit: false },
-                      },
-                      canEdit: false,
-                      isDirectionColumn: true,
-                    },
-                  },
-                },
-              ],
-            }}
             product={{
               items: [
                 {
-                  type: "list",
+                  name: "おすすめのプロジェクト",
                   value: {
-                    items: props.topProjectsLoadingState.projectIdList.map(
-                      (projectId) => ({ type: "project", value: projectId })
-                    ),
+                    type: "list",
+                    value: {
+                      canEdit: false,
+                      isDirectionColumn: true,
+                      items: props.topProjectsLoadingState.projectIdList.map(
+                        (projectId): Value => ({
+                          type: "project",
+                          value: { canEdit: false, projectId },
+                        })
+                      ),
+                    },
                   },
                 },
               ],

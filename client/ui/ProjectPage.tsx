@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
-import { Editor } from "./Editor";
+import { Editor, Value } from "./Editor";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type Props = Pick<
@@ -45,81 +45,62 @@ export const ProjectPage: React.VFC<Props> = (props) => {
   const project = projectState.dataWithTime.data;
   return (
     <Editor
-      productType={{
-        headItem: {
-          name: "プロジェクト名",
-          textType: { canEdit: false },
-          hasIcon: true,
-        },
-        items: [
-          {
-            name: "画像",
-            type: { tag: "image", imageType: { canEdit: false } },
-          },
-          {
-            name: "作成者",
-            type: { tag: "account", accountType: { canEdit: false } },
-          },
-          {
-            name: "作成日時",
-            type: { tag: "time", timeType: { canEdit: false } },
-          },
-          {
-            name: "プロジェクトID",
-            type: { tag: "text", textType: { canEdit: false } },
-          },
-          {
-            name: "型パーツ",
-            type: {
-              tag: "list",
-              listType: {
-                canEdit: true,
-                elementType: {
-                  tag: "typePartId",
-                  typePartIdType: { canEdit: true },
-                },
-              },
-            },
-          },
-        ],
-      }}
       product={{
         headItem: {
-          value: project.name,
+          name: "プロジェクト名",
+          value: { canEdit: false, text: project.name },
           iconHash: project.iconHash,
         },
         items: [
           {
-            type: "image",
+            name: "画像",
             value: {
-              alternativeText: project.name + "の画像",
-              value: project.imageHash,
+              type: "image",
+              value: {
+                alternativeText: project.name + "の画像",
+                value: project.imageHash,
+                canEdit: false,
+              },
             },
           },
           {
-            type: "account",
-            value: { accountId: project.createAccountId },
-          },
-          {
-            type: "time",
-            value: project.createTime,
-          },
-          {
-            type: "text",
-            value: props.projectId,
-          },
-          {
-            type: "list",
+            name: "作成者",
             value: {
-              items:
-                typePartIdListInProject?._ === "Loaded"
-                  ? typePartIdListInProject.dataWithTime.data.map(
-                      (typePartId) => ({
-                        type: "typePartId",
-                        value: typePartId,
-                      })
-                    )
-                  : [],
+              type: "account",
+              value: { accountId: project.createAccountId, canEdit: false },
+            },
+          },
+          {
+            name: "作成日時",
+            value: {
+              type: "time",
+              value: { time: project.createTime, canEdit: false },
+            },
+          },
+          {
+            name: "プロジェクトID",
+            value: {
+              type: "text",
+              value: { text: props.projectId, canEdit: false },
+            },
+          },
+          {
+            name: "型パーツ",
+            value: {
+              type: "list",
+              value: {
+                canEdit: true,
+                isDirectionColumn: true,
+                items:
+                  typePartIdListInProject?._ === "Loaded"
+                    ? typePartIdListInProject.dataWithTime.data.map(
+                        (typePartId): Value => ({
+                          type: "typePartId",
+                          value: { canEdit: false, typePartId },
+                        })
+                      )
+                    : [],
+              },
             },
           },
         ],

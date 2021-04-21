@@ -4,23 +4,23 @@ import type { ElementOperation } from "./ElementOperation";
 import { Link } from "../ui/Link";
 
 export type TypePartIdSelection = never;
-export type TypePartIdValue = d.TypePartId;
-export type TypePartIdType = {
+export type TypePartIdValue = {
+  readonly typePartId: d.TypePartId;
   readonly canEdit: boolean;
 };
+
 export type TypePartIdDataOperation = never;
 
 const TypePartIdSelectionView: ElementOperation<
   TypePartIdSelection,
   TypePartIdValue,
-  TypePartIdType,
   TypePartIdDataOperation
 >["selectionView"] = (props) => {
   React.useEffect(() => {
-    props.typePartResource.requestToServerIfEmpty(props.value);
+    props.typePartResource.requestToServerIfEmpty(props.value.typePartId);
   }, []);
   const typePartResource = props.typePartResource.getFromMemoryCache(
-    props.value
+    props.value.typePartId
   );
   if (typePartResource === undefined) {
     return (
@@ -28,7 +28,7 @@ const TypePartIdSelectionView: ElementOperation<
         onJump={props.onJump}
         urlData={{
           language: props.language,
-          location: d.Location.TypePart(props.value),
+          location: d.Location.TypePart(props.value.typePartId),
         }}
       >
         リクエスト準備中
@@ -41,7 +41,7 @@ const TypePartIdSelectionView: ElementOperation<
         onJump={props.onJump}
         urlData={{
           language: props.language,
-          location: d.Location.TypePart(props.value),
+          location: d.Location.TypePart(props.value.typePartId),
         }}
       >
         削除された型パーツ
@@ -54,7 +54,7 @@ const TypePartIdSelectionView: ElementOperation<
         onJump={props.onJump}
         urlData={{
           language: props.language,
-          location: d.Location.TypePart(props.value),
+          location: d.Location.TypePart(props.value.typePartId),
         }}
       >
         取得に失敗
@@ -67,7 +67,7 @@ const TypePartIdSelectionView: ElementOperation<
         onJump={props.onJump}
         urlData={{
           language: props.language,
-          location: d.Location.TypePart(props.value),
+          location: d.Location.TypePart(props.value.typePartId),
         }}
       >
         取得中
@@ -79,7 +79,7 @@ const TypePartIdSelectionView: ElementOperation<
       onJump={props.onJump}
       urlData={{
         language: props.language,
-        location: d.Location.TypePart(props.value),
+        location: d.Location.TypePart(props.value.typePartId),
       }}
     >
       {typePartResource.dataWithTime.data.name}
@@ -90,7 +90,6 @@ const TypePartIdSelectionView: ElementOperation<
 const TypePartIdDetailView: ElementOperation<
   TypePartIdSelection,
   TypePartIdValue,
-  TypePartIdType,
   TypePartIdDataOperation
 >["detailView"] = () => {
   return <div>検索欄と, 候補の選択肢</div>;
@@ -99,7 +98,6 @@ const TypePartIdDetailView: ElementOperation<
 export const typePartIdOperation: ElementOperation<
   TypePartIdSelection,
   TypePartIdValue,
-  TypePartIdType,
   TypePartIdDataOperation
 > = {
   moveUp: () => undefined,
