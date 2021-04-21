@@ -8,8 +8,6 @@ export type ImageSelection = never;
 export type ImageValue = {
   readonly alternativeText: string;
   readonly value: d.ImageHash;
-};
-export type ImageType = {
   readonly canEdit: boolean;
 };
 export type ImageDataOperation = never;
@@ -17,7 +15,6 @@ export type ImageDataOperation = never;
 const ImageSelectionView: ElementOperation<
   ImageSelection,
   ImageValue,
-  ImageType,
   ImageDataOperation
 >["selectionView"] = (props) => {
   return (
@@ -40,7 +37,6 @@ const ImageSelectionView: ElementOperation<
 const ImageDetailView: ElementOperation<
   ImageSelection,
   ImageValue,
-  ImageType,
   ImageDataOperation
 >["detailView"] = (props) => {
   return (
@@ -63,7 +59,6 @@ const ImageDetailView: ElementOperation<
 export const imageOperation: ElementOperation<
   ImageSelection,
   ImageValue,
-  ImageType,
   ImageDataOperation
 > = {
   moveUp: () => undefined,

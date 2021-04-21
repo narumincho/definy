@@ -12,6 +12,7 @@ export const Image: React.VFC<{
 }> = (props) => {
   return (
     <img
+      alt={props.alt}
       className={css({
         width: props.width,
         height: props.height,

@@ -1,17 +1,10 @@
 import * as React from "react";
 import * as d from "../../data";
-import {
-  CommonDataOperation,
-  Selection,
-  Type,
-  Value,
-  commonElement,
-} from "./common";
+import { CommonDataOperation, Selection, Value, commonElement } from "./common";
 import {
   HeadTextSelectionView,
   TextDataOperation,
   TextSelection,
-  TextType,
   TextValue,
   textOperation,
 } from "./text";
@@ -34,23 +27,20 @@ export type ProductSelection =
       selection: Selection | undefined;
     };
 
-export type ProductType = {
-  headItem?: {
-    name: string;
-    textType: TextType;
-    hasIcon: boolean;
-  };
-  items: ReadonlyArray<{ name: string; type: Type }>;
-};
-
 export type ProductValue = {
-  headItem?: HeadItem;
-  items: ReadonlyArray<Value>;
+  readonly headItem?: HeadItem;
+  readonly items: ReadonlyArray<Item>;
 };
 
 export type HeadItem = {
-  value: TextValue;
-  iconHash?: d.ImageHash;
+  readonly name: string;
+  readonly value: TextValue;
+  readonly iconHash?: d.ImageHash;
+};
+
+export type Item = {
+  readonly name: string;
+  readonly value: Value;
 };
 
 export type ProductDataOperation =
@@ -66,42 +56,28 @@ export type ProductDataOperation =
 
 const moveUp = (
   selection: ProductSelection,
-  product: ProductValue,
-  type: ProductType
+  value: ProductValue
 ): ProductSelection | undefined => {
   switch (selection.tag) {
     case "icon":
       return undefined;
     case "head": {
       // head の要素がないか, head自体を選択していた場合は外へ
-      if (
-        product.headItem === undefined ||
-        selection.selection === undefined ||
-        type.headItem === undefined
-      ) {
+      if (value.headItem === undefined || selection.selection === undefined) {
         return undefined;
       }
       return {
         tag: "head",
-        selection: textOperation.moveUp(
-          selection,
-          product.headItem.value,
-          type.headItem.textType
-        ),
+        selection: textOperation.moveUp(selection, value.headItem.value),
       };
     }
     case "content": {
-      const item = product.items[selection.index];
-      const itemType = type.items[selection.index];
+      const item = value.items[selection.index];
       // 要素が存在しない, 要素を自体を選択している場合
-      if (
-        item === undefined ||
-        selection.selection === undefined ||
-        itemType === undefined
-      ) {
-        const lastIndex = Math.min(selection.index - 1, type.items.length - 1);
+      if (item === undefined || selection.selection === undefined) {
+        const lastIndex = Math.min(selection.index - 1, value.items.length - 1);
         if (lastIndex < 0) {
-          if (type.headItem !== undefined) {
+          if (value.headItem !== undefined) {
             return { tag: "head", selection: undefined };
           }
           return undefined;
@@ -111,11 +87,7 @@ const moveUp = (
       return {
         tag: "content",
         index: selection.index,
-        selection: commonElement.moveUp(
-          selection.selection,
-          item,
-          itemType.type
-        ),
+        selection: commonElement.moveUp(selection.selection, item.value),
       };
     }
   }
@@ -123,49 +95,35 @@ const moveUp = (
 
 const moveDown = (
   selection: ProductSelection,
-  product: ProductValue,
-  type: ProductType
+  value: ProductValue
 ): ProductSelection | undefined => {
   switch (selection.tag) {
     case "icon": {
-      if (type.headItem !== undefined) {
+      if (value.headItem !== undefined) {
         return { tag: "head", selection: undefined };
       }
-      if (type.items.length >= 1) {
+      if (value.items.length >= 1) {
         return { tag: "content", index: 0, selection: undefined };
       }
       return undefined;
     }
     case "head": {
-      if (
-        product.headItem === undefined ||
-        selection.selection === undefined ||
-        type.headItem === undefined
-      ) {
-        if (product.items.length >= 1) {
+      if (value.headItem === undefined || selection.selection === undefined) {
+        if (value.items.length >= 1) {
           return { tag: "content", index: 0, selection: undefined };
         }
         return undefined;
       }
       return {
         tag: "head",
-        selection: textOperation.moveDown(
-          selection,
-          product.headItem.value,
-          type.headItem.textType
-        ),
+        selection: textOperation.moveDown(selection, value.headItem.value),
       };
     }
     case "content": {
-      const item = product.items[selection.index];
-      const itemType = type.items[selection.index];
-      if (
-        item === undefined ||
-        selection.selection === undefined ||
-        itemType === undefined
-      ) {
+      const item = value.items[selection.index];
+      if (item === undefined || selection.selection === undefined) {
         const nextIndex = selection.index + 1;
-        if (type.items.length <= nextIndex) {
+        if (value.items.length <= nextIndex) {
           return undefined;
         }
         return {
@@ -177,11 +135,7 @@ const moveDown = (
       return {
         tag: "content",
         index: selection.index,
-        selection: commonElement.moveDown(
-          selection.selection,
-          item,
-          itemType.type
-        ),
+        selection: commonElement.moveDown(selection.selection, item.value),
       };
     }
   }
@@ -190,40 +144,39 @@ const moveDown = (
 const moveFirstChild: ElementOperation<
   ProductSelection,
   ProductValue,
-  ProductType,
   ProductDataOperation
 >["moveFirstChild"] = (
   selection: ProductSelection | undefined,
-  value: ProductValue,
-  type: ProductType
+  value: ProductValue
 ): ProductSelection | undefined => {
   if (selection === undefined) {
-    return firstChildValue(value, type);
+    return firstChildValue(value);
   }
   switch (selection.tag) {
     case "icon": {
-      if (type.headItem === undefined || !type.headItem.hasIcon) {
+      if (
+        value.headItem === undefined ||
+        value.headItem.iconHash !== undefined
+      ) {
         return undefined;
       }
       return { tag: "icon" };
     }
     case "head": {
-      if (value.headItem === undefined || type.headItem === undefined) {
+      if (value.headItem === undefined) {
         return undefined;
       }
       return {
         tag: "head",
         selection: textOperation.moveFirstChild(
           selection.selection,
-          value.headItem.value,
-          type.headItem.textType
+          value.headItem.value
         ),
       };
     }
     case "content": {
       const item = value.items[selection.index];
-      const itemType = type.items[selection.index];
-      if (item === undefined || itemType === undefined) {
+      if (item === undefined) {
         return undefined;
       }
       return {
@@ -231,22 +184,18 @@ const moveFirstChild: ElementOperation<
         index: selection.index,
         selection: commonElement.moveFirstChild(
           selection.selection,
-          item,
-          itemType.type
+          item.value
         ),
       };
     }
   }
 };
 
-const firstChildValue = (
-  value: ProductValue,
-  type: ProductType
-): ProductSelection | undefined => {
-  if (type.headItem !== undefined) {
+const firstChildValue = (value: ProductValue): ProductSelection | undefined => {
+  if (value.headItem !== undefined) {
     return { tag: "head", selection: undefined };
   }
-  if (type.items.length !== 0) {
+  if (value.items.length !== 0) {
     return { tag: "content", index: 0, selection: undefined };
   }
   return undefined;
@@ -255,48 +204,30 @@ const firstChildValue = (
 const moveParent: ElementOperation<
   ProductSelection,
   ProductValue,
-  ProductType,
   ProductDataOperation
->["moveParent"] = (selection, value, type) => {
+>["moveParent"] = (selection, value) => {
   switch (selection.tag) {
     case "icon": {
       return undefined;
     }
     case "head": {
-      if (
-        selection.selection === undefined ||
-        value.headItem === undefined ||
-        type.headItem === undefined
-      ) {
+      if (selection.selection === undefined || value.headItem === undefined) {
         return undefined;
       }
       return {
         tag: "head",
-        selection: textOperation.moveParent(
-          selection,
-          value.headItem.value,
-          type.headItem.textType
-        ),
+        selection: textOperation.moveParent(selection, value.headItem.value),
       };
     }
     case "content": {
       const item = value.items[selection.index];
-      const itemType = type.items[selection.index];
-      if (
-        selection.selection === undefined ||
-        item === undefined ||
-        itemType === undefined
-      ) {
+      if (selection.selection === undefined || item === undefined) {
         return undefined;
       }
       return {
         tag: "content",
         index: selection.index,
-        selection: commonElement.moveParent(
-          selection.selection,
-          item,
-          itemType.type
-        ),
+        selection: commonElement.moveParent(selection.selection, item.value),
       };
     }
   }
@@ -305,7 +236,6 @@ const moveParent: ElementOperation<
 export const ProductSelectionView: ElementOperation<
   ProductSelection,
   ProductValue,
-  ProductType,
   ProductDataOperation
 >["selectionView"] = (props) => {
   return (
@@ -317,8 +247,7 @@ export const ProductSelectionView: ElementOperation<
         padding: 8,
       })}
     >
-      {props.value.headItem === undefined ||
-      props.type.headItem === undefined ? (
+      {props.value.headItem === undefined ? (
         <></>
       ) : (
         <div
@@ -363,8 +292,7 @@ export const ProductSelectionView: ElementOperation<
             onSelect={(selection) => {
               props.onChangeSelection({ tag: "head", selection });
             }}
-            name={props.type.headItem.name}
-            textType={props.type.headItem.textType}
+            name={props.value.headItem.name}
             productSelection={props.selection}
             textValue={props.value.headItem.value}
             accountResource={props.accountResource}
@@ -378,7 +306,7 @@ export const ProductSelectionView: ElementOperation<
           />
         </div>
       )}
-      {props.type.items.map((itemType, index) => {
+      {props.value.items.map((itemType, index) => {
         const item = props.value.items[index];
         if (item === undefined) {
           return <div>指定したメンバーの値がない {JSON.stringify(item)}</div>;
@@ -394,9 +322,8 @@ export const ProductSelectionView: ElementOperation<
               });
             }}
             name={itemType.name}
-            type={itemType.type}
             itemSelection={getContentItemSelection(props.selection, index)}
-            value={item}
+            value={item.value}
             projectResource={props.projectResource}
             accountResource={props.accountResource}
             typePartResource={props.typePartResource}
@@ -452,7 +379,6 @@ const HeadItemView: React.VFC<
   > & {
     readonly onSelect: (selection: TextSelection | undefined) => void;
     readonly name: string;
-    readonly textType: TextType;
     readonly textValue: TextValue;
     readonly productSelection: ProductSelection | undefined;
     readonly onJump: UseDefinyAppResult["jump"];
@@ -491,7 +417,6 @@ const HeadItemView: React.VFC<
       tabIndex={0}
     >
       <HeadTextSelectionView
-        type={props.textType}
         value={props.textValue}
         accountResource={props.accountResource}
         projectResource={props.projectResource}
@@ -518,7 +443,6 @@ const ItemView: React.VFC<
   > & {
     readonly onSelect: (selection: Selection | undefined) => void;
     readonly name: string;
-    readonly type: Type;
     readonly value: Value;
     readonly itemSelection: ItemSelection;
     readonly onJump: UseDefinyAppResult["jump"];
@@ -568,7 +492,6 @@ const ItemView: React.VFC<
         </div>
       </div>
       <commonElement.selectionView
-        type={props.type}
         value={props.value}
         accountResource={props.accountResource}
         projectResource={props.projectResource}
@@ -590,7 +513,6 @@ const ItemView: React.VFC<
 const ProductDetailView: ElementOperation<
   ProductSelection,
   ProductValue,
-  ProductType,
   ProductDataOperation
 >["detailView"] = (props) => {
   if (props.selection === undefined) {
@@ -598,10 +520,7 @@ const ProductDetailView: ElementOperation<
   }
   switch (props.selection.tag) {
     case "head":
-      if (
-        props.value.headItem === undefined ||
-        props.type.headItem === undefined
-      ) {
+      if (props.value.headItem === undefined) {
         return <div>headItemがないのに選択している</div>;
       }
       return (
@@ -618,11 +537,10 @@ const ProductDetailView: ElementOperation<
                 fontSize: 24,
               })}
             >
-              {props.type.headItem.name}
+              {props.value.headItem.name}
             </div>
           </div>
           <textOperation.detailView
-            type={props.type.headItem.textType}
             value={props.value.headItem.value}
             selection={props.selection.selection}
             projectResource={props.projectResource}
@@ -641,8 +559,7 @@ const ProductDetailView: ElementOperation<
     case "content": {
       const index = props.selection.index;
       const item = props.value.items[index];
-      const itemType = props.type.items[index];
-      if (item === undefined || itemType === undefined) {
+      if (item === undefined) {
         return <div>指定した要素が存在しない</div>;
       }
       return (
@@ -659,12 +576,11 @@ const ProductDetailView: ElementOperation<
                 fontSize: 24,
               })}
             >
-              {itemType.name}
+              {item.name}
             </div>
           </div>
           <commonElement.detailView
-            type={itemType.type}
-            value={item}
+            value={item.value}
             selection={props.selection.selection}
             accountResource={props.accountResource}
             projectResource={props.projectResource}
@@ -688,7 +604,6 @@ const ProductDetailView: ElementOperation<
 export const productOperation: ElementOperation<
   ProductSelection,
   ProductValue,
-  ProductType,
   ProductDataOperation
 > = {
   moveUp,

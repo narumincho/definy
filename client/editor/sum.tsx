@@ -4,17 +4,14 @@ import { css } from "@emotion/css";
 
 export type SumSelection = never;
 export type SumValue = {
-  index: number;
-};
-export type SumType = {
   valueList: ReadonlyArray<string>;
+  index: number;
 };
 export type SumDataOperation = never;
 
 const SumSelectionView: ElementOperation<
   SumSelection,
   SumValue,
-  SumType,
   SumDataOperation
 >["selectionView"] = (props) => {
   return (
@@ -25,7 +22,7 @@ const SumSelectionView: ElementOperation<
         gridAutoFlow: "column",
       })}
     >
-      {props.type.valueList.map((value, index) => (
+      {props.value.valueList.map((value, index) => (
         <div
           key={value}
           className={css({
@@ -45,7 +42,6 @@ const SumSelectionView: ElementOperation<
 const SumDetailView: ElementOperation<
   SumSelection,
   SumValue,
-  SumType,
   SumDataOperation
 >["detailView"] = (props) => {
   return (
@@ -55,7 +51,7 @@ const SumDetailView: ElementOperation<
       })}
     >
       option(
-      {props.type.valueList.join(",")})
+      {props.value.valueList.join(",")})
     </div>
   );
 };
@@ -63,7 +59,6 @@ const SumDetailView: ElementOperation<
 export const sumOperation: ElementOperation<
   SumSelection,
   SumValue,
-  SumType,
   SumDataOperation
 > = {
   moveUp: () => undefined,

@@ -15,7 +15,10 @@ const fullScreen = (
     injectGlobal(globalStyle);
   }, []);
   return (
-    <div id="story-book-full-screen-decorator" style={{ height: "100vh" }}>
+    <div
+      id="story-book-full-screen-decorator"
+      style={{ display: "grid", placeItems: "center", height: "100vh" }}
+    >
       <Story />
     </div>
   );

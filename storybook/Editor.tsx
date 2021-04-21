@@ -29,75 +29,72 @@ type ControlAndActionProps = Pick<
 
 export const Project: Story<ControlAndActionProps> = (props) => (
   <Editor
-    productType={{
+    product={{
       headItem: {
         name: "プロジェクト名",
-        hasIcon: true,
-        textType: { canEdit: false },
+        value: { canEdit: true, text: "やあ" },
+        iconHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
       },
       items: [
         {
           name: "カバー画像",
-          type: { tag: "image", imageType: { canEdit: false } },
+          value: {
+            type: "image",
+            value: {
+              canEdit: true,
+              alternativeText: "プロジェクトの画像",
+              value: project1.imageHash,
+            },
+          },
         },
         {
           name: "作成者",
-          type: { tag: "text", textType: { canEdit: false } },
+          value: {
+            type: "text",
+            value: { canEdit: false, text: "作成者の名前" },
+          },
         },
         {
           name: "作成日時",
-          type: { tag: "time", timeType: { canEdit: false } },
+          value: {
+            type: "time",
+            value: { time: { day: 20001, millisecond: 1234 }, canEdit: false },
+          },
         },
         {
           name: "パーツ",
-          type: { tag: "text", textType: { canEdit: false } },
+          value: {
+            type: "text",
+            value: { canEdit: false, text: "パーツのリストを表示したい" },
+          },
         },
         {
           name: "型パーツ",
-          type: {
-            tag: "list",
-            listType: {
-              elementType: {
-                tag: "typePartId",
-                typePartIdType: { canEdit: false },
-              },
-              canEdit: false,
+          value: {
+            type: "list",
+            value: {
+              canEdit: true,
+              items: [
+                {
+                  type: "typePartId",
+                  value: { canEdit: false, typePartId: typePart1Id },
+                },
+                {
+                  type: "typePartId",
+                  value: { canEdit: false, typePartId: typePart1Id },
+                },
+                {
+                  type: "typePartId",
+                  value: { canEdit: false, typePartId: typePart1Id },
+                },
+              ],
             },
           },
         },
         {
           name: "プロジェクトID",
-          type: { tag: "text", textType: { canEdit: false } },
+          value: { type: "text", value: { canEdit: false, text: "ffffffff" } },
         },
-      ],
-    }}
-    product={{
-      headItem: {
-        value: "やあ",
-        iconHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
-      },
-      items: [
-        {
-          type: "image",
-          value: {
-            alternativeText: "プロジェクトの画像",
-            value: project1.imageHash,
-          },
-        },
-        { type: "text", value: "作成者の名前" },
-        { type: "time", value: { day: 20001, millisecond: 1234 } },
-        { type: "text", value: "パーツのリストを表示したい" },
-        {
-          type: "list",
-          value: {
-            items: [
-              { type: "typePartId", value: typePart1Id },
-              { type: "typePartId", value: typePart1Id },
-              { type: "typePartId", value: typePart1Id },
-            ],
-          },
-        },
-        { type: "text", value: "ffffffff" },
       ],
     }}
     accountResource={accountResource}
@@ -112,69 +109,59 @@ Project.args = { language: d.Language.Japanese };
 
 export const TypePart: Story<ControlAndActionProps> = (props) => (
   <Editor
-    productType={{
+    product={{
       headItem: {
         name: "name",
-        textType: { canEdit: true },
-        hasIcon: false,
+        value: { canEdit: true, text: "Location" },
       },
       items: [
         {
           name: "description",
-          type: { tag: "text", textType: { canEdit: true } },
+          value: {
+            type: "text",
+            value: {
+              canEdit: true,
+              text:
+                "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
+            },
+          },
         },
         {
           name: "attribute",
-          type: { tag: "sum", sumType: { valueList: ["Just", "Nothing"] } },
+          value: {
+            type: "sum",
+            value: { valueList: ["Just", "Nothing"], index: 1 },
+          },
         },
         {
           name: "body",
-          type: {
-            tag: "sum",
-            sumType: { valueList: ["Product", "Sum", "Kernel"] },
+          value: {
+            type: "sum",
+            value: { valueList: ["Product", "Sum", "Kernel"], index: 1 },
           },
         },
         {
           name: "使用しているところ",
-          type: {
-            tag: "list",
-            listType: {
-              elementType: {
-                tag: "typePartId",
-                typePartIdType: { canEdit: false },
-              },
-              canEdit: false,
-            },
-          },
-        },
-      ],
-    }}
-    product={{
-      headItem: {
-        value: "Location",
-      },
-      items: [
-        {
-          type: "text",
-          value:
-            "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
-        },
-        {
-          type: "sum",
-          value: { index: 1 },
-        },
-        {
-          type: "sum",
-          value: { index: 1 },
-        },
-        {
-          type: "list",
           value: {
-            items: [
-              { type: "typePartId", value: typePart1Id },
-              { type: "typePartId", value: typePart1Id },
-              { type: "typePartId", value: typePart1Id },
-            ],
+            type: "list",
+            value: {
+              canEdit: false,
+              isDirectionColumn: false,
+              items: [
+                {
+                  type: "typePartId",
+                  value: { canEdit: false, typePartId: typePart1Id },
+                },
+                {
+                  type: "typePartId",
+                  value: { canEdit: false, typePartId: typePart1Id },
+                },
+                {
+                  type: "typePartId",
+                  value: { canEdit: false, typePartId: typePart1Id },
+                },
+              ],
+            },
           },
         },
       ],
@@ -191,35 +178,30 @@ TypePart.args = { language: d.Language.Japanese };
 
 export const Home: Story<ControlAndActionProps> = (props) => (
   <Editor
-    productType={{
+    product={{
       items: [
         {
           name: "検索",
-          type: { tag: "text", textType: { canEdit: true } },
+          value: { type: "text", value: { canEdit: true, text: "検索語句" } },
         },
         {
           name: "プロジェクト",
-          type: {
-            tag: "list",
-            listType: {
-              elementType: { tag: "project", projectType: { canEdit: false } },
+          value: {
+            type: "list",
+            value: {
               canEdit: false,
               isDirectionColumn: true,
+              items: [
+                {
+                  type: "project",
+                  value: { canEdit: false, projectId: project1Id },
+                },
+                {
+                  type: "project",
+                  value: { canEdit: false, projectId: project2Id },
+                },
+              ],
             },
-          },
-        },
-      ],
-    }}
-    product={{
-      items: [
-        { type: "text", value: "検索語句" },
-        {
-          type: "list",
-          value: {
-            items: [
-              { type: "project", value: project1Id },
-              { type: "project", value: project2Id },
-            ],
           },
         },
       ],
@@ -236,51 +218,38 @@ Home.args = { language: d.Language.Japanese };
 
 export const List: Story<ControlAndActionProps> = (props) => (
   <Editor
-    productType={{
+    product={{
       items: [
         {
           name: "数値のリスト",
-          type: {
-            tag: "list",
-            listType: {
-              elementType: { tag: "number", numberType: { canEdit: true } },
+          value: {
+            type: "list",
+            value: {
               canEdit: true,
+              isDirectionColumn: true,
+              items: [
+                { type: "number", value: { canEdit: true, value: 0 } },
+                { type: "number", value: { canEdit: true, value: 1 } },
+                { type: "number", value: { canEdit: true, value: 2 } },
+                { type: "number", value: { canEdit: true, value: 3 } },
+              ],
             },
           },
         },
         {
           name: "文字のリスト",
-          type: {
-            tag: "list",
-            listType: {
-              elementType: { tag: "text", textType: { canEdit: true } },
+          value: {
+            type: "list",
+            value: {
               canEdit: true,
+              isDirectionColumn: true,
+              items: [
+                { type: "text", value: { canEdit: true, text: "React" } },
+                { type: "text", value: { canEdit: true, text: "Vue" } },
+                { type: "text", value: { canEdit: true, text: "Angular" } },
+                { type: "text", value: { canEdit: true, text: "Elm" } },
+              ],
             },
-          },
-        },
-      ],
-    }}
-    product={{
-      items: [
-        {
-          type: "list",
-          value: {
-            items: [
-              { type: "number", value: 0 },
-              { type: "number", value: 1 },
-              { type: "number", value: 2 },
-              { type: "number", value: 3 },
-            ],
-          },
-        },
-        {
-          type: "list",
-          value: {
-            items: [
-              { type: "text", value: "React" },
-              { type: "text", value: "Vue" },
-              { type: "text", value: "Angular" },
-            ],
           },
         },
       ],
@@ -297,26 +266,31 @@ List.args = { language: d.Language.Japanese };
 
 export const NestProduct: Story<ControlAndActionProps> = (props) => (
   <Editor
-    productType={{
+    product={{
       headItem: {
         name: "name",
-        hasIcon: false,
-        textType: { canEdit: false },
+        value: { canEdit: false, text: "直積の入れ子" },
       },
       items: [
         {
           name: "直積 in 直積",
-          type: {
-            tag: "product",
-            productType: {
+          value: {
+            type: "product",
+            value: {
               items: [
                 {
                   name: "name",
-                  type: { tag: "text", textType: { canEdit: true } },
+                  value: {
+                    type: "text",
+                    value: { canEdit: false, text: "入れ子の名前" },
+                  },
                 },
                 {
                   name: "age",
-                  type: { tag: "number", numberType: { canEdit: true } },
+                  value: {
+                    type: "number",
+                    value: { canEdit: false, value: 22 },
+                  },
                 },
               ],
             },
@@ -324,76 +298,77 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "直積 in リスト",
-          type: {
-            tag: "list",
-            listType: {
-              elementType: {
-                tag: "product",
-                productType: {
-                  items: [
-                    {
-                      name: "name",
-                      type: { tag: "text", textType: { canEdit: true } },
-                    },
-                    {
-                      name: "age",
-                      type: { tag: "number", numberType: { canEdit: true } },
-                    },
-                  ],
+          value: {
+            type: "list",
+            value: {
+              canEdit: false,
+              isDirectionColumn: false,
+              items: [
+                {
+                  type: "product",
+                  value: {
+                    items: [
+                      {
+                        name: "name",
+                        value: {
+                          type: "text",
+                          value: { canEdit: false, text: "入れ子の名前A" },
+                        },
+                      },
+                      {
+                        name: "age",
+                        value: {
+                          type: "number",
+                          value: { canEdit: false, value: 1 },
+                        },
+                      },
+                    ],
+                  },
                 },
-              },
-              canEdit: true,
+                {
+                  type: "product",
+                  value: {
+                    items: [
+                      {
+                        name: "name",
+                        value: {
+                          type: "text",
+                          value: { canEdit: false, text: "入れ子の名前B" },
+                        },
+                      },
+                      {
+                        name: "age",
+                        value: {
+                          type: "number",
+                          value: { canEdit: false, value: 12 },
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  type: "product",
+                  value: {
+                    items: [
+                      {
+                        name: "name",
+                        value: {
+                          type: "text",
+                          value: { canEdit: false, text: "入れ子の名前C" },
+                        },
+                      },
+                      {
+                        name: "age",
+                        value: {
+                          type: "number",
+                          value: { canEdit: false, value: 123 },
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
             },
-          },
-        },
-      ],
-    }}
-    product={{
-      headItem: {
-        value: "直積の入れ子",
-      },
-      items: [
-        {
-          type: "product",
-          value: {
-            items: [
-              { type: "text", value: "入れ子の名前" },
-              { type: "number", value: 22 },
-            ],
-          },
-        },
-        {
-          type: "list",
-          value: {
-            items: [
-              {
-                type: "product",
-                value: {
-                  items: [
-                    { type: "text", value: "入れ子の名前A" },
-                    { type: "number", value: 1 },
-                  ],
-                },
-              },
-              {
-                type: "product",
-                value: {
-                  items: [
-                    { type: "text", value: "入れ子の名前B" },
-                    { type: "number", value: 12 },
-                  ],
-                },
-              },
-              {
-                type: "product",
-                value: {
-                  items: [
-                    { type: "text", value: "入れ子の名前C" },
-                    { type: "number", value: 123 },
-                  ],
-                },
-              },
-            ],
           },
         },
       ],

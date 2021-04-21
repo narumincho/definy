@@ -37,6 +37,7 @@ export const App: React.VFC<Props> = (props) => {
   return (
     <div
       className={css({
+        width: "100%",
         height: "100%",
         display: "grid",
         overflow: "hidden",

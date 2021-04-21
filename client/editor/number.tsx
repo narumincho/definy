@@ -3,8 +3,8 @@ import type { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
 
 export type NumberSelection = never;
-export type NumberValue = number;
-export type NumberType = {
+export type NumberValue = {
+  readonly value: number;
   readonly canEdit: boolean;
 };
 export type NumberDataOperation =
@@ -18,16 +18,14 @@ export type NumberDataOperation =
 const NumberSelectionView: ElementOperation<
   NumberSelection,
   NumberValue,
-  NumberType,
   NumberDataOperation
 >["selectionView"] = (props) => {
-  return <div className={css({ fontSize: 16 })}>{props.value}</div>;
+  return <div className={css({ fontSize: 16 })}>{props.value.value}</div>;
 };
 
 const NumberDetailView: ElementOperation<
   NumberSelection,
   NumberValue,
-  NumberType,
   NumberDataOperation
 >["detailView"] = (props) => {
   return (
@@ -36,7 +34,7 @@ const NumberDetailView: ElementOperation<
         color: "limegreen",
       })}
     >
-      [type: number] {props.value}
+      [type: number] {props.value.value}
     </div>
   );
 };
@@ -44,7 +42,6 @@ const NumberDetailView: ElementOperation<
 export const numberOperation: ElementOperation<
   NumberSelection,
   NumberValue,
-  NumberType,
   NumberDataOperation
 > = {
   moveUp: () => undefined,

@@ -39,115 +39,92 @@ export const TypePartPage: React.VFC<Props> = (props) => {
   }
   return (
     <Editor
-      productType={{
+      product={{
         headItem: {
           name: "name",
-          hasIcon: false,
-          textType: { canEdit: true },
+          value: {
+            canEdit: true,
+            text: typePartResource.dataWithTime.data.name,
+          },
         },
         items: [
           {
             name: "description",
-            type: { tag: "text", textType: { canEdit: true } },
+            value: {
+              type: "text",
+              value: {
+                text: typePartResource.dataWithTime.data.description,
+                canEdit: true,
+              },
+            },
           },
           {
             name: "attribute",
-            type: { tag: "sum", sumType: { valueList: ["Just", "Noting"] } },
+            value: {
+              type: "sum",
+              value: {
+                valueList: ["Just", "Noting"],
+                index:
+                  typePartResource.dataWithTime.data.attribute._ === "Just"
+                    ? 0
+                    : 1,
+              },
+            },
           },
           {
             name: "parameter",
-            type: {
-              tag: "list",
-              listType: {
+            value: {
+              type: "list",
+              value: {
                 canEdit: true,
-                elementType: {
-                  tag: "product",
-                  productType: {
-                    headItem: {
-                      name: "name",
-                      textType: { canEdit: true },
-                      hasIcon: false,
-                    },
-                    items: [
-                      {
-                        name: "typePartId",
-                        type: {
-                          tag: "typePartId",
-                          typePartIdType: { canEdit: true },
-                        },
+                items: typePartResource.dataWithTime.data.typeParameterList.map(
+                  (typeParameter): Value => ({
+                    type: "product",
+                    value: {
+                      headItem: {
+                        name: "name",
+                        value: { text: typeParameter.name, canEdit: false },
                       },
-                    ],
-                  },
-                },
+                      items: [
+                        {
+                          name: "typePartId",
+                          value: {
+                            type: "typePartId",
+                            value: {
+                              typePartId: typeParameter.typePartId,
+                              canEdit: true,
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  })
+                ),
               },
             },
           },
           {
             name: "body",
-            type: {
-              tag: "sum",
-              sumType: {
+
+            value: {
+              type: "sum",
+              value: {
                 valueList: ["Sum", "Product", "Kernel"],
+                index: getTypePartBodySumIndex(
+                  typePartResource.dataWithTime.data.body
+                ),
               },
             },
           },
           {
             name: "projectId",
-            type: {
-              tag: "project",
-              projectType: { canEdit: false },
-            },
-          },
-        ],
-      }}
-      product={{
-        headItem: {
-          value: typePartResource.dataWithTime.data.name,
-        },
-        items: [
-          {
-            type: "text",
-            value: typePartResource.dataWithTime.data.description,
-          },
-          {
-            type: "sum",
             value: {
-              index:
-                typePartResource.dataWithTime.data.attribute._ === "Just"
-                  ? 0
-                  : 1,
+              type: "project",
+              value: {
+                canEdit: false,
+                projectId: typePartResource.dataWithTime.data.projectId,
+              },
             },
-          },
-          {
-            type: "list",
-            value: {
-              items: typePartResource.dataWithTime.data.typeParameterList.map(
-                (typeParameter): Value => ({
-                  type: "product",
-                  value: {
-                    headItem: { value: typeParameter.name },
-                    items: [
-                      {
-                        type: "typePartId",
-                        value: typeParameter.typePartId,
-                      },
-                    ],
-                  },
-                })
-              ),
-            },
-          },
-          {
-            type: "sum",
-            value: {
-              index: getTypePartBodySumIndex(
-                typePartResource.dataWithTime.data.body
-              ),
-            },
-          },
-          {
-            type: "project",
-            value: typePartResource.dataWithTime.data.projectId,
           },
         ],
       }}

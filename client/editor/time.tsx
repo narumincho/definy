@@ -8,9 +8,8 @@ import type { ElementOperation } from "./ElementOperation";
  */
 export type TimeSelection = never;
 
-export type TimeValue = d.Time;
-
-export type TimeType = {
+export type TimeValue = {
+  readonly time: d.Time;
   readonly canEdit: boolean;
 };
 
@@ -19,25 +18,22 @@ export type TimeDataOperation = never;
 const TimeSelectionView: ElementOperation<
   TimeSelection,
   TimeValue,
-  TimeType,
   TimeDataOperation
 >["selectionView"] = (props) => {
-  return <TimeCard time={props.value} />;
+  return <TimeCard time={props.value.time} />;
 };
 
 const TimeDetailView: ElementOperation<
   TimeSelection,
   TimeValue,
-  TimeType,
   TimeDataOperation
 >["detailView"] = (props) => {
-  return <TimeDetail time={props.value} />;
+  return <TimeDetail time={props.value.time} />;
 };
 
 export const timeOperation: ElementOperation<
   TimeSelection,
   TimeValue,
-  TimeType,
   TimeDataOperation
 > = {
   moveUp: () => undefined,

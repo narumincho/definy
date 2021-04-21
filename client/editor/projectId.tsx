@@ -6,9 +6,8 @@ import { ProjectCard } from "../ui/ProjectCard";
 /** プロジェクト内の要素を選択することはなさそう */
 export type ProjectIdSelection = never;
 
-export type ProjectIdValue = d.ProjectId;
-
-export type ProjectIdType = {
+export type ProjectIdValue = {
+  readonly projectId: d.ProjectId;
   readonly canEdit: boolean;
 };
 
@@ -19,13 +18,12 @@ export type ProjectIdDataOperation = {
 const ProjectIdSelectionView: ElementOperation<
   ProjectIdSelection,
   ProjectIdValue,
-  ProjectIdType,
   ProjectIdDataOperation
 >["selectionView"] = (props) => {
   return (
     <ProjectCard
       projectResource={props.projectResource}
-      projectId={props.value}
+      projectId={props.value.projectId}
       language={props.language}
       onJump={props.onJump}
     />
@@ -35,13 +33,12 @@ const ProjectIdSelectionView: ElementOperation<
 const ProjectIdDetailView: ElementOperation<
   ProjectIdSelection,
   ProjectIdValue,
-  ProjectIdType,
   ProjectIdDataOperation
 >["detailView"] = (props) => {
   return (
     <ProjectCard
       projectResource={props.projectResource}
-      projectId={props.value}
+      projectId={props.value.projectId}
       language={props.language}
       onJump={props.onJump}
     />
@@ -51,7 +48,6 @@ const ProjectIdDetailView: ElementOperation<
 export const projectIdOperation: ElementOperation<
   ProjectIdSelection,
   ProjectIdValue,
-  ProjectIdType,
   ProjectIdDataOperation
 > = {
   moveUp: () => undefined,

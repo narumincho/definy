@@ -2,19 +2,18 @@ import * as React from "react";
 import {
   ProductDataOperation,
   ProductSelection,
-  ProductType,
   ProductValue,
   productOperation,
 } from "../editor/product";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
+export type { Value } from "../editor/common";
 
 export type Props = Pick<
   UseDefinyAppResult,
   "accountResource" | "projectResource" | "language" | "typePartResource"
 > & {
   readonly product: ProductValue;
-  readonly productType: ProductType;
   readonly onJump: UseDefinyAppResult["jump"];
   /** データを編集をしようとした */
   readonly onRequestDataOperation: (
@@ -38,11 +37,8 @@ export const Editor: React.VFC<Props> = (props) => {
         case "ArrowUp": {
           setSelection(
             (oldSelection) =>
-              productOperation.moveUp(
-                oldSelection,
-                props.product,
-                props.productType
-              ) ?? oldSelection
+              productOperation.moveUp(oldSelection, props.product) ??
+              oldSelection
           );
           event.preventDefault();
           event.stopPropagation();
@@ -52,11 +48,8 @@ export const Editor: React.VFC<Props> = (props) => {
         case "ArrowDown": {
           setSelection(
             (oldSelection) =>
-              productOperation.moveDown(
-                oldSelection,
-                props.product,
-                props.productType
-              ) ?? oldSelection
+              productOperation.moveDown(oldSelection, props.product) ??
+              oldSelection
           );
           event.preventDefault();
           event.stopPropagation();
@@ -65,11 +58,8 @@ export const Editor: React.VFC<Props> = (props) => {
         case "KeyE": {
           setSelection(
             (oldSelection) =>
-              productOperation.moveFirstChild(
-                oldSelection,
-                props.product,
-                props.productType
-              ) ?? oldSelection
+              productOperation.moveFirstChild(oldSelection, props.product) ??
+              oldSelection
           );
           event.preventDefault();
           event.stopPropagation();
@@ -78,11 +68,8 @@ export const Editor: React.VFC<Props> = (props) => {
         case "KeyQ": {
           setSelection(
             (oldSelection) =>
-              productOperation.moveParent(
-                oldSelection,
-                props.product,
-                props.productType
-              ) ?? oldSelection
+              productOperation.moveParent(oldSelection, props.product) ??
+              oldSelection
           );
           event.preventDefault();
           event.stopPropagation();
@@ -99,7 +86,9 @@ export const Editor: React.VFC<Props> = (props) => {
       className={css({
         display: "grid",
         gridTemplateColumns: "1fr 300px",
+        width: "100%",
         height: "100%",
+        overflow: "hidden",
       })}
     >
       <div
@@ -111,7 +100,6 @@ export const Editor: React.VFC<Props> = (props) => {
         <productOperation.selectionView
           selection={selection}
           onChangeSelection={setSelection}
-          type={props.productType}
           value={props.product}
           accountResource={props.accountResource}
           projectResource={props.projectResource}
@@ -130,7 +118,6 @@ export const Editor: React.VFC<Props> = (props) => {
       >
         <productOperation.detailView
           selection={selection}
-          type={props.productType}
           value={props.product}
           language={props.language}
           accountResource={props.accountResource}

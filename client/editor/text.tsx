@@ -5,9 +5,8 @@ import { css } from "@emotion/css";
 
 export type TextSelection = never;
 
-export type TextValue = string;
-
-export type TextType = {
+export type TextValue = {
+  readonly text: string;
   readonly canEdit: boolean;
 };
 
@@ -19,32 +18,29 @@ export type TextDataOperation = {
 const TextSelectionView: ElementOperation<
   TextSelection,
   TextValue,
-  TextType,
   TextDataOperation
 >["selectionView"] = (props) => {
-  return <div className={css({ fontSize: 16 })}>{props.value}</div>;
+  return <div className={css({ fontSize: 16 })}>{props.value.text}</div>;
 };
 
 export const HeadTextSelectionView: ElementOperation<
   TextSelection,
   TextValue,
-  TextType,
   TextDataOperation
 >["selectionView"] = (props) => {
-  return <div className={css({ fontSize: 32 })}>{props.value}</div>;
+  return <div className={css({ fontSize: 32 })}>{props.value.text}</div>;
 };
 
 const TextDetailView: ElementOperation<
   TextSelection,
   TextValue,
-  TextType,
   TextDataOperation
 >["detailView"] = (props) => {
-  if (props.type.canEdit) {
+  if (props.value.canEdit) {
     return (
       <OneLineTextEditor
         id="text"
-        value={props.value}
+        value={props.value.text}
         onChange={(newValue) =>
           props.onRequestDataOperation({ tag: "edit", newValue })
         }
@@ -57,7 +53,7 @@ const TextDetailView: ElementOperation<
         color: "orange",
       })}
     >
-      [type: text] {props.value}
+      [type: text] {props.value.text}
     </div>
   );
 };
@@ -65,7 +61,6 @@ const TextDetailView: ElementOperation<
 export const textOperation: ElementOperation<
   TextSelection,
   TextValue,
-  TextType,
   TextDataOperation
 > = {
   moveUp: () => undefined,

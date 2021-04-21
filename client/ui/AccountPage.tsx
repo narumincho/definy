@@ -34,53 +34,33 @@ export const AccountPage: React.VFC<Props> = (props) => {
   const account = accountResource.dataWithTime.data;
   return (
     <Editor
-      productType={{
-        headItem: {
-          textType: { canEdit: false },
-          name: "アカウント名",
-          hasIcon: true,
-        },
-        items: [
-          {
-            name: "自己紹介文",
-            type: {
-              tag: "text",
-              textType: { canEdit: false },
-            },
-          },
-          {
-            name: "作成日時",
-            type: {
-              tag: "time",
-              timeType: { canEdit: false },
-            },
-          },
-          {
-            name: "アカウントId",
-            type: {
-              tag: "text",
-              textType: { canEdit: false },
-            },
-          },
-        ],
-      }}
       product={{
         headItem: {
-          value: account.name,
+          name: "アカウント名",
+          value: { canEdit: false, text: account.name },
           iconHash: account.imageHash,
         },
         items: [
           {
-            type: "text",
-            value: account.introduction,
+            name: "自己紹介文",
+            value: {
+              type: "text",
+              value: { canEdit: false, text: account.introduction },
+            },
           },
           {
-            type: "time",
-            value: account.createTime,
+            name: "作成日時",
+            value: {
+              type: "time",
+              value: { canEdit: false, time: account.createTime },
+            },
           },
           {
-            type: "text",
-            value: props.accountId,
+            name: "アカウントId",
+            value: {
+              type: "text",
+              value: { canEdit: false, text: props.accountId },
+            },
           },
         ],
       }}

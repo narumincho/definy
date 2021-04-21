@@ -24,8 +24,14 @@ export const CreateProjectPage: React.VFC<Props> = (props) => {
   const normalizedProjectName = stringToValidProjectName(text);
 
   return (
-    <div>
-      プロジェクト作成ページ!!
+    <div
+      className={css({
+        width: "100%",
+        height: "100%",
+        padding: 8,
+      })}
+    >
+      <h2>プロジェクト作成ページ</h2>
       <div>プロジェクト名</div>
       <div
         className={css({
