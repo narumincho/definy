@@ -2,12 +2,13 @@ import * as React from "react";
 import * as d from "../../data";
 import type { ElementOperation } from "./ElementOperation";
 import { Link } from "../ui/Link";
+import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type TypePartIdSelection = never;
 export type TypePartIdValue = {
   readonly typePartId: d.TypePartId;
   readonly canEdit: boolean;
-};
+} & Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump">;
 
 export type TypePartIdDataOperation = never;
 
@@ -17,17 +18,17 @@ const TypePartIdSelectionView: ElementOperation<
   TypePartIdDataOperation
 >["selectionView"] = (props) => {
   React.useEffect(() => {
-    props.typePartResource.requestToServerIfEmpty(props.value.typePartId);
+    props.value.typePartResource.requestToServerIfEmpty(props.value.typePartId);
   }, []);
-  const typePartResource = props.typePartResource.getFromMemoryCache(
+  const typePartResource = props.value.typePartResource.getFromMemoryCache(
     props.value.typePartId
   );
   if (typePartResource === undefined) {
     return (
       <Link
-        onJump={props.onJump}
+        onJump={props.value.jump}
         urlData={{
-          language: props.language,
+          language: props.value.language,
           location: d.Location.TypePart(props.value.typePartId),
         }}
       >
@@ -38,9 +39,9 @@ const TypePartIdSelectionView: ElementOperation<
   if (typePartResource._ === "Deleted") {
     return (
       <Link
-        onJump={props.onJump}
+        onJump={props.value.jump}
         urlData={{
-          language: props.language,
+          language: props.value.language,
           location: d.Location.TypePart(props.value.typePartId),
         }}
       >
@@ -51,9 +52,9 @@ const TypePartIdSelectionView: ElementOperation<
   if (typePartResource._ === "Unknown") {
     return (
       <Link
-        onJump={props.onJump}
+        onJump={props.value.jump}
         urlData={{
-          language: props.language,
+          language: props.value.language,
           location: d.Location.TypePart(props.value.typePartId),
         }}
       >
@@ -64,9 +65,9 @@ const TypePartIdSelectionView: ElementOperation<
   if (typePartResource._ === "Requesting") {
     return (
       <Link
-        onJump={props.onJump}
+        onJump={props.value.jump}
         urlData={{
-          language: props.language,
+          language: props.value.language,
           location: d.Location.TypePart(props.value.typePartId),
         }}
       >
@@ -76,9 +77,9 @@ const TypePartIdSelectionView: ElementOperation<
   }
   return (
     <Link
-      onJump={props.onJump}
+      onJump={props.value.jump}
       urlData={{
-        language: props.language,
+        language: props.value.language,
         location: d.Location.TypePart(props.value.typePartId),
       }}
     >

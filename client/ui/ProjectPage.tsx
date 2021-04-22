@@ -1,6 +1,14 @@
 import * as React from "react";
 import * as d from "../../data";
 import { Editor, Value } from "./Editor";
+import {
+  accountIdValue,
+  imageValue,
+  listValue,
+  textValue,
+  timeValue,
+  typePartIdValue,
+} from "../editor/common";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type Props = Pick<
@@ -54,62 +62,58 @@ export const ProjectPage: React.VFC<Props> = (props) => {
         items: [
           {
             name: "画像",
-            value: {
-              type: "image",
-              value: {
-                alternativeText: project.name + "の画像",
-                value: project.imageHash,
-                canEdit: false,
-              },
-            },
+            value: imageValue({
+              alternativeText: project.name + "の画像",
+              value: project.imageHash,
+              canEdit: false,
+            }),
           },
           {
             name: "作成者",
-            value: {
-              type: "account",
-              value: { accountId: project.createAccountId, canEdit: false },
-            },
+            value: accountIdValue({
+              accountId: project.createAccountId,
+              canEdit: false,
+              accountResource: props.accountResource,
+              jump: props.onJump,
+              language: props.language,
+            }),
           },
           {
             name: "作成日時",
-            value: {
-              type: "time",
-              value: { time: project.createTime, canEdit: false },
-            },
+            value: timeValue({
+              time: project.createTime,
+              canEdit: false,
+            }),
           },
           {
             name: "プロジェクトID",
-            value: {
-              type: "text",
-              value: { text: props.projectId, canEdit: false },
-            },
+            value: textValue({
+              text: props.projectId,
+              canEdit: false,
+            }),
           },
           {
             name: "型パーツ",
-            value: {
-              type: "list",
-              value: {
-                canEdit: true,
-                isDirectionColumn: true,
-                items:
-                  typePartIdListInProject?._ === "Loaded"
-                    ? typePartIdListInProject.dataWithTime.data.map(
-                        (typePartId): Value => ({
-                          type: "typePartId",
-                          value: { canEdit: false, typePartId },
+            value: listValue({
+              canEdit: true,
+              isDirectionColumn: true,
+              items:
+                typePartIdListInProject?._ === "Loaded"
+                  ? typePartIdListInProject.dataWithTime.data.map(
+                      (typePartId): Value =>
+                        typePartIdValue({
+                          canEdit: false,
+                          typePartId,
+                          typePartResource: props.typePartResource,
+                          jump: props.onJump,
+                          language: props.language,
                         })
-                      )
-                    : [],
-              },
-            },
+                    )
+                  : [],
+            }),
           },
         ],
       }}
-      onJump={props.onJump}
-      projectResource={props.projectResource}
-      accountResource={props.accountResource}
-      typePartResource={props.typePartResource}
-      language={props.language}
       onRequestDataOperation={(operation) => {
         if (
           operation.tag === "content" &&

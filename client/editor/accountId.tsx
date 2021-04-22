@@ -5,6 +5,7 @@ import type { ElementOperation } from "./ElementOperation";
 import { Image } from "../ui/Image";
 import { Link } from "../ui/Link";
 import { NextIcon } from "../ui/NextIcon";
+import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
 
 export type AccountIdSelection = never;
@@ -12,7 +13,7 @@ export type AccountIdSelection = never;
 export type AccountIdValue = {
   readonly accountId: d.AccountId;
   readonly canEdit: boolean;
-};
+} & Pick<UseDefinyAppResult, "accountResource" | "language" | "jump">;
 
 export type AccountIdDataOperation = {
   tag: "jump";
@@ -24,10 +25,10 @@ const AccountIdSelectionView: ElementOperation<
   AccountIdDataOperation
 >["selectionView"] = (props) => {
   React.useEffect(() => {
-    props.accountResource.requestToServerIfEmpty(props.value.accountId);
+    props.value.accountResource.requestToServerIfEmpty(props.value.accountId);
   }, [props.value.accountId]);
 
-  const accountResource = props.accountResource.getFromMemoryCache(
+  const accountResource = props.value.accountResource.getFromMemoryCache(
     props.value.accountId
   );
   if (accountResource === undefined) {
@@ -61,9 +62,9 @@ const AccountIdSelectionView: ElementOperation<
       />
       <div>{account.name}</div>
       <Link
-        onJump={props.onJump}
+        onJump={props.value.jump}
         urlData={{
-          language: props.language,
+          language: props.value.language,
           location: d.Location.Account(props.value.accountId),
         }}
         style={{
@@ -88,9 +89,9 @@ const AccountIdDetailView: ElementOperation<
     <div>
       <AccountCard
         accountId={props.value.accountId}
-        language={props.language}
-        onJump={props.onJump}
-        accountResource={props.accountResource}
+        language={props.value.language}
+        onJump={props.value.jump}
+        accountResource={props.value.accountResource}
       />
     </div>
   );

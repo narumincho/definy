@@ -1,8 +1,16 @@
 import * as React from "react";
 import * as d from "../../data";
+import {
+  Value,
+  listValue,
+  productValue,
+  projectIdValue,
+  sumValue,
+  textValue,
+  typePartIdValue,
+} from "../editor/common";
 import { Editor } from "./Editor";
 import { UseDefinyAppResult } from "../hook/useDefinyApp";
-import { Value } from "../editor/common";
 
 export type Props = Pick<
   UseDefinyAppResult,
@@ -50,89 +58,69 @@ export const TypePartPage: React.VFC<Props> = (props) => {
         items: [
           {
             name: "description",
-            value: {
-              type: "text",
-              value: {
-                text: typePartResource.dataWithTime.data.description,
-                canEdit: true,
-              },
-            },
+            value: textValue({
+              text: typePartResource.dataWithTime.data.description,
+              canEdit: true,
+            }),
           },
           {
             name: "attribute",
-            value: {
-              type: "sum",
-              value: {
-                valueList: ["Just", "Noting"],
-                index:
-                  typePartResource.dataWithTime.data.attribute._ === "Just"
-                    ? 0
-                    : 1,
-              },
-            },
+            value: sumValue({
+              valueList: ["Just", "Noting"],
+              index:
+                typePartResource.dataWithTime.data.attribute._ === "Just"
+                  ? 0
+                  : 1,
+            }),
           },
           {
             name: "parameter",
-            value: {
-              type: "list",
-              value: {
-                canEdit: true,
-                items: typePartResource.dataWithTime.data.typeParameterList.map(
-                  (typeParameter): Value => ({
-                    type: "product",
-                    value: {
-                      headItem: {
-                        name: "name",
-                        value: { text: typeParameter.name, canEdit: false },
-                      },
-                      items: [
-                        {
-                          name: "typePartId",
-                          value: {
-                            type: "typePartId",
-                            value: {
-                              typePartId: typeParameter.typePartId,
-                              canEdit: true,
-                            },
-                          },
-                        },
-                      ],
+            value: listValue({
+              canEdit: true,
+              items: typePartResource.dataWithTime.data.typeParameterList.map(
+                (typeParameter): Value =>
+                  productValue({
+                    headItem: {
+                      name: "name",
+                      value: { text: typeParameter.name, canEdit: false },
                     },
+                    items: [
+                      {
+                        name: "typePartId",
+                        value: typePartIdValue({
+                          typePartId: typeParameter.typePartId,
+                          canEdit: true,
+                          typePartResource: props.typePartResource,
+                          jump: props.onJump,
+                          language: props.language,
+                        }),
+                      },
+                    ],
                   })
-                ),
-              },
-            },
+              ),
+            }),
           },
           {
             name: "body",
-
-            value: {
-              type: "sum",
-              value: {
-                valueList: ["Sum", "Product", "Kernel"],
-                index: getTypePartBodySumIndex(
-                  typePartResource.dataWithTime.data.body
-                ),
-              },
-            },
+            value: sumValue({
+              valueList: ["Sum", "Product", "Kernel"],
+              index: getTypePartBodySumIndex(
+                typePartResource.dataWithTime.data.body
+              ),
+            }),
           },
           {
             name: "projectId",
-            value: {
-              type: "project",
-              value: {
-                canEdit: false,
-                projectId: typePartResource.dataWithTime.data.projectId,
-              },
-            },
+            value: projectIdValue({
+              canEdit: false,
+              projectId: typePartResource.dataWithTime.data.projectId,
+              projectResource: props.projectResource,
+              jump: props.onJump,
+              language: props.language,
+            }),
           },
         ],
       }}
-      accountResource={props.accountResource}
-      projectResource={props.projectResource}
-      typePartResource={props.typePartResource}
-      language={props.language}
-      onJump={props.onJump}
       onRequestDataOperation={() => {}}
     />
   );

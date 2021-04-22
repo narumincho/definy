@@ -113,7 +113,7 @@ export type Value =
       value: SumValue;
     }
   | {
-      type: "account";
+      type: "accountId";
       value: AccountIdValue;
     }
   | {
@@ -133,7 +133,7 @@ export type Value =
       value: ImageValue;
     }
   | {
-      type: "project";
+      type: "projectId";
       value: ProjectIdValue;
     }
   | {
@@ -141,9 +141,32 @@ export type Value =
       value: TypePartIdValue;
     };
 
+export const textValue = (value: TextValue): Value => ({ type: "text", value });
+export const numberValue = (value: NumberValue): Value => ({
+  type: "number",
+  value,
+});
+export const sumValue = (value: SumValue): Value => ({ type: "sum", value });
+export const accountIdValue = (value: AccountIdValue): Value => ({
+  type: "accountId",
+  value,
+});
+export const timeValue = (value: TimeValue): Value => ({ type: "time", value });
 export const listValue = (value: ListValue): Value => ({ type: "list", value });
 export const productValue = (value: ProductValue): Value => ({
   type: "product",
+  value,
+});
+export const imageValue = (value: ImageValue): Value => ({
+  type: "image",
+  value,
+});
+export const projectIdValue = (value: ProjectIdValue): Value => ({
+  type: "projectId",
+  value,
+});
+export const typePartIdValue = (value: TypePartIdValue): Value => ({
+  type: "typePartId",
   value,
 });
 
@@ -270,11 +293,6 @@ const CommonElementSelectionView: ElementOperation<
     return (
       <numberOperation.selectionView
         value={props.value.value}
-        accountResource={props.accountResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
-        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -293,11 +311,6 @@ const CommonElementSelectionView: ElementOperation<
     return (
       <textOperation.selectionView
         value={props.value.value}
-        accountResource={props.accountResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
-        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -316,11 +329,6 @@ const CommonElementSelectionView: ElementOperation<
     return (
       <sumOperation.selectionView
         value={props.value.value}
-        accountResource={props.accountResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
-        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -337,11 +345,6 @@ const CommonElementSelectionView: ElementOperation<
     return (
       <imageOperation.selectionView
         value={props.value.value}
-        accountResource={props.accountResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
-        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -354,15 +357,10 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
-  if (props.value.type === "account") {
+  if (props.value.type === "accountId") {
     return (
       <accountIdOperation.selectionView
         value={props.value.value}
-        accountResource={props.accountResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
-        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -384,11 +382,6 @@ const CommonElementSelectionView: ElementOperation<
     return (
       <timeOperation.selectionView
         value={props.value.value}
-        accountResource={props.accountResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
-        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -401,15 +394,10 @@ const CommonElementSelectionView: ElementOperation<
       />
     );
   }
-  if (props.value.type === "project") {
+  if (props.value.type === "projectId") {
     return (
       <projectIdOperation.selectionView
         value={props.value.value}
-        accountResource={props.accountResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
-        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -428,11 +416,6 @@ const CommonElementSelectionView: ElementOperation<
     return (
       <listOperation.selectionView
         value={props.value.value}
-        accountResource={props.accountResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
-        projectResource={props.projectResource}
         onChangeSelection={(listSelection) =>
           props.onChangeSelection(selectionList(listSelection))
         }
@@ -451,11 +434,6 @@ const CommonElementSelectionView: ElementOperation<
     return (
       <productOperation.selectionView
         value={props.value.value}
-        accountResource={props.accountResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
-        projectResource={props.projectResource}
         onChangeSelection={(productSelection) =>
           props.onChangeSelection(selectionProduct(productSelection))
         }
@@ -477,11 +455,6 @@ const CommonElementSelectionView: ElementOperation<
     return (
       <typePartIdOperation.selectionView
         value={props.value.value}
-        accountResource={props.accountResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
-        projectResource={props.projectResource}
         onChangeSelection={(typePartIdSelection) =>
           props.onChangeSelection(typePartIdSelection)
         }
@@ -516,11 +489,6 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.numberSelection
             : undefined
         }
-        accountResource={props.accountResource}
-        projectResource={props.projectResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
         onRequestDataOperation={(numberDataOperation) =>
           props.onRequestDataOperation({ tag: "number", numberDataOperation })
         }
@@ -536,11 +504,6 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.textSelection
             : undefined
         }
-        accountResource={props.accountResource}
-        projectResource={props.projectResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
         onRequestDataOperation={(textDataOperation) =>
           props.onRequestDataOperation({
             tag: "text",
@@ -559,11 +522,6 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.sumSelection
             : undefined
         }
-        accountResource={props.accountResource}
-        projectResource={props.projectResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );
@@ -577,16 +535,11 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.imageSelection
             : undefined
         }
-        accountResource={props.accountResource}
-        projectResource={props.projectResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );
   }
-  if (props.value.type === "account") {
+  if (props.value.type === "accountId") {
     return (
       <accountIdOperation.detailView
         value={props.value.value}
@@ -595,18 +548,13 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.accountSelection
             : undefined
         }
-        accountResource={props.accountResource}
-        projectResource={props.projectResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
         onRequestDataOperation={(accountDataOperation) =>
           props.onRequestDataOperation({ tag: "account", accountDataOperation })
         }
       />
     );
   }
-  if (props.value.type === "project") {
+  if (props.value.type === "projectId") {
     return (
       <projectIdOperation.detailView
         value={props.value.value}
@@ -615,11 +563,6 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.projectSelection
             : undefined
         }
-        accountResource={props.accountResource}
-        projectResource={props.projectResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
         onRequestDataOperation={(projectDataOperation) =>
           props.onRequestDataOperation({ tag: "project", projectDataOperation })
         }
@@ -635,11 +578,6 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.timeSelection
             : undefined
         }
-        accountResource={props.accountResource}
-        projectResource={props.projectResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );
@@ -653,11 +591,6 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.value
             : undefined
         }
-        accountResource={props.accountResource}
-        projectResource={props.projectResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
         onRequestDataOperation={(listDataOperation) =>
           props.onRequestDataOperation({
             tag: "list",
@@ -676,11 +609,6 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.value
             : undefined
         }
-        accountResource={props.accountResource}
-        projectResource={props.projectResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
         onRequestDataOperation={(productDataOperation) =>
           props.onRequestDataOperation({
             tag: "product",
@@ -699,11 +627,6 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.typePartIdSelection
             : undefined
         }
-        accountResource={props.accountResource}
-        projectResource={props.projectResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
         onRequestDataOperation={props.onRequestDataOperation}
       />
     );

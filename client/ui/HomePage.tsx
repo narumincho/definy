@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as d from "../../data";
 import { Editor, Value } from "./Editor";
+import { listValue, projectIdValue } from "../editor/common";
 import { Link } from "./Link";
 import { ProjectCardSkeleton } from "./ProjectCard";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
@@ -43,7 +44,6 @@ export const HomePage: React.VFC<Props> = (props) => {
         language={props.language}
         projectResource={props.projectResource}
         accountResource={props.accountResource}
-        typePartResource={props.typePartResource}
       />
       {props.logInState._ === "LoggedIn" ? (
         <CreateProjectButton language={props.language} onJump={props.onJump} />
@@ -89,7 +89,6 @@ const TopProjectList: React.VFC<
     | "projectResource"
     | "accountResource"
     | "language"
-    | "typePartResource"
   > & {
     onJump: UseDefinyAppResult["jump"];
   }
@@ -156,27 +155,23 @@ const TopProjectList: React.VFC<
               items: [
                 {
                   name: "おすすめのプロジェクト",
-                  value: {
-                    type: "list",
-                    value: {
-                      canEdit: false,
-                      isDirectionColumn: true,
-                      items: props.topProjectsLoadingState.projectIdList.map(
-                        (projectId): Value => ({
-                          type: "project",
-                          value: { canEdit: false, projectId },
+                  value: listValue({
+                    canEdit: false,
+                    isDirectionColumn: true,
+                    items: props.topProjectsLoadingState.projectIdList.map(
+                      (projectId): Value =>
+                        projectIdValue({
+                          canEdit: false,
+                          projectId,
+                          projectResource: props.projectResource,
+                          jump: props.onJump,
+                          language: props.language,
                         })
-                      ),
-                    },
-                  },
+                    ),
+                  }),
                 },
               ],
             }}
-            accountResource={props.accountResource}
-            projectResource={props.projectResource}
-            typePartResource={props.typePartResource}
-            language={props.language}
-            onJump={props.onJump}
             onRequestDataOperation={() => {}}
           />
         </div>

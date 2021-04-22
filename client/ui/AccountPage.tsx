@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
+import { textValue, timeValue } from "../editor/common";
 import { Editor } from "./Editor";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
@@ -43,32 +44,18 @@ export const AccountPage: React.VFC<Props> = (props) => {
         items: [
           {
             name: "自己紹介文",
-            value: {
-              type: "text",
-              value: { canEdit: false, text: account.introduction },
-            },
+            value: textValue({ canEdit: false, text: account.introduction }),
           },
           {
             name: "作成日時",
-            value: {
-              type: "time",
-              value: { canEdit: false, time: account.createTime },
-            },
+            value: timeValue({ canEdit: false, time: account.createTime }),
           },
           {
             name: "アカウントId",
-            value: {
-              type: "text",
-              value: { canEdit: false, text: props.accountId },
-            },
+            value: textValue({ canEdit: false, text: props.accountId }),
           },
         ],
       }}
-      accountResource={props.accountResource}
-      projectResource={props.projectResource}
-      typePartResource={props.typePartResource}
-      language={props.language}
-      onJump={props.onJump}
       onRequestDataOperation={() => {}}
     />
   );
