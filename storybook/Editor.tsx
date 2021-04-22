@@ -22,6 +22,7 @@ import {
   typePartResource,
 } from "./mockData";
 import { ArgType } from "@storybook/addons";
+import type { Item } from "../client/editor/product";
 import { UseDefinyAppResult } from "../client/hook/useDefinyApp";
 
 type ControlAndActionProps = Pick<Props, "onRequestDataOperation"> & {
@@ -368,3 +369,43 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
   />
 );
 NestProduct.args = { language: d.Language.Japanese };
+
+const valueList = ["A", "B", "C", "D", "E", "F", "G"];
+
+const SumComponent: React.VFC<Record<string, string>> = () => {
+  const [index, setIndex] = React.useState<number>(0);
+  return (
+    <Editor
+      product={{
+        items: Array.from(
+          { length: 7 },
+          (_, i): Item => ({
+            name: `${i}このタグ`,
+            value: sumValue({
+              index,
+              valueList: valueList.slice(0, i),
+            }),
+          })
+        ),
+      }}
+      onRequestDataOperation={(operation) => {
+        console.log(index, operation);
+
+        if (
+          operation.tag === "content" &&
+          operation.commonDataOperation.tag === "sum" &&
+          operation.commonDataOperation.sumDataOperation.tag === "select"
+        ) {
+          const selectedName =
+            operation.commonDataOperation.sumDataOperation.name;
+          setIndex(valueList.findIndex((e) => e === selectedName));
+        }
+      }}
+    />
+  );
+};
+
+export const Sum: Story<Record<string, string>> = () => {
+  return <SumComponent />;
+};
+Sum.argTypes = {};

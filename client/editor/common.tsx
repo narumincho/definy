@@ -337,7 +337,12 @@ const CommonElementSelectionView: ElementOperation<
             ? props.selection.sumSelection
             : undefined
         }
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(sumDataOperation) =>
+          props.onRequestDataOperation({
+            tag: "sum",
+            sumDataOperation,
+          })
+        }
       />
     );
   }
@@ -522,7 +527,12 @@ const CommonElementDetailView: ElementOperation<
             ? props.selection.sumSelection
             : undefined
         }
-        onRequestDataOperation={props.onRequestDataOperation}
+        onRequestDataOperation={(sumDataOperation) =>
+          props.onRequestDataOperation({
+            tag: "sum",
+            sumDataOperation,
+          })
+        }
       />
     );
   }
