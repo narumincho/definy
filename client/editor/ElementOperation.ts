@@ -1,5 +1,4 @@
 import React from "react";
-import { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 /**
  * エディタの要素に必要なもの.
@@ -61,31 +60,19 @@ export type ElementOperation<Selection, Value, DataOperation> = {
   /**
    * 左側の選択の木構造のコンポーネント
    */
-  readonly selectionView: React.VFC<
-    Pick<
-      UseDefinyAppResult,
-      "accountResource" | "projectResource" | "language" | "typePartResource"
-    > & {
-      readonly selection: Selection | undefined;
-      readonly value: Value;
-      readonly onJump: UseDefinyAppResult["jump"];
-      readonly onChangeSelection: (selection: Selection) => void;
-      readonly onRequestDataOperation: (operation: DataOperation) => void;
-    }
-  >;
+  readonly selectionView: React.VFC<{
+    readonly selection: Selection | undefined;
+    readonly value: Value;
+    readonly onChangeSelection: (selection: Selection) => void;
+    readonly onRequestDataOperation: (operation: DataOperation) => void;
+  }>;
 
   /**
    * 右側に表示される詳細コンポーネント
    */
-  readonly detailView: React.VFC<
-    Pick<
-      UseDefinyAppResult,
-      "accountResource" | "projectResource" | "language" | "typePartResource"
-    > & {
-      readonly value: Value;
-      readonly selection: Selection | undefined;
-      readonly onJump: UseDefinyAppResult["jump"];
-      readonly onRequestDataOperation: (operation: DataOperation) => void;
-    }
-  >;
+  readonly detailView: React.VFC<{
+    readonly value: Value;
+    readonly selection: Selection | undefined;
+    readonly onRequestDataOperation: (operation: DataOperation) => void;
+  }>;
 };

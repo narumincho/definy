@@ -157,11 +157,6 @@ const ListSelectionView: ElementOperation<
                 ? props.selection.selection
                 : undefined
             }
-            accountResource={props.accountResource}
-            projectResource={props.projectResource}
-            typePartResource={props.typePartResource}
-            language={props.language}
-            onJump={props.onJump}
             onChangeSelection={(selection) =>
               props.onChangeSelection({
                 index,
@@ -243,11 +238,6 @@ const ListDetailView: ElementOperation<
       <commonElement.detailView
         value={item}
         selection={props.selection.selection}
-        accountResource={props.accountResource}
-        projectResource={props.projectResource}
-        typePartResource={props.typePartResource}
-        language={props.language}
-        onJump={props.onJump}
         onRequestDataOperation={(commonDataOperation) =>
           props.onRequestDataOperation({
             tag: "childOperation",

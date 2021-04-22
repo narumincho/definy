@@ -5,16 +5,11 @@ import {
   ProductValue,
   productOperation,
 } from "../editor/product";
-import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
 export type { Value } from "../editor/common";
 
-export type Props = Pick<
-  UseDefinyAppResult,
-  "accountResource" | "projectResource" | "language" | "typePartResource"
-> & {
+export type Props = {
   readonly product: ProductValue;
-  readonly onJump: UseDefinyAppResult["jump"];
   /** データを編集をしようとした */
   readonly onRequestDataOperation: (
     dataOperation: ProductDataOperation
@@ -101,11 +96,6 @@ export const Editor: React.VFC<Props> = (props) => {
           selection={selection}
           onChangeSelection={setSelection}
           value={props.product}
-          accountResource={props.accountResource}
-          projectResource={props.projectResource}
-          typePartResource={props.typePartResource}
-          language={props.language}
-          onJump={props.onJump}
           onRequestDataOperation={props.onRequestDataOperation}
         />
       </div>
@@ -119,11 +109,6 @@ export const Editor: React.VFC<Props> = (props) => {
         <productOperation.detailView
           selection={selection}
           value={props.product}
-          language={props.language}
-          accountResource={props.accountResource}
-          projectResource={props.projectResource}
-          typePartResource={props.typePartResource}
-          onJump={props.onJump}
           onRequestDataOperation={props.onRequestDataOperation}
         />
       </div>
