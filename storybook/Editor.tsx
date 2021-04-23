@@ -370,7 +370,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
 );
 NestProduct.args = { language: d.Language.Japanese };
 
-const valueList = ["A", "B", "C", "D", "E", "F", "G"];
+const valueList = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
 const SumComponent: React.VFC<Record<string, string>> = () => {
   const [index, setIndex] = React.useState<number>(0);
@@ -378,7 +378,7 @@ const SumComponent: React.VFC<Record<string, string>> = () => {
     <Editor
       product={{
         items: Array.from(
-          { length: 7 },
+          { length: 10 },
           (_, i): Item => ({
             name: `${i}このタグ`,
             value: sumValue({
