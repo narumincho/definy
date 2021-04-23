@@ -98,6 +98,10 @@ const selectionList = (value: ListSelection): Selection => ({
   tag: "list",
   value,
 });
+const selectionSum = (sumSelection: SumSelection): Selection => ({
+  tag: "sum",
+  sumSelection,
+});
 
 export type Value =
   | {
@@ -329,9 +333,7 @@ const CommonElementSelectionView: ElementOperation<
     return (
       <sumOperation.selectionView
         value={props.value.value}
-        onChangeSelection={(listSelection) =>
-          props.onChangeSelection(selectionList(listSelection))
-        }
+        onChangeSelection={(s) => props.onChangeSelection(selectionSum(s))}
         selection={
           props.selection !== undefined && props.selection.tag === "sum"
             ? props.selection.sumSelection

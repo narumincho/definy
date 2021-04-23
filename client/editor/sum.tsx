@@ -1,16 +1,23 @@
 import * as React from "react";
+import { CommonDataOperation, Selection, Value, commonElement } from "./common";
 import type { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
 
-export type SumSelection = never;
+export type SumSelection = Selection;
 export type SumValue = {
   readonly valueList: ReadonlyArray<string>;
   readonly index: number;
+  readonly value: Value | undefined;
 };
-export type SumDataOperation = {
-  tag: "select";
-  name: string;
-};
+export type SumDataOperation =
+  | {
+      readonly tag: "select";
+      readonly index: number;
+    }
+  | {
+      readonly tag: "childOperation";
+      readonly operation: CommonDataOperation;
+    };
 
 const SumSelectionView: ElementOperation<
   SumSelection,
@@ -18,41 +25,58 @@ const SumSelectionView: ElementOperation<
   SumDataOperation
 >["selectionView"] = (props) => {
   return (
-    <div
-      className={css({
-        fontSize: 16,
-        display: "grid",
-        gridTemplateColumns: tagCountToGridTemplateColumns(
-          props.value.valueList.length
-        ),
-        gridAutoFlow: "column",
-        border: "solid 1px #333",
-      })}
-    >
-      {props.value.valueList.map((value, index) => (
-        <div
-          key={value}
-          className={css({
-            gridArea: tagCountAndIndexToGridArea(
-              props.value.valueList.length,
-              index
-            ),
-            backgroundColor: props.value.index === index ? "#aaa" : "#000",
-            color: props.value.index === index ? "#000" : "#ddd",
-            padding: 8,
-            cursor: "pointer",
-            textAlign: "center",
-          })}
-          onClick={() => {
+    <div>
+      <div
+        className={css({
+          fontSize: 16,
+          display: "grid",
+          gridTemplateColumns: tagCountToGridTemplateColumns(
+            props.value.valueList.length
+          ),
+          gridAutoFlow: "column",
+          border: "solid 1px #333",
+        })}
+      >
+        {props.value.valueList.map((value, index) => (
+          <div
+            key={value}
+            className={css({
+              gridArea: tagCountAndIndexToGridArea(
+                props.value.valueList.length,
+                index
+              ),
+              backgroundColor: props.value.index === index ? "#aaa" : "#000",
+              color: props.value.index === index ? "#000" : "#ddd",
+              padding: 8,
+              cursor: "pointer",
+              textAlign: "center",
+            })}
+            onClick={() => {
+              props.onRequestDataOperation({
+                tag: "select",
+                index,
+              });
+            }}
+          >
+            {value}
+          </div>
+        ))}
+      </div>
+      {props.value.value === undefined ? (
+        <></>
+      ) : (
+        <commonElement.selectionView
+          value={props.value.value}
+          selection={props.selection}
+          onChangeSelection={(selection) => props.onChangeSelection(selection)}
+          onRequestDataOperation={(operation) =>
             props.onRequestDataOperation({
-              tag: "select",
-              name: value,
-            });
-          }}
-        >
-          {value}
-        </div>
-      ))}
+              tag: "childOperation",
+              operation,
+            })
+          }
+        />
+      )}
     </div>
   );
 };
@@ -70,7 +94,7 @@ const tagCountToColumnCount = (tagCount: number): number => {
   if (tagCount === 2) {
     return 2;
   }
-  if (tagCount === 3 || tagCount === 5) {
+  if (tagCount === 3 || tagCount === 5 || tagCount === 6 || tagCount === 9) {
     return 3;
   }
   return 4;

@@ -71,6 +71,14 @@ export const TypePartPage: React.VFC<Props> = (props) => {
                 typePartResource.dataWithTime.data.attribute._ === "Just"
                   ? 0
                   : 1,
+              value:
+                typePartResource.dataWithTime.data.attribute._ === "Just"
+                  ? sumValue({
+                      valueList: ["AsBoolean", "AsUndefined"],
+                      value: undefined,
+                      index: 0,
+                    })
+                  : undefined,
             }),
           },
           {
@@ -107,6 +115,7 @@ export const TypePartPage: React.VFC<Props> = (props) => {
               index: getTypePartBodySumIndex(
                 typePartResource.dataWithTime.data.body
               ),
+              value: undefined,
             }),
           },
           {

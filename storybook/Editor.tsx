@@ -150,6 +150,7 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
           value: sumValue({
             valueList: ["Just", "Nothing"],
             index: 1,
+            value: undefined,
           }),
         },
         {
@@ -157,6 +158,7 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
           value: sumValue({
             valueList: ["Product", "Sum", "Kernel"],
             index: 1,
+            value: undefined,
           }),
         },
         {
@@ -384,6 +386,10 @@ const SumComponent: React.VFC<Record<string, string>> = () => {
             value: sumValue({
               index,
               valueList: valueList.slice(0, i),
+              value: textValue({
+                canEdit: false,
+                text: valueList[index] ?? "?",
+              }),
             }),
           })
         ),
@@ -396,9 +402,7 @@ const SumComponent: React.VFC<Record<string, string>> = () => {
           operation.commonDataOperation.tag === "sum" &&
           operation.commonDataOperation.sumDataOperation.tag === "select"
         ) {
-          const selectedName =
-            operation.commonDataOperation.sumDataOperation.name;
-          setIndex(valueList.findIndex((e) => e === selectedName));
+          setIndex(operation.commonDataOperation.sumDataOperation.index);
         }
       }}
     />
