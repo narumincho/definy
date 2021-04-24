@@ -6,6 +6,7 @@ import {
   AccountIdValue,
   accountIdOperation,
 } from "./accountId";
+import { ButtonDataOperation, ButtonValue, buttonOperation } from "./button";
 import { ImageSelection, ImageValue, imageOperation } from "./image";
 import {
   ListDataOperation,
@@ -143,6 +144,10 @@ export type Value =
   | {
       type: "typePartId";
       value: TypePartIdValue;
+    }
+  | {
+      type: "button";
+      value: ButtonValue;
     };
 
 export const textValue = (value: TextValue): Value => ({ type: "text", value });
@@ -171,6 +176,10 @@ export const projectIdValue = (value: ProjectIdValue): Value => ({
 });
 export const typePartIdValue = (value: TypePartIdValue): Value => ({
   type: "typePartId",
+  value,
+});
+export const buttonValue = (value: ButtonValue): Value => ({
+  type: "button",
   value,
 });
 
@@ -206,6 +215,10 @@ export type CommonDataOperation =
   | {
       tag: "typePartId";
       typePartIdDataOperation: TypePartIdDataOperation;
+    }
+  | {
+      tag: "button";
+      buttonDataOperation: ButtonDataOperation;
     };
 
 const moveUp = (selection: Selection, value: Value): Selection | undefined => {
@@ -293,193 +306,194 @@ const CommonElementSelectionView: ElementOperation<
   Value,
   CommonDataOperation
 >["selectionView"] = (props) => {
-  if (props.value.type === "number") {
-    return (
-      <numberOperation.selectionView
-        value={props.value.value}
-        onChangeSelection={(listSelection) =>
-          props.onChangeSelection(selectionList(listSelection))
-        }
-        selection={
-          props.selection !== undefined && props.selection.tag === "number"
-            ? props.selection.numberSelection
-            : undefined
-        }
-        onRequestDataOperation={(numberDataOperation) =>
-          props.onRequestDataOperation({ tag: "number", numberDataOperation })
-        }
-      />
-    );
+  switch (props.value.type) {
+    case "number":
+      return (
+        <numberOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={(listSelection) =>
+            props.onChangeSelection(selectionList(listSelection))
+          }
+          selection={
+            props.selection !== undefined && props.selection.tag === "number"
+              ? props.selection.numberSelection
+              : undefined
+          }
+          onRequestDataOperation={(numberDataOperation) =>
+            props.onRequestDataOperation({ tag: "number", numberDataOperation })
+          }
+        />
+      );
+    case "text":
+      return (
+        <textOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={(listSelection) =>
+            props.onChangeSelection(selectionList(listSelection))
+          }
+          selection={
+            props.selection !== undefined && props.selection.tag === "text"
+              ? props.selection.textSelection
+              : undefined
+          }
+          onRequestDataOperation={(textDataOperation) =>
+            props.onRequestDataOperation({ tag: "text", textDataOperation })
+          }
+        />
+      );
+    case "sum":
+      return (
+        <sumOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={(s) => props.onChangeSelection(selectionSum(s))}
+          selection={
+            props.selection !== undefined && props.selection.tag === "sum"
+              ? props.selection.sumSelection
+              : undefined
+          }
+          onRequestDataOperation={(sumDataOperation) =>
+            props.onRequestDataOperation({
+              tag: "sum",
+              sumDataOperation,
+            })
+          }
+        />
+      );
+    case "image":
+      return (
+        <imageOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={(listSelection) =>
+            props.onChangeSelection(selectionList(listSelection))
+          }
+          selection={
+            props.selection !== undefined && props.selection.tag === "image"
+              ? props.selection.imageSelection
+              : undefined
+          }
+          onRequestDataOperation={props.onRequestDataOperation}
+        />
+      );
+    case "accountId":
+      return (
+        <accountIdOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={(listSelection) =>
+            props.onChangeSelection(selectionList(listSelection))
+          }
+          selection={
+            props.selection !== undefined && props.selection.tag === "account"
+              ? props.selection.accountSelection
+              : undefined
+          }
+          onRequestDataOperation={(accountDataOperation) => {
+            props.onRequestDataOperation({
+              tag: "account",
+              accountDataOperation,
+            });
+          }}
+        />
+      );
+    case "time":
+      return (
+        <timeOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={(listSelection) =>
+            props.onChangeSelection(selectionList(listSelection))
+          }
+          selection={
+            props.selection !== undefined && props.selection.tag === "time"
+              ? props.selection.timeSelection
+              : undefined
+          }
+          onRequestDataOperation={props.onRequestDataOperation}
+        />
+      );
+    case "projectId":
+      return (
+        <projectIdOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={(listSelection) =>
+            props.onChangeSelection(selectionList(listSelection))
+          }
+          selection={
+            props.selection !== undefined && props.selection.tag === "project"
+              ? props.selection.projectSelection
+              : undefined
+          }
+          onRequestDataOperation={(projectDataOperation) =>
+            props.onRequestDataOperation({
+              tag: "project",
+              projectDataOperation,
+            })
+          }
+        />
+      );
+    case "list":
+      return (
+        <listOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={(listSelection) =>
+            props.onChangeSelection(selectionList(listSelection))
+          }
+          selection={
+            props.selection !== undefined && props.selection.tag === "list"
+              ? props.selection.value
+              : undefined
+          }
+          onRequestDataOperation={(listDataOperation) =>
+            props.onRequestDataOperation({ tag: "list", listDataOperation })
+          }
+        />
+      );
+    case "product":
+      return (
+        <productOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={(productSelection) =>
+            props.onChangeSelection(selectionProduct(productSelection))
+          }
+          selection={
+            props.selection !== undefined && props.selection.tag === "product"
+              ? props.selection.value
+              : undefined
+          }
+          onRequestDataOperation={(productDataOperation) =>
+            props.onRequestDataOperation({
+              tag: "product",
+              productDataOperation,
+            })
+          }
+        />
+      );
+    case "typePartId":
+      return (
+        <typePartIdOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={(typePartIdSelection) =>
+            props.onChangeSelection(typePartIdSelection)
+          }
+          selection={
+            props.selection !== undefined &&
+            props.selection.tag === "typePartId"
+              ? props.selection.typePartIdSelection
+              : undefined
+          }
+          onRequestDataOperation={props.onRequestDataOperation}
+        />
+      );
+    case "button":
+      return (
+        <buttonOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={() => {}}
+          selection={undefined}
+          onRequestDataOperation={(buttonDataOperation) =>
+            props.onRequestDataOperation({ tag: "button", buttonDataOperation })
+          }
+        />
+      );
   }
-  if (props.value.type === "text") {
-    return (
-      <textOperation.selectionView
-        value={props.value.value}
-        onChangeSelection={(listSelection) =>
-          props.onChangeSelection(selectionList(listSelection))
-        }
-        selection={
-          props.selection !== undefined && props.selection.tag === "text"
-            ? props.selection.textSelection
-            : undefined
-        }
-        onRequestDataOperation={(textDataOperation) =>
-          props.onRequestDataOperation({ tag: "text", textDataOperation })
-        }
-      />
-    );
-  }
-  if (props.value.type === "sum") {
-    return (
-      <sumOperation.selectionView
-        value={props.value.value}
-        onChangeSelection={(s) => props.onChangeSelection(selectionSum(s))}
-        selection={
-          props.selection !== undefined && props.selection.tag === "sum"
-            ? props.selection.sumSelection
-            : undefined
-        }
-        onRequestDataOperation={(sumDataOperation) =>
-          props.onRequestDataOperation({
-            tag: "sum",
-            sumDataOperation,
-          })
-        }
-      />
-    );
-  }
-  if (props.value.type === "image") {
-    return (
-      <imageOperation.selectionView
-        value={props.value.value}
-        onChangeSelection={(listSelection) =>
-          props.onChangeSelection(selectionList(listSelection))
-        }
-        selection={
-          props.selection !== undefined && props.selection.tag === "image"
-            ? props.selection.imageSelection
-            : undefined
-        }
-        onRequestDataOperation={props.onRequestDataOperation}
-      />
-    );
-  }
-  if (props.value.type === "accountId") {
-    return (
-      <accountIdOperation.selectionView
-        value={props.value.value}
-        onChangeSelection={(listSelection) =>
-          props.onChangeSelection(selectionList(listSelection))
-        }
-        selection={
-          props.selection !== undefined && props.selection.tag === "account"
-            ? props.selection.accountSelection
-            : undefined
-        }
-        onRequestDataOperation={(accountDataOperation) => {
-          props.onRequestDataOperation({
-            tag: "account",
-            accountDataOperation,
-          });
-        }}
-      />
-    );
-  }
-  if (props.value.type === "time") {
-    return (
-      <timeOperation.selectionView
-        value={props.value.value}
-        onChangeSelection={(listSelection) =>
-          props.onChangeSelection(selectionList(listSelection))
-        }
-        selection={
-          props.selection !== undefined && props.selection.tag === "time"
-            ? props.selection.timeSelection
-            : undefined
-        }
-        onRequestDataOperation={props.onRequestDataOperation}
-      />
-    );
-  }
-  if (props.value.type === "projectId") {
-    return (
-      <projectIdOperation.selectionView
-        value={props.value.value}
-        onChangeSelection={(listSelection) =>
-          props.onChangeSelection(selectionList(listSelection))
-        }
-        selection={
-          props.selection !== undefined && props.selection.tag === "project"
-            ? props.selection.projectSelection
-            : undefined
-        }
-        onRequestDataOperation={(projectDataOperation) =>
-          props.onRequestDataOperation({ tag: "project", projectDataOperation })
-        }
-      />
-    );
-  }
-  if (props.value.type === "list") {
-    return (
-      <listOperation.selectionView
-        value={props.value.value}
-        onChangeSelection={(listSelection) =>
-          props.onChangeSelection(selectionList(listSelection))
-        }
-        selection={
-          props.selection !== undefined && props.selection.tag === "list"
-            ? props.selection.value
-            : undefined
-        }
-        onRequestDataOperation={(listDataOperation) =>
-          props.onRequestDataOperation({ tag: "list", listDataOperation })
-        }
-      />
-    );
-  }
-  if (props.value.type === "product") {
-    return (
-      <productOperation.selectionView
-        value={props.value.value}
-        onChangeSelection={(productSelection) =>
-          props.onChangeSelection(selectionProduct(productSelection))
-        }
-        selection={
-          props.selection !== undefined && props.selection.tag === "product"
-            ? props.selection.value
-            : undefined
-        }
-        onRequestDataOperation={(productDataOperation) =>
-          props.onRequestDataOperation({
-            tag: "product",
-            productDataOperation,
-          })
-        }
-      />
-    );
-  }
-  if (props.value.type === "typePartId") {
-    return (
-      <typePartIdOperation.selectionView
-        value={props.value.value}
-        onChangeSelection={(typePartIdSelection) =>
-          props.onChangeSelection(typePartIdSelection)
-        }
-        selection={
-          props.selection !== undefined && props.selection.tag === "typePartId"
-            ? props.selection.typePartIdSelection
-            : undefined
-        }
-        onRequestDataOperation={props.onRequestDataOperation}
-      />
-    );
-  }
-  return (
-    <div>
-      common で 値のパターンを記述忘れている
-      {JSON.stringify(props.value)}
-    </div>
-  );
 };
 
 const CommonElementDetailView: ElementOperation<
@@ -487,163 +501,174 @@ const CommonElementDetailView: ElementOperation<
   Value,
   CommonDataOperation
 >["detailView"] = (props) => {
-  if (props.value.type === "number") {
-    return (
-      <numberOperation.detailView
-        value={props.value.value}
-        selection={
-          props.selection !== undefined && props.selection.tag === "number"
-            ? props.selection.numberSelection
-            : undefined
-        }
-        onRequestDataOperation={(numberDataOperation) =>
-          props.onRequestDataOperation({ tag: "number", numberDataOperation })
-        }
-      />
-    );
+  switch (props.value.type) {
+    case "number":
+      return (
+        <numberOperation.detailView
+          value={props.value.value}
+          selection={
+            props.selection !== undefined && props.selection.tag === "number"
+              ? props.selection.numberSelection
+              : undefined
+          }
+          onRequestDataOperation={(numberDataOperation) =>
+            props.onRequestDataOperation({ tag: "number", numberDataOperation })
+          }
+        />
+      );
+    case "text":
+      return (
+        <textOperation.detailView
+          value={props.value.value}
+          selection={
+            props.selection !== undefined && props.selection.tag === "text"
+              ? props.selection.textSelection
+              : undefined
+          }
+          onRequestDataOperation={(textDataOperation) =>
+            props.onRequestDataOperation({
+              tag: "text",
+              textDataOperation,
+            })
+          }
+        />
+      );
+    case "sum":
+      return (
+        <sumOperation.detailView
+          value={props.value.value}
+          selection={
+            props.selection !== undefined && props.selection.tag === "sum"
+              ? props.selection.sumSelection
+              : undefined
+          }
+          onRequestDataOperation={(sumDataOperation) =>
+            props.onRequestDataOperation({
+              tag: "sum",
+              sumDataOperation,
+            })
+          }
+        />
+      );
+    case "image":
+      return (
+        <imageOperation.detailView
+          value={props.value.value}
+          selection={
+            props.selection !== undefined && props.selection.tag === "image"
+              ? props.selection.imageSelection
+              : undefined
+          }
+          onRequestDataOperation={props.onRequestDataOperation}
+        />
+      );
+    case "accountId":
+      return (
+        <accountIdOperation.detailView
+          value={props.value.value}
+          selection={
+            props.selection !== undefined && props.selection.tag === "account"
+              ? props.selection.accountSelection
+              : undefined
+          }
+          onRequestDataOperation={(accountDataOperation) =>
+            props.onRequestDataOperation({
+              tag: "account",
+              accountDataOperation,
+            })
+          }
+        />
+      );
+    case "projectId":
+      return (
+        <projectIdOperation.detailView
+          value={props.value.value}
+          selection={
+            props.selection !== undefined && props.selection.tag === "project"
+              ? props.selection.projectSelection
+              : undefined
+          }
+          onRequestDataOperation={(projectDataOperation) =>
+            props.onRequestDataOperation({
+              tag: "project",
+              projectDataOperation,
+            })
+          }
+        />
+      );
+    case "time":
+      return (
+        <timeOperation.detailView
+          value={props.value.value}
+          selection={
+            props.selection !== undefined && props.selection.tag === "time"
+              ? props.selection.timeSelection
+              : undefined
+          }
+          onRequestDataOperation={props.onRequestDataOperation}
+        />
+      );
+    case "list":
+      return (
+        <listOperation.detailView
+          value={props.value.value}
+          selection={
+            props.selection !== undefined && props.selection.tag === "list"
+              ? props.selection.value
+              : undefined
+          }
+          onRequestDataOperation={(listDataOperation) =>
+            props.onRequestDataOperation({
+              tag: "list",
+              listDataOperation,
+            })
+          }
+        />
+      );
+    case "product":
+      return (
+        <productOperation.detailView
+          value={props.value.value}
+          selection={
+            props.selection !== undefined && props.selection.tag === "product"
+              ? props.selection.value
+              : undefined
+          }
+          onRequestDataOperation={(productDataOperation) =>
+            props.onRequestDataOperation({
+              tag: "product",
+              productDataOperation,
+            })
+          }
+        />
+      );
+    case "typePartId":
+      return (
+        <typePartIdOperation.detailView
+          value={props.value.value}
+          selection={
+            props.selection !== undefined &&
+            props.selection.tag === "typePartId"
+              ? props.selection.typePartIdSelection
+              : undefined
+          }
+          onRequestDataOperation={props.onRequestDataOperation}
+        />
+      );
+    case "button":
+      return (
+        <buttonOperation.detailView
+          value={props.value.value}
+          selection={undefined}
+          onRequestDataOperation={(buttonDataOperation) => {
+            props.onRequestDataOperation({
+              tag: "button",
+              buttonDataOperation,
+            });
+          }}
+        />
+      );
   }
-  if (props.value.type === "text") {
-    return (
-      <textOperation.detailView
-        value={props.value.value}
-        selection={
-          props.selection !== undefined && props.selection.tag === "text"
-            ? props.selection.textSelection
-            : undefined
-        }
-        onRequestDataOperation={(textDataOperation) =>
-          props.onRequestDataOperation({
-            tag: "text",
-            textDataOperation,
-          })
-        }
-      />
-    );
-  }
-  if (props.value.type === "sum") {
-    return (
-      <sumOperation.detailView
-        value={props.value.value}
-        selection={
-          props.selection !== undefined && props.selection.tag === "sum"
-            ? props.selection.sumSelection
-            : undefined
-        }
-        onRequestDataOperation={(sumDataOperation) =>
-          props.onRequestDataOperation({
-            tag: "sum",
-            sumDataOperation,
-          })
-        }
-      />
-    );
-  }
-  if (props.value.type === "image") {
-    return (
-      <imageOperation.detailView
-        value={props.value.value}
-        selection={
-          props.selection !== undefined && props.selection.tag === "image"
-            ? props.selection.imageSelection
-            : undefined
-        }
-        onRequestDataOperation={props.onRequestDataOperation}
-      />
-    );
-  }
-  if (props.value.type === "accountId") {
-    return (
-      <accountIdOperation.detailView
-        value={props.value.value}
-        selection={
-          props.selection !== undefined && props.selection.tag === "account"
-            ? props.selection.accountSelection
-            : undefined
-        }
-        onRequestDataOperation={(accountDataOperation) =>
-          props.onRequestDataOperation({ tag: "account", accountDataOperation })
-        }
-      />
-    );
-  }
-  if (props.value.type === "projectId") {
-    return (
-      <projectIdOperation.detailView
-        value={props.value.value}
-        selection={
-          props.selection !== undefined && props.selection.tag === "project"
-            ? props.selection.projectSelection
-            : undefined
-        }
-        onRequestDataOperation={(projectDataOperation) =>
-          props.onRequestDataOperation({ tag: "project", projectDataOperation })
-        }
-      />
-    );
-  }
-  if (props.value.type === "time") {
-    return (
-      <timeOperation.detailView
-        value={props.value.value}
-        selection={
-          props.selection !== undefined && props.selection.tag === "time"
-            ? props.selection.timeSelection
-            : undefined
-        }
-        onRequestDataOperation={props.onRequestDataOperation}
-      />
-    );
-  }
-  if (props.value.type === "list") {
-    return (
-      <listOperation.detailView
-        value={props.value.value}
-        selection={
-          props.selection !== undefined && props.selection.tag === "list"
-            ? props.selection.value
-            : undefined
-        }
-        onRequestDataOperation={(listDataOperation) =>
-          props.onRequestDataOperation({
-            tag: "list",
-            listDataOperation,
-          })
-        }
-      />
-    );
-  }
-  if (props.value.type === "product") {
-    return (
-      <productOperation.detailView
-        value={props.value.value}
-        selection={
-          props.selection !== undefined && props.selection.tag === "product"
-            ? props.selection.value
-            : undefined
-        }
-        onRequestDataOperation={(productDataOperation) =>
-          props.onRequestDataOperation({
-            tag: "product",
-            productDataOperation,
-          })
-        }
-      />
-    );
-  }
-  if (props.value.type === "typePartId") {
-    return (
-      <typePartIdOperation.detailView
-        value={props.value.value}
-        selection={
-          props.selection !== undefined && props.selection.tag === "typePartId"
-            ? props.selection.typePartIdSelection
-            : undefined
-        }
-        onRequestDataOperation={props.onRequestDataOperation}
-      />
-    );
-  }
-  return <div>選択時しているものの構造が壊れている</div>;
 };
 
 export const commonElement: ElementOperation<
