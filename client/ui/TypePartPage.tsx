@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as d from "../../data";
 import {
+  CommonDataOperation,
   Value,
   buttonValue,
   listValue,
@@ -92,6 +93,9 @@ const LoadedTypePartEditor: React.VFC<
   const [attribute, setAttribute] = React.useState<d.Maybe<d.TypeAttribute>>(
     props.typePart.attribute
   );
+  const [typeParameterList, setTypeParameterList] = React.useState<
+    ReadonlyArray<d.TypeParameter>
+  >([]);
 
   return (
     <Editor
@@ -114,53 +118,18 @@ const LoadedTypePartEditor: React.VFC<
           },
           {
             name: props.language === d.Language.Japanese ? "属性" : "attribute",
-            value: sumValue({
-              valueList:
-                props.language === d.Language.Japanese
-                  ? ["あり", "なし"]
-                  : ["Just", "Nothing"],
-              index: attribute._ === "Just" ? 0 : 1,
-              value:
-                props.typePart.attribute._ === "Just"
-                  ? sumValue({
-                      valueList:
-                        props.language === d.Language.Japanese
-                          ? ["boolean として扱う", "undefined として扱う"]
-                          : ["AsBoolean", "AsUndefined"],
-                      value: undefined,
-                      index: 0,
-                    })
-                  : undefined,
-            }),
+            value: attributeValue(props.language, attribute),
           },
           {
             name:
               props.language === d.Language.Japanese
                 ? "パラメータ"
                 : "parameter",
-            value: listValue({
-              canEdit: true,
-              items: props.typePart.typeParameterList.map(
-                (typeParameter): Value =>
-                  productValue({
-                    headItem: {
-                      name: "name",
-                      value: { text: typeParameter.name, canEdit: false },
-                    },
-                    items: [
-                      {
-                        name: "typePartId",
-                        value: typePartIdValue({
-                          typePartId: typeParameter.typePartId,
-                          canEdit: true,
-                          typePartResource: props.typePartResource,
-                          jump: props.jump,
-                          language: props.language,
-                        }),
-                      },
-                    ],
-                  })
-              ),
+            value: parameterListValue({
+              language: props.language,
+              jump: props.jump,
+              typePartResource: props.typePartResource,
+              typeParameterList,
             }),
           },
           {
@@ -233,21 +202,131 @@ const LoadedTypePartEditor: React.VFC<
           );
           return;
         }
-        if (
-          operation.tag === "content" &&
-          operation.index === 1 &&
-          operation.commonDataOperation.tag === "sum" &&
-          operation.commonDataOperation.sumDataOperation.tag === "select"
-        ) {
-          if (operation.commonDataOperation.sumDataOperation.index === 0) {
-            setAttribute(d.Maybe.Just(d.TypeAttribute.AsBoolean));
-            return;
-          }
-          if (operation.commonDataOperation.sumDataOperation.index === 1) {
-            setAttribute(d.Maybe.Nothing());
-          }
+        if (operation.tag === "content" && operation.index === 1) {
+          attributeOperation(operation.commonDataOperation, setAttribute);
+        }
+        if (operation.tag === "content" && operation.index === 2) {
+          parameterListOperation(
+            operation.commonDataOperation,
+            typeParameterList,
+            setTypeParameterList
+          );
         }
       }}
     />
   );
 };
+
+const attributeValue = (
+  language: d.Language,
+  attributeMaybe: d.Maybe<d.TypeAttribute>
+): Value => {
+  return sumValue({
+    valueList:
+      language === d.Language.Japanese ? ["あり", "なし"] : ["Just", "Nothing"],
+    index: attributeMaybe._ === "Just" ? 0 : 1,
+    value:
+      attributeMaybe._ === "Just"
+        ? sumValue({
+            valueList:
+              language === d.Language.Japanese
+                ? ["boolean として扱う", "undefined として扱う"]
+                : ["AsBoolean", "AsUndefined"],
+            value: undefined,
+            index: attributeMaybe.value === d.TypeAttribute.AsBoolean ? 0 : 1,
+          })
+        : undefined,
+  });
+};
+
+const attributeOperation = (
+  commonDataOperation: CommonDataOperation,
+  setAttribute: (value: React.SetStateAction<d.Maybe<d.TypeAttribute>>) => void
+): void => {
+  if (commonDataOperation.tag !== "sum") {
+    return;
+  }
+  const sumOp = commonDataOperation.sumDataOperation;
+  if (sumOp.tag === "select") {
+    if (sumOp.index === 0) {
+      setAttribute(d.Maybe.Just(d.TypeAttribute.AsBoolean));
+      return;
+    }
+    if (sumOp.index === 1) {
+      setAttribute(d.Maybe.Nothing());
+      return;
+    }
+    return;
+  }
+  if (
+    sumOp.operation.tag !== "sum" ||
+    sumOp.operation.sumDataOperation.tag !== "select"
+  ) {
+    return;
+  }
+  if (sumOp.operation.sumDataOperation.index === 0) {
+    setAttribute(d.Maybe.Just(d.TypeAttribute.AsBoolean));
+    return;
+  }
+  if (sumOp.operation.sumDataOperation.index === 1) {
+    setAttribute(d.Maybe.Just(d.TypeAttribute.AsUndefined));
+  }
+};
+
+const parameterListValue = (
+  option: Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump"> & {
+    typeParameterList: ReadonlyArray<d.TypeParameter>;
+  }
+) => {
+  return listValue({
+    canEdit: true,
+    items: option.typeParameterList.map(
+      (typeParameter): Value =>
+        productValue({
+          headItem: {
+            name: "name",
+            value: { text: typeParameter.name, canEdit: true },
+          },
+          items: [
+            {
+              name: "typePartId",
+              value: textValue({
+                text: typeParameter.typePartId,
+                canEdit: false,
+              }),
+            },
+          ],
+        })
+    ),
+  });
+};
+
+const parameterListOperation = (
+  commonDataOperation: CommonDataOperation,
+  typeParameterList: ReadonlyArray<d.TypeParameter>,
+  setTypeParameterList: React.Dispatch<
+    React.SetStateAction<ReadonlyArray<d.TypeParameter>>
+  >
+) => {
+  if (commonDataOperation.tag !== "list") {
+    return;
+  }
+  const listOp = commonDataOperation.listDataOperation;
+  if (listOp.tag === "addLast") {
+    setTypeParameterList([
+      ...typeParameterList,
+      { name: "新たな型パラメータの名前", typePartId: randomTypePartId() },
+    ]);
+  }
+  if (listOp.tag === "delete") {
+    setTypeParameterList([
+      ...typeParameterList.slice(0, listOp.index - 1),
+      ...typeParameterList.slice(listOp.index),
+    ]);
+  }
+};
+
+const randomTypePartId = () =>
+  [...crypto.getRandomValues(new Uint8Array(16))]
+    .map((e) => e.toString(16).padStart(2, "0"))
+    .join("") as d.TypePartId;
