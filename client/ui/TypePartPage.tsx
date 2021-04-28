@@ -13,6 +13,7 @@ import {
   typePartIdValue,
 } from "../editor/common";
 import { Editor } from "./Editor";
+import type { ProductDataOperation } from "../editor/product";
 import { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type Props = Pick<
@@ -62,16 +63,6 @@ export const TypePartPage: React.VFC<Props> = (props) => {
   );
 };
 
-const getTypePartBodySumIndex = (typePartBody: d.TypePartBody): number => {
-  if (typePartBody._ === "Sum") {
-    return 0;
-  }
-  if (typePartBody._ === "Product") {
-    return 1;
-  }
-  return 2;
-};
-
 const LoadedTypePartEditor: React.VFC<
   Pick<
     UseDefinyAppResult,
@@ -95,7 +86,41 @@ const LoadedTypePartEditor: React.VFC<
   );
   const [typeParameterList, setTypeParameterList] = React.useState<
     ReadonlyArray<d.TypeParameter>
-  >([]);
+  >(props.typePart.typeParameterList);
+  const [body, setBody] = React.useState<d.TypePartBody>(props.typePart.body);
+
+  const onRequestDataOperation = (operation: ProductDataOperation): void => {
+    console.log(operation);
+    if (operation.tag === "head") {
+      if (operation.textDataOperation.tag === "edit") {
+        setName(operation.textDataOperation.newValue);
+      }
+      return;
+    }
+    if (
+      operation.index === 0 &&
+      operation.commonDataOperation.tag === "text" &&
+      operation.commonDataOperation.textDataOperation.tag === "edit"
+    ) {
+      setDescription(operation.commonDataOperation.textDataOperation.newValue);
+      return;
+    }
+    if (operation.index === 1) {
+      attributeOperation(operation.commonDataOperation, setAttribute);
+      return;
+    }
+    if (operation.index === 2) {
+      parameterListOperation(
+        operation.commonDataOperation,
+        typeParameterList,
+        setTypeParameterList
+      );
+      return;
+    }
+    if (operation.index === 3) {
+      bodyOperation(operation.commonDataOperation, setBody);
+    }
+  };
 
   return (
     <Editor
@@ -134,14 +159,14 @@ const LoadedTypePartEditor: React.VFC<
           },
           {
             name: props.language === d.Language.Japanese ? "本体" : "body",
-            value: sumValue({
-              valueList:
-                props.language === d.Language.Japanese
-                  ? ["直和", "直積", "カーネル"]
-                  : ["Sum", "Product", "Kernel"],
-              index: getTypePartBodySumIndex(props.typePart.body),
-              value: undefined,
-            }),
+            value: bodyValue(
+              {
+                language: props.language,
+                typePartResource: props.typePartResource,
+                jump: props.jump,
+              },
+              body
+            ),
           },
           {
             name: "保存ボタン",
@@ -182,61 +207,43 @@ const LoadedTypePartEditor: React.VFC<
           },
         ],
       }}
-      onRequestDataOperation={(operation) => {
-        console.log(operation);
-        if (
-          operation.tag === "head" &&
-          operation.textDataOperation.tag === "edit"
-        ) {
-          setName(operation.textDataOperation.newValue);
-          return;
-        }
-        if (
-          operation.tag === "content" &&
-          operation.index === 0 &&
-          operation.commonDataOperation.tag === "text" &&
-          operation.commonDataOperation.textDataOperation.tag === "edit"
-        ) {
-          setDescription(
-            operation.commonDataOperation.textDataOperation.newValue
-          );
-          return;
-        }
-        if (operation.tag === "content" && operation.index === 1) {
-          attributeOperation(operation.commonDataOperation, setAttribute);
-        }
-        if (operation.tag === "content" && operation.index === 2) {
-          parameterListOperation(
-            operation.commonDataOperation,
-            typeParameterList,
-            setTypeParameterList
-          );
-        }
-      }}
+      onRequestDataOperation={onRequestDataOperation}
     />
   );
+};
+
+const maybeValue = <T extends unknown, Context extends unknown>(
+  language: d.Language,
+  context: Context,
+  valueFunc: (c: Context, t: T) => Value,
+  maybe: d.Maybe<T>
+): Value => {
+  return sumValue({
+    valueList:
+      language === d.Language.Japanese ? ["あり", "なし"] : ["Just", "Nothing"],
+    index: maybe._ === "Just" ? 0 : 1,
+    value: maybe._ === "Just" ? valueFunc(context, maybe.value) : undefined,
+  });
 };
 
 const attributeValue = (
   language: d.Language,
   attributeMaybe: d.Maybe<d.TypeAttribute>
 ): Value => {
-  return sumValue({
-    valueList:
-      language === d.Language.Japanese ? ["あり", "なし"] : ["Just", "Nothing"],
-    index: attributeMaybe._ === "Just" ? 0 : 1,
-    value:
-      attributeMaybe._ === "Just"
-        ? sumValue({
-            valueList:
-              language === d.Language.Japanese
-                ? ["boolean として扱う", "undefined として扱う"]
-                : ["AsBoolean", "AsUndefined"],
-            value: undefined,
-            index: attributeMaybe.value === d.TypeAttribute.AsBoolean ? 0 : 1,
-          })
-        : undefined,
-  });
+  return maybeValue(
+    language,
+    undefined,
+    (_, attribute) =>
+      sumValue({
+        valueList:
+          language === d.Language.Japanese
+            ? ["boolean として扱う", "undefined として扱う"]
+            : ["AsBoolean", "AsUndefined"],
+        value: undefined,
+        index: attribute === d.TypeAttribute.AsBoolean ? 0 : 1,
+      }),
+    attributeMaybe
+  );
 };
 
 const attributeOperation = (
@@ -277,7 +284,7 @@ const parameterListValue = (
   option: Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump"> & {
     typeParameterList: ReadonlyArray<d.TypeParameter>;
   }
-) => {
+): Value => {
   return listValue({
     canEdit: true,
     items: option.typeParameterList.map(
@@ -307,7 +314,7 @@ const parameterListOperation = (
   setTypeParameterList: React.Dispatch<
     React.SetStateAction<ReadonlyArray<d.TypeParameter>>
   >
-) => {
+): void => {
   if (commonDataOperation.tag !== "list") {
     return;
   }
@@ -330,3 +337,129 @@ const randomTypePartId = () =>
   [...crypto.getRandomValues(new Uint8Array(16))]
     .map((e) => e.toString(16).padStart(2, "0"))
     .join("") as d.TypePartId;
+
+const bodyValue = (
+  context: Pick<UseDefinyAppResult, "jump" | "language" | "typePartResource">,
+  typePartBody: d.TypePartBody
+): Value => {
+  const valueList =
+    context.language === d.Language.Japanese
+      ? (["直和", "直積", "カーネル"] as const)
+      : (["Sum", "Product", "Kernel"] as const);
+  switch (typePartBody._) {
+    case "Sum":
+      return sumValue({
+        valueList,
+        index: 0,
+        value: patternListValue(context, typePartBody.patternList),
+      });
+    case "Product":
+      return sumValue({
+        valueList,
+        index: 1,
+        value: undefined,
+      });
+    case "Kernel":
+      return sumValue({
+        valueList,
+        index: 2,
+        value: undefined,
+      });
+  }
+};
+
+const patternListValue = (
+  context: Pick<UseDefinyAppResult, "jump" | "language" | "typePartResource">,
+  patternList: ReadonlyArray<d.Pattern>
+): Value => {
+  return listValue({
+    canEdit: true,
+    items: patternList.map((pattern) => patternValue(context, pattern)),
+  });
+};
+
+const patternValue = (
+  context: Pick<UseDefinyAppResult, "jump" | "language" | "typePartResource">,
+  pattern: d.Pattern
+): Value =>
+  productValue({
+    headItem: {
+      name: "name",
+      value: { canEdit: true, text: pattern.name },
+    },
+    items: [
+      {
+        name: "description",
+        value: textValue({ canEdit: true, text: pattern.description }),
+      },
+      {
+        name: "parameter",
+        value: maybeValue(
+          context.language,
+          context,
+          typeValue,
+          pattern.parameter
+        ),
+      },
+    ],
+  });
+
+const typeValue = (
+  context: Pick<UseDefinyAppResult, "jump" | "language" | "typePartResource">,
+  type: d.Type
+): Value => {
+  return productValue({
+    items: [
+      {
+        name: "typePartId",
+        value: typePartIdValue({
+          canEdit: true,
+          typePartId: type.typePartId,
+          jump: context.jump,
+          language: context.language,
+          typePartResource: context.typePartResource,
+        }),
+      },
+      {
+        name: "parameter",
+        value: listValue({
+          canEdit: true,
+          items: type.parameter.map((p) => typeValue(context, p)),
+        }),
+      },
+    ],
+  });
+};
+
+const bodyOperation = (
+  commonDataOperation: CommonDataOperation,
+  setBody: React.Dispatch<React.SetStateAction<d.TypePartBody>>
+) => {
+  if (commonDataOperation.tag !== "sum") {
+    return;
+  }
+  const sumOp = commonDataOperation.sumDataOperation;
+  if (sumOp.tag === "select") {
+    if (sumOp.index === 0) {
+      setBody(
+        d.TypePartBody.Sum([
+          { name: "Pattern", description: "", parameter: d.Maybe.Nothing() },
+        ])
+      );
+    }
+    if (sumOp.index === 1) {
+      setBody(
+        d.TypePartBody.Product([
+          {
+            name: "member",
+            description: "",
+            type: { typePartId: d.Int32.typePartId, parameter: [] },
+          },
+        ])
+      );
+    }
+    if (sumOp.index === 2) {
+      setBody(d.TypePartBody.Kernel(d.TypePartBodyKernel.String));
+    }
+  }
+};
