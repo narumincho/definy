@@ -15,6 +15,7 @@ import {
 import { Editor } from "./Editor";
 import type { ProductDataOperation } from "../editor/product";
 import { UseDefinyAppResult } from "../hook/useDefinyApp";
+import { listDeleteAt } from "../../common/util";
 
 export type Props = Pick<
   UseDefinyAppResult,
@@ -118,7 +119,7 @@ const LoadedTypePartEditor: React.VFC<
       return;
     }
     if (operation.index === 3) {
-      bodyOperation(operation.commonDataOperation, setBody);
+      bodyOperation(operation.commonDataOperation, setBody, body);
     }
   };
 
@@ -326,10 +327,7 @@ const parameterListOperation = (
     ]);
   }
   if (listOp.tag === "delete") {
-    setTypeParameterList([
-      ...typeParameterList.slice(0, listOp.index - 1),
-      ...typeParameterList.slice(listOp.index),
-    ]);
+    setTypeParameterList(listDeleteAt(typeParameterList, listOp.index));
   }
 };
 
@@ -357,13 +355,13 @@ const bodyValue = (
       return sumValue({
         valueList,
         index: 1,
-        value: undefined,
+        value: memberListValue(context, typePartBody.memberList),
       });
     case "Kernel":
       return sumValue({
         valueList,
         index: 2,
-        value: undefined,
+        value: kernelValue(typePartBody.typePartBodyKernel),
       });
   }
 };
@@ -431,9 +429,58 @@ const typeValue = (
   });
 };
 
+const memberListValue = (
+  context: Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump">,
+  memberList: ReadonlyArray<d.Member>
+): Value => {
+  return listValue({
+    canEdit: true,
+    items: memberList.map((member) => memberValue(context, member)),
+  });
+};
+
+const memberValue = (
+  context: Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump">,
+  member: d.Member
+) => {
+  return productValue({
+    headItem: {
+      name: "name",
+      value: { canEdit: true, text: member.name },
+    },
+    items: [
+      {
+        name: "description",
+        value: textValue({ canEdit: true, text: member.description }),
+      },
+      { name: "type", value: typeValue(context, member.type) },
+    ],
+  });
+};
+
+const typePartBodyKernelValueList: ReadonlyArray<d.TypePartBodyKernel> = [
+  "Function",
+  "Int32",
+  "String",
+  "Binary",
+  "Id",
+  "Token",
+  "List",
+  "Dict",
+];
+
+const kernelValue = (typePartBodyKernel: d.TypePartBodyKernel) => {
+  return sumValue({
+    valueList: typePartBodyKernelValueList,
+    index: typePartBodyKernelValueList.indexOf(typePartBodyKernel),
+    value: undefined,
+  });
+};
+
 const bodyOperation = (
   commonDataOperation: CommonDataOperation,
-  setBody: React.Dispatch<React.SetStateAction<d.TypePartBody>>
+  setBody: React.Dispatch<React.SetStateAction<d.TypePartBody>>,
+  body: d.TypePartBody
 ) => {
   if (commonDataOperation.tag !== "sum") {
     return;
@@ -446,6 +493,7 @@ const bodyOperation = (
           { name: "Pattern", description: "", parameter: d.Maybe.Nothing() },
         ])
       );
+      return;
     }
     if (sumOp.index === 1) {
       setBody(
@@ -457,9 +505,93 @@ const bodyOperation = (
           },
         ])
       );
+      return;
     }
     if (sumOp.index === 2) {
       setBody(d.TypePartBody.Kernel(d.TypePartBodyKernel.String));
+    }
+    return;
+  }
+  bodyContentOperation(sumOp.operation, setBody, body);
+};
+
+const bodyContentOperation = (
+  op: CommonDataOperation,
+  setBody: React.Dispatch<React.SetStateAction<d.TypePartBody>>,
+  body: d.TypePartBody
+): void => {
+  switch (body._) {
+    case "Sum": {
+      if (op.tag !== "list") {
+        return;
+      }
+      if (op.listDataOperation.tag === "addLast") {
+        setBody(
+          d.TypePartBody.Sum([
+            ...body.patternList,
+            {
+              name: "newPattern",
+              description: "",
+              parameter: d.Maybe.Nothing(),
+            },
+          ])
+        );
+        return;
+      }
+      if (op.listDataOperation.tag === "delete") {
+        setBody(
+          d.TypePartBody.Sum(
+            listDeleteAt(body.patternList, op.listDataOperation.index)
+          )
+        );
+      }
+      if (op.listDataOperation.tag === "deleteAll") {
+        setBody(d.TypePartBody.Sum([]));
+      }
+      return;
+    }
+    case "Product": {
+      if (op.tag !== "list") {
+        return;
+      }
+      if (op.listDataOperation.tag === "addLast") {
+        setBody(
+          d.TypePartBody.Product([
+            ...body.memberList,
+            {
+              name: "newMember",
+              description: "",
+              type: { typePartId: d.Int32.typePartId, parameter: [] },
+            },
+          ])
+        );
+        return;
+      }
+      if (op.listDataOperation.tag === "delete") {
+        setBody(
+          d.TypePartBody.Product(
+            listDeleteAt(body.memberList, op.listDataOperation.index)
+          )
+        );
+        return;
+      }
+      if (op.listDataOperation.tag === "deleteAll") {
+        setBody(d.TypePartBody.Product([]));
+      }
+      return;
+    }
+    case "Kernel": {
+      if (op.tag !== "sum") {
+        return;
+      }
+      if (op.sumDataOperation.tag === "select") {
+        const selectedKernel =
+          typePartBodyKernelValueList[op.sumDataOperation.index];
+        if (selectedKernel === undefined) {
+          return;
+        }
+        setBody(d.TypePartBody.Kernel(selectedKernel));
+      }
     }
   }
 };

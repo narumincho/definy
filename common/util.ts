@@ -29,3 +29,10 @@ export const maybeMap = <Input, Output>(
   }
   return func(value);
 };
+
+export const listDeleteAt = <Element>(
+  list: ReadonlyArray<Element>,
+  index: number
+): ReadonlyArray<Element> => {
+  return [...list.slice(0, index - 1), ...list.slice(index)];
+};
