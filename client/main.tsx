@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
 import { SnackbarProvider, useSnackbar } from "notistack";
-import { App as UiApp } from "./ui/App";
+import { App } from "./ui/App";
 import { useDefinyApp } from "./hook/useDefinyApp";
 
 export const AppInSnack: React.VFC<Record<string, never>> = () => {
@@ -11,15 +11,7 @@ export const AppInSnack: React.VFC<Record<string, never>> = () => {
       enqueueSnackbar(message, { variant }),
   });
 
-  return <UiApp useDefinyAppResult={useDefinyAppResult} />;
-};
-
-export const App: React.VFC<Record<string, string>> = () => {
-  return (
-    <SnackbarProvider maxSnack={4}>
-      <AppInSnack />
-    </SnackbarProvider>
-  );
+  return <App useDefinyAppResult={useDefinyAppResult} />;
 };
 
 const entryElement = document.createElement("div");
@@ -29,7 +21,9 @@ document.body.textContent = "";
 document.body.appendChild(entryElement);
 ReactDom.render(
   <React.StrictMode>
-    <App />
+    <SnackbarProvider maxSnack={4}>
+      <AppInSnack />
+    </SnackbarProvider>
   </React.StrictMode>,
   entryElement
 );
