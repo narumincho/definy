@@ -41,6 +41,12 @@ import {
 } from "./text";
 import { TimeSelection, TimeValue, timeOperation } from "./time";
 import {
+  TypeDataOperation,
+  TypeSelection,
+  TypeValue,
+  typeOperation,
+} from "./type";
+import {
   TypePartIdDataOperation,
   TypePartIdSelection,
   TypePartIdValue,
@@ -89,6 +95,10 @@ export type Selection =
   | {
       tag: "typePartId";
       typePartIdSelection: TypePartIdSelection;
+    }
+  | {
+      tag: "type";
+      typeSelection: TypeSelection;
     };
 
 const selectionProduct = (value: ProductSelection): Selection => ({
@@ -102,6 +112,10 @@ const selectionList = (value: ListSelection): Selection => ({
 const selectionSum = (sumSelection: SumSelection): Selection => ({
   tag: "sum",
   sumSelection,
+});
+const selectionType = (typeSelection: TypeSelection): Selection => ({
+  tag: "type",
+  typeSelection,
 });
 
 export type Value =
@@ -148,6 +162,10 @@ export type Value =
   | {
       type: "button";
       value: ButtonValue;
+    }
+  | {
+      type: "type";
+      value: TypeValue;
     };
 
 export const textValue = (value: TextValue): Value => ({ type: "text", value });
@@ -180,6 +198,10 @@ export const typePartIdValue = (value: TypePartIdValue): Value => ({
 });
 export const buttonValue = (value: ButtonValue): Value => ({
   type: "button",
+  value,
+});
+export const typeValue = (value: TypeValue): Value => ({
+  type: "type",
   value,
 });
 
@@ -219,6 +241,10 @@ export type CommonDataOperation =
   | {
       tag: "button";
       buttonDataOperation: ButtonDataOperation;
+    }
+  | {
+      tag: "type";
+      typeDataOperation: TypeDataOperation;
     };
 
 const moveUp = (selection: Selection, value: Value): Selection | undefined => {
@@ -493,6 +519,23 @@ const CommonElementSelectionView: ElementOperation<
           }
         />
       );
+    case "type":
+      return (
+        <typeOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={(selection) =>
+            props.onChangeSelection(selectionType(selection))
+          }
+          selection={
+            props.selection?.tag === "type"
+              ? props.selection.typeSelection
+              : undefined
+          }
+          onRequestDataOperation={(typeDataOperation) =>
+            props.onRequestDataOperation({ tag: "type", typeDataOperation })
+          }
+        />
+      );
   }
 };
 
@@ -664,6 +707,23 @@ const CommonElementDetailView: ElementOperation<
             props.onRequestDataOperation({
               tag: "button",
               buttonDataOperation,
+            });
+          }}
+        />
+      );
+    case "type":
+      return (
+        <typeOperation.detailView
+          value={props.value.value}
+          selection={
+            props.selection !== undefined && props.selection.tag === "type"
+              ? props.selection.typeSelection
+              : undefined
+          }
+          onRequestDataOperation={(typeDataOperation) => {
+            props.onRequestDataOperation({
+              tag: "type",
+              typeDataOperation,
             });
           }}
         />

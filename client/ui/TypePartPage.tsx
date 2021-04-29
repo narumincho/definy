@@ -11,6 +11,7 @@ import {
   textValue,
   timeValue,
   typePartIdValue,
+  typeValue,
 } from "../editor/common";
 import { listDeleteAt, listSetAt } from "../../common/util";
 import { Editor } from "./Editor";
@@ -395,39 +396,19 @@ const patternValue = (
         value: maybeValue(
           context.language,
           context,
-          typeValue,
+          (_, type) =>
+            typeValue({
+              type,
+              typePartResource: context.typePartResource,
+              jump: context.jump,
+              language: context.language,
+              canEdit: true,
+            }),
           pattern.parameter
         ),
       },
     ],
   });
-
-const typeValue = (
-  context: Pick<UseDefinyAppResult, "jump" | "language" | "typePartResource">,
-  type: d.Type
-): Value => {
-  return productValue({
-    items: [
-      {
-        name: "typePartId",
-        value: typePartIdValue({
-          canEdit: true,
-          typePartId: type.typePartId,
-          jump: context.jump,
-          language: context.language,
-          typePartResource: context.typePartResource,
-        }),
-      },
-      {
-        name: "parameter",
-        value: listValue({
-          canEdit: true,
-          items: type.parameter.map((p) => typeValue(context, p)),
-        }),
-      },
-    ],
-  });
-};
 
 const memberListValue = (
   context: Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump">,
@@ -453,7 +434,16 @@ const memberValue = (
         name: "description",
         value: textValue({ canEdit: true, text: member.description }),
       },
-      { name: "type", value: typeValue(context, member.type) },
+      {
+        name: "type",
+        value: typeValue({
+          type: member.type,
+          typePartResource: context.typePartResource,
+          jump: context.jump,
+          language: context.language,
+          canEdit: true,
+        }),
+      },
     ],
   });
 };
