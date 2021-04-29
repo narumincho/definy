@@ -491,30 +491,13 @@ const ProductDetailView: ElementOperation<
         return <div>headItemがないのに選択している</div>;
       }
       return (
-        <div>
-          <div
-            className={css({
-              display: "flex",
-              gap: 16,
-              alignItems: "center",
-            })}
-          >
-            <div
-              className={css({
-                fontSize: 24,
-              })}
-            >
-              {props.value.headItem.name}
-            </div>
-          </div>
-          <textOperation.detailView
-            value={props.value.headItem.value}
-            selection={props.selection.selection}
-            onRequestDataOperation={(textDataOperation) =>
-              props.onRequestDataOperation({ tag: "head", textDataOperation })
-            }
-          />
-        </div>
+        <textOperation.detailView
+          value={props.value.headItem.value}
+          selection={props.selection.selection}
+          onRequestDataOperation={(textDataOperation) =>
+            props.onRequestDataOperation({ tag: "head", textDataOperation })
+          }
+        />
       );
     case "icon":
       return <div>アイコンを選択してる</div>;
@@ -525,34 +508,17 @@ const ProductDetailView: ElementOperation<
         return <div>指定した要素が存在しない</div>;
       }
       return (
-        <div>
-          <div
-            className={css({
-              display: "flex",
-              gap: 16,
-              alignItems: "center",
-            })}
-          >
-            <div
-              className={css({
-                fontSize: 24,
-              })}
-            >
-              {item.name}
-            </div>
-          </div>
-          <commonElement.detailView
-            value={item.value}
-            selection={props.selection.selection}
-            onRequestDataOperation={(commonDataOperation) =>
-              props.onRequestDataOperation({
-                tag: "content",
-                index,
-                commonDataOperation,
-              })
-            }
-          />
-        </div>
+        <commonElement.detailView
+          value={item.value}
+          selection={props.selection.selection}
+          onRequestDataOperation={(commonDataOperation) =>
+            props.onRequestDataOperation({
+              tag: "content",
+              index,
+              commonDataOperation,
+            })
+          }
+        />
       );
     }
   }

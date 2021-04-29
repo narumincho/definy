@@ -115,15 +115,32 @@ const SumDetailView: ElementOperation<
   SumValue,
   SumDataOperation
 >["detailView"] = (props) => {
+  if (props.selection === undefined) {
+    return (
+      <div
+        className={css({
+          color: "#ddd",
+        })}
+      >
+        sum(
+        {props.value.valueList.join(",")})
+      </div>
+    );
+  }
+  if (props.value.value === undefined) {
+    return <div>sum の選択している値がない</div>;
+  }
   return (
-    <div
-      className={css({
-        color: "#ddd",
-      })}
-    >
-      option(
-      {props.value.valueList.join(",")})
-    </div>
+    <commonElement.detailView
+      value={props.value.value}
+      selection={props.selection}
+      onRequestDataOperation={(operation) =>
+        props.onRequestDataOperation({
+          tag: "childOperation",
+          operation,
+        })
+      }
+    />
   );
 };
 

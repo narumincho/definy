@@ -223,30 +223,36 @@ const ListDetailView: ElementOperation<
   if (item === undefined) {
     return <div>存在しないインデックスを指定している</div>;
   }
+  if (props.selection.selection === undefined) {
+    return (
+      <div>
+        <div>リストインデックス: {index}</div>
+        {props.value.canEdit ? (
+          <Button
+            onClick={() =>
+              props.onRequestDataOperation({ tag: "delete", index })
+            }
+          >
+            リストの要素を削除
+          </Button>
+        ) : (
+          <></>
+        )}
+      </div>
+    );
+  }
   return (
-    <div>
-      <div>リストインデックス: {index}</div>
-      {props.selection.selection === undefined && props.value.canEdit ? (
-        <Button
-          onClick={() => props.onRequestDataOperation({ tag: "delete", index })}
-        >
-          リストの要素を削除
-        </Button>
-      ) : (
-        <></>
-      )}
-      <commonElement.detailView
-        value={item}
-        selection={props.selection.selection}
-        onRequestDataOperation={(commonDataOperation) =>
-          props.onRequestDataOperation({
-            tag: "childOperation",
-            index,
-            commonDataOperation,
-          })
-        }
-      />
-    </div>
+    <commonElement.detailView
+      value={item}
+      selection={props.selection.selection}
+      onRequestDataOperation={(commonDataOperation) =>
+        props.onRequestDataOperation({
+          tag: "childOperation",
+          index,
+          commonDataOperation,
+        })
+      }
+    />
   );
 };
 
