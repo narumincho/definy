@@ -5,6 +5,7 @@ import { Link } from "../ui/Link";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
 import { listSetAt } from "../../common/util";
+import { useOneLineTextEditor } from "../ui/OneLineTextEditor";
 
 export type TypeSelection = {
   readonly index: number;
@@ -100,13 +101,39 @@ const TypeDetailView: ElementOperation<
   TypeValue,
   TypeDataOperation
 >["detailView"] = (props) => {
+  const { text, element } = useOneLineTextEditor({
+    id: "search",
+    initText: "",
+  });
   React.useEffect(() => {
     props.value.typePartResource.requestToServerIfEmpty(
       props.value.type.typePartId
     );
   }, [props.value.type.typePartId]);
-  const typePartResource = props.value.typePartResource.getFromMemoryCache(
-    props.value.type.typePartId
+  return (
+    <div>
+      <SelectedType
+        language={props.value.language}
+        jump={props.value.jump}
+        typePartId={props.value.type.typePartId}
+        typePartResource={props.value.typePartResource}
+      />
+      <div>
+        <div>検索</div>
+        {element()}
+      </div>
+      <div>{text} で検索して絞り込んだ型パーツの一覧を表示する</div>
+    </div>
+  );
+};
+
+const SelectedType: React.VFC<
+  Pick<UseDefinyAppResult, "typePartResource" | "jump" | "language"> & {
+    typePartId: d.TypePartId;
+  }
+> = (props) => {
+  const typePartResource = props.typePartResource.getFromMemoryCache(
+    props.typePartId
   );
   if (typePartResource === undefined) {
     return <div>型パーツの取得準備待ち</div>;
@@ -123,10 +150,10 @@ const TypeDetailView: ElementOperation<
         <div>
           <div>{typePartResource.dataWithTime.data.name}</div>
           <Link
-            onJump={props.value.jump}
+            onJump={props.jump}
             urlData={{
-              language: props.value.language,
-              location: d.Location.TypePart(props.value.type.typePartId),
+              language: props.language,
+              location: d.Location.TypePart(props.typePartId),
             }}
           >
             {typePartResource.dataWithTime.data.name}のページ
