@@ -375,7 +375,7 @@ const HeadItemView: React.VFC<{
       props.productSelection.tag === "head" &&
       ref.current !== null
     ) {
-      ref.current.focus();
+      ref.current.scrollIntoView({ block: "nearest", inline: "nearest" });
     }
   }, [props.productSelection]);
 
@@ -426,7 +426,7 @@ const ItemView: React.VFC<{
   const ref = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     if (props.itemSelection.tag === "selectSelf" && ref.current !== null) {
-      ref.current.focus();
+      ref.current.scrollIntoView({ block: "nearest", inline: "nearest" });
     }
   }, [props.itemSelection]);
 
