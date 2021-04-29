@@ -2,6 +2,7 @@ import * as commonUrl from "../common/url";
 import * as d from "../data";
 import * as main from "../core/main";
 import * as util from "../core/util";
+import { listDeleteAt, listSetAt } from "../common/util";
 
 describe("url", () => {
   it("https://definy.app/ is Home in English", () => {
@@ -249,5 +250,60 @@ describe("binary codec", () => {
       }),
       d.Maybe.codec(d.IdAndData.codec(d.AccountId.codec, d.Account.codec))
     );
+  });
+  it("util listDeleteAt center", () => {
+    expect(listDeleteAt(["あ", "い", "う", "え", "お"], 1)).toEqual([
+      "あ",
+      "う",
+      "え",
+      "お",
+    ]);
+  });
+  it("util listDeleteAt first", () => {
+    expect(listDeleteAt(["あ", "い", "う", "え", "お"], 0)).toEqual([
+      "い",
+      "う",
+      "え",
+      "お",
+    ]);
+  });
+  it("util listDeleteAt last", () => {
+    expect(listDeleteAt(["あ", "い", "う", "え", "お"], 4)).toEqual([
+      "あ",
+      "い",
+      "う",
+      "え",
+    ]);
+  });
+  it("util listDeleteAt out of index", () => {
+    expect(listDeleteAt(["あ", "い", "う"], 3)).toEqual(["あ", "い", "う"]);
+  });
+  it("util listSetAt center", () => {
+    expect(listSetAt(["あ", "い", "う"], 1, "それな")).toEqual([
+      "あ",
+      "それな",
+      "う",
+    ]);
+  });
+  it("util listSetAt first", () => {
+    expect(listSetAt(["あ", "い", "う"], 0, "それな")).toEqual([
+      "それな",
+      "い",
+      "う",
+    ]);
+  });
+  it("util listSetAt last", () => {
+    expect(listSetAt(["あ", "い", "う"], 2, "それな")).toEqual([
+      "あ",
+      "い",
+      "それな",
+    ]);
+  });
+  it("util listSetAt out of index", () => {
+    expect(listSetAt(["あ", "い", "う"], 3, "それな")).toEqual([
+      "あ",
+      "い",
+      "う",
+    ]);
   });
 });

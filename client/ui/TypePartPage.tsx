@@ -12,10 +12,10 @@ import {
   timeValue,
   typePartIdValue,
 } from "../editor/common";
+import { listDeleteAt, listSetAt } from "../../common/util";
 import { Editor } from "./Editor";
 import type { ProductDataOperation } from "../editor/product";
 import { UseDefinyAppResult } from "../hook/useDefinyApp";
-import { listDeleteAt } from "../../common/util";
 
 export type Props = Pick<
   UseDefinyAppResult,
@@ -544,9 +544,30 @@ const bodyContentOperation = (
             listDeleteAt(body.patternList, op.listDataOperation.index)
           )
         );
+        return;
       }
       if (op.listDataOperation.tag === "deleteAll") {
         setBody(d.TypePartBody.Sum([]));
+        return;
+      }
+      const pattern = body.patternList[op.listDataOperation.index];
+      if (pattern === undefined) {
+        return;
+      }
+      const sumContentResult = sumContentOperation(
+        op.listDataOperation.commonDataOperation,
+        pattern
+      );
+      if (sumContentResult !== undefined) {
+        setBody(
+          d.TypePartBody.Sum(
+            listSetAt(
+              body.patternList,
+              op.listDataOperation.index,
+              sumContentResult
+            )
+          )
+        );
       }
       return;
     }
@@ -591,6 +612,52 @@ const bodyContentOperation = (
           return;
         }
         setBody(d.TypePartBody.Kernel(selectedKernel));
+      }
+    }
+  }
+};
+
+const sumContentOperation = (
+  op: CommonDataOperation,
+  pattern: d.Pattern
+): d.Pattern | undefined => {
+  if (op.tag !== "product") {
+    return;
+  }
+  const productOp = op.productDataOperation;
+  if (productOp.tag === "head") {
+    return {
+      name: productOp.textDataOperation.newValue,
+      description: pattern.description,
+      parameter: pattern.parameter,
+    };
+  }
+  if (productOp.index === 0 && productOp.commonDataOperation.tag === "text") {
+    return {
+      name: pattern.name,
+      description: productOp.commonDataOperation.textDataOperation.newValue,
+      parameter: pattern.parameter,
+    };
+  }
+  if (productOp.index === 1 && productOp.commonDataOperation.tag === "sum") {
+    const sumOp = productOp.commonDataOperation.sumDataOperation;
+    if (sumOp.tag === "select") {
+      if (sumOp.index === 0) {
+        return {
+          name: pattern.name,
+          description: pattern.description,
+          parameter: d.Maybe.Just({
+            typePartId: d.Int32.typePartId,
+            parameter: [],
+          }),
+        };
+      }
+      if (sumOp.index === 1) {
+        return {
+          name: pattern.name,
+          description: pattern.description,
+          parameter: d.Maybe.Nothing(),
+        };
       }
     }
   }
