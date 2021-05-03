@@ -6,7 +6,7 @@ export type Props = {
   style?: CSSObject;
 };
 
-export const Button: React.FC<Props> = (props) => (
+export const Button: React.FC<Props> = React.memo((props) => (
   <button
     className={css(
       {
@@ -28,4 +28,5 @@ export const Button: React.FC<Props> = (props) => (
   >
     {props.children}
   </button>
-);
+));
+Button.displayName = "Button";

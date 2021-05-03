@@ -22,9 +22,11 @@ import {
   typePartResource,
 } from "./mockData";
 import { ArgType } from "@storybook/addons";
+import type { Item } from "../client/editor/product";
 import { UseDefinyAppResult } from "../client/hook/useDefinyApp";
+import { action } from "@storybook/addon-actions";
 
-type ControlAndActionProps = Pick<Props, "onRequestDataOperation"> & {
+type ControlAndActionProps = {
   language: d.Language;
   onJump: UseDefinyAppResult["jump"];
 };
@@ -55,7 +57,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
     product={{
       headItem: {
         name: "プロジェクト名",
-        value: { canEdit: true, text: "やあ" },
+        value: { onChange: action("editProjectName"), text: "やあ" },
         iconHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
       },
       items: [
@@ -70,7 +72,6 @@ export const Project: Story<ControlAndActionProps> = (props) => (
         {
           name: "作成者",
           value: textValue({
-            canEdit: false,
             text: "作成者の名前",
           }),
         },
@@ -84,14 +85,12 @@ export const Project: Story<ControlAndActionProps> = (props) => (
         {
           name: "パーツ",
           value: textValue({
-            canEdit: false,
             text: "パーツのリストを表示したい",
           }),
         },
         {
           name: "型パーツ",
           value: listValue({
-            canEdit: true,
             items: [
               typePartIdValue({
                 canEdit: false,
@@ -119,11 +118,10 @@ export const Project: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "プロジェクトID",
-          value: { type: "text", value: { canEdit: false, text: "ffffffff" } },
+          value: { type: "text", value: { text: "ffffffff" } },
         },
       ],
     }}
-    onRequestDataOperation={props.onRequestDataOperation}
   />
 );
 Project.args = { language: d.Language.Japanese };
@@ -133,13 +131,13 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
     product={{
       headItem: {
         name: "name",
-        value: { canEdit: true, text: "Location" },
+        value: { onChange: action("editName"), text: "Location" },
       },
       items: [
         {
           name: "description",
           value: textValue({
-            canEdit: true,
+            onChange: action("editDescription"),
             text:
               "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
           }),
@@ -147,21 +145,29 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
         {
           name: "attribute",
           value: sumValue({
-            valueList: ["Just", "Nothing"],
+            tagList: [
+              { name: "Just", onSelect: action("attributeJust") },
+              { name: "Nothing", onSelect: action("attributeNothing") },
+            ],
             index: 1,
+            value: undefined,
           }),
         },
         {
           name: "body",
           value: sumValue({
-            valueList: ["Product", "Sum", "Kernel"],
+            tagList: [
+              { name: "Sum", onSelect: action("bodySum") },
+              { name: "Product", onSelect: action("bodyProduct") },
+              { name: "Kernel", onSelect: action("bodyKernel") },
+            ],
             index: 1,
+            value: undefined,
           }),
         },
         {
           name: "使用しているところ",
           value: listValue({
-            canEdit: false,
             isDirectionColumn: false,
             items: [
               typePartIdValue({
@@ -190,7 +196,6 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
         },
       ],
     }}
-    onRequestDataOperation={props.onRequestDataOperation}
   />
 );
 TypePart.args = { language: d.Language.Japanese };
@@ -202,7 +207,7 @@ export const Home: Story<ControlAndActionProps> = (props) => (
         {
           name: "検索",
           value: textValue({
-            canEdit: true,
+            onChange: action("changeSearchText"),
             text: "検索語句",
           }),
         },
@@ -211,7 +216,6 @@ export const Home: Story<ControlAndActionProps> = (props) => (
           value: {
             type: "list",
             value: {
-              canEdit: false,
               isDirectionColumn: true,
               items: [
                 projectIdValue({
@@ -234,19 +238,17 @@ export const Home: Story<ControlAndActionProps> = (props) => (
         },
       ],
     }}
-    onRequestDataOperation={props.onRequestDataOperation}
   />
 );
 Home.args = { language: d.Language.Japanese };
 
-export const List: Story<ControlAndActionProps> = (props) => (
+export const List: Story<ControlAndActionProps> = () => (
   <Editor
     product={{
       items: [
         {
           name: "数値のリスト",
           value: listValue({
-            canEdit: true,
             isDirectionColumn: true,
             items: [
               numberValue({ canEdit: true, value: 0 }),
@@ -259,29 +261,27 @@ export const List: Story<ControlAndActionProps> = (props) => (
         {
           name: "文字のリスト",
           value: listValue({
-            canEdit: true,
             isDirectionColumn: true,
             items: [
-              textValue({ canEdit: true, text: "React" }),
-              textValue({ canEdit: true, text: "Vue" }),
-              textValue({ canEdit: true, text: "Angular" }),
-              textValue({ canEdit: true, text: "Elm" }),
+              textValue({ text: "React" }),
+              textValue({ text: "Vue" }),
+              textValue({ text: "Angular" }),
+              textValue({ text: "Elm" }),
             ],
           }),
         },
       ],
     }}
-    onRequestDataOperation={props.onRequestDataOperation}
   />
 );
 List.args = { language: d.Language.Japanese };
 
-export const NestProduct: Story<ControlAndActionProps> = (props) => (
+export const NestProduct: Story<ControlAndActionProps> = () => (
   <Editor
     product={{
       headItem: {
         name: "name",
-        value: { canEdit: false, text: "直積の入れ子" },
+        value: { text: "直積の入れ子" },
       },
       items: [
         {
@@ -290,7 +290,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
             items: [
               {
                 name: "name",
-                value: textValue({ canEdit: false, text: "入れ子の名前" }),
+                value: textValue({ text: "入れ子の名前" }),
               },
               {
                 name: "age",
@@ -302,7 +302,6 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
         {
           name: "直積 in リスト",
           value: listValue({
-            canEdit: false,
             isDirectionColumn: false,
             items: [
               productValue({
@@ -310,7 +309,6 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
                   {
                     name: "name",
                     value: textValue({
-                      canEdit: false,
                       text: "入れ子の名前A",
                     }),
                   },
@@ -327,10 +325,7 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
                 items: [
                   {
                     name: "name",
-                    value: textValue({
-                      canEdit: false,
-                      text: "入れ子の名前B",
-                    }),
+                    value: textValue({ text: "入れ子の名前B" }),
                   },
                   {
                     name: "age",
@@ -346,7 +341,6 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
                   {
                     name: "name",
                     value: textValue({
-                      canEdit: false,
                       text: "入れ子の名前C",
                     }),
                   },
@@ -364,7 +358,41 @@ export const NestProduct: Story<ControlAndActionProps> = (props) => (
         },
       ],
     }}
-    onRequestDataOperation={props.onRequestDataOperation}
   />
 );
 NestProduct.args = { language: d.Language.Japanese };
+
+const valueList = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+
+const SumComponent: React.VFC<Record<string, string>> = () => {
+  const [selectedIndex, setSelectedIndex] = React.useState<number>(0);
+  return (
+    <Editor
+      product={{
+        items: Array.from(
+          { length: 10 },
+          (_, i): Item => ({
+            name: `${i}このタグ`,
+            value: sumValue({
+              index: selectedIndex,
+              tagList: valueList.slice(0, i).map((name, index) => ({
+                name,
+                onSelect: () => {
+                  setSelectedIndex(index);
+                },
+              })),
+              value: textValue({
+                text: valueList[selectedIndex] ?? "?",
+              }),
+            }),
+          })
+        ),
+      }}
+    />
+  );
+};
+
+export const Sum: Story<Record<string, string>> = () => {
+  return <SumComponent />;
+};
+Sum.argTypes = {};

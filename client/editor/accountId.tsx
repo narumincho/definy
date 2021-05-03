@@ -15,18 +15,13 @@ export type AccountIdValue = {
   readonly canEdit: boolean;
 } & Pick<UseDefinyAppResult, "accountResource" | "language" | "jump">;
 
-export type AccountIdDataOperation = {
-  tag: "jump";
-};
-
 const AccountIdSelectionView: ElementOperation<
   AccountIdSelection,
-  AccountIdValue,
-  AccountIdDataOperation
->["selectionView"] = (props) => {
+  AccountIdValue
+>["selectionView"] = React.memo((props) => {
   React.useEffect(() => {
     props.value.accountResource.requestToServerIfEmpty(props.value.accountId);
-  }, [props.value.accountId]);
+  }, [props.value.accountId, props.value.accountResource]);
 
   const accountResource = props.value.accountResource.getFromMemoryCache(
     props.value.accountId
@@ -78,13 +73,13 @@ const AccountIdSelectionView: ElementOperation<
       </Link>
     </div>
   );
-};
+});
+AccountIdSelectionView.displayName = "AccountIdSelectionView";
 
 const AccountIdDetailView: ElementOperation<
   AccountIdSelection,
-  AccountIdValue,
-  AccountIdDataOperation
->["detailView"] = (props) => {
+  AccountIdValue
+>["detailView"] = React.memo((props) => {
   return (
     <div>
       <AccountCard
@@ -95,12 +90,12 @@ const AccountIdDetailView: ElementOperation<
       />
     </div>
   );
-};
+});
+AccountIdDetailView.displayName = "AccountIdDetailView";
 
 export const accountIdOperation: ElementOperation<
   AccountIdSelection,
-  AccountIdValue,
-  AccountIdDataOperation
+  AccountIdValue
 > = {
   moveUp: () => undefined,
   moveDown: () => undefined,

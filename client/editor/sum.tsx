@@ -1,66 +1,175 @@
 import * as React from "react";
+import { CommonSelection, CommonValue, commonElement } from "./common";
 import type { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
 
-export type SumSelection = never;
-export type SumValue = {
-  valueList: ReadonlyArray<string>;
-  index: number;
+/**
+ * なぜ `Selection | undefined` にしないかというと
+ * 選択されていないといういみで `undefined` が渡ってくるため
+ */
+export type SumSelection = {
+  tag: "content";
+  selection: CommonSelection | undefined;
 };
-export type SumDataOperation = never;
+
+export type SumValue = {
+  readonly tagList: ReadonlyArray<SumTagItem>;
+  readonly index: number;
+  readonly value: CommonValue | undefined;
+};
+
+export type SumTagItem = {
+  name: string;
+  onSelect: () => void;
+};
 
 const SumSelectionView: ElementOperation<
   SumSelection,
-  SumValue,
-  SumDataOperation
->["selectionView"] = (props) => {
+  SumValue
+>["selectionView"] = React.memo((props) => {
+  const onChangeSelection = props.onChangeSelection;
+
+  const onChangeContentSelection = React.useCallback(
+    (commonSelection: CommonSelection): void => {
+      onChangeSelection({
+        tag: "content",
+        selection: commonSelection,
+      });
+    },
+    [onChangeSelection]
+  );
+
+  return (
+    <div>
+      <div
+        className={css({
+          fontSize: 16,
+          display: "grid",
+          gridTemplateColumns: tagCountToGridTemplateColumns(
+            props.value.tagList.length
+          ),
+          gridAutoFlow: "column",
+          border: "solid 1px #333",
+        })}
+      >
+        {props.value.tagList.map((value, index) => (
+          <TagItem
+            key={index}
+            index={index}
+            isSelect={props.value.index === index}
+            sumTagItem={value}
+            tagNameCount={props.value.tagList.length}
+          />
+        ))}
+      </div>
+      {props.value.value === undefined ? (
+        <></>
+      ) : (
+        <div
+          className={css({
+            borderWidth: 2,
+            borderStyle: "solid",
+            borderColor:
+              props.selection !== undefined &&
+              props.selection.selection === undefined
+                ? "red"
+                : "#333",
+          })}
+        >
+          <commonElement.selectionView
+            value={props.value.value}
+            selection={props.selection?.selection}
+            onChangeSelection={onChangeContentSelection}
+          />
+        </div>
+      )}
+    </div>
+  );
+});
+SumSelectionView.displayName = "SumSelectionView";
+
+const TagItem: React.VFC<{
+  index: number;
+  isSelect: boolean;
+  sumTagItem: SumTagItem;
+  tagNameCount: number;
+}> = React.memo(({ index, isSelect, sumTagItem, tagNameCount }) => {
   return (
     <div
       className={css({
-        fontSize: 16,
-        display: "grid",
-        gridAutoFlow: "column",
+        gridArea: tagCountAndIndexToGridArea(tagNameCount, index),
+        backgroundColor: isSelect ? "#aaa" : "#000",
+        color: isSelect ? "#000" : "#ddd",
+        padding: 8,
+        cursor: "pointer",
+        textAlign: "center",
       })}
+      onClick={sumTagItem.onSelect}
     >
-      {props.value.valueList.map((value, index) => (
-        <div
-          key={value}
-          className={css({
-            backgroundColor: props.value.index === index ? "#aaa" : "#000",
-            color: props.value.index === index ? "#000" : "#ddd",
-            padding: 4,
-            cursor: "pointer",
-          })}
-        >
-          {value}
-        </div>
-      ))}
+      {sumTagItem.name}
     </div>
   );
+});
+TagItem.displayName = "TagItem";
+
+const tagCountToGridTemplateColumns = (tagCount: number): string => {
+  return new Array<string>(tagCountToColumnCount(tagCount))
+    .fill("1fr")
+    .join(" ");
+};
+
+const tagCountToColumnCount = (tagCount: number): number => {
+  if (tagCount <= 1) {
+    return 1;
+  }
+  if (tagCount === 2) {
+    return 2;
+  }
+  if (tagCount === 3 || tagCount === 5 || tagCount === 6 || tagCount === 9) {
+    return 3;
+  }
+  return 4;
+};
+
+const tagCountAndIndexToGridArea = (
+  tagCount: number,
+  index: number
+): string => {
+  const columnCount = tagCountToColumnCount(tagCount);
+  const x = (index % columnCount) + 1;
+  const y = Math.floor(index / columnCount) + 1;
+  return `${y} / ${x} / ${y + 1} / ${x + 1}`;
 };
 
 const SumDetailView: ElementOperation<
   SumSelection,
-  SumValue,
-  SumDataOperation
->["detailView"] = (props) => {
+  SumValue
+>["detailView"] = React.memo((props) => {
+  if (props.selection === undefined) {
+    return (
+      <div
+        className={css({
+          color: "#ddd",
+        })}
+      >
+        sum(
+        {props.value.tagList.map((item) => item.name).join(",")})
+      </div>
+    );
+  }
+  if (props.value.value === undefined) {
+    return <div>sum の選択している値がない</div>;
+  }
   return (
-    <div
-      className={css({
-        color: "#ddd",
-      })}
-    >
-      option(
-      {props.value.valueList.join(",")})
-    </div>
+    <commonElement.detailView
+      value={props.value.value}
+      selection={props.selection.selection}
+    />
   );
-};
+});
+SumDetailView.displayName = "SumDetailView";
 
-export const sumOperation: ElementOperation<
-  SumSelection,
-  SumValue,
-  SumDataOperation
-> = {
+export const sumOperation: ElementOperation<SumSelection, SumValue> = {
   moveUp: () => undefined,
   moveDown: () => undefined,
   moveFirstChild: () => undefined,

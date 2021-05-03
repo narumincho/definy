@@ -1,36 +1,21 @@
 import * as React from "react";
-import { CommonDataOperation, Selection, Value, commonElement } from "./common";
+import { CommonSelection, CommonValue, commonElement } from "./common";
 import { Button } from "../ui/Button";
 import type { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
 
 export type ListSelection = {
   readonly index: number;
-  readonly selection: Selection | undefined;
+  readonly selection: CommonSelection | undefined;
 };
 
 export type ListValue = {
-  readonly items: ReadonlyArray<Value>;
-  readonly canEdit: boolean;
+  readonly items: ReadonlyArray<CommonValue>;
   readonly isDirectionColumn?: boolean;
+  readonly deleteAll?: () => void;
+  readonly deleteAt?: (index: number) => void;
+  readonly addInLast?: () => void;
 };
-
-export type ListDataOperation =
-  | {
-      tag: "addLast";
-    }
-  | {
-      tag: "delete";
-      index: number;
-    }
-  | {
-      tag: "childOperation";
-      index: number;
-      commonDataOperation: CommonDataOperation;
-    }
-  | {
-      tag: "deleteAll";
-    };
 
 const moveUp = (
   selection: ListSelection,
@@ -91,11 +76,10 @@ const moveFirstChild = (
   };
 };
 
-const moveParent: ElementOperation<
-  ListSelection,
-  ListValue,
-  ListDataOperation
->["moveParent"] = (selection, value) => {
+const moveParent: ElementOperation<ListSelection, ListValue>["moveParent"] = (
+  selection,
+  value
+) => {
   const item = value.items[selection.index];
   if (selection.selection === undefined || item === undefined) {
     return undefined;
@@ -108,9 +92,8 @@ const moveParent: ElementOperation<
 
 const ListSelectionView: ElementOperation<
   ListSelection,
-  ListValue,
-  ListDataOperation
->["selectionView"] = (props) => {
+  ListValue
+>["selectionView"] = React.memo((props) => {
   return (
     <div
       className={css({
@@ -123,97 +106,117 @@ const ListSelectionView: ElementOperation<
       })}
     >
       {props.value.items.map((v, index) => (
-        <div
+        <SelectionItem
           key={index}
-          onFocus={(event) => {
-            event.stopPropagation();
-            event.preventDefault();
-            props.onChangeSelection({
-              index,
-              selection: undefined,
-            });
-          }}
-          tabIndex={0}
-          className={css({
-            padding: 4,
-            borderWidth: 2,
-            borderStyle: "solid",
-            borderColor:
-              props.selection !== undefined &&
-              props.selection.index === index &&
-              props.selection.selection === undefined
-                ? "red"
-                : "#333",
-            borderRadius: 8,
-            display: "grid",
-            gridTemplateColumns: "1fr 32px",
-          })}
-        >
-          <commonElement.selectionView
-            key={index}
-            value={v}
-            selection={
-              props.selection !== undefined && props.selection.index === index
-                ? props.selection.selection
-                : undefined
-            }
-            onChangeSelection={(selection) =>
-              props.onChangeSelection({
-                index,
-                selection,
-              })
-            }
-            onRequestDataOperation={(commonDataOperation) =>
-              props.onRequestDataOperation({
-                tag: "childOperation",
-                index,
-                commonDataOperation,
-              })
-            }
-          />
-          {props.value.canEdit ? (
-            <Button
-              onClick={() =>
-                props.onRequestDataOperation({ tag: "delete", index })
-              }
-            >
-              x
-            </Button>
-          ) : (
-            <></>
-          )}
-        </div>
+          index={index}
+          onChangeSelection={props.onChangeSelection}
+          selection={getListItemSelection(props.selection, index)}
+          value={v}
+          deleteAt={props.value.deleteAt}
+        />
       ))}
-      {props.value.canEdit ? (
-        <Button
-          onClick={() => props.onRequestDataOperation({ tag: "addLast" })}
-        >
-          +
-        </Button>
-      ) : (
+      {props.value.addInLast === undefined ? (
         <></>
+      ) : (
+        <Button onClick={props.value.addInLast}>+</Button>
       )}
     </div>
   );
+});
+ListSelectionView.displayName = "ListSelectionView";
+
+const getListItemSelection = (
+  listSelection: ListSelection | undefined,
+  index: number
+): ListItemSelection => {
+  if (listSelection === undefined || listSelection.index !== index) {
+    return "none";
+  }
+  if (listSelection.selection === undefined) {
+    return "self";
+  }
+  return listSelection.selection;
 };
+
+type ListItemSelection = CommonSelection | "none" | "self";
+
+const SelectionItem: React.VFC<{
+  index: number;
+  onChangeSelection: (listSelection: ListSelection) => void;
+  selection: ListItemSelection;
+  value: CommonValue;
+  deleteAt: ((index: number) => void) | undefined;
+}> = React.memo(({ index, onChangeSelection, selection, value, deleteAt }) => {
+  const onFocus = React.useCallback(
+    (event: React.FocusEvent<HTMLDivElement>): void => {
+      event.stopPropagation();
+      event.preventDefault();
+      onChangeSelection({
+        index,
+        selection: undefined,
+      });
+    },
+    [index, onChangeSelection]
+  );
+  const onChangeItemSelection = React.useCallback(
+    (s: CommonSelection) => {
+      onChangeSelection({
+        index,
+        selection: s,
+      });
+    },
+    [index, onChangeSelection]
+  );
+  const onClickDelete = React.useCallback(() => {
+    if (deleteAt !== undefined) {
+      deleteAt(index);
+    }
+  }, [index, deleteAt]);
+
+  return (
+    <div
+      onFocus={onFocus}
+      tabIndex={0}
+      className={css({
+        padding: 4,
+        borderWidth: 2,
+        borderStyle: "solid",
+        borderColor: selection === "self" ? "red" : "#333",
+        borderRadius: 8,
+        display: "grid",
+        gridTemplateColumns: "1fr 32px",
+      })}
+    >
+      <commonElement.selectionView
+        key={index}
+        value={value}
+        selection={
+          selection !== "none" && selection !== "self" ? selection : undefined
+        }
+        onChangeSelection={onChangeItemSelection}
+      />
+      {deleteAt === undefined ? (
+        <></>
+      ) : (
+        <Button onClick={onClickDelete}>x</Button>
+      )}
+    </div>
+  );
+});
+SelectionItem.displayName = "SelectionItem";
 
 const ListDetailView: ElementOperation<
   ListSelection,
-  ListValue,
-  ListDataOperation
->["detailView"] = (props) => {
+  ListValue
+>["detailView"] = React.memo((props) => {
   if (props.selection === undefined) {
     return (
       <div>
         <div>要素数: {props.value.items.length}</div>
-        {props.value.canEdit ? (
-          <Button
-            onClick={() => props.onRequestDataOperation({ tag: "deleteAll" })}
-          >
-            すべての要素を削除
-          </Button>
-        ) : (
+        {props.value.deleteAll === undefined ? (
           <></>
+        ) : (
+          <Button onClick={props.value.deleteAll}>すべての要素を削除</Button>
         )}
       </div>
     );
@@ -223,38 +226,23 @@ const ListDetailView: ElementOperation<
   if (item === undefined) {
     return <div>存在しないインデックスを指定している</div>;
   }
+  if (props.selection.selection === undefined) {
+    return (
+      <div>
+        <div>リストインデックス: {index}</div>
+      </div>
+    );
+  }
   return (
-    <div>
-      <div>リストインデックス: {index}</div>
-      {props.selection.selection === undefined && props.value.canEdit ? (
-        <Button
-          onClick={() => props.onRequestDataOperation({ tag: "delete", index })}
-        >
-          リストの要素を削除
-        </Button>
-      ) : (
-        <></>
-      )}
-      <commonElement.detailView
-        value={item}
-        selection={props.selection.selection}
-        onRequestDataOperation={(commonDataOperation) =>
-          props.onRequestDataOperation({
-            tag: "childOperation",
-            index,
-            commonDataOperation,
-          })
-        }
-      />
-    </div>
+    <commonElement.detailView
+      value={item}
+      selection={props.selection.selection}
+    />
   );
-};
+});
+ListDetailView.displayName = "ListDetailView";
 
-export const listOperation: ElementOperation<
-  ListSelection,
-  ListValue,
-  ListDataOperation
-> = {
+export const listOperation: ElementOperation<ListSelection, ListValue> = {
   moveUp,
   moveDown,
   moveFirstChild,

@@ -7,26 +7,18 @@ export type NumberValue = {
   readonly value: number;
   readonly canEdit: boolean;
 };
-export type NumberDataOperation =
-  | {
-      tag: "up";
-    }
-  | {
-      tag: "down";
-    };
 
 const NumberSelectionView: ElementOperation<
   NumberSelection,
-  NumberValue,
-  NumberDataOperation
->["selectionView"] = (props) => {
+  NumberValue
+>["selectionView"] = React.memo((props) => {
   return <div className={css({ fontSize: 16 })}>{props.value.value}</div>;
-};
+});
+NumberSelectionView.displayName = "NumberSelectionView";
 
 const NumberDetailView: ElementOperation<
   NumberSelection,
-  NumberValue,
-  NumberDataOperation
+  NumberValue
 >["detailView"] = (props) => {
   return (
     <div
@@ -38,12 +30,9 @@ const NumberDetailView: ElementOperation<
     </div>
   );
 };
+NumberDetailView.displayName = "NumberDetailView";
 
-export const numberOperation: ElementOperation<
-  NumberSelection,
-  NumberValue,
-  NumberDataOperation
-> = {
+export const numberOperation: ElementOperation<NumberSelection, NumberValue> = {
   moveUp: () => undefined,
   moveDown: () => undefined,
   moveFirstChild: () => undefined,

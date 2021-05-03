@@ -18,33 +18,35 @@
     "storybook": "start-storybook --config-dir ./storybook --static-dir ./storybook/static"
   },
   "devDependencies": {
-    "@babel/core": "7.13.15",
+    "@babel/core": "7.13.16",
     "@emotion/css": "11.1.3",
-    "@material-ui/core": "4.11.3",
+    "@material-ui/core": "4.11.4",
     "@narumincho/html": "0.2.6",
-    "@storybook/addon-a11y": "^6.2.8",
-    "@storybook/addon-actions": "6.2.8",
-    "@storybook/addon-essentials": "6.2.8",
-    "@storybook/addon-links": "6.2.8",
-    "@storybook/react": "6.2.8",
+    "@storybook/addon-a11y": "6.2.9",
+    "@storybook/addon-actions": "6.2.9",
+    "@storybook/addon-essentials": "6.2.9",
+    "@storybook/addon-links": "6.2.9",
+    "@storybook/react": "6.2.9",
     "@types/fs-extra": "9.0.11",
-    "@types/jest": "26.0.22",
+    "@types/jest": "26.0.23",
     "@types/jsonwebtoken": "8.5.1",
-    "@types/node": "14.14.41",
+    "@types/node": "15.0.1",
     "@types/prettier": "2.2.3",
-    "@types/react": "17.0.3",
+    "@types/react": "17.0.4",
     "@types/react-dom": "17.0.3",
     "@typescript-eslint/eslint-plugin": "4.22.0",
     "@typescript-eslint/parser": "4.22.0",
     "axios": "0.21.1",
     "babel-loader": "8.2.2",
-    "dependency-cruiser": "9.25.1",
+    "dependency-cruiser": "9.26.0",
     "elm-code-generator": "0.0.2",
-    "esbuild": "0.11.12",
-    "eslint": "7.24.0",
-    "eslint-config-prettier": "8.2.0",
+    "esbuild": "0.11.15",
+    "eslint": "7.25.0",
+    "eslint-config-prettier": "8.3.0",
     "eslint-plugin-prettier": "3.4.0",
-    "firebase-admin": "9.6.0",
+    "eslint-plugin-react": "7.23.2",
+    "eslint-plugin-react-hooks": "4.2.0",
+    "firebase-admin": "9.7.0",
     "firebase-functions": "3.13.2",
     "fs-extra": "9.1.0",
     "jest": "26.6.3",
@@ -54,7 +56,7 @@
     "prettier": "2.2.1",
     "react": "17.0.2",
     "react-dom": "17.0.2",
-    "storybook-dark-mode": "^1.0.7",
+    "storybook-dark-mode": "1.0.7",
     "ts-jest": "26.5.5",
     "ts-node": "9.1.1",
     "typed-admin-firestore": "1.2.0",
@@ -67,7 +69,9 @@
     "extends": [
       "eslint:all",
       "plugin:@typescript-eslint/recommended",
-      "plugin:prettier/recommended"
+      "plugin:prettier/recommended",
+      "plugin:react/recommended",
+      "plugin:react-hooks/recommended"
     ],
     "plugins": [
       "@typescript-eslint"
@@ -209,7 +213,8 @@
       ],
       "@typescript-eslint/no-empty-function": [
         "off"
-      ]
+      ],
+      "react/prop-types": "off"
     }
   }
 }

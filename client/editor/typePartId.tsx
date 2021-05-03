@@ -10,16 +10,14 @@ export type TypePartIdValue = {
   readonly canEdit: boolean;
 } & Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump">;
 
-export type TypePartIdDataOperation = never;
-
 const TypePartIdSelectionView: ElementOperation<
   TypePartIdSelection,
-  TypePartIdValue,
-  TypePartIdDataOperation
->["selectionView"] = (props) => {
+  TypePartIdValue
+>["selectionView"] = React.memo((props) => {
   React.useEffect(() => {
     props.value.typePartResource.requestToServerIfEmpty(props.value.typePartId);
-  }, []);
+  }, [props.value.typePartId, props.value.typePartResource]);
+
   const typePartResource = props.value.typePartResource.getFromMemoryCache(
     props.value.typePartId
   );
@@ -86,20 +84,20 @@ const TypePartIdSelectionView: ElementOperation<
       {typePartResource.dataWithTime.data.name}
     </Link>
   );
-};
+});
+TypePartIdSelectionView.displayName = "TypePartIdSelectionView";
 
 const TypePartIdDetailView: ElementOperation<
   TypePartIdSelection,
-  TypePartIdValue,
-  TypePartIdDataOperation
->["detailView"] = () => {
+  TypePartIdValue
+>["detailView"] = React.memo(() => {
   return <div>検索欄と, 候補の選択肢</div>;
-};
+});
+TypePartIdDetailView.displayName = "TypePartIdDetailView";
 
 export const typePartIdOperation: ElementOperation<
   TypePartIdSelection,
-  TypePartIdValue,
-  TypePartIdDataOperation
+  TypePartIdValue
 > = {
   moveUp: () => undefined,
   moveDown: () => undefined,

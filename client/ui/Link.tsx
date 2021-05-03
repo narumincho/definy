@@ -8,7 +8,7 @@ export const Link: React.FC<{
   style?: CSSObject;
   onJump: (urlData: d.UrlData) => void;
   isActive?: boolean;
-}> = (props) => {
+}> = React.memo((props) => {
   return (
     <a
       className={css(
@@ -49,4 +49,5 @@ export const Link: React.FC<{
       {props.children}
     </a>
   );
-};
+});
+Link.displayName = "Link";

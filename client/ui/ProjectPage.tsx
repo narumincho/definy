@@ -25,12 +25,19 @@ export type Props = Pick<
 };
 
 export const ProjectPage: React.VFC<Props> = (props) => {
+  const addTypePart = props.addTypePart;
+  const addTypePartInProject = React.useCallback(
+    (): void => addTypePart(props.projectId),
+    [addTypePart, props.projectId]
+  );
+
   React.useEffect(() => {
     props.projectResource.forciblyRequestToServer(props.projectId);
     props.typePartIdListInProjectResource.forciblyRequestToServer(
       props.projectId
     );
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.projectId]);
 
   const projectState = props.projectResource.getFromMemoryCache(
     props.projectId
@@ -56,7 +63,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
       product={{
         headItem: {
           name: "プロジェクト名",
-          value: { canEdit: false, text: project.name },
+          value: { onChange: undefined, text: project.name },
           iconHash: project.iconHash,
         },
         items: [
@@ -89,13 +96,12 @@ export const ProjectPage: React.VFC<Props> = (props) => {
             name: "プロジェクトID",
             value: textValue({
               text: props.projectId,
-              canEdit: false,
+              onChange: undefined,
             }),
           },
           {
             name: "型パーツ",
             value: listValue({
-              canEdit: true,
               isDirectionColumn: true,
               items:
                 typePartIdListInProject?._ === "Loaded"
@@ -110,22 +116,10 @@ export const ProjectPage: React.VFC<Props> = (props) => {
                         })
                     )
                   : [],
+              addInLast: addTypePartInProject,
             }),
           },
         ],
-      }}
-      onRequestDataOperation={(operation) => {
-        if (
-          operation.tag === "content" &&
-          operation.index === 4 &&
-          operation.commonDataOperation.tag === "list"
-        ) {
-          const listDataOperation =
-            operation.commonDataOperation.listDataOperation;
-          if (listDataOperation.tag === "addLast") {
-            props.addTypePart(props.projectId);
-          }
-        }
       }}
     />
   );
