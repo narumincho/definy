@@ -170,10 +170,53 @@ const SumDetailView: ElementOperation<
 SumDetailView.displayName = "SumDetailView";
 
 export const sumOperation: ElementOperation<SumSelection, SumValue> = {
-  moveUp: () => undefined,
-  moveDown: () => undefined,
-  moveFirstChild: () => undefined,
-  moveParent: () => undefined,
+  moveUp: (selection, value) => {
+    if (selection.selection === undefined || value.value === undefined) {
+      return selection;
+    }
+    return {
+      tag: "content",
+      selection: commonElement.moveUp(selection.selection, value.value),
+    };
+  },
+  moveDown: (selection, value) => {
+    if (selection.selection === undefined || value.value === undefined) {
+      return selection;
+    }
+    return {
+      tag: "content",
+      selection: commonElement.moveDown(selection.selection, value.value),
+    };
+  },
+  moveFirstChild: (selection, value) => {
+    // 自身を選択してる場合
+    if (selection === undefined) {
+      if (value.value !== undefined) {
+        return {
+          tag: "content",
+          selection: undefined,
+        };
+      }
+      return undefined;
+    }
+    // 子要素を選択してる場合
+    if (value.value === undefined) {
+      return undefined;
+    }
+    return {
+      tag: "content",
+      selection: commonElement.moveFirstChild(selection.selection, value.value),
+    };
+  },
+  moveParent: (selection, value) => {
+    if (selection.selection === undefined || value.value === undefined) {
+      return undefined;
+    }
+    return {
+      tag: "content",
+      selection: commonElement.moveParent(selection.selection, value.value),
+    };
+  },
   selectionView: SumSelectionView,
   detailView: SumDetailView,
 };
