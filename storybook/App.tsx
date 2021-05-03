@@ -30,6 +30,8 @@ const useDefinyAppResult: UseDefinyAppResult = {
   topProjectsLoadingState: { _: "none" },
   addTypePart: action("addTypePart"),
   requestTop50Project: action("requestTop50Project"),
+  saveTypePart: action("saveTypePart"),
+  isSavingTypePart: false,
 };
 
 type ControlAndActionProps = Pick<UseDefinyAppResult, "language">;

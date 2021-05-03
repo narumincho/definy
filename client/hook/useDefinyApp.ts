@@ -135,6 +135,19 @@ export type UseDefinyAppResult = {
    * *side-effect*
    */
   readonly addTypePart: (projectId: d.ProjectId) => void;
+
+  /**
+   * 型パーツを保存する
+   */
+  readonly saveTypePart: (
+    typePartId: d.TypePartId,
+    typePart: d.TypePart
+  ) => void;
+
+  /**
+   * 型パーツを保存中かどうか
+   */
+  readonly isSavingTypePart: boolean;
 };
 
 export type NotificationMessageHandler = (
@@ -180,6 +193,7 @@ export const useDefinyApp = (
     ReadonlyArray<d.TypePartId>
   >();
   const typePartDict = useResourceState<d.TypePartId, d.TypePart>();
+  const [isSavingTypePart, setIsSavingTypePart] = useState<boolean>(false);
 
   /**
    * ページを移動する
@@ -556,6 +570,44 @@ export const useDefinyApp = (
     [option, typePartDict]
   );
 
+  const saveTypePart = useCallback(
+    (typePartId: d.TypePartId, typePart: d.TypePart): void => {
+      const accountToken = getAccountToken();
+      if (accountToken === undefined) {
+        option.notificationMessageHandler(
+          "ログインしていない状態で型パーツを保存することはできない",
+          "error"
+        );
+        return;
+      }
+      setIsSavingTypePart(true);
+      api
+        .setTypePart({
+          typePart,
+          typePartId,
+          accountToken,
+        })
+        .then((response) => {
+          setIsSavingTypePart(false);
+          if (response._ === "Nothing") {
+            option.notificationMessageHandler("型の保存に失敗した", "error");
+            return;
+          }
+          if (response.value.data._ === "Nothing") {
+            option.notificationMessageHandler("型の保存に失敗した?", "error");
+            return;
+          }
+          typePartDict.setLoaded(
+            typePartId,
+            response.value.data.value,
+            response.value.getTime
+          );
+          option.notificationMessageHandler("型の保存に成功!", "success");
+        });
+    },
+    [getAccountToken, option, typePartDict]
+  );
+
   return useMemo(
     () => ({
       accountResource,
@@ -573,6 +625,8 @@ export const useDefinyApp = (
       addTypePart,
       typePartIdListInProjectResource,
       typePartResource,
+      saveTypePart,
+      isSavingTypePart,
     }),
     [
       accountResource,
@@ -590,6 +644,8 @@ export const useDefinyApp = (
       typePartResource,
       urlData.language,
       urlData.location,
+      saveTypePart,
+      isSavingTypePart,
     ]
   );
 };

@@ -23,6 +23,8 @@ export type Props = Pick<
   | "typePartResource"
   | "language"
   | "typePartIdListInProjectResource"
+  | "saveTypePart"
+  | "isSavingTypePart"
 > & {
   typePartId: d.TypePartId;
   onJump: UseDefinyAppResult["jump"];
@@ -61,6 +63,8 @@ export const TypePartPage: React.VFC<Props> = (props) => {
       typePartResource={props.typePartResource}
       language={props.language}
       jump={props.onJump}
+      saveTypePart={props.saveTypePart}
+      isSavingTypePart={props.isSavingTypePart}
       typePartId={props.typePartId}
       typePart={typePartResource.dataWithTime.data}
       getTime={typePartResource.dataWithTime.getTime}
@@ -68,8 +72,6 @@ export const TypePartPage: React.VFC<Props> = (props) => {
     />
   );
 };
-
-const onClickSaveTypePart = () => {};
 
 const LoadedTypePartEditor: React.VFC<
   Pick<
@@ -80,12 +82,15 @@ const LoadedTypePartEditor: React.VFC<
     | "language"
     | "jump"
     | "typePartIdListInProjectResource"
+    | "saveTypePart"
+    | "isSavingTypePart"
   > & {
     typePartId: d.TypePartId;
     typePart: d.TypePart;
     getTime: d.Time;
   }
 > = (props) => {
+  const saveTypePart = props.saveTypePart;
   const [name, setName] = React.useState<string>(props.typePart.name);
   const [description, setDescription] = React.useState<string>(
     props.typePart.description
@@ -97,6 +102,26 @@ const LoadedTypePartEditor: React.VFC<
     ReadonlyArray<d.TypeParameter>
   >(props.typePart.typeParameterList);
   const [body, setBody] = React.useState<d.TypePartBody>(props.typePart.body);
+
+  const onClickSaveTypePart = React.useCallback(() => {
+    saveTypePart(props.typePartId, {
+      name,
+      description,
+      attribute,
+      typeParameterList,
+      body,
+      projectId: props.typePart.projectId,
+    });
+  }, [
+    attribute,
+    body,
+    description,
+    name,
+    props.typePart.projectId,
+    props.typePartId,
+    saveTypePart,
+    typeParameterList,
+  ]);
 
   return (
     <Editor
@@ -152,8 +177,10 @@ const LoadedTypePartEditor: React.VFC<
           {
             name: "保存ボタン",
             value: buttonValue({
-              onClick: onClickSaveTypePart,
-              text: "サーバーに保存する",
+              onClick: props.isSavingTypePart ? undefined : onClickSaveTypePart,
+              text: props.isSavingTypePart
+                ? "サーバーに保存中……"
+                : "サーバーに保存する",
             }),
           },
           {

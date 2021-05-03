@@ -25,6 +25,7 @@ export const Button: React.FC<Props> = React.memo((props) => (
       props.style
     )}
     onClick={props.onClick}
+    disabled={props.onClick === undefined}
   >
     {props.children}
   </button>

@@ -197,6 +197,8 @@ const AppMain: React.VFC<Props> = (props) => {
           typePartIdListInProjectResource={
             useDefinyAppResult.typePartIdListInProjectResource
           }
+          saveTypePart={useDefinyAppResult.saveTypePart}
+          isSavingTypePart={useDefinyAppResult.isSavingTypePart}
         />
       );
   }

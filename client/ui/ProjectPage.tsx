@@ -102,7 +102,6 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           {
             name: "型パーツ",
             value: listValue({
-              isDirectionColumn: true,
               items:
                 typePartIdListInProject?._ === "Loaded"
                   ? typePartIdListInProject.dataWithTime.data.map(
