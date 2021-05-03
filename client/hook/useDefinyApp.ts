@@ -135,6 +135,14 @@ export type UseDefinyAppResult = {
    * *side-effect*
    */
   readonly addTypePart: (projectId: d.ProjectId) => void;
+
+  /**
+   * 型パーツを保存する
+   */
+  readonly saveTypePart: (
+    typePartId: d.TypePartId,
+    typePart: d.TypePart
+  ) => void;
 };
 
 export type NotificationMessageHandler = (
@@ -556,6 +564,25 @@ export const useDefinyApp = (
     [option, typePartDict]
   );
 
+  const saveTypePart = useCallback(
+    (typePartId: d.TypePartId, typePart: d.TypePart): void => {
+      const accountToken = getAccountToken();
+      if (accountToken === undefined) {
+        option.notificationMessageHandler(
+          "ログインしていない状態で型パーツを保存することはできない",
+          "error"
+        );
+        return;
+      }
+      api.setTypePart({
+        typePart,
+        typePartId,
+        accountToken,
+      });
+    },
+    [getAccountToken, option]
+  );
+
   return useMemo(
     () => ({
       accountResource,
@@ -573,6 +600,7 @@ export const useDefinyApp = (
       addTypePart,
       typePartIdListInProjectResource,
       typePartResource,
+      saveTypePart,
     }),
     [
       accountResource,
@@ -590,6 +618,7 @@ export const useDefinyApp = (
       typePartResource,
       urlData.language,
       urlData.location,
+      saveTypePart,
     ]
   );
 };
