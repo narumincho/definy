@@ -9,27 +9,15 @@ export type ElementOperation<Selection, Value> = {
   /**
    * 上に移動するときにどのように移動するかどうかを決める
    *
-   * @returns `undefined` の場合は, 選択が要素外に出る場合や, 選択が不正であることを表現する.
-   * その場合, 基本的に要素自体を選択することが多い
-   *
    * デフォルトで `W` キーを押したときの動作
    */
-  readonly moveUp: (
-    selection: Selection,
-    value: Value
-  ) => Selection | undefined;
+  readonly moveUp: (selection: Selection, value: Value) => Selection;
   /**
    * 下に移動するときにどのように移動するかどうかを決める
    *
-   * @returns `undefined` の場合は, 選択が要素外に出る場合や, 選択が不正であることを表現する.
-   * その場合, 基本的に要素自体を選択することが多い
-   *
    * デフォルトで `S` キーを押したときの動作
    */
-  readonly moveDown: (
-    selection: Selection,
-    value: Value
-  ) => Selection | undefined;
+  readonly moveDown: (selection: Selection, value: Value) => Selection;
 
   /**
    * 先頭の子要素に移動したときにどういう移動をするかどうかを決める

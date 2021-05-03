@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Button } from "../ui/Button";
 import { ElementOperation } from "./ElementOperation";
+import { neverFunc } from "../../common/util";
 
 export type ButtonSelection = never;
 
@@ -31,8 +32,8 @@ const ButtonDetailView: ElementOperation<
 ButtonDetailView.displayName = "ButtonDetailView";
 
 export const buttonOperation: ElementOperation<ButtonSelection, ButtonValue> = {
-  moveUp: () => undefined,
-  moveDown: () => undefined,
+  moveUp: neverFunc,
+  moveDown: neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: ButtonSelectionView,

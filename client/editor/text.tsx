@@ -2,6 +2,7 @@ import * as React from "react";
 import type { ElementOperation } from "./ElementOperation";
 import { OneLineTextEditor } from "../ui/OneLineTextEditor";
 import { css } from "@emotion/css";
+import { neverFunc } from "../../common/util";
 
 export type TextSelection = never;
 
@@ -51,8 +52,8 @@ const TextDetailView: ElementOperation<
 };
 
 export const textOperation: ElementOperation<TextSelection, TextValue> = {
-  moveUp: () => undefined,
-  moveDown: () => undefined,
+  moveUp: neverFunc,
+  moveDown: neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: TextSelectionView,

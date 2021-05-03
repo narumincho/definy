@@ -5,6 +5,7 @@ import { ElementOperation } from "./ElementOperation";
 import { Link } from "../ui/Link";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
+import { neverFunc } from "../../common/util";
 import { useOneLineTextEditor } from "../ui/OneLineTextEditor";
 
 export type TypeSelection = {
@@ -363,8 +364,8 @@ const TypeParameterList: React.VFC<
 TypeParameterList.displayName = "TypeParameterList";
 
 export const typeOperation: ElementOperation<TypeSelection, TypeValue> = {
-  moveDown: () => undefined,
-  moveUp: () => undefined,
+  moveDown: neverFunc,
+  moveUp: neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: TypeSelectionView,

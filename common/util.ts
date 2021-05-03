@@ -70,3 +70,7 @@ export const listSetAt = <Element>(
     ...list.slice(Math.max(0, index + 1)),
   ];
 };
+
+export const neverFunc = (): never => {
+  throw new Error("呼ばれないはずの関数. neverFunc が呼ばれた!");
+};

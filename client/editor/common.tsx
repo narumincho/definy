@@ -192,49 +192,45 @@ export const typeValue = (value: TypeValue): CommonValue => ({
 const moveUp = (
   selection: CommonSelection,
   value: CommonValue
-): CommonSelection | undefined => {
+): CommonSelection => {
   if (selection.tag === "list" && value.type === "list") {
-    return maybeMap(
-      listOperation.moveUp(selection.listSelection, value.value),
-      selectionList
+    return selectionList(
+      listOperation.moveUp(selection.listSelection, value.value)
     );
   }
   if (selection.tag === "product" && value.type === "product") {
-    return maybeMap(
-      productOperation.moveUp(selection.productSelection, value.value),
-      selectionProduct
+    return selectionProduct(
+      productOperation.moveUp(selection.productSelection, value.value)
     );
   }
   if (selection.tag === "sum" && value.type === "sum") {
-    return maybeMap(
-      sumOperation.moveUp(selection.sumSelection, value.value),
-      selectionSum
+    return selectionSum(
+      sumOperation.moveUp(selection.sumSelection, value.value)
     );
   }
+  return selection;
 };
 
 const moveDown = (
   selection: CommonSelection,
   value: CommonValue
-): CommonSelection | undefined => {
+): CommonSelection => {
   if (selection.tag === "list" && value.type === "list") {
-    return maybeMap(
-      listOperation.moveDown(selection.listSelection, value.value),
-      selectionList
+    return selectionList(
+      listOperation.moveDown(selection.listSelection, value.value)
     );
   }
   if (selection.tag === "product" && value.type === "product") {
-    return maybeMap(
-      productOperation.moveDown(selection.productSelection, value.value),
-      selectionProduct
+    return selectionProduct(
+      productOperation.moveDown(selection.productSelection, value.value)
     );
   }
   if (selection.tag === "sum" && value.type === "sum") {
-    return maybeMap(
-      sumOperation.moveDown(selection.sumSelection, value.value),
-      selectionSum
+    return selectionSum(
+      sumOperation.moveDown(selection.sumSelection, value.value)
     );
   }
+  return selection;
 };
 
 const moveFirstChild = (

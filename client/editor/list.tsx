@@ -17,15 +17,15 @@ export type ListValue = {
   readonly addInLast?: () => void;
 };
 
-const moveUp = (
-  selection: ListSelection,
-  value: ListValue
-): ListSelection | undefined => {
+const moveUp = (selection: ListSelection, value: ListValue): ListSelection => {
   const item = value.items[selection.index];
   if (selection.selection === undefined || item === undefined) {
     const nextIndex = Math.min(selection.index - 1, value.items.length - 1);
     if (nextIndex < 0) {
-      return undefined;
+      return {
+        index: value.items.length - 1,
+        selection: undefined,
+      };
     }
     return { index: nextIndex, selection: undefined };
   }
@@ -38,12 +38,15 @@ const moveUp = (
 const moveDown = (
   selection: ListSelection,
   value: ListValue
-): ListSelection | undefined => {
+): ListSelection => {
   const item = value.items[selection.index];
   if (selection.selection === undefined || item === undefined) {
     const nextIndex = selection.index + 1;
     if (value.items.length - 1 < nextIndex) {
-      return undefined;
+      return {
+        index: 0,
+        selection: undefined,
+      };
     }
     return { index: nextIndex, selection: undefined };
   }

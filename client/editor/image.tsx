@@ -3,6 +3,7 @@ import * as d from "../../data";
 import type { ElementOperation } from "./ElementOperation";
 import { Image } from "../ui/Image";
 import { css } from "@emotion/css";
+import { neverFunc } from "../../common/util";
 
 export type ImageSelection = never;
 export type ImageValue = {
@@ -56,8 +57,8 @@ const ImageDetailView: ElementOperation<
 ImageDetailView.displayName = "ImageDetailView";
 
 export const imageOperation: ElementOperation<ImageSelection, ImageValue> = {
-  moveUp: () => undefined,
-  moveDown: () => undefined,
+  moveUp: neverFunc,
+  moveDown: neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: ImageSelectionView,

@@ -3,6 +3,7 @@ import * as d from "../../data";
 import type { ElementOperation } from "./ElementOperation";
 import { ProjectCard } from "../ui/ProjectCard";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
+import { neverFunc } from "../../common/util";
 
 /** プロジェクト内の要素を選択することはなさそう */
 export type ProjectIdSelection = never;
@@ -46,8 +47,8 @@ export const projectIdOperation: ElementOperation<
   ProjectIdSelection,
   ProjectIdValue
 > = {
-  moveUp: () => undefined,
-  moveDown: () => undefined,
+  moveUp: neverFunc,
+  moveDown: neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: ProjectIdSelectionView,
