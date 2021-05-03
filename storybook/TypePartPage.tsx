@@ -9,6 +9,7 @@ import {
   typePartIdListInProjectResource,
   typePartResource,
 } from "./mockData";
+import { action } from "@storybook/addon-actions";
 
 const meta: Meta = {
   title: "TypePartPage",
@@ -27,6 +28,8 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     accountResource={accountResource}
     onJump={props.onJump}
     typePartIdListInProjectResource={typePartIdListInProjectResource}
+    isSavingTypePart={false}
+    saveTypePart={action("saveTypePart")}
   />
 );
 Default.args = { language: d.Language.Japanese };

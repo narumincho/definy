@@ -143,6 +143,11 @@ export type UseDefinyAppResult = {
     typePartId: d.TypePartId,
     typePart: d.TypePart
   ) => void;
+
+  /**
+   * 型パーツを保存中かどうか
+   */
+  readonly isSavingTypePart: boolean;
 };
 
 export type NotificationMessageHandler = (
@@ -188,6 +193,7 @@ export const useDefinyApp = (
     ReadonlyArray<d.TypePartId>
   >();
   const typePartDict = useResourceState<d.TypePartId, d.TypePart>();
+  const [isSavingTypePart, setIsSavingTypePart] = useState<boolean>(false);
 
   /**
    * ページを移動する
@@ -574,13 +580,32 @@ export const useDefinyApp = (
         );
         return;
       }
-      api.setTypePart({
-        typePart,
-        typePartId,
-        accountToken,
-      });
+      setIsSavingTypePart(true);
+      api
+        .setTypePart({
+          typePart,
+          typePartId,
+          accountToken,
+        })
+        .then((response) => {
+          setIsSavingTypePart(false);
+          if (response._ === "Nothing") {
+            option.notificationMessageHandler("型の保存に失敗した", "error");
+            return;
+          }
+          if (response.value.data._ === "Nothing") {
+            option.notificationMessageHandler("型の保存に失敗した?", "error");
+            return;
+          }
+          typePartDict.setLoaded(
+            typePartId,
+            response.value.data.value,
+            response.value.getTime
+          );
+          option.notificationMessageHandler("型の保存に成功!", "success");
+        });
     },
-    [getAccountToken, option]
+    [getAccountToken, option, typePartDict]
   );
 
   return useMemo(
@@ -601,6 +626,7 @@ export const useDefinyApp = (
       typePartIdListInProjectResource,
       typePartResource,
       saveTypePart,
+      isSavingTypePart,
     }),
     [
       accountResource,
@@ -619,6 +645,7 @@ export const useDefinyApp = (
       urlData.language,
       urlData.location,
       saveTypePart,
+      isSavingTypePart,
     ]
   );
 };

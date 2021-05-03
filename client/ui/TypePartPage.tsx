@@ -24,6 +24,7 @@ export type Props = Pick<
   | "language"
   | "typePartIdListInProjectResource"
   | "saveTypePart"
+  | "isSavingTypePart"
 > & {
   typePartId: d.TypePartId;
   onJump: UseDefinyAppResult["jump"];
@@ -63,6 +64,7 @@ export const TypePartPage: React.VFC<Props> = (props) => {
       language={props.language}
       jump={props.onJump}
       saveTypePart={props.saveTypePart}
+      isSavingTypePart={props.isSavingTypePart}
       typePartId={props.typePartId}
       typePart={typePartResource.dataWithTime.data}
       getTime={typePartResource.dataWithTime.getTime}
@@ -81,6 +83,7 @@ const LoadedTypePartEditor: React.VFC<
     | "jump"
     | "typePartIdListInProjectResource"
     | "saveTypePart"
+    | "isSavingTypePart"
   > & {
     typePartId: d.TypePartId;
     typePart: d.TypePart;
@@ -174,8 +177,10 @@ const LoadedTypePartEditor: React.VFC<
           {
             name: "保存ボタン",
             value: buttonValue({
-              onClick: onClickSaveTypePart,
-              text: "サーバーに保存する",
+              onClick: props.isSavingTypePart ? undefined : onClickSaveTypePart,
+              text: props.isSavingTypePart
+                ? "サーバーに保存中……"
+                : "サーバーに保存する",
             }),
           },
           {
