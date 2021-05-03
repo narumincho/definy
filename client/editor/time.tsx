@@ -2,6 +2,7 @@ import * as React from "react";
 import * as d from "../../data";
 import { TimeCard, TimeDetail } from "../ui/TimeCard";
 import type { ElementOperation } from "./ElementOperation";
+import { neverFunc } from "../../common/util";
 
 /**
  * 年, 月, 日, 時, 分, 秒, ミリ秒選べると良いような気がしなくもない
@@ -30,8 +31,8 @@ const TimeDetailView: ElementOperation<
 TimeDetailView.displayName = "TimeDetailView";
 
 export const timeOperation: ElementOperation<TimeSelection, TimeValue> = {
-  moveUp: () => undefined,
-  moveDown: () => undefined,
+  moveUp: neverFunc,
+  moveDown: neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: TimeSelectionView,

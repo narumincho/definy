@@ -7,6 +7,7 @@ import { Link } from "../ui/Link";
 import { NextIcon } from "../ui/NextIcon";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
+import { neverFunc } from "../../common/util";
 
 export type AccountIdSelection = never;
 
@@ -97,8 +98,8 @@ export const accountIdOperation: ElementOperation<
   AccountIdSelection,
   AccountIdValue
 > = {
-  moveUp: () => undefined,
-  moveDown: () => undefined,
+  moveDown: neverFunc,
+  moveUp: neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: AccountIdSelectionView,

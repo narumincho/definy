@@ -3,6 +3,7 @@ import * as d from "../../data";
 import type { ElementOperation } from "./ElementOperation";
 import { Link } from "../ui/Link";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
+import { neverFunc } from "../../common/util";
 
 export type TypePartIdSelection = never;
 export type TypePartIdValue = {
@@ -99,8 +100,8 @@ export const typePartIdOperation: ElementOperation<
   TypePartIdSelection,
   TypePartIdValue
 > = {
-  moveUp: () => undefined,
-  moveDown: () => undefined,
+  moveUp: neverFunc,
+  moveDown: neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: TypePartIdSelectionView,

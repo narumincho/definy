@@ -1,6 +1,7 @@
 import * as React from "react";
 import type { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
+import { neverFunc } from "../../common/util";
 
 export type NumberSelection = never;
 export type NumberValue = {
@@ -33,8 +34,8 @@ const NumberDetailView: ElementOperation<
 NumberDetailView.displayName = "NumberDetailView";
 
 export const numberOperation: ElementOperation<NumberSelection, NumberValue> = {
-  moveUp: () => undefined,
-  moveDown: () => undefined,
+  moveUp: neverFunc,
+  moveDown: neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: NumberSelectionView,

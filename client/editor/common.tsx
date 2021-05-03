@@ -30,11 +30,11 @@ import { maybeMap } from "../../common/util";
 export type CommonSelection =
   | {
       readonly tag: "product";
-      readonly value: ProductSelection;
+      readonly productSelection: ProductSelection;
     }
   | {
       readonly tag: "list";
-      readonly value: ListSelection;
+      readonly listSelection: ListSelection;
     }
   | {
       readonly tag: "text";
@@ -75,11 +75,11 @@ export type CommonSelection =
 
 const selectionProduct = (value: ProductSelection): CommonSelection => ({
   tag: "product",
-  value,
+  productSelection: value,
 });
 const selectionList = (value: ListSelection): CommonSelection => ({
   tag: "list",
-  value,
+  listSelection: value,
 });
 const selectionSum = (sumSelection: SumSelection): CommonSelection => ({
   tag: "sum",
@@ -192,64 +192,82 @@ export const typeValue = (value: TypeValue): CommonValue => ({
 const moveUp = (
   selection: CommonSelection,
   value: CommonValue
-): CommonSelection | undefined => {
+): CommonSelection => {
   if (selection.tag === "list" && value.type === "list") {
-    return maybeMap(
-      listOperation.moveUp(selection.value, value.value),
-      selectionList
+    return selectionList(
+      listOperation.moveUp(selection.listSelection, value.value)
     );
   }
   if (selection.tag === "product" && value.type === "product") {
-    return maybeMap(
-      productOperation.moveUp(selection.value, value.value),
-      selectionProduct
+    return selectionProduct(
+      productOperation.moveUp(selection.productSelection, value.value)
     );
   }
+  if (selection.tag === "sum" && value.type === "sum") {
+    return selectionSum(
+      sumOperation.moveUp(selection.sumSelection, value.value)
+    );
+  }
+  return selection;
 };
 
 const moveDown = (
   selection: CommonSelection,
   value: CommonValue
-): CommonSelection | undefined => {
+): CommonSelection => {
   if (selection.tag === "list" && value.type === "list") {
-    return maybeMap(
-      listOperation.moveDown(selection.value, value.value),
-      selectionList
+    return selectionList(
+      listOperation.moveDown(selection.listSelection, value.value)
     );
   }
   if (selection.tag === "product" && value.type === "product") {
-    return maybeMap(
-      productOperation.moveDown(selection.value, value.value),
-      selectionProduct
+    return selectionProduct(
+      productOperation.moveDown(selection.productSelection, value.value)
     );
   }
+  if (selection.tag === "sum" && value.type === "sum") {
+    return selectionSum(
+      sumOperation.moveDown(selection.sumSelection, value.value)
+    );
+  }
+  return selection;
 };
 
 const moveFirstChild = (
   selection: CommonSelection | undefined,
   value: CommonValue
 ): CommonSelection | undefined => {
-  if (value.type === "list") {
-    return maybeMap(
-      listOperation.moveFirstChild(
-        selection !== undefined && selection.tag === "list"
-          ? selection.value
-          : undefined,
-        value.value
-      ),
-      selectionList
-    );
-  }
-  if (value.type === "product") {
-    return maybeMap(
-      productOperation.moveFirstChild(
-        selection !== undefined && selection.tag === "product"
-          ? selection.value
-          : undefined,
-        value.value
-      ),
-      selectionProduct
-    );
+  switch (value.type) {
+    case "list":
+      return maybeMap(
+        listOperation.moveFirstChild(
+          selection !== undefined && selection.tag === "list"
+            ? selection.listSelection
+            : undefined,
+          value.value
+        ),
+        selectionList
+      );
+    case "product":
+      return maybeMap(
+        productOperation.moveFirstChild(
+          selection !== undefined && selection.tag === "product"
+            ? selection.productSelection
+            : undefined,
+          value.value
+        ),
+        selectionProduct
+      );
+    case "sum":
+      return maybeMap(
+        sumOperation.moveFirstChild(
+          selection !== undefined && selection.tag === "sum"
+            ? selection.sumSelection
+            : undefined,
+          value.value
+        ),
+        selectionSum
+      );
   }
 };
 
@@ -259,14 +277,20 @@ const moveParent: ElementOperation<
 >["moveParent"] = (selection, value) => {
   if (selection.tag === "list" && value.type === "list") {
     return maybeMap(
-      listOperation.moveParent(selection.value, value.value),
+      listOperation.moveParent(selection.listSelection, value.value),
       selectionList
     );
   }
   if (selection.tag === "product" && value.type === "product") {
     return maybeMap(
-      productOperation.moveParent(selection.value, value.value),
+      productOperation.moveParent(selection.productSelection, value.value),
       selectionProduct
+    );
+  }
+  if (selection.tag === "sum" && value.type === "sum") {
+    return maybeMap(
+      sumOperation.moveParent(selection.sumSelection, value.value),
+      selectionSum
     );
   }
 };
@@ -379,7 +403,7 @@ const CommonElementSelectionView: ElementOperation<
           onChangeSelection={listChangeSelection}
           selection={
             props.selection !== undefined && props.selection.tag === "list"
-              ? props.selection.value
+              ? props.selection.listSelection
               : undefined
           }
         />
@@ -391,7 +415,7 @@ const CommonElementSelectionView: ElementOperation<
           onChangeSelection={productChangeSelection}
           selection={
             props.selection !== undefined && props.selection.tag === "product"
-              ? props.selection.value
+              ? props.selection.productSelection
               : undefined
           }
         />
@@ -504,7 +528,7 @@ const CommonElementDetailView: ElementOperation<
           value={props.value.value}
           selection={
             props.selection !== undefined && props.selection.tag === "list"
-              ? props.selection.value
+              ? props.selection.listSelection
               : undefined
           }
         />
@@ -515,7 +539,7 @@ const CommonElementDetailView: ElementOperation<
           value={props.value.value}
           selection={
             props.selection !== undefined && props.selection.tag === "product"
-              ? props.selection.value
+              ? props.selection.productSelection
               : undefined
           }
         />

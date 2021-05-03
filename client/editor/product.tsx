@@ -44,14 +44,14 @@ export type Item = {
 const moveUp = (
   selection: ProductSelection,
   value: ProductValue
-): ProductSelection | undefined => {
+): ProductSelection => {
   switch (selection.tag) {
     case "icon":
-      return undefined;
+      return lastSelectionWithDefault(value);
     case "head": {
       // head の要素がないか, head自体を選択していた場合は外へ
       if (value.headItem === undefined || selection.selection === undefined) {
-        return undefined;
+        return lastSelectionWithDefault(value);
       }
       return {
         tag: "head",
@@ -67,7 +67,7 @@ const moveUp = (
           if (value.headItem !== undefined) {
             return { tag: "head", selection: undefined };
           }
-          return undefined;
+          return lastSelectionWithDefault(value);
         }
         return { tag: "content", index: lastIndex, selection: undefined };
       }
@@ -80,26 +80,45 @@ const moveUp = (
   }
 };
 
+const lastSelectionWithDefault = (value: ProductValue): ProductSelection => {
+  return lastSelection(value) ?? { tag: "head", selection: undefined };
+};
+
+/** 最後の要素への移動 */
+const lastSelection = (value: ProductValue): ProductSelection | undefined => {
+  if (value.items.length <= 0) {
+    if (value.headItem === undefined) {
+      return undefined;
+    }
+    return {
+      tag: "head",
+      selection: undefined,
+    };
+  }
+  return {
+    tag: "content",
+    index: value.items.length - 1,
+    selection: undefined,
+  };
+};
+
 const moveDown = (
   selection: ProductSelection,
   value: ProductValue
-): ProductSelection | undefined => {
+): ProductSelection => {
   switch (selection.tag) {
     case "icon": {
-      if (value.headItem !== undefined) {
-        return { tag: "head", selection: undefined };
-      }
-      if (value.items.length >= 1) {
-        return { tag: "content", index: 0, selection: undefined };
-      }
-      return undefined;
+      return firstSelectionWithDefault(value);
     }
     case "head": {
       if (value.headItem === undefined || selection.selection === undefined) {
         if (value.items.length >= 1) {
           return { tag: "content", index: 0, selection: undefined };
         }
-        return undefined;
+        return {
+          tag: "head",
+          selection: undefined,
+        };
       }
       return {
         tag: "head",
@@ -111,7 +130,7 @@ const moveDown = (
       if (item === undefined || selection.selection === undefined) {
         const nextIndex = selection.index + 1;
         if (value.items.length <= nextIndex) {
-          return undefined;
+          return firstSelectionWithDefault(value);
         }
         return {
           tag: "content",
@@ -136,7 +155,7 @@ const moveFirstChild: ElementOperation<
   value: ProductValue
 ): ProductSelection | undefined => {
   if (selection === undefined) {
-    return firstChildValue(value);
+    return firstSelection(value);
   }
   switch (selection.tag) {
     case "icon": {
@@ -177,7 +196,11 @@ const moveFirstChild: ElementOperation<
   }
 };
 
-const firstChildValue = (value: ProductValue): ProductSelection | undefined => {
+const firstSelectionWithDefault = (value: ProductValue): ProductSelection => {
+  return firstSelection(value) ?? { tag: "head", selection: undefined };
+};
+
+const firstSelection = (value: ProductValue): ProductSelection | undefined => {
   if (value.headItem !== undefined) {
     return { tag: "head", selection: undefined };
   }
@@ -430,30 +453,28 @@ const ItemView: React.VFC<{
     >
       <div
         className={css({
-          display: "flex",
-          gap: 16,
-          alignItems: "center",
+          fontWeight: "bold",
+          fontSize: 16,
+          color: "#ddd",
         })}
       >
-        <div
-          className={css({
-            fontWeight: "bold",
-            fontSize: 16,
-            color: "#ddd",
-          })}
-        >
-          {props.name}
-        </div>
+        {props.name}
       </div>
-      <commonElement.selectionView
-        value={props.value}
-        selection={
-          props.itemSelection !== "self" && props.itemSelection !== "none"
-            ? props.itemSelection
-            : undefined
-        }
-        onChangeSelection={props.onSelect}
-      />
+      <div
+        className={css({
+          padding: 8,
+        })}
+      >
+        <commonElement.selectionView
+          value={props.value}
+          selection={
+            props.itemSelection !== "self" && props.itemSelection !== "none"
+              ? props.itemSelection
+              : undefined
+          }
+          onChangeSelection={props.onSelect}
+        />
+      </div>
     </div>
   );
 });
