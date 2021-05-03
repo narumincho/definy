@@ -29,6 +29,18 @@ const SumSelectionView: ElementOperation<
 >["selectionView"] = React.memo((props) => {
   const onChangeSelection = props.onChangeSelection;
 
+  const onFocusContent = React.useCallback(
+    (event: React.FocusEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      onChangeSelection({
+        tag: "content",
+        selection: undefined,
+      });
+    },
+    [onChangeSelection]
+  );
+
   const onChangeContentSelection = React.useCallback(
     (commonSelection: CommonSelection): void => {
       onChangeSelection({
@@ -74,7 +86,10 @@ const SumSelectionView: ElementOperation<
               props.selection.selection === undefined
                 ? "red"
                 : "#333",
+            padding: 4,
           })}
+          onFocus={onFocusContent}
+          tabIndex={0}
         >
           <commonElement.selectionView
             value={props.value.value}
