@@ -1,9 +1,8 @@
 import * as React from "react";
 import * as d from "../../data";
-import { CommonDataOperation, Selection, Value, commonElement } from "./common";
+import { CommonSelection, CommonValue, commonElement } from "./common";
 import {
   HeadTextSelectionView,
-  TextDataOperation,
   TextSelection,
   TextValue,
   textOperation,
@@ -14,16 +13,16 @@ import { css } from "@emotion/css";
 
 export type ProductSelection =
   | {
-      tag: "icon";
+      readonly tag: "icon";
     }
   | {
-      tag: "head";
-      selection: TextSelection | undefined;
+      readonly tag: "head";
+      readonly selection: TextSelection | undefined;
     }
   | {
-      tag: "content";
-      index: number;
-      selection: Selection | undefined;
+      readonly tag: "content";
+      readonly index: number;
+      readonly selection: CommonSelection | undefined;
     };
 
 export type ProductValue = {
@@ -39,19 +38,8 @@ export type HeadItem = {
 
 export type Item = {
   readonly name: string;
-  readonly value: Value;
+  readonly value: CommonValue;
 };
-
-export type ProductDataOperation =
-  | {
-      tag: "head";
-      textDataOperation: TextDataOperation;
-    }
-  | {
-      tag: "content";
-      index: number;
-      commonDataOperation: CommonDataOperation;
-    };
 
 const moveUp = (
   selection: ProductSelection,
@@ -142,8 +130,7 @@ const moveDown = (
 
 const moveFirstChild: ElementOperation<
   ProductSelection,
-  ProductValue,
-  ProductDataOperation
+  ProductValue
 >["moveFirstChild"] = (
   selection: ProductSelection | undefined,
   value: ProductValue
@@ -202,8 +189,7 @@ const firstChildValue = (value: ProductValue): ProductSelection | undefined => {
 
 const moveParent: ElementOperation<
   ProductSelection,
-  ProductValue,
-  ProductDataOperation
+  ProductValue
 >["moveParent"] = (selection, value) => {
   switch (selection.tag) {
     case "icon": {
@@ -234,9 +220,23 @@ const moveParent: ElementOperation<
 
 export const ProductSelectionView: ElementOperation<
   ProductSelection,
-  ProductValue,
-  ProductDataOperation
->["selectionView"] = (props) => {
+  ProductValue
+>["selectionView"] = React.memo((props) => {
+  const onChangeSelection = props.onChangeSelection;
+
+  const onClickIcon = React.useCallback(() => {
+    onChangeSelection({
+      tag: "icon",
+    });
+  }, [onChangeSelection]);
+
+  const onClickHeadItem = React.useCallback(
+    (textSelection: TextSelection | undefined) => {
+      onChangeSelection({ tag: "head", selection: textSelection });
+    },
+    [onChangeSelection]
+  );
+
   return (
     <div
       className={css({
@@ -273,11 +273,7 @@ export const ProductSelectionView: ElementOperation<
                     : "#333",
                 borderRadius: 8,
               })}
-              onClick={() => {
-                props.onChangeSelection({
-                  tag: "icon",
-                });
-              }}
+              onClick={onClickIcon}
             >
               <Image
                 width={32}
@@ -288,26 +284,17 @@ export const ProductSelectionView: ElementOperation<
             </div>
           )}
           <HeadItemView
-            onSelect={(selection) => {
-              props.onChangeSelection({ tag: "head", selection });
-            }}
+            onSelect={onClickHeadItem}
             name={props.value.headItem.name}
             productSelection={props.selection}
             textValue={props.value.headItem.value}
-            onRequestDataOperation={(textDataOperation) =>
-              props.onRequestDataOperation({ tag: "head", textDataOperation })
-            }
           />
         </div>
       )}
-      {props.value.items.map((itemType, index) => {
-        const item = props.value.items[index];
-        if (item === undefined) {
-          return <div>指定したメンバーの値がない {JSON.stringify(item)}</div>;
-        }
+      {props.value.items.map((item, index) => {
         return (
           <ItemView
-            key={itemType.name}
+            key={item.name}
             onSelect={(selection) => {
               props.onChangeSelection({
                 tag: "content",
@@ -315,22 +302,17 @@ export const ProductSelectionView: ElementOperation<
                 selection,
               });
             }}
-            name={itemType.name}
+            name={item.name}
             itemSelection={getContentItemSelection(props.selection, index)}
             value={item.value}
-            onRequestDataOperation={(commonDataOperation) =>
-              props.onRequestDataOperation({
-                tag: "content",
-                index,
-                commonDataOperation,
-              })
-            }
+            index={index}
           />
         );
       })}
     </div>
   );
-};
+});
+ProductSelectionView.displayName = "ProductSelectionView";
 
 const getContentItemSelection = (
   productSelection: ProductSelection | undefined,
@@ -341,34 +323,33 @@ const getContentItemSelection = (
     productSelection.tag !== "content" ||
     productSelection.index !== index
   ) {
-    return { tag: "none" };
+    return "none";
   }
   if (productSelection.selection === undefined) {
-    return { tag: "selectSelf" };
+    return "self";
   }
-  return { tag: "selectInner", selection: productSelection.selection };
+  return productSelection.selection;
 };
 
-type ItemSelection =
-  | {
-      tag: "selectSelf";
-    }
-  | {
-      tag: "selectInner";
-      selection: Selection;
-    }
-  | {
-      tag: "none";
-    };
+type ItemSelection = "none" | "self" | CommonSelection;
 
 const HeadItemView: React.VFC<{
   readonly onSelect: (selection: TextSelection | undefined) => void;
   readonly name: string;
   readonly textValue: TextValue;
   readonly productSelection: ProductSelection | undefined;
-  readonly onRequestDataOperation: (operation: TextDataOperation) => void;
-}> = (props) => {
+}> = React.memo((props) => {
+  const onSelect = props.onSelect;
   const ref = React.useRef<HTMLDivElement>(null);
+  const onFocus = React.useCallback(
+    (event: React.FocusEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      onSelect(undefined);
+    },
+    [onSelect]
+  );
+
   React.useEffect(() => {
     if (
       props.productSelection !== undefined &&
@@ -392,11 +373,7 @@ const HeadItemView: React.VFC<{
             ? "red"
             : "#333",
       })}
-      onFocus={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        props.onSelect(undefined);
-      }}
+      onFocus={onFocus}
       tabIndex={0}
     >
       <HeadTextSelectionView
@@ -408,24 +385,33 @@ const HeadItemView: React.VFC<{
             : undefined
         }
         onChangeSelection={props.onSelect}
-        onRequestDataOperation={props.onRequestDataOperation}
       />
     </div>
   );
-};
+});
+HeadItemView.displayName = "HeadItemView";
 
 const ItemView: React.VFC<{
-  readonly onSelect: (selection: Selection | undefined) => void;
+  readonly onSelect: (selection: CommonSelection | undefined) => void;
   readonly name: string;
-  readonly value: Value;
+  readonly value: CommonValue;
   readonly itemSelection: ItemSelection;
-  readonly onRequestDataOperation: (
-    commonDataOperation: CommonDataOperation
-  ) => void;
-}> = (props) => {
+  readonly index: number;
+}> = React.memo((props) => {
+  const onSelect = props.onSelect;
+
   const ref = React.useRef<HTMLDivElement>(null);
+  const onFocus = React.useCallback(
+    (event: React.FocusEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      onSelect(undefined);
+    },
+    [onSelect]
+  );
+
   React.useEffect(() => {
-    if (props.itemSelection.tag === "selectSelf" && ref.current !== null) {
+    if (props.itemSelection === "self" && ref.current !== null) {
       ref.current.scrollIntoView({ block: "nearest", inline: "nearest" });
     }
   }, [props.itemSelection]);
@@ -437,13 +423,9 @@ const ItemView: React.VFC<{
         padding: 4,
         borderWidth: 2,
         borderStyle: "solid",
-        borderColor: props.itemSelection.tag === "selectSelf" ? "red" : "#333",
+        borderColor: props.itemSelection === "self" ? "red" : "#333",
       })}
-      onFocus={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        props.onSelect(undefined);
-      }}
+      onFocus={onFocus}
       tabIndex={0}
     >
       <div
@@ -466,22 +448,21 @@ const ItemView: React.VFC<{
       <commonElement.selectionView
         value={props.value}
         selection={
-          props.itemSelection.tag === "selectInner"
-            ? props.itemSelection.selection
+          props.itemSelection !== "self" && props.itemSelection !== "none"
+            ? props.itemSelection
             : undefined
         }
         onChangeSelection={props.onSelect}
-        onRequestDataOperation={props.onRequestDataOperation}
       />
     </div>
   );
-};
+});
+ItemView.displayName = "ItemView";
 
 const ProductDetailView: ElementOperation<
   ProductSelection,
-  ProductValue,
-  ProductDataOperation
->["detailView"] = (props) => {
+  ProductValue
+>["detailView"] = React.memo((props) => {
   if (props.selection === undefined) {
     return <div>product自体を選択している</div>;
   }
@@ -494,9 +475,6 @@ const ProductDetailView: ElementOperation<
         <textOperation.detailView
           value={props.value.headItem.value}
           selection={props.selection.selection}
-          onRequestDataOperation={(textDataOperation) =>
-            props.onRequestDataOperation({ tag: "head", textDataOperation })
-          }
         />
       );
     case "icon":
@@ -511,23 +489,16 @@ const ProductDetailView: ElementOperation<
         <commonElement.detailView
           value={item.value}
           selection={props.selection.selection}
-          onRequestDataOperation={(commonDataOperation) =>
-            props.onRequestDataOperation({
-              tag: "content",
-              index,
-              commonDataOperation,
-            })
-          }
         />
       );
     }
   }
-};
+});
+ProductDetailView.displayName = "ProductDetailView";
 
 export const productOperation: ElementOperation<
   ProductSelection,
-  ProductValue,
-  ProductDataOperation
+  ProductValue
 > = {
   moveUp,
   moveDown,

@@ -9,10 +9,10 @@ export type Props = Pick<UseDefinyAppResult, "language" | "accountResource"> & {
   readonly onJump: UseDefinyAppResult["jump"];
 };
 
-export const AccountCard: React.VFC<Props> = (props) => {
+export const AccountCard: React.VFC<Props> = React.memo((props) => {
   React.useEffect(() => {
     props.accountResource.requestToServerIfEmpty(props.accountId);
-  }, [props.accountId]);
+  }, [props.accountResource, props.accountId]);
   const accountResource = props.accountResource.getFromMemoryCache(
     props.accountId
   );
@@ -53,4 +53,5 @@ export const AccountCard: React.VFC<Props> = (props) => {
       {account.name}
     </Link>
   );
-};
+});
+AccountCard.displayName = "AccountCard";

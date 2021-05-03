@@ -9,7 +9,7 @@ export const Image: React.VFC<{
   width: number;
   height: number;
   isCircle?: boolean;
-}> = (props) => {
+}> = React.memo((props) => {
   return (
     <img
       alt={props.alt}
@@ -22,12 +22,13 @@ export const Image: React.VFC<{
       src={pngFilePath(props.imageHash)}
     />
   );
-};
+});
+Image.displayName = "Image";
 
 export const ImageSkeleton: React.VFC<{
   width: number;
   height: number;
-}> = (props) => {
+}> = React.memo((props) => {
   return (
     <div
       className={css({
@@ -37,4 +38,5 @@ export const ImageSkeleton: React.VFC<{
       })}
     ></div>
   );
-};
+});
+ImageSkeleton.displayName = "ImageSkeleton";

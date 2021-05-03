@@ -11,9 +11,6 @@ export type Props = {
 };
 
 export const CreateProjectPage: React.VFC<Props> = (props) => {
-  if (props.createProjectState._ === "creating") {
-    return <div>「{props.createProjectState.name}」を作成中</div>;
-  }
   const { text, element } = useOneLineTextEditor({
     id: "project-name",
     initText: "",
@@ -22,6 +19,16 @@ export const CreateProjectPage: React.VFC<Props> = (props) => {
     },
   });
   const normalizedProjectName = stringToValidProjectName(text);
+  const onCreateProject = props.onCreateProject;
+  const onClickCreateButton = React.useCallback(() => {
+    if (typeof normalizedProjectName === "string") {
+      onCreateProject(normalizedProjectName);
+    }
+  }, [normalizedProjectName, onCreateProject]);
+
+  if (props.createProjectState._ === "creating") {
+    return <div>「{props.createProjectState.name}」を作成中</div>;
+  }
 
   return (
     <div
@@ -43,11 +50,7 @@ export const CreateProjectPage: React.VFC<Props> = (props) => {
       {normalizedProjectName === null ? (
         <div>プロジェクト名が不正です</div>
       ) : (
-        <Button
-          onClick={() => {
-            props.onCreateProject(normalizedProjectName);
-          }}
-        >
+        <Button onClick={onClickCreateButton}>
           「{normalizedProjectName}」を作成する
         </Button>
       )}

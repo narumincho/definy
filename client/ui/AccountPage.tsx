@@ -15,7 +15,8 @@ export type Props = Pick<
 export const AccountPage: React.VFC<Props> = (props) => {
   React.useEffect(() => {
     props.accountResource.forciblyRequestToServer(props.accountId);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.accountId]);
 
   const accountResource = props.accountResource.getFromMemoryCache(
     props.accountId
@@ -38,13 +39,16 @@ export const AccountPage: React.VFC<Props> = (props) => {
       product={{
         headItem: {
           name: "アカウント名",
-          value: { canEdit: false, text: account.name },
+          value: { text: account.name, onChange: undefined },
           iconHash: account.imageHash,
         },
         items: [
           {
             name: "自己紹介文",
-            value: textValue({ canEdit: false, text: account.introduction }),
+            value: textValue({
+              text: account.introduction,
+              onChange: undefined,
+            }),
           },
           {
             name: "作成日時",
@@ -52,11 +56,10 @@ export const AccountPage: React.VFC<Props> = (props) => {
           },
           {
             name: "アカウントId",
-            value: textValue({ canEdit: false, text: props.accountId }),
+            value: textValue({ text: props.accountId, onChange: undefined }),
           },
         ],
       }}
-      onRequestDataOperation={() => {}}
     />
   );
 };

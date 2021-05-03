@@ -12,15 +12,10 @@ export type ProjectIdValue = {
   readonly canEdit: boolean;
 } & Pick<UseDefinyAppResult, "projectResource" | "language" | "jump">;
 
-export type ProjectIdDataOperation = {
-  tag: "jump";
-};
-
 const ProjectIdSelectionView: ElementOperation<
   ProjectIdSelection,
-  ProjectIdValue,
-  ProjectIdDataOperation
->["selectionView"] = (props) => {
+  ProjectIdValue
+>["selectionView"] = React.memo((props) => {
   return (
     <ProjectCard
       projectResource={props.value.projectResource}
@@ -29,13 +24,13 @@ const ProjectIdSelectionView: ElementOperation<
       onJump={props.value.jump}
     />
   );
-};
+});
+ProjectIdSelectionView.displayName = "ProjectIdSelectionView";
 
 const ProjectIdDetailView: ElementOperation<
   ProjectIdSelection,
-  ProjectIdValue,
-  ProjectIdDataOperation
->["detailView"] = (props) => {
+  ProjectIdValue
+>["detailView"] = React.memo((props) => {
   return (
     <ProjectCard
       projectResource={props.value.projectResource}
@@ -44,12 +39,12 @@ const ProjectIdDetailView: ElementOperation<
       onJump={props.value.jump}
     />
   );
-};
+});
+ProjectIdDetailView.displayName = "ProjectIdDetailView";
 
 export const projectIdOperation: ElementOperation<
   ProjectIdSelection,
-  ProjectIdValue,
-  ProjectIdDataOperation
+  ProjectIdValue
 > = {
   moveUp: () => undefined,
   moveDown: () => undefined,

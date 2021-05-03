@@ -40,7 +40,7 @@ export const listDeleteAt = <Element>(
   ];
 };
 
-export const listMapAt = <Element>(
+export const listUpdateAt = <Element>(
   list: ReadonlyArray<Element>,
   index: number,
   func: (e: Element) => Element

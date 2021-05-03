@@ -16,10 +16,10 @@ export type Props = Pick<UseDefinyAppResult, "projectResource" | "language"> & {
   readonly onJump: UseDefinyAppResult["jump"];
 };
 
-export const ProjectCard: React.VFC<Props> = (props) => {
+export const ProjectCard: React.VFC<Props> = React.memo((props) => {
   React.useEffect(() => {
     props.projectResource.requestToServerIfEmpty(props.projectId);
-  }, []);
+  }, [props.projectId, props.projectResource]);
 
   const projectState = props.projectResource.getFromMemoryCache(
     props.projectId
@@ -76,9 +76,10 @@ export const ProjectCard: React.VFC<Props> = (props) => {
       </div>
     </Link>
   );
-};
+});
+ProjectCard.displayName = "ProjectCard";
 
-export const ProjectCardSkeleton: React.VFC = () => {
+export const ProjectCardSkeleton: React.VFC = React.memo(() => {
   return (
     <div
       className={css({
@@ -90,4 +91,5 @@ export const ProjectCardSkeleton: React.VFC = () => {
       <ImageSkeleton width={imageWidth} height={imageHeight} />
     </div>
   );
-};
+});
+ProjectCardSkeleton.displayName = "ProjectCardSkeleton";

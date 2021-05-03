@@ -1,15 +1,19 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
 import { SnackbarProvider, useSnackbar } from "notistack";
+import { UseDefinyAppOption, useDefinyApp } from "./hook/useDefinyApp";
 import { App } from "./ui/App";
-import { useDefinyApp } from "./hook/useDefinyApp";
 
 export const AppInSnack: React.VFC<Record<string, never>> = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const useDefinyAppResult = useDefinyApp({
-    notificationMessageHandler: (message, variant) =>
-      enqueueSnackbar(message, { variant }),
-  });
+  const useDefinyAppOption = React.useMemo<UseDefinyAppOption>(
+    () => ({
+      notificationMessageHandler: (message, variant) =>
+        enqueueSnackbar(message, { variant }),
+    }),
+    [enqueueSnackbar]
+  );
+  const useDefinyAppResult = useDefinyApp(useDefinyAppOption);
 
   return <App useDefinyAppResult={useDefinyAppResult} />;
 };

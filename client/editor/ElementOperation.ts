@@ -5,7 +5,7 @@ import React from "react";
  *
  * 移動時の動作や, 左のSelectionView, 右のDetailView に表示するコンポーネントを指定する必要がある
  */
-export type ElementOperation<Selection, Value, DataOperation> = {
+export type ElementOperation<Selection, Value> = {
   /**
    * 上に移動するときにどのように移動するかどうかを決める
    *
@@ -64,7 +64,6 @@ export type ElementOperation<Selection, Value, DataOperation> = {
     readonly selection: Selection | undefined;
     readonly value: Value;
     readonly onChangeSelection: (selection: Selection) => void;
-    readonly onRequestDataOperation: (operation: DataOperation) => void;
   }>;
 
   /**
@@ -73,6 +72,5 @@ export type ElementOperation<Selection, Value, DataOperation> = {
   readonly detailView: React.VFC<{
     readonly value: Value;
     readonly selection: Selection | undefined;
-    readonly onRequestDataOperation: (operation: DataOperation) => void;
   }>;
 };

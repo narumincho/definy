@@ -1,253 +1,198 @@
 /* eslint-disable complexity */
 import * as React from "react";
 import {
-  AccountIdDataOperation,
   AccountIdSelection,
   AccountIdValue,
   accountIdOperation,
 } from "./accountId";
-import { ButtonDataOperation, ButtonValue, buttonOperation } from "./button";
+import { ButtonValue, buttonOperation } from "./button";
 import { ImageSelection, ImageValue, imageOperation } from "./image";
+import { ListSelection, ListValue, listOperation } from "./list";
+import { NumberSelection, NumberValue, numberOperation } from "./number";
+import { ProductSelection, ProductValue, productOperation } from "./product";
 import {
-  ListDataOperation,
-  ListSelection,
-  ListValue,
-  listOperation,
-} from "./list";
-import {
-  NumberDataOperation,
-  NumberSelection,
-  NumberValue,
-  numberOperation,
-} from "./number";
-import {
-  ProductDataOperation,
-  ProductSelection,
-  ProductValue,
-  productOperation,
-} from "./product";
-import {
-  ProjectIdDataOperation,
   ProjectIdSelection,
   ProjectIdValue,
   projectIdOperation,
 } from "./projectId";
-import { SumDataOperation, SumSelection, SumValue, sumOperation } from "./sum";
-import {
-  TextDataOperation,
-  TextSelection,
-  TextValue,
-  textOperation,
-} from "./text";
+import { SumSelection, SumValue, sumOperation } from "./sum";
+import { TextSelection, TextValue, textOperation } from "./text";
 import { TimeSelection, TimeValue, timeOperation } from "./time";
 import {
-  TypeDataOperation,
-  TypeSelection,
-  TypeValue,
-  typeOperation,
-} from "./type";
-import {
-  TypePartIdDataOperation,
   TypePartIdSelection,
   TypePartIdValue,
   typePartIdOperation,
 } from "./typePartId";
+import { TypeSelection, TypeValue, typeOperation } from "./type";
 import type { ElementOperation } from "./ElementOperation";
 import { maybeMap } from "../../common/util";
 
-export type Selection =
+export type CommonSelection =
   | {
-      tag: "product";
-      value: ProductSelection;
+      readonly tag: "product";
+      readonly value: ProductSelection;
     }
   | {
-      tag: "list";
-      value: ListSelection;
+      readonly tag: "list";
+      readonly value: ListSelection;
     }
   | {
-      tag: "text";
-      textSelection: TextSelection;
+      readonly tag: "text";
+      readonly textSelection: TextSelection;
     }
   | {
-      tag: "number";
-      numberSelection: NumberSelection;
+      readonly tag: "number";
+      readonly numberSelection: NumberSelection;
     }
   | {
-      tag: "sum";
-      sumSelection: SumSelection;
+      readonly tag: "sum";
+      readonly sumSelection: SumSelection;
     }
   | {
-      tag: "image";
-      imageSelection: ImageSelection;
+      readonly tag: "image";
+      readonly imageSelection: ImageSelection;
     }
   | {
-      tag: "account";
-      accountSelection: AccountIdSelection;
+      readonly tag: "account";
+      readonly accountSelection: AccountIdSelection;
     }
   | {
-      tag: "time";
-      timeSelection: TimeSelection;
+      readonly tag: "time";
+      readonly timeSelection: TimeSelection;
     }
   | {
-      tag: "project";
-      projectSelection: ProjectIdSelection;
+      readonly tag: "project";
+      readonly projectSelection: ProjectIdSelection;
     }
   | {
-      tag: "typePartId";
-      typePartIdSelection: TypePartIdSelection;
+      readonly tag: "typePartId";
+      readonly typePartIdSelection: TypePartIdSelection;
     }
   | {
-      tag: "type";
-      typeSelection: TypeSelection;
+      readonly tag: "type";
+      readonly typeSelection: TypeSelection;
     };
 
-const selectionProduct = (value: ProductSelection): Selection => ({
+const selectionProduct = (value: ProductSelection): CommonSelection => ({
   tag: "product",
   value,
 });
-const selectionList = (value: ListSelection): Selection => ({
+const selectionList = (value: ListSelection): CommonSelection => ({
   tag: "list",
   value,
 });
-const selectionSum = (sumSelection: SumSelection): Selection => ({
+const selectionSum = (sumSelection: SumSelection): CommonSelection => ({
   tag: "sum",
   sumSelection,
 });
-const selectionType = (typeSelection: TypeSelection): Selection => ({
+const selectionType = (typeSelection: TypeSelection): CommonSelection => ({
   tag: "type",
   typeSelection,
 });
 
-export type Value =
+export type CommonValue =
   | {
-      type: "text";
-      value: TextValue;
+      readonly type: "text";
+      readonly value: TextValue;
     }
   | {
-      type: "number";
-      value: NumberValue;
+      readonly type: "number";
+      readonly value: NumberValue;
     }
   | {
-      type: "sum";
-      value: SumValue;
+      readonly type: "sum";
+      readonly value: SumValue;
     }
   | {
-      type: "accountId";
-      value: AccountIdValue;
+      readonly type: "accountId";
+      readonly value: AccountIdValue;
     }
   | {
-      type: "time";
-      value: TimeValue;
+      readonly type: "time";
+      readonly value: TimeValue;
     }
   | {
-      type: "list";
-      value: ListValue;
+      readonly type: "list";
+      readonly value: ListValue;
     }
   | {
-      type: "product";
-      value: ProductValue;
+      readonly type: "product";
+      readonly value: ProductValue;
     }
   | {
-      type: "image";
-      value: ImageValue;
+      readonly type: "image";
+      readonly value: ImageValue;
     }
   | {
-      type: "projectId";
-      value: ProjectIdValue;
+      readonly type: "projectId";
+      readonly value: ProjectIdValue;
     }
   | {
-      type: "typePartId";
-      value: TypePartIdValue;
+      readonly type: "typePartId";
+      readonly value: TypePartIdValue;
     }
   | {
-      type: "button";
-      value: ButtonValue;
+      readonly type: "button";
+      readonly value: ButtonValue;
     }
   | {
-      type: "type";
-      value: TypeValue;
+      readonly type: "type";
+      readonly value: TypeValue;
     };
 
-export const textValue = (value: TextValue): Value => ({ type: "text", value });
-export const numberValue = (value: NumberValue): Value => ({
+export const textValue = (value: TextValue): CommonValue => ({
+  type: "text",
+  value,
+});
+export const numberValue = (value: NumberValue): CommonValue => ({
   type: "number",
   value,
 });
-export const sumValue = (value: SumValue): Value => ({ type: "sum", value });
-export const accountIdValue = (value: AccountIdValue): Value => ({
+export const sumValue = (value: SumValue): CommonValue => ({
+  type: "sum",
+  value,
+});
+export const accountIdValue = (value: AccountIdValue): CommonValue => ({
   type: "accountId",
   value,
 });
-export const timeValue = (value: TimeValue): Value => ({ type: "time", value });
-export const listValue = (value: ListValue): Value => ({ type: "list", value });
-export const productValue = (value: ProductValue): Value => ({
+export const timeValue = (value: TimeValue): CommonValue => ({
+  type: "time",
+  value,
+});
+export const listValue = (value: ListValue): CommonValue => ({
+  type: "list",
+  value,
+});
+export const productValue = (value: ProductValue): CommonValue => ({
   type: "product",
   value,
 });
-export const imageValue = (value: ImageValue): Value => ({
+export const imageValue = (value: ImageValue): CommonValue => ({
   type: "image",
   value,
 });
-export const projectIdValue = (value: ProjectIdValue): Value => ({
+export const projectIdValue = (value: ProjectIdValue): CommonValue => ({
   type: "projectId",
   value,
 });
-export const typePartIdValue = (value: TypePartIdValue): Value => ({
+export const typePartIdValue = (value: TypePartIdValue): CommonValue => ({
   type: "typePartId",
   value,
 });
-export const buttonValue = (value: ButtonValue): Value => ({
+export const buttonValue = (value: ButtonValue): CommonValue => ({
   type: "button",
   value,
 });
-export const typeValue = (value: TypeValue): Value => ({
+export const typeValue = (value: TypeValue): CommonValue => ({
   type: "type",
   value,
 });
 
-export type CommonDataOperation =
-  | {
-      tag: "text";
-      textDataOperation: TextDataOperation;
-    }
-  | {
-      tag: "number";
-      numberDataOperation: NumberDataOperation;
-    }
-  | {
-      tag: "sum";
-      sumDataOperation: SumDataOperation;
-    }
-  | {
-      tag: "account";
-      accountDataOperation: AccountIdDataOperation;
-    }
-  | {
-      tag: "project";
-      projectDataOperation: ProjectIdDataOperation;
-    }
-  | {
-      tag: "list";
-      listDataOperation: ListDataOperation;
-    }
-  | {
-      tag: "product";
-      productDataOperation: ProductDataOperation;
-    }
-  | {
-      tag: "typePartId";
-      typePartIdDataOperation: TypePartIdDataOperation;
-    }
-  | {
-      tag: "button";
-      buttonDataOperation: ButtonDataOperation;
-    }
-  | {
-      tag: "type";
-      typeDataOperation: TypeDataOperation;
-    };
-
-const moveUp = (selection: Selection, value: Value): Selection | undefined => {
+const moveUp = (
+  selection: CommonSelection,
+  value: CommonValue
+): CommonSelection | undefined => {
   if (selection.tag === "list" && value.type === "list") {
     return maybeMap(
       listOperation.moveUp(selection.value, value.value),
@@ -263,9 +208,9 @@ const moveUp = (selection: Selection, value: Value): Selection | undefined => {
 };
 
 const moveDown = (
-  selection: Selection,
-  value: Value
-): Selection | undefined => {
+  selection: CommonSelection,
+  value: CommonValue
+): CommonSelection | undefined => {
   if (selection.tag === "list" && value.type === "list") {
     return maybeMap(
       listOperation.moveDown(selection.value, value.value),
@@ -281,9 +226,9 @@ const moveDown = (
 };
 
 const moveFirstChild = (
-  selection: Selection | undefined,
-  value: Value
-): Selection | undefined => {
+  selection: CommonSelection | undefined,
+  value: CommonValue
+): CommonSelection | undefined => {
   if (value.type === "list") {
     return maybeMap(
       listOperation.moveFirstChild(
@@ -309,9 +254,8 @@ const moveFirstChild = (
 };
 
 const moveParent: ElementOperation<
-  Selection,
-  Value,
-  CommonDataOperation
+  CommonSelection,
+  CommonValue
 >["moveParent"] = (selection, value) => {
   if (selection.tag === "list" && value.type === "list") {
     return maybeMap(
@@ -327,61 +271,60 @@ const moveParent: ElementOperation<
   }
 };
 
+const noSelectionDummyFunction = () => {};
+
 const CommonElementSelectionView: ElementOperation<
-  Selection,
-  Value,
-  CommonDataOperation
->["selectionView"] = (props) => {
+  CommonSelection,
+  CommonValue
+>["selectionView"] = React.memo((props) => {
+  const onChangeSelection = props.onChangeSelection;
+
+  const sumChangeSelection = React.useCallback(
+    (s: SumSelection): void => onChangeSelection(selectionSum(s)),
+    [onChangeSelection]
+  );
+  const listChangeSelection = React.useCallback(
+    (listSelection: ListSelection): void =>
+      onChangeSelection(selectionList(listSelection)),
+    [onChangeSelection]
+  );
+  const productChangeSelection = React.useCallback(
+    (productSelection: ProductSelection): void =>
+      onChangeSelection(selectionProduct(productSelection)),
+    [onChangeSelection]
+  );
+  const typeChangeSelection = React.useCallback(
+    (selection: TypeSelection): void =>
+      onChangeSelection(selectionType(selection)),
+    [onChangeSelection]
+  );
+
   switch (props.value.type) {
     case "number":
       return (
         <numberOperation.selectionView
           value={props.value.value}
-          onChangeSelection={(listSelection) =>
-            props.onChangeSelection(selectionList(listSelection))
-          }
-          selection={
-            props.selection !== undefined && props.selection.tag === "number"
-              ? props.selection.numberSelection
-              : undefined
-          }
-          onRequestDataOperation={(numberDataOperation) =>
-            props.onRequestDataOperation({ tag: "number", numberDataOperation })
-          }
+          onChangeSelection={noSelectionDummyFunction}
+          selection={undefined}
         />
       );
     case "text":
       return (
         <textOperation.selectionView
           value={props.value.value}
-          onChangeSelection={(listSelection) =>
-            props.onChangeSelection(selectionList(listSelection))
-          }
-          selection={
-            props.selection !== undefined && props.selection.tag === "text"
-              ? props.selection.textSelection
-              : undefined
-          }
-          onRequestDataOperation={(textDataOperation) =>
-            props.onRequestDataOperation({ tag: "text", textDataOperation })
-          }
+          onChangeSelection={noSelectionDummyFunction}
+          selection={undefined}
         />
       );
     case "sum":
       return (
         <sumOperation.selectionView
           value={props.value.value}
-          onChangeSelection={(s) => props.onChangeSelection(selectionSum(s))}
+          onChangeSelection={sumChangeSelection}
           selection={
             props.selection !== undefined && props.selection.tag === "sum"
               ? props.selection.sumSelection
               : undefined
-          }
-          onRequestDataOperation={(sumDataOperation) =>
-            props.onRequestDataOperation({
-              tag: "sum",
-              sumDataOperation,
-            })
           }
         />
       );
@@ -389,69 +332,43 @@ const CommonElementSelectionView: ElementOperation<
       return (
         <imageOperation.selectionView
           value={props.value.value}
-          onChangeSelection={(listSelection) =>
-            props.onChangeSelection(selectionList(listSelection))
-          }
-          selection={
-            props.selection !== undefined && props.selection.tag === "image"
-              ? props.selection.imageSelection
-              : undefined
-          }
-          onRequestDataOperation={props.onRequestDataOperation}
+          onChangeSelection={noSelectionDummyFunction}
+          selection={undefined}
         />
       );
     case "accountId":
       return (
         <accountIdOperation.selectionView
           value={props.value.value}
-          onChangeSelection={(listSelection) =>
-            props.onChangeSelection(selectionList(listSelection))
-          }
+          onChangeSelection={noSelectionDummyFunction}
           selection={
             props.selection !== undefined && props.selection.tag === "account"
               ? props.selection.accountSelection
               : undefined
           }
-          onRequestDataOperation={(accountDataOperation) => {
-            props.onRequestDataOperation({
-              tag: "account",
-              accountDataOperation,
-            });
-          }}
         />
       );
     case "time":
       return (
         <timeOperation.selectionView
           value={props.value.value}
-          onChangeSelection={(listSelection) =>
-            props.onChangeSelection(selectionList(listSelection))
-          }
+          onChangeSelection={noSelectionDummyFunction}
           selection={
             props.selection !== undefined && props.selection.tag === "time"
               ? props.selection.timeSelection
               : undefined
           }
-          onRequestDataOperation={props.onRequestDataOperation}
         />
       );
     case "projectId":
       return (
         <projectIdOperation.selectionView
           value={props.value.value}
-          onChangeSelection={(listSelection) =>
-            props.onChangeSelection(selectionList(listSelection))
-          }
+          onChangeSelection={noSelectionDummyFunction}
           selection={
             props.selection !== undefined && props.selection.tag === "project"
               ? props.selection.projectSelection
               : undefined
-          }
-          onRequestDataOperation={(projectDataOperation) =>
-            props.onRequestDataOperation({
-              tag: "project",
-              projectDataOperation,
-            })
           }
         />
       );
@@ -459,16 +376,11 @@ const CommonElementSelectionView: ElementOperation<
       return (
         <listOperation.selectionView
           value={props.value.value}
-          onChangeSelection={(listSelection) =>
-            props.onChangeSelection(selectionList(listSelection))
-          }
+          onChangeSelection={listChangeSelection}
           selection={
             props.selection !== undefined && props.selection.tag === "list"
               ? props.selection.value
               : undefined
-          }
-          onRequestDataOperation={(listDataOperation) =>
-            props.onRequestDataOperation({ tag: "list", listDataOperation })
           }
         />
       );
@@ -476,19 +388,11 @@ const CommonElementSelectionView: ElementOperation<
       return (
         <productOperation.selectionView
           value={props.value.value}
-          onChangeSelection={(productSelection) =>
-            props.onChangeSelection(selectionProduct(productSelection))
-          }
+          onChangeSelection={productChangeSelection}
           selection={
             props.selection !== undefined && props.selection.tag === "product"
               ? props.selection.value
               : undefined
-          }
-          onRequestDataOperation={(productDataOperation) =>
-            props.onRequestDataOperation({
-              tag: "product",
-              productDataOperation,
-            })
           }
         />
       );
@@ -496,84 +400,51 @@ const CommonElementSelectionView: ElementOperation<
       return (
         <typePartIdOperation.selectionView
           value={props.value.value}
-          onChangeSelection={(typePartIdSelection) =>
-            props.onChangeSelection(typePartIdSelection)
-          }
-          selection={
-            props.selection !== undefined &&
-            props.selection.tag === "typePartId"
-              ? props.selection.typePartIdSelection
-              : undefined
-          }
-          onRequestDataOperation={props.onRequestDataOperation}
+          onChangeSelection={noSelectionDummyFunction}
+          selection={undefined}
         />
       );
     case "button":
       return (
         <buttonOperation.selectionView
           value={props.value.value}
-          onChangeSelection={() => {}}
+          onChangeSelection={noSelectionDummyFunction}
           selection={undefined}
-          onRequestDataOperation={(buttonDataOperation) =>
-            props.onRequestDataOperation({ tag: "button", buttonDataOperation })
-          }
         />
       );
     case "type":
       return (
         <typeOperation.selectionView
           value={props.value.value}
-          onChangeSelection={(selection) =>
-            props.onChangeSelection(selectionType(selection))
-          }
+          onChangeSelection={typeChangeSelection}
           selection={
             props.selection?.tag === "type"
               ? props.selection.typeSelection
               : undefined
           }
-          onRequestDataOperation={(typeDataOperation) =>
-            props.onRequestDataOperation({ tag: "type", typeDataOperation })
-          }
         />
       );
   }
-};
+});
+CommonElementSelectionView.displayName = "CommonElementSelectionView";
 
 const CommonElementDetailView: ElementOperation<
-  Selection,
-  Value,
-  CommonDataOperation
->["detailView"] = (props) => {
+  CommonSelection,
+  CommonValue
+>["detailView"] = React.memo((props) => {
   switch (props.value.type) {
     case "number":
       return (
         <numberOperation.detailView
           value={props.value.value}
-          selection={
-            props.selection !== undefined && props.selection.tag === "number"
-              ? props.selection.numberSelection
-              : undefined
-          }
-          onRequestDataOperation={(numberDataOperation) =>
-            props.onRequestDataOperation({ tag: "number", numberDataOperation })
-          }
+          selection={undefined}
         />
       );
     case "text":
       return (
         <textOperation.detailView
           value={props.value.value}
-          selection={
-            props.selection !== undefined && props.selection.tag === "text"
-              ? props.selection.textSelection
-              : undefined
-          }
-          onRequestDataOperation={(textDataOperation) =>
-            props.onRequestDataOperation({
-              tag: "text",
-              textDataOperation,
-            })
-          }
+          selection={undefined}
         />
       );
     case "sum":
@@ -585,24 +456,13 @@ const CommonElementDetailView: ElementOperation<
               ? props.selection.sumSelection
               : undefined
           }
-          onRequestDataOperation={(sumDataOperation) =>
-            props.onRequestDataOperation({
-              tag: "sum",
-              sumDataOperation,
-            })
-          }
         />
       );
     case "image":
       return (
         <imageOperation.detailView
           value={props.value.value}
-          selection={
-            props.selection !== undefined && props.selection.tag === "image"
-              ? props.selection.imageSelection
-              : undefined
-          }
-          onRequestDataOperation={props.onRequestDataOperation}
+          selection={undefined}
         />
       );
     case "accountId":
@@ -613,12 +473,6 @@ const CommonElementDetailView: ElementOperation<
             props.selection !== undefined && props.selection.tag === "account"
               ? props.selection.accountSelection
               : undefined
-          }
-          onRequestDataOperation={(accountDataOperation) =>
-            props.onRequestDataOperation({
-              tag: "account",
-              accountDataOperation,
-            })
           }
         />
       );
@@ -631,12 +485,6 @@ const CommonElementDetailView: ElementOperation<
               ? props.selection.projectSelection
               : undefined
           }
-          onRequestDataOperation={(projectDataOperation) =>
-            props.onRequestDataOperation({
-              tag: "project",
-              projectDataOperation,
-            })
-          }
         />
       );
     case "time":
@@ -648,7 +496,6 @@ const CommonElementDetailView: ElementOperation<
               ? props.selection.timeSelection
               : undefined
           }
-          onRequestDataOperation={props.onRequestDataOperation}
         />
       );
     case "list":
@@ -660,12 +507,6 @@ const CommonElementDetailView: ElementOperation<
               ? props.selection.value
               : undefined
           }
-          onRequestDataOperation={(listDataOperation) =>
-            props.onRequestDataOperation({
-              tag: "list",
-              listDataOperation,
-            })
-          }
         />
       );
     case "product":
@@ -676,12 +517,6 @@ const CommonElementDetailView: ElementOperation<
             props.selection !== undefined && props.selection.tag === "product"
               ? props.selection.value
               : undefined
-          }
-          onRequestDataOperation={(productDataOperation) =>
-            props.onRequestDataOperation({
-              tag: "product",
-              productDataOperation,
-            })
           }
         />
       );
@@ -695,7 +530,6 @@ const CommonElementDetailView: ElementOperation<
               ? props.selection.typePartIdSelection
               : undefined
           }
-          onRequestDataOperation={props.onRequestDataOperation}
         />
       );
     case "button":
@@ -703,12 +537,6 @@ const CommonElementDetailView: ElementOperation<
         <buttonOperation.detailView
           value={props.value.value}
           selection={undefined}
-          onRequestDataOperation={(buttonDataOperation) => {
-            props.onRequestDataOperation({
-              tag: "button",
-              buttonDataOperation,
-            });
-          }}
         />
       );
     case "type":
@@ -720,22 +548,13 @@ const CommonElementDetailView: ElementOperation<
               ? props.selection.typeSelection
               : undefined
           }
-          onRequestDataOperation={(typeDataOperation) => {
-            props.onRequestDataOperation({
-              tag: "type",
-              typeDataOperation,
-            });
-          }}
         />
       );
   }
-};
+});
+CommonElementDetailView.displayName = "CommonElementDetailView";
 
-export const commonElement: ElementOperation<
-  Selection,
-  Value,
-  CommonDataOperation
-> = {
+export const commonElement: ElementOperation<CommonSelection, CommonValue> = {
   moveUp,
   moveDown,
   moveFirstChild,

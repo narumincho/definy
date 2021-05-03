@@ -7,43 +7,35 @@ export type TextSelection = never;
 
 export type TextValue = {
   readonly text: string;
-  readonly canEdit: boolean;
-};
-
-export type TextDataOperation = {
-  tag: "edit";
-  newValue: string;
+  readonly onChange?: (newText: string) => void;
 };
 
 const TextSelectionView: ElementOperation<
   TextSelection,
-  TextValue,
-  TextDataOperation
->["selectionView"] = (props) => {
+  TextValue
+>["selectionView"] = React.memo((props) => {
   return <div className={css({ fontSize: 16 })}>{props.value.text}</div>;
-};
+});
+TextSelectionView.displayName = "TextSelectionView";
 
 export const HeadTextSelectionView: ElementOperation<
   TextSelection,
-  TextValue,
-  TextDataOperation
->["selectionView"] = (props) => {
+  TextValue
+>["selectionView"] = React.memo((props) => {
   return <div className={css({ fontSize: 32 })}>{props.value.text}</div>;
-};
+});
+HeadTextSelectionView.displayName = "HeadTextSelectionView";
 
 const TextDetailView: ElementOperation<
   TextSelection,
-  TextValue,
-  TextDataOperation
->["detailView"] = (props) => {
-  if (props.value.canEdit) {
+  TextValue
+>["detailView"] = ({ value }) => {
+  if (value.onChange !== undefined) {
     return (
       <OneLineTextEditor
         id="text"
-        value={props.value.text}
-        onChange={(newValue) =>
-          props.onRequestDataOperation({ tag: "edit", newValue })
-        }
+        value={value.text}
+        onChange={value.onChange}
       />
     );
   }
@@ -53,16 +45,12 @@ const TextDetailView: ElementOperation<
         color: "orange",
       })}
     >
-      [type: text] {props.value.text}
+      [type: text] {value.text}
     </div>
   );
 };
 
-export const textOperation: ElementOperation<
-  TextSelection,
-  TextValue,
-  TextDataOperation
-> = {
+export const textOperation: ElementOperation<TextSelection, TextValue> = {
   moveUp: () => undefined,
   moveDown: () => undefined,
   moveFirstChild: () => undefined,

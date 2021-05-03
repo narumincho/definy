@@ -10,13 +10,11 @@ export type ImageValue = {
   readonly value: d.ImageHash;
   readonly canEdit: boolean;
 };
-export type ImageDataOperation = never;
 
 const ImageSelectionView: ElementOperation<
   ImageSelection,
-  ImageValue,
-  ImageDataOperation
->["selectionView"] = (props) => {
+  ImageValue
+>["selectionView"] = React.memo((props) => {
   return (
     <div
       className={css({
@@ -32,13 +30,13 @@ const ImageSelectionView: ElementOperation<
       />
     </div>
   );
-};
+});
+ImageSelectionView.displayName = "ImageSelectionView";
 
 const ImageDetailView: ElementOperation<
   ImageSelection,
-  ImageValue,
-  ImageDataOperation
->["detailView"] = (props) => {
+  ImageValue
+>["detailView"] = React.memo((props) => {
   return (
     <div
       className={css({
@@ -54,13 +52,10 @@ const ImageDetailView: ElementOperation<
       />
     </div>
   );
-};
+});
+ImageDetailView.displayName = "ImageDetailView";
 
-export const imageOperation: ElementOperation<
-  ImageSelection,
-  ImageValue,
-  ImageDataOperation
-> = {
+export const imageOperation: ElementOperation<ImageSelection, ImageValue> = {
   moveUp: () => undefined,
   moveDown: () => undefined,
   moveFirstChild: () => undefined,

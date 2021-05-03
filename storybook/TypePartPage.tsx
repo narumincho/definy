@@ -6,6 +6,7 @@ import {
   accountResource,
   projectResource,
   typePart1Id,
+  typePartIdListInProjectResource,
   typePartResource,
 } from "./mockData";
 
@@ -25,6 +26,7 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     projectResource={projectResource}
     accountResource={accountResource}
     onJump={props.onJump}
+    typePartIdListInProjectResource={typePartIdListInProjectResource}
   />
 );
 Default.args = { language: d.Language.Japanese };

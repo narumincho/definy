@@ -1,8 +1,7 @@
 import * as React from "react";
 import * as d from "../../data";
 import {
-  CommonDataOperation,
-  Value,
+  CommonValue,
   buttonValue,
   listValue,
   productValue,
@@ -10,17 +9,20 @@ import {
   sumValue,
   textValue,
   timeValue,
-  typePartIdValue,
   typeValue,
 } from "../editor/common";
-import { listDeleteAt, listSetAt } from "../../common/util";
+import { listDeleteAt, listUpdateAt } from "../../common/util";
 import { Editor } from "./Editor";
-import type { ProductDataOperation } from "../editor/product";
+import { SumTagItem } from "../editor/sum";
 import { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type Props = Pick<
   UseDefinyAppResult,
-  "accountResource" | "projectResource" | "typePartResource" | "language"
+  | "accountResource"
+  | "projectResource"
+  | "typePartResource"
+  | "language"
+  | "typePartIdListInProjectResource"
 > & {
   typePartId: d.TypePartId;
   onJump: UseDefinyAppResult["jump"];
@@ -29,7 +31,8 @@ export type Props = Pick<
 export const TypePartPage: React.VFC<Props> = (props) => {
   React.useEffect(() => {
     props.typePartResource.forciblyRequestToServer(props.typePartId);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.typePartId]);
 
   const typePartResource = props.typePartResource.getFromMemoryCache(
     props.typePartId
@@ -61,9 +64,12 @@ export const TypePartPage: React.VFC<Props> = (props) => {
       typePartId={props.typePartId}
       typePart={typePartResource.dataWithTime.data}
       getTime={typePartResource.dataWithTime.getTime}
+      typePartIdListInProjectResource={props.typePartIdListInProjectResource}
     />
   );
 };
+
+const onClickSaveTypePart = () => {};
 
 const LoadedTypePartEditor: React.VFC<
   Pick<
@@ -73,6 +79,7 @@ const LoadedTypePartEditor: React.VFC<
     | "typePartResource"
     | "language"
     | "jump"
+    | "typePartIdListInProjectResource"
   > & {
     typePartId: d.TypePartId;
     typePart: d.TypePart;
@@ -91,46 +98,13 @@ const LoadedTypePartEditor: React.VFC<
   >(props.typePart.typeParameterList);
   const [body, setBody] = React.useState<d.TypePartBody>(props.typePart.body);
 
-  const onRequestDataOperation = (operation: ProductDataOperation): void => {
-    console.log(operation);
-    if (operation.tag === "head") {
-      if (operation.textDataOperation.tag === "edit") {
-        setName(operation.textDataOperation.newValue);
-      }
-      return;
-    }
-    if (
-      operation.index === 0 &&
-      operation.commonDataOperation.tag === "text" &&
-      operation.commonDataOperation.textDataOperation.tag === "edit"
-    ) {
-      setDescription(operation.commonDataOperation.textDataOperation.newValue);
-      return;
-    }
-    if (operation.index === 1) {
-      attributeOperation(operation.commonDataOperation, setAttribute);
-      return;
-    }
-    if (operation.index === 2) {
-      parameterListOperation(
-        operation.commonDataOperation,
-        typeParameterList,
-        setTypeParameterList
-      );
-      return;
-    }
-    if (operation.index === 3) {
-      bodyOperation(operation.commonDataOperation, setBody, body);
-    }
-  };
-
   return (
     <Editor
       product={{
         headItem: {
           name: props.language === d.Language.Japanese ? "名前" : "name",
           value: {
-            canEdit: true,
+            onChange: setName,
             text: name,
           },
         },
@@ -139,13 +113,13 @@ const LoadedTypePartEditor: React.VFC<
             name:
               props.language === d.Language.Japanese ? "説明" : "description",
             value: textValue({
-              canEdit: true,
+              onChange: setDescription,
               text: description,
             }),
           },
           {
             name: props.language === d.Language.Japanese ? "属性" : "attribute",
-            value: attributeValue(props.language, attribute),
+            value: attributeValue(props.language, attribute, setAttribute),
           },
           {
             name:
@@ -157,6 +131,7 @@ const LoadedTypePartEditor: React.VFC<
               jump: props.jump,
               typePartResource: props.typePartResource,
               typeParameterList,
+              setTypeParameterList,
             }),
           },
           {
@@ -166,13 +141,18 @@ const LoadedTypePartEditor: React.VFC<
                 language: props.language,
                 typePartResource: props.typePartResource,
                 jump: props.jump,
+                typePartIdListInProjectResource:
+                  props.typePartIdListInProjectResource,
+                projectId: props.typePart.projectId,
               },
-              body
+              body,
+              setBody
             ),
           },
           {
             name: "保存ボタン",
             value: buttonValue({
+              onClick: onClickSaveTypePart,
               text: "サーバーに保存する",
             }),
           },
@@ -195,7 +175,7 @@ const LoadedTypePartEditor: React.VFC<
                 ? "型パーツID"
                 : "typePartId",
             value: textValue({
-              canEdit: false,
+              onChange: undefined,
               text: props.typePartId,
             }),
           },
@@ -209,127 +189,119 @@ const LoadedTypePartEditor: React.VFC<
           },
         ],
       }}
-      onRequestDataOperation={onRequestDataOperation}
     />
   );
 };
 
-const maybeValue = <T extends unknown, Context extends unknown>(
+const maybeValue = <T extends unknown>(
   language: d.Language,
-  context: Context,
-  valueFunc: (c: Context, t: T) => Value,
-  maybe: d.Maybe<T>
-): Value => {
+  valueFunc: (t: T) => CommonValue,
+  maybe: d.Maybe<T>,
+  onSelectJust: () => void,
+  onSelectNothing: () => void
+): CommonValue => {
   return sumValue({
-    valueList:
-      language === d.Language.Japanese ? ["あり", "なし"] : ["Just", "Nothing"],
+    tagList: [
+      {
+        name: language === d.Language.Japanese ? "あり" : "Just",
+        onSelect: onSelectJust,
+      },
+      {
+        name: language === d.Language.Japanese ? "なし" : "Nothing",
+        onSelect: onSelectNothing,
+      },
+    ],
     index: maybe._ === "Just" ? 0 : 1,
-    value: maybe._ === "Just" ? valueFunc(context, maybe.value) : undefined,
+    value: maybe._ === "Just" ? valueFunc(maybe.value) : undefined,
   });
 };
 
 const attributeValue = (
   language: d.Language,
-  attributeMaybe: d.Maybe<d.TypeAttribute>
-): Value => {
+  attributeMaybe: d.Maybe<d.TypeAttribute>,
+  setAttribute: React.Dispatch<React.SetStateAction<d.Maybe<d.TypeAttribute>>>
+): CommonValue => {
   return maybeValue(
     language,
-    undefined,
-    (_, attribute) =>
+    (attribute) =>
       sumValue({
-        valueList:
-          language === d.Language.Japanese
-            ? ["boolean として扱う", "undefined として扱う"]
-            : ["AsBoolean", "AsUndefined"],
+        tagList: [
+          {
+            name:
+              language === d.Language.Japanese
+                ? "boolean として扱う"
+                : "AsBoolean",
+            onSelect: () => {
+              setAttribute(d.Maybe.Just(d.TypeAttribute.AsBoolean));
+            },
+          },
+          {
+            name:
+              language === d.Language.Japanese
+                ? "undefined として扱う"
+                : "AsUndefined",
+            onSelect: () => {
+              setAttribute(d.Maybe.Just(d.TypeAttribute.AsUndefined));
+            },
+          },
+        ],
         value: undefined,
         index: attribute === d.TypeAttribute.AsBoolean ? 0 : 1,
       }),
-    attributeMaybe
-  );
-};
-
-const attributeOperation = (
-  commonDataOperation: CommonDataOperation,
-  setAttribute: (value: React.SetStateAction<d.Maybe<d.TypeAttribute>>) => void
-): void => {
-  if (commonDataOperation.tag !== "sum") {
-    return;
-  }
-  const sumOp = commonDataOperation.sumDataOperation;
-  if (sumOp.tag === "select") {
-    if (sumOp.index === 0) {
+    attributeMaybe,
+    () => {
       setAttribute(d.Maybe.Just(d.TypeAttribute.AsBoolean));
-      return;
-    }
-    if (sumOp.index === 1) {
+    },
+    () => {
       setAttribute(d.Maybe.Nothing());
-      return;
     }
-    return;
-  }
-  if (
-    sumOp.operation.tag !== "sum" ||
-    sumOp.operation.sumDataOperation.tag !== "select"
-  ) {
-    return;
-  }
-  if (sumOp.operation.sumDataOperation.index === 0) {
-    setAttribute(d.Maybe.Just(d.TypeAttribute.AsBoolean));
-    return;
-  }
-  if (sumOp.operation.sumDataOperation.index === 1) {
-    setAttribute(d.Maybe.Just(d.TypeAttribute.AsUndefined));
-  }
+  );
 };
 
 const parameterListValue = (
   option: Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump"> & {
     typeParameterList: ReadonlyArray<d.TypeParameter>;
+    setTypeParameterList: React.Dispatch<
+      React.SetStateAction<ReadonlyArray<d.TypeParameter>>
+    >;
   }
-): Value => {
+): CommonValue => {
   return listValue({
-    canEdit: true,
     items: option.typeParameterList.map(
-      (typeParameter): Value =>
+      (typeParameter, index): CommonValue =>
         productValue({
           headItem: {
             name: "name",
-            value: { text: typeParameter.name, canEdit: true },
+            value: {
+              text: typeParameter.name,
+              onChange: (newName) => {
+                option.setTypeParameterList((before) =>
+                  listUpdateAt(before, index, (param) => ({
+                    name: newName,
+                    typePartId: param.typePartId,
+                  }))
+                );
+              },
+            },
           },
           items: [
             {
               name: "typePartId",
               value: textValue({
                 text: typeParameter.typePartId,
-                canEdit: false,
+                onChange: undefined,
               }),
             },
           ],
         })
     ),
+    addInLast: () => {
+      option.setTypeParameterList((before) => [
+        ...before,
+        { name: "新たな型パラメータの名前", typePartId: randomTypePartId() },
+      ]);
+    },
   });
-};
-
-const parameterListOperation = (
-  commonDataOperation: CommonDataOperation,
-  typeParameterList: ReadonlyArray<d.TypeParameter>,
-  setTypeParameterList: React.Dispatch<
-    React.SetStateAction<ReadonlyArray<d.TypeParameter>>
-  >
-): void => {
-  if (commonDataOperation.tag !== "list") {
-    return;
-  }
-  const listOp = commonDataOperation.listDataOperation;
-  if (listOp.tag === "addLast") {
-    setTypeParameterList([
-      ...typeParameterList,
-      { name: "新たな型パラメータの名前", typePartId: randomTypePartId() },
-    ]);
-  }
-  if (listOp.tag === "delete") {
-    setTypeParameterList(listDeleteAt(typeParameterList, listOp.index));
-  }
 };
 
 const randomTypePartId = () =>
@@ -338,101 +310,276 @@ const randomTypePartId = () =>
     .join("") as d.TypePartId;
 
 const bodyValue = (
-  context: Pick<UseDefinyAppResult, "jump" | "language" | "typePartResource">,
-  typePartBody: d.TypePartBody
-): Value => {
-  const valueList =
-    context.language === d.Language.Japanese
-      ? (["直和", "直積", "カーネル"] as const)
-      : (["Sum", "Product", "Kernel"] as const);
+  context: Pick<
+    UseDefinyAppResult,
+    "jump" | "language" | "typePartResource" | "typePartIdListInProjectResource"
+  > & { projectId: d.ProjectId },
+  typePartBody: d.TypePartBody,
+  setBody: React.Dispatch<React.SetStateAction<d.TypePartBody>>
+): CommonValue => {
+  const tagList: ReadonlyArray<SumTagItem> = [
+    {
+      name: context.language === d.Language.Japanese ? "直和" : "Sum",
+      onSelect: () => {
+        setBody(
+          d.TypePartBody.Sum([
+            {
+              name: "Pattern",
+              description: "",
+              parameter: d.Maybe.Nothing(),
+            },
+          ])
+        );
+      },
+    },
+    {
+      name: context.language === d.Language.Japanese ? "直積" : "Product",
+      onSelect: () => {
+        setBody(
+          d.TypePartBody.Product([
+            {
+              name: "member",
+              description: "",
+              type: { typePartId: d.Int32.typePartId, parameter: [] },
+            },
+          ])
+        );
+      },
+    },
+    {
+      name: context.language === d.Language.Japanese ? "カーネル" : "Kernel",
+      onSelect: () => {
+        setBody(d.TypePartBody.Kernel(d.TypePartBodyKernel.String));
+      },
+    },
+  ];
   switch (typePartBody._) {
     case "Sum":
       return sumValue({
-        valueList,
+        tagList,
         index: 0,
-        value: patternListValue(context, typePartBody.patternList),
+        value: patternListValue(
+          context,
+          typePartBody.patternList,
+          (patternListFn) => {
+            setBody((prevBody) => {
+              if (prevBody._ !== "Sum") {
+                return prevBody;
+              }
+              return d.TypePartBody.Sum(patternListFn(prevBody.patternList));
+            });
+          }
+        ),
       });
     case "Product":
       return sumValue({
-        valueList,
+        tagList,
         index: 1,
-        value: memberListValue(context, typePartBody.memberList),
+        value: memberListValue(context, typePartBody.memberList, (func) => {
+          setBody((prevBody) => {
+            if (prevBody._ !== "Product") {
+              return prevBody;
+            }
+            return d.TypePartBody.Product(func(prevBody.memberList));
+          });
+        }),
       });
     case "Kernel":
       return sumValue({
-        valueList,
+        tagList,
         index: 2,
-        value: kernelValue(typePartBody.typePartBodyKernel),
+        value: kernelValue(typePartBody.typePartBodyKernel, (newKernel) => {
+          setBody(d.TypePartBody.Kernel(newKernel));
+        }),
       });
   }
 };
 
 const patternListValue = (
-  context: Pick<UseDefinyAppResult, "jump" | "language" | "typePartResource">,
-  patternList: ReadonlyArray<d.Pattern>
-): Value => {
+  context: Pick<
+    UseDefinyAppResult,
+    "jump" | "language" | "typePartResource" | "typePartIdListInProjectResource"
+  > & { projectId: d.ProjectId },
+  patternList: ReadonlyArray<d.Pattern>,
+  setPatternList: (
+    func: (prev: ReadonlyArray<d.Pattern>) => ReadonlyArray<d.Pattern>
+  ) => void
+): CommonValue => {
   return listValue({
-    canEdit: true,
-    items: patternList.map((pattern) => patternValue(context, pattern)),
+    items: patternList.map((pattern, index) =>
+      patternValue(context, pattern, (func) => {
+        setPatternList((prev) => listUpdateAt(prev, index, func));
+      })
+    ),
+    addInLast: () => {
+      setPatternList((prev) => [
+        ...prev,
+        {
+          name: "newPattern",
+          description: "",
+          parameter: d.Maybe.Nothing(),
+        },
+      ]);
+    },
+    deleteAll: () => {
+      setPatternList(() => []);
+    },
+    deleteAt: (index) => {
+      setPatternList((prevList) => listDeleteAt(prevList, index));
+    },
   });
 };
 
 const patternValue = (
-  context: Pick<UseDefinyAppResult, "jump" | "language" | "typePartResource">,
-  pattern: d.Pattern
-): Value =>
+  context: Pick<
+    UseDefinyAppResult,
+    "jump" | "language" | "typePartResource" | "typePartIdListInProjectResource"
+  > & { projectId: d.ProjectId },
+  pattern: d.Pattern,
+  setPattern: (func: (prevPattern: d.Pattern) => d.Pattern) => void
+): CommonValue =>
   productValue({
     headItem: {
       name: "name",
-      value: { canEdit: true, text: pattern.name },
+      value: {
+        onChange: (newName) => {
+          setPattern((prevPattern) => ({
+            name: newName,
+            description: prevPattern.description,
+            parameter: prevPattern.parameter,
+          }));
+        },
+        text: pattern.name,
+      },
     },
     items: [
       {
         name: "description",
-        value: textValue({ canEdit: true, text: pattern.description }),
+        value: textValue({
+          onChange: (newDescription) => {
+            setPattern((prevPattern) => ({
+              name: prevPattern.name,
+              description: newDescription,
+              parameter: prevPattern.parameter,
+            }));
+          },
+          text: pattern.description,
+        }),
       },
       {
         name: "parameter",
         value: maybeValue(
           context.language,
-          context,
-          (_, type) =>
+          (type) =>
             typeValue({
               type,
               typePartResource: context.typePartResource,
               jump: context.jump,
               language: context.language,
-              canEdit: true,
+              onChange: (newType) => {
+                setPattern((prevPattern) => ({
+                  name: prevPattern.name,
+                  description: prevPattern.description,
+                  parameter: d.Maybe.Just(newType),
+                }));
+              },
+              projectId: context.projectId,
+              typePartIdListInProjectResource:
+                context.typePartIdListInProjectResource,
             }),
-          pattern.parameter
+          pattern.parameter,
+          () => {
+            setPattern((prevPattern) => ({
+              name: prevPattern.name,
+              description: prevPattern.description,
+              parameter: d.Maybe.Just({
+                typePartId: d.Int32.typePartId,
+                parameter: [],
+              }),
+            }));
+          },
+          () => {
+            setPattern((prevPattern) => ({
+              name: prevPattern.name,
+              description: prevPattern.description,
+              parameter: d.Maybe.Nothing(),
+            }));
+          }
         ),
       },
     ],
   });
 
 const memberListValue = (
-  context: Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump">,
-  memberList: ReadonlyArray<d.Member>
-): Value => {
+  context: Pick<
+    UseDefinyAppResult,
+    "typePartResource" | "language" | "jump" | "typePartIdListInProjectResource"
+  > & { projectId: d.ProjectId },
+  memberList: ReadonlyArray<d.Member>,
+  setMemberList: (
+    func: (prev: ReadonlyArray<d.Member>) => ReadonlyArray<d.Member>
+  ) => void
+): CommonValue => {
   return listValue({
-    canEdit: true,
-    items: memberList.map((member) => memberValue(context, member)),
+    items: memberList.map((member, index) =>
+      memberValue(context, member, (func) => {
+        setMemberList((prev) => listUpdateAt(prev, index, func));
+      })
+    ),
+    addInLast: () => {
+      setMemberList((prev) => [
+        ...prev,
+        {
+          name: "newMember",
+          description: "",
+          type: { typePartId: d.Int32.typePartId, parameter: [] },
+        },
+      ]);
+    },
+    deleteAll: () => {
+      setMemberList(() => []);
+    },
+    deleteAt: (index) => {
+      setMemberList((prev) => listDeleteAt(prev, index));
+    },
   });
 };
 
 const memberValue = (
-  context: Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump">,
-  member: d.Member
+  context: Pick<
+    UseDefinyAppResult,
+    "typePartResource" | "language" | "jump" | "typePartIdListInProjectResource"
+  > & { projectId: d.ProjectId },
+  member: d.Member,
+  setMember: (func: (prev: d.Member) => d.Member) => void
 ) => {
   return productValue({
     headItem: {
       name: "name",
-      value: { canEdit: true, text: member.name },
+      value: {
+        onChange: (newName) => {
+          setMember((prev) => ({
+            name: newName,
+            description: prev.description,
+            type: prev.type,
+          }));
+        },
+        text: member.name,
+      },
     },
     items: [
       {
         name: "description",
-        value: textValue({ canEdit: true, text: member.description }),
+        value: textValue({
+          onChange: (newDescription) => {
+            setMember((prev) => ({
+              name: prev.name,
+              description: newDescription,
+              type: prev.type,
+            }));
+          },
+          text: member.description,
+        }),
       },
       {
         name: "type",
@@ -441,7 +588,16 @@ const memberValue = (
           typePartResource: context.typePartResource,
           jump: context.jump,
           language: context.language,
-          canEdit: true,
+          onChange: (newType) => {
+            setMember((prev) => ({
+              name: prev.name,
+              description: prev.description,
+              type: newType,
+            }));
+          },
+          projectId: context.projectId,
+          typePartIdListInProjectResource:
+            context.typePartIdListInProjectResource,
         }),
       },
     ],
@@ -459,196 +615,62 @@ const typePartBodyKernelValueList: ReadonlyArray<d.TypePartBodyKernel> = [
   "Dict",
 ];
 
-const kernelValue = (typePartBodyKernel: d.TypePartBodyKernel) => {
+const kernelValue = (
+  typePartBodyKernel: d.TypePartBodyKernel,
+  setTypePartBodyKernel: (typePartBody: d.TypePartBodyKernel) => void
+) => {
   return sumValue({
-    valueList: typePartBodyKernelValueList,
+    tagList: [
+      {
+        name: "Function",
+        onSelect: () => {
+          setTypePartBodyKernel(d.TypePartBodyKernel.Function);
+        },
+      },
+      {
+        name: "Int32",
+        onSelect: () => {
+          setTypePartBodyKernel(d.TypePartBodyKernel.Int32);
+        },
+      },
+      {
+        name: "String",
+        onSelect: () => {
+          setTypePartBodyKernel(d.TypePartBodyKernel.String);
+        },
+      },
+      {
+        name: "Binary",
+        onSelect: () => {
+          setTypePartBodyKernel(d.TypePartBodyKernel.Binary);
+        },
+      },
+      {
+        name: "Id",
+        onSelect: () => {
+          setTypePartBodyKernel(d.TypePartBodyKernel.Id);
+        },
+      },
+      {
+        name: "Token",
+        onSelect: () => {
+          setTypePartBodyKernel(d.TypePartBodyKernel.Token);
+        },
+      },
+      {
+        name: "List",
+        onSelect: () => {
+          setTypePartBodyKernel(d.TypePartBodyKernel.List);
+        },
+      },
+      {
+        name: "Dict",
+        onSelect: () => {
+          setTypePartBodyKernel(d.TypePartBodyKernel.Dict);
+        },
+      },
+    ],
     index: typePartBodyKernelValueList.indexOf(typePartBodyKernel),
     value: undefined,
   });
-};
-
-const bodyOperation = (
-  commonDataOperation: CommonDataOperation,
-  setBody: React.Dispatch<React.SetStateAction<d.TypePartBody>>,
-  body: d.TypePartBody
-) => {
-  if (commonDataOperation.tag !== "sum") {
-    return;
-  }
-  const sumOp = commonDataOperation.sumDataOperation;
-  if (sumOp.tag === "select") {
-    if (sumOp.index === 0) {
-      setBody(
-        d.TypePartBody.Sum([
-          { name: "Pattern", description: "", parameter: d.Maybe.Nothing() },
-        ])
-      );
-      return;
-    }
-    if (sumOp.index === 1) {
-      setBody(
-        d.TypePartBody.Product([
-          {
-            name: "member",
-            description: "",
-            type: { typePartId: d.Int32.typePartId, parameter: [] },
-          },
-        ])
-      );
-      return;
-    }
-    if (sumOp.index === 2) {
-      setBody(d.TypePartBody.Kernel(d.TypePartBodyKernel.String));
-    }
-    return;
-  }
-  bodyContentOperation(sumOp.operation, setBody, body);
-};
-
-const bodyContentOperation = (
-  op: CommonDataOperation,
-  setBody: React.Dispatch<React.SetStateAction<d.TypePartBody>>,
-  body: d.TypePartBody
-): void => {
-  switch (body._) {
-    case "Sum": {
-      if (op.tag !== "list") {
-        return;
-      }
-      if (op.listDataOperation.tag === "addLast") {
-        setBody(
-          d.TypePartBody.Sum([
-            ...body.patternList,
-            {
-              name: "newPattern",
-              description: "",
-              parameter: d.Maybe.Nothing(),
-            },
-          ])
-        );
-        return;
-      }
-      if (op.listDataOperation.tag === "delete") {
-        setBody(
-          d.TypePartBody.Sum(
-            listDeleteAt(body.patternList, op.listDataOperation.index)
-          )
-        );
-        return;
-      }
-      if (op.listDataOperation.tag === "deleteAll") {
-        setBody(d.TypePartBody.Sum([]));
-        return;
-      }
-      const pattern = body.patternList[op.listDataOperation.index];
-      if (pattern === undefined) {
-        return;
-      }
-      const sumContentResult = sumContentOperation(
-        op.listDataOperation.commonDataOperation,
-        pattern
-      );
-      if (sumContentResult !== undefined) {
-        setBody(
-          d.TypePartBody.Sum(
-            listSetAt(
-              body.patternList,
-              op.listDataOperation.index,
-              sumContentResult
-            )
-          )
-        );
-      }
-      return;
-    }
-    case "Product": {
-      if (op.tag !== "list") {
-        return;
-      }
-      if (op.listDataOperation.tag === "addLast") {
-        setBody(
-          d.TypePartBody.Product([
-            ...body.memberList,
-            {
-              name: "newMember",
-              description: "",
-              type: { typePartId: d.Int32.typePartId, parameter: [] },
-            },
-          ])
-        );
-        return;
-      }
-      if (op.listDataOperation.tag === "delete") {
-        setBody(
-          d.TypePartBody.Product(
-            listDeleteAt(body.memberList, op.listDataOperation.index)
-          )
-        );
-        return;
-      }
-      if (op.listDataOperation.tag === "deleteAll") {
-        setBody(d.TypePartBody.Product([]));
-      }
-      return;
-    }
-    case "Kernel": {
-      if (op.tag !== "sum") {
-        return;
-      }
-      if (op.sumDataOperation.tag === "select") {
-        const selectedKernel =
-          typePartBodyKernelValueList[op.sumDataOperation.index];
-        if (selectedKernel === undefined) {
-          return;
-        }
-        setBody(d.TypePartBody.Kernel(selectedKernel));
-      }
-    }
-  }
-};
-
-const sumContentOperation = (
-  op: CommonDataOperation,
-  pattern: d.Pattern
-): d.Pattern | undefined => {
-  if (op.tag !== "product") {
-    return;
-  }
-  const productOp = op.productDataOperation;
-  if (productOp.tag === "head") {
-    return {
-      name: productOp.textDataOperation.newValue,
-      description: pattern.description,
-      parameter: pattern.parameter,
-    };
-  }
-  if (productOp.index === 0 && productOp.commonDataOperation.tag === "text") {
-    return {
-      name: pattern.name,
-      description: productOp.commonDataOperation.textDataOperation.newValue,
-      parameter: pattern.parameter,
-    };
-  }
-  if (productOp.index === 1 && productOp.commonDataOperation.tag === "sum") {
-    const sumOp = productOp.commonDataOperation.sumDataOperation;
-    if (sumOp.tag === "select") {
-      if (sumOp.index === 0) {
-        return {
-          name: pattern.name,
-          description: pattern.description,
-          parameter: d.Maybe.Just({
-            typePartId: d.Int32.typePartId,
-            parameter: [],
-          }),
-        };
-      }
-      if (sumOp.index === 1) {
-        return {
-          name: pattern.name,
-          description: pattern.description,
-          parameter: d.Maybe.Nothing(),
-        };
-      }
-    }
-  }
 };

@@ -1,5 +1,5 @@
-import * as React from "react";
 import * as d from "../../data";
+import { useCallback, useState } from "react";
 import { timeFromDate } from "../../core/util";
 
 export type UseResourceStateResult<id extends string, resource> = {
@@ -57,28 +57,34 @@ export const useResourceState = <
   key extends string,
   resource
 >(): UseResourceStateResult<key, resource> => {
-  const [dict, setDict] = React.useState<
-    ReadonlyMap<key, d.ResourceState<resource>>
-  >(new Map());
+  const [dict, setDict] = useState<ReadonlyMap<key, d.ResourceState<resource>>>(
+    new Map()
+  );
 
-  const set = (key_: key, resourceState: d.ResourceState<resource>) => {
-    setDict((oldDict) => new Map(oldDict).set(key_, resourceState));
-  };
+  const set = useCallback(
+    (key_: key, resourceState: d.ResourceState<resource>) => {
+      setDict((oldDict) => new Map(oldDict).set(key_, resourceState));
+    },
+    []
+  );
 
   return {
-    get: (projectId) => {
-      return dict.get(projectId);
-    },
-    setRequesting: (key_) => {
+    get: useCallback(
+      (projectId) => {
+        return dict.get(projectId);
+      },
+      [dict]
+    ),
+    setRequesting: useCallback((key_) => {
       set(key_, d.ResourceState.Requesting());
-    },
-    setUnknown: (key_) => {
+    }, []),
+    setUnknown: useCallback((key_) => {
       set(key_, d.ResourceState.Unknown(timeFromDate(new Date())));
-    },
-    setDeleted: (key_, getTime) => {
+    }, []),
+    setDeleted: useCallback((key_, getTime) => {
       set(key_, d.ResourceState.Deleted(getTime));
-    },
-    setLoaded: (key_, resource_, getTime) => {
+    }, []),
+    setLoaded: useCallback((key_, resource_, getTime) => {
       set(
         key_,
         d.ResourceState.Loaded({
@@ -86,8 +92,8 @@ export const useResourceState = <
           getTime: getTime === undefined ? timeFromDate(new Date()) : getTime,
         })
       );
-    },
-    setLoadedList: (projectList, getTime) => {
+    }, []),
+    setLoadedList: useCallback((projectList, getTime) => {
       setDict((oldDict) => {
         const newDict = new Map(oldDict);
         for (const projectIdAndData of projectList) {
@@ -98,6 +104,6 @@ export const useResourceState = <
         }
         return newDict;
       });
-    },
+    }, []),
   };
 };

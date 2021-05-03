@@ -44,7 +44,7 @@ export const OneLineTextEditor: React.VFC<{
   onChange: (value: string) => void;
   id: string;
   style?: CSSObject;
-}> = (props) => (
+}> = React.memo((props) => (
   <input
     type="text"
     value={props.value}
@@ -75,4 +75,5 @@ export const OneLineTextEditor: React.VFC<{
       props.onChange(e.target.value);
     }}
   />
-);
+));
+OneLineTextEditor.displayName = "OneLineTextEditor";

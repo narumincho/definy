@@ -1,10 +1,10 @@
 import * as React from "react";
 import * as d from "../../data";
+import { Header, TitleItem } from "./Header";
 import { css, keyframes } from "@emotion/css";
 import { AboutPage } from "./AboutPage";
 import { AccountPage } from "./AccountPage";
 import { CreateProjectPage } from "./CreateProjectPage";
-import { Header } from "./Header";
 import { HomePage } from "./HomePage";
 import { ProjectPage } from "./ProjectPage";
 import { SettingPage } from "./SettingPage";
@@ -15,8 +15,9 @@ export type Props = {
   readonly useDefinyAppResult: UseDefinyAppResult;
 };
 
-export const App: React.VFC<Props> = (props) => {
-  const useDefinyAppResult = props.useDefinyAppResult;
+const titleItemList: ReadonlyArray<TitleItem> = [];
+
+export const App: React.VFC<Props> = ({ useDefinyAppResult }) => {
   switch (useDefinyAppResult.logInState._) {
     case "RequestingLogInUrl": {
       return (
@@ -49,15 +50,14 @@ export const App: React.VFC<Props> = (props) => {
         logInState={useDefinyAppResult.logInState}
         accountResource={useDefinyAppResult.accountResource}
         language={useDefinyAppResult.language}
-        titleItemList={[]}
+        titleItemList={titleItemList}
         onJump={useDefinyAppResult.jump}
         onLogInButtonClick={useDefinyAppResult.logIn}
       />
-      <AppMain {...props} />
+      <AppMain useDefinyAppResult={useDefinyAppResult} />
     </div>
   );
 };
-
 const PrepareLogIn: React.VFC<{ message: string }> = (props) => (
   <div
     className={css({
@@ -194,6 +194,9 @@ const AppMain: React.VFC<Props> = (props) => {
           projectResource={useDefinyAppResult.projectResource}
           language={useDefinyAppResult.language}
           onJump={useDefinyAppResult.jump}
+          typePartIdListInProjectResource={
+            useDefinyAppResult.typePartIdListInProjectResource
+          }
         />
       );
   }

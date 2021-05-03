@@ -23,6 +23,7 @@ export type Props = Pick<
 export const HomePage: React.VFC<Props> = (props) => {
   React.useEffect(() => {
     props.requestTop50Project();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -156,7 +157,6 @@ const TopProjectList: React.VFC<
                 {
                   name: "おすすめのプロジェクト",
                   value: listValue({
-                    canEdit: false,
                     isDirectionColumn: true,
                     items: props.topProjectsLoadingState.projectIdList.map(
                       (projectId): Value =>
@@ -172,7 +172,6 @@ const TopProjectList: React.VFC<
                 },
               ],
             }}
-            onRequestDataOperation={() => {}}
           />
         </div>
       );

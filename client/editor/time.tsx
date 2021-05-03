@@ -13,29 +13,23 @@ export type TimeValue = {
   readonly canEdit: boolean;
 };
 
-export type TimeDataOperation = never;
-
 const TimeSelectionView: ElementOperation<
   TimeSelection,
-  TimeValue,
-  TimeDataOperation
->["selectionView"] = (props) => {
+  TimeValue
+>["selectionView"] = React.memo((props) => {
   return <TimeCard time={props.value.time} />;
-};
+});
+TimeSelectionView.displayName = "TimeSelectionView";
 
 const TimeDetailView: ElementOperation<
   TimeSelection,
-  TimeValue,
-  TimeDataOperation
->["detailView"] = (props) => {
+  TimeValue
+>["detailView"] = React.memo((props) => {
   return <TimeDetail time={props.value.time} />;
-};
+});
+TimeDetailView.displayName = "TimeDetailView";
 
-export const timeOperation: ElementOperation<
-  TimeSelection,
-  TimeValue,
-  TimeDataOperation
-> = {
+export const timeOperation: ElementOperation<TimeSelection, TimeValue> = {
   moveUp: () => undefined,
   moveDown: () => undefined,
   moveFirstChild: () => undefined,

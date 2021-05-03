@@ -1,25 +1,21 @@
 import * as React from "react";
 import {
-  ProductDataOperation,
   ProductSelection,
   ProductValue,
   productOperation,
 } from "../editor/product";
+import { compare } from "../propCompare";
 import { css } from "@emotion/css";
-export type { Value } from "../editor/common";
+export type { CommonValue as Value } from "../editor/common";
 
 export type Props = {
   readonly product: ProductValue;
-  /** データを編集をしようとした */
-  readonly onRequestDataOperation: (
-    dataOperation: ProductDataOperation
-  ) => void;
 };
 
 /**
  * 要素の操作対象を選ぶ, SelectionView, 選択した対象を操作する DetailView を内包する
  */
-export const Editor: React.VFC<Props> = (props) => {
+export const Editor: React.VFC<Props> = React.memo((props: Props) => {
   const [selection, setSelection] = React.useState<ProductSelection>({
     tag: "head",
     selection: undefined,
@@ -75,7 +71,7 @@ export const Editor: React.VFC<Props> = (props) => {
     return () => {
       document.removeEventListener("keydown", handleKeyEvent);
     };
-  }, []);
+  }, [props.product]);
   return (
     <div
       className={css({
@@ -96,7 +92,6 @@ export const Editor: React.VFC<Props> = (props) => {
           selection={selection}
           onChangeSelection={setSelection}
           value={props.product}
-          onRequestDataOperation={props.onRequestDataOperation}
         />
       </div>
       <div
@@ -109,9 +104,8 @@ export const Editor: React.VFC<Props> = (props) => {
         <productOperation.detailView
           selection={selection}
           value={props.product}
-          onRequestDataOperation={props.onRequestDataOperation}
         />
       </div>
     </div>
   );
-};
+});
