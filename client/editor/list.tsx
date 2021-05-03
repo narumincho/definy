@@ -187,21 +187,29 @@ const SelectionItem: React.VFC<{
         borderColor: selection === "self" ? "red" : "#333",
         borderRadius: 8,
         display: "grid",
-        gridTemplateColumns: "1fr 32px",
+        gridTemplateColumns: "1fr auto",
       })}
     >
-      <commonElement.selectionView
-        key={index}
-        value={value}
-        selection={
-          selection !== "none" && selection !== "self" ? selection : undefined
-        }
-        onChangeSelection={onChangeItemSelection}
-      />
+      <div
+        className={css({
+          padding: 4,
+        })}
+      >
+        <commonElement.selectionView
+          key={index}
+          value={value}
+          selection={
+            selection !== "none" && selection !== "self" ? selection : undefined
+          }
+          onChangeSelection={onChangeItemSelection}
+        />
+      </div>
       {deleteAt === undefined ? (
         <></>
       ) : (
-        <Button onClick={onClickDelete}>x</Button>
+        <Button onClick={onClickDelete} style={{ width: 32 }}>
+          x
+        </Button>
       )}
     </div>
   );
