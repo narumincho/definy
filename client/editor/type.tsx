@@ -19,6 +19,7 @@ export type TypeValue = Pick<
 > & {
   readonly type: d.Type;
   readonly projectId: d.ProjectId;
+  readonly scopeTypePartId: d.TypePartId;
   readonly onChange: (newType: d.Type) => void;
 };
 
@@ -32,38 +33,64 @@ const TypeSelectionView: ElementOperation<
     );
   }, [props.value.type.typePartId, props.value.typePartResource]);
 
-  const typePartResource = props.value.typePartResource.getFromMemoryCache(
-    props.value.type.typePartId
+  const result = getTypePartNameFromTypePartId(
+    props.value.type.typePartId,
+    props.value.typePartResource,
+    props.value.scopeTypePartId
   );
 
-  if (typePartResource === undefined) {
-    return <div>型パーツの取得準備待ち</div>;
-  }
-  switch (typePartResource._) {
-    case "Deleted":
-      return <div>削除された型パーツ</div>;
-    case "Requesting":
-      return <div>取得中</div>;
-    case "Unknown":
-      return <div>取得に失敗</div>;
-    case "Loaded":
-      return (
-        <div>
-          <div>{typePartResource.dataWithTime.data.name}</div>
-          {props.value.type.parameter.map((t, index) => (
-            <TypeArgument
-              key={index}
-              index={index}
-              selection={getTypeArgumentSelection(props.selection, index)}
-              value={{ ...props.value, type: t }}
-              onChangeSelection={props.onChangeSelection}
-            />
-          ))}
-        </div>
-      );
-  }
+  return (
+    <div>
+      <div>{result.name}</div>
+      {props.value.type.parameter.map((t, index) => (
+        <TypeArgument
+          key={index}
+          index={index}
+          selection={getTypeArgumentSelection(props.selection, index)}
+          value={{ ...props.value, type: t }}
+          onChangeSelection={props.onChangeSelection}
+        />
+      ))}
+    </div>
+  );
 });
 TypeSelectionView.displayName = "TypeSelectionView";
+
+type GetTypePartNameFromTypePartResult = {
+  type: "inProject" | "none" | "inTypeParameter";
+  name: string;
+};
+
+const getTypePartNameFromTypePartId = (
+  typePartId: d.TypePartId,
+  typePartResource: UseDefinyAppResult["typePartResource"],
+  scopeTypePartId: d.TypePartId
+): GetTypePartNameFromTypePartResult => {
+  const scopeTypePart = typePartResource.getFromMemoryCache(scopeTypePartId);
+  if (scopeTypePart === undefined || scopeTypePart._ !== "Loaded") {
+    return { type: "none", name: "???" };
+  }
+  const selectedTypePart = scopeTypePart.dataWithTime.data.typeParameterList.find(
+    (param) => param.typePartId === typePartId
+  );
+  if (selectedTypePart === undefined) {
+    const resource = typePartResource.getFromMemoryCache(typePartId);
+    if (resource === undefined) {
+      return { type: "none", name: ".." };
+    }
+    if (resource._ === "Unknown") {
+      return { type: "none", name: "取得に失敗した" };
+    }
+    if (resource._ === "Deleted") {
+      return { type: "none", name: "存在しない" };
+    }
+    if (resource._ === "Requesting") {
+      return { type: "none", name: "取得中..." };
+    }
+    return { type: "inProject", name: resource.dataWithTime.data.name };
+  }
+  return { type: "inTypeParameter", name: selectedTypePart.name };
+};
 
 type TypeArgumentSelection = TypeSelection | "none" | "self";
 
@@ -139,6 +166,7 @@ const TypeDetailView: ElementOperation<
         jump={props.value.jump}
         typePartId={props.value.type.typePartId}
         typePartResource={props.value.typePartResource}
+        scopeTypePartId={props.value.scopeTypePartId}
       />
       <div>
         <div>検索</div>
@@ -157,7 +185,7 @@ const TypeDetailView: ElementOperation<
       <TypeParameterList
         language={props.value.language}
         jump={props.value.jump}
-        typePartId={props.value.type.typePartId}
+        typePartId={props.value.scopeTypePartId}
         typePartResource={props.value.typePartResource}
         onChange={props.value.onChange}
       />
@@ -169,37 +197,32 @@ TypeDetailView.displayName = "TypeDetailView";
 const SelectedType: React.VFC<
   Pick<UseDefinyAppResult, "typePartResource" | "jump" | "language"> & {
     typePartId: d.TypePartId;
+    scopeTypePartId: d.TypePartId;
   }
 > = React.memo((props) => {
-  const typePartResource = props.typePartResource.getFromMemoryCache(
-    props.typePartId
+  const result = getTypePartNameFromTypePartId(
+    props.typePartId,
+    props.typePartResource,
+    props.scopeTypePartId
   );
-  if (typePartResource === undefined) {
-    return <div>型パーツの取得準備待ち</div>;
-  }
-  switch (typePartResource._) {
-    case "Deleted":
-      return <div>削除された型パーツ</div>;
-    case "Requesting":
-      return <div>取得中</div>;
-    case "Unknown":
-      return <div>取得に失敗</div>;
-    case "Loaded":
-      return (
-        <div>
-          <div>{typePartResource.dataWithTime.data.name}</div>
-          <Link
-            onJump={props.jump}
-            urlData={{
-              language: props.language,
-              location: d.Location.TypePart(props.typePartId),
-            }}
-          >
-            {typePartResource.dataWithTime.data.name}のページ
-          </Link>
-        </div>
-      );
-  }
+  return (
+    <div>
+      <div>{result.name}</div>
+      {result.type === "inTypeParameter" ? (
+        <></>
+      ) : (
+        <Link
+          onJump={props.jump}
+          urlData={{
+            language: props.language,
+            location: d.Location.TypePart(props.typePartId),
+          }}
+        >
+          {result.name}のページ
+        </Link>
+      )}
+    </div>
+  );
 });
 SelectedType.displayName = "SelectedType";
 
