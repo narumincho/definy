@@ -30,7 +30,6 @@ export const HomePage: React.VFC<Props> = (props) => {
     <div
       className={css({
         display: "grid",
-        overflowY: "scroll",
         gridTemplateRows: "32px 1fr",
         gap: 8,
         padding: 16,
