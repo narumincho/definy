@@ -4,9 +4,9 @@ import { Meta, Story } from "@storybook/react";
 import { Props, TypePartPage } from "../client/ui/TypePartPage";
 import {
   accountResource,
+  listTypePartId,
   projectResource,
   typePart1Id,
-  typePart2Id,
   typePartIdListInProjectResource,
   typePartResource,
 } from "./mockData";
@@ -37,7 +37,7 @@ Default.args = { language: d.Language.Japanese };
 
 export const WithTypeParameter: Story<ControlAndActionProps> = (props) => (
   <TypePartPage
-    typePartId={typePart2Id}
+    typePartId={listTypePartId}
     typePartResource={typePartResource}
     language={props.language}
     projectResource={projectResource}
