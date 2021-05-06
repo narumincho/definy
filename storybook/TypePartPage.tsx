@@ -6,6 +6,7 @@ import {
   accountResource,
   projectResource,
   typePart1Id,
+  typePart2Id,
   typePartIdListInProjectResource,
   typePartResource,
 } from "./mockData";
@@ -22,6 +23,21 @@ type ControlAndActionProps = Pick<Props, "language" | "onJump">;
 export const Default: Story<ControlAndActionProps> = (props) => (
   <TypePartPage
     typePartId={typePart1Id}
+    typePartResource={typePartResource}
+    language={props.language}
+    projectResource={projectResource}
+    accountResource={accountResource}
+    onJump={props.onJump}
+    typePartIdListInProjectResource={typePartIdListInProjectResource}
+    isSavingTypePart={false}
+    saveTypePart={action("saveTypePart")}
+  />
+);
+Default.args = { language: d.Language.Japanese };
+
+export const WithTypeParameter: Story<ControlAndActionProps> = (props) => (
+  <TypePartPage
+    typePartId={typePart2Id}
     typePartResource={typePartResource}
     language={props.language}
     projectResource={projectResource}

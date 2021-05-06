@@ -39,6 +39,20 @@ const TypeSelectionView: ElementOperation<
     props.value.scopeTypePartId
   );
 
+  if (
+    result.typeParameterNameList.length !== props.value.type.parameter.length
+  ) {
+    return (
+      <div>
+        パラメータの個数が違う type:{props.value.type}, result:{result}
+      </div>
+    );
+  }
+
+  if (props.value.type.parameter.length === 0) {
+    return <div>{result.name}</div>;
+  }
+
   return (
     <div>
       <div>{result.name}</div>
@@ -46,6 +60,7 @@ const TypeSelectionView: ElementOperation<
         <TypeArgument
           key={index}
           index={index}
+          name={result.typeParameterNameList[index] ?? "???"}
           selection={getTypeArgumentSelection(props.selection, index)}
           value={{ ...props.value, type: t }}
           onChangeSelection={props.onChangeSelection}
@@ -59,6 +74,7 @@ TypeSelectionView.displayName = "TypeSelectionView";
 type GetTypePartNameFromTypePartResult = {
   type: "inProject" | "none" | "inTypeParameter";
   name: string;
+  typeParameterNameList: ReadonlyArray<string>;
 };
 
 const getTypePartNameFromTypePartId = (
@@ -68,7 +84,7 @@ const getTypePartNameFromTypePartId = (
 ): GetTypePartNameFromTypePartResult => {
   const scopeTypePart = typePartResource.getFromMemoryCache(scopeTypePartId);
   if (scopeTypePart === undefined || scopeTypePart._ !== "Loaded") {
-    return { type: "none", name: "???" };
+    return { type: "none", name: "???", typeParameterNameList: [] };
   }
   const selectedTypePart = scopeTypePart.dataWithTime.data.typeParameterList.find(
     (param) => param.typePartId === typePartId
@@ -76,20 +92,34 @@ const getTypePartNameFromTypePartId = (
   if (selectedTypePart === undefined) {
     const resource = typePartResource.getFromMemoryCache(typePartId);
     if (resource === undefined) {
-      return { type: "none", name: ".." };
+      return { type: "none", name: "..", typeParameterNameList: [] };
     }
     if (resource._ === "Unknown") {
-      return { type: "none", name: "取得に失敗した" };
+      return {
+        type: "none",
+        name: "取得に失敗した",
+        typeParameterNameList: [],
+      };
     }
     if (resource._ === "Deleted") {
-      return { type: "none", name: "存在しない" };
+      return { type: "none", name: "存在しない", typeParameterNameList: [] };
     }
     if (resource._ === "Requesting") {
-      return { type: "none", name: "取得中..." };
+      return { type: "none", name: "取得中...", typeParameterNameList: [] };
     }
-    return { type: "inProject", name: resource.dataWithTime.data.name };
+    return {
+      type: "inProject",
+      name: resource.dataWithTime.data.name,
+      typeParameterNameList: resource.dataWithTime.data.typeParameterList.map(
+        (parameter) => parameter.name
+      ),
+    };
   }
-  return { type: "inTypeParameter", name: selectedTypePart.name };
+  return {
+    type: "inTypeParameter",
+    name: selectedTypePart.name,
+    typeParameterNameList: [],
+  };
 };
 
 type TypeArgumentSelection = TypeSelection | "none" | "self";
@@ -110,23 +140,37 @@ const getTypeArgumentSelection = (
 const TypeArgument: React.VFC<{
   index: number;
   selection: TypeArgumentSelection;
+  name: string;
   value: TypeValue;
   onChangeSelection: (typeSelection: TypeSelection) => void;
-}> = React.memo(({ index, selection, value, onChangeSelection }) => {
+}> = React.memo(({ index, selection, value, name, onChangeSelection }) => {
   const onChangeArgumentSelection = React.useCallback(
     (typeSelection: TypeSelection) => {
       onChangeSelection({ index, typeSelection });
     },
     [index, onChangeSelection]
   );
+  const onFocus = React.useCallback(
+    (event: React.FocusEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      onChangeSelection({ index, typeSelection: undefined });
+    },
+    [index, onChangeSelection]
+  );
+
   return (
     <div
       className={css({
         borderStyle: "solid",
-        borderColor: selection === "self" ? "red" : "#000",
-        borderWidth: 1,
+        borderColor: selection === "self" ? "red" : "#333",
+        borderWidth: 2,
+        padding: 4,
       })}
+      tabIndex={0}
+      onFocus={onFocus}
     >
+      {name}
       <TypeSelectionView
         value={value}
         selection={
@@ -365,8 +409,12 @@ const TypeParameterList: React.VFC<
       return <div>...</div>;
     case "Loaded": {
       const data = typePartResource.dataWithTime.data;
+      if (data.typeParameterList.length === 0) {
+        return <div>型パラメータはない</div>;
+      }
       return (
         <div>
+          <div>型パラメータから</div>
           {data.typeParameterList.map((p) => (
             <TypeItem
               key={p.typePartId}
