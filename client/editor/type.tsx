@@ -1,11 +1,11 @@
 import * as React from "react";
 import * as d from "../../data";
+import { listUpdateAt, neverFunc } from "../../common/util";
 import { Button } from "../ui/Button";
 import { ElementOperation } from "./ElementOperation";
 import { Link } from "../ui/Link";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
-import { neverFunc } from "../../common/util";
 import { useOneLineTextEditor } from "../ui/OneLineTextEditor";
 
 export type TypeSelection = {
@@ -19,6 +19,7 @@ export type TypeValue = Pick<
 > & {
   readonly type: d.Type;
   readonly projectId: d.ProjectId;
+  readonly scopeTypePartId: d.TypePartId;
   readonly onChange: (newType: d.Type) => void;
 };
 
@@ -32,38 +33,94 @@ const TypeSelectionView: ElementOperation<
     );
   }, [props.value.type.typePartId, props.value.typePartResource]);
 
-  const typePartResource = props.value.typePartResource.getFromMemoryCache(
-    props.value.type.typePartId
+  const result = getTypePartNameFromTypePartId(
+    props.value.type.typePartId,
+    props.value.typePartResource,
+    props.value.scopeTypePartId
   );
 
-  if (typePartResource === undefined) {
-    return <div>型パーツの取得準備待ち</div>;
+  if (
+    result.typeParameterNameList.length !== props.value.type.parameter.length
+  ) {
+    return (
+      <div>
+        パラメータの個数が違う type:{props.value.type}, result:{result}
+      </div>
+    );
   }
-  switch (typePartResource._) {
-    case "Deleted":
-      return <div>削除された型パーツ</div>;
-    case "Requesting":
-      return <div>取得中</div>;
-    case "Unknown":
-      return <div>取得に失敗</div>;
-    case "Loaded":
-      return (
-        <div>
-          <div>{typePartResource.dataWithTime.data.name}</div>
-          {props.value.type.parameter.map((t, index) => (
-            <TypeArgument
-              key={index}
-              index={index}
-              selection={getTypeArgumentSelection(props.selection, index)}
-              value={{ ...props.value, type: t }}
-              onChangeSelection={props.onChangeSelection}
-            />
-          ))}
-        </div>
-      );
+
+  if (props.value.type.parameter.length === 0) {
+    return <div>{result.name}</div>;
   }
+
+  return (
+    <div>
+      <div>{result.name}</div>
+      {props.value.type.parameter.map((t, index) => (
+        <TypeArgument
+          key={index}
+          index={index}
+          name={result.typeParameterNameList[index] ?? "???"}
+          selection={getTypeArgumentSelection(props.selection, index)}
+          value={{ ...props.value, type: t }}
+          onChangeSelection={props.onChangeSelection}
+        />
+      ))}
+    </div>
+  );
 });
 TypeSelectionView.displayName = "TypeSelectionView";
+
+type GetTypePartNameFromTypePartResult = {
+  type: "inProject" | "none" | "inTypeParameter";
+  name: string;
+  typeParameterNameList: ReadonlyArray<string>;
+};
+
+const getTypePartNameFromTypePartId = (
+  typePartId: d.TypePartId,
+  typePartResource: UseDefinyAppResult["typePartResource"],
+  scopeTypePartId: d.TypePartId
+): GetTypePartNameFromTypePartResult => {
+  const scopeTypePart = typePartResource.getFromMemoryCache(scopeTypePartId);
+  if (scopeTypePart === undefined || scopeTypePart._ !== "Loaded") {
+    return { type: "none", name: "???", typeParameterNameList: [] };
+  }
+  const selectedTypePart = scopeTypePart.dataWithTime.data.typeParameterList.find(
+    (param) => param.typePartId === typePartId
+  );
+  if (selectedTypePart === undefined) {
+    const resource = typePartResource.getFromMemoryCache(typePartId);
+    if (resource === undefined) {
+      return { type: "none", name: "..", typeParameterNameList: [] };
+    }
+    if (resource._ === "Unknown") {
+      return {
+        type: "none",
+        name: "取得に失敗した",
+        typeParameterNameList: [],
+      };
+    }
+    if (resource._ === "Deleted") {
+      return { type: "none", name: "存在しない", typeParameterNameList: [] };
+    }
+    if (resource._ === "Requesting") {
+      return { type: "none", name: "取得中...", typeParameterNameList: [] };
+    }
+    return {
+      type: "inProject",
+      name: resource.dataWithTime.data.name,
+      typeParameterNameList: resource.dataWithTime.data.typeParameterList.map(
+        (parameter) => parameter.name
+      ),
+    };
+  }
+  return {
+    type: "inTypeParameter",
+    name: selectedTypePart.name,
+    typeParameterNameList: [],
+  };
+};
 
 type TypeArgumentSelection = TypeSelection | "none" | "self";
 
@@ -83,23 +140,37 @@ const getTypeArgumentSelection = (
 const TypeArgument: React.VFC<{
   index: number;
   selection: TypeArgumentSelection;
+  name: string;
   value: TypeValue;
   onChangeSelection: (typeSelection: TypeSelection) => void;
-}> = React.memo(({ index, selection, value, onChangeSelection }) => {
+}> = React.memo(({ index, selection, value, name, onChangeSelection }) => {
   const onChangeArgumentSelection = React.useCallback(
     (typeSelection: TypeSelection) => {
       onChangeSelection({ index, typeSelection });
     },
     [index, onChangeSelection]
   );
+  const onFocus = React.useCallback(
+    (event: React.FocusEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      onChangeSelection({ index, typeSelection: undefined });
+    },
+    [index, onChangeSelection]
+  );
+
   return (
     <div
       className={css({
         borderStyle: "solid",
-        borderColor: selection === "self" ? "red" : "#000",
-        borderWidth: 1,
+        borderColor: selection === "self" ? "red" : "#333",
+        borderWidth: 2,
+        padding: 4,
       })}
+      tabIndex={0}
+      onFocus={onFocus}
     >
+      {name}
       <TypeSelectionView
         value={value}
         selection={
@@ -132,6 +203,12 @@ const TypeDetailView: ElementOperation<
     );
   }, [props.value.typePartIdListInProjectResource, props.value.projectId]);
 
+  const onChange = (type: d.Type): void => {
+    props.value.onChange(
+      setTypePartAtSelection(props.value.type, props.selection, type)
+    );
+  };
+
   return (
     <div>
       <SelectedType
@@ -139,6 +216,7 @@ const TypeDetailView: ElementOperation<
         jump={props.value.jump}
         typePartId={props.value.type.typePartId}
         typePartResource={props.value.typePartResource}
+        scopeTypePartId={props.value.scopeTypePartId}
       />
       <div>
         <div>検索</div>
@@ -152,54 +230,65 @@ const TypeDetailView: ElementOperation<
         )}
         typePartResource={props.value.typePartResource}
         language={props.value.language}
-        onChange={props.value.onChange}
+        onChange={onChange}
       />
       <TypeParameterList
         language={props.value.language}
         jump={props.value.jump}
-        typePartId={props.value.type.typePartId}
+        typePartId={props.value.scopeTypePartId}
         typePartResource={props.value.typePartResource}
-        onChange={props.value.onChange}
+        onChange={onChange}
       />
     </div>
   );
 });
 TypeDetailView.displayName = "TypeDetailView";
 
+const setTypePartAtSelection = (
+  currentType: d.Type,
+  selection: TypeSelection | undefined,
+  type: d.Type
+): d.Type => {
+  if (selection === undefined) {
+    return type;
+  }
+  return {
+    typePartId: currentType.typePartId,
+    parameter: listUpdateAt(currentType.parameter, selection.index, (t) =>
+      setTypePartAtSelection(t, selection.typeSelection, type)
+    ),
+  };
+};
+
 const SelectedType: React.VFC<
   Pick<UseDefinyAppResult, "typePartResource" | "jump" | "language"> & {
     typePartId: d.TypePartId;
+    scopeTypePartId: d.TypePartId;
   }
 > = React.memo((props) => {
-  const typePartResource = props.typePartResource.getFromMemoryCache(
-    props.typePartId
+  const result = getTypePartNameFromTypePartId(
+    props.typePartId,
+    props.typePartResource,
+    props.scopeTypePartId
   );
-  if (typePartResource === undefined) {
-    return <div>型パーツの取得準備待ち</div>;
-  }
-  switch (typePartResource._) {
-    case "Deleted":
-      return <div>削除された型パーツ</div>;
-    case "Requesting":
-      return <div>取得中</div>;
-    case "Unknown":
-      return <div>取得に失敗</div>;
-    case "Loaded":
-      return (
-        <div>
-          <div>{typePartResource.dataWithTime.data.name}</div>
-          <Link
-            onJump={props.jump}
-            urlData={{
-              language: props.language,
-              location: d.Location.TypePart(props.typePartId),
-            }}
-          >
-            {typePartResource.dataWithTime.data.name}のページ
-          </Link>
-        </div>
-      );
-  }
+  return (
+    <div>
+      <div>{result.name}</div>
+      {result.type === "inTypeParameter" ? (
+        <></>
+      ) : (
+        <Link
+          onJump={props.jump}
+          urlData={{
+            language: props.language,
+            location: d.Location.TypePart(props.typePartId),
+          }}
+        >
+          {result.name}のページ
+        </Link>
+      )}
+    </div>
+  );
 });
 SelectedType.displayName = "SelectedType";
 
@@ -342,8 +431,12 @@ const TypeParameterList: React.VFC<
       return <div>...</div>;
     case "Loaded": {
       const data = typePartResource.dataWithTime.data;
+      if (data.typeParameterList.length === 0) {
+        return <div>型パラメータはない</div>;
+      }
       return (
         <div>
+          <div>型パラメータから</div>
           {data.typeParameterList.map((p) => (
             <TypeItem
               key={p.typePartId}

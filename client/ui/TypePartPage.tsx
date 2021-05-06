@@ -169,6 +169,7 @@ const LoadedTypePartEditor: React.VFC<
                 typePartIdListInProjectResource:
                   props.typePartIdListInProjectResource,
                 projectId: props.typePart.projectId,
+                scopeTypePartId: props.typePartId,
               },
               body,
               setBody
@@ -340,7 +341,7 @@ const bodyValue = (
   context: Pick<
     UseDefinyAppResult,
     "jump" | "language" | "typePartResource" | "typePartIdListInProjectResource"
-  > & { projectId: d.ProjectId },
+  > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
   typePartBody: d.TypePartBody,
   setBody: React.Dispatch<React.SetStateAction<d.TypePartBody>>
 ): CommonValue => {
@@ -426,7 +427,7 @@ const patternListValue = (
   context: Pick<
     UseDefinyAppResult,
     "jump" | "language" | "typePartResource" | "typePartIdListInProjectResource"
-  > & { projectId: d.ProjectId },
+  > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
   patternList: ReadonlyArray<d.Pattern>,
   setPatternList: (
     func: (prev: ReadonlyArray<d.Pattern>) => ReadonlyArray<d.Pattern>
@@ -461,7 +462,7 @@ const patternValue = (
   context: Pick<
     UseDefinyAppResult,
     "jump" | "language" | "typePartResource" | "typePartIdListInProjectResource"
-  > & { projectId: d.ProjectId },
+  > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
   pattern: d.Pattern,
   setPattern: (func: (prevPattern: d.Pattern) => d.Pattern) => void
 ): CommonValue =>
@@ -513,6 +514,7 @@ const patternValue = (
               projectId: context.projectId,
               typePartIdListInProjectResource:
                 context.typePartIdListInProjectResource,
+              scopeTypePartId: context.scopeTypePartId,
             }),
           pattern.parameter,
           () => {
@@ -541,7 +543,7 @@ const memberListValue = (
   context: Pick<
     UseDefinyAppResult,
     "typePartResource" | "language" | "jump" | "typePartIdListInProjectResource"
-  > & { projectId: d.ProjectId },
+  > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
   memberList: ReadonlyArray<d.Member>,
   setMemberList: (
     func: (prev: ReadonlyArray<d.Member>) => ReadonlyArray<d.Member>
@@ -576,7 +578,7 @@ const memberValue = (
   context: Pick<
     UseDefinyAppResult,
     "typePartResource" | "language" | "jump" | "typePartIdListInProjectResource"
-  > & { projectId: d.ProjectId },
+  > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
   member: d.Member,
   setMember: (func: (prev: d.Member) => d.Member) => void
 ) => {
@@ -625,6 +627,7 @@ const memberValue = (
           projectId: context.projectId,
           typePartIdListInProjectResource:
             context.typePartIdListInProjectResource,
+          scopeTypePartId: context.scopeTypePartId,
         }),
       },
     ],

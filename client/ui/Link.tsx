@@ -21,6 +21,7 @@ export const Link: React.FC<{
           },
           cursor: "pointer",
           textDecoration: "none",
+          display: "block",
         },
         props.style
       )}

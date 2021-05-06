@@ -26,8 +26,6 @@ export const project2: d.Project = {
   updateTime: { day: 0, millisecond: 0 },
 };
 
-export const typePart1Id = "500d9bc147fe8c1efaa5fb6c8222ce2e" as d.TypePartId;
-
 export const projectResource: UseDefinyAppResult["projectResource"] = {
   forciblyRequestToServer: action(
     "強制的にプロジェクトをサーバーから取得しようとした"
@@ -74,17 +72,63 @@ export const typePartIdListInProjectResource: UseDefinyAppResult["typePartIdList
     | d.ResourceState<ReadonlyArray<d.TypePartId>>
     | undefined => {
     return d.ResourceState.Loaded({
-      data: [typePart1Id],
+      data: [typePart1Id, listTypePartId, resultTypePartId],
       getTime: { day: 0, millisecond: 0 },
     });
   },
 };
+
+export const typePart1Id = "500d9bc147fe8c1efaa5fb6c8222ce2e" as d.TypePartId;
+export const listTypePartId = "97c3b7967f35d2dcf34332fe769bc773" as d.TypePartId;
+export const resultTypePartId = "38fd51297bf15fd87254974ebc36d43f" as d.TypePartId;
+
 export const typePartResource: UseDefinyAppResult["typePartResource"] = {
   forciblyRequestToServer: action("強制的に 型パーツを取得しようとした"),
   requestToServerIfEmpty: action(
     "キャッシュになければ, 型パーツを取得しようとした"
   ),
-  getFromMemoryCache: () => {
+  getFromMemoryCache: (typePartId) => {
+    if (typePartId === listTypePartId) {
+      return d.ResourceState.Loaded({
+        data: {
+          name: "List",
+          attribute: d.Maybe.Nothing(),
+          description: "リスト. JavaScriptのArrayで扱う",
+          projectId: project1Id,
+          body: d.TypePartBody.Kernel(d.TypePartBodyKernel.List),
+          typeParameterList: [
+            {
+              name: "element",
+              typePartId: "7df9be49c3f18512abd87184776f3262" as d.TypePartId,
+            },
+          ],
+        },
+        getTime: { day: 0, millisecond: 0 },
+      });
+    }
+    if (typePartId === resultTypePartId) {
+      return d.ResourceState.Loaded({
+        data: {
+          name: "Result",
+          attribute: d.Maybe.Nothing(),
+          description:
+            "成功と失敗を表す型. 今後はRustのstd::Resultに出力するために属性をつける?",
+          projectId: project1Id,
+          body: d.TypePartBody.Kernel(d.TypePartBodyKernel.List),
+          typeParameterList: [
+            {
+              name: "ok",
+              typePartId: "82c7167c9d832e8383b161e4c0652b4a" as d.TypePartId,
+            },
+            {
+              name: "error",
+              typePartId: "bd8be8409130f30f15c5c86c01de6dc5" as d.TypePartId,
+            },
+          ],
+        },
+        getTime: { day: 0, millisecond: 0 },
+      });
+    }
     return d.ResourceState.Loaded({
       data: {
         name: "サンプル型パーツ",

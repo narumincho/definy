@@ -81,6 +81,7 @@ const TypePartIdSelectionView: ElementOperation<
         language: props.value.language,
         location: d.Location.TypePart(props.value.typePartId),
       }}
+      style={{ padding: 8 }}
     >
       {typePartResource.dataWithTime.data.name}
     </Link>

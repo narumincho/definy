@@ -4,7 +4,6 @@ import {
   ProductValue,
   productOperation,
 } from "../editor/product";
-import { compare } from "../propCompare";
 import { css } from "@emotion/css";
 export type { CommonValue as Value } from "../editor/common";
 
@@ -93,6 +92,7 @@ export const Editor: React.VFC<Props> = React.memo((props: Props) => {
           onChangeSelection={setSelection}
           value={props.product}
         />
+        <div className={css({ height: 64 })}></div>
       </div>
       <div
         className={css({
