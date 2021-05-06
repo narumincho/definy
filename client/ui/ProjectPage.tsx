@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
-import { Editor, Value } from "./Editor";
+import { ListItem, listItem } from "../editor/list";
 import {
   accountIdValue,
   imageValue,
@@ -9,6 +9,7 @@ import {
   timeValue,
   typePartIdValue,
 } from "../editor/common";
+import { Editor } from "./Editor";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type Props = Pick<
@@ -105,14 +106,11 @@ export const ProjectPage: React.VFC<Props> = (props) => {
               items:
                 typePartIdListInProject?._ === "Loaded"
                   ? typePartIdListInProject.dataWithTime.data.map(
-                      (typePartId): Value =>
-                        typePartIdValue({
-                          canEdit: false,
-                          typePartId,
-                          typePartResource: props.typePartResource,
-                          jump: props.onJump,
-                          language: props.language,
-                        })
+                      typePartIdToListItem({
+                        typePartResource: props.typePartResource,
+                        jump: props.onJump,
+                        language: props.language,
+                      })
                     )
                   : [],
               addInLast: addTypePartInProject,
@@ -121,5 +119,21 @@ export const ProjectPage: React.VFC<Props> = (props) => {
         ],
       }}
     />
+  );
+};
+
+const typePartIdToListItem = (
+  option: Pick<UseDefinyAppResult, "typePartResource" | "jump" | "language">
+) => (typePartId: d.TypePartId): ListItem => {
+  const typePart = option.typePartResource.getFromMemoryCache(typePartId);
+  return listItem(
+    typePartIdValue({
+      canEdit: false,
+      typePartId,
+      typePartResource: option.typePartResource,
+      jump: option.jump,
+      language: option.language,
+    }),
+    typePart?._ === "Loaded" ? typePart.dataWithTime.data.name : ""
   );
 };

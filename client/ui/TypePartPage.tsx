@@ -11,6 +11,7 @@ import {
   timeValue,
   typeValue,
 } from "../editor/common";
+import { ListItem, listItem } from "../editor/list";
 import { listDeleteAt, listUpdateAt } from "../../common/util";
 import { Editor } from "./Editor";
 import { SumTagItem } from "../editor/sum";
@@ -296,32 +297,35 @@ const parameterListValue = (
 ): CommonValue => {
   return listValue({
     items: option.typeParameterList.map(
-      (typeParameter, index): CommonValue =>
-        productValue({
-          headItem: {
-            name: "name",
-            value: {
-              text: typeParameter.name,
-              onChange: (newName) => {
-                option.setTypeParameterList((before) =>
-                  listUpdateAt(before, index, (param) => ({
-                    name: newName,
-                    typePartId: param.typePartId,
-                  }))
-                );
+      (typeParameter, index): ListItem =>
+        listItem(
+          productValue({
+            headItem: {
+              name: "name",
+              value: {
+                text: typeParameter.name,
+                onChange: (newName) => {
+                  option.setTypeParameterList((before) =>
+                    listUpdateAt(before, index, (param) => ({
+                      name: newName,
+                      typePartId: param.typePartId,
+                    }))
+                  );
+                },
               },
             },
-          },
-          items: [
-            {
-              name: "typePartId",
-              value: textValue({
-                text: typeParameter.typePartId,
-                onChange: undefined,
-              }),
-            },
-          ],
-        })
+            items: [
+              {
+                name: "typePartId",
+                value: textValue({
+                  text: typeParameter.typePartId,
+                  onChange: undefined,
+                }),
+              },
+            ],
+          }),
+          typeParameter.name
+        )
     ),
     addInLast: () => {
       option.setTypeParameterList((before) => [
@@ -434,10 +438,14 @@ const patternListValue = (
   ) => void
 ): CommonValue => {
   return listValue({
-    items: patternList.map((pattern, index) =>
-      patternValue(context, pattern, (func) => {
-        setPatternList((prev) => listUpdateAt(prev, index, func));
-      })
+    items: patternList.map(
+      (pattern, index): ListItem =>
+        listItem(
+          patternValue(context, pattern, (func) => {
+            setPatternList((prev) => listUpdateAt(prev, index, func));
+          }),
+          pattern.name
+        )
     ),
     addInLast: () => {
       setPatternList((prev) => [
@@ -550,10 +558,14 @@ const memberListValue = (
   ) => void
 ): CommonValue => {
   return listValue({
-    items: memberList.map((member, index) =>
-      memberValue(context, member, (func) => {
-        setMemberList((prev) => listUpdateAt(prev, index, func));
-      })
+    items: memberList.map(
+      (member, index): ListItem =>
+        listItem(
+          memberValue(context, member, (func) => {
+            setMemberList((prev) => listUpdateAt(prev, index, func));
+          }),
+          member.name
+        )
     ),
     addInLast: () => {
       setMemberList((prev) => [

@@ -69,7 +69,7 @@ const normalizeMultiLineString = (text: string): string => {
 /**
  * NFKCで正規化して, 先頭末尾の空白をなくし, 空白の連続を1つの空白にまとめ, 改行を取り除く
  */
-const normalizeOneLineString = (text: string): string => {
+export const normalizeOneLineString = (text: string): string => {
   const normalized = text.normalize("NFKC").trim();
   let result = "";
   let beforeSpace = false;
