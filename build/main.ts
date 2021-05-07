@@ -122,6 +122,8 @@ const generateFirestoreRules = (): Promise<void> => {
   return fileSystem.outputFile(
     firestoreRulesFilePath,
     `
+rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
@@ -167,6 +169,7 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
     "jimp",
     "jsonwebtoken",
     "fs-extra",
+    "elm-code-generator",
   ];
   const jsonResult = packageJsonGen.toJson({
     name: "definy-functions",
