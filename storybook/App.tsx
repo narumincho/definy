@@ -32,6 +32,8 @@ const useDefinyAppResult: UseDefinyAppResult = {
   requestTop50Project: action("requestTop50Project"),
   saveTypePart: action("saveTypePart"),
   isSavingTypePart: false,
+  generateCode: action("generateCode"),
+  outputCode: { tag: "notGenerated" },
 };
 
 type ControlAndActionProps = Pick<UseDefinyAppResult, "language">;

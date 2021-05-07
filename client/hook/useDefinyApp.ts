@@ -1,11 +1,16 @@
 import * as d from "../../data";
 import * as indexedDB from "../indexedDB";
 import {
+  generateElmCodeAsString,
+  generateTypeScriptCode,
+} from "../../core/main";
+import {
   urlDataAndAccountTokenFromUrl,
   urlDataAndAccountTokenToUrl,
 } from "../../common/url";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../api";
+import { generateCodeAsString } from "../../gen/jsTs/main";
 import { useResourceState } from "./resourceState";
 
 export type TopProjectsLoadingState =
@@ -138,6 +143,8 @@ export type UseDefinyAppResult = {
 
   /**
    * 型パーツを保存する
+   *
+   * *side-effect*
    */
   readonly saveTypePart: (
     typePartId: d.TypePartId,
@@ -146,9 +153,43 @@ export type UseDefinyAppResult = {
 
   /**
    * 型パーツを保存中かどうか
+   *
+   * *no-side-effect*
    */
   readonly isSavingTypePart: boolean;
+
+  /**
+   * コード生成を生成する
+   *
+   * *side-effect*
+   */
+  readonly generateCode: (projectId: d.ProjectId) => void;
+
+  /**
+   * 出力されたコード
+   *
+   * *no-side-effect*
+   */
+  readonly outputCode: OutputCode;
 };
+
+export type OutputCode =
+  | {
+      readonly tag: "notGenerated";
+    }
+  | {
+      readonly tag: "generating";
+    }
+  | {
+      readonly tag: "generated";
+      readonly typeScript: string;
+      readonly javaScript: string;
+      readonly elm: string;
+    }
+  | {
+      readonly tag: "error";
+      readonly errorMessage: string;
+    };
 
 export type NotificationMessageHandler = (
   message: string,
@@ -194,6 +235,9 @@ export const useDefinyApp = (
   >();
   const typePartDict = useResourceState<d.TypePartId, d.TypePart>();
   const [isSavingTypePart, setIsSavingTypePart] = useState<boolean>(false);
+  const [outputCode, setOutputCode] = useState<OutputCode>({
+    tag: "notGenerated",
+  });
 
   /**
    * ページを移動する
@@ -608,6 +652,35 @@ export const useDefinyApp = (
     [getAccountToken, option, typePartDict]
   );
 
+  const generateCode = useCallback(
+    (projectId: d.ProjectId): void => {
+      setOutputCode({ tag: "generating" });
+      const gen = () => {
+        const projectIdList = typePartIdListInProjectResource.getFromMemoryCache(
+          projectId
+        );
+        if (projectIdList === undefined || projectIdList._ !== "Loaded") {
+          option.notificationMessageHandler(
+            "プロジェクトの型パーツ一覧を取得していない状態でコードは生成できない",
+            "error"
+          );
+          return;
+        }
+        const definyCode: Map<d.TypePartId, d.TypePart> = new Map();
+        for (const typePartId of projectIdList.dataWithTime.data) {
+          const typePart = typePartDict.get(typePartId);
+          if (typePart !== undefined && typePart._ === "Loaded") {
+            definyCode.set(typePartId, typePart.dataWithTime.data);
+          }
+        }
+        setOutputCode(generateCodeWithOutErrorHandling(definyCode));
+        option.notificationMessageHandler("コードを生成しました", "success");
+      };
+      requestAnimationFrame(gen);
+    },
+    [option, typePartDict, typePartIdListInProjectResource]
+  );
+
   return useMemo(
     () => ({
       accountResource,
@@ -627,6 +700,8 @@ export const useDefinyApp = (
       typePartResource,
       saveTypePart,
       isSavingTypePart,
+      generateCode,
+      outputCode,
     }),
     [
       accountResource,
@@ -646,6 +721,8 @@ export const useDefinyApp = (
       urlData.location,
       saveTypePart,
       isSavingTypePart,
+      generateCode,
+      outputCode,
     ]
   );
 };
@@ -675,4 +752,24 @@ const verifyingAccountTokenAndGetAccount = (
     );
     setAccount(response.value.value.id, response.value.value.data);
   });
+};
+
+const generateCodeWithOutErrorHandling = (
+  definyCode: ReadonlyMap<d.TypePartId, d.TypePart>
+): OutputCode => {
+  try {
+    const jsTsCode = generateTypeScriptCode(definyCode);
+
+    return {
+      tag: "generated",
+      typeScript: generateCodeAsString(jsTsCode, "TypeScript"),
+      javaScript: generateCodeAsString(jsTsCode, "JavaScript"),
+      elm: generateElmCodeAsString(definyCode),
+    };
+  } catch (error) {
+    return {
+      tag: "error",
+      errorMessage: "エラー! " + (error as string),
+    };
+  }
 };

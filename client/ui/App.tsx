@@ -172,6 +172,8 @@ const AppMain: React.VFC<Props> = (props) => {
             useDefinyAppResult.typePartIdListInProjectResource
           }
           typePartResource={useDefinyAppResult.typePartResource}
+          generateCode={useDefinyAppResult.generateCode}
+          outputCode={useDefinyAppResult.outputCode}
         />
       );
     case "Account":

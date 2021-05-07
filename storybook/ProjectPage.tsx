@@ -29,6 +29,8 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     projectId={project1Id}
     onJump={props.onJump}
     addTypePart={action("addTypePart")}
+    generateCode={action("generateCode")}
+    outputCode={{ tag: "notGenerated" }}
   />
 );
 Default.args = {

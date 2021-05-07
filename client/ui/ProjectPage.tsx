@@ -3,6 +3,7 @@ import * as d from "../../data";
 import { ListItem, listItem } from "../editor/list";
 import {
   accountIdValue,
+  buttonValue,
   imageValue,
   listValue,
   textValue,
@@ -20,6 +21,8 @@ export type Props = Pick<
   | "addTypePart"
   | "typePartIdListInProjectResource"
   | "typePartResource"
+  | "generateCode"
+  | "outputCode"
 > & {
   readonly projectId: d.ProjectId;
   readonly onJump: UseDefinyAppResult["jump"];
@@ -116,6 +119,21 @@ export const ProjectPage: React.VFC<Props> = (props) => {
               addInLast: addTypePartInProject,
             }),
           },
+          {
+            name: "コード生成",
+            value: buttonValue({
+              text: "コードを生成する",
+              onClick: () => {
+                props.generateCode(props.projectId);
+              },
+            }),
+          },
+          {
+            name: "出力されたコード",
+            value: textValue({
+              text: outputCodeToText(props.outputCode),
+            }),
+          },
         ],
       }}
     />
@@ -136,4 +154,19 @@ const typePartIdToListItem = (
     }),
     typePart?._ === "Loaded" ? typePart.dataWithTime.data.name : ""
   );
+};
+
+const outputCodeToText = (
+  outputCode: UseDefinyAppResult["outputCode"]
+): string => {
+  switch (outputCode.tag) {
+    case "notGenerated":
+      return "まだ生成していない";
+    case "generating":
+      return "生成中";
+    case "error":
+      return "生成に失敗 " + outputCode.errorMessage;
+    case "generated":
+      return outputCode.typeScript;
+  }
 };
