@@ -220,6 +220,16 @@ const outputNowMode = async (mode: d.Mode): Promise<void> => {
               name: identifer.fromString("Mode"),
             }),
           }),
+          d.ExportDefinition.Variable({
+            name: identifer.fromString("version"),
+            document: "バージョン名",
+            expr: d.TsExpr.StringLiteral(
+              mode === d.Mode.Develop
+                ? "Develop:" + new Date().toISOString()
+                : "Release:" + (process.env.GITHUB_REF ?? "???")
+            ),
+            type: d.TsType.String,
+          }),
         ],
         statementList: [],
       },
