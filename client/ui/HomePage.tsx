@@ -1,7 +1,8 @@
 import * as React from "react";
 import * as d from "../../data";
-import { Editor, Value } from "./Editor";
+import { ListItem, listItem } from "../editor/list";
 import { listValue, projectIdValue } from "../editor/common";
+import { Editor } from "./Editor";
 import { Link } from "./Link";
 import { ProjectCardSkeleton } from "./ProjectCard";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
@@ -158,14 +159,11 @@ const TopProjectList: React.VFC<
                   value: listValue({
                     isDirectionColumn: true,
                     items: props.topProjectsLoadingState.projectIdList.map(
-                      (projectId): Value =>
-                        projectIdValue({
-                          canEdit: false,
-                          projectId,
-                          projectResource: props.projectResource,
-                          jump: props.onJump,
-                          language: props.language,
-                        })
+                      projectIdToListItem({
+                        projectResource: props.projectResource,
+                        jump: props.onJump,
+                        language: props.language,
+                      })
                     ),
                   }),
                 },
@@ -175,6 +173,22 @@ const TopProjectList: React.VFC<
         </div>
       );
   }
+};
+
+const projectIdToListItem = (
+  option: Pick<UseDefinyAppResult, "projectResource" | "jump" | "language">
+) => (projectId: d.ProjectId): ListItem => {
+  const project = option.projectResource.getFromMemoryCache(projectId);
+  return listItem(
+    projectIdValue({
+      canEdit: false,
+      projectId,
+      projectResource: option.projectResource,
+      jump: option.jump,
+      language: option.language,
+    }),
+    project?._ === "Loaded" ? project.dataWithTime.data.name : ""
+  );
 };
 
 const CreateProjectButton: React.VFC<{

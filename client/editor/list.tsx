@@ -3,6 +3,8 @@ import { CommonSelection, CommonValue, commonElement } from "./common";
 import { Button } from "../ui/Button";
 import type { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
+import { normalizeSearchText } from "../../common/searchText";
+import { useOneLineTextEditor } from "../ui/OneLineTextEditor";
 
 export type ListSelection = {
   readonly index: number;
@@ -10,12 +12,31 @@ export type ListSelection = {
 };
 
 export type ListValue = {
-  readonly items: ReadonlyArray<CommonValue>;
+  readonly items: ReadonlyArray<ListItem>;
   readonly isDirectionColumn?: boolean;
   readonly deleteAll?: () => void;
   readonly deleteAt?: (index: number) => void;
   readonly addInLast?: () => void;
 };
+
+export type ListItem = {
+  readonly commonValue: CommonValue;
+  /** 検索で使用するテキスト */
+  readonly searchText: string;
+};
+
+/**
+ * Editor の list の1つの要素
+ * @param commonValue 値. 共通であつかえる
+ * @param searchText 検索で使われるテキスト
+ */
+export const listItem = (
+  commonValue: CommonValue,
+  searchText: string
+): ListItem => ({
+  commonValue,
+  searchText,
+});
 
 const moveUp = (selection: ListSelection, value: ListValue): ListSelection => {
   const item = value.items[selection.index];
@@ -31,7 +52,7 @@ const moveUp = (selection: ListSelection, value: ListValue): ListSelection => {
   }
   return {
     index: selection.index,
-    selection: commonElement.moveUp(selection.selection, item),
+    selection: commonElement.moveUp(selection.selection, item.commonValue),
   };
 };
 
@@ -52,7 +73,7 @@ const moveDown = (
   }
   return {
     index: selection.index,
-    selection: commonElement.moveDown(selection.selection, item),
+    selection: commonElement.moveDown(selection.selection, item.commonValue),
   };
 };
 
@@ -75,7 +96,10 @@ const moveFirstChild = (
   }
   return {
     index: selection.index,
-    selection: commonElement.moveFirstChild(selection.selection, item),
+    selection: commonElement.moveFirstChild(
+      selection.selection,
+      item.commonValue
+    ),
   };
 };
 
@@ -89,7 +113,7 @@ const moveParent: ElementOperation<ListSelection, ListValue>["moveParent"] = (
   }
   return {
     index: selection.index,
-    selection: commonElement.moveParent(selection.selection, item),
+    selection: commonElement.moveParent(selection.selection, item.commonValue),
   };
 };
 
@@ -97,32 +121,55 @@ const ListSelectionView: ElementOperation<
   ListSelection,
   ListValue
 >["selectionView"] = React.memo((props) => {
+  const { text: searchQueryText, element } = useOneLineTextEditor({
+    id: "search",
+    initText: "",
+  });
+  const normalizedSearchQueryText = normalizeSearchText(searchQueryText);
+
   return (
-    <div
-      className={css({
-        display: "grid",
-        padding: 8,
-        gridAutoFlow: props.value.isDirectionColumn ? "column" : "row",
-        gridTemplateColumns: props.value.isDirectionColumn
-          ? "1fr 1fr 1fr"
-          : "1fr",
-      })}
-    >
-      {props.value.items.map((v, index) => (
-        <SelectionItem
-          key={index}
-          index={index}
-          onChangeSelection={props.onChangeSelection}
-          selection={getListItemSelection(props.selection, index)}
-          value={v}
-          deleteAt={props.value.deleteAt}
-        />
-      ))}
-      {props.value.addInLast === undefined ? (
+    <div>
+      <div>{element()}</div>
+      {searchQueryText === "" ? (
         <></>
       ) : (
-        <Button onClick={props.value.addInLast}>+</Button>
+        <div>{normalizedSearchQueryText} でフィルター中</div>
       )}
+      <div
+        className={css({
+          display: "grid",
+          padding: 8,
+          gridAutoFlow: props.value.isDirectionColumn ? "column" : "row",
+          gridTemplateColumns: props.value.isDirectionColumn
+            ? "1fr 1fr 1fr"
+            : "1fr",
+        })}
+      >
+        {props.value.items.flatMap((v, index) => {
+          if (
+            normalizeSearchText(v.searchText).includes(
+              normalizedSearchQueryText
+            )
+          ) {
+            return [
+              <SelectionItem
+                key={index}
+                index={index}
+                onChangeSelection={props.onChangeSelection}
+                selection={getListItemSelection(props.selection, index)}
+                value={v.commonValue}
+                deleteAt={props.value.deleteAt}
+              />,
+            ];
+          }
+          return [];
+        })}
+        {props.value.addInLast === undefined ? (
+          <></>
+        ) : (
+          <Button onClick={props.value.addInLast}>+</Button>
+        )}
+      </div>
     </div>
   );
 });
@@ -246,7 +293,7 @@ const ListDetailView: ElementOperation<
   }
   return (
     <commonElement.detailView
-      value={item}
+      value={item.commonValue}
       selection={props.selection.selection}
     />
   );

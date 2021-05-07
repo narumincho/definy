@@ -14,10 +14,16 @@ import {
   typePartIdValue,
 } from "../client/editor/common";
 import {
+  listTypePart,
+  listTypePartId,
   project1,
   project1Id,
+  project2,
   project2Id,
   projectResource,
+  resultTypePart,
+  resultTypePartId,
+  typePart,
   typePart1Id,
   typePartResource,
 } from "./mockData";
@@ -25,6 +31,7 @@ import { ArgType } from "@storybook/addons";
 import type { Item } from "../client/editor/product";
 import { UseDefinyAppResult } from "../client/hook/useDefinyApp";
 import { action } from "@storybook/addon-actions";
+import { listItem } from "../client/editor/list";
 
 type ControlAndActionProps = {
   language: d.Language;
@@ -92,27 +99,36 @@ export const Project: Story<ControlAndActionProps> = (props) => (
           name: "型パーツ",
           value: listValue({
             items: [
-              typePartIdValue({
-                canEdit: false,
-                typePartId: typePart1Id,
-                jump: props.onJump,
-                language: props.language,
-                typePartResource,
-              }),
-              typePartIdValue({
-                canEdit: false,
-                typePartId: typePart1Id,
-                jump: props.onJump,
-                language: props.language,
-                typePartResource,
-              }),
-              typePartIdValue({
-                canEdit: false,
-                typePartId: typePart1Id,
-                jump: props.onJump,
-                language: props.language,
-                typePartResource,
-              }),
+              listItem(
+                typePartIdValue({
+                  canEdit: false,
+                  typePartId: typePart1Id,
+                  jump: props.onJump,
+                  language: props.language,
+                  typePartResource,
+                }),
+                typePart.name
+              ),
+              listItem(
+                typePartIdValue({
+                  canEdit: false,
+                  typePartId: listTypePartId,
+                  jump: props.onJump,
+                  language: props.language,
+                  typePartResource,
+                }),
+                listTypePart.name
+              ),
+              listItem(
+                typePartIdValue({
+                  canEdit: false,
+                  typePartId: resultTypePartId,
+                  jump: props.onJump,
+                  language: props.language,
+                  typePartResource,
+                }),
+                resultTypePart.name
+              ),
             ],
           }),
         },
@@ -170,27 +186,36 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
           value: listValue({
             isDirectionColumn: false,
             items: [
-              typePartIdValue({
-                canEdit: false,
-                typePartId: typePart1Id,
-                jump: props.onJump,
-                language: props.language,
-                typePartResource,
-              }),
-              typePartIdValue({
-                canEdit: false,
-                typePartId: typePart1Id,
-                jump: props.onJump,
-                language: props.language,
-                typePartResource,
-              }),
-              typePartIdValue({
-                canEdit: false,
-                typePartId: typePart1Id,
-                jump: props.onJump,
-                language: props.language,
-                typePartResource,
-              }),
+              listItem(
+                typePartIdValue({
+                  canEdit: false,
+                  typePartId: typePart1Id,
+                  jump: props.onJump,
+                  language: props.language,
+                  typePartResource,
+                }),
+                typePart.name
+              ),
+              listItem(
+                typePartIdValue({
+                  canEdit: false,
+                  typePartId: listTypePartId,
+                  jump: props.onJump,
+                  language: props.language,
+                  typePartResource,
+                }),
+                listTypePart.name
+              ),
+              listItem(
+                typePartIdValue({
+                  canEdit: false,
+                  typePartId: resultTypePartId,
+                  jump: props.onJump,
+                  language: props.language,
+                  typePartResource,
+                }),
+                resultTypePart.name
+              ),
             ],
           }),
         },
@@ -218,20 +243,26 @@ export const Home: Story<ControlAndActionProps> = (props) => (
             value: {
               isDirectionColumn: true,
               items: [
-                projectIdValue({
-                  canEdit: false,
-                  projectId: project1Id,
-                  jump: props.onJump,
-                  language: props.language,
-                  projectResource,
-                }),
-                projectIdValue({
-                  canEdit: false,
-                  projectId: project2Id,
-                  jump: props.onJump,
-                  language: props.language,
-                  projectResource,
-                }),
+                listItem(
+                  projectIdValue({
+                    canEdit: false,
+                    projectId: project1Id,
+                    jump: props.onJump,
+                    language: props.language,
+                    projectResource,
+                  }),
+                  project1.name
+                ),
+                listItem(
+                  projectIdValue({
+                    canEdit: false,
+                    projectId: project2Id,
+                    jump: props.onJump,
+                    language: props.language,
+                    projectResource,
+                  }),
+                  project2.name
+                ),
               ],
             },
           },
@@ -251,10 +282,10 @@ export const List: Story<ControlAndActionProps> = () => (
           value: listValue({
             isDirectionColumn: true,
             items: [
-              numberValue({ canEdit: true, value: 0 }),
-              numberValue({ canEdit: true, value: 1 }),
-              numberValue({ canEdit: true, value: 2 }),
-              numberValue({ canEdit: true, value: 3 }),
+              listItem(numberValue({ canEdit: true, value: 0 }), "0"),
+              listItem(numberValue({ canEdit: true, value: 1 }), "1"),
+              listItem(numberValue({ canEdit: true, value: 2 }), "2"),
+              listItem(numberValue({ canEdit: true, value: 3 }), "3"),
             ],
           }),
         },
@@ -263,10 +294,10 @@ export const List: Story<ControlAndActionProps> = () => (
           value: listValue({
             isDirectionColumn: true,
             items: [
-              textValue({ text: "React" }),
-              textValue({ text: "Vue" }),
-              textValue({ text: "Angular" }),
-              textValue({ text: "Elm" }),
+              listItem(textValue({ text: "React" }), "react"),
+              listItem(textValue({ text: "Vue" }), "vue"),
+              listItem(textValue({ text: "Angular" }), "angular"),
+              listItem(textValue({ text: "Elm" }), "elm"),
             ],
           }),
         },
@@ -304,55 +335,64 @@ export const NestProduct: Story<ControlAndActionProps> = () => (
           value: listValue({
             isDirectionColumn: false,
             items: [
-              productValue({
-                items: [
-                  {
-                    name: "name",
-                    value: textValue({
-                      text: "入れ子の名前A",
-                    }),
-                  },
-                  {
-                    name: "age",
-                    value: numberValue({
-                      canEdit: false,
-                      value: 1,
-                    }),
-                  },
-                ],
-              }),
-              productValue({
-                items: [
-                  {
-                    name: "name",
-                    value: textValue({ text: "入れ子の名前B" }),
-                  },
-                  {
-                    name: "age",
-                    value: numberValue({
-                      canEdit: false,
-                      value: 12,
-                    }),
-                  },
-                ],
-              }),
-              productValue({
-                items: [
-                  {
-                    name: "name",
-                    value: textValue({
-                      text: "入れ子の名前C",
-                    }),
-                  },
-                  {
-                    name: "age",
-                    value: numberValue({
-                      canEdit: false,
-                      value: 123,
-                    }),
-                  },
-                ],
-              }),
+              listItem(
+                productValue({
+                  items: [
+                    {
+                      name: "name",
+                      value: textValue({
+                        text: "入れ子の名前A",
+                      }),
+                    },
+                    {
+                      name: "age",
+                      value: numberValue({
+                        canEdit: false,
+                        value: 1,
+                      }),
+                    },
+                  ],
+                }),
+                "a"
+              ),
+              listItem(
+                productValue({
+                  items: [
+                    {
+                      name: "name",
+                      value: textValue({ text: "入れ子の名前B" }),
+                    },
+                    {
+                      name: "age",
+                      value: numberValue({
+                        canEdit: false,
+                        value: 12,
+                      }),
+                    },
+                  ],
+                }),
+                "b"
+              ),
+              listItem(
+                productValue({
+                  items: [
+                    {
+                      name: "name",
+                      value: textValue({
+                        text: "入れ子の名前C",
+                      }),
+                    },
+                    {
+                      name: "age",
+                      value: numberValue({
+                        canEdit: false,
+                        value: 123,
+                      }),
+                    },
+                  ],
+                }),
+                "c"
+              ),
             ],
           }),
         },
