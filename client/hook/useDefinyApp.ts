@@ -370,7 +370,7 @@ export const useDefinyApp = (
     const urlDataAndAccountToken = urlDataAndAccountTokenFromUrl(
       new URL(location.href)
     );
-    // ブラウザのURLを正規化 アクセストークンを隠す
+    // ブラウザのURLを正規化. アカウントトークンを隠す
     window.history.replaceState(
       undefined,
       "",
@@ -740,6 +740,7 @@ const verifyingAccountTokenAndGetAccount = (
       setLogInState(d.LogInState.Guest);
       return;
     }
+    indexedDB.setAccountToken(accountToken);
     notificationMessageHandler(
       `「${response.value.value.data.name}」としてログインしました`,
       "success"
