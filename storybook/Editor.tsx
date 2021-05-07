@@ -6,10 +6,10 @@ import {
   imageValue,
   listValue,
   numberValue,
+  oneLineTextValue,
   productValue,
   projectIdValue,
   sumValue,
-  textValue,
   timeValue,
   typePartIdValue,
 } from "../client/editor/common";
@@ -78,7 +78,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "作成者",
-          value: textValue({
+          value: oneLineTextValue({
             text: "作成者の名前",
           }),
         },
@@ -91,7 +91,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "パーツ",
-          value: textValue({
+          value: oneLineTextValue({
             text: "パーツのリストを表示したい",
           }),
         },
@@ -134,7 +134,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "プロジェクトID",
-          value: { type: "text", value: { text: "ffffffff" } },
+          value: oneLineTextValue({ text: "72262927b6ddb672bb86b296c03210a9" }),
         },
       ],
     }}
@@ -152,7 +152,7 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
       items: [
         {
           name: "description",
-          value: textValue({
+          value: oneLineTextValue({
             onChange: action("editDescription"),
             text:
               "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
@@ -231,7 +231,7 @@ export const Home: Story<ControlAndActionProps> = (props) => (
       items: [
         {
           name: "検索",
-          value: textValue({
+          value: oneLineTextValue({
             onChange: action("changeSearchText"),
             text: "検索語句",
           }),
@@ -294,10 +294,10 @@ export const List: Story<ControlAndActionProps> = () => (
           value: listValue({
             isDirectionColumn: true,
             items: [
-              listItem(textValue({ text: "React" }), "react"),
-              listItem(textValue({ text: "Vue" }), "vue"),
-              listItem(textValue({ text: "Angular" }), "angular"),
-              listItem(textValue({ text: "Elm" }), "elm"),
+              listItem(oneLineTextValue({ text: "React" }), "react"),
+              listItem(oneLineTextValue({ text: "Vue" }), "vue"),
+              listItem(oneLineTextValue({ text: "Angular" }), "angular"),
+              listItem(oneLineTextValue({ text: "Elm" }), "elm"),
             ],
           }),
         },
@@ -321,7 +321,7 @@ export const NestProduct: Story<ControlAndActionProps> = () => (
             items: [
               {
                 name: "name",
-                value: textValue({ text: "入れ子の名前" }),
+                value: oneLineTextValue({ text: "入れ子の名前" }),
               },
               {
                 name: "age",
@@ -340,7 +340,7 @@ export const NestProduct: Story<ControlAndActionProps> = () => (
                   items: [
                     {
                       name: "name",
-                      value: textValue({
+                      value: oneLineTextValue({
                         text: "入れ子の名前A",
                       }),
                     },
@@ -360,7 +360,7 @@ export const NestProduct: Story<ControlAndActionProps> = () => (
                   items: [
                     {
                       name: "name",
-                      value: textValue({ text: "入れ子の名前B" }),
+                      value: oneLineTextValue({ text: "入れ子の名前B" }),
                     },
                     {
                       name: "age",
@@ -378,7 +378,7 @@ export const NestProduct: Story<ControlAndActionProps> = () => (
                   items: [
                     {
                       name: "name",
-                      value: textValue({
+                      value: oneLineTextValue({
                         text: "入れ子の名前C",
                       }),
                     },
@@ -421,7 +421,7 @@ const SumComponent: React.VFC<Record<string, string>> = () => {
                   setSelectedIndex(index);
                 },
               })),
-              value: textValue({
+              value: oneLineTextValue({
                 text: valueList[selectedIndex] ?? "?",
               }),
             }),

@@ -4,54 +4,42 @@ import { OneLineTextEditor } from "../ui/OneLineTextEditor";
 import { css } from "@emotion/css";
 import { neverFunc } from "../../common/util";
 
-export type TextSelection = never;
+export type OneLineTextSelection = never;
 
-export type TextValue = {
+export type OneLineTextValue = {
   readonly text: string;
   readonly onChange?: (newText: string) => void;
 };
 
 const TextSelectionView: ElementOperation<
-  TextSelection,
-  TextValue
+  OneLineTextSelection,
+  OneLineTextValue
 >["selectionView"] = React.memo((props) => {
   return <div className={css({ fontSize: 16 })}>{props.value.text}</div>;
 });
 TextSelectionView.displayName = "TextSelectionView";
 
 export const HeadTextSelectionView: ElementOperation<
-  TextSelection,
-  TextValue
+  OneLineTextSelection,
+  OneLineTextValue
 >["selectionView"] = React.memo((props) => {
   return <div className={css({ fontSize: 32 })}>{props.value.text}</div>;
 });
 HeadTextSelectionView.displayName = "HeadTextSelectionView";
 
 const TextDetailView: ElementOperation<
-  TextSelection,
-  TextValue
+  OneLineTextSelection,
+  OneLineTextValue
 >["detailView"] = ({ value }) => {
-  if (value.onChange !== undefined) {
-    return (
-      <OneLineTextEditor
-        id="text"
-        value={value.text}
-        onChange={value.onChange}
-      />
-    );
-  }
   return (
-    <div
-      className={css({
-        color: "orange",
-      })}
-    >
-      [type: text] {value.text}
-    </div>
+    <OneLineTextEditor id="text" value={value.text} onChange={value.onChange} />
   );
 };
 
-export const textOperation: ElementOperation<TextSelection, TextValue> = {
+export const oneLineTextOperation: ElementOperation<
+  OneLineTextSelection,
+  OneLineTextValue
+> = {
   moveUp: neverFunc,
   moveDown: neverFunc,
   moveFirstChild: () => undefined,

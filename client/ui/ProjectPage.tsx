@@ -1,14 +1,18 @@
 import * as React from "react";
 import * as d from "../../data";
-import { ListItem, listItem } from "../editor/list";
 import {
+  CommonValue,
   accountIdValue,
+  buttonValue,
   imageValue,
   listValue,
-  textValue,
+  multiLineTextValue,
+  oneLineTextValue,
+  productValue,
   timeValue,
   typePartIdValue,
 } from "../editor/common";
+import { ListItem, listItem } from "../editor/list";
 import { Editor } from "./Editor";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
@@ -20,6 +24,8 @@ export type Props = Pick<
   | "addTypePart"
   | "typePartIdListInProjectResource"
   | "typePartResource"
+  | "generateCode"
+  | "outputCode"
 > & {
   readonly projectId: d.ProjectId;
   readonly onJump: UseDefinyAppResult["jump"];
@@ -95,7 +101,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             name: "プロジェクトID",
-            value: textValue({
+            value: oneLineTextValue({
               text: props.projectId,
               onChange: undefined,
             }),
@@ -115,6 +121,19 @@ export const ProjectPage: React.VFC<Props> = (props) => {
                   : [],
               addInLast: addTypePartInProject,
             }),
+          },
+          {
+            name: "コード生成",
+            value: buttonValue({
+              text: "コードを生成する",
+              onClick: () => {
+                props.generateCode(props.projectId);
+              },
+            }),
+          },
+          {
+            name: "出力されたコード",
+            value: outputCodeToText(props.outputCode),
           },
         ],
       }}
@@ -136,4 +155,36 @@ const typePartIdToListItem = (
     }),
     typePart?._ === "Loaded" ? typePart.dataWithTime.data.name : ""
   );
+};
+
+const outputCodeToText = (
+  outputCode: UseDefinyAppResult["outputCode"]
+): CommonValue => {
+  switch (outputCode.tag) {
+    case "notGenerated":
+      return oneLineTextValue({ text: "まだ生成していない" });
+    case "generating":
+      return oneLineTextValue({ text: "生成中" });
+    case "error":
+      return oneLineTextValue({
+        text: "生成に失敗 " + outputCode.errorMessage,
+      });
+    case "generated":
+      return productValue({
+        items: [
+          {
+            name: "TypeScript",
+            value: multiLineTextValue({ text: outputCode.typeScript }),
+          },
+          {
+            name: "JavaScript",
+            value: multiLineTextValue({ text: outputCode.javaScript }),
+          },
+          {
+            name: "Elm",
+            value: multiLineTextValue({ text: outputCode.elm }),
+          },
+        ],
+      });
+  }
 };

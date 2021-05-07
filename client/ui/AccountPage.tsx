@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as d from "../../data";
-import { textValue, timeValue } from "../editor/common";
+import { oneLineTextValue, timeValue } from "../editor/common";
 import { Editor } from "./Editor";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
@@ -45,7 +45,7 @@ export const AccountPage: React.VFC<Props> = (props) => {
         items: [
           {
             name: "自己紹介文",
-            value: textValue({
+            value: oneLineTextValue({
               text: account.introduction,
               onChange: undefined,
             }),
@@ -56,7 +56,10 @@ export const AccountPage: React.VFC<Props> = (props) => {
           },
           {
             name: "アカウントId",
-            value: textValue({ text: props.accountId, onChange: undefined }),
+            value: oneLineTextValue({
+              text: props.accountId,
+              onChange: undefined,
+            }),
           },
         ],
       }}
