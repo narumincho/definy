@@ -4,10 +4,11 @@ import {
   CommonValue,
   buttonValue,
   listValue,
+  multiLineTextValue,
+  oneLineTextValue,
   productValue,
   projectIdValue,
   sumValue,
-  textValue,
   timeValue,
   typeValue,
 } from "../editor/common";
@@ -138,7 +139,7 @@ const LoadedTypePartEditor: React.VFC<
           {
             name:
               props.language === d.Language.Japanese ? "説明" : "description",
-            value: textValue({
+            value: oneLineTextValue({
               onChange: setDescription,
               text: description,
             }),
@@ -203,7 +204,7 @@ const LoadedTypePartEditor: React.VFC<
               props.language === d.Language.Japanese
                 ? "型パーツID"
                 : "typePartId",
-            value: textValue({
+            value: oneLineTextValue({
               onChange: undefined,
               text: props.typePartId,
             }),
@@ -317,7 +318,7 @@ const parameterListValue = (
             items: [
               {
                 name: "typePartId",
-                value: textValue({
+                value: oneLineTextValue({
                   text: typeParameter.typePartId,
                   onChange: undefined,
                 }),
@@ -491,7 +492,7 @@ const patternValue = (
     items: [
       {
         name: "description",
-        value: textValue({
+        value: oneLineTextValue({
           onChange: (newDescription) => {
             setPattern((prevPattern) => ({
               name: prevPattern.name,
@@ -611,7 +612,7 @@ const memberValue = (
     items: [
       {
         name: "description",
-        value: textValue({
+        value: multiLineTextValue({
           onChange: (newDescription) => {
             setMember((prev) => ({
               name: prev.name,

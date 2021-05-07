@@ -1,23 +1,16 @@
 /* eslint-disable complexity */
 import * as React from "react";
-import {
-  AccountIdSelection,
-  AccountIdValue,
-  accountIdOperation,
-} from "./accountId";
+import { AccountIdValue, accountIdOperation } from "./accountId";
 import { ButtonValue, buttonOperation } from "./button";
-import { ImageSelection, ImageValue, imageOperation } from "./image";
+import { ImageValue, imageOperation } from "./image";
 import { ListSelection, ListValue, listOperation } from "./list";
-import { NumberSelection, NumberValue, numberOperation } from "./number";
+import { MultiLineTextValue, multiLineTextOperation } from "./multilineText";
+import { NumberValue, numberOperation } from "./number";
+import { OneLineTextValue, oneLineTextOperation } from "./oneLineText";
 import { ProductSelection, ProductValue, productOperation } from "./product";
-import {
-  ProjectIdSelection,
-  ProjectIdValue,
-  projectIdOperation,
-} from "./projectId";
+import { ProjectIdValue, projectIdOperation } from "./projectId";
 import { SumSelection, SumValue, sumOperation } from "./sum";
-import { TextSelection, TextValue, textOperation } from "./text";
-import { TimeSelection, TimeValue, timeOperation } from "./time";
+import { TimeValue, timeOperation } from "./time";
 import {
   TypePartIdSelection,
   TypePartIdValue,
@@ -37,32 +30,8 @@ export type CommonSelection =
       readonly listSelection: ListSelection;
     }
   | {
-      readonly tag: "text";
-      readonly textSelection: TextSelection;
-    }
-  | {
-      readonly tag: "number";
-      readonly numberSelection: NumberSelection;
-    }
-  | {
       readonly tag: "sum";
       readonly sumSelection: SumSelection;
-    }
-  | {
-      readonly tag: "image";
-      readonly imageSelection: ImageSelection;
-    }
-  | {
-      readonly tag: "account";
-      readonly accountSelection: AccountIdSelection;
-    }
-  | {
-      readonly tag: "time";
-      readonly timeSelection: TimeSelection;
-    }
-  | {
-      readonly tag: "project";
-      readonly projectSelection: ProjectIdSelection;
     }
   | {
       readonly tag: "typePartId";
@@ -92,8 +61,12 @@ const selectionType = (typeSelection: TypeSelection): CommonSelection => ({
 
 export type CommonValue =
   | {
-      readonly type: "text";
-      readonly value: TextValue;
+      readonly type: "oneLineText";
+      readonly value: OneLineTextValue;
+    }
+  | {
+      readonly type: "multiLineText";
+      readonly value: MultiLineTextValue;
     }
   | {
       readonly type: "number";
@@ -140,8 +113,12 @@ export type CommonValue =
       readonly value: TypeValue;
     };
 
-export const textValue = (value: TextValue): CommonValue => ({
-  type: "text",
+export const oneLineTextValue = (value: OneLineTextValue): CommonValue => ({
+  type: "oneLineText",
+  value,
+});
+export const multiLineTextValue = (value: MultiLineTextValue): CommonValue => ({
+  type: "multiLineText",
   value,
 });
 export const numberValue = (value: NumberValue): CommonValue => ({
@@ -332,9 +309,17 @@ const CommonElementSelectionView: ElementOperation<
           selection={undefined}
         />
       );
-    case "text":
+    case "oneLineText":
       return (
-        <textOperation.selectionView
+        <oneLineTextOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={noSelectionDummyFunction}
+          selection={undefined}
+        />
+      );
+    case "multiLineText":
+      return (
+        <multiLineTextOperation.selectionView
           value={props.value.value}
           onChangeSelection={noSelectionDummyFunction}
           selection={undefined}
@@ -365,11 +350,7 @@ const CommonElementSelectionView: ElementOperation<
         <accountIdOperation.selectionView
           value={props.value.value}
           onChangeSelection={noSelectionDummyFunction}
-          selection={
-            props.selection !== undefined && props.selection.tag === "account"
-              ? props.selection.accountSelection
-              : undefined
-          }
+          selection={undefined}
         />
       );
     case "time":
@@ -377,11 +358,7 @@ const CommonElementSelectionView: ElementOperation<
         <timeOperation.selectionView
           value={props.value.value}
           onChangeSelection={noSelectionDummyFunction}
-          selection={
-            props.selection !== undefined && props.selection.tag === "time"
-              ? props.selection.timeSelection
-              : undefined
-          }
+          selection={undefined}
         />
       );
     case "projectId":
@@ -389,11 +366,7 @@ const CommonElementSelectionView: ElementOperation<
         <projectIdOperation.selectionView
           value={props.value.value}
           onChangeSelection={noSelectionDummyFunction}
-          selection={
-            props.selection !== undefined && props.selection.tag === "project"
-              ? props.selection.projectSelection
-              : undefined
-          }
+          selection={undefined}
         />
       );
     case "list":
@@ -464,9 +437,16 @@ const CommonElementDetailView: ElementOperation<
           selection={undefined}
         />
       );
-    case "text":
+    case "oneLineText":
       return (
-        <textOperation.detailView
+        <oneLineTextOperation.detailView
+          value={props.value.value}
+          selection={undefined}
+        />
+      );
+    case "multiLineText":
+      return (
+        <multiLineTextOperation.detailView
           value={props.value.value}
           selection={undefined}
         />
@@ -493,33 +473,21 @@ const CommonElementDetailView: ElementOperation<
       return (
         <accountIdOperation.detailView
           value={props.value.value}
-          selection={
-            props.selection !== undefined && props.selection.tag === "account"
-              ? props.selection.accountSelection
-              : undefined
-          }
+          selection={undefined}
         />
       );
     case "projectId":
       return (
         <projectIdOperation.detailView
           value={props.value.value}
-          selection={
-            props.selection !== undefined && props.selection.tag === "project"
-              ? props.selection.projectSelection
-              : undefined
-          }
+          selection={undefined}
         />
       );
     case "time":
       return (
         <timeOperation.detailView
           value={props.value.value}
-          selection={
-            props.selection !== undefined && props.selection.tag === "time"
-              ? props.selection.timeSelection
-              : undefined
-          }
+          selection={undefined}
         />
       );
     case "list":

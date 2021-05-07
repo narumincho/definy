@@ -41,7 +41,7 @@ export const useOneLineTextEditor = (option: {
  */
 export const OneLineTextEditor: React.VFC<{
   value: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   id: string;
   style?: CSSObject;
 }> = React.memo((props) => (
@@ -71,8 +71,11 @@ export const OneLineTextEditor: React.VFC<{
     onKeyDown={(e) => {
       e.stopPropagation();
     }}
+    readOnly={props.onChange === undefined}
     onChange={(e) => {
-      props.onChange(e.target.value);
+      if (props.onChange !== undefined) {
+        props.onChange(e.target.value);
+      }
     }}
   />
 ));

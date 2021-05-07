@@ -3,10 +3,10 @@ import * as d from "../../data";
 import { CommonSelection, CommonValue, commonElement } from "./common";
 import {
   HeadTextSelectionView,
-  TextSelection,
-  TextValue,
-  textOperation,
-} from "./text";
+  OneLineTextSelection,
+  OneLineTextValue,
+  oneLineTextOperation,
+} from "./oneLineText";
 import type { ElementOperation } from "./ElementOperation";
 import { Image } from "../ui/Image";
 import { css } from "@emotion/css";
@@ -17,7 +17,7 @@ export type ProductSelection =
     }
   | {
       readonly tag: "head";
-      readonly selection: TextSelection | undefined;
+      readonly selection: OneLineTextSelection | undefined;
     }
   | {
       readonly tag: "content";
@@ -32,7 +32,7 @@ export type ProductValue = {
 
 export type HeadItem = {
   readonly name: string;
-  readonly value: TextValue;
+  readonly value: OneLineTextValue;
   readonly iconHash?: d.ImageHash;
 };
 
@@ -55,7 +55,7 @@ const moveUp = (
       }
       return {
         tag: "head",
-        selection: textOperation.moveUp(selection, value.headItem.value),
+        selection: oneLineTextOperation.moveUp(selection, value.headItem.value),
       };
     }
     case "content": {
@@ -122,7 +122,10 @@ const moveDown = (
       }
       return {
         tag: "head",
-        selection: textOperation.moveDown(selection, value.headItem.value),
+        selection: oneLineTextOperation.moveDown(
+          selection,
+          value.headItem.value
+        ),
       };
     }
     case "content": {
@@ -173,7 +176,7 @@ const moveFirstChild: ElementOperation<
       }
       return {
         tag: "head",
-        selection: textOperation.moveFirstChild(
+        selection: oneLineTextOperation.moveFirstChild(
           selection.selection,
           value.headItem.value
         ),
@@ -224,7 +227,10 @@ const moveParent: ElementOperation<
       }
       return {
         tag: "head",
-        selection: textOperation.moveParent(selection, value.headItem.value),
+        selection: oneLineTextOperation.moveParent(
+          selection,
+          value.headItem.value
+        ),
       };
     }
     case "content": {
@@ -254,7 +260,7 @@ export const ProductSelectionView: ElementOperation<
   }, [onChangeSelection]);
 
   const onClickHeadItem = React.useCallback(
-    (textSelection: TextSelection | undefined) => {
+    (textSelection: OneLineTextSelection | undefined) => {
       onChangeSelection({ tag: "head", selection: textSelection });
     },
     [onChangeSelection]
@@ -357,9 +363,9 @@ const getContentItemSelection = (
 type ItemSelection = "none" | "self" | CommonSelection;
 
 const HeadItemView: React.VFC<{
-  readonly onSelect: (selection: TextSelection | undefined) => void;
+  readonly onSelect: (selection: OneLineTextSelection | undefined) => void;
   readonly name: string;
-  readonly textValue: TextValue;
+  readonly textValue: OneLineTextValue;
   readonly productSelection: ProductSelection | undefined;
 }> = React.memo((props) => {
   const onSelect = props.onSelect;
@@ -493,7 +499,7 @@ const ProductDetailView: ElementOperation<
         return <div>headItemがないのに選択している</div>;
       }
       return (
-        <textOperation.detailView
+        <oneLineTextOperation.detailView
           value={props.value.headItem.value}
           selection={props.selection.selection}
         />

@@ -1,15 +1,18 @@
 import * as React from "react";
 import * as d from "../../data";
-import { ListItem, listItem } from "../editor/list";
 import {
+  CommonValue,
   accountIdValue,
   buttonValue,
   imageValue,
   listValue,
-  textValue,
+  multiLineTextValue,
+  oneLineTextValue,
+  productValue,
   timeValue,
   typePartIdValue,
 } from "../editor/common";
+import { ListItem, listItem } from "../editor/list";
 import { Editor } from "./Editor";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
@@ -98,7 +101,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             name: "プロジェクトID",
-            value: textValue({
+            value: oneLineTextValue({
               text: props.projectId,
               onChange: undefined,
             }),
@@ -130,9 +133,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             name: "出力されたコード",
-            value: textValue({
-              text: outputCodeToText(props.outputCode),
-            }),
+            value: outputCodeToText(props.outputCode),
           },
         ],
       }}
@@ -158,15 +159,32 @@ const typePartIdToListItem = (
 
 const outputCodeToText = (
   outputCode: UseDefinyAppResult["outputCode"]
-): string => {
+): CommonValue => {
   switch (outputCode.tag) {
     case "notGenerated":
-      return "まだ生成していない";
+      return oneLineTextValue({ text: "まだ生成していない" });
     case "generating":
-      return "生成中";
+      return oneLineTextValue({ text: "生成中" });
     case "error":
-      return "生成に失敗 " + outputCode.errorMessage;
+      return oneLineTextValue({
+        text: "生成に失敗 " + outputCode.errorMessage,
+      });
     case "generated":
-      return outputCode.typeScript;
+      return productValue({
+        items: [
+          {
+            name: "TypeScript",
+            value: multiLineTextValue({ text: outputCode.typeScript }),
+          },
+          {
+            name: "JavaScript",
+            value: multiLineTextValue({ text: outputCode.javaScript }),
+          },
+          {
+            name: "Elm",
+            value: multiLineTextValue({ text: outputCode.elm }),
+          },
+        ],
+      });
   }
 };
