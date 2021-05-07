@@ -190,7 +190,7 @@ export const logInCallback = async (
       .where("openIdConnect", "==", openIdConnectProviderAndIdQuery)
       .get()
   ).docs;
-  if (documentList.length === 0) {
+  if (documentList[0] === undefined) {
     const accessToken = await createUser(
       providerUserData,
       openIdConnectProvider
@@ -565,14 +565,14 @@ export const apiFunc: {
       state
     ).toString();
   },
-  getUserByAccountToken: async (accountToken) => {
+  getAccountByAccountToken: async (accountToken) => {
     const accessTokenHash: AccessTokenHash = hashAccessToken(accountToken);
     const querySnapshot = await database
       .collection("user")
       .where("accessTokenHash", "==", accessTokenHash)
       .get();
     const userDataDocs = querySnapshot.docs;
-    if (userDataDocs.length !== 1) {
+    if (userDataDocs[0] === undefined || userDataDocs.length !== 1) {
       return d.Maybe.Nothing();
     }
     const queryDocumentSnapshot = userDataDocs[0];
@@ -588,7 +588,7 @@ export const apiFunc: {
       },
     });
   },
-  getUser: async (userId) => {
+  getAccount: async (userId) => {
     const documentSnapshot = await database
       .collection("user")
       .doc(userId)
@@ -610,7 +610,7 @@ export const apiFunc: {
   createProject: async (
     parameter: d.CreateProjectParameter
   ): Promise<d.Maybe<d.IdAndData<d.ProjectId, d.Project>>> => {
-    const userDataMaybe = await apiFunc.getUserByAccountToken(
+    const userDataMaybe = await apiFunc.getAccountByAccountToken(
       parameter.accountToken
     );
     switch (userDataMaybe._) {
@@ -708,7 +708,7 @@ export const apiFunc: {
     };
   },
   addTypePart: async (accountTokenAndProjectId: d.AccountTokenAndProjectId) => {
-    const userPromise = apiFunc.getUserByAccountToken(
+    const userPromise = apiFunc.getAccountByAccountToken(
       accountTokenAndProjectId.accountToken
     );
     const projectPromise = apiFunc.getProject(
@@ -739,7 +739,9 @@ export const apiFunc: {
         data: d.Maybe.Nothing(),
       };
     }
-    const account = await apiFunc.getUserByAccountToken(request.accountToken);
+    const account = await apiFunc.getAccountByAccountToken(
+      request.accountToken
+    );
     // アカウントトークンが不正だった
     if (account._ === "Nothing") {
       return {
@@ -792,7 +794,9 @@ export const apiFunc: {
         data: d.Maybe.Nothing(),
       };
     }
-    const account = await apiFunc.getUserByAccountToken(request.accountToken);
+    const account = await apiFunc.getAccountByAccountToken(
+      request.accountToken
+    );
     // アカウントトークンが不正だった
     if (account._ === "Nothing") {
       return {
@@ -851,7 +855,9 @@ export const apiFunc: {
         data: d.Maybe.Nothing(),
       };
     }
-    const account = await apiFunc.getUserByAccountToken(request.accountToken);
+    const account = await apiFunc.getAccountByAccountToken(
+      request.accountToken
+    );
     // アカウントトークンが不正だった
     if (account._ === "Nothing") {
       return {
@@ -885,6 +891,32 @@ export const apiFunc: {
     return {
       getTime: firestoreTimestampToTime(writeData.writeTime),
       data: d.Maybe.Just(request.typePart),
+    };
+  },
+  getTypePart: async (typePartId) => {
+    const typePartSnapshot = await database
+      .collection("typePart")
+      .doc(typePartId)
+      .get();
+    const typePartData = typePartSnapshot.data();
+
+    // 型パーツが存在していなかった
+    if (typePartData === undefined) {
+      return {
+        getTime: firestoreTimestampToTime(typePartSnapshot.readTime),
+        data: d.Maybe.Nothing(),
+      };
+    }
+    return {
+      getTime: firestoreTimestampToTime(typePartSnapshot.readTime),
+      data: d.Maybe.Just({
+        name: typePartData.name,
+        description: typePartData.description,
+        attribute: typePartData.attribute,
+        projectId: typePartData.projectId,
+        body: typePartData.typePartBody,
+        typeParameterList: typePartData.typeParameterList,
+      }),
     };
   },
 };

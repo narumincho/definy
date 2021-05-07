@@ -28,7 +28,7 @@ export type PackageJsonRaw = {
   description: string;
   repository: {
     type: "git";
-    url: `git+https://github.com/${string}/${string}.git`;
+    url: string;
   };
   license: "MIT";
   main: string;
@@ -72,7 +72,7 @@ export const toJson = (
     description: packageJson.description,
     repository: {
       type: "git",
-      url: `git+https://github.com/${packageJson.gitHubAccountName}/${packageJson.gitHubRepositoryName}.git` as const,
+      url: `git+https://github.com/${packageJson.gitHubAccountName}/${packageJson.gitHubRepositoryName}.git`,
     },
     license: "MIT",
     main: packageJson.entryPoint,

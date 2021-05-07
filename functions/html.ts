@@ -2,7 +2,7 @@ import * as commonUrl from "../common/url";
 import * as d from "../data";
 import * as lib from "./lib";
 import * as nHtml from "@narumincho/html";
-import * as out from "../out";
+import { globalStyle } from "../common/globalStyle";
 
 /**
  * OGP の 情報が含まれている HTML を返す
@@ -19,42 +19,15 @@ export const html = async (
     view: {
       appName: "Definy",
       pageName: "Definy",
-      iconPath: "/icon",
+      iconPath: commonUrl.iconPath,
       coverImageUrl: coverImageUrlAndDescription.imageUrl,
       description: coverImageUrlAndDescription.description,
       scriptPath: "/main.js",
       styleUrlList: [],
       twitterCard: "SummaryCard",
       language: urlData.language,
-      manifestPath: ["manifest.json"],
-      url: new URL(normalizedUrl.toString()),
-      style: `/*
-    Hack typeface https://github.com/source-foundry/Hack
-    License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
-*/
-
-@font-face {
-    font-family: "Hack";
-    font-weight: 400;
-    font-style: normal;
-    src: url("/hack-regular-subset.woff2") format("woff2");
-}
-
-html {
-    height: 100%;
-}
-
-body {
-    height: 100%;
-    margin: 0;
-    background-color: black;
-    display: grid;
-}
-
-* {
-    box-sizing: border-box;
-    color: white;
-}`,
+      url: normalizedUrl,
+      style: globalStyle,
       bodyClass: "dummy",
       themeColor: undefined,
       children: nHtml.view.childrenText(loadingMessage(urlData.language)),
@@ -86,7 +59,7 @@ const getCoverImageUrlAndDescription = async (
       };
     }
     case "Account": {
-      const user = await lib.apiFunc.getUser(location.accountId);
+      const user = await lib.apiFunc.getAccount(location.accountId);
       if (user.data._ === "Just") {
         return {
           imageUrl: commonUrl.pngFileUrl(user.data.value.imageHash),

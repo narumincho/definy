@@ -5,30 +5,43 @@ import * as packageJsonGen from "../gen/packageJson/main";
 import * as ts from "typescript";
 import { generateCodeAsString, identifer } from "../gen/jsTs/main";
 
-const clientSourceEntryPath = "./client/main.ts";
+const clientSourceEntryPath = "./client/main.tsx";
 const functionsSourceEntryPath = "./functions/main.ts";
 const distributionPath = "./distribution";
 const functionsDistributionPath = `${distributionPath}/functions`;
 const hostingDistributionPath = `${distributionPath}/hosting`;
+const firestoreRulesFilePath = `${distributionPath}/firestore.rules`;
 
 /**
  * Firebase へ デプロイするためにビルドする
  */
 export const build = async (mode: d.Mode): Promise<void> => {
+  await fileSystem.remove(distributionPath);
+  console.log(`${distributionPath}をすべて削除完了!`);
+  if (mode === "Develop") {
+    await fileSystem.copy(
+      "../secret/definy.json",
+      `${functionsDistributionPath}/.runtimeconfig.json`
+    );
+    console.log(
+      `.runtimeconfig.json サーバーの秘密情報をローカルファイルからコピー完了`
+    );
+  }
+
   await outputPackageJsonForFunctions();
+  console.log(`package.json を出力完了!`);
   await outputNowMode(mode);
+  console.log(`out.ts を出力完了!`);
+  await generateFirestoreRules();
+  console.log(
+    `Firestore 向けセキュリティールール (${firestoreRulesFilePath}) を出力完了!`
+  );
   await generateFirebaseJson(mode);
+  console.log(`firebase.json を出力完了!`);
 
   /** staticなファイルのコピー */
   await fileSystem.copy("./static", hostingDistributionPath);
-  await fileSystem
-    .rename(
-      `${hostingDistributionPath}/icon.png`,
-      `${hostingDistributionPath}/icon`
-    )
-    .catch((e) => {
-      throw e;
-    });
+  console.log("static な ファイルのコピーに成功!");
 
   await esbuild.build({
     entryPoints: [clientSourceEntryPath],
@@ -41,8 +54,10 @@ export const build = async (mode: d.Mode): Promise<void> => {
     minify: true,
     target: ["chrome88", "firefox85", "safari14"],
   });
+  console.log("クライアント向けのスクリプト (main.js) のビルドに成功!");
 
   buildFunctionsTypeScript();
+  console.log("Cloud Functions for Firebase 向けのスクリプトのビルドに成功!");
 };
 
 const generateFirebaseJson = (mode: d.Mode): Promise<void> => {
@@ -52,19 +67,11 @@ const generateFirebaseJson = (mode: d.Mode): Promise<void> => {
       functions: {
         source: functionsDistributionPath,
       },
+      firestore: {
+        rules: firestoreRulesFilePath,
+      },
       hosting: {
         public: hostingDistributionPath,
-        headers: [
-          {
-            source: "icon",
-            headers: [
-              {
-                key: "content-type",
-                value: "image/png",
-              },
-            ],
-          },
-        ],
         rewrites: [
           {
             source: "/sitemap",
@@ -108,6 +115,21 @@ const generateFirebaseJson = (mode: d.Mode): Promise<void> => {
               },
             },
     })
+  );
+};
+
+const generateFirestoreRules = (): Promise<void> => {
+  return fileSystem.outputFile(
+    firestoreRulesFilePath,
+    `
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+`
   );
 };
 
@@ -197,6 +219,16 @@ const outputNowMode = async (mode: d.Mode): Promise<void> => {
               moduleName: "./data",
               name: identifer.fromString("Mode"),
             }),
+          }),
+          d.ExportDefinition.Variable({
+            name: identifer.fromString("version"),
+            document: "バージョン名",
+            expr: d.TsExpr.StringLiteral(
+              mode === d.Mode.Develop
+                ? "Develop:" + new Date().toISOString()
+                : "Release:" + (process.env.GITHUB_REF ?? "???")
+            ),
+            type: d.TsType.String,
           }),
         ],
         statementList: [],

@@ -12,7 +12,7 @@ export const urlDataAndAccountTokenToUrl = (
   accountToken: d.Maybe<d.AccountToken>
 ): URL => {
   const url = new URL(origin);
-  url.pathname = locationToPath(urlData.location);
+  url.pathname = createPath(locationToPathList(urlData.location));
   url.searchParams.append(
     languageQueryKey,
     languageToIdString(urlData.language)
@@ -23,35 +23,33 @@ export const urlDataAndAccountTokenToUrl = (
   return url;
 };
 
-const locationToPath = (location: d.Location): string => {
+const locationToPathList = (location: d.Location): ReadonlyArray<string> => {
   switch (location._) {
     case "Home":
-      return "/";
+      return [];
     case "CreateProject":
-      return "/create-project";
+      return [createProjectPath];
     case "Account":
-      return "/user/" + (location.accountId as string);
+      return [accountPath, location.accountId];
     case "Project":
-      return "/project/" + (location.projectId as string);
+      return [projectPath, location.projectId];
     case "Setting":
-      return "/setting/";
+      return [settingPath];
     case "About":
-      return "/about";
-    case "Debug":
-      return "/debug";
+      return [aboutPath];
     case "TypePart":
-      return "/type-part/" + location.typePartId;
+      return [typePartPath, location.typePartId];
   }
 };
 
 const languageToIdString = (language: d.Language): string => {
   switch (language) {
     case "English":
-      return "en";
+      return englishId;
     case "Japanese":
-      return "ja";
+      return japaneseId;
     case "Esperanto":
-      return "eo";
+      return esperantoId;
   }
 };
 
@@ -75,40 +73,42 @@ export const urlDataAndAccountTokenFromUrl = (
 };
 
 const locationFromUrl = (pathName: string): d.Location => {
-  if (pathName === "/create-project") {
-    return d.Location.CreateProject;
-  }
-  if (pathName === "/about") {
-    return d.Location.About;
-  }
-  if (pathName === "/debug") {
-    return d.Location.Debug;
-  }
-  if (pathName === "/setting") {
-    return d.Location.Setting;
-  }
-  const projectResult = pathName.match(/^\/project\/(?<id>[0-9a-f]{32})$/u);
-  if (projectResult !== null && projectResult.groups !== undefined) {
-    return d.Location.Project(projectResult.groups.id as d.ProjectId);
-  }
-  const userResult = pathName.match(/^\/user\/(?<id>[0-9a-f]{32})$/u);
-  if (userResult !== null && userResult.groups !== undefined) {
-    return d.Location.Account(userResult.groups.id as d.AccountId);
-  }
-  const typePartResult = pathName.match(/^\/type-part\/(?<id>[0-9a-f]{32})$/u);
-  if (typePartResult !== null && typePartResult.groups !== undefined) {
-    return d.Location.TypePart(typePartResult.groups.id as d.TypePartId);
+  const pathList = pathName.split("/");
+  switch (pathList[1]) {
+    case createProjectPath:
+      return d.Location.CreateProject;
+    case aboutPath:
+      return d.Location.About;
+    case settingPath:
+      return d.Location.Setting;
+    case projectPath:
+      if (typeof pathList[2] === "string") {
+        return d.Location.Project(pathList[2] as d.ProjectId);
+      }
+      return d.Location.Home;
+
+    case accountPath:
+      if (typeof pathList[2] === "string") {
+        return d.Location.Account(pathList[2] as d.AccountId);
+      }
+      return d.Location.Home;
+
+    case typePartPath:
+      if (typeof pathList[2] === "string") {
+        return d.Location.TypePart(pathList[2] as d.TypePartId);
+      }
+      return d.Location.Home;
   }
   return d.Location.Home;
 };
 
 const languageFromIdString = (languageAsString: string): d.Language => {
   switch (languageAsString) {
-    case "ja":
+    case japaneseId:
       return "Japanese";
-    case "en":
+    case englishId:
       return "English";
-    case "eo":
+    case esperantoId:
       return "Esperanto";
   }
   return defaultLanguage;
@@ -122,10 +122,15 @@ const accountTokenFromUrl = (hash: string): d.Maybe<d.AccountToken> => {
   return d.Maybe.Just(matchResult.groups.token as d.AccountToken);
 };
 
-export const iconUrl: URL = new URL(`${origin}/icon`);
+export const iconPath = "/icon.png";
+export const iconUrl: URL = new URL(`${origin}/${iconPath}`);
 
-export const pngFileUrl = (fileHash: d.ImageHash): URL =>
-  new URL(`${origin}/pngFile/${fileHash}`);
+export const pngFileUrl = (imageHash: d.ImageHash): URL =>
+  new URL(`${origin}${pngFilePath(imageHash)}`);
+
+export const pngFilePath = (imageHash: d.ImageHash): string => {
+  return `/pngFile/${imageHash}.png`;
+};
 
 export const apiUrl = (apiName: string): URL =>
   new URL(`${origin}/api/${apiName}`);
@@ -133,3 +138,21 @@ export const apiUrl = (apiName: string): URL =>
 export const logInRedirectUri = (
   openIdConnectProvider: d.OpenIdConnectProvider
 ): string => `${origin}/logInCallback/${openIdConnectProvider}`;
+
+const createProjectPath = "create-project";
+const aboutPath = "about";
+const settingPath = "setting";
+const projectPath = "project";
+const accountPath = "account";
+const typePartPath = "type-part";
+const japaneseId = "ja";
+const englishId = "en";
+const esperantoId = "eo";
+
+/**
+ * パスを宣言的に作成する
+ * @param path パス
+ */
+const createPath = (pathList: ReadonlyArray<string>): string => {
+  return "/" + pathList.join("/");
+};

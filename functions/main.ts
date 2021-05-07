@@ -47,7 +47,12 @@ export const api = functions
   .runWith({ memory: "512MB" })
   .https.onRequest(async (request, response) => {
     const path = request.path.split("/")[2];
-    console.log("call api function!", request.connection.remoteAddress, path);
+    if (path === undefined) {
+      response.status(400);
+      response.send("パスにAPI名が含まれていない request.path=" + request.path);
+      return;
+    }
+    console.log("call api function!", request.socket.remoteAddress, path);
     const result = await callApiFunction(path, request.body as Buffer);
     if (result === undefined) {
       response.status(400);
@@ -144,13 +149,28 @@ export const logInCallback = functions.https.onRequest((request, response) => {
   }
 });
 
+/*
+ * =====================================================================
+ *               pngFile Cloud Storage に 保存された PNG ファイルを取得する
+ *        https://definy.app/logInCallback/Google?state=&code=
+ *                            など
+ *            ↓ Firebase Hosting firebase.json rewrite
+ *                Cloud Functions for Firebase / logInCallback
+ * =====================================================================
+ */
 export const pngFile = functions.https.onRequest((request, response): void => {
-  const fileHash = request.path.split("/")[2];
+  const matchResult = request.path.match(/(?<hash>.{64})\.png/u);
+  if (matchResult === null || matchResult.groups === undefined) {
+    response.send(400);
+    return;
+  }
+  const fileHash = matchResult.groups.hash;
   if (fileHash === undefined) {
-    response.status(400).send("getFile API need file hash");
+    response.send(400);
     return;
   }
   const readableStream = lib.readPngFile(fileHash);
   response.contentType("image/png");
+  response.header("cache-control", "max-age=31536000");
   readableStream.pipe(response);
 });

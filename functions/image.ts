@@ -37,10 +37,10 @@ const drawRectRandomImage = (
   const xSize = Math.floor(image.getWidth() / xCount + 1);
   const ySize = Math.floor(image.getHeight() / yCount + 1);
 
-  let k = palette[0];
+  let k = palette[0] as number;
   for (let i = 0; i < xSize * ySize * xCount * yCount; i += 1) {
     if (Math.random() < changeRate) {
-      k = palette[Math.floor(Math.random() * palette.length)];
+      k = palette[Math.floor(Math.random() * palette.length)] as number;
     }
     image.setPixelColor(
       k,
@@ -59,30 +59,54 @@ const randomColor = (): number =>
     255
   );
 
+type PalletAndRandomValueWithSum = {
+  readonly paletteAndRandomValue: ReadonlyArray<{
+    readonly color: number;
+    readonly value: number;
+  }>;
+  readonly sum: number;
+};
+
 const drawPaletteImage = (image: jimp, palette: ReadonlyArray<number>) => {
   const width = image.getWidth();
   const height = image.getHeight();
 
-  const paletteOccupation = [];
-  let sum = 0;
-  for (const color of palette) {
-    const value = Math.random();
-    paletteOccupation.push(value);
-    sum += value;
-  }
-  let sumOffset = 0;
-  for (let i = 0; i < palette.length; i += 1) {
-    sumOffset += paletteOccupation[i] / sum;
-    paletteOccupation[i] = sumOffset * height;
-  }
+  const randomValueAndSumList = palette.reduce<PalletAndRandomValueWithSum>(
+    (
+      previousValue: PalletAndRandomValueWithSum,
+      currentValue: number
+    ): PalletAndRandomValueWithSum => {
+      const value = previousValue.sum + Math.random();
+      return {
+        paletteAndRandomValue: [
+          ...previousValue.paletteAndRandomValue,
+          {
+            color: currentValue,
+            value,
+          },
+        ],
+        sum: value,
+      };
+    },
+    {
+      paletteAndRandomValue: [],
+      sum: 0,
+    }
+  );
+
+  const paletteOccupation = randomValueAndSumList.paletteAndRandomValue.map(
+    (e) => {
+      return (e.value / randomValueAndSumList.sum) * height;
+    }
+  );
 
   let paletteOffset = 0;
   for (let y = 0; y < height; y += 1) {
-    if (paletteOccupation[paletteOffset] < y) {
+    if ((paletteOccupation[paletteOffset] as number) < y) {
       paletteOffset = Math.min(palette.length - 1, paletteOffset + 1);
     }
     for (let x = 0; x < width; x += 1) {
-      image.setPixelColor(palette[paletteOffset], x, y);
+      image.setPixelColor(palette[paletteOffset] as number, x, y);
     }
   }
 };
