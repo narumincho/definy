@@ -4,7 +4,7 @@ import * as d from "../data";
 import * as functions from "firebase-functions";
 import * as genHtml from "./html";
 import * as lib from "./lib";
-import * as nHtml from "@narumincho/html";
+import { htmlOptionToString } from "../gen/html/toString";
 
 console.log("versions", JSON.stringify(process.versions));
 /*
@@ -31,7 +31,7 @@ export const html = functions.https.onRequest(async (request, response) => {
 
   response.status(htmlAndIsNotFound.isNotFound ? 404 : 200);
   response.setHeader("content-type", "text/html");
-  response.send(nHtml.toString.toString(htmlAndIsNotFound.view));
+  response.send(htmlOptionToString(htmlAndIsNotFound.htmlOption));
 });
 
 /*

@@ -1,7 +1,7 @@
 import * as commonUrl from "../common/url";
 import * as d from "../data";
 import * as lib from "./lib";
-import * as nHtml from "@narumincho/html";
+import { HtmlOption, div } from "../gen/html/main";
 import { globalStyle } from "../common/globalStyle";
 
 /**
@@ -10,27 +10,25 @@ import { globalStyle } from "../common/globalStyle";
 export const html = async (
   urlData: d.UrlData,
   normalizedUrl: URL
-): Promise<{ view: nHtml.view.View<never>; isNotFound: boolean }> => {
+): Promise<{ htmlOption: HtmlOption; isNotFound: boolean }> => {
   const coverImageUrlAndDescription = await getCoverImageUrlAndDescription(
     urlData.location,
     urlData.language
   );
   return {
-    view: {
+    htmlOption: {
       appName: "Definy",
       pageName: "Definy",
-      iconPath: commonUrl.iconPath,
+      iconUrl: commonUrl.iconUrl,
       coverImageUrl: coverImageUrlAndDescription.imageUrl,
       description: coverImageUrlAndDescription.description,
-      scriptPath: "/main.js",
-      styleUrlList: [],
+      scriptUrlList: [commonUrl.scriptUrl],
       twitterCard: "SummaryCard",
       language: urlData.language,
       url: normalizedUrl,
       style: globalStyle,
-      bodyClass: "dummy",
       themeColor: undefined,
-      children: nHtml.view.childrenText(loadingMessage(urlData.language)),
+      children: [div({}, urlData.language)],
     },
     isNotFound: false,
   };
