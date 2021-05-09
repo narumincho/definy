@@ -8,7 +8,7 @@ fs.removeSync(distributionPath);
 console.log(`${distributionPath}をすべて削除完了!`);
 
 ts.createProgram({
-  rootNames: ["./gen/jsTs/main.ts"],
+  rootNames: ["./gen/main.ts"],
   options: {
     target: ts.ScriptTarget.ES2020,
     module: ts.ModuleKind.CommonJS,

@@ -1,9 +1,6 @@
 name: npm publish
 
-on:
-  push:
-    branches:
-      - main
+on: workflow_dispatch
 
 jobs:
   npm-publish:
