@@ -1,5 +1,7 @@
 # @narumincho/gen
 
+[![npm version](https://badge.fury.io/js/%40narumincho%2Fgen.svg)](https://badge.fury.io/js/%40narumincho%2Fgen)
+
 [Definy](https://github.com/narumincho/Definy) で HTML, TypeScript, JavaScript, package.json, wasm を生成したかったので作った.
 
 ## JsTs の 特徴
