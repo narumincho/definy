@@ -2,9 +2,9 @@ import * as c from "./codec";
 import * as string from "./string";
 import * as ts from "../../data";
 import * as util from "../util";
-import { identifer, util as tsUtil } from "../../gen/jsTs/main";
+import { jsTs } from "../../gen/main";
 
-const name = identifer.fromString("Url");
+const name = jsTs.identiferFromString("Url");
 
 export const type = ts.TsType.ScopeInGlobal(name);
 
@@ -13,10 +13,7 @@ export const encodeDefinitionStatementList = (
 ): ReadonlyArray<ts.Statement> => {
   return [
     ts.Statement.Return(
-      util.callEncode(
-        string.codec(),
-        tsUtil.callMethod(valueVar, "toString", [])
-      )
+      util.callEncode(string.codec(), jsTs.callMethod(valueVar, "toString", []))
     ),
   ];
 };
@@ -25,7 +22,7 @@ export const decodeDefinitionStatementList = (
   parameterIndex: ts.TsExpr,
   parameterBinary: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
-  const resultAndNextIndexAsStringName = identifer.fromString(
+  const resultAndNextIndexAsStringName = jsTs.identiferFromString(
     "resultAndNextIndexAsString"
   );
   const resultAndNextIndexAsStringVar = ts.TsExpr.Variable(
@@ -40,7 +37,7 @@ export const decodeDefinitionStatementList = (
     }),
     c.returnStatement(
       ts.TsExpr.New({
-        expr: ts.TsExpr.GlobalObjects(identifer.fromString("URL")),
+        expr: ts.TsExpr.GlobalObjects(jsTs.identiferFromString("URL")),
         parameterList: [c.getResult(resultAndNextIndexAsStringVar)],
       }),
       c.getNextIndex(resultAndNextIndexAsStringVar)

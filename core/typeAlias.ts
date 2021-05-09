@@ -1,7 +1,7 @@
 import * as codec from "./kernelType/codec";
 import * as d from "../data";
 import * as util from "./util";
-import { identifer, util as tsUtil } from "../gen/jsTs/main";
+import { jsTs } from "../gen/main";
 
 export const typePartMapToTypeAlias = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
@@ -20,10 +20,10 @@ export const typePartToTypeAlias = (
   typePart: d.TypePart,
   allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
 ): d.TypeAlias => ({
-  name: identifer.fromString(typePart.name),
+  name: jsTs.identiferFromString(typePart.name),
   document: typePart.description + "\n@typePartId " + (typePartId as string),
   typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-    identifer.fromString(typeParameter.name)
+    jsTs.identiferFromString(typeParameter.name)
   ),
   type: typePartToTsType(typePart, allTypePartIdTypePartNameMap),
 });
@@ -149,9 +149,9 @@ const typePartBodyKernelToTsType = (
       }
       return d.TsType.Function({
         parameterList: [
-          d.TsType.ScopeInFile(identifer.fromString(inputType.name)),
+          d.TsType.ScopeInFile(jsTs.identiferFromString(inputType.name)),
         ],
-        return: d.TsType.ScopeInFile(identifer.fromString(outputType.name)),
+        return: d.TsType.ScopeInFile(jsTs.identiferFromString(outputType.name)),
         typeParameterList: [],
       });
     }
@@ -160,7 +160,7 @@ const typePartBodyKernelToTsType = (
     case "String":
       return d.TsType.String;
     case "Binary":
-      return tsUtil.uint8ArrayType;
+      return jsTs.uint8ArrayType;
     case "Id":
     case "Token":
       return d.TsType.Intersection({
@@ -179,8 +179,8 @@ const typePartBodyKernelToTsType = (
       if (elementType === undefined) {
         throw new Error("List need one type parameter");
       }
-      return tsUtil.readonlyArrayType(
-        d.TsType.ScopeInFile(identifer.fromString(elementType.name))
+      return jsTs.readonlyArrayType(
+        d.TsType.ScopeInFile(jsTs.identiferFromString(elementType.name))
       );
     }
     case "Dict": {
@@ -188,9 +188,9 @@ const typePartBodyKernelToTsType = (
       if (id === undefined || value === undefined) {
         throw new Error("Dict need two type parameter");
       }
-      return tsUtil.readonlyMapType(
-        d.TsType.ScopeInFile(identifer.fromString(id.name)),
-        d.TsType.ScopeInFile(identifer.fromString(value.name))
+      return jsTs.readonlyMapType(
+        d.TsType.ScopeInFile(jsTs.identiferFromString(id.name)),
+        d.TsType.ScopeInFile(jsTs.identiferFromString(value.name))
       );
     }
   }

@@ -19,7 +19,7 @@ jobs:
       - name: Install npm dependencies (npm ci)
         run: npm ci
       - name: Transpile TypeScript (npx tsc)
-        run: npm run build-js-ts-code-generator
+        run: npm run build-gen
       - name: npm publish
         uses: JS-DevTools/npm-publish@v1
         with:

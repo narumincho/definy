@@ -6,7 +6,7 @@ import { TsIdentifer } from "../../data";
  * 識別子に使えない文字が含まれていた場合, 末尾に_がつくか, $マークでエンコードされる
  * @param text
  */
-export const fromString = (word: string): TsIdentifer => {
+export const identiferFromString = (word: string): TsIdentifer => {
   const [firstChar] = word;
   if (firstChar === undefined) {
     return TsIdentifer.Identifer("$00");

@@ -1,6 +1,6 @@
 import * as ts from "../../data";
 import * as util from "../util";
-import { identifer, util as tsUtil } from "../../gen/jsTs/main";
+import { jsTs } from "../../gen/main";
 
 export const codecTypeWithTypeParameter = (
   type_: ts.TsType,
@@ -9,22 +9,24 @@ export const codecTypeWithTypeParameter = (
   return typeParameterList.length === 0
     ? codecType(type_)
     : ts.TsType.Function({
-        typeParameterList: typeParameterList.map(identifer.fromString),
+        typeParameterList: typeParameterList.map(jsTs.identiferFromString),
         parameterList: typeParameterList.map((typeParameter) =>
-          codecType(ts.TsType.ScopeInFile(identifer.fromString(typeParameter)))
+          codecType(
+            ts.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter))
+          )
         ),
         return: codecType(
           ts.TsType.WithTypeParameter({
             type: type_,
             typeParameterList: typeParameterList.map((typeParameter) =>
-              ts.TsType.ScopeInFile(identifer.fromString(typeParameter))
+              ts.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter))
             ),
           })
         ),
       });
 };
 
-const codecName = identifer.fromString("Codec");
+const codecName = jsTs.identiferFromString("Codec");
 
 /**
  * ```ts
@@ -39,7 +41,7 @@ export const codecType = (type_: ts.TsType): ts.TsType =>
   });
 
 export const codecTypeAlias = (): ts.TypeAlias => {
-  const typeParameterIdentifer = identifer.fromString("T");
+  const typeParameterIdentifer = jsTs.identiferFromString("T");
   return {
     name: codecName,
     document: "バイナリと相互変換するための関数",
@@ -112,7 +114,7 @@ export const encodeLambda = (
   type_: ts.TsType,
   statementList: (valueExpr: ts.TsExpr) => ReadonlyArray<ts.Statement>
 ): ts.TsExpr => {
-  const valueName = identifer.fromString("value");
+  const valueName = jsTs.identiferFromString("value");
   return ts.TsExpr.Lambda({
     typeParameterList: [],
     parameterList: [
@@ -126,7 +128,7 @@ export const encodeLambda = (
   });
 };
 
-export const encodeReturnType = tsUtil.readonlyArrayType(ts.TsType.Number);
+export const encodeReturnType = jsTs.readonlyArrayType(ts.TsType.Number);
 /**
  * ```ts
  * (a: number, b: Uint8Array) => { readonly result: type_, readonly nextIndex: number }
@@ -155,8 +157,8 @@ export const decodeReturnType = (type_: ts.TsType): ts.TsType =>
     },
   ]);
 
-export const indexIdentifer = identifer.fromString("index");
-export const binaryIdentifer = identifer.fromString("binary");
+export const indexIdentifer = jsTs.identiferFromString("index");
+export const binaryIdentifer = jsTs.identiferFromString("binary");
 
 /**
  * ( index: number, binary: Uint8Array )
@@ -169,7 +171,7 @@ export const decodeParameterList: ReadonlyArray<ts.ParameterWithDocument> = [
   },
   {
     name: binaryIdentifer,
-    type: tsUtil.uint8ArrayType,
+    type: jsTs.uint8ArrayType,
     document: "バイナリ",
   },
 ];
@@ -218,7 +220,7 @@ export const decodeLambda = (
  * ```
  */
 export const getResult = (resultAndNextIndexExpr: ts.TsExpr): ts.TsExpr =>
-  tsUtil.get(resultAndNextIndexExpr, util.resultProperty);
+  jsTs.get(resultAndNextIndexExpr, util.resultProperty);
 
 /**
  * ```ts
@@ -226,10 +228,10 @@ export const getResult = (resultAndNextIndexExpr: ts.TsExpr): ts.TsExpr =>
  * ```
  */
 export const getNextIndex = (resultAndNextIndexExpr: ts.TsExpr): ts.TsExpr =>
-  tsUtil.get(resultAndNextIndexExpr, util.nextIndexProperty);
+  jsTs.get(resultAndNextIndexExpr, util.nextIndexProperty);
 
 /**
  * 名前の末尾に `Codec` をつける
  */
 export const codecParameterName = (name: string): ts.TsIdentifer =>
-  identifer.fromString(name + "Codec");
+  jsTs.identiferFromString(name + "Codec");

@@ -285,7 +285,7 @@ export const callNumberMethod = (
   parameterList: ReadonlyArray<TsExpr>
 ): TsExpr =>
   callMethod(
-    TsExpr.GlobalObjects(identifer.fromString("Number")),
+    TsExpr.GlobalObjects(identifer.identiferFromString("Number")),
     methodName,
     parameterList
   );
@@ -301,7 +301,7 @@ export const callMathMethod = (
   parameterList: ReadonlyArray<TsExpr>
 ): TsExpr =>
   callMethod(
-    TsExpr.GlobalObjects(identifer.fromString("Math")),
+    TsExpr.GlobalObjects(identifer.identiferFromString("Math")),
     methodName,
     parameterList
   );
@@ -312,7 +312,7 @@ export const callMathMethod = (
  * ```
  */
 export const newDate: TsExpr = TsExpr.New({
-  expr: TsExpr.GlobalObjects(identifer.fromString("Date")),
+  expr: TsExpr.GlobalObjects(identifer.identiferFromString("Date")),
   parameterList: [],
 });
 
@@ -323,7 +323,7 @@ export const newDate: TsExpr = TsExpr.New({
  */
 export const newUint8Array = (lengthOrIterable: TsExpr): TsExpr =>
   TsExpr.New({
-    expr: TsExpr.GlobalObjects(identifer.fromString("Uint8Array")),
+    expr: TsExpr.GlobalObjects(identifer.identiferFromString("Uint8Array")),
     parameterList: [lengthOrIterable],
   });
 
@@ -334,7 +334,7 @@ export const newUint8Array = (lengthOrIterable: TsExpr): TsExpr =>
  */
 export const newMap = (initKeyValueList: TsExpr): TsExpr =>
   TsExpr.New({
-    expr: TsExpr.GlobalObjects(identifer.fromString("Map")),
+    expr: TsExpr.GlobalObjects(identifer.identiferFromString("Map")),
     parameterList: [initKeyValueList],
   });
 
@@ -345,7 +345,7 @@ export const newMap = (initKeyValueList: TsExpr): TsExpr =>
  */
 export const newSet = (initValueList: TsExpr): TsExpr =>
   TsExpr.New({
-    expr: TsExpr.GlobalObjects(identifer.fromString("Set")),
+    expr: TsExpr.GlobalObjects(identifer.identiferFromString("Set")),
     parameterList: [initValueList],
   });
 
@@ -356,9 +356,11 @@ export const newSet = (initValueList: TsExpr): TsExpr =>
  */
 export const consoleLog = (expr: TsExpr): Statement =>
   Statement.EvaluateExpr(
-    callMethod(TsExpr.GlobalObjects(identifer.fromString("console")), "log", [
-      expr,
-    ])
+    callMethod(
+      TsExpr.GlobalObjects(identifer.identiferFromString("console")),
+      "log",
+      [expr]
+    )
   );
 
 /**
@@ -366,7 +368,7 @@ export const consoleLog = (expr: TsExpr): Statement =>
  */
 export const arrayType = (elementType: TsType): TsType =>
   TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(identifer.fromString("Array")),
+    type: TsType.ScopeInGlobal(identifer.identiferFromString("Array")),
     typeParameterList: [elementType],
   });
 
@@ -375,7 +377,7 @@ export const arrayType = (elementType: TsType): TsType =>
  */
 export const readonlyArrayType = (elementType: TsType): TsType =>
   TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(identifer.fromString("ReadonlyArray")),
+    type: TsType.ScopeInGlobal(identifer.identiferFromString("ReadonlyArray")),
     typeParameterList: [elementType],
   });
 
@@ -383,7 +385,7 @@ export const readonlyArrayType = (elementType: TsType): TsType =>
  * `Uint8Array`
  */
 export const uint8ArrayType: TsType = TsType.ScopeInGlobal(
-  identifer.fromString("Uint8Array")
+  identifer.identiferFromString("Uint8Array")
 );
 
 /**
@@ -391,7 +393,7 @@ export const uint8ArrayType: TsType = TsType.ScopeInGlobal(
  */
 export const promiseType = (returnType: TsType): TsType =>
   TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(identifer.fromString("Promise")),
+    type: TsType.ScopeInGlobal(identifer.identiferFromString("Promise")),
     typeParameterList: [returnType],
   });
 
@@ -399,7 +401,7 @@ export const promiseType = (returnType: TsType): TsType =>
  * `Date`
  */
 export const dateType: TsType = TsType.ScopeInGlobal(
-  identifer.fromString("Date")
+  identifer.identiferFromString("Date")
 );
 
 /**
@@ -407,7 +409,7 @@ export const dateType: TsType = TsType.ScopeInGlobal(
  */
 export const mapType = (keyType: TsType, valueType: TsType): TsType =>
   TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(identifer.fromString("Map")),
+    type: TsType.ScopeInGlobal(identifer.identiferFromString("Map")),
     typeParameterList: [keyType, valueType],
   });
 
@@ -416,7 +418,7 @@ export const mapType = (keyType: TsType, valueType: TsType): TsType =>
  */
 export const readonlyMapType = (keyType: TsType, valueType: TsType): TsType =>
   TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(identifer.fromString("ReadonlyMap")),
+    type: TsType.ScopeInGlobal(identifer.identiferFromString("ReadonlyMap")),
     typeParameterList: [keyType, valueType],
   });
 
@@ -425,7 +427,7 @@ export const readonlyMapType = (keyType: TsType, valueType: TsType): TsType =>
  */
 export const setType = (elementType: TsType): TsType =>
   TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(identifer.fromString("Set")),
+    type: TsType.ScopeInGlobal(identifer.identiferFromString("Set")),
     typeParameterList: [elementType],
   });
 
@@ -434,6 +436,6 @@ export const setType = (elementType: TsType): TsType =>
  */
 export const readonlySetType = (elementType: TsType): TsType =>
   TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(identifer.fromString("ReadonlySet")),
+    type: TsType.ScopeInGlobal(identifer.identiferFromString("ReadonlySet")),
     typeParameterList: [elementType],
   });

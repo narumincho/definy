@@ -1,21 +1,20 @@
-import * as collect from "./collect";
 import * as d from "../../data";
-import * as identifer from "./identifer";
-import * as toString from "./toString";
-import * as util from "./util";
+import { createIdentifer, initialIdentiferIndex } from "./identifer";
+import { UsedNameAndModulePathSet } from "./interface";
+import { collectInCode } from "./collect";
+import { toString } from "./toString";
 
-export { d, identifer, util };
+export * from "./identifer";
+export * from "./interface";
 
 export const generateCodeAsString = (
   code: d.JsTsCode,
   codeType: d.CodeType
 ): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
-  const usedNameAndModulePath: util.UsedNameAndModulePathSet = collect.collectInCode(
-    code
-  );
+  const usedNameAndModulePath: UsedNameAndModulePathSet = collectInCode(code);
 
-  return toString.toString(
+  return toString(
     code,
     createImportedModuleName(usedNameAndModulePath),
     codeType
@@ -27,12 +26,12 @@ export const generateCodeAsString = (
  * @param usedNameAndModulePath
  */
 const createImportedModuleName = (
-  usedNameAndModulePath: util.UsedNameAndModulePathSet
+  usedNameAndModulePath: UsedNameAndModulePathSet
 ): ReadonlyMap<string, d.TsIdentifer> => {
-  let identiferIndex = identifer.initialIdentiferIndex;
+  let identiferIndex = initialIdentiferIndex;
   const importedModuleNameMap = new Map<string, d.TsIdentifer>();
   for (const modulePath of usedNameAndModulePath.modulePathSet) {
-    const identiferAndNextIdentiferIndex = identifer.createIdentifer(
+    const identiferAndNextIdentiferIndex = createIdentifer(
       identiferIndex,
       usedNameAndModulePath.usedNameSet
     );
