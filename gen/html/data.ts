@@ -1,4 +1,4 @@
-export type htmlOption = {
+export type HtmlOption = {
   /**
    * ページ名
    *
@@ -84,7 +84,7 @@ export type Language = "Japanese" | "English" | "Esperanto";
 export type TwitterCard = "SummaryCard" | "SummaryCardWithLargeImage";
 
 /**
- * @narumincho/htmlにないHTML要素を使いたいときに使うもの。
+ * ./interface.ts にない. HTML要素を使いたいときに使うもの.
  * 低レベルAPI
  * @param name 要素名
  * @param attributes 属性
@@ -104,7 +104,8 @@ export const htmlElement = (
 });
 
 /**
- * エスケープしないカスタマイズ要素。低レベルAPI
+ * エスケープしないカスタマイズ要素.
+ * 低レベルAPI
  * ```html
  * <script type="x-shader/x-vertex">
  * attribute vec3 position;
@@ -133,7 +134,8 @@ export const htmlElementRawText = (
 });
 
 /**
- * 閉じタグがないカスタマイズ要素。低レベルAPI
+ * 閉じタグがないカスタマイズ要素.
+ * 低レベルAPI
  * `<meta name="rafya">`
  * @param name 要素名
  * @param attributes 属性
@@ -158,8 +160,8 @@ export type HtmlElement = {
    */
   readonly name: string;
   /**
-   * 属性名は正しい必要がある。
-   * value=nullの意味は、属性値がないということ。
+   * 属性名は正しい必要がある.
+   * value=nullの意味は、属性値がないということ.
    * `<button disabled>`
    */
   readonly attributes: ReadonlyMap<string, string | null>;
@@ -171,7 +173,7 @@ export type HtmlElement = {
 };
 
 /**
- * 子要素のパターン。パターンマッチングのみに使う
+ * HtmlElementの 子要素
  */
 export type HtmlChildren =
   | {

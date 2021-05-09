@@ -1,12 +1,12 @@
 import {
   Color,
   HtmlElement,
+  HtmlOption,
   Language,
   TwitterCard,
   htmlElement,
   htmlElementNoEndTag,
   htmlElementRawText,
-  htmlOption,
 } from "./data";
 
 export const escapeInHtml = (text: string): string =>
@@ -39,9 +39,9 @@ const twitterCardToString = (twitterCard: TwitterCard): string => {
 };
 
 /**
- * View を HTML に変換する. イベントの登録は行われない
+ * 文字列の HTML を生成する
  */
-export const htmlOptionToString = (option: htmlOption): string =>
+export const htmlOptionToString = (option: HtmlOption): string =>
   "<!doctype html>" +
   htmlElementToString(
     htmlElement(
@@ -72,7 +72,7 @@ export const htmlOptionToString = (option: htmlOption): string =>
     )
   );
 
-const headElement = (view: htmlOption): HtmlElement => {
+const headElement = (view: HtmlOption): HtmlElement => {
   const children: Array<HtmlElement> = [
     charsetElement,
     viewportElement,

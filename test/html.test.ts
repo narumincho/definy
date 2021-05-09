@@ -1,12 +1,12 @@
 import {
+  HtmlOption,
   colorToHexString,
   div,
-  htmlOption,
   htmlOptionToString,
 } from "../gen/html/main";
 
 describe("toString", () => {
-  const sampleHtml: htmlOption = {
+  const sampleHtml: HtmlOption = {
     appName: "テストアプリ",
     pageName: "テストページ",
     language: "Japanese",

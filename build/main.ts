@@ -161,7 +161,6 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
     await fileSystem.readJSON("package.json")
   ).devDependencies;
   const packageNameUseInFunctions = [
-    "@narumincho/html",
     "firebase-admin",
     "firebase-functions",
     "axios",
