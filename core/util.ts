@@ -1,5 +1,5 @@
 import * as d from "../data";
-import { identifer, util as tsUtil } from "../gen/jsTs/main";
+import { jsTs } from "../gen/main";
 
 const millisecondInDay = 1000 * 60 * 60 * 24;
 
@@ -26,7 +26,7 @@ export const typeToTsType = (
     );
   }
   return d.TsType.WithTypeParameter({
-    type: d.TsType.ScopeInFile(identifer.fromString(typePartName)),
+    type: d.TsType.ScopeInFile(jsTs.identiferFromString(typePartName)),
     typeParameterList: type.parameter.map((parameter) =>
       typeToTsType(parameter, allTypePartIdTypePartNameMap)
     ),
@@ -55,7 +55,7 @@ export const typePartIdPropertyName = "typePartId";
  * ```
  */
 export const callEncode = (codecExpr: d.TsExpr, value: d.TsExpr): d.TsExpr =>
-  tsUtil.callMethod(codecExpr, encodePropertyName, [value]);
+  jsTs.callMethod(codecExpr, encodePropertyName, [value]);
 
 /**
  * デコードの関数を呼ぶ
@@ -67,8 +67,7 @@ export const callDecode = (
   codecExpr: d.TsExpr,
   index: d.TsExpr,
   binary: d.TsExpr
-): d.TsExpr =>
-  tsUtil.callMethod(codecExpr, decodePropertyName, [index, binary]);
+): d.TsExpr => jsTs.callMethod(codecExpr, decodePropertyName, [index, binary]);
 
 export const toTypeName = (
   type: d.Type,

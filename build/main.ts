@@ -2,8 +2,14 @@ import * as d from "../data";
 import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
 import * as packageJsonGen from "../gen/packageJson/main";
-import * as ts from "typescript";
-import { generateCodeAsString, identifer } from "../gen/jsTs/main";
+import {
+  ModuleKind,
+  ModuleResolutionKind,
+  NewLineKind,
+  ScriptTarget,
+  createProgram,
+} from "typescript";
+import { jsTs } from "../gen/main";
 
 const clientSourceEntryPath = "./client/main.tsx";
 const functionsSourceEntryPath = "./functions/main.ts";
@@ -141,16 +147,16 @@ service cloud.firestore {
  * TypeScript の 標準のコンパイラ tsc を使う
  */
 const buildFunctionsTypeScript = (): void => {
-  ts.createProgram({
+  createProgram({
     rootNames: [functionsSourceEntryPath],
     options: {
-      target: ts.ScriptTarget.ES2020,
+      target: ScriptTarget.ES2020,
       forceConsistentCasingInFileNames: true,
-      newLine: ts.NewLineKind.LineFeed,
+      newLine: NewLineKind.LineFeed,
       lib: ["DOM", "ES2020"],
       strict: true,
-      moduleResolution: ts.ModuleResolutionKind.NodeJs,
-      module: ts.ModuleKind.CommonJS,
+      moduleResolution: ModuleResolutionKind.NodeJs,
+      module: ModuleKind.CommonJS,
       outDir: functionsDistributionPath,
     },
   }).emit();
@@ -204,26 +210,26 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
 const outputNowMode = async (mode: d.Mode): Promise<void> => {
   await fileSystem.outputFile(
     "./out.ts",
-    generateCodeAsString(
+    jsTs.generateCodeAsString(
       {
         exportDefinitionList: [
           d.ExportDefinition.Variable({
-            name: identifer.fromString("nowMode"),
+            name: jsTs.identiferFromString("nowMode"),
             document: "実行モード (ビルド時にコード生成される)",
             expr: d.TsExpr.Get({
               expr: d.TsExpr.ImportedVariable({
                 moduleName: "./data",
-                name: identifer.fromString("Mode"),
+                name: jsTs.identiferFromString("Mode"),
               }),
               propertyExpr: d.TsExpr.StringLiteral(mode),
             }),
             type: d.TsType.ImportedType({
               moduleName: "./data",
-              name: identifer.fromString("Mode"),
+              name: jsTs.identiferFromString("Mode"),
             }),
           }),
           d.ExportDefinition.Variable({
-            name: identifer.fromString("version"),
+            name: jsTs.identiferFromString("version"),
             document: "バージョン名",
             expr: d.TsExpr.StringLiteral(
               mode === d.Mode.Develop

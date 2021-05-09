@@ -7,7 +7,7 @@ import * as int32 from "./kernelType/int32";
 import * as kernelString from "./kernelType/string";
 import * as list from "./kernelType/list";
 import * as util from "./util";
-import { identifer, util as tsUtil } from "../gen/jsTs/main";
+import { jsTs } from "../gen/main";
 
 export const typePartMapToVariable = (
   typePartMap: ReadonlyMap<data.TypePartId, data.TypePart>,
@@ -24,7 +24,7 @@ const typePartToVariable = (
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
 ): data.Variable => {
   return {
-    name: identifer.fromString(typePart.name),
+    name: jsTs.identiferFromString(typePart.name),
     document: typePart.description + "\n@typePartId " + (typePartId as string),
     type: typePartToVariableType(typePart, allTypePartIdTypePartNameMap),
     expr: typePartToVariableExpr(
@@ -48,7 +48,7 @@ const typePartToVariableType = (
   const typePartIdMemberType: data.TsMemberType = {
     name: util.typePartIdPropertyName,
     required: true,
-    type: data.TsType.ScopeInFile(identifer.fromString("TypePartId")),
+    type: data.TsType.ScopeInFile(jsTs.identiferFromString("TypePartId")),
     document: "definy.app内 の 型パーツの Id",
   };
 
@@ -56,9 +56,9 @@ const typePartToVariableType = (
     case "Product": {
       /** ジェネリック付きの型 */
       const type = data.TsType.WithTypeParameter({
-        type: data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
+        type: data.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
         typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-          data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
+          data.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
         ),
       });
       return data.TsType.Object([
@@ -70,7 +70,7 @@ const typePartToVariableType = (
           required: true,
           type: data.TsType.Function({
             typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-              identifer.fromString(typeParameter.name)
+              jsTs.identiferFromString(typeParameter.name)
             ),
             parameterList: [type],
             return: type,
@@ -89,7 +89,7 @@ const typePartToVariableType = (
             name: pattern.name,
             required: true,
             type: patternToTagType(
-              identifer.fromString(typePart.name),
+              jsTs.identiferFromString(typePart.name),
               typePart.typeParameterList,
               pattern,
               allTypePartIdTypePartNameMap
@@ -108,7 +108,7 @@ const patternToTagType = (
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
 ) => {
   const typeParameterIdentiferList = typeParameterList.map((typeParameter) =>
-    identifer.fromString(typeParameter.name)
+    jsTs.identiferFromString(typeParameter.name)
   );
   const returnType = data.TsType.WithTypeParameter({
     type: data.TsType.ScopeInFile(typeName),
@@ -153,20 +153,20 @@ const typePartToVariableExpr = (
     value: data.TsExpr.TypeAssertion(
       data.TypeAssertion.helper({
         expr: data.TsExpr.StringLiteral(typePartId),
-        type: data.TsType.ScopeInFile(identifer.fromString("TypePartId")),
+        type: data.TsType.ScopeInFile(jsTs.identiferFromString("TypePartId")),
       })
     ),
   });
   switch (typePart.body._) {
     case "Product": {
-      const parameterIdentifer = identifer.fromString(
+      const parameterIdentifer = jsTs.identiferFromString(
         util.firstLowerCase(typePart.name)
       );
       /** ジェネリック付きの型 */
       const type = data.TsType.WithTypeParameter({
-        type: data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
+        type: data.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
         typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-          data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
+          data.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
         ),
       });
       return data.TsExpr.ObjectLiteral([
@@ -181,7 +181,7 @@ const typePartToVariableExpr = (
               },
             ],
             typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-              identifer.fromString(typeParameter.name)
+              jsTs.identiferFromString(typeParameter.name)
             ),
             returnType: type,
             statementList: [
@@ -264,15 +264,15 @@ const patternWithParameterToTagExpr = (
     value: data.TsExpr.StringLiteral(pattern.name),
   });
   const returnType = data.TsType.WithTypeParameter({
-    type: data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
+    type: data.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
     typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-      data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
+      data.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
     ),
   });
 
   switch (pattern.parameter._) {
     case "Just": {
-      const parameterIdentifer = identifer.fromString(
+      const parameterIdentifer = jsTs.identiferFromString(
         util.typeToMemberOrParameterName(
           pattern.parameter.value,
           allTypePartIdTypePartNameMap
@@ -280,7 +280,7 @@ const patternWithParameterToTagExpr = (
       );
       return data.TsExpr.Lambda({
         typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-          identifer.fromString(typeParameter.name)
+          jsTs.identiferFromString(typeParameter.name)
         ),
         parameterList: [
           {
@@ -315,7 +315,7 @@ const patternWithParameterToTagExpr = (
       }
       return data.TsExpr.Lambda({
         typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-          identifer.fromString(typeParameter.name)
+          jsTs.identiferFromString(typeParameter.name)
         ),
         parameterList: [],
         returnType,
@@ -329,7 +329,7 @@ const patternWithParameterToTagExpr = (
 /** カスタム型の式のcodecプロパティの型 */
 const typePartToCodecType = (typePart: data.TypePart): data.TsType =>
   codec.codecTypeWithTypeParameter(
-    data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
+    data.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
     typePart.typeParameterList.map((typeParameter) => typeParameter.name)
   );
 
@@ -342,19 +342,19 @@ const codecExprDefinition = (
   }
   return data.TsExpr.Lambda({
     typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-      identifer.fromString(typeParameter.name)
+      jsTs.identiferFromString(typeParameter.name)
     ),
     parameterList: typePart.typeParameterList.map((typeParameter) => ({
       name: codec.codecParameterName(typeParameter.name),
       type: codec.codecType(
-        data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
+        data.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
       ),
     })),
     returnType: codec.codecType(
       data.TsType.WithTypeParameter({
-        type: data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
+        type: data.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
         typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-          data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
+          data.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
         ),
       })
     ),
@@ -391,9 +391,9 @@ const encodeExprDefinition = (
 ): data.TsExpr =>
   codec.encodeLambda(
     data.TsType.WithTypeParameter({
-      type: data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
+      type: data.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
       typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-        data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
+        data.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
       ),
     }),
     (valueVar): ReadonlyArray<data.Statement> => {
@@ -461,20 +461,20 @@ const productEncodeDefinitionStatementList = (
     return [data.Statement.Return(data.TsExpr.ArrayLiteral([]))];
   }
   let e = data.TsExpr.Call({
-    expr: tsUtil.get(
+    expr: jsTs.get(
       codecExprUse(firstMember.type, allTypePartIdTypePartNameMap),
       util.encodePropertyName
     ),
-    parameterList: [tsUtil.get(parameter, firstMember.name)],
+    parameterList: [jsTs.get(parameter, firstMember.name)],
   });
   for (const member of memberList.slice(1)) {
-    e = tsUtil.callMethod(e, "concat", [
+    e = jsTs.callMethod(e, "concat", [
       data.TsExpr.Call({
-        expr: tsUtil.get(
+        expr: jsTs.get(
           codecExprUse(member.type, allTypePartIdTypePartNameMap),
           util.encodePropertyName
         ),
-        parameterList: [tsUtil.get(parameter, member.name)],
+        parameterList: [jsTs.get(parameter, member.name)],
       }),
     ]);
   }
@@ -489,7 +489,7 @@ const sumEncodeDefinitionStatementList = (
   data.Statement.Switch({
     expr: util.isTagTypeAllNoParameter(patternList)
       ? parameter
-      : tsUtil.get(parameter, "_"),
+      : jsTs.get(parameter, "_"),
     patternList: patternList.map((pattern, index) =>
       patternToSwitchPattern(
         pattern,
@@ -510,7 +510,7 @@ const patternToSwitchPattern = (
   const returnExpr = ((): data.TsExpr => {
     switch (patternList.parameter._) {
       case "Just":
-        return tsUtil.callMethod(
+        return jsTs.callMethod(
           data.TsExpr.ArrayLiteral([
             { expr: data.TsExpr.NumberLiteral(index), spread: false },
           ]),
@@ -518,7 +518,7 @@ const patternToSwitchPattern = (
           [
             encodeExprUse(
               patternList.parameter.value,
-              tsUtil.get(
+              jsTs.get(
                 parameter,
                 util.typeToMemberOrParameterName(
                   patternList.parameter.value,
@@ -586,9 +586,9 @@ const decodeExprDefinition = (
 ): data.TsExpr => {
   return codec.decodeLambda(
     data.TsType.WithTypeParameter({
-      type: data.TsType.ScopeInFile(identifer.fromString(typePart.name)),
+      type: data.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
       typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-        data.TsType.ScopeInFile(identifer.fromString(typeParameter.name))
+        data.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
       ),
     }),
     (parameterIndex, parameterBinary): ReadonlyArray<data.Statement> => {
@@ -649,7 +649,7 @@ const productDecodeDefinitionStatementList = (
 ): ReadonlyArray<data.Statement> => {
   const resultAndNextIndexNameIdentifer = (
     member: data.Member
-  ): data.TsIdentifer => identifer.fromString(member.name + "AndNextIndex");
+  ): data.TsIdentifer => jsTs.identiferFromString(member.name + "AndNextIndex");
 
   const memberDecoderCode = memberList.reduce<{
     nextIndexExpr: data.TsExpr;
@@ -715,7 +715,7 @@ const sumDecodeDefinitionStatementList = (
   noTypeParameter: boolean,
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
 ): ReadonlyArray<data.Statement> => {
-  const patternIndexAndNextIndexName = identifer.fromString("patternIndex");
+  const patternIndexAndNextIndexName = jsTs.identiferFromString("patternIndex");
   const patternIndexAndNextIndexVar = data.TsExpr.Variable(
     patternIndexAndNextIndexName
   );
@@ -758,14 +758,14 @@ const tagPatternCode = (
   switch (pattern.parameter._) {
     case "Just":
       return data.Statement.If({
-        condition: tsUtil.equal(
+        condition: jsTs.equal(
           codec.getResult(patternIndexAndNextIndexVar),
           data.TsExpr.NumberLiteral(index)
         ),
         thenStatementList: [
           data.Statement.VariableDefinition({
             isConst: true,
-            name: identifer.fromString("result"),
+            name: jsTs.identiferFromString("result"),
             type: codec.decodeReturnType(
               util.typeToTsType(
                 pattern.parameter.value,
@@ -786,19 +786,19 @@ const tagPatternCode = (
               pattern.name,
               data.Maybe.Just(
                 codec.getResult(
-                  data.TsExpr.Variable(identifer.fromString("result"))
+                  data.TsExpr.Variable(jsTs.identiferFromString("result"))
                 )
               )
             ),
             codec.getNextIndex(
-              data.TsExpr.Variable(identifer.fromString("result"))
+              data.TsExpr.Variable(jsTs.identiferFromString("result"))
             )
           ),
         ],
       });
     case "Nothing":
       return data.Statement.If({
-        condition: tsUtil.equal(
+        condition: jsTs.equal(
           codec.getResult(patternIndexAndNextIndexVar),
           data.TsExpr.NumberLiteral(index)
         ),
@@ -885,8 +885,8 @@ const patternUse = (
   tagName: string,
   parameter: data.Maybe<data.TsExpr>
 ): data.TsExpr => {
-  const tagExpr = tsUtil.get(
-    data.TsExpr.Variable(identifer.fromString(typePartName)),
+  const tagExpr = jsTs.get(
+    data.TsExpr.Variable(jsTs.identiferFromString(typePartName)),
     tagName
   );
   switch (parameter._) {
@@ -909,7 +909,7 @@ const encodeExprUse = (
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
 ): data.TsExpr =>
   data.TsExpr.Call({
-    expr: tsUtil.get(
+    expr: jsTs.get(
       codecExprUse(type_, allTypePartIdTypePartNameMap),
       util.encodePropertyName
     ),
@@ -923,7 +923,7 @@ const decodeExprUse = (
   allTypePartIdTypePartNameMap: ReadonlyMap<data.TypePartId, string>
 ) =>
   data.TsExpr.Call({
-    expr: tsUtil.get(
+    expr: jsTs.get(
       codecExprUse(type_, allTypePartIdTypePartNameMap),
       util.decodePropertyName
     ),
@@ -957,8 +957,8 @@ const typePartNameToCodecExpr = (typePartName: string): data.TsExpr => {
   if (util.isFirstLowerCaseName(typePartName)) {
     return data.TsExpr.Variable(codec.codecParameterName(typePartName));
   }
-  return tsUtil.get(
-    data.TsExpr.Variable(identifer.fromString(typePartName)),
+  return jsTs.get(
+    data.TsExpr.Variable(jsTs.identiferFromString(typePartName)),
     util.codecPropertyName
   );
 };

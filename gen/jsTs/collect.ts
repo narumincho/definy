@@ -10,7 +10,7 @@ import {
   TypeAlias,
   Variable,
 } from "../../data";
-import { UsedNameAndModulePathSet } from "./util";
+import { UsedNameAndModulePathSet } from "./interface";
 
 /**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める

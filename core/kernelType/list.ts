@@ -1,27 +1,27 @@
 import * as c from "./codec";
 import * as int32 from "./int32";
 import * as util from "../util";
-import { d, identifer, util as tsUtil } from "../../gen/jsTs/main";
+import { d, jsTs } from "../../gen/main";
 
-export const name = identifer.fromString("List");
+export const name = jsTs.identiferFromString("List");
 
 export const type = (element: d.TsType): d.TsType =>
-  tsUtil.readonlyArrayType(element);
+  jsTs.readonlyArrayType(element);
 
 export const encodeDefinitionStatementList = (
   typeParameterName: string,
   valueVar: d.TsExpr
 ): ReadonlyArray<d.Statement> => {
-  const resultName = identifer.fromString("result");
-  const elementName = identifer.fromString("element");
+  const resultName = jsTs.identiferFromString("result");
+  const elementName = jsTs.identiferFromString("element");
   return [
     d.Statement.VariableDefinition({
       isConst: false,
       name: resultName,
-      type: tsUtil.arrayType(d.TsType.Number),
+      type: jsTs.arrayType(d.TsType.Number),
       expr: d.TsExpr.TypeAssertion({
-        expr: int32.encode(tsUtil.get(valueVar, "length")),
-        type: tsUtil.arrayType(d.TsType.Number),
+        expr: int32.encode(jsTs.get(valueVar, "length")),
+        type: jsTs.arrayType(d.TsType.Number),
       }),
     }),
     d.Statement.ForOf({
@@ -31,7 +31,7 @@ export const encodeDefinitionStatementList = (
         d.Statement.Set({
           target: d.TsExpr.Variable(resultName),
           operatorMaybe: d.Maybe.Nothing(),
-          expr: tsUtil.callMethod(d.TsExpr.Variable(resultName), "concat", [
+          expr: jsTs.callMethod(d.TsExpr.Variable(resultName), "concat", [
             util.callEncode(
               d.TsExpr.Variable(c.codecParameterName(typeParameterName)),
               d.TsExpr.Variable(elementName)
@@ -50,15 +50,15 @@ export const decodeDefinitionStatementList = (
   parameterBinary: d.TsExpr
 ): ReadonlyArray<d.Statement> => {
   const elementTypeVar = d.TsType.ScopeInFile(
-    identifer.fromString(typeParameterName)
+    jsTs.identiferFromString(typeParameterName)
   );
-  const resultName = identifer.fromString("result");
+  const resultName = jsTs.identiferFromString("result");
   const resultVar = d.TsExpr.Variable(resultName);
-  const lengthResultName = identifer.fromString("lengthResult");
+  const lengthResultName = jsTs.identiferFromString("lengthResult");
   const lengthResultVar = d.TsExpr.Variable(lengthResultName);
-  const resultAndNextIndexName = identifer.fromString("resultAndNextIndex");
+  const resultAndNextIndexName = jsTs.identiferFromString("resultAndNextIndex");
   const resultAndNextIndexVar = d.TsExpr.Variable(resultAndNextIndexName);
-  const nextIndexName = identifer.fromString("nextIndex");
+  const nextIndexName = jsTs.identiferFromString("nextIndex");
   const nextIndexVar = d.TsExpr.Variable(nextIndexName);
 
   return [
@@ -77,11 +77,11 @@ export const decodeDefinitionStatementList = (
     d.Statement.VariableDefinition({
       isConst: true,
       name: resultName,
-      type: tsUtil.arrayType(elementTypeVar),
+      type: jsTs.arrayType(elementTypeVar),
       expr: d.TsExpr.ArrayLiteral([]),
     }),
     d.Statement.For({
-      counterVariableName: identifer.fromString("i"),
+      counterVariableName: jsTs.identiferFromString("i"),
       untilExpr: c.getResult(lengthResultVar),
       statementList: [
         d.Statement.VariableDefinition({
@@ -95,7 +95,7 @@ export const decodeDefinitionStatementList = (
           ),
         }),
         d.Statement.EvaluateExpr(
-          tsUtil.callMethod(resultVar, "push", [
+          jsTs.callMethod(resultVar, "push", [
             c.getResult(resultAndNextIndexVar),
           ])
         ),
