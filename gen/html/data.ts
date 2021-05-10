@@ -68,7 +68,6 @@ export type HtmlOption = {
   readonly children: ReadonlyArray<HtmlElement>;
 };
 
-/** 色を表現する rgbは 0...1 の範囲でなければならない */
 export type Color = {
   readonly r: number;
   readonly g: number;
@@ -83,13 +82,6 @@ export type Language = "Japanese" | "English" | "Esperanto";
 /** Twitter Card。Twitterでシェアしたときの表示をどうするか */
 export type TwitterCard = "SummaryCard" | "SummaryCardWithLargeImage";
 
-/**
- * ./interface.ts にない. HTML要素を使いたいときに使うもの.
- * 低レベルAPI
- * @param name 要素名
- * @param attributes 属性
- * @param children 子要素
- */
 export const htmlElement = (
   name: string,
   attributes: ReadonlyMap<string, string | null>,
@@ -103,23 +95,6 @@ export const htmlElement = (
       : { tag: "elementList", value: children },
 });
 
-/**
- * エスケープしないカスタマイズ要素.
- * 低レベルAPI
- * ```html
- * <script type="x-shader/x-vertex">
- * attribute vec3 position;
- * uniform   mat4 mvpMatrix;
- *
- * void main(void) {
- *     gl_Position = mvpMatrix * vec4(position, 1.0);
- * }
- * </script>
- * ```
- * @param name 要素名
- * @param attributes 属性
- * @param text エスケープしないテキスト
- */
 export const htmlElementRawText = (
   name: string,
   attributes: ReadonlyMap<string, string | null>,
@@ -133,13 +108,6 @@ export const htmlElementRawText = (
   },
 });
 
-/**
- * 閉じタグがないカスタマイズ要素.
- * 低レベルAPI
- * `<meta name="rafya">`
- * @param name 要素名
- * @param attributes 属性
- */
 export const htmlElementNoEndTag = (
   name: string,
   attributes: ReadonlyMap<string, string | null>
@@ -159,16 +127,7 @@ export type HtmlElement = {
    * 要素名 `h1` や `div` など
    */
   readonly name: string;
-  /**
-   * 属性名は正しい必要がある.
-   * value=nullの意味は、属性値がないということ.
-   * `<button disabled>`
-   */
   readonly attributes: ReadonlyMap<string, string | null>;
-  /**
-   * 子の要素
-   * `<path d="M1,2 L20,53"/>`のような閉じカッコの省略はしない
-   */
   readonly children: HtmlChildren;
 };
 

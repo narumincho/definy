@@ -1,71 +1,98 @@
 import * as fs from "fs-extra";
 import * as packageJsonGen from "../gen/packageJson/main";
-import * as ts from "typescript";
+import {
+  ModuleKind,
+  ModuleResolutionKind,
+  NewLineKind,
+  ScriptTarget,
+  createProgram,
+} from "typescript";
 
 const distributionPath = "./distribution";
 
-fs.removeSync(distributionPath);
-console.log(`${distributionPath}をすべて削除完了!`);
+const removeWithLog = async (path: string): Promise<void> => {
+  console.group(`${path}を削除`);
+  await fs.remove(path);
+  console.groupEnd();
+};
 
-ts.createProgram({
-  rootNames: ["./gen/main.ts"],
-  options: {
-    target: ts.ScriptTarget.ES2020,
-    module: ts.ModuleKind.CommonJS,
-    lib: ["ES2020", "DOM"],
-    strict: true,
-    moduleResolution: ts.ModuleResolutionKind.NodeJs,
-    newLine: ts.NewLineKind.LineFeed,
-    forceConsistentCasingInFileNames: true,
-    declaration: true,
-    noUncheckedIndexedAccess: true,
-    outDir: distributionPath,
-  },
-}).emit();
+const mkdirWithLog = async (path: string): Promise<void> => {
+  console.group(`${path} ファイルを作成`);
+  await fs.mkdir(path);
+  console.groupEnd();
+};
 
-const packageJsonResult = packageJsonGen.toString({
-  author: "narumincho",
-  dependencies: new Map(),
-  description: "HTML, TypeScript, JavaScript, package.json, wasm Generator",
-  entryPoint: "./gen/main.js",
-  gitHubAccountName: "narumincho",
-  gitHubRepositoryName: "Definy",
-  homepage: "https://github.com/narumincho/Definy",
-  name: "@narumincho/gen",
-  nodeVersion: ">=14",
-  typeFilePath: "./gen/main.d.ts",
-  version: "1.0.1",
-});
+const copyWithLog = async (
+  source: string,
+  distribution: string
+): Promise<void> => {
+  console.group(`${source} → ${distribution} にコピー`);
+  await fs.copy(source, distribution);
+  console.groupEnd();
+};
 
-if (packageJsonResult._ === "Error") {
-  throw new Error(packageJsonResult.error);
-}
+const moveWithLog = async (
+  source: string,
+  distribution: string
+): Promise<void> => {
+  console.group(`${source} → ${distribution} に移動`);
+  await fs.move(source, distribution);
+  console.groupEnd();
+};
 
-fs.outputFile(`${distributionPath}/package.json`, packageJsonResult.ok);
+const build = async (): Promise<void> => {
+  await removeWithLog(distributionPath);
+  await mkdirWithLog(distributionPath);
+  await copyWithLog("./data.ts", `${distributionPath}/data.ts`);
+  await mkdirWithLog(`${distributionPath}/gen`);
+  await copyWithLog("./gen", `${distributionPath}/gen`);
+  await moveWithLog(
+    `${distributionPath}/gen/README.md`,
+    `${distributionPath}/README.md`
+  );
+  await moveWithLog(
+    `${distributionPath}/gen/LICENCE`,
+    `${distributionPath}/LICENCE`
+  );
 
-fs.outputFile(
-  `${distributionPath}/LICENCE`,
-  `MIT License
+  createProgram({
+    rootNames: ["./gen/main.ts"],
+    options: {
+      target: ScriptTarget.ES2020,
+      lib: ["ES2020", "DOM"],
+      esModuleInterop: true,
+      strict: true,
+      forceConsistentCasingInFileNames: true,
+      module: ModuleKind.CommonJS,
+      moduleResolution: ModuleResolutionKind.NodeJs,
+      isolatedModules: true,
+      skipLibCheck: true,
+      noUncheckedIndexedAccess: true,
+      newLine: NewLineKind.LineFeed,
+      outDir: distributionPath,
+    },
+  }).emit();
 
-Copyright (c) 2021 narumincho
+  const packageJsonResult = packageJsonGen.toString({
+    author: "narumincho",
+    dependencies: new Map(),
+    description: "HTML, TypeScript, JavaScript, package.json, wasm Generator",
+    entryPoint: "./gen/main.js",
+    gitHubAccountName: "narumincho",
+    gitHubRepositoryName: "Definy",
+    homepage: "https://github.com/narumincho/Definy",
+    name: "@narumincho/gen",
+    nodeVersion: ">=14",
+    typeFilePath: "./gen/main.ts",
+    version: "1.0.2",
+  });
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+  if (packageJsonResult._ === "Error") {
+    throw new Error(packageJsonResult.error);
+  }
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+  await fs.outputFile(`${distributionPath}/package.json`, packageJsonResult.ok);
+  console.log("@narumincho/gen の ビルドに成功!");
+};
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.`
-);
-
-fs.copy(`./gen/README.md`, `${distributionPath}/README.md`);
+build();
