@@ -48,6 +48,7 @@
     "firebase-admin": "9.7.0",
     "firebase-functions": "3.13.2",
     "fs-extra": "10.0.0",
+    "fuse-box": "^4.0.1-next.4",
     "jest": "26.6.3",
     "jimp": "0.16.1",
     "jsonwebtoken": "8.5.1",
