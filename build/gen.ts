@@ -84,7 +84,7 @@ const build = async (): Promise<void> => {
     name: "@narumincho/gen",
     nodeVersion: ">=14",
     typeFilePath: "./gen/main.ts",
-    version: "1.0.1",
+    version: "1.0.2",
   });
 
   if (packageJsonResult._ === "Error") {
