@@ -156,32 +156,30 @@ const tagCountAndIndexToGridArea = (
   return `${y} / ${x} / ${y + 1} / ${x + 1}`;
 };
 
-const SumDetailView: ElementOperation<
-  SumSelection,
-  SumValue
->["detailView"] = React.memo((props) => {
-  if (props.selection === undefined) {
+const SumDetailView: ElementOperation<SumSelection, SumValue>["detailView"] =
+  React.memo((props) => {
+    if (props.selection === undefined) {
+      return (
+        <div
+          className={css({
+            color: "#ddd",
+          })}
+        >
+          sum(
+          {props.value.tagList.map((item) => item.name).join(",")})
+        </div>
+      );
+    }
+    if (props.value.value === undefined) {
+      return <div>sum の選択している値がない</div>;
+    }
     return (
-      <div
-        className={css({
-          color: "#ddd",
-        })}
-      >
-        sum(
-        {props.value.tagList.map((item) => item.name).join(",")})
-      </div>
+      <commonElement.detailView
+        value={props.value.value}
+        selection={props.selection.selection}
+      />
     );
-  }
-  if (props.value.value === undefined) {
-    return <div>sum の選択している値がない</div>;
-  }
-  return (
-    <commonElement.detailView
-      value={props.value.value}
-      selection={props.selection.selection}
-    />
-  );
-});
+  });
 SumDetailView.displayName = "SumDetailView";
 
 export const sumOperation: ElementOperation<SumSelection, SumValue> = {

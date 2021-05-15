@@ -10,8 +10,10 @@ export const project1: d.Project = {
   name: "プロジェクト名",
   createAccountId: account1Id,
   createTime: { day: 0, millisecond: 0 },
-  iconHash: "4fd10948344af0b16748efef0f2015700c87554be13036e13b99a56fc422ed02" as d.ImageHash,
-  imageHash: "3a08c6750c510132e89a7c16f31aabfc6370d443cdc9ed05ab3346dbf5456bdb" as d.ImageHash,
+  iconHash:
+    "4fd10948344af0b16748efef0f2015700c87554be13036e13b99a56fc422ed02" as d.ImageHash,
+  imageHash:
+    "3a08c6750c510132e89a7c16f31aabfc6370d443cdc9ed05ab3346dbf5456bdb" as d.ImageHash,
   updateTime: { day: 0, millisecond: 0 },
 };
 
@@ -21,8 +23,10 @@ export const project2: d.Project = {
   name: "プロジェクト2",
   createAccountId: account1Id,
   createTime: { day: 0, millisecond: 0 },
-  iconHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
-  imageHash: "3204f96f9e58c0d720c39599747e7568872a396b3442e1cfe7607d041901277c" as d.ImageHash,
+  iconHash:
+    "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
+  imageHash:
+    "3204f96f9e58c0d720c39599747e7568872a396b3442e1cfe7607d041901277c" as d.ImageHash,
   updateTime: { day: 0, millisecond: 0 },
 };
 
@@ -59,7 +63,8 @@ export const accountResource: UseDefinyAppResult["accountResource"] = {
       data: {
         name: "サンプルアカウント",
         createTime: { day: 0, millisecond: 0 },
-        imageHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
+        imageHash:
+          "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
         introduction: "対戦よろしくおねがいします",
       },
       getTime: { day: 0, millisecond: 0 },
@@ -67,26 +72,29 @@ export const accountResource: UseDefinyAppResult["accountResource"] = {
   },
 };
 
-export const typePartIdListInProjectResource: UseDefinyAppResult["typePartIdListInProjectResource"] = {
-  forciblyRequestToServer: action(
-    "強制的にプロジェクトに属する型パーツ一覧を取得しようとした"
-  ),
-  requestToServerIfEmpty: action(
-    "キャッシュになければ, プロジェクトに属する質問を取得しようとした"
-  ),
-  getFromMemoryCache: ():
-    | d.ResourceState<ReadonlyArray<d.TypePartId>>
-    | undefined => {
-    return d.ResourceState.Loaded({
-      data: [typePart1Id, listTypePartId, resultTypePartId],
-      getTime: { day: 0, millisecond: 0 },
-    });
-  },
-};
+export const typePartIdListInProjectResource: UseDefinyAppResult["typePartIdListInProjectResource"] =
+  {
+    forciblyRequestToServer: action(
+      "強制的にプロジェクトに属する型パーツ一覧を取得しようとした"
+    ),
+    requestToServerIfEmpty: action(
+      "キャッシュになければ, プロジェクトに属する質問を取得しようとした"
+    ),
+    getFromMemoryCache: ():
+      | d.ResourceState<ReadonlyArray<d.TypePartId>>
+      | undefined => {
+      return d.ResourceState.Loaded({
+        data: [typePart1Id, listTypePartId, resultTypePartId],
+        getTime: { day: 0, millisecond: 0 },
+      });
+    },
+  };
 
 export const typePart1Id = "500d9bc147fe8c1efaa5fb6c8222ce2e" as d.TypePartId;
-export const listTypePartId = "97c3b7967f35d2dcf34332fe769bc773" as d.TypePartId;
-export const resultTypePartId = "38fd51297bf15fd87254974ebc36d43f" as d.TypePartId;
+export const listTypePartId =
+  "97c3b7967f35d2dcf34332fe769bc773" as d.TypePartId;
+export const resultTypePartId =
+  "38fd51297bf15fd87254974ebc36d43f" as d.TypePartId;
 
 export const typePart: d.TypePart = {
   name: "サンプル型パーツ",

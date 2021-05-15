@@ -181,9 +181,9 @@ const setResource = <id extends string, data>(
         );
       };
 
-      const getRequest: IDBRequest<
-        undefined | d.WithTime<data>
-      > = transaction.objectStore(objectStoreName).get(id);
+      const getRequest: IDBRequest<undefined | d.WithTime<data>> = transaction
+        .objectStore(objectStoreName)
+        .get(id);
     });
   });
 

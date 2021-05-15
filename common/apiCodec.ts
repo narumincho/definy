@@ -7,13 +7,11 @@ export type ApiCodec<Request, Response> = {
   response: d.Codec<Response>;
 };
 
-export const requestLogInUrl: ApiCodec<
-  d.RequestLogInUrlRequestData,
-  d.String
-> = {
-  request: d.RequestLogInUrlRequestData.codec,
-  response: d.String.codec,
-};
+export const requestLogInUrl: ApiCodec<d.RequestLogInUrlRequestData, d.String> =
+  {
+    request: d.RequestLogInUrlRequestData.codec,
+    response: d.String.codec,
+  };
 
 export const getAccountByAccountToken: ApiCodec<
   d.AccountToken,
@@ -25,13 +23,11 @@ export const getAccountByAccountToken: ApiCodec<
   ),
 };
 
-export const getAccount: ApiCodec<
-  d.AccountId,
-  d.WithTime<d.Maybe<d.Account>>
-> = {
-  request: d.AccountId.codec,
-  response: d.WithTime.codec(d.Maybe.codec(d.Account.codec)),
-};
+export const getAccount: ApiCodec<d.AccountId, d.WithTime<d.Maybe<d.Account>>> =
+  {
+    request: d.AccountId.codec,
+    response: d.WithTime.codec(d.Maybe.codec(d.Account.codec)),
+  };
 
 export const getImageFile: ApiCodec<d.ImageHash, d.Binary> = {
   request: d.ImageHash.codec,
@@ -58,13 +54,11 @@ export const getTop50Project: ApiCodec<
   ),
 };
 
-export const getProject: ApiCodec<
-  d.ProjectId,
-  d.WithTime<d.Maybe<d.Project>>
-> = {
-  request: d.ProjectId.codec,
-  response: d.WithTime.codec(d.Maybe.codec(d.Project.codec)),
-};
+export const getProject: ApiCodec<d.ProjectId, d.WithTime<d.Maybe<d.Project>>> =
+  {
+    request: d.ProjectId.codec,
+    response: d.WithTime.codec(d.Maybe.codec(d.Project.codec)),
+  };
 
 export const getTypePartByProjectId: ApiCodec<
   d.ProjectId,

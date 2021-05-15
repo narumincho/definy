@@ -263,41 +263,39 @@ const SelectionItem: React.VFC<{
 });
 SelectionItem.displayName = "SelectionItem";
 
-const ListDetailView: ElementOperation<
-  ListSelection,
-  ListValue
->["detailView"] = React.memo((props) => {
-  if (props.selection === undefined) {
+const ListDetailView: ElementOperation<ListSelection, ListValue>["detailView"] =
+  React.memo((props) => {
+    if (props.selection === undefined) {
+      return (
+        <div>
+          <div>要素数: {props.value.items.length}</div>
+          {props.value.deleteAll === undefined ? (
+            <></>
+          ) : (
+            <Button onClick={props.value.deleteAll}>すべての要素を削除</Button>
+          )}
+        </div>
+      );
+    }
+    const index = props.selection.index;
+    const item = props.value.items[index];
+    if (item === undefined) {
+      return <div>存在しないインデックスを指定している</div>;
+    }
+    if (props.selection.selection === undefined) {
+      return (
+        <div>
+          <div>リストインデックス: {index}</div>
+        </div>
+      );
+    }
     return (
-      <div>
-        <div>要素数: {props.value.items.length}</div>
-        {props.value.deleteAll === undefined ? (
-          <></>
-        ) : (
-          <Button onClick={props.value.deleteAll}>すべての要素を削除</Button>
-        )}
-      </div>
+      <commonElement.detailView
+        value={item.commonValue}
+        selection={props.selection.selection}
+      />
     );
-  }
-  const index = props.selection.index;
-  const item = props.value.items[index];
-  if (item === undefined) {
-    return <div>存在しないインデックスを指定している</div>;
-  }
-  if (props.selection.selection === undefined) {
-    return (
-      <div>
-        <div>リストインデックス: {index}</div>
-      </div>
-    );
-  }
-  return (
-    <commonElement.detailView
-      value={item.commonValue}
-      selection={props.selection.selection}
-    />
-  );
-});
+  });
 ListDetailView.displayName = "ListDetailView";
 
 export const listOperation: ElementOperation<ListSelection, ListValue> = {

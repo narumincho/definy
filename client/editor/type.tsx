@@ -86,9 +86,10 @@ const getTypePartNameFromTypePartId = (
   if (scopeTypePart === undefined || scopeTypePart._ !== "Loaded") {
     return { type: "none", name: "???", typeParameterNameList: [] };
   }
-  const selectedTypePart = scopeTypePart.dataWithTime.data.typeParameterList.find(
-    (param) => param.typePartId === typePartId
-  );
+  const selectedTypePart =
+    scopeTypePart.dataWithTime.data.typeParameterList.find(
+      (param) => param.typePartId === typePartId
+    );
   if (selectedTypePart === undefined) {
     const resource = typePartResource.getFromMemoryCache(typePartId);
     if (resource === undefined) {
@@ -183,65 +184,63 @@ const TypeArgument: React.VFC<{
 });
 TypeArgument.displayName = "TypeArgument";
 
-const TypeDetailView: ElementOperation<
-  TypeSelection,
-  TypeValue
->["detailView"] = React.memo((props) => {
-  const { text, element } = useOneLineTextEditor({
-    id: "search",
-    initText: "",
-  });
-  React.useEffect(() => {
-    props.value.typePartResource.requestToServerIfEmpty(
-      props.value.type.typePartId
-    );
-  }, [props.value.type.typePartId, props.value.typePartResource]);
+const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
+  React.memo((props) => {
+    const { text, element } = useOneLineTextEditor({
+      id: "search",
+      initText: "",
+    });
+    React.useEffect(() => {
+      props.value.typePartResource.requestToServerIfEmpty(
+        props.value.type.typePartId
+      );
+    }, [props.value.type.typePartId, props.value.typePartResource]);
 
-  React.useEffect(() => {
-    props.value.typePartIdListInProjectResource.requestToServerIfEmpty(
-      props.value.projectId
-    );
-  }, [props.value.typePartIdListInProjectResource, props.value.projectId]);
+    React.useEffect(() => {
+      props.value.typePartIdListInProjectResource.requestToServerIfEmpty(
+        props.value.projectId
+      );
+    }, [props.value.typePartIdListInProjectResource, props.value.projectId]);
 
-  const onChange = (type: d.Type): void => {
-    props.value.onChange(
-      setTypePartAtSelection(props.value.type, props.selection, type)
-    );
-  };
+    const onChange = (type: d.Type): void => {
+      props.value.onChange(
+        setTypePartAtSelection(props.value.type, props.selection, type)
+      );
+    };
 
-  return (
-    <div>
-      <SelectedType
-        language={props.value.language}
-        jump={props.value.jump}
-        typePartId={props.value.type.typePartId}
-        typePartResource={props.value.typePartResource}
-        scopeTypePartId={props.value.scopeTypePartId}
-      />
+    return (
       <div>
-        <div>検索</div>
-        {element()}
+        <SelectedType
+          language={props.value.language}
+          jump={props.value.jump}
+          typePartId={props.value.type.typePartId}
+          typePartResource={props.value.typePartResource}
+          scopeTypePartId={props.value.scopeTypePartId}
+        />
+        <div>
+          <div>検索</div>
+          {element()}
+        </div>
+        <SearchResult
+          jump={props.value.jump}
+          normalizedSearchText={text.trim().toLocaleLowerCase()}
+          typePartIdListInProject={props.value.typePartIdListInProjectResource.getFromMemoryCache(
+            props.value.projectId
+          )}
+          typePartResource={props.value.typePartResource}
+          language={props.value.language}
+          onChange={onChange}
+        />
+        <TypeParameterList
+          language={props.value.language}
+          jump={props.value.jump}
+          typePartId={props.value.scopeTypePartId}
+          typePartResource={props.value.typePartResource}
+          onChange={onChange}
+        />
       </div>
-      <SearchResult
-        jump={props.value.jump}
-        normalizedSearchText={text.trim().toLocaleLowerCase()}
-        typePartIdListInProject={props.value.typePartIdListInProjectResource.getFromMemoryCache(
-          props.value.projectId
-        )}
-        typePartResource={props.value.typePartResource}
-        language={props.value.language}
-        onChange={onChange}
-      />
-      <TypeParameterList
-        language={props.value.language}
-        jump={props.value.jump}
-        typePartId={props.value.scopeTypePartId}
-        typePartResource={props.value.typePartResource}
-        onChange={onChange}
-      />
-    </div>
-  );
-});
+    );
+  });
 TypeDetailView.displayName = "TypeDetailView";
 
 const setTypePartAtSelection = (
@@ -313,31 +312,33 @@ const SearchResult: React.VFC<
     case "Requesting":
       return <div>取得中</div>;
     case "Loaded": {
-      const typePartList = props.typePartIdListInProject.dataWithTime.data.flatMap<{
-        typePartId: d.TypePartId;
-        name: string;
-        typeParameterCount: number;
-        point: number;
-      }>((typePartId) => {
-        const typePart = props.typePartResource.getFromMemoryCache(typePartId);
-        if (typePart === undefined || typePart._ !== "Loaded") {
+      const typePartList =
+        props.typePartIdListInProject.dataWithTime.data.flatMap<{
+          typePartId: d.TypePartId;
+          name: string;
+          typeParameterCount: number;
+          point: number;
+        }>((typePartId) => {
+          const typePart =
+            props.typePartResource.getFromMemoryCache(typePartId);
+          if (typePart === undefined || typePart._ !== "Loaded") {
+            return [];
+          }
+          const data = typePart.dataWithTime.data;
+          if (
+            data.name.toLocaleLowerCase().includes(props.normalizedSearchText)
+          ) {
+            return [
+              {
+                typePartId,
+                name: data.name,
+                typeParameterCount: data.typeParameterList.length,
+                point: data.name.length - props.normalizedSearchText.length,
+              },
+            ];
+          }
           return [];
-        }
-        const data = typePart.dataWithTime.data;
-        if (
-          data.name.toLocaleLowerCase().includes(props.normalizedSearchText)
-        ) {
-          return [
-            {
-              typePartId,
-              name: data.name,
-              typeParameterCount: data.typeParameterList.length,
-              point: data.name.length - props.normalizedSearchText.length,
-            },
-          ];
-        }
-        return [];
-      });
+        });
       typePartList.sort((itemA, itemB) => itemA.point - itemB.point);
       return (
         <div>

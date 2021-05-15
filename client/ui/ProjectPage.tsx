@@ -49,9 +49,8 @@ export const ProjectPage: React.VFC<Props> = (props) => {
   const projectState = props.projectResource.getFromMemoryCache(
     props.projectId
   );
-  const typePartIdListInProject = props.typePartIdListInProjectResource.getFromMemoryCache(
-    props.projectId
-  );
+  const typePartIdListInProject =
+    props.typePartIdListInProjectResource.getFromMemoryCache(props.projectId);
   if (projectState === undefined) {
     return <div>プロジェクトリクエスト準備前</div>;
   }
@@ -141,21 +140,23 @@ export const ProjectPage: React.VFC<Props> = (props) => {
   );
 };
 
-const typePartIdToListItem = (
-  option: Pick<UseDefinyAppResult, "typePartResource" | "jump" | "language">
-) => (typePartId: d.TypePartId): ListItem => {
-  const typePart = option.typePartResource.getFromMemoryCache(typePartId);
-  return listItem(
-    typePartIdValue({
-      canEdit: false,
-      typePartId,
-      typePartResource: option.typePartResource,
-      jump: option.jump,
-      language: option.language,
-    }),
-    typePart?._ === "Loaded" ? typePart.dataWithTime.data.name : ""
-  );
-};
+const typePartIdToListItem =
+  (
+    option: Pick<UseDefinyAppResult, "typePartResource" | "jump" | "language">
+  ) =>
+  (typePartId: d.TypePartId): ListItem => {
+    const typePart = option.typePartResource.getFromMemoryCache(typePartId);
+    return listItem(
+      typePartIdValue({
+        canEdit: false,
+        typePartId,
+        typePartResource: option.typePartResource,
+        jump: option.jump,
+        language: option.language,
+      }),
+      typePart?._ === "Loaded" ? typePart.dataWithTime.data.name : ""
+    );
+  };
 
 const outputCodeToText = (
   outputCode: UseDefinyAppResult["outputCode"]

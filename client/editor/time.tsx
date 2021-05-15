@@ -22,12 +22,10 @@ const TimeSelectionView: ElementOperation<
 });
 TimeSelectionView.displayName = "TimeSelectionView";
 
-const TimeDetailView: ElementOperation<
-  TimeSelection,
-  TimeValue
->["detailView"] = React.memo((props) => {
-  return <TimeDetail time={props.value.time} />;
-});
+const TimeDetailView: ElementOperation<TimeSelection, TimeValue>["detailView"] =
+  React.memo((props) => {
+    return <TimeDetail time={props.value.time} />;
+  });
 TimeDetailView.displayName = "TimeDetailView";
 
 export const timeOperation: ElementOperation<TimeSelection, TimeValue> = {
