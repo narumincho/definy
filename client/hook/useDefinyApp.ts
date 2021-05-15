@@ -208,10 +208,8 @@ export type UseDefinyAppOption = {
 export const useDefinyApp = (
   option: UseDefinyAppOption
 ): UseDefinyAppResult => {
-  const [
-    topProjectsLoadingState,
-    setTopProjectsLoadingState,
-  ] = useState<TopProjectsLoadingState>({ _: "none" });
+  const [topProjectsLoadingState, setTopProjectsLoadingState] =
+    useState<TopProjectsLoadingState>({ _: "none" });
   const [urlData, setUrlData] = useState<d.UrlData>({
     language: "English",
     location: d.Location.Home,
@@ -219,20 +217,14 @@ export const useDefinyApp = (
   const [logInState, setLogInState] = useState<d.LogInState>(
     d.LogInState.Guest
   );
-  const [
-    createProjectState,
-    setCreateProjectState,
-  ] = useState<CreateProjectState>({ _: "none" });
+  const [createProjectState, setCreateProjectState] =
+    useState<CreateProjectState>({ _: "none" });
   const projectDict = useResourceState<d.ProjectId, d.Project>();
   const accountDict = useResourceState<d.AccountId, d.Account>();
-  const [
-    createTypePartState,
-    setCreateTypePartState,
-  ] = useState<CreateTypePartState>({ tag: "none" });
-  const typePartIdListInProjectDict = useResourceState<
-    d.ProjectId,
-    ReadonlyArray<d.TypePartId>
-  >();
+  const [createTypePartState, setCreateTypePartState] =
+    useState<CreateTypePartState>({ tag: "none" });
+  const typePartIdListInProjectDict =
+    useResourceState<d.ProjectId, ReadonlyArray<d.TypePartId>>();
   const typePartDict = useResourceState<d.TypePartId, d.TypePart>();
   const [isSavingTypePart, setIsSavingTypePart] = useState<boolean>(false);
   const [outputCode, setOutputCode] = useState<OutputCode>({
@@ -538,43 +530,47 @@ export const useDefinyApp = (
     [createTypePartState.tag, getAccountToken, jump, option, urlData.language]
   );
 
-  const typePartIdListInProjectResource: UseDefinyAppResult["typePartIdListInProjectResource"] = useMemo(
-    () => ({
-      forciblyRequestToServer: (projectId) => {
-        if (typePartIdListInProjectDict.get(projectId)?._ === "Requesting") {
-          return;
-        }
-        typePartIdListInProjectDict.setRequesting(projectId);
-        api.getTypePartByProjectId(projectId).then((response) => {
-          if (response._ === "Nothing" || response.value.data._ === "Nothing") {
-            typePartIdListInProjectDict.setUnknown(projectId);
-            option.notificationMessageHandler(
-              "プロジェクトに属している型パーツ一覧の取得に失敗しました",
-              "error"
-            );
+  const typePartIdListInProjectResource: UseDefinyAppResult["typePartIdListInProjectResource"] =
+    useMemo(
+      () => ({
+        forciblyRequestToServer: (projectId) => {
+          if (typePartIdListInProjectDict.get(projectId)?._ === "Requesting") {
             return;
           }
-          typePartIdListInProjectDict.setLoaded(
-            projectId,
-            response.value.data.value.map((e) => e.id)
-          );
-          typePartDict.setLoadedList(
-            response.value.data.value,
-            response.value.getTime
-          );
-        });
-      },
-      getFromMemoryCache: typePartIdListInProjectDict.get,
-      requestToServerIfEmpty: (projectId) => {
-        const resource = typePartIdListInProjectDict.get(projectId);
-        if (resource !== undefined) {
-          return;
-        }
-        typePartIdListInProjectResource.forciblyRequestToServer(projectId);
-      },
-    }),
-    [option, typePartDict, typePartIdListInProjectDict]
-  );
+          typePartIdListInProjectDict.setRequesting(projectId);
+          api.getTypePartByProjectId(projectId).then((response) => {
+            if (
+              response._ === "Nothing" ||
+              response.value.data._ === "Nothing"
+            ) {
+              typePartIdListInProjectDict.setUnknown(projectId);
+              option.notificationMessageHandler(
+                "プロジェクトに属している型パーツ一覧の取得に失敗しました",
+                "error"
+              );
+              return;
+            }
+            typePartIdListInProjectDict.setLoaded(
+              projectId,
+              response.value.data.value.map((e) => e.id)
+            );
+            typePartDict.setLoadedList(
+              response.value.data.value,
+              response.value.getTime
+            );
+          });
+        },
+        getFromMemoryCache: typePartIdListInProjectDict.get,
+        requestToServerIfEmpty: (projectId) => {
+          const resource = typePartIdListInProjectDict.get(projectId);
+          if (resource !== undefined) {
+            return;
+          }
+          typePartIdListInProjectResource.forciblyRequestToServer(projectId);
+        },
+      }),
+      [option, typePartDict, typePartIdListInProjectDict]
+    );
 
   const typePartResource: UseDefinyAppResult["typePartResource"] = useMemo(
     () => ({
@@ -656,9 +652,8 @@ export const useDefinyApp = (
     (projectId: d.ProjectId): void => {
       setOutputCode({ tag: "generating" });
       const gen = () => {
-        const projectIdList = typePartIdListInProjectResource.getFromMemoryCache(
-          projectId
-        );
+        const projectIdList =
+          typePartIdListInProjectResource.getFromMemoryCache(projectId);
         if (projectIdList === undefined || projectIdList._ !== "Loaded") {
           option.notificationMessageHandler(
             "プロジェクトの型パーツ一覧を取得していない状態でコードは生成できない",

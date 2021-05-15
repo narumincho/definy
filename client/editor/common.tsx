@@ -248,29 +248,27 @@ const moveFirstChild = (
   }
 };
 
-const moveParent: ElementOperation<
-  CommonSelection,
-  CommonValue
->["moveParent"] = (selection, value) => {
-  if (selection.tag === "list" && value.type === "list") {
-    return maybeMap(
-      listOperation.moveParent(selection.listSelection, value.value),
-      selectionList
-    );
-  }
-  if (selection.tag === "product" && value.type === "product") {
-    return maybeMap(
-      productOperation.moveParent(selection.productSelection, value.value),
-      selectionProduct
-    );
-  }
-  if (selection.tag === "sum" && value.type === "sum") {
-    return maybeMap(
-      sumOperation.moveParent(selection.sumSelection, value.value),
-      selectionSum
-    );
-  }
-};
+const moveParent: ElementOperation<CommonSelection, CommonValue>["moveParent"] =
+  (selection, value) => {
+    if (selection.tag === "list" && value.type === "list") {
+      return maybeMap(
+        listOperation.moveParent(selection.listSelection, value.value),
+        selectionList
+      );
+    }
+    if (selection.tag === "product" && value.type === "product") {
+      return maybeMap(
+        productOperation.moveParent(selection.productSelection, value.value),
+        selectionProduct
+      );
+    }
+    if (selection.tag === "sum" && value.type === "sum") {
+      return maybeMap(
+        sumOperation.moveParent(selection.sumSelection, value.value),
+        selectionSum
+      );
+    }
+  };
 
 const noSelectionDummyFunction = () => {};
 

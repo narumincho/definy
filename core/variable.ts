@@ -656,9 +656,8 @@ const productDecodeDefinitionStatementList = (
     statementList: ReadonlyArray<data.Statement>;
   }>(
     (statementAndNextIndexExpr, memberNameAndType) => {
-      const resultAndNextIndexName = resultAndNextIndexNameIdentifer(
-        memberNameAndType
-      );
+      const resultAndNextIndexName =
+        resultAndNextIndexNameIdentifer(memberNameAndType);
       const resultAndNextIndexVar = data.TsExpr.Variable(
         resultAndNextIndexName
       );

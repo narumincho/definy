@@ -64,9 +64,8 @@ describe("url", () => {
       languageAndLocation,
       d.Maybe.Nothing()
     );
-    const decodedLanguageAndLocation: d.UrlData = commonUrl.urlDataAndAccountTokenFromUrl(
-      url
-    ).urlData;
+    const decodedLanguageAndLocation: d.UrlData =
+      commonUrl.urlDataAndAccountTokenFromUrl(url).urlData;
     expect(languageAndLocation).toEqual(decodedLanguageAndLocation);
   });
 });
@@ -231,7 +230,8 @@ describe("binary codec", () => {
       {
         name: "ナルミンチョ",
         createTime: { day: 18440, millisecond: 12000 },
-        imageHash: "0a8eed336ca61252c13da0ff0b82ce37e81b84622a4052ab33693c434b4f6434" as d.ImageHash,
+        imageHash:
+          "0a8eed336ca61252c13da0ff0b82ce37e81b84622a4052ab33693c434b4f6434" as d.ImageHash,
         introduction: "ナルミンチョはDefinyを作っている人です.",
       },
       d.Account.codec
@@ -244,7 +244,8 @@ describe("binary codec", () => {
         data: {
           name: "ナルミンチョ",
           createTime: { day: 18440, millisecond: 12000 },
-          imageHash: "0a8eed336ca61252c13da0ff0b82ce37e81b84622a4052ab33693c434b4f6434" as d.ImageHash,
+          imageHash:
+            "0a8eed336ca61252c13da0ff0b82ce37e81b84622a4052ab33693c434b4f6434" as d.ImageHash,
           introduction: "ナルミンチョはDefinyを作っている人です.",
         },
       }),

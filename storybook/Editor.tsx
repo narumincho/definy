@@ -65,7 +65,8 @@ export const Project: Story<ControlAndActionProps> = (props) => (
       headItem: {
         name: "プロジェクト名",
         value: { onChange: action("editProjectName"), text: "やあ" },
-        iconHash: "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
+        iconHash:
+          "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
       },
       items: [
         {
@@ -154,8 +155,7 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
           name: "description",
           value: oneLineTextValue({
             onChange: action("editDescription"),
-            text:
-              "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
+            text: "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
           }),
         },
         {

@@ -175,21 +175,21 @@ const TopProjectList: React.VFC<
   }
 };
 
-const projectIdToListItem = (
-  option: Pick<UseDefinyAppResult, "projectResource" | "jump" | "language">
-) => (projectId: d.ProjectId): ListItem => {
-  const project = option.projectResource.getFromMemoryCache(projectId);
-  return listItem(
-    projectIdValue({
-      canEdit: false,
-      projectId,
-      projectResource: option.projectResource,
-      jump: option.jump,
-      language: option.language,
-    }),
-    project?._ === "Loaded" ? project.dataWithTime.data.name : ""
-  );
-};
+const projectIdToListItem =
+  (option: Pick<UseDefinyAppResult, "projectResource" | "jump" | "language">) =>
+  (projectId: d.ProjectId): ListItem => {
+    const project = option.projectResource.getFromMemoryCache(projectId);
+    return listItem(
+      projectIdValue({
+        canEdit: false,
+        projectId,
+        projectResource: option.projectResource,
+        jump: option.jump,
+        language: option.language,
+      }),
+      project?._ === "Loaded" ? project.dataWithTime.data.name : ""
+    );
+  };
 
 const CreateProjectButton: React.VFC<{
   language: d.Language;

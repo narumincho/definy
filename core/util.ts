@@ -140,7 +140,8 @@ export const isFirstLowerCaseName = (text: string): boolean => {
   return true;
 };
 
-export const definyCodeProjectId = "1e4531eba1d93cd9f9f31a8bc49551a2" as d.ProjectId;
+export const definyCodeProjectId =
+  "1e4531eba1d93cd9f9f31a8bc49551a2" as d.ProjectId;
 
 /** エディタ上で型の名前を作る. 先頭は小文字だがエディタ上は大文字 */
 export const stringToTypePartName = (text: string): string | undefined => {

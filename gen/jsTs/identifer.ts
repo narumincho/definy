@@ -11,18 +11,18 @@ export const identiferFromString = (word: string): TsIdentifer => {
   if (firstChar === undefined) {
     return TsIdentifer.Identifer("$00");
   }
-  let result = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(
-    firstChar
-  )
-    ? firstChar
-    : escapeChar(firstChar);
+  let result =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(firstChar)
+      ? firstChar
+      : escapeChar(firstChar);
   const slicedWord = word.slice(1);
   for (const char of slicedWord) {
-    result += "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789".includes(
-      char
-    )
-      ? char
-      : escapeChar(char);
+    result +=
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789".includes(
+        char
+      )
+        ? char
+        : escapeChar(char);
   }
   if (reservedByLanguageWordSet.has(word)) {
     return TsIdentifer.Identifer(result + "_");

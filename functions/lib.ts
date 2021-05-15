@@ -20,7 +20,7 @@ const app = admin.initializeApp();
 type AccessTokenHash = string & { _accessTokenHash: never };
 
 const storageDefaultBucket = app.storage().bucket();
-const database = (app.firestore() as unknown) as typedFirestore.Firestore<{
+const database = app.firestore() as unknown as typedFirestore.Firestore<{
   openConnectState: {
     key: string;
     value: StateData;
@@ -757,30 +757,28 @@ export const apiFunc: {
       };
     }
     await Promise.all(
-      request.typePartList.map(
-        async ({ id, data }): Promise<void> => {
-          const typePartDocSnapshot = await database
-            .collection("typePart")
-            .doc(id)
-            .get();
-          const typePartDoc = typePartDocSnapshot.data();
-          if (typePartDoc === undefined) {
-            throw new Error("unknown typePart. typePartId=" + id);
-          }
-          if (typePartDoc.projectId !== request.projectId) {
-            throw new Error(
-              "typePart project is not same. projectId=" +
-                request.projectId +
-                "   typePartId" +
-                id
-            );
-          }
-          await database
-            .collection("typePart")
-            .doc(id)
-            .update(typePartToDBTypeWithoutCreateTime(data));
+      request.typePartList.map(async ({ id, data }): Promise<void> => {
+        const typePartDocSnapshot = await database
+          .collection("typePart")
+          .doc(id)
+          .get();
+        const typePartDoc = typePartDocSnapshot.data();
+        if (typePartDoc === undefined) {
+          throw new Error("unknown typePart. typePartId=" + id);
         }
-      )
+        if (typePartDoc.projectId !== request.projectId) {
+          throw new Error(
+            "typePart project is not same. projectId=" +
+              request.projectId +
+              "   typePartId" +
+              id
+          );
+        }
+        await database
+          .collection("typePart")
+          .doc(id)
+          .update(typePartToDBTypeWithoutCreateTime(data));
+      })
     );
 
     return apiFunc.getTypePartByProjectId(request.projectId);
@@ -813,30 +811,28 @@ export const apiFunc: {
     }
     await addTypePart(request.projectId);
     await Promise.all(
-      request.typePartList.map(
-        async ({ id, data }): Promise<void> => {
-          const typePartDocSnapshot = await database
-            .collection("typePart")
-            .doc(id)
-            .get();
-          const typePartDoc = typePartDocSnapshot.data();
-          if (typePartDoc === undefined) {
-            throw new Error("unknown typePart. typePartId=" + id);
-          }
-          if (typePartDoc.projectId !== request.projectId) {
-            throw new Error(
-              "typePart project is not same. projectId=" +
-                request.projectId +
-                "   typePartId" +
-                id
-            );
-          }
-          await database
-            .collection("typePart")
-            .doc(id)
-            .update(typePartToDBTypeWithoutCreateTime(data));
+      request.typePartList.map(async ({ id, data }): Promise<void> => {
+        const typePartDocSnapshot = await database
+          .collection("typePart")
+          .doc(id)
+          .get();
+        const typePartDoc = typePartDocSnapshot.data();
+        if (typePartDoc === undefined) {
+          throw new Error("unknown typePart. typePartId=" + id);
         }
-      )
+        if (typePartDoc.projectId !== request.projectId) {
+          throw new Error(
+            "typePart project is not same. projectId=" +
+              request.projectId +
+              "   typePartId" +
+              id
+          );
+        }
+        await database
+          .collection("typePart")
+          .doc(id)
+          .update(typePartToDBTypeWithoutCreateTime(data));
+      })
     );
 
     return apiFunc.getTypePartByProjectId(request.projectId);
