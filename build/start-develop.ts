@@ -1,4 +1,4 @@
-import { build } from "./main";
 import * as d from "../data";
+import { build } from "./main";
 
 build(d.Mode.Develop);

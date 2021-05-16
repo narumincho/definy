@@ -44,13 +44,22 @@ Definy is Web App for Web App.
 
 ## フォルダとファイルの説明
 
-- `/__snapshot__/` jest の テストの実行結果で変化がないか調べる スナップショットが保存されている
-- `/.github/workflows/main.yml`: Firebase Hosting へのデプロイの処理が書かれている
+- `/.github/workflows/deploy_firebase.yml`: Firebase へのデプロイの処理が書かれている
+- `/.github/workflows/deploy_gen.yml`: npm パッケージ `@narumincho/gen` へのデプロイの処理が書かれている
+- `/.github/workflows/pull_request`: Pull Request したときに実行されるテストの処理が書かれている
+- `/build`: ビルドのスクリプト
+- `/client`: TypeScript で書かれたクライアント用のコード
+- `/common`: クライアントとサーバーの共通のコード
+- `/core`: コンパイラのような処理が書かれている
+- `/functions`: サーバーのコード
+- `/gen`: データやコードを生成するプログラムのコード
 - `/static`: スタティックなファイルが置かれている
-- `/source`: TypeScript で書かれたクライアント用のコード
-- `/firebase.json`: サーバーでファイルをどのように扱うかの設定が書かれている
-- `/index.html`: Parcel で使うエントリーのファイル(リリース時には使わない)
-- `/test.ts`: テストのコードが含まれている
+- `/storybook`: UI の見た目や動作を確かめられる, storybook の設定や, ストーリーが書かれている
+
+## エミュレータの起動方法
+
+Node.js をインストールし, `firebase-tools` を global で インストールする (`npm i -g firebase-tools`). また Java をインストールする必要がある. firestore の エミュレータに必要なため.
+Google でログインするための 鍵を, 1 つ上の階層のファイルに保存し, npm script の `develop-build` を実行したあとに, `start-emulator` を実行する. Ctrl + C キーを押すと エミュレータを停止することができる. VSCode の ゴミ箱ボタンだと, firestore のエミュレータが終了されないので注意. タスクマネージャーの Open JDK Platform binary などのそれっぽいものを停止すれば, firestore のエミュレータを停止させることができる.
 
 ## 各ファイルの依存関係
 

@@ -336,11 +336,11 @@ export const useDefinyApp = (
         );
         return;
       }
+      projectDict.setLoadedList(response.value.data, response.value.getTime);
       setTopProjectsLoadingState({
         _: "loaded",
         projectIdList: response.value.data.map((project) => project.id),
       });
-      projectDict.setLoadedList(response.value.data, response.value.getTime);
     });
   }, [option, projectDict]);
 
@@ -550,13 +550,13 @@ export const useDefinyApp = (
               );
               return;
             }
-            typePartIdListInProjectDict.setLoaded(
-              projectId,
-              response.value.data.value.map((e) => e.id)
-            );
             typePartDict.setLoadedList(
               response.value.data.value,
               response.value.getTime
+            );
+            typePartIdListInProjectDict.setLoaded(
+              projectId,
+              response.value.data.value.map((e) => e.id)
             );
           });
         },
