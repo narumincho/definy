@@ -139,7 +139,7 @@ const LoadedTypePartEditor: React.VFC<
           {
             name:
               props.language === d.Language.Japanese ? "説明" : "description",
-            value: oneLineTextValue({
+            value: multiLineTextValue({
               onChange: setDescription,
               text: description,
             }),

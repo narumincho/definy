@@ -59,7 +59,7 @@ Definy is Web App for Web App.
 ## エミュレータの起動方法
 
 Node.js をインストールし, `firebase-tools` を global で インストールする (`npm i -g firebase-tools`). また Java をインストールする必要がある. firestore の エミュレータに必要なため.
-Google でログインするための 鍵を, 1 つ上の階層のファイルに保存し, npm script の `develop-build` を実行したあとに, `start-emulator` を実行する. Ctrl + C キーを押すと エミュレータを停止することができる. VSCode の ゴミ箱ボタンだと, firestore のエミュレータが終了されないので注意. タスクマネージャーの Open JDK Platform binary などのそれっぽいものを停止すれば, firestore のエミュレータを停止させることができる.
+Google でログインするための 鍵を, 1 つ上の階層のファイルに保存し, npm script の `start` を実行するを開発用にアプリが起動する. Ctrl + C キーを押すと エミュレータを停止することができる. VSCode の ゴミ箱ボタンだと, firestore のエミュレータが終了されないので注意. タスクマネージャーの Open JDK Platform binary などのそれっぽいものを停止すれば, firestore のエミュレータを停止させることができる.
 
 ## 各ファイルの依存関係
 

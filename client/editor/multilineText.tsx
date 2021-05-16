@@ -28,16 +28,15 @@ const MultiLineTextSelectionView: ElementOperation<
           resize: "none",
           lineHeight: 1.5,
           width: "100%",
-          height: 320,
+          height: 128,
 
           "&:focus": {
             border: "2px solid #f0932b",
             outline: "none",
           },
         })}
-      >
-        {value.text}
-      </textarea>
+        value={value.text}
+      ></textarea>
     </div>
   );
 });
@@ -66,7 +65,9 @@ const MultiLineTextDetailView: ElementOperation<
   return (
     <div>
       <textarea
-        readOnly
+        onKeyDown={(e) => {
+          e.stopPropagation();
+        }}
         className={css({
           padding: 8,
           fontSize: 16,
@@ -121,6 +122,9 @@ const MultiLineTextEditorCanEdit: React.VFC<{
         },
       })}
       onChange={onChangeTextAreaValue}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+      }}
     >
       {value}
     </textarea>
