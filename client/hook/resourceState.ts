@@ -75,24 +75,36 @@ export const useResourceState = <
       },
       [dict]
     ),
-    setRequesting: useCallback((key_) => {
-      set(key_, d.ResourceState.Requesting());
-    }, []),
-    setUnknown: useCallback((key_) => {
-      set(key_, d.ResourceState.Unknown(timeFromDate(new Date())));
-    }, []),
-    setDeleted: useCallback((key_, getTime) => {
-      set(key_, d.ResourceState.Deleted(getTime));
-    }, []),
-    setLoaded: useCallback((key_, resource_, getTime) => {
-      set(
-        key_,
-        d.ResourceState.Loaded({
-          data: resource_,
-          getTime: getTime === undefined ? timeFromDate(new Date()) : getTime,
-        })
-      );
-    }, []),
+    setRequesting: useCallback(
+      (key_) => {
+        set(key_, d.ResourceState.Requesting());
+      },
+      [set]
+    ),
+    setUnknown: useCallback(
+      (key_) => {
+        set(key_, d.ResourceState.Unknown(timeFromDate(new Date())));
+      },
+      [set]
+    ),
+    setDeleted: useCallback(
+      (key_, getTime) => {
+        set(key_, d.ResourceState.Deleted(getTime));
+      },
+      [set]
+    ),
+    setLoaded: useCallback(
+      (key_, resource_, getTime) => {
+        set(
+          key_,
+          d.ResourceState.Loaded({
+            data: resource_,
+            getTime: getTime === undefined ? timeFromDate(new Date()) : getTime,
+          })
+        );
+      },
+      [set]
+    ),
     setLoadedList: useCallback((projectList, getTime) => {
       setDict((oldDict) => {
         const newDict = new Map(oldDict);
