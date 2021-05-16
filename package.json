@@ -12,8 +12,8 @@
     "test": "jest --env=./test/env.ts",
     "generate-graph": "npx depcruise -X node_modules --output-type dot client/main.tsx functions/main.ts core/main.ts build/main.ts | dot -T svg > graph.svg",
     "production-build": "ts-node ./build/start-production.ts",
-    "develop-build": "ts-node ./build/start-develop.ts",
-    "start-emulator": "firebase emulators:start --project definy-lang",
+    "prestart": "ts-node ./build/start-develop.ts",
+    "start": "firebase emulators:start --project definy-lang",
     "build-gen": "ts-node ./build/gen.ts",
     "storybook": "start-storybook --config-dir ./storybook --static-dir ./storybook/static"
   },
