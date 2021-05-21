@@ -1,0 +1,54 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`test invalid filed name 1`] = `"invalid field name = then"`;
+
+exports[`test output (List Int) -> String 1`] = `
+"module Main exposing ()
+
+import String
+
+{-| List Int -> Stringの型
+-}
+type alias IntListToString =
+    ((List Basics.Int) -> String.String)
+"
+`;
+
+exports[`test output type alias 1`] = `
+"module Main exposing ()
+
+import String
+import Basics
+
+{-| 色
+-}
+type alias User =
+    { name : String.String, age : Basics.Int }
+"
+`;
+
+exports[`test output type parameter 1`] = `
+"module Main exposing ()
+
+
+
+{-| 型パラメーターがつくもの
+-}
+type alias WithParameter element =
+    { field : element }
+"
+`;
+
+exports[`test output variant 1`] = `
+"module Main exposing (Color(..))
+
+
+
+{-| 色
+-}
+type Color
+    = Red
+    | Green
+    | Blue
+"
+`;
