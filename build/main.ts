@@ -239,7 +239,7 @@ const outputNowMode = async (mode: d.Mode): Promise<void> => {
             expr: d.TsExpr.StringLiteral(
               mode === d.Mode.Develop
                 ? "Develop:" + new Date().toISOString()
-                : "Release:" + (process.env.GITHUB_REF ?? "???")
+                : "Release: " + (process.env.GITHUB_SHA ?? "???")
             ),
             type: d.TsType.String,
           }),
