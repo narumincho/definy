@@ -1,5 +1,5 @@
 import * as data from "../../data";
-import * as main from "./main";
+import * as elmData from "./data";
 
 const importedType = (
   moduleName: string,
@@ -8,7 +8,7 @@ const importedType = (
 ): data.ElmType =>
   data.ElmType.ImportedType({
     moduleName,
-    typeName: main.elmTypeNameFromStringOrThrow(typeName),
+    typeName: elmData.elmTypeNameFromStringOrThrow(typeName),
     parameter,
   });
 
