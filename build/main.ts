@@ -175,11 +175,9 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
     "firebase-admin",
     "firebase-functions",
     "axios",
-    "definy-core",
     "jimp",
     "jsonwebtoken",
     "fs-extra",
-    "elm-code-generator",
   ];
   const jsonResult = packageJsonGen.toJson({
     name: "definy-functions",
