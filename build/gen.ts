@@ -1,5 +1,4 @@
 import * as fs from "fs-extra";
-import * as packageJsonGen from "../gen/packageJson/main";
 import {
   ModuleKind,
   ModuleResolutionKind,
@@ -7,6 +6,7 @@ import {
   ScriptTarget,
   createProgram,
 } from "typescript";
+import { packageJson as packageJsonGen } from "../gen/main";
 
 const distributionPath = "./distribution";
 
