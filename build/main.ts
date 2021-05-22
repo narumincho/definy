@@ -1,7 +1,6 @@
 import * as d from "../data";
 import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
-import * as packageJsonGen from "../gen/packageJson/main";
 import {
   ModuleKind,
   ModuleResolutionKind,
@@ -9,7 +8,7 @@ import {
   ScriptTarget,
   createProgram,
 } from "typescript";
-import { jsTs } from "../gen/main";
+import { jsTs, packageJson as packageJsonGen } from "../gen/main";
 
 const clientSourceEntryPath = "./client/main.tsx";
 const functionsSourceEntryPath = "./functions/main.ts";
@@ -175,11 +174,9 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
     "firebase-admin",
     "firebase-functions",
     "axios",
-    "definy-core",
     "jimp",
     "jsonwebtoken",
     "fs-extra",
-    "elm-code-generator",
   ];
   const jsonResult = packageJsonGen.toJson({
     name: "definy-functions",

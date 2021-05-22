@@ -1,12 +1,9 @@
 import * as data from "../data";
-import * as elm from "elm-code-generator/source/data";
-import * as elmCodeGenerator from "elm-code-generator";
-import * as elmUtil from "elm-code-generator/source/util";
 import * as hexString from "./kernelType/hexString";
-import * as jsTsCodeGenerator from "../gen/jsTs/main";
 import * as typeAlias from "./typeAlias";
 import * as util from "./util";
 import * as variable from "./variable";
+import { elm, jsTs } from "../gen/main";
 
 export const stringToValidUserName = (userName: string): string | null => {
   const normalized = normalizeOneLineString(userName);
@@ -337,7 +334,7 @@ const kernelToString = (kernelExpr: data.KernelExpr): string => {
 export const generateTypeScriptCodeAsString = (
   typePartMap: ReadonlyMap<data.TypePartId, data.TypePart>
 ): string => {
-  return jsTsCodeGenerator.generateCodeAsString(
+  return jsTs.generateCodeAsString(
     generateTypeScriptCode(typePartMap),
     "TypeScript"
   );
@@ -346,7 +343,7 @@ export const generateTypeScriptCodeAsString = (
 export const generateJavaScriptCodeAsString = (
   typePartMap: ReadonlyMap<data.TypePartId, data.TypePart>
 ): string => {
-  return jsTsCodeGenerator.generateCodeAsString(
+  return jsTs.generateCodeAsString(
     generateTypeScriptCode(typePartMap),
     "JavaScript"
   );
@@ -575,12 +572,12 @@ const typeParamterCountFromTypePartId = (
 export const generateElmCodeAsString = (
   typePartMap: ReadonlyMap<data.TypePartId, data.TypePart>
 ): string => {
-  return elmCodeGenerator.codeToString(generateElmCode(typePartMap));
+  return elm.codeToString(generateElmCode(typePartMap));
 };
 
 export const generateElmCode = (
   typePartMap: ReadonlyMap<data.TypePartId, data.TypePart>
-): elm.ElmCode => {
+): data.ElmCode => {
   const allTypePartIdTypePartNameMap = checkTypePartListValidation(typePartMap);
   return {
     moduleName: "Data",
@@ -607,19 +604,19 @@ const undefinedFlatMap = <Input, Output>(
 const typePartToElmTypeDeclaration = (
   typePart: data.TypePart,
   typePartNameMap: ReadonlyMap<data.TypePartId, string>
-): elm.ElmTypeDeclaration | undefined => {
+): data.ElmTypeDeclaration | undefined => {
   switch (typePart.body._) {
     case "Product":
-      return elm.ElmTypeDeclaration.TypeAlias({
+      return data.ElmTypeDeclaration.TypeAlias({
         name: stringToElmTypeName(typePart.name),
         comment: typePart.description,
         export: true,
         parameter: typePart.typeParameterList.map(
           (typeParameter) => typeParameter.name
         ),
-        type: elm.ElmType.Record(
+        type: data.ElmType.Record(
           typePart.body.memberList.map(
-            (member): elm.ElmField => ({
+            (member): data.ElmField => ({
               name: stringToElmFiledName(member.name),
               type: definyTypeToElmType(member.type, typePartNameMap),
             })
@@ -627,15 +624,15 @@ const typePartToElmTypeDeclaration = (
         ),
       });
     case "Sum":
-      return elm.ElmTypeDeclaration.CustomType({
+      return data.ElmTypeDeclaration.CustomType({
         name: stringToElmTypeName(typePart.name),
         comment: typePart.description,
-        export: elm.ElmCustomTypeExportLevel.ExportTypeAndVariant,
+        export: data.ElmCustomTypeExportLevel.ExportTypeAndVariant,
         parameter: typePart.typeParameterList.map(
           (typeParameter) => typeParameter.name
         ),
         variantList: typePart.body.patternList.map(
-          (pattern): elm.ElmVariant => ({
+          (pattern): data.ElmVariant => ({
             name: stringToVariantName(pattern.name),
             parameter:
               pattern.parameter._ === "Just"
@@ -657,40 +654,40 @@ const typePartToElmTypeDeclaration = (
   }
 };
 
-const stringToElmTypeName = (name: string): elm.ElmTypeName => {
-  const typeName = elmCodeGenerator.elmTypeNameFromString(name);
+const stringToElmTypeName = (name: string): data.ElmTypeName => {
+  const typeName = elm.elmTypeNameFromString(name);
   switch (typeName._) {
     case "Just":
       return typeName.value;
     case "Nothing":
-      return elmCodeGenerator.elmTypeNameFromStringOrThrow(name + "_");
+      return elm.elmTypeNameFromStringOrThrow(name + "_");
   }
 };
 
-const stringToElmFiledName = (name: string): elm.ElmFieldName => {
-  const filedName = elmCodeGenerator.fieldNameFromString(name);
+const stringToElmFiledName = (name: string): data.ElmFieldName => {
+  const filedName = elm.fieldNameFromString(name);
   switch (filedName._) {
     case "Just":
       return filedName.value;
     case "Nothing":
-      return elmCodeGenerator.fieldNameFromStringOrThrow(name + "_");
+      return elm.fieldNameFromStringOrThrow(name + "_");
   }
 };
 
-const stringToVariantName = (name: string): elm.ElmVariantName => {
-  const variantName = elmCodeGenerator.variantNameFormString(name);
+const stringToVariantName = (name: string): data.ElmVariantName => {
+  const variantName = elm.variantNameFormString(name);
   switch (variantName._) {
     case "Just":
       return variantName.value;
     case "Nothing":
-      return elmCodeGenerator.variantNameFormStringOrThrow(name + "_");
+      return elm.variantNameFormStringOrThrow(name + "_");
   }
 };
 
 const definyTypePartBodyKernelToElmType = (
   typePart: data.TypePart,
   typePartBodyKernel: data.TypePartBodyKernel
-): elm.ElmTypeDeclaration | undefined => {
+): data.ElmTypeDeclaration | undefined => {
   switch (typePartBodyKernel) {
     case "Function":
     case "Int32":
@@ -699,15 +696,15 @@ const definyTypePartBodyKernelToElmType = (
       return;
     case "Id":
     case "Token":
-      return elm.ElmTypeDeclaration.CustomType({
+      return data.ElmTypeDeclaration.CustomType({
         name: stringToElmTypeName(typePart.name),
         comment: typePart.description,
-        export: elm.ElmCustomTypeExportLevel.ExportTypeAndVariant,
+        export: data.ElmCustomTypeExportLevel.ExportTypeAndVariant,
         parameter: [],
         variantList: [
           {
             name: stringToVariantName(typePart.name),
-            parameter: [elmUtil.String],
+            parameter: [elm.String],
           },
         ],
       });
@@ -718,7 +715,7 @@ const definyTypePartBodyKernelToElmType = (
 const definyTypeToElmType = (
   type: data.Type,
   typePartNameMap: ReadonlyMap<data.TypePartId, string>
-): elm.ElmType => {
+): data.ElmType => {
   const typePartName = typePartNameMap.get(type.typePartId);
   if (typePartName === undefined) {
     throw new Error(
@@ -728,10 +725,10 @@ const definyTypeToElmType = (
   }
   // TODO 型パラメーターかどうかの判定を名前でしてしまっている
   if (util.isFirstLowerCaseName(typePartName)) {
-    return elm.ElmType.TypeParameter(typePartName);
+    return data.ElmType.TypeParameter(typePartName);
   }
 
-  return elm.ElmType.LocalType({
+  return data.ElmType.LocalType({
     typeName: stringToElmTypeName(typePartName),
     parameter: type.parameter.map((parameter) =>
       definyTypeToElmType(parameter, typePartNameMap)
