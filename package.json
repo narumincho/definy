@@ -15,7 +15,8 @@
     "prestart": "ts-node ./build/start-develop.ts",
     "start": "firebase emulators:start --project definy-lang",
     "build-gen": "ts-node ./build/gen.ts",
-    "storybook": "start-storybook --config-dir ./storybook --static-dir ./storybook/static"
+    "storybook": "start-storybook --config-dir ./storybook --static-dir ./storybook/static",
+    "update-package-json": "ncu -u"
   },
   "devDependencies": {
     "@babel/core": "7.14.3",
@@ -46,12 +47,14 @@
     "eslint-plugin-react-hooks": "4.2.0",
     "firebase-admin": "9.8.0",
     "firebase-functions": "3.14.1",
+    "firebase-tools": "9.12.0",
     "fs-extra": "10.0.0",
     "fuse-box": "^4.0.1-next.4",
     "jest": "27.0.1",
     "jimp": "0.16.1",
     "jsonwebtoken": "8.5.1",
     "notistack": "1.0.9",
+    "npm-check-updates": "11.6.0",
     "prettier": "2.3.0",
     "react": "17.0.2",
     "react-dom": "17.0.2",
