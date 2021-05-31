@@ -4,7 +4,6 @@ import * as commonUrl from "../common/url";
 import * as core from "../core/main";
 import * as crypto from "crypto";
 import * as d from "../data";
-import * as fileSystem from "fs-extra";
 import * as functions from "firebase-functions";
 import * as image from "./image";
 import * as jimp from "jimp";
@@ -13,7 +12,6 @@ import * as stream from "stream";
 import type * as typedFirestore from "typed-admin-firestore";
 import * as util from "../core/util";
 import axios, { AxiosResponse } from "axios";
-import { nowMode } from "../out";
 
 const app = admin.initializeApp();
 
@@ -387,27 +385,15 @@ const getAndSaveUserImage = async (imageUrl: URL): Promise<d.ImageHash> => {
   );
 };
 
-const fakeCloudStoragePath = "./fakeCloudStorage";
-
 /**
  * Cloud Storage for Firebase に PNGファイルを保存する
  */
 const savePngFile = async (binary: Uint8Array): Promise<d.ImageHash> => {
   const pngMimeType = "image/png";
   const hash = createImageTokenFromUint8ArrayAndMimeType(binary, pngMimeType);
-  switch (nowMode) {
-    case "Develop":
-      await fileSystem.outputFile(
-        `${fakeCloudStoragePath}/${hash}.png`,
-        Buffer.from(binary)
-      );
-      return hash;
-    case "Release": {
-      const file = storageDefaultBucket.file(hash);
-      await file.save(Buffer.from(binary), { contentType: pngMimeType });
-      return hash;
-    }
-  }
+  const file = storageDefaultBucket.file(hash);
+  await file.save(Buffer.from(binary), { contentType: pngMimeType });
+  return hash;
 };
 
 export const createImageTokenFromUint8ArrayAndMimeType = (
@@ -468,10 +454,7 @@ const hashAccessToken = (accountToken: d.AccountToken): AccessTokenHash =>
  * Cloud Storage for Firebase からPNGファイルを読み込む
  */
 export const readPngFile = (hash: string): stream.Readable => {
-  if (nowMode === "Release") {
-    return storageDefaultBucket.file(hash).createReadStream();
-  }
-  return fileSystem.createReadStream(`${fakeCloudStoragePath}/${hash}.png`);
+  return storageDefaultBucket.file(hash).createReadStream();
 };
 
 const projectDataToProjectSnapshot = (document: ProjectData): d.Project => ({
