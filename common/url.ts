@@ -18,7 +18,7 @@ export const urlDataAndAccountTokenToUrl = (
     languageToIdString(urlData.language)
   );
   if (accountToken._ === "Just") {
-    url.hash = "account-token=" + (accountToken.value as string);
+    url.hash = "account-token=" + accountToken.value;
   }
   return url;
 };

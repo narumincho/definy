@@ -16,6 +16,7 @@ const distributionPath = "./distribution";
 const functionsDistributionPath = `${distributionPath}/functions`;
 const hostingDistributionPath = `${distributionPath}/hosting`;
 const firestoreRulesFilePath = `${distributionPath}/firestore.rules`;
+const cloudStorageRulesPath = `${distributionPath}/storage.rules`;
 
 /**
  * Firebase へ デプロイするためにビルドする
@@ -40,6 +41,10 @@ export const build = async (mode: d.Mode): Promise<void> => {
   await generateFirestoreRules();
   console.log(
     `Firestore 向けセキュリティールール (${firestoreRulesFilePath}) を出力完了!`
+  );
+  await generateCloudStorageRules();
+  console.log(
+    `Cloud Storage 向けの セキュリティールール (${cloudStorageRulesPath}) を出力完了!`
   );
   await generateFirebaseJson(mode);
   console.log(`firebase.json を出力完了!`);
@@ -74,6 +79,9 @@ const generateFirebaseJson = (mode: d.Mode): Promise<void> => {
       },
       firestore: {
         rules: firestoreRulesFilePath,
+      },
+      storage: {
+        rules: cloudStorageRulesPath,
       },
       hosting: {
         public: hostingDistributionPath,
@@ -115,6 +123,9 @@ const generateFirebaseJson = (mode: d.Mode): Promise<void> => {
               hosting: {
                 port: 2520,
               },
+              storage: {
+                port: 9199,
+              },
               ui: {
                 enabled: true,
               },
@@ -132,6 +143,20 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+`
+  );
+};
+
+const generateCloudStorageRules = (): Promise<void> => {
+  return fileSystem.outputFile(
+    cloudStorageRulesPath,
+    `service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
       allow read, write: if false;
     }
   }
