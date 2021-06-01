@@ -274,6 +274,13 @@ const ListDetailView: ElementOperation<ListSelection, ListValue>["detailView"] =
           ) : (
             <Button onClick={props.value.deleteAll}>すべての要素を削除</Button>
           )}
+          {props.value.addInLast === undefined ? (
+            <></>
+          ) : (
+            <Button onClick={props.value.addInLast}>
+              + 末尾に要素を追加する
+            </Button>
+          )}
         </div>
       );
     }
