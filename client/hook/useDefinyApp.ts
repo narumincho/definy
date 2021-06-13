@@ -223,8 +223,10 @@ export const useDefinyApp = (
   const accountDict = useResourceState<d.AccountId, d.Account>();
   const [createTypePartState, setCreateTypePartState] =
     useState<CreateTypePartState>({ tag: "none" });
-  const typePartIdListInProjectDict =
-    useResourceState<d.ProjectId, ReadonlyArray<d.TypePartId>>();
+  const typePartIdListInProjectDict = useResourceState<
+    d.ProjectId,
+    ReadonlyArray<d.TypePartId>
+  >();
   const typePartDict = useResourceState<d.TypePartId, d.TypePart>();
   const [isSavingTypePart, setIsSavingTypePart] = useState<boolean>(false);
   const [outputCode, setOutputCode] = useState<OutputCode>({
