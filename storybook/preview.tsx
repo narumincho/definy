@@ -8,7 +8,7 @@ export const parameters = {
   layout: "fullscreen",
 };
 
-const fullScreen = (
+const FullScreen = (
   Story: () => React.ReactElement<unknown>
 ): React.ReactElement => {
   React.useEffect(() => {
@@ -24,4 +24,4 @@ const fullScreen = (
   );
 };
 
-export const decorators = [fullScreen];
+export const decorators = [FullScreen];
