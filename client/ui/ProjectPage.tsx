@@ -107,18 +107,17 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             name: "型パーツ",
-            value: listValue({
-              items:
-                typePartIdListInProject?._ === "Loaded"
-                  ? typePartIdListInProject.dataWithTime.data.map(
-                      typePartIdToListItem({
-                        typePartResource: props.typePartResource,
-                        jump: props.onJump,
-                        language: props.language,
-                      })
-                    )
-                  : [],
-              addInLast: addTypePartInProject,
+            value: typePartListValue(typePartIdListInProject, {
+              addTypePartInProject,
+              jump: props.onJump,
+              language: props.language,
+              typePartResource: props.typePartResource,
+            }),
+          },
+          {
+            name: "パーツ",
+            value: oneLineTextValue({
+              text: "準備中……",
             }),
           },
           {
@@ -138,6 +137,38 @@ export const ProjectPage: React.VFC<Props> = (props) => {
       }}
     />
   );
+};
+
+const typePartListValue = (
+  typePartIdListInProject:
+    | d.ResourceState<ReadonlyArray<d.TypePartId>>
+    | undefined,
+  option: Pick<UseDefinyAppResult, "typePartResource" | "jump" | "language"> & {
+    addTypePartInProject: () => void;
+  }
+): CommonValue => {
+  if (typePartIdListInProject === undefined) {
+    return oneLineTextValue({ text: "取得準備中……" });
+  }
+  if (typePartIdListInProject._ === "Deleted") {
+    return oneLineTextValue({ text: "削除されたのか, 存在しない" });
+  }
+  if (typePartIdListInProject._ === "Unknown") {
+    return oneLineTextValue({ text: "取得に失敗しました" });
+  }
+  if (typePartIdListInProject._ === "Requesting") {
+    return oneLineTextValue({ text: "取得中" });
+  }
+  return listValue({
+    items: typePartIdListInProject.dataWithTime.data.map(
+      typePartIdToListItem({
+        typePartResource: option.typePartResource,
+        jump: option.jump,
+        language: option.language,
+      })
+    ),
+    addInLast: option.addTypePartInProject,
+  });
 };
 
 const typePartIdToListItem =
