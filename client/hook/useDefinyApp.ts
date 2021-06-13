@@ -14,22 +14,25 @@ import { generateCodeAsString } from "../../gen/jsTs/main";
 import { useResourceState } from "./resourceState";
 
 export type TopProjectsLoadingState =
-  | { _: "none" }
-  | { _: "loading" }
-  | { _: "loaded"; projectIdList: ReadonlyArray<d.ProjectId> };
+  | { readonly _: "none" }
+  | { readonly _: "loading" }
+  | {
+      readonly _: "loaded";
+      readonly projectIdList: ReadonlyArray<d.ProjectId>;
+    };
 
 export type CreateProjectState =
   | {
-      _: "creating";
-      name: string;
+      readonly _: "creating";
+      readonly name: string;
     }
   | {
-      _: "none";
+      readonly _: "none";
     };
 
 export type CreateTypePartState =
-  | { tag: "creating"; projectId: d.ProjectId }
-  | { tag: "none" };
+  | { readonly tag: "creating"; readonly projectId: d.ProjectId }
+  | { readonly tag: "none" };
 
 export type Resource<id extends string, resource> = {
   /**
@@ -37,19 +40,21 @@ export type Resource<id extends string, resource> = {
    *
    * *no-side-effect*
    */
-  getFromMemoryCache: (id_: id) => d.ResourceState<resource> | undefined;
+  readonly getFromMemoryCache: (
+    id_: id
+  ) => d.ResourceState<resource> | undefined;
   /**
    * データがキャッシュにない場合, サーバーにリクエストする
    *
    * *side-effect*
    */
-  requestToServerIfEmpty: (id_: id) => void;
+  readonly requestToServerIfEmpty: (id_: id) => void;
   /**
    * 強制的にサーバーにリクエストする
    *
    * *side-effect*
    */
-  forciblyRequestToServer: (id_: id) => void;
+  readonly forciblyRequestToServer: (id_: id) => void;
 };
 
 export type UseDefinyAppResult = {
