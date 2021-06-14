@@ -121,6 +121,7 @@ const MultiLineTextEditorCanEdit: React.VFC<{
           outline: "none",
         },
       })}
+      readOnly={onChange === undefined}
       onChange={onChangeTextAreaValue}
       onKeyDown={(e) => {
         e.stopPropagation();
