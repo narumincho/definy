@@ -10,6 +10,7 @@ import { ProjectPage } from "./ProjectPage";
 import { SettingPage } from "./SettingPage";
 import { TypePartPage } from "./TypePartPage";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
+import { PartPage } from "./PartPage";
 
 export type Props = {
   readonly useDefinyAppResult: UseDefinyAppResult;
@@ -203,6 +204,8 @@ const AppMain: React.VFC<Props> = (props) => {
           isSavingTypePart={useDefinyAppResult.isSavingTypePart}
         />
       );
+    case "Part":
+      return <PartPage />
   }
   return (
     <HomePage
