@@ -37,6 +37,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
     (): void => addTypePart(props.projectId),
     [addTypePart, props.projectId]
   );
+  const [partList, setPartList] = React.useState<ReadonlyArray<d.Part>>([]);
 
   React.useEffect(() => {
     props.projectResource.forciblyRequestToServer(props.projectId);
@@ -116,9 +117,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             name: "パーツ",
-            value: oneLineTextValue({
-              text: "準備中……",
-            }),
+            value: partListValue(partList, setPartList, props.projectId),
           },
           {
             name: "コード生成",
@@ -219,4 +218,40 @@ const outputCodeToText = (
         ],
       });
   }
+};
+
+const partListValue = (
+  partList: ReadonlyArray<d.Part>,
+  setPartList: React.Dispatch<React.SetStateAction<ReadonlyArray<d.Part>>>,
+  projectId: d.ProjectId
+): CommonValue => {
+  return listValue({
+    items: partList.map(
+      (part): ListItem => ({
+        commonValue: oneLineTextValue({
+          text: part.name,
+        }),
+        searchText: part.name,
+      })
+    ),
+    addInLast: () => {
+      setPartList(
+        (beforeList: ReadonlyArray<d.Part>): ReadonlyArray<d.Part> => {
+          return [
+            ...beforeList,
+            {
+              name: "SamplePart",
+              description: "",
+              expr: d.Expr.Int32Literal(0),
+              projectId,
+              type: d.Type.helper({
+                typePartId: d.Int32.typePartId,
+                parameter: [],
+              }),
+            },
+          ];
+        }
+      );
+    },
+  });
 };
