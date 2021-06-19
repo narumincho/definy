@@ -11,6 +11,7 @@ import {
   productValue,
   timeValue,
   typePartIdValue,
+  typeValue,
 } from "../editor/common";
 import { ListItem, listItem } from "../editor/list";
 import { Editor } from "./Editor";
@@ -228,8 +229,27 @@ const partListValue = (
   return listValue({
     items: partList.map(
       (part): ListItem => ({
-        commonValue: oneLineTextValue({
-          text: part.name,
+        commonValue: productValue({
+          headItem: {
+            name: "name",
+            value: { text: part.name },
+          },
+          items: [
+            {
+              name: "description",
+              value: multiLineTextValue({
+                text: part.description,
+              }),
+            },
+            {
+              name: "type",
+              value: oneLineTextValue({ text: "型の編集はもう少しあと" }),
+            },
+            {
+              name: "expr",
+              value: oneLineTextValue({ text: "式の編集はもう少しあと" }),
+            },
+          ],
         }),
         searchText: part.name,
       })
