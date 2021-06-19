@@ -4,7 +4,7 @@ import { AccountIdValue, accountIdOperation } from "./accountId";
 import { ButtonValue, buttonOperation } from "./button";
 import { ImageValue, imageOperation } from "./image";
 import { ListSelection, ListValue, listOperation } from "./list";
-import { MultiLineTextValue, multiLineTextOperation } from "./multilineText";
+import { MultiLineTextValue, multiLineTextOperation } from "./multiLineText";
 import { NumberValue, numberOperation } from "./number";
 import { OneLineTextValue, oneLineTextOperation } from "./oneLineText";
 import { ProductSelection, ProductValue, productOperation } from "./product";

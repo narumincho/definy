@@ -11,6 +11,7 @@ import {
   productValue,
   timeValue,
   typePartIdValue,
+  typeValue,
 } from "../editor/common";
 import { ListItem, listItem } from "../editor/list";
 import { Editor } from "./Editor";
@@ -37,6 +38,7 @@ export const ProjectPage: React.VFC<Props> = (props) => {
     (): void => addTypePart(props.projectId),
     [addTypePart, props.projectId]
   );
+  const [partList, setPartList] = React.useState<ReadonlyArray<d.Part>>([]);
 
   React.useEffect(() => {
     props.projectResource.forciblyRequestToServer(props.projectId);
@@ -107,19 +109,16 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             name: "型パーツ",
-            value: listValue({
-              items:
-                typePartIdListInProject?._ === "Loaded"
-                  ? typePartIdListInProject.dataWithTime.data.map(
-                      typePartIdToListItem({
-                        typePartResource: props.typePartResource,
-                        jump: props.onJump,
-                        language: props.language,
-                      })
-                    )
-                  : [],
-              addInLast: addTypePartInProject,
+            value: typePartListValue(typePartIdListInProject, {
+              addTypePartInProject,
+              jump: props.onJump,
+              language: props.language,
+              typePartResource: props.typePartResource,
             }),
+          },
+          {
+            name: "パーツ",
+            value: partListValue(partList, setPartList, props.projectId),
           },
           {
             name: "コード生成",
@@ -138,6 +137,38 @@ export const ProjectPage: React.VFC<Props> = (props) => {
       }}
     />
   );
+};
+
+const typePartListValue = (
+  typePartIdListInProject:
+    | d.ResourceState<ReadonlyArray<d.TypePartId>>
+    | undefined,
+  option: Pick<UseDefinyAppResult, "typePartResource" | "jump" | "language"> & {
+    addTypePartInProject: () => void;
+  }
+): CommonValue => {
+  if (typePartIdListInProject === undefined) {
+    return oneLineTextValue({ text: "取得準備中……" });
+  }
+  if (typePartIdListInProject._ === "Deleted") {
+    return oneLineTextValue({ text: "削除されたのか, 存在しない" });
+  }
+  if (typePartIdListInProject._ === "Unknown") {
+    return oneLineTextValue({ text: "取得に失敗しました" });
+  }
+  if (typePartIdListInProject._ === "Requesting") {
+    return oneLineTextValue({ text: "取得中" });
+  }
+  return listValue({
+    items: typePartIdListInProject.dataWithTime.data.map(
+      typePartIdToListItem({
+        typePartResource: option.typePartResource,
+        jump: option.jump,
+        language: option.language,
+      })
+    ),
+    addInLast: option.addTypePartInProject,
+  });
 };
 
 const typePartIdToListItem =
@@ -188,4 +219,59 @@ const outputCodeToText = (
         ],
       });
   }
+};
+
+const partListValue = (
+  partList: ReadonlyArray<d.Part>,
+  setPartList: React.Dispatch<React.SetStateAction<ReadonlyArray<d.Part>>>,
+  projectId: d.ProjectId
+): CommonValue => {
+  return listValue({
+    items: partList.map(
+      (part): ListItem => ({
+        commonValue: productValue({
+          headItem: {
+            name: "name",
+            value: { text: part.name },
+          },
+          items: [
+            {
+              name: "description",
+              value: multiLineTextValue({
+                text: part.description,
+              }),
+            },
+            {
+              name: "type",
+              value: oneLineTextValue({ text: "型の編集はもう少しあと" }),
+            },
+            {
+              name: "expr",
+              value: oneLineTextValue({ text: "式の編集はもう少しあと" }),
+            },
+          ],
+        }),
+        searchText: part.name,
+      })
+    ),
+    addInLast: () => {
+      setPartList(
+        (beforeList: ReadonlyArray<d.Part>): ReadonlyArray<d.Part> => {
+          return [
+            ...beforeList,
+            {
+              name: "SamplePart",
+              description: "",
+              expr: d.Expr.Int32Literal(0),
+              projectId,
+              type: d.Type.helper({
+                typePartId: d.Int32.typePartId,
+                parameter: [],
+              }),
+            },
+          ];
+        }
+      );
+    },
+  });
 };
