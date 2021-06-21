@@ -10,7 +10,7 @@ import {
 } from "../../common/url";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../api";
-import { generateCodeAsString } from "../../gen/jsTs/main";
+import { jsTs } from "../../gen/main";
 import { useResourceState } from "./resourceState";
 
 export type TopProjectsLoadingState =
@@ -765,8 +765,8 @@ const generateCodeWithOutErrorHandling = (
 
     return {
       tag: "generated",
-      typeScript: generateCodeAsString(jsTsCode, "TypeScript"),
-      javaScript: generateCodeAsString(jsTsCode, "JavaScript"),
+      typeScript: jsTs.generateCodeAsString(jsTsCode, "TypeScript"),
+      javaScript: jsTs.generateCodeAsString(jsTsCode, "JavaScript"),
       elm: generateElmCodeAsString(definyCode),
     };
   } catch (error) {
