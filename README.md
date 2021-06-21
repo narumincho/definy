@@ -10,7 +10,7 @@ Definy is Web App for Web App.
 
 [Old Version](https://definy-old.web.app/)
 
-ゲームとツールを手軽に作れて公開できるプログラミング言語とエディタ,ゲームエンジン,SNS. [Elm](https://elm-lang.org/)でできている Web アプリ.**まだ, ぜんぜんできていない**
+ゲームとツールを手軽に作れて公開できるプログラミング言語とエディタ,ゲームエンジン,SNS. [Elm](https://elm-lang.org/)で作っていた時期もあったが, 今は React で作られている Web アプリ.**まだ, ぜんぜんできていない**
 
 [ここ](https://definy.app/?hl=ja)で動作を確認できる
 
@@ -64,7 +64,3 @@ Google でログインするための 鍵を, 1 つ上の階層のファイル�
 ## 各ファイルの依存関係
 
 ![各ファイルの依存関係のグラフ図](graph.svg)
-
-## パッケージの依存関係
-
-![パッケージの依存関係のグラフ図](package.svg)
