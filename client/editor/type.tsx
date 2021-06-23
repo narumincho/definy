@@ -4,9 +4,9 @@ import { listUpdateAt, neverFunc } from "../../common/util";
 import { Button } from "../ui/Button";
 import { ElementOperation } from "./ElementOperation";
 import { Link } from "../ui/Link";
+import { OneLineTextEditor } from "../ui/OneLineTextEditor";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
-import { useOneLineTextEditor } from "../ui/OneLineTextEditor";
 
 export type TypeSelection = {
   readonly index: number;
@@ -186,10 +186,7 @@ TypeArgument.displayName = "TypeArgument";
 
 const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
   React.memo((props) => {
-    const { text, element } = useOneLineTextEditor({
-      id: "search",
-      initText: "",
-    });
+    const [text, setText] = React.useState<string>("");
     React.useEffect(() => {
       props.value.typePartResource.requestToServerIfEmpty(
         props.value.type.typePartId
@@ -208,6 +205,39 @@ const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
       );
     };
 
+    const onSearchTextChange = (newText: string): void => {
+      setText(newText);
+      const typePartIdListInProjectResource =
+        props.value.typePartIdListInProjectResource.getFromMemoryCache(
+          props.value.projectId
+        );
+      if (
+        typePartIdListInProjectResource === undefined ||
+        typePartIdListInProjectResource._ !== "Loaded"
+      ) {
+        return;
+      }
+      const normalizedNewText = newText.trim().toLocaleLowerCase();
+      if (normalizedNewText.length === 0) {
+        return;
+      }
+      const suggestionFirst = generateTypeSuggestion(
+        typePartIdListInProjectResource.dataWithTime.data,
+        props.value.typePartResource.getFromMemoryCache,
+        normalizedNewText
+      )[0];
+      if (suggestionFirst === undefined) {
+        return;
+      }
+      onChange({
+        typePartId: suggestionFirst.typePartId,
+        parameter: new Array<d.Type>(suggestionFirst.typeParameterCount).fill({
+          parameter: [],
+          typePartId: d.Int32.typePartId,
+        }),
+      });
+    };
+
     return (
       <div>
         <SelectedType
@@ -217,10 +247,11 @@ const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
           typePartResource={props.value.typePartResource}
           scopeTypePartId={props.value.scopeTypePartId}
         />
-        <div>
-          <div>検索</div>
-          {element()}
-        </div>
+        <OneLineTextEditor
+          id="typeEditorFiler"
+          value={text}
+          onChange={onSearchTextChange}
+        />
         <SearchResult
           jump={props.value.jump}
           normalizedSearchText={text.trim().toLocaleLowerCase()}
@@ -229,6 +260,7 @@ const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
           )}
           typePartResource={props.value.typePartResource}
           language={props.value.language}
+          selectedTypePartId={props.value.type.typePartId}
           onChange={onChange}
         />
         <TypeParameterList
@@ -236,6 +268,7 @@ const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
           jump={props.value.jump}
           typePartId={props.value.scopeTypePartId}
           typePartResource={props.value.typePartResource}
+          selectedTypePartId={props.value.type.typePartId}
           onChange={onChange}
         />
       </div>
@@ -272,7 +305,7 @@ const SelectedType: React.VFC<
   );
   return (
     <div>
-      <div>{result.name}</div>
+      <div className={css({ padding: 8 })}>{result.name} を選択中</div>
       {result.type === "inTypeParameter" ? (
         <></>
       ) : (
@@ -282,6 +315,7 @@ const SelectedType: React.VFC<
             language: props.language,
             location: d.Location.TypePart(props.typePartId),
           }}
+          style={{ padding: 8 }}
         >
           {result.name}のページ
         </Link>
@@ -298,6 +332,7 @@ const SearchResult: React.VFC<
       | undefined;
     /** 前後の空白を取り除き, 小文字に変換しておく必要がある */
     normalizedSearchText: string;
+    selectedTypePartId: d.TypePartId;
     onChange: (t: d.Type) => void;
   }
 > = React.memo((props) => {
@@ -312,34 +347,12 @@ const SearchResult: React.VFC<
     case "Requesting":
       return <div>取得中</div>;
     case "Loaded": {
-      const typePartList =
-        props.typePartIdListInProject.dataWithTime.data.flatMap<{
-          typePartId: d.TypePartId;
-          name: string;
-          typeParameterCount: number;
-          point: number;
-        }>((typePartId) => {
-          const typePart =
-            props.typePartResource.getFromMemoryCache(typePartId);
-          if (typePart === undefined || typePart._ !== "Loaded") {
-            return [];
-          }
-          const data = typePart.dataWithTime.data;
-          if (
-            data.name.toLocaleLowerCase().includes(props.normalizedSearchText)
-          ) {
-            return [
-              {
-                typePartId,
-                name: data.name,
-                typeParameterCount: data.typeParameterList.length,
-                point: data.name.length - props.normalizedSearchText.length,
-              },
-            ];
-          }
-          return [];
-        });
-      typePartList.sort((itemA, itemB) => itemA.point - itemB.point);
+      const typePartList = generateTypeSuggestion(
+        props.typePartIdListInProject.dataWithTime.data,
+        props.typePartResource.getFromMemoryCache,
+        props.normalizedSearchText
+      );
+
       return (
         <div>
           {typePartList.slice(0, 20).map((item) => (
@@ -358,6 +371,7 @@ const SearchResult: React.VFC<
               }}
               typeParameterCount={item.typeParameterCount}
               typePartId={item.typePartId}
+              isSelected={props.selectedTypePartId === item.typePartId}
             />
           ))}
         </div>
@@ -367,19 +381,100 @@ const SearchResult: React.VFC<
 });
 SearchResult.displayName = "SearchResult";
 
+type SuggestionText = {
+  /** 表示する文字 */
+  text: string;
+  /** 強調表示する文字か */
+  isEmphasis: boolean;
+};
+
+type TypeSuggestion = {
+  typePartId: d.TypePartId;
+  name: ReadonlyArray<SuggestionText>;
+  typeParameterCount: number;
+};
+
+/**
+ * 検索文字から最適な候補を生成する
+ */
+const generateTypeSuggestion = (
+  typePartIdList: ReadonlyArray<d.TypePartId>,
+  getFromMemoryCache: (
+    id_: d.TypePartId
+  ) => d.ResourceState<d.TypePart> | undefined,
+  normalizedSearchText: string
+): ReadonlyArray<TypeSuggestion> => {
+  const list = typePartIdList.flatMap<{
+    typePartId: d.TypePartId;
+    name: ReadonlyArray<SuggestionText>;
+    typeParameterCount: number;
+    point: number;
+  }>((typePartId) => {
+    const typePart = getFromMemoryCache(typePartId);
+    if (typePart === undefined || typePart._ !== "Loaded") {
+      return [];
+    }
+    const data = typePart.dataWithTime.data;
+    const includeIndex = data.name
+      .toLocaleLowerCase()
+      .indexOf(normalizedSearchText);
+    if (includeIndex !== -1) {
+      return [
+        {
+          typePartId,
+          name: [
+            { text: data.name.slice(0, includeIndex), isEmphasis: false },
+            {
+              text: data.name.slice(
+                includeIndex,
+                includeIndex + normalizedSearchText.length
+              ),
+              isEmphasis: true,
+            },
+            {
+              text: data.name.slice(includeIndex + normalizedSearchText.length),
+              isEmphasis: false,
+            },
+            {
+              text: ` ${new Array(data.typeParameterList.length)
+                .fill("*")
+                .join(" ")}`,
+              isEmphasis: false,
+            },
+          ],
+          typeParameterCount: data.typeParameterList.length,
+          point: data.name.length - normalizedSearchText.length,
+        },
+      ];
+    }
+    return [];
+  });
+  list.sort((itemA, itemB) => itemA.point - itemB.point);
+  return list;
+};
+
 /**
  * 型を選択するボタン, ボタンの右に詳細ページへ移動するリンクがある
  */
 const TypeItem: React.VFC<
   Pick<UseDefinyAppResult, "jump" | "language"> & {
     typePartId: d.TypePartId;
-    name: string;
+    name: ReadonlyArray<SuggestionText>;
     typeParameterCount: number;
     type: d.Type;
     onChange: (type: d.Type) => void;
+    isSelected: boolean;
   }
 > = React.memo(
-  ({ onChange, typePartId, typeParameterCount, name, jump, language }) => {
+  ({
+    onChange,
+    typePartId,
+    typeParameterCount,
+    name,
+    jump,
+    language,
+    isSelected,
+  }) => {
     const onClick = React.useCallback(() => {
       onChange({
         typePartId,
@@ -395,17 +490,40 @@ const TypeItem: React.VFC<
         className={css({
           display: "grid",
           gridTemplateColumns: "1fr auto",
+          border: isSelected ? "solid 2px red" : "solid 2px transparent",
         })}
       >
-        <Button onClick={onClick}>{name}</Button>
+        <Button onClick={onClick}>
+          {name.map((suggestionText, index) => (
+            <span
+              key={index}
+              className={css({
+                fontWeight: suggestionText.isEmphasis ? "bold" : "normal",
+                color: suggestionText.isEmphasis ? "#f0932b" : "inherit",
+              })}
+            >
+              {suggestionText.text}
+            </span>
+          ))}
+        </Button>
         <Link
           onJump={jump}
           urlData={{
             language,
             location: d.Location.TypePart(typePartId),
           }}
+          style={{
+            display: "grid",
+            placeItems: "center",
+          }}
         >
-          →
+          <div
+            className={css({
+              padding: 4,
+            })}
+          >
+            →
+          </div>
         </Link>
       </div>
     );
@@ -417,6 +535,7 @@ const TypeParameterList: React.VFC<
   Pick<UseDefinyAppResult, "jump" | "language" | "typePartResource"> & {
     typePartId: d.TypePartId;
     onChange: (t: d.Type) => void;
+    selectedTypePartId: d.TypePartId;
   }
 > = React.memo((props) => {
   const typePartResource = props.typePartResource.getFromMemoryCache(
@@ -443,11 +562,12 @@ const TypeParameterList: React.VFC<
               key={p.typePartId}
               jump={props.jump}
               language={props.language}
-              name={p.name}
+              name={[{ text: p.name, isEmphasis: false }]}
               onChange={props.onChange}
               type={{ typePartId: p.typePartId, parameter: [] }}
               typeParameterCount={0}
               typePartId={p.typePartId}
+              isSelected={props.typePartId === props.selectedTypePartId}
             />
           ))}
         </div>

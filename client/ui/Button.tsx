@@ -21,6 +21,7 @@ export const Button: React.FC<Props> = React.memo((props) => (
           backgroundColor: "#444",
           color: "#dfdfdf",
         },
+        font: "inherit",
       },
       props.style
     )}

@@ -158,7 +158,7 @@ export const typePartResource: UseDefinyAppResult["typePartResource"] = {
   getFromMemoryCache: (typePartId) => {
     if (typePartId === listTypePartId) {
       return d.ResourceState.Loaded({
-        data: typePart,
+        data: listTypePart,
         getTime: { day: 0, millisecond: 0 },
       });
     }

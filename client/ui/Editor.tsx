@@ -92,7 +92,7 @@ export const Editor: React.VFC<Props> = React.memo((props: Props) => {
           onChangeSelection={setSelection}
           value={props.product}
         />
-        <div className={css({ height: 64 })}></div>
+        <div className={css({ height: 256 })}></div>
       </div>
       <div
         className={css({

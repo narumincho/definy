@@ -16,12 +16,6 @@ Definy is Web App for Web App.
 
 [古いバージョン](https://definy-old.web.app/)では WebAssembly を使って数値の足し算, 引き算, 掛け算ができる
 
-- [narumincho/definy-functions](https://github.com/narumincho/definy-functions)  
-  Cloud Functions for Firestore での処理
-
-- [narumincho/definy-core](https://github.com/narumincho/definy-core)  
-  共通の型と処理
-
 ## 特徴
 
 - インストールの必要なく, Web ブラウザで動くため, 開発環境構築に時間がかからない
@@ -58,7 +52,8 @@ Definy is Web App for Web App.
 
 ## エミュレータの起動方法
 
-Node.js をインストールし, `firebase-tools` を global で インストールする (`npm i -g firebase-tools`). また Java をインストールする必要がある. firestore の エミュレータに必要なため.
+Node.js と Java (Firestore のエミュレータに必要) をインストールする必要がある.
+
 Google でログインするための 鍵を, 1 つ上の階層のファイルに保存し, npm script の `start` を実行するを開発用にアプリが起動する. Ctrl + C キーを押すと エミュレータを停止することができる. VSCode の ゴミ箱ボタンだと, firestore のエミュレータが終了されないので注意. タスクマネージャーの Open JDK Platform binary などのそれっぽいものを停止すれば, firestore のエミュレータを停止させることができる.
 
 ## 各ファイルの依存関係
