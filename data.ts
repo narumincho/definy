@@ -452,6 +452,21 @@
  
  
  /**
+  * クラスの参加者を取得するときに必要なパラメータ
+  * @typePartId 510d8ea5d62965942071b7ed6b4edae8
+  */
+ export type GetClassParticipantParameter = { 
+ /**
+  * アカウントトークン
+  */
+ readonly accountToken: AccountToken; 
+ /**
+  * クラスID
+  */
+ readonly classId: QClassId };
+ 
+ 
+ /**
   * クエストの質問 ID
   * @typePartId 5249c5510c734bbe48e63a23e4e202b3
   */
@@ -654,7 +669,11 @@
  /**
   * アカウント名. 表示される名前. 他のユーザーとかぶっても良い. 絵文字も使える. 全角英数は半角英数,半角カタカナは全角カタカナ, (株)の合字を分解するなどのNFKCの正規化がされる. U+0000-U+0019 と U+007F-U+00A0 の範囲の文字は入らない. 前後に空白を含められない. 間の空白は2文字以上連続しない. 文字数のカウント方法は正規化されたあとのCodePoint単位. Twitterと同じ, 1文字以上50文字以下
   */
- readonly name: String };
+ readonly name: String; 
+ /**
+  * アカウントを識別するID
+  */
+ readonly id: AccountId };
  
  
  /**
@@ -893,6 +912,30 @@
   * 本文. 質問テンプレートにどうぞ
   */
  readonly text: String };
+ 
+ 
+ /**
+  * プロジェクトのデータファイル
+  * パーツや,型パーツのデータが含まれている
+  * @typePartId 8aa41233812aab908b1d71d11ad97375
+  */
+ export type ProjectDataFile = { 
+ /**
+  * プロジェクトID
+  */
+ readonly id: ProjectId; 
+ /**
+  * プロジェクト名
+  */
+ readonly name: String; 
+ /**
+  * 型パーツの定義
+  */
+ readonly typePartList: List<TypePart>; 
+ /**
+  * パーツの定義
+  */
+ readonly partList: List<Part> };
  
  
  /**
@@ -1310,22 +1353,11 @@
  
  
  /**
-  * 型パーツのリストを保存, 変更する
+  * プロジェクトデータファイルのハッシュ値
+  * Cloud Storage に保存するときのファイル名
   * @typePartId b8bf6c22e275c06c7dc42300c332b47d
   */
- export type SetTypePartListParameter = { 
- /**
-  * アカウントトークン
-  */
- readonly accountToken: AccountToken; 
- /**
-  * プロジェクトID
-  */
- readonly projectId: ProjectId; 
- /**
-  * 型パーツのリスト
-  */
- readonly typePartList: List<IdAndData<TypePartId, TypePart>> };
+ export type ProjectDataFileHashValue = string & { readonly _projectDataFileHashValue: never };
  
  
  /**
@@ -3625,6 +3657,29 @@
  
  
  /**
+  * クラスの参加者を取得するときに必要なパラメータ
+  * @typePartId 510d8ea5d62965942071b7ed6b4edae8
+  */
+ export const GetClassParticipantParameter: { 
+ /**
+  * definy.app内 の 型パーツの Id
+  */
+ readonly typePartId: TypePartId; 
+ /**
+  * 独自のバイナリ形式の変換処理ができるコーデック
+  */
+ readonly codec: Codec<GetClassParticipantParameter>; 
+ /**
+  * 型を合わせる上で便利なヘルパー関数
+  */
+ readonly helper: (a: GetClassParticipantParameter) => GetClassParticipantParameter } = { typePartId: "510d8ea5d62965942071b7ed6b4edae8" as TypePartId, helper: (getClassParticipantParameter: GetClassParticipantParameter): GetClassParticipantParameter => getClassParticipantParameter, codec: { encode: (value: GetClassParticipantParameter): ReadonlyArray<number> => (AccountToken.codec.encode(value.accountToken).concat(QClassId.codec.encode(value.classId))), decode: (index: number, binary: Uint8Array): { readonly result: GetClassParticipantParameter; readonly nextIndex: number } => {
+   const accountTokenAndNextIndex: { readonly result: AccountToken; readonly nextIndex: number } = AccountToken.codec.decode(index, binary);
+   const classIdAndNextIndex: { readonly result: QClassId; readonly nextIndex: number } = QClassId.codec.decode(accountTokenAndNextIndex.nextIndex, binary);
+   return { result: { accountToken: accountTokenAndNextIndex.result, classId: classIdAndNextIndex.result }, nextIndex: classIdAndNextIndex.nextIndex };
+ } } };
+ 
+ 
+ /**
   * クエストの質問 ID
   * @typePartId 5249c5510c734bbe48e63a23e4e202b3
   */
@@ -4045,12 +4100,13 @@
  /**
   * 型を合わせる上で便利なヘルパー関数
   */
- readonly helper: (a: Account) => Account } = { typePartId: "67d4e3bc4f13e1132b6c5e81d5b74395" as TypePartId, helper: (account: Account): Account => account, codec: { encode: (value: Account): ReadonlyArray<number> => (ImageHash.codec.encode(value.imageHash).concat(String.codec.encode(value.introduction)).concat(Time.codec.encode(value.createTime)).concat(String.codec.encode(value.name))), decode: (index: number, binary: Uint8Array): { readonly result: Account; readonly nextIndex: number } => {
+ readonly helper: (a: Account) => Account } = { typePartId: "67d4e3bc4f13e1132b6c5e81d5b74395" as TypePartId, helper: (account: Account): Account => account, codec: { encode: (value: Account): ReadonlyArray<number> => (ImageHash.codec.encode(value.imageHash).concat(String.codec.encode(value.introduction)).concat(Time.codec.encode(value.createTime)).concat(String.codec.encode(value.name)).concat(AccountId.codec.encode(value.id))), decode: (index: number, binary: Uint8Array): { readonly result: Account; readonly nextIndex: number } => {
    const imageHashAndNextIndex: { readonly result: ImageHash; readonly nextIndex: number } = ImageHash.codec.decode(index, binary);
    const introductionAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(imageHashAndNextIndex.nextIndex, binary);
    const createTimeAndNextIndex: { readonly result: Time; readonly nextIndex: number } = Time.codec.decode(introductionAndNextIndex.nextIndex, binary);
    const nameAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(createTimeAndNextIndex.nextIndex, binary);
-   return { result: { imageHash: imageHashAndNextIndex.result, introduction: introductionAndNextIndex.result, createTime: createTimeAndNextIndex.result, name: nameAndNextIndex.result }, nextIndex: nameAndNextIndex.nextIndex };
+   const idAndNextIndex: { readonly result: AccountId; readonly nextIndex: number } = AccountId.codec.decode(nameAndNextIndex.nextIndex, binary);
+   return { result: { imageHash: imageHashAndNextIndex.result, introduction: introductionAndNextIndex.result, createTime: createTimeAndNextIndex.result, name: nameAndNextIndex.result, id: idAndNextIndex.result }, nextIndex: idAndNextIndex.nextIndex };
  } } };
  
  
@@ -4648,6 +4704,32 @@
    const parentAndNextIndex: { readonly result: Maybe<QQuestionId>; readonly nextIndex: number } = Maybe.codec(QQuestionId.codec).decode(programIdAndNextIndex.nextIndex, binary);
    const textAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(parentAndNextIndex.nextIndex, binary);
    return { result: { programId: programIdAndNextIndex.result, parent: parentAndNextIndex.result, text: textAndNextIndex.result }, nextIndex: textAndNextIndex.nextIndex };
+ } } };
+ 
+ 
+ /**
+  * プロジェクトのデータファイル
+  * パーツや,型パーツのデータが含まれている
+  * @typePartId 8aa41233812aab908b1d71d11ad97375
+  */
+ export const ProjectDataFile: { 
+ /**
+  * definy.app内 の 型パーツの Id
+  */
+ readonly typePartId: TypePartId; 
+ /**
+  * 独自のバイナリ形式の変換処理ができるコーデック
+  */
+ readonly codec: Codec<ProjectDataFile>; 
+ /**
+  * 型を合わせる上で便利なヘルパー関数
+  */
+ readonly helper: (a: ProjectDataFile) => ProjectDataFile } = { typePartId: "8aa41233812aab908b1d71d11ad97375" as TypePartId, helper: (projectDataFile: ProjectDataFile): ProjectDataFile => projectDataFile, codec: { encode: (value: ProjectDataFile): ReadonlyArray<number> => (ProjectId.codec.encode(value.id).concat(String.codec.encode(value.name)).concat(List.codec(TypePart.codec).encode(value.typePartList)).concat(List.codec(Part.codec).encode(value.partList))), decode: (index: number, binary: Uint8Array): { readonly result: ProjectDataFile; readonly nextIndex: number } => {
+   const idAndNextIndex: { readonly result: ProjectId; readonly nextIndex: number } = ProjectId.codec.decode(index, binary);
+   const nameAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(idAndNextIndex.nextIndex, binary);
+   const typePartListAndNextIndex: { readonly result: List<TypePart>; readonly nextIndex: number } = List.codec(TypePart.codec).decode(nameAndNextIndex.nextIndex, binary);
+   const partListAndNextIndex: { readonly result: List<Part>; readonly nextIndex: number } = List.codec(Part.codec).decode(typePartListAndNextIndex.nextIndex, binary);
+   return { result: { id: idAndNextIndex.result, name: nameAndNextIndex.result, typePartList: typePartListAndNextIndex.result, partList: partListAndNextIndex.result }, nextIndex: partListAndNextIndex.nextIndex };
  } } };
  
  
@@ -5655,10 +5737,11 @@
  
  
  /**
-  * 型パーツのリストを保存, 変更する
+  * プロジェクトデータファイルのハッシュ値
+  * Cloud Storage に保存するときのファイル名
   * @typePartId b8bf6c22e275c06c7dc42300c332b47d
   */
- export const SetTypePartListParameter: { 
+ export const ProjectDataFileHashValue: { 
  /**
   * definy.app内 の 型パーツの Id
   */
@@ -5666,16 +5749,7 @@
  /**
   * 独自のバイナリ形式の変換処理ができるコーデック
   */
- readonly codec: Codec<SetTypePartListParameter>; 
- /**
-  * 型を合わせる上で便利なヘルパー関数
-  */
- readonly helper: (a: SetTypePartListParameter) => SetTypePartListParameter } = { typePartId: "b8bf6c22e275c06c7dc42300c332b47d" as TypePartId, helper: (setTypePartListParameter: SetTypePartListParameter): SetTypePartListParameter => setTypePartListParameter, codec: { encode: (value: SetTypePartListParameter): ReadonlyArray<number> => (AccountToken.codec.encode(value.accountToken).concat(ProjectId.codec.encode(value.projectId)).concat(List.codec(IdAndData.codec(TypePartId.codec, TypePart.codec)).encode(value.typePartList))), decode: (index: number, binary: Uint8Array): { readonly result: SetTypePartListParameter; readonly nextIndex: number } => {
-   const accountTokenAndNextIndex: { readonly result: AccountToken; readonly nextIndex: number } = AccountToken.codec.decode(index, binary);
-   const projectIdAndNextIndex: { readonly result: ProjectId; readonly nextIndex: number } = ProjectId.codec.decode(accountTokenAndNextIndex.nextIndex, binary);
-   const typePartListAndNextIndex: { readonly result: List<IdAndData<TypePartId, TypePart>>; readonly nextIndex: number } = List.codec(IdAndData.codec(TypePartId.codec, TypePart.codec)).decode(projectIdAndNextIndex.nextIndex, binary);
-   return { result: { accountToken: accountTokenAndNextIndex.result, projectId: projectIdAndNextIndex.result, typePartList: typePartListAndNextIndex.result }, nextIndex: typePartListAndNextIndex.nextIndex };
- } } };
+ readonly codec: Codec<ProjectDataFileHashValue> } = { typePartId: "b8bf6c22e275c06c7dc42300c332b47d" as TypePartId, codec: { encode: (value: ProjectDataFileHashValue): ReadonlyArray<number> => (encodeToken(value)), decode: (index: number, binary: Uint8Array): { readonly result: ProjectDataFileHashValue; readonly nextIndex: number } => (decodeToken(index, binary) as { readonly result: ProjectDataFileHashValue; readonly nextIndex: number }) } };
  
  
  /**

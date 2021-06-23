@@ -563,18 +563,16 @@ export const apiFunc: {
 
     return d.Maybe.Just({
       id: queryDocumentSnapshot.id as d.AccountId,
-      data: {
-        name: userData.name,
-        imageHash: userData.imageHash,
-        introduction: userData.introduction,
-        createTime: firestoreTimestampToTime(userData.createTime),
-      },
+      name: userData.name,
+      imageHash: userData.imageHash,
+      introduction: userData.introduction,
+      createTime: firestoreTimestampToTime(userData.createTime),
     });
   },
-  getAccount: async (userId) => {
+  getAccount: async (accountId) => {
     const documentSnapshot = await database
       .collection("user")
-      .doc(userId)
+      .doc(accountId)
       .get();
     const userData = documentSnapshot.data();
     return {
@@ -582,6 +580,7 @@ export const apiFunc: {
         userData === undefined
           ? d.Maybe.Nothing()
           : d.Maybe.Just({
+              id: documentSnapshot.id as d.AccountId,
               name: userData.name,
               imageHash: userData.imageHash,
               introduction: userData.introduction,

@@ -15,12 +15,10 @@ export const requestLogInUrl: ApiCodec<d.RequestLogInUrlRequestData, d.String> =
 
 export const getAccountByAccountToken: ApiCodec<
   d.AccountToken,
-  d.Maybe<d.IdAndData<d.AccountId, d.Account>>
+  d.Maybe<d.Account>
 > = {
   request: d.AccountToken.codec,
-  response: d.Maybe.codec(
-    d.IdAndData.codec(d.AccountId.codec, d.Account.codec)
-  ),
+  response: d.Maybe.codec(d.Account.codec),
 };
 
 export const getAccount: ApiCodec<

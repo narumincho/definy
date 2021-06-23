@@ -744,7 +744,7 @@ const verifyingAccountTokenAndGetAccount = (
     }
     indexedDB.setAccountToken(accountToken);
     notificationMessageHandler(
-      `「${response.value.value.data.name}」としてログインしました`,
+      `「${response.value.value.name}」としてログインしました`,
       "success"
     );
     setLogInState(
@@ -753,7 +753,7 @@ const verifyingAccountTokenAndGetAccount = (
         userId: response.value.value.id,
       })
     );
-    setAccount(response.value.value.id, response.value.value.data);
+    setAccount(response.value.value.id, response.value.value);
   });
 };
 

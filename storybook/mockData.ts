@@ -61,6 +61,7 @@ export const accountResource: UseDefinyAppResult["accountResource"] = {
   getFromMemoryCache: () => {
     return d.ResourceState.Loaded({
       data: {
+        id: account1Id,
         name: "サンプルアカウント",
         createTime: { day: 0, millisecond: 0 },
         imageHash:

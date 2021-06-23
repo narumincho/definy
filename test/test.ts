@@ -228,6 +228,7 @@ describe("binary codec", () => {
   it("user codec", () => {
     codecEqual(
       {
+        id: "933055412132d6aa46f8dde7159ecb38" as d.AccountId,
         name: "ナルミンチョ",
         createTime: { day: 18440, millisecond: 12000 },
         imageHash:
@@ -237,19 +238,17 @@ describe("binary codec", () => {
       d.Account.codec
     );
   });
-  it("Maybe (IdAndData UserId User) codec", () => {
-    codecEqual<d.Maybe<d.IdAndData<d.AccountId, d.Account>>>(
+  it("Maybe Account codec", () => {
+    codecEqual<d.Maybe<d.Account>>(
       d.Maybe.Just({
         id: "933055412132d6aa46f8dde7159ecb38" as d.AccountId,
-        data: {
-          name: "ナルミンチョ",
-          createTime: { day: 18440, millisecond: 12000 },
-          imageHash:
-            "0a8eed336ca61252c13da0ff0b82ce37e81b84622a4052ab33693c434b4f6434" as d.ImageHash,
-          introduction: "ナルミンチョはDefinyを作っている人です.",
-        },
+        name: "ナルミンチョ",
+        createTime: { day: 18440, millisecond: 12000 },
+        imageHash:
+          "0a8eed336ca61252c13da0ff0b82ce37e81b84622a4052ab33693c434b4f6434" as d.ImageHash,
+        introduction: "ナルミンチョはDefinyを作っている人です.",
       }),
-      d.Maybe.codec(d.IdAndData.codec(d.AccountId.codec, d.Account.codec))
+      d.Maybe.codec(d.Account.codec)
     );
   });
   it("util listDeleteAt center", () => {
