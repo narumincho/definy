@@ -509,9 +509,7 @@ const typePartToDBTypeWithoutCreateTime = (
   typePartBody: typePart.body,
 });
 
-const addTypePart = async (
-  projectId: d.ProjectId
-): Promise<d.IdAndData<d.TypePartId, d.TypePart>> => {
+const addTypePart = async (projectId: d.ProjectId): Promise<d.TypePart> => {
   const newTypePartId = createRandomId() as d.TypePartId;
   const newTypePart: d.TypePart = {
     id: newTypePartId,
@@ -526,10 +524,7 @@ const addTypePart = async (
     .collection("typePart")
     .doc(newTypePartId)
     .set(typePartToDBType(newTypePart, admin.firestore.Timestamp.now()));
-  return {
-    id: newTypePartId,
-    data: newTypePart,
-  };
+  return newTypePart;
 };
 
 type ApiCodecType = typeof apiCodec;

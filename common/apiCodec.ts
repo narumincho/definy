@@ -68,12 +68,10 @@ export const getTypePartByProjectId: ApiCodec<
 
 export const addTypePart: ApiCodec<
   d.AccountTokenAndProjectId,
-  d.WithTime<d.Maybe<d.IdAndData<d.TypePartId, d.TypePart>>>
+  d.WithTime<d.Maybe<d.TypePart>>
 > = {
   request: d.AccountTokenAndProjectId.codec,
-  response: d.WithTime.codec(
-    d.Maybe.codec(d.IdAndData.codec(d.TypePartId.codec, d.TypePart.codec))
-  ),
+  response: d.WithTime.codec(d.Maybe.codec(d.TypePart.codec)),
 };
 
 export const setTypePart: ApiCodec<

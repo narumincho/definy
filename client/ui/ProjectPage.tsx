@@ -260,6 +260,7 @@ const partListValue = (
           return [
             ...beforeList,
             {
+              id: "" as d.PartId,
               name: "SamplePart",
               description: "",
               expr: d.Expr.Int32Literal(0),

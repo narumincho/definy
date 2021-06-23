@@ -1204,22 +1204,6 @@ readonly expr: TsExpr };
 
 
 /**
- * deprecated!!!
- * 無理に深いデータ構造にしてIDを組み合わせるのでなく, フラットなほうがわかりやすいのでこれは使わないことにする
- * @typePartId a541cb9bb64930be40dc83bf8870f36b
- */
-export type IdAndData<id extends unknown, data extends unknown> = { 
-/**
- * ID
- */
-readonly id: id; 
-/**
- * データ
- */
-readonly data: data };
-
-
-/**
  * questのクラス招待トークン
  * @typePartId a5f14e3ce94846347dc38bc1fb29ba7f
  */
@@ -1617,7 +1601,11 @@ readonly expr: Expr;
 /**
  * 所属しているプロジェクトのID
  */
-readonly projectId: ProjectId };
+readonly projectId: ProjectId; 
+/**
+ * パーツを識別するID
+ */
+readonly id: PartId };
 
 
 /**
@@ -1628,7 +1616,12 @@ export type EvaluatedExpr = { readonly _: "Kernel"; readonly kernelExpr: KernelE
 
 
 /**
+ * # 型の変更が必要
+ *
+ * https://www.notion.so/setTypePart-definy-app-api-a2500046da77432796b7ccaab6e4e3ee
+ *
  * 1つの型パーツを保存するために指定するパラメーター
+ *
  * @typePartId dac038758a5c45f762de388bb5193fb8
  */
 export type SetTypePartParameter = { 
@@ -5479,30 +5472,6 @@ readonly helper: (a: Variable) => Variable } = { typePartId: "a2580a29c047f54d63
 
 
 /**
- * deprecated!!!
- * 無理に深いデータ構造にしてIDを組み合わせるのでなく, フラットなほうがわかりやすいのでこれは使わないことにする
- * @typePartId a541cb9bb64930be40dc83bf8870f36b
- */
-export const IdAndData: { 
-/**
- * definy.app内 の 型パーツの Id
- */
-readonly typePartId: TypePartId; 
-/**
- * 独自のバイナリ形式の変換処理ができるコーデック
- */
-readonly codec: <id extends unknown, data extends unknown>(a: Codec<id>, b: Codec<data>) => Codec<IdAndData<id, data>>; 
-/**
- * 型を合わせる上で便利なヘルパー関数
- */
-readonly helper: <id extends unknown, data extends unknown>(a: IdAndData<id, data>) => IdAndData<id, data> } = { typePartId: "a541cb9bb64930be40dc83bf8870f36b" as TypePartId, helper: <id extends unknown, data extends unknown>(idAndData: IdAndData<id, data>): IdAndData<id, data> => idAndData, codec: <id extends unknown, data extends unknown>(idCodec: Codec<id>, dataCodec: Codec<data>): Codec<IdAndData<id, data>> => ({ encode: (value: IdAndData<id, data>): ReadonlyArray<number> => (idCodec.encode(value.id).concat(dataCodec.encode(value.data))), decode: (index: number, binary: Uint8Array): { readonly result: IdAndData<id, data>; readonly nextIndex: number } => {
-  const idAndNextIndex: { readonly result: id; readonly nextIndex: number } = idCodec.decode(index, binary);
-  const dataAndNextIndex: { readonly result: data; readonly nextIndex: number } = dataCodec.decode(idAndNextIndex.nextIndex, binary);
-  return { result: { id: idAndNextIndex.result, data: dataAndNextIndex.result }, nextIndex: dataAndNextIndex.nextIndex };
-} }) };
-
-
-/**
  * questのクラス招待トークン
  * @typePartId a5f14e3ce94846347dc38bc1fb29ba7f
  */
@@ -6337,13 +6306,14 @@ readonly codec: Codec<Part>;
 /**
  * 型を合わせる上で便利なヘルパー関数
  */
-readonly helper: (a: Part) => Part } = { typePartId: "d8bccc70252cee9ce70784bf5dfa493b" as TypePartId, helper: (part: Part): Part => part, codec: { encode: (value: Part): ReadonlyArray<number> => (String.codec.encode(value.name).concat(String.codec.encode(value.description)).concat(Type.codec.encode(value.type)).concat(Expr.codec.encode(value.expr)).concat(ProjectId.codec.encode(value.projectId))), decode: (index: number, binary: Uint8Array): { readonly result: Part; readonly nextIndex: number } => {
+readonly helper: (a: Part) => Part } = { typePartId: "d8bccc70252cee9ce70784bf5dfa493b" as TypePartId, helper: (part: Part): Part => part, codec: { encode: (value: Part): ReadonlyArray<number> => (String.codec.encode(value.name).concat(String.codec.encode(value.description)).concat(Type.codec.encode(value.type)).concat(Expr.codec.encode(value.expr)).concat(ProjectId.codec.encode(value.projectId)).concat(PartId.codec.encode(value.id))), decode: (index: number, binary: Uint8Array): { readonly result: Part; readonly nextIndex: number } => {
   const nameAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(index, binary);
   const descriptionAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(nameAndNextIndex.nextIndex, binary);
   const typeAndNextIndex: { readonly result: Type; readonly nextIndex: number } = Type.codec.decode(descriptionAndNextIndex.nextIndex, binary);
   const exprAndNextIndex: { readonly result: Expr; readonly nextIndex: number } = Expr.codec.decode(typeAndNextIndex.nextIndex, binary);
   const projectIdAndNextIndex: { readonly result: ProjectId; readonly nextIndex: number } = ProjectId.codec.decode(exprAndNextIndex.nextIndex, binary);
-  return { result: { name: nameAndNextIndex.result, description: descriptionAndNextIndex.result, type: typeAndNextIndex.result, expr: exprAndNextIndex.result, projectId: projectIdAndNextIndex.result }, nextIndex: projectIdAndNextIndex.nextIndex };
+  const idAndNextIndex: { readonly result: PartId; readonly nextIndex: number } = PartId.codec.decode(projectIdAndNextIndex.nextIndex, binary);
+  return { result: { name: nameAndNextIndex.result, description: descriptionAndNextIndex.result, type: typeAndNextIndex.result, expr: exprAndNextIndex.result, projectId: projectIdAndNextIndex.result, id: idAndNextIndex.result }, nextIndex: idAndNextIndex.nextIndex };
 } } };
 
 
@@ -6413,7 +6383,12 @@ readonly KernelCall: (a: KernelCall) => EvaluatedExpr } = { Kernel: (kernelExpr:
 
 
 /**
+ * # 型の変更が必要
+ *
+ * https://www.notion.so/setTypePart-definy-app-api-a2500046da77432796b7ccaab6e4e3ee
+ *
  * 1つの型パーツを保存するために指定するパラメーター
+ *
  * @typePartId dac038758a5c45f762de388bb5193fb8
  */
 export const SetTypePartParameter: { 

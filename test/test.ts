@@ -138,6 +138,7 @@ describe("data", () => {
           [
             oneName,
             {
+              id: oneName,
               name: "one",
               description: "1を表す",
               type: intType,
@@ -148,6 +149,7 @@ describe("data", () => {
           [
             addOneHundredName,
             {
+              id: addOneHundredName,
               name: "addOneHundred",
               description: "100を足す関数",
               type: intType,

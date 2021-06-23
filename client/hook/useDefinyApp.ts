@@ -520,7 +520,7 @@ export const useDefinyApp = (
             return;
           }
           option.notificationMessageHandler(
-            `型パーツ 「${response.value.data.value.data.name}」を作成しました`,
+            `型パーツ 「${response.value.data.value.name}」を作成しました`,
             "success"
           );
           jump({
