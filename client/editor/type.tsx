@@ -312,34 +312,12 @@ const SearchResult: React.VFC<
     case "Requesting":
       return <div>取得中</div>;
     case "Loaded": {
-      const typePartList =
-        props.typePartIdListInProject.dataWithTime.data.flatMap<{
-          typePartId: d.TypePartId;
-          name: string;
-          typeParameterCount: number;
-          point: number;
-        }>((typePartId) => {
-          const typePart =
-            props.typePartResource.getFromMemoryCache(typePartId);
-          if (typePart === undefined || typePart._ !== "Loaded") {
-            return [];
-          }
-          const data = typePart.dataWithTime.data;
-          if (
-            data.name.toLocaleLowerCase().includes(props.normalizedSearchText)
-          ) {
-            return [
-              {
-                typePartId,
-                name: data.name,
-                typeParameterCount: data.typeParameterList.length,
-                point: data.name.length - props.normalizedSearchText.length,
-              },
-            ];
-          }
-          return [];
-        });
-      typePartList.sort((itemA, itemB) => itemA.point - itemB.point);
+      const typePartList = generateTypeSuggestion(
+        props.typePartIdListInProject.dataWithTime.data,
+        props.typePartResource.getFromMemoryCache,
+        props.normalizedSearchText
+      );
+
       return (
         <div>
           {typePartList.slice(0, 20).map((item) => (
@@ -368,13 +346,76 @@ const SearchResult: React.VFC<
 });
 SearchResult.displayName = "SearchResult";
 
+type SuggestionText = {
+  /** 表示する文字 */
+  text: string;
+  /** 強調表示する文字か */
+  isEmphasis: boolean;
+};
+
+type TypeSuggestion = {
+  typePartId: d.TypePartId;
+  name: ReadonlyArray<SuggestionText>;
+  typeParameterCount: number;
+};
+
+const generateTypeSuggestion = (
+  typePartIdList: ReadonlyArray<d.TypePartId>,
+  getFromMemoryCache: (
+    id_: d.TypePartId
+  ) => d.ResourceState<d.TypePart> | undefined,
+  normalizedSearchText: string
+): ReadonlyArray<TypeSuggestion> => {
+  const list = typePartIdList.flatMap<{
+    typePartId: d.TypePartId;
+    name: ReadonlyArray<SuggestionText>;
+    typeParameterCount: number;
+    point: number;
+  }>((typePartId) => {
+    const typePart = getFromMemoryCache(typePartId);
+    if (typePart === undefined || typePart._ !== "Loaded") {
+      return [];
+    }
+    const data = typePart.dataWithTime.data;
+    const includeIndex = data.name
+      .toLocaleLowerCase()
+      .indexOf(normalizedSearchText);
+    if (includeIndex !== -1) {
+      return [
+        {
+          typePartId,
+          name: [
+            { text: data.name.slice(0, includeIndex), isEmphasis: false },
+            {
+              text: data.name.slice(
+                includeIndex,
+                includeIndex + normalizedSearchText.length
+              ),
+              isEmphasis: true,
+            },
+            {
+              text: data.name.slice(includeIndex + normalizedSearchText.length),
+              isEmphasis: false,
+            },
+          ],
+          typeParameterCount: data.typeParameterList.length,
+          point: data.name.length - normalizedSearchText.length,
+        },
+      ];
+    }
+    return [];
+  });
+  list.sort((itemA, itemB) => itemA.point - itemB.point);
+  return list;
+};
+
 /**
  * 型を選択するボタン, ボタンの右に詳細ページへ移動するリンクがある
  */
 const TypeItem: React.VFC<
   Pick<UseDefinyAppResult, "jump" | "language"> & {
     typePartId: d.TypePartId;
-    name: string;
+    name: ReadonlyArray<SuggestionText>;
     typeParameterCount: number;
     type: d.Type;
     onChange: (type: d.Type) => void;
@@ -408,7 +449,19 @@ const TypeItem: React.VFC<
           border: isSelected ? "solid 2px red" : "solid 2px transparent",
         })}
       >
-        <Button onClick={onClick}>{name}</Button>
+        <Button onClick={onClick}>
+          {name.map((suggestionText, index) => (
+            <span
+              key={index}
+              className={css({
+                fontWeight: suggestionText.isEmphasis ? "bold" : "normal",
+                color: suggestionText.isEmphasis ? "#f0932b" : "inherit",
+              })}
+            >
+              {suggestionText.text}
+            </span>
+          ))}
+        </Button>
         <Link
           onJump={jump}
           urlData={{
@@ -465,7 +518,7 @@ const TypeParameterList: React.VFC<
               key={p.typePartId}
               jump={props.jump}
               language={props.language}
-              name={p.name}
+              name={[{ text: p.name, isEmphasis: false }]}
               onChange={props.onChange}
               type={{ typePartId: p.typePartId, parameter: [] }}
               typeParameterCount={0}
