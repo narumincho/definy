@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../api";
 import { jsTs } from "../../gen/main";
 import { useResourceState } from "./resourceState";
+import { useTypePartIdListInProject } from "./typePartIdListInProject";
 
 export type TopProjectsLoadingState =
   | { readonly _: "none" }
@@ -151,10 +152,7 @@ export type UseDefinyAppResult = {
    *
    * *side-effect*
    */
-  readonly saveTypePart: (
-    typePartId: d.TypePartId,
-    typePart: d.TypePart
-  ) => void;
+  readonly saveTypePart: (typePart: d.TypePart) => void;
 
   /**
    * 型パーツを保存中かどうか
@@ -205,6 +203,8 @@ export type UseDefinyAppOption = {
   readonly notificationMessageHandler: NotificationMessageHandler;
 };
 
+const getIdFunc = <Id>(item: { id: Id }): Id => item.id;
+
 /**
  * Definy の アプリの動作をする Hook.
  *
@@ -224,15 +224,12 @@ export const useDefinyApp = (
   );
   const [createProjectState, setCreateProjectState] =
     useState<CreateProjectState>({ _: "none" });
-  const projectDict = useResourceState<d.ProjectId, d.Project>();
-  const accountDict = useResourceState<d.AccountId, d.Account>();
+  const projectDict = useResourceState<d.ProjectId, d.Project>(getIdFunc);
+  const accountDict = useResourceState<d.AccountId, d.Account>(getIdFunc);
   const [createTypePartState, setCreateTypePartState] =
     useState<CreateTypePartState>({ tag: "none" });
-  const typePartIdListInProjectDict = useResourceState<
-    d.ProjectId,
-    ReadonlyArray<d.TypePartId>
-  >();
-  const typePartDict = useResourceState<d.TypePartId, d.TypePart>();
+  const typePartIdListInProjectDict = useTypePartIdListInProject();
+  const typePartDict = useResourceState<d.TypePartId, d.TypePart>(getIdFunc);
   const [isSavingTypePart, setIsSavingTypePart] = useState<boolean>(false);
   const [outputCode, setOutputCode] = useState<OutputCode>({
     tag: "notGenerated",
@@ -321,7 +318,7 @@ export const useDefinyApp = (
             return;
           }
           option.notificationMessageHandler(
-            `プロジェクト「${response.value.value.data.name}」を作成しました`,
+            `プロジェクト「${response.value.value.name}」を作成しました`,
             "success"
           );
           jump({
@@ -430,7 +427,6 @@ export const useDefinyApp = (
             return;
           }
           projectDict.setLoaded(
-            projectId,
             response.value.data.value,
             response.value.getTime
           );
@@ -474,7 +470,6 @@ export const useDefinyApp = (
             return;
           }
           accountDict.setLoaded(
-            accountId,
             response.value.data.value,
             response.value.getTime
           );
@@ -603,7 +598,7 @@ export const useDefinyApp = (
             );
             return;
           }
-          typePartDict.setLoaded(typePartId, response.value.data.value);
+          typePartDict.setLoaded(response.value.data.value);
         });
       },
       getFromMemoryCache: typePartDict.get,
@@ -618,7 +613,7 @@ export const useDefinyApp = (
   );
 
   const saveTypePart = useCallback(
-    (typePartId: d.TypePartId, typePart: d.TypePart): void => {
+    (typePart: d.TypePart): void => {
       const accountToken = getAccountToken();
       if (accountToken === undefined) {
         option.notificationMessageHandler(
@@ -631,7 +626,7 @@ export const useDefinyApp = (
       api
         .setTypePart({
           typePart,
-          typePartId,
+          typePartId: typePart.id,
           accountToken,
         })
         .then((response) => {
@@ -645,7 +640,6 @@ export const useDefinyApp = (
             return;
           }
           typePartDict.setLoaded(
-            typePartId,
             response.value.data.value,
             response.value.getTime
           );
@@ -732,7 +726,7 @@ export const useDefinyApp = (
 const verifyingAccountTokenAndGetAccount = (
   setLogInState: (logInState: d.LogInState) => void,
   accountToken: d.AccountToken,
-  setAccount: (accountId: d.AccountId, account: d.Account) => void,
+  setAccount: (account: d.Account) => void,
   notificationMessageHandler: NotificationMessageHandler
 ) => {
   setLogInState(d.LogInState.VerifyingAccountToken(accountToken));
@@ -753,7 +747,7 @@ const verifyingAccountTokenAndGetAccount = (
         userId: response.value.value.id,
       })
     );
-    setAccount(response.value.value.id, response.value.value);
+    setAccount(response.value.value);
   });
 };
 

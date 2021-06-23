@@ -36,22 +36,18 @@ export const getImageFile: ApiCodec<d.ImageHash, d.Binary> = {
 
 export const createProject: ApiCodec<
   d.CreateProjectParameter,
-  d.Maybe<d.IdAndData<d.ProjectId, d.Project>>
+  d.Maybe<d.Project>
 > = {
   request: d.CreateProjectParameter.codec,
-  response: d.Maybe.codec(
-    d.IdAndData.codec(d.ProjectId.codec, d.Project.codec)
-  ),
+  response: d.Maybe.codec(d.Project.codec),
 };
 
 export const getTop50Project: ApiCodec<
   d.Unit,
-  d.WithTime<ReadonlyArray<d.IdAndData<d.ProjectId, d.Project>>>
+  d.WithTime<ReadonlyArray<d.Project>>
 > = {
   request: d.Unit.codec,
-  response: d.WithTime.codec(
-    d.List.codec(d.IdAndData.codec(d.ProjectId.codec, d.Project.codec))
-  ),
+  response: d.WithTime.codec(d.List.codec(d.Project.codec)),
 };
 
 export const getProject: ApiCodec<
@@ -64,14 +60,10 @@ export const getProject: ApiCodec<
 
 export const getTypePartByProjectId: ApiCodec<
   d.ProjectId,
-  d.WithTime<d.Maybe<d.List<d.IdAndData<d.TypePartId, d.TypePart>>>>
+  d.WithTime<d.Maybe<d.List<d.TypePart>>>
 > = {
   request: d.ProjectId.codec,
-  response: d.WithTime.codec(
-    d.Maybe.codec(
-      d.List.codec(d.IdAndData.codec(d.TypePartId.codec, d.TypePart.codec))
-    )
-  ),
+  response: d.WithTime.codec(d.Maybe.codec(d.List.codec(d.TypePart.codec))),
 };
 
 export const addTypePart: ApiCodec<

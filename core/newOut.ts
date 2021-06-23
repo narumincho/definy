@@ -6,6 +6,7 @@ namespace core {
   export const Time: Product<Time> = {
     from: (time: Time): Time => time,
     typePart: d.TypePart.helper({
+      id: "" as d.TypePartId,
       name: "Time",
       description: "時間",
       attribute: d.Maybe.Nothing(),
