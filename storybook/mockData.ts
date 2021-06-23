@@ -7,6 +7,7 @@ export const account1Id = "afcc321463d3b693de0e8cd70af65eba" as d.AccountId;
 export const project1Id = "0fccb11463d3b69dde018cd70af65eba" as d.ProjectId;
 
 export const project1: d.Project = {
+  id: project1Id,
   name: "プロジェクト名",
   createAccountId: account1Id,
   createTime: { day: 0, millisecond: 0 },
@@ -20,6 +21,7 @@ export const project1: d.Project = {
 export const project2Id = "8ef7cce240fba7eae799f309caffa187" as d.ProjectId;
 
 export const project2: d.Project = {
+  id: project2Id,
   name: "プロジェクト2",
   createAccountId: account1Id,
   createTime: { day: 0, millisecond: 0 },
@@ -61,6 +63,7 @@ export const accountResource: UseDefinyAppResult["accountResource"] = {
   getFromMemoryCache: () => {
     return d.ResourceState.Loaded({
       data: {
+        id: account1Id,
         name: "サンプルアカウント",
         createTime: { day: 0, millisecond: 0 },
         imageHash:
@@ -90,13 +93,14 @@ export const typePartIdListInProjectResource: UseDefinyAppResult["typePartIdList
     },
   };
 
-export const typePart1Id = "500d9bc147fe8c1efaa5fb6c8222ce2e" as d.TypePartId;
+export const typePart1Id = "860f022381516f6eae126338851d9a37" as d.TypePartId;
 export const listTypePartId =
   "97c3b7967f35d2dcf34332fe769bc773" as d.TypePartId;
 export const resultTypePartId =
   "38fd51297bf15fd87254974ebc36d43f" as d.TypePartId;
 
 export const typePart: d.TypePart = {
+  id: resultTypePartId,
   name: "サンプル型パーツ",
   attribute: d.Maybe.Nothing(),
   description: "サンプルの型パーツの説明文",
@@ -112,6 +116,7 @@ export const typePart: d.TypePart = {
 };
 
 export const listTypePart: d.TypePart = {
+  id: listTypePartId,
   name: "List",
   attribute: d.Maybe.Nothing(),
   description: "リスト. JavaScriptのArrayで扱う",
@@ -126,6 +131,7 @@ export const listTypePart: d.TypePart = {
 };
 
 export const resultTypePart: d.TypePart = {
+  id: resultTypePartId,
   name: "Result",
   attribute: d.Maybe.Nothing(),
   description:

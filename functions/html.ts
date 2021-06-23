@@ -1,16 +1,16 @@
 import * as commonUrl from "../common/url";
 import * as d from "../data";
 import * as lib from "./lib";
-import { HtmlOption, div } from "../gen/html/main";
+import { html as genHtml } from "../gen/main";
 import { globalStyle } from "../common/globalStyle";
 
 /**
  * OGP の 情報が含まれている HTML を返す
  */
-export const html = async (
+export const generateHtml = async (
   urlData: d.UrlData,
   normalizedUrl: URL
-): Promise<{ htmlOption: HtmlOption; isNotFound: boolean }> => {
+): Promise<{ htmlOption: genHtml.HtmlOption; isNotFound: boolean }> => {
   const coverImageUrlAndDescription = await getCoverImageUrlAndDescription(
     urlData.location,
     urlData.language
@@ -28,7 +28,7 @@ export const html = async (
       url: normalizedUrl,
       style: globalStyle,
       themeColor: undefined,
-      children: [div({}, urlData.language)],
+      children: [genHtml.div({}, loadingMessage(urlData.language))],
     },
     isNotFound: false,
   };

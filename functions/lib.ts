@@ -457,7 +457,11 @@ export const readPngFile = (hash: string): stream.Readable => {
   return storageDefaultBucket.file(hash).createReadStream();
 };
 
-const projectDataToProjectSnapshot = (document: ProjectData): d.Project => ({
+const projectDataToProjectSnapshot = (
+  id: d.ProjectId,
+  document: ProjectData
+): d.Project => ({
+  id,
   name: document.name,
   iconHash: document.iconHash,
   imageHash: document.imageHash,
@@ -469,17 +473,15 @@ const projectDataToProjectSnapshot = (document: ProjectData): d.Project => ({
 const typePartFromDBType = (
   typePartId: d.TypePartId,
   typePartData: TypePartData
-): d.IdAndData<d.TypePartId, d.TypePart> => {
+): d.TypePart => {
   return {
     id: typePartId,
-    data: {
-      name: typePartData.name,
-      description: typePartData.description,
-      attribute: typePartData.attribute,
-      typeParameterList: typePartData.typeParameterList,
-      body: typePartData.typePartBody,
-      projectId: typePartData.projectId,
-    },
+    name: typePartData.name,
+    description: typePartData.description,
+    attribute: typePartData.attribute,
+    typeParameterList: typePartData.typeParameterList,
+    body: typePartData.typePartBody,
+    projectId: typePartData.projectId,
   };
 };
 
@@ -507,10 +509,10 @@ const typePartToDBTypeWithoutCreateTime = (
   typePartBody: typePart.body,
 });
 
-const addTypePart = async (
-  projectId: d.ProjectId
-): Promise<d.IdAndData<d.TypePartId, d.TypePart>> => {
+const addTypePart = async (projectId: d.ProjectId): Promise<d.TypePart> => {
+  const newTypePartId = createRandomId() as d.TypePartId;
   const newTypePart: d.TypePart = {
+    id: newTypePartId,
     name: "NewType",
     description: "",
     attribute: d.Maybe.Nothing(),
@@ -518,15 +520,11 @@ const addTypePart = async (
     typeParameterList: [],
     body: d.TypePartBody.Sum([]),
   };
-  const newTypePartId = createRandomId() as d.TypePartId;
   await database
     .collection("typePart")
     .doc(newTypePartId)
     .set(typePartToDBType(newTypePart, admin.firestore.Timestamp.now()));
-  return {
-    id: newTypePartId,
-    data: newTypePart,
-  };
+  return newTypePart;
 };
 
 type ApiCodecType = typeof apiCodec;
@@ -563,18 +561,16 @@ export const apiFunc: {
 
     return d.Maybe.Just({
       id: queryDocumentSnapshot.id as d.AccountId,
-      data: {
-        name: userData.name,
-        imageHash: userData.imageHash,
-        introduction: userData.introduction,
-        createTime: firestoreTimestampToTime(userData.createTime),
-      },
+      name: userData.name,
+      imageHash: userData.imageHash,
+      introduction: userData.introduction,
+      createTime: firestoreTimestampToTime(userData.createTime),
     });
   },
-  getAccount: async (userId) => {
+  getAccount: async (accountId) => {
     const documentSnapshot = await database
       .collection("user")
-      .doc(userId)
+      .doc(accountId)
       .get();
     const userData = documentSnapshot.data();
     return {
@@ -582,6 +578,7 @@ export const apiFunc: {
         userData === undefined
           ? d.Maybe.Nothing()
           : d.Maybe.Just({
+              id: documentSnapshot.id as d.AccountId,
               name: userData.name,
               imageHash: userData.imageHash,
               introduction: userData.introduction,
@@ -592,7 +589,7 @@ export const apiFunc: {
   },
   createProject: async (
     parameter: d.CreateProjectParameter
-  ): Promise<d.Maybe<d.IdAndData<d.ProjectId, d.Project>>> => {
+  ): Promise<d.Maybe<d.Project>> => {
     const userDataMaybe = await apiFunc.getAccountByAccountToken(
       parameter.accountToken
     );
@@ -620,16 +617,14 @@ export const apiFunc: {
         };
 
         await database.collection("project").doc(projectId).create(project);
-        return d.Maybe.Just<d.IdAndData<d.ProjectId, d.Project>>({
+        return d.Maybe.Just<d.Project>({
           id: projectId,
-          data: {
-            name: project.name,
-            iconHash: project.iconHash,
-            imageHash: project.imageHash,
-            createAccountId: project.createUserId,
-            createTime: createTimeAsTime,
-            updateTime: createTimeAsTime,
-          },
+          name: project.name,
+          iconHash: project.iconHash,
+          imageHash: project.imageHash,
+          createAccountId: project.createUserId,
+          createTime: createTimeAsTime,
+          updateTime: createTimeAsTime,
         });
       }
       case "Nothing": {
@@ -647,10 +642,9 @@ export const apiFunc: {
     > = querySnapshot.docs;
     const getTime = firestoreTimestampToTime(querySnapshot.readTime);
     return {
-      data: documentList.map((document) => ({
-        id: document.id,
-        data: projectDataToProjectSnapshot(document.data()),
-      })),
+      data: documentList.map((document) =>
+        projectDataToProjectSnapshot(document.id, document.data())
+      ),
       getTime,
     };
   },
@@ -664,7 +658,9 @@ export const apiFunc: {
       data:
         document === undefined
           ? d.Maybe.Nothing()
-          : d.Maybe.Just<d.Project>(projectDataToProjectSnapshot(document)),
+          : d.Maybe.Just<d.Project>(
+              projectDataToProjectSnapshot(documentSnapshot.id, document)
+            ),
       getTime: firestoreTimestampToTime(documentSnapshot.readTime),
     };
   },
@@ -712,113 +708,6 @@ export const apiFunc: {
       data: d.Maybe.Just(await addTypePart(accountTokenAndProjectId.projectId)),
       getTime: util.timeFromDate(new Date()),
     };
-  },
-  setTypePartList: async (request) => {
-    const projectData = await apiFunc.getProject(request.projectId);
-    // プロジェクトが存在しなかった
-    if (projectData.data._ === "Nothing") {
-      return {
-        getTime: projectData.getTime,
-        data: d.Maybe.Nothing(),
-      };
-    }
-    const account = await apiFunc.getAccountByAccountToken(
-      request.accountToken
-    );
-    // アカウントトークンが不正だった
-    if (account._ === "Nothing") {
-      return {
-        getTime: projectData.getTime,
-        data: d.Maybe.Nothing(),
-      };
-    }
-    // 型パーツを編集するアカウントとプロジェクトを作ったアカウントが違う
-    if (account.value.id !== projectData.data.value.createAccountId) {
-      return {
-        getTime: projectData.getTime,
-        data: d.Maybe.Nothing(),
-      };
-    }
-    await Promise.all(
-      request.typePartList.map(async ({ id, data }): Promise<void> => {
-        const typePartDocSnapshot = await database
-          .collection("typePart")
-          .doc(id)
-          .get();
-        const typePartDoc = typePartDocSnapshot.data();
-        if (typePartDoc === undefined) {
-          throw new Error("unknown typePart. typePartId=" + id);
-        }
-        if (typePartDoc.projectId !== request.projectId) {
-          throw new Error(
-            "typePart project is not same. projectId=" +
-              request.projectId +
-              "   typePartId" +
-              id
-          );
-        }
-        await database
-          .collection("typePart")
-          .doc(id)
-          .update(typePartToDBTypeWithoutCreateTime(data));
-      })
-    );
-
-    return apiFunc.getTypePartByProjectId(request.projectId);
-  },
-  setTypePartListAndAddTypePart: async (request) => {
-    const projectData = await apiFunc.getProject(request.projectId);
-    // プロジェクトが存在しなかった
-    if (projectData.data._ === "Nothing") {
-      return {
-        getTime: projectData.getTime,
-        data: d.Maybe.Nothing(),
-      };
-    }
-    const account = await apiFunc.getAccountByAccountToken(
-      request.accountToken
-    );
-    // アカウントトークンが不正だった
-    if (account._ === "Nothing") {
-      return {
-        getTime: projectData.getTime,
-        data: d.Maybe.Nothing(),
-      };
-    }
-    // 型パーツを編集するアカウントとプロジェクトを作ったアカウントが違う
-    if (account.value.id !== projectData.data.value.createAccountId) {
-      return {
-        getTime: projectData.getTime,
-        data: d.Maybe.Nothing(),
-      };
-    }
-    await addTypePart(request.projectId);
-    await Promise.all(
-      request.typePartList.map(async ({ id, data }): Promise<void> => {
-        const typePartDocSnapshot = await database
-          .collection("typePart")
-          .doc(id)
-          .get();
-        const typePartDoc = typePartDocSnapshot.data();
-        if (typePartDoc === undefined) {
-          throw new Error("unknown typePart. typePartId=" + id);
-        }
-        if (typePartDoc.projectId !== request.projectId) {
-          throw new Error(
-            "typePart project is not same. projectId=" +
-              request.projectId +
-              "   typePartId" +
-              id
-          );
-        }
-        await database
-          .collection("typePart")
-          .doc(id)
-          .update(typePartToDBTypeWithoutCreateTime(data));
-      })
-    );
-
-    return apiFunc.getTypePartByProjectId(request.projectId);
   },
   setTypePart: async (request) => {
     const typePartSnapshot = await database
@@ -888,14 +777,7 @@ export const apiFunc: {
     }
     return {
       getTime: firestoreTimestampToTime(typePartSnapshot.readTime),
-      data: d.Maybe.Just({
-        name: typePartData.name,
-        description: typePartData.description,
-        attribute: typePartData.attribute,
-        projectId: typePartData.projectId,
-        body: typePartData.typePartBody,
-        typeParameterList: typePartData.typeParameterList,
-      }),
+      data: d.Maybe.Just(typePartFromDBType(typePartSnapshot.id, typePartData)),
     };
   },
 };

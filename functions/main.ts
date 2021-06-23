@@ -2,9 +2,9 @@ import * as apiCodec from "../common/apiCodec";
 import * as commonUrl from "../common/url";
 import * as d from "../data";
 import * as functions from "firebase-functions";
-import * as genHtml from "./html";
 import * as lib from "./lib";
-import { htmlOptionToString } from "../gen/html/toString";
+import { html as genHtml } from "../gen/main";
+import { generateHtml } from "./html";
 
 console.log("versions", JSON.stringify(process.versions));
 /*
@@ -27,11 +27,11 @@ export const html = functions.https.onRequest(async (request, response) => {
     d.Maybe.Nothing()
   );
   console.log("requestUrl", requestUrl.toString());
-  const htmlAndIsNotFound = await genHtml.html(urlData, normalizedUrl);
+  const htmlAndIsNotFound = await generateHtml(urlData, normalizedUrl);
 
   response.status(htmlAndIsNotFound.isNotFound ? 404 : 200);
   response.setHeader("content-type", "text/html");
-  response.send(htmlOptionToString(htmlAndIsNotFound.htmlOption));
+  response.send(genHtml.htmlOptionToString(htmlAndIsNotFound.htmlOption));
 });
 
 /*

@@ -103,8 +103,8 @@ type SourceAndCache = {
 };
 
 type EvalParameter = {
-  typePartList: ReadonlyArray<data.IdAndData<data.TypePartId, data.TypePart>>;
-  partList: ReadonlyArray<data.IdAndData<data.PartId, data.Part>>;
+  typePartList: ReadonlyArray<data.TypePart>;
+  partList: ReadonlyArray<data.Part>;
   expr: data.Expr;
 };
 
@@ -114,17 +114,9 @@ type EvalParameter = {
 export const evalExpr = (evalParameter: EvalParameter): EvaluationResult =>
   evaluateSuggestionExpr(
     {
-      partMap: new Map(
-        evalParameter.partList.map((partAndId) => [
-          partAndId.id,
-          partAndId.data,
-        ])
-      ),
+      partMap: new Map(evalParameter.partList.map((part) => [part.id, part])),
       typePartMap: new Map(
-        evalParameter.typePartList.map((typeAndId) => [
-          typeAndId.id,
-          typeAndId.data,
-        ])
+        evalParameter.typePartList.map((typePart) => [typePart.id, typePart])
       ),
       evaluatedPartMap: new Map(),
       evaluatedSuggestionPartMap: new Map(),

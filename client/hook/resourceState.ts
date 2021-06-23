@@ -36,7 +36,7 @@ export type UseResourceStateResult<id extends string, resource> = {
    *
    * *side-effect*
    */
-  setLoaded: (id_: id, resource_: resource, getTime?: d.Time) => void;
+  setLoaded: (resource_: resource, getTime?: d.Time) => void;
   /**
    * 指定したリソースの取得状態を取得済みにしてキャッシュに保存する.
    *
@@ -44,19 +44,15 @@ export type UseResourceStateResult<id extends string, resource> = {
    *
    * *side-effect*
    */
-  setLoadedList: (
-    list: ReadonlyArray<d.IdAndData<id, resource>>,
-    getTime: d.Time
-  ) => void;
+  setLoadedList: (list: ReadonlyArray<resource>, getTime: d.Time) => void;
 };
 
 /**
- * プロジェクトのデータ本体と取得状態をメモリキャッシュ(Map型の変数)に保存, 取得できる Hook
+ * データと取得状態をメモリキャッシュ(Map型の変数)に保存, 取得できる Hook
  */
-export const useResourceState = <
-  key extends string,
-  resource
->(): UseResourceStateResult<key, resource> => {
+export const useResourceState = <key extends string, resource>(
+  getKeyFunc: (res: resource) => key
+): UseResourceStateResult<key, resource> => {
   const [dict, setDict] = useState<ReadonlyMap<key, d.ResourceState<resource>>>(
     new Map()
   );
@@ -94,28 +90,31 @@ export const useResourceState = <
       [set]
     ),
     setLoaded: useCallback(
-      (key_, resource_, getTime) => {
+      (resource_, getTime) => {
         set(
-          key_,
+          getKeyFunc(resource_),
           d.ResourceState.Loaded({
             data: resource_,
             getTime: getTime === undefined ? timeFromDate(new Date()) : getTime,
           })
         );
       },
-      [set]
+      [set, getKeyFunc]
     ),
-    setLoadedList: useCallback((projectList, getTime) => {
-      setDict((oldDict) => {
-        const newDict = new Map(oldDict);
-        for (const projectIdAndData of projectList) {
-          newDict.set(
-            projectIdAndData.id,
-            d.ResourceState.Loaded({ data: projectIdAndData.data, getTime })
-          );
-        }
-        return newDict;
-      });
-    }, []),
+    setLoadedList: useCallback(
+      (list, getTime) => {
+        setDict((oldDict) => {
+          const newDict = new Map(oldDict);
+          for (const item of list) {
+            newDict.set(
+              getKeyFunc(item),
+              d.ResourceState.Loaded({ data: item, getTime })
+            );
+          }
+          return newDict;
+        });
+      },
+      [getKeyFunc]
+    ),
   };
 };
