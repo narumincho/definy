@@ -113,8 +113,10 @@ const TagItem: React.VFC<{
     <div
       className={css({
         gridArea: tagCountAndIndexToGridArea(tagNameCount, index),
-        backgroundColor: isSelect ? "#aaa" : "#000",
-        color: isSelect ? "#000" : "#ddd",
+        backgroundColor: isSelect ? "#222" : "#000",
+        color: isSelect ? "#f1e241" : "#ddd",
+        fontWeight: isSelect ? "bold" : "normal",
+        border: isSelect ? "solid 2px #f1e241" : "solid 2px transparent",
         padding: 8,
         cursor: "pointer",
         textAlign: "center",
