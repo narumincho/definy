@@ -4,9 +4,9 @@ import { listUpdateAt, neverFunc } from "../../common/util";
 import { Button } from "../ui/Button";
 import { ElementOperation } from "./ElementOperation";
 import { Link } from "../ui/Link";
+import { OneLineTextEditor } from "../ui/OneLineTextEditor";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
-import { useOneLineTextEditor } from "../ui/OneLineTextEditor";
 
 export type TypeSelection = {
   readonly index: number;
@@ -186,10 +186,7 @@ TypeArgument.displayName = "TypeArgument";
 
 const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
   React.memo((props) => {
-    const { text, element } = useOneLineTextEditor({
-      id: "search",
-      initText: "",
-    });
+    const [text, setText] = React.useState<string>("");
     React.useEffect(() => {
       props.value.typePartResource.requestToServerIfEmpty(
         props.value.type.typePartId
@@ -208,6 +205,39 @@ const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
       );
     };
 
+    const onSearchTextChange = (newText: string): void => {
+      setText(newText);
+      const typePartIdListInProjectResource =
+        props.value.typePartIdListInProjectResource.getFromMemoryCache(
+          props.value.projectId
+        );
+      if (
+        typePartIdListInProjectResource === undefined ||
+        typePartIdListInProjectResource._ !== "Loaded"
+      ) {
+        return;
+      }
+      const normalizedNewText = newText.trim().toLocaleLowerCase();
+      if (normalizedNewText.length === 0) {
+        return;
+      }
+      const suggestionFirst = generateTypeSuggestion(
+        typePartIdListInProjectResource.dataWithTime.data,
+        props.value.typePartResource.getFromMemoryCache,
+        normalizedNewText
+      )[0];
+      if (suggestionFirst === undefined) {
+        return;
+      }
+      onChange({
+        typePartId: suggestionFirst.typePartId,
+        parameter: new Array<d.Type>(suggestionFirst.typeParameterCount).fill({
+          parameter: [],
+          typePartId: d.Int32.typePartId,
+        }),
+      });
+    };
+
     return (
       <div>
         <SelectedType
@@ -217,7 +247,11 @@ const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
           typePartResource={props.value.typePartResource}
           scopeTypePartId={props.value.scopeTypePartId}
         />
-        <div>{element()}</div>
+        <OneLineTextEditor
+          id="typeEditorFiler"
+          value={text}
+          onChange={onSearchTextChange}
+        />
         <SearchResult
           jump={props.value.jump}
           normalizedSearchText={text.trim().toLocaleLowerCase()}
@@ -271,7 +305,7 @@ const SelectedType: React.VFC<
   );
   return (
     <div>
-      <div>{result.name}</div>
+      <div className={css({ padding: 8 })}>{result.name} を選択中</div>
       {result.type === "inTypeParameter" ? (
         <></>
       ) : (
@@ -281,6 +315,7 @@ const SelectedType: React.VFC<
             language: props.language,
             location: d.Location.TypePart(props.typePartId),
           }}
+          style={{ padding: 8 }}
         >
           {result.name}のページ
         </Link>
@@ -359,6 +394,9 @@ type TypeSuggestion = {
   typeParameterCount: number;
 };
 
+/**
+ * 検索文字から最適な候補を生成する
+ */
 const generateTypeSuggestion = (
   typePartIdList: ReadonlyArray<d.TypePartId>,
   getFromMemoryCache: (
@@ -395,6 +433,12 @@ const generateTypeSuggestion = (
             },
             {
               text: data.name.slice(includeIndex + normalizedSearchText.length),
+              isEmphasis: false,
+            },
+            {
+              text: ` ${new Array(data.typeParameterList.length)
+                .fill("*")
+                .join(" ")}`,
               isEmphasis: false,
             },
           ],
