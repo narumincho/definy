@@ -217,10 +217,7 @@ const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
           typePartResource={props.value.typePartResource}
           scopeTypePartId={props.value.scopeTypePartId}
         />
-        <div>
-          <div>検索</div>
-          {element()}
-        </div>
+        <div>{element()}</div>
         <SearchResult
           jump={props.value.jump}
           normalizedSearchText={text.trim().toLocaleLowerCase()}
@@ -229,6 +226,7 @@ const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
           )}
           typePartResource={props.value.typePartResource}
           language={props.value.language}
+          selectedTypePartId={props.value.type.typePartId}
           onChange={onChange}
         />
         <TypeParameterList
@@ -236,6 +234,7 @@ const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
           jump={props.value.jump}
           typePartId={props.value.scopeTypePartId}
           typePartResource={props.value.typePartResource}
+          selectedTypePartId={props.value.type.typePartId}
           onChange={onChange}
         />
       </div>
@@ -298,6 +297,7 @@ const SearchResult: React.VFC<
       | undefined;
     /** 前後の空白を取り除き, 小文字に変換しておく必要がある */
     normalizedSearchText: string;
+    selectedTypePartId: d.TypePartId;
     onChange: (t: d.Type) => void;
   }
 > = React.memo((props) => {
@@ -358,6 +358,7 @@ const SearchResult: React.VFC<
               }}
               typeParameterCount={item.typeParameterCount}
               typePartId={item.typePartId}
+              isSelected={props.selectedTypePartId === item.typePartId}
             />
           ))}
         </div>
@@ -377,9 +378,18 @@ const TypeItem: React.VFC<
     typeParameterCount: number;
     type: d.Type;
     onChange: (type: d.Type) => void;
+    isSelected: boolean;
   }
 > = React.memo(
-  ({ onChange, typePartId, typeParameterCount, name, jump, language }) => {
+  ({
+    onChange,
+    typePartId,
+    typeParameterCount,
+    name,
+    jump,
+    language,
+    isSelected,
+  }) => {
     const onClick = React.useCallback(() => {
       onChange({
         typePartId,
@@ -395,6 +405,7 @@ const TypeItem: React.VFC<
         className={css({
           display: "grid",
           gridTemplateColumns: "1fr auto",
+          border: isSelected ? "solid 2px red" : "solid 2px transparent",
         })}
       >
         <Button onClick={onClick}>{name}</Button>
@@ -404,8 +415,18 @@ const TypeItem: React.VFC<
             language,
             location: d.Location.TypePart(typePartId),
           }}
+          style={{
+            display: "grid",
+            placeItems: "center",
+          }}
         >
-          →
+          <div
+            className={css({
+              padding: 4,
+            })}
+          >
+            →
+          </div>
         </Link>
       </div>
     );
@@ -417,6 +438,7 @@ const TypeParameterList: React.VFC<
   Pick<UseDefinyAppResult, "jump" | "language" | "typePartResource"> & {
     typePartId: d.TypePartId;
     onChange: (t: d.Type) => void;
+    selectedTypePartId: d.TypePartId;
   }
 > = React.memo((props) => {
   const typePartResource = props.typePartResource.getFromMemoryCache(
@@ -448,6 +470,7 @@ const TypeParameterList: React.VFC<
               type={{ typePartId: p.typePartId, parameter: [] }}
               typeParameterCount={0}
               typePartId={p.typePartId}
+              isSelected={props.typePartId === props.selectedTypePartId}
             />
           ))}
         </div>
