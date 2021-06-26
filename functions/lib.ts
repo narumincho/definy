@@ -498,17 +498,6 @@ const typePartToDBType = (
   typePartBody: typePart.body,
 });
 
-const typePartToDBTypeWithoutCreateTime = (
-  typePart: d.TypePart
-): Omit<TypePartData, "createTime"> => ({
-  name: typePart.name,
-  description: typePart.description,
-  attribute: typePart.attribute,
-  typeParameterList: typePart.typeParameterList,
-  projectId: typePart.projectId,
-  typePartBody: typePart.body,
-});
-
 const addTypePart = async (projectId: d.ProjectId): Promise<d.TypePart> => {
   const newTypePartId = createRandomId() as d.TypePartId;
   const newTypePart: d.TypePart = {
