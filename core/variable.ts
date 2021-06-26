@@ -224,31 +224,39 @@ const typePartToVariableExpr = (
           key: util.codecPropertyName,
           value: codecExprDefinition(typePart, allTypePartIdTypePartNameMap),
         }),
-        d.TsMember.KeyValue({
-          key: util.fromStringPropertyName,
-          value: d.TsExpr.Lambda({
-            typeParameterList: [],
-            parameterList: [
-              {
-                name: jsTs.identiferFromString("str"),
-                type: d.TsType.String,
-              },
-            ],
-            returnType: d.TsType.ScopeInFile(
-              jsTs.identiferFromString(typePart.name)
-            ),
-            statementList: [
-              d.Statement.Return(
-                d.TsExpr.TypeAssertion({
-                  expr: d.TsExpr.Variable(jsTs.identiferFromString("str")),
-                  type: d.TsType.ScopeInFile(
+
+        ...(typePart.body.typePartBodyKernel === d.TypePartBodyKernel.Id ||
+        typePart.body.typePartBodyKernel === d.TypePartBodyKernel.Token
+          ? [
+              d.TsMember.KeyValue({
+                key: util.fromStringPropertyName,
+                value: d.TsExpr.Lambda({
+                  typeParameterList: [],
+                  parameterList: [
+                    {
+                      name: jsTs.identiferFromString("str"),
+                      type: d.TsType.String,
+                    },
+                  ],
+                  returnType: d.TsType.ScopeInFile(
                     jsTs.identiferFromString(typePart.name)
                   ),
-                })
-              ),
-            ],
-          }),
-        }),
+                  statementList: [
+                    d.Statement.Return(
+                      d.TsExpr.TypeAssertion({
+                        expr: d.TsExpr.Variable(
+                          jsTs.identiferFromString("str")
+                        ),
+                        type: d.TsType.ScopeInFile(
+                          jsTs.identiferFromString(typePart.name)
+                        ),
+                      })
+                    ),
+                  ],
+                }),
+              }),
+            ]
+          : []),
       ]);
 
     case "Sum": {
