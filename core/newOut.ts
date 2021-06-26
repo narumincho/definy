@@ -11,12 +11,12 @@ namespace core {
   export const Time: Product<Time> = {
     from: (time: Time): Time => time,
     typePart: d.TypePart.helper({
-      id: "" as d.TypePartId,
+      id: d.TypePartId.fromString(""),
       name: "Time",
       description: "時間",
       attribute: d.Maybe.Nothing(),
       typeParameterList: [],
-      projectId: "" as d.ProjectId,
+      projectId: d.ProjectId.fromString(""),
       body: d.TypePartBody.Product([]),
     }),
   };

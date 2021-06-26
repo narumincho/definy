@@ -23,7 +23,7 @@ describe("url", () => {
       ).urlData
     ).toEqual<d.UrlData>({
       location: d.Location.Project(
-        "580d8d6a54cf43e4452a0bba6694a4ed" as d.ProjectId
+        d.ProjectId.fromString("580d8d6a54cf43e4452a0bba6694a4ed")
       ),
       language: "Japanese",
     });
@@ -36,7 +36,7 @@ describe("url", () => {
       commonUrl.urlDataAndAccountTokenFromUrl(url).urlData
     ).toEqual<d.UrlData>({
       location: d.Location.Account(
-        "580d8d6a54cf43e4452a0bba6694a4ed" as d.AccountId
+        d.AccountId.fromString("580d8d6a54cf43e4452a0bba6694a4ed")
       ),
       language: "Esperanto",
     });
@@ -49,14 +49,16 @@ describe("url", () => {
       commonUrl.urlDataAndAccountTokenFromUrl(url).accountToken
     ).toEqual(
       d.Maybe.Just(
-        "f81919b78537257302b50f776b77a90b984cc3d75fa899f9f460ff972dcc8cb0" as d.AccountToken
+        d.AccountToken.fromString(
+          "f81919b78537257302b50f776b77a90b984cc3d75fa899f9f460ff972dcc8cb0"
+        )
       )
     );
   });
   it("encode, decode user url", () => {
     const languageAndLocation: d.UrlData = {
       location: d.Location.Account(
-        "580d8d6a54cf43e4452a0bba6694a4ed" as d.AccountId
+        d.AccountId.fromString("580d8d6a54cf43e4452a0bba6694a4ed")
       ),
       language: "Esperanto",
     };
@@ -126,11 +128,11 @@ describe("data", () => {
      * = (add (addOneHundred one)) one
      */
     const intType: d.Type = {
-      typePartId: "int" as d.TypePartId,
+      typePartId: d.TypePartId.fromString("int"),
       parameter: [],
     };
-    const oneName = "0" as d.PartId;
-    const addOneHundredName = "1" as d.PartId;
+    const oneName = d.PartId.fromString("0");
+    const addOneHundredName = d.PartId.fromString("1");
     const result = main.evaluateSuggestionExpr(
       {
         typePartMap: new Map(),
@@ -143,7 +145,7 @@ describe("data", () => {
               description: "1を表す",
               type: intType,
               expr: d.Expr.Int32Literal(1),
-              projectId: "sampleProject" as d.ProjectId,
+              projectId: d.ProjectId.fromString("sampleProject"),
             },
           ],
           [
@@ -157,7 +159,7 @@ describe("data", () => {
                 function: d.Expr.Kernel("Int32Add"),
                 parameter: d.Expr.Int32Literal(100),
               }),
-              projectId: "sampleProject" as d.ProjectId,
+              projectId: d.ProjectId.fromString("sampleProject"),
             },
           ],
         ]),
@@ -217,24 +219,27 @@ describe("binary codec", () => {
   });
   it("token codec", () => {
     codecEqual(
-      "24b6b3789d903e841490ac04ffc2b6f9848ea529b2d9db380d190583b09995e6" as d.AccountToken,
+      d.AccountToken.fromString(
+        "24b6b3789d903e841490ac04ffc2b6f9848ea529b2d9db380d190583b09995e6"
+      ),
       d.AccountToken.codec
     );
   });
   it("id codec", () => {
     codecEqual(
-      "756200c85a0ff28f08daa2d201d616a9" as d.AccountId,
+      d.AccountId.fromString("756200c85a0ff28f08daa2d201d616a9"),
       d.AccountId.codec
     );
   });
   it("user codec", () => {
     codecEqual(
       {
-        id: "933055412132d6aa46f8dde7159ecb38" as d.AccountId,
+        id: d.AccountId.fromString("933055412132d6aa46f8dde7159ecb38"),
         name: "ナルミンチョ",
         createTime: { day: 18440, millisecond: 12000 },
-        imageHash:
-          "0a8eed336ca61252c13da0ff0b82ce37e81b84622a4052ab33693c434b4f6434" as d.ImageHash,
+        imageHash: d.ImageHash.fromString(
+          "0a8eed336ca61252c13da0ff0b82ce37e81b84622a4052ab33693c434b4f6434"
+        ),
         introduction: "ナルミンチョはDefinyを作っている人です.",
       },
       d.Account.codec
@@ -243,11 +248,12 @@ describe("binary codec", () => {
   it("Maybe Account codec", () => {
     codecEqual<d.Maybe<d.Account>>(
       d.Maybe.Just({
-        id: "933055412132d6aa46f8dde7159ecb38" as d.AccountId,
+        id: d.AccountId.fromString("933055412132d6aa46f8dde7159ecb38"),
         name: "ナルミンチョ",
         createTime: { day: 18440, millisecond: 12000 },
-        imageHash:
-          "0a8eed336ca61252c13da0ff0b82ce37e81b84622a4052ab33693c434b4f6434" as d.ImageHash,
+        imageHash: d.ImageHash.fromString(
+          "0a8eed336ca61252c13da0ff0b82ce37e81b84622a4052ab33693c434b4f6434"
+        ),
         introduction: "ナルミンチョはDefinyを作っている人です.",
       }),
       d.Maybe.codec(d.Account.codec)

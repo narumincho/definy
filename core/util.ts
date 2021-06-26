@@ -22,7 +22,7 @@ export const typeToTsType = (
   if (typePartName === undefined) {
     throw new Error(
       "internal error not found type part name in typeToTsType. typePartId =" +
-        (type.typePartId as string)
+        type.typePartId
     );
   }
   return d.TsType.WithTypeParameter({
@@ -79,7 +79,7 @@ export const toTypeName = (
   if (typePartName === undefined) {
     throw new Error(
       "internal error not found type part name in toTypeName. typePartId =" +
-        (type.typePartId as string)
+        type.typePartId
     );
   }
   return (
@@ -142,8 +142,9 @@ export const isFirstLowerCaseName = (text: string): boolean => {
   return true;
 };
 
-export const definyCodeProjectId =
-  "1e4531eba1d93cd9f9f31a8bc49551a2" as d.ProjectId;
+export const definyCodeProjectId = d.ProjectId.fromString(
+  "1e4531eba1d93cd9f9f31a8bc49551a2"
+);
 
 /** エディタ上で型の名前を作る. 先頭は小文字だがエディタ上は大文字 */
 export const stringToTypePartName = (text: string): string | undefined => {

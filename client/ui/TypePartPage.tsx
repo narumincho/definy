@@ -337,9 +337,11 @@ const parameterListValue = (
 };
 
 const randomTypePartId = () =>
-  [...crypto.getRandomValues(new Uint8Array(16))]
-    .map((e) => e.toString(16).padStart(2, "0"))
-    .join("") as d.TypePartId;
+  d.TypePartId.fromString(
+    [...crypto.getRandomValues(new Uint8Array(16))]
+      .map((e) => e.toString(16).padStart(2, "0"))
+      .join("")
+  );
 
 const bodyValue = (
   context: Pick<
@@ -647,7 +649,6 @@ const memberValue = (
 };
 
 const typePartBodyKernelValueList: ReadonlyArray<d.TypePartBodyKernel> = [
-  "Function",
   "Int32",
   "String",
   "Binary",
@@ -663,12 +664,6 @@ const kernelValue = (
 ) => {
   return sumValue({
     tagList: [
-      {
-        name: "Function",
-        onSelect: () => {
-          setTypePartBodyKernel(d.TypePartBodyKernel.Function);
-        },
-      },
       {
         name: "Int32",
         onSelect: () => {

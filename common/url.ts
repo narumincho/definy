@@ -85,25 +85,25 @@ const locationFromUrl = (pathName: string): d.Location => {
       return d.Location.Setting;
     case projectPath:
       if (typeof pathList[2] === "string") {
-        return d.Location.Project(pathList[2] as d.ProjectId);
+        return d.Location.Project(d.ProjectId.fromString(pathList[2]));
       }
       return d.Location.Home;
 
     case accountPath:
       if (typeof pathList[2] === "string") {
-        return d.Location.Account(pathList[2] as d.AccountId);
+        return d.Location.Account(d.AccountId.fromString(pathList[2]));
       }
       return d.Location.Home;
 
     case typePartPath:
       if (typeof pathList[2] === "string") {
-        return d.Location.TypePart(pathList[2] as d.TypePartId);
+        return d.Location.TypePart(d.TypePartId.fromString(pathList[2]));
       }
       return d.Location.Home;
 
     case partPath:
       if (typeof pathList[2] === "string") {
-        return d.Location.Part(pathList[2] as d.PartId);
+        return d.Location.Part(d.PartId.fromString(pathList[2]));
       }
       return d.Location.Home;
   }
@@ -124,10 +124,14 @@ const languageFromIdString = (languageAsString: string): d.Language => {
 
 const accountTokenFromUrl = (hash: string): d.Maybe<d.AccountToken> => {
   const matchResult = hash.match(/account-token=(?<token>[0-9a-f]{64})/u);
-  if (matchResult === null || matchResult.groups === undefined) {
+  if (
+    matchResult === null ||
+    matchResult.groups === undefined ||
+    matchResult.groups.token === undefined
+  ) {
     return d.Maybe.Nothing();
   }
-  return d.Maybe.Just(matchResult.groups.token as d.AccountToken);
+  return d.Maybe.Just(d.AccountToken.fromString(matchResult.groups.token));
 };
 
 export const iconUrl: URL = new URL(`${origin}/icon.png`);

@@ -639,7 +639,7 @@ readonly typeDeclarationList: List<ElmTypeDeclaration> };
  * Definyだけでは表現できないデータ型
  * @typePartId 657b5a5519b095480a21fdadd0f6fbd1
  */
-export type TypePartBodyKernel = "Function" | "Int32" | "String" | "Binary" | "Id" | "Token" | "List" | "Dict";
+export type TypePartBodyKernel = "Int32" | "String" | "Binary" | "Id" | "Token" | "List" | "Dict";
 
 
 /**
@@ -838,6 +838,21 @@ readonly accountToken: AccountToken;
  * プロジェクトID
  */
 readonly projectId: ProjectId };
+
+
+/**
+ * 関数ではない型
+ * @typePartId 7e689d3cd011d42947cca759ecebd1cf
+ */
+export type DataType = { 
+/**
+ * 型パーツID
+ */
+readonly typePartId: TypePartId; 
+/**
+ * 型のパラメータ
+ */
+readonly parameter: List<UrlData> };
 
 
 /**
@@ -2216,7 +2231,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<ProjectId> } = { typePartId: "0cd913118a2ad1469d656146a08c5f76" as TypePartId, codec: { encode: (value: ProjectId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: ProjectId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: ProjectId; readonly nextIndex: number }) } };
+readonly codec: Codec<ProjectId>; 
+/**
+ * 文字列から変換する
+ */
+readonly fromString: (a: string) => ProjectId } = { typePartId: "0cd913118a2ad1469d656146a08c5f76" as TypePartId, codec: { encode: (value: ProjectId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: ProjectId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: ProjectId; readonly nextIndex: number }) }, fromString: (str: string): ProjectId => (str as ProjectId) };
 
 
 /**
@@ -3671,7 +3690,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<QProgramId> } = { typePartId: "4fe2f5da0a887c2a6b33c16c5d52058f" as TypePartId, codec: { encode: (value: QProgramId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: QProgramId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: QProgramId; readonly nextIndex: number }) } };
+readonly codec: Codec<QProgramId>; 
+/**
+ * 文字列から変換する
+ */
+readonly fromString: (a: string) => QProgramId } = { typePartId: "4fe2f5da0a887c2a6b33c16c5d52058f" as TypePartId, codec: { encode: (value: QProgramId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: QProgramId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: QProgramId; readonly nextIndex: number }) }, fromString: (str: string): QProgramId => (str as QProgramId) };
 
 
 /**
@@ -3709,7 +3732,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<QQuestionId> } = { typePartId: "5249c5510c734bbe48e63a23e4e202b3" as TypePartId, codec: { encode: (value: QQuestionId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: QQuestionId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: QQuestionId; readonly nextIndex: number }) } };
+readonly codec: Codec<QQuestionId>; 
+/**
+ * 文字列から変換する
+ */
+readonly fromString: (a: string) => QQuestionId } = { typePartId: "5249c5510c734bbe48e63a23e4e202b3" as TypePartId, codec: { encode: (value: QQuestionId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: QQuestionId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: QQuestionId; readonly nextIndex: number }) }, fromString: (str: string): QQuestionId => (str as QQuestionId) };
 
 
 /**
@@ -3828,7 +3855,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<PartId> } = { typePartId: "5880cd7c0b6f0205c739a06181898d03" as TypePartId, codec: { encode: (value: PartId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: PartId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: PartId; readonly nextIndex: number }) } };
+readonly codec: Codec<PartId>; 
+/**
+ * 文字列から変換する
+ */
+readonly fromString: (a: string) => PartId } = { typePartId: "5880cd7c0b6f0205c739a06181898d03" as TypePartId, codec: { encode: (value: PartId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: PartId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: PartId; readonly nextIndex: number }) }, fromString: (str: string): PartId => (str as PartId) };
 
 
 /**
@@ -3868,7 +3899,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<TagId> } = { typePartId: "5ec292c48424e5e9ee8cc2d672830ecd" as TypePartId, codec: { encode: (value: TagId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: TagId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: TagId; readonly nextIndex: number }) } };
+readonly codec: Codec<TagId>; 
+/**
+ * 文字列から変換する
+ */
+readonly fromString: (a: string) => TagId } = { typePartId: "5ec292c48424e5e9ee8cc2d672830ecd" as TypePartId, codec: { encode: (value: TagId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: TagId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: TagId; readonly nextIndex: number }) }, fromString: (str: string): TagId => (str as TagId) };
 
 
 /**
@@ -3929,7 +3964,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<QClassId> } = { typePartId: "624e37b7230f763e6318c627c2c728ec" as TypePartId, codec: { encode: (value: QClassId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: QClassId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: QClassId; readonly nextIndex: number }) } };
+readonly codec: Codec<QClassId>; 
+/**
+ * 文字列から変換する
+ */
+readonly fromString: (a: string) => QClassId } = { typePartId: "624e37b7230f763e6318c627c2c728ec" as TypePartId, codec: { encode: (value: QClassId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: QClassId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: QClassId; readonly nextIndex: number }) }, fromString: (str: string): QClassId => (str as QClassId) };
 
 
 /**
@@ -3992,10 +4031,6 @@ readonly typePartId: TypePartId;
  */
 readonly codec: Codec<TypePartBodyKernel>; 
 /**
- * 関数
- */
-readonly Function: TypePartBodyKernel; 
-/**
  * 32bit整数
  */
 readonly Int32: TypePartBodyKernel; 
@@ -4022,57 +4057,51 @@ readonly List: TypePartBodyKernel;
 /**
  * 辞書型. TypeScriptでは ReadonlyMapとして扱う
  */
-readonly Dict: TypePartBodyKernel } = { Function: "Function", Int32: "Int32", String: "String", Binary: "Binary", Id: "Id", Token: "Token", List: "List", Dict: "Dict", typePartId: "657b5a5519b095480a21fdadd0f6fbd1" as TypePartId, codec: { encode: (value: TypePartBodyKernel): ReadonlyArray<number> => {
+readonly Dict: TypePartBodyKernel } = { Int32: "Int32", String: "String", Binary: "Binary", Id: "Id", Token: "Token", List: "List", Dict: "Dict", typePartId: "657b5a5519b095480a21fdadd0f6fbd1" as TypePartId, codec: { encode: (value: TypePartBodyKernel): ReadonlyArray<number> => {
   switch (value) {
-    case "Function": {
+    case "Int32": {
       return [0];
     }
-    case "Int32": {
+    case "String": {
       return [1];
     }
-    case "String": {
+    case "Binary": {
       return [2];
     }
-    case "Binary": {
+    case "Id": {
       return [3];
     }
-    case "Id": {
+    case "Token": {
       return [4];
     }
-    case "Token": {
+    case "List": {
       return [5];
     }
-    case "List": {
-      return [6];
-    }
     case "Dict": {
-      return [7];
+      return [6];
     }
   }
 }, decode: (index: number, binary: Uint8Array): { readonly result: TypePartBodyKernel; readonly nextIndex: number } => {
   const patternIndex: { readonly result: number; readonly nextIndex: number } = Int32.codec.decode(index, binary);
   if (patternIndex.result === 0) {
-    return { result: TypePartBodyKernel.Function, nextIndex: patternIndex.nextIndex };
-  }
-  if (patternIndex.result === 1) {
     return { result: TypePartBodyKernel.Int32, nextIndex: patternIndex.nextIndex };
   }
-  if (patternIndex.result === 2) {
+  if (patternIndex.result === 1) {
     return { result: TypePartBodyKernel.String, nextIndex: patternIndex.nextIndex };
   }
-  if (patternIndex.result === 3) {
+  if (patternIndex.result === 2) {
     return { result: TypePartBodyKernel.Binary, nextIndex: patternIndex.nextIndex };
   }
-  if (patternIndex.result === 4) {
+  if (patternIndex.result === 3) {
     return { result: TypePartBodyKernel.Id, nextIndex: patternIndex.nextIndex };
   }
-  if (patternIndex.result === 5) {
+  if (patternIndex.result === 4) {
     return { result: TypePartBodyKernel.Token, nextIndex: patternIndex.nextIndex };
   }
-  if (patternIndex.result === 6) {
+  if (patternIndex.result === 5) {
     return { result: TypePartBodyKernel.List, nextIndex: patternIndex.nextIndex };
   }
-  if (patternIndex.result === 7) {
+  if (patternIndex.result === 6) {
     return { result: TypePartBodyKernel.Dict, nextIndex: patternIndex.nextIndex };
   }
   throw new Error("存在しないパターンを指定された 型を更新してください");
@@ -4250,7 +4279,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<TypePartId> } = { typePartId: "6e3cff317f8bfbbd1391c0afb9ad6b72" as TypePartId, codec: { encode: (value: TypePartId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: TypePartId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: TypePartId; readonly nextIndex: number }) } };
+readonly codec: Codec<TypePartId>; 
+/**
+ * 文字列から変換する
+ */
+readonly fromString: (a: string) => TypePartId } = { typePartId: "6e3cff317f8bfbbd1391c0afb9ad6b72" as TypePartId, codec: { encode: (value: TypePartId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: TypePartId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: TypePartId; readonly nextIndex: number }) }, fromString: (str: string): TypePartId => (str as TypePartId) };
 
 
 /**
@@ -4605,6 +4638,29 @@ readonly helper: (a: AccountTokenAndProjectId) => AccountTokenAndProjectId } = {
   const accountTokenAndNextIndex: { readonly result: AccountToken; readonly nextIndex: number } = AccountToken.codec.decode(index, binary);
   const projectIdAndNextIndex: { readonly result: ProjectId; readonly nextIndex: number } = ProjectId.codec.decode(accountTokenAndNextIndex.nextIndex, binary);
   return { result: { accountToken: accountTokenAndNextIndex.result, projectId: projectIdAndNextIndex.result }, nextIndex: projectIdAndNextIndex.nextIndex };
+} } };
+
+
+/**
+ * 関数ではない型
+ * @typePartId 7e689d3cd011d42947cca759ecebd1cf
+ */
+export const DataType: { 
+/**
+ * definy.app内 の 型パーツの Id
+ */
+readonly typePartId: TypePartId; 
+/**
+ * 独自のバイナリ形式の変換処理ができるコーデック
+ */
+readonly codec: Codec<DataType>; 
+/**
+ * 型を合わせる上で便利なヘルパー関数
+ */
+readonly helper: (a: DataType) => DataType } = { typePartId: "7e689d3cd011d42947cca759ecebd1cf" as TypePartId, helper: (dataType: DataType): DataType => dataType, codec: { encode: (value: DataType): ReadonlyArray<number> => (TypePartId.codec.encode(value.typePartId).concat(List.codec(UrlData.codec).encode(value.parameter))), decode: (index: number, binary: Uint8Array): { readonly result: DataType; readonly nextIndex: number } => {
+  const typePartIdAndNextIndex: { readonly result: TypePartId; readonly nextIndex: number } = TypePartId.codec.decode(index, binary);
+  const parameterAndNextIndex: { readonly result: List<UrlData>; readonly nextIndex: number } = List.codec(UrlData.codec).decode(typePartIdAndNextIndex.nextIndex, binary);
+  return { result: { typePartId: typePartIdAndNextIndex.result, parameter: parameterAndNextIndex.result }, nextIndex: parameterAndNextIndex.nextIndex };
 } } };
 
 
@@ -5499,7 +5555,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<QClassInvitationToken> } = { typePartId: "a5f14e3ce94846347dc38bc1fb29ba7f" as TypePartId, codec: { encode: (value: QClassInvitationToken): ReadonlyArray<number> => (encodeToken(value)), decode: (index: number, binary: Uint8Array): { readonly result: QClassInvitationToken; readonly nextIndex: number } => (decodeToken(index, binary) as { readonly result: QClassInvitationToken; readonly nextIndex: number }) } };
+readonly codec: Codec<QClassInvitationToken>; 
+/**
+ * 文字列から変換する
+ */
+readonly fromString: (a: string) => QClassInvitationToken } = { typePartId: "a5f14e3ce94846347dc38bc1fb29ba7f" as TypePartId, codec: { encode: (value: QClassInvitationToken): ReadonlyArray<number> => (encodeToken(value)), decode: (index: number, binary: Uint8Array): { readonly result: QClassInvitationToken; readonly nextIndex: number } => (decodeToken(index, binary) as { readonly result: QClassInvitationToken; readonly nextIndex: number }) }, fromString: (str: string): QClassInvitationToken => (str as QClassInvitationToken) };
 
 
 /**
@@ -5679,7 +5739,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<AccountTokenHash> } = { typePartId: "b553ab17ca45f4975d9fe17fe1a63ac4" as TypePartId, codec: { encode: (value: AccountTokenHash): ReadonlyArray<number> => (encodeToken(value)), decode: (index: number, binary: Uint8Array): { readonly result: AccountTokenHash; readonly nextIndex: number } => (decodeToken(index, binary) as { readonly result: AccountTokenHash; readonly nextIndex: number }) } };
+readonly codec: Codec<AccountTokenHash>; 
+/**
+ * 文字列から変換する
+ */
+readonly fromString: (a: string) => AccountTokenHash } = { typePartId: "b553ab17ca45f4975d9fe17fe1a63ac4" as TypePartId, codec: { encode: (value: AccountTokenHash): ReadonlyArray<number> => (encodeToken(value)), decode: (index: number, binary: Uint8Array): { readonly result: AccountTokenHash; readonly nextIndex: number } => (decodeToken(index, binary) as { readonly result: AccountTokenHash; readonly nextIndex: number }) }, fromString: (str: string): AccountTokenHash => (str as AccountTokenHash) };
 
 
 /**
@@ -5746,7 +5810,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<ProjectDataFileHashValue> } = { typePartId: "b8bf6c22e275c06c7dc42300c332b47d" as TypePartId, codec: { encode: (value: ProjectDataFileHashValue): ReadonlyArray<number> => (encodeToken(value)), decode: (index: number, binary: Uint8Array): { readonly result: ProjectDataFileHashValue; readonly nextIndex: number } => (decodeToken(index, binary) as { readonly result: ProjectDataFileHashValue; readonly nextIndex: number }) } };
+readonly codec: Codec<ProjectDataFileHashValue>; 
+/**
+ * 文字列から変換する
+ */
+readonly fromString: (a: string) => ProjectDataFileHashValue } = { typePartId: "b8bf6c22e275c06c7dc42300c332b47d" as TypePartId, codec: { encode: (value: ProjectDataFileHashValue): ReadonlyArray<number> => (encodeToken(value)), decode: (index: number, binary: Uint8Array): { readonly result: ProjectDataFileHashValue; readonly nextIndex: number } => (decodeToken(index, binary) as { readonly result: ProjectDataFileHashValue; readonly nextIndex: number }) }, fromString: (str: string): ProjectDataFileHashValue => (str as ProjectDataFileHashValue) };
 
 
 /**
@@ -5891,7 +5959,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<AccountId> } = { typePartId: "c1a17b07e8e664ca80217833ff2ad3f1" as TypePartId, codec: { encode: (value: AccountId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: AccountId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: AccountId; readonly nextIndex: number }) } };
+readonly codec: Codec<AccountId>; 
+/**
+ * 文字列から変換する
+ */
+readonly fromString: (a: string) => AccountId } = { typePartId: "c1a17b07e8e664ca80217833ff2ad3f1" as TypePartId, codec: { encode: (value: AccountId): ReadonlyArray<number> => (encodeId(value)), decode: (index: number, binary: Uint8Array): { readonly result: AccountId; readonly nextIndex: number } => (decodeId(index, binary) as { readonly result: AccountId; readonly nextIndex: number }) }, fromString: (str: string): AccountId => (str as AccountId) };
 
 
 /**
@@ -6527,7 +6599,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<AccountToken> } = { typePartId: "deb01f82879754c03aa4d244e136e59d" as TypePartId, codec: { encode: (value: AccountToken): ReadonlyArray<number> => (encodeToken(value)), decode: (index: number, binary: Uint8Array): { readonly result: AccountToken; readonly nextIndex: number } => (decodeToken(index, binary) as { readonly result: AccountToken; readonly nextIndex: number }) } };
+readonly codec: Codec<AccountToken>; 
+/**
+ * 文字列から変換する
+ */
+readonly fromString: (a: string) => AccountToken } = { typePartId: "deb01f82879754c03aa4d244e136e59d" as TypePartId, codec: { encode: (value: AccountToken): ReadonlyArray<number> => (encodeToken(value)), decode: (index: number, binary: Uint8Array): { readonly result: AccountToken; readonly nextIndex: number } => (decodeToken(index, binary) as { readonly result: AccountToken; readonly nextIndex: number }) }, fromString: (str: string): AccountToken => (str as AccountToken) };
 
 
 /**
@@ -6592,7 +6668,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<ImageHash> } = { typePartId: "e71e15a15b0883940a75e58367151d1a" as TypePartId, codec: { encode: (value: ImageHash): ReadonlyArray<number> => (encodeToken(value)), decode: (index: number, binary: Uint8Array): { readonly result: ImageHash; readonly nextIndex: number } => (decodeToken(index, binary) as { readonly result: ImageHash; readonly nextIndex: number }) } };
+readonly codec: Codec<ImageHash>; 
+/**
+ * 文字列から変換する
+ */
+readonly fromString: (a: string) => ImageHash } = { typePartId: "e71e15a15b0883940a75e58367151d1a" as TypePartId, codec: { encode: (value: ImageHash): ReadonlyArray<number> => (encodeToken(value)), decode: (index: number, binary: Uint8Array): { readonly result: ImageHash; readonly nextIndex: number } => (decodeToken(index, binary) as { readonly result: ImageHash; readonly nextIndex: number }) }, fromString: (str: string): ImageHash => (str as ImageHash) };
 
 
 /**
