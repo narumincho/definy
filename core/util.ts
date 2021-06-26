@@ -48,6 +48,8 @@ export const resultProperty = "result";
 export const nextIndexProperty = "nextIndex";
 
 export const typePartIdPropertyName = "typePartId";
+export const fromStringPropertyName = "fromString";
+
 /**
  * エンコードの関数を呼ぶ
  * ```ts

@@ -1,5 +1,10 @@
 import * as d from "../data";
 
+/**
+ * 試しで, 名前空間付きの出力をどうしようかと思った結果.
+ * namespace を使わずに, 複数ファイル出力するようにしよう
+ */
+
 /* eslint-disable @typescript-eslint/no-namespace */
 namespace core {
   export type Time = { second: number; millisecond: number };
