@@ -498,17 +498,6 @@ const typePartToDBType = (
   typePartBody: typePart.body,
 });
 
-const typePartToDBTypeWithoutCreateTime = (
-  typePart: d.TypePart
-): Omit<TypePartData, "createTime"> => ({
-  name: typePart.name,
-  description: typePart.description,
-  attribute: typePart.attribute,
-  typeParameterList: typePart.typeParameterList,
-  projectId: typePart.projectId,
-  typePartBody: typePart.body,
-});
-
 const addTypePart = async (projectId: d.ProjectId): Promise<d.TypePart> => {
   const newTypePartId = createRandomId() as d.TypePartId;
   const newTypePart: d.TypePart = {
@@ -754,11 +743,25 @@ export const apiFunc: {
     const writeData = await database
       .collection("typePart")
       .doc(request.typePartId)
-      .update(typePartToDBTypeWithoutCreateTime(request.typePart));
+      .update({
+        name: request.name,
+        description: request.description,
+        attribute: request.attribute,
+        typeParameterList: request.typeParameterList,
+        typePartBody: request.body,
+      });
 
     return {
       getTime: firestoreTimestampToTime(writeData.writeTime),
-      data: d.Maybe.Just(request.typePart),
+      data: d.Maybe.Just({
+        name: request.name,
+        description: request.description,
+        attribute: request.attribute,
+        typeParameterList: request.typeParameterList,
+        body: request.body,
+        id: request.typePartId,
+        projectId: typePart.projectId,
+      }),
     };
   },
   getTypePart: async (typePartId) => {

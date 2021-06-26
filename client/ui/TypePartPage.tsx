@@ -107,20 +107,18 @@ const LoadedTypePartEditor: React.VFC<
 
   const onClickSaveTypePart = React.useCallback(() => {
     saveTypePart({
-      id: props.typePartId,
+      typePartId: props.typePartId,
       name,
       description,
       attribute,
       typeParameterList,
       body,
-      projectId: props.typePart.projectId,
     });
   }, [
     attribute,
     body,
     description,
     name,
-    props.typePart.projectId,
     props.typePartId,
     saveTypePart,
     typeParameterList,

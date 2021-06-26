@@ -1634,9 +1634,25 @@ readonly accountToken: AccountToken;
  */
 readonly typePartId: TypePartId; 
 /**
- * 型パーツ
+ * 設定する型パーツ名
  */
-readonly typePart: TypePart };
+readonly name: String; 
+/**
+ * 設定する説明文
+ */
+readonly description: String; 
+/**
+ * 設定する属性
+ */
+readonly attribute: Maybe<TypeAttribute>; 
+/**
+ * 設定する型パラメーター
+ */
+readonly typeParameterList: List<TypeParameter>; 
+/**
+ * 設定する型定義本体
+ */
+readonly body: TypePartBody };
 
 
 /**
@@ -6403,11 +6419,15 @@ readonly codec: Codec<SetTypePartParameter>;
 /**
  * 型を合わせる上で便利なヘルパー関数
  */
-readonly helper: (a: SetTypePartParameter) => SetTypePartParameter } = { typePartId: "dac038758a5c45f762de388bb5193fb8" as TypePartId, helper: (setTypePartParameter: SetTypePartParameter): SetTypePartParameter => setTypePartParameter, codec: { encode: (value: SetTypePartParameter): ReadonlyArray<number> => (AccountToken.codec.encode(value.accountToken).concat(TypePartId.codec.encode(value.typePartId)).concat(TypePart.codec.encode(value.typePart))), decode: (index: number, binary: Uint8Array): { readonly result: SetTypePartParameter; readonly nextIndex: number } => {
+readonly helper: (a: SetTypePartParameter) => SetTypePartParameter } = { typePartId: "dac038758a5c45f762de388bb5193fb8" as TypePartId, helper: (setTypePartParameter: SetTypePartParameter): SetTypePartParameter => setTypePartParameter, codec: { encode: (value: SetTypePartParameter): ReadonlyArray<number> => (AccountToken.codec.encode(value.accountToken).concat(TypePartId.codec.encode(value.typePartId)).concat(String.codec.encode(value.name)).concat(String.codec.encode(value.description)).concat(Maybe.codec(TypeAttribute.codec).encode(value.attribute)).concat(List.codec(TypeParameter.codec).encode(value.typeParameterList)).concat(TypePartBody.codec.encode(value.body))), decode: (index: number, binary: Uint8Array): { readonly result: SetTypePartParameter; readonly nextIndex: number } => {
   const accountTokenAndNextIndex: { readonly result: AccountToken; readonly nextIndex: number } = AccountToken.codec.decode(index, binary);
   const typePartIdAndNextIndex: { readonly result: TypePartId; readonly nextIndex: number } = TypePartId.codec.decode(accountTokenAndNextIndex.nextIndex, binary);
-  const typePartAndNextIndex: { readonly result: TypePart; readonly nextIndex: number } = TypePart.codec.decode(typePartIdAndNextIndex.nextIndex, binary);
-  return { result: { accountToken: accountTokenAndNextIndex.result, typePartId: typePartIdAndNextIndex.result, typePart: typePartAndNextIndex.result }, nextIndex: typePartAndNextIndex.nextIndex };
+  const nameAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(typePartIdAndNextIndex.nextIndex, binary);
+  const descriptionAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(nameAndNextIndex.nextIndex, binary);
+  const attributeAndNextIndex: { readonly result: Maybe<TypeAttribute>; readonly nextIndex: number } = Maybe.codec(TypeAttribute.codec).decode(descriptionAndNextIndex.nextIndex, binary);
+  const typeParameterListAndNextIndex: { readonly result: List<TypeParameter>; readonly nextIndex: number } = List.codec(TypeParameter.codec).decode(attributeAndNextIndex.nextIndex, binary);
+  const bodyAndNextIndex: { readonly result: TypePartBody; readonly nextIndex: number } = TypePartBody.codec.decode(typeParameterListAndNextIndex.nextIndex, binary);
+  return { result: { accountToken: accountTokenAndNextIndex.result, typePartId: typePartIdAndNextIndex.result, name: nameAndNextIndex.result, description: descriptionAndNextIndex.result, attribute: attributeAndNextIndex.result, typeParameterList: typeParameterListAndNextIndex.result, body: bodyAndNextIndex.result }, nextIndex: bodyAndNextIndex.nextIndex };
 } } };
 
 

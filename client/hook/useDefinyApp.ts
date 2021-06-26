@@ -152,7 +152,17 @@ export type UseDefinyAppResult = {
    *
    * *side-effect*
    */
-  readonly saveTypePart: (typePart: d.TypePart) => void;
+  readonly saveTypePart: (
+    parameter: Pick<
+      d.SetTypePartParameter,
+      | "typePartId"
+      | "name"
+      | "description"
+      | "attribute"
+      | "typeParameterList"
+      | "body"
+    >
+  ) => void;
 
   /**
    * 型パーツを保存中かどうか
@@ -613,7 +623,17 @@ export const useDefinyApp = (
   );
 
   const saveTypePart = useCallback(
-    (typePart: d.TypePart): void => {
+    (
+      parameter: Pick<
+        d.SetTypePartParameter,
+        | "typePartId"
+        | "name"
+        | "description"
+        | "attribute"
+        | "typeParameterList"
+        | "body"
+      >
+    ): void => {
       const accountToken = getAccountToken();
       if (accountToken === undefined) {
         option.notificationMessageHandler(
@@ -625,9 +645,13 @@ export const useDefinyApp = (
       setIsSavingTypePart(true);
       api
         .setTypePart({
-          typePart,
-          typePartId: typePart.id,
           accountToken,
+          typePartId: parameter.typePartId,
+          name: parameter.name,
+          description: parameter.description,
+          attribute: parameter.attribute,
+          typeParameterList: parameter.typeParameterList,
+          body: parameter.body,
         })
         .then((response) => {
           setIsSavingTypePart(false);
