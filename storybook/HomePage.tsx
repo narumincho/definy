@@ -41,7 +41,7 @@ Default.args = {
   language: d.Language.Japanese,
 };
 
-const dummyAccountId = "dummyAccountId" as d.AccountId;
+const dummyAccountId = d.AccountId.fromString("dummyAccountId");
 
 export const LoggedIn: Story<ControlAndActionProps> = (props) => (
   <HomePage
@@ -49,7 +49,7 @@ export const LoggedIn: Story<ControlAndActionProps> = (props) => (
     projectResource={projectResource}
     accountResource={accountResource}
     logInState={d.LogInState.LoggedIn({
-      accountToken: "dummyAccountToken" as d.AccountToken,
+      accountToken: d.AccountToken.fromString("dummyAccountToken"),
       userId: dummyAccountId,
     })}
     onJump={props.onJump}
@@ -68,7 +68,7 @@ export const Loaded: Story<ControlAndActionProps> = (props) => (
     projectResource={projectResource}
     accountResource={accountResource}
     logInState={d.LogInState.LoggedIn({
-      accountToken: "dummyAccountToken" as d.AccountToken,
+      accountToken: d.AccountToken.fromString("dummyAccountToken"),
       userId: dummyAccountId,
     })}
     onJump={props.onJump}

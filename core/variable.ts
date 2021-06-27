@@ -25,7 +25,7 @@ const typePartToVariable = (
 ): d.Variable => {
   return {
     name: jsTs.identiferFromString(typePart.name),
-    document: typePart.description + "\n@typePartId " + (typePartId as string),
+    document: typePart.description + "\n@typePartId " + typePartId,
     type: typePartToVariableType(typePart, allTypePartIdTypePartNameMap),
     expr: typePartToVariableExpr(
       typePartId,
@@ -603,8 +603,6 @@ const kernelEncodeDefinitionStatementList = (
   typePart: d.TypePart
 ): ReadonlyArray<d.Statement> => {
   switch (typePartBodyKernel) {
-    case "Function":
-      throw new Error("cannot encode function");
     case "Int32":
       return int32.encodeDefinitionStatementList(valueVar);
     case "String":
@@ -875,8 +873,6 @@ const kernelDecodeDefinitionStatementList = (
   parameterBinary: d.TsExpr
 ): ReadonlyArray<d.Statement> => {
   switch (typePartBodyKernel) {
-    case "Function":
-      throw new Error("cannot decode function");
     case "Int32":
       return int32.decodeDefinitionStatementList(
         parameterIndex,
@@ -989,7 +985,7 @@ const codecExprUse = (
   if (typePartName === undefined) {
     throw new Error(
       "internal error not found type part name in codecExprUse. typePartId =" +
-        (type.typePartId as string)
+        type.typePartId
     );
   }
   if (type.parameter.length === 0) {

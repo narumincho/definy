@@ -260,7 +260,7 @@ const partListValue = (
           return [
             ...beforeList,
             {
-              id: "" as d.PartId,
+              id: d.PartId.fromString("サーバー内で生成したほうが良さそうなID"),
               name: "SamplePart",
               description: "",
               expr: d.Expr.Int32Literal(0),

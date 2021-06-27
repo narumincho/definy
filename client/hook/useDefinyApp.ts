@@ -562,6 +562,7 @@ export const useDefinyApp = (
               );
               return;
             }
+            console.log("typePartList", response);
             typePartDict.setLoadedList(
               response.value.data.value,
               response.value.getTime

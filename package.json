@@ -55,7 +55,7 @@
     "jsonwebtoken": "8.5.1",
     "notistack": "1.0.9",
     "npm-check-updates": "11.7.1",
-    "prettier": "2.3.1",
+    "prettier": "2.3.2",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "storybook-dark-mode": "1.0.8",

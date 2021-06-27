@@ -47,11 +47,11 @@ export const Title: Story<ControlAndActionProps> = (props) => (
     titleItemList={[
       {
         name: "サンプルプロジェクト",
-        location: d.Location.Project("sample" as d.ProjectId),
+        location: d.Location.Project(d.ProjectId.fromString("sample")),
       },
       {
         name: "サンプル型パーツ",
-        location: d.Location.TypePart("sample" as d.TypePartId),
+        location: d.Location.TypePart(d.TypePartId.fromString("sample")),
       },
     ]}
     accountResource={accountResource}

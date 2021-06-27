@@ -681,7 +681,6 @@ const definyTypePartBodyKernelToElmType = (
   typePartBodyKernel: data.TypePartBodyKernel
 ): data.ElmTypeDeclaration | undefined => {
   switch (typePartBodyKernel) {
-    case "Function":
     case "Int32":
     case "String":
     case "Binary":

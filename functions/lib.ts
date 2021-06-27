@@ -358,7 +358,7 @@ const createUser = async (
   const accessTokenData = issueAccessToken();
   await database
     .collection("user")
-    .doc(createRandomId() as d.AccountId)
+    .doc(d.AccountId.fromString(createRandomId()))
     .create({
       name: providerUserData.name,
       createTime,
@@ -400,11 +400,13 @@ export const createImageTokenFromUint8ArrayAndMimeType = (
   binary: Uint8Array,
   mimeType: string
 ): d.ImageHash =>
-  crypto
-    .createHash("sha256")
-    .update(binary)
-    .update(mimeType, "utf8")
-    .digest("hex") as d.ImageHash;
+  d.ImageHash.fromString(
+    crypto
+      .createHash("sha256")
+      .update(binary)
+      .update(mimeType, "utf8")
+      .digest("hex")
+  );
 
 /**
  * OpenIdConnectのclientSecretはfirebaseの環境変数に設定されている
@@ -436,7 +438,9 @@ const issueAccessToken = (): {
   accessTokenHash: AccessTokenHash;
   issueTime: admin.firestore.Timestamp;
 } => {
-  const accessToken = crypto.randomBytes(32).toString("hex") as d.AccountToken;
+  const accessToken = d.AccountToken.fromString(
+    crypto.randomBytes(32).toString("hex")
+  );
   return {
     accessToken,
     accessTokenHash: hashAccessToken(accessToken),
@@ -499,7 +503,7 @@ const typePartToDBType = (
 });
 
 const addTypePart = async (projectId: d.ProjectId): Promise<d.TypePart> => {
-  const newTypePartId = createRandomId() as d.TypePartId;
+  const newTypePartId = d.TypePartId.fromString(createRandomId());
   const newTypePart: d.TypePart = {
     id: newTypePartId,
     name: "NewType",
@@ -549,7 +553,7 @@ export const apiFunc: {
     const userData = queryDocumentSnapshot.data();
 
     return d.Maybe.Just({
-      id: queryDocumentSnapshot.id as d.AccountId,
+      id: d.AccountId.fromString(queryDocumentSnapshot.id),
       name: userData.name,
       imageHash: userData.imageHash,
       introduction: userData.introduction,
@@ -567,7 +571,7 @@ export const apiFunc: {
         userData === undefined
           ? d.Maybe.Nothing()
           : d.Maybe.Just({
-              id: documentSnapshot.id as d.AccountId,
+              id: d.AccountId.fromString(documentSnapshot.id),
               name: userData.name,
               imageHash: userData.imageHash,
               introduction: userData.introduction,
@@ -590,7 +594,7 @@ export const apiFunc: {
         );
         const projectNameWithDefault =
           normalizedProjectName === null ? "?" : normalizedProjectName;
-        const projectId = createRandomId() as d.ProjectId;
+        const projectId = d.ProjectId.fromString(createRandomId());
         const iconAndImage = await image.createProjectIconAndImage();
         const iconHashPromise = savePngFile(iconAndImage.icon);
         const imageHashPromise = savePngFile(iconAndImage.image);

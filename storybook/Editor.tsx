@@ -65,8 +65,9 @@ export const Project: Story<ControlAndActionProps> = (props) => (
       headItem: {
         name: "プロジェクト名",
         value: { onChange: action("editProjectName"), text: "やあ" },
-        iconHash:
-          "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73" as d.ImageHash,
+        iconHash: d.ImageHash.fromString(
+          "366ec0307e312489e88e6c7d347ce344a6fb326c5f2ddd286153c3b6628ffb73"
+        ),
       },
       items: [
         {

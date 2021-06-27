@@ -142,19 +142,6 @@ const typePartBodyKernelToTsType = (
   kernel: d.TypePartBodyKernel
 ): d.TsType => {
   switch (kernel) {
-    case "Function": {
-      const [inputType, outputType] = typePart.typeParameterList;
-      if (inputType === undefined || outputType === undefined) {
-        throw new Error("kernel function type need 2 type parameter");
-      }
-      return d.TsType.Function({
-        parameterList: [
-          d.TsType.ScopeInFile(jsTs.identiferFromString(inputType.name)),
-        ],
-        return: d.TsType.ScopeInFile(jsTs.identiferFromString(outputType.name)),
-        typeParameterList: [],
-      });
-    }
     case "Int32":
       return d.TsType.Number;
     case "String":
