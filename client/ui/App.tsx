@@ -6,11 +6,11 @@ import { AboutPage } from "./AboutPage";
 import { AccountPage } from "./AccountPage";
 import { CreateProjectPage } from "./CreateProjectPage";
 import { HomePage } from "./HomePage";
+import { PartPage } from "./PartPage";
 import { ProjectPage } from "./ProjectPage";
 import { SettingPage } from "./SettingPage";
 import { TypePartPage } from "./TypePartPage";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
-import { PartPage } from "./PartPage";
 
 export type Props = {
   readonly useDefinyAppResult: UseDefinyAppResult;
@@ -205,7 +205,7 @@ const AppMain: React.VFC<Props> = (props) => {
         />
       );
     case "Part":
-      return <PartPage />
+      return <PartPage />;
   }
   return (
     <HomePage
