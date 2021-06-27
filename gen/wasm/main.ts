@@ -3,12 +3,14 @@ import { uInt32ToBinary } from "./value";
 import { vectorToWasmBinary } from "./vector";
 
 export type Wasm = {
-  functionList: ReadonlyArray<WasmFunction>;
+  readonly functionList: ReadonlyArray<WasmFunction>;
 };
 
 export type WasmFunction = {
-  export: { tag: "export"; name: string } | { tag: "local" };
-  expr: Opt;
+  readonly export:
+    | { readonly tag: "export"; name: string }
+    | { readonly tag: "local" };
+  readonly expr: Opt;
 };
 
 /**

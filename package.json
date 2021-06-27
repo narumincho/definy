@@ -42,6 +42,7 @@
     "esbuild": "0.12.9",
     "eslint": "7.29.0",
     "eslint-config-prettier": "8.3.0",
+    "eslint-plugin-import-access": "^1.0.0-beta",
     "eslint-plugin-prettier": "3.4.0",
     "eslint-plugin-react": "7.24.0",
     "eslint-plugin-react-hooks": "4.2.0",
@@ -81,7 +82,8 @@
       }
     },
     "plugins": [
-      "@typescript-eslint"
+      "@typescript-eslint",
+      "import-access"
     ],
     "env": {
       "browser": true,
@@ -221,7 +223,12 @@
       "@typescript-eslint/no-empty-function": [
         "off"
       ],
-      "react/prop-types": "off"
+      "react/prop-types": [
+        "off"
+      ],
+      "import-access/jsdoc": [
+        "error"
+      ]
     }
   }
 }
