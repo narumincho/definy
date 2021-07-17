@@ -1,6 +1,10 @@
-name: Deploy to Firebase
+name: Deploy to Firebase (main)
 
-on: workflow_dispatch
+description: プログラムをビルドして https://definy-dev.web.app にデプロイ(全世界に公開)する
+
+on:
+  push:
+    branches: dev
 
 jobs:
   build-and-deploy:
@@ -16,11 +20,11 @@ jobs:
       - name: Install npm dependencies (npm ci)
         run: npm ci
       - name: Run build script
-        run: npm run production-build
+        run: npm run production-build-dev
       - name: deploy firebase hosting
         uses: w9jds/firebase-action@master
         with:
           args: deploy
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          PROJECT_ID: definy-lang
+          PROJECT_ID: definy-dev

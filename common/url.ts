@@ -1,8 +1,5 @@
 import * as d from "../data";
-import { nowMode } from "../out";
-
-export const origin =
-  nowMode === d.Mode.Develop ? `http://localhost:2520` : "https://definy.app";
+import { origin } from "../out";
 
 const languageQueryKey = "hl";
 export const defaultLanguage: d.Language = "English";

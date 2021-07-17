@@ -1,0 +1,30 @@
+name: Deploy to Firebase (main)
+
+description: プログラムをビルドして https://definy.app にデプロイ(全世界に公開)する
+
+on:
+  push:
+    branches: main
+
+jobs:
+  build-and-deploy:
+    name: build and deploy
+    runs-on: ubuntu-20.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v2
+      - name: setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Install npm dependencies (npm ci)
+        run: npm ci
+      - name: Run build script
+        run: npm run production-build-main
+      - name: deploy firebase hosting
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          PROJECT_ID: definy-lang
