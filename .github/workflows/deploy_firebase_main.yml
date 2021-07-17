@@ -1,7 +1,5 @@
 name: Deploy to Firebase (main)
 
-description: "プログラムをビルドして https://definy.app にデプロイ(全世界に公開)する"
-
 on:
   push:
     branches: main
