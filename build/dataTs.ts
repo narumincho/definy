@@ -24,10 +24,16 @@ const resultOk: d.TypePartId = d.TypePartId.fromString(
 const resultError: d.TypePartId = d.TypePartId.fromString(
   "bd8be8409130f30f15c5c86c01de6dc5"
 );
+const tuple2First: d.TypePartId = d.TypePartId.fromString(
+  "85f328c72b935491618d127811a328a5"
+);
+const tuple2Second: d.TypePartId = d.TypePartId.fromString(
+  "6276b43c4866574cc345f2055fceb291"
+);
 
 const typePartList: ReadonlyArray<d.TypePart> = [
   {
-    id: d.ElmVariantName.typePartId,
+    id: d.ElmVariant.typePartId,
     name: "ElmVariant",
     description: "バリアント. 値コンストラクタ. タグ",
     projectId: coreProjectId,
@@ -95,7 +101,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     ]),
   },
   {
-    id: d.UnaryOperator.typePartId,
+    id: d.UnaryOperatorExpr.typePartId,
     name: "UnaryOperatorExpr",
     description: "単項演算子と適用される式",
     projectId: coreProjectId,
@@ -2620,6 +2626,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     },
   },
   {
+    id: d.JsTsCode.typePartId,
     name: "JsTsCode",
     description:
       "TypeScriptやJavaScriptのコードを表現する. TypeScriptでも出力できるように型情報をつける必要がある",
@@ -2636,7 +2643,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             typePartId: d.List.typePartId,
             parameter: [
               {
-                typePartId: id.exportDefinition,
+                typePartId: d.ExportDefinition.typePartId,
                 parameter: [],
               },
             ],
@@ -2657,9 +2664,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "92ea504049ca5b7e2227a95195fe74eb",
   },
   {
+    id: d.Member.typePartId,
     name: "Member",
     description: "直積型のメンバー",
     projectId: coreProjectId,
@@ -2688,84 +2695,15 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "type",
           description: "メンバー値の型",
           type: {
-            typePartId: "b3b36f39469d23321ed01b92f048ccc0",
+            typePartId: d.Type.typePartId,
             parameter: [],
           },
         },
       ],
     },
-    id: "9481ceae2c3e2765243f5c7ce7eb76c7",
   },
   {
-    name: "QAccountData",
-    description: "アカウントの情報",
-    projectId: coreProjectId,
-    attribute: { _: "Nothing" },
-    typeParameterList: [],
-    body: {
-      _: "Product",
-      memberList: [
-        {
-          name: "account",
-          description: "アカウント情報",
-          type: {
-            typePartId: "4e6857a774597ae66e5c316642a8ae8b",
-            parameter: [],
-          },
-        },
-        {
-          name: "createdProgramList",
-          description: "作成したプログラム",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: "d59eabf90cfeb709b136e1c832b4f5d4",
-                parameter: [],
-              },
-            ],
-          },
-        },
-        {
-          name: "createdClassList",
-          description: "作成したクラス",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: "cf779792c0201a3874f77765b063b64b",
-                parameter: [],
-              },
-            ],
-          },
-        },
-        {
-          name: "joinedClassList",
-          description: "参加したクラス",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: "9b55e2a5ed07246355fbeba998eaf5fe",
-                parameter: [
-                  {
-                    typePartId: "067954ebc8a7f155be3a4ee196ccf99a",
-                    parameter: [],
-                  },
-                  {
-                    typePartId: "ce031774e68409c72ea855cf929f2293",
-                    parameter: [],
-                  },
-                ],
-              },
-            ],
-          },
-        },
-      ],
-    },
-    id: "94aa0a477dfb8362d00aaac05b29b79c",
-  },
-  {
+    id: d.ElmExpr.typePartId,
     name: "ElmExpr",
     description: "Elm の 式",
     projectId: coreProjectId,
@@ -2816,7 +2754,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
               typePartId: d.List.typePartId,
               parameter: [
                 {
-                  typePartId: "94e53139b3a82087777ea3e001b2adb4",
+                  typePartId: d.ElmExpr.typePartId,
                   parameter: [],
                 },
               ],
@@ -2834,7 +2772,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: "94e53139b3a82087777ea3e001b2adb4",
+              typePartId: d.ElmExpr.typePartId,
               parameter: [],
             },
           },
@@ -2912,9 +2850,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "94e53139b3a82087777ea3e001b2adb4",
   },
   {
+    id: d.FunctionType.typePartId,
     name: "FunctionType",
     description: "関数の型",
     projectId: coreProjectId,
@@ -2959,66 +2897,16 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "98904215e50e04fa2197a7a96df8f646",
   },
   {
-    name: "QEditQuestion",
-    description: "質問を編集する",
-    projectId: coreProjectId,
-    attribute: { _: "Nothing" },
-    typeParameterList: [],
-    body: {
-      _: "Product",
-      memberList: [
-        {
-          name: "accountToken",
-          description: "accountToken",
-          type: {
-            typePartId: d.AccountToken.typePartId,
-            parameter: [],
-          },
-        },
-        {
-          name: "questionId",
-          description: "questionId",
-          type: {
-            typePartId: "5249c5510c734bbe48e63a23e4e202b3",
-            parameter: [],
-          },
-        },
-        {
-          name: "name",
-          description: "新たな質問文",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
-        },
-        {
-          name: "parentId",
-          description: "親の質問",
-          type: {
-            typePartId: d.Maybe.typePartId,
-            parameter: [
-              {
-                typePartId: "5249c5510c734bbe48e63a23e4e202b3",
-                parameter: [],
-              },
-            ],
-          },
-        },
-      ],
-    },
-    id: "98bc46a897ffdb9d86782890776c9221",
-  },
-  {
+    id: d.Tuple2.typePartId,
     name: "Tuple2",
     description: "2つの値を持つ型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     typeParameterList: [
-      { name: "first", typePartId: "85f328c72b935491618d127811a328a5" },
-      { name: "second", typePartId: "6276b43c4866574cc345f2055fceb291" },
+      { name: "first", typePartId: tuple2First },
+      { name: "second", typePartId: tuple2Second },
     ],
     body: {
       _: "Product",
@@ -3027,7 +2915,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "first",
           description: "0番目の値",
           type: {
-            typePartId: "85f328c72b935491618d127811a328a5",
+            typePartId: tuple2First,
             parameter: [],
           },
         },
@@ -3035,15 +2923,15 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "second",
           description: "1番目の値",
           type: {
-            typePartId: "6276b43c4866574cc345f2055fceb291",
+            typePartId: tuple2Second,
             parameter: [],
           },
         },
       ],
     },
-    id: "9b55e2a5ed07246355fbeba998eaf5fe",
   },
   {
+    id: d.ElmCustomType.typePartId,
     name: "ElmCustomType",
     description: "カスタム型. 代数的データ型",
     projectId: coreProjectId,
@@ -3056,7 +2944,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "name",
           description: "カスタム型名",
           type: {
-            typePartId: id.elmTypeName,
+            typePartId: d.ElmTypeName.typePartId,
             parameter: [],
           },
         },
@@ -3064,7 +2952,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "export",
           description: "外部に公開するレベル",
           type: {
-            typePartId: "4e1cab8c9074c1a058d6ef3ffcf29ab0",
+            typePartId: d.ElmCustomTypeExportLevel.typePartId,
             parameter: [],
           },
         },
@@ -3096,7 +2984,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             typePartId: d.List.typePartId,
             parameter: [
               {
-                typePartId: id.elmVariant,
+                typePartId: d.ElmVariant.typePartId,
                 parameter: [],
               },
             ],
@@ -3104,9 +2992,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "a0cee28e982f5fbcae6b2c7bd1e27e2a",
   },
   {
+    id: d.CallExpr.typePartId,
     name: "CallExpr",
     description: "式と呼ぶパラメーター",
     projectId: coreProjectId,
@@ -3138,9 +3026,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "a1f71188b7c3ab2a21954471f3ac67f1",
   },
   {
+    id: d.Variable.typePartId,
     name: "Variable",
     description: "",
     projectId: coreProjectId,
@@ -3183,47 +3071,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "a2580a29c047f54d635c4456696bbef3",
   },
   {
-    name: "QClassInvitationToken",
-    description: "questのクラス招待トークン",
-    projectId: coreProjectId,
-    attribute: { _: "Nothing" },
-    typeParameterList: [],
-    body: { _: "Kernel", typePartBodyKernel: "Token" },
-    id: "a5f14e3ce94846347dc38bc1fb29ba7f",
-  },
-  {
-    name: "QCreateProgramParameter",
-    description: "quest で プログラムを作るときに必要になるパラメータ",
-    projectId: coreProjectId,
-    attribute: { _: "Nothing" },
-    typeParameterList: [],
-    body: {
-      _: "Product",
-      memberList: [
-        {
-          name: "programName",
-          description: "プログラム名",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
-        },
-        {
-          name: "accountToken",
-          description: "アカウントトークン",
-          type: {
-            typePartId: d.AccountToken.typePartId,
-            parameter: [],
-          },
-        },
-      ],
-    },
-    id: "a86e36ceeff2a4fefb8d9147c232dbb6",
-  },
-  {
+    id: d.KernelCall.typePartId,
     name: "KernelCall",
     description: "複数の引数が必要な内部関数の部分呼び出し",
     projectId: coreProjectId,
@@ -3236,7 +3086,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "kernel",
           description: "関数",
           type: {
-            typePartId: "b6eef263a982482747a8ad0bc9f05e21",
+            typePartId: d.KernelExpr.typePartId,
             parameter: [],
           },
         },
@@ -3244,15 +3094,15 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "expr",
           description: "呼び出すパラメーター",
           type: {
-            typePartId: "daa9bf22c3f2e52ff92edcdd896d6a6d",
+            typePartId: d.EvaluatedExpr.typePartId,
             parameter: [],
           },
         },
       ],
     },
-    id: "a8c830bd6b3473f2fac7a62ede58ecf0",
   },
   {
+    id: d.GetExpr.typePartId,
     name: "GetExpr",
     description: "プロパティアクセス",
     projectId: coreProjectId,
@@ -3279,94 +3129,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "a9ce526a22f09800aa3773a1614cce89",
   },
   {
-    name: "QQuestion",
-    description: "質問",
-    projectId: coreProjectId,
-    attribute: { _: "Nothing" },
-    typeParameterList: [],
-    body: {
-      _: "Product",
-      memberList: [
-        {
-          name: "name",
-          description: "質問",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
-        },
-        {
-          name: "parent",
-          description: "親の質問",
-          type: {
-            typePartId: d.Maybe.typePartId,
-            parameter: [
-              {
-                typePartId: "5249c5510c734bbe48e63a23e4e202b3",
-                parameter: [],
-              },
-            ],
-          },
-        },
-        {
-          name: "programId",
-          description: "所属するプログラム",
-          type: {
-            typePartId: "4fe2f5da0a887c2a6b33c16c5d52058f",
-            parameter: [],
-          },
-        },
-        {
-          name: "id",
-          description: "質問を識別するID",
-          type: {
-            typePartId: "5249c5510c734bbe48e63a23e4e202b3",
-            parameter: [],
-          },
-        },
-      ],
-    },
-    id: "ab9150e30802a0e39f7fdca3703da3ab",
-  },
-  {
-    name: "Type",
-    description:
-      "Definy の 関数を含んだ型. 式や値に対して決まる. 型パーツの定義にも使う",
-    projectId: coreProjectId,
-    attribute: { _: "Nothing" },
-    typeParameterList: [],
-    body: {
-      _: "Product",
-      memberList: [
-        {
-          name: "input",
-          description: "関数の入力.\nNoting の場合は単なる値だということ",
-          type: {
-            typePartId: d.Maybe.typePartId,
-            parameter: [
-              {
-                typePartId: "7b01edcb8f7b313ab03aa6b376876545",
-                parameter: [],
-              },
-            ],
-          },
-        },
-        {
-          name: "output",
-          description: "関数の出力か, 値の型",
-          type: {
-            typePartId: "7b01edcb8f7b313ab03aa6b376876545",
-            parameter: [],
-          },
-        },
-      ],
-    },
-    id: "b3b36f39469d23321ed01b92f048ccc0",
-  },
-  {
+    id: d.ImportedType.typePartId,
     name: "ImportedType",
     description: "インポートされた型",
     projectId: coreProjectId,
@@ -3394,18 +3159,18 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "b44289bc65640d4ad0ad79a5a627ef78",
   },
   {
+    id: d.AccountTokenHash.typePartId,
     name: "AccountTokenHash",
     description: "アカウントトークンのハッシュ値. データベースに保存する用",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     typeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Token" },
-    id: "b553ab17ca45f4975d9fe17fe1a63ac4",
   },
   {
+    id: d.KernelExpr.typePartId,
     name: "KernelExpr",
     description: "Definyだけでは表現できない式",
     projectId: coreProjectId,
@@ -3431,9 +3196,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "b6eef263a982482747a8ad0bc9f05e21",
   },
   {
+    id: d.ProjectDataFileHashValue.typePartId,
     name: "ProjectDataFileHashValue",
     description:
       "プロジェクトデータファイルのハッシュ値\nCloud Storage に保存するときのファイル名",
@@ -3441,9 +3206,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     attribute: { _: "Nothing" },
     typeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Token" },
-    id: "b8bf6c22e275c06c7dc42300c332b47d",
   },
   {
+    id: d.Location.typePartId,
     name: "Location",
     description:
       "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
@@ -3469,7 +3234,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: id.projectId,
+              typePartId: d.ProjectId.typePartId,
               parameter: [],
             },
           },
@@ -3519,9 +3284,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "bbcb8e43df8afff9fe24b001c66fb065",
   },
   {
+    id: d.TypeAlias.typePartId,
     name: "TypeAlias",
     description: "TypeAlias. `export type T = {}`",
     projectId: coreProjectId,
@@ -3569,7 +3334,6 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "bf69f7e46f5e4949fe801c234fc3ad15",
   },
   {
     name: "AccountId",
@@ -3581,6 +3345,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     id: d.AccountId.typePartId,
   },
   {
+    id: d.KeyValue.typePartId,
     name: "KeyValue",
     description: "文字列のkeyと式のvalue",
     projectId: coreProjectId,
@@ -3607,9 +3372,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "c2428cbcd62b33ce2c904a200b876863",
   },
   {
+    id: d.List.typePartId,
     name: "List",
     description: "リスト. JavaScriptのArrayで扱う",
     projectId: coreProjectId,
@@ -3617,13 +3382,13 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     typeParameterList: [
       {
         name: "element",
-        typePartId: "91b5185b554cf5ab00c5dae0ae9eafac",
+        typePartId: d.TypePartId.fromString("91b5185b554cf5ab00c5dae0ae9eafac"),
       },
     ],
     body: { _: "Kernel", typePartBodyKernel: "List" },
-    id: d.List.typePartId,
   },
   {
+    id: d.LogInState.typePartId,
     name: "LogInState",
     description: "definy.app の ログイン状態",
     projectId: coreProjectId,
@@ -3648,7 +3413,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: "84597034eb252267ce1a599ab7a0b543",
+              typePartId: d.OpenIdConnectProvider.typePartId,
               parameter: [],
             },
           },
@@ -3676,16 +3441,16 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: "5d291325e9d7bc27ff35e907f59bde54",
+              typePartId: d.AccountTokenAndUserId.typePartId,
               parameter: [],
             },
           },
         },
       ],
     },
-    id: "c4b574e3ca8bad17022054d5e77fd3d0",
   },
   {
+    id: d.ForStatement.typePartId,
     name: "ForStatement",
     description: "for文",
     projectId: coreProjectId,
@@ -3725,9 +3490,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "c53be8bcaf56ff90080cf7a75f1e4815",
   },
   {
+    id: d.TsMemberType.typePartId,
     name: "TsMemberType",
     description: "オブジェクトのメンバーの型",
     projectId: coreProjectId,
@@ -3770,9 +3535,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "c68bac5afb1a1d35af096bf317d09339",
   },
   {
+    id: d.ConditionalOperatorExpr.typePartId,
     name: "ConditionalOperatorExpr",
     description: "条件演算子",
     projectId: coreProjectId,
@@ -3807,9 +3572,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "c7a771f770f0f92690faeb59eaff6268",
   },
   {
+    id: d.IfStatement.typePartId,
     name: "IfStatement",
     description: "if文",
     projectId: coreProjectId,
@@ -3841,9 +3606,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "cd325760f992e47a8438ae78ca9b1529",
   },
   {
+    id: d.ElmFieldName.typePartId,
     name: "ElmFieldName",
     description: "フィールド名",
     projectId: coreProjectId,
@@ -3866,9 +3631,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "d256109676f834b74931495891b61d1b",
   },
   {
+    id: d.ElmVariantName.typePartId,
     name: "ElmVariantName",
     description: "バリアント名",
     projectId: coreProjectId,
@@ -3891,9 +3656,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "d77f1f967b892c739a1555f74d2ff9fd",
   },
   {
+    id: d.IntersectionType.typePartId,
     name: "IntersectionType",
     description: "交差型",
     projectId: coreProjectId,
@@ -3920,9 +3685,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "d82150857d0f2e78c1df0f418ba9b01a",
   },
   {
+    id: d.Part.typePartId,
     name: "Part",
     description: "パーツの定義. 他のプログラミング言語でいう関数や, 変数のこと",
     projectId: coreProjectId,
@@ -3951,7 +3716,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "type",
           description: "パーツの型",
           type: {
-            typePartId: "b3b36f39469d23321ed01b92f048ccc0",
+            typePartId: d.Type.typePartId,
             parameter: [],
           },
         },
@@ -3967,7 +3732,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "projectId",
           description: "所属しているプロジェクトのID",
           type: {
-            typePartId: id.projectId,
+            typePartId: d.ProjectId.typePartId,
             parameter: [],
           },
         },
@@ -3981,9 +3746,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "d8bccc70252cee9ce70784bf5dfa493b",
   },
   {
+    id: d.EvaluatedExpr.typePartId,
     name: "EvaluatedExpr",
     description: "Definyの評価しきった式",
     projectId: coreProjectId,
@@ -3998,7 +3763,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: "b6eef263a982482747a8ad0bc9f05e21",
+              typePartId: d.KernelExpr.typePartId,
               parameter: [],
             },
           },
@@ -4020,7 +3785,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: "edd59bd2ab4852c149f6ce5917767908",
+              typePartId: d.TagReference.typePartId,
               parameter: [],
             },
           },
@@ -4031,16 +3796,16 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: "a8c830bd6b3473f2fac7a62ede58ecf0",
+              typePartId: d.KernelCall.typePartId,
               parameter: [],
             },
           },
         },
       ],
     },
-    id: "daa9bf22c3f2e52ff92edcdd896d6a6d",
   },
   {
+    id: d.SetTypePartParameter.typePartId,
     name: "SetTypePartParameter",
     description:
       "# 型の変更が必要\n\nhttps://www.notion.so/setTypePart-definy-app-api-a2500046da77432796b7ccaab6e4e3ee\n\n1つの型パーツを保存するために指定するパラメーター\n",
@@ -4089,7 +3854,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             typePartId: d.Maybe.typePartId,
             parameter: [
               {
-                typePartId: "22d8f2d392c573a7aa54c39fa4c98ad0",
+                typePartId: d.TypeAttribute.typePartId,
                 parameter: [],
               },
             ],
@@ -4102,7 +3867,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             typePartId: d.List.typePartId,
             parameter: [
               {
-                typePartId: "627dc8fa15214481812af12268d97b6b",
+                typePartId: d.TypeParameter.typePartId,
                 parameter: [],
               },
             ],
@@ -4112,13 +3877,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "body",
           description: "設定する型定義本体",
           type: {
-            typePartId: "4c60c73d6b8f236d34281fbb9119a598",
+            typePartId: d.TypePartBody.typePartId,
             parameter: [],
           },
         },
       ],
     },
-    id: "dac038758a5c45f762de388bb5193fb8",
   },
   {
     name: "Bool",
@@ -4145,6 +3909,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     id: d.Bool.typePartId,
   },
   {
+    id: d.ElmDefinition.typePartId,
     name: "ElmDefinition",
     description: "Elmの関数の定義. 引数がない関数(定数)も含まれる",
     projectId: coreProjectId,
@@ -4187,9 +3952,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "db8b9f83d99ef58fd206acca4e56d098",
   },
   {
+    id: d.Function.typePartId,
     name: "Function",
     description: "外部に公開する関数",
     projectId: coreProjectId,
@@ -4234,7 +3999,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             typePartId: d.List.typePartId,
             parameter: [
               {
-                typePartId: "6b05e33009ade6b4decd452e8fd4bff1",
+                typePartId: d.ParameterWithDocument.typePartId,
                 parameter: [],
               },
             ],
@@ -4263,7 +4028,6 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "dd3366ce7254327c85732d2932ff219b",
   },
   {
     name: "AccountToken",
@@ -4276,6 +4040,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     id: d.AccountToken.typePartId,
   },
   {
+    id: d.FunctionDefinitionStatement.typePartId,
     name: "FunctionDefinitionStatement",
     description: "ローカル関数定義",
     projectId: coreProjectId,
@@ -4312,7 +4077,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             typePartId: d.List.typePartId,
             parameter: [
               {
-                typePartId: "6b05e33009ade6b4decd452e8fd4bff1",
+                typePartId: d.ParameterWithDocument.typePartId,
                 parameter: [],
               },
             ],
@@ -4341,9 +4106,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "df5c5388248252a92864ceb219628b8e",
   },
   {
+    id: d.Pattern.typePartId,
     name: "Pattern",
     description: "直積型のパターン",
     projectId: coreProjectId,
@@ -4375,7 +4140,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             typePartId: d.Maybe.typePartId,
             parameter: [
               {
-                typePartId: "b3b36f39469d23321ed01b92f048ccc0",
+                typePartId: d.Type.typePartId,
                 parameter: [],
               },
             ],
@@ -4383,9 +4148,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "e4ef8a0713aceb0eaa7606cd516ad847",
   },
   {
+    id: d.ImageHash.typePartId,
     name: "ImageHash",
     description:
       "画像から求められるトークン.キャッシュのキーとして使われる.1つのトークンに対して永久に1つの画像データしか表さない. キャッシュを更新する必要はない",
@@ -4393,9 +4158,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     attribute: { _: "Nothing" },
     typeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Token" },
-    id: "e71e15a15b0883940a75e58367151d1a",
   },
   {
+    id: d.Expr.typePartId,
     name: "Expr",
     description: "Definy の 式",
     projectId: coreProjectId,
@@ -4410,7 +4175,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: "b6eef263a982482747a8ad0bc9f05e21",
+              typePartId: d.KernelExpr.typePartId,
               parameter: [],
             },
           },
@@ -4443,7 +4208,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: "edd59bd2ab4852c149f6ce5917767908",
+              typePartId: d.TagReference.typePartId,
               parameter: [],
             },
           },
@@ -4454,16 +4219,16 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: "2f9784d2c41d0974487a1ca2b0a51ec5",
+              typePartId: d.FunctionCall.typePartId,
               parameter: [],
             },
           },
         },
       ],
     },
-    id: d.Expr.typePartId,
   },
   {
+    id: d.TagReference.typePartId,
     name: "TagReference",
     description: "タグの参照を表す",
     projectId: coreProjectId,
@@ -4484,15 +4249,15 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "tagId",
           description: "タグID",
           type: {
-            typePartId: "5ec292c48424e5e9ee8cc2d672830ecd",
+            typePartId: d.TagId.typePartId,
             parameter: [],
           },
         },
       ],
     },
-    id: "edd59bd2ab4852c149f6ce5917767908",
   },
   {
+    id: d.Mode.typePartId,
     name: "Mode",
     description:
       "definy.app を開発する上での動作モード. デベロップモード(http://localhost:2520)か, リリースモード(https://definy.app)",
@@ -4515,9 +4280,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "ee0590e764618611ffa8e1a0a2e22f79",
   },
   {
+    id: d.BinaryOperatorExpr.typePartId,
     name: "BinaryOperatorExpr",
     description: "2項演算子と左右の式",
     projectId: coreProjectId,
@@ -4530,7 +4295,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "operator",
           description: "2項演算子",
           type: {
-            typePartId: "4953938f040aefdaa5f2601e2a78d43b",
+            typePartId: d.BinaryOperator.typePartId,
             parameter: [],
           },
         },
@@ -4552,9 +4317,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "eec2dab74fbcd3237bfa1c773f9b9d21",
   },
   {
+    id: d.CodeType.typePartId,
     name: "CodeType",
     description: "出力するコードの種類",
     projectId: coreProjectId,
@@ -4575,9 +4340,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "eedf73c97f9dd61159572322f6d7e0a5",
   },
   {
+    id: d.LambdaExpr.typePartId,
     name: "LambdaExpr",
     description: "ラムダ式",
     projectId: coreProjectId,
@@ -4593,7 +4358,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             typePartId: d.List.typePartId,
             parameter: [
               {
-                typePartId: "5433bade7738da21e7663ff043f588d5",
+                typePartId: d.Parameter.typePartId,
                 parameter: [],
               },
             ],
@@ -4635,9 +4400,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
       ],
     },
-    id: "eeeef818144e5a42460c4efdaa221460",
   },
   {
+    id: d.RequestLogInUrlRequestData.typePartId,
     name: "RequestLogInUrlRequestData",
     description: "ログインのURLを発行するために必要なデータ",
     projectId: coreProjectId,
@@ -4650,7 +4415,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "openIdConnectProvider",
           description: "ログインに使用するプロバイダー",
           type: {
-            typePartId: "84597034eb252267ce1a599ab7a0b543",
+            typePartId: d.OpenIdConnectProvider.typePartId,
             parameter: [],
           },
         },
@@ -4658,16 +4423,15 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "urlData",
           description: "ログインした後に返ってくるURLに必要なデータ",
           type: {
-            typePartId: "7210f04a85c5f0f58f7aa20826d67f05",
+            typePartId: d.UrlData.typePartId,
             parameter: [],
           },
         },
       ],
     },
-    id: "f03ea5331c1a3adcde80a04054d35e07",
   },
-
   {
+    id: d.ElmTypeDeclaration.typePartId,
     name: "ElmTypeDeclaration",
     description: "Elmの型定義",
     projectId: coreProjectId,
@@ -4682,7 +4446,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: "57f429fd5c67eb2542447a2eaeb34497",
+              typePartId: d.ElmTypeAlias.typePartId,
               parameter: [],
             },
           },
@@ -4693,16 +4457,16 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: "a0cee28e982f5fbcae6b2c7bd1e27e2a",
+              typePartId: d.ElmCustomType.typePartId,
               parameter: [],
             },
           },
         },
       ],
     },
-    id: "f4bed793b657b39db5a579c9e158eba5",
   },
   {
+    id: d.TsMember.typePartId,
     name: "TsMember",
     description: "JavaScriptのオブジェクトリテラルの要素",
     projectId: coreProjectId,
@@ -4728,18 +4492,76 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: "c2428cbcd62b33ce2c904a200b876863",
+              typePartId: d.KeyValue.typePartId,
               parameter: [],
             },
           },
         },
       ],
     },
-    id: "fddd2a65994fae205dd636f3a6b9f1ea",
+  },
+  {
+    id: d.Type.typePartId,
+    name: "Type",
+    description: "Definy の型",
+    attribute: d.Maybe.Nothing(),
+    projectId: coreProjectId,
+    typeParameterList: [],
+    body: d.TypePartBody.Product([
+      {
+        name: "typePartId",
+        description: "型パーツID",
+        type: {
+          typePartId: d.TypePartId.typePartId,
+          parameter: [],
+        },
+      },
+      {
+        name: "parameter",
+        description: "パラメーター",
+        type: {
+          typePartId: d.List.typePartId,
+          parameter: [
+            {
+              typePartId: d.Type.typePartId,
+              parameter: [],
+            },
+          ],
+        },
+      },
+    ]),
+  },
+  {
+    id: d.TypeParameter.typePartId,
+    name: "TypeParameter",
+    description: "型パラメータに指定するもの",
+    attribute: d.Maybe.Nothing(),
+    body: d.TypePartBody.Product([
+      {
+        name: "name",
+        description: "パラメーター名",
+        type: {
+          typePartId: d.String.typePartId,
+          parameter: [],
+        },
+      },
+      {
+        name: "typePartId",
+        description: "型パラメーターの型ID",
+        type: {
+          typePartId: d.TypePartId.typePartId,
+          parameter: [],
+        },
+      },
+    ]),
+    projectId: coreProjectId,
+    typeParameterList: [],
   },
 ];
 
 fileSystem.writeFile(
-  "newData.ts",
-  generateTypeScriptCodeAsString(typePartList as any)
+  "localData.ts",
+  generateTypeScriptCodeAsString(
+    new Map(typePartList.map((typePart) => [typePart.id, typePart]))
+  )
 );
