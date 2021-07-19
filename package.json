@@ -11,6 +11,7 @@
     "typeCheck": "tsc --project tsconfig.json --noEmit",
     "test": "jest",
     "generate-graph": "npx depcruise -X node_modules --output-type dot client/main.tsx functions/main.ts core/main.ts build/main.ts | dot -T svg > graph.svg",
+    "generate-local-data": "npx ts-node ./build/dataTs.ts",
     "production-build": "ts-node ./build/start-production.ts",
     "prestart": "ts-node ./build/start-develop.ts",
     "start": "firebase emulators:start --project definy-lang",
