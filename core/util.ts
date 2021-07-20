@@ -1,4 +1,4 @@
-import * as d from "../data";
+import * as d from "../localData";
 import { jsTs } from "../gen/main";
 
 const millisecondInDay = 1000 * 60 * 60 * 24;

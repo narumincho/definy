@@ -1,6 +1,6 @@
 import * as binary from "./kernelType/binary";
 import * as codec from "./kernelType/codec";
-import * as d from "../data";
+import * as d from "../localData";
 import * as dict from "./kernelType/dict";
 import * as hexString from "./kernelType/hexString";
 import * as int32 from "./kernelType/int32";
@@ -57,7 +57,7 @@ const typePartToVariableType = (
       /** ジェネリック付きの型 */
       const type = d.TsType.WithTypeParameter({
         type: d.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
-        typeParameterList: typePart.typeParameterList.map((typeParameter) =>
+        typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
           d.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
         ),
       });
@@ -69,8 +69,8 @@ const typePartToVariableType = (
           document: "型を合わせる上で便利なヘルパー関数",
           required: true,
           type: d.TsType.Function({
-            typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-              jsTs.identiferFromString(typeParameter.name)
+            typeParameterList: typePart.dataTypeParameterList.map(
+              (typeParameter) => jsTs.identiferFromString(typeParameter.name)
             ),
             parameterList: [type],
             return: type,
@@ -113,7 +113,7 @@ const typePartToVariableType = (
             required: true,
             type: patternToTagType(
               jsTs.identiferFromString(typePart.name),
-              typePart.typeParameterList,
+              typePart.dataTypeParameterList,
               pattern,
               allTypePartIdTypePartNameMap
             ),
@@ -187,7 +187,7 @@ const typePartToVariableExpr = (
       /** ジェネリック付きの型 */
       const type = d.TsType.WithTypeParameter({
         type: d.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
-        typeParameterList: typePart.typeParameterList.map((typeParameter) =>
+        typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
           d.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
         ),
       });
@@ -202,8 +202,8 @@ const typePartToVariableExpr = (
                 type,
               },
             ],
-            typeParameterList: typePart.typeParameterList.map((typeParameter) =>
-              jsTs.identiferFromString(typeParameter.name)
+            typeParameterList: typePart.dataTypeParameterList.map(
+              (typeParameter) => jsTs.identiferFromString(typeParameter.name)
             ),
             returnType: type,
             statementList: [
@@ -320,7 +320,7 @@ const patternWithParameterToTagExpr = (
   });
   const returnType = d.TsType.WithTypeParameter({
     type: d.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
-    typeParameterList: typePart.typeParameterList.map((typeParameter) =>
+    typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
       d.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
     ),
   });
@@ -334,7 +334,7 @@ const patternWithParameterToTagExpr = (
         )
       );
       return d.TsExpr.Lambda({
-        typeParameterList: typePart.typeParameterList.map((typeParameter) =>
+        typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
           jsTs.identiferFromString(typeParameter.name)
         ),
         parameterList: [
@@ -365,11 +365,11 @@ const patternWithParameterToTagExpr = (
     }
 
     case "Nothing":
-      if (typePart.typeParameterList.length === 0) {
+      if (typePart.dataTypeParameterList.length === 0) {
         return d.TsExpr.ObjectLiteral([tagMember]);
       }
       return d.TsExpr.Lambda({
-        typeParameterList: typePart.typeParameterList.map((typeParameter) =>
+        typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
           jsTs.identiferFromString(typeParameter.name)
         ),
         parameterList: [],
@@ -385,21 +385,21 @@ const patternWithParameterToTagExpr = (
 const typePartToCodecType = (typePart: d.TypePart): d.TsType =>
   codec.codecTypeWithTypeParameter(
     d.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
-    typePart.typeParameterList.map((typeParameter) => typeParameter.name)
+    typePart.dataTypeParameterList.map((typeParameter) => typeParameter.name)
   );
 
 const codecExprDefinition = (
   typePart: d.TypePart,
   allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
 ): d.TsExpr => {
-  if (typePart.typeParameterList.length === 0) {
+  if (typePart.dataTypeParameterList.length === 0) {
     return codecDefinitionBodyExpr(typePart, allTypePartIdTypePartNameMap);
   }
   return d.TsExpr.Lambda({
-    typeParameterList: typePart.typeParameterList.map((typeParameter) =>
+    typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
       jsTs.identiferFromString(typeParameter.name)
     ),
-    parameterList: typePart.typeParameterList.map((typeParameter) => ({
+    parameterList: typePart.dataTypeParameterList.map((typeParameter) => ({
       name: codec.codecParameterName(typeParameter.name),
       type: codec.codecType(
         d.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
@@ -408,7 +408,7 @@ const codecExprDefinition = (
     returnType: codec.codecType(
       d.TsType.WithTypeParameter({
         type: d.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
-        typeParameterList: typePart.typeParameterList.map((typeParameter) =>
+        typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
           d.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
         ),
       })
@@ -447,7 +447,7 @@ const encodeExprDefinition = (
   codec.encodeLambda(
     d.TsType.WithTypeParameter({
       type: d.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
-      typeParameterList: typePart.typeParameterList.map((typeParameter) =>
+      typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
         d.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
       ),
     }),
@@ -614,14 +614,14 @@ const kernelEncodeDefinitionStatementList = (
     case "Token":
       return hexString.tokenEncodeDefinitionStatementList(valueVar);
     case "List": {
-      const [elementType] = typePart.typeParameterList;
+      const [elementType] = typePart.dataTypeParameterList;
       if (elementType === undefined) {
         throw new Error("List type need one type paramter");
       }
       return list.encodeDefinitionStatementList(elementType.name, valueVar);
     }
     case "Dict": {
-      const [key, value] = typePart.typeParameterList;
+      const [key, value] = typePart.dataTypeParameterList;
       if (key === undefined || value === undefined) {
         throw new Error("Dict need 2 type parameters");
       }
@@ -640,7 +640,7 @@ const decodeExprDefinition = (
   return codec.decodeLambda(
     d.TsType.WithTypeParameter({
       type: d.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
-      typeParameterList: typePart.typeParameterList.map((typeParameter) =>
+      typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
         d.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
       ),
     }),
@@ -679,7 +679,7 @@ const decodeExprDefinition = (
             typePart.name,
             parameterIndex,
             parameterBinary,
-            typePart.typeParameterList.length === 0,
+            typePart.dataTypeParameterList.length === 0,
             allTypePartIdTypePartNameMap
           );
         case "Kernel":
@@ -901,7 +901,7 @@ const kernelDecodeDefinitionStatementList = (
         parameterBinary
       );
     case "List": {
-      const [elementType] = typePart.typeParameterList;
+      const [elementType] = typePart.dataTypeParameterList;
       if (elementType === undefined) {
         throw new Error("List type need one type paramter");
       }
@@ -912,7 +912,7 @@ const kernelDecodeDefinitionStatementList = (
       );
     }
     case "Dict": {
-      const [key, value] = typePart.typeParameterList;
+      const [key, value] = typePart.dataTypeParameterList;
       if (key === undefined || value === undefined) {
         throw new Error("Dict need 2 type parameters");
       }

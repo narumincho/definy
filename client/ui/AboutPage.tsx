@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../../data";
+import * as d from "../../localData";
 import { css } from "@emotion/css";
 import { version } from "../../out";
 

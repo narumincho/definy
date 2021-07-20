@@ -1,5 +1,5 @@
 import * as codec from "./codec";
-import * as ts from "../../data";
+import * as ts from "../../localData";
 import { jsTs } from "../../gen/main";
 
 const encodeDefinition = (

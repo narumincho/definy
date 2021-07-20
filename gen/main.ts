@@ -1,4 +1,4 @@
-export * as d from "../data";
+export * as d from "../localData";
 export * as html from "./html/main";
 export * as jsTs from "./jsTs/main";
 export * as packageJson from "./packageJson/main";

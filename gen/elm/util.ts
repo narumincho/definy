@@ -1,4 +1,4 @@
-import * as data from "../../data";
+import * as data from "../../localData";
 import * as elmData from "./data";
 
 const importedType = (

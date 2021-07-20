@@ -1,4 +1,4 @@
-import * as d from "../data";
+import * as d from "../localData";
 import * as util from "../core/util";
 
 const AccountTokenObjectStoreName = "AccountToken";

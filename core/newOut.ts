@@ -1,4 +1,4 @@
-import * as d from "../data";
+import * as d from "../localData";
 
 /**
  * 試しで, 名前空間付きの出力をどうしようかと思った結果.
@@ -15,7 +15,7 @@ namespace core {
       name: "Time",
       description: "時間",
       attribute: d.Maybe.Nothing(),
-      typeParameterList: [],
+      dataTypeParameterList: [],
       projectId: d.ProjectId.fromString(""),
       body: d.TypePartBody.Product([]),
     }),

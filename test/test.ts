@@ -1,5 +1,5 @@
 import * as commonUrl from "../common/url";
-import * as d from "../data";
+import * as d from "../localData";
 import * as main from "../core/main";
 import * as util from "../core/util";
 import { listDeleteAt, listSetAt } from "../common/util";

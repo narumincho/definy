@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../../data";
+import * as d from "../../localData";
 import { ListItem, listItem } from "../editor/list";
 import { listValue, projectIdValue } from "../editor/common";
 import { Editor } from "./Editor";

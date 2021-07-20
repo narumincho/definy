@@ -1,4 +1,4 @@
-import * as d from "../data";
+import * as d from "../localData";
 import { promises as fileSystem } from "fs";
 import { generateTypeScriptCodeAsString } from "../core/main";
 
@@ -38,7 +38,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "バリアント. 値コンストラクタ. タグ",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: d.TypePartBody.Product([
       {
         name: "name",
@@ -69,7 +69,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "外部に公開する定義",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: d.TypePartBody.Sum([
       {
         name: "TypeAlias",
@@ -106,7 +106,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "単項演算子と適用される式",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -135,7 +135,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "プロジェクトの識別子",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Id" },
   },
   {
@@ -145,7 +145,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "英語,日本語,エスペラント語\n\nナルミンチョが使える? プログラミングじゃない言語",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -173,7 +173,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "Elmで使う型の名前. Elmで使える型名ということを確認済み",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -199,7 +199,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "-2 147 483 648 ～ 2 147 483 647. 32bit 符号付き整数. JavaScriptのnumberとして扱える. numberの32bit符号あり整数をSigned Leb128のバイナリに変換する",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Int32" },
   },
   {
@@ -208,7 +208,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "Elm の 型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -319,7 +319,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -478,7 +478,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "Project, Account, TypePartなどのリソースの状態とデータ. 読み込み中だとか",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [
+    dataTypeParameterList: [
       {
         name: "data",
         typePartId: resourceStateData,
@@ -539,7 +539,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "Unit. 1つの値しかない型. JavaScriptのundefinedで扱う",
     projectId: coreProjectId,
     attribute: { _: "Just", value: "AsUndefined" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -557,7 +557,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "コンパイラに向けた, 型のデータ形式をどうするかの情報",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -582,7 +582,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -611,7 +611,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "パラメーター付きの型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -646,7 +646,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "評価したときに失敗した原因を表すもの",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -691,7 +691,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "TypeScriptの識別子として使える文字",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -716,7 +716,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "モジュール内の型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -750,7 +750,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "関数呼び出し",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -780,7 +780,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "Maybe. nullableのようなもの. 今後はRustのstd::Optionに出力するために属性をつけよう (確信)",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [{ name: "value", typePartId: maybeValue }],
+    dataTypeParameterList: [{ name: "value", typePartId: maybeValue }],
     body: {
       _: "Sum",
       patternList: [
@@ -809,7 +809,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "配列リテラルの要素",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -839,7 +839,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "バイナリ. JavaScriptのUint8Arrayで扱える. 最初にLED128でバイト数, その次にバイナリそのまま",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Binary" },
   },
   {
@@ -848,7 +848,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "3つの要素のタプルの型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -885,7 +885,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "外部のモジュールの型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -927,7 +927,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "2項演算子",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -1030,7 +1030,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "型アサーション",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1059,7 +1059,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "JavaScriptの単項演算子",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -1087,7 +1087,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "型の定義本体",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -1143,7 +1143,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "カスタム型の公開レベル",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -1173,7 +1173,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "関数のパラメーター. パラメーター名, 型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1202,7 +1202,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "辞書型. TypeScriptでは ReadonlyMap として扱う",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [
+    dataTypeParameterList: [
       {
         name: "key",
         typePartId: d.TypePartId.fromString("cb26a5badbccc2f37b8e9a1904867d2d"),
@@ -1220,7 +1220,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "取得日時と任意のデータ",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [{ name: "data", typePartId: withTimeData }],
+    dataTypeParameterList: [{ name: "data", typePartId: withTimeData }],
     body: {
       _: "Product",
       memberList: [
@@ -1250,7 +1250,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "型エイリアス. 型に名前を付け, レコード型の場合, その名前の関数を作成する",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1307,7 +1307,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "パーツの識別子",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Id" },
     id: d.PartId.typePartId,
   },
@@ -1317,7 +1317,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "AccountToken と UserId",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1347,7 +1347,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "タグの識別子. タグは直和型に使うもの.\n\n実行時に使わないことは確定しているが, コード内の形式としてタグにUUIDを使うべきかは考慮中. index で充分かと思ったが別に型の情報も必要になることが多い",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Id" },
   },
   {
@@ -1356,7 +1356,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "関数の型. 入力と出力",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1385,7 +1385,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: 'switch文のcase "text": { statementList } の部分',
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1419,7 +1419,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "Elmのコードを表現するもの",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1453,7 +1453,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "Definyだけでは表現できないデータ型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -1504,7 +1504,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "文字列. JavaScriptのstringで扱う. バイナリ形式はUTF-8. 不正な文字が入っている可能性がある",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "String" },
     id: d.String.typePartId,
   },
@@ -1515,7 +1515,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "ユーザー名. 表示される名前. 他のユーザーとかぶっても良い. 絵文字も使える. 全角英数は半角英数,半角カタカナは全角カタカナ, (株)の合字を分解するなどのNFKCの正規化がされる. U+0000-U+0019 と U+007F-U+00A0 の範囲の文字は入らない. 前後に空白を含められない. 間の空白は2文字以上連続しない. 文字数のカウント方法は正規化されたあとのCodePoint単位. Twitterと同じ, 1文字以上50文字以下",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1570,7 +1570,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "キーであるTokenによってデータが必ず1つに決まるもの. 絶対に更新されない. リソースがないということはデータが不正な状態になっているということ",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [{ name: "data", typePartId: staticResourceStateData }],
+    dataTypeParameterList: [
+      { name: "data", typePartId: staticResourceStateData },
+    ],
     body: {
       _: "Sum",
       patternList: [
@@ -1609,7 +1611,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "代入文",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1653,7 +1655,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "ドキュメント付きの関数のパラメーター. パラメーター名, ドキュメント, 型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1690,7 +1692,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "型パーツの識別子",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Id" },
   },
   {
@@ -1700,7 +1702,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "成功と失敗を表す型. 今後はRustのstd::Resultに出力するために属性をつける?",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [
+    dataTypeParameterList: [
       { name: "ok", typePartId: resultOk },
       { name: "error", typePartId: resultError },
     ],
@@ -1739,7 +1741,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( https://support.google.com/webmasters/answer/182192?hl=ja )で,URLにページの言語を入れて,言語ごとに別のURLである必要がある.",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1768,7 +1770,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "switch文",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1802,7 +1804,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "ローカル変数定義",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1847,7 +1849,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "プロジェクト作成時に必要なパラメーター",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -1876,7 +1878,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "JavaScript の 文",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -2031,7 +2033,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "日時. `0001-01-01T00:00:00.000Z to 9999-12-31T23:59:59.999Z` 最小単位はミリ秒. ミリ秒の求め方は `day*1000*60*60*24 + millisecond`",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -2061,7 +2063,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "アカウントトークンとプロジェクトID",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -2090,7 +2092,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "インポートした変数",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -2121,7 +2123,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       '"ソーシャルログインを提供するプロバイダー (例: Google, GitHub)\n\nGitHub いらないかも (GitHubのアカウント作成するの分かりづらいので, 選択肢を減らしたい)',
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -2146,7 +2148,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "型パーツ",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -2227,7 +2229,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "プロジェクトのデータファイル\nパーツや,型パーツのデータが含まれている",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -2281,7 +2283,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "JavaScript の 式",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -2491,7 +2493,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "2つの要素のタプルの型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -2520,7 +2522,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "Definy の プロジェクト",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -2589,7 +2591,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "forOf文",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -2632,7 +2634,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "TypeScriptやJavaScriptのコードを表現する. TypeScriptでも出力できるように型情報をつける必要がある",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -2671,7 +2673,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "直積型のメンバー",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -2708,7 +2710,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "Elm の 式",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -2857,7 +2859,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "関数の型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -2904,7 +2906,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "2つの値を持つ型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [
+    dataTypeParameterList: [
       { name: "first", typePartId: tuple2First },
       { name: "second", typePartId: tuple2Second },
     ],
@@ -2936,7 +2938,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "カスタム型. 代数的データ型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -2999,7 +3001,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "式と呼ぶパラメーター",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3033,7 +3035,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3078,7 +3080,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "複数の引数が必要な内部関数の部分呼び出し",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3107,7 +3109,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "プロパティアクセス",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3136,7 +3138,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "インポートされた型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3166,7 +3168,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "アカウントトークンのハッシュ値. データベースに保存する用",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Token" },
   },
   {
@@ -3175,7 +3177,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "Definyだけでは表現できない式",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -3204,7 +3206,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "プロジェクトデータファイルのハッシュ値\nCloud Storage に保存するときのファイル名",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Token" },
   },
   {
@@ -3214,7 +3216,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -3291,7 +3293,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "TypeAlias. `export type T = {}`",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3340,7 +3342,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "アカウントを識別するためのID",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Id" },
     id: d.AccountId.typePartId,
   },
@@ -3350,7 +3352,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "文字列のkeyと式のvalue",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3379,7 +3381,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "リスト. JavaScriptのArrayで扱う",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [
+    dataTypeParameterList: [
       {
         name: "element",
         typePartId: d.TypePartId.fromString("91b5185b554cf5ab00c5dae0ae9eafac"),
@@ -3393,7 +3395,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "definy.app の ログイン状態",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -3455,7 +3457,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "for文",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3497,7 +3499,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "オブジェクトのメンバーの型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3542,7 +3544,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "条件演算子",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3579,7 +3581,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "if文",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3613,7 +3615,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "フィールド名",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -3638,7 +3640,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "バリアント名",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -3663,7 +3665,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "交差型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3692,7 +3694,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "パーツの定義. 他のプログラミング言語でいう関数や, 変数のこと",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3753,7 +3755,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "Definyの評価しきった式",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -3811,7 +3813,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "# 型の変更が必要\n\nhttps://www.notion.so/setTypePart-definy-app-api-a2500046da77432796b7ccaab6e4e3ee\n\n1つの型パーツを保存するために指定するパラメーター\n",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3890,7 +3892,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "Bool. 真か偽. JavaScriptのbooleanで扱える. true: 1, false: 0. (1byte)としてバイナリに変換する",
     projectId: coreProjectId,
     attribute: { _: "Just", value: "AsBoolean" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -3914,7 +3916,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "Elmの関数の定義. 引数がない関数(定数)も含まれる",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -3959,7 +3961,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "外部に公開する関数",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -4035,7 +4037,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "アカウントトークン. アカウントトークンを持っていればアクセストークンをDefinyのサーバーにリクエストした際に得られるIDのアカウントを保有していると証明できる. サーバーにハッシュ化したものを保存している. これが盗まれた場合,不正に得た人はアカウントを乗っ取ることができる. 有効期限はなし, 最後に発行したアカウントトークン以外は無効になる",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Token" },
     id: d.AccountToken.typePartId,
   },
@@ -4045,7 +4047,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "ローカル関数定義",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -4113,7 +4115,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "直積型のパターン",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -4156,7 +4158,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "画像から求められるトークン.キャッシュのキーとして使われる.1つのトークンに対して永久に1つの画像データしか表さない. キャッシュを更新する必要はない",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: { _: "Kernel", typePartBodyKernel: "Token" },
   },
   {
@@ -4165,7 +4167,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "Definy の 式",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -4233,7 +4235,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "タグの参照を表す",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -4263,7 +4265,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "definy.app を開発する上での動作モード. デベロップモード(http://localhost:2520)か, リリースモード(https://definy.app)",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -4287,7 +4289,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "2項演算子と左右の式",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -4324,7 +4326,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "出力するコードの種類",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -4347,7 +4349,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "ラムダ式",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -4407,7 +4409,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "ログインのURLを発行するために必要なデータ",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Product",
       memberList: [
@@ -4436,7 +4438,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "Elmの型定義",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -4471,7 +4473,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "JavaScriptのオブジェクトリテラルの要素",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: {
       _: "Sum",
       patternList: [
@@ -4506,7 +4508,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "Definy の型",
     attribute: d.Maybe.Nothing(),
     projectId: coreProjectId,
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: d.TypePartBody.Product([
       {
         name: "typePartId",
@@ -4555,7 +4557,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       },
     ]),
     projectId: coreProjectId,
-    typeParameterList: [],
+    dataTypeParameterList: [],
   },
 ];
 

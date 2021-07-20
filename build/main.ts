@@ -1,4 +1,4 @@
-import * as d from "../data";
+import * as d from "../localData";
 import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
 import {

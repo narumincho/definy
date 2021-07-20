@@ -1,4 +1,4 @@
-import * as data from "../data";
+import * as data from "../localData";
 import * as hexString from "./kernelType/hexString";
 import * as typeAlias from "./typeAlias";
 import * as util from "./util";
@@ -395,7 +395,7 @@ const checkTypePartListValidation = (
     allTypePartIdTypePartNameMap.set(typePartId, typePart.name);
 
     const typeParameterNameSet: Set<string> = new Set();
-    for (const typeParameter of typePart.typeParameterList) {
+    for (const typeParameter of typePart.dataTypeParameterList) {
       if (typePartIdSet.has(typeParameter.typePartId)) {
         throw new Error(
           "duplicate type part id. (type parameter) typePartId = " +
@@ -422,7 +422,7 @@ const checkTypePartListValidation = (
     }
     typePartIdTypeParameterSizeMap.set(
       typePartId,
-      typePart.typeParameterList.length
+      typePart.dataTypeParameterList.length
     );
   }
 
@@ -431,7 +431,7 @@ const checkTypePartListValidation = (
       typePart.body,
       typePartIdTypeParameterSizeMap,
       new Set(
-        typePart.typeParameterList.map((parameter) => parameter.typePartId)
+        typePart.dataTypeParameterList.map((parameter) => parameter.typePartId)
       ),
       typePart.name
     );
@@ -603,7 +603,7 @@ const typePartToElmTypeDeclaration = (
         name: stringToElmTypeName(typePart.name),
         comment: typePart.description,
         export: true,
-        parameter: typePart.typeParameterList.map(
+        parameter: typePart.dataTypeParameterList.map(
           (typeParameter) => typeParameter.name
         ),
         type: data.ElmType.Record(
@@ -620,7 +620,7 @@ const typePartToElmTypeDeclaration = (
         name: stringToElmTypeName(typePart.name),
         comment: typePart.description,
         export: data.ElmCustomTypeExportLevel.ExportTypeAndVariant,
-        parameter: typePart.typeParameterList.map(
+        parameter: typePart.dataTypeParameterList.map(
           (typeParameter) => typeParameter.name
         ),
         variantList: typePart.body.patternList.map(

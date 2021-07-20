@@ -1,5 +1,5 @@
 import * as codec from "./kernelType/codec";
-import * as d from "../data";
+import * as d from "../localData";
 import * as util from "./util";
 import { jsTs } from "../gen/main";
 
@@ -22,7 +22,7 @@ export const typePartToTypeAlias = (
 ): d.TypeAlias => ({
   name: jsTs.identiferFromString(typePart.name),
   document: typePart.description + "\n@typePartId " + (typePartId as string),
-  typeParameterList: typePart.typeParameterList.map((typeParameter) =>
+  typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
     jsTs.identiferFromString(typeParameter.name)
   ),
   type: typePartToTsType(typePart, allTypePartIdTypePartNameMap),
@@ -162,7 +162,7 @@ const typePartBodyKernelToTsType = (
         ]),
       });
     case "List": {
-      const [elementType] = typePart.typeParameterList;
+      const [elementType] = typePart.dataTypeParameterList;
       if (elementType === undefined) {
         throw new Error("List need one type parameter");
       }
@@ -171,7 +171,7 @@ const typePartBodyKernelToTsType = (
       );
     }
     case "Dict": {
-      const [id, value] = typePart.typeParameterList;
+      const [id, value] = typePart.dataTypeParameterList;
       if (id === undefined || value === undefined) {
         throw new Error("Dict need two type parameter");
       }
