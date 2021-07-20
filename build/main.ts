@@ -21,7 +21,7 @@ const cloudStorageRulesPath = `${distributionPath}/storage.rules`;
 /**
  * Firebase へ デプロイするためにビルドする
  */
-export const build = async (mode: d.Mode): Promise<void> => {
+export const build = async (mode: d.Mode, origin: string): Promise<void> => {
   await fileSystem.remove(distributionPath);
   console.log(`${distributionPath}をすべて削除完了!`);
   if (mode === "Develop") {
@@ -36,7 +36,7 @@ export const build = async (mode: d.Mode): Promise<void> => {
 
   await outputPackageJsonForFunctions();
   console.log(`package.json を出力完了!`);
-  await outputNowMode(mode);
+  await outputNowModeAndOrigin(mode, origin);
   console.log(`out.ts を出力完了!`);
   await generateFirestoreRules();
   console.log(
@@ -86,10 +86,6 @@ const generateFirebaseJson = (mode: d.Mode): Promise<void> => {
       hosting: {
         public: hostingDistributionPath,
         rewrites: [
-          {
-            source: "/sitemap",
-            function: "sitemap",
-          },
           {
             source: "/api/**",
             function: "api",
@@ -237,7 +233,10 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
   );
 };
 
-const outputNowMode = async (mode: d.Mode): Promise<void> => {
+const outputNowModeAndOrigin = async (
+  mode: d.Mode,
+  origin: string
+): Promise<void> => {
   await fileSystem.outputFile(
     "./out.ts",
     jsTs.generateCodeAsString(
@@ -257,6 +256,12 @@ const outputNowMode = async (mode: d.Mode): Promise<void> => {
               moduleName: "./data",
               name: jsTs.identiferFromString("Mode"),
             }),
+          }),
+          d.ExportDefinition.Variable({
+            name: jsTs.identiferFromString("origin"),
+            document: "オリジン (ビルド時にコード生成される)",
+            expr: d.TsExpr.StringLiteral(origin),
+            type: d.TsType.String,
           }),
           d.ExportDefinition.Variable({
             name: jsTs.identiferFromString("version"),
