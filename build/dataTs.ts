@@ -4562,7 +4562,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
 ];
 
 fileSystem.writeFile(
-  "localData.ts",
+  "localDat.ts",
   generateTypeScriptCodeAsString(
     new Map(typePartList.map((typePart) => [typePart.id, typePart]))
   )
