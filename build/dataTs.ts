@@ -1312,9 +1312,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     id: d.PartId.typePartId,
   },
   {
-    id: d.AccountTokenAndUserId.typePartId,
-    name: "AccountTokenAndUserId",
-    description: "AccountToken と UserId",
+    id: d.AccountTokenAccountId.typePartId,
+    name: "AccountTokenAccountId",
+    description: "AccountToken と AccountId",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
@@ -1330,8 +1330,8 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           },
         },
         {
-          name: "userId",
-          description: "UserId",
+          name: "accountId",
+          description: "accountId",
           type: {
             typePartId: d.AccountId.typePartId,
             parameter: [],
@@ -3443,7 +3443,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: d.AccountTokenAndUserId.typePartId,
+              typePartId: d.AccountTokenAccountId.typePartId,
               parameter: [],
             },
           },

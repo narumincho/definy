@@ -110,7 +110,7 @@ const UserViewOrLogInButton: React.VFC<
 
     case "LoggedIn": {
       const accountResourceState = props.accountResource.getFromMemoryCache(
-        props.logInState.accountTokenAndUserId.userId
+        props.logInState.accountTokenAccountId.accountId
       );
       if (
         accountResourceState === undefined ||

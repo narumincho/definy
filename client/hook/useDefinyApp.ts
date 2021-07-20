@@ -289,7 +289,7 @@ export const useDefinyApp = (
   const getAccountToken = useCallback((): d.AccountToken | undefined => {
     switch (logInState._) {
       case "LoggedIn":
-        return logInState.accountTokenAndUserId.accountToken;
+        return logInState.accountTokenAccountId.accountToken;
       case "VerifyingAccountToken":
         return logInState.accountToken;
     }
@@ -769,7 +769,7 @@ const verifyingAccountTokenAndGetAccount = (
     setLogInState(
       d.LogInState.LoggedIn({
         accountToken,
-        userId: response.value.value.id,
+        accountId: response.value.value.id,
       })
     );
     setAccount(response.value.value);

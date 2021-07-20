@@ -50,7 +50,7 @@ export const LoggedIn: Story<ControlAndActionProps> = (props) => (
     accountResource={accountResource}
     logInState={d.LogInState.LoggedIn({
       accountToken: d.AccountToken.fromString("dummyAccountToken"),
-      userId: dummyAccountId,
+      accountId: dummyAccountId,
     })}
     onJump={props.onJump}
     topProjectsLoadingState={{ _: "none" }}
@@ -69,7 +69,7 @@ export const Loaded: Story<ControlAndActionProps> = (props) => (
     accountResource={accountResource}
     logInState={d.LogInState.LoggedIn({
       accountToken: d.AccountToken.fromString("dummyAccountToken"),
-      userId: dummyAccountId,
+      accountId: dummyAccountId,
     })}
     onJump={props.onJump}
     topProjectsLoadingState={{

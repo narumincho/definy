@@ -393,18 +393,18 @@ export type PartId = string & { readonly _partId: never };
 
 
 /**
- * AccountToken と UserId
+ * AccountToken と AccountId
  * @typePartId 5d291325e9d7bc27ff35e907f59bde54
  */
-export type AccountTokenAndUserId = { 
+export type AccountTokenAccountId = { 
 /**
  * accountToken
  */
 readonly accountToken: AccountToken; 
 /**
- * UserId
+ * accountId
  */
-readonly userId: AccountId };
+readonly accountId: AccountId };
 
 
 /**
@@ -1094,7 +1094,7 @@ export type List<element extends unknown> = ReadonlyArray<element>;
  * definy.app の ログイン状態
  * @typePartId c4b574e3ca8bad17022054d5e77fd3d0
  */
-export type LogInState = { readonly _: "LoadingAccountTokenFromIndexedDB" } | { readonly _: "Guest" } | { readonly _: "RequestingLogInUrl"; readonly openIdConnectProvider: OpenIdConnectProvider } | { readonly _: "JumpingToLogInPage" } | { readonly _: "VerifyingAccountToken"; readonly accountToken: AccountToken } | { readonly _: "LoggedIn"; readonly accountTokenAndUserId: AccountTokenAndUserId };
+export type LogInState = { readonly _: "LoadingAccountTokenFromIndexedDB" } | { readonly _: "Guest" } | { readonly _: "RequestingLogInUrl"; readonly openIdConnectProvider: OpenIdConnectProvider } | { readonly _: "JumpingToLogInPage" } | { readonly _: "VerifyingAccountToken"; readonly accountToken: AccountToken } | { readonly _: "LoggedIn"; readonly accountTokenAccountId: AccountTokenAccountId };
 
 
 /**
@@ -3040,10 +3040,10 @@ readonly fromString: (a: string) => PartId } = { typePartId: "5880cd7c0b6f0205c7
 
 
 /**
- * AccountToken と UserId
+ * AccountToken と AccountId
  * @typePartId 5d291325e9d7bc27ff35e907f59bde54
  */
-export const AccountTokenAndUserId: { 
+export const AccountTokenAccountId: { 
 /**
  * definy.app内 の 型パーツの Id
  */
@@ -3051,14 +3051,14 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<AccountTokenAndUserId>; 
+readonly codec: Codec<AccountTokenAccountId>; 
 /**
  * 型を合わせる上で便利なヘルパー関数
  */
-readonly helper: (a: AccountTokenAndUserId) => AccountTokenAndUserId } = { typePartId: "5d291325e9d7bc27ff35e907f59bde54" as TypePartId, helper: (accountTokenAndUserId: AccountTokenAndUserId): AccountTokenAndUserId => accountTokenAndUserId, codec: { encode: (value: AccountTokenAndUserId): ReadonlyArray<number> => (AccountToken.codec.encode(value.accountToken).concat(AccountId.codec.encode(value.userId))), decode: (index: number, binary: Uint8Array): { readonly result: AccountTokenAndUserId; readonly nextIndex: number } => {
+readonly helper: (a: AccountTokenAccountId) => AccountTokenAccountId } = { typePartId: "5d291325e9d7bc27ff35e907f59bde54" as TypePartId, helper: (accountTokenAccountId: AccountTokenAccountId): AccountTokenAccountId => accountTokenAccountId, codec: { encode: (value: AccountTokenAccountId): ReadonlyArray<number> => (AccountToken.codec.encode(value.accountToken).concat(AccountId.codec.encode(value.accountId))), decode: (index: number, binary: Uint8Array): { readonly result: AccountTokenAccountId; readonly nextIndex: number } => {
   const accountTokenAndNextIndex: { readonly result: AccountToken; readonly nextIndex: number } = AccountToken.codec.decode(index, binary);
-  const userIdAndNextIndex: { readonly result: AccountId; readonly nextIndex: number } = AccountId.codec.decode(accountTokenAndNextIndex.nextIndex, binary);
-  return { result: { accountToken: accountTokenAndNextIndex.result, userId: userIdAndNextIndex.result }, nextIndex: userIdAndNextIndex.nextIndex };
+  const accountIdAndNextIndex: { readonly result: AccountId; readonly nextIndex: number } = AccountId.codec.decode(accountTokenAndNextIndex.nextIndex, binary);
+  return { result: { accountToken: accountTokenAndNextIndex.result, accountId: accountIdAndNextIndex.result }, nextIndex: accountIdAndNextIndex.nextIndex };
 } } };
 
 
@@ -4979,7 +4979,7 @@ readonly VerifyingAccountToken: (a: AccountToken) => LogInState;
 /**
  * ログインしている状態
  */
-readonly LoggedIn: (a: AccountTokenAndUserId) => LogInState } = { LoadingAccountTokenFromIndexedDB: { _: "LoadingAccountTokenFromIndexedDB" }, Guest: { _: "Guest" }, RequestingLogInUrl: (openIdConnectProvider: OpenIdConnectProvider): LogInState => ({ _: "RequestingLogInUrl", openIdConnectProvider }), JumpingToLogInPage: { _: "JumpingToLogInPage" }, VerifyingAccountToken: (accountToken: AccountToken): LogInState => ({ _: "VerifyingAccountToken", accountToken }), LoggedIn: (accountTokenAndUserId: AccountTokenAndUserId): LogInState => ({ _: "LoggedIn", accountTokenAndUserId }), typePartId: "c4b574e3ca8bad17022054d5e77fd3d0" as TypePartId, codec: { encode: (value: LogInState): ReadonlyArray<number> => {
+readonly LoggedIn: (a: AccountTokenAccountId) => LogInState } = { LoadingAccountTokenFromIndexedDB: { _: "LoadingAccountTokenFromIndexedDB" }, Guest: { _: "Guest" }, RequestingLogInUrl: (openIdConnectProvider: OpenIdConnectProvider): LogInState => ({ _: "RequestingLogInUrl", openIdConnectProvider }), JumpingToLogInPage: { _: "JumpingToLogInPage" }, VerifyingAccountToken: (accountToken: AccountToken): LogInState => ({ _: "VerifyingAccountToken", accountToken }), LoggedIn: (accountTokenAccountId: AccountTokenAccountId): LogInState => ({ _: "LoggedIn", accountTokenAccountId }), typePartId: "c4b574e3ca8bad17022054d5e77fd3d0" as TypePartId, codec: { encode: (value: LogInState): ReadonlyArray<number> => {
   switch (value._) {
     case "LoadingAccountTokenFromIndexedDB": {
       return [0];
@@ -4997,7 +4997,7 @@ readonly LoggedIn: (a: AccountTokenAndUserId) => LogInState } = { LoadingAccount
       return [4].concat(AccountToken.codec.encode(value.accountToken));
     }
     case "LoggedIn": {
-      return [5].concat(AccountTokenAndUserId.codec.encode(value.accountTokenAndUserId));
+      return [5].concat(AccountTokenAccountId.codec.encode(value.accountTokenAccountId));
     }
   }
 }, decode: (index: number, binary: Uint8Array): { readonly result: LogInState; readonly nextIndex: number } => {
@@ -5020,7 +5020,7 @@ readonly LoggedIn: (a: AccountTokenAndUserId) => LogInState } = { LoadingAccount
     return { result: LogInState.VerifyingAccountToken(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 5) {
-    const result: { readonly result: AccountTokenAndUserId; readonly nextIndex: number } = AccountTokenAndUserId.codec.decode(patternIndex.nextIndex, binary);
+    const result: { readonly result: AccountTokenAccountId; readonly nextIndex: number } = AccountTokenAccountId.codec.decode(patternIndex.nextIndex, binary);
     return { result: LogInState.LoggedIn(result.result), nextIndex: result.nextIndex };
   }
   throw new Error("存在しないパターンを指定された 型を更新してください");
