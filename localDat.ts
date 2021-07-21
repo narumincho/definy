@@ -5925,7 +5925,7 @@ readonly codec: Codec<SampleNamedInt32>;
 /**
  * 1つのパターン
  */
-readonly SampleNamedInt32: (a: Int32) => SampleNamedInt32 } = { SampleNamedInt32: (int32: Int32): SampleNamedInt32 => ({ _: "SampleNamedInt32", int32 }), typePartId: "a9c4fac6168c374e3a4e1579d588bf99" as TypePartId, codec: { encode: (value: SampleNamedInt32): ReadonlyArray<number> => {
+readonly SampleNamedInt32: (a: Int32) => SampleNamedInt32 } = { SampleNamedInt32: (int32: Int32): SampleNamedInt32 => (int32 as SampleNamedInt32), typePartId: "a9c4fac6168c374e3a4e1579d588bf99" as TypePartId, codec: { encode: (value: SampleNamedInt32): ReadonlyArray<number> => {
   let rest: number = value | 0;
   const result: Array<number> = [];
   while (true) {

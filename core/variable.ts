@@ -287,18 +287,71 @@ const patternToTagExpr = (
   patternIndex: number,
   typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
 ): d.TsExpr => {
+  if (typePart.attribute._ === "Just") {
+    return patternWithAttributeToTagExpr(
+      typePart,
+      pattern,
+      patternIndex,
+      typePart.attribute.value,
+      typePartDataMap
+    );
+  }
   if (util.isTagTypeAllNoParameter(patternList)) {
-    if (typePart.attribute._ === "Just") {
-      switch (typePart.attribute.value) {
-        case "AsBoolean":
-          return d.TsExpr.BooleanLiteral(patternIndex !== 0);
-        case "AsUndefined":
-          return d.TsExpr.UndefinedLiteral;
-      }
-    }
     return d.TsExpr.StringLiteral(pattern.name);
   }
   return patternWithParameterToTagExpr(typePart, pattern, typePartDataMap);
+};
+
+const patternWithAttributeToTagExpr = (
+  typePart: d.TypePart,
+  pattern: d.Pattern,
+  patternIndex: number,
+  attribute: d.TypeAttribute,
+  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+): d.TsExpr => {
+  switch (attribute) {
+    case "AsBoolean":
+      return d.TsExpr.BooleanLiteral(patternIndex !== 0);
+    case "AsUndefined":
+      return d.TsExpr.UndefinedLiteral;
+    case "AsNumber": {
+      if (pattern.parameter._ === "Nothing") {
+        throw new Error("AsNumber need parameter type");
+      }
+      const parameterIdentifer = jsTs.identiferFromString(
+        util.typeToMemberOrParameterName(
+          pattern.parameter.value,
+          typePartDataMap
+        )
+      );
+      const returnType = d.TsType.WithTypeParameter({
+        type: d.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
+        typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
+          d.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter.name))
+        ),
+      });
+      return d.TsExpr.Lambda({
+        typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
+          jsTs.identiferFromString(typeParameter.name)
+        ),
+        parameterList: [
+          {
+            name: parameterIdentifer,
+            type: util.typeToTsType(pattern.parameter.value, typePartDataMap),
+          },
+        ],
+        returnType,
+        statementList: [
+          d.Statement.Return(
+            d.TsExpr.TypeAssertion({
+              expr: d.TsExpr.Variable(parameterIdentifer),
+              type: returnType,
+            })
+          ),
+        ],
+      });
+    }
+  }
 };
 
 const patternWithParameterToTagExpr = (
