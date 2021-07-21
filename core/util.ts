@@ -1,4 +1,5 @@
 import * as d from "../localData";
+import { TypePartData } from "./validation";
 import { jsTs } from "../gen/main";
 
 const millisecondInDay = 1000 * 60 * 60 * 24;
@@ -16,28 +17,32 @@ export const timeFromDate = (date: Date): d.Time => {
 
 export const typeToTsType = (
   type: d.Type,
-  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
+  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
 ): d.TsType => {
-  const typePartName = allTypePartIdTypePartNameMap.get(type.typePartId);
-  if (typePartName === undefined) {
+  const typePart = typePartDataMap.get(type.typePartId);
+  if (typePart === undefined) {
     throw new Error(
       "internal error not found type part name in typeToTsType. typePartId =" +
         type.typePartId
     );
   }
   return d.TsType.WithTypeParameter({
-    type: d.TsType.ScopeInFile(jsTs.identiferFromString(typePartName)),
+    type: d.TsType.ScopeInFile(
+      jsTs.identiferFromString(
+        typePart.tag === "typePart" ? typePart.typePart.name : typePart.name
+      )
+    ),
     typeParameterList: type.parameter.map((parameter) =>
-      typeToTsType(parameter, allTypePartIdTypePartNameMap)
+      typeToTsType(parameter, typePartDataMap)
     ),
   });
 };
 
 export const typeToMemberOrParameterName = (
   type: d.Type,
-  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
+  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
 ): string => {
-  return firstLowerCase(toTypeName(type, allTypePartIdTypePartNameMap));
+  return firstLowerCase(toTypeName(type, typePartDataMap));
 };
 
 export const codecPropertyName = "codec";
@@ -73,10 +78,10 @@ export const callDecode = (
 
 export const toTypeName = (
   type: d.Type,
-  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
+  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
 ): string => {
-  const typePartName = allTypePartIdTypePartNameMap.get(type.typePartId);
-  if (typePartName === undefined) {
+  const typePartData = typePartDataMap.get(type.typePartId);
+  if (typePartData === undefined) {
     throw new Error(
       "internal error not found type part name in toTypeName. typePartId =" +
         type.typePartId
@@ -84,8 +89,11 @@ export const toTypeName = (
   }
   return (
     type.parameter
-      .map((parameter) => toTypeName(parameter, allTypePartIdTypePartNameMap))
-      .join("") + typePartName
+      .map((parameter) => toTypeName(parameter, typePartDataMap))
+      .join("") +
+    (typePartData.tag === "typePart"
+      ? typePartData.typePart.name
+      : typePartData.name)
   );
 };
 

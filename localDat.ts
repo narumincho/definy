@@ -1539,6 +1539,13 @@ readonly typePartId: TypePartId };
 
 
 /**
+ * 名前付きの数値
+ * @typePartId a9c4fac6168c374e3a4e1579d588bf99
+ */
+export type SampleNamedInt32 = number & { readonly _SampleNamedInt32: never };
+
+
+/**
  * バリアント. 値コンストラクタ. タグ
  * @typePartId 0bc2e5ab2fd2caeb6e6c331573ae735f
  */
@@ -5899,6 +5906,40 @@ readonly helper: (a: TypeParameter) => TypeParameter } = { typePartId: "627dc8fa
   const nameAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(index, binary);
   const typePartIdAndNextIndex: { readonly result: TypePartId; readonly nextIndex: number } = TypePartId.codec.decode(nameAndNextIndex.nextIndex, binary);
   return { result: { name: nameAndNextIndex.result, typePartId: typePartIdAndNextIndex.result }, nextIndex: typePartIdAndNextIndex.nextIndex };
+} } };
+
+
+/**
+ * 名前付きの数値
+ * @typePartId a9c4fac6168c374e3a4e1579d588bf99
+ */
+export const SampleNamedInt32: { 
+/**
+ * definy.app内 の 型パーツの Id
+ */
+readonly typePartId: TypePartId; 
+/**
+ * 独自のバイナリ形式の変換処理ができるコーデック
+ */
+readonly codec: Codec<SampleNamedInt32>; 
+/**
+ * 1つのパターン
+ */
+readonly SampleNamedInt32: (a: Int32) => SampleNamedInt32 } = { SampleNamedInt32: (int32: Int32): SampleNamedInt32 => ({ _: "SampleNamedInt32", int32 }), typePartId: "a9c4fac6168c374e3a4e1579d588bf99" as TypePartId, codec: { encode: (value: SampleNamedInt32): ReadonlyArray<number> => {
+  let rest: number = value | 0;
+  const result: Array<number> = [];
+  while (true) {
+    const byte: number = rest & 127;
+    rest >>= 7;
+    if (rest === 0 && (byte & 64) === 0 || rest === -1 && (byte & 64) !== 0) {
+      result.push(byte);
+      return result;
+    }
+    result.push(byte | 128);
+  }
+}, decode: (index: number, binary: Uint8Array): { readonly result: SampleNamedInt32; readonly nextIndex: number } => {
+  const decodedInt32: { readonly result: number; readonly nextIndex: number } = Int32.codec.decode(index, binary);
+  return { result: SampleNamedInt32.SampleNamedInt32(decodedInt32.result), nextIndex: decodedInt32.nextIndex };
 } } };
 
 

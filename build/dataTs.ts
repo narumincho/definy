@@ -558,23 +558,26 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
-    body: {
-      _: "Sum",
-      patternList: [
-        {
-          name: "AsBoolean",
-          description:
-            "JavaScript, TypeScript で boolean として扱うように指示する. 定義が2つのパターンで両方パラメーターなし false, trueの順である必要がある",
-          parameter: { _: "Nothing" },
-        },
-        {
-          name: "AsUndefined",
-          description:
-            "JavaScript, TypeScript で undefined として扱うように指示する. 定義が1つのパターンでパラメーターなしである必要がある",
-          parameter: { _: "Nothing" },
-        },
-      ],
-    },
+    body: d.TypePartBody.Sum([
+      {
+        name: "AsBoolean",
+        description:
+          "JavaScript, TypeScript で boolean として扱うように指示する. 定義が2つのパターンで両方パラメーターなし false, trueの順である必要がある",
+        parameter: d.Maybe.Nothing(),
+      },
+      {
+        name: "AsUndefined",
+        description:
+          "JavaScript, TypeScript で undefined として扱うように指示する. 定義が1つのパターンでパラメーターなしである必要がある",
+        parameter: d.Maybe.Nothing(),
+      },
+      {
+        name: "AsNumber",
+        description:
+          "JavaScript, TypeScript で number & {_typeName: never} として扱うように指示する. 定義が1つのパターンでパラメーターが Int32 である必要がある",
+        parameter: d.Maybe.Nothing(),
+      },
+    ]),
   },
   {
     id: d.ElmField.typePartId,
@@ -1454,49 +1457,46 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
-    body: {
-      _: "Sum",
-      patternList: [
-        {
-          name: "Int32",
-          description: "32bit整数",
-          parameter: { _: "Nothing" },
-        },
-        {
-          name: "String",
-          description:
-            "文字列. Definyだけで表現できるが, TypeScriptでstringとして扱うために必要",
-          parameter: { _: "Nothing" },
-        },
-        {
-          name: "Binary",
-          description: "バイナリ型. TypeScriptではUint8Arrayとして扱う",
-          parameter: { _: "Nothing" },
-        },
-        {
-          name: "Id",
-          description:
-            "UUID (16byte) を表現する. 内部表現はとりあえず0-f長さ32の文字列",
-          parameter: { _: "Nothing" },
-        },
-        {
-          name: "Token",
-          description:
-            "sha256などでハッシュ化したもの (32byte) を表現する. 内部表現はとりあえず0-f長さ64の文字列",
-          parameter: { _: "Nothing" },
-        },
-        {
-          name: "List",
-          description: "配列型. TypeScriptではReadonlyArrayとして扱う",
-          parameter: { _: "Nothing" },
-        },
-        {
-          name: "Dict",
-          description: "辞書型. TypeScriptでは ReadonlyMapとして扱う",
-          parameter: { _: "Nothing" },
-        },
-      ],
-    },
+    body: d.TypePartBody.Sum([
+      {
+        name: "Int32",
+        description: "32bit整数",
+        parameter: { _: "Nothing" },
+      },
+      {
+        name: "String",
+        description:
+          "文字列. Definyだけで表現できるが, TypeScriptでstringとして扱うために必要",
+        parameter: { _: "Nothing" },
+      },
+      {
+        name: "Binary",
+        description: "バイナリ型. TypeScriptではUint8Arrayとして扱う",
+        parameter: { _: "Nothing" },
+      },
+      {
+        name: "Id",
+        description:
+          "UUID (16byte) を表現する. 内部表現はとりあえず0-f長さ32の文字列",
+        parameter: { _: "Nothing" },
+      },
+      {
+        name: "Token",
+        description:
+          "sha256などでハッシュ化したもの (32byte) を表現する. 内部表現はとりあえず0-f長さ64の文字列",
+        parameter: { _: "Nothing" },
+      },
+      {
+        name: "List",
+        description: "配列型. TypeScriptではReadonlyArrayとして扱う",
+        parameter: { _: "Nothing" },
+      },
+      {
+        name: "Dict",
+        description: "辞書型. TypeScriptでは ReadonlyMapとして扱う",
+        parameter: { _: "Nothing" },
+      },
+    ]),
   },
   {
     name: "String",
@@ -4558,6 +4558,24 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     ]),
     projectId: coreProjectId,
     dataTypeParameterList: [],
+  },
+  {
+    id: d.TypePartId.fromString("a9c4fac6168c374e3a4e1579d588bf99"),
+    name: "SampleNamedInt32",
+    description: "名前付きの数値",
+    attribute: d.Maybe.Just(d.TypeAttribute.AsNumber),
+    dataTypeParameterList: [],
+    projectId: coreProjectId,
+    body: d.TypePartBody.Sum([
+      {
+        name: "SampleNamedInt32",
+        description: "1つのパターン",
+        parameter: d.Maybe.Just({
+          typePartId: d.Int32.typePartId,
+          parameter: [],
+        }),
+      },
+    ]),
   },
 ];
 
