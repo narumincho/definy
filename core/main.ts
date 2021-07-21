@@ -1,12 +1,12 @@
 import * as data from "../localData";
 import * as hexString from "./kernelType/hexString";
 import * as typeAlias from "./typeAlias";
-import * as variable from "./variable";
 import { evalExpr, evaluateSuggestionExpr } from "./evaluation";
 import { generateElmCode, generateElmCodeAsString } from "./elm";
 import { checkTypePartListValidation } from "./validation";
 import { exprToDebugString } from "./toDebugString";
 import { jsTs } from "../gen/main";
+import { typePartMapToVariable } from "./variable/main";
 
 export const stringToValidUserName = (userName: string): string | null => {
   const normalized = normalizeOneLineString(userName);
@@ -121,9 +121,9 @@ export const generateTypeScriptCode = (
       ...typeAlias
         .typePartMapToTypeAlias(typePartDataMap)
         .map(data.ExportDefinition.TypeAlias),
-      ...variable
-        .typePartMapToVariable(typePartDataMap)
-        .map(data.ExportDefinition.Variable),
+      ...typePartMapToVariable(typePartDataMap).map(
+        data.ExportDefinition.Variable
+      ),
     ],
     statementList: [],
   };
