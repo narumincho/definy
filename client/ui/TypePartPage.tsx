@@ -101,7 +101,7 @@ const LoadedTypePartEditor: React.VFC<
     props.typePart.attribute
   );
   const [dataTypeParameterList, setDataTypeParameterList] = React.useState<
-    ReadonlyArray<d.TypeParameter>
+    ReadonlyArray<d.DataTypeParameter>
   >(props.typePart.dataTypeParameterList);
   const [body, setBody] = React.useState<d.TypePartBody>(props.typePart.body);
 
@@ -289,9 +289,9 @@ const attributeValue = (
 
 const parameterListValue = (
   option: Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump"> & {
-    typeParameterList: ReadonlyArray<d.TypeParameter>;
+    typeParameterList: ReadonlyArray<d.DataTypeParameter>;
     setTypeParameterList: React.Dispatch<
-      React.SetStateAction<ReadonlyArray<d.TypeParameter>>
+      React.SetStateAction<ReadonlyArray<d.DataTypeParameter>>
     >;
   }
 ): CommonValue => {

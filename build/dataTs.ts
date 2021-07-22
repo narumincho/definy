@@ -2197,7 +2197,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             typePartId: d.List.typePartId,
             parameter: [
               {
-                typePartId: d.TypeParameter.typePartId,
+                typePartId: d.DataTypeParameter.typePartId,
                 parameter: [],
               },
             ],
@@ -3869,7 +3869,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             typePartId: d.List.typePartId,
             parameter: [
               {
-                typePartId: d.TypeParameter.typePartId,
+                typePartId: d.DataTypeParameter.typePartId,
                 parameter: [],
               },
             ],
@@ -4534,9 +4534,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     ]),
   },
   {
-    id: d.TypeParameter.typePartId,
-    name: "TypeParameter",
-    description: "型パラメータに指定するもの",
+    id: d.DataTypeParameter.typePartId,
+    name: "DataTypeParameter",
+    description: "データ型パラメータに指定するもの",
     attribute: d.Maybe.Nothing(),
     body: d.TypePartBody.Product([
       {
@@ -4607,6 +4607,32 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       {
         name: "SampleProjectTypePartId",
         description: "数値を SampleProjectTypePartId として扱う",
+        parameter: d.Maybe.Just({
+          typePartId: d.Int32.typePartId,
+          parameter: [],
+        }),
+      },
+    ]),
+  },
+  {
+    id: d.DataTypeOrDataTypeParameter.typePartId,
+    name: "DataTypeOrDataTypeParameter",
+    description: "データタイプか, データタイプパラメーターで定義されたもの",
+    attribute: d.Maybe.Nothing(),
+    dataTypeParameterList: [],
+    projectId: coreProjectId,
+    body: d.TypePartBody.Sum([
+      {
+        name: "DataType",
+        description: "データタイプ",
+        parameter: d.Maybe.Just({
+          typePartId: d.DataType.typePartId,
+          parameter: [],
+        }),
+      },
+      {
+        name: "DataTypeParameter",
+        description: "データタイプパラメータで指定したパラメータ",
         parameter: d.Maybe.Just({
           typePartId: d.Int32.typePartId,
           parameter: [],

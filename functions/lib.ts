@@ -89,7 +89,7 @@ type TypePartData = {
   /** 型パーツの特殊扱いの種類 */
   readonly attribute: d.Maybe<d.TypeAttribute>;
   /** 型パラメーター */
-  readonly typeParameterList: ReadonlyArray<d.TypeParameter>;
+  readonly typeParameterList: ReadonlyArray<d.DataTypeParameter>;
   /** 定義本体 */
   readonly typePartBody: d.TypePartBody;
   /** 所属しているプロジェクト */

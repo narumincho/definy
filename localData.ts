@@ -714,7 +714,7 @@ readonly attribute: Maybe<TypeAttribute>;
 /**
  * 型パラメーター
  */
-readonly dataTypeParameterList: List<TypeParameter>; 
+readonly dataTypeParameterList: List<DataTypeParameter>; 
 /**
  * 定義本体
  */
@@ -1273,7 +1273,7 @@ readonly attribute: Maybe<TypeAttribute>;
 /**
  * 設定する型パラメーター
  */
-readonly typeParameterList: List<TypeParameter>; 
+readonly typeParameterList: List<DataTypeParameter>; 
 /**
  * 設定する型定義本体
  */
@@ -1524,10 +1524,10 @@ readonly parameter: List<Type> };
 
 
 /**
- * 型パラメータに指定するもの
+ * データ型パラメータに指定するもの
  * @typePartId 627dc8fa15214481812af12268d97b6b
  */
-export type TypeParameter = { 
+export type DataTypeParameter = { 
 /**
  * パラメーター名
  */
@@ -1561,6 +1561,13 @@ export type NewTypePartId = { readonly _: "SameProject"; readonly sampleProjectT
  * @typePartId f329c4d764cf2e8f0cadbce5e97763ea
  */
 export type SampleProjectTypePartId = number & { readonly _SampleProjectTypePartId: never };
+
+
+/**
+ * データタイプか, データタイプパラメーターで定義されたもの
+ * @typePartId b4c160bb8b69e290abf7b60faca0856b
+ */
+export type DataTypeOrDataTypeParameter = { readonly _: "DataType"; readonly dataType: DataType } | { readonly _: "DataTypeParameter"; readonly int32: Int32 };
 
 
 /**
@@ -3893,12 +3900,12 @@ readonly codec: Codec<TypePart>;
 /**
  * 型を合わせる上で便利なヘルパー関数
  */
-readonly helper: (a: TypePart) => TypePart } = { typePartId: "87fc411d10f6986dd33e5dbaff6d06ae" as TypePartId, helper: (typePart: TypePart): TypePart => typePart, codec: { encode: (value: TypePart): ReadonlyArray<number> => (String.codec.encode(value.name).concat(String.codec.encode(value.description)).concat(ProjectId.codec.encode(value.projectId)).concat(Maybe.codec(TypeAttribute.codec).encode(value.attribute)).concat(List.codec(TypeParameter.codec).encode(value.dataTypeParameterList)).concat(TypePartBody.codec.encode(value.body)).concat(TypePartId.codec.encode(value.id))), decode: (index: number, binary: Uint8Array): { readonly result: TypePart; readonly nextIndex: number } => {
+readonly helper: (a: TypePart) => TypePart } = { typePartId: "87fc411d10f6986dd33e5dbaff6d06ae" as TypePartId, helper: (typePart: TypePart): TypePart => typePart, codec: { encode: (value: TypePart): ReadonlyArray<number> => (String.codec.encode(value.name).concat(String.codec.encode(value.description)).concat(ProjectId.codec.encode(value.projectId)).concat(Maybe.codec(TypeAttribute.codec).encode(value.attribute)).concat(List.codec(DataTypeParameter.codec).encode(value.dataTypeParameterList)).concat(TypePartBody.codec.encode(value.body)).concat(TypePartId.codec.encode(value.id))), decode: (index: number, binary: Uint8Array): { readonly result: TypePart; readonly nextIndex: number } => {
   const nameAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(index, binary);
   const descriptionAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(nameAndNextIndex.nextIndex, binary);
   const projectIdAndNextIndex: { readonly result: ProjectId; readonly nextIndex: number } = ProjectId.codec.decode(descriptionAndNextIndex.nextIndex, binary);
   const attributeAndNextIndex: { readonly result: Maybe<TypeAttribute>; readonly nextIndex: number } = Maybe.codec(TypeAttribute.codec).decode(projectIdAndNextIndex.nextIndex, binary);
-  const dataTypeParameterListAndNextIndex: { readonly result: List<TypeParameter>; readonly nextIndex: number } = List.codec(TypeParameter.codec).decode(attributeAndNextIndex.nextIndex, binary);
+  const dataTypeParameterListAndNextIndex: { readonly result: List<DataTypeParameter>; readonly nextIndex: number } = List.codec(DataTypeParameter.codec).decode(attributeAndNextIndex.nextIndex, binary);
   const bodyAndNextIndex: { readonly result: TypePartBody; readonly nextIndex: number } = TypePartBody.codec.decode(dataTypeParameterListAndNextIndex.nextIndex, binary);
   const idAndNextIndex: { readonly result: TypePartId; readonly nextIndex: number } = TypePartId.codec.decode(bodyAndNextIndex.nextIndex, binary);
   return { result: { name: nameAndNextIndex.result, description: descriptionAndNextIndex.result, projectId: projectIdAndNextIndex.result, attribute: attributeAndNextIndex.result, dataTypeParameterList: dataTypeParameterListAndNextIndex.result, body: bodyAndNextIndex.result, id: idAndNextIndex.result }, nextIndex: idAndNextIndex.nextIndex };
@@ -5358,13 +5365,13 @@ readonly codec: Codec<SetTypePartParameter>;
 /**
  * 型を合わせる上で便利なヘルパー関数
  */
-readonly helper: (a: SetTypePartParameter) => SetTypePartParameter } = { typePartId: "dac038758a5c45f762de388bb5193fb8" as TypePartId, helper: (setTypePartParameter: SetTypePartParameter): SetTypePartParameter => setTypePartParameter, codec: { encode: (value: SetTypePartParameter): ReadonlyArray<number> => (AccountToken.codec.encode(value.accountToken).concat(TypePartId.codec.encode(value.typePartId)).concat(String.codec.encode(value.name)).concat(String.codec.encode(value.description)).concat(Maybe.codec(TypeAttribute.codec).encode(value.attribute)).concat(List.codec(TypeParameter.codec).encode(value.typeParameterList)).concat(TypePartBody.codec.encode(value.body))), decode: (index: number, binary: Uint8Array): { readonly result: SetTypePartParameter; readonly nextIndex: number } => {
+readonly helper: (a: SetTypePartParameter) => SetTypePartParameter } = { typePartId: "dac038758a5c45f762de388bb5193fb8" as TypePartId, helper: (setTypePartParameter: SetTypePartParameter): SetTypePartParameter => setTypePartParameter, codec: { encode: (value: SetTypePartParameter): ReadonlyArray<number> => (AccountToken.codec.encode(value.accountToken).concat(TypePartId.codec.encode(value.typePartId)).concat(String.codec.encode(value.name)).concat(String.codec.encode(value.description)).concat(Maybe.codec(TypeAttribute.codec).encode(value.attribute)).concat(List.codec(DataTypeParameter.codec).encode(value.typeParameterList)).concat(TypePartBody.codec.encode(value.body))), decode: (index: number, binary: Uint8Array): { readonly result: SetTypePartParameter; readonly nextIndex: number } => {
   const accountTokenAndNextIndex: { readonly result: AccountToken; readonly nextIndex: number } = AccountToken.codec.decode(index, binary);
   const typePartIdAndNextIndex: { readonly result: TypePartId; readonly nextIndex: number } = TypePartId.codec.decode(accountTokenAndNextIndex.nextIndex, binary);
   const nameAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(typePartIdAndNextIndex.nextIndex, binary);
   const descriptionAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(nameAndNextIndex.nextIndex, binary);
   const attributeAndNextIndex: { readonly result: Maybe<TypeAttribute>; readonly nextIndex: number } = Maybe.codec(TypeAttribute.codec).decode(descriptionAndNextIndex.nextIndex, binary);
-  const typeParameterListAndNextIndex: { readonly result: List<TypeParameter>; readonly nextIndex: number } = List.codec(TypeParameter.codec).decode(attributeAndNextIndex.nextIndex, binary);
+  const typeParameterListAndNextIndex: { readonly result: List<DataTypeParameter>; readonly nextIndex: number } = List.codec(DataTypeParameter.codec).decode(attributeAndNextIndex.nextIndex, binary);
   const bodyAndNextIndex: { readonly result: TypePartBody; readonly nextIndex: number } = TypePartBody.codec.decode(typeParameterListAndNextIndex.nextIndex, binary);
   return { result: { accountToken: accountTokenAndNextIndex.result, typePartId: typePartIdAndNextIndex.result, name: nameAndNextIndex.result, description: descriptionAndNextIndex.result, attribute: attributeAndNextIndex.result, typeParameterList: typeParameterListAndNextIndex.result, body: bodyAndNextIndex.result }, nextIndex: bodyAndNextIndex.nextIndex };
 } } };
@@ -5905,10 +5912,10 @@ readonly helper: (a: Type) => Type } = { typePartId: "b3b36f39469d23321ed01b92f0
 
 
 /**
- * 型パラメータに指定するもの
+ * データ型パラメータに指定するもの
  * @typePartId 627dc8fa15214481812af12268d97b6b
  */
-export const TypeParameter: { 
+export const DataTypeParameter: { 
 /**
  * definy.app内 の 型パーツの Id
  */
@@ -5916,11 +5923,11 @@ readonly typePartId: TypePartId;
 /**
  * 独自のバイナリ形式の変換処理ができるコーデック
  */
-readonly codec: Codec<TypeParameter>; 
+readonly codec: Codec<DataTypeParameter>; 
 /**
  * 型を合わせる上で便利なヘルパー関数
  */
-readonly helper: (a: TypeParameter) => TypeParameter } = { typePartId: "627dc8fa15214481812af12268d97b6b" as TypePartId, helper: (typeParameter: TypeParameter): TypeParameter => typeParameter, codec: { encode: (value: TypeParameter): ReadonlyArray<number> => (String.codec.encode(value.name).concat(TypePartId.codec.encode(value.typePartId))), decode: (index: number, binary: Uint8Array): { readonly result: TypeParameter; readonly nextIndex: number } => {
+readonly helper: (a: DataTypeParameter) => DataTypeParameter } = { typePartId: "627dc8fa15214481812af12268d97b6b" as TypePartId, helper: (dataTypeParameter: DataTypeParameter): DataTypeParameter => dataTypeParameter, codec: { encode: (value: DataTypeParameter): ReadonlyArray<number> => (String.codec.encode(value.name).concat(TypePartId.codec.encode(value.typePartId))), decode: (index: number, binary: Uint8Array): { readonly result: DataTypeParameter; readonly nextIndex: number } => {
   const nameAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(index, binary);
   const typePartIdAndNextIndex: { readonly result: TypePartId; readonly nextIndex: number } = TypePartId.codec.decode(nameAndNextIndex.nextIndex, binary);
   return { result: { name: nameAndNextIndex.result, typePartId: typePartIdAndNextIndex.result }, nextIndex: typePartIdAndNextIndex.nextIndex };
@@ -6012,6 +6019,49 @@ readonly SampleProjectTypePartId: (a: Int32) => SampleProjectTypePartId } = { Sa
 }, decode: (index: number, binary: Uint8Array): { readonly result: SampleProjectTypePartId; readonly nextIndex: number } => {
   const decodedInt32: { readonly result: number; readonly nextIndex: number } = Int32.codec.decode(index, binary);
   return { result: SampleProjectTypePartId.SampleProjectTypePartId(decodedInt32.result), nextIndex: decodedInt32.nextIndex };
+} } };
+
+
+/**
+ * データタイプか, データタイプパラメーターで定義されたもの
+ * @typePartId b4c160bb8b69e290abf7b60faca0856b
+ */
+export const DataTypeOrDataTypeParameter: { 
+/**
+ * definy.app内 の 型パーツの Id
+ */
+readonly typePartId: TypePartId; 
+/**
+ * 独自のバイナリ形式の変換処理ができるコーデック
+ */
+readonly codec: Codec<DataTypeOrDataTypeParameter>; 
+/**
+ * データタイプ
+ */
+readonly DataType: (a: DataType) => DataTypeOrDataTypeParameter; 
+/**
+ * データタイプパラメータで指定したパラメータ
+ */
+readonly DataTypeParameter: (a: Int32) => DataTypeOrDataTypeParameter } = { DataType: (dataType: DataType): DataTypeOrDataTypeParameter => ({ _: "DataType", dataType }), DataTypeParameter: (int32: Int32): DataTypeOrDataTypeParameter => ({ _: "DataTypeParameter", int32 }), typePartId: "b4c160bb8b69e290abf7b60faca0856b" as TypePartId, codec: { encode: (value: DataTypeOrDataTypeParameter): ReadonlyArray<number> => {
+  switch (value._) {
+    case "DataType": {
+      return [0].concat(DataType.codec.encode(value.dataType));
+    }
+    case "DataTypeParameter": {
+      return [1].concat(Int32.codec.encode(value.int32));
+    }
+  }
+}, decode: (index: number, binary: Uint8Array): { readonly result: DataTypeOrDataTypeParameter; readonly nextIndex: number } => {
+  const patternIndex: { readonly result: number; readonly nextIndex: number } = Int32.codec.decode(index, binary);
+  if (patternIndex.result === 0) {
+    const result: { readonly result: DataType; readonly nextIndex: number } = DataType.codec.decode(patternIndex.nextIndex, binary);
+    return { result: DataTypeOrDataTypeParameter.DataType(result.result), nextIndex: result.nextIndex };
+  }
+  if (patternIndex.result === 1) {
+    const result: { readonly result: Int32; readonly nextIndex: number } = Int32.codec.decode(patternIndex.nextIndex, binary);
+    return { result: DataTypeOrDataTypeParameter.DataTypeParameter(result.result), nextIndex: result.nextIndex };
+  }
+  throw new Error("存在しないパターンを指定された 型を更新してください");
 } } };
 
 
