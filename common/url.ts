@@ -1,5 +1,5 @@
 import * as d from "../localData";
-import { nowMode } from "../out";
+import { origin } from "../out";
 
 const languageQueryKey = "hl";
 export const defaultLanguage: d.Language = "English";
