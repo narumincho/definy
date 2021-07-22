@@ -846,12 +846,12 @@ const codecExprUse = (
         type.typePartId
     );
   }
-  if (type.parameter.length === 0) {
+  if (type.arguments.length === 0) {
     return typePartNameToCodecExpr(typePartData);
   }
   return d.TsExpr.Call({
     expr: typePartNameToCodecExpr(typePartData),
-    parameterList: type.parameter.map((parameter) =>
+    parameterList: type.arguments.map((parameter) =>
       codecExprUse(parameter, typePartDataMap)
     ),
   });

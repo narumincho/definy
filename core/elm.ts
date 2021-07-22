@@ -163,7 +163,7 @@ const definyTypeToElmType = (
 
   return d.ElmType.LocalType({
     typeName: stringToElmTypeName(typePart.typePart.name),
-    parameter: type.parameter.map((parameter) =>
+    parameter: type.arguments.map((parameter) =>
       definyTypeToElmType(parameter, typePartDataMap)
     ),
   });

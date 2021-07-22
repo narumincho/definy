@@ -267,7 +267,7 @@ const partListValue = (
               projectId,
               type: d.Type.helper({
                 typePartId: d.Int32.typePartId,
-                parameter: [],
+                arguments: [],
               }),
             },
           ];

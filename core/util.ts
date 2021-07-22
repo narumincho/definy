@@ -32,7 +32,7 @@ export const typeToTsType = (
         typePart.tag === "typePart" ? typePart.typePart.name : typePart.name
       )
     ),
-    typeParameterList: type.parameter.map((parameter) =>
+    typeParameterList: type.arguments.map((parameter) =>
       typeToTsType(parameter, typePartDataMap)
     ),
   });
@@ -88,7 +88,7 @@ export const toTypeName = (
     );
   }
   return (
-    type.parameter
+    type.arguments
       .map((parameter) => toTypeName(parameter, typePartDataMap))
       .join("") +
     (typePartData.tag === "typePart"
@@ -184,5 +184,5 @@ export const isValidTypePartName = (text: string): boolean => {
 /** 型パーツIDから型パラメーターをしていしない型を指定する */
 export const noParameterType = (typePartId: d.TypePartId): d.Type => ({
   typePartId,
-  parameter: [],
+  arguments: [],
 });

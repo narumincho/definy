@@ -129,7 +129,7 @@ describe("data", () => {
      */
     const intType: d.Type = {
       typePartId: d.TypePartId.fromString("int"),
-      parameter: [],
+      arguments: [],
     };
     const oneName = d.PartId.fromString("0");
     const addOneHundredName = d.PartId.fromString("1");

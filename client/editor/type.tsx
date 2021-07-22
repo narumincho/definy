@@ -40,7 +40,7 @@ const TypeSelectionView: ElementOperation<
   );
 
   if (
-    result.typeParameterNameList.length !== props.value.type.parameter.length
+    result.typeParameterNameList.length !== props.value.type.arguments.length
   ) {
     return (
       <div>
@@ -49,14 +49,14 @@ const TypeSelectionView: ElementOperation<
     );
   }
 
-  if (props.value.type.parameter.length === 0) {
+  if (props.value.type.arguments.length === 0) {
     return <div>{result.name}</div>;
   }
 
   return (
     <div>
       <div>{result.name}</div>
-      {props.value.type.parameter.map((t, index) => (
+      {props.value.type.arguments.map((t, index) => (
         <TypeArgument
           key={index}
           index={index}
@@ -232,8 +232,8 @@ const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
       }
       onChange({
         typePartId: suggestionFirst.typePartId,
-        parameter: new Array<d.Type>(suggestionFirst.typeParameterCount).fill({
-          parameter: [],
+        arguments: new Array<d.Type>(suggestionFirst.typeParameterCount).fill({
+          arguments: [],
           typePartId: d.Int32.typePartId,
         }),
       });
@@ -287,7 +287,7 @@ const setTypePartAtSelection = (
   }
   return {
     typePartId: currentType.typePartId,
-    parameter: listUpdateAt(currentType.parameter, selection.index, (t) =>
+    arguments: listUpdateAt(currentType.arguments, selection.index, (t) =>
       setTypePartAtSelection(t, selection.typeSelection, type)
     ),
   };
@@ -365,8 +365,8 @@ const SearchResult: React.VFC<
               onChange={props.onChange}
               type={{
                 typePartId: item.typePartId,
-                parameter: new Array<d.Type>(item.typeParameterCount).fill({
-                  parameter: [],
+                arguments: new Array<d.Type>(item.typeParameterCount).fill({
+                  arguments: [],
                   typePartId: d.Int32.typePartId,
                 }),
               }}
@@ -479,8 +479,8 @@ const TypeItem: React.VFC<
     const onClick = React.useCallback(() => {
       onChange({
         typePartId,
-        parameter: new Array<d.Type>(typeParameterCount).fill({
-          parameter: [],
+        arguments: new Array<d.Type>(typeParameterCount).fill({
+          arguments: [],
           typePartId: d.Int32.typePartId,
         }),
       });
@@ -565,7 +565,7 @@ const TypeParameterList: React.VFC<
               language={props.language}
               name={[{ text: p.name, isEmphasis: false }]}
               onChange={props.onChange}
-              type={{ typePartId: p.typePartId, parameter: [] }}
+              type={{ typePartId: p.typePartId, arguments: [] }}
               typeParameterCount={0}
               typePartId={p.typePartId}
               isSelected={props.typePartId === props.selectedTypePartId}

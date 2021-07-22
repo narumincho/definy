@@ -374,7 +374,7 @@ const bodyValue = (
             {
               name: "member",
               description: "",
-              type: { typePartId: d.Int32.typePartId, parameter: [] },
+              type: { typePartId: d.Int32.typePartId, arguments: [] },
             },
           ])
         );
@@ -533,7 +533,7 @@ const patternValue = (
               description: prevPattern.description,
               parameter: d.Maybe.Just({
                 typePartId: d.Int32.typePartId,
-                parameter: [],
+                arguments: [],
               }),
             }));
           },
@@ -575,7 +575,7 @@ const memberListValue = (
         {
           name: "newMember",
           description: "",
-          type: { typePartId: d.Int32.typePartId, parameter: [] },
+          type: { typePartId: d.Int32.typePartId, arguments: [] },
         },
       ]);
     },

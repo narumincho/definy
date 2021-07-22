@@ -185,12 +185,12 @@ const checkTypeValidation = (
     typeIdTypeParameterSizeMap,
     typeParameterTypePartIdSet
   );
-  if (typeParameterSize !== type.parameter.length) {
+  if (typeParameterSize !== type.arguments.length) {
     throw new Error(
       "type parameter size not match. type part need " +
         typeParameterSize.toString() +
         ". but use " +
-        type.parameter.length.toString() +
+        type.arguments.length.toString() +
         "parameter(s)"
     );
   }

@@ -3,8 +3,8 @@ import * as d from "../localData";
 export type GetCodecType<codec> = codec extends d.Codec<infer t> ? t : never;
 
 export type ApiCodec<Request, Response> = {
-  request: d.Codec<Request>;
-  response: d.Codec<Response>;
+  readonly request: d.Codec<Request>;
+  readonly response: d.Codec<Response>;
 };
 
 export const requestLogInUrl: ApiCodec<d.RequestLogInUrlRequestData, d.String> =
