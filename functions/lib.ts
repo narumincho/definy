@@ -3,7 +3,7 @@ import * as apiCodec from "../common/apiCodec";
 import * as commonUrl from "../common/url";
 import * as core from "../core/main";
 import * as crypto from "crypto";
-import * as d from "../data";
+import * as d from "../localData";
 import * as functions from "firebase-functions";
 import * as image from "./image";
 import * as jimp from "jimp";
@@ -89,7 +89,7 @@ type TypePartData = {
   /** 型パーツの特殊扱いの種類 */
   readonly attribute: d.Maybe<d.TypeAttribute>;
   /** 型パラメーター */
-  readonly typeParameterList: ReadonlyArray<d.TypeParameter>;
+  readonly typeParameterList: ReadonlyArray<d.DataTypeParameter>;
   /** 定義本体 */
   readonly typePartBody: d.TypePartBody;
   /** 所属しているプロジェクト */
@@ -483,7 +483,7 @@ const typePartFromDBType = (
     name: typePartData.name,
     description: typePartData.description,
     attribute: typePartData.attribute,
-    typeParameterList: typePartData.typeParameterList,
+    dataTypeParameterList: typePartData.typeParameterList,
     body: typePartData.typePartBody,
     projectId: typePartData.projectId,
   };
@@ -496,7 +496,7 @@ const typePartToDBType = (
   name: typePart.name,
   description: typePart.description,
   attribute: typePart.attribute,
-  typeParameterList: typePart.typeParameterList,
+  typeParameterList: typePart.dataTypeParameterList,
   createTime,
   projectId: typePart.projectId,
   typePartBody: typePart.body,
@@ -510,7 +510,7 @@ const addTypePart = async (projectId: d.ProjectId): Promise<d.TypePart> => {
     description: "",
     attribute: d.Maybe.Nothing(),
     projectId,
-    typeParameterList: [],
+    dataTypeParameterList: [],
     body: d.TypePartBody.Sum([]),
   };
   await database
@@ -761,7 +761,7 @@ export const apiFunc: {
         name: request.name,
         description: request.description,
         attribute: request.attribute,
-        typeParameterList: request.typeParameterList,
+        dataTypeParameterList: request.typeParameterList,
         body: request.body,
         id: request.typePartId,
         projectId: typePart.projectId,

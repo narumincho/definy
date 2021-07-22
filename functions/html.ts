@@ -1,5 +1,5 @@
 import * as commonUrl from "../common/url";
-import * as d from "../data";
+import * as d from "../localData";
 import * as lib from "./lib";
 import { html as genHtml } from "../gen/main";
 import { globalStyle } from "../common/globalStyle";

@@ -1,4 +1,4 @@
-import * as d from "../data";
+import * as d from "../localData";
 import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
 import {
@@ -247,13 +247,13 @@ const outputNowModeAndOrigin = async (
             document: "実行モード (ビルド時にコード生成される)",
             expr: d.TsExpr.Get({
               expr: d.TsExpr.ImportedVariable({
-                moduleName: "./data",
+                moduleName: "./localData",
                 name: jsTs.identiferFromString("Mode"),
               }),
               propertyExpr: d.TsExpr.StringLiteral(mode),
             }),
             type: d.TsType.ImportedType({
-              moduleName: "./data",
+              moduleName: "./localData",
               name: jsTs.identiferFromString("Mode"),
             }),
           }),

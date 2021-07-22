@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../data";
+import * as d from "../localData";
 import { AccountCard, Props } from "../client/ui/AccountCard";
 import { Meta, Story } from "@storybook/react";
 import { account1Id, accountResource } from "./mockData";

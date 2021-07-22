@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../../data";
+import * as d from "../../localData";
 import { Header, TitleItem } from "./Header";
 import { css, keyframes } from "@emotion/css";
 import { AboutPage } from "./AboutPage";

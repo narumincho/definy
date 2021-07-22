@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../data";
+import * as d from "../localData";
 import { Meta, Story } from "@storybook/react";
 import { Props, TypePartPage } from "../client/ui/TypePartPage";
 import {

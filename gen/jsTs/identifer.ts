@@ -1,4 +1,4 @@
-import { TsIdentifer } from "../../data";
+import { TsIdentifer } from "../../localData";
 
 /**
  * 識別子を文字列から無理矢理でも生成する.

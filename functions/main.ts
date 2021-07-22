@@ -1,6 +1,6 @@
 import * as apiCodec from "../common/apiCodec";
 import * as commonUrl from "../common/url";
-import * as d from "../data";
+import * as d from "../localData";
 import * as functions from "firebase-functions";
 import * as lib from "./lib";
 import { html as genHtml } from "../gen/main";

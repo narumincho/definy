@@ -1,4 +1,4 @@
-import * as d from "../data";
+import * as d from "../localData";
 import { origin } from "../out";
 
 const languageQueryKey = "hl";

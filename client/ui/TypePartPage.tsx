@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../../data";
+import * as d from "../../localData";
 import {
   CommonValue,
   buttonValue,
@@ -100,9 +100,9 @@ const LoadedTypePartEditor: React.VFC<
   const [attribute, setAttribute] = React.useState<d.Maybe<d.TypeAttribute>>(
     props.typePart.attribute
   );
-  const [typeParameterList, setTypeParameterList] = React.useState<
-    ReadonlyArray<d.TypeParameter>
-  >(props.typePart.typeParameterList);
+  const [dataTypeParameterList, setDataTypeParameterList] = React.useState<
+    ReadonlyArray<d.DataTypeParameter>
+  >(props.typePart.dataTypeParameterList);
   const [body, setBody] = React.useState<d.TypePartBody>(props.typePart.body);
 
   const onClickSaveTypePart = React.useCallback(() => {
@@ -111,7 +111,7 @@ const LoadedTypePartEditor: React.VFC<
       name,
       description,
       attribute,
-      typeParameterList,
+      typeParameterList: dataTypeParameterList,
       body,
     });
   }, [
@@ -121,7 +121,7 @@ const LoadedTypePartEditor: React.VFC<
     name,
     props.typePartId,
     saveTypePart,
-    typeParameterList,
+    dataTypeParameterList,
   ]);
 
   return (
@@ -156,8 +156,8 @@ const LoadedTypePartEditor: React.VFC<
               language: props.language,
               jump: props.jump,
               typePartResource: props.typePartResource,
-              typeParameterList,
-              setTypeParameterList,
+              typeParameterList: dataTypeParameterList,
+              setTypeParameterList: setDataTypeParameterList,
             }),
           },
           {
@@ -289,9 +289,9 @@ const attributeValue = (
 
 const parameterListValue = (
   option: Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump"> & {
-    typeParameterList: ReadonlyArray<d.TypeParameter>;
+    typeParameterList: ReadonlyArray<d.DataTypeParameter>;
     setTypeParameterList: React.Dispatch<
-      React.SetStateAction<ReadonlyArray<d.TypeParameter>>
+      React.SetStateAction<ReadonlyArray<d.DataTypeParameter>>
     >;
   }
 ): CommonValue => {

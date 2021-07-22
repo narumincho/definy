@@ -1,39 +1,44 @@
 import * as codec from "./kernelType/codec";
-import * as d from "../data";
+import * as d from "../localData";
 import * as util from "./util";
+import { TypePartData } from "./validation";
 import { jsTs } from "../gen/main";
 
 export const typePartMapToTypeAlias = (
-  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
-  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
+  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
 ): ReadonlyArray<d.TypeAlias> => {
   return [
     codec.codecTypeAlias(),
-    ...[...typePartMap].map(([typePartId, typePart]) =>
-      typePartToTypeAlias(typePartId, typePart, allTypePartIdTypePartNameMap)
+    ...[...typePartDataMap.values()].flatMap((typePartData) =>
+      typePartData.tag === "typePart"
+        ? [typePartToTypeAlias(typePartData.typePart, typePartDataMap)]
+        : []
     ),
   ];
 };
 
 export const typePartToTypeAlias = (
-  typePartId: d.TypePartId,
   typePart: d.TypePart,
-  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
+  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
 ): d.TypeAlias => ({
   name: jsTs.identiferFromString(typePart.name),
-  document: typePart.description + "\n@typePartId " + (typePartId as string),
-  typeParameterList: typePart.typeParameterList.map((typeParameter) =>
+  document: typePart.description + "\n@typePartId " + (typePart.id as string),
+  typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
     jsTs.identiferFromString(typeParameter.name)
   ),
-  type: typePartToTsType(typePart, allTypePartIdTypePartNameMap),
+  type: typePartToTsType(typePart, typePartDataMap),
 });
 
 const typePartToTsType = (
   typePart: d.TypePart,
-  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
+  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
 ): d.TsType => {
   if (typePart.attribute._ === "Just") {
-    return typePartWIthAttributeToTsType(typePart, typePart.attribute.value);
+    return typePartWithAttributeToTsType(
+      typePart,
+      typePart.attribute.value,
+      typePartDataMap
+    );
   }
   switch (typePart.body._) {
     case "Sum":
@@ -46,7 +51,7 @@ const typePartToTsType = (
       }
       return d.TsType.Union(
         typePart.body.patternList.map((pattern) =>
-          patternListToObjectType(pattern, allTypePartIdTypePartNameMap)
+          patternListToObjectType(pattern, typePartDataMap)
         )
       );
     case "Product":
@@ -54,7 +59,7 @@ const typePartToTsType = (
         typePart.body.memberList.map((member) => ({
           name: member.name,
           required: true,
-          type: util.typeToTsType(member.type, allTypePartIdTypePartNameMap),
+          type: util.typeToTsType(member.type, typePartDataMap),
           document: member.description,
         }))
       );
@@ -70,9 +75,10 @@ const typePartToTsType = (
  * コンパイラに向けた属性付きのDefinyの型をTypeScriptの型に変換する
  * @param typeAttribute
  */
-const typePartWIthAttributeToTsType = (
+const typePartWithAttributeToTsType = (
   typePart: d.TypePart,
-  typeAttribute: d.TypeAttribute
+  typeAttribute: d.TypeAttribute,
+  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
 ): d.TsType => {
   switch (typeAttribute) {
     case "AsBoolean":
@@ -101,12 +107,54 @@ const typePartWIthAttributeToTsType = (
       throw new Error(
         "attribute == Just(AsUndefined) type part need sum and have 1 patterns, All pattern parameters are empty"
       );
+    case "AsNumber": {
+      if (typePart.body._ !== "Sum" || typePart.body.patternList.length !== 1) {
+        throw new Error(
+          "attribute == Just(AsNumber) type part need sum, have 1 patterns, parameters is int32"
+        );
+      }
+      const firstPattern = typePart.body.patternList[0];
+      if (firstPattern === undefined || firstPattern.parameter._ !== "Just") {
+        throw new Error(
+          "attribute == Just(AsNumber) type part need sum, have 1 patterns, parameters is int32"
+        );
+      }
+      const parameterTypePart = typePartDataMap.get(
+        firstPattern.parameter.value.typePartId
+      );
+      if (parameterTypePart === undefined) {
+        throw new Error(
+          `attribute == Just(AsNumber). parameter typePart not found. typePartId = ${firstPattern.parameter.value.typePartId}`
+        );
+      }
+      if (
+        parameterTypePart.tag !== "typePart" ||
+        parameterTypePart.typePart.body._ !== "Kernel" ||
+        parameterTypePart.typePart.body.typePartBodyKernel !== "Int32"
+      ) {
+        throw new Error(
+          `attribute == Just(AsNumber). parameter typePart need typePartBody is Int32. typePartId = ${firstPattern.parameter.value.typePartId}`
+        );
+      }
+
+      return d.TsType.Intersection({
+        left: d.TsType.Number,
+        right: d.TsType.Object([
+          d.TsMemberType.helper({
+            required: true,
+            name: "_" + typePart.name,
+            document: "",
+            type: d.TsType.Never,
+          }),
+        ]),
+      });
+    }
   }
 };
 
 const patternListToObjectType = (
   patternList: d.Pattern,
-  allTypePartIdTypePartNameMap: ReadonlyMap<d.TypePartId, string>
+  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
 ): d.TsType => {
   const tagField: d.TsMemberType = {
     name: "_",
@@ -122,14 +170,11 @@ const patternListToObjectType = (
         {
           name: util.typeToMemberOrParameterName(
             patternList.parameter.value,
-            allTypePartIdTypePartNameMap
+            typePartDataMap
           ),
           required: true,
           document: "",
-          type: util.typeToTsType(
-            patternList.parameter.value,
-            allTypePartIdTypePartNameMap
-          ),
+          type: util.typeToTsType(patternList.parameter.value, typePartDataMap),
         },
       ]);
     case "Nothing":
@@ -162,7 +207,7 @@ const typePartBodyKernelToTsType = (
         ]),
       });
     case "List": {
-      const [elementType] = typePart.typeParameterList;
+      const [elementType] = typePart.dataTypeParameterList;
       if (elementType === undefined) {
         throw new Error("List need one type parameter");
       }
@@ -171,7 +216,7 @@ const typePartBodyKernelToTsType = (
       );
     }
     case "Dict": {
-      const [id, value] = typePart.typeParameterList;
+      const [id, value] = typePart.dataTypeParameterList;
       if (id === undefined || value === undefined) {
         throw new Error("Dict need two type parameter");
       }

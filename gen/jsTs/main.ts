@@ -1,4 +1,4 @@
-import * as d from "../../data";
+import * as d from "../../localData";
 import { createIdentifer, initialIdentiferIndex } from "./identifer";
 import { UsedNameAndModulePathSet } from "./interface";
 import { collectInCode } from "./collect";

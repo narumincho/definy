@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../../data";
+import * as d from "../../localData";
 import { listUpdateAt, neverFunc } from "../../common/util";
 import { Button } from "../ui/Button";
 import { ElementOperation } from "./ElementOperation";
@@ -87,7 +87,7 @@ const getTypePartNameFromTypePartId = (
     return { type: "none", name: "???", typeParameterNameList: [] };
   }
   const selectedTypePart =
-    scopeTypePart.dataWithTime.data.typeParameterList.find(
+    scopeTypePart.dataWithTime.data.dataTypeParameterList.find(
       (param) => param.typePartId === typePartId
     );
   if (selectedTypePart === undefined) {
@@ -111,9 +111,10 @@ const getTypePartNameFromTypePartId = (
     return {
       type: "inProject",
       name: resource.dataWithTime.data.name,
-      typeParameterNameList: resource.dataWithTime.data.typeParameterList.map(
-        (parameter) => parameter.name
-      ),
+      typeParameterNameList:
+        resource.dataWithTime.data.dataTypeParameterList.map(
+          (parameter) => parameter.name
+        ),
     };
   }
   return {
@@ -436,13 +437,13 @@ const generateTypeSuggestion = (
               isEmphasis: false,
             },
             {
-              text: ` ${new Array(data.typeParameterList.length)
+              text: ` ${new Array(data.dataTypeParameterList.length)
                 .fill("*")
                 .join(" ")}`,
               isEmphasis: false,
             },
           ],
-          typeParameterCount: data.typeParameterList.length,
+          typeParameterCount: data.dataTypeParameterList.length,
           point: data.name.length - normalizedSearchText.length,
         },
       ];
@@ -551,13 +552,13 @@ const TypeParameterList: React.VFC<
       return <div>...</div>;
     case "Loaded": {
       const data = typePartResource.dataWithTime.data;
-      if (data.typeParameterList.length === 0) {
+      if (data.dataTypeParameterList.length === 0) {
         return <div>型パラメータはない</div>;
       }
       return (
         <div>
           <div>型パラメータから</div>
-          {data.typeParameterList.map((p) => (
+          {data.dataTypeParameterList.map((p) => (
             <TypeItem
               key={p.typePartId}
               jump={props.jump}
