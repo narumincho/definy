@@ -4560,16 +4560,53 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     dataTypeParameterList: [],
   },
   {
-    id: d.TypePartId.fromString("a9c4fac6168c374e3a4e1579d588bf99"),
-    name: "SampleNamedInt32",
-    description: "名前付きの数値",
+    id: d.DataType.typePartId,
+    name: "DataType",
+    description: "直接的に, 関数ではないデータ型 (内部に関数を保つ場合はある)",
+    attribute: d.Maybe.Nothing(),
+    dataTypeParameterList: [],
+    projectId: coreProjectId,
+    body: d.TypePartBody.Product([
+      {
+        name: "typePartId",
+        description: "型パーツID",
+        type: {
+          typePartId: d.NewTypePartId.typePartId,
+          parameter: [],
+        },
+      },
+    ]),
+  },
+  {
+    id: d.NewTypePartId.typePartId,
+    name: "NewTypePartId",
+    description:
+      "新しい型パーツID. 同じプロジェクトならシンプルな整数で表現し, 他のプロジェクトはUUID で表現する",
+    attribute: d.Maybe.Nothing(),
+    dataTypeParameterList: [],
+    projectId: coreProjectId,
+    body: d.TypePartBody.Sum([
+      {
+        name: "SameProject",
+        description: "同じプロジェクト",
+        parameter: d.Maybe.Just({
+          typePartId: d.SampleProjectTypePartId.typePartId,
+          parameter: [],
+        }),
+      },
+    ]),
+  },
+  {
+    id: d.SampleProjectTypePartId.typePartId,
+    name: "SampleProjectTypePartId",
+    description: "同じプロジェクトの型パーツID",
     attribute: d.Maybe.Just(d.TypeAttribute.AsNumber),
     dataTypeParameterList: [],
     projectId: coreProjectId,
     body: d.TypePartBody.Sum([
       {
-        name: "SampleNamedInt32",
-        description: "1つのパターン",
+        name: "SampleProjectTypePartId",
+        description: "数値を SampleProjectTypePartId として扱う",
         parameter: d.Maybe.Just({
           typePartId: d.Int32.typePartId,
           parameter: [],
