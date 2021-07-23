@@ -273,9 +273,22 @@ const attributeValue = (
               setAttribute(d.Maybe.Just(d.TypeAttribute.AsUndefined));
             },
           },
+          {
+            name:
+              language === d.Language.Japanese
+                ? "number として扱う"
+                : "AsNumber",
+            onSelect: () => {
+              setAttribute(d.Maybe.Just(d.TypeAttribute.AsNumber));
+            },
+          },
         ],
         value: undefined,
-        index: attribute === d.TypeAttribute.AsBoolean ? 0 : 1,
+        index: [
+          d.TypeAttribute.AsBoolean,
+          d.TypeAttribute.AsUndefined,
+          d.TypeAttribute.AsNumber,
+        ].findIndex((a) => a === attribute),
       }),
     attributeMaybe,
     () => {

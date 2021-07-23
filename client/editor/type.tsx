@@ -41,8 +41,14 @@ const TypeSelectionView: ElementOperation<
     );
 
     return (
-      <div>
-        <div>{`->`}</div>
+      <div
+        className={css({
+          display: "flex",
+          gap: 8,
+        })}
+      >
+        <div>(入力)</div>
+        <div>{`→`}</div>
         <dataTypeOperation.selectionView
           value={{
             dataType: value.type.output,

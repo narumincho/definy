@@ -11,7 +11,6 @@ import {
   productValue,
   timeValue,
   typePartIdValue,
-  typeValue,
 } from "../editor/common";
 import { ListItem, listItem } from "../editor/list";
 import { Editor } from "./Editor";
