@@ -712,7 +712,7 @@ readonly projectId: ProjectId;
  */
 readonly attribute: Maybe<TypeAttribute>; 
 /**
- * 型パラメーター
+ * データ型パラメーター
  */
 readonly dataTypeParameterList: List<DataTypeParameter>; 
 /**
@@ -1303,7 +1303,7 @@ readonly type: ElmType;
 /**
  * 式
  */
-readonly expr: ElmType; 
+readonly expr: ElmExpr; 
 /**
  * コメント
  */
@@ -5429,10 +5429,10 @@ readonly codec: Codec<ElmDefinition>;
 /**
  * 型を合わせる上で便利なヘルパー関数
  */
-readonly helper: (a: ElmDefinition) => ElmDefinition } = { typePartId: "db8b9f83d99ef58fd206acca4e56d098" as TypePartId, helper: (elmDefinition: ElmDefinition): ElmDefinition => elmDefinition, codec: { encode: (value: ElmDefinition): ReadonlyArray<number> => (String.codec.encode(value.name).concat(ElmType.codec.encode(value.type)).concat(ElmType.codec.encode(value.expr)).concat(String.codec.encode(value.comment))), decode: (index: number, binary: Uint8Array): { readonly result: ElmDefinition; readonly nextIndex: number } => {
+readonly helper: (a: ElmDefinition) => ElmDefinition } = { typePartId: "db8b9f83d99ef58fd206acca4e56d098" as TypePartId, helper: (elmDefinition: ElmDefinition): ElmDefinition => elmDefinition, codec: { encode: (value: ElmDefinition): ReadonlyArray<number> => (String.codec.encode(value.name).concat(ElmType.codec.encode(value.type)).concat(ElmExpr.codec.encode(value.expr)).concat(String.codec.encode(value.comment))), decode: (index: number, binary: Uint8Array): { readonly result: ElmDefinition; readonly nextIndex: number } => {
   const nameAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(index, binary);
   const typeAndNextIndex: { readonly result: ElmType; readonly nextIndex: number } = ElmType.codec.decode(nameAndNextIndex.nextIndex, binary);
-  const exprAndNextIndex: { readonly result: ElmType; readonly nextIndex: number } = ElmType.codec.decode(typeAndNextIndex.nextIndex, binary);
+  const exprAndNextIndex: { readonly result: ElmExpr; readonly nextIndex: number } = ElmExpr.codec.decode(typeAndNextIndex.nextIndex, binary);
   const commentAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(exprAndNextIndex.nextIndex, binary);
   return { result: { name: nameAndNextIndex.result, type: typeAndNextIndex.result, expr: exprAndNextIndex.result, comment: commentAndNextIndex.result }, nextIndex: commentAndNextIndex.nextIndex };
 } } };
