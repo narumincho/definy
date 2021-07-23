@@ -150,11 +150,18 @@ const definyTypeToElmType = (
   type: d.Type,
   typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
 ): d.ElmType => {
-  const typePart = typePartDataMap.get(type.typePartId);
+  return dataTypeToElmType(type.output, typePartDataMap);
+};
+
+const dataTypeToElmType = (
+  dataType: d.DataType,
+  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+): d.ElmType => {
+  const typePart = typePartDataMap.get(dataType.typePartId);
   if (typePart === undefined) {
     throw new Error(
       "internal error: not found type part name in definyTypeToElmType. typePartId =" +
-        (type.typePartId as string)
+        dataType.typePartId
     );
   }
   if (typePart.tag === "dataTypeParameter") {
@@ -163,8 +170,8 @@ const definyTypeToElmType = (
 
   return d.ElmType.LocalType({
     typeName: stringToElmTypeName(typePart.typePart.name),
-    parameter: type.arguments.map((parameter) =>
-      definyTypeToElmType(parameter, typePartDataMap)
+    parameter: dataType.arguments.map((parameter) =>
+      dataTypeToElmType(parameter, typePartDataMap)
     ),
   });
 };

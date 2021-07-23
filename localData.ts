@@ -1514,13 +1514,13 @@ export type TsMember = { readonly _: "Spread"; readonly tsExpr: TsExpr } | { rea
  */
 export type Type = { 
 /**
- * 型パーツID
+ * 入力のデータ型
  */
-readonly typePartId: TypePartId; 
+readonly input: Maybe<DataType>; 
 /**
- * 型のパラメーターに指定する型の arguments
+ * 出力のデータ型
  */
-readonly arguments: List<Type> };
+readonly output: DataType };
 
 
 /**
@@ -1546,7 +1546,11 @@ export type DataType = {
 /**
  * 型パーツID
  */
-readonly typePartId: NewTypePartId };
+readonly typePartId: TypePartId; 
+/**
+ * データ型のパラメータに指定する. arguments
+ */
+readonly arguments: List<DataType> };
 
 
 /**
@@ -5904,10 +5908,10 @@ readonly codec: Codec<Type>;
 /**
  * 型を合わせる上で便利なヘルパー関数
  */
-readonly helper: (a: Type) => Type } = { typePartId: "b3b36f39469d23321ed01b92f048ccc0" as TypePartId, helper: (type_: Type): Type => type_, codec: { encode: (value: Type): ReadonlyArray<number> => (TypePartId.codec.encode(value.typePartId).concat(List.codec(Type.codec).encode(value.arguments))), decode: (index: number, binary: Uint8Array): { readonly result: Type; readonly nextIndex: number } => {
-  const typePartIdAndNextIndex: { readonly result: TypePartId; readonly nextIndex: number } = TypePartId.codec.decode(index, binary);
-  const argumentsAndNextIndex: { readonly result: List<Type>; readonly nextIndex: number } = List.codec(Type.codec).decode(typePartIdAndNextIndex.nextIndex, binary);
-  return { result: { typePartId: typePartIdAndNextIndex.result, arguments: argumentsAndNextIndex.result }, nextIndex: argumentsAndNextIndex.nextIndex };
+readonly helper: (a: Type) => Type } = { typePartId: "b3b36f39469d23321ed01b92f048ccc0" as TypePartId, helper: (type_: Type): Type => type_, codec: { encode: (value: Type): ReadonlyArray<number> => (Maybe.codec(DataType.codec).encode(value.input).concat(DataType.codec.encode(value.output))), decode: (index: number, binary: Uint8Array): { readonly result: Type; readonly nextIndex: number } => {
+  const inputAndNextIndex: { readonly result: Maybe<DataType>; readonly nextIndex: number } = Maybe.codec(DataType.codec).decode(index, binary);
+  const outputAndNextIndex: { readonly result: DataType; readonly nextIndex: number } = DataType.codec.decode(inputAndNextIndex.nextIndex, binary);
+  return { result: { input: inputAndNextIndex.result, output: outputAndNextIndex.result }, nextIndex: outputAndNextIndex.nextIndex };
 } } };
 
 
@@ -5950,9 +5954,10 @@ readonly codec: Codec<DataType>;
 /**
  * 型を合わせる上で便利なヘルパー関数
  */
-readonly helper: (a: DataType) => DataType } = { typePartId: "a9c4fac6168c374e3a4e1579d588bf99" as TypePartId, helper: (dataType: DataType): DataType => dataType, codec: { encode: (value: DataType): ReadonlyArray<number> => (NewTypePartId.codec.encode(value.typePartId)), decode: (index: number, binary: Uint8Array): { readonly result: DataType; readonly nextIndex: number } => {
-  const typePartIdAndNextIndex: { readonly result: NewTypePartId; readonly nextIndex: number } = NewTypePartId.codec.decode(index, binary);
-  return { result: { typePartId: typePartIdAndNextIndex.result }, nextIndex: typePartIdAndNextIndex.nextIndex };
+readonly helper: (a: DataType) => DataType } = { typePartId: "a9c4fac6168c374e3a4e1579d588bf99" as TypePartId, helper: (dataType: DataType): DataType => dataType, codec: { encode: (value: DataType): ReadonlyArray<number> => (TypePartId.codec.encode(value.typePartId).concat(List.codec(DataType.codec).encode(value.arguments))), decode: (index: number, binary: Uint8Array): { readonly result: DataType; readonly nextIndex: number } => {
+  const typePartIdAndNextIndex: { readonly result: TypePartId; readonly nextIndex: number } = TypePartId.codec.decode(index, binary);
+  const argumentsAndNextIndex: { readonly result: List<DataType>; readonly nextIndex: number } = List.codec(DataType.codec).decode(typePartIdAndNextIndex.nextIndex, binary);
+  return { result: { typePartId: typePartIdAndNextIndex.result, arguments: argumentsAndNextIndex.result }, nextIndex: argumentsAndNextIndex.nextIndex };
 } } };
 
 

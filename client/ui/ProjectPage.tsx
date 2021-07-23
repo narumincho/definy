@@ -266,8 +266,11 @@ const partListValue = (
               expr: d.Expr.Int32Literal(0),
               projectId,
               type: d.Type.helper({
-                typePartId: d.Int32.typePartId,
-                arguments: [],
+                input: d.Maybe.Nothing(),
+                output: {
+                  typePartId: d.Int32.typePartId,
+                  arguments: [],
+                },
               }),
             },
           ];

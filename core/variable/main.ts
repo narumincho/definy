@@ -839,20 +839,27 @@ const codecExprUse = (
   type: d.Type,
   typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
 ): d.TsExpr => {
-  const typePartData = typePartDataMap.get(type.typePartId);
+  return dataTypeCodecExprUse(type.output, typePartDataMap);
+};
+
+const dataTypeCodecExprUse = (
+  dataType: d.DataType,
+  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+): d.TsExpr => {
+  const typePartData = typePartDataMap.get(dataType.typePartId);
   if (typePartData === undefined) {
     throw new Error(
       "internal error not found type part name in codecExprUse. typePartId =" +
-        type.typePartId
+        dataType.typePartId
     );
   }
-  if (type.arguments.length === 0) {
+  if (dataType.arguments.length === 0) {
     return typePartNameToCodecExpr(typePartData);
   }
   return d.TsExpr.Call({
     expr: typePartNameToCodecExpr(typePartData),
-    parameterList: type.arguments.map((parameter) =>
-      codecExprUse(parameter, typePartDataMap)
+    parameterList: dataType.arguments.map((parameter) =>
+      dataTypeCodecExprUse(parameter, typePartDataMap)
     ),
   });
 };

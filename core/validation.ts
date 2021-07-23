@@ -181,16 +181,16 @@ const checkTypeValidation = (
   typeParameterTypePartIdSet: ReadonlySet<d.TypePartId>
 ): void => {
   const typeParameterSize = typeParamterCountFromTypePartId(
-    type.typePartId,
+    type.output.typePartId,
     typeIdTypeParameterSizeMap,
     typeParameterTypePartIdSet
   );
-  if (typeParameterSize !== type.arguments.length) {
+  if (typeParameterSize !== type.output.arguments.length) {
     throw new Error(
       "type parameter size not match. type part need " +
         typeParameterSize.toString() +
         ". but use " +
-        type.arguments.length.toString() +
+        type.output.arguments.length.toString() +
         "parameter(s)"
     );
   }

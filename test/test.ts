@@ -128,8 +128,11 @@ describe("data", () => {
      * = (add (addOneHundred one)) one
      */
     const intType: d.Type = {
-      typePartId: d.TypePartId.fromString("int"),
-      arguments: [],
+      input: d.Maybe.Nothing(),
+      output: {
+        typePartId: d.TypePartId.fromString("int"),
+        arguments: [],
+      },
     };
     const oneName = d.PartId.fromString("0");
     const addOneHundredName = d.PartId.fromString("1");

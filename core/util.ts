@@ -19,11 +19,18 @@ export const typeToTsType = (
   type: d.Type,
   typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
 ): d.TsType => {
-  const typePart = typePartDataMap.get(type.typePartId);
+  return dataTypeToTsType(type.output, typePartDataMap);
+};
+
+const dataTypeToTsType = (
+  dataType: d.DataType,
+  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+): d.TsType => {
+  const typePart = typePartDataMap.get(dataType.typePartId);
   if (typePart === undefined) {
     throw new Error(
       "internal error not found type part name in typeToTsType. typePartId =" +
-        type.typePartId
+        dataType.typePartId
     );
   }
   return d.TsType.WithTypeParameter({
@@ -32,8 +39,8 @@ export const typeToTsType = (
         typePart.tag === "typePart" ? typePart.typePart.name : typePart.name
       )
     ),
-    typeParameterList: type.arguments.map((parameter) =>
-      typeToTsType(parameter, typePartDataMap)
+    typeParameterList: dataType.arguments.map((parameter) =>
+      dataTypeToTsType(parameter, typePartDataMap)
     ),
   });
 };
@@ -80,16 +87,23 @@ export const toTypeName = (
   type: d.Type,
   typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
 ): string => {
-  const typePartData = typePartDataMap.get(type.typePartId);
+  return dataTypeToTypeName(type.output, typePartDataMap);
+};
+
+export const dataTypeToTypeName = (
+  datatype: d.DataType,
+  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+): string => {
+  const typePartData = typePartDataMap.get(datatype.typePartId);
   if (typePartData === undefined) {
     throw new Error(
       "internal error not found type part name in toTypeName. typePartId =" +
-        type.typePartId
+        datatype.typePartId
     );
   }
   return (
-    type.arguments
-      .map((parameter) => toTypeName(parameter, typePartDataMap))
+    datatype.arguments
+      .map((parameter) => dataTypeToTypeName(parameter, typePartDataMap))
       .join("") +
     (typePartData.tag === "typePart"
       ? typePartData.typePart.name

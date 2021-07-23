@@ -120,11 +120,11 @@ const typePartWithAttributeToTsType = (
         );
       }
       const parameterTypePart = typePartDataMap.get(
-        firstPattern.parameter.value.typePartId
+        firstPattern.parameter.value.output.typePartId
       );
       if (parameterTypePart === undefined) {
         throw new Error(
-          `attribute == Just(AsNumber). parameter typePart not found. typePartId = ${firstPattern.parameter.value.typePartId}`
+          `attribute == Just(AsNumber). parameter typePart not found. typePartId = ${firstPattern.parameter.value.output.typePartId}`
         );
       }
       if (
@@ -133,7 +133,7 @@ const typePartWithAttributeToTsType = (
         parameterTypePart.typePart.body.typePartBodyKernel !== "Int32"
       ) {
         throw new Error(
-          `attribute == Just(AsNumber). parameter typePart need typePartBody is Int32. typePartId = ${firstPattern.parameter.value.typePartId}`
+          `attribute == Just(AsNumber). parameter typePart need typePartBody is Int32. typePartId = ${firstPattern.parameter.value.output.typePartId}`
         );
       }
 

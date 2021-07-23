@@ -1,4 +1,4 @@
-import * as d from "../newLocalData";
+import * as d from "../localData";
 import { promises as fileSystem } from "fs";
 import { generateTypeScriptCodeAsString } from "../core/main";
 
@@ -3647,7 +3647,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       {
         name: "DataTypeParameter",
         description: "データタイプパラメータで指定したパラメータ",
-        parameter: d.Maybe.Just(noArgumentsType(d.Int32.typePartId)
+        parameter: d.Maybe.Just(noArgumentsType(d.Int32.typePartId)),
       },
     ]),
   },
