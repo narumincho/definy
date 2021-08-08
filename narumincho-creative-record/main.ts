@@ -1,6 +1,7 @@
 import { fastify } from "fastify";
 import { promises as fileSystem } from "fs";
 import { html } from "../gen/main";
+import { topChildren } from "./top";
 
 const portNumber = 8080;
 const origin = `http://localhost:${portNumber}`;
@@ -12,7 +13,7 @@ instance.get("/", (request, reply) => {
   reply.send(
     html.htmlOptionToString({
       appName: "ナルミンチョの創作記録",
-      children: [html.div({}, "やあ")],
+      children: topChildren,
       coverImageUrl: new URL(origin + iconPath),
       description:
         "革新的なプログラミング言語のDefiny, Web技術, 作っているゲームなどについて解説しています",
@@ -33,7 +34,6 @@ instance.get(iconPath, (request, reply): void => {
   fileSystem
     .readFile("./narumincho-creative-record/icon.png")
     .then((iconImageFile) => {
-      console.log(iconImageFile);
       reply.send(iconImageFile);
     })
     .catch((err) => {
