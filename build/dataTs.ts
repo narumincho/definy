@@ -1416,7 +1416,8 @@ const typePartList: ReadonlyArray<d.TypePart> = [
   {
     id: d.TypePartId.typePartId,
     name: "TypePartId",
-    description: "型パーツの識別子",
+    description:
+      "型パーツの識別子. データ型パラメータが含まれることはなくなった",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
@@ -3549,12 +3550,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       {
         name: "input",
         description: "入力のデータ型",
-        type: maybeType(d.DataType.typePartId),
+        type: maybeType(d.DataTypeOrDataTypeParameter.typePartId),
       },
       {
         name: "output",
         description: "出力のデータ型",
-        type: noArgumentsType(d.DataType.typePartId),
+        type: noArgumentsType(d.DataTypeOrDataTypeParameter.typePartId),
       },
     ]),
   },
@@ -3566,13 +3567,13 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     body: d.TypePartBody.Product([
       {
         name: "name",
-        description: "パラメーター名",
+        description: "データ型パラメータの名前",
         type: noArgumentsType(d.String.typePartId),
       },
       {
-        name: "typePartId",
-        description: "型パラメーターの型ID",
-        type: noArgumentsType(d.TypePartId.typePartId),
+        name: "description",
+        description: "データ型パラメータの説明文",
+        type: noArgumentsType(d.String.typePartId),
       },
     ]),
     projectId: coreProjectId,
@@ -3594,40 +3595,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       {
         name: "arguments",
         description: "データ型のパラメータに指定する. arguments",
-        type: listType(d.DataType.typePartId),
-      },
-    ]),
-  },
-  {
-    id: d.NewTypePartId.typePartId,
-    name: "NewTypePartId",
-    description:
-      "新しい型パーツID. 同じプロジェクトならシンプルな整数で表現し, 他のプロジェクトはUUID で表現する",
-    attribute: d.Maybe.Nothing(),
-    dataTypeParameterList: [],
-    projectId: coreProjectId,
-    body: d.TypePartBody.Sum([
-      {
-        name: "SameProject",
-        description: "同じプロジェクト",
-        parameter: d.Maybe.Just(
-          noArgumentsType(d.SampleProjectTypePartId.typePartId)
-        ),
-      },
-    ]),
-  },
-  {
-    id: d.SampleProjectTypePartId.typePartId,
-    name: "SampleProjectTypePartId",
-    description: "同じプロジェクトの型パーツID",
-    attribute: d.Maybe.Just(d.TypeAttribute.AsNumber),
-    dataTypeParameterList: [],
-    projectId: coreProjectId,
-    body: d.TypePartBody.Sum([
-      {
-        name: "SampleProjectTypePartId",
-        description: "数値を SampleProjectTypePartId として扱う",
-        parameter: d.Maybe.Just(noArgumentsType(d.Int32.typePartId)),
+        type: listType(d.DataTypeOrDataTypeParameter.typePartId),
       },
     ]),
   },
