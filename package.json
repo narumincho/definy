@@ -18,7 +18,8 @@
     "start": "firebase emulators:start --project definy-lang",
     "build-gen": "ts-node ./build/gen.ts",
     "storybook": "start-storybook --config-dir ./storybook --static-dir ./storybook/static",
-    "update-package-json": "ncu -u"
+    "update-package-json": "ncu -u",
+    "start-narumincho-creative-records": "npx ts-node ./narumincho-creative-record/main.ts"
   },
   "devDependencies": {
     "@babel/core": "7.15.0",
