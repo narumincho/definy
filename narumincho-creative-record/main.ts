@@ -25,6 +25,7 @@ instance.get("/", (request, reply) => {
       twitterCard: "SummaryCard",
       url: new URL(origin),
       themeColor: undefined,
+      isBackgroundColorBlack: true,
     })
   );
 });

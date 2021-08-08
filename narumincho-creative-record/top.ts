@@ -1,7 +1,7 @@
 import { html } from "../gen/main";
 
 export const topChildren: ReadonlyArray<html.HtmlElement> = [
-  html.div({}, "ナルミンチョの創作記録"),
+  html.h1({}, "ナルミンチョの創作記録"),
   html.anchor(
     { url: new URL("https://twitter.com/naru_mincho") },
     "Twitter @naru_mincho"
@@ -26,7 +26,6 @@ export const topChildren: ReadonlyArray<html.HtmlElement> = [
     "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する"
   ),
   html.div({}, "SVGの基本"),
-  html.div({}, "単体SVGと埋め込みSVG"),
   html.div({}, "単体SVGと埋め込みSVG"),
   html.div({}, "DESIRED Routeについて"),
   html.div({}, "メッセージウィンドウの話"),

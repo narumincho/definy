@@ -66,6 +66,9 @@ export type HtmlOption = {
 
   /** body の 子要素 */
   readonly children: ReadonlyArray<HtmlElement>;
+
+  /** 背景色を黒にするかどうか */
+  readonly isBackgroundColorBlack?: boolean;
 };
 
 export type Color = {
