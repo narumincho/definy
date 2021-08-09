@@ -1035,7 +1035,7 @@ export type ProjectDataFileHashValue = string & { readonly _projectDataFileHashV
  * DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる
  * @typePartId bbcb8e43df8afff9fe24b001c66fb065
  */
-export type Location = { readonly _: "Home" } | { readonly _: "CreateProject" } | { readonly _: "Project"; readonly projectId: ProjectId } | { readonly _: "Account"; readonly accountId: AccountId } | { readonly _: "Setting" } | { readonly _: "About" } | { readonly _: "TypePart"; readonly typePartId: TypePartId } | { readonly _: "Part"; readonly partId: PartId };
+export type Location = { readonly _: "Home" } | { readonly _: "CreateProject" } | { readonly _: "Project"; readonly projectId: ProjectId } | { readonly _: "Account"; readonly accountId: AccountId } | { readonly _: "Setting" } | { readonly _: "About" } | { readonly _: "TypePart"; readonly typePartId: TypePartId } | { readonly _: "Part"; readonly partId: PartId } | { readonly _: "LocalProject" };
 
 
 /**
@@ -4816,7 +4816,11 @@ readonly TypePart: (a: TypePartId) => Location;
 /**
  * パーツ編集ページ
  */
-readonly Part: (a: PartId) => Location } = { Home: { _: "Home" }, CreateProject: { _: "CreateProject" }, Project: (projectId: ProjectId): Location => ({ _: "Project", projectId }), Account: (accountId: AccountId): Location => ({ _: "Account", accountId }), Setting: { _: "Setting" }, About: { _: "About" }, TypePart: (typePartId: TypePartId): Location => ({ _: "TypePart", typePartId }), Part: (partId: PartId): Location => ({ _: "Part", partId }), typePartId: "bbcb8e43df8afff9fe24b001c66fb065" as TypePartId, codec: { encode: (value: Location): ReadonlyArray<number> => {
+readonly Part: (a: PartId) => Location; 
+/**
+ * ローカルで保存するプロジェクトファイルの編集ページ
+ */
+readonly LocalProject: Location } = { Home: { _: "Home" }, CreateProject: { _: "CreateProject" }, Project: (projectId: ProjectId): Location => ({ _: "Project", projectId }), Account: (accountId: AccountId): Location => ({ _: "Account", accountId }), Setting: { _: "Setting" }, About: { _: "About" }, TypePart: (typePartId: TypePartId): Location => ({ _: "TypePart", typePartId }), Part: (partId: PartId): Location => ({ _: "Part", partId }), LocalProject: { _: "LocalProject" }, typePartId: "bbcb8e43df8afff9fe24b001c66fb065" as TypePartId, codec: { encode: (value: Location): ReadonlyArray<number> => {
   switch (value._) {
     case "Home": {
       return [0];
@@ -4841,6 +4845,9 @@ readonly Part: (a: PartId) => Location } = { Home: { _: "Home" }, CreateProject:
     }
     case "Part": {
       return [7].concat(PartId.codec.encode(value.partId));
+    }
+    case "LocalProject": {
+      return [8];
     }
   }
 }, decode: (index: number, binary: Uint8Array): { readonly result: Location; readonly nextIndex: number } => {
@@ -4872,6 +4879,9 @@ readonly Part: (a: PartId) => Location } = { Home: { _: "Home" }, CreateProject:
   if (patternIndex.result === 7) {
     const result: { readonly result: PartId; readonly nextIndex: number } = PartId.codec.decode(patternIndex.nextIndex, binary);
     return { result: Location.Part(result.result), nextIndex: result.nextIndex };
+  }
+  if (patternIndex.result === 8) {
+    return { result: Location.LocalProject, nextIndex: patternIndex.nextIndex };
   }
   throw new Error("存在しないパターンを指定された 型を更新してください");
 } } };
