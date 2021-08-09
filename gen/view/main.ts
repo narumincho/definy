@@ -1,3 +1,4 @@
+import * as css from "../css/main";
 import { Color, HtmlElement, HtmlOption, htmlElement } from "../html/main";
 import { Language } from "../../localData";
 
@@ -76,12 +77,17 @@ export type Box = {
   readonly children: ReadonlyArray<Element | Box>;
   readonly gap: number;
   readonly padding: number;
+  readonly height: number | undefined;
+  readonly backgroundColor: string | undefined;
   readonly url: URL | undefined;
 };
 
 export type CreateBoxOption = {
   readonly gap?: number;
   readonly padding?: number;
+  readonly height?: number;
+  /** @example "#7B920A" */
+  readonly backgroundColor?: string;
   readonly url?: URL;
 };
 
@@ -108,7 +114,9 @@ const createBox = (
     direction,
     gap: option.gap ?? 0,
     padding: option.padding ?? 0,
+    height: option.height,
     url: option.url,
+    backgroundColor: option.backgroundColor,
     children,
   };
 };
@@ -151,18 +159,27 @@ export const viewToHtmlOption = (view: View): HtmlOption => {
     coverImageUrl: view.coverImageUrl,
     url: view.url,
     twitterCard: "SummaryCard",
-    style: `html {
-      height: 100%;
-    }
-  
-    body {
-      height: 100%;
-      margin: 0;
-      background-color: black;
-      display: grid;
-      box-sizing: border-box;
-      color: white;
-    }
+    style: `html ${css.declarationBlockToString([css.height("100%")])}
+    
+    body ${css.declarationBlockToString([
+      css.height("100%"),
+      {
+        property: "margin",
+        value: "0",
+      },
+      {
+        property: "background-color",
+        value: "black",
+      },
+      {
+        property: "display",
+        value: "grid",
+      },
+      {
+        property: "box-sizing",
+        value: "border-box",
+      },
+    ])}
   `,
     children: [boxToHtmlElement(view.box)],
   };
@@ -174,9 +191,44 @@ const boxToHtmlElement = (box: Box): HtmlElement => {
     new Map<string, string>([
       [
         "style",
-        `display: grid; grid-auto-flow: ${
-          box.direction === "x" ? "column" : "row"
-        }; gap: ${box.gap}px; padding: ${box.padding}px`,
+        css.declarationListToString([
+          {
+            property: "box-sizing",
+            value: "border-box",
+          },
+          {
+            property: "display",
+            value: "grid",
+          },
+          {
+            property: "grid-auto-flow",
+            value: box.direction === "x" ? "column" : "row",
+          },
+          {
+            property: "align-items",
+            value: "start",
+          },
+          {
+            property: "gap",
+            value: `${box.gap}px`,
+          },
+          {
+            property: "padding",
+            value: `${box.padding}px`,
+          },
+          ...(box.height === undefined ? [] : [css.height(`${box.height}px`)]),
+          ...(box.backgroundColor === undefined
+            ? []
+            : [
+                {
+                  property: "background-color",
+                  value: box.backgroundColor,
+                },
+              ]),
+          ...(box.url === undefined
+            ? []
+            : [{ property: "text-decoration", value: "none" }]),
+        ]),
       ],
       ...(box.url === undefined
         ? []
@@ -193,8 +245,40 @@ const boxToHtmlElement = (box: Box): HtmlElement => {
 const elementToHtmlElement = (element: Element): HtmlElement => {
   switch (element.type) {
     case "text":
-      return htmlElement("div", new Map([]), element.text);
+      return htmlElement(
+        "div",
+        new Map([
+          [
+            "style",
+            css.declarationListToString([
+              {
+                property: "color",
+                value: "white",
+              },
+            ]),
+          ],
+        ]),
+        element.text
+      );
     case "heading0":
-      return htmlElement("h1", new Map([["style", `margin: 0`]]), element.text);
+      return htmlElement(
+        "h1",
+        new Map([
+          [
+            "style",
+            css.declarationListToString([
+              {
+                property: "margin",
+                value: "0",
+              },
+              {
+                property: "color",
+                value: "white",
+              },
+            ]),
+          ],
+        ]),
+        element.text
+      );
   }
 };
