@@ -38,6 +38,8 @@ const locationToPathList = (location: d.Location): ReadonlyArray<string> => {
       return [typePartPath, location.typePartId];
     case "Part":
       return [partPath, location.partId];
+    case "LocalProject":
+      return [localProjectPath];
   }
 };
 
@@ -103,6 +105,9 @@ const locationFromUrl = (pathName: string): d.Location => {
         return d.Location.Part(d.PartId.fromString(pathList[2]));
       }
       return d.Location.Home;
+
+    case localProjectPath:
+      return d.Location.LocalProject;
   }
   return d.Location.Home;
 };
@@ -155,6 +160,7 @@ const projectPath = "project";
 const accountPath = "account";
 const typePartPath = "type-part";
 const partPath = "part";
+const localProjectPath = "local-project";
 const japaneseId = "ja";
 const englishId = "en";
 const esperantoId = "eo";

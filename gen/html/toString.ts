@@ -108,6 +108,32 @@ const headElement = (view: HtmlOption): HtmlElement => {
       children.push(styleElementByUrl(styleUrl));
     }
   }
+  children.push(
+    cssStyleElement(`
+  html {
+    height: 100%;
+  }
+
+  body {
+    height: 100%;
+    margin: 0;
+    background-color: black;
+    display: grid;
+    box-sizing: border-box;
+  }
+`)
+  );
+  if (view.isBackgroundColorBlack) {
+    children.push(
+      cssStyleElement(`
+  
+    body {
+      background-color: black;
+      color: white;
+    }
+  `)
+    );
+  }
 
   return htmlElement("head", new Map(), children);
 };

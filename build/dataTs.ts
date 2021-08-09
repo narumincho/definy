@@ -25,8 +25,13 @@ const listType = (typePartId: d.TypePartId): d.Type => ({
 const maybeType = (typePartId: d.TypePartId): d.Type => ({
   input: d.Maybe.Nothing(),
   output: d.DataTypeOrDataTypeParameter.DataType({
-    typePartId,
-    arguments: [],
+    typePartId: d.Maybe.typePartId,
+    arguments: [
+      d.DataTypeOrDataTypeParameter.DataType({
+        typePartId,
+        arguments: [],
+      }),
+    ],
   }),
 });
 
@@ -2583,6 +2588,11 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             _: "Just",
             value: noArgumentsType(d.PartId.typePartId),
           },
+        },
+        {
+          name: "LocalProject",
+          description: "ローカルで保存するプロジェクトファイルの編集ページ",
+          parameter: d.Maybe.Nothing(),
         },
       ],
     },

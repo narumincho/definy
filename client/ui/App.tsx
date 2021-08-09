@@ -6,6 +6,7 @@ import { AboutPage } from "./AboutPage";
 import { AccountPage } from "./AccountPage";
 import { CreateProjectPage } from "./CreateProjectPage";
 import { HomePage } from "./HomePage";
+import { LocalProjectPage } from "./LocalProjectPage";
 import { PartPage } from "./PartPage";
 import { ProjectPage } from "./ProjectPage";
 import { SettingPage } from "./SettingPage";
@@ -141,6 +142,19 @@ const rotateAnimation = keyframes`
 const AppMain: React.VFC<Props> = (props) => {
   const useDefinyAppResult = props.useDefinyAppResult;
   switch (useDefinyAppResult.location._) {
+    case "Home":
+      return (
+        <HomePage
+          topProjectsLoadingState={useDefinyAppResult.topProjectsLoadingState}
+          accountResource={useDefinyAppResult.accountResource}
+          language={useDefinyAppResult.language}
+          logInState={useDefinyAppResult.logInState}
+          projectResource={useDefinyAppResult.projectResource}
+          onJump={useDefinyAppResult.jump}
+          requestTop50Project={useDefinyAppResult.requestTop50Project}
+          typePartResource={useDefinyAppResult.typePartResource}
+        />
+      );
     case "About":
       return <AboutPage language={useDefinyAppResult.language} />;
     case "Setting":
@@ -206,17 +220,7 @@ const AppMain: React.VFC<Props> = (props) => {
       );
     case "Part":
       return <PartPage />;
+    case "LocalProject":
+      return <LocalProjectPage />;
   }
-  return (
-    <HomePage
-      topProjectsLoadingState={useDefinyAppResult.topProjectsLoadingState}
-      accountResource={useDefinyAppResult.accountResource}
-      language={useDefinyAppResult.language}
-      logInState={useDefinyAppResult.logInState}
-      projectResource={useDefinyAppResult.projectResource}
-      onJump={useDefinyAppResult.jump}
-      requestTop50Project={useDefinyAppResult.requestTop50Project}
-      typePartResource={useDefinyAppResult.typePartResource}
-    />
-  );
 };
