@@ -6,30 +6,29 @@ const coreProjectId: d.ProjectId = d.ProjectId.fromString(
   "96deb95f697e66f12a55e4d3910ea509"
 );
 
-const resourceStateData: d.TypePartId = d.TypePartId.fromString(
-  "cdf3576a38b1f792a7e2f9e21598ae06"
-);
-const maybeValue: d.TypePartId = d.TypePartId.fromString(
-  "7340e6b552af43695335a64e057f4250"
-);
-const withTimeData: d.TypePartId = d.TypePartId.fromString(
-  "1aa6b16efd6aaeebaf0fc58f3c2c5997"
-);
-const staticResourceStateData: d.TypePartId = d.TypePartId.fromString(
-  "5ef14dcfa0f01d9a505b7b00e223a922"
-);
-const resultOk: d.TypePartId = d.TypePartId.fromString(
-  "2163b3c97b382de8085973eff850c919"
-);
-const resultError: d.TypePartId = d.TypePartId.fromString(
-  "bd8be8409130f30f15c5c86c01de6dc5"
-);
-const tuple2First: d.TypePartId = d.TypePartId.fromString(
-  "85f328c72b935491618d127811a328a5"
-);
-const tuple2Second: d.TypePartId = d.TypePartId.fromString(
-  "6276b43c4866574cc345f2055fceb291"
-);
+const noArgumentsType = (typePartId: d.TypePartId): d.Type => ({
+  input: d.Maybe.Nothing(),
+  output: d.DataTypeOrDataTypeParameter.DataType({ typePartId, arguments: [] }),
+});
+const listType = (typePartId: d.TypePartId): d.Type => ({
+  input: d.Maybe.Nothing(),
+  output: d.DataTypeOrDataTypeParameter.DataType({
+    typePartId: d.List.typePartId,
+    arguments: [
+      d.DataTypeOrDataTypeParameter.DataType({
+        typePartId,
+        arguments: [],
+      }),
+    ],
+  }),
+});
+const maybeType = (typePartId: d.TypePartId): d.Type => ({
+  input: d.Maybe.Nothing(),
+  output: d.DataTypeOrDataTypeParameter.DataType({
+    typePartId,
+    arguments: [],
+  }),
+});
 
 const typePartList: ReadonlyArray<d.TypePart> = [
   {
@@ -43,23 +42,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       {
         name: "name",
         description: "バリアント名",
-        type: {
-          typePartId: d.ElmVariantName.typePartId,
-          parameter: [],
-        },
+        type: noArgumentsType(d.ElmVariantName.typePartId),
       },
       {
         name: "parameter",
         description: "パラメーター",
-        type: {
-          typePartId: d.List.typePartId,
-          parameter: [
-            {
-              typePartId: d.ElmType.typePartId,
-              parameter: [],
-            },
-          ],
-        },
+        type: listType(d.ElmType.typePartId),
       },
     ]),
   },
@@ -74,29 +62,19 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       {
         name: "TypeAlias",
         description: "TypeAlias",
-        parameter: d.Maybe.Just<d.Type>({
-          typePartId: d.TypeAlias.typePartId,
-          parameter: [],
-        }),
+        parameter: d.Maybe.Just<d.Type>(
+          noArgumentsType(d.TypeAlias.typePartId)
+        ),
       },
       {
         name: "Function",
         description: "Function",
-        parameter: d.Maybe.Just<d.Type>({
-          typePartId: d.Function.typePartId,
-          parameter: [],
-        }),
+        parameter: d.Maybe.Just<d.Type>(noArgumentsType(d.Function.typePartId)),
       },
       {
         name: "Variable",
         description: "Variable",
-        parameter: {
-          _: "Just",
-          value: {
-            typePartId: d.Variable.typePartId,
-            parameter: [],
-          },
-        },
+        parameter: d.Maybe.Just(noArgumentsType(d.Variable.typePartId)),
       },
     ]),
   },
@@ -113,18 +91,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "operator",
           description: "単項演算子",
-          type: {
-            typePartId: d.UnaryOperator.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.UnaryOperator.typePartId),
         },
         {
           name: "expr",
           description: "適用される式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
       ],
     },
@@ -183,10 +155,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             '**直接 ElmTypeName.ElmTypeName("Int") と指定してはいけない!! Elmの識別子として使える文字としてチェックできないため**',
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.String.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.String.typePartId),
           },
         },
       ],
@@ -215,23 +184,16 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "ImportedType",
           description: "インポートした型",
-          parameter: {
-            _: "Just",
-            value: {
-              typePartId: d.ElmImportedType.typePartId,
-              parameter: [],
-            },
-          },
+          parameter: d.Maybe.Just(
+            noArgumentsType(d.ElmImportedType.typePartId)
+          ),
         },
         {
           name: "TypeParameter",
           description: "型パラメーター",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.String.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.String.typePartId),
           },
         },
         {
@@ -239,10 +201,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "関数",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ElmFunctionType.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ElmFunctionType.typePartId),
           },
         },
         {
@@ -250,10 +209,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "List リスト",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ElmType.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ElmType.typePartId),
           },
         },
         {
@@ -266,10 +222,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "(a, b)",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ElmTuple2.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ElmTuple2.typePartId),
           },
         },
         {
@@ -277,10 +230,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "(a, b, c)",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ElmTuple3.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ElmTuple3.typePartId),
           },
         },
         {
@@ -288,15 +238,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "{ name: String, age: Int } レコード型",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.List.typePartId,
-              parameter: [
-                {
-                  typePartId: d.ElmField.typePartId,
-                  parameter: [],
-                },
-              ],
-            },
+            value: listType(d.ElmField.typePartId),
           },
         },
         {
@@ -304,10 +246,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "モジュール内にある型",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ElmLocalType.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ElmLocalType.typePartId),
           },
         },
       ],
@@ -363,15 +302,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "オブジェクト",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.List.typePartId,
-              parameter: [
-                {
-                  typePartId: d.TsMemberType.typePartId,
-                  parameter: [],
-                },
-              ],
-            },
+            value: listType(d.TsMemberType.typePartId),
           },
         },
         {
@@ -379,10 +310,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "関数 `(parameter: parameter) => returnType`",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.FunctionType.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.FunctionType.typePartId),
           },
         },
         {
@@ -391,10 +319,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             "型パラメータ付きの型 `Promise<number>` `ReadonlyArray<string>`",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.TsTypeWithTypeParameter.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.TsTypeWithTypeParameter.typePartId),
           },
         },
         {
@@ -402,15 +327,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "ユニオン型 `a | b`",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.List.typePartId,
-              parameter: [
-                {
-                  typePartId: d.TsType.typePartId,
-                  parameter: [],
-                },
-              ],
-            },
+            value: listType(d.TsType.typePartId),
           },
         },
         {
@@ -418,10 +335,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: '"交差型 `left & right`',
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.IntersectionType.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.IntersectionType.typePartId),
           },
         },
         {
@@ -429,10 +343,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "インポートされた外部の型",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ImportedType.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ImportedType.typePartId),
           },
         },
         {
@@ -440,10 +351,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "ファイル内で定義された型",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.TsIdentifer.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.TsIdentifer.typePartId),
           },
         },
         {
@@ -451,10 +359,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "グローバル空間の型",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.TsIdentifer.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.TsIdentifer.typePartId),
           },
         },
         {
@@ -462,10 +367,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "文字列リテラル型",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.String.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.String.typePartId),
           },
         },
       ],
@@ -481,7 +383,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     dataTypeParameterList: [
       {
         name: "data",
-        typePartId: resourceStateData,
+        description: "リソースに含めるのデータ型",
       },
     ],
     body: {
@@ -490,28 +392,20 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "Loaded",
           description: "読み込み済み",
-          parameter: {
-            _: "Just",
-            value: {
+          parameter: d.Maybe.Just({
+            input: d.Maybe.Nothing(),
+            output: d.DataTypeOrDataTypeParameter.DataType({
               typePartId: d.WithTime.typePartId,
-              parameter: [
-                {
-                  typePartId: resourceStateData,
-                  parameter: [],
-                },
-              ],
-            },
-          },
+              arguments: [d.DataTypeOrDataTypeParameter.DataTypeParameter(0)],
+            }),
+          }),
         },
         {
           name: "Deleted",
           description: "削除されたか, 存在しない",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.Time.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.Time.typePartId),
           },
         },
         {
@@ -519,10 +413,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "削除されたか, 存在しない",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.Time.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.Time.typePartId),
           },
         },
         {
@@ -592,18 +483,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "フィールド名",
-          type: {
-            typePartId: d.ElmFieldName.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmFieldName.typePartId),
         },
         {
           name: "type",
           description: "型",
-          type: {
-            typePartId: d.ElmType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmType.typePartId),
         },
       ],
     },
@@ -621,24 +506,13 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "type",
           description: "パラメーターをつけられる型",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
         {
           name: "typeParameterList",
           description:
             "パラメーターに指定する型. なにも要素を入れなけければ T<>ではなく T の形式で出力される",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.TsType.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.TsType.typePartId),
         },
       ],
     },
@@ -658,10 +532,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "式を評価するには,このパーツの定義が必要だと言っている",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.PartId.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.PartId.typePartId),
           },
         },
         {
@@ -674,10 +545,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "型が合わない",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.String.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.String.typePartId),
           },
         },
         {
@@ -702,13 +570,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "Identifer",
           description:
             '**直接 Identifer.Identifer("name") と指定してはいけない!! TypeScriptの識別子として使える文字としてチェックできないため**',
-          parameter: {
-            _: "Just",
-            value: {
-              typePartId: d.String.typePartId,
-              parameter: [],
-            },
-          },
+          parameter: d.Maybe.Just(noArgumentsType(d.String.typePartId)),
         },
       ],
     },
@@ -726,23 +588,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "typeName",
           description: "型名",
-          type: {
-            typePartId: d.ElmTypeName.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmTypeName.typePartId),
         },
         {
           name: "parameter",
           description: "型パラメーター",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.ElmType.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.ElmType.typePartId),
         },
       ],
     },
@@ -760,18 +611,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "function",
           description: "関数",
-          type: {
-            typePartId: d.Expr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Expr.typePartId),
         },
         {
           name: "parameter",
           description: "パラメーター",
-          type: {
-            typePartId: d.Expr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Expr.typePartId),
         },
       ],
     },
@@ -783,20 +628,19 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "Maybe. nullableのようなもの. 今後はRustのstd::Optionに出力するために属性をつけよう (確信)",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    dataTypeParameterList: [{ name: "value", typePartId: maybeValue }],
+    dataTypeParameterList: [
+      { name: "value", description: "Just のときに指定するデータ型" },
+    ],
     body: {
       _: "Sum",
       patternList: [
         {
           name: "Just",
           description: "値があるということ",
-          parameter: {
-            _: "Just",
-            value: {
-              typePartId: maybeValue,
-              parameter: [],
-            },
-          },
+          parameter: d.Maybe.Just({
+            input: d.Maybe.Nothing(),
+            output: d.DataTypeOrDataTypeParameter.DataTypeParameter(0),
+          }),
         },
         {
           name: "Nothing",
@@ -819,18 +663,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "expr",
           description: "式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
         {
           name: "spread",
           description: "スプレッド ...a のようにするか",
-          type: {
-            typePartId: d.Bool.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Bool.typePartId),
         },
       ],
     },
@@ -858,26 +696,17 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "first",
           description: "左の型",
-          type: {
-            typePartId: d.ElmType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmType.typePartId),
         },
         {
           name: "second",
           description: "真ん中の型",
-          type: {
-            typePartId: d.ElmType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmType.typePartId),
         },
         {
           name: "third",
           description: "右の型",
-          type: {
-            typePartId: d.ElmType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmType.typePartId),
         },
       ],
     },
@@ -895,31 +724,17 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "moduleName",
           description: "モジュール名",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "typeName",
           description: "型名",
-          type: {
-            typePartId: d.ElmTypeName.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmTypeName.typePartId),
         },
         {
           name: "parameter",
           description: "型パラメーター",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.ElmType.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.ElmType.typePartId),
         },
       ],
     },
@@ -1040,18 +855,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "expr",
           description: "型アサーションを受ける式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
         {
           name: "type",
           description: "型",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
       ],
     },
@@ -1097,45 +906,19 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "Product",
           description: "直積型",
-          parameter: {
-            _: "Just",
-            value: {
-              typePartId: d.List.typePartId,
-              parameter: [
-                {
-                  typePartId: d.Member.typePartId,
-                  parameter: [],
-                },
-              ],
-            },
-          },
+          parameter: d.Maybe.Just(listType(d.Member.typePartId)),
         },
         {
           name: "Sum",
           description: "直和型",
-          parameter: {
-            _: "Just",
-            value: {
-              typePartId: d.List.typePartId,
-              parameter: [
-                {
-                  typePartId: d.Pattern.typePartId,
-                  parameter: [],
-                },
-              ],
-            },
-          },
+          parameter: d.Maybe.Just(listType(d.Pattern.typePartId)),
         },
         {
           name: "Kernel",
           description: "Definyだけでは表現できないデータ型",
-          parameter: {
-            _: "Just",
-            value: {
-              typePartId: d.TypePartBodyKernel.typePartId,
-              parameter: [],
-            },
-          },
+          parameter: d.Maybe.Just(
+            noArgumentsType(d.TypePartBodyKernel.typePartId)
+          ),
         },
       ],
     },
@@ -1183,18 +966,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "パラメーター名",
-          type: {
-            typePartId: d.TsIdentifer.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsIdentifer.typePartId),
         },
         {
           name: "type",
           description: "パラメーターの型",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
       ],
     },
@@ -1208,11 +985,11 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     dataTypeParameterList: [
       {
         name: "key",
-        typePartId: d.TypePartId.fromString("cb26a5badbccc2f37b8e9a1904867d2d"),
+        description: "辞書のキーとなるデータタイプ",
       },
       {
         name: "value",
-        typePartId: d.TypePartId.fromString("3471e961a12c6ec91d511d074cbe3838"),
+        description: "辞書のvalueとなるデータタイプ",
       },
     ],
     body: { _: "Kernel", typePartBodyKernel: "Dict" },
@@ -1223,24 +1000,23 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "取得日時と任意のデータ",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    dataTypeParameterList: [{ name: "data", typePartId: withTimeData }],
+    dataTypeParameterList: [
+      { name: "data", description: "任意のデータタイプ" },
+    ],
     body: {
       _: "Product",
       memberList: [
         {
           name: "getTime",
           description: "データベースから取得した日時",
-          type: {
-            typePartId: d.Time.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Time.typePartId),
         },
         {
           name: "data",
           description: "データ",
           type: {
-            typePartId: withTimeData,
-            parameter: [],
+            input: d.Maybe.Nothing(),
+            output: d.DataTypeOrDataTypeParameter.DataTypeParameter(0),
           },
         },
       ],
@@ -1260,47 +1036,27 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "型エイリアス名",
-          type: {
-            typePartId: d.ElmTypeName.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmTypeName.typePartId),
         },
         {
           name: "export",
           description: "外部に公開するか",
-          type: {
-            typePartId: d.Bool.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Bool.typePartId),
         },
         {
           name: "comment",
           description: "コメント",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "parameter",
           description: "型パラメーター",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.String.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.String.typePartId),
         },
         {
           name: "type",
           description: "別名を付ける型",
-          type: {
-            typePartId: d.ElmType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmType.typePartId),
         },
       ],
     },
@@ -1327,18 +1083,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "accountToken",
           description: "accountToken",
-          type: {
-            typePartId: d.AccountToken.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.AccountToken.typePartId),
         },
         {
           name: "accountId",
           description: "accountId",
-          type: {
-            typePartId: d.AccountId.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.AccountId.typePartId),
         },
       ],
     },
@@ -1366,18 +1116,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "input",
           description: "入力の型",
-          type: {
-            typePartId: d.ElmType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmType.typePartId),
         },
         {
           name: "output",
           description: "出力の型",
-          type: {
-            typePartId: d.ElmType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmType.typePartId),
         },
       ],
     },
@@ -1395,23 +1139,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "caseString",
           description: "case に使う文字列",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "statementList",
           description: "マッチしたときに実行する部分",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.Statement.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.Statement.typePartId),
         },
       ],
     },
@@ -1429,23 +1162,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "moduleName",
           description: "モジュール名",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "typeDeclarationList",
           description: "型定義",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.ElmTypeDeclaration.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.ElmTypeDeclaration.typePartId),
         },
       ],
     },
@@ -1522,43 +1244,28 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "imageHash",
           description: "プロフィール画像",
-          type: {
-            typePartId: d.ImageHash.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ImageHash.typePartId),
         },
         {
           name: "introduction",
           description: "initMemberDescription",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "createTime",
           description: "Definyでユーザーが作成された日時",
-          type: {
-            typePartId: d.Time.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Time.typePartId),
         },
         {
           name: "name",
           description:
             "アカウント名. 表示される名前. 他のユーザーとかぶっても良い. 絵文字も使える. 全角英数は半角英数,半角カタカナは全角カタカナ, (株)の合字を分解するなどのNFKCの正規化がされる. U+0000-U+0019 と U+007F-U+00A0 の範囲の文字は入らない. 前後に空白を含められない. 間の空白は2文字以上連続しない. 文字数のカウント方法は正規化されたあとのCodePoint単位. Twitterと同じ, 1文字以上50文字以下",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "id",
           description: "アカウントを識別するID",
-          type: {
-            typePartId: d.AccountId.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.AccountId.typePartId),
         },
       ],
     },
@@ -1571,7 +1278,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [
-      { name: "data", typePartId: staticResourceStateData },
+      { name: "data", description: "リソースに含めるデータタイプ" },
     ],
     body: {
       _: "Sum",
@@ -1582,8 +1289,8 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: staticResourceStateData,
-              parameter: [],
+              input: d.Maybe.Nothing(),
+              output: d.DataTypeOrDataTypeParameter.DataTypeParameter(0),
             },
           },
         },
@@ -1619,31 +1326,17 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "target",
           description:
             "対象となる式. 指定の仕方によってはJSのSyntaxErrorになる",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
         {
           name: "operatorMaybe",
           description: "演算子を=の左につける",
-          type: {
-            typePartId: d.Maybe.typePartId,
-            parameter: [
-              {
-                typePartId: d.BinaryOperator.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: maybeType(d.BinaryOperator.typePartId),
         },
         {
           name: "expr",
           description: "式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
       ],
     },
@@ -1662,26 +1355,17 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "パラメーター名",
-          type: {
-            typePartId: d.TsIdentifer.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsIdentifer.typePartId),
         },
         {
           name: "document",
           description: "ドキュメント",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "type",
           description: "パラメーターの型",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
       ],
     },
@@ -1689,7 +1373,8 @@ const typePartList: ReadonlyArray<d.TypePart> = [
   {
     id: d.TypePartId.typePartId,
     name: "TypePartId",
-    description: "型パーツの識別子",
+    description:
+      "型パーツの識別子. データ型パラメータが含まれることはなくなった",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
@@ -1703,8 +1388,8 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [
-      { name: "ok", typePartId: resultOk },
-      { name: "error", typePartId: resultError },
+      { name: "ok", description: "okなときのデータタイプ" },
+      { name: "error", description: "errorなときのデータタイプ" },
     ],
     body: {
       _: "Sum",
@@ -1715,8 +1400,8 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: resultOk,
-              parameter: [],
+              input: d.Maybe.Nothing(),
+              output: d.DataTypeOrDataTypeParameter.DataTypeParameter(0),
             },
           },
         },
@@ -1726,8 +1411,8 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: {
             _: "Just",
             value: {
-              typePartId: resultError,
-              parameter: [],
+              input: d.Maybe.Nothing(),
+              output: d.DataTypeOrDataTypeParameter.DataTypeParameter(1),
             },
           },
         },
@@ -1748,18 +1433,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "location",
           description: "場所",
-          type: {
-            typePartId: d.Location.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Location.typePartId),
         },
         {
           name: "language",
           description: "言語",
-          type: {
-            typePartId: d.Language.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Language.typePartId),
         },
       ],
     },
@@ -1777,23 +1456,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "expr",
           description: "switch(a) {} の a",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
         {
           name: "patternList",
           description: 'case "text": { statementList }',
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.TsPattern.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.TsPattern.typePartId),
         },
       ],
     },
@@ -1811,34 +1479,22 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "変数名",
-          type: {
-            typePartId: d.TsIdentifer.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsIdentifer.typePartId),
         },
         {
           name: "type",
           description: "変数の型",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
         {
           name: "expr",
           description: "式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
         {
           name: "isConst",
           description: "constかどうか. falseはlet",
-          type: {
-            typePartId: d.Bool.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Bool.typePartId),
         },
       ],
     },
@@ -1856,18 +1512,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "accountToken",
           description: "プロジェクトを作るときのアカウント",
-          type: {
-            typePartId: d.AccountToken.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.AccountToken.typePartId),
         },
         {
           name: "projectName",
           description: "プロジェクト名",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
       ],
     },
@@ -1887,10 +1537,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "式を評価する",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.TsExpr.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.TsExpr.typePartId),
           },
         },
         {
@@ -1898,10 +1545,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "代入やプロパティの値を設定する",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.SetStatement.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.SetStatement.typePartId),
           },
         },
         {
@@ -1909,10 +1553,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "if (condition) { thenStatementList }",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.IfStatement.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.IfStatement.typePartId),
           },
         },
         {
@@ -1920,10 +1561,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: 'throw new Error("エラーメッセージ");',
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.TsExpr.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.TsExpr.typePartId),
           },
         },
         {
@@ -1931,10 +1569,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "return expr;",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.TsExpr.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.TsExpr.typePartId),
           },
         },
         {
@@ -1952,10 +1587,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "`const a: type_ = expr`\\nローカル変数の定義",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.VariableDefinitionStatement.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.VariableDefinitionStatement.typePartId),
           },
         },
         {
@@ -1964,10 +1596,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             "`const name = (parameterList): returnType => { statementList }`\\nローカル関数の定義",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.FunctionDefinitionStatement.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.FunctionDefinitionStatement.typePartId),
           },
         },
         {
@@ -1975,10 +1604,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "for文. 繰り返し.",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ForStatement.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ForStatement.typePartId),
           },
         },
         {
@@ -1986,10 +1612,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "for文. 繰り返し.",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ForOfStatement.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ForOfStatement.typePartId),
           },
         },
         {
@@ -1997,15 +1620,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "while (true) での無限ループ",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.List.typePartId,
-              parameter: [
-                {
-                  typePartId: d.Statement.typePartId,
-                  parameter: [],
-                },
-              ],
-            },
+            value: listType(d.Statement.typePartId),
           },
         },
         {
@@ -2018,10 +1633,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "switch文",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.SwitchStatement.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.SwitchStatement.typePartId),
           },
         },
       ],
@@ -2040,18 +1652,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "day",
           description: "`1970-01-01` からの経過日数. マイナスになることもある",
-          type: {
-            typePartId: d.Int32.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Int32.typePartId),
         },
         {
           name: "millisecond",
           description: "日にちの中のミリ秒. `0 to 86399999 (=1000*60*60*24-1)`",
-          type: {
-            typePartId: d.Int32.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Int32.typePartId),
         },
       ],
     },
@@ -2070,18 +1676,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "accountToken",
           description: "アカウントトークン",
-          type: {
-            typePartId: d.AccountToken.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.AccountToken.typePartId),
         },
         {
           name: "projectId",
           description: "プロジェクトID",
-          type: {
-            typePartId: d.ProjectId.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ProjectId.typePartId),
         },
       ],
     },
@@ -2100,18 +1700,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "moduleName",
           description:
             "モジュール名, 使うときにはnamedインポートされ, そのモジュール識別子は自動的につけられる",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "name",
           description: "変数名",
-          type: {
-            typePartId: d.TsIdentifer.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsIdentifer.typePartId),
         },
       ],
     },
@@ -2155,69 +1749,38 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "型パーツの名前",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "description",
           description: "型パーツの説明",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "projectId",
           description: "所属しているプロジェクトのID",
-          type: {
-            typePartId: d.ProjectId.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ProjectId.typePartId),
         },
         {
           name: "attribute",
           description:
             "コンパイラに与える,この型を表現するのにどういう特殊な状態にするかという情報",
-          type: {
-            typePartId: d.Maybe.typePartId,
-            parameter: [
-              {
-                typePartId: d.TypeAttribute.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: maybeType(d.TypeAttribute.typePartId),
         },
         {
           name: "dataTypeParameterList",
-          description: "型パラメーター",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.DataTypeParameter.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          description: "データ型パラメーター",
+          type: listType(d.DataTypeParameter.typePartId),
         },
         {
           name: "body",
           description: "定義本体",
-          type: {
-            typePartId: d.TypePartBody.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TypePartBody.typePartId),
         },
         {
           name: "id",
           description: "型パーツを識別するID",
-          type: {
-            typePartId: d.TypePartId.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TypePartId.typePartId),
         },
       ],
     },
@@ -2236,44 +1799,22 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "id",
           description: "プロジェクトID",
-          type: {
-            typePartId: d.ProjectId.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ProjectId.typePartId),
         },
         {
           name: "name",
           description: "プロジェクト名",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "typePartList",
           description: "型パーツの定義",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.TypePart.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.TypePart.typePartId),
         },
         {
           name: "partList",
           description: "パーツの定義",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.Part.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.Part.typePartId),
         },
       ],
     },
@@ -2292,10 +1833,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "数値リテラル `123`",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.Int32.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.Int32.typePartId),
           },
         },
         {
@@ -2303,10 +1841,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: '文字列リテラル `"text"`',
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.String.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.String.typePartId),
           },
         },
         {
@@ -2314,10 +1849,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "booleanリテラル",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.Bool.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.Bool.typePartId),
           },
         },
         {
@@ -2335,10 +1867,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "単項演算子での式",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.UnaryOperatorExpr.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.UnaryOperatorExpr.typePartId),
           },
         },
         {
@@ -2346,10 +1875,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "2項演算子での式",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.BinaryOperatorExpr.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.BinaryOperatorExpr.typePartId),
           },
         },
         {
@@ -2357,10 +1883,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "条件演算子 `a ? b : c`",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ConditionalOperatorExpr.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ConditionalOperatorExpr.typePartId),
           },
         },
         {
@@ -2368,15 +1891,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "配列リテラル `[1, 2, 3]`",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.List.typePartId,
-              parameter: [
-                {
-                  typePartId: d.ArrayItem.typePartId,
-                  parameter: [],
-                },
-              ],
-            },
+            value: listType(d.ArrayItem.typePartId),
           },
         },
         {
@@ -2384,15 +1899,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: 'オブジェクトリテラル `{ data: 123, text: "sorena" }`',
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.List.typePartId,
-              parameter: [
-                {
-                  typePartId: d.TsMember.typePartId,
-                  parameter: [],
-                },
-              ],
-            },
+            value: listType(d.TsMember.typePartId),
           },
         },
         {
@@ -2400,10 +1907,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "ラムダ式 `() => {}`",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.LambdaExpr.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.LambdaExpr.typePartId),
           },
         },
         {
@@ -2411,10 +1915,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "変数. 変数が存在するかのチャックがされる",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.TsIdentifer.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.TsIdentifer.typePartId),
           },
         },
         {
@@ -2422,10 +1923,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "グローバルオブジェクト",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.TsIdentifer.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.TsIdentifer.typePartId),
           },
         },
         {
@@ -2433,10 +1931,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "インポートされた変数",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ImportedVariable.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ImportedVariable.typePartId),
           },
         },
         {
@@ -2444,10 +1939,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "プロパティの値を取得する `a.b a[12] data[f(2)]`",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.GetExpr.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.GetExpr.typePartId),
           },
         },
         {
@@ -2455,10 +1947,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: '関数を呼ぶ f(x)",',
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.CallExpr.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.CallExpr.typePartId),
           },
         },
         {
@@ -2466,10 +1955,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "式からインスタンスを作成する `new Date()`",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.CallExpr.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.CallExpr.typePartId),
           },
         },
         {
@@ -2477,10 +1963,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "型アサーション `a as string`",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.TypeAssertion.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.TypeAssertion.typePartId),
           },
         },
       ],
@@ -2500,18 +1983,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "first",
           description: "左の型",
-          type: {
-            typePartId: d.ElmType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmType.typePartId),
         },
         {
           name: "second",
           description: "右の型",
-          type: {
-            typePartId: d.ElmType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmType.typePartId),
         },
       ],
     },
@@ -2529,58 +2006,37 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "プロジェクト名",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "iconHash",
           description: "プロジェクトのアイコン画像",
-          type: {
-            typePartId: d.ImageHash.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ImageHash.typePartId),
         },
         {
           name: "imageHash",
           description: "initMemberDescription",
-          type: {
-            typePartId: d.ImageHash.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ImageHash.typePartId),
         },
         {
           name: "createTime",
           description: "initMemberDescription",
-          type: {
-            typePartId: d.Time.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Time.typePartId),
         },
         {
           name: "createAccountId",
           description: "プロジェクトを作成したアカウント",
-          type: {
-            typePartId: d.AccountId.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.AccountId.typePartId),
         },
         {
           name: "updateTime",
           description: "更新日時",
-          type: {
-            typePartId: d.Time.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Time.typePartId),
         },
         {
           name: "id",
           description: "プロジェクトを識別するID",
-          type: {
-            typePartId: d.ProjectId.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ProjectId.typePartId),
         },
       ],
     },
@@ -2598,31 +2054,17 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "elementVariableName",
           description: "要素の変数名",
-          type: {
-            typePartId: d.TsIdentifer.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsIdentifer.typePartId),
         },
         {
           name: "iterableExpr",
           description: "繰り返す対象",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
         {
           name: "statementList",
           description: "繰り返す文",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.Statement.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.Statement.typePartId),
         },
       ],
     },
@@ -2641,28 +2083,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "exportDefinitionList",
           description: "外部に公開する定義",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.ExportDefinition.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.ExportDefinition.typePartId),
         },
         {
           name: "statementList",
           description: "定義した後に実行するコード",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.Statement.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.Statement.typePartId),
         },
       ],
     },
@@ -2680,26 +2106,17 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "メンバー名",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "description",
           description: "メンバーの説明",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "type",
           description: "メンバー値の型",
-          type: {
-            typePartId: d.Type.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Type.typePartId),
         },
       ],
     },
@@ -2719,10 +2136,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "文字列リテラル",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.String.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.String.typePartId),
           },
         },
         {
@@ -2730,10 +2144,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "整数リテラル",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.Int32.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.Int32.typePartId),
           },
         },
         {
@@ -2752,15 +2163,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "リストリテラル",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.List.typePartId,
-              parameter: [
-                {
-                  typePartId: d.ElmExpr.typePartId,
-                  parameter: [],
-                },
-              ],
-            },
+            value: listType(d.ElmExpr.typePartId),
           },
         },
         {
@@ -2773,10 +2176,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "単行マイナス",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ElmExpr.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ElmExpr.typePartId),
           },
         },
         {
@@ -2814,10 +2214,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "アクセサ .name メンバーを取得する関数",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.String.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.String.typePartId),
           },
         },
         {
@@ -2866,36 +2263,17 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "typeParameterList",
           description: "型パラメーターのリスト",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.TsIdentifer.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.TsIdentifer.typePartId),
         },
         {
           name: "parameterList",
           description: "パラメーターの型. 意味のない引数名は適当に付く",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.TsType.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.TsType.typePartId),
         },
         {
           name: "return",
           description: "戻り値の型",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
       ],
     },
@@ -2907,8 +2285,8 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [
-      { name: "first", typePartId: tuple2First },
-      { name: "second", typePartId: tuple2Second },
+      { name: "first", description: "タプルの0番目の値" },
+      { name: "second", description: "タプルの1番目の値" },
     ],
     body: {
       _: "Product",
@@ -2917,16 +2295,16 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "first",
           description: "0番目の値",
           type: {
-            typePartId: tuple2First,
-            parameter: [],
+            input: d.Maybe.Nothing(),
+            output: d.DataTypeOrDataTypeParameter.DataTypeParameter(0),
           },
         },
         {
           name: "second",
           description: "1番目の値",
           type: {
-            typePartId: tuple2Second,
-            parameter: [],
+            input: d.Maybe.Nothing(),
+            output: d.DataTypeOrDataTypeParameter.DataTypeParameter(1),
           },
         },
       ],
@@ -2945,52 +2323,27 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "カスタム型名",
-          type: {
-            typePartId: d.ElmTypeName.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmTypeName.typePartId),
         },
         {
           name: "export",
           description: "外部に公開するレベル",
-          type: {
-            typePartId: d.ElmCustomTypeExportLevel.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmCustomTypeExportLevel.typePartId),
         },
         {
           name: "comment",
           description: "コメント",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "parameter",
           description: "型パラメーター",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.String.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.String.typePartId),
         },
         {
           name: "variantList",
           description: "バリアントのリスト. 値コンストラクタ. タグ",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.ElmVariant.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.ElmVariant.typePartId),
         },
       ],
     },
@@ -3008,23 +2361,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "expr",
           description: "呼ばれる式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
         {
           name: "parameterList",
           description: "パラメーター",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.TsExpr.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.TsExpr.typePartId),
         },
       ],
     },
@@ -3042,34 +2384,22 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "変数の名前",
-          type: {
-            typePartId: d.TsIdentifer.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsIdentifer.typePartId),
         },
         {
           name: "document",
           description: "ドキュメント",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "type",
           description: "変数の型",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
         {
           name: "expr",
           description: "変数の式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
       ],
     },
@@ -3087,18 +2417,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "kernel",
           description: "関数",
-          type: {
-            typePartId: d.KernelExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.KernelExpr.typePartId),
         },
         {
           name: "expr",
           description: "呼び出すパラメーター",
-          type: {
-            typePartId: d.EvaluatedExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.EvaluatedExpr.typePartId),
         },
       ],
     },
@@ -3116,18 +2440,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "expr",
           description: "式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
         {
           name: "propertyExpr",
           description: "プロパティの式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
       ],
     },
@@ -3146,18 +2464,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "moduleName",
           description:
             "モジュール名. namedImportされるがその識別子は自動的に作成される",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "name",
           description: "型の名前",
-          type: {
-            typePartId: d.TsIdentifer.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsIdentifer.typePartId),
         },
       ],
     },
@@ -3235,10 +2547,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "プロジェクトの詳細ページ",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ProjectId.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ProjectId.typePartId),
           },
         },
         {
@@ -3246,10 +2555,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "アカウント詳細ページ",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.AccountId.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.AccountId.typePartId),
           },
         },
         {
@@ -3267,10 +2573,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "型パーツ編集ページ",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.TypePartId.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.TypePartId.typePartId),
           },
         },
         {
@@ -3278,10 +2581,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "パーツ編集ページ",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.PartId.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.PartId.typePartId),
           },
         },
       ],
@@ -3300,39 +2600,22 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "型の名前",
-          type: {
-            typePartId: d.TsIdentifer.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsIdentifer.typePartId),
         },
         {
           name: "typeParameterList",
           description: "型パラメーターのリスト",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.TsIdentifer.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.TsIdentifer.typePartId),
         },
         {
           name: "document",
           description: "ドキュメント",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "type",
           description: "型本体",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
       ],
     },
@@ -3359,18 +2642,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "key",
           description: "key",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "value",
           description: "value",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
       ],
     },
@@ -3384,7 +2661,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     dataTypeParameterList: [
       {
         name: "element",
-        typePartId: d.TypePartId.fromString("91b5185b554cf5ab00c5dae0ae9eafac"),
+        description: "リストの要素のデータ型",
       },
     ],
     body: { _: "Kernel", typePartBodyKernel: "List" },
@@ -3414,10 +2691,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "ログインへの画面URLをリクエストした状態",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.OpenIdConnectProvider.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.OpenIdConnectProvider.typePartId),
           },
         },
         {
@@ -3431,10 +2705,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             "アカウントトークンの検証とログインしているユーザーの情報を取得している状態",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.AccountToken.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.AccountToken.typePartId),
           },
         },
         {
@@ -3442,10 +2713,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "ログインしている状態",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.AccountTokenAccountId.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.AccountTokenAccountId.typePartId),
           },
         },
       ],
@@ -3464,31 +2732,17 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "counterVariableName",
           description: "カウンタ変数名",
-          type: {
-            typePartId: d.TsIdentifer.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsIdentifer.typePartId),
         },
         {
           name: "untilExpr",
           description: "ループの上限の式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
         {
           name: "statementList",
           description: "繰り返す文",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.Statement.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.Statement.typePartId),
         },
       ],
     },
@@ -3506,34 +2760,22 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "プロパティ名",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "required",
           description: "必須かどうか falseの場合 ? がつく",
-          type: {
-            typePartId: d.Bool.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Bool.typePartId),
         },
         {
           name: "type",
           description: "型",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
         {
           name: "document",
           description: "ドキュメント",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
       ],
     },
@@ -3551,26 +2793,17 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "condition",
           description: "条件の式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
         {
           name: "thenExpr",
           description: "条件がtrueのときに評価される式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
         {
           name: "elseExpr",
           description: "条件がfalseのときに評価される式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
       ],
     },
@@ -3588,23 +2821,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "condition",
           description: "条件の式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
         {
           name: "thenStatementList",
           description: "条件がtrueのときに実行する文",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.Statement.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.Statement.typePartId),
         },
       ],
     },
@@ -3625,10 +2847,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             '**直接 FieldName.FieldName("name") と指定してはいけない!! Elmの識別子として使える文字としてチェックできないため**',
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.String.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.String.typePartId),
           },
         },
       ],
@@ -3650,10 +2869,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             '**直接 VariantName.VariantName("Loading") と指定してはいけない!! Elmの識別子として使える文字としてチェックできないため**',
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.String.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.String.typePartId),
           },
         },
       ],
@@ -3672,18 +2888,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "left",
           description: "左に指定する型",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
         {
           name: "right",
           description: "右に指定する型",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
       ],
     },
@@ -3701,50 +2911,32 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "パーツの名前",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "description",
           description: "パーツの説明",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "type",
           description: "パーツの型",
-          type: {
-            typePartId: d.Type.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Type.typePartId),
         },
         {
           name: "expr",
           description: "パーツの式",
-          type: {
-            typePartId: d.Expr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.Expr.typePartId),
         },
         {
           name: "projectId",
           description: "所属しているプロジェクトのID",
-          type: {
-            typePartId: d.ProjectId.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ProjectId.typePartId),
         },
         {
           name: "id",
           description: "パーツを識別するID",
-          type: {
-            typePartId: d.PartId.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.PartId.typePartId),
         },
       ],
     },
@@ -3764,10 +2956,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "Definyだけでは表現できない式",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.KernelExpr.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.KernelExpr.typePartId),
           },
         },
         {
@@ -3775,10 +2964,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "32bit整数",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.Int32.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.Int32.typePartId),
           },
         },
         {
@@ -3786,10 +2972,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "タグを参照",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.TagReference.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.TagReference.typePartId),
           },
         },
         {
@@ -3797,10 +2980,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "内部関数呼び出し",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.KernelCall.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.KernelCall.typePartId),
           },
         },
       ],
@@ -3820,68 +3000,37 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "accountToken",
           description: "アカウントトークン",
-          type: {
-            typePartId: d.AccountToken.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.AccountToken.typePartId),
         },
         {
           name: "typePartId",
           description: "型パーツのID",
-          type: {
-            typePartId: d.TypePartId.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TypePartId.typePartId),
         },
         {
           name: "name",
           description: "設定する型パーツ名",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "description",
           description: "設定する説明文",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "attribute",
           description: "設定する属性",
-          type: {
-            typePartId: d.Maybe.typePartId,
-            parameter: [
-              {
-                typePartId: d.TypeAttribute.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: maybeType(d.TypeAttribute.typePartId),
         },
         {
           name: "typeParameterList",
           description: "設定する型パラメーター",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.DataTypeParameter.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.DataTypeParameter.typePartId),
         },
         {
           name: "body",
           description: "設定する型定義本体",
-          type: {
-            typePartId: d.TypePartBody.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TypePartBody.typePartId),
         },
       ],
     },
@@ -3923,34 +3072,22 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "関数名",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "type",
           description: "型",
-          type: {
-            typePartId: d.ElmType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmType.typePartId),
         },
         {
           name: "expr",
           description: "式",
-          type: {
-            typePartId: d.ElmType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.ElmExpr.typePartId),
         },
         {
           name: "comment",
           description: "コメント",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
       ],
     },
@@ -3968,65 +3105,32 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "外部に公開する関数の名前",
-          type: {
-            typePartId: d.TsIdentifer.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsIdentifer.typePartId),
         },
         {
           name: "document",
           description: "ドキュメント",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "typeParameterList",
           description: "型パラメーターのリスト",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.TsIdentifer.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.TsIdentifer.typePartId),
         },
         {
           name: "parameterList",
           description: "パラメーター",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.ParameterWithDocument.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.ParameterWithDocument.typePartId),
         },
         {
           name: "returnType",
           description: "戻り値の型",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
         {
           name: "statementList",
           description: "関数の本体",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.Statement.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.Statement.typePartId),
         },
       ],
     },
@@ -4054,57 +3158,27 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "変数名",
-          type: {
-            typePartId: d.TsIdentifer.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsIdentifer.typePartId),
         },
         {
           name: "typeParameterList",
           description: "型パラメーターのリスト",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.TsIdentifer.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.TsIdentifer.typePartId),
         },
         {
           name: "parameterList",
           description: "パラメーターのリスト",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.ParameterWithDocument.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.ParameterWithDocument.typePartId),
         },
         {
           name: "returnType",
           description: "戻り値の型",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
         {
           name: "statementList",
           description: "関数本体",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.Statement.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.Statement.typePartId),
         },
       ],
     },
@@ -4122,31 +3196,17 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "タグ名",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "description",
           description: "パターンの説明",
-          type: {
-            typePartId: d.String.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.String.typePartId),
         },
         {
           name: "parameter",
           description: "そのパターンにつけるデータの型",
-          type: {
-            typePartId: d.Maybe.typePartId,
-            parameter: [
-              {
-                typePartId: d.Type.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: maybeType(d.Type.typePartId),
         },
       ],
     },
@@ -4176,10 +3236,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "Definyだけでは表現できない式",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.KernelExpr.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.KernelExpr.typePartId),
           },
         },
         {
@@ -4187,10 +3244,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "32bit整数",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.Int32.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.Int32.typePartId),
           },
         },
         {
@@ -4198,10 +3252,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "パーツの値を参照",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.PartId.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.PartId.typePartId),
           },
         },
         {
@@ -4209,10 +3260,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "タグを参照",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.TagReference.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.TagReference.typePartId),
           },
         },
         {
@@ -4220,10 +3268,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "関数呼び出し",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.FunctionCall.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.FunctionCall.typePartId),
           },
         },
       ],
@@ -4242,18 +3287,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "typePartId",
           description: "型ID. タグIDがあれば, 型を導出できそうだが……",
-          type: {
-            typePartId: d.TypePartId.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TypePartId.typePartId),
         },
         {
           name: "tagId",
           description: "タグID",
-          type: {
-            typePartId: d.TagId.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TagId.typePartId),
         },
       ],
     },
@@ -4296,26 +3335,17 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "operator",
           description: "2項演算子",
-          type: {
-            typePartId: d.BinaryOperator.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.BinaryOperator.typePartId),
         },
         {
           name: "left",
           description: "左の式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
         {
           name: "right",
           description: "右の式",
-          type: {
-            typePartId: d.TsExpr.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsExpr.typePartId),
         },
       ],
     },
@@ -4356,49 +3386,22 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "parameterList",
           description: "パラメーターのリスト",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.Parameter.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.Parameter.typePartId),
         },
         {
           name: "typeParameterList",
           description: "型パラメーターのリスト",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.TsIdentifer.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.TsIdentifer.typePartId),
         },
         {
           name: "returnType",
           description: "戻り値の型",
-          type: {
-            typePartId: d.TsType.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.TsType.typePartId),
         },
         {
           name: "statementList",
           description: "ラムダ式本体",
-          type: {
-            typePartId: d.List.typePartId,
-            parameter: [
-              {
-                typePartId: d.Statement.typePartId,
-                parameter: [],
-              },
-            ],
-          },
+          type: listType(d.Statement.typePartId),
         },
       ],
     },
@@ -4416,18 +3419,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "openIdConnectProvider",
           description: "ログインに使用するプロバイダー",
-          type: {
-            typePartId: d.OpenIdConnectProvider.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.OpenIdConnectProvider.typePartId),
         },
         {
           name: "urlData",
           description: "ログインした後に返ってくるURLに必要なデータ",
-          type: {
-            typePartId: d.UrlData.typePartId,
-            parameter: [],
-          },
+          type: noArgumentsType(d.UrlData.typePartId),
         },
       ],
     },
@@ -4447,10 +3444,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "型エイリアス. レコード型に名前を付ける",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ElmTypeAlias.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ElmTypeAlias.typePartId),
           },
         },
         {
@@ -4458,10 +3452,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "カスタム型. 代数的データ型",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.ElmCustomType.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.ElmCustomType.typePartId),
           },
         },
       ],
@@ -4480,23 +3471,14 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "Spread",
           description: "...a のようにする",
-          parameter: {
-            _: "Just",
-            value: {
-              typePartId: d.TsExpr.typePartId,
-              parameter: [],
-            },
-          },
+          parameter: d.Maybe.Just(noArgumentsType(d.TsExpr.typePartId)),
         },
         {
           name: "KeyValue",
           description: "a: b のようにする",
           parameter: {
             _: "Just",
-            value: {
-              typePartId: d.KeyValue.typePartId,
-              parameter: [],
-            },
+            value: noArgumentsType(d.KeyValue.typePartId),
           },
         },
       ],
@@ -4511,25 +3493,14 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     dataTypeParameterList: [],
     body: d.TypePartBody.Product([
       {
-        name: "typePartId",
-        description: "型パーツID",
-        type: {
-          typePartId: d.TypePartId.typePartId,
-          parameter: [],
-        },
+        name: "input",
+        description: "入力のデータ型",
+        type: maybeType(d.DataTypeOrDataTypeParameter.typePartId),
       },
       {
-        name: "parameter",
-        description: "パラメーター",
-        type: {
-          typePartId: d.List.typePartId,
-          parameter: [
-            {
-              typePartId: d.Type.typePartId,
-              parameter: [],
-            },
-          ],
-        },
+        name: "output",
+        description: "出力のデータ型",
+        type: noArgumentsType(d.DataTypeOrDataTypeParameter.typePartId),
       },
     ]),
   },
@@ -4541,19 +3512,13 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     body: d.TypePartBody.Product([
       {
         name: "name",
-        description: "パラメーター名",
-        type: {
-          typePartId: d.String.typePartId,
-          parameter: [],
-        },
+        description: "データ型パラメータの名前",
+        type: noArgumentsType(d.String.typePartId),
       },
       {
-        name: "typePartId",
-        description: "型パラメーターの型ID",
-        type: {
-          typePartId: d.TypePartId.typePartId,
-          parameter: [],
-        },
+        name: "description",
+        description: "データ型パラメータの説明文",
+        type: noArgumentsType(d.String.typePartId),
       },
     ]),
     projectId: coreProjectId,
@@ -4570,47 +3535,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       {
         name: "typePartId",
         description: "型パーツID",
-        type: {
-          typePartId: d.NewTypePartId.typePartId,
-          parameter: [],
-        },
+        type: noArgumentsType(d.TypePartId.typePartId),
       },
-    ]),
-  },
-  {
-    id: d.NewTypePartId.typePartId,
-    name: "NewTypePartId",
-    description:
-      "新しい型パーツID. 同じプロジェクトならシンプルな整数で表現し, 他のプロジェクトはUUID で表現する",
-    attribute: d.Maybe.Nothing(),
-    dataTypeParameterList: [],
-    projectId: coreProjectId,
-    body: d.TypePartBody.Sum([
       {
-        name: "SameProject",
-        description: "同じプロジェクト",
-        parameter: d.Maybe.Just({
-          typePartId: d.SampleProjectTypePartId.typePartId,
-          parameter: [],
-        }),
-      },
-    ]),
-  },
-  {
-    id: d.SampleProjectTypePartId.typePartId,
-    name: "SampleProjectTypePartId",
-    description: "同じプロジェクトの型パーツID",
-    attribute: d.Maybe.Just(d.TypeAttribute.AsNumber),
-    dataTypeParameterList: [],
-    projectId: coreProjectId,
-    body: d.TypePartBody.Sum([
-      {
-        name: "SampleProjectTypePartId",
-        description: "数値を SampleProjectTypePartId として扱う",
-        parameter: d.Maybe.Just({
-          typePartId: d.Int32.typePartId,
-          parameter: [],
-        }),
+        name: "arguments",
+        description: "データ型のパラメータに指定する. arguments",
+        type: listType(d.DataTypeOrDataTypeParameter.typePartId),
       },
     ]),
   },
@@ -4625,18 +3555,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       {
         name: "DataType",
         description: "データタイプ",
-        parameter: d.Maybe.Just({
-          typePartId: d.DataType.typePartId,
-          parameter: [],
-        }),
+        parameter: d.Maybe.Just(noArgumentsType(d.DataType.typePartId)),
       },
       {
         name: "DataTypeParameter",
         description: "データタイプパラメータで指定したパラメータ",
-        parameter: d.Maybe.Just({
-          typePartId: d.Int32.typePartId,
-          parameter: [],
-        }),
+        parameter: d.Maybe.Just(noArgumentsType(d.Int32.typePartId)),
       },
     ]),
   },

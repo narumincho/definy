@@ -1,5 +1,5 @@
 import * as d from "../localData";
-import { TypePartData, checkTypePartListValidation } from "./validation";
+import { checkTypePartListValidation } from "./validation";
 import { elm } from "../gen/main";
 
 export const generateElmCodeAsString = (
@@ -11,13 +11,12 @@ export const generateElmCodeAsString = (
 export const generateElmCode = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
 ): d.ElmCode => {
-  const allTypePartIdTypePartNameMap = checkTypePartListValidation(typePartMap);
+  checkTypePartListValidation(typePartMap);
   return {
     moduleName: "Data",
     typeDeclarationList: undefinedFlatMap(
       [...typePartMap.values()],
-      (typePart) =>
-        typePartToElmTypeDeclaration(typePart, allTypePartIdTypePartNameMap)
+      (typePart) => typePartToElmTypeDeclaration(typePart, typePartMap)
     ),
   };
 };
@@ -38,7 +37,7 @@ const undefinedFlatMap = <Input, Output>(
 
 const typePartToElmTypeDeclaration = (
   typePart: d.TypePart,
-  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
 ): d.ElmTypeDeclaration | undefined => {
   switch (typePart.body._) {
     case "Product":
@@ -53,7 +52,11 @@ const typePartToElmTypeDeclaration = (
           typePart.body.memberList.map(
             (member): d.ElmField => ({
               name: stringToElmFiledName(member.name),
-              type: definyTypeToElmType(member.type, typePartDataMap),
+              type: definyTypeToElmType(
+                member.type,
+                typePartMap,
+                typePart.dataTypeParameterList
+              ),
             })
           )
         ),
@@ -74,7 +77,8 @@ const typePartToElmTypeDeclaration = (
                 ? [
                     definyTypeToElmType(
                       pattern.parameter.value,
-                      typePartDataMap
+                      typePartMap,
+                      typePart.dataTypeParameterList
                     ),
                   ]
                 : [],
@@ -148,23 +152,54 @@ const definyTypePartBodyKernelToElmType = (
 
 const definyTypeToElmType = (
   type: d.Type,
-  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
+  scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
 ): d.ElmType => {
-  const typePart = typePartDataMap.get(type.typePartId);
-  if (typePart === undefined) {
-    throw new Error(
-      "internal error: not found type part name in definyTypeToElmType. typePartId =" +
-        (type.typePartId as string)
-    );
-  }
-  if (typePart.tag === "dataTypeParameter") {
-    return d.ElmType.TypeParameter(typePart.name);
-  }
+  return dataTypeOrDataTypeParameterToElmType(
+    type.output,
+    typePartMap,
+    scopeTypePartDataTypeParameterList
+  );
+};
 
-  return d.ElmType.LocalType({
-    typeName: stringToElmTypeName(typePart.typePart.name),
-    parameter: type.parameter.map((parameter) =>
-      definyTypeToElmType(parameter, typePartDataMap)
-    ),
-  });
+const dataTypeOrDataTypeParameterToElmType = (
+  dataTypeOrDataTypeParameter: d.DataTypeOrDataTypeParameter,
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
+  scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
+): d.ElmType => {
+  switch (dataTypeOrDataTypeParameter._) {
+    case "DataType": {
+      const typePart = typePartMap.get(
+        dataTypeOrDataTypeParameter.dataType.typePartId
+      );
+      if (typePart === undefined) {
+        throw new Error(
+          "internal error: not found type part name in definyTypeToElmType. typePartId =" +
+            dataTypeOrDataTypeParameter.dataType.typePartId
+        );
+      }
+
+      return d.ElmType.LocalType({
+        typeName: stringToElmTypeName(typePart.name),
+        parameter: dataTypeOrDataTypeParameter.dataType.arguments.map(
+          (parameter) =>
+            dataTypeOrDataTypeParameterToElmType(
+              parameter,
+              typePartMap,
+              scopeTypePartDataTypeParameterList
+            )
+        ),
+      });
+    }
+    case "DataTypeParameter": {
+      const dataTypeParameter =
+        scopeTypePartDataTypeParameterList[dataTypeOrDataTypeParameter.int32];
+      if (dataTypeParameter === undefined) {
+        throw new Error(
+          `data type parameter index error. hint = ${scopeTypePartDataTypeParameterList}`
+        );
+      }
+      return d.ElmType.TypeParameter(dataTypeParameter.name);
+    }
+  }
 };

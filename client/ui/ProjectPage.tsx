@@ -11,7 +11,6 @@ import {
   productValue,
   timeValue,
   typePartIdValue,
-  typeValue,
 } from "../editor/common";
 import { ListItem, listItem } from "../editor/list";
 import { Editor } from "./Editor";
@@ -266,8 +265,11 @@ const partListValue = (
               expr: d.Expr.Int32Literal(0),
               projectId,
               type: d.Type.helper({
-                typePartId: d.Int32.typePartId,
-                parameter: [],
+                input: d.Maybe.Nothing(),
+                output: d.DataTypeOrDataTypeParameter.DataType({
+                  typePartId: d.Int32.typePartId,
+                  arguments: [],
+                }),
               }),
             },
           ];

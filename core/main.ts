@@ -111,7 +111,7 @@ export const generateTypeScriptCode = (
   typePartMap: ReadonlyMap<data.TypePartId, data.TypePart>
 ): data.JsTsCode => {
   // 型パラメータも含めた辞書
-  const typePartDataMap = checkTypePartListValidation(typePartMap);
+  checkTypePartListValidation(typePartMap);
   return {
     exportDefinitionList: [
       data.ExportDefinition.Function(hexString.encodeIdFunction),
@@ -119,11 +119,9 @@ export const generateTypeScriptCode = (
       data.ExportDefinition.Function(hexString.tokenEncodeFunction),
       data.ExportDefinition.Function(hexString.decodeTokenFunction),
       ...typeAlias
-        .typePartMapToTypeAlias(typePartDataMap)
+        .typePartMapToTypeAlias(typePartMap)
         .map(data.ExportDefinition.TypeAlias),
-      ...typePartMapToVariable(typePartDataMap).map(
-        data.ExportDefinition.Variable
-      ),
+      ...typePartMapToVariable(typePartMap).map(data.ExportDefinition.Variable),
     ],
     statementList: [],
   };

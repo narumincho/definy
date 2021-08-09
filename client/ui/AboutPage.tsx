@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as d from "../../localData";
+import { commitUrl, nowMode, version } from "../../out";
 import { css } from "@emotion/css";
-import { version } from "../../out";
 
 export type Props = {
   language: d.Language;
@@ -23,8 +23,18 @@ export const AboutPage: React.VFC<Props> = (props) => {
       <div>{aboutMessage(props.language)}</div>
       <GitHubRepositoryLink githubAccountName="narumincho" repoName="Definy" />
       <div>
-        <div>バージョン</div>
-        <div>{version}</div>
+        <div
+          className={css({
+            fontSize: 20,
+          })}
+        >
+          {versionMessage(props.language)}
+        </div>
+        {nowMode === d.Mode.Release ? (
+          <a href={commitUrl}>{version}</a>
+        ) : (
+          <div>{version}</div>
+        )}
       </div>
     </div>
   );
@@ -38,6 +48,19 @@ const aboutMessage = (language: d.Language): string => {
       return "DefinyはWebアプリのためのWebアプリです";
     case "Esperanto":
       return "Definy estas TTT-programo por TTT-programo";
+  }
+};
+
+const versionMessage = (language: d.Language): string => {
+  switch (language) {
+    case "English":
+      return "version";
+
+    case "Japanese":
+      return "バージョン";
+
+    case "Esperanto":
+      return "versio";
   }
 };
 

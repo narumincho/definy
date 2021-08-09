@@ -268,8 +268,19 @@ const outputNowModeAndOrigin = async (
             document: "バージョン名",
             expr: d.TsExpr.StringLiteral(
               mode === d.Mode.Develop
-                ? "Develop:" + new Date().toISOString()
+                ? "Develop: " + new Date().toISOString()
                 : "Release: " + (process.env.GITHUB_SHA ?? "???")
+            ),
+            type: d.TsType.String,
+          }),
+          d.ExportDefinition.Variable({
+            name: jsTs.identiferFromString("commitUrl"),
+            document: "このサーバーのコードのスナップショット",
+            expr: d.TsExpr.StringLiteral(
+              "https://github.com/narumincho/Definy" +
+                (process.env.GITHUB_SHA === undefined
+                  ? ""
+                  : "/tree/" + process.env.GITHUB_SHA)
             ),
             type: d.TsType.String,
           }),
