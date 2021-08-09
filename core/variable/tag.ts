@@ -1,13 +1,12 @@
 import * as d from "../../localData";
 import * as util from "../util";
-import { TypePartData } from "../validation";
 import { jsTs } from "../../gen/main";
 
 /** 直和型の指定を簡単にする関数や定数の型を生成する */
 export const typePartSumTagType = (
   typePart: d.TypePart,
   patternList: ReadonlyArray<d.Pattern>,
-  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
 ): ReadonlyArray<d.TsMemberType> => {
   return patternList.map(
     (pattern): d.TsMemberType => ({
@@ -17,7 +16,8 @@ export const typePartSumTagType = (
         jsTs.identiferFromString(typePart.name),
         typePart.dataTypeParameterList,
         pattern,
-        typePartDataMap
+        typePartMap,
+        typePart.dataTypeParameterList
       ),
       document: pattern.description,
     })
@@ -28,7 +28,8 @@ const patternToTagType = (
   typeName: d.TsIdentifer,
   typeParameterList: ReadonlyArray<d.DataTypeParameter>,
   pattern: d.Pattern,
-  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
+  scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
 ) => {
   const typeParameterIdentiferList = typeParameterList.map((typeParameter) =>
     jsTs.identiferFromString(typeParameter.name)
@@ -45,7 +46,11 @@ const patternToTagType = (
       return d.TsType.Function({
         typeParameterList: typeParameterIdentiferList,
         parameterList: [
-          util.typeToTsType(pattern.parameter.value, typePartDataMap),
+          util.typeToTsType(
+            pattern.parameter.value,
+            typePartMap,
+            scopeTypePartDataTypeParameterList
+          ),
         ],
         return: returnType,
       });
@@ -66,7 +71,7 @@ const patternToTagType = (
 export const typePartSumTagExpr = (
   typePart: d.TypePart,
   patternList: ReadonlyArray<d.Pattern>,
-  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
 ): ReadonlyArray<d.TsMember> => {
   return patternList.map((pattern, index) =>
     d.TsMember.KeyValue({
@@ -76,7 +81,7 @@ export const typePartSumTagExpr = (
         patternList,
         pattern,
         index,
-        typePartDataMap
+        typePartMap
       ),
     })
   );
@@ -87,7 +92,7 @@ const patternToTagExpr = (
   patternList: ReadonlyArray<d.Pattern>,
   pattern: d.Pattern,
   patternIndex: number,
-  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
 ): d.TsExpr => {
   if (typePart.attribute._ === "Just") {
     return patternWithAttributeToTagExpr(
@@ -95,13 +100,13 @@ const patternToTagExpr = (
       pattern,
       patternIndex,
       typePart.attribute.value,
-      typePartDataMap
+      typePartMap
     );
   }
   if (util.isTagTypeAllNoParameter(patternList)) {
     return d.TsExpr.StringLiteral(pattern.name);
   }
-  return patternWithParameterToTagExpr(typePart, pattern, typePartDataMap);
+  return patternWithParameterToTagExpr(typePart, pattern, typePartMap);
 };
 
 const patternWithAttributeToTagExpr = (
@@ -109,7 +114,7 @@ const patternWithAttributeToTagExpr = (
   pattern: d.Pattern,
   patternIndex: number,
   attribute: d.TypeAttribute,
-  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
 ): d.TsExpr => {
   switch (attribute) {
     case "AsBoolean":
@@ -123,7 +128,8 @@ const patternWithAttributeToTagExpr = (
       const parameterIdentifer = jsTs.identiferFromString(
         util.typeToMemberOrParameterName(
           pattern.parameter.value,
-          typePartDataMap
+          typePartMap,
+          typePart.dataTypeParameterList
         )
       );
       const returnType = d.TsType.WithTypeParameter({
@@ -139,7 +145,11 @@ const patternWithAttributeToTagExpr = (
         parameterList: [
           {
             name: parameterIdentifer,
-            type: util.typeToTsType(pattern.parameter.value, typePartDataMap),
+            type: util.typeToTsType(
+              pattern.parameter.value,
+              typePartMap,
+              typePart.dataTypeParameterList
+            ),
           },
         ],
         returnType,
@@ -159,7 +169,7 @@ const patternWithAttributeToTagExpr = (
 const patternWithParameterToTagExpr = (
   typePart: d.TypePart,
   pattern: d.Pattern,
-  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
 ): d.TsExpr => {
   const tagMember: d.TsMember = d.TsMember.KeyValue({
     key: "_",
@@ -177,7 +187,8 @@ const patternWithParameterToTagExpr = (
       const parameterIdentifer = jsTs.identiferFromString(
         util.typeToMemberOrParameterName(
           pattern.parameter.value,
-          typePartDataMap
+          typePartMap,
+          typePart.dataTypeParameterList
         )
       );
       return d.TsExpr.Lambda({
@@ -187,7 +198,11 @@ const patternWithParameterToTagExpr = (
         parameterList: [
           {
             name: parameterIdentifer,
-            type: util.typeToTsType(pattern.parameter.value, typePartDataMap),
+            type: util.typeToTsType(
+              pattern.parameter.value,
+              typePartMap,
+              typePart.dataTypeParameterList
+            ),
           },
         ],
         returnType,
@@ -198,7 +213,8 @@ const patternWithParameterToTagExpr = (
               d.TsMember.KeyValue({
                 key: util.typeToMemberOrParameterName(
                   pattern.parameter.value,
-                  typePartDataMap
+                  typePartMap,
+                  typePart.dataTypeParameterList
                 ),
                 value: d.TsExpr.Variable(parameterIdentifer),
               }),

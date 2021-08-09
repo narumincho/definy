@@ -6,61 +6,28 @@ const coreProjectId: d.ProjectId = d.ProjectId.fromString(
   "96deb95f697e66f12a55e4d3910ea509"
 );
 
-const resourceStateData: d.TypePartId = d.TypePartId.fromString(
-  "cdf3576a38b1f792a7e2f9e21598ae06"
-);
-const maybeValue: d.TypePartId = d.TypePartId.fromString(
-  "7340e6b552af43695335a64e057f4250"
-);
-const withTimeData: d.TypePartId = d.TypePartId.fromString(
-  "1aa6b16efd6aaeebaf0fc58f3c2c5997"
-);
-const staticResourceStateData: d.TypePartId = d.TypePartId.fromString(
-  "5ef14dcfa0f01d9a505b7b00e223a922"
-);
-const resultOk: d.TypePartId = d.TypePartId.fromString(
-  "2163b3c97b382de8085973eff850c919"
-);
-const resultError: d.TypePartId = d.TypePartId.fromString(
-  "bd8be8409130f30f15c5c86c01de6dc5"
-);
-const tuple2First: d.TypePartId = d.TypePartId.fromString(
-  "85f328c72b935491618d127811a328a5"
-);
-const tuple2Second: d.TypePartId = d.TypePartId.fromString(
-  "6276b43c4866574cc345f2055fceb291"
-);
-
 const noArgumentsType = (typePartId: d.TypePartId): d.Type => ({
   input: d.Maybe.Nothing(),
-  output: {
-    typePartId,
-    arguments: [],
-  },
+  output: d.DataTypeOrDataTypeParameter.DataType({ typePartId, arguments: [] }),
 });
 const listType = (typePartId: d.TypePartId): d.Type => ({
   input: d.Maybe.Nothing(),
-  output: {
+  output: d.DataTypeOrDataTypeParameter.DataType({
     typePartId: d.List.typePartId,
     arguments: [
-      {
+      d.DataTypeOrDataTypeParameter.DataType({
         typePartId,
         arguments: [],
-      },
+      }),
     ],
-  },
+  }),
 });
 const maybeType = (typePartId: d.TypePartId): d.Type => ({
   input: d.Maybe.Nothing(),
-  output: {
-    typePartId: d.Maybe.typePartId,
-    arguments: [
-      {
-        typePartId,
-        arguments: [],
-      },
-    ],
-  },
+  output: d.DataTypeOrDataTypeParameter.DataType({
+    typePartId,
+    arguments: [],
+  }),
 });
 
 const typePartList: ReadonlyArray<d.TypePart> = [
@@ -416,7 +383,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     dataTypeParameterList: [
       {
         name: "data",
-        typePartId: resourceStateData,
+        description: "リソースに含めるのデータ型",
       },
     ],
     body: {
@@ -427,15 +394,10 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "読み込み済み",
           parameter: d.Maybe.Just({
             input: d.Maybe.Nothing(),
-            output: {
+            output: d.DataTypeOrDataTypeParameter.DataType({
               typePartId: d.WithTime.typePartId,
-              arguments: [
-                {
-                  typePartId: resourceStateData,
-                  arguments: [],
-                },
-              ],
-            },
+              arguments: [d.DataTypeOrDataTypeParameter.DataTypeParameter(0)],
+            }),
           }),
         },
         {
@@ -666,7 +628,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       "Maybe. nullableのようなもの. 今後はRustのstd::Optionに出力するために属性をつけよう (確信)",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    dataTypeParameterList: [{ name: "value", typePartId: maybeValue }],
+    dataTypeParameterList: [
+      { name: "value", description: "Just のときに指定するデータ型" },
+    ],
     body: {
       _: "Sum",
       patternList: [
@@ -675,10 +639,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "値があるということ",
           parameter: d.Maybe.Just({
             input: d.Maybe.Nothing(),
-            output: {
-              typePartId: maybeValue,
-              arguments: [],
-            },
+            output: d.DataTypeOrDataTypeParameter.DataTypeParameter(0),
           }),
         },
         {
@@ -1024,11 +985,11 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     dataTypeParameterList: [
       {
         name: "key",
-        typePartId: d.TypePartId.fromString("cb26a5badbccc2f37b8e9a1904867d2d"),
+        description: "辞書のキーとなるデータタイプ",
       },
       {
         name: "value",
-        typePartId: d.TypePartId.fromString("3471e961a12c6ec91d511d074cbe3838"),
+        description: "辞書のvalueとなるデータタイプ",
       },
     ],
     body: { _: "Kernel", typePartBodyKernel: "Dict" },
@@ -1039,7 +1000,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     description: "取得日時と任意のデータ",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
-    dataTypeParameterList: [{ name: "data", typePartId: withTimeData }],
+    dataTypeParameterList: [
+      { name: "data", description: "任意のデータタイプ" },
+    ],
     body: {
       _: "Product",
       memberList: [
@@ -1053,10 +1016,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "データ",
           type: {
             input: d.Maybe.Nothing(),
-            output: {
-              typePartId: withTimeData,
-              arguments: [],
-            },
+            output: d.DataTypeOrDataTypeParameter.DataTypeParameter(0),
           },
         },
       ],
@@ -1318,7 +1278,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [
-      { name: "data", typePartId: staticResourceStateData },
+      { name: "data", description: "リソースに含めるデータタイプ" },
     ],
     body: {
       _: "Sum",
@@ -1330,10 +1290,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             _: "Just",
             value: {
               input: d.Maybe.Nothing(),
-              output: {
-                typePartId: staticResourceStateData,
-                arguments: [],
-              },
+              output: d.DataTypeOrDataTypeParameter.DataTypeParameter(0),
             },
           },
         },
@@ -1431,8 +1388,8 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [
-      { name: "ok", typePartId: resultOk },
-      { name: "error", typePartId: resultError },
+      { name: "ok", description: "okなときのデータタイプ" },
+      { name: "error", description: "errorなときのデータタイプ" },
     ],
     body: {
       _: "Sum",
@@ -1444,10 +1401,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             _: "Just",
             value: {
               input: d.Maybe.Nothing(),
-              output: {
-                typePartId: resultOk,
-                arguments: [],
-              },
+              output: d.DataTypeOrDataTypeParameter.DataTypeParameter(0),
             },
           },
         },
@@ -1458,10 +1412,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
             _: "Just",
             value: {
               input: d.Maybe.Nothing(),
-              output: {
-                typePartId: resultError,
-                arguments: [],
-              },
+              output: d.DataTypeOrDataTypeParameter.DataTypeParameter(1),
             },
           },
         },
@@ -2334,8 +2285,8 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [
-      { name: "first", typePartId: tuple2First },
-      { name: "second", typePartId: tuple2Second },
+      { name: "first", description: "タプルの0番目の値" },
+      { name: "second", description: "タプルの1番目の値" },
     ],
     body: {
       _: "Product",
@@ -2345,10 +2296,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "0番目の値",
           type: {
             input: d.Maybe.Nothing(),
-            output: {
-              typePartId: tuple2First,
-              arguments: [],
-            },
+            output: d.DataTypeOrDataTypeParameter.DataTypeParameter(0),
           },
         },
         {
@@ -2356,10 +2304,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "1番目の値",
           type: {
             input: d.Maybe.Nothing(),
-            output: {
-              typePartId: tuple2Second,
-              arguments: [],
-            },
+            output: d.DataTypeOrDataTypeParameter.DataTypeParameter(1),
           },
         },
       ],
@@ -2716,7 +2661,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     dataTypeParameterList: [
       {
         name: "element",
-        typePartId: d.TypePartId.fromString("91b5185b554cf5ab00c5dae0ae9eafac"),
+        description: "リストの要素のデータ型",
       },
     ],
     body: { _: "Kernel", typePartBodyKernel: "List" },

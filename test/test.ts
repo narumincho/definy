@@ -129,10 +129,10 @@ describe("data", () => {
      */
     const intType: d.Type = {
       input: d.Maybe.Nothing(),
-      output: {
+      output: d.DataTypeOrDataTypeParameter.DataType({
         typePartId: d.TypePartId.fromString("int"),
         arguments: [],
-      },
+      }),
     };
     const oneName = d.PartId.fromString("0");
     const addOneHundredName = d.PartId.fromString("1");

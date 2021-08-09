@@ -140,7 +140,7 @@ export const listTypePart: d.TypePart = {
   dataTypeParameterList: [
     {
       name: "element",
-      typePartId: d.TypePartId.fromString("7df9be49c3f18512abd87184776f3262"),
+      description: "リストの要素の型",
     },
   ],
 };
@@ -156,11 +156,11 @@ export const resultTypePart: d.TypePart = {
   dataTypeParameterList: [
     {
       name: "ok",
-      typePartId: d.TypePartId.fromString("82c7167c9d832e8383b161e4c0652b4a"),
+      description: "Okのときに持つ値の型",
     },
     {
       name: "error",
-      typePartId: d.TypePartId.fromString("bd8be8409130f30f15c5c86c01de6dc5"),
+      description: "Errorのときに持つ値の型",
     },
   ],
 };

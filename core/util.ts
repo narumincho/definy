@@ -1,5 +1,4 @@
 import * as d from "../localData";
-import { TypePartData } from "./validation";
 import { jsTs } from "../gen/main";
 
 const millisecondInDay = 1000 * 60 * 60 * 24;
@@ -17,39 +16,68 @@ export const timeFromDate = (date: Date): d.Time => {
 
 export const typeToTsType = (
   type: d.Type,
-  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
+  scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
 ): d.TsType => {
-  return dataTypeToTsType(type.output, typePartDataMap);
+  return dataTypeOrDataTypeParameterToTsType(
+    type.output,
+    typePartMap,
+    scopeTypePartDataTypeParameterList
+  );
 };
 
-const dataTypeToTsType = (
-  dataType: d.DataType,
-  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+const dataTypeOrDataTypeParameterToTsType = (
+  dataTypeOrDataTypeParameter: d.DataTypeOrDataTypeParameter,
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
+  scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
 ): d.TsType => {
-  const typePart = typePartDataMap.get(dataType.typePartId);
-  if (typePart === undefined) {
-    throw new Error(
-      "internal error not found type part name in typeToTsType. typePartId =" +
-        dataType.typePartId
-    );
+  switch (dataTypeOrDataTypeParameter._) {
+    case "DataType": {
+      const typePart = typePartMap.get(
+        dataTypeOrDataTypeParameter.dataType.typePartId
+      );
+      if (typePart === undefined) {
+        throw new Error(
+          "internal error not found type part name in typeToTsType. typePartId =" +
+            dataTypeOrDataTypeParameter.dataType.typePartId
+        );
+      }
+      return d.TsType.WithTypeParameter({
+        type: d.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
+        typeParameterList: dataTypeOrDataTypeParameter.dataType.arguments.map(
+          (parameter) =>
+            dataTypeOrDataTypeParameterToTsType(
+              parameter,
+              typePartMap,
+              scopeTypePartDataTypeParameterList
+            )
+        ),
+      });
+    }
+    case "DataTypeParameter": {
+      const dataTypeParameter =
+        scopeTypePartDataTypeParameterList[dataTypeOrDataTypeParameter.int32];
+      if (dataTypeParameter === undefined) {
+        throw new Error(
+          `data type parameter index error. hint = ${scopeTypePartDataTypeParameterList}`
+        );
+      }
+
+      return d.TsType.ScopeInFile(
+        jsTs.identiferFromString(dataTypeParameter.name)
+      );
+    }
   }
-  return d.TsType.WithTypeParameter({
-    type: d.TsType.ScopeInFile(
-      jsTs.identiferFromString(
-        typePart.tag === "typePart" ? typePart.typePart.name : typePart.name
-      )
-    ),
-    typeParameterList: dataType.arguments.map((parameter) =>
-      dataTypeToTsType(parameter, typePartDataMap)
-    ),
-  });
 };
 
 export const typeToMemberOrParameterName = (
   type: d.Type,
-  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
+  scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
 ): string => {
-  return firstLowerCase(toTypeName(type, typePartDataMap));
+  return firstLowerCase(
+    toTypeName(type, typePartMap, scopeTypePartDataTypeParameterList)
+  );
 };
 
 export const codecPropertyName = "codec";
@@ -85,30 +113,55 @@ export const callDecode = (
 
 export const toTypeName = (
   type: d.Type,
-  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
+  scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
 ): string => {
-  return dataTypeToTypeName(type.output, typePartDataMap);
+  return dataTypeOrDataTypeParameterToTypeName(
+    type.output,
+    typePartMap,
+    scopeTypePartDataTypeParameterList
+  );
 };
 
-export const dataTypeToTypeName = (
-  datatype: d.DataType,
-  typePartDataMap: ReadonlyMap<d.TypePartId, TypePartData>
+export const dataTypeOrDataTypeParameterToTypeName = (
+  dataTypeOrDataTypeParameter: d.DataTypeOrDataTypeParameter,
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
+  scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
 ): string => {
-  const typePartData = typePartDataMap.get(datatype.typePartId);
-  if (typePartData === undefined) {
-    throw new Error(
-      "internal error not found type part name in toTypeName. typePartId =" +
-        datatype.typePartId
-    );
+  switch (dataTypeOrDataTypeParameter._) {
+    case "DataType": {
+      const typePart = typePartMap.get(
+        dataTypeOrDataTypeParameter.dataType.typePartId
+      );
+      if (typePart === undefined) {
+        throw new Error(
+          "internal error not found type part name in toTypeName. typePartId =" +
+            dataTypeOrDataTypeParameter.dataType.typePartId
+        );
+      }
+      return (
+        dataTypeOrDataTypeParameter.dataType.arguments
+          .map((parameter) =>
+            dataTypeOrDataTypeParameterToTypeName(
+              parameter,
+              typePartMap,
+              scopeTypePartDataTypeParameterList
+            )
+          )
+          .join("") + typePart.name
+      );
+    }
+    case "DataTypeParameter": {
+      const dataTypeParameter =
+        scopeTypePartDataTypeParameterList[dataTypeOrDataTypeParameter.int32];
+      if (dataTypeParameter === undefined) {
+        throw new Error(
+          `data type parameter index error. hint = ${scopeTypePartDataTypeParameterList}`
+        );
+      }
+      return dataTypeParameter.name;
+    }
   }
-  return (
-    datatype.arguments
-      .map((parameter) => dataTypeToTypeName(parameter, typePartDataMap))
-      .join("") +
-    (typePartData.tag === "typePart"
-      ? typePartData.typePart.name
-      : typePartData.name)
-  );
 };
 
 export const isTagTypeAllNoParameter = (

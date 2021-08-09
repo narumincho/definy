@@ -3,7 +3,7 @@ import * as d from "../../localData";
 import { ElementOperation } from "./ElementOperation";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
-import { dataTypeOperation } from "./dataType";
+import { dataTypeOrDataTypeParameterOperation } from "./dataTypeOrDataTypeParameter";
 import { neverFunc } from "../../common/util";
 
 export type TypeSelection = {
@@ -31,10 +31,10 @@ const TypeSelectionView: ElementOperation<
     selection,
   }) => {
     const onChange = React.useCallback(
-      (dataType: d.DataType) => {
+      (dataTypeOrDataTypeParameter: d.DataTypeOrDataTypeParameter) => {
         onChangeType({
           input: d.Maybe.Nothing(),
-          output: dataType,
+          output: dataTypeOrDataTypeParameter,
         });
       },
       [onChangeType]
@@ -49,9 +49,9 @@ const TypeSelectionView: ElementOperation<
       >
         <div>(入力)</div>
         <div>{`→`}</div>
-        <dataTypeOperation.selectionView
+        <dataTypeOrDataTypeParameterOperation.selectionView
           value={{
-            dataType: value.type.output,
+            dataTypeOrTypeParameter: value.type.output,
             jump: value.jump,
             language: value.language,
             onChange,
@@ -121,19 +121,19 @@ TypeArgument.displayName = "TypeArgument";
 const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
   React.memo(({ value: { onChange: onChangeType, ...value }, selection }) => {
     const onChange = React.useCallback(
-      (dataType: d.DataType) => {
+      (dataTypeOrDataTypeParameter: d.DataTypeOrDataTypeParameter) => {
         onChangeType({
           input: d.Maybe.Nothing(),
-          output: dataType,
+          output: dataTypeOrDataTypeParameter,
         });
       },
       [onChangeType]
     );
     return (
-      <dataTypeOperation.detailView
+      <dataTypeOrDataTypeParameterOperation.detailView
         selection={selection}
         value={{
-          dataType: value.type.output,
+          dataTypeOrTypeParameter: value.type.output,
           jump: value.jump,
           language: value.language,
           onChange,
