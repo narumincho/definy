@@ -74,12 +74,26 @@ export type View = {
 export type Box = {
   readonly type: "box";
   readonly direction: "x" | "y";
-  readonly children: ReadonlyArray<Element | Box>;
+  readonly children: ReadonlyArray<SizeAndElementOrBox>;
   readonly gap: number;
   readonly padding: number;
   readonly height: number | undefined;
   readonly backgroundColor: string | undefined;
   readonly url: URL | undefined;
+};
+
+export type SizeAndElementOrBox = {
+  readonly size: Size;
+  readonly elementOrBox: Element | Box;
+};
+
+export type Size = number | "1fr" | "auto";
+
+export const sizeAndElementOrBox = (
+  size: SizeAndElementOrBox["size"],
+  elementOrBox: Element | Box
+): SizeAndElementOrBox => {
+  return { size, elementOrBox };
 };
 
 export type CreateBoxOption = {
@@ -93,13 +107,13 @@ export type CreateBoxOption = {
 
 export const boxX = (
   option: CreateBoxOption,
-  children: ReadonlyArray<Element | Box>
+  children: ReadonlyArray<SizeAndElementOrBox>
 ): Box => {
   return createBox("x", option, children);
 };
 export const boxY = (
   option: CreateBoxOption,
-  children: ReadonlyArray<Element | Box>
+  children: ReadonlyArray<SizeAndElementOrBox>
 ): Box => {
   return createBox("y", option, children);
 };
@@ -107,7 +121,7 @@ export const boxY = (
 const createBox = (
   direction: "x" | "y",
   option: CreateBoxOption,
-  children: ReadonlyArray<Element | Box>
+  children: ReadonlyArray<SizeAndElementOrBox>
 ): Box => {
   return {
     type: "box",
@@ -202,22 +216,13 @@ export const viewToHtmlOption = (view: View): HtmlOption => {
     
     body ${css.declarationBlockToString([
       css.height("100%"),
-      {
-        property: "margin",
-        value: "0",
-      },
+      css.margin0,
       {
         property: "background-color",
         value: "black",
       },
-      {
-        property: "display",
-        value: "grid",
-      },
-      {
-        property: "box-sizing",
-        value: "border-box",
-      },
+      css.displayGrid,
+      css.boxSizingBorderBox,
     ])}
   `,
     children: [boxToHtmlElement(view.box)],
@@ -231,21 +236,22 @@ const boxToHtmlElement = (box: Box): HtmlElement => {
       [
         "style",
         css.declarationListToString([
-          {
-            property: "box-sizing",
-            value: "border-box",
-          },
-          {
-            property: "display",
-            value: "grid",
-          },
+          css.boxSizingBorderBox,
+          css.displayGrid,
           {
             property: "grid-auto-flow",
             value: box.direction === "x" ? "column" : "row",
           },
           {
+            property:
+              box.direction === "x"
+                ? "grid-template-columns"
+                : "grid-template-rows",
+            value: sizeListToStyleValue(box.children.map((c) => c.size)),
+          },
+          {
             property: "align-items",
-            value: "start",
+            value: box.direction === "x" ? "center" : "start",
           },
           {
             property: "gap",
@@ -274,9 +280,9 @@ const boxToHtmlElement = (box: Box): HtmlElement => {
         : ([["href", box.url.toString()]] as const)),
     ]),
     box.children.map((elementOrBox) =>
-      elementOrBox.type === "box"
-        ? boxToHtmlElement(elementOrBox)
-        : elementToHtmlElement(elementOrBox)
+      elementOrBox.elementOrBox.type === "box"
+        ? boxToHtmlElement(elementOrBox.elementOrBox)
+        : elementToHtmlElement(elementOrBox.elementOrBox)
     )
   );
 };
@@ -306,10 +312,7 @@ const elementToHtmlElement = (element: Element): HtmlElement => {
           [
             "style",
             css.declarationListToString([
-              {
-                property: "margin",
-                value: "0",
-              },
+              css.margin0,
               {
                 property: "color",
                 value: "white",
@@ -335,11 +338,8 @@ const elementToHtmlElement = (element: Element): HtmlElement => {
           [
             "style",
             css.declarationListToString([
-              {
-                property: "width",
-                value: `${element.width}px`,
-              },
-              css.height(`${element.height}px`),
+              css.width(element.width),
+              css.height(element.height),
             ]),
           ],
         ]),
@@ -366,4 +366,15 @@ const svgElementToHtmlElement = (svg: SvgElement): HtmlElement => {
         svg.svgElementList.map(svgElementToHtmlElement)
       );
   }
+};
+
+const sizeListToStyleValue = (sizeList: ReadonlyArray<Size>): string => {
+  return sizeList.map(sizeToStyleValue).join(" ");
+};
+
+const sizeToStyleValue = (size: Size): string => {
+  if (typeof size === "number") {
+    return `${size}px`;
+  }
+  return size;
 };

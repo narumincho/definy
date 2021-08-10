@@ -42,91 +42,121 @@ const gitHubLogo: view.Svg = {
   ],
 };
 
-export const topBox: view.Box = view.boxY({}, [
-  view.heading0("ナルミンチョの創作記録"),
-  view.boxX({ padding: 16, gap: 8, height: 64 }, [
-    view.boxX(
-      {
-        url: new URL("https://twitter.com/naru_mincho"),
-        backgroundColor: linkBackGroundColor,
-      },
-      [
-        view.svgElement({ width: 32, height: 32 }, twitterLogo),
-        view.textElement("Twitter @naru_mincho"),
-      ]
-    ),
-    view.boxX(
-      {
-        url: new URL("https://github.com/narumincho"),
-        backgroundColor: linkBackGroundColor,
-      },
-      [
-        view.svgElement({ width: 32, height: 32 }, gitHubLogo),
-        view.textElement("GitHub @narumincho"),
-      ]
-    ),
-    view.boxX(
-      {
-        url: new URL(
-          "https://www.youtube.com/channel/UCDGsMJptdPNN_dbPkTl9qjA/"
-        ),
-        backgroundColor: linkBackGroundColor,
-      },
-      [view.textElement("YouTube ナルミンチョ")]
-    ),
-  ]),
-  view.boxY({ padding: 16, gap: 8 }, [
-    view.boxX(
-      {
-        url: new URL("https://definy.app/?hl=ja"),
-        backgroundColor: linkBackGroundColor,
-      },
-      [view.textElement("definy")]
-    ),
-    view.boxX(
-      {
-        url: new URL("https://definy-dev.web.app/?hl=ja"),
-        backgroundColor: linkBackGroundColor,
-      },
-      [view.textElement("nightly definy")]
-    ),
+const youTubeLogo: view.Svg = {
+  viewBox: {
+    x: 0,
+    y: 0,
+    width: 30,
+    height: 20,
+  },
+  svgElementList: [
+    {
+      type: "path",
+      fill: "#ff0000",
+      pathText:
+        "M27.9727 3.12324C27.6435 1.89323 26.6768 0.926623 25.4468 0.597366C23.2197 2.24288e-07 14.285 0 14.285 0C14.285 0 5.35042 2.24288e-07 3.12323 0.597366C1.89323 0.926623 0.926623 1.89323 0.597366 3.12324C2.24288e-07 5.35042 0 10 0 10C0 10 2.24288e-07 14.6496 0.597366 16.8768C0.926623 18.1068 1.89323 19.0734 3.12323 19.4026C5.35042 20 14.285 20 14.285 20C14.285 20 23.2197 20 25.4468 19.4026C26.6768 19.0734 27.6435 18.1068 27.9727 16.8768C28.5701 14.6496 28.5701 10 28.5701 10C28.5701 10 28.5677 5.35042 27.9727 3.12324Z",
+    },
+    {
+      type: "path",
+      fill: "#dddddd",
+      pathText: "M11.4253 14.2854L18.8477 10.0004L11.4253 5.71533V14.2854Z",
+    },
+  ],
+};
+
+const dummyArticle = (title: string): view.SizeAndElementOrBox => {
+  return view.sizeAndElementOrBox(
+    "auto",
     view.boxX({ padding: 4, backgroundColor: linkBackGroundColor }, [
-      view.textElement(
+      view.sizeAndElementOrBox("1fr", view.textElement(title)),
+    ])
+  );
+};
+
+const snsLink = (
+  url: URL,
+  logo: view.Svg,
+  text: string
+): view.SizeAndElementOrBox => {
+  return view.sizeAndElementOrBox(
+    "1fr",
+    view.boxX(
+      {
+        url,
+        padding: 8,
+        gap: 8,
+        backgroundColor: linkBackGroundColor,
+      },
+      [
+        view.sizeAndElementOrBox(
+          32,
+          view.svgElement({ width: 32, height: 32 }, logo)
+        ),
+        view.sizeAndElementOrBox("1fr", view.textElement(text)),
+      ]
+    )
+  );
+};
+
+export const topBox: view.Box = view.boxY({ padding: 16 }, [
+  view.sizeAndElementOrBox(72, view.heading0("ナルミンチョの創作記録")),
+  view.sizeAndElementOrBox(
+    64,
+    view.boxX({ gap: 8, height: 64 }, [
+      snsLink(
+        new URL("https://twitter.com/naru_mincho"),
+        twitterLogo,
+        "@naru_mincho"
+      ),
+      snsLink(
+        new URL("https://github.com/narumincho"),
+        gitHubLogo,
+        "@narumincho"
+      ),
+      snsLink(
+        new URL("https://www.youtube.com/channel/UCDGsMJptdPNN_dbPkTl9qjA/"),
+        youTubeLogo,
+        "ナルミンチョ"
+      ),
+    ])
+  ),
+  view.sizeAndElementOrBox(
+    "auto",
+    view.boxY({ gap: 8 }, [
+      view.sizeAndElementOrBox(
+        "auto",
+        view.boxX(
+          {
+            url: new URL("https://definy.app/?hl=ja"),
+            backgroundColor: linkBackGroundColor,
+          },
+          [view.sizeAndElementOrBox("1fr", view.textElement("definy"))]
+        )
+      ),
+      view.sizeAndElementOrBox(
+        "auto",
+        view.boxX(
+          {
+            url: new URL("https://definy-dev.web.app/?hl=ja"),
+            backgroundColor: linkBackGroundColor,
+          },
+          [view.sizeAndElementOrBox("1fr", view.textElement("nightly definy"))]
+        )
+      ),
+      dummyArticle(
         "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する"
       ),
-    ]),
-    view.boxX({ padding: 4, backgroundColor: linkBackGroundColor }, [
-      view.textElement("SVGの基本"),
-    ]),
-    view.boxX({ padding: 4, backgroundColor: linkBackGroundColor }, [
-      view.textElement("単体SVGと埋め込みSVG"),
-    ]),
-    view.boxX({ padding: 4, backgroundColor: linkBackGroundColor }, [
-      view.textElement("DESIRED Routeについて"),
-    ]),
-    view.boxX({ padding: 4, backgroundColor: linkBackGroundColor }, [
-      view.textElement("メッセージウィンドウの話"),
-    ]),
-    view.boxX({ padding: 4, backgroundColor: linkBackGroundColor }, [
-      view.textElement("DESIRED RouteとNPIMEのフォントの描画処理"),
-    ]),
-    view.boxX({ padding: 4, backgroundColor: linkBackGroundColor }, [
-      view.textElement("リストUIのボタン操作の挙動"),
-    ]),
-    view.boxX({ padding: 4, backgroundColor: linkBackGroundColor }, [
-      view.textElement("UIの配色"),
-    ]),
-    view.boxX({ padding: 4, backgroundColor: linkBackGroundColor }, [
-      view.textElement("モンスターとのエンカウントについて"),
-    ]),
-    view.boxX({ padding: 4, backgroundColor: linkBackGroundColor }, [
-      view.textElement("星の図形について"),
-    ]),
-    view.boxX({ padding: 4, backgroundColor: linkBackGroundColor }, [
-      view.textElement("DESIRED Routeに登場する予定だった敵モンスター"),
-    ]),
-    view.boxX({ padding: 4, backgroundColor: linkBackGroundColor }, [
-      view.textElement("Nプチコン漢字入力(N Petitcom IME)"),
-    ]),
-  ]),
+      dummyArticle("SVGの基本"),
+      dummyArticle("単体SVGと埋め込みSVG"),
+      dummyArticle("DESIRED Routeについて"),
+      dummyArticle("メッセージウィンドウの話"),
+      dummyArticle("DESIRED RouteとNPIMEのフォントの描画処理"),
+      dummyArticle("リストUIのボタン操作の挙動"),
+      dummyArticle("UIの配色"),
+      dummyArticle("モンスターとのエンカウントについて"),
+      dummyArticle("星の図形について"),
+      dummyArticle("DESIRED Routeに登場する予定だった敵モンスター"),
+      dummyArticle("Nプチコン漢字入力(N Petitcom IME)"),
+    ])
+  ),
 ]);

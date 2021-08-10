@@ -23,9 +23,29 @@ export const declarationBlockToString = (
   return "{" + declarationListToString(declarationList) + "}";
 };
 
-export const height = (value: string): Declaration => {
+export const width = (value: string | number): Declaration => {
+  return {
+    property: "width",
+    value: typeof value === "number" ? `${value}px` : value,
+  };
+};
+export const height = (value: string | number): Declaration => {
   return {
     property: "height",
-    value,
+    value: typeof value === "number" ? `${value}px` : value,
   };
+};
+
+export const boxSizingBorderBox: Declaration = {
+  property: "box-sizing",
+  value: "border-box",
+};
+
+export const displayGrid: Declaration = {
+  property: "display",
+  value: "grid",
+};
+export const margin0: Declaration = {
+  property: "margin",
+  value: "0",
 };
