@@ -1,5 +1,11 @@
 import * as css from "../css/main";
-import { Color, HtmlElement, HtmlOption, htmlElement } from "../html/main";
+import {
+  Color,
+  HtmlElement,
+  HtmlOption,
+  htmlElement,
+  htmlElementNoEndTag,
+} from "../html/main";
 import { Language } from "../../localData";
 
 /**
@@ -150,6 +156,12 @@ type Element =
       readonly svg: Svg;
       readonly width: number;
       readonly height: number;
+    }
+  | {
+      readonly type: "image";
+      readonly url: URL;
+      readonly width: number;
+      readonly height: number;
     };
 
 export type Svg = {
@@ -193,6 +205,18 @@ export const svgElement = (
   return {
     type: "svg",
     svg,
+    width: option.width,
+    height: option.height,
+  };
+};
+export const imageElement = (option: {
+  readonly url: URL;
+  readonly width: number;
+  readonly height: number;
+}): Element => {
+  return {
+    type: "image",
+    url: option.url,
     width: option.width,
     height: option.height,
   };
@@ -344,6 +368,24 @@ const elementToHtmlElement = (element: Element): HtmlElement => {
           ],
         ]),
         element.svg.svgElementList.map(svgElementToHtmlElement)
+      );
+    case "image":
+      return htmlElementNoEndTag(
+        "img",
+        new Map([
+          ["src", element.url.toString()],
+          [
+            "style",
+            css.declarationListToString([
+              css.width(element.width),
+              css.height(element.height),
+              {
+                property: "object-fit",
+                value: "contain",
+              },
+            ]),
+          ],
+        ])
       );
   }
 };

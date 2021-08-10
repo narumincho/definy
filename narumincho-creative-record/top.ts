@@ -1,3 +1,4 @@
+import { resourceUrl } from "./resource/main";
 import { view } from "../gen/main";
 
 const linkBackGroundColor = "#333333";
@@ -130,7 +131,17 @@ export const topBox: view.Box = view.boxY({ padding: 16 }, [
             url: new URL("https://definy.app/?hl=ja"),
             backgroundColor: linkBackGroundColor,
           },
-          [view.sizeAndElementOrBox("1fr", view.textElement("definy"))]
+          [
+            view.sizeAndElementOrBox(
+              128,
+              view.imageElement({
+                url: resourceUrl.definy20190212,
+                width: 128,
+                height: 128,
+              })
+            ),
+            view.sizeAndElementOrBox("1fr", view.textElement("definy")),
+          ]
         )
       ),
       view.sizeAndElementOrBox(

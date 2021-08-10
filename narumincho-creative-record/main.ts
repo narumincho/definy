@@ -1,10 +1,10 @@
 import { html, view } from "../gen/main";
+import { origin, portNumber } from "./origin";
 import { fastify } from "fastify";
 import { promises as fileSystem } from "fs";
+import { pathAndFilePathList } from "./resource/main";
 import { topBox } from "./top";
 
-const portNumber = 8080;
-const origin = `http://localhost:${portNumber}`;
 const iconPath = "/icon";
 
 const instance = fastify();
@@ -29,20 +29,20 @@ instance.get("/", (request, reply) => {
     )
   );
 });
-instance.get(iconPath, (request, reply): void => {
-  console.log("アイコンをリクエストされた");
-  reply.type("image/png");
-  fileSystem
-    .readFile("./narumincho-creative-record/icon.png")
-    .then((iconImageFile) => {
-      reply.send(iconImageFile);
-    })
-    .catch((err) => {
-      console.log("アイコンファイル読み込み時にエラー", err);
-    });
-});
+for (const resourcePath of pathAndFilePathList) {
+  instance.get(resourcePath.path, (request, reply): void => {
+    console.log(`${resourcePath.path} をリクエストされた`);
+    reply.type("image/png");
+    fileSystem
+      .readFile(resourcePath.filePath)
+      .then((iconImageFile) => {
+        reply.send(iconImageFile);
+      })
+      .catch((err) => {
+        console.log("ファイル読み込み時にエラー", err);
+      });
+  });
+}
 
 instance.listen(portNumber);
 console.log(`ナルミンチョ創作記録開発サーバー起動中! → ${origin}`);
-
-export {};
