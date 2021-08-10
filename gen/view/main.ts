@@ -130,6 +130,34 @@ type Element =
   | {
       readonly type: "heading0";
       readonly text: string;
+    }
+  | {
+      readonly type: "svg";
+      readonly svg: Svg;
+      readonly width: number;
+      readonly height: number;
+    };
+
+export type Svg = {
+  readonly viewBox: {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+  };
+  readonly svgElementList: ReadonlyArray<SvgElement>;
+};
+
+export type SvgElement =
+  | {
+      readonly type: "path";
+      readonly pathText: string;
+      readonly fill: string;
+    }
+  | {
+      readonly type: "g";
+      readonly transform: ReadonlyArray<string>;
+      readonly svgElementList: ReadonlyArray<SvgElement>;
     };
 
 export const textElement = (text: string): Element => {
@@ -142,6 +170,17 @@ export const heading0 = (text: string): Element => {
   return {
     type: "heading0",
     text,
+  };
+};
+export const svgElement = (
+  option: { width: number; height: number },
+  svg: Svg
+): Element => {
+  return {
+    type: "svg",
+    svg,
+    width: option.width,
+    height: option.height,
   };
 };
 
@@ -279,6 +318,52 @@ const elementToHtmlElement = (element: Element): HtmlElement => {
           ],
         ]),
         element.text
+      );
+    case "svg":
+      return htmlElement(
+        "svg",
+        new Map([
+          [
+            "viewBox",
+            [
+              element.svg.viewBox.x,
+              element.svg.viewBox.y,
+              element.svg.viewBox.width,
+              element.svg.viewBox.height,
+            ].join(" "),
+          ],
+          [
+            "style",
+            css.declarationListToString([
+              {
+                property: "width",
+                value: `${element.width}px`,
+              },
+              css.height(`${element.height}px`),
+            ]),
+          ],
+        ]),
+        element.svg.svgElementList.map(svgElementToHtmlElement)
+      );
+  }
+};
+
+const svgElementToHtmlElement = (svg: SvgElement): HtmlElement => {
+  switch (svg.type) {
+    case "path":
+      return htmlElement(
+        "path",
+        new Map([
+          ["d", svg.pathText],
+          ["fill", svg.fill],
+        ]),
+        []
+      );
+    case "g":
+      return htmlElement(
+        "g",
+        new Map([["transform", svg.transform.join(" ")]]),
+        svg.svgElementList.map(svgElementToHtmlElement)
       );
   }
 };
