@@ -226,6 +226,7 @@ export const imageElement = (option: {
  * View から HtmlOption に変換する
  */
 export const viewToHtmlOption = (view: View): HtmlOption => {
+  const htmlElementAndStyleDict = boxToHtmlElement(view.box);
   return {
     pageName: view.pageName,
     appName: view.appName,
@@ -236,157 +237,197 @@ export const viewToHtmlOption = (view: View): HtmlOption => {
     coverImageUrl: view.coverImageUrl,
     url: view.url,
     twitterCard: "SummaryCard",
-    style: `html ${css.declarationBlockToString([css.height("100%")])}
-    
-    body ${css.declarationBlockToString([
-      css.height("100%"),
-      css.margin0,
+    style: css.ruleListToString([
       {
-        property: "background-color",
-        value: "black",
+        selector: "html",
+        declarationList: [css.height("100%")],
       },
-      css.displayGrid,
-      css.boxSizingBorderBox,
-    ])}
-  `,
-    children: [boxToHtmlElement(view.box)],
+      {
+        selector: "body",
+        declarationList: [
+          css.height("100%"),
+          css.margin0,
+          {
+            property: "background-color",
+            value: "black",
+          },
+          css.displayGrid,
+          css.boxSizingBorderBox,
+        ],
+      },
+      ...[...htmlElementAndStyleDict.styleDict].map(
+        ([hashValue, declarationList]) => {
+          return {
+            selector: "." + sha256HashValueToClassName(hashValue),
+            declarationList,
+          };
+        }
+      ),
+    ]),
+    children: [htmlElementAndStyleDict.htmlElement],
   };
 };
 
-const boxToHtmlElement = (box: Box): HtmlElement => {
-  return htmlElement(
-    box.url === undefined ? "div" : "a",
-    new Map<string, string>([
-      [
-        "style",
-        css.declarationListToString([
-          css.boxSizingBorderBox,
-          css.displayGrid,
+const boxToHtmlElement = (
+  box: Box
+): {
+  readonly htmlElement: HtmlElement;
+  readonly styleDict: ReadonlyMap<string, ReadonlyArray<css.Declaration>>;
+} => {
+  const styleDeclarationList: ReadonlyArray<css.Declaration> = [
+    css.boxSizingBorderBox,
+    css.displayGrid,
+    {
+      property: "grid-auto-flow",
+      value: box.direction === "x" ? "column" : "row",
+    },
+    {
+      property:
+        box.direction === "x" ? "grid-template-columns" : "grid-template-rows",
+      value: sizeListToStyleValue(box.children.map((c) => c.size)),
+    },
+    {
+      property: "align-items",
+      value: box.direction === "x" ? "center" : "start",
+    },
+    {
+      property: "gap",
+      value: `${box.gap}px`,
+    },
+    {
+      property: "padding",
+      value: `${box.padding}px`,
+    },
+    ...(box.height === undefined ? [] : [css.height(`${box.height}px`)]),
+    ...(box.backgroundColor === undefined
+      ? []
+      : [
           {
-            property: "grid-auto-flow",
-            value: box.direction === "x" ? "column" : "row",
+            property: "background-color",
+            value: box.backgroundColor,
           },
-          {
-            property:
-              box.direction === "x"
-                ? "grid-template-columns"
-                : "grid-template-rows",
-            value: sizeListToStyleValue(box.children.map((c) => c.size)),
-          },
-          {
-            property: "align-items",
-            value: box.direction === "x" ? "center" : "start",
-          },
-          {
-            property: "gap",
-            value: `${box.gap}px`,
-          },
-          {
-            property: "padding",
-            value: `${box.padding}px`,
-          },
-          ...(box.height === undefined ? [] : [css.height(`${box.height}px`)]),
-          ...(box.backgroundColor === undefined
-            ? []
-            : [
-                {
-                  property: "background-color",
-                  value: box.backgroundColor,
-                },
-              ]),
-          ...(box.url === undefined
-            ? []
-            : [{ property: "text-decoration", value: "none" }]),
         ]),
-      ],
-      ...(box.url === undefined
-        ? []
-        : ([["href", box.url.toString()]] as const)),
-    ]),
-    box.children.map((elementOrBox) =>
-      elementOrBox.elementOrBox.type === "box"
-        ? boxToHtmlElement(elementOrBox.elementOrBox)
-        : elementToHtmlElement(elementOrBox.elementOrBox)
-    )
+    ...(box.url === undefined
+      ? []
+      : [{ property: "text-decoration", value: "none" }]),
+  ];
+  const className = css.declarationListToSha256HashValue(styleDeclarationList);
+  const children = box.children.map((elementOrBox) =>
+    elementOrBox.elementOrBox.type === "box"
+      ? boxToHtmlElement(elementOrBox.elementOrBox)
+      : elementToHtmlElement(elementOrBox.elementOrBox)
   );
+  return {
+    htmlElement: htmlElement(
+      box.url === undefined ? "div" : "a",
+      new Map<string, string>([
+        ["class", sha256HashValueToClassName(className)],
+        ...(box.url === undefined
+          ? []
+          : ([["href", box.url.toString()]] as const)),
+      ]),
+      children.map((c) => c.htmlElement)
+    ),
+    styleDict: new Map([
+      ...children.flatMap((c) => [...c.styleDict]),
+      [className, styleDeclarationList],
+    ]),
+  };
 };
 
-const elementToHtmlElement = (element: Element): HtmlElement => {
+const elementToHtmlElement = (
+  element: Element
+): {
+  readonly htmlElement: HtmlElement;
+  readonly styleDict: ReadonlyMap<string, ReadonlyArray<css.Declaration>>;
+} => {
   switch (element.type) {
-    case "text":
-      return htmlElement(
-        "div",
-        new Map([
-          [
-            "style",
-            css.declarationListToString([
-              {
-                property: "color",
-                value: "white",
-              },
-            ]),
-          ],
-        ]),
-        element.text
-      );
-    case "heading0":
-      return htmlElement(
-        "h1",
-        new Map([
-          [
-            "style",
-            css.declarationListToString([
-              css.margin0,
-              {
-                property: "color",
-                value: "white",
-              },
-            ]),
-          ],
-        ]),
-        element.text
-      );
-    case "svg":
-      return htmlElement(
-        "svg",
-        new Map([
-          [
-            "viewBox",
+    case "text": {
+      const styleDeclarationList: ReadonlyArray<css.Declaration> = [
+        {
+          property: "color",
+          value: "white",
+        },
+      ];
+      const className =
+        css.declarationListToSha256HashValue(styleDeclarationList);
+      return {
+        htmlElement: htmlElement(
+          "div",
+          new Map([["class", sha256HashValueToClassName(className)]]),
+          element.text
+        ),
+        styleDict: new Map([[className, styleDeclarationList]]),
+      };
+    }
+    case "heading0": {
+      const styleDeclarationList: ReadonlyArray<css.Declaration> = [
+        css.margin0,
+        {
+          property: "color",
+          value: "white",
+        },
+      ];
+      const className =
+        css.declarationListToSha256HashValue(styleDeclarationList);
+      return {
+        htmlElement: htmlElement(
+          "h1",
+          new Map([["class", sha256HashValueToClassName(className)]]),
+          element.text
+        ),
+        styleDict: new Map([[className, styleDeclarationList]]),
+      };
+    }
+    case "svg": {
+      const styleDeclarationList: ReadonlyArray<css.Declaration> = [
+        css.width(element.width),
+        css.height(element.height),
+      ];
+      const className =
+        css.declarationListToSha256HashValue(styleDeclarationList);
+      return {
+        htmlElement: htmlElement(
+          "svg",
+          new Map([
             [
-              element.svg.viewBox.x,
-              element.svg.viewBox.y,
-              element.svg.viewBox.width,
-              element.svg.viewBox.height,
-            ].join(" "),
-          ],
-          [
-            "style",
-            css.declarationListToString([
-              css.width(element.width),
-              css.height(element.height),
-            ]),
-          ],
-        ]),
-        element.svg.svgElementList.map(svgElementToHtmlElement)
-      );
-    case "image":
-      return htmlElementNoEndTag(
-        "img",
-        new Map([
-          ["src", element.url.toString()],
-          [
-            "style",
-            css.declarationListToString([
-              css.width(element.width),
-              css.height(element.height),
-              {
-                property: "object-fit",
-                value: "contain",
-              },
-            ]),
-          ],
-        ])
-      );
+              "viewBox",
+              [
+                element.svg.viewBox.x,
+                element.svg.viewBox.y,
+                element.svg.viewBox.width,
+                element.svg.viewBox.height,
+              ].join(" "),
+            ],
+            ["className", className],
+          ]),
+          element.svg.svgElementList.map(svgElementToHtmlElement)
+        ),
+        styleDict: new Map([[className, styleDeclarationList]]),
+      };
+    }
+    case "image": {
+      const styleDeclarationList: ReadonlyArray<css.Declaration> = [
+        css.width(element.width),
+        css.height(element.height),
+        {
+          property: "object-fit",
+          value: "contain",
+        },
+      ];
+      const className =
+        css.declarationListToSha256HashValue(styleDeclarationList);
+      return {
+        htmlElement: htmlElementNoEndTag(
+          "img",
+          new Map([
+            ["src", element.url.toString()],
+            ["class", sha256HashValueToClassName(className)],
+          ])
+        ),
+        styleDict: new Map([[className, styleDeclarationList]]),
+      };
+    }
   }
 };
 
@@ -419,4 +460,8 @@ const sizeToStyleValue = (size: Size): string => {
     return `${size}px`;
   }
   return size;
+};
+
+const sha256HashValueToClassName = (sha256HashValue: string): string => {
+  return "nv_" + sha256HashValue;
 };
