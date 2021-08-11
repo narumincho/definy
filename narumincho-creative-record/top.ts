@@ -93,7 +93,7 @@ const snsLink = (
 
 const externalLink = (url: URL, imageUrl: URL, text: string) => {
   return view.sizeAndElementOrBox(
-    "auto",
+    256,
     view.boxY(
       {
         url,
@@ -114,7 +114,7 @@ const externalLink = (url: URL, imageUrl: URL, text: string) => {
   );
 };
 
-const dummyArticle = (
+const articleLink = (
   articleTitleAndImageUrl: ArticleTitleAndImageUrl
 ): view.SizeAndElementOrBox => {
   return view.sizeAndElementOrBox(
@@ -146,25 +146,38 @@ type ArticleTitleAndImageUrl = {
   readonly title: string;
 };
 
-const ariticleListToViewElement = (
+const articleListToViewElement = (
   list: ReadonlyArray<ArticleTitleAndImageUrl>
 ): view.Box => {
   return view.boxY(
-    { gap: 8 },
+    { padding: 8, gap: 8 },
     groupBySize(list, 3).map((row) =>
       view.sizeAndElementOrBox(
         "auto",
-        view.boxX({ gap: 8 }, row.map(dummyArticle))
+        view.boxX({ gap: 8 }, row.map(articleLink))
       )
     )
   );
 };
 
-export const topBox: view.Box = view.boxY({ padding: 16 }, [
-  view.sizeAndElementOrBox(72, view.heading0("ナルミンチョの創作記録")),
+export const topBox: view.Box = view.boxY({}, [
   view.sizeAndElementOrBox(
-    64,
-    view.boxX({ gap: 8, height: 64 }, [
+    72,
+    view.textElement(
+      { markup: "heading1", padding: 16 },
+      "ナルミンチョの創作記録"
+    )
+  ),
+  view.sizeAndElementOrBox(
+    "auto",
+    view.textElement(
+      { markup: "heading2", padding: 8 },
+      "ナルミンチョの SNS アカウント"
+    )
+  ),
+  view.sizeAndElementOrBox(
+    "auto",
+    view.boxX({ padding: 8, gap: 8, height: 64 }, [
       snsLink(
         new URL("https://twitter.com/naru_mincho"),
         twitterLogo,
@@ -184,37 +197,46 @@ export const topBox: view.Box = view.boxY({ padding: 16 }, [
   ),
   view.sizeAndElementOrBox(
     "auto",
-    view.boxY({ gap: 8 }, [
-      view.sizeAndElementOrBox(
-        256,
-        view.boxX({ gap: 8 }, [
-          externalLink(
-            new URL("https://definy.app/?hl=ja"),
-            resourceUrl.definy20190212,
-            "definy"
-          ),
-          externalLink(
-            new URL("https://definy-dev.web.app/?hl=ja"),
-            resourceUrl.definy20210811,
-            "nightly definy"
-          ),
-          externalLink(
-            new URL("https://narumincho-creative-record.web.app/"),
-            resourceUrl.gravityStar,
-            "重力星"
-          ),
-          externalLink(
-            new URL("https://tsukumart.com/"),
-            resourceUrl.tsukumart,
-            "つくマート"
-          ),
-        ])
+    view.textElement(
+      { markup: "heading2", padding: 8 },
+      "ナルミンチョが作った Webアプリ"
+    )
+  ),
+  view.sizeAndElementOrBox(
+    "auto",
+    view.boxX({ padding: 8, gap: 8 }, [
+      externalLink(
+        new URL("https://definy.app/?hl=ja"),
+        resourceUrl.definy20190212,
+        "definy"
+      ),
+      externalLink(
+        new URL("https://definy-dev.web.app/?hl=ja"),
+        resourceUrl.definy20210811,
+        "nightly definy"
+      ),
+      externalLink(
+        new URL("https://narumincho-creative-record.web.app/"),
+        resourceUrl.gravityStar,
+        "重力星"
+      ),
+      externalLink(
+        new URL("https://tsukumart.com/"),
+        resourceUrl.tsukumart,
+        "つくマート"
       ),
     ])
   ),
   view.sizeAndElementOrBox(
     "auto",
-    ariticleListToViewElement([
+    view.textElement(
+      { markup: "heading2", padding: 8 },
+      "ナルミンチョが書いた記事"
+    )
+  ),
+  view.sizeAndElementOrBox(
+    "auto",
+    articleListToViewElement([
       {
         title:
           "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する",

@@ -145,11 +145,8 @@ const createBox = (
 type Element =
   | {
       readonly type: "text";
+      readonly markup: "none" | "heading1" | "heading2";
       readonly padding: number;
-      readonly text: string;
-    }
-  | {
-      readonly type: "heading0";
       readonly text: string;
     }
   | {
@@ -188,18 +185,13 @@ export type SvgElement =
     };
 
 export const textElement = (
-  option: { padding?: number },
+  option: { padding?: number; markup?: "heading1" | "heading2" },
   text: string
 ): Element => {
   return {
     type: "text",
     padding: option.padding ?? 0,
-    text,
-  };
-};
-export const heading0 = (text: string): Element => {
-  return {
-    type: "heading0",
+    markup: option.markup ?? "none",
     text,
   };
 };
@@ -357,31 +349,17 @@ const elementToHtmlElement = (
           property: "padding",
           value: `${element.padding}px`,
         },
-      ];
-      const className =
-        css.declarationListToSha256HashValue(styleDeclarationList);
-      return {
-        htmlElement: htmlElement(
-          "div",
-          new Map([["class", sha256HashValueToClassName(className)]]),
-          element.text
-        ),
-        styleDict: new Map([[className, styleDeclarationList]]),
-      };
-    }
-    case "heading0": {
-      const styleDeclarationList: ReadonlyArray<css.Declaration> = [
         css.margin0,
         {
-          property: "color",
-          value: "white",
+          property: "line-height",
+          value: "1",
         },
       ];
       const className =
         css.declarationListToSha256HashValue(styleDeclarationList);
       return {
         htmlElement: htmlElement(
-          "h1",
+          markupToTagName(element.markup),
           new Map([["class", sha256HashValueToClassName(className)]]),
           element.text
         ),
@@ -437,6 +415,17 @@ const elementToHtmlElement = (
         styleDict: new Map([[className, styleDeclarationList]]),
       };
     }
+  }
+};
+
+const markupToTagName = (markup: "none" | "heading1" | "heading2"): string => {
+  switch (markup) {
+    case "none":
+      return "div";
+    case "heading1":
+      return "h1";
+    case "heading2":
+      return "h2";
   }
 };
 
