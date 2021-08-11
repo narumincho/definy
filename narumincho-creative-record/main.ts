@@ -1,46 +1,34 @@
-import { html, view } from "../gen/main";
+import * as childProcess from "child_process";
+import * as fileSystem from "fs-extra";
 import { origin, portNumber } from "./origin";
 import { fastify } from "fastify";
-import { promises as fileSystem } from "fs";
+import { indexHtmlPath } from "./build";
 import { pathAndFilePathList } from "./resource/main";
-import { topBox } from "./top";
 
-const iconPath = "/icon";
-
+// ナルミンチョの創作記録の開発用サーバーを起動する
 const instance = fastify();
 instance.get("/", (request, reply) => {
   reply.type("text/html");
-  reply.send(
-    html.htmlOptionToString(
-      view.viewToHtmlOption({
-        appName: "ナルミンチョの創作記録",
-        box: topBox,
-        coverImageUrl: new URL(origin + iconPath),
-        description:
-          "革新的なプログラミング言語のDefiny, Web技術, 作っているゲームなどについて解説しています",
-        iconUrl: new URL(origin + iconPath),
-        language: "Japanese",
-        pageName: "ナルミンチョの創作記録",
-        scriptUrlList: [],
-        styleUrlList: [],
-        url: new URL(origin),
-        themeColor: undefined,
-      })
-    )
+  childProcess.exec(
+    "npx ts-node ./narumincho-creative-record/build.ts",
+    (error, stdout, stderr) => {
+      if (error) {
+        console.log({ stdout, stderr });
+        throw error;
+      }
+      console.log("ts-node の実行にはエラーが無かった");
+      fileSystem.readFile(indexHtmlPath).then((indexHtml: Buffer): void => {
+        reply.send(indexHtml);
+      });
+    }
   );
 });
 for (const resourcePath of pathAndFilePathList) {
-  instance.get(resourcePath.path, (request, reply): void => {
+  instance.get(resourcePath.path, async (request, reply): Promise<void> => {
     console.log(`${resourcePath.path} をリクエストされた`);
     reply.type("image/png");
-    fileSystem
-      .readFile(resourcePath.filePath)
-      .then((iconImageFile) => {
-        reply.send(iconImageFile);
-      })
-      .catch((err) => {
-        console.log("ファイル読み込み時にエラー", err);
-      });
+    const resourceFile = await fileSystem.readFile(resourcePath.filePath);
+    reply.send(resourceFile);
   });
 }
 
