@@ -1,3 +1,4 @@
+import { groupBySize } from "../common/util";
 import { resourceUrl } from "./resource/main";
 import { view } from "../gen/main";
 
@@ -65,15 +66,6 @@ const youTubeLogo: view.Svg = {
   ],
 };
 
-const dummyArticle = (title: string): view.SizeAndElementOrBox => {
-  return view.sizeAndElementOrBox(
-    "auto",
-    view.boxX({ padding: 4, backgroundColor: linkBackGroundColor }, [
-      view.sizeAndElementOrBox("1fr", view.textElement(title)),
-    ])
-  );
-};
-
 const snsLink = (
   url: URL,
   logo: view.Svg,
@@ -93,8 +85,77 @@ const snsLink = (
           32,
           view.svgElement({ width: 32, height: 32 }, logo)
         ),
-        view.sizeAndElementOrBox("1fr", view.textElement(text)),
+        view.sizeAndElementOrBox("1fr", view.textElement({ padding: 8 }, text)),
       ]
+    )
+  );
+};
+
+const externalLink = (url: URL, imageUrl: URL, text: string) => {
+  return view.sizeAndElementOrBox(
+    "auto",
+    view.boxY(
+      {
+        url,
+        backgroundColor: linkBackGroundColor,
+      },
+      [
+        view.sizeAndElementOrBox(
+          128,
+          view.imageElement({
+            url: imageUrl,
+            width: 256,
+            height: 128,
+          })
+        ),
+        view.sizeAndElementOrBox("1fr", view.textElement({ padding: 8 }, text)),
+      ]
+    )
+  );
+};
+
+const dummyArticle = (
+  articleTitleAndImageUrl: ArticleTitleAndImageUrl
+): view.SizeAndElementOrBox => {
+  return view.sizeAndElementOrBox(
+    "1fr",
+    view.boxY(
+      {
+        backgroundColor: linkBackGroundColor,
+      },
+      [
+        view.sizeAndElementOrBox(
+          128,
+          view.imageElement({
+            url: articleTitleAndImageUrl.imageUrl,
+            width: 256,
+            height: 128,
+          })
+        ),
+        view.sizeAndElementOrBox(
+          "1fr",
+          view.textElement({ padding: 8 }, articleTitleAndImageUrl.title)
+        ),
+      ]
+    )
+  );
+};
+
+type ArticleTitleAndImageUrl = {
+  readonly imageUrl: URL;
+  readonly title: string;
+};
+
+const ariticleListToViewElement = (
+  list: ReadonlyArray<ArticleTitleAndImageUrl>
+): view.Box => {
+  return view.boxY(
+    { gap: 8 },
+    groupBySize(list, 3).map((row) =>
+      view.sizeAndElementOrBox(
+        "auto",
+        view.boxX({ gap: 8 }, row.map(dummyArticle))
+      )
     )
   );
 };
@@ -125,49 +186,84 @@ export const topBox: view.Box = view.boxY({ padding: 16 }, [
     "auto",
     view.boxY({ gap: 8 }, [
       view.sizeAndElementOrBox(
-        "auto",
-        view.boxX(
-          {
-            url: new URL("https://definy.app/?hl=ja"),
-            backgroundColor: linkBackGroundColor,
-          },
-          [
-            view.sizeAndElementOrBox(
-              128,
-              view.imageElement({
-                url: resourceUrl.definy20190212,
-                width: 128,
-                height: 128,
-              })
-            ),
-            view.sizeAndElementOrBox("1fr", view.textElement("definy")),
-          ]
-        )
+        256,
+        view.boxX({ gap: 8 }, [
+          externalLink(
+            new URL("https://definy.app/?hl=ja"),
+            resourceUrl.definy20190212,
+            "definy"
+          ),
+          externalLink(
+            new URL("https://definy-dev.web.app/?hl=ja"),
+            resourceUrl.definy20210811,
+            "nightly definy"
+          ),
+          externalLink(
+            new URL("https://narumincho-creative-record.web.app/"),
+            resourceUrl.gravityStar,
+            "重力星"
+          ),
+          externalLink(
+            new URL("https://tsukumart.com/"),
+            resourceUrl.tsukumart,
+            "つくマート"
+          ),
+        ])
       ),
-      view.sizeAndElementOrBox(
-        "auto",
-        view.boxX(
-          {
-            url: new URL("https://definy-dev.web.app/?hl=ja"),
-            backgroundColor: linkBackGroundColor,
-          },
-          [view.sizeAndElementOrBox("1fr", view.textElement("nightly definy"))]
-        )
-      ),
-      dummyArticle(
-        "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する"
-      ),
-      dummyArticle("SVGの基本"),
-      dummyArticle("単体SVGと埋め込みSVG"),
-      dummyArticle("DESIRED Routeについて"),
-      dummyArticle("メッセージウィンドウの話"),
-      dummyArticle("DESIRED RouteとNPIMEのフォントの描画処理"),
-      dummyArticle("リストUIのボタン操作の挙動"),
-      dummyArticle("UIの配色"),
-      dummyArticle("モンスターとのエンカウントについて"),
-      dummyArticle("星の図形について"),
-      dummyArticle("DESIRED Routeに登場する予定だった敵モンスター"),
-      dummyArticle("Nプチコン漢字入力(N Petitcom IME)"),
+    ])
+  ),
+  view.sizeAndElementOrBox(
+    "auto",
+    ariticleListToViewElement([
+      {
+        title:
+          "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する",
+        imageUrl: resourceUrl.definy20210811,
+      },
+      {
+        title: "SVGの基本",
+        imageUrl: resourceUrl.definy20210811,
+      },
+      {
+        title: "単体SVGと埋め込みSVG",
+        imageUrl: resourceUrl.definy20210811,
+      },
+      {
+        title: "DESIRED Routeについて",
+        imageUrl: resourceUrl.definy20210811,
+      },
+      {
+        title: "メッセージウィンドウの話",
+        imageUrl: resourceUrl.definy20210811,
+      },
+      {
+        title: "DESIRED RouteとNPIMEのフォントの描画処理",
+        imageUrl: resourceUrl.definy20210811,
+      },
+      {
+        title: "リストUIのボタン操作の挙動",
+        imageUrl: resourceUrl.definy20210811,
+      },
+      {
+        title: "UIの配色",
+        imageUrl: resourceUrl.definy20210811,
+      },
+      {
+        title: "モンスターとのエンカウントについて",
+        imageUrl: resourceUrl.definy20210811,
+      },
+      {
+        title: "星の図形について",
+        imageUrl: resourceUrl.definy20210811,
+      },
+      {
+        title: "DESIRED Routeに登場する予定だった敵モンスター",
+        imageUrl: resourceUrl.definy20210811,
+      },
+      {
+        title: "Nプチコン漢字入力(N Petitcom IME)",
+        imageUrl: resourceUrl.definy20210811,
+      },
     ])
   ),
 ]);

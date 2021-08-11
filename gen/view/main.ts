@@ -145,6 +145,7 @@ const createBox = (
 type Element =
   | {
       readonly type: "text";
+      readonly padding: number;
       readonly text: string;
     }
   | {
@@ -186,9 +187,13 @@ export type SvgElement =
       readonly svgElementList: ReadonlyArray<SvgElement>;
     };
 
-export const textElement = (text: string): Element => {
+export const textElement = (
+  option: { padding?: number },
+  text: string
+): Element => {
   return {
     type: "text",
+    padding: option.padding ?? 0,
     text,
   };
 };
@@ -348,6 +353,10 @@ const elementToHtmlElement = (
           property: "color",
           value: "white",
         },
+        {
+          property: "padding",
+          value: `${element.padding}px`,
+        },
       ];
       const className =
         css.declarationListToSha256HashValue(styleDeclarationList);
@@ -412,7 +421,7 @@ const elementToHtmlElement = (
         css.height(element.height),
         {
           property: "object-fit",
-          value: "contain",
+          value: "cover",
         },
       ];
       const className =
