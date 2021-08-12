@@ -1,3 +1,5 @@
+import type { Language } from "../../localData";
+
 export type HtmlOption = {
   /**
    * ページ名
@@ -66,9 +68,6 @@ export type HtmlOption = {
 
   /** body の 子要素 */
   readonly children: ReadonlyArray<HtmlElement>;
-
-  /** 背景色を黒にするかどうか */
-  readonly isBackgroundColorBlack?: boolean;
 };
 
 export type Color = {
@@ -76,11 +75,6 @@ export type Color = {
   readonly g: number;
   readonly b: number;
 };
-
-/**
- * ナルミンチョが使う言語
- */
-export type Language = "Japanese" | "English" | "Esperanto";
 
 /** Twitter Card。Twitterでシェアしたときの表示をどうするか */
 export type TwitterCard = "SummaryCard" | "SummaryCardWithLargeImage";
