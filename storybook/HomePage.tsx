@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../data";
+import * as d from "../localData";
 import { HomePage, Props } from "../client/ui/HomePage";
 import { Meta, Story } from "@storybook/react";
 import {
@@ -50,7 +50,7 @@ export const LoggedIn: Story<ControlAndActionProps> = (props) => (
     accountResource={accountResource}
     logInState={d.LogInState.LoggedIn({
       accountToken: d.AccountToken.fromString("dummyAccountToken"),
-      userId: dummyAccountId,
+      accountId: dummyAccountId,
     })}
     onJump={props.onJump}
     topProjectsLoadingState={{ _: "none" }}
@@ -69,7 +69,7 @@ export const Loaded: Story<ControlAndActionProps> = (props) => (
     accountResource={accountResource}
     logInState={d.LogInState.LoggedIn({
       accountToken: d.AccountToken.fromString("dummyAccountToken"),
-      userId: dummyAccountId,
+      accountId: dummyAccountId,
     })}
     onJump={props.onJump}
     topProjectsLoadingState={{

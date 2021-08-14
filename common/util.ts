@@ -30,6 +30,11 @@ export const maybeMap = <Input, Output>(
   return func(value);
 };
 
+/**
+ * 指定したインデックスの要素を削除した配列を生成する
+ * @example
+ * listDeleteAt(["a", "b", "c", "d"], 2) // ["a", "b", "d"]
+ */
 export const listDeleteAt = <Element>(
   list: ReadonlyArray<Element>,
   index: number
@@ -56,6 +61,30 @@ export const listUpdateAt = <Element>(
   ];
 };
 
+export const listUpdateAtOverAutoCreate = <Element>(
+  list: ReadonlyArray<Element>,
+  index: number,
+  func: (e: Element | undefined) => Element,
+  fillElement: Element
+): ReadonlyArray<Element> => {
+  const element = list[index];
+  if (element === undefined) {
+    if (list.length <= index) {
+      return [
+        ...list,
+        ...new Array(index - list.length).fill(fillElement),
+        func(undefined),
+      ];
+    }
+    return list;
+  }
+  return [
+    ...list.slice(0, Math.max(0, index)),
+    func(element),
+    ...list.slice(Math.max(0, index + 1)),
+  ];
+};
+
 export const listSetAt = <Element>(
   list: ReadonlyArray<Element>,
   index: number,
@@ -73,4 +102,39 @@ export const listSetAt = <Element>(
 
 export const neverFunc = (): never => {
   throw new Error("呼ばれないはずの関数. neverFunc が呼ばれた!");
+};
+
+/**
+ * 配列をグループ分けする
+ * https://qiita.com/nagtkk/items/e1cc3f929b61b1882bd1
+ * @param list グループ分けする配列
+ * @param groupIndexFunc グループ番号(外側の配列のインデックス)を返す関数
+ *
+ * @example
+ * scatter(["a", "bb", "c", "ddd"], (text)=>text.length) // [[],["a", "c"], ["bb"], ["ddd"]]
+ */
+export const group = <T>(
+  list: ReadonlyArray<T>,
+  groupIndexFunc: (element: T, index: number) => number
+): ReadonlyArray<ReadonlyArray<T>> =>
+  list.reduce<ReadonlyArray<ReadonlyArray<T>>>(
+    (result, cur, index): ReadonlyArray<ReadonlyArray<T>> => {
+      return listUpdateAtOverAutoCreate<ReadonlyArray<T>>(
+        result,
+        groupIndexFunc(cur, index),
+        (item) => [...(item ?? []), cur],
+        []
+      );
+    },
+    []
+  );
+
+export const groupBySize = <T>(
+  list: ReadonlyArray<T>,
+  size: number
+): ReadonlyArray<ReadonlyArray<T>> => {
+  if (size < 0) {
+    throw new Error("size need +");
+  }
+  return group(list, (_, i) => Math.floor(i / Math.floor(size)));
 };

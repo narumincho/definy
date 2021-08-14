@@ -1,5 +1,5 @@
 import * as commonUrl from "../common/url";
-import * as d from "../data";
+import * as d from "../localData";
 import * as main from "../core/main";
 import * as util from "../core/util";
 import { listDeleteAt, listSetAt } from "../common/util";
@@ -128,8 +128,11 @@ describe("data", () => {
      * = (add (addOneHundred one)) one
      */
     const intType: d.Type = {
-      typePartId: d.TypePartId.fromString("int"),
-      parameter: [],
+      input: d.Maybe.Nothing(),
+      output: d.DataTypeOrDataTypeParameter.DataType({
+        typePartId: d.TypePartId.fromString("int"),
+        arguments: [],
+      }),
     };
     const oneName = d.PartId.fromString("0");
     const addOneHundredName = d.PartId.fromString("1");

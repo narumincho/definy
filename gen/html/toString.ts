@@ -2,12 +2,12 @@ import {
   Color,
   HtmlElement,
   HtmlOption,
-  Language,
   TwitterCard,
   htmlElement,
   htmlElementNoEndTag,
   htmlElementRawText,
 } from "./data";
+import { Language } from "../../localData";
 
 export const escapeInHtml = (text: string): string =>
   text

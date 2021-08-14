@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../../data";
+import * as d from "../../localData";
 import { TimeCard, TimeDetail } from "../ui/TimeCard";
 import type { ElementOperation } from "./ElementOperation";
 import { neverFunc } from "../../common/util";

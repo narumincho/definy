@@ -1,4 +1,4 @@
-import * as d from "../../data";
+import * as d from "../../localData";
 import { useCallback, useState } from "react";
 import { timeFromDate } from "../../core/util";
 

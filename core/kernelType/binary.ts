@@ -1,5 +1,5 @@
 import * as c from "./codec";
-import * as d from "../../data";
+import * as d from "../../localData";
 import * as int32 from "./int32";
 import { jsTs } from "../../gen/main";
 

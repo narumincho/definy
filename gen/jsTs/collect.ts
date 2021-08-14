@@ -9,7 +9,7 @@ import {
   TsType,
   TypeAlias,
   Variable,
-} from "../../data";
+} from "../../localData";
 import { UsedNameAndModulePathSet } from "./interface";
 
 /**

@@ -1,5 +1,5 @@
 import * as identifer from "./identifer";
-import { Statement, TsExpr, TsType } from "../../data";
+import { Statement, TsExpr, TsType } from "../../localData";
 
 /**
  * 使われている名前, モジュールのパス

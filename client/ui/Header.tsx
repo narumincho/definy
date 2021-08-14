@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../../data";
+import * as d from "../../localData";
 import { CSSObject, css } from "@emotion/css";
 import { Image } from "./Image";
 import { Link } from "./Link";
@@ -110,7 +110,7 @@ const UserViewOrLogInButton: React.VFC<
 
     case "LoggedIn": {
       const accountResourceState = props.accountResource.getFromMemoryCache(
-        props.logInState.accountTokenAndUserId.userId
+        props.logInState.accountTokenAccountId.accountId
       );
       if (
         accountResourceState === undefined ||

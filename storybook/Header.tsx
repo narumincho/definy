@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../data";
+import * as d from "../localData";
 import { Header, Props } from "../client/ui/Header";
 import { Meta, Story } from "@storybook/react";
 import { ArgType } from "@storybook/addons";

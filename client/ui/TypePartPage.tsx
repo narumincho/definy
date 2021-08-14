@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../../data";
+import * as d from "../../localData";
 import {
   CommonValue,
   buttonValue,
@@ -100,9 +100,9 @@ const LoadedTypePartEditor: React.VFC<
   const [attribute, setAttribute] = React.useState<d.Maybe<d.TypeAttribute>>(
     props.typePart.attribute
   );
-  const [typeParameterList, setTypeParameterList] = React.useState<
-    ReadonlyArray<d.TypeParameter>
-  >(props.typePart.typeParameterList);
+  const [dataTypeParameterList, setDataTypeParameterList] = React.useState<
+    ReadonlyArray<d.DataTypeParameter>
+  >(props.typePart.dataTypeParameterList);
   const [body, setBody] = React.useState<d.TypePartBody>(props.typePart.body);
 
   const onClickSaveTypePart = React.useCallback(() => {
@@ -111,7 +111,7 @@ const LoadedTypePartEditor: React.VFC<
       name,
       description,
       attribute,
-      typeParameterList,
+      typeParameterList: dataTypeParameterList,
       body,
     });
   }, [
@@ -121,7 +121,7 @@ const LoadedTypePartEditor: React.VFC<
     name,
     props.typePartId,
     saveTypePart,
-    typeParameterList,
+    dataTypeParameterList,
   ]);
 
   return (
@@ -144,10 +144,6 @@ const LoadedTypePartEditor: React.VFC<
             }),
           },
           {
-            name: props.language === d.Language.Japanese ? "属性" : "attribute",
-            value: attributeValue(props.language, attribute, setAttribute),
-          },
-          {
             name:
               props.language === d.Language.Japanese
                 ? "パラメータ"
@@ -156,8 +152,8 @@ const LoadedTypePartEditor: React.VFC<
               language: props.language,
               jump: props.jump,
               typePartResource: props.typePartResource,
-              typeParameterList,
-              setTypeParameterList,
+              typeParameterList: dataTypeParameterList,
+              setTypeParameterList: setDataTypeParameterList,
             }),
           },
           {
@@ -175,6 +171,10 @@ const LoadedTypePartEditor: React.VFC<
               body,
               setBody
             ),
+          },
+          {
+            name: props.language === d.Language.Japanese ? "属性" : "attribute",
+            value: attributeValue(props.language, attribute, setAttribute),
           },
           {
             name: "保存ボタン",
@@ -273,9 +273,22 @@ const attributeValue = (
               setAttribute(d.Maybe.Just(d.TypeAttribute.AsUndefined));
             },
           },
+          {
+            name:
+              language === d.Language.Japanese
+                ? "number として扱う"
+                : "AsNumber",
+            onSelect: () => {
+              setAttribute(d.Maybe.Just(d.TypeAttribute.AsNumber));
+            },
+          },
         ],
         value: undefined,
-        index: attribute === d.TypeAttribute.AsBoolean ? 0 : 1,
+        index: [
+          d.TypeAttribute.AsBoolean,
+          d.TypeAttribute.AsUndefined,
+          d.TypeAttribute.AsNumber,
+        ].findIndex((a) => a === attribute),
       }),
     attributeMaybe,
     () => {
@@ -289,9 +302,9 @@ const attributeValue = (
 
 const parameterListValue = (
   option: Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump"> & {
-    typeParameterList: ReadonlyArray<d.TypeParameter>;
+    typeParameterList: ReadonlyArray<d.DataTypeParameter>;
     setTypeParameterList: React.Dispatch<
-      React.SetStateAction<ReadonlyArray<d.TypeParameter>>
+      React.SetStateAction<ReadonlyArray<d.DataTypeParameter>>
     >;
   }
 ): CommonValue => {
@@ -308,7 +321,7 @@ const parameterListValue = (
                   option.setTypeParameterList((before) =>
                     listUpdateAt(before, index, (param) => ({
                       name: newName,
-                      typePartId: param.typePartId,
+                      description: param.description,
                     }))
                   );
                 },
@@ -316,10 +329,17 @@ const parameterListValue = (
             },
             items: [
               {
-                name: "typePartId",
+                name: "description",
                 value: oneLineTextValue({
-                  text: typeParameter.typePartId,
-                  onChange: undefined,
+                  text: typeParameter.description,
+                  onChange: (newDescription) => {
+                    option.setTypeParameterList((before) =>
+                      listUpdateAt(before, index, (param) => ({
+                        name: param.name,
+                        description: newDescription,
+                      }))
+                    );
+                  },
                 }),
               },
             ],
@@ -330,18 +350,14 @@ const parameterListValue = (
     addInLast: () => {
       option.setTypeParameterList((before) => [
         ...before,
-        { name: "新たな型パラメータの名前", typePartId: randomTypePartId() },
+        {
+          name: "新たなデータ型パラメータの名前",
+          description: "データ型パラメータの名前",
+        },
       ]);
     },
   });
 };
-
-const randomTypePartId = () =>
-  d.TypePartId.fromString(
-    [...crypto.getRandomValues(new Uint8Array(16))]
-      .map((e) => e.toString(16).padStart(2, "0"))
-      .join("")
-  );
 
 const bodyValue = (
   context: Pick<
@@ -374,7 +390,13 @@ const bodyValue = (
             {
               name: "member",
               description: "",
-              type: { typePartId: d.Int32.typePartId, parameter: [] },
+              type: {
+                input: d.Maybe.Nothing(),
+                output: d.DataTypeOrDataTypeParameter.DataType({
+                  typePartId: d.Int32.typePartId,
+                  arguments: [],
+                }),
+              },
             },
           ])
         );
@@ -532,8 +554,11 @@ const patternValue = (
               name: prevPattern.name,
               description: prevPattern.description,
               parameter: d.Maybe.Just({
-                typePartId: d.Int32.typePartId,
-                parameter: [],
+                input: d.Maybe.Nothing(),
+                output: d.DataTypeOrDataTypeParameter.DataType({
+                  typePartId: d.Int32.typePartId,
+                  arguments: [],
+                }),
               }),
             }));
           },
@@ -575,7 +600,13 @@ const memberListValue = (
         {
           name: "newMember",
           description: "",
-          type: { typePartId: d.Int32.typePartId, parameter: [] },
+          type: {
+            input: d.Maybe.Nothing(),
+            output: d.DataTypeOrDataTypeParameter.DataType({
+              typePartId: d.Int32.typePartId,
+              arguments: [],
+            }),
+          },
         },
       ]);
     },

@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../../data";
+import * as d from "../../localData";
 import type { ElementOperation } from "./ElementOperation";
 import { ProjectCard } from "../ui/ProjectCard";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";

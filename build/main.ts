@@ -1,4 +1,4 @@
-import * as d from "../data";
+import * as d from "../localData";
 import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
 import {
@@ -201,6 +201,7 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
     "jimp",
     "jsonwebtoken",
     "fs-extra",
+    "sha256-uint8array",
   ];
   const jsonResult = packageJsonGen.toJson({
     name: "definy-functions",
@@ -247,13 +248,13 @@ const outputNowModeAndOrigin = async (
             document: "実行モード (ビルド時にコード生成される)",
             expr: d.TsExpr.Get({
               expr: d.TsExpr.ImportedVariable({
-                moduleName: "./data",
+                moduleName: "./localData",
                 name: jsTs.identiferFromString("Mode"),
               }),
               propertyExpr: d.TsExpr.StringLiteral(mode),
             }),
             type: d.TsType.ImportedType({
-              moduleName: "./data",
+              moduleName: "./localData",
               name: jsTs.identiferFromString("Mode"),
             }),
           }),
@@ -268,8 +269,19 @@ const outputNowModeAndOrigin = async (
             document: "バージョン名",
             expr: d.TsExpr.StringLiteral(
               mode === d.Mode.Develop
-                ? "Develop:" + new Date().toISOString()
+                ? "Develop: " + new Date().toISOString()
                 : "Release: " + (process.env.GITHUB_SHA ?? "???")
+            ),
+            type: d.TsType.String,
+          }),
+          d.ExportDefinition.Variable({
+            name: jsTs.identiferFromString("commitUrl"),
+            document: "このサーバーのコードのスナップショット",
+            expr: d.TsExpr.StringLiteral(
+              "https://github.com/narumincho/Definy" +
+                (process.env.GITHUB_SHA === undefined
+                  ? ""
+                  : "/tree/" + process.env.GITHUB_SHA)
             ),
             type: d.TsType.String,
           }),

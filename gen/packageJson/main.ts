@@ -1,4 +1,4 @@
-import * as d from "../../data";
+import * as d from "../../localData";
 
 export type PackageJsonInput = {
   readonly name: string;

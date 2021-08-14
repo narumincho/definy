@@ -1,4 +1,4 @@
-import * as d from "../data";
+import * as d from "../localData";
 import { build } from "./main";
 
 build(d.Mode.Release, "https://definy-dev.web.app");

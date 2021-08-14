@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as d from "../../data";
+import * as d from "../../localData";
 import type { ElementOperation } from "./ElementOperation";
 import { Image } from "../ui/Image";
 import { css } from "@emotion/css";

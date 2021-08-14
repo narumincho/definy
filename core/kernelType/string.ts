@@ -1,6 +1,6 @@
 import * as c from "./codec";
 import * as int32 from "./int32";
-import * as ts from "../../data";
+import * as ts from "../../localData";
 import * as util from "../util";
 import { jsTs } from "../../gen/main";
 
