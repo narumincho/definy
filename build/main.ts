@@ -201,6 +201,7 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
     "jimp",
     "jsonwebtoken",
     "fs-extra",
+    "sha256-uint8array",
   ];
   const jsonResult = packageJsonGen.toJson({
     name: "definy-functions",

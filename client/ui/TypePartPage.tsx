@@ -144,10 +144,6 @@ const LoadedTypePartEditor: React.VFC<
             }),
           },
           {
-            name: props.language === d.Language.Japanese ? "属性" : "attribute",
-            value: attributeValue(props.language, attribute, setAttribute),
-          },
-          {
             name:
               props.language === d.Language.Japanese
                 ? "パラメータ"
@@ -175,6 +171,10 @@ const LoadedTypePartEditor: React.VFC<
               body,
               setBody
             ),
+          },
+          {
+            name: props.language === d.Language.Japanese ? "属性" : "attribute",
+            value: attributeValue(props.language, attribute, setAttribute),
           },
           {
             name: "保存ボタン",
