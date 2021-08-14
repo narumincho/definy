@@ -55,7 +55,7 @@ const DataTypeSelectionView: ElementOperation<
     props.value.dataTypeOrTypeParameter._ === "DataType"
   ) {
     return (
-      <div>
+      <div className={css({ display: "flex", gap: 8 })}>
         <div>{result.name}</div>
         {props.value.dataTypeOrTypeParameter.dataType.arguments.map(
           (t, index) => (
@@ -205,11 +205,19 @@ const TypeArgument: React.VFC<{
         borderColor: selection === "self" ? "red" : "#333",
         borderWidth: 2,
         padding: 4,
+        display: "flex",
+        gap: 8,
       })}
       tabIndex={0}
       onFocus={onFocus}
     >
-      {name}
+      <div
+        className={css({
+          fontSize: 14,
+        })}
+      >
+        {name}:
+      </div>
       <DataTypeSelectionView
         value={value}
         selection={

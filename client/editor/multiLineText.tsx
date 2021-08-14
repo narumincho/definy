@@ -16,27 +16,9 @@ const MultiLineTextSelectionView: ElementOperation<
 >["selectionView"] = React.memo(({ value }) => {
   return (
     <div className={css({ fontSize: 16 })}>
-      <textarea
-        readOnly
-        className={css({
-          padding: 8,
-          fontSize: 16,
-          border: "2px solid #222",
-          backgroundColor: "#000",
-          color: "#ddd",
-          borderRadius: 8,
-          resize: "none",
-          lineHeight: 1.5,
-          width: "100%",
-          height: 128,
-
-          "&:focus": {
-            border: "2px solid #f0932b",
-            outline: "none",
-          },
-        })}
-        value={value.text}
-      ></textarea>
+      {value.text.split("\n").map((line, index) => (
+        <div key={index}>{line}</div>
+      ))}
     </div>
   );
 });
@@ -78,7 +60,7 @@ const MultiLineTextDetailView: ElementOperation<
           resize: "none",
           lineHeight: 1.5,
           width: "100%",
-          height: 320,
+          height: 480,
 
           "&:focus": {
             border: "2px solid #f0932b",

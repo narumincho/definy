@@ -70,54 +70,6 @@ const TypeSelectionView: ElementOperation<
 );
 TypeSelectionView.displayName = "TypeSelectionView";
 
-type TypeArgumentSelection = TypeSelection | "none" | "self";
-
-const TypeArgument: React.VFC<{
-  index: number;
-  selection: TypeArgumentSelection;
-  name: string;
-  value: TypeValue;
-  onChangeSelection: (typeSelection: TypeSelection) => void;
-}> = React.memo(({ index, selection, value, name, onChangeSelection }) => {
-  const onChangeArgumentSelection = React.useCallback(
-    (typeSelection: TypeSelection) => {
-      onChangeSelection({ index, typeSelection });
-    },
-    [index, onChangeSelection]
-  );
-  const onFocus = React.useCallback(
-    (event: React.FocusEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-      onChangeSelection({ index, typeSelection: undefined });
-    },
-    [index, onChangeSelection]
-  );
-
-  return (
-    <div
-      className={css({
-        borderStyle: "solid",
-        borderColor: selection === "self" ? "red" : "#333",
-        borderWidth: 2,
-        padding: 4,
-      })}
-      tabIndex={0}
-      onFocus={onFocus}
-    >
-      {name}
-      <TypeSelectionView
-        value={value}
-        selection={
-          selection !== "self" && selection !== "none" ? selection : undefined
-        }
-        onChangeSelection={onChangeArgumentSelection}
-      />
-    </div>
-  );
-});
-TypeArgument.displayName = "TypeArgument";
-
 const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
   React.memo(({ value: { onChange: onChangeType, ...value }, selection }) => {
     const onChange = React.useCallback(
