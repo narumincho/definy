@@ -79,6 +79,16 @@ const HomeLinkList: React.VFC<{
       >
         Definyについて
       </Link>
+      <Link
+        urlData={{
+          location: d.Location.LocalProject,
+          language: props.language,
+        }}
+        style={{ padding: 4 }}
+        onJump={props.jumpHandler}
+      >
+        ファイルから開く
+      </Link>
     </div>
   );
 };
