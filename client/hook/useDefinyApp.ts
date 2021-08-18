@@ -1,16 +1,13 @@
 import * as d from "../../localData";
 import * as indexedDB from "../indexedDB";
 import {
-  generateElmCodeAsString,
-  generateTypeScriptCode,
-} from "../../core/main";
-import {
   urlDataAndAccountTokenFromUrl,
   urlDataAndAccountTokenToUrl,
 } from "../../common/url";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TypePartIdAndMessage } from "../../core/TypePartIdAndMessage";
 import { api } from "../api";
+import { generateTypeScriptCode } from "../../core/main";
 import { jsTs } from "../../gen/main";
 import { useResourceState } from "./resourceState";
 import { useTypePartIdListInProject } from "./typePartIdListInProject";
