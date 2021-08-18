@@ -1,5 +1,6 @@
 import * as d from "../localData";
 import * as util from "./util";
+import type { TypePartIdAndMessage } from "./TypePartIdAndMessage";
 
 /**
  * 指定した型の定義が正しくできているか調べる
@@ -8,51 +9,70 @@ import * as util from "./util";
  */
 export const checkTypePartListValidation = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
-): void => {
-  const typeNameSet = new Set<string>();
+): ReadonlyArray<TypePartIdAndMessage> => {
+  const typePartNameSet = new Set<string>();
   const typePartIdSet = new Set<d.TypePartId>();
-  for (const [typePartId, typePart] of typePartMap) {
-    if (typePartIdSet.has(typePartId)) {
-      throw new Error(
-        "duplicate type part id. typePartId = " +
-          (typePartId as string) +
-          " typePart = " +
-          JSON.stringify(typePart)
+  return [...typePartMap.values()].flatMap(
+    (typePart): ReadonlyArray<TypePartIdAndMessage> => {
+      if (typePartIdSet.has(typePart.id)) {
+        return [
+          {
+            message: "duplicate type part id.",
+            typePartId: typePart.id,
+          },
+        ];
+      }
+      typePartIdSet.add(typePart.id);
+      const nameResult = checkTypePartNameValidation(
+        typePart.name,
+        typePartNameSet
       );
-    }
-    typePartIdSet.add(typePartId);
-    if (util.isValidTypePartName(typePart.name)) {
-      throw new Error("type part name is invalid. name = " + typePart.name);
-    }
-    if (typeNameSet.has(typePart.name)) {
-      throw new Error("duplicate type part name. name =" + typePart.name);
-    }
-    typeNameSet.add(typePart.name);
-
-    const typeParameterNameSet: Set<string> = new Set();
-    for (const typeParameter of typePart.dataTypeParameterList) {
-      if (typeParameterNameSet.has(typeParameter.name)) {
-        throw new Error(
-          `duplicate type parameter name. name = ${typeParameter.name} , in ${typePart.name}`
-        );
+      if (typeof nameResult === "string") {
+        return [{ message: nameResult, typePartId: typePart.id }];
       }
-      typeParameterNameSet.add(typeParameter.name);
-      if (!util.isFirstLowerCaseName(typeParameter.name)) {
-        throw new Error(
-          `type parameter name is invalid. name = ${typeParameter.name} , in ${typePart.name}`
-        );
-      }
-    }
-  }
+      typePartNameSet.add(typePart.name);
 
-  for (const typePart of typePartMap.values()) {
-    checkTypePartBodyValidation(
-      typePart.body,
-      typePartMap,
-      typePart.dataTypeParameterList.length,
-      typePart.name
-    );
+      return [
+        ...checkTypePartTypeParameterValidation(
+          typePart.dataTypeParameterList
+        ).map((message) => ({ message, typePartId: typePart.id })),
+        ...checkTypePartBodyValidation(
+          typePart.body,
+          typePartMap,
+          typePart.dataTypeParameterList.length,
+          typePart.name
+        ).map((message) => ({ message, typePartId: typePart.id })),
+      ];
+    }
+  );
+};
+
+const checkTypePartNameValidation = (
+  name: string,
+  nameSet: ReadonlySet<string>
+): string | undefined => {
+  if (util.isValidTypePartName(name)) {
+    return "type part name is invalid. name = " + name;
   }
+  if (nameSet.has(name)) {
+    return "duplicate type part name. name =" + name;
+  }
+};
+
+const checkTypePartTypeParameterValidation = (
+  dataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
+): ReadonlyArray<string> => {
+  const typeParameterNameSet: Set<string> = new Set();
+  return dataTypeParameterList.flatMap((typeParameter) => {
+    if (typeParameterNameSet.has(typeParameter.name)) {
+      return [`duplicate type parameter name. name = ${typeParameter.name}`];
+    }
+    typeParameterNameSet.add(typeParameter.name);
+    if (!util.isFirstLowerCaseName(typeParameter.name)) {
+      return [`type parameter name is invalid. name = ${typeParameter.name}`];
+    }
+    return [];
+  });
 };
 
 const checkTypePartBodyValidation = (
@@ -60,23 +80,24 @@ const checkTypePartBodyValidation = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
   scopeDataTypeParamterSize: number,
   typePartName: string
-): void => {
+): ReadonlyArray<string> => {
   switch (typePartBody._) {
     case "Product":
-      checkProductTypeValidation(
+      return checkProductTypeValidation(
         typePartBody.memberList,
         typePartMap,
         scopeDataTypeParamterSize,
         typePartName
       );
-      return;
     case "Sum":
-      checkSumTypeValidation(
+      return checkSumTypeValidation(
         typePartBody.patternList,
         typePartMap,
         scopeDataTypeParamterSize,
         typePartName
       );
+    case "Kernel":
+      return [];
   }
 };
 
@@ -85,23 +106,27 @@ const checkProductTypeValidation = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
   scopeDataTypeParamterSize: number,
   typePartName: string
-): void => {
+): ReadonlyArray<string> => {
   const memberNameSet: Set<string> = new Set();
-  for (const member of memberList) {
+  return memberList.flatMap((member): ReadonlyArray<string> => {
     if (memberNameSet.has(member.name)) {
-      throw new Error(
-        `duplicate member name. name = ${member.name} in ${typePartName}. メンバー名が重複しています`
-      );
+      return [
+        `duplicate member name. name = ${member.name} in ${typePartName}. メンバー名が重複しています`,
+      ];
     }
     memberNameSet.add(member.name);
 
     if (!util.isFirstLowerCaseName(member.name)) {
-      throw new Error(
-        `member name is invalid. name = ${member.name} in ${typePartName}. メンバー名が不正です`
-      );
+      return [
+        `member name is invalid. name = ${member.name} in ${typePartName}. メンバー名が不正です`,
+      ];
     }
-    checkTypeValidation(member.type, typePartMap, scopeDataTypeParamterSize);
-  }
+    return checkTypeValidation(
+      member.type,
+      typePartMap,
+      scopeDataTypeParamterSize
+    );
+  });
 };
 
 const checkSumTypeValidation = (
@@ -109,44 +134,52 @@ const checkSumTypeValidation = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
   scopeDataTypeParamterSize: number,
   typePartName: string
-): void => {
+): ReadonlyArray<string> => {
   const tagNameSet: Set<string> = new Set();
-  for (const pattern of patternList) {
+  return patternList.flatMap((pattern): ReadonlyArray<string> => {
     if (tagNameSet.has(pattern.name)) {
-      throw new Error(
-        `duplicate tag name. name = ${pattern.name} in ${typePartName}. タグ名が重複しています`
-      );
+      return [
+        `duplicate tag name. name = ${pattern.name} in ${typePartName}. タグ名が重複しています`,
+      ];
     }
     tagNameSet.add(pattern.name);
 
     if (!util.isFirstUpperCaseName(pattern.name)) {
-      throw new Error(
-        `tag name is invalid. name = ${pattern.name} in ${typePartName}. タグ名が不正です`
-      );
+      return [
+        `tag name is invalid. name = ${pattern.name} in ${typePartName}. タグ名が不正です`,
+      ];
     }
     if (pattern.parameter._ === "Just") {
-      checkTypeValidation(
+      return checkTypeValidation(
         pattern.parameter.value,
         typePartMap,
         scopeDataTypeParamterSize
       );
     }
-  }
+    return [];
+  });
 };
 
 const checkTypeValidation = (
   type: d.Type,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
   scopeDataTypeParamterSize: number
-): void => {
+): ReadonlyArray<string> => {
   if (type.input._ === "Just") {
-    validateDataTypeOrDataTypeParamter(
-      type.input.value,
-      typePartMap,
-      scopeDataTypeParamterSize
-    );
+    return [
+      ...validateDataTypeOrDataTypeParamter(
+        type.input.value,
+        typePartMap,
+        scopeDataTypeParamterSize
+      ),
+      ...validateDataTypeOrDataTypeParamter(
+        type.output,
+        typePartMap,
+        scopeDataTypeParamterSize
+      ),
+    ];
   }
-  validateDataTypeOrDataTypeParamter(
+  return validateDataTypeOrDataTypeParamter(
     type.output,
     typePartMap,
     scopeDataTypeParamterSize
@@ -157,28 +190,32 @@ const validateDataTypeOrDataTypeParamter = (
   dataTypeOrDataTypeParameter: d.DataTypeOrDataTypeParameter,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
   scopeDataTypeParamterSize: number
-): void => {
+): ReadonlyArray<string> => {
   switch (dataTypeOrDataTypeParameter._) {
     case "DataType": {
-      validateDataType(
+      const dataTypeResult = validateDataType(
         dataTypeOrDataTypeParameter.dataType,
         typePartMap,
         scopeDataTypeParamterSize
       );
-      return;
+      if (typeof dataTypeResult === "string") {
+        return [dataTypeResult];
+      }
+      return [];
     }
 
     case "DataTypeParameter": {
       if (dataTypeOrDataTypeParameter.int32 < 0) {
-        throw new Error(
-          `dataTypeParameterIndex is < 0. index = ${dataTypeOrDataTypeParameter.int32}`
-        );
+        return [
+          `dataTypeParameterIndex is < 0. index = ${dataTypeOrDataTypeParameter.int32}`,
+        ];
       }
       if (scopeDataTypeParamterSize <= dataTypeOrDataTypeParameter.int32) {
-        throw new Error(
-          `scopeDataTypeParamterSize = ${scopeDataTypeParamterSize}, but use =${dataTypeOrDataTypeParameter.int32}`
-        );
+        return [
+          `scopeDataTypeParamterSize = ${scopeDataTypeParamterSize}, but use =${dataTypeOrDataTypeParameter.int32}`,
+        ];
       }
+      return [];
     }
   }
 };
@@ -187,16 +224,14 @@ const validateDataType = (
   dataType: d.DataType,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
   scopeDataTypeParamterSize: number
-): void => {
+): string | undefined => {
   const typePart = typePartMap.get(dataType.typePartId);
   if (typePart === undefined) {
-    throw new Error(`not found typePartId = ${dataType.typePartId}`);
+    return `not found typePartId = ${dataType.typePartId}`;
   }
 
   if (typePart.dataTypeParameterList.length !== dataType.arguments.length) {
-    throw new Error(
-      `type parameter size not match. type part need ${typePart.dataTypeParameterList.length}. but use ${dataType.arguments.length} parameter(s). typePartId = ${dataType.typePartId}`
-    );
+    return `type parameter size not match. type part need ${typePart.dataTypeParameterList.length}. but use ${dataType.arguments.length} parameter(s). typePartId = ${dataType.typePartId}`;
   }
   for (const argument of dataType.arguments) {
     validateDataTypeOrDataTypeParamter(

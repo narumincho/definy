@@ -1,15 +1,13 @@
 import * as d from "../../localData";
 import * as indexedDB from "../indexedDB";
 import {
-  generateElmCodeAsString,
-  generateTypeScriptCode,
-} from "../../core/main";
-import {
   urlDataAndAccountTokenFromUrl,
   urlDataAndAccountTokenToUrl,
 } from "../../common/url";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { TypePartIdAndMessage } from "../../core/TypePartIdAndMessage";
 import { api } from "../api";
+import { generateTypeScriptCode } from "../../core/main";
 import { jsTs } from "../../gen/main";
 import { useResourceState } from "./resourceState";
 import { useTypePartIdListInProject } from "./typePartIdListInProject";
@@ -196,8 +194,10 @@ export type OutputCode =
   | {
       readonly tag: "generated";
       readonly typeScript: string;
-      readonly javaScript: string;
-      readonly elm: string;
+    }
+  | {
+      readonly tag: "errorWithTypePartId";
+      readonly messageList: ReadonlyArray<TypePartIdAndMessage>;
     }
   | {
       readonly tag: "error";
@@ -781,17 +781,21 @@ const generateCodeWithOutErrorHandling = (
 ): OutputCode => {
   try {
     const jsTsCode = generateTypeScriptCode(definyCode);
+    if (jsTsCode._ === "Error") {
+      return {
+        tag: "errorWithTypePartId",
+        messageList: jsTsCode.error,
+      };
+    }
 
     return {
       tag: "generated",
-      typeScript: jsTs.generateCodeAsString(jsTsCode, "TypeScript"),
-      javaScript: jsTs.generateCodeAsString(jsTsCode, "JavaScript"),
-      elm: generateElmCodeAsString(definyCode),
+      typeScript: jsTs.generateCodeAsString(jsTsCode.ok, "TypeScript"),
     };
-  } catch (error) {
+  } catch (error: unknown) {
     return {
       tag: "error",
-      errorMessage: "エラー! " + (error as string),
+      errorMessage: "エラーが発生しました " + (error as string),
     };
   }
 };

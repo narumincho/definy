@@ -87,7 +87,6 @@ export const helperName = "helper";
 export const resultProperty = "result";
 export const nextIndexProperty = "nextIndex";
 
-export const typePartIdPropertyName = "typePartId";
 export const fromStringPropertyName = "fromString";
 
 /**

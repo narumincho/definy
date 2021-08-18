@@ -130,7 +130,12 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             name: "出力されたコード",
-            value: outputCodeToText(props.outputCode),
+            value: outputCodeToText({
+              jump: props.onJump,
+              language: props.language,
+              outputCode: props.outputCode,
+              typePartResource: props.typePartResource,
+            }),
           },
         ],
       }}
@@ -189,31 +194,51 @@ const typePartIdToListItem =
   };
 
 const outputCodeToText = (
-  outputCode: UseDefinyAppResult["outputCode"]
+  option: Pick<
+    UseDefinyAppResult,
+    "typePartResource" | "jump" | "language" | "outputCode"
+  >
 ): CommonValue => {
-  switch (outputCode.tag) {
+  switch (option.outputCode.tag) {
     case "notGenerated":
       return oneLineTextValue({ text: "まだ生成していない" });
     case "generating":
       return oneLineTextValue({ text: "生成中" });
     case "error":
       return oneLineTextValue({
-        text: "生成に失敗 " + outputCode.errorMessage,
+        text: "生成に失敗 " + option.outputCode.errorMessage,
       });
+    case "errorWithTypePartId": {
+      return listValue({
+        items: option.outputCode.messageList.map((typePartIdAndMessage) => {
+          const errorTypePartListItem = typePartIdToListItem({
+            typePartResource: option.typePartResource,
+            jump: option.jump,
+            language: option.language,
+          })(typePartIdAndMessage.typePartId);
+          return listItem(
+            productValue({
+              items: [
+                {
+                  name: "message",
+                  value: oneLineTextValue({
+                    text: typePartIdAndMessage.message,
+                  }),
+                },
+                { name: "at", value: errorTypePartListItem.commonValue },
+              ],
+            }),
+            errorTypePartListItem.searchText
+          );
+        }),
+      });
+    }
     case "generated":
       return productValue({
         items: [
           {
             name: "TypeScript",
-            value: multiLineTextValue({ text: outputCode.typeScript }),
-          },
-          {
-            name: "JavaScript",
-            value: multiLineTextValue({ text: outputCode.javaScript }),
-          },
-          {
-            name: "Elm",
-            value: multiLineTextValue({ text: outputCode.elm }),
+            value: multiLineTextValue({ text: option.outputCode.typeScript }),
           },
         ],
       });

@@ -7,6 +7,7 @@ import * as int32 from "../kernelType/int32";
 import * as kernelString from "../kernelType/string";
 import * as list from "../kernelType/list";
 import * as util from "../util";
+import { typePartIdMember, typePartIdMemberType } from "./typePartId";
 import { typePartSumTagExpr, typePartSumTagType } from "./tag";
 import { jsTs } from "../../gen/main";
 
@@ -42,12 +43,6 @@ const typePartToVariableType = (
     required: true,
     type: typePartToCodecType(typePart),
     document: "独自のバイナリ形式の変換処理ができるコーデック",
-  };
-  const typePartIdMemberType: d.TsMemberType = {
-    name: util.typePartIdPropertyName,
-    required: true,
-    type: d.TsType.ScopeInFile(jsTs.identiferFromString("TypePartId")),
-    document: "definy.app内 の 型パーツの Id",
   };
 
   switch (typePart.body._) {
@@ -114,15 +109,6 @@ const typePartToVariableExpr = (
   typePart: d.TypePart,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
 ): d.TsExpr => {
-  const typePartIdMember = d.TsMember.KeyValue({
-    key: util.typePartIdPropertyName,
-    value: d.TsExpr.TypeAssertion(
-      d.TypeAssertion.helper({
-        expr: d.TsExpr.StringLiteral(typePart.id),
-        type: d.TsType.ScopeInFile(jsTs.identiferFromString("TypePartId")),
-      })
-    ),
-  });
   switch (typePart.body._) {
     case "Product": {
       const parameterIdentifer = jsTs.identiferFromString(
@@ -136,7 +122,7 @@ const typePartToVariableExpr = (
         ),
       });
       return d.TsExpr.ObjectLiteral([
-        typePartIdMember,
+        typePartIdMember(typePart.id),
         d.TsMember.KeyValue({
           key: util.helperName,
           value: d.TsExpr.Lambda({
@@ -163,7 +149,7 @@ const typePartToVariableExpr = (
     }
     case "Kernel":
       return d.TsExpr.ObjectLiteral([
-        typePartIdMember,
+        typePartIdMember(typePart.id),
         d.TsMember.KeyValue({
           key: util.codecPropertyName,
           value: codecExprDefinition(typePart, typePartMap),
@@ -206,7 +192,7 @@ const typePartToVariableExpr = (
     case "Sum": {
       return d.TsExpr.ObjectLiteral([
         ...typePartSumTagExpr(typePart, typePart.body.patternList, typePartMap),
-        typePartIdMember,
+        typePartIdMember(typePart.id),
         d.TsMember.KeyValue({
           key: util.codecPropertyName,
           value: codecExprDefinition(typePart, typePartMap),
