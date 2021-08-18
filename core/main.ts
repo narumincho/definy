@@ -1,8 +1,9 @@
-import * as data from "../localData";
+import * as d from "../localData";
 import * as hexString from "./kernelType/hexString";
 import * as typeAlias from "./typeAlias";
 import { evalExpr, evaluateSuggestionExpr } from "./evaluation";
 import { generateElmCode, generateElmCodeAsString } from "./elm";
+import type { TypePartIdAndMessage } from "./TypePartIdAndMessage";
 import { checkTypePartListValidation } from "./validation";
 import { exprToDebugString } from "./toDebugString";
 import { jsTs } from "../gen/main";
@@ -90,41 +91,50 @@ export const normalizeOneLineString = (text: string): string => {
 };
 
 export const generateTypeScriptCodeAsString = (
-  typePartMap: ReadonlyMap<data.TypePartId, data.TypePart>
-): string => {
-  return jsTs.generateCodeAsString(
-    generateTypeScriptCode(typePartMap),
-    "TypeScript"
-  );
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
+): d.Result<string, ReadonlyArray<TypePartIdAndMessage>> => {
+  const code = generateTypeScriptCode(typePartMap);
+  if (code._ === "Error") {
+    return d.Result.Error(code.error);
+  }
+  return d.Result.Ok(jsTs.generateCodeAsString(code.ok, "TypeScript"));
 };
 
 export const generateJavaScriptCodeAsString = (
-  typePartMap: ReadonlyMap<data.TypePartId, data.TypePart>
-): string => {
-  return jsTs.generateCodeAsString(
-    generateTypeScriptCode(typePartMap),
-    "JavaScript"
-  );
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
+): d.Result<string, ReadonlyArray<TypePartIdAndMessage>> => {
+  const code = generateTypeScriptCode(typePartMap);
+  if (code._ === "Error") {
+    return d.Result.Error(code.error);
+  }
+  return d.Result.Ok(jsTs.generateCodeAsString(code.ok, "JavaScript"));
 };
 
 export const generateTypeScriptCode = (
-  typePartMap: ReadonlyMap<data.TypePartId, data.TypePart>
-): data.JsTsCode => {
-  // 型パラメータも含めた辞書
-  checkTypePartListValidation(typePartMap);
-  return {
+  typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
+): d.Result<d.JsTsCode, ReadonlyArray<TypePartIdAndMessage>> => {
+  // バリデーション
+  const validationResult = checkTypePartListValidation(typePartMap);
+  if (validationResult.length !== 0) {
+    return d.Result.Error(validationResult);
+  }
+
+  const typeAliasResult = typeAlias.typePartMapToTypeAlias(typePartMap);
+  if (typeAliasResult._ === "Error") {
+    return d.Result.Error(typeAliasResult.error);
+  }
+
+  return d.Result.Ok({
     exportDefinitionList: [
-      data.ExportDefinition.Function(hexString.encodeIdFunction),
-      data.ExportDefinition.Function(hexString.idDecodeFunction),
-      data.ExportDefinition.Function(hexString.tokenEncodeFunction),
-      data.ExportDefinition.Function(hexString.decodeTokenFunction),
-      ...typeAlias
-        .typePartMapToTypeAlias(typePartMap)
-        .map(data.ExportDefinition.TypeAlias),
-      ...typePartMapToVariable(typePartMap).map(data.ExportDefinition.Variable),
+      d.ExportDefinition.Function(hexString.encodeIdFunction),
+      d.ExportDefinition.Function(hexString.idDecodeFunction),
+      d.ExportDefinition.Function(hexString.tokenEncodeFunction),
+      d.ExportDefinition.Function(hexString.decodeTokenFunction),
+      ...typeAliasResult.ok.map(d.ExportDefinition.TypeAlias),
+      ...typePartMapToVariable(typePartMap).map(d.ExportDefinition.Variable),
     ],
     statementList: [],
-  };
+  });
 };
 
 export {

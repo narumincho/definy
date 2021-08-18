@@ -3576,9 +3576,11 @@ const typePartList: ReadonlyArray<d.TypePart> = [
   },
 ];
 
-fileSystem.writeFile(
-  "localDat.ts",
-  generateTypeScriptCodeAsString(
-    new Map(typePartList.map((typePart) => [typePart.id, typePart]))
-  )
+const code = generateTypeScriptCodeAsString(
+  new Map(typePartList.map((typePart) => [typePart.id, typePart]))
 );
+if (code._ === "Error") {
+  throw new Error(JSON.stringify(code.error));
+}
+
+fileSystem.writeFile("localDat.ts", code.ok);
