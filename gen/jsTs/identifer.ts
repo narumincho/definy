@@ -169,7 +169,7 @@ const createIdentiferByIndex = (index: number): string => {
 };
 
 /**
- *識別子として使える文字かどうか調べる。日本語の識別子は使えないものとする
+ * 識別子として使える文字かどうか調べる。日本語の識別子は使えないものとする
  * @param word 識別子として使えるかどうか調べるワード
  */
 export const isIdentifer = (word: string): boolean => {
@@ -183,10 +183,10 @@ export const isIdentifer = (word: string): boolean => {
  * ```ts
  * ({ await: 32 }.await)
  * ({ "": "empty"}[""])
+ * ```
  *
  * プロパティ名として直接コードで指定できるかどうか
- * `isIdentifer`とは予約語を指定できるかの面で違う
- * ```
+ * {@link isIdentifer} とは予約語を指定できるかの面で違う
  */
 export const isSafePropertyName = (word: string): boolean => {
   const [firstChar] = word;
