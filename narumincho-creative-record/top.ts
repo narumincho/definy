@@ -1,6 +1,6 @@
+import * as view from "../gen/view/view";
 import { groupBySize } from "../common/util";
 import { resourceUrl } from "./resource/main";
-import { view } from "../gen/main";
 
 const linkBackGroundColor = "#333333";
 

@@ -1,17 +1,11 @@
-import * as fileSystem from "fs-extra";
-import { html, view } from "../gen/main";
+import { build } from "../gen/view/build";
+import { distributionPath } from "./distributionPath";
 import { naruminchoCreativeRecordView } from "./app";
+import { staticResourcePathObject } from "./resource/main";
 
-export const distributionPath = "./narumincho-creative-record/dist";
-export const indexHtmlPath = `${distributionPath}/index.html`;
-
-const build = async (): Promise<void> => {
-  await fileSystem.remove(distributionPath);
-  await fileSystem.outputFile(
-    indexHtmlPath,
-    html.htmlOptionToString(view.viewToHtmlOption(naruminchoCreativeRecordView))
-  );
-  console.log("index.html のビルドに成功!");
-};
-
-build();
+build({
+  view: naruminchoCreativeRecordView,
+  distributionPath,
+  staticResourcePathObject,
+  staticResourcePath: "./narumincho-creative-record/resource",
+});

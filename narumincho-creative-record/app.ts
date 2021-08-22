@@ -1,7 +1,7 @@
-import { origin } from "./origin";
+import * as view from "../gen/view/view";
+import { portNumber } from "./distributionPath";
 import { resourceUrl } from "./resource/main";
 import { topBox } from "./top";
-import { view } from "../gen/main";
 
 export const naruminchoCreativeRecordView: view.View = {
   appName: "ナルミンチョの創作記録",
@@ -14,6 +14,6 @@ export const naruminchoCreativeRecordView: view.View = {
   pageName: "ナルミンチョの創作記録",
   scriptUrlList: [],
   styleUrlList: [],
-  url: new URL(origin),
+  url: new URL(`http://localhost:${portNumber}`),
   themeColor: undefined,
 };

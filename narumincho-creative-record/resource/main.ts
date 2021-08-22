@@ -1,18 +1,15 @@
-import * as list from "./list";
-import { origin } from "../origin";
+import { portNumber } from "../distributionPath";
+import { staticResourcePathObjectToUrlObject } from "../../gen/view/util";
 
-type ListType = typeof list;
+export const staticResourcePathObject = {
+  icon: "icon.png",
+  definy20190212: "definy20190212.png",
+  definy20210811: "definy20210811.png",
+  gravityStar: "gravity-star.png",
+  tsukumart: "tsukumart.png",
+} as const;
 
-const resourcePath = "./narumincho-creative-record/resource";
-
-export const resourceUrl = Object.fromEntries(
-  Object.entries(list).map(([path]) => [path, new URL(origin + "/" + path)])
-) as { [key in keyof ListType]: URL };
-
-export const pathAndFilePathList: ReadonlyArray<{
-  path: string;
-  filePath: string;
-}> = Object.entries(list).map(([path, filePath]) => ({
-  path: "/" + path,
-  filePath: resourcePath + "/" + filePath,
-}));
+export const resourceUrl = staticResourcePathObjectToUrlObject(
+  staticResourcePathObject,
+  portNumber
+);
