@@ -1,15 +1,15 @@
 import * as view from "../gen/view/view";
 import { portNumber } from "./distributionPath";
-import { resourceUrl } from "./resource/main";
+import { staticResourceUrl } from "./resourceUrl";
 import { topBox } from "./top";
 
 export const naruminchoCreativeRecordView: view.View = {
   appName: "ナルミンチョの創作記録",
   box: topBox,
-  coverImageUrl: resourceUrl.icon,
+  coverImageUrl: staticResourceUrl.iconPng,
   description:
     "革新的なプログラミング言語のDefiny, Web技術, 作っているゲームなどについて解説しています",
-  iconUrl: resourceUrl.icon,
+  iconUrl: staticResourceUrl.iconPng,
   language: "Japanese",
   pageName: "ナルミンチョの創作記録",
   scriptUrlList: [],
