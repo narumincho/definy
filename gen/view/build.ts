@@ -1,5 +1,6 @@
 import * as fileSystem from "fs-extra";
 import { View } from "./view";
+import { getStaticResourceFileResult } from "./staticResource";
 import { html } from "../main";
 import { indexHtmlPath } from "./util";
 import { viewToHtmlOption } from "./toHtml";
@@ -17,10 +18,6 @@ export type BuildOption = {
    * staticなファイルのファイルパス
    */
   readonly staticResourcePath: string;
-  /**
-   * staticなファイルのリクエストのパスとファイルパス
-   */
-  readonly staticResourcePathObject: { [key in string]: string };
 };
 
 /**
@@ -35,13 +32,17 @@ export const build = async (option: BuildOption): Promise<void> => {
   );
   console.log("index.html のビルドに成功!");
 
-  for (const [_, filePath] of Object.entries(option.staticResourcePath)) {
-    // eslint-disable-next-line no-await-in-loop
-    await fileSystem.copy(
-      option.staticResourcePath + "/" + filePath,
-      option.distributionPath + "/" + filePath
-    );
-    console.log(`${filePath}のコピーに成功!`);
-  }
+  await Promise.all(
+    (
+      await getStaticResourceFileResult(option.staticResourcePath)
+    ).map(async (fileResult) => {
+      await fileSystem.copy(
+        option.staticResourcePath + "/" + fileResult.originalFileName,
+        option.distributionPath + "/" + fileResult.uploadFileName
+      );
+      console.log(fileResult.originalFileName, "のコピーに成功!");
+    })
+  );
+
   console.log("ビルドが完了しました");
 };

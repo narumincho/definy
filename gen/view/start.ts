@@ -1,5 +1,10 @@
 import * as childProcess from "child_process";
+import * as chokidar from "chokidar";
 import * as fileSystem from "fs-extra";
+import {
+  FilePathAndMimeType,
+  generateStaticResourceUrlCode,
+} from "./staticResource";
 import { indexHtmlPath, localhostOrigin } from "./util";
 import { fastify } from "fastify";
 import open from "open";
@@ -15,48 +20,106 @@ export type StartDevelopmentServerOption = {
    */
   readonly distributionPath: string;
   /**
-   * staticなファイルのリクエストのパスとファイルパス
+   * static なファイルを保管しているディレクトリのパス
    */
-  readonly staticResourcePathObject: { [key in string]: string };
+  readonly resourceDirectoryPath: string;
+  /**
+   * static なファイルをリクエストするためのURLがコード生成されるTypeScriptのコードのファイル
+   */
+  readonly staticResourceUrlCodePath: string;
 };
 
 /**
  * n-view アプリを開発目的で起動する
  */
-export const startDevelopmentServer = (
+export const startDevelopmentServer = async (
   option: StartDevelopmentServerOption
-): void => {
-  const instance = fastify();
-  instance.get("/", (request, reply) => {
-    reply.type("text/html");
-    childProcess.exec(
-      `npx ts-node ${option.buildScriptPath}`,
-      (error, stdout, stderr) => {
-        console.log("再ビルド中", { stdout, stderr, error });
-        console.log("ts-node の実行にはエラーが無かった");
-        fileSystem
-          .readFile(indexHtmlPath(option.distributionPath))
-          .then((indexHtml: Buffer): void => {
-            reply.send(indexHtml);
-          });
+): Promise<void> => {
+  console.log("first build start");
+  let staticResourceRequestPathToFileNameMap = await runBuildScript(option);
+  console.log("first build end");
+
+  let isRunningBuildScript = false;
+  chokidar
+    .watch(".", {
+      ignored: [
+        "**/node_modules/**",
+        ".git/**",
+        option.distributionPath + "/**",
+      ],
+    })
+    .on("all", (eventType, changeFilePath) => {
+      console.log("change file!", eventType, changeFilePath);
+      if (!isRunningBuildScript) {
+        isRunningBuildScript = true;
+        runBuildScript(option).then(
+          (result) => {
+            staticResourceRequestPathToFileNameMap = result;
+            isRunningBuildScript = false;
+          },
+          () => {
+            isRunningBuildScript = false;
+          }
+        );
       }
-    );
-  });
-  for (const [urlPath, filePath] of Object.entries(
-    option.staticResourcePathObject
-  )) {
-    instance.get("/" + urlPath, async (request, reply): Promise<void> => {
-      console.log(`${urlPath} をリクエストされた`);
-      reply.type("image/png");
-      const resourceFile = await fileSystem.readFile(
-        option.distributionPath + "/" + filePath
-      );
-      reply.send(resourceFile);
     });
-  }
+
+  const instance = fastify();
+  instance.get("/:path", (request, reply) => {
+    const requestPath = request.url;
+    console.log("requestPath", requestPath);
+    if (requestPath === "/") {
+      reply.type("text/html");
+      fileSystem
+        .readFile(indexHtmlPath(option.distributionPath))
+        .then((indexHtml: Buffer): void => {
+          reply.send(indexHtml);
+        });
+      return;
+    }
+    const fileNameAndMimeType = staticResourceRequestPathToFileNameMap.get(
+      requestPath.slice(1)
+    );
+    if (fileNameAndMimeType === undefined) {
+      console.log("見つからなかったので 404を返す", requestPath);
+      reply.status(404);
+      reply.send();
+      return;
+    }
+    reply.type(fileNameAndMimeType.mimeType);
+    fileSystem
+      .readFile(option.distributionPath + "/" + fileNameAndMimeType.fileName)
+      .then((file) => {
+        reply.send(file);
+      });
+  });
 
   instance.listen(option.portNumber);
   const origin = localhostOrigin(option.portNumber);
   console.log(`開発サーバー起動した! → ${origin}`);
   open(origin);
 };
+
+export const runBuildScript = (
+  option: StartDevelopmentServerOption
+): Promise<ReadonlyMap<string, FilePathAndMimeType>> =>
+  generateStaticResourceUrlCode(
+    option.portNumber,
+    option.resourceDirectoryPath,
+    option.staticResourceUrlCodePath
+  ).then((staticResourceRequestPathToFileNameMap) => {
+    console.log("generate static resource url code done.");
+    return new Promise((resolve, reject) => {
+      console.log("build start");
+      childProcess.exec(
+        `npx ts-node ${option.buildScriptPath}`,
+        (error, stdout, stderr) => {
+          if (error) {
+            reject(error);
+          }
+          console.log("ビルド完了", { stdout, stderr, error });
+          resolve(staticResourceRequestPathToFileNameMap);
+        }
+      );
+    });
+  });
