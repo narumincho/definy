@@ -47,9 +47,9 @@ const build = async (): Promise<void> => {
   await mkdirWithLog(distributionPath);
   await copyFile(
     directoryPathFrom([]),
-    fileNameFrom("data", fileTypeTypeScript),
+    fileNameFrom("localData", fileTypeTypeScript),
     distributionPathAsDirectoryPath,
-    fileNameFrom("data", fileTypeTypeScript)
+    fileNameFrom("localData", fileTypeTypeScript)
   );
   await mkdirWithLog(`${distributionPath}/gen`);
   await copyWithLog("./gen", `${distributionPath}/gen`);
@@ -91,7 +91,7 @@ const build = async (): Promise<void> => {
     name: "@narumincho/gen",
     nodeVersion: ">=14",
     typeFilePath: "./gen/main.ts",
-    version: "1.0.2",
+    version: "1.0.3",
   });
 
   if (packageJsonResult._ === "Error") {
