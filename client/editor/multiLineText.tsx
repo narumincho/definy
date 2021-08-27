@@ -7,7 +7,7 @@ export type MultiLineTextSelection = never;
 
 export type MultiLineTextValue = {
   readonly text: string;
-  readonly onChange?: (newText: string) => void;
+  readonly onChange: ((newText: string) => void) | undefined;
 };
 
 const MultiLineTextSelectionView: ElementOperation<

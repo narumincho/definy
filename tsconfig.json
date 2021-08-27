@@ -11,7 +11,8 @@
     "skipLibCheck": true,
     "rootDir": ".",
     "jsx": "react",
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
   },
   "exclude": ["distribution"]
 }

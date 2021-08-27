@@ -152,16 +152,22 @@ const typePartListValue = (
   }
 ): CommonValue => {
   if (typePartIdListInProject === undefined) {
-    return oneLineTextValue({ text: "取得準備中……" });
+    return oneLineTextValue({ text: "取得準備中……", onChange: undefined });
   }
   if (typePartIdListInProject._ === "Deleted") {
-    return oneLineTextValue({ text: "削除されたのか, 存在しない" });
+    return oneLineTextValue({
+      text: "削除されたのか, 存在しない",
+      onChange: undefined,
+    });
   }
   if (typePartIdListInProject._ === "Unknown") {
-    return oneLineTextValue({ text: "取得に失敗しました" });
+    return oneLineTextValue({
+      text: "取得に失敗しました",
+      onChange: undefined,
+    });
   }
   if (typePartIdListInProject._ === "Requesting") {
-    return oneLineTextValue({ text: "取得中" });
+    return oneLineTextValue({ text: "取得中", onChange: undefined });
   }
   return listValue({
     items: typePartIdListInProject.dataWithTime.data.map(
@@ -201,12 +207,16 @@ const outputCodeToText = (
 ): CommonValue => {
   switch (option.outputCode.tag) {
     case "notGenerated":
-      return oneLineTextValue({ text: "まだ生成していない" });
+      return oneLineTextValue({
+        text: "まだ生成していない",
+        onChange: undefined,
+      });
     case "generating":
-      return oneLineTextValue({ text: "生成中" });
+      return oneLineTextValue({ text: "生成中", onChange: undefined });
     case "error":
       return oneLineTextValue({
         text: "生成に失敗 " + option.outputCode.errorMessage,
+        onChange: undefined,
       });
     case "errorWithTypePartId": {
       return listValue({
@@ -223,6 +233,7 @@ const outputCodeToText = (
                   name: "message",
                   value: oneLineTextValue({
                     text: typePartIdAndMessage.message,
+                    onChange: undefined,
                   }),
                 },
                 { name: "at", value: errorTypePartListItem.commonValue },
@@ -238,7 +249,10 @@ const outputCodeToText = (
         items: [
           {
             name: "TypeScript",
-            value: multiLineTextValue({ text: option.outputCode.typeScript }),
+            value: multiLineTextValue({
+              text: option.outputCode.typeScript,
+              onChange: undefined,
+            }),
           },
         ],
       });
@@ -256,22 +270,29 @@ const partListValue = (
         commonValue: productValue({
           headItem: {
             name: "name",
-            value: { text: part.name },
+            value: { text: part.name, onChange: undefined },
           },
           items: [
             {
               name: "description",
               value: multiLineTextValue({
                 text: part.description,
+                onChange: undefined,
               }),
             },
             {
               name: "type",
-              value: oneLineTextValue({ text: "型の編集はもう少しあと" }),
+              value: oneLineTextValue({
+                text: "型の編集はもう少しあと",
+                onChange: undefined,
+              }),
             },
             {
               name: "expr",
-              value: oneLineTextValue({ text: "式の編集はもう少しあと" }),
+              value: oneLineTextValue({
+                text: "式の編集はもう少しあと",
+                onChange: undefined,
+              }),
             },
           ],
         }),
