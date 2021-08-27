@@ -80,9 +80,24 @@ const build = async (): Promise<void> => {
     },
   }).emit();
 
+  const devDependencies = packageJsonGen.fromJson(
+    await fs.readJSON("package.json")
+  ).devDependencies;
+  const packageNameUseInNaruminchoGen: ReadonlyArray<string> = [
+    "sha256-uint8array",
+  ];
   const packageJsonResult = packageJsonGen.toString({
     author: "narumincho",
-    dependencies: new Map(),
+    dependencies: new Map(
+      [...devDependencies].flatMap(
+        ([packageName, packageVersion]): ReadonlyArray<
+          readonly [string, string]
+        > =>
+          packageNameUseInNaruminchoGen.includes(packageName)
+            ? [[packageName, packageVersion]]
+            : []
+      )
+    ),
     description: "HTML, TypeScript, JavaScript, package.json, wasm Generator",
     entryPoint: "./gen/main.js",
     gitHubAccountName: "narumincho",
@@ -91,7 +106,7 @@ const build = async (): Promise<void> => {
     name: "@narumincho/gen",
     nodeVersion: ">=14",
     typeFilePath: "./gen/main.ts",
-    version: "1.0.3",
+    version: "1.0.4",
   });
 
   if (packageJsonResult._ === "Error") {
