@@ -38,7 +38,7 @@ export type PackageJsonRaw = {
     node: string;
   };
   dependencies: Record<string, string>;
-  types?: string;
+  types: string | undefined;
 };
 
 /**

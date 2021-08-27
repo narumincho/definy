@@ -8,7 +8,7 @@ export type OneLineTextSelection = never;
 
 export type OneLineTextValue = {
   readonly text: string;
-  readonly onChange?: (newText: string) => void;
+  readonly onChange: ((newText: string) => void) | undefined;
 };
 
 const TextSelectionView: ElementOperation<

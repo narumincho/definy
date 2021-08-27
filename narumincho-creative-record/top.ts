@@ -1,6 +1,6 @@
+import * as view from "../gen/view/view";
 import { groupBySize } from "../common/util";
-import { resourceUrl } from "./resource/main";
-import { view } from "../gen/main";
+import { staticResourceUrl } from "./resourceUrl";
 
 const linkBackGroundColor = "#333333";
 
@@ -207,22 +207,22 @@ export const topBox: view.Box = view.boxY({}, [
     view.boxX({ padding: 8, gap: 8 }, [
       externalLink(
         new URL("https://definy.app/?hl=ja"),
-        resourceUrl.definy20190212,
+        staticResourceUrl.definy20190212Png,
         "definy"
       ),
       externalLink(
         new URL("https://definy-dev.web.app/?hl=ja"),
-        resourceUrl.definy20210811,
+        staticResourceUrl.definy20210811Png,
         "nightly definy"
       ),
       externalLink(
         new URL("https://narumincho-creative-record.web.app/"),
-        resourceUrl.gravityStar,
+        staticResourceUrl["gravity-starPng"],
         "重力星"
       ),
       externalLink(
         new URL("https://tsukumart.com/"),
-        resourceUrl.tsukumart,
+        staticResourceUrl.tsukumartPng,
         "つくマート"
       ),
     ])
@@ -240,51 +240,51 @@ export const topBox: view.Box = view.boxY({}, [
       {
         title:
           "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する",
-        imageUrl: resourceUrl.definy20210811,
+        imageUrl: staticResourceUrl.definy20210811Png,
       },
       {
         title: "SVGの基本",
-        imageUrl: resourceUrl.definy20210811,
+        imageUrl: staticResourceUrl.definy20210811Png,
       },
       {
         title: "単体SVGと埋め込みSVG",
-        imageUrl: resourceUrl.definy20210811,
+        imageUrl: staticResourceUrl.definy20210811Png,
       },
       {
         title: "DESIRED Routeについて",
-        imageUrl: resourceUrl.definy20210811,
+        imageUrl: staticResourceUrl.definy20210811Png,
       },
       {
         title: "メッセージウィンドウの話",
-        imageUrl: resourceUrl.definy20210811,
+        imageUrl: staticResourceUrl.definy20210811Png,
       },
       {
         title: "DESIRED RouteとNPIMEのフォントの描画処理",
-        imageUrl: resourceUrl.definy20210811,
+        imageUrl: staticResourceUrl.definy20210811Png,
       },
       {
         title: "リストUIのボタン操作の挙動",
-        imageUrl: resourceUrl.definy20210811,
+        imageUrl: staticResourceUrl.definy20210811Png,
       },
       {
         title: "UIの配色",
-        imageUrl: resourceUrl.definy20210811,
+        imageUrl: staticResourceUrl.definy20210811Png,
       },
       {
         title: "モンスターとのエンカウントについて",
-        imageUrl: resourceUrl.definy20210811,
+        imageUrl: staticResourceUrl.definy20210811Png,
       },
       {
         title: "星の図形について",
-        imageUrl: resourceUrl.definy20210811,
+        imageUrl: staticResourceUrl.definy20210811Png,
       },
       {
         title: "DESIRED Routeに登場する予定だった敵モンスター",
-        imageUrl: resourceUrl.definy20210811,
+        imageUrl: staticResourceUrl.definy20210811Png,
       },
       {
         title: "Nプチコン漢字入力(N Petitcom IME)",
-        imageUrl: resourceUrl.definy20210811,
+        imageUrl: staticResourceUrl.definy20210811Png,
       },
     ])
   ),

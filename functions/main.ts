@@ -5,6 +5,7 @@ import * as functions from "firebase-functions";
 import * as lib from "./lib";
 import { html as genHtml } from "../gen/main";
 import { generateHtml } from "./html";
+import { imagePng } from "../gen/mimeType/main";
 
 console.log("versions", JSON.stringify(process.versions));
 /*
@@ -170,7 +171,7 @@ export const pngFile = functions.https.onRequest((request, response): void => {
     return;
   }
   const readableStream = lib.readPngFile(fileHash);
-  response.contentType("image/png");
+  response.contentType(imagePng);
   response.header("cache-control", "max-age=31536000");
   readableStream.pipe(response);
 });

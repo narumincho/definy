@@ -2,8 +2,8 @@ import * as React from "react";
 import { CSSObject, css } from "@emotion/css";
 
 export type Props = {
-  onClick?: () => void;
-  style?: CSSObject;
+  readonly onClick: (() => void) | undefined;
+  readonly style?: CSSObject;
 };
 
 export const Button: React.FC<Props> = React.memo((props) => (

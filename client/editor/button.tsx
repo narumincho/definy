@@ -7,7 +7,7 @@ export type ButtonSelection = never;
 
 export type ButtonValue = {
   readonly text: string;
-  readonly onClick?: () => void;
+  readonly onClick: (() => void) | undefined;
 };
 
 const ButtonSelectionView: ElementOperation<

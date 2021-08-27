@@ -82,6 +82,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
           name: "作成者",
           value: oneLineTextValue({
             text: "作成者の名前",
+            onChange: undefined,
           }),
         },
         {
@@ -95,6 +96,7 @@ export const Project: Story<ControlAndActionProps> = (props) => (
           name: "パーツ",
           value: oneLineTextValue({
             text: "パーツのリストを表示したい",
+            onChange: undefined,
           }),
         },
         {
@@ -136,7 +138,10 @@ export const Project: Story<ControlAndActionProps> = (props) => (
         },
         {
           name: "プロジェクトID",
-          value: oneLineTextValue({ text: "72262927b6ddb672bb86b296c03210a9" }),
+          value: oneLineTextValue({
+            text: "72262927b6ddb672bb86b296c03210a9",
+            onChange: undefined,
+          }),
         },
       ],
     }}
@@ -295,10 +300,22 @@ export const List: Story<ControlAndActionProps> = () => (
           value: listValue({
             isDirectionColumn: true,
             items: [
-              listItem(oneLineTextValue({ text: "React" }), "react"),
-              listItem(oneLineTextValue({ text: "Vue" }), "vue"),
-              listItem(oneLineTextValue({ text: "Angular" }), "angular"),
-              listItem(oneLineTextValue({ text: "Elm" }), "elm"),
+              listItem(
+                oneLineTextValue({ text: "React", onChange: undefined }),
+                "react"
+              ),
+              listItem(
+                oneLineTextValue({ text: "Vue", onChange: undefined }),
+                "vue"
+              ),
+              listItem(
+                oneLineTextValue({ text: "Angular", onChange: undefined }),
+                "angular"
+              ),
+              listItem(
+                oneLineTextValue({ text: "Elm", onChange: undefined }),
+                "elm"
+              ),
             ],
           }),
         },
@@ -313,7 +330,7 @@ export const NestProduct: Story<ControlAndActionProps> = () => (
     product={{
       headItem: {
         name: "name",
-        value: { text: "直積の入れ子" },
+        value: { text: "直積の入れ子", onChange: undefined },
       },
       items: [
         {
@@ -322,7 +339,10 @@ export const NestProduct: Story<ControlAndActionProps> = () => (
             items: [
               {
                 name: "name",
-                value: oneLineTextValue({ text: "入れ子の名前" }),
+                value: oneLineTextValue({
+                  text: "入れ子の名前",
+                  onChange: undefined,
+                }),
               },
               {
                 name: "age",
@@ -343,6 +363,7 @@ export const NestProduct: Story<ControlAndActionProps> = () => (
                       name: "name",
                       value: oneLineTextValue({
                         text: "入れ子の名前A",
+                        onChange: undefined,
                       }),
                     },
                     {
@@ -361,7 +382,10 @@ export const NestProduct: Story<ControlAndActionProps> = () => (
                   items: [
                     {
                       name: "name",
-                      value: oneLineTextValue({ text: "入れ子の名前B" }),
+                      value: oneLineTextValue({
+                        text: "入れ子の名前B",
+                        onChange: undefined,
+                      }),
                     },
                     {
                       name: "age",
@@ -381,6 +405,7 @@ export const NestProduct: Story<ControlAndActionProps> = () => (
                       name: "name",
                       value: oneLineTextValue({
                         text: "入れ子の名前C",
+                        onChange: undefined,
                       }),
                     },
                     {
@@ -424,6 +449,7 @@ const SumComponent: React.VFC<Record<string, string>> = () => {
               })),
               value: oneLineTextValue({
                 text: valueList[selectedIndex] ?? "?",
+                onChange: undefined,
               }),
             }),
           })

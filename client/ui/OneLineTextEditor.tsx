@@ -41,9 +41,9 @@ export const useOneLineTextEditor = (option: {
  */
 export const OneLineTextEditor: React.VFC<{
   value: string;
-  onChange?: (value: string) => void;
+  onChange: ((value: string) => void) | undefined;
   id: string;
-  style?: CSSObject;
+  style?: CSSObject | undefined;
 }> = React.memo((props) => (
   <input
     type="text"
