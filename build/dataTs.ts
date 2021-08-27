@@ -1,6 +1,6 @@
 import * as d from "../localData";
-import { promises as fileSystem } from "fs";
-import { generateTypeScriptCodeAsString } from "../core/main";
+import * as fileSystem from "../gen/fileSystem/main";
+import { generateTypeScriptCode } from "../core/main";
 
 const coreProjectId: d.ProjectId = d.ProjectId.fromString(
   "96deb95f697e66f12a55e4d3910ea509"
@@ -3576,11 +3576,15 @@ const typePartList: ReadonlyArray<d.TypePart> = [
   },
 ];
 
-const code = generateTypeScriptCodeAsString(
+const code = generateTypeScriptCode(
   new Map(typePartList.map((typePart) => [typePart.id, typePart]))
 );
 if (code._ === "Error") {
   throw new Error(JSON.stringify(code.error));
 }
 
-fileSystem.writeFile("localDat.ts", code.ok);
+fileSystem.writeTypeScriptCode(
+  fileSystem.directoryPathFrom([]),
+  fileSystem.fileNameFrom("localData_out", fileSystem.fileTypeTypeScript),
+  code.ok
+);

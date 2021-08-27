@@ -1,4 +1,5 @@
 import * as jimp from "jimp";
+import { imagePng } from "../gen/mimeType/main";
 
 export const createProjectIconAndImage = async (): Promise<{
   icon: Buffer;
@@ -22,8 +23,8 @@ export const createProjectIconAndImage = async (): Promise<{
   const icon = await jimp.create(iconWidth, iconHeight);
   drawPaletteImage(icon, palette);
   return {
-    image: await image.getBufferAsync("image/png"),
-    icon: await icon.getBufferAsync("image/png"),
+    image: await image.getBufferAsync(imagePng),
+    icon: await icon.getBufferAsync(imagePng),
   };
 };
 

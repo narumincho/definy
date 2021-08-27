@@ -2,6 +2,7 @@ import * as crypto from "crypto";
 import * as d from "../../localData";
 import * as fileSystem from "fs-extra";
 import * as jsTs from "../jsTs/main";
+import { extensionToMimeType } from "../fileSystem/main";
 import { localhostOrigin } from "./util";
 import { posix as path } from "path";
 
@@ -96,13 +97,6 @@ const getFileHash = async (
     .update(await fileSystem.readFile(filePath))
     .update(mimeType)
     .digest("hex");
-};
-
-const extensionToMimeType = (extension: string): string | undefined => {
-  switch (extension) {
-    case "png":
-      return "image/png";
-  }
 };
 
 const firstUppercase = (text: string): string => {
