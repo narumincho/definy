@@ -194,7 +194,7 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
   const devDependencies = packageJsonGen.fromJson(
     await fileSystem.readJSON("package.json")
   ).devDependencies;
-  const packageNameUseInFunctions = [
+  const packageNameUseInFunctions: ReadonlyArray<string> = [
     "firebase-admin",
     "firebase-functions",
     "axios",
