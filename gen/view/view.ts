@@ -5,7 +5,7 @@ import { Language } from "../../localData";
  * 見た目を表現するデータ. HTML Option より HTML と離れた, 抽象度の高く 扱いやすいものにする.
  * Definy と ナルミンチョの創作記録で両方の指定が可能なもの
  */
-export type View = {
+export type View<Message> = {
   /**
    * ページ名
    *
@@ -66,14 +66,14 @@ export type View = {
   readonly scriptUrlList?: ReadonlyArray<URL>;
 
   /** 子要素 */
-  readonly box: Box;
+  readonly box: Box<Message>;
 };
 
 /** 縦か横方向に積める箱 */
-export type Box = {
+export type Box<Message> = {
   readonly type: "box";
   readonly direction: "x" | "y";
-  readonly children: ReadonlyArray<SizeAndElementOrBox>;
+  readonly children: ReadonlyArray<SizeAndElementOrBox<Message>>;
   readonly gap: number;
   readonly padding: number;
   readonly height: number | undefined;
@@ -81,17 +81,17 @@ export type Box = {
   readonly url: URL | undefined;
 };
 
-export type SizeAndElementOrBox = {
+export type SizeAndElementOrBox<Message> = {
   readonly size: Size;
-  readonly elementOrBox: Element | Box;
+  readonly elementOrBox: Element | Box<Message>;
 };
 
 export type Size = number | "1fr" | "auto";
 
-export const sizeAndElementOrBox = (
-  size: SizeAndElementOrBox["size"],
-  elementOrBox: Element | Box
-): SizeAndElementOrBox => {
+export const sizeAndElementOrBox = <Message>(
+  size: SizeAndElementOrBox<Message>["size"],
+  elementOrBox: Element | Box<Message>
+): SizeAndElementOrBox<Message> => {
   return { size, elementOrBox };
 };
 
@@ -104,24 +104,24 @@ export type CreateBoxOption = {
   readonly url?: URL;
 };
 
-export const boxX = (
+export const boxX = <Message>(
   option: CreateBoxOption,
-  children: ReadonlyArray<SizeAndElementOrBox>
-): Box => {
+  children: ReadonlyArray<SizeAndElementOrBox<Message>>
+): Box<Message> => {
   return createBox("x", option, children);
 };
-export const boxY = (
+export const boxY = <Message>(
   option: CreateBoxOption,
-  children: ReadonlyArray<SizeAndElementOrBox>
-): Box => {
+  children: ReadonlyArray<SizeAndElementOrBox<Message>>
+): Box<Message> => {
   return createBox("y", option, children);
 };
 
-const createBox = (
+const createBox = <Message>(
   direction: "x" | "y",
   option: CreateBoxOption,
-  children: ReadonlyArray<SizeAndElementOrBox>
-): Box => {
+  children: ReadonlyArray<SizeAndElementOrBox<Message>>
+): Box<Message> => {
   return {
     type: "box",
     direction,

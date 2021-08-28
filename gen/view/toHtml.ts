@@ -10,7 +10,7 @@ import { css } from "../main";
 /**
  * View から HtmlOption に変換する
  */
-export const viewToHtmlOption = (view: View): HtmlOption => {
+export const viewToHtmlOption = <Message>(view: View<Message>): HtmlOption => {
   const htmlElementAndStyleDict = boxToHtmlElement(view.box);
   return {
     pageName: view.pageName,
@@ -53,8 +53,8 @@ export const viewToHtmlOption = (view: View): HtmlOption => {
   };
 };
 
-const boxToHtmlElement = (
-  box: Box
+const boxToHtmlElement = <Message>(
+  box: Box<Message>
 ): {
   readonly htmlElement: HtmlElement;
   readonly styleDict: ReadonlyMap<string, ReadonlyArray<css.Declaration>>;

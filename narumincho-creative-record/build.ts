@@ -1,9 +1,9 @@
+import * as app from "./app";
 import { build } from "../gen/view/build";
 import { distributionPath } from "./distributionPath";
-import { naruminchoCreativeRecordView } from "./app";
 
 build({
-  view: naruminchoCreativeRecordView,
+  app: app.naruminchoCreativeRecordApp,
   distributionPath,
   staticResourcePath: "./narumincho-creative-record/resource",
 });

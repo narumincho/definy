@@ -70,7 +70,7 @@ const snsLink = (
   url: URL,
   logo: view.Svg,
   text: string
-): view.SizeAndElementOrBox => {
+): view.SizeAndElementOrBox<undefined> => {
   return view.sizeAndElementOrBox(
     "1fr",
     view.boxX(
@@ -116,7 +116,7 @@ const externalLink = (url: URL, imageUrl: URL, text: string) => {
 
 const articleLink = (
   articleTitleAndImageUrl: ArticleTitleAndImageUrl
-): view.SizeAndElementOrBox => {
+): view.SizeAndElementOrBox<undefined> => {
   return view.sizeAndElementOrBox(
     "1fr",
     view.boxY(
@@ -148,7 +148,7 @@ type ArticleTitleAndImageUrl = {
 
 const articleListToViewElement = (
   list: ReadonlyArray<ArticleTitleAndImageUrl>
-): view.Box => {
+): view.Box<undefined> => {
   return view.boxY(
     { padding: 8, gap: 8 },
     groupBySize(list, 3).map((row) =>
@@ -160,7 +160,7 @@ const articleListToViewElement = (
   );
 };
 
-export const topBox: view.Box = view.boxY({}, [
+export const topBox: view.Box<undefined> = view.boxY({}, [
   view.sizeAndElementOrBox(
     72,
     view.textElement(
@@ -231,7 +231,7 @@ export const topBox: view.Box = view.boxY({}, [
     "auto",
     view.textElement(
       { markup: "heading2", padding: 8 },
-      "ナルミンチョが書いた記事"
+      "ナルミンチョが書いた 記事"
     )
   ),
   view.sizeAndElementOrBox(
