@@ -57,9 +57,6 @@ export type HtmlOption = {
   /** スタイルのURL */
   readonly styleUrlList?: ReadonlyArray<URL>;
 
-  /** ES Modules形式のJavaScript */
-  readonly script?: string;
-
   /** スクリプトのURL */
   readonly scriptUrlList?: ReadonlyArray<URL>;
 

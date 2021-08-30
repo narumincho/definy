@@ -95,9 +95,6 @@ const headElement = (view: HtmlOption): HtmlElement => {
   children.push(ogSiteName(view.appName));
   children.push(ogDescription(view.description));
   children.push(ogImage(view.coverImageUrl));
-  if (typeof view.script === "string") {
-    children.push(javaScriptElement(view.script));
-  }
   if (view.scriptUrlList !== undefined) {
     for (const scriptUrl of view.scriptUrlList) {
       children.push(javaScriptElementByUrl(scriptUrl));
@@ -244,9 +241,6 @@ const ogImage = (url: URL): HtmlElement =>
       ["content", url.toString()],
     ])
   );
-
-const javaScriptElement = (javaScriptCode: string): HtmlElement =>
-  htmlElementRawText("script", new Map([["type", "module"]]), javaScriptCode);
 
 const javaScriptElementByUrl = (url: URL): HtmlElement =>
   htmlElement(
