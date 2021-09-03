@@ -1,15 +1,15 @@
 import * as fileSystem from "fs-extra";
-import { View } from "./view";
+import { App } from "./app";
 import { getStaticResourceFileResult } from "./staticResource";
 import { html } from "../main";
 import { indexHtmlPath } from "./util";
 import { viewToHtmlOption } from "./toHtml";
 
-export type BuildOption = {
+export type BuildOption<State, Message> = {
   /**
    * 見た目
    */
-  readonly view: View;
+  readonly app: App<State, Message>;
   /**
    * Firebase Hosting のための ファイル出力先パス
    */
@@ -23,12 +23,16 @@ export type BuildOption = {
 /**
  * n-view アプリ をビルドする
  */
-export const build = async (option: BuildOption): Promise<void> => {
+export const build = async <State, Message>(
+  option: BuildOption<State, Message>
+): Promise<void> => {
   await fileSystem.remove(option.distributionPath);
 
   await fileSystem.outputFile(
     indexHtmlPath(option.distributionPath),
-    html.htmlOptionToString(viewToHtmlOption(option.view))
+    html.htmlOptionToString(
+      viewToHtmlOption(option.app.stateToView(option.app.initState))
+    )
   );
   console.log("index.html のビルドに成功!");
 

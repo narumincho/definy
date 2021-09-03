@@ -1,9 +1,16 @@
 import * as view from "../gen/view/view";
+import { App } from "../gen/view/app";
 import { portNumber } from "./distributionPath";
 import { staticResourceUrl } from "./resourceUrl";
 import { topBox } from "./top";
 
-export const naruminchoCreativeRecordView: view.View = {
+export const naruminchoCreativeRecordApp: App<undefined, undefined> = {
+  initState: undefined,
+  stateToView: () => naruminchoCreativeRecordView,
+  updateState: () => undefined,
+};
+
+const naruminchoCreativeRecordView: view.View<undefined> = {
   appName: "ナルミンチョの創作記録",
   box: topBox,
   coverImageUrl: staticResourceUrl.iconPng,
