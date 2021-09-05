@@ -1,8 +1,10 @@
 import * as React from "react";
+import * as d from "../../localData";
 import { CommonValue, listValue, oneLineTextValue } from "../editor/common";
+import { listDeleteAt, listUpdateAt } from "../../common/util";
 import { Button } from "./Button";
 import { Editor } from "./Editor";
-import { listUpdateAt } from "../../common/util";
+import { ListItem } from "../editor/list";
 
 export const LocalProjectPage = (): React.ReactElement => {
   const fileInputElement = React.useRef<HTMLInputElement>(null);
@@ -43,8 +45,18 @@ export const LocalProjectPage = (): React.ReactElement => {
 };
 
 type LocalProjectPageEditState = {
-  readonly typePartList: ReadonlyArray<string>;
-  readonly partList: ReadonlyArray<string>;
+  readonly typePartList: ReadonlyArray<LocalTypePart>;
+  readonly partList: ReadonlyArray<LocalPart>;
+};
+
+type LocalTypePart = {
+  readonly id: d.TypePartId;
+  readonly name: string;
+};
+
+type LocalPart = {
+  readonly id: d.PartId;
+  readonly name: string;
 };
 
 const LoadedLocalProjectPage = (): React.ReactElement => {
@@ -52,10 +64,12 @@ const LoadedLocalProjectPage = (): React.ReactElement => {
     partList: [],
     typePartList: [],
   });
-  const setTypePartList = (typePartList: ReadonlyArray<string>): void => {
+  const setTypePartList = (
+    typePartList: ReadonlyArray<LocalTypePart>
+  ): void => {
     setState((beforeState) => ({ ...beforeState, typePartList }));
   };
-  const setPartList = (partList: ReadonlyArray<string>): void => {
+  const setPartList = (partList: ReadonlyArray<LocalPart>): void => {
     setState((beforeState) => ({ ...beforeState, partList }));
   };
   return (
@@ -84,47 +98,69 @@ const LoadedLocalProjectPage = (): React.ReactElement => {
 };
 
 const typePartListEditor = (
-  typePartList: ReadonlyArray<string>,
-  setTypePartList: (list: ReadonlyArray<string>) => void
+  typePartList: ReadonlyArray<LocalTypePart>,
+  setTypePartList: (list: ReadonlyArray<LocalTypePart>) => void
 ): CommonValue => {
   return listValue({
-    items: typePartList.map((typePart, index) => ({
-      searchText: typePart,
+    items: typePartList.map<ListItem>((typePart, index) => ({
+      searchText: typePart.name,
       commonValue: oneLineTextValue({
-        text: typePart,
-        onChange: (newText) => {
-          setTypePartList(listUpdateAt(typePartList, index, () => newText));
-        },
+        text: typePart.name,
+        onChange: undefined,
       }),
     })),
+    deleteAt: (index) => {
+      setTypePartList(listDeleteAt(typePartList, index));
+    },
     deleteAll: () => {
       setTypePartList([]);
     },
     addInLast: () => {
-      setTypePartList([...typePartList, "init"]);
+      setTypePartList([
+        ...typePartList,
+        { id: createRandomTypePartId(), name: "name" },
+      ]);
     },
   });
 };
 
 const partListEditor = (
-  partList: ReadonlyArray<string>,
-  setPartList: (list: ReadonlyArray<string>) => void
+  partList: ReadonlyArray<LocalPart>,
+  setPartList: (list: ReadonlyArray<LocalPart>) => void
 ): CommonValue => {
   return listValue({
-    items: partList.map((part, index) => ({
-      searchText: part,
+    items: partList.map<ListItem>((part, index) => ({
+      searchText: part.name,
       commonValue: oneLineTextValue({
-        text: part,
-        onChange: (newText) => {
-          setPartList(listUpdateAt(partList, index, () => newText));
-        },
+        text: part.name,
+        onChange: undefined,
       }),
     })),
+    deleteAt: (index) => {
+      setPartList(listDeleteAt(partList, index));
+    },
     deleteAll: () => {
       setPartList([]);
     },
     addInLast: () => {
-      setPartList([...partList, "init"]);
+      setPartList([...partList, { id: createRandomPartId(), name: "name" }]);
     },
   });
+};
+
+const createRandomTypePartId = (): d.TypePartId => {
+  return d.TypePartId.fromString(createRandomId());
+};
+
+const createRandomPartId = (): d.PartId => {
+  return d.PartId.fromString(createRandomId());
+};
+
+const createRandomId = (): string => {
+  const binary = crypto.getRandomValues(new Uint8Array(32));
+  let result = "";
+  for (const item of binary) {
+    result += item.toString(16).padStart(2, "0");
+  }
+  return result;
 };
