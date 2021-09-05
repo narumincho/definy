@@ -30,7 +30,7 @@ export const stringLiteralValueToString = (value: string): string =>
  * extends unknown をつけた理由はJSXでも解釈できるようにするため
  */
 export const typeParameterListToString = (
-  typeParameterList: ReadonlyArray<d.TsIdentifer>
+  typeParameterList: ReadonlyArray<d.TsIdentifier>
 ): string => {
   if (typeParameterList.length === 0) {
     return "";

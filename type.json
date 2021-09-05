@@ -928,7 +928,7 @@
       "id": "25d0af5522da614f7617016ca7868edd"
     },
     {
-      "name": "TsIdentifer",
+      "name": "TsIdentifier",
       "description": "TypeScriptの識別子として使える文字",
       "projectId": "96deb95f697e66f12a55e4d3910ea509",
       "attribute": { "_": "Nothing" },

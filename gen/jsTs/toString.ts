@@ -12,7 +12,7 @@ import { statementListToString } from "./toString/statement";
  */
 export const toString = (
   code: d.JsTsCode,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string => {
   const importCode =
@@ -45,7 +45,7 @@ export const toString = (
 
 const definitionToString = (
   definition: d.ExportDefinition,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string => {
   switch (definition._) {
@@ -65,7 +65,7 @@ const definitionToString = (
 
 const typeAliasToString = (
   typeAlias: d.TypeAlias,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>
 ): string =>
   documentToString(typeAlias.document) +
   "export type " +
@@ -77,7 +77,7 @@ const typeAliasToString = (
 
 const exportFunctionToString = (
   function_: d.Function,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string =>
   documentToString(
@@ -103,7 +103,7 @@ const exportFunctionToString = (
 
 const exportVariableToString = (
   variable: d.Variable,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string =>
   documentToString(variable.document) +
