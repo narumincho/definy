@@ -3,7 +3,7 @@ import * as int32 from "./int32";
 import * as util from "../util";
 import { d, jsTs } from "../../gen/main";
 
-export const name = jsTs.identiferFromString("List");
+export const name = jsTs.identifierFromString("List");
 
 export const type = (element: d.TsType): d.TsType =>
   jsTs.readonlyArrayType(element);
@@ -12,8 +12,8 @@ export const encodeDefinitionStatementList = (
   typeParameterName: string,
   valueVar: d.TsExpr
 ): ReadonlyArray<d.Statement> => {
-  const resultName = jsTs.identiferFromString("result");
-  const elementName = jsTs.identiferFromString("element");
+  const resultName = jsTs.identifierFromString("result");
+  const elementName = jsTs.identifierFromString("element");
   return [
     d.Statement.VariableDefinition({
       isConst: false,
@@ -50,15 +50,16 @@ export const decodeDefinitionStatementList = (
   parameterBinary: d.TsExpr
 ): ReadonlyArray<d.Statement> => {
   const elementTypeVar = d.TsType.ScopeInFile(
-    jsTs.identiferFromString(typeParameterName)
+    jsTs.identifierFromString(typeParameterName)
   );
-  const resultName = jsTs.identiferFromString("result");
+  const resultName = jsTs.identifierFromString("result");
   const resultVar = d.TsExpr.Variable(resultName);
-  const lengthResultName = jsTs.identiferFromString("lengthResult");
+  const lengthResultName = jsTs.identifierFromString("lengthResult");
   const lengthResultVar = d.TsExpr.Variable(lengthResultName);
-  const resultAndNextIndexName = jsTs.identiferFromString("resultAndNextIndex");
+  const resultAndNextIndexName =
+    jsTs.identifierFromString("resultAndNextIndex");
   const resultAndNextIndexVar = d.TsExpr.Variable(resultAndNextIndexName);
-  const nextIndexName = jsTs.identiferFromString("nextIndex");
+  const nextIndexName = jsTs.identifierFromString("nextIndex");
   const nextIndexVar = d.TsExpr.Variable(nextIndexName);
 
   return [
@@ -81,7 +82,7 @@ export const decodeDefinitionStatementList = (
       expr: d.TsExpr.ArrayLiteral([]),
     }),
     d.Statement.For({
-      counterVariableName: jsTs.identiferFromString("i"),
+      counterVariableName: jsTs.identifierFromString("i"),
       untilExpr: c.getResult(lengthResultVar),
       statementList: [
         d.Statement.VariableDefinition({

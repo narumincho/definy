@@ -17,9 +17,9 @@ export const decodeDefinitionStatementList = (
   parameterIndex: d.TsExpr,
   parameterBinary: d.TsExpr
 ): ReadonlyArray<d.Statement> => {
-  const lengthName = jsTs.identiferFromString("length");
+  const lengthName = jsTs.identifierFromString("length");
   const lengthVar = d.TsExpr.Variable(lengthName);
-  const nextIndexName = jsTs.identiferFromString("nextIndex");
+  const nextIndexName = jsTs.identifierFromString("nextIndex");
   const nextIndexVar = d.TsExpr.Variable(nextIndexName);
 
   return [

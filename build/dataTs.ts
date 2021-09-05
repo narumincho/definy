@@ -572,9 +572,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       _: "Sum",
       patternList: [
         {
-          name: "Identifer",
+          name: "Identifier",
           description:
-            '**直接 Identifer.Identifer("name") と指定してはいけない!! TypeScriptの識別子として使える文字としてチェックできないため**',
+            '**直接 TsIdentifier.Identifier("name") と指定してはいけない!! TypeScriptの識別子として使える文字としてチェックできないため**',
           parameter: d.Maybe.Just(noArgumentsType(d.String.typePartId)),
         },
       ],
@@ -3584,7 +3584,12 @@ if (code._ === "Error") {
 }
 
 fileSystem.writeTypeScriptCode(
-  fileSystem.directoryPathFrom([]),
-  fileSystem.fileNameFrom("localData_out", fileSystem.fileTypeTypeScript),
+  {
+    directoryPath: fileSystem.directoryPathFrom([]),
+    fileName: fileSystem.fileNameFrom(
+      "localData_out",
+      fileSystem.fileTypeTypeScript
+    ),
+  },
   code.ok
 );

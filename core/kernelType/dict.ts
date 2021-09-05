@@ -4,7 +4,7 @@ import * as ts from "../../localData";
 import * as util from "../util";
 import { jsTs } from "../../gen/main";
 
-export const name = jsTs.identiferFromString("Dict");
+export const name = jsTs.identifierFromString("Dict");
 
 export const type = (key: ts.TsType, value: ts.TsType): ts.TsType =>
   jsTs.readonlyMapType(key, value);
@@ -14,8 +14,8 @@ export const encodeDefinitionStatementList = (
   valueTypeParameterName: string,
   valueVar: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
-  const resultName = jsTs.identiferFromString("result");
-  const elementName = jsTs.identiferFromString("element");
+  const resultName = jsTs.identifierFromString("result");
+  const elementName = jsTs.identifierFromString("element");
   const keyCodec = ts.TsExpr.Variable(
     c.codecParameterName(keyTypeParameterName)
   );
@@ -79,20 +79,20 @@ export const decodeDefinitionStatementList = (
   parameterBinary: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
   const keyTypeVar = ts.TsType.ScopeInFile(
-    jsTs.identiferFromString(keyTypeParameterName)
+    jsTs.identifierFromString(keyTypeParameterName)
   );
   const valueTypeVar = ts.TsType.ScopeInFile(
-    jsTs.identiferFromString(valueTypeParameterName)
+    jsTs.identifierFromString(valueTypeParameterName)
   );
-  const resultName = jsTs.identiferFromString("result");
+  const resultName = jsTs.identifierFromString("result");
   const resultVar = ts.TsExpr.Variable(resultName);
-  const lengthResultName = jsTs.identiferFromString("lengthResult");
+  const lengthResultName = jsTs.identifierFromString("lengthResult");
   const lengthResultVar = ts.TsExpr.Variable(lengthResultName);
-  const keyResultName = jsTs.identiferFromString("keyResult");
+  const keyResultName = jsTs.identifierFromString("keyResult");
   const keyResultVar = ts.TsExpr.Variable(keyResultName);
-  const valueResultName = jsTs.identiferFromString("valueResult");
+  const valueResultName = jsTs.identifierFromString("valueResult");
   const valueResultVar = ts.TsExpr.Variable(valueResultName);
-  const nextIndexName = jsTs.identiferFromString("nextIndex");
+  const nextIndexName = jsTs.identifierFromString("nextIndex");
   const nextIndexVar = ts.TsExpr.Variable(nextIndexName);
 
   return [
@@ -115,7 +115,7 @@ export const decodeDefinitionStatementList = (
       expr: jsTs.newMap(ts.TsExpr.ArrayLiteral([])),
     }),
     ts.Statement.For({
-      counterVariableName: jsTs.identiferFromString("i"),
+      counterVariableName: jsTs.identifierFromString("i"),
       untilExpr: c.getResult(lengthResultVar),
       statementList: [
         ts.Statement.VariableDefinition({

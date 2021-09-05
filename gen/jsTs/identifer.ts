@@ -6,10 +6,10 @@ import { TsIdentifier } from "../../localData";
  * 識別子に使えない文字が含まれていた場合, 末尾に_がつくか, $マークでエンコードされる
  * @param text
  */
-export const identiferFromString = (word: string): TsIdentifier => {
+export const identifierFromString = (word: string): TsIdentifier => {
   const [firstChar] = word;
   if (firstChar === undefined) {
-    return TsIdentifier.Identifer("$00");
+    return TsIdentifier.Identifier("$00");
   }
   let result =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(firstChar)
@@ -25,9 +25,9 @@ export const identiferFromString = (word: string): TsIdentifier => {
         : escapeChar(char);
   }
   if (reservedByLanguageWordSet.has(word)) {
-    return TsIdentifier.Identifer(result + "_");
+    return TsIdentifier.Identifier(result + "_");
   }
-  return TsIdentifier.Identifer(result);
+  return TsIdentifier.Identifier(result);
 };
 
 const escapeChar = (char: string): string =>
@@ -110,27 +110,27 @@ const reservedByLanguageWordSet: ReadonlySet<string> = new Set([
 /**
  * 識別子のID
  */
-export type IdentiferIndex = number & { _identiferIndex: never };
+export type IdentifierIndex = number & { _identiferIndex: never };
 
 /** 初期インデックス */
-export const initialIdentiferIndex = 0 as IdentiferIndex;
+export const initialIdentiferIndex = 0 as IdentifierIndex;
 
 /**
  * 識別子を生成する
- * @param identiferIndex 識別子を生成するインデックス
+ * @param identifierIndex 識別子を生成するインデックス
  * @param reserved 言語の予約語と別に使わない識別子
  */
-export const createIdentifer = (
-  identiferIndex: IdentiferIndex,
+export const createIdentifier = (
+  identifierIndex: IdentifierIndex,
   reserved: ReadonlySet<string>
-): { identifer: TsIdentifier; nextIdentiferIndex: IdentiferIndex } => {
-  let index: number = identiferIndex;
+): { identifier: TsIdentifier; nextIdentiferIndex: IdentifierIndex } => {
+  let index: number = identifierIndex;
   while (true) {
-    const result = createIdentiferByIndex(index);
+    const result = createIdentifierByIndex(index);
     if (!reserved.has(result) && !reservedByLanguageWordSet.has(result)) {
       return {
-        identifer: TsIdentifier.Identifer(result),
-        nextIdentiferIndex: (index + 1) as IdentiferIndex,
+        identifier: TsIdentifier.Identifier(result),
+        nextIdentiferIndex: (index + 1) as IdentifierIndex,
       };
     }
     index += 1;
@@ -141,24 +141,24 @@ export const createIdentifer = (
  * indexから識別子を生成する (予約語を考慮しない)
  * @param index
  */
-const createIdentiferByIndex = (index: number): string => {
-  const headIdentiferCharTable =
+const createIdentifierByIndex = (index: number): string => {
+  const headIdentifierCharTable =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const noHeadIdentiferCharTable = headIdentiferCharTable + "0123456789";
-  const char = headIdentiferCharTable[index];
+  const noHeadIdentifierCharTable = headIdentifierCharTable + "0123456789";
+  const char = headIdentifierCharTable[index];
   if (typeof char === "string") {
     return char;
   }
   let result = "";
-  let offsetIndex = index - headIdentiferCharTable.length;
+  let offsetIndex = index - headIdentifierCharTable.length;
   while (true) {
-    const quotient = Math.floor(offsetIndex / noHeadIdentiferCharTable.length);
+    const quotient = Math.floor(offsetIndex / noHeadIdentifierCharTable.length);
     const first =
-      headIdentiferCharTable[
-        Math.floor(offsetIndex / noHeadIdentiferCharTable.length)
+      headIdentifierCharTable[
+        Math.floor(offsetIndex / noHeadIdentifierCharTable.length)
       ];
-    const second = noHeadIdentiferCharTable[
-      offsetIndex % noHeadIdentiferCharTable.length
+    const second = noHeadIdentifierCharTable[
+      offsetIndex % noHeadIdentifierCharTable.length
     ] as string;
     if (typeof first === "string") {
       return first + second + result;
@@ -172,7 +172,7 @@ const createIdentiferByIndex = (index: number): string => {
  * 識別子として使える文字かどうか調べる。日本語の識別子は使えないものとする
  * @param word 識別子として使えるかどうか調べるワード
  */
-export const isIdentifer = (word: string): boolean => {
+export const isIdentifier = (word: string): boolean => {
   if (!isSafePropertyName(word)) {
     return false;
   }
@@ -186,7 +186,7 @@ export const isIdentifer = (word: string): boolean => {
  * ```
  *
  * プロパティ名として直接コードで指定できるかどうか
- * {@link isIdentifer} とは予約語を指定できるかの面で違う
+ * {@link isIdentifier} とは予約語を指定できるかの面で違う
  */
 export const isSafePropertyName = (word: string): boolean => {
   const [firstChar] = word;

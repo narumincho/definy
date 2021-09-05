@@ -9,6 +9,7 @@ import {
   createProgram,
 } from "typescript";
 import { jsTs, packageJson as packageJsonGen } from "../gen/main";
+import { resetDistributionDirectory } from "../gen/fileSystem/main";
 
 const clientSourceEntryPath = "./client/main.tsx";
 const functionsSourceEntryPath = "./functions/main.ts";
@@ -22,8 +23,7 @@ const cloudStorageRulesPath = `${distributionPath}/storage.rules`;
  * Firebase へ デプロイするためにビルドする
  */
 export const build = async (mode: d.Mode, origin: string): Promise<void> => {
-  await fileSystem.remove(distributionPath);
-  console.log(`${distributionPath}をすべて削除完了!`);
+  await resetDistributionDirectory();
   if (mode === "Develop") {
     await fileSystem.copy(
       "../secret/definy.json",
@@ -244,28 +244,28 @@ const outputNowModeAndOrigin = async (
       {
         exportDefinitionList: [
           d.ExportDefinition.Variable({
-            name: jsTs.identiferFromString("nowMode"),
+            name: jsTs.identifierFromString("nowMode"),
             document: "実行モード (ビルド時にコード生成される)",
             expr: d.TsExpr.Get({
               expr: d.TsExpr.ImportedVariable({
                 moduleName: "./localData",
-                name: jsTs.identiferFromString("Mode"),
+                name: jsTs.identifierFromString("Mode"),
               }),
               propertyExpr: d.TsExpr.StringLiteral(mode),
             }),
             type: d.TsType.ImportedType({
               moduleName: "./localData",
-              name: jsTs.identiferFromString("Mode"),
+              name: jsTs.identifierFromString("Mode"),
             }),
           }),
           d.ExportDefinition.Variable({
-            name: jsTs.identiferFromString("origin"),
+            name: jsTs.identifierFromString("origin"),
             document: "オリジン (ビルド時にコード生成される)",
             expr: d.TsExpr.StringLiteral(origin),
             type: d.TsType.String,
           }),
           d.ExportDefinition.Variable({
-            name: jsTs.identiferFromString("version"),
+            name: jsTs.identifierFromString("version"),
             document: "バージョン名",
             expr: d.TsExpr.StringLiteral(
               mode === d.Mode.Develop
@@ -275,7 +275,7 @@ const outputNowModeAndOrigin = async (
             type: d.TsType.String,
           }),
           d.ExportDefinition.Variable({
-            name: jsTs.identiferFromString("commitUrl"),
+            name: jsTs.identifierFromString("commitUrl"),
             document: "このサーバーのコードのスナップショット",
             expr: d.TsExpr.StringLiteral(
               "https://github.com/narumincho/Definy" +

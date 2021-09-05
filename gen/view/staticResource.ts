@@ -38,12 +38,12 @@ export const generateStaticResourceUrlCode = async (
   const code: d.JsTsCode = {
     exportDefinitionList: [
       d.ExportDefinition.Variable({
-        name: jsTs.identiferFromString("staticResourceUrl"),
+        name: jsTs.identifierFromString("staticResourceUrl"),
         document: "クライアントでファイルを取得するのに使うURL",
         type: d.TsType.Object(
           resultList.map((result) => ({
             name: result.fileId,
-            type: d.TsType.ScopeInGlobal(jsTs.identiferFromString("URL")),
+            type: d.TsType.ScopeInGlobal(jsTs.identifierFromString("URL")),
             document:
               'static な ファイル の "' +
               result.originalFileName +
@@ -58,7 +58,7 @@ export const generateStaticResourceUrlCode = async (
             d.TsMember.KeyValue({
               key: result.fileId,
               value: d.TsExpr.New({
-                expr: d.TsExpr.GlobalObjects(jsTs.identiferFromString("URL")),
+                expr: d.TsExpr.GlobalObjects(jsTs.identifierFromString("URL")),
                 parameterList: [
                   d.TsExpr.StringLiteral(
                     localhostOrigin(portNumber) + "/" + result.uploadFileName

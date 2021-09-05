@@ -9,24 +9,24 @@ export const codecTypeWithTypeParameter = (
   return typeParameterList.length === 0
     ? codecType(type_)
     : ts.TsType.Function({
-        typeParameterList: typeParameterList.map(jsTs.identiferFromString),
+        typeParameterList: typeParameterList.map(jsTs.identifierFromString),
         parameterList: typeParameterList.map((typeParameter) =>
           codecType(
-            ts.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter))
+            ts.TsType.ScopeInFile(jsTs.identifierFromString(typeParameter))
           )
         ),
         return: codecType(
           ts.TsType.WithTypeParameter({
             type: type_,
             typeParameterList: typeParameterList.map((typeParameter) =>
-              ts.TsType.ScopeInFile(jsTs.identiferFromString(typeParameter))
+              ts.TsType.ScopeInFile(jsTs.identifierFromString(typeParameter))
             ),
           })
         ),
       });
 };
 
-const codecName = jsTs.identiferFromString("Codec");
+const codecName = jsTs.identifierFromString("Codec");
 
 /**
  * ```ts
@@ -41,7 +41,7 @@ export const codecType = (type_: ts.TsType): ts.TsType =>
   });
 
 export const codecTypeAlias = (): ts.TypeAlias => {
-  const typeParameterIdentifer = jsTs.identiferFromString("T");
+  const typeParameterIdentifer = jsTs.identifierFromString("T");
   return {
     name: codecName,
     document: "バイナリと相互変換するための関数",
@@ -114,7 +114,7 @@ export const encodeLambda = (
   type_: ts.TsType,
   statementList: (valueExpr: ts.TsExpr) => ReadonlyArray<ts.Statement>
 ): ts.TsExpr => {
-  const valueName = jsTs.identiferFromString("value");
+  const valueName = jsTs.identifierFromString("value");
   return ts.TsExpr.Lambda({
     typeParameterList: [],
     parameterList: [
@@ -157,8 +157,8 @@ export const decodeReturnType = (type_: ts.TsType): ts.TsType =>
     },
   ]);
 
-export const indexIdentifer = jsTs.identiferFromString("index");
-export const binaryIdentifer = jsTs.identiferFromString("binary");
+export const indexIdentifer = jsTs.identifierFromString("index");
+export const binaryIdentifer = jsTs.identifierFromString("binary");
 
 /**
  * ( index: number, binary: Uint8Array )
@@ -234,4 +234,4 @@ export const getNextIndex = (resultAndNextIndexExpr: ts.TsExpr): ts.TsExpr =>
  * 名前の末尾に `Codec` をつける
  */
 export const codecParameterName = (name: string): ts.TsIdentifier =>
-  jsTs.identiferFromString(name + "Codec");
+  jsTs.identifierFromString(name + "Codec");
