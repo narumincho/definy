@@ -161,7 +161,7 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
           name: "description",
           value: oneLineTextValue({
             onChange: action("editDescription"),
-            text: "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
+            text: "definyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
           }),
         },
         {

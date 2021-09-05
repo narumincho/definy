@@ -221,8 +221,8 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
       )
     ),
     gitHubAccountName: "narumincho",
-    gitHubRepositoryName: "Definy",
-    homepage: "https://github.com/narumincho/Definy",
+    gitHubRepositoryName: "definy",
+    homepage: "https://github.com/narumincho/definy",
   });
   if (jsonResult._ === "Error") {
     throw new Error(jsonResult.error);
@@ -278,7 +278,7 @@ const outputNowModeAndOrigin = async (
             name: jsTs.identifierFromString("commitUrl"),
             document: "このサーバーのコードのスナップショット",
             expr: d.TsExpr.StringLiteral(
-              "https://github.com/narumincho/Definy" +
+              "https://github.com/narumincho/definy" +
                 (process.env.GITHUB_SHA === undefined
                   ? ""
                   : "/tree/" + process.env.GITHUB_SHA)

@@ -1,7 +1,7 @@
 import * as d from "../localData";
 
 /**
- * Definy の式をデバッグように文字列にする
+ * definy の式をデバッグように文字列にする
  */
 export const exprToDebugString = (expr: d.Expr): string => {
   switch (expr._) {

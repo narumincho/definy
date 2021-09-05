@@ -1423,7 +1423,7 @@
           },
           {
             "name": "Kernel",
-            "description": "Definyだけでは表現できないデータ型",
+            "description": "definyだけでは表現できないデータ型",
             "parameter": {
               "_": "Just",
               "value": {
@@ -1891,7 +1891,7 @@
     },
     {
       "name": "TypePartBodyKernel",
-      "description": "Definyだけでは表現できないデータ型",
+      "description": "definyだけでは表現できないデータ型",
       "projectId": "96deb95f697e66f12a55e4d3910ea509",
       "attribute": { "_": "Nothing" },
       "typeParameterList": [],
@@ -1905,7 +1905,7 @@
           },
           {
             "name": "String",
-            "description": "文字列. Definyだけで表現できるが, TypeScriptでstringとして扱うために必要",
+            "description": "文字列",
             "parameter": { "_": "Nothing" }
           },
           {
@@ -1973,7 +1973,7 @@
           },
           {
             "name": "createTime",
-            "description": "Definyでユーザーが作成された日時",
+            "description": "definyでユーザーが作成された日時",
             "type": {
               "typePartId": "7d91f0f70643799692aa144ee51a62b1",
               "parameter": []
@@ -3052,7 +3052,7 @@
     },
     {
       "name": "Project",
-      "description": "Definy の プロジェクト",
+      "description": "definy の プロジェクト",
       "projectId": "96deb95f697e66f12a55e4d3910ea509",
       "attribute": { "_": "Nothing" },
       "typeParameterList": [],
@@ -3923,7 +3923,7 @@
     },
     {
       "name": "Type",
-      "description": "Definy の 関数を含んだ型. 式や値に対して決まる. 型パーツの定義にも使う",
+      "description": "definy の 関数を含んだ型. 式や値に対して決まる. 型パーツの定義にも使う",
       "projectId": "96deb95f697e66f12a55e4d3910ea509",
       "attribute": { "_": "Nothing" },
       "typeParameterList": [],
@@ -3995,7 +3995,7 @@
     },
     {
       "name": "KernelExpr",
-      "description": "Definyだけでは表現できない式",
+      "description": "definyだけでは表現できない式",
       "projectId": "96deb95f697e66f12a55e4d3910ea509",
       "attribute": { "_": "Nothing" },
       "typeParameterList": [],
@@ -4032,7 +4032,7 @@
     },
     {
       "name": "Location",
-      "description": "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
+      "description": "definyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
       "projectId": "96deb95f697e66f12a55e4d3910ea509",
       "attribute": { "_": "Nothing" },
       "typeParameterList": [],
@@ -4078,7 +4078,7 @@
           },
           {
             "name": "About",
-            "description": "Definyについて説明したページ",
+            "description": "definyについて説明したページ",
             "parameter": { "_": "Nothing" }
           },
           {
@@ -4681,7 +4681,7 @@
     },
     {
       "name": "EvaluatedExpr",
-      "description": "Definyの評価しきった式",
+      "description": "definyの評価しきった式",
       "projectId": "96deb95f697e66f12a55e4d3910ea509",
       "attribute": { "_": "Nothing" },
       "typeParameterList": [],
@@ -4690,7 +4690,7 @@
         "patternList": [
           {
             "name": "Kernel",
-            "description": "Definyだけでは表現できない式",
+            "description": "definyだけでは表現できない式",
             "parameter": {
               "_": "Just",
               "value": {
@@ -4961,7 +4961,7 @@
     },
     {
       "name": "AccountToken",
-      "description": "アカウントトークン. アカウントトークンを持っていればアクセストークンをDefinyのサーバーにリクエストした際に得られるIDのアカウントを保有していると証明できる. サーバーにハッシュ化したものを保存している. これが盗まれた場合,不正に得た人はアカウントを乗っ取ることができる. 有効期限はなし, 最後に発行したアカウントトークン以外は無効になる",
+      "description": "アカウントトークン. アカウントトークンを持っていればアクセストークンをdefinyのサーバーにリクエストした際に得られるIDのアカウントを保有していると証明できる. サーバーにハッシュ化したものを保存している. これが盗まれた場合,不正に得た人はアカウントを乗っ取ることができる. 有効期限はなし, 最後に発行したアカウントトークン以外は無効になる",
       "projectId": "96deb95f697e66f12a55e4d3910ea509",
       "attribute": { "_": "Nothing" },
       "typeParameterList": [],
@@ -5089,7 +5089,7 @@
     },
     {
       "name": "Expr",
-      "description": "Definy の 式",
+      "description": "definy の 式",
       "projectId": "96deb95f697e66f12a55e4d3910ea509",
       "attribute": { "_": "Nothing" },
       "typeParameterList": [],
@@ -5098,7 +5098,7 @@
         "patternList": [
           {
             "name": "Kernel",
-            "description": "Definyだけでは表現できない式",
+            "description": "definyだけでは表現できない式",
             "parameter": {
               "_": "Just",
               "value": {

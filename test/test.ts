@@ -84,7 +84,7 @@ describe("data", () => {
 
   it("stringToTypePartName", () => {
     expect(
-      util.stringToTypePartName("Definy is web  app! for.web::App")
+      util.stringToTypePartName("definy is web  app! for.web::App")
     ).toEqual("definyIsWebAppForWebApp");
   });
 
@@ -243,7 +243,7 @@ describe("binary codec", () => {
         imageHash: d.ImageHash.fromString(
           "0a8eed336ca61252c13da0ff0b82ce37e81b84622a4052ab33693c434b4f6434"
         ),
-        introduction: "ナルミンチョはDefinyを作っている人です.",
+        introduction: "ナルミンチョはdefinyを作っている人です.",
       },
       d.Account.codec
     );
@@ -257,7 +257,7 @@ describe("binary codec", () => {
         imageHash: d.ImageHash.fromString(
           "0a8eed336ca61252c13da0ff0b82ce37e81b84622a4052ab33693c434b4f6434"
         ),
-        introduction: "ナルミンチョはDefinyを作っている人です.",
+        introduction: "ナルミンチョはdefinyを作っている人です.",
       }),
       d.Maybe.codec(d.Account.codec)
     );

@@ -216,7 +216,7 @@ export type UseDefinyAppOption = {
 const getIdFunc = <Id>(item: { id: Id }): Id => item.id;
 
 /**
- * Definy の アプリの動作をする Hook.
+ * definy の アプリの動作をする Hook.
  *
  * 想定する環境は ブラウザで, Reactを使用する. node.js 内ではたぶん動かない
  */
@@ -360,7 +360,7 @@ export const useDefinyApp = (
 
   useEffect(() => {
     document.title =
-      "Definy 手軽に堅牢なゲームとツールが作れて公開できる が目標のWebアプリ";
+      "definy 手軽に堅牢なゲームとツールが作れて公開できる が目標のWebアプリ";
 
     // ブラウザで戻るボタンを押したときのイベントを登録
     window.addEventListener("popstate", () => {

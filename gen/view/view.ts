@@ -3,7 +3,7 @@ import { Language } from "../../localData";
 
 /**
  * 見た目を表現するデータ. HTML Option より HTML と離れた, 抽象度の高く 扱いやすいものにする.
- * Definy と ナルミンチョの創作記録で両方の指定が可能なもの
+ * definy と ナルミンチョの創作記録で両方の指定が可能なもの
  */
 export type View<Message> = {
   /**

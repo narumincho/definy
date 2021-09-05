@@ -15,7 +15,7 @@ const naruminchoCreativeRecordView: view.View<undefined> = {
   box: topBox,
   coverImageUrl: staticResourceUrl.iconPng,
   description:
-    "革新的なプログラミング言語のDefiny, Web技術, 作っているゲームなどについて解説しています",
+    "革新的なプログラミング言語のdefiny, Web技術, 作っているゲームなどについて解説しています",
   iconUrl: staticResourceUrl.iconPng,
   language: "Japanese",
   pageName: "ナルミンチョの創作記録",
