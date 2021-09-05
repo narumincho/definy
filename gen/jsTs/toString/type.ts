@@ -1,6 +1,6 @@
 import * as d from "../../../localData";
 import {
-  createIdentifer,
+  createIdentifier,
   initialIdentiferIndex,
   isSafePropertyName,
 } from "../identifer";
@@ -124,10 +124,10 @@ const functionTypeToString = (
     type: d.TsType;
   }> = [];
   for (const parameter of functionType.parameterList) {
-    const indexAndIdentifer = createIdentifer(index, new Set());
+    const indexAndIdentifer = createIdentifier(index, new Set());
     index = indexAndIdentifer.nextIdentiferIndex;
     parameterList.push({
-      name: indexAndIdentifer.identifer,
+      name: indexAndIdentifer.identifier,
       type: parameter,
     });
   }

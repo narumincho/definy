@@ -1,5 +1,5 @@
 import * as d from "../../../localData";
-import { isIdentifer, isSafePropertyName } from "../identifer";
+import { isIdentifier, isSafePropertyName } from "../identifer";
 import {
   stringLiteralValueToString,
   typeParameterListToString,
@@ -188,7 +188,7 @@ const objectLiteralToString = (
           );
         case "KeyValue":
           if (
-            isIdentifer(member.keyValue.key) &&
+            isIdentifier(member.keyValue.key) &&
             member.keyValue.value._ === "Variable" &&
             member.keyValue.key === member.keyValue.value.tsIdentifier.string
           ) {

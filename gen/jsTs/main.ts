@@ -1,5 +1,5 @@
 import * as d from "../../localData";
-import { createIdentifer, initialIdentiferIndex } from "./identifer";
+import { createIdentifier, initialIdentiferIndex } from "./identifer";
 import { UsedNameAndModulePathSet } from "./interface";
 import { collectInCode } from "./collect";
 import { toString } from "./toString";
@@ -31,13 +31,13 @@ const createImportedModuleName = (
   let identiferIndex = initialIdentiferIndex;
   const importedModuleNameMap = new Map<string, d.TsIdentifier>();
   for (const modulePath of usedNameAndModulePath.modulePathSet) {
-    const identiferAndNextIdentiferIndex = createIdentifer(
+    const identiferAndNextIdentiferIndex = createIdentifier(
       identiferIndex,
       usedNameAndModulePath.usedNameSet
     );
     importedModuleNameMap.set(
       modulePath,
-      identiferAndNextIdentiferIndex.identifer
+      identiferAndNextIdentiferIndex.identifier
     );
     identiferIndex = identiferAndNextIdentiferIndex.nextIdentiferIndex;
   }

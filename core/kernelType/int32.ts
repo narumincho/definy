@@ -4,7 +4,7 @@ import * as util from "../util";
 import { jsTs } from "../../gen/main";
 
 const codec: ts.TsExpr = jsTs.get(
-  ts.TsExpr.Variable(jsTs.identiferFromString("Int32")),
+  ts.TsExpr.Variable(jsTs.identifierFromString("Int32")),
   util.codecPropertyName
 );
 
@@ -20,11 +20,11 @@ export const decode = (index: ts.TsExpr, binary: ts.TsExpr): ts.TsExpr =>
 export const encodeDefinitionStatementList = (
   valueVar: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
-  const resultName = jsTs.identiferFromString("result");
+  const resultName = jsTs.identifierFromString("result");
   const resultVar = ts.TsExpr.Variable(resultName);
-  const byteName = jsTs.identiferFromString("byte");
+  const byteName = jsTs.identifierFromString("byte");
   const byteVar = ts.TsExpr.Variable(byteName);
-  const restName = jsTs.identiferFromString("rest");
+  const restName = jsTs.identifierFromString("rest");
   const restVar = ts.TsExpr.Variable(restName);
 
   return [
@@ -89,11 +89,11 @@ export const decodeDefinitionStatementList = (
   parameterIndex: ts.TsExpr,
   parameterBinary: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
-  const resultName = jsTs.identiferFromString("result");
+  const resultName = jsTs.identifierFromString("result");
   const resultVar = ts.TsExpr.Variable(resultName);
-  const offsetName = jsTs.identiferFromString("offset");
+  const offsetName = jsTs.identifierFromString("offset");
   const offsetVar = ts.TsExpr.Variable(offsetName);
-  const byteName = jsTs.identiferFromString("byte");
+  const byteName = jsTs.identifierFromString("byte");
   const byteVar = ts.TsExpr.Variable(byteName);
 
   return [

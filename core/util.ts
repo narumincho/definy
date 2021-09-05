@@ -43,7 +43,7 @@ const dataTypeOrDataTypeParameterToTsType = (
         );
       }
       return d.TsType.WithTypeParameter({
-        type: d.TsType.ScopeInFile(jsTs.identiferFromString(typePart.name)),
+        type: d.TsType.ScopeInFile(jsTs.identifierFromString(typePart.name)),
         typeParameterList: dataTypeOrDataTypeParameter.dataType.arguments.map(
           (parameter) =>
             dataTypeOrDataTypeParameterToTsType(
@@ -64,7 +64,7 @@ const dataTypeOrDataTypeParameterToTsType = (
       }
 
       return d.TsType.ScopeInFile(
-        jsTs.identiferFromString(dataTypeParameter.name)
+        jsTs.identifierFromString(dataTypeParameter.name)
       );
     }
   }

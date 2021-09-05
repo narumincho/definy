@@ -38,10 +38,10 @@ export const typePartToTypeAlias = (
     return d.Result.Error(tsType.error);
   }
   return d.Result.Ok({
-    name: jsTs.identiferFromString(typePart.name),
+    name: jsTs.identifierFromString(typePart.name),
     document: typePart.description + "\n@typePartId " + (typePart.id as string),
     typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
-      jsTs.identiferFromString(typeParameter.name)
+      jsTs.identifierFromString(typeParameter.name)
     ),
     type: tsType.ok,
   });
@@ -255,7 +255,7 @@ const typePartBodyKernelToTsType = (
         throw new Error("List need one type parameter");
       }
       return jsTs.readonlyArrayType(
-        d.TsType.ScopeInFile(jsTs.identiferFromString(elementType.name))
+        d.TsType.ScopeInFile(jsTs.identifierFromString(elementType.name))
       );
     }
     case "Dict": {
@@ -264,8 +264,8 @@ const typePartBodyKernelToTsType = (
         throw new Error("Dict need two type parameter");
       }
       return jsTs.readonlyMapType(
-        d.TsType.ScopeInFile(jsTs.identiferFromString(id.name)),
-        d.TsType.ScopeInFile(jsTs.identiferFromString(value.name))
+        d.TsType.ScopeInFile(jsTs.identifierFromString(id.name)),
+        d.TsType.ScopeInFile(jsTs.identifierFromString(value.name))
       );
     }
   }

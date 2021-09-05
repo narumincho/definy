@@ -4,7 +4,7 @@ import * as ts from "../../localData";
 import * as util from "../util";
 import { jsTs } from "../../gen/main";
 
-const name = jsTs.identiferFromString("String");
+const name = jsTs.identifierFromString("String");
 
 export const type = ts.TsType.String;
 
@@ -14,7 +14,7 @@ export const codec = (): ts.TsExpr =>
 export const encodeDefinitionStatementList = (
   valueVar: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
-  const resultName = jsTs.identiferFromString("result");
+  const resultName = jsTs.identifierFromString("result");
   const resultVar = ts.TsExpr.Variable(resultName);
 
   return [
@@ -27,7 +27,7 @@ export const encodeDefinitionStatementList = (
           expr: jsTs.callMethod(
             ts.TsExpr.New({
               expr: ts.TsExpr.GlobalObjects(
-                jsTs.identiferFromString("TextEncoder")
+                jsTs.identifierFromString("TextEncoder")
               ),
               parameterList: [],
             }),
@@ -50,11 +50,11 @@ export const decodeDefinitionStatementList = (
   parameterIndex: ts.TsExpr,
   parameterBinary: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
-  const lengthName = jsTs.identiferFromString("length");
+  const lengthName = jsTs.identifierFromString("length");
   const lengthVar = ts.TsExpr.Variable(lengthName);
-  const nextIndexName = jsTs.identiferFromString("nextIndex");
+  const nextIndexName = jsTs.identifierFromString("nextIndex");
   const nextIndexVar = ts.TsExpr.Variable(nextIndexName);
-  const textBinaryName = jsTs.identiferFromString("textBinary");
+  const textBinaryName = jsTs.identifierFromString("textBinary");
   const textBinaryVar = ts.TsExpr.Variable(textBinaryName);
 
   return [
@@ -83,7 +83,7 @@ export const decodeDefinitionStatementList = (
       jsTs.callMethod(
         ts.TsExpr.New({
           expr: ts.TsExpr.GlobalObjects(
-            jsTs.identiferFromString("TextDecoder")
+            jsTs.identifierFromString("TextDecoder")
           ),
           parameterList: [],
         }),

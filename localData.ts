@@ -178,7 +178,7 @@ export type EvaluateExprError = { readonly _: "NeedPartDefinition"; readonly par
  * TypeScriptの識別子として使える文字
  * @typePartId 2a75ad7c7ccc58ba56f6c8545c8150d1
  */
-export type TsIdentifier = { readonly _: "Identifer"; readonly string: String };
+export type TsIdentifier = { readonly _: "Identifier"; readonly string: String };
 
 
 /**
@@ -2372,11 +2372,11 @@ readonly typePartId: TypePartId;
  */
 readonly codec: Codec<TsIdentifier>; 
 /**
- * **直接 Identifer.Identifer("name") と指定してはいけない!! TypeScriptの識別子として使える文字としてチェックできないため**
+ * **直接 TsIdentifier.Identifier("name") と指定してはいけない!! TypeScriptの識別子として使える文字としてチェックできないため**
  */
-readonly Identifer: (a: String) => TsIdentifier } = { Identifer: (string_: String): TsIdentifier => ({ _: "Identifer", string: string_ }), typePartId: "2a75ad7c7ccc58ba56f6c8545c8150d1" as TypePartId, codec: { encode: (value: TsIdentifier): ReadonlyArray<number> => {
+readonly Identifier: (a: String) => TsIdentifier } = { Identifier: (string_: String): TsIdentifier => ({ _: "Identifier", string: string_ }), typePartId: "2a75ad7c7ccc58ba56f6c8545c8150d1" as TypePartId, codec: { encode: (value: TsIdentifier): ReadonlyArray<number> => {
   switch (value._) {
-    case "Identifer": {
+    case "Identifier": {
       return [0].concat(String.codec.encode(value.string));
     }
   }
@@ -2384,7 +2384,7 @@ readonly Identifer: (a: String) => TsIdentifier } = { Identifer: (string_: Strin
   const patternIndex: { readonly result: number; readonly nextIndex: number } = Int32.codec.decode(index, binary);
   if (patternIndex.result === 0) {
     const result: { readonly result: String; readonly nextIndex: number } = String.codec.decode(patternIndex.nextIndex, binary);
-    return { result: TsIdentifier.Identifer(result.result), nextIndex: result.nextIndex };
+    return { result: TsIdentifier.Identifier(result.result), nextIndex: result.nextIndex };
   }
   throw new Error("存在しないパターンを指定された 型を更新してください");
 } } };

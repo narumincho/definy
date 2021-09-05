@@ -4,7 +4,7 @@ import * as ts from "../../localData";
 import * as util from "../util";
 import { jsTs } from "../../gen/main";
 
-const name = jsTs.identiferFromString("Url");
+const name = jsTs.identifierFromString("Url");
 
 export const type = ts.TsType.ScopeInGlobal(name);
 
@@ -22,7 +22,7 @@ export const decodeDefinitionStatementList = (
   parameterIndex: ts.TsExpr,
   parameterBinary: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
-  const resultAndNextIndexAsStringName = jsTs.identiferFromString(
+  const resultAndNextIndexAsStringName = jsTs.identifierFromString(
     "resultAndNextIndexAsString"
   );
   const resultAndNextIndexAsStringVar = ts.TsExpr.Variable(
@@ -37,7 +37,7 @@ export const decodeDefinitionStatementList = (
     }),
     c.returnStatement(
       ts.TsExpr.New({
-        expr: ts.TsExpr.GlobalObjects(jsTs.identiferFromString("URL")),
+        expr: ts.TsExpr.GlobalObjects(jsTs.identifierFromString("URL")),
         parameterList: [c.getResult(resultAndNextIndexAsStringVar)],
       }),
       c.getNextIndex(resultAndNextIndexAsStringVar)

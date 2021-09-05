@@ -3,26 +3,26 @@ import { d, jsTs } from "../gen/main";
 describe("test", () => {
   const expressRequest = d.TsType.ImportedType({
     moduleName: "express",
-    name: jsTs.identiferFromString("Request"),
+    name: jsTs.identifierFromString("Request"),
   });
   const expressResponse = d.TsType.ImportedType({
     moduleName: "express",
-    name: jsTs.identiferFromString("Response"),
+    name: jsTs.identifierFromString("Response"),
   });
 
   const sampleCode: d.JsTsCode = {
     exportDefinitionList: [
       d.ExportDefinition.Function({
-        name: jsTs.identiferFromString("middleware"),
+        name: jsTs.identifierFromString("middleware"),
         typeParameterList: [],
         parameterList: [
           {
-            name: jsTs.identiferFromString("request"),
+            name: jsTs.identifierFromString("request"),
             document: "expressのリクエスト",
             type: expressRequest,
           },
           {
-            name: jsTs.identiferFromString("response"),
+            name: jsTs.identifierFromString("response"),
             document: "expressのレスポンス",
             type: expressResponse,
           },
@@ -53,7 +53,7 @@ describe("test", () => {
       {
         exportDefinitionList: [
           d.ExportDefinition.Function({
-            name: jsTs.identiferFromString("new"),
+            name: jsTs.identifierFromString("new"),
             document: "newという名前の関数",
             typeParameterList: [],
             parameterList: [],
@@ -74,7 +74,7 @@ describe("test", () => {
       {
         exportDefinitionList: [
           d.ExportDefinition.Function({
-            name: jsTs.identiferFromString("0name"),
+            name: jsTs.identifierFromString("0name"),
             document: "0から始まる識別子",
             typeParameterList: [],
             parameterList: [],
@@ -94,12 +94,12 @@ describe("test", () => {
       const reserved: ReadonlySet<string> = new Set();
       let index = jsTs.initialIdentiferIndex;
       for (let i = 0; i < 999; i += 1) {
-        const createIdentiferResult = jsTs.createIdentifer(index, reserved);
+        const createIdentiferResult = jsTs.createIdentifier(index, reserved);
         index = createIdentiferResult.nextIdentiferIndex;
-        if (!jsTs.isIdentifer(createIdentiferResult.identifer.string)) {
+        if (!jsTs.isIdentifier(createIdentiferResult.identifier.string)) {
           throw new Error(
             "create not identifer. identifer=" +
-              createIdentiferResult.identifer.string
+              createIdentiferResult.identifier.string
           );
         }
       }
@@ -109,7 +109,7 @@ describe("test", () => {
     const nodeJsCode: d.JsTsCode = {
       exportDefinitionList: [
         d.ExportDefinition.Variable({
-          name: jsTs.identiferFromString("stringValue"),
+          name: jsTs.identifierFromString("stringValue"),
           document: "文字列リテラルでエスケープしているか調べる",
           type: d.TsType.String,
           expr: d.TsExpr.StringLiteral(`
@@ -131,36 +131,36 @@ describe("test", () => {
     const nodeJsCode: d.JsTsCode = {
       exportDefinitionList: [
         d.ExportDefinition.Function({
-          name: jsTs.identiferFromString("middleware"),
+          name: jsTs.identifierFromString("middleware"),
           document: "ミドルウェア",
           typeParameterList: [],
           parameterList: [
             {
-              name: jsTs.identiferFromString("request"),
+              name: jsTs.identifierFromString("request"),
               document: "リクエスト",
               type: d.TsType.ImportedType({
                 moduleName: "express",
-                name: jsTs.identiferFromString("Request"),
+                name: jsTs.identifierFromString("Request"),
               }),
             },
             {
-              name: jsTs.identiferFromString("response"),
+              name: jsTs.identifierFromString("response"),
               document: "レスポンス",
               type: d.TsType.ImportedType({
                 moduleName: "express",
-                name: jsTs.identiferFromString("Response"),
+                name: jsTs.identifierFromString("Response"),
               }),
             },
           ],
           returnType: d.TsType.Void,
           statementList: [
             d.Statement.VariableDefinition({
-              name: jsTs.identiferFromString("accept"),
+              name: jsTs.identifierFromString("accept"),
               type: d.TsType.Union([d.TsType.String, d.TsType.Undefined]),
               isConst: true,
               expr: jsTs.get(
                 jsTs.get(
-                  d.TsExpr.Variable(jsTs.identiferFromString("request")),
+                  d.TsExpr.Variable(jsTs.identifierFromString("request")),
                   "headers"
                 ),
                 "accept"
@@ -169,13 +169,13 @@ describe("test", () => {
             d.Statement.If({
               condition: d.TsExpr.BinaryOperator({
                 left: d.TsExpr.BinaryOperator({
-                  left: d.TsExpr.Variable(jsTs.identiferFromString("accept")),
+                  left: d.TsExpr.Variable(jsTs.identifierFromString("accept")),
                   operator: "NotEqual",
                   right: d.TsExpr.UndefinedLiteral,
                 }),
                 operator: "LogicalAnd",
                 right: jsTs.callMethod(
-                  d.TsExpr.Variable(jsTs.identiferFromString("accept")),
+                  d.TsExpr.Variable(jsTs.identifierFromString("accept")),
                   "includes",
                   [d.TsExpr.StringLiteral("text/html")]
                 ),
@@ -183,7 +183,7 @@ describe("test", () => {
               thenStatementList: [
                 d.Statement.EvaluateExpr(
                   jsTs.callMethod(
-                    d.TsExpr.Variable(jsTs.identiferFromString("response")),
+                    d.TsExpr.Variable(jsTs.identifierFromString("response")),
                     "setHeader",
                     [
                       d.TsExpr.StringLiteral("content-type"),
@@ -207,12 +207,12 @@ describe("test", () => {
       {
         exportDefinitionList: [
           d.ExportDefinition.Function({
-            name: jsTs.identiferFromString("getZeroIndexElement"),
+            name: jsTs.identifierFromString("getZeroIndexElement"),
             document: "Uint8Arrayの0番目の要素を取得する",
             typeParameterList: [],
             parameterList: [
               {
-                name: jsTs.identiferFromString("array"),
+                name: jsTs.identifierFromString("array"),
                 document: "Uint8Array",
                 type: jsTs.uint8ArrayType,
               },
@@ -221,7 +221,7 @@ describe("test", () => {
             statementList: [
               d.Statement.Return(
                 d.TsExpr.Get({
-                  expr: d.TsExpr.Variable(jsTs.identiferFromString("array")),
+                  expr: d.TsExpr.Variable(jsTs.identifierFromString("array")),
                   propertyExpr: d.TsExpr.NumberLiteral(0),
                 })
               ),
@@ -240,12 +240,12 @@ describe("test", () => {
       exportDefinitionList: [],
       statementList: [
         d.Statement.VariableDefinition({
-          name: jsTs.identiferFromString("sorena"),
+          name: jsTs.identifierFromString("sorena"),
           isConst: false,
           type: d.TsType.String,
           expr: d.TsExpr.StringLiteral("それな"),
         }),
-        jsTs.consoleLog(d.TsExpr.Variable(jsTs.identiferFromString("sorena"))),
+        jsTs.consoleLog(d.TsExpr.Variable(jsTs.identifierFromString("sorena"))),
       ],
     },
     "JavaScript"
@@ -263,7 +263,7 @@ describe("test", () => {
       {
         exportDefinitionList: [
           d.ExportDefinition.Function({
-            name: jsTs.identiferFromString("sample"),
+            name: jsTs.identifierFromString("sample"),
             document: "",
             typeParameterList: [],
             parameterList: [],
@@ -352,7 +352,7 @@ describe("test", () => {
       {
         exportDefinitionList: [
           d.ExportDefinition.Function({
-            name: jsTs.identiferFromString("returnObject"),
+            name: jsTs.identifierFromString("returnObject"),
             document: "",
             typeParameterList: [],
             parameterList: [],
@@ -394,7 +394,7 @@ describe("test", () => {
     expect(code).toMatch(/\(\{.*\}\)/u);
   });
   it("let variable", () => {
-    const v = jsTs.identiferFromString("v");
+    const v = jsTs.identifierFromString("v");
     const code = jsTs.generateCodeAsString(
       {
         exportDefinitionList: [],
@@ -427,7 +427,7 @@ describe("test", () => {
       exportDefinitionList: [],
       statementList: [
         d.Statement.ForOf({
-          elementVariableName: jsTs.identiferFromString("element"),
+          elementVariableName: jsTs.identifierFromString("element"),
           iterableExpr: d.TsExpr.ArrayLiteral([
             { expr: d.TsExpr.NumberLiteral(1), spread: false },
             { expr: d.TsExpr.NumberLiteral(2), spread: false },
@@ -442,7 +442,7 @@ describe("test", () => {
           ]),
           statementList: [
             jsTs.consoleLog(
-              d.TsExpr.Variable(jsTs.identiferFromString("element"))
+              d.TsExpr.Variable(jsTs.identifierFromString("element"))
             ),
           ],
         }),
@@ -456,11 +456,11 @@ describe("test", () => {
     const code: d.JsTsCode = {
       exportDefinitionList: [
         d.ExportDefinition.TypeAlias({
-          name: jsTs.identiferFromString("Result"),
+          name: jsTs.identifierFromString("Result"),
           document: "Result型",
           typeParameterList: [
-            jsTs.identiferFromString("error"),
-            jsTs.identiferFromString("ok"),
+            jsTs.identifierFromString("error"),
+            jsTs.identifierFromString("ok"),
           ],
           type: d.TsType.Union([
             d.TsType.Object([
@@ -473,7 +473,7 @@ describe("test", () => {
               {
                 name: "ok",
                 required: true,
-                type: d.TsType.ScopeInFile(jsTs.identiferFromString("ok")),
+                type: d.TsType.ScopeInFile(jsTs.identifierFromString("ok")),
                 document: "",
               },
             ]),
@@ -487,30 +487,30 @@ describe("test", () => {
               {
                 name: "error",
                 required: true,
-                type: d.TsType.ScopeInFile(jsTs.identiferFromString("error")),
+                type: d.TsType.ScopeInFile(jsTs.identifierFromString("error")),
                 document: "",
               },
             ]),
           ]),
         }),
         d.ExportDefinition.Function({
-          name: jsTs.identiferFromString("switchSample"),
+          name: jsTs.identifierFromString("switchSample"),
           document: "switch文のテスト",
           typeParameterList: [
-            jsTs.identiferFromString("ok"),
-            jsTs.identiferFromString("error"),
+            jsTs.identifierFromString("ok"),
+            jsTs.identifierFromString("error"),
           ],
           parameterList: [
             {
-              name: jsTs.identiferFromString("value"),
+              name: jsTs.identifierFromString("value"),
               document: "",
               type: d.TsType.WithTypeParameter({
                 type: d.TsType.ScopeInGlobal(
-                  jsTs.identiferFromString("Result")
+                  jsTs.identifierFromString("Result")
                 ),
                 typeParameterList: [
-                  d.TsType.ScopeInFile(jsTs.identiferFromString("ok")),
-                  d.TsType.ScopeInFile(jsTs.identiferFromString("error")),
+                  d.TsType.ScopeInFile(jsTs.identifierFromString("ok")),
+                  d.TsType.ScopeInFile(jsTs.identifierFromString("error")),
                 ],
               }),
             },
@@ -519,7 +519,7 @@ describe("test", () => {
           statementList: [
             d.Statement.Switch({
               expr: jsTs.get(
-                d.TsExpr.Variable(jsTs.identiferFromString("value")),
+                d.TsExpr.Variable(jsTs.identifierFromString("value")),
                 "_"
               ),
               patternList: [
@@ -529,7 +529,7 @@ describe("test", () => {
                     d.Statement.Return(
                       jsTs.callMethod(
                         jsTs.get(
-                          d.TsExpr.Variable(jsTs.identiferFromString("value")),
+                          d.TsExpr.Variable(jsTs.identifierFromString("value")),
                           "ok"
                         ),
                         "toString",
@@ -544,7 +544,7 @@ describe("test", () => {
                     d.Statement.Return(
                       jsTs.callMethod(
                         jsTs.get(
-                          d.TsExpr.Variable(jsTs.identiferFromString("value")),
+                          d.TsExpr.Variable(jsTs.identifierFromString("value")),
                           "error"
                         ),
                         "toString",
@@ -584,7 +584,7 @@ describe("test", () => {
     const code: d.JsTsCode = d.JsTsCode.helper({
       exportDefinitionList: [
         d.ExportDefinition.TypeAlias({
-          name: jsTs.identiferFromString("SampleIntersectionType"),
+          name: jsTs.identifierFromString("SampleIntersectionType"),
           document: "",
           typeParameterList: [],
           type: d.TsType.Intersection({
@@ -605,7 +605,7 @@ describe("test", () => {
       exportDefinitionList: [],
       statementList: [
         d.Statement.VariableDefinition({
-          name: jsTs.identiferFromString("value"),
+          name: jsTs.identifierFromString("value"),
           isConst: true,
           type: d.TsType.Object([
             { name: "a", required: true, type: d.TsType.String, document: "" },
@@ -625,7 +625,7 @@ describe("test", () => {
         jsTs.consoleLog(
           d.TsExpr.ObjectLiteral([
             d.TsMember.Spread(
-              d.TsExpr.Variable(jsTs.identiferFromString("value"))
+              d.TsExpr.Variable(jsTs.identifierFromString("value"))
             ),
             d.TsMember.KeyValue({
               key: "b",
@@ -644,7 +644,7 @@ describe("test", () => {
     const code: d.JsTsCode = {
       exportDefinitionList: [
         d.ExportDefinition.TypeAlias({
-          name: jsTs.identiferFromString("Time"),
+          name: jsTs.identifierFromString("Time"),
           document: "初期のDefinyで使う時間の内部表現",
           typeParameterList: [],
           type: d.TsType.Object([
@@ -672,12 +672,12 @@ describe("test", () => {
 });
 
 it("output lambda type parameter", () => {
-  const typeParameterIdentifer = jsTs.identiferFromString("t");
+  const typeParameterIdentifer = jsTs.identifierFromString("t");
   const code: d.JsTsCode = {
     exportDefinitionList: [],
     statementList: [
       d.Statement.VariableDefinition({
-        name: jsTs.identiferFromString("sampleFunction"),
+        name: jsTs.identifierFromString("sampleFunction"),
         isConst: true,
         type: d.TsType.Function({
           typeParameterList: [typeParameterIdentifer],
@@ -696,7 +696,7 @@ it("output lambda type parameter", () => {
               type: d.TsType.WithTypeParameter({
                 type: d.TsType.ImportedType({
                   moduleName: "sampleModule",
-                  name: jsTs.identiferFromString("Type"),
+                  name: jsTs.identifierFromString("Type"),
                 }),
                 typeParameterList: [d.TsType.Number],
               }),
@@ -706,7 +706,7 @@ it("output lambda type parameter", () => {
         expr: d.TsExpr.Lambda({
           parameterList: [
             {
-              name: jsTs.identiferFromString("input"),
+              name: jsTs.identifierFromString("input"),
               type: d.TsType.ScopeInFile(typeParameterIdentifer),
             },
           ],
@@ -724,7 +724,7 @@ it("output lambda type parameter", () => {
               d.TsExpr.ObjectLiteral([
                 d.TsMember.KeyValue({
                   key: "value",
-                  value: d.TsExpr.Variable(jsTs.identiferFromString("input")),
+                  value: d.TsExpr.Variable(jsTs.identifierFromString("input")),
                 }),
               ])
             ),
@@ -744,7 +744,7 @@ it("output optional type member", () => {
   const code: d.JsTsCode = {
     exportDefinitionList: [
       d.ExportDefinition.Variable({
-        name: jsTs.identiferFromString("value"),
+        name: jsTs.identifierFromString("value"),
         document: "年齢があってもなくてもいいやつ",
         type: d.TsType.Object([
           {
@@ -779,24 +779,24 @@ it("read me code", () => {
   const serverCode: d.JsTsCode = {
     exportDefinitionList: [
       d.ExportDefinition.Function({
-        name: jsTs.identiferFromString("middleware"),
+        name: jsTs.identifierFromString("middleware"),
         document: "ミドルウェア",
         typeParameterList: [],
         parameterList: [
           {
-            name: jsTs.identiferFromString("request"),
+            name: jsTs.identifierFromString("request"),
             document: "リクエスト",
             type: d.TsType.ImportedType({
               moduleName: "express",
-              name: jsTs.identiferFromString("Request"),
+              name: jsTs.identifierFromString("Request"),
             }),
           },
           {
-            name: jsTs.identiferFromString("response"),
+            name: jsTs.identifierFromString("response"),
             document: "レスポンス",
             type: d.TsType.ImportedType({
               moduleName: "express",
-              name: jsTs.identiferFromString("Response"),
+              name: jsTs.identifierFromString("Response"),
             }),
           },
         ],
@@ -804,11 +804,11 @@ it("read me code", () => {
         statementList: [
           d.Statement.VariableDefinition({
             isConst: true,
-            name: jsTs.identiferFromString("accept"),
+            name: jsTs.identifierFromString("accept"),
             type: d.TsType.Union([d.TsType.String, d.TsType.Undefined]),
             expr: jsTs.get(
               jsTs.get(
-                d.TsExpr.Variable(jsTs.identiferFromString("request")),
+                d.TsExpr.Variable(jsTs.identifierFromString("request")),
                 "headers"
               ),
               "accept"
@@ -817,11 +817,11 @@ it("read me code", () => {
           d.Statement.If({
             condition: jsTs.logicalAnd(
               jsTs.notEqual(
-                d.TsExpr.Variable(jsTs.identiferFromString("accept")),
+                d.TsExpr.Variable(jsTs.identifierFromString("accept")),
                 d.TsExpr.UndefinedLiteral
               ),
               jsTs.callMethod(
-                d.TsExpr.Variable(jsTs.identiferFromString("accept")),
+                d.TsExpr.Variable(jsTs.identifierFromString("accept")),
                 "includes",
                 [d.TsExpr.StringLiteral("text/html")]
               )
@@ -829,7 +829,7 @@ it("read me code", () => {
             thenStatementList: [
               d.Statement.EvaluateExpr(
                 jsTs.callMethod(
-                  d.TsExpr.Variable(jsTs.identiferFromString("response")),
+                  d.TsExpr.Variable(jsTs.identifierFromString("response")),
                   "setHeader",
                   [
                     d.TsExpr.StringLiteral("content-type"),

@@ -7,9 +7,9 @@ const encodeDefinition = (
   functionName: ts.TsIdentifier,
   document: string
 ): ts.Function => {
-  const valueName = jsTs.identiferFromString("value");
+  const valueName = jsTs.identifierFromString("value");
   const valueVar = ts.TsExpr.Variable(valueName);
-  const iName = jsTs.identiferFromString("i");
+  const iName = jsTs.identifierFromString("i");
   const iVar = ts.TsExpr.Variable(iName);
 
   return {
@@ -27,7 +27,7 @@ const encodeDefinition = (
     statementList: [
       ts.Statement.Return(
         jsTs.callMethod(
-          ts.TsExpr.GlobalObjects(jsTs.identiferFromString("Array")),
+          ts.TsExpr.GlobalObjects(jsTs.identifierFromString("Array")),
           "from",
           [
             ts.TsExpr.ObjectLiteral([
@@ -40,7 +40,7 @@ const encodeDefinition = (
               typeParameterList: [],
               parameterList: [
                 {
-                  name: jsTs.identiferFromString("_"),
+                  name: jsTs.identifierFromString("_"),
                   type: ts.TsType.Undefined,
                 },
                 {
@@ -106,7 +106,7 @@ const decodeDefinition = (
                 typeParameterList: [],
                 parameterList: [
                   {
-                    name: jsTs.identiferFromString("n"),
+                    name: jsTs.identifierFromString("n"),
                     type: ts.TsType.Number,
                   },
                 ],
@@ -115,7 +115,7 @@ const decodeDefinition = (
                   ts.Statement.Return(
                     jsTs.callMethod(
                       jsTs.callMethod(
-                        ts.TsExpr.Variable(jsTs.identiferFromString("n")),
+                        ts.TsExpr.Variable(jsTs.identifierFromString("n")),
                         "toString",
                         [ts.TsExpr.NumberLiteral(16)]
                       ),
@@ -140,7 +140,7 @@ const decodeDefinition = (
 const idByteSize = 16;
 const tokenByteSize = 32;
 
-const encodeIdIdentifer = jsTs.identiferFromString("encodeId");
+const encodeIdIdentifer = jsTs.identifierFromString("encodeId");
 const encodeIdVariable = ts.TsExpr.Variable(encodeIdIdentifer);
 export const encodeIdFunction: ts.Function = encodeDefinition(
   idByteSize,
@@ -148,7 +148,7 @@ export const encodeIdFunction: ts.Function = encodeDefinition(
   "UserId, ProjectIdなどのIdをバイナリ形式にエンコードする"
 );
 
-const encodeTokenIdentifer = jsTs.identiferFromString("encodeToken");
+const encodeTokenIdentifer = jsTs.identifierFromString("encodeToken");
 const encodeTokenVariable = ts.TsExpr.Variable(encodeTokenIdentifer);
 export const tokenEncodeFunction: ts.Function = encodeDefinition(
   tokenByteSize,
@@ -156,7 +156,7 @@ export const tokenEncodeFunction: ts.Function = encodeDefinition(
   "ImageTokenなどのTokenをバイナリ形式にエンコードする"
 );
 
-const decodeIdIdentifer = jsTs.identiferFromString("decodeId");
+const decodeIdIdentifer = jsTs.identifierFromString("decodeId");
 const decodeIdVariable = ts.TsExpr.Variable(decodeIdIdentifer);
 export const idDecodeFunction: ts.Function = decodeDefinition(
   idByteSize,
@@ -164,7 +164,7 @@ export const idDecodeFunction: ts.Function = decodeDefinition(
   "バイナリ形式をUserId, ProjectIdなどのIdにデコードする"
 );
 
-const decodeTokenIdentifer = jsTs.identiferFromString("decodeToken");
+const decodeTokenIdentifer = jsTs.identifierFromString("decodeToken");
 const decodeTokenVariable = ts.TsExpr.Variable(decodeTokenIdentifer);
 export const decodeTokenFunction: ts.Function = decodeDefinition(
   tokenByteSize,
@@ -189,7 +189,7 @@ export const idDecodeDefinitionStatementList = (
   parameterBinary: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
   const targetType = ts.TsType.ScopeInFile(
-    jsTs.identiferFromString(typePartName)
+    jsTs.identifierFromString(typePartName)
   );
   return [
     ts.Statement.Return(
@@ -221,7 +221,7 @@ export const tokenDecodeDefinitionStatementList = (
   parameterBinary: ts.TsExpr
 ): ReadonlyArray<ts.Statement> => {
   const targetType = ts.TsType.ScopeInFile(
-    jsTs.identiferFromString(typePartName)
+    jsTs.identifierFromString(typePartName)
   );
   return [
     ts.Statement.Return(
