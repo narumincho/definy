@@ -27,9 +27,9 @@ export const generateCodeAsString = (
  */
 const createImportedModuleName = (
   usedNameAndModulePath: UsedNameAndModulePathSet
-): ReadonlyMap<string, d.TsIdentifer> => {
+): ReadonlyMap<string, d.TsIdentifier> => {
   let identiferIndex = initialIdentiferIndex;
-  const importedModuleNameMap = new Map<string, d.TsIdentifer>();
+  const importedModuleNameMap = new Map<string, d.TsIdentifier>();
   for (const modulePath of usedNameAndModulePath.modulePathSet) {
     const identiferAndNextIdentiferIndex = createIdentifer(
       identiferIndex,

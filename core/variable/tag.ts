@@ -25,7 +25,7 @@ export const typePartSumTagType = (
 };
 
 const patternToTagType = (
-  typeName: d.TsIdentifer,
+  typeName: d.TsIdentifier,
   typeParameterList: ReadonlyArray<d.DataTypeParameter>,
   pattern: d.Pattern,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,

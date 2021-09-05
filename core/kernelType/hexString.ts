@@ -4,7 +4,7 @@ import { jsTs } from "../../gen/main";
 
 const encodeDefinition = (
   byteSize: number,
-  functionName: ts.TsIdentifer,
+  functionName: ts.TsIdentifier,
   document: string
 ): ts.Function => {
   const valueName = jsTs.identiferFromString("value");
@@ -73,7 +73,7 @@ const encodeDefinition = (
 
 const decodeDefinition = (
   byteSize: number,
-  functionName: ts.TsIdentifer,
+  functionName: ts.TsIdentifier,
   document: string
 ): ts.Function => {
   const parameterIndex = ts.TsExpr.Variable(codec.indexIdentifer);

@@ -15,7 +15,7 @@ import { statementListToString } from "./statement";
 export const exprToString = (
   expr: d.TsExpr,
   indent: number,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string => {
   switch (expr._) {
@@ -100,10 +100,10 @@ export const exprToString = (
       );
 
     case "Variable":
-      return expr.tsIdentifer.string;
+      return expr.tsIdentifier.string;
 
     case "GlobalObjects":
-      return expr.tsIdentifer.string;
+      return expr.tsIdentifier.string;
 
     case "ImportedVariable": {
       const nameSpaceIdentifer = moduleMap.get(
@@ -159,7 +159,7 @@ export const exprToString = (
 const arrayLiteralToString = (
   itemList: ReadonlyArray<d.ArrayItem>,
   indent: number,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string =>
   "[" +
@@ -175,7 +175,7 @@ const arrayLiteralToString = (
 const objectLiteralToString = (
   memberList: ReadonlyArray<d.TsMember>,
   indent: number,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string =>
   "{ " +
@@ -190,7 +190,7 @@ const objectLiteralToString = (
           if (
             isIdentifer(member.keyValue.key) &&
             member.keyValue.value._ === "Variable" &&
-            member.keyValue.key === member.keyValue.value.tsIdentifer.string
+            member.keyValue.key === member.keyValue.value.tsIdentifier.string
           ) {
             return member.keyValue.key;
           }
@@ -222,7 +222,7 @@ const exprToStringWithCombineStrength = (
   expr: d.TsExpr,
   target: d.TsExpr,
   indent: number,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string => {
   const text = exprToString(target, indent, moduleMap, codeType);
@@ -302,7 +302,7 @@ const binaryOperatorCombineStrength = (
 const binaryOperatorExprToString = (
   binaryOperatorExpr: d.BinaryOperatorExpr,
   indent: number,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string => {
   const operatorExprCombineStrength = exprCombineStrength(
@@ -340,7 +340,7 @@ const binaryOperatorExprToString = (
 const conditionalOperatorToString = (
   conditionalOperator: d.ConditionalOperatorExpr,
   indent: number,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string => {
   const expr = d.TsExpr.ConditionalOperator(conditionalOperator);
@@ -379,7 +379,7 @@ const conditionalOperatorToString = (
 export const lambdaBodyToString = (
   statementList: ReadonlyArray<d.Statement>,
   indent: number,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string => {
   const [firstStatement] = statementList;
@@ -404,7 +404,7 @@ const callExprToString = (
   expr: d.TsExpr,
   callExpr: d.CallExpr,
   indent: number,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ) =>
   exprToStringWithCombineStrength(
@@ -430,7 +430,7 @@ const callExprToString = (
 const indexAccessToString = (
   indexExpr: d.TsExpr,
   indent: number,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string => {
   if (indexExpr._ === "StringLiteral" && isSafePropertyName(indexExpr.string)) {

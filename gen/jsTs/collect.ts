@@ -5,7 +5,7 @@ import {
   JsTsCode,
   Statement,
   TsExpr,
-  TsIdentifer,
+  TsIdentifier,
   TsType,
   TypeAlias,
   Variable,
@@ -338,7 +338,7 @@ const collectInExpr = (
       checkVariableIsDefinedOrThrow(
         localVariableNameSetList,
         rootScopeIdentiferSet.rootScopeVariableName,
-        expr.tsIdentifer
+        expr.tsIdentifier
       );
       return {
         modulePathSet: new Set(),
@@ -348,7 +348,7 @@ const collectInExpr = (
     case "GlobalObjects":
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set([expr.tsIdentifer.string]),
+        usedNameSet: new Set([expr.tsIdentifier.string]),
       };
 
     case "ImportedVariable":
@@ -663,7 +663,7 @@ const collectInStatement = (
 const checkVariableIsDefinedOrThrow = (
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
   rootScopeNameSet: ReadonlySet<string>,
-  variableName: TsIdentifer
+  variableName: TsIdentifier
 ): void => {
   const reversedLocalVariableNameSetList = [
     ...localVariableNameSetList,
@@ -785,17 +785,17 @@ const collectInType = (
       checkTypeIsDefinedOrThrow(
         rootScopeTypeNameSet,
         typeParameterSetList,
-        type_.tsIdentifer
+        type_.tsIdentifier
       );
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set([type_.tsIdentifer.string]),
+        usedNameSet: new Set([type_.tsIdentifier.string]),
       };
 
     case "ScopeInGlobal":
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set([type_.tsIdentifer.string]),
+        usedNameSet: new Set([type_.tsIdentifier.string]),
       };
 
     case "StringLiteral":
@@ -809,7 +809,7 @@ const collectInType = (
 const checkTypeIsDefinedOrThrow = (
   rootScopeTypeNameSet: ReadonlySet<string>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
-  typeName: TsIdentifer
+  typeName: TsIdentifier
 ): void => {
   const reversedTypeParameterSetList = [...typeParameterSetList].reverse();
   for (const typeParameter of reversedTypeParameterSetList) {
@@ -876,7 +876,7 @@ const collectList = <Element>(
  */
 const checkDuplicateIdentifer = (
   name: string,
-  identiferList: ReadonlyArray<TsIdentifer>
+  identiferList: ReadonlyArray<TsIdentifier>
 ): ReadonlySet<string> => {
   const set: Set<string> = new Set();
   for (const identifer of identiferList) {

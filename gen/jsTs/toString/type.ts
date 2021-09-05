@@ -16,7 +16,7 @@ import {
  */
 export const typeToString = (
   type_: d.TsType,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>
 ): string => {
   switch (type_._) {
     case "Number":
@@ -71,10 +71,10 @@ export const typeToString = (
       );
 
     case "ScopeInFile":
-      return type_.tsIdentifer.string;
+      return type_.tsIdentifier.string;
 
     case "ScopeInGlobal":
-      return type_.tsIdentifer.string;
+      return type_.tsIdentifier.string;
 
     case "ImportedType": {
       const nameSpaceIdentifer = moduleMap.get(type_.importedType.moduleName);
@@ -95,7 +95,7 @@ export const typeToString = (
 
 const typeObjectToString = (
   memberList: ReadonlyArray<d.TsMemberType>,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>
 ): string =>
   "{ " +
   memberList
@@ -116,11 +116,11 @@ const typeObjectToString = (
 /** 関数の引数と戻り値の型を文字列にする */
 const functionTypeToString = (
   functionType: d.FunctionType,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>
 ): string => {
   let index = initialIdentiferIndex;
   const parameterList: Array<{
-    name: d.TsIdentifer;
+    name: d.TsIdentifier;
     type: d.TsType;
   }> = [];
   for (const parameter of functionType.parameterList) {
@@ -152,7 +152,7 @@ const functionTypeToString = (
 export const typeAnnotation = (
   type_: d.TsType,
   codeType: d.CodeType,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>
 ): string => {
   switch (codeType) {
     case "JavaScript":

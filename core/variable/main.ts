@@ -569,7 +569,7 @@ const productDecodeDefinitionStatementList = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
   scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
 ): ReadonlyArray<d.Statement> => {
-  const resultAndNextIndexNameIdentifer = (member: d.Member): d.TsIdentifer =>
+  const resultAndNextIndexNameIdentifer = (member: d.Member): d.TsIdentifier =>
     jsTs.identiferFromString(member.name + "AndNextIndex");
 
   const memberDecoderCode = memberList.reduce<{

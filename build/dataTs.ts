@@ -356,7 +356,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "ファイル内で定義された型",
           parameter: {
             _: "Just",
-            value: noArgumentsType(d.TsIdentifer.typePartId),
+            value: noArgumentsType(d.TsIdentifier.typePartId),
           },
         },
         {
@@ -364,7 +364,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "グローバル空間の型",
           parameter: {
             _: "Just",
-            value: noArgumentsType(d.TsIdentifer.typePartId),
+            value: noArgumentsType(d.TsIdentifier.typePartId),
           },
         },
         {
@@ -562,8 +562,8 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     },
   },
   {
-    id: d.TsIdentifer.typePartId,
-    name: "TsIdentifer",
+    id: d.TsIdentifier.typePartId,
+    name: "TsIdentifier",
     description: "TypeScriptの識別子として使える文字",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
@@ -971,7 +971,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "パラメーター名",
-          type: noArgumentsType(d.TsIdentifer.typePartId),
+          type: noArgumentsType(d.TsIdentifier.typePartId),
         },
         {
           name: "type",
@@ -1360,7 +1360,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "パラメーター名",
-          type: noArgumentsType(d.TsIdentifer.typePartId),
+          type: noArgumentsType(d.TsIdentifier.typePartId),
         },
         {
           name: "document",
@@ -1484,7 +1484,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "変数名",
-          type: noArgumentsType(d.TsIdentifer.typePartId),
+          type: noArgumentsType(d.TsIdentifier.typePartId),
         },
         {
           name: "type",
@@ -1710,7 +1710,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "変数名",
-          type: noArgumentsType(d.TsIdentifer.typePartId),
+          type: noArgumentsType(d.TsIdentifier.typePartId),
         },
       ],
     },
@@ -1920,7 +1920,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "変数. 変数が存在するかのチャックがされる",
           parameter: {
             _: "Just",
-            value: noArgumentsType(d.TsIdentifer.typePartId),
+            value: noArgumentsType(d.TsIdentifier.typePartId),
           },
         },
         {
@@ -1928,7 +1928,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "グローバルオブジェクト",
           parameter: {
             _: "Just",
-            value: noArgumentsType(d.TsIdentifer.typePartId),
+            value: noArgumentsType(d.TsIdentifier.typePartId),
           },
         },
         {
@@ -2059,7 +2059,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "elementVariableName",
           description: "要素の変数名",
-          type: noArgumentsType(d.TsIdentifer.typePartId),
+          type: noArgumentsType(d.TsIdentifier.typePartId),
         },
         {
           name: "iterableExpr",
@@ -2268,7 +2268,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "typeParameterList",
           description: "型パラメーターのリスト",
-          type: listType(d.TsIdentifer.typePartId),
+          type: listType(d.TsIdentifier.typePartId),
         },
         {
           name: "parameterList",
@@ -2389,7 +2389,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "変数の名前",
-          type: noArgumentsType(d.TsIdentifer.typePartId),
+          type: noArgumentsType(d.TsIdentifier.typePartId),
         },
         {
           name: "document",
@@ -2474,7 +2474,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "型の名前",
-          type: noArgumentsType(d.TsIdentifer.typePartId),
+          type: noArgumentsType(d.TsIdentifier.typePartId),
         },
       ],
     },
@@ -2610,12 +2610,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "型の名前",
-          type: noArgumentsType(d.TsIdentifer.typePartId),
+          type: noArgumentsType(d.TsIdentifier.typePartId),
         },
         {
           name: "typeParameterList",
           description: "型パラメーターのリスト",
-          type: listType(d.TsIdentifer.typePartId),
+          type: listType(d.TsIdentifier.typePartId),
         },
         {
           name: "document",
@@ -2742,7 +2742,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "counterVariableName",
           description: "カウンタ変数名",
-          type: noArgumentsType(d.TsIdentifer.typePartId),
+          type: noArgumentsType(d.TsIdentifier.typePartId),
         },
         {
           name: "untilExpr",
@@ -3115,7 +3115,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "外部に公開する関数の名前",
-          type: noArgumentsType(d.TsIdentifer.typePartId),
+          type: noArgumentsType(d.TsIdentifier.typePartId),
         },
         {
           name: "document",
@@ -3125,7 +3125,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "typeParameterList",
           description: "型パラメーターのリスト",
-          type: listType(d.TsIdentifer.typePartId),
+          type: listType(d.TsIdentifier.typePartId),
         },
         {
           name: "parameterList",
@@ -3168,12 +3168,12 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "name",
           description: "変数名",
-          type: noArgumentsType(d.TsIdentifer.typePartId),
+          type: noArgumentsType(d.TsIdentifier.typePartId),
         },
         {
           name: "typeParameterList",
           description: "型パラメーターのリスト",
-          type: listType(d.TsIdentifer.typePartId),
+          type: listType(d.TsIdentifier.typePartId),
         },
         {
           name: "parameterList",
@@ -3401,7 +3401,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         {
           name: "typeParameterList",
           description: "型パラメーターのリスト",
-          type: listType(d.TsIdentifer.typePartId),
+          type: listType(d.TsIdentifier.typePartId),
         },
         {
           name: "returnType",

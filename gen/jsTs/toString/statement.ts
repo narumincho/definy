@@ -14,7 +14,7 @@ import { typeAnnotation } from "./type";
 export const statementListToString = (
   statementList: ReadonlyArray<d.Statement>,
   indent: number,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string =>
   "{\n" +
@@ -39,7 +39,7 @@ export const statementListToString = (
 const statementToTypeScriptCodeAsString = (
   statement: d.Statement,
   indent: number,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string => {
   const indentString = indentNumberToString(indent);
@@ -213,7 +213,7 @@ const statementToTypeScriptCodeAsString = (
 const functionDefinitionStatementToString = (
   functionDefinition: d.FunctionDefinitionStatement,
   indent: number,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string =>
   indentNumberToString(indent) +
@@ -243,7 +243,7 @@ const functionDefinitionStatementToString = (
 const switchToString = (
   switch_: d.SwitchStatement,
   indent: number,
-  moduleMap: ReadonlyMap<string, d.TsIdentifer>,
+  moduleMap: ReadonlyMap<string, d.TsIdentifier>,
   codeType: d.CodeType
 ): string => {
   const indentString = indentNumberToString(indent);

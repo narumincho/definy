@@ -64,7 +64,7 @@ export const codecTypeAlias = (): ts.TypeAlias => {
 };
 
 export const variableDefinition = (
-  name: ts.TsIdentifer,
+  name: ts.TsIdentifier,
   type_: ts.TsType,
   document: string,
   codecDocument: string,
@@ -233,5 +233,5 @@ export const getNextIndex = (resultAndNextIndexExpr: ts.TsExpr): ts.TsExpr =>
 /**
  * 名前の末尾に `Codec` をつける
  */
-export const codecParameterName = (name: string): ts.TsIdentifer =>
+export const codecParameterName = (name: string): ts.TsIdentifier =>
   jsTs.identiferFromString(name + "Codec");
