@@ -9,6 +9,7 @@ import {
   createProgram,
 } from "typescript";
 import { jsTs, packageJson as packageJsonGen } from "../gen/main";
+import { resetDistributionDirectory } from "../gen/fileSystem/main";
 
 const clientSourceEntryPath = "./client/main.tsx";
 const functionsSourceEntryPath = "./functions/main.ts";
@@ -22,8 +23,7 @@ const cloudStorageRulesPath = `${distributionPath}/storage.rules`;
  * Firebase へ デプロイするためにビルドする
  */
 export const build = async (mode: d.Mode, origin: string): Promise<void> => {
-  await fileSystem.remove(distributionPath);
-  console.log(`${distributionPath}をすべて削除完了!`);
+  await resetDistributionDirectory();
   if (mode === "Develop") {
     await fileSystem.copy(
       "../secret/definy.json",

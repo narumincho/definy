@@ -8,15 +8,15 @@ import {
 } from "typescript";
 import {
   copyFile,
-  deleteDirectory,
   directoryPathFrom,
+  distributionPathAsDirectoryPath,
   fileNameFrom,
   fileTypeTypeScript,
+  resetDistributionDirectory,
 } from "../gen/fileSystem/main";
 import { packageJson as packageJsonGen } from "../gen/main";
 
 const distributionPath = "./distribution";
-const distributionPathAsDirectoryPath = directoryPathFrom(["distribution"]);
 
 const mkdirWithLog = async (path: string): Promise<void> => {
   console.group(`${path} ファイルを作成`);
@@ -43,14 +43,19 @@ const moveWithLog = async (
 };
 
 const build = async (): Promise<void> => {
-  await deleteDirectory(distributionPathAsDirectoryPath);
+  await resetDistributionDirectory();
   await mkdirWithLog(distributionPath);
   await copyFile(
-    directoryPathFrom([]),
-    fileNameFrom("localData", fileTypeTypeScript),
-    distributionPathAsDirectoryPath,
-    fileNameFrom("localData", fileTypeTypeScript)
+    {
+      directoryPath: directoryPathFrom([]),
+      fileName: fileNameFrom("localData", fileTypeTypeScript),
+    },
+    {
+      directoryPath: distributionPathAsDirectoryPath,
+      fileName: fileNameFrom("localData", fileTypeTypeScript),
+    }
   );
+
   await mkdirWithLog(`${distributionPath}/gen`);
   await copyWithLog("./gen", `${distributionPath}/gen`);
   await moveWithLog(

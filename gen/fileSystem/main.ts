@@ -6,6 +6,8 @@ import { MimeType, imagePng } from "../mimeType/main";
 /**
  * 標準ライブラリの fs の ディレクトリとファイルの区別が型レベルではない欠点の解決と,
  * ファイル操作時にログを出力したいために作った 雑なファイルシステムライブラリ
+ *
+ * パスの指定はすべてリポジトリのルートからの相対パスになる.
  */
 
 /**
@@ -76,6 +78,11 @@ export const directoryPathFrom = (
   };
 };
 
+export type DirectoryPathAndFileName = {
+  readonly directoryPath: DirectoryPath;
+  readonly fileName: FileName;
+};
+
 /**
  * ディレクトリをめぐるためのディレクトリパスを生成する
  * @example
@@ -119,33 +126,64 @@ const fileTypeToExtension = (fileType: FileType): string => {
   }
 };
 
-const directoryPathAndFileNameToPath = (
-  directoryPath: DirectoryPath,
-  fileName: FileName
+const directoryPathAndFileNameToPathFromRepositoryRoot = (
+  directoryPathAndFileName: DirectoryPathAndFileName
 ): string => {
   return (
-    directoryPathToPath(directoryPath) +
+    directoryPathToPathFromRepositoryRoot(
+      directoryPathAndFileName.directoryPath
+    ) +
     "/" +
-    fileName.fileName +
-    (fileName.fileType === undefined
+    directoryPathAndFileName.fileName.fileName +
+    (directoryPathAndFileName.fileName.fileType === undefined
       ? ""
-      : "." + fileTypeToExtension(fileName.fileType))
+      : "." + fileTypeToExtension(directoryPathAndFileName.fileName.fileType))
   );
 };
 
-const directoryPathToPath = (directoryPath: DirectoryPath): string => {
+const directoryPathToPathFromRepositoryRoot = (
+  directoryPath: DirectoryPath
+): string => {
+  if (directoryPath.directoryNameList.length === 0) {
+    return ".";
+  }
   return "./" + directoryPath.directoryNameList.join("/");
+};
+
+export const directoryPathAndFileNameToPathFromDistribution = (
+  directoryPathAndFileName: DirectoryPathAndFileName
+): string => {
+  return (
+    directoryPathToPathFromDistribution(
+      directoryPathAndFileName.directoryPath
+    ) +
+    "/" +
+    directoryPathAndFileName.fileName.fileName +
+    (directoryPathAndFileName.fileName.fileType === undefined
+      ? ""
+      : "." + fileTypeToExtension(directoryPathAndFileName.fileName.fileType))
+  );
+};
+
+export const directoryPathToPathFromDistribution = (
+  directoryPath: DirectoryPath
+): string => {
+  if (directoryPath.directoryNameList.length === 0) {
+    return "..";
+  }
+  return "../" + directoryPath.directoryNameList.join("/");
 };
 
 /**
  * バイナリデータをファイルシステムの指定した場所にファイルとして書く
  */
 export const writeFile = async (
-  directoryPath: DirectoryPath,
-  fileName: FileName,
+  directoryPathAndFileName: DirectoryPathAndFileName,
   data: Uint8Array
 ): Promise<void> => {
-  const path = directoryPathAndFileNameToPath(directoryPath, fileName);
+  const path = directoryPathAndFileNameToPathFromRepositoryRoot(
+    directoryPathAndFileName
+  );
   console.log(path, "にファイルを書き込み中...");
   await fs.writeFile(path, data);
   console.log(path, "にファイルを書き込み完了!");
@@ -155,8 +193,7 @@ export const writeFile = async (
  * TypeScript のコードをファイルに書き込む
  */
 export const writeTypeScriptCode = async (
-  directoryPath: DirectoryPath,
-  fileName: FileName,
+  directoryPathAndFileName: DirectoryPathAndFileName,
   jsTsCode: d.JsTsCode
 ): Promise<void> => {
   const codeAsString = jsTs.generateCodeAsString(
@@ -165,51 +202,49 @@ export const writeTypeScriptCode = async (
   );
 
   await writeFile(
-    directoryPath,
-    fileName,
+    directoryPathAndFileName,
     new TextEncoder().encode(codeAsString)
   );
 };
 
 /**
- * ディレクトリを削除する. 中身のファイルやディレクトリも消える
+ * definy のリポジトリで使う. 一時的に保存しておくファイルを保管しておくディレクトリ
  */
-export const deleteDirectory = (
-  directoryPath: DirectoryPath
-): Promise<void> => {
-  const path = directoryPathToPath(directoryPath);
-  console.log(`${path}を削除中...`);
-  return fs.remove(path).then(
-    () => {
-      console.log(`${path}を削除完了!`);
-    },
+export const distributionPathAsDirectoryPath = directoryPathFrom([
+  "distribution",
+]);
+
+/**
+ * distribution ディレクトリを削除する. 中身のファイルやディレクトリも消す
+ */
+export const resetDistributionDirectory = async (): Promise<void> => {
+  const path = directoryPathToPathFromRepositoryRoot(
+    distributionPathAsDirectoryPath
+  );
+  console.log(`distribution をリセット中...`);
+  await fs.remove(path).then(
+    () => {},
     (error: { code: string }) => {
       if (error.code === "ENOENT") {
-        console.log(`${path}を削除しようとしたが存在しなかった`);
+        console.log(`distribution を削除しようとしたが存在しなかった`);
         return;
       }
       throw error;
     }
   );
+  await fs.mkdir(path);
+  console.log(`distribution をリセット完了!`);
 };
 
 /**
  * ファイルをコピーする
  */
 export const copyFile = (
-  inputDirectoryPath: DirectoryPath,
-  inputFileName: FileName,
-  outputDirectoryPath: DirectoryPath,
-  outputFileName: FileName
+  input: DirectoryPathAndFileName,
+  output: DirectoryPathAndFileName
 ): Promise<void> => {
-  const inputPath = directoryPathAndFileNameToPath(
-    inputDirectoryPath,
-    inputFileName
-  );
-  const outputPath = directoryPathAndFileNameToPath(
-    outputDirectoryPath,
-    outputFileName
-  );
+  const inputPath = directoryPathAndFileNameToPathFromRepositoryRoot(input);
+  const outputPath = directoryPathAndFileNameToPathFromRepositoryRoot(output);
   console.log(`${inputPath} → ${outputPath} ファイルをコピー中...`);
   return fs.copyFile(inputPath, outputPath).then(
     () => {

@@ -3584,7 +3584,12 @@ if (code._ === "Error") {
 }
 
 fileSystem.writeTypeScriptCode(
-  fileSystem.directoryPathFrom([]),
-  fileSystem.fileNameFrom("localData_out", fileSystem.fileTypeTypeScript),
+  {
+    directoryPath: fileSystem.directoryPathFrom([]),
+    fileName: fileSystem.fileNameFrom(
+      "localData_out",
+      fileSystem.fileTypeTypeScript
+    ),
+  },
   code.ok
 );
