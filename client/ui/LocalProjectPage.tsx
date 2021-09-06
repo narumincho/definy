@@ -1,6 +1,11 @@
 import * as React from "react";
 import * as d from "../../localData";
-import { CommonValue, listValue, oneLineTextValue } from "../editor/common";
+import {
+  CommonValue,
+  buttonValue,
+  listValue,
+  oneLineTextValue,
+} from "../editor/common";
 import { listDeleteAt, listUpdateAt } from "../../common/util";
 import { Button } from "./Button";
 import { Editor } from "./Editor";
@@ -59,11 +64,24 @@ type LocalPart = {
   readonly name: string;
 };
 
+type LocalLocation =
+  | {
+      readonly tag: "project";
+    }
+  | {
+      readonly tag: "typePart";
+      readonly typePartId: d.TypePartId;
+    };
+
 const LoadedLocalProjectPage = (): React.ReactElement => {
   const [state, setState] = React.useState<LocalProjectPageEditState>({
     partList: [],
     typePartList: [],
   });
+  const [localLocation, setLocalLocation] = React.useState<LocalLocation>({
+    tag: "project",
+  });
+
   const setTypePartList = (
     typePartList: ReadonlyArray<LocalTypePart>
   ): void => {
@@ -72,6 +90,32 @@ const LoadedLocalProjectPage = (): React.ReactElement => {
   const setPartList = (partList: ReadonlyArray<LocalPart>): void => {
     setState((beforeState) => ({ ...beforeState, partList }));
   };
+  if (localLocation.tag === "project") {
+    return (
+      <ProjectPage
+        state={state}
+        setTypePartList={setTypePartList}
+        setPartList={setPartList}
+        setLocalLocation={setLocalLocation}
+      />
+    );
+  }
+  return (
+    <TypePartPage
+      state={state}
+      setTypePartList={setTypePartList}
+      setPartList={setPartList}
+      typePartId={localLocation.typePartId}
+    />
+  );
+};
+
+const ProjectPage = (props: {
+  readonly state: LocalProjectPageEditState;
+  readonly setTypePartList: (list: ReadonlyArray<LocalTypePart>) => void;
+  readonly setPartList: (list: ReadonlyArray<LocalPart>) => void;
+  readonly setLocalLocation: (l: LocalLocation) => void;
+}): React.ReactElement => {
   return (
     <Editor
       product={{
@@ -85,11 +129,49 @@ const LoadedLocalProjectPage = (): React.ReactElement => {
         items: [
           {
             name: "型パーツ",
-            value: typePartListEditor(state.typePartList, setTypePartList),
+            value: typePartListEditor(
+              props.state.typePartList,
+              props.setTypePartList,
+              props.setLocalLocation
+            ),
           },
           {
             name: "パーツ",
-            value: partListEditor(state.partList, setPartList),
+            value: partListEditor(props.state.partList, props.setPartList),
+          },
+        ],
+      }}
+    />
+  );
+};
+
+const TypePartPage = (props: {
+  readonly state: LocalProjectPageEditState;
+  readonly setTypePartList: (list: ReadonlyArray<LocalTypePart>) => void;
+  readonly setPartList: (list: ReadonlyArray<LocalPart>) => void;
+  readonly typePartId: d.TypePartId;
+}): React.ReactElement => {
+  const typePart = props.state.typePartList.find(
+    (e) => e.id === props.typePartId
+  );
+  if (typePart === undefined) {
+    return <div>存在しない型パーツ</div>;
+  }
+
+  return (
+    <Editor
+      product={{
+        headItem: {
+          name: "名前",
+          value: {
+            text: typePart.name,
+            onChange: undefined,
+          },
+        },
+        items: [
+          {
+            name: "id",
+            value: oneLineTextValue({ text: typePart.id, onChange: undefined }),
           },
         ],
       }}
@@ -99,14 +181,16 @@ const LoadedLocalProjectPage = (): React.ReactElement => {
 
 const typePartListEditor = (
   typePartList: ReadonlyArray<LocalTypePart>,
-  setTypePartList: (list: ReadonlyArray<LocalTypePart>) => void
+  setTypePartList: (list: ReadonlyArray<LocalTypePart>) => void,
+  setLocalLocation: (l: LocalLocation) => void
 ): CommonValue => {
   return listValue({
     items: typePartList.map<ListItem>((typePart, index) => ({
       searchText: typePart.name,
-      commonValue: oneLineTextValue({
+      commonValue: buttonValue({
         text: typePart.name,
-        onChange: undefined,
+        onClick: () =>
+          setLocalLocation({ tag: "typePart", typePartId: typePart.id }),
       }),
     })),
     deleteAt: (index) => {
