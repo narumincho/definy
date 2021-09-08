@@ -46,7 +46,7 @@ export const Header: React.VFC<Props> = React.memo((props) => {
         }}
         onJump={props.onJump}
       >
-        Definy
+        definy
       </Link>
       <div className={css({ display: "flex", alignItems: "center" })}>
         {props.titleItemList.flatMap((titleItem) => {

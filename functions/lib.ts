@@ -166,11 +166,11 @@ export const logInCallback = async (
   const documentReference = database.collection("openConnectState").doc(state);
   const stateData = (await documentReference.get()).data();
   if (stateData === undefined) {
-    throw new Error("Definy do not generate state.");
+    throw new Error("definy do not generate state.");
   }
   documentReference.delete();
   if (stateData.provider !== openIdConnectProvider) {
-    throw new Error("Definy do not generate state.");
+    throw new Error("definy do not generate state.");
   }
   if (stateData.createTime.toMillis() + 60 * 1000 < new Date().getTime()) {
     throw new Error("state is too old.");

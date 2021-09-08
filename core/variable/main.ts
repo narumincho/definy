@@ -20,7 +20,7 @@ export const typePartMapToVariable = (
 };
 
 /**
- * Definyの 型パーツ から TypeScript で実装時に使える便利な関数や定数を生成する
+ * definyの 型パーツ から TypeScript で実装時に使える便利な関数や定数を生成する
  */
 const typePartToVariable = (
   typePart: d.TypePart,

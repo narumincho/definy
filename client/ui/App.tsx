@@ -122,7 +122,7 @@ const LoadingBox: React.VFC<{ message: string }> = (props) => (
         color: "#ddd",
       })}
     >
-      Definy
+      definy
     </div>
   </div>
 );

@@ -21,7 +21,7 @@ export const AboutPage: React.VFC<Props> = (props) => {
       })}
     >
       <div>{aboutMessage(props.language)}</div>
-      <GitHubRepositoryLink githubAccountName="narumincho" repoName="Definy" />
+      <GitHubRepositoryLink githubAccountName="narumincho" repoName="definy" />
       <div>
         <div
           className={css({
@@ -43,11 +43,11 @@ export const AboutPage: React.VFC<Props> = (props) => {
 const aboutMessage = (language: d.Language): string => {
   switch (language) {
     case "English":
-      return "Definy is Web App for Web App";
+      return "definy is Web App for Web App";
     case "Japanese":
-      return "DefinyはWebアプリのためのWebアプリです";
+      return "definyはWebアプリのためのWebアプリです";
     case "Esperanto":
-      return "Definy estas TTT-programo por TTT-programo";
+      return "definy estas TTT-programo por TTT-programo";
   }
 };
 

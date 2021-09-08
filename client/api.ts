@@ -5,7 +5,7 @@ import * as d from "../localData";
 type ApiCodecType = typeof apiCodec;
 
 /**
- * DefinyのApi. api[api名](リクエストのデータ) で呼べる. 戻り値の Nothing は fetch が失敗した場合に返す.
+ * definyのApi. api[api名](リクエストのデータ) で呼べる. 戻り値の Nothing は fetch が失敗した場合に返す.
  * いずれは, Result型を返したい
  */
 export const api = Object.fromEntries(

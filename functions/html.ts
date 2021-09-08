@@ -17,8 +17,8 @@ export const generateHtml = async (
   );
   return {
     htmlOption: {
-      appName: "Definy",
-      pageName: "Definy",
+      appName: "definy",
+      pageName: "definy",
       iconUrl: commonUrl.iconUrl,
       coverImageUrl: coverImageUrlAndDescription.imageUrl,
       description: coverImageUrlAndDescription.description,
@@ -46,13 +46,13 @@ const getCoverImageUrlAndDescription = async (
           imageUrl: commonUrl.pngFileUrl(projectResource.data.value.imageHash),
           description:
             projectResource.data.value.name +
-            " | Definy で作られたプロジェクト",
+            " | definy で作られたプロジェクト",
           isNotFound: false,
         };
       }
       return {
         imageUrl: commonUrl.iconUrl,
-        description: "不明なプロジェクト | Definy",
+        description: "不明なプロジェクト | definy",
         isNotFound: true,
       };
     }
@@ -61,13 +61,13 @@ const getCoverImageUrlAndDescription = async (
       if (user.data._ === "Just") {
         return {
           imageUrl: commonUrl.pngFileUrl(user.data.value.imageHash),
-          description: user.data.value.name + " | Definy のアカウント",
+          description: user.data.value.name + " | definy のアカウント",
           isNotFound: false,
         };
       }
       return {
         imageUrl: commonUrl.iconUrl,
-        description: "不明なアカウント | Definy",
+        description: "不明なアカウント | definy",
         isNotFound: true,
       };
     }
@@ -81,7 +81,7 @@ const getCoverImageUrlAndDescription = async (
         case "Esperanto":
           return "Noviga programlingvo, kiu funkcias en la retumilo";
         case "English":
-          return "Definy is Web App for Web App.";
+          return "definy is Web App for Web App.";
       }
     })(),
     isNotFound: false,
@@ -91,10 +91,10 @@ const getCoverImageUrlAndDescription = async (
 const loadingMessage = (language: d.Language): string => {
   switch (language) {
     case "English":
-      return "Loading Definy ...";
+      return "Loading definy ...";
     case "Japanese":
-      return "Definyを読込中……";
+      return "definyを読込中……";
     case "Esperanto":
-      return "Ŝarĝante Definy ...";
+      return "Ŝarĝante definy ...";
   }
 };

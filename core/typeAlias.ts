@@ -103,7 +103,7 @@ const typePartToTsType = (
 };
 
 /**
- * コンパイラに向けた属性付きのDefinyの型をTypeScriptの型に変換する
+ * コンパイラに向けた属性付きのdefinyの型をTypeScriptの型に変換する
  * @param typeAttribute
  */
 const typePartWithAttributeToTsType = (

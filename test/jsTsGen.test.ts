@@ -645,7 +645,7 @@ describe("test", () => {
       exportDefinitionList: [
         d.ExportDefinition.TypeAlias({
           name: jsTs.identifierFromString("Time"),
-          document: "初期のDefinyで使う時間の内部表現",
+          document: "初期のdefinyで使う時間の内部表現",
           typeParameterList: [],
           type: d.TsType.Object([
             {

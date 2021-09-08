@@ -920,7 +920,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
         {
           name: "Kernel",
-          description: "Definyだけでは表現できないデータ型",
+          description: "definyだけでは表現できないデータ型",
           parameter: d.Maybe.Just(
             noArgumentsType(d.TypePartBodyKernel.typePartId)
           ),
@@ -1180,7 +1180,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
   {
     id: d.TypePartBodyKernel.typePartId,
     name: "TypePartBodyKernel",
-    description: "Definyだけでは表現できないデータ型",
+    description: "definyだけでは表現できないデータ型",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
@@ -1192,8 +1192,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       },
       {
         name: "String",
-        description:
-          "文字列. Definyだけで表現できるが, TypeScriptでstringとして扱うために必要",
+        description: "文字列",
         parameter: { _: "Nothing" },
       },
       {
@@ -1258,7 +1257,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
         {
           name: "createTime",
-          description: "Definyでユーザーが作成された日時",
+          description: "definyでユーザーが作成された日時",
           type: noArgumentsType(d.Time.typePartId),
         },
         {
@@ -2001,7 +2000,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
   {
     id: d.Project.typePartId,
     name: "Project",
-    description: "Definy の プロジェクト",
+    description: "definy の プロジェクト",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
@@ -2491,7 +2490,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
   {
     id: d.KernelExpr.typePartId,
     name: "KernelExpr",
-    description: "Definyだけでは表現できない式",
+    description: "definyだけでは表現できない式",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
@@ -2530,7 +2529,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     id: d.Location.typePartId,
     name: "Location",
     description:
-      "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
+      "definyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
@@ -2570,7 +2569,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         },
         {
           name: "About",
-          description: "Definyについて説明したページ",
+          description: "definyについて説明したページ",
           parameter: { _: "Nothing" },
         },
         {
@@ -2954,7 +2953,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
   {
     id: d.EvaluatedExpr.typePartId,
     name: "EvaluatedExpr",
-    description: "Definyの評価しきった式",
+    description: "definyの評価しきった式",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
@@ -2963,7 +2962,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       patternList: [
         {
           name: "Kernel",
-          description: "Definyだけでは表現できない式",
+          description: "definyだけでは表現できない式",
           parameter: {
             _: "Just",
             value: noArgumentsType(d.KernelExpr.typePartId),
@@ -3148,7 +3147,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
   {
     name: "AccountToken",
     description:
-      "アカウントトークン. アカウントトークンを持っていればアクセストークンをDefinyのサーバーにリクエストした際に得られるIDのアカウントを保有していると証明できる. サーバーにハッシュ化したものを保存している. これが盗まれた場合,不正に得た人はアカウントを乗っ取ることができる. 有効期限はなし, 最後に発行したアカウントトークン以外は無効になる",
+      "アカウントトークン. アカウントトークンを持っていればアクセストークンをdefinyのサーバーにリクエストした際に得られるIDのアカウントを保有していると証明できる. サーバーにハッシュ化したものを保存している. これが盗まれた場合,不正に得た人はアカウントを乗っ取ることができる. 有効期限はなし, 最後に発行したアカウントトークン以外は無効になる",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
@@ -3234,7 +3233,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
   {
     id: d.Expr.typePartId,
     name: "Expr",
-    description: "Definy の 式",
+    description: "definy の 式",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
@@ -3243,7 +3242,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
       patternList: [
         {
           name: "Kernel",
-          description: "Definyだけでは表現できない式",
+          description: "definyだけでは表現できない式",
           parameter: {
             _: "Just",
             value: noArgumentsType(d.KernelExpr.typePartId),
@@ -3497,7 +3496,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
   {
     id: d.Type.typePartId,
     name: "Type",
-    description: "Definy の型",
+    description: "definy の型",
     attribute: d.Maybe.Nothing(),
     projectId: coreProjectId,
     dataTypeParameterList: [],

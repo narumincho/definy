@@ -77,7 +77,7 @@ const HomeLinkList: React.VFC<{
         style={{ padding: 4 }}
         onJump={props.jumpHandler}
       >
-        Definyについて
+        definyについて
       </Link>
       <Link
         urlData={{
