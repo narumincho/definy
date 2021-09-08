@@ -33,10 +33,10 @@ const IdView = (props: {
       const value = Number.parseInt(char, 16);
       const offset = i * 16;
       for (let j = 0; j < 4; j += 1) {
-        const n = (value >> j) & 1;
-        imageData.data[offset + j * 4 + 0] = n * 255;
-        imageData.data[offset + j * 4 + 1] = n * 255;
-        imageData.data[offset + j * 4 + 2] = n * 255;
+        const color = bitToColor(((value >> (3 - j)) & 1) === 1, j);
+        imageData.data[offset + j * 4 + 0] = color.r;
+        imageData.data[offset + j * 4 + 1] = color.g;
+        imageData.data[offset + j * 4 + 2] = color.b;
         imageData.data[offset + j * 4 + 3] = 255;
       }
     }
@@ -101,4 +101,29 @@ export const idOperation: ElementOperation<never, IdValue> = {
   moveParent: () => undefined,
   selectionView: IdSelectionView,
   detailView: IdDetailView,
+};
+
+const bitToColor = (
+  bit: boolean,
+  offset: number
+): { r: number; g: number; b: number } => {
+  if (bit) {
+    if (offset === 3) {
+      return {
+        r: 126,
+        g: 198,
+        b: 105,
+      };
+    }
+    return {
+      r: 156,
+      g: 231,
+      b: 134,
+    };
+  }
+  return {
+    r: 20,
+    g: 20,
+    b: 20,
+  };
 };
