@@ -3,6 +3,7 @@ import * as d from "../../localData";
 import {
   CommonValue,
   buttonValue,
+  idValue,
   listValue,
   multiLineTextValue,
   oneLineTextValue,
@@ -203,9 +204,8 @@ const LoadedTypePartEditor: React.VFC<
               props.language === d.Language.Japanese
                 ? "型パーツID"
                 : "typePartId",
-            value: oneLineTextValue({
-              onChange: undefined,
-              text: props.typePartId,
+            value: idValue({
+              id: props.typePartId,
             }),
           },
           {
