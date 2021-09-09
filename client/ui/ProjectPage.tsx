@@ -4,6 +4,7 @@ import {
   CommonValue,
   accountIdValue,
   buttonValue,
+  idValue,
   imageValue,
   listValue,
   multiLineTextValue,
@@ -101,9 +102,8 @@ export const ProjectPage: React.VFC<Props> = (props) => {
           },
           {
             name: "プロジェクトID",
-            value: oneLineTextValue({
-              text: props.projectId,
-              onChange: undefined,
+            value: idValue({
+              id: props.projectId,
             }),
           },
           {

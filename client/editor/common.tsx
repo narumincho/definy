@@ -2,6 +2,7 @@
 import * as React from "react";
 import { AccountIdValue, accountIdOperation } from "./accountId";
 import { ButtonValue, buttonOperation } from "./button";
+import { IdValue, idOperation } from "./id";
 import { ImageValue, imageOperation } from "./image";
 import { ListSelection, ListValue, listOperation } from "./list";
 import { MultiLineTextValue, multiLineTextOperation } from "./multiLineText";
@@ -111,6 +112,10 @@ export type CommonValue =
   | {
       readonly type: "type";
       readonly value: TypeValue;
+    }
+  | {
+      readonly type: "id";
+      readonly value: IdValue;
     };
 
 export const oneLineTextValue = (value: OneLineTextValue): CommonValue => ({
@@ -163,6 +168,10 @@ export const buttonValue = (value: ButtonValue): CommonValue => ({
 });
 export const typeValue = (value: TypeValue): CommonValue => ({
   type: "type",
+  value,
+});
+export const idValue = (value: IdValue): CommonValue => ({
+  type: "id",
   value,
 });
 
@@ -419,6 +428,14 @@ const CommonElementSelectionView: ElementOperation<
           }
         />
       );
+    case "id":
+      return (
+        <idOperation.selectionView
+          value={props.value.value}
+          onChangeSelection={typeChangeSelection}
+          selection={undefined}
+        />
+      );
   }
 });
 CommonElementSelectionView.displayName = "CommonElementSelectionView";
@@ -538,6 +555,13 @@ const CommonElementDetailView: ElementOperation<
               ? props.selection.typeSelection
               : undefined
           }
+        />
+      );
+    case "id":
+      return (
+        <idOperation.detailView
+          value={props.value.value}
+          selection={undefined}
         />
       );
   }
