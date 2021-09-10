@@ -67,11 +67,6 @@ const boxToHtmlElement = <Message>(
       value: box.direction === "x" ? "column" : "row",
     },
     {
-      property:
-        box.direction === "x" ? "grid-template-columns" : "grid-template-rows",
-      value: sizeListToStyleValue(box.children.map((c) => c.size)),
-    },
-    {
       property: "align-items",
       value: box.direction === "x" ? "center" : "start",
     },
@@ -98,9 +93,9 @@ const boxToHtmlElement = <Message>(
   ];
   const className = css.declarationListToSha256HashValue(styleDeclarationList);
   const children = box.children.map((elementOrBox) =>
-    elementOrBox.elementOrBox.type === "box"
-      ? boxToHtmlElement(elementOrBox.elementOrBox)
-      : elementToHtmlElement(elementOrBox.elementOrBox)
+    elementOrBox.type === "box"
+      ? boxToHtmlElement(elementOrBox)
+      : elementToHtmlElement(elementOrBox)
   );
   return {
     htmlElement: htmlElement(

@@ -73,7 +73,7 @@ export type View<Message> = {
 export type Box<Message> = {
   readonly type: "box";
   readonly direction: "x" | "y";
-  readonly children: ReadonlyArray<SizeAndElementOrBox<Message>>;
+  readonly children: ReadonlyArray<Element | Box<Message>>;
   readonly gap: number;
   readonly padding: number;
   readonly height: number | undefined;
@@ -81,19 +81,7 @@ export type Box<Message> = {
   readonly url: URL | undefined;
 };
 
-export type SizeAndElementOrBox<Message> = {
-  readonly size: Size;
-  readonly elementOrBox: Element | Box<Message>;
-};
-
 export type Size = number | "1fr" | "auto";
-
-export const sizeAndElementOrBox = <Message>(
-  size: SizeAndElementOrBox<Message>["size"],
-  elementOrBox: Element | Box<Message>
-): SizeAndElementOrBox<Message> => {
-  return { size, elementOrBox };
-};
 
 export type CreateBoxOption = {
   readonly gap?: number;
@@ -106,13 +94,13 @@ export type CreateBoxOption = {
 
 export const boxX = <Message>(
   option: CreateBoxOption,
-  children: ReadonlyArray<SizeAndElementOrBox<Message>>
+  children: ReadonlyArray<Element | Box<Message>>
 ): Box<Message> => {
   return createBox("x", option, children);
 };
 export const boxY = <Message>(
   option: CreateBoxOption,
-  children: ReadonlyArray<SizeAndElementOrBox<Message>>
+  children: ReadonlyArray<Element | Box<Message>>
 ): Box<Message> => {
   return createBox("y", option, children);
 };
@@ -120,7 +108,7 @@ export const boxY = <Message>(
 const createBox = <Message>(
   direction: "x" | "y",
   option: CreateBoxOption,
-  children: ReadonlyArray<SizeAndElementOrBox<Message>>
+  children: ReadonlyArray<Element | Box<Message>>
 ): Box<Message> => {
   return {
     type: "box",
