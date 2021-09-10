@@ -24,11 +24,11 @@ export const viewToHtmlOption = <Message>(view: View<Message>): HtmlOption => {
     twitterCard: "SummaryCard",
     style: css.ruleListToString([
       {
-        selector: "html",
+        selector: css.typeSelector("html"),
         declarationList: [css.height("100%")],
       },
       {
-        selector: "body",
+        selector: css.typeSelector("body"),
         declarationList: [
           css.height("100%"),
           css.margin0,
@@ -43,7 +43,7 @@ export const viewToHtmlOption = <Message>(view: View<Message>): HtmlOption => {
       ...[...htmlElementAndStyleDict.styleDict].map(
         ([hashValue, declarationList]) => {
           return {
-            selector: "." + sha256HashValueToClassName(hashValue),
+            selector: css.classSelector(sha256HashValueToClassName(hashValue)),
             declarationList,
           };
         }

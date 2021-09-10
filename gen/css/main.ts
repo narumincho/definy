@@ -5,8 +5,32 @@ export type Declaration = {
   readonly value: string;
 };
 
+export type Selector =
+  | {
+      readonly type: "class";
+      readonly className: string;
+    }
+  | {
+      readonly type: "type";
+      readonly elementName: string;
+    };
+
+export const classSelector = (className: string): Selector => {
+  return {
+    type: "class",
+    className,
+  };
+};
+
+export const typeSelector = (elementName: string): Selector => {
+  return {
+    type: "type",
+    elementName,
+  };
+};
+
 export type Rule = {
-  readonly selector: string;
+  readonly selector: Selector;
   readonly declarationList: ReadonlyArray<Declaration>;
 };
 
@@ -25,8 +49,20 @@ export const declarationListToString = (
 
 export const ruleToString = (rule: Rule): string => {
   return (
-    rule.selector + "{" + declarationListToString(rule.declarationList) + "}"
+    selectorToString(rule.selector) +
+    "{" +
+    declarationListToString(rule.declarationList) +
+    "}"
   );
+};
+
+const selectorToString = (selector: Selector): string => {
+  switch (selector.type) {
+    case "type":
+      return selector.elementName;
+    case "class":
+      return "." + selector.className;
+  }
 };
 
 export const ruleListToString = (ruleList: ReadonlyArray<Rule>): string => {
