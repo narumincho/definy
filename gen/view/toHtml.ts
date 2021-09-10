@@ -106,7 +106,7 @@ const boxToHtmlElement = <Message>(
     htmlElement: htmlElement(
       box.url === undefined ? "div" : "a",
       new Map<string, string>([
-        ["class", sha256HashValueToClassName(className)],
+        sha256HashValueToClassAttributeNameAndValue(className),
         ...(box.url === undefined
           ? []
           : ([["href", box.url.toString()]] as const)),
@@ -148,7 +148,7 @@ const elementToHtmlElement = (
       return {
         htmlElement: htmlElement(
           markupToTagName(element.markup),
-          new Map([["class", sha256HashValueToClassName(className)]]),
+          new Map([sha256HashValueToClassAttributeNameAndValue(className)]),
           element.text
         ),
         styleDict: new Map([[className, styleDeclarationList]]),
@@ -174,7 +174,7 @@ const elementToHtmlElement = (
                 element.svg.viewBox.height,
               ].join(" "),
             ],
-            ["className", className],
+            sha256HashValueToClassAttributeNameAndValue(className),
           ]),
           element.svg.svgElementList.map(svgElementToHtmlElement)
         ),
@@ -197,7 +197,7 @@ const elementToHtmlElement = (
           "img",
           new Map([
             ["src", element.url.toString()],
-            ["class", sha256HashValueToClassName(className)],
+            sha256HashValueToClassAttributeNameAndValue(className),
           ])
         ),
         styleDict: new Map([[className, styleDeclarationList]]),
@@ -246,6 +246,12 @@ const sizeToStyleValue = (size: Size): string => {
     return `${size}px`;
   }
   return size;
+};
+
+const sha256HashValueToClassAttributeNameAndValue = (
+  sha256HashValue: string
+): readonly [string, string] => {
+  return ["class", sha256HashValueToClassName(sha256HashValue)];
 };
 
 const sha256HashValueToClassName = (sha256HashValue: string): string => {
