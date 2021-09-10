@@ -92,11 +92,7 @@ const boxToHtmlElement = <Message>(
       : [{ property: "text-decoration", value: "none" }]),
   ];
   const className = css.declarationListToSha256HashValue(styleDeclarationList);
-  const children = box.children.map((elementOrBox) =>
-    elementOrBox.type === "box"
-      ? boxToHtmlElement(elementOrBox)
-      : elementToHtmlElement(elementOrBox)
-  );
+  const children = box.children.map(elementToHtmlElement);
   return {
     htmlElement: htmlElement(
       box.url === undefined ? "div" : "a",
@@ -115,8 +111,8 @@ const boxToHtmlElement = <Message>(
   };
 };
 
-const elementToHtmlElement = (
-  element: Element
+const elementToHtmlElement = <Message>(
+  element: Element<Message>
 ): {
   readonly htmlElement: HtmlElement;
   readonly styleDict: ReadonlyMap<string, ReadonlyArray<css.Declaration>>;
@@ -197,6 +193,9 @@ const elementToHtmlElement = (
         ),
         styleDict: new Map([[className, styleDeclarationList]]),
       };
+    }
+    case "box": {
+      return boxToHtmlElement(element);
     }
   }
 };

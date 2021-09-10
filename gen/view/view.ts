@@ -73,7 +73,7 @@ export type View<Message> = {
 export type Box<Message> = {
   readonly type: "box";
   readonly direction: "x" | "y";
-  readonly children: ReadonlyArray<Element | Box<Message>>;
+  readonly children: ReadonlyArray<Element<Message>>;
   readonly gap: number;
   readonly padding: number;
   readonly height: number | undefined;
@@ -94,13 +94,13 @@ export type CreateBoxOption = {
 
 export const boxX = <Message>(
   option: CreateBoxOption,
-  children: ReadonlyArray<Element | Box<Message>>
+  children: ReadonlyArray<Element<Message>>
 ): Box<Message> => {
   return createBox("x", option, children);
 };
 export const boxY = <Message>(
   option: CreateBoxOption,
-  children: ReadonlyArray<Element | Box<Message>>
+  children: ReadonlyArray<Element<Message>>
 ): Box<Message> => {
   return createBox("y", option, children);
 };
@@ -108,7 +108,7 @@ export const boxY = <Message>(
 const createBox = <Message>(
   direction: "x" | "y",
   option: CreateBoxOption,
-  children: ReadonlyArray<Element | Box<Message>>
+  children: ReadonlyArray<Element<Message>>
 ): Box<Message> => {
   return {
     type: "box",
@@ -123,7 +123,7 @@ const createBox = <Message>(
 };
 
 /** テキスト, リンクなどの要素 */
-export type Element =
+export type Element<Message> =
   | {
       readonly type: "text";
       readonly markup: "none" | "heading1" | "heading2";
@@ -141,7 +141,8 @@ export type Element =
       readonly url: URL;
       readonly width: number;
       readonly height: number;
-    };
+    }
+  | Box<Message>;
 
 export type Svg = {
   readonly viewBox: {
@@ -165,10 +166,10 @@ export type SvgElement =
       readonly svgElementList: ReadonlyArray<SvgElement>;
     };
 
-export const textElement = (
+export const textElement = <Message>(
   option: { padding?: number; markup?: "heading1" | "heading2" },
   text: string
-): Element => {
+): Element<Message> => {
   return {
     type: "text",
     padding: option.padding ?? 0,
@@ -176,10 +177,10 @@ export const textElement = (
     text,
   };
 };
-export const svgElement = (
+export const svgElement = <Message>(
   option: { width: number; height: number },
   svg: Svg
-): Element => {
+): Element<Message> => {
   return {
     type: "svg",
     svg,
@@ -187,11 +188,11 @@ export const svgElement = (
     height: option.height,
   };
 };
-export const imageElement = (option: {
+export const imageElement = <Message>(option: {
   readonly url: URL;
   readonly width: number;
   readonly height: number;
-}): Element => {
+}): Element<Message> => {
   return {
     type: "image",
     url: option.url,
