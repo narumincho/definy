@@ -25,12 +25,12 @@ export const viewToHtmlOption = <Message>(view: View<Message>): HtmlOption => {
     style: css.ruleListToString([
       {
         selector: css.typeSelector("html"),
-        declarationList: [css.height("100%")],
+        declarationList: [css.height100Percent],
       },
       {
         selector: css.typeSelector("body"),
         declarationList: [
-          css.height("100%"),
+          css.height100Percent,
           css.margin0,
           {
             property: "background-color",
@@ -38,6 +38,7 @@ export const viewToHtmlOption = <Message>(view: View<Message>): HtmlOption => {
           },
           css.displayGrid,
           css.boxSizingBorderBox,
+          css.alignItems("start"),
         ],
       },
       ...[...htmlElementAndStyleDict.styleDict].map(
@@ -66,19 +67,20 @@ const boxToHtmlElement = <Message>(
       property: "grid-auto-flow",
       value: box.direction === "x" ? "column" : "row",
     },
-    {
-      property: "align-items",
-      value: box.direction === "x" ? "center" : "start",
-    },
+    css.alignItems(box.direction === "x" ? "center" : "start"),
     {
       property: "gap",
       value: `${box.gap}px`,
     },
     {
       property: "padding",
-      value: `${box.padding}px`,
+      value: `${box.paddingTopBottom}px ${box.paddingLeftRight}px`,
     },
-    ...(box.height === undefined ? [] : [css.height(`${box.height}px`)]),
+    {
+      property: "overflow",
+      value: "hidden",
+    },
+    ...(box.height === undefined ? [] : [css.heightRem(box.height)]),
     ...(box.backgroundColor === undefined
       ? []
       : [
@@ -147,8 +149,18 @@ const elementToHtmlElement = <Message>(
     }
     case "svg": {
       const styleDeclarationList: ReadonlyArray<css.Declaration> = [
-        css.width(element.width),
-        css.height(element.height),
+        element.width.type === "rem"
+          ? css.widthRem(element.width.value)
+          : css.widthPercent(element.width.value),
+        css.heightRem(element.height),
+        ...(element.justifySelf === "center"
+          ? [
+              {
+                property: "justify-self",
+                value: "center",
+              },
+            ]
+          : []),
       ];
       const className =
         css.declarationListToSha256HashValue(styleDeclarationList);
@@ -174,8 +186,8 @@ const elementToHtmlElement = <Message>(
     }
     case "image": {
       const styleDeclarationList: ReadonlyArray<css.Declaration> = [
-        css.width(element.width),
-        css.height(element.height),
+        css.widthRem(element.width),
+        css.heightRem(element.height),
         {
           property: "object-fit",
           value: "cover",

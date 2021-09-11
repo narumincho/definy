@@ -75,7 +75,8 @@ export type Box<Message> = {
   readonly direction: "x" | "y";
   readonly children: ReadonlyArray<Element<Message>>;
   readonly gap: number;
-  readonly padding: number;
+  readonly paddingTopBottom: number;
+  readonly paddingLeftRight: number;
   readonly height: number | undefined;
   readonly backgroundColor: string | undefined;
   readonly url: URL | undefined;
@@ -85,7 +86,9 @@ export type Size = number | "1fr" | "auto";
 
 export type CreateBoxOption = {
   readonly gap?: number;
-  readonly padding?: number;
+  readonly padding?:
+    | number
+    | { readonly topBottom: number; readonly leftRight: number };
   readonly height?: number;
   /** @example "#7B920A" */
   readonly backgroundColor?: string;
@@ -114,12 +117,43 @@ const createBox = <Message>(
     type: "box",
     direction,
     gap: option.gap ?? 0,
-    padding: option.padding ?? 0,
+    paddingLeftRight: getPaddingLeftRight(option.padding),
+    paddingTopBottom: getPaddingTopBottom(option.padding),
     height: option.height,
     url: option.url,
     backgroundColor: option.backgroundColor,
     children,
   };
+};
+
+const getPaddingLeftRight = (
+  padding:
+    | number
+    | { readonly topBottom: number; readonly leftRight: number }
+    | undefined
+) => {
+  if (padding === undefined) {
+    return 0;
+  }
+  if (typeof padding === "number") {
+    return padding;
+  }
+  return padding.leftRight;
+};
+
+const getPaddingTopBottom = (
+  padding:
+    | number
+    | { readonly topBottom: number; readonly leftRight: number }
+    | undefined
+) => {
+  if (padding === undefined) {
+    return 0;
+  }
+  if (typeof padding === "number") {
+    return padding;
+  }
+  return padding.topBottom;
 };
 
 /** テキスト, リンクなどの要素 */
@@ -133,8 +167,9 @@ export type Element<Message> =
   | {
       readonly type: "svg";
       readonly svg: Svg;
-      readonly width: number;
+      readonly width: PercentageOrRem;
       readonly height: number;
+      readonly justifySelf: "center" | undefined;
     }
   | {
       readonly type: "image";
@@ -177,8 +212,23 @@ export const textElement = <Message>(
     text,
   };
 };
+
+export type PercentageOrRem =
+  | {
+      readonly type: "rem";
+      readonly value: number;
+    }
+  | {
+      readonly type: "percentage";
+      readonly value: number;
+    };
+
 export const svgElement = <Message>(
-  option: { width: number; height: number },
+  option: {
+    readonly width: PercentageOrRem;
+    readonly height: number;
+    readonly justifySelf?: "center" | undefined;
+  },
   svg: Svg
 ): Element<Message> => {
   return {
@@ -186,6 +236,7 @@ export const svgElement = <Message>(
     svg,
     width: option.width,
     height: option.height,
+    justifySelf: option.justifySelf,
   };
 };
 export const imageElement = <Message>(option: {

@@ -91,7 +91,7 @@ const snsLink = (
       backgroundColor: linkBackGroundColor,
     },
     [
-      view.svgElement({ width: 32, height: 32 }, logo),
+      view.svgElement({ width: { type: "rem", value: 2 }, height: 2 }, logo),
       view.textElement({ padding: 8 }, text),
     ]
   );
@@ -110,8 +110,8 @@ const externalLink = (
     [
       view.imageElement({
         url: imageUrl,
-        width: 256,
-        height: 128,
+        width: 16,
+        height: 8,
       }),
       view.textElement({ padding: 8 }, text),
     ]
@@ -128,8 +128,8 @@ const articleLink = (
     [
       view.imageElement({
         url: articleTitleAndImageUrl.imageUrl,
-        width: 256,
-        height: 128,
+        width: 16,
+        height: 8,
       }),
       view.textElement({ padding: 8 }, articleTitleAndImageUrl.title),
     ]
@@ -153,12 +153,21 @@ const articleListToViewElement = (
 };
 
 export const topBox: view.Box<undefined> = view.boxY({}, [
-  view.svgElement({ width: 512, height: 72 }, webSiteLogo),
+  view.boxY({ padding: { topBottom: 48, leftRight: 0 } }, [
+    view.svgElement(
+      {
+        width: { type: "percentage", value: 90 },
+        height: 5,
+        justifySelf: "center",
+      },
+      webSiteLogo
+    ),
+  ]),
   view.textElement(
     { markup: "heading2", padding: 8 },
     "ナルミンチョの SNS アカウント"
   ),
-  view.boxX({ padding: 8, gap: 8, height: 64 }, [
+  view.boxX({ padding: 8, gap: 8, height: 4 }, [
     snsLink(
       new URL("https://twitter.com/naru_mincho"),
       twitterLogo,

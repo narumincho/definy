@@ -69,17 +69,30 @@ export const ruleListToString = (ruleList: ReadonlyArray<Rule>): string => {
   return ruleList.map(ruleToString).join("");
 };
 
-export const width = (value: string | number): Declaration => {
+export const widthRem = (value: number): Declaration => {
   return {
     property: "width",
-    value: typeof value === "number" ? `${value}px` : value,
+    value: remValueToCssValue(value),
   };
 };
-export const height = (value: string | number): Declaration => {
+
+export const widthPercent = (value: number): Declaration => {
+  return {
+    property: "width",
+    value: `${value}%`,
+  };
+};
+
+export const heightRem = (value: number): Declaration => {
   return {
     property: "height",
-    value: typeof value === "number" ? `${value}px` : value,
+    value: remValueToCssValue(value),
   };
+};
+
+export const height100Percent: Declaration = {
+  property: "height",
+  value: "100%",
 };
 
 export const boxSizingBorderBox: Declaration = {
@@ -103,3 +116,12 @@ export const declarationListToSha256HashValue = (
     .update(declarationListToString(declarationList))
     .digest("hex");
 };
+
+const remValueToCssValue = (value: number): string => {
+  return `${value}rem`;
+};
+
+export const alignItems = (value: "center" | "start"): Declaration => ({
+  property: "align-items",
+  value,
+});
