@@ -125,3 +125,8 @@ export const alignItems = (value: "center" | "start"): Declaration => ({
   property: "align-items",
   value,
 });
+
+export const backgroundColor = (value: string): Declaration => ({
+  property: "background-color",
+  value,
+});

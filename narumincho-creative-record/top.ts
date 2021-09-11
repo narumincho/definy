@@ -147,10 +147,18 @@ const articleListToViewElement = (
   return view.boxY(
     { padding: 8, gap: 8 },
     groupBySize(list, 3).map((row) =>
-      view.boxX({ gap: 8 }, row.map(articleLink))
+      view.boxX(
+        { gap: 8, gridTemplateColumns1FrCount: 3 },
+        row.map(articleLink)
+      )
     )
   );
 };
+
+const copyright: view.Element<undefined> = view.textElement(
+  { padding: 8 },
+  "© 2021 narumincho"
+);
 
 export const topBox: view.Box<undefined> = view.boxY({}, [
   view.boxY({ padding: { topBottom: 48, leftRight: 0 } }, [
@@ -191,12 +199,12 @@ export const topBox: view.Box<undefined> = view.boxY({}, [
   view.boxX({ padding: 8, gap: 8 }, [
     externalLink(
       new URL("https://definy.app/?hl=ja"),
-      staticResourceUrl.definy20190212Png,
+      staticResourceUrl.definy20210811Png,
       "definy"
     ),
     externalLink(
       new URL("https://narumincho-creative-record.web.app/"),
-      staticResourceUrl["gravity-starPng"],
+      staticResourceUrl.gravity_starPng,
       "重力星"
     ),
     externalLink(
@@ -213,11 +221,11 @@ export const topBox: view.Box<undefined> = view.boxY({}, [
     {
       title:
         "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する",
-      imageUrl: staticResourceUrl.definy20210811Png,
+      imageUrl: staticResourceUrl.powershell_iconPng,
     },
     {
       title: "SVGの基本",
-      imageUrl: staticResourceUrl.definy20210811Png,
+      imageUrl: staticResourceUrl.svg_basicPng,
     },
     {
       title: "単体SVGと埋め込みSVG",
@@ -260,4 +268,5 @@ export const topBox: view.Box<undefined> = view.boxY({}, [
       imageUrl: staticResourceUrl.definy20210811Png,
     },
   ]),
+  copyright,
 ]);

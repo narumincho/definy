@@ -8,24 +8,28 @@
  */
 export const staticResourceUrl: { 
 /**
- * static な ファイル の "definy20190212.png"をリクエストするためのURL. ファイルのハッシュ値は "c2f730c26a3b19a5d20d7f6c28467230feccbdfc484938130b999b3f179600cf"
- */
-readonly definy20190212Png: URL; 
-/**
  * static な ファイル の "definy20210811.png"をリクエストするためのURL. ファイルのハッシュ値は "33b80a0844230e60044b9891dc2fbefc3960e7995913e10928ca17852a8c3ce7"
  */
 readonly definy20210811Png: URL; 
 /**
- * static な ファイル の "gravity-star.png"をリクエストするためのURL. ファイルのハッシュ値は "68800d65e7bba25db6a2e5e5d2001e275969f10e653d34233989543090809dc2"
+ * static な ファイル の "gravity_star.png"をリクエストするためのURL. ファイルのハッシュ値は "68800d65e7bba25db6a2e5e5d2001e275969f10e653d34233989543090809dc2"
  */
-readonly "gravity-starPng": URL; 
+readonly gravity_starPng: URL; 
 /**
  * static な ファイル の "icon.png"をリクエストするためのURL. ファイルのハッシュ値は "fe793a7f2e27cb8cfe578e5dff35315e2ba9c2544dcb250d3e9b78ca00a5b959"
  */
 readonly iconPng: URL; 
 /**
+ * static な ファイル の "powershell_icon.png"をリクエストするためのURL. ファイルのハッシュ値は "3e53209d83848dffa23b7cbbdca35a735c55a6b55601cdedd303a3f90d559fe3"
+ */
+readonly powershell_iconPng: URL; 
+/**
+ * static な ファイル の "svg_basic.png"をリクエストするためのURL. ファイルのハッシュ値は "07eb3d10e2f339ab8574ffa8a3f9f15bfd6f51518ef24bb38ae92d54deb9510a"
+ */
+readonly svg_basicPng: URL; 
+/**
  * static な ファイル の "tsukumart.png"をリクエストするためのURL. ファイルのハッシュ値は "3f878f4f28de1c5358fdc1048ee983e5bf3d23e37b7d8b769afc3529ef63e062"
  */
-readonly tsukumartPng: URL } = { definy20190212Png: new URL("http://localhost:8080/c2f730c26a3b19a5d20d7f6c28467230feccbdfc484938130b999b3f179600cf"), definy20210811Png: new URL("http://localhost:8080/33b80a0844230e60044b9891dc2fbefc3960e7995913e10928ca17852a8c3ce7"), "gravity-starPng": new URL("http://localhost:8080/68800d65e7bba25db6a2e5e5d2001e275969f10e653d34233989543090809dc2"), iconPng: new URL("http://localhost:8080/fe793a7f2e27cb8cfe578e5dff35315e2ba9c2544dcb250d3e9b78ca00a5b959"), tsukumartPng: new URL("http://localhost:8080/3f878f4f28de1c5358fdc1048ee983e5bf3d23e37b7d8b769afc3529ef63e062") };
+readonly tsukumartPng: URL } = { definy20210811Png: new URL("http://localhost:8080/33b80a0844230e60044b9891dc2fbefc3960e7995913e10928ca17852a8c3ce7"), gravity_starPng: new URL("http://localhost:8080/68800d65e7bba25db6a2e5e5d2001e275969f10e653d34233989543090809dc2"), iconPng: new URL("http://localhost:8080/fe793a7f2e27cb8cfe578e5dff35315e2ba9c2544dcb250d3e9b78ca00a5b959"), powershell_iconPng: new URL("http://localhost:8080/3e53209d83848dffa23b7cbbdca35a735c55a6b55601cdedd303a3f90d559fe3"), svg_basicPng: new URL("http://localhost:8080/07eb3d10e2f339ab8574ffa8a3f9f15bfd6f51518ef24bb38ae92d54deb9510a"), tsukumartPng: new URL("http://localhost:8080/3f878f4f28de1c5358fdc1048ee983e5bf3d23e37b7d8b769afc3529ef63e062") };
 
 

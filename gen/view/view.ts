@@ -79,10 +79,9 @@ export type Box<Message> = {
   readonly paddingLeftRight: number;
   readonly height: number | undefined;
   readonly backgroundColor: string | undefined;
+  readonly gridTemplateColumns1FrCount: number | undefined;
   readonly url: URL | undefined;
 };
-
-export type Size = number | "1fr" | "auto";
 
 export type CreateBoxOption = {
   readonly gap?: number;
@@ -93,6 +92,8 @@ export type CreateBoxOption = {
   /** @example "#7B920A" */
   readonly backgroundColor?: string;
   readonly url?: URL;
+  /** `grid-template-columns` の 1fr を繰り返す数 */
+  readonly gridTemplateColumns1FrCount?: number | undefined;
 };
 
 export const boxX = <Message>(
@@ -122,6 +123,7 @@ const createBox = <Message>(
     height: option.height,
     url: option.url,
     backgroundColor: option.backgroundColor,
+    gridTemplateColumns1FrCount: option.gridTemplateColumns1FrCount,
     children,
   };
 };

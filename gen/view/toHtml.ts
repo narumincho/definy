@@ -1,4 +1,4 @@
-import { Box, Element, Size, SvgElement, View } from "./view";
+import { Box, Element, SvgElement, View } from "./view";
 import {
   HtmlElement,
   HtmlOption,
@@ -32,10 +32,7 @@ export const viewToHtmlOption = <Message>(view: View<Message>): HtmlOption => {
         declarationList: [
           css.height100Percent,
           css.margin0,
-          {
-            property: "background-color",
-            value: "black",
-          },
+          css.backgroundColor("black"),
           css.displayGrid,
           css.boxSizingBorderBox,
           css.alignItems("start"),
@@ -83,15 +80,20 @@ const boxToHtmlElement = <Message>(
     ...(box.height === undefined ? [] : [css.heightRem(box.height)]),
     ...(box.backgroundColor === undefined
       ? []
-      : [
-          {
-            property: "background-color",
-            value: box.backgroundColor,
-          },
-        ]),
+      : [css.backgroundColor(box.backgroundColor)]),
     ...(box.url === undefined
       ? []
       : [{ property: "text-decoration", value: "none" }]),
+    ...(box.gridTemplateColumns1FrCount === undefined
+      ? []
+      : [
+          {
+            property: "grid-template-columns",
+            value: new Array(box.gridTemplateColumns1FrCount)
+              .fill("1fr")
+              .join(" "),
+          },
+        ]),
   ];
   const className = css.declarationListToSha256HashValue(styleDeclarationList);
   const children = box.children.map(elementToHtmlElement);
@@ -241,17 +243,6 @@ const svgElementToHtmlElement = (svg: SvgElement): HtmlElement => {
         svg.svgElementList.map(svgElementToHtmlElement)
       );
   }
-};
-
-const sizeListToStyleValue = (sizeList: ReadonlyArray<Size>): string => {
-  return sizeList.map(sizeToStyleValue).join(" ");
-};
-
-const sizeToStyleValue = (size: Size): string => {
-  if (typeof size === "number") {
-    return `${size}px`;
-  }
-  return size;
 };
 
 const sha256HashValueToClassAttributeNameAndValue = (
