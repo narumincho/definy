@@ -195,11 +195,6 @@ export const topBox: view.Box<undefined> = view.boxY({}, [
       "definy"
     ),
     externalLink(
-      new URL("https://definy-dev.web.app/?hl=ja"),
-      staticResourceUrl.definy20210811Png,
-      "nightly definy"
-    ),
-    externalLink(
       new URL("https://narumincho-creative-record.web.app/"),
       staticResourceUrl["gravity-starPng"],
       "重力星"
