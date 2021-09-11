@@ -176,7 +176,7 @@ export type Element<Message> =
   | {
       readonly type: "image";
       readonly url: URL;
-      readonly width: number;
+      readonly width: PercentageOrRem;
       readonly height: number;
     }
   | Box<Message>;
@@ -243,7 +243,7 @@ export const svgElement = <Message>(
 };
 export const imageElement = <Message>(option: {
   readonly url: URL;
-  readonly width: number;
+  readonly width: PercentageOrRem;
   readonly height: number;
 }): Element<Message> => {
   return {

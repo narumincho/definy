@@ -12,6 +12,10 @@ export const staticResourceUrl: {
  */
 readonly definy20210811Png: URL; 
 /**
+ * static な ファイル の "grape_svg_code.png"をリクエストするためのURL. ファイルのハッシュ値は "ddc034ae2b5d07e6ec33076a3a45bd9772c6670f53b14ddd30c0b51f2b97c7fb"
+ */
+readonly grape_svg_codePng: URL; 
+/**
  * static な ファイル の "gravity_star.png"をリクエストするためのURL. ファイルのハッシュ値は "68800d65e7bba25db6a2e5e5d2001e275969f10e653d34233989543090809dc2"
  */
 readonly gravity_starPng: URL; 
@@ -30,6 +34,6 @@ readonly svg_basicPng: URL;
 /**
  * static な ファイル の "tsukumart.png"をリクエストするためのURL. ファイルのハッシュ値は "3f878f4f28de1c5358fdc1048ee983e5bf3d23e37b7d8b769afc3529ef63e062"
  */
-readonly tsukumartPng: URL } = { definy20210811Png: new URL("http://localhost:8080/33b80a0844230e60044b9891dc2fbefc3960e7995913e10928ca17852a8c3ce7"), gravity_starPng: new URL("http://localhost:8080/68800d65e7bba25db6a2e5e5d2001e275969f10e653d34233989543090809dc2"), iconPng: new URL("http://localhost:8080/fe793a7f2e27cb8cfe578e5dff35315e2ba9c2544dcb250d3e9b78ca00a5b959"), powershell_iconPng: new URL("http://localhost:8080/3e53209d83848dffa23b7cbbdca35a735c55a6b55601cdedd303a3f90d559fe3"), svg_basicPng: new URL("http://localhost:8080/07eb3d10e2f339ab8574ffa8a3f9f15bfd6f51518ef24bb38ae92d54deb9510a"), tsukumartPng: new URL("http://localhost:8080/3f878f4f28de1c5358fdc1048ee983e5bf3d23e37b7d8b769afc3529ef63e062") };
+readonly tsukumartPng: URL } = { definy20210811Png: new URL("http://localhost:8080/33b80a0844230e60044b9891dc2fbefc3960e7995913e10928ca17852a8c3ce7"), grape_svg_codePng: new URL("http://localhost:8080/ddc034ae2b5d07e6ec33076a3a45bd9772c6670f53b14ddd30c0b51f2b97c7fb"), gravity_starPng: new URL("http://localhost:8080/68800d65e7bba25db6a2e5e5d2001e275969f10e653d34233989543090809dc2"), iconPng: new URL("http://localhost:8080/fe793a7f2e27cb8cfe578e5dff35315e2ba9c2544dcb250d3e9b78ca00a5b959"), powershell_iconPng: new URL("http://localhost:8080/3e53209d83848dffa23b7cbbdca35a735c55a6b55601cdedd303a3f90d559fe3"), svg_basicPng: new URL("http://localhost:8080/07eb3d10e2f339ab8574ffa8a3f9f15bfd6f51518ef24bb38ae92d54deb9510a"), tsukumartPng: new URL("http://localhost:8080/3f878f4f28de1c5358fdc1048ee983e5bf3d23e37b7d8b769afc3529ef63e062") };
 
 

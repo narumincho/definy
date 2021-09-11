@@ -121,7 +121,9 @@ const remValueToCssValue = (value: number): string => {
   return `${value}rem`;
 };
 
-export const alignItems = (value: "center" | "start"): Declaration => ({
+export const alignItems = (
+  value: "stretch" | "center" | "start"
+): Declaration => ({
   property: "align-items",
   value,
 });

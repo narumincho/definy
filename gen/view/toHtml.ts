@@ -1,4 +1,4 @@
-import { Box, Element, SvgElement, View } from "./view";
+import { Box, Element, PercentageOrRem, SvgElement, View } from "./view";
 import {
   HtmlElement,
   HtmlOption,
@@ -64,7 +64,7 @@ const boxToHtmlElement = <Message>(
       property: "grid-auto-flow",
       value: box.direction === "x" ? "column" : "row",
     },
-    css.alignItems(box.direction === "x" ? "center" : "start"),
+    css.alignItems("stretch"),
     {
       property: "gap",
       value: `${box.gap}px`,
@@ -151,9 +151,7 @@ const elementToHtmlElement = <Message>(
     }
     case "svg": {
       const styleDeclarationList: ReadonlyArray<css.Declaration> = [
-        element.width.type === "rem"
-          ? css.widthRem(element.width.value)
-          : css.widthPercent(element.width.value),
+        percentageOrRemWidthToCssDeclaration(element.width),
         css.heightRem(element.height),
         ...(element.justifySelf === "center"
           ? [
@@ -188,7 +186,7 @@ const elementToHtmlElement = <Message>(
     }
     case "image": {
       const styleDeclarationList: ReadonlyArray<css.Declaration> = [
-        css.widthRem(element.width),
+        percentageOrRemWidthToCssDeclaration(element.width),
         css.heightRem(element.height),
         {
           property: "object-fit",
@@ -253,4 +251,13 @@ const sha256HashValueToClassAttributeNameAndValue = (
 
 const sha256HashValueToClassName = (sha256HashValue: string): string => {
   return "nv_" + sha256HashValue;
+};
+
+const percentageOrRemWidthToCssDeclaration = (
+  percentageOrRem: PercentageOrRem
+): css.Declaration => {
+  if (percentageOrRem.type === "rem") {
+    return css.widthRem(percentageOrRem.value);
+  }
+  return css.widthPercent(percentageOrRem.value);
 };

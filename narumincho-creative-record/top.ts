@@ -110,7 +110,7 @@ const externalLink = (
     [
       view.imageElement({
         url: imageUrl,
-        width: 16,
+        width: { type: "percentage", value: 100 },
         height: 8,
       }),
       view.textElement({ padding: 8 }, text),
@@ -128,7 +128,7 @@ const articleLink = (
     [
       view.imageElement({
         url: articleTitleAndImageUrl.imageUrl,
-        width: 16,
+        width: { type: "percentage", value: 100 },
         height: 8,
       }),
       view.textElement({ padding: 8 }, articleTitleAndImageUrl.title),
@@ -196,7 +196,7 @@ export const topBox: view.Box<undefined> = view.boxY({}, [
     { markup: "heading2", padding: 8 },
     "ナルミンチョが作った Webアプリ"
   ),
-  view.boxX({ padding: 8, gap: 8 }, [
+  view.boxX({ padding: 8, gap: 8, gridTemplateColumns1FrCount: 3 }, [
     externalLink(
       new URL("https://definy.app/?hl=ja"),
       staticResourceUrl.definy20210811Png,
@@ -229,7 +229,7 @@ export const topBox: view.Box<undefined> = view.boxY({}, [
     },
     {
       title: "単体SVGと埋め込みSVG",
-      imageUrl: staticResourceUrl.definy20210811Png,
+      imageUrl: staticResourceUrl.grape_svg_codePng,
     },
     {
       title: "DESIRED Routeについて",
