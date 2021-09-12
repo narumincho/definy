@@ -5,8 +5,32 @@ export type Declaration = {
   readonly value: string;
 };
 
+export type Selector =
+  | {
+      readonly type: "class";
+      readonly className: string;
+    }
+  | {
+      readonly type: "type";
+      readonly elementName: string;
+    };
+
+export const classSelector = (className: string): Selector => {
+  return {
+    type: "class",
+    className,
+  };
+};
+
+export const typeSelector = (elementName: string): Selector => {
+  return {
+    type: "type",
+    elementName,
+  };
+};
+
 export type Rule = {
-  readonly selector: string;
+  readonly selector: Selector;
   readonly declarationList: ReadonlyArray<Declaration>;
 };
 
@@ -25,25 +49,50 @@ export const declarationListToString = (
 
 export const ruleToString = (rule: Rule): string => {
   return (
-    rule.selector + "{" + declarationListToString(rule.declarationList) + "}"
+    selectorToString(rule.selector) +
+    "{" +
+    declarationListToString(rule.declarationList) +
+    "}"
   );
+};
+
+const selectorToString = (selector: Selector): string => {
+  switch (selector.type) {
+    case "type":
+      return selector.elementName;
+    case "class":
+      return "." + selector.className;
+  }
 };
 
 export const ruleListToString = (ruleList: ReadonlyArray<Rule>): string => {
   return ruleList.map(ruleToString).join("");
 };
 
-export const width = (value: string | number): Declaration => {
+export const widthRem = (value: number): Declaration => {
   return {
     property: "width",
-    value: typeof value === "number" ? `${value}px` : value,
+    value: remValueToCssValue(value),
   };
 };
-export const height = (value: string | number): Declaration => {
+
+export const widthPercent = (value: number): Declaration => {
+  return {
+    property: "width",
+    value: `${value}%`,
+  };
+};
+
+export const heightRem = (value: number): Declaration => {
   return {
     property: "height",
-    value: typeof value === "number" ? `${value}px` : value,
+    value: remValueToCssValue(value),
   };
+};
+
+export const height100Percent: Declaration = {
+  property: "height",
+  value: "100%",
 };
 
 export const boxSizingBorderBox: Declaration = {
@@ -67,3 +116,19 @@ export const declarationListToSha256HashValue = (
     .update(declarationListToString(declarationList))
     .digest("hex");
 };
+
+const remValueToCssValue = (value: number): string => {
+  return `${value}rem`;
+};
+
+export const alignItems = (
+  value: "stretch" | "center" | "start"
+): Declaration => ({
+  property: "align-items",
+  value,
+});
+
+export const backgroundColor = (value: string): Declaration => ({
+  property: "background-color",
+  value,
+});

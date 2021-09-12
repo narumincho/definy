@@ -73,46 +73,38 @@ export type View<Message> = {
 export type Box<Message> = {
   readonly type: "box";
   readonly direction: "x" | "y";
-  readonly children: ReadonlyArray<SizeAndElementOrBox<Message>>;
+  readonly children: ReadonlyArray<Element<Message>>;
   readonly gap: number;
-  readonly padding: number;
+  readonly paddingTopBottom: number;
+  readonly paddingLeftRight: number;
   readonly height: number | undefined;
   readonly backgroundColor: string | undefined;
+  readonly gridTemplateColumns1FrCount: number | undefined;
   readonly url: URL | undefined;
-};
-
-export type SizeAndElementOrBox<Message> = {
-  readonly size: Size;
-  readonly elementOrBox: Element | Box<Message>;
-};
-
-export type Size = number | "1fr" | "auto";
-
-export const sizeAndElementOrBox = <Message>(
-  size: SizeAndElementOrBox<Message>["size"],
-  elementOrBox: Element | Box<Message>
-): SizeAndElementOrBox<Message> => {
-  return { size, elementOrBox };
 };
 
 export type CreateBoxOption = {
   readonly gap?: number;
-  readonly padding?: number;
+  readonly padding?:
+    | number
+    | { readonly topBottom: number; readonly leftRight: number };
   readonly height?: number;
   /** @example "#7B920A" */
   readonly backgroundColor?: string;
   readonly url?: URL;
+  /** `grid-template-columns` の 1fr を繰り返す数 */
+  readonly gridTemplateColumns1FrCount?: number | undefined;
 };
 
 export const boxX = <Message>(
   option: CreateBoxOption,
-  children: ReadonlyArray<SizeAndElementOrBox<Message>>
+  children: ReadonlyArray<Element<Message>>
 ): Box<Message> => {
   return createBox("x", option, children);
 };
 export const boxY = <Message>(
   option: CreateBoxOption,
-  children: ReadonlyArray<SizeAndElementOrBox<Message>>
+  children: ReadonlyArray<Element<Message>>
 ): Box<Message> => {
   return createBox("y", option, children);
 };
@@ -120,22 +112,54 @@ export const boxY = <Message>(
 const createBox = <Message>(
   direction: "x" | "y",
   option: CreateBoxOption,
-  children: ReadonlyArray<SizeAndElementOrBox<Message>>
+  children: ReadonlyArray<Element<Message>>
 ): Box<Message> => {
   return {
     type: "box",
     direction,
     gap: option.gap ?? 0,
-    padding: option.padding ?? 0,
+    paddingLeftRight: getPaddingLeftRight(option.padding),
+    paddingTopBottom: getPaddingTopBottom(option.padding),
     height: option.height,
     url: option.url,
     backgroundColor: option.backgroundColor,
+    gridTemplateColumns1FrCount: option.gridTemplateColumns1FrCount,
     children,
   };
 };
 
+const getPaddingLeftRight = (
+  padding:
+    | number
+    | { readonly topBottom: number; readonly leftRight: number }
+    | undefined
+) => {
+  if (padding === undefined) {
+    return 0;
+  }
+  if (typeof padding === "number") {
+    return padding;
+  }
+  return padding.leftRight;
+};
+
+const getPaddingTopBottom = (
+  padding:
+    | number
+    | { readonly topBottom: number; readonly leftRight: number }
+    | undefined
+) => {
+  if (padding === undefined) {
+    return 0;
+  }
+  if (typeof padding === "number") {
+    return padding;
+  }
+  return padding.topBottom;
+};
+
 /** テキスト, リンクなどの要素 */
-export type Element =
+export type Element<Message> =
   | {
       readonly type: "text";
       readonly markup: "none" | "heading1" | "heading2";
@@ -145,15 +169,17 @@ export type Element =
   | {
       readonly type: "svg";
       readonly svg: Svg;
-      readonly width: number;
+      readonly width: PercentageOrRem;
       readonly height: number;
+      readonly justifySelf: "center" | undefined;
     }
   | {
       readonly type: "image";
       readonly url: URL;
-      readonly width: number;
+      readonly width: PercentageOrRem;
       readonly height: number;
-    };
+    }
+  | Box<Message>;
 
 export type Svg = {
   readonly viewBox: {
@@ -177,10 +203,10 @@ export type SvgElement =
       readonly svgElementList: ReadonlyArray<SvgElement>;
     };
 
-export const textElement = (
+export const textElement = <Message>(
   option: { padding?: number; markup?: "heading1" | "heading2" },
   text: string
-): Element => {
+): Element<Message> => {
   return {
     type: "text",
     padding: option.padding ?? 0,
@@ -188,22 +214,38 @@ export const textElement = (
     text,
   };
 };
-export const svgElement = (
-  option: { width: number; height: number },
+
+export type PercentageOrRem =
+  | {
+      readonly type: "rem";
+      readonly value: number;
+    }
+  | {
+      readonly type: "percentage";
+      readonly value: number;
+    };
+
+export const svgElement = <Message>(
+  option: {
+    readonly width: PercentageOrRem;
+    readonly height: number;
+    readonly justifySelf?: "center" | undefined;
+  },
   svg: Svg
-): Element => {
+): Element<Message> => {
   return {
     type: "svg",
     svg,
     width: option.width,
     height: option.height,
+    justifySelf: option.justifySelf,
   };
 };
-export const imageElement = (option: {
+export const imageElement = <Message>(option: {
   readonly url: URL;
-  readonly width: number;
+  readonly width: PercentageOrRem;
   readonly height: number;
-}): Element => {
+}): Element<Message> => {
   return {
     type: "image",
     url: option.url,

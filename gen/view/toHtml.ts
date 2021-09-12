@@ -1,4 +1,4 @@
-import { Box, Element, Size, SvgElement, View } from "./view";
+import { Box, Element, PercentageOrRem, SvgElement, View } from "./view";
 import {
   HtmlElement,
   HtmlOption,
@@ -24,26 +24,24 @@ export const viewToHtmlOption = <Message>(view: View<Message>): HtmlOption => {
     twitterCard: "SummaryCard",
     style: css.ruleListToString([
       {
-        selector: "html",
-        declarationList: [css.height("100%")],
+        selector: css.typeSelector("html"),
+        declarationList: [css.height100Percent],
       },
       {
-        selector: "body",
+        selector: css.typeSelector("body"),
         declarationList: [
-          css.height("100%"),
+          css.height100Percent,
           css.margin0,
-          {
-            property: "background-color",
-            value: "black",
-          },
+          css.backgroundColor("black"),
           css.displayGrid,
           css.boxSizingBorderBox,
+          css.alignItems("start"),
         ],
       },
       ...[...htmlElementAndStyleDict.styleDict].map(
         ([hashValue, declarationList]) => {
           return {
-            selector: "." + sha256HashValueToClassName(hashValue),
+            selector: css.classSelector(sha256HashValueToClassName(hashValue)),
             declarationList,
           };
         }
@@ -66,47 +64,44 @@ const boxToHtmlElement = <Message>(
       property: "grid-auto-flow",
       value: box.direction === "x" ? "column" : "row",
     },
-    {
-      property:
-        box.direction === "x" ? "grid-template-columns" : "grid-template-rows",
-      value: sizeListToStyleValue(box.children.map((c) => c.size)),
-    },
-    {
-      property: "align-items",
-      value: box.direction === "x" ? "center" : "start",
-    },
+    css.alignItems("stretch"),
     {
       property: "gap",
       value: `${box.gap}px`,
     },
     {
       property: "padding",
-      value: `${box.padding}px`,
+      value: `${box.paddingTopBottom}px ${box.paddingLeftRight}px`,
     },
-    ...(box.height === undefined ? [] : [css.height(`${box.height}px`)]),
+    {
+      property: "overflow",
+      value: "hidden",
+    },
+    ...(box.height === undefined ? [] : [css.heightRem(box.height)]),
     ...(box.backgroundColor === undefined
       ? []
-      : [
-          {
-            property: "background-color",
-            value: box.backgroundColor,
-          },
-        ]),
+      : [css.backgroundColor(box.backgroundColor)]),
     ...(box.url === undefined
       ? []
       : [{ property: "text-decoration", value: "none" }]),
+    ...(box.gridTemplateColumns1FrCount === undefined
+      ? []
+      : [
+          {
+            property: "grid-template-columns",
+            value: new Array(box.gridTemplateColumns1FrCount)
+              .fill("1fr")
+              .join(" "),
+          },
+        ]),
   ];
   const className = css.declarationListToSha256HashValue(styleDeclarationList);
-  const children = box.children.map((elementOrBox) =>
-    elementOrBox.elementOrBox.type === "box"
-      ? boxToHtmlElement(elementOrBox.elementOrBox)
-      : elementToHtmlElement(elementOrBox.elementOrBox)
-  );
+  const children = box.children.map(elementToHtmlElement);
   return {
     htmlElement: htmlElement(
       box.url === undefined ? "div" : "a",
       new Map<string, string>([
-        ["class", sha256HashValueToClassName(className)],
+        sha256HashValueToClassAttributeNameAndValue(className),
         ...(box.url === undefined
           ? []
           : ([["href", box.url.toString()]] as const)),
@@ -120,8 +115,8 @@ const boxToHtmlElement = <Message>(
   };
 };
 
-const elementToHtmlElement = (
-  element: Element
+const elementToHtmlElement = <Message>(
+  element: Element<Message>
 ): {
   readonly htmlElement: HtmlElement;
   readonly styleDict: ReadonlyMap<string, ReadonlyArray<css.Declaration>>;
@@ -148,7 +143,7 @@ const elementToHtmlElement = (
       return {
         htmlElement: htmlElement(
           markupToTagName(element.markup),
-          new Map([["class", sha256HashValueToClassName(className)]]),
+          new Map([sha256HashValueToClassAttributeNameAndValue(className)]),
           element.text
         ),
         styleDict: new Map([[className, styleDeclarationList]]),
@@ -156,8 +151,16 @@ const elementToHtmlElement = (
     }
     case "svg": {
       const styleDeclarationList: ReadonlyArray<css.Declaration> = [
-        css.width(element.width),
-        css.height(element.height),
+        percentageOrRemWidthToCssDeclaration(element.width),
+        css.heightRem(element.height),
+        ...(element.justifySelf === "center"
+          ? [
+              {
+                property: "justify-self",
+                value: "center",
+              },
+            ]
+          : []),
       ];
       const className =
         css.declarationListToSha256HashValue(styleDeclarationList);
@@ -174,7 +177,7 @@ const elementToHtmlElement = (
                 element.svg.viewBox.height,
               ].join(" "),
             ],
-            ["className", className],
+            sha256HashValueToClassAttributeNameAndValue(className),
           ]),
           element.svg.svgElementList.map(svgElementToHtmlElement)
         ),
@@ -183,8 +186,8 @@ const elementToHtmlElement = (
     }
     case "image": {
       const styleDeclarationList: ReadonlyArray<css.Declaration> = [
-        css.width(element.width),
-        css.height(element.height),
+        percentageOrRemWidthToCssDeclaration(element.width),
+        css.heightRem(element.height),
         {
           property: "object-fit",
           value: "cover",
@@ -197,11 +200,14 @@ const elementToHtmlElement = (
           "img",
           new Map([
             ["src", element.url.toString()],
-            ["class", sha256HashValueToClassName(className)],
+            sha256HashValueToClassAttributeNameAndValue(className),
           ])
         ),
         styleDict: new Map([[className, styleDeclarationList]]),
       };
+    }
+    case "box": {
+      return boxToHtmlElement(element);
     }
   }
 };
@@ -237,17 +243,21 @@ const svgElementToHtmlElement = (svg: SvgElement): HtmlElement => {
   }
 };
 
-const sizeListToStyleValue = (sizeList: ReadonlyArray<Size>): string => {
-  return sizeList.map(sizeToStyleValue).join(" ");
-};
-
-const sizeToStyleValue = (size: Size): string => {
-  if (typeof size === "number") {
-    return `${size}px`;
-  }
-  return size;
+const sha256HashValueToClassAttributeNameAndValue = (
+  sha256HashValue: string
+): readonly [string, string] => {
+  return ["class", sha256HashValueToClassName(sha256HashValue)];
 };
 
 const sha256HashValueToClassName = (sha256HashValue: string): string => {
   return "nv_" + sha256HashValue;
+};
+
+const percentageOrRemWidthToCssDeclaration = (
+  percentageOrRem: PercentageOrRem
+): css.Declaration => {
+  if (percentageOrRem.type === "rem") {
+    return css.widthRem(percentageOrRem.value);
+  }
+  return css.widthPercent(percentageOrRem.value);
 };

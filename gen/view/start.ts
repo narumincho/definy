@@ -1,12 +1,10 @@
 import * as childProcess from "child_process";
 import * as chokidar from "chokidar";
 import * as fileSystem from "fs-extra";
-import {
-  FilePathAndMimeType,
-  generateStaticResourceUrlCode,
-} from "./staticResource";
 import { indexHtmlPath, localhostOrigin } from "./util";
 import { fastify } from "fastify";
+import { generateViewOutTs } from "./codeGen";
+import { getStaticResourceFileResult } from "./staticResource";
 import open from "open";
 
 export type StartDevelopmentServerOption = {
@@ -26,7 +24,12 @@ export type StartDevelopmentServerOption = {
   /**
    * static なファイルをリクエストするためのURLがコード生成されるTypeScriptのコードのファイル
    */
-  readonly staticResourceUrlCodePath: string;
+  readonly viewOutCodePath: string;
+};
+
+type FilePathAndMimeType = {
+  readonly fileName: string;
+  readonly mimeType: string;
 };
 
 /**
@@ -100,26 +103,35 @@ export const startDevelopmentServer = async (
   open(origin);
 };
 
-export const runBuildScript = (
+export const runBuildScript = async (
   option: StartDevelopmentServerOption
-): Promise<ReadonlyMap<string, FilePathAndMimeType>> =>
-  generateStaticResourceUrlCode(
-    option.portNumber,
-    option.resourceDirectoryPath,
-    option.staticResourceUrlCodePath
-  ).then((staticResourceRequestPathToFileNameMap) => {
-    console.log("generate static resource url code done.");
-    return new Promise((resolve, reject) => {
-      console.log("build start");
-      childProcess.exec(
-        `npx ts-node ${option.buildScriptPath}`,
-        (error, stdout, stderr) => {
-          if (error) {
-            reject(error);
-          }
-          console.log("ビルド完了", { stdout, stderr, error });
-          resolve(staticResourceRequestPathToFileNameMap);
+): Promise<ReadonlyMap<string, FilePathAndMimeType>> => {
+  const list = await getStaticResourceFileResult(option.resourceDirectoryPath);
+  await generateViewOutTs(list, option.portNumber, option.viewOutCodePath);
+
+  console.log("generate static resource url code done.");
+
+  return new Promise((resolve, reject) => {
+    console.log("build start");
+    childProcess.exec(
+      `npx ts-node ${option.buildScriptPath}`,
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(error);
         }
-      );
-    });
+        console.log("ビルド完了", { stdout, stderr, error });
+        resolve(
+          new Map<string, FilePathAndMimeType>(
+            list.map<[string, FilePathAndMimeType]>((staticFileData) => [
+              staticFileData.requestPath,
+              {
+                fileName: staticFileData.uploadFileName,
+                mimeType: staticFileData.mimeType,
+              },
+            ])
+          )
+        );
+      }
+    );
   });
+};

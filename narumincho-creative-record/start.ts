@@ -6,5 +6,5 @@ startDevelopmentServer({
   distributionPath,
   portNumber,
   resourceDirectoryPath: "./narumincho-creative-record/resource",
-  staticResourceUrlCodePath: "./narumincho-creative-record/resourceUrl.ts",
+  viewOutCodePath: "./narumincho-creative-record/viewOut.ts",
 });
