@@ -9,16 +9,21 @@ export type Selector =
   | {
       readonly type: "class";
       readonly className: string;
+      readonly isHover: boolean;
     }
   | {
       readonly type: "type";
       readonly elementName: string;
     };
 
-export const classSelector = (className: string): Selector => {
+export const classSelector = (
+  className: string,
+  isHover: boolean
+): Selector => {
   return {
     type: "class",
     className,
+    isHover,
   };
 };
 
@@ -61,7 +66,7 @@ const selectorToString = (selector: Selector): string => {
     case "type":
       return selector.elementName;
     case "class":
-      return "." + selector.className;
+      return "." + selector.className + (selector.isHover ? ":hover" : "");
   }
 };
 

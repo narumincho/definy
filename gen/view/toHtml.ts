@@ -43,7 +43,8 @@ export const viewToHtmlOption = <Message>(view: View<Message>): HtmlOption => {
           ([hashValue, declarationList]) => {
             return {
               selector: css.classSelector(
-                sha256HashValueToClassName(hashValue)
+                sha256HashValueToClassName(hashValue),
+                false
               ),
               declarationList,
             };
