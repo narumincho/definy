@@ -65,8 +65,42 @@ const selectorToString = (selector: Selector): string => {
   }
 };
 
-export const ruleListToString = (ruleList: ReadonlyArray<Rule>): string => {
-  return ruleList.map(ruleToString).join("");
+type StatementList = {
+  readonly keyframesList: ReadonlyArray<Keyframes>;
+  readonly ruleList: ReadonlyArray<Rule>;
+};
+
+type Keyframes = {
+  readonly name: string;
+  readonly keyframeList: ReadonlyArray<Keyframe>;
+};
+
+type Keyframe = {
+  readonly percentage: number;
+  readonly declarationList: ReadonlyArray<Declaration>;
+};
+
+export const ruleListToString = (statementList: StatementList): string => {
+  return (
+    statementList.ruleList.map(ruleToString).join("") +
+    statementList.keyframesList.map(keyFramesToString).join("")
+  );
+};
+
+const keyFramesToString = (keyframes: Keyframes): string => {
+  return (
+    "@keyframes" +
+    keyframes.name +
+    "{" +
+    keyframes.keyframeList.map(keyFrameToString).join("") +
+    "}"
+  );
+};
+
+const keyFrameToString = (keyframe: Keyframe): string => {
+  return `${keyframe.percentage} {${declarationListToString(
+    keyframe.declarationList
+  )}}`;
 };
 
 export const widthRem = (value: number): Declaration => {

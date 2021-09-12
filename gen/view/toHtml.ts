@@ -22,31 +22,36 @@ export const viewToHtmlOption = <Message>(view: View<Message>): HtmlOption => {
     coverImageUrl: view.coverImageUrl,
     url: view.url,
     twitterCard: "SummaryCard",
-    style: css.ruleListToString([
-      {
-        selector: css.typeSelector("html"),
-        declarationList: [css.height100Percent],
-      },
-      {
-        selector: css.typeSelector("body"),
-        declarationList: [
-          css.height100Percent,
-          css.margin0,
-          css.backgroundColor("black"),
-          css.displayGrid,
-          css.boxSizingBorderBox,
-          css.alignItems("start"),
-        ],
-      },
-      ...[...htmlElementAndStyleDict.styleDict].map(
-        ([hashValue, declarationList]) => {
-          return {
-            selector: css.classSelector(sha256HashValueToClassName(hashValue)),
-            declarationList,
-          };
-        }
-      ),
-    ]),
+    style: css.ruleListToString({
+      ruleList: [
+        {
+          selector: css.typeSelector("html"),
+          declarationList: [css.height100Percent],
+        },
+        {
+          selector: css.typeSelector("body"),
+          declarationList: [
+            css.height100Percent,
+            css.margin0,
+            css.backgroundColor("black"),
+            css.displayGrid,
+            css.boxSizingBorderBox,
+            css.alignItems("start"),
+          ],
+        },
+        ...[...htmlElementAndStyleDict.styleDict].map(
+          ([hashValue, declarationList]) => {
+            return {
+              selector: css.classSelector(
+                sha256HashValueToClassName(hashValue)
+              ),
+              declarationList,
+            };
+          }
+        ),
+      ],
+      keyframesList: [],
+    }),
     children: [htmlElementAndStyleDict.htmlElement],
   };
 };

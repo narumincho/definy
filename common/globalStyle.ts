@@ -13,25 +13,28 @@ export const globalStyle = `
   src: url("/hack-regular-subset.woff2") format("woff2");
 }
 
-${css.ruleListToString([
-  {
-    selector: { type: "type", elementName: "html" },
-    declarationList: [css.height100Percent],
-  },
-  {
-    selector: { type: "type", elementName: "body" },
-    declarationList: [
-      css.height100Percent,
-      css.margin0,
-      css.backgroundColor("black"),
-      css.displayGrid,
-      {
-        property: "font-family",
-        value: "Hack",
-      },
-    ],
-  },
-])}
+${css.ruleListToString({
+  ruleList: [
+    {
+      selector: { type: "type", elementName: "html" },
+      declarationList: [css.height100Percent],
+    },
+    {
+      selector: { type: "type", elementName: "body" },
+      declarationList: [
+        css.height100Percent,
+        css.margin0,
+        css.backgroundColor("black"),
+        css.displayGrid,
+        {
+          property: "font-family",
+          value: "Hack",
+        },
+      ],
+    },
+  ],
+  keyframesList: [],
+})}
 
 * {
   box-sizing: border-box;
