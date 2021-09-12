@@ -233,39 +233,39 @@ export const topBox: view.Box<undefined> = view.boxY({}, [
     },
     {
       title: "DESIRED Routeについて",
-      imageUrl: staticResourceUrl.definy20210811Png,
+      imageUrl: staticResourceUrl.desired_route_titlePng,
     },
     {
       title: "メッセージウィンドウの話",
-      imageUrl: staticResourceUrl.definy20210811Png,
+      imageUrl: staticResourceUrl.windowPng,
     },
     {
       title: "DESIRED RouteとNPIMEのフォントの描画処理",
-      imageUrl: staticResourceUrl.definy20210811Png,
+      imageUrl: staticResourceUrl.fontPng,
     },
     {
       title: "リストUIのボタン操作の挙動",
-      imageUrl: staticResourceUrl.definy20210811Png,
+      imageUrl: staticResourceUrl.list_uiPng,
     },
     {
       title: "UIの配色",
-      imageUrl: staticResourceUrl.definy20210811Png,
+      imageUrl: staticResourceUrl.colorPng,
     },
     {
       title: "モンスターとのエンカウントについて",
-      imageUrl: staticResourceUrl.definy20210811Png,
+      imageUrl: staticResourceUrl.battlePng,
     },
     {
       title: "星の図形について",
-      imageUrl: staticResourceUrl.definy20210811Png,
+      imageUrl: staticResourceUrl.starPng,
     },
     {
       title: "DESIRED Routeに登場する予定だった敵モンスター",
-      imageUrl: staticResourceUrl.definy20210811Png,
+      imageUrl: staticResourceUrl.kamausagiPng,
     },
     {
       title: "Nプチコン漢字入力(N Petitcom IME)",
-      imageUrl: staticResourceUrl.definy20210811Png,
+      imageUrl: staticResourceUrl.henkanPng,
     },
   ]),
   copyright,
