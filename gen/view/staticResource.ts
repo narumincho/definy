@@ -1,15 +1,12 @@
 import * as crypto from "crypto";
-import * as d from "../../localData";
 import * as fileSystem from "fs-extra";
-import * as jsTs from "../jsTs/main";
 import { extensionToMimeType } from "../fileSystem/main";
-import { localhostOrigin } from "./util";
 import { posix as path } from "path";
 
 /**
  * static な ファイルの解析結果
  */
-type StaticResourceFileResult = {
+export type StaticResourceFileResult = {
   /**
    * 入力のファイル名. オリジナルのファイル名. 拡張子あり
    */
@@ -21,67 +18,6 @@ type StaticResourceFileResult = {
    * Firebase Hosting などにアップロードするファイル名. 拡張子は含まれない
    */
   readonly uploadFileName: string;
-};
-
-export type FilePathAndMimeType = {
-  readonly fileName: string;
-  readonly mimeType: string;
-};
-
-export const generateStaticResourceUrlCode = async (
-  portNumber: number,
-  directoryPath: string,
-  outputCodeFilePath: string
-): Promise<ReadonlyMap<string, FilePathAndMimeType>> => {
-  const resultList = await getStaticResourceFileResult(directoryPath);
-
-  const code: d.JsTsCode = {
-    exportDefinitionList: [
-      d.ExportDefinition.Variable({
-        name: jsTs.identifierFromString("staticResourceUrl"),
-        document: "クライアントでファイルを取得するのに使うURL",
-        type: d.TsType.Object(
-          resultList.map((result) => ({
-            name: result.fileId,
-            type: d.TsType.ScopeInGlobal(jsTs.identifierFromString("URL")),
-            document:
-              'static な ファイル の "' +
-              result.originalFileName +
-              '"をリクエストするためのURL. ファイルのハッシュ値は "' +
-              result.uploadFileName +
-              '"',
-            required: true,
-          }))
-        ),
-        expr: d.TsExpr.ObjectLiteral(
-          resultList.map((result) =>
-            d.TsMember.KeyValue({
-              key: result.fileId,
-              value: d.TsExpr.New({
-                expr: d.TsExpr.GlobalObjects(jsTs.identifierFromString("URL")),
-                parameterList: [
-                  d.TsExpr.StringLiteral(
-                    localhostOrigin(portNumber) + "/" + result.uploadFileName
-                  ),
-                ],
-              }),
-            })
-          )
-        ),
-      }),
-    ],
-    statementList: [],
-  };
-  await fileSystem.writeFile(
-    outputCodeFilePath,
-    jsTs.generateCodeAsString(code, d.CodeType.TypeScript)
-  );
-  return new Map(
-    resultList.map((result): readonly [string, FilePathAndMimeType] => [
-      result.requestPath,
-      { fileName: result.uploadFileName, mimeType: result.mimeType },
-    ])
-  );
 };
 
 /**

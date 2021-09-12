@@ -4,6 +4,12 @@
 
 
 /**
+ * オリジン (ビルド時にコード生成される)
+ */
+export const origin: string = "http://localhost:8080";
+
+
+/**
  * クライアントでファイルを取得するのに使うURL
  */
 export const staticResourceUrl: { 

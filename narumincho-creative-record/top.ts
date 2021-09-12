@@ -1,6 +1,7 @@
 import * as view from "../gen/view/view";
+import { Location, locationToUrl } from "./location";
 import { groupBySize } from "../common/util";
-import { staticResourceUrl } from "./resourceUrl";
+import { staticResourceUrl } from "./viewOut";
 
 const linkBackGroundColor = "#333333";
 
@@ -124,6 +125,7 @@ const articleLink = (
   return view.boxY(
     {
       backgroundColor: linkBackGroundColor,
+      url: locationToUrl(articleTitleAndImageUrl.location),
     },
     [
       view.imageElement({
@@ -139,6 +141,7 @@ const articleLink = (
 type ArticleTitleAndImageUrl = {
   readonly imageUrl: URL;
   readonly title: string;
+  readonly location: Location;
 };
 
 const articleListToViewElement = (
@@ -161,16 +164,19 @@ const copyright: view.Element<undefined> = view.textElement(
 );
 
 export const topBox: view.Box<undefined> = view.boxY({}, [
-  view.boxY({ padding: { topBottom: 48, leftRight: 0 } }, [
-    view.svgElement(
-      {
-        width: { type: "percentage", value: 90 },
-        height: 5,
-        justifySelf: "center",
-      },
-      webSiteLogo
-    ),
-  ]),
+  view.boxY(
+    { padding: { topBottom: 48, leftRight: 0 }, url: locationToUrl("top") },
+    [
+      view.svgElement(
+        {
+          width: { type: "percentage", value: 90 },
+          height: 5,
+          justifySelf: "center",
+        },
+        webSiteLogo
+      ),
+    ]
+  ),
   view.textElement(
     { markup: "heading2", padding: 8 },
     "ナルミンチョの SNS アカウント"
@@ -222,50 +228,63 @@ export const topBox: view.Box<undefined> = view.boxY({}, [
       title:
         "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する",
       imageUrl: staticResourceUrl.powershell_iconPng,
+      location: "powershellRecursion",
     },
     {
       title: "SVGの基本",
       imageUrl: staticResourceUrl.svg_basicPng,
+      location: "svgBasic",
     },
     {
       title: "単体SVGと埋め込みSVG",
       imageUrl: staticResourceUrl.grape_svg_codePng,
+      location: "svgStandaloneEmbed",
     },
     {
       title: "DESIRED Routeについて",
       imageUrl: staticResourceUrl.desired_route_titlePng,
+      location: "aboutDesiredRoute",
     },
     {
       title: "メッセージウィンドウの話",
       imageUrl: staticResourceUrl.windowPng,
+      location: "messageWindow",
     },
     {
       title: "DESIRED RouteとNPIMEのフォントの描画処理",
+
       imageUrl: staticResourceUrl.fontPng,
+      location: "desiredRouteFont",
     },
     {
       title: "リストUIのボタン操作の挙動",
       imageUrl: staticResourceUrl.list_uiPng,
+      location: "listSelectionBehavior",
     },
     {
       title: "UIの配色",
       imageUrl: staticResourceUrl.colorPng,
+      location: "uiColor",
     },
     {
       title: "モンスターとのエンカウントについて",
       imageUrl: staticResourceUrl.battlePng,
+      location: "desiredRouteEncounter",
     },
     {
       title: "星の図形について",
       imageUrl: staticResourceUrl.starPng,
+      location: "star",
     },
     {
       title: "DESIRED Routeに登場する予定だった敵モンスター",
       imageUrl: staticResourceUrl.kamausagiPng,
+      location: "desiredRouteMonster",
     },
     {
       title: "Nプチコン漢字入力(N Petitcom IME)",
       imageUrl: staticResourceUrl.henkanPng,
+      location: "nPetitcomIme",
     },
   ]),
   copyright,

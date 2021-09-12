@@ -1,7 +1,7 @@
 import * as view from "../gen/view/view";
 import { App } from "../gen/view/app";
 import { portNumber } from "./distributionPath";
-import { staticResourceUrl } from "./resourceUrl";
+import { staticResourceUrl } from "./viewOut";
 import { topBox } from "./top";
 
 export const naruminchoCreativeRecordApp: App<undefined, undefined> = {
