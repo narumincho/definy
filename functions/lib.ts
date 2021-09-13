@@ -147,25 +147,30 @@ const createRandomId = (): string => {
  * @param code
  * @param state
  */
-export const logInCallback = async (
-  openIdConnectProvider: d.OpenIdConnectProvider,
-  code: string,
-  state: string
-): Promise<{
-  readonly locationAndLanguage: d.LocationAndLanguage;
-  readonly accessToken: d.AccountToken;
-}> => {
+const logInCallback = async ({
+  code,
+  state,
+  openIdConnectProvider,
+}: d.CodeAndState): Promise<
+  d.Result<
+    {
+      readonly locationAndLanguage: d.LocationAndLanguage;
+      readonly accessToken: d.AccountToken;
+    },
+    string
+  >
+> => {
   const documentReference = database.collection("openConnectState").doc(state);
   const stateData = (await documentReference.get()).data();
   if (stateData === undefined) {
-    throw new Error("definy do not generate state.");
+    return d.Result.Error("definy do not generate state.");
   }
   documentReference.delete();
   if (stateData.provider !== openIdConnectProvider) {
-    throw new Error("definy do not generate state.");
+    return d.Result.Error("definy do not generate state.");
   }
   if (stateData.createTime.toMillis() + 60 * 1000 < new Date().getTime()) {
-    throw new Error("state is too old.");
+    return d.Result.Error("definy do not generate state.");
   }
   const providerUserData: ProviderUserData = await getUserDataFromCode(
     openIdConnectProvider,
@@ -186,10 +191,10 @@ export const logInCallback = async (
       providerUserData,
       openIdConnectProvider
     );
-    return {
+    return d.Result.Ok({
       locationAndLanguage: stateData.locationAndLanguage,
       accessToken,
-    };
+    });
   }
   const userQueryDocumentSnapshot = documentList[0];
   const userDocumentReference = userQueryDocumentSnapshot.ref;
@@ -198,10 +203,10 @@ export const logInCallback = async (
     accessTokenHash: accessTokenData.accessTokenHash,
     accessTokenIssueTime: accessTokenData.issueTime,
   });
-  return {
+  return d.Result.Ok({
     locationAndLanguage: stateData.locationAndLanguage,
     accessToken: accessTokenData.accessToken,
-  };
+  });
 };
 
 type ProviderUserData = {
@@ -436,6 +441,30 @@ const addTypePart = async (projectId: d.ProjectId): Promise<d.TypePart> => {
   return newTypePart;
 };
 
+const getAccountByAccountToken = async (
+  accountToken: d.AccountToken
+): Promise<d.Maybe<d.Account>> => {
+  const accessTokenHash: AccessTokenHash = hashAccessToken(accountToken);
+  const querySnapshot = await database
+    .collection("user")
+    .where("accessTokenHash", "==", accessTokenHash)
+    .get();
+  const userDataDocs = querySnapshot.docs;
+  if (userDataDocs[0] === undefined || userDataDocs.length !== 1) {
+    return d.Maybe.Nothing();
+  }
+  const queryDocumentSnapshot = userDataDocs[0];
+  const userData = queryDocumentSnapshot.data();
+
+  return d.Maybe.Just({
+    id: d.AccountId.fromString(queryDocumentSnapshot.id),
+    name: userData.name,
+    imageHash: userData.imageHash,
+    introduction: userData.introduction,
+    createTime: firestoreTimestampToTime(userData.createTime),
+  });
+};
+
 type ApiCodecType = typeof apiCodec;
 
 export const apiFunc: {
@@ -455,29 +484,21 @@ export const apiFunc: {
       state
     ).toString();
   },
-  getAccountByAccountToken: async (accountToken) => {
-    const accessTokenHash: AccessTokenHash = hashAccessToken(accountToken);
-    const querySnapshot = await database
-      .collection("user")
-      .where("accessTokenHash", "==", accessTokenHash)
-      .get();
-    const userDataDocs = querySnapshot.docs;
-    if (userDataDocs[0] === undefined || userDataDocs.length !== 1) {
+  getAccountByAccountToken,
+  getAccountTokenAndUrlDataByCodeAndState: async (codeAndState) => {
+    const result = await logInCallback(codeAndState);
+    if (result._ === "Error") {
       return d.Maybe.Nothing();
     }
-    const queryDocumentSnapshot = userDataDocs[0];
-    const userData = queryDocumentSnapshot.data();
-
+    const account = await getAccountByAccountToken(result.ok.accessToken);
+    if (account._ === "Nothing") {
+      return d.Maybe.Nothing();
+    }
     return d.Maybe.Just({
-      id: d.AccountId.fromString(queryDocumentSnapshot.id),
-      name: userData.name,
-      imageHash: userData.imageHash,
-      introduction: userData.introduction,
-      createTime: firestoreTimestampToTime(userData.createTime),
+      account: account.value,
+      accountToken: result.ok.accessToken,
+      locationAndLanguage: result.ok.locationAndLanguage,
     });
-  },
-  getAccountTokenAndUrlDataByCodeAndState: (codeAndState) => {
-    return Promise.resolve(d.Maybe.Nothing());
   },
   getAccount: async (accountId) => {
     const documentSnapshot = await database
@@ -502,7 +523,7 @@ export const apiFunc: {
   createProject: async (
     parameter: d.CreateProjectParameter
   ): Promise<d.Maybe<d.Project>> => {
-    const userDataMaybe = await apiFunc.getAccountByAccountToken(
+    const userDataMaybe = await getAccountByAccountToken(
       parameter.accountToken
     );
     switch (userDataMaybe._) {
@@ -599,7 +620,7 @@ export const apiFunc: {
     };
   },
   addTypePart: async (accountTokenAndProjectId: d.AccountTokenAndProjectId) => {
-    const userPromise = apiFunc.getAccountByAccountToken(
+    const userPromise = getAccountByAccountToken(
       accountTokenAndProjectId.accountToken
     );
     const projectPromise = apiFunc.getProject(
@@ -635,9 +656,7 @@ export const apiFunc: {
         data: d.Maybe.Nothing(),
       };
     }
-    const account = await apiFunc.getAccountByAccountToken(
-      request.accountToken
-    );
+    const account = await getAccountByAccountToken(request.accountToken);
     // アカウントトークンが不正だった
     if (account._ === "Nothing") {
       return {

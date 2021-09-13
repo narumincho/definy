@@ -4,9 +4,8 @@ import { origin } from "../out";
 const languageQueryKey = "hl";
 export const defaultLanguage: d.Language = "English";
 
-export const urlDataAndAccountTokenToUrl = (
-  locationAndLanguage: d.LocationAndLanguage,
-  accountToken: d.Maybe<d.AccountToken>
+export const locationAndLanguageToUrl = (
+  locationAndLanguage: d.LocationAndLanguage
 ): URL => {
   const url = new URL(origin);
   url.pathname = createPath(locationToPathList(locationAndLanguage.location));
@@ -14,9 +13,6 @@ export const urlDataAndAccountTokenToUrl = (
     languageQueryKey,
     languageToIdString(locationAndLanguage.language)
   );
-  if (accountToken._ === "Just") {
-    url.hash = "account-token=" + accountToken.value;
-  }
   return url;
 };
 
@@ -58,22 +54,27 @@ const languageToIdString = (language: d.Language): string => {
  * URLのパスを場所のデータに変換する
  * @param url `https://definy.app/project/580d8d6a54cf43e4452a0bba6694a4ed?hl=ja` のようなURL
  */
-export const urlDataAndAccountTokenFromUrl = (
-  url: URL
-): {
-  readonly locationAndLanguage: d.LocationAndLanguage;
-  readonly accountToken: d.Maybe<d.AccountToken>;
-} => {
+export const urlToUrlData = (url: URL): d.UrlData => {
+  const pathList = url.pathname.split("/");
+  if (pathList[1] === "logInCallback" && pathList[2] === "Google") {
+    const state = url.searchParams.get("state");
+    const code = url.searchParams.get("code");
+    if (typeof state === "string" && typeof code === "string") {
+      return d.UrlData.LogInCallback({
+        code,
+        state,
+        openIdConnectProvider: d.OpenIdConnectProvider.Google,
+      });
+    }
+  }
+
   const languageId = url.searchParams.get(languageQueryKey);
   const language: d.Language =
     languageId === null ? defaultLanguage : languageFromIdString(languageId);
-  return {
-    locationAndLanguage: {
-      location: locationFromUrl(url.pathname),
-      language,
-    },
-    accountToken: accountTokenFromUrl(url.hash),
-  };
+  return d.UrlData.Normal({
+    location: locationFromUrl(url.pathname),
+    language,
+  });
 };
 
 const locationFromUrl = (pathName: string): d.Location => {

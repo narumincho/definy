@@ -1,6 +1,5 @@
 import * as apiCodec from "../common/apiCodec";
 import * as commonUrl from "../common/url";
-import * as d from "../localData";
 import * as functions from "firebase-functions";
 import * as lib from "./lib";
 import { html as genHtml } from "../gen/main";
@@ -22,14 +21,9 @@ console.log("versions", JSON.stringify(process.versions));
 
 export const html = functions.https.onRequest(async (request, response) => {
   const requestUrl = new URL("https://" + request.hostname + request.url);
-  const urlData =
-    commonUrl.urlDataAndAccountTokenFromUrl(requestUrl).locationAndLanguage;
-  const normalizedUrl = commonUrl.urlDataAndAccountTokenToUrl(
-    urlData,
-    d.Maybe.Nothing()
-  );
+  const urlData = commonUrl.urlToUrlData(requestUrl);
   console.log("requestUrl", requestUrl.toString());
-  const htmlAndIsNotFound = await generateHtml(urlData, normalizedUrl);
+  const htmlAndIsNotFound = await generateHtml(urlData);
 
   response.status(htmlAndIsNotFound.isNotFound ? 404 : 200);
   response.setHeader("content-type", "text/html");
@@ -103,60 +97,11 @@ const callApiFunction = (
 
 /*
  * =====================================================================
- *               logInCallback ソーシャルログインのコールバック先
- *        https://definy.app/logInCallback/Google?state=&code=
+ *          pngFile Cloud Storage に 保存された PNG ファイルを取得する
+ *  https://definy.app/pngFile/08bb4f91242e1ce96da5ee69909d0ccfe530c155bedff462d049683becc3cb20
  *                            など
  *            ↓ Firebase Hosting firebase.json rewrite
- *                Cloud Functions for Firebase / logInCallback
- * =====================================================================
- */
-export const logInCallback = functions.https.onRequest((request, response) => {
-  const openIdConnectProvider = request.path.split("/")[2];
-  const code: unknown = request.query.code;
-  const state: unknown = request.query.state;
-  if (!(typeof code === "string" && typeof state === "string")) {
-    console.log("codeかstateが送られて来なかった。ユーザーがキャンセルした?");
-    response.redirect(
-      301,
-      commonUrl
-        .urlDataAndAccountTokenToUrl(
-          {
-            location: d.Location.Home,
-            language: commonUrl.defaultLanguage,
-          },
-          d.Maybe.Nothing()
-        )
-        .toString()
-    );
-    return;
-  }
-  switch (openIdConnectProvider) {
-    case "Google": {
-      lib.logInCallback(openIdConnectProvider, code, state).then((result) => {
-        response.redirect(
-          301,
-          commonUrl
-            .urlDataAndAccountTokenToUrl(
-              result.locationAndLanguage,
-              d.Maybe.Just(result.accessToken)
-            )
-            .toString()
-        );
-      });
-      return;
-    }
-    default:
-      response.send("invalid OpenIdConnectProvider name =" + request.path);
-  }
-});
-
-/*
- * =====================================================================
- *               pngFile Cloud Storage に 保存された PNG ファイルを取得する
- *        https://definy.app/logInCallback/Google?state=&code=
- *                            など
- *            ↓ Firebase Hosting firebase.json rewrite
- *                Cloud Functions for Firebase / logInCallback
+ *                Cloud Functions for Firebase / pngFile
  * =====================================================================
  */
 export const pngFile = functions.https.onRequest((request, response): void => {

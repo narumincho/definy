@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as d from "../../localData";
 import { CSSObject, css } from "@emotion/css";
-import { urlDataAndAccountTokenToUrl } from "../../common/url";
+import { locationAndLanguageToUrl } from "../../common/url";
 
 export const Link: React.FC<{
   locationAndLanguage: d.LocationAndLanguage;
@@ -42,10 +42,7 @@ export const Link: React.FC<{
         mouseEvent.preventDefault();
         props.onJump(props.locationAndLanguage);
       }}
-      href={urlDataAndAccountTokenToUrl(
-        props.locationAndLanguage,
-        d.Maybe.Nothing()
-      ).toString()}
+      href={locationAndLanguageToUrl(props.locationAndLanguage).toString()}
     >
       {props.children}
     </a>

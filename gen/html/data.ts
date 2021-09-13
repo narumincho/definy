@@ -38,8 +38,10 @@ export type HtmlOption = {
    */
   readonly coverImageUrl: URL;
 
-  /** ページのURL */
-  readonly url: URL;
+  /**
+   * ページのURL. できれば指定して欲しいが, ログインコールバックURLの場合など, OGP を使わないなら `undefined` を指定する
+   */
+  readonly url: URL | undefined;
 
   /** Twitter Card。Twitterでシェアしたときの表示をどうするか */
   readonly twitterCard: TwitterCard;

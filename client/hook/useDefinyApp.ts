@@ -1,9 +1,6 @@
 import * as d from "../../localData";
 import * as indexedDB from "../indexedDB";
-import {
-  urlDataAndAccountTokenFromUrl,
-  urlDataAndAccountTokenToUrl,
-} from "../../common/url";
+import { locationAndLanguageToUrl, urlToUrlData } from "../../common/url";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TypePartIdAndMessage } from "../../core/TypePartIdAndMessage";
 import { api } from "../api";
@@ -254,15 +251,21 @@ export const useDefinyApp = (
       window.history.pushState(
         undefined,
         "",
-        urlDataAndAccountTokenToUrl(
-          newLocationAndLanguage,
-          d.Maybe.Nothing()
-        ).toString()
+        locationAndLanguageToUrl(newLocationAndLanguage).toString()
       );
       setLocationAndLanguage(newLocationAndLanguage);
     },
     []
   );
+
+  const replace = (newLocationAndLanguage: d.LocationAndLanguage): void => {
+    window.history.replaceState(
+      undefined,
+      "",
+      locationAndLanguageToUrl(newLocationAndLanguage).toString()
+    );
+    setLocationAndLanguage(newLocationAndLanguage);
+  };
 
   const logIn = useCallback(() => {
     setLogInState({ _: "RequestingLogInUrl", openIdConnectProvider: "Google" });
@@ -378,51 +381,38 @@ export const useDefinyApp = (
 
     // ブラウザで戻るボタンを押したときのイベントを登録
     window.addEventListener("popstate", () => {
-      const newUrlData: d.LocationAndLanguage = urlDataAndAccountTokenFromUrl(
-        new URL(window.location.href)
-      ).locationAndLanguage;
-      setLocationAndLanguage({
-        language: newUrlData.language,
-        location: newUrlData.location,
-      });
+      const newUrlData: d.UrlData = urlToUrlData(new URL(window.location.href));
+      if (newUrlData._ === "Normal") {
+        setLocationAndLanguage(newUrlData.locationAndLanguage);
+      }
     });
 
-    const urlDataAndAccountToken = urlDataAndAccountTokenFromUrl(
-      new URL(location.href)
-    );
-    // ブラウザのURLを正規化. アカウントトークンを隠す
-    window.history.replaceState(
-      undefined,
-      "",
-
-      urlDataAndAccountTokenToUrl(
-        urlDataAndAccountToken.locationAndLanguage,
-        d.Maybe.Nothing()
-      ).toString()
-    );
-    setLocationAndLanguage(urlDataAndAccountToken.locationAndLanguage);
-    if (urlDataAndAccountToken.accountToken._ === "Just") {
-      const accountToken = urlDataAndAccountToken.accountToken.value;
-      verifyingAccountTokenAndGetAccount(
-        setLogInState,
-        accountToken,
-        accountDict.setLoaded,
-        option.notificationMessageHandler
-      );
+    const urlData = urlToUrlData(new URL(location.href));
+    if (urlData._ === "Normal") {
+      // ブラウザのURLを正規化.
+      replace(urlData.locationAndLanguage);
+      indexedDB.getAccountToken().then((accountToken) => {
+        if (accountToken === undefined) {
+          setLogInState(d.LogInState.Guest);
+          return;
+        }
+        verifyingAccountTokenAndGetAccount(
+          setLogInState,
+          accountToken,
+          accountDict.setLoaded,
+          option.notificationMessageHandler
+        );
+      });
       return;
     }
-    indexedDB.getAccountToken().then((accountToken) => {
-      if (accountToken === undefined) {
-        setLogInState(d.LogInState.Guest);
-        return;
-      }
-      verifyingAccountTokenAndGetAccount(
-        setLogInState,
-        accountToken,
-        accountDict.setLoaded,
-        option.notificationMessageHandler
-      );
-    });
+    // urlData が LogInCallback の場合
+    verifyingAccountTokenAndGetAccountFromCodeAndState(
+      setLogInState,
+      urlData.codeAndState,
+      accountDict.setLoaded,
+      option.notificationMessageHandler,
+      replace
+    );
   }, [accountDict.setLoaded, option.notificationMessageHandler]);
 
   const projectResource: Resource<d.ProjectId, d.Project> = useMemo(
@@ -800,8 +790,9 @@ const verifyingAccountTokenAndGetAccountFromCodeAndState = (
   setLogInState: (logInState: d.LogInState) => void,
   codeAndState: d.CodeAndState,
   setAccount: (account: d.Account) => void,
-  notificationMessageHandler: NotificationMessageHandler
-) => {
+  notificationMessageHandler: NotificationMessageHandler,
+  replace: (newLocationAndLanguage: d.LocationAndLanguage) => void
+): void => {
   setLogInState(d.LogInState.LoadingAccountData);
 
   api.getAccountTokenAndUrlDataByCodeAndState(codeAndState).then((response) => {
@@ -822,6 +813,7 @@ const verifyingAccountTokenAndGetAccountFromCodeAndState = (
       })
     );
     setAccount(response.value.value.account);
+    replace(response.value.value.locationAndLanguage);
   });
 };
 

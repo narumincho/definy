@@ -6,53 +6,54 @@ import { listDeleteAt, listSetAt } from "../common/util";
 
 describe("url", () => {
   it("https://definy.app/ is Home in English", () => {
-    expect<d.LocationAndLanguage>(
-      commonUrl.urlDataAndAccountTokenFromUrl(new URL("https://definy.app/"))
-        .locationAndLanguage
-    ).toEqual<d.LocationAndLanguage>({
-      location: d.Location.Home,
-      language: "English",
-    });
+    expect<d.UrlData>(
+      commonUrl.urlToUrlData(new URL("https://definy.app/"))
+    ).toEqual<d.UrlData>(
+      d.UrlData.Normal({
+        location: d.Location.Home,
+        language: "English",
+      })
+    );
   });
   it("project url", () => {
-    expect<d.LocationAndLanguage>(
-      commonUrl.urlDataAndAccountTokenFromUrl(
+    expect<d.UrlData>(
+      commonUrl.urlToUrlData(
         new URL(
           "https://definy.app/project/580d8d6a54cf43e4452a0bba6694a4ed?hl=ja"
         )
-      ).locationAndLanguage
-    ).toEqual<d.LocationAndLanguage>({
-      location: d.Location.Project(
-        d.ProjectId.fromString("580d8d6a54cf43e4452a0bba6694a4ed")
-      ),
-      language: "Japanese",
-    });
+      )
+    ).toEqual<d.UrlData>(
+      d.UrlData.Normal({
+        location: d.Location.Project(
+          d.ProjectId.fromString("580d8d6a54cf43e4452a0bba6694a4ed")
+        ),
+        language: "Japanese",
+      })
+    );
   });
   it("account page", () => {
     const url = new URL(
       "http://localhost:2520/account/580d8d6a54cf43e4452a0bba6694a4ed?hl=eo#account-token=f81919b78537257302b50f776b77a90b984cc3d75fa899f9f460ff972dcc8cb0"
     );
-    expect<d.LocationAndLanguage>(
-      commonUrl.urlDataAndAccountTokenFromUrl(url).locationAndLanguage
-    ).toEqual<d.LocationAndLanguage>({
-      location: d.Location.Account(
-        d.AccountId.fromString("580d8d6a54cf43e4452a0bba6694a4ed")
-      ),
-      language: "Esperanto",
-    });
+    expect<d.UrlData>(commonUrl.urlToUrlData(url)).toEqual<d.UrlData>(
+      d.UrlData.Normal({
+        location: d.Location.Account(
+          d.AccountId.fromString("580d8d6a54cf43e4452a0bba6694a4ed")
+        ),
+        language: "Esperanto",
+      })
+    );
   });
   it("account token", () => {
     const url = new URL(
-      "http://localhost:2520/account/580d8d6a54cf43e4452a0bba6694a4ed?hl=eo#account-token=f81919b78537257302b50f776b77a90b984cc3d75fa899f9f460ff972dcc8cb0"
+      "https://definy.app/logInCallback/Google?state=fewafjawiofj&code=3234uwwe"
     );
-    expect<d.Maybe<d.AccountToken>>(
-      commonUrl.urlDataAndAccountTokenFromUrl(url).accountToken
-    ).toEqual(
-      d.Maybe.Just(
-        d.AccountToken.fromString(
-          "f81919b78537257302b50f776b77a90b984cc3d75fa899f9f460ff972dcc8cb0"
-        )
-      )
+    expect<d.UrlData>(commonUrl.urlToUrlData(url)).toEqual<d.UrlData>(
+      d.UrlData.LogInCallback({
+        code: "3234uwwe",
+        state: "fewafjawiofj",
+        openIdConnectProvider: d.OpenIdConnectProvider.Google,
+      })
     );
   });
   it("encode, decode user url", () => {
@@ -62,13 +63,11 @@ describe("url", () => {
       ),
       language: "Esperanto",
     };
-    const url = commonUrl.urlDataAndAccountTokenToUrl(
-      languageAndLocation,
-      d.Maybe.Nothing()
+    const url = commonUrl.locationAndLanguageToUrl(languageAndLocation);
+    const decodedLanguageAndLocation: d.UrlData = commonUrl.urlToUrlData(url);
+    expect(decodedLanguageAndLocation).toEqual(
+      d.UrlData.Normal(languageAndLocation)
     );
-    const decodedLanguageAndLocation: d.LocationAndLanguage =
-      commonUrl.urlDataAndAccountTokenFromUrl(url).locationAndLanguage;
-    expect(languageAndLocation).toEqual(decodedLanguageAndLocation);
   });
 });
 
