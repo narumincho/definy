@@ -3579,6 +3579,11 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         description: "",
         type: noArgumentsType(d.String.typePartId),
       },
+      {
+        name: "openIdConnectProvider",
+        description: "",
+        type: noArgumentsType(d.OpenIdConnectProvider.typePartId),
+      },
     ]),
   },
   {
@@ -3603,6 +3608,28 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         name: "account",
         description: "ログインした account",
         type: noArgumentsType(d.Account.typePartId),
+      },
+    ]),
+  },
+  {
+    id: d.UrlData.typePartId,
+    name: "UrlData",
+    description: "logInCallback も含めた URL に入る場所と言語",
+    attribute: d.Maybe.Nothing(),
+    dataTypeParameterList: [],
+    projectId: coreProjectId,
+    body: d.TypePartBody.Sum([
+      {
+        name: "Normal",
+        description: "普通の場所",
+        parameter: d.Maybe.Just(
+          noArgumentsType(d.LocationAndLanguage.typePartId)
+        ),
+      },
+      {
+        name: "LogInCallback",
+        description: "ソーシャルログインから返ってきたときのURL",
+        parameter: d.Maybe.Just(noArgumentsType(d.CodeAndState.typePartId)),
       },
     ]),
   },

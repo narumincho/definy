@@ -1562,7 +1562,7 @@ export type DataTypeOrDataTypeParameter = { readonly _: "DataType"; readonly dat
  * ソーシャルログインしたあとに返ってくるパラメーター
  * @typePartId f332dc92c18678b3c61bad7cf0e8010d
  */
-export type CodeAndState = { readonly code: String; readonly state: String };
+export type CodeAndState = { readonly code: String; readonly state: String; readonly openIdConnectProvider: OpenIdConnectProvider };
 
 
 /**
@@ -1582,6 +1582,13 @@ readonly locationAndLanguage: LocationAndLanguage;
  * ログインした account
  */
 readonly account: Account };
+
+
+/**
+ * logInCallback も含めた URL に入る場所と言語
+ * @typePartId 24b5c609255152717a191a7af8e1ceed
+ */
+export type UrlData = { readonly _: "Normal"; readonly locationAndLanguage: LocationAndLanguage } | { readonly _: "LogInCallback"; readonly codeAndState: CodeAndState };
 
 
 /**
@@ -6027,10 +6034,11 @@ readonly codec: Codec<CodeAndState>;
 /**
  * 型を合わせる上で便利なヘルパー関数
  */
-readonly helper: (a: CodeAndState) => CodeAndState } = { typePartId: "f332dc92c18678b3c61bad7cf0e8010d" as TypePartId, helper: (codeAndState: CodeAndState): CodeAndState => codeAndState, codec: { encode: (value: CodeAndState): ReadonlyArray<number> => (String.codec.encode(value.code).concat(String.codec.encode(value.state))), decode: (index: number, binary: Uint8Array): { readonly result: CodeAndState; readonly nextIndex: number } => {
+readonly helper: (a: CodeAndState) => CodeAndState } = { typePartId: "f332dc92c18678b3c61bad7cf0e8010d" as TypePartId, helper: (codeAndState: CodeAndState): CodeAndState => codeAndState, codec: { encode: (value: CodeAndState): ReadonlyArray<number> => (String.codec.encode(value.code).concat(String.codec.encode(value.state)).concat(OpenIdConnectProvider.codec.encode(value.openIdConnectProvider))), decode: (index: number, binary: Uint8Array): { readonly result: CodeAndState; readonly nextIndex: number } => {
   const codeAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(index, binary);
   const stateAndNextIndex: { readonly result: String; readonly nextIndex: number } = String.codec.decode(codeAndNextIndex.nextIndex, binary);
-  return { result: { code: codeAndNextIndex.result, state: stateAndNextIndex.result }, nextIndex: stateAndNextIndex.nextIndex };
+  const openIdConnectProviderAndNextIndex: { readonly result: OpenIdConnectProvider; readonly nextIndex: number } = OpenIdConnectProvider.codec.decode(stateAndNextIndex.nextIndex, binary);
+  return { result: { code: codeAndNextIndex.result, state: stateAndNextIndex.result, openIdConnectProvider: openIdConnectProviderAndNextIndex.result }, nextIndex: openIdConnectProviderAndNextIndex.nextIndex };
 } } };
 
 
@@ -6055,6 +6063,49 @@ readonly helper: (a: AccountTokenAndUrlDataAndAccount) => AccountTokenAndUrlData
   const locationAndLanguageAndNextIndex: { readonly result: LocationAndLanguage; readonly nextIndex: number } = LocationAndLanguage.codec.decode(accountTokenAndNextIndex.nextIndex, binary);
   const accountAndNextIndex: { readonly result: Account; readonly nextIndex: number } = Account.codec.decode(locationAndLanguageAndNextIndex.nextIndex, binary);
   return { result: { accountToken: accountTokenAndNextIndex.result, locationAndLanguage: locationAndLanguageAndNextIndex.result, account: accountAndNextIndex.result }, nextIndex: accountAndNextIndex.nextIndex };
+} } };
+
+
+/**
+ * logInCallback も含めた URL に入る場所と言語
+ * @typePartId 24b5c609255152717a191a7af8e1ceed
+ */
+export const UrlData: { 
+/**
+ * definy.app 内 の 型パーツの Id
+ */
+readonly typePartId: TypePartId; 
+/**
+ * 独自のバイナリ形式の変換処理ができるコーデック
+ */
+readonly codec: Codec<UrlData>; 
+/**
+ * 普通の場所
+ */
+readonly Normal: (a: LocationAndLanguage) => UrlData; 
+/**
+ * ソーシャルログインから返ってきたときのURL
+ */
+readonly LogInCallback: (a: CodeAndState) => UrlData } = { Normal: (locationAndLanguage: LocationAndLanguage): UrlData => ({ _: "Normal", locationAndLanguage }), LogInCallback: (codeAndState: CodeAndState): UrlData => ({ _: "LogInCallback", codeAndState }), typePartId: "24b5c609255152717a191a7af8e1ceed" as TypePartId, codec: { encode: (value: UrlData): ReadonlyArray<number> => {
+  switch (value._) {
+    case "Normal": {
+      return [0].concat(LocationAndLanguage.codec.encode(value.locationAndLanguage));
+    }
+    case "LogInCallback": {
+      return [1].concat(CodeAndState.codec.encode(value.codeAndState));
+    }
+  }
+}, decode: (index: number, binary: Uint8Array): { readonly result: UrlData; readonly nextIndex: number } => {
+  const patternIndex: { readonly result: number; readonly nextIndex: number } = Int32.codec.decode(index, binary);
+  if (patternIndex.result === 0) {
+    const result: { readonly result: LocationAndLanguage; readonly nextIndex: number } = LocationAndLanguage.codec.decode(patternIndex.nextIndex, binary);
+    return { result: UrlData.Normal(result.result), nextIndex: result.nextIndex };
+  }
+  if (patternIndex.result === 1) {
+    const result: { readonly result: CodeAndState; readonly nextIndex: number } = CodeAndState.codec.decode(patternIndex.nextIndex, binary);
+    return { result: UrlData.LogInCallback(result.result), nextIndex: result.nextIndex };
+  }
+  throw new Error("存在しないパターンを指定された 型を更新してください");
 } } };
 
 
