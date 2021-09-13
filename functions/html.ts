@@ -8,12 +8,13 @@ import { globalStyle } from "../common/globalStyle";
  * OGP の 情報が含まれている HTML を返す
  */
 export const generateHtml = async (
-  urlData: d.UrlData,
-  normalizedUrl: URL
-): Promise<{ htmlOption: genHtml.HtmlOption; isNotFound: boolean }> => {
+  urlData: d.UrlData
+): Promise<{
+  readonly htmlOption: genHtml.HtmlOption;
+  readonly isNotFound: boolean;
+}> => {
   const coverImageUrlAndDescription = await getCoverImageUrlAndDescription(
-    urlData.location,
-    urlData.language
+    urlData
   );
   return {
     htmlOption: {
@@ -24,20 +25,56 @@ export const generateHtml = async (
       description: coverImageUrlAndDescription.description,
       scriptUrlList: [commonUrl.scriptUrl],
       twitterCard: "SummaryCard",
-      language: urlData.language,
-      url: normalizedUrl,
+      language:
+        urlData._ === "Normal"
+          ? urlData.locationAndLanguage.language
+          : d.Language.English,
+      url: undefined,
       style: globalStyle,
       themeColor: undefined,
-      children: [genHtml.div({}, loadingMessage(urlData.language))],
+      children: [
+        genHtml.div(
+          {},
+          loadingMessage(
+            urlData._ === "Normal"
+              ? urlData.locationAndLanguage.language
+              : d.Language.English
+          )
+        ),
+      ],
     },
     isNotFound: false,
   };
 };
 
-const getCoverImageUrlAndDescription = async (
-  location: d.Location,
-  language: d.Language
-): Promise<{ imageUrl: URL; description: string; isNotFound: boolean }> => {
+const getCoverImageUrlAndDescription = (
+  urlData: d.UrlData
+): Promise<{
+  readonly imageUrl: URL;
+  readonly description: string;
+  readonly isNotFound: boolean;
+}> => {
+  switch (urlData._) {
+    case "LogInCallback": {
+      return Promise.resolve({
+        imageUrl: commonUrl.iconUrl,
+        description: "logInCallback...",
+        isNotFound: false,
+      });
+    }
+    case "Normal":
+      return getCoverImageUrlAndDescriptionNormal(urlData.locationAndLanguage);
+  }
+};
+
+const getCoverImageUrlAndDescriptionNormal = async ({
+  location,
+  language,
+}: d.LocationAndLanguage): Promise<{
+  imageUrl: URL;
+  description: string;
+  isNotFound: boolean;
+}> => {
   switch (location._) {
     case "Project": {
       const projectResource = await lib.apiFunc.getProject(location.projectId);

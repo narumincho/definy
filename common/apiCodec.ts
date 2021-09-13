@@ -21,6 +21,14 @@ export const getAccountByAccountToken: ApiCodec<
   response: d.Maybe.codec(d.Account.codec),
 };
 
+export const getAccountTokenAndUrlDataByCodeAndState: ApiCodec<
+  d.CodeAndState,
+  d.Maybe<d.AccountTokenAndUrlDataAndAccount>
+> = {
+  request: d.CodeAndState.codec,
+  response: d.Maybe.codec(d.AccountTokenAndUrlDataAndAccount.codec),
+};
+
 export const getAccount: ApiCodec<
   d.AccountId,
   d.WithTime<d.Maybe<d.Account>>

@@ -32,7 +32,7 @@ export const AccountCard: React.VFC<Props> = React.memo((props) => {
   return (
     <Link
       onJump={props.onJump}
-      urlData={{
+      locationAndLanguage={{
         language: props.language,
         location: d.Location.Account(props.accountId),
       }}

@@ -1,3 +1,4 @@
+import * as css from "../css/main";
 import { Color } from "../html/main";
 import { Language } from "../../localData";
 
@@ -81,6 +82,17 @@ export type Box<Message> = {
   readonly backgroundColor: string | undefined;
   readonly gridTemplateColumns1FrCount: number | undefined;
   readonly url: URL | undefined;
+  readonly hover: BoxHoverStyle;
+};
+
+export type BoxHoverStyle = {
+  readonly animation: Animation | undefined;
+};
+
+export type Animation = {
+  readonly keyframeList: ReadonlyArray<css.Keyframe>;
+  /** アニメーションする時間. 単位は ms */
+  readonly duration: number;
 };
 
 export type CreateBoxOption = {
@@ -94,6 +106,7 @@ export type CreateBoxOption = {
   readonly url?: URL;
   /** `grid-template-columns` の 1fr を繰り返す数 */
   readonly gridTemplateColumns1FrCount?: number | undefined;
+  readonly hover?: { readonly animation?: Animation | undefined } | undefined;
 };
 
 export const boxX = <Message>(
@@ -125,6 +138,7 @@ const createBox = <Message>(
     backgroundColor: option.backgroundColor,
     gridTemplateColumns1FrCount: option.gridTemplateColumns1FrCount,
     children,
+    hover: { animation: option.hover?.animation },
   };
 };
 

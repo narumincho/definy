@@ -1424,10 +1424,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
     },
   },
   {
-    id: d.UrlData.typePartId,
-    name: "UrlData",
-    description:
-      "言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( https://support.google.com/webmasters/answer/182192?hl=ja )で,URLにページの言語を入れて,言語ごとに別のURLである必要がある.",
+    id: d.LocationAndLanguage.typePartId,
+    name: "LocationAndLanguage",
+    description: "言語とページの場所. URLとして表現されるデータ",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
@@ -1717,8 +1716,7 @@ const typePartList: ReadonlyArray<d.TypePart> = [
   {
     id: d.OpenIdConnectProvider.typePartId,
     name: "OpenIdConnectProvider",
-    description:
-      '"ソーシャルログインを提供するプロバイダー (例: Google, GitHub)\n\nGitHub いらないかも (GitHubのアカウント作成するの分かりづらいので, 選択肢を減らしたい)',
+    description: "ソーシャルログインを提供するプロバイダー Googleのみサポート",
     projectId: coreProjectId,
     attribute: { _: "Nothing" },
     dataTypeParameterList: [],
@@ -1729,12 +1727,6 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           name: "Google",
           description:
             "Google ( https://developers.google.com/identity/sign-in/web/ )",
-          parameter: { _: "Nothing" },
-        },
-        {
-          name: "GitHub",
-          description:
-            "GitHub ( https://developer.github.com/v3/guides/basics-of-authentication/ )",
           parameter: { _: "Nothing" },
         },
       ],
@@ -2709,13 +2701,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: { _: "Nothing" },
         },
         {
-          name: "VerifyingAccountToken",
-          description:
-            "アカウントトークンの検証とログインしているユーザーの情報を取得している状態",
-          parameter: {
-            _: "Just",
-            value: noArgumentsType(d.AccountToken.typePartId),
-          },
+          name: "LoadingAccountData",
+          description: "アカウントの情報を取得中",
+          parameter: d.Maybe.Nothing(),
         },
         {
           name: "LoggedIn",
@@ -3431,9 +3419,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           type: noArgumentsType(d.OpenIdConnectProvider.typePartId),
         },
         {
-          name: "urlData",
+          name: "locationAndLanguage",
           description: "ログインした後に返ってくるURLに必要なデータ",
-          type: noArgumentsType(d.UrlData.typePartId),
+          type: noArgumentsType(d.LocationAndLanguage.typePartId),
         },
       ],
     },
@@ -3570,6 +3558,78 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         name: "DataTypeParameter",
         description: "データタイプパラメータで指定したパラメータ",
         parameter: d.Maybe.Just(noArgumentsType(d.Int32.typePartId)),
+      },
+    ]),
+  },
+  {
+    id: d.CodeAndState.typePartId,
+    name: "CodeAndState",
+    description: "ソーシャルログインしたあとに返ってくるパラメーター",
+    attribute: d.Maybe.Nothing(),
+    dataTypeParameterList: [],
+    projectId: coreProjectId,
+    body: d.TypePartBody.Product([
+      {
+        name: "code",
+        description: "",
+        type: noArgumentsType(d.String.typePartId),
+      },
+      {
+        name: "state",
+        description: "",
+        type: noArgumentsType(d.String.typePartId),
+      },
+      {
+        name: "openIdConnectProvider",
+        description: "",
+        type: noArgumentsType(d.OpenIdConnectProvider.typePartId),
+      },
+    ]),
+  },
+  {
+    id: d.AccountTokenAndUrlDataAndAccount.typePartId,
+    name: "AccountTokenAndUrlDataAndAccount",
+    description: "アカウントトークンとUrlData (場所と言語)",
+    attribute: d.Maybe.Nothing(),
+    dataTypeParameterList: [],
+    projectId: coreProjectId,
+    body: d.TypePartBody.Product([
+      {
+        name: "accountToken",
+        description: "アカウントトークン",
+        type: noArgumentsType(d.AccountToken.typePartId),
+      },
+      {
+        name: "locationAndLanguage",
+        description: "場所と言語",
+        type: noArgumentsType(d.LocationAndLanguage.typePartId),
+      },
+      {
+        name: "account",
+        description: "ログインした account",
+        type: noArgumentsType(d.Account.typePartId),
+      },
+    ]),
+  },
+  {
+    id: d.UrlData.typePartId,
+    name: "UrlData",
+    description: "logInCallback も含めた URL に入る場所と言語",
+    attribute: d.Maybe.Nothing(),
+    dataTypeParameterList: [],
+    projectId: coreProjectId,
+    body: d.TypePartBody.Sum([
+      {
+        name: "Normal",
+        description: "普通の場所",
+        parameter: d.Maybe.Just(
+          noArgumentsType(d.LocationAndLanguage.typePartId)
+        ),
+      },
+      {
+        name: "LogInCallback",
+        description: "ソーシャルログインから返ってきたときのURL",
+        parameter: d.Maybe.Just(noArgumentsType(d.CodeAndState.typePartId)),
       },
     ]),
   },

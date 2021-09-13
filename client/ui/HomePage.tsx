@@ -57,7 +57,7 @@ export const HomePage: React.VFC<Props> = (props) => {
 
 const HomeLinkList: React.VFC<{
   language: d.Language;
-  jumpHandler: (urlData: d.UrlData) => void;
+  jumpHandler: (urlData: d.LocationAndLanguage) => void;
 }> = (props) => {
   return (
     <div
@@ -73,14 +73,17 @@ const HomeLinkList: React.VFC<{
       })}
     >
       <Link
-        urlData={{ location: d.Location.About, language: props.language }}
+        locationAndLanguage={{
+          location: d.Location.About,
+          language: props.language,
+        }}
         style={{ padding: 4 }}
         onJump={props.jumpHandler}
       >
         definyについて
       </Link>
       <Link
-        urlData={{
+        locationAndLanguage={{
           location: d.Location.LocalProject,
           language: props.language,
         }}
@@ -203,7 +206,7 @@ const projectIdToListItem =
 
 const CreateProjectButton: React.VFC<{
   language: d.Language;
-  onJump: (urlData: d.UrlData) => void;
+  onJump: (urlData: d.LocationAndLanguage) => void;
 }> = (props) => (
   <div
     className={css({
@@ -215,7 +218,7 @@ const CreateProjectButton: React.VFC<{
     })}
   >
     <Link
-      urlData={{
+      locationAndLanguage={{
         language: props.language,
         location: d.Location.CreateProject,
       }}

@@ -1,3 +1,5 @@
+import * as css from "../gen/css/main";
+
 export const globalStyle = `
 /*
   Hack typeface https://github.com/source-foundry/Hack
@@ -11,17 +13,28 @@ export const globalStyle = `
   src: url("/hack-regular-subset.woff2") format("woff2");
 }
 
-html {
-  height: 100%;
-}
-
-body {
-  height: 100%;
-  margin: 0;
-  background-color: black;
-  display: grid;
-  font-family: "Hack";
-}
+${css.ruleListToString({
+  ruleList: [
+    {
+      selector: { type: "type", elementName: "html" },
+      declarationList: [css.height100Percent],
+    },
+    {
+      selector: { type: "type", elementName: "body" },
+      declarationList: [
+        css.height100Percent,
+        css.margin0,
+        css.backgroundColor("black"),
+        css.displayGrid,
+        {
+          property: "font-family",
+          value: "Hack",
+        },
+      ],
+    },
+  ],
+  keyframesList: [],
+})}
 
 * {
   box-sizing: border-box;

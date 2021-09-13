@@ -1,5 +1,3 @@
-import { createHash } from "sha256-uint8array";
-
 export type Declaration = {
   readonly property: string;
   readonly value: string;
@@ -9,16 +7,21 @@ export type Selector =
   | {
       readonly type: "class";
       readonly className: string;
+      readonly isHover: boolean;
     }
   | {
       readonly type: "type";
       readonly elementName: string;
     };
 
-export const classSelector = (className: string): Selector => {
+export const classSelector = (
+  className: string,
+  isHover: boolean
+): Selector => {
   return {
     type: "class",
     className,
+    isHover,
   };
 };
 
@@ -61,12 +64,46 @@ const selectorToString = (selector: Selector): string => {
     case "type":
       return selector.elementName;
     case "class":
-      return "." + selector.className;
+      return "." + selector.className + (selector.isHover ? ":hover" : "");
   }
 };
 
-export const ruleListToString = (ruleList: ReadonlyArray<Rule>): string => {
-  return ruleList.map(ruleToString).join("");
+export type StatementList = {
+  readonly keyframesList: ReadonlyArray<Keyframes>;
+  readonly ruleList: ReadonlyArray<Rule>;
+};
+
+export type Keyframes = {
+  readonly name: string;
+  readonly keyframeList: ReadonlyArray<Keyframe>;
+};
+
+export type Keyframe = {
+  readonly percentage: number;
+  readonly declarationList: ReadonlyArray<Declaration>;
+};
+
+export const ruleListToString = (statementList: StatementList): string => {
+  return (
+    statementList.ruleList.map(ruleToString).join("") +
+    statementList.keyframesList.map(keyFramesToString).join("")
+  );
+};
+
+const keyFramesToString = (keyframes: Keyframes): string => {
+  return (
+    "@keyframes " +
+    keyframes.name +
+    "{" +
+    keyframes.keyframeList.map(keyFrameToString).join("") +
+    "}"
+  );
+};
+
+export const keyFrameToString = (keyframe: Keyframe): string => {
+  return `${keyframe.percentage}% {${declarationListToString(
+    keyframe.declarationList
+  )}}`;
 };
 
 export const widthRem = (value: number): Declaration => {
@@ -107,14 +144,6 @@ export const displayGrid: Declaration = {
 export const margin0: Declaration = {
   property: "margin",
   value: "0",
-};
-
-export const declarationListToSha256HashValue = (
-  declarationList: ReadonlyArray<Declaration>
-): string => {
-  return createHash("sha256")
-    .update(declarationListToString(declarationList))
-    .digest("hex");
 };
 
 const remValueToCssValue = (value: number): string => {

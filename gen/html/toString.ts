@@ -90,7 +90,9 @@ const headElement = (view: HtmlOption): HtmlElement => {
     children.push(cssStyleElement(view.style));
   }
   children.push(twitterCardElement(view.twitterCard));
-  children.push(ogUrlElement(view.url));
+  if (view.url !== undefined) {
+    children.push(ogUrlElement(view.url));
+  }
   children.push(ogTitleElement(view.pageName));
   children.push(ogSiteName(view.appName));
   children.push(ogDescription(view.description));

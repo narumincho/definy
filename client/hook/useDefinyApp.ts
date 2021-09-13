@@ -1,9 +1,6 @@
 import * as d from "../../localData";
 import * as indexedDB from "../indexedDB";
-import {
-  urlDataAndAccountTokenFromUrl,
-  urlDataAndAccountTokenToUrl,
-} from "../../common/url";
+import { locationAndLanguageToUrl, urlToUrlData } from "../../common/url";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TypePartIdAndMessage } from "../../core/TypePartIdAndMessage";
 import { api } from "../api";
@@ -110,7 +107,7 @@ export type UseDefinyAppResult = {
    *
    * *side-effect*
    */
-  readonly jump: (urlData: d.UrlData) => void;
+  readonly jump: (urlData: d.LocationAndLanguage) => void;
   /**
    * ログインする
    *
@@ -225,10 +222,11 @@ export const useDefinyApp = (
 ): UseDefinyAppResult => {
   const [topProjectsLoadingState, setTopProjectsLoadingState] =
     useState<TopProjectsLoadingState>({ _: "none" });
-  const [urlData, setUrlData] = useState<d.UrlData>({
-    language: "English",
-    location: d.Location.Home,
-  });
+  const [locationAndLanguage, setLocationAndLanguage] =
+    useState<d.LocationAndLanguage>({
+      language: "English",
+      location: d.Location.Home,
+    });
   const [logInState, setLogInState] = useState<d.LogInState>(
     d.LogInState.Guest
   );
@@ -248,19 +246,34 @@ export const useDefinyApp = (
   /**
    * ページを移動する
    */
-  const jump = useCallback((newUrlData: d.UrlData): void => {
-    window.history.pushState(
+  const jump = useCallback(
+    (newLocationAndLanguage: d.LocationAndLanguage): void => {
+      window.history.pushState(
+        undefined,
+        "",
+        locationAndLanguageToUrl(newLocationAndLanguage).toString()
+      );
+      setLocationAndLanguage(newLocationAndLanguage);
+    },
+    []
+  );
+
+  const replace = (newLocationAndLanguage: d.LocationAndLanguage): void => {
+    window.history.replaceState(
       undefined,
       "",
-      urlDataAndAccountTokenToUrl(newUrlData, d.Maybe.Nothing()).toString()
+      locationAndLanguageToUrl(newLocationAndLanguage).toString()
     );
-    setUrlData(newUrlData);
-  }, []);
+    setLocationAndLanguage(newLocationAndLanguage);
+  };
 
   const logIn = useCallback(() => {
     setLogInState({ _: "RequestingLogInUrl", openIdConnectProvider: "Google" });
     api
-      .requestLogInUrl({ urlData, openIdConnectProvider: "Google" })
+      .requestLogInUrl({
+        locationAndLanguage,
+        openIdConnectProvider: "Google",
+      })
       .then((response) => {
         if (response._ === "Nothing") {
           option.notificationMessageHandler(
@@ -274,24 +287,22 @@ export const useDefinyApp = (
           window.location.href = response.value;
         });
       });
-  }, [urlData, option]);
+  }, [locationAndLanguage, option]);
 
   const logOut = useCallback(() => {
     indexedDB.deleteAccountToken();
     setLogInState(d.LogInState.Guest);
     jump({
-      language: urlData.language,
+      language: locationAndLanguage.language,
       location: d.Location.Home,
     });
     option.notificationMessageHandler("ログアウトしました", "success");
-  }, [jump, option, urlData.language]);
+  }, [jump, option, locationAndLanguage.language]);
 
   const getAccountToken = useCallback((): d.AccountToken | undefined => {
     switch (logInState._) {
       case "LoggedIn":
         return logInState.accountTokenAccountId.accountToken;
-      case "VerifyingAccountToken":
-        return logInState.accountToken;
     }
   }, [logInState]);
 
@@ -332,12 +343,18 @@ export const useDefinyApp = (
             "success"
           );
           jump({
-            language: urlData.language,
+            language: locationAndLanguage.language,
             location: d.Location.Project(response.value.value.id),
           });
         });
     },
-    [getAccountToken, createProjectState, urlData.language, jump, option]
+    [
+      getAccountToken,
+      createProjectState,
+      locationAndLanguage.language,
+      jump,
+      option,
+    ]
   );
 
   const requestTop50Project = useCallback((): void => {
@@ -364,51 +381,38 @@ export const useDefinyApp = (
 
     // ブラウザで戻るボタンを押したときのイベントを登録
     window.addEventListener("popstate", () => {
-      const newUrlData: d.UrlData = urlDataAndAccountTokenFromUrl(
-        new URL(window.location.href)
-      ).urlData;
-      setUrlData({
-        language: newUrlData.language,
-        location: newUrlData.location,
-      });
+      const newUrlData: d.UrlData = urlToUrlData(new URL(window.location.href));
+      if (newUrlData._ === "Normal") {
+        setLocationAndLanguage(newUrlData.locationAndLanguage);
+      }
     });
 
-    const urlDataAndAccountToken = urlDataAndAccountTokenFromUrl(
-      new URL(location.href)
-    );
-    // ブラウザのURLを正規化. アカウントトークンを隠す
-    window.history.replaceState(
-      undefined,
-      "",
-
-      urlDataAndAccountTokenToUrl(
-        urlDataAndAccountToken.urlData,
-        d.Maybe.Nothing()
-      ).toString()
-    );
-    setUrlData(urlDataAndAccountToken.urlData);
-    if (urlDataAndAccountToken.accountToken._ === "Just") {
-      const accountToken = urlDataAndAccountToken.accountToken.value;
-      verifyingAccountTokenAndGetAccount(
-        setLogInState,
-        accountToken,
-        accountDict.setLoaded,
-        option.notificationMessageHandler
-      );
+    const urlData = urlToUrlData(new URL(location.href));
+    if (urlData._ === "Normal") {
+      // ブラウザのURLを正規化.
+      replace(urlData.locationAndLanguage);
+      indexedDB.getAccountToken().then((accountToken) => {
+        if (accountToken === undefined) {
+          setLogInState(d.LogInState.Guest);
+          return;
+        }
+        verifyingAccountTokenAndGetAccount(
+          setLogInState,
+          accountToken,
+          accountDict.setLoaded,
+          option.notificationMessageHandler
+        );
+      });
       return;
     }
-    indexedDB.getAccountToken().then((accountToken) => {
-      if (accountToken === undefined) {
-        setLogInState(d.LogInState.Guest);
-        return;
-      }
-      verifyingAccountTokenAndGetAccount(
-        setLogInState,
-        accountToken,
-        accountDict.setLoaded,
-        option.notificationMessageHandler
-      );
-    });
+    // urlData が LogInCallback の場合
+    verifyingAccountTokenAndGetAccountFromCodeAndState(
+      setLogInState,
+      urlData.codeAndState,
+      accountDict.setLoaded,
+      option.notificationMessageHandler,
+      replace
+    );
   }, [accountDict.setLoaded, option.notificationMessageHandler]);
 
   const projectResource: Resource<d.ProjectId, d.Project> = useMemo(
@@ -534,12 +538,18 @@ export const useDefinyApp = (
             "success"
           );
           jump({
-            language: urlData.language,
+            language: locationAndLanguage.language,
             location: d.Location.TypePart(response.value.data.value.id),
           });
         });
     },
-    [createTypePartState.tag, getAccountToken, jump, option, urlData.language]
+    [
+      createTypePartState.tag,
+      getAccountToken,
+      jump,
+      option,
+      locationAndLanguage.language,
+    ]
   );
 
   const typePartIdListInProjectResource: UseDefinyAppResult["typePartIdListInProjectResource"] =
@@ -709,8 +719,8 @@ export const useDefinyApp = (
       createProject,
       createProjectState,
       jump,
-      language: urlData.language,
-      location: urlData.location,
+      language: locationAndLanguage.language,
+      location: locationAndLanguage.location,
       logIn,
       logInState,
       logOut,
@@ -738,8 +748,8 @@ export const useDefinyApp = (
       topProjectsLoadingState,
       typePartIdListInProjectResource,
       typePartResource,
-      urlData.language,
-      urlData.location,
+      locationAndLanguage.language,
+      locationAndLanguage.location,
       saveTypePart,
       isSavingTypePart,
       generateCode,
@@ -754,7 +764,7 @@ const verifyingAccountTokenAndGetAccount = (
   setAccount: (account: d.Account) => void,
   notificationMessageHandler: NotificationMessageHandler
 ) => {
-  setLogInState(d.LogInState.VerifyingAccountToken(accountToken));
+  setLogInState(d.LogInState.LoadingAccountData);
   api.getAccountByAccountToken(accountToken).then((response) => {
     if (response._ === "Nothing" || response.value._ === "Nothing") {
       notificationMessageHandler("ログインに失敗しました", "error");
@@ -773,6 +783,37 @@ const verifyingAccountTokenAndGetAccount = (
       })
     );
     setAccount(response.value.value);
+  });
+};
+
+const verifyingAccountTokenAndGetAccountFromCodeAndState = (
+  setLogInState: (logInState: d.LogInState) => void,
+  codeAndState: d.CodeAndState,
+  setAccount: (account: d.Account) => void,
+  notificationMessageHandler: NotificationMessageHandler,
+  replace: (newLocationAndLanguage: d.LocationAndLanguage) => void
+): void => {
+  setLogInState(d.LogInState.LoadingAccountData);
+
+  api.getAccountTokenAndUrlDataByCodeAndState(codeAndState).then((response) => {
+    if (response._ === "Nothing" || response.value._ === "Nothing") {
+      notificationMessageHandler("ログインに失敗しました", "error");
+      setLogInState(d.LogInState.Guest);
+      return;
+    }
+    indexedDB.setAccountToken(response.value.value.accountToken);
+    notificationMessageHandler(
+      `「${response.value.value.account.name}」としてログインしました`,
+      "success"
+    );
+    setLogInState(
+      d.LogInState.LoggedIn({
+        accountToken: response.value.value.accountToken,
+        accountId: response.value.value.account.id,
+      })
+    );
+    setAccount(response.value.value.account);
+    replace(response.value.value.locationAndLanguage);
   });
 };
 

@@ -59,7 +59,7 @@ const AccountIdSelectionView: ElementOperation<
       <div>{account.name}</div>
       <Link
         onJump={props.value.jump}
-        urlData={{
+        locationAndLanguage={{
           language: props.value.language,
           location: d.Location.Account(props.value.accountId),
         }}

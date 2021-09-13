@@ -26,7 +26,7 @@ const TypePartIdSelectionView: ElementOperation<
     return (
       <Link
         onJump={props.value.jump}
-        urlData={{
+        locationAndLanguage={{
           language: props.value.language,
           location: d.Location.TypePart(props.value.typePartId),
         }}
@@ -39,7 +39,7 @@ const TypePartIdSelectionView: ElementOperation<
     return (
       <Link
         onJump={props.value.jump}
-        urlData={{
+        locationAndLanguage={{
           language: props.value.language,
           location: d.Location.TypePart(props.value.typePartId),
         }}
@@ -52,7 +52,7 @@ const TypePartIdSelectionView: ElementOperation<
     return (
       <Link
         onJump={props.value.jump}
-        urlData={{
+        locationAndLanguage={{
           language: props.value.language,
           location: d.Location.TypePart(props.value.typePartId),
         }}
@@ -65,7 +65,7 @@ const TypePartIdSelectionView: ElementOperation<
     return (
       <Link
         onJump={props.value.jump}
-        urlData={{
+        locationAndLanguage={{
           language: props.value.language,
           location: d.Location.TypePart(props.value.typePartId),
         }}
@@ -77,7 +77,7 @@ const TypePartIdSelectionView: ElementOperation<
   return (
     <Link
       onJump={props.value.jump}
-      urlData={{
+      locationAndLanguage={{
         language: props.value.language,
         location: d.Location.TypePart(props.value.typePartId),
       }}

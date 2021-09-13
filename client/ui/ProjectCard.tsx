@@ -45,7 +45,7 @@ export const ProjectCard: React.VFC<Props> = React.memo((props) => {
         display: "grid",
         gridTemplateRows: `${imageHeight}px ${textHeight}px`,
       }}
-      urlData={{
+      locationAndLanguage={{
         location: d.Location.Project(props.projectId),
         language: props.language,
       }}
