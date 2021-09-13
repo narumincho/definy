@@ -268,7 +268,7 @@ export const useDefinyApp = (
     setLogInState({ _: "RequestingLogInUrl", openIdConnectProvider: "Google" });
     api
       .requestLogInUrl({
-        urlData: locationAndLanguage,
+        locationAndLanguage,
         openIdConnectProvider: "Google",
       })
       .then((response) => {

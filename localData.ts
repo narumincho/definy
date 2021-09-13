@@ -682,12 +682,10 @@ readonly name: TsIdentifier };
 
 
 /**
- * "ソーシャルログインを提供するプロバイダー (例: Google, GitHub)
- *
- * GitHub いらないかも (GitHubのアカウント作成するの分かりづらいので, 選択肢を減らしたい)
+ * ソーシャルログインを提供するプロバイダー Googleのみサポート
  * @typePartId 84597034eb252267ce1a599ab7a0b543
  */
-export type OpenIdConnectProvider = "Google" | "GitHub";
+export type OpenIdConnectProvider = "Google";
 
 
 /**
@@ -1491,7 +1489,7 @@ readonly openIdConnectProvider: OpenIdConnectProvider;
 /**
  * ログインした後に返ってくるURLに必要なデータ
  */
-readonly urlData: LocationAndLanguage };
+readonly locationAndLanguage: LocationAndLanguage };
 
 
 /**
@@ -1577,9 +1575,9 @@ export type AccountTokenAndUrlDataAndAccount = {
  */
 readonly accountToken: AccountToken; 
 /**
- * UrlData 場所と言語
+ * 場所と言語
  */
-readonly urlData: LocationAndLanguage; 
+readonly locationAndLanguage: LocationAndLanguage; 
 /**
  * ログインした account
  */
@@ -3858,9 +3856,7 @@ readonly helper: (a: ImportedVariable) => ImportedVariable } = { typePartId: "81
 
 
 /**
- * "ソーシャルログインを提供するプロバイダー (例: Google, GitHub)
- *
- * GitHub いらないかも (GitHubのアカウント作成するの分かりづらいので, 選択肢を減らしたい)
+ * ソーシャルログインを提供するプロバイダー Googleのみサポート
  * @typePartId 84597034eb252267ce1a599ab7a0b543
  */
 export const OpenIdConnectProvider: { 
@@ -3875,26 +3871,16 @@ readonly codec: Codec<OpenIdConnectProvider>;
 /**
  * Google ( https://developers.google.com/identity/sign-in/web/ )
  */
-readonly Google: OpenIdConnectProvider; 
-/**
- * GitHub ( https://developer.github.com/v3/guides/basics-of-authentication/ )
- */
-readonly GitHub: OpenIdConnectProvider } = { Google: "Google", GitHub: "GitHub", typePartId: "84597034eb252267ce1a599ab7a0b543" as TypePartId, codec: { encode: (value: OpenIdConnectProvider): ReadonlyArray<number> => {
+readonly Google: OpenIdConnectProvider } = { Google: "Google", typePartId: "84597034eb252267ce1a599ab7a0b543" as TypePartId, codec: { encode: (value: OpenIdConnectProvider): ReadonlyArray<number> => {
   switch (value) {
     case "Google": {
       return [0];
-    }
-    case "GitHub": {
-      return [1];
     }
   }
 }, decode: (index: number, binary: Uint8Array): { readonly result: OpenIdConnectProvider; readonly nextIndex: number } => {
   const patternIndex: { readonly result: number; readonly nextIndex: number } = Int32.codec.decode(index, binary);
   if (patternIndex.result === 0) {
     return { result: OpenIdConnectProvider.Google, nextIndex: patternIndex.nextIndex };
-  }
-  if (patternIndex.result === 1) {
-    return { result: OpenIdConnectProvider.GitHub, nextIndex: patternIndex.nextIndex };
   }
   throw new Error("存在しないパターンを指定された 型を更新してください");
 } } };
@@ -5820,10 +5806,10 @@ readonly codec: Codec<RequestLogInUrlRequestData>;
 /**
  * 型を合わせる上で便利なヘルパー関数
  */
-readonly helper: (a: RequestLogInUrlRequestData) => RequestLogInUrlRequestData } = { typePartId: "f03ea5331c1a3adcde80a04054d35e07" as TypePartId, helper: (requestLogInUrlRequestData: RequestLogInUrlRequestData): RequestLogInUrlRequestData => requestLogInUrlRequestData, codec: { encode: (value: RequestLogInUrlRequestData): ReadonlyArray<number> => (OpenIdConnectProvider.codec.encode(value.openIdConnectProvider).concat(LocationAndLanguage.codec.encode(value.urlData))), decode: (index: number, binary: Uint8Array): { readonly result: RequestLogInUrlRequestData; readonly nextIndex: number } => {
+readonly helper: (a: RequestLogInUrlRequestData) => RequestLogInUrlRequestData } = { typePartId: "f03ea5331c1a3adcde80a04054d35e07" as TypePartId, helper: (requestLogInUrlRequestData: RequestLogInUrlRequestData): RequestLogInUrlRequestData => requestLogInUrlRequestData, codec: { encode: (value: RequestLogInUrlRequestData): ReadonlyArray<number> => (OpenIdConnectProvider.codec.encode(value.openIdConnectProvider).concat(LocationAndLanguage.codec.encode(value.locationAndLanguage))), decode: (index: number, binary: Uint8Array): { readonly result: RequestLogInUrlRequestData; readonly nextIndex: number } => {
   const openIdConnectProviderAndNextIndex: { readonly result: OpenIdConnectProvider; readonly nextIndex: number } = OpenIdConnectProvider.codec.decode(index, binary);
-  const urlDataAndNextIndex: { readonly result: LocationAndLanguage; readonly nextIndex: number } = LocationAndLanguage.codec.decode(openIdConnectProviderAndNextIndex.nextIndex, binary);
-  return { result: { openIdConnectProvider: openIdConnectProviderAndNextIndex.result, urlData: urlDataAndNextIndex.result }, nextIndex: urlDataAndNextIndex.nextIndex };
+  const locationAndLanguageAndNextIndex: { readonly result: LocationAndLanguage; readonly nextIndex: number } = LocationAndLanguage.codec.decode(openIdConnectProviderAndNextIndex.nextIndex, binary);
+  return { result: { openIdConnectProvider: openIdConnectProviderAndNextIndex.result, locationAndLanguage: locationAndLanguageAndNextIndex.result }, nextIndex: locationAndLanguageAndNextIndex.nextIndex };
 } } };
 
 
@@ -6064,11 +6050,11 @@ readonly codec: Codec<AccountTokenAndUrlDataAndAccount>;
 /**
  * 型を合わせる上で便利なヘルパー関数
  */
-readonly helper: (a: AccountTokenAndUrlDataAndAccount) => AccountTokenAndUrlDataAndAccount } = { typePartId: "bf38704fac7ddb2c86d107f928e9d88f" as TypePartId, helper: (accountTokenAndUrlDataAndAccount: AccountTokenAndUrlDataAndAccount): AccountTokenAndUrlDataAndAccount => accountTokenAndUrlDataAndAccount, codec: { encode: (value: AccountTokenAndUrlDataAndAccount): ReadonlyArray<number> => (AccountToken.codec.encode(value.accountToken).concat(LocationAndLanguage.codec.encode(value.urlData)).concat(Account.codec.encode(value.account))), decode: (index: number, binary: Uint8Array): { readonly result: AccountTokenAndUrlDataAndAccount; readonly nextIndex: number } => {
+readonly helper: (a: AccountTokenAndUrlDataAndAccount) => AccountTokenAndUrlDataAndAccount } = { typePartId: "bf38704fac7ddb2c86d107f928e9d88f" as TypePartId, helper: (accountTokenAndUrlDataAndAccount: AccountTokenAndUrlDataAndAccount): AccountTokenAndUrlDataAndAccount => accountTokenAndUrlDataAndAccount, codec: { encode: (value: AccountTokenAndUrlDataAndAccount): ReadonlyArray<number> => (AccountToken.codec.encode(value.accountToken).concat(LocationAndLanguage.codec.encode(value.locationAndLanguage)).concat(Account.codec.encode(value.account))), decode: (index: number, binary: Uint8Array): { readonly result: AccountTokenAndUrlDataAndAccount; readonly nextIndex: number } => {
   const accountTokenAndNextIndex: { readonly result: AccountToken; readonly nextIndex: number } = AccountToken.codec.decode(index, binary);
-  const urlDataAndNextIndex: { readonly result: LocationAndLanguage; readonly nextIndex: number } = LocationAndLanguage.codec.decode(accountTokenAndNextIndex.nextIndex, binary);
-  const accountAndNextIndex: { readonly result: Account; readonly nextIndex: number } = Account.codec.decode(urlDataAndNextIndex.nextIndex, binary);
-  return { result: { accountToken: accountTokenAndNextIndex.result, urlData: urlDataAndNextIndex.result, account: accountAndNextIndex.result }, nextIndex: accountAndNextIndex.nextIndex };
+  const locationAndLanguageAndNextIndex: { readonly result: LocationAndLanguage; readonly nextIndex: number } = LocationAndLanguage.codec.decode(accountTokenAndNextIndex.nextIndex, binary);
+  const accountAndNextIndex: { readonly result: Account; readonly nextIndex: number } = Account.codec.decode(locationAndLanguageAndNextIndex.nextIndex, binary);
+  return { result: { accountToken: accountTokenAndNextIndex.result, locationAndLanguage: locationAndLanguageAndNextIndex.result, account: accountAndNextIndex.result }, nextIndex: accountAndNextIndex.nextIndex };
 } } };
 
 

@@ -115,17 +115,6 @@ const logInUrlFromOpenIdConnectProviderAndState = (
           ["state", state],
         ])
       );
-    case "GitHub":
-      return createUrl(
-        "https://github.com/login/oauth/authorize",
-        new Map([
-          ["response_type", "code"],
-          ["client_id", getOpenIdConnectClientId("GitHub")],
-          ["redirect_uri", commonUrl.logInRedirectUri("GitHub")],
-          ["scope", "read:user"],
-          ["state", state],
-        ])
-      );
   }
 };
 
@@ -228,8 +217,6 @@ const getUserDataFromCode = (
   switch (openIdConnectProvider) {
     case "Google":
       return getGoogleUserDataFromCode(code);
-    case "GitHub":
-      return getGitHubUserDataFromCode(code);
   }
 };
 
@@ -278,78 +265,6 @@ const getGoogleUserDataFromCode = async (
     id: markedDecoded.sub,
     name: markedDecoded.name,
     imageUrl: new URL(markedDecoded.picture),
-  };
-};
-
-const getGitHubUserDataFromCode = async (
-  code: string
-): Promise<ProviderUserData> => {
-  const responseData = (
-    await axios.post(
-      "https://github.com/login/oauth/access_token",
-      new URLSearchParams([
-        ["grant_type", "authorization_code"],
-        ["code", code],
-        ["redirect_uri", commonUrl.logInRedirectUri("GitHub")],
-        ["client_id", getOpenIdConnectClientId("GitHub")],
-        ["client_secret", getOpenIdConnectClientSecret("GitHub")],
-      ]),
-      {
-        headers: {
-          accept: "application/json",
-          "content-type": "application/x-www-form-urlencoded",
-        },
-      }
-    )
-  ).data;
-  const accessToken: unknown = responseData.access_token;
-  if (typeof accessToken !== "string") {
-    console.error("GitHubからアクセストークンを取得できなかった", responseData);
-    throw new Error("LogInError: GitHub Oauth response is invalid");
-  }
-
-  const gitHubData = (
-    await axios.post(
-      "https://api.github.com/graphql",
-      {
-        query: `
-query {
-viewer {
-    id
-    name
-    avatarUrl
-}
-}
-`,
-      },
-      {
-        headers: {
-          Authorization: "token " + accessToken,
-        },
-      }
-    )
-  ).data.data.viewer;
-  if (
-    gitHubData === undefined ||
-    gitHubData === null ||
-    typeof gitHubData === "string"
-  ) {
-    throw new Error("LogInError: GitHub API response is invalid");
-  }
-  const id: unknown = gitHubData.id;
-  const name: unknown = gitHubData.name;
-  const avatarUrl: unknown = gitHubData.avatarUrl;
-  if (
-    typeof id !== "string" ||
-    typeof name !== "string" ||
-    typeof avatarUrl !== "string"
-  ) {
-    throw new Error("LogInError: GitHub API response is invalid");
-  }
-  return {
-    id,
-    name,
-    imageUrl: new URL(avatarUrl),
   };
 };
 
@@ -428,8 +343,6 @@ const getOpenIdConnectClientId = (
   switch (openIdConnectProvider) {
     case "Google":
       return "8347840964-l3796imv2d11d0qi8cnb6r48n5jabk9t.apps.googleusercontent.com";
-    case "GitHub":
-      return "b35031a84487b285978e";
   }
 };
 
@@ -534,7 +447,7 @@ export const apiFunc: {
     const state = createRandomId();
     await database.collection("openConnectState").doc(state).create({
       createTime: admin.firestore.Timestamp.now(),
-      locationAndLanguage: requestLogInUrlRequestData.urlData,
+      locationAndLanguage: requestLogInUrlRequestData.locationAndLanguage,
       provider: requestLogInUrlRequestData.openIdConnectProvider,
     });
     return logInUrlFromOpenIdConnectProviderAndState(

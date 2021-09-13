@@ -131,8 +131,7 @@ export const logInCallback = functions.https.onRequest((request, response) => {
     return;
   }
   switch (openIdConnectProvider) {
-    case "Google":
-    case "GitHub": {
+    case "Google": {
       lib.logInCallback(openIdConnectProvider, code, state).then((result) => {
         response.redirect(
           301,
