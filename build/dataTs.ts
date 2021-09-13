@@ -2709,13 +2709,9 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           parameter: { _: "Nothing" },
         },
         {
-          name: "VerifyingAccountToken",
-          description:
-            "アカウントトークンの検証とログインしているユーザーの情報を取得している状態",
-          parameter: {
-            _: "Just",
-            value: noArgumentsType(d.AccountToken.typePartId),
-          },
+          name: "LoadingAccountData",
+          description: "アカウントの情報を取得中",
+          parameter: d.Maybe.Nothing(),
         },
         {
           name: "LoggedIn",
@@ -3570,6 +3566,51 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         name: "DataTypeParameter",
         description: "データタイプパラメータで指定したパラメータ",
         parameter: d.Maybe.Just(noArgumentsType(d.Int32.typePartId)),
+      },
+    ]),
+  },
+  {
+    id: d.CodeAndState.typePartId,
+    name: "CodeAndState",
+    description: "ソーシャルログインしたあとに返ってくるパラメーター",
+    attribute: d.Maybe.Nothing(),
+    dataTypeParameterList: [],
+    projectId: coreProjectId,
+    body: d.TypePartBody.Product([
+      {
+        name: "code",
+        description: "",
+        type: noArgumentsType(d.String.typePartId),
+      },
+      {
+        name: "state",
+        description: "",
+        type: noArgumentsType(d.String.typePartId),
+      },
+    ]),
+  },
+  {
+    id: d.AccountTokenAndUrlDataAndAccount.typePartId,
+    name: "AccountTokenAndUrlDataAndAccount",
+    description: "アカウントトークンとUrlData (場所と言語)",
+    attribute: d.Maybe.Nothing(),
+    dataTypeParameterList: [],
+    projectId: coreProjectId,
+    body: d.TypePartBody.Product([
+      {
+        name: "accountToken",
+        description: "アカウントトークン",
+        type: noArgumentsType(d.AccountToken.typePartId),
+      },
+      {
+        name: "urlData",
+        description: "UrlData 場所と言語",
+        type: noArgumentsType(d.UrlData.typePartId),
+      },
+      {
+        name: "account",
+        description: "ログインした account",
+        type: noArgumentsType(d.Account.typePartId),
       },
     ]),
   },

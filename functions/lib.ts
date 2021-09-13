@@ -560,6 +560,9 @@ export const apiFunc: {
       createTime: firestoreTimestampToTime(userData.createTime),
     });
   },
+  getAccountTokenAndUrlDataByCodeAndState: (codeAndState) => {
+    return Promise.resolve(d.Maybe.Nothing());
+  },
   getAccount: async (accountId) => {
     const documentSnapshot = await database
       .collection("user")

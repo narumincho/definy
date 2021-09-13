@@ -290,8 +290,6 @@ export const useDefinyApp = (
     switch (logInState._) {
       case "LoggedIn":
         return logInState.accountTokenAccountId.accountToken;
-      case "VerifyingAccountToken":
-        return logInState.accountToken;
     }
   }, [logInState]);
 
@@ -754,7 +752,7 @@ const verifyingAccountTokenAndGetAccount = (
   setAccount: (account: d.Account) => void,
   notificationMessageHandler: NotificationMessageHandler
 ) => {
-  setLogInState(d.LogInState.VerifyingAccountToken(accountToken));
+  setLogInState(d.LogInState.LoadingAccountData);
   api.getAccountByAccountToken(accountToken).then((response) => {
     if (response._ === "Nothing" || response.value._ === "Nothing") {
       notificationMessageHandler("ログインに失敗しました", "error");
@@ -773,6 +771,35 @@ const verifyingAccountTokenAndGetAccount = (
       })
     );
     setAccount(response.value.value);
+  });
+};
+
+const verifyingAccountTokenAndGetAccountFromCodeAndState = (
+  setLogInState: (logInState: d.LogInState) => void,
+  codeAndState: d.CodeAndState,
+  setAccount: (account: d.Account) => void,
+  notificationMessageHandler: NotificationMessageHandler
+) => {
+  setLogInState(d.LogInState.LoadingAccountData);
+
+  api.getAccountTokenAndUrlDataByCodeAndState(codeAndState).then((response) => {
+    if (response._ === "Nothing" || response.value._ === "Nothing") {
+      notificationMessageHandler("ログインに失敗しました", "error");
+      setLogInState(d.LogInState.Guest);
+      return;
+    }
+    indexedDB.setAccountToken(response.value.value.accountToken);
+    notificationMessageHandler(
+      `「${response.value.value.account.name}」としてログインしました`,
+      "success"
+    );
+    setLogInState(
+      d.LogInState.LoggedIn({
+        accountToken: response.value.value.accountToken,
+        accountId: response.value.value.account.id,
+      })
+    );
+    setAccount(response.value.value.account);
   });
 };
 

@@ -1255,7 +1255,7 @@ export type LogInState =
       readonly openIdConnectProvider: OpenIdConnectProvider;
     }
   | { readonly _: "JumpingToLogInPage" }
-  | { readonly _: "VerifyingAccountToken"; readonly accountToken: AccountToken }
+  | { readonly _: "LoadingAccountData" }
   | {
       readonly _: "LoggedIn";
       readonly accountTokenAccountId: AccountTokenAccountId;
@@ -1729,6 +1729,31 @@ export type DataType = {
 export type DataTypeOrDataTypeParameter =
   | { readonly _: "DataType"; readonly dataType: DataType }
   | { readonly _: "DataTypeParameter"; readonly int32: Int32 };
+
+/**
+ * ソーシャルログインしたあとに返ってくるパラメーター
+ * @typePartId f332dc92c18678b3c61bad7cf0e8010d
+ */
+export type CodeAndState = { readonly code: String; readonly state: String };
+
+/**
+ * アカウントトークンとUrlData (場所と言語)
+ * @typePartId bf38704fac7ddb2c86d107f928e9d88f
+ */
+export type AccountTokenAndUrlDataAndAccount = {
+  /**
+   * アカウントトークン
+   */
+  readonly accountToken: AccountToken;
+  /**
+   * UrlData 場所と言語
+   */
+  readonly urlData: UrlData;
+  /**
+   * ログインした account
+   */
+  readonly account: Account;
+};
 
 /**
  * バリアント. 値コンストラクタ. タグ
@@ -7962,9 +7987,9 @@ export const LogInState: {
    */
   readonly JumpingToLogInPage: LogInState;
   /**
-   * アカウントトークンの検証とログインしているユーザーの情報を取得している状態
+   * アカウントの情報を取得中
    */
-  readonly VerifyingAccountToken: (a: AccountToken) => LogInState;
+  readonly LoadingAccountData: LogInState;
   /**
    * ログインしている状態
    */
@@ -7976,10 +8001,7 @@ export const LogInState: {
     openIdConnectProvider: OpenIdConnectProvider
   ): LogInState => ({ _: "RequestingLogInUrl", openIdConnectProvider }),
   JumpingToLogInPage: { _: "JumpingToLogInPage" },
-  VerifyingAccountToken: (accountToken: AccountToken): LogInState => ({
-    _: "VerifyingAccountToken",
-    accountToken,
-  }),
+  LoadingAccountData: { _: "LoadingAccountData" },
   LoggedIn: (accountTokenAccountId: AccountTokenAccountId): LogInState => ({
     _: "LoggedIn",
     accountTokenAccountId,
@@ -8002,8 +8024,8 @@ export const LogInState: {
         case "JumpingToLogInPage": {
           return [3];
         }
-        case "VerifyingAccountToken": {
-          return [4].concat(AccountToken.codec.encode(value.accountToken));
+        case "LoadingAccountData": {
+          return [4];
         }
         case "LoggedIn": {
           return [5].concat(
@@ -8046,13 +8068,9 @@ export const LogInState: {
         };
       }
       if (patternIndex.result === 4) {
-        const result: {
-          readonly result: AccountToken;
-          readonly nextIndex: number;
-        } = AccountToken.codec.decode(patternIndex.nextIndex, binary);
         return {
-          result: LogInState.VerifyingAccountToken(result.result),
-          nextIndex: result.nextIndex,
+          result: LogInState.LoadingAccountData,
+          nextIndex: patternIndex.nextIndex,
         };
       }
       if (patternIndex.result === 5) {
@@ -9964,6 +9982,113 @@ export const DataTypeOrDataTypeParameter: {
         };
       }
       throw new Error("存在しないパターンを指定された 型を更新してください");
+    },
+  },
+};
+
+/**
+ * ソーシャルログインしたあとに返ってくるパラメーター
+ * @typePartId f332dc92c18678b3c61bad7cf0e8010d
+ */
+export const CodeAndState: {
+  /**
+   * definy.app 内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<CodeAndState>;
+  /**
+   * 型を合わせる上で便利なヘルパー関数
+   */
+  readonly helper: (a: CodeAndState) => CodeAndState;
+} = {
+  typePartId: "f332dc92c18678b3c61bad7cf0e8010d" as TypePartId,
+  helper: (codeAndState: CodeAndState): CodeAndState => codeAndState,
+  codec: {
+    encode: (value: CodeAndState): ReadonlyArray<number> =>
+      String.codec.encode(value.code).concat(String.codec.encode(value.state)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: CodeAndState; readonly nextIndex: number } => {
+      const codeAndNextIndex: {
+        readonly result: String;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const stateAndNextIndex: {
+        readonly result: String;
+        readonly nextIndex: number;
+      } = String.codec.decode(codeAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          code: codeAndNextIndex.result,
+          state: stateAndNextIndex.result,
+        },
+        nextIndex: stateAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * アカウントトークンとUrlData (場所と言語)
+ * @typePartId bf38704fac7ddb2c86d107f928e9d88f
+ */
+export const AccountTokenAndUrlDataAndAccount: {
+  /**
+   * definy.app 内 の 型パーツの Id
+   */
+  readonly typePartId: TypePartId;
+  /**
+   * 独自のバイナリ形式の変換処理ができるコーデック
+   */
+  readonly codec: Codec<AccountTokenAndUrlDataAndAccount>;
+  /**
+   * 型を合わせる上で便利なヘルパー関数
+   */
+  readonly helper: (
+    a: AccountTokenAndUrlDataAndAccount
+  ) => AccountTokenAndUrlDataAndAccount;
+} = {
+  typePartId: "bf38704fac7ddb2c86d107f928e9d88f" as TypePartId,
+  helper: (
+    accountTokenAndUrlDataAndAccount: AccountTokenAndUrlDataAndAccount
+  ): AccountTokenAndUrlDataAndAccount => accountTokenAndUrlDataAndAccount,
+  codec: {
+    encode: (value: AccountTokenAndUrlDataAndAccount): ReadonlyArray<number> =>
+      AccountToken.codec
+        .encode(value.accountToken)
+        .concat(UrlData.codec.encode(value.urlData))
+        .concat(Account.codec.encode(value.account)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): {
+      readonly result: AccountTokenAndUrlDataAndAccount;
+      readonly nextIndex: number;
+    } => {
+      const accountTokenAndNextIndex: {
+        readonly result: AccountToken;
+        readonly nextIndex: number;
+      } = AccountToken.codec.decode(index, binary);
+      const urlDataAndNextIndex: {
+        readonly result: UrlData;
+        readonly nextIndex: number;
+      } = UrlData.codec.decode(accountTokenAndNextIndex.nextIndex, binary);
+      const accountAndNextIndex: {
+        readonly result: Account;
+        readonly nextIndex: number;
+      } = Account.codec.decode(urlDataAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          accountToken: accountTokenAndNextIndex.result,
+          urlData: urlDataAndNextIndex.result,
+          account: accountAndNextIndex.result,
+        },
+        nextIndex: accountAndNextIndex.nextIndex,
+      };
     },
   },
 };

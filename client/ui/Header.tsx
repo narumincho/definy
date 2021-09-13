@@ -101,10 +101,10 @@ const UserViewOrLogInButton: React.VFC<
           onLogInButtonClick={props.onLogInButtonClick}
         />
       );
-    case "VerifyingAccountToken":
+    case "LoadingAccountData":
       return (
         <div className={css(userViewOrLogInButtonStyle)}>
-          アクセストークンを検証中……
+          アカウントの情報を取得中
         </div>
       );
 
