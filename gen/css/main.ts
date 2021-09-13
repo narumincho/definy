@@ -1,5 +1,3 @@
-import { createHash } from "sha256-uint8array";
-
 export type Declaration = {
   readonly property: string;
   readonly value: string;
@@ -70,17 +68,17 @@ const selectorToString = (selector: Selector): string => {
   }
 };
 
-type StatementList = {
+export type StatementList = {
   readonly keyframesList: ReadonlyArray<Keyframes>;
   readonly ruleList: ReadonlyArray<Rule>;
 };
 
-type Keyframes = {
+export type Keyframes = {
   readonly name: string;
   readonly keyframeList: ReadonlyArray<Keyframe>;
 };
 
-type Keyframe = {
+export type Keyframe = {
   readonly percentage: number;
   readonly declarationList: ReadonlyArray<Declaration>;
 };
@@ -94,7 +92,7 @@ export const ruleListToString = (statementList: StatementList): string => {
 
 const keyFramesToString = (keyframes: Keyframes): string => {
   return (
-    "@keyframes" +
+    "@keyframes " +
     keyframes.name +
     "{" +
     keyframes.keyframeList.map(keyFrameToString).join("") +
@@ -102,8 +100,8 @@ const keyFramesToString = (keyframes: Keyframes): string => {
   );
 };
 
-const keyFrameToString = (keyframe: Keyframe): string => {
-  return `${keyframe.percentage} {${declarationListToString(
+export const keyFrameToString = (keyframe: Keyframe): string => {
+  return `${keyframe.percentage}% {${declarationListToString(
     keyframe.declarationList
   )}}`;
 };
@@ -146,14 +144,6 @@ export const displayGrid: Declaration = {
 export const margin0: Declaration = {
   property: "margin",
   value: "0",
-};
-
-export const declarationListToSha256HashValue = (
-  declarationList: ReadonlyArray<Declaration>
-): string => {
-  return createHash("sha256")
-    .update(declarationListToString(declarationList))
-    .digest("hex");
 };
 
 const remValueToCssValue = (value: number): string => {

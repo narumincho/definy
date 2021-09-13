@@ -53,6 +53,19 @@ const articleLink = (
     {
       backgroundColor: linkBackGroundColor,
       url: locationToUrl(articleTitleAndImageUrl.location),
+      hover: {
+        animation: {
+          duration: 300,
+          keyframeList: [
+            {
+              percentage: 50,
+              declarationList: [
+                { property: "transform", value: "scale(1.05)" },
+              ],
+            },
+          ],
+        },
+      },
     },
     [
       view.imageElement({
