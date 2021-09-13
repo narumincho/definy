@@ -5,14 +5,14 @@ const languageQueryKey = "hl";
 export const defaultLanguage: d.Language = "English";
 
 export const urlDataAndAccountTokenToUrl = (
-  urlData: d.UrlData,
+  locationAndLanguage: d.LocationAndLanguage,
   accountToken: d.Maybe<d.AccountToken>
 ): URL => {
   const url = new URL(origin);
-  url.pathname = createPath(locationToPathList(urlData.location));
+  url.pathname = createPath(locationToPathList(locationAndLanguage.location));
   url.searchParams.append(
     languageQueryKey,
-    languageToIdString(urlData.language)
+    languageToIdString(locationAndLanguage.language)
   );
   if (accountToken._ === "Just") {
     url.hash = "account-token=" + accountToken.value;
@@ -60,12 +60,15 @@ const languageToIdString = (language: d.Language): string => {
  */
 export const urlDataAndAccountTokenFromUrl = (
   url: URL
-): { urlData: d.UrlData; accountToken: d.Maybe<d.AccountToken> } => {
+): {
+  readonly locationAndLanguage: d.LocationAndLanguage;
+  readonly accountToken: d.Maybe<d.AccountToken>;
+} => {
   const languageId = url.searchParams.get(languageQueryKey);
   const language: d.Language =
     languageId === null ? defaultLanguage : languageFromIdString(languageId);
   return {
-    urlData: {
+    locationAndLanguage: {
       location: locationFromUrl(url.pathname),
       language,
     },

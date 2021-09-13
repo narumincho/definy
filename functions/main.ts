@@ -22,7 +22,8 @@ console.log("versions", JSON.stringify(process.versions));
 
 export const html = functions.https.onRequest(async (request, response) => {
   const requestUrl = new URL("https://" + request.hostname + request.url);
-  const urlData = commonUrl.urlDataAndAccountTokenFromUrl(requestUrl).urlData;
+  const urlData =
+    commonUrl.urlDataAndAccountTokenFromUrl(requestUrl).locationAndLanguage;
   const normalizedUrl = commonUrl.urlDataAndAccountTokenToUrl(
     urlData,
     d.Maybe.Nothing()
@@ -137,7 +138,7 @@ export const logInCallback = functions.https.onRequest((request, response) => {
           301,
           commonUrl
             .urlDataAndAccountTokenToUrl(
-              result.urlData,
+              result.locationAndLanguage,
               d.Maybe.Just(result.accessToken)
             )
             .toString()

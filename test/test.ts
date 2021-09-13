@@ -6,22 +6,22 @@ import { listDeleteAt, listSetAt } from "../common/util";
 
 describe("url", () => {
   it("https://definy.app/ is Home in English", () => {
-    expect<d.UrlData>(
+    expect<d.LocationAndLanguage>(
       commonUrl.urlDataAndAccountTokenFromUrl(new URL("https://definy.app/"))
-        .urlData
-    ).toEqual<d.UrlData>({
+        .locationAndLanguage
+    ).toEqual<d.LocationAndLanguage>({
       location: d.Location.Home,
       language: "English",
     });
   });
   it("project url", () => {
-    expect<d.UrlData>(
+    expect<d.LocationAndLanguage>(
       commonUrl.urlDataAndAccountTokenFromUrl(
         new URL(
           "https://definy.app/project/580d8d6a54cf43e4452a0bba6694a4ed?hl=ja"
         )
-      ).urlData
-    ).toEqual<d.UrlData>({
+      ).locationAndLanguage
+    ).toEqual<d.LocationAndLanguage>({
       location: d.Location.Project(
         d.ProjectId.fromString("580d8d6a54cf43e4452a0bba6694a4ed")
       ),
@@ -32,9 +32,9 @@ describe("url", () => {
     const url = new URL(
       "http://localhost:2520/account/580d8d6a54cf43e4452a0bba6694a4ed?hl=eo#account-token=f81919b78537257302b50f776b77a90b984cc3d75fa899f9f460ff972dcc8cb0"
     );
-    expect<d.UrlData>(
-      commonUrl.urlDataAndAccountTokenFromUrl(url).urlData
-    ).toEqual<d.UrlData>({
+    expect<d.LocationAndLanguage>(
+      commonUrl.urlDataAndAccountTokenFromUrl(url).locationAndLanguage
+    ).toEqual<d.LocationAndLanguage>({
       location: d.Location.Account(
         d.AccountId.fromString("580d8d6a54cf43e4452a0bba6694a4ed")
       ),
@@ -56,7 +56,7 @@ describe("url", () => {
     );
   });
   it("encode, decode user url", () => {
-    const languageAndLocation: d.UrlData = {
+    const languageAndLocation: d.LocationAndLanguage = {
       location: d.Location.Account(
         d.AccountId.fromString("580d8d6a54cf43e4452a0bba6694a4ed")
       ),
@@ -66,8 +66,8 @@ describe("url", () => {
       languageAndLocation,
       d.Maybe.Nothing()
     );
-    const decodedLanguageAndLocation: d.UrlData =
-      commonUrl.urlDataAndAccountTokenFromUrl(url).urlData;
+    const decodedLanguageAndLocation: d.LocationAndLanguage =
+      commonUrl.urlDataAndAccountTokenFromUrl(url).locationAndLanguage;
     expect(languageAndLocation).toEqual(decodedLanguageAndLocation);
   });
 });

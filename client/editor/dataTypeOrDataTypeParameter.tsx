@@ -388,7 +388,7 @@ const SelectedType: React.VFC<
           <div className={css({ padding: 8 })}>{result.name} を選択中</div>
           <Link
             onJump={props.jump}
-            urlData={{
+            locationAndLanguage={{
               language: props.language,
               location: d.Location.TypePart(
                 props.dataTypeOrDataTypeParameter.dataType.typePartId
@@ -582,7 +582,7 @@ const DataTypeItem: React.VFC<
       </Button>
       <Link
         onJump={jump}
-        urlData={{
+        locationAndLanguage={{
           language,
           location: d.Location.TypePart(typePartId),
         }}

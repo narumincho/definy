@@ -4,9 +4,9 @@ import { CSSObject, css } from "@emotion/css";
 import { urlDataAndAccountTokenToUrl } from "../../common/url";
 
 export const Link: React.FC<{
-  urlData: d.UrlData;
+  locationAndLanguage: d.LocationAndLanguage;
   style?: CSSObject;
-  onJump: (urlData: d.UrlData) => void;
+  onJump: (urlData: d.LocationAndLanguage) => void;
   isActive?: boolean;
 }> = React.memo((props) => {
   return (
@@ -40,10 +40,10 @@ export const Link: React.FC<{
           return;
         }
         mouseEvent.preventDefault();
-        props.onJump(props.urlData);
+        props.onJump(props.locationAndLanguage);
       }}
       href={urlDataAndAccountTokenToUrl(
-        props.urlData,
+        props.locationAndLanguage,
         d.Maybe.Nothing()
       ).toString()}
     >

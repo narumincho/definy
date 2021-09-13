@@ -40,7 +40,7 @@ export const Header: React.VFC<Props> = React.memo((props) => {
           lineHeight: 1,
           alignItems: "center",
         }}
-        urlData={{
+        locationAndLanguage={{
           language: props.language,
           location: d.Location.Home,
         }}
@@ -56,7 +56,7 @@ export const Header: React.VFC<Props> = React.memo((props) => {
               style={{
                 padding: 8,
               }}
-              urlData={{
+              locationAndLanguage={{
                 language: props.language,
                 location: titleItem.location,
               }}
@@ -144,7 +144,7 @@ const userViewOrLogInButtonStyle: CSSObject = {
 const SettingLink: React.VFC<{
   account: d.Account;
   language: d.Language;
-  onJump: (urlData: d.UrlData) => void;
+  onJump: (urlData: d.LocationAndLanguage) => void;
 }> = (props) => (
   <Link
     onJump={props.onJump}
@@ -156,7 +156,10 @@ const SettingLink: React.VFC<{
       padding: 8,
       gap: 8,
     }}
-    urlData={{ language: props.language, location: d.Location.Setting }}
+    locationAndLanguage={{
+      language: props.language,
+      location: d.Location.Setting,
+    }}
   >
     <Image
       width={32}

@@ -8,12 +8,12 @@ import { globalStyle } from "../common/globalStyle";
  * OGP の 情報が含まれている HTML を返す
  */
 export const generateHtml = async (
-  urlData: d.UrlData,
+  locationAndLanguage: d.LocationAndLanguage,
   normalizedUrl: URL
 ): Promise<{ htmlOption: genHtml.HtmlOption; isNotFound: boolean }> => {
   const coverImageUrlAndDescription = await getCoverImageUrlAndDescription(
-    urlData.location,
-    urlData.language
+    locationAndLanguage.location,
+    locationAndLanguage.language
   );
   return {
     htmlOption: {
@@ -24,11 +24,11 @@ export const generateHtml = async (
       description: coverImageUrlAndDescription.description,
       scriptUrlList: [commonUrl.scriptUrl],
       twitterCard: "SummaryCard",
-      language: urlData.language,
+      language: locationAndLanguage.language,
       url: normalizedUrl,
       style: globalStyle,
       themeColor: undefined,
-      children: [genHtml.div({}, loadingMessage(urlData.language))],
+      children: [genHtml.div({}, loadingMessage(locationAndLanguage.language))],
     },
     isNotFound: false,
   };

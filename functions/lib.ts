@@ -44,7 +44,7 @@ const database = app.firestore() as unknown as typedFirestore.Firestore<{
 
 type StateData = {
   createTime: admin.firestore.Timestamp;
-  urlData: d.UrlData;
+  locationAndLanguage: d.LocationAndLanguage;
   provider: d.OpenIdConnectProvider;
 };
 
@@ -162,7 +162,10 @@ export const logInCallback = async (
   openIdConnectProvider: d.OpenIdConnectProvider,
   code: string,
   state: string
-): Promise<{ urlData: d.UrlData; accessToken: d.AccountToken }> => {
+): Promise<{
+  readonly locationAndLanguage: d.LocationAndLanguage;
+  readonly accessToken: d.AccountToken;
+}> => {
   const documentReference = database.collection("openConnectState").doc(state);
   const stateData = (await documentReference.get()).data();
   if (stateData === undefined) {
@@ -195,7 +198,7 @@ export const logInCallback = async (
       openIdConnectProvider
     );
     return {
-      urlData: stateData.urlData,
+      locationAndLanguage: stateData.locationAndLanguage,
       accessToken,
     };
   }
@@ -207,7 +210,7 @@ export const logInCallback = async (
     accessTokenIssueTime: accessTokenData.issueTime,
   });
   return {
-    urlData: stateData.urlData,
+    locationAndLanguage: stateData.locationAndLanguage,
     accessToken: accessTokenData.accessToken,
   };
 };
@@ -531,7 +534,7 @@ export const apiFunc: {
     const state = createRandomId();
     await database.collection("openConnectState").doc(state).create({
       createTime: admin.firestore.Timestamp.now(),
-      urlData: requestLogInUrlRequestData.urlData,
+      locationAndLanguage: requestLogInUrlRequestData.urlData,
       provider: requestLogInUrlRequestData.openIdConnectProvider,
     });
     return logInUrlFromOpenIdConnectProviderAndState(

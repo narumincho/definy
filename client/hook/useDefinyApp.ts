@@ -110,7 +110,7 @@ export type UseDefinyAppResult = {
    *
    * *side-effect*
    */
-  readonly jump: (urlData: d.UrlData) => void;
+  readonly jump: (urlData: d.LocationAndLanguage) => void;
   /**
    * ログインする
    *
@@ -225,10 +225,11 @@ export const useDefinyApp = (
 ): UseDefinyAppResult => {
   const [topProjectsLoadingState, setTopProjectsLoadingState] =
     useState<TopProjectsLoadingState>({ _: "none" });
-  const [urlData, setUrlData] = useState<d.UrlData>({
-    language: "English",
-    location: d.Location.Home,
-  });
+  const [locationAndLanguage, setLocationAndLanguage] =
+    useState<d.LocationAndLanguage>({
+      language: "English",
+      location: d.Location.Home,
+    });
   const [logInState, setLogInState] = useState<d.LogInState>(
     d.LogInState.Guest
   );
@@ -248,19 +249,28 @@ export const useDefinyApp = (
   /**
    * ページを移動する
    */
-  const jump = useCallback((newUrlData: d.UrlData): void => {
-    window.history.pushState(
-      undefined,
-      "",
-      urlDataAndAccountTokenToUrl(newUrlData, d.Maybe.Nothing()).toString()
-    );
-    setUrlData(newUrlData);
-  }, []);
+  const jump = useCallback(
+    (newLocationAndLanguage: d.LocationAndLanguage): void => {
+      window.history.pushState(
+        undefined,
+        "",
+        urlDataAndAccountTokenToUrl(
+          newLocationAndLanguage,
+          d.Maybe.Nothing()
+        ).toString()
+      );
+      setLocationAndLanguage(newLocationAndLanguage);
+    },
+    []
+  );
 
   const logIn = useCallback(() => {
     setLogInState({ _: "RequestingLogInUrl", openIdConnectProvider: "Google" });
     api
-      .requestLogInUrl({ urlData, openIdConnectProvider: "Google" })
+      .requestLogInUrl({
+        urlData: locationAndLanguage,
+        openIdConnectProvider: "Google",
+      })
       .then((response) => {
         if (response._ === "Nothing") {
           option.notificationMessageHandler(
@@ -274,17 +284,17 @@ export const useDefinyApp = (
           window.location.href = response.value;
         });
       });
-  }, [urlData, option]);
+  }, [locationAndLanguage, option]);
 
   const logOut = useCallback(() => {
     indexedDB.deleteAccountToken();
     setLogInState(d.LogInState.Guest);
     jump({
-      language: urlData.language,
+      language: locationAndLanguage.language,
       location: d.Location.Home,
     });
     option.notificationMessageHandler("ログアウトしました", "success");
-  }, [jump, option, urlData.language]);
+  }, [jump, option, locationAndLanguage.language]);
 
   const getAccountToken = useCallback((): d.AccountToken | undefined => {
     switch (logInState._) {
@@ -330,12 +340,18 @@ export const useDefinyApp = (
             "success"
           );
           jump({
-            language: urlData.language,
+            language: locationAndLanguage.language,
             location: d.Location.Project(response.value.value.id),
           });
         });
     },
-    [getAccountToken, createProjectState, urlData.language, jump, option]
+    [
+      getAccountToken,
+      createProjectState,
+      locationAndLanguage.language,
+      jump,
+      option,
+    ]
   );
 
   const requestTop50Project = useCallback((): void => {
@@ -362,10 +378,10 @@ export const useDefinyApp = (
 
     // ブラウザで戻るボタンを押したときのイベントを登録
     window.addEventListener("popstate", () => {
-      const newUrlData: d.UrlData = urlDataAndAccountTokenFromUrl(
+      const newUrlData: d.LocationAndLanguage = urlDataAndAccountTokenFromUrl(
         new URL(window.location.href)
-      ).urlData;
-      setUrlData({
+      ).locationAndLanguage;
+      setLocationAndLanguage({
         language: newUrlData.language,
         location: newUrlData.location,
       });
@@ -380,11 +396,11 @@ export const useDefinyApp = (
       "",
 
       urlDataAndAccountTokenToUrl(
-        urlDataAndAccountToken.urlData,
+        urlDataAndAccountToken.locationAndLanguage,
         d.Maybe.Nothing()
       ).toString()
     );
-    setUrlData(urlDataAndAccountToken.urlData);
+    setLocationAndLanguage(urlDataAndAccountToken.locationAndLanguage);
     if (urlDataAndAccountToken.accountToken._ === "Just") {
       const accountToken = urlDataAndAccountToken.accountToken.value;
       verifyingAccountTokenAndGetAccount(
@@ -532,12 +548,18 @@ export const useDefinyApp = (
             "success"
           );
           jump({
-            language: urlData.language,
+            language: locationAndLanguage.language,
             location: d.Location.TypePart(response.value.data.value.id),
           });
         });
     },
-    [createTypePartState.tag, getAccountToken, jump, option, urlData.language]
+    [
+      createTypePartState.tag,
+      getAccountToken,
+      jump,
+      option,
+      locationAndLanguage.language,
+    ]
   );
 
   const typePartIdListInProjectResource: UseDefinyAppResult["typePartIdListInProjectResource"] =
@@ -707,8 +729,8 @@ export const useDefinyApp = (
       createProject,
       createProjectState,
       jump,
-      language: urlData.language,
-      location: urlData.location,
+      language: locationAndLanguage.language,
+      location: locationAndLanguage.location,
       logIn,
       logInState,
       logOut,
@@ -736,8 +758,8 @@ export const useDefinyApp = (
       topProjectsLoadingState,
       typePartIdListInProjectResource,
       typePartResource,
-      urlData.language,
-      urlData.location,
+      locationAndLanguage.language,
+      locationAndLanguage.location,
       saveTypePart,
       isSavingTypePart,
       generateCode,
