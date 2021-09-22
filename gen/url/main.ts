@@ -41,7 +41,7 @@ export const pathAndQueryStringToStructuredUrl = (
   pathAndQueryAsString: string
 ): StructuredUrl => {
   const url = new URL(`https://narumincho.com/${pathAndQueryAsString}`);
-  const pathList = url.pathname.split("/");
+  const pathList = url.pathname.split("/").slice(1);
   return {
     path: pathList,
     searchParams: new Map([...url.searchParams]),
@@ -59,7 +59,7 @@ export const urlToStructuredUrl = (
   pathAsString: string,
   searchParamsAsString: string
 ): StructuredUrl => {
-  const pathList = pathAsString.split("/");
+  const pathList = pathAsString.split("/").slice(1);
   return {
     path: pathList,
     searchParams: new Map([...new URLSearchParams(searchParamsAsString)]),

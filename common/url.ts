@@ -1,4 +1,5 @@
 import * as d from "../localData";
+import { structuredUrlToUrl, urlToStructuredUrl } from "../gen/url/main";
 import { origin } from "../out";
 
 const languageQueryKey = "hl";
@@ -7,13 +8,12 @@ export const defaultLanguage: d.Language = "English";
 export const locationAndLanguageToUrl = (
   locationAndLanguage: d.LocationAndLanguage
 ): URL => {
-  const url = new URL(origin);
-  url.pathname = createPath(locationToPathList(locationAndLanguage.location));
-  url.searchParams.append(
-    languageQueryKey,
-    languageToIdString(locationAndLanguage.language)
-  );
-  return url;
+  return structuredUrlToUrl(origin, {
+    path: locationToPathList(locationAndLanguage.location),
+    searchParams: new Map<string, string>([
+      [languageQueryKey, languageToIdString(locationAndLanguage.language)],
+    ]),
+  });
 };
 
 const locationToPathList = (location: d.Location): ReadonlyArray<string> => {
@@ -55,10 +55,13 @@ const languageToIdString = (language: d.Language): string => {
  * @param url `https://definy.app/project/580d8d6a54cf43e4452a0bba6694a4ed?hl=ja` のようなURL
  */
 export const urlToUrlData = (url: URL): d.UrlData => {
-  const pathList = url.pathname.split("/");
-  if (pathList[1] === "logInCallback" && pathList[2] === "Google") {
-    const state = url.searchParams.get("state");
-    const code = url.searchParams.get("code");
+  const structuredUrl = urlToStructuredUrl(url.pathname, url.search);
+  if (
+    structuredUrl.path[0] === "logInCallback" &&
+    structuredUrl.path[1] === "Google"
+  ) {
+    const state = structuredUrl.searchParams.get("state");
+    const code = structuredUrl.searchParams.get("code");
     if (typeof state === "string" && typeof code === "string") {
       return d.UrlData.LogInCallback({
         code,
@@ -68,18 +71,19 @@ export const urlToUrlData = (url: URL): d.UrlData => {
     }
   }
 
-  const languageId = url.searchParams.get(languageQueryKey);
-  const language: d.Language =
-    languageId === null ? defaultLanguage : languageFromIdString(languageId);
+  const languageId = structuredUrl.searchParams.get(languageQueryKey);
+
   return d.UrlData.Normal({
-    location: locationFromUrl(url.pathname),
-    language,
+    location: locationFromUrl(structuredUrl.path),
+    language:
+      languageId === undefined
+        ? defaultLanguage
+        : languageFromIdString(languageId),
   });
 };
 
-const locationFromUrl = (pathName: string): d.Location => {
-  const pathList = pathName.split("/");
-  switch (pathList[1]) {
+const locationFromUrl = (path: ReadonlyArray<string>): d.Location => {
+  switch (path[0]) {
     case createProjectPath:
       return d.Location.CreateProject;
     case aboutPath:
@@ -87,26 +91,26 @@ const locationFromUrl = (pathName: string): d.Location => {
     case settingPath:
       return d.Location.Setting;
     case projectPath:
-      if (typeof pathList[2] === "string") {
-        return d.Location.Project(d.ProjectId.fromString(pathList[2]));
+      if (typeof path[1] === "string") {
+        return d.Location.Project(d.ProjectId.fromString(path[1]));
       }
       return d.Location.Home;
 
     case accountPath:
-      if (typeof pathList[2] === "string") {
-        return d.Location.Account(d.AccountId.fromString(pathList[2]));
+      if (typeof path[1] === "string") {
+        return d.Location.Account(d.AccountId.fromString(path[1]));
       }
       return d.Location.Home;
 
     case typePartPath:
-      if (typeof pathList[2] === "string") {
-        return d.Location.TypePart(d.TypePartId.fromString(pathList[2]));
+      if (typeof path[1] === "string") {
+        return d.Location.TypePart(d.TypePartId.fromString(path[1]));
       }
       return d.Location.Home;
 
     case partPath:
-      if (typeof pathList[2] === "string") {
-        return d.Location.Part(d.PartId.fromString(pathList[2]));
+      if (typeof path[1] === "string") {
+        return d.Location.Part(d.PartId.fromString(path[1]));
       }
       return d.Location.Home;
 
@@ -126,18 +130,6 @@ const languageFromIdString = (languageAsString: string): d.Language => {
       return "Esperanto";
   }
   return defaultLanguage;
-};
-
-const accountTokenFromUrl = (hash: string): d.Maybe<d.AccountToken> => {
-  const matchResult = hash.match(/account-token=(?<token>[0-9a-f]{64})/u);
-  if (
-    matchResult === null ||
-    matchResult.groups === undefined ||
-    matchResult.groups.token === undefined
-  ) {
-    return d.Maybe.Nothing();
-  }
-  return d.Maybe.Just(d.AccountToken.fromString(matchResult.groups.token));
 };
 
 export const iconUrl: URL = new URL(`${origin}/icon.png`);
@@ -168,11 +160,3 @@ const localProjectPath = "local-project";
 const japaneseId = "ja";
 const englishId = "en";
 const esperantoId = "eo";
-
-/**
- * パスを宣言的に作成する
- * @param path パス
- */
-const createPath = (pathList: ReadonlyArray<string>): string => {
-  return "/" + pathList.join("/");
-};
