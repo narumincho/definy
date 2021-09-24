@@ -6,6 +6,16 @@ import { staticResourceUrl } from "./viewOut";
 
 const linkBackGroundColor = "#333333";
 
+const zoomAnimation: view.Animation = {
+  duration: 300,
+  keyframeList: [
+    {
+      percentage: 50,
+      declarationList: [{ property: "transform", value: "scale(1.05)" }],
+    },
+  ],
+};
+
 const snsLink = (
   url: URL,
   logo: view.Svg,
@@ -17,6 +27,7 @@ const snsLink = (
       padding: 8,
       gap: 8,
       backgroundColor: linkBackGroundColor,
+      hover: { animation: zoomAnimation },
     },
     [
       view.svgElement({ width: { type: "rem", value: 2 }, height: 2 }, logo),
@@ -34,6 +45,7 @@ const externalLink = (
     {
       url,
       backgroundColor: linkBackGroundColor,
+      hover: { animation: zoomAnimation },
     },
     [
       view.imageElement({
@@ -54,17 +66,7 @@ const articleLink = (
       backgroundColor: linkBackGroundColor,
       url: locationToUrl(articleTitleAndImageUrl.location),
       hover: {
-        animation: {
-          duration: 300,
-          keyframeList: [
-            {
-              percentage: 50,
-              declarationList: [
-                { property: "transform", value: "scale(1.05)" },
-              ],
-            },
-          ],
-        },
+        animation: zoomAnimation,
       },
     },
     [
