@@ -1,7 +1,8 @@
 import * as d from "../../localData";
 import * as fs from "fs-extra";
 import * as jsTs from "../jsTs/main";
-import { MimeType, imagePng } from "../mimeType/main";
+import { FileType } from "../fileType/main";
+import { posix as posixPath } from "path";
 
 /**
  * 標準ライブラリの fs の ディレクトリとファイルの区別が型レベルではない欠点の解決と,
@@ -9,11 +10,6 @@ import { MimeType, imagePng } from "../mimeType/main";
  *
  * パスの指定はすべてリポジトリのルートからの相対パスになる.
  */
-
-/**
- * definy, ナルミンチョの創作記録で扱うファイルの種類
- */
-export type FileType = MimeType | "TypeScript";
 
 /**
  * TypeScript のファイル形式. 拡張子は `ts`
@@ -25,7 +21,7 @@ export const fileTypeTypeScript: FileType = "TypeScript";
  * {@link fileNameFrom} を使って作成する
  */
 export type FileName = {
-  readonly fileName: string;
+  readonly name: string;
   readonly fileType: FileType | undefined;
 };
 
@@ -42,9 +38,21 @@ export const fileNameFrom = (
     );
   }
   return {
-    fileName,
+    name: fileName,
     fileType,
   };
+};
+
+/**
+ * 一般的なファイル名の文字列表現に変換する `star.png` `main.js` `index.html`
+ */
+export const fileNameToString = (fileName: FileName): string => {
+  return (
+    fileName.name +
+    (fileName.fileType === undefined
+      ? ""
+      : "." + fileTypeToExtension(fileName.fileType))
+  );
 };
 
 /**
@@ -106,23 +114,34 @@ const directoryPathToCreateDirectoryList = (
 };
 
 /**
- * 拡張子から {@link MimeType} を得る
+ * 拡張子から {@link FileType} を得る
+ * @param extension 拡張子 `.` は含まない
  */
-export const extensionToMimeType = (
+export const extensionToFileType = (
   extension: string
-): MimeType | undefined => {
+): FileType | undefined => {
   switch (extension) {
     case "png":
-      return imagePng;
+      return "Png";
+    case "ts":
+      return "TypeScript";
+    case "js":
+      return "JavaScript";
+    case "html":
+      return "Html";
   }
 };
 
-const fileTypeToExtension = (fileType: FileType): string => {
+export const fileTypeToExtension = (fileType: FileType): string => {
   switch (fileType) {
+    case "Png":
+      return "png";
     case "TypeScript":
       return "ts";
-    case "image/png":
-      return "png";
+    case "JavaScript":
+      return "js";
+    case "Html":
+      return "html";
   }
 };
 
@@ -134,14 +153,11 @@ const directoryPathAndFileNameToPathFromRepositoryRoot = (
       directoryPathAndFileName.directoryPath
     ) +
     "/" +
-    directoryPathAndFileName.fileName.fileName +
-    (directoryPathAndFileName.fileName.fileType === undefined
-      ? ""
-      : "." + fileTypeToExtension(directoryPathAndFileName.fileName.fileType))
+    fileNameToString(directoryPathAndFileName.fileName)
   );
 };
 
-const directoryPathToPathFromRepositoryRoot = (
+export const directoryPathToPathFromRepositoryRoot = (
   directoryPath: DirectoryPath
 ): string => {
   if (directoryPath.directoryNameList.length === 0) {
@@ -158,10 +174,7 @@ export const directoryPathAndFileNameToPathFromDistribution = (
       directoryPathAndFileName.directoryPath
     ) +
     "/" +
-    directoryPathAndFileName.fileName.fileName +
-    (directoryPathAndFileName.fileName.fileType === undefined
-      ? ""
-      : "." + fileTypeToExtension(directoryPathAndFileName.fileName.fileType))
+    fileNameToString(directoryPathAndFileName.fileName)
   );
 };
 
@@ -185,7 +198,13 @@ export const writeFile = async (
     directoryPathAndFileName
   );
   console.log(path, "にファイルを書き込み中...");
-  await fs.writeFile(path, data);
+  await fs.writeFile(path, data).catch((error: { readonly code: string }) => {
+    if (error.code === "ENOENT") {
+      console.log(`親ディレクトリが見つからなかった...?`);
+      return;
+    }
+    throw error;
+  });
   console.log(path, "にファイルを書き込み完了!");
 };
 
@@ -224,7 +243,7 @@ export const resetDistributionDirectory = async (): Promise<void> => {
   console.log(`distribution をリセット中...`);
   await fs.remove(path).then(
     () => {},
-    (error: { code: string }) => {
+    (error: { readonly code: string }) => {
       if (error.code === "ENOENT") {
         console.log(`distribution を削除しようとしたが存在しなかった`);
         return;
@@ -261,4 +280,72 @@ export const copyFile = (
       throw error;
     }
   );
+};
+
+/**
+ * ディレクトリ内に含まれるファイルやディレクトリを削除する
+ */
+export const deleteFileAndDirectoryInDirectory = async (
+  directoryPath: DirectoryPath
+): Promise<void> => {
+  const path = directoryPathToPathFromRepositoryRoot(directoryPath);
+  console.log(`${path} をリセット中...`);
+  await fs.remove(directoryPathToPathFromRepositoryRoot(directoryPath));
+  await fs.mkdir(path);
+  console.log(`${path} をリセット完了!`);
+};
+
+/**
+ * ファイルの中身を読む
+ * @returns ファイルの中身のバイナリ
+ */
+export const readFile = async (
+  directoryPathAndFileName: DirectoryPathAndFileName
+): Promise<Uint8Array> => {
+  const path = directoryPathAndFileNameToPathFromRepositoryRoot(
+    directoryPathAndFileName
+  );
+  console.log(`${path} を読み取り中...`);
+  const result = await fs.readFile(path);
+  console.log(`${path} を読み取り完了!`);
+  return result;
+};
+
+/**
+ * ディレクトリ内に含まれるファイルのパスを取得する.
+ * 再帰的には調べず, ディレクトリ内のディレクトリは無視する.
+ * @returns ディレクトリの中に入っていたファイルのパス
+ */
+export const readFilePathInDirectory = async (
+  directoryPath: DirectoryPath
+): Promise<ReadonlyArray<DirectoryPathAndFileName>> => {
+  const path = directoryPathToPathFromRepositoryRoot(directoryPath);
+  console.log(`${path} 内のファイルを取得中...`);
+  const direntList = await fs.readdir(
+    directoryPathToPathFromRepositoryRoot(directoryPath),
+    { withFileTypes: true }
+  );
+  const result = direntList.flatMap(
+    (dirent): readonly [DirectoryPathAndFileName] | [] => {
+      if (!dirent.isFile()) {
+        return [];
+      }
+      const parsedPath = posixPath.parse(dirent.name);
+      const fileType = extensionToFileType(parsedPath.ext.slice(1));
+      if (fileType === undefined) {
+        console.warn(
+          `[fileSystem] readFilePathInDirectory で 拡張子 ${parsedPath.ext} は対応していない`
+        );
+        return [];
+      }
+      return [
+        {
+          directoryPath,
+          fileName: { name: parsedPath.name, fileType },
+        },
+      ];
+    }
+  );
+  console.log(`${path} 内のファイルを取得完了!`);
+  return result;
 };

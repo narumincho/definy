@@ -1,10 +1,11 @@
 import * as childProcess from "child_process";
 import * as chokidar from "chokidar";
-import * as fileSystem from "fs-extra";
-import { indexHtmlPath, localhostOrigin } from "./util";
+import * as fileSystem from "../fileSystem/main";
+import { FileType, fileTypeToMimeType } from "../fileType/main";
 import { fastify } from "fastify";
 import { generateViewOutTs } from "./codeGen";
 import { getStaticResourceFileResult } from "./staticResource";
+import { localhostOrigin } from "./util";
 import open from "open";
 
 export type StartDevelopmentServerOption = {
@@ -16,11 +17,11 @@ export type StartDevelopmentServerOption = {
   /**
    * Firebase Hosting のための ファイル出力先パス
    */
-  readonly distributionPath: string;
+  readonly distributionPath: fileSystem.DirectoryPath;
   /**
    * static なファイルを保管しているディレクトリのパス
    */
-  readonly resourceDirectoryPath: string;
+  readonly resourceDirectoryPath: fileSystem.DirectoryPath;
   /**
    * static なファイルをリクエストするためのURLがコード生成されるTypeScriptのコードのファイル
    */
@@ -29,7 +30,7 @@ export type StartDevelopmentServerOption = {
 
 type FilePathAndMimeType = {
   readonly fileName: string;
-  readonly mimeType: string;
+  readonly fileType: FileType | undefined;
 };
 
 /**
@@ -48,7 +49,9 @@ export const startDevelopmentServer = async (
       ignored: [
         "**/node_modules/**",
         ".git/**",
-        option.distributionPath + "/**",
+        fileSystem.directoryPathToPathFromRepositoryRoot(
+          option.distributionPath
+        ) + "/**",
       ],
     })
     .on("all", (eventType, changeFilePath) => {
@@ -74,8 +77,11 @@ export const startDevelopmentServer = async (
     if (requestPath === "/") {
       reply.type("text/html");
       fileSystem
-        .readFile(indexHtmlPath(option.distributionPath))
-        .then((indexHtml: Buffer): void => {
+        .readFile({
+          directoryPath: option.distributionPath,
+          fileName: { name: "index", fileType: "Html" },
+        })
+        .then((indexHtml): void => {
           reply.send(indexHtml);
         });
       return;
@@ -83,7 +89,10 @@ export const startDevelopmentServer = async (
     if (requestPath === "/main.js") {
       reply.type("text/javascript");
       fileSystem
-        .readFile(option.distributionPath + "/main.js")
+        .readFile({
+          directoryPath: option.distributionPath,
+          fileName: { name: "main", fileType: "JavaScript" },
+        })
         .then((mainJs) => {
           reply.send(mainJs);
         });
@@ -98,9 +107,15 @@ export const startDevelopmentServer = async (
       reply.send();
       return;
     }
-    reply.type(fileNameAndMimeType.mimeType);
+    reply.type(fileTypeToMimeType(fileNameAndMimeType.fileType));
     fileSystem
-      .readFile(option.distributionPath + "/" + fileNameAndMimeType.fileName)
+      .readFile({
+        directoryPath: option.distributionPath,
+        fileName: {
+          name: fileNameAndMimeType.fileName,
+          fileType: undefined,
+        },
+      })
       .then((file) => {
         reply.send(file);
       });
@@ -135,7 +150,7 @@ export const runBuildScript = async (
               staticFileData.requestPath,
               {
                 fileName: staticFileData.uploadFileName,
-                mimeType: staticFileData.mimeType,
+                fileType: staticFileData.fileType,
               },
             ])
           )

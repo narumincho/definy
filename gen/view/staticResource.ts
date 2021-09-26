@@ -1,7 +1,6 @@
 import * as crypto from "crypto";
-import * as fileSystem from "fs-extra";
-import { extensionToMimeType } from "../fileSystem/main";
-import { posix as path } from "path";
+import * as fileSystem from "../fileSystem/main";
+import { FileType } from "../fileType/main";
 
 /**
  * static な ファイルの解析結果
@@ -12,7 +11,7 @@ export type StaticResourceFileResult = {
    */
   readonly originalFileName: string;
   readonly fileId: string;
-  readonly mimeType: string;
+  readonly fileType: FileType | undefined;
   readonly requestPath: string;
   /**
    * Firebase Hosting などにアップロードするファイル名. 拡張子は含まれない
@@ -25,13 +24,12 @@ export type StaticResourceFileResult = {
  * @param filePath ハッシュ値を取得するファイルの ファイルパス
  */
 const getFileHash = async (
-  filePath: string,
-  mimeType: string
+  filePath: fileSystem.DirectoryPathAndFileName
 ): Promise<string> => {
   return crypto
     .createHash("sha256")
     .update(await fileSystem.readFile(filePath))
-    .update(mimeType)
+    .update(filePath.fileName.fileType ?? "")
     .digest("hex");
 };
 
@@ -48,28 +46,30 @@ const firstUppercase = (text: string): string => {
  * @param directoryPath static なディレクトリが入っているフォルダ
  */
 export const getStaticResourceFileResult = async (
-  directoryPath: string
+  directoryPath: fileSystem.DirectoryPath
 ): Promise<ReadonlyArray<StaticResourceFileResult>> => {
-  const fileNameList = await fileSystem.readdir(directoryPath);
+  const filePathList = await fileSystem.readFilePathInDirectory(directoryPath);
   return Promise.all(
-    fileNameList.map(async (fileName): Promise<StaticResourceFileResult> => {
-      const extension = path.parse(fileName).ext.slice(1);
-      const mimeType = extensionToMimeType(extension);
-      if (mimeType === undefined) {
-        throw new Error("不明な拡張子です. " + extension);
-      }
-      const hashValue = await getFileHash(
-        path.join(directoryPath, fileName),
-        mimeType
-      );
+    filePathList.map(
+      async (
+        filePath: fileSystem.DirectoryPathAndFileName
+      ): Promise<StaticResourceFileResult> => {
+        const hashValue = await getFileHash(filePath);
 
-      return {
-        originalFileName: fileName,
-        fileId: path.parse(fileName).name + firstUppercase(extension),
-        mimeType,
-        requestPath: hashValue,
-        uploadFileName: hashValue,
-      };
-    })
+        return {
+          originalFileName: fileSystem.fileNameToString(filePath.fileName),
+          fileId:
+            filePath.fileName.name +
+            (filePath.fileName.fileType === undefined
+              ? ""
+              : firstUppercase(
+                  fileSystem.fileTypeToExtension(filePath.fileName.fileType)
+                )),
+          fileType: filePath.fileName.fileType,
+          requestPath: hashValue,
+          uploadFileName: hashValue,
+        };
+      }
+    )
   );
 };

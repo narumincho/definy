@@ -12,7 +12,7 @@ import * as stream from "stream";
 import type * as typedFirestore from "typed-admin-firestore";
 import * as util from "../core/util";
 import axios, { AxiosResponse } from "axios";
-import { imagePng } from "../gen/mimeType/main";
+import { fileTypeImagePng, fileTypeToMimeType } from "../gen/fileType/main";
 
 const app = admin.initializeApp();
 
@@ -305,7 +305,7 @@ const getAndSaveUserImage = async (imageUrl: URL): Promise<d.ImageHash> => {
   return savePngFile(
     await (await jimp.create(response.data))
       .resize(64, 64)
-      .getBufferAsync(imagePng)
+      .getBufferAsync(fileTypeToMimeType(fileTypeImagePng))
   );
 };
 
@@ -313,21 +313,22 @@ const getAndSaveUserImage = async (imageUrl: URL): Promise<d.ImageHash> => {
  * Cloud Storage for Firebase に PNGファイルを保存する
  */
 const savePngFile = async (binary: Uint8Array): Promise<d.ImageHash> => {
-  const hash = createImageTokenFromUint8ArrayAndMimeType(binary, imagePng);
+  const hash = createImageTokenFromUint8ArrayAndMimeType(binary);
   const file = storageDefaultBucket.file(hash);
-  await file.save(Buffer.from(binary), { contentType: imagePng });
+  await file.save(Buffer.from(binary), {
+    contentType: fileTypeToMimeType(fileTypeImagePng),
+  });
   return hash;
 };
 
 export const createImageTokenFromUint8ArrayAndMimeType = (
-  binary: Uint8Array,
-  mimeType: string
+  binary: Uint8Array
 ): d.ImageHash =>
   d.ImageHash.fromString(
     crypto
       .createHash("sha256")
       .update(binary)
-      .update(mimeType, "utf8")
+      .update(fileTypeToMimeType(fileTypeImagePng), "utf8")
       .digest("hex")
   );
 

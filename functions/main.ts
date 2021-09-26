@@ -2,9 +2,9 @@ import * as apiCodec from "../common/apiCodec";
 import * as commonUrl from "../common/url";
 import * as functions from "firebase-functions";
 import * as lib from "./lib";
+import { fileTypeImagePng, fileTypeToMimeType } from "../gen/fileType/main";
 import { html as genHtml } from "../gen/main";
 import { generateHtml } from "./html";
-import { imagePng } from "../gen/mimeType/main";
 
 console.log("versions", JSON.stringify(process.versions));
 /*
@@ -116,7 +116,7 @@ export const pngFile = functions.https.onRequest((request, response): void => {
     return;
   }
   const readableStream = lib.readPngFile(fileHash);
-  response.contentType(imagePng);
+  response.contentType(fileTypeToMimeType(fileTypeImagePng));
   response.header("cache-control", "max-age=31536000");
   readableStream.pipe(response);
 });

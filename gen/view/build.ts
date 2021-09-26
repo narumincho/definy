@@ -1,8 +1,9 @@
-import * as fileSystem from "fs-extra";
+import * as d from "../../localData";
+import * as fileSystem from "../fileSystem/main";
+import * as jsTs from "../jsTs/main";
 import { App } from "./app";
 import { getStaticResourceFileResult } from "./staticResource";
 import { html } from "../main";
-import { indexHtmlPath } from "./util";
 import { viewToHtmlOption } from "./toHtml";
 
 export type BuildOption<State, Message> = {
@@ -13,11 +14,11 @@ export type BuildOption<State, Message> = {
   /**
    * Firebase Hosting のための ファイル出力先パス
    */
-  readonly distributionPath: string;
+  readonly distributionPath: fileSystem.DirectoryPath;
   /**
    * staticなファイルのファイルパス
    */
-  readonly staticResourcePath: string;
+  readonly staticResourcePath: fileSystem.DirectoryPath;
 };
 
 /**
@@ -26,19 +27,43 @@ export type BuildOption<State, Message> = {
 export const build = async <State, Message>(
   option: BuildOption<State, Message>
 ): Promise<void> => {
-  await fileSystem.remove(option.distributionPath);
+  await fileSystem.deleteFileAndDirectoryInDirectory(option.distributionPath);
 
-  await fileSystem.outputFile(
-    indexHtmlPath(option.distributionPath),
-    html.htmlOptionToString(
-      viewToHtmlOption(option.app.stateToView(option.app.initState))
+  await fileSystem.writeFile(
+    {
+      directoryPath: option.distributionPath,
+      fileName: { name: "index", fileType: "Html" },
+    },
+    new TextEncoder().encode(
+      html.htmlOptionToString(
+        viewToHtmlOption(option.app.stateToView(option.app.initState))
+      )
     )
   );
   console.log("index.html のビルドに成功!");
 
-  await fileSystem.outputFile(
-    option.distributionPath + "/main.js",
-    `console.log("スクリプトを読み込めた!");`
+  await fileSystem.writeFile(
+    {
+      directoryPath: option.distributionPath,
+      fileName: { name: "main", fileType: "JavaScript" },
+    },
+    new TextEncoder().encode(
+      jsTs.generateCodeAsString(
+        {
+          exportDefinitionList: [],
+          statementList: [
+            jsTs.consoleLog(
+              d.TsExpr.StringLiteral(
+                `「${
+                  option.app.stateToView(option.app.initState).appName
+                }」のスクリプトテスト!`
+              )
+            ),
+          ],
+        },
+        d.CodeType.JavaScript
+      )
+    )
   );
   console.log("script のビルドに成功!");
 
@@ -46,9 +71,21 @@ export const build = async <State, Message>(
     (
       await getStaticResourceFileResult(option.staticResourcePath)
     ).map(async (fileResult) => {
-      await fileSystem.copy(
-        option.staticResourcePath + "/" + fileResult.originalFileName,
-        option.distributionPath + "/" + fileResult.uploadFileName
+      await fileSystem.copyFile(
+        {
+          directoryPath: option.staticResourcePath,
+          fileName: {
+            name: fileResult.originalFileName,
+            fileType: undefined,
+          },
+        },
+        {
+          directoryPath: option.distributionPath,
+          fileName: {
+            name: fileResult.uploadFileName,
+            fileType: undefined,
+          },
+        }
       );
       console.log(fileResult.originalFileName, "のコピーに成功!");
     })
