@@ -1,6 +1,8 @@
 import * as d from "../localData";
-import * as fileSystem from "../gen/fileSystem/main";
+import * as fileSystem from "../gen/fileSystem/data";
+import { fileTypeTypeScript } from "../gen/fileType/main";
 import { generateTypeScriptCode } from "../core/main";
+import { writeTypeScriptCode } from "../gen/fileSystem/effect";
 
 const coreProjectId: d.ProjectId = d.ProjectId.fromString(
   "96deb95f697e66f12a55e4d3910ea509"
@@ -3642,13 +3644,10 @@ if (code._ === "Error") {
   throw new Error(JSON.stringify(code.error));
 }
 
-fileSystem.writeTypeScriptCode(
+writeTypeScriptCode(
   {
     directoryPath: fileSystem.directoryPathFrom([]),
-    fileName: fileSystem.fileNameFrom(
-      "localData_out",
-      fileSystem.fileTypeTypeScript
-    ),
+    fileName: fileSystem.fileNameFrom("localData_out", fileTypeTypeScript),
   },
   code.ok
 );

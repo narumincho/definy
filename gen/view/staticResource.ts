@@ -1,5 +1,6 @@
 import * as crypto from "crypto";
-import * as fileSystem from "../fileSystem/main";
+import * as fileSystem from "../fileSystem/data";
+import { readFile, readFilePathInDirectory } from "../fileSystem/effect";
 import { FileType } from "../fileType/main";
 
 /**
@@ -28,7 +29,7 @@ const getFileHash = async (
 ): Promise<string> => {
   return crypto
     .createHash("sha256")
-    .update(await fileSystem.readFile(filePath))
+    .update(await readFile(filePath))
     .update(filePath.fileName.fileType ?? "")
     .digest("hex");
 };
@@ -48,7 +49,7 @@ const firstUppercase = (text: string): string => {
 export const getStaticResourceFileResult = async (
   directoryPath: fileSystem.DirectoryPath
 ): Promise<ReadonlyArray<StaticResourceFileResult>> => {
-  const filePathList = await fileSystem.readFilePathInDirectory(directoryPath);
+  const filePathList = await readFilePathInDirectory(directoryPath);
   return Promise.all(
     filePathList.map(
       async (

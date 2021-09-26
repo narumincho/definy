@@ -1,4 +1,4 @@
-import { DirectoryPath, directoryPathFrom } from "../gen/fileSystem/main";
+import { DirectoryPath, directoryPathFrom } from "../gen/fileSystem/data";
 
 export const distributionPath: DirectoryPath = directoryPathFrom([
   "narumincho-creative-record",

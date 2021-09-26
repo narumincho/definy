@@ -1,6 +1,17 @@
 import * as d from "../../localData";
-import * as fileSystem from "../fileSystem/main";
+import * as esbuild from "esbuild";
 import * as jsTs from "../jsTs/main";
+import {
+  DirectoryPath,
+  DirectoryPathAndFileName,
+  directoryPathAndFileNameToPathFromRepositoryRoot,
+  directoryPathToPathFromRepositoryRoot,
+} from "../fileSystem/data";
+import {
+  copyFile,
+  deleteFileAndDirectoryInDirectory,
+  writeFile,
+} from "../fileSystem/effect";
 import { App } from "./app";
 import { getStaticResourceFileResult } from "./staticResource";
 import { html } from "../main";
@@ -14,11 +25,15 @@ export type BuildOption<State, Message> = {
   /**
    * Firebase Hosting のための ファイル出力先パス
    */
-  readonly distributionPath: fileSystem.DirectoryPath;
+  readonly distributionPath: DirectoryPath;
   /**
    * staticなファイルのファイルパス
    */
-  readonly staticResourcePath: fileSystem.DirectoryPath;
+  readonly staticResourcePath: DirectoryPath;
+  /**
+   * app が書かれた TypeScript のファイルパス
+   */
+  readonly appScriptPath: DirectoryPathAndFileName;
 };
 
 /**
@@ -27,9 +42,9 @@ export type BuildOption<State, Message> = {
 export const build = async <State, Message>(
   option: BuildOption<State, Message>
 ): Promise<void> => {
-  await fileSystem.deleteFileAndDirectoryInDirectory(option.distributionPath);
+  await deleteFileAndDirectoryInDirectory(option.distributionPath);
 
-  await fileSystem.writeFile(
+  await writeFile(
     {
       directoryPath: option.distributionPath,
       fileName: { name: "index", fileType: "Html" },
@@ -42,7 +57,7 @@ export const build = async <State, Message>(
   );
   console.log("index.html のビルドに成功!");
 
-  await fileSystem.writeFile(
+  await writeFile(
     {
       directoryPath: option.distributionPath,
       fileName: { name: "main", fileType: "JavaScript" },
@@ -67,11 +82,22 @@ export const build = async <State, Message>(
   );
   console.log("script のビルドに成功!");
 
+  await esbuild.build({
+    entryPoints: [
+      directoryPathAndFileNameToPathFromRepositoryRoot(option.appScriptPath),
+    ],
+    bundle: true,
+    outdir: directoryPathToPathFromRepositoryRoot(option.distributionPath),
+    sourcemap: true,
+    minify: true,
+    target: ["chrome88", "firefox85", "safari14"],
+  });
+
   await Promise.all(
     (
       await getStaticResourceFileResult(option.staticResourcePath)
     ).map(async (fileResult) => {
-      await fileSystem.copyFile(
+      await copyFile(
         {
           directoryPath: option.staticResourcePath,
           fileName: {

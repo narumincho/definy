@@ -1,12 +1,16 @@
 import * as childProcess from "child_process";
 import * as chokidar from "chokidar";
-import * as fileSystem from "../fileSystem/main";
+import {
+  DirectoryPath,
+  directoryPathToPathFromRepositoryRoot,
+} from "../fileSystem/data";
 import { FileType, fileTypeToMimeType } from "../fileType/main";
 import { fastify } from "fastify";
 import { generateViewOutTs } from "./codeGen";
 import { getStaticResourceFileResult } from "./staticResource";
 import { localhostOrigin } from "./util";
 import open from "open";
+import { readFile } from "../fileSystem/effect";
 
 export type StartDevelopmentServerOption = {
   /**
@@ -17,11 +21,11 @@ export type StartDevelopmentServerOption = {
   /**
    * Firebase Hosting のための ファイル出力先パス
    */
-  readonly distributionPath: fileSystem.DirectoryPath;
+  readonly distributionPath: DirectoryPath;
   /**
    * static なファイルを保管しているディレクトリのパス
    */
-  readonly resourceDirectoryPath: fileSystem.DirectoryPath;
+  readonly resourceDirectoryPath: DirectoryPath;
   /**
    * static なファイルをリクエストするためのURLがコード生成されるTypeScriptのコードのファイル
    */
@@ -49,9 +53,7 @@ export const startDevelopmentServer = async (
       ignored: [
         "**/node_modules/**",
         ".git/**",
-        fileSystem.directoryPathToPathFromRepositoryRoot(
-          option.distributionPath
-        ) + "/**",
+        directoryPathToPathFromRepositoryRoot(option.distributionPath) + "/**",
       ],
     })
     .on("all", (eventType, changeFilePath) => {
@@ -76,26 +78,22 @@ export const startDevelopmentServer = async (
     console.log("requestPath", requestPath);
     if (requestPath === "/") {
       reply.type("text/html");
-      fileSystem
-        .readFile({
-          directoryPath: option.distributionPath,
-          fileName: { name: "index", fileType: "Html" },
-        })
-        .then((indexHtml): void => {
-          reply.send(indexHtml);
-        });
+      readFile({
+        directoryPath: option.distributionPath,
+        fileName: { name: "index", fileType: "Html" },
+      }).then((indexHtml): void => {
+        reply.send(indexHtml);
+      });
       return;
     }
     if (requestPath === "/main.js") {
       reply.type("text/javascript");
-      fileSystem
-        .readFile({
-          directoryPath: option.distributionPath,
-          fileName: { name: "main", fileType: "JavaScript" },
-        })
-        .then((mainJs) => {
-          reply.send(mainJs);
-        });
+      readFile({
+        directoryPath: option.distributionPath,
+        fileName: { name: "main", fileType: "JavaScript" },
+      }).then((mainJs) => {
+        reply.send(mainJs);
+      });
       return;
     }
     const fileNameAndMimeType = staticResourceRequestPathToFileNameMap.get(
@@ -108,17 +106,15 @@ export const startDevelopmentServer = async (
       return;
     }
     reply.type(fileTypeToMimeType(fileNameAndMimeType.fileType));
-    fileSystem
-      .readFile({
-        directoryPath: option.distributionPath,
-        fileName: {
-          name: fileNameAndMimeType.fileName,
-          fileType: undefined,
-        },
-      })
-      .then((file) => {
-        reply.send(file);
-      });
+    readFile({
+      directoryPath: option.distributionPath,
+      fileName: {
+        name: fileNameAndMimeType.fileName,
+        fileType: undefined,
+      },
+    }).then((file) => {
+      reply.send(file);
+    });
   });
 
   instance.listen(option.portNumber);
