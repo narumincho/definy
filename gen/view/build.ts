@@ -36,6 +36,12 @@ export const build = async <State, Message>(
   );
   console.log("index.html のビルドに成功!");
 
+  await fileSystem.outputFile(
+    option.distributionPath + "/main.js",
+    `console.log("スクリプトを読み込めた!");`
+  );
+  console.log("script のビルドに成功!");
+
   await Promise.all(
     (
       await getStaticResourceFileResult(option.staticResourcePath)

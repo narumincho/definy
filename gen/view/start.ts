@@ -80,6 +80,15 @@ export const startDevelopmentServer = async (
         });
       return;
     }
+    if (requestPath === "/main.js") {
+      reply.type("text/javascript");
+      fileSystem
+        .readFile(option.distributionPath + "/main.js")
+        .then((mainJs) => {
+          reply.send(mainJs);
+        });
+      return;
+    }
     const fileNameAndMimeType = staticResourceRequestPathToFileNameMap.get(
       requestPath.slice(1)
     );

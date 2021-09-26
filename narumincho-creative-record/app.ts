@@ -1,7 +1,7 @@
 import * as view from "../gen/view/view";
+import { origin, staticResourceUrl } from "./viewOut";
 import { App } from "../gen/view/app";
 import { portNumber } from "./distributionPath";
-import { staticResourceUrl } from "./viewOut";
 import { topBox } from "./top";
 
 export const naruminchoCreativeRecordApp: App<undefined, undefined> = {
@@ -23,4 +23,5 @@ const naruminchoCreativeRecordView: view.View<undefined> = {
   styleUrlList: [],
   url: new URL(`http://localhost:${portNumber}`),
   themeColor: undefined,
+  origin,
 };

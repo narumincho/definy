@@ -79,6 +79,7 @@ export const viewToHtmlOption = <Message>(view: View<Message>): HtmlOption => {
         }
       ),
     }),
+    scriptUrlList: [new URL(view.origin + "/main.js")],
     children: [htmlElementAndStyleDict.htmlElement],
   };
 };

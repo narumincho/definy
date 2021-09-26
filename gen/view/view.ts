@@ -60,8 +60,7 @@ export type View<Message> = {
   /** スタイルのURL */
   readonly styleUrlList?: ReadonlyArray<URL>;
 
-  /** ES Modules形式のJavaScript */
-  readonly script?: string;
+  readonly origin: string;
 
   /** スクリプトのURL */
   readonly scriptUrlList?: ReadonlyArray<URL>;
