@@ -8,12 +8,11 @@ import {
 } from "typescript";
 import {
   copyFile,
-  directoryPathFrom,
   distributionPathAsDirectoryPath,
-  fileNameFrom,
-  fileTypeTypeScript,
   resetDistributionDirectory,
-} from "../gen/fileSystem/main";
+} from "../gen/fileSystem/effect";
+import { directoryPathFrom, fileNameFrom } from "../gen/fileSystem/data";
+import { fileTypeTypeScript } from "../gen/fileType/main";
 import { packageJson as packageJsonGen } from "../gen/main";
 
 const distributionPath = "./distribution";

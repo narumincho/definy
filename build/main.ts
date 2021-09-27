@@ -9,7 +9,7 @@ import {
   createProgram,
 } from "typescript";
 import { jsTs, packageJson as packageJsonGen } from "../gen/main";
-import { resetDistributionDirectory } from "../gen/fileSystem/main";
+import { resetDistributionDirectory } from "../gen/fileSystem/effect";
 
 const clientSourceEntryPath = "./client/main.tsx";
 const functionsSourceEntryPath = "./functions/main.ts";

@@ -1,4 +1,5 @@
 import { Box, Element, PercentageOrRem, SvgElement, View } from "./view";
+import { FileName, fileNameToString } from "../fileSystem/data";
 import {
   HtmlElement,
   HtmlOption,
@@ -12,7 +13,10 @@ import { declarationListToString } from "../css/main";
 /**
  * View から HtmlOption に変換する
  */
-export const viewToHtmlOption = <Message>(view: View<Message>): HtmlOption => {
+export const viewToHtmlOption = <Message>(
+  view: View<Message>,
+  scriptFileName: FileName
+): HtmlOption => {
   const htmlElementAndStyleDict = boxToHtmlElementAndStyleDict(view.box);
   return {
     pageName: view.pageName,
@@ -79,6 +83,16 @@ export const viewToHtmlOption = <Message>(view: View<Message>): HtmlOption => {
         }
       ),
     }),
+    scriptUrlList: [
+      new URL(
+        view.origin +
+          "/" +
+          fileNameToString({
+            fileType: "JavaScript",
+            name: scriptFileName.name,
+          })
+      ),
+    ],
     children: [htmlElementAndStyleDict.htmlElement],
   };
 };

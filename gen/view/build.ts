@@ -1,8 +1,20 @@
-import * as fileSystem from "fs-extra";
+import * as d from "../../localData";
+import * as esbuild from "esbuild";
+import * as jsTs from "../jsTs/main";
+import {
+  DirectoryPath,
+  DirectoryPathAndFileName,
+  directoryPathAndFileNameToPathFromRepositoryRoot,
+  directoryPathToPathFromRepositoryRoot,
+} from "../fileSystem/data";
+import {
+  copyFile,
+  deleteFileAndDirectoryInDirectory,
+  writeFile,
+} from "../fileSystem/effect";
 import { App } from "./app";
 import { getStaticResourceFileResult } from "./staticResource";
 import { html } from "../main";
-import { indexHtmlPath } from "./util";
 import { viewToHtmlOption } from "./toHtml";
 
 export type BuildOption<State, Message> = {
@@ -13,11 +25,15 @@ export type BuildOption<State, Message> = {
   /**
    * Firebase Hosting のための ファイル出力先パス
    */
-  readonly distributionPath: string;
+  readonly distributionPath: DirectoryPath;
   /**
    * staticなファイルのファイルパス
    */
-  readonly staticResourcePath: string;
+  readonly staticResourcePath: DirectoryPath;
+  /**
+   * app が書かれた TypeScript のファイルパス
+   */
+  readonly clientScriptPath: DirectoryPathAndFileName;
 };
 
 /**
@@ -26,23 +42,55 @@ export type BuildOption<State, Message> = {
 export const build = async <State, Message>(
   option: BuildOption<State, Message>
 ): Promise<void> => {
-  await fileSystem.remove(option.distributionPath);
+  await deleteFileAndDirectoryInDirectory(option.distributionPath);
 
-  await fileSystem.outputFile(
-    indexHtmlPath(option.distributionPath),
-    html.htmlOptionToString(
-      viewToHtmlOption(option.app.stateToView(option.app.initState))
+  await writeFile(
+    {
+      directoryPath: option.distributionPath,
+      fileName: { name: "index", fileType: "Html" },
+    },
+    new TextEncoder().encode(
+      html.htmlOptionToString(
+        viewToHtmlOption(
+          option.app.stateToView(option.app.initState),
+          option.clientScriptPath.fileName
+        )
+      )
     )
   );
   console.log("index.html のビルドに成功!");
+
+  await esbuild.build({
+    entryPoints: [
+      directoryPathAndFileNameToPathFromRepositoryRoot(option.clientScriptPath),
+    ],
+    bundle: true,
+    outdir: directoryPathToPathFromRepositoryRoot(option.distributionPath),
+    sourcemap: true,
+    minify: true,
+    target: ["chrome93", "firefox91", "safari14"],
+  });
+  console.log("script のビルドに成功!");
 
   await Promise.all(
     (
       await getStaticResourceFileResult(option.staticResourcePath)
     ).map(async (fileResult) => {
-      await fileSystem.copy(
-        option.staticResourcePath + "/" + fileResult.originalFileName,
-        option.distributionPath + "/" + fileResult.uploadFileName
+      await copyFile(
+        {
+          directoryPath: option.staticResourcePath,
+          fileName: {
+            name: fileResult.originalFileName,
+            fileType: undefined,
+          },
+        },
+        {
+          directoryPath: option.distributionPath,
+          fileName: {
+            name: fileResult.uploadFileName,
+            fileType: undefined,
+          },
+        }
       );
       console.log(fileResult.originalFileName, "のコピーに成功!");
     })
