@@ -33,7 +33,7 @@ export type BuildOption<State, Message> = {
   /**
    * app が書かれた TypeScript のファイルパス
    */
-  readonly appScriptPath: DirectoryPathAndFileName;
+  readonly clientScriptPath: DirectoryPathAndFileName;
 };
 
 /**
@@ -51,47 +51,26 @@ export const build = async <State, Message>(
     },
     new TextEncoder().encode(
       html.htmlOptionToString(
-        viewToHtmlOption(option.app.stateToView(option.app.initState))
+        viewToHtmlOption(
+          option.app.stateToView(option.app.initState),
+          option.clientScriptPath.fileName
+        )
       )
     )
   );
   console.log("index.html のビルドに成功!");
 
-  await writeFile(
-    {
-      directoryPath: option.distributionPath,
-      fileName: { name: "main", fileType: "JavaScript" },
-    },
-    new TextEncoder().encode(
-      jsTs.generateCodeAsString(
-        {
-          exportDefinitionList: [],
-          statementList: [
-            jsTs.consoleLog(
-              d.TsExpr.StringLiteral(
-                `「${
-                  option.app.stateToView(option.app.initState).appName
-                }」のスクリプトテスト!`
-              )
-            ),
-          ],
-        },
-        d.CodeType.JavaScript
-      )
-    )
-  );
-  console.log("script のビルドに成功!");
-
   await esbuild.build({
     entryPoints: [
-      directoryPathAndFileNameToPathFromRepositoryRoot(option.appScriptPath),
+      directoryPathAndFileNameToPathFromRepositoryRoot(option.clientScriptPath),
     ],
     bundle: true,
     outdir: directoryPathToPathFromRepositoryRoot(option.distributionPath),
     sourcemap: true,
     minify: true,
-    target: ["chrome88", "firefox85", "safari14"],
+    target: ["chrome93", "firefox91", "safari14"],
   });
+  console.log("script のビルドに成功!");
 
   await Promise.all(
     (

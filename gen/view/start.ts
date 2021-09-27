@@ -2,7 +2,10 @@ import * as childProcess from "child_process";
 import * as chokidar from "chokidar";
 import {
   DirectoryPath,
+  FileName,
+  directoryPathAndFileNameToPathFromDistribution,
   directoryPathToPathFromRepositoryRoot,
+  fileNameToString,
 } from "../fileSystem/data";
 import { FileType, fileTypeToMimeType } from "../fileType/main";
 import { fastify } from "fastify";
@@ -30,11 +33,10 @@ export type StartDevelopmentServerOption = {
    * static なファイルをリクエストするためのURLがコード生成されるTypeScriptのコードのファイル
    */
   readonly viewOutCodePath: string;
-};
-
-type FilePathAndMimeType = {
-  readonly fileName: string;
-  readonly fileType: FileType | undefined;
+  /**
+   * クライアントスクリプトのファイル名
+   */
+  readonly clientScriptFileName: FileName;
 };
 
 /**
@@ -77,7 +79,7 @@ export const startDevelopmentServer = async (
     const requestPath = request.url;
     console.log("requestPath", requestPath);
     if (requestPath === "/") {
-      reply.type("text/html");
+      reply.type(fileTypeToMimeType("Html"));
       readFile({
         directoryPath: option.distributionPath,
         fileName: { name: "index", fileType: "Html" },
@@ -86,11 +88,33 @@ export const startDevelopmentServer = async (
       });
       return;
     }
-    if (requestPath === "/main.js") {
-      reply.type("text/javascript");
+    const clientScriptRequestPath =
+      "/" +
+      fileNameToString({
+        name: option.clientScriptFileName.name,
+        fileType: "JavaScript",
+      });
+    if (requestPath === clientScriptRequestPath) {
+      reply.type(fileTypeToMimeType("JavaScript"));
       readFile({
         directoryPath: option.distributionPath,
-        fileName: { name: "main", fileType: "JavaScript" },
+        fileName: {
+          name: option.clientScriptFileName.name,
+          fileType: "JavaScript",
+        },
+      }).then((mainJs) => {
+        reply.send(mainJs);
+      });
+      return;
+    }
+    if (requestPath === clientScriptRequestPath + ".map") {
+      reply.type(fileTypeToMimeType("JavaScript"));
+      readFile({
+        directoryPath: option.distributionPath,
+        fileName: {
+          name: option.clientScriptFileName.name + ".map",
+          fileType: "JavaScript",
+        },
       }).then((mainJs) => {
         reply.send(mainJs);
       });
@@ -109,7 +133,7 @@ export const startDevelopmentServer = async (
     readFile({
       directoryPath: option.distributionPath,
       fileName: {
-        name: fileNameAndMimeType.fileName,
+        name: fileNameAndMimeType.name,
         fileType: undefined,
       },
     }).then((file) => {
@@ -125,7 +149,7 @@ export const startDevelopmentServer = async (
 
 export const runBuildScript = async (
   option: StartDevelopmentServerOption
-): Promise<ReadonlyMap<string, FilePathAndMimeType>> => {
+): Promise<ReadonlyMap<string, FileName>> => {
   const list = await getStaticResourceFileResult(option.resourceDirectoryPath);
   await generateViewOutTs(list, option.portNumber, option.viewOutCodePath);
 
@@ -141,11 +165,11 @@ export const runBuildScript = async (
         }
         console.log("ビルド完了", { stdout, stderr, error });
         resolve(
-          new Map<string, FilePathAndMimeType>(
-            list.map<[string, FilePathAndMimeType]>((staticFileData) => [
+          new Map<string, FileName>(
+            list.map<[string, FileName]>((staticFileData) => [
               staticFileData.requestPath,
               {
-                fileName: staticFileData.uploadFileName,
+                name: staticFileData.uploadFileName,
                 fileType: staticFileData.fileType,
               },
             ])

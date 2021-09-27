@@ -1,4 +1,5 @@
 import {
+  clientScriptPath,
   distributionPath,
   portNumber,
   staticResourcePath,
@@ -11,4 +12,5 @@ startDevelopmentServer({
   portNumber,
   resourceDirectoryPath: staticResourcePath,
   viewOutCodePath: "./narumincho-creative-record/viewOut.ts",
+  clientScriptFileName: clientScriptPath.fileName,
 });

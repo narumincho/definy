@@ -1,13 +1,27 @@
-import { DirectoryPath, directoryPathFrom } from "../gen/fileSystem/data";
+import {
+  DirectoryPath,
+  DirectoryPathAndFileName,
+  directoryPathFrom,
+} from "../gen/fileSystem/data";
+
+const naruminchoCreativeRecordDirectoryName = "narumincho-creative-record";
 
 export const distributionPath: DirectoryPath = directoryPathFrom([
-  "narumincho-creative-record",
+  naruminchoCreativeRecordDirectoryName,
   "dist",
 ]);
 
 export const staticResourcePath: DirectoryPath = directoryPathFrom([
-  "narumincho-creative-record",
+  naruminchoCreativeRecordDirectoryName,
   "resource",
 ]);
+
+export const clientScriptPath: DirectoryPathAndFileName = {
+  directoryPath: directoryPathFrom([naruminchoCreativeRecordDirectoryName]),
+  fileName: {
+    name: "client",
+    fileType: "TypeScript",
+  },
+};
 
 export const portNumber = 8080;
