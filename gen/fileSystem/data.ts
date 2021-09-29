@@ -9,20 +9,20 @@ import { FileType } from "../fileType/main";
 
 /**
  * ファイル名. ファイルタイプの指定はあってもなくても良い
- * {@link fileNameFrom} を使って作成する
+ * {@link fileNameWithFileTypeFrom} を使って作成する
  */
-export type FileName = {
+export type FileNameWithFileType = {
   readonly name: string;
-  readonly fileType: FileType | undefined;
+  readonly fileType: FileType;
 };
 
 /**
- * ファイル名を作成する
+ * ファイルタイプ付き, ファイル名を作成する
  */
-export const fileNameFrom = (
+export const fileNameWithFileTypeFrom = (
   fileName: string,
   fileType: FileType
-): FileName => {
+): FileNameWithFileType => {
   if (fileName.includes("/") || fileName.includes("\\")) {
     throw new Error(
       "ファイル名に / や \\ を含めることはできません fileName=" + fileName
@@ -37,7 +37,9 @@ export const fileNameFrom = (
 /**
  * 一般的なファイル名の文字列表現に変換する `star.png` `main.js` `index.html`
  */
-export const fileNameToString = (fileName: FileName): string => {
+export const fileNameWithFileTypeToString = (
+  fileName: FileNameWithFileType
+): string => {
   return (
     fileName.name +
     (fileName.fileType === undefined
@@ -77,9 +79,36 @@ export const directoryPathFrom = (
   };
 };
 
-export type DirectoryPathAndFileName = {
+export type FilePathWithFileType = {
   readonly directoryPath: DirectoryPath;
-  readonly fileName: FileName;
+  readonly fileNameWithFileType: FileNameWithFileType;
+};
+
+export type FilePath = {
+  readonly directoryPath: DirectoryPath;
+  readonly fileName: string;
+};
+
+export const filePathWithFileTypeToFilePath = (
+  filePathWithFileType: FilePathWithFileType
+): FilePath => {
+  return {
+    directoryPath: filePathWithFileType.directoryPath,
+    fileName: filePathWithFileType.fileNameWithFileType.name,
+  };
+};
+
+export const filePathSetFileType = (
+  filePath: FilePath,
+  fileType: FileType
+): FilePathWithFileType => {
+  return {
+    directoryPath: filePath.directoryPath,
+    fileNameWithFileType: {
+      name: filePath.fileName,
+      fileType,
+    },
+  };
 };
 
 /**
@@ -136,15 +165,15 @@ export const fileTypeToExtension = (fileType: FileType): string => {
   }
 };
 
-export const directoryPathAndFileNameToPathFromRepositoryRoot = (
-  directoryPathAndFileName: DirectoryPathAndFileName
+export const filePathWithFileTypeToPathFromRepositoryRoot = (
+  directoryPathAndFileName: FilePathWithFileType
 ): string => {
   return (
     directoryPathToPathFromRepositoryRoot(
       directoryPathAndFileName.directoryPath
     ) +
     "/" +
-    fileNameToString(directoryPathAndFileName.fileName)
+    fileNameWithFileTypeToString(directoryPathAndFileName.fileNameWithFileType)
   );
 };
 
@@ -157,15 +186,13 @@ export const directoryPathToPathFromRepositoryRoot = (
   return "./" + directoryPath.directoryNameList.join("/");
 };
 
-export const directoryPathAndFileNameToPathFromDistribution = (
-  directoryPathAndFileName: DirectoryPathAndFileName
+export const filePathWithFileTypeToPathFromDistribution = (
+  filePathWithFileType: FilePathWithFileType
 ): string => {
   return (
-    directoryPathToPathFromDistribution(
-      directoryPathAndFileName.directoryPath
-    ) +
+    directoryPathToPathFromDistribution(filePathWithFileType.directoryPath) +
     "/" +
-    fileNameToString(directoryPathAndFileName.fileName)
+    fileNameWithFileTypeToString(filePathWithFileType.fileNameWithFileType)
   );
 };
 

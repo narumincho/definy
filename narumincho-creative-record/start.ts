@@ -12,5 +12,5 @@ startDevelopmentServer({
   portNumber,
   resourceDirectoryPath: staticResourcePath,
   viewOutCodePath: "./narumincho-creative-record/viewOut.ts",
-  clientScriptFileName: clientScriptPath.fileName,
+  clientScriptFileName: clientScriptPath.fileNameWithFileType,
 });
