@@ -55,22 +55,24 @@ htmlOptionToHtmlHtmlElement htmlOption@(Data.HtmlOption option) =
                 Maybe.Nothing -> Map.empty
             )
             ( Data.ElementList
-                ( Array.concat
-                    [ [ Data.htmlElement
-                          "noscript"
-                          Map.empty
-                          ( Data.Text
-                              ( Prelude.append
-                                  option.appName
-                                  " では JavaScript を使用します. ブラウザの設定で有効にしてください."
-                              )
-                          )
-                      ]
-                    , option.bodyChildren
-                    ]
+                ( Array.cons
+                    (noScriptElement option.appName)
+                    option.bodyChildren
                 )
             )
         ]
+    )
+
+noScriptElement :: String -> Data.HtmlElement
+noScriptElement appName =
+  Data.htmlElement
+    "noscript"
+    Map.empty
+    ( Data.Text
+        ( Prelude.append
+            appName
+            " では JavaScript を使用します. ブラウザの設定で有効にしてください."
+        )
     )
 
 -- | 文字列の HTML を生成する
