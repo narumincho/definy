@@ -4,6 +4,7 @@ module Html.Data
   , HtmlChildren(..)
   , HtmlElement(..)
   , TwitterCard(..)
+  , meta
   ) where
 
 import Data.Maybe as Maybe
@@ -47,3 +48,6 @@ data HtmlChildren
 
 htmlElement :: String -> Map.Map String (Maybe.Maybe String) -> HtmlChildren -> HtmlElement
 htmlElement name attributes children = HtmlElement { name, attributes, children }
+
+meta :: Map.Map String (Maybe.Maybe String) -> HtmlElement
+meta attributes = htmlElement "meta" attributes NoEndTag

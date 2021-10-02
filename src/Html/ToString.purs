@@ -116,15 +116,11 @@ headElement (Data.HtmlOption option) =
     )
 
 charsetElement :: Data.HtmlElement
-charsetElement =
-  Data.htmlElement "meta"
-    (Map.singleton "charset" (Maybe.Just "utf-8"))
-    Data.NoEndTag
+charsetElement = Data.meta (Map.singleton "charset" (Maybe.Just "utf-8"))
 
 viewportElement :: Data.HtmlElement
 viewportElement =
-  Data.htmlElement
-    "meta"
+  Data.meta
     ( Map.fromFoldable
         [ Tuple.Tuple "name" (Maybe.Just "viewport")
         , Tuple.Tuple
@@ -134,32 +130,27 @@ viewportElement =
             )
         ]
     )
-    Data.NoEndTag
 
 pageNameElement :: String -> Data.HtmlElement
 pageNameElement pageName = Data.htmlElement "title" Map.empty (Data.Text pageName)
 
 descriptionElement :: String -> Data.HtmlElement
 descriptionElement description =
-  Data.htmlElement
-    "meta"
+  Data.meta
     ( Map.fromFoldable
         [ Tuple.Tuple "name" (Maybe.Just "description")
         , Tuple.Tuple "content" (Maybe.Just description)
         ]
     )
-    Data.NoEndTag
 
 themeColorElement :: Color.Color -> Data.HtmlElement
 themeColorElement themeColor =
-  Data.htmlElement
-    "meta"
+  Data.meta
     ( Map.fromFoldable
         [ Tuple.Tuple "name" (Maybe.Just "theme-color")
         , Tuple.Tuple "content" (Maybe.Just (Color.toHexString themeColor))
         ]
     )
-    Data.NoEndTag
 
 iconElement :: StructuredUrl.StructuredUrl -> Data.HtmlElement
 iconElement iconUrl =
@@ -177,71 +168,59 @@ cssStyleElement cssCode = Data.htmlElement "style" Map.empty (Data.RawText cssCo
 
 twitterCardElement :: Data.TwitterCard -> Data.HtmlElement
 twitterCardElement twitterCard =
-  Data.htmlElement
-    "meta"
+  Data.meta
     ( Map.fromFoldable
         ( [ Tuple.Tuple "name" (Maybe.Just "twitter:card")
           , Tuple.Tuple "content" (Maybe.Just (twitterCardToString twitterCard))
           ]
         )
     )
-    Data.NoEndTag
 
 ogUrlElement :: StructuredUrl.StructuredUrl -> Data.HtmlElement
 ogUrlElement url =
-  Data.htmlElement
-    "meta"
+  Data.meta
     ( Map.fromFoldable
         [ Tuple.Tuple "property" (Maybe.Just "og:url")
         , Tuple.Tuple "content"
             (Maybe.Just (StructuredUrl.toString url))
         ]
     )
-    Data.NoEndTag
 
 ogTitleElement :: String -> Data.HtmlElement
 ogTitleElement title =
-  Data.htmlElement
-    "meta"
+  Data.meta
     ( Map.fromFoldable
         [ Tuple.Tuple "property" (Maybe.Just "og:title")
         , Tuple.Tuple "content" (Maybe.Just title)
         ]
     )
-    Data.NoEndTag
 
 ogSiteName :: String -> Data.HtmlElement
 ogSiteName siteName =
-  Data.htmlElement
-    "meta"
+  Data.meta
     ( Map.fromFoldable
         [ Tuple.Tuple "property" (Maybe.Just "og:site_name")
         , Tuple.Tuple "content" (Maybe.Just siteName)
         ]
     )
-    Data.NoEndTag
 
 ogDescription :: String -> Data.HtmlElement
 ogDescription description =
-  Data.htmlElement
-    "meta"
+  Data.meta
     ( Map.fromFoldable
         [ Tuple.Tuple "property" (Maybe.Just "og:description")
         , Tuple.Tuple "content" (Maybe.Just description)
         ]
     )
-    Data.NoEndTag
 
 ogImage :: StructuredUrl.StructuredUrl -> Data.HtmlElement
 ogImage url =
-  Data.htmlElement
-    "meta"
+  Data.meta
     ( Map.fromFoldable
         [ Tuple.Tuple "property" (Maybe.Just "og:image")
         , Tuple.Tuple "content" (Maybe.Just (StructuredUrl.toString url))
         ]
     )
-    Data.NoEndTag
 
 javaScriptElementByUrl :: StructuredUrl.StructuredUrl -> Data.HtmlElement
 javaScriptElementByUrl url =
