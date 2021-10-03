@@ -6,6 +6,8 @@
   , "effect"
   , "maybe"
   , "node-buffer"
+  , "node-child-process"
+  , "node-fs"
   , "node-http"
   , "node-streams"
   , "ordered-collections"

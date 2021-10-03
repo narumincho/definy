@@ -37,37 +37,22 @@ twitterCardToString = case _ of
 
 htmlOptionToHtmlHtmlElement :: Data.HtmlOption -> Data.HtmlElement
 htmlOptionToHtmlHtmlElement htmlOption@(Data.HtmlOption option) =
-  Data.htmlElement
-    "html"
-    ( case option.language of
-        Maybe.Just language ->
-          Map.singleton
-            "lang"
-            (Maybe.Just (languageToIETFLanguageTag language))
-        Maybe.Nothing -> Map.empty
-    )
-    ( Data.ElementList
-        [ headElement htmlOption
-        , Data.htmlElement
-            "body"
-            ( case option.bodyClass of
-                Maybe.Just bodyClass -> Map.singleton "class" (Maybe.Just bodyClass)
-                Maybe.Nothing -> Map.empty
+  Data.html
+    (Prelude.map languageToIETFLanguageTag option.language)
+    (headElement htmlOption)
+    ( Data.body
+        option.bodyClass
+        ( Data.ElementList
+            ( Array.cons
+                (noScriptElement option.appName)
+                option.bodyChildren
             )
-            ( Data.ElementList
-                ( Array.cons
-                    (noScriptElement option.appName)
-                    option.bodyChildren
-                )
-            )
-        ]
+        )
     )
 
 noScriptElement :: String -> Data.HtmlElement
 noScriptElement appName =
-  Data.htmlElement
-    "noscript"
-    Map.empty
+  Data.noscript
     ( Data.Text
         ( Prelude.append
             appName
@@ -86,20 +71,18 @@ htmlOptionToString htmlOption =
 
 headElement :: Data.HtmlOption -> Data.HtmlElement
 headElement (Data.HtmlOption option) =
-  Data.htmlElement
-    "head"
-    Map.empty
+  Data.head
     ( Data.ElementList
         ( Array.concat
             [ [ charsetElement
               , viewportElement
-              , pageNameElement option.pageName
+              , Data.title option.pageName
               , descriptionElement option.description
               , themeColorElement option.themeColor
               ]
             , [ iconElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: option.iconPath }) ]
             , case option.style of
-                Maybe.Just style -> [ cssStyleElement style ]
+                Maybe.Just style -> [ Data.style style ]
                 Maybe.Nothing -> []
             , [ twitterCardElement option.twitterCard ]
             , case option.path of
@@ -111,7 +94,7 @@ headElement (Data.HtmlOption option) =
               , ogImage (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: option.coverImagePath })
               ]
             , case option.scriptPath of
-                Maybe.Just scriptPath -> [ javaScriptElementByUrl (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: scriptPath }) ]
+                Maybe.Just scriptPath -> [ Data.script (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: scriptPath }) ]
                 Maybe.Nothing -> []
             ]
         )
@@ -133,9 +116,6 @@ viewportElement =
         ]
     )
 
-pageNameElement :: String -> Data.HtmlElement
-pageNameElement pageName = Data.htmlElement "title" Map.empty (Data.Text pageName)
-
 descriptionElement :: String -> Data.HtmlElement
 descriptionElement description =
   Data.meta
@@ -155,18 +135,7 @@ themeColorElement themeColor =
     )
 
 iconElement :: StructuredUrl.StructuredUrl -> Data.HtmlElement
-iconElement iconUrl =
-  Data.htmlElement
-    "link"
-    ( Map.fromFoldable
-        [ Tuple.Tuple "rel" (Maybe.Just "icon")
-        , Tuple.Tuple "href" (Maybe.Just (StructuredUrl.toString iconUrl))
-        ]
-    )
-    Data.NoEndTag
-
-cssStyleElement :: String -> Data.HtmlElement
-cssStyleElement cssCode = Data.htmlElement "style" Map.empty (Data.RawText cssCode)
+iconElement iconUrl = Data.link "icon" (StructuredUrl.toString iconUrl)
 
 twitterCardElement :: Data.TwitterCard -> Data.HtmlElement
 twitterCardElement twitterCard =
@@ -224,17 +193,6 @@ ogImage url =
         ]
     )
 
-javaScriptElementByUrl :: StructuredUrl.StructuredUrl -> Data.HtmlElement
-javaScriptElementByUrl url =
-  Data.htmlElement
-    "script"
-    ( Map.fromFoldable
-        [ Tuple.Tuple "defer" Maybe.Nothing
-        , Tuple.Tuple "src" (Maybe.Just (StructuredUrl.toString url))
-        ]
-    )
-    (Data.ElementList [])
-
 htmlElementToString :: Data.HtmlElement -> String
 htmlElementToString (Data.HtmlElement element) =
   let
@@ -262,7 +220,7 @@ attributesToString attributeMap =
     ""
   else
     Prelude.append " "
-      ( String.joinWith ""
+      ( String.joinWith " "
           ( Prelude.map
               ( \(Tuple.Tuple key value) -> case value of
                   Maybe.Just v -> String.joinWith "" [ key, "=\"", escapeInHtml v, "\"" ]

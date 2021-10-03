@@ -1,17 +1,26 @@
 module Html.Data
-  ( htmlElement
-  , HtmlOption(..)
+  ( HtmlOption(..)
   , HtmlChildren(..)
   , HtmlElement(..)
   , TwitterCard(..)
   , meta
+  , html
+  , body
+  , noscript
+  , head
+  , link
+  , style
+  , script
+  , title
+  , div
   ) where
 
-import Data.Maybe as Maybe
-import StructuredUrl as StructuredUrl
-import Language as Language
-import Data.Map as Map
 import Color as Color
+import Data.Map as Map
+import Data.Maybe as Maybe
+import Language as Language
+import StructuredUrl as StructuredUrl
+import Data.Tuple as Tuple
 
 -- | 構造化された Html の指定
 newtype HtmlOption
@@ -51,3 +60,66 @@ htmlElement name attributes children = HtmlElement { name, attributes, children 
 
 meta :: Map.Map String (Maybe.Maybe String) -> HtmlElement
 meta attributes = htmlElement "meta" attributes NoEndTag
+
+html :: Maybe.Maybe String -> HtmlElement -> HtmlElement -> HtmlElement
+html langMaybe headElement bodyElement =
+  htmlElement "html"
+    ( case langMaybe of
+        Maybe.Just lang -> Map.singleton "lang" (Maybe.Just lang)
+        Maybe.Nothing -> Map.empty
+    )
+    (ElementList [ headElement, bodyElement ])
+
+body :: Maybe.Maybe String -> HtmlChildren -> HtmlElement
+body classMaybe children =
+  htmlElement "body"
+    ( case classMaybe of
+        Maybe.Just className -> Map.singleton "class" (Maybe.Just className)
+        Maybe.Nothing -> Map.empty
+    )
+    children
+
+noscript :: HtmlChildren -> HtmlElement
+noscript children =
+  htmlElement
+    "noscript"
+    Map.empty
+    children
+
+head :: HtmlChildren -> HtmlElement
+head children =
+  htmlElement
+    "head"
+    Map.empty
+    children
+
+link :: String -> String -> HtmlElement
+link rel href =
+  htmlElement
+    "link"
+    ( Map.fromFoldable
+        [ Tuple.Tuple "rel" (Maybe.Just rel)
+        , Tuple.Tuple "href" (Maybe.Just href)
+        ]
+    )
+    NoEndTag
+
+style :: String -> HtmlElement
+style cssCode = htmlElement "style" Map.empty (RawText cssCode)
+
+script :: StructuredUrl.StructuredUrl -> HtmlElement
+script url =
+  htmlElement
+    "script"
+    ( Map.fromFoldable
+        [ Tuple.Tuple "defer" Maybe.Nothing
+        , Tuple.Tuple "src" (Maybe.Just (StructuredUrl.toString url))
+        ]
+    )
+    (ElementList [])
+
+title :: String -> HtmlElement
+title pageName = htmlElement "title" Map.empty (Text pageName)
+
+div :: Map.Map String (Maybe.Maybe String) -> HtmlChildren -> HtmlElement
+div attributes children = htmlElement "div" attributes children
