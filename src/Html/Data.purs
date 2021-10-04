@@ -13,6 +13,13 @@ module Html.Data
   , script
   , title
   , div
+  , a
+  , h1
+  , h2
+  , svg
+  , img
+  , svgPath
+  , svgG
   ) where
 
 import Color as Color
@@ -123,3 +130,24 @@ title pageName = htmlElement "title" Map.empty (Text pageName)
 
 div :: Map.Map String (Maybe.Maybe String) -> HtmlChildren -> HtmlElement
 div attributes children = htmlElement "div" attributes children
+
+a :: Map.Map String (Maybe.Maybe String) -> HtmlChildren -> HtmlElement
+a attributes children = htmlElement "a" attributes children
+
+h1 :: Map.Map String (Maybe.Maybe String) -> HtmlChildren -> HtmlElement
+h1 attributes children = htmlElement "h1" attributes children
+
+h2 :: Map.Map String (Maybe.Maybe String) -> HtmlChildren -> HtmlElement
+h2 attributes children = htmlElement "h2" attributes children
+
+svg :: Map.Map String (Maybe.Maybe String) -> HtmlChildren -> HtmlElement
+svg attributes children = htmlElement "svg" attributes children
+
+img :: Map.Map String (Maybe.Maybe String) -> HtmlElement
+img attributes = htmlElement "img" attributes NoEndTag
+
+svgPath :: Map.Map String (Maybe.Maybe String) -> HtmlElement
+svgPath attributes = htmlElement "img" attributes (ElementList [])
+
+svgG :: Map.Map String (Maybe.Maybe String) -> Array HtmlElement -> HtmlElement
+svgG attributes elementList = htmlElement "img" attributes (ElementList elementList)
