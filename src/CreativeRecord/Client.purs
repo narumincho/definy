@@ -1,4 +1,4 @@
-module CreativeRecordClient where
+module CreativeRecord.Client where
 
 import Effect as Effect
 import Effect.Console as Console

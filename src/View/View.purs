@@ -10,6 +10,9 @@ module View.View
   , Animation(..)
   , ViewBox(..)
   , SvgElement(..)
+  , BoxRecord
+  , box
+  , boxHoverStyleNone
   ) where
 
 import Color as Color
@@ -42,18 +45,20 @@ newtype View message
 newtype Box :: Type -> Type
 -- | 縦か横方向に積める箱
 newtype Box message
-  = Box
-  { direction :: XOrY
-  , children :: Array (Element message)
-  , gap :: Number
-  , paddingTopBottom :: Number
-  , paddingLeftRight :: Number
-  , height :: Maybe.Maybe Number
-  , backgroundColor :: Maybe.Maybe String
-  , gridTemplateColumns1FrCount :: Maybe.Maybe Int
-  , url :: Maybe.Maybe StructuredUrl.StructuredUrl
-  , hover :: BoxHoverStyle
-  }
+  = Box (BoxRecord message)
+
+type BoxRecord message
+  = { direction :: XOrY
+    , children :: Array (Element message)
+    , gap :: Number
+    , paddingTopBottom :: Number
+    , paddingLeftRight :: Number
+    , height :: Maybe.Maybe Number
+    , backgroundColor :: Maybe.Maybe String
+    , gridTemplateColumns1FrCount :: Maybe.Maybe Int
+    , url :: Maybe.Maybe StructuredUrl.StructuredUrl
+    , hover :: BoxHoverStyle
+    }
 
 data XOrY
   = X
@@ -75,7 +80,7 @@ data Element message
   = Text { markup :: TextMarkup, padding :: Number, text :: String }
   | SvgElement { svg :: Svg, width :: PercentageOrRem, height :: Number, isJustifySelfCenter :: Boolean }
   | Image
-    { url :: StructuredUrl.StructuredUrl
+    { path :: StructuredUrl.PathAndSearchParams
     , width :: PercentageOrRem
     , height :: Number
     }
@@ -113,3 +118,11 @@ data SvgElement
 data PercentageOrRem
   = Rem Number
   | Percentage Number
+
+box :: forall message. BoxRecord message -> Element message
+box record =
+  BoxElement
+    (Box record)
+
+boxHoverStyleNone :: BoxHoverStyle
+boxHoverStyleNone = BoxHoverStyle { animation: Maybe.Nothing }

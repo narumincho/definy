@@ -293,7 +293,7 @@ elementToHtmlElementAndStyleDict = case _ of
         , styleDict: Map.singleton className viewStyle
         , keyframesDict: Map.empty
         }
-  View.Image { width, height, url } ->
+  View.Image { width, height, path } ->
     let
       viewStyle :: ViewStyle
       viewStyle =
@@ -312,7 +312,7 @@ elementToHtmlElementAndStyleDict = case _ of
         { htmlElement:
             HtmlData.img
               ( Map.fromFoldable
-                  [ Tuple.Tuple "src" (Maybe.Just (StructuredUrl.toString url))
+                  [ Tuple.Tuple "src" (Maybe.Just (StructuredUrl.pathAndSearchParamsToString path))
                   , sha256HashValueToClassAttributeNameAndValue (className)
                   ]
               )

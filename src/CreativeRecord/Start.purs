@@ -1,5 +1,6 @@
-module CreativeRecordStart where
+module CreativeRecord.Start where
 
+import CreativeRecord.View as CreativeRecordView
 import Data.Maybe as Maybe
 import Effect as Effect
 import Effect.Console as Console
@@ -12,7 +13,9 @@ import Node.FS.Sync as FileSystem
 import Node.HTTP as Http
 import Node.Stream as Stream
 import Prelude as Prelude
-import CreativeRecord as CreativeRecord
+import StructuredUrl as StructuredUrl
+import View.ToHtml as ViewToHtml
+import Data.Map as Map
 
 main :: Effect.Effect Prelude.Unit
 main =
@@ -129,14 +132,20 @@ writeStringResponse response = case _ of
               setHeader
               (\_ -> setBody)
         )
-  NotFound -> Http.setStatusCode response 404
+  NotFound ->
+    Prelude.bind (Http.setStatusCode response 404)
+      ( \_ ->
+          ( Stream.end
+              (Http.responseAsStream response)
+              (Console.log "writeEnd")
+          )
+      )
 
 htmlResponse :: ResponseData
 htmlResponse =
   StringResponse
     { data:
-        ( HtmlToSTring.htmlOptionToString
-            CreativeRecord.view
-        )
+        HtmlToSTring.htmlOptionToString
+          (ViewToHtml.viewToHtmlOption CreativeRecordView.view (StructuredUrl.pathAndSearchParams [ "program" ] Map.empty))
     , fileType: FileType.Html
     }

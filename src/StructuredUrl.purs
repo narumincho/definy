@@ -3,10 +3,12 @@ module StructuredUrl
   , StructuredUrl(..)
   , toString
   , pathAndSearchParams
+  , pathAndSearchParamsToString
   ) where
 
 import Data.Map as Map
 import Data.String as String
+import Prelude as Prelude
 
 -- | URL の Path と searchParams
 newtype PathAndSearchParams
@@ -31,4 +33,7 @@ newtype StructuredUrl
   = StructuredUrl { origin :: String, pathAndSearchParams :: PathAndSearchParams }
 
 toString :: StructuredUrl -> String
-toString (StructuredUrl { origin, pathAndSearchParams: PathAndSearchParams { path } }) = String.joinWith "" [ origin, "/", (String.joinWith "/" path) ]
+toString (StructuredUrl { origin, pathAndSearchParams: path }) = String.joinWith "" [ origin, pathAndSearchParamsToString path ]
+
+pathAndSearchParamsToString :: PathAndSearchParams -> String
+pathAndSearchParamsToString (PathAndSearchParams { path }) = Prelude.append "/" (String.joinWith "/" path)

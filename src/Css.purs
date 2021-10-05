@@ -32,6 +32,7 @@ module Css
   , lineHeight
   , justifySelfCenter
   , objectFitConver
+  , transformScale
   ) where
 
 import Data.Array as Array
@@ -307,3 +308,8 @@ objectFitConver =
     { property: "object-fit"
     , value: "cover"
     }
+
+transformScale :: Number -> Declaration
+transformScale value =
+  Declaration
+    { property: "transform", value: String.joinWith "" [ "scale(", Prelude.show value, ")" ] }
