@@ -3,25 +3,26 @@ module Util where
 import Data.Array as Array
 import Data.Maybe as Maybe
 import Data.Ord as Ord
-import Prelude as Prelude
 import Data.Tuple as Tuple
+import Data.UInt as UInt
+import Prelude as Prelude
 
-listUpdateAtOverAutoCreate :: forall e. Array e -> Int -> (Maybe.Maybe e -> e) -> e -> Array e
-listUpdateAtOverAutoCreate list index func fillElement = case Array.index list index of
+listUpdateAtOverAutoCreate :: forall e. Array e -> UInt.UInt -> (Maybe.Maybe e -> e) -> e -> Array e
+listUpdateAtOverAutoCreate list index func fillElement = case Array.index list (UInt.toInt index) of
   Maybe.Just element ->
     let
-      beforeAndAfter = Array.splitAt index list
+      beforeAndAfter = Array.splitAt (UInt.toInt index) list
     in
       Array.concat
         [ beforeAndAfter.before
         , [ func (Maybe.Just element) ]
-        , beforeAndAfter.after
+        , Maybe.maybe [] Prelude.identity (Array.tail beforeAndAfter.after)
         ]
   Maybe.Nothing ->
-    if Ord.lessThanOrEq (Array.length list) index then
+    if Ord.lessThanOrEq (Array.length list) (UInt.toInt index) then
       Array.concat
         [ list
-        , Array.replicate (Prelude.sub index (Array.length list)) fillElement
+        , Array.replicate (Prelude.sub (UInt.toInt index) (Array.length list)) fillElement
         , [ func Maybe.Nothing ]
         ]
     else
@@ -35,7 +36,7 @@ listUpdateAtOverAutoCreate list index func fillElement = case Array.index list i
 -- | ```purs
 -- | scatter(["a", "bb", "c", "ddd"], (text)=>text.length) // [[],["a", "c"], ["bb"], ["ddd"]]
 -- | ````
-group :: forall t. Array t -> (t -> Int -> Int) -> Array (Array t)
+group :: forall t. Array t -> (t -> UInt.UInt -> UInt.UInt) -> Array (Array t)
 group list groupIndexFunc =
   Array.foldl
     ( \result (Tuple.Tuple index cur) ->
@@ -49,11 +50,7 @@ group list groupIndexFunc =
           []
     )
     []
-    (Array.mapWithIndex Tuple.Tuple list)
+    (Array.mapWithIndex (\i e -> Tuple.Tuple (UInt.fromInt i) e) list)
 
-groupBySize :: forall t. Array t -> Int -> Array (Array t)
-groupBySize list size =
-  if Ord.lessThan size 0 then
-    []
-  else
-    group list (\_ i -> (Prelude.div i size))
+groupBySize :: forall t. UInt.UInt -> Array t -> Array (Array t)
+groupBySize size list = group list (\_ i -> (Prelude.div i size))

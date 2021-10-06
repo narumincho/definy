@@ -1,6 +1,7 @@
 { name = "my-project"
 , dependencies =
   [ "arrays"
+  , "assert"
   , "colors"
   , "console"
   , "effect"
@@ -15,6 +16,7 @@
   , "psci-support"
   , "strings"
   , "tuples"
+  , "uint"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]

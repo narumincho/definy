@@ -9,6 +9,7 @@ import StructuredUrl as StructuredUrl
 import CreativeRecord.SvgImage as SvgImage
 import Util as Util
 import View.View as View
+import Data.UInt as UInt
 
 linkBackGroundColor :: String
 linkBackGroundColor = "#333333"
@@ -117,7 +118,7 @@ articleListToViewElement list =
                 , hover: View.boxHoverStyleNone
                 }
           )
-          (Util.groupBySize list 3)
+          (Util.groupBySize (UInt.fromInt 3) list)
     , height: Maybe.Nothing
     , backgroundColor: Maybe.Nothing
     , gridTemplateColumns1FrCount: Maybe.Nothing
