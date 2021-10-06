@@ -147,7 +147,7 @@ img :: Map.Map String (Maybe.Maybe String) -> HtmlElement
 img attributes = htmlElement "img" attributes NoEndTag
 
 svgPath :: Map.Map String (Maybe.Maybe String) -> HtmlElement
-svgPath attributes = htmlElement "img" attributes (ElementList [])
+svgPath attributes = htmlElement "path" attributes (ElementList [])
 
 svgG :: Map.Map String (Maybe.Maybe String) -> Array HtmlElement -> HtmlElement
-svgG attributes elementList = htmlElement "img" attributes (ElementList elementList)
+svgG attributes elementList = htmlElement "g" attributes (ElementList elementList)
