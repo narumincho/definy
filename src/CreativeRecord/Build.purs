@@ -12,6 +12,7 @@ import Effect.Class as EffectClass
 import Effect.Console as Console
 import EsBuild as EsBuild
 import FileSystem as FileSystem
+import FileType as FileType
 import FirebaseJson as FirebaseJson
 import Hash as Hash
 import Node.Buffer as Buffer
@@ -88,7 +89,7 @@ runEsbuild :: Aff.Aff Unit
 runEsbuild = do
   EsBuild.build
     { entryPoints: firstClientProgramFilePath
-    , outdir: FileSystem.distributionFilePathToDirectoryPathString esbuildClientProgramFileDirectoryPath
+    , outdir: FileSystem.distributionDirectoryPathToString esbuildClientProgramFileDirectoryPath
     , sourcemap: false
     , target: [ "chrome94", "firefox93", "safari15" ]
     }
@@ -96,17 +97,24 @@ runEsbuild = do
 
 readEsbuildResultClientProgramFile :: Aff.Aff Unit
 readEsbuildResultClientProgramFile = do
-  clientProgramAsString <- FileSystem.readTextFile (FileSystem.DistributionFilePath { directoryPath: esbuildClientProgramFileDirectoryPath, fileName: "program.js" })
+  clientProgramAsString <-
+    FileSystem.readTextFileInDistribution
+      ( FileSystem.DistributionFilePath
+          { directoryPath: esbuildClientProgramFileDirectoryPath, fileName: "program", fileType: Maybe.Just FileType.JavaScript }
+      )
   let
     clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString
-  FileSystem.writeTextFile (FileSystem.DistributionFilePath { directoryPath: hostingDirectoryPath, fileName: clientProgramHashValue }) clientProgramAsString
+  FileSystem.writeTextFile (FileSystem.DistributionFilePath { directoryPath: hostingDirectoryPath, fileName: clientProgramHashValue, fileType: Maybe.Nothing }) clientProgramAsString
   pure unit
 
 writeFirebaseJson :: Aff.Aff Unit
 writeFirebaseJson = do
   FileSystem.writeTextFile
     ( FileSystem.DistributionFilePath
-        { directoryPath: FileSystem.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }, fileName: "firebase.json" }
+        { directoryPath: FileSystem.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
+        , fileName: "firebase"
+        , fileType: Maybe.Just FileType.Json
+        }
     )
     ( FirebaseJson.toString
         ( FirebaseJson.FirebaseJson

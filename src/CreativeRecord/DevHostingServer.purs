@@ -17,7 +17,7 @@ import Data.Map as Map
 -- | Firebase の Hosting emulator では配信するリソースを実行時に変更できないので,
 -- | その変更できるサーバーを作る
 startServer :: String -> Effect.Effect Prelude.Unit
-startServer firebaseJsonPath =
+startServer _firebaseJsonPath =
   Prelude.bind
     ( Http.createServer
         ( \request response ->

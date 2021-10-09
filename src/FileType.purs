@@ -8,6 +8,7 @@ data FileType
   | TypeScript
   | JavaScript
   | Html
+  | Json
 
 toMimeType :: Maybe.Maybe FileType -> String
 toMimeType = case _ of
@@ -15,4 +16,5 @@ toMimeType = case _ of
   Maybe.Just TypeScript -> "text/typescript"
   Maybe.Just JavaScript -> "text/javascript"
   Maybe.Just Html -> "text/html"
+  Maybe.Just Json -> "application/json"
   Maybe.Nothing -> "application/octet-stream"
