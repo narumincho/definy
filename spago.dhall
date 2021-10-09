@@ -14,7 +14,6 @@
   , "node-child-process"
   , "node-fs-aff"
   , "node-http"
-  , "node-path"
   , "node-streams"
   , "ordered-collections"
   , "parallel"

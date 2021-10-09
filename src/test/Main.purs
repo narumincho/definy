@@ -4,6 +4,8 @@ import Prelude
 import Data.Maybe as Maybe
 import Data.UInt as UInt
 import Effect as Effect
+import FileSystem as FileSystem
+import FileType as FileType
 import Test.Assert as Assert
 import Util as Util
 
@@ -14,6 +16,7 @@ main = do
   listUpdateAtOverAutoCreateLast
   listUpdateAtOverAutoCreateAutoCreate
   groupBySize2
+  fileNameWithExtensitonParse
 
 listUpdateAtOverAutoCreateInline :: Effect.Effect Unit
 listUpdateAtOverAutoCreateInline =
@@ -80,4 +83,11 @@ groupBySize2 =
   Assert.assertEqual
     { actual: Util.groupBySize (UInt.fromInt 2) [ 0, 1, 2, 3, 4 ]
     , expected: [ [ 0, 1 ], [ 2, 3 ], [ 4 ] ]
+    }
+
+fileNameWithExtensitonParse :: Effect.Effect Unit
+fileNameWithExtensitonParse =
+  Assert.assertEqual
+    { actual: FileSystem.fileNameWithExtensitonParse "sample.test.js"
+    , expected: { fileName: "sample.test", fileType: Maybe.Just FileType.JavaScript }
     }
