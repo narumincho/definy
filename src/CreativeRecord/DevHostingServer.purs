@@ -1,65 +1,27 @@
-module CreativeRecord.Start where
+module DevServer where
 
-import CreativeRecord.Build as Build
 import CreativeRecord.View as CreativeRecordView
-import Data.Map as Map
 import Data.Maybe as Maybe
 import Effect as Effect
-import Effect.Aff as Aff
 import Effect.Console as Console
 import FileType as FileType
 import Html.ToString as HtmlToSTring
-import Node.Buffer as Buffer
-import Node.ChildProcess as ChildProcess
 import Node.Encoding as Encoding
 import Node.HTTP as Http
 import Node.Stream as Stream
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import View.ToHtml as ViewToHtml
+import Data.Map as Map
 
-main :: Effect.Effect Prelude.Unit
-main = Aff.runAff_ Console.logShow (Aff.attempt Build.build)
-
-runClientScriptBuildCommandAndLog :: Effect.Effect Prelude.Unit -> Effect.Effect Prelude.Unit
-runClientScriptBuildCommandAndLog callback =
-  Prelude.map (\_ -> Prelude.unit)
-    ( ChildProcess.exec
-        "spago bundle-app --main CreativeRecordClient"
-        ChildProcess.defaultExecOptions
-        ( \result ->
-            Prelude.bind
-              (execResultToString result)
-              (\out -> (Prelude.bind (Console.log out) (\_ -> callback)))
-        )
-    )
-
-execResultToString :: ChildProcess.ExecResult -> Effect.Effect String
-execResultToString result =
-  let
-    stdoutEffect :: Effect.Effect String
-    stdoutEffect = (Buffer.toString Encoding.UTF8 result.stdout)
-
-    stderrEffect :: Effect.Effect String
-    stderrEffect = (Buffer.toString Encoding.UTF8 result.stderr)
-  in
-    Prelude.bind stdoutEffect
-      ( \stdout ->
-          Prelude.map
-            ( \stderr ->
-                Prelude.append
-                  "build-std"
-                  (Prelude.show { stdout, stderr, error: result.error })
-            )
-            stderrEffect
-      )
-
+-- | Firebase の Hosting emulator では配信するリソースを実行時に変更できないので,
+-- | その変更できるサーバーを作る
 startServer :: String -> Effect.Effect Prelude.Unit
-startServer clientScriptCode =
+startServer firebaseJsonPath =
   Prelude.bind
     ( Http.createServer
         ( \request response ->
-            service clientScriptCode request response
+            service request response
         )
     )
     ( \server ->
@@ -68,20 +30,14 @@ startServer clientScriptCode =
           (Console.log "start! http://localhost:1234")
     )
 
-service :: String -> Http.Request -> Http.Response -> Effect.Effect Prelude.Unit
-service clientScriptCode request response =
+service :: Http.Request -> Http.Response -> Effect.Effect Prelude.Unit
+service request response =
   Prelude.bind
     (Console.log (Prelude.append "requestPath:" (Http.requestURL request)))
     ( \_ ->
         writeStringResponse response
           ( case Http.requestURL request of
               "/" -> htmlResponse
-              "/program" ->
-                ( StringResponse
-                    { data: clientScriptCode
-                    , fileType: FileType.JavaScript
-                    }
-                )
               _ -> NotFound
           )
     )
