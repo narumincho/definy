@@ -1,5 +1,8 @@
 import { Box, Element, PercentageOrRem, SvgElement, View } from "./view";
-import { FileName, fileNameToString } from "../fileSystem/data";
+import {
+  FileNameWithFileType,
+  fileNameWithFileTypeToString,
+} from "../fileSystem/data";
 import {
   HtmlElement,
   HtmlOption,
@@ -15,7 +18,7 @@ import { declarationListToString } from "../css/main";
  */
 export const viewToHtmlOption = <Message>(
   view: View<Message>,
-  scriptFileName: FileName
+  scriptFileName: FileNameWithFileType
 ): HtmlOption => {
   const htmlElementAndStyleDict = boxToHtmlElementAndStyleDict(view.box);
   return {
@@ -87,7 +90,7 @@ export const viewToHtmlOption = <Message>(
       new URL(
         view.origin +
           "/" +
-          fileNameToString({
+          fileNameWithFileTypeToString({
             fileType: "JavaScript",
             name: scriptFileName.name,
           })

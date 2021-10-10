@@ -1,6 +1,6 @@
 import {
   DirectoryPath,
-  DirectoryPathAndFileName,
+  FilePathWithFileType,
   directoryPathFrom,
 } from "../gen/fileSystem/data";
 
@@ -16,9 +16,9 @@ export const staticResourcePath: DirectoryPath = directoryPathFrom([
   "resource",
 ]);
 
-export const clientScriptPath: DirectoryPathAndFileName = {
+export const clientScriptPath: FilePathWithFileType = {
   directoryPath: directoryPathFrom([naruminchoCreativeRecordDirectoryName]),
-  fileName: {
+  fileNameWithFileType: {
     name: "client",
     fileType: "TypeScript",
   },

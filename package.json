@@ -19,7 +19,9 @@
     "build-gen": "ts-node ./build/gen.ts",
     "storybook": "start-storybook --config-dir ./storybook --static-dir ./storybook/static",
     "update-package-json": "ncu -u",
-    "start-narumincho-creative-record": "npx ts-node ./narumincho-creative-record/start.ts"
+    "start-narumincho-creative-record": "npx ts-node ./narumincho-creative-record/start.ts",
+    "purescript-start": "spago run --main CreativeRecord.Start",
+    "purescript-test": "spago test"
   },
   "devDependencies": {
     "@babel/core": "7.15.5",

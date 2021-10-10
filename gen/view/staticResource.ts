@@ -10,12 +10,14 @@ export type StaticResourceFileResult = {
   /**
    * 入力のファイル名. オリジナルのファイル名. 拡張子あり
    */
-  readonly originalFileName: string;
+  readonly originalFileName: fileSystem.FileNameWithFileType;
   readonly fileId: string;
-  readonly fileType: FileType | undefined;
+  readonly fileType: FileType;
   readonly requestPath: string;
   /**
    * Firebase Hosting などにアップロードするファイル名. 拡張子は含まれない
+   *
+   * ファイルの中身のハッシュ値になる.
    */
   readonly uploadFileName: string;
 };
@@ -25,12 +27,12 @@ export type StaticResourceFileResult = {
  * @param filePath ハッシュ値を取得するファイルの ファイルパス
  */
 const getFileHash = async (
-  filePath: fileSystem.DirectoryPathAndFileName
+  filePath: fileSystem.FilePathWithFileType
 ): Promise<string> => {
   return crypto
     .createHash("sha256")
     .update(await readFile(filePath))
-    .update(filePath.fileName.fileType ?? "")
+    .update(filePath.fileNameWithFileType.fileType ?? "")
     .digest("hex");
 };
 
@@ -53,20 +55,22 @@ export const getStaticResourceFileResult = async (
   return Promise.all(
     filePathList.map(
       async (
-        filePath: fileSystem.DirectoryPathAndFileName
+        filePath: fileSystem.FilePathWithFileType
       ): Promise<StaticResourceFileResult> => {
         const hashValue = await getFileHash(filePath);
 
         return {
-          originalFileName: fileSystem.fileNameToString(filePath.fileName),
+          originalFileName: filePath.fileNameWithFileType,
           fileId:
-            filePath.fileName.name +
-            (filePath.fileName.fileType === undefined
+            filePath.fileNameWithFileType.name +
+            (filePath.fileNameWithFileType.fileType === undefined
               ? ""
               : firstUppercase(
-                  fileSystem.fileTypeToExtension(filePath.fileName.fileType)
+                  fileSystem.fileTypeToExtension(
+                    filePath.fileNameWithFileType.fileType
+                  )
                 )),
-          fileType: filePath.fileName.fileType,
+          fileType: filePath.fileNameWithFileType.fileType,
           requestPath: hashValue,
           uploadFileName: hashValue,
         };

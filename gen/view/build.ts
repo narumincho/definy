@@ -3,9 +3,9 @@ import * as esbuild from "esbuild";
 import * as jsTs from "../jsTs/main";
 import {
   DirectoryPath,
-  DirectoryPathAndFileName,
-  directoryPathAndFileNameToPathFromRepositoryRoot,
+  FilePathWithFileType,
   directoryPathToPathFromRepositoryRoot,
+  filePathWithFileTypeToPathFromRepositoryRoot,
 } from "../fileSystem/data";
 import {
   copyFile,
@@ -33,7 +33,7 @@ export type BuildOption<State, Message> = {
   /**
    * app が書かれた TypeScript のファイルパス
    */
-  readonly clientScriptPath: DirectoryPathAndFileName;
+  readonly clientScriptPath: FilePathWithFileType;
 };
 
 /**
@@ -47,13 +47,13 @@ export const build = async <State, Message>(
   await writeFile(
     {
       directoryPath: option.distributionPath,
-      fileName: { name: "index", fileType: "Html" },
+      fileNameWithFileType: { name: "index", fileType: "Html" },
     },
     new TextEncoder().encode(
       html.htmlOptionToString(
         viewToHtmlOption(
           option.app.stateToView(option.app.initState),
-          option.clientScriptPath.fileName
+          option.clientScriptPath.fileNameWithFileType
         )
       )
     )
@@ -62,7 +62,7 @@ export const build = async <State, Message>(
 
   await esbuild.build({
     entryPoints: [
-      directoryPathAndFileNameToPathFromRepositoryRoot(option.clientScriptPath),
+      filePathWithFileTypeToPathFromRepositoryRoot(option.clientScriptPath),
     ],
     bundle: true,
     outdir: directoryPathToPathFromRepositoryRoot(option.distributionPath),
@@ -79,17 +79,11 @@ export const build = async <State, Message>(
       await copyFile(
         {
           directoryPath: option.staticResourcePath,
-          fileName: {
-            name: fileResult.originalFileName,
-            fileType: undefined,
-          },
+          fileNameWithFileType: fileResult.originalFileName,
         },
         {
           directoryPath: option.distributionPath,
-          fileName: {
-            name: fileResult.uploadFileName,
-            fileType: undefined,
-          },
+          fileName: fileResult.uploadFileName,
         }
       );
       console.log(fileResult.originalFileName, "のコピーに成功!");

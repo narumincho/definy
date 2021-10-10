@@ -3,24 +3,26 @@ import * as fs from "fs-extra";
 import * as jsTs from "../jsTs/main";
 import {
   DirectoryPath,
-  DirectoryPathAndFileName,
-  directoryPathAndFileNameToPathFromRepositoryRoot,
+  FilePath,
+  FilePathWithFileType,
   directoryPathFrom,
   directoryPathToPathFromRepositoryRoot,
   extensionToFileType,
+  filePathSetFileType,
+  filePathWithFileTypeToPathFromRepositoryRoot,
 } from "./data";
+import { fileTypeTypeScript } from "../fileType/main";
 import { posix as posixPath } from "path";
 
 /**
  * バイナリデータをファイルシステムの指定した場所にファイルとして書く
  */
 export const writeFile = async (
-  directoryPathAndFileName: DirectoryPathAndFileName,
+  filePathWithFileType: FilePathWithFileType,
   data: Uint8Array
 ): Promise<void> => {
-  const path = directoryPathAndFileNameToPathFromRepositoryRoot(
-    directoryPathAndFileName
-  );
+  const path =
+    filePathWithFileTypeToPathFromRepositoryRoot(filePathWithFileType);
   console.log(path, "にファイルを書き込み中...");
   await fs.writeFile(path, data).catch((error: { readonly code: string }) => {
     if (error.code === "ENOENT") {
@@ -36,7 +38,7 @@ export const writeFile = async (
  * TypeScript のコードをファイルに書き込む
  */
 export const writeTypeScriptCode = async (
-  directoryPathAndFileName: DirectoryPathAndFileName,
+  filePath: FilePath,
   jsTsCode: d.JsTsCode
 ): Promise<void> => {
   const codeAsString = jsTs.generateCodeAsString(
@@ -45,7 +47,7 @@ export const writeTypeScriptCode = async (
   );
 
   await writeFile(
-    directoryPathAndFileName,
+    filePathSetFileType(filePath, fileTypeTypeScript),
     new TextEncoder().encode(codeAsString)
   );
 };
@@ -83,11 +85,13 @@ export const resetDistributionDirectory = async (): Promise<void> => {
  * ファイルをコピーする
  */
 export const copyFile = (
-  input: DirectoryPathAndFileName,
-  output: DirectoryPathAndFileName
+  input: FilePathWithFileType,
+  output: FilePath
 ): Promise<void> => {
-  const inputPath = directoryPathAndFileNameToPathFromRepositoryRoot(input);
-  const outputPath = directoryPathAndFileNameToPathFromRepositoryRoot(output);
+  const inputPath = filePathWithFileTypeToPathFromRepositoryRoot(input);
+  const outputPath = filePathWithFileTypeToPathFromRepositoryRoot(
+    filePathSetFileType(output, input.fileNameWithFileType.fileType)
+  );
   console.log(`${inputPath} → ${outputPath} ファイルをコピー中...`);
   return fs.copyFile(inputPath, outputPath).then(
     () => {
@@ -124,9 +128,9 @@ export const deleteFileAndDirectoryInDirectory = async (
  * @returns ファイルの中身のバイナリ
  */
 export const readFile = async (
-  directoryPathAndFileName: DirectoryPathAndFileName
+  directoryPathAndFileName: FilePathWithFileType
 ): Promise<Uint8Array> => {
-  const path = directoryPathAndFileNameToPathFromRepositoryRoot(
+  const path = filePathWithFileTypeToPathFromRepositoryRoot(
     directoryPathAndFileName
   );
   console.log(`${path} を読み取り中...`);
@@ -142,7 +146,7 @@ export const readFile = async (
  */
 export const readFilePathInDirectory = async (
   directoryPath: DirectoryPath
-): Promise<ReadonlyArray<DirectoryPathAndFileName>> => {
+): Promise<ReadonlyArray<FilePathWithFileType>> => {
   const path = directoryPathToPathFromRepositoryRoot(directoryPath);
   console.log(`${path} 内のファイルを取得中...`);
   const direntList = await fs.readdir(
@@ -150,7 +154,7 @@ export const readFilePathInDirectory = async (
     { withFileTypes: true }
   );
   const result = direntList.flatMap(
-    (dirent): readonly [DirectoryPathAndFileName] | [] => {
+    (dirent): readonly [FilePathWithFileType] | [] => {
       if (!dirent.isFile()) {
         return [];
       }
@@ -165,7 +169,7 @@ export const readFilePathInDirectory = async (
       return [
         {
           directoryPath,
-          fileName: { name: parsedPath.name, fileType },
+          fileNameWithFileType: { name: parsedPath.name, fileType },
         },
       ];
     }

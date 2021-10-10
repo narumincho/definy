@@ -11,7 +11,10 @@ import {
   distributionPathAsDirectoryPath,
   resetDistributionDirectory,
 } from "../gen/fileSystem/effect";
-import { directoryPathFrom, fileNameFrom } from "../gen/fileSystem/data";
+import {
+  directoryPathFrom,
+  fileNameWithFileTypeFrom,
+} from "../gen/fileSystem/data";
 import { fileTypeTypeScript } from "../gen/fileType/main";
 import { packageJson as packageJsonGen } from "../gen/main";
 
@@ -47,11 +50,14 @@ const build = async (): Promise<void> => {
   await copyFile(
     {
       directoryPath: directoryPathFrom([]),
-      fileName: fileNameFrom("localData", fileTypeTypeScript),
+      fileNameWithFileType: fileNameWithFileTypeFrom(
+        "localData",
+        fileTypeTypeScript
+      ),
     },
     {
       directoryPath: distributionPathAsDirectoryPath,
-      fileName: fileNameFrom("localData", fileTypeTypeScript),
+      fileName: "localData",
     }
   );
 
