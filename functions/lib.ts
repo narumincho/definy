@@ -228,7 +228,10 @@ const getUserDataFromCode = (
 const getGoogleUserDataFromCode = async (
   code: string
 ): Promise<ProviderUserData> => {
-  const response = await axios.post(
+  const response = await axios.post<
+    URLSearchParams,
+    AxiosResponse<{ id_token: unknown }>
+  >(
     "https://www.googleapis.com/oauth2/v4/token",
     new URLSearchParams([
       ["grant_type", "authorization_code"],
@@ -243,7 +246,10 @@ const getGoogleUserDataFromCode = async (
       },
     }
   );
-  const idToken: string = response.data.id_token;
+  const idToken = response.data.id_token;
+  if (typeof idToken !== "string") {
+    throw new Error("Google idToken not include in response");
+  }
   const decoded = jsonWebToken.decode(idToken);
   if (typeof decoded === "string" || decoded === null) {
     throw new Error("Google idToken not include object");
