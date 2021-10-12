@@ -104,12 +104,12 @@ readEsbuildResultClientProgramFile = do
       )
   let
     clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString
-  FileSystem.writeTextFile (FileSystem.DistributionFilePath { directoryPath: hostingDirectoryPath, fileName: clientProgramHashValue, fileType: Maybe.Nothing }) clientProgramAsString
+  FileSystem.writeTextFileInDistribution (FileSystem.DistributionFilePath { directoryPath: hostingDirectoryPath, fileName: clientProgramHashValue, fileType: Maybe.Nothing }) clientProgramAsString
   pure unit
 
 writeFirebaseJson :: Aff.Aff Unit
 writeFirebaseJson = do
-  FileSystem.writeTextFile
+  FileSystem.writeTextFileInDistribution
     ( FileSystem.DistributionFilePath
         { directoryPath: FileSystem.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
         , fileName: "firebase"

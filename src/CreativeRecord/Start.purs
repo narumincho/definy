@@ -19,17 +19,13 @@ import Prelude as Prelude
 import StaticResourceFile as StaticResourceFile
 import StructuredUrl as StructuredUrl
 import View.ToHtml as ViewToHtml
+import CreativeRecord.CodeGen
 
 main :: Effect.Effect Prelude.Unit
 main =
   Aff.runAff_ Console.logShow
     ( Aff.attempt
-        ( Prelude.bind
-            ( StaticResourceFile.getStaticResourceFileResult
-                (FileSystem.DirectoryPath [ "narumincho-creative-record", "resource" ])
-            )
-            (\_ -> Build.build)
-        )
+        codeGen
     )
 
 runClientScriptBuildCommandAndLog :: Effect.Effect Prelude.Unit -> Effect.Effect Prelude.Unit

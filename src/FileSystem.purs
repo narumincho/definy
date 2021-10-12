@@ -1,7 +1,7 @@
 module FileSystem
   ( DistributionFilePath(..)
   , DistributionDirectoryPath(..)
-  , writeTextFile
+  , writeTextFileInDistribution
   , readTextFile
   , readTextFileInDistribution
   , filePathToStringWithoutExtensition
@@ -16,6 +16,7 @@ module FileSystem
   , distributionFilePathToString
   , distributionDirectoryPathToString
   , fileNameWithExtensitonParse
+  , writePureScript
   ) where
 
 import Prelude
@@ -30,6 +31,7 @@ import FileType as FileType
 import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
+import PureScript as PureScript
 
 newtype DistributionDirectoryPath
   = DistributionDirectoryPath
@@ -92,6 +94,7 @@ fileTypeToExtension = case _ of
   FileType.JavaScript -> "js"
   FileType.Html -> "html"
   FileType.Json -> "json"
+  FileType.PureScript -> "purs"
 
 extensionToFileType :: String -> Maybe.Maybe FileType.FileType
 extensionToFileType = case _ of
@@ -100,6 +103,7 @@ extensionToFileType = case _ of
   "js" -> Maybe.Just FileType.JavaScript
   "html" -> Maybe.Just FileType.Html
   "json" -> Maybe.Just FileType.Json
+  "purs" -> Maybe.Just FileType.PureScript
   _ -> Maybe.Nothing
 
 filePathToStringWithoutExtensition :: FilePath -> String
@@ -142,8 +146,8 @@ distributionFilePathToDirectoryPath :: DistributionFilePath -> DistributionDirec
 distributionFilePathToDirectoryPath (DistributionFilePath { directoryPath }) = directoryPath
 
 -- | distribution に ファイルを文字列として書き込む
-writeTextFile :: DistributionFilePath -> String -> Aff.Aff Unit
-writeTextFile distributionFilePath content =
+writeTextFileInDistribution :: DistributionFilePath -> String -> Aff.Aff Unit
+writeTextFileInDistribution distributionFilePath content =
   let
     dirPath :: String
     dirPath = distributionDirectoryPathToString (distributionFilePathToDirectoryPath distributionFilePath)
@@ -155,6 +159,24 @@ writeTextFile distributionFilePath content =
       ( bind
           (ensureDir dirPath)
           (\_ -> Fs.writeTextFile Encoding.UTF8 filePath content)
+      )
+      ( \_ ->
+          EffectClass.liftEffect (Console.log (append filePath "の書き込みに成功"))
+      )
+
+writePureScript :: DirectoryPath -> String -> PureScript.Module -> Aff.Aff Unit
+writePureScript directoryPath fileNameWithExtensiton pModule =
+  let
+    dirPath :: String
+    dirPath = directoryPathToString directoryPath
+
+    filePath :: String
+    filePath = filePathToString (FilePath { directoryPath, fileName: fileNameWithExtensiton, fileType: Maybe.Just FileType.PureScript })
+  in
+    bind
+      ( bind
+          (ensureDir dirPath)
+          (\_ -> Fs.writeTextFile Encoding.UTF8 filePath (PureScript.toString pModule))
       )
       ( \_ ->
           EffectClass.liftEffect (Console.log (append filePath "の書き込みに成功"))
