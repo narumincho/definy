@@ -7,7 +7,9 @@ import Data.UInt as UInt
 import Effect as Effect
 import FileSystem as FileSystem
 import FileType as FileType
-import PureScript as PureScript
+import PureScript.Data as PureScriptData
+import PureScript.ToString as PureScriptToString
+import PureScript.Wellknown as PureScriptWellknown
 import Test.Assert as Assert
 import Util as Util
 
@@ -99,32 +101,22 @@ pureScriptCodeGenerate :: Effect.Effect Unit
 pureScriptCodeGenerate =
   Assert.assertEqual
     { actual:
-        PureScript.toString
-          ( PureScript.Module
-              { name: PureScript.ModuleName (NonEmptyArray.singleton "Sample")
+        PureScriptToString.toString
+          ( PureScriptData.Module
+              { name: PureScriptData.ModuleName (NonEmptyArray.singleton "Sample")
               , definitionList:
-                  [ PureScript.Definition
+                  [ PureScriptData.Definition
                       { name: "origin"
                       , document: "オリジン"
-                      , pType:
-                          PureScript.PType
-                            { moduleName: PureScript.primModuleName
-                            , name: "String"
-                            , argument: Maybe.Nothing
-                            }
-                      , expr: PureScript.StringLiteral "http://narumincho.com"
+                      , pType: PureScriptWellknown.primString
+                      , expr: PureScriptData.StringLiteral "http://narumincho.com"
                       , isExport: true
                       }
-                  , PureScript.Definition
+                  , PureScriptData.Definition
                       { name: "sample"
                       , document: "サンプルデータ\n改行付きのドキュメント"
-                      , pType:
-                          PureScript.PType
-                            { moduleName: PureScript.primModuleName
-                            , name: "String"
-                            , argument: Maybe.Nothing
-                            }
-                      , expr: PureScript.StringLiteral "改行も\nしっかりエスケープされてるかな?"
+                      , pType: PureScriptWellknown.primString
+                      , expr: PureScriptData.StringLiteral "改行も\nしっかりエスケープされてるかな?"
                       , isExport: false
                       }
                   ]

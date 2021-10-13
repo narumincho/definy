@@ -32,7 +32,8 @@ import FileType as FileType
 import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
-import PureScript as PureScript
+import PureScript.Data as PureScriptData
+import PureScript.ToString as PureScriptToString
 
 newtype DistributionDirectoryPath
   = DistributionDirectoryPath
@@ -168,10 +169,10 @@ writeTextFileInDistribution distributionFilePath content =
           EffectClass.liftEffect (Console.log (append filePath "の書き込みに成功"))
       )
 
-writePureScript :: DirectoryPath -> PureScript.Module -> Aff.Aff Unit
+writePureScript :: DirectoryPath -> PureScriptData.Module -> Aff.Aff Unit
 writePureScript srcDirectoryPath pModule =
   let
-    moduleNameAsNonEmptyArrayUnsnoced = ArrayNonEmpty.unsnoc (PureScript.moduleNameAsString pModule)
+    moduleNameAsNonEmptyArrayUnsnoced = ArrayNonEmpty.unsnoc (PureScriptData.moduleNameAsStringNonEmptyArray pModule)
 
     directoryPath :: DirectoryPath
     directoryPath = directoryPathPushDirectoryNameList srcDirectoryPath moduleNameAsNonEmptyArrayUnsnoced.init
@@ -185,7 +186,7 @@ writePureScript srcDirectoryPath pModule =
     bind
       ( bind
           (ensureDir dirPath)
-          (\_ -> Fs.writeTextFile Encoding.UTF8 filePath (PureScript.toString pModule))
+          (\_ -> Fs.writeTextFile Encoding.UTF8 filePath (PureScriptToString.toString pModule))
       )
       ( \_ ->
           EffectClass.liftEffect (Console.log (append filePath "の書き込みに成功"))

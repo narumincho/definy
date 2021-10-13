@@ -2,12 +2,12 @@ module CreativeRecord.CodeGen where
 
 import Control.Parallel.Class as ParallelClass
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Maybe as Maybe
 import Data.String as String
 import Effect.Aff as Aff
 import FileSystem as FileSystem
 import Prelude as Prelude
-import PureScript as PureScript
+import PureScript.Data as PureScriptData
+import PureScript.Wellknown as PureScriptWellknown
 import StaticResourceFile as StaticResourceFile
 
 codeGen :: Aff.Aff Prelude.Unit
@@ -29,19 +29,19 @@ staticResourceCodeGen =
     )
     (\resultList -> FileSystem.writePureScript srcDirectoryPath (staticFileResultToPureScriptModule resultList))
 
-staticFileResultToPureScriptModule :: Array StaticResourceFile.StaticResourceFileResult -> PureScript.Module
+staticFileResultToPureScriptModule :: Array StaticResourceFile.StaticResourceFileResult -> PureScriptData.Module
 staticFileResultToPureScriptModule resultList =
-  PureScript.Module
-    { name: PureScript.ModuleName (NonEmptyArray.cons' creativeRecordModuleName [ staticResourceModuleName ])
+  PureScriptData.Module
+    { name: PureScriptData.ModuleName (NonEmptyArray.cons' creativeRecordModuleName [ staticResourceModuleName ])
     , definitionList:
         Prelude.map
           staticResourceFileResultToPureScriptDefinition
           resultList
     }
 
-staticResourceFileResultToPureScriptDefinition :: StaticResourceFile.StaticResourceFileResult -> PureScript.Definition
+staticResourceFileResultToPureScriptDefinition :: StaticResourceFile.StaticResourceFileResult -> PureScriptData.Definition
 staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourceFileResult record) =
-  PureScript.Definition
+  PureScriptData.Definition
     { name: record.fileId
     , document:
         String.joinWith ""
@@ -51,8 +51,8 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
           , record.uploadFileName
           , "\"(コード生成結果)"
           ]
-    , pType: PureScript.PType { moduleName: PureScript.primModuleName, name: "String", argument: Maybe.Nothing }
-    , expr: PureScript.StringLiteral record.uploadFileName
+    , pType: PureScriptWellknown.primString
+    , expr: PureScriptData.StringLiteral record.uploadFileName
     , isExport: true
     }
 
@@ -68,18 +68,18 @@ staticResourceModuleName = "StaticResource"
 srcDirectoryPath :: FileSystem.DirectoryPath
 srcDirectoryPath = FileSystem.DirectoryPath [ "src" ]
 
-originPureScriptModule :: PureScript.Module
+originPureScriptModule :: PureScriptData.Module
 originPureScriptModule =
-  PureScript.Module
+  PureScriptData.Module
     { name:
-        PureScript.ModuleName
+        PureScriptData.ModuleName
           (NonEmptyArray.cons' creativeRecordModuleName [ originModuleName ])
     , definitionList:
-        [ PureScript.Definition
+        [ PureScriptData.Definition
             { name: "origin"
             , document: "アプリケーションのオリジン (コード生成結果)"
-            , pType: PureScript.PType { moduleName: PureScript.primModuleName, name: "String", argument: Maybe.Nothing }
-            , expr: PureScript.StringLiteral "http://localhost:1234"
+            , pType: PureScriptWellknown.primString
+            , expr: PureScriptData.StringLiteral "http://localhost:1234"
             , isExport: true
             }
         ]
