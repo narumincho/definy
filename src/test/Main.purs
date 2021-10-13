@@ -1,6 +1,7 @@
 module Test.Main (main) where
 
 import Prelude
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe as Maybe
 import Data.UInt as UInt
 import Effect as Effect
@@ -100,14 +101,14 @@ pureScriptCodeGenerate =
     { actual:
         PureScript.toString
           ( PureScript.Module
-              { name: PureScript.ModuleName [ "Sample" ]
+              { name: PureScript.ModuleName (NonEmptyArray.singleton "Sample")
               , definitionList:
                   [ PureScript.Definition
                       { name: "origin"
                       , document: "オリジン"
                       , pType:
                           PureScript.PType
-                            { moduleName: PureScript.ModuleName [ "Prim" ]
+                            { moduleName: PureScript.primModuleName
                             , name: "String"
                             , argument: Maybe.Nothing
                             }
@@ -119,7 +120,7 @@ pureScriptCodeGenerate =
                       , document: "サンプルデータ\n改行付きのドキュメント"
                       , pType:
                           PureScript.PType
-                            { moduleName: PureScript.ModuleName [ "Prim" ]
+                            { moduleName: PureScript.primModuleName
                             , name: "String"
                             , argument: Maybe.Nothing
                             }

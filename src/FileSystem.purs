@@ -21,6 +21,7 @@ module FileSystem
 
 import Prelude
 import Data.Array as Array
+import Data.Array.NonEmpty as ArrayNonEmpty
 import Data.Maybe as Maybe
 import Data.String as String
 import Effect.Aff as Aff
@@ -145,6 +146,9 @@ distributionDirectoryPathToDirectoryPath (DistributionDirectoryPath { appName, f
 distributionFilePathToDirectoryPath :: DistributionFilePath -> DistributionDirectoryPath
 distributionFilePathToDirectoryPath (DistributionFilePath { directoryPath }) = directoryPath
 
+directoryPathPushDirectoryNameList :: DirectoryPath -> Array String -> DirectoryPath
+directoryPathPushDirectoryNameList (DirectoryPath directoryPath) list = DirectoryPath (append directoryPath list)
+
 -- | distribution に ファイルを文字列として書き込む
 writeTextFileInDistribution :: DistributionFilePath -> String -> Aff.Aff Unit
 writeTextFileInDistribution distributionFilePath content =
@@ -164,14 +168,19 @@ writeTextFileInDistribution distributionFilePath content =
           EffectClass.liftEffect (Console.log (append filePath "の書き込みに成功"))
       )
 
-writePureScript :: DirectoryPath -> String -> PureScript.Module -> Aff.Aff Unit
-writePureScript directoryPath fileNameWithExtensiton pModule =
+writePureScript :: DirectoryPath -> PureScript.Module -> Aff.Aff Unit
+writePureScript srcDirectoryPath pModule =
   let
+    moduleNameAsNonEmptyArrayUnsnoced = ArrayNonEmpty.unsnoc (PureScript.moduleNameAsString pModule)
+
+    directoryPath :: DirectoryPath
+    directoryPath = directoryPathPushDirectoryNameList srcDirectoryPath moduleNameAsNonEmptyArrayUnsnoced.init
+
     dirPath :: String
     dirPath = directoryPathToString directoryPath
 
     filePath :: String
-    filePath = filePathToString (FilePath { directoryPath, fileName: fileNameWithExtensiton, fileType: Maybe.Just FileType.PureScript })
+    filePath = filePathToString (FilePath { directoryPath, fileName: moduleNameAsNonEmptyArrayUnsnoced.last, fileType: Maybe.Just FileType.PureScript })
   in
     bind
       ( bind

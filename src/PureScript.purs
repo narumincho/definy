@@ -4,11 +4,13 @@ module PureScript
   , PType(..)
   , toString
   , Expr(..)
-  , moduleNameFrom
   , ModuleName(..)
+  , moduleNameAsString
+  , primModuleName
   ) where
 
 import Data.Array as Array
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe as Maybe
 import Data.Set as Set
 import Data.String as String
@@ -30,7 +32,7 @@ newtype Definition
   }
 
 newtype ModuleName
-  = ModuleName (Array String)
+  = ModuleName (NonEmptyArray.NonEmptyArray String)
 
 derive instance moduleNameEq :: Prelude.Eq ModuleName
 
@@ -42,6 +44,9 @@ newtype PType
 data Expr
   = Expr { moduleName :: ModuleName, name :: String, argument :: Maybe.Maybe Expr }
   | StringLiteral String
+
+moduleNameAsString :: Module -> NonEmptyArray.NonEmptyArray String
+moduleNameAsString (Module { name: ModuleName name }) = name
 
 toString :: Module -> String
 toString module_@(Module { name, definitionList }) =
@@ -73,14 +78,11 @@ toString module_@(Module { name, definitionList }) =
 moduleNameCode :: Module -> String
 moduleNameCode (Module { name, definitionList }) = String.joinWith "" ([ "module ", moduleNameToString name, "(", String.joinWith ", " (collectExportDefinition definitionList), ") where" ])
 
-moduleNameFrom :: Array String -> ModuleName
-moduleNameFrom = ModuleName
-
 moduleNameToString :: ModuleName -> String
-moduleNameToString (ModuleName stringList) = String.joinWith "." stringList
+moduleNameToString (ModuleName stringList) = String.joinWith "." (NonEmptyArray.toArray stringList)
 
 moduleNameToQualifiedName :: ModuleName -> String
-moduleNameToQualifiedName (ModuleName stringList) = String.joinWith "_" stringList
+moduleNameToQualifiedName (ModuleName stringList) = String.joinWith "_" (NonEmptyArray.toArray stringList)
 
 collectInportModule :: Module -> Set.Set ModuleName
 collectInportModule (Module { name, definitionList }) =
@@ -200,3 +202,6 @@ documentToString document =
             )
         )
         "\n"
+
+primModuleName :: ModuleName
+primModuleName = ModuleName (NonEmptyArray.singleton "Prim")
