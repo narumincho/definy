@@ -2,9 +2,9 @@
 
 module CreativeRecord.Origin(origin) where
 
-import Prim as Prim
+import Prim as M0
 
 -- | アプリケーションのオリジン (コード生成結果)
-origin :: Prim.String
+origin :: M0.String
 origin = "http://localhost:1234"
 

@@ -72,10 +72,11 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
                 , name: NonEmptyString.cons (String.codePointFromChar 'p') "athAndSearchParams"
                 }
           , arguments:
-              NonEmptyArray.singleton
-                ( ( PureScriptData.ArrayLiteral
-                      [ PureScriptData.StringLiteral record.uploadFileName ]
-                  )
+              NonEmptyArray.cons
+                ( PureScriptData.ArrayLiteral
+                    [ PureScriptData.StringLiteral record.uploadFileName ]
+                )
+                ( NonEmptyArray.singleton PureScriptWellknown.dataMapEmpty
                 )
           }
     , isExport: true
