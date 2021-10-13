@@ -1,6 +1,7 @@
 module View.ToHtml where
 
 import Css as Css
+import Data.String.NonEmpty as NonEmptyString
 import Data.Array as Array
 import Data.Map as Map
 import Data.Maybe as Maybe
@@ -374,14 +375,18 @@ percentageOrRemWidthToCssDeclaration = case _ of
 
 viewStyleToSha256HashValue :: ViewStyle -> String
 viewStyleToSha256HashValue (ViewStyle { declarationList, hoverDeclarationList }) =
-  Hash.stringToSha256HashValue
-    ( String.joinWith "!"
-        [ Css.declarationListToString declarationList
-        , Css.declarationListToString hoverDeclarationList
-        ]
+  NonEmptyString.toString
+    ( Hash.stringToSha256HashValue
+        ( String.joinWith "!"
+            [ Css.declarationListToString declarationList
+            , Css.declarationListToString hoverDeclarationList
+            ]
+        )
     )
 
 keyframeListToSha256HashValue :: Array Css.Keyframe -> String
 keyframeListToSha256HashValue keyframeList =
-  Hash.stringToSha256HashValue
-    (String.joinWith "!" (Prelude.map Css.keyFrameToString keyframeList))
+  NonEmptyString.toString
+    ( Hash.stringToSha256HashValue
+        (String.joinWith "!" (Prelude.map Css.keyFrameToString keyframeList))
+    )

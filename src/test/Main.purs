@@ -3,6 +3,8 @@ module Test.Main (main) where
 import Prelude
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe as Maybe
+import Data.String as String
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect
 import FileSystem as FileSystem
@@ -93,8 +95,15 @@ groupBySize2 =
 fileNameWithExtensitonParse :: Effect.Effect Unit
 fileNameWithExtensitonParse =
   Assert.assertEqual
-    { actual: FileSystem.fileNameWithExtensitonParse "sample.test.js"
-    , expected: { fileName: "sample.test", fileType: Maybe.Just FileType.JavaScript }
+    { actual:
+        FileSystem.fileNameWithExtensitonParse
+          (NonEmptyString.cons (String.codePointFromChar 's') "ample.test.js")
+    , expected:
+        Maybe.Just
+          { fileName:
+              NonEmptyString.cons (String.codePointFromChar 's') "ample.test"
+          , fileType: Maybe.Just FileType.JavaScript
+          }
     }
 
 pureScriptCodeGenerate :: Effect.Effect Unit
@@ -103,17 +112,17 @@ pureScriptCodeGenerate =
     { actual:
         PureScriptToString.toString
           ( PureScriptData.Module
-              { name: PureScriptData.ModuleName (NonEmptyArray.singleton "Sample")
+              { name: PureScriptData.ModuleName (NonEmptyArray.singleton (NonEmptyString.cons (String.codePointFromChar 'S') "ample"))
               , definitionList:
                   [ PureScriptData.Definition
-                      { name: "origin"
+                      { name: NonEmptyString.cons (String.codePointFromChar 'o') "rigin"
                       , document: "オリジン"
                       , pType: PureScriptWellknown.primString
                       , expr: PureScriptData.StringLiteral "http://narumincho.com"
                       , isExport: true
                       }
                   , PureScriptData.Definition
-                      { name: "sample"
+                      { name: NonEmptyString.cons (String.codePointFromChar 's') "ample"
                       , document: "サンプルデータ\n改行付きのドキュメント"
                       , pType: PureScriptWellknown.primString
                       , expr: PureScriptData.StringLiteral "改行も\nしっかりエスケープされてるかな?"

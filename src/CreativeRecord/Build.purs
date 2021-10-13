@@ -5,6 +5,8 @@ import Control.Parallel.Class as ParallelClass
 import Data.Either as Either
 import Data.Maybe as Mabye
 import Data.Maybe as Maybe
+import Data.String as String
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect
 import Effect.Aff as Aff
@@ -19,8 +21,8 @@ import Node.Buffer as Buffer
 import Node.ChildProcess as ChildProcess
 import Node.Encoding as Encoding
 
-appName :: String
-appName = "creative-record"
+appName :: NonEmptyString.NonEmptyString
+appName = NonEmptyString.cons (String.codePointFromChar 'c') "reative-record"
 
 firstClientProgramFilePath :: String
 firstClientProgramFilePath = "./distribution/creative-record/client-spago-result/program.js"
@@ -31,11 +33,17 @@ esbuildClientProgramFileDirectoryPath =
     { appName
     , folderNameMaybe:
         Maybe.Just
-          "client-esbuild-result"
+          ( NonEmptyString.cons
+              (String.codePointFromChar 'c')
+              "lient-esbuild-result"
+          )
     }
 
-hostingDistributionDirectoryName :: String
-hostingDistributionDirectoryName = "hosting"
+hostingDistributionDirectoryName :: NonEmptyString.NonEmptyString
+hostingDistributionDirectoryName =
+  NonEmptyString.cons
+    (String.codePointFromChar 'h')
+    "osting"
 
 hostingDirectoryPath :: FileSystem.DistributionDirectoryPath
 hostingDirectoryPath =
@@ -89,7 +97,7 @@ runEsbuild :: Aff.Aff Unit
 runEsbuild = do
   EsBuild.build
     { entryPoints: firstClientProgramFilePath
-    , outdir: FileSystem.distributionDirectoryPathToString esbuildClientProgramFileDirectoryPath
+    , outdir: NonEmptyString.toString (FileSystem.distributionDirectoryPathToString esbuildClientProgramFileDirectoryPath)
     , sourcemap: false
     , target: [ "chrome94", "firefox93", "safari15" ]
     }
@@ -100,7 +108,7 @@ readEsbuildResultClientProgramFile = do
   clientProgramAsString <-
     FileSystem.readTextFileInDistribution
       ( FileSystem.DistributionFilePath
-          { directoryPath: esbuildClientProgramFileDirectoryPath, fileName: "program", fileType: Maybe.Just FileType.JavaScript }
+          { directoryPath: esbuildClientProgramFileDirectoryPath, fileName: NonEmptyString.cons (String.codePointFromChar 'p') "rogram", fileType: Maybe.Just FileType.JavaScript }
       )
   let
     clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString
@@ -112,7 +120,7 @@ writeFirebaseJson = do
   FileSystem.writeTextFileInDistribution
     ( FileSystem.DistributionFilePath
         { directoryPath: FileSystem.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
-        , fileName: "firebase"
+        , fileName: NonEmptyString.cons (String.codePointFromChar 'f') "irebase"
         , fileType: Maybe.Just FileType.Json
         }
     )
@@ -128,7 +136,10 @@ writeFirebaseJson = do
                   }
             , firestoreRulesFilePath: "./firestore.rules"
             , functionsDistributionPath: "./functions"
-            , hostingDistributionPath: append "./" hostingDistributionDirectoryName
+            , hostingDistributionPath:
+                append
+                  "./"
+                  (NonEmptyString.toString hostingDistributionDirectoryName)
             , hostingRewites: []
             }
         )

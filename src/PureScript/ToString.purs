@@ -5,6 +5,7 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe as Maybe
 import Data.Set as Set
 import Data.String as String
+import Data.String.NonEmpty as NonEmptyString
 import Prelude as Prelude
 import PureScript.Data as Data
 
@@ -39,10 +40,14 @@ moduleNameCode :: Data.Module -> String
 moduleNameCode (Data.Module { name, definitionList }) = String.joinWith "" ([ "module ", moduleNameToString name, "(", String.joinWith ", " (collectExportDefinition definitionList), ") where" ])
 
 moduleNameToString :: Data.ModuleName -> String
-moduleNameToString (Data.ModuleName stringList) = String.joinWith "." (NonEmptyArray.toArray stringList)
+moduleNameToString (Data.ModuleName stringList) =
+  String.joinWith "."
+    (Prelude.map NonEmptyString.toString (NonEmptyArray.toArray stringList))
 
 moduleNameToQualifiedName :: Data.ModuleName -> String
-moduleNameToQualifiedName (Data.ModuleName stringList) = String.joinWith "_" (NonEmptyArray.toArray stringList)
+moduleNameToQualifiedName (Data.ModuleName stringList) =
+  String.joinWith "_"
+    (Prelude.map NonEmptyString.toString (NonEmptyArray.toArray stringList))
 
 collectInportModule :: Data.Module -> Set.Set Data.ModuleName
 collectInportModule (Data.Module { name, definitionList }) =
@@ -68,20 +73,20 @@ collectInportModuleInType (Data.PType { moduleName, argument }) =
 
 collectInportModuleInExpr :: Data.Expr -> Set.Set Data.ModuleName
 collectInportModuleInExpr = case _ of
-  (Data.Expr { moduleName, argument }) ->
-    Set.insert
-      moduleName
-      ( case argument of
-          Maybe.Just argumentExpr -> collectInportModuleInExpr argumentExpr
-          Maybe.Nothing -> Set.empty
+  Data.Call { function, arguments } ->
+    Set.unions
+      ( Prelude.map collectInportModuleInExpr
+          (Array.cons function (NonEmptyArray.toArray arguments))
       )
-  (Data.StringLiteral _) -> Set.empty
+  Data.Variable { moduleName } -> Set.singleton moduleName
+  Data.StringLiteral _ -> Set.empty
+  Data.ArrayLiteral list -> Set.unions (Prelude.map collectInportModuleInExpr list)
 
 collectExportDefinition :: Array Data.Definition -> Array String
 collectExportDefinition list =
   Array.mapMaybe
     ( case _ of
-        Data.Definition { isExport: true, name } -> Maybe.Just name
+        Data.Definition { isExport: true, name } -> Maybe.Just (NonEmptyString.toString name)
         Data.Definition _ -> Maybe.Nothing
     )
     list
@@ -90,11 +95,11 @@ definitionToString :: Data.ModuleName -> Data.Definition -> String
 definitionToString selfModuleName (Data.Definition { name, document, pType, expr }) =
   String.joinWith ""
     [ documentToString document
-    , name
+    , NonEmptyString.toString name
     , " :: "
     , typeToString selfModuleName pType
     , "\n"
-    , name
+    , NonEmptyString.toString name
     , " = "
     , exprToString selfModuleName expr
     ]
@@ -112,15 +117,15 @@ typeToString selfModuleName (Data.PType { moduleName, name, argument }) =
 
 exprToString :: Data.ModuleName -> Data.Expr -> String
 exprToString selfModuleName = case _ of
-  Data.Expr { moduleName, name, argument } ->
-    String.joinWith ""
-      ( Array.concat
-          [ [ moduleNameToStringSelfEmpty selfModuleName moduleName, name ]
-          , case argument of
-              Maybe.Just argumentExpr -> [ "(", exprToString selfModuleName argumentExpr, ")" ]
-              Maybe.Nothing -> []
-          ]
+  Data.Call { function, arguments } ->
+    String.joinWith " "
+      ( Prelude.map
+          (\expr -> String.joinWith "" [ "(", exprToString selfModuleName expr, ")" ])
+          (Array.cons function (NonEmptyArray.toArray arguments))
       )
+  Data.Variable { moduleName, name } ->
+    String.joinWith ""
+      [ moduleNameToStringSelfEmpty selfModuleName moduleName, NonEmptyString.toString name ]
   Data.StringLiteral value ->
     String.joinWith ""
       [ "\""
@@ -130,6 +135,12 @@ exprToString selfModuleName = case _ of
               )
           )
       , "\""
+      ]
+  Data.ArrayLiteral list ->
+    String.joinWith ""
+      [ "[ "
+      , String.joinWith ", " (Prelude.map (exprToString selfModuleName) list)
+      , " ]"
       ]
 
 moduleNameToStringSelfEmpty :: Data.ModuleName -> Data.ModuleName -> String

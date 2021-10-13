@@ -3,6 +3,7 @@ module CreativeRecord.CodeGen where
 import Control.Parallel.Class as ParallelClass
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.String as String
+import Data.String.NonEmpty as NonEmptyString
 import Effect.Aff as Aff
 import FileSystem as FileSystem
 import Prelude as Prelude
@@ -25,14 +26,18 @@ staticResourceCodeGen :: Aff.Aff Prelude.Unit
 staticResourceCodeGen =
   Prelude.bind
     ( StaticResourceFile.getStaticResourceFileResult
-        (FileSystem.DirectoryPath [ "narumincho-creative-record", "resource" ])
+        ( FileSystem.DirectoryPath
+            [ NonEmptyString.cons (String.codePointFromChar 'n') "arumincho-creative-record"
+            , NonEmptyString.cons (String.codePointFromChar 'r') "esource"
+            ]
+        )
     )
     (\resultList -> FileSystem.writePureScript srcDirectoryPath (staticFileResultToPureScriptModule resultList))
 
 staticFileResultToPureScriptModule :: Array StaticResourceFile.StaticResourceFileResult -> PureScriptData.Module
 staticFileResultToPureScriptModule resultList =
   PureScriptData.Module
-    { name: PureScriptData.ModuleName (NonEmptyArray.cons' creativeRecordModuleName [ staticResourceModuleName ])
+    { name: staticResourceModuleName
     , definitionList:
         Prelude.map
           staticResourceFileResultToPureScriptDefinition
@@ -46,37 +51,69 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
     , document:
         String.joinWith ""
           [ "static な ファイル の \""
-          , FileSystem.filePathToString record.originalFilePath
+          , NonEmptyString.toString (FileSystem.filePathToString record.originalFilePath)
           , "\"をリクエストするためのURL. ファイルのハッシュ値は "
           , record.uploadFileName
           , "\"(コード生成結果)"
           ]
     , pType: PureScriptWellknown.primString
-    , expr: PureScriptData.StringLiteral record.uploadFileName
+    , expr:
+        PureScriptData.Call
+          { function:
+              PureScriptData.Variable
+                { moduleName:
+                    PureScriptData.ModuleName
+                      ( NonEmptyArray.singleton
+                          ( NonEmptyString.cons
+                              (String.codePointFromChar 'S')
+                              "tructuredUrl"
+                          )
+                      )
+                , name: NonEmptyString.cons (String.codePointFromChar 'p') "athAndSearchParams"
+                }
+          , arguments:
+              NonEmptyArray.singleton
+                ( ( PureScriptData.ArrayLiteral
+                      [ PureScriptData.StringLiteral record.uploadFileName ]
+                  )
+                )
+          }
     , isExport: true
     }
 
-creativeRecordModuleName :: String
-creativeRecordModuleName = "CreativeRecord"
+creativeRecordModuleName :: NonEmptyString.NonEmptyString
+creativeRecordModuleName = NonEmptyString.cons (String.codePointFromChar 'C') "reativeRecord"
 
-originModuleName :: String
-originModuleName = "Origin"
+originModuleName :: PureScriptData.ModuleName
+originModuleName =
+  PureScriptData.ModuleName
+    ( NonEmptyArray.cons' creativeRecordModuleName
+        [ NonEmptyString.cons
+            (String.codePointFromChar 'O')
+            "rigin"
+        ]
+    )
 
-staticResourceModuleName :: String
-staticResourceModuleName = "StaticResource"
+staticResourceModuleName :: PureScriptData.ModuleName
+staticResourceModuleName =
+  PureScriptData.ModuleName
+    ( NonEmptyArray.cons' creativeRecordModuleName
+        [ NonEmptyString.cons
+            (String.codePointFromChar 'S')
+            "taticResource"
+        ]
+    )
 
 srcDirectoryPath :: FileSystem.DirectoryPath
-srcDirectoryPath = FileSystem.DirectoryPath [ "src" ]
+srcDirectoryPath = FileSystem.DirectoryPath [ NonEmptyString.cons (String.codePointFromChar 's') "rc" ]
 
 originPureScriptModule :: PureScriptData.Module
 originPureScriptModule =
   PureScriptData.Module
-    { name:
-        PureScriptData.ModuleName
-          (NonEmptyArray.cons' creativeRecordModuleName [ originModuleName ])
+    { name: originModuleName
     , definitionList:
         [ PureScriptData.Definition
-            { name: "origin"
+            { name: NonEmptyString.cons (String.codePointFromChar 'o') "rigin"
             , document: "アプリケーションのオリジン (コード生成結果)"
             , pType: PureScriptWellknown.primString
             , expr: PureScriptData.StringLiteral "http://localhost:1234"
