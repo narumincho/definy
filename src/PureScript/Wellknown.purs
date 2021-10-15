@@ -5,13 +5,14 @@ import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import PureScript.Data as Data
+import Type.Proxy as Proxy
 
 -- | https://pursuit.purescript.org/builtins/docs/Prim
 primModuleName :: Data.ModuleName
 primModuleName =
   Data.ModuleName
     ( NonEmptyArray.singleton
-        (NonEmptyString.cons (String.codePointFromChar 'P') "rim")
+        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Prim"))
     )
 
 -- | https://pursuit.purescript.org/builtins/docs/Prim#t:String

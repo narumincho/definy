@@ -2,6 +2,7 @@ module CreativeRecord.CodeGen where
 
 import Control.Parallel.Class as ParallelClass
 import Data.Array.NonEmpty as NonEmptyArray
+import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Effect.Aff as Aff
@@ -10,6 +11,7 @@ import Prelude as Prelude
 import PureScript.Data as PureScriptData
 import PureScript.Wellknown as PureScriptWellknown
 import StaticResourceFile as StaticResourceFile
+import Type.Proxy as Proxy
 
 codeGen :: Aff.Aff Prelude.Unit
 codeGen =
@@ -56,7 +58,12 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
           , record.uploadFileName
           , "\"(コード生成結果)"
           ]
-    , pType: PureScriptWellknown.primString
+    , pType:
+        PureScriptData.PType
+          { moduleName: PureScriptData.ModuleName (NonEmptyArray.singleton (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "StructuredUrl")))
+          , name: "PathAndSearchParams"
+          , argument: Maybe.Nothing
+          }
     , expr:
         PureScriptData.Call
           { function:

@@ -136,15 +136,15 @@ pureScriptCodeGenerate =
 
 module Sample(origin) where
 
-import Prim as Prim
+import Prim as M0
 
 -- | オリジン
-origin :: Prim.String
+origin :: M0.String
 origin = "http://narumincho.com"
 
 -- | サンプルデータ
 -- | 改行付きのドキュメント
-sample :: Prim.String
+sample :: M0.String
 sample = "改行も\nしっかりエスケープされてるかな?"
 
 """
