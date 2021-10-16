@@ -29,8 +29,8 @@ staticResourceCodeGen =
   Prelude.bind
     ( StaticResourceFile.getStaticResourceFileResult
         ( FileSystem.DirectoryPath
-            [ NonEmptyString.cons (String.codePointFromChar 'n') "arumincho-creative-record"
-            , NonEmptyString.cons (String.codePointFromChar 'r') "esource"
+            [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho-creative-record")
+            , NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "resource")
             ]
         )
     )
@@ -71,12 +71,11 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
                 { moduleName:
                     PureScriptData.ModuleName
                       ( NonEmptyArray.singleton
-                          ( NonEmptyString.cons
-                              (String.codePointFromChar 'S')
-                              "tructuredUrl"
+                          ( NonEmptyString.nes
+                              (Proxy.Proxy :: Proxy.Proxy "StructuredUrl")
                           )
                       )
-                , name: NonEmptyString.cons (String.codePointFromChar 'p') "athAndSearchParams"
+                , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "pathAndSearchParams")
                 }
           , arguments:
               NonEmptyArray.cons
@@ -90,15 +89,14 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
     }
 
 creativeRecordModuleName :: NonEmptyString.NonEmptyString
-creativeRecordModuleName = NonEmptyString.cons (String.codePointFromChar 'C') "reativeRecord"
+creativeRecordModuleName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "CreativeRecord")
 
 originModuleName :: PureScriptData.ModuleName
 originModuleName =
   PureScriptData.ModuleName
     ( NonEmptyArray.cons' creativeRecordModuleName
-        [ NonEmptyString.cons
-            (String.codePointFromChar 'O')
-            "rigin"
+        [ NonEmptyString.nes
+            (Proxy.Proxy :: Proxy.Proxy "Origin")
         ]
     )
 
@@ -106,14 +104,15 @@ staticResourceModuleName :: PureScriptData.ModuleName
 staticResourceModuleName =
   PureScriptData.ModuleName
     ( NonEmptyArray.cons' creativeRecordModuleName
-        [ NonEmptyString.cons
-            (String.codePointFromChar 'S')
-            "taticResource"
+        [ NonEmptyString.nes
+            (Proxy.Proxy :: Proxy.Proxy "StaticResource")
         ]
     )
 
 srcDirectoryPath :: FileSystem.DirectoryPath
-srcDirectoryPath = FileSystem.DirectoryPath [ NonEmptyString.cons (String.codePointFromChar 's') "rc" ]
+srcDirectoryPath =
+  FileSystem.DirectoryPath
+    [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "src") ]
 
 originPureScriptModule :: PureScriptData.Module
 originPureScriptModule =
@@ -121,7 +120,7 @@ originPureScriptModule =
     { name: originModuleName
     , definitionList:
         [ PureScriptData.Definition
-            { name: NonEmptyString.cons (String.codePointFromChar 'o') "rigin"
+            { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "origin")
             , document: "アプリケーションのオリジン (コード生成結果)"
             , pType: PureScriptWellknown.primString
             , expr: PureScriptData.StringLiteral "http://localhost:1234"

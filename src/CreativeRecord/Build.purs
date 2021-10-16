@@ -20,9 +20,10 @@ import Hash as Hash
 import Node.Buffer as Buffer
 import Node.ChildProcess as ChildProcess
 import Node.Encoding as Encoding
+import Type.Proxy as Proxy
 
 appName :: NonEmptyString.NonEmptyString
-appName = NonEmptyString.cons (String.codePointFromChar 'c') "reative-record"
+appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "creative-record")
 
 firstClientProgramFilePath :: String
 firstClientProgramFilePath = "./distribution/creative-record/client-spago-result/program.js"
@@ -33,17 +34,15 @@ esbuildClientProgramFileDirectoryPath =
     { appName
     , folderNameMaybe:
         Maybe.Just
-          ( NonEmptyString.cons
-              (String.codePointFromChar 'c')
-              "lient-esbuild-result"
+          ( NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "client-esbuild-result")
           )
     }
 
 hostingDistributionDirectoryName :: NonEmptyString.NonEmptyString
 hostingDistributionDirectoryName =
-  NonEmptyString.cons
-    (String.codePointFromChar 'h')
-    "osting"
+  NonEmptyString.nes
+    (Proxy.Proxy :: Proxy.Proxy "hosting")
 
 hostingDirectoryPath :: FileSystem.DistributionDirectoryPath
 hostingDirectoryPath =
@@ -108,7 +107,10 @@ readEsbuildResultClientProgramFile = do
   clientProgramAsString <-
     FileSystem.readTextFileInDistribution
       ( FileSystem.DistributionFilePath
-          { directoryPath: esbuildClientProgramFileDirectoryPath, fileName: NonEmptyString.cons (String.codePointFromChar 'p') "rogram", fileType: Maybe.Just FileType.JavaScript }
+          { directoryPath: esbuildClientProgramFileDirectoryPath
+          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "program")
+          , fileType: Maybe.Just FileType.JavaScript
+          }
       )
   let
     clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString
@@ -120,7 +122,7 @@ writeFirebaseJson = do
   FileSystem.writeTextFileInDistribution
     ( FileSystem.DistributionFilePath
         { directoryPath: FileSystem.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
-        , fileName: NonEmptyString.cons (String.codePointFromChar 'f') "irebase"
+        , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase")
         , fileType: Maybe.Just FileType.Json
         }
     )

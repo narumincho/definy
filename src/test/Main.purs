@@ -14,6 +14,7 @@ import PureScript.ToString as PureScriptToString
 import PureScript.Wellknown as PureScriptWellknown
 import Test.Assert as Assert
 import Util as Util
+import Type.Proxy as Proxy
 
 main :: Effect.Effect Unit
 main = do
@@ -97,11 +98,11 @@ fileNameWithExtensitonParse =
   Assert.assertEqual
     { actual:
         FileSystem.fileNameWithExtensitonParse
-          (NonEmptyString.cons (String.codePointFromChar 's') "ample.test.js")
+          (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "sample.test.js"))
     , expected:
         Maybe.Just
           { fileName:
-              NonEmptyString.cons (String.codePointFromChar 's') "ample.test"
+              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "sample.test")
           , fileType: Maybe.Just FileType.JavaScript
           }
     }
@@ -112,17 +113,21 @@ pureScriptCodeGenerate =
     { actual:
         PureScriptToString.toString
           ( PureScriptData.Module
-              { name: PureScriptData.ModuleName (NonEmptyArray.singleton (NonEmptyString.cons (String.codePointFromChar 'S') "ample"))
+              { name:
+                  PureScriptData.ModuleName
+                    ( NonEmptyArray.singleton
+                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Sample"))
+                    )
               , definitionList:
                   [ PureScriptData.Definition
-                      { name: NonEmptyString.cons (String.codePointFromChar 'o') "rigin"
+                      { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "origin")
                       , document: "オリジン"
                       , pType: PureScriptWellknown.primString
                       , expr: PureScriptData.StringLiteral "http://narumincho.com"
                       , isExport: true
                       }
                   , PureScriptData.Definition
-                      { name: NonEmptyString.cons (String.codePointFromChar 's') "ample"
+                      { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "sample")
                       , document: "サンプルデータ\n改行付きのドキュメント"
                       , pType: PureScriptWellknown.primString
                       , expr: PureScriptData.StringLiteral "改行も\nしっかりエスケープされてるかな?"

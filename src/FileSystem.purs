@@ -35,6 +35,7 @@ import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
 import PureScript.Data as PureScriptData
 import PureScript.ToString as PureScriptToString
+import Type.Proxy as Proxy
 
 newtype DistributionDirectoryPath
   = DistributionDirectoryPath
@@ -70,7 +71,7 @@ directoryPathToString (DirectoryPath directoryNameList) =
   if Array.null directoryNameList then
     (NonEmptyString.singleton (String.codePointFromChar '.'))
   else
-    NonEmptyString.appendString (NonEmptyString.cons (String.codePointFromChar '.') "/")
+    NonEmptyString.appendString (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "./"))
       (NonEmptyString.joinWith "/" directoryNameList)
 
 filePathToString :: FilePath -> NonEmptyString.NonEmptyString
@@ -93,12 +94,12 @@ fileNameWithFileTypeToString fileName fileType =
 
 fileTypeToExtension :: FileType.FileType -> NonEmptyString.NonEmptyString
 fileTypeToExtension = case _ of
-  FileType.Png -> NonEmptyString.cons (String.codePointFromChar 'p') "ng"
-  FileType.TypeScript -> NonEmptyString.cons (String.codePointFromChar 't') "s"
-  FileType.JavaScript -> NonEmptyString.cons (String.codePointFromChar 'j') "s"
-  FileType.Html -> NonEmptyString.cons (String.codePointFromChar 'h') "tml"
-  FileType.Json -> NonEmptyString.cons (String.codePointFromChar 'j') "son"
-  FileType.PureScript -> NonEmptyString.cons (String.codePointFromChar 'p') "urs"
+  FileType.Png -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "png")
+  FileType.TypeScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ts")
+  FileType.JavaScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "js")
+  FileType.Html -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
+  FileType.Json -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "json")
+  FileType.PureScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "purs")
 
 extensionToFileType :: String -> Maybe.Maybe FileType.FileType
 extensionToFileType = case _ of
@@ -136,7 +137,7 @@ distributionDirectoryPathToDirectoryPath :: DistributionDirectoryPath -> Directo
 distributionDirectoryPathToDirectoryPath (DistributionDirectoryPath { appName, folderNameMaybe }) =
   ( DirectoryPath
       ( Array.concat
-          [ [ NonEmptyString.cons (String.codePointFromChar 'd') "istribution", appName ]
+          [ [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "distribution"), appName ]
           , case folderNameMaybe of
               Maybe.Just folderName -> [ folderName ]
               Maybe.Nothing -> []
