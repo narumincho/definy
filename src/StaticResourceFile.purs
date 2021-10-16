@@ -3,6 +3,7 @@ module StaticResourceFile (StaticResourceFileResult(..), getStaticResourceFileRe
 import Control.Parallel as Parallel
 import Data.Maybe as Maybe
 import Data.String as String
+import Data.String.NonEmpty as NonEmptyString
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import Effect.Console as Console
@@ -17,7 +18,7 @@ newtype StaticResourceFileResult
   { {- 
       入力のファイル名. オリジナルのファイル名. 拡張子あり 
     -} originalFilePath :: FileSystem.FilePath
-  , fileId :: String
+  , fileId :: NonEmptyString.NonEmptyString
   , requestPath :: String
   {- 
     Firebase Hosting などにアップロードするファイル名. 拡張子は含まれない 
@@ -32,7 +33,10 @@ getFileHash filePath@(FileSystem.FilePath { fileType }) =
   Prelude.bind
     ( EffectClass.liftEffect
         ( Console.log
-            (Prelude.append (FileSystem.filePathToString filePath) "のハッシュ値を取得中")
+            ( Prelude.append
+                (NonEmptyString.toString (FileSystem.filePathToString filePath))
+                "のハッシュ値を取得中"
+            )
         )
     )
     ( \_ ->
@@ -75,11 +79,11 @@ filePathToStaticResourceFileResultAff filePath =
         StaticResourceFileResult
           { originalFilePath: filePath
           , fileId:
-              Prelude.append (FileSystem.filePathFileName filePath)
+              NonEmptyString.appendString (FileSystem.filePathFileName filePath)
                 ( case FileSystem.filePathFileType filePath of
                     Maybe.Just fileType ->
                       firstUppercase
-                        (FileSystem.fileTypeToExtension fileType)
+                        (NonEmptyString.toString (FileSystem.fileTypeToExtension fileType))
                     Maybe.Nothing -> ""
                 )
           , requestPath: hashValue

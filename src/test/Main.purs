@@ -1,14 +1,19 @@
 module Test.Main (main) where
 
 import Prelude
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe as Maybe
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect
 import FileSystem as FileSystem
 import FileType as FileType
-import PureScript as PureScript
+import PureScript.Data as PureScriptData
+import PureScript.ToString as PureScriptToString
+import PureScript.Wellknown as PureScriptWellknown
 import Test.Assert as Assert
 import Util as Util
+import Type.Proxy as Proxy
 
 main :: Effect.Effect Unit
 main = do
@@ -90,40 +95,41 @@ groupBySize2 =
 fileNameWithExtensitonParse :: Effect.Effect Unit
 fileNameWithExtensitonParse =
   Assert.assertEqual
-    { actual: FileSystem.fileNameWithExtensitonParse "sample.test.js"
-    , expected: { fileName: "sample.test", fileType: Maybe.Just FileType.JavaScript }
+    { actual:
+        FileSystem.fileNameWithExtensitonParse
+          (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "sample.test.js"))
+    , expected:
+        Maybe.Just
+          { fileName:
+              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "sample.test")
+          , fileType: Maybe.Just FileType.JavaScript
+          }
     }
 
 pureScriptCodeGenerate :: Effect.Effect Unit
 pureScriptCodeGenerate =
   Assert.assertEqual
     { actual:
-        PureScript.toString
-          ( PureScript.Module
-              { name: PureScript.ModuleName [ "Sample" ]
+        PureScriptToString.toString
+          ( PureScriptData.Module
+              { name:
+                  PureScriptData.ModuleName
+                    ( NonEmptyArray.singleton
+                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Sample"))
+                    )
               , definitionList:
-                  [ PureScript.Definition
-                      { name: "origin"
+                  [ PureScriptData.Definition
+                      { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "origin")
                       , document: "オリジン"
-                      , pType:
-                          PureScript.PType
-                            { moduleName: PureScript.ModuleName [ "Prim" ]
-                            , name: "String"
-                            , argument: Maybe.Nothing
-                            }
-                      , expr: PureScript.StringLiteral "http://narumincho.com"
+                      , pType: PureScriptWellknown.primString
+                      , expr: PureScriptData.StringLiteral "http://narumincho.com"
                       , isExport: true
                       }
-                  , PureScript.Definition
-                      { name: "sample"
+                  , PureScriptData.Definition
+                      { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "sample")
                       , document: "サンプルデータ\n改行付きのドキュメント"
-                      , pType:
-                          PureScript.PType
-                            { moduleName: PureScript.ModuleName [ "Prim" ]
-                            , name: "String"
-                            , argument: Maybe.Nothing
-                            }
-                      , expr: PureScript.StringLiteral "改行も\nしっかりエスケープされてるかな?"
+                      , pType: PureScriptWellknown.primString
+                      , expr: PureScriptData.StringLiteral "改行も\nしっかりエスケープされてるかな?"
                       , isExport: false
                       }
                   ]
@@ -134,15 +140,15 @@ pureScriptCodeGenerate =
 
 module Sample(origin) where
 
-import Prim as Prim
+import Prim as M0
 
 -- | オリジン
-origin :: Prim.String
+origin :: M0.String
 origin = "http://narumincho.com"
 
 -- | サンプルデータ
 -- | 改行付きのドキュメント
-sample :: Prim.String
+sample :: M0.String
 sample = "改行も\nしっかりエスケープされてるかな?"
 
 """

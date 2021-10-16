@@ -5,6 +5,7 @@ import Control.Parallel.Class as ParallelClass
 import Data.Either as Either
 import Data.Maybe as Mabye
 import Data.Maybe as Maybe
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect
 import Effect.Aff as Aff
@@ -18,9 +19,10 @@ import Hash as Hash
 import Node.Buffer as Buffer
 import Node.ChildProcess as ChildProcess
 import Node.Encoding as Encoding
+import Type.Proxy as Proxy
 
-appName :: String
-appName = "creative-record"
+appName :: NonEmptyString.NonEmptyString
+appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "creative-record")
 
 firstClientProgramFilePath :: String
 firstClientProgramFilePath = "./distribution/creative-record/client-spago-result/program.js"
@@ -31,11 +33,15 @@ esbuildClientProgramFileDirectoryPath =
     { appName
     , folderNameMaybe:
         Maybe.Just
-          "client-esbuild-result"
+          ( NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "client-esbuild-result")
+          )
     }
 
-hostingDistributionDirectoryName :: String
-hostingDistributionDirectoryName = "hosting"
+hostingDistributionDirectoryName :: NonEmptyString.NonEmptyString
+hostingDistributionDirectoryName =
+  NonEmptyString.nes
+    (Proxy.Proxy :: Proxy.Proxy "hosting")
 
 hostingDirectoryPath :: FileSystem.DistributionDirectoryPath
 hostingDirectoryPath =
@@ -89,7 +95,7 @@ runEsbuild :: Aff.Aff Unit
 runEsbuild = do
   EsBuild.build
     { entryPoints: firstClientProgramFilePath
-    , outdir: FileSystem.distributionDirectoryPathToString esbuildClientProgramFileDirectoryPath
+    , outdir: NonEmptyString.toString (FileSystem.distributionDirectoryPathToString esbuildClientProgramFileDirectoryPath)
     , sourcemap: false
     , target: [ "chrome94", "firefox93", "safari15" ]
     }
@@ -100,19 +106,22 @@ readEsbuildResultClientProgramFile = do
   clientProgramAsString <-
     FileSystem.readTextFileInDistribution
       ( FileSystem.DistributionFilePath
-          { directoryPath: esbuildClientProgramFileDirectoryPath, fileName: "program", fileType: Maybe.Just FileType.JavaScript }
+          { directoryPath: esbuildClientProgramFileDirectoryPath
+          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "program")
+          , fileType: Maybe.Just FileType.JavaScript
+          }
       )
   let
     clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString
-  FileSystem.writeTextFile (FileSystem.DistributionFilePath { directoryPath: hostingDirectoryPath, fileName: clientProgramHashValue, fileType: Maybe.Nothing }) clientProgramAsString
+  FileSystem.writeTextFileInDistribution (FileSystem.DistributionFilePath { directoryPath: hostingDirectoryPath, fileName: clientProgramHashValue, fileType: Maybe.Nothing }) clientProgramAsString
   pure unit
 
 writeFirebaseJson :: Aff.Aff Unit
 writeFirebaseJson = do
-  FileSystem.writeTextFile
+  FileSystem.writeTextFileInDistribution
     ( FileSystem.DistributionFilePath
         { directoryPath: FileSystem.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
-        , fileName: "firebase"
+        , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase")
         , fileType: Maybe.Just FileType.Json
         }
     )
@@ -128,7 +137,10 @@ writeFirebaseJson = do
                   }
             , firestoreRulesFilePath: "./firestore.rules"
             , functionsDistributionPath: "./functions"
-            , hostingDistributionPath: append "./" hostingDistributionDirectoryName
+            , hostingDistributionPath:
+                append
+                  "./"
+                  (NonEmptyString.toString hostingDistributionDirectoryName)
             , hostingRewites: []
             }
         )

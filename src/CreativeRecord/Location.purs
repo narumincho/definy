@@ -1,7 +1,7 @@
-module CreativeRecord.Location (Location(..), toPath, toUrl) where
+module CreativeRecord.Location (Location(..), toUrl) where
 
 import Data.Map as Map
-import Out as Out
+import CreativeRecord.Origin as Origin
 import StructuredUrl as StructuredUrl
 
 data Location
@@ -22,7 +22,7 @@ data Location
 toUrl :: Location -> StructuredUrl.StructuredUrl
 toUrl location =
   StructuredUrl.StructuredUrl
-    { origin: Out.origin, pathAndSearchParams: (toPath location) }
+    { origin: Origin.origin, pathAndSearchParams: toPath location }
 
 toPath :: Location -> StructuredUrl.PathAndSearchParams
 toPath location =
@@ -42,4 +42,4 @@ toPath location =
         DesiredRouteMonster -> [ "desired-route-monster" ]
         NPetitcomIme -> [ "n-petitcom-ime" ]
     )
-    (Map.empty)
+    Map.empty
