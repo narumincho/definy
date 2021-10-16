@@ -5,7 +5,6 @@ import Control.Parallel.Class as ParallelClass
 import Data.Either as Either
 import Data.Maybe as Mabye
 import Data.Maybe as Maybe
-import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect

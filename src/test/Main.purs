@@ -3,7 +3,6 @@ module Test.Main (main) where
 import Prelude
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe as Maybe
-import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect

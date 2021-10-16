@@ -2,10 +2,8 @@ module PureScript.Wellknown (primString, dataMapEmpty) where
 
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe as Maybe
-import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import PureScript.Data as Data
-import Type.Proxy (Proxy)
 import Type.Proxy as Proxy
 
 -- | https://pursuit.purescript.org/builtins/docs/Prim
