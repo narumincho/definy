@@ -5,6 +5,7 @@ import Data.Array as Array
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String as String
+import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Html.Data as Data
 import Language as Language
@@ -50,12 +51,12 @@ htmlOptionToHtmlHtmlElement htmlOption@(Data.HtmlOption option) =
         )
     )
 
-noScriptElement :: String -> Data.HtmlElement
+noScriptElement :: NonEmptyString.NonEmptyString -> Data.HtmlElement
 noScriptElement appName =
   Data.noscript
     ( Data.Text
         ( Prelude.append
-            appName
+            (NonEmptyString.toString appName)
             " では JavaScript を使用します. ブラウザの設定で有効にしてください."
         )
     )
@@ -135,7 +136,7 @@ themeColorElement themeColor =
     )
 
 iconElement :: StructuredUrl.StructuredUrl -> Data.HtmlElement
-iconElement iconUrl = Data.link "icon" (StructuredUrl.toString iconUrl)
+iconElement iconUrl = Data.link "icon" (NonEmptyString.toString (StructuredUrl.toString iconUrl))
 
 twitterCardElement :: Data.TwitterCard -> Data.HtmlElement
 twitterCardElement twitterCard =
@@ -153,25 +154,25 @@ ogUrlElement url =
     ( Map.fromFoldable
         [ Tuple.Tuple "property" (Maybe.Just "og:url")
         , Tuple.Tuple "content"
-            (Maybe.Just (StructuredUrl.toString url))
+            (Maybe.Just (NonEmptyString.toString (StructuredUrl.toString url)))
         ]
     )
 
-ogTitleElement :: String -> Data.HtmlElement
+ogTitleElement :: NonEmptyString.NonEmptyString -> Data.HtmlElement
 ogTitleElement title =
   Data.meta
     ( Map.fromFoldable
         [ Tuple.Tuple "property" (Maybe.Just "og:title")
-        , Tuple.Tuple "content" (Maybe.Just title)
+        , Tuple.Tuple "content" (Maybe.Just (NonEmptyString.toString title))
         ]
     )
 
-ogSiteName :: String -> Data.HtmlElement
+ogSiteName :: NonEmptyString.NonEmptyString -> Data.HtmlElement
 ogSiteName siteName =
   Data.meta
     ( Map.fromFoldable
         [ Tuple.Tuple "property" (Maybe.Just "og:site_name")
-        , Tuple.Tuple "content" (Maybe.Just siteName)
+        , Tuple.Tuple "content" (Maybe.Just (NonEmptyString.toString siteName))
         ]
     )
 
@@ -189,7 +190,7 @@ ogImage url =
   Data.meta
     ( Map.fromFoldable
         [ Tuple.Tuple "property" (Maybe.Just "og:image")
-        , Tuple.Tuple "content" (Maybe.Just (StructuredUrl.toString url))
+        , Tuple.Tuple "content" (Maybe.Just (NonEmptyString.toString (StructuredUrl.toString url)))
         ]
     )
 
