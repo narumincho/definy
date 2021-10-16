@@ -1,5 +1,6 @@
 module View.ToHtml where
 
+import Color as Color
 import Css as Css
 import Data.Array as Array
 import Data.Map as Map
@@ -45,7 +46,7 @@ viewToHtmlOption (View.View view) scriptFileName =
                                 , declarationList:
                                     [ Css.height100Percent
                                     , Css.margin0
-                                    , Css.backgroundColor "black"
+                                    , Css.backgroundColor Color.black
                                     , Css.displayGrid
                                     , Css.boxSizingBorderBox
                                     , Css.alignItems Css.Start
@@ -247,7 +248,7 @@ elementToHtmlElementAndStyleDict = case _ of
       viewStyle =
         ViewStyle
           { declarationList:
-              [ Css.color "white"
+              [ Css.color Color.white
               , Css.padding { topBottom: padding, leftRight: padding }
               , Css.margin0
               , Css.lineHeight 1

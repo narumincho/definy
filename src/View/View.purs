@@ -55,7 +55,7 @@ type BoxRecord message
     , paddingTopBottom :: Number
     , paddingLeftRight :: Number
     , height :: Maybe.Maybe Number
-    , backgroundColor :: Maybe.Maybe String
+    , backgroundColor :: Maybe.Maybe Color.Color
     , gridTemplateColumns1FrCount :: Maybe.Maybe Int
     , url :: Maybe.Maybe StructuredUrl.StructuredUrl
     , hover :: BoxHoverStyle

@@ -1,20 +1,21 @@
 module CreativeRecord.Top where
 
+import Color as Color
 import CreativeRecord.Location as Location
 import CreativeRecord.SvgImage as SvgImage
 import Css as Css
 import Data.Map as Map
 import Data.Maybe as Maybe
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
 import View.View as View
-import Data.String.NonEmpty as NonEmptyString
 
-linkBackGroundColor :: String
-linkBackGroundColor = "#333333"
+linkBackGroundColor :: Color.Color
+linkBackGroundColor = Color.fromInt 0x333333
 
 zoomAnimation :: View.Animation
 zoomAnimation =
