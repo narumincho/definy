@@ -1,4 +1,3 @@
-import * as admin from "firebase-admin";
 import * as apiCodec from "../common/apiCodec";
 import * as commonUrl from "../common/url";
 import * as core from "../core/main";
@@ -11,15 +10,18 @@ import * as jsonWebToken from "jsonwebtoken";
 import * as stream from "stream";
 import type * as typedFirestore from "typed-admin-firestore";
 import * as util from "../core/util";
+import { Timestamp, getFirestore } from "firebase-admin/firestore";
 import axios, { AxiosResponse } from "axios";
 import { fileTypeImagePng, fileTypeToMimeType } from "../gen/fileType/main";
+import { getStorage } from "firebase-admin/storage";
+import { initializeApp } from "firebase-admin/app";
 
-const app = admin.initializeApp();
+const app = initializeApp();
 
 type AccessTokenHash = string & { _accessTokenHash: never };
 
-const storageDefaultBucket = app.storage().bucket();
-const database = app.firestore() as unknown as typedFirestore.Firestore<{
+const storageDefaultBucket = getStorage(app).bucket();
+const database = getFirestore(app) as unknown as typedFirestore.Firestore<{
   openConnectState: {
     key: string;
     value: StateData;
@@ -43,7 +45,7 @@ const database = app.firestore() as unknown as typedFirestore.Firestore<{
 }>;
 
 type StateData = {
-  createTime: admin.firestore.Timestamp;
+  createTime: Timestamp;
   locationAndLanguage: d.LocationAndLanguage;
   provider: d.OpenIdConnectProvider;
 };
@@ -55,8 +57,8 @@ type UserData = {
   /** アクセストークンのハッシュ値 */
   readonly accessTokenHash: AccessTokenHash;
   /** アクセストークンを発行した日時 */
-  readonly accessTokenIssueTime: admin.firestore.Timestamp;
-  readonly createTime: admin.firestore.Timestamp;
+  readonly accessTokenIssueTime: Timestamp;
+  readonly createTime: Timestamp;
   readonly imageHash: d.ImageHash;
   readonly introduction: string;
   /** ユーザー名 */
@@ -77,8 +79,8 @@ type ProjectData = {
   readonly name: string;
   readonly iconHash: d.ImageHash;
   readonly imageHash: d.ImageHash;
-  readonly createTime: admin.firestore.Timestamp;
-  readonly updateTime: admin.firestore.Timestamp;
+  readonly createTime: Timestamp;
+  readonly updateTime: Timestamp;
   readonly createUserId: d.AccountId;
 };
 
@@ -96,7 +98,7 @@ type TypePartData = {
   /** 所属しているプロジェクト */
   readonly projectId: d.ProjectId;
   /** 作成日時 */
-  readonly createTime: admin.firestore.Timestamp;
+  readonly createTime: Timestamp;
 };
 
 const logInUrlFromOpenIdConnectProviderAndState = (
@@ -118,9 +120,8 @@ const logInUrlFromOpenIdConnectProviderAndState = (
   }
 };
 
-const firestoreTimestampToTime = (
-  timestamp: admin.firestore.Timestamp
-): d.Time => util.timeFromDate(timestamp.toDate());
+const firestoreTimestampToTime = (timestamp: Timestamp): d.Time =>
+  util.timeFromDate(timestamp.toDate());
 
 const createUrl = (
   originAndPath: string,
@@ -284,7 +285,7 @@ const createUser = async (
   provider: d.OpenIdConnectProvider
 ): Promise<d.AccountToken> => {
   const imageHash = await getAndSaveUserImage(providerUserData.imageUrl);
-  const createTime = admin.firestore.Timestamp.now();
+  const createTime = Timestamp.now();
   const accessTokenData = issueAccessToken();
   await database
     .collection("user")
@@ -364,7 +365,7 @@ const getOpenIdConnectClientId = (
 const issueAccessToken = (): {
   accessToken: d.AccountToken;
   accessTokenHash: AccessTokenHash;
-  issueTime: admin.firestore.Timestamp;
+  issueTime: Timestamp;
 } => {
   const accessToken = d.AccountToken.fromString(
     crypto.randomBytes(32).toString("hex")
@@ -372,7 +373,7 @@ const issueAccessToken = (): {
   return {
     accessToken,
     accessTokenHash: hashAccessToken(accessToken),
-    issueTime: admin.firestore.Timestamp.now(),
+    issueTime: Timestamp.now(),
   };
 };
 
@@ -419,7 +420,7 @@ const typePartFromDBType = (
 
 const typePartToDBType = (
   typePart: d.TypePart,
-  createTime: admin.firestore.Timestamp
+  createTime: Timestamp
 ): TypePartData => ({
   name: typePart.name,
   description: typePart.description,
@@ -444,7 +445,7 @@ const addTypePart = async (projectId: d.ProjectId): Promise<d.TypePart> => {
   await database
     .collection("typePart")
     .doc(newTypePartId)
-    .set(typePartToDBType(newTypePart, admin.firestore.Timestamp.now()));
+    .set(typePartToDBType(newTypePart, Timestamp.now()));
   return newTypePart;
 };
 
@@ -482,7 +483,7 @@ export const apiFunc: {
   requestLogInUrl: async (requestLogInUrlRequestData) => {
     const state = createRandomId();
     await database.collection("openConnectState").doc(state).create({
-      createTime: admin.firestore.Timestamp.now(),
+      createTime: Timestamp.now(),
       locationAndLanguage: requestLogInUrlRequestData.locationAndLanguage,
       provider: requestLogInUrlRequestData.openIdConnectProvider,
     });
@@ -545,7 +546,7 @@ export const apiFunc: {
         const iconAndImage = await image.createProjectIconAndImage();
         const iconHashPromise = savePngFile(iconAndImage.icon);
         const imageHashPromise = savePngFile(iconAndImage.image);
-        const createTime = admin.firestore.Timestamp.now();
+        const createTime = Timestamp.now();
         const createTimeAsTime = firestoreTimestampToTime(createTime);
         const project: ProjectData = {
           name: projectNameWithDefault,
