@@ -6,6 +6,7 @@ import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.Set as Set
 import Data.String as String
+import Data.String.CodePoints as CodePoints
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Prelude as Prelude
@@ -90,13 +91,15 @@ collectInportModuleInDefinition (Data.Definition { pType, expr }) =
     (collectInportModuleInExpr expr)
 
 collectInportModuleInType :: Data.PType -> Set.Set Data.ModuleName
-collectInportModuleInType (Data.PType { moduleName, argument }) =
-  Set.insert
-    moduleName
-    ( case argument of
-        Maybe.Just argumentType -> collectInportModuleInType argumentType
-        Maybe.Nothing -> Set.empty
-    )
+collectInportModuleInType = case _ of
+  Data.PType { moduleName, argument } ->
+    Set.insert
+      moduleName
+      ( case argument of
+          Maybe.Just argumentType -> collectInportModuleInType argumentType
+          Maybe.Nothing -> Set.empty
+      )
+  Data.SymbolLiteral _ -> Set.empty
 
 collectInportModuleInExpr :: Data.Expr -> Set.Set Data.ModuleName
 collectInportModuleInExpr = case _ of
@@ -107,7 +110,12 @@ collectInportModuleInExpr = case _ of
       )
   Data.Variable { moduleName } -> Set.singleton moduleName
   Data.StringLiteral _ -> Set.empty
+  Data.CharLiteral _ -> Set.empty
   Data.ArrayLiteral list -> Set.unions (Prelude.map collectInportModuleInExpr list)
+  Data.TypeAnnotation { expr, pType } ->
+    Set.union
+      (collectInportModuleInExpr expr)
+      (collectInportModuleInType pType)
 
 collectExportDefinition :: Array Data.Definition -> Array String
 collectExportDefinition list =
@@ -132,19 +140,23 @@ definitionToString importedModuleQualifiedNameDict (Data.Definition { name, docu
     ]
 
 typeToString :: ModuleQualifiedNameDict -> Data.PType -> String
-typeToString importedModuleQualifiedNameDict (Data.PType { moduleName, name, argument }) =
-  String.joinWith ""
-    ( Array.concat
-        [ [ moduleNameToStringSelfEmpty importedModuleQualifiedNameDict moduleName, name ]
-        , case argument of
-            Maybe.Just argumentType ->
-              [ "("
-              , typeToString importedModuleQualifiedNameDict argumentType
-              , ")"
-              ]
-            Maybe.Nothing -> []
-        ]
-    )
+typeToString importedModuleQualifiedNameDict pType = case pType of
+  Data.PType { moduleName, name, argument } ->
+    String.joinWith ""
+      ( Array.concat
+          [ [ moduleNameToStringSelfEmpty importedModuleQualifiedNameDict moduleName
+            , NonEmptyString.toString name
+            ]
+          , case argument of
+              Maybe.Just argumentType ->
+                [ " ("
+                , typeToString importedModuleQualifiedNameDict argumentType
+                , ")"
+                ]
+              Maybe.Nothing -> []
+          ]
+      )
+  Data.SymbolLiteral str -> stringToStringLiteral str
 
 exprToString :: ModuleQualifiedNameDict -> Data.Expr -> String
 exprToString importedModuleQualifiedNameDict = case _ of
@@ -165,15 +177,16 @@ exprToString importedModuleQualifiedNameDict = case _ of
       [ moduleNameToStringSelfEmpty importedModuleQualifiedNameDict moduleName
       , NonEmptyString.toString name
       ]
-  Data.StringLiteral value ->
+  Data.StringLiteral value -> stringToStringLiteral value
+  Data.CharLiteral value ->
     String.joinWith ""
-      [ "\""
-      , String.replaceAll (String.Pattern "\n") (String.Replacement "\\n")
-          ( String.replaceAll (String.Pattern "\"") (String.Replacement "\\\"")
-              ( String.replaceAll (String.Pattern "\\") (String.Replacement "\\\\") value
-              )
-          )
-      , "\""
+      [ "'"
+      , case value of
+          '\n' -> "\\n"
+          '\'' -> "\\'"
+          '\\' -> "\\\\"
+          _ -> String.singleton (CodePoints.codePointFromChar value)
+      , "'"
       ]
   Data.ArrayLiteral list ->
     String.joinWith ""
@@ -181,6 +194,24 @@ exprToString importedModuleQualifiedNameDict = case _ of
       , String.joinWith ", " (Prelude.map (exprToString importedModuleQualifiedNameDict) list)
       , " ]"
       ]
+  Data.TypeAnnotation { expr, pType } ->
+    String.joinWith ""
+      [ exprToString importedModuleQualifiedNameDict expr
+      , " :: "
+      , typeToString importedModuleQualifiedNameDict pType
+      ]
+
+stringToStringLiteral :: String -> String
+stringToStringLiteral value =
+  String.joinWith ""
+    [ "\""
+    , String.replaceAll (String.Pattern "\n") (String.Replacement "\\n")
+        ( String.replaceAll (String.Pattern "\"") (String.Replacement "\\\"")
+            ( String.replaceAll (String.Pattern "\\") (String.Replacement "\\\\") value
+            )
+        )
+    , "\""
+    ]
 
 moduleNameToStringSelfEmpty :: ModuleQualifiedNameDict -> Data.ModuleName -> String
 moduleNameToStringSelfEmpty importedModuleQualifiedNameDict moduleName = case dicGetQualifiedName moduleName importedModuleQualifiedNameDict of

@@ -34,14 +34,21 @@ derive instance moduleNameEq :: Prelude.Eq ModuleName
 
 derive instance moduleNameOrd :: Prelude.Ord ModuleName
 
-newtype PType
-  = PType { moduleName :: ModuleName, name :: String, argument :: Maybe.Maybe PType }
+data PType
+  = PType
+    { moduleName :: ModuleName
+    , name :: NonEmptyString.NonEmptyString
+    , argument :: Maybe.Maybe PType
+    }
+  | SymbolLiteral String
 
 data Expr
   = Call { function :: Expr, arguments :: NonEmptyArray.NonEmptyArray Expr }
   | Variable { moduleName :: ModuleName, name :: NonEmptyString.NonEmptyString }
   | StringLiteral String
+  | CharLiteral Char
   | ArrayLiteral (Array Expr)
+  | TypeAnnotation { expr :: Expr, pType :: PType }
 
 moduleNameAsStringNonEmptyArray :: Module -> NonEmptyArray.NonEmptyArray NonEmptyString.NonEmptyString
 moduleNameAsStringNonEmptyArray (Module { name: ModuleName name }) = name

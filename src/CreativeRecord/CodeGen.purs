@@ -60,8 +60,12 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
           ]
     , pType:
         PureScriptData.PType
-          { moduleName: PureScriptData.ModuleName (NonEmptyArray.singleton (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "StructuredUrl")))
-          , name: "PathAndSearchParams"
+          { moduleName:
+              PureScriptData.ModuleName
+                ( NonEmptyArray.singleton
+                    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "StructuredUrl"))
+                )
+          , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "PathAndSearchParams")
           , argument: Maybe.Nothing
           }
     , expr:
@@ -122,8 +126,10 @@ originPureScriptModule =
         [ PureScriptData.Definition
             { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "origin")
             , document: "アプリケーションのオリジン (コード生成結果)"
-            , pType: PureScriptWellknown.primString
-            , expr: PureScriptData.StringLiteral "http://localhost:1234"
+            , pType: PureScriptWellknown.nonEmptyString
+            , expr:
+                PureScriptWellknown.nonEmptyStringLiteral
+                  (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "http://localhost:1234"))
             , isExport: true
             }
         ]
