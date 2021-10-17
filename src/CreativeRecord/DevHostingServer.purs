@@ -1,7 +1,9 @@
 module DevServer where
 
 import CreativeRecord.View as CreativeRecordView
+import Data.Map as Map
 import Data.Maybe as Maybe
+import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
 import Effect.Console as Console
 import FileType as FileType
@@ -12,7 +14,6 @@ import Node.Stream as Stream
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import View.ToHtml as ViewToHtml
-import Data.Map as Map
 
 -- | Firebase の Hosting emulator では配信するリソースを実行時に変更できないので,
 -- | その変更できるサーバーを作る
@@ -43,7 +44,7 @@ service request response =
     )
 
 data ResponseData
-  = StringResponse { data :: String, fileType :: FileType.FileType }
+  = StringResponse { data :: String, mimeType :: NonEmptyString.NonEmptyString }
   | NotFound
 
 writeStringResponse :: Http.Response -> ResponseData -> Effect.Effect Prelude.Unit
@@ -56,9 +57,7 @@ writeStringResponse response = case _ of
       setHeader :: Effect.Effect Prelude.Unit
       setHeader =
         Http.setHeader response "content-type"
-          ( FileType.toMimeType
-              (Maybe.Just record.fileType)
-          )
+          (NonEmptyString.toString record.mimeType)
 
       setBody :: Effect.Effect Prelude.Unit
       setBody =
@@ -97,6 +96,8 @@ htmlResponse =
   StringResponse
     { data:
         HtmlToSTring.htmlOptionToString
-          (ViewToHtml.viewToHtmlOption CreativeRecordView.view (StructuredUrl.pathAndSearchParams [ "program" ] Map.empty))
-    , fileType: FileType.Html
+          ( ViewToHtml.viewToHtmlOption CreativeRecordView.view
+              (StructuredUrl.pathAndSearchParams [ "program" ] Map.empty)
+          )
+    , mimeType: FileType.textHtmlMimeType
     }

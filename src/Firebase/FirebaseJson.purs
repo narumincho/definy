@@ -1,8 +1,9 @@
-module FirebaseJson (FirebaseJson(..), Rewrite(..), Emulators(..), toString) where
+module Firebase.FirebaseJson (FirebaseJson(..), Rewrite(..), Emulators(..), toString) where
 
 import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
 import Data.Maybe as Maybe
+import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Foreign.Object as Object
@@ -11,8 +12,8 @@ import Prelude as Prelude
 newtype FirebaseJson
   = FirebaseJson
   { functionsDistributionPath :: String
-  , firestoreRulesFilePath :: String
-  , cloudStorageRulesPath :: String
+  , firestoreRulesFilePath :: NonEmptyString.NonEmptyString
+  , cloudStorageRulesPath :: NonEmptyString.NonEmptyString
   , hostingDistributionPath :: String
   , hostingRewites :: Array Rewrite
   , emulators :: Emulators
@@ -37,9 +38,14 @@ toString (FirebaseJson record) =
               ( ArgonautCore.jsonSingletonObject "source"
                   (ArgonautCore.fromString record.functionsDistributionPath)
               )
+          , Tuple.Tuple
+              "firestore"
+              ( ArgonautCore.jsonSingletonObject "rules"
+                  (ArgonautCore.fromString (NonEmptyString.toString record.firestoreRulesFilePath))
+              )
           , Tuple.Tuple "storage"
               ( ArgonautCore.jsonSingletonObject "rules"
-                  (ArgonautCore.fromString record.cloudStorageRulesPath)
+                  (ArgonautCore.fromString (NonEmptyString.toString record.cloudStorageRulesPath))
               )
           , Tuple.Tuple "hosting"
               ( tupleListToJson

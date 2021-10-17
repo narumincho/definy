@@ -17,6 +17,7 @@ module FileSystem
   , distributionDirectoryPathToString
   , fileNameWithExtensitonParse
   , writePureScript
+  , writeFirebaseRules
   ) where
 
 import Prelude
@@ -30,6 +31,7 @@ import Effect.Aff.Compat as AffCompat
 import Effect.Class as EffectClass
 import Effect.Console as Console
 import FileType as FileType
+import Firebase.SecurityRules as FirebaseSecurityRules
 import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
@@ -100,6 +102,7 @@ fileTypeToExtension = case _ of
   FileType.Html -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
   FileType.Json -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "json")
   FileType.PureScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "purs")
+  FileType.FirebaseSecurityRules -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "rules")
 
 extensionToFileType :: String -> Maybe.Maybe FileType.FileType
 extensionToFileType = case _ of
@@ -109,6 +112,7 @@ extensionToFileType = case _ of
   "html" -> Maybe.Just FileType.Html
   "json" -> Maybe.Just FileType.Json
   "purs" -> Maybe.Just FileType.PureScript
+  "rules" -> Maybe.Just FileType.FirebaseSecurityRules
   _ -> Maybe.Nothing
 
 filePathToStringWithoutExtensition :: FilePath -> NonEmptyString.NonEmptyString
@@ -284,3 +288,35 @@ fileNameWithExtensitonParse fileNameWithExtensiton = case NonEmptyString.lastInd
         )
         (NonEmptyString.fromString afterAndBefore.before)
   Maybe.Nothing -> Maybe.Just { fileName: fileNameWithExtensiton, fileType: Maybe.Nothing }
+
+writeFirebaseRules :: DistributionDirectoryPath -> NonEmptyString.NonEmptyString -> FirebaseSecurityRules.SecurityRules -> Aff.Aff Unit
+writeFirebaseRules directoryPath fileName securityRules =
+  let
+    dirPath :: String
+    dirPath = NonEmptyString.toString (distributionDirectoryPathToString directoryPath)
+
+    filePath :: String
+    filePath =
+      NonEmptyString.toString
+        ( distributionFilePathToString
+            ( DistributionFilePath
+                { directoryPath
+                , fileName
+                , fileType: Maybe.Just FileType.FirebaseSecurityRules
+                }
+            )
+        )
+  in
+    bind
+      ( bind
+          (ensureDir dirPath)
+          ( \_ ->
+              Fs.writeTextFile Encoding.UTF8 filePath
+                ( NonEmptyString.toString
+                    (FirebaseSecurityRules.toNonEmptyString securityRules)
+                )
+          )
+      )
+      ( \_ ->
+          EffectClass.liftEffect (Console.log (append filePath "の書き込みに成功"))
+      )

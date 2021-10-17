@@ -19,6 +19,7 @@ main =
   Aff.runAff_ Console.logShow
     ( Aff.attempt
         ( do
+            Build.build
             runFirebaseEmulator
         )
     )

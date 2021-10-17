@@ -1,10 +1,11 @@
-module CreativeRecord.Build where
+module CreativeRecord.Build (build) where
 
 import Prelude
-import Control.Parallel.Class as ParallelClass
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Maybe as Mabye
 import Data.Maybe as Maybe
+import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect
@@ -14,18 +15,18 @@ import Effect.Console as Console
 import EsBuild as EsBuild
 import FileSystem as FileSystem
 import FileType as FileType
-import FirebaseJson as FirebaseJson
+import Firebase.FirebaseJson as FirebaseJson
+import Firebase.SecurityRules as SecurityRules
 import Hash as Hash
 import Node.Buffer as Buffer
-import Shell as Shell
 import Node.Encoding as Encoding
-import Type.Proxy as Proxy
-import Data.Array.NonEmpty as NonEmptyArray
-import Data.String as String
 import Prelude as Prelude
 import PureScript.Data as PureScriptData
 import PureScript.Wellknown as PureScriptWellknown
+import Shell as Shell
 import StaticResourceFile as StaticResourceFile
+import Type.Proxy as Proxy
+import Util as Util
 
 appName :: NonEmptyString.NonEmptyString
 appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "creative-record")
@@ -58,12 +59,14 @@ hostingDirectoryPath =
 
 build :: Aff.Aff Unit
 build = do
-  codeGen
-  ParallelClass.sequential
-    ( apply
-        (map (\_ _ -> unit) (Aff.parallel writeFirebaseJson))
-        (Aff.parallel clientProgramBuild)
-    )
+  Util.toParallel
+    [ originCodeGen
+    , staticResourceCodeGen
+    , writeFirestoreRules
+    , writeCloudStorageRules
+    , writeFirebaseJson
+    , clientProgramBuild
+    ]
 
 clientProgramBuild :: Aff.Aff Unit
 clientProgramBuild = do
@@ -83,7 +86,11 @@ runSpagoBundleAppAndLog = do
                   firstClientProgramFilePath
               )
               Shell.defaultExecOptions
-              (\_ -> callback (Either.Right unit))
+              ( \result -> do
+                  log <- execResultToString result
+                  Console.log log
+                  callback (Either.Right unit)
+              )
           )
     )
   EffectClass.liftEffect (Console.log "spago でのビルドに成功!")
@@ -130,6 +137,26 @@ readEsbuildResultClientProgramFile = do
     clientProgramAsString
   pure unit
 
+writeFirestoreRules :: Aff.Aff Unit
+writeFirestoreRules =
+  FileSystem.writeFirebaseRules
+    (FileSystem.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing })
+    firestoreSecurityRulesFileName
+    SecurityRules.allForbiddenFirestoreRule
+
+writeCloudStorageRules :: Aff.Aff Unit
+writeCloudStorageRules =
+  FileSystem.writeFirebaseRules
+    (FileSystem.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing })
+    cloudStorageSecurityRulesFileName
+    SecurityRules.allForbiddenFirebaseStorageRule
+
+firestoreSecurityRulesFileName :: NonEmptyString.NonEmptyString
+firestoreSecurityRulesFileName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firestore")
+
+cloudStorageSecurityRulesFileName :: NonEmptyString.NonEmptyString
+cloudStorageSecurityRulesFileName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "storage")
+
 writeFirebaseJson :: Aff.Aff Unit
 writeFirebaseJson = do
   FileSystem.writeTextFileInDistribution
@@ -141,7 +168,7 @@ writeFirebaseJson = do
     )
     ( FirebaseJson.toString
         ( FirebaseJson.FirebaseJson
-            { cloudStorageRulesPath: "./storage.rules"
+            { cloudStorageRulesPath: NonEmptyString.prependString "./" cloudStorageSecurityRulesFileName
             , emulators:
                 FirebaseJson.Emulators
                   { functionsPortNumber: Maybe.Just (UInt.fromInt 5001)
@@ -149,7 +176,7 @@ writeFirebaseJson = do
                   , hostingPortNumber: Maybe.Nothing
                   , storagePortNumber: Maybe.Just (UInt.fromInt 9199)
                   }
-            , firestoreRulesFilePath: "./firestore.rules"
+            , firestoreRulesFilePath: NonEmptyString.prependString "./" firestoreSecurityRulesFileName
             , functionsDistributionPath: "./functions"
             , hostingDistributionPath:
                 append
@@ -160,14 +187,6 @@ writeFirebaseJson = do
         )
     )
   EffectClass.liftEffect (Console.log "firebase.json の書き込みに成功!")
-
-codeGen :: Aff.Aff Prelude.Unit
-codeGen =
-  ParallelClass.sequential
-    ( Prelude.apply
-        (Prelude.map (\_ _ -> Prelude.unit) (Aff.parallel originCodeGen))
-        (Aff.parallel staticResourceCodeGen)
-    )
 
 originCodeGen :: Aff.Aff Prelude.Unit
 originCodeGen = FileSystem.writePureScript srcDirectoryPath originPureScriptModule
@@ -182,7 +201,11 @@ staticResourceCodeGen =
             ]
         )
     )
-    (\resultList -> FileSystem.writePureScript srcDirectoryPath (staticFileResultToPureScriptModule resultList))
+    ( \resultList ->
+        FileSystem.writePureScript
+          srcDirectoryPath
+          (staticFileResultToPureScriptModule resultList)
+    )
 
 staticFileResultToPureScriptModule :: Array StaticResourceFile.StaticResourceFileResult -> PureScriptData.Module
 staticFileResultToPureScriptModule resultList =

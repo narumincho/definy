@@ -8,7 +8,6 @@ import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import Effect.Console as Console
 import FileSystem as FileSystem
-import FileType as FileType
 import Hash as Hash
 import Prelude as Prelude
 
@@ -43,7 +42,7 @@ getFileHash filePath@(FileSystem.FilePath { fileType }) =
         Prelude.map
           ( \content ->
               Hash.bufferAndMimeTypeToSha256HashValue
-                { buffer: content, mimeType: FileType.toMimeType fileType }
+                { buffer: content, mimeType: Prelude.show fileType }
           )
           (FileSystem.readBinaryFile filePath)
     )
