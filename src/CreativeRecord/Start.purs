@@ -1,150 +1,53 @@
 module CreativeRecord.Start where
 
-import CreativeRecord.View as CreativeRecordView
-import Data.Map as Map
-import Data.Maybe as Maybe
+import Prelude
+import CreativeRecord.Build as Build
+import Data.Either as Either
 import Effect as Effect
 import Effect.Aff as Aff
+import Effect.Class as EffectClass
 import Effect.Console as Console
-import FileType as FileType
-import Html.ToString as HtmlToSTring
 import Node.Buffer as Buffer
-import Node.ChildProcess as ChildProcess
 import Node.Encoding as Encoding
-import Node.HTTP as Http
 import Node.Stream as Stream
-import Prelude as Prelude
-import StructuredUrl as StructuredUrl
-import View.ToHtml as ViewToHtml
-import CreativeRecord.CodeGen
+import Shell as Shell
+import Type.Proxy as Proxy
+import Data.String.NonEmpty as NonEmptyString
 
-main :: Effect.Effect Prelude.Unit
+main :: Effect.Effect Unit
 main =
   Aff.runAff_ Console.logShow
     ( Aff.attempt
-        codeGen
-    )
-
-runClientScriptBuildCommandAndLog :: Effect.Effect Prelude.Unit -> Effect.Effect Prelude.Unit
-runClientScriptBuildCommandAndLog callback =
-  Prelude.map (\_ -> Prelude.unit)
-    ( ChildProcess.exec
-        "spago bundle-app --main CreativeRecordClient"
-        ChildProcess.defaultExecOptions
-        ( \result ->
-            Prelude.bind
-              (execResultToString result)
-              (\out -> (Prelude.bind (Console.log out) (\_ -> callback)))
+        ( do
+            runFirebaseEmulator
         )
     )
 
-execResultToString :: ChildProcess.ExecResult -> Effect.Effect String
-execResultToString result =
-  let
-    stdoutEffect :: Effect.Effect String
-    stdoutEffect = (Buffer.toString Encoding.UTF8 result.stdout)
+runFirebaseEmulator :: Aff.Aff Unit
+runFirebaseEmulator = do
+  lsSample
+  EffectClass.liftEffect (Console.log "ここで Firebase のエミュレーター を起動するようにする")
 
-    stderrEffect :: Effect.Effect String
-    stderrEffect = (Buffer.toString Encoding.UTF8 result.stderr)
-  in
-    Prelude.bind stdoutEffect
-      ( \stdout ->
-          Prelude.map
-            ( \stderr ->
-                Prelude.append
-                  "build-std"
-                  (Prelude.show { stdout, stderr, error: result.error })
-            )
-            stderrEffect
+lsSample :: Aff.Aff Unit
+lsSample =
+  Aff.makeAff
+    ( \callback -> do
+        lsEffect (callback (Either.Right unit))
+        pure (Aff.effectCanceler (Console.log "ls をキャンセルしようとした?"))
+    )
+
+lsEffect :: Effect.Effect Unit -> Effect.Effect Unit
+lsEffect callback = do
+  childProcess <-
+    Shell.spawn
+      ( NonEmptyString.nes
+          (Proxy.Proxy :: Proxy.Proxy "npx firebase emulators:start --project definy-lang --config ./distribution/creative-record/firebase.json")
       )
-
-startServer :: String -> Effect.Effect Prelude.Unit
-startServer clientScriptCode =
-  Prelude.bind
-    ( Http.createServer
-        ( \request response ->
-            service clientScriptCode request response
-        )
+      Shell.defaultSpawnOptions
+  Stream.onData
+    (Shell.stdout childProcess)
+    ( \buffer -> do
+        stdout <- (Buffer.toString Encoding.UTF8 buffer)
+        Console.log (append "firebase emulator の ログ: " stdout)
+        callback
     )
-    ( \server ->
-        Http.listen server
-          { backlog: Maybe.Nothing, hostname: "localhost", port: 1234 }
-          (Console.log "start! http://localhost:1234")
-    )
-
-service :: String -> Http.Request -> Http.Response -> Effect.Effect Prelude.Unit
-service clientScriptCode request response =
-  Prelude.bind
-    (Console.log (Prelude.append "requestPath:" (Http.requestURL request)))
-    ( \_ ->
-        writeStringResponse response
-          ( case Http.requestURL request of
-              "/" -> htmlResponse
-              "/program" ->
-                ( StringResponse
-                    { data: clientScriptCode
-                    , fileType: FileType.JavaScript
-                    }
-                )
-              _ -> NotFound
-          )
-    )
-
-data ResponseData
-  = StringResponse { data :: String, fileType :: FileType.FileType }
-  | NotFound
-
-writeStringResponse :: Http.Response -> ResponseData -> Effect.Effect Prelude.Unit
-writeStringResponse response = case _ of
-  StringResponse record ->
-    let
-      setStatusCode :: Effect.Effect Prelude.Unit
-      setStatusCode = Http.setStatusCode response 200
-
-      setHeader :: Effect.Effect Prelude.Unit
-      setHeader =
-        Http.setHeader response "content-type"
-          ( FileType.toMimeType
-              (Maybe.Just record.fileType)
-          )
-
-      setBody :: Effect.Effect Prelude.Unit
-      setBody =
-        Prelude.bind
-          ( Stream.writeString
-              (Http.responseAsStream response)
-              Encoding.UTF8
-              record.data
-              (Console.log "writeStringOk")
-          )
-          ( \_ ->
-              ( Stream.end
-                  (Http.responseAsStream response)
-                  (Console.log "writeEnd")
-              )
-          )
-    in
-      Prelude.bind
-        setStatusCode
-        ( \_ ->
-            Prelude.bind
-              setHeader
-              (\_ -> setBody)
-        )
-  NotFound ->
-    Prelude.bind (Http.setStatusCode response 404)
-      ( \_ ->
-          ( Stream.end
-              (Http.responseAsStream response)
-              (Console.log "writeEnd")
-          )
-      )
-
-htmlResponse :: ResponseData
-htmlResponse =
-  StringResponse
-    { data:
-        HtmlToSTring.htmlOptionToString
-          (ViewToHtml.viewToHtmlOption CreativeRecordView.view (StructuredUrl.pathAndSearchParams [ "program" ] Map.empty))
-    , fileType: FileType.Html
-    }

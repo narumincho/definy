@@ -17,9 +17,15 @@ import FileType as FileType
 import FirebaseJson as FirebaseJson
 import Hash as Hash
 import Node.Buffer as Buffer
-import Node.ChildProcess as ChildProcess
+import Shell as Shell
 import Node.Encoding as Encoding
 import Type.Proxy as Proxy
+import Data.Array.NonEmpty as NonEmptyArray
+import Data.String as String
+import Prelude as Prelude
+import PureScript.Data as PureScriptData
+import PureScript.Wellknown as PureScriptWellknown
+import StaticResourceFile as StaticResourceFile
 
 appName :: NonEmptyString.NonEmptyString
 appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "creative-record")
@@ -51,7 +57,8 @@ hostingDirectoryPath =
     }
 
 build :: Aff.Aff Unit
-build =
+build = do
+  codeGen
   ParallelClass.sequential
     ( apply
         (map (\_ _ -> unit) (Aff.parallel writeFirebaseJson))
@@ -70,18 +77,18 @@ runSpagoBundleAppAndLog = do
   Aff.makeAff
     ( \callback ->
         map (\_ -> Aff.nonCanceler)
-          ( ChildProcess.exec
+          ( Shell.exec
               ( append
                   "spago bundle-app --main CreativeRecord.Client --to "
                   firstClientProgramFilePath
               )
-              ChildProcess.defaultExecOptions
+              Shell.defaultExecOptions
               (\_ -> callback (Either.Right unit))
           )
     )
   EffectClass.liftEffect (Console.log "spago でのビルドに成功!")
 
-execResultToString :: ChildProcess.ExecResult -> Effect.Effect String
+execResultToString :: Shell.ExecResult -> Effect.Effect String
 execResultToString result = do
   stdout <- Buffer.toString Encoding.UTF8 result.stdout
   stderr <- Buffer.toString Encoding.UTF8 result.stderr
@@ -113,7 +120,14 @@ readEsbuildResultClientProgramFile = do
       )
   let
     clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString
-  FileSystem.writeTextFileInDistribution (FileSystem.DistributionFilePath { directoryPath: hostingDirectoryPath, fileName: clientProgramHashValue, fileType: Maybe.Nothing }) clientProgramAsString
+  FileSystem.writeTextFileInDistribution
+    ( FileSystem.DistributionFilePath
+        { directoryPath: hostingDirectoryPath
+        , fileName: clientProgramHashValue
+        , fileType: Maybe.Nothing
+        }
+    )
+    clientProgramAsString
   pure unit
 
 writeFirebaseJson :: Aff.Aff Unit
@@ -146,3 +160,125 @@ writeFirebaseJson = do
         )
     )
   EffectClass.liftEffect (Console.log "firebase.json の書き込みに成功!")
+
+codeGen :: Aff.Aff Prelude.Unit
+codeGen =
+  ParallelClass.sequential
+    ( Prelude.apply
+        (Prelude.map (\_ _ -> Prelude.unit) (Aff.parallel originCodeGen))
+        (Aff.parallel staticResourceCodeGen)
+    )
+
+originCodeGen :: Aff.Aff Prelude.Unit
+originCodeGen = FileSystem.writePureScript srcDirectoryPath originPureScriptModule
+
+staticResourceCodeGen :: Aff.Aff Prelude.Unit
+staticResourceCodeGen =
+  Prelude.bind
+    ( StaticResourceFile.getStaticResourceFileResult
+        ( FileSystem.DirectoryPath
+            [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho-creative-record")
+            , NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "resource")
+            ]
+        )
+    )
+    (\resultList -> FileSystem.writePureScript srcDirectoryPath (staticFileResultToPureScriptModule resultList))
+
+staticFileResultToPureScriptModule :: Array StaticResourceFile.StaticResourceFileResult -> PureScriptData.Module
+staticFileResultToPureScriptModule resultList =
+  PureScriptData.Module
+    { name: staticResourceModuleName
+    , definitionList:
+        Prelude.map
+          staticResourceFileResultToPureScriptDefinition
+          resultList
+    }
+
+staticResourceFileResultToPureScriptDefinition :: StaticResourceFile.StaticResourceFileResult -> PureScriptData.Definition
+staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourceFileResult record) =
+  PureScriptData.Definition
+    { name: record.fileId
+    , document:
+        String.joinWith ""
+          [ "static な ファイル の \""
+          , NonEmptyString.toString (FileSystem.filePathToString record.originalFilePath)
+          , "\"をリクエストするためのURL. ファイルのハッシュ値は "
+          , record.uploadFileName
+          , "\"(コード生成結果)"
+          ]
+    , pType:
+        PureScriptData.PType
+          { moduleName:
+              PureScriptData.ModuleName
+                ( NonEmptyArray.singleton
+                    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "StructuredUrl"))
+                )
+          , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "PathAndSearchParams")
+          , argument: Maybe.Nothing
+          }
+    , expr:
+        PureScriptData.Call
+          { function:
+              PureScriptData.Variable
+                { moduleName:
+                    PureScriptData.ModuleName
+                      ( NonEmptyArray.singleton
+                          ( NonEmptyString.nes
+                              (Proxy.Proxy :: Proxy.Proxy "StructuredUrl")
+                          )
+                      )
+                , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "pathAndSearchParams")
+                }
+          , arguments:
+              NonEmptyArray.cons
+                ( PureScriptData.ArrayLiteral
+                    [ PureScriptData.StringLiteral record.uploadFileName ]
+                )
+                ( NonEmptyArray.singleton PureScriptWellknown.dataMapEmpty
+                )
+          }
+    , isExport: true
+    }
+
+creativeRecordModuleName :: NonEmptyString.NonEmptyString
+creativeRecordModuleName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "CreativeRecord")
+
+originModuleName :: PureScriptData.ModuleName
+originModuleName =
+  PureScriptData.ModuleName
+    ( NonEmptyArray.cons' creativeRecordModuleName
+        [ NonEmptyString.nes
+            (Proxy.Proxy :: Proxy.Proxy "Origin")
+        ]
+    )
+
+staticResourceModuleName :: PureScriptData.ModuleName
+staticResourceModuleName =
+  PureScriptData.ModuleName
+    ( NonEmptyArray.cons' creativeRecordModuleName
+        [ NonEmptyString.nes
+            (Proxy.Proxy :: Proxy.Proxy "StaticResource")
+        ]
+    )
+
+srcDirectoryPath :: FileSystem.DirectoryPath
+srcDirectoryPath =
+  FileSystem.DirectoryPath
+    [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "src") ]
+
+originPureScriptModule :: PureScriptData.Module
+originPureScriptModule =
+  PureScriptData.Module
+    { name: originModuleName
+    , definitionList:
+        [ PureScriptData.Definition
+            { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "origin")
+            , document: "アプリケーションのオリジン (コード生成結果)"
+            , pType: PureScriptWellknown.nonEmptyString
+            , expr:
+                PureScriptWellknown.nonEmptyStringLiteral
+                  (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "http://localhost:1234"))
+            , isExport: true
+            }
+        ]
+    }
