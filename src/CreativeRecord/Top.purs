@@ -1,18 +1,21 @@
 module CreativeRecord.Top where
 
+import Color as Color
+import CreativeRecord.Location as Location
+import CreativeRecord.SvgImage as SvgImage
 import Css as Css
 import Data.Map as Map
 import Data.Maybe as Maybe
-import CreativeRecord.Location as Location
+import Data.String.NonEmpty as NonEmptyString
+import Data.UInt as UInt
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
-import CreativeRecord.SvgImage as SvgImage
+import Type.Proxy as Proxy
 import Util as Util
 import View.View as View
-import Data.UInt as UInt
 
-linkBackGroundColor :: String
-linkBackGroundColor = "#333333"
+linkBackGroundColor :: Color.Color
+linkBackGroundColor = Color.fromInt 0x333333
 
 zoomAnimation :: View.Animation
 zoomAnimation =
@@ -179,7 +182,7 @@ topBox =
                   , children:
                       [ snsLink
                           ( StructuredUrl.StructuredUrl
-                              { origin: "https://twitter.com"
+                              { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://twitter.com")
                               , pathAndSearchParams: StructuredUrl.pathAndSearchParams [ "naru_mincho" ] Map.empty
                               }
                           )
@@ -187,7 +190,7 @@ topBox =
                           "@naru_mincho"
                       , snsLink
                           ( StructuredUrl.StructuredUrl
-                              { origin: "https://github.com"
+                              { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://github.com")
                               , pathAndSearchParams: StructuredUrl.pathAndSearchParams [ "narumincho" ] Map.empty
                               }
                           )
@@ -195,7 +198,7 @@ topBox =
                           "@narumincho"
                       , snsLink
                           ( StructuredUrl.StructuredUrl
-                              { origin: "https://www.youtube.com"
+                              { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://www.youtube.com")
                               , pathAndSearchParams: StructuredUrl.pathAndSearchParams [ "channel", "UCDGsMJptdPNN_dbPkTl9qjA" ] Map.empty
                               }
                           )
@@ -220,15 +223,20 @@ topBox =
             , children:
                 [ externalLink
                     ( StructuredUrl.StructuredUrl
-                        { origin: "https://definy.app/?hl=ja"
-                        , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] (Map.singleton "hl" "ja")
+                        { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://definy.app")
+                        , pathAndSearchParams:
+                            StructuredUrl.pathAndSearchParams []
+                              ( Map.singleton
+                                  (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "hl"))
+                                  (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ja"))
+                              )
                         }
                     )
                     (StructuredUrl.pathAndSearchParams [ "definy20210811Png" ] Map.empty)
                     "definy"
                 , externalLink
                     ( StructuredUrl.StructuredUrl
-                        { origin: "https://narumincho-creative-record.web.app"
+                        { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://narumincho-creative-record.web.app")
                         , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] Map.empty
                         }
                     )
@@ -236,7 +244,7 @@ topBox =
                     "重力星"
                 , externalLink
                     ( StructuredUrl.StructuredUrl
-                        { origin: "https://tsukumart.com"
+                        { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://tsukumart.com")
                         , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] Map.empty
                         }
                     )

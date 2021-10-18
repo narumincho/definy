@@ -6,6 +6,8 @@ import Data.Ord as Ord
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Prelude as Prelude
+import Control.Parallel as Parallel
+import Effect.Aff as Aff
 
 listUpdateAtOverAutoCreate :: forall e. Array e -> UInt.UInt -> (Maybe.Maybe e -> e) -> e -> Array e
 listUpdateAtOverAutoCreate list index func fillElement = case Array.index list (UInt.toInt index) of
@@ -54,3 +56,7 @@ group list groupIndexFunc =
 
 groupBySize :: forall t. UInt.UInt -> Array t -> Array (Array t)
 groupBySize size list = group list (\_ i -> (Prelude.div i size))
+
+-- | 並列実行する
+toParallel :: Array (Aff.Aff Prelude.Unit) -> Aff.Aff Prelude.Unit
+toParallel list = Prelude.map (\_ -> Prelude.unit) (Parallel.parSequence list)

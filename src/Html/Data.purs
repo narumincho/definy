@@ -25,27 +25,31 @@ module Html.Data
 import Color as Color
 import Data.Map as Map
 import Data.Maybe as Maybe
+import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import Language as Language
 import StructuredUrl as StructuredUrl
-import Data.Tuple as Tuple
 
 -- | 構造化された Html の指定
 newtype HtmlOption
   = HtmlOption
-  { {- ページ名 Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される -} pageName :: String
-  , {- アプリ名 / サイト名 (HTML出力のみ反映) -} appName :: String
+  { {- 
+  ページ名
+  Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される 
+  -} pageName :: NonEmptyString.NonEmptyString
+  , {- アプリ名 / サイト名 (HTML出力のみ反映) -} appName :: NonEmptyString.NonEmptyString
   , {- ページの説明 (HTML出力のみ反映) -} description :: String
   , {- テーマカラー -} themeColor :: Color.Color
   , {- アイコン画像のURL -} iconPath :: StructuredUrl.PathAndSearchParams
   , {- 使用している言語 -} language :: Maybe.Maybe Language.Language
   , {- OGPに使われるカバー画像のURL (CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams
-  , {- オリジン -} origin :: String
+  , {- オリジン -} origin :: NonEmptyString.NonEmptyString
   , {- パス. ログイン時のコールバック時には Noting にして良い -} path :: Maybe.Maybe StructuredUrl.PathAndSearchParams
   , {- Twitter Card. Twitterでシェアしたときの表示をどうするか -} twitterCard :: TwitterCard
   , {- 全体に適応されるスタイル. CSS -} style :: Maybe.Maybe String
   , {- スタイルのパス -} stylePath :: Maybe.Maybe StructuredUrl.PathAndSearchParams
   , {- スクリプトのパス -} scriptPath :: Maybe.Maybe StructuredUrl.PathAndSearchParams
-  , {- body の class -} bodyClass :: Maybe.Maybe String
+  , {- body の class -} bodyClass :: Maybe.Maybe NonEmptyString.NonEmptyString
   , {- body の 子要素 -} bodyChildren :: Array HtmlElement
   }
 
@@ -77,11 +81,15 @@ html langMaybe headElement bodyElement =
     )
     (ElementList [ headElement, bodyElement ])
 
-body :: Maybe.Maybe String -> HtmlChildren -> HtmlElement
+body :: Maybe.Maybe NonEmptyString.NonEmptyString -> HtmlChildren -> HtmlElement
 body classMaybe children =
   htmlElement "body"
     ( case classMaybe of
-        Maybe.Just className -> Map.singleton "class" (Maybe.Just className)
+        Maybe.Just className ->
+          Map.singleton "class"
+            ( Maybe.Just
+                (NonEmptyString.toString className)
+            )
         Maybe.Nothing -> Map.empty
     )
     children
@@ -120,13 +128,13 @@ script url =
     "script"
     ( Map.fromFoldable
         [ Tuple.Tuple "defer" Maybe.Nothing
-        , Tuple.Tuple "src" (Maybe.Just (StructuredUrl.toString url))
+        , Tuple.Tuple "src" (Maybe.Just (NonEmptyString.toString (StructuredUrl.toString url)))
         ]
     )
     (ElementList [])
 
-title :: String -> HtmlElement
-title pageName = htmlElement "title" Map.empty (Text pageName)
+title :: NonEmptyString.NonEmptyString -> HtmlElement
+title pageName = htmlElement "title" Map.empty (Text (NonEmptyString.toString pageName))
 
 div :: Map.Map String (Maybe.Maybe String) -> HtmlChildren -> HtmlElement
 div attributes children = htmlElement "div" attributes children

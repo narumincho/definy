@@ -1,11 +1,12 @@
 module View.ToHtml where
 
+import Color as Color
 import Css as Css
-import Data.String.NonEmpty as NonEmptyString
 import Data.Array as Array
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String as String
+import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Hash as Hash
 import Html.Data as HtmlData
@@ -45,7 +46,7 @@ viewToHtmlOption (View.View view) scriptFileName =
                                 , declarationList:
                                     [ Css.height100Percent
                                     , Css.margin0
-                                    , Css.backgroundColor "black"
+                                    , Css.backgroundColor Color.black
                                     , Css.displayGrid
                                     , Css.boxSizingBorderBox
                                     , Css.alignItems Css.Start
@@ -53,35 +54,10 @@ viewToHtmlOption (View.View view) scriptFileName =
                                 }
                             ]
                           , Array.concatMap
-                              ( \(Tuple.Tuple hashValue (ViewStyle { declarationList, hoverDeclarationList })) ->
-                                  Array.concat
-                                    [ if Array.null declarationList then
-                                        []
-                                      else
-                                        [ Css.Rule
-                                            { selector:
-                                                Css.Class
-                                                  { className: sha256HashValueToClassName hashValue
-                                                  , isHover: false
-                                                  }
-                                            , declarationList: declarationList
-                                            }
-                                        ]
-                                    , if Array.null hoverDeclarationList then
-                                        []
-                                      else
-                                        [ Css.Rule
-                                            { selector:
-                                                Css.Class
-                                                  { className: sha256HashValueToClassName (hashValue)
-                                                  , isHover: true
-                                                  }
-                                            , declarationList: hoverDeclarationList
-                                            }
-                                        ]
-                                    ]
+                              styleDictItemToCssRuleList
+                              ( Map.toUnfoldable
+                                  (htmlElementAndStyleDictStyleDict htmlElementAndStyleDict)
                               )
-                              (Map.toUnfoldable (htmlElementAndStyleDictStyleDict htmlElementAndStyleDict))
                           ]
                     , keyframesList:
                         Prelude.map
@@ -101,6 +77,35 @@ viewToHtmlOption (View.View view) scriptFileName =
       , bodyClass: Maybe.Nothing
       }
 
+styleDictItemToCssRuleList :: Tuple.Tuple NonEmptyString.NonEmptyString ViewStyle -> Array Css.Rule
+styleDictItemToCssRuleList (Tuple.Tuple hashValue (ViewStyle { declarationList, hoverDeclarationList })) =
+  Array.concat
+    [ if Array.null declarationList then
+        []
+      else
+        [ Css.Rule
+            { selector:
+                Css.Class
+                  { className: sha256HashValueToClassName hashValue
+                  , isHover: false
+                  }
+            , declarationList: declarationList
+            }
+        ]
+    , if Array.null hoverDeclarationList then
+        []
+      else
+        [ Css.Rule
+            { selector:
+                Css.Class
+                  { className: sha256HashValueToClassName hashValue
+                  , isHover: true
+                  }
+            , declarationList: hoverDeclarationList
+            }
+        ]
+    ]
+
 newtype ViewStyle
   = ViewStyle
   { declarationList :: Array Css.Declaration
@@ -110,17 +115,17 @@ newtype ViewStyle
 newtype HtmlElementAndStyleDict
   = HtmlElementAndStyleDict
   { htmlElement :: HtmlData.HtmlElement
-  , styleDict :: Map.Map String ViewStyle
-  , keyframesDict :: Map.Map String (Array Css.Keyframe)
+  , styleDict :: Map.Map NonEmptyString.NonEmptyString ViewStyle
+  , keyframesDict :: Map.Map NonEmptyString.NonEmptyString (Array Css.Keyframe)
   }
 
-htmlElementAndStyleDictStyleDict :: HtmlElementAndStyleDict -> Map.Map String ViewStyle
+htmlElementAndStyleDictStyleDict :: HtmlElementAndStyleDict -> Map.Map NonEmptyString.NonEmptyString ViewStyle
 htmlElementAndStyleDictStyleDict (HtmlElementAndStyleDict { styleDict }) = styleDict
 
 htmlElementAndStyleDictHtmlElement :: HtmlElementAndStyleDict -> HtmlData.HtmlElement
 htmlElementAndStyleDictHtmlElement (HtmlElementAndStyleDict { htmlElement }) = htmlElement
 
-htmlElementAndStyleDictKeyframesDict :: HtmlElementAndStyleDict -> Map.Map String (Array Css.Keyframe)
+htmlElementAndStyleDictKeyframesDict :: HtmlElementAndStyleDict -> Map.Map NonEmptyString.NonEmptyString (Array Css.Keyframe)
 htmlElementAndStyleDictKeyframesDict (HtmlElementAndStyleDict { keyframesDict }) = keyframesDict
 
 boxToHtmlElementAndStyleDict :: forall message. View.Box message -> HtmlElementAndStyleDict
@@ -188,7 +193,14 @@ boxToHtmlElementAndStyleDict box@( View.Box
                 ( Array.concat
                     [ [ sha256HashValueToClassAttributeNameAndValue className ]
                     , case boxRecord.url of
-                        Maybe.Just url -> [ Tuple.Tuple "href" (Maybe.Just (StructuredUrl.toString url)) ]
+                        Maybe.Just url ->
+                          [ Tuple.Tuple "href"
+                              ( Maybe.Just
+                                  ( NonEmptyString.toString
+                                      (StructuredUrl.toString url)
+                                  )
+                              )
+                          ]
                         Maybe.Nothing -> []
                     ]
                 )
@@ -199,7 +211,7 @@ boxToHtmlElementAndStyleDict box@( View.Box
             (Map.fromFoldable (Array.concatMap (\c -> Map.toUnfoldable (htmlElementAndStyleDictStyleDict c)) children))
       , keyframesDict:
           let
-            childrenKeyframesDict :: Map.Map String (Array Css.Keyframe)
+            childrenKeyframesDict :: Map.Map NonEmptyString.NonEmptyString (Array Css.Keyframe)
             childrenKeyframesDict =
               Map.fromFoldable
                 (Array.concatMap (\c -> Map.toUnfoldable (htmlElementAndStyleDictKeyframesDict c)) children)
@@ -216,14 +228,14 @@ boxGetKeyframeListAndAnimationName ::
   View.Box message ->
   Maybe.Maybe
     { keyframeList :: Array Css.Keyframe
-    , animationHashValue :: String
+    , animationHashValue :: NonEmptyString.NonEmptyString
     , duration :: Number
     }
 boxGetKeyframeListAndAnimationName (View.Box { hover: View.BoxHoverStyle { animation } }) = case animation of
   Maybe.Just (View.Animation { keyframeList, duration }) ->
     Maybe.Just
       { keyframeList: keyframeList
-      , animationHashValue: keyframeListToSha256HashValue (keyframeList)
+      , animationHashValue: keyframeListToSha256HashValue keyframeList
       , duration: duration
       }
   Maybe.Nothing -> Maybe.Nothing
@@ -236,7 +248,7 @@ elementToHtmlElementAndStyleDict = case _ of
       viewStyle =
         ViewStyle
           { declarationList:
-              [ Css.color "white"
+              [ Css.color Color.white
               , Css.padding { topBottom: padding, leftRight: padding }
               , Css.margin0
               , Css.lineHeight 1
@@ -313,8 +325,8 @@ elementToHtmlElementAndStyleDict = case _ of
         { htmlElement:
             HtmlData.img
               ( Map.fromFoldable
-                  [ Tuple.Tuple "src" (Maybe.Just (StructuredUrl.pathAndSearchParamsToString path))
-                  , sha256HashValueToClassAttributeNameAndValue (className)
+                  [ Tuple.Tuple "src" (Maybe.Just (NonEmptyString.toString (StructuredUrl.pathAndSearchParamsToString path)))
+                  , sha256HashValueToClassAttributeNameAndValue className
                   ]
               )
         , styleDict: Map.singleton className viewStyle
@@ -356,37 +368,33 @@ svgElementToHtmlElement = case _ of
       )
       (Prelude.map svgElementToHtmlElement svgElementList)
 
-sha256HashValueToClassAttributeNameAndValue :: String -> Tuple.Tuple String (Maybe.Maybe String)
+sha256HashValueToClassAttributeNameAndValue :: NonEmptyString.NonEmptyString -> Tuple.Tuple String (Maybe.Maybe String)
 sha256HashValueToClassAttributeNameAndValue sha256HashValue =
   Tuple.Tuple
     "class"
     (Maybe.Just (sha256HashValueToClassName sha256HashValue))
 
-sha256HashValueToClassName :: String -> String
-sha256HashValueToClassName sha256HashValue = Prelude.append "nv_" sha256HashValue
+sha256HashValueToClassName :: NonEmptyString.NonEmptyString -> String
+sha256HashValueToClassName sha256HashValue = Prelude.append "nv_" (NonEmptyString.toString sha256HashValue)
 
-sha256HashValueToAnimationName :: String -> String
-sha256HashValueToAnimationName sha256HashValue = Prelude.append "nva_" sha256HashValue
+sha256HashValueToAnimationName :: NonEmptyString.NonEmptyString -> String
+sha256HashValueToAnimationName sha256HashValue = Prelude.append "nva_" (NonEmptyString.toString sha256HashValue)
 
 percentageOrRemWidthToCssDeclaration :: View.PercentageOrRem -> Css.Declaration
 percentageOrRemWidthToCssDeclaration = case _ of
   View.Rem value -> Css.widthRem value
   View.Percentage value -> Css.widthPercent value
 
-viewStyleToSha256HashValue :: ViewStyle -> String
+viewStyleToSha256HashValue :: ViewStyle -> NonEmptyString.NonEmptyString
 viewStyleToSha256HashValue (ViewStyle { declarationList, hoverDeclarationList }) =
-  NonEmptyString.toString
-    ( Hash.stringToSha256HashValue
-        ( String.joinWith "!"
-            [ Css.declarationListToString declarationList
-            , Css.declarationListToString hoverDeclarationList
-            ]
-        )
+  Hash.stringToSha256HashValue
+    ( String.joinWith "!"
+        [ Css.declarationListToString declarationList
+        , Css.declarationListToString hoverDeclarationList
+        ]
     )
 
-keyframeListToSha256HashValue :: Array Css.Keyframe -> String
+keyframeListToSha256HashValue :: Array Css.Keyframe -> NonEmptyString.NonEmptyString
 keyframeListToSha256HashValue keyframeList =
-  NonEmptyString.toString
-    ( Hash.stringToSha256HashValue
-        (String.joinWith "!" (Prelude.map Css.keyFrameToString keyframeList))
-    )
+  Hash.stringToSha256HashValue
+    (String.joinWith "!" (Prelude.map Css.keyFrameToString keyframeList))

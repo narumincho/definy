@@ -18,6 +18,7 @@ module View.View
 import Color as Color
 import Css as Css
 import Data.Maybe as Maybe
+import Data.String.NonEmpty as NonEmptyString
 import Language as Language
 import StructuredUrl as StructuredUrl
 
@@ -29,8 +30,8 @@ newtype View message
   { {- 
     ページ名
     Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される
-    -} pageName :: String
-  , {- アプリ名 / サイト名 (HTML出力のみ反映) -} appName :: String
+    -} pageName :: NonEmptyString.NonEmptyString
+  , {- アプリ名 / サイト名 (HTML出力のみ反映) -} appName :: NonEmptyString.NonEmptyString
   , {- ページの説明 (HTML出力のみ反映) -} description :: String
   , {- テーマカラー -} themeColor :: Color.Color
   , {- アイコン画像のURL -} iconPath :: StructuredUrl.PathAndSearchParams
@@ -38,7 +39,7 @@ newtype View message
   , {- OGPに使われるカバー画像のパス (CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams
   , {- ページのパス -} path :: StructuredUrl.PathAndSearchParams
   , {- 全体に適応されるスタイル. CSS -} style :: Maybe.Maybe String
-  , {- オリジン -} origin :: String
+  , {- オリジン -} origin :: NonEmptyString.NonEmptyString
   , {- 子要素 -} box :: Box message
   }
 
@@ -54,7 +55,7 @@ type BoxRecord message
     , paddingTopBottom :: Number
     , paddingLeftRight :: Number
     , height :: Maybe.Maybe Number
-    , backgroundColor :: Maybe.Maybe String
+    , backgroundColor :: Maybe.Maybe Color.Color
     , gridTemplateColumns1FrCount :: Maybe.Maybe Int
     , url :: Maybe.Maybe StructuredUrl.StructuredUrl
     , hover :: BoxHoverStyle

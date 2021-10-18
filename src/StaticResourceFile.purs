@@ -7,8 +7,8 @@ import Data.String.NonEmpty as NonEmptyString
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import Effect.Console as Console
-import FileSystem as FileSystem
-import FileType as FileType
+import FileSystem.Path as Path
+import FileSystem.Read as FileSystemRead
 import Hash as Hash
 import Prelude as Prelude
 
@@ -17,7 +17,7 @@ newtype StaticResourceFileResult
   = StaticResourceFileResult
   { {- 
       入力のファイル名. オリジナルのファイル名. 拡張子あり 
-    -} originalFilePath :: FileSystem.FilePath
+    -} originalFilePath :: Path.FilePath
   , fileId :: NonEmptyString.NonEmptyString
   , requestPath :: String
   {- 
@@ -28,13 +28,13 @@ newtype StaticResourceFileResult
   }
 
 -- | 指定したファイルパスの SHA-256 のハッシュ値を取得する
-getFileHash :: FileSystem.FilePath -> Aff.Aff String
-getFileHash filePath@(FileSystem.FilePath { fileType }) =
+getFileHash :: Path.FilePath -> Aff.Aff String
+getFileHash filePath =
   Prelude.bind
     ( EffectClass.liftEffect
         ( Console.log
             ( Prelude.append
-                (NonEmptyString.toString (FileSystem.filePathToString filePath))
+                (NonEmptyString.toString (Path.filePathToString filePath))
                 "のハッシュ値を取得中"
             )
         )
@@ -43,9 +43,13 @@ getFileHash filePath@(FileSystem.FilePath { fileType }) =
         Prelude.map
           ( \content ->
               Hash.bufferAndMimeTypeToSha256HashValue
-                { buffer: content, mimeType: FileType.toMimeType fileType }
+                { buffer: content
+                , mimeType:
+                    Prelude.show
+                      (Path.filePathGetFileType filePath)
+                }
           )
-          (FileSystem.readBinaryFile filePath)
+          (FileSystemRead.readBinaryFile filePath)
     )
 
 firstUppercase :: String -> String
@@ -54,11 +58,11 @@ firstUppercase text = case String.uncons text of
   Maybe.Nothing -> ""
 
 -- | static なファイルが入っているディレクトリを分析する
-getStaticResourceFileResult :: FileSystem.DirectoryPath -> Aff.Aff (Array StaticResourceFileResult)
+getStaticResourceFileResult :: Path.DirectoryPath -> Aff.Aff (Array StaticResourceFileResult)
 getStaticResourceFileResult directoryPath =
   let
-    filePathListAff :: Aff.Aff (Array FileSystem.FilePath)
-    filePathListAff = FileSystem.readFilePathInDirectory directoryPath
+    filePathListAff :: Aff.Aff (Array Path.FilePath)
+    filePathListAff = FileSystemRead.readFilePathInDirectory directoryPath
   in
     Prelude.bind
       filePathListAff
@@ -72,18 +76,18 @@ getStaticResourceFileResult directoryPath =
             )
       )
 
-filePathToStaticResourceFileResultAff :: FileSystem.FilePath -> Aff.Aff StaticResourceFileResult
+filePathToStaticResourceFileResultAff :: Path.FilePath -> Aff.Aff StaticResourceFileResult
 filePathToStaticResourceFileResultAff filePath =
   Prelude.map
     ( \hashValue ->
         StaticResourceFileResult
           { originalFilePath: filePath
           , fileId:
-              NonEmptyString.appendString (FileSystem.filePathFileName filePath)
-                ( case FileSystem.filePathFileType filePath of
+              NonEmptyString.appendString (Path.filePathGetFileName filePath)
+                ( case Path.filePathGetFileType filePath of
                     Maybe.Just fileType ->
                       firstUppercase
-                        (NonEmptyString.toString (FileSystem.fileTypeToExtension fileType))
+                        (NonEmptyString.toString (Path.fileTypeToExtension fileType))
                     Maybe.Nothing -> ""
                 )
           , requestPath: hashValue

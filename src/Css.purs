@@ -35,6 +35,7 @@ module Css
   , transformScale
   ) where
 
+import Color as Color
 import Data.Array as Array
 import Data.String as String
 import Prelude as Prelude
@@ -208,11 +209,11 @@ alignItems value =
           Start -> "start"
     }
 
-backgroundColor :: String -> Declaration
+backgroundColor :: Color.Color -> Declaration
 backgroundColor value =
   Declaration
     { property: "background-color"
-    , value
+    , value: Color.toHexString value
     }
 
 data ColumnOrRow
@@ -281,11 +282,11 @@ animation animationName duration =
           ]
     }
 
-color :: String -> Declaration
-color colorString =
+color :: Color.Color -> Declaration
+color value =
   Declaration
     { property: "color"
-    , value: "white"
+    , value: Color.toHexString value
     }
 
 lineHeight :: Int -> Declaration

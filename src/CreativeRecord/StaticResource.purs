@@ -5,67 +5,67 @@ module CreativeRecord.StaticResource(battlePng, colorPng, definy20210811Png, des
 import Data.Map as M0
 import StructuredUrl as M1
 
--- | static な ファイル の "./narumincho-creative-record/resource/battle.png"をリクエストするためのURL. ファイルのハッシュ値は b498aff8917d349aa0f9b3a41a0d6a5b7093caea175873b4bc77a467ef67d499"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/battle.png"をリクエストするためのURL. ファイルのハッシュ値は d0d5b5155e3bf151182dec717b40219b2e3eeb3ddf0c00788ae09ae81e835a98"(コード生成結果)
 battlePng :: M1.PathAndSearchParams
-battlePng = (M1.pathAndSearchParams) ([ "b498aff8917d349aa0f9b3a41a0d6a5b7093caea175873b4bc77a467ef67d499" ]) (M0.empty)
+battlePng = (M1.pathAndSearchParams) ([ "d0d5b5155e3bf151182dec717b40219b2e3eeb3ddf0c00788ae09ae81e835a98" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/color.png"をリクエストするためのURL. ファイルのハッシュ値は d1f295174ec13a77811ff1b9e4c58377f50c444ba1bea8f9587448f2720c655c"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/color.png"をリクエストするためのURL. ファイルのハッシュ値は 69cb9776df6fe254459a0777072c1ba1b613cac6a29bd038cb9bb5ffdbc930e2"(コード生成結果)
 colorPng :: M1.PathAndSearchParams
-colorPng = (M1.pathAndSearchParams) ([ "d1f295174ec13a77811ff1b9e4c58377f50c444ba1bea8f9587448f2720c655c" ]) (M0.empty)
+colorPng = (M1.pathAndSearchParams) ([ "69cb9776df6fe254459a0777072c1ba1b613cac6a29bd038cb9bb5ffdbc930e2" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/definy20210811.png"をリクエストするためのURL. ファイルのハッシュ値は 33b80a0844230e60044b9891dc2fbefc3960e7995913e10928ca17852a8c3ce7"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/definy20210811.png"をリクエストするためのURL. ファイルのハッシュ値は 0120c597af9fca9ba96ebcabfb4cf2c7a3487d6032c43e0665b06438d71a002b"(コード生成結果)
 definy20210811Png :: M1.PathAndSearchParams
-definy20210811Png = (M1.pathAndSearchParams) ([ "33b80a0844230e60044b9891dc2fbefc3960e7995913e10928ca17852a8c3ce7" ]) (M0.empty)
+definy20210811Png = (M1.pathAndSearchParams) ([ "0120c597af9fca9ba96ebcabfb4cf2c7a3487d6032c43e0665b06438d71a002b" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/desired_route_title.png"をリクエストするためのURL. ファイルのハッシュ値は 6959cae6bdab07e752157c9077d1153b0a61d525869b7ecef6630b8cde4815b0"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/desired_route_title.png"をリクエストするためのURL. ファイルのハッシュ値は c273cd987dd17e47754ed882b9e90d3db3f239d277835f40f7914ea19272fbcc"(コード生成結果)
 desired_route_titlePng :: M1.PathAndSearchParams
-desired_route_titlePng = (M1.pathAndSearchParams) ([ "6959cae6bdab07e752157c9077d1153b0a61d525869b7ecef6630b8cde4815b0" ]) (M0.empty)
+desired_route_titlePng = (M1.pathAndSearchParams) ([ "c273cd987dd17e47754ed882b9e90d3db3f239d277835f40f7914ea19272fbcc" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/font.png"をリクエストするためのURL. ファイルのハッシュ値は 68c380d905ce9e1f8043c3f5c3c7f3fd51b0156d49cd36912aaf94c7f368c28a"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/font.png"をリクエストするためのURL. ファイルのハッシュ値は 9eafa059786cc013afb3adcc40f0b932384e95b37b788b2f50dceadba9756217"(コード生成結果)
 fontPng :: M1.PathAndSearchParams
-fontPng = (M1.pathAndSearchParams) ([ "68c380d905ce9e1f8043c3f5c3c7f3fd51b0156d49cd36912aaf94c7f368c28a" ]) (M0.empty)
+fontPng = (M1.pathAndSearchParams) ([ "9eafa059786cc013afb3adcc40f0b932384e95b37b788b2f50dceadba9756217" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/grape_svg_code.png"をリクエストするためのURL. ファイルのハッシュ値は ddc034ae2b5d07e6ec33076a3a45bd9772c6670f53b14ddd30c0b51f2b97c7fb"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/grape_svg_code.png"をリクエストするためのURL. ファイルのハッシュ値は 4b330bb7de6534c6fc3ed51a952d41e7469f329efd729b8fa5b8e3250cc4b1f0"(コード生成結果)
 grape_svg_codePng :: M1.PathAndSearchParams
-grape_svg_codePng = (M1.pathAndSearchParams) ([ "ddc034ae2b5d07e6ec33076a3a45bd9772c6670f53b14ddd30c0b51f2b97c7fb" ]) (M0.empty)
+grape_svg_codePng = (M1.pathAndSearchParams) ([ "4b330bb7de6534c6fc3ed51a952d41e7469f329efd729b8fa5b8e3250cc4b1f0" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/gravity_star.png"をリクエストするためのURL. ファイルのハッシュ値は 68800d65e7bba25db6a2e5e5d2001e275969f10e653d34233989543090809dc2"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/gravity_star.png"をリクエストするためのURL. ファイルのハッシュ値は fbd8d22e751dfa4839801f57291c988ae1ae34e87801d0fa352c67974a513a7e"(コード生成結果)
 gravity_starPng :: M1.PathAndSearchParams
-gravity_starPng = (M1.pathAndSearchParams) ([ "68800d65e7bba25db6a2e5e5d2001e275969f10e653d34233989543090809dc2" ]) (M0.empty)
+gravity_starPng = (M1.pathAndSearchParams) ([ "fbd8d22e751dfa4839801f57291c988ae1ae34e87801d0fa352c67974a513a7e" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/henkan.png"をリクエストするためのURL. ファイルのハッシュ値は fbeaa96a4aa8321b5f81238cad963e5e2eb1a8ef8f39f169b5a015bca7f06bb2"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/henkan.png"をリクエストするためのURL. ファイルのハッシュ値は 65cc89888994728d91dfc23caee830d5d07a66baf043fd3a536dbed24da26d0a"(コード生成結果)
 henkanPng :: M1.PathAndSearchParams
-henkanPng = (M1.pathAndSearchParams) ([ "fbeaa96a4aa8321b5f81238cad963e5e2eb1a8ef8f39f169b5a015bca7f06bb2" ]) (M0.empty)
+henkanPng = (M1.pathAndSearchParams) ([ "65cc89888994728d91dfc23caee830d5d07a66baf043fd3a536dbed24da26d0a" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/icon.png"をリクエストするためのURL. ファイルのハッシュ値は fe793a7f2e27cb8cfe578e5dff35315e2ba9c2544dcb250d3e9b78ca00a5b959"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/icon.png"をリクエストするためのURL. ファイルのハッシュ値は 098f526733f0a87c33e598f953769a7fa86fcffca5072011bba21ffb007ca7f5"(コード生成結果)
 iconPng :: M1.PathAndSearchParams
-iconPng = (M1.pathAndSearchParams) ([ "fe793a7f2e27cb8cfe578e5dff35315e2ba9c2544dcb250d3e9b78ca00a5b959" ]) (M0.empty)
+iconPng = (M1.pathAndSearchParams) ([ "098f526733f0a87c33e598f953769a7fa86fcffca5072011bba21ffb007ca7f5" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/kamausagi.png"をリクエストするためのURL. ファイルのハッシュ値は 6939a60eff9d66c18333d1cd28cdb052ed5d6ed8e0c933b9bfa2780596f41853"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/kamausagi.png"をリクエストするためのURL. ファイルのハッシュ値は 195b56c3a78e4fdf2441ffc1eb10aef1034d4162d49109913f791cb971b5febc"(コード生成結果)
 kamausagiPng :: M1.PathAndSearchParams
-kamausagiPng = (M1.pathAndSearchParams) ([ "6939a60eff9d66c18333d1cd28cdb052ed5d6ed8e0c933b9bfa2780596f41853" ]) (M0.empty)
+kamausagiPng = (M1.pathAndSearchParams) ([ "195b56c3a78e4fdf2441ffc1eb10aef1034d4162d49109913f791cb971b5febc" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/list_ui.png"をリクエストするためのURL. ファイルのハッシュ値は 7d1f910bbaccf3362282d509b606084ca93b8e2dd8055283280b421ae5d5c50a"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/list_ui.png"をリクエストするためのURL. ファイルのハッシュ値は 36a91f221e48405c2ee2b574ccbfe9c727c4e1932384d505530afbfd7f3bac00"(コード生成結果)
 list_uiPng :: M1.PathAndSearchParams
-list_uiPng = (M1.pathAndSearchParams) ([ "7d1f910bbaccf3362282d509b606084ca93b8e2dd8055283280b421ae5d5c50a" ]) (M0.empty)
+list_uiPng = (M1.pathAndSearchParams) ([ "36a91f221e48405c2ee2b574ccbfe9c727c4e1932384d505530afbfd7f3bac00" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/powershell_icon.png"をリクエストするためのURL. ファイルのハッシュ値は 3e53209d83848dffa23b7cbbdca35a735c55a6b55601cdedd303a3f90d559fe3"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/powershell_icon.png"をリクエストするためのURL. ファイルのハッシュ値は c108fea0178ded573bed955a633d681dd2c15e2fd8ea45556b2ee1bea8688cf9"(コード生成結果)
 powershell_iconPng :: M1.PathAndSearchParams
-powershell_iconPng = (M1.pathAndSearchParams) ([ "3e53209d83848dffa23b7cbbdca35a735c55a6b55601cdedd303a3f90d559fe3" ]) (M0.empty)
+powershell_iconPng = (M1.pathAndSearchParams) ([ "c108fea0178ded573bed955a633d681dd2c15e2fd8ea45556b2ee1bea8688cf9" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/star.png"をリクエストするためのURL. ファイルのハッシュ値は f0e7afe9457c2dc0c117934e3e584001d1fa7c910ec912ac1260179ab1dac8db"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/star.png"をリクエストするためのURL. ファイルのハッシュ値は 3e875e3e5caedcf07d6e8416c065b0bef5383e4523d8968f8348db52bab549ef"(コード生成結果)
 starPng :: M1.PathAndSearchParams
-starPng = (M1.pathAndSearchParams) ([ "f0e7afe9457c2dc0c117934e3e584001d1fa7c910ec912ac1260179ab1dac8db" ]) (M0.empty)
+starPng = (M1.pathAndSearchParams) ([ "3e875e3e5caedcf07d6e8416c065b0bef5383e4523d8968f8348db52bab549ef" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/svg_basic.png"をリクエストするためのURL. ファイルのハッシュ値は 07eb3d10e2f339ab8574ffa8a3f9f15bfd6f51518ef24bb38ae92d54deb9510a"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/svg_basic.png"をリクエストするためのURL. ファイルのハッシュ値は 4759c2725203a86dd60e95f1ec169d400c580ed9726f90cbb43cc147e38b35da"(コード生成結果)
 svg_basicPng :: M1.PathAndSearchParams
-svg_basicPng = (M1.pathAndSearchParams) ([ "07eb3d10e2f339ab8574ffa8a3f9f15bfd6f51518ef24bb38ae92d54deb9510a" ]) (M0.empty)
+svg_basicPng = (M1.pathAndSearchParams) ([ "4759c2725203a86dd60e95f1ec169d400c580ed9726f90cbb43cc147e38b35da" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/tsukumart.png"をリクエストするためのURL. ファイルのハッシュ値は 2df345d24aef7080b8f64a69a022b8e1d7968ebfd8e93e42c1c6e7a9cb088d64"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/tsukumart.png"をリクエストするためのURL. ファイルのハッシュ値は f72f6883b8f091e28c26e64d8b755e689a43848351d6087aa66ec990372a9bd1"(コード生成結果)
 tsukumartPng :: M1.PathAndSearchParams
-tsukumartPng = (M1.pathAndSearchParams) ([ "2df345d24aef7080b8f64a69a022b8e1d7968ebfd8e93e42c1c6e7a9cb088d64" ]) (M0.empty)
+tsukumartPng = (M1.pathAndSearchParams) ([ "f72f6883b8f091e28c26e64d8b755e689a43848351d6087aa66ec990372a9bd1" ]) (M0.empty)
 
--- | static な ファイル の "./narumincho-creative-record/resource/window.png"をリクエストするためのURL. ファイルのハッシュ値は 3162cd943ef3c3c7681b84acb99e54ada924dccdbcda8ee090d31e28efda1dc8"(コード生成結果)
+-- | static な ファイル の "./narumincho-creative-record/resource/window.png"をリクエストするためのURL. ファイルのハッシュ値は 37a5d840bc6be92b9c45f859b8a33d7518e071cfb7fb851a1938bb86680fa0d2"(コード生成結果)
 windowPng :: M1.PathAndSearchParams
-windowPng = (M1.pathAndSearchParams) ([ "3162cd943ef3c3c7681b84acb99e54ada924dccdbcda8ee090d31e28efda1dc8" ]) (M0.empty)
+windowPng = (M1.pathAndSearchParams) ([ "37a5d840bc6be92b9c45f859b8a33d7518e071cfb7fb851a1938bb86680fa0d2" ]) (M0.empty)
 
