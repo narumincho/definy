@@ -13,9 +13,9 @@ import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import Effect.Console as Console
 import EsBuild as EsBuild
-import FileSystem.Write as FileSystemWrite
 import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
+import FileSystem.Write as FileSystemWrite
 import FileType as FileType
 import Firebase.FirebaseJson as FirebaseJson
 import Firebase.SecurityRules as SecurityRules
@@ -47,16 +47,11 @@ esbuildClientProgramFileDirectoryPath =
           )
     }
 
-hostingDistributionDirectoryName :: NonEmptyString.NonEmptyString
-hostingDistributionDirectoryName =
-  NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "hosting")
-
 hostingDirectoryPath :: Path.DistributionDirectoryPath
 hostingDirectoryPath =
   Path.DistributionDirectoryPath
     { appName
-    , folderNameMaybe: Maybe.Just hostingDistributionDirectoryName
+    , folderNameMaybe: Maybe.Just (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "hosting"))
     }
 
 build :: Aff.Aff Unit
@@ -124,16 +119,15 @@ readEsbuildResultClientProgramFile = do
       ( Path.DistributionFilePath
           { directoryPath: esbuildClientProgramFileDirectoryPath
           , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "program")
-          , fileType: Maybe.Just FileType.JavaScript
           }
       )
+      FileType.JavaScript
   let
     clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString
   FileSystemWrite.writeTextFileInDistribution
     ( Path.DistributionFilePath
         { directoryPath: hostingDirectoryPath
         , fileName: clientProgramHashValue
-        , fileType: Maybe.Nothing
         }
     )
     clientProgramAsString
@@ -142,35 +136,41 @@ readEsbuildResultClientProgramFile = do
 writeFirestoreRules :: Aff.Aff Unit
 writeFirestoreRules =
   FileSystemWrite.writeFirebaseRules
-    (Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing })
-    firestoreSecurityRulesFileName
+    firestoreSecurityRulesFilePath
     SecurityRules.allForbiddenFirestoreRule
 
 writeCloudStorageRules :: Aff.Aff Unit
 writeCloudStorageRules =
   FileSystemWrite.writeFirebaseRules
-    (Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing })
-    cloudStorageSecurityRulesFileName
+    cloudStorageSecurityRulesFilePath
     SecurityRules.allForbiddenFirebaseStorageRule
 
-firestoreSecurityRulesFileName :: NonEmptyString.NonEmptyString
-firestoreSecurityRulesFileName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firestore")
+firestoreSecurityRulesFilePath :: Path.DistributionFilePath
+firestoreSecurityRulesFilePath =
+  Path.DistributionFilePath
+    { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
+    , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firestore")
+    }
 
-cloudStorageSecurityRulesFileName :: NonEmptyString.NonEmptyString
-cloudStorageSecurityRulesFileName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "storage")
+cloudStorageSecurityRulesFilePath :: Path.DistributionFilePath
+cloudStorageSecurityRulesFilePath =
+  Path.DistributionFilePath
+    { directoryPath:
+        Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
+    , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "storage")
+    }
 
 writeFirebaseJson :: Aff.Aff Unit
 writeFirebaseJson = do
-  FileSystemWrite.writeTextFileInDistribution
+  FileSystemWrite.writeJson
     ( Path.DistributionFilePath
         { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
         , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase")
-        , fileType: Maybe.Just FileType.Json
         }
     )
-    ( FirebaseJson.toString
+    ( FirebaseJson.toJson
         ( FirebaseJson.FirebaseJson
-            { cloudStorageRulesPath: NonEmptyString.prependString "./" cloudStorageSecurityRulesFileName
+            { cloudStorageRulesFilePath: cloudStorageSecurityRulesFilePath
             , emulators:
                 FirebaseJson.Emulators
                   { functionsPortNumber: Maybe.Just (UInt.fromInt 5001)
@@ -178,12 +178,17 @@ writeFirebaseJson = do
                   , hostingPortNumber: Maybe.Nothing
                   , storagePortNumber: Maybe.Just (UInt.fromInt 9199)
                   }
-            , firestoreRulesFilePath: NonEmptyString.prependString "./" firestoreSecurityRulesFileName
-            , functionsDistributionPath: "./functions"
-            , hostingDistributionPath:
-                append
-                  "./"
-                  (NonEmptyString.toString hostingDistributionDirectoryName)
+            , firestoreRulesFilePath: firestoreSecurityRulesFilePath
+            , functionsDistributionPath:
+                Path.DistributionDirectoryPath
+                  { appName
+                  , folderNameMaybe:
+                      Mabye.Just
+                        ( NonEmptyString.nes
+                            (Proxy.Proxy :: Proxy.Proxy "./functions")
+                        )
+                  }
+            , hostingDistributionPath: hostingDirectoryPath
             , hostingRewites: []
             }
         )

@@ -1,4 +1,4 @@
-module Firebase.FirebaseJson (FirebaseJson(..), Rewrite(..), Emulators(..), toString) where
+module Firebase.FirebaseJson (FirebaseJson(..), Rewrite(..), Emulators(..), toJson) where
 
 import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
@@ -6,15 +6,17 @@ import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
+import FileSystem.Path as Path
+import FileType as FileType
 import Foreign.Object as Object
 import Prelude as Prelude
 
 newtype FirebaseJson
   = FirebaseJson
-  { functionsDistributionPath :: String
-  , firestoreRulesFilePath :: NonEmptyString.NonEmptyString
-  , cloudStorageRulesPath :: NonEmptyString.NonEmptyString
-  , hostingDistributionPath :: String
+  { hostingDistributionPath :: Path.DistributionDirectoryPath
+  , functionsDistributionPath :: Path.DistributionDirectoryPath
+  , firestoreRulesFilePath :: Path.DistributionFilePath
+  , cloudStorageRulesFilePath :: Path.DistributionFilePath
   , hostingRewites :: Array Rewrite
   , emulators :: Emulators
   }
@@ -30,38 +32,62 @@ newtype Emulators
   , storagePortNumber :: Maybe.Maybe UInt.UInt
   }
 
-toString :: FirebaseJson -> String
-toString (FirebaseJson record) =
-  ArgonautCore.stringify
-    ( tupleListToJson
-        ( [ Tuple.Tuple "functions"
-              ( ArgonautCore.jsonSingletonObject "source"
-                  (ArgonautCore.fromString record.functionsDistributionPath)
-              )
-          , Tuple.Tuple
-              "firestore"
-              ( ArgonautCore.jsonSingletonObject "rules"
-                  (ArgonautCore.fromString (NonEmptyString.toString record.firestoreRulesFilePath))
-              )
-          , Tuple.Tuple "storage"
-              ( ArgonautCore.jsonSingletonObject "rules"
-                  (ArgonautCore.fromString (NonEmptyString.toString record.cloudStorageRulesPath))
-              )
-          , Tuple.Tuple "hosting"
-              ( tupleListToJson
-                  [ Tuple.Tuple "public" (ArgonautCore.fromString record.hostingDistributionPath)
-                  , Tuple.Tuple "rewrites"
-                      ( ArgonautCore.fromArray
-                          (Prelude.map rewriteToJson record.hostingRewites)
-                      )
-                  , Tuple.Tuple "cleanUrls" ArgonautCore.jsonTrue
-                  , Tuple.Tuple "trailingSlash" ArgonautCore.jsonFalse
-                  ]
-              )
-          , Tuple.Tuple "emulators" (emulatorsToJsonValue record.emulators)
-          ]
+toJson :: FirebaseJson -> ArgonautCore.Json
+toJson (FirebaseJson record) =
+  tupleListToJson
+    [ Tuple.Tuple "functions"
+        ( ArgonautCore.jsonSingletonObject "source"
+            ( ArgonautCore.fromString
+                ( NonEmptyString.toString
+                    ( Path.distributionDirectoryPathToStringBaseApp
+                        record.functionsDistributionPath
+                    )
+                )
+            )
         )
-    )
+    , Tuple.Tuple
+        "firestore"
+        ( ArgonautCore.jsonSingletonObject "rules"
+            ( ArgonautCore.fromString
+                ( NonEmptyString.toString
+                    ( Path.distributionFilePathToStringBaseApp
+                        record.firestoreRulesFilePath
+                        FileType.FirebaseSecurityRules
+                    )
+                )
+            )
+        )
+    , Tuple.Tuple "storage"
+        ( ArgonautCore.jsonSingletonObject "rules"
+            ( ArgonautCore.fromString
+                ( NonEmptyString.toString
+                    ( Path.distributionFilePathToStringBaseApp
+                        record.cloudStorageRulesFilePath
+                        FileType.FirebaseSecurityRules
+                    )
+                )
+            )
+        )
+    , Tuple.Tuple "hosting"
+        ( tupleListToJson
+            [ Tuple.Tuple "public"
+                ( ArgonautCore.fromString
+                    ( NonEmptyString.toString
+                        ( Path.distributionDirectoryPathToStringBaseApp
+                            record.hostingDistributionPath
+                        )
+                    )
+                )
+            , Tuple.Tuple "rewrites"
+                ( ArgonautCore.fromArray
+                    (Prelude.map rewriteToJson record.hostingRewites)
+                )
+            , Tuple.Tuple "cleanUrls" ArgonautCore.jsonTrue
+            , Tuple.Tuple "trailingSlash" ArgonautCore.jsonFalse
+            ]
+        )
+    , Tuple.Tuple "emulators" (emulatorsToJsonValue record.emulators)
+    ]
 
 tupleListToJson :: Array (Tuple.Tuple String ArgonautCore.Json) -> ArgonautCore.Json
 tupleListToJson list = ArgonautCore.fromObject (Object.fromFoldable list)

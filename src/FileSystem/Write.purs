@@ -2,9 +2,11 @@ module FileSystem.Write
   ( writeTextFileInDistribution
   , writePureScript
   , writeFirebaseRules
+  , writeJson
   ) where
 
 import Prelude
+import Data.Argonaut.Core as ArgonautCore
 import Data.Array.NonEmpty as ArrayNonEmpty
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
@@ -12,15 +14,15 @@ import Effect.Aff as Aff
 import Effect.Aff.Compat as AffCompat
 import Effect.Class as EffectClass
 import Effect.Console as Console
+import FileSystem.Path as Path
 import FileType as FileType
 import Firebase.SecurityRules as FirebaseSecurityRules
 import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
 import PureScript.Data as PureScriptData
 import PureScript.ToString as PureScriptToString
-import FileSystem.Path as Path
 
--- | distribution に ファイルを文字列として書き込む
+-- | distribution に ファイルを文字列として書き込む 拡張子はなし
 writeTextFileInDistribution :: Path.DistributionFilePath -> String -> Aff.Aff Unit
 writeTextFileInDistribution distributionFilePath content =
   let
@@ -32,11 +34,29 @@ writeTextFileInDistribution distributionFilePath content =
         )
 
     filePath :: String
-    filePath = NonEmptyString.toString (Path.distributionFilePathToString distributionFilePath)
+    filePath = NonEmptyString.toString (Path.distributionFilePathToStringWithoutExtensiton distributionFilePath)
   in
     do
       ensureDir dirPath
       Fs.writeTextFile Encoding.UTF8 filePath content
+      EffectClass.liftEffect (Console.log (append filePath "の書き込みに成功"))
+
+writeJson :: Path.DistributionFilePath -> ArgonautCore.Json -> Aff.Aff Unit
+writeJson distributionFilePath json =
+  let
+    dirPath :: String
+    dirPath =
+      NonEmptyString.toString
+        ( Path.distributionDirectoryPathToString
+            (Path.distributionFilePathToDirectoryPath distributionFilePath)
+        )
+
+    filePath :: String
+    filePath = NonEmptyString.toString (Path.distributionFilePathToString distributionFilePath FileType.Json)
+  in
+    do
+      ensureDir dirPath
+      Fs.writeTextFile Encoding.UTF8 filePath (ArgonautCore.stringify json)
       EffectClass.liftEffect (Console.log (append filePath "の書き込みに成功"))
 
 -- | PureScript をモジュール名をファイル名としてファイルに書く
@@ -75,8 +95,8 @@ ensureDir :: String -> Aff.Aff Unit
 ensureDir path = AffCompat.fromEffectFnAff (ensureDirAsEffectFnAff path)
 
 -- | Firebase のセキュリティルールをファイルに書く
-writeFirebaseRules :: Path.DistributionDirectoryPath -> NonEmptyString.NonEmptyString -> FirebaseSecurityRules.SecurityRules -> Aff.Aff Unit
-writeFirebaseRules directoryPath fileName securityRules =
+writeFirebaseRules :: Path.DistributionFilePath -> FirebaseSecurityRules.SecurityRules -> Aff.Aff Unit
+writeFirebaseRules distributionFilePath@(Path.DistributionFilePath { directoryPath }) securityRules =
   let
     dirPath :: String
     dirPath = NonEmptyString.toString (Path.distributionDirectoryPathToString directoryPath)
@@ -85,12 +105,8 @@ writeFirebaseRules directoryPath fileName securityRules =
     filePath =
       NonEmptyString.toString
         ( Path.distributionFilePathToString
-            ( Path.DistributionFilePath
-                { directoryPath
-                , fileName
-                , fileType: Maybe.Just FileType.FirebaseSecurityRules
-                }
-            )
+            distributionFilePath
+            FileType.FirebaseSecurityRules
         )
   in
     do

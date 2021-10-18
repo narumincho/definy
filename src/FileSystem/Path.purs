@@ -10,17 +10,20 @@ module FileSystem.Path
   , distributionDirectoryPathToString
   , distributionFilePathToDirectoryPath
   , distributionFilePathToString
+  , distributionFilePathToStringWithoutExtensiton
   , directoryPathPushDirectoryNameList
   , directoryPathToString
   , filePathToString
+  , distributionFilePathToStringBaseApp
+  , distributionDirectoryPathToStringBaseApp
   ) where
 
-import Prelude as Prelude
-import Data.String.NonEmpty as NonEmptyString
 import Data.Array as Array
 import Data.Maybe as Maybe
-import FileType as FileType
 import Data.String as String
+import Data.String.NonEmpty as NonEmptyString
+import FileType as FileType
+import Prelude as Prelude
 import Type.Proxy as Proxy
 
 -- | 基本的な出力先の `distribution` 内の ディレクトリのパス
@@ -35,7 +38,6 @@ newtype DistributionFilePath
   = DistributionFilePath
   { directoryPath :: DistributionDirectoryPath
   , fileName :: NonEmptyString.NonEmptyString
-  , fileType :: Maybe.Maybe FileType.FileType
   }
 
 -- | リポジトリのルートをルートとした ディレクトリのパス
@@ -84,25 +86,29 @@ fileNameWithFileTypeToString fileName fileType =
     fileName
     (NonEmptyString.prependString "." (fileTypeToExtension fileType))
 
-filePathToStringWithoutExtensition :: FilePath -> NonEmptyString.NonEmptyString
-filePathToStringWithoutExtensition (FilePath { directoryPath, fileName }) =
-  Prelude.append
-    (NonEmptyString.appendString (directoryPathToString directoryPath) "/")
-    fileName
-
 distributionDirectoryPathToString :: DistributionDirectoryPath -> NonEmptyString.NonEmptyString
 distributionDirectoryPathToString distributionDirectoryPath =
   directoryPathToString
     ( distributionDirectoryPathToDirectoryPath distributionDirectoryPath
     )
 
-distributionFilePathToString :: DistributionFilePath -> NonEmptyString.NonEmptyString
-distributionFilePathToString (DistributionFilePath { directoryPath, fileName, fileType }) =
+distributionFilePathToString :: DistributionFilePath -> FileType.FileType -> NonEmptyString.NonEmptyString
+distributionFilePathToString (DistributionFilePath { directoryPath, fileName }) fileType =
   filePathToString
     ( FilePath
         { directoryPath: distributionDirectoryPathToDirectoryPath directoryPath
         , fileName
-        , fileType
+        , fileType: Maybe.Just fileType
+        }
+    )
+
+distributionFilePathToStringWithoutExtensiton :: DistributionFilePath -> NonEmptyString.NonEmptyString
+distributionFilePathToStringWithoutExtensiton (DistributionFilePath { directoryPath, fileName }) =
+  filePathToString
+    ( FilePath
+        { directoryPath: distributionDirectoryPathToDirectoryPath directoryPath
+        , fileName
+        , fileType: Maybe.Nothing
         }
     )
 
@@ -159,3 +165,17 @@ extensionToFileType = case _ of
   "purs" -> Maybe.Just FileType.PureScript
   "rules" -> Maybe.Just FileType.FirebaseSecurityRules
   _ -> Maybe.Nothing
+
+distributionFilePathToStringBaseApp :: DistributionFilePath -> FileType.FileType -> NonEmptyString.NonEmptyString
+distributionFilePathToStringBaseApp (DistributionFilePath { directoryPath, fileName }) fileType =
+  Prelude.append
+    (distributionDirectoryPathToStringBaseApp directoryPath)
+    (fileNameWithFileTypeToString fileName fileType)
+
+distributionDirectoryPathToStringBaseApp :: DistributionDirectoryPath -> NonEmptyString.NonEmptyString
+distributionDirectoryPathToStringBaseApp (DistributionDirectoryPath { folderNameMaybe }) =
+  NonEmptyString.appendString (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "./"))
+    ( case folderNameMaybe of
+        Maybe.Just filderName -> Prelude.append (NonEmptyString.toString filderName) "/"
+        Maybe.Nothing -> ""
+    )

@@ -18,13 +18,13 @@ import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
 import FileSystem.Path as Path
+import FileType as FileType
 
 -- | distribution にあるファイルを文字列として読み取る
-readTextFileInDistribution :: Path.DistributionFilePath -> Aff.Aff String
-readTextFileInDistribution distributionFilePath =
-  bind
-    (Fs.readFile (NonEmptyString.toString (Path.distributionFilePathToString distributionFilePath)))
-    (\buffer -> EffectClass.liftEffect (Buffer.toString Encoding.UTF8 buffer))
+readTextFileInDistribution :: Path.DistributionFilePath -> FileType.FileType -> Aff.Aff String
+readTextFileInDistribution distributionFilePath fileType = do
+  buffer <- Fs.readFile (NonEmptyString.toString (Path.distributionFilePathToString distributionFilePath fileType))
+  EffectClass.liftEffect (Buffer.toString Encoding.UTF8 buffer)
 
 -- | ファイルを文字列として読み取る
 readTextFile :: Path.FilePath -> Aff.Aff String
