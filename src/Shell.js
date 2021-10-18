@@ -42,43 +42,6 @@ exports.execImpl = function execImpl(command) {
   };
 };
 
-exports.execFileImpl = function execFileImpl(command) {
-  return (args) => {
-    return (opts) => {
-      return (callback) => {
-        return () => {
-          return require("child_process").execFile(
-            command,
-            args,
-            opts,
-            (err, stdout, stderr) => {
-              callback(err)(stdout)(stderr)();
-            }
-          );
-        };
-      };
-    };
-  };
-};
-
-exports.execSyncImpl = function execSyncImpl(command) {
-  return (opts) => {
-    return () => {
-      return require("child_process").execSync(command, opts);
-    };
-  };
-};
-
-exports.execFileSyncImpl = function execFileSyncImpl(command) {
-  return (args) => {
-    return (opts) => {
-      return () => {
-        return require("child_process").execFileSync(command, args, opts);
-      };
-    };
-  };
-};
-
 exports.fork = function fork(cmd) {
   return (args) => {
     return () => {

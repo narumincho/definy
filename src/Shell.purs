@@ -27,12 +27,9 @@ module Shell
   , SpawnOptions
   , defaultSpawnOptions
   , exec
-  , execFile
   , ExecOptions
   , ExecResult
   , defaultExecOptions
-  , ExecSyncOptions
-  , defaultExecSyncOptions
   , fork
   , StdIOBehaviour(..)
   , pipe
@@ -40,25 +37,25 @@ module Shell
   , ignore
   ) where
 
-import Prelude
-import Control.Alt ((<|>))
-import Data.Function.Uncurried (Fn2, runFn2)
+import Data.Function.Uncurried as FunctionUncurried
 import Data.Maybe as Maybe
-import Data.Nullable (Nullable, toNullable, toMaybe)
-import Data.Posix (Pid, Gid, Uid)
+import Data.Nullable as Nullable
+import Data.Posix as Posix
 import Data.Posix.Signal as Signal
+import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
 import Effect.Exception as Exception
 import Effect.Exception.Unsafe as ExceptionUnsafe
 import Foreign as Foreign
 import Foreign.Object as Object
-import Node.Buffer (Buffer)
+import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.FS as FS
 import Node.Platform as Platform
 import Node.Process as Process
 import Node.Stream as Stream
+import Prelude as Prelude
 import Unsafe.Coerce as UnsafeCoerce
 
 -- | A handle for inter-process communication (IPC).
@@ -72,14 +69,14 @@ newtype ChildProcess
 -- | Note: some of these types are lies, and so it is unsafe to access some of
 -- | these record fields directly.
 type ChildProcessRec
-  = { stdin :: Nullable (Stream.Writable ())
-    , stdout :: Nullable (Stream.Readable ())
-    , stderr :: Nullable (Stream.Readable ())
-    , pid :: Pid
+  = { stdin :: Nullable.Nullable (Stream.Writable ())
+    , stdout :: Nullable.Nullable (Stream.Readable ())
+    , stderr :: Nullable.Nullable (Stream.Readable ())
+    , pid :: Posix.Pid
     , connected :: Boolean
-    , kill :: String -> Unit
-    , send :: forall r. Fn2 { | r } Handle Boolean
-    , disconnect :: Effect.Effect Unit
+    , kill :: String -> Prelude.Unit
+    , send :: forall r. FunctionUncurried.Fn2 { | r } Handle Boolean
+    , disconnect :: Effect.Effect Prelude.Unit
     }
 
 -- | The standard input stream of a child process. Note that this is only
@@ -99,15 +96,19 @@ stderr (ChildProcess rec) = unsafeFromNullable (missingStream "stderr") rec.stde
 
 missingStream :: String -> String
 missingStream str =
-  "Node.ChildProcess: stream not available: " <> str <> "\nThis is probably "
-    <> "because you passed something other than Pipe to the stdio option when "
-    <> "you spawned it."
+  String.joinWith ""
+    [ "Node.ChildProcess: stream not available: "
+    , str
+    , "\nThis is probably "
+    , "because you passed something other than Pipe to the stdio option when "
+    , "you spawned it."
+    ]
 
-foreign import unsafeFromNullable :: forall a. String -> Nullable a -> a
+foreign import unsafeFromNullable :: forall a. String -> Nullable.Nullable a -> a
 
 -- | The process ID of a child process. Note that if the process has already
 -- | exited, another process may have taken the same ID, so be careful!
-pid :: ChildProcess -> Pid
+pid :: ChildProcess -> Posix.Pid
 pid (ChildProcess rec) = rec.pid
 
 -- | Indicates whether it is still possible to send and receive
@@ -125,10 +126,10 @@ send ::
   Handle ->
   ChildProcess ->
   Effect.Effect Boolean
-send msg handle (ChildProcess cp) = mkEffect \_ -> runFn2 cp.send msg handle
+send msg handle (ChildProcess cp) = mkEffect \_ -> FunctionUncurried.runFn2 cp.send msg handle
 
 -- | Closes the IPC channel between parent and child.
-disconnect :: ChildProcess -> Effect.Effect Unit
+disconnect :: ChildProcess -> Effect.Effect Prelude.Unit
 disconnect (ChildProcess rec) = rec.disconnect
 
 -- | Send a signal to a child process. In the same way as the
@@ -139,10 +140,10 @@ disconnect (ChildProcess rec) = rec.disconnect
 -- | and the signal. They can vary from system to system.
 -- | The child process might emit an `"error"` event if the signal
 -- | could not be delivered.
-kill :: Signal.Signal -> ChildProcess -> Effect.Effect Unit
+kill :: Signal.Signal -> ChildProcess -> Effect.Effect Prelude.Unit
 kill sig (ChildProcess cp) = mkEffect \_ -> cp.kill (Signal.toString sig)
 
-mkEffect :: forall a. (Unit -> a) -> Effect.Effect a
+mkEffect :: forall a. (Prelude.Unit -> a) -> Effect.Effect a
 mkEffect = UnsafeCoerce.unsafeCoerce
 
 -- | Specifies how a child process exited; normally (with an exit code), or
@@ -151,50 +152,50 @@ data Exit
   = Normally Int
   | BySignal Signal.Signal
 
-instance showExit :: Show Exit where
-  show (Normally x) = "Normally " <> show x
-  show (BySignal sig) = "BySignal " <> show sig
+instance showExit :: Prelude.Show Exit where
+  show (Normally x) = Prelude.append "Normally " (Prelude.show x)
+  show (BySignal sig) = Prelude.append "BySignal " (Prelude.show sig)
 
-mkExit :: Nullable Int -> Nullable String -> Exit
-mkExit code signal = case fromCode code <|> fromSignal signal of
-  Maybe.Just e -> e
-  Maybe.Nothing -> ExceptionUnsafe.unsafeThrow "Node.ChildProcess.mkExit: Invalid arguments"
-  where
-  fromCode = toMaybe >>> map Normally
-
-  fromSignal = toMaybe >=> Signal.fromString >>> map BySignal
+mkExit :: Nullable.Nullable Int -> Nullable.Nullable String -> Exit
+mkExit code signal = case Prelude.map Normally (Nullable.toMaybe code) of
+  Maybe.Just exit -> exit
+  Maybe.Nothing -> case Prelude.bind
+      (Nullable.toMaybe signal)
+      (\v -> Prelude.map BySignal (Signal.fromString v)) of
+    Maybe.Just exit -> exit
+    Maybe.Nothing -> ExceptionUnsafe.unsafeThrow "Node.ChildProcess.mkExit: Invalid arguments"
 
 -- | Handle the `"exit"` signal.
 onExit ::
   ChildProcess ->
-  (Exit -> Effect.Effect Unit) ->
-  Effect.Effect Unit
+  (Exit -> Effect.Effect Prelude.Unit) ->
+  Effect.Effect Prelude.Unit
 onExit = mkOnExit mkExit
 
 foreign import mkOnExit ::
-  (Nullable Int -> Nullable String -> Exit) ->
+  (Nullable.Nullable Int -> Nullable.Nullable String -> Exit) ->
   ChildProcess ->
-  (Exit -> Effect.Effect Unit) ->
-  Effect.Effect Unit
+  (Exit -> Effect.Effect Prelude.Unit) ->
+  Effect.Effect Prelude.Unit
 
 -- | Handle the `"close"` signal.
 onClose ::
   ChildProcess ->
-  (Exit -> Effect.Effect Unit) ->
-  Effect.Effect Unit
+  (Exit -> Effect.Effect Prelude.Unit) ->
+  Effect.Effect Prelude.Unit
 onClose = mkOnClose mkExit
 
 foreign import mkOnClose ::
-  (Nullable Int -> Nullable String -> Exit) ->
+  (Nullable.Nullable Int -> Nullable.Nullable String -> Exit) ->
   ChildProcess ->
-  (Exit -> Effect.Effect Unit) ->
-  Effect.Effect Unit
+  (Exit -> Effect.Effect Prelude.Unit) ->
+  Effect.Effect Prelude.Unit
 
 -- | Handle the `"message"` signal.
 onMessage ::
   ChildProcess ->
-  (Foreign.Foreign -> Maybe.Maybe Handle -> Effect.Effect Unit) ->
-  Effect.Effect Unit
+  (Foreign.Foreign -> Maybe.Maybe Handle -> Effect.Effect Prelude.Unit) ->
+  Effect.Effect Prelude.Unit
 onMessage = mkOnMessage Maybe.Nothing Maybe.Just
 
 foreign import mkOnMessage ::
@@ -202,20 +203,20 @@ foreign import mkOnMessage ::
   Maybe.Maybe a ->
   (a -> Maybe.Maybe a) ->
   ChildProcess ->
-  (Foreign.Foreign -> Maybe.Maybe Handle -> Effect.Effect Unit) ->
-  Effect.Effect Unit
+  (Foreign.Foreign -> Maybe.Maybe Handle -> Effect.Effect Prelude.Unit) ->
+  Effect.Effect Prelude.Unit
 
 -- | Handle the `"disconnect"` signal.
 foreign import onDisconnect ::
   ChildProcess ->
-  Effect.Effect Unit ->
-  Effect.Effect Unit
+  Effect.Effect Prelude.Unit ->
+  Effect.Effect Prelude.Unit
 
 -- | Handle the `"error"` signal.
 foreign import onError ::
   ChildProcess ->
-  (Error -> Effect.Effect Unit) ->
-  Effect.Effect Unit
+  (Error -> Effect.Effect Prelude.Unit) ->
+  Effect.Effect Prelude.Unit
 
 -- | Spawn a child process. Note that, in the event that a child process could
 -- | not be spawned (for example, if the executable was not found) this will
@@ -230,7 +231,7 @@ spawn cmd options = spawnImpl (NonEmptyString.toString cmd) [] (convertOpts opti
   convertOpts opts =
     { cwd: Maybe.fromMaybe undefined opts.cwd
     , stdio: toActualStdIOOptions opts.stdio
-    , env: toNullable opts.env
+    , env: Nullable.toNullable opts.env
     , detached: opts.detached
     , uid: Maybe.fromMaybe undefined opts.uid
     , gid: Maybe.fromMaybe undefined opts.gid
@@ -257,8 +258,8 @@ type SpawnOptions
     , stdio :: Array (Maybe.Maybe StdIOBehaviour)
     , env :: Maybe.Maybe (Object.Object String)
     , detached :: Boolean
-    , uid :: Maybe.Maybe Uid
-    , gid :: Maybe.Maybe Gid
+    , uid :: Maybe.Maybe Posix.Uid
+    , gid :: Maybe.Maybe Posix.Gid
     }
 
 -- | A default set of `SpawnOptions`. Everything is set to `Nothing`,
@@ -283,12 +284,12 @@ defaultSpawnOptions =
 exec ::
   String ->
   ExecOptions ->
-  (ExecResult -> Effect.Effect Unit) ->
+  (ExecResult -> Effect.Effect Prelude.Unit) ->
   Effect.Effect ChildProcess
 exec cmd opts callback =
   execImpl cmd (convertExecOptions opts) \err stdout' stderr' ->
     callback
-      { error: toMaybe err
+      { error: Nullable.toMaybe err
       , stdout: stdout'
       , stderr: stderr'
       }
@@ -296,30 +297,7 @@ exec cmd opts callback =
 foreign import execImpl ::
   String ->
   ActualExecOptions ->
-  (Nullable Exception.Error -> Buffer -> Buffer -> Effect.Effect Unit) ->
-  Effect.Effect ChildProcess
-
--- | Like `exec`, except instead of using a shell, it passes the arguments
--- | directly to the specified command.
-execFile ::
-  String ->
-  Array String ->
-  ExecOptions ->
-  (ExecResult -> Effect.Effect Unit) ->
-  Effect.Effect ChildProcess
-execFile cmd args opts callback =
-  execFileImpl cmd args (convertExecOptions opts) \err stdout' stderr' ->
-    callback
-      { error: toMaybe err
-      , stdout: stdout'
-      , stderr: stderr'
-      }
-
-foreign import execFileImpl ::
-  String ->
-  Array String ->
-  ActualExecOptions ->
-  (Nullable Exception.Error -> Buffer -> Buffer -> Effect.Effect Unit) ->
+  (Nullable.Nullable Exception.Error -> Buffer.Buffer -> Buffer.Buffer -> Effect.Effect Prelude.Unit) ->
   Effect.Effect ChildProcess
 
 foreign import data ActualExecOptions :: Type
@@ -348,8 +326,8 @@ type ExecOptions
     , timeout :: Maybe.Maybe Number
     , maxBuffer :: Maybe.Maybe Int
     , killSignal :: Maybe.Maybe Signal.Signal
-    , uid :: Maybe.Maybe Uid
-    , gid :: Maybe.Maybe Gid
+    , uid :: Maybe.Maybe Posix.Uid
+    , gid :: Maybe.Maybe Posix.Gid
     }
 
 -- | A default set of `ExecOptions`. Everything is set to `Nothing`.
@@ -368,48 +346,10 @@ defaultExecOptions =
 
 -- | The combined output of a process calld with `exec`.
 type ExecResult
-  = { stderr :: Buffer
-    , stdout :: Buffer
+  = { stderr :: Buffer.Buffer
+    , stdout :: Buffer.Buffer
     , error :: Maybe.Maybe Exception.Error
     }
-
-foreign import execSyncImpl ::
-  String ->
-  ActualExecSyncOptions ->
-  Effect.Effect Buffer
-
-foreign import execFileSyncImpl ::
-  String ->
-  Array String ->
-  ActualExecSyncOptions ->
-  Effect.Effect Buffer
-
-foreign import data ActualExecSyncOptions :: Type
-
-type ExecSyncOptions
-  = { cwd :: Maybe.Maybe String
-    , input :: Maybe.Maybe String
-    , stdio :: Array (Maybe.Maybe StdIOBehaviour)
-    , env :: Maybe.Maybe (Object.Object String)
-    , timeout :: Maybe.Maybe Number
-    , maxBuffer :: Maybe.Maybe Int
-    , killSignal :: Maybe.Maybe Signal.Signal
-    , uid :: Maybe.Maybe Uid
-    , gid :: Maybe.Maybe Gid
-    }
-
-defaultExecSyncOptions :: ExecSyncOptions
-defaultExecSyncOptions =
-  { cwd: Maybe.Nothing
-  , input: Maybe.Nothing
-  , stdio: pipe
-  , env: Maybe.Nothing
-  , timeout: Maybe.Nothing
-  , maxBuffer: Maybe.Nothing
-  , killSignal: Maybe.Nothing
-  , uid: Maybe.Nothing
-  , gid: Maybe.Nothing
-  }
 
 -- | A special case of `spawn` for creating Node.js child processes. The first
 -- | argument is the module to be run, and the second is the argv (command line
@@ -451,13 +391,13 @@ data StdIOBehaviour
 
 -- | Create pipes for each of the three standard IO streams.
 pipe :: Array (Maybe.Maybe StdIOBehaviour)
-pipe = map Maybe.Just [ Pipe, Pipe, Pipe ]
+pipe = Prelude.map Maybe.Just [ Pipe, Pipe, Pipe ]
 
 -- | Share `stdin` with `stdin`, `stdout` with `stdout`,
 -- | and `stderr` with `stderr`.
 inherit :: Array (Maybe.Maybe StdIOBehaviour)
 inherit =
-  map Maybe.Just
+  Prelude.map Maybe.Just
     [ ShareStream process.stdin
     , ShareStream process.stdout
     , ShareStream process.stderr
@@ -467,7 +407,7 @@ foreign import process :: forall props. { | props }
 
 -- | Ignore all streams.
 ignore :: Array (Maybe.Maybe StdIOBehaviour)
-ignore = map Maybe.Just [ Ignore, Ignore, Ignore ]
+ignore = Prelude.map Maybe.Just [ Ignore, Ignore, Ignore ]
 
 -- Helpers
 foreign import data ActualStdIOBehaviour :: Type
@@ -483,7 +423,10 @@ toActualStdIOBehaviour b = case b of
   c = UnsafeCoerce.unsafeCoerce
 
 type ActualStdIOOptions
-  = Array (Nullable ActualStdIOBehaviour)
+  = Array (Nullable.Nullable ActualStdIOBehaviour)
 
 toActualStdIOOptions :: Array (Maybe.Maybe StdIOBehaviour) -> ActualStdIOOptions
-toActualStdIOOptions = map (toNullable <<< map toActualStdIOBehaviour)
+toActualStdIOOptions list =
+  Prelude.map
+    (\item -> Nullable.toNullable (Prelude.map toActualStdIOBehaviour item))
+    list
