@@ -173,21 +173,12 @@ writeFirebaseJson = do
             { cloudStorageRulesFilePath: cloudStorageSecurityRulesFilePath
             , emulators:
                 FirebaseJson.Emulators
-                  { functionsPortNumber: Maybe.Just (UInt.fromInt 5001)
-                  , firestorePortNumber: Maybe.Just (UInt.fromInt 8080)
+                  { firestorePortNumber: Maybe.Just (UInt.fromInt 8080)
                   , hostingPortNumber: Maybe.Nothing
                   , storagePortNumber: Maybe.Just (UInt.fromInt 9199)
                   }
             , firestoreRulesFilePath: firestoreSecurityRulesFilePath
-            , functionsDistributionPath:
-                Path.DistributionDirectoryPath
-                  { appName
-                  , folderNameMaybe:
-                      Mabye.Just
-                        ( NonEmptyString.nes
-                            (Proxy.Proxy :: Proxy.Proxy "./functions")
-                        )
-                  }
+            , functions: Mabye.Nothing
             , hostingDistributionPath: hostingDirectoryPath
             , hostingRewites: []
             }
