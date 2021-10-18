@@ -6,7 +6,7 @@ import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect
-import FileSystem as FileSystem
+import FileSystem.Path as FileSystemPath
 import FileType as FileType
 import PureScript.Data as PureScriptData
 import PureScript.ToString as PureScriptToString
@@ -96,7 +96,7 @@ fileNameWithExtensitonParse :: Effect.Effect Unit
 fileNameWithExtensitonParse =
   Assert.assertEqual
     { actual:
-        FileSystem.fileNameWithExtensitonParse
+        FileSystemPath.fileNameWithExtensitonParse
           (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "sample.test.js"))
     , expected:
         Maybe.Just

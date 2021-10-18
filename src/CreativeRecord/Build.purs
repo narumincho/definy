@@ -13,7 +13,9 @@ import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import Effect.Console as Console
 import EsBuild as EsBuild
-import FileSystem as FileSystem
+import FileSystem.Write as FileSystemWrite
+import FileSystem.Path as Path
+import FileSystem.Read as FileSystemRead
 import FileType as FileType
 import Firebase.FirebaseJson as FirebaseJson
 import Firebase.SecurityRules as SecurityRules
@@ -34,9 +36,9 @@ appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "creative-record")
 firstClientProgramFilePath :: String
 firstClientProgramFilePath = "./distribution/creative-record/client-spago-result/program.js"
 
-esbuildClientProgramFileDirectoryPath :: FileSystem.DistributionDirectoryPath
+esbuildClientProgramFileDirectoryPath :: Path.DistributionDirectoryPath
 esbuildClientProgramFileDirectoryPath =
-  FileSystem.DistributionDirectoryPath
+  Path.DistributionDirectoryPath
     { appName
     , folderNameMaybe:
         Maybe.Just
@@ -50,9 +52,9 @@ hostingDistributionDirectoryName =
   NonEmptyString.nes
     (Proxy.Proxy :: Proxy.Proxy "hosting")
 
-hostingDirectoryPath :: FileSystem.DistributionDirectoryPath
+hostingDirectoryPath :: Path.DistributionDirectoryPath
 hostingDirectoryPath =
-  FileSystem.DistributionDirectoryPath
+  Path.DistributionDirectoryPath
     { appName
     , folderNameMaybe: Maybe.Just hostingDistributionDirectoryName
     }
@@ -109,7 +111,7 @@ runEsbuild :: Aff.Aff Unit
 runEsbuild = do
   EsBuild.build
     { entryPoints: firstClientProgramFilePath
-    , outdir: NonEmptyString.toString (FileSystem.distributionDirectoryPathToString esbuildClientProgramFileDirectoryPath)
+    , outdir: NonEmptyString.toString (Path.distributionDirectoryPathToString esbuildClientProgramFileDirectoryPath)
     , sourcemap: false
     , target: [ "chrome94", "firefox93", "safari15" ]
     }
@@ -118,8 +120,8 @@ runEsbuild = do
 readEsbuildResultClientProgramFile :: Aff.Aff Unit
 readEsbuildResultClientProgramFile = do
   clientProgramAsString <-
-    FileSystem.readTextFileInDistribution
-      ( FileSystem.DistributionFilePath
+    FileSystemRead.readTextFileInDistribution
+      ( Path.DistributionFilePath
           { directoryPath: esbuildClientProgramFileDirectoryPath
           , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "program")
           , fileType: Maybe.Just FileType.JavaScript
@@ -127,8 +129,8 @@ readEsbuildResultClientProgramFile = do
       )
   let
     clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString
-  FileSystem.writeTextFileInDistribution
-    ( FileSystem.DistributionFilePath
+  FileSystemWrite.writeTextFileInDistribution
+    ( Path.DistributionFilePath
         { directoryPath: hostingDirectoryPath
         , fileName: clientProgramHashValue
         , fileType: Maybe.Nothing
@@ -139,15 +141,15 @@ readEsbuildResultClientProgramFile = do
 
 writeFirestoreRules :: Aff.Aff Unit
 writeFirestoreRules =
-  FileSystem.writeFirebaseRules
-    (FileSystem.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing })
+  FileSystemWrite.writeFirebaseRules
+    (Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing })
     firestoreSecurityRulesFileName
     SecurityRules.allForbiddenFirestoreRule
 
 writeCloudStorageRules :: Aff.Aff Unit
 writeCloudStorageRules =
-  FileSystem.writeFirebaseRules
-    (FileSystem.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing })
+  FileSystemWrite.writeFirebaseRules
+    (Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing })
     cloudStorageSecurityRulesFileName
     SecurityRules.allForbiddenFirebaseStorageRule
 
@@ -159,9 +161,9 @@ cloudStorageSecurityRulesFileName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Pro
 
 writeFirebaseJson :: Aff.Aff Unit
 writeFirebaseJson = do
-  FileSystem.writeTextFileInDistribution
-    ( FileSystem.DistributionFilePath
-        { directoryPath: FileSystem.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
+  FileSystemWrite.writeTextFileInDistribution
+    ( Path.DistributionFilePath
+        { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
         , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase")
         , fileType: Maybe.Just FileType.Json
         }
@@ -189,20 +191,20 @@ writeFirebaseJson = do
   EffectClass.liftEffect (Console.log "firebase.json の書き込みに成功!")
 
 originCodeGen :: Aff.Aff Prelude.Unit
-originCodeGen = FileSystem.writePureScript srcDirectoryPath originPureScriptModule
+originCodeGen = FileSystemWrite.writePureScript srcDirectoryPath originPureScriptModule
 
 staticResourceCodeGen :: Aff.Aff Prelude.Unit
 staticResourceCodeGen =
   Prelude.bind
     ( StaticResourceFile.getStaticResourceFileResult
-        ( FileSystem.DirectoryPath
+        ( Path.DirectoryPath
             [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho-creative-record")
             , NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "resource")
             ]
         )
     )
     ( \resultList ->
-        FileSystem.writePureScript
+        FileSystemWrite.writePureScript
           srcDirectoryPath
           (staticFileResultToPureScriptModule resultList)
     )
@@ -224,7 +226,7 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
     , document:
         String.joinWith ""
           [ "static な ファイル の \""
-          , NonEmptyString.toString (FileSystem.filePathToString record.originalFilePath)
+          , NonEmptyString.toString (Path.filePathToString record.originalFilePath)
           , "\"をリクエストするためのURL. ファイルのハッシュ値は "
           , record.uploadFileName
           , "\"(コード生成結果)"
@@ -284,9 +286,9 @@ staticResourceModuleName =
         ]
     )
 
-srcDirectoryPath :: FileSystem.DirectoryPath
+srcDirectoryPath :: Path.DirectoryPath
 srcDirectoryPath =
-  FileSystem.DirectoryPath
+  Path.DirectoryPath
     [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "src") ]
 
 originPureScriptModule :: PureScriptData.Module
