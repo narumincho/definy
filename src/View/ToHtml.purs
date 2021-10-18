@@ -10,8 +10,10 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Hash as Hash
 import Html.Data as HtmlData
+import Html.Wellknown as HtmlWellknown
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
+import Type.Proxy as Proxy
 import View.View as View
 
 -- | View から HtmlOption に変換する
@@ -186,15 +188,16 @@ boxToHtmlElementAndStyleDict box@( View.Box
     HtmlElementAndStyleDict
       { htmlElement:
           ( case boxRecord.url of
-              Maybe.Just _ -> HtmlData.a
-              Maybe.Nothing -> HtmlData.div
+              Maybe.Just _ -> HtmlWellknown.a
+              Maybe.Nothing -> HtmlWellknown.div
           )
             ( Map.fromFoldable
                 ( Array.concat
                     [ [ sha256HashValueToClassAttributeNameAndValue className ]
                     , case boxRecord.url of
                         Maybe.Just url ->
-                          [ Tuple.Tuple "href"
+                          [ Tuple.Tuple
+                              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "href"))
                               ( Maybe.Just
                                   ( NonEmptyString.toString
                                       (StructuredUrl.toString url)
@@ -293,9 +296,10 @@ elementToHtmlElementAndStyleDict = case _ of
     in
       HtmlElementAndStyleDict
         { htmlElement:
-            HtmlData.svg
+            HtmlWellknown.svg
               ( Map.fromFoldable
-                  [ Tuple.Tuple "viewBox"
+                  [ Tuple.Tuple
+                      (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "viewBox"))
                       ( Maybe.Just
                           (viewBoxToViewBoxAttributeValue viewBox)
                       )
@@ -323,9 +327,11 @@ elementToHtmlElementAndStyleDict = case _ of
     in
       HtmlElementAndStyleDict
         { htmlElement:
-            HtmlData.img
+            HtmlWellknown.img
               ( Map.fromFoldable
-                  [ Tuple.Tuple "src" (Maybe.Just (NonEmptyString.toString (StructuredUrl.pathAndSearchParamsToString path)))
+                  [ Tuple.Tuple
+                      (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "src"))
+                      (Maybe.Just (NonEmptyString.toString (StructuredUrl.pathAndSearchParamsToString path)))
                   , sha256HashValueToClassAttributeNameAndValue className
                   ]
               )
@@ -334,11 +340,11 @@ elementToHtmlElementAndStyleDict = case _ of
         }
   View.BoxElement element -> boxToHtmlElementAndStyleDict element
 
-markupToTagName :: View.TextMarkup -> Map.Map String (Maybe.Maybe String) → HtmlData.HtmlChildren → HtmlData.HtmlElement
+markupToTagName :: View.TextMarkup -> Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) → HtmlData.HtmlChildren → HtmlData.HtmlElement
 markupToTagName = case _ of
-  View.None -> HtmlData.div
-  View.Heading1 -> HtmlData.h1
-  View.Heading2 -> HtmlData.h2
+  View.None -> HtmlWellknown.div
+  View.Heading1 -> HtmlWellknown.h1
+  View.Heading2 -> HtmlWellknown.h2
 
 viewBoxToViewBoxAttributeValue :: View.ViewBox -> String
 viewBoxToViewBoxAttributeValue (View.ViewBox viewBox) =
@@ -354,24 +360,28 @@ viewBoxToViewBoxAttributeValue (View.ViewBox viewBox) =
 svgElementToHtmlElement :: View.SvgElement -> HtmlData.HtmlElement
 svgElementToHtmlElement = case _ of
   View.Path { pathText, fill } ->
-    HtmlData.svgPath
+    HtmlWellknown.svgPath
       ( Map.fromFoldable
-          [ Tuple.Tuple "d" (Maybe.Just pathText)
-          , Tuple.Tuple "fill" (Maybe.Just fill)
+          [ Tuple.Tuple
+              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "d"))
+              (Maybe.Just pathText)
+          , Tuple.Tuple
+              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "fill"))
+              (Maybe.Just fill)
           ]
       )
   View.G { transform, svgElementList } ->
-    HtmlData.svgG
+    HtmlWellknown.svgG
       ( Map.singleton
-          "transform"
+          (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "transform"))
           (Maybe.Just (String.joinWith "" transform))
       )
       (Prelude.map svgElementToHtmlElement svgElementList)
 
-sha256HashValueToClassAttributeNameAndValue :: NonEmptyString.NonEmptyString -> Tuple.Tuple String (Maybe.Maybe String)
+sha256HashValueToClassAttributeNameAndValue :: NonEmptyString.NonEmptyString -> Tuple.Tuple NonEmptyString.NonEmptyString (Maybe.Maybe String)
 sha256HashValueToClassAttributeNameAndValue sha256HashValue =
   Tuple.Tuple
-    "class"
+    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "class"))
     (Maybe.Just (sha256HashValueToClassName sha256HashValue))
 
 sha256HashValueToClassName :: NonEmptyString.NonEmptyString -> String

@@ -6,7 +6,6 @@
   , "assert"
   , "colors"
   , "console"
-  , "control"
   , "effect"
   , "either"
   , "exceptions"

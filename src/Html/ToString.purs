@@ -8,9 +8,11 @@ import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Html.Data as Data
+import Html.Wellknown as Wellknown
 import Language as Language
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
+import Type.Proxy as Proxy
 
 escapeInHtml :: String -> String
 escapeInHtml text =
@@ -38,10 +40,10 @@ twitterCardToString = case _ of
 
 htmlOptionToHtmlHtmlElement :: Data.HtmlOption -> Data.HtmlElement
 htmlOptionToHtmlHtmlElement htmlOption@(Data.HtmlOption option) =
-  Data.html
+  Wellknown.html
     (Prelude.map languageToIETFLanguageTag option.language)
     (headElement htmlOption)
-    ( Data.body
+    ( Wellknown.body
         option.bodyClass
         ( Data.ElementList
             ( Array.cons
@@ -53,7 +55,7 @@ htmlOptionToHtmlHtmlElement htmlOption@(Data.HtmlOption option) =
 
 noScriptElement :: NonEmptyString.NonEmptyString -> Data.HtmlElement
 noScriptElement appName =
-  Data.noscript
+  Wellknown.noscript
     ( Data.Text
         ( Prelude.append
             (NonEmptyString.toString appName)
@@ -72,18 +74,18 @@ htmlOptionToString htmlOption =
 
 headElement :: Data.HtmlOption -> Data.HtmlElement
 headElement (Data.HtmlOption option) =
-  Data.head
+  Wellknown.head
     ( Data.ElementList
         ( Array.concat
             [ [ charsetElement
               , viewportElement
-              , Data.title option.pageName
+              , Wellknown.title option.pageName
               , descriptionElement option.description
               , themeColorElement option.themeColor
               ]
             , [ iconElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: option.iconPath }) ]
             , case option.style of
-                Maybe.Just style -> [ Data.style style ]
+                Maybe.Just style -> [ Wellknown.style style ]
                 Maybe.Nothing -> []
             , [ twitterCardElement option.twitterCard ]
             , case option.path of
@@ -95,22 +97,26 @@ headElement (Data.HtmlOption option) =
               , ogImage (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: option.coverImagePath })
               ]
             , case option.scriptPath of
-                Maybe.Just scriptPath -> [ Data.script (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: scriptPath }) ]
+                Maybe.Just scriptPath -> [ Wellknown.script (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: scriptPath }) ]
                 Maybe.Nothing -> []
             ]
         )
     )
 
 charsetElement :: Data.HtmlElement
-charsetElement = Data.meta (Map.singleton "charset" (Maybe.Just "utf-8"))
+charsetElement =
+  Wellknown.meta
+    (Map.singleton (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "charset")) (Maybe.Just "utf-8"))
 
 viewportElement :: Data.HtmlElement
 viewportElement =
-  Data.meta
+  Wellknown.meta
     ( Map.fromFoldable
-        [ Tuple.Tuple "name" (Maybe.Just "viewport")
+        [ Tuple.Tuple
+            (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "name"))
+            (Maybe.Just "viewport")
         , Tuple.Tuple
-            "content"
+            (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content"))
             ( Maybe.Just
                 "width=device-width,initial-scale=1.0"
             )
@@ -119,87 +125,114 @@ viewportElement =
 
 descriptionElement :: String -> Data.HtmlElement
 descriptionElement description =
-  Data.meta
+  Wellknown.meta
     ( Map.fromFoldable
-        [ Tuple.Tuple "name" (Maybe.Just "description")
-        , Tuple.Tuple "content" (Maybe.Just description)
+        [ Tuple.Tuple
+            (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "name"))
+            (Maybe.Just "description")
+        , contentAttribute description
         ]
     )
 
 themeColorElement :: Color.Color -> Data.HtmlElement
 themeColorElement themeColor =
-  Data.meta
+  Wellknown.meta
     ( Map.fromFoldable
-        [ Tuple.Tuple "name" (Maybe.Just "theme-color")
-        , Tuple.Tuple "content" (Maybe.Just (Color.toHexString themeColor))
+        [ Tuple.Tuple
+            (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "name"))
+            (Maybe.Just "theme-color")
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content"))
+            (Maybe.Just (Color.toHexString themeColor))
         ]
     )
 
 iconElement :: StructuredUrl.StructuredUrl -> Data.HtmlElement
-iconElement iconUrl = Data.link "icon" (NonEmptyString.toString (StructuredUrl.toString iconUrl))
+iconElement iconUrl = Wellknown.link "icon" (NonEmptyString.toString (StructuredUrl.toString iconUrl))
 
 twitterCardElement :: Data.TwitterCard -> Data.HtmlElement
 twitterCardElement twitterCard =
-  Data.meta
+  Wellknown.meta
     ( Map.fromFoldable
-        ( [ Tuple.Tuple "name" (Maybe.Just "twitter:card")
-          , Tuple.Tuple "content" (Maybe.Just (twitterCardToString twitterCard))
+        ( [ Tuple.Tuple
+              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "name"))
+              (Maybe.Just "twitter:card")
+          , Tuple.Tuple
+              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content"))
+              (Maybe.Just (twitterCardToString twitterCard))
           ]
         )
     )
 
+propertyAttribute :: String -> Tuple.Tuple NonEmptyString.NonEmptyString (Maybe.Maybe String)
+propertyAttribute value =
+  Tuple.Tuple
+    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "property"))
+    (Maybe.Just value)
+
+contentAttribute :: String -> Tuple.Tuple NonEmptyString.NonEmptyString (Maybe.Maybe String)
+contentAttribute value =
+  Tuple.Tuple
+    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content"))
+    (Maybe.Just value)
+
 ogUrlElement :: StructuredUrl.StructuredUrl -> Data.HtmlElement
 ogUrlElement url =
-  Data.meta
+  Wellknown.meta
     ( Map.fromFoldable
-        [ Tuple.Tuple "property" (Maybe.Just "og:url")
-        , Tuple.Tuple "content"
-            (Maybe.Just (NonEmptyString.toString (StructuredUrl.toString url)))
+        [ propertyAttribute "og:url"
+        , contentAttribute (NonEmptyString.toString (StructuredUrl.toString url))
         ]
     )
 
 ogTitleElement :: NonEmptyString.NonEmptyString -> Data.HtmlElement
 ogTitleElement title =
-  Data.meta
+  Wellknown.meta
     ( Map.fromFoldable
-        [ Tuple.Tuple "property" (Maybe.Just "og:title")
-        , Tuple.Tuple "content" (Maybe.Just (NonEmptyString.toString title))
+        [ propertyAttribute "og:title"
+        , contentAttribute (NonEmptyString.toString title)
         ]
     )
 
 ogSiteName :: NonEmptyString.NonEmptyString -> Data.HtmlElement
 ogSiteName siteName =
-  Data.meta
+  Wellknown.meta
     ( Map.fromFoldable
-        [ Tuple.Tuple "property" (Maybe.Just "og:site_name")
-        , Tuple.Tuple "content" (Maybe.Just (NonEmptyString.toString siteName))
+        [ propertyAttribute "og:site_name"
+        , contentAttribute (NonEmptyString.toString siteName)
         ]
     )
 
 ogDescription :: String -> Data.HtmlElement
 ogDescription description =
-  Data.meta
+  Wellknown.meta
     ( Map.fromFoldable
-        [ Tuple.Tuple "property" (Maybe.Just "og:description")
-        , Tuple.Tuple "content" (Maybe.Just description)
+        [ propertyAttribute "og:description"
+        , contentAttribute description
         ]
     )
 
 ogImage :: StructuredUrl.StructuredUrl -> Data.HtmlElement
 ogImage url =
-  Data.meta
+  Wellknown.meta
     ( Map.fromFoldable
-        [ Tuple.Tuple "property" (Maybe.Just "og:image")
-        , Tuple.Tuple "content" (Maybe.Just (NonEmptyString.toString (StructuredUrl.toString url)))
+        [ propertyAttribute "og:image"
+        , contentAttribute (NonEmptyString.toString (StructuredUrl.toString url))
         ]
     )
 
 htmlElementToString :: Data.HtmlElement -> String
 htmlElementToString (Data.HtmlElement element) =
   let
-    startTag = String.joinWith "" [ "<", element.name, attributesToString (element.attributes), ">" ]
+    startTag =
+      String.joinWith ""
+        [ "<"
+        , NonEmptyString.toString element.name
+        , attributesToString (element.attributes)
+        , ">"
+        ]
 
-    endTag = String.joinWith "" [ "</", element.name, ">" ]
+    endTag = String.joinWith "" [ "</", NonEmptyString.toString element.name, ">" ]
   in
     String.joinWith ""
       ( Array.concat
@@ -215,7 +248,7 @@ htmlElementToString (Data.HtmlElement element) =
           ]
       )
 
-attributesToString :: Map.Map String (Maybe.Maybe String) -> String
+attributesToString :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> String
 attributesToString attributeMap =
   if Map.isEmpty attributeMap then
     ""
@@ -224,8 +257,14 @@ attributesToString attributeMap =
       ( String.joinWith " "
           ( Prelude.map
               ( \(Tuple.Tuple key value) -> case value of
-                  Maybe.Just v -> String.joinWith "" [ key, "=\"", escapeInHtml v, "\"" ]
-                  Maybe.Nothing -> key
+                  Maybe.Just v ->
+                    String.joinWith ""
+                      [ NonEmptyString.toString key
+                      , "=\""
+                      , escapeInHtml v
+                      , "\""
+                      ]
+                  Maybe.Nothing -> NonEmptyString.toString key
               )
               (Map.toUnfoldable attributeMap)
           )
