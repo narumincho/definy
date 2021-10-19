@@ -1,13 +1,22 @@
-module Util where
+module Util
+  ( listUpdateAtOverAutoCreate
+  , groupBySize
+  , toParallel
+  , tupleListToJson
+  , jsonFromNonEmptyString
+  ) where
 
+import Control.Parallel as Parallel
+import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
 import Data.Maybe as Maybe
 import Data.Ord as Ord
+import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
-import Prelude as Prelude
-import Control.Parallel as Parallel
 import Effect.Aff as Aff
+import Foreign.Object as Object
+import Prelude as Prelude
 
 listUpdateAtOverAutoCreate :: forall e. Array e -> UInt.UInt -> (Maybe.Maybe e -> e) -> e -> Array e
 listUpdateAtOverAutoCreate list index func fillElement = case Array.index list (UInt.toInt index) of
@@ -60,3 +69,11 @@ groupBySize size list = group list (\_ i -> (Prelude.div i size))
 -- | 並列実行する
 toParallel :: Array (Aff.Aff Prelude.Unit) -> Aff.Aff Prelude.Unit
 toParallel list = Prelude.map (\_ -> Prelude.unit) (Parallel.parSequence list)
+
+tupleListToJson :: Array (Tuple.Tuple String ArgonautCore.Json) -> ArgonautCore.Json
+tupleListToJson list = ArgonautCore.fromObject (Object.fromFoldable list)
+
+jsonFromNonEmptyString :: NonEmptyString.NonEmptyString -> ArgonautCore.Json
+jsonFromNonEmptyString nonEmptyString =
+  ArgonautCore.fromString
+    (NonEmptyString.toString nonEmptyString)

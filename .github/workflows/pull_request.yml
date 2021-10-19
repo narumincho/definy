@@ -17,7 +17,9 @@ jobs:
         run: npm ci
       - name: Run build script
         run: npm run production-build-main
-      - name: type check
+      - name: Type check
         run: npm run typeCheck
-      - name: test
+      - name: Test
         run: npm run test
+      - name: Test in PureScript
+        run: npx spago test

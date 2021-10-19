@@ -44,7 +44,6 @@ lsEffect callback = do
       ( NonEmptyString.nes
           (Proxy.Proxy :: Proxy.Proxy "npx firebase emulators:start --project definy-lang --config ./distribution/creative-record/firebase.json")
       )
-      Shell.defaultSpawnOptions
   Stream.onData
     (Shell.stdout childProcess)
     ( \buffer -> do

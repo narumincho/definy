@@ -1,6 +1,6 @@
+// @ts-check
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-require-imports */
-/* eslint-env node*/
 
 exports.unsafeFromNullable = function unsafeFromNullable(msg) {
   return (x) => {
@@ -37,43 +37,6 @@ exports.execImpl = function execImpl(command) {
             callback(err)(stdout)(stderr)();
           }
         );
-      };
-    };
-  };
-};
-
-exports.execFileImpl = function execFileImpl(command) {
-  return (args) => {
-    return (opts) => {
-      return (callback) => {
-        return () => {
-          return require("child_process").execFile(
-            command,
-            args,
-            opts,
-            (err, stdout, stderr) => {
-              callback(err)(stdout)(stderr)();
-            }
-          );
-        };
-      };
-    };
-  };
-};
-
-exports.execSyncImpl = function execSyncImpl(command) {
-  return (opts) => {
-    return () => {
-      return require("child_process").execSync(command, opts);
-    };
-  };
-};
-
-exports.execFileSyncImpl = function execFileSyncImpl(command) {
-  return (args) => {
-    return (opts) => {
-      return () => {
-        return require("child_process").execFileSync(command, args, opts);
       };
     };
   };
@@ -143,5 +106,4 @@ exports.onError = function onError(cp) {
   };
 };
 
-exports.undefined = undefined;
-exports.process = process;
+exports.nodeProcess = process;
