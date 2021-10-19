@@ -282,12 +282,12 @@ defaultSpawnOptions =
 -- | Note that the child process will be killed if the amount of output exceeds
 -- | a certain threshold (the default is defined by Node.js).
 exec ::
-  String ->
+  NonEmptyString.NonEmptyString ->
   ExecOptions ->
   (ExecResult -> Effect.Effect Prelude.Unit) ->
   Effect.Effect ChildProcess
 exec cmd opts callback =
-  execImpl cmd (convertExecOptions opts) \err stdout' stderr' ->
+  execImpl (NonEmptyString.toString cmd) (convertExecOptions opts) \err stdout' stderr' ->
     callback
       { error: Nullable.toMaybe err
       , stdout: stdout'

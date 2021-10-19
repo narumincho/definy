@@ -33,8 +33,23 @@ import Util as Util
 appName :: NonEmptyString.NonEmptyString
 appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "creative-record")
 
-firstClientProgramFilePath :: String
-firstClientProgramFilePath = "./distribution/creative-record/client-spago-result/program.js"
+firstClientProgramFilePath :: Path.DistributionFilePath
+firstClientProgramFilePath =
+  Path.DistributionFilePath
+    { directoryPath:
+        Path.DistributionDirectoryPath
+          { appName
+          , folderNameMaybe:
+              Maybe.Just
+                ( NonEmptyString.nes
+                    (Proxy.Proxy :: Proxy.Proxy "client-spago-result")
+                )
+          }
+    , fileName: programFileName
+    }
+
+programFileName :: NonEmptyString.NonEmptyString
+programFileName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "program")
 
 esbuildClientProgramFileDirectoryPath :: Path.DistributionDirectoryPath
 esbuildClientProgramFileDirectoryPath =
@@ -63,6 +78,7 @@ build = do
     , writeCloudStorageRules
     , writeFirebaseJson
     , clientProgramBuild
+    , runSpagoForFunctions
     ]
 
 clientProgramBuild :: Aff.Aff Unit
@@ -78,9 +94,9 @@ runSpagoBundleAppAndLog = do
     ( \callback ->
         map (\_ -> Aff.nonCanceler)
           ( Shell.exec
-              ( append
+              ( NonEmptyString.prependString
                   "spago bundle-app --main CreativeRecord.Client --to "
-                  firstClientProgramFilePath
+                  (Path.distributionFilePathToString firstClientProgramFilePath FileType.JavaScript)
               )
               Shell.defaultExecOptions
               ( \result -> do
@@ -104,9 +120,9 @@ execResultToString result = do
 
 runEsbuild :: Aff.Aff Unit
 runEsbuild = do
-  EsBuild.build
+  EsBuild.buildJs
     { entryPoints: firstClientProgramFilePath
-    , outdir: NonEmptyString.toString (Path.distributionDirectoryPathToString esbuildClientProgramFileDirectoryPath)
+    , outdir: esbuildClientProgramFileDirectoryPath
     , sourcemap: false
     , target: [ "chrome94", "firefox93", "safari15" ]
     }
@@ -118,7 +134,7 @@ readEsbuildResultClientProgramFile = do
     FileSystemRead.readTextFileInDistribution
       ( Path.DistributionFilePath
           { directoryPath: esbuildClientProgramFileDirectoryPath
-          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "program")
+          , fileName: programFileName
           }
       )
       FileType.JavaScript
@@ -303,3 +319,22 @@ originPureScriptModule =
             }
         ]
     }
+
+runSpagoForFunctions :: Aff.Aff Unit
+runSpagoForFunctions = do
+  Aff.makeAff
+    ( \callback ->
+        map (\_ -> Aff.nonCanceler)
+          ( Shell.exec
+              ( NonEmptyString.nes
+                  (Proxy.Proxy :: Proxy.Proxy "spago build --purs-args \"-o distribution/creative-record/functions/\"")
+              )
+              Shell.defaultExecOptions
+              ( \result -> do
+                  log <- execResultToString result
+                  Console.log log
+                  callback (Either.Right unit)
+              )
+          )
+    )
+  EffectClass.liftEffect (Console.log "spago で functions のビルドに成功!")
