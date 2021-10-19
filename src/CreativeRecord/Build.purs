@@ -98,7 +98,6 @@ runSpagoBundleAppAndLog = do
                   "spago bundle-app --main CreativeRecord.Client --to "
                   (Path.distributionFilePathToString firstClientProgramFilePath FileType.JavaScript)
               )
-              Shell.defaultExecOptions
               ( \result -> do
                   log <- execResultToString result
                   Console.log log
@@ -113,9 +112,14 @@ execResultToString result = do
   stdout <- Buffer.toString Encoding.UTF8 result.stdout
   stderr <- Buffer.toString Encoding.UTF8 result.stderr
   pure
-    ( append
-        "build-std"
-        (show { stdout, stderr, error: result.error })
+    ( String.joinWith "\n"
+        [ "stdout:"
+        , stdout
+        , "stderr:"
+        , stderr
+        , "error:"
+        , show result.error
+        ]
     )
 
 runEsbuild :: Aff.Aff Unit
@@ -329,7 +333,6 @@ runSpagoForFunctions = do
               ( NonEmptyString.nes
                   (Proxy.Proxy :: Proxy.Proxy "spago build --purs-args \"-o distribution/creative-record/functions/\"")
               )
-              Shell.defaultExecOptions
               ( \result -> do
                   log <- execResultToString result
                   Console.log log

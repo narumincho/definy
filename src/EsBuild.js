@@ -1,8 +1,13 @@
+// @ts-check
 /* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable @typescript-eslint/no-var-requires */
+/**
+ *
+ * @param {{entryPoints: string, outdir:string, sourcemap: boolean, target: string }} option
+ * @returns {(onError: (error: Error) => void, onSuccess: () => void) => (cancelError: () => void, cancelerError: () => void, cancelerSuccess: () => void) => void}
+ */
 exports.buildAsEffectFnAff = (option) => {
   return (onError, onSuccess) => {
-    console.log("esbuildを呼んだ");
     require("esbuild")
       .build({
         entryPoints: [option.entryPoints],
@@ -13,20 +18,18 @@ exports.buildAsEffectFnAff = (option) => {
         target: option.target,
       })
       .then(
-        (result) => {
-          onSuccess(result);
+        () => {
+          onSuccess();
         },
         (error) => {
-          console.log("失敗と送る error", error);
+          console.log("esbuild でエラーが発生", error);
           onError(error);
         }
       );
 
     return (cancelError, cancelerError, cancelerSuccess) => {
-      // esBuild を停止する処理は書いていない
-      console.log("停止処理を呼ばれた (なにもしていない)");
+      console.log("ESBuild の停止処理は未実装です");
       cancelerSuccess();
-      console.log("停止に成功したと送った");
     };
   };
 };

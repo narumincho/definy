@@ -1,6 +1,6 @@
+// @ts-check
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-require-imports */
-/* eslint-env node*/
 
 exports.unsafeFromNullable = function unsafeFromNullable(msg) {
   return (x) => {
@@ -106,5 +106,4 @@ exports.onError = function onError(cp) {
   };
 };
 
-exports.undefined = undefined;
-exports.process = process;
+exports.nodeProcess = process;

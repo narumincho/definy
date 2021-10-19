@@ -24,17 +24,9 @@ module Shell
   , onMessage
   , onError
   , spawn
-  , SpawnOptions
-  , defaultSpawnOptions
   , exec
-  , ExecOptions
   , ExecResult
-  , defaultExecOptions
   , fork
-  , StdIOBehaviour(..)
-  , pipe
-  , inherit
-  , ignore
   ) where
 
 import Data.Function.Uncurried as FunctionUncurried
@@ -48,10 +40,7 @@ import Effect as Effect
 import Effect.Exception as Exception
 import Effect.Exception.Unsafe as ExceptionUnsafe
 import Foreign as Foreign
-import Foreign.Object as Object
 import Node.Buffer as Buffer
-import Node.Encoding as Encoding
-import Node.FS as FS
 import Node.Platform as Platform
 import Node.Process as Process
 import Node.Stream as Stream
@@ -224,55 +213,23 @@ foreign import onError ::
 -- | but it will immediately emit an 'error' event.
 spawn ::
   NonEmptyString.NonEmptyString ->
-  SpawnOptions ->
   Effect.Effect ChildProcess
-spawn cmd options = spawnImpl (NonEmptyString.toString cmd) [] (convertOpts options)
-  where
-  convertOpts opts =
-    { cwd: Maybe.fromMaybe undefined opts.cwd
-    , stdio: toActualStdIOOptions opts.stdio
-    , env: Nullable.toNullable opts.env
-    , detached: opts.detached
-    , uid: Maybe.fromMaybe undefined opts.uid
-    , gid: Maybe.fromMaybe undefined opts.gid
-    , shell:
+spawn cmd =
+  spawnImpl (NonEmptyString.toString cmd) []
+    { shell:
         case Process.platform of
           Maybe.Just Platform.Win32 -> "powershell"
           _ -> "/bin/sh"
     }
 
 foreign import spawnImpl ::
-  forall opts.
   String ->
   Array String ->
-  { | opts } ->
+  RawSpawnOption ->
   Effect.Effect ChildProcess
 
--- There's gotta be a better way.
-foreign import undefined :: forall a. a
-
--- | Configuration of `spawn`. Fields set to `Nothing` will use
--- | the node defaults.
-type SpawnOptions
-  = { cwd :: Maybe.Maybe String
-    , stdio :: Array (Maybe.Maybe StdIOBehaviour)
-    , env :: Maybe.Maybe (Object.Object String)
-    , detached :: Boolean
-    , uid :: Maybe.Maybe Posix.Uid
-    , gid :: Maybe.Maybe Posix.Gid
-    }
-
--- | A default set of `SpawnOptions`. Everything is set to `Nothing`,
--- | `detached` is `false` and `stdio` is `ChildProcess.pipe`.
-defaultSpawnOptions :: SpawnOptions
-defaultSpawnOptions =
-  { cwd: Maybe.Nothing
-  , stdio: pipe
-  , env: Maybe.Nothing
-  , detached: false
-  , uid: Maybe.Nothing
-  , gid: Maybe.Nothing
-  }
+type RawSpawnOption
+  = { shell :: String }
 
 -- | Similar to `spawn`, except that this variant will:
 -- | * run the given command with the shell,
@@ -283,11 +240,16 @@ defaultSpawnOptions =
 -- | a certain threshold (the default is defined by Node.js).
 exec ::
   NonEmptyString.NonEmptyString ->
-  ExecOptions ->
   (ExecResult -> Effect.Effect Prelude.Unit) ->
   Effect.Effect ChildProcess
-exec cmd opts callback =
-  execImpl (NonEmptyString.toString cmd) (convertExecOptions opts) \err stdout' stderr' ->
+exec cmd callback =
+  execImpl (NonEmptyString.toString cmd)
+    ( { shell:
+          case Process.platform of
+            Maybe.Just Platform.Win32 -> "powershell"
+            _ -> "/bin/sh"
+      }
+    ) \err stdout' stderr' ->
     callback
       { error: Nullable.toMaybe err
       , stdout: stdout'
@@ -300,49 +262,8 @@ foreign import execImpl ::
   (Nullable.Nullable Exception.Error -> Buffer.Buffer -> Buffer.Buffer -> Effect.Effect Prelude.Unit) ->
   Effect.Effect ChildProcess
 
-foreign import data ActualExecOptions :: Type
-
-convertExecOptions :: ExecOptions -> ActualExecOptions
-convertExecOptions opts =
-  UnsafeCoerce.unsafeCoerce
-    { cwd: Maybe.fromMaybe undefined opts.cwd
-    , env: Maybe.fromMaybe undefined opts.env
-    , encoding: Maybe.maybe undefined Encoding.encodingToNode opts.encoding
-    , shell: Maybe.fromMaybe undefined opts.shell
-    , timeout: Maybe.fromMaybe undefined opts.timeout
-    , maxBuffer: Maybe.fromMaybe undefined opts.maxBuffer
-    , killSignal: Maybe.fromMaybe undefined opts.killSignal
-    , uid: Maybe.fromMaybe undefined opts.uid
-    , gid: Maybe.fromMaybe undefined opts.gid
-    }
-
--- | Configuration of `exec`. Fields set to `Nothing`
--- | will use the node defaults.
-type ExecOptions
-  = { cwd :: Maybe.Maybe String
-    , env :: Maybe.Maybe (Object.Object String)
-    , encoding :: Maybe.Maybe Encoding.Encoding
-    , shell :: Maybe.Maybe String
-    , timeout :: Maybe.Maybe Number
-    , maxBuffer :: Maybe.Maybe Int
-    , killSignal :: Maybe.Maybe Signal.Signal
-    , uid :: Maybe.Maybe Posix.Uid
-    , gid :: Maybe.Maybe Posix.Gid
-    }
-
--- | A default set of `ExecOptions`. Everything is set to `Nothing`.
-defaultExecOptions :: ExecOptions
-defaultExecOptions =
-  { cwd: Maybe.Nothing
-  , env: Maybe.Nothing
-  , encoding: Maybe.Nothing
-  , shell: Maybe.Nothing
-  , timeout: Maybe.Nothing
-  , maxBuffer: Maybe.Nothing
-  , killSignal: Maybe.Nothing
-  , uid: Maybe.Nothing
-  , gid: Maybe.Nothing
-  }
+type ActualExecOptions
+  = { shell :: String }
 
 -- | The combined output of a process calld with `exec`.
 type ExecResult
@@ -371,62 +292,4 @@ type Error
 toStandardError :: Error -> Exception.Error
 toStandardError = UnsafeCoerce.unsafeCoerce
 
--- | Behaviour for standard IO streams (eg, standard input, standard output) of
--- | a child process.
--- |
--- | * `Pipe`: creates a pipe between the child and parent process, which can
--- |   then be accessed as a `Stream` via the `stdin`, `stdout`, or `stderr`
--- |   functions.
--- | * `Ignore`: ignore this stream. This will cause Node to open /dev/null and
--- |   connect it to the stream.
--- | * `ShareStream`: Connect the supplied stream to the corresponding file
--- |    descriptor in the child.
--- | * `ShareFD`: Connect the supplied file descriptor (which should be open
--- |   in the parent) to the corresponding file descriptor in the child.
-data StdIOBehaviour
-  = Pipe
-  | Ignore
-  | ShareStream (forall r. Stream.Stream r)
-  | ShareFD FS.FileDescriptor
-
--- | Create pipes for each of the three standard IO streams.
-pipe :: Array (Maybe.Maybe StdIOBehaviour)
-pipe = Prelude.map Maybe.Just [ Pipe, Pipe, Pipe ]
-
--- | Share `stdin` with `stdin`, `stdout` with `stdout`,
--- | and `stderr` with `stderr`.
-inherit :: Array (Maybe.Maybe StdIOBehaviour)
-inherit =
-  Prelude.map Maybe.Just
-    [ ShareStream process.stdin
-    , ShareStream process.stdout
-    , ShareStream process.stderr
-    ]
-
-foreign import process :: forall props. { | props }
-
--- | Ignore all streams.
-ignore :: Array (Maybe.Maybe StdIOBehaviour)
-ignore = Prelude.map Maybe.Just [ Ignore, Ignore, Ignore ]
-
--- Helpers
-foreign import data ActualStdIOBehaviour :: Type
-
-toActualStdIOBehaviour :: StdIOBehaviour -> ActualStdIOBehaviour
-toActualStdIOBehaviour b = case b of
-  Pipe -> c "pipe"
-  Ignore -> c "ignore"
-  ShareFD x -> c x
-  ShareStream stream -> c stream
-  where
-  c :: forall a. a -> ActualStdIOBehaviour
-  c = UnsafeCoerce.unsafeCoerce
-
-type ActualStdIOOptions
-  = Array (Nullable.Nullable ActualStdIOBehaviour)
-
-toActualStdIOOptions :: Array (Maybe.Maybe StdIOBehaviour) -> ActualStdIOOptions
-toActualStdIOOptions list =
-  Prelude.map
-    (\item -> Nullable.toNullable (Prelude.map toActualStdIOBehaviour item))
-    list
+foreign import nodeProcess :: forall props. { | props }

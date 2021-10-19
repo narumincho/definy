@@ -14,7 +14,6 @@
   , "functions"
   , "maybe"
   , "node-buffer"
-  , "node-fs"
   , "node-fs-aff"
   , "node-http"
   , "node-process"
