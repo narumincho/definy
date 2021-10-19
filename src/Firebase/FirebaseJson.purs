@@ -9,13 +9,12 @@ module Firebase.FirebaseJson
 import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
 import Data.Maybe as Maybe
-import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import FileSystem.Path as Path
 import FileType as FileType
-import Foreign.Object as Object
 import Prelude as Prelude
+import Util as Util
 
 newtype FirebaseJson
   = FirebaseJson
@@ -45,17 +44,15 @@ newtype Emulators
 
 toJson :: FirebaseJson -> ArgonautCore.Json
 toJson (FirebaseJson record) =
-  tupleListToJson
+  Util.tupleListToJson
     ( Array.concat
         [ case record.functions of
             Maybe.Just (FunctionsSetting setting) ->
               [ Tuple.Tuple "functions"
                   ( ArgonautCore.jsonSingletonObject "source"
-                      ( ArgonautCore.fromString
-                          ( NonEmptyString.toString
-                              ( Path.distributionDirectoryPathToStringBaseApp
-                                  setting.distributionPath
-                              )
+                      ( Util.jsonFromNonEmptyString
+                          ( Path.distributionDirectoryPathToStringBaseApp
+                              setting.distributionPath
                           )
                       )
                   )
@@ -64,34 +61,28 @@ toJson (FirebaseJson record) =
         , [ Tuple.Tuple
               "firestore"
               ( ArgonautCore.jsonSingletonObject "rules"
-                  ( ArgonautCore.fromString
-                      ( NonEmptyString.toString
-                          ( Path.distributionFilePathToStringBaseApp
-                              record.firestoreRulesFilePath
-                              FileType.FirebaseSecurityRules
-                          )
+                  ( Util.jsonFromNonEmptyString
+                      ( Path.distributionFilePathToStringBaseApp
+                          record.firestoreRulesFilePath
+                          FileType.FirebaseSecurityRules
                       )
                   )
               )
           , Tuple.Tuple "storage"
               ( ArgonautCore.jsonSingletonObject "rules"
-                  ( ArgonautCore.fromString
-                      ( NonEmptyString.toString
-                          ( Path.distributionFilePathToStringBaseApp
-                              record.cloudStorageRulesFilePath
-                              FileType.FirebaseSecurityRules
-                          )
+                  ( Util.jsonFromNonEmptyString
+                      ( Path.distributionFilePathToStringBaseApp
+                          record.cloudStorageRulesFilePath
+                          FileType.FirebaseSecurityRules
                       )
                   )
               )
           , Tuple.Tuple "hosting"
-              ( tupleListToJson
+              ( Util.tupleListToJson
                   [ Tuple.Tuple "public"
-                      ( ArgonautCore.fromString
-                          ( NonEmptyString.toString
-                              ( Path.distributionDirectoryPathToStringBaseApp
-                                  record.hostingDistributionPath
-                              )
+                      ( Util.jsonFromNonEmptyString
+                          ( Path.distributionDirectoryPathToStringBaseApp
+                              record.hostingDistributionPath
                           )
                       )
                   , Tuple.Tuple "rewrites"
@@ -107,19 +98,16 @@ toJson (FirebaseJson record) =
         ]
     )
 
-tupleListToJson :: Array (Tuple.Tuple String ArgonautCore.Json) -> ArgonautCore.Json
-tupleListToJson list = ArgonautCore.fromObject (Object.fromFoldable list)
-
 rewriteToJson :: Rewrite -> ArgonautCore.Json
 rewriteToJson (Rewrite { source, function }) =
-  tupleListToJson
+  Util.tupleListToJson
     [ Tuple.Tuple "source" (ArgonautCore.fromString source)
     , Tuple.Tuple "function" (ArgonautCore.fromString function)
     ]
 
 emulatorsToJsonValue :: Emulators -> Maybe.Maybe FunctionsSetting -> ArgonautCore.Json
 emulatorsToJsonValue (Emulators emulators) functionsSetting =
-  tupleListToJson
+  Util.tupleListToJson
     ( Array.concat
         [ case functionsSetting of
             Maybe.Just (FunctionsSetting setting) ->
