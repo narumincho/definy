@@ -1,7 +1,6 @@
 module DevServer where
 
 import CreativeRecord.View as CreativeRecordView
-import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
@@ -12,7 +11,6 @@ import Node.Encoding as Encoding
 import Node.HTTP as Http
 import Node.Stream as Stream
 import Prelude as Prelude
-import StructuredUrl as StructuredUrl
 import View.ToHtml as ViewToHtml
 
 -- | Firebase の Hosting emulator では配信するリソースを実行時に変更できないので,
@@ -96,8 +94,6 @@ htmlResponse =
   StringResponse
     { data:
         HtmlToSTring.htmlOptionToString
-          ( ViewToHtml.viewToHtmlOption CreativeRecordView.view
-              (StructuredUrl.pathAndSearchParams [ "program" ] Map.empty)
-          )
+          (ViewToHtml.viewToHtmlOption CreativeRecordView.view)
     , mimeType: FileType.textHtmlMimeType
     }

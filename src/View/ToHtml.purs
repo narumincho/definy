@@ -1,4 +1,4 @@
-module View.ToHtml where
+module View.ToHtml (viewToHtmlOption) where
 
 import Color as Color
 import Css as Css
@@ -17,8 +17,8 @@ import Type.Proxy as Proxy
 import View.View as View
 
 -- | View から HtmlOption に変換する
-viewToHtmlOption :: forall message. View.View message -> StructuredUrl.PathAndSearchParams -> HtmlData.HtmlOption
-viewToHtmlOption (View.View view) scriptFileName =
+viewToHtmlOption :: forall message. View.View message -> HtmlData.HtmlOption
+viewToHtmlOption (View.View view) =
   let
     htmlElementAndStyleDict = boxToHtmlElementAndStyleDict view.box
   in
@@ -73,7 +73,7 @@ viewToHtmlOption (View.View view) scriptFileName =
                     }
                 )
             )
-      , scriptPath: Maybe.Just scriptFileName
+      , scriptPath: Maybe.Nothing
       , bodyChildren: [ htmlElementAndStyleDictHtmlElement htmlElementAndStyleDict ]
       , stylePath: Maybe.Nothing
       , bodyClass: Maybe.Nothing
