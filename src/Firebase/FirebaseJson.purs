@@ -9,6 +9,7 @@ module Firebase.FirebaseJson
 import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
 import Data.Maybe as Maybe
+import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import FileSystem.Path as Path
@@ -33,7 +34,10 @@ newtype FunctionsSetting
   }
 
 newtype Rewrite
-  = Rewrite { source :: String, function :: String }
+  = Rewrite
+  { source :: NonEmptyString.NonEmptyString
+  , function :: NonEmptyString.NonEmptyString
+  }
 
 newtype Emulators
   = Emulators
@@ -101,8 +105,8 @@ toJson (FirebaseJson record) =
 rewriteToJson :: Rewrite -> ArgonautCore.Json
 rewriteToJson (Rewrite { source, function }) =
   Util.tupleListToJson
-    [ Tuple.Tuple "source" (ArgonautCore.fromString source)
-    , Tuple.Tuple "function" (ArgonautCore.fromString function)
+    [ Tuple.Tuple "source" (Util.jsonFromNonEmptyString source)
+    , Tuple.Tuple "function" (Util.jsonFromNonEmptyString function)
     ]
 
 emulatorsToJsonValue :: Emulators -> Maybe.Maybe FunctionsSetting -> ArgonautCore.Json

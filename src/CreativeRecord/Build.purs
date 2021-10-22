@@ -1,12 +1,14 @@
 module CreativeRecord.Build (build) where
 
 import Prelude
+import Data.Argonaut.Core as ArgonautCore
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
-import Data.Maybe as Mabye
+import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect as Effect
 import Effect.Aff as Aff
@@ -22,11 +24,13 @@ import Firebase.SecurityRules as SecurityRules
 import Hash as Hash
 import Node.Buffer as Buffer
 import Node.Encoding as Encoding
+import PackageJson as PackageJson
 import Prelude as Prelude
 import PureScript.Data as PureScriptData
 import PureScript.Wellknown as PureScriptWellknown
 import Shell as Shell
 import StaticResourceFile as StaticResourceFile
+import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
 
@@ -66,7 +70,22 @@ hostingDirectoryPath :: Path.DistributionDirectoryPath
 hostingDirectoryPath =
   Path.DistributionDirectoryPath
     { appName
-    , folderNameMaybe: Maybe.Just (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "hosting"))
+    , folderNameMaybe:
+        Maybe.Just
+          ( NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "hosting")
+          )
+    }
+
+functionsDirectoryPath :: Path.DistributionDirectoryPath
+functionsDirectoryPath =
+  Path.DistributionDirectoryPath
+    { appName
+    , folderNameMaybe:
+        Maybe.Just
+          ( NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "functions")
+          )
     }
 
 build :: Aff.Aff Unit
@@ -79,6 +98,7 @@ build = do
     , writeFirebaseJson
     , clientProgramBuild
     , runSpagoForFunctions
+    , writePackageJsonForFunctions
     ]
 
 clientProgramBuild :: Aff.Aff Unit
@@ -168,7 +188,7 @@ writeCloudStorageRules =
 firestoreSecurityRulesFilePath :: Path.DistributionFilePath
 firestoreSecurityRulesFilePath =
   Path.DistributionFilePath
-    { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
+    { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }
     , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firestore")
     }
 
@@ -176,7 +196,7 @@ cloudStorageSecurityRulesFilePath :: Path.DistributionFilePath
 cloudStorageSecurityRulesFilePath =
   Path.DistributionFilePath
     { directoryPath:
-        Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
+        Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }
     , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "storage")
     }
 
@@ -184,7 +204,7 @@ writeFirebaseJson :: Aff.Aff Unit
 writeFirebaseJson = do
   FileSystemWrite.writeJson
     ( Path.DistributionFilePath
-        { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
+        { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }
         , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase")
         }
     )
@@ -198,9 +218,14 @@ writeFirebaseJson = do
                   , storagePortNumber: Maybe.Just (UInt.fromInt 9199)
                   }
             , firestoreRulesFilePath: firestoreSecurityRulesFilePath
-            , functions: Mabye.Nothing
+            , functions: Maybe.Nothing
             , hostingDistributionPath: hostingDirectoryPath
-            , hostingRewites: []
+            , hostingRewites:
+                [ FirebaseJson.Rewrite
+                    { source: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "**")
+                    , function: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
+                    }
+                ]
             }
         )
     )
@@ -330,8 +355,18 @@ runSpagoForFunctions = do
     ( \callback ->
         map (\_ -> Aff.nonCanceler)
           ( Shell.exec
-              ( NonEmptyString.nes
-                  (Proxy.Proxy :: Proxy.Proxy "spago build --purs-args \"-o distribution/creative-record/functions/\"")
+              ( Prelude.append
+                  ( NonEmptyString.nes
+                      (Proxy.Proxy :: Proxy.Proxy "spago bundle-module --main CreativeRecord.Functions --to ")
+                  )
+                  ( Path.distributionFilePathToString
+                      ( Path.DistributionFilePath
+                          { directoryPath: functionsDirectoryPath
+                          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "index")
+                          }
+                      )
+                      FileType.JavaScript
+                  )
               )
               ( \result -> do
                   log <- execResultToString result
@@ -341,3 +376,54 @@ runSpagoForFunctions = do
           )
     )
   EffectClass.liftEffect (Console.log "spago で functions のビルドに成功!")
+
+writePackageJsonForFunctions :: Aff.Aff Unit
+writePackageJsonForFunctions = case packageJsonForFunctions of
+  Maybe.Just json ->
+    FileSystemWrite.writeJson
+      ( Path.DistributionFilePath
+          { directoryPath: functionsDirectoryPath
+          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "package")
+          }
+      )
+      json
+  Maybe.Nothing -> EffectClass.liftEffect (Console.log "functions 向けの package.json の生成に失敗した")
+
+packageJsonForFunctions :: Maybe.Maybe ArgonautCore.Json
+packageJsonForFunctions =
+  Prelude.map
+    ( \name ->
+        PackageJson.toJson
+          ( PackageJson.PackageJsonInput
+              { name
+              , version: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "0.0.0")
+              , description: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録 https://narumincho.com")
+              , gitHubAccountName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho")
+              , gitHubRepositoryName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "definy")
+              , entryPoint: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "./index.js")
+              , homepage:
+                  StructuredUrl.StructuredUrl
+                    { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://narumincho.com")
+                    , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] Map.empty
+                    }
+              , author:
+                  NonEmptyString.nes
+                    ( Proxy.Proxy ::
+                        Proxy.Proxy
+                          "narumincho <narumincho.starfy@gmail.com> (https://narumincho.com)"
+                    )
+              , nodeVersion: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "14")
+              , dependencies:
+                  Map.fromFoldable
+                    [ Tuple.Tuple
+                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase-admin"))
+                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "10.0.0"))
+                    , Tuple.Tuple
+                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase-functions"))
+                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "3.15.7"))
+                    ]
+              , typeFilePath: Maybe.Nothing
+              }
+          )
+    )
+    (PackageJson.nameFromNonEmptyString appName)

@@ -2,7 +2,6 @@ module CreativeRecord.Start where
 
 import Prelude
 import CreativeRecord.Build as Build
-import Data.Either as Either
 import Effect as Effect
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
@@ -20,25 +19,12 @@ main =
     ( Aff.attempt
         ( do
             Build.build
-            runFirebaseEmulator
+            EffectClass.liftEffect runFirebaseEmulator
         )
     )
 
-runFirebaseEmulator :: Aff.Aff Unit
+runFirebaseEmulator :: Effect.Effect Unit
 runFirebaseEmulator = do
-  lsSample
-  EffectClass.liftEffect (Console.log "ここで Firebase のエミュレーター を起動するようにする")
-
-lsSample :: Aff.Aff Unit
-lsSample =
-  Aff.makeAff
-    ( \callback -> do
-        lsEffect (callback (Either.Right unit))
-        pure (Aff.effectCanceler (Console.log "ls をキャンセルしようとした?"))
-    )
-
-lsEffect :: Effect.Effect Unit -> Effect.Effect Unit
-lsEffect callback = do
   childProcess <-
     Shell.spawn
       ( NonEmptyString.nes
@@ -49,5 +35,4 @@ lsEffect callback = do
     ( \buffer -> do
         stdout <- (Buffer.toString Encoding.UTF8 buffer)
         Console.log (append "firebase emulator の ログ: " stdout)
-        callback
     )

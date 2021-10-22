@@ -244,17 +244,14 @@ exec ::
   Effect.Effect ChildProcess
 exec cmd callback =
   execImpl (NonEmptyString.toString cmd)
-    ( { shell:
-          case Process.platform of
-            Maybe.Just Platform.Win32 -> "powershell"
-            _ -> "/bin/sh"
-      }
-    ) \err stdout' stderr' ->
-    callback
-      { error: Nullable.toMaybe err
-      , stdout: stdout'
-      , stderr: stderr'
-      }
+    {}
+    ( \err stdout' stderr' ->
+        callback
+          { error: Nullable.toMaybe err
+          , stdout: stdout'
+          , stderr: stderr'
+          }
+    )
 
 foreign import execImpl ::
   String ->
@@ -263,7 +260,7 @@ foreign import execImpl ::
   Effect.Effect ChildProcess
 
 type ActualExecOptions
-  = { shell :: String }
+  = {}
 
 -- | The combined output of a process calld with `exec`.
 type ExecResult
