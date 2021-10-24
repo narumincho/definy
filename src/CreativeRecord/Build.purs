@@ -19,6 +19,7 @@ import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import FileSystem.Write as FileSystemWrite
 import FileType as FileType
+import Firebase.FirebaseJson as FirebaesJson
 import Firebase.FirebaseJson as FirebaseJson
 import Firebase.SecurityRules as SecurityRules
 import Hash as Hash
@@ -88,6 +89,9 @@ functionsDirectoryPath =
           )
     }
 
+hostingPortNumber :: UInt.UInt
+hostingPortNumber = UInt.fromInt 1324
+
 build :: Aff.Aff Unit
 build = do
   Util.toParallel
@@ -95,17 +99,18 @@ build = do
     , staticResourceCodeGen
     , writeFirestoreRules
     , writeCloudStorageRules
-    , writeFirebaseJson
-    , clientProgramBuild
+    , clientProgramAndFirebaseJsonBuild
     , runSpagoForFunctions
     , writePackageJsonForFunctions
     ]
 
-clientProgramBuild :: Aff.Aff Unit
-clientProgramBuild = do
+clientProgramAndFirebaseJsonBuild :: Aff.Aff Unit
+clientProgramAndFirebaseJsonBuild = do
   runSpagoBundleAppAndLog
   runEsbuild
-  readEsbuildResultClientProgramFile
+  fileHashValue <- readEsbuildResultClientProgramFile
+  writeCodeClientProgramHashValue fileHashValue
+  writeFirebaseJson fileHashValue
   EffectClass.liftEffect (Console.log "クライアント向けビルド完了!")
 
 runSpagoBundleAppAndLog :: Aff.Aff Unit
@@ -152,7 +157,7 @@ runEsbuild = do
     }
   EffectClass.liftEffect (Console.log "esbuild でのビルドに成功!")
 
-readEsbuildResultClientProgramFile :: Aff.Aff Unit
+readEsbuildResultClientProgramFile :: Aff.Aff NonEmptyString.NonEmptyString
 readEsbuildResultClientProgramFile = do
   clientProgramAsString <-
     FileSystemRead.readTextFileInDistribution
@@ -171,7 +176,31 @@ readEsbuildResultClientProgramFile = do
         }
     )
     clientProgramAsString
-  pure unit
+  pure clientProgramHashValue
+
+writeCodeClientProgramHashValue :: NonEmptyString.NonEmptyString -> Aff.Aff Unit
+writeCodeClientProgramHashValue fileHashValue =
+  FileSystemWrite.writePureScript
+    srcDirectoryPath
+    ( PureScriptData.Module
+        { name:
+            PureScriptData.ModuleName
+              ( NonEmptyArray.cons' creativeRecordModuleName
+                  [ NonEmptyString.nes
+                      (Proxy.Proxy :: Proxy.Proxy "ClientProgramHashValue")
+                  ]
+              )
+        , definitionList:
+            [ PureScriptData.Definition
+                { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "clientProgramHashValue")
+                , document: "クライアント向け JavaScript のファイルのハッシュ値"
+                , pType: PureScriptWellknown.nonEmptyString
+                , expr: PureScriptWellknown.nonEmptyStringLiteral fileHashValue
+                , isExport: true
+                }
+            ]
+        }
+    )
 
 writeFirestoreRules :: Aff.Aff Unit
 writeFirestoreRules =
@@ -200,8 +229,8 @@ cloudStorageSecurityRulesFilePath =
     , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "storage")
     }
 
-writeFirebaseJson :: Aff.Aff Unit
-writeFirebaseJson = do
+writeFirebaseJson :: NonEmptyString.NonEmptyString -> Aff.Aff Unit
+writeFirebaseJson clientProgramHashValue = do
   FileSystemWrite.writeJson
     ( Path.DistributionFilePath
         { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }
@@ -214,7 +243,7 @@ writeFirebaseJson = do
             , emulators:
                 FirebaseJson.Emulators
                   { firestorePortNumber: Maybe.Just (UInt.fromInt 8080)
-                  , hostingPortNumber: Maybe.Nothing
+                  , hostingPortNumber: Maybe.Just hostingPortNumber
                   , storagePortNumber: Maybe.Just (UInt.fromInt 9199)
                   }
             , firestoreRulesFilePath: firestoreSecurityRulesFilePath
@@ -224,6 +253,17 @@ writeFirebaseJson = do
                 [ FirebaseJson.Rewrite
                     { source: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "**")
                     , function: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
+                    }
+                ]
+            , hostingHeaders:
+                [ FirebaesJson.SourceAndHeaders
+                    { source: clientProgramHashValue
+                    , headers:
+                        [ FirebaseJson.Header
+                            { key: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content-type")
+                            , value: NonEmptyString.toString FileType.javaScriptMimeType
+                            }
+                        ]
                     }
                 ]
             }
@@ -343,7 +383,10 @@ originPureScriptModule =
             , pType: PureScriptWellknown.nonEmptyString
             , expr:
                 PureScriptWellknown.nonEmptyStringLiteral
-                  (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "http://localhost:1234"))
+                  ( NonEmptyString.appendString
+                      (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "http://localhost:"))
+                      (UInt.toString hostingPortNumber)
+                  )
             , isExport: true
             }
         ]

@@ -17,9 +17,10 @@ import Type.Proxy as Proxy
 import View.View as View
 
 -- | View から HtmlOption に変換する
-viewToHtmlOption :: forall message. View.View message -> HtmlData.HtmlOption
-viewToHtmlOption (View.View view) =
+viewToHtmlOption :: forall message. StructuredUrl.PathAndSearchParams -> View.View message -> HtmlData.HtmlOption
+viewToHtmlOption scriptPath (View.View view) =
   let
+    htmlElementAndStyleDict :: HtmlElementAndStyleDict
     htmlElementAndStyleDict = boxToHtmlElementAndStyleDict view.box
   in
     HtmlData.HtmlOption
@@ -36,48 +37,51 @@ viewToHtmlOption (View.View view) =
       , style:
           Maybe.Just
             ( Css.ruleListToString
-                ( Css.StatementList
-                    { ruleList:
-                        Array.concat
-                          [ [ Css.Rule
-                                { selector: Css.Type { elementName: "html" }
-                                , declarationList: [ Css.height100Percent ]
-                                }
-                            , Css.Rule
-                                { selector: Css.Type { elementName: "body" }
-                                , declarationList:
-                                    [ Css.height100Percent
-                                    , Css.margin0
-                                    , Css.backgroundColor Color.black
-                                    , Css.displayGrid
-                                    , Css.boxSizingBorderBox
-                                    , Css.alignItems Css.Start
-                                    ]
-                                }
-                            ]
-                          , Array.concatMap
-                              styleDictItemToCssRuleList
-                              ( Map.toUnfoldable
-                                  (htmlElementAndStyleDictStyleDict htmlElementAndStyleDict)
-                              )
-                          ]
-                    , keyframesList:
-                        Prelude.map
-                          ( \(Tuple.Tuple hashValue keyframeList) ->
-                              Css.Keyframes
-                                { name: sha256HashValueToAnimationName (hashValue)
-                                , keyframeList
-                                }
-                          )
-                          (Map.toUnfoldable (htmlElementAndStyleDictKeyframesDict htmlElementAndStyleDict))
-                    }
-                )
+                (htmlElementAndStyleDictToCssStatementList htmlElementAndStyleDict)
             )
-      , scriptPath: Maybe.Nothing
+      , scriptPath: Maybe.Just scriptPath
       , bodyChildren: [ htmlElementAndStyleDictHtmlElement htmlElementAndStyleDict ]
       , stylePath: Maybe.Nothing
       , bodyClass: Maybe.Nothing
       }
+
+htmlElementAndStyleDictToCssStatementList :: HtmlElementAndStyleDict -> Css.StatementList
+htmlElementAndStyleDictToCssStatementList htmlElementAndStyleDict =
+  Css.StatementList
+    { ruleList:
+        Array.concat
+          [ [ Css.Rule
+                { selector: Css.Type { elementName: "html" }
+                , declarationList: [ Css.height100Percent ]
+                }
+            , Css.Rule
+                { selector: Css.Type { elementName: "body" }
+                , declarationList:
+                    [ Css.height100Percent
+                    , Css.margin0
+                    , Css.backgroundColor Color.black
+                    , Css.displayGrid
+                    , Css.boxSizingBorderBox
+                    , Css.alignItems Css.Start
+                    ]
+                }
+            ]
+          , Array.concatMap
+              styleDictItemToCssRuleList
+              ( Map.toUnfoldable
+                  (htmlElementAndStyleDictStyleDict htmlElementAndStyleDict)
+              )
+          ]
+    , keyframesList:
+        Prelude.map
+          ( \(Tuple.Tuple hashValue keyframeList) ->
+              Css.Keyframes
+                { name: sha256HashValueToAnimationName (hashValue)
+                , keyframeList
+                }
+          )
+          (Map.toUnfoldable (htmlElementAndStyleDictKeyframesDict htmlElementAndStyleDict))
+    }
 
 styleDictItemToCssRuleList :: Tuple.Tuple NonEmptyString.NonEmptyString ViewStyle -> Array Css.Rule
 styleDictItemToCssRuleList (Tuple.Tuple hashValue (ViewStyle { declarationList, hoverDeclarationList })) =

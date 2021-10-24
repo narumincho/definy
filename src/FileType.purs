@@ -1,4 +1,9 @@
-module FileType (FileType(..), toMimeType, textHtmlMimeType) where
+module FileType
+  ( FileType(..)
+  , toMimeType
+  , htmlMimeType
+  , javaScriptMimeType
+  ) where
 
 import Data.Generic.Rep as GenericRep
 import Data.Maybe as Maybe
@@ -33,12 +38,8 @@ toMimeType = case _ of
       )
   Maybe.Just TypeScript -> Maybe.Nothing
   Maybe.Just PureScript -> Maybe.Nothing
-  Maybe.Just JavaScript ->
-    Maybe.Just
-      ( NonEmptyString.nes
-          (Proxy.Proxy :: Proxy.Proxy "text/javascript")
-      )
-  Maybe.Just Html -> Maybe.Just textHtmlMimeType
+  Maybe.Just JavaScript -> Maybe.Just javaScriptMimeType
+  Maybe.Just Html -> Maybe.Just htmlMimeType
   Maybe.Just Json ->
     Maybe.Just
       ( NonEmptyString.nes
@@ -51,7 +52,12 @@ toMimeType = case _ of
           (Proxy.Proxy :: Proxy.Proxy "application/octet-stream")
       )
 
-textHtmlMimeType :: NonEmptyString.NonEmptyString
-textHtmlMimeType =
+htmlMimeType :: NonEmptyString.NonEmptyString
+htmlMimeType =
   NonEmptyString.nes
     (Proxy.Proxy :: Proxy.Proxy "text/html")
+
+javaScriptMimeType :: NonEmptyString.NonEmptyString
+javaScriptMimeType =
+  NonEmptyString.nes
+    (Proxy.Proxy :: Proxy.Proxy "text/javascript")

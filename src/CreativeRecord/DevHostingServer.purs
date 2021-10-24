@@ -2,6 +2,7 @@ module DevServer where
 
 import CreativeRecord.View as CreativeRecordView
 import Data.Maybe as Maybe
+import Data.Map as Map
 import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
 import Effect.Console as Console
@@ -12,9 +13,11 @@ import Node.HTTP as Http
 import Node.Stream as Stream
 import Prelude as Prelude
 import View.ToHtml as ViewToHtml
+import StructuredUrl as StructuredUrl
 
 -- | Firebase の Hosting emulator では配信するリソースを実行時に変更できないので,
 -- | その変更できるサーバーを作る
+-- | 現在 未使用 !
 startServer :: String -> Effect.Effect Prelude.Unit
 startServer _firebaseJsonPath =
   Prelude.bind
@@ -94,6 +97,12 @@ htmlResponse =
   StringResponse
     { data:
         HtmlToSTring.htmlOptionToString
-          (ViewToHtml.viewToHtmlOption CreativeRecordView.view)
-    , mimeType: FileType.textHtmlMimeType
+          ( ViewToHtml.viewToHtmlOption
+              ( StructuredUrl.pathAndSearchParams
+                  [ "program" ]
+                  Map.empty
+              )
+              CreativeRecordView.view
+          )
+    , mimeType: FileType.htmlMimeType
     }

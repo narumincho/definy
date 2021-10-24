@@ -1,6 +1,7 @@
 module CreativeRecord.View (view) where
 
 import Color.Scheme.MaterialDesign as Color
+import CreativeRecord.Origin as Origin
 import CreativeRecord.Top as Top
 import Data.Map as Map
 import Data.Maybe as Mabye
@@ -26,5 +27,5 @@ view =
     , path: StructuredUrl.pathAndSearchParams [] Map.empty
     , themeColor: Color.orange
     , style: Maybe.Nothing
-    , origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "http://localhost:1234")
+    , origin: Origin.origin
     }
