@@ -38,6 +38,7 @@ module Css
 import Color as Color
 import Data.Array as Array
 import Data.String as String
+import Data.String.NonEmpty as NonEmptyString
 import Prelude as Prelude
 
 newtype Declaration
@@ -55,11 +56,11 @@ declarationValue (Declaration { value }) = value
 
 data Selector
   = Class
-    { className :: String
+    { className :: NonEmptyString.NonEmptyString
     , isHover :: Boolean
     }
   | Type
-    { elementName :: String
+    { elementName :: NonEmptyString.NonEmptyString
     }
 
 newtype Rule
@@ -91,11 +92,11 @@ ruleToString (Rule { selector, declarationList }) =
 
 selectorToString :: Selector -> String
 selectorToString = case _ of
-  Type { elementName } -> elementName
+  Type { elementName } -> NonEmptyString.toString elementName
   Class { className, isHover } ->
     String.joinWith ""
       [ "."
-      , className
+      , NonEmptyString.toString className
       , if isHover then ":hover" else ""
       ]
 
@@ -107,7 +108,7 @@ newtype StatementList
 
 newtype Keyframes
   = Keyframes
-  { name :: String
+  { name :: NonEmptyString.NonEmptyString
   , keyframeList :: Array Keyframe
   }
 
@@ -127,7 +128,7 @@ keyFramesToString :: Keyframes -> String
 keyFramesToString (Keyframes { name, keyframeList }) =
   String.joinWith ""
     [ "@keyframes "
-    , name
+    , NonEmptyString.toString name
     , "{"
     , String.joinWith "" (Prelude.map keyFrameToString keyframeList)
     , "}"
@@ -138,7 +139,9 @@ keyFrameToString (Keyframe { percentage, declarationList }) =
   String.joinWith ""
     [ Prelude.show percentage
     , "% "
+    , "{"
     , declarationListToString declarationList
+    , "}"
     ]
 
 widthRem :: Number -> Declaration
@@ -271,13 +274,13 @@ gridTemplateColumns oneFrCount =
           (Array.replicate oneFrCount "1fr")
     }
 
-animation :: String -> Number -> Declaration
+animation :: NonEmptyString.NonEmptyString -> Number -> Declaration
 animation animationName duration =
   Declaration
     { property: "animation"
     , value:
         String.joinWith " "
-          [ animationName
+          [ NonEmptyString.toString animationName
           , Prelude.append (Prelude.show duration) "ms"
           ]
     }
