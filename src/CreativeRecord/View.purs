@@ -1,6 +1,8 @@
 module CreativeRecord.View (view) where
 
 import Color.Scheme.MaterialDesign as Color
+import CreativeRecord.Origin as Origin
+import CreativeRecord.StaticResource as StaticResource
 import CreativeRecord.Top as Top
 import Data.Map as Map
 import Data.Maybe as Mabye
@@ -17,14 +19,14 @@ view =
   View.View
     { appName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録")
     , box: Top.topBox
-    , coverImagePath: StructuredUrl.pathAndSearchParams [ "icon" ] Map.empty
+    , coverImagePath: StaticResource.iconPng
     , description:
         "革新的なプログラミング言語のdefiny, Web技術, 作っているゲームなどについて解説しています"
-    , iconPath: StructuredUrl.pathAndSearchParams [ "icon" ] Map.empty
+    , iconPath: StaticResource.iconPng
     , language: Mabye.Just Language.Japanese
     , pageName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録")
     , path: StructuredUrl.pathAndSearchParams [] Map.empty
     , themeColor: Color.orange
     , style: Maybe.Nothing
-    , origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "http://localhost:1234")
+    , origin: Origin.origin
     }

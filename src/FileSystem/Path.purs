@@ -5,7 +5,6 @@ module FileSystem.Path
   , FilePath(..)
   , filePathGetFileName
   , fileNameWithExtensitonParse
-  , fileTypeToExtension
   , filePathGetFileType
   , distributionDirectoryPathToString
   , distributionFilePathToDirectoryPath
@@ -16,13 +15,14 @@ module FileSystem.Path
   , filePathToString
   , distributionFilePathToStringBaseApp
   , distributionDirectoryPathToStringBaseApp
+  , distributionDirectoryPathToDirectoryPath
   ) where
 
 import Data.Array as Array
 import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
-import FileType as FileType
+import FileSystem.FileType as FileType
 import Prelude as Prelude
 import Type.Proxy as Proxy
 
@@ -84,7 +84,7 @@ fileNameWithFileTypeToString :: NonEmptyString.NonEmptyString -> FileType.FileTy
 fileNameWithFileTypeToString fileName fileType =
   Prelude.append
     fileName
-    (NonEmptyString.prependString "." (fileTypeToExtension fileType))
+    (NonEmptyString.prependString "." (FileType.toExtension fileType))
 
 distributionDirectoryPathToString :: DistributionDirectoryPath -> NonEmptyString.NonEmptyString
 distributionDirectoryPathToString distributionDirectoryPath =
@@ -140,31 +140,12 @@ fileNameWithExtensitonParse fileNameWithExtensiton = case NonEmptyString.lastInd
     in
       Prelude.map
         ( \fileName ->
-            { fileName: fileName, fileType: extensionToFileType (String.drop 1 afterAndBefore.after) }
+            { fileName: fileName
+            , fileType: FileType.fromExtension (String.drop 1 afterAndBefore.after)
+            }
         )
         (NonEmptyString.fromString afterAndBefore.before)
   Maybe.Nothing -> Maybe.Just { fileName: fileNameWithExtensiton, fileType: Maybe.Nothing }
-
-fileTypeToExtension :: FileType.FileType -> NonEmptyString.NonEmptyString
-fileTypeToExtension = case _ of
-  FileType.Png -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "png")
-  FileType.TypeScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ts")
-  FileType.JavaScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "js")
-  FileType.Html -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
-  FileType.Json -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "json")
-  FileType.PureScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "purs")
-  FileType.FirebaseSecurityRules -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "rules")
-
-extensionToFileType :: String -> Maybe.Maybe FileType.FileType
-extensionToFileType = case _ of
-  "png" -> Maybe.Just FileType.Png
-  "ts" -> Maybe.Just FileType.TypeScript
-  "js" -> Maybe.Just FileType.JavaScript
-  "html" -> Maybe.Just FileType.Html
-  "json" -> Maybe.Just FileType.Json
-  "purs" -> Maybe.Just FileType.PureScript
-  "rules" -> Maybe.Just FileType.FirebaseSecurityRules
-  _ -> Maybe.Nothing
 
 distributionFilePathToStringBaseApp :: DistributionFilePath -> FileType.FileType -> NonEmptyString.NonEmptyString
 distributionFilePathToStringBaseApp (DistributionFilePath { directoryPath, fileName }) fileType =

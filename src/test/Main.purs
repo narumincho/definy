@@ -7,7 +7,7 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect
 import FileSystem.Path as FileSystemPath
-import FileType as FileType
+import FileSystem.FileType as FileType
 import PureScript.Data as PureScriptData
 import PureScript.ToString as PureScriptToString
 import PureScript.Wellknown as PureScriptWellknown

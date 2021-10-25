@@ -1,32 +1,40 @@
 module CreativeRecord.Build (build) where
 
 import Prelude
+import Data.Argonaut.Core as ArgonautCore
+import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
-import Data.Maybe as Mabye
+import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect as Effect
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import Effect.Console as Console
 import EsBuild as EsBuild
+import FileSystem.Copy as FileSystemCopy
+import FileSystem.FileType as FileType
 import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import FileSystem.Write as FileSystemWrite
-import FileType as FileType
+import Firebase.FirebaseJson as FirebaesJson
 import Firebase.FirebaseJson as FirebaseJson
 import Firebase.SecurityRules as SecurityRules
 import Hash as Hash
+import MediaType as MediaType
 import Node.Buffer as Buffer
 import Node.Encoding as Encoding
+import PackageJson as PackageJson
 import Prelude as Prelude
 import PureScript.Data as PureScriptData
 import PureScript.Wellknown as PureScriptWellknown
 import Shell as Shell
 import StaticResourceFile as StaticResourceFile
+import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
 
@@ -66,27 +74,58 @@ hostingDirectoryPath :: Path.DistributionDirectoryPath
 hostingDirectoryPath =
   Path.DistributionDirectoryPath
     { appName
-    , folderNameMaybe: Maybe.Just (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "hosting"))
+    , folderNameMaybe:
+        Maybe.Just
+          ( NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "hosting")
+          )
     }
+
+functionsDirectoryPath :: Path.DistributionDirectoryPath
+functionsDirectoryPath =
+  Path.DistributionDirectoryPath
+    { appName
+    , folderNameMaybe:
+        Maybe.Just
+          ( NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "functions")
+          )
+    }
+
+hostingPortNumber :: UInt.UInt
+hostingPortNumber = UInt.fromInt 1324
 
 build :: Aff.Aff Unit
 build = do
   Util.toParallel
-    [ originCodeGen
-    , staticResourceCodeGen
-    , writeFirestoreRules
+    [ writeFirestoreRules
     , writeCloudStorageRules
-    , writeFirebaseJson
-    , clientProgramBuild
-    , runSpagoForFunctions
+    , mainBuild
+    , writePackageJsonForFunctions
     ]
 
-clientProgramBuild :: Aff.Aff Unit
-clientProgramBuild = do
+mainBuild :: Aff.Aff Unit
+mainBuild = do
+  (Tuple.Tuple staticFileData _) <- Tuple.Tuple <$> staticResourceBuild <*> originCodeGen
+  clinetProgramHashValue <- clientProgramAndFirebaseJsonBuild
+  Util.toParallel
+    [ writeCodeClientProgramHashValueAndFunctionBuild clinetProgramHashValue
+    , writeFirebaseJson staticFileData clinetProgramHashValue
+    ]
+  pure unit
+
+writeCodeClientProgramHashValueAndFunctionBuild :: NonEmptyString.NonEmptyString -> Aff.Aff Unit
+writeCodeClientProgramHashValueAndFunctionBuild clinetProgramHashValue = do
+  writeCodeClientProgramHashValue clinetProgramHashValue
+  runSpagoForFunctions
+
+clientProgramAndFirebaseJsonBuild :: Aff.Aff NonEmptyString.NonEmptyString
+clientProgramAndFirebaseJsonBuild = do
   runSpagoBundleAppAndLog
   runEsbuild
-  readEsbuildResultClientProgramFile
-  EffectClass.liftEffect (Console.log "クライアント向けビルド完了!")
+  fileHashValue <- readEsbuildResultClientProgramFile
+  EffectClass.liftEffect (Console.log (append "クライアント向けビルド完了! hashValue:" (NonEmptyString.toString fileHashValue)))
+  pure fileHashValue
 
 runSpagoBundleAppAndLog :: Aff.Aff Unit
 runSpagoBundleAppAndLog = do
@@ -132,7 +171,7 @@ runEsbuild = do
     }
   EffectClass.liftEffect (Console.log "esbuild でのビルドに成功!")
 
-readEsbuildResultClientProgramFile :: Aff.Aff Unit
+readEsbuildResultClientProgramFile :: Aff.Aff NonEmptyString.NonEmptyString
 readEsbuildResultClientProgramFile = do
   clientProgramAsString <-
     FileSystemRead.readTextFileInDistribution
@@ -151,7 +190,31 @@ readEsbuildResultClientProgramFile = do
         }
     )
     clientProgramAsString
-  pure unit
+  pure clientProgramHashValue
+
+writeCodeClientProgramHashValue :: NonEmptyString.NonEmptyString -> Aff.Aff Unit
+writeCodeClientProgramHashValue fileHashValue =
+  FileSystemWrite.writePureScript
+    srcDirectoryPath
+    ( PureScriptData.Module
+        { name:
+            PureScriptData.ModuleName
+              ( NonEmptyArray.cons' creativeRecordModuleName
+                  [ NonEmptyString.nes
+                      (Proxy.Proxy :: Proxy.Proxy "ClientProgramHashValue")
+                  ]
+              )
+        , definitionList:
+            [ PureScriptData.Definition
+                { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "clientProgramHashValue")
+                , document: "クライアント向け JavaScript のファイルのハッシュ値"
+                , pType: PureScriptWellknown.nonEmptyString
+                , expr: PureScriptWellknown.nonEmptyStringLiteral fileHashValue
+                , isExport: true
+                }
+            ]
+        }
+    )
 
 writeFirestoreRules :: Aff.Aff Unit
 writeFirestoreRules =
@@ -168,7 +231,7 @@ writeCloudStorageRules =
 firestoreSecurityRulesFilePath :: Path.DistributionFilePath
 firestoreSecurityRulesFilePath =
   Path.DistributionFilePath
-    { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
+    { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }
     , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firestore")
     }
 
@@ -176,15 +239,15 @@ cloudStorageSecurityRulesFilePath :: Path.DistributionFilePath
 cloudStorageSecurityRulesFilePath =
   Path.DistributionFilePath
     { directoryPath:
-        Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
+        Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }
     , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "storage")
     }
 
-writeFirebaseJson :: Aff.Aff Unit
-writeFirebaseJson = do
+writeFirebaseJson :: Array StaticResourceFile.StaticResourceFileResult -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
+writeFirebaseJson staticFileDataList clientProgramHashValue = do
   FileSystemWrite.writeJson
     ( Path.DistributionFilePath
-        { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Mabye.Nothing }
+        { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }
         , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase")
         }
     )
@@ -194,13 +257,50 @@ writeFirebaseJson = do
             , emulators:
                 FirebaseJson.Emulators
                   { firestorePortNumber: Maybe.Just (UInt.fromInt 8080)
-                  , hostingPortNumber: Maybe.Nothing
+                  , hostingPortNumber: Maybe.Just hostingPortNumber
                   , storagePortNumber: Maybe.Just (UInt.fromInt 9199)
                   }
             , firestoreRulesFilePath: firestoreSecurityRulesFilePath
-            , functions: Mabye.Nothing
+            , functions: Maybe.Nothing
             , hostingDistributionPath: hostingDirectoryPath
-            , hostingRewites: []
+            , hostingRewites:
+                [ FirebaseJson.Rewrite
+                    { source: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "**")
+                    , function: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
+                    }
+                ]
+            , hostingHeaders:
+                Array.cons
+                  ( FirebaesJson.SourceAndHeaders
+                      { source: clientProgramHashValue
+                      , headers:
+                          [ FirebaseJson.Header
+                              { key: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content-type")
+                              , value: NonEmptyString.toString MediaType.javaScriptMimeType
+                              }
+                          ]
+                      }
+                  )
+                  ( map
+                      ( \( StaticResourceFile.StaticResourceFileResult { requestPathAndUploadFileName, mediaTypeMaybe }
+                        ) ->
+                          ( FirebaesJson.SourceAndHeaders
+                              { source: requestPathAndUploadFileName
+                              , headers:
+                                  [ FirebaseJson.Header
+                                      { key: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content-type")
+                                      , value:
+                                          NonEmptyString.toString
+                                            ( MediaType.toMimeType
+                                                mediaTypeMaybe
+                                            )
+                                      }
+                                  ]
+                              }
+                          )
+                      )
+                      staticFileDataList
+                  )
             }
         )
     )
@@ -209,21 +309,40 @@ writeFirebaseJson = do
 originCodeGen :: Aff.Aff Prelude.Unit
 originCodeGen = FileSystemWrite.writePureScript srcDirectoryPath originPureScriptModule
 
-staticResourceCodeGen :: Aff.Aff Prelude.Unit
-staticResourceCodeGen =
-  Prelude.bind
-    ( StaticResourceFile.getStaticResourceFileResult
-        ( Path.DirectoryPath
-            [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho-creative-record")
-            , NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "resource")
-            ]
+staticResourceBuild :: Aff.Aff (Array StaticResourceFile.StaticResourceFileResult)
+staticResourceBuild = do
+  resultList <-
+    StaticResourceFile.getStaticResourceFileResult
+      ( Path.DirectoryPath
+          [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho-creative-record")
+          , NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "resource")
+          ]
+      )
+  copyStaticResouece resultList
+  staticResourceCodeGen resultList
+  pure resultList
+
+copyStaticResouece :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Prelude.Unit
+copyStaticResouece resultList =
+  Util.toParallel
+    ( map
+        ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, requestPathAndUploadFileName }) ->
+            FileSystemCopy.copyFileToDistribution
+              originalFilePath
+              ( Path.DistributionFilePath
+                  { directoryPath: hostingDirectoryPath
+                  , fileName: requestPathAndUploadFileName
+                  }
+              )
         )
+        resultList
     )
-    ( \resultList ->
-        FileSystemWrite.writePureScript
-          srcDirectoryPath
-          (staticFileResultToPureScriptModule resultList)
-    )
+
+staticResourceCodeGen :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Prelude.Unit
+staticResourceCodeGen resultList =
+  FileSystemWrite.writePureScript
+    srcDirectoryPath
+    (staticFileResultToPureScriptModule resultList)
 
 staticFileResultToPureScriptModule :: Array StaticResourceFile.StaticResourceFileResult -> PureScriptData.Module
 staticFileResultToPureScriptModule resultList =
@@ -241,11 +360,11 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
     { name: record.fileId
     , document:
         String.joinWith ""
-          [ "static な ファイル の \""
+          [ "static な ファイル の `"
           , NonEmptyString.toString (Path.filePathToString record.originalFilePath)
-          , "\"をリクエストするためのURL. ファイルのハッシュ値は "
-          , record.uploadFileName
-          , "\"(コード生成結果)"
+          , "` をリクエストするためのURL. ファイルのハッシュ値は `"
+          , NonEmptyString.toString record.requestPathAndUploadFileName
+          , "`(コード生成結果)"
           ]
     , pType:
         PureScriptData.PType
@@ -273,7 +392,9 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
           , arguments:
               NonEmptyArray.cons
                 ( PureScriptData.ArrayLiteral
-                    [ PureScriptData.StringLiteral record.uploadFileName ]
+                    [ PureScriptWellknown.nonEmptyStringLiteral
+                        record.requestPathAndUploadFileName
+                    ]
                 )
                 ( NonEmptyArray.singleton PureScriptWellknown.dataMapEmpty
                 )
@@ -318,7 +439,10 @@ originPureScriptModule =
             , pType: PureScriptWellknown.nonEmptyString
             , expr:
                 PureScriptWellknown.nonEmptyStringLiteral
-                  (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "http://localhost:1234"))
+                  ( NonEmptyString.appendString
+                      (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "http://localhost:"))
+                      (UInt.toString hostingPortNumber)
+                  )
             , isExport: true
             }
         ]
@@ -330,8 +454,18 @@ runSpagoForFunctions = do
     ( \callback ->
         map (\_ -> Aff.nonCanceler)
           ( Shell.exec
-              ( NonEmptyString.nes
-                  (Proxy.Proxy :: Proxy.Proxy "spago build --purs-args \"-o distribution/creative-record/functions/\"")
+              ( Prelude.append
+                  ( NonEmptyString.nes
+                      (Proxy.Proxy :: Proxy.Proxy "spago bundle-module --main CreativeRecord.Functions --to ")
+                  )
+                  ( Path.distributionFilePathToString
+                      ( Path.DistributionFilePath
+                          { directoryPath: functionsDirectoryPath
+                          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "index")
+                          }
+                      )
+                      FileType.JavaScript
+                  )
               )
               ( \result -> do
                   log <- execResultToString result
@@ -341,3 +475,54 @@ runSpagoForFunctions = do
           )
     )
   EffectClass.liftEffect (Console.log "spago で functions のビルドに成功!")
+
+writePackageJsonForFunctions :: Aff.Aff Unit
+writePackageJsonForFunctions = case packageJsonForFunctions of
+  Maybe.Just json ->
+    FileSystemWrite.writeJson
+      ( Path.DistributionFilePath
+          { directoryPath: functionsDirectoryPath
+          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "package")
+          }
+      )
+      json
+  Maybe.Nothing -> EffectClass.liftEffect (Console.log "functions 向けの package.json の生成に失敗した")
+
+packageJsonForFunctions :: Maybe.Maybe ArgonautCore.Json
+packageJsonForFunctions =
+  Prelude.map
+    ( \name ->
+        PackageJson.toJson
+          ( PackageJson.PackageJsonInput
+              { name
+              , version: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "0.0.0")
+              , description: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録 https://narumincho.com")
+              , gitHubAccountName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho")
+              , gitHubRepositoryName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "definy")
+              , entryPoint: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "./index.js")
+              , homepage:
+                  StructuredUrl.StructuredUrl
+                    { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://narumincho.com")
+                    , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] Map.empty
+                    }
+              , author:
+                  NonEmptyString.nes
+                    ( Proxy.Proxy ::
+                        Proxy.Proxy
+                          "narumincho <narumincho.starfy@gmail.com> (https://narumincho.com)"
+                    )
+              , nodeVersion: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "14")
+              , dependencies:
+                  Map.fromFoldable
+                    [ Tuple.Tuple
+                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase-admin"))
+                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "10.0.0"))
+                    , Tuple.Tuple
+                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase-functions"))
+                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "3.15.7"))
+                    ]
+              , typeFilePath: Maybe.Nothing
+              }
+          )
+    )
+    (PackageJson.nameFromNonEmptyString appName)

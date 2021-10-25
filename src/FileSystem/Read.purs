@@ -18,7 +18,7 @@ import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
 import FileSystem.Path as Path
-import FileType as FileType
+import FileSystem.FileType as FileType
 
 -- | distribution にあるファイルを文字列として読み取る
 readTextFileInDistribution :: Path.DistributionFilePath -> FileType.FileType -> Aff.Aff String
@@ -39,7 +39,7 @@ readBinaryFile filePath = Fs.readFile (NonEmptyString.toString (Path.filePathToS
 
 -- | ディレクトリ内に含まれるファイルのパスを取得する.
 -- |
--- |  再帰的には調べず, ディレクトリ内のディレクトリは無視する.
+-- | 再帰的には調べず, ディレクトリ内のディレクトリは無視する.
 readFilePathInDirectory :: Path.DirectoryPath -> Aff.Aff (Array Path.FilePath)
 readFilePathInDirectory directoryPath =
   let

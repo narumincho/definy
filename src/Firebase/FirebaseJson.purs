@@ -4,15 +4,18 @@ module Firebase.FirebaseJson
   , Emulators(..)
   , toJson
   , FunctionsSetting
+  , SourceAndHeaders(..)
+  , Header(..)
   ) where
 
 import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
 import Data.Maybe as Maybe
+import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import FileSystem.Path as Path
-import FileType as FileType
+import FileSystem.FileType as FileType
 import Prelude as Prelude
 import Util as Util
 
@@ -23,6 +26,7 @@ newtype FirebaseJson
   , firestoreRulesFilePath :: Path.DistributionFilePath
   , cloudStorageRulesFilePath :: Path.DistributionFilePath
   , hostingRewites :: Array Rewrite
+  , hostingHeaders :: Array SourceAndHeaders
   , emulators :: Emulators
   }
 
@@ -33,7 +37,22 @@ newtype FunctionsSetting
   }
 
 newtype Rewrite
-  = Rewrite { source :: String, function :: String }
+  = Rewrite
+  { source :: NonEmptyString.NonEmptyString
+  , function :: NonEmptyString.NonEmptyString
+  }
+
+newtype SourceAndHeaders
+  = SourceAndHeaders
+  { source :: NonEmptyString.NonEmptyString
+  , headers :: Array Header
+  }
+
+newtype Header
+  = Header
+  { key :: NonEmptyString.NonEmptyString
+  , value :: String
+  }
 
 newtype Emulators
   = Emulators
@@ -89,6 +108,8 @@ toJson (FirebaseJson record) =
                       ( ArgonautCore.fromArray
                           (Prelude.map rewriteToJson record.hostingRewites)
                       )
+                  , Tuple.Tuple "headers"
+                      (ArgonautCore.fromArray (Prelude.map sourceAndHeadersToJson record.hostingHeaders))
                   , Tuple.Tuple "cleanUrls" ArgonautCore.jsonTrue
                   , Tuple.Tuple "trailingSlash" ArgonautCore.jsonFalse
                   ]
@@ -101,8 +122,22 @@ toJson (FirebaseJson record) =
 rewriteToJson :: Rewrite -> ArgonautCore.Json
 rewriteToJson (Rewrite { source, function }) =
   Util.tupleListToJson
-    [ Tuple.Tuple "source" (ArgonautCore.fromString source)
-    , Tuple.Tuple "function" (ArgonautCore.fromString function)
+    [ Tuple.Tuple "source" (Util.jsonFromNonEmptyString source)
+    , Tuple.Tuple "function" (Util.jsonFromNonEmptyString function)
+    ]
+
+sourceAndHeadersToJson :: SourceAndHeaders -> ArgonautCore.Json
+sourceAndHeadersToJson (SourceAndHeaders { source, headers }) =
+  Util.tupleListToJson
+    [ Tuple.Tuple "source" (Util.jsonFromNonEmptyString source)
+    , Tuple.Tuple "headers" (ArgonautCore.fromArray (Prelude.map headerToJson headers))
+    ]
+
+headerToJson :: Header -> ArgonautCore.Json
+headerToJson (Header { key, value }) =
+  Util.tupleListToJson
+    [ Tuple.Tuple "key" (Util.jsonFromNonEmptyString key)
+    , Tuple.Tuple "value" (ArgonautCore.fromString value)
     ]
 
 emulatorsToJsonValue :: Emulators -> Maybe.Maybe FunctionsSetting -> ArgonautCore.Json

@@ -4,11 +4,13 @@
 
 /**
  *
- * @param {() => string} callback
+ * @param {() => { body : string, mimeType : string }} callback
  * @returns {import("firebase-functions").HttpsFunction}
  */
 exports.onRequestJs = (callback) => {
   return require("firebase-functions").https.onRequest((request, response) => {
-    response.send(callback());
+    const res = callback();
+    response.type(res.mimeType);
+    response.send(res.body);
   });
 };

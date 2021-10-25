@@ -18,7 +18,7 @@ newtype PathAndSearchParams
   パス.
   クエリパラメーターとの違いは, SSG 時にファイルとして残せるレベルの単位 であるということ
   使える文字は, 正規表現 `[a-zA-Z0-9_-]` を満たすものに限ってほしいが, チェックはしない
-   -} path :: Array String
+   -} path :: Array NonEmptyString.NonEmptyString
   , {-
   クエリパラメーター.
   検索条件等を入れる.
@@ -26,7 +26,7 @@ newtype PathAndSearchParams
    -} searchParams :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString
   }
 
-pathAndSearchParams :: Array String -> Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> PathAndSearchParams
+pathAndSearchParams :: Array NonEmptyString.NonEmptyString -> Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> PathAndSearchParams
 pathAndSearchParams path searchParams = PathAndSearchParams { path, searchParams }
 
 -- | 構造化されたURL
@@ -46,4 +46,4 @@ pathAndSearchParamsToString :: PathAndSearchParams -> NonEmptyString.NonEmptyStr
 pathAndSearchParamsToString (PathAndSearchParams { path }) =
   NonEmptyString.appendString
     (NonEmptyString.singleton (String.codePointFromChar '/'))
-    (String.joinWith "/" path)
+    (NonEmptyString.joinWith "/" path)
