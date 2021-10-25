@@ -14,6 +14,7 @@ import Node.Stream as Stream
 import Prelude as Prelude
 import View.ToHtml as ViewToHtml
 import StructuredUrl as StructuredUrl
+import Type.Proxy as Proxy
 
 -- | Firebase の Hosting emulator では配信するリソースを実行時に変更できないので,
 -- | その変更できるサーバーを作る
@@ -99,7 +100,7 @@ htmlResponse =
         HtmlToSTring.htmlOptionToString
           ( ViewToHtml.viewToHtmlOption
               ( StructuredUrl.pathAndSearchParams
-                  [ "program" ]
+                  [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "program") ]
                   Map.empty
               )
               CreativeRecordView.view

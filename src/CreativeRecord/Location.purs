@@ -1,8 +1,10 @@
 module CreativeRecord.Location (Location(..), toUrl) where
 
-import Data.Map as Map
 import CreativeRecord.Origin as Origin
+import Data.Map as Map
+import Data.String.NonEmpty as NonEmptyString
 import StructuredUrl as StructuredUrl
+import Type.Proxy as Proxy
 
 data Location
   = Top
@@ -29,17 +31,53 @@ toPath location =
   StructuredUrl.pathAndSearchParams
     ( case location of
         Top -> []
-        PowershellRecursion -> [ "powershell-recursion" ]
-        SvgBasic -> [ "svg-basic" ]
-        SvgStandaloneEmbed -> [ "svg-standalone-embed" ]
-        AboutDesiredRoute -> [ "about-desired-route" ]
-        MessageWindow -> [ "message-window" ]
-        DesiredRouteFont -> [ "desired-route-font" ]
-        ListSelectionBehavior -> [ "list-selection-behavior" ]
-        UiColor -> [ "ui-color" ]
-        DesiredRouteEncounter -> [ "desired-route-encounter" ]
-        Star -> [ "star" ]
-        DesiredRouteMonster -> [ "desired-route-monster" ]
-        NPetitcomIme -> [ "n-petitcom-ime" ]
+        PowershellRecursion ->
+          [ NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "powershell-recursion")
+          ]
+        SvgBasic ->
+          [ NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "svg-basic")
+          ]
+        SvgStandaloneEmbed ->
+          [ NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "svg-standalone-embed")
+          ]
+        AboutDesiredRoute ->
+          [ NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "about-desired-route")
+          ]
+        MessageWindow ->
+          [ NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "message-window")
+          ]
+        DesiredRouteFont ->
+          [ NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "desired-route-font")
+          ]
+        ListSelectionBehavior ->
+          [ NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "list-selection-behavior")
+          ]
+        UiColor ->
+          [ NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "ui-color")
+          ]
+        DesiredRouteEncounter ->
+          [ NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "desired-route-encounter")
+          ]
+        Star ->
+          [ NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "star")
+          ]
+        DesiredRouteMonster ->
+          [ NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "desired-route-monster")
+          ]
+        NPetitcomIme ->
+          [ NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "n-petitcom-ime")
+          ]
     )
     Map.empty

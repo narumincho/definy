@@ -168,46 +168,48 @@ topBox =
             }
         , View.Text
             { markup: View.Heading2, padding: 8.0, text: "ナルミンチョの SNS アカウント" }
-        , View.BoxElement
-            ( View.Box
-                ( { direction: View.X
-                  , paddingTopBottom: 8.0
-                  , paddingLeftRight: 8.0
-                  , gap: 8.0
-                  , height: Maybe.Just 4.0
-                  , backgroundColor: Maybe.Nothing
-                  , gridTemplateColumns1FrCount: Maybe.Nothing
-                  , url: Maybe.Nothing
-                  , hover: View.boxHoverStyleNone
-                  , children:
-                      [ snsLink
-                          ( StructuredUrl.StructuredUrl
-                              { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://twitter.com")
-                              , pathAndSearchParams: StructuredUrl.pathAndSearchParams [ "naru_mincho" ] Map.empty
-                              }
-                          )
-                          SvgImage.twitterLogo
-                          "@naru_mincho"
-                      , snsLink
-                          ( StructuredUrl.StructuredUrl
-                              { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://github.com")
-                              , pathAndSearchParams: StructuredUrl.pathAndSearchParams [ "narumincho" ] Map.empty
-                              }
-                          )
-                          SvgImage.gitHubLogo
-                          "@narumincho"
-                      , snsLink
-                          ( StructuredUrl.StructuredUrl
-                              { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://www.youtube.com")
-                              , pathAndSearchParams: StructuredUrl.pathAndSearchParams [ "channel", "UCDGsMJptdPNN_dbPkTl9qjA" ] Map.empty
-                              }
-                          )
-                          SvgImage.youTubeLogo
-                          "ナルミンチョ"
-                      ]
-                  }
-                )
-            )
+        , View.box
+            { direction: View.X
+            , paddingTopBottom: 8.0
+            , paddingLeftRight: 8.0
+            , gap: 8.0
+            , height: Maybe.Just 4.0
+            , backgroundColor: Maybe.Nothing
+            , gridTemplateColumns1FrCount: Maybe.Nothing
+            , url: Maybe.Nothing
+            , hover: View.boxHoverStyleNone
+            , children:
+                [ snsLink
+                    ( StructuredUrl.StructuredUrl
+                        { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://twitter.com")
+                        , pathAndSearchParams: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "naru_mincho") ] Map.empty
+                        }
+                    )
+                    SvgImage.twitterLogo
+                    "@naru_mincho"
+                , snsLink
+                    ( StructuredUrl.StructuredUrl
+                        { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://github.com")
+                        , pathAndSearchParams: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho") ] Map.empty
+                        }
+                    )
+                    SvgImage.gitHubLogo
+                    "@narumincho"
+                , snsLink
+                    ( StructuredUrl.StructuredUrl
+                        { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://www.youtube.com")
+                        , pathAndSearchParams:
+                            StructuredUrl.pathAndSearchParams
+                              [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "channel")
+                              , NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "UCDGsMJptdPNN_dbPkTl9qjA")
+                              ]
+                              Map.empty
+                        }
+                    )
+                    SvgImage.youTubeLogo
+                    "ナルミンチョ"
+                ]
+            }
         , View.Text
             { markup: View.Heading2, padding: 8.0, text: "ナルミンチョが作った Webアプリ" }
         , View.box
@@ -232,7 +234,7 @@ topBox =
                               )
                         }
                     )
-                    (StructuredUrl.pathAndSearchParams [ "definy20210811Png" ] Map.empty)
+                    (StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "definy20210811Png") ] Map.empty)
                     "definy"
                 , externalLink
                     ( StructuredUrl.StructuredUrl
@@ -240,7 +242,7 @@ topBox =
                         , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] Map.empty
                         }
                     )
-                    (StructuredUrl.pathAndSearchParams [ "gravity_starPng" ] Map.empty)
+                    (StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "gravity_starPng") ] Map.empty)
                     "重力星"
                 , externalLink
                     ( StructuredUrl.StructuredUrl
@@ -248,7 +250,7 @@ topBox =
                         , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] Map.empty
                         }
                     )
-                    (StructuredUrl.pathAndSearchParams [ "tsukumartPng" ] Map.empty)
+                    (StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "tsukumartPng") ] Map.empty)
                     "つくマート"
                 ]
             }
@@ -258,62 +260,62 @@ topBox =
             ( [ ArticleTitleAndImageUrl
                   { title:
                       "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ "powershell_iconPng" ] Map.empty
+                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "powershell_iconPng") ] Map.empty
                   , location: Location.PowershellRecursion
                   }
               , ArticleTitleAndImageUrl
                   { title: "SVGの基本"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ "svgBasic" ] Map.empty
+                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "svgBasic") ] Map.empty
                   , location: Location.SvgBasic
                   }
               , ArticleTitleAndImageUrl
                   { title: "単体SVGと埋め込みSVG"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ "grape_svg_codePng" ] Map.empty
+                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "grape_svg_codePng") ] Map.empty
                   , location: Location.SvgStandaloneEmbed
                   }
               , ArticleTitleAndImageUrl
                   { title: "DESIRED Routeについて"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ "desired_route_titlePng" ] Map.empty
+                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "desired_route_titlePng") ] Map.empty
                   , location: Location.AboutDesiredRoute
                   }
               , ArticleTitleAndImageUrl
                   { title: "メッセージウィンドウの話"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ "windowPng" ] Map.empty
+                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "windowPng") ] Map.empty
                   , location: Location.MessageWindow
                   }
               , ArticleTitleAndImageUrl
                   { title: "DESIRED RouteとNPIMEのフォントの描画処理"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ "fontPng" ] Map.empty
+                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "fontPng") ] Map.empty
                   , location: Location.DesiredRouteFont
                   }
               , ArticleTitleAndImageUrl
                   { title: "リストUIのボタン操作の挙動"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ "list_uiPng" ] Map.empty
+                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "list_uiPng") ] Map.empty
                   , location: Location.ListSelectionBehavior
                   }
               , ArticleTitleAndImageUrl
                   { title: "UIの配色"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ "colorPng" ] Map.empty
+                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "colorPng") ] Map.empty
                   , location: Location.UiColor
                   }
               , ArticleTitleAndImageUrl
                   { title: "モンスターとのエンカウントについて"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ "battlePng" ] Map.empty
+                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "battlePng") ] Map.empty
                   , location: Location.DesiredRouteEncounter
                   }
               , ArticleTitleAndImageUrl
                   { title: "星の図形について"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ "starPng" ] Map.empty
+                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "starPng") ] Map.empty
                   , location: Location.Star
                   }
               , ArticleTitleAndImageUrl
                   { title: "DESIRED Routeに登場する予定だった敵モンスター"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ "kamausagiPng" ] Map.empty
+                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "kamausagiPng") ] Map.empty
                   , location: Location.DesiredRouteMonster
                   }
               , ArticleTitleAndImageUrl
                   { title: "Nプチコン漢字入力(N Petitcom IME)"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ "henkanPng" ] Map.empty
+                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "henkanPng") ] Map.empty
                   , location: Location.NPetitcomIme
                   }
               ]

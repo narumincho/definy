@@ -18,10 +18,10 @@ view =
   View.View
     { appName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録")
     , box: Top.topBox
-    , coverImagePath: StructuredUrl.pathAndSearchParams [ "icon" ] Map.empty
+    , coverImagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "icon") ] Map.empty
     , description:
         "革新的なプログラミング言語のdefiny, Web技術, 作っているゲームなどについて解説しています"
-    , iconPath: StructuredUrl.pathAndSearchParams [ "icon" ] Map.empty
+    , iconPath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "icon") ] Map.empty
     , language: Mabye.Just Language.Japanese
     , pageName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録")
     , path: StructuredUrl.pathAndSearchParams [] Map.empty

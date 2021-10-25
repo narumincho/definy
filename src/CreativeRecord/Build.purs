@@ -392,8 +392,8 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
           , arguments:
               NonEmptyArray.cons
                 ( PureScriptData.ArrayLiteral
-                    [ PureScriptData.StringLiteral
-                        (NonEmptyString.toString record.requestPathAndUploadFileName)
+                    [ PureScriptWellknown.nonEmptyStringLiteral
+                        record.requestPathAndUploadFileName
                     ]
                 )
                 ( NonEmptyArray.singleton PureScriptWellknown.dataMapEmpty

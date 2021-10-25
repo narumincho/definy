@@ -19,7 +19,7 @@ html =
             HtmlToString.htmlOptionToString
               ( ViewToHtml.viewToHtmlOption
                   ( StructuredUrl.pathAndSearchParams
-                      [ NonEmptyString.toString ClientProgramHashValue.clientProgramHashValue ]
+                      [ ClientProgramHashValue.clientProgramHashValue ]
                       Map.empty
                   )
                   CreativeRecordView.view
