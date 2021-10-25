@@ -16,6 +16,7 @@ module FileSystem.Path
   , filePathToString
   , distributionFilePathToStringBaseApp
   , distributionDirectoryPathToStringBaseApp
+  , distributionDirectoryPathToDirectoryPath
   ) where
 
 import Data.Array as Array
